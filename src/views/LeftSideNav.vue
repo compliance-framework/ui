@@ -7,7 +7,7 @@ import logo from '@/assets/logo.svg'
 </script>
 
 <template>
-  <SideNav class="px-8 overflow-x-auto">
+  <SideNav class="px-8 overflow-x-auto shadow">
     <template #logo>
       <div class="py-6">
         <SideNavLogo alt="Vue logo" :src="logo" class="max-h-14 mx-auto"/>
@@ -17,25 +17,11 @@ import logo from '@/assets/logo.svg'
     <div class="bg-zinc-100 h-0.5 mb-2"></div>
 
     <SideNavLink :to="{ name: 'home' }">Home</SideNavLink>
-    <SideNavLink :to="{ name: 'about' }">About</SideNavLink>
+    <SideNavLink :to="{ name: 'dashboard' }">Dashboard</SideNavLink>
 
-    <SideNavCategory title="First Category">
-      <SideNavLink :to="{ name: 'home' }">Home</SideNavLink>
+    <SideNavCategory title="Continuous Compliance">
       <SideNavLink :to="{ name: 'about' }">About</SideNavLink>
-    </SideNavCategory>
-
-    <SideNavCategory title="Second Category">
-      <SideNavLink :to="{ name: 'home' }">Home</SideNavLink>
-      <SideNavLink :to="{ name: 'about' }">About</SideNavLink>
-    </SideNavCategory>
-
-    <SideNavCategory title="Third Category">
-      <SideNavLink :to="{ name: 'home' }">Home</SideNavLink>
-      <SideNavLink :to="{ name: 'about' }">About</SideNavLink>
-      <SideNavLink :to="{ name: 'home' }">Assessments</SideNavLink>
-      <SideNavLink :to="{ name: 'about' }">Analytics</SideNavLink>
-      <SideNavLink :to="{ name: 'home' }">Pages</SideNavLink>
-      <SideNavLink :to="{ name: 'about' }">Something else for real</SideNavLink>
+      <SideNavLink :to="{ name: 'home' }">Docs</SideNavLink>
     </SideNavCategory>
   </SideNav>
 </template>
