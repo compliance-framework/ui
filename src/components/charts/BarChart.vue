@@ -1,21 +1,12 @@
 <script setup lang="ts">
 import { Bar } from 'vue-chartjs'
-import { Chart as ChartJS, Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale } from 'chart.js'
+import { useCharts } from './chart-defaults'
 
-ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale)
+useCharts()
 
-defineProps([
-  'id',
-  'title',
-  'data',
-  'options',
-])
+const props = defineProps(['data', 'options'])
 </script>
 
 <template>
-  <Bar
-    id="my-chart-id"
-    :options="options"
-    :data="data"
-  />
+  <Bar :options="props.options" :data="props.data" />
 </template>
