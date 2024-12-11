@@ -1,1 +1,5 @@
 @import './base.css';
+
+html, body {
+    @apply font-open-sans;
+}

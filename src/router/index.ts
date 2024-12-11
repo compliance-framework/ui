@@ -11,7 +11,7 @@ const authenticatedRoutes = [
     component: () => import('../views/HomeView.vue'),
   },
   {
-    path: '/',
+    path: '/dashboard',
     name: 'dashboard',
     // route level code-splitting
     // this generates a separate chunk (About.[hash].js) for this route
