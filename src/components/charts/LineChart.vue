@@ -13,7 +13,6 @@ import {
   Filler,
 } from 'chart.js'
 import gradient from 'chartjs-plugin-gradient'
-import { ref } from 'vue'
 
 ChartJS.register(
   Title,
@@ -28,72 +27,59 @@ ChartJS.register(
   gradient,
 )
 
-const props = defineProps(['id', 'data', 'options', 'style'])
-
-const optionData = ref({
-  ...{
-    plugins: {
-      gradient,
-      legend: {
-        display: false,
-      },
-    },
-    responsive: true,
-    maintainAspectRatio: false,
-    hoverBorderJoinStyle: 'round',
-    layout: {
-      autoPadding: false,
-      padding: {
-        top: 4
-      },
-    },
-    animation: {
-      duration: 0,
-    },
-    interaction: {
-      intersect: false,
-      mode: 'index',
-    },
-    elements: {
-      point: {
-        radius: 1,
-        hitRadius: 12,
-      },
-      line: {
-        tension: 0.4,
-        borderWidth: 1,
-        fill: true,
-      },
-    },
-    scales: {
-      y: {
-        grid: {
-          drawBorder: false,
-          display: false,
-          drawOnChartArea: false,
-          drawTicks: false,
-        },
-        ticks: {
-          display: false,
-        },
-      },
-      x: {
-        grid: {
-          drawBorder: false,
-          display: false,
-          drawOnChartArea: false,
-          drawTicks: false,
-        },
-        ticks: {
-          display: false,
-        },
-      },
+ChartJS.defaults.set({
+  plugins: {
+    gradient,
+    legend: {
+      display: false,
     },
   },
-  ...props.options,
-})
+  layout: {
+    autoPadding: false,
+    padding: {
+      top: 4
+    },
+  },
+  responsive: true,
+  maintainAspectRatio: false,
+  animation: {
+    duration: 0,
+  },
+  interaction: {
+    intersect: false,
+    mode: 'index',
+  },
+  elements: {
+    point: {
+      radius: 0,
+      hitRadius: 1,
+      hoverRadius: 2,
+    },
+    line: {
+      tension: 0.4,
+      borderWidth: 1,
+      fill: true,
+    }
+  },
+  scale: {
+    grid: {
+      drawBorder: false,
+      display: false,
+      drawOnChartArea: false,
+      drawTicks: false,
+    },
+    border: {
+      display: false,
+    },
+    ticks: {
+      display: false,
+    }
+  }
+});
+
+const props = defineProps(['id', 'data', 'options', 'style'])
 </script>
 
 <template>
-  <Line :options="optionData" :data="data" class="-mx-0.5 overflow-auto h-full" />
+  <Line :options="props.options" :data="props.data" class="-mx-1 overflow-hidden h-full" />
 </template>
