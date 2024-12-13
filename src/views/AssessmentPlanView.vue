@@ -7,27 +7,7 @@
         </div>
         <div class="h-32">
           <LineChart
-            :data="{
-              labels: ['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-              datasets: [
-                {
-                  gradient: {
-                    backgroundColor: {
-                      axis: 'y',
-                      colors: {
-                        100: 'rgba(30,64,175, .4)',
-                        70: 'rgba(30,64,175, .3)',
-                        30: 'rgba(30,64,175, .1)',
-                        0: 'rgba(30,64,175, .0)',
-                      },
-                    },
-                  },
-                  label: 'Results',
-                  data: [50, 45, 60, 60, 80, 65, 90, 80, 100],
-                  borderColor: 'rgba(30,64,175, 0.2)',
-                },
-              ],
-            }"
+            :data="chartData"
           ></LineChart>
         </div>
       </div>
@@ -97,13 +77,130 @@
     </div>
   </div>
   <div class="px-2 mt-8">
-    <div class="bg-white h-72 rounded shadow px-4 py-2">
-      <h3 class="text-lg font-semibold text-zinc-600 mb-4">Assessment plan: {{ this.$route.params.id }}</h3>
-      Details
+    <div class="bg-white rounded shadow px-4 py-2">
+      <h3 class="text-lg font-semibold text-zinc-600 mb-4">
+        {{ assessmentPlan.title }}
+      </h3>
+      Results
+      <div
+        class="flex border-t items-center hover:bg-zinc-100"
+        v-for="result in results"
+        :key="result.id"
+      >
+        <div class="px-2 py-2">{{ result.id }}</div>
+        <div class="px-2 py-2">Findings: {{ result.findings.length }}</div>
+        <div class="px-2 py-2">Observations: {{ result.observations.length }}</div>
+        <!--        <div class="px-2 py-2 flex-1">{{ assessment.title }}</div>-->
+        <!--        <div class="px-2 w-1/5 h-8">-->
+        <!--          <LineChart-->
+        <!--            :options="{-->
+        <!--              plugins: {-->
+        <!--                tooltip: {-->
+        <!--                  enabled: false,-->
+        <!--                },-->
+        <!--              },-->
+        <!--              elements: {-->
+        <!--                point: {-->
+        <!--                  hoverRadius: 0,-->
+        <!--                  hitRadius: 0,-->
+        <!--                },-->
+        <!--              },-->
+        <!--            }"-->
+        <!--            :data="assessment.data"-->
+        <!--          />-->
+        <!--        </div>-->
+      </div>
     </div>
   </div>
 </template>
-<script setup lang="ts">
+<script setup>
 import LineChart from '@/components/charts/LineChart.vue'
 import BarChart from '@/components/charts/BarChart.vue'
+import {  onMounted, ref } from 'vue'
+import { useRoute } from 'vue-router'
+
+const route = useRoute()
+
+const assessmentPlan = ref({})
+const results = ref([])
+const chartData = ref({
+  labels: [],
+  datasets: []
+})
+
+// const chartData = computed({
+//   // getter
+//   get() {
+//     return calculateChart(results)
+//   },
+// })
+
+function fetchPlan() {
+  return fetch(`http://localhost:8080/api/plan/${route.params.id}`).then((response) => {
+    return response.json()
+  })
+}
+
+function fetchResults() {
+  return fetch(`http://localhost:8080/api/plan/${route.params.id}/results`).then((response) => {
+    return response.json()
+  })
+}
+
+function calculateChart(results) {
+  const labels = []
+  const findings = {
+    label: 'Findings',
+    gradient: {
+      backgroundColor: {
+        axis: 'y',
+        colors: {
+          100: 'rgba(20,184,166, .4)',
+          70: 'rgba(20,184,166, .3)',
+          30: 'rgba(20,184,166, .1)',
+          0: 'rgba(20,184,166, .0)',
+        },
+      },
+    },
+    borderColor: 'rgba(20,184,166, 0.7)',
+    data: [],
+  }
+  const observations = {
+    label: 'Observations',
+    gradient: {
+      backgroundColor: {
+        axis: 'y',
+        colors: {
+          100: 'rgba(30,64,175, .4)',
+          70: 'rgba(30,64,175, .3)',
+          30: 'rgba(30,64,175, .1)',
+          0: 'rgba(30,64,175, .0)',
+        },
+      },
+    },
+    borderColor: 'rgba(30,64,175, 0.7)',
+    data: [],
+  }
+
+  results.forEach((result) => {
+    labels.push(result.start)
+    findings.data.push(result.findings.length)
+    observations.data.push(result.observations.length)
+  })
+
+  return {
+    labels: labels,
+    datasets: [findings, observations],
+  }
+}
+
+onMounted(() => {
+  fetchPlan().then((plan) => {
+    assessmentPlan.value = plan
+  })
+  fetchResults().then((resultsList) => {
+    results.value = resultsList
+    chartData.value = calculateChart(results.value)
+  })
+})
 </script>

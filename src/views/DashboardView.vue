@@ -142,7 +142,7 @@ onMounted(() => {
       return response.json()
     })
     .then((data) => {
-      let localData = []
+      const localData = []
       data.forEach((item) => {
         localData.push({
           id: item._id,
@@ -152,6 +152,4 @@ onMounted(() => {
       assessmentPlans.value = localData;
     });
 })
-
-
 </script>
