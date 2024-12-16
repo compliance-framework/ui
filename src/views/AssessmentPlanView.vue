@@ -155,14 +155,14 @@ function calculateChart(results) {
       backgroundColor: {
         axis: 'y',
         colors: {
-          100: 'rgba(20,184,166, .4)',
-          70: 'rgba(20,184,166, .3)',
-          30: 'rgba(20,184,166, .1)',
-          0: 'rgba(20,184,166, .0)',
+          100: 'rgba(253,92,110,0.4)',
+          70: 'rgba(253,92,110, .3)',
+          30: 'rgba(253,92,110, .1)',
+          0: 'rgba(253,92,110, .0)',
         },
       },
     },
-    borderColor: 'rgba(20,184,166, 0.7)',
+    borderColor: 'rgba(253,92,110, 0.7)',
     data: [],
   }
   const observations = {
@@ -171,14 +171,14 @@ function calculateChart(results) {
       backgroundColor: {
         axis: 'y',
         colors: {
-          100: 'rgba(30,64,175, .4)',
-          70: 'rgba(30,64,175, .3)',
-          30: 'rgba(30,64,175, .1)',
-          0: 'rgba(30,64,175, .0)',
+          100: 'rgba(20,184,166, .4)',
+          70: 'rgba(20,184,166, .3)',
+          30: 'rgba(20,184,166, .1)',
+          0: 'rgba(20,184,166, .0)',
         },
       },
     },
-    borderColor: 'rgba(30,64,175, 0.7)',
+    borderColor: 'rgba(20,184,166, 0.7)',
     data: [],
   }
 
