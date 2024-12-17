@@ -7,7 +7,27 @@
         </div>
         <div class="h-32">
           <LineChart
-            :data="chartData"
+            :data="{
+              labels: ['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+              datasets: [
+                {
+                  gradient: {
+                    backgroundColor: {
+                      axis: 'y',
+                      colors: {
+                        100: 'rgba(30,64,175, .4)',
+                        70: 'rgba(30,64,175, .3)',
+                        30: 'rgba(30,64,175, .1)',
+                        0: 'rgba(30,64,175, .0)',
+                      },
+                    },
+                  },
+                  label: 'Results',
+                  data: [50, 45, 60, 60, 80, 65, 90, 80, 100],
+                  borderColor: 'rgba(30,64,175, 0.2)',
+                },
+              ],
+            }"
           ></LineChart>
         </div>
       </div>
@@ -81,10 +101,9 @@
       <h3 class="text-lg font-semibold text-zinc-600 mb-4">
         {{ assessmentPlan.title }}
       </h3>
-      Results
-      <RouterLink
+      Result: {{ resultId }}
+      <div
         class="flex border-t items-center hover:bg-zinc-100"
-        :to="{ name: 'assessment-plan-result', params: { id: result.id } }"
         v-for="result in results"
         :key="result.id"
       >
@@ -110,7 +129,7 @@
         <!--            :data="assessment.data"-->
         <!--          />-->
         <!--        </div>-->
-      </RouterLink>
+      </div>
     </div>
   </div>
 </template>
@@ -122,12 +141,10 @@ import { useRoute } from 'vue-router'
 
 const route = useRoute()
 
-const assessmentPlan = ref({})
-const results = ref([])
-const chartData = ref({
-  labels: [],
-  datasets: []
-})
+const resultId = ref(route.params.id)
+
+const findings = ref([])
+const observations = ref([])
 
 // const chartData = computed({
 //   // getter
