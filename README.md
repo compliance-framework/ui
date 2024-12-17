@@ -1,6 +1,7 @@
 # Continuous Compliance UI project
 
-> !! This repository is still very much in development, and not ready for full usage yet.
+> [!WARNING]
+> This repository is still very much in development, and not ready for use yet.
 
 ## Project Setup
 
