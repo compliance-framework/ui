@@ -88,7 +88,7 @@
         v-for="result in results"
         :key="result.id"
       >
-        <div class="px-2 py-2">{{ result.id }}</div>
+        <div class="px-2 py-2">{{ result.title }}</div>
         <div class="px-2 py-2">Findings: {{ result.findings.length }}</div>
         <div class="px-2 py-2">Observations: {{ result.observations.length }}</div>
         <!--        <div class="px-2 py-2 flex-1">{{ assessment.title }}</div>-->
@@ -143,7 +143,7 @@ function fetchPlan() {
 }
 
 function fetchResults() {
-  return fetch(`http://localhost:8080/api/plan/${route.params.id}/results`).then((response) => {
+  return fetch(`http://localhost:8080/api/results/${route.params.id}`).then((response) => {
     return response.json()
   })
 }
@@ -200,7 +200,7 @@ onMounted(() => {
     assessmentPlan.value = plan
   })
   fetchResults().then((resultsList) => {
-    results.value = resultsList
+    results.value = resultsList.data
     chartData.value = calculateChart(results.value)
   })
 })
