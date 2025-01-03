@@ -143,7 +143,7 @@ function fetchPlan() {
 }
 
 function fetchResults() {
-  return fetch(`http://localhost:8080/api/results/${route.params.id}`).then((response) => {
+  return fetch(`http://localhost:8080/api/results/plan/${route.params.id}`).then((response) => {
     return response.json()
   })
 }

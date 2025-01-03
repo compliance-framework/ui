@@ -11,16 +11,16 @@ const authenticatedRoutes = [
     component: () => import('../views/HomeView.vue'),
   },
   {
-    path: '/dashboard',
-    name: 'dashboard',
+    path: '/assessment-plans/create',
+    name: 'assessment-plan.create',
     // route level code-splitting
     // this generates a separate chunk (About.[hash].js) for this route
     // which is lazy-loaded when the route is visited.
-    component: () => import('../views/DashboardView.vue'),
+    component: () => import('../views/AssessmentPlanCreate.vue'),
   },
   {
-    path: '/assessment-plan/:id',
-    name: 'assessment-plan',
+    path: '/assessment-plans/:id',
+    name: 'assessment-plan.view',
     // route level code-splitting
     // this generates a separate chunk (About.[hash].js) for this route
     // which is lazy-loaded when the route is visited.
