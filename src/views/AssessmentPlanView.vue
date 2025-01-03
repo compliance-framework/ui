@@ -84,7 +84,7 @@
       Results
       <RouterLink
         class="flex border-t items-center hover:bg-zinc-100"
-        :to="{ name: 'assessment-plan-result', params: { id: result.id } }"
+        :to="{ name: 'assessment-plan-result', params: { id: result._id } }"
         v-for="result in results"
         :key="result.id"
       >
