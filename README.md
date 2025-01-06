@@ -5,7 +5,11 @@
 
 ## Project Setup
 
+Install and use NVM:
+https://github.com/nvm-sh/nvm
+
 ```sh
+nvm install 20.9.0 && nvm use 20.9.0
 npm install
 ```
 
