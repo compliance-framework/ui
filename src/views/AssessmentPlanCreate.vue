@@ -1,8 +1,8 @@
 <template>
-  <div class="px-8 py-8 mt-16 w-1/3 mx-auto bg-white rounded shadow">
-    <h3 class="text-xl mb-4">
-      New Assessment Plan
-    </h3>
+  <PageHeader>
+    New Assessment Plan
+  </PageHeader>
+  <PageCard class="mt-8 w-1/2">
     <form @submit.prevent="createPlan">
       <div class="mb-4">
         <label for="name" class="block text-sm font-medium text-gray-700">Name</label>
@@ -22,11 +22,13 @@
         Submit
       </button>
     </form>
-  </div>
+  </PageCard>
 </template>
 <script setup>
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
+import PageHeader from '@/components/PageHeader.vue'
+import PageCard from '@/components/PageCard.vue'
 
 const router = useRouter();
 const name = ref('');
