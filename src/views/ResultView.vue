@@ -45,7 +45,9 @@ import { useRoute } from 'vue-router'
 import PageHeader from '@/components/PageHeader.vue'
 import PageCard from '@/components/PageCard.vue'
 import PageSubHeader from '@/components/PageSubHeader.vue'
+import { useConfigStore } from '@/stores/config';
 
+const configStore = useConfigStore();
 const route = useRoute()
 const id = ref(route.params.id)
 const title = ref('')
@@ -55,7 +57,8 @@ const logs = ref([])
 const risks = ref([])
 
 async function fetchResult() {
-  return fetch(`http://localhost:8080/api/results/${id.value}`)
+  const config = await useConfigStore().getConfig();
+  return fetch(`${config.API_URL}/api/results/${id.value}`)
     .then((response) => {
       return response.json()
     })
