@@ -1,0 +1,25 @@
+version: '3'
+
+services:
+  ui:
+    build:
+      context: .
+      target: 'build'
+    tty: true
+    volumes:
+      - .:/app
+      # Prevent our node_modules from being used inside the container.
+      - /app/node_modules
+    entrypoint: ["npm", "run", "dev"]
+    ports:
+      - "3000:3000"
+
+#  ui-prod:
+#    build:
+#      context: .
+#      target: 'production'
+#    volumes:
+#      # This can be mounted in Kubernetes as a configmap, or as a local file.
+#      - ./config.json:/app/config.json
+#    ports:
+#      - "8900:80"

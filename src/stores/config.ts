@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import builtInConfig from '../defaultconfig.json'
 
 export interface Config {
   API_URL: string
@@ -14,7 +15,23 @@ export const useConfigStore = defineStore('config', () => {
     }
 
     const response = await fetch(window.location.origin + import.meta.env.BASE_URL + '/config.json')
-    config.value = (await response.json()) as Config
+    let returnedConfig = {} as Config
+    if (response.ok) {
+      try {
+        returnedConfig = (await response.json()) as Config
+      } catch (e: unknown) {
+        if (e instanceof SyntaxError) {
+          console.error('Unable to read the configuration response. Reverting to builin config.');
+        } else {
+          throw e
+        }
+
+      }
+    }
+    config.value = {
+      ...builtInConfig,
+      ...returnedConfig,
+    }
     return config.value
   }
 
