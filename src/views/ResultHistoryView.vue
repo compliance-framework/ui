@@ -114,7 +114,7 @@
     </div>
   </PageCard>
 </template>
-<script setup>
+<script setup lang="ts">
 import LineChart from '@/components/charts/LineChart.vue'
 import BarChart from '@/components/charts/BarChart.vue'
 import {  onMounted, ref } from 'vue'
@@ -122,31 +122,22 @@ import { useRoute } from 'vue-router'
 import PageHeader from '@/components/PageHeader.vue'
 import PageSubHeader from '@/components/PageSubHeader.vue'
 import PageCard from '@/components/PageCard.vue'
+import { useApiStore, type Result, type DataResponse } from '@/stores/api.ts'
+import type { ChartData, ChartDataset } from 'chart.js'
 
 const route = useRoute()
-const streamId = ref(route.params.stream);
-const results = ref([])
-const chartData = ref({
+const apiStore = useApiStore()
+
+const streamId = route.params.stream as string;
+const results = ref<Result[]>([] as Result[])
+const chartData = ref<ChartData>({
   labels: [],
-  datasets: []
+  datasets: [],
 })
 
-// const chartData = computed({
-//   // getter
-//   get() {
-//     return calculateChart(results)
-//   },
-// })
-
-function fetchResults() {
-  return fetch(`http://localhost:8080/api/results/stream/${streamId.value}`).then((response) => {
-    return response.json()
-  })
-}
-
-function calculateChart(results) {
-  const labels = []
-  const findings = {
+function calculateChart(results: Result[]) {
+  const labels: string[] = []
+  const findings: ChartDataset = {
     label: 'Findings',
     gradient: {
       backgroundColor: {
@@ -162,7 +153,7 @@ function calculateChart(results) {
     borderColor: 'rgba(253,92,110, 0.7)',
     data: [],
   }
-  const observations = {
+  const observations: ChartDataset = {
     label: 'Observations',
     gradient: {
       backgroundColor: {
@@ -181,8 +172,8 @@ function calculateChart(results) {
 
   results.forEach((result) => {
     labels.push(result.start)
-    findings.data.push(result.findings.length)
-    observations.data.push(result.observations.length)
+    findings.data?.push(result.findings.length)
+    observations.data?.push(result.observations.length)
   })
 
   return {
@@ -192,9 +183,9 @@ function calculateChart(results) {
 }
 
 onMounted(() => {
-  fetchResults().then((resultsList) => {
-    results.value = resultsList.data
-    // chartData.value = calculateChart(results.value)
+  apiStore.getStreamResults(streamId).then((resultList: DataResponse<Result[]>) => {
+    results.value = resultList.data;
+    chartData.value = calculateChart(results.value)
   })
 })
 </script>

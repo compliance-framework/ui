@@ -1,7 +1,5 @@
 <template>
-  <PageHeader>
-    Assessment Plans
-  </PageHeader>
+  <PageHeader> Assessment Plans</PageHeader>
   <div class="grid grid-cols-3 gap-4 mt-4">
     <div class="bg-white rounded shadow">
       <div class="px-4 pt-2">
@@ -100,13 +98,14 @@
         v-for="plan in plans"
         :key="plan._id"
       >
-  <!--      <div class="px-2 py-2">{{ assessment.id }}</div>-->
+        <!--      <div class="px-2 py-2">{{ assessment.id }}</div>-->
         <div class="pl-4">{{ plan.title }}</div>
         <div>
           <RouterLink
             class="bg-blue-800 hover:bg-clue-700 text-white px-4 py-1 rounded-md text-sm inline-block"
             :to="{ name: 'assessment-plan.view', params: { id: plan._id } }"
-          >View</RouterLink>
+            >View
+          </RouterLink>
         </div>
       </div>
     </div>
@@ -114,17 +113,18 @@
       <RouterLink
         class="bg-gray-50 border border-blue-800 hover:bg-gray-200 text-blue-800 px-4 py-2 rounded inline-block"
         :to="{ name: 'assessment-plan.create' }"
-      >Create</RouterLink>
+        >Create
+      </RouterLink>
     </div>
   </PageCard>
 </template>
 <script setup lang="ts">
 import LineChart from '@/components/charts/LineChart.vue'
-import { onMounted, ref } from 'vue'
 import BarChart from '@/components/charts/BarChart.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import PageCard from '@/components/PageCard.vue'
-import {useApiStore, type Plan} from '@/stores/api.ts'
+import { onMounted, ref } from 'vue'
+import { useApiStore, type Plan } from '@/stores/api.ts'
 
 const apiStore = useApiStore()
 const plans = ref<Plan[]>([] as Plan[])

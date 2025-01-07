@@ -63,8 +63,7 @@ export const useApiStore = defineStore('api', () => {
   async function getPlan(id: string): Promise<Plan> {
     const config = await configStore.getConfig()
     const response = await fetch(`${config.API_URL}/api/plan/${id}`)
-    const plan: Plan = await response.json()
-    return plan
+    return await response.json() as Plan
   }
 
   async function getPlans(): Promise<Plan[]> {
@@ -80,9 +79,16 @@ export const useApiStore = defineStore('api', () => {
     })
   }
 
+  async function getStreamResults(streamId: string): Promise<DataResponse<Result[]>> {
+    const config = await configStore.getConfig()
+    const response = await fetch(`${config.API_URL}/api/results/stream/${streamId}`)
+    return await response.json() as DataResponse<Result[]>
+  }
+
   return {
     getPlan,
     getPlanResults,
+    getStreamResults,
     createPlan,
     getPlans,
   }
