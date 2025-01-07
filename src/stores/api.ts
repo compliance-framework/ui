@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { useConfigStore } from '@/stores/config.ts'
 
 export interface Plan {
+  _id: string
   id: string
   title: string
   status: string
@@ -66,6 +67,12 @@ export const useApiStore = defineStore('api', () => {
     return plan
   }
 
+  async function getPlans(): Promise<Plan[]> {
+    const config = await configStore.getConfig()
+    const response = await fetch(`${config.API_URL}/api/plans`)
+    return await response.json() as Plan[]
+  }
+
   async function getPlanResults(id: string): Promise<DataResponse<Result[]>> {
     const config = await configStore.getConfig()
     return fetch(`${config.API_URL}/api/results/plan/${id}`).then((response) => {
@@ -77,5 +84,6 @@ export const useApiStore = defineStore('api', () => {
     getPlan,
     getPlanResults,
     createPlan,
+    getPlans,
   }
 })
