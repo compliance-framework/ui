@@ -12,6 +12,13 @@ export default defineConfig({
     vueDevTools(),
     nightwatchPlugin(),
   ],
+  server : {
+    port: 3000, // must be a port other than 5173
+    host: true,
+    watch: {
+      usePolling: true,
+    },
+  },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))

@@ -13,9 +13,29 @@ nvm install 20.9.0 && nvm use 20.9.0
 npm install
 ```
 
+### Configuration 
+
+#### Locally
+To configure the running frontend, add a file called `public/config.json` with your configuration.
+
+This file will also be used when running in Docker.
+```json
+{
+  "API_URL": "http://localhost:9000"
+}
+```
+
+#### In Production
+Mount a file called `/app/config.json` with your configuration.
+
+
 ### Compile and Hot-Reload for Development
 
 ```sh
+# Using Docker
+docker-compose up -d
+
+# Running locally
 npm run dev
 ```
 
