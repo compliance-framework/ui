@@ -81,14 +81,13 @@ export const useApiStore = defineStore('api', () => {
   async function getResult(id: string): Promise<DataResponse<Result>> {
     const config = await configStore.getConfig()
     const response = await fetch(`${config.API_URL}/api/results/${id}`)
-    return await response.json() as DataResponse<Result>
+    return (await response.json()) as DataResponse<Result>
   }
 
   async function getPlanResults(id: string): Promise<DataResponse<Result[]>> {
     const config = await configStore.getConfig()
-    return fetch(`${config.API_URL}/api/results/plan/${id}`).then((response) => {
-      return response.json()
-    })
+    const response = await fetch(`${config.API_URL}/api/results/plan/${id}`)
+    return (await response.json()) as DataResponse<Result[]>
   }
 
   async function getStreamResults(streamId: string): Promise<DataResponse<Result[]>> {
