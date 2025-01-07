@@ -8,7 +8,7 @@
         <label for="name" class="block text-sm font-medium text-gray-700">Name</label>
         <input
           type="text"
-          v-model="name"
+          v-model="plan.title"
           id="name"
           name="name"
           required
@@ -24,35 +24,23 @@
     </form>
   </PageCard>
 </template>
-<script setup>
+<script setup lang="ts">
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import PageHeader from '@/components/PageHeader.vue'
 import PageCard from '@/components/PageCard.vue'
+import { useApiStore, type Plan } from '@/stores/api'
 
 const router = useRouter();
-const name = ref('');
+const apiStore = useApiStore();
+const plan = ref<Plan>({} as Plan);
 
 async function createPlan() {
   try {
-    const response = await fetch('http://localhost:8080/api/plan', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        title: name.value,
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Error: ${response.statusText}`);
-    }
-
-    const data = await response.json();
+    const newPlan = await apiStore.createPlan(plan.value)
     return router.push({
       name: 'assessment-plan.view',
-      params: { id: data.id },
+      params: { id: newPlan.id },
     });
   } catch (error) {
     console.error(error);
