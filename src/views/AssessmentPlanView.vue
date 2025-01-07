@@ -1,9 +1,7 @@
 <template>
-  <PageHeader>
-    Assessment Plan
-  </PageHeader>
+  <PageHeader> Assessment Plan</PageHeader>
   <PageSubHeader>
-    {{ assessmentPlan.title }}
+    {{ plan.title }}
   </PageSubHeader>
   <div class="grid grid-cols-3 gap-4 mt-4">
     <div class="bg-white rounded shadow">
@@ -11,9 +9,7 @@
         <h3 class="text-lg font-semibold text-zinc-600">Compliance over time</h3>
       </div>
       <div class="h-32">
-        <LineChart
-          :data="chartData"
-        ></LineChart>
+        <LineChart :data="chartData"></LineChart>
       </div>
     </div>
     <div class="bg-white rounded shadow">
@@ -77,86 +73,72 @@
     </div>
   </div>
   <PageCard class="mt-8">
-      <div
-        class="grid grid-cols-5 gap-4 border-t first:border-none items-center hover:bg-zinc-100 py-2"
-        v-for="result in results"
-        :key="result.id"
-      >
-        <div class="col-span-2 pl-2">{{ result.title }}</div>
-        <div>Findings: {{ result.findings.length }}</div>
-        <div>Observations: {{ result.observations.length }}</div>
-        <div>
-          <RouterLink
-            class="bg-gray-50 hover:bg-gray-200 text-blue-800 border border-blue-800 px-4 py-1 rounded-md text-sm mr-2"
-            :to="{ name: 'assessment-plan-result-history', params: { stream: result.streamId } }"
-          >History</RouterLink>
-          <RouterLink
-            class="bg-blue-800 hover:bg-clue-700 text-white px-4 py-1 rounded-md text-sm"
-            :to="{ name: 'assessment-plan-result', params: { id: result._id } }"
-          >View</RouterLink>
-        </div>
-        <!--        <div class="px-2 py-2 flex-1">{{ assessment.title }}</div>-->
-        <!--        <div class="px-2 w-1/5 h-8">-->
-        <!--          <LineChart-->
-        <!--            :options="{-->
-        <!--              plugins: {-->
-        <!--                tooltip: {-->
-        <!--                  enabled: false,-->
-        <!--                },-->
-        <!--              },-->
-        <!--              elements: {-->
-        <!--                point: {-->
-        <!--                  hoverRadius: 0,-->
-        <!--                  hitRadius: 0,-->
-        <!--                },-->
-        <!--              },-->
-        <!--            }"-->
-        <!--            :data="assessment.data"-->
-        <!--          />-->
-        <!--        </div>-->
+    <div
+      class="grid grid-cols-5 gap-4 border-t first:border-none items-center hover:bg-zinc-100 py-2"
+      v-for="result in results"
+      :key="result.id"
+    >
+      <div class="col-span-2 pl-2">{{ result.title }}</div>
+      <div>Findings: {{ result.findings.length }}</div>
+      <div>Observations: {{ result.observations.length }}</div>
+      <div>
+        <RouterLink
+          class="bg-gray-50 hover:bg-gray-200 text-blue-800 border border-blue-800 px-4 py-1 rounded-md text-sm mr-2"
+          :to="{ name: 'assessment-plan-result-history', params: { stream: result.streamId } }"
+          >History
+        </RouterLink>
+        <RouterLink
+          class="bg-blue-800 hover:bg-clue-700 text-white px-4 py-1 rounded-md text-sm"
+          :to="{ name: 'assessment-plan-result', params: { id: result._id } }"
+          >View
+        </RouterLink>
       </div>
+      <!--        <div class="px-2 py-2 flex-1">{{ assessment.title }}</div>-->
+      <!--        <div class="px-2 w-1/5 h-8">-->
+      <!--          <LineChart-->
+      <!--            :options="{-->
+      <!--              plugins: {-->
+      <!--                tooltip: {-->
+      <!--                  enabled: false,-->
+      <!--                },-->
+      <!--              },-->
+      <!--              elements: {-->
+      <!--                point: {-->
+      <!--                  hoverRadius: 0,-->
+      <!--                  hitRadius: 0,-->
+      <!--                },-->
+      <!--              },-->
+      <!--            }"-->
+      <!--            :data="assessment.data"-->
+      <!--          />-->
+      <!--        </div>-->
+    </div>
   </PageCard>
 </template>
-<script setup>
+<script setup lang="ts">
 import LineChart from '@/components/charts/LineChart.vue'
 import BarChart from '@/components/charts/BarChart.vue'
 import PageHeader from '@/components/PageHeader.vue'
-import {  onMounted, ref } from 'vue'
-import { useRoute } from 'vue-router'
 import PageSubHeader from '@/components/PageSubHeader.vue'
 import PageCard from '@/components/PageCard.vue'
+import { onMounted, ref } from 'vue'
+import { useRoute } from 'vue-router'
+import { useApiStore, type Plan, type Result, type DataResponse } from '@/stores/api.ts'
+import { type ChartData, type ChartDataset } from 'chart.js'
 
 const route = useRoute()
+const apiStore = useApiStore()
 
-const assessmentPlan = ref({})
-const results = ref([])
-const chartData = ref({
+const plan = ref<Plan>({} as Plan)
+const results = ref<Result[]>([])
+const chartData = ref<ChartData>({
   labels: [],
-  datasets: []
+  datasets: [],
 })
 
-// const chartData = computed({
-//   // getter
-//   get() {
-//     return calculateChart(results)
-//   },
-// })
-
-function fetchPlan() {
-  return fetch(`http://localhost:8080/api/plan/${route.params.id}`).then((response) => {
-    return response.json()
-  })
-}
-
-function fetchResults() {
-  return fetch(`http://localhost:8080/api/results/plan/${route.params.id}`).then((response) => {
-    return response.json()
-  })
-}
-
-function calculateChart(results) {
-  const labels = []
-  const findings = {
+function calculateChart(results: Result[]) {
+  const labels: string[] = []
+  const findings: ChartDataset = {
     label: 'Findings',
     gradient: {
       backgroundColor: {
@@ -172,7 +154,7 @@ function calculateChart(results) {
     borderColor: 'rgba(253,92,110, 0.7)',
     data: [],
   }
-  const observations = {
+  const observations: ChartDataset = {
     label: 'Observations',
     gradient: {
       backgroundColor: {
@@ -191,8 +173,8 @@ function calculateChart(results) {
 
   results.forEach((result) => {
     labels.push(result.start)
-    findings.data.push(result.findings.length)
-    observations.data.push(result.observations.length)
+    findings.data?.push(result.findings.length)
+    observations.data?.push(result.observations.length)
   })
 
   return {
@@ -202,10 +184,10 @@ function calculateChart(results) {
 }
 
 onMounted(() => {
-  fetchPlan().then((plan) => {
-    assessmentPlan.value = plan
+  apiStore.getPlan(route.params.id as string).then((fetchedPlan: Plan) => {
+    plan.value = fetchedPlan
   })
-  fetchResults().then((resultsList) => {
+  apiStore.getPlanResults(route.params.id as string).then((resultsList: DataResponse<Result[]>) => {
     results.value = resultsList.data
     chartData.value = calculateChart(results.value)
   })
