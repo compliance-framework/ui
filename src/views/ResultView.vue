@@ -1,16 +1,16 @@
 <template>
   <PageHeader>
-    {{ result?.title }}
+    {{ result.title }}
   </PageHeader>
   <PageSubHeader>
-    {{ result?._id }}
+    {{ result._id }}
   </PageSubHeader>
   <div class="grid grid-cols-2 gap-4 mt-4">
     <PageCard>
       <h3 class="text-lg pl-4 mb-4">Observations</h3>
       <div>
         <div
-          v-for="observation in result?.observations"
+          v-for="observation in result.observations"
           :key="observation.id"
           class="px-4 py-2 hover:bg-zinc-100"
         >
@@ -22,7 +22,7 @@
     <PageCard>
       <h3 class="text-lg pl-4 mb-4">Findings</h3>
       <div>
-        <div v-for="finding in result?.findings" :key="finding.id" class="px-4 py-2 hover:bg-zinc-100">
+        <div v-for="finding in result.findings" :key="finding.id" class="px-4 py-2 hover:bg-zinc-100">
           <p class="font-semibold">{{ finding.title }}</p>
           <p>{{ finding.description }}</p>
         </div>
@@ -31,7 +31,7 @@
     <PageCard>
       <h3 class="text-lg pl-4 mb-4">Logs</h3>
       <div>
-        <div v-for="log in result?.assessmentLogEntries" class="px-4 py-2 hover:bg-zinc-100">
+        <div v-for="log in result.assessmentLogEntries" class="px-4 py-2 hover:bg-zinc-100">
           <p class="font-semibold">{{ log.title }}</p>
           <p>{{ log.description }}</p>
         </div>

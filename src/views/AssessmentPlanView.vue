@@ -1,7 +1,7 @@
 <template>
   <PageHeader> Assessment Plan</PageHeader>
   <PageSubHeader>
-    {{ plan?.title }}
+    {{ plan.title }}
   </PageSubHeader>
   <div class="grid grid-cols-3 gap-4 mt-4">
     <div class="bg-white rounded shadow">
@@ -129,7 +129,7 @@ import { type ChartData, type ChartDataset } from 'chart.js'
 const route = useRoute()
 const apiStore = useApiStore()
 
-const plan = ref<Plan|null>(null)
+const plan = ref<Plan>({} as Plan)
 const results = ref<Result[]>([])
 const chartData = ref<ChartData>({
   labels: [],
