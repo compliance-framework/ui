@@ -33,3 +33,24 @@ jobs:
       - name: Run tests using the `build` image
         run: |
           docker run --rm ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:build npm run test:unit run
+
+  type-check:
+    runs-on: ubuntu-latest
+    needs: docker-build
+    steps:
+      - name: Restore Docker Cache
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache
+          key: docker-${{ github.sha }}
+          restore-keys: |
+            docker-
+
+      - name: Load the `build` image from cache
+        run: |
+          mkdir -p /tmp/.buildx-cache
+          docker load < /tmp/.buildx-cache/image.tar
+
+      - name: Run tests using the `build` image
+        run: |
+          docker run --rm ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:build npm run type-check
