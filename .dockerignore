@@ -1,0 +1,4 @@
+/dist
+.github
+.idea
+node_modules
