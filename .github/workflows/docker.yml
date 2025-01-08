@@ -36,6 +36,7 @@ jobs:
             type=ref,event=branch
             type=ref,event=pr
             type=sha
+
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         if: inputs.push
@@ -45,8 +46,9 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and cache intermediate (build) stage
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
+          load: true
           target: build
           tags: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:build
           cache-to: type=local,dest=/tmp/.buildx-cache
