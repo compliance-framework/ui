@@ -10,21 +10,36 @@
       <h3 class="text-lg pl-4 mb-4">Observations</h3>
       <div>
         <div
-          v-for="observation in result.observations"
+          v-for="(observation, index) in result.observations"
           :key="observation.id"
           class="px-4 py-2 hover:bg-zinc-100"
         >
-          <p class="font-semibold">{{ observation.title }}</p>
-          <p>{{ observation.description }}</p>
+          <p class="font-semibold">{{index + 1}}: {{ observation.title }}</p>
+          <p class="pt-1">Desc: {{ observation.description }}</p>
         </div>
       </div>
     </PageCard>
     <PageCard>
       <h3 class="text-lg pl-4 mb-4">Findings</h3>
       <div>
-        <div v-for="finding in result.findings" :key="finding.id" class="px-4 py-2 hover:bg-zinc-100">
-          <p class="font-semibold">{{ finding.title }}</p>
-          <p>{{ finding.description }}</p>
+        <div v-for="(finding, idx) in result.findings" :key="finding.id" class="p-* px-4 py-2 hover:bg-zinc-100">
+          <p class="font-semibold">{{idx + 1}}. {{ finding.title }}</p>
+          <p class="pt-1">Desc: {{ finding.description }}</p>
+          <p :class="[
+                'pt-1',
+                'text-black-800', 
+              ]">Status:
+            <span 
+              :class="[
+                'inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset', 
+                `bg-${getFindingStatusColor(finding.status)}-50`, 
+                `text-${getFindingStatusColor(finding.status)}-800`, 
+                `ring-${getFindingStatusColor(finding.status)}-600/20`
+              ]"
+            >
+              {{ finding.status }}
+            </span>
+        </p>
         </div>
       </div>
     </PageCard>
@@ -48,14 +63,26 @@ import PageSubHeader from '@/components/PageSubHeader.vue'
 import { type Result, useApiStore } from '@/stores/api'
 
 const apiStore = useApiStore();
-const route = useRoute()
-const id = route.params.id as string
+const route = useRoute();
+const id = route.params.id as string;
 
-const result = ref<Result>({} as Result)
+const result = ref<Result>({} as Result);
+
+enum FindingStatusColor {
+  UNKNOWN = 'grey',
+  OPEN = 'red',
+  MITIGATED = 'yellow',
+  RESOLVED = 'green',
+}
+
+function getFindingStatusColor(status?: string): string {
+  return FindingStatusColor[status as keyof typeof FindingStatusColor] || FindingStatusColor.UNKNOWN;
+}
 
 onMounted(() => {
   apiStore.getResult(id).then((res) => {
-    result.value = res.data
-  })
-})
+    result.value = res.data;
+  });
+});
 </script>
+
