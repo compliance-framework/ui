@@ -27,7 +27,7 @@
           <p class="pt-1">Desc: {{ finding.description }}</p>
           <p :class="[
                 'pt-1',
-                `text-${getFindingStatusColor(finding.status)}-800`, 
+                'text-black-800', 
               ]">Status:
             <span 
               :class="[
@@ -73,11 +73,10 @@ enum FindingStatusColor {
   OPEN = 'red',
   MITIGATED = 'yellow',
   RESOLVED = 'green',
-  DEFAULT = 'grey',
 }
 
 function getFindingStatusColor(status?: string): string {
-  return FindingStatusColor[status as keyof typeof FindingStatusColor] || FindingStatusColor.DEFAULT;
+  return FindingStatusColor[status as keyof typeof FindingStatusColor] || FindingStatusColor.UNKNOWN;
 }
 
 onMounted(() => {
