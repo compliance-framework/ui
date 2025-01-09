@@ -25,7 +25,7 @@
         <div v-for="(finding, idx) in result.findings" :key="finding.id" class="p-* px-4 py-2 hover:bg-zinc-100">
           <p class="font-semibold">{{idx + 1}}. {{ finding.title }}</p>
           <p class="pt-1">Desc: {{ finding.description }}</p>
-          <p :class="[
+          <p v-if="finding.status" :class="[
                 'pt-1',
                 'text-black-800', 
               ]">Status:
