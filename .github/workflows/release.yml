@@ -1,0 +1,15 @@
+name: Release New Version
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    permissions:
+      packages: write
+      contents: write
+    uses: ./.github/workflows/docker.yml
+    with:
+      push: true
