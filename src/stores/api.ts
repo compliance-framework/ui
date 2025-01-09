@@ -19,6 +19,7 @@ export interface Finding {
   title: string
   description: string
   remarks: string
+  status?: string
 }
 
 export interface Log {
