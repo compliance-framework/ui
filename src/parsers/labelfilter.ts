@@ -5,7 +5,7 @@ type Condition = {
 };
 
 type Query = {
-  operator: "and" | "or" | "AND" | "OR";
+  operator: "and" | "or";
   scopes: Scope[];
 };
 
@@ -18,101 +18,104 @@ export type Filter = {
   scope: Scope;
 };
 
-export class FilterParser {
-  private tokens: string[];
-  private position: number = 0;
+const tokenize = (input: string): string[] => {
+  const regex = /\(|\)|\bAND\b|\band\b|\bOR\b|\bor\b|!=|=|\s+|[^()\s=!]+/gi;
+  return (
+    input
+      .match(regex)
+      ?.map(token => token.trim())
+      .filter(token => token) || []
+  );
+};
 
-  constructor(input: string) {
-    this.tokens = this.tokenize(input);
+const parseCondition = (tokens: string[]): [Condition, string[]] => {
+  if (tokens.length < 3) {
+    throw new Error("Invalid condition format, expected 'label=|!=value'");
   }
 
-  private tokenize(input: string): string[] {
-    // Tokenize the input string (preserve parentheses and logical operators)
-    const regex = /\(|\)|\bAND\b|\band\b|\bOR\b|\bor\b|!=|=|\s+|[^()\s=!]+/gi;
-    return input.match(regex)?.map(token => token.trim()).filter(token => token) || [];
+  const [label, operator, value, ...rest] = tokens;
+
+  if (operator !== "=" && operator !== "!=") {
+    throw new Error(`Unsupported operator: ${operator}`);
   }
 
-  private peek(): string | undefined {
-    return this.tokens[this.position];
-  }
+  return [
+    { label, operator: operator as "=" | "!=", value },
+    rest
+  ];
+};
 
-  private consume(): string | undefined {
-    return this.tokens[this.position++];
-  }
+// Parse a query (logical grouping of scopes)
+const parseQuery = (tokens: string[]): [Query, string[]] => {
+  const scopes: Scope[] = [];
+  let operator: "and" | "or" | undefined;
+  let remainingTokens = tokens;
 
-  private expect(expected: string): void {
-    const token = this.consume();
-    if (token !== expected) {
-      throw new Error(`Expected '${expected}', but found '${token}'`);
-    }
-  }
+  while (remainingTokens.length > 0) {
+    const token = remainingTokens[0];
+    const isConditional = token === "AND" || token === "and" || token === "OR" || token === "or"
+    const lowerUpperSnake = /^[a-zA-Z0-9_]+$/.test(token)
 
-  public parse(): Filter {
-    const scope = this.parseTopLevel();
-    return { scope };
-  }
+    if (token === "(") {
+      // Parse a nested query
+      const [nestedScope, rest] = parseTopLevel(remainingTokens.slice(1));
+      scopes.push(nestedScope);
+      remainingTokens = rest;
 
-  private parseTopLevel(): Scope {
-    if (this.tokens.length === 0) {
-      return {};
-    }
-
-    if (this.tokens.length === 3) {
-      // Single condition case: `foo=bar`
-      return { condition: this.parseCondition() };
-    }
-
-    return this.parseQuery();
-  }
-
-  private parseQuery(): Scope {
-    const scopes: Scope[] = [];
-    let operator: "AND" | "and" | "OR" | "or" | undefined;
-
-    while (this.position < this.tokens.length) {
-      const token = this.peek();
-
-      if (token === "(") {
-        // Handle nested query
-        this.consume(); // Consume '('
-        scopes.push(this.parseQuery());
-        this.expect(")"); // Consume ')'
-      } else if (token === "AND" || token === "and" || token === "OR" || token === "or") {
-        // Set the operator for this query
-        if (operator && operator !== token) {
-          throw new Error(`Mixed logical operators without grouping: '${operator}' and '${token}'`);
-        }
-        operator = token.toLowerCase() as "AND" | "and" | "OR" | "or";
-        this.consume(); // Consume 'AND' or 'OR'
-      } else if (token && /[a-zA-Z0-9_]+/.test(token)) {
-        // Parse a condition
-        scopes.push({ condition: this.parseCondition() });
-      } else {
-        break;
+      if (remainingTokens[0] !== ")") {
+        throw new Error("Expected closing parenthesis")
       }
-    }
 
-    // Default to "AND" if no operator is explicitly specified
-    if (!operator) {
-      operator = "and";
-    }
+      remainingTokens = remainingTokens.slice(1);
+    } else if (isConditional) {
+      const currentOperator = token.toLowerCase() as "and" | "or";
 
-    return { query: { operator, scopes } };
+      if (operator && operator !== currentOperator) {
+        throw new Error(`Mixed logical operators without grouping: '${operator}' and '${currentOperator}'`);
+      }
+
+      operator = currentOperator;
+      remainingTokens = remainingTokens.slice(1);
+    } else if (lowerUpperSnake) {
+      const [condition, rest] = parseCondition(remainingTokens);
+      scopes.push({ condition });
+      remainingTokens = rest;
+    } else {
+      break;
+    }
   }
 
-  private parseCondition(): Condition {
-    const label = this.consume();
-    const operator = this.consume();
-    const value = this.consume();
-
-    if (!label || !operator || !value) {
-      throw new Error("Invalid condition format, expected 'label=|!=value'");
-    }
-
-    if (operator !== "=" && operator !== "!=") {
-      throw new Error(`Unsupported operator: ${operator}`);
-    }
-
-    return { label, operator: operator as "=" | "!=", value };
+  if (!operator) {
+    operator = "and";
   }
-}
+
+  return [
+    { operator, scopes },
+    remainingTokens
+  ];
+};
+
+const parseTopLevel = (tokens: string[]): [Scope, string[]] => {
+  if (tokens.length === 0) {
+    return [{}, tokens];
+  }
+
+  if (tokens.length === 3) {
+    const [condition, rest] = parseCondition(tokens);
+    return [{ condition }, rest];
+  }
+
+  const [query, rest] = parseQuery(tokens);
+  return [{ query }, rest];
+};
+
+export const parseFilter = (input: string): Filter => {
+  const tokens = tokenize(input);
+  const [scope, remainingTokens] = parseTopLevel(tokens);
+
+  if (remainingTokens.length > 0) {
+    throw new Error(`Unexpected tokens remaining: ${remainingTokens.join(" ")}`);
+  }
+
+  return { scope };
+};

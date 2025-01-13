@@ -1,16 +1,16 @@
 import { describe, it, expect } from 'vitest'
 
-import { FilterParser } from './labelfilter.ts'
+import { parseFilter } from './labelfilter.ts'
 
 describe('FilterParser', () => {
   it('parses empty search', () => {
-    expect(new FilterParser('').parse()).toEqual(
+    expect(parseFilter('')).toEqual(
       expect.objectContaining({}),
     )
   })
 
   it('accepts lowercase operators', () => {
-    expect(new FilterParser('foo=bar and foo=bar').parse()).toEqual(
+    expect(parseFilter('foo=bar and foo=bar')).toEqual(
       expect.objectContaining({
         scope: {
           query: {
@@ -38,7 +38,7 @@ describe('FilterParser', () => {
   })
 
   it('parses simple condition', () => {
-    expect(new FilterParser('foo=bar').parse()).toEqual(
+    expect(parseFilter('foo=bar')).toEqual(
       expect.objectContaining({
         scope: {
           condition: {
@@ -52,7 +52,7 @@ describe('FilterParser', () => {
   })
 
   it('parses simple negated query', () => {
-    expect(new FilterParser('foo!=bar').parse()).toEqual(
+    expect(parseFilter('foo!=bar')).toEqual(
       expect.objectContaining({
         scope: {
           condition: {
@@ -66,7 +66,7 @@ describe('FilterParser', () => {
   })
 
   it('parses multi conditions', () => {
-    expect(new FilterParser('foo=bar AND bat!=baz').parse()).toEqual(
+    expect(parseFilter('foo=bar AND bat!=baz')).toEqual(
       expect.objectContaining({
         scope: {
           query: {
@@ -94,7 +94,7 @@ describe('FilterParser', () => {
   })
 
   it('parses single depth subquery', () => {
-    expect(new FilterParser('foo=bar AND (bat=baz OR bat=bay)').parse()).toEqual(
+    expect(parseFilter('foo=bar AND (bat=baz OR bat=bay)')).toEqual(
       expect.objectContaining({
         scope: {
           query: {
@@ -136,7 +136,7 @@ describe('FilterParser', () => {
   })
 
   it('parses double depth subquery', () => {
-    expect(new FilterParser('foo=bar AND (bat=baz OR (bat=bay AND baz!=ray))').parse()).toEqual(
+    expect(parseFilter('foo=bar AND (bat=baz OR (bat=bay AND baz!=ray))')).toEqual(
       expect.objectContaining({
         scope: {
           query: {
@@ -192,7 +192,7 @@ describe('FilterParser', () => {
   })
 
   it('parses two subqueries', () => {
-    expect(new FilterParser('(foo=bar AND bat=bay) OR (foo=bar OR baz!=bay)').parse()).toEqual(
+    expect(parseFilter('(foo=bar AND bat=bay) OR (foo=bar OR baz!=bay)')).toEqual(
       expect.objectContaining({
         scope: {
           query: {
