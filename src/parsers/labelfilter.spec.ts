@@ -3,6 +3,40 @@ import { describe, it, expect } from 'vitest'
 import { FilterParser } from './labelfilter.ts'
 
 describe('FilterParser', () => {
+  it('parses empty search', () => {
+    expect(new FilterParser('').parse()).toEqual(
+      expect.objectContaining({}),
+    )
+  })
+
+  it('accepts lowercase operators', () => {
+    expect(new FilterParser('foo=bar and foo=bar').parse()).toEqual(
+      expect.objectContaining({
+        scope: {
+          query: {
+            operator: 'and',
+            scopes: [
+              {
+                condition: {
+                  label: 'foo',
+                  operator: '=',
+                  value: 'bar',
+                },
+              },
+              {
+                condition: {
+                  label: 'foo',
+                  operator: '=',
+                  value: 'bar',
+                },
+              },
+            ],
+          },
+        },
+      }),
+    )
+  })
+
   it('parses simple condition', () => {
     expect(new FilterParser('foo=bar').parse()).toEqual(
       expect.objectContaining({
@@ -36,7 +70,7 @@ describe('FilterParser', () => {
       expect.objectContaining({
         scope: {
           query: {
-            operator: 'AND',
+            operator: 'and',
             scopes: [
               {
                 condition: {
@@ -64,7 +98,7 @@ describe('FilterParser', () => {
       expect.objectContaining({
         scope: {
           query: {
-            operator: 'AND',
+            operator: 'and',
             scopes: [
               {
                 condition: {
@@ -75,7 +109,7 @@ describe('FilterParser', () => {
               },
               {
                 query: {
-                  operator: 'OR',
+                  operator: 'or',
                   scopes: [
                     {
                       condition: {
@@ -106,7 +140,7 @@ describe('FilterParser', () => {
       expect.objectContaining({
         scope: {
           query: {
-            operator: 'AND',
+            operator: 'and',
             scopes: [
               {
                 condition: {
@@ -117,7 +151,7 @@ describe('FilterParser', () => {
               },
               {
                 query: {
-                  operator: 'OR',
+                  operator: 'or',
                   scopes: [
                     {
                       condition: {
@@ -128,7 +162,7 @@ describe('FilterParser', () => {
                     },
                     {
                       query: {
-                        operator: 'AND',
+                        operator: 'and',
                         scopes: [
                           {
                             condition: {
@@ -162,11 +196,11 @@ describe('FilterParser', () => {
       expect.objectContaining({
         scope: {
           query: {
-            operator: 'OR',
+            operator: 'or',
             scopes: [
               {
                 query: {
-                  operator: 'AND',
+                  operator: 'and',
                   scopes: [
                     {
                       condition: {
@@ -187,7 +221,7 @@ describe('FilterParser', () => {
               },
               {
                 query: {
-                  operator: 'OR',
+                  operator: 'or',
                   scopes: [
                     {
                       condition: {

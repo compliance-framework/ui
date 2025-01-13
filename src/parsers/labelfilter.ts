@@ -5,7 +5,7 @@ type Condition = {
 };
 
 type Query = {
-  operator: "AND" | "OR";
+  operator: "and" | "or" | "AND" | "OR";
   scopes: Scope[];
 };
 
@@ -14,7 +14,7 @@ type Scope = {
   query?: Query;
 };
 
-type Filter = {
+export type Filter = {
   scope: Scope;
 };
 
@@ -28,7 +28,7 @@ export class FilterParser {
 
   private tokenize(input: string): string[] {
     // Tokenize the input string (preserve parentheses and logical operators)
-    const regex = /\(|\)|\bAND\b|\bOR\b|!=|=|\s+|[^()\s=!]+/gi;
+    const regex = /\(|\)|\bAND\b|\band\b|\bOR\b|\bor\b|!=|=|\s+|[^()\s=!]+/gi;
     return input.match(regex)?.map(token => token.trim()).filter(token => token) || [];
   }
 
@@ -54,7 +54,7 @@ export class FilterParser {
 
   private parseTopLevel(): Scope {
     if (this.tokens.length === 0) {
-      throw new Error("Empty input");
+      return {};
     }
 
     if (this.tokens.length === 3) {
@@ -67,7 +67,7 @@ export class FilterParser {
 
   private parseQuery(): Scope {
     const scopes: Scope[] = [];
-    let operator: "AND" | "OR" | undefined;
+    let operator: "AND" | "and" | "OR" | "or" | undefined;
 
     while (this.position < this.tokens.length) {
       const token = this.peek();
@@ -77,12 +77,12 @@ export class FilterParser {
         this.consume(); // Consume '('
         scopes.push(this.parseQuery());
         this.expect(")"); // Consume ')'
-      } else if (token === "AND" || token === "OR") {
+      } else if (token === "AND" || token === "and" || token === "OR" || token === "or") {
         // Set the operator for this query
         if (operator && operator !== token) {
           throw new Error(`Mixed logical operators without grouping: '${operator}' and '${token}'`);
         }
-        operator = token as "AND" | "OR";
+        operator = token.toLowerCase() as "AND" | "and" | "OR" | "or";
         this.consume(); // Consume 'AND' or 'OR'
       } else if (token && /[a-zA-Z0-9_]+/.test(token)) {
         // Parse a condition
@@ -94,7 +94,7 @@ export class FilterParser {
 
     // Default to "AND" if no operator is explicitly specified
     if (!operator) {
-      operator = "AND";
+      operator = "and";
     }
 
     return { query: { operator, scopes } };
