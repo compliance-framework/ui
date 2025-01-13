@@ -53,11 +53,11 @@ const parseQuery = (tokens: string[]): [Query, string[]] => {
 
   while (remainingTokens.length > 0) {
     const token = remainingTokens[0];
+    const isNestedQuery = token === "("
     const isConditional = token === "AND" || token === "and" || token === "OR" || token === "or"
     const lowerUpperSnake = /^[a-zA-Z0-9_]+$/.test(token)
 
-    if (token === "(") {
-      // Parse a nested query
+    if (isNestedQuery) {
       const [nestedScope, rest] = parseTopLevel(remainingTokens.slice(1));
       scopes.push(nestedScope);
       remainingTokens = rest;
