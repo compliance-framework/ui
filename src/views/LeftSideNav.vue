@@ -16,7 +16,8 @@ import logo from '@/assets/logo.svg'
 
     <div class="bg-zinc-100 h-0.5 mb-2"></div>
 
-    <SideNavLink :to="{ name: 'home' }">Home</SideNavLink>
+    <SideNavLink :to="{ name: 'home' }">Assessment Plans</SideNavLink>
+    <SideNavLink :to="{ name: 'results' }">Results</SideNavLink>
 <!--    <SideNavLink :to="{ name: 'dashboard' }">Dashboard</SideNavLink>-->
 
     <SideNavCategory title="Continuous Compliance">

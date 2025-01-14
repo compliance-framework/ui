@@ -1,7 +1,9 @@
 <template>
-  <PageHeader> Assessment Plan</PageHeader>
+  <PageHeader>
+    Results
+  </PageHeader>
   <PageSubHeader>
-    {{ plan.title }}
+    Search for results using labels
   </PageSubHeader>
   <div class="grid grid-cols-3 gap-4 mt-4">
     <div class="bg-white rounded shadow">
@@ -9,7 +11,29 @@
         <h3 class="text-lg font-semibold text-zinc-600">Compliance over time</h3>
       </div>
       <div class="h-32">
-        <LineChart :data="chartData"></LineChart>
+        <LineChart
+          :data="{
+            labels: ['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+            datasets: [
+              {
+                gradient: {
+                  backgroundColor: {
+                    axis: 'y',
+                    colors: {
+                      100: 'rgba(30,64,175, .4)',
+                      70: 'rgba(30,64,175, .3)',
+                      30: 'rgba(30,64,175, .1)',
+                      0: 'rgba(30,64,175, .0)',
+                    },
+                  },
+                },
+                label: 'Results',
+                data: [50, 45, 60, 60, 80, 65, 90, 80, 100],
+                borderColor: 'rgba(30,64,175, 0.2)',
+              },
+            ],
+          }"
+        ></LineChart>
       </div>
     </div>
     <div class="bg-white rounded shadow">
@@ -72,6 +96,28 @@
       </div>
     </div>
   </div>
+  <div class="mt-4">
+    <PageCard>
+      <h3 class="text-lg mb-4">Search</h3>
+      <div>
+        <form @submit.prevent="search">
+          <div class="flex items-center">
+            <input
+              type="text"
+              v-model="filter"
+              id="filter"
+              name="filter"
+              placeholder="foo=bar AND bar=baz AND (bar!=bat OR bar!=bat)"
+              class="w-full rounded-l-md border-black border-y border-l px-4 py-2 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+            />
+            <button type="submit" class="flex items-center border-y text-sm border-black bg-white text-black hover:bg-gray-100 p-2"><BIconSearch class="mr-2"></BIconSearch> Search</button>
+            <button @click="save" class="bg-blue-800 text-white hover:bg-blue-700 p-3 rounded-r-md"><BIconFloppy></BIconFloppy></button>
+          </div>
+        </form>
+      </div>
+    </PageCard>
+  </div>
+
   <PageCard class="mt-8">
     <div
       class="grid grid-cols-5 gap-4 border-t first:border-none items-center hover:bg-zinc-100 py-2"
@@ -121,26 +167,23 @@
   </PageCard>
 </template>
 <script setup lang="ts">
-import LineChart from '@/components/charts/LineChart.vue'
-import BarChart from '@/components/charts/BarChart.vue'
-import PageHeader from '@/components/PageHeader.vue'
-import PageSubHeader from '@/components/PageSubHeader.vue'
-import PageCard from '@/components/PageCard.vue'
 import { onMounted, ref } from 'vue'
-import { useRoute } from 'vue-router'
-import { useApiStore, type Plan, type Result, type DataResponse, type LabelMap } from '@/stores/api.ts'
-import { type ChartData, type ChartDataset } from 'chart.js'
+import { useRouter } from 'vue-router'
+import PageHeader from '@/components/PageHeader.vue'
+import PageCard from '@/components/PageCard.vue'
+import PageSubHeader from '@/components/PageSubHeader.vue'
+import { type LabelMap, type Result, useApiStore } from '@/stores/api'
+import { FilterParser } from '@/parsers/labelfilter.ts'
+import BarChart from '@/components/charts/BarChart.vue'
+import LineChart from '@/components/charts/LineChart.vue'
+import { BIconFloppy, BIconSearch } from 'bootstrap-icons-vue'
 import LabelList from '@/components/LabelList.vue'
 
-const route = useRoute()
-const apiStore = useApiStore()
+const apiStore = useApiStore();
+const router = useRouter()
 
-const plan = ref<Plan>({} as Plan)
+const filter = ref<string>('');
 const results = ref<Result[]>([])
-const chartData = ref<ChartData>({
-  labels: [],
-  datasets: [],
-})
 
 function viewableLabels(labels: LabelMap) {
   const viewable: LabelMap = {};
@@ -152,60 +195,17 @@ function viewableLabels(labels: LabelMap) {
   return viewable;
 }
 
-function calculateChart(results: Result[]) {
-  const labels: string[] = []
-  const findings: ChartDataset = {
-    label: 'Findings',
-    gradient: {
-      backgroundColor: {
-        axis: 'y',
-        colors: {
-          100: 'rgba(253,92,110,0.4)',
-          70: 'rgba(253,92,110, .3)',
-          30: 'rgba(253,92,110, .1)',
-          0: 'rgba(253,92,110, .0)',
-        },
-      },
-    },
-    borderColor: 'rgba(253,92,110, 0.7)',
-    data: [],
-  }
-  const observations: ChartDataset = {
-    label: 'Observations',
-    gradient: {
-      backgroundColor: {
-        axis: 'y',
-        colors: {
-          100: 'rgba(20,184,166, .4)',
-          70: 'rgba(20,184,166, .3)',
-          30: 'rgba(20,184,166, .1)',
-          0: 'rgba(20,184,166, .0)',
-        },
-      },
-    },
-    borderColor: 'rgba(20,184,166, 0.7)',
-    data: [],
-  }
+async function search() {
+  const query = new FilterParser(filter.value).parse();
+  const response = await apiStore.searchResults(query);
+  results.value = response.data;
+}
 
-  results.forEach((result) => {
-    labels.push(result.start)
-    findings.data?.push(result.findings.length)
-    observations.data?.push(result.observations.length)
-  })
-
-  return {
-    labels: labels,
-    datasets: [findings, observations],
-  }
+async function save() {
+  await router.push({ name: 'assessment-plan.create', query: { filter: filter.value } });
 }
 
 onMounted(() => {
-  apiStore.getPlan(route.params.id as string).then((fetchedPlan: Plan) => {
-    plan.value = fetchedPlan
-  })
-  apiStore.getPlanResults(route.params.id as string).then((resultsList: DataResponse<Result[]>) => {
-    results.value = resultsList.data
-    chartData.value = calculateChart(results.value)
-  })
+  search()
 })
 </script>

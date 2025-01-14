@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { useConfigStore } from '@/stores/config.ts'
+import { type Filter } from '@/parsers/labelfilter.ts'
 
 export interface Plan {
   _id: string
@@ -37,6 +38,11 @@ export interface Result {
   observations: Observation[]
   findings: Finding[]
   assessmentLogEntries: Log[]
+  labels: LabelMap,
+}
+
+export interface LabelMap {
+  [label: string]: string
 }
 
 export interface DataResponse<T> {
@@ -46,24 +52,28 @@ export interface DataResponse<T> {
 export const useApiStore = defineStore('api', () => {
   const configStore = useConfigStore()
 
-  async function createPlan(plan: Plan): Promise<Plan> {
+  async function createPlan(plan: Plan, filter: Filter): Promise<Plan> {
     const config = await configStore.getConfig()
     const response = await fetch(`${config.API_URL}/api/plan`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(plan),
+      body: JSON.stringify({
+        ...plan,
+        filter,
+      }),
     })
 
     if (!response.ok) {
       throw new Error(`Error: ${response.statusText}`)
     }
 
-    const data = (await response.json()) as Plan
+    const data = (await response.json()) as DataResponse<Plan>
+    const planData = data.data as Plan
     return {
       ...plan,
-      ...data,
+      ...planData,
     } as Plan
   }
 
@@ -85,6 +95,25 @@ export const useApiStore = defineStore('api', () => {
     return (await response.json()) as DataResponse<Result>
   }
 
+  async function searchResults(filter: Filter): Promise<DataResponse<Result[]>> {
+    const config = await configStore.getConfig()
+    const response = await fetch(`${config.API_URL}/api/results/search`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        "filter": filter,
+      }),
+    })
+
+    if (!response.ok) {
+      throw new Error(`Error: ${response.statusText}`)
+    }
+
+    return (await response.json()) as DataResponse<Result[]>
+  }
+
   async function getPlanResults(id: string): Promise<DataResponse<Result[]>> {
     const config = await configStore.getConfig()
     const response = await fetch(`${config.API_URL}/api/results/plan/${id}`)
@@ -102,6 +131,7 @@ export const useApiStore = defineStore('api', () => {
     getPlans,
     createPlan,
     getResult,
+    searchResults,
     getPlanResults,
     getStreamResults,
   }
