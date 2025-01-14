@@ -192,7 +192,6 @@ function viewableLabels(labels: LabelMap) {
       viewable[label] = labels[label];
     }
   }
-  console.log(viewable);
   return viewable;
 }
 
