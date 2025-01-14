@@ -36,17 +36,25 @@
   </PageCard>
 </template>
 <script setup lang="ts">
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { onMounted, ref } from 'vue'
+import { useRouter, useRoute } from 'vue-router';
 import PageHeader from '@/components/PageHeader.vue'
 import PageCard from '@/components/PageCard.vue'
 import { useApiStore, type Plan } from '@/stores/api'
 import { FilterParser } from '@/parsers/labelfilter.ts'
 
 const router = useRouter();
+const route = useRoute();
 const apiStore = useApiStore();
 const plan = ref<Plan>({} as Plan);
+
 const filter = ref<string>("");
+
+onMounted(() => {
+  if (route.query['filter']) {
+    filter.value = route.query['filter'] as string;
+  }
+})
 
 async function createPlan() {
   try {

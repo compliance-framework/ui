@@ -98,17 +98,21 @@
   </div>
   <div class="mt-4">
     <PageCard>
-      <h3 class="text-lg pl-4 mb-4">Search</h3>
+      <h3 class="text-lg mb-4">Search</h3>
       <div>
         <form @submit.prevent="search">
-          <input
-            type="text"
-            v-model="filter"
-            id="filter"
-            name="filter"
-            placeholder="foo=bar AND bar=baz AND (bar!=bat OR bar!=bat)"
-            class="mt-1 w-full rounded-md border-black border px-4 py-2 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-          />
+          <div class="flex items-center">
+            <input
+              type="text"
+              v-model="filter"
+              id="filter"
+              name="filter"
+              placeholder="foo=bar AND bar=baz AND (bar!=bat OR bar!=bat)"
+              class="w-full rounded-l-md border-black border-y border-l px-4 py-2 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+            />
+            <button type="submit" class="flex items-center border-y text-sm border-black bg-white text-black hover:bg-gray-100 p-2"><BIconSearch class="mr-2"></BIconSearch> Search</button>
+            <button @click="save" class="bg-blue-800 text-white hover:bg-blue-700 p-3 rounded-r-md"><BIconFloppy></BIconFloppy></button>
+          </div>
         </form>
       </div>
     </PageCard>
@@ -126,9 +130,7 @@
         <div>Observations: {{ result.observations.length }}</div>
       </div>
       <div class="col-span-2">
-        <div v-for="(value, label) of viewableLabels(result.labels)" :key="label" class="inline-block bg-blue-100 border border-blue-200 m-1 text-gray-800 rounded-full text-sm px-2 py-0.5">
-          {{label}}={{value}}
-        </div>
+        <LabelList :labels="viewableLabels(result.labels)" />
       </div>
       <div>
         <RouterLink
@@ -166,7 +168,7 @@
 </template>
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRouter } from 'vue-router'
 import PageHeader from '@/components/PageHeader.vue'
 import PageCard from '@/components/PageCard.vue'
 import PageSubHeader from '@/components/PageSubHeader.vue'
@@ -174,9 +176,11 @@ import { type LabelMap, type Result, useApiStore } from '@/stores/api'
 import { FilterParser } from '@/parsers/labelfilter.ts'
 import BarChart from '@/components/charts/BarChart.vue'
 import LineChart from '@/components/charts/LineChart.vue'
+import { BIconFloppy, BIconSearch } from 'bootstrap-icons-vue'
+import LabelList from '@/components/LabelList.vue'
 
 const apiStore = useApiStore();
-const route = useRoute()
+const router = useRouter()
 
 const filter = ref<string>('');
 const results = ref<Result[]>([])
@@ -196,6 +200,10 @@ async function search() {
   const query = new FilterParser(filter.value).parse();
   const response = await apiStore.searchResults(query);
   results.value = response.data;
+}
+
+async function save() {
+  await router.push({ name: 'assessment-plan.create', query: { filter: filter.value } });
 }
 
 onMounted(() => {
