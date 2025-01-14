@@ -107,7 +107,6 @@
             id="filter"
             name="filter"
             placeholder="foo=bar AND bar=baz AND (bar!=bat OR bar!=bat)"
-            required
             class="mt-1 w-full rounded-md border-black border px-4 py-2 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
           />
         </form>
