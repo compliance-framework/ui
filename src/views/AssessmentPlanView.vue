@@ -78,19 +78,24 @@
       v-for="result in results"
       :key="result.id"
     >
-      <div class="col-span-2 pl-2">{{ result.title }}</div>
-      <div>Findings: {{ result.findings.length }}</div>
-      <div>Observations: {{ result.observations.length }}</div>
+      <div>{{ result.title }}</div>
+      <div class="grid gap-2 grid-cols-2">
+        <div>Findings: {{ result.findings.length }}</div>
+        <div>Observations: {{ result.observations.length }}</div>
+      </div>
+      <div class="col-span-2">
+        <LabelList :labels="viewableLabels(result.labels)" />
+      </div>
       <div>
         <RouterLink
           class="bg-gray-50 hover:bg-gray-200 text-blue-800 border border-blue-800 px-4 py-1 rounded-md text-sm mr-2"
           :to="{ name: 'assessment-plan-result-history', params: { stream: result.streamId } }"
-          >History
+        >History
         </RouterLink>
         <RouterLink
           class="bg-blue-800 hover:bg-clue-700 text-white px-4 py-1 rounded-md text-sm"
           :to="{ name: 'assessment-plan-result', params: { id: result._id } }"
-          >View
+        >View
         </RouterLink>
       </div>
       <!--        <div class="px-2 py-2 flex-1">{{ assessment.title }}</div>-->
@@ -123,8 +128,9 @@ import PageSubHeader from '@/components/PageSubHeader.vue'
 import PageCard from '@/components/PageCard.vue'
 import { onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
-import { useApiStore, type Plan, type Result, type DataResponse } from '@/stores/api.ts'
+import { useApiStore, type Plan, type Result, type DataResponse, type LabelMap } from '@/stores/api.ts'
 import { type ChartData, type ChartDataset } from 'chart.js'
+import LabelList from '@/components/LabelList.vue'
 
 const route = useRoute()
 const apiStore = useApiStore()
@@ -135,6 +141,17 @@ const chartData = ref<ChartData>({
   labels: [],
   datasets: [],
 })
+
+function viewableLabels(labels: LabelMap) {
+  const viewable: LabelMap = {};
+  for (const label in labels) {
+    if (label.substring(0, 1) != "_") {
+      viewable[label] = labels[label];
+    }
+  }
+  console.log(viewable);
+  return viewable;
+}
 
 function calculateChart(results: Result[]) {
   const labels: string[] = []
