@@ -37,6 +37,11 @@ export interface Result {
   observations: Observation[]
   findings: Finding[]
   assessmentLogEntries: Log[]
+  labels: LabelMap,
+}
+
+export interface LabelMap {
+  [label: string]: string
 }
 
 export interface DataResponse<T> {

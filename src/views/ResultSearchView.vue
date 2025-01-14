@@ -116,13 +116,18 @@
 
   <PageCard class="mt-8">
     <div
-      class="grid grid-cols-5 gap-4 border-t first:border-none items-center hover:bg-zinc-100 py-2"
+      class="grid grid-cols-6 gap-4 border-t first:border-none items-center hover:bg-zinc-100 py-2"
       v-for="result in results"
       :key="result.id"
     >
-      <div class="col-span-2 pl-2">{{ result.title }}</div>
+      <div>{{ result.title }}</div>
       <div>Findings: {{ result.findings.length }}</div>
       <div>Observations: {{ result.observations.length }}</div>
+      <div class="col-span-2">
+        <div v-for="(value, label) of viewableLabels(result.labels)" :key="label" class="inline-block bg-blue-100 border border-blue-200 m-1 text-gray-800 rounded-full text-sm px-2 py-0.5">
+          {{label}}:{{value}}
+        </div>
+      </div>
       <div>
         <RouterLink
           class="bg-gray-50 hover:bg-gray-200 text-blue-800 border border-blue-800 px-4 py-1 rounded-md text-sm mr-2"
@@ -163,7 +168,7 @@ import { useRoute } from 'vue-router'
 import PageHeader from '@/components/PageHeader.vue'
 import PageCard from '@/components/PageCard.vue'
 import PageSubHeader from '@/components/PageSubHeader.vue'
-import { type Result, useApiStore } from '@/stores/api'
+import { type LabelMap, type Result, useApiStore } from '@/stores/api'
 import { FilterParser } from '@/parsers/labelfilter.ts'
 import BarChart from '@/components/charts/BarChart.vue'
 import LineChart from '@/components/charts/LineChart.vue'
@@ -173,6 +178,17 @@ const route = useRoute()
 
 const filter = ref<string>('');
 const results = ref<Result[]>([])
+
+function viewableLabels(labels: LabelMap) {
+  const viewable: LabelMap = {};
+  for (const label in labels) {
+    if (label.substring(0, 1) != "_") {
+      viewable[label] = labels[label];
+    }
+  }
+  console.log(viewable);
+  return viewable;
+}
 
 async function search() {
   const query = new FilterParser(filter.value).parse();
