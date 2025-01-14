@@ -51,24 +51,28 @@ export interface DataResponse<T> {
 export const useApiStore = defineStore('api', () => {
   const configStore = useConfigStore()
 
-  async function createPlan(plan: Plan): Promise<Plan> {
+  async function createPlan(plan: Plan, filter: Filter): Promise<Plan> {
     const config = await configStore.getConfig()
     const response = await fetch(`${config.API_URL}/api/plan`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(plan),
+      body: JSON.stringify({
+        ...plan,
+        filter,
+      }),
     })
 
     if (!response.ok) {
       throw new Error(`Error: ${response.statusText}`)
     }
 
-    const data = (await response.json()) as Plan
+    const data = (await response.json()) as DataResponse<Plan>
+    const planData = data.data as Plan
     return {
       ...plan,
-      ...data,
+      ...planData,
     } as Plan
   }
 
