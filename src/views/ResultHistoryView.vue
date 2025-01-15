@@ -123,7 +123,8 @@ import PageHeader from '@/components/PageHeader.vue'
 import PageSubHeader from '@/components/PageSubHeader.vue'
 import PageCard from '@/components/PageCard.vue'
 import { useApiStore, type Result, type DataResponse } from '@/stores/api.ts'
-import type { ChartData, ChartDataset } from 'chart.js'
+import type { ChartData } from 'chart.js'
+import { calculateComplianceChartData } from '@/parsers/results.ts'
 
 const route = useRoute()
 const apiStore = useApiStore()
@@ -135,57 +136,10 @@ const chartData = ref<ChartData>({
   datasets: [],
 })
 
-function calculateChart(results: Result[]) {
-  const labels: string[] = []
-  const findings: ChartDataset = {
-    label: 'Findings',
-    gradient: {
-      backgroundColor: {
-        axis: 'y',
-        colors: {
-          100: 'rgba(253,92,110,0.4)',
-          70: 'rgba(253,92,110, .3)',
-          30: 'rgba(253,92,110, .1)',
-          0: 'rgba(253,92,110, .0)',
-        },
-      },
-    },
-    borderColor: 'rgba(253,92,110, 0.7)',
-    data: [],
-  }
-  const observations: ChartDataset = {
-    label: 'Observations',
-    gradient: {
-      backgroundColor: {
-        axis: 'y',
-        colors: {
-          100: 'rgba(20,184,166, .4)',
-          70: 'rgba(20,184,166, .3)',
-          30: 'rgba(20,184,166, .1)',
-          0: 'rgba(20,184,166, .0)',
-        },
-      },
-    },
-    borderColor: 'rgba(20,184,166, 0.7)',
-    data: [],
-  }
-
-  results.forEach((result) => {
-    labels.push(result.start)
-    findings.data?.push(result.findings.length)
-    observations.data?.push(result.observations.length)
-  })
-
-  return {
-    labels: labels,
-    datasets: [findings, observations],
-  }
-}
-
 onMounted(() => {
   apiStore.getStreamResults(streamId).then((resultList: DataResponse<Result[]>) => {
     results.value = resultList.data;
-    chartData.value = calculateChart(results.value)
+    chartData.value = calculateComplianceChartData(results.value)
   })
 })
 </script>

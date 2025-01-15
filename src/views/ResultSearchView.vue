@@ -8,32 +8,48 @@
   <div class="grid grid-cols-3 gap-4 mt-4">
     <div class="bg-white rounded shadow">
       <div class="px-4 pt-2">
-        <h3 class="text-lg font-semibold text-zinc-600">Compliance over time</h3>
+        <h3 class="text-lg font-semibold text-zinc-600 ">Compliance over time</h3>
       </div>
       <div class="h-32">
-        <LineChart
-          :data="{
-            labels: ['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-            datasets: [
-              {
-                gradient: {
-                  backgroundColor: {
-                    axis: 'y',
-                    colors: {
-                      100: 'rgba(30,64,175, .4)',
-                      70: 'rgba(30,64,175, .3)',
-                      30: 'rgba(30,64,175, .1)',
-                      0: 'rgba(30,64,175, .0)',
-                    },
-                  },
-                },
-                label: 'Results',
-                data: [50, 45, 60, 60, 80, 65, 90, 80, 100],
-                borderColor: 'rgba(30,64,175, 0.2)',
+        <LineChart :data="complianceChartData" :options="{
+           scales: {
+            x: {
+              type: 'time',
+              // bounds: 'data',
+              time: {
+                unit: 'minute'
               },
-            ],
-          }"
-        ></LineChart>
+
+              grid: {
+                  display: false
+              },
+              // ticks: {
+              //     source: 'data',
+              //     min: '2025-01-13 23:00:00',
+              // },
+              suggestedMin: '2025-01-01 00:00:00',
+              suggestedMax: new Date(),
+          },
+           } ,
+           scale: {
+                    grid: {
+                        drawBorder: false,
+                        display: false,
+                        drawOnChartArea: false,
+                        drawTicks: false,
+                    },
+                    border: {
+                        display: false,
+                    },
+                    ticks: {
+                        display: false,
+                        min: '2025-01-13 23:00:00',
+                    },
+                    min: '2025-01-13 23:00:00',
+                    suggestedMin: '2025-01-13 23:00:00',
+                },
+
+        }"></LineChart>
       </div>
     </div>
     <div class="bg-white rounded shadow">
@@ -41,39 +57,7 @@
         <h3 class="text-lg font-semibold text-zinc-600">Agent health</h3>
       </div>
       <div class="h-32">
-        <LineChart
-          :data="{
-            labels: [
-              '12:00',
-              '13:00',
-              '14:00',
-              '15:00',
-              '16:00',
-              '17:00',
-              '18:00',
-              '19:00',
-              '20:00',
-            ],
-            datasets: [
-              {
-                gradient: {
-                  backgroundColor: {
-                    axis: 'y',
-                    colors: {
-                      100: 'rgba(20,184,166, .4)',
-                      70: 'rgba(20,184,166, .3)',
-                      30: 'rgba(20,184,166, .1)',
-                      0: 'rgba(20,184,166, .0)',
-                    },
-                  },
-                },
-                label: 'Health checks complete',
-                data: [50, 45, 60, 55, 60, 10, 5, 60, 60],
-                borderColor: 'rgba(20,184,166, 0.2)',
-              },
-            ],
-          }"
-        ></LineChart>
+        <LineChart :data="chartData"></LineChart>
       </div>
     </div>
     <div class="bg-white rounded shadow">
@@ -120,16 +104,20 @@
 
   <PageCard class="mt-8">
     <div
-      class="grid grid-cols-5 gap-4 border-t first:border-none items-center hover:bg-zinc-100 py-2"
+      class="flex items-center border-t first:border-none hover:bg-zinc-100 py-2"
       v-for="result in results"
       :key="result.id"
     >
-      <div>{{ result.title }}</div>
-      <div class="grid gap-2 grid-cols-2">
-        <div>Findings: {{ result.findings.length }}</div>
-        <div>Observations: {{ result.observations.length }}</div>
+      <div class="w-1/3">{{ result.title }}</div>
+      <div class="w-1/5 flex items-center gap-2">
+        <!-- TODO We should integrate the finding status here instead of using observations vs. findings  -->
+        <DoughnutChart class="h-6" :options="{responsive: false}" :data="calculateComplianceRatioData([result])"></DoughnutChart>
+        <div class="flex gap-2 items-center flex-wrap min-w-32">
+          <div>Findings: {{ result.findings.length }}</div>
+          <div>Observations: {{ result.observations.length }}</div>
+        </div>
       </div>
-      <div class="col-span-2">
+      <div class="flex-wrap grow">
         <LabelList :labels="viewableLabels(result.labels)" />
       </div>
       <div>
@@ -176,14 +164,28 @@ import { type LabelMap, type Result, useApiStore } from '@/stores/api'
 import { FilterParser } from '@/parsers/labelfilter.ts'
 import BarChart from '@/components/charts/BarChart.vue'
 import LineChart from '@/components/charts/LineChart.vue'
+import DoughnutChart from '@/components/charts/DoughnutChart.vue'
 import { BIconFloppy, BIconSearch } from 'bootstrap-icons-vue'
 import LabelList from '@/components/LabelList.vue'
+import type { ChartData } from 'chart.js'
+import {
+  calculateComplianceOverTimeData,
+  calculateComplianceRatioData
+} from '@/parsers/results.ts'
 
 const apiStore = useApiStore();
 const router = useRouter()
 
 const filter = ref<string>('');
 const results = ref<Result[]>([])
+const chartData = ref<ChartData>({
+  labels: [],
+  datasets: [],
+})
+const complianceChartData = ref<ChartData>({
+  labels: [],
+  datasets: [],
+})
 
 function viewableLabels(labels: LabelMap) {
   const viewable: LabelMap = {};
@@ -197,8 +199,26 @@ function viewableLabels(labels: LabelMap) {
 
 async function search() {
   const query = new FilterParser(filter.value).parse();
-  const response = await apiStore.searchResults(query);
-  results.value = response.data;
+  apiStore.searchResults(query).then((response) => {
+    results.value = response.data.sort(function(a,b){
+      // here a , b is whole object, you can access its property
+      //convert both to lowercase
+      const x = a.title.toLowerCase();
+      const y = b.title.toLowerCase();
+
+      //compare the word which is comes first
+      if(x>y){return 1;}
+      if(x<y){return -1;}
+      return 0;
+    });
+  });
+
+  apiStore.getComplianceForSearch(query).then((response) => {
+    complianceChartData.value = calculateComplianceOverTimeData(response.data);
+  });
+
+  // chartData.value = calculateComplianceChartData(results.value)
+  // complianceChartData.value = calculateComplianceRatioData(results.value)
 }
 
 async function save() {

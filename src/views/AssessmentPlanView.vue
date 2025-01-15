@@ -9,7 +9,7 @@
         <h3 class="text-lg font-semibold text-zinc-600">Compliance over time</h3>
       </div>
       <div class="h-32">
-        <LineChart :data="chartData"></LineChart>
+        <LineChart :data="complianceChartData"></LineChart>
       </div>
     </div>
     <div class="bg-white rounded shadow">
@@ -131,6 +131,7 @@ import { useRoute } from 'vue-router'
 import { useApiStore, type Plan, type Result, type DataResponse, type LabelMap } from '@/stores/api.ts'
 import { type ChartData, type ChartDataset } from 'chart.js'
 import LabelList from '@/components/LabelList.vue'
+import { calculateComplianceChartData, calculateComplianceOverTimeData } from '@/parsers/results.ts'
 
 const route = useRoute()
 const apiStore = useApiStore()
@@ -138,6 +139,10 @@ const apiStore = useApiStore()
 const plan = ref<Plan>({} as Plan)
 const results = ref<Result[]>([])
 const chartData = ref<ChartData>({
+  labels: [],
+  datasets: [],
+})
+const complianceChartData = ref<ChartData>({
   labels: [],
   datasets: [],
 })
@@ -152,60 +157,16 @@ function viewableLabels(labels: LabelMap) {
   return viewable;
 }
 
-function calculateChart(results: Result[]) {
-  const labels: string[] = []
-  const findings: ChartDataset = {
-    label: 'Findings',
-    gradient: {
-      backgroundColor: {
-        axis: 'y',
-        colors: {
-          100: 'rgba(253,92,110,0.4)',
-          70: 'rgba(253,92,110, .3)',
-          30: 'rgba(253,92,110, .1)',
-          0: 'rgba(253,92,110, .0)',
-        },
-      },
-    },
-    borderColor: 'rgba(253,92,110, 0.7)',
-    data: [],
-  }
-  const observations: ChartDataset = {
-    label: 'Observations',
-    gradient: {
-      backgroundColor: {
-        axis: 'y',
-        colors: {
-          100: 'rgba(20,184,166, .4)',
-          70: 'rgba(20,184,166, .3)',
-          30: 'rgba(20,184,166, .1)',
-          0: 'rgba(20,184,166, .0)',
-        },
-      },
-    },
-    borderColor: 'rgba(20,184,166, 0.7)',
-    data: [],
-  }
-
-  results.forEach((result) => {
-    labels.push(result.start)
-    findings.data?.push(result.findings.length)
-    observations.data?.push(result.observations.length)
-  })
-
-  return {
-    labels: labels,
-    datasets: [findings, observations],
-  }
-}
-
 onMounted(() => {
-  apiStore.getPlan(route.params.id as string).then((fetchedPlan: Plan) => {
-    plan.value = fetchedPlan
+  apiStore.getPlan(route.params.id as string).then((fetchedPlan: DataResponse<Plan>) => {
+    plan.value = fetchedPlan.data
+    apiStore.getComplianceForSearch(fetchedPlan.data.filter).then((response) => {
+      complianceChartData.value = calculateComplianceOverTimeData(response.data);
+    });
   })
   apiStore.getPlanResults(route.params.id as string).then((resultsList: DataResponse<Result[]>) => {
     results.value = resultsList.data
-    chartData.value = calculateChart(results.value)
+    chartData.value = calculateComplianceChartData(results.value)
   })
 })
 </script>

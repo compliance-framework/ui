@@ -7,6 +7,7 @@ export interface Plan {
   id: string
   title: string
   status: string
+  filter: Filter
 }
 
 export interface Observation {
@@ -59,6 +60,18 @@ export interface LabelMap {
   [label: string]: string
 }
 
+export interface ComplianceBySearchResultRecord {
+  title: string
+  interval: string
+  findings: number
+  observations: number
+}
+
+export interface ComplianceBySearchResult {
+  id: string
+  records: ComplianceBySearchResultRecord[]
+}
+
 export interface DataResponse<T> {
   data: T
 }
@@ -91,10 +104,10 @@ export const useApiStore = defineStore('api', () => {
     } as Plan
   }
 
-  async function getPlan(id: string): Promise<Plan> {
+  async function getPlan(id: string): Promise<DataResponse<Plan>> {
     const config = await configStore.getConfig()
     const response = await fetch(`${config.API_URL}/api/plan/${id}`)
-    return (await response.json()) as Plan
+    return (await response.json()) as DataResponse<Plan>
   }
 
   async function getPlans(): Promise<Plan[]> {
@@ -128,6 +141,25 @@ export const useApiStore = defineStore('api', () => {
     return (await response.json()) as DataResponse<Result[]>
   }
 
+  async function getComplianceForSearch(filter: Filter): Promise<DataResponse<ComplianceBySearchResult[]>> {
+    const config = await configStore.getConfig()
+    const response = await fetch(`${config.API_URL}/api/results/compliance-by-search`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        "filter": filter,
+      }),
+    })
+
+    if (!response.ok) {
+      throw new Error(`Error: ${response.statusText}`)
+    }
+
+    return (await response.json()) as DataResponse<ComplianceBySearchResult[]>
+  }
+
   async function getPlanResults(id: string): Promise<DataResponse<Result[]>> {
     const config = await configStore.getConfig()
     const response = await fetch(`${config.API_URL}/api/results/plan/${id}`)
@@ -146,6 +178,7 @@ export const useApiStore = defineStore('api', () => {
     createPlan,
     getResult,
     searchResults,
+    getComplianceForSearch,
     getPlanResults,
     getStreamResults,
   }
