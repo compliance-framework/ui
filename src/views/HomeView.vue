@@ -1,6 +1,6 @@
 <template>
   <PageHeader> Assessment Plans</PageHeader>
-  <div class="grid grid-cols-3 gap-4 mt-4">
+  <div class="grid grid-cols-3 gap-4 mt-4 hidden">
     <div class="bg-white rounded shadow">
       <div class="px-4 pt-2">
         <h3 class="text-lg font-semibold text-zinc-600">

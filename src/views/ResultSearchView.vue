@@ -5,51 +5,13 @@
   <PageSubHeader>
     Search for results using labels
   </PageSubHeader>
-  <div class="grid grid-cols-3 gap-4 mt-4">
+  <div class="grid grid-cols-2 gap-4 mt-4">
     <div class="bg-white rounded shadow">
       <div class="px-4 pt-2">
         <h3 class="text-lg font-semibold text-zinc-600 ">Compliance over time</h3>
       </div>
       <div class="h-32">
-        <LineChart :data="complianceChartData" :options="{
-           scales: {
-            x: {
-              type: 'time',
-              // bounds: 'data',
-              time: {
-                unit: 'minute'
-              },
-
-              grid: {
-                  display: false
-              },
-              // ticks: {
-              //     source: 'data',
-              //     min: '2025-01-13 23:00:00',
-              // },
-              suggestedMin: '2025-01-01 00:00:00',
-              suggestedMax: new Date(),
-          },
-           } ,
-           scale: {
-                    grid: {
-                        drawBorder: false,
-                        display: false,
-                        drawOnChartArea: false,
-                        drawTicks: false,
-                    },
-                    border: {
-                        display: false,
-                    },
-                    ticks: {
-                        display: false,
-                        min: '2025-01-13 23:00:00',
-                    },
-                    min: '2025-01-13 23:00:00',
-                    suggestedMin: '2025-01-13 23:00:00',
-                },
-
-        }"></LineChart>
+        <ResultComplianceOverTimeChart :data="complianceChartData" />
       </div>
     </div>
     <div class="bg-white rounded shadow">
@@ -57,26 +19,7 @@
         <h3 class="text-lg font-semibold text-zinc-600">Agent health</h3>
       </div>
       <div class="h-32">
-        <LineChart :data="chartData"></LineChart>
-      </div>
-    </div>
-    <div class="bg-white rounded shadow">
-      <div class="px-4 pt-2">
-        <h3 class="text-lg font-semibold text-zinc-600">Compliance over time</h3>
-      </div>
-      <div class="h-32">
-        <BarChart
-          :data="{
-            labels: ['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-            datasets: [
-              {
-                label: 'Results',
-                data: [50, 45, 60, 60, 80, 65, 90, 80, 100],
-                backgroundColor: 'rgba(99,190,246,0.5)',
-              },
-            ],
-          }"
-        ></BarChart>
+        <ResultComplianceOverTimeChart :data="uptimeChartData" />
       </div>
     </div>
   </div>
@@ -169,20 +112,22 @@ import { BIconFloppy, BIconSearch } from 'bootstrap-icons-vue'
 import LabelList from '@/components/LabelList.vue'
 import type { ChartData } from 'chart.js'
 import {
+  calculateAgentUptimeData,
   calculateComplianceOverTimeData,
-  calculateComplianceRatioData
+  calculateComplianceRatioData, type DateDataPoint
 } from '@/parsers/results.ts'
+import ResultComplianceOverTimeChart from '@/components/ResultComplianceOverTimeChart.vue'
 
 const apiStore = useApiStore();
 const router = useRouter()
 
 const filter = ref<string>('');
 const results = ref<Result[]>([])
-const chartData = ref<ChartData>({
+const complianceChartData = ref<ChartData<"line", DateDataPoint[]>>({
   labels: [],
   datasets: [],
 })
-const complianceChartData = ref<ChartData>({
+const uptimeChartData = ref<ChartData<"line", DateDataPoint[]>>({
   labels: [],
   datasets: [],
 })
@@ -215,6 +160,7 @@ async function search() {
 
   apiStore.getComplianceForSearch(query).then((response) => {
     complianceChartData.value = calculateComplianceOverTimeData(response.data);
+    uptimeChartData.value = calculateAgentUptimeData(response.data);
   });
 
   // chartData.value = calculateComplianceChartData(results.value)

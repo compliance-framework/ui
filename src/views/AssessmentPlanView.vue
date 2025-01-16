@@ -3,13 +3,13 @@
   <PageSubHeader>
     {{ plan.title }}
   </PageSubHeader>
-  <div class="grid grid-cols-3 gap-4 mt-4">
+  <div class="grid grid-cols-2 gap-4 mt-4">
     <div class="bg-white rounded shadow">
       <div class="px-4 pt-2">
         <h3 class="text-lg font-semibold text-zinc-600">Compliance over time</h3>
       </div>
       <div class="h-32">
-        <LineChart :data="complianceChartData"></LineChart>
+        <ResultComplianceOverTimeChart :data="complianceChartData" />
       </div>
     </div>
     <div class="bg-white rounded shadow">
@@ -17,58 +17,7 @@
         <h3 class="text-lg font-semibold text-zinc-600">Agent health</h3>
       </div>
       <div class="h-32">
-        <LineChart
-          :data="{
-            labels: [
-              '12:00',
-              '13:00',
-              '14:00',
-              '15:00',
-              '16:00',
-              '17:00',
-              '18:00',
-              '19:00',
-              '20:00',
-            ],
-            datasets: [
-              {
-                gradient: {
-                  backgroundColor: {
-                    axis: 'y',
-                    colors: {
-                      100: 'rgba(20,184,166, .4)',
-                      70: 'rgba(20,184,166, .3)',
-                      30: 'rgba(20,184,166, .1)',
-                      0: 'rgba(20,184,166, .0)',
-                    },
-                  },
-                },
-                label: 'Health checks complete',
-                data: [50, 45, 60, 55, 60, 10, 5, 60, 60],
-                borderColor: 'rgba(20,184,166, 0.2)',
-              },
-            ],
-          }"
-        ></LineChart>
-      </div>
-    </div>
-    <div class="bg-white rounded shadow">
-      <div class="px-4 pt-2">
-        <h3 class="text-lg font-semibold text-zinc-600">Compliance over time</h3>
-      </div>
-      <div class="h-32">
-        <BarChart
-          :data="{
-            labels: ['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-            datasets: [
-              {
-                label: 'Results',
-                data: [50, 45, 60, 60, 80, 65, 90, 80, 100],
-                backgroundColor: 'rgba(99,190,246,0.5)',
-              },
-            ],
-          }"
-        ></BarChart>
+        <ResultComplianceOverTimeChart :data="uptimeChartData" />
       </div>
     </div>
   </div>
@@ -131,7 +80,12 @@ import { useRoute } from 'vue-router'
 import { useApiStore, type Plan, type Result, type DataResponse, type LabelMap } from '@/stores/api.ts'
 import { type ChartData, type ChartDataset } from 'chart.js'
 import LabelList from '@/components/LabelList.vue'
-import { calculateComplianceChartData, calculateComplianceOverTimeData } from '@/parsers/results.ts'
+import {
+  calculateAgentUptimeData,
+  calculateComplianceChartData,
+  calculateComplianceOverTimeData, type DateDataPoint
+} from '@/parsers/results.ts'
+import ResultComplianceOverTimeChart from '@/components/ResultComplianceOverTimeChart.vue'
 
 const route = useRoute()
 const apiStore = useApiStore()
@@ -142,7 +96,11 @@ const chartData = ref<ChartData>({
   labels: [],
   datasets: [],
 })
-const complianceChartData = ref<ChartData>({
+const complianceChartData = ref<ChartData<"line", DateDataPoint[]>>({
+  labels: [],
+  datasets: [],
+})
+const uptimeChartData = ref<ChartData<"line", DateDataPoint[]>>({
   labels: [],
   datasets: [],
 })
@@ -162,6 +120,8 @@ onMounted(() => {
     plan.value = fetchedPlan.data
     apiStore.getComplianceForSearch(fetchedPlan.data.filter).then((response) => {
       complianceChartData.value = calculateComplianceOverTimeData(response.data);
+
+      uptimeChartData.value = calculateAgentUptimeData(response.data);
     });
   })
   apiStore.getPlanResults(route.params.id as string).then((resultsList: DataResponse<Result[]>) => {
