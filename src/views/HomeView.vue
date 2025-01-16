@@ -3,12 +3,24 @@
   <div class="grid grid-cols-3 gap-4 mt-4">
     <div class="bg-white rounded shadow">
       <div class="px-4 pt-2">
-        <h3 class="text-lg font-semibold text-zinc-600">Compliance over time</h3>
+        <h3 class="text-lg font-semibold text-zinc-600">
+          Compliance over time
+        </h3>
       </div>
       <div class="h-32">
         <LineChart
           :data="{
-            labels: ['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+            labels: [
+              'Apr',
+              'May',
+              'Jun',
+              'Jul',
+              'Aug',
+              'Sep',
+              'Oct',
+              'Nov',
+              'Dec',
+            ],
             datasets: [
               {
                 gradient: {
@@ -73,12 +85,24 @@
     </div>
     <div class="bg-white rounded shadow">
       <div class="px-4 pt-2">
-        <h3 class="text-lg font-semibold text-zinc-600">Compliance over time</h3>
+        <h3 class="text-lg font-semibold text-zinc-600">
+          Compliance over time
+        </h3>
       </div>
       <div class="h-32">
         <BarChart
           :data="{
-            labels: ['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+            labels: [
+              'Apr',
+              'May',
+              'Jun',
+              'Jul',
+              'Aug',
+              'Sep',
+              'Oct',
+              'Nov',
+              'Dec',
+            ],
             datasets: [
               {
                 label: 'Results',
@@ -119,19 +143,19 @@
   </PageCard>
 </template>
 <script setup lang="ts">
-import LineChart from '@/components/charts/LineChart.vue'
-import BarChart from '@/components/charts/BarChart.vue'
-import PageHeader from '@/components/PageHeader.vue'
-import PageCard from '@/components/PageCard.vue'
-import { onMounted, ref } from 'vue'
-import { useApiStore, type Plan } from '@/stores/api.ts'
+import LineChart from '@/components/charts/LineChart.vue';
+import BarChart from '@/components/charts/BarChart.vue';
+import PageHeader from '@/components/PageHeader.vue';
+import PageCard from '@/components/PageCard.vue';
+import { onMounted, ref } from 'vue';
+import { useApiStore, type Plan } from '@/stores/api.ts';
 
-const apiStore = useApiStore()
-const plans = ref<Plan[]>([] as Plan[])
+const apiStore = useApiStore();
+const plans = ref<Plan[]>([] as Plan[]);
 
 onMounted(() => {
   apiStore.getPlans().then((res) => {
-    plans.value = res
-  })
-})
+    plans.value = res;
+  });
+});
 </script>

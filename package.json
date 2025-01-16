@@ -57,5 +57,11 @@
     "vite-plugin-vue-devtools": "^7.6.8",
     "vitest": "^2.1.5",
     "vue-tsc": "^2.1.10"
+  },
+  "prettier": {
+    "semi": true,
+    "singleQuote": true,
+    "trailingComma": "all",
+    "arrowParens": "always"
   }
 }
