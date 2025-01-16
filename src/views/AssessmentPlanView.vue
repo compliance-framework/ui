@@ -74,19 +74,16 @@
   </PageCard>
 </template>
 <script setup lang="ts">
-import LineChart from '@/components/charts/LineChart.vue'
-import BarChart from '@/components/charts/BarChart.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import PageSubHeader from '@/components/PageSubHeader.vue'
 import PageCard from '@/components/PageCard.vue'
 import { onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { useApiStore, type Plan, type Result, type DataResponse, type LabelMap } from '@/stores/api.ts'
-import { type ChartData, type ChartDataset } from 'chart.js'
+import { type ChartData } from 'chart.js'
 import LabelList from '@/components/LabelList.vue'
 import {
   calculateAgentUptimeData,
-  calculateComplianceChartData,
   calculateComplianceOverTimeData, type DateDataPoint
 } from '@/parsers/results.ts'
 import ResultComplianceOverTimeChart from '@/components/ResultComplianceOverTimeChart.vue'
@@ -97,10 +94,6 @@ const apiStore = useApiStore()
 
 const plan = ref<Plan>({} as Plan)
 const results = ref<Result[]>([])
-const chartData = ref<ChartData>({
-  labels: [],
-  datasets: [],
-})
 const complianceChartData = ref<ChartData<"line", DateDataPoint[]>>({
   labels: [],
   datasets: [],
@@ -131,7 +124,6 @@ onMounted(() => {
   })
   apiStore.getPlanResults(route.params.id as string).then((resultsList: DataResponse<Result[]>) => {
     results.value = resultsList.data
-    chartData.value = calculateComplianceChartData(results.value)
   })
 })
 </script>
