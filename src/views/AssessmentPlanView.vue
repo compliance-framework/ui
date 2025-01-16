@@ -23,7 +23,7 @@
   </div>
   <PageCard class="mt-4">
     <div
-      class="flex items-center border-t first:border-none hover:bg-zinc-100 py-1 px-2"
+      class="flex items-center border-t first:border-none hover:bg-zinc-100 py-2 px-2"
       v-for="result in results"
       :key="result.id"
     >

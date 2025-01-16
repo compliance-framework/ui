@@ -48,7 +48,7 @@
     </div>
     <div class="mt-4">
       <div
-        class="flex items-center border-t first:border-none hover:bg-zinc-100 py-1 px-2"
+        class="flex items-center border-t first:border-none hover:bg-zinc-100 py-2 px-2"
         v-for="result in results"
         :key="result.id"
       >
@@ -82,7 +82,7 @@
 </template>
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import PageHeader from '@/components/PageHeader.vue'
 import PageCard from '@/components/PageCard.vue'
 import PageSubHeader from '@/components/PageSubHeader.vue'
@@ -94,16 +94,16 @@ import type { ChartData } from 'chart.js'
 import {
   calculateAgentUptimeData,
   calculateComplianceOverTimeData,
-  calculateComplianceRatioData,
   type DateDataPoint,
 } from '@/parsers/results.ts'
 import ResultComplianceOverTimeChart from '@/components/ResultComplianceOverTimeChart.vue'
 import ResultStatusBadge from '@/components/ResultStatusBadge.vue'
 
 const apiStore = useApiStore()
+const route = useRoute()
 const router = useRouter()
 
-const filter = ref<string>('')
+const filter = ref<string>(route.query.filter ?? '' as string)
 const results = ref<Result[]>([])
 const complianceChartData = ref<ChartData<'line', DateDataPoint[]>>({
   labels: [],
@@ -126,7 +126,9 @@ function viewableLabels(labels: LabelMap) {
 
 async function search() {
   const query = new FilterParser(filter.value).parse()
+  await router.push({ query: { filter: filter.value }})
   apiStore.searchResults(query).then((response) => {
+
     results.value = response.data.sort(function (a, b) {
       // Order results by their title for better UI consistency
       const x = a.title.toLowerCase()

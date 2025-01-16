@@ -161,6 +161,25 @@ export const useApiStore = defineStore('api', () => {
     return (await response.json()) as DataResponse<ComplianceBySearchResult[]>
   }
 
+  async function getComplianceForStream(stream: string): Promise<DataResponse<ComplianceBySearchResult[]>> {
+    const config = await configStore.getConfig()
+    const response = await fetch(`${config.API_URL}/api/results/compliance-by-stream`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        "streamId": stream,
+      }),
+    })
+
+    if (!response.ok) {
+      throw new Error(`Error: ${response.statusText}`)
+    }
+
+    return (await response.json()) as DataResponse<ComplianceBySearchResult[]>
+  }
+
   async function getPlanResults(id: string): Promise<DataResponse<Result[]>> {
     const config = await configStore.getConfig()
     const response = await fetch(`${config.API_URL}/api/results/plan/${id}`)
@@ -180,6 +199,7 @@ export const useApiStore = defineStore('api', () => {
     getResult,
     searchResults,
     getComplianceForSearch,
+    getComplianceForStream,
     getPlanResults,
     getStreamResults,
   }
