@@ -1,6 +1,6 @@
 <template>
-  <PageHeader> Results </PageHeader>
-  <PageSubHeader> Search for results using labels </PageSubHeader>
+  <PageHeader>Results</PageHeader>
+  <PageSubHeader>Search for results using labels</PageSubHeader>
   <div class="grid grid-cols-2 gap-4 mt-4">
     <div class="bg-white rounded shadow">
       <div class="px-4 pt-2">
@@ -128,12 +128,10 @@ async function search() {
   const query = new FilterParser(filter.value).parse()
   apiStore.searchResults(query).then((response) => {
     results.value = response.data.sort(function (a, b) {
-      // here a , b is whole object, you can access its property
-      //convert both to lowercase
+      // Order results by their title for better UI consistency
       const x = a.title.toLowerCase()
       const y = b.title.toLowerCase()
 
-      //compare the word which is comes first
       if (x > y) {
         return 1
       }
