@@ -6,7 +6,7 @@
     {{ result._id }}
   </PageSubHeader>
   <div class="grid grid-cols-2 gap-4 mt-4">
-    <PageCard @click="toggleObservationsModal">
+    <PageCard>
       <h3 class="text-lg pl-4 mb-4">Observations</h3>
       <div>
         <div
@@ -19,35 +19,18 @@
         </div>
       </div>
     </PageCard>
-    <Modal
-      title="Observations"
-      v-model:show="showObservationsModal"
-      @click="toggleObservationsModal"
-    >
-      <h3 class="text-lg pl-4 mb-4">Observations</h3>
+    <PageCard>
+      <h3 class="text-lg mb-2">Findings</h3>
       <div>
         <div
-          v-for="(observation, index) in result.observations"
-          :key="observation.id"
-          class="px-4 py-2 hover:bg-zinc-100"
-        >
-          <p class="font-semibold">{{ index + 1 }}: {{ observation.title }}</p>
-          <p class="pt-1">Desc: {{ observation.description }}</p>
-        </div>
-      </div>
-    </Modal>
-    <PageCard @click="toggleFindingsModal">
-      <h3 class="text-lg pl-4 mb-4">Findings</h3>
-      <div>
-        <div
-          v-for="(finding, findingIdx) in result.findings"
+          v-for="(finding) in result.findings"
           :key="finding.id"
-          class="p-* px-4 py-2 hover:bg-zinc-100"
+          class="py-4 border-gray-200 last:border-b-0"
         >
-          <p class="font-semibold">{{ findingIdx + 1 }}. {{ finding.title }}</p>
-          <p class="pt-1">Desc: {{ finding.description }}</p>
-          <p v-if="finding.status" :class="['pt-1', 'text-black-800']">
-            Status:
+          <p class="font-medium">
+            {{ finding.title }}
+          </p>
+          <p class="mb-2">
             <span
               :class="[
                 'inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset',
@@ -59,62 +42,19 @@
               {{ finding.status }}
             </span>
           </p>
-          <div class="pt-2 flex items-center justify-between w-full">
-            <p>Tasks: {{ finding.tasks.length }}</p>
-            <span class="mr-5">(Click for more details)</span>
+          <p class="pt-1">{{ finding.description }}</p>
+          <div class="pt-2 flex items-center justify-between mb-2">
+            <button @click="showFindingTasks(finding)" class="px-2 py-1 border-zinc-500 border rounded-md shadow text-sm">View Tasks</button>
           </div>
         </div>
       </div>
     </PageCard>
-    <Modal
-      title="Findings"
-      v-model:show="showFindingsModal"
-      @click="toggleFindingsModal"
-    >
-      <h3 class="text-lg pl-4 mb-4">Findings</h3>
-      <div>
-        <div
-          v-for="(finding, findingIdx) in result.findings"
-          :key="finding.id"
-          class="p-* px-4 py-2 hover:bg-zinc-100"
-        >
-          <p class="font-semibold">{{ findingIdx + 1 }}. {{ finding.title }}</p>
-          <p class="pt-1">Desc: {{ finding.description }}</p>
-          <p v-if="finding.status" :class="['pt-1', 'text-black-800']">
-            Status:
-            <span
-              :class="[
-                'inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset',
-                `bg-${getFindingStatusColor(finding.status)}-50`,
-                `text-${getFindingStatusColor(finding.status)}-800`,
-                `ring-${getFindingStatusColor(finding.status)}-600/20`,
-              ]"
-            >
-              {{ finding.status }}
-            </span>
-          </p>
-          <p class="pt-1">Tasks:</p>
-          <ol class="pl-6 pt-2 list-decimal">
-            <li v-for="task in finding.tasks" :key="task.id">
-              <p class="mb-2">Title: {{ task.title }}</p>
-              <p class="mb-2">Description: {{ task.description }}</p>
-              <p>Activities:</p>
-              <ol class="pl-6 pt-2 list-decimal">
-                <li v-for="activity in task.activities" :key="activity.id">
-                  <p>Title: {{ task.title }}</p>
-                  <p>Description: {{ task.description }}</p>
-                </li>
-              </ol>
-            </li>
-          </ol>
-        </div>
-      </div>
-    </Modal>
-    <PageCard @click="toggleLogsModal">
+    <PageCard>
       <h3 class="text-lg pl-4 mb-4">Logs</h3>
       <div>
         <div
           v-for="log in result.assessmentLogEntries"
+          :key="log.title"
           class="px-4 py-2 hover:bg-zinc-100"
         >
           <p class="font-semibold">{{ log.title }}</p>
@@ -122,16 +62,31 @@
         </div>
       </div>
     </PageCard>
-    <Modal title="Logs" v-model:show="showLogsModal" @click="toggleLogsModal">
-      <h3 class="text-lg pl-4 mb-4">Logs</h3>
-      <div>
-        <div
-          v-for="log in result.assessmentLogEntries"
-          class="px-4 py-2 hover:bg-zinc-100"
-        >
-          <p class="font-semibold">{{ log.title }}</p>
-          <p>{{ log.description }}</p>
+
+    <Modal
+      :show="showFindingsModal"
+      @close="setFindingsModal(false)"
+    >
+      <div class="px-12 py-8">
+        <div v-for="task in tasks" :key="task.id">
+          <div class="flex items-center">
+            <div class="bg-blue-500 rounded-full w-3 aspect-square mr-2" />
+            <h4 class="font-medium text-lg">{{ task.title }}</h4>
+          </div>
+          <div class="border-l-4 border-blue-500 ml-1 pl-4 pb-4 pt-2">
+            <div v-for="activity in task.activities" :key="activity.id" class="pb-4 last:pb-0">
+              <h4 class="font-medium">{{ activity.title }}
+                {{ activity.title }}
+              </h4>
+              <div class="text-sm pl-2">
+                {{ activity.description }}
+              </div>
+            </div>
+          </div>
         </div>
+      </div>
+      <div class="border-t border-zinc-300 text-right py-2 px-4">
+        <button @click="setFindingsModal(false)" class="px-2 py-1 border-zinc-500 border rounded-md shadow">Close</button>
       </div>
     </Modal>
   </div>
@@ -143,14 +98,14 @@ import PageHeader from '@/components/PageHeader.vue';
 import PageCard from '@/components/PageCard.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
 import Modal from '@/components/Modal.vue';
-import { type Result, useApiStore } from '@/stores/api';
+import { type Finding, type Result, type Task, useApiStore } from '@/stores/api'
 
 const apiStore = useApiStore();
 const route = useRoute();
 const id = route.params.id as string;
 
 const result = ref<Result>({} as Result);
-const showObservationsModal = ref(false);
+const tasks = ref<Task[]>([] as Task[]);
 const showLogsModal = ref(false);
 const showFindingsModal = ref(false);
 
@@ -161,16 +116,13 @@ enum FindingStatusColor {
   RESOLVED = 'green',
 }
 
-function toggleObservationsModal() {
-  showObservationsModal.value = !showObservationsModal.value;
+function showFindingTasks(finding: Finding) {
+  tasks.value = finding.tasks
+  setFindingsModal(true);
 }
 
-function toggleFindingsModal() {
-  showFindingsModal.value = !showFindingsModal.value;
-}
-
-function toggleLogsModal() {
-  showLogsModal.value = !showLogsModal.value;
+function setFindingsModal(open: boolean) {
+  showFindingsModal.value = open;
 }
 
 function getFindingStatusColor(status?: string): string {

@@ -2,39 +2,55 @@
   <teleport to="body">
     <div
       class="relative z-10"
-      :aria-labelledby="props.title"
+      :aria-labelledby="title"
       role="dialog"
       aria-modal="true"
       v-if="show"
     >
       <div
-        class="fixed inset-0 bg-gray-500/75 transition-opacity"
+        class="fixed inset-0 h-screen w-screen overflow-auto z-1"
         aria-hidden="true"
-      ></div>
-
-      <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+      >
+        <div class="bg-gray-500/70 fixed left-0 top-0 w-screen h-screen z-10" @click.prevent="$emit('close')" />
         <div
-          class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0"
+          :class="'relative z-20 mx-auto my-12 bg-white rounded-md shadow-xl overflow-hidden ' + sizeClass"
+          v-bind="$attrs"
         >
-          <div
-            class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:max-w-3xl"
-          >
-            <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
-              <div class="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left">
-                <slot></slot>
-              </div>
-            </div>
-          </div>
+            <slot></slot>
         </div>
       </div>
+
     </div>
   </teleport>
 </template>
 
 <script setup lang="ts">
-const props = defineProps(['title']);
-const show = defineModel('show', {
-  required: true,
-  default: false,
+import { ref } from 'vue'
+
+defineOptions({
+  inheritAttrs: false
+})
+const props = defineProps({
+  title: String,
+  show: Boolean,
+  size: String,
 });
+defineEmits(['close'])
+
+const getSizeClass = () => {
+  const size = props.size as string
+  const sizes: {[size: string]: string} = {
+    'sm': 'w-1/4',
+    'md': 'w-1/3',
+    'lg': 'w-1/2',
+  }
+  if (size) {
+    if (sizes.hasOwnProperty(size)) {
+      return sizes[size];
+    }
+  }
+  return sizes['md'];
+};
+
+const sizeClass = ref(getSizeClass());
 </script>
