@@ -117,5 +117,5 @@ export function calculateAgentUptimeData(
         },
       },
     ],
-  } as ChartData<'line', DateDataPoint[]>
+  }
 }
