@@ -3,13 +3,13 @@
   <PageSubHeader>
     {{ plan.title }}
   </PageSubHeader>
-  <div class="grid grid-cols-3 gap-4 mt-4">
+  <div class="grid grid-cols-2 gap-4 mt-4">
     <div class="bg-white rounded shadow">
       <div class="px-4 pt-2">
         <h3 class="text-lg font-semibold text-zinc-600">Compliance over time</h3>
       </div>
       <div class="h-32">
-        <LineChart :data="chartData"></LineChart>
+        <ResultComplianceOverTimeChart :data="complianceChartData" />
       </div>
     </div>
     <div class="bg-white rounded shadow">
@@ -17,73 +17,26 @@
         <h3 class="text-lg font-semibold text-zinc-600">Agent health</h3>
       </div>
       <div class="h-32">
-        <LineChart
-          :data="{
-            labels: [
-              '12:00',
-              '13:00',
-              '14:00',
-              '15:00',
-              '16:00',
-              '17:00',
-              '18:00',
-              '19:00',
-              '20:00',
-            ],
-            datasets: [
-              {
-                gradient: {
-                  backgroundColor: {
-                    axis: 'y',
-                    colors: {
-                      100: 'rgba(20,184,166, .4)',
-                      70: 'rgba(20,184,166, .3)',
-                      30: 'rgba(20,184,166, .1)',
-                      0: 'rgba(20,184,166, .0)',
-                    },
-                  },
-                },
-                label: 'Health checks complete',
-                data: [50, 45, 60, 55, 60, 10, 5, 60, 60],
-                borderColor: 'rgba(20,184,166, 0.2)',
-              },
-            ],
-          }"
-        ></LineChart>
-      </div>
-    </div>
-    <div class="bg-white rounded shadow">
-      <div class="px-4 pt-2">
-        <h3 class="text-lg font-semibold text-zinc-600">Compliance over time</h3>
-      </div>
-      <div class="h-32">
-        <BarChart
-          :data="{
-            labels: ['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-            datasets: [
-              {
-                label: 'Results',
-                data: [50, 45, 60, 60, 80, 65, 90, 80, 100],
-                backgroundColor: 'rgba(99,190,246,0.5)',
-              },
-            ],
-          }"
-        ></BarChart>
+        <ResultComplianceOverTimeChart :data="uptimeChartData" />
       </div>
     </div>
   </div>
-  <PageCard class="mt-8">
+  <PageCard class="mt-4">
     <div
-      class="grid grid-cols-5 gap-4 border-t first:border-none items-center hover:bg-zinc-100 py-2"
+      class="flex items-center border-t first:border-none hover:bg-zinc-100 py-2 px-2"
       v-for="result in results"
       :key="result.id"
     >
-      <div>{{ result.title }}</div>
-      <div class="grid gap-2 grid-cols-2">
-        <div>Findings: {{ result.findings.length }}</div>
-        <div>Observations: {{ result.observations.length }}</div>
+      <div class="w-1/3">{{ result.title }}</div>
+      <div class="grow-0 pr-12">
+        <!-- TODO We should integrate the finding status here instead of using observations vs. findings  -->
+        <ResultStatusBadge
+          :gray="result.observations.length"
+          :red="result.findings.length"
+          :green="result.observations.length - result.findings.length"
+        ></ResultStatusBadge>
       </div>
-      <div class="col-span-2">
+      <div class="flex-wrap grow">
         <LabelList :labels="viewableLabels(result.labels)" />
       </div>
       <div>
@@ -121,23 +74,31 @@
   </PageCard>
 </template>
 <script setup lang="ts">
-import LineChart from '@/components/charts/LineChart.vue'
-import BarChart from '@/components/charts/BarChart.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import PageSubHeader from '@/components/PageSubHeader.vue'
 import PageCard from '@/components/PageCard.vue'
 import { onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { useApiStore, type Plan, type Result, type DataResponse, type LabelMap } from '@/stores/api.ts'
-import { type ChartData, type ChartDataset } from 'chart.js'
+import { type ChartData } from 'chart.js'
 import LabelList from '@/components/LabelList.vue'
+import {
+  calculateAgentUptimeData,
+  calculateComplianceOverTimeData, type DateDataPoint
+} from '@/parsers/results.ts'
+import ResultComplianceOverTimeChart from '@/components/ResultComplianceOverTimeChart.vue'
+import ResultStatusBadge from '@/components/ResultStatusBadge.vue'
 
 const route = useRoute()
 const apiStore = useApiStore()
 
 const plan = ref<Plan>({} as Plan)
 const results = ref<Result[]>([])
-const chartData = ref<ChartData>({
+const complianceChartData = ref<ChartData<"line", DateDataPoint[]>>({
+  labels: [],
+  datasets: [],
+})
+const uptimeChartData = ref<ChartData<"line", DateDataPoint[]>>({
   labels: [],
   datasets: [],
 })
@@ -152,60 +113,17 @@ function viewableLabels(labels: LabelMap) {
   return viewable;
 }
 
-function calculateChart(results: Result[]) {
-  const labels: string[] = []
-  const findings: ChartDataset = {
-    label: 'Findings',
-    gradient: {
-      backgroundColor: {
-        axis: 'y',
-        colors: {
-          100: 'rgba(253,92,110,0.4)',
-          70: 'rgba(253,92,110, .3)',
-          30: 'rgba(253,92,110, .1)',
-          0: 'rgba(253,92,110, .0)',
-        },
-      },
-    },
-    borderColor: 'rgba(253,92,110, 0.7)',
-    data: [],
-  }
-  const observations: ChartDataset = {
-    label: 'Observations',
-    gradient: {
-      backgroundColor: {
-        axis: 'y',
-        colors: {
-          100: 'rgba(20,184,166, .4)',
-          70: 'rgba(20,184,166, .3)',
-          30: 'rgba(20,184,166, .1)',
-          0: 'rgba(20,184,166, .0)',
-        },
-      },
-    },
-    borderColor: 'rgba(20,184,166, 0.7)',
-    data: [],
-  }
-
-  results.forEach((result) => {
-    labels.push(result.start)
-    findings.data?.push(result.findings.length)
-    observations.data?.push(result.observations.length)
-  })
-
-  return {
-    labels: labels,
-    datasets: [findings, observations],
-  }
-}
-
 onMounted(() => {
-  apiStore.getPlan(route.params.id as string).then((fetchedPlan: Plan) => {
-    plan.value = fetchedPlan
+  apiStore.getPlan(route.params.id as string).then((fetchedPlan: DataResponse<Plan>) => {
+    plan.value = fetchedPlan.data
+    apiStore.getComplianceForSearch(fetchedPlan.data.filter).then((response) => {
+      complianceChartData.value = calculateComplianceOverTimeData(response.data);
+
+      uptimeChartData.value = calculateAgentUptimeData(response.data);
+    });
   })
   apiStore.getPlanResults(route.params.id as string).then((resultsList: DataResponse<Result[]>) => {
     results.value = resultsList.data
-    chartData.value = calculateChart(results.value)
   })
 })
 </script>

@@ -1,128 +1,12 @@
 <template>
   <PageHeader> Assessment Plans</PageHeader>
-  <div class="grid grid-cols-3 gap-4 mt-4">
-    <div class="bg-white rounded shadow">
-      <div class="px-4 pt-2">
-        <h3 class="text-lg font-semibold text-zinc-600">
-          Compliance over time
-        </h3>
-      </div>
-      <div class="h-32">
-        <LineChart
-          :data="{
-            labels: [
-              'Apr',
-              'May',
-              'Jun',
-              'Jul',
-              'Aug',
-              'Sep',
-              'Oct',
-              'Nov',
-              'Dec',
-            ],
-            datasets: [
-              {
-                gradient: {
-                  backgroundColor: {
-                    axis: 'y',
-                    colors: {
-                      100: 'rgba(30,64,175, .4)',
-                      70: 'rgba(30,64,175, .3)',
-                      30: 'rgba(30,64,175, .1)',
-                      0: 'rgba(30,64,175, .0)',
-                    },
-                  },
-                },
-                label: 'Results',
-                data: [50, 45, 60, 60, 80, 65, 90, 80, 100],
-                borderColor: 'rgba(30,64,175, 0.2)',
-              },
-            ],
-          }"
-        ></LineChart>
-      </div>
-    </div>
-    <div class="bg-white rounded shadow">
-      <div class="px-4 pt-2">
-        <h3 class="text-lg font-semibold text-zinc-600">Agent health</h3>
-      </div>
-      <div class="h-32">
-        <LineChart
-          :data="{
-            labels: [
-              '12:00',
-              '13:00',
-              '14:00',
-              '15:00',
-              '16:00',
-              '17:00',
-              '18:00',
-              '19:00',
-              '20:00',
-            ],
-            datasets: [
-              {
-                gradient: {
-                  backgroundColor: {
-                    axis: 'y',
-                    colors: {
-                      100: 'rgba(20,184,166, .4)',
-                      70: 'rgba(20,184,166, .3)',
-                      30: 'rgba(20,184,166, .1)',
-                      0: 'rgba(20,184,166, .0)',
-                    },
-                  },
-                },
-                label: 'Health checks complete',
-                data: [50, 45, 60, 55, 60, 10, 5, 60, 60],
-                borderColor: 'rgba(20,184,166, 0.2)',
-              },
-            ],
-          }"
-        ></LineChart>
-      </div>
-    </div>
-    <div class="bg-white rounded shadow">
-      <div class="px-4 pt-2">
-        <h3 class="text-lg font-semibold text-zinc-600">
-          Compliance over time
-        </h3>
-      </div>
-      <div class="h-32">
-        <BarChart
-          :data="{
-            labels: [
-              'Apr',
-              'May',
-              'Jun',
-              'Jul',
-              'Aug',
-              'Sep',
-              'Oct',
-              'Nov',
-              'Dec',
-            ],
-            datasets: [
-              {
-                label: 'Results',
-                data: [50, 45, 60, 60, 80, 65, 90, 80, 100],
-                backgroundColor: 'rgba(99,190,246,0.5)',
-              },
-            ],
-          }"
-        ></BarChart>
-      </div>
-    </div>
-  </div>
   <PageCard class="mt-8">
     <div>
       <div
-        class="grid grid-cols-2 gap-4 border-t first:border-none hover:bg-zinc-100 py-2"
+        class="grid grid-cols-2 gap-4 items-center border-t first:border-none hover:bg-zinc-100 py-1"
         v-for="plan in plans"
         :key="plan._id"
       >
-        <!--      <div class="px-2 py-2">{{ assessment.id }}</div>-->
         <div class="pl-4">{{ plan.title }}</div>
         <div>
           <RouterLink
@@ -143,12 +27,10 @@
   </PageCard>
 </template>
 <script setup lang="ts">
-import LineChart from '@/components/charts/LineChart.vue';
-import BarChart from '@/components/charts/BarChart.vue';
-import PageHeader from '@/components/PageHeader.vue';
-import PageCard from '@/components/PageCard.vue';
-import { onMounted, ref } from 'vue';
-import { useApiStore, type Plan } from '@/stores/api.ts';
+import PageHeader from '@/components/PageHeader.vue'
+import PageCard from '@/components/PageCard.vue'
+import { onMounted, ref } from 'vue'
+import { useApiStore, type Plan } from '@/stores/api.ts'
 
 const apiStore = useApiStore();
 const plans = ref<Plan[]>([] as Plan[]);

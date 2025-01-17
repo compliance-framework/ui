@@ -1,4 +1,3 @@
-import gradient from 'chartjs-plugin-gradient'
 import {
   Chart as ChartJS,
   BarElement,
@@ -6,11 +5,14 @@ import {
   Filler,
   Legend,
   LinearScale,
+  TimeScale,
   LineElement,
   PointElement,
   Title,
   Tooltip
 } from 'chart.js'
+import gradient from 'chartjs-plugin-gradient'
+import 'chartjs-adapter-luxon';
 
 export function useCharts() {
   // state encapsulated and managed by the composable
@@ -23,6 +25,7 @@ export function useCharts() {
     PointElement,
     LineElement,
     CategoryScale,
+    TimeScale,
     LinearScale,
     gradient,
   )
