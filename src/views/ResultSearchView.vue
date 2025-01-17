@@ -103,7 +103,10 @@ const apiStore = useApiStore()
 const route = useRoute()
 const router = useRouter()
 
-const filter = ref<string>(route.query.filter ?? '' as string)
+const filter = ref<string>('')
+if (route.query.filter) {
+  filter.value = route.query.filter as string
+}
 const results = ref<Result[]>([])
 const complianceChartData = ref<ChartData<'line', DateDataPoint[]>>({
   labels: [],

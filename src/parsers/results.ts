@@ -1,4 +1,8 @@
-import { type ComplianceBySearchResult, type Result } from '../stores/api'
+import {
+  type ComplianceBySearchResult,
+  type ComplianceBySearchResultRecord,
+  type Result,
+} from '../stores/api'
 import { Chart, type ChartData, type ChartDataset } from 'chart.js'
 
 export interface DateDataPoint {
@@ -6,21 +10,28 @@ export interface DateDataPoint {
   value: number
 }
 
+function intervalledReduce(records: ComplianceBySearchResultRecord[], valueKey: keyof ComplianceBySearchResultRecord) {
+  return Object.values(records.reduce(
+    (acc, rec) => {
+      acc[rec.interval] = {
+        date: new Date(rec.interval),
+        value: rec[valueKey] as number + (acc.hasOwnProperty(rec.interval) ? acc[rec.interval].value : 0),
+      }
+      return acc
+    },
+    {} as { [interval: string]: DateDataPoint },
+  ))
+}
+
+function sortByDate(a: DateDataPoint, b: DateDataPoint): number {
+  return a.date.valueOf() - b.date.valueOf()
+}
+
 export function calculateComplianceOverTimeData(
   results: ComplianceBySearchResult[],
 ): ChartData<'line', DateDataPoint[]> {
-  const data = Object.values(results
-    .flatMap((record) => record.records)
-    .reduce((accumulator, record) => {
-      accumulator[record.interval] = {
-        date: new Date(record.interval),
-        findings: record.findings + (accumulator.hasOwnProperty(record.interval) ? accumulator[record.interval].findings : 0),
-        observations: record.observations + (accumulator[record.interval] ? accumulator[record.interval].observations :0),
-      }
-      return accumulator
-    }, {})).sort((a, b) => {
-    return a.date.valueOf() - b.date.valueOf()
-  })
+  const records = results.flatMap((record) => record.records)
+
   return {
     datasets: [
       {
@@ -37,10 +48,10 @@ export function calculateComplianceOverTimeData(
           },
         },
         borderColor: 'rgba(253,92,110, 0.7)',
-        data: data,
+        data: intervalledReduce(records, "findings").sort(sortByDate),
         parsing: {
           xAxisKey: 'date',
-          yAxisKey: 'findings',
+          yAxisKey: 'value',
         },
       },
       {
@@ -57,10 +68,10 @@ export function calculateComplianceOverTimeData(
           },
         },
         borderColor: 'rgba(20,184,166, 0.7)',
-        data: data,
+        data: intervalledReduce(records, "observations").sort(sortByDate),
         parsing: {
           xAxisKey: 'date',
-          yAxisKey: 'observations',
+          yAxisKey: 'value',
         },
       },
     ],
@@ -86,20 +97,23 @@ export function calculateAgentUptimeData(
           },
         },
         borderColor: 'rgba(20,184,166, 0.7)',
-        data: Object.values(results
-          .flatMap((record) => record.records)
-          .reduce((accumulator, record) => {
-            accumulator[record.interval] = {
-              date: new Date(record.interval),
-              uptime: (record.hasRecords ? 1 : 0) + (accumulator[record.interval] ? accumulator[record.interval].uptime :0),
+        data: Object.values(results.flatMap((record) => record.records).reduce(
+          (acc, rec) => {
+            if (acc.hasOwnProperty(rec.interval)) {
+              acc[rec.interval].value += rec.hasRecords ? 1 : 0
+            } else {
+              acc[rec.interval] = {
+                date: new Date(rec.interval),
+                value: rec.hasRecords ? 1 : 0,
+              }
             }
-            return accumulator
-          }, {})).sort((a, b) => {
-          return a.date.valueOf() - b.date.valueOf()
-        }),
+            return acc
+          },
+          {} as { [interval: string]: DateDataPoint },
+        )).sort(sortByDate),
         parsing: {
           xAxisKey: 'date',
-          yAxisKey: 'uptime',
+          yAxisKey: 'value',
         },
       },
     ],
