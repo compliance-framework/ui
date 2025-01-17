@@ -15,11 +15,25 @@ export interface Observation {
   description: string
 }
 
+export interface Activity {
+  id: string
+  title: string
+  description: string
+}
+
+export interface Task {
+  id: string
+  title: string
+  description: string
+  activities: Activity[]
+}
+
 export interface Finding {
   id: string
   title: string
   description: string
   remarks: string
+  tasks: Task[]
   status?: string
 }
 
