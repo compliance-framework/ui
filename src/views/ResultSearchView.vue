@@ -134,8 +134,8 @@ async function search() {
 
     results.value = response.data.sort(function (a, b) {
       // Order results by their title for better UI consistency
-      const x = a.title.toLowerCase()
-      const y = b.title.toLowerCase()
+      const x = a.title ? a.title.toLowerCase() : ""
+      const y = b.title ? b.title.toLowerCase() : ""
 
       if (x > y) {
         return 1
