@@ -29,11 +29,10 @@
     >
       <div class="w-1/3">{{ result.title }}</div>
       <div class="grow-0 pr-12">
-        <!-- TODO We should integrate the finding status here instead of using observations vs. findings  -->
         <ResultStatusBadge
           :gray="result.observations.length"
-          :red="result.findings.length"
-          :green="result.observations.length - result.findings.length"
+          :red="result.findings.filter(finding => finding.status?.toLowerCase() == 'open').length"
+          :green="result.findings.filter(finding => finding.status?.toLowerCase() != 'open').length"
         ></ResultStatusBadge>
       </div>
       <div class="flex-wrap grow">
