@@ -64,6 +64,8 @@ export interface ComplianceBySearchResultRecord {
   title: string
   interval: string
   findings: number
+  findings_pass: number
+  findings_fail: number
   observations: number
   hasRecords: boolean
 }
