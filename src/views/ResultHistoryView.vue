@@ -34,8 +34,8 @@
       <div class="">
         <ResultStatusBadge
           :gray="result.observations.length"
-          :red="result.findings.length"
-          :green="result.observations.length - result.findings.length"
+          :red="result.findings.filter(finding => finding.status?.toLowerCase() == 'open').length"
+          :green="result.findings.filter(finding => finding.status?.toLowerCase() != 'open').length"
         ></ResultStatusBadge>
       </div>
       <div>
