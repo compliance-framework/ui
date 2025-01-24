@@ -80,14 +80,14 @@ export function calculateComplianceOverTimeData(
           backgroundColor: {
             axis: 'y',
             colors: {
-              100: 'rgba(30 64 175, .4)',
-              70: 'rgba(30 64 175, .3)',
-              30: 'rgba(30 64 175, .1)',
-              0: 'rgba(30 64 175, .0)',
+              100: 'rgba(128,128,128, .4)',
+              70: 'rgba(128,128,128, .3)',
+              30: 'rgba(128,128,128, .1)',
+              0: 'rgba(128,128,128, .0)',
             },
           },
         },
-        borderColor: 'rgba(30 64 175, 0.7)',
+        borderColor: 'rgba(128,128,128, 0.7)',
         data: intervalledReduce(records, "observations").sort(sortByDate),
         parsing: {
           xAxisKey: 'date',
