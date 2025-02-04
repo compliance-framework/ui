@@ -2,12 +2,14 @@ import { defineStore } from 'pinia'
 import { useConfigStore } from '@/stores/config.ts'
 import { type Filter } from '@/parsers/labelfilter.ts'
 
-export interface Plan {
-  _id: string
-  id: string
+export interface Metadata {
   title: string
-  status: string
-  filter: Filter
+}
+
+export interface Plan {
+  uuid: string
+  metadata: Metadata
+  resultFilter: Filter
 }
 
 export interface Observation {
@@ -29,13 +31,31 @@ export interface Task {
   activities: Activity[]
 }
 
+export interface FindingTargetImplementationStatus {
+  remarks: string
+  state: string
+}
+
+export interface FindingTargetStatus {
+  reason: string
+  remarks: string
+  state: string
+}
+
+export interface FindingTarget {
+  type: string
+  title: string
+  status: FindingTargetStatus
+  implementationStatus: FindingTargetImplementationStatus
+}
+
 export interface Finding {
   id: string
   title: string
   description: string
   remarks: string
   tasks: Task[]
-  status?: string
+  target: FindingTarget
 }
 
 export interface Log {
@@ -44,8 +64,7 @@ export interface Log {
 }
 
 export interface Result {
-  _id: string
-  id: string
+  uuid: string
   title: string
   start: string
   end: string
@@ -113,10 +132,10 @@ export const useApiStore = defineStore('api', () => {
     return (await response.json()) as DataResponse<Plan>
   }
 
-  async function getPlans(): Promise<Plan[]> {
+  async function getPlans(): Promise<DataResponse<Plan[]>> {
     const config = await configStore.getConfig()
     const response = await fetch(`${config.API_URL}/api/plans`)
-    return (await response.json()) as Plan[]
+    return (await response.json()) as DataResponse<Plan[]>
   }
 
   async function getResult(id: string): Promise<DataResponse<Result>> {

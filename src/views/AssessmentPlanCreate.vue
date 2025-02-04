@@ -8,7 +8,7 @@
         <label for="name" class="block text-sm font-medium text-gray-700">Name</label>
         <input
           type="text"
-          v-model="plan.title"
+          v-model="plan.metadata.title"
           id="name"
           name="name"
           required
@@ -22,7 +22,6 @@
           v-model="filter"
           id="filter"
           name="filter"
-          required
           class="mt-1 w-full rounded-md border-black border px-4 py-2 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
         />
       </div>
@@ -46,7 +45,7 @@ import { FilterParser } from '@/parsers/labelfilter.ts'
 const router = useRouter();
 const route = useRoute();
 const apiStore = useApiStore();
-const plan = ref<Plan>({} as Plan);
+const plan = ref<Plan>({metadata: {}} as Plan);
 
 const filter = ref<string>("");
 
@@ -62,7 +61,7 @@ async function createPlan() {
     const newPlan = await apiStore.createPlan(plan.value, planfilter)
     return router.push({
       name: 'assessment-plan.view',
-      params: { id: newPlan.id },
+      params: { id: newPlan.uuid },
     });
   } catch (error) {
     console.error(error);

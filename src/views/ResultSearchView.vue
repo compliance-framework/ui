@@ -40,7 +40,7 @@
             <BIconSearch class="mr-2"></BIconSearch>
             Search
           </button>
-          <button @click="save" class="bg-blue-800 text-white hover:bg-blue-700 p-3 rounded-r-md">
+          <button @click.prevent="save" class="bg-blue-800 text-white hover:bg-blue-700 p-3 rounded-r-md">
             <BIconFloppy></BIconFloppy>
           </button>
         </div>
@@ -50,14 +50,14 @@
       <div
         class="flex items-center border-t first:border-none hover:bg-zinc-100 py-2 px-2"
         v-for="result in results"
-        :key="result.id"
+        :key="result.uuid"
       >
         <div class="w-1/3">{{ result.title }}</div>
         <div class="grow-0 pr-12">
           <ResultStatusBadge
             :gray="result.observations.length"
-            :red="result.findings.filter(finding => finding.status?.toLowerCase() == 'open').length"
-            :green="result.findings.filter(finding => finding.status?.toLowerCase() != 'open').length"
+            :red="result.findings.filter(finding => finding.target.status.state?.toLowerCase() == 'open').length"
+            :green="result.findings.filter(finding => finding.target.status.state?.toLowerCase() != 'open').length"
           ></ResultStatusBadge>
         </div>
         <div class="flex-wrap grow">
@@ -71,7 +71,7 @@
           </RouterLink>
           <RouterLink
             class="bg-blue-800 hover:bg-clue-700 text-white px-4 py-1 rounded-md text-sm"
-            :to="{ name: 'assessment-plan-result', params: { id: result._id } }"
+            :to="{ name: 'assessment-plan-result', params: { id: result.uuid } }"
             >View
           </RouterLink>
         </div>

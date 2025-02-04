@@ -55,11 +55,11 @@ export function useCharts() {
     elements: {
       point: {
         radius: 0,
-        hitRadius: 1,
-        hoverRadius: 2,
+        hitRadius: 2,
+        hoverRadius: 4,
       },
       line: {
-        tension: 0.5,
+        cubicInterpolationMode: 'monotone',
         borderWidth: 2,
         fill: true,
       },

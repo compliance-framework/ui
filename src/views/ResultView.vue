@@ -34,12 +34,12 @@
             <span
               :class="[
                 'inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset',
-                `bg-${getFindingStatusColor(finding.status)}-50`,
-                `text-${getFindingStatusColor(finding.status)}-800`,
-                `ring-${getFindingStatusColor(finding.status)}-600/20`,
+                `bg-${getFindingStatusColor(finding.target.status.state)}-50`,
+                `text-${getFindingStatusColor(finding.target.status.state)}-800`,
+                `ring-${getFindingStatusColor(finding.target.status.state)}-600/20`,
               ]"
             >
-              {{ finding.status }}
+              {{ finding.target.status.state.toUpperCase() }}
             </span>
           </p>
           <p class="pt-1">{{ finding.description }}</p>
