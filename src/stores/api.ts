@@ -13,7 +13,7 @@ export interface Plan {
 }
 
 export interface Observation {
-  id: string
+  uuid: string
   title: string
   description: string
 }
@@ -50,7 +50,7 @@ export interface FindingTarget {
 }
 
 export interface Finding {
-  id: string
+  uuid: string
   title: string
   description: string
   remarks: string
