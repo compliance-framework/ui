@@ -5,13 +5,13 @@
       <div
         class="grid grid-cols-2 gap-4 items-center border-t first:border-none hover:bg-zinc-100 py-1"
         v-for="plan in plans"
-        :key="plan._id"
+        :key="plan.uuid"
       >
-        <div class="pl-4">{{ plan.title }}</div>
+        <div class="pl-4">{{ plan.metadata.title }}</div>
         <div>
           <RouterLink
             class="bg-blue-800 hover:bg-clue-700 text-white px-4 py-1 rounded-md text-sm inline-block"
-            :to="{ name: 'assessment-plan.view', params: { id: plan._id } }"
+            :to="{ name: 'assessment-plan.view', params: { id: plan.uuid } }"
             >View
           </RouterLink>
         </div>
@@ -37,7 +37,7 @@ const plans = ref<Plan[]>([] as Plan[]);
 
 onMounted(() => {
   apiStore.getPlans().then((res) => {
-    plans.value = res;
+    plans.value = res.data;
   });
 });
 </script>

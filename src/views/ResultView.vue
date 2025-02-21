@@ -3,7 +3,7 @@
     {{ result.title }}
   </PageHeader>
   <PageSubHeader>
-    {{ result._id }}
+    {{ result.uuid }}
   </PageSubHeader>
   <div class="grid grid-cols-2 gap-4 mt-4">
     <PageCard>
@@ -11,7 +11,7 @@
       <div>
         <div
           v-for="(observation, index) in result.observations"
-          :key="observation.id"
+          :key="observation.uuid"
           class="px-4 py-2 hover:bg-zinc-100"
         >
           <p class="font-semibold">{{ index + 1 }}: {{ observation.title }}</p>
@@ -24,7 +24,7 @@
       <div>
         <div
           v-for="(finding) in result.findings"
-          :key="finding.id"
+          :key="finding.uuid"
           class="py-4 border-gray-200 last:border-b-0"
         >
           <p class="font-medium">
@@ -34,12 +34,12 @@
             <span
               :class="[
                 'inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset',
-                `bg-${getFindingStatusColor(finding.status)}-50`,
-                `text-${getFindingStatusColor(finding.status)}-800`,
-                `ring-${getFindingStatusColor(finding.status)}-600/20`,
+                `bg-${getFindingStatusColor(finding.target.status.state)}-50`,
+                `text-${getFindingStatusColor(finding.target.status.state)}-800`,
+                `ring-${getFindingStatusColor(finding.target.status.state)}-600/20`,
               ]"
             >
-              {{ finding.status }}
+              {{ finding.target.status.state.toUpperCase() }}
             </span>
           </p>
           <p class="pt-1">{{ finding.description }}</p>

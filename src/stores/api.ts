@@ -2,16 +2,18 @@ import { defineStore } from 'pinia'
 import { useConfigStore } from '@/stores/config.ts'
 import { type Filter } from '@/parsers/labelfilter.ts'
 
-export interface Plan {
-  _id: string
-  id: string
+export interface Metadata {
   title: string
-  status: string
-  filter: Filter
+}
+
+export interface Plan {
+  uuid: string
+  metadata: Metadata
+  resultFilter: Filter
 }
 
 export interface Observation {
-  id: string
+  uuid: string
   title: string
   description: string
 }
@@ -29,13 +31,31 @@ export interface Task {
   activities: Activity[]
 }
 
+export interface FindingTargetImplementationStatus {
+  remarks: string
+  state: string
+}
+
+export interface FindingTargetStatus {
+  reason: string
+  remarks: string
+  state: string
+}
+
+export interface FindingTarget {
+  type: string
+  title: string
+  status: FindingTargetStatus
+  implementationStatus: FindingTargetImplementationStatus
+}
+
 export interface Finding {
-  id: string
+  uuid: string
   title: string
   description: string
   remarks: string
   tasks: Task[]
-  status?: string
+  target: FindingTarget
 }
 
 export interface Log {
@@ -44,8 +64,7 @@ export interface Log {
 }
 
 export interface Result {
-  _id: string
-  id: string
+  uuid: string
   title: string
   start: string
   end: string
@@ -109,25 +128,25 @@ export const useApiStore = defineStore('api', () => {
 
   async function getPlan(id: string): Promise<DataResponse<Plan>> {
     const config = await configStore.getConfig()
-    const response = await fetch(`${config.API_URL}/api/plan/${id}`)
+    const response = await fetch(`${config.API_URL}/api/assessment-plans/${id}`)
     return (await response.json()) as DataResponse<Plan>
   }
 
-  async function getPlans(): Promise<Plan[]> {
+  async function getPlans(): Promise<DataResponse<Plan[]>> {
     const config = await configStore.getConfig()
-    const response = await fetch(`${config.API_URL}/api/plans`)
-    return (await response.json()) as Plan[]
+    const response = await fetch(`${config.API_URL}/api/assessment-plans`)
+    return (await response.json()) as DataResponse<Plan[]>
   }
 
   async function getResult(id: string): Promise<DataResponse<Result>> {
     const config = await configStore.getConfig()
-    const response = await fetch(`${config.API_URL}/api/results/${id}`)
+    const response = await fetch(`${config.API_URL}/api/assessment-results/${id}`)
     return (await response.json()) as DataResponse<Result>
   }
 
   async function searchResults(filter: Filter): Promise<DataResponse<Result[]>> {
     const config = await configStore.getConfig()
-    const response = await fetch(`${config.API_URL}/api/results/search`, {
+    const response = await fetch(`${config.API_URL}/api/assessment-results/search`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -146,7 +165,7 @@ export const useApiStore = defineStore('api', () => {
 
   async function getComplianceForSearch(filter: Filter): Promise<DataResponse<ComplianceBySearchResult[]>> {
     const config = await configStore.getConfig()
-    const response = await fetch(`${config.API_URL}/api/results/compliance-by-search`, {
+    const response = await fetch(`${config.API_URL}/api/assessment-results/compliance-by-search`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -165,7 +184,7 @@ export const useApiStore = defineStore('api', () => {
 
   async function getComplianceForStream(stream: string): Promise<DataResponse<ComplianceBySearchResult[]>> {
     const config = await configStore.getConfig()
-    const response = await fetch(`${config.API_URL}/api/results/compliance-by-stream`, {
+    const response = await fetch(`${config.API_URL}/api/assessment-results/compliance-by-stream`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -184,13 +203,13 @@ export const useApiStore = defineStore('api', () => {
 
   async function getPlanResults(id: string): Promise<DataResponse<Result[]>> {
     const config = await configStore.getConfig()
-    const response = await fetch(`${config.API_URL}/api/results/plan/${id}`)
+    const response = await fetch(`${config.API_URL}/api/assessment-results/plan/${id}`)
     return (await response.json()) as DataResponse<Result[]>
   }
 
   async function getStreamResults(streamId: string): Promise<DataResponse<Result[]>> {
     const config = await configStore.getConfig()
-    const response = await fetch(`${config.API_URL}/api/results/stream/${streamId}`)
+    const response = await fetch(`${config.API_URL}/api/assessment-results/stream/${streamId}`)
     return (await response.json()) as DataResponse<Result[]>
   }
 
