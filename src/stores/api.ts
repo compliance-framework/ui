@@ -128,25 +128,25 @@ export const useApiStore = defineStore('api', () => {
 
   async function getPlan(id: string): Promise<DataResponse<Plan>> {
     const config = await configStore.getConfig()
-    const response = await fetch(`${config.API_URL}/api/plan/${id}`)
+    const response = await fetch(`${config.API_URL}/api/assessment-plans/${id}`)
     return (await response.json()) as DataResponse<Plan>
   }
 
   async function getPlans(): Promise<DataResponse<Plan[]>> {
     const config = await configStore.getConfig()
-    const response = await fetch(`${config.API_URL}/api/plans`)
+    const response = await fetch(`${config.API_URL}/api/assessment-plans`)
     return (await response.json()) as DataResponse<Plan[]>
   }
 
   async function getResult(id: string): Promise<DataResponse<Result>> {
     const config = await configStore.getConfig()
-    const response = await fetch(`${config.API_URL}/api/results/${id}`)
+    const response = await fetch(`${config.API_URL}/api/assessment-results/${id}`)
     return (await response.json()) as DataResponse<Result>
   }
 
   async function searchResults(filter: Filter): Promise<DataResponse<Result[]>> {
     const config = await configStore.getConfig()
-    const response = await fetch(`${config.API_URL}/api/results/search`, {
+    const response = await fetch(`${config.API_URL}/api/assessment-results/search`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -165,7 +165,7 @@ export const useApiStore = defineStore('api', () => {
 
   async function getComplianceForSearch(filter: Filter): Promise<DataResponse<ComplianceBySearchResult[]>> {
     const config = await configStore.getConfig()
-    const response = await fetch(`${config.API_URL}/api/results/compliance-by-search`, {
+    const response = await fetch(`${config.API_URL}/api/assessment-results/compliance-by-search`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -184,7 +184,7 @@ export const useApiStore = defineStore('api', () => {
 
   async function getComplianceForStream(stream: string): Promise<DataResponse<ComplianceBySearchResult[]>> {
     const config = await configStore.getConfig()
-    const response = await fetch(`${config.API_URL}/api/results/compliance-by-stream`, {
+    const response = await fetch(`${config.API_URL}/api/assessment-results/compliance-by-stream`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -203,13 +203,13 @@ export const useApiStore = defineStore('api', () => {
 
   async function getPlanResults(id: string): Promise<DataResponse<Result[]>> {
     const config = await configStore.getConfig()
-    const response = await fetch(`${config.API_URL}/api/results/plan/${id}`)
+    const response = await fetch(`${config.API_URL}/api/assessment-results/plan/${id}`)
     return (await response.json()) as DataResponse<Result[]>
   }
 
   async function getStreamResults(streamId: string): Promise<DataResponse<Result[]>> {
     const config = await configStore.getConfig()
-    const response = await fetch(`${config.API_URL}/api/results/stream/${streamId}`)
+    const response = await fetch(`${config.API_URL}/api/assessment-results/stream/${streamId}`)
     return (await response.json()) as DataResponse<Result[]>
   }
 

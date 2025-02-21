@@ -56,8 +56,8 @@
         <div class="grow-0 pr-12">
           <ResultStatusBadge
             :gray="result.observations.length"
-            :red="result.findings.filter(finding => finding.target.status.state?.toLowerCase() == 'open').length"
-            :green="result.findings.filter(finding => finding.target.status.state?.toLowerCase() != 'open').length"
+            :red="result.findings.filter(finding => finding.target.status.state?.toLowerCase() != 'satisfied').length"
+            :green="result.findings.filter(finding => finding.target.status.state?.toLowerCase() == 'satisfied').length"
           ></ResultStatusBadge>
         </div>
         <div class="flex-wrap grow">
