@@ -33,9 +33,9 @@
       <div class="pl-2">{{ result.start }}</div>
       <div class="">
         <ResultStatusBadge
-          :gray="result.observations.length"
-          :red="result.findings.filter(finding => finding.target.status.state?.toLowerCase() != 'satisfied').length"
-          :green="result.findings.filter(finding => finding.target.status.state?.toLowerCase() == 'satisfied').length"
+          :gray="result.observations?.length"
+          :red="result.findings?.filter(finding => finding.target.status.state?.toLowerCase() != 'satisfied').length"
+          :green="result.findings?.filter(finding => finding.target.status.state?.toLowerCase() == 'satisfied').length"
         ></ResultStatusBadge>
       </div>
       <div>
