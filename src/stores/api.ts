@@ -103,7 +103,7 @@ export const useApiStore = defineStore('api', () => {
 
   async function createPlan(plan: Plan, filter: Filter): Promise<Plan> {
     const config = await configStore.getConfig()
-    const response = await fetch(`${config.API_URL}/api/plan`, {
+    const response = await fetch(`${config.API_URL}/api/assessment-plans`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
