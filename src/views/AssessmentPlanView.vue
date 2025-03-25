@@ -41,12 +41,12 @@
       <div>
         <RouterLink
           class="bg-gray-50 hover:bg-gray-200 text-blue-800 border border-blue-800 px-4 py-1 rounded-md text-sm mr-2"
-          :to="{ name: 'assessment-plan-result-history', params: { stream: result.streamId } }"
+          :to="{ name: 'finding-history', params: { stream: result.streamId } }"
         >History
         </RouterLink>
         <RouterLink
           class="bg-blue-800 hover:bg-clue-700 text-white px-4 py-1 rounded-md text-sm"
-          :to="{ name: 'assessment-plan-result', params: { id: result.uuid } }"
+          :to="{ name: 'finding-view', params: { id: result.uuid } }"
         >View
         </RouterLink>
       </div>

@@ -49,14 +49,14 @@ export interface FindingTarget {
   implementationStatus: FindingTargetImplementationStatus
 }
 
-export interface Finding {
-  uuid: string
-  title: string
-  description: string
-  remarks: string
-  tasks: Task[]
-  target: FindingTarget
-}
+// export interface Finding {
+//   uuid: string
+//   title: string
+//   description: string
+//   remarks: string
+//   tasks: Task[]
+//   target: FindingTarget
+// }
 
 export interface Log {
   title: string
@@ -70,7 +70,7 @@ export interface Result {
   end: string
   streamId: string
   observations: Observation[]
-  findings: Finding[]
+  // findings: Finding[]
   assessmentLogEntries: Log[]
   labels: LabelMap,
 }

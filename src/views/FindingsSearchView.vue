@@ -1,23 +1,23 @@
 <template>
-  <PageHeader>Results</PageHeader>
-  <PageSubHeader>Search for results using labels</PageSubHeader>
+  <PageHeader>Findings</PageHeader>
+  <PageSubHeader>Search for findings using labels</PageSubHeader>
   <div class="grid grid-cols-2 gap-4 mt-4">
-    <div class="bg-white rounded shadow">
-      <div class="px-4 pt-2">
-        <h3 class="text-lg font-semibold text-zinc-600">Compliance over time</h3>
-      </div>
-      <div class="h-32">
-        <ResultComplianceOverTimeChart :data="complianceChartData" />
-      </div>
-    </div>
-    <div class="bg-white rounded shadow">
-      <div class="px-4 pt-2">
-        <h3 class="text-lg font-semibold text-zinc-600">Agent health</h3>
-      </div>
-      <div class="h-32">
-        <ResultComplianceOverTimeChart :data="uptimeChartData" />
-      </div>
-    </div>
+<!--    <div class="bg-white rounded shadow">-->
+<!--      <div class="px-4 pt-2">-->
+<!--        <h3 class="text-lg font-semibold text-zinc-600">Compliance over time</h3>-->
+<!--      </div>-->
+<!--      <div class="h-32">-->
+<!--        <ResultComplianceOverTimeChart :data="complianceChartData" />-->
+<!--      </div>-->
+<!--    </div>-->
+<!--    <div class="bg-white rounded shadow">-->
+<!--      <div class="px-4 pt-2">-->
+<!--        <h3 class="text-lg font-semibold text-zinc-600">Agent health</h3>-->
+<!--      </div>-->
+<!--      <div class="h-32">-->
+<!--        <ResultComplianceOverTimeChart :data="uptimeChartData" />-->
+<!--      </div>-->
+<!--    </div>-->
   </div>
 
   <PageCard class="mt-4">
@@ -49,29 +49,25 @@
     <div class="mt-4">
       <div
         class="flex items-center border-t first:border-none hover:bg-zinc-100 py-2 px-2"
-        v-for="result in results"
-        :key="result.uuid"
+        v-for="finding in findings"
+        :key="finding.uuid"
       >
-        <div class="w-1/3">{{ result.title }}</div>
-        <div class="grow-0 pr-12">
-          <ResultStatusBadge
-            :gray="result.observations?.length"
-            :red="result.findings?.filter(finding => finding.target.status.state?.toLowerCase() != 'satisfied').length"
-            :green="result.findings?.filter(finding => finding.target.status.state?.toLowerCase() == 'satisfied').length"
-          ></ResultStatusBadge>
+        <div class="shrink-0 pr-4">
+          <ResultStatusBadge :state="finding.status.state?.toLowerCase()"></ResultStatusBadge>
         </div>
+        <div class="w-1/3">{{ finding.title }}</div>
         <div class="flex-wrap grow">
-          <LabelList :labels="viewableLabels(result.labels)" />
+          <LabelList :labels="viewableLabels(finding.labels)" />
         </div>
         <div>
           <RouterLink
             class="bg-gray-50 hover:bg-gray-200 text-blue-800 border border-blue-800 px-4 py-1 rounded-md text-sm mr-2"
-            :to="{ name: 'assessment-plan-result-history', params: { stream: result.streamId } }"
+            :to="{ name: 'finding-history', params: { stream: finding.uuid } }"
             >History
           </RouterLink>
           <RouterLink
             class="bg-blue-800 hover:bg-clue-700 text-white px-4 py-1 rounded-md text-sm"
-            :to="{ name: 'assessment-plan-result', params: { id: result.uuid } }"
+            :to="{ name: 'finding-view', params: { id: finding._id } }"
             >View
           </RouterLink>
         </div>
@@ -85,20 +81,21 @@ import { useRoute, useRouter } from 'vue-router'
 import PageHeader from '@/components/PageHeader.vue'
 import PageCard from '@/components/PageCard.vue'
 import PageSubHeader from '@/components/PageSubHeader.vue'
-import { type LabelMap, type Result, useApiStore } from '@/stores/api'
+import { type LabelMap } from '@/stores/api'
 import { FilterParser } from '@/parsers/labelfilter.ts'
 import { BIconFloppy, BIconSearch } from 'bootstrap-icons-vue'
 import LabelList from '@/components/LabelList.vue'
-import type { ChartData } from 'chart.js'
-import {
-  calculateAgentUptimeData,
-  calculateComplianceOverTimeData,
-  type DateDataPoint,
-} from '@/parsers/results.ts'
-import ResultComplianceOverTimeChart from '@/components/ResultComplianceOverTimeChart.vue'
+// import type { ChartData } from 'chart.js'
+// import {
+//   calculateAgentUptimeData,
+//   calculateComplianceOverTimeData,
+//   type DateDataPoint,
+// } from '@/parsers/results.ts'
+// import ResultComplianceOverTimeChart from '@/components/ResultComplianceOverTimeChart.vue'
 import ResultStatusBadge from '@/components/ResultStatusBadge.vue'
+import { type Finding, useFindingsStore } from '@/stores/findings.ts'
 
-const apiStore = useApiStore()
+const findingsStore = useFindingsStore()
 const route = useRoute()
 const router = useRouter()
 
@@ -106,15 +103,15 @@ const filter = ref<string>('')
 if (route.query.filter) {
   filter.value = route.query.filter as string
 }
-const results = ref<Result[]>([])
-const complianceChartData = ref<ChartData<'line', DateDataPoint[]>>({
-  labels: [],
-  datasets: [],
-})
-const uptimeChartData = ref<ChartData<'line', DateDataPoint[]>>({
-  labels: [],
-  datasets: [],
-})
+const findings = ref<Finding[]>([])
+// const complianceChartData = ref<ChartData<'line', DateDataPoint[]>>({
+//   labels: [],
+//   datasets: [],
+// })
+// const uptimeChartData = ref<ChartData<'line', DateDataPoint[]>>({
+//   labels: [],
+//   datasets: [],
+// })
 
 function viewableLabels(labels: LabelMap) {
   const viewable: LabelMap = {}
@@ -129,12 +126,11 @@ function viewableLabels(labels: LabelMap) {
 async function search() {
   const query = new FilterParser(filter.value).parse()
   await router.push({ query: { filter: filter.value }})
-  apiStore.searchResults(query).then((response) => {
-
-    results.value = response.data.sort(function (a, b) {
+  findingsStore.searchFindings(query).then((response) => {
+    findings.value = response.data.sort(function (a, b) {
       // Order results by their title for better UI consistency
-      const x = a.title ? a.title.toLowerCase() : ""
-      const y = b.title ? b.title.toLowerCase() : ""
+      const x = new Date(a.collected);
+      const y = new Date(a.collected);
 
       if (x > y) {
         return 1
@@ -144,12 +140,13 @@ async function search() {
       }
       return 0
     })
+    // results.value = response.data
   })
 
-  apiStore.getComplianceForSearch(query).then((response) => {
-    complianceChartData.value = calculateComplianceOverTimeData(response.data)
-    uptimeChartData.value = calculateAgentUptimeData(response.data)
-  })
+  // apiStore.getComplianceForSearch(query).then((response) => {
+  //   complianceChartData.value = calculateComplianceOverTimeData(response.data)
+  //   uptimeChartData.value = calculateAgentUptimeData(response.data)
+  // })
 }
 
 async function save() {
