@@ -2,22 +2,22 @@
   <PageHeader>Findings</PageHeader>
   <PageSubHeader>Search for findings using labels</PageSubHeader>
   <div class="grid grid-cols-2 gap-4 mt-4">
-<!--    <div class="bg-white rounded shadow">-->
-<!--      <div class="px-4 pt-2">-->
-<!--        <h3 class="text-lg font-semibold text-zinc-600">Compliance over time</h3>-->
-<!--      </div>-->
-<!--      <div class="h-32">-->
-<!--        <ResultComplianceOverTimeChart :data="complianceChartData" />-->
-<!--      </div>-->
-<!--    </div>-->
-<!--    <div class="bg-white rounded shadow">-->
-<!--      <div class="px-4 pt-2">-->
-<!--        <h3 class="text-lg font-semibold text-zinc-600">Agent health</h3>-->
-<!--      </div>-->
-<!--      <div class="h-32">-->
-<!--        <ResultComplianceOverTimeChart :data="uptimeChartData" />-->
-<!--      </div>-->
-<!--    </div>-->
+    <div class="bg-white rounded shadow">
+      <div class="px-4 pt-2">
+        <h3 class="text-lg font-semibold text-zinc-600">Compliance over time</h3>
+      </div>
+      <div class="h-32">
+        <ResultComplianceOverTimeChart :data="complianceChartData" />
+      </div>
+    </div>
+    <div class="bg-white rounded shadow">
+      <div class="px-4 pt-2">
+        <h3 class="text-lg font-semibold text-zinc-600">Agent health</h3>
+      </div>
+      <div class="h-32">
+        <ResultComplianceOverTimeChart :data="uptimeChartData" />
+      </div>
+    </div>
   </div>
 
   <PageCard class="mt-4">
@@ -85,13 +85,13 @@ import { type LabelMap } from '@/stores/api'
 import { FilterParser } from '@/parsers/labelfilter.ts'
 import { BIconFloppy, BIconSearch } from 'bootstrap-icons-vue'
 import LabelList from '@/components/LabelList.vue'
-// import type { ChartData } from 'chart.js'
-// import {
-//   calculateAgentUptimeData,
-//   calculateComplianceOverTimeData,
-//   type DateDataPoint,
-// } from '@/parsers/results.ts'
-// import ResultComplianceOverTimeChart from '@/components/ResultComplianceOverTimeChart.vue'
+import type { ChartData } from 'chart.js'
+import {
+  calculateAgentUptimeData,
+  calculateComplianceOverTimeData,
+  type DateDataPoint,
+} from '@/parsers/findings.ts'
+import ResultComplianceOverTimeChart from '@/components/ResultComplianceOverTimeChart.vue'
 import ResultStatusBadge from '@/components/ResultStatusBadge.vue'
 import { type Finding, useFindingsStore } from '@/stores/findings.ts'
 
@@ -104,14 +104,14 @@ if (route.query.filter) {
   filter.value = route.query.filter as string
 }
 const findings = ref<Finding[]>([])
-// const complianceChartData = ref<ChartData<'line', DateDataPoint[]>>({
-//   labels: [],
-//   datasets: [],
-// })
-// const uptimeChartData = ref<ChartData<'line', DateDataPoint[]>>({
-//   labels: [],
-//   datasets: [],
-// })
+const complianceChartData = ref<ChartData<'line', DateDataPoint[]>>({
+  labels: [],
+  datasets: [],
+})
+const uptimeChartData = ref<ChartData<'line', DateDataPoint[]>>({
+  labels: [],
+  datasets: [],
+})
 
 function viewableLabels(labels: LabelMap) {
   const viewable: LabelMap = {}
@@ -130,7 +130,7 @@ async function search() {
     findings.value = response.data.sort(function (a, b) {
       // Order results by their title for better UI consistency
       const x = new Date(a.collected);
-      const y = new Date(a.collected);
+      const y = new Date(b.collected);
 
       if (x > y) {
         return 1
@@ -143,10 +143,10 @@ async function search() {
     // results.value = response.data
   })
 
-  // apiStore.getComplianceForSearch(query).then((response) => {
-  //   complianceChartData.value = calculateComplianceOverTimeData(response.data)
-  //   uptimeChartData.value = calculateAgentUptimeData(response.data)
-  // })
+  findingsStore.getComplianceForSearch(query).then((response) => {
+    complianceChartData.value = calculateComplianceOverTimeData(response.data)
+    // uptimeChartData.value = calculateAgentUptimeData(response.data)
+  })
 }
 
 async function save() {

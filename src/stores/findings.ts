@@ -22,19 +22,14 @@ export interface Finding {
   props?: Property[];
 }
 
-export interface ComplianceBySearchResultRecord {
-  title: string
-  interval: string
-  findings: number
-  findings_pass: number
-  findings_fail: number
-  observations: number
-  hasRecords: boolean
+export interface ComplianceBySearchStatus {
+  status: string
+  count: number
 }
 
-export interface ComplianceBySearchResult {
-  id: string
-  records: ComplianceBySearchResultRecord[]
+export interface ComplianceBySearch {
+  interval: string
+  statuses: ComplianceBySearchStatus[]
 }
 
 export interface DataResponse<T> {
@@ -69,24 +64,24 @@ export const useFindingsStore = defineStore('findings', () => {
     return (await response.json()) as DataResponse<Finding[]>
   }
 
-  // async function getComplianceForSearch(filter: Filter): Promise<DataResponse<ComplianceBySearchResult[]>> {
-  //   const config = await configStore.getConfig()
-  //   const response = await fetch(`${config.API_URL}/api/assessment-results/compliance-by-search`, {
-  //     method: 'POST',
-  //     headers: {
-  //       'Content-Type': 'application/json',
-  //     },
-  //     body: JSON.stringify({
-  //       "filter": filter,
-  //     }),
-  //   })
-  //
-  //   if (!response.ok) {
-  //     throw new Error(`Error: ${response.statusText}`)
-  //   }
-  //
-  //   return (await response.json()) as DataResponse<ComplianceBySearchResult[]>
-  // }
+  async function getComplianceForSearch(filter: Filter): Promise<DataResponse<ComplianceBySearch[]>> {
+    const config = await configStore.getConfig()
+    const response = await fetch(`${config.API_URL}/api/findings/compliance-by-search`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        "filter": filter,
+      }),
+    })
+
+    if (!response.ok) {
+      throw new Error(`Error: ${response.statusText}`)
+    }
+
+    return (await response.json()) as DataResponse<ComplianceBySearch[]>
+  }
   //
   // async function getComplianceForStream(stream: string): Promise<DataResponse<ComplianceBySearchResult[]>> {
   //   const config = await configStore.getConfig()
@@ -116,7 +111,7 @@ export const useFindingsStore = defineStore('findings', () => {
   return {
     // getResult,
     searchFindings: searchFindings,
-    // getComplianceForSearch,
+    getComplianceForSearch,
     // getComplianceForStream,
     // getStreamResults,
   }

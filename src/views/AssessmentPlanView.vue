@@ -84,7 +84,7 @@ import LabelList from '@/components/LabelList.vue'
 import {
   calculateAgentUptimeData,
   calculateComplianceOverTimeData, type DateDataPoint
-} from '@/parsers/results.ts'
+} from '@/parsers/findings.ts'
 import ResultComplianceOverTimeChart from '@/components/ResultComplianceOverTimeChart.vue'
 import ResultStatusBadge from '@/components/ResultStatusBadge.vue'
 
