@@ -1,72 +1,73 @@
-import {
-  type ComplianceBySearchResult,
-  type ComplianceBySearchResultRecord,
-  type Result,
-} from '../stores/api'
-import { Chart, type ChartData, type ChartDataSets } from 'chart.js'
-import type { ComplianceBySearch } from '@/stores/findings.ts'
+// import {
+//   type ComplianceBySearchResult,
+//   type ComplianceBySearchResultRecord,
+//   type Result,
+// } from '../stores/api'
+import { type ChartData } from 'chart.js';
+import type { ComplianceBySearch } from '@/stores/findings.ts';
 
 export interface DateDataPoint {
-  interval: Date
-  count: number
+  interval: Date;
+  count: number;
 }
 
 type RGB = {
-  r: number
-  g: number
-  b: number
-}
+  r: number;
+  g: number;
+  b: number;
+};
 
 function getStatusColour(status: string): RGB {
   let color: RGB = {
     r: 128,
     g: 128,
     b: 128,
-  }
+  };
   if (status === 'not satisfied') {
     color = {
       r: 253,
       g: 92,
       b: 110,
-    }
+    };
   } else if (status === 'satisfied') {
     color = {
       r: 20,
       g: 184,
       b: 166,
-    }
+    };
   }
 
-  return color
+  return color;
 }
 
 export function calculateComplianceOverTimeData(
   complianceData: ComplianceBySearch[],
 ): ChartData<'line', DateDataPoint[]> {
-
   // First we need to build up the status map so we can then construct a data point set.
 
-  const sortedComplianceData = complianceData.map((dataPoint) => {
-    return {
-      interval: new Date(dataPoint.interval),
-      statuses: dataPoint.statuses,
-    }
-  }).sort((a, b) => {
-    // Order results by their title for better UI consistency
-    const x = a.interval;
-    const y = b.interval;
+  const sortedComplianceData = complianceData
+    .map((dataPoint) => {
+      return {
+        interval: new Date(dataPoint.interval),
+        statuses: dataPoint.statuses,
+      };
+    })
+    .sort((a, b) => {
+      // Order results by their title for better UI consistency
+      const x = a.interval;
+      const y = b.interval;
 
-    if (x > y) {
-      return 1
-    }
-    if (x < y) {
-      return -1
-    }
-    return 0
-  })
+      if (x > y) {
+        return 1;
+      }
+      if (x < y) {
+        return -1;
+      }
+      return 0;
+    });
 
   // We want to split the data by the status names, so we can build different tracks for them.
-  const datasets: {[key: string]: DateDataPoint[];} = {};
+  const datasets: { [key: string]: DateDataPoint[] } = {};
 
   for (const compliance of sortedComplianceData) {
     for (const status of compliance.statuses) {
@@ -81,21 +82,19 @@ export function calculateComplianceOverTimeData(
     }
   }
 
-  console.log(datasets);
-
   const finalDataset = [];
   for (const [status, data] of Object.entries(datasets)) {
-    const color = getStatusColour(status)
+    const color = getStatusColour(status);
     finalDataset.push({
       label: status,
       gradient: {
         backgroundColor: {
           axis: 'y',
           colors: {
-            100: `rgba(${color.r},${color.g},${color.b}, .4)`,
-            70: `rgba(${color.r},${color.g},${color.b}, .3)`,
-            30: `rgba(${color.r},${color.g},${color.b}, .1)`,
-            0: `rgba(${color.r},${color.g},${color.b}, .0)`,
+              100: `rgba(${color.r},${color.g},${color.b}, .5)`,
+              // 70: `rgba(${color.r},${color.g},${color.b}, .6)`,
+              // 30: `rgba(${color.r},${color.g},${color.b}, .4)`,
+              0: `rgba(${color.r},${color.g},${color.b}, 0)`,
           },
         },
       },
@@ -105,52 +104,20 @@ export function calculateComplianceOverTimeData(
         xAxisKey: 'interval',
         yAxisKey: 'count',
       },
-    })
+    });
   }
 
-  return {
-    datasets: finalDataset as ChartDataSets[],
-  }
-}
+  finalDataset.sort((x, y) => {
+    if (x.label > y.label) {
+      return -1;
+    }
+    if (x.label < y.label) {
+      return 1;
+    }
+    return 0;
+  });
 
-export function calculateAgentUptimeData(
-  results: ComplianceBySearchResult[],
-): ChartData<'line', DateDataPoint[]> {
   return {
-    datasets: [
-      {
-        label: 'HeartBeats',
-        gradient: {
-          backgroundColor: {
-            axis: 'y',
-            colors: {
-              100: 'rgba(20,184,166, .4)',
-              70: 'rgba(20,184,166, .3)',
-              30: 'rgba(20,184,166, .1)',
-              0: 'rgba(20,184,166, .0)',
-            },
-          },
-        },
-        borderColor: 'rgba(20,184,166, 0.7)',
-        data: Object.values(results.flatMap((record) => record.records).reduce(
-          (acc, rec) => {
-            if (acc.hasOwnProperty(rec.interval)) {
-              acc[rec.interval].value += rec.hasRecords ? 1 : 0
-            } else {
-              acc[rec.interval] = {
-                date: new Date(rec.interval),
-                value: rec.hasRecords ? 1 : 0,
-              }
-            }
-            return acc
-          },
-          {} as { [interval: string]: DateDataPoint },
-        )).sort(sortByDate),
-        parsing: {
-          xAxisKey: 'date',
-          yAxisKey: 'value',
-        },
-      },
-    ],
-  }
+    datasets: finalDataset,
+  };
 }
