@@ -43,6 +43,11 @@ const authenticatedRoutes = [
     component: () => import('../views/ResultHistoryView.vue'),
   },
   {
+    path: '/subjects',
+    name: 'subjects',
+    component: () => import('../views/SubjectsView.vue'),
+  },
+  {
     path: '/subject/:subjectId',
     name: 'subject-crud',
     component: () => import('../views/SubjectCRUDView.vue'),

@@ -25,18 +25,27 @@
         <input v-model="form.uuid" class="w-full p-2 border rounded" disabled />
       </div>
 
-      <button type="submit" class="bg-blue-500 text-white p-2 rounded">Save Changes</button>
+      <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">Save Changes</button>
     </form>
+
+    <div class="mt-4 text-left">
+      <button
+        @click="deleteSubject"
+        class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:ring-2 focus:ring-red-500">
+        Delete Subject
+      </button>
+    </div>
   </PageCard>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import PageHeader from '@/components/PageHeader.vue'
 import PageCard from '@/components/PageCard.vue'
 import { useApiStore, type Subject, type DataResponse } from '@/stores/api'
 const apiStore = useApiStore()
+const router = useRouter()
 
 const route = useRoute()
 const subjectId = computed(() => route.params.subjectId as string)
@@ -60,9 +69,19 @@ onMounted(async () => {
 })
 
 const updateSubject = async () => {
-  apiStore.patchBySubjectId(subjectId.value, form.value.title, form.value.remarks ).then((subject: DataResponse<Subject>) => {
+  apiStore.patchBySubjectId(subjectId.value, form.value.title, form.value.remarks).then((subject: DataResponse<Subject>) => {
     console.log('Updated!', subject)
     window.location.reload();
   })
+}
+
+const deleteSubject = async () => {
+  try {
+    await apiStore.deleteSubjectById(subjectId.value)
+    console.log('Subject deleted successfully')
+    router.push('/subjects')
+  } catch (error) {
+    console.error('Failed to delete subject:', error)
+  }
 }
 </script>

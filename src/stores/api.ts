@@ -260,6 +260,22 @@ export const useApiStore = defineStore('api', () => {
     })
     return (await response.json()) as DataResponse<Subject>
   }
+  async function getAllSubjects() {
+    const config = await configStore.getConfig()
+    const response = await fetch(`${config.API_URL}/api/subjects`)
+    return (await response.json()) as DataResponse<Subject[]>
+  }
+
+  async function deleteSubjectById(subjectId: string) {
+    const config = await configStore.getConfig()
+    const response = await fetch(`${config.API_URL}/api/subjects/${subjectId}`, {
+      method: 'DELETE'
+    })
+    if (!response.ok) {
+      throw new Error('Failed to delete subject')
+    }
+    return
+  }
 
   return {
     getPlan,
@@ -273,5 +289,7 @@ export const useApiStore = defineStore('api', () => {
     getStreamResults,
     getSubjectById,
     patchBySubjectId,
+    getAllSubjects,
+    deleteSubjectById,
   }
 })
