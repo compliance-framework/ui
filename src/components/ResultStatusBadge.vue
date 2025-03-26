@@ -1,17 +1,14 @@
 <template>
   <div class="inline-flex">
-    <div class="text-base text-center w-8 font-light bg-green-700 rounded-l-full text-white">
-      {{ green }}
+    <div v-if="state == 'satisfied'" class="text-base text-center w-4 h-4 font-light bg-green-700 rounded-full text-white">
     </div>
-    <div class="text-base text-center w-8 font-light bg-zinc-400 text-white border-x border-white">
-      {{ gray }}
+    <div v-else-if="state == 'not satisfied'" class="text-base text-center w-4 h-4 font-light bg-red-600 rounded-full text-white">
     </div>
-    <div class="text-base text-center w-8 font-light bg-red-600 rounded-r-full text-white">
-      {{ red }}
+    <div v-else class="text-base text-center w-4 h-4 font-light bg-zinc-400 rounded-full text-white">
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-defineProps(['green', 'gray', 'red'])
+defineProps(['state'])
 </script>
