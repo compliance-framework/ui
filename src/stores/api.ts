@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { useConfigStore } from '@/stores/config.ts'
 import { type Filter } from '@/parsers/labelfilter.ts'
+import type { Subject } from './subjects'
 
 export interface Metadata {
   title: string
@@ -62,6 +63,7 @@ export interface Log {
   title: string
   description: string
 }
+
 
 export interface Result {
   uuid: string
@@ -213,6 +215,41 @@ export const useApiStore = defineStore('api', () => {
     return (await response.json()) as DataResponse<Result[]>
   }
 
+  async function getSubjectById(subjectId: string) {
+    const config = await configStore.getConfig()
+    const response = await fetch(`${config.API_URL}/api/subjects/${subjectId}`)
+    return (await response.json()) as DataResponse<Subject>
+  }
+
+  async function patchBySubjectId(subjectId: string, title: string, remarks: string) {
+    const config = await configStore.getConfig()
+    const response = await fetch(`${config.API_URL}/api/subjects/${subjectId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title,
+        remarks,
+      })
+    })
+    return (await response.json()) as DataResponse<Subject>
+  }
+  async function getAllSubjects() {
+    const config = await configStore.getConfig()
+    const response = await fetch(`${config.API_URL}/api/subjects`)
+    return (await response.json()) as DataResponse<Subject[]>
+  }
+
+  async function deleteSubjectById(subjectId: string) {
+    const config = await configStore.getConfig()
+    const response = await fetch(`${config.API_URL}/api/subjects/${subjectId}`, {
+      method: 'DELETE'
+    })
+    if (!response.ok) {
+      throw new Error('Failed to delete subject')
+    }
+    return
+  }
+
   return {
     getPlan,
     getPlans,
@@ -223,5 +260,9 @@ export const useApiStore = defineStore('api', () => {
     getComplianceForStream,
     getPlanResults,
     getStreamResults,
+    getSubjectById,
+    patchBySubjectId,
+    getAllSubjects,
+    deleteSubjectById,
   }
 })
