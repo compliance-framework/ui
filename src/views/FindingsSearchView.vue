@@ -62,7 +62,7 @@
         <div>
           <RouterLink
             class="bg-gray-50 hover:bg-gray-200 text-blue-800 border border-blue-800 px-4 py-1 rounded-md text-sm mr-2"
-            :to="{ name: 'finding-history', params: { stream: finding.uuid } }"
+            :to="{ name: 'finding-history', params: { uuid: finding.uuid } }"
             >History
           </RouterLink>
           <RouterLink
@@ -87,7 +87,6 @@ import { BIconFloppy, BIconSearch } from 'bootstrap-icons-vue'
 import LabelList from '@/components/LabelList.vue'
 import type { ChartData } from 'chart.js'
 import {
-  calculateAgentUptimeData,
   calculateComplianceOverTimeData,
   type DateDataPoint,
 } from '@/parsers/findings.ts'
@@ -126,7 +125,7 @@ function viewableLabels(labels: LabelMap) {
 async function search() {
   const query = new FilterParser(filter.value).parse()
   await router.push({ query: { filter: filter.value }})
-  findingsStore.searchFindings(query).then((response) => {
+  findingsStore.search(query).then((response) => {
     findings.value = response.data.sort(function (a, b) {
       // Order results by their title for better UI consistency
       const x = new Date(a.collected);

@@ -27,7 +27,7 @@ const authenticatedRoutes = [
     component: () => import('../views/AssessmentPlanView.vue'),
   },
   {
-    path: '/assessment-plan-result/:id',
+    path: '/findings/:id',
     name: 'finding-view',
     // route level code-splitting
     // this generates a separate chunk (About.[hash].js) for this route
@@ -35,12 +35,12 @@ const authenticatedRoutes = [
     component: () => import('../views/ResultView.vue'),
   },
   {
-    path: '/assessment-plan-result/history/:stream',
+    path: '/findings/history/:uuid',
     name: 'finding-history',
     // route level code-splitting
     // this generates a separate chunk (About.[hash].js) for this route
     // which is lazy-loaded when the route is visited.
-    component: () => import('../views/ResultHistoryView.vue'),
+    component: () => import('../views/FindingsHistoryView.vue'),
   },
   {
     path: '/findings',

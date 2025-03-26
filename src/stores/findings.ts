@@ -22,14 +22,14 @@ export interface Finding {
   props?: Property[];
 }
 
-export interface ComplianceBySearchStatus {
+export interface ComplianceIntervalStatus {
   status: string
   count: number
 }
 
-export interface ComplianceBySearch {
+export interface ComplianceInterval {
   interval: string
-  statuses: ComplianceBySearchStatus[]
+  statuses: ComplianceIntervalStatus[]
 }
 
 export interface DataResponse<T> {
@@ -45,7 +45,7 @@ export const useFindingsStore = defineStore('findings', () => {
   //   return (await response.json()) as DataResponse<Result>
   // }
 
-  async function searchFindings(filter: Filter): Promise<DataResponse<Finding[]>> {
+  async function search(filter: Filter): Promise<DataResponse<Finding[]>> {
     const config = await configStore.getConfig()
     const response = await fetch(`${config.API_URL}/api/findings/search`, {
       method: 'POST',
@@ -64,7 +64,23 @@ export const useFindingsStore = defineStore('findings', () => {
     return (await response.json()) as DataResponse<Finding[]>
   }
 
-  async function getComplianceForSearch(filter: Filter): Promise<DataResponse<ComplianceBySearch[]>> {
+  async function history(uuid: string): Promise<DataResponse<Finding[]>> {
+    const config = await configStore.getConfig()
+    const response = await fetch(`${config.API_URL}/api/findings/history/${uuid}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+
+    if (!response.ok) {
+      throw new Error(`Error: ${response.statusText}`)
+    }
+
+    return (await response.json()) as DataResponse<Finding[]>
+  }
+
+  async function getComplianceForSearch(filter: Filter): Promise<DataResponse<ComplianceInterval[]>> {
     const config = await configStore.getConfig()
     const response = await fetch(`${config.API_URL}/api/findings/compliance-by-search`, {
       method: 'POST',
@@ -80,28 +96,25 @@ export const useFindingsStore = defineStore('findings', () => {
       throw new Error(`Error: ${response.statusText}`)
     }
 
-    return (await response.json()) as DataResponse<ComplianceBySearch[]>
+    return (await response.json()) as DataResponse<ComplianceInterval[]>
   }
-  //
-  // async function getComplianceForStream(stream: string): Promise<DataResponse<ComplianceBySearchResult[]>> {
-  //   const config = await configStore.getConfig()
-  //   const response = await fetch(`${config.API_URL}/api/assessment-results/compliance-by-stream`, {
-  //     method: 'POST',
-  //     headers: {
-  //       'Content-Type': 'application/json',
-  //     },
-  //     body: JSON.stringify({
-  //       "streamId": stream,
-  //     }),
-  //   })
-  //
-  //   if (!response.ok) {
-  //     throw new Error(`Error: ${response.statusText}`)
-  //   }
-  //
-  //   return (await response.json()) as DataResponse<ComplianceBySearchResult[]>
-  // }
-  //
+
+  async function getComplianceForUUID(uuid: string): Promise<DataResponse<ComplianceInterval[]>> {
+    const config = await configStore.getConfig()
+    const response = await fetch(`${config.API_URL}/api/findings/compliance-by-uuid/${uuid}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+
+    if (!response.ok) {
+      throw new Error(`Error: ${response.statusText}`)
+    }
+
+    return (await response.json()) as DataResponse<ComplianceInterval[]>
+  }
+
   // async function getStreamResults(streamId: string): Promise<DataResponse<Result[]>> {
   //   const config = await configStore.getConfig()
   //   const response = await fetch(`${config.API_URL}/api/assessment-results/stream/${streamId}`)
@@ -110,9 +123,10 @@ export const useFindingsStore = defineStore('findings', () => {
 
   return {
     // getResult,
-    searchFindings: searchFindings,
+    search: search,
+    history: history,
     getComplianceForSearch,
-    // getComplianceForStream,
+    getComplianceForUUID,
     // getStreamResults,
   }
 })
