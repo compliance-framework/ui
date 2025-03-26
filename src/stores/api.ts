@@ -63,6 +63,35 @@ export interface Log {
   description: string
 }
 
+export interface Link {
+  href: string
+  mediaType?: string
+  rel?: string
+  resourceFragment?: string
+  text?: string
+}
+
+export interface Property {
+  class?: string
+  group?: string
+  name: string
+  ns?: string
+  remarks?: string
+  uuid?: string
+  value: string
+}
+
+export interface Subject {
+  _id: string
+  type: string
+  title?: string
+  remarks?: string
+  attributes: Record<string, string>
+  links?: Link[]
+  props?: Property[]
+}
+
+
 export interface Result {
   uuid: string
   title: string
@@ -213,6 +242,25 @@ export const useApiStore = defineStore('api', () => {
     return (await response.json()) as DataResponse<Result[]>
   }
 
+  async function getSubjectById(subjectId: string) {
+    const config = await configStore.getConfig()
+    const response = await fetch(`${config.API_URL}/api/subjects/${subjectId}`)
+    return (await response.json()) as DataResponse<Subject>
+  }
+
+  async function patchBySubjectId(subjectId: string, title: string, remarks: string) {
+    const config = await configStore.getConfig()
+    const response = await fetch(`${config.API_URL}/api/subjects/${subjectId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title,
+        remarks,
+      })
+    })
+    return (await response.json()) as DataResponse<Subject>
+  }
+
   return {
     getPlan,
     getPlans,
@@ -223,5 +271,7 @@ export const useApiStore = defineStore('api', () => {
     getComplianceForStream,
     getPlanResults,
     getStreamResults,
+    getSubjectById,
+    patchBySubjectId,
   }
 })

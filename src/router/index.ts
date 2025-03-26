@@ -43,6 +43,11 @@ const authenticatedRoutes = [
     component: () => import('../views/ResultHistoryView.vue'),
   },
   {
+    path: '/subject/:subjectId',
+    name: 'subject-crud',
+    component: () => import('../views/SubjectCRUDView.vue'),
+  },
+  {
     path: '/results',
     name: 'results',
     // route level code-splitting
