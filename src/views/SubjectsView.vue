@@ -44,7 +44,6 @@ const apiStore = useApiStore()
 const subjects = ref<Subject[]>([])
 
 onMounted(async () => {
-  // Fetch all subjects from the API
   apiStore.getAllSubjects().then((response: DataResponse<Subject[]>) => {
     subjects.value = response.data || []
   })
