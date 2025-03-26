@@ -1,30 +1,15 @@
 <template>
   <PageHeader>
-    {{ result.title }}
+    {{ finding.title }}
   </PageHeader>
   <PageSubHeader>
-    {{ result.uuid }}
+    {{ finding.uuid }}
   </PageSubHeader>
   <div class="grid grid-cols-2 gap-4 mt-4">
     <PageCard>
-      <h3 class="text-lg pl-4 mb-4">Observations</h3>
+      <h3 class="text-lg mb-2">Finding</h3>
       <div>
         <div
-          v-for="(observation, index) in result.observations"
-          :key="observation.uuid"
-          class="px-4 py-2 hover:bg-zinc-100"
-        >
-          <p class="font-semibold">{{ index + 1 }}: {{ observation.title }}</p>
-          <p class="pt-1">Desc: {{ observation.description }}</p>
-        </div>
-      </div>
-    </PageCard>
-    <PageCard>
-      <h3 class="text-lg mb-2">Findings</h3>
-      <div>
-        <div
-          v-for="(finding) in result.findings"
-          :key="finding.uuid"
           class="py-4 border-gray-200 last:border-b-0"
         >
           <p class="font-medium">
@@ -34,12 +19,12 @@
             <span
               :class="[
                 'inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset',
-                `bg-${getFindingStatusColor(finding.target.status.state)}-50`,
-                `text-${getFindingStatusColor(finding.target.status.state)}-800`,
-                `ring-${getFindingStatusColor(finding.target.status.state)}-600/20`,
+                `bg-${getFindingStatusColor(finding.status?.state)}-50`,
+                `text-${getFindingStatusColor(finding.status?.state)}-800`,
+                `ring-${getFindingStatusColor(finding.status?.state)}-600/20`,
               ]"
             >
-              {{ finding.target.status.state.toUpperCase() }}
+              {{ finding.status?.state.toUpperCase() }}
             </span>
           </p>
           <p class="pt-1">{{ finding.description }}</p>
@@ -50,18 +35,43 @@
       </div>
     </PageCard>
     <PageCard>
-      <h3 class="text-lg pl-4 mb-4">Logs</h3>
+      <h3 class="text-lg pl-4 mb-4">Observations</h3>
       <div>
         <div
-          v-for="log in result.assessmentLogEntries"
-          :key="log.title"
+          v-for="(observation, index) in finding.observations"
+          :key="observation"
           class="px-4 py-2 hover:bg-zinc-100"
         >
-          <p class="font-semibold">{{ log.title }}</p>
-          <p>{{ log.description }}</p>
+          <p class="font-semibold">{{ index + 1 }}: {{ observation }}</p>
         </div>
       </div>
     </PageCard>
+    <PageCard>
+      <h3 class="text-lg pl-4 mb-4">Subject</h3>
+      <div>
+        <div
+          v-for="(subject, index) in finding.subjects"
+          :key="subject"
+          class="px-4 py-2 hover:bg-zinc-100"
+        >
+          <p class="font-semibold">{{ index + 1 }}: {{ subject }}</p>
+        </div>
+      </div>
+    </PageCard>
+
+<!--    <PageCard>-->
+<!--      <h3 class="text-lg pl-4 mb-4">Logs</h3>-->
+<!--      <div>-->
+<!--        <div-->
+<!--          v-for="log in result.assessmentLogEntries"-->
+<!--          :key="log.title"-->
+<!--          class="px-4 py-2 hover:bg-zinc-100"-->
+<!--        >-->
+<!--          <p class="font-semibold">{{ log.title }}</p>-->
+<!--          <p>{{ log.description }}</p>-->
+<!--        </div>-->
+<!--      </div>-->
+<!--    </PageCard>-->
 
     <Modal
       :show="showFindingsModal"
@@ -98,22 +108,21 @@ import PageHeader from '@/components/PageHeader.vue';
 import PageCard from '@/components/PageCard.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
 import Modal from '@/components/Modal.vue';
-import { type Finding, type Result, type Task, useApiStore } from '@/stores/api'
+import { useFindingsStore, type Finding } from '@/stores/findings.ts'
 
-const apiStore = useApiStore();
+const findingsStore = useFindingsStore();
 const route = useRoute();
 const id = route.params.id as string;
 
-const result = ref<Result>({} as Result);
+const finding = ref<Finding>({} as Finding);
 const tasks = ref<Task[]>([] as Task[]);
 const showLogsModal = ref(false);
 const showFindingsModal = ref(false);
 
 enum FindingStatusColor {
   UNKNOWN = 'grey',
-  OPEN = 'red',
-  MITIGATED = 'yellow',
-  RESOLVED = 'green',
+  SATISFIED = 'green',
+  "NOT SATISFIED" = 'red',
 }
 
 function showFindingTasks(finding: Finding) {
@@ -133,8 +142,8 @@ function getFindingStatusColor(status?: string): string {
 }
 
 onMounted(() => {
-  apiStore.getResult(id).then((res) => {
-    result.value = res.data;
+  findingsStore.get(id).then((res) => {
+    finding.value = res.data;
   });
 });
 </script>

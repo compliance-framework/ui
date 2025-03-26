@@ -1,7 +1,14 @@
-import { defineStore } from 'pinia'
-import { useConfigStore } from '@/stores/config.ts'
-import { type Filter } from '@/parsers/labelfilter.ts'
-import type { ControlReference, FindingStatus, Link, Origin, Property, RiskReference } from '@/stores/types.ts'
+import { defineStore } from 'pinia';
+import { useConfigStore } from '@/stores/config.ts';
+import { type Filter } from '@/parsers/labelfilter.ts';
+import type {
+  ControlReference,
+  FindingStatus,
+  Link,
+  Origin,
+  Property,
+  RiskReference,
+} from '@/stores/types.ts';
 
 export interface Finding {
   _id?: string;
@@ -23,96 +30,109 @@ export interface Finding {
 }
 
 export interface ComplianceIntervalStatus {
-  status: string
-  count: number
+  status: string;
+  count: number;
 }
 
 export interface ComplianceInterval {
-  interval: string
-  statuses: ComplianceIntervalStatus[]
+  interval: string;
+  statuses: ComplianceIntervalStatus[];
 }
 
 export interface DataResponse<T> {
-  data: T
+  data: T;
 }
 
 export const useFindingsStore = defineStore('findings', () => {
-  const configStore = useConfigStore()
+  const configStore = useConfigStore();
 
-  // async function getResult(id: string): Promise<DataResponse<Result>> {
-  //   const config = await configStore.getConfig()
-  //   const response = await fetch(`${config.API_URL}/api/assessment-results/${id}`)
-  //   return (await response.json()) as DataResponse<Result>
-  // }
+  async function get(id: string): Promise<DataResponse<Finding>> {
+    const config = await configStore.getConfig();
+    const response = await fetch(`${config.API_URL}/api/findings/${id}`);
+    return (await response.json()) as DataResponse<Finding>;
+  }
 
   async function search(filter: Filter): Promise<DataResponse<Finding[]>> {
-    const config = await configStore.getConfig()
+    const config = await configStore.getConfig();
     const response = await fetch(`${config.API_URL}/api/findings/search`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        "filter": filter,
+        filter: filter,
       }),
-    })
+    });
 
     if (!response.ok) {
-      throw new Error(`Error: ${response.statusText}`)
+      throw new Error(`Error: ${response.statusText}`);
     }
 
-    return (await response.json()) as DataResponse<Finding[]>
+    return (await response.json()) as DataResponse<Finding[]>;
   }
 
   async function history(uuid: string): Promise<DataResponse<Finding[]>> {
-    const config = await configStore.getConfig()
-    const response = await fetch(`${config.API_URL}/api/findings/history/${uuid}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
+    const config = await configStore.getConfig();
+    const response = await fetch(
+      `${config.API_URL}/api/findings/history/${uuid}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
       },
-    })
+    );
 
     if (!response.ok) {
-      throw new Error(`Error: ${response.statusText}`)
+      throw new Error(`Error: ${response.statusText}`);
     }
 
-    return (await response.json()) as DataResponse<Finding[]>
+    return (await response.json()) as DataResponse<Finding[]>;
   }
 
-  async function getComplianceForSearch(filter: Filter): Promise<DataResponse<ComplianceInterval[]>> {
-    const config = await configStore.getConfig()
-    const response = await fetch(`${config.API_URL}/api/findings/compliance-by-search`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
+  async function getComplianceForSearch(
+    filter: Filter,
+  ): Promise<DataResponse<ComplianceInterval[]>> {
+    const config = await configStore.getConfig();
+    const response = await fetch(
+      `${config.API_URL}/api/findings/compliance-by-search`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          filter: filter,
+        }),
       },
-      body: JSON.stringify({
-        "filter": filter,
-      }),
-    })
+    );
 
     if (!response.ok) {
-      throw new Error(`Error: ${response.statusText}`)
+      throw new Error(`Error: ${response.statusText}`);
     }
 
-    return (await response.json()) as DataResponse<ComplianceInterval[]>
+    return (await response.json()) as DataResponse<ComplianceInterval[]>;
   }
 
-  async function getComplianceForUUID(uuid: string): Promise<DataResponse<ComplianceInterval[]>> {
-    const config = await configStore.getConfig()
-    const response = await fetch(`${config.API_URL}/api/findings/compliance-by-uuid/${uuid}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
+  async function getComplianceForUUID(
+    uuid: string,
+  ): Promise<DataResponse<ComplianceInterval[]>> {
+    const config = await configStore.getConfig();
+    const response = await fetch(
+      `${config.API_URL}/api/findings/compliance-by-uuid/${uuid}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
       },
-    })
+    );
 
     if (!response.ok) {
-      throw new Error(`Error: ${response.statusText}`)
+      throw new Error(`Error: ${response.statusText}`);
     }
 
-    return (await response.json()) as DataResponse<ComplianceInterval[]>
+    return (await response.json()) as DataResponse<ComplianceInterval[]>;
   }
 
   // async function getStreamResults(streamId: string): Promise<DataResponse<Result[]>> {
@@ -123,10 +143,11 @@ export const useFindingsStore = defineStore('findings', () => {
 
   return {
     // getResult,
+    get: get,
     search: search,
     history: history,
     getComplianceForSearch,
     getComplianceForUUID,
     // getStreamResults,
-  }
-})
+  };
+});
