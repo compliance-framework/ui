@@ -1,10 +1,5 @@
-// import {
-//   type ComplianceBySearchResult,
-//   type ComplianceBySearchResultRecord,
-//   type Result,
-// } from '../stores/api'
-import { type ChartData } from 'chart.js';
-import type { ComplianceBySearch } from '@/stores/findings.ts';
+import { type ChartData, type ChartDataset } from 'chart.js';
+import type { ComplianceInterval } from '@/stores/findings.ts'
 
 export interface DateDataPoint {
   interval: Date;
@@ -41,7 +36,7 @@ function getStatusColour(status: string): RGB {
 }
 
 export function calculateComplianceOverTimeData(
-  complianceData: ComplianceBySearch[],
+  complianceData: ComplianceInterval[],
 ): ChartData<'line', DateDataPoint[]> {
   // First we need to build up the status map so we can then construct a data point set.
 
@@ -118,6 +113,6 @@ export function calculateComplianceOverTimeData(
   });
 
   return {
-    datasets: finalDataset,
+    datasets: finalDataset as ChartDataset<"line", DateDataPoint[]>[],
   };
 }
