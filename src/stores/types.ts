@@ -1,10 +1,10 @@
 export type FindingStatusState = 'satisfied' | 'not satisfied' | string;
 
 export interface FindingStatus {
-  title?: string
-  description?: string
-  remarks?: string
-  state: FindingStatusState
+  title?: string;
+  description?: string;
+  remarks?: string;
+  state: FindingStatusState;
   links?: Link[];
   props?: Property[];
 }
@@ -32,6 +32,33 @@ export interface RiskReference {
   prose?: string;
 }
 
+export interface RelevantEvidence {
+  description: string;
+  remarks?: string;
+  href?: string;
+  links?: Link[];
+  props?: Property[];
+}
+
+export interface Activity {
+  uuid?: string;
+  title: string;
+  description: string;
+  remarks?: string;
+  steps?: Step[];
+  links?: Link[];
+  props?: Property[];
+}
+
+export interface Step {
+  uuid?: string;
+  title: string;
+  description: string;
+  remarks?: string;
+  links?: Link[];
+  props?: Property[];
+}
+
 export interface Link {
   href: string;
   rel?: string;
@@ -43,4 +70,8 @@ export interface Property {
   value?: string;
   class?: string;
   ns?: string;
+}
+
+export interface DataResponse<T> {
+  data: T;
 }

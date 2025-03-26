@@ -2,13 +2,13 @@ import { defineStore } from 'pinia';
 import { useConfigStore } from '@/stores/config.ts';
 import { type Filter } from '@/parsers/labelfilter.ts';
 import type {
-  ControlReference,
+  ControlReference, DataResponse,
   FindingStatus,
   Link,
   Origin,
   Property,
-  RiskReference,
-} from '@/stores/types.ts';
+  RiskReference
+} from '@/stores/types.ts'
 
 export interface Finding {
   _id?: string;
@@ -37,10 +37,6 @@ export interface ComplianceIntervalStatus {
 export interface ComplianceInterval {
   interval: string;
   statuses: ComplianceIntervalStatus[];
-}
-
-export interface DataResponse<T> {
-  data: T;
 }
 
 export const useFindingsStore = defineStore('findings', () => {
