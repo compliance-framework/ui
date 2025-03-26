@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { useConfigStore } from '@/stores/config.ts'
 import { type Filter } from '@/parsers/labelfilter.ts'
+import type { Subject } from './subjects'
 
 export interface Metadata {
   title: string
@@ -61,34 +62,6 @@ export interface FindingTarget {
 export interface Log {
   title: string
   description: string
-}
-
-export interface Link {
-  href: string
-  mediaType?: string
-  rel?: string
-  resourceFragment?: string
-  text?: string
-}
-
-export interface Property {
-  class?: string
-  group?: string
-  name: string
-  ns?: string
-  remarks?: string
-  uuid?: string
-  value: string
-}
-
-export interface Subject {
-  _id: string
-  type: string
-  title?: string
-  remarks?: string
-  attributes: Record<string, string>
-  links?: Link[]
-  props?: Property[]
 }
 
 

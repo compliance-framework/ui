@@ -37,7 +37,8 @@
 import { ref, onMounted } from 'vue'
 import PageHeader from '@/components/PageHeader.vue'
 import PageCard from '@/components/PageCard.vue'
-import { useApiStore, type Subject, type DataResponse } from '@/stores/api'
+import { useApiStore, type DataResponse } from '@/stores/api'
+import type { Subject } from '@/stores/subjects'
 
 const apiStore = useApiStore()
 

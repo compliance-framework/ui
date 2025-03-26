@@ -43,7 +43,8 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import PageHeader from '@/components/PageHeader.vue'
 import PageCard from '@/components/PageCard.vue'
-import { useApiStore, type Subject, type DataResponse } from '@/stores/api'
+import { useApiStore, type DataResponse } from '@/stores/api'
+import type { Subject } from '@/stores/subjects'
 const apiStore = useApiStore()
 const router = useRouter()
 

@@ -50,7 +50,7 @@ const authenticatedRoutes = [
   {
     path: '/subject/:subjectId',
     name: 'subject-crud',
-    component: () => import('../views/SubjectCRUDView.vue'),
+    component: () => import('../views/SubjectEditView.vue'),
   },
   {
     path: '/findings',
