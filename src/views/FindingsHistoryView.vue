@@ -19,7 +19,7 @@
         <h3 class="text-lg font-semibold text-zinc-600">Agent health</h3>
       </div>
       <div class="h-32">
-        <ResultComplianceOverTimeChart :data="uptimeChartData" />
+        <ResultComplianceOverTimeChart :data="heartbeatChartData" />
       </div>
     </div>
   </div>
@@ -90,8 +90,6 @@
   </PageCard>
 </template>
 <script setup lang="ts">
-import LineChart from '@/components/charts/LineChart.vue'
-import BarChart from '@/components/charts/BarChart.vue'
 import {  onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import PageHeader from '@/components/PageHeader.vue'
@@ -105,9 +103,12 @@ import {
 import ResultComplianceOverTimeChart from '@/components/ResultComplianceOverTimeChart.vue'
 import ResultStatusBadge from '@/components/ResultStatusBadge.vue'
 import { type Finding, useFindingsStore } from '@/stores/findings.ts'
+import { calculateHeartbeatOverTimeData } from '@/parsers/heartbeats.ts'
+import { useHeartbeatsStore } from '@/stores/heartbeats.ts'
 
 const route = useRoute()
 const findingStore = useFindingsStore()
+const heartbeatStore = useHeartbeatsStore()
 
 const uuid = route.params.uuid as string;
 const findings = ref<Finding[]>([] as Finding[])
@@ -115,7 +116,7 @@ const complianceChartData = ref<ChartData<'line', DateDataPoint[]>>({
   labels: [],
   datasets: [],
 })
-const uptimeChartData = ref<ChartData<'line', DateDataPoint[]>>({
+const heartbeatChartData = ref<ChartData<'line', DateDataPoint[]>>({
   labels: [],
   datasets: [],
 })
@@ -128,6 +129,10 @@ onMounted(() => {
   findingStore.getComplianceForUUID(uuid).then((response) => {
     complianceChartData.value = calculateComplianceOverTimeData(response.data)
     // uptimeChartData.value = calculateAgentUptimeData(response.data)
+  })
+
+  heartbeatStore.overTime().then((response) => {
+    heartbeatChartData.value = calculateHeartbeatOverTimeData(response.data)
   })
 })
 </script>

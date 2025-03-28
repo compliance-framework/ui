@@ -6,6 +6,7 @@ import {
   Legend,
   LinearScale,
   TimeScale,
+  TimeSeriesScale,
   LineElement,
   PointElement,
   Title,
@@ -26,6 +27,7 @@ export function useCharts() {
     LineElement,
     CategoryScale,
     TimeScale,
+    TimeSeriesScale,
     LinearScale,
     gradient,
   )
@@ -78,6 +80,6 @@ export function useCharts() {
         display: false,
       },
       suggestedMin: 0,
-    },
+    }
   })
 }
