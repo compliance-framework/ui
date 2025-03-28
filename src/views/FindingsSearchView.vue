@@ -15,7 +15,7 @@
         <h3 class="text-lg font-semibold text-zinc-600">Agent health</h3>
       </div>
       <div class="h-32">
-        <ResultComplianceOverTimeChart :data="uptimeChartData" />
+        <ResultComplianceOverTimeChart :data="heartbeatChartData" />
       </div>
     </div>
   </div>
@@ -93,8 +93,11 @@ import {
 import ResultComplianceOverTimeChart from '@/components/ResultComplianceOverTimeChart.vue'
 import ResultStatusBadge from '@/components/ResultStatusBadge.vue'
 import { type Finding, useFindingsStore } from '@/stores/findings.ts'
+import { useHeartbeatsStore } from '@/stores/heartbeats.ts'
+import { calculateHeartbeatOverTimeData } from '@/parsers/heartbeats.ts'
 
 const findingsStore = useFindingsStore()
+const heartbeatStore = useHeartbeatsStore()
 const route = useRoute()
 const router = useRouter()
 
@@ -107,7 +110,7 @@ const complianceChartData = ref<ChartData<'line', DateDataPoint[]>>({
   labels: [],
   datasets: [],
 })
-const uptimeChartData = ref<ChartData<'line', DateDataPoint[]>>({
+const heartbeatChartData = ref<ChartData<'line', DateDataPoint[]>>({
   labels: [],
   datasets: [],
 })
@@ -144,7 +147,9 @@ async function search() {
 
   findingsStore.getComplianceForSearch(query).then((response) => {
     complianceChartData.value = calculateComplianceOverTimeData(response.data)
-    // uptimeChartData.value = calculateAgentUptimeData(response.data)
+  })
+  heartbeatStore.overTime().then((response) => {
+    heartbeatChartData.value = calculateHeartbeatOverTimeData(response.data)
   })
 }
 
