@@ -58,7 +58,7 @@
       :key="finding.uuid"
     >
       <div class="shrink-0 pr-4">
-        <ResultStatusBadge :state="finding.status.state?.toLowerCase()"></ResultStatusBadge>
+        <ResultStatusRing :state="finding.status.state?.toLowerCase()"></ResultStatusRing>
       </div>
       <div class="w-1/3">{{ finding.title }}</div>
       <div>
@@ -101,7 +101,7 @@ import {
   calculateComplianceOverTimeData, type DateDataPoint
 } from '@/parsers/findings.ts'
 import ResultComplianceOverTimeChart from '@/components/ResultComplianceOverTimeChart.vue'
-import ResultStatusBadge from '@/components/ResultStatusBadge.vue'
+import ResultStatusRing from '@/components/ResultStatusRing.vue'
 import { type Finding, useFindingsStore } from '@/stores/findings.ts'
 import { calculateHeartbeatOverTimeData } from '@/parsers/heartbeats.ts'
 import { useHeartbeatsStore } from '@/stores/heartbeats.ts'
