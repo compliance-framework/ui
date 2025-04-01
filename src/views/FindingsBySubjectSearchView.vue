@@ -48,26 +48,42 @@
     </div>
     <div class="mt-4">
       <div
-        class="flex items-center border-t first:border-none py-2 px-2"
         v-for="subject in subjectFindings"
         :key="subject.subject"
       >
-        <div>
-          <div class="flex items-center border-t first:border-none hover:bg-zinc-100 py-2 px-2">
-            <div class="w-1/3">{{ subject.subject }}</div>
-<!--            <div>{{ subject.findings.reduce((total, current) => current.status?.state.toLowerCase() == "satisfied" ? total + 1 : total, 0) }}</div>-->
-<!--            <div>{{ subject.findings.reduce((total, current) => current.status?.state.toLowerCase() == "not satisfied" ? total + 1 : total, 0) }}</div>-->
-<!--            <div>{{ subject.findings.reduce((total, current) => ["satisfied", "not satisfied"].includes(current.status?.state.toLowerCase()) ? total : total + 1, 0) }}</div>-->
-            <div class="shrink-0 pr-4">
-              <ResultStatusBadge
-                :gray="subject.findings.reduce((total, current) => ['satisfied', 'not satisfied'].includes(current.status?.state.toLowerCase()) ? total : total + 1, 0)"
-                :red="subject.findings.reduce((total, current) => current.status?.state.toLowerCase() == 'not satisfied' ? total + 1 : total, 0)"
-                :green="subject.findings.reduce((total, current) => current.status?.state.toLowerCase() == 'satisfied' ? total + 1 : total, 0)"
-              ></ResultStatusBadge>
+        <CollapsableGroup>
+          <template #header>
+            <div class="w-full grid grid-cols-3 py-1 px-4">
+              <div class="col-span-1">
+                {{ subject.subject }}
+              </div>
+              <div>
+                <ResultStatusBadge
+                  :gray="subject.findings.reduce((total, current) => ['satisfied', 'not satisfied'].includes(current.status?.state.toLowerCase()) ? total : total + 1, 0)"
+                  :red="subject.findings.reduce((total, current) => current.status?.state.toLowerCase() == 'not satisfied' ? total + 1 : total, 0)"
+                  :green="subject.findings.reduce((total, current) => current.status?.state.toLowerCase() == 'satisfied' ? total + 1 : total, 0)"
+                ></ResultStatusBadge>
+              </div>
             </div>
-          </div>
+          </template>
           <FindingsList :findings="subject.findings" />
-        </div>
+        </CollapsableGroup>
+<!--        <div>-->
+<!--          <div class="flex items-center border-t first:border-none hover:bg-zinc-100 py-2 px-2">-->
+<!--            <div class="w-1/3">{{ subject.subject }}</div>-->
+<!--&lt;!&ndash;            <div>{{ subject.findings.reduce((total, current) => current.status?.state.toLowerCase() == "satisfied" ? total + 1 : total, 0) }}</div>&ndash;&gt;-->
+<!--&lt;!&ndash;            <div>{{ subject.findings.reduce((total, current) => current.status?.state.toLowerCase() == "not satisfied" ? total + 1 : total, 0) }}</div>&ndash;&gt;-->
+<!--&lt;!&ndash;            <div>{{ subject.findings.reduce((total, current) => ["satisfied", "not satisfied"].includes(current.status?.state.toLowerCase()) ? total : total + 1, 0) }}</div>&ndash;&gt;-->
+<!--            <div class="shrink-0 pr-4">-->
+<!--              <ResultStatusBadge-->
+<!--                :gray="subject.findings.reduce((total, current) => ['satisfied', 'not satisfied'].includes(current.status?.state.toLowerCase()) ? total : total + 1, 0)"-->
+<!--                :red="subject.findings.reduce((total, current) => current.status?.state.toLowerCase() == 'not satisfied' ? total + 1 : total, 0)"-->
+<!--                :green="subject.findings.reduce((total, current) => current.status?.state.toLowerCase() == 'satisfied' ? total + 1 : total, 0)"-->
+<!--              ></ResultStatusBadge>-->
+<!--            </div>-->
+<!--          </div>-->
+<!--          <FindingsList :findings="subject.findings" />-->
+<!--        </div>-->
       </div>
     </div>
   </PageCard>
@@ -94,6 +110,7 @@ import { type Finding, type FindingBySubject, useFindingsStore } from '@/stores/
 import { useHeartbeatsStore } from '@/stores/heartbeats.ts'
 import { calculateHeartbeatOverTimeData } from '@/parsers/heartbeats.ts'
 import FindingsList from '@/views/FindingsList.vue'
+import CollapsableGroup from '@/components/CollapsableGroup.vue'
 
 const findingsStore = useFindingsStore()
 const heartbeatStore = useHeartbeatsStore()
