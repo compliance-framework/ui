@@ -39,6 +39,11 @@ export interface ComplianceInterval {
   statuses: ComplianceIntervalStatus[];
 }
 
+export interface FindingBySubject {
+  subject: string;
+  findings: Finding[];
+}
+
 export const useFindingsStore = defineStore('findings', () => {
   const configStore = useConfigStore();
 
@@ -65,6 +70,25 @@ export const useFindingsStore = defineStore('findings', () => {
     }
 
     return (await response.json()) as DataResponse<Finding[]>;
+  }
+
+  async function searchBySubject(filter: Filter): Promise<DataResponse<FindingBySubject[]>> {
+    const config = await configStore.getConfig();
+    const response = await fetch(`${config.API_URL}/api/findings/search-by-subject`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        filter: filter,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error: ${response.statusText}`);
+    }
+
+    return (await response.json()) as DataResponse<FindingBySubject[]>;
   }
 
   async function history(uuid: string): Promise<DataResponse<Finding[]>> {
@@ -141,6 +165,7 @@ export const useFindingsStore = defineStore('findings', () => {
     // getResult,
     get: get,
     search: search,
+    searchBySubject: searchBySubject,
     history: history,
     getComplianceForSearch,
     getComplianceForUUID,

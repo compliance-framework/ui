@@ -1,10 +1,12 @@
 <template>
-  <PageHeader>Findings</PageHeader>
-  <PageSubHeader>Search for findings using labels</PageSubHeader>
+  <PageHeader>Findings by Subject</PageHeader>
+  <!--  <PageSubHeader>Search for findings using labels</PageSubHeader>-->
   <div class="grid grid-cols-2 gap-4 mt-4">
     <div class="bg-white rounded shadow">
       <div class="px-4 pt-2">
-        <h3 class="text-lg font-semibold text-zinc-600">Compliance over time</h3>
+        <h3 class="text-lg font-semibold text-zinc-600">
+          Compliance over time
+        </h3>
       </div>
       <div class="h-32">
         <ResultComplianceOverTimeChart :data="complianceChartData" />
@@ -40,37 +42,63 @@
             <BIconSearch class="mr-2"></BIconSearch>
             Search
           </button>
-          <button @click.prevent="save" class="bg-blue-800 text-white hover:bg-blue-700 p-3 rounded-r-md">
+          <button
+            @click.prevent="save"
+            class="bg-blue-800 text-white hover:bg-blue-700 p-3 rounded-r-md"
+          >
             <BIconFloppy></BIconFloppy>
           </button>
         </div>
       </form>
     </div>
     <div class="mt-4">
-      <div
-        class="flex items-center border-t first:border-none hover:bg-zinc-100 py-2 px-2"
-        v-for="finding in findings"
-        :key="finding.uuid"
-      >
-        <div class="shrink-0 pr-4">
-          <ResultStatusRing :state="finding.status.state?.toLowerCase()"></ResultStatusRing>
-        </div>
-        <div class="w-1/3">{{ finding.title }}</div>
-        <div class="flex-wrap grow">
-          <LabelList :labels="viewableLabels(finding.labels)" />
-        </div>
-        <div>
-          <RouterLink
-            class="bg-gray-50 hover:bg-gray-200 text-blue-800 border border-blue-800 px-4 py-1 rounded-md text-sm mr-2"
-            :to="{ name: 'finding-history', params: { uuid: finding.uuid } }"
-            >History
-          </RouterLink>
-          <RouterLink
-            class="bg-blue-800 hover:bg-clue-700 text-white px-4 py-1 rounded-md text-sm"
-            :to="{ name: 'finding-view', params: { id: finding._id } }"
-            >View
-          </RouterLink>
-        </div>
+      <div v-for="subject in subjectFindings" :key="subject.subject">
+        <CollapsableGroup>
+          <template #header>
+            <div class="w-full grid grid-cols-6 py-2 px-4 items-center">
+              <div>
+                {{ subjects[subject.subject]?.title }}
+              </div>
+              <div>
+                <ResultStatusBadge
+                  :gray="
+                    subject.findings.reduce(
+                      (total, current) =>
+                        ['satisfied', 'not satisfied'].includes(
+                          current.status?.state.toLowerCase(),
+                        )
+                          ? total
+                          : total + 1,
+                      0,
+                    )
+                  "
+                  :red="
+                    subject.findings.reduce(
+                      (total, current) =>
+                        current.status?.state.toLowerCase() == 'not satisfied'
+                          ? total + 1
+                          : total,
+                      0,
+                    )
+                  "
+                  :green="
+                    subject.findings.reduce(
+                      (total, current) =>
+                        current.status?.state.toLowerCase() == 'satisfied'
+                          ? total + 1
+                          : total,
+                      0,
+                    )
+                  "
+                ></ResultStatusBadge>
+              </div>
+              <div class="col-span-4">
+                <LabelList :labels="subjects[subject.subject]?.attributes" />
+              </div>
+            </div>
+          </template>
+          <FindingsList :findings="subject.findings" />
+        </CollapsableGroup>
       </div>
     </div>
   </PageCard>
@@ -91,11 +119,15 @@ import {
   type DateDataPoint,
 } from '@/parsers/findings.ts'
 import ResultComplianceOverTimeChart from '@/components/ResultComplianceOverTimeChart.vue'
-import ResultStatusRing from '@/components/ResultStatusRing.vue'
-import { type Finding, useFindingsStore } from '@/stores/findings.ts'
+import ResultStatusBadge from '@/components/ResultStatusBadge.vue'
+import { type FindingBySubject, useFindingsStore } from '@/stores/findings.ts'
 import { useHeartbeatsStore } from '@/stores/heartbeats.ts'
 import { calculateHeartbeatOverTimeData } from '@/parsers/heartbeats.ts'
+import FindingsList from '@/views/FindingsList.vue'
+import CollapsableGroup from '@/components/CollapsableGroup.vue'
+import { type Subject, useSubjectsStore } from '@/stores/subjects.ts'
 
+const subjectStore = useSubjectsStore()
 const findingsStore = useFindingsStore()
 const heartbeatStore = useHeartbeatsStore()
 const route = useRoute()
@@ -105,7 +137,8 @@ const filter = ref<string>('')
 if (route.query.filter) {
   filter.value = route.query.filter as string
 }
-const findings = ref<Finding[]>([])
+const subjectFindings = ref<FindingBySubject[]>([])
+const subjects = ref<Record<string, Subject>>({ } as Record<string, Subject>)
 const complianceChartData = ref<ChartData<'line', DateDataPoint[]>>({
   labels: [],
   datasets: [],
@@ -115,34 +148,19 @@ const heartbeatChartData = ref<ChartData<'line', DateDataPoint[]>>({
   datasets: [],
 })
 
-function viewableLabels(labels: LabelMap) {
-  const viewable: LabelMap = {}
-  for (const label in labels) {
-    if (label.substring(0, 1) != '_') {
-      viewable[label] = labels[label]
-    }
-  }
-  return viewable
-}
-
 async function search() {
   const query = new FilterParser(filter.value).parse()
   await router.push({ query: { filter: filter.value }})
-  findingsStore.search(query).then((response) => {
-    findings.value = response.data.sort(function (a, b) {
-      // Order results by their title for better UI consistency
-      const x = new Date(a.collected);
-      const y = new Date(b.collected);
-
-      if (x > y) {
-        return 1
-      }
-      if (x < y) {
-        return -1
-      }
-      return 0
-    })
+  findingsStore.searchBySubject(query).then((response) => {
+    subjectFindings.value = response.data;
     // results.value = response.data
+    response.data.forEach((subject) => {
+      subjectStore.get(subject.subject).then((response) => {
+        const something = subjects.value;
+        something[subject.subject] = response.data as Subject;
+        subjects.value = something;
+      });
+    });
   })
 
   findingsStore.getComplianceForSearch(query).then((response) => {
