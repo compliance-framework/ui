@@ -93,11 +93,37 @@
                 ></ResultStatusBadge>
               </div>
               <div class="col-span-4">
-                <LabelList :labels="subjects[subject.subject]?.attributes" />
+                <LabelList
+                  :labels="subjects[subject.subject]?.attributes || {}"
+                />
               </div>
             </div>
           </template>
-          <FindingsList :findings="subject.findings" />
+          <div
+            class="flex items-center border-t first:border-none hover:bg-zinc-100 py-2 px-2"
+            v-for="finding in subject.findings"
+            :key="finding.uuid"
+          >
+            <div class="shrink-0 pr-4">
+              <ResultStatusRing :state="finding.status.state?.toLowerCase()"></ResultStatusRing>
+            </div>
+            <div class="w-1/3">{{ finding.title }}</div>
+            <div class="flex-wrap grow">
+              <LabelList :labels="finding.labels" :exclude-keys="Object.keys(subjects[subject.subject]?.attributes || {})" />
+            </div>
+            <div>
+              <RouterLink
+                class="bg-gray-50 hover:bg-gray-200 text-blue-800 border border-blue-800 px-4 py-1 rounded-md text-sm mr-2"
+                :to="{ name: 'finding-history', params: { uuid: finding.uuid } }"
+              >History
+              </RouterLink>
+              <RouterLink
+                class="bg-blue-800 hover:bg-clue-700 text-white px-4 py-1 rounded-md text-sm"
+                :to="{ name: 'finding-view', params: { id: finding._id } }"
+              >View
+              </RouterLink>
+            </div>
+          </div>
         </CollapsableGroup>
       </div>
     </div>
@@ -126,6 +152,7 @@ import { calculateHeartbeatOverTimeData } from '@/parsers/heartbeats.ts'
 import FindingsList from '@/views/FindingsList.vue'
 import CollapsableGroup from '@/components/CollapsableGroup.vue'
 import { type Subject, useSubjectsStore } from '@/stores/subjects.ts'
+import ResultStatusRing from '@/components/ResultStatusRing.vue'
 
 const subjectStore = useSubjectsStore()
 const findingsStore = useFindingsStore()
