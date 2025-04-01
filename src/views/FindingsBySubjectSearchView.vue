@@ -53,9 +53,9 @@
       >
         <CollapsableGroup>
           <template #header>
-            <div class="w-full grid grid-cols-3 py-1 px-4">
-              <div class="col-span-1">
-                {{ subject.subject }}
+            <div class="w-full grid grid-cols-6 py-2 px-4 items-center">
+              <div>
+                {{ subjects[subject.subject]?.title }}
               </div>
               <div>
                 <ResultStatusBadge
@@ -64,26 +64,13 @@
                   :green="subject.findings.reduce((total, current) => current.status?.state.toLowerCase() == 'satisfied' ? total + 1 : total, 0)"
                 ></ResultStatusBadge>
               </div>
+              <div class="col-span-4">
+                <LabelList :labels="subjects[subject.subject]?.attributes" />
+              </div>
             </div>
           </template>
           <FindingsList :findings="subject.findings" />
         </CollapsableGroup>
-<!--        <div>-->
-<!--          <div class="flex items-center border-t first:border-none hover:bg-zinc-100 py-2 px-2">-->
-<!--            <div class="w-1/3">{{ subject.subject }}</div>-->
-<!--&lt;!&ndash;            <div>{{ subject.findings.reduce((total, current) => current.status?.state.toLowerCase() == "satisfied" ? total + 1 : total, 0) }}</div>&ndash;&gt;-->
-<!--&lt;!&ndash;            <div>{{ subject.findings.reduce((total, current) => current.status?.state.toLowerCase() == "not satisfied" ? total + 1 : total, 0) }}</div>&ndash;&gt;-->
-<!--&lt;!&ndash;            <div>{{ subject.findings.reduce((total, current) => ["satisfied", "not satisfied"].includes(current.status?.state.toLowerCase()) ? total : total + 1, 0) }}</div>&ndash;&gt;-->
-<!--            <div class="shrink-0 pr-4">-->
-<!--              <ResultStatusBadge-->
-<!--                :gray="subject.findings.reduce((total, current) => ['satisfied', 'not satisfied'].includes(current.status?.state.toLowerCase()) ? total : total + 1, 0)"-->
-<!--                :red="subject.findings.reduce((total, current) => current.status?.state.toLowerCase() == 'not satisfied' ? total + 1 : total, 0)"-->
-<!--                :green="subject.findings.reduce((total, current) => current.status?.state.toLowerCase() == 'satisfied' ? total + 1 : total, 0)"-->
-<!--              ></ResultStatusBadge>-->
-<!--            </div>-->
-<!--          </div>-->
-<!--          <FindingsList :findings="subject.findings" />-->
-<!--        </div>-->
       </div>
     </div>
   </PageCard>
@@ -105,13 +92,14 @@ import {
 } from '@/parsers/findings.ts'
 import ResultComplianceOverTimeChart from '@/components/ResultComplianceOverTimeChart.vue'
 import ResultStatusBadge from '@/components/ResultStatusBadge.vue'
-import ResultStatusRing from '@/components/ResultStatusRing.vue'
-import { type Finding, type FindingBySubject, useFindingsStore } from '@/stores/findings.ts'
+import { type FindingBySubject, useFindingsStore } from '@/stores/findings.ts'
 import { useHeartbeatsStore } from '@/stores/heartbeats.ts'
 import { calculateHeartbeatOverTimeData } from '@/parsers/heartbeats.ts'
 import FindingsList from '@/views/FindingsList.vue'
 import CollapsableGroup from '@/components/CollapsableGroup.vue'
+import { type Subject, useSubjectsStore } from '@/stores/subjects.ts'
 
+const subjectStore = useSubjectsStore()
 const findingsStore = useFindingsStore()
 const heartbeatStore = useHeartbeatsStore()
 const route = useRoute()
@@ -122,6 +110,7 @@ if (route.query.filter) {
   filter.value = route.query.filter as string
 }
 const subjectFindings = ref<FindingBySubject[]>([])
+const subjects = ref<Record<string, Subject>>([])
 const complianceChartData = ref<ChartData<'line', DateDataPoint[]>>({
   labels: [],
   datasets: [],
@@ -137,6 +126,13 @@ async function search() {
   findingsStore.searchBySubject(query).then((response) => {
     subjectFindings.value = response.data;
     // results.value = response.data
+    response.data.forEach((subject) => {
+      subjectStore.get(subject.subject).then((response) => {
+        const something = subjects.value;
+        something[subject.subject] = response.data as Subject;
+        subjects.value = something;
+      });
+    });
   })
 
   findingsStore.getComplianceForSearch(query).then((response) => {
