@@ -10,17 +10,25 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 
-const { labels } = defineProps({
+const { labels, excludeKeys } = defineProps({
   labels: {
     type: Object,
     required: true,
-  }
+  },
+  excludeKeys: {
+    type: Array,
+    default() {
+      return [];
+    }
+  },
 })
 
 const sortedLabels = computed(() => {
   return Object
     .entries(labels)
-    .filter(([key]) => !["_policy_path", "_agent"].includes(key))
+    .filter(([key]) => {
+      return !["_policy_path", "_agent"].includes(key) && !excludeKeys.includes(key)
+    })
     .map(([key, value]) => key + ': ' + value)
     .sort((a, b) => a > b ? -1 : 0)
 });
