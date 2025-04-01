@@ -57,7 +57,7 @@
         </div>
         <div class="w-1/3">{{ finding.title }}</div>
         <div class="flex-wrap grow">
-          <LabelList :labels="viewableLabels(finding.labels)" />
+          <LabelList :labels="finding.labels" />
         </div>
         <div>
           <RouterLink
@@ -114,16 +114,6 @@ const heartbeatChartData = ref<ChartData<'line', DateDataPoint[]>>({
   labels: [],
   datasets: [],
 })
-
-function viewableLabels(labels: LabelMap) {
-  const viewable: LabelMap = {}
-  for (const label in labels) {
-    if (label.substring(0, 1) != '_') {
-      viewable[label] = labels[label]
-    }
-  }
-  return viewable
-}
 
 async function search() {
   const query = new FilterParser(filter.value).parse()

@@ -9,7 +9,7 @@
     </div>
     <div class="w-1/3">{{ finding.title }}</div>
     <div class="flex-wrap grow">
-      <LabelList :labels="viewableLabels(finding.labels)" />
+      <LabelList :labels="finding.labels" />
     </div>
     <div>
       <RouterLink
@@ -28,18 +28,6 @@
 <script setup lang="ts">
 import LabelList from '@/components/LabelList.vue'
 import ResultStatusRing from '@/components/ResultStatusRing.vue'
-import type { LabelMap } from '@/stores/api.ts'
-
-function viewableLabels(labels: LabelMap) {
-  const viewable: LabelMap = {}
-  for (const label in labels) {
-    if (label.substring(0, 1) != '_') {
-      viewable[label] = labels[label]
-    }
-  }
-  return viewable
-
-}
 
 defineProps(['findings'])
 </script>

@@ -93,7 +93,7 @@
                 ></ResultStatusBadge>
               </div>
               <div class="col-span-4">
-                <LabelList :labels="subjects[subject.subject]?.attributes" />
+                <LabelList :labels="subjects[subject.subject]?.attributes || {}" />
               </div>
             </div>
           </template>

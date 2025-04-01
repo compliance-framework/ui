@@ -36,7 +36,7 @@
 <!--        ></ResultStatusBadge>-->
 <!--      </div>-->
 <!--      <div class="flex-wrap grow">-->
-<!--        <LabelList :labels="viewableLabels(result.labels)" />-->
+<!--        <LabelList :labels="result.labels" />-->
 <!--      </div>-->
 <!--      <div>-->
 <!--        <RouterLink-->
@@ -100,16 +100,6 @@
 //   labels: [],
 //   datasets: [],
 // })
-//
-// function viewableLabels(labels: LabelMap) {
-//   const viewable: LabelMap = {};
-//   for (const label in labels) {
-//     if (label.substring(0, 1) != "_") {
-//       viewable[label] = labels[label];
-//     }
-//   }
-//   return viewable;
-// }
 //
 // onMounted(() => {
 //   apiStore.getPlan(route.params.id as string).then((fetchedPlan: DataResponse<Plan>) => {
