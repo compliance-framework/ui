@@ -48,7 +48,7 @@
     </div>
     <div class="mt-4">
       <div
-        class="flex items-center border-t first:border-none hover:bg-zinc-100 py-2 px-2"
+        class="flex border-t first:border-none hover:bg-zinc-100 py-2 px-2"
         v-for="finding in findings"
         :key="finding.uuid"
       >
@@ -59,7 +59,7 @@
         <div class="flex-wrap grow">
           <LabelList :labels="finding.labels" />
         </div>
-        <div>
+        <div class="flex items-start">
           <RouterLink
             class="bg-gray-50 hover:bg-gray-200 text-blue-800 border border-blue-800 px-4 py-1 rounded-md text-sm mr-2"
             :to="{ name: 'finding-history', params: { uuid: finding.uuid } }"
@@ -81,7 +81,6 @@ import { useRoute, useRouter } from 'vue-router'
 import PageHeader from '@/components/PageHeader.vue'
 import PageCard from '@/components/PageCard.vue'
 import PageSubHeader from '@/components/PageSubHeader.vue'
-import { type LabelMap } from '@/stores/api'
 import { FilterParser } from '@/parsers/labelfilter.ts'
 import { BIconFloppy, BIconSearch } from 'bootstrap-icons-vue'
 import LabelList from '@/components/LabelList.vue'

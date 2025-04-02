@@ -44,6 +44,11 @@ export interface FindingBySubject {
   findings: Finding[];
 }
 
+export interface FindingsByClassName {
+  controlid: string;
+  findings: Finding[];
+}
+
 export const useFindingsStore = defineStore('findings', () => {
   const configStore = useConfigStore();
 
@@ -89,6 +94,25 @@ export const useFindingsStore = defineStore('findings', () => {
     }
 
     return (await response.json()) as DataResponse<FindingBySubject[]>;
+  }
+
+  async function getByControlClass(className: string): Promise<DataResponse<FindingsByClassName[]>> {
+    const config = await configStore.getConfig();
+    const response = await fetch(
+      `${config.API_URL}/api/findings/by-control/${className}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      },
+    );
+
+    if (!response.ok) {
+      throw new Error(`Error: ${response.statusText}`);
+    }
+
+    return (await response.json()) as DataResponse<FindingsByClassName[]>;
   }
 
   async function history(uuid: string): Promise<DataResponse<Finding[]>> {
@@ -162,13 +186,12 @@ export const useFindingsStore = defineStore('findings', () => {
   // }
 
   return {
-    // getResult,
     get: get,
     search: search,
-    searchBySubject: searchBySubject,
+    searchBySubject,
     history: history,
     getComplianceForSearch,
     getComplianceForUUID,
-    // getStreamResults,
+    getByControlClass,
   };
 });

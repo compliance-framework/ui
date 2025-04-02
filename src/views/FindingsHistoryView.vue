@@ -39,25 +39,6 @@
           :to="{ name: 'finding-view', params: { id: finding._id } }"
         >View</RouterLink>
       </div>
-      <!--        <div class="px-2 py-2 flex-1">{{ assessment.title }}</div>-->
-      <!--        <div class="px-2 w-1/5 h-8">-->
-      <!--          <LineChart-->
-      <!--            :options="{-->
-      <!--              plugins: {-->
-      <!--                tooltip: {-->
-      <!--                  enabled: false,-->
-      <!--                },-->
-      <!--              },-->
-      <!--              elements: {-->
-      <!--                point: {-->
-      <!--                  hoverRadius: 0,-->
-      <!--                  hitRadius: 0,-->
-      <!--                },-->
-      <!--              },-->
-      <!--            }"-->
-      <!--            :data="assessment.data"-->
-      <!--          />-->
-      <!--        </div>-->
     </div>
   </PageCard>
 </template>
