@@ -179,6 +179,25 @@ export const useFindingsStore = defineStore('findings', () => {
     return (await response.json()) as DataResponse<ComplianceInterval[]>;
   }
 
+  async function getAllControlClasses(): Promise<DataResponse<string[]>> {
+    const config = await configStore.getConfig();
+    const response = await fetch(
+      `${config.API_URL}/api/findings/list-control-classes`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      },
+    );
+
+    if (!response.ok) {
+      throw new Error(`Error: ${response.statusText}`);
+    }
+
+    return (await response.json()) as DataResponse<string[]>;
+  }
+
   // async function getStreamResults(streamId: string): Promise<DataResponse<Result[]>> {
   //   const config = await configStore.getConfig()
   //   const response = await fetch(`${config.API_URL}/api/assessment-results/stream/${streamId}`)
@@ -193,5 +212,6 @@ export const useFindingsStore = defineStore('findings', () => {
     getComplianceForSearch,
     getComplianceForUUID,
     getByControlClass,
+    getAllControlClasses,
   };
 });
