@@ -18,6 +18,7 @@ import logo from '@/assets/logo.svg'
     <SideNavCategory title="Findings (Evidence)">
       <SideNavLink :to="{ name: 'findings' }">All</SideNavLink>
       <SideNavLink :to="{ name: 'findings-by-subject' }">By Subject</SideNavLink>
+      <SideNavLink :to="{ name: 'list-classes-of-findings' }">By Control Class</SideNavLink>
     </SideNavCategory>
     <SideNavCategory title="Continuous Compliance">
       <SideNavLink :to="{ name: 'about' }">About</SideNavLink>
