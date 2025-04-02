@@ -1,5 +1,5 @@
 <template>
-  <PageHeader>Findings by Subject</PageHeader>
+  <PageHeader>Controls of "{{className}}"</PageHeader>
   <div class="grid grid-cols-2 gap-4 mt-4">
     <div class="bg-white rounded shadow">
       <div class="px-4 pt-2">
@@ -51,17 +51,17 @@
       </form>
     </div>
     <div class="mt-4">
-      <div v-for="subject in subjectFindings" :key="subject.subject">
+      <div v-for="control in controlFindings" :key="control.controlid">
         <CollapsableGroup>
           <template #header>
             <div class="w-full grid grid-cols-6 py-2 px-4 items-center">
               <div>
-                {{ subjects[subject.subject]?.title }}
+                {{ control.controlid }}
               </div>
               <div>
                 <ResultStatusBadge
                   :gray="
-                    subject.findings.reduce(
+                    control.findings.reduce(
                       (total, current) =>
                         ['satisfied', 'not satisfied'].includes(
                           current.status?.state.toLowerCase(),
@@ -72,7 +72,7 @@
                     )
                   "
                   :red="
-                    subject.findings.reduce(
+                    control.findings.reduce(
                       (total, current) =>
                         current.status?.state.toLowerCase() == 'not satisfied'
                           ? total + 1
@@ -81,7 +81,7 @@
                     )
                   "
                   :green="
-                    subject.findings.reduce(
+                    control.findings.reduce(
                       (total, current) =>
                         current.status?.state.toLowerCase() == 'satisfied'
                           ? total + 1
@@ -93,35 +93,35 @@
               </div>
               <div class="col-span-4">
                 <LabelList
-                  :labels="subjects[subject.subject]?.attributes || {}"
+                  :labels="{}"
                 />
               </div>
             </div>
           </template>
           <div
             class="flex border-t first:border-none hover:bg-zinc-100 py-2 px-2"
-            v-for="finding in subject.findings"
+            v-for="finding in control.findings"
             :key="finding.uuid"
           >
             <div class="shrink-0 pr-4">
-              <ResultStatusRing :state="finding.status.state?.toLowerCase()"></ResultStatusRing>
+                <ResultStatusRing :state="finding.status.state?.toLowerCase()"></ResultStatusRing>
             </div>
             <div class="w-1/3">{{ finding.title }}</div>
-            <div class="flex-wrap grow">
-              <LabelList :labels="finding.labels" :exclude-keys="Object.keys(subjects[subject.subject]?.attributes || {})" />
-            </div>
-            <div class="flex items-start">
-              <RouterLink
-                class="bg-gray-50 hover:bg-gray-200 text-blue-800 border border-blue-800 px-4 py-1 rounded-md text-sm mr-2"
-                :to="{ name: 'finding-history', params: { uuid: finding.uuid } }"
-              >History
-              </RouterLink>
-              <RouterLink
-                class="bg-blue-800 hover:bg-clue-700 text-white px-4 py-1 rounded-md text-sm"
-                :to="{ name: 'finding-view', params: { id: finding._id } }"
-              >View
-              </RouterLink>
-            </div>
+              <div class="flex-wrap grow">
+                <LabelList :labels="finding.labels" />
+              </div>
+              <div class="flex items-start">
+                <RouterLink
+                  class="bg-gray-50 hover:bg-gray-200 text-blue-800 border border-blue-800 px-4 py-1 rounded-md text-sm mr-2"
+                  :to="{ name: 'finding-history', params: { uuid: finding.uuid } }"
+                >History
+                </RouterLink>
+                <RouterLink
+                  class="bg-blue-800 hover:bg-clue-700 text-white px-4 py-1 rounded-md text-sm"
+                  :to="{ name: 'finding-view', params: { id: finding._id } }"
+                >View
+                </RouterLink>
+              </div>
           </div>
         </CollapsableGroup>
       </div>
@@ -129,7 +129,7 @@
   </PageCard>
 </template>
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import PageHeader from '@/components/PageHeader.vue'
 import PageCard from '@/components/PageCard.vue'
@@ -143,25 +143,25 @@ import {
 } from '@/parsers/findings.ts'
 import ResultComplianceOverTimeChart from '@/components/ResultComplianceOverTimeChart.vue'
 import ResultStatusBadge from '@/components/ResultStatusBadge.vue'
-import { type FindingBySubject, useFindingsStore } from '@/stores/findings.ts'
+import { type FindingsByClassName, useFindingsStore } from '@/stores/findings.ts'
 import { useHeartbeatsStore } from '@/stores/heartbeats.ts'
 import { calculateHeartbeatOverTimeData } from '@/parsers/heartbeats.ts'
 import CollapsableGroup from '@/components/CollapsableGroup.vue'
-import { type Subject, useSubjectsStore } from '@/stores/subjects.ts'
 import ResultStatusRing from '@/components/ResultStatusRing.vue'
 
-const subjectStore = useSubjectsStore()
 const findingsStore = useFindingsStore()
 const heartbeatStore = useHeartbeatsStore()
 const route = useRoute()
 const router = useRouter()
 
+const className = computed(() => route.params.className as string)
+
 const filter = ref<string>('')
 if (route.query.filter) {
   filter.value = route.query.filter as string
 }
-const subjectFindings = ref<FindingBySubject[]>([])
-const subjects = ref<Record<string, Subject>>({ } as Record<string, Subject>)
+const controlFindings = ref<FindingsByClassName[]>()
+
 const complianceChartData = ref<ChartData<'line', DateDataPoint[]>>({
   labels: [],
   datasets: [],
@@ -174,16 +174,9 @@ const heartbeatChartData = ref<ChartData<'line', DateDataPoint[]>>({
 async function search() {
   const query = new FilterParser(filter.value).parse()
   await router.push({ query: { filter: filter.value }})
-  findingsStore.searchBySubject(query).then((response) => {
-    subjectFindings.value = response.data;
-    // results.value = response.data
-    response.data.forEach((subject) => {
-      subjectStore.get(subject.subject).then((response) => {
-        const something = subjects.value;
-        something[subject.subject] = response.data as Subject;
-        subjects.value = something;
-      });
-    });
+
+  findingsStore.getByControlClass(className.value).then((response) => {
+    controlFindings.value = response.data;
   })
 
   findingsStore.getComplianceForSearch(query).then((response) => {
