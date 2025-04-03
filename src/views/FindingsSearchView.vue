@@ -143,7 +143,7 @@ async function search() {
 }
 
 async function save() {
-  await router.push({ name: 'assessment-plan.create', query: { filter: filter.value } })
+  await router.push({ name: 'dashboards.create', query: { filter: filter.value } })
 }
 
 onMounted(() => {

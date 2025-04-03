@@ -1,14 +1,14 @@
 <template>
   <PageHeader>
-    New Assessment Plan
+    New Dashboard
   </PageHeader>
   <PageCard class="mt-8 w-1/2">
-    <form @submit.prevent="createPlan">
+    <form @submit.prevent="submit">
       <div class="mb-4">
         <label for="name" class="block text-sm font-medium text-gray-700">Name</label>
         <input
           type="text"
-          v-model="plan.metadata.title"
+          v-model="dashboard.name"
           id="name"
           name="name"
           required
@@ -39,13 +39,13 @@ import { onMounted, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router';
 import PageHeader from '@/components/PageHeader.vue'
 import PageCard from '@/components/PageCard.vue'
-import { useApiStore, type Plan } from '@/stores/api'
 import { FilterParser } from '@/parsers/labelfilter.ts'
+import { type Dashboard, useDashboardStore } from '@/stores/dashboards.ts'
 
 const router = useRouter();
 const route = useRoute();
-const apiStore = useApiStore();
-const plan = ref<Plan>({metadata: {}} as Plan);
+const store = useDashboardStore();
+const dashboard = ref<Dashboard>({} as Dashboard);
 
 const filter = ref<string>("");
 
@@ -55,13 +55,16 @@ onMounted(() => {
   }
 })
 
-async function createPlan() {
+async function submit() {
   try {
-    const planfilter = new FilterParser(filter.value).parse();
-    const newPlan = await apiStore.createPlan(plan.value, planfilter)
+    const parsedFilter = new FilterParser(filter.value).parse();
+    await store.create({
+      ...dashboard.value,
+      filter: parsedFilter,
+    })
     return router.push({
-      name: 'assessment-plan.view',
-      params: { id: newPlan.uuid },
+      name: 'findings',
+      query: { filter: filter.value },
     });
   } catch (error) {
     console.error(error);

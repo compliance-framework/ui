@@ -8,23 +8,47 @@ const authenticatedRoutes = [
     // route level code-splitting
     // this generates a separate chunk (About.[hash].js) for this route
     // which is lazy-loaded when the route is visited.
-    component: () => import('../views/HomeView.vue'),
+    component: () => import('../views/FindingsSearchView.vue'),
   },
   {
-    path: '/assessment-plans/create',
-    name: 'assessment-plan.create',
+    path: '/dashboards',
+    name: 'dashboards',
     // route level code-splitting
     // this generates a separate chunk (About.[hash].js) for this route
     // which is lazy-loaded when the route is visited.
-    component: () => import('../views/AssessmentPlanCreate.vue'),
+    component: () => import('../views/DashboardsView.vue'),
   },
   {
-    path: '/assessment-plans/:id',
-    name: 'assessment-plan.view',
+    path: '/dashboards/create',
+    name: 'dashboards.create',
     // route level code-splitting
     // this generates a separate chunk (About.[hash].js) for this route
     // which is lazy-loaded when the route is visited.
-    component: () => import('../views/AssessmentPlanView.vue'),
+    component: () => import('../views/DashboardCreate.vue'),
+  },
+  {
+    path: '/dashboards/:id',
+    name: 'dashboards.view',
+    // route level code-splitting
+    // this generates a separate chunk (About.[hash].js) for this route
+    // which is lazy-loaded when the route is visited.
+    component: () => import('../views/DashboardsView.vue'),
+  },
+  {
+    path: '/catalogs',
+    name: 'catalog-list',
+    // route level code-splitting
+    // this generates a separate chunk (About.[hash].js) for this route
+    // which is lazy-loaded when the route is visited.
+    component: () => import('../views/CatalogListView.vue'),
+  },
+  {
+    path: '/catalogs/:id',
+    name: 'catalog-view',
+    // route level code-splitting
+    // this generates a separate chunk (About.[hash].js) for this route
+    // which is lazy-loaded when the route is visited.
+    component: () => import('../views/CatalogView.vue'),
   },
   {
     path: '/findings/:id',
@@ -44,12 +68,12 @@ const authenticatedRoutes = [
   },
   {
     path: '/subjects',
-    name: 'subjects',
+    name: 'admin-subjects',
     component: () => import('../views/SubjectsView.vue'),
   },
   {
     path: '/subject/:subjectId',
-    name: 'subject-crud',
+    name: 'admin-subject-crud',
     component: () => import('../views/SubjectEditView.vue'),
   },
   {
