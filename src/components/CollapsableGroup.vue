@@ -17,8 +17,7 @@ function toggleOpen() {
     }'>
       <slot name="header"></slot>
     </div>
-    <div :class='{
-      hidden: !isOpen,
+    <div v-if="isOpen" :class='{
       "bg-gray-50 px-4 border-2": isOpen
     }'>
       <slot></slot>

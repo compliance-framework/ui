@@ -2,13 +2,14 @@ import { defineStore } from 'pinia';
 import { useConfigStore } from '@/stores/config.ts';
 import { type Filter } from '@/parsers/labelfilter.ts';
 import type {
-  ControlReference, DataResponse,
+  ControlReference,
+  DataResponse,
   FindingStatus,
   Link,
   Origin,
   Property,
-  RiskReference
-} from '@/stores/types.ts'
+  RiskReference,
+} from '@/stores/types.ts';
 
 export interface Finding {
   _id?: string;
@@ -77,17 +78,22 @@ export const useFindingsStore = defineStore('findings', () => {
     return (await response.json()) as DataResponse<Finding[]>;
   }
 
-  async function searchBySubject(filter: Filter): Promise<DataResponse<FindingBySubject[]>> {
+  async function searchBySubject(
+    filter: Filter,
+  ): Promise<DataResponse<FindingBySubject[]>> {
     const config = await configStore.getConfig();
-    const response = await fetch(`${config.API_URL}/api/findings/search-by-subject`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
+    const response = await fetch(
+      `${config.API_URL}/api/findings/search-by-subject`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          filter: filter,
+        }),
       },
-      body: JSON.stringify({
-        filter: filter,
-      }),
-    });
+    );
 
     if (!response.ok) {
       throw new Error(`Error: ${response.statusText}`);
@@ -96,7 +102,9 @@ export const useFindingsStore = defineStore('findings', () => {
     return (await response.json()) as DataResponse<FindingBySubject[]>;
   }
 
-  async function getByControlClass(className: string): Promise<DataResponse<FindingsByClassName[]>> {
+  async function getByControlClass(
+    className: string,
+  ): Promise<DataResponse<FindingsByClassName[]>> {
     const config = await configStore.getConfig();
     const response = await fetch(
       `${config.API_URL}/api/findings/by-control/${className}`,
@@ -179,6 +187,27 @@ export const useFindingsStore = defineStore('findings', () => {
     return (await response.json()) as DataResponse<ComplianceInterval[]>;
   }
 
+  async function getComplianceForControl(
+    _class: string,
+    id: string,
+  ): Promise<DataResponse<ComplianceIntervalStatus[]>> {
+    const config = await configStore.getConfig();
+    const response = await fetch(
+      `${config.API_URL}/api/findings/instant-compliance-by-control/${_class}/${id}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      },
+    );
+
+    if (!response.ok) {
+      throw new Error(`Error: ${response.statusText}`);
+    }
+    return (await response.json()) as DataResponse<string[]>;
+  }
+
   async function getAllControlClasses(): Promise<DataResponse<string[]>> {
     const config = await configStore.getConfig();
     const response = await fetch(
@@ -194,8 +223,7 @@ export const useFindingsStore = defineStore('findings', () => {
     if (!response.ok) {
       throw new Error(`Error: ${response.statusText}`);
     }
-
-    return (await response.json()) as DataResponse<string[]>;
+    return (await response.json()) as DataResponse<ComplianceIntervalStatus[]>;
   }
 
   // async function getStreamResults(streamId: string): Promise<DataResponse<Result[]>> {
@@ -213,5 +241,6 @@ export const useFindingsStore = defineStore('findings', () => {
     getComplianceForUUID,
     getByControlClass,
     getAllControlClasses,
+    getComplianceForControl,
   };
 });

@@ -72,6 +72,24 @@ export interface Property {
   ns?: string;
 }
 
+export interface Part {
+  class: string;
+  id: string;
+  links: Link[];
+  name: string;
+  ns: string;
+  parts: Part[];
+  props: Property[];
+  prose: string;
+  title: string;
+}
+
+export interface Parent {
+  id: string;
+  class: string;
+  type: string;
+}
+
 export interface DataResponse<T> {
   data: T;
 }

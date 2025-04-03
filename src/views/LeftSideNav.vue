@@ -15,10 +15,15 @@ import logo from '@/assets/logo.svg'
     </template>
 
     <div class="bg-zinc-100 h-0.5 mb-2"></div>
+    <SideNavLink :to="{ name: 'dashboards' }">Dashboards</SideNavLink>
+    <SideNavLink :to="{ name: 'catalog-list' }">Catalogs</SideNavLink>
     <SideNavCategory title="Findings (Evidence)">
       <SideNavLink :to="{ name: 'findings' }">All</SideNavLink>
       <SideNavLink :to="{ name: 'findings-by-subject' }">By Subject</SideNavLink>
       <SideNavLink :to="{ name: 'list-classes-of-findings' }">By Control Class</SideNavLink>
+    </SideNavCategory>
+    <SideNavCategory title="Admin">
+      <SideNavLink :to="{ name: 'admin-subjects' }">Subjects</SideNavLink>
     </SideNavCategory>
     <SideNavCategory title="Continuous Compliance">
       <SideNavLink :to="{ name: 'about' }">About</SideNavLink>
