@@ -205,7 +205,7 @@ export const useFindingsStore = defineStore('findings', () => {
     if (!response.ok) {
       throw new Error(`Error: ${response.statusText}`);
     }
-    return (await response.json()) as DataResponse<string[]>;
+    return (await response.json()) as DataResponse<ComplianceIntervalStatus[]>;
   }
 
   async function getAllControlClasses(): Promise<DataResponse<string[]>> {
@@ -223,7 +223,7 @@ export const useFindingsStore = defineStore('findings', () => {
     if (!response.ok) {
       throw new Error(`Error: ${response.statusText}`);
     }
-    return (await response.json()) as DataResponse<ComplianceIntervalStatus[]>;
+    return (await response.json()) as DataResponse<string[]>;
   }
 
   // async function getStreamResults(streamId: string): Promise<DataResponse<Result[]>> {
