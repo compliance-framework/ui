@@ -6,30 +6,58 @@
     {{ finding.uuid }}
   </PageSubHeader>
   <div class="grid grid-cols-2 gap-4 mt-4">
-    <PageCard>
-      <h3 class="text-lg flex items-center">
-        Finding
-        <span
-          :class="[
-            'inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ml-4',
-            getFindingStatusColor(finding.status?.state),
-          ]"
-        >
-          {{ finding.status?.state.toUpperCase() }}
-        </span>
-      </h3>
-      <div>
-        <div class="border-gray-200 last:border-b-0">
-          <p class="text-sm text-gray-800 mb-2">
-            Collected {{ new Date(finding.collected).toLocaleString() }}
-          </p>
-          <p class="font-medium mt-4">
-            {{ finding.title }}
-          </p>
-          <p class="pt-1">{{ finding.description }}</p>
+    <div>
+      <PageCard>
+        <h3 class="text-lg flex items-center">
+          Finding
+          <span
+            :class="[
+              'inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ml-4',
+              getFindingStatusColor(finding.status?.state),
+            ]"
+          >
+            {{ finding.status?.state.toUpperCase() }}
+          </span>
+        </h3>
+        <div>
+          <div class="border-gray-200 last:border-b-0">
+            <p class="text-sm text-gray-800 mb-2">
+              Collected {{ new Date(finding.collected).toLocaleString() }}
+            </p>
+            <p class="font-medium mt-4">
+              {{ finding.title }}
+            </p>
+            <p class="pt-1">{{ finding.description }}</p>
+            <p class="pt-1">{{ finding.remarks }}</p>
+          </div>
         </div>
-      </div>
-    </PageCard>
+      </PageCard>
+      <PageCard class="mt-4">
+        <h3 class="text-lg pl-4 mb-4">Observations</h3>
+        <div>
+          <div
+            v-for="observation in observations"
+            :key="observation._id"
+            class="px-4 py-2 hover:bg-zinc-100"
+          >
+            <p class="font-semibold">{{ observation.title }}</p>
+            <p class="text-sm text-gray-800 mb-2">
+              Collected {{ new Date(finding.collected).toLocaleString() }}
+            </p>
+            <p>{{ observation.description }}</p>
+            <p>{{ observation.remarks }}</p>
+            <div class="pt-2 flex items-center justify-between mb-2">
+              <button
+                @click="showActivities(observation)"
+                class="px-2 py-1 border-zinc-500 border rounded-md shadow text-sm"
+              >
+                View Tasks
+              </button>
+            </div>
+          </div>
+        </div>
+      </PageCard>
+    </div>
     <PageCard>
       <h3 class="text-lg pl-4 mb-4">Subjects</h3>
       <div>
@@ -51,28 +79,7 @@
         </div>
       </div>
     </PageCard>
-    <PageCard>
-      <h3 class="text-lg pl-4 mb-4">Observations</h3>
-      <div>
-        <div
-          v-for="observation in observations"
-          :key="observation._id"
-          class="px-4 py-2 hover:bg-zinc-100"
-        >
-          <p class="font-semibold">{{ observation.title }}</p>
-          <p>{{ observation.description }}</p>
-          <p>{{ (new Date(observation.collected)).toLocaleString() }}</p>
-          <div class="pt-2 flex items-center justify-between mb-2">
-            <button
-              @click="showActivities(observation)"
-              class="px-2 py-1 border-zinc-500 border rounded-md shadow text-sm"
-            >
-              View Tasks
-            </button>
-          </div>
-        </div>
-      </div>
-    </PageCard>
+
 
 
     <!--    <PageCard>-->

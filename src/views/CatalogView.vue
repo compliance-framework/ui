@@ -2,7 +2,7 @@
   <PageHeader>Catalog</PageHeader>
   <PageSubHeader>{{ catalog.metadata?.title }}</PageSubHeader>
 
-  <PageCard>
+  <PageCard class="mt-4">
     <CatalogGroup v-for="group in groups" :key="group.id" :group="group" />
   </PageCard>
 
@@ -15,7 +15,6 @@ import { useRoute } from 'vue-router'
 import PageSubHeader from '@/components/PageSubHeader.vue'
 import { type Group, useGroupsStore } from '@/stores/groups.ts'
 import PageCard from '@/components/PageCard.vue'
-import CollapsableGroup from '@/components/CollapsableGroup.vue'
 
 const catalogStore = useCatalogStore()
 const groupStore = useGroupsStore()

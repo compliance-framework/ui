@@ -21,7 +21,10 @@
   </div>
 
   <PageCard class="mt-4">
-    <h3 class="text-lg mb-4">Search</h3>
+    <div class="flex items-start justify-between">
+      <h3 class="text-lg mb-4">Search</h3>
+      <button @click="configStore.toggleLabels()" class="bg-gray-50 hover:bg-gray-200 text-blue-800 border border-blue-800 px-4 py-1 rounded-md text-sm flex items-center gap-2"><b-icon-eye-fill height="1.2em" width="1.2em" /> <span v-if="configStore.showLabels">Hide</span><span v-else>Show</span> Labels</button>
+    </div>
     <div>
       <form @submit.prevent="search">
         <div class="flex items-center">
@@ -46,17 +49,17 @@
         </div>
       </form>
     </div>
-    <div class="mt-4">
+    <div class="mt-4 max-w-full">
       <div
-        class="flex border-t first:border-none hover:bg-zinc-100 py-2 px-2"
+        class="flex items-center border-t first:border-none hover:bg-zinc-100 py-2 px-2"
         v-for="finding in findings"
         :key="finding.uuid"
       >
         <div class="shrink-0 pr-4">
           <ResultStatusRing :state="finding.status.state?.toLowerCase()"></ResultStatusRing>
         </div>
-        <div class="w-1/3">{{ finding.title }}</div>
-        <div class="flex-wrap grow">
+        <div class="flex-1">{{ finding.title }}</div>
+        <div class="flex-1" v-if="configStore.showLabels">
           <LabelList :labels="finding.labels" />
         </div>
         <div class="flex items-start">
@@ -82,7 +85,7 @@ import PageHeader from '@/components/PageHeader.vue'
 import PageCard from '@/components/PageCard.vue'
 import PageSubHeader from '@/components/PageSubHeader.vue'
 import { FilterParser } from '@/parsers/labelfilter.ts'
-import { BIconFloppy, BIconSearch } from 'bootstrap-icons-vue'
+import { BIconEyeFill, BIconFloppy, BIconSearch } from 'bootstrap-icons-vue'
 import LabelList from '@/components/LabelList.vue'
 import type { ChartData } from 'chart.js'
 import {
@@ -94,9 +97,11 @@ import ResultStatusRing from '@/components/ResultStatusRing.vue'
 import { type Finding, useFindingsStore } from '@/stores/findings.ts'
 import { useHeartbeatsStore } from '@/stores/heartbeats.ts'
 import { calculateHeartbeatOverTimeData } from '@/parsers/heartbeats.ts'
+import { useConfigStore } from '@/stores/config.ts'
 
 const findingsStore = useFindingsStore()
 const heartbeatStore = useHeartbeatsStore()
+const configStore = useConfigStore()
 const route = useRoute()
 const router = useRouter()
 
