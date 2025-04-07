@@ -1,10 +1,12 @@
 <template>
-  <div
-    v-for="label of sortedLabels"
-    :key="label"
-    class="inline-block bg-blue-100 border border-blue-200 m-1 text-gray-800 rounded-full text-sm px-2 py-0.5"
-  >
-    {{ label }}
+  <div class="flex items-center flex-wrap">
+    <div
+      v-for="label of sortedLabels"
+      :key="label"
+      class="inline-block bg-blue-100 border border-blue-200 m-1 text-gray-800 rounded-full text-sm px-2 py-0.5"
+    >
+      {{ label }}
+    </div>
   </div>
 </template>
 <script setup lang="ts">
@@ -29,7 +31,7 @@ const sortedLabels = computed(() => {
     .filter(([key]) => {
       return !["_policy_path", "_agent"].includes(key) && !excludeKeys.includes(key)
     })
-    .map(([key, value]) => key + ': ' + value)
+    .map(([key, value]) => `${key}=${value}`)
     .sort((a, b) => a > b ? -1 : 0)
 });
 </script>

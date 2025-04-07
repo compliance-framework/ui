@@ -22,7 +22,10 @@
   </div>
 
   <PageCard class="mt-4">
-    <h3 class="text-lg mb-4">Search</h3>
+    <div class="flex items-start justify-between">
+      <h3 class="text-lg mb-4">Search</h3>
+      <button @click="configStore.toggleLabels()" class="bg-gray-50 hover:bg-gray-200 text-blue-800 border border-blue-800 px-4 py-1 rounded-md text-sm flex items-center gap-2"><b-icon-eye-fill height="1.2em" width="1.2em" /> <span v-if="configStore.showLabels">Hide</span><span v-else>Show</span> Labels</button>
+    </div>
     <div>
       <form @submit.prevent="search">
         <div class="flex items-center">
@@ -54,10 +57,8 @@
       <div v-for="subject in subjectFindings" :key="subject.subject">
         <CollapsableGroup>
           <template #header>
-            <div class="w-full grid grid-cols-6 py-2 px-4 items-center">
-              <div>
-                {{ subjects[subject.subject]?.title }}
-              </div>
+            <div class="flex items-center py-2 px-4 items-center">
+              <div class="w-1/4">{{ subjects[subject.subject]?.title }}</div>
               <div>
                 <ResultStatusBadge
                   :gray="
@@ -91,10 +92,8 @@
                   "
                 ></ResultStatusBadge>
               </div>
-              <div class="col-span-4">
-                <LabelList
-                  :labels="subjects[subject.subject]?.attributes || {}"
-                />
+              <div class="flex-1 ml-4" v-if="configStore.showLabels">
+                <LabelList :labels="subjects[subject.subject]?.attributes || {}" />
               </div>
             </div>
           </template>
@@ -134,7 +133,7 @@ import { useRoute, useRouter } from 'vue-router'
 import PageHeader from '@/components/PageHeader.vue'
 import PageCard from '@/components/PageCard.vue'
 import { FilterParser } from '@/parsers/labelfilter.ts'
-import { BIconFloppy, BIconSearch } from 'bootstrap-icons-vue'
+import { BIconEyeFill, BIconFloppy, BIconSearch } from 'bootstrap-icons-vue'
 import LabelList from '@/components/LabelList.vue'
 import type { ChartData } from 'chart.js'
 import {
@@ -149,10 +148,12 @@ import { calculateHeartbeatOverTimeData } from '@/parsers/heartbeats.ts'
 import CollapsableGroup from '@/components/CollapsableGroup.vue'
 import { type Subject, useSubjectsStore } from '@/stores/subjects.ts'
 import ResultStatusRing from '@/components/ResultStatusRing.vue'
+import { useConfigStore } from '@/stores/config.ts'
 
 const subjectStore = useSubjectsStore()
 const findingsStore = useFindingsStore()
 const heartbeatStore = useHeartbeatsStore()
+const configStore = useConfigStore()
 const route = useRoute()
 const router = useRouter()
 

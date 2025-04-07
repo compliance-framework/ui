@@ -34,6 +34,11 @@
                     )
                   "
         ></ResultStatusBadge>
+        <RouterLink
+          class="bg-gray-50 hover:bg-gray-200 text-blue-800 border border-blue-800 px-4 py-1 rounded-md text-sm mr-2 ml-4"
+          :to="{ name: 'catalog-control-findings', params: { class: control.class, id: control.id } }"
+        >Findings
+        </RouterLink>
       </div>
     </template>
     <div class="px-2 pt-2 pb-8">
