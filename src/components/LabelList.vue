@@ -21,17 +21,20 @@ const { labels, excludeKeys } = defineProps({
     type: Array,
     default() {
       return [];
-    }
+    },
   },
-})
+});
 
 const sortedLabels = computed(() => {
-  return Object
-    .entries(labels)
+  return Object.entries(labels)
     .filter(([key]) => {
-      return !["_policy_path", "_agent"].includes(key) && !excludeKeys.includes(key)
+      return (
+        key.substring(0, 1) != '_' &&
+        !['_policy_path', '_agent'].includes(key) &&
+        !excludeKeys.includes(key)
+      );
     })
     .map(([key, value]) => `${key}=${value}`)
-    .sort((a, b) => a > b ? -1 : 0)
+    .sort((a, b) => (a > b ? -1 : 0));
 });
 </script>

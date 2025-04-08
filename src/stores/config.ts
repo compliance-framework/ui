@@ -8,7 +8,7 @@ export interface Config {
 
 export const useConfigStore = defineStore('config', () => {
   const config = ref<Config>()
-  const showLabels = ref<boolean>(false);
+  const showLabels = ref<boolean>(true);
 
   async function getConfig(): Promise<Config> {
     if (config.value) {

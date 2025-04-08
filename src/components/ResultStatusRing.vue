@@ -1,14 +1,16 @@
 <template>
-  <div class="inline-flex">
-    <div v-if="state == 'satisfied'" class="text-base text-center w-4 h-4 font-light bg-green-700 rounded-full text-white">
+    <div v-if="state == 'satisfied'" :class="{...classes, 'bg-green-700': true}">
     </div>
-    <div v-else-if="state == 'not satisfied'" class="text-base text-center w-4 h-4 font-light bg-red-600 rounded-full text-white">
+    <div v-else-if="state == 'not satisfied'" :class="{...classes, 'bg-red-600': true}">
     </div>
-    <div v-else class="text-base text-center w-4 h-4 font-light bg-zinc-400 rounded-full text-white">
+    <div v-else :class="{...classes, 'bg-zinc-400': true}">
     </div>
-  </div>
 </template>
 
 <script setup lang="ts">
 defineProps(['state'])
+
+const classes = {
+  "text-base text-center w-8 h-5 rounded-full font-light": true,
+}
 </script>
