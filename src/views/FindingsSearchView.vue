@@ -3,13 +3,13 @@
   <PageSubHeader>Search for findings using labels</PageSubHeader>
   <div class="grid grid-cols-2 gap-4 mt-4">
     <PageCard>
-      <h3 class="text-lg font-semibold text-zinc-600">Compliance over time</h3>
+      <h3 class="text-lg font-semibold text-zinc-600 dark:text-slate-300">Compliance over time</h3>
       <div class="h-32">
         <ResultComplianceOverTimeChart :data="complianceChartData" />
       </div>
     </PageCard>
     <PageCard>
-      <h3 class="text-lg font-semibold text-zinc-600">Agent health</h3>
+      <h3 class="text-lg font-semibold text-zinc-600 dark:text-slate-300">Agent health</h3>
       <div class="h-32">
         <ResultComplianceOverTimeChart :data="heartbeatChartData" />
       </div>
@@ -19,8 +19,8 @@
   <div class="mt-4">
     <div class="flex gap-4">
       <form @submit.prevent="search" class="grow">
-        <div class="flex border rounded-md text-zinc-700">
-          <div class="pl-4 my-auto bg-white">
+        <div class="flex border rounded-md text-zinc-700 dark:text-slate-300 bg-white dark:bg-slate-900 dark:border-slate-700">
+          <div class="pl-4 my-auto ">
             <BIconSearch class="mr-2 " height="1.2rem" width="1.2rem"></BIconSearch>
           </div>
           <input
@@ -29,7 +29,7 @@
             id="filter"
             name="filter"
             placeholder="foo=bar AND bar=baz AND (bar!=bat OR bar!=bat)"
-            class="grow px-2 py-2 focus:border-none focus-visible:border-none focus:ring-0 focus-visible:ring-0 focus:outline-none focus-visible:outline-none"
+            class="grow px-2 py-2 focus:border-none focus-visible:border-none focus:ring-0 focus-visible:ring-0 focus:outline-none focus-visible:outline-none bg-white dark:bg-slate-900"
           />
           <SecondaryButton
             type="submit"
@@ -39,23 +39,23 @@
           </SecondaryButton>
         </div>
       </form>
-      <SecondaryButton @click.prevent="save">
+      <SecondaryButton @click.prevent="save" class="text-sm">
         Save Search
       </SecondaryButton>
-      <PrimaryButton @click="configStore.toggleLabels()" class="flex items-center gap-1">
+      <PrimaryButton @click="configStore.toggleLabels()" class="flex items-center gap-1 text-sm">
         <SomeIcon height="1.7em" width="1.7em" /><span v-if="configStore.showLabels">Hide Labels</span><span v-else>Show Labels</span>
       </PrimaryButton>
     </div>
   </div>
 
 
-  <div class="mt-4 rounded-md bg-white border-collapse border">
-      <table class="table-auto w-full rounded-full">
+  <div class="mt-4 rounded-md bg-white dark:bg-slate-900 border-collapse border dark:border-slate-700">
+      <table class="table-auto w-full rounded-full dark:text-slate-300">
         <tbody>
 
 <!--          class="flex items-center border-t first:border-none hover:bg-zinc-100 py-2 px-2"-->
         <tr
-          class="hover:bg-zinc-50 border-b"
+          class="hover:bg-zinc-50 dark:hover:bg-slate-800 border-b dark:border-slate-700"
           v-for="finding in findings"
           :key="finding.uuid"
         >
@@ -68,12 +68,12 @@
           </td>
           <td class="py-2 px-2 text-right whitespace-nowrap">
             <RouterLink
-              class="bg-gray-100 hover:bg-gray-200 px-4 py-1 rounded-md mr-2 border"
+              class="mr-2 bg-zinc-100 dark:bg-slate-900 hover:bg-zinc-200 dark:hover:bg-slate-800 border dark:border-slate-700 px-4 py-1 rounded-md"
               :to="{ name: 'finding-history', params: { uuid: finding.uuid } }"
             >History
             </RouterLink>
             <RouterLink
-              class="bg-white hover:bg-zinc-100 hover:shadow hover:bg-clue-700 px-4 py-1 rounded-md border"
+              class="bg-white hover:bg-zinc-100 border px-4 py-1 rounded-md dark:bg-slate-800 dark:hover:bg-slate-700 dark:border-slate-700"
               :to="{ name: 'finding-view', params: { id: finding._id } }"
             >View
             </RouterLink>

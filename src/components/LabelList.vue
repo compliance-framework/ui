@@ -3,7 +3,7 @@
     <div
       v-for="label of sortedLabels"
       :key="label"
-      class="inline-block bg-blue-100 border border-blue-200 m-1 text-gray-800 rounded-full text-sm px-2 py-0.5"
+      class="inline-block bg-blue-100 dark:bg-slate-800 border border-blue-200 dark:border-slate-700 m-1 text-gray-800 dark:text-slate-300 rounded-full text-sm px-2 py-0.5"
     >
       {{ label }}
     </div>

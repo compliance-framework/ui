@@ -3,14 +3,16 @@ import SideNavCategory from '@/components/navigation/SideNavCategory.vue'
 import SideNav from '@/components/navigation/SideNav.vue'
 import SideNavLink from '@/components/navigation/SideNavLink.vue'
 import SideNavLogo from '@/components/navigation/SideNavLogo.vue'
-import logo from '@/assets/logo.svg'
+import lightLogo from '@/assets/logo-light.svg'
+import darkLogo from '@/assets/logo-dark.svg'
 </script>
 
 <template>
-  <SideNav class="flex flex-col max-h-screen border-r">
+  <SideNav class="flex flex-col max-h-screen border-r dark:border-slate-700 bg-white dark:bg-slate-900">
     <template #logo>
       <div class="px-8 py-8">
-        <SideNavLogo alt="Vue logo" :src="logo" class="w-full"/>
+        <SideNavLogo alt="Vue logo" :src="lightLogo" class="w-full dark:hidden"/>
+        <SideNavLogo alt="Vue logo" :src="darkLogo" class="w-full hidden dark:block"/>
       </div>
     </template>
 
@@ -35,9 +37,9 @@ import logo from '@/assets/logo.svg'
 
 <style>
 .router-link {
-  @apply border-l-transparent border-l-8 text-zinc-700;
+  @apply border-l-transparent border-l-8 text-zinc-700 dark:text-slate-300;
 }
 .router-link-exact-active {
-  @apply bg-gradient-to-r from-slate-200 to-slate-100 border-l-slate-300;
+  @apply bg-gradient-to-r from-slate-200 to-slate-100 border-l-slate-300 dark:from-slate-700 dark:to-slate-800 dark:border-slate-500 dark:text-slate-200;
 }
 </style>
