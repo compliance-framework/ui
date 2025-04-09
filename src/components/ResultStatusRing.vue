@@ -11,6 +11,6 @@
 defineProps(['state'])
 
 const classes = {
-  "text-base text-center w-8 h-5 rounded-full font-light": true,
+  "text-base text-center w-6 h-5 rounded-full font-light": true,
 }
 </script>

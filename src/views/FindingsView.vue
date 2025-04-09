@@ -5,14 +5,16 @@
   <PageSubHeader>
     {{ finding.uuid }}
   </PageSubHeader>
-  <div class="grid grid-cols-2 gap-4 mt-4">
+  <div class="grid grid-cols-2 gap-4 mt-4 items-start">
     <div>
       <PageCard>
-        <h3 class="text-lg flex items-center">
-          Finding
+        <h3 class="text-lg flex items-center mb-2">
+          <span>
+            Finding
+          </span>
           <span
             :class="[
-              'inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ml-4',
+              'rounded-md px-2 py-1 text-sm ml-4 font-light',
               getFindingStatusColor(finding.status?.state),
             ]"
           >
@@ -20,55 +22,48 @@
           </span>
         </h3>
         <div>
-          <div class="border-gray-200 last:border-b-0">
-            <p class="text-sm text-gray-800 mb-2">
-              Collected {{ new Date(finding.collected).toLocaleString() }}
-            </p>
-            <p class="font-medium mt-4">
-              {{ finding.title }}
-            </p>
-            <p class="pt-1">{{ finding.description }}</p>
-            <p class="pt-1">{{ finding.remarks }}</p>
-          </div>
+          <p class="text-sm text-gray-800 dark:text-slate-300">
+            Collected {{ new Date(finding.collected).toLocaleString() }}
+          </p>
+          <p class="font-medium mt-4">
+            {{ finding.title }}
+          </p>
+          <p class="pt-1">{{ finding.description }}</p>
+          <p class="pt-1">{{ finding.remarks }}</p>
         </div>
       </PageCard>
       <PageCard class="mt-4">
-        <h3 class="text-lg pl-4 mb-4">Observations</h3>
-        <div>
-          <div
-            v-for="observation in observations"
-            :key="observation._id"
-            class="px-4 py-2 hover:bg-zinc-100"
+        <h3 class="text-lg">Observations</h3>
+        <div
+          v-for="observation in observations"
+          :key="observation._id"
+          class="mt-2"
+        >
+          <p class="font-semibold">{{ observation.title }}</p>
+          <p class="text-sm text-gray-800 dark:text-slate-300 mb-2">
+            Collected {{ new Date(finding.collected).toLocaleString() }}
+          </p>
+          <p>{{ observation.description }}</p>
+          <p>{{ observation.remarks }}</p>
+          <SecondaryButton
+            @click="showActivities(observation)"
+            class="mt-4"
           >
-            <p class="font-semibold">{{ observation.title }}</p>
-            <p class="text-sm text-gray-800 mb-2">
-              Collected {{ new Date(finding.collected).toLocaleString() }}
-            </p>
-            <p>{{ observation.description }}</p>
-            <p>{{ observation.remarks }}</p>
-            <div class="pt-2 flex items-center justify-between mb-2">
-              <button
-                @click="showActivities(observation)"
-                class="px-2 py-1 border-zinc-500 border rounded-md shadow text-sm"
-              >
-                View Tasks
-              </button>
-            </div>
-          </div>
+            View Tasks
+          </SecondaryButton>
         </div>
       </PageCard>
     </div>
     <PageCard>
-      <h3 class="text-lg pl-4 mb-4">Subjects</h3>
-      <div>
+      <h3 class="text-lg mb-2">Subjects</h3>
+      <div class="grid grid-cols-2 gap-4 items-start">
         <div
           v-for="subject in subjects"
           :key="subject._id"
-          class="px-4 py-2 hover:bg-zinc-100"
         >
           <p class="font-semibold">Type: {{ subject.type }}</p>
-          <p class="mt-2 mb-2">Attributes</p>
-          <table>
+          <p class="mb-2">Attributes</p>
+          <table class="w-full table-auto">
             <tbody>
               <tr v-for="(value, key) in subject.attributes" :key="key" class="table-fixed border-collapse border border-gray-500">
                 <td class="border border-gray-500 px-2 py-1">{{ key }}</td>
@@ -119,13 +114,13 @@
           </div>
         </div>
       </div>
-      <div class="border-t border-zinc-300 text-right py-2 px-4">
-        <button
+      <div class="border-t border-zinc-300 dark:border-slate-700 text-right py-4 px-4">
+        <PrimaryButton
           @click="toggleActivitiesModal(false)"
           class="px-2 py-1 border-zinc-500 border rounded-md shadow"
         >
           Close
-        </button>
+        </PrimaryButton>
       </div>
     </Modal>
   </div>
@@ -141,6 +136,8 @@ import { useFindingsStore, type Finding } from '@/stores/findings.ts';
 import { type Observation, useObservationsStore } from '@/stores/observations.ts'
 import { type Subject, useSubjectsStore } from '@/stores/subjects.ts'
 import type { Activity } from '@/stores/types.ts'
+import PrimaryButton from '@/components/PrimaryButton.vue'
+import SecondaryButton from '@/components/SecondaryButton.vue'
 
 const findingsStore = useFindingsStore();
 const observationsStore = useObservationsStore();
@@ -156,8 +153,8 @@ const showActivitiesModal = ref(false);
 
 enum FindingStatusColor {
   UNKNOWN = 'grey',
-  SATISFIED = 'bg-green-50 text-green-800 ring-green-600/20',
-  'NOT SATISFIED' = 'bg-red-50 text-red-800 ring-red-600/20',
+  SATISFIED = 'bg-green-50 dark:bg-green-950/30 text-green-800 dark:text-green-500 border border-green-800 dark:border-green-600',
+  'NOT SATISFIED' = 'bg-red-50 dark:bg-red-950/30 text-red-800 dark:text-red-500 border border-red-800 dark:border-red-600',
 }
 
 function showActivities(observation: Observation) {
