@@ -11,9 +11,9 @@
         class="fixed inset-0 h-screen w-screen overflow-auto z-1"
         aria-hidden="true"
       >
-        <div class="bg-gray-500/70 fixed left-0 top-0 w-screen h-screen z-10" @click.prevent="$emit('close')" />
+        <div class="bg-gray-500/70 dark:bg-slate-800/95 fixed left-0 top-0 w-screen h-screen z-10" @click.prevent="$emit('close')" />
         <div
-          :class="'relative z-20 mx-auto my-12 bg-white rounded-md shadow-xl overflow-hidden ' + sizeClass"
+          :class="'relative z-20 mx-auto my-12 bg-white dark:bg-slate-900 dark:border-slate-700 rounded-md shadow-xl overflow-hidden dark:text-slate-200 ' + sizeClass"
           v-bind="$attrs"
         >
             <slot></slot>

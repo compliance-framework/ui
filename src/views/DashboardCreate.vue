@@ -5,32 +5,20 @@
   <PageCard class="mt-8 w-1/2">
     <form @submit.prevent="submit">
       <div class="mb-4">
-        <label for="name" class="block text-sm font-medium text-gray-700">Name</label>
-        <input
-          type="text"
-          v-model="dashboard.name"
-          id="name"
-          name="name"
-          required
-          class="mt-1 w-full rounded-md border-black border px-4 py-2 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-        />
+        <label class="inline-block pb-2">Name</label>
+        <FormInput v-model="dashboard.name" />
       </div>
       <div class="mb-4">
-        <label for="filter" class="block text-sm font-medium text-gray-700">Result Filter</label>
-        <input
-          type="text"
-          v-model="filter"
-          id="filter"
-          name="filter"
-          class="mt-1 w-full rounded-md border-black border px-4 py-2 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-        />
+        <label class="inline-block pb-2">Result Filter</label>
+        <FormInput v-model="filter" />
       </div>
-      <button
-        type="submit"
-        class="px-4 py-2 bg-blue-800 text-white rounded hover:bg-blue-700"
-      >
-        Submit
-      </button>
+      <div class="text-right">
+        <PrimaryButton
+          type="submit"
+        >
+          Submit
+        </PrimaryButton>
+      </div>
     </form>
   </PageCard>
 </template>
@@ -41,6 +29,8 @@ import PageHeader from '@/components/PageHeader.vue'
 import PageCard from '@/components/PageCard.vue'
 import { FilterParser } from '@/parsers/labelfilter.ts'
 import { type Dashboard, useDashboardStore } from '@/stores/dashboards.ts'
+import FormInput from '@/components/forms/FormInput.vue'
+import PrimaryButton from '@/components/PrimaryButton.vue'
 
 const router = useRouter();
 const route = useRoute();

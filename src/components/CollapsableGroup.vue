@@ -9,18 +9,14 @@ function toggleOpen() {
 </script>
 
 <template>
-  <div class="my-1">
     <div @click="toggleOpen" :class='{
-      "cursor-pointer border border-zinc-300 border-collapse": true,
+      "cursor-pointer hover:bg-zinc-50 dark:hover:bg-slate-800 border-b dark:border-slate-800": true,
       "hover:bg-gray-100": !isOpen,
       // "bg-blue-800": isOpen,
     }'>
       <slot name="header"></slot>
     </div>
-    <div v-if="isOpen" :class='{
-      "bg-gray-50 px-4 border-2": isOpen
-    }'>
+    <div v-if="isOpen" :class='{}'>
       <slot></slot>
     </div>
-  </div>
 </template>

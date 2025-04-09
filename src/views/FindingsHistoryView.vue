@@ -6,41 +6,50 @@
     {{ uuid }}
   </PageSubHeader>
   <div class="grid grid-cols-2 gap-4 mt-4">
-    <div class="bg-white rounded shadow">
-      <div class="px-4 pt-2">
-        <h3 class="text-lg font-semibold text-zinc-600">Compliance over time</h3>
-      </div>
+    <PageCard>
+      <h3 class="text-lg font-semibold text-zinc-600 dark:text-slate-300">
+        Compliance over time
+      </h3>
       <div class="h-32">
         <ResultComplianceOverTimeChart :data="complianceChartData" />
       </div>
-    </div>
-    <div class="bg-white rounded shadow">
-      <div class="px-4 pt-2">
-        <h3 class="text-lg font-semibold text-zinc-600">Agent health</h3>
-      </div>
+    </PageCard>
+    <PageCard>
+      <h3 class="text-lg font-semibold text-zinc-600 dark:text-slate-300">
+        Agent health
+      </h3>
       <div class="h-32">
         <ResultComplianceOverTimeChart :data="heartbeatChartData" />
       </div>
-    </div>
+    </PageCard>
   </div>
-  <PageCard class="mt-4">
-    <div
-      class="flex items-center border-t first:border-none hover:bg-zinc-100 py-2 px-2"
-      v-for="finding in findings"
-      :key="finding.uuid"
-    >
-      <div class="shrink-0 pr-4">
-        <ResultStatusRing :state="finding.status.state?.toLowerCase()"></ResultStatusRing>
-      </div>
-      <div class="w-1/3">{{ finding.title }}</div>
-      <div>
-        <RouterLink
-          class="bg-blue-800 hover:bg-clue-700 text-white px-4 py-1 rounded-md text-sm"
-          :to="{ name: 'finding-view', params: { id: finding._id } }"
-        >View</RouterLink>
-      </div>
-    </div>
-  </PageCard>
+  <div
+    class="mt-4 rounded-md bg-white dark:bg-slate-900 border-collapse border dark:border-slate-700"
+  >
+    <table class="table-auto w-full rounded-full dark:text-slate-300">
+      <tbody>
+      <tr
+        class="hover:bg-zinc-50 dark:hover:bg-slate-800 border-b dark:border-slate-700"
+        v-for="finding in findings"
+        :key="finding.uuid"
+      >
+        <td class="py-2 pl-4 pr-2 w-[1%]">
+          <ResultStatusRing
+            :state="finding.status.state?.toLowerCase()"
+          ></ResultStatusRing>
+        </td>
+        <td class="py-3 px-2 whitespace-nowrap grow">{{ finding.title }}</td>
+        <td class="py-2 px-2 text-right whitespace-nowrap">
+          <RouterLink
+            class="bg-white hover:bg-zinc-100 border px-4 py-1 rounded-md dark:bg-slate-800 dark:hover:bg-slate-700 dark:border-slate-700"
+            :to="{ name: 'finding-view', params: { id: finding._id } }"
+          >View
+          </RouterLink>
+        </td>
+      </tr>
+      </tbody>
+    </table>
+  </div>
 </template>
 <script setup lang="ts">
 import {  onMounted, ref } from 'vue'
@@ -58,6 +67,7 @@ import ResultStatusRing from '@/components/ResultStatusRing.vue'
 import { type Finding, useFindingsStore } from '@/stores/findings.ts'
 import { calculateHeartbeatOverTimeData } from '@/parsers/heartbeats.ts'
 import { useHeartbeatsStore } from '@/stores/heartbeats.ts'
+import LabelList from '@/components/LabelList.vue'
 
 const route = useRoute()
 const findingStore = useFindingsStore()

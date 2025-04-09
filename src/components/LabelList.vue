@@ -3,7 +3,7 @@
     <div
       v-for="label of sortedLabels"
       :key="label"
-      class="inline-block bg-blue-100 border border-blue-200 m-1 text-gray-800 rounded-full text-sm px-2 py-0.5"
+      class="bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 m-1 text-gray-800 dark:text-slate-300 rounded-md text-sm px-2 py-1"
     >
       {{ label }}
     </div>
@@ -21,17 +21,20 @@ const { labels, excludeKeys } = defineProps({
     type: Array,
     default() {
       return [];
-    }
+    },
   },
-})
+});
 
 const sortedLabels = computed(() => {
-  return Object
-    .entries(labels)
+  return Object.entries(labels)
     .filter(([key]) => {
-      return !["_policy_path", "_agent"].includes(key) && !excludeKeys.includes(key)
+      return (
+        key.substring(0, 1) != '_' &&
+        !['_policy_path', '_agent'].includes(key) &&
+        !excludeKeys.includes(key)
+      );
     })
     .map(([key, value]) => `${key}=${value}`)
-    .sort((a, b) => a > b ? -1 : 0)
+    .sort((a, b) => (a > b ? -1 : 0));
 });
 </script>

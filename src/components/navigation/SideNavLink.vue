@@ -5,9 +5,7 @@ defineProps([
 ])
 </script>
 <template>
-  <div class="py-1">
-    <RouterLink :to="to" class="block px-2 py-1 hover:bg-zinc-100">
-      <slot />
-    </RouterLink>
-  </div>
+  <RouterLink :to="to" class="block py-2 pl-8 router-link">
+    <slot />
+  </RouterLink>
 </template>

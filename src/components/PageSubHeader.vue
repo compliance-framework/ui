@@ -1,5 +1,5 @@
 <template>
-  <h2 class="text-base text-gray-200 font-light">
+  <h2 class="text-lg text-gray-700 dark:text-slate-300 font-light">
     <slot></slot>
   </h2>
 </template>
