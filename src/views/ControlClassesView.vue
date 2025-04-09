@@ -3,27 +3,33 @@
     All Classes
   </PageHeader>
 
-  <PageCard class="mt-8 w-full p-4">
-    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-      <div
+  <div
+    class="mt-4 rounded-md bg-white dark:bg-slate-900 border-collapse border dark:border-slate-700"
+  >
+    <table class="table-auto w-full rounded-full dark:text-slate-300">
+      <tbody>
+      <tr
+        class="hover:bg-zinc-50 dark:hover:bg-slate-800 border-b dark:border-slate-800"
         v-for="className in classes"
         :key="className"
-        class="bg-gray-100 p-4 rounded-lg shadow hover:shadow-md transition">
-        <p class="text-gray-800 font-medium mb-2">{{ className }}</p>
-        <router-link :to="`/findings/by-class/${className}`">
-          <button class="bg-blue-800 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm">
-            View controls
-          </button>
-        </router-link>
-      </div>
-    </div>
-  </PageCard>
+      >
+        <td class="py-3 px-4 whitespace-nowrap grow">{{ className }}</td>
+        <td class="py-2 px-2 text-right whitespace-nowrap">
+          <RouterLink
+            class="bg-white hover:bg-zinc-100 border px-4 py-1 rounded-md dark:bg-slate-800 dark:hover:bg-slate-700 dark:border-slate-700"
+            :to="{name: 'findings-by-class', params: {className}}"
+          >View
+          </RouterLink>
+        </td>
+      </tr>
+      </tbody>
+    </table>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import PageHeader from '@/components/PageHeader.vue'
-import PageCard from '@/components/PageCard.vue'
 import { useFindingsStore } from '@/stores/findings.ts'
 
 const findingsStore = useFindingsStore()

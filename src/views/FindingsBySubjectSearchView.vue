@@ -103,38 +103,9 @@
             </div>
           </div>
         </template>
-        <table class="table-auto w-full rounded-full dark:text-slate-300">
-          <tbody>
-          <tr
-            class="hover:bg-zinc-50 dark:hover:bg-slate-800 border-b dark:border-slate-800"
-            v-for="finding in subject.findings"
-            :key="finding.uuid"
-          >
-            <td class="py-2 pl-8 pr-2 w-[1%]">
-              <ResultStatusRing
-                class="p-0 m-0 whitespace-normal"
-                :state="finding.status.state?.toLowerCase()"
-              ></ResultStatusRing>
-            </td>
-            <td class="py-4 px-2 whitespace-nowrap grow text-sm">{{ finding.title }}</td>
-            <td class="" v-if="configStore.showLabels">
-              <LabelList :labels="finding.labels" />
-            </td>
-            <td class="py-2 px-2 text-right whitespace-nowrap">
-              <RouterLink
-                class="mr-2 bg-white hover:bg-zinc-100 border px-4 py-1 rounded-md dark:bg-slate-800 dark:hover:bg-slate-700 dark:border-slate-700"
-                :to="{ name: 'finding-history', params: { uuid: finding.uuid } }"
-              >History
-              </RouterLink>
-              <RouterLink
-                class="bg-white hover:bg-zinc-100 border px-4 py-1 rounded-md dark:bg-slate-800 dark:hover:bg-slate-700 dark:border-slate-700"
-                :to="{ name: 'finding-view', params: { id: finding._id } }"
-              >View
-              </RouterLink>
-            </td>
-          </tr>
-          </tbody>
-        </table>
+        <div class="px-4">
+          <FindingsList :findings="subject.findings" />
+        </div>
       </CollapsableGroup>
     </div>
   </div>
@@ -164,6 +135,7 @@ import { useConfigStore } from '@/stores/config.ts'
 import PrimaryButton from '@/components/PrimaryButton.vue'
 import SecondaryButton from '@/components/SecondaryButton.vue'
 import PageSubHeader from '@/components/PageSubHeader.vue'
+import FindingsList from '@/views/FindingsList.vue'
 
 const subjectStore = useSubjectsStore()
 const findingsStore = useFindingsStore()

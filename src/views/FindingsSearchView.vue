@@ -41,7 +41,7 @@
             placeholder="foo=bar AND bar=baz AND (bar!=bat OR bar!=bat)"
             class="grow px-2 py-2 focus:border-none focus-visible:border-none focus:ring-0 focus-visible:ring-0 focus:outline-none focus-visible:outline-none bg-white dark:bg-slate-900"
           />
-          <SecondaryButton type="submit" class="border-none">
+          <SecondaryButton type="submit" class="border-none text-sm">
             Search
           </SecondaryButton>
         </div>
@@ -63,38 +63,7 @@
   <div
     class="mt-4 rounded-md bg-white dark:bg-slate-900 border-collapse border dark:border-slate-700"
   >
-    <table class="table-auto w-full rounded-full dark:text-slate-300">
-      <tbody>
-        <tr
-          class="hover:bg-zinc-50 dark:hover:bg-slate-800 border-b dark:border-slate-800"
-          v-for="finding in findings"
-          :key="finding.uuid"
-        >
-          <td class="py-2 pl-4 pr-2 w-[1%]">
-            <ResultStatusRing
-              class="p-0 m-0 whitespace-normal"
-              :state="finding.status.state?.toLowerCase()"
-            ></ResultStatusRing>
-          </td>
-          <td class="py-3 px-2 whitespace-nowrap grow">{{ finding.title }}</td>
-          <td class="px-2" v-if="configStore.showLabels">
-            <LabelList :labels="finding.labels" />
-          </td>
-          <td class="py-2 px-2 text-right whitespace-nowrap">
-            <RouterLink
-              class="mr-2 bg-white hover:bg-zinc-100 border px-4 py-1 rounded-md dark:bg-slate-800 dark:hover:bg-slate-700 dark:border-slate-700"
-              :to="{ name: 'finding-history', params: { uuid: finding.uuid } }"
-              >History
-            </RouterLink>
-            <RouterLink
-              class="bg-white hover:bg-zinc-100 border px-4 py-1 rounded-md dark:bg-slate-800 dark:hover:bg-slate-700 dark:border-slate-700"
-              :to="{ name: 'finding-view', params: { id: finding._id } }"
-              >View
-            </RouterLink>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+    <FindingsList :findings="findings" />
   </div>
   <!--    <div class="max-w-full">-->
   <!--      <div-->
@@ -151,6 +120,7 @@ import { calculateHeartbeatOverTimeData } from '@/parsers/heartbeats.ts';
 import { useConfigStore } from '@/stores/config.ts';
 import PrimaryButton from '@/components/PrimaryButton.vue';
 import SecondaryButton from '@/components/SecondaryButton.vue';
+import FindingsList from '@/views/FindingsList.vue'
 
 const findingsStore = useFindingsStore();
 const heartbeatStore = useHeartbeatsStore();

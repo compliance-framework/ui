@@ -2,9 +2,11 @@
   <PageHeader>Control Findings</PageHeader>
   <PageSubHeader>{{ _class }}: {{ id }}</PageSubHeader>
 
-  <PageCard class="mt-4">
+  <div
+    class="mt-4 rounded-md bg-white dark:bg-slate-900 border-collapse border dark:border-slate-700"
+  >
     <FindingsList :findings="findings" />
-  </PageCard>
+  </div>
 
 </template>
 <script setup lang="ts">

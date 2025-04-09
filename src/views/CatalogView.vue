@@ -2,10 +2,11 @@
   <PageHeader>Catalog</PageHeader>
   <PageSubHeader>{{ catalog.metadata?.title }}</PageSubHeader>
 
-  <PageCard class="mt-4">
+  <div
+    class="mt-4 rounded-md bg-white dark:bg-slate-900 border-collapse border dark:border-slate-700"
+  >
     <CatalogGroup v-for="group in groups" :key="group.id" :group="group" />
-  </PageCard>
-
+  </div>
 </template>
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
@@ -14,7 +15,6 @@ import { type Catalog, useCatalogStore } from '@/stores/catalogs.ts'
 import { useRoute } from 'vue-router'
 import PageSubHeader from '@/components/PageSubHeader.vue'
 import { type Group, useGroupsStore } from '@/stores/groups.ts'
-import PageCard from '@/components/PageCard.vue'
 
 const catalogStore = useCatalogStore()
 const groupStore = useGroupsStore()
