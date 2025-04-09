@@ -80,7 +80,7 @@ const authenticatedRoutes = [
     component: () => import('../views/SubjectsView.vue'),
   },
   {
-    path: '/subject/:subjectId',
+    path: '/subject/:id',
     name: 'admin-subject-crud',
     component: () => import('../views/SubjectEditView.vue'),
   },

@@ -77,12 +77,12 @@
             ></ResultStatusRing>
           </td>
           <td class="py-3 px-2 whitespace-nowrap grow">{{ finding.title }}</td>
-          <td class="py-1 px-2" v-if="configStore.showLabels">
+          <td class="px-2" v-if="configStore.showLabels">
             <LabelList :labels="finding.labels" />
           </td>
           <td class="py-2 px-2 text-right whitespace-nowrap">
             <RouterLink
-              class="mr-2 bg-zinc-100 dark:bg-slate-900 hover:bg-zinc-200 dark:hover:bg-slate-800 border dark:border-slate-700 px-4 py-1 rounded-md"
+              class="mr-2 bg-white hover:bg-zinc-100 border px-4 py-1 rounded-md dark:bg-slate-800 dark:hover:bg-slate-700 dark:border-slate-700"
               :to="{ name: 'finding-history', params: { uuid: finding.uuid } }"
               >History
             </RouterLink>

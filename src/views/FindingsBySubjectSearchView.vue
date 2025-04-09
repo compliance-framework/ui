@@ -1,131 +1,143 @@
 <template>
   <PageHeader>Findings by Subject</PageHeader>
+  <PageSubHeader>Search for findings using subjects</PageSubHeader>
   <div class="grid grid-cols-2 gap-4 mt-4">
-    <div class="bg-white rounded shadow">
-      <div class="px-4 pt-2">
-        <h3 class="text-lg font-semibold text-zinc-600">
-          Compliance over time
-        </h3>
-      </div>
+    <PageCard>
+      <h3 class="text-lg font-semibold text-zinc-600 dark:text-slate-300">
+        Compliance over time
+      </h3>
       <div class="h-32">
         <ResultComplianceOverTimeChart :data="complianceChartData" />
       </div>
-    </div>
-    <div class="bg-white rounded shadow">
-      <div class="px-4 pt-2">
-        <h3 class="text-lg font-semibold text-zinc-600">Agent health</h3>
-      </div>
+    </PageCard>
+    <PageCard>
+      <h3 class="text-lg font-semibold text-zinc-600 dark:text-slate-300">
+        Agent health
+      </h3>
       <div class="h-32">
         <ResultComplianceOverTimeChart :data="heartbeatChartData" />
       </div>
-    </div>
+    </PageCard>
   </div>
 
-  <PageCard class="mt-4">
-    <div class="flex items-start justify-between">
-      <h3 class="text-lg mb-4">Search</h3>
-      <button @click="configStore.toggleLabels()" class="bg-gray-50 hover:bg-gray-200 text-blue-800 border border-blue-800 px-4 py-1 rounded-md text-sm flex items-center gap-2"><b-icon-eye-fill height="1.2em" width="1.2em" /> <span v-if="configStore.showLabels">Hide</span><span v-else>Show</span> Labels</button>
-    </div>
-    <div>
-      <form @submit.prevent="search">
-        <div class="flex items-center">
+  <div class="mt-4">
+    <div class="flex gap-4">
+      <form @submit.prevent="search" class="grow">
+        <div
+          class="flex border rounded-md text-zinc-700 dark:text-slate-300 bg-white dark:bg-slate-900 dark:border-slate-700"
+        >
+          <div class="pl-4 my-auto">
+            <BIconSearch
+              class="mr-2"
+              height="1.2rem"
+              width="1.2rem"
+            ></BIconSearch>
+          </div>
           <input
             type="text"
             v-model="filter"
             id="filter"
             name="filter"
             placeholder="foo=bar AND bar=baz AND (bar!=bat OR bar!=bat)"
-            class="w-full rounded-l-md border-black border-y border-l px-4 py-2 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+            class="grow px-2 py-2 focus:border-none focus-visible:border-none focus:ring-0 focus-visible:ring-0 focus:outline-none focus-visible:outline-none bg-white dark:bg-slate-900"
           />
-          <button
-            type="submit"
-            class="flex items-center border-y text-sm border-black bg-white text-black hover:bg-gray-100 p-2"
-          >
-            <BIconSearch class="mr-2"></BIconSearch>
+          <SecondaryButton type="submit" class="border-none">
             Search
-          </button>
-          <button
-            @click.prevent="save"
-            class="bg-blue-800 text-white hover:bg-blue-700 p-3 rounded-r-md"
-          >
-            <BIconFloppy></BIconFloppy>
-          </button>
+          </SecondaryButton>
         </div>
       </form>
+      <PrimaryButton
+        @click="configStore.toggleLabels()"
+        class="flex items-center gap-1 text-sm"
+      >
+        <BIconFilter height="1.7em" width="1.7em" />
+        <span v-if="configStore.showLabels">Hide Labels</span
+        ><span v-else>Show Labels</span>
+      </PrimaryButton>
     </div>
-    <div class="mt-4">
-      <div v-for="subject in subjectFindings" :key="subject.subject">
-        <CollapsableGroup>
-          <template #header>
-            <div class="flex items-center py-2 px-4 items-center">
-              <div class="w-1/4">{{ subjects[subject.subject]?.title }}</div>
-              <div>
-                <ResultStatusBadge
-                  :gray="
-                    subject.findings.reduce(
-                      (total, current) =>
-                        ['satisfied', 'not satisfied'].includes(
-                          current.status?.state.toLowerCase(),
-                        )
-                          ? total
-                          : total + 1,
-                      0,
-                    )
-                  "
-                  :red="
-                    subject.findings.reduce(
-                      (total, current) =>
-                        current.status?.state.toLowerCase() == 'not satisfied'
-                          ? total + 1
-                          : total,
-                      0,
-                    )
-                  "
-                  :green="
-                    subject.findings.reduce(
-                      (total, current) =>
-                        current.status?.state.toLowerCase() == 'satisfied'
-                          ? total + 1
-                          : total,
-                      0,
-                    )
-                  "
-                ></ResultStatusBadge>
-              </div>
-              <div class="flex-1 ml-4" v-if="configStore.showLabels">
-                <LabelList :labels="subjects[subject.subject]?.attributes || {}" />
-              </div>
+  </div>
+
+  <div
+    class="mt-4 rounded-md bg-white dark:bg-slate-900 border-collapse border dark:border-slate-700"
+  >
+    <div v-for="subject in subjectFindings" :key="subject.subject">
+      <CollapsableGroup>
+        <template #header>
+          <div class="flex items-center px-4 gap-4">
+            <div class="py-3">
+              <ResultStatusBadge
+                :gray="
+                  subject.findings.reduce(
+                    (total, current) =>
+                      ['satisfied', 'not satisfied'].includes(
+                        current.status?.state.toLowerCase(),
+                      )
+                        ? total
+                        : total + 1,
+                    0,
+                  )
+                "
+                :red="
+                  subject.findings.reduce(
+                    (total, current) =>
+                      current.status?.state.toLowerCase() == 'not satisfied'
+                        ? total + 1
+                        : total,
+                    0,
+                  )
+                "
+                :green="
+                  subject.findings.reduce(
+                    (total, current) =>
+                      current.status?.state.toLowerCase() == 'satisfied'
+                        ? total + 1
+                        : total,
+                    0,
+                  )
+                "
+              ></ResultStatusBadge>
             </div>
-          </template>
-          <div
-            class="flex border-t first:border-none hover:bg-zinc-100 py-2 px-2"
+            <div class="w-1/4 py-1">{{ subjects[subject.subject]?.title }}</div>
+            <div class="flex-1 ml-4" v-if="configStore.showLabels">
+              <LabelList :labels="subjects[subject.subject]?.attributes || {}" :exclude-keys="['instance-name', 'image-id']" />
+            </div>
+          </div>
+        </template>
+        <table class="table-auto w-full rounded-full dark:text-slate-300">
+          <tbody>
+          <tr
+            class="hover:bg-zinc-50 dark:hover:bg-slate-800 border-b dark:border-slate-800"
             v-for="finding in subject.findings"
             :key="finding.uuid"
           >
-            <div class="shrink-0 pr-4">
-              <ResultStatusRing :state="finding.status.state?.toLowerCase()"></ResultStatusRing>
-            </div>
-            <div class="w-1/3">{{ finding.title }}</div>
-            <div class="flex-wrap grow">
-              <LabelList :labels="finding.labels" :exclude-keys="Object.keys(subjects[subject.subject]?.attributes || {})" />
-            </div>
-            <div class="flex items-start">
+            <td class="py-2 pl-8 pr-2 w-[1%]">
+              <ResultStatusRing
+                class="p-0 m-0 whitespace-normal"
+                :state="finding.status.state?.toLowerCase()"
+              ></ResultStatusRing>
+            </td>
+            <td class="py-4 px-2 whitespace-nowrap grow text-sm">{{ finding.title }}</td>
+            <td class="" v-if="configStore.showLabels">
+              <LabelList :labels="finding.labels" />
+            </td>
+            <td class="py-2 px-2 text-right whitespace-nowrap">
               <RouterLink
-                class="bg-gray-50 hover:bg-gray-200 text-blue-800 border border-blue-800 px-4 py-1 rounded-md text-sm mr-2"
+                class="mr-2 bg-white hover:bg-zinc-100 border px-4 py-1 rounded-md dark:bg-slate-800 dark:hover:bg-slate-700 dark:border-slate-700"
                 :to="{ name: 'finding-history', params: { uuid: finding.uuid } }"
               >History
               </RouterLink>
               <RouterLink
-                class="bg-blue-800 hover:bg-clue-700 text-white px-4 py-1 rounded-md text-sm"
+                class="bg-white hover:bg-zinc-100 border px-4 py-1 rounded-md dark:bg-slate-800 dark:hover:bg-slate-700 dark:border-slate-700"
                 :to="{ name: 'finding-view', params: { id: finding._id } }"
               >View
               </RouterLink>
-            </div>
-          </div>
-        </CollapsableGroup>
-      </div>
+            </td>
+          </tr>
+          </tbody>
+        </table>
+      </CollapsableGroup>
     </div>
-  </PageCard>
+  </div>
 </template>
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
@@ -133,7 +145,7 @@ import { useRoute, useRouter } from 'vue-router'
 import PageHeader from '@/components/PageHeader.vue'
 import PageCard from '@/components/PageCard.vue'
 import { FilterParser } from '@/parsers/labelfilter.ts'
-import { BIconEyeFill, BIconFloppy, BIconSearch } from 'bootstrap-icons-vue'
+import { BIconEyeFill, BIconFilter, BIconFloppy, BIconSearch } from 'bootstrap-icons-vue'
 import LabelList from '@/components/LabelList.vue'
 import type { ChartData } from 'chart.js'
 import {
@@ -149,6 +161,9 @@ import CollapsableGroup from '@/components/CollapsableGroup.vue'
 import { type Subject, useSubjectsStore } from '@/stores/subjects.ts'
 import ResultStatusRing from '@/components/ResultStatusRing.vue'
 import { useConfigStore } from '@/stores/config.ts'
+import PrimaryButton from '@/components/PrimaryButton.vue'
+import SecondaryButton from '@/components/SecondaryButton.vue'
+import PageSubHeader from '@/components/PageSubHeader.vue'
 
 const subjectStore = useSubjectsStore()
 const findingsStore = useFindingsStore()
