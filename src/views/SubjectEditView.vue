@@ -87,7 +87,7 @@ function toggleDeleteModal(value: boolean) {
 }
 
 const updateSubject = async () => {
-  apiStore.patchBySubjectId(subjectId, form.value.title, form.value.remarks).then((subject: DataResponse<Subject>) => {
+  apiStore.patchBySubjectId(subjectId, form.value.title as string, form.value.remarks as string).then((subject: DataResponse<Subject>) => {
     console.log('Updated!', subject)
     window.location.reload();
   })
