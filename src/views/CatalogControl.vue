@@ -45,19 +45,40 @@
       </div>
     </template>
     <div class="px-4 py-4 border-b dark:border-slate-700">
-      <template v-if="hasPart('statement')">
-        <p class="whitespace-pre-wrap">{{ getPart('statement')?.prose }}</p>
-      </template>
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <template v-if="hasPart('statement')">
+            <p class="whitespace-pre-wrap">{{ getPart('statement')?.prose }}</p>
+          </template>
 
-      <template v-if="hasPart('assessment-objective')">
-        <h4 class="font-medium mt-2">Objective:</h4>
-        <p class="whitespace-pre-wrap">{{ getPart('assessment-objective')?.prose }}</p>
-      </template>
+          <template v-if="hasPart('assessment-objective')">
+            <h4 class="font-medium mt-2">Objective:</h4>
+            <p class="whitespace-pre-wrap">{{ getPart('assessment-objective')?.prose }}</p>
+          </template>
 
-      <template v-if="hasPart('guidance')">
-        <h4 class="font-medium mt-2">Guidance:</h4>
-        <p class="whitespace-pre-wrap">{{ getPart('guidance')?.prose }}</p>
-      </template>
+          <template v-if="hasPart('guidance')">
+            <h4 class="font-medium mt-2">Guidance:</h4>
+            <p class="whitespace-pre-wrap">{{ getPart('guidance')?.prose }}</p>
+          </template>
+        </div>
+        <div class="rounded-md border dark:border-slate-700">
+          <table class="table-auto">
+            <tbody>
+            <tr>
+              <td colspan="2" class="px-2 py-2 font-medium">Attributes</td>
+            </tr>
+            <tr class="border-t dark:border-slate-700">
+              <td class="px-2 py-1">ID</td>
+              <td class="px-2 py-1 whitespace-nowrap">{{ control.id }}</td>
+            </tr>
+            <tr class="border-t dark:border-slate-700">
+              <td class="px-2 py-1">Class</td>
+              <td class="px-2 py-1 whitespace-nowrap">{{ control.class }}</td>
+            </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
       <div
         class="my-4 rounded-md bg-white dark:bg-slate-900 border-collapse border dark:border-slate-700"
       >
