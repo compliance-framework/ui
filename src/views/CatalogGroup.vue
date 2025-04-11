@@ -6,12 +6,19 @@
       </div>
     </template>
     <div class="px-4 py-4 border-b dark:border-slate-700">
-      <h4 class="font-medium">Statement:</h4>
-      <p>{{ getStatement(group.parts)?.prose }}</p>
-      <h4 class="font-medium mt-2">Objective:</h4>
-      <p>{{ getStatement(group.parts)?.prose }}</p>
-      <h4 class="font-medium mt-2">Guidance:</h4>
-      <p>{{ getStatement(group.parts)?.prose }}</p>
+      <template v-if="hasPart('statement')">
+        <p class="whitespace-pre-wrap">{{ getPart('statement')?.prose }}</p>
+      </template>
+
+      <template v-if="hasPart('assessment-objective')">
+        <h4 class="font-medium mt-2">Objective:</h4>
+        <p class="whitespace-pre-wrap">{{ getPart('assessment-objective')?.prose }}</p>
+      </template>
+
+      <template v-if="hasPart('guidance')">
+        <h4 class="font-medium mt-2">Guidance:</h4>
+        <p class="whitespace-pre-wrap">{{ getPart('guidance')?.prose }}</p>
+      </template>
       <div
         class="my-4 rounded-md bg-white dark:bg-slate-900 border-collapse border dark:border-slate-700"
       >
@@ -37,21 +44,15 @@ const controlStore = useControlStore()
 const groups = ref<Group[]>([]);
 const controls = ref<Control[]>([]);
 
-function getStatement(parts: Part[]) {
-  return parts?.find((part) => {
-    return part.name == "statement"
+function hasPart(type: string) {
+  return props.group.parts?.find((part) => {
+    return part.name == type
   })
 }
 
-function getGuidance(parts: Part[]) {
-  return parts?.find((part) => {
-    return part.name == "guidance"
-  })
-}
-
-function getObjective(parts: Part[]) {
-  return parts?.find((part) => {
-    return part.name == "assessment-objective"
+function getPart(type: string) {
+  return props.group.parts?.find((part) => {
+    return part.name == type
   })
 }
 
