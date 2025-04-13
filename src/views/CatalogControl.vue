@@ -82,7 +82,7 @@
       <div
         class="my-4 rounded-md bg-white dark:bg-slate-900 border-collapse border dark:border-slate-700"
       >
-        <CatalogControl v-for="control in controls" :key="control.id" :control="control" />
+        <CatalogControl v-for="control in controls" :key="control.id" :control="props.control" :catalog="props.catalog" />
       </div>
     </div>
   </CollapsableGroup>
