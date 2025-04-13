@@ -94,8 +94,10 @@ import { type Control, useControlStore } from '@/stores/controls.ts'
 import type { Part } from '@/stores/types.ts'
 import { type ComplianceIntervalStatus, useFindingsStore } from '@/stores/findings.ts'
 import ResultStatusBadge from '@/components/ResultStatusBadge.vue'
+import type { Catalog } from '@/stores/catalogs.ts'
 
 const props = defineProps<{
+  catalog: Catalog,
   control: Control,
 }>()
 
@@ -117,7 +119,7 @@ function getPart(type: string) {
 }
 
 onMounted(() => {
-  controlStore.children(props.control).then((data) => {
+  controlStore.children(props.catalog, props.control).then((data) => {
     controls.value = data.data
   })
   findingStore.getComplianceForControl(props.control.class, props.control.id).then((data) => {

@@ -22,8 +22,8 @@
       <div
         class="my-4 rounded-md bg-white dark:bg-slate-900 border-collapse border dark:border-slate-700"
       >
-        <CatalogControl v-for="control in controls" :key="control.id" :control="control" />
-        <CatalogGroup v-for="group in groups" :key="group.id" :group="group" />
+        <CatalogControl v-for="control in controls" :key="control.id" :control="control" :catalog="props.catalog" />
+        <CatalogGroup v-for="group in groups" :key="group.id" :group="group" :catalog="props.catalog" />
       </div>
     </div>
   </CollapsableGroup>
@@ -33,9 +33,10 @@ import { onMounted, ref } from 'vue'
 import { type Group, useGroupsStore } from '@/stores/groups.ts'
 import CollapsableGroup from '@/components/CollapsableGroup.vue'
 import { type Control, useControlStore } from '@/stores/controls.ts'
-import type { Part } from '@/stores/types.ts'
+import type { Catalog } from '@/stores/catalogs.ts'
 
 const props = defineProps<{
+  catalog: Catalog,
   group: Group,
 }>()
 
@@ -57,10 +58,10 @@ function getPart(type: string) {
 }
 
 onMounted(() => {
-  groupStore.children(props.group).then((data) => {
+  groupStore.children(props.catalog, props.group).then((data) => {
     groups.value = data.data
   })
-  controlStore.group(props.group).then((data) => {
+  controlStore.group(props.catalog, props.group).then((data) => {
     controls.value = data.data
   });
 })
