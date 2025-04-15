@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { useConfigStore } from '@/stores/config.ts'
 import type { DataResponse, Link, Parent, Part, Property } from '@/stores/types.ts'
 import type { Group } from '@/stores/groups.ts'
+import type { Catalog } from '@/stores/catalogs.ts'
 
 export interface Control {
   uuid: string;
@@ -17,15 +18,15 @@ export interface Control {
 export const useControlStore = defineStore('controls', () => {
   const configStore = useConfigStore()
 
-  async function group(group: Group): Promise<DataResponse<Control[]>> {
+  async function group(catalog: Catalog, group: Group): Promise<DataResponse<Control[]>> {
     const config = await configStore.getConfig()
-    const response = await fetch(`${config.API_URL}/api/controls/group/${group.class}/${group.id}`)
+    const response = await fetch(`${config.API_URL}/api/controls/group/${catalog.uuid}/${group.class}/${group.id}`)
     return (await response.json()) as DataResponse<Control[]>
   }
 
-  async function children(control: Control): Promise<DataResponse<Control[]>> {
+  async function children(catalog: Catalog, control: Control): Promise<DataResponse<Control[]>> {
     const config = await configStore.getConfig()
-    const response = await fetch(`${config.API_URL}/api/controls/children/${control.class}/${control.id}`)
+    const response = await fetch(`${config.API_URL}/api/controls/control/${catalog.uuid}/${control.class}/${control.id}`)
     return (await response.json()) as DataResponse<Control[]>
   }
 
