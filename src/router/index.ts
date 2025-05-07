@@ -123,8 +123,8 @@ const authenticatedRoutes = [
   },
   {
     path: '/components',
-    name: 'ComponentList',
-    component: () => import('@/views/ComponentList.vue')
+    name: 'findings-by-components',
+    component: () => import('../views/ComponentList.vue')
   },
 ];
 
