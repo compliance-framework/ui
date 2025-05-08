@@ -3,26 +3,52 @@
     <h1 class="text-2xl font-bold mb-4">Components</h1>
     <div v-if="components.length" class="space-y-4">
       <div v-for="component in components" :key="component.id" class="border rounded-md p-4">
-        <div class="flex justify-between items-center">
-          <h2 class="text-lg font-semibold">{{ component.name }}</h2>
-          <button
-            @click="toggleComponent(component.id)"
-            class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
-          >
-            {{ expandedComponent === component.id ? 'Hide Results' : 'Show Results' }}
-          </button>
-        </div>
-        <div v-if="expandedComponent === component.id" class="mt-4">
-          <ul>
-            <li v-for="finding in componentFindings[component.id]" :key="finding.id" class="mb-2">
-              <div class="p-2 border rounded-md">
-                <p><strong>ID:</strong> {{ finding.id }}</p>
-                <p><strong>Title:</strong> {{ finding.title }}</p>
-                <p><strong>Description:</strong> {{ finding.description }}</p>
+        <CollapsableGroup>
+          <template #header>
+            <div class="flex items-center px-4 gap-4">
+              <div class="py-3">
+                <ResultStatusBadge
+                  :gray="
+                    componentFindings.findings.reduce(
+                      (total, current) =>
+                        ['satisfied', 'not satisfied'].includes(
+                          (current.status?.state || '').toLowerCase(),
+                        )
+                          ? total
+                          : total + 1,
+                      0,
+                    )
+                  "
+                  :red="
+                    componentFindings.findings.reduce(
+                      (total, current) =>
+                        current.status?.state.toLowerCase() == 'not satisfied'
+                          ? total + 1
+                          : total,
+                      0,
+                    )
+                  "
+                  :green="
+                    componentFindings.findings.reduce(
+                      (total, current) =>
+                        current.status?.state.toLowerCase() == 'satisfied'
+                          ? total + 1
+                          : total,
+                      0,
+                    )
+                  "
+                ></ResultStatusBadge>
               </div>
-            </li>
-          </ul>
+              <!-- <div class="w-1/4 py-1">{{ components[components.]?.title }}</div> -->
+              <div class="flex-1 ml-4" v-if="configStore.showLabels">
+                <!-- <LabelList :labels="subjects[subject.subject]?.attributes || {}" :exclude-keys="['instance-name', 'image-id']" /> -->
+              </div>
+            </div>
+          </template>
+        <div class="px-4">
+          <!-- <FindingsList :findings="subject.findings" /> -->
         </div>
+      </CollapsableGroup>
       </div>
     </div>
     <div v-else>
@@ -44,6 +70,9 @@ interface Finding {
   id: string;
   title: string;
   description: string;
+  status?: {
+    state: string;
+  };
 }
 
 const components = ref<Component[]>([]);
