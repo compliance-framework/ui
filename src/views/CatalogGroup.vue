@@ -6,19 +6,15 @@
       </div>
     </template>
     <div class="px-4 py-4 border-b dark:border-slate-700">
-      <template v-if="hasPart('statement')">
-        <p class="whitespace-pre-wrap">{{ getPart('statement')?.prose }}</p>
-      </template>
-
       <template v-if="hasPart('assessment-objective')">
         <h4 class="font-medium mt-2">Objective:</h4>
         <p class="whitespace-pre-wrap">{{ getPart('assessment-objective')?.prose }}</p>
       </template>
 
-      <template v-if="hasPart('guidance')">
-        <h4 class="font-medium mt-2">Guidance:</h4>
-        <p class="whitespace-pre-wrap">{{ getPart('guidance')?.prose }}</p>
-      </template>
+      <div>
+        <PartDisplayEditor v-for="part in group.parts" :key="part.id" :part="part"></PartDisplayEditor>
+      </div>
+
       <div
         class="my-4 rounded-md bg-white dark:bg-slate-900 border-collapse border dark:border-slate-700"
       >
@@ -41,6 +37,7 @@ import { type Catalog, type Group, type Control, useCatalogStore } from '@/store
 import TertiaryButton from '@/components/TertiaryButton.vue'
 import GroupCreateModal from '@/components/catalogs/GroupCreateModal.vue'
 import ControlCreateModal from '@/components/catalogs/ControlCreateModal.vue'
+import PartDisplayEditor from '@/components/PartDisplayEditor.vue'
 
 const props = defineProps<{
   catalog: Catalog,

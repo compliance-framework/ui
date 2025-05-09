@@ -14,7 +14,7 @@ const catalogStore = useCatalogStore();
 const props = defineProps<{
   catalog: Catalog;
   parentGroup?: Group;
-  parentControl?: Group;
+  parentControl?: Control;
 }>();
 
 const emit = defineEmits({

@@ -12,7 +12,7 @@
     "lib": ["ESNext", "dom"],
     "types": ["nightwatch"]
   },
-  "include": ["../node_modules/@nightwatch/**/*", "../src/components/**/*", "../tests/e2e/**/*"],
+  "include": ["../node_modules/@nightwatch/**/*", "../tests/e2e/**/*"],
   "ts-node": {
     "transpileOnly": true
   },
