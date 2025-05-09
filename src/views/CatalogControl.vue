@@ -4,7 +4,7 @@
       <div class="py-2 px-4 flex items-center gap-4">
         <span class="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-800 text-gray-800 dark:text-slate-300 rounded-md text-sm whitespace-nowrap px-4 py-1">{{control.id}}</span>
         <div class="grow">
-          {{ control.title }}
+          {{ control.title }} <span class="text-gray-400 dark:text-slate-300 text-sm px-2 py-1">Control</span>
         </div>
         <ResultStatusBadge v-if="compliance"
           :gray="
@@ -38,6 +38,7 @@
                   "
         ></ResultStatusBadge>
         <RouterLink
+          v-if="control.class"
           class="bg-white hover:bg-zinc-100 border px-4 py-1 rounded-md dark:bg-slate-800 dark:hover:bg-slate-700 dark:border-slate-700"
           :to="{ name: 'catalog-control-findings', params: { class: control.class, id: control.id } }"
         >Findings
@@ -69,11 +70,11 @@
             </tr>
             <tr class="border-t dark:border-slate-700">
               <td class="px-2 py-1">ID</td>
-              <td class="px-2 py-1 whitespace-nowrap">{{ control.id }}</td>
+              <td class="px-2 py-1 whitespace-nowrap">{{ control?.id }}</td>
             </tr>
             <tr class="border-t dark:border-slate-700">
               <td class="px-2 py-1">Class</td>
-              <td class="px-2 py-1 whitespace-nowrap">{{ control.class }}</td>
+              <td class="px-2 py-1 whitespace-nowrap">{{ control?.class }}</td>
             </tr>
             </tbody>
           </table>
@@ -84,25 +85,29 @@
       >
         <CatalogControl v-for="child in controls" :key="child.id" :control="child" :catalog="props.catalog" />
       </div>
+      <div class="mt-4">
+        <TertiaryButton @click="showControlForm = true" class="ml-2">Add Control</TertiaryButton>
+        <ControlCreateModal @created="controlCreated" :catalog="catalog" :parent-control="props.control" v-model="showControlForm" />
+      </div>
     </div>
   </CollapsableGroup>
 </template>
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import CollapsableGroup from '@/components/CollapsableGroup.vue'
-import { type Control, useControlStore } from '@/stores/controls.ts'
-import type { Part } from '@/stores/types.ts'
 import { type ComplianceIntervalStatus, useFindingsStore } from '@/stores/findings.ts'
 import ResultStatusBadge from '@/components/ResultStatusBadge.vue'
-import type { Catalog } from '@/stores/catalogs.ts'
+import { type Catalog, type Control, useCatalogStore } from '@/stores/catalogs.ts'
+import TertiaryButton from '@/components/TertiaryButton.vue'
+import ControlCreateModal from '@/components/catalogs/ControlCreateModal.vue'
 
 const props = defineProps<{
   catalog: Catalog,
   control: Control,
 }>()
 
-const controlStore = useControlStore()
 const findingStore = useFindingsStore();
+const catalogStore = useCatalogStore();
 const controls = ref<Control[]>([]);
 const compliance = ref<ComplianceIntervalStatus[]|null>(null);
 
@@ -119,11 +124,16 @@ function getPart(type: string) {
 }
 
 onMounted(() => {
-  controlStore.children(props.catalog, props.control).then((data) => {
+  catalogStore.listControlControls(props.catalog.uuid, props.control).then((data) => {
     controls.value = data.data
   })
   findingStore.getComplianceForControl(props.control.class, props.control.id).then((data) => {
     compliance.value = data.data
   })
 })
+
+const showControlForm = ref<boolean>(false);
+function controlCreated(control: Control) {
+  controls.value.push(control)
+}
 </script>
