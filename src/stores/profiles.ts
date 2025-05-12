@@ -11,6 +11,13 @@ export interface Profile {
   metadata: ProfileMetadata;
 }
 
+export interface Import {
+  href: string
+  includeControls: object[]
+  excludeControls: object[]
+}
+
+
 export const useProfileStore = defineStore('profiles', () => {
   const configStore = useConfigStore()
 
@@ -26,8 +33,16 @@ export const useProfileStore = defineStore('profiles', () => {
     return (await response.json()) as DataResponse<Profile>
   }
 
+  async function listImports(id: string): Promise<DataResponse<Import[]>> {
+    const config = await configStore.getConfig()
+    const response = await fetch(`${config.API_URL}/api/oscal/profiles/${id}/imports`)
+
+    return (await response.json()) as DataResponse<Import[]>
+  }
+
   return {
     list,
-    get
+    get,
+    listImports,
   }
 })
