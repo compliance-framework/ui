@@ -50,7 +50,7 @@ onMounted(() => {
               <li v-for="controlId in imp['exclude-controls'][0]['with-ids']">{{ controlId }}</li>
             </ul>
           </template>
-          <span class="px-4"v-else>No Excluded controls found</span>
+          <span class="px-4" v-else>No Excluded controls found</span>
         </div>
       </CollapsableGroup>
     </template>
