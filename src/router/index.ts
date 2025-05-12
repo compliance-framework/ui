@@ -59,6 +59,16 @@ const authenticatedRoutes = [
     component: () => import('../views/CatalogControlFindings.vue'),
   },
   {
+    path: "/profiles",
+    name: "profile-list",
+    component: () => import ("../views/ProfileListView.vue"),
+  },
+  {
+    path: "/profiles/:id",
+    name: "profile-view",
+    component: () => import("../views/ProfileView.vue"),
+  },
+  {
     path: '/findings/:id',
     name: 'finding-view',
     // route level code-splitting
