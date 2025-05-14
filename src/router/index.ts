@@ -51,6 +51,14 @@ const authenticatedRoutes = [
     component: () => import('../views/CatalogView.vue'),
   },
   {
+    path: '/catalogs/new',
+    name: 'catalog-create',
+    // route level code-splitting
+    // this generates a separate chunk (About.[hash].js) for this route
+    // which is lazy-loaded when the route is visited.
+    component: () => import('../views/CatalogCreateView.vue'),
+  },
+  {
     path: '/catalogs/control/:class/:id',
     name: 'catalog-control-findings',
     // route level code-splitting
