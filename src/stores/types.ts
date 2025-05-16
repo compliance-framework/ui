@@ -1,3 +1,8 @@
+export interface Metadata {
+  title: string;
+  remarks?: string;
+}
+
 export type FindingStatusState = 'satisfied' | 'not satisfied' | string;
 
 export interface FindingStatus {

@@ -19,6 +19,7 @@ import darkLogo from '@/assets/logo-dark.svg'
     <div class="overflow-y-auto max-h-full grow">
       <SideNavLink class="pl-6" :to="{ name: 'dashboards' }">Dashboards</SideNavLink>
       <SideNavLink class="pl-6" :to="{ name: 'catalog-list' }">Catalogs</SideNavLink>
+      <SideNavLink class="pl-6" :to="{ name: 'system-security-plans' }">System Security Plans</SideNavLink>
       <SideNavCategory title="Findings (Evidence)">
         <SideNavLink :to="{ name: 'findings' }">All</SideNavLink>
         <SideNavLink :to="{ name: 'findings-by-subject' }">By Subject</SideNavLink>

@@ -125,6 +125,30 @@ const authenticatedRoutes = [
     component: () => import('../views/FindingsByClassSearchView.vue'),
   },
   {
+    path: '/system-security-plans',
+    name: 'system-security-plans',
+    // route level code-splitting
+    // this generates a separate chunk (About.[hash].js) for this route
+    // which is lazy-loaded when the route is visited.
+    component: () => import('../views/SystemSecurityPlanListView.vue'),
+  },
+  {
+    path: '/system-security-plans/:id/editor',
+    name: 'system-security-plans-editor',
+    // route level code-splitting
+    // this generates a separate chunk (About.[hash].js) for this route
+    // which is lazy-loaded when the route is visited.
+    component: () => import('../views/SystemSecurityPlanEditorView.vue'),
+  },
+  {
+    path: '/system-security-plans/create',
+    name: 'system-security-plans-create',
+    // route level code-splitting
+    // this generates a separate chunk (About.[hash].js) for this route
+    // which is lazy-loaded when the route is visited.
+    component: () => import('../views/SystemSecurityPlanListView.vue'),
+  },
+  {
     path: '/about',
     name: 'about',
     component: () => import('../views/AboutView.vue'),
