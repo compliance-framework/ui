@@ -1,6 +1,8 @@
 import { defineStore } from 'pinia';
 import { useConfigStore } from '@/stores/config.ts';
 import type { DataResponse, Metadata } from '@/stores/types.ts';
+import camelcaseKeys from 'camelcase-keys'
+import decamelizeKeys from 'decamelize-keys'
 
 export interface SystemCharacteristics {
   systemName?: string;
@@ -43,13 +45,32 @@ export const useSystemSecurityPlanStore = defineStore(
       const response = await fetch(
         `${config.API_URL}/api/oscal/system-security-plans/${id}/system-characteristics`,
       );
-      return (await response.json()) as DataResponse<SystemCharacteristics>;
+
+      return camelcaseKeys((await response.json()), {deep: true}) as DataResponse<SystemCharacteristics>;
+    }
+
+    async function updateCharacteristics(id: string, characteristics: SystemCharacteristics): Promise<DataResponse<SystemCharacteristics>> {
+      const config = await configStore.getConfig()
+      const response = await fetch(`${config.API_URL}/api/oscal/system-security-plans/${id}/system-characteristics`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(decamelizeKeys(characteristics, {separator: '-'})),
+      })
+
+      if (!response.ok) {
+        throw new Error(`Error: ${response.statusText}`)
+      }
+
+      return camelcaseKeys((await response.json())) as DataResponse<SystemCharacteristics>
     }
 
     return {
       get,
       list,
       getCharacteristics,
+      updateCharacteristics,
     };
   },
 );

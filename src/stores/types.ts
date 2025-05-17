@@ -98,3 +98,4 @@ export interface Parent {
 export interface DataResponse<T> {
   data: T;
 }
+
