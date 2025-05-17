@@ -38,9 +38,18 @@ export const useSystemSecurityPlanStore = defineStore(
       return (await response.json()) as DataResponse<SystemSecurityPlan[]>;
     }
 
+    async function getCharacteristics(id: string): Promise<DataResponse<SystemCharacteristics>> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/system-security-plans/${id}/system-characteristics`,
+      );
+      return (await response.json()) as DataResponse<SystemCharacteristics>;
+    }
+
     return {
       get,
       list,
+      getCharacteristics,
     };
   },
 );
