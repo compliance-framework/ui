@@ -6,7 +6,7 @@ import {
 } from '@/stores/system-security-plans.ts'
 import FormTextarea from '@/components/forms/FormTextarea.vue'
 
-const model = defineModel<DiagramGrouping>();
+const model = defineModel<DiagramGrouping>({ required: true });
 
 const emit = defineEmits({
   updated(grouping: DiagramGrouping) {
