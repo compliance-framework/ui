@@ -75,6 +75,7 @@ export interface Property {
   value?: string;
   class?: string;
   ns?: string;
+  remarks?: string;
 }
 
 export interface Part {

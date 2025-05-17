@@ -1,8 +1,26 @@
 import { defineStore } from 'pinia';
 import { useConfigStore } from '@/stores/config.ts';
-import type { DataResponse, Metadata } from '@/stores/types.ts';
-import camelcaseKeys from 'camelcase-keys'
-import decamelizeKeys from 'decamelize-keys'
+import type { DataResponse, Link, Metadata, Property } from '@/stores/types.ts';
+import camelcaseKeys from 'camelcase-keys';
+import decamelizeKeys from 'decamelize-keys';
+
+export interface Diagram {
+  uuid: string;
+  description: string;
+  props: Property[];
+  links: Link[];
+  caption: string;
+  remarks: string;
+}
+
+export interface DiagramGrouping {
+  uuid: string;
+  description: string;
+  remarks: string;
+  props: Property[];
+  links: Link[];
+  diagrams: Diagram[];
+}
 
 export interface SystemCharacteristics {
   systemName?: string;
@@ -40,36 +58,142 @@ export const useSystemSecurityPlanStore = defineStore(
       return (await response.json()) as DataResponse<SystemSecurityPlan[]>;
     }
 
-    async function getCharacteristics(id: string): Promise<DataResponse<SystemCharacteristics>> {
+    async function getCharacteristics(
+      id: string,
+    ): Promise<DataResponse<SystemCharacteristics>> {
       const config = await configStore.getConfig();
       const response = await fetch(
         `${config.API_URL}/api/oscal/system-security-plans/${id}/system-characteristics`,
       );
 
-      return camelcaseKeys((await response.json()), {deep: true}) as DataResponse<SystemCharacteristics>;
+      return camelcaseKeys(await response.json(), {
+        deep: true,
+      }) as DataResponse<SystemCharacteristics>;
     }
 
-    async function updateCharacteristics(id: string, characteristics: SystemCharacteristics): Promise<DataResponse<SystemCharacteristics>> {
-      const config = await configStore.getConfig()
-      const response = await fetch(`${config.API_URL}/api/oscal/system-security-plans/${id}/system-characteristics`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
+    async function updateCharacteristics(
+      id: string,
+      characteristics: SystemCharacteristics,
+    ): Promise<DataResponse<SystemCharacteristics>> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/system-security-plans/${id}/system-characteristics`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(
+            decamelizeKeys(characteristics, { separator: '-' }),
+          ),
         },
-        body: JSON.stringify(decamelizeKeys(characteristics, {separator: '-'})),
-      })
+      );
 
       if (!response.ok) {
-        throw new Error(`Error: ${response.statusText}`)
+        throw new Error(`Error: ${response.statusText}`);
       }
 
-      return camelcaseKeys((await response.json())) as DataResponse<SystemCharacteristics>
+      return camelcaseKeys(
+        await response.json(),
+      ) as DataResponse<SystemCharacteristics>;
+    }
+
+    async function getCharacteristicsAuthorizationBoundary(
+      id: string,
+    ): Promise<DataResponse<DiagramGrouping>> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/system-security-plans/${id}/system-characteristics/authorization-boundary`,
+      );
+
+      return camelcaseKeys(await response.json(), {
+        deep: true,
+      }) as DataResponse<DiagramGrouping>;
+    }
+
+    async function getCharacteristicsNetworkArchitecture(
+      id: string,
+    ): Promise<DataResponse<DiagramGrouping>> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/system-security-plans/${id}/system-characteristics/network-architecture`,
+      );
+
+      return camelcaseKeys(await response.json(), {
+        deep: true,
+      }) as DataResponse<DiagramGrouping>;
+    }
+
+    async function updateCharacteristicsAuthorizationBoundaryDiagram(
+      id: string,
+      diagram: Diagram,
+    ): Promise<DataResponse<Diagram>> {
+      const config = await configStore.getConfig();
+      return await saveDiagram(`${config.API_URL}/api/oscal/system-security-plans/${id}/system-characteristics/authorization-boundary/diagrams/${diagram.uuid}`, diagram)
+    }
+
+    async function updateCharacteristicsNetworkArchitectureDiagram(
+      id: string,
+      diagram: Diagram,
+    ): Promise<DataResponse<Diagram>> {
+      const config = await configStore.getConfig();
+      return await saveDiagram(`${config.API_URL}/api/oscal/system-security-plans/${id}/system-characteristics/network-architecture/diagrams/${diagram.uuid}`, diagram)
+    }
+
+    async function updateCharacteristicsDataFlowDiagram(
+      id: string,
+      diagram: Diagram,
+    ): Promise<DataResponse<Diagram>> {
+      const config = await configStore.getConfig();
+      return await saveDiagram(`${config.API_URL}/api/oscal/system-security-plans/${id}/system-characteristics/data-flow/diagrams/${diagram.uuid}`, diagram)
+    }
+
+    async function saveDiagram(url: string, diagram: Diagram): Promise<DataResponse<Diagram>> {
+      const response = await fetch(
+        url,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(
+            decamelizeKeys(diagram, { separator: '-' }),
+          ),
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error(`Error: ${response.statusText}`);
+      }
+
+      return camelcaseKeys(
+        await response.json(),
+      ) as DataResponse<Diagram>;
+    }
+
+    async function getCharacteristicsDataFlow(
+      id: string,
+    ): Promise<DataResponse<DiagramGrouping>> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/system-security-plans/${id}/system-characteristics/data-flow`,
+      );
+
+      return camelcaseKeys(await response.json(), {
+        deep: true,
+      }) as DataResponse<DiagramGrouping>;
     }
 
     return {
       get,
       list,
       getCharacteristics,
+      getCharacteristicsAuthorizationBoundary,
+      getCharacteristicsNetworkArchitecture,
+      updateCharacteristicsAuthorizationBoundaryDiagram,
+      updateCharacteristicsNetworkArchitectureDiagram,
+      updateCharacteristicsDataFlowDiagram,
+      getCharacteristicsDataFlow,
       updateCharacteristics,
     };
   },
