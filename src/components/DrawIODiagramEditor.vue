@@ -19,31 +19,31 @@ const emit = defineEmits({
 
 onMounted(() => {
   window.addEventListener('message', onDrawIoMessage);
-
-  console.log(props.diagram);
 });
 
 function onDrawIoMessage(e: MessageEvent) {
-  // console.log(e);
-  // console.log('message from iframe:', e.data);
   const req = JSON.parse(e.data);
-  // console.log(req.xml);
-  if (req.event == "init") {
-    loadXml()
-  }
 
   switch (req.event) {
     case "init":
       loadXml()
       break;
     case "save":
-      exportXml();
+      exportXml(props.diagram);
       break;
     case "autosave":
       // Ignored for now
       // exportXml();
       break;
+    case "load":
+      // Ignored for now
+      // exportXml();
+      break;
     case "export":
+      if (req.message.diagram != props.diagram.uuid) {
+        break;
+      }
+
       const pngProp = {
         ns: 'ccf',
         name: 'ccf-diagram-png',
@@ -90,7 +90,8 @@ function onDrawIoMessage(e: MessageEvent) {
       emit('saved', currentDiagram.value)
       break;
     default:
-      console.log('Unknown event: ', req.event, req.data);
+      console.log('Unknown event: ', req.event, req);
+      break;
   }
 }
 
@@ -105,7 +106,6 @@ function findExistingXml() {
 function loadXml() {
   const existingXml = findExistingXml()
   if (existingXml) {
-    console.log(existingXml.value)
     frame.value?.contentWindow?.postMessage(
       JSON.stringify({
         action: 'load',
@@ -130,11 +130,12 @@ function loadXml() {
   );
 }
 
-function exportXml() {
+function exportXml(diagram: Diagram) {
   frame.value?.contentWindow?.postMessage(
     JSON.stringify({
       action: 'export',
       format: `png`,
+      diagram: diagram.uuid,
     }),
     '*',
   );
@@ -144,7 +145,7 @@ function exportXml() {
 <template>
   <iframe
     ref="frame"
-    class="w-full h-full"
+    class="w-full"
     src="https://embed.diagrams.net/?spin=0&proto=json"
     frameborder="0"
   ></iframe>

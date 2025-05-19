@@ -18,7 +18,7 @@
       v-if="systemSecurityPlan.uuid"
     >
       <template v-slot:characteristics>
-        <div class="px-8 py-4 pt-12">
+        <div class="px-8 py-4">
           <SystemCharacteristicsForm :system-security-plan-id="systemSecurityPlan.uuid" />
 
           <div
@@ -69,9 +69,9 @@
         </div>
       </template>
 
-      <template v-slot:implementation>System Implementation</template>
+      <template v-slot:implementation><div class="px-8 py-4">System Implementation</div></template>
 
-      <template v-slot:control-implementation>Control Implementation</template>
+      <template v-slot:control-implementation><div class="px-8 py-4">Control Implementation</div></template>
     </Tabs>
     <!--    <DiagramEditor />-->
   </div>
