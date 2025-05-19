@@ -1,14 +1,10 @@
 import { defineStore } from 'pinia'
 import { useConfigStore } from '@/stores/config.ts'
-import type { DataResponse, Link, Parent, Part, Property } from '@/stores/types.ts'
-
-export interface CatalogMetadata {
-  title: string
-}
+import type { DataResponse, Link, Metadata, Part, Property } from '@/stores/types.ts'
 
 export interface Catalog {
   uuid: string
-  metadata: CatalogMetadata
+  metadata: Metadata
 }
 
 export interface Group {

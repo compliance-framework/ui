@@ -1,3 +1,8 @@
+export interface Metadata {
+  title: string;
+  remarks?: string;
+}
+
 export type FindingStatusState = 'satisfied' | 'not satisfied' | string;
 
 export interface FindingStatus {
@@ -70,6 +75,7 @@ export interface Property {
   value?: string;
   class?: string;
   ns?: string;
+  remarks?: string;
 }
 
 export interface Part {
@@ -93,3 +99,4 @@ export interface Parent {
 export interface DataResponse<T> {
   data: T;
 }
+
