@@ -92,6 +92,8 @@ import SystemCharacteristicsForm from '@/components/SystemCharacteristicsForm.vu
 import SystemCharacteristicsDiagramGroupForm from '@/components/SystemCharacteristicsDiagramGroupForm.vue'
 import DrawIODiagramEditor from '@/components/DrawIODiagramEditor.vue'
 import CollapsableGroup from '@/components/CollapsableGroup.vue'
+import type { DataResponse } from '@/stores/types.ts'
+import { v4 } from 'uuid'
 
 const route = useRoute();
 const id = route.params.id as string;
@@ -106,8 +108,13 @@ onMounted(() => {
   sspStore.get(id).then((data) => {
     systemSecurityPlan.value = data.data;
   });
-  sspStore.getCharacteristicsAuthorizationBoundary(id).then((data) => {
+  sspStore.getCharacteristicsAuthorizationBoundary(id).then((data: DataResponse<DiagramGrouping>) => {
     authorizationBoundary.value = data.data;
+    if (!data.data?.diagrams?.length) {
+      authorizationBoundary.value.diagrams = [{
+        uuid: v4(),
+      } as Diagram]
+    }
   })
   sspStore.getCharacteristicsNetworkArchitecture(id).then((data) => {
     networkArchitecture.value = data.data;
