@@ -44,15 +44,11 @@
             )
           "
         ></ResultStatusBadge>
-        <RouterLink
+        <TertiaryButton
           v-if="control.class"
-          class="bg-white hover:bg-zinc-100 border px-4 py-1 rounded-md dark:bg-slate-800 dark:hover:bg-slate-700 dark:border-slate-700"
-          :to="{
-            name: 'catalog-control-findings',
-            params: { class: control.class, id: control.id },
-          }"
-          >Findings
-        </RouterLink>
+          class="bg-white hover:bg-zinc-100  dark:bg-slate-800 dark:hover:bg-slate-600"
+          @click.stop="gotoFindings"
+        >Findings</TertiaryButton>
       </div>
     </template>
     <div class="px-4 py-4 border-b dark:border-slate-700">
@@ -125,6 +121,7 @@ import TertiaryButton from '@/components/TertiaryButton.vue';
 import ControlCreateModal from '@/components/catalogs/ControlCreateModal.vue';
 import type { Part } from '@/stores/types.ts';
 import PartDisplayEditor from '@/components/PartDisplayEditor.vue'
+import { useRouter } from 'vue-router'
 
 const props = defineProps<{
   catalog: Catalog;
@@ -140,10 +137,19 @@ const objective = ref<Part | undefined>(getPart('assessment-objective'));
 const statement = ref<Part | undefined>(getPart('statement'));
 const guidance = ref<Part | undefined>(getPart('guidance'));
 
+const router = useRouter();
+
 function hasPart(type: string) {
   return props.control.parts?.find((part) => {
     return part.name == type;
   });
+}
+
+function gotoFindings() {
+  router.push({
+    name: 'catalog-control-findings',
+    params: { class: props.control.class, id: props.control.id },
+  })
 }
 
 function getPart(type: string) {

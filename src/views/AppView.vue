@@ -9,7 +9,11 @@ import LeftSideNav from '@/views/LeftSideNav.vue'
       <LeftSideNav class="h-full w-80 fixed top-0 left-0" />
     </div>
     <main class="flex-1 z-10 px-12 py-4 bg-zinc-50 dark:bg-slate-950 text-zinc-800 dark:text-slate-50">
-      <RouterView />
+        <router-view v-slot="{ Component }">
+          <KeepAlive include="CatalogView">
+            <component :is="Component" />
+          </KeepAlive>
+        </router-view>
     </main>
   </div>
 </template>
