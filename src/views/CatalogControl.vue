@@ -95,9 +95,9 @@
         />
       </div>
       <div class="mt-4">
-        <TertiaryButton @click="showControlForm = true" class="ml-2"
-          >Add Control</TertiaryButton
-        >
+<!--        <TertiaryButton @click="showControlForm = true" class="ml-2"-->
+<!--          >Add Control</TertiaryButton-->
+<!--        >-->
         <ControlCreateModal
           @created="controlCreated"
           :catalog="catalog"
