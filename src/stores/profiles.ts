@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { useConfigStore } from '@/stores/config.ts'
-import type { DataResponse } from '@/stores/types.ts'
+import type { DataResponse, Property, Link } from '@/stores/types.ts'
+import camelcaseKeys from 'camelcase-keys'
 
 export interface ProfileMetadata {
   title: string;
@@ -13,8 +14,34 @@ export interface Profile {
 
 export interface Import {
   href: string
-  includeControls: object[]
-  excludeControls: object[]
+  includeAll: object
+  includeControls: SelectControlById[]
+  excludeControls: SelectControlById[]
+}
+
+export interface SelectControlById {
+  withChildControls?: string
+  withIds?: string[]
+  matching: object
+}
+
+
+export interface Merge {
+  'as-is': boolean
+  combine: object
+  flat: object
+}
+
+
+export interface ParameterSetting {
+  paramId: string
+  class?: string
+  dependsOn?: string
+  props?: Property[]
+  links?: Link[]
+  label?: string
+  constraints: object[]
+
 }
 
 
@@ -37,12 +64,19 @@ export const useProfileStore = defineStore('profiles', () => {
     const config = await configStore.getConfig()
     const response = await fetch(`${config.API_URL}/api/oscal/profiles/${id}/imports`)
 
-    return (await response.json()) as DataResponse<Import[]>
+    return camelcaseKeys(await response.json(), {deep: true}) as DataResponse<Import[]>
+  }
+
+  async function getMerge(id: string): Promise<DataResponse<Merge>> {
+    const config = await configStore.getConfig()
+    const response = await fetch(`${config.API_URL}/api/oscal/profiles/${id}/merge`)
+    return (await response.json()) as DataResponse<Merge>
   }
 
   return {
     list,
     get,
     listImports,
+    getMerge,
   }
 })
