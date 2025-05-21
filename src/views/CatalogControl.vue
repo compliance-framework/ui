@@ -4,8 +4,7 @@
       <div class="py-2 px-4 flex items-center gap-4">
         <span
           class="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-800 text-gray-800 dark:text-slate-300 rounded-md text-sm whitespace-nowrap px-4 py-1"
-          >{{ control.id }}</span
-        >
+          >{{ control.id }}</span>
         <div class="grow">
           {{ control.title }}
           <span class="text-gray-400 dark:text-slate-300 text-sm px-2 py-1"

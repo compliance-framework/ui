@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
-const isOpen = ref(false)
+const props = defineProps({
+  open: Boolean,
+})
 
+const isOpen = ref<boolean>(props.open);
 function toggleOpen() {
   isOpen.value = !isOpen.value;
 }
@@ -16,7 +19,7 @@ function toggleOpen() {
     }'>
       <slot name="header"></slot>
     </div>
-    <div v-if="isOpen" :class='{}'>
+    <div v-if="isOpen">
       <slot></slot>
     </div>
 </template>

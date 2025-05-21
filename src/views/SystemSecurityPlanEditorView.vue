@@ -24,46 +24,24 @@
   </div>
 </template>
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, toValue } from 'vue'
 import PageHeader from '@/components/PageHeader.vue';
 import {
-  type Diagram,
-  type DiagramGrouping,
   type SystemSecurityPlan,
   useSystemSecurityPlanStore
 } from '@/stores/system-security-plans.ts'
-import { RouterView, useRoute } from 'vue-router'
+import { RouterView, useRoute, useRouter } from 'vue-router'
 import PageSubHeader from '@/components/PageSubHeader.vue';
-import type { DataResponse } from '@/stores/types.ts'
-import { v4 } from 'uuid'
 
 const route = useRoute();
-const id = route.params.id as string;
+const id = ref<string>(route.params.id as string);
 const sspStore = useSystemSecurityPlanStore();
-
 const systemSecurityPlan = ref<SystemSecurityPlan>({} as SystemSecurityPlan);
-const authorizationBoundary = ref<DiagramGrouping>({} as DiagramGrouping);
-const networkArchitecture = ref<DiagramGrouping>({} as DiagramGrouping);
-const dataFlow = ref<DiagramGrouping>({} as DiagramGrouping);
 
 onMounted(() => {
-  sspStore.get(id).then((data) => {
+  sspStore.get(toValue(id)).then((data) => {
     systemSecurityPlan.value = data.data;
   });
-  sspStore.getCharacteristicsAuthorizationBoundary(id).then((data: DataResponse<DiagramGrouping>) => {
-    authorizationBoundary.value = data.data;
-    if (!data.data?.diagrams?.length) {
-      authorizationBoundary.value.diagrams = [{
-        uuid: v4(),
-      } as Diagram]
-    }
-  })
-  sspStore.getCharacteristicsNetworkArchitecture(id).then((data) => {
-    networkArchitecture.value = data.data;
-  })
-  sspStore.getCharacteristicsDataFlow(id).then((data) => {
-    dataFlow.value = data.data;
-  })
 });
 </script>
 

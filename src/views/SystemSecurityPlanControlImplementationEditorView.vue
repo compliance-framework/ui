@@ -1,5 +1,5 @@
 <template>
-  Control Implementation
+  Work In Progress
 </template>
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
