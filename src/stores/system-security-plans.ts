@@ -1,6 +1,12 @@
 import { defineStore } from 'pinia';
 import { useConfigStore } from '@/stores/config.ts';
-import type { DataResponse, Link, Metadata, Property } from '@/stores/types.ts';
+import type {
+  DataResponse,
+  Link,
+  Metadata,
+  Property,
+  Protocol,
+} from '@/stores/types.ts';
 import camelcaseKeys from 'camelcase-keys';
 import decamelizeKeys from 'decamelize-keys';
 
@@ -29,6 +35,49 @@ export interface SystemCharacteristics {
   dateAuthorized?: Date;
   securitySensitivityLevel?: string;
   remarks?: string;
+}
+
+export interface SystemImplementation {
+  props: Property[];
+  links: Link[];
+  remarks?: string;
+}
+
+export interface SystemImplementationUser {
+  uuid: string;
+  title: string;
+  shortName: string;
+  description: string;
+  props: Property[];
+  links: Link[];
+  roleIds?: string[];
+  authorizedPrivileges?: AuthorizedPrivilege[];
+}
+
+export interface AuthorizedPrivilege {
+  title: string;
+  description: string;
+  props: Property[];
+  links: Link[];
+  functionsPerformed?: string[];
+}
+
+export interface SystemComponentStatus {
+  remarks: string;
+  state: string;
+}
+
+export interface SystemComponent {
+  uuid: string;
+  type: string;
+  title: string;
+  description: string;
+  purpose: string;
+  status: SystemComponentStatus;
+  protocols: Protocol[];
+  remarks: string;
+  props: Property[];
+  links: Link[];
 }
 
 export interface SystemSecurityPlan {
@@ -129,7 +178,10 @@ export const useSystemSecurityPlanStore = defineStore(
       diagram: Diagram,
     ): Promise<DataResponse<Diagram>> {
       const config = await configStore.getConfig();
-      return await saveDiagram(`${config.API_URL}/api/oscal/system-security-plans/${id}/system-characteristics/authorization-boundary/diagrams/${diagram.uuid}`, diagram)
+      return await saveDiagram(
+        `${config.API_URL}/api/oscal/system-security-plans/${id}/system-characteristics/authorization-boundary/diagrams/${diagram.uuid}`,
+        diagram,
+      );
     }
 
     async function updateCharacteristicsNetworkArchitectureDiagram(
@@ -137,7 +189,10 @@ export const useSystemSecurityPlanStore = defineStore(
       diagram: Diagram,
     ): Promise<DataResponse<Diagram>> {
       const config = await configStore.getConfig();
-      return await saveDiagram(`${config.API_URL}/api/oscal/system-security-plans/${id}/system-characteristics/network-architecture/diagrams/${diagram.uuid}`, diagram)
+      return await saveDiagram(
+        `${config.API_URL}/api/oscal/system-security-plans/${id}/system-characteristics/network-architecture/diagrams/${diagram.uuid}`,
+        diagram,
+      );
     }
 
     async function updateCharacteristicsDataFlowDiagram(
@@ -145,30 +200,29 @@ export const useSystemSecurityPlanStore = defineStore(
       diagram: Diagram,
     ): Promise<DataResponse<Diagram>> {
       const config = await configStore.getConfig();
-      return await saveDiagram(`${config.API_URL}/api/oscal/system-security-plans/${id}/system-characteristics/data-flow/diagrams/${diagram.uuid}`, diagram)
+      return await saveDiagram(
+        `${config.API_URL}/api/oscal/system-security-plans/${id}/system-characteristics/data-flow/diagrams/${diagram.uuid}`,
+        diagram,
+      );
     }
 
-    async function saveDiagram(url: string, diagram: Diagram): Promise<DataResponse<Diagram>> {
-      const response = await fetch(
-        url,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(
-            decamelizeKeys(diagram, { separator: '-' }),
-          ),
+    async function saveDiagram(
+      url: string,
+      diagram: Diagram,
+    ): Promise<DataResponse<Diagram>> {
+      const response = await fetch(url, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
         },
-      );
+        body: JSON.stringify(decamelizeKeys(diagram, { separator: '-' })),
+      });
 
       if (!response.ok) {
         throw new Error(`Error: ${response.statusText}`);
       }
 
-      return camelcaseKeys(
-        await response.json(),
-      ) as DataResponse<Diagram>;
+      return camelcaseKeys(await response.json()) as DataResponse<Diagram>;
     }
 
     async function getCharacteristicsDataFlow(
@@ -184,6 +238,45 @@ export const useSystemSecurityPlanStore = defineStore(
       }) as DataResponse<DiagramGrouping>;
     }
 
+    async function getSystemImplementation(
+      id: string,
+    ): Promise<DataResponse<SystemImplementation>> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/system-security-plans/${id}/system-implementation`,
+      );
+
+      return camelcaseKeys(await response.json(), {
+        deep: true,
+      }) as DataResponse<SystemImplementation>;
+    }
+
+    async function getSystemImplementationUsers(
+      id: string,
+    ): Promise<DataResponse<SystemImplementationUser[]>> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/system-security-plans/${id}/system-implementation/users`,
+      );
+
+      return camelcaseKeys(await response.json(), {
+        deep: true,
+      }) as DataResponse<SystemImplementationUser[]>;
+    }
+
+    async function getSystemImplementationComponents(
+      id: string,
+    ): Promise<DataResponse<SystemComponent[]>> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/system-security-plans/${id}/system-implementation/components`,
+      );
+
+      return camelcaseKeys(await response.json(), {
+        deep: true,
+      }) as DataResponse<SystemComponent[]>;
+    }
+
     return {
       get,
       list,
@@ -195,6 +288,10 @@ export const useSystemSecurityPlanStore = defineStore(
       updateCharacteristicsDataFlowDiagram,
       getCharacteristicsDataFlow,
       updateCharacteristics,
+
+      getSystemImplementation,
+      getSystemImplementationUsers,
+      getSystemImplementationComponents,
     };
   },
 );

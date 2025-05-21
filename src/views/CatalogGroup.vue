@@ -22,8 +22,8 @@
         <CatalogGroup v-for="group in groups" :key="group.id" :group="group" :catalog="props.catalog" />
       </div>
       <div class="mt-4">
-        <TertiaryButton v-if="controls.length == 0" @click="showGroupForm = true">Add Group</TertiaryButton>
-        <TertiaryButton v-if="groups.length == 0" @click="showControlForm = true" class="ml-2">Add Control</TertiaryButton>
+<!--        <TertiaryButton v-if="controls.length == 0" @click="showGroupForm = true">Add Group</TertiaryButton>-->
+<!--        <TertiaryButton v-if="groups.length == 0" @click="showControlForm = true" class="ml-2">Add Control</TertiaryButton>-->
         <GroupCreateModal @created="groupCreated" :catalog="catalog" :parent="props.group" v-model="showGroupForm" />
         <ControlCreateModal @created="controlCreated" :catalog="catalog" :parent-group="props.group" v-model="showControlForm" />
       </div>

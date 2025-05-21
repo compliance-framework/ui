@@ -105,6 +105,10 @@ function findExistingXml() {
 
 function loadXml() {
   const existingXml = findExistingXml()
+  let dark = false;
+  if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+    dark = true;
+  }
   if (existingXml) {
     frame.value?.contentWindow?.postMessage(
       JSON.stringify({
@@ -113,6 +117,7 @@ function loadXml() {
         noExitBtn: 1,
         autosave: 1,
         title: currentDiagram.value.uuid,
+        dark: dark,
       }),
       '*',
     );
@@ -125,6 +130,7 @@ function loadXml() {
       xml: ``,
       noExitBtn: 1,
       autosave: 1,
+      dark: dark,
     }),
     '*',
   );

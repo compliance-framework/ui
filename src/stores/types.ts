@@ -90,6 +90,19 @@ export interface Part {
   title: string;
 }
 
+export interface PortRange {
+  end: number;
+  start: number;
+  transport: string;
+}
+
+export interface Protocol {
+  name: string;
+  portRanges?: PortRange[];
+  title: string;
+  uuid: string;
+}
+
 export interface Parent {
   id: string;
   class: string;
@@ -99,4 +112,3 @@ export interface Parent {
 export interface DataResponse<T> {
   data: T;
 }
-

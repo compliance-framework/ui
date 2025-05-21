@@ -15,7 +15,7 @@
         <td class="py-2 px-2 text-right whitespace-nowrap">
           <RouterLink
             class="bg-white hover:bg-zinc-100 border px-4 py-1 rounded-md dark:bg-slate-800 dark:hover:bg-slate-700 dark:border-slate-700"
-            :to="{ name: 'system-security-plans-editor', params: { id: ssp.uuid } }"
+            :to="{ name: 'system-security-plans-characteristics', params: { id: ssp.uuid } }"
           >View
           </RouterLink>
         </td>
@@ -24,13 +24,13 @@
     </table>
   </div>
 
-  <div class="mt-4">
-    <RouterLink
-      class="bg-transparent font-light hover:bg-zinc-100 dark:text-slate-300 dark:hover:bg-slate-800 border dark:border-slate-700 px-4 py-1 rounded-md"
-      :to="{ name: 'system-security-plans-create' }"
-    >Create Catalog
-    </RouterLink>
-  </div>
+<!--  <div class="mt-4">-->
+<!--    <RouterLink-->
+<!--      class="bg-transparent font-light hover:bg-zinc-100 dark:text-slate-300 dark:hover:bg-slate-800 border dark:border-slate-700 px-4 py-1 rounded-md"-->
+<!--      :to="{ name: 'system-security-plans-create' }"-->
+<!--    >Create Catalog-->
+<!--    </RouterLink>-->
+<!--  </div>-->
 
 </template>
 <script setup lang="ts">

@@ -9,8 +9,8 @@
     <CatalogControl v-for="control in controls" :key="control.id" :control="control" :catalog="catalog" />
   </div>
   <div class="mt-4">
-    <TertiaryButton v-if="controls.length == 0" @click="showGroupForm = true">Add Group</TertiaryButton>
-    <TertiaryButton v-if="groups.length == 0" @click="showControlForm = true" class="ml-2">Add Control</TertiaryButton>
+<!--    <TertiaryButton v-if="controls.length == 0" @click="showGroupForm = true">Add Group</TertiaryButton>-->
+<!--    <TertiaryButton v-if="groups.length == 0" @click="showControlForm = true" class="ml-2">Add Control</TertiaryButton>-->
     <GroupCreateModal @created="groupCreated" :catalog="catalog" v-model="showGroupForm" />
     <ControlCreateModal @created="controlCreated" :catalog="catalog" v-model="showControlForm" />
   </div>
@@ -36,6 +36,7 @@ const route = useRoute();
 const id = route.params.id as string;
 
 onMounted(() => {
+  console.log('mounting')
   catalogStore.get(id).then((data) => {
     catalog.value = data.data
     catalogStore.listGroups(id).then((data) => {
