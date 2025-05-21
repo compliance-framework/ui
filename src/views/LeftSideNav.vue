@@ -20,6 +20,7 @@ import darkLogo from '@/assets/logo-dark.svg'
       <SideNavLink class="pl-6" :to="{ name: 'dashboards' }">Dashboards</SideNavLink>
       <SideNavLink class="pl-6" :to="{ name: 'catalog-list' }">Catalogs</SideNavLink>
       <SideNavLink ckass="pl-6" :to="{name: 'profile-list'}">Profiles</SideNavLink>
+      <SideNavLink class="pl-6" :to="{ name: 'system-security-plans' }">System Security Plans</SideNavLink>
       <SideNavCategory title="Findings (Evidence)">
         <SideNavLink :to="{ name: 'findings' }">All</SideNavLink>
         <SideNavLink :to="{ name: 'findings-by-subject' }">By Subject</SideNavLink>

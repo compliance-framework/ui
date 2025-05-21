@@ -4,8 +4,7 @@
       <div class="py-2 px-4 flex items-center gap-4">
         <span
           class="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-800 text-gray-800 dark:text-slate-300 rounded-md text-sm whitespace-nowrap px-4 py-1"
-          >{{ control.id }}</span
-        >
+          >{{ control.id }}</span>
         <div class="grow">
           {{ control.title }}
           <span class="text-gray-400 dark:text-slate-300 text-sm px-2 py-1"
@@ -44,15 +43,11 @@
             )
           "
         ></ResultStatusBadge>
-        <RouterLink
+        <TertiaryButton
           v-if="control.class"
-          class="bg-white hover:bg-zinc-100 border px-4 py-1 rounded-md dark:bg-slate-800 dark:hover:bg-slate-700 dark:border-slate-700"
-          :to="{
-            name: 'catalog-control-findings',
-            params: { class: control.class, id: control.id },
-          }"
-          >Findings
-        </RouterLink>
+          class="bg-white hover:bg-zinc-100  dark:bg-slate-800 dark:hover:bg-slate-600"
+          @click.stop="gotoFindings"
+        >Findings</TertiaryButton>
       </div>
     </template>
     <div class="px-4 py-4 border-b dark:border-slate-700">
@@ -95,9 +90,9 @@
         />
       </div>
       <div class="mt-4">
-        <TertiaryButton @click="showControlForm = true" class="ml-2"
-          >Add Control</TertiaryButton
-        >
+<!--        <TertiaryButton @click="showControlForm = true" class="ml-2"-->
+<!--          >Add Control</TertiaryButton-->
+<!--        >-->
         <ControlCreateModal
           @created="controlCreated"
           :catalog="catalog"
@@ -125,6 +120,7 @@ import TertiaryButton from '@/components/TertiaryButton.vue';
 import ControlCreateModal from '@/components/catalogs/ControlCreateModal.vue';
 import type { Part } from '@/stores/types.ts';
 import PartDisplayEditor from '@/components/PartDisplayEditor.vue'
+import { useRouter } from 'vue-router'
 
 const props = defineProps<{
   catalog: Catalog;
@@ -140,10 +136,19 @@ const objective = ref<Part | undefined>(getPart('assessment-objective'));
 const statement = ref<Part | undefined>(getPart('statement'));
 const guidance = ref<Part | undefined>(getPart('guidance'));
 
+const router = useRouter();
+
 function hasPart(type: string) {
   return props.control.parts?.find((part) => {
     return part.name == type;
   });
+}
+
+function gotoFindings() {
+  router.push({
+    name: 'catalog-control-findings',
+    params: { class: props.control.class, id: props.control.id },
+  })
 }
 
 function getPart(type: string) {

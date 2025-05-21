@@ -1,3 +1,8 @@
+export interface Metadata {
+  title: string;
+  remarks?: string;
+}
+
 export type FindingStatusState = 'satisfied' | 'not satisfied' | string;
 
 export interface FindingStatus {
@@ -70,6 +75,7 @@ export interface Property {
   value?: string;
   class?: string;
   ns?: string;
+  remarks?: string;
 }
 
 export interface Part {
@@ -82,6 +88,19 @@ export interface Part {
   props: Property[];
   prose: string;
   title: string;
+}
+
+export interface PortRange {
+  end: number;
+  start: number;
+  transport: string;
+}
+
+export interface Protocol {
+  name: string;
+  portRanges?: PortRange[];
+  title: string;
+  uuid: string;
 }
 
 export interface Parent {
