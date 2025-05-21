@@ -96,17 +96,23 @@ onMounted(() => {
 });
 
 async function saveAuthorizationBoundaryDiagram(diagram: Diagram) {
-  const response = await sspStore.updateCharacteristicsAuthorizationBoundaryDiagram(systemSecurityPlan.value.uuid, diagram);
-  console.log('authorization boundary stored', response);
+  if (systemSecurityPlan.value != null) {
+    const response = await sspStore.updateCharacteristicsAuthorizationBoundaryDiagram(systemSecurityPlan.value.uuid, diagram);
+    console.log('authorization boundary stored', response);
+  }
 }
 
 async function saveNetworkArchitectureDiagram(diagram: Diagram) {
-  const response = await sspStore.updateCharacteristicsNetworkArchitectureDiagram(systemSecurityPlan.value.uuid, diagram);
-  console.log('network architecture stored', response);
+  if (systemSecurityPlan.value != null) {
+    const response = await sspStore.updateCharacteristicsNetworkArchitectureDiagram(systemSecurityPlan.value.uuid, diagram);
+    console.log('network architecture stored', response);
+  }
 }
 
 async function saveDataFlowDiagram(diagram: Diagram) {
-  const response = await sspStore.updateCharacteristicsDataFlowDiagram(systemSecurityPlan.value.uuid, diagram);
-  console.log('data flow stored', response);
+  if (systemSecurityPlan.value != null) {
+    const response = await sspStore.updateCharacteristicsDataFlowDiagram(systemSecurityPlan.value.uuid, diagram);
+    console.log('data flow stored', response);
+  }
 }
 </script>
