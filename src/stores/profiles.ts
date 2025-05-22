@@ -27,7 +27,7 @@ export interface SelectControlById {
 
 
 export interface Merge {
-  'as-is': boolean
+  asIs: boolean
   combine: object
   flat: object
 }
@@ -73,7 +73,7 @@ export const useProfileStore = defineStore('profiles', () => {
   async function getMerge(id: string): Promise<DataResponse<Merge>> {
     const config = await configStore.getConfig()
     const response = await fetch(`${config.API_URL}/api/oscal/profiles/${id}/merge`)
-    return (await response.json()) as DataResponse<Merge>
+    return camelcaseKeys(await response.json(), {deep: true}) as DataResponse<Merge>
   }
 
   async function resolve(id: string): Promise<DataResponse<ResolveResponse>> {

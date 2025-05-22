@@ -39,6 +39,18 @@ function resolveProfile() {
   })
 }
 
+function stringifyMerge(merge: Merge) {
+  console.log(merge)
+  if (merge.asIs) {
+    return 'As Is'
+  } else if (merge.combine != undefined) {
+    return 'Combine'
+  } else if (merge.flat != undefined) {
+     return 'Flat'
+  }
+  return 'Unknown'
+}
+
 </script>
 
 <template>
@@ -74,7 +86,7 @@ function resolveProfile() {
 
   <h3>Merge</h3>
   <PageCard>
-    <strong>Merge method:</strong> {{  merge['as-is'] ? 'As Is' : '' }}
+    <strong>Merge method:</strong> {{  stringifyMerge(merge) }}
   </PageCard>
 
   <h3>Modify</h3>
