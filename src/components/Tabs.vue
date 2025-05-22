@@ -9,7 +9,6 @@ const active = ref(props.items[0].id);
 
 onMounted(() => {
   active.value = props.items[0].id;
-  console.log(active.value);
 });
 </script>
 

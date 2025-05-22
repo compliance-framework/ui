@@ -88,6 +88,16 @@ const authenticatedRoutes = [
     component: () => import('../views/SubjectsView.vue'),
   },
   {
+    path: '/parties',
+    name: 'admin-parties',
+    component: () => import('../views/PartyListView.vue'),
+  },
+  {
+    path: '/roles',
+    name: 'admin-roles',
+    component: () => import('../views/RoleListView.vue'),
+  },
+  {
     path: '/subject/:id',
     name: 'admin-subject-crud',
     component: () => import('../views/SubjectEditView.vue'),

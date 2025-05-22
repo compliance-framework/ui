@@ -36,7 +36,6 @@ const route = useRoute();
 const id = route.params.id as string;
 
 onMounted(() => {
-  console.log('mounting')
   catalogStore.get(id).then((data) => {
     catalog.value = data.data
     catalogStore.listGroups(id).then((data) => {

@@ -50,7 +50,7 @@
         >Findings</TertiaryButton>
       </div>
     </template>
-    <div class="px-4 py-4 border-b dark:border-slate-700">
+    <div class="px-4 py-4 dark:bg-slate-950 border-b dark:border-slate-700">
       <div class="flex items-start justify-between gap-4">
         <div>
           <TertiaryButton v-if="!statement">Add Statement</TertiaryButton>
