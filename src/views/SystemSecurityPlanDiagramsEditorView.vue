@@ -75,7 +75,6 @@ const networkArchitecture = ref<DiagramGrouping>({} as DiagramGrouping);
 const dataFlow = ref<DiagramGrouping>({} as DiagramGrouping);
 
 onMounted(() => {
-  console.log("Fetching for ID", id);
   sspStore.get(id).then((data) => {
     systemSecurityPlan.value = data.data;
   });

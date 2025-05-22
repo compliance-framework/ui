@@ -47,7 +47,7 @@
           </h3>
           <div :class="{
             'rounded-full capitalize px-2 py-1 text-sm font-light': true,
-            'bg-green-700': component.status.state == `operational`,
+            'bg-green-400 dark:bg-green-700': component.status.state == `operational`,
             'bg-amber-600': component.status.state != `operational`,
           }">
             {{ component.status.state }}
@@ -107,7 +107,6 @@ const systemSecurityPlan = ref<SystemSecurityPlan | null>(null);
 const users = ref<SystemImplementationUser[] | null>(null);
 const components = ref<SystemComponent[] | null>(null);
 onMounted(() => {
-  console.log("Fetching for ID", id);
   sspStore.get(id).then((data) => {
     systemSecurityPlan.value = data.data;
   });

@@ -5,7 +5,7 @@
         <span class="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-800 text-gray-800 dark:text-slate-300 rounded-md text-sm px-2 py-1 mr-2">{{group.id}}</span>{{ group.title }} <span class="text-gray-400 dark:text-slate-300 text-sm px-2 py-1">Group</span>
       </div>
     </template>
-    <div class="px-4 py-4 border-b dark:border-slate-700">
+    <div class="px-4 py-4 dark:bg-slate-950 border-b dark:border-slate-700">
       <template v-if="hasPart('assessment-objective')">
         <h4 class="font-medium mt-2">Objective:</h4>
         <p class="whitespace-pre-wrap">{{ getPart('assessment-objective')?.prose }}</p>

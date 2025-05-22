@@ -16,7 +16,6 @@ const sspStore = useSystemSecurityPlanStore();
 const systemSecurityPlan = ref<SystemSecurityPlan | null>(null);
 
 onMounted(() => {
-  console.log("Fetching for ID", id);
   sspStore.get(id).then((data) => {
     systemSecurityPlan.value = data.data;
   });
