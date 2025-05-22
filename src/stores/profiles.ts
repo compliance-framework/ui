@@ -41,7 +41,10 @@ export interface ParameterSetting {
   links?: Link[]
   label?: string
   constraints: object[]
+}
 
+export interface ResolveResponse {
+  id: string
 }
 
 
@@ -73,10 +76,20 @@ export const useProfileStore = defineStore('profiles', () => {
     return (await response.json()) as DataResponse<Merge>
   }
 
+  async function resolve(id: string): Promise<DataResponse<ResolveResponse>> {
+    const config = await configStore.getConfig()
+    const response = await fetch(`${config.API_URL}/api/oscal/profiles/${id}/resolve`, {
+      method: 'POST',
+    })
+
+    return (await response.json()) as DataResponse<ResolveResponse>
+  }
+
   return {
     list,
     get,
     listImports,
     getMerge,
+    resolve,
   }
 })
