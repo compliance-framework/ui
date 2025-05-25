@@ -185,6 +185,11 @@ const authenticatedRoutes = [
     name: 'about',
     component: () => import('../views/AboutView.vue'),
   },
+  {
+    path: '/components',
+    name: 'findings-by-components',
+    component: () => import('../views/ComponentList.vue')
+  },
 ];
 
 const router = createRouter({
