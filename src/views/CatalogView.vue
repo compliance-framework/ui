@@ -17,7 +17,7 @@
   <div class="h-screen w-full"></div> <!-- A screen height div to prevent collapse scrolling back up after closing -->
 </template>
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onActivated, onMounted, ref, toValue } from 'vue'
 import PageHeader from '@/components/PageHeader.vue'
 import { type Catalog, type Group, type Control, useCatalogStore } from '@/stores/catalogs.ts'
 import { useRoute } from 'vue-router'
@@ -33,9 +33,25 @@ const groups = ref<Group[]>([]);
 const controls = ref<Control[]>([]);
 
 const route = useRoute();
-const id = route.params.id as string;
+const id = ref<string>(route.params.id as string);
 
-onMounted(() => {
+onMounted(async () => {
+  await loadCatalog(toValue(id))
+})
+
+onActivated(async () => {
+  catalog.value = {
+    uuid: route.params.id,
+  } as Catalog
+  groups.value = [] as Group[]
+  controls.value = [] as Control[]
+  if (route.params.id !== id.value) {
+    id.value = route.params.id as string
+    await loadCatalog(toValue(id))
+  }
+})
+
+async function loadCatalog(id: string) {
   catalogStore.get(id).then((data) => {
     catalog.value = data.data
     catalogStore.listGroups(id).then((data) => {
@@ -45,7 +61,7 @@ onMounted(() => {
       controls.value = data.data
     })
   })
-})
+}
 
 const showGroupForm = ref<boolean>(false);
 const showControlForm = ref<boolean>(false);
