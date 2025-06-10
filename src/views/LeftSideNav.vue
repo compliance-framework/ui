@@ -5,6 +5,15 @@ import SideNavLink from '@/components/navigation/SideNavLink.vue'
 import SideNavLogo from '@/components/navigation/SideNavLogo.vue'
 import lightLogo from '@/assets/logo-light.svg'
 import darkLogo from '@/assets/logo-dark.svg'
+import { useUserStore } from '@/stores/auth'
+import { ref } from 'vue'
+
+const userStore = useUserStore()
+
+const loggedIn = ref<boolean>(false)
+
+loggedIn.value = userStore.isAuthenticated
+
 </script>
 
 <template>
@@ -15,26 +24,32 @@ import darkLogo from '@/assets/logo-dark.svg'
         <SideNavLogo alt="Vue logo" :src="darkLogo" class="w-full hidden dark:block"/>
       </div>
     </template>
-
-    <div class="overflow-y-auto max-h-full grow">
-      <SideNavLink class="pl-6" :to="{ name: 'dashboards' }">Dashboards</SideNavLink>
-      <SideNavLink class="pl-6" :to="{ name: 'catalog-list' }">Catalogs</SideNavLink>
-      <SideNavLink class="pl-6" :to="{ name: 'system-security-plans' }">System Security Plans</SideNavLink>
-      <SideNavLink class="pl-6" :to="{ name: 'admin-parties' }">Parties</SideNavLink>
-      <SideNavLink class="pl-6" :to="{ name: 'admin-roles' }">Roles</SideNavLink>
-      <SideNavCategory title="Findings (Evidence)">
-        <SideNavLink :to="{ name: 'findings' }">All</SideNavLink>
-        <SideNavLink :to="{ name: 'findings-by-subject' }">By Subject</SideNavLink>
-        <SideNavLink :to="{ name: 'list-classes-of-findings' }">By Control Class</SideNavLink>
-      </SideNavCategory>
-      <SideNavCategory title="Admin">
-        <SideNavLink :to="{ name: 'admin-subjects' }">Subjects</SideNavLink>
-      </SideNavCategory>
-      <SideNavCategory title="Continuous Compliance">
-        <SideNavLink :to="{ name: 'about' }">About</SideNavLink>
-        <SideNavLink :to="{ name: 'home' }">Docs</SideNavLink>
-      </SideNavCategory>
-    </div>
+    <template v-if="userStore.isAuthenticated">
+      <div class="overflow-y-auto max-h-full grow">
+        <SideNavLink class="pl-6" :to="{ name: 'dashboards' }">Dashboards</SideNavLink>
+        <SideNavLink class="pl-6" :to="{ name: 'catalog-list' }">Catalogs</SideNavLink>
+        <SideNavLink class="pl-6" :to="{ name: 'system-security-plans' }">System Security Plans</SideNavLink>
+        <SideNavLink class="pl-6" :to="{ name: 'admin-parties' }">Parties</SideNavLink>
+        <SideNavLink class="pl-6" :to="{ name: 'admin-roles' }">Roles</SideNavLink>
+        <SideNavCategory title="Findings (Evidence)">
+          <SideNavLink :to="{ name: 'findings' }">All</SideNavLink>
+          <SideNavLink :to="{ name: 'findings-by-subject' }">By Subject</SideNavLink>
+          <SideNavLink :to="{ name: 'list-classes-of-findings' }">By Control Class</SideNavLink>
+        </SideNavCategory>
+        <SideNavCategory title="Admin">
+          <SideNavLink :to="{ name: 'admin-subjects' }">Subjects</SideNavLink>
+        </SideNavCategory>
+        <SideNavCategory title="Continuous Compliance">
+          <SideNavLink :to="{ name: 'about' }">About</SideNavLink>
+          <SideNavLink :to="{ name: 'home' }">Docs</SideNavLink>
+        </SideNavCategory>
+      </div>
+    </template>
+    <template v-else>
+      <div class="overflow-y-auto max-h-full grow">
+        <SideNavLink class="pl-6" :to="{ name: 'login' }">Login</SideNavLink>
+      </div>
+    </template>
   </SideNav>
 </template>
 

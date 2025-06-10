@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
 import { useConfigStore } from "@/stores/config";
 import type { DataResponse } from "./types";
+import { ref } from "vue";
 
 interface User {
   sub: string;
@@ -16,7 +17,7 @@ export const useUserStore = defineStore("user", {
   state: () => {
     return {
       user: null as User | null,
-      isAuthenticated: false,
+      isAuthenticated: ref<boolean>(false),
       token: null as string | null
     }
   }
