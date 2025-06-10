@@ -4,25 +4,25 @@
   <PageCard class="mt-6">
     <form @submit.prevent="onSubmit" class="space-y-6">
       <div>
-        <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+        <label for="email" class="block text-sm font-medium text-gray-700 dark:text-slate-300">Email</label>
         <input
           id="email"
           type="email"
           v-model="email"
           placeholder="you@example.com"
           required
-          class="mt-2 p-3 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          class="mt-2 p-3 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:text-slate-300 dark:bg-slate-700"
         />
       </div>
       <div>
-        <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+        <label for="password" class="block text-sm font-medium text-gray-700 dark:text-slate-300">Password</label>
         <input
           id="password"
           type="password"
           v-model="password"
           placeholder="Enter your password"
           required
-          class="mt-2 p-3 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          class="mt-2 p-3 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:text-slate-300 dark:bg-slate-700"
         />
       </div>
       <div>
