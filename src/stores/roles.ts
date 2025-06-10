@@ -10,6 +10,7 @@ import type {
 import camelcaseKeys from 'camelcase-keys';
 import decamelizeKeys from 'decamelize-keys';
 import type { SystemCharacteristics } from '@/stores/system-security-plans.ts'
+import { useUserStore } from '@/stores/auth';
 
 export interface Role {
   id: string;
@@ -25,11 +26,17 @@ export const useRoleStore = defineStore(
   'roles',
   () => {
     const configStore = useConfigStore();
+    const userStore = useUserStore()
 
     async function get(id: string): Promise<DataResponse<Role>> {
       const config = await configStore.getConfig();
       const response = await fetch(
         `${config.API_URL}/api/oscal/parties/${id}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${userStore.token}`
+          }
+        }
       );
       return decamelizeKeys(await response.json()) as DataResponse<Role>;
     }
@@ -38,6 +45,11 @@ export const useRoleStore = defineStore(
       const config = await configStore.getConfig();
       const response = await fetch(
         `${config.API_URL}/api/oscal/roles`,
+        {
+          headers: {
+            'Authorization': `Bearer ${userStore.token}`
+          }
+        }
       );
       return camelcaseKeys(await response.json(), {deep:true}) as DataResponse<Role[]>;
     }
