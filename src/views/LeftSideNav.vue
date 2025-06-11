@@ -6,13 +6,8 @@ import SideNavLogo from '@/components/navigation/SideNavLogo.vue'
 import lightLogo from '@/assets/logo-light.svg'
 import darkLogo from '@/assets/logo-dark.svg'
 import { useUserStore } from '@/stores/auth'
-import { ref } from 'vue'
 
 const userStore = useUserStore()
-
-const loggedIn = ref<boolean>(false)
-
-loggedIn.value = userStore.isAuthenticated
 
 </script>
 
