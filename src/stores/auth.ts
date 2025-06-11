@@ -49,7 +49,15 @@ export const useAuthStore = defineStore("auth", () => {
     return data.data
 
   }
+
+  async function logout(): Promise<boolean> {
+    user.token = null
+    user.isAuthenticated = false
+
+    return true;
+  }
   return {
     login,
+    logout,
   }
 });

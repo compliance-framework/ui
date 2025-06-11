@@ -43,6 +43,7 @@ loggedIn.value = userStore.isAuthenticated
           <SideNavLink :to="{ name: 'about' }">About</SideNavLink>
           <SideNavLink :to="{ name: 'home' }">Docs</SideNavLink>
         </SideNavCategory>
+        <SideNavLink :to="{ name: 'logout' }">Logout</SideNavLink>
       </div>
     </template>
     <template v-else>
