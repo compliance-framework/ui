@@ -29,7 +29,11 @@ jobs:
         run: |
           mkdir -p /tmp/.buildx-cache
           docker load < /tmp/.buildx-cache/image.tar
-          
+
+      - name: Run lint
+        run: |
+          docker run --rm ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:build npm run lint
+
       - name: Run tests using the `build` image
         run: |
           docker run --rm ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:build npm run test:unit run
