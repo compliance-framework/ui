@@ -9,6 +9,7 @@ import type {
 } from '@/stores/types.ts';
 import camelcaseKeys from 'camelcase-keys';
 import decamelizeKeys from 'decamelize-keys';
+import { useUserStore } from '@/stores/auth';
 
 export interface Diagram {
   uuid: string;
@@ -90,36 +91,47 @@ export const useSystemSecurityPlanStore = defineStore(
   'system-security-plans',
   () => {
     const configStore = useConfigStore();
-
+    const userStore = useUserStore();
     async function get(id: string): Promise<DataResponse<SystemSecurityPlan>> {
       const config = await configStore.getConfig();
       const response = await fetch(
         `${config.API_URL}/api/oscal/system-security-plans/${id}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${userStore.token}`
+          }
+        }
       );
       return (await response.json()) as DataResponse<SystemSecurityPlan>;
     }
-
     async function list(): Promise<DataResponse<SystemSecurityPlan[]>> {
       const config = await configStore.getConfig();
       const response = await fetch(
         `${config.API_URL}/api/oscal/system-security-plans`,
+        {
+          headers: {
+            'Authorization': `Bearer ${userStore.token}`
+          }
+        }
       );
       return (await response.json()) as DataResponse<SystemSecurityPlan[]>;
     }
-
     async function getCharacteristics(
       id: string,
     ): Promise<DataResponse<SystemCharacteristics>> {
       const config = await configStore.getConfig();
       const response = await fetch(
         `${config.API_URL}/api/oscal/system-security-plans/${id}/system-characteristics`,
+        {
+          headers: {
+            'Authorization': `Bearer ${userStore.token}`
+          }
+        }
       );
-
       return camelcaseKeys(await response.json(), {
         deep: true,
       }) as DataResponse<SystemCharacteristics>;
     }
-
     async function updateCharacteristics(
       id: string,
       characteristics: SystemCharacteristics,
@@ -131,17 +143,16 @@ export const useSystemSecurityPlanStore = defineStore(
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${userStore.token}`
           },
           body: JSON.stringify(
             decamelizeKeys(characteristics, { separator: '-' }),
           ),
         },
       );
-
       if (!response.ok) {
         throw new Error(`Error: ${response.statusText}`);
       }
-
       return camelcaseKeys(
         await response.json(),
       ) as DataResponse<SystemCharacteristics>;
@@ -153,8 +164,12 @@ export const useSystemSecurityPlanStore = defineStore(
       const config = await configStore.getConfig();
       const response = await fetch(
         `${config.API_URL}/api/oscal/system-security-plans/${id}/system-characteristics/authorization-boundary`,
+        {
+          headers: {
+            'Authorization': `Bearer ${userStore.token}`
+          }
+        }
       );
-
       return camelcaseKeys(await response.json(), {
         deep: true,
       }) as DataResponse<DiagramGrouping>;
@@ -166,6 +181,11 @@ export const useSystemSecurityPlanStore = defineStore(
       const config = await configStore.getConfig();
       const response = await fetch(
         `${config.API_URL}/api/oscal/system-security-plans/${id}/system-characteristics/network-architecture`,
+        {
+          headers: {
+            'Authorization': `Bearer ${userStore.token}`
+          }
+        }
       );
 
       return camelcaseKeys(await response.json(), {
@@ -214,14 +234,13 @@ export const useSystemSecurityPlanStore = defineStore(
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${userStore.token}`,
         },
         body: JSON.stringify(decamelizeKeys(diagram, { separator: '-' })),
       });
-
       if (!response.ok) {
         throw new Error(`Error: ${response.statusText}`);
       }
-
       return camelcaseKeys(await response.json()) as DataResponse<Diagram>;
     }
 
@@ -231,8 +250,12 @@ export const useSystemSecurityPlanStore = defineStore(
       const config = await configStore.getConfig();
       const response = await fetch(
         `${config.API_URL}/api/oscal/system-security-plans/${id}/system-characteristics/data-flow`,
+        {
+          headers: {
+            'Authorization': `Bearer ${userStore.token}`
+          }
+        }
       );
-
       return camelcaseKeys(await response.json(), {
         deep: true,
       }) as DataResponse<DiagramGrouping>;
@@ -244,8 +267,12 @@ export const useSystemSecurityPlanStore = defineStore(
       const config = await configStore.getConfig();
       const response = await fetch(
         `${config.API_URL}/api/oscal/system-security-plans/${id}/system-implementation`,
+        {
+          headers: {
+            'Authorization': `Bearer ${userStore.token}`
+          }
+        }
       );
-
       return camelcaseKeys(await response.json(), {
         deep: true,
       }) as DataResponse<SystemImplementation>;
@@ -257,8 +284,12 @@ export const useSystemSecurityPlanStore = defineStore(
       const config = await configStore.getConfig();
       const response = await fetch(
         `${config.API_URL}/api/oscal/system-security-plans/${id}/system-implementation/users`,
+        {
+          headers: {
+            'Authorization': `Bearer ${userStore.token}`
+          }
+        }
       );
-
       return camelcaseKeys(await response.json(), {
         deep: true,
       }) as DataResponse<SystemImplementationUser[]>;
@@ -270,8 +301,12 @@ export const useSystemSecurityPlanStore = defineStore(
       const config = await configStore.getConfig();
       const response = await fetch(
         `${config.API_URL}/api/oscal/system-security-plans/${id}/system-implementation/components`,
+        {
+          headers: {
+            'Authorization': `Bearer ${userStore.token}`
+          }
+        }
       );
-
       return camelcaseKeys(await response.json(), {
         deep: true,
       }) as DataResponse<SystemComponent[]>;
@@ -280,14 +315,15 @@ export const useSystemSecurityPlanStore = defineStore(
     return {
       get,
       list,
+
       getCharacteristics,
       getCharacteristicsAuthorizationBoundary,
       getCharacteristicsNetworkArchitecture,
+      getCharacteristicsDataFlow,
+      updateCharacteristics,
       updateCharacteristicsAuthorizationBoundaryDiagram,
       updateCharacteristicsNetworkArchitectureDiagram,
       updateCharacteristicsDataFlowDiagram,
-      getCharacteristicsDataFlow,
-      updateCharacteristics,
 
       getSystemImplementation,
       getSystemImplementationUsers,
