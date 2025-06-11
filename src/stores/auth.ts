@@ -20,7 +20,8 @@ export const useUserStore = defineStore("user", {
       isAuthenticated: ref<boolean>(false),
       token: null as string | null
     }
-  }
+  },
+  persist: true
 });
 
 export const useAuthStore = defineStore("auth", () => {
