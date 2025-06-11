@@ -10,7 +10,6 @@ import { onMounted } from 'vue';
 const router = useRouter();
 const authStore = useAuthStore();
 
-
 onMounted(() => {
   authStore.logout().then(() => {
     router.push({ name: "login" });

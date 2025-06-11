@@ -14,12 +14,12 @@ import { useUserStore } from '@/stores/auth';
 
 export interface Role {
   id: string;
-  title?: string
-  shortName?: string
-  description?: string
-  links: Link[]
-  props: Property[]
-  remarks?: string
+  title?: string;
+  shortName?: string;
+  description?: string;
+  links: Link[];
+  props: Property[];
+  remarks?: string;
 }
 
 export const useRoleStore = defineStore(
@@ -27,7 +27,6 @@ export const useRoleStore = defineStore(
   () => {
     const configStore = useConfigStore();
     const userStore = useUserStore()
-
     async function get(id: string): Promise<DataResponse<Role>> {
       const config = await configStore.getConfig();
       const response = await fetch(
@@ -40,7 +39,6 @@ export const useRoleStore = defineStore(
       );
       return decamelizeKeys(await response.json()) as DataResponse<Role>;
     }
-
     async function list(): Promise<DataResponse<Role[]>> {
       const config = await configStore.getConfig();
       const response = await fetch(
@@ -53,7 +51,6 @@ export const useRoleStore = defineStore(
       );
       return camelcaseKeys(await response.json(), {deep:true}) as DataResponse<Role[]>;
     }
-
     return {
       get,
       list,

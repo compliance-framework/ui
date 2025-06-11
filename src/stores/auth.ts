@@ -47,15 +47,14 @@ export const useAuthStore = defineStore("auth", () => {
     user.token = data.data.auth_token;
     user.isAuthenticated = true;
     return data.data
-
   }
 
   async function logout(): Promise<boolean> {
     user.token = null
     user.isAuthenticated = false
-
     return true;
   }
+
   return {
     login,
     logout,

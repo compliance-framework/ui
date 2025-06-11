@@ -8,7 +8,6 @@ import darkLogo from '@/assets/logo-dark.svg'
 import { useUserStore } from '@/stores/auth'
 
 const userStore = useUserStore()
-
 </script>
 
 <template>

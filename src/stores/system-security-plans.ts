@@ -92,7 +92,6 @@ export const useSystemSecurityPlanStore = defineStore(
   () => {
     const configStore = useConfigStore();
     const userStore = useUserStore();
-
     async function get(id: string): Promise<DataResponse<SystemSecurityPlan>> {
       const config = await configStore.getConfig();
       const response = await fetch(
@@ -105,7 +104,6 @@ export const useSystemSecurityPlanStore = defineStore(
       );
       return (await response.json()) as DataResponse<SystemSecurityPlan>;
     }
-
     async function list(): Promise<DataResponse<SystemSecurityPlan[]>> {
       const config = await configStore.getConfig();
       const response = await fetch(
@@ -118,7 +116,6 @@ export const useSystemSecurityPlanStore = defineStore(
       );
       return (await response.json()) as DataResponse<SystemSecurityPlan[]>;
     }
-
     async function getCharacteristics(
       id: string,
     ): Promise<DataResponse<SystemCharacteristics>> {
@@ -131,12 +128,10 @@ export const useSystemSecurityPlanStore = defineStore(
           }
         }
       );
-
       return camelcaseKeys(await response.json(), {
         deep: true,
       }) as DataResponse<SystemCharacteristics>;
     }
-
     async function updateCharacteristics(
       id: string,
       characteristics: SystemCharacteristics,
@@ -155,11 +150,9 @@ export const useSystemSecurityPlanStore = defineStore(
           ),
         },
       );
-
       if (!response.ok) {
         throw new Error(`Error: ${response.statusText}`);
       }
-
       return camelcaseKeys(
         await response.json(),
       ) as DataResponse<SystemCharacteristics>;
@@ -177,7 +170,6 @@ export const useSystemSecurityPlanStore = defineStore(
           }
         }
       );
-
       return camelcaseKeys(await response.json(), {
         deep: true,
       }) as DataResponse<DiagramGrouping>;
@@ -246,11 +238,9 @@ export const useSystemSecurityPlanStore = defineStore(
         },
         body: JSON.stringify(decamelizeKeys(diagram, { separator: '-' })),
       });
-
       if (!response.ok) {
         throw new Error(`Error: ${response.statusText}`);
       }
-
       return camelcaseKeys(await response.json()) as DataResponse<Diagram>;
     }
 
@@ -266,7 +256,6 @@ export const useSystemSecurityPlanStore = defineStore(
           }
         }
       );
-
       return camelcaseKeys(await response.json(), {
         deep: true,
       }) as DataResponse<DiagramGrouping>;
@@ -284,7 +273,6 @@ export const useSystemSecurityPlanStore = defineStore(
           }
         }
       );
-
       return camelcaseKeys(await response.json(), {
         deep: true,
       }) as DataResponse<SystemImplementation>;
@@ -302,7 +290,6 @@ export const useSystemSecurityPlanStore = defineStore(
           }
         }
       );
-
       return camelcaseKeys(await response.json(), {
         deep: true,
       }) as DataResponse<SystemImplementationUser[]>;
@@ -320,7 +307,6 @@ export const useSystemSecurityPlanStore = defineStore(
           }
         }
       );
-
       return camelcaseKeys(await response.json(), {
         deep: true,
       }) as DataResponse<SystemComponent[]>;
@@ -329,14 +315,15 @@ export const useSystemSecurityPlanStore = defineStore(
     return {
       get,
       list,
+
       getCharacteristics,
       getCharacteristicsAuthorizationBoundary,
       getCharacteristicsNetworkArchitecture,
+      getCharacteristicsDataFlow,
+      updateCharacteristics,
       updateCharacteristicsAuthorizationBoundaryDiagram,
       updateCharacteristicsNetworkArchitectureDiagram,
       updateCharacteristicsDataFlowDiagram,
-      getCharacteristicsDataFlow,
-      updateCharacteristics,
 
       getSystemImplementation,
       getSystemImplementationUsers,

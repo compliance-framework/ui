@@ -33,7 +33,6 @@ export interface Party {
   addresses: Address[];
   emailAddresses: string[];
   telephoneNumbers: string[];
-
 }
 
 export const usePartyStore = defineStore(
@@ -41,7 +40,6 @@ export const usePartyStore = defineStore(
   () => {
     const configStore = useConfigStore();
     const userStore = useUserStore();
-
     async function get(id: string): Promise<DataResponse<Party>> {
       const config = await configStore.getConfig();
       const response = await fetch(
@@ -54,7 +52,6 @@ export const usePartyStore = defineStore(
       );
       return decamelizeKeys(await response.json()) as DataResponse<Party>;
     }
-
     async function list(): Promise<DataResponse<Party[]>> {
       const config = await configStore.getConfig();
       const response = await fetch(
@@ -67,7 +64,6 @@ export const usePartyStore = defineStore(
       );
       return camelcaseKeys(await response.json(), {deep:true}) as DataResponse<Party[]>;
     }
-
     return {
       get,
       list,

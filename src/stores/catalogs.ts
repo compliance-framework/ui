@@ -4,8 +4,8 @@ import type { DataResponse, Link, Metadata, Part, Property } from '@/stores/type
 import { useUserStore } from '@/stores/auth.ts'
 
 export interface Catalog {
-  uuid: string
-  metadata: Metadata
+  uuid: string;
+  metadata: Metadata;
 }
 
 export interface Group {
@@ -13,8 +13,8 @@ export interface Group {
   title: string;
   class?: string;
   parts: Part[];
-  links: Link[]
-  props: Property[]
+  links: Link[];
+  props: Property[];
 }
 
 export interface Control {
@@ -22,8 +22,8 @@ export interface Control {
   title: string;
   class: string;
   parts: Part[];
-  links: Link[]
-  props: Property[]
+  links: Link[];
+  props: Property[];
 }
 
 export const useCatalogStore = defineStore('catalogs', () => {
@@ -60,11 +60,9 @@ export const useCatalogStore = defineStore('catalogs', () => {
       },
       body: JSON.stringify(catalog),
     })
-
     if (!response.ok) {
       throw new Error(`Error: ${response.statusText}`)
     }
-
     return (await response.json()) as DataResponse<Catalog>
   }
 
@@ -82,7 +80,6 @@ export const useCatalogStore = defineStore('catalogs', () => {
     if (!response.ok) {
       throw new Error(`Error: ${response.statusText}`)
     }
-
     return (await response.json()) as DataResponse<Group>
   }
 
@@ -96,11 +93,9 @@ export const useCatalogStore = defineStore('catalogs', () => {
       },
       body: JSON.stringify(group),
     })
-
     if (!response.ok) {
       throw new Error(`Error: ${response.statusText}`)
     }
-
     return (await response.json()) as DataResponse<Group>
   }
 
@@ -114,11 +109,9 @@ export const useCatalogStore = defineStore('catalogs', () => {
       },
       body: JSON.stringify(control),
     })
-
     if (!response.ok) {
       throw new Error(`Error: ${response.statusText}`)
     }
-
     return (await response.json()) as DataResponse<Control>
   }
 
@@ -162,11 +155,9 @@ export const useCatalogStore = defineStore('catalogs', () => {
       },
       body: JSON.stringify(control),
     })
-
     if (!response.ok) {
       throw new Error(`Error: ${response.statusText}`)
     }
-
     return (await response.json()) as DataResponse<Control>
   }
 
@@ -180,11 +171,9 @@ export const useCatalogStore = defineStore('catalogs', () => {
       },
       body: JSON.stringify(control),
     })
-
     if (!response.ok) {
       throw new Error(`Error: ${response.statusText}`)
     }
-
     return (await response.json()) as DataResponse<Control>
   }
 
