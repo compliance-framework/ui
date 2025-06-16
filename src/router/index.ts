@@ -295,11 +295,11 @@ router.beforeEach((to, from, next) => {
   const isAuthenticated = userStore.isAuthenticated;
   if (requiresAuth && !isAuthenticated) {
     // Redirect to the login page if the user is not authenticated
-    next({ name: 'login' });
-  } else {
-    // Proceed to the requested route
-    next();
+    return next({ name: 'login', query: {next: to.fullPath} });
   }
+
+  // Proceed to the requested route
+  return next();
 });
 
 export default router
