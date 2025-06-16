@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import AppView from '../views/AppView.vue'
+import AppLayout from '@/views/layouts/App.vue'
+import GuestLayout from '@/views/layouts/Guest.vue'
 import { useUserStore } from '@/stores/auth';
 
 const authenticatedRoutes = [
@@ -270,7 +271,7 @@ const router = createRouter({
     {
       path: '/auth',
       name: 'auth',
-      component: AppView,
+      component: GuestLayout,
       children: publicRoutes,
       meta: {
         requiresAuth: false,
@@ -280,7 +281,7 @@ const router = createRouter({
     {
       path: '/',
       name: 'app',
-      component: AppView,
+      component: AppLayout,
       children: authenticatedRoutes,
       meta: {
         requiresAuth: true,

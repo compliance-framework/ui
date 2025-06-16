@@ -1,8 +1,10 @@
 <template>
-  <PageHeader>Login</PageHeader>
-  <PageSubHeader>Login to your account</PageSubHeader>
-  <PageCard class="mt-6">
-    <form @submit.prevent="onSubmit" class="space-y-6">
+  <PageCard class="mx-auto mt-12 max-w-96 py-8">
+    <div class="px-8 pb-8">
+      <SideNavLogo alt="Vue logo" :src="lightLogo" class="w-full dark:hidden"/>
+      <SideNavLogo alt="Vue logo" :src="darkLogo" class="w-full hidden dark:block"/>
+    </div>
+    <form @submit.prevent="onSubmit" class="space-y-4">
       <div>
         <label
           for="email"
@@ -29,8 +31,6 @@
 </template>
 
 <script setup lang="ts">
-import PageHeader from '@/components/PageHeader.vue';
-import PageSubHeader from '@/components/PageSubHeader.vue';
 import PageCard from '@/components/PageCard.vue';
 import { ref } from 'vue';
 import PrimaryButton from '@/components/PrimaryButton.vue';
@@ -38,6 +38,9 @@ import { useAuthStore } from '@/stores/auth';
 import { useRoute, useRouter } from 'vue-router';
 import type { DataResponse } from '@/stores/api.ts'
 import FormInput from '@/components/forms/FormInput.vue'
+import lightLogo from '@/assets/logo-light.svg'
+import darkLogo from '@/assets/logo-dark.svg'
+import SideNavLogo from '@/components/navigation/SideNavLogo.vue'
 
 interface AuthError {
   email: string[];
