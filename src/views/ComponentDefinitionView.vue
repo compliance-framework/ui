@@ -1,6 +1,16 @@
 <template>
   <PageHeader>Component Definition</PageHeader>
   <PageSubHeader>{{ componentDefinition.metadata?.title }}</PageSubHeader>
+  
+  <div class="mt-4 text-right">
+    <RouterLink
+      v-if="componentDefinition.uuid"
+      :to="{ name: 'component-definition-edit', params: { id: componentDefinition.uuid } }"
+      class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
+    >
+      Edit
+    </RouterLink>
+  </div>
 
   <div
     class="mt-4 rounded-md bg-white dark:bg-slate-900 border-collapse border dark:border-slate-700 p-6"

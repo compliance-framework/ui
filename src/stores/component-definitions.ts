@@ -48,9 +48,37 @@ export const useComponentDefinitionStore = defineStore('component-definitions', 
     return (await response.json()) as DataResponse<ComponentDefinition>
   }
 
+  async function update(id: string, componentDefinition: ComponentDefinition): Promise<DataResponse<ComponentDefinition>> {
+    const config = await configStore.getConfig()
+    const response = await fetch(`${config.API_URL}/api/oscal/component-definitions/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${userStore.token}`,
+      },
+      body: JSON.stringify(componentDefinition),
+    })
+    if (!response.ok) {
+      throw new Error(`Error: ${response.statusText}`)
+    }
+    return (await response.json()) as DataResponse<ComponentDefinition>
+  }
+
+  async function full(id: string): Promise<DataResponse<ComponentDefinition>> {
+    const config = await configStore.getConfig()
+    const response = await fetch(`${config.API_URL}/api/oscal/component-definitions/${id}/full`, {
+      headers: {
+        'Authorization': `Bearer ${userStore.token}`,
+      }
+    })
+    return (await response.json()) as DataResponse<ComponentDefinition>
+  }
+
   return {
     get,
     list,
     create,
+    update,
+    full,
   }
 })
