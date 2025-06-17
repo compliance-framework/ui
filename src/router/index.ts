@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import AppView from '../views/AppView.vue'
+import AppLayout from '@/views/layouts/App.vue'
+import GuestLayout from '@/views/layouts/Guest.vue'
 import { useUserStore } from '@/stores/auth';
 
 const authenticatedRoutes = [
@@ -270,7 +271,7 @@ const router = createRouter({
     {
       path: '/auth',
       name: 'auth',
-      component: AppView,
+      component: GuestLayout,
       children: publicRoutes,
       meta: {
         requiresAuth: false,
@@ -280,7 +281,7 @@ const router = createRouter({
     {
       path: '/',
       name: 'app',
-      component: AppView,
+      component: AppLayout,
       children: authenticatedRoutes,
       meta: {
         requiresAuth: true,
@@ -295,11 +296,11 @@ router.beforeEach((to, from, next) => {
   const isAuthenticated = userStore.isAuthenticated;
   if (requiresAuth && !isAuthenticated) {
     // Redirect to the login page if the user is not authenticated
-    next({ name: 'login' });
-  } else {
-    // Proceed to the requested route
-    next();
+    return next({ name: 'login', query: {next: to.fullPath} });
   }
+
+  // Proceed to the requested route
+  return next();
 });
 
 export default router
