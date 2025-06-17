@@ -15,24 +15,14 @@
         </div>
         
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">Version</label>
-          <p class="text-gray-900 dark:text-slate-300">{{ componentDefinition.metadata.version || 'Not specified' }}</p>
-        </div>
-        
-        <div v-if="componentDefinition.metadata.lastModified">
-          <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">Last Modified</label>
-          <p class="text-gray-900 dark:text-slate-300">{{ formatDate(componentDefinition.metadata.lastModified) }}</p>
-        </div>
-        
-        <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">UUID</label>
           <p class="text-sm text-gray-600 dark:text-slate-400 font-mono">{{ componentDefinition.uuid }}</p>
         </div>
       </div>
 
-      <div v-if="componentDefinition.metadata.description" class="mb-6">
-        <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">Description</label>
-        <p class="text-gray-900 dark:text-slate-300">{{ componentDefinition.metadata.description }}</p>
+      <div v-if="componentDefinition.metadata.remarks" class="mb-6">
+        <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">Remarks</label>
+        <p class="text-gray-900 dark:text-slate-300">{{ componentDefinition.metadata.remarks }}</p>
       </div>
     </div>
 
@@ -62,8 +52,4 @@ onMounted(async () => {
     console.error('Failed to load component definition:', error)
   }
 })
-
-function formatDate(dateString: string): string {
-  return new Date(dateString).toLocaleDateString()
-}
 </script>
