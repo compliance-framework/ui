@@ -70,7 +70,7 @@ async function submit() {
     const id = route.params.id as string
     await componentDefinitionStore.update(id, componentDefinition.value)
     await router.push({
-      name: 'component-definition-view',
+      name: 'component-definition-overview',
       params: { id: componentDefinition.value.uuid },
     })
   } catch (error) {
@@ -80,7 +80,7 @@ async function submit() {
 
 function cancel() {
   router.push({
-    name: 'component-definition-view',
+    name: 'component-definition-overview',
     params: { id: route.params.id },
   })
 }

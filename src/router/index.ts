@@ -156,11 +156,38 @@ const authenticatedRoutes = [
   },
   {
     path: '/component-definitions/:id',
-    name: 'component-definition-view',
-    component: () => import('../views/ComponentDefinitionView.vue'),
+    name: 'component-definition-editor',
+    component: () => import('../views/ComponentDefinitionEditorView.vue'),
     meta: {
       requiresAuth: true,
-    }
+    },
+    children: [
+      {
+        path: '',
+        name: 'component-definition-overview',
+        component: () => import('../views/ComponentDefinitionOverviewView.vue')
+      },
+      {
+        path: 'import-definitions',
+        name: 'component-definition-import-definitions',
+        component: () => import('../views/ComponentDefinitionImportDefinitionsView.vue')
+      },
+      {
+        path: 'components',
+        name: 'component-definition-components',
+        component: () => import('../views/ComponentDefinitionComponentsView.vue')
+      },
+      {
+        path: 'capabilities',
+        name: 'component-definition-capabilities',
+        component: () => import('../views/ComponentDefinitionCapabilitiesView.vue')
+      },
+      {
+        path: 'back-matter',
+        name: 'component-definition-back-matter',
+        component: () => import('../views/ComponentDefinitionBackMatterView.vue')
+      },
+    ]
   },
   {
     path: '/component-definitions/:id/edit',

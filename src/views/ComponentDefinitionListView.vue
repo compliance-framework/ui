@@ -15,7 +15,7 @@
         <td class="py-2 px-2 text-right whitespace-nowrap">
           <RouterLink
             class="bg-white hover:bg-zinc-100 border px-4 py-1 rounded-md dark:bg-slate-800 dark:hover:bg-slate-700 dark:border-slate-700"
-            :to="{ name: 'component-definition-view', params: { id: componentDefinition.uuid } }"
+            :to="{ name: 'component-definition-overview', params: { id: componentDefinition.uuid } }"
           >View
           </RouterLink>
         </td>
