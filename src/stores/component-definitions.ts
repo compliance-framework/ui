@@ -134,6 +134,43 @@ export const useComponentDefinitionStore = defineStore('component-definitions', 
     return (await response.json()) as DataResponse<any>
   }
 
+  async function createComponent(id: string, component: any): Promise<DataResponse<any>> {
+    const config = await configStore.getConfig()
+    console.log('Creating component with data:', JSON.stringify(component, null, 2))
+    const response = await fetch(`${config.API_URL}/api/oscal/component-definitions/${id}/components`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${userStore.token}`,
+      },
+      body: JSON.stringify([component]),
+    })
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error('Component creation error:', errorText)
+      throw new Error(`Error: ${response.statusText} - ${errorText}`)
+    }
+    return (await response.json()) as DataResponse<any>
+  }
+
+  async function createCapability(id: string, capability: any): Promise<DataResponse<any>> {
+    const config = await configStore.getConfig()
+    const response = await fetch(`${config.API_URL}/api/oscal/component-definitions/${id}/capabilities`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${userStore.token}`,
+      },
+      body: JSON.stringify(capability),
+    })
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error('Capability creation error:', errorText)
+      throw new Error(`Error: ${response.statusText} - ${errorText}`)
+    }
+    return (await response.json()) as DataResponse<any>
+  }
+
   return {
     get,
     list,
@@ -146,5 +183,7 @@ export const useComponentDefinitionStore = defineStore('component-definitions', 
     getControlImplementations,
     getCapabilities,
     getBackMatter,
+    createComponent,
+    createCapability,
   }
 })
