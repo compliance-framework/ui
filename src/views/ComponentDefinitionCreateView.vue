@@ -58,7 +58,7 @@ async function submit() {
   try {
     const response = await componentDefinitionStore.create(componentDefinition.value)
     await router.push({
-      name: 'component-definition-view',
+      name: 'component-definition-overview',
       params: { id: response.data.uuid },
     })
   } catch (error) {
