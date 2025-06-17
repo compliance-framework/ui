@@ -147,9 +147,25 @@ const authenticatedRoutes = [
     }
   },
   {
+    path: '/component-definitions/create',
+    name: 'component-definition-create',
+    component: () => import('../views/ComponentDefinitionCreateView.vue'),
+    meta: {
+      requiresAuth: true,
+    }
+  },
+  {
     path: '/component-definitions/:id',
     name: 'component-definition-view',
     component: () => import('../views/ComponentDefinitionView.vue'),
+    meta: {
+      requiresAuth: true,
+    }
+  },
+  {
+    path: '/component-definitions/:id/edit',
+    name: 'component-definition-edit',
+    component: () => import('../views/ComponentDefinitionEditView.vue'),
     meta: {
       requiresAuth: true,
     }
