@@ -138,6 +138,22 @@ const authenticatedRoutes = [
     }
   },
   {
+    path: '/component-definitions',
+    name: 'component-definitions',
+    component: () => import('../views/ComponentDefinitionListView.vue'),
+    meta: {
+      requiresAuth: true,
+    }
+  },
+  {
+    path: '/component-definitions/:id',
+    name: 'component-definition-view',
+    component: () => import('../views/ComponentDefinitionView.vue'),
+    meta: {
+      requiresAuth: true,
+    }
+  },
+  {
     path: '/subject/:id',
     name: 'admin-subject-crud',
     component: () => import('../views/SubjectEditView.vue'),
