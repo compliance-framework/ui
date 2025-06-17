@@ -18,7 +18,11 @@
     <TertiaryButton @click="showCreateForm = true">Add Capability</TertiaryButton>
   </div>
 
-  <!-- TODO: Add Capability Creation Modal -->
+  <CapabilityCreateModal 
+    @created="capabilityCreated" 
+    :component-definition-id="componentDefinitionId" 
+    v-model="showCreateForm" 
+  />
 </template>
 
 <script setup lang="ts">
@@ -27,6 +31,7 @@ import { useComponentDefinitionStore } from '@/stores/component-definitions.ts'
 import { useRoute } from 'vue-router'
 import TertiaryButton from '@/components/TertiaryButton.vue'
 import ComponentDefinitionCapability from '@/components/component-definitions/ComponentDefinitionCapability.vue'
+import CapabilityCreateModal from '@/components/component-definitions/CapabilityCreateModal.vue'
 
 const componentDefinitionStore = useComponentDefinitionStore()
 const capabilities = ref<any[]>([])
@@ -35,11 +40,19 @@ const componentDefinitionId = ref<string>(route.params.id as string)
 const showCreateForm = ref<boolean>(false)
 
 onMounted(async () => {
+  await loadCapabilities()
+})
+
+async function loadCapabilities() {
   try {
     const response = await componentDefinitionStore.getCapabilities(componentDefinitionId.value)
     capabilities.value = response.data
   } catch (error) {
     console.error('Failed to load capabilities:', error)
   }
-})
+}
+
+function capabilityCreated(capability: any) {
+  capabilities.value.push(capability)
+}
 </script>

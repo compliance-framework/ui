@@ -18,7 +18,11 @@
     <TertiaryButton @click="showCreateForm = true">Add Component</TertiaryButton>
   </div>
 
-  <!-- TODO: Add Component Creation Modal -->
+  <ComponentCreateModal 
+    @created="componentCreated" 
+    :component-definition-id="componentDefinitionId" 
+    v-model="showCreateForm" 
+  />
 </template>
 
 <script setup lang="ts">
@@ -27,6 +31,7 @@ import { useComponentDefinitionStore } from '@/stores/component-definitions.ts'
 import { useRoute } from 'vue-router'
 import TertiaryButton from '@/components/TertiaryButton.vue'
 import ComponentDefinitionComponent from '@/components/component-definitions/ComponentDefinitionComponent.vue'
+import ComponentCreateModal from '@/components/component-definitions/ComponentCreateModal.vue'
 
 const componentDefinitionStore = useComponentDefinitionStore()
 const components = ref<any[]>([])
@@ -35,11 +40,19 @@ const componentDefinitionId = ref<string>(route.params.id as string)
 const showCreateForm = ref<boolean>(false)
 
 onMounted(async () => {
+  await loadComponents()
+})
+
+async function loadComponents() {
   try {
     const response = await componentDefinitionStore.getComponents(componentDefinitionId.value)
     components.value = response.data
   } catch (error) {
     console.error('Failed to load components:', error)
   }
-})
+}
+
+function componentCreated(component: any) {
+  components.value.push(component)
+}
 </script>
