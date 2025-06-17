@@ -139,6 +139,65 @@ const authenticatedRoutes = [
     }
   },
   {
+    path: '/component-definitions',
+    name: 'component-definitions',
+    component: () => import('../views/ComponentDefinitionListView.vue'),
+    meta: {
+      requiresAuth: true,
+    }
+  },
+  {
+    path: '/component-definitions/create',
+    name: 'component-definition-create',
+    component: () => import('../views/ComponentDefinitionCreateView.vue'),
+    meta: {
+      requiresAuth: true,
+    }
+  },
+  {
+    path: '/component-definitions/:id',
+    name: 'component-definition-editor',
+    component: () => import('../views/ComponentDefinitionEditorView.vue'),
+    meta: {
+      requiresAuth: true,
+    },
+    children: [
+      {
+        path: '',
+        name: 'component-definition-overview',
+        component: () => import('../views/ComponentDefinitionOverviewView.vue')
+      },
+      {
+        path: 'import-definitions',
+        name: 'component-definition-import-definitions',
+        component: () => import('../views/ComponentDefinitionImportDefinitionsView.vue')
+      },
+      {
+        path: 'components',
+        name: 'component-definition-components',
+        component: () => import('../views/ComponentDefinitionComponentsView.vue')
+      },
+      {
+        path: 'capabilities',
+        name: 'component-definition-capabilities',
+        component: () => import('../views/ComponentDefinitionCapabilitiesView.vue')
+      },
+      {
+        path: 'back-matter',
+        name: 'component-definition-back-matter',
+        component: () => import('../views/ComponentDefinitionBackMatterView.vue')
+      },
+    ]
+  },
+  {
+    path: '/component-definitions/:id/edit',
+    name: 'component-definition-edit',
+    component: () => import('../views/ComponentDefinitionEditView.vue'),
+    meta: {
+      requiresAuth: true,
+    }
+  },
+  {
     path: '/subject/:id',
     name: 'admin-subject-crud',
     component: () => import('../views/SubjectEditView.vue'),
