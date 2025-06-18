@@ -117,7 +117,7 @@
       <div class="border-t border-zinc-300 dark:border-slate-700 text-right py-4 px-4">
         <PrimaryButton
           @click="toggleActivitiesModal(false)"
-          class="px-2 py-1 border-zinc-500 border rounded-md shadow"
+          class="px-2 py-1 border-zinc-500 border rounded-md shadow-sm"
         >
           Close
         </PrimaryButton>

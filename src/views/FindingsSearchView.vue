@@ -39,7 +39,7 @@
             id="filter"
             name="filter"
             placeholder="foo=bar AND bar=baz AND (bar!=bat OR bar!=bat)"
-            class="grow px-2 py-2 focus:border-none focus-visible:border-none focus:ring-0 focus-visible:ring-0 focus:outline-none focus-visible:outline-none bg-white dark:bg-slate-900"
+            class="grow px-2 py-2 focus:border-none focus-visible:border-none focus:ring-0 focus-visible:ring-0 focus:outline-hidden focus-visible:outline-hidden bg-white dark:bg-slate-900"
           />
           <SecondaryButton type="submit" class="border-none text-sm">
             Search

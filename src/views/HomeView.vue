@@ -19,7 +19,7 @@
     </div>
     <div class="mt-4">
 <!--      <RouterLink-->
-<!--        class="bg-gray-50 border border-blue-800 hover:bg-gray-200 text-blue-800 px-4 py-2 rounded inline-block"-->
+<!--        class="bg-gray-50 border border-blue-800 hover:bg-gray-200 text-blue-800 px-4 py-2 rounded-sm inline-block"-->
 <!--        :to="{ name: 'assessment-plan.create' }"-->
 <!--        >Create-->
 <!--      </RouterLink>-->

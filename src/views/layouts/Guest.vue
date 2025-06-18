@@ -15,6 +15,8 @@ import { RouterView } from 'vue-router';
 </template>
 
 <style>
+@reference '../../assets/base.css';
+
 body,
 html {
   @apply bg-white;

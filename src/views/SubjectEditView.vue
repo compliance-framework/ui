@@ -43,7 +43,7 @@
     <div class="border-t border-zinc-300 dark:border-slate-700 text-right py-4 px-4">
       <PrimaryButton
         @click="toggleDeleteModal(false)"
-        class="mx-2 px-2 py-1 border-zinc-500 border rounded-md shadow"
+        class="mx-2 px-2 py-1 border-zinc-500 border rounded-md shadow-sm"
       >
         Cancel
       </PrimaryButton>

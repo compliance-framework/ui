@@ -49,10 +49,11 @@ const userStore = useUserStore()
 </template>
 
 <style>
+@reference '../assets/base.css';
 .router-link {
   @apply border-l-transparent border-l-8 text-zinc-700 dark:text-slate-200;
 }
 .router-link-exact-active {
-  @apply bg-gradient-to-r from-slate-200 to-slate-100 border-l-slate-300 dark:from-slate-700 dark:to-slate-800 dark:border-slate-500 dark:text-slate-200;
+  @apply bg-linear-to-r from-slate-200 to-slate-100 border-l-slate-300 dark:from-slate-700 dark:to-slate-800 dark:border-slate-500 dark:text-slate-200;
 }
 </style>
