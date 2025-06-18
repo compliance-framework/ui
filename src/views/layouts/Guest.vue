@@ -15,7 +15,7 @@ import { RouterView } from 'vue-router';
 </template>
 
 <style>
-@reference '../../assets/base.css';
+@reference '@/assets/base.css';
 
 body,
 html {

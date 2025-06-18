@@ -49,7 +49,7 @@ const userStore = useUserStore()
 </template>
 
 <style>
-@reference '../assets/base.css';
+@reference '@/assets/base.css';
 .router-link {
   @apply border-l-transparent border-l-8 text-zinc-700 dark:text-slate-200;
 }

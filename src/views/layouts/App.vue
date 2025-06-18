@@ -20,7 +20,7 @@ import LeftSideNav from '@/views/LeftSideNav.vue'
 
 <style>
 body, html {
-  @reference "../../assets/base.css";
+  @reference "@/assets/base.css";
 
   @apply bg-white;
 }
