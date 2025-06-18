@@ -46,6 +46,8 @@ onMounted(() => {
 </script>
 
 <style scoped>
+@reference "@/assets/main.css";
+
 .router-link-exact-active {
   @apply bg-none border-b-2 dark:bg-slate-900
 }
