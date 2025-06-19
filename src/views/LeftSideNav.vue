@@ -11,7 +11,7 @@ const userStore = useUserStore()
 </script>
 
 <template>
-  <SideNav class="flex flex-col max-h-screen border border-r dark:border-slate-700 bg-white dark:bg-slate-900">
+  <SideNav class="flex flex-col max-h-screen border-r border-r-ccf-300  dark:border-slate-700 bg-white dark:bg-slate-900">
     <template #logo>
       <div class="px-8 py-8">
         <SideNavLogo alt="Vue logo" :src="lightLogo" class="w-full dark:hidden"/>

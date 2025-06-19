@@ -7,7 +7,7 @@
   </p>
 
   <div
-    class="mt-4 border-b dark:border-slate-800"
+    class="mt-4 border-b border-ccf-300 dark:border-slate-800"
   >
     <RouterLink class="px-4 py-2 inline-block text-lg border-slate-600 dark:border-slate-700 dark:hover:bg-slate-900" :to="{name: 'system-security-plans-characteristics', params: {id: systemSecurityPlan.uuid}}">Characteristics</RouterLink>
     <RouterLink class="px-4 py-2 inline-block text-lg border-slate-600 dark:border-slate-700 dark:hover:bg-slate-900" :to="{name: 'system-security-plans-diagrams', params: {id: systemSecurityPlan.uuid}}">Diagrams</RouterLink>

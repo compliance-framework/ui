@@ -2,6 +2,17 @@
 
 @theme {
     --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+
+    --color-ccf-100: var(--color-gray-100);
+    --color-ccf-200: var(--color-gray-200);
+    --color-ccf-300: var(--color-gray-300);
+    --color-ccf-400: var(--color-gray-400);
+    --color-ccf-500: var(--color-gray-500);
+    --color-ccf-600: var(--color-gray-600);
+    --color-ccf-700: var(--color-gray-700);
+    --color-ccf-800: var(--color-gray-800);
+    --color-ccf-900: var(--color-gray-900);
+    --color-ccf-950: var(--color-gray-950);
 }
 
 html, body {
@@ -10,10 +21,4 @@ html, body {
 
 .field-sizing-content {
     field-sizing: content;
-}
-
-@layer base {
-    .border, .border-b, .border-t, .border-l, .border-r {
-        @apply border-gray-300 dark:border-gray-700;
-    }
 }

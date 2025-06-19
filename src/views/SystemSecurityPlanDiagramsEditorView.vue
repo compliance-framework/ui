@@ -1,6 +1,6 @@
 <template>
   <div
-    class="my-4 rounded-md bg-white dark:bg-slate-900 border-collapse border dark:border-slate-700"
+    class="my-4 rounded-md bg-white dark:bg-slate-900 border-collapse border border-ccf-300 dark:border-slate-700"
   >
     <CollapsableGroup open>
       <template #header>
@@ -8,9 +8,9 @@
           Authorization Boundary
         </div>
       </template>
-      <div class="px-4 py-4 border-b dark:border-slate-700">
+      <div class="px-4 py-4 border-b border-ccf-300 dark:border-slate-700">
 <!--        <SystemCharacteristicsDiagramGroupForm v-model="authorizationBoundary" />-->
-        <div class="overflow-hidden border dark:border-slate-700 rounded-md" v-for="diagram in authorizationBoundary.diagrams" :key="diagram.uuid">
+        <div class="overflow-hidden border border-ccf-300 dark:border-slate-700 rounded-md" v-for="diagram in authorizationBoundary.diagrams" :key="diagram.uuid">
           <DrawIODiagramEditor class="h-184" :diagram="diagram" @saved="saveAuthorizationBoundaryDiagram" />
         </div>
       </div>
@@ -22,9 +22,9 @@
           Network Architecture
         </div>
       </template>
-      <div class="px-4 py-4 border-b dark:border-slate-700">
+      <div class="px-4 py-4 border-b border-ccf-300 dark:border-slate-700">
 <!--        <SystemCharacteristicsDiagramGroupForm v-model="networkArchitecture" />-->
-        <div class="overflow-hidden border dark:border-slate-700 rounded-md" v-for="diagram in networkArchitecture.diagrams" :key="diagram.uuid">
+        <div class="overflow-hidden border border-ccf-300 dark:border-slate-700 rounded-md" v-for="diagram in networkArchitecture.diagrams" :key="diagram.uuid">
           <DrawIODiagramEditor class="h-168" :diagram="diagram" @saved="saveNetworkArchitectureDiagram" />
         </div>
       </div>
@@ -36,9 +36,9 @@
           Data Flow
         </div>
       </template>
-      <div class="px-4 py-4 border-b dark:border-slate-700">
+      <div class="px-4 py-4 border-b border-ccf-300 dark:border-slate-700">
 <!--        <SystemCharacteristicsDiagramGroupForm v-model="dataFlow" />-->
-        <div class="overflow-hidden border dark:border-slate-700 rounded-md" v-for="diagram in dataFlow.diagrams" :key="diagram.uuid">
+        <div class="overflow-hidden border border-ccf-300 dark:border-slate-700 rounded-md" v-for="diagram in dataFlow.diagrams" :key="diagram.uuid">
           <DrawIODiagramEditor class="h-168" :diagram="diagram" @saved="saveDataFlowDiagram" />
         </div>
       </div>

@@ -24,7 +24,7 @@
     <div class="flex gap-4">
       <form @submit.prevent="search" class="grow">
         <div
-          class="flex border rounded-md text-zinc-700 dark:text-slate-300 bg-white dark:bg-slate-900 dark:border-slate-700"
+          class="flex border rounded-md text-zinc-700 dark:text-slate-300 bg-white dark:bg-slate-900 border-ccf-300 dark:border-slate-700"
         >
           <div class="pl-4 my-auto">
             <BIconSearch
@@ -61,7 +61,7 @@
   </div>
 
   <div
-    class="mt-4 rounded-md bg-white dark:bg-slate-900 border-collapse border dark:border-slate-700"
+    class="mt-4 rounded-md bg-white dark:bg-slate-900 border-collapse border border-ccf-300 dark:border-slate-700"
   >
     <FindingsList :findings="findings" />
   </div>

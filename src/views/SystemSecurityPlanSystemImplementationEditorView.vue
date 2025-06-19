@@ -2,7 +2,7 @@
   <h4 class="text-lg">Users</h4>
 
   <div
-    class="my-4 rounded-md bg-white dark:bg-slate-900 border-collapse border dark:border-slate-700"
+    class="my-4 rounded-md bg-white dark:bg-slate-900 border-collapse border border-ccf-300 dark:border-slate-700"
   >
     <CollapsableGroup v-for="user in users" :key="user.uuid">
       <template #header>
@@ -34,7 +34,7 @@
   <h4 class="text-lg">Components</h4>
 
   <div
-    class="my-4 rounded-md bg-white dark:bg-slate-900 border-collapse border dark:border-slate-700"
+    class="my-4 rounded-md bg-white dark:bg-slate-900 border-collapse border border-ccf-300 dark:border-slate-700"
   >
     <CollapsableGroup v-for="component in components" :key="component.uuid">
       <template #header>
