@@ -11,7 +11,7 @@
       <div class="px-4 py-4 border-b dark:border-slate-700">
 <!--        <SystemCharacteristicsDiagramGroupForm v-model="authorizationBoundary" />-->
         <div class="overflow-hidden border dark:border-slate-700 rounded-md" v-for="diagram in authorizationBoundary.diagrams" :key="diagram.uuid">
-          <DrawIODiagramEditor class="h-[46rem]" :diagram="diagram" @saved="saveAuthorizationBoundaryDiagram" />
+          <DrawIODiagramEditor class="h-184" :diagram="diagram" @saved="saveAuthorizationBoundaryDiagram" />
         </div>
       </div>
     </CollapsableGroup>
@@ -25,7 +25,7 @@
       <div class="px-4 py-4 border-b dark:border-slate-700">
 <!--        <SystemCharacteristicsDiagramGroupForm v-model="networkArchitecture" />-->
         <div class="overflow-hidden border dark:border-slate-700 rounded-md" v-for="diagram in networkArchitecture.diagrams" :key="diagram.uuid">
-          <DrawIODiagramEditor class="h-[42rem]" :diagram="diagram" @saved="saveNetworkArchitectureDiagram" />
+          <DrawIODiagramEditor class="h-168" :diagram="diagram" @saved="saveNetworkArchitectureDiagram" />
         </div>
       </div>
     </CollapsableGroup>
@@ -39,7 +39,7 @@
       <div class="px-4 py-4 border-b dark:border-slate-700">
 <!--        <SystemCharacteristicsDiagramGroupForm v-model="dataFlow" />-->
         <div class="overflow-hidden border dark:border-slate-700 rounded-md" v-for="diagram in dataFlow.diagrams" :key="diagram.uuid">
-          <DrawIODiagramEditor class="h-[42rem]" :diagram="diagram" @saved="saveDataFlowDiagram" />
+          <DrawIODiagramEditor class="h-168" :diagram="diagram" @saved="saveDataFlowDiagram" />
         </div>
       </div>
     </CollapsableGroup>

@@ -1,9 +1,19 @@
 @import './base.css';
 
+@theme {
+    --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+}
+
 html, body {
     @apply font-sans;
 }
 
 .field-sizing-content {
     field-sizing: content;
+}
+
+@layer base {
+    .border, .border-b, .border-t, .border-l, .border-r {
+        @apply border-gray-300 dark:border-gray-700;
+    }
 }

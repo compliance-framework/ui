@@ -36,7 +36,7 @@ const theme = ref<ToastPassThroughOptions>({
         p-secondary:bg-surface-100 p-secondary:border-surface-200 p-secondary:text-surface-600 dark:p-secondary:bg-surface-800 dark:p-secondary:border-surface-700 dark:p-secondary:text-surface-300
         p-contrast:bg-surface-900 p-contrast:border-surface-950 p-contrast:text-surface-50 dark:p-contrast:bg-surface-0 dark:p-contrast:border-surface-100 dark:p-contrast:text-surface-950`,
     messageContent: `flex items-start p-3 gap-2`,
-    messageIcon: `flex-shrink-0 text-lg w-[1.125rem] h-[1.125rem] mt-1`,
+    messageIcon: `shrink-0 text-lg w-4.5 h-4.5 mt-1`,
     messageText: `flex-auto flex flex-col gap-2`,
     summary: `font-medium text-base`,
     detail: `font-medium text-sm text-surface-700 dark:text-surface-0
