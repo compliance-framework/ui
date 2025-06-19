@@ -24,12 +24,12 @@
     </PageCard>
   </div>
   <div
-    class="mt-4 rounded-md bg-white dark:bg-slate-900 border-collapse border dark:border-slate-700"
+    class="mt-4 rounded-md bg-white dark:bg-slate-900 border-collapse border border-ccf-300 dark:border-slate-700"
   >
     <table class="table-auto w-full rounded-full dark:text-slate-300">
       <tbody>
       <tr
-        class="hover:bg-zinc-50 dark:hover:bg-slate-800 border-b dark:border-slate-700"
+        class="hover:bg-zinc-50 dark:hover:bg-slate-800 border-b border-ccf-300 dark:border-slate-700"
         v-for="finding in findings"
         :key="finding.uuid"
       >
@@ -41,7 +41,7 @@
         <td class="py-3 px-2 whitespace-nowrap grow">{{ finding.title }}</td>
         <td class="py-2 px-2 text-right whitespace-nowrap">
           <RouterLink
-            class="bg-white hover:bg-zinc-100 border px-4 py-1 rounded-md dark:bg-slate-800 dark:hover:bg-slate-700 dark:border-slate-700"
+            class="bg-white hover:bg-zinc-100 border px-4 py-1 rounded-md dark:bg-slate-800 border-ccf-300 dark:hover:bg-slate-700 dark:border-slate-700"
             :to="{ name: 'finding-view', params: { id: finding._id } }"
           >View
           </RouterLink>
