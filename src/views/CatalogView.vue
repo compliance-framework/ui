@@ -3,7 +3,7 @@
   <PageSubHeader>{{ catalog.metadata?.title }}</PageSubHeader>
 
   <div
-    class="mt-4 rounded-md bg-white dark:bg-slate-900 border-collapse border dark:border-slate-700"
+    class="mt-4 rounded-md bg-white dark:bg-slate-900 border-collapse border border-ccf-300 dark:border-slate-700"
   >
     <CatalogGroup v-for="group in groups" :key="group.id" :group="group" :catalog="catalog" />
     <CatalogControl v-for="control in controls" :key="control.id" :control="control" :catalog="catalog" />

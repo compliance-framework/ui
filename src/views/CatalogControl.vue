@@ -50,7 +50,7 @@
         >Findings</TertiaryButton>
       </div>
     </template>
-    <div class="px-4 py-4 dark:bg-slate-950 border-b dark:border-slate-700">
+    <div class="px-4 py-4 dark:bg-slate-950 border-b border-ccf-300 dark:border-slate-700">
       <div class="flex items-start justify-between gap-4">
         <div>
           <TertiaryButton v-if="!statement">Add Statement</TertiaryButton>
@@ -59,17 +59,17 @@
 
           <PartDisplayEditor v-for="part in control.parts" :key="part.id" :part="part"></PartDisplayEditor>
         </div>
-        <div class="rounded-md border dark:border-slate-700">
+        <div class="rounded-md border border-ccf-300 dark:border-slate-700">
           <table class="table-auto">
             <tbody>
               <tr>
                 <td colspan="2" class="px-2 py-2 font-medium">Attributes</td>
               </tr>
-              <tr class="border-t dark:border-slate-700">
+              <tr class="border-t border-ccf-300 dark:border-slate-700">
                 <td class="px-2 py-1">ID</td>
                 <td class="px-2 py-1 whitespace-nowrap">{{ control?.id }}</td>
               </tr>
-              <tr class="border-t dark:border-slate-700">
+              <tr class="border-t border-ccf-300 dark:border-slate-700">
                 <td class="px-2 py-1">Class</td>
                 <td class="px-2 py-1 whitespace-nowrap">
                   {{ control?.class }}
@@ -80,7 +80,7 @@
         </div>
       </div>
       <div
-        class="my-4 rounded-md bg-white dark:bg-slate-900 border-collapse border dark:border-slate-700"
+        class="my-4 rounded-md bg-white dark:bg-slate-900 border-collapse border border-ccf-300 dark:border-slate-700"
       >
         <CatalogControl
           v-for="child in controls"

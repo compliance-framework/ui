@@ -11,7 +11,7 @@ const userStore = useUserStore()
 </script>
 
 <template>
-  <SideNav class="flex flex-col max-h-screen border-r dark:border-slate-700 bg-white dark:bg-slate-900">
+  <SideNav class="flex flex-col max-h-screen border-r border-r-ccf-300  dark:border-slate-700 bg-white dark:bg-slate-900">
     <template #logo>
       <div class="px-8 py-8">
         <SideNavLogo alt="Vue logo" :src="lightLogo" class="w-full dark:hidden"/>
@@ -49,10 +49,12 @@ const userStore = useUserStore()
 </template>
 
 <style>
+@reference "@/assets/main.css";
+
 .router-link {
   @apply border-l-transparent border-l-8 text-zinc-700 dark:text-slate-200;
 }
 .router-link-exact-active {
-  @apply bg-gradient-to-r from-slate-200 to-slate-100 border-l-slate-300 dark:from-slate-700 dark:to-slate-800 dark:border-slate-500 dark:text-slate-200;
+  @apply bg-linear-to-r from-slate-200 to-slate-100 border-l-slate-300 dark:from-slate-700 dark:to-slate-800 dark:border-slate-500 dark:text-slate-200;
 }
 </style>

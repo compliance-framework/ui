@@ -19,6 +19,8 @@ import LeftSideNav from '@/views/LeftSideNav.vue'
 </template>
 
 <style>
+@reference "@/assets/main.css";
+
 body, html {
   @apply bg-white;
 }
