@@ -28,7 +28,7 @@
       <div class="text-right">
         <PrimaryButton
           @click.prevent="toggleDeleteModal(true)"
-          class="bg-red-500 border-red-600 hover:bg-red-600 text-white dark:bg-red-700 dark:hover:bg-red-600 dark:border-red-700 mr-4">
+          class="!bg-red-500 border-red-600 hover:bg-red-600 text-white dark:bg-red-700 dark:hover:bg-red-600 dark:border-red-700 mr-4">
           Delete Subject
         </PrimaryButton>
         <PrimaryButton type="submit" class="">Save Changes</PrimaryButton>
@@ -49,7 +49,7 @@
       </PrimaryButton>
       <PrimaryButton
         @click="deleteSubject"
-        class="mx-2 bg-red-500 border-red-600 hover:bg-red-600 text-white dark:bg-red-700 dark:hover:bg-red-600 dark:border-red-700">
+        class="mx-2 !bg-red-500 border-red-600 hover:bg-red-600 text-white dark:bg-red-700 dark:hover:bg-red-600 dark:border-red-700">
         Yes
       </PrimaryButton>
     </div>
