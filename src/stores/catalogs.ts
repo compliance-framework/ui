@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { useConfigStore } from '@/stores/config.ts'
-import type { DataResponse, Link, Metadata, Part, Property } from '@/stores/types.ts'
+import type { DataResponse, Link, Metadata, Part, Property, ErrorResponse, ErrorBody } from '@/stores/types.ts'
 import { useUserStore } from '@/stores/auth.ts'
 
 export interface Catalog {
@@ -37,6 +37,9 @@ export const useCatalogStore = defineStore('catalogs', () => {
         'Authorization': `Bearer ${userStore.token}`,
       }
     })
+    if (!response.ok) {
+      throw response
+    }
     return (await response.json()) as DataResponse<Catalog>
   }
 
@@ -47,8 +50,11 @@ export const useCatalogStore = defineStore('catalogs', () => {
         'Authorization': `Bearer ${userStore.token}`,
       },
     })
+    if (!response.ok) {
+      throw response
+    }
     return (await response.json()) as DataResponse<Catalog[]>
-  }
+    }
 
   async function create(catalog: Catalog): Promise<DataResponse<Catalog>> {
     const config = await configStore.getConfig()
@@ -61,7 +67,7 @@ export const useCatalogStore = defineStore('catalogs', () => {
       body: JSON.stringify(catalog),
     })
     if (!response.ok) {
-      throw new Error(`Error: ${response.statusText}`)
+      throw response
     }
     return (await response.json()) as DataResponse<Catalog>
   }
@@ -78,7 +84,7 @@ export const useCatalogStore = defineStore('catalogs', () => {
     })
 
     if (!response.ok) {
-      throw new Error(`Error: ${response.statusText}`)
+      throw response
     }
     return (await response.json()) as DataResponse<Group>
   }
@@ -94,7 +100,7 @@ export const useCatalogStore = defineStore('catalogs', () => {
       body: JSON.stringify(group),
     })
     if (!response.ok) {
-      throw new Error(`Error: ${response.statusText}`)
+      throw response
     }
     return (await response.json()) as DataResponse<Group>
   }
@@ -110,7 +116,7 @@ export const useCatalogStore = defineStore('catalogs', () => {
       body: JSON.stringify(control),
     })
     if (!response.ok) {
-      throw new Error(`Error: ${response.statusText}`)
+      throw response
     }
     return (await response.json()) as DataResponse<Control>
   }
@@ -122,6 +128,9 @@ export const useCatalogStore = defineStore('catalogs', () => {
         'Authorization': `Bearer ${userStore.token}`,
       },
     })
+    if (!response.ok) {
+      throw response
+    }
     return (await response.json()) as DataResponse<Group[]>
   }
 
@@ -132,6 +141,9 @@ export const useCatalogStore = defineStore('catalogs', () => {
         'Authorization': `Bearer ${userStore.token}`,
       },
     })
+    if (!response.ok) {
+      throw response
+    }
     return (await response.json()) as DataResponse<Group[]>
   }
 
@@ -142,6 +154,9 @@ export const useCatalogStore = defineStore('catalogs', () => {
         'Authorization': `Bearer ${userStore.token}`,
       },
     })
+    if (!response.ok) {
+      throw response
+    }
     return (await response.json()) as DataResponse<Control[]>
   }
 
@@ -156,7 +171,7 @@ export const useCatalogStore = defineStore('catalogs', () => {
       body: JSON.stringify(control),
     })
     if (!response.ok) {
-      throw new Error(`Error: ${response.statusText}`)
+      throw response
     }
     return (await response.json()) as DataResponse<Control>
   }
@@ -172,7 +187,7 @@ export const useCatalogStore = defineStore('catalogs', () => {
       body: JSON.stringify(control),
     })
     if (!response.ok) {
-      throw new Error(`Error: ${response.statusText}`)
+      throw response
     }
     return (await response.json()) as DataResponse<Control>
   }
@@ -184,6 +199,9 @@ export const useCatalogStore = defineStore('catalogs', () => {
         'Authorization': `Bearer ${userStore.token}`,
       },
     })
+    if (!response.ok) {
+      throw response
+    }
     return (await response.json()) as DataResponse<Control[]>
   }
 
@@ -194,6 +212,9 @@ export const useCatalogStore = defineStore('catalogs', () => {
         'Authorization': `Bearer ${userStore.token}`,
       },
     })
+    if (!response.ok) {
+      throw response
+    }
     return (await response.json()) as DataResponse<Control[]>
   }
 

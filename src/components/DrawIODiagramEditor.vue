@@ -6,7 +6,7 @@ import type { Property } from '@/stores/types.ts'
 const frame = useTemplateRef('frame');
 
 const props = defineProps<{
-  diagram: Diagram,
+  diagram: Diagram
 }>();
 
 const currentDiagram = ref<Diagram>(props.diagram);

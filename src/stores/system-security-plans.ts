@@ -102,6 +102,9 @@ export const useSystemSecurityPlanStore = defineStore(
           }
         }
       );
+      if (!response.ok) {
+        throw response
+      }
       return (await response.json()) as DataResponse<SystemSecurityPlan>;
     }
     async function list(): Promise<DataResponse<SystemSecurityPlan[]>> {
@@ -114,6 +117,9 @@ export const useSystemSecurityPlanStore = defineStore(
           }
         }
       );
+      if (!response.ok) {
+        throw response
+      }
       return (await response.json()) as DataResponse<SystemSecurityPlan[]>;
     }
     async function getCharacteristics(
@@ -128,6 +134,9 @@ export const useSystemSecurityPlanStore = defineStore(
           }
         }
       );
+      if (!response.ok) {
+        throw response;
+      }
       return camelcaseKeys(await response.json(), {
         deep: true,
       }) as DataResponse<SystemCharacteristics>;
@@ -151,7 +160,7 @@ export const useSystemSecurityPlanStore = defineStore(
         },
       );
       if (!response.ok) {
-        throw new Error(`Error: ${response.statusText}`);
+        throw response;
       }
       return camelcaseKeys(
         await response.json(),
@@ -170,6 +179,9 @@ export const useSystemSecurityPlanStore = defineStore(
           }
         }
       );
+      if (!response.ok) {
+        throw response;
+      }
       return camelcaseKeys(await response.json(), {
         deep: true,
       }) as DataResponse<DiagramGrouping>;
@@ -187,7 +199,9 @@ export const useSystemSecurityPlanStore = defineStore(
           }
         }
       );
-
+      if (!response.ok) {
+        throw response;
+      }
       return camelcaseKeys(await response.json(), {
         deep: true,
       }) as DataResponse<DiagramGrouping>;
@@ -239,7 +253,7 @@ export const useSystemSecurityPlanStore = defineStore(
         body: JSON.stringify(decamelizeKeys(diagram, { separator: '-' })),
       });
       if (!response.ok) {
-        throw new Error(`Error: ${response.statusText}`);
+        throw response;
       }
       return camelcaseKeys(await response.json()) as DataResponse<Diagram>;
     }
@@ -256,6 +270,9 @@ export const useSystemSecurityPlanStore = defineStore(
           }
         }
       );
+      if (!response.ok) {
+        throw response
+      }
       return camelcaseKeys(await response.json(), {
         deep: true,
       }) as DataResponse<DiagramGrouping>;
@@ -273,6 +290,9 @@ export const useSystemSecurityPlanStore = defineStore(
           }
         }
       );
+      if (!response.ok) {
+        throw response;
+      }
       return camelcaseKeys(await response.json(), {
         deep: true,
       }) as DataResponse<SystemImplementation>;
@@ -290,6 +310,9 @@ export const useSystemSecurityPlanStore = defineStore(
           }
         }
       );
+      if (!response.ok) {
+        throw response;
+      }
       return camelcaseKeys(await response.json(), {
         deep: true,
       }) as DataResponse<SystemImplementationUser[]>;
@@ -307,6 +330,9 @@ export const useSystemSecurityPlanStore = defineStore(
           }
         }
       );
+      if (!response.ok) {
+        throw response;
+      }
       return camelcaseKeys(await response.json(), {
         deep: true,
       }) as DataResponse<SystemComponent[]>;

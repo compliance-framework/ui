@@ -37,14 +37,25 @@
 import { onMounted, ref } from 'vue'
 import PageHeader from '@/components/PageHeader.vue'
 import { type Catalog, useCatalogStore } from '@/stores/catalogs.ts'
+import type { ErrorBody, ErrorResponse } from '@/stores/types'
+import { useToast } from 'primevue/usetoast'
 
 const catalogStore = useCatalogStore()
+const toast = useToast();
 
 const catalogs = ref<Catalog[]>([])
 
 onMounted(() => {
   catalogStore.list().then((data) => {
     catalogs.value = data.data
+  }).catch(async (response) => {
+    const error = await response.json() as ErrorResponse<ErrorBody>
+    toast.add({
+      severity: 'error',
+      summary: `Error loading catalogs - ${response.statusText}`,
+      detail: error.errors?.body ?? 'An error occurred while loading catalogs.',
+      life: 3000
+    })
   })
 })
 </script>

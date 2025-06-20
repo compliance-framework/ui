@@ -64,10 +64,12 @@ import DrawIODiagramEditor from '@/components/DrawIODiagramEditor.vue'
 import CollapsableGroup from '@/components/CollapsableGroup.vue'
 import type { DataResponse } from '@/stores/types.ts'
 import { v4 } from 'uuid'
+import { useToast } from 'primevue/usetoast';
 
 const route = useRoute();
 const id = route.params.id as string;
 const sspStore = useSystemSecurityPlanStore();
+const toast = useToast();
 
 const systemSecurityPlan = ref<SystemSecurityPlan | null>(null);
 const authorizationBoundary = ref<DiagramGrouping>({} as DiagramGrouping);
@@ -97,21 +99,36 @@ onMounted(() => {
 async function saveAuthorizationBoundaryDiagram(diagram: Diagram) {
   if (systemSecurityPlan.value != null) {
     const response = await sspStore.updateCharacteristicsAuthorizationBoundaryDiagram(systemSecurityPlan.value.uuid, diagram);
-    console.log('authorization boundary stored', response);
+    toast.add({
+      severity: 'success',
+      summary: 'Diagram Saved',
+      detail: 'Authorization Boundary diagram saved successfully.',
+      life: 3000
+    });
   }
 }
 
 async function saveNetworkArchitectureDiagram(diagram: Diagram) {
   if (systemSecurityPlan.value != null) {
     const response = await sspStore.updateCharacteristicsNetworkArchitectureDiagram(systemSecurityPlan.value.uuid, diagram);
-    console.log('network architecture stored', response);
+    toast.add({
+      severity: 'success',
+      summary: 'Diagram Saved',
+      detail: 'Network Architecture diagram saved successfully.',
+      life: 3000
+    });
   }
 }
 
 async function saveDataFlowDiagram(diagram: Diagram) {
   if (systemSecurityPlan.value != null) {
     const response = await sspStore.updateCharacteristicsDataFlowDiagram(systemSecurityPlan.value.uuid, diagram);
-    console.log('data flow stored', response);
+    toast.add({
+      severity: 'success',
+      summary: 'Diagram Saved',
+      detail: 'Data Flow diagram saved successfully.',
+      life: 3000
+    });
   }
 }
 </script>

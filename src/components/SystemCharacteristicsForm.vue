@@ -25,12 +25,14 @@ const emit = defineEmits({
 async function updateCharacteristics() {
   sspStore.updateCharacteristics(props.systemSecurityPlanId, characteristics.value).then(() => {
     emit('updated', characteristics.value);
-  });
+  })
 }
 
 onMounted(() => {
   sspStore.getCharacteristics(props.systemSecurityPlanId).then((data) => {
     characteristics.value = data.data;
+  }).catch(async () => {
+    emit('updated', {} as SystemCharacteristics);
   });
 })
 </script>

@@ -32,8 +32,12 @@ import {
 } from '@/stores/system-security-plans.ts'
 import { RouterView, useRoute, useRouter } from 'vue-router'
 import PageSubHeader from '@/components/PageSubHeader.vue';
+import { useToast } from 'primevue/usetoast';
+import type { ErrorResponse, ErrorBody } from '@/stores/types';
 
 const route = useRoute();
+const router = useRouter();
+const toast = useToast();
 const id = ref<string>(route.params.id as string);
 const sspStore = useSystemSecurityPlanStore();
 const systemSecurityPlan = ref<SystemSecurityPlan>({} as SystemSecurityPlan);
@@ -41,6 +45,15 @@ const systemSecurityPlan = ref<SystemSecurityPlan>({} as SystemSecurityPlan);
 onMounted(() => {
   sspStore.get(toValue(id)).then((data) => {
     systemSecurityPlan.value = data.data;
+  }).catch(async (response) => {
+    const error = await response.json() as ErrorResponse<ErrorBody>;
+    toast.add({
+      severity: 'error',
+      summary: `Error loading system security plan - ${response.statusText}`,
+      detail: error.errors?.body ?? 'An error occurred while loading the system security plan.',
+      life: 3000
+    });
+    router.push({ name: 'system-security-plans' });
   });
 });
 </script>
