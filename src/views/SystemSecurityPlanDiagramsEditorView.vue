@@ -57,7 +57,6 @@ import {
 } from '@/stores/system-security-plans.ts'
 import { useRoute } from 'vue-router';
 import PageSubHeader from '@/components/PageSubHeader.vue';
-import Tabs from '@/components/Tabs.vue';
 import SystemCharacteristicsForm from '@/components/SystemCharacteristicsForm.vue'
 import SystemCharacteristicsDiagramGroupForm from '@/components/SystemCharacteristicsDiagramGroupForm.vue'
 import DrawIODiagramEditor from '@/components/DrawIODiagramEditor.vue'
