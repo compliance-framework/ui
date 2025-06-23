@@ -32,8 +32,6 @@ async function createGroup(): Promise<void> {
 
 <template>
   <form @submit.prevent="createGroup()">
-    <h1>Create a new group</h1>
-
     <div class="mb-4">
       <label class="inline-block pb-2">ID</label>
       <FormInput v-model="group.id" />
