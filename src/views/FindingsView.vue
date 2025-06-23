@@ -91,8 +91,12 @@
     <!--      </div>-->
     <!--    </PageCard>-->
 
-    <Modal :show="showActivitiesModal" @close="toggleActivitiesModal(false)">
-      <div class="px-12 py-8">
+    <Dialog
+      v-model:visible="showActivitiesModal"
+      maximizable
+      modal
+      header="Tasks">
+      <div class="px-12 flex-grow">
         <div v-for="activity in activities" :key="activity.uuid">
           <div class="flex items-center">
             <div class="bg-blue-500 rounded-full w-3 aspect-square mr-2" />
@@ -114,15 +118,15 @@
           </div>
         </div>
       </div>
-      <div class="border-t border-zinc-300 dark:border-slate-700 text-right py-4 px-4">
-        <PrimaryButton
+      <div class="mt-4 border-t border-zinc-300 dark:border-slate-400 text-right py-4 px-4">
+        <SecondaryButton
           @click="toggleActivitiesModal(false)"
-          class="px-2 py-1 border-zinc-500 border rounded-md shadow"
+          class="px-2 py-1 shadow"
         >
           Close
-        </PrimaryButton>
+        </SecondaryButton>
       </div>
-    </Modal>
+    </Dialog>
   </div>
 </template>
 <script setup lang="ts">
@@ -131,13 +135,13 @@ import { useRoute } from 'vue-router';
 import PageHeader from '@/components/PageHeader.vue';
 import PageCard from '@/components/PageCard.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
-import Modal from '@/components/Modal.vue';
 import { useFindingsStore, type Finding } from '@/stores/findings.ts';
 import { type Observation, useObservationsStore } from '@/stores/observations.ts'
 import { type Subject, useSubjectsStore } from '@/stores/subjects.ts'
 import type { Activity } from '@/stores/types.ts'
-import PrimaryButton from '@/components/PrimaryButton.vue'
-import SecondaryButton from '@/components/SecondaryButton.vue'
+import SecondaryButton from '@/volt/SecondaryButton.vue'
+
+import Dialog from '@/volt/Dialog.vue';
 
 const findingsStore = useFindingsStore();
 const observationsStore = useObservationsStore();
