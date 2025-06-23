@@ -73,6 +73,11 @@ onMounted(() => {
 @reference "@/assets/main.css";
 
 .router-link-exact-active {
-  @apply bg-none border-b-0
+  background: none;
+  border-bottom: 2px solid;
+}
+
+.dark .router-link-exact-active {
+  background-color: rgb(15 23 42); /* slate-900 */
 }
 </style>
