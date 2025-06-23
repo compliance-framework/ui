@@ -21,13 +21,33 @@
       </div>
 
       <!-- Actions -->
-      <div class="mt-6 text-right">
+      <div class="mt-6 flex gap-3">
         <RouterLink
           :to="{ name: 'component-definition-edit', params: { id: componentDefinition.uuid } }"
+          class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md"
+        >
+          View Metadata
+        </RouterLink>
+        <RouterLink
+          :to="{ name: 'component-definition-components', params: { id: componentDefinition.uuid } }"
           class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
         >
-          Edit Metadata
+          Edit Components
         </RouterLink>
+        <RouterLink
+          :to="{ name: 'component-definition-capabilities', params: { id: componentDefinition.uuid } }"
+          class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md"
+        >
+          Edit Capabilities
+        </RouterLink>
+      </div>
+
+      <!-- Feature Notice -->
+      <div class="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md">
+        <p class="text-sm text-blue-800 dark:text-blue-200">
+          <strong>Available Features:</strong> You can edit components (title, description, purpose, type, remarks) and capabilities. 
+          Component definition metadata is read-only, but all component details can be modified.
+        </p>
       </div>
 
       <!-- Summary Statistics -->
@@ -55,24 +75,30 @@
 
 <script setup lang="ts">
 import { onMounted, ref, computed } from 'vue'
-import { type ComponentDefinition, useComponentDefinitionStore } from '@/stores/component-definitions.ts'
+import { type ComponentDefinition, type ComponentDefinitionCharacteristics, useComponentDefinitionStore } from '@/stores/component-definitions.ts'
 import { useRoute } from 'vue-router'
 
 const componentDefinitionStore = useComponentDefinitionStore()
 const componentDefinition = ref<ComponentDefinition>({} as ComponentDefinition)
+const characteristics = ref<ComponentDefinitionCharacteristics>({} as ComponentDefinitionCharacteristics)
 const route = useRoute()
 
 const componentCounts = computed(() => ({
-  components: 0, // Will be loaded from API
-  capabilities: 0, // Will be loaded from API  
-  importDefinitions: 0 // Will be loaded from API
+  components: characteristics.value.components?.length || 0,
+  capabilities: characteristics.value.capabilities?.length || 0,
+  importDefinitions: characteristics.value.importComponentDefinitions?.length || 0
 }))
 
 onMounted(async () => {
   const id = route.params.id as string
   try {
-    const response = await componentDefinitionStore.get(id)
-    componentDefinition.value = response.data
+    // Load both metadata and characteristics separately, like SSP does
+    const [metadataResponse, characteristicsResponse] = await Promise.all([
+      componentDefinitionStore.get(id),
+      componentDefinitionStore.getCharacteristics(id)
+    ])
+    componentDefinition.value = metadataResponse.data
+    characteristics.value = characteristicsResponse.data
   } catch (error) {
     console.error('Failed to load component definition:', error)
   }

@@ -6,6 +6,7 @@
         :key="component.uuid" 
         :component="component"
         :componentDefinitionId="componentDefinitionId"
+        @edit="editComponent"
       />
     </div>
     <div v-else class="p-8 text-center">
@@ -23,21 +24,32 @@
     :component-definition-id="componentDefinitionId" 
     v-model="showCreateForm" 
   />
+  
+  <ComponentEditModal 
+    v-if="editingComponent"
+    @updated="componentUpdated" 
+    :component-definition-id="componentDefinitionId"
+    :component="editingComponent"
+    v-model="showEditForm" 
+  />
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, computed } from 'vue'
 import { useComponentDefinitionStore } from '@/stores/component-definitions.ts'
 import { useRoute } from 'vue-router'
 import TertiaryButton from '@/components/TertiaryButton.vue'
 import ComponentDefinitionComponent from '@/components/component-definitions/ComponentDefinitionComponent.vue'
 import ComponentCreateModal from '@/components/component-definitions/ComponentCreateModal.vue'
+import ComponentEditModal from '@/components/component-definitions/ComponentEditModal.vue'
 
 const componentDefinitionStore = useComponentDefinitionStore()
 const components = ref<any[]>([])
 const route = useRoute()
-const componentDefinitionId = ref<string>(route.params.id as string)
+const componentDefinitionId = computed(() => route.params.id as string)
 const showCreateForm = ref<boolean>(false)
+const showEditForm = ref<boolean>(false)
+const editingComponent = ref<any>(null)
 
 onMounted(async () => {
   await loadComponents()
@@ -45,14 +57,34 @@ onMounted(async () => {
 
 async function loadComponents() {
   try {
+    console.log('Loading components for componentDefinitionId:', componentDefinitionId.value, 'type:', typeof componentDefinitionId.value)
     const response = await componentDefinitionStore.getComponents(componentDefinitionId.value)
-    components.value = response.data
+    components.value = response.data || []
   } catch (error) {
     console.error('Failed to load components:', error)
+    components.value = []
   }
 }
 
 function componentCreated(component: any) {
   components.value.push(component)
+  showCreateForm.value = false
+}
+
+function editComponent(component: any) {
+  editingComponent.value = {
+    ...component,
+    componentDefinitionId: componentDefinitionId.value
+  }
+  showEditForm.value = true
+}
+
+function componentUpdated(updatedComponent: any) {
+  const index = components.value.findIndex(c => c.uuid === updatedComponent.uuid)
+  if (index !== -1) {
+    components.value[index] = updatedComponent
+  }
+  showEditForm.value = false
+  editingComponent.value = null
 }
 </script>

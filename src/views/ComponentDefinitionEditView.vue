@@ -1,36 +1,44 @@
 <template>
-  <PageHeader>Edit Component Definition</PageHeader>
+  <PageHeader>Component Definition Metadata</PageHeader>
   <PageSubHeader>{{ componentDefinition.metadata?.title }}</PageSubHeader>
 
   <PageCard class="mt-8 w-1/2">
-    <form @submit.prevent="submit" v-if="componentDefinition.metadata">
+    <div class="mb-4 p-3 bg-red-100 dark:bg-red-900/20 border border-red-400 dark:border-red-800 text-red-700 dark:text-red-200 rounded">
+      <strong>Metadata Editing Disabled:</strong> Component definition metadata cannot be updated due to backend limitations. 
+      The backend only supports updating import definitions, components, and capabilities through their respective sections.
+    </div>
+    
+    <div v-if="componentDefinition.metadata" class="space-y-4">
       <div class="mb-4">
-        <label class="inline-block pb-2">ID</label>
-        <FormInput v-model="componentDefinition.uuid" disabled class="bg-gray-100 dark:bg-slate-800" />
+        <label class="inline-block pb-2 font-medium text-gray-700 dark:text-slate-300">ID</label>
+        <div class="p-3 bg-gray-50 dark:bg-slate-800 border rounded-md">
+          <span class="text-gray-600 dark:text-slate-400 font-mono">{{ componentDefinition.uuid }}</span>
+        </div>
       </div>
+      
       <div class="mb-4">
-        <label class="inline-block pb-2">Title</label>
-        <FormInput v-model="componentDefinition.metadata.title" />
+        <label class="inline-block pb-2 font-medium text-gray-700 dark:text-slate-300">Title</label>
+        <div class="p-3 bg-gray-50 dark:bg-slate-800 border rounded-md">
+          <span class="text-gray-900 dark:text-slate-300">{{ componentDefinition.metadata.title }}</span>
+        </div>
       </div>
+      
       <div class="mb-4">
-        <label class="inline-block pb-2">Remarks</label>
-        <FormTextarea v-model="componentDefinition.metadata.remarks" />
+        <label class="inline-block pb-2 font-medium text-gray-700 dark:text-slate-300">Remarks</label>
+        <div class="p-3 bg-gray-50 dark:bg-slate-800 border rounded-md min-h-[60px]">
+          <span class="text-gray-900 dark:text-slate-300">{{ componentDefinition.metadata.remarks || 'No remarks' }}</span>
+        </div>
       </div>
+      
       <div class="text-right">
         <SecondaryButton
           type="button"
           @click="cancel"
-          class="mr-2"
         >
-          Cancel
+          Back to Overview
         </SecondaryButton>
-        <PrimaryButton
-          type="submit"
-        >
-          Update Component Definition
-        </PrimaryButton>
       </div>
-    </form>
+    </div>
     
     <div v-else class="text-center py-8">
       <p class="text-gray-500 dark:text-slate-400">Loading component definition...</p>
@@ -45,9 +53,6 @@ import PageSubHeader from '@/components/PageSubHeader.vue'
 import { type ComponentDefinition, useComponentDefinitionStore } from '@/stores/component-definitions.ts'
 import { useRouter, useRoute } from 'vue-router'
 import PageCard from '@/components/PageCard.vue'
-import FormInput from '@/components/forms/FormInput.vue'
-import FormTextarea from '@/components/forms/FormTextarea.vue'
-import PrimaryButton from '@/components/PrimaryButton.vue'
 import SecondaryButton from '@/components/SecondaryButton.vue'
 
 const componentDefinitionStore = useComponentDefinitionStore()
@@ -65,18 +70,7 @@ onMounted(async () => {
   }
 })
 
-async function submit() {
-  try {
-    const id = route.params.id as string
-    await componentDefinitionStore.update(id, componentDefinition.value)
-    await router.push({
-      name: 'component-definition-overview',
-      params: { id: componentDefinition.value.uuid },
-    })
-  } catch (error) {
-    console.error('Failed to update component definition:', error)
-  }
-}
+// Submit function removed - metadata editing is disabled
 
 function cancel() {
   router.push({

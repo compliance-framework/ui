@@ -30,6 +30,24 @@
       <FormTextarea v-model="component.purpose" required />
     </div>
 
+    <div class="mb-4">
+      <label class="inline-block pb-2 dark:text-slate-300">Properties</label>
+      <FormTextarea 
+        v-model="component.props" 
+        placeholder="Additional properties (JSON format)"
+        rows="3"
+      />
+    </div>
+
+    <div class="mb-4">
+      <label class="inline-block pb-2 dark:text-slate-300">Links</label>
+      <FormTextarea 
+        v-model="component.links" 
+        placeholder="External links (JSON format)"
+        rows="3"
+      />
+    </div>
+
     <div v-if="errorMessage" class="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
       {{ errorMessage }}
     </div>
@@ -53,11 +71,9 @@ const props = defineProps<{
   componentDefinitionId: string
 }>()
 
-const emit = defineEmits({
-  created(component: any) {
-    return !!component.uuid
-  },
-})
+const emit = defineEmits<{
+  created: [component: any]
+}>()
 
 const component = ref({
   uuid: uuidv4(),
@@ -65,6 +81,11 @@ const component = ref({
   title: '',
   description: '',
   purpose: '',
+  props: '',
+  links: '',
+  responsibleRoles: [],
+  protocols: [],
+  controlImplementations: [],
 })
 
 const errorMessage = ref('')
@@ -72,17 +93,47 @@ const errorMessage = ref('')
 async function createComponent(): Promise<void> {
   errorMessage.value = ''
   
-  if (!component.value.type || !component.value.title || !component.value.description || !component.value.purpose) {
+  if (!component.value.type?.trim() || !component.value.title?.trim() || 
+      !component.value.description?.trim() || !component.value.purpose?.trim()) {
     errorMessage.value = 'All required fields must be filled'
     return
   }
   
   try {
+    // Parse JSON strings to arrays or use empty arrays if parsing fails
+    let props = []
+    let links = []
+    
+    if (component.value.props?.trim()) {
+      try {
+        props = JSON.parse(component.value.props)
+      } catch (e) {
+        console.warn('Invalid props JSON, using empty array')
+      }
+    }
+    
+    if (component.value.links?.trim()) {
+      try {
+        links = JSON.parse(component.value.links)
+      } catch (e) {
+        console.warn('Invalid links JSON, using empty array')
+      }
+    }
+    
+    const componentData = {
+      ...component.value,
+      props,
+      links,
+      responsibleRoles: component.value.responsibleRoles || [],
+      protocols: component.value.protocols || [],
+      controlImplementations: component.value.controlImplementations || [],
+    }
+    
     const response = await componentDefinitionStore.createComponent(
       props.componentDefinitionId,
-      component.value
+      componentData
     )
-    emit('created', response.data[0])
+    emit('created', response.data)
   } catch (error) {
     console.error('Failed to create component:', error)
     errorMessage.value = error instanceof Error ? error.message : 'Failed to create component'

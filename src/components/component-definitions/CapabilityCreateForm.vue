@@ -21,8 +21,21 @@
     </div>
 
     <div class="mb-4">
-      <label class="inline-block pb-2 dark:text-slate-300">Remarks</label>
-      <FormTextarea v-model="capability.remarks" />
+      <label class="inline-block pb-2 dark:text-slate-300">Properties</label>
+      <FormTextarea 
+        v-model="capability.props" 
+        placeholder="Additional properties (JSON format)"
+        rows="3"
+      />
+    </div>
+
+    <div class="mb-4">
+      <label class="inline-block pb-2 dark:text-slate-300">Links</label>
+      <FormTextarea 
+        v-model="capability.links" 
+        placeholder="External links (JSON format)"
+        rows="3"
+      />
     </div>
 
     <div v-if="errorMessage" class="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
@@ -48,17 +61,18 @@ const props = defineProps<{
   componentDefinitionId: string
 }>()
 
-const emit = defineEmits({
-  created(capability: any) {
-    return !!capability.uuid
-  },
-})
+const emit = defineEmits<{
+  created: [capability: any]
+}>()
 
 const capability = ref({
   uuid: uuidv4(),
   name: '',
   description: '',
-  remarks: '',
+  props: '',
+  links: '',
+  incorporatesComponents: [],
+  controlImplementations: [],
 })
 
 const errorMessage = ref('')
@@ -66,15 +80,41 @@ const errorMessage = ref('')
 async function createCapability(): Promise<void> {
   errorMessage.value = ''
   
-  if (!capability.value.name || !capability.value.description) {
+  if (!capability.value.name?.trim() || !capability.value.description?.trim()) {
     errorMessage.value = 'Name and description are required'
     return
   }
   
   try {
+    // Parse JSON strings to arrays or use empty arrays if parsing fails
+    let props = []
+    let links = []
+    
+    if (capability.value.props?.trim()) {
+      try {
+        props = JSON.parse(capability.value.props)
+      } catch (e) {
+        console.warn('Invalid props JSON, using empty array')
+      }
+    }
+    
+    if (capability.value.links?.trim()) {
+      try {
+        links = JSON.parse(capability.value.links)
+      } catch (e) {
+        console.warn('Invalid links JSON, using empty array')
+      }
+    }
+    
+    const capabilityData = {
+      ...capability.value,
+      props,
+      links,
+    }
+    
     const response = await componentDefinitionStore.createCapability(
       props.componentDefinitionId,
-      capability.value
+      capabilityData
     )
     emit('created', response.data)
   } catch (error) {

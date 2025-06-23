@@ -9,12 +9,20 @@
           {{ component.title }}
           <span class="text-gray-400 dark:text-slate-300 text-sm px-2 py-1">Component</span>
         </div>
-        <TertiaryButton
-          class="bg-white hover:bg-zinc-100 dark:bg-slate-800 dark:hover:bg-slate-600"
-          @click.stop="viewDetails"
-        >
-          Details
-        </TertiaryButton>
+        <div class="flex gap-2">
+          <TertiaryButton
+            class="bg-white hover:bg-zinc-100 dark:bg-slate-800 dark:hover:bg-slate-600"
+            @click.stop="viewDetails"
+          >
+            Details
+          </TertiaryButton>
+          <TertiaryButton
+            class="bg-blue-100 hover:bg-blue-200 dark:bg-blue-900 dark:hover:bg-blue-800 text-blue-800 dark:text-blue-200"
+            @click.stop="editComponent"
+          >
+            Edit
+          </TertiaryButton>
+        </div>
       </div>
     </template>
     
@@ -116,8 +124,16 @@ onMounted(async () => {
   }
 })
 
+const emit = defineEmits<{
+  edit: [component: any]
+}>()
+
 function viewDetails() {
   // Could navigate to a detailed component view or open a modal
   console.log('View details for component:', props.component.uuid)
+}
+
+function editComponent() {
+  emit('edit', props.component)
 }
 </script>
