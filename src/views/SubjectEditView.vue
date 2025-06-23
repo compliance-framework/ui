@@ -80,7 +80,7 @@ function confirmSave() {
     },
     acceptProps: {
       label: "Yes",
-      severity: "success",
+      severity: "danger",
     },
     accept: () => {
       deleteSubject()
