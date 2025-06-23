@@ -141,8 +141,8 @@ async function updateComponent(): Promise<void> {
       title: componentData.value.title,
       description: componentData.value.description,
       purpose: componentData.value.purpose,
-      // props: props,
-      // links: links,
+      props: [], // Required by TypeScript interface but not stored in DB
+      links: [], // Required by TypeScript interface but not stored in DB
       // Skip responsibleRoles, protocols, controlImplementations - they don't exist in DB schema
     }
     
