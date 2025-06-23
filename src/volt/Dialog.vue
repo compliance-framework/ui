@@ -43,8 +43,8 @@ const theme = ref<DialogPassThroughOptions>({
     root: `max-h-[90%] max-w-screen rounded-xl
         border border-surface-200 dark:border-surface-700
         bg-white dark:bg-slate-600
-        text-surface-700 dark:text-surfac:e-0 shadow-lg
-        p-maximized:w-screen p-maximized:h-screen p-maximized:top-0 p-maximized:start-0p-maximized: max-h-full p-maximized:rounded-none`,
+        text-surface-700 dark:text-surface-0 shadow-lg
+        p-maximized:w-screen p-maximized:h-screen p-maximized:top-0 p-maximized:start-0 p-maximized: max-h-full p-maximized:rounded-none`,
     header: `flex items-center justify-between shrink-0 p-5`,
     title: `font-semibold text-xl dark:text-gray-200`,
     headerActions: `flex items-center gap-2 dark:text-gray-200`,

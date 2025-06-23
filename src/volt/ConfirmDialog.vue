@@ -16,7 +16,7 @@
                 </SecondaryButton>
             </div>
             <div class="overflow-y-auto pt-0 px-5 pb-5 flex items-center gap-4">
-                <ExclamationTriangeIcon class="size-6" />
+                <ExclamationTriangleIcon class="size-6" />
                 {{ message.message }}
             </div>
             <div class="pt-0 px-5 pb-5 flex justify-end gap-2">

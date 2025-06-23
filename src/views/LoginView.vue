@@ -64,15 +64,15 @@ function onSubmit() {
   authStore
     .login(email.value, password.value)
     .then(() => {
-      if (route.query.hasOwnProperty('next')) {
-        return router.push(route.query.next as string);
-      }
       toast.add({
         severity: 'success',
         summary: 'Login Successful',
         detail: 'You have successfully logged in.',
         life: 3000,
       });
+      if (route.query.hasOwnProperty('next')) {
+        return router.push(route.query.next as string);
+      }
       return router.push({ name: 'home' });
     })
     .catch(async (response) => {
