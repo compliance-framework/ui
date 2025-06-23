@@ -1,7 +1,8 @@
+import type { TooltipContext } from 'primevue/tooltip';
 export default {
   directives: {
       tooltip: {
-        root: ({ context }) => ({
+        root: ({ context } : { context?: TooltipContext }) => ({
                 class: [
                     'absolute max-w-[24rem]',
                     {
@@ -10,7 +11,7 @@ export default {
                     }
                 ]
             }),
-            arrow: ({ context }) => ({
+            arrow: ({ context }: { context?: TooltipContext }) => ({
                 class: [
                     'absolute w-0 h-0 border-transparent border-solid',
                     {
