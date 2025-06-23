@@ -5,6 +5,7 @@
     <PageCard>
       <h3 class="text-lg font-semibold text-zinc-600 dark:text-slate-300">
         Compliance over time
+        <InfoCircleIcon class="inline-block ml-1" v-tooltip.top="'This shows the compliance of findings over time from Observations sent back from the agents, grouped by whether each control is classed as \'Satisfied\' or \'Unsatisfied\'.'"/>
       </h3>
       <div class="h-32">
         <ResultComplianceOverTimeChart :data="complianceChartData" />
@@ -13,6 +14,7 @@
     <PageCard>
       <h3 class="text-lg font-semibold text-zinc-600 dark:text-slate-300">
         Agent health
+        <InfoCircleIcon class="inline-block ml-1" v-tooltip.top="'This shows the amount of agents over time that are responding to heartbeats sent to them by the central API server'"/>
       </h3>
       <div class="h-32">
         <ResultComplianceOverTimeChart :data="heartbeatChartData" />
@@ -121,6 +123,7 @@ import { useConfigStore } from '@/stores/config.ts';
 import PrimaryButton from '@/components/PrimaryButton.vue';
 import SecondaryButton from '@/components/SecondaryButton.vue';
 import FindingsList from '@/views/FindingsList.vue'
+import InfoCircleIcon from '@primevue/icons/infocircle'
 
 const findingsStore = useFindingsStore();
 const heartbeatStore = useHeartbeatsStore();
