@@ -30,6 +30,7 @@
       <FormTextarea v-model="component.purpose" required />
     </div>
 
+    <!-- Temporarily disabled - these fields don't exist in current DB schema
     <div class="mb-4">
       <label class="inline-block pb-2 dark:text-slate-300">Properties</label>
       <FormTextarea 
@@ -47,6 +48,7 @@
         rows="3"
       />
     </div>
+    -->
 
     <div v-if="errorMessage" class="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
       {{ errorMessage }}
@@ -81,17 +83,22 @@ const component = ref({
   title: '',
   description: '',
   purpose: '',
-  props: '',
-  links: '',
-  responsibleRoles: [],
-  protocols: [],
-  controlImplementations: [],
+  // props: '',
+  // links: '',
+  // responsibleRoles: [],
+  // protocols: [],
+  // controlImplementations: [],
 })
 
 const errorMessage = ref('')
 
 async function createComponent(): Promise<void> {
   errorMessage.value = ''
+  
+  if (!props.componentDefinitionId) {
+    errorMessage.value = 'Component definition ID is missing'
+    return
+  }
   
   if (!component.value.type?.trim() || !component.value.title?.trim() || 
       !component.value.description?.trim() || !component.value.purpose?.trim()) {
@@ -100,33 +107,16 @@ async function createComponent(): Promise<void> {
   }
   
   try {
-    // Parse JSON strings to arrays or use empty arrays if parsing fails
-    let props = []
-    let links = []
-    
-    if (component.value.props?.trim()) {
-      try {
-        props = JSON.parse(component.value.props)
-      } catch (e) {
-        console.warn('Invalid props JSON, using empty array')
-      }
-    }
-    
-    if (component.value.links?.trim()) {
-      try {
-        links = JSON.parse(component.value.links)
-      } catch (e) {
-        console.warn('Invalid links JSON, using empty array')
-      }
-    }
-    
+    // Only include fields that the backend supports for creation
     const componentData = {
-      ...component.value,
-      props,
-      links,
-      responsibleRoles: component.value.responsibleRoles || [],
-      protocols: component.value.protocols || [],
-      controlImplementations: component.value.controlImplementations || [],
+      uuid: component.value.uuid,
+      type: component.value.type,
+      title: component.value.title,
+      description: component.value.description,
+      purpose: component.value.purpose,
+      // props: props,
+      // links: links,
+      // Skip responsibleRoles, protocols, controlImplementations - they don't exist in DB schema
     }
     
     const response = await componentDefinitionStore.createComponent(

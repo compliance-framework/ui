@@ -57,7 +57,6 @@ onMounted(async () => {
 
 async function loadComponents() {
   try {
-    console.log('Loading components for componentDefinitionId:', componentDefinitionId.value, 'type:', typeof componentDefinitionId.value)
     const response = await componentDefinitionStore.getComponents(componentDefinitionId.value)
     components.value = response.data || []
   } catch (error) {

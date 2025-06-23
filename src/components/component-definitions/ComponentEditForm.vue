@@ -29,6 +29,7 @@
       <FormTextarea v-model="componentData.purpose" required />
     </div>
 
+    <!-- Temporarily disabled - these fields don't exist in current DB schema
     <div class="mb-4">
       <label class="inline-block pb-2 dark:text-slate-300">Properties</label>
       <FormTextarea 
@@ -46,6 +47,7 @@
         rows="3"
       />
     </div>
+    -->
 
     <div v-if="errorMessage" class="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
       {{ errorMessage }}
@@ -84,11 +86,11 @@ const componentData = ref({
   title: '',
   description: '',
   purpose: '',
-  props: '',
-  links: '',
-  responsibleRoles: [],
-  protocols: [],
-  controlImplementations: [],
+  // props: '',
+  // links: '',
+  // responsibleRoles: [],
+  // protocols: [],
+  // controlImplementations: [],
 })
 
 const errorMessage = ref('')
@@ -101,11 +103,11 @@ onMounted(() => {
       title: props.component.title || '',
       description: props.component.description || '',
       purpose: props.component.purpose || '',
-      props: JSON.stringify(props.component.props || [], null, 2),
-      links: JSON.stringify(props.component.links || [], null, 2),
-      responsibleRoles: props.component.responsibleRoles || [],
-      protocols: props.component.protocols || [],
-      controlImplementations: props.component.controlImplementations || [],
+      // props: JSON.stringify(props.component.props || [], null, 2),
+      // links: JSON.stringify(props.component.links || [], null, 2),
+      // responsibleRoles: props.component.responsibleRoles || [],
+      // protocols: props.component.protocols || [],
+      // controlImplementations: props.component.controlImplementations || [],
     }
   }
 })
@@ -132,35 +134,16 @@ async function updateComponent(): Promise<void> {
   }
   
   try {
-    // Parse JSON strings to arrays or use empty arrays if parsing fails
-    let props = []
-    let links = []
-    
-    if (componentData.value.props?.trim()) {
-      try {
-        props = JSON.parse(componentData.value.props)
-      } catch (e) {
-        console.warn('Invalid props JSON, using empty array')
-        props = []
-      }
-    }
-    
-    if (componentData.value.links?.trim()) {
-      try {
-        links = JSON.parse(componentData.value.links)
-      } catch (e) {
-        console.warn('Invalid links JSON, using empty array')
-        links = []
-      }
-    }
-    
+    // Only include fields that the backend supports for updates
     const updatedComponentData = {
-      ...componentData.value,
-      props,
-      links,
-      responsibleRoles: componentData.value.responsibleRoles || [],
-      protocols: componentData.value.protocols || [],
-      controlImplementations: componentData.value.controlImplementations || [],
+      uuid: componentData.value.uuid,
+      type: componentData.value.type,
+      title: componentData.value.title,
+      description: componentData.value.description,
+      purpose: componentData.value.purpose,
+      // props: props,
+      // links: links,
+      // Skip responsibleRoles, protocols, controlImplementations - they don't exist in DB schema
     }
     
     const response = await componentDefinitionStore.updateComponent(

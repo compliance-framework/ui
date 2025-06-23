@@ -296,6 +296,8 @@ export const useComponentDefinitionStore = defineStore('component-definitions', 
 
   async function createComponent(id: string, component: DefinedComponent): Promise<DataResponse<DefinedComponent>> {
     const config = await configStore.getConfig()
+    const payload = [decamelizeKeys(component, { separator: '-' })]
+    
     // Backend expects an array of components, not a single component
     const response = await fetch(`${config.API_URL}/api/oscal/component-definitions/${id}/components`, {
       method: 'POST',
@@ -303,7 +305,7 @@ export const useComponentDefinitionStore = defineStore('component-definitions', 
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${userStore.token}`,
       },
-      body: JSON.stringify([decamelizeKeys(component, { separator: '-' })]),
+      body: JSON.stringify(payload),
     })
     if (!response.ok) {
       throw new Error(`Error: ${response.statusText}`)
@@ -338,6 +340,8 @@ export const useComponentDefinitionStore = defineStore('component-definitions', 
 
   async function updateComponents(id: string, components: DefinedComponent[]): Promise<DataResponse<DefinedComponent[]>> {
     const config = await configStore.getConfig()
+    const payload = decamelizeKeys(components, { separator: '-' })
+    
     // Use the bulk UpdateComponents endpoint that supports updating title, description, purpose, type, remarks
     const response = await fetch(`${config.API_URL}/api/oscal/component-definitions/${id}/components`, {
       method: 'PUT',
@@ -345,7 +349,7 @@ export const useComponentDefinitionStore = defineStore('component-definitions', 
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${userStore.token}`,
       },
-      body: JSON.stringify(decamelizeKeys(components, { separator: '-' })),
+      body: JSON.stringify(payload),
     })
     if (!response.ok) {
       throw new Error(`Error: ${response.statusText}`)
