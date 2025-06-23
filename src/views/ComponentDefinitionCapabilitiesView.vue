@@ -26,7 +26,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, computed } from 'vue'
 import { useComponentDefinitionStore } from '@/stores/component-definitions.ts'
 import { useRoute } from 'vue-router'
 import TertiaryButton from '@/components/TertiaryButton.vue'
@@ -36,7 +36,7 @@ import CapabilityCreateModal from '@/components/component-definitions/Capability
 const componentDefinitionStore = useComponentDefinitionStore()
 const capabilities = ref<any[]>([])
 const route = useRoute()
-const componentDefinitionId = ref<string>(route.params.id as string)
+const componentDefinitionId = computed(() => route.params.id as string)
 const showCreateForm = ref<boolean>(false)
 
 onMounted(async () => {
@@ -54,5 +54,6 @@ async function loadCapabilities() {
 
 function capabilityCreated(capability: any) {
   capabilities.value.push(capability)
+  showCreateForm.value = false
 }
 </script>

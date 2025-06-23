@@ -20,6 +20,7 @@
       <FormTextarea v-model="capability.description" required />
     </div>
 
+    <!-- Temporarily disabled - these fields may not be in current DB schema
     <div class="mb-4">
       <label class="inline-block pb-2 dark:text-slate-300">Properties</label>
       <FormTextarea 
@@ -37,11 +38,16 @@
         rows="3"
       />
     </div>
+    -->
 
     <div v-if="errorMessage" class="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
       {{ errorMessage }}
     </div>
-    <PrimaryButton type="submit">Create Capability</PrimaryButton>
+    
+    <div class="flex gap-2">
+      <PrimaryButton type="submit">Create Capability</PrimaryButton>
+      <SecondaryButton type="button" @click="$emit('cancel')">Cancel</SecondaryButton>
+    </div>
   </form>
 </template>
 
@@ -51,6 +57,7 @@ import { useComponentDefinitionStore } from '@/stores/component-definitions.ts'
 import FormInput from '@/components/forms/FormInput.vue'
 import FormTextarea from '@/components/forms/FormTextarea.vue'
 import PrimaryButton from '@/components/PrimaryButton.vue'
+import SecondaryButton from '@/components/SecondaryButton.vue'
 import TertiaryButton from '@/components/TertiaryButton.vue'
 import { BIconArrowRepeat } from 'bootstrap-icons-vue'
 import { v4 as uuidv4 } from 'uuid'
@@ -63,16 +70,17 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   created: [capability: any]
+  cancel: []
 }>()
 
 const capability = ref({
   uuid: uuidv4(),
   name: '',
   description: '',
-  props: '',
-  links: '',
-  incorporatesComponents: [],
-  controlImplementations: [],
+  // props: '',
+  // links: '',
+  // incorporatesComponents: [],
+  // controlImplementations: [],
 })
 
 const errorMessage = ref('')
@@ -80,36 +88,25 @@ const errorMessage = ref('')
 async function createCapability(): Promise<void> {
   errorMessage.value = ''
   
+  if (!props.componentDefinitionId) {
+    errorMessage.value = 'Component definition ID is missing'
+    return
+  }
+  
   if (!capability.value.name?.trim() || !capability.value.description?.trim()) {
     errorMessage.value = 'Name and description are required'
     return
   }
   
   try {
-    // Parse JSON strings to arrays or use empty arrays if parsing fails
-    let props = []
-    let links = []
-    
-    if (capability.value.props?.trim()) {
-      try {
-        props = JSON.parse(capability.value.props)
-      } catch (e) {
-        console.warn('Invalid props JSON, using empty array')
-      }
-    }
-    
-    if (capability.value.links?.trim()) {
-      try {
-        links = JSON.parse(capability.value.links)
-      } catch (e) {
-        console.warn('Invalid links JSON, using empty array')
-      }
-    }
-    
+    // Only include fields that the backend supports for capability creation
     const capabilityData = {
-      ...capability.value,
-      props,
-      links,
+      uuid: capability.value.uuid,
+      name: capability.value.name,
+      description: capability.value.description,
+      props: [], // Required by TypeScript interface but not stored in DB
+      links: [], // Required by TypeScript interface but not stored in DB
+      // Skip incorporatesComponents, controlImplementations - they may not exist in DB schema
     }
     
     const response = await componentDefinitionStore.createCapability(
