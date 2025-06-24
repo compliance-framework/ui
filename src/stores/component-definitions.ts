@@ -111,6 +111,7 @@ export interface ImportComponentDefinition {
   includeAll?: boolean;
   includeComponents?: SelectComponentById[];
   excludeComponents?: SelectComponentById[];
+  includeControls?: { withId: string }[];
 }
 
 export interface SelectComponentById {

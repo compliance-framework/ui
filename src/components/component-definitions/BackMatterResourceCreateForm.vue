@@ -27,7 +27,7 @@
 
     <div class="mb-4">
       <label class="inline-block pb-2 dark:text-slate-300">Citation Text</label>
-      <FormTextarea v-model="resource.citation.text" placeholder="Reference or citation information" rows="2" />
+      <FormTextarea v-model="resource.citation!.text" placeholder="Reference or citation information" rows="2" />
     </div>
 
     <div class="mb-4">
