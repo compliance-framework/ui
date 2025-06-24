@@ -84,6 +84,28 @@ export interface IncorporatesComponent {
   description: string;
 }
 
+export interface BackMatterResource {
+  uuid: string;
+  title: string;
+  description: string;
+  remarks?: string;
+  citation?: Citation;
+  props?: Property[];
+  links?: Link[];
+  rlinks?: ResourceLink[];
+}
+
+export interface Citation {
+  text: string;
+  props?: Property[];
+  links?: Link[];
+}
+
+export interface ResourceLink {
+  href: string;
+  mediaType?: string;
+}
+
 export interface ImportComponentDefinition {
   href: string;
   includeAll?: boolean;
@@ -294,6 +316,32 @@ export const useComponentDefinitionStore = defineStore('component-definitions', 
     }) as DataResponse<any>
   }
 
+  async function createBackMatterResource(id: string, resource: BackMatterResource): Promise<DataResponse<BackMatterResource>> {
+    const config = await configStore.getConfig()
+    // Backend expects a BackMatter object with a resources array
+    const payload = {
+      resources: [decamelizeKeys(resource, { separator: '-' })]
+    }
+    
+    
+    const response = await fetch(`${config.API_URL}/api/oscal/component-definitions/${id}/back-matter`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${userStore.token}`,
+      },
+      body: JSON.stringify(payload),
+    })
+    if (!response.ok) {
+      throw new Error(`Error: ${response.statusText}`)
+    }
+    const result = camelcaseKeys(await response.json(), {
+      deep: true,
+    }) as DataResponse<any>
+    // Return the first resource from the response
+    return { data: result.data.resources[0] } as DataResponse<BackMatterResource>
+  }
+
   async function createComponent(id: string, component: DefinedComponent): Promise<DataResponse<DefinedComponent>> {
     const config = await configStore.getConfig()
     const payload = [decamelizeKeys(component, { separator: '-' })]
@@ -443,5 +491,6 @@ export const useComponentDefinitionStore = defineStore('component-definitions', 
     
     // Back Matter
     getBackMatter,
+    createBackMatterResource,
   }
 })
