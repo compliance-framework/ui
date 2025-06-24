@@ -36,28 +36,39 @@
     </div>
     <div v-else class="p-8 text-center">
       <p class="text-gray-500 dark:text-slate-400 mb-4">No import definitions configured.</p>
-      <TertiaryButton @click="showCreateForm = true">Add Import Definition</TertiaryButton>
+      <TertiaryButton @click="handleAddImportDefinition">Add Import Definition</TertiaryButton>
     </div>
   </div>
 
   <div class="mt-4" v-if="importDefinitions.length > 0">
-    <TertiaryButton @click="showCreateForm = true">Add Import Definition</TertiaryButton>
+    <TertiaryButton @click="handleAddImportDefinition">Add Import Definition</TertiaryButton>
   </div>
 
-  <!-- TODO: Add Import Definition Creation Modal -->
+  <!-- Import Definition Edit Modal -->
+  <ImportDefinitionEditModal
+    :is-open="showEditModal"
+    :component-definition-id="componentDefinitionId"
+    :import-definition="selectedImportDefinition"
+    :all-import-definitions="importDefinitions"
+    @close="closeEditModal"
+    @updated="handleImportDefinitionUpdated"
+  />
 </template>
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { useComponentDefinitionStore } from '@/stores/component-definitions.ts'
+import { useComponentDefinitionStore, type ImportComponentDefinition } from '@/stores/component-definitions.ts'
 import { useRoute } from 'vue-router'
 import TertiaryButton from '@/components/TertiaryButton.vue'
+import ImportDefinitionEditModal from '@/components/component-definitions/ImportDefinitionEditModal.vue'
 
 const componentDefinitionStore = useComponentDefinitionStore()
-const importDefinitions = ref<any[]>([])
+const importDefinitions = ref<ImportComponentDefinition[]>([])
 const route = useRoute()
 const componentDefinitionId = ref<string>(route.params.id as string)
 const showCreateForm = ref<boolean>(false)
+const showEditModal = ref<boolean>(false)
+const selectedImportDefinition = ref<ImportComponentDefinition>({} as ImportComponentDefinition)
 
 onMounted(async () => {
   try {
@@ -68,7 +79,25 @@ onMounted(async () => {
   }
 })
 
-function editImportDefinition(importDef: any) {
-  console.log('Edit import definition:', importDef)
+function editImportDefinition(importDef: ImportComponentDefinition) {
+  console.log('Edit button clicked:', importDef)
+  selectedImportDefinition.value = importDef
+  showEditModal.value = true
+  console.log('Modal should be open:', showEditModal.value)
+}
+
+function closeEditModal() {
+  showEditModal.value = false
+  selectedImportDefinition.value = {} as ImportComponentDefinition
+}
+
+function handleImportDefinitionUpdated(updatedImportDefinitions: ImportComponentDefinition[]) {
+  importDefinitions.value = updatedImportDefinitions
+}
+
+function handleAddImportDefinition() {
+  console.log('Add Import Definition button clicked')
+  showCreateForm.value = true
+  console.log('showCreateForm is now:', showCreateForm.value)
 }
 </script>

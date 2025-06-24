@@ -1,11 +1,11 @@
 <template>
-  <PageHeader>Component Definition Metadata</PageHeader>
+  <PageHeader>Edit Component Definition</PageHeader>
   <PageSubHeader>{{ componentDefinition.metadata?.title }}</PageSubHeader>
 
   <PageCard class="mt-8 w-1/2">
-    <div class="mb-4 p-3 bg-red-100 dark:bg-red-900/20 border border-red-400 dark:border-red-800 text-red-700 dark:text-red-200 rounded">
-      <strong>Metadata Editing Disabled:</strong> Component definition metadata cannot be updated due to backend limitations. 
-      The backend only supports updating import definitions, components, and capabilities through their respective sections.
+    <div class="mb-4 p-3 bg-blue-100 dark:bg-blue-900/20 border border-blue-400 dark:border-blue-800 text-blue-700 dark:text-blue-200 rounded">
+      <strong>Component Definition Properties:</strong> Currently showing read-only view of the main component definition container. 
+      Individual components and capabilities can be edited through their respective sections.
     </div>
     
     <div v-if="componentDefinition.metadata" class="space-y-4">
@@ -69,8 +69,6 @@ onMounted(async () => {
     console.error('Failed to load component definition:', error)
   }
 })
-
-// Submit function removed - metadata editing is disabled
 
 function cancel() {
   router.push({

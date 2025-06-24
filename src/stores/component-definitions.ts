@@ -443,8 +443,5 @@ export const useComponentDefinitionStore = defineStore('component-definitions', 
     
     // Back Matter
     getBackMatter,
-    
-    // Note: Metadata (title, remarks) cannot be updated via current backend implementation
-    // Backend only updates LastModified and OscalVersion automatically
   }
 })

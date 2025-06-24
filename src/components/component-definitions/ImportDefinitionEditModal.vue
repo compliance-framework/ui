@@ -1,0 +1,45 @@
+<template>
+  <Modal :show="isOpen" @close="$emit('close')">
+    <div class="px-12 py-8">
+      <ImportDefinitionEditForm
+        :component-definition-id="componentDefinitionId"
+        :import-definition="importDefinition"
+        :all-import-definitions="allImportDefinitions"
+        @updated="handleUpdated"
+        @cancel="$emit('close')"
+      />
+    </div>
+    <div class="border-t border-zinc-300 dark:border-slate-700 text-right py-4 px-4">
+      <PrimaryButton
+        @click="$emit('close')"
+        class="px-2 py-1 border-zinc-500 border rounded-md shadow"
+      >
+        Close
+      </PrimaryButton>
+    </div>
+  </Modal>
+</template>
+
+<script setup lang="ts">
+import Modal from '@/components/Modal.vue'
+import PrimaryButton from '@/components/PrimaryButton.vue'
+import ImportDefinitionEditForm from './ImportDefinitionEditForm.vue'
+import type { ImportComponentDefinition } from '@/stores/component-definitions.ts'
+
+defineProps<{
+  isOpen: boolean
+  componentDefinitionId: string
+  importDefinition: ImportComponentDefinition
+  allImportDefinitions: ImportComponentDefinition[]
+}>()
+
+const emit = defineEmits<{
+  close: []
+  updated: [importDefinitions: ImportComponentDefinition[]]
+}>()
+
+function handleUpdated(updatedImportDefinitions: ImportComponentDefinition[]) {
+  emit('updated', updatedImportDefinitions)
+  emit('close')
+}
+</script>
