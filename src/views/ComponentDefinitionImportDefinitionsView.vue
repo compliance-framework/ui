@@ -80,10 +80,8 @@ onMounted(async () => {
 })
 
 function editImportDefinition(importDef: ImportComponentDefinition) {
-  console.log('Edit button clicked:', importDef)
   selectedImportDefinition.value = importDef
   showEditModal.value = true
-  console.log('Modal should be open:', showEditModal.value)
 }
 
 function closeEditModal() {
@@ -96,8 +94,6 @@ function handleImportDefinitionUpdated(updatedImportDefinitions: ImportComponent
 }
 
 function handleAddImportDefinition() {
-  console.log('Add Import Definition button clicked')
   showCreateForm.value = true
-  console.log('showCreateForm is now:', showCreateForm.value)
 }
 </script>

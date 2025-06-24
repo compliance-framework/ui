@@ -114,14 +114,11 @@ async function createResource(): Promise<void> {
   }
   
   try {
-    // Clean up the resource data before sending - start with minimal required fields only
     const resourceData: any = {
       uuid: resource.value.uuid,
       title: resource.value.title.trim(),
       description: resource.value.description.trim()
     }
-    
-    // Only add optional fields if they have content
     if (resource.value.remarks?.trim()) {
       resourceData.remarks = resource.value.remarks.trim()
     }
@@ -132,12 +129,10 @@ async function createResource(): Promise<void> {
       }
     }
     
-    // Only add rlinks if there are valid links
     const validLinks = resource.value.rlinks?.filter(link => link.href.trim())
     if (validLinks && validLinks.length > 0) {
       resourceData.rlinks = validLinks
     }
-    
     
     const response = await componentDefinitionStore.createBackMatterResource(
       props.componentDefinitionId,

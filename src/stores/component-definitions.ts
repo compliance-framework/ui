@@ -318,11 +318,9 @@ export const useComponentDefinitionStore = defineStore('component-definitions', 
 
   async function createBackMatterResource(id: string, resource: BackMatterResource): Promise<DataResponse<BackMatterResource>> {
     const config = await configStore.getConfig()
-    // Backend expects a BackMatter object with a resources array
     const payload = {
       resources: [decamelizeKeys(resource, { separator: '-' })]
     }
-    
     
     const response = await fetch(`${config.API_URL}/api/oscal/component-definitions/${id}/back-matter`, {
       method: 'POST',
