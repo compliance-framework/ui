@@ -6,6 +6,7 @@
         :key="capability.uuid" 
         :capability="capability"
         :componentDefinitionId="componentDefinitionId"
+        @edit="editCapability"
       />
     </div>
     <div v-else class="p-8 text-center">
@@ -23,6 +24,14 @@
     :component-definition-id="componentDefinitionId" 
     v-model="showCreateForm" 
   />
+  
+  <CapabilityEditModal 
+    v-if="editingCapability"
+    @updated="capabilityUpdated" 
+    :component-definition-id="componentDefinitionId"
+    :capability="editingCapability"
+    v-model="showEditForm" 
+  />
 </template>
 
 <script setup lang="ts">
@@ -32,12 +41,15 @@ import { useRoute } from 'vue-router'
 import TertiaryButton from '@/components/TertiaryButton.vue'
 import ComponentDefinitionCapability from '@/components/component-definitions/ComponentDefinitionCapability.vue'
 import CapabilityCreateModal from '@/components/component-definitions/CapabilityCreateModal.vue'
+import CapabilityEditModal from '@/components/component-definitions/CapabilityEditModal.vue'
 
 const componentDefinitionStore = useComponentDefinitionStore()
 const capabilities = ref<any[]>([])
 const route = useRoute()
 const componentDefinitionId = computed(() => route.params.id as string)
 const showCreateForm = ref<boolean>(false)
+const showEditForm = ref<boolean>(false)
+const editingCapability = ref<any>(null)
 
 onMounted(async () => {
   await loadCapabilities()
@@ -55,5 +67,22 @@ async function loadCapabilities() {
 function capabilityCreated(capability: any) {
   capabilities.value.push(capability)
   showCreateForm.value = false
+}
+
+function editCapability(capability: any) {
+  editingCapability.value = {
+    ...capability,
+    componentDefinitionId: componentDefinitionId.value
+  }
+  showEditForm.value = true
+}
+
+function capabilityUpdated(updatedCapability: any) {
+  const index = capabilities.value.findIndex(c => c.uuid === updatedCapability.uuid)
+  if (index !== -1) {
+    capabilities.value[index] = updatedCapability
+  }
+  showEditForm.value = false
+  editingCapability.value = null
 }
 </script>

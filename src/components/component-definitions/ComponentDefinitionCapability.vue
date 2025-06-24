@@ -9,6 +9,14 @@
           {{ capability.name }}
           <span class="text-gray-400 dark:text-slate-300 text-sm px-2 py-1">{{ capability.description }}</span>
         </div>
+        <div class="flex gap-2">
+          <TertiaryButton
+            class="bg-blue-100 hover:bg-blue-200 dark:bg-blue-900 dark:hover:bg-blue-800 text-blue-800 dark:text-blue-200"
+            @click.stop="editCapability"
+          >
+            Edit
+          </TertiaryButton>
+        </div>
       </div>
     </template>
     
@@ -97,9 +105,18 @@
 
 <script setup lang="ts">
 import CollapsableGroup from '@/components/CollapsableGroup.vue'
+import TertiaryButton from '@/components/TertiaryButton.vue'
 
 const props = defineProps<{
   capability: any
   componentDefinitionId: string
 }>()
+
+const emit = defineEmits<{
+  edit: [capability: any]
+}>()
+
+function editCapability() {
+  emit('edit', props.capability)
+}
 </script>
