@@ -318,13 +318,8 @@ export const useComponentDefinitionStore = defineStore('component-definitions', 
   }
 
   async function createCapability(id: string, capability: Capability): Promise<DataResponse<Capability>> {
-    console.log('createCapability called with:', { id, capability })
     const config = await configStore.getConfig()
     const payload = [decamelizeKeys(capability, { separator: '-' })]
-    console.log('CreateCapability request:', {
-      url: `${config.API_URL}/api/oscal/component-definitions/${id}/capabilities`,
-      payload: payload
-    })
     
     // Backend expects an array of capabilities, not a single capability
     const response = await fetch(`${config.API_URL}/api/oscal/component-definitions/${id}/capabilities`, {
@@ -336,8 +331,6 @@ export const useComponentDefinitionStore = defineStore('component-definitions', 
       body: JSON.stringify(payload),
     })
     if (!response.ok) {
-      const errorText = await response.text()
-      console.error('CreateCapability error response:', errorText)
       throw new Error(`Error: ${response.statusText}`)
     }
     const result = camelcaseKeys(await response.json(), {

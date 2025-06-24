@@ -9,12 +9,6 @@
           {{ capability.name }}
           <span class="text-gray-400 dark:text-slate-300 text-sm px-2 py-1">{{ capability.description }}</span>
         </div>
-        <TertiaryButton
-          class="bg-white hover:bg-zinc-100 dark:bg-slate-800 dark:hover:bg-slate-600"
-          @click.stop="viewDetails"
-        >
-          Details
-        </TertiaryButton>
       </div>
     </template>
     
@@ -103,14 +97,9 @@
 
 <script setup lang="ts">
 import CollapsableGroup from '@/components/CollapsableGroup.vue'
-import TertiaryButton from '@/components/TertiaryButton.vue'
 
 const props = defineProps<{
   capability: any
   componentDefinitionId: string
 }>()
-
-function viewDetails() {
-  console.log('View details for capability:', props.capability.uuid)
-}
 </script>

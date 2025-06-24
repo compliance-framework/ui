@@ -11,12 +11,6 @@
         </div>
         <div class="flex gap-2">
           <TertiaryButton
-            class="bg-white hover:bg-zinc-100 dark:bg-slate-800 dark:hover:bg-slate-600"
-            @click.stop="viewDetails"
-          >
-            Details
-          </TertiaryButton>
-          <TertiaryButton
             class="bg-blue-100 hover:bg-blue-200 dark:bg-blue-900 dark:hover:bg-blue-800 text-blue-800 dark:text-blue-200"
             @click.stop="editComponent"
           >
@@ -96,7 +90,6 @@ import { onMounted, ref } from 'vue'
 import CollapsableGroup from '@/components/CollapsableGroup.vue'
 import TertiaryButton from '@/components/TertiaryButton.vue'
 import { useComponentDefinitionStore } from '@/stores/component-definitions.ts'
-import { useRouter } from 'vue-router'
 
 const props = defineProps<{
   component: any
@@ -106,7 +99,6 @@ const props = defineProps<{
 const componentDefinitionStore = useComponentDefinitionStore()
 const controlImplementations = ref<any[]>([])
 const responsibleRoles = ref<any[]>([])
-const router = useRouter()
 
 onMounted(async () => {
   try {
@@ -127,11 +119,6 @@ onMounted(async () => {
 const emit = defineEmits<{
   edit: [component: any]
 }>()
-
-function viewDetails() {
-  // Could navigate to a detailed component view or open a modal
-  console.log('View details for component:', props.component.uuid)
-}
 
 function editComponent() {
   emit('edit', props.component)
