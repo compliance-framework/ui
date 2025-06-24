@@ -14,7 +14,7 @@
               <p class="text-sm text-gray-600 dark:text-slate-400" v-if="importDef.includeAll">
                 Includes all components from this definition
               </p>
-              <div v-if="importDef.includeControls?.length > 0" class="mt-2">
+              <div v-if="Array.isArray(importDef.includeControls) && importDef.includeControls.length > 0" class="mt-2">
                 <p class="text-sm text-gray-600 dark:text-slate-400">Includes controls:</p>
                 <div class="flex flex-wrap gap-2 mt-1">
                   <span 
