@@ -55,7 +55,7 @@
           </div>
         </div>
         
-        <div class="rounded-md border dark:border-slate-700 min-w-48">
+        <div class="rounded-md border border-ccf-300 dark:border-slate-700 min-w-48">
           <table class="table-auto w-full">
             <tbody>
               <tr>

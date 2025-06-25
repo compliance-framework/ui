@@ -1,5 +1,5 @@
 <template>
-  <div class="mt-4 rounded-md bg-white dark:bg-slate-900 border-collapse border dark:border-slate-700 p-6">
+  <div class="mt-4 rounded-md bg-white dark:bg-slate-900 border-collapse border border-ccf-300 dark:border-slate-700 p-6">
     <div v-if="componentDefinition.metadata">
       <h3 class="text-lg font-semibold mb-4 dark:text-slate-300">Metadata</h3>
       

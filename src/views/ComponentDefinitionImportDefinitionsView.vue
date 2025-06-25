@@ -1,12 +1,12 @@
 <template>
-  <div class="mt-4 rounded-md bg-white dark:bg-slate-900 border-collapse border dark:border-slate-700">
+  <div class="mt-4 rounded-md bg-white dark:bg-slate-900 border-collapse border border-ccf-300 dark:border-slate-700">
     <div v-if="importDefinitions.length > 0" class="p-4">
       <h3 class="text-lg font-semibold mb-4 dark:text-slate-300">Import Component Definitions</h3>
       <div class="space-y-4">
         <div 
           v-for="importDef in importDefinitions" 
           :key="importDef.href"
-          class="border dark:border-slate-700 rounded-md p-4"
+          class="border border-ccf-300 dark:border-slate-700 rounded-md p-4"
         >
           <div class="flex justify-between items-start">
             <div>

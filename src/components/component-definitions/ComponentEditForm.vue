@@ -4,7 +4,7 @@
 
     <div class="mb-4">
       <label class="inline-block pb-2 dark:text-slate-300">UUID</label>
-      <div class="p-3 bg-gray-50 dark:bg-slate-800 border rounded-md">
+      <div class="p-3 bg-gray-50 dark:bg-slate-800 border border-ccf-300 dark:border-slate-700 rounded-md">
         <span class="text-gray-600 dark:text-slate-400 font-mono">{{ componentData.uuid }}</span>
       </div>
     </div>

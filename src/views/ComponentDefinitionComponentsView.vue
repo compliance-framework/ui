@@ -1,5 +1,5 @@
 <template>
-  <div class="mt-4 rounded-md bg-white dark:bg-slate-900 border-collapse border dark:border-slate-700">
+  <div class="mt-4 rounded-md bg-white dark:bg-slate-900 border-collapse border border-ccf-300 dark:border-slate-700">
     <div v-if="components.length > 0">
       <ComponentDefinitionComponent 
         v-for="component in components" 

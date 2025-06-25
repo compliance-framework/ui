@@ -11,21 +11,21 @@
     <div v-if="componentDefinition.metadata" class="space-y-4">
       <div class="mb-4">
         <label class="inline-block pb-2 font-medium text-gray-700 dark:text-slate-300">ID</label>
-        <div class="p-3 bg-gray-50 dark:bg-slate-800 border rounded-md">
+        <div class="p-3 bg-gray-50 dark:bg-slate-800 border border-ccf-300 dark:border-slate-700 rounded-md">
           <span class="text-gray-600 dark:text-slate-400 font-mono">{{ componentDefinition.uuid }}</span>
         </div>
       </div>
       
       <div class="mb-4">
         <label class="inline-block pb-2 font-medium text-gray-700 dark:text-slate-300">Title</label>
-        <div class="p-3 bg-gray-50 dark:bg-slate-800 border rounded-md">
+        <div class="p-3 bg-gray-50 dark:bg-slate-800 border border-ccf-300 dark:border-slate-700 rounded-md">
           <span class="text-gray-900 dark:text-slate-300">{{ componentDefinition.metadata.title }}</span>
         </div>
       </div>
       
       <div class="mb-4">
         <label class="inline-block pb-2 font-medium text-gray-700 dark:text-slate-300">Remarks</label>
-        <div class="p-3 bg-gray-50 dark:bg-slate-800 border rounded-md min-h-[60px]">
+        <div class="p-3 bg-gray-50 dark:bg-slate-800 border border-ccf-300 dark:border-slate-700 rounded-md min-h-[60px]">
           <span class="text-gray-900 dark:text-slate-300">{{ componentDefinition.metadata.remarks || 'No remarks' }}</span>
         </div>
       </div>
