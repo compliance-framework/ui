@@ -38,12 +38,14 @@
 import { onMounted, ref, computed } from 'vue'
 import { useComponentDefinitionStore } from '@/stores/component-definitions.ts'
 import { useRoute } from 'vue-router'
+import { useToast } from 'primevue/usetoast'
 import TertiaryButton from '@/components/TertiaryButton.vue'
 import ComponentDefinitionComponent from '@/components/component-definitions/ComponentDefinitionComponent.vue'
 import ComponentCreateModal from '@/components/component-definitions/ComponentCreateModal.vue'
 import ComponentEditModal from '@/components/component-definitions/ComponentEditModal.vue'
 
 const componentDefinitionStore = useComponentDefinitionStore()
+const toast = useToast()
 const components = ref<any[]>([])
 const route = useRoute()
 const componentDefinitionId = computed(() => route.params.id as string)
@@ -60,7 +62,12 @@ async function loadComponents() {
     const response = await componentDefinitionStore.getComponents(componentDefinitionId.value)
     components.value = response.data || []
   } catch (error) {
-    console.error('Failed to load components:', error)
+    toast.add({
+      severity: 'error',
+      summary: 'Error Loading Components',
+      detail: 'Failed to load components for this component definition',
+      life: 3000
+    })
     components.value = []
   }
 }

@@ -77,11 +77,13 @@
 import { onMounted, ref, computed } from 'vue'
 import { type ComponentDefinition, type ComponentDefinitionCharacteristics, useComponentDefinitionStore } from '@/stores/component-definitions.ts'
 import { useRoute } from 'vue-router'
+import { useToast } from 'primevue/usetoast'
 
 const componentDefinitionStore = useComponentDefinitionStore()
 const componentDefinition = ref<ComponentDefinition>({} as ComponentDefinition)
 const characteristics = ref<ComponentDefinitionCharacteristics>({} as ComponentDefinitionCharacteristics)
 const route = useRoute()
+const toast = useToast()
 
 const componentCounts = computed(() => ({
   components: characteristics.value.components?.length || 0,
@@ -100,7 +102,12 @@ onMounted(async () => {
     componentDefinition.value = metadataResponse.data
     characteristics.value = characteristicsResponse.data
   } catch (error) {
-    console.error('Failed to load component definition:', error)
+    toast.add({
+      severity: 'error',
+      summary: 'Error loading component definition',
+      detail: 'Failed to load component definition overview. Please try again.',
+      life: 3000
+    })
   }
 })
 </script>

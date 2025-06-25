@@ -43,6 +43,7 @@ import FormTextarea from '@/components/forms/FormTextarea.vue'
 import PrimaryButton from '@/components/PrimaryButton.vue'
 import { BIconArrowRepeat } from 'bootstrap-icons-vue'
 import { v4 as uuidv4 } from 'uuid'
+import { useToast } from 'primevue/usetoast'
 
 const componentDefinitionStore = useComponentDefinitionStore()
 const componentDefinition = ref<ComponentDefinition>({
@@ -53,6 +54,7 @@ const componentDefinition = ref<ComponentDefinition>({
 } as ComponentDefinition)
 
 const router = useRouter()
+const toast = useToast()
 
 async function submit() {
   try {
@@ -62,7 +64,12 @@ async function submit() {
       params: { id: response.data.uuid },
     })
   } catch (error) {
-    console.error('Failed to create component definition:', error)
+    toast.add({
+      severity: 'error',
+      summary: 'Error creating component definition',
+      detail: 'Failed to create component definition. Please check your input and try again.',
+      life: 3000
+    })
   }
 }
 

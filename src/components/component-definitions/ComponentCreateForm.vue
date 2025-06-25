@@ -66,8 +66,10 @@ import PrimaryButton from '@/components/PrimaryButton.vue'
 import TertiaryButton from '@/components/TertiaryButton.vue'
 import { BIconArrowRepeat } from 'bootstrap-icons-vue'
 import { v4 as uuidv4 } from 'uuid'
+import { useToast } from 'primevue/usetoast'
 
 const componentDefinitionStore = useComponentDefinitionStore()
+const toast = useToast()
 
 const props = defineProps<{
   componentDefinitionId: string
@@ -125,8 +127,14 @@ async function createComponent(): Promise<void> {
     )
     emit('created', response.data)
   } catch (error) {
-    console.error('Failed to create component:', error)
-    errorMessage.value = error instanceof Error ? error.message : 'Failed to create component'
+    const errorText = error instanceof Error ? error.message : 'Failed to create component'
+    toast.add({
+      severity: 'error',
+      summary: 'Error creating component',
+      detail: errorText,
+      life: 3000
+    })
+    errorMessage.value = errorText
   }
 }
 

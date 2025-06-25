@@ -33,11 +33,13 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useComponentDefinitionStore, type ImportComponentDefinition } from '@/stores/component-definitions.ts'
+import { useToast } from 'primevue/usetoast'
 import FormInput from '@/components/forms/FormInput.vue'
 import PrimaryButton from '@/components/PrimaryButton.vue'
 import SecondaryButton from '@/components/SecondaryButton.vue'
 
 const componentDefinitionStore = useComponentDefinitionStore()
+const toast = useToast()
 
 const props = defineProps<{
   componentDefinitionId: string
@@ -85,7 +87,12 @@ async function updateImportDefinition(): Promise<void> {
     
     emit('updated', updatedImportDefinitions)
   } catch (error) {
-    console.error('Failed to update import definition:', error)
+    toast.add({
+      severity: 'error',
+      summary: 'Error Updating Import Definition',
+      detail: error instanceof Error ? error.message : 'Failed to update import definition',
+      life: 3000
+    })
     errorMessage.value = error instanceof Error ? error.message : 'Failed to update import definition'
   }
 }

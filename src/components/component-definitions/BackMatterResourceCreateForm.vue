@@ -75,8 +75,10 @@ import SecondaryButton from '@/components/SecondaryButton.vue'
 import TertiaryButton from '@/components/TertiaryButton.vue'
 import { BIconArrowRepeat } from 'bootstrap-icons-vue'
 import { v4 as uuidv4 } from 'uuid'
+import { useToast } from 'primevue/usetoast'
 
 const componentDefinitionStore = useComponentDefinitionStore()
+const toast = useToast()
 
 const props = defineProps<{
   componentDefinitionId: string
@@ -140,8 +142,14 @@ async function createResource(): Promise<void> {
     )
     emit('created', response.data)
   } catch (error) {
-    console.error('Failed to create back matter resource:', error)
-    errorMessage.value = error instanceof Error ? error.message : 'Failed to create back matter resource'
+    const errorText = error instanceof Error ? error.message : 'Failed to create back matter resource'
+    toast.add({
+      severity: 'error',
+      summary: 'Error creating resource',
+      detail: errorText,
+      life: 3000
+    })
+    errorMessage.value = errorText
   }
 }
 

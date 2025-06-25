@@ -38,12 +38,14 @@
 import { onMounted, ref, computed } from 'vue'
 import { useComponentDefinitionStore } from '@/stores/component-definitions.ts'
 import { useRoute } from 'vue-router'
+import { useToast } from 'primevue/usetoast'
 import TertiaryButton from '@/components/TertiaryButton.vue'
 import ComponentDefinitionCapability from '@/components/component-definitions/ComponentDefinitionCapability.vue'
 import CapabilityCreateModal from '@/components/component-definitions/CapabilityCreateModal.vue'
 import CapabilityEditModal from '@/components/component-definitions/CapabilityEditModal.vue'
 
 const componentDefinitionStore = useComponentDefinitionStore()
+const toast = useToast()
 const capabilities = ref<any[]>([])
 const route = useRoute()
 const componentDefinitionId = computed(() => route.params.id as string)
@@ -60,7 +62,12 @@ async function loadCapabilities() {
     const response = await componentDefinitionStore.getCapabilities(componentDefinitionId.value)
     capabilities.value = response.data
   } catch (error) {
-    console.error('Failed to load capabilities:', error)
+    toast.add({
+      severity: 'error',
+      summary: 'Error Loading Capabilities',
+      detail: 'Failed to load capabilities for this component definition',
+      life: 3000
+    })
   }
 }
 

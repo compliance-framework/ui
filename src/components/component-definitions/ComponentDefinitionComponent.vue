@@ -90,6 +90,7 @@ import { onMounted, ref } from 'vue'
 import CollapsableGroup from '@/components/CollapsableGroup.vue'
 import TertiaryButton from '@/components/TertiaryButton.vue'
 import { useComponentDefinitionStore } from '@/stores/component-definitions.ts'
+import { useToast } from 'primevue/usetoast'
 
 const props = defineProps<{
   component: any
@@ -97,6 +98,7 @@ const props = defineProps<{
 }>()
 
 const componentDefinitionStore = useComponentDefinitionStore()
+const toast = useToast()
 const controlImplementations = ref<any[]>([])
 const responsibleRoles = ref<any[]>([])
 
@@ -112,7 +114,12 @@ onMounted(async () => {
     // Load responsible roles (would be in the component data)
     responsibleRoles.value = props.component.responsibleRoles || []
   } catch (error) {
-    console.error('Failed to load component details:', error)
+    toast.add({
+      severity: 'error',
+      summary: 'Error Loading Component Details',
+      detail: 'Failed to load control implementations and roles for this component',
+      life: 3000
+    })
   }
 })
 

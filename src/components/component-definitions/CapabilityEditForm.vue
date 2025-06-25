@@ -33,12 +33,14 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useComponentDefinitionStore } from '@/stores/component-definitions.ts'
+import { useToast } from 'primevue/usetoast'
 import FormInput from '@/components/forms/FormInput.vue'
 import FormTextarea from '@/components/forms/FormTextarea.vue'
 import PrimaryButton from '@/components/PrimaryButton.vue'
 import SecondaryButton from '@/components/SecondaryButton.vue'
 
 const componentDefinitionStore = useComponentDefinitionStore()
+const toast = useToast()
 
 const props = defineProps<{
   componentDefinitionId: string
@@ -105,7 +107,12 @@ async function updateCapability(): Promise<void> {
     )
     emit('updated', response.data)
   } catch (error) {
-    console.error('Failed to update capability:', error)
+    toast.add({
+      severity: 'error',
+      summary: 'Error Updating Capability',
+      detail: error instanceof Error ? error.message : 'Failed to update capability',
+      life: 3000
+    })
     errorMessage.value = error instanceof Error ? error.message : 'Failed to update capability'
   }
 }

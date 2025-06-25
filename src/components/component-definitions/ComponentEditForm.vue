@@ -67,8 +67,10 @@ import FormInput from '@/components/forms/FormInput.vue'
 import FormTextarea from '@/components/forms/FormTextarea.vue'
 import PrimaryButton from '@/components/PrimaryButton.vue'
 import SecondaryButton from '@/components/SecondaryButton.vue'
+import { useToast } from 'primevue/usetoast'
 
 const componentDefinitionStore = useComponentDefinitionStore()
+const toast = useToast()
 
 const props = defineProps<{
   componentDefinitionId: string
@@ -153,8 +155,14 @@ async function updateComponent(): Promise<void> {
     )
     emit('updated', response.data)
   } catch (error) {
-    console.error('Failed to update component:', error)
-    errorMessage.value = error instanceof Error ? error.message : 'Failed to update component'
+    const errorText = error instanceof Error ? error.message : 'Failed to update component'
+    toast.add({
+      severity: 'error',
+      summary: 'Error updating component',
+      detail: errorText,
+      life: 3000
+    })
+    errorMessage.value = errorText
   }
 }
 </script>

@@ -61,6 +61,7 @@ import { useComponentDefinitionStore, type ImportComponentDefinition } from '@/s
 import { useRoute } from 'vue-router'
 import TertiaryButton from '@/components/TertiaryButton.vue'
 import ImportDefinitionEditModal from '@/components/component-definitions/ImportDefinitionEditModal.vue'
+import { useToast } from 'primevue/usetoast'
 
 const componentDefinitionStore = useComponentDefinitionStore()
 const importDefinitions = ref<ImportComponentDefinition[]>([])
@@ -69,13 +70,19 @@ const componentDefinitionId = ref<string>(route.params.id as string)
 const showCreateForm = ref<boolean>(false)
 const showEditModal = ref<boolean>(false)
 const selectedImportDefinition = ref<ImportComponentDefinition>({} as ImportComponentDefinition)
+const toast = useToast()
 
 onMounted(async () => {
   try {
     const response = await componentDefinitionStore.getImportComponentDefinitions(componentDefinitionId.value)
     importDefinitions.value = response.data
   } catch (error) {
-    console.error('Failed to load import definitions:', error)
+    toast.add({
+      severity: 'error',
+      summary: 'Error loading import definitions',
+      detail: 'Failed to load import definitions. Please try again.',
+      life: 3000
+    })
   }
 })
 

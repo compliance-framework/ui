@@ -56,10 +56,12 @@
 import { onMounted, ref } from 'vue'
 import { useComponentDefinitionStore, type BackMatterResource } from '@/stores/component-definitions.ts'
 import { useRoute } from 'vue-router'
+import { useToast } from 'primevue/usetoast'
 import TertiaryButton from '@/components/TertiaryButton.vue'
 import BackMatterResourceCreateModal from '@/components/component-definitions/BackMatterResourceCreateModal.vue'
 
 const componentDefinitionStore = useComponentDefinitionStore()
+const toast = useToast()
 const backMatter = ref<any>(null)
 const route = useRoute()
 const componentDefinitionId = ref<string>(route.params.id as string)
@@ -70,7 +72,12 @@ onMounted(async () => {
     const response = await componentDefinitionStore.getBackMatter(componentDefinitionId.value)
     backMatter.value = response.data
   } catch (error) {
-    console.error('Failed to load back matter:', error)
+    toast.add({
+      severity: 'error',
+      summary: 'Error Loading Back Matter',
+      detail: 'Failed to load back matter resources for this component definition',
+      life: 3000
+    })
   }
 })
 

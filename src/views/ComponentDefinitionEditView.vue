@@ -54,11 +54,13 @@ import { type ComponentDefinition, useComponentDefinitionStore } from '@/stores/
 import { useRouter, useRoute } from 'vue-router'
 import PageCard from '@/components/PageCard.vue'
 import SecondaryButton from '@/components/SecondaryButton.vue'
+import { useToast } from 'primevue/usetoast'
 
 const componentDefinitionStore = useComponentDefinitionStore()
 const componentDefinition = ref<ComponentDefinition>({} as ComponentDefinition)
 const router = useRouter()
 const route = useRoute()
+const toast = useToast()
 
 onMounted(async () => {
   const id = route.params.id as string
@@ -66,7 +68,12 @@ onMounted(async () => {
     const response = await componentDefinitionStore.get(id)
     componentDefinition.value = response.data
   } catch (error) {
-    console.error('Failed to load component definition:', error)
+    toast.add({
+      severity: 'error',
+      summary: 'Error loading component definition',
+      detail: 'Failed to load component definition for editing. Please try again.',
+      life: 3000
+    })
   }
 })
 
