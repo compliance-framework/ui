@@ -181,10 +181,12 @@ export const useComponentDefinitionStore = defineStore('component-definitions', 
 
   async function updateImportComponentDefinitions(id: string, importDefinitions: ImportComponentDefinition[]): Promise<DataResponse<ComponentDefinition>> {
     const config = await configStore.getConfig()
-    // Backend only supports updating import_component_definitions field through main update
+    
+    // Get current component definition to preserve existing metadata
+    const currentResponse = await get(id)
     const componentDefinition = {
       uuid: id,
-      metadata: { title: "Placeholder" }, // Backend requires this but ignores updates to it
+      metadata: currentResponse.data.metadata,
       importComponentDefinitions: importDefinitions
     }
     
