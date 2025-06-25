@@ -11,6 +11,9 @@ import CatalogControl from '@/views/CatalogControl.vue'
 
 import PrimeVue from 'primevue/config';
 import ToastService from 'primevue/toastservice';
+import ConfirmationService from 'primevue/confirmationservice';
+import Tooltip from 'primevue/tooltip';
+import TooltipPt from '@/volt/Tooltip';
 
 const app = createApp(App)
 
@@ -20,8 +23,13 @@ pinia.use(piniaPluginPersistedstate)
 app.use(pinia)
 app.use(router)
 app.use(PrimeVue, {
-  unstyled: true
+  unstyled: true,
+  pt: {
+    ...TooltipPt
+  }
 });
+app.use(ConfirmationService);
+app.directive('tooltip', Tooltip);
 
 // This is a recursive component so should be registered globally
 app.component('CatalogGroup', CatalogGroup)

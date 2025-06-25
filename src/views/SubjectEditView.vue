@@ -26,34 +26,17 @@
       </div>
 
       <div class="text-right">
-        <PrimaryButton
-          @click.prevent="toggleDeleteModal(true)"
+        <Button
+          label="Delete Subject"
+          @click.prevent="confirmSave()"
           class="!bg-red-500 border-red-600 hover:bg-red-600 text-white dark:bg-red-700 dark:hover:bg-red-600 dark:border-red-700 mr-4">
           Delete Subject
-        </PrimaryButton>
-        <PrimaryButton type="submit" class="">Save Changes</PrimaryButton>
+        </Button>
+        <Button type="submit" class="">Save Changes</Button>
       </div>
     </form>
 
   </PageCard>
-  <Modal :show="showDeleteModal" @close="toggleDeleteModal(false)" size="sm">
-    <div class="px-12 py-8">
-      Are you sure you want to delete this subject?
-    </div>
-    <div class="border-t border-zinc-300 dark:border-slate-700 text-right py-4 px-4">
-      <PrimaryButton
-        @click="toggleDeleteModal(false)"
-        class="mx-2 px-2 py-1 border-zinc-500 border rounded-md shadow"
-      >
-        Cancel
-      </PrimaryButton>
-      <PrimaryButton
-        @click="deleteSubject"
-        class="mx-2 !bg-red-500 border-red-600 hover:bg-red-600 text-white dark:bg-red-700 dark:hover:bg-red-600 dark:border-red-700">
-        Yes
-      </PrimaryButton>
-    </div>
-  </Modal>
 </template>
 
 <script setup lang="ts">
@@ -66,9 +49,15 @@ import type { Subject } from '@/stores/subjects'
 import FormInput from '@/components/forms/FormInput.vue'
 import FormTextarea from '@/components/forms/FormTextarea.vue'
 import PrimaryButton from '@/components/PrimaryButton.vue'
-import Modal from '@/components/Modal.vue'
+
+import Button from '@/volt/Button.vue'
+import { useConfirm } from 'primevue/useconfirm'
+import { useToast } from 'primevue/usetoast'
+
 const apiStore = useApiStore()
 const router = useRouter()
+const confirm = useConfirm()
+const toast = useToast()
 
 const route = useRoute()
 const subjectId = route.params.id as string
@@ -82,8 +71,24 @@ onMounted(async () => {
   })
 })
 
-function toggleDeleteModal(value: boolean) {
-  showDeleteModal.value = value
+function confirmSave() {
+  confirm.require({
+    message: 'Are you sure you want to delete this subject?',
+    header: 'Delete Subject',
+    rejectProps: {
+      label: "Cancel",
+    },
+    acceptProps: {
+      label: "Yes",
+      severity: "danger",
+    },
+    accept: () => {
+      deleteSubject()
+    },
+    reject: () => {
+      toast.add({ severity: 'info', summary: 'Cancelled', detail: 'Subject deletion cancelled', life: 3000 })
+    },
+  })
 }
 
 const updateSubject = async () => {
@@ -96,6 +101,7 @@ async function deleteSubject() {
   try {
     await apiStore.deleteSubjectById(subjectId)
     await router.push({name: 'admin-subjects'})
+    toast.add({ severity: 'success', summary: 'Success', detail: 'Subject deleted successfully', life: 3000 })
   } catch (error) {
     console.error('Failed to delete subject:', error)
   }

@@ -112,3 +112,11 @@ export interface Parent {
 export interface DataResponse<T> {
   data: T;
 }
+
+export interface ErrorResponse<T> {
+  errors: T;
+}
+
+export interface ErrorBody {
+  body: string
+}

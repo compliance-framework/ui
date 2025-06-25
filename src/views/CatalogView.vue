@@ -20,19 +20,23 @@
 import { onActivated, onMounted, ref, toValue } from 'vue'
 import PageHeader from '@/components/PageHeader.vue'
 import { type Catalog, type Group, type Control, useCatalogStore } from '@/stores/catalogs.ts'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import PageSubHeader from '@/components/PageSubHeader.vue'
 import CatalogControl from '@/views/CatalogControl.vue'
 import TertiaryButton from '@/components/TertiaryButton.vue'
 import GroupCreateModal from '@/components/catalogs/GroupCreateModal.vue'
 import ControlCreateModal from '@/components/catalogs/ControlCreateModal.vue'
+import { useToast } from 'primevue/usetoast'
+import type { ErrorResponse, ErrorBody } from '@/stores/types'
 
 const catalogStore = useCatalogStore()
 const catalog = ref<Catalog>({} as Catalog);
 const groups = ref<Group[]>([]);
 const controls = ref<Control[]>([]);
+const toast = useToast();
 
 const route = useRoute();
+const router = useRouter();
 const id = ref<string>(route.params.id as string);
 
 onMounted(async () => {
@@ -60,7 +64,16 @@ async function loadCatalog(id: string) {
     catalogStore.listControls(id).then((data) => {
       controls.value = data.data
     })
-  })
+  }).catch(async (response) => {
+    const error = await (response.json()) as ErrorResponse<ErrorBody>;
+    toast.add({
+      severity: 'error',
+      summary: `Error loading catalog - ${response.statusText}`,
+      detail: error.errors.body,
+      life: 3000,
+    });
+    router.push({ name: 'catalog-list' });
+  });
 }
 
 const showGroupForm = ref<boolean>(false);

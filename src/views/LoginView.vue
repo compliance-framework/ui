@@ -41,6 +41,7 @@ import FormInput from '@/components/forms/FormInput.vue'
 import lightLogo from '@/assets/logo-light.svg'
 import darkLogo from '@/assets/logo-dark.svg'
 import SideNavLogo from '@/components/navigation/SideNavLogo.vue'
+import { useToast } from 'primevue/usetoast';
 
 interface AuthError {
   email: string[];
@@ -56,14 +57,19 @@ const authStore = useAuthStore();
 
 const route = useRoute();
 const router = useRouter();
+const toast = useToast();
 
 function onSubmit() {
-  // TODO: implement actual login logic
-  console.log('Logging in with', email.value, password.value);
   errors.value = {} as AuthError;
   authStore
     .login(email.value, password.value)
     .then(() => {
+      toast.add({
+        severity: 'success',
+        summary: 'Login Successful',
+        detail: 'You have successfully logged in.',
+        life: 3000,
+      });
       if (route.query.hasOwnProperty('next')) {
         return router.push(route.query.next as string);
       }
@@ -74,6 +80,11 @@ function onSubmit() {
         const errorResponse = (await response.json()) as DataResponse<AuthError>;
         errors.value = errorResponse.data as AuthError;
       }
+      toast.add({
+        severity: 'error',
+        summary: 'Login Failed',
+        life: 3000,
+      });
     });
 }
 </script>
