@@ -2,12 +2,12 @@
   <PageHeader>Component Definitions</PageHeader>
 
   <div
-    class="mt-4 rounded-md bg-white dark:bg-slate-900 border-collapse border border-ccf-300 dark:border-slate-700"
+    class="my-4 rounded-md bg-white dark:bg-slate-900 border-collapse border border-ccf-300 dark:border-slate-700"
   >
     <table class="table-auto w-full rounded-full dark:text-slate-300">
       <tbody>
       <tr
-        class="hover:bg-zinc-50 dark:hover:bg-slate-800 border-b dark:border-slate-800"
+        class="hover:bg-zinc-50 dark:hover:bg-slate-800 border-b border-ccf-300 dark:border-slate-800"
         v-for="componentDefinition in componentDefinitions"
         :key="componentDefinition.uuid"
       >

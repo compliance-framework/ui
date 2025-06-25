@@ -20,7 +20,7 @@
       </div>
     </template>
     
-    <div class="px-4 py-4 dark:bg-slate-950 border-b dark:border-slate-700">
+    <div class="px-4 py-4 dark:bg-slate-950 border-b border-ccf-300 dark:border-slate-700">
       <div class="flex items-start justify-between gap-4">
         <div class="grow">
           <div v-if="component.description" class="mb-4">
@@ -61,11 +61,11 @@
               <tr>
                 <td colspan="2" class="px-2 py-2 font-medium">Attributes</td>
               </tr>
-              <tr class="border-t dark:border-slate-700">
+              <tr class="border-t border-ccf-300 dark:border-slate-700">
                 <td class="px-2 py-1">UUID</td>
                 <td class="px-2 py-1 text-xs font-mono">{{ component.uuid }}</td>
               </tr>
-              <tr class="border-t dark:border-slate-700">
+              <tr class="border-t border-ccf-300 dark:border-slate-700">
                 <td class="px-2 py-1">Type</td>
                 <td class="px-2 py-1">{{ component.type }}</td>
               </tr>

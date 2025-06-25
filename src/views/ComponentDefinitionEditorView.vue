@@ -6,40 +6,40 @@
     {{ componentDefinition.metadata.remarks }}
   </p>
 
-  <div class="mt-4 border-b dark:border-slate-800">
+  <div class="mt-4 border-b border-ccf-300 dark:border-slate-800">
     <RouterLink 
-      class="px-4 py-2 inline-block text-lg border-slate-600 dark:border-slate-700 dark:hover:bg-slate-900" 
+      class="px-4 py-2 inline-block text-lg border-ccf-300 dark:border-slate-700 dark:hover:bg-slate-900" 
       :to="{name: 'component-definition-overview', params: {id: componentDefinition.uuid}}"
     >
       Overview
     </RouterLink>
     <RouterLink 
-      class="px-4 py-2 inline-block text-lg border-slate-600 dark:border-slate-700 dark:hover:bg-slate-900" 
+      class="px-4 py-2 inline-block text-lg border-ccf-300 dark:border-slate-700 dark:hover:bg-slate-900" 
       :to="{name: 'component-definition-import-definitions', params: {id: componentDefinition.uuid}}"
     >
       Import Definitions
     </RouterLink>
     <RouterLink 
-      class="px-4 py-2 inline-block text-lg border-slate-600 dark:border-slate-700 dark:hover:bg-slate-900" 
+      class="px-4 py-2 inline-block text-lg border-ccf-300 dark:border-slate-700 dark:hover:bg-slate-900" 
       :to="{name: 'component-definition-components', params: {id: componentDefinition.uuid}}"
     >
       Components
     </RouterLink>
     <RouterLink 
-      class="px-4 py-2 inline-block text-lg border-slate-600 dark:border-slate-700 dark:hover:bg-slate-900" 
+      class="px-4 py-2 inline-block text-lg border-ccf-300 dark:border-slate-700 dark:hover:bg-slate-900" 
       :to="{name: 'component-definition-capabilities', params: {id: componentDefinition.uuid}}"
     >
       Capabilities
     </RouterLink>
     <RouterLink 
-      class="px-4 py-2 inline-block text-lg border-slate-600 dark:border-slate-700 dark:hover:bg-slate-900" 
+      class="px-4 py-2 inline-block text-lg border-ccf-300 dark:border-slate-700 dark:hover:bg-slate-900" 
       :to="{name: 'component-definition-back-matter', params: {id: componentDefinition.uuid}}"
     >
       Back Matter
     </RouterLink>
   </div>
 
-  <div class="mt-4">
+  <div class="my-4">
     <RouterView v-slot="{ Component }">
       <KeepAlive>
         <component :is="Component" />
