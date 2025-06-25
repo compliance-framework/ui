@@ -11,7 +11,7 @@ import CatalogControl from '@/views/CatalogControl.vue'
 
 import PrimeVue from 'primevue/config';
 import ToastService from 'primevue/toastservice';
-import ComfirmationService from 'primevue/confirmationservice';
+import ConfirmationService from 'primevue/confirmationservice';
 import Tooltip from 'primevue/tooltip';
 import TooltipPt from '@/volt/Tooltip';
 
@@ -28,7 +28,7 @@ app.use(PrimeVue, {
     ...TooltipPt
   }
 });
-app.use(ComfirmationService);
+app.use(ConfirmationService);
 app.directive('tooltip', Tooltip);
 
 // This is a recursive component so should be registered globally
