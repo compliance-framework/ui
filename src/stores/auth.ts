@@ -39,7 +39,8 @@ export const useAuthStore = defineStore("auth", () => {
         body: JSON.stringify({
           email: email,
           password: password
-        })
+        }),
+        credentials: "include"
       });
       if (!response.ok) {
         return reject(response);
