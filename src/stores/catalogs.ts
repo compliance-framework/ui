@@ -58,11 +58,7 @@ export const useCatalogStore = defineStore('catalogs', () => {
 
   async function list(): Promise<DataResponse<Catalog[]>> {
     const config = await configStore.getConfig()
-    const response = await fetch(`${config.API_URL}/api/oscal/catalogs`, {
-      headers: {
-        'Authorization': `Bearer ${userStore.token}`,
-      },
-    })
+    const response = await fetch(`${config.API_URL}/api/oscal/catalogs`, {credentials: 'include'})
     if (!response.ok) {
       throw response
     }
