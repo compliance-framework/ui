@@ -13,11 +13,19 @@
       >
         <td class="py-3 px-4 whitespace-nowrap grow">{{ catalog.metadata.title }}</td>
         <td class="py-2 px-2 text-right whitespace-nowrap">
-          <RouterLink
-            class="bg-white hover:bg-zinc-100 border border-ccf-300 px-4 py-1 rounded-md dark:bg-slate-800 dark:hover:bg-slate-700 dark:border-slate-700"
-            :to="{ name: 'catalog-view', params: { id: catalog.uuid } }"
-          >View
-          </RouterLink>
+          <div class="flex gap-2">
+            <RouterLink
+              class="bg-white hover:bg-zinc-100 border border-ccf-300 px-4 py-1 rounded-md dark:bg-slate-800 dark:hover:bg-slate-700 dark:border-slate-700"
+              :to="{ name: 'catalog-view', params: { id: catalog.uuid } }"
+            >View
+            </RouterLink>
+            <button
+              class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1 rounded-md"
+              @click="downloadCatalogJSON(catalog.uuid, catalog.metadata.title)"
+              title="Download Full Catalog JSON"
+            >JSON
+            </button>
+          </div>
         </td>
       </tr>
       </tbody>
@@ -58,4 +66,36 @@ onMounted(() => {
     })
   })
 })
+
+async function downloadCatalogJSON(id: string, title: string) {
+  try {
+    const response = await catalogStore.full(id)
+    const jsonData = JSON.stringify(response.data, null, 2)
+    
+    // Create blob and download
+    const blob = new Blob([jsonData], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `${title.replace(/[^a-zA-Z0-9]/g, '_')}-catalog.json`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+    
+    toast.add({
+      severity: 'success',
+      summary: 'Catalog JSON Downloaded',
+      detail: `Catalog "${title}" JSON downloaded successfully`,
+      life: 3000
+    })
+  } catch {
+    toast.add({
+      severity: 'error',
+      summary: 'Download Failed',
+      detail: 'Failed to download catalog JSON. Full catalog export may not be available.',
+      life: 3000
+    })
+  }
+}
 </script>

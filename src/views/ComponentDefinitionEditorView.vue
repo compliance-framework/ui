@@ -37,6 +37,12 @@
     >
       Back Matter
     </RouterLink>
+    <RouterLink 
+      class="px-4 py-2 inline-block text-lg border-ccf-300 dark:border-slate-700 dark:hover:bg-slate-900" 
+      :to="{name: 'component-definition-json', params: {id: componentDefinition.uuid}}"
+    >
+      JSON
+    </RouterLink>
   </div>
 
   <div class="my-4">

@@ -187,6 +187,11 @@ const authenticatedRoutes = [
         name: 'component-definition-back-matter',
         component: () => import('../views/ComponentDefinitionBackMatterView.vue')
       },
+      {
+        path: 'json',
+        name: 'component-definition-json',
+        component: () => import('../views/ComponentDefinitionJSONView.vue')
+      },
     ]
   },
   {
