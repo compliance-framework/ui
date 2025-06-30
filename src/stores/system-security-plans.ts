@@ -42,6 +42,7 @@ export interface SystemImplementation {
   props: Property[];
   links: Link[];
   remarks?: string;
+  description?: string;
 }
 
 export interface SystemImplementationUser {

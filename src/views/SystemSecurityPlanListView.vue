@@ -2,7 +2,7 @@
   <div>
     <PageHeader>System Security Plans</PageHeader>
     
-    <div class="overflow-hidden rounded-lg border border-ccf-300 bg-white shadow dark:border-slate-700 dark:bg-slate-900">
+    <div class="my-4 overflow-hidden rounded-lg border border-ccf-300 bg-white shadow dark:border-slate-700 dark:bg-slate-900">
       <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-ccf-300 dark:divide-slate-700">
           <thead class="bg-gray-50 dark:bg-slate-800">
@@ -64,16 +64,17 @@
                   {{ formatDate(ssp.metadata.lastModified) }}
                 </td>
                 <td class="px-6 py-4 text-right text-sm font-medium">
-                  <div class="flex justify-end space-x-2">
+                  <div class="flex gap-2 justify-end">
                     <RouterLink
                       :to="`/system-security-plans/${ssp.uuid}`"
-                      class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                      class="bg-white hover:bg-zinc-100 border border-ccf-300 px-4 py-1 rounded-md dark:bg-slate-800 dark:hover:bg-slate-700 dark:border-slate-700"
                     >
                       View
                     </RouterLink>
                     <button
-                      @click="downloadJson(ssp.uuid)"
-                      class="text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300"
+                      @click="downloadJson(ssp.uuid, ssp.metadata.title)"
+                      class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1 rounded-md"
+                      title="Download Full JSON"
                     >
                       JSON
                     </button>
@@ -91,8 +92,10 @@
 import { onMounted, ref } from 'vue'
 import PageHeader from '@/components/PageHeader.vue'
 import { type SystemSecurityPlan, useSystemSecurityPlanStore } from '@/stores/system-security-plans.ts'
+import { useToast } from 'primevue/usetoast'
 
 const sspStore = useSystemSecurityPlanStore()
+const toast = useToast()
 
 const systemSecurityPlans = ref<SystemSecurityPlan[]>([])
 const loading = ref(true)
@@ -115,7 +118,7 @@ function formatDate(dateString?: string): string {
   return new Date(dateString).toLocaleDateString()
 }
 
-async function downloadJson(uuid: string): Promise<void> {
+async function downloadJson(uuid: string, title: string): Promise<void> {
   try {
     const response = await sspStore.full(uuid)
     const dataStr = JSON.stringify(response.data, null, 2)
@@ -124,13 +127,26 @@ async function downloadJson(uuid: string): Promise<void> {
     const url = URL.createObjectURL(dataBlob)
     const link = document.createElement('a')
     link.href = url
-    link.download = `ssp-${uuid}.json`
+    link.download = `${title.replace(/[^a-zA-Z0-9]/g, '_')}-ssp.json`
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
     URL.revokeObjectURL(url)
+    
+    toast.add({
+      severity: 'success',
+      summary: 'SSP JSON Downloaded',
+      detail: `System Security Plan "${title}" JSON downloaded successfully`,
+      life: 3000
+    })
   } catch (err) {
     console.error('Error downloading JSON:', err)
+    toast.add({
+      severity: 'error',
+      summary: 'Download Failed',
+      detail: 'Failed to download SSP JSON. Full SSP export may not be available.',
+      life: 3000
+    })
   }
 }
 </script>

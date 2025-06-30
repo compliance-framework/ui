@@ -1,6 +1,9 @@
 export interface Metadata {
   title: string;
   remarks?: string;
+  version?: string;
+  lastModified?: string;
+  published?: string;
 }
 
 export type FindingStatusState = 'satisfied' | 'not satisfied' | string;
