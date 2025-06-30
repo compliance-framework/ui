@@ -266,6 +266,41 @@ const authenticatedRoutes = [
     }
   },
   {
+    path: '/system-security-plans/:id',
+    name: 'system-security-plan-editor',
+    component: () => import('../views/SystemSecurityPlanEditorView.vue'),
+    meta: {
+      requiresAuth: true,
+    },
+    children: [
+      {
+        path: '',
+        name: 'system-security-plan-overview',
+        component: () => import('../views/SystemSecurityPlanOverviewView.vue')
+      },
+      {
+        path: 'system-characteristics',
+        name: 'system-security-plan-characteristics',
+        component: () => import('../views/SystemSecurityPlanCharacteristicsView.vue')
+      },
+      {
+        path: 'system-implementation',
+        name: 'system-security-plan-system-implementation',
+        component: () => import('../views/SystemSecurityPlanSystemImplementationView.vue')
+      },
+      {
+        path: 'control-implementation',
+        name: 'system-security-plan-control-implementation',
+        component: () => import('../views/SystemSecurityPlanControlImplementationView.vue')
+      },
+      {
+        path: 'json',
+        name: 'system-security-plan-json',
+        component: () => import('../views/SystemSecurityPlanJSONView.vue')
+      },
+    ]
+  },
+  {
     path: '/system-security-plans/:id/editor',
     name: 'system-security-plans-editor',
     // route level code-splitting

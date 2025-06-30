@@ -338,9 +338,88 @@ export const useSystemSecurityPlanStore = defineStore(
       }) as DataResponse<SystemComponent[]>;
     }
 
+    async function getSystemImplementationInventoryItems(
+      id: string,
+    ): Promise<DataResponse<any[]>> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/system-security-plans/${id}/system-implementation/inventory-items`,
+        {
+          headers: {
+            'Authorization': `Bearer ${userStore.token}`
+          }
+        }
+      );
+      if (!response.ok) {
+        throw response;
+      }
+      return camelcaseKeys(await response.json(), {
+        deep: true,
+      }) as DataResponse<any[]>;
+    }
+
+    async function getSystemImplementationLeveragedAuthorizations(
+      id: string,
+    ): Promise<DataResponse<any[]>> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/system-security-plans/${id}/system-implementation/leveraged-authorizations`,
+        {
+          headers: {
+            'Authorization': `Bearer ${userStore.token}`
+          }
+        }
+      );
+      if (!response.ok) {
+        throw response;
+      }
+      return camelcaseKeys(await response.json(), {
+        deep: true,
+      }) as DataResponse<any[]>;
+    }
+
+    async function getControlImplementation(
+      id: string,
+    ): Promise<DataResponse<any>> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/system-security-plans/${id}/control-implementation`,
+        {
+          headers: {
+            'Authorization': `Bearer ${userStore.token}`
+          }
+        }
+      );
+      if (!response.ok) {
+        throw response;
+      }
+      return camelcaseKeys(await response.json(), {
+        deep: true,
+      }) as DataResponse<any>;
+    }
+
+    async function full(id: string): Promise<DataResponse<SystemSecurityPlan>> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/system-security-plans/${id}/full`,
+        {
+          headers: {
+            'Authorization': `Bearer ${userStore.token}`
+          }
+        }
+      );
+      if (!response.ok) {
+        throw response;
+      }
+      return camelcaseKeys(await response.json(), {
+        deep: true,
+      }) as DataResponse<SystemSecurityPlan>;
+    }
+
     return {
       get,
       list,
+      full,
 
       getCharacteristics,
       getCharacteristicsAuthorizationBoundary,
@@ -354,6 +433,10 @@ export const useSystemSecurityPlanStore = defineStore(
       getSystemImplementation,
       getSystemImplementationUsers,
       getSystemImplementationComponents,
+      getSystemImplementationInventoryItems,
+      getSystemImplementationLeveragedAuthorizations,
+
+      getControlImplementation,
     };
   },
 );
