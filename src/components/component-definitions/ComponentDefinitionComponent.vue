@@ -16,6 +16,13 @@
           >
             Edit
           </TertiaryButton>
+          <TertiaryButton
+            class="bg-green-100 hover:bg-green-200 dark:bg-green-900 dark:hover:bg-green-800 text-green-800 dark:text-green-200"
+            @click.stop="downloadComponentJSON"
+            title="Download Component JSON"
+          >
+            JSON
+          </TertiaryButton>
         </div>
       </div>
     </template>
@@ -129,5 +136,37 @@ const emit = defineEmits<{
 
 function editComponent() {
   emit('edit', props.component)
+}
+
+async function downloadComponentJSON() {
+  try {
+    const response = await componentDefinitionStore.getDefinedComponent(props.componentDefinitionId, props.component.uuid)
+    const jsonData = JSON.stringify(response.data, null, 2)
+    
+    // Create blob and download
+    const blob = new Blob([jsonData], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `${props.component.title?.replace(/[^a-zA-Z0-9]/g, '_') || 'component'}-component.json`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+    
+    toast.add({
+      severity: 'success',
+      summary: 'Component JSON Downloaded',
+      detail: `Component "${props.component.title}" JSON downloaded successfully`,
+      life: 3000
+    })
+  } catch (error) {
+    toast.add({
+      severity: 'error',
+      summary: 'Download Failed',
+      detail: 'Failed to download component JSON',
+      life: 3000
+    })
+  }
 }
 </script>
