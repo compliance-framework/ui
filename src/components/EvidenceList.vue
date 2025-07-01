@@ -3,28 +3,28 @@
     <tbody>
     <tr
       class="hover:bg-zinc-50 dark:hover:bg-slate-800 border-b border-ccf-300 dark:border-slate-800"
-      v-for="finding in findings"
-      :key="finding.uuid"
+      v-for="item in evidence"
+      :key="item.uuid"
     >
       <td class="py-2 pl-4 pr-2 w-[1%]">
         <ResultStatusRing
           class="p-0 m-0 whitespace-normal"
-          :state="finding.status.state?.toLowerCase()"
+          :state="item.status.state?.toLowerCase()"
         ></ResultStatusRing>
       </td>
-      <td class="py-3 px-2 whitespace-nowrap grow">{{ finding.title }}</td>
+      <td class="py-3 px-2 whitespace-nowrap grow">{{ item.title }}</td>
       <td class="px-2" v-if="configStore.showLabels">
-        <LabelList :labels="finding.labels" />
+        <LabelList :labels="item.labels" />
       </td>
       <td class="py-2 px-2 text-right whitespace-nowrap">
         <RouterLink
           class="mr-2 bg-white hover:bg-zinc-100 border px-4 py-1 rounded-md dark:bg-slate-800 dark:hover:bg-slate-700 border-ccf-300 dark:border-slate-700"
-          :to="{ name: 'finding-history', params: { uuid: finding.uuid } }"
+          :to="{ name: 'finding-history', params: { uuid: item.uuid } }"
         >History
         </RouterLink>
         <RouterLink
           class="bg-white hover:bg-zinc-100 border px-4 py-1 rounded-md dark:bg-slate-800 dark:hover:bg-slate-700 border-ccf-300 dark:border-slate-700"
-          :to="{ name: 'finding-view', params: { id: finding._id } }"
+          :to="{ name: 'finding-view', params: { id: item.id } }"
         >View
         </RouterLink>
       </td>
@@ -37,6 +37,6 @@ import LabelList from '@/components/LabelList.vue'
 import ResultStatusRing from '@/components/ResultStatusRing.vue'
 import { useConfigStore } from '@/stores/config.ts'
 
-defineProps(['findings'])
+defineProps(['evidence'])
 const configStore = useConfigStore();
 </script>

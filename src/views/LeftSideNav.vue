@@ -26,8 +26,8 @@ const userStore = useUserStore()
         <SideNavLink class="pl-6" :to="{ name: 'system-security-plans' }">System Security Plans</SideNavLink>
         <SideNavLink class="pl-6" :to="{ name: 'admin-parties' }">Parties</SideNavLink>
         <SideNavLink class="pl-6" :to="{ name: 'admin-roles' }">Roles</SideNavLink>
-        <SideNavCategory title="Findings (Evidence)">
-          <SideNavLink :to="{ name: 'findings' }">All</SideNavLink>
+        <SideNavCategory title="Evidence">
+          <SideNavLink :to="{ name: 'evidence:index' }">All</SideNavLink>
           <SideNavLink :to="{ name: 'findings-by-subject' }">By Subject</SideNavLink>
           <SideNavLink :to="{ name: 'list-classes-of-findings' }">By Control Class</SideNavLink>
         </SideNavCategory>

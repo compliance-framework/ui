@@ -1,6 +1,6 @@
 <template>
-  <PageHeader>Findings</PageHeader>
-  <PageSubHeader>Search for findings using labels</PageSubHeader>
+  <PageHeader>Evidence</PageHeader>
+  <PageSubHeader>Search for evidence using labels</PageSubHeader>
   <div class="grid grid-cols-2 gap-4 mt-4">
     <PageCard>
       <h3 class="text-lg font-semibold text-zinc-600 dark:text-slate-300">
@@ -65,7 +65,7 @@
   <div
     class="mt-4 rounded-md bg-white dark:bg-slate-900 border-collapse border border-ccf-300 dark:border-slate-700"
   >
-    <FindingsList :findings="findings" />
+    <EvidenceList :evidence="evidence" />
   </div>
   <!--    <div class="max-w-full">-->
   <!--      <div-->
@@ -116,16 +116,16 @@ import {
 } from '@/parsers/findings.ts';
 import ResultComplianceOverTimeChart from '@/components/ResultComplianceOverTimeChart.vue';
 import ResultStatusRing from '@/components/ResultStatusRing.vue';
-import { type Finding, useFindingsStore } from '@/stores/findings.ts';
 import { useHeartbeatsStore } from '@/stores/heartbeats.ts';
 import { calculateHeartbeatOverTimeData } from '@/parsers/heartbeats.ts';
 import { useConfigStore } from '@/stores/config.ts';
 import PrimaryButton from '@/components/PrimaryButton.vue';
 import SecondaryButton from '@/components/SecondaryButton.vue';
-import FindingsList from '@/views/FindingsList.vue'
 import InfoCircleIcon from '@primevue/icons/infocircle'
+import { type Evidence, useEvidenceStore } from '@/stores/evidence.ts'
+import EvidenceList from '@/components/EvidenceList.vue'
 
-const findingsStore = useFindingsStore();
+const evidenceStore = useEvidenceStore();
 const heartbeatStore = useHeartbeatsStore();
 const configStore = useConfigStore();
 const route = useRoute();
@@ -135,7 +135,7 @@ const filter = ref<string>('');
 if (route.query.filter) {
   filter.value = route.query.filter as string;
 }
-const findings = ref<Finding[]>([]);
+const evidence = ref<Evidence[]>([]);
 const complianceChartData = ref<ChartData<'line', DateDataPoint[]>>({
   labels: [],
   datasets: [],
@@ -148,11 +148,11 @@ const heartbeatChartData = ref<ChartData<'line', DateDataPoint[]>>({
 async function search() {
   const query = new FilterParser(filter.value).parse();
   await router.push({ query: { filter: filter.value } });
-  findingsStore.search(query).then((response) => {
-    findings.value = response.data.sort(function (a, b) {
+  evidenceStore.search(query).then((response) => {
+    evidence.value = response.data.sort(function (a, b) {
       // Order results by their title for better UI consistency
-      const x = new Date(a.collected);
-      const y = new Date(b.collected);
+      const x = new Date(a.end);
+      const y = new Date(b.end);
 
       if (x > y) {
         return 1;
@@ -165,9 +165,9 @@ async function search() {
     // results.value = response.data
   });
 
-  findingsStore.getComplianceForSearch(query).then((response) => {
-    complianceChartData.value = calculateComplianceOverTimeData(response.data);
-  });
+  // findingsStore.getComplianceForSearch(query).then((response) => {
+  //   complianceChartData.value = calculateComplianceOverTimeData(response.data);
+  // });
   heartbeatStore.overTime().then((response) => {
     heartbeatChartData.value = calculateHeartbeatOverTimeData(response.data);
   });

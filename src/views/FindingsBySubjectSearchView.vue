@@ -135,7 +135,7 @@ import { useConfigStore } from '@/stores/config.ts'
 import PrimaryButton from '@/components/PrimaryButton.vue'
 import SecondaryButton from '@/components/SecondaryButton.vue'
 import PageSubHeader from '@/components/PageSubHeader.vue'
-import FindingsList from '@/views/FindingsList.vue'
+import FindingsList from '@/components/FindingsList.vue'
 
 const subjectStore = useSubjectsStore()
 const findingsStore = useFindingsStore()
