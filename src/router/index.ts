@@ -93,17 +93,6 @@ const authenticatedRoutes = [
     }
   },
   {
-    path: '/findings/history/:uuid',
-    name: 'finding-history',
-    // route level code-splitting
-    // this generates a separate chunk (About.[hash].js) for this route
-    // which is lazy-loaded when the route is visited.
-    component: () => import('../views/FindingsHistoryView.vue'),
-    meta: {
-      requiresAuth: true,
-    }
-  },
-  {
     path: '/subjects',
     name: 'admin-subjects',
     component: () => import('../views/SubjectsView.vue'),
@@ -217,6 +206,17 @@ const authenticatedRoutes = [
     // this generates a separate chunk (About.[hash].js) for this route
     // which is lazy-loaded when the route is visited.
     component: () => import('../views/evidence/ViewView.vue'),
+    meta: {
+      requiresAuth: true,
+    }
+  },
+  {
+    path: '/evidence/history/:uuid',
+    name: 'evidence:history',
+    // route level code-splitting
+    // this generates a separate chunk (About.[hash].js) for this route
+    // which is lazy-loaded when the route is visited.
+    component: () => import('../views/evidence/HistoryView.vue'),
     meta: {
       requiresAuth: true,
     }

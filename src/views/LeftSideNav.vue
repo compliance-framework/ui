@@ -28,8 +28,8 @@ const userStore = useUserStore()
         <SideNavLink class="pl-6" :to="{ name: 'admin-roles' }">Roles</SideNavLink>
         <SideNavCategory title="Evidence">
           <SideNavLink :to="{ name: 'evidence:index' }">All</SideNavLink>
-          <SideNavLink :to="{ name: 'findings-by-subject' }">By Subject</SideNavLink>
-          <SideNavLink :to="{ name: 'list-classes-of-findings' }">By Control Class</SideNavLink>
+<!--          <SideNavLink :to="{ name: 'findings-by-subject' }">By Subject</SideNavLink>-->
+<!--          <SideNavLink :to="{ name: 'list-classes-of-findings' }">By Control Class</SideNavLink>-->
         </SideNavCategory>
         <SideNavCategory title="Admin">
           <SideNavLink :to="{ name: 'admin-subjects' }">Subjects</SideNavLink>

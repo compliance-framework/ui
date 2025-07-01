@@ -80,17 +80,6 @@ export const useEvidenceStore = defineStore('evidence', () => {
     return (await response.json()) as DataResponse<Evidence[]>;
   }
 
-  // async function searchForControlID(_class: string, id: string): Promise<DataResponse<Finding[]>> {
-  //   const config = await configStore.getConfig();
-  //   const response = await fetch(`${config.API_URL}/api/findings/by-control/${_class}/${id}`);
-  //
-  //   if (!response.ok) {
-  //     throw new Error(`Error: ${response.statusText}`);
-  //   }
-  //
-  //   return (await response.json()) as DataResponse<Finding[]>;
-  // }
-  //
   // async function searchBySubject(
   //   filter: Filter,
   // ): Promise<DataResponse<FindingBySubject[]>> {
@@ -136,24 +125,24 @@ export const useEvidenceStore = defineStore('evidence', () => {
   //   return (await response.json()) as DataResponse<FindingsByClassName[]>;
   // }
   //
-  // async function history(uuid: string): Promise<DataResponse<Finding[]>> {
-  //   const config = await configStore.getConfig();
-  //   const response = await fetch(
-  //     `${config.API_URL}/api/findings/history/${uuid}`,
-  //     {
-  //       method: 'GET',
-  //       headers: {
-  //         'Content-Type': 'application/json',
-  //       },
-  //     },
-  //   );
-  //
-  //   if (!response.ok) {
-  //     throw new Error(`Error: ${response.statusText}`);
-  //   }
-  //
-  //   return (await response.json()) as DataResponse<Finding[]>;
-  // }
+  async function history(uuid: string): Promise<DataResponse<Evidence[]>> {
+    const config = await configStore.getConfig();
+    const response = await fetch(
+      `${config.API_URL}/api/evidence/history/${uuid}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      },
+    );
+
+    if (!response.ok) {
+      throw new Error(`Error: ${response.statusText}`);
+    }
+
+    return (await response.json()) as DataResponse<Evidence[]>;
+  }
   //
   // async function getComplianceForSearch(
   //   filter: Filter,
@@ -243,7 +232,7 @@ export const useEvidenceStore = defineStore('evidence', () => {
     get: get,
     search: search,
     // searchBySubject,
-    // history: history,
+    history: history,
     // getComplianceForSearch,
     // getComplianceForUUID,
     // getByControlClass,
