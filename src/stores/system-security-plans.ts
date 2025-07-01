@@ -1,12 +1,12 @@
 import { defineStore } from 'pinia';
-import { useConfigStore } from '@/stores/config.ts';
+import { useConfigStore } from '@/stores/config';
 import type {
   DataResponse,
   Link,
   Metadata,
   Property,
   Protocol,
-} from '@/stores/types.ts';
+} from '@/stores/types';
 import camelcaseKeys from 'camelcase-keys';
 import decamelizeKeys from 'decamelize-keys';
 import { useUserStore } from '@/stores/auth';
@@ -69,6 +69,12 @@ export interface SystemComponentStatus {
   state: string;
 }
 
+export interface PortRange {
+  transport: string;
+  start?: number;
+  end?: number;
+}
+
 export interface SystemComponent {
   uuid: string;
   type: string;
@@ -80,6 +86,118 @@ export interface SystemComponent {
   remarks: string;
   props: Property[];
   links: Link[];
+}
+
+export interface ResponsibleRole {
+  roleId: string;
+  props: Property[];
+  links: Link[];
+  partyUuids?: string[];
+  remarks?: string;
+}
+
+export interface SetParameter {
+  paramId: string;
+  values: string[];
+  props: Property[];
+  links: Link[];
+  remarks?: string;
+}
+
+export interface ImplementationStatus {
+  state: string;
+  remarks?: string;
+}
+
+export interface ProvidedControlImplementation {
+  uuid: string;
+  description: string;
+  props: Property[];
+  links: Link[];
+  remarks?: string;
+}
+
+export interface ControlImplementationResponsibility {
+  uuid: string;
+  providedUuid?: string;
+  description: string;
+  props: Property[];
+  links: Link[];
+  remarks?: string;
+}
+
+export interface Export {
+  uuid: string;
+  description: string;
+  props: Property[];
+  links: Link[];
+  remarks?: string;
+  provided?: ProvidedControlImplementation[];
+  responsibilities?: ControlImplementationResponsibility[];
+}
+
+export interface InheritedControlImplementation {
+  uuid: string;
+  providedUuid: string;
+  description: string;
+  props: Property[];
+  links: Link[];
+  remarks?: string;
+}
+
+export interface SatisfiedControlImplementationResponsibility {
+  uuid: string;
+  responsibilityUuid: string;
+  description: string;
+  props: Property[];
+  links: Link[];
+  remarks?: string;
+}
+
+export interface ByComponent {
+  uuid: string;
+  componentUuid: string;
+  description: string;
+  props: Property[];
+  links: Link[];
+  setParameters?: SetParameter[];
+  responsibleRoles?: ResponsibleRole[];
+  remarks?: string;
+  implementationStatus?: ImplementationStatus;
+  export?: Export;
+  inherited?: InheritedControlImplementation[];
+  satisfied?: SatisfiedControlImplementationResponsibility[];
+}
+
+export interface Statement {
+  uuid: string;
+  statementId: string;
+  description?: string;
+  props: Property[];
+  links: Link[];
+  responsibleRoles?: ResponsibleRole[];
+  byComponents?: ByComponent[];
+  remarks?: string;
+}
+
+export interface ImplementedRequirement {
+  uuid: string;
+  controlId: string;
+  props: Property[];
+  links: Link[];
+  setParameters?: SetParameter[];
+  responsibleRoles?: ResponsibleRole[];
+  remarks?: string;
+  byComponents?: ByComponent[];
+  statements?: Statement[];
+}
+
+export interface ControlImplementation {
+  uuid: string;
+  source?: string;
+  description: string;
+  setParameters?: SetParameter[];
+  implementedRequirements: ImplementedRequirement[];
 }
 
 export interface SystemSecurityPlan {
@@ -379,6 +497,89 @@ export const useSystemSecurityPlanStore = defineStore(
       }) as DataResponse<any[]>;
     }
 
+    async function updateSystemImplementationInventoryItem(
+      id: string,
+      itemId: string,
+      item: any,
+    ): Promise<DataResponse<any>> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/system-security-plans/${id}/system-implementation/inventory-items/${itemId}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${userStore.token}`
+          },
+          body: JSON.stringify(decamelizeKeys(item, { separator: '-' })),
+        }
+      );
+      if (!response.ok) {
+        throw response;
+      }
+      return camelcaseKeys(await response.json(), { deep: true }) as DataResponse<any>;
+    }
+
+    async function createSystemImplementationInventoryItem(
+      id: string,
+      item: any,
+    ): Promise<DataResponse<any>> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/system-security-plans/${id}/system-implementation/inventory-items`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${userStore.token}`
+          },
+          body: JSON.stringify(decamelizeKeys(item, { separator: '-' })),
+        }
+      );
+      if (!response.ok) {
+        throw response;
+      }
+      return camelcaseKeys(await response.json(), { deep: true }) as DataResponse<any>;
+    }
+
+    async function deleteSystemImplementationUser(
+      id: string,
+      userId: string,
+    ): Promise<void> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/system-security-plans/${id}/system-implementation/users/${userId}`,
+        {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${userStore.token}`
+          }
+        }
+      );
+      if (!response.ok) {
+        throw response;
+      }
+    }
+
+    async function deleteSystemImplementationComponent(
+      id: string,
+      componentId: string,
+    ): Promise<void> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/system-security-plans/${id}/system-implementation/components/${componentId}`,
+        {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${userStore.token}`
+          }
+        }
+      );
+      if (!response.ok) {
+        throw response;
+      }
+    }
+
     async function getControlImplementation(
       id: string,
     ): Promise<DataResponse<any>> {
@@ -399,6 +600,96 @@ export const useSystemSecurityPlanStore = defineStore(
       }) as DataResponse<any>;
     }
 
+    async function updateSystemImplementationUser(
+      id: string,
+      userId: string,
+      user: SystemImplementationUser,
+    ): Promise<DataResponse<SystemImplementationUser>> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/system-security-plans/${id}/system-implementation/users/${userId}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${userStore.token}`
+          },
+          body: JSON.stringify(decamelizeKeys(user, { separator: '-' })),
+        }
+      );
+      if (!response.ok) {
+        throw response;
+      }
+      return camelcaseKeys(await response.json(), { deep: true }) as DataResponse<SystemImplementationUser>;
+    }
+
+    async function createSystemImplementationUser(
+      id: string,
+      user: Partial<SystemImplementationUser>,
+    ): Promise<DataResponse<SystemImplementationUser>> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/system-security-plans/${id}/system-implementation/users`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${userStore.token}`
+          },
+          body: JSON.stringify(decamelizeKeys(user, { separator: '-' })),
+        }
+      );
+      if (!response.ok) {
+        throw response;
+      }
+      return camelcaseKeys(await response.json(), { deep: true }) as DataResponse<SystemImplementationUser>;
+    }
+
+    async function updateSystemImplementationComponent(
+      id: string,
+      componentId: string,
+      component: SystemComponent,
+    ): Promise<DataResponse<SystemComponent>> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/system-security-plans/${id}/system-implementation/components/${componentId}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${userStore.token}`
+          },
+          body: JSON.stringify(decamelizeKeys(component, { separator: '-' })),
+        }
+      );
+      if (!response.ok) {
+        throw response;
+      }
+      return camelcaseKeys(await response.json(), { deep: true }) as DataResponse<SystemComponent>;
+    }
+
+    async function createSystemImplementationComponent(
+      id: string,
+      component: Partial<SystemComponent>,
+    ): Promise<DataResponse<SystemComponent>> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/system-security-plans/${id}/system-implementation/components`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${userStore.token}`
+          },
+          body: JSON.stringify(decamelizeKeys(component, { separator: '-' })),
+        }
+      );
+      if (!response.ok) {
+        throw response;
+      }
+      return camelcaseKeys(await response.json(), { deep: true }) as DataResponse<SystemComponent>;
+    }
+
     async function full(id: string): Promise<DataResponse<SystemSecurityPlan>> {
       const config = await configStore.getConfig();
       const response = await fetch(
@@ -417,10 +708,134 @@ export const useSystemSecurityPlanStore = defineStore(
       }) as DataResponse<SystemSecurityPlan>;
     }
 
+    async function create(ssp: Partial<SystemSecurityPlan>): Promise<DataResponse<SystemSecurityPlan>> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/system-security-plans`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${userStore.token}`
+          },
+          body: JSON.stringify(decamelizeKeys(ssp, { separator: '-' })),
+        }
+      );
+      if (!response.ok) {
+        throw response;
+      }
+      return camelcaseKeys(await response.json(), { deep: true }) as DataResponse<SystemSecurityPlan>;
+    }
+
+    async function updateControlImplementation(
+      id: string,
+      controlImplementation: ControlImplementation,
+    ): Promise<DataResponse<ControlImplementation>> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/system-security-plans/${id}/control-implementation`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${userStore.token}`
+          },
+          body: JSON.stringify(decamelizeKeys(controlImplementation, { separator: '-' })),
+        }
+      );
+      if (!response.ok) {
+        throw response;
+      }
+      return camelcaseKeys(await response.json(), { deep: true }) as DataResponse<ControlImplementation>;
+    }
+
+    async function getImplementedRequirements(
+      id: string,
+    ): Promise<DataResponse<ImplementedRequirement[]>> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/system-security-plans/${id}/control-implementation/implemented-requirements`,
+        {
+          headers: {
+            'Authorization': `Bearer ${userStore.token}`
+          }
+        }
+      );
+      if (!response.ok) {
+        throw response;
+      }
+      return camelcaseKeys(await response.json(), { deep: true }) as DataResponse<ImplementedRequirement[]>;
+    }
+
+    async function createImplementedRequirement(
+      id: string,
+      requirement: Partial<ImplementedRequirement>,
+    ): Promise<DataResponse<ImplementedRequirement>> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/system-security-plans/${id}/control-implementation/implemented-requirements`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${userStore.token}`
+          },
+          body: JSON.stringify(decamelizeKeys(requirement, { separator: '-' })),
+        }
+      );
+      if (!response.ok) {
+        throw response;
+      }
+      return camelcaseKeys(await response.json(), { deep: true }) as DataResponse<ImplementedRequirement>;
+    }
+
+    async function updateImplementedRequirement(
+      id: string,
+      reqId: string,
+      requirement: ImplementedRequirement,
+    ): Promise<DataResponse<ImplementedRequirement>> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/system-security-plans/${id}/control-implementation/implemented-requirements/${reqId}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${userStore.token}`
+          },
+          body: JSON.stringify(decamelizeKeys(requirement, { separator: '-' })),
+        }
+      );
+      if (!response.ok) {
+        throw response;
+      }
+      return camelcaseKeys(await response.json(), { deep: true }) as DataResponse<ImplementedRequirement>;
+    }
+
+    async function deleteImplementedRequirement(
+      id: string,
+      reqId: string,
+    ): Promise<void> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/system-security-plans/${id}/control-implementation/implemented-requirements/${reqId}`,
+        {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${userStore.token}`
+          }
+        }
+      );
+      if (!response.ok) {
+        throw response;
+      }
+    }
+
     return {
       get,
       list,
       full,
+      create,
 
       getCharacteristics,
       getCharacteristicsAuthorizationBoundary,
@@ -436,8 +851,21 @@ export const useSystemSecurityPlanStore = defineStore(
       getSystemImplementationComponents,
       getSystemImplementationInventoryItems,
       getSystemImplementationLeveragedAuthorizations,
+      updateSystemImplementationUser,
+      createSystemImplementationUser,
+      deleteSystemImplementationUser,
+      updateSystemImplementationComponent,
+      createSystemImplementationComponent,
+      deleteSystemImplementationComponent,
+      updateSystemImplementationInventoryItem,
+      createSystemImplementationInventoryItem,
 
       getControlImplementation,
+      updateControlImplementation,
+      getImplementedRequirements,
+      createImplementedRequirement,
+      updateImplementedRequirement,
+      deleteImplementedRequirement,
     };
   },
 );

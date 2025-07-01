@@ -286,7 +286,7 @@ const authenticatedRoutes = [
       {
         path: 'system-implementation',
         name: 'system-security-plan-system-implementation',
-        component: () => import('../views/SystemSecurityPlanSystemImplementationView.vue')
+        component: () => import('../views/SystemSecurityPlanSystemImplementationEditorView.vue')
       },
       {
         path: 'control-implementation',

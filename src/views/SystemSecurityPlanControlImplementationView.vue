@@ -5,9 +5,8 @@
       <div class="flex justify-between items-center mb-4">
         <h3 class="text-lg font-semibold text-gray-900 dark:text-slate-300">Control Implementation</h3>
         <button
-          @click="() => {}"
+          @click="editControlImplementation"
           class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
-          disabled
         >
           Edit
         </button>
@@ -55,22 +54,21 @@
     </div>
 
     <!-- Implemented Requirements -->
-    <div v-if="controlImplementation?.implementedRequirements?.length" class="bg-white dark:bg-slate-900 border border-ccf-300 dark:border-slate-700 rounded-lg p-6">
+    <div v-if="controlImplementation" class="bg-white dark:bg-slate-900 border border-ccf-300 dark:border-slate-700 rounded-lg p-6">
       <div class="flex justify-between items-center mb-4">
         <h3 class="text-lg font-semibold text-gray-900 dark:text-slate-300">
           Implemented Requirements 
-          <span class="text-sm font-normal text-gray-500 dark:text-slate-400">({{ controlImplementation.implementedRequirements.length }})</span>
+          <span class="text-sm font-normal text-gray-500 dark:text-slate-400">({{ controlImplementation.implementedRequirements?.length || 0 }})</span>
         </h3>
         <button
-          @click="() => {}"
+          @click="addRequirement"
           class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
-          disabled
         >
           Add Requirement
         </button>
       </div>
 
-      <div class="space-y-6">
+      <div v-if="controlImplementation.implementedRequirements?.length" class="space-y-6">
         <div 
           v-for="requirement in controlImplementation.implementedRequirements" 
           :key="requirement.uuid"
@@ -79,15 +77,22 @@
           <div class="flex justify-between items-start mb-3">
             <div>
               <h4 class="font-medium text-gray-900 dark:text-slate-300">{{ requirement.controlId }}</h4>
-              <p class="text-sm text-gray-600 dark:text-slate-400 mt-1">{{ requirement.description }}</p>
+              <p class="text-sm text-gray-600 dark:text-slate-400 mt-1">{{ requirement.remarks }}</p>
             </div>
-            <button
-              @click="() => {}"
-              class="text-blue-600 hover:text-blue-800 dark:text-blue-400 disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled
-            >
-              Edit
-            </button>
+            <div class="flex gap-2">
+              <button
+                @click="editRequirement(requirement)"
+                class="text-blue-600 hover:text-blue-800 dark:text-blue-400 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Edit
+              </button>
+              <button
+                @click="deleteRequirement(requirement)"
+                class="text-red-600 hover:text-red-800 dark:text-red-400 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Delete
+              </button>
+            </div>
           </div>
 
           <!-- Statements -->
@@ -104,9 +109,8 @@
                 <div class="flex justify-between items-start mb-2">
                   <span class="text-sm font-medium text-gray-900 dark:text-slate-300">{{ statement.statementId }}</span>
                   <button
-                    @click="() => {}"
+                    @click="editStatement(requirement, statement)"
                     class="text-blue-600 hover:text-blue-800 dark:text-blue-400 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
-                    disabled
                   >
                     Edit
                   </button>
@@ -125,9 +129,8 @@
                       <div class="flex justify-between items-start">
                         <span class="font-medium">{{ byComponent.componentUuid }}</span>
                         <button
-                          @click="() => {}"
+                          @click="editByComponent(statement, byComponent)"
                           class="text-blue-600 hover:text-blue-800 dark:text-blue-400 disabled:opacity-50 disabled:cursor-not-allowed"
-                          disabled
                         >
                           Edit
                         </button>
@@ -194,9 +197,8 @@
                 <div class="flex justify-between items-start mb-2">
                   <span class="text-sm font-medium text-gray-900 dark:text-slate-300">{{ byComponent.componentUuid }}</span>
                   <button
-                    @click="() => {}"
+                    @click="editRequirementByComponent(requirement, byComponent)"
                     class="text-blue-600 hover:text-blue-800 dark:text-blue-400 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
-                    disabled
                   >
                     Edit
                   </button>
@@ -207,21 +209,61 @@
           </div>
         </div>
       </div>
+
+      <div v-else class="text-center py-8">
+        <p class="text-gray-500 dark:text-slate-400">No implemented requirements yet. Click "Add Requirement" to get started.</p>
+      </div>
     </div>
   </div>
+
+  <!-- Requirement Create Modal -->
+  <Modal :show="showCreateRequirementModal" @close="showCreateRequirementModal = false" size="lg">
+    <ImplementedRequirementCreateForm 
+      :ssp-id="route.params.id as string"
+      @cancel="showCreateRequirementModal = false"
+      @created="handleRequirementCreated"
+    />
+  </Modal>
+
+  <!-- Requirement Edit Modal -->
+  <Modal :show="showEditRequirementModal && editingRequirement !== null" @close="showEditRequirementModal = false" size="lg">
+    <ImplementedRequirementEditForm 
+      v-if="editingRequirement"
+      :ssp-id="route.params.id as string"
+      :requirement="editingRequirement"
+      @cancel="showEditRequirementModal = false"
+      @saved="handleRequirementSaved"
+    />
+  </Modal>
 </template>
 
 <script setup lang="ts">
 import { onMounted, ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { useSystemSecurityPlanStore } from '@/stores/system-security-plans.ts'
+import { useToast } from 'primevue/usetoast'
+import { 
+  type ControlImplementation,
+  type ImplementedRequirement,
+  useSystemSecurityPlanStore 
+} from '@/stores/system-security-plans.ts'
+import Modal from '@/components/Modal.vue'
+import ImplementedRequirementCreateForm from '@/components/system-security-plans/ImplementedRequirementCreateForm.vue'
+import ImplementedRequirementEditForm from '@/components/system-security-plans/ImplementedRequirementEditForm.vue'
 
 const route = useRoute()
 const sspStore = useSystemSecurityPlanStore()
+const toast = useToast()
 
-const controlImplementation = ref<any>(null)
+const controlImplementation = ref<ControlImplementation | null>(null)
 const loading = ref(true)
 const error = ref<string | null>(null)
+
+// Modal states
+const showCreateRequirementModal = ref(false)
+const showEditRequirementModal = ref(false)
+
+// Edit targets
+const editingRequirement = ref<ImplementedRequirement | null>(null)
 
 const totalStatements = computed(() => {
   if (!controlImplementation.value?.implementedRequirements) return 0
@@ -246,10 +288,13 @@ const totalByComponents = computed(() => {
 
 onMounted(async () => {
   const id = route.params.id as string
+  console.log('Loading control implementation for SSP ID:', id)
   
   try {
     const response = await sspStore.getControlImplementation(id)
+    console.log('Control implementation response:', response)
     controlImplementation.value = response.data
+    console.log('Control implementation loaded:', controlImplementation.value)
   } catch (err) {
     console.error('Error loading control implementation:', err)
     error.value = err instanceof Error ? err.message : 'Unknown error'
@@ -257,4 +302,87 @@ onMounted(async () => {
     loading.value = false
   }
 })
+
+// Control Implementation management
+const editControlImplementation = () => {
+  console.log('Edit Control Implementation - functionality coming soon')
+  alert('Control Implementation editing functionality is in development')
+}
+
+// Requirement management
+const addRequirement = () => {
+  console.log('Add requirement clicked')
+  showCreateRequirementModal.value = true
+  console.log('Modal state:', showCreateRequirementModal.value)
+}
+
+const editRequirement = (requirement: ImplementedRequirement) => {
+  console.log('Edit requirement clicked:', requirement)
+  editingRequirement.value = requirement
+  showEditRequirementModal.value = true
+  console.log('Edit modal state:', showEditRequirementModal.value)
+}
+
+const deleteRequirement = async (requirement: ImplementedRequirement) => {
+  console.log('Delete requirement clicked:', requirement)
+  if (!confirm(`Are you sure you want to delete requirement "${requirement.controlId}"?`)) {
+    return
+  }
+  
+  try {
+    await sspStore.deleteImplementedRequirement(route.params.id as string, requirement.uuid)
+    if (controlImplementation.value) {
+      controlImplementation.value.implementedRequirements = 
+        controlImplementation.value.implementedRequirements.filter(r => r.uuid !== requirement.uuid)
+    }
+    toast.add({
+      severity: 'success',
+      summary: 'Success',
+      detail: 'Implemented requirement deleted successfully.',
+      life: 3000
+    })
+  } catch (error) {
+    console.error('Failed to delete implemented requirement:', error)
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'Failed to delete implemented requirement. Please try again.',
+      life: 5000
+    })
+  }
+}
+
+const handleRequirementCreated = (newRequirement: ImplementedRequirement) => {
+  if (controlImplementation.value) {
+    controlImplementation.value.implementedRequirements.push(newRequirement)
+  }
+  showCreateRequirementModal.value = false
+}
+
+const handleRequirementSaved = (updatedRequirement: ImplementedRequirement) => {
+  if (controlImplementation.value) {
+    const index = controlImplementation.value.implementedRequirements.findIndex(r => r.uuid === updatedRequirement.uuid)
+    if (index !== -1) {
+      controlImplementation.value.implementedRequirements[index] = updatedRequirement
+    }
+  }
+  showEditRequirementModal.value = false
+  editingRequirement.value = null
+}
+
+// Placeholder functions for nested editing (statements, by-components)
+const editStatement = (requirement: ImplementedRequirement, statement: any) => {
+  console.log('Edit Statement:', requirement, statement)
+  alert('Statement editing functionality is in development')
+}
+
+const editByComponent = (statement: any, byComponent: any) => {
+  console.log('Edit Statement By Component:', statement, byComponent)
+  alert('Statement By Component editing functionality is in development')
+}
+
+const editRequirementByComponent = (requirement: ImplementedRequirement, byComponent: any) => {
+  console.log('Edit Requirement By Component:', requirement, byComponent)
+  alert('Requirement By Component editing functionality is in development')
+}
 </script>

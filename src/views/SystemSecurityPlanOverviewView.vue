@@ -47,30 +47,26 @@
       
       <div class="flex flex-wrap gap-3">
         <button
-          @click="() => {}"
+          @click="editMetadata"
           class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
-          disabled
         >
           Edit Metadata
         </button>
         <button
-          @click="() => {}"
+          @click="editSystemCharacteristics"
           class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
-          disabled
         >
           Edit System Characteristics
         </button>
         <button
-          @click="() => {}"
+          @click="editImplementation"
           class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
-          disabled
         >
           Edit Implementation
         </button>
         <button
-          @click="() => {}"
+          @click="editControls"
           class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
-          disabled
         >
           Edit Controls
         </button>
@@ -83,9 +79,9 @@
       </div>
 
       <!-- Feature Notice -->
-      <div class="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md">
-        <p class="text-sm text-blue-800 dark:text-blue-200">
-          <strong>View-Only Mode:</strong> This is currently a read-only interface. Edit buttons are disabled as requested. 
+      <div class="mt-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md">
+        <p class="text-sm text-green-800 dark:text-green-200">
+          <strong>Edit Mode:</strong> Edit buttons are now enabled. Some editing functionality is still in development.
           You can view all SSP data and download the full JSON representation.
         </p>
       </div>
@@ -234,5 +230,26 @@ async function downloadJson(): Promise<void> {
   } catch (err) {
     console.error('Error downloading JSON:', err)
   }
+}
+
+// Placeholder functions for editing functionality
+const editMetadata = () => {
+  console.log('Edit Metadata - functionality coming soon')
+  alert('Metadata editing functionality is in development')
+}
+
+const editSystemCharacteristics = () => {
+  console.log('Edit System Characteristics - functionality coming soon')
+  alert('System Characteristics editing functionality is in development')
+}
+
+const editImplementation = () => {
+  console.log('Edit Implementation - functionality coming soon')
+  alert('Implementation editing functionality is in development')
+}
+
+const editControls = () => {
+  console.log('Edit Controls - functionality coming soon')
+  alert('Controls editing functionality is in development')
 }
 </script>

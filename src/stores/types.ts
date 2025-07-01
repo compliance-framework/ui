@@ -74,6 +74,7 @@ export interface Link {
 }
 
 export interface Property {
+  uuid?: string;
   name?: string;
   value?: string;
   class?: string;
