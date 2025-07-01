@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia'
 import { useConfigStore } from '@/stores/config.ts'
 import type { DataResponse, Link, Metadata, Property } from '@/stores/types.ts'
-import { useUserStore } from '@/stores/auth.ts'
 import camelcaseKeys from 'camelcase-keys'
 import decamelizeKeys from 'decamelize-keys'
 
@@ -135,14 +134,11 @@ export interface ComponentDefinitionCharacteristics {
 
 export const useComponentDefinitionStore = defineStore('component-definitions', () => {
   const configStore = useConfigStore()
-  const userStore = useUserStore()
 
   async function get(id: string): Promise<DataResponse<ComponentDefinition>> {
     const config = await configStore.getConfig()
     const response = await fetch(`${config.API_URL}/api/oscal/component-definitions/${id}`, {
-      headers: {
-        'Authorization': `Bearer ${userStore.token}`,
-      }
+      credentials: 'include',
     })
     return camelcaseKeys(await response.json(), {
       deep: true,
@@ -152,9 +148,7 @@ export const useComponentDefinitionStore = defineStore('component-definitions', 
   async function list(): Promise<DataResponse<ComponentDefinition[]>> {
     const config = await configStore.getConfig()
     const response = await fetch(`${config.API_URL}/api/oscal/component-definitions`, {
-      headers: {
-        'Authorization': `Bearer ${userStore.token}`,
-      },
+      credentials: 'include',
     })
     return camelcaseKeys(await response.json(), {
       deep: true,
@@ -167,9 +161,9 @@ export const useComponentDefinitionStore = defineStore('component-definitions', 
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${userStore.token}`,
       },
       body: JSON.stringify(decamelizeKeys(componentDefinition, { separator: '-' })),
+      credentials: 'include',
     })
     if (!response.ok) {
       throw new Error(`Error: ${response.statusText}`)
@@ -181,7 +175,7 @@ export const useComponentDefinitionStore = defineStore('component-definitions', 
 
   async function updateImportComponentDefinitions(id: string, importDefinitions: ImportComponentDefinition[]): Promise<DataResponse<ComponentDefinition>> {
     const config = await configStore.getConfig()
-    
+
     // Get current component definition to preserve existing metadata
     const currentResponse = await get(id)
     const componentDefinition = {
@@ -189,14 +183,14 @@ export const useComponentDefinitionStore = defineStore('component-definitions', 
       metadata: currentResponse.data.metadata,
       importComponentDefinitions: importDefinitions
     }
-    
+
     const response = await fetch(`${config.API_URL}/api/oscal/component-definitions/${id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${userStore.token}`,
       },
       body: JSON.stringify(decamelizeKeys(componentDefinition, { separator: '-' })),
+      credentials: 'include',
     })
     if (!response.ok) {
       throw new Error(`Error: ${response.statusText}`)
@@ -209,9 +203,7 @@ export const useComponentDefinitionStore = defineStore('component-definitions', 
   async function full(id: string): Promise<DataResponse<ComponentDefinition>> {
     const config = await configStore.getConfig()
     const response = await fetch(`${config.API_URL}/api/oscal/component-definitions/${id}/full`, {
-      headers: {
-        'Authorization': `Bearer ${userStore.token}`,
-      }
+      credentials: 'include',
     })
     return camelcaseKeys(await response.json(), {
       deep: true,
@@ -220,20 +212,20 @@ export const useComponentDefinitionStore = defineStore('component-definitions', 
 
   async function getCharacteristics(id: string): Promise<DataResponse<ComponentDefinitionCharacteristics>> {
     const config = await configStore.getConfig()
-    
+
     // Get all the main content sections like SSP does for characteristics
     const [importDefs, components, capabilities, backMatter] = await Promise.all([
       fetch(`${config.API_URL}/api/oscal/component-definitions/${id}/import-component-definitions`, {
-        headers: { 'Authorization': `Bearer ${userStore.token}` }
+        credentials: 'include'
       }),
       fetch(`${config.API_URL}/api/oscal/component-definitions/${id}/components`, {
-        headers: { 'Authorization': `Bearer ${userStore.token}` }
+        credentials: 'include'
       }),
       fetch(`${config.API_URL}/api/oscal/component-definitions/${id}/capabilities`, {
-        headers: { 'Authorization': `Bearer ${userStore.token}` }
+        credentials: 'include'
       }),
       fetch(`${config.API_URL}/api/oscal/component-definitions/${id}/back-matter`, {
-        headers: { 'Authorization': `Bearer ${userStore.token}` }
+        credentials: 'include'
       })
     ])
 
@@ -250,9 +242,7 @@ export const useComponentDefinitionStore = defineStore('component-definitions', 
   async function getImportComponentDefinitions(id: string): Promise<DataResponse<ImportComponentDefinition[]>> {
     const config = await configStore.getConfig()
     const response = await fetch(`${config.API_URL}/api/oscal/component-definitions/${id}/import-component-definitions`, {
-      headers: {
-        'Authorization': `Bearer ${userStore.token}`,
-      }
+      credentials: 'include',
     })
     return camelcaseKeys(await response.json(), {
       deep: true,
@@ -262,9 +252,7 @@ export const useComponentDefinitionStore = defineStore('component-definitions', 
   async function getComponents(id: string): Promise<DataResponse<DefinedComponent[]>> {
     const config = await configStore.getConfig()
     const response = await fetch(`${config.API_URL}/api/oscal/component-definitions/${id}/components`, {
-      headers: {
-        'Authorization': `Bearer ${userStore.token}`,
-      }
+      credentials: 'include',
     })
     return camelcaseKeys(await response.json(), {
       deep: true,
@@ -274,9 +262,7 @@ export const useComponentDefinitionStore = defineStore('component-definitions', 
   async function getDefinedComponent(id: string, componentId: string): Promise<DataResponse<DefinedComponent>> {
     const config = await configStore.getConfig()
     const response = await fetch(`${config.API_URL}/api/oscal/component-definitions/${id}/components/${componentId}`, {
-      headers: {
-        'Authorization': `Bearer ${userStore.token}`,
-      }
+      credentials: 'include',
     })
     return camelcaseKeys(await response.json(), {
       deep: true,
@@ -286,9 +272,7 @@ export const useComponentDefinitionStore = defineStore('component-definitions', 
   async function getControlImplementations(id: string, componentId: string): Promise<DataResponse<ControlImplementation[]>> {
     const config = await configStore.getConfig()
     const response = await fetch(`${config.API_URL}/api/oscal/component-definitions/${id}/components/${componentId}/control-implementations`, {
-      headers: {
-        'Authorization': `Bearer ${userStore.token}`,
-      }
+      credentials: 'include',
     })
     return camelcaseKeys(await response.json(), {
       deep: true,
@@ -298,9 +282,7 @@ export const useComponentDefinitionStore = defineStore('component-definitions', 
   async function getCapabilities(id: string): Promise<DataResponse<Capability[]>> {
     const config = await configStore.getConfig()
     const response = await fetch(`${config.API_URL}/api/oscal/component-definitions/${id}/capabilities`, {
-      headers: {
-        'Authorization': `Bearer ${userStore.token}`,
-      }
+      credentials: 'include',
     })
     return camelcaseKeys(await response.json(), {
       deep: true,
@@ -310,9 +292,7 @@ export const useComponentDefinitionStore = defineStore('component-definitions', 
   async function getBackMatter(id: string): Promise<DataResponse<any>> {
     const config = await configStore.getConfig()
     const response = await fetch(`${config.API_URL}/api/oscal/component-definitions/${id}/back-matter`, {
-      headers: {
-        'Authorization': `Bearer ${userStore.token}`,
-      }
+      credentials: 'include',
     })
     return camelcaseKeys(await response.json(), {
       deep: true,
@@ -324,14 +304,13 @@ export const useComponentDefinitionStore = defineStore('component-definitions', 
     const payload = {
       resources: [decamelizeKeys(resource, { separator: '-' })]
     }
-    
     const response = await fetch(`${config.API_URL}/api/oscal/component-definitions/${id}/back-matter`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${userStore.token}`,
       },
       body: JSON.stringify(payload),
+      credentials: 'include',
     })
     if (!response.ok) {
       throw new Error(`Error: ${response.statusText}`)
@@ -346,15 +325,13 @@ export const useComponentDefinitionStore = defineStore('component-definitions', 
   async function createComponent(id: string, component: DefinedComponent): Promise<DataResponse<DefinedComponent>> {
     const config = await configStore.getConfig()
     const payload = [decamelizeKeys(component, { separator: '-' })]
-    
-    // Backend expects an array of components, not a single component
     const response = await fetch(`${config.API_URL}/api/oscal/component-definitions/${id}/components`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${userStore.token}`,
       },
       body: JSON.stringify(payload),
+      credentials: 'include',
     })
     if (!response.ok) {
       throw new Error(`Error: ${response.statusText}`)
@@ -369,15 +346,13 @@ export const useComponentDefinitionStore = defineStore('component-definitions', 
   async function createCapability(id: string, capability: Capability): Promise<DataResponse<Capability>> {
     const config = await configStore.getConfig()
     const payload = [decamelizeKeys(capability, { separator: '-' })]
-    
-    // Backend expects an array of capabilities, not a single capability
     const response = await fetch(`${config.API_URL}/api/oscal/component-definitions/${id}/capabilities`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${userStore.token}`,
       },
       body: JSON.stringify(payload),
+      credentials: 'include',
     })
     if (!response.ok) {
       throw new Error(`Error: ${response.statusText}`)
@@ -392,15 +367,13 @@ export const useComponentDefinitionStore = defineStore('component-definitions', 
   async function updateComponents(id: string, components: DefinedComponent[]): Promise<DataResponse<DefinedComponent[]>> {
     const config = await configStore.getConfig()
     const payload = decamelizeKeys(components, { separator: '-' })
-    
-    // Use the bulk UpdateComponents endpoint that supports updating title, description, purpose, type, remarks
     const response = await fetch(`${config.API_URL}/api/oscal/component-definitions/${id}/components`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${userStore.token}`,
       },
       body: JSON.stringify(payload),
+      credentials: 'include',
     })
     if (!response.ok) {
       throw new Error(`Error: ${response.statusText}`)
@@ -422,9 +395,9 @@ export const useComponentDefinitionStore = defineStore('component-definitions', 
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${userStore.token}`,
       },
       body: JSON.stringify(decamelizeKeys(capability, { separator: '-' })),
+      credentials: 'include',
     })
     if (!response.ok) {
       throw new Error(`Error: ${response.statusText}`)
@@ -437,9 +410,7 @@ export const useComponentDefinitionStore = defineStore('component-definitions', 
   async function getCapability(id: string, capabilityId: string): Promise<DataResponse<Capability>> {
     const config = await configStore.getConfig()
     const response = await fetch(`${config.API_URL}/api/oscal/component-definitions/${id}/capabilities/${capabilityId}`, {
-      headers: {
-        'Authorization': `Bearer ${userStore.token}`,
-      }
+      credentials: 'include',
     })
     return camelcaseKeys(await response.json(), {
       deep: true,
@@ -452,9 +423,9 @@ export const useComponentDefinitionStore = defineStore('component-definitions', 
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${userStore.token}`,
       },
       body: JSON.stringify(decamelizeKeys(importDef, { separator: '-' })),
+      credentials: 'include',
     })
     if (!response.ok) {
       throw new Error(`Error: ${response.statusText}`)
@@ -470,12 +441,12 @@ export const useComponentDefinitionStore = defineStore('component-definitions', 
     create,
     full,
     getCharacteristics,
-    
+
     // Import Component Definitions (only field that can be updated via main update endpoint)
     getImportComponentDefinitions,
     createImportComponentDefinition,
     updateImportComponentDefinitions,
-    
+
     // Components (use specific endpoints)
     getComponents,
     getDefinedComponent,
@@ -483,13 +454,13 @@ export const useComponentDefinitionStore = defineStore('component-definitions', 
     updateComponent,
     updateComponents, // Bulk update for multiple components
     getControlImplementations,
-    
+
     // Capabilities (use specific endpoints)
     getCapabilities,
     getCapability,
     createCapability,
     updateCapability,
-    
+
     // Back Matter
     getBackMatter,
     createBackMatterResource,
