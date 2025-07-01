@@ -18,7 +18,6 @@ export const useUserStore = defineStore("user", {
     return {
       user: null as User | null,
       isAuthenticated: ref<boolean>(false),
-      token: null as string | null
     }
   },
   persist: true
@@ -46,14 +45,12 @@ export const useAuthStore = defineStore("auth", () => {
         return reject(response);
       }
       const data = (await response.json()) as DataResponse<AuthResponse>;
-      user.token = data.data.auth_token;
       user.isAuthenticated = true;
       return resolve(data.data)
     });
   }
 
   async function logout(): Promise<boolean> {
-    user.token = null
     user.isAuthenticated = false
     return true;
   }
