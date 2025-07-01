@@ -2,10 +2,11 @@ import { defineStore } from 'pinia';
 import { useConfigStore } from '@/stores/config.ts';
 import { type Filter } from '@/parsers/labelfilter.ts';
 import type {
+  Activity,
   DataResponse,
   Link,
-  Property,
-} from '@/stores/types.ts';
+  Property
+} from '@/stores/types.ts'
 
 export interface EvidenceStatus {
   reason: string
@@ -28,6 +29,7 @@ export interface Evidence {
   links?: Link[];
   props?: Property[];
   status: EvidenceStatus
+  activities: Activity[]
 }
 
 export interface ComplianceIntervalStatus {
@@ -53,11 +55,11 @@ export interface ComplianceInterval {
 export const useEvidenceStore = defineStore('evidence', () => {
   const configStore = useConfigStore();
 
-  // async function get(id: string): Promise<DataResponse<Finding>> {
-  //   const config = await configStore.getConfig();
-  //   const response = await fetch(`${config.API_URL}/api/findings/${id}`);
-  //   return (await response.json()) as DataResponse<Finding>;
-  // }
+  async function get(id: string): Promise<DataResponse<Evidence>> {
+    const config = await configStore.getConfig();
+    const response = await fetch(`${config.API_URL}/api/evidence/${id}`);
+    return (await response.json()) as DataResponse<Evidence>;
+  }
 
   async function search(filter: Filter): Promise<DataResponse<Evidence[]>> {
     const config = await configStore.getConfig();
@@ -238,7 +240,7 @@ export const useEvidenceStore = defineStore('evidence', () => {
   // }
 
   return {
-    // get: get,
+    get: get,
     search: search,
     // searchBySubject,
     // history: history,
