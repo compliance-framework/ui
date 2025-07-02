@@ -1,6 +1,7 @@
 <template>
-  <form @submit.prevent="createComponent()">
-    <h1 class="text-xl font-semibold mb-6 dark:text-slate-300">Create System Component</h1>
+  <div class="px-12 py-8">
+    <form @submit.prevent="createComponent()">
+      <h1 class="text-xl font-semibold mb-6 dark:text-slate-300">Create System Component</h1>
 
     <div class="mb-4">
       <label class="inline-block pb-2 dark:text-slate-300">UUID</label>
@@ -166,7 +167,8 @@
         {{ saving ? 'Creating...' : 'Create Component' }}
       </button>
     </div>
-  </form>
+    </form>
+  </div>
 </template>
 
 <script setup lang="ts">

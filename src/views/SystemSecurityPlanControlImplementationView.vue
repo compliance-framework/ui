@@ -216,6 +216,17 @@
     </div>
   </div>
 
+  <!-- Control Implementation Edit Modal -->
+  <Modal :show="showEditControlImplementationModal && controlImplementation !== null" @close="showEditControlImplementationModal = false" size="lg">
+    <ControlImplementationEditForm 
+      v-if="controlImplementation"
+      :ssp-id="route.params.id as string"
+      :control-implementation="controlImplementation"
+      @cancel="showEditControlImplementationModal = false"
+      @saved="handleControlImplementationSaved"
+    />
+  </Modal>
+
   <!-- Requirement Create Modal -->
   <Modal :show="showCreateRequirementModal" @close="showCreateRequirementModal = false" size="lg">
     <ImplementedRequirementCreateForm 
@@ -249,6 +260,7 @@ import {
 import Modal from '@/components/Modal.vue'
 import ImplementedRequirementCreateForm from '@/components/system-security-plans/ImplementedRequirementCreateForm.vue'
 import ImplementedRequirementEditForm from '@/components/system-security-plans/ImplementedRequirementEditForm.vue'
+import ControlImplementationEditForm from '@/components/system-security-plans/ControlImplementationEditForm.vue'
 
 const route = useRoute()
 const sspStore = useSystemSecurityPlanStore()
@@ -261,6 +273,7 @@ const error = ref<string | null>(null)
 // Modal states
 const showCreateRequirementModal = ref(false)
 const showEditRequirementModal = ref(false)
+const showEditControlImplementationModal = ref(false)
 
 // Edit targets
 const editingRequirement = ref<ImplementedRequirement | null>(null)
@@ -288,13 +301,10 @@ const totalByComponents = computed(() => {
 
 onMounted(async () => {
   const id = route.params.id as string
-  console.log('Loading control implementation for SSP ID:', id)
   
   try {
     const response = await sspStore.getControlImplementation(id)
-    console.log('Control implementation response:', response)
     controlImplementation.value = response.data
-    console.log('Control implementation loaded:', controlImplementation.value)
   } catch (err) {
     console.error('Error loading control implementation:', err)
     error.value = err instanceof Error ? err.message : 'Unknown error'
@@ -305,26 +315,25 @@ onMounted(async () => {
 
 // Control Implementation management
 const editControlImplementation = () => {
-  console.log('Edit Control Implementation - functionality coming soon')
-  alert('Control Implementation editing functionality is in development')
+  showEditControlImplementationModal.value = true
+}
+
+const handleControlImplementationSaved = (updatedControlImpl: ControlImplementation) => {
+  controlImplementation.value = updatedControlImpl
+  showEditControlImplementationModal.value = false
 }
 
 // Requirement management
 const addRequirement = () => {
-  console.log('Add requirement clicked')
   showCreateRequirementModal.value = true
-  console.log('Modal state:', showCreateRequirementModal.value)
 }
 
 const editRequirement = (requirement: ImplementedRequirement) => {
-  console.log('Edit requirement clicked:', requirement)
   editingRequirement.value = requirement
   showEditRequirementModal.value = true
-  console.log('Edit modal state:', showEditRequirementModal.value)
 }
 
 const deleteRequirement = async (requirement: ImplementedRequirement) => {
-  console.log('Delete requirement clicked:', requirement)
   if (!confirm(`Are you sure you want to delete requirement "${requirement.controlId}"?`)) {
     return
   }

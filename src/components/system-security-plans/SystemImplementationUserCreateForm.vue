@@ -1,6 +1,7 @@
 <template>
-  <form @submit.prevent="createUser()">
-    <h1 class="text-xl font-semibold mb-6 dark:text-slate-300">Create User</h1>
+  <div class="px-12 py-8">
+    <form @submit.prevent="createUser()">
+      <h1 class="text-xl font-semibold mb-6 dark:text-slate-300">Create User</h1>
 
     <div class="mb-4">
       <label class="inline-block pb-2 dark:text-slate-300">UUID</label>
@@ -142,7 +143,8 @@
         {{ saving ? 'Creating...' : 'Create User' }}
       </button>
     </div>
-  </form>
+    </form>
+  </div>
 </template>
 
 <script setup lang="ts">

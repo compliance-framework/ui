@@ -1,6 +1,7 @@
 <template>
-  <form @submit.prevent="updateUser()">
-    <h1 class="text-xl font-semibold mb-6 dark:text-slate-300">Edit User</h1>
+  <div class="px-12 py-8">
+    <form @submit.prevent="updateUser()">
+      <h1 class="text-xl font-semibold mb-6 dark:text-slate-300">Edit User</h1>
 
     <div class="mb-4">
       <label class="inline-block pb-2 dark:text-slate-300">UUID</label>
@@ -135,7 +136,8 @@
         {{ saving ? 'Saving...' : 'Save User' }}
       </button>
     </div>
-  </form>
+    </form>
+  </div>
 </template>
 
 <script setup lang="ts">

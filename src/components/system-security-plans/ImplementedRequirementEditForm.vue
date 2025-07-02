@@ -1,6 +1,7 @@
 <template>
-  <form @submit.prevent="updateRequirement()">
-    <h1 class="text-xl font-semibold mb-6 dark:text-slate-300">Edit Implemented Requirement</h1>
+  <div class="px-12 py-8">
+    <form @submit.prevent="updateRequirement()">
+      <h1 class="text-xl font-semibold mb-6 dark:text-slate-300">Edit Implemented Requirement</h1>
 
     <div class="mb-4">
       <label class="inline-block pb-2 dark:text-slate-300">UUID</label>
@@ -107,23 +108,24 @@
       </div>
     </div>
 
-    <div class="flex justify-end gap-4">
-      <button 
-        type="button" 
-        @click="$emit('cancel')"
-        class="px-4 py-2 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 rounded-md hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
-      >
-        Cancel
-      </button>
-      <button 
-        type="submit"
-        :disabled="saving"
-        class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 transition-colors"
-      >
-        {{ saving ? 'Saving...' : 'Save Requirement' }}
-      </button>
-    </div>
-  </form>
+      <div class="flex justify-end gap-4">
+        <button 
+          type="button" 
+          @click="$emit('cancel')"
+          class="px-4 py-2 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 rounded-md hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
+        >
+          Cancel
+        </button>
+        <button 
+          type="submit"
+          :disabled="saving"
+          class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 transition-colors"
+        >
+          {{ saving ? 'Saving...' : 'Save Requirement' }}
+        </button>
+      </div>
+    </form>
+  </div>
 </template>
 
 <script setup lang="ts">
