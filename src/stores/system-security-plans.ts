@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia';
-import { useConfigStore } from '@/stores/config';
-import { useUserStore } from '@/stores/auth';
+import { useConfigStore } from '@/stores/config.ts';
 import type {
   DataResponse,
   Link,
@@ -210,7 +209,6 @@ export const useSystemSecurityPlanStore = defineStore(
   'system-security-plans',
   () => {
     const configStore = useConfigStore();
-    const userStore = useUserStore();
     async function get(id: string): Promise<DataResponse<SystemSecurityPlan>> {
       const config = await configStore.getConfig();
       const response = await fetch(
@@ -448,9 +446,7 @@ export const useSystemSecurityPlanStore = defineStore(
       const response = await fetch(
         `${config.API_URL}/api/oscal/system-security-plans/${id}/system-implementation/inventory-items`,
         {
-          headers: {
-            'Authorization': `Bearer ${userStore.token}`
-          }
+          credentials: 'include'
         }
       );
       if (!response.ok) {
@@ -468,9 +464,7 @@ export const useSystemSecurityPlanStore = defineStore(
       const response = await fetch(
         `${config.API_URL}/api/oscal/system-security-plans/${id}/system-implementation/leveraged-authorizations`,
         {
-          headers: {
-            'Authorization': `Bearer ${userStore.token}`
-          }
+          credentials: 'include'
         }
       );
       if (!response.ok) {
@@ -493,9 +487,9 @@ export const useSystemSecurityPlanStore = defineStore(
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${userStore.token}`
           },
           body: JSON.stringify(decamelizeKeys(item, { separator: '-' })),
+          credentials: 'include',
         }
       );
       if (!response.ok) {
@@ -515,9 +509,9 @@ export const useSystemSecurityPlanStore = defineStore(
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${userStore.token}`
           },
           body: JSON.stringify(decamelizeKeys(item, { separator: '-' })),
+          credentials: 'include',
         }
       );
       if (!response.ok) {
@@ -535,9 +529,7 @@ export const useSystemSecurityPlanStore = defineStore(
         `${config.API_URL}/api/oscal/system-security-plans/${id}/system-implementation/users/${userId}`,
         {
           method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${userStore.token}`
-          }
+          credentials: 'include',
         }
       );
       if (!response.ok) {
@@ -554,9 +546,7 @@ export const useSystemSecurityPlanStore = defineStore(
         `${config.API_URL}/api/oscal/system-security-plans/${id}/system-implementation/components/${componentId}`,
         {
           method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${userStore.token}`
-          }
+          credentials: 'include',
         }
       );
       if (!response.ok) {
@@ -571,9 +561,7 @@ export const useSystemSecurityPlanStore = defineStore(
       const response = await fetch(
         `${config.API_URL}/api/oscal/system-security-plans/${id}/control-implementation`,
         {
-          headers: {
-            'Authorization': `Bearer ${userStore.token}`
-          }
+          credentials: 'include'
         }
       );
       if (!response.ok) {
@@ -596,9 +584,9 @@ export const useSystemSecurityPlanStore = defineStore(
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${userStore.token}`
           },
           body: JSON.stringify(decamelizeKeys(user, { separator: '-' })),
+          credentials: 'include',
         }
       );
       if (!response.ok) {
@@ -618,9 +606,9 @@ export const useSystemSecurityPlanStore = defineStore(
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${userStore.token}`
           },
           body: JSON.stringify(decamelizeKeys(user, { separator: '-' })),
+          credentials: 'include',
         }
       );
       if (!response.ok) {
@@ -641,9 +629,9 @@ export const useSystemSecurityPlanStore = defineStore(
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${userStore.token}`
           },
           body: JSON.stringify(decamelizeKeys(component, { separator: '-' })),
+          credentials: 'include',
         }
       );
       if (!response.ok) {
@@ -663,9 +651,9 @@ export const useSystemSecurityPlanStore = defineStore(
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${userStore.token}`
           },
           body: JSON.stringify(decamelizeKeys(component, { separator: '-' })),
+          credentials: 'include',
         }
       );
       if (!response.ok) {
@@ -679,9 +667,7 @@ export const useSystemSecurityPlanStore = defineStore(
       const response = await fetch(
         `${config.API_URL}/api/oscal/system-security-plans/${id}/full`,
         {
-          headers: {
-            'Authorization': `Bearer ${userStore.token}`
-          }
+          credentials: 'include'
         }
       );
       if (!response.ok) {
@@ -700,9 +686,9 @@ export const useSystemSecurityPlanStore = defineStore(
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${userStore.token}`
           },
           body: JSON.stringify(decamelizeKeys(ssp, { separator: '-' })),
+          credentials: 'include',
         }
       );
       if (!response.ok) {
@@ -722,9 +708,9 @@ export const useSystemSecurityPlanStore = defineStore(
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${userStore.token}`
           },
           body: JSON.stringify(decamelizeKeys(controlImplementation, { separator: '-' })),
+          credentials: 'include',
         }
       );
       if (!response.ok) {
@@ -740,9 +726,7 @@ export const useSystemSecurityPlanStore = defineStore(
       const response = await fetch(
         `${config.API_URL}/api/oscal/system-security-plans/${id}/control-implementation/implemented-requirements`,
         {
-          headers: {
-            'Authorization': `Bearer ${userStore.token}`
-          }
+          credentials: 'include'
         }
       );
       if (!response.ok) {
@@ -762,9 +746,9 @@ export const useSystemSecurityPlanStore = defineStore(
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${userStore.token}`
           },
           body: JSON.stringify(decamelizeKeys(requirement, { separator: '-' })),
+          credentials: 'include',
         }
       );
       if (!response.ok) {
@@ -785,9 +769,9 @@ export const useSystemSecurityPlanStore = defineStore(
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${userStore.token}`
           },
           body: JSON.stringify(decamelizeKeys(requirement, { separator: '-' })),
+          credentials: 'include',
         }
       );
       if (!response.ok) {
@@ -805,9 +789,7 @@ export const useSystemSecurityPlanStore = defineStore(
         `${config.API_URL}/api/oscal/system-security-plans/${id}/control-implementation/implemented-requirements/${reqId}`,
         {
           method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${userStore.token}`
-          }
+          credentials: 'include',
         }
       );
       if (!response.ok) {
