@@ -211,6 +211,7 @@ export const useSystemSecurityPlanStore = defineStore(
   () => {
     const configStore = useConfigStore();
     const userStore = useUserStore();
+    
     async function get(id: string): Promise<DataResponse<SystemSecurityPlan>> {
       const config = await configStore.getConfig();
       const response = await fetch(
