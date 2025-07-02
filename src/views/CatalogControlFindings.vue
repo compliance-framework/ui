@@ -16,7 +16,7 @@ import { useRoute } from 'vue-router'
 import PageSubHeader from '@/components/PageSubHeader.vue'
 import PageCard from '@/components/PageCard.vue'
 import { type Finding, useFindingsStore } from '@/stores/findings.ts'
-import FindingsList from '@/views/FindingsList.vue'
+import FindingsList from '@/components/FindingsList.vue'
 
 const findingStore = useFindingsStore()
 const findings = ref<Finding[]>([]);

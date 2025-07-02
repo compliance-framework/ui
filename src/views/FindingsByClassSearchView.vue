@@ -98,7 +98,7 @@ import { type FindingsByClassName, useFindingsStore } from '@/stores/findings.ts
 import { useHeartbeatsStore } from '@/stores/heartbeats.ts'
 import { calculateHeartbeatOverTimeData } from '@/parsers/heartbeats.ts'
 import CollapsableGroup from '@/components/CollapsableGroup.vue'
-import FindingsList from '@/views/FindingsList.vue'
+import FindingsList from '@/components/FindingsList.vue'
 import SecondaryButton from '@/components/SecondaryButton.vue'
 
 const findingsStore = useFindingsStore()

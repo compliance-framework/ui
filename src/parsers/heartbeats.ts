@@ -10,7 +10,7 @@ export function calculateHeartbeatOverTimeData(
   const finalData = data.map((dataPoint) => {
     return {
       interval: new Date(dataPoint.interval),
-      count: dataPoint.count,
+      count: dataPoint.total,
     } as DateDataPoint;
   }).sort((a, b) => {
     // Order results by their title for better UI consistency
