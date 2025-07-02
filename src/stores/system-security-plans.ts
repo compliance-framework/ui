@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import { useConfigStore } from '@/stores/config';
+import { useUserStore } from '@/stores/auth';
 import type {
   DataResponse,
   Link,
@@ -9,7 +10,6 @@ import type {
 } from '@/stores/types';
 import camelcaseKeys from 'camelcase-keys';
 import decamelizeKeys from 'decamelize-keys';
-import { useUserStore } from '@/stores/auth';
 
 export interface Diagram {
   uuid: string;
