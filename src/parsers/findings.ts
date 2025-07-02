@@ -18,7 +18,7 @@ function getStatusColour(status: string): RGB {
     g: 128,
     b: 128,
   };
-  if (status === 'not satisfied') {
+  if (status === 'not-satisfied') {
     color = {
       r: 253,
       g: 92,

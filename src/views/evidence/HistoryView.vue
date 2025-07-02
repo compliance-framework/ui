@@ -89,10 +89,10 @@ onMounted(() => {
     evidence.value = resultList.data;
   })
 
-  // findingStore.getComplianceForUUID(uuid).then((response) => {
-  //   complianceChartData.value = calculateComplianceOverTimeData(response.data)
-  //   // uptimeChartData.value = calculateAgentUptimeData(response.data)
-  // })
+  evidenceStore.getComplianceForUUID(uuid).then((response) => {
+    complianceChartData.value = calculateComplianceOverTimeData(response.data)
+    // uptimeChartData.value = calculateAgentUptimeData(response.data)
+  })
 
   heartbeatStore.overTime().then((response) => {
     heartbeatChartData.value = calculateHeartbeatOverTimeData(response.data)

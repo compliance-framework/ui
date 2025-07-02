@@ -136,9 +136,9 @@ async function search() {
     // results.value = response.data
   });
 
-  // findingsStore.getComplianceForSearch(query).then((response) => {
-  //   complianceChartData.value = calculateComplianceOverTimeData(response.data);
-  // });
+  evidenceStore.getComplianceForSearch(query).then((response) => {
+    complianceChartData.value = calculateComplianceOverTimeData(response.data);
+  });
   heartbeatStore.overTime().then((response) => {
     heartbeatChartData.value = calculateHeartbeatOverTimeData(response.data);
   });

@@ -143,51 +143,51 @@ export const useEvidenceStore = defineStore('evidence', () => {
 
     return (await response.json()) as DataResponse<Evidence[]>;
   }
-  //
-  // async function getComplianceForSearch(
-  //   filter: Filter,
-  // ): Promise<DataResponse<ComplianceInterval[]>> {
-  //   const config = await configStore.getConfig();
-  //   const response = await fetch(
-  //     `${config.API_URL}/api/findings/compliance-by-search`,
-  //     {
-  //       method: 'POST',
-  //       headers: {
-  //         'Content-Type': 'application/json',
-  //       },
-  //       body: JSON.stringify({
-  //         filter: filter,
-  //       }),
-  //     },
-  //   );
-  //
-  //   if (!response.ok) {
-  //     throw new Error(`Error: ${response.statusText}`);
-  //   }
-  //
-  //   return (await response.json()) as DataResponse<ComplianceInterval[]>;
-  // }
-  //
-  // async function getComplianceForUUID(
-  //   uuid: string,
-  // ): Promise<DataResponse<ComplianceInterval[]>> {
-  //   const config = await configStore.getConfig();
-  //   const response = await fetch(
-  //     `${config.API_URL}/api/findings/compliance-by-uuid/${uuid}`,
-  //     {
-  //       method: 'GET',
-  //       headers: {
-  //         'Content-Type': 'application/json',
-  //       },
-  //     },
-  //   );
-  //
-  //   if (!response.ok) {
-  //     throw new Error(`Error: ${response.statusText}`);
-  //   }
-  //
-  //   return (await response.json()) as DataResponse<ComplianceInterval[]>;
-  // }
+
+  async function getComplianceForSearch(
+    filter: Filter,
+  ): Promise<DataResponse<ComplianceInterval[]>> {
+    const config = await configStore.getConfig();
+    const response = await fetch(
+      `${config.API_URL}/api/evidence/status-over-time`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          filter: filter,
+        }),
+      },
+    );
+
+    if (!response.ok) {
+      throw new Error(`Error: ${response.statusText}`);
+    }
+
+    return (await response.json()) as DataResponse<ComplianceInterval[]>;
+  }
+
+  async function getComplianceForUUID(
+    uuid: string,
+  ): Promise<DataResponse<ComplianceInterval[]>> {
+    const config = await configStore.getConfig();
+    const response = await fetch(
+      `${config.API_URL}/api/evidence/status-over-time/${uuid}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      },
+    );
+
+    if (!response.ok) {
+      throw new Error(`Error: ${response.statusText}`);
+    }
+
+    return (await response.json()) as DataResponse<ComplianceInterval[]>;
+  }
   //
   // async function getComplianceForControl(
   //   _class: string,
@@ -233,8 +233,8 @@ export const useEvidenceStore = defineStore('evidence', () => {
     search: search,
     // searchBySubject,
     history: history,
-    // getComplianceForSearch,
-    // getComplianceForUUID,
+    getComplianceForSearch,
+    getComplianceForUUID,
     // getByControlClass,
     // getAllControlClasses,
     // getComplianceForControl,
