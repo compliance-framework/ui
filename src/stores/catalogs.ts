@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia'
 import { useConfigStore } from '@/stores/config.ts'
-import type { DataResponse, Link, Metadata, Part, Property, ErrorResponse, ErrorBody } from '@/stores/types.ts'
-import { useUserStore } from '@/stores/auth.ts'
+import type { DataResponse, Link, Metadata, Part, Property } from '@/stores/types.ts'
 
 export interface Catalog {
   uuid: string;
@@ -28,14 +27,11 @@ export interface Control {
 
 export const useCatalogStore = defineStore('catalogs', () => {
   const configStore = useConfigStore()
-  const userStore = useUserStore()
 
   async function get(id: string): Promise<DataResponse<Catalog>> {
     const config = await configStore.getConfig()
     const response = await fetch(`${config.API_URL}/api/oscal/catalogs/${id}`, {
-      headers: {
-        'Authorization': `Bearer ${userStore.token}`,
-      }
+      credentials: 'include',
     })
     if (!response.ok) {
       throw response
@@ -46,9 +42,7 @@ export const useCatalogStore = defineStore('catalogs', () => {
   async function full(id: string): Promise<DataResponse<Catalog>> {
     const config = await configStore.getConfig()
     const response = await fetch(`${config.API_URL}/api/oscal/catalogs/${id}/full`, {
-      headers: {
-        'Authorization': `Bearer ${userStore.token}`,
-      }
+      credentials: 'include',
     })
     if (!response.ok) {
       throw response
@@ -58,11 +52,7 @@ export const useCatalogStore = defineStore('catalogs', () => {
 
   async function list(): Promise<DataResponse<Catalog[]>> {
     const config = await configStore.getConfig()
-    const response = await fetch(`${config.API_URL}/api/oscal/catalogs`, {
-      headers: {
-        'Authorization': `Bearer ${userStore.token}`,
-      },
-    })
+    const response = await fetch(`${config.API_URL}/api/oscal/catalogs`, {credentials: 'include'})
     if (!response.ok) {
       throw response
     }
@@ -75,9 +65,9 @@ export const useCatalogStore = defineStore('catalogs', () => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${userStore.token}`,
       },
       body: JSON.stringify(catalog),
+      credentials: 'include',
     })
     if (!response.ok) {
       throw response
@@ -91,9 +81,9 @@ export const useCatalogStore = defineStore('catalogs', () => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${userStore.token}`,
       },
       body: JSON.stringify(group),
+      credentials: 'include',
     })
 
     if (!response.ok) {
@@ -108,9 +98,9 @@ export const useCatalogStore = defineStore('catalogs', () => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${userStore.token}`,
       },
       body: JSON.stringify(group),
+      credentials: 'include',
     })
     if (!response.ok) {
       throw response
@@ -124,9 +114,9 @@ export const useCatalogStore = defineStore('catalogs', () => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${userStore.token}`,
       },
       body: JSON.stringify(control),
+      credentials: 'include',
     })
     if (!response.ok) {
       throw response
@@ -137,9 +127,7 @@ export const useCatalogStore = defineStore('catalogs', () => {
   async function listGroups(catalogId: string): Promise<DataResponse<Group[]>> {
     const config = await configStore.getConfig()
     const response = await fetch(`${config.API_URL}/api/oscal/catalogs/${catalogId}/groups`, {
-      headers: {
-        'Authorization': `Bearer ${userStore.token}`,
-      },
+      credentials: 'include',
     })
     if (!response.ok) {
       throw response
@@ -150,9 +138,7 @@ export const useCatalogStore = defineStore('catalogs', () => {
   async function listGroupGroups(catalogId: string, group: Group): Promise<DataResponse<Group[]>> {
     const config = await configStore.getConfig()
     const response = await fetch(`${config.API_URL}/api/oscal/catalogs/${catalogId}/groups/${group.id}/groups`, {
-      headers: {
-        'Authorization': `Bearer ${userStore.token}`,
-      },
+      credentials: 'include',
     })
     if (!response.ok) {
       throw response
@@ -163,9 +149,7 @@ export const useCatalogStore = defineStore('catalogs', () => {
   async function listGroupControls(catalogId: string, group: Group): Promise<DataResponse<Control[]>> {
     const config = await configStore.getConfig()
     const response = await fetch(`${config.API_URL}/api/oscal/catalogs/${catalogId}/groups/${group.id}/controls`, {
-      headers: {
-        'Authorization': `Bearer ${userStore.token}`,
-      },
+      credentials: 'include',
     })
     if (!response.ok) {
       throw response
@@ -179,9 +163,9 @@ export const useCatalogStore = defineStore('catalogs', () => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${userStore.token}`,
       },
       body: JSON.stringify(control),
+      credentials: 'include',
     })
     if (!response.ok) {
       throw response
@@ -195,9 +179,9 @@ export const useCatalogStore = defineStore('catalogs', () => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${userStore.token}`,
       },
       body: JSON.stringify(control),
+      credentials: 'include',
     })
     if (!response.ok) {
       throw response
@@ -208,9 +192,7 @@ export const useCatalogStore = defineStore('catalogs', () => {
   async function listControls(catalogId: string): Promise<DataResponse<Control[]>> {
     const config = await configStore.getConfig()
     const response = await fetch(`${config.API_URL}/api/oscal/catalogs/${catalogId}/controls`, {
-      headers: {
-        'Authorization': `Bearer ${userStore.token}`,
-      },
+      credentials: 'include',
     })
     if (!response.ok) {
       throw response
@@ -221,9 +203,7 @@ export const useCatalogStore = defineStore('catalogs', () => {
   async function listControlControls(catalogId: string, control: Control): Promise<DataResponse<Control[]>> {
     const config = await configStore.getConfig()
     const response = await fetch(`${config.API_URL}/api/oscal/catalogs/${catalogId}/controls/${control.id}/controls`, {
-      headers: {
-        'Authorization': `Bearer ${userStore.token}`,
-      },
+      credentials: 'include',
     })
     if (!response.ok) {
       throw response
