@@ -1,13 +1,41 @@
 <template>
-  <h4 class="text-lg">Users</h4>
+  <div class="flex justify-between items-center mb-4">
+    <h4 class="text-lg">Users</h4>
+    <button 
+      @click="showCreateUserModal = true"
+      class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
+    >
+      Create User
+    </button>
+  </div>
 
   <div
     class="my-4 rounded-md bg-white dark:bg-slate-900 border-collapse border border-ccf-300 dark:border-slate-700"
   >
     <CollapsableGroup v-for="user in users" :key="user.uuid">
       <template #header>
-        <div class="py-2 px-4 text-lg">
-          {{ user.title }}
+        <div class="py-2 px-4 text-lg flex justify-between items-center">
+          <span>{{ user.title }}</span>
+          <div class="flex gap-2">
+            <button 
+              @click.stop="editUser(user)"
+              class="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 transition-colors"
+            >
+              Edit
+            </button>
+            <button 
+              @click.stop="downloadUserJSON(user)"
+              class="px-3 py-1 bg-gray-500 text-white text-sm rounded hover:bg-gray-600 transition-colors"
+            >
+              JSON
+            </button>
+            <button 
+              @click.stop="deleteUser(user)"
+              class="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition-colors"
+            >
+              Delete
+            </button>
+          </div>
         </div>
       </template>
       <div class="px-4 py-4 dark:bg-slate-950 border-b dark:border-slate-700">
@@ -31,7 +59,15 @@
     </CollapsableGroup>
   </div>
 
-  <h4 class="text-lg">Components</h4>
+  <div class="flex justify-between items-center mb-4">
+    <h4 class="text-lg">Components</h4>
+    <button 
+      @click="showCreateComponentModal = true"
+      class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
+    >
+      Create Component
+    </button>
+  </div>
 
   <div
     class="my-4 rounded-md bg-white dark:bg-slate-900 border-collapse border border-ccf-300 dark:border-slate-700"
@@ -39,18 +75,42 @@
     <CollapsableGroup v-for="component in components" :key="component.uuid">
       <template #header>
         <div class="py-2 px-4 text-lg flex items-center justify-between">
-          <h3>
-            {{ component.title }}
-            <span
-              class="ml-4 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-800 text-gray-800 dark:text-slate-300 rounded-md text-sm whitespace-nowrap px-4 py-1"
-            >{{ component.type }}</span>
-          </h3>
-          <div :class="{
-            'rounded-full capitalize px-2 py-1 text-sm font-light': true,
-            'bg-green-400 dark:bg-green-700': component.status.state == `operational`,
-            'bg-amber-600': component.status.state != `operational`,
-          }">
-            {{ component.status.state }}
+          <div class="flex items-center">
+            <h3>
+              {{ component.title }}
+              <span
+                class="ml-4 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-800 text-gray-800 dark:text-slate-300 rounded-md text-sm whitespace-nowrap px-4 py-1"
+              >{{ component.type }}</span>
+            </h3>
+          </div>
+          <div class="flex items-center gap-3">
+            <div :class="{
+              'rounded-full capitalize px-2 py-1 text-sm font-light': true,
+              'bg-green-400 dark:bg-green-700': component.status.state == `operational`,
+              'bg-amber-600': component.status.state != `operational`,
+            }">
+              {{ component.status.state }}
+            </div>
+            <div class="flex gap-2">
+              <button 
+                @click.stop="editComponent(component)"
+                class="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 transition-colors"
+              >
+                Edit
+              </button>
+              <button 
+                @click.stop="downloadComponentJSON(component)"
+                class="px-3 py-1 bg-gray-500 text-white text-sm rounded hover:bg-gray-600 transition-colors"
+              >
+                JSON
+              </button>
+              <button 
+                @click.stop="deleteComponent(component)"
+                class="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
           </div>
         </div>
       </template>
@@ -85,7 +145,43 @@
     </CollapsableGroup>
   </div>
 
+  <!-- User Create Modal -->
+  <Modal v-if="showCreateUserModal" @close="showCreateUserModal = false">
+    <SystemImplementationUserCreateForm 
+      :ssp-id="id"
+      @cancel="showCreateUserModal = false"
+      @created="handleUserCreated"
+    />
+  </Modal>
 
+  <!-- User Edit Modal -->
+  <Modal v-if="showEditUserModal && editingUser" @close="showEditUserModal = false">
+    <SystemImplementationUserEditForm 
+      :ssp-id="id"
+      :user="editingUser"
+      @cancel="showEditUserModal = false"
+      @saved="handleUserSaved"
+    />
+  </Modal>
+
+  <!-- Component Create Modal -->
+  <Modal v-if="showCreateComponentModal" @close="showCreateComponentModal = false">
+    <SystemImplementationComponentCreateForm 
+      :ssp-id="id"
+      @cancel="showCreateComponentModal = false"
+      @created="handleComponentCreated"
+    />
+  </Modal>
+
+  <!-- Component Edit Modal -->
+  <Modal v-if="showEditComponentModal && editingComponent" @close="showEditComponentModal = false">
+    <SystemImplementationComponentEditForm 
+      :ssp-id="id"
+      :component="editingComponent"
+      @cancel="showEditComponentModal = false"
+      @saved="handleComponentSaved"
+    />
+  </Modal>
 </template>
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
@@ -98,15 +194,33 @@ import {
 import { useRoute } from 'vue-router';
 import type { DataResponse } from '@/stores/types.ts'
 import CollapsableGroup from '@/components/CollapsableGroup.vue'
+import Modal from '@/components/Modal.vue'
+import SystemImplementationUserCreateForm from '@/components/system-security-plans/SystemImplementationUserCreateForm.vue'
+import SystemImplementationUserEditForm from '@/components/system-security-plans/SystemImplementationUserEditForm.vue'
+import SystemImplementationComponentCreateForm from '@/components/system-security-plans/SystemImplementationComponentCreateForm.vue'
+import SystemImplementationComponentEditForm from '@/components/system-security-plans/SystemImplementationComponentEditForm.vue'
+import { useToast } from 'primevue/usetoast'
 
 const route = useRoute();
+const toast = useToast();
 const id = route.params.id as string;
 const sspStore = useSystemSecurityPlanStore();
 
 const systemSecurityPlan = ref<SystemSecurityPlan | null>(null);
 const users = ref<SystemImplementationUser[] | null>(null);
 const components = ref<SystemComponent[] | null>(null);
-onMounted(() => {
+
+// Modal states
+const showCreateUserModal = ref(false);
+const showEditUserModal = ref(false);
+const showCreateComponentModal = ref(false);
+const showEditComponentModal = ref(false);
+
+// Edit targets
+const editingUser = ref<SystemImplementationUser | null>(null);
+const editingComponent = ref<SystemComponent | null>(null);
+
+const loadData = () => {
   sspStore.get(id).then((data) => {
     systemSecurityPlan.value = data.data;
   });
@@ -116,5 +230,129 @@ onMounted(() => {
   sspStore.getSystemImplementationComponents(id).then((data: DataResponse<SystemComponent[]>) => {
     components.value = data.data;
   });
+};
+
+onMounted(() => {
+  loadData();
 });
+
+// User management
+const editUser = (user: SystemImplementationUser) => {
+  editingUser.value = user;
+  showEditUserModal.value = true;
+};
+
+const handleUserCreated = (newUser: SystemImplementationUser) => {
+  users.value?.push(newUser);
+  showCreateUserModal.value = false;
+};
+
+const handleUserSaved = (updatedUser: SystemImplementationUser) => {
+  if (users.value) {
+    const index = users.value.findIndex(u => u.uuid === updatedUser.uuid);
+    if (index !== -1) {
+      users.value[index] = updatedUser;
+    }
+  }
+  showEditUserModal.value = false;
+  editingUser.value = null;
+};
+
+const downloadUserJSON = (user: SystemImplementationUser) => {
+  const dataStr = JSON.stringify(user, null, 2);
+  const dataBlob = new Blob([dataStr], { type: 'application/json' });
+  const url = URL.createObjectURL(dataBlob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `user-${user.uuid}.json`;
+  link.click();
+  URL.revokeObjectURL(url);
+};
+
+const deleteUser = async (user: SystemImplementationUser) => {
+  if (!confirm(`Are you sure you want to delete user "${user.title}"?`)) {
+    return;
+  }
+  
+  try {
+    await sspStore.deleteSystemImplementationUser(id, user.uuid);
+    if (users.value) {
+      users.value = users.value.filter(u => u.uuid !== user.uuid);
+    }
+    toast.add({
+      severity: 'success',
+      summary: 'Success',
+      detail: 'User deleted successfully.',
+      life: 3000
+    });
+  } catch (error) {
+    console.error('Failed to delete user:', error);
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'Failed to delete user. Please try again.',
+      life: 5000
+    });
+  }
+};
+
+// Component management
+const editComponent = (component: SystemComponent) => {
+  editingComponent.value = component;
+  showEditComponentModal.value = true;
+};
+
+const handleComponentCreated = (newComponent: SystemComponent) => {
+  components.value?.push(newComponent);
+  showCreateComponentModal.value = false;
+};
+
+const handleComponentSaved = (updatedComponent: SystemComponent) => {
+  if (components.value) {
+    const index = components.value.findIndex(c => c.uuid === updatedComponent.uuid);
+    if (index !== -1) {
+      components.value[index] = updatedComponent;
+    }
+  }
+  showEditComponentModal.value = false;
+  editingComponent.value = null;
+};
+
+const downloadComponentJSON = (component: SystemComponent) => {
+  const dataStr = JSON.stringify(component, null, 2);
+  const dataBlob = new Blob([dataStr], { type: 'application/json' });
+  const url = URL.createObjectURL(dataBlob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `component-${component.uuid}.json`;
+  link.click();
+  URL.revokeObjectURL(url);
+};
+
+const deleteComponent = async (component: SystemComponent) => {
+  if (!confirm(`Are you sure you want to delete component "${component.title}"?`)) {
+    return;
+  }
+  
+  try {
+    await sspStore.deleteSystemImplementationComponent(id, component.uuid);
+    if (components.value) {
+      components.value = components.value.filter(c => c.uuid !== component.uuid);
+    }
+    toast.add({
+      severity: 'success',
+      summary: 'Success',
+      detail: 'Component deleted successfully.',
+      life: 3000
+    });
+  } catch (error) {
+    console.error('Failed to delete component:', error);
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'Failed to delete component. Please try again.',
+      life: 5000
+    });
+  }
+};
 </script>
