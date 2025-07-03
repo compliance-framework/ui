@@ -114,12 +114,21 @@
               >
                 <div class="flex justify-between items-start mb-2">
                   <span class="text-sm font-medium text-gray-900 dark:text-slate-300">{{ statement.statementId }}</span>
-                  <button
-                    @click="editStatement(requirement, statement)"
-                    class="text-blue-600 hover:text-blue-800 dark:text-blue-400 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Edit
-                  </button>
+                  <div class="flex gap-2">
+                    <button
+                      @click="createComponent(statement)"
+                      class="text-green-600 hover:text-green-800 dark:text-green-400 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+                      disabled
+                    >
+                      Create Component
+                    </button>
+                    <button
+                      @click="editStatement(requirement, statement)"
+                      class="text-blue-600 hover:text-blue-800 dark:text-blue-400 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Edit
+                    </button>
+                  </div>
                 </div>
                 <p class="text-sm text-gray-600 dark:text-slate-400">{{ statement.description }}</p>
                 
@@ -456,6 +465,11 @@ const editStatement = (requirement: ImplementedRequirement, statement: Statement
 const createStatement = (requirement: ImplementedRequirement) => {
   editingRequirement.value = requirement
   showCreateStatementModal.value = true
+}
+
+const createComponent = (statement: Statement) => {
+  console.log('Create Component for Statement:', statement)
+  alert('Create Component functionality is in development')
 }
 
 const editByComponent = (statement: any, byComponent: any) => {
