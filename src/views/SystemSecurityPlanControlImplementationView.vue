@@ -81,6 +81,12 @@
             </div>
             <div class="flex gap-2">
               <button
+                @click="createStatement(requirement)"
+                class="text-green-600 hover:text-green-800 dark:text-green-400 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Create Statement
+              </button>
+              <button
                 @click="editRequirement(requirement)"
                 class="text-blue-600 hover:text-blue-800 dark:text-blue-400 disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -258,6 +264,16 @@
       @saved="handleStatementSaved"
     />
   </Modal>
+
+  <!-- Statement Create Modal -->
+  <Modal :show="showCreateStatementModal" @close="showCreateStatementModal = false" size="lg">
+    <StatementCreateForm 
+      :ssp-id="route.params.id as string"
+      :req-id="editingRequirement?.uuid || ''"
+      @cancel="showCreateStatementModal = false"
+      @created="handleStatementCreated"
+    />
+  </Modal>
 </template>
 
 <script setup lang="ts">
@@ -275,6 +291,7 @@ import ImplementedRequirementCreateForm from '@/components/system-security-plans
 import ImplementedRequirementEditForm from '@/components/system-security-plans/ImplementedRequirementEditForm.vue'
 import ControlImplementationEditForm from '@/components/system-security-plans/ControlImplementationEditForm.vue'
 import StatementEditForm from '@/components/system-security-plans/StatementEditForm.vue'
+import StatementCreateForm from '@/components/system-security-plans/StatementCreateForm.vue'
 
 const route = useRoute()
 const sspStore = useSystemSecurityPlanStore()
@@ -289,6 +306,7 @@ const showCreateRequirementModal = ref(false)
 const showEditRequirementModal = ref(false)
 const showEditControlImplementationModal = ref(false)
 const showEditStatementModal = ref(false)
+const showCreateStatementModal = ref(false)
 
 // Edit targets
 const editingRequirement = ref<ImplementedRequirement | null>(null)
@@ -413,11 +431,31 @@ const handleStatementSaved = (updatedStatement: Statement) => {
   editingRequirement.value = null
 }
 
+const handleStatementCreated = (newStatement: Statement) => {
+  if (controlImplementation.value && editingRequirement.value) {
+    const reqIndex = controlImplementation.value.implementedRequirements.findIndex(r => r.uuid === editingRequirement.value?.uuid)
+    if (reqIndex !== -1) {
+      const requirement = controlImplementation.value.implementedRequirements[reqIndex]
+      if (!requirement.statements) {
+        requirement.statements = []
+      }
+      requirement.statements.push(newStatement)
+    }
+  }
+  showCreateStatementModal.value = false
+  editingRequirement.value = null
+}
+
 // Placeholder functions for nested editing (statements, by-components)
 const editStatement = (requirement: ImplementedRequirement, statement: Statement) => {
   editingRequirement.value = requirement
   editingStatement.value = statement
   showEditStatementModal.value = true
+}
+
+const createStatement = (requirement: ImplementedRequirement) => {
+  editingRequirement.value = requirement
+  showCreateStatementModal.value = true
 }
 
 const editByComponent = (statement: any, byComponent: any) => {

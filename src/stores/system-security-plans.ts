@@ -179,6 +179,17 @@ export interface Statement {
   remarks?: string;
 }
 
+export interface CreateStatementRequest {
+  uuid: string;
+  statementId: string;
+  description?: string;
+  props: Property[];
+  links: Link[];
+  responsibleRoles?: ResponsibleRole[];
+  byComponents?: ByComponent[];
+  remarks?: string;
+}
+
 export interface ImplementedRequirement {
   uuid: string;
   controlId: string;
@@ -821,6 +832,29 @@ export const useSystemSecurityPlanStore = defineStore(
       return camelcaseKeys(await response.json(), { deep: true }) as DataResponse<Statement>;
     }
 
+    async function createImplementedRequirementStatement(
+      id: string,
+      reqId: string,
+      statement: CreateStatementRequest,
+    ): Promise<DataResponse<Statement>> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/system-security-plans/${id}/control-implementation/implemented-requirements/${reqId}/statements`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(decamelizeKeys(statement, { separator: '-' })),
+          credentials: 'include',
+        }
+      );
+      if (!response.ok) {
+        throw response;
+      }
+      return camelcaseKeys(await response.json(), { deep: true }) as DataResponse<Statement>;
+    }
+
     return {
       get,
       list,
@@ -857,6 +891,7 @@ export const useSystemSecurityPlanStore = defineStore(
       updateImplementedRequirement,
       deleteImplementedRequirement,
       updateImplementedRequirementStatement,
+      createImplementedRequirementStatement,
     };
   },
 );
