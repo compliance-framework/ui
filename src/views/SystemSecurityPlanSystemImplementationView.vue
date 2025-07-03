@@ -5,7 +5,6 @@
       <div class="flex justify-between items-center mb-4">
         <h3 class="text-lg font-semibold text-gray-900 dark:text-slate-300">System Implementation</h3>
         <button
-          @click="() => {}"
           class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
           disabled
         >
@@ -42,7 +41,6 @@
           <span v-if="users.length > 0" class="text-sm font-normal text-gray-500 dark:text-slate-400">({{ users.length }})</span>
         </h3>
         <button
-          @click="() => {}"
           class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
           disabled
         >
@@ -67,7 +65,6 @@
           <div class="flex justify-between items-start mb-2">
             <h4 class="font-medium text-gray-900 dark:text-slate-300">{{ user.title || 'Untitled User' }}</h4>
             <button
-              @click="() => {}"
               class="text-blue-600 hover:text-blue-800 dark:text-blue-400 disabled:opacity-50 disabled:cursor-not-allowed"
               disabled
             >
@@ -119,7 +116,6 @@
           <span v-if="components.length > 0" class="text-sm font-normal text-gray-500 dark:text-slate-400">({{ components.length }})</span>
         </h3>
         <button
-          @click="() => {}"
           class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
           disabled
         >
@@ -148,7 +144,6 @@
                 {{ component.type }}
               </span>
               <button
-                @click="() => {}"
                 class="text-blue-600 hover:text-blue-800 dark:text-blue-400 disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled
               >
@@ -183,7 +178,6 @@
           <span v-if="inventoryItems.length > 0" class="text-sm font-normal text-gray-500 dark:text-slate-400">({{ inventoryItems.length }})</span>
         </h3>
         <button
-          @click="() => {}"
           class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
           disabled
         >
