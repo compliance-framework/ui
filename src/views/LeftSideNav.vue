@@ -24,6 +24,7 @@ const userStore = useUserStore()
         <SideNavLink class="pl-6" :to="{ name: 'catalog-list' }">Catalogs</SideNavLink>
         <SideNavLink class="pl-6" :to="{ name: 'component-definitions' }">Component Definitions</SideNavLink>
         <SideNavLink class="pl-6" :to="{ name: 'system-security-plans' }">System Security Plans</SideNavLink>
+        <SideNavLink class="pl-6" :to="{ name: 'plan-of-action-and-milestones' }">Plan of Action and Milestones</SideNavLink>
         <SideNavLink class="pl-6" :to="{ name: 'admin-parties' }">Parties</SideNavLink>
         <SideNavLink class="pl-6" :to="{ name: 'admin-roles' }">Roles</SideNavLink>
         <SideNavCategory title="Evidence">
