@@ -53,7 +53,7 @@ async function submit() {
       filter: parsedFilter,
     })
     return router.push({
-      name: 'findings',
+      name: 'evidence:index',
       query: { filter: filter.value },
     });
   } catch (error) {
