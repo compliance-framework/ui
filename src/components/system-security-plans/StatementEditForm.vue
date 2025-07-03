@@ -157,7 +157,6 @@ const saving = ref(false);
 const statementData = reactive<Statement>({
   uuid: '',
   statementId: '',
-  description: '',
   props: [],
   links: [],
   remarks: ''
@@ -165,7 +164,9 @@ const statementData = reactive<Statement>({
 
 onMounted(() => {
   Object.assign(statementData, {
-    ...props.statement,
+    uuid: props.statement.uuid,
+    statementId: props.statement.statementId,
+    remarks: props.statement.remarks,
     props: [...(props.statement.props || [])],
     links: [...(props.statement.links || [])]
   });
