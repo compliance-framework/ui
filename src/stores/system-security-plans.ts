@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { useConfigStore } from '@/stores/config.ts';
+import { useConfigStore } from '@/stores/config';
 import type {
   DataResponse,
   Link,
@@ -797,6 +797,30 @@ export const useSystemSecurityPlanStore = defineStore(
       }
     }
 
+    async function updateImplementedRequirementStatement(
+      id: string,
+      reqId: string,
+      stmtId: string,
+      statement: Statement,
+    ): Promise<DataResponse<Statement>> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/system-security-plans/${id}/control-implementation/implemented-requirements/${reqId}/statements/${stmtId}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(decamelizeKeys(statement, { separator: '-' })),
+          credentials: 'include',
+        }
+      );
+      if (!response.ok) {
+        throw response;
+      }
+      return camelcaseKeys(await response.json(), { deep: true }) as DataResponse<Statement>;
+    }
+
     return {
       get,
       list,
@@ -832,6 +856,7 @@ export const useSystemSecurityPlanStore = defineStore(
       createImplementedRequirement,
       updateImplementedRequirement,
       deleteImplementedRequirement,
+      updateImplementedRequirementStatement,
     };
   },
 );

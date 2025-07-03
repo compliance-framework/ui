@@ -246,6 +246,18 @@
       @saved="handleRequirementSaved"
     />
   </Modal>
+
+  <!-- Statement Edit Modal -->
+  <Modal :show="showEditStatementModal && editingStatement !== null" @close="showEditStatementModal = false" size="lg">
+    <StatementEditForm 
+      v-if="editingStatement"
+      :ssp-id="route.params.id as string"
+      :req-id="editingRequirement?.uuid || ''"
+      :statement="editingStatement"
+      @cancel="showEditStatementModal = false"
+      @saved="handleStatementSaved"
+    />
+  </Modal>
 </template>
 
 <script setup lang="ts">
@@ -255,12 +267,14 @@ import { useToast } from 'primevue/usetoast'
 import { 
   type ControlImplementation,
   type ImplementedRequirement,
+  type Statement,
   useSystemSecurityPlanStore 
-} from '@/stores/system-security-plans.ts'
+} from '@/stores/system-security-plans'
 import Modal from '@/components/Modal.vue'
 import ImplementedRequirementCreateForm from '@/components/system-security-plans/ImplementedRequirementCreateForm.vue'
 import ImplementedRequirementEditForm from '@/components/system-security-plans/ImplementedRequirementEditForm.vue'
 import ControlImplementationEditForm from '@/components/system-security-plans/ControlImplementationEditForm.vue'
+import StatementEditForm from '@/components/system-security-plans/StatementEditForm.vue'
 
 const route = useRoute()
 const sspStore = useSystemSecurityPlanStore()
@@ -274,9 +288,11 @@ const error = ref<string | null>(null)
 const showCreateRequirementModal = ref(false)
 const showEditRequirementModal = ref(false)
 const showEditControlImplementationModal = ref(false)
+const showEditStatementModal = ref(false)
 
 // Edit targets
 const editingRequirement = ref<ImplementedRequirement | null>(null)
+const editingStatement = ref<Statement | null>(null)
 
 const totalStatements = computed(() => {
   if (!controlImplementation.value?.implementedRequirements) return 0
@@ -379,10 +395,29 @@ const handleRequirementSaved = (updatedRequirement: ImplementedRequirement) => {
   editingRequirement.value = null
 }
 
+const handleStatementSaved = (updatedStatement: Statement) => {
+  if (controlImplementation.value && editingRequirement.value) {
+    const reqIndex = controlImplementation.value.implementedRequirements.findIndex(r => r.uuid === editingRequirement.value?.uuid)
+    if (reqIndex !== -1) {
+      const requirement = controlImplementation.value.implementedRequirements[reqIndex]
+      if (requirement.statements) {
+        const statementIndex = requirement.statements.findIndex(s => s.uuid === updatedStatement.uuid)
+        if (statementIndex !== -1) {
+          requirement.statements[statementIndex] = updatedStatement
+        }
+      }
+    }
+  }
+  showEditStatementModal.value = false
+  editingStatement.value = null
+  editingRequirement.value = null
+}
+
 // Placeholder functions for nested editing (statements, by-components)
-const editStatement = (requirement: ImplementedRequirement, statement: any) => {
-  console.log('Edit Statement:', requirement, statement)
-  alert('Statement editing functionality is in development')
+const editStatement = (requirement: ImplementedRequirement, statement: Statement) => {
+  editingRequirement.value = requirement
+  editingStatement.value = statement
+  showEditStatementModal.value = true
 }
 
 const editByComponent = (statement: any, byComponent: any) => {
