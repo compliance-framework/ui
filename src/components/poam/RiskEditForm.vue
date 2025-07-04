@@ -7,11 +7,12 @@
     <form @submit.prevent="submit" class="space-y-4">
       <div>
         <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">
-          Title
+          Title <span class="text-red-500">*</span>
         </label>
         <input
           v-model="formData.title"
           type="text"
+          required
           class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-800 dark:text-slate-300"
           placeholder="Enter risk title"
         />
@@ -32,14 +33,34 @@
 
       <div>
         <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">
-          Statement
+          Statement <span class="text-red-500">*</span>
         </label>
         <textarea
           v-model="formData.statement"
+          required
           rows="3"
           class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-800 dark:text-slate-300"
-          placeholder="Enter risk statement (optional)"
+          placeholder="Enter risk statement"
         ></textarea>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">
+          Status <span class="text-red-500">*</span>
+        </label>
+        <select
+          v-model="formData.status"
+          required
+          class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-800 dark:text-slate-300"
+        >
+          <option value="">Select status</option>
+          <option value="open">Open</option>
+          <option value="investigating">Investigating</option>
+          <option value="resolved">Resolved</option>
+          <option value="risk-accepted">Risk Accepted</option>
+          <option value="mitigation-implemented">Mitigation Implemented</option>
+          <option value="mitigation-planned">Mitigation Planned</option>
+        </select>
       </div>
 
       <div>
@@ -105,7 +126,7 @@
         </button>
         <button
           type="submit"
-          :disabled="!formData.description || saving"
+          :disabled="!formData.title || !formData.description || !formData.statement || !formData.status || saving"
           class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {{ saving ? 'Saving...' : 'Save' }}
@@ -139,6 +160,7 @@ const formData = reactive({
   title: '',
   description: '',
   statement: '',
+  status: '',
   threatIds: [] as string[],
   deadline: '',
   remarks: ''
@@ -149,6 +171,7 @@ onMounted(() => {
   formData.title = props.risk.title || ''
   formData.description = props.risk.description
   formData.statement = props.risk.statement || ''
+  formData.status = props.risk.status
   formData.threatIds = [...(props.risk.threatIds || [])]
   formData.deadline = props.risk.deadline || ''
   formData.remarks = props.risk.remarks || ''
@@ -163,6 +186,16 @@ function removeThreatId(index: number) {
 }
 
 async function submit() {
+  if (!formData.title) {
+    toast.add({
+      severity: 'error',
+      summary: 'Validation Error',
+      detail: 'Title is required',
+      life: 3000
+    })
+    return
+  }
+
   if (!formData.description) {
     toast.add({
       severity: 'error',
@@ -173,14 +206,35 @@ async function submit() {
     return
   }
 
+  if (!formData.statement) {
+    toast.add({
+      severity: 'error',
+      summary: 'Validation Error',
+      detail: 'Statement is required',
+      life: 3000
+    })
+    return
+  }
+
+  if (!formData.status) {
+    toast.add({
+      severity: 'error',
+      summary: 'Validation Error',
+      detail: 'Status is required',
+      life: 3000
+    })
+    return
+  }
+
   try {
     saving.value = true
     
     const updatedRisk: Risk = {
       ...props.risk,
-      title: formData.title || undefined,
+      title: formData.title,
       description: formData.description,
-      statement: formData.statement || undefined,
+      statement: formData.statement,
+      status: formData.status,
       threatIds: formData.threatIds.filter(t => t.trim()).length > 0 ? formData.threatIds.filter(t => t.trim()) : undefined,
       deadline: formData.deadline || undefined,
       remarks: formData.remarks || undefined

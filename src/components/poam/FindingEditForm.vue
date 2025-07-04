@@ -7,11 +7,12 @@
     <form @submit.prevent="submit" class="space-y-4">
       <div>
         <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">
-          Title
+          Title <span class="text-red-500">*</span>
         </label>
         <input
           v-model="formData.title"
           type="text"
+          required
           class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-800 dark:text-slate-300"
           placeholder="Enter finding title"
         />
@@ -32,14 +33,30 @@
 
       <div>
         <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">
-          Target (JSON)
+          Target (JSON) <span class="text-red-500">*</span>
         </label>
         <textarea
           v-model="formData.target"
+          required
           rows="3"
           class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-800 dark:text-slate-300"
-          placeholder='{"type": "component", "componentId": "example"}'
+          placeholder='{"type": "component", "componentId": "example", "title": "Component Name", "status": {"state": "implemented"}}'
         ></textarea>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">
+          Status
+        </label>
+        <select
+          v-model="formData.status"
+          class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-800 dark:text-slate-300"
+        >
+          <option value="">Select status</option>
+          <option value="satisfied">Satisfied</option>
+          <option value="not satisfied">Not Satisfied</option>
+          <option value="unknown">Unknown</option>
+        </select>
       </div>
 
       <div>
@@ -136,7 +153,7 @@
         </button>
         <button
           type="submit"
-          :disabled="!formData.description || saving"
+          :disabled="!formData.title || !formData.description || !formData.target || saving"
           class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {{ saving ? 'Saving...' : 'Save' }}
@@ -170,6 +187,7 @@ const formData = reactive({
   title: '',
   description: '',
   target: '',
+  status: '',
   implementationStatus: '',
   relatedObservations: [] as string[],
   relatedRisks: [] as string[],
@@ -181,9 +199,12 @@ onMounted(() => {
   formData.title = props.finding.title || ''
   formData.description = props.finding.description
   formData.target = props.finding.target ? JSON.stringify(props.finding.target, null, 2) : ''
+  formData.status = props.finding.status?.state || ''
   formData.implementationStatus = props.finding.implementationStatus ? JSON.stringify(props.finding.implementationStatus, null, 2) : ''
-  formData.relatedObservations = [...(props.finding.relatedObservations || [])]
-  formData.relatedRisks = [...(props.finding.relatedRisks || [])]
+  // Handle related observations - extract UUIDs from objects
+  formData.relatedObservations = props.finding.relatedObservations?.map((obs: any) => obs.observationUuid || obs) || []
+  // Handle related risks - extract UUIDs from objects
+  formData.relatedRisks = props.finding.relatedRisks?.map((risk: any) => risk.riskUuid || risk) || []
   formData.remarks = props.finding.remarks || ''
 })
 
@@ -213,6 +234,16 @@ function parseJsonField(value: string): any {
 }
 
 async function submit() {
+  if (!formData.title) {
+    toast.add({
+      severity: 'error',
+      summary: 'Validation Error',
+      detail: 'Title is required',
+      life: 3000
+    })
+    return
+  }
+
   if (!formData.description) {
     toast.add({
       severity: 'error',
@@ -223,14 +254,25 @@ async function submit() {
     return
   }
 
+  if (!formData.target) {
+    toast.add({
+      severity: 'error',
+      summary: 'Validation Error',
+      detail: 'Target is required',
+      life: 3000
+    })
+    return
+  }
+
   try {
     saving.value = true
     
     const updatedFinding: Finding = {
       ...props.finding,
-      title: formData.title || undefined,
+      title: formData.title,
       description: formData.description,
       target: parseJsonField(formData.target),
+      status: formData.status ? { state: formData.status } : undefined,
       implementationStatus: parseJsonField(formData.implementationStatus),
       relatedObservations: formData.relatedObservations.filter(o => o.trim()).length > 0 ? formData.relatedObservations.filter(o => o.trim()) : undefined,
       relatedRisks: formData.relatedRisks.filter(r => r.trim()).length > 0 ? formData.relatedRisks.filter(r => r.trim()) : undefined,

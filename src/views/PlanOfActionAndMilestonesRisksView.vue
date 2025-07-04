@@ -38,6 +38,13 @@
               <p class="text-sm text-gray-600 dark:text-slate-400">{{ risk.statement }}</p>
             </div>
             
+            <div class="mt-3">
+              <h4 class="text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">Status</h4>
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                {{ risk.status }}
+              </span>
+            </div>
+            
             <div class="mt-4 flex flex-wrap gap-2">
               <span v-if="risk.threatIds?.length" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
                 {{ risk.threatIds.length }} Threats

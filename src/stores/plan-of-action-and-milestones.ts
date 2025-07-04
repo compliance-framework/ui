@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import { useConfigStore } from '@/stores/config';
 import type {
   DataResponse,
+  FindingStatus,
   Link,
   Metadata,
   Property,
@@ -135,6 +136,7 @@ export interface Risk {
   title?: string;
   description: string;
   statement?: string;
+  status: string; // Required field
   props?: Property[];
   links?: Link[];
   origins?: Origin[];
@@ -143,6 +145,8 @@ export interface Risk {
   mitigatingFactors?: any[];
   deadline?: string;
   remediations?: any[];
+  relatedObservations?: string[];
+  riskLog?: any;
   remarks?: string;
 }
 
@@ -150,10 +154,11 @@ export interface Finding {
   uuid?: string;
   title?: string;
   description: string;
-  target?: any;
+  target: any; // Required field
   implementationStatus?: any;
-  relatedObservations?: string[];
-  relatedRisks?: string[];
+  status?: FindingStatus;
+  relatedObservations?: any[];
+  relatedRisks?: any[];
   props?: Property[];
   links?: Link[];
   origins?: Origin[];
@@ -518,6 +523,10 @@ export const usePlanOfActionAndMilestonesStore = defineStore(
 
     async function createFinding(id: string, finding: Partial<Finding>): Promise<DataResponse<Finding>> {
       const config = await configStore.getConfig();
+      const decamelizedFinding = decamelizeKeys(finding, { separator: '-' });
+      console.log('Decamelized finding payload:', decamelizedFinding);
+      console.log('Decamelized finding JSON:', JSON.stringify(decamelizedFinding, null, 2));
+      
       const response = await fetch(
         `${config.API_URL}/api/oscal/plan-of-action-and-milestones/${id}/findings`,
         {
@@ -525,7 +534,7 @@ export const usePlanOfActionAndMilestonesStore = defineStore(
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(decamelizeKeys(finding, { separator: '-' })),
+          body: JSON.stringify(decamelizedFinding),
           credentials: 'include',
         }
       );
