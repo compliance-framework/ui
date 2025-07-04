@@ -103,8 +103,8 @@ onMounted(async () => {
     const response = await poamStore.getLocations(id)
     locations.value = response.data
   } catch (err) {
-    console.error('Error loading locations:', err)
-    error.value = err instanceof Error ? err.message : 'Unknown error'
+    console.error('Error loading locations (endpoint not implemented):', err)
+    error.value = 'Locations endpoint not yet implemented in backend'
   } finally {
     loading.value = false
   }

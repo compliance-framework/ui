@@ -89,8 +89,8 @@ onMounted(async () => {
     const response = await poamStore.getParties(id)
     parties.value = response.data
   } catch (err) {
-    console.error('Error loading parties:', err)
-    error.value = err instanceof Error ? err.message : 'Unknown error'
+    console.error('Error loading parties (endpoint not implemented):', err)
+    error.value = 'Parties endpoint not yet implemented in backend'
   } finally {
     loading.value = false
   }
