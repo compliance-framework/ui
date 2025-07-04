@@ -2,11 +2,16 @@
   <PageHeader>Dashboards</PageHeader>
   <PageSubHeader>Findings grouped by query</PageSubHeader>
 
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 mt-4">
     <PageCard v-for="dashboard in dashboards" :key="dashboard.uuid">
-      <h3 class="text-lg font-semibold text-zinc-600 dark:text-slate-300">
-        {{ dashboard.name }}
-      </h3>
+      <div class="flex justify-between items-center mb-2">
+        <h3 class="text-lg font-semibold text-zinc-600 dark:text-slate-300">
+          {{ dashboard.name }}
+        </h3>
+        <div>
+          <Chip v-for="control in dashboard.controls" :key="control.id" :label="control.id" class="mx-1" />
+        </div>
+      </div>
       <div class="h-32">
         <DashboardChart :filter="dashboard.filter" :dashboard="dashboard" />
       </div>
@@ -30,6 +35,7 @@ import DashboardChart from '@/views/dashboard/DashboardChart.vue'
 import { useConfirm } from 'primevue/useconfirm'
 import { useToast } from 'primevue/usetoast'
 import Button from '@/volt/Button.vue'
+import Chip from '@/volt/Chip.vue';
 
 const dashboardsStore = useDashboardStore()
 const confirm = useConfirm();

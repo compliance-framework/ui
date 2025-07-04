@@ -2,13 +2,14 @@ import { defineStore } from 'pinia'
 import { useConfigStore } from '@/stores/config.ts'
 import { type Filter } from '@/parsers/labelfilter.ts'
 import type { DataResponse } from '@/stores/types.ts'
+import type { Control } from '@/stores/catalogs.ts'
 
 export interface Dashboard {
   id?: string
   uuid?: string
   name: string
   filter: Filter
-  controls: string[]
+  controls: Control[]
 }
 
 export const useDashboardStore = defineStore('dashboards', () => {
