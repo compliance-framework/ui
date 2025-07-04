@@ -8,6 +8,7 @@ export interface Dashboard {
   uuid?: string
   name: string
   filter: Filter
+  controls: string[]
 }
 
 export const useDashboardStore = defineStore('dashboards', () => {
