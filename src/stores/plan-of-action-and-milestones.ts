@@ -114,6 +114,22 @@ export interface PoamItem {
   remarks?: string;
 }
 
+export interface Observation {
+  uuid?: string;
+  title?: string;
+  description: string;
+  methods: string[];
+  types?: string[];
+  props?: Property[];
+  links?: Link[];
+  origins?: Origin[];
+  subjects?: string[];
+  relevantEvidence?: string[];
+  collected?: string;
+  expires?: string;
+  remarks?: string;
+}
+
 export interface Resource {
   uuid: string;
   title?: string;
@@ -206,14 +222,46 @@ export const usePlanOfActionAndMilestonesStore = defineStore(
       }) as DataResponse<PlanOfActionAndMilestones>;
     }
 
-    // Create function (disabled for now)
     async function create(poam: Partial<PlanOfActionAndMilestones>): Promise<DataResponse<PlanOfActionAndMilestones>> {
-      throw new Error('Create functionality is currently disabled');
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/plan-of-action-and-milestones`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(decamelizeKeys(poam, { separator: '-' })),
+          credentials: 'include',
+        }
+      );
+      if (!response.ok) {
+        throw response;
+      }
+      return camelcaseKeys(await response.json(), {
+        deep: true,
+      }) as DataResponse<PlanOfActionAndMilestones>;
     }
 
-    // Update functions (disabled for now)
     async function update(id: string, poam: PlanOfActionAndMilestones): Promise<DataResponse<PlanOfActionAndMilestones>> {
-      throw new Error('Update functionality is currently disabled');
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/plan-of-action-and-milestones/${id}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(decamelizeKeys(poam, { separator: '-' })),
+          credentials: 'include',
+        }
+      );
+      if (!response.ok) {
+        throw response;
+      }
+      return camelcaseKeys(await response.json(), {
+        deep: true,
+      }) as DataResponse<PlanOfActionAndMilestones>;
     }
 
     async function updateMetadata(id: string, metadata: Metadata): Promise<DataResponse<Metadata>> {
@@ -221,11 +269,132 @@ export const usePlanOfActionAndMilestonesStore = defineStore(
     }
 
     async function updatePoamItem(id: string, itemId: string, item: PoamItem): Promise<DataResponse<PoamItem>> {
-      throw new Error('Update functionality is currently disabled');
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/plan-of-action-and-milestones/${id}/poam-items/${itemId}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(decamelizeKeys(item, { separator: '-' })),
+          credentials: 'include',
+        }
+      );
+      if (!response.ok) {
+        throw response;
+      }
+      return camelcaseKeys(await response.json(), {
+        deep: true,
+      }) as DataResponse<PoamItem>;
     }
 
     async function createPoamItem(id: string, item: Partial<PoamItem>): Promise<DataResponse<PoamItem>> {
-      throw new Error('Create functionality is currently disabled');
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/plan-of-action-and-milestones/${id}/poam-items`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(decamelizeKeys(item, { separator: '-' })),
+          credentials: 'include',
+        }
+      );
+      if (!response.ok) {
+        throw response;
+      }
+      return camelcaseKeys(await response.json(), {
+        deep: true,
+      }) as DataResponse<PoamItem>;
+    }
+
+    async function deletePoamItem(id: string, itemId: string): Promise<void> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/plan-of-action-and-milestones/${id}/poam-items/${itemId}`,
+        {
+          method: 'DELETE',
+          credentials: 'include',
+        }
+      );
+      if (!response.ok) {
+        throw response;
+      }
+    }
+
+    // Observation functions
+    async function getObservations(id: string): Promise<DataResponse<Observation[]>> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/plan-of-action-and-milestones/${id}/observations`,
+        {
+          credentials: 'include',
+        }
+      );
+      if (!response.ok) {
+        throw response;
+      }
+      return camelcaseKeys(await response.json(), {
+        deep: true,
+      }) as DataResponse<Observation[]>;
+    }
+
+    async function createObservation(id: string, observation: Partial<Observation>): Promise<DataResponse<Observation>> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/plan-of-action-and-milestones/${id}/observations`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(decamelizeKeys(observation, { separator: '-' })),
+          credentials: 'include',
+        }
+      );
+      if (!response.ok) {
+        throw response;
+      }
+      return camelcaseKeys(await response.json(), {
+        deep: true,
+      }) as DataResponse<Observation>;
+    }
+
+    async function updateObservation(id: string, observationId: string, observation: Observation): Promise<DataResponse<Observation>> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/plan-of-action-and-milestones/${id}/observations/${observationId}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(decamelizeKeys(observation, { separator: '-' })),
+          credentials: 'include',
+        }
+      );
+      if (!response.ok) {
+        throw response;
+      }
+      return camelcaseKeys(await response.json(), {
+        deep: true,
+      }) as DataResponse<Observation>;
+    }
+
+    async function deleteObservation(id: string, observationId: string): Promise<void> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/plan-of-action-and-milestones/${id}/observations/${observationId}`,
+        {
+          method: 'DELETE',
+          credentials: 'include',
+        }
+      );
+      if (!response.ok) {
+        throw response;
+      }
     }
 
     async function updateRole(id: string, roleId: string, role: Role): Promise<DataResponse<Role>> {
@@ -332,6 +501,11 @@ export const usePlanOfActionAndMilestonesStore = defineStore(
       updateMetadata,
       updatePoamItem,
       createPoamItem,
+      deletePoamItem,
+      getObservations,
+      createObservation,
+      updateObservation,
+      deleteObservation,
       updateRole,
       createRole,
       updateParty,

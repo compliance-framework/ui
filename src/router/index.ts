@@ -277,6 +277,14 @@ const authenticatedRoutes = [
     }
   },
   {
+    path: '/plan-of-action-and-milestones/create',
+    name: 'plan-of-action-and-milestones-create',
+    component: () => import('../views/PlanOfActionAndMilestonesCreateView.vue'),
+    meta: {
+      requiresAuth: true,
+    }
+  },
+  {
     path: '/system-security-plans/:id',
     name: 'system-security-plan-editor',
     component: () => import('../views/SystemSecurityPlanEditorView.vue'),
@@ -330,6 +338,11 @@ const authenticatedRoutes = [
         component: () => import('../views/PlanOfActionAndMilestonesPoamItemsView.vue')
       },
       {
+        path: 'observations',
+        name: 'plan-of-action-and-milestones-observations',
+        component: () => import('../views/PlanOfActionAndMilestonesObservationsView.vue')
+      },
+      {
         path: 'roles',
         name: 'plan-of-action-and-milestones-roles',
         component: () => import('../views/PlanOfActionAndMilestonesRolesView.vue')
@@ -355,6 +368,14 @@ const authenticatedRoutes = [
         component: () => import('../views/PlanOfActionAndMilestonesJSONView.vue')
       },
     ]
+  },
+  {
+    path: '/plan-of-action-and-milestones/:id/edit',
+    name: 'plan-of-action-and-milestones-edit',
+    component: () => import('../views/PlanOfActionAndMilestonesEditView.vue'),
+    meta: {
+      requiresAuth: true,
+    }
   },
   {
     path: '/system-security-plans/:id/editor',
