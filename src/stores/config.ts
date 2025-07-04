@@ -26,7 +26,6 @@ export const useConfigStore = defineStore('config', () => {
         } else {
           throw e
         }
-
       }
     }
     config.value = {

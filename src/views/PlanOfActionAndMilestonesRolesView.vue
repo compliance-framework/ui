@@ -77,8 +77,8 @@ onMounted(async () => {
     const response = await poamStore.getRoles(id)
     roles.value = response.data
   } catch (err) {
-    console.error('Error loading roles:', err)
-    error.value = err instanceof Error ? err.message : 'Unknown error'
+    console.error('Error loading roles (endpoint not implemented):', err)
+    error.value = 'Roles endpoint not yet implemented in backend'
   } finally {
     loading.value = false
   }

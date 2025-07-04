@@ -65,7 +65,7 @@ async function downloadJson(): Promise<void> {
     const url = URL.createObjectURL(dataBlob)
     const link = document.createElement('a')
     link.href = url
-    link.download = `${poamData.value.title.replace(/[^a-zA-Z0-9]/g, '_')}-poam.json`
+    link.download = `${poamData.value.metadata?.title?.replace(/[^a-zA-Z0-9]/g, '_') || 'poam'}-poam.json`
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)

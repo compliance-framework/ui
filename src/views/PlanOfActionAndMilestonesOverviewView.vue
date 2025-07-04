@@ -7,7 +7,7 @@
       <div v-if="planOfActionAndMilestones.metadata" class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">Title</label>
-          <p class="text-gray-900 dark:text-slate-300">{{ planOfActionAndMilestones.title }}</p>
+          <p class="text-gray-900 dark:text-slate-300">{{ planOfActionAndMilestones.metadata?.title }}</p>
         </div>
         
         <div>
@@ -17,22 +17,22 @@
 
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">Version</label>
-          <p class="text-gray-900 dark:text-slate-300">{{ planOfActionAndMilestones.version }}</p>
+          <p class="text-gray-900 dark:text-slate-300">{{ planOfActionAndMilestones.metadata?.version }}</p>
         </div>
 
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">OSCAL Version</label>
-          <p class="text-gray-900 dark:text-slate-300">{{ planOfActionAndMilestones.oscalVersion }}</p>
+          <p class="text-gray-900 dark:text-slate-300">{{ planOfActionAndMilestones.metadata?.oscalVersion || 'N/A' }}</p>
         </div>
 
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">Last Modified</label>
-          <p class="text-gray-900 dark:text-slate-300">{{ formatDate(planOfActionAndMilestones.lastModified) }}</p>
+          <p class="text-gray-900 dark:text-slate-300">{{ formatDate(planOfActionAndMilestones.metadata?.lastModified) }}</p>
         </div>
 
-        <div v-if="planOfActionAndMilestones.published">
+        <div v-if="planOfActionAndMilestones.metadata?.published">
           <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">Published</label>
-          <p class="text-gray-900 dark:text-slate-300">{{ formatDate(planOfActionAndMilestones.published) }}</p>
+          <p class="text-gray-900 dark:text-slate-300">{{ formatDate(planOfActionAndMilestones.metadata?.published) }}</p>
         </div>
 
         <div v-if="planOfActionAndMilestones.metadata.remarks" class="md:col-span-2">
@@ -217,28 +217,31 @@ onMounted(async () => {
       console.warn('Could not load POAM items:', error)
     }
 
-    // Load roles
+    // Load roles (not yet implemented in backend)
     try {
       const rolesResponse = await poamStore.getRoles(id)
       roles.value = rolesResponse.data
     } catch (error) {
-      console.warn('Could not load roles:', error)
+      console.warn('Could not load roles (endpoint not implemented):', error)
+      roles.value = [] // Set empty array since endpoint doesn't exist
     }
 
-    // Load parties
+    // Load parties (not yet implemented in backend)
     try {
       const partiesResponse = await poamStore.getParties(id)
       parties.value = partiesResponse.data
     } catch (error) {
-      console.warn('Could not load parties:', error)
+      console.warn('Could not load parties (endpoint not implemented):', error)
+      parties.value = [] // Set empty array since endpoint doesn't exist
     }
 
-    // Load locations
+    // Load locations (not yet implemented in backend)
     try {
       const locationsResponse = await poamStore.getLocations(id)
       locations.value = locationsResponse.data
     } catch (error) {
-      console.warn('Could not load locations:', error)
+      console.warn('Could not load locations (endpoint not implemented):', error)
+      locations.value = [] // Set empty array since endpoint doesn't exist
     }
 
   } catch (error) {
@@ -260,7 +263,7 @@ async function downloadJson(): Promise<void> {
     const url = URL.createObjectURL(dataBlob)
     const link = document.createElement('a')
     link.href = url
-    link.download = `${planOfActionAndMilestones.value.title.replace(/[^a-zA-Z0-9]/g, '_')}-poam.json`
+    link.download = `${planOfActionAndMilestones.value.metadata?.title?.replace(/[^a-zA-Z0-9]/g, '_') || 'poam'}-poam.json`
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)

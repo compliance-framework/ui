@@ -148,18 +148,6 @@ export interface BackMatter {
 export interface PlanOfActionAndMilestones {
   uuid: string;
   metadata: Metadata;
-  title: string;
-  published?: string;
-  lastModified: string;
-  version: string;
-  oscalVersion: string;
-  revisions?: Revision[];
-  documentIds?: DocumentId[];
-  props?: Property[];
-  links?: Link[];
-  roles?: Role[];
-  locations?: Location[];
-  parties?: Party[];
   poamItems: PoamItem[];
   backMatter?: BackMatter;
   remarks?: string;
@@ -181,7 +169,9 @@ export const usePlanOfActionAndMilestonesStore = defineStore(
       if (!response.ok) {
         throw response;
       }
-      return (await response.json()) as DataResponse<PlanOfActionAndMilestones>;
+      return camelcaseKeys(await response.json(), {
+        deep: true,
+      }) as DataResponse<PlanOfActionAndMilestones>;
     }
 
     async function list(): Promise<DataResponse<PlanOfActionAndMilestones[]>> {
@@ -195,7 +185,9 @@ export const usePlanOfActionAndMilestonesStore = defineStore(
       if (!response.ok) {
         throw response;
       }
-      return (await response.json()) as DataResponse<PlanOfActionAndMilestones[]>;
+      return camelcaseKeys(await response.json(), {
+        deep: true,
+      }) as DataResponse<PlanOfActionAndMilestones[]>;
     }
 
     async function full(id: string): Promise<DataResponse<PlanOfActionAndMilestones>> {
@@ -293,52 +285,17 @@ export const usePlanOfActionAndMilestonesStore = defineStore(
       }) as DataResponse<PoamItem[]>;
     }
 
+    // Note: These endpoints are not yet implemented in the backend
     async function getRoles(id: string): Promise<DataResponse<Role[]>> {
-      const config = await configStore.getConfig();
-      const response = await fetch(
-        `${config.API_URL}/api/oscal/plan-of-action-and-milestones/${id}/roles`,
-        {
-          credentials: 'include',
-        }
-      );
-      if (!response.ok) {
-        throw response;
-      }
-      return camelcaseKeys(await response.json(), {
-        deep: true,
-      }) as DataResponse<Role[]>;
+      throw new Error('Roles endpoint not yet implemented in backend');
     }
 
     async function getParties(id: string): Promise<DataResponse<Party[]>> {
-      const config = await configStore.getConfig();
-      const response = await fetch(
-        `${config.API_URL}/api/oscal/plan-of-action-and-milestones/${id}/parties`,
-        {
-          credentials: 'include',
-        }
-      );
-      if (!response.ok) {
-        throw response;
-      }
-      return camelcaseKeys(await response.json(), {
-        deep: true,
-      }) as DataResponse<Party[]>;
+      throw new Error('Parties endpoint not yet implemented in backend');
     }
 
     async function getLocations(id: string): Promise<DataResponse<Location[]>> {
-      const config = await configStore.getConfig();
-      const response = await fetch(
-        `${config.API_URL}/api/oscal/plan-of-action-and-milestones/${id}/locations`,
-        {
-          credentials: 'include',
-        }
-      );
-      if (!response.ok) {
-        throw response;
-      }
-      return camelcaseKeys(await response.json(), {
-        deep: true,
-      }) as DataResponse<Location[]>;
+      throw new Error('Locations endpoint not yet implemented in backend');
     }
 
     async function getBackMatter(id: string): Promise<DataResponse<BackMatter>> {

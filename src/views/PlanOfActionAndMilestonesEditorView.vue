@@ -1,7 +1,7 @@
 <template>
   <div>
     <PageHeader>Plan of Action and Milestones</PageHeader>
-    <PageSubHeader>{{ planOfActionAndMilestones.title }}</PageSubHeader>
+    <PageSubHeader>{{ planOfActionAndMilestones.metadata?.title }}</PageSubHeader>
 
     <div class="mt-4 text-gray-600 dark:text-slate-400">
       {{ planOfActionAndMilestones.metadata?.remarks }}

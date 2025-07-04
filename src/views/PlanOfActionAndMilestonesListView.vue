@@ -57,14 +57,14 @@
                     :to="`/plan-of-action-and-milestones/${poam.uuid}`"
                     class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
                   >
-                    {{ poam.title }}
+                    {{ poam.metadata?.title }}
                   </RouterLink>
                 </td>
                 <td class="px-6 py-4 text-sm text-gray-500 dark:text-slate-400">
-                  {{ poam.version }}
+                  {{ poam.metadata?.version }}
                 </td>
                 <td class="px-6 py-4 text-sm text-gray-500 dark:text-slate-400">
-                  {{ formatDate(poam.lastModified) }}
+                  {{ formatDate(poam.metadata?.lastModified) }}
                 </td>
                 <td class="px-6 py-4 text-sm text-gray-500 dark:text-slate-400">
                   {{ poam.poamItems?.length || 0 }}
@@ -78,7 +78,7 @@
                       View
                     </RouterLink>
                     <button
-                      @click="downloadJson(poam.uuid, poam.title)"
+                      @click="downloadJson(poam.uuid, poam.metadata?.title)"
                       class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1 rounded-md"
                       title="Download Full JSON"
                     >
