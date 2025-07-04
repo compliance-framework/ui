@@ -58,13 +58,18 @@
         >
           Edit Metadata
         </button>
-        <button
-          disabled
-          class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
-          title="Edit functionality is currently disabled"
+        <RouterLink
+          :to="`/plan-of-action-and-milestones/${planOfActionAndMilestones.uuid}/edit`"
+          class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
         >
-          Edit POAM Items
-        </button>
+          Edit POAM
+        </RouterLink>
+        <RouterLink
+          :to="`/plan-of-action-and-milestones/${planOfActionAndMilestones.uuid}/poam-items`"
+          class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md"
+        >
+          Manage POAM Items
+        </RouterLink>
         <button
           disabled
           class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
@@ -87,12 +92,7 @@
         </button>
       </div>
 
-      <!-- Feature Notice -->
-      <div class="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md">
-        <p class="text-sm text-yellow-800 dark:text-yellow-200">
-          <strong>Read-Only Mode:</strong> Edit functionality is currently disabled. You can view all POAM data and download the full JSON representation.
-        </p>
-      </div>
+
     </div>
 
     <!-- Summary Statistics -->
@@ -175,7 +175,7 @@
 
 <script setup lang="ts">
 import { onMounted, ref, computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, RouterLink } from 'vue-router'
 import { 
   type PlanOfActionAndMilestones, 
   type PoamItem,

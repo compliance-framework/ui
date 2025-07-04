@@ -93,18 +93,14 @@
       </div>
     </div>
 
-    <!-- Create Button (Disabled) -->
+    <!-- Create Button -->
     <div class="mt-4">
-      <button
-        disabled
-        class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
-        title="Create functionality is currently disabled"
+      <RouterLink
+        to="/plan-of-action-and-milestones/create"
+        class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md inline-block"
       >
         Create New POAM
-      </button>
-      <div class="mt-2 text-sm text-gray-600 dark:text-slate-400">
-        Create functionality is currently disabled. You can view existing POAMs and download their JSON representations.
-      </div>
+      </RouterLink>
     </div>
   </div>
 </template>

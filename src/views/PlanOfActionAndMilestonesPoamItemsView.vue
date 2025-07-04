@@ -3,9 +3,8 @@
     <div class="flex justify-between items-center mb-6">
       <h2 class="text-xl font-semibold text-gray-900 dark:text-slate-300">POAM Items</h2>
       <button
-        disabled
-        class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
-        title="Create functionality is currently disabled"
+        @click="showCreateModal = true"
+        class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md"
       >
         Add POAM Item
       </button>
@@ -47,25 +46,43 @@
             </div>
           </div>
           
-          <div class="ml-4">
+          <div class="ml-4 flex gap-2">
             <button
-              disabled
-              class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-              title="Edit functionality is currently disabled"
+              @click="editItem(item)"
+              class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-sm"
             >
               Edit
+            </button>
+            <button
+              @click="deleteItem(item.uuid || '')"
+              class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md text-sm"
+            >
+              Delete
             </button>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Feature Notice -->
-    <div class="mt-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md">
-      <p class="text-sm text-yellow-800 dark:text-yellow-200">
-        <strong>Read-Only Mode:</strong> Edit and create functionality for POAM items is currently disabled. You can view existing items and their details.
-      </p>
-    </div>
+    <!-- Create Modal -->
+    <Modal :show="showCreateModal" @close="showCreateModal = false" size="lg">
+      <PoamItemCreateForm 
+        :poam-id="route.params.id as string"
+        @cancel="showCreateModal = false"
+        @created="handleItemCreated"
+      />
+    </Modal>
+
+    <!-- Edit Modal -->
+    <Modal :show="showEditModal && editingItem !== null" @close="showEditModal = false" size="lg">
+      <PoamItemEditForm 
+        v-if="editingItem"
+        :poam-id="route.params.id as string"
+        :item="editingItem"
+        @cancel="showEditModal = false"
+        @saved="handleItemSaved"
+      />
+    </Modal>
   </div>
 </template>
 
@@ -73,18 +90,35 @@
 import { onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { type PoamItem, usePlanOfActionAndMilestonesStore } from '@/stores/plan-of-action-and-milestones.ts'
+import Modal from '@/components/Modal.vue'
+import PoamItemCreateForm from '@/components/poam/PoamItemCreateForm.vue'
+import PoamItemEditForm from '@/components/poam/PoamItemEditForm.vue'
+import { useToast } from 'primevue/usetoast'
 
 const route = useRoute()
 const poamStore = usePlanOfActionAndMilestonesStore()
+const toast = useToast()
 
 const poamItems = ref<PoamItem[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
 
+// Modal states
+const showCreateModal = ref(false)
+const showEditModal = ref(false)
+
+// Edit targets
+const editingItem = ref<PoamItem | null>(null)
+
 onMounted(async () => {
+  await loadPoamItems()
+})
+
+async function loadPoamItems() {
   const id = route.params.id as string
   
   try {
+    loading.value = true
     const response = await poamStore.getPoamItems(id)
     poamItems.value = response.data
   } catch (err) {
@@ -93,5 +127,53 @@ onMounted(async () => {
   } finally {
     loading.value = false
   }
-})
+}
+
+// Item management
+const editItem = (item: PoamItem) => {
+  editingItem.value = item
+  showEditModal.value = true
+}
+
+const handleItemCreated = (newItem: PoamItem) => {
+  poamItems.value.push(newItem)
+  showCreateModal.value = false
+}
+
+const handleItemSaved = (updatedItem: PoamItem) => {
+  const index = poamItems.value.findIndex(item => item.uuid === updatedItem.uuid)
+  if (index !== -1) {
+    poamItems.value[index] = updatedItem
+  }
+  showEditModal.value = false
+  editingItem.value = null
+}
+
+async function deleteItem(uuid: string) {
+  if (!uuid || !confirm('Are you sure you want to delete this POAM item?')) {
+    return
+  }
+
+  try {
+    const id = route.params.id as string
+    await poamStore.deletePoamItem(id, uuid)
+    
+    toast.add({
+      severity: 'success',
+      summary: 'POAM Item Deleted',
+      detail: 'POAM item deleted successfully',
+      life: 3000
+    })
+    
+    await loadPoamItems() // Reload the list
+  } catch (err) {
+    console.error('Error deleting POAM item:', err)
+    toast.add({
+      severity: 'error',
+      summary: 'Delete Failed',
+      detail: err instanceof Error ? err.message : 'Failed to delete POAM item',
+      life: 3000
+    })
+  }
+}
 </script> 
