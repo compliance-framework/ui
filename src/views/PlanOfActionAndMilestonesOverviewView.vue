@@ -96,22 +96,18 @@
     </div>
 
     <!-- Summary Statistics -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
         <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ statistics.poamItems }}</div>
         <div class="text-sm text-blue-600 dark:text-blue-400">POAM Items</div>
       </div>
       <div class="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-200 dark:border-green-800">
-        <div class="text-2xl font-bold text-green-600 dark:text-green-400">{{ statistics.roles }}</div>
-        <div class="text-sm text-green-600 dark:text-green-400">Roles</div>
+        <div class="text-2xl font-bold text-green-600 dark:text-green-400">{{ statistics.observations }}</div>
+        <div class="text-sm text-green-600 dark:text-green-400">Observations</div>
       </div>
       <div class="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg border border-purple-200 dark:border-purple-800">
-        <div class="text-2xl font-bold text-purple-600 dark:text-purple-400">{{ statistics.parties }}</div>
-        <div class="text-sm text-purple-600 dark:text-purple-400">Parties</div>
-      </div>
-      <div class="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-lg border border-orange-200 dark:border-orange-800">
-        <div class="text-2xl font-bold text-orange-600 dark:text-orange-400">{{ statistics.locations }}</div>
-        <div class="text-sm text-orange-600 dark:text-orange-400">Locations</div>
+        <div class="text-2xl font-bold text-purple-600 dark:text-purple-400">{{ statistics.risks }}</div>
+        <div class="text-sm text-purple-600 dark:text-purple-400">Risks</div>
       </div>
     </div>
 
@@ -150,26 +146,7 @@
       </div>
     </div>
 
-    <!-- Roles Summary -->
-    <div v-if="roles.length > 0" class="bg-white dark:bg-slate-900 border border-ccf-300 dark:border-slate-700 rounded-lg p-6">
-      <h3 class="text-lg font-semibold mb-4 text-gray-900 dark:text-slate-300">Roles Summary</h3>
-      
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div
-          v-for="role in roles.slice(0, 6)"
-          :key="role.id"
-          class="border border-gray-200 dark:border-slate-700 rounded-lg p-3"
-        >
-          <h4 class="font-medium text-gray-900 dark:text-slate-300">{{ role.title }}</h4>
-          <p v-if="role.shortName" class="text-sm text-gray-600 dark:text-slate-400">{{ role.shortName }}</p>
-          <p v-if="role.description" class="text-sm text-gray-600 dark:text-slate-400 mt-1">{{ role.description }}</p>
-        </div>
-      </div>
-      
-      <div v-if="roles.length > 6" class="text-center text-sm text-gray-500 dark:text-slate-400 mt-4">
-        Showing first 6 of {{ roles.length }} roles
-      </div>
-    </div>
+
   </div>
 </template>
 
@@ -179,9 +156,6 @@ import { useRoute, RouterLink } from 'vue-router'
 import { 
   type PlanOfActionAndMilestones, 
   type PoamItem,
-  type Role,
-  type Party,
-  type Location,
   usePlanOfActionAndMilestonesStore 
 } from '@/stores/plan-of-action-and-milestones.ts'
 
@@ -190,15 +164,12 @@ const poamStore = usePlanOfActionAndMilestonesStore()
 
 const planOfActionAndMilestones = ref<PlanOfActionAndMilestones>({} as PlanOfActionAndMilestones)
 const poamItems = ref<PoamItem[]>([])
-const roles = ref<Role[]>([])
-const parties = ref<Party[]>([])
-const locations = ref<Location[]>([])
+
 
 const statistics = computed(() => ({
   poamItems: poamItems.value.length,
-  roles: roles.value.length,
-  parties: parties.value.length,
-  locations: locations.value.length
+  observations: poamItems.value.filter(item => item.relatedObservations && item.relatedObservations.length > 0).length,
+  risks: poamItems.value.filter(item => item.relatedRisks && item.relatedRisks.length > 0).length
 }))
 
 onMounted(async () => {
@@ -217,32 +188,7 @@ onMounted(async () => {
       console.warn('Could not load POAM items:', error)
     }
 
-    // Load roles (not yet implemented in backend)
-    try {
-      const rolesResponse = await poamStore.getRoles(id)
-      roles.value = rolesResponse.data
-    } catch (error) {
-      console.warn('Could not load roles (endpoint not implemented):', error)
-      roles.value = [] // Set empty array since endpoint doesn't exist
-    }
 
-    // Load parties (not yet implemented in backend)
-    try {
-      const partiesResponse = await poamStore.getParties(id)
-      parties.value = partiesResponse.data
-    } catch (error) {
-      console.warn('Could not load parties (endpoint not implemented):', error)
-      parties.value = [] // Set empty array since endpoint doesn't exist
-    }
-
-    // Load locations (not yet implemented in backend)
-    try {
-      const locationsResponse = await poamStore.getLocations(id)
-      locations.value = locationsResponse.data
-    } catch (error) {
-      console.warn('Could not load locations (endpoint not implemented):', error)
-      locations.value = [] // Set empty array since endpoint doesn't exist
-    }
 
   } catch (error) {
     console.error('Error loading POAM data:', error)

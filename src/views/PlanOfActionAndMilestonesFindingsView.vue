@@ -38,6 +38,13 @@
               <p class="text-sm text-gray-600 dark:text-slate-400">{{ JSON.stringify(finding.target) }}</p>
             </div>
             
+            <div v-if="finding.status" class="mt-3">
+              <h4 class="text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">Status</h4>
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                {{ finding.status.state }}
+              </span>
+            </div>
+            
             <div v-if="finding.implementationStatus" class="mt-3">
               <h4 class="text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">Implementation Status</h4>
               <p class="text-sm text-gray-600 dark:text-slate-400">{{ JSON.stringify(finding.implementationStatus) }}</p>
