@@ -130,6 +130,36 @@ export interface Observation {
   remarks?: string;
 }
 
+export interface Risk {
+  uuid?: string;
+  title?: string;
+  description: string;
+  statement?: string;
+  props?: Property[];
+  links?: Link[];
+  origins?: Origin[];
+  threatIds?: string[];
+  characterizations?: any[];
+  mitigatingFactors?: any[];
+  deadline?: string;
+  remediations?: any[];
+  remarks?: string;
+}
+
+export interface Finding {
+  uuid?: string;
+  title?: string;
+  description: string;
+  target?: any;
+  implementationStatus?: any;
+  relatedObservations?: string[];
+  relatedRisks?: string[];
+  props?: Property[];
+  links?: Link[];
+  origins?: Origin[];
+  remarks?: string;
+}
+
 export interface Resource {
   uuid: string;
   title?: string;
@@ -454,23 +484,26 @@ export const usePlanOfActionAndMilestonesStore = defineStore(
       }) as DataResponse<PoamItem[]>;
     }
 
-    // Note: These endpoints are not yet implemented in the backend
-    async function getRoles(id: string): Promise<DataResponse<Role[]>> {
-      throw new Error('Roles endpoint not yet implemented in backend');
+    // OSCAL POAM endpoints
+    async function getImportSsp(id: string): Promise<DataResponse<any>> {
+      throw new Error('Import SSP endpoint not yet implemented in backend');
     }
 
-    async function getParties(id: string): Promise<DataResponse<Party[]>> {
-      throw new Error('Parties endpoint not yet implemented in backend');
+    async function getSystemId(id: string): Promise<DataResponse<any>> {
+      throw new Error('System ID endpoint not yet implemented in backend');
     }
 
-    async function getLocations(id: string): Promise<DataResponse<Location[]>> {
-      throw new Error('Locations endpoint not yet implemented in backend');
+    async function getLocalDefinitions(id: string): Promise<DataResponse<any>> {
+      throw new Error('Local Definitions endpoint not yet implemented in backend');
     }
 
-    async function getBackMatter(id: string): Promise<DataResponse<BackMatter>> {
+
+
+    // Finding functions
+    async function getFindings(id: string): Promise<DataResponse<Finding[]>> {
       const config = await configStore.getConfig();
       const response = await fetch(
-        `${config.API_URL}/api/oscal/plan-of-action-and-milestones/${id}/back-matter`,
+        `${config.API_URL}/api/oscal/plan-of-action-and-milestones/${id}/findings`,
         {
           credentials: 'include',
         }
@@ -480,7 +513,140 @@ export const usePlanOfActionAndMilestonesStore = defineStore(
       }
       return camelcaseKeys(await response.json(), {
         deep: true,
-      }) as DataResponse<BackMatter>;
+      }) as DataResponse<Finding[]>;
+    }
+
+    async function createFinding(id: string, finding: Partial<Finding>): Promise<DataResponse<Finding>> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/plan-of-action-and-milestones/${id}/findings`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(decamelizeKeys(finding, { separator: '-' })),
+          credentials: 'include',
+        }
+      );
+      if (!response.ok) {
+        throw response;
+      }
+      return camelcaseKeys(await response.json(), {
+        deep: true,
+      }) as DataResponse<Finding>;
+    }
+
+    async function updateFinding(id: string, findingId: string, finding: Finding): Promise<DataResponse<Finding>> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/plan-of-action-and-milestones/${id}/findings/${findingId}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(decamelizeKeys(finding, { separator: '-' })),
+          credentials: 'include',
+        }
+      );
+      if (!response.ok) {
+        throw response;
+      }
+      return camelcaseKeys(await response.json(), {
+        deep: true,
+      }) as DataResponse<Finding>;
+    }
+
+    async function deleteFinding(id: string, findingId: string): Promise<void> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/plan-of-action-and-milestones/${id}/findings/${findingId}`,
+        {
+          method: 'DELETE',
+          credentials: 'include',
+        }
+      );
+      if (!response.ok) {
+        throw response;
+      }
+    }
+
+    // Risk functions
+    async function getRisks(id: string): Promise<DataResponse<Risk[]>> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/plan-of-action-and-milestones/${id}/risks`,
+        {
+          credentials: 'include',
+        }
+      );
+      if (!response.ok) {
+        throw response;
+      }
+      return camelcaseKeys(await response.json(), {
+        deep: true,
+      }) as DataResponse<Risk[]>;
+    }
+
+    async function createRisk(id: string, risk: Partial<Risk>): Promise<DataResponse<Risk>> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/plan-of-action-and-milestones/${id}/risks`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(decamelizeKeys(risk, { separator: '-' })),
+          credentials: 'include',
+        }
+      );
+      if (!response.ok) {
+        throw response;
+      }
+      return camelcaseKeys(await response.json(), {
+        deep: true,
+      }) as DataResponse<Risk>;
+    }
+
+    async function updateRisk(id: string, riskId: string, risk: Risk): Promise<DataResponse<Risk>> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/plan-of-action-and-milestones/${id}/risks/${riskId}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(decamelizeKeys(risk, { separator: '-' })),
+          credentials: 'include',
+        }
+      );
+      if (!response.ok) {
+        throw response;
+      }
+      return camelcaseKeys(await response.json(), {
+        deep: true,
+      }) as DataResponse<Risk>;
+    }
+
+    async function deleteRisk(id: string, riskId: string): Promise<void> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/plan-of-action-and-milestones/${id}/risks/${riskId}`,
+        {
+          method: 'DELETE',
+          credentials: 'include',
+        }
+      );
+      if (!response.ok) {
+        throw response;
+      }
+    }
+
+    async function getBackMatter(id: string): Promise<DataResponse<BackMatter>> {
+      throw new Error('Back Matter endpoint not yet implemented in backend');
     }
 
     return {
@@ -490,9 +656,18 @@ export const usePlanOfActionAndMilestonesStore = defineStore(
       full,
       getMetadata,
       getPoamItems,
-      getRoles,
-      getParties,
-      getLocations,
+      getImportSsp,
+      getSystemId,
+      getLocalDefinitions,
+      getObservations,
+      getRisks,
+      createRisk,
+      updateRisk,
+      deleteRisk,
+      getFindings,
+      createFinding,
+      updateFinding,
+      deleteFinding,
       getBackMatter,
 
       // Create/Update functions (disabled for now)
@@ -502,7 +677,6 @@ export const usePlanOfActionAndMilestonesStore = defineStore(
       updatePoamItem,
       createPoamItem,
       deletePoamItem,
-      getObservations,
       createObservation,
       updateObservation,
       deleteObservation,
