@@ -24,6 +24,27 @@
           POAM Items
         </RouterLink>
         <RouterLink
+          :to="`/plan-of-action-and-milestones/${planOfActionAndMilestones.uuid}/import-ssp`"
+          class="px-1 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 dark:text-slate-400 dark:hover:text-slate-300"
+          active-class="border-b-2 border-blue-500 text-blue-600 dark:text-blue-400"
+        >
+          Import SSP
+        </RouterLink>
+        <RouterLink
+          :to="`/plan-of-action-and-milestones/${planOfActionAndMilestones.uuid}/system-id`"
+          class="px-1 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 dark:text-slate-400 dark:hover:text-slate-300"
+          active-class="border-b-2 border-blue-500 text-blue-600 dark:text-blue-400"
+        >
+          System ID
+        </RouterLink>
+        <RouterLink
+          :to="`/plan-of-action-and-milestones/${planOfActionAndMilestones.uuid}/local-definitions`"
+          class="px-1 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 dark:text-slate-400 dark:hover:text-slate-300"
+          active-class="border-b-2 border-blue-500 text-blue-600 dark:text-blue-400"
+        >
+          Local Definitions
+        </RouterLink>
+        <RouterLink
           :to="`/plan-of-action-and-milestones/${planOfActionAndMilestones.uuid}/observations`"
           class="px-1 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 dark:text-slate-400 dark:hover:text-slate-300"
           active-class="border-b-2 border-blue-500 text-blue-600 dark:text-blue-400"
@@ -31,25 +52,18 @@
           Observations
         </RouterLink>
         <RouterLink
-          :to="`/plan-of-action-and-milestones/${planOfActionAndMilestones.uuid}/roles`"
+          :to="`/plan-of-action-and-milestones/${planOfActionAndMilestones.uuid}/risks`"
           class="px-1 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 dark:text-slate-400 dark:hover:text-slate-300"
           active-class="border-b-2 border-blue-500 text-blue-600 dark:text-blue-400"
         >
-          Roles
+          Risks
         </RouterLink>
         <RouterLink
-          :to="`/plan-of-action-and-milestones/${planOfActionAndMilestones.uuid}/parties`"
+          :to="`/plan-of-action-and-milestones/${planOfActionAndMilestones.uuid}/findings`"
           class="px-1 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 dark:text-slate-400 dark:hover:text-slate-300"
           active-class="border-b-2 border-blue-500 text-blue-600 dark:text-blue-400"
         >
-          Parties
-        </RouterLink>
-        <RouterLink
-          :to="`/plan-of-action-and-milestones/${planOfActionAndMilestones.uuid}/locations`"
-          class="px-1 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 dark:text-slate-400 dark:hover:text-slate-300"
-          active-class="border-b-2 border-blue-500 text-blue-600 dark:text-blue-400"
-        >
-          Locations
+          Findings
         </RouterLink>
         <RouterLink
           :to="`/plan-of-action-and-milestones/${planOfActionAndMilestones.uuid}/back-matter`"

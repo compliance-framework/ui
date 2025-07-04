@@ -305,24 +305,34 @@ const authenticatedRoutes = [
         component: () => import('../views/PlanOfActionAndMilestonesPoamItemsView.vue')
       },
       {
+        path: 'import-ssp',
+        name: 'plan-of-action-and-milestones-import-ssp',
+        component: () => import('../views/PlanOfActionAndMilestonesImportSspView.vue')
+      },
+      {
+        path: 'system-id',
+        name: 'plan-of-action-and-milestones-system-id',
+        component: () => import('../views/PlanOfActionAndMilestonesSystemIdView.vue')
+      },
+      {
+        path: 'local-definitions',
+        name: 'plan-of-action-and-milestones-local-definitions',
+        component: () => import('../views/PlanOfActionAndMilestonesLocalDefinitionsView.vue')
+      },
+      {
         path: 'observations',
         name: 'plan-of-action-and-milestones-observations',
         component: () => import('../views/PlanOfActionAndMilestonesObservationsView.vue')
       },
       {
-        path: 'roles',
-        name: 'plan-of-action-and-milestones-roles',
-        component: () => import('../views/PlanOfActionAndMilestonesRolesView.vue')
+        path: 'risks',
+        name: 'plan-of-action-and-milestones-risks',
+        component: () => import('../views/PlanOfActionAndMilestonesRisksView.vue')
       },
       {
-        path: 'parties',
-        name: 'plan-of-action-and-milestones-parties',
-        component: () => import('../views/PlanOfActionAndMilestonesPartiesView.vue')
-      },
-      {
-        path: 'locations',
-        name: 'plan-of-action-and-milestones-locations',
-        component: () => import('../views/PlanOfActionAndMilestonesLocationsView.vue')
+        path: 'findings',
+        name: 'plan-of-action-and-milestones-findings',
+        component: () => import('../views/PlanOfActionAndMilestonesFindingsView.vue')
       },
       {
         path: 'back-matter',
