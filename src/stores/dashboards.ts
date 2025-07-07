@@ -3,6 +3,7 @@ import { useConfigStore } from '@/stores/config.ts'
 import { type Filter } from '@/parsers/labelfilter.ts'
 import type { DataResponse } from '@/stores/types.ts'
 import type { Control } from '@/stores/catalogs.ts'
+import type { ComplianceIntervalStatus } from '@/stores/evidence.ts'
 
 export interface Dashboard {
   id?: string
@@ -25,6 +26,12 @@ export const useDashboardStore = defineStore('dashboards', () => {
     const config = await configStore.getConfig()
     const response = await fetch(`${config.API_URL}/api/dashboards`)
     return (await response.json()) as DataResponse<Dashboard[]>
+  }
+
+  async function complianceForControl(control: Control): Promise<DataResponse<ComplianceIntervalStatus[]>> {
+    const config = await configStore.getConfig()
+    const response = await fetch(`${config.API_URL}/api/dashboards/compliance-by-control/${control.id}`)
+    return (await response.json()) as DataResponse<ComplianceIntervalStatus[]>
   }
 
   async function create(plan: Dashboard): Promise<Dashboard> {
@@ -64,6 +71,7 @@ export const useDashboardStore = defineStore('dashboards', () => {
   return {
     get,
     list,
+    complianceForControl,
     create,
     destroy,
   }

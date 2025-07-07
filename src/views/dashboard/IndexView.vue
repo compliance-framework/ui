@@ -9,7 +9,13 @@
           {{ dashboard.name }}
         </h3>
         <div>
-          <Chip v-for="control in dashboard.controls" :key="control.id" :label="control.id" class="mx-1" />
+          <Chip
+            v-for="control in dashboard.controls"
+            :key="control.id"
+            :label="control.id"
+            class="mx-1"
+            v-tooltip.top="control.title"
+          />
         </div>
       </div>
       <div class="h-32">

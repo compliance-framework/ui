@@ -21,7 +21,7 @@ const authenticatedRoutes = [
     // route level code-splitting
     // this generates a separate chunk (About.[hash].js) for this route
     // which is lazy-loaded when the route is visited.
-    component: () => import('../views/dashboard/DashboardsView.vue'),
+    component: () => import('../views/dashboard/IndexView.vue'),
     meta: {
       requiresAuth: true,
     }
@@ -32,7 +32,7 @@ const authenticatedRoutes = [
     // route level code-splitting
     // this generates a separate chunk (About.[hash].js) for this route
     // which is lazy-loaded when the route is visited.
-    component: () => import('../views/dashboard/DashboardCreate.vue'),
+    component: () => import('../views/dashboard/CreateFormView.vue'),
     meta: {
       requiresAuth: true,
     }
@@ -43,7 +43,7 @@ const authenticatedRoutes = [
     // route level code-splitting
     // this generates a separate chunk (About.[hash].js) for this route
     // which is lazy-loaded when the route is visited.
-    component: () => import('../views/dashboard/DashboardsView.vue'),
+    component: () => import('../views/dashboard/IndexView.vue'),
     meta: {
       requiresAuth: true,
     }

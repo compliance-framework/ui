@@ -12,7 +12,7 @@
           >
         </div>
         <ResultStatusBadge
-          v-if="compliance"
+          v-if="compliance && compliance?.reduce((total, current) => total + current.count, 0)"
           :gray="
             compliance?.reduce(
               (total, current) =>
@@ -121,13 +121,14 @@ import ControlCreateModal from '@/components/catalogs/ControlCreateModal.vue';
 import type { Part } from '@/stores/types.ts';
 import PartDisplayEditor from '@/components/PartDisplayEditor.vue'
 import { useRouter } from 'vue-router'
+import { useDashboardStore } from '@/stores/dashboards.ts'
 
 const props = defineProps<{
   catalog: Catalog;
   control: Control;
 }>();
 
-const findingStore = useFindingsStore();
+const dashboardStore = useDashboardStore();
 const catalogStore = useCatalogStore();
 const controls = ref<Control[]>([]);
 const compliance = ref<ComplianceIntervalStatus[] | null>(null);
@@ -163,8 +164,8 @@ onMounted(() => {
     .then((data) => {
       controls.value = data.data;
     });
-  findingStore
-    .getComplianceForControl(props.control.class, props.control.id)
+  dashboardStore
+    .complianceForControl(props.control)
     .then((data) => {
       compliance.value = data.data;
     });
