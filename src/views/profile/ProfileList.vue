@@ -15,7 +15,7 @@
           <div class="flex gap-2">
             <RouterLink
               class="bg-white hover:bg-zinc-100 border border-ccf-300 px-4 py-1 rounded-md dark:bg-slate-800 dark:hover:bg-slate-700 dark:border-slate-700"
-              :to="{ name: 'profile-view', params: { id: profile.uuid } }"
+              :to="{ name: 'profile-view-controls', params: { id: profile.uuid } }"
             >View
             </RouterLink>
           </div>
