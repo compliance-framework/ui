@@ -210,6 +210,80 @@ export interface SystemId {
   remarks?: string;
 }
 
+export interface SystemComponent {
+  uuid: string;
+  type: string;
+  title: string;
+  description?: string;
+  status: {
+    state: string;
+    reason?: string;
+    remarks?: string;
+  };
+  props?: Property[];
+  links?: Link[];
+  responsibleRoles?: {
+    roleId: string;
+    props?: Property[];
+    links?: Link[];
+    remarks?: string;
+  }[];
+  protocols?: any[];
+  remarks?: string;
+}
+
+export interface InventoryItem {
+  uuid: string;
+  description: string;
+  props?: Property[];
+  links?: Link[];
+  responsibleParties?: {
+    roleId: string;
+    partyUuids: string[];
+    props?: Property[];
+    links?: Link[];
+    remarks?: string;
+  }[];
+  implementedComponents?: {
+    componentUuid: string;
+    props?: Property[];
+    links?: Link[];
+    responsibleParties?: {
+      roleId: string;
+      partyUuids: string[];
+      props?: Property[];
+      links?: Link[];
+      remarks?: string;
+    }[];
+    remarks?: string;
+  }[];
+  remarks?: string;
+}
+
+export interface AssessmentAssets {
+  components?: SystemComponent[];
+  assessmentPlatforms?: {
+    uuid: string;
+    title?: string;
+    props?: Property[];
+    links?: Link[];
+    usesComponents?: {
+      componentUuid: string;
+      props?: Property[];
+      links?: Link[];
+      remarks?: string;
+    }[];
+    remarks?: string;
+  }[];
+}
+
+export interface LocalDefinitions {
+  components?: SystemComponent[];
+  inventoryItems?: InventoryItem[];
+  assessmentAssets?: AssessmentAssets;
+  remarks?: string;
+}
+
 export interface PlanOfActionAndMilestones {
   uuid: string;
   metadata: Metadata;
@@ -679,8 +753,62 @@ export const usePlanOfActionAndMilestonesStore = defineStore(
       }) as DataResponse<SystemId>;
     }
 
-    async function getLocalDefinitions(id: string): Promise<DataResponse<any>> {
-      throw new Error('Local Definitions endpoint not yet implemented in backend');
+    async function getLocalDefinitions(id: string): Promise<DataResponse<LocalDefinitions>> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/plan-of-action-and-milestones/${id}/local-definitions`,
+        {
+          credentials: 'include',
+        }
+      );
+      if (!response.ok) {
+        throw response;
+      }
+      return camelcaseKeys(await response.json(), {
+        deep: true,
+      }) as DataResponse<LocalDefinitions>;
+    }
+
+    async function createLocalDefinitions(id: string, localDefinitions: Partial<LocalDefinitions>): Promise<DataResponse<LocalDefinitions>> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/plan-of-action-and-milestones/${id}/local-definitions`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(decamelizeKeys(localDefinitions, { separator: '-' })),
+          credentials: 'include',
+        }
+      );
+      if (!response.ok) {
+        throw response;
+      }
+      return camelcaseKeys(await response.json(), {
+        deep: true,
+      }) as DataResponse<LocalDefinitions>;
+    }
+
+    async function updateLocalDefinitions(id: string, localDefinitions: LocalDefinitions): Promise<DataResponse<LocalDefinitions>> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/plan-of-action-and-milestones/${id}/local-definitions`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(decamelizeKeys(localDefinitions, { separator: '-' })),
+          credentials: 'include',
+        }
+      );
+      if (!response.ok) {
+        throw response;
+      }
+      return camelcaseKeys(await response.json(), {
+        deep: true,
+      }) as DataResponse<LocalDefinitions>;
     }
 
     // Finding functions
@@ -879,6 +1007,8 @@ export const usePlanOfActionAndMilestonesStore = defineStore(
       createLocation,
       createSystemId,
       updateSystemId,
+      createLocalDefinitions,
+      updateLocalDefinitions,
     };
   },
 ); 
