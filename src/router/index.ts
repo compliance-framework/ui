@@ -93,6 +93,40 @@ const authenticatedRoutes = [
     }
   },
   {
+    path: "/profiles",
+    name: "profile-list",
+    component: () => import('../views/profile/ProfileList.vue'),
+    meta: {
+      requiresAuth: true,
+    },
+  },
+  {
+    path: "/profiles/:id",
+    name: "profile-view",
+    component: () => import('../views/profile/ProfileView.vue'),
+    meta: {
+      requiresAuth: true,
+    },
+    children: [
+      {
+        path: '',
+        name: 'profile-view-controls',
+        component: () => import('../views/profile/ProfileControlsView.vue'),
+        meta: {
+          requiresAuth: true,
+        },
+      },
+      {
+        path: 'settings',
+        name: 'profile-view-settings',
+        component: () => import('../views/profile/ProfileSettingsView.vue'),
+        meta: {
+          requiresAuth: true,
+        },
+      }
+    ]
+  },
+  {
     path: '/subjects',
     name: 'admin-subjects',
     component: () => import('../views/SubjectsView.vue'),
