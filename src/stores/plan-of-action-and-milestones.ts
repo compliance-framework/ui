@@ -196,6 +196,11 @@ export interface BackMatter {
   resources?: Resource[];
 }
 
+export interface ImportSsp {
+  href: string;
+  remarks?: string;
+}
+
 export interface PlanOfActionAndMilestones {
   uuid: string;
   metadata: Metadata;
@@ -535,8 +540,76 @@ export const usePlanOfActionAndMilestonesStore = defineStore(
     }
 
     // OSCAL POAM endpoints
-    async function getImportSsp(id: string): Promise<DataResponse<any>> {
-      throw new Error('Import SSP endpoint not yet implemented in backend');
+    async function getImportSsp(id: string): Promise<DataResponse<ImportSsp>> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/plan-of-action-and-milestones/${id}/import-ssp`,
+        {
+          credentials: 'include',
+        }
+      );
+      if (!response.ok) {
+        throw response;
+      }
+      return camelcaseKeys(await response.json(), {
+        deep: true,
+      }) as DataResponse<ImportSsp>;
+    }
+
+    async function createImportSsp(id: string, importSsp: Partial<ImportSsp>): Promise<DataResponse<ImportSsp>> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/plan-of-action-and-milestones/${id}/import-ssp`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(decamelizeKeys(importSsp, { separator: '-' })),
+          credentials: 'include',
+        }
+      );
+      if (!response.ok) {
+        throw response;
+      }
+      return camelcaseKeys(await response.json(), {
+        deep: true,
+      }) as DataResponse<ImportSsp>;
+    }
+
+    async function updateImportSsp(id: string, importSsp: ImportSsp): Promise<DataResponse<ImportSsp>> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/plan-of-action-and-milestones/${id}/import-ssp`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(decamelizeKeys(importSsp, { separator: '-' })),
+          credentials: 'include',
+        }
+      );
+      if (!response.ok) {
+        throw response;
+      }
+      return camelcaseKeys(await response.json(), {
+        deep: true,
+      }) as DataResponse<ImportSsp>;
+    }
+
+    async function deleteImportSsp(id: string): Promise<void> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/plan-of-action-and-milestones/${id}/import-ssp`,
+        {
+          method: 'DELETE',
+          credentials: 'include',
+        }
+      );
+      if (!response.ok) {
+        throw response;
+      }
     }
 
     async function getSystemId(id: string): Promise<DataResponse<any>> {
@@ -546,8 +619,6 @@ export const usePlanOfActionAndMilestonesStore = defineStore(
     async function getLocalDefinitions(id: string): Promise<DataResponse<any>> {
       throw new Error('Local Definitions endpoint not yet implemented in backend');
     }
-
-
 
     // Finding functions
     async function getFindings(id: string): Promise<DataResponse<Finding[]>> {
@@ -711,6 +782,9 @@ export const usePlanOfActionAndMilestonesStore = defineStore(
       getMetadata,
       getPoamItems,
       getImportSsp,
+      createImportSsp,
+      updateImportSsp,
+      deleteImportSsp,
       getSystemId,
       getLocalDefinitions,
       getObservations,
