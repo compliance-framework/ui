@@ -16,7 +16,7 @@
           :gray="
             compliance?.reduce(
               (total, current) =>
-                ['satisfied', 'not satisfied'].includes(
+                ['satisfied', 'not-satisfied'].includes(
                   current.status?.toLowerCase(),
                 )
                   ? total
@@ -27,7 +27,7 @@
           :red="
             compliance?.reduce(
               (total, current) =>
-                current.status?.toLowerCase() == 'not satisfied'
+                current.status?.toLowerCase() == 'not-satisfied'
                   ? total + current.count
                   : total,
               0,

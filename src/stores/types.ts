@@ -3,7 +3,7 @@ export interface Metadata {
   remarks?: string;
 }
 
-export type FindingStatusState = 'satisfied' | 'not satisfied' | string;
+export type FindingStatusState = 'satisfied' | 'not-satisfied' | string;
 
 export interface FindingStatus {
   title?: string;

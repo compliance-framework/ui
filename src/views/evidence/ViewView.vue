@@ -100,7 +100,7 @@ const showActivitiesModal = ref(false);
 enum FindingStatusColor {
   UNKNOWN = 'grey',
   SATISFIED = 'bg-green-50 dark:bg-green-950/30 text-green-800 dark:text-green-500 border border-green-800 dark:border-green-600',
-  'NOT SATISFIED' = 'bg-red-50 dark:bg-red-950/30 text-red-800 dark:text-red-500 border border-red-800 dark:border-red-600',
+  'NOT-SATISFIED' = 'bg-red-50 dark:bg-red-950/30 text-red-800 dark:text-red-500 border border-red-800 dark:border-red-600',
 }
 
 function showActivities(evidence: Evidence) {
