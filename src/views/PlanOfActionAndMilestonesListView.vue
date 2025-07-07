@@ -16,9 +16,6 @@
               <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-slate-400">
                 Last Modified
               </th>
-              <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-slate-400">
-                POAM Items
-              </th>
               <th class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-slate-400">
                 Actions
               </th>
@@ -27,21 +24,21 @@
           <tbody class="divide-y divide-ccf-300 bg-white dark:divide-slate-700 dark:bg-slate-900">
             <template v-if="loading">
               <tr>
-                <td colspan="5" class="px-6 py-4 text-center text-gray-500 dark:text-slate-400">
+                <td colspan="4" class="px-6 py-4 text-center text-gray-500 dark:text-slate-400">
                   Loading...
                 </td>
               </tr>
             </template>
             <template v-else-if="error">
               <tr>
-                <td colspan="5" class="px-6 py-4 text-center text-red-500">
+                <td colspan="4" class="px-6 py-4 text-center text-red-500">
                   Error loading Plan of Action and Milestones: {{ error }}
                 </td>
               </tr>
             </template>
             <template v-else-if="!planOfActionAndMilestones?.length">
               <tr>
-                <td colspan="5" class="px-6 py-4 text-center text-gray-500 dark:text-slate-400">
+                <td colspan="4" class="px-6 py-4 text-center text-gray-500 dark:text-slate-400">
                   No Plan of Action and Milestones found.
                 </td>
               </tr>
@@ -65,9 +62,6 @@
                 </td>
                 <td class="px-6 py-4 text-sm text-gray-500 dark:text-slate-400">
                   {{ formatDate(poam.metadata?.lastModified) }}
-                </td>
-                <td class="px-6 py-4 text-sm text-gray-500 dark:text-slate-400">
-                  {{ poam.poamItems?.length || 0 }}
                 </td>
                 <td class="px-6 py-4 text-right text-sm font-medium">
                   <div class="flex gap-2 justify-end">
