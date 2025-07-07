@@ -222,39 +222,6 @@ const authenticatedRoutes = [
     }
   },
   {
-    path: '/findings/by-subject',
-    name: 'findings-by-subject',
-    // route level code-splitting
-    // this generates a separate chunk (About.[hash].js) for this route
-    // which is lazy-loaded when the route is visited.
-    component: () => import('../views/FindingsBySubjectSearchView.vue'),
-    meta: {
-      requiresAuth: true,
-    }
-  },
-  {
-    path: '/findings/by-class',
-    name: 'list-classes-of-findings',
-    // route level code-splitting
-    // this generates a separate chunk (About.[hash].js) for this route
-    // which is lazy-loaded when the route is visited.
-    component: () => import('../views/ControlClassesView.vue'),
-    meta: {
-      requiresAuth: true,
-    }
-  },
-  {
-    path: '/findings/by-class/:className',
-    name: 'findings-by-class',
-    // route level code-splitting
-    // this generates a separate chunk (About.[hash].js) for this route
-    // which is lazy-loaded when the route is visited.
-    component: () => import('../views/FindingsByClassSearchView.vue'),
-    meta: {
-      requiresAuth: true,
-    }
-  },
-  {
     path: '/system-security-plans',
     name: 'system-security-plans',
     // route level code-splitting

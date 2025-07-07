@@ -63,9 +63,14 @@ const store = useFilterStore();
 const catalogStore = useCatalogStore();
 const dashboard = ref<Dashboard>({} as Dashboard);
 
+interface ControlOption {
+  label: string
+  value: string
+}
+
 const filter = ref<string>("");
 
-const selectedControls = ref([]);
+const selectedControls = ref<ControlOption[]>([]);
 const controls = ref<object[]>([]);
 
 onMounted(() => {
