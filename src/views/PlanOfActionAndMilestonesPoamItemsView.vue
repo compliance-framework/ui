@@ -26,41 +26,60 @@
       <div
         v-for="item in poamItems"
         :key="item.uuid"
-        class="bg-white dark:bg-slate-900 border border-ccf-300 dark:border-slate-700 rounded-lg p-6"
+        class="bg-white dark:bg-slate-900 border border-ccf-300 dark:border-slate-700 rounded-lg overflow-hidden"
       >
-        <div class="flex justify-between items-start">
-          <div class="flex-1">
-            <h3 class="text-lg font-medium text-gray-900 dark:text-slate-300">{{ item.title }}</h3>
-            <p class="text-gray-600 dark:text-slate-400 mt-2">{{ item.description }}</p>
-            
-            <div class="mt-4 flex flex-wrap gap-2">
-              <span v-if="item.relatedFindings?.length" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                {{ item.relatedFindings.length }} Findings
-              </span>
-              <span v-if="item.relatedObservations?.length" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                {{ item.relatedObservations.length }} Observations
-              </span>
-              <span v-if="item.relatedRisks?.length" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
-                {{ item.relatedRisks.length }} Risks
-              </span>
+        <CollapsableGroup>
+          <template #header="{ isOpen }">
+            <div class="flex justify-between items-center p-6">
+              <div class="flex-1">
+                <div class="flex items-center gap-2 mb-1">
+                  <svg 
+                    class="w-4 h-4 text-gray-400 dark:text-slate-500 transition-transform duration-200"
+                    :class="{ 'rotate-90': isOpen }"
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                  </svg>
+                  <h3 class="text-lg font-medium text-gray-900 dark:text-slate-300">{{ item.title }}</h3>
+                </div>
+                <p class="text-gray-600 dark:text-slate-400 mt-1 line-clamp-2">{{ item.description }}</p>
+                
+                <div class="mt-3 flex flex-wrap gap-2">
+                  <span v-if="item.relatedFindings?.length" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                    {{ item.relatedFindings.length }} Findings
+                  </span>
+                  <span v-if="item.relatedObservations?.length" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                    {{ item.relatedObservations.length }} Observations
+                  </span>
+                  <span v-if="item.relatedRisks?.length" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+                    {{ item.relatedRisks.length }} Risks
+                  </span>
+                </div>
+              </div>
+              
+              <div class="ml-4 flex gap-2">
+                <button
+                  @click.stop="editItem(item)"
+                  class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-sm"
+                >
+                  Edit
+                </button>
+                <button
+                  @click.stop="deleteItem(item.uuid || '')"
+                  class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md text-sm"
+                >
+                  Delete
+                </button>
+              </div>
             </div>
-          </div>
+          </template>
           
-          <div class="ml-4 flex gap-2">
-            <button
-              @click="editItem(item)"
-              class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-sm"
-            >
-              Edit
-            </button>
-            <button
-              @click="deleteItem(item.uuid || '')"
-              class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md text-sm"
-            >
-              Delete
-            </button>
+          <div class="px-6 pb-6 bg-gray-50 dark:bg-slate-800">
+            <PoamItemDetails :item="item" />
           </div>
-        </div>
+        </CollapsableGroup>
       </div>
     </div>
 
@@ -91,6 +110,8 @@ import { onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { type PoamItem, usePlanOfActionAndMilestonesStore } from '@/stores/plan-of-action-and-milestones.ts'
 import Modal from '@/components/Modal.vue'
+import CollapsableGroup from '@/components/CollapsableGroup.vue'
+import PoamItemDetails from '@/components/poam/PoamItemDetails.vue'
 import PoamItemCreateForm from '@/components/poam/PoamItemCreateForm.vue'
 import PoamItemEditForm from '@/components/poam/PoamItemEditForm.vue'
 import { useToast } from 'primevue/usetoast'

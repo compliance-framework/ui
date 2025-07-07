@@ -17,7 +17,7 @@ function toggleOpen() {
       "hover:bg-gray-100": !isOpen,
       // "bg-blue-800": isOpen,
     }'>
-      <slot name="header"></slot>
+      <slot name="header" :is-open="isOpen"></slot>
     </div>
     <div v-if="isOpen">
       <slot></slot>
