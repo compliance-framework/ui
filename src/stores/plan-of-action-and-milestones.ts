@@ -201,6 +201,15 @@ export interface ImportSsp {
   remarks?: string;
 }
 
+export interface SystemId {
+  id?: string;
+  identifier?: string;
+  identifierType?: string;
+  props?: Property[];
+  links?: Link[];
+  remarks?: string;
+}
+
 export interface PlanOfActionAndMilestones {
   uuid: string;
   metadata: Metadata;
@@ -612,8 +621,62 @@ export const usePlanOfActionAndMilestonesStore = defineStore(
       }
     }
 
-    async function getSystemId(id: string): Promise<DataResponse<any>> {
-      throw new Error('System ID endpoint not yet implemented in backend');
+    async function getSystemId(id: string): Promise<DataResponse<SystemId>> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/plan-of-action-and-milestones/${id}/system-id`,
+        {
+          credentials: 'include',
+        }
+      );
+      if (!response.ok) {
+        throw response;
+      }
+      return camelcaseKeys(await response.json(), {
+        deep: true,
+      }) as DataResponse<SystemId>;
+    }
+
+    async function createSystemId(id: string, systemId: Partial<SystemId>): Promise<DataResponse<SystemId>> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/plan-of-action-and-milestones/${id}/system-id`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(decamelizeKeys(systemId, { separator: '-' })),
+          credentials: 'include',
+        }
+      );
+      if (!response.ok) {
+        throw response;
+      }
+      return camelcaseKeys(await response.json(), {
+        deep: true,
+      }) as DataResponse<SystemId>;
+    }
+
+    async function updateSystemId(id: string, systemId: SystemId): Promise<DataResponse<SystemId>> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/plan-of-action-and-milestones/${id}/system-id`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(decamelizeKeys(systemId, { separator: '-' })),
+          credentials: 'include',
+        }
+      );
+      if (!response.ok) {
+        throw response;
+      }
+      return camelcaseKeys(await response.json(), {
+        deep: true,
+      }) as DataResponse<SystemId>;
     }
 
     async function getLocalDefinitions(id: string): Promise<DataResponse<any>> {
@@ -814,6 +877,8 @@ export const usePlanOfActionAndMilestonesStore = defineStore(
       createParty,
       updateLocation,
       createLocation,
+      createSystemId,
+      updateSystemId,
     };
   },
 ); 
