@@ -61,6 +61,12 @@
               
               <div class="ml-4 flex gap-2">
                 <button
+                  @click.stop="attachItems(item)"
+                  class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded-md text-sm"
+                >
+                  Attach Items
+                </button>
+                <button
                   @click.stop="editItem(item)"
                   class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-sm"
                 >
@@ -77,7 +83,7 @@
           </template>
           
           <div class="px-6 pb-6">
-            <PoamItemDetails :item="item" />
+            <PoamItemDetails :item="item" :poam-id="route.params.id as string" />
           </div>
         </CollapsableGroup>
       </div>
@@ -102,6 +108,17 @@
         @saved="handleItemSaved"
       />
     </Modal>
+
+    <!-- Attach Modal -->
+    <Modal :show="showAttachModal && attachingItem !== null" @close="showAttachModal = false" size="lg">
+      <PoamItemAttachModal 
+        v-if="attachingItem"
+        :poam-id="route.params.id as string"
+        :item="attachingItem"
+        @cancel="showAttachModal = false"
+        @saved="handleItemAttached"
+      />
+    </Modal>
   </div>
 </template>
 
@@ -114,6 +131,7 @@ import CollapsableGroup from '@/components/CollapsableGroup.vue'
 import PoamItemDetails from '@/components/poam/PoamItemDetails.vue'
 import PoamItemCreateForm from '@/components/poam/PoamItemCreateForm.vue'
 import PoamItemEditForm from '@/components/poam/PoamItemEditForm.vue'
+import PoamItemAttachModal from '@/components/poam/PoamItemAttachModal.vue'
 import { useToast } from 'primevue/usetoast'
 
 const route = useRoute()
@@ -127,9 +145,11 @@ const error = ref<string | null>(null)
 // Modal states
 const showCreateModal = ref(false)
 const showEditModal = ref(false)
+const showAttachModal = ref(false)
 
 // Edit targets
 const editingItem = ref<PoamItem | null>(null)
+const attachingItem = ref<PoamItem | null>(null)
 
 onMounted(async () => {
   await loadPoamItems()
@@ -196,5 +216,19 @@ async function deleteItem(uuid: string) {
       life: 3000
     })
   }
+}
+
+const attachItems = (item: PoamItem) => {
+  attachingItem.value = item
+  showAttachModal.value = true
+}
+
+const handleItemAttached = (updatedItem: PoamItem) => {
+  const index = poamItems.value.findIndex(item => item.uuid === updatedItem.uuid)
+  if (index !== -1) {
+    poamItems.value[index] = updatedItem
+  }
+  showAttachModal.value = false
+  attachingItem.value = null
 }
 </script> 

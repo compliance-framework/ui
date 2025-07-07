@@ -78,8 +78,8 @@ export interface Party {
   remarks?: string;
 }
 
-export interface RelatedObservation {
-  observationUuid: string;
+export interface RelatedFinding {
+  findingUuid: string;
 }
 
 export interface AssociatedRisk {
@@ -98,8 +98,8 @@ export interface Actor {
   links?: Link[];
 }
 
-export interface RelatedFinding {
-  findingUuid: string;
+export interface RelatedObservation {
+  observationUuid: string;
 }
 
 export interface PoamItem {
@@ -304,6 +304,48 @@ export const usePlanOfActionAndMilestonesStore = defineStore(
     }
 
     async function updatePoamItem(id: string, itemId: string, item: PoamItem): Promise<DataResponse<PoamItem>> {
+      console.log('Original item:', item)
+      
+      // Create a deep copy to avoid modifying the original
+      const itemCopy = JSON.parse(JSON.stringify(item))
+      
+      // Convert nested related objects to use kebab-case field names
+      if (itemCopy.relatedFindings) {
+        itemCopy.relatedFindings = itemCopy.relatedFindings.map((finding: any) => ({
+          'finding-uuid': finding.findingUuid
+        }))
+      }
+      
+      if (itemCopy.relatedObservations) {
+        itemCopy.relatedObservations = itemCopy.relatedObservations.map((observation: any) => ({
+          'observation-uuid': observation.observationUuid
+        }))
+      }
+      
+      if (itemCopy.relatedRisks) {
+        itemCopy.relatedRisks = itemCopy.relatedRisks.map((risk: any) => ({
+          'risk-uuid': risk.riskUuid
+        }))
+      }
+      
+      // Convert other fields to kebab-case 
+      const decamelizedItem = decamelizeKeys(itemCopy, { separator: '-' })
+      
+      // Restore the manually converted nested objects after decamelization
+      if (itemCopy.relatedFindings) {
+        decamelizedItem['related-findings'] = itemCopy.relatedFindings
+      }
+      
+      if (itemCopy.relatedObservations) {
+        decamelizedItem['related-observations'] = itemCopy.relatedObservations
+      }
+      
+      if (itemCopy.relatedRisks) {
+        decamelizedItem['related-risks'] = itemCopy.relatedRisks
+      }
+      console.log('Decamelized item:', decamelizedItem)
+      console.log('Decamelized item JSON:', JSON.stringify(decamelizedItem, null, 2))
+      
       const config = await configStore.getConfig();
       const response = await fetch(
         `${config.API_URL}/api/oscal/plan-of-action-and-milestones/${id}/poam-items/${itemId}`,
@@ -312,16 +354,19 @@ export const usePlanOfActionAndMilestonesStore = defineStore(
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(decamelizeKeys(item, { separator: '-' })),
+          body: JSON.stringify(decamelizedItem),
           credentials: 'include',
         }
       );
+      
       if (!response.ok) {
-        throw response;
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
-      return camelcaseKeys(await response.json(), {
-        deep: true,
-      }) as DataResponse<PoamItem>;
+      
+      const responseData = await response.json();
+      console.log('Backend response data:', responseData);
+      console.log('Backend response data JSON:', JSON.stringify(responseData, null, 2));
+      return camelcaseKeys(responseData, { deep: true }) as DataResponse<PoamItem>;
     }
 
     async function createPoamItem(id: string, item: Partial<PoamItem>): Promise<DataResponse<PoamItem>> {
