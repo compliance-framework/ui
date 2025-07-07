@@ -76,7 +76,7 @@
             </div>
           </template>
           
-          <div class="px-6 pb-6 bg-gray-50 dark:bg-slate-800">
+          <div class="px-6 pb-6">
             <PoamItemDetails :item="item" />
           </div>
         </CollapsableGroup>
