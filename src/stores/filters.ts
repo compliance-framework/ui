@@ -13,30 +13,29 @@ export interface Dashboard {
   controls: Control[]
 }
 
-export const useDashboardStore = defineStore('dashboards', () => {
+/** Used for creating a Dashboard: controls passed as an array of IDs */
+export interface DashboardCreate extends Omit<Dashboard, 'controls'> {
+  controls: string[];
+}
+
+export const useFilterStore = defineStore('filters', () => {
   const configStore = useConfigStore()
 
   async function get(id: string): Promise<DataResponse<Dashboard>> {
     const config = await configStore.getConfig()
-    const response = await fetch(`${config.API_URL}/api/dashboards/${id}`)
+    const response = await fetch(`${config.API_URL}/api/filters/${id}`)
     return (await response.json()) as DataResponse<Dashboard>
   }
 
   async function list(): Promise<DataResponse<Dashboard[]>> {
     const config = await configStore.getConfig()
-    const response = await fetch(`${config.API_URL}/api/dashboards`)
+    const response = await fetch(`${config.API_URL}/api/filters`)
     return (await response.json()) as DataResponse<Dashboard[]>
   }
 
-  async function complianceForControl(control: Control): Promise<DataResponse<ComplianceIntervalStatus[]>> {
+  async function create(plan: DashboardCreate): Promise<Dashboard> {
     const config = await configStore.getConfig()
-    const response = await fetch(`${config.API_URL}/api/dashboards/compliance-by-control/${control.id}`)
-    return (await response.json()) as DataResponse<ComplianceIntervalStatus[]>
-  }
-
-  async function create(plan: Dashboard): Promise<Dashboard> {
-    const config = await configStore.getConfig()
-    const response = await fetch(`${config.API_URL}/api/dashboards`, {
+    const response = await fetch(`${config.API_URL}/api/filters`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -54,7 +53,7 @@ export const useDashboardStore = defineStore('dashboards', () => {
 
   async function destroy(id: string): Promise<void> {
     const config = await configStore.getConfig()
-    const response = await fetch(`${config.API_URL}/api/dashboards/${id}`, {
+    const response = await fetch(`${config.API_URL}/api/filters/${id}`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
@@ -71,7 +70,6 @@ export const useDashboardStore = defineStore('dashboards', () => {
   return {
     get,
     list,
-    complianceForControl,
     create,
     destroy,
   }

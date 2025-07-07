@@ -7,6 +7,8 @@ import type {
   Link,
   Property
 } from '@/stores/types.ts'
+import type { Catalog, Control } from '@/stores/catalogs.ts'
+import type { Dashboard } from '@/stores/filters.ts'
 
 export interface EvidenceStatus {
   reason: string
@@ -52,6 +54,14 @@ export interface ComplianceInterval {
 //   findings: Evidence[];
 // }
 
+interface ForControlMetadata {
+  control: Control
+}
+
+export interface ForControlResponse  extends DataResponse<Evidence[]> {
+  metadata: ForControlMetadata
+}
+
 export const useEvidenceStore = defineStore('evidence', () => {
   const configStore = useConfigStore();
 
@@ -59,6 +69,12 @@ export const useEvidenceStore = defineStore('evidence', () => {
     const config = await configStore.getConfig();
     const response = await fetch(`${config.API_URL}/api/evidence/${id}`);
     return (await response.json()) as DataResponse<Evidence>;
+  }
+
+  async function getForControl(controlId: string): Promise<ForControlResponse> {
+    const config = await configStore.getConfig();
+    const response = await fetch(`${config.API_URL}/api/evidence/for-control/${controlId}`);
+    return (await response.json()) as ForControlResponse;
   }
 
   async function search(filter: Filter): Promise<DataResponse<Evidence[]>> {
@@ -188,6 +204,13 @@ export const useEvidenceStore = defineStore('evidence', () => {
 
     return (await response.json()) as DataResponse<ComplianceInterval[]>;
   }
+
+  async function getComplianceForControl(control: Control): Promise<DataResponse<ComplianceIntervalStatus[]>> {
+    const config = await configStore.getConfig()
+    const response = await fetch(`${config.API_URL}/api/evidence/compliance-by-control/${control.id}`)
+    return (await response.json()) as DataResponse<ComplianceIntervalStatus[]>
+  }
+
   //
   // async function getComplianceForControl(
   //   _class: string,
@@ -230,11 +253,13 @@ export const useEvidenceStore = defineStore('evidence', () => {
 
   return {
     get: get,
+    getForControl,
     search: search,
     // searchBySubject,
     history: history,
     getComplianceForSearch,
     getComplianceForUUID,
+    getComplianceForControl,
     // getByControlClass,
     // getAllControlClasses,
     // getComplianceForControl,

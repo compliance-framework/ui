@@ -14,7 +14,7 @@
       </td>
       <td class="py-3 px-2 whitespace-nowrap grow">{{ item.title }}</td>
       <td class="px-2" v-if="configStore.showLabels">
-        <LabelList :labels="item.labels" />
+<!--        <LabelList :labels="item.labels" />-->
       </td>
       <td class="py-2 px-2 text-right whitespace-nowrap">
         <RouterLink

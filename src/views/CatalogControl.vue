@@ -108,7 +108,6 @@ import { onMounted, ref } from 'vue';
 import CollapsableGroup from '@/components/CollapsableGroup.vue';
 import {
   type ComplianceIntervalStatus,
-  useFindingsStore,
 } from '@/stores/findings.ts';
 import ResultStatusBadge from '@/components/ResultStatusBadge.vue';
 import {
@@ -121,14 +120,14 @@ import ControlCreateModal from '@/components/catalogs/ControlCreateModal.vue';
 import type { Part } from '@/stores/types.ts';
 import PartDisplayEditor from '@/components/PartDisplayEditor.vue'
 import { useRouter } from 'vue-router'
-import { useDashboardStore } from '@/stores/dashboards.ts'
+import { useEvidenceStore } from '@/stores/evidence.ts'
 
 const props = defineProps<{
   catalog: Catalog;
   control: Control;
 }>();
 
-const dashboardStore = useDashboardStore();
+const evidenceStore = useEvidenceStore();
 const catalogStore = useCatalogStore();
 const controls = ref<Control[]>([]);
 const compliance = ref<ComplianceIntervalStatus[] | null>(null);
@@ -147,8 +146,8 @@ function hasPart(type: string) {
 
 function gotoFindings() {
   router.push({
-    name: 'catalog-control-findings',
-    params: { class: props.control.class, id: props.control.id },
+    name: 'catalog-control-evidence',
+    params: { catalog: props.catalog.uuid, id: props.control.id },
   })
 }
 
@@ -164,8 +163,8 @@ onMounted(() => {
     .then((data) => {
       controls.value = data.data;
     });
-  dashboardStore
-    .complianceForControl(props.control)
+  evidenceStore
+    .getComplianceForControl(props.control)
     .then((data) => {
       compliance.value = data.data;
     });

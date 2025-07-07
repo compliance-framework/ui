@@ -36,14 +36,14 @@ import { onMounted, ref } from 'vue'
 import PageHeader from '@/components/PageHeader.vue'
 import PageCard from '@/components/PageCard.vue'
 import PageSubHeader from '@/components/PageSubHeader.vue'
-import { type Dashboard, useDashboardStore } from '@/stores/dashboards.ts'
+import { type Dashboard, useFilterStore } from '@/stores/filters.ts'
 import DashboardChart from '@/views/dashboard/DashboardChart.vue'
 import { useConfirm } from 'primevue/useconfirm'
 import { useToast } from 'primevue/usetoast'
 import Button from '@/volt/Button.vue'
 import Chip from '@/volt/Chip.vue';
 
-const dashboardsStore = useDashboardStore()
+const dashboardsStore = useFilterStore()
 const confirm = useConfirm();
 const toast = useToast();
 

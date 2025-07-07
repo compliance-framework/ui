@@ -82,12 +82,12 @@ const authenticatedRoutes = [
     }
   },
   {
-    path: '/catalogs/control/:class/:id',
-    name: 'catalog-control-findings',
+    path: '/catalogs/:catalog/control/:id/evidence',
+    name: 'catalog-control-evidence',
     // route level code-splitting
     // this generates a separate chunk (About.[hash].js) for this route
     // which is lazy-loaded when the route is visited.
-    component: () => import('../views/CatalogControlFindings.vue'),
+    component: () => import('../views/EvidenceByControlView.vue'),
     meta: {
       requiresAuth: true,
     }

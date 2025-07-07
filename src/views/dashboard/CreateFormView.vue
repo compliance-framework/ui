@@ -51,7 +51,7 @@ import { useRouter, useRoute } from 'vue-router';
 import PageHeader from '@/components/PageHeader.vue'
 import PageCard from '@/components/PageCard.vue'
 import { FilterParser } from '@/parsers/labelfilter.ts'
-import { type Dashboard, useDashboardStore } from '@/stores/dashboards.ts'
+import { type Dashboard, useFilterStore } from '@/stores/filters.ts'
 import FormInput from '@/components/forms/FormInput.vue'
 import PrimaryButton from '@/components/PrimaryButton.vue'
 import MultiSelect from '@/volt/MultiSelect.vue';
@@ -59,7 +59,7 @@ import { type Control, type Group, useCatalogStore } from '@/stores/catalogs.ts'
 
 const router = useRouter();
 const route = useRoute();
-const store = useDashboardStore();
+const store = useFilterStore();
 const catalogStore = useCatalogStore();
 const dashboard = ref<Dashboard>({} as Dashboard);
 
