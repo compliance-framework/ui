@@ -1,7 +1,7 @@
 <template>
   <div class="p-6">
     <h3 class="text-lg font-semibold text-gray-900 dark:text-slate-300 mb-4">
-      Attach Items to POAM Item
+      Attach / Detach Items to POAM Item
     </h3>
     
     <div class="mb-6">

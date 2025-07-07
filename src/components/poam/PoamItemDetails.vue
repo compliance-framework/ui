@@ -142,12 +142,6 @@
                 {{ getFindingDisplayInfo(finding.findingUuid).description }}
               </p>
             </div>
-            <button
-              @click="$emit('detach', { type: 'findings', uuid: finding.findingUuid })"
-              class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 text-sm"
-            >
-              Remove
-            </button>
           </div>
         </div>
       </div>
@@ -177,12 +171,6 @@
                 {{ getObservationDisplayInfo(observation.observationUuid).description }}
               </p>
             </div>
-            <button
-              @click="$emit('detach', { type: 'observations', uuid: observation.observationUuid })"
-              class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 text-sm"
-            >
-              Remove
-            </button>
           </div>
         </div>
       </div>
@@ -212,12 +200,6 @@
                 {{ getRiskDisplayInfo(risk.riskUuid).description }}
               </p>
             </div>
-            <button
-              @click="$emit('detach', { type: 'risks', uuid: risk.riskUuid })"
-              class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 text-sm"
-            >
-              Remove
-            </button>
           </div>
         </div>
       </div>

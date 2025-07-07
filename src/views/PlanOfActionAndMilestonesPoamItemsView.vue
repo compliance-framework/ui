@@ -64,7 +64,7 @@
                   @click.stop="attachItems(item)"
                   class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded-md text-sm"
                 >
-                  Attach Items
+                  Attach / Detach Items
                 </button>
                 <button
                   @click.stop="editItem(item)"
