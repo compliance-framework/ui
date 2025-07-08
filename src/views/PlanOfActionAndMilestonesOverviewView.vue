@@ -52,18 +52,11 @@
       
       <div class="flex flex-wrap gap-3">
         <button
-          disabled
-          class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
-          title="Edit functionality is currently disabled"
-        >
-          Edit Metadata
-        </button>
-        <RouterLink
-          :to="`/plan-of-action-and-milestones/${planOfActionAndMilestones.uuid}/edit`"
+          @click="showEditModal = true"
           class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
         >
           Edit POAM
-        </RouterLink>
+        </button>
         <RouterLink
           :to="`/plan-of-action-and-milestones/${planOfActionAndMilestones.uuid}/poam-items`"
           class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md"
@@ -91,9 +84,18 @@
           Download JSON
         </button>
       </div>
-
-
     </div>
+
+    <!-- Edit Metadata Modal -->
+    <Modal :show="showEditModal" @close="showEditModal = false" size="lg">
+      <MetadataEditForm
+        v-if="showEditModal && planOfActionAndMilestones.metadata"
+        :poam-id="route.params.id as string"
+        :metadata="planOfActionAndMilestones.metadata"
+        @cancel="showEditModal = false"
+        @saved="handleMetadataSaved"
+      />
+    </Modal>
 
     <!-- Summary Statistics -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -158,13 +160,17 @@ import {
   type PoamItem,
   usePlanOfActionAndMilestonesStore 
 } from '@/stores/plan-of-action-and-milestones.ts'
+import MetadataEditForm from '@/components/poam/MetadataEditForm.vue'
+import Modal from '@/components/Modal.vue'
+import { useToast } from 'primevue/usetoast'
 
 const route = useRoute()
 const poamStore = usePlanOfActionAndMilestonesStore()
+const toast = useToast()
 
 const planOfActionAndMilestones = ref<PlanOfActionAndMilestones>({} as PlanOfActionAndMilestones)
 const poamItems = ref<PoamItem[]>([])
-
+const showEditModal = ref(false)
 
 const statistics = computed(() => ({
   poamItems: poamItems.value.length,
@@ -217,5 +223,22 @@ async function downloadJson(): Promise<void> {
   } catch (error) {
     console.error('Error downloading JSON:', error)
   }
+}
+
+function handleMetadataSaved(updatedMetadata: any) {
+  // Update the metadata in the current POAM data
+  if (planOfActionAndMilestones.value.metadata) {
+    planOfActionAndMilestones.value.metadata = updatedMetadata
+  }
+  
+  showEditModal.value = false
+  
+  // Show success message
+  toast.add({
+    severity: 'success',
+    summary: 'Metadata Updated',
+    detail: 'POAM metadata updated successfully',
+    life: 3000
+  })
 }
 </script> 

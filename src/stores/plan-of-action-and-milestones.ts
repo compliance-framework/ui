@@ -388,7 +388,24 @@ export const usePlanOfActionAndMilestonesStore = defineStore(
     }
 
     async function updateMetadata(id: string, metadata: Metadata): Promise<DataResponse<Metadata>> {
-      throw new Error('Update functionality is currently disabled');
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/plan-of-action-and-milestones/${id}/metadata`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(decamelizeKeys(metadata, { separator: '-' })),
+          credentials: 'include',
+        }
+      );
+      if (!response.ok) {
+        throw response;
+      }
+      return camelcaseKeys(await response.json(), {
+        deep: true,
+      }) as DataResponse<Metadata>;
     }
 
     async function updatePoamItem(id: string, itemId: string, item: PoamItem): Promise<DataResponse<PoamItem>> {
