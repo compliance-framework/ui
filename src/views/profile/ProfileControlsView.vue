@@ -56,6 +56,30 @@
         <PrimaryButton class="mt-2" @click="save(imp)">Save</PrimaryButton>
       </div>
     </CollapsableGroup>
+    <PrimaryButton class="mt-4" @click="openCatalogDialog()">Add Catalog Import</PrimaryButton>
+
+    <Dialog v-model:visible="catalogDialogVisible" modal header="Add Catalog">
+      <table class="table-fixed">
+        <thead class="bg-ccf-100 dark:bg-slate-800 text-ccf-700 dark:text-slate-200">
+          <tr>
+            <th class="p-2">Catalog Name</th>
+            <th class="p-2">Catalog UUID</th>
+            <th class="p-2">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="catalog in catalogs" :key="catalog.uuid">
+            <td class="py-2 pr-3 font-medium text-wrap">{{ catalog.metadata.title }}</td>
+            <td class="py-2 pr-3">
+              <pre>{{ catalog.uuid }}</pre>
+            </td>
+            <td class="py-2 pr-3">
+              <PrimaryButton :disabled="importedCatalogs[catalog.uuid]" class="disabled:text-ccf-600 disabled:bg-ccf-200 dark:disabled:bg-slate-700" v-tooltip.top="'Catalog is already imported in this profile'">Import</PrimaryButton>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </Dialog>
 </template>
 
 <script setup lang="ts">
@@ -69,14 +93,20 @@ import PrimaryButton from '@/components/PrimaryButton.vue';
 import type { DataResponse } from '@/stores/types';
 import ProfileControlEditor from '@/components/profiles/ProfileControlEditor.vue';
 import { useToast } from 'primevue/usetoast';
+import Dialog from '@/volt/Dialog.vue';
+import { type Catalog, useCatalogStore } from '@/stores/catalogs';
 
 const profile = useProfileStore();
 const imports = ref<Import[]>([] as Import[]);
+const catalogs = ref<Catalog[]>([] as Catalog[]);
 const route = useRoute();
 const toast = useToast();
 const id = route.params.id as string;
 
+const importedCatalogs = ref<{ [key: string]: string }>({});
+
 const backmatter = ref<BackMatter>({} as BackMatter);
+const catalogDialogVisible = ref(false);
 
 function findResourceByHref(href: string): BackMatterResource | undefined {
   const hrefUUID = href.startsWith('#') ? href.substring(1) : href;
@@ -115,14 +145,43 @@ function save(imp: Import) {
   });
 }
 
+function gatherImportedCatalogs() {
+  for (const imp of imports.value) {
+      const resource = findResourceByHref(imp.href);
+      if (resource) {
+        for (const rlink of resource.rlinks ?? []) {
+          if (rlink.mediaType === 'application/ccf+oscal+json' && rlink.href.startsWith('#')) {
+              const uuid = rlink.href.substring(1, rlink.href.length);
+              importedCatalogs.value[uuid] = imp.href
+            }
+        }
+      }
+    }
+}
+
+function openCatalogDialog() {
+  const catalogStore = useCatalogStore();
+  catalogStore.list().then((response) => {
+    catalogs.value = response.data;
+    catalogDialogVisible.value = true;
+  }).catch((error) => {
+    toast.add({
+      severity: 'error',
+      summary: 'Error loading catalogs',
+      detail: error.message,
+      life: 3000,
+    });
+  });
+}
+
 onActivated(() => {
   Promise.all([
     profile.listImports(id),
     profile.getBackMatter(id)
   ]).then(([importsData, backmatterData]) => {
     imports.value = importsData.data;
-    console.log(importsData);
     backmatter.value = backmatterData.data;
+    gatherImportedCatalogs();
   });
 });
 
