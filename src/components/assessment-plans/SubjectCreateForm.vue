@@ -10,10 +10,6 @@
       </div>
     </div>
 
-    <div class="mb-4">
-      <label class="inline-block pb-2 dark:text-slate-300">Title</label>
-      <FormInput v-model="subject.title" />
-    </div>
 
     <div class="mb-4">
       <label class="inline-block pb-2 dark:text-slate-300">Type <span class="text-red-500">*</span></label>
@@ -162,7 +158,6 @@ const emit = defineEmits<{
 
 const subject = ref<AssessmentSubject>({
   uuid: uuidv4(),
-  title: '',
   type: '',
   description: '',
   props: [],
@@ -215,7 +210,6 @@ async function createSubject(): Promise<void> {
   try {
     const subjectData = {
       uuid: subject.value.uuid,
-      title: subject.value.title || '',
       type: subject.value.type,
       description: subject.value.description,
       props: subject.value.props || [],

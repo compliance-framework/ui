@@ -18,7 +18,7 @@
           class="border border-ccf-300 dark:border-slate-700 rounded-lg p-4"
         >
           <div class="flex justify-between items-start mb-2">
-            <h4 class="font-medium text-gray-900 dark:text-slate-300">{{ subject.title || 'Untitled Subject' }}</h4>
+            <h4 class="font-medium text-gray-900 dark:text-slate-300">{{ subject.type || 'Subject' }}</h4>
             <div class="flex gap-2">
               <button
                 @click="editSubject(subject)"
