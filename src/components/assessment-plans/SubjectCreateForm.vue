@@ -36,6 +36,94 @@
       <FormTextarea v-model="subject.description" rows="3" required />
     </div>
 
+    <!-- Properties Section -->
+    <div class="mb-6">
+      <label class="inline-block pb-2 dark:text-slate-300">Properties</label>
+      <div class="space-y-3">
+        <div
+          v-for="(prop, index) in subject.props"
+          :key="index"
+          class="p-3 border border-ccf-300 dark:border-slate-700 rounded-md bg-gray-50 dark:bg-slate-800"
+        >
+          <div class="flex justify-between items-start mb-2">
+            <h4 class="text-sm font-medium dark:text-slate-300">Property {{ index + 1 }}</h4>
+            <button
+              type="button"
+              @click="removeProperty(index)"
+              class="text-red-500 hover:text-red-700"
+            >
+              Remove
+            </button>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label class="inline-block pb-1 text-sm dark:text-slate-300">Name</label>
+              <FormInput v-model="prop.name" placeholder="Property name" />
+            </div>
+            <div>
+              <label class="inline-block pb-1 text-sm dark:text-slate-300">Value</label>
+              <FormInput v-model="prop.value" placeholder="Property value" />
+            </div>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          @click="addProperty"
+          class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors"
+        >
+          Add Property
+        </button>
+      </div>
+    </div>
+
+    <!-- Links Section -->
+    <div class="mb-6">
+      <label class="inline-block pb-2 dark:text-slate-300">Links</label>
+      <div class="space-y-3">
+        <div
+          v-for="(link, index) in subject.links"
+          :key="index"
+          class="p-3 border border-ccf-300 dark:border-slate-700 rounded-md bg-gray-50 dark:bg-slate-800"
+        >
+          <div class="flex justify-between items-start mb-2">
+            <h4 class="text-sm font-medium dark:text-slate-300">Link {{ index + 1 }}</h4>
+            <button
+              type="button"
+              @click="removeLink(index)"
+              class="text-red-500 hover:text-red-700"
+            >
+              Remove
+            </button>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label class="inline-block pb-1 text-sm dark:text-slate-300">Href</label>
+              <FormInput v-model="link.href" placeholder="URL or reference" />
+            </div>
+            <div>
+              <label class="inline-block pb-1 text-sm dark:text-slate-300">Rel</label>
+              <FormInput v-model="link.rel" placeholder="Relationship" />
+            </div>
+          </div>
+          <div class="mt-2">
+            <label class="inline-block pb-1 text-sm dark:text-slate-300">Text</label>
+            <FormInput v-model="link.text" placeholder="Link text" />
+          </div>
+        </div>
+
+        <button
+          type="button"
+          @click="addLink"
+          class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors"
+        >
+          Add Link
+        </button>
+      </div>
+    </div>
+
     <div v-if="errorMessage" class="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
       {{ errorMessage }}
     </div>
@@ -49,7 +137,8 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { type Subject, useAssessmentPlanStore } from '@/stores/assessment-plans.ts'
+import { type AssessmentSubject, useAssessmentPlanStore } from '@/stores/assessment-plans.ts'
+import type { Property, Link } from '@/stores/types.ts'
 import { useToast } from 'primevue/usetoast'
 import FormInput from '@/components/forms/FormInput.vue'
 import FormTextarea from '@/components/forms/FormTextarea.vue'
@@ -67,18 +156,48 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  created: [subject: Subject]
+  created: [subject: AssessmentSubject]
   cancel: []
 }>()
 
-const subject = ref<Subject>({
+const subject = ref<AssessmentSubject>({
   uuid: uuidv4(),
   title: '',
   type: '',
-  description: ''
+  description: '',
+  props: [],
+  links: []
 })
 
 const errorMessage = ref('')
+
+const addProperty = () => {
+  const newProperty: Property = {
+    name: '',
+    value: '',
+    class: '',
+    ns: '',
+    uuid: crypto.randomUUID()
+  };
+  subject.value.props!.push(newProperty);
+};
+
+const removeProperty = (index: number) => {
+  subject.value.props!.splice(index, 1);
+};
+
+const addLink = () => {
+  const newLink: Link = {
+    href: '',
+    rel: '',
+    text: ''
+  };
+  subject.value.links!.push(newLink);
+};
+
+const removeLink = (index: number) => {
+  subject.value.links!.splice(index, 1);
+};
 
 async function createSubject(): Promise<void> {
   errorMessage.value = ''
@@ -98,15 +217,17 @@ async function createSubject(): Promise<void> {
       uuid: subject.value.uuid,
       title: subject.value.title || '',
       type: subject.value.type,
-      description: subject.value.description
+      description: subject.value.description,
+      props: subject.value.props || [],
+      links: subject.value.links || []
     }
 
     // Get current subjects and add the new one
     const response = await assessmentPlanStore.get(props.assessmentPlanId)
-    const currentSubjects = response.data.subjects || []
+    const currentSubjects = response.data.assessmentSubjects || []
     const updatedSubjects = [...currentSubjects, subjectData]
 
-    await assessmentPlanStore.updateSubjects(props.assessmentPlanId, updatedSubjects)
+    await assessmentPlanStore.updateAssessmentSubjects(props.assessmentPlanId, updatedSubjects)
 
     toast.add({
       severity: 'success',

@@ -48,7 +48,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { type Subject, useAssessmentPlanStore } from '@/stores/assessment-plans.ts'
+import { type AssessmentSubject, useAssessmentPlanStore } from '@/stores/assessment-plans.ts'
 import { useToast } from 'primevue/usetoast'
 import FormInput from '@/components/forms/FormInput.vue'
 import FormTextarea from '@/components/forms/FormTextarea.vue'
@@ -60,15 +60,15 @@ const toast = useToast()
 
 const props = defineProps<{
   assessmentPlanId: string
-  subject: Subject
+  subject: AssessmentSubject
 }>()
 
 const emit = defineEmits<{
-  updated: [subject: Subject]
+  updated: [subject: AssessmentSubject]
   cancel: []
 }>()
 
-const subjectData = ref<Subject>({
+const subjectData = ref<AssessmentSubject>({
   uuid: '',
   title: '',
   type: '',
@@ -116,7 +116,7 @@ async function updateSubject(): Promise<void> {
 
     // Get current subjects, find and update the specific subject
     const response = await assessmentPlanStore.get(props.assessmentPlanId)
-    const currentSubjects = response.data.subjects || []
+    const currentSubjects = response.data.assessmentSubjects || []
     const subjectIndex = currentSubjects.findIndex(s => s.uuid === subjectData.value.uuid)
 
     if (subjectIndex === -1) {
@@ -127,7 +127,7 @@ async function updateSubject(): Promise<void> {
     const updatedSubjects = [...currentSubjects]
     updatedSubjects[subjectIndex] = updatedSubjectData
 
-    await assessmentPlanStore.updateSubjects(props.assessmentPlanId, updatedSubjects)
+    await assessmentPlanStore.updateAssessmentSubjects(props.assessmentPlanId, updatedSubjects)
 
     toast.add({
       severity: 'success',

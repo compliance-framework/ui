@@ -137,8 +137,8 @@ async function removeSubject(index: number) {
 async function loadSubjects() {
   const id = route.params.id as string
   try {
-    const response = await assessmentPlanStore.get(id)
-    subjects.value = response.data.assessmentSubjects || []
+    const response = await assessmentPlanStore.getAssessmentSubjects(id)
+    subjects.value = response.data || []
   } catch (error) {
     toast.add({
       severity: 'error',
