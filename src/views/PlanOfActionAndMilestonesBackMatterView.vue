@@ -122,13 +122,6 @@
         </div>
       </div>
     </div>
-
-    <!-- Feature Notice -->
-    <div class="mt-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md">
-      <p class="text-sm text-yellow-800 dark:text-yellow-200">
-        <strong>Read-Only Mode:</strong> Back Matter functionality is currently disabled. The backend endpoint is not yet implemented.
-      </p>
-    </div>
   </div>
 </template>
 

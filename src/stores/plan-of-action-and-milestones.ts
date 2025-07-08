@@ -962,7 +962,19 @@ export const usePlanOfActionAndMilestonesStore = defineStore(
     }
 
     async function getBackMatter(id: string): Promise<DataResponse<BackMatter>> {
-      throw new Error('Back Matter endpoint not yet implemented in backend');
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/plan-of-action-and-milestones/${id}/back-matter`,
+        {
+          credentials: 'include',
+        }
+      );
+      if (!response.ok) {
+        throw response;
+      }
+      return camelcaseKeys(await response.json(), {
+        deep: true,
+      }) as DataResponse<BackMatter>;
     }
 
     return {
