@@ -194,7 +194,6 @@ export interface ExcludeObjective {
 export interface AssessmentSubject {
   uuid: string;
   type: string;
-  title?: string;
   description: string;
   props?: Property[];
   links?: Link[];
@@ -206,7 +205,6 @@ export interface AssessmentSubject {
 export interface IncludeSubject {
   subjectUuid: string;
   type: string;
-  title?: string;
   description?: string;
   props?: Property[];
   links?: Link[];
@@ -215,7 +213,6 @@ export interface IncludeSubject {
 export interface ExcludeSubject {
   subjectUuid: string;
   type: string;
-  title?: string;
   description?: string;
   props?: Property[];
   links?: Link[];

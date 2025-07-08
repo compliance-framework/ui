@@ -9,10 +9,6 @@
       </div>
     </div>
 
-    <div class="mb-4">
-      <label class="inline-block pb-2 dark:text-slate-300">Title</label>
-      <FormInput v-model="subjectData.title" />
-    </div>
 
     <div class="mb-4">
       <label class="inline-block pb-2 dark:text-slate-300">Type <span class="text-red-500">*</span></label>
@@ -50,7 +46,6 @@
 import { ref, onMounted } from 'vue'
 import { type AssessmentSubject, useAssessmentPlanStore } from '@/stores/assessment-plans.ts'
 import { useToast } from 'primevue/usetoast'
-import FormInput from '@/components/forms/FormInput.vue'
 import FormTextarea from '@/components/forms/FormTextarea.vue'
 import PrimaryButton from '@/components/PrimaryButton.vue'
 import SecondaryButton from '@/components/SecondaryButton.vue'
@@ -70,7 +65,6 @@ const emit = defineEmits<{
 
 const subjectData = ref<AssessmentSubject>({
   uuid: '',
-  title: '',
   type: '',
   description: ''
 })
@@ -81,7 +75,6 @@ onMounted(() => {
   if (props.subject) {
     subjectData.value = {
       uuid: props.subject.uuid,
-      title: props.subject.title || '',
       type: props.subject.type || '',
       description: props.subject.description || ''
     }
@@ -109,7 +102,6 @@ async function updateSubject(): Promise<void> {
   try {
     const updatedSubjectData = {
       uuid: subjectData.value.uuid,
-      title: subjectData.value.title || '',
       type: subjectData.value.type,
       description: subjectData.value.description
     }
