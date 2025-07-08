@@ -3,7 +3,7 @@
     <div class="flex justify-between items-center mb-6">
       <h3 class="text-lg font-semibold dark:text-slate-300">Assessment Tasks</h3>
       <button
-        @click="addTask"
+        @click="showCreateModal = true"
         class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
       >
         Add Task
@@ -21,7 +21,7 @@
             <h4 class="font-medium text-gray-900 dark:text-slate-300">{{ task.title }}</h4>
             <div class="flex gap-2">
               <button
-                @click="editTask(index)"
+                @click="editTask(task)"
                 class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
               >
                 Edit
@@ -59,61 +59,20 @@
       <p class="text-sm text-gray-400 dark:text-slate-500 mt-2">Click "Add Task" to create your first assessment task.</p>
     </div>
 
-    <!-- Task Edit Modal (Simple inline form for now) -->
-    <div v-if="editingTaskIndex !== null" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div class="bg-white dark:bg-slate-800 rounded-lg p-6 w-full max-w-md mx-4">
-        <h4 class="text-lg font-semibold mb-4 dark:text-slate-300">
-          {{ editingTaskIndex === -1 ? 'Add Task' : 'Edit Task' }}
-        </h4>
+    <!-- Task Create Modal -->
+    <TaskCreateModal
+      v-model="showCreateModal"
+      :assessment-plan-id="route.params.id as string"
+      @created="onTaskCreated"
+    />
 
-        <form @submit.prevent="saveTask">
-          <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">Title</label>
-            <input
-              v-model="editingTask.title"
-              type="text"
-              required
-              class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md dark:bg-slate-700 dark:text-slate-300"
-            />
-          </div>
-
-          <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">Type</label>
-            <input
-              v-model="editingTask.type"
-              type="text"
-              required
-              class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md dark:bg-slate-700 dark:text-slate-300"
-            />
-          </div>
-
-          <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">Description</label>
-            <textarea
-              v-model="editingTask.description"
-              rows="3"
-              class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md dark:bg-slate-700 dark:text-slate-300"
-            ></textarea>
-          </div>
-
-          <div class="flex justify-end gap-3">
-            <button
-              type="button"
-              @click="cancelEdit"
-              class="px-4 py-2 text-gray-600 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-300"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
-            >
-              {{ editingTaskIndex === -1 ? 'Add' : 'Save' }}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+    <!-- Task Edit Modal -->
+    <TaskEditModal
+      v-model="showEditModal"
+      :assessment-plan-id="route.params.id as string"
+      :task="editingTask"
+      @updated="onTaskUpdated"
+    />
   </div>
 </template>
 
@@ -122,76 +81,44 @@ import { onMounted, ref } from 'vue'
 import { type Task, useAssessmentPlanStore } from '@/stores/assessment-plans.ts'
 import { useRoute } from 'vue-router'
 import { useToast } from 'primevue/usetoast'
-import { v4 as uuidv4 } from 'uuid'
+import TaskCreateModal from '@/components/assessment-plans/TaskCreateModal.vue'
+import TaskEditModal from '@/components/assessment-plans/TaskEditModal.vue'
 
 const assessmentPlanStore = useAssessmentPlanStore()
 const route = useRoute()
 const toast = useToast()
 
 const tasks = ref<Task[]>([])
-const editingTaskIndex = ref<number | null>(null)
+const showCreateModal = ref(false)
+const showEditModal = ref(false)
 const editingTask = ref<Task>({} as Task)
 
-function addTask() {
-  editingTask.value = {
-    uuid: uuidv4(),
-    type: '',
-    title: '',
-    description: ''
-  } as Task
-  editingTaskIndex.value = -1
+function editTask(task: Task) {
+  editingTask.value = { ...task }
+  showEditModal.value = true
 }
 
-function editTask(index: number) {
-  editingTask.value = { ...tasks.value[index] }
-  editingTaskIndex.value = index
+async function onTaskCreated(task: Task) {
+  // Refresh the tasks list from the backend
+  await loadTasks()
 }
 
-function cancelEdit() {
-  editingTaskIndex.value = null
-  editingTask.value = {} as Task
-}
-
-async function saveTask() {
-  try {
-    if (editingTaskIndex.value === -1) {
-      // Add new task
-      tasks.value.push({ ...editingTask.value })
-    } else {
-      // Update existing task
-      tasks.value[editingTaskIndex.value] = { ...editingTask.value }
-    }
-
-    // Save to backend
-    const id = route.params.id as string
-    await assessmentPlanStore.updateTasks(id, tasks.value)
-
-    toast.add({
-      severity: 'success',
-      summary: 'Task Saved',
-      detail: 'Task has been saved successfully',
-      life: 3000
-    })
-
-    cancelEdit()
-  } catch (error) {
-    toast.add({
-      severity: 'error',
-      summary: 'Error saving task',
-      detail: 'Failed to save task. Please try again.',
-      life: 3000
-    })
-  }
+async function onTaskUpdated(task: Task) {
+  // Refresh the tasks list from the backend
+  await loadTasks()
 }
 
 async function removeTask(index: number) {
   if (confirm('Are you sure you want to remove this task?')) {
     try {
-      tasks.value.splice(index, 1)
-
-      // Save to backend
+      const taskToDelete = tasks.value[index]
       const id = route.params.id as string
-      await assessmentPlanStore.updateTasks(id, tasks.value)
+
+      // Delete from backend first
+      await assessmentPlanStore.deleteTask(id, taskToDelete.uuid)
+
+      // Remove from local array only after successful backend deletion
+      tasks.value.splice(index, 1)
 
       toast.add({
         severity: 'success',
@@ -210,11 +137,11 @@ async function removeTask(index: number) {
   }
 }
 
-onMounted(async () => {
+async function loadTasks() {
   const id = route.params.id as string
   try {
-    const response = await assessmentPlanStore.get(id)
-    tasks.value = response.data.tasks || []
+    const response = await assessmentPlanStore.getTasks(id)
+    tasks.value = response.data || []
   } catch (error) {
     toast.add({
       severity: 'error',
@@ -223,5 +150,9 @@ onMounted(async () => {
       life: 3000
     })
   }
+}
+
+onMounted(async () => {
+  await loadTasks()
 })
 </script>
