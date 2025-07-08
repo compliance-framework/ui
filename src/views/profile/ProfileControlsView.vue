@@ -1,4 +1,5 @@
 <template>
+  <div>
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8 py-3">
       <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
         <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ imports.length }}</div>
@@ -24,72 +25,25 @@
       </template>
       <div class="px-4 py-4 bg-white dark:bg-slate-950 border border-ccf-300 dark:border-slate-700">
         <p>Included Controls</p>
-        <CollapsableGroup v-for="(controlGroup, idx) in imp.includeControls" :key="idx">
-          <template #header>
-            <div
-              class="py-4 px-4 dark:bg-slate-900 border border-ccf-300 dark:border-slate-700 flex flex-inline">
-              <p class="grow whitespace-nowrap">Group {{ idx + 1 }}</p>
-              <PrimaryButton class="flex gap-2" @click="removeControlGroup(imp.includeControls, idx)">Remove
-              </PrimaryButton>
-            </div>
-          </template>
-          <div class="px-4 py-4 bg-ccf-100 dark:bg-slate-950 border border-ccf-300 dark:border-slate-700">
-            <ProfileControlEditor v-model="controlGroup.withIds" />
-          </div>
-        </CollapsableGroup>
-        <PrimaryButton @click="createIncludeControlGroup(imp)" class="mt-4">Create Group</PrimaryButton>
+        <ProfileControlGroups :groups="imp.includeControls" />
         <hr class="my-4 border-ccf-300 dark:border-slate-700 border-dashed" />
         <p>Excluded Controls</p>
-        <CollapsableGroup v-for="(controlGroup, idx) in imp.excludeControls" :key="idx">
-          <template #header>
-            <div
-              class="py-4 px-4 dark:bg-slate-900 border border-ccf-300 dark:border-slate-700 flex flex-inline">
-              <p class="grow whitespace-nowrap">Group {{ idx + 1 }}</p>
-              <PrimaryButton class="flex gap-2" @click="removeControlGroup(imp.excludeControls, idx)">Remove
-              </PrimaryButton>
-            </div>
-          </template>
-          <div class="px-4 py-4 bg-ccf-100 dark:bg-slate-950 border border-ccf-300 dark:border-slate-700">
-            <ProfileControlEditor v-model="controlGroup.withIds" />
-          </div>
-        </CollapsableGroup>
-        <PrimaryButton @click="createExcludeControlGroup(imp)" class="mt-4">Create Group</PrimaryButton><br>
+        <ProfileControlGroups :groups="imp.excludeControls" />
         <PrimaryButton class="mt-2" @click="save(imp)">Save</PrimaryButton>
       </div>
     </CollapsableGroup>
     <PrimaryButton class="mt-4" @click="openCatalogDialog()">Add Catalog Import</PrimaryButton>
-
-    <Dialog v-model:visible="catalogDialogVisible" modal header="Add Catalog">
-      <table class="table-fixed">
-        <thead class="bg-ccf-100 dark:bg-slate-800 text-ccf-700 dark:text-slate-200">
-          <tr>
-            <th class="p-2">Catalog Name</th>
-            <th class="p-2">Catalog UUID</th>
-            <th class="p-2">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="catalog in catalogs" :key="catalog.uuid">
-            <td class="py-2 pr-3 font-medium text-wrap">{{ catalog.metadata.title }}</td>
-            <td class="py-2 pr-3">
-              <pre>{{ catalog.uuid }}</pre>
-            </td>
-            <td class="py-2 pr-3">
-              <PrimaryButton
-                :disabled="!!importedCatalogs[catalog.uuid]"
-                @click="addImport(catalog)"
-                class="disabled:text-ccf-600 disabled:bg-ccf-200 dark:disabled:bg-slate-700"
-                v-tooltip.top="{ value: 'Catalog is already imported in this profile', disabled: !importedCatalogs[catalog.uuid] }"
-              >Import</PrimaryButton>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </Dialog>
+    <CatalogImportDialog
+      :visible="catalogDialogVisible"
+      :catalogs="catalogs"
+      :importedCatalogs="importedCatalogs"
+      @update:visible="catalogDialogVisible = $event"
+      @import="addImport"
+    />
+  </div>
 </template>
 
 <script setup lang="ts">
-
 import { type BackMatter, useProfileStore, type Import, type SelectControlsByID } from '@/stores/profiles';
 import { type BackMatterResource } from '@/stores/component-definitions';
 import { useRoute } from 'vue-router';
@@ -97,10 +51,10 @@ import { onActivated, ref } from 'vue';
 import CollapsableGroup from '@/components/CollapsableGroup.vue';
 import PrimaryButton from '@/components/PrimaryButton.vue';
 import type { DataResponse } from '@/stores/types';
-import ProfileControlEditor from '@/components/profiles/ProfileControlEditor.vue';
+import ProfileControlGroups from '@/components/profiles/ProfileControlGroups.vue';
+import CatalogImportDialog from '@/components/profiles/CatalogImportDialog.vue';
 import { useToast } from 'primevue/usetoast';
 import { useConfirm } from 'primevue/useconfirm';
-import Dialog from '@/volt/Dialog.vue';
 import { type Catalog, useCatalogStore } from '@/stores/catalogs';
 
 const profile = useProfileStore();
@@ -119,25 +73,6 @@ const catalogDialogVisible = ref(false);
 function findResourceByHref(href: string): BackMatterResource | undefined {
   const hrefUUID = href.startsWith('#') ? href.substring(1) : href;
   return backmatter.value?.resources.find((resource) => resource.uuid === hrefUUID);
-}
-
-function createIncludeControlGroup(imp: Import) {
-  const newGroup: SelectControlsByID = {
-    withIds: [],
-  };
-  imp.includeControls.push(newGroup);
-}
-
-
-function createExcludeControlGroup(imp: Import) {
-  const newGroup: SelectControlsByID = {
-    withIds: [],
-  };
-  imp.excludeControls.push(newGroup);
-}
-
-function removeControlGroup(controlGroups: SelectControlsByID[], index: number) {
-  controlGroups.splice(index, 1);
 }
 
 function save(imp: Import) {
