@@ -62,6 +62,22 @@ export const useProfileStore = defineStore('profiles', () => {
     return camelcaseKeys(await response.json(), { deep: true }) as DataResponse<Import[]>;
   }
 
+  async function addImport(profileId: string, uuid: string): Promise<DataResponse<Import>> {
+    const config = await configStore.getConfig();
+    const response = await fetch(`${config.API_URL}/api/oscal/profiles/${profileId}/imports/add`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ uuid: uuid, type: 'catalog' }),
+      credentials: 'include',
+    });
+    if (!response.ok) {
+      throw response;
+    }
+    return camelcaseKeys(await response.json(), { deep: true }) as DataResponse<Import>;
+  }
+
   async function updateImport(profileId: string, importData: Import): Promise<DataResponse<Import>> {
     const config = await configStore.getConfig();
     const encodedHref = encodeURIComponent(importData.href);
@@ -81,6 +97,20 @@ export const useProfileStore = defineStore('profiles', () => {
     return camelcaseKeys(await response.json(), { deep: true }) as DataResponse<Import>;
   }
 
+  async function deleteImport(profileId: string, href: string): Promise<void> {
+    const config = await configStore.getConfig();
+    const encodedHref = encodeURIComponent(href);
+    const response = await fetch(`${config.API_URL}/api/oscal/profiles/${profileId}/imports/${encodedHref}`, {
+      method: 'DELETE',
+      credentials: 'include',
+    });
+    if (!response.ok) {
+      throw response;
+    }
+
+    return;
+  }
+
   async function getBackMatter(id: string): Promise<DataResponse<BackMatter>> {
     const config = await configStore.getConfig();
     const response = await fetch(`${config.API_URL}/api/oscal/profiles/${id}/back-matter`, {
@@ -96,7 +126,9 @@ export const useProfileStore = defineStore('profiles', () => {
     list,
     get,
     listImports,
+    addImport,
     updateImport,
+    deleteImport,
     getBackMatter,
   }
 });

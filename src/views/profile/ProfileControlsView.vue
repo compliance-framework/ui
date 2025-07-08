@@ -5,20 +5,21 @@
         <div class="text-sm text-blue-600 dark:text-blue-400">Imported Catalogs</div>
       </div>
       <div class="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
-        <div class="text-2xl font-bold text-green-600 dark:text-green-400">{{ imports.reduce((acc, imp) => acc + imp.includeControls.reduce((innerAcc, group) =>
+        <div class="text-2xl font-bold text-green-600 dark:text-green-400">{{ imports.reduce((acc, imp) => acc + (imp.includeControls ?? []).reduce((innerAcc, group) =>
           innerAcc + group.withIds.length, 0), 0) }}</div>
         <div class="text-sm text-green-600 dark:text-green-400">Included Controls</div>
       </div>
       <div class="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg">
-        <div class="text-2xl font-bold text-purple-600 dark:text-purple-400">{{ imports.reduce((acc, imp) => acc + imp.excludeControls.reduce((innerAcc, group) =>
+        <div class="text-2xl font-bold text-purple-600 dark:text-purple-400">{{ imports.reduce((acc, imp) => acc + (imp.excludeControls ?? []).reduce((innerAcc, group)  =>
           innerAcc + group.withIds.length, 0), 0) }}</div>
         <div class="text-sm text-purple-600 dark:text-purple-400">Excluded Controls</div>
       </div>
     </div>
     <CollapsableGroup v-for="imp in imports" :key="imp.href">
       <template #header>
-        <div class="py-4 px-4 bg-white dark:bg-slate-900 border border-ccf-300 dark:border-slate-700">
-          <span class="font-medium"> {{ findResourceByHref(imp.href)?.title || 'No Title' }}</span>
+        <div class="py-4 px-4 bg-white dark:bg-slate-900 border border-ccf-300 dark:border-slate-700 flex flex-inline">
+          <span class="grow font-medium"> {{ findResourceByHref(imp.href)?.title || 'No Title' }}</span>
+          <PrimaryButton class="flex gap-2" @click="removeImport(imp)">Remove</PrimaryButton>
         </div>
       </template>
       <div class="px-4 py-4 bg-white dark:bg-slate-950 border border-ccf-300 dark:border-slate-700">
@@ -74,7 +75,12 @@
               <pre>{{ catalog.uuid }}</pre>
             </td>
             <td class="py-2 pr-3">
-              <PrimaryButton :disabled="importedCatalogs[catalog.uuid]" class="disabled:text-ccf-600 disabled:bg-ccf-200 dark:disabled:bg-slate-700" v-tooltip.top="'Catalog is already imported in this profile'">Import</PrimaryButton>
+              <PrimaryButton
+                :disabled="!!importedCatalogs[catalog.uuid]"
+                @click="addImport(catalog)"
+                class="disabled:text-ccf-600 disabled:bg-ccf-200 dark:disabled:bg-slate-700"
+                v-tooltip.top="{ value: 'Catalog is already imported in this profile', disabled: !importedCatalogs[catalog.uuid] }"
+              >Import</PrimaryButton>
             </td>
           </tr>
         </tbody>
@@ -93,6 +99,7 @@ import PrimaryButton from '@/components/PrimaryButton.vue';
 import type { DataResponse } from '@/stores/types';
 import ProfileControlEditor from '@/components/profiles/ProfileControlEditor.vue';
 import { useToast } from 'primevue/usetoast';
+import { useConfirm } from 'primevue/useconfirm';
 import Dialog from '@/volt/Dialog.vue';
 import { type Catalog, useCatalogStore } from '@/stores/catalogs';
 
@@ -101,6 +108,7 @@ const imports = ref<Import[]>([] as Import[]);
 const catalogs = ref<Catalog[]>([] as Catalog[]);
 const route = useRoute();
 const toast = useToast();
+const confirm = useConfirm();
 const id = route.params.id as string;
 
 const importedCatalogs = ref<{ [key: string]: string }>({});
@@ -146,6 +154,7 @@ function save(imp: Import) {
 }
 
 function gatherImportedCatalogs() {
+  importedCatalogs.value = {};
   for (const imp of imports.value) {
       const resource = findResourceByHref(imp.href);
       if (resource) {
@@ -157,6 +166,72 @@ function gatherImportedCatalogs() {
         }
       }
     }
+}
+
+function addImport(catalog: Catalog) {
+  profile.addImport(id, catalog.uuid).then(() => {
+    loadData();
+    toast.add({
+      severity: 'success',
+      summary: 'Catalog imported successfully',
+      detail: `Catalog ${catalog.metadata.title} has been imported.`,
+      life: 3000,
+    });
+    catalogDialogVisible.value = false;
+  }).catch((error) => {
+    toast.add({
+      severity: 'error',
+      summary: 'Error importing catalog',
+      detail: error.message,
+      life: 3000,
+    });
+  });
+}
+
+function removeImport(imp: Import) {
+  confirm.require({
+    message: `Are you sure you want to remove the import for ${findResourceByHref(imp.href)?.title || 'No Title'}?`,
+    header: 'Confirm Removal',
+    icon: 'pi pi-exclamation-triangle',
+    rejectProps: {
+      label: 'Cancel',
+      severity: 'secondary',
+    },
+    acceptProps: {
+      label: 'Remove',
+      severity: 'danger',
+    },
+    accept: () => {
+      profile.deleteImport(id, imp.href).then(() => {
+        loadData();
+        gatherImportedCatalogs();
+        toast.add({
+          severity: 'success',
+          summary: 'Import removed successfully',
+          detail: `Import ${findResourceByHref(imp.href)?.title || 'No Title'} has been removed.`,
+          life: 3000,
+        });
+      }).catch((error) => {
+        toast.add({
+          severity: 'error',
+          summary: 'Error removing import',
+          detail: error.message,
+          life: 3000,
+        });
+      });
+    }
+  });
+}
+
+function loadData() {
+  Promise.all([
+    profile.listImports(id),
+    profile.getBackMatter(id)
+  ]).then(([importsData, backmatterData]) => {
+    imports.value = importsData.data;
+    backmatter.value = backmatterData.data;
+    gatherImportedCatalogs();
+  });
 }
 
 function openCatalogDialog() {
@@ -175,14 +250,7 @@ function openCatalogDialog() {
 }
 
 onActivated(() => {
-  Promise.all([
-    profile.listImports(id),
-    profile.getBackMatter(id)
-  ]).then(([importsData, backmatterData]) => {
-    imports.value = importsData.data;
-    backmatter.value = backmatterData.data;
-    gatherImportedCatalogs();
-  });
+  loadData();
 });
 
 </script>
