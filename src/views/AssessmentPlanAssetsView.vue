@@ -50,6 +50,68 @@
             <span class="font-medium text-gray-700 dark:text-slate-400">Description:</span>
             <p class="mt-1 text-gray-900 dark:text-slate-300">{{ asset.description }}</p>
           </div>
+
+          <!-- Properties Section -->
+          <div v-if="asset.props && asset.props.length > 0" class="mt-4">
+            <span class="font-medium text-gray-700 dark:text-slate-400">Properties:</span>
+            <div class="mt-2 space-y-2">
+              <div
+                v-for="(prop, propIndex) in asset.props"
+                :key="prop.uuid || propIndex"
+                class="p-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded text-sm"
+              >
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  <div v-if="prop.name">
+                    <span class="font-medium text-gray-600 dark:text-slate-400">Name:</span>
+                    <span class="ml-1 text-gray-900 dark:text-slate-300">{{ prop.name }}</span>
+                  </div>
+                  <div v-if="prop.value">
+                    <span class="font-medium text-gray-600 dark:text-slate-400">Value:</span>
+                    <span class="ml-1 text-gray-900 dark:text-slate-300">{{ prop.value }}</span>
+                  </div>
+                  <div v-if="prop.class">
+                    <span class="font-medium text-gray-600 dark:text-slate-400">Class:</span>
+                    <span class="ml-1 text-gray-900 dark:text-slate-300">{{ prop.class }}</span>
+                  </div>
+                  <div v-if="prop.ns">
+                    <span class="font-medium text-gray-600 dark:text-slate-400">Namespace:</span>
+                    <span class="ml-1 text-gray-900 dark:text-slate-300">{{ prop.ns }}</span>
+                  </div>
+                </div>
+                <div v-if="prop.remarks" class="mt-1">
+                  <span class="font-medium text-gray-600 dark:text-slate-400">Remarks:</span>
+                  <span class="ml-1 text-gray-900 dark:text-slate-300">{{ prop.remarks }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Links Section -->
+          <div v-if="asset.links && asset.links.length > 0" class="mt-4">
+            <span class="font-medium text-gray-700 dark:text-slate-400">Links:</span>
+            <div class="mt-2 space-y-2">
+              <div
+                v-for="(link, linkIndex) in asset.links"
+                :key="linkIndex"
+                class="p-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded text-sm"
+              >
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  <div v-if="link.href">
+                    <span class="font-medium text-gray-600 dark:text-slate-400">Href:</span>
+                    <span class="ml-1 text-gray-900 dark:text-slate-300">{{ link.href }}</span>
+                  </div>
+                  <div v-if="link.rel">
+                    <span class="font-medium text-gray-600 dark:text-slate-400">Rel:</span>
+                    <span class="ml-1 text-gray-900 dark:text-slate-300">{{ link.rel }}</span>
+                  </div>
+                </div>
+                <div v-if="link.text" class="mt-1">
+                  <span class="font-medium text-gray-600 dark:text-slate-400">Text:</span>
+                  <span class="ml-1 text-gray-900 dark:text-slate-300">{{ link.text }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -137,8 +199,8 @@ async function removeAsset(index: number) {
 async function loadAssets() {
   const id = route.params.id as string
   try {
-    const response = await assessmentPlanStore.get(id)
-    assets.value = response.data.assessmentAssets || []
+    const response = await assessmentPlanStore.getAssessmentAssets(id)
+    assets.value = response.data || []
   } catch (error) {
     toast.add({
       severity: 'error',

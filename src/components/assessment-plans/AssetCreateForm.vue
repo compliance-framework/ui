@@ -20,6 +20,94 @@
       <FormTextarea v-model="asset.description" rows="3" required />
     </div>
 
+    <!-- Properties Section -->
+    <div class="mb-6">
+      <label class="inline-block pb-2 dark:text-slate-300">Properties</label>
+      <div class="space-y-3">
+        <div
+          v-for="(prop, index) in asset.props"
+          :key="index"
+          class="p-3 border border-ccf-300 dark:border-slate-700 rounded-md bg-gray-50 dark:bg-slate-800"
+        >
+          <div class="flex justify-between items-start mb-2">
+            <h4 class="text-sm font-medium dark:text-slate-300">Property {{ index + 1 }}</h4>
+            <button
+              type="button"
+              @click="removeProperty(index)"
+              class="text-red-500 hover:text-red-700"
+            >
+              Remove
+            </button>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label class="inline-block pb-1 text-sm dark:text-slate-300">Name</label>
+              <FormInput v-model="prop.name" placeholder="Property name" />
+            </div>
+            <div>
+              <label class="inline-block pb-1 text-sm dark:text-slate-300">Value</label>
+              <FormInput v-model="prop.value" placeholder="Property value" />
+            </div>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          @click="addProperty"
+          class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors"
+        >
+          Add Property
+        </button>
+      </div>
+    </div>
+
+    <!-- Links Section -->
+    <div class="mb-6">
+      <label class="inline-block pb-2 dark:text-slate-300">Links</label>
+      <div class="space-y-3">
+        <div
+          v-for="(link, index) in asset.links"
+          :key="index"
+          class="p-3 border border-ccf-300 dark:border-slate-700 rounded-md bg-gray-50 dark:bg-slate-800"
+        >
+          <div class="flex justify-between items-start mb-2">
+            <h4 class="text-sm font-medium dark:text-slate-300">Link {{ index + 1 }}</h4>
+            <button
+              type="button"
+              @click="removeLink(index)"
+              class="text-red-500 hover:text-red-700"
+            >
+              Remove
+            </button>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label class="inline-block pb-1 text-sm dark:text-slate-300">Href</label>
+              <FormInput v-model="link.href" placeholder="URL or reference" />
+            </div>
+            <div>
+              <label class="inline-block pb-1 text-sm dark:text-slate-300">Rel</label>
+              <FormInput v-model="link.rel" placeholder="Relationship" />
+            </div>
+          </div>
+          <div class="mt-2">
+            <label class="inline-block pb-1 text-sm dark:text-slate-300">Text</label>
+            <FormInput v-model="link.text" placeholder="Link text" />
+          </div>
+        </div>
+
+        <button
+          type="button"
+          @click="addLink"
+          class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors"
+        >
+          Add Link
+        </button>
+      </div>
+    </div>
+
     <div v-if="errorMessage" class="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
       {{ errorMessage }}
     </div>
@@ -33,7 +121,8 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { type Asset, useAssessmentPlanStore } from '@/stores/assessment-plans.ts'
+import { type AssessmentAsset, useAssessmentPlanStore } from '@/stores/assessment-plans.ts'
+import type { Property, Link } from '@/stores/types.ts'
 import { useToast } from 'primevue/usetoast'
 import FormInput from '@/components/forms/FormInput.vue'
 import FormTextarea from '@/components/forms/FormTextarea.vue'
@@ -51,18 +140,48 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  created: [asset: Asset]
+  created: [asset: AssessmentAsset]
   cancel: []
 }>()
 
-const asset = ref<Asset>({
+const asset = ref<AssessmentAsset>({
   uuid: uuidv4(),
   title: '',
   description: '',
+  props: [],
+  links: [],
   components: []
 })
 
 const errorMessage = ref('')
+
+const addProperty = () => {
+  const newProperty: Property = {
+    name: '',
+    value: '',
+    class: '',
+    ns: '',
+    uuid: uuidv4()
+  };
+  asset.value.props!.push(newProperty);
+};
+
+const removeProperty = (index: number) => {
+  asset.value.props!.splice(index, 1);
+};
+
+const addLink = () => {
+  const newLink: Link = {
+    href: '',
+    rel: '',
+    text: ''
+  };
+  asset.value.links!.push(newLink);
+};
+
+const removeLink = (index: number) => {
+  asset.value.links!.splice(index, 1);
+};
 
 async function createAsset(): Promise<void> {
   errorMessage.value = ''
@@ -78,19 +197,44 @@ async function createAsset(): Promise<void> {
   }
 
   try {
-    const assetData = {
+    // Filter out empty properties and links
+    const filteredProps = (asset.value.props || []).filter(prop =>
+      prop.name?.trim() || prop.value?.trim() || prop.class?.trim() || prop.ns?.trim()
+    )
+    const filteredLinks = (asset.value.links || []).filter(link =>
+      link.href?.trim() || link.rel?.trim() || link.text?.trim()
+    )
+
+    // Create the assessment platform object
+    const assessmentPlatform = {
       uuid: asset.value.uuid,
-      title: asset.value.title || '',
-      description: asset.value.description,
-      components: asset.value.components || []
+      title: asset.value.title?.trim() || asset.value.description,
+      description: asset.value.description
     }
 
-    // Get current assets and add the new one
-    const response = await assessmentPlanStore.get(props.assessmentPlanId)
-    const currentAssets = response.data.assets || []
-    const updatedAssets = [...currentAssets, assetData]
+    // Add optional fields if they have meaningful values
+    if (filteredProps.length > 0) {
+      assessmentPlatform.props = filteredProps
+    }
 
-    await assessmentPlanStore.updateAssets(props.assessmentPlanId, updatedAssets)
+    if (filteredLinks.length > 0) {
+      assessmentPlatform.links = filteredLinks
+    }
+
+    // Create the payload in the correct OSCAL AssessmentAssets structure
+    const assetPayload = {
+      'assessment-platforms': [assessmentPlatform]
+    }
+
+    // Add components if they exist
+    if (asset.value.components && asset.value.components.length > 0) {
+      assetPayload.components = asset.value.components
+    }
+
+    console.log('[DEBUG_LOG] Creating asset with payload:', assetPayload)
+
+    // Use the dedicated asset creation endpoint
+    await assessmentPlanStore.createAssessmentAsset(props.assessmentPlanId, assetPayload)
 
     toast.add({
       severity: 'success',
@@ -99,8 +243,33 @@ async function createAsset(): Promise<void> {
       life: 3000
     })
 
+    // Emit the original asset data for consistency with parent components
+    const assetData: AssessmentAsset = {
+      uuid: asset.value.uuid,
+      title: asset.value.title?.trim(),
+      description: asset.value.description,
+      props: filteredProps.length > 0 ? filteredProps : undefined,
+      links: filteredLinks.length > 0 ? filteredLinks : undefined,
+      components: asset.value.components && asset.value.components.length > 0 ? asset.value.components : undefined
+    }
+
     emit('created', assetData)
   } catch (error) {
+    console.error('[DEBUG_LOG] Asset creation error:', error)
+    console.error('[DEBUG_LOG] Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      assessmentPlanId: props.assessmentPlanId,
+      rawAssetData: {
+        uuid: asset.value.uuid,
+        title: asset.value.title || '',
+        description: asset.value.description,
+        props: asset.value.props || [],
+        links: asset.value.links || [],
+        components: asset.value.components || []
+      }
+    })
+
     toast.add({
       severity: 'error',
       summary: 'Error Creating Asset',
