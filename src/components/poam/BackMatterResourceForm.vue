@@ -9,36 +9,15 @@
       <div class="grid grid-cols-2 gap-4">
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
-            UUID
+            Title
           </label>
-          <div class="flex gap-2">
-            <input
-              v-model="formData.uuid"
-              type="text"
-              required
-              class="flex-1 px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-300"
-            />
-            <button
-              type="button"
-              @click="generateUUID"
-              class="px-3 py-2 text-blue-600 hover:text-blue-700 border border-blue-300 rounded-md"
-            >
-              Generate
-            </button>
-          </div>
+          <input
+            v-model="formData.title"
+            type="text"
+            placeholder="Resource title"
+            class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-300"
+          />
         </div>
-      </div>
-
-      <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
-          Title
-        </label>
-        <input
-          v-model="formData.title"
-          type="text"
-          placeholder="Resource title"
-          class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-300"
-        />
       </div>
 
       <div>
@@ -323,7 +302,8 @@ onMounted(() => {
       base64: props.resource.base64 || { filename: '', mediaType: '', value: '' }
     }
   } else {
-    generateUUID()
+    // Generate UUID for new resources
+    formData.value.uuid = generateUUID()
   }
 })
 
