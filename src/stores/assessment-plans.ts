@@ -385,15 +385,71 @@ export const useAssessmentPlanStore = defineStore('assessment-plans', () => {
   }
 
   // Sub-resource operations
+  async function deleteTask(planId: string, taskId: string): Promise<void> {
+    const config = await configStore.getConfig()
+    console.log('deleteTask called with:', { planId, taskId })
+
+    const response = await fetch(`${config.API_URL}/api/oscal/assessment-plans/${planId}/tasks/${taskId}`, {
+      method: 'DELETE',
+      credentials: 'include',
+    })
+    
+    console.log('Task delete response status:', response.status)
+    
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error('Task delete error:', errorText)
+      throw new Error(`Error: ${response.statusText}`)
+    }
+    
+    console.log('Task deleted successfully')
+  }
+
+  async function updateTask(planId: string, task: Task): Promise<DataResponse<Task>> {
+    const config = await configStore.getConfig()
+    console.log('updateTask called with:', { planId, task })
+
+    const taskPayload = decamelizeKeys(task, { separator: '-' })
+    console.log('Sending task payload:', taskPayload)
+
+    const response = await fetch(`${config.API_URL}/api/oscal/assessment-plans/${planId}/tasks/${task.uuid}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(taskPayload),
+      credentials: 'include',
+    })
+    
+    console.log('Task update response status:', response.status)
+    
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error('Task update error:', errorText)
+      throw new Error(`Error: ${response.statusText}`)
+    }
+    
+    const result = camelcaseKeys(await response.json(), {
+      deep: true,
+    }) as DataResponse<Task>
+    console.log('Task update result:', result)
+    return result
+  }
+
   async function updateTasks(id: string, tasks: Task[]): Promise<DataResponse<AssessmentPlan>> {
     const config = await configStore.getConfig()
+    console.log('updateTasks called with:', { id, tasks })
 
+    // Fall back to updating the full assessment plan since there's no bulk update endpoint
+    console.log('Using full assessment plan update for tasks')
     // Get current assessment plan to preserve existing data
     const currentResponse = await get(id)
     const assessmentPlan = {
       ...currentResponse.data,
       tasks: tasks
     }
+
+    console.log('Full assessment plan payload:', assessmentPlan)
 
     const response = await fetch(`${config.API_URL}/api/oscal/assessment-plans/${id}`, {
       method: 'PUT',
@@ -403,12 +459,17 @@ export const useAssessmentPlanStore = defineStore('assessment-plans', () => {
       body: JSON.stringify(decamelizeKeys(assessmentPlan, { separator: '-' })),
       credentials: 'include',
     })
+    console.log('Full plan update response status:', response.status)
     if (!response.ok) {
+      const errorText = await response.text()
+      console.error('Full plan update error:', errorText)
       throw new Error(`Error: ${response.statusText}`)
     }
-    return camelcaseKeys(await response.json(), {
+    const result = camelcaseKeys(await response.json(), {
       deep: true,
     }) as DataResponse<AssessmentPlan>
+    console.log('Full plan update result:', result)
+    return result
   }
 
   async function updateAssessmentSubjects(id: string, subjects: AssessmentSubject[]): Promise<DataResponse<AssessmentPlan>> {
@@ -463,6 +524,19 @@ export const useAssessmentPlanStore = defineStore('assessment-plans', () => {
     }) as DataResponse<AssessmentPlan>
   }
 
+  async function getTasks(id: string): Promise<DataResponse<Task[]>> {
+    const config = await configStore.getConfig()
+    const response = await fetch(`${config.API_URL}/api/oscal/assessment-plans/${id}/tasks`, {
+      credentials: 'include',
+    })
+    if (!response.ok) {
+      throw new Error(`Error: ${response.statusText}`)
+    }
+    return camelcaseKeys(await response.json(), {
+      deep: true,
+    }) as DataResponse<Task[]>
+  }
+
   return {
     get,
     list,
@@ -470,6 +544,9 @@ export const useAssessmentPlanStore = defineStore('assessment-plans', () => {
     update,
     remove,
     full,
+    getTasks,
+    deleteTask,
+    updateTask,
     updateTasks,
     updateAssessmentSubjects,
     updateAssessmentAssets,
