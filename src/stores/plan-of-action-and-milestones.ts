@@ -977,6 +977,118 @@ export const usePlanOfActionAndMilestonesStore = defineStore(
       }) as DataResponse<BackMatter>;
     }
 
+    async function createBackMatter(id: string, backMatter: Partial<BackMatter>): Promise<DataResponse<BackMatter>> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/plan-of-action-and-milestones/${id}/back-matter`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(decamelizeKeys(backMatter, { separator: '-' })),
+          credentials: 'include',
+        }
+      );
+      if (!response.ok) {
+        throw response;
+      }
+      return camelcaseKeys(await response.json(), {
+        deep: true,
+      }) as DataResponse<BackMatter>;
+    }
+
+    async function updateBackMatter(id: string, backMatter: BackMatter): Promise<DataResponse<BackMatter>> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/plan-of-action-and-milestones/${id}/back-matter`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(decamelizeKeys(backMatter, { separator: '-' })),
+          credentials: 'include',
+        }
+      );
+      if (!response.ok) {
+        throw response;
+      }
+      return camelcaseKeys(await response.json(), {
+        deep: true,
+      }) as DataResponse<BackMatter>;
+    }
+
+    async function deleteBackMatter(id: string): Promise<void> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/plan-of-action-and-milestones/${id}/back-matter`,
+        {
+          method: 'DELETE',
+          credentials: 'include',
+        }
+      );
+      if (!response.ok) {
+        throw response;
+      }
+    }
+
+    async function createBackMatterResource(id: string, resource: Partial<Resource>): Promise<DataResponse<Resource>> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/plan-of-action-and-milestones/${id}/back-matter/resources`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(decamelizeKeys(resource, { separator: '-' })),
+          credentials: 'include',
+        }
+      );
+      if (!response.ok) {
+        throw response;
+      }
+      return camelcaseKeys(await response.json(), {
+        deep: true,
+      }) as DataResponse<Resource>;
+    }
+
+    async function updateBackMatterResource(id: string, resourceId: string, resource: Resource): Promise<DataResponse<Resource>> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/plan-of-action-and-milestones/${id}/back-matter/resources/${resourceId}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(decamelizeKeys(resource, { separator: '-' })),
+          credentials: 'include',
+        }
+      );
+      if (!response.ok) {
+        throw response;
+      }
+      return camelcaseKeys(await response.json(), {
+        deep: true,
+      }) as DataResponse<Resource>;
+    }
+
+    async function deleteBackMatterResource(id: string, resourceId: string): Promise<void> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/plan-of-action-and-milestones/${id}/back-matter/resources/${resourceId}`,
+        {
+          method: 'DELETE',
+          credentials: 'include',
+        }
+      );
+      if (!response.ok) {
+        throw response;
+      }
+    }
+
     return {
       // GET functions (enabled)
       get,
@@ -1021,6 +1133,12 @@ export const usePlanOfActionAndMilestonesStore = defineStore(
       updateSystemId,
       createLocalDefinitions,
       updateLocalDefinitions,
+      createBackMatter,
+      updateBackMatter,
+      deleteBackMatter,
+      createBackMatterResource,
+      updateBackMatterResource,
+      deleteBackMatterResource,
     };
   },
 ); 
