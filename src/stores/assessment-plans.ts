@@ -497,28 +497,51 @@ export const useAssessmentPlanStore = defineStore('assessment-plans', () => {
 
   async function updateAssessmentAssets(id: string, assets: AssessmentAsset[]): Promise<DataResponse<AssessmentPlan>> {
     const config = await configStore.getConfig()
+    console.log('[DEBUG_LOG] updateAssessmentAssets called with:', { id, assetsCount: assets.length })
 
     // Get current assessment plan to preserve existing data
     const currentResponse = await get(id)
     const assessmentPlan = {
       ...currentResponse.data,
-      assessmentAssets: assets
+      // Wrap assets array in the expected object structure
+      assessmentAssets: {
+        assets: assets
+      }
     }
+
+    console.log('[DEBUG_LOG] Assessment plan before decamelizeKeys:', {
+      uuid: assessmentPlan.uuid,
+      assessmentAssetsCount: assessmentPlan.assessmentAssets?.assets?.length || 0,
+      assessmentAssets: assessmentPlan.assessmentAssets
+    })
+
+    const payload = decamelizeKeys(assessmentPlan, { separator: '-' })
+    console.log('[DEBUG_LOG] Payload being sent to backend:', payload)
+    console.log('[DEBUG_LOG] Assessment assets in payload:', payload['assessment-assets'])
 
     const response = await fetch(`${config.API_URL}/api/oscal/assessment-plans/${id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(decamelizeKeys(assessmentPlan, { separator: '-' })),
+      body: JSON.stringify(payload),
       credentials: 'include',
     })
+
+    console.log('[DEBUG_LOG] Response status:', response.status)
+    console.log('[DEBUG_LOG] Response headers:', Object.fromEntries(response.headers.entries()))
+
     if (!response.ok) {
-      throw new Error(`Error: ${response.statusText}`)
+      const errorText = await response.text()
+      console.error('[DEBUG_LOG] Backend error response:', errorText)
+      throw new Error(`Error: ${response.statusText} - ${errorText}`)
     }
-    return camelcaseKeys(await response.json(), {
+
+    const result = camelcaseKeys(await response.json(), {
       deep: true,
     }) as DataResponse<AssessmentPlan>
+    console.log('[DEBUG_LOG] Success response:', result)
+    return result
   }
 
   async function getTasks(id: string): Promise<DataResponse<Task[]>> {
@@ -547,6 +570,47 @@ export const useAssessmentPlanStore = defineStore('assessment-plans', () => {
     }) as DataResponse<AssessmentSubject[]>
   }
 
+  async function getAssessmentAssets(id: string): Promise<DataResponse<AssessmentAsset[]>> {
+    const config = await configStore.getConfig()
+    const response = await fetch(`${config.API_URL}/api/oscal/assessment-plans/${id}/assessment-assets`, {
+      credentials: 'include',
+    })
+    if (!response.ok) {
+      throw new Error(`Error: ${response.statusText}`)
+    }
+    return camelcaseKeys(await response.json(), {
+      deep: true,
+    }) as DataResponse<AssessmentAsset[]>
+  }
+
+  async function createAssessmentAsset(planId: string, asset: any): Promise<DataResponse<any>> {
+    const config = await configStore.getConfig()
+    console.log('[DEBUG_LOG] createAssessmentAsset called with:', { planId, asset })
+
+    const response = await fetch(`${config.API_URL}/api/oscal/assessment-plans/${planId}/assessment-assets`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(asset),
+      credentials: 'include',
+    })
+
+    console.log('[DEBUG_LOG] Asset creation response status:', response.status)
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error('[DEBUG_LOG] Asset creation error:', errorText)
+      throw new Error(`Error: ${response.statusText} - ${errorText}`)
+    }
+
+    const result = camelcaseKeys(await response.json(), {
+      deep: true,
+    }) as DataResponse<any>
+    console.log('[DEBUG_LOG] Asset creation result:', result)
+    return result
+  }
+
   return {
     get,
     list,
@@ -556,10 +620,12 @@ export const useAssessmentPlanStore = defineStore('assessment-plans', () => {
     full,
     getTasks,
     getAssessmentSubjects,
+    getAssessmentAssets,
     deleteTask,
     updateTask,
     updateTasks,
     updateAssessmentSubjects,
     updateAssessmentAssets,
+    createAssessmentAsset,
   }
 })

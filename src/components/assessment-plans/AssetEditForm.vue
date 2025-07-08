@@ -32,7 +32,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { type Asset, useAssessmentPlanStore } from '@/stores/assessment-plans.ts'
+import { type AssessmentAsset, useAssessmentPlanStore } from '@/stores/assessment-plans.ts'
 import { useToast } from 'primevue/usetoast'
 import FormInput from '@/components/forms/FormInput.vue'
 import FormTextarea from '@/components/forms/FormTextarea.vue'
@@ -44,15 +44,15 @@ const toast = useToast()
 
 const props = defineProps<{
   assessmentPlanId: string
-  asset: Asset
+  asset: AssessmentAsset
 }>()
 
 const emit = defineEmits<{
-  updated: [asset: Asset]
+  updated: [asset: AssessmentAsset]
   cancel: []
 }>()
 
-const assetData = ref<Asset>({
+const assetData = ref<AssessmentAsset>({
   uuid: '',
   title: '',
   description: '',
@@ -100,7 +100,7 @@ async function updateAsset(): Promise<void> {
 
     // Get current assets, find and update the specific asset
     const response = await assessmentPlanStore.get(props.assessmentPlanId)
-    const currentAssets = response.data.assets || []
+    const currentAssets = response.data.assessmentAssets || []
     const assetIndex = currentAssets.findIndex(a => a.uuid === assetData.value.uuid)
 
     if (assetIndex === -1) {
@@ -111,7 +111,7 @@ async function updateAsset(): Promise<void> {
     const updatedAssets = [...currentAssets]
     updatedAssets[assetIndex] = updatedAssetData
 
-    await assessmentPlanStore.updateAssets(props.assessmentPlanId, updatedAssets)
+    await assessmentPlanStore.updateAssessmentAssets(props.assessmentPlanId, updatedAssets)
 
     toast.add({
       severity: 'success',
