@@ -393,15 +393,15 @@ export const useAssessmentPlanStore = defineStore('assessment-plans', () => {
       method: 'DELETE',
       credentials: 'include',
     })
-    
+
     console.log('Task delete response status:', response.status)
-    
+
     if (!response.ok) {
       const errorText = await response.text()
       console.error('Task delete error:', errorText)
       throw new Error(`Error: ${response.statusText}`)
     }
-    
+
     console.log('Task deleted successfully')
   }
 
@@ -420,15 +420,15 @@ export const useAssessmentPlanStore = defineStore('assessment-plans', () => {
       body: JSON.stringify(taskPayload),
       credentials: 'include',
     })
-    
+
     console.log('Task update response status:', response.status)
-    
+
     if (!response.ok) {
       const errorText = await response.text()
       console.error('Task update error:', errorText)
       throw new Error(`Error: ${response.statusText}`)
     }
-    
+
     const result = camelcaseKeys(await response.json(), {
       deep: true,
     }) as DataResponse<Task>
@@ -537,6 +537,19 @@ export const useAssessmentPlanStore = defineStore('assessment-plans', () => {
     }) as DataResponse<Task[]>
   }
 
+  async function getAssessmentSubjects(id: string): Promise<DataResponse<AssessmentSubject[]>> {
+    const config = await configStore.getConfig()
+    const response = await fetch(`${config.API_URL}/api/oscal/assessment-plans/${id}/assessment-subjects`, {
+      credentials: 'include',
+    })
+    if (!response.ok) {
+      throw new Error(`Error: ${response.statusText}`)
+    }
+    return camelcaseKeys(await response.json(), {
+      deep: true,
+    }) as DataResponse<AssessmentSubject[]>
+  }
+
   return {
     get,
     list,
@@ -545,6 +558,7 @@ export const useAssessmentPlanStore = defineStore('assessment-plans', () => {
     remove,
     full,
     getTasks,
+    getAssessmentSubjects,
     deleteTask,
     updateTask,
     updateTasks,
