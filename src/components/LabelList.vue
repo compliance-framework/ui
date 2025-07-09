@@ -11,10 +11,11 @@
 </template>
 <script setup lang="ts">
 import { computed } from 'vue';
+import type { EvidenceLabel } from '@/stores/evidence.ts'
 
 const { labels, excludeKeys } = defineProps({
   labels: {
-    type: Object,
+    type: Array,
     required: true,
   },
   excludeKeys: {
@@ -26,15 +27,14 @@ const { labels, excludeKeys } = defineProps({
 });
 
 const sortedLabels = computed(() => {
-  return Object.entries(labels)
-    .filter(([key]) => {
+  const localLabels = labels as EvidenceLabel[];
+  return localLabels.filter((label: EvidenceLabel) => {
       return (
-        key.substring(0, 1) != '_' &&
-        !['_policy_path', '_agent'].includes(key) &&
-        !excludeKeys.includes(key)
+        label.name.substring(0, 1) != '_' &&
+        !excludeKeys.includes(label.name)
       );
     })
-    .map(([key, value]) => `${key}=${value}`)
+    .map((label: EvidenceLabel) => `${label.name}=${label.value}`)
     .sort((a, b) => (a > b ? -1 : 0));
 });
 </script>

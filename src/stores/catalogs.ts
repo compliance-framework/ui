@@ -5,6 +5,8 @@ import type { DataResponse, Link, Metadata, Part, Property } from '@/stores/type
 export interface Catalog {
   uuid: string;
   metadata: Metadata;
+  groups: Group[];
+  controls: Control[];
 }
 
 export interface Group {
@@ -14,6 +16,8 @@ export interface Group {
   parts: Part[];
   links: Link[];
   props: Property[];
+  groups: Group[];
+  controls: Control[];
 }
 
 export interface Control {
@@ -23,6 +27,7 @@ export interface Control {
   parts: Part[];
   links: Link[];
   props: Property[];
+  controls: Control[];
 }
 
 export const useCatalogStore = defineStore('catalogs', () => {

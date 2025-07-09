@@ -1,7 +1,7 @@
 <template>
     <div v-if="state == 'satisfied'" :class="{...classes, 'bg-green-700': true}">
     </div>
-    <div v-else-if="state == 'not satisfied'" :class="{...classes, 'bg-red-600': true}">
+    <div v-else-if="state == 'not-satisfied'" :class="{...classes, 'bg-red-600': true}">
     </div>
     <div v-else :class="{...classes, 'bg-zinc-400': true}">
     </div>
