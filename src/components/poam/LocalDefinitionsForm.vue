@@ -269,6 +269,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { usePlanOfActionAndMilestonesStore, type LocalDefinitions, type SystemComponent, type InventoryItem } from '@/stores/plan-of-action-and-milestones'
+import { useToast } from 'primevue/usetoast'
 
 interface Props {
   poamId: string
@@ -284,6 +285,7 @@ const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 
 const poamStore = usePlanOfActionAndMilestonesStore()
+const toast = useToast()
 const loading = ref(false)
 
 const formData = ref<LocalDefinitions>({
@@ -402,7 +404,13 @@ async function handleSubmit() {
 
     emit('saved', response.data)
   } catch (error) {
-    console.error('Error saving local definitions:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    toast.add({
+      severity: 'error',
+      summary: 'Save Failed',
+      detail: `Failed to save local definitions: ${errorMessage}`,
+      life: 3000
+    })
   } finally {
     loading.value = false
   }

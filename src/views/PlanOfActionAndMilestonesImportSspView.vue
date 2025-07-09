@@ -112,8 +112,14 @@ async function loadImportSsp() {
     const response = await poamStore.getImportSsp(id)
     importSsp.value = response.data
   } catch (err) {
-    console.error('Error loading import SSP:', err)
-    error.value = err instanceof Error ? err.message : 'Unknown error'
+    const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+    error.value = errorMessage
+    toast.add({
+      severity: 'error',
+      summary: 'Load Failed',
+      detail: `Failed to load import SSP: ${errorMessage}`,
+      life: 3000
+    })
   } finally {
     loading.value = false
   }
@@ -143,11 +149,11 @@ async function deleteImportSsp() {
     
     importSsp.value = null
   } catch (err) {
-    console.error('Error deleting import SSP:', err)
+    const errorMessage = err instanceof Error ? err.message : 'Unknown error'
     toast.add({
       severity: 'error',
       summary: 'Delete Failed',
-      detail: err instanceof Error ? err.message : 'Failed to delete import SSP',
+      detail: `Failed to delete import SSP: ${errorMessage}`,
       life: 3000
     })
   }

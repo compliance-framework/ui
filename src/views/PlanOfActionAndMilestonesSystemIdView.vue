@@ -106,8 +106,8 @@ async function loadSystemId() {
     const response = await poamStore.getSystemId(id)
     systemId.value = response.data
   } catch (err) {
-    console.error('Error loading system ID:', err)
-    error.value = err instanceof Error ? err.message : 'Unknown error'
+    const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+    error.value = errorMessage
   } finally {
     loading.value = false
   }

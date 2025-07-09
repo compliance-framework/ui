@@ -251,11 +251,11 @@ async function submit() {
     
     emit('saved', response.data)
   } catch (error) {
-    console.error('Error updating risk:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     toast.add({
       severity: 'error',
       summary: 'Update Failed',
-      detail: 'Failed to update risk. Please try again.',
+      detail: `Failed to update risk: ${errorMessage}`,
       life: 3000
     })
   } finally {

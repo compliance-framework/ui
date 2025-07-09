@@ -266,7 +266,7 @@ async function loadRelatedFindings() {
       props.item.relatedFindings?.some(related => related.findingUuid === finding.uuid)
     )
   } catch (error) {
-    console.error('Error loading related findings:', error)
+    // Silently handle error - related findings are optional
   } finally {
     loadingFindings.value = false
   }
@@ -283,7 +283,7 @@ async function loadRelatedObservations() {
       props.item.relatedObservations?.some(related => related.observationUuid === observation.uuid)
     )
   } catch (error) {
-    console.error('Error loading related observations:', error)
+    // Silently handle error - related observations are optional
   } finally {
     loadingObservations.value = false
   }
@@ -300,7 +300,7 @@ async function loadRelatedRisks() {
       props.item.relatedRisks?.some(related => related.riskUuid === risk.uuid)
     )
   } catch (error) {
-    console.error('Error loading related risks:', error)
+    // Silently handle error - related risks are optional
   } finally {
     loadingRisks.value = false
   }

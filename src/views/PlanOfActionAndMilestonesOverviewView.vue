@@ -191,13 +191,17 @@ onMounted(async () => {
       const itemsResponse = await poamStore.getPoamItems(id)
       poamItems.value = itemsResponse.data
     } catch (error) {
-      console.warn('Could not load POAM items:', error)
+      // Silently handle POAM items loading error - they're optional for overview
     }
 
-
-
   } catch (error) {
-    console.error('Error loading POAM data:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    toast.add({
+      severity: 'error',
+      summary: 'Load Failed',
+      detail: `Failed to load POAM data: ${errorMessage}`,
+      life: 3000
+    })
   }
 })
 
@@ -221,7 +225,13 @@ async function downloadJson(): Promise<void> {
     document.body.removeChild(link)
     URL.revokeObjectURL(url)
   } catch (error) {
-    console.error('Error downloading JSON:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    toast.add({
+      severity: 'error',
+      summary: 'Download Failed',
+      detail: `Failed to download JSON: ${errorMessage}`,
+      life: 3000
+    })
   }
 }
 

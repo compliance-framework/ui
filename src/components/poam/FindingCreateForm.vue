@@ -289,9 +289,6 @@ async function submit() {
       remarks: formData.remarks || undefined
     }
     
-    console.log('Sending finding payload:', newFinding)
-    console.log('Finding payload JSON:', JSON.stringify(newFinding, null, 2))
-    
     const response = await poamStore.createFinding(props.poamId, newFinding)
     
     toast.add({
@@ -303,20 +300,13 @@ async function submit() {
     
     emit('created', response.data)
   } catch (error) {
-    console.error('Error creating finding:', error)
-    
     let errorMessage = 'Failed to create finding. Please try again.'
     
     if (error instanceof Response) {
-      console.log('Response status:', error.status)
-      console.log('Response statusText:', error.statusText)
-      
       try {
         const errorData = await error.json()
-        console.log('Error response data:', errorData)
         errorMessage = errorData.message || errorData.error || errorData.detail || errorMessage
       } catch (e) {
-        console.log('Could not parse error response as JSON:', e)
         errorMessage = `HTTP ${error.status}: ${error.statusText}`
       }
     } else if (error instanceof Error) {

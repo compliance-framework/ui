@@ -48,8 +48,8 @@ onMounted(async () => {
     const response = await poamStore.full(id)
     poamData.value = response.data
   } catch (err) {
-    console.error('Error loading POAM data:', err)
-    error.value = err instanceof Error ? err.message : 'Unknown error'
+    const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+    error.value = errorMessage
   } finally {
     loading.value = false
   }

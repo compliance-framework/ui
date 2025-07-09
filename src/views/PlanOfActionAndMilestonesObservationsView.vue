@@ -131,8 +131,14 @@ async function loadObservations() {
     const response = await poamStore.getObservations(id)
     observations.value = response.data
   } catch (err) {
-    console.error('Error loading observations:', err)
-    error.value = err instanceof Error ? err.message : 'Unknown error'
+    const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+    error.value = errorMessage
+    toast.add({
+      severity: 'error',
+      summary: 'Load Failed',
+      detail: `Failed to load observations: ${errorMessage}`,
+      life: 3000
+    })
   } finally {
     loading.value = false
   }
@@ -176,11 +182,11 @@ async function deleteObservation(uuid: string) {
     
     await loadObservations() // Reload the list
   } catch (err) {
-    console.error('Error deleting observation:', err)
+    const errorMessage = err instanceof Error ? err.message : 'Unknown error'
     toast.add({
       severity: 'error',
       summary: 'Delete Failed',
-      detail: err instanceof Error ? err.message : 'Failed to delete observation',
+      detail: `Failed to delete observation: ${errorMessage}`,
       life: 3000
     })
   }

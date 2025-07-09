@@ -228,11 +228,11 @@ async function submit() {
     
     emit('created', response.data)
   } catch (error) {
-    console.error('Error creating observation:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     toast.add({
       severity: 'error',
       summary: 'Creation Failed',
-      detail: 'Failed to create observation. Please try again.',
+      detail: `Failed to create observation: ${errorMessage}`,
       life: 3000
     })
   } finally {

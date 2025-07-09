@@ -239,11 +239,11 @@ async function submit() {
     
     emit('created', response.data)
   } catch (error) {
-    console.error('Error creating risk:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     toast.add({
       severity: 'error',
       summary: 'Creation Failed',
-      detail: 'Failed to create risk. Please try again.',
+      detail: `Failed to create risk: ${errorMessage}`,
       life: 3000
     })
   } finally {

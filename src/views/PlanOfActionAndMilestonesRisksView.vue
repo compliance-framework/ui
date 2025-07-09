@@ -141,8 +141,14 @@ async function loadRisks() {
     const response = await poamStore.getRisks(id)
     risks.value = response.data
   } catch (err) {
-    console.error('Error loading risks:', err)
-    error.value = err instanceof Error ? err.message : 'Unknown error'
+    const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+    error.value = errorMessage
+    toast.add({
+      severity: 'error',
+      summary: 'Load Failed',
+      detail: `Failed to load risks: ${errorMessage}`,
+      life: 3000
+    })
   } finally {
     loading.value = false
   }
@@ -186,11 +192,11 @@ async function deleteRisk(uuid: string) {
     
     await loadRisks() // Reload the list
   } catch (err) {
-    console.error('Error deleting risk:', err)
+    const errorMessage = err instanceof Error ? err.message : 'Unknown error'
     toast.add({
       severity: 'error',
       summary: 'Delete Failed',
-      detail: err instanceof Error ? err.message : 'Failed to delete risk',
+      detail: `Failed to delete risk: ${errorMessage}`,
       life: 3000
     })
   }

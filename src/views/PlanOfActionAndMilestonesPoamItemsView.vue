@@ -163,8 +163,14 @@ async function loadPoamItems() {
     const response = await poamStore.getPoamItems(id)
     poamItems.value = response.data
   } catch (err) {
-    console.error('Error loading POAM items:', err)
-    error.value = err instanceof Error ? err.message : 'Unknown error'
+    const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+    error.value = errorMessage
+    toast.add({
+      severity: 'error',
+      summary: 'Load Failed',
+      detail: `Failed to load POAM items: ${errorMessage}`,
+      life: 3000
+    })
   } finally {
     loading.value = false
   }
@@ -208,11 +214,11 @@ async function deleteItem(uuid: string) {
     
     await loadPoamItems() // Reload the list
   } catch (err) {
-    console.error('Error deleting POAM item:', err)
+    const errorMessage = err instanceof Error ? err.message : 'Unknown error'
     toast.add({
       severity: 'error',
       summary: 'Delete Failed',
-      detail: err instanceof Error ? err.message : 'Failed to delete POAM item',
+      detail: `Failed to delete POAM item: ${errorMessage}`,
       life: 3000
     })
   }

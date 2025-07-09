@@ -168,9 +168,11 @@ import { useRoute } from 'vue-router'
 import { type LocalDefinitions, usePlanOfActionAndMilestonesStore } from '@/stores/plan-of-action-and-milestones.ts'
 import Modal from '@/components/Modal.vue'
 import LocalDefinitionsForm from '@/components/poam/LocalDefinitionsForm.vue'
+import { useToast } from 'primevue/usetoast'
 
 const route = useRoute()
 const poamStore = usePlanOfActionAndMilestonesStore()
+const toast = useToast()
 
 const loading = ref(true)
 const error = ref<string | null>(null)
@@ -190,8 +192,14 @@ async function loadLocalDefinitions() {
     const response = await poamStore.getLocalDefinitions(id)
     localDefinitions.value = response.data
   } catch (err) {
-    console.error('Error loading local definitions:', err)
-    error.value = err instanceof Error ? err.message : 'Unknown error'
+    const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+    error.value = errorMessage
+    toast.add({
+      severity: 'error',
+      summary: 'Load Failed',
+      detail: `Failed to load local definitions: ${errorMessage}`,
+      life: 3000
+    })
   } finally {
     loading.value = false
   }

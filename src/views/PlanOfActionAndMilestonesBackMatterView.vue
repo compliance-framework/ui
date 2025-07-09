@@ -154,8 +154,14 @@ async function loadBackMatter() {
     const response = await poamStore.getBackMatter(id)
     backMatter.value = response.data
   } catch (err) {
-    console.error('Error loading back matter:', err)
-    error.value = err instanceof Error ? err.message : 'Unknown error'
+    const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+    error.value = errorMessage
+    toast.add({
+      severity: 'error',
+      summary: 'Load Failed',
+      detail: `Failed to load back matter: ${errorMessage}`,
+      life: 3000
+    })
   } finally {
     loading.value = false
   }
@@ -184,11 +190,11 @@ async function deleteResource(resourceId: string) {
     
     await loadBackMatter() // Reload the list
   } catch (err) {
-    console.error('Error deleting resource:', err)
+    const errorMessage = err instanceof Error ? err.message : 'Unknown error'
     toast.add({
       severity: 'error',
       summary: 'Delete Failed',
-      detail: err instanceof Error ? err.message : 'Failed to delete resource',
+      detail: `Failed to delete resource: ${errorMessage}`,
       life: 3000
     })
   }

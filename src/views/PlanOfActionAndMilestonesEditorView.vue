@@ -112,7 +112,7 @@ onMounted(async () => {
     const response = await poamStore.get(id.value)
     planOfActionAndMilestones.value = response.data
   } catch (error) {
-    console.error('Error loading Plan of Action and Milestones:', error)
+    // Silently handle error - this is just for navigation
   }
 })
 </script> 

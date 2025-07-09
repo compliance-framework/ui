@@ -117,8 +117,14 @@ onMounted(async () => {
     const response = await poamStore.list()
     planOfActionAndMilestones.value = response.data
   } catch (err) {
-    console.error('Error loading Plan of Action and Milestones:', err)
-    error.value = err instanceof Error ? err.message : 'Unknown error'
+    const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+    error.value = errorMessage
+    toast.add({
+      severity: 'error',
+      summary: 'Load Failed',
+      detail: `Failed to load Plan of Action and Milestones: ${errorMessage}`,
+      life: 3000
+    })
   } finally {
     loading.value = false
   }
@@ -151,11 +157,11 @@ async function downloadJson(uuid: string, title: string): Promise<void> {
       life: 3000
     })
   } catch (err) {
-    console.error('Error downloading JSON:', err)
+    const errorMessage = err instanceof Error ? err.message : 'Unknown error'
     toast.add({
       severity: 'error',
       summary: 'Download Failed',
-      detail: 'Failed to download POAM JSON. Full POAM export may not be available.',
+      detail: `Failed to download POAM JSON: ${errorMessage}`,
       life: 3000
     })
   }

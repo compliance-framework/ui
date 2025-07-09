@@ -132,11 +132,11 @@ async function handleSubmit() {
 
     emit('saved', response.data)
   } catch (err) {
-    console.error('Error saving system ID:', err)
+    const errorMessage = err instanceof Error ? err.message : 'Unknown error'
     toast.add({
       severity: 'error',
       summary: 'Save Failed',
-      detail: err instanceof Error ? err.message : 'Failed to save system ID data',
+      detail: `Failed to save system ID: ${errorMessage}`,
       life: 3000
     })
   } finally {

@@ -231,8 +231,7 @@ const workingItem = reactive<PoamItem>({
   relatedRisks: [...(props.item.relatedRisks || [])].filter(r => r.riskUuid && r.riskUuid.trim() !== '')
 })
 
-console.log('Initial props.item:', props.item)
-console.log('Initial workingItem:', workingItem)
+// Removed debug console.log statements
 
 const tabs = [
   { key: 'findings' as const, label: 'Findings' },
@@ -301,15 +300,23 @@ function isAttached(uuid: string | undefined, type: string): boolean {
 
 function attachItem(uuid: string | undefined, type: string) {
   if (!uuid) {
-    console.warn(`Cannot attach item: UUID is undefined or empty for type ${type}`)
+    toast.add({
+      severity: 'warn',
+      summary: 'Invalid Item',
+      detail: `Cannot attach item: UUID is undefined or empty for type ${type}`,
+      life: 3000
+    })
     return
   }
   
-  console.log(`Attaching ${type} with UUID:`, uuid)
-  
   // Prevent duplicate attachments
   if (isAttached(uuid, type)) {
-    console.warn(`Item ${uuid} is already attached`)
+    toast.add({
+      severity: 'warn',
+      summary: 'Item Already Attached',
+      detail: `This ${type.slice(0, -1)} is already attached to this POAM item`,
+      life: 3000
+    })
     return
   }
   
@@ -317,17 +324,14 @@ function attachItem(uuid: string | undefined, type: string) {
     case 'findings':
       if (!workingItem.relatedFindings) workingItem.relatedFindings = []
       workingItem.relatedFindings.push({ findingUuid: uuid })
-      console.log('Updated relatedFindings:', workingItem.relatedFindings)
       break
     case 'observations':
       if (!workingItem.relatedObservations) workingItem.relatedObservations = []
       workingItem.relatedObservations.push({ observationUuid: uuid })
-      console.log('Updated relatedObservations:', workingItem.relatedObservations)
       break
     case 'risks':
       if (!workingItem.relatedRisks) workingItem.relatedRisks = []
       workingItem.relatedRisks.push({ riskUuid: uuid })
-      console.log('Updated relatedRisks:', workingItem.relatedRisks)
       break
   }
 }
@@ -370,8 +374,14 @@ async function loadData() {
     observations.value = observationsResponse.data
     risks.value = risksResponse.data
   } catch (err) {
-    console.error('Error loading data:', err)
-    error.value = err instanceof Error ? err.message : 'Unknown error'
+    const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+    error.value = errorMessage
+    toast.add({
+      severity: 'error',
+      summary: 'Load Failed',
+      detail: `Failed to load available items: ${errorMessage}`,
+      life: 3000
+    })
   } finally {
     loading.value = false
   }
@@ -380,34 +390,8 @@ async function loadData() {
 async function saveChanges() {
   saving.value = true
   
-  console.log('Saving POAM item with data:', {
-    relatedFindings: workingItem.relatedFindings,
-    relatedObservations: workingItem.relatedObservations,
-    relatedRisks: workingItem.relatedRisks
-  })
-  
-  // Debug: Check each related finding UUID
-  if (workingItem.relatedFindings) {
-    workingItem.relatedFindings.forEach((finding, index) => {
-      console.log(`Related finding ${index}:`, finding)
-    })
-  }
-  
   try {
-    console.log('About to send to backend:', workingItem)
     const response = await poamStore.updatePoamItem(props.poamId, props.item.uuid!, workingItem)
-    console.log('Backend response:', response)
-    console.log('Backend response data:', response.data)
-    console.log('Backend response data JSON:', JSON.stringify(response.data, null, 2))
-    console.log('Backend response type:', typeof response.data)
-    console.log('Backend response keys:', Object.keys(response.data))
-    
-    // Log the specific properties we care about
-    if (response.data) {
-      console.log('Response data relatedFindings:', response.data.relatedFindings)
-      console.log('Response data relatedObservations:', response.data.relatedObservations)
-      console.log('Response data relatedRisks:', response.data.relatedRisks)
-    }
     
     toast.add({
       severity: 'success',
@@ -418,23 +402,11 @@ async function saveChanges() {
     
     emit('saved', response.data)
   } catch (err) {
-    console.error('Error updating POAM item:', err)
-    
-    // Try to get more details about the error
-    if (err instanceof Response) {
-      console.error('Response status:', err.status)
-      console.error('Response statusText:', err.statusText)
-      err.text().then(text => {
-        console.error('Error response body:', text)
-      }).catch(e => {
-        console.error('Could not read error response:', e)
-      })
-    }
-    
+    const errorMessage = err instanceof Error ? err.message : 'Unknown error'
     toast.add({
       severity: 'error',
       summary: 'Update Failed',
-      detail: 'Failed to update POAM item. Please try again.',
+      detail: `Failed to update POAM item: ${errorMessage}`,
       life: 3000
     })
   } finally {

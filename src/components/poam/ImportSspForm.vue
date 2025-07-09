@@ -124,11 +124,11 @@ async function handleSubmit() {
 
     emit('saved', response.data)
   } catch (err) {
-    console.error('Error saving import SSP:', err)
+    const errorMessage = err instanceof Error ? err.message : 'Unknown error'
     toast.add({
       severity: 'error',
       summary: 'Save Failed',
-      detail: err instanceof Error ? err.message : 'Failed to save import SSP data',
+      detail: `Failed to save import SSP: ${errorMessage}`,
       life: 3000
     })
   } finally {

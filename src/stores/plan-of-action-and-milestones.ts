@@ -409,8 +409,6 @@ export const usePlanOfActionAndMilestonesStore = defineStore(
     }
 
     async function updatePoamItem(id: string, itemId: string, item: PoamItem): Promise<DataResponse<PoamItem>> {
-      console.log('Original item:', item)
-      
       // Create a deep copy to avoid modifying the original
       const itemCopy = JSON.parse(JSON.stringify(item))
       
@@ -448,8 +446,6 @@ export const usePlanOfActionAndMilestonesStore = defineStore(
       if (itemCopy.relatedRisks) {
         decamelizedItem['related-risks'] = itemCopy.relatedRisks
       }
-      console.log('Decamelized item:', decamelizedItem)
-      console.log('Decamelized item JSON:', JSON.stringify(decamelizedItem, null, 2))
       
       const config = await configStore.getConfig();
       const response = await fetch(
@@ -469,8 +465,6 @@ export const usePlanOfActionAndMilestonesStore = defineStore(
       }
       
       const responseData = await response.json();
-      console.log('Backend response data:', responseData);
-      console.log('Backend response data JSON:', JSON.stringify(responseData, null, 2));
       return camelcaseKeys(responseData, { deep: true }) as DataResponse<PoamItem>;
     }
 
@@ -848,8 +842,6 @@ export const usePlanOfActionAndMilestonesStore = defineStore(
     async function createFinding(id: string, finding: Partial<Finding>): Promise<DataResponse<Finding>> {
       const config = await configStore.getConfig();
       const decamelizedFinding = decamelizeKeys(finding, { separator: '-' });
-      console.log('Decamelized finding payload:', decamelizedFinding);
-      console.log('Decamelized finding JSON:', JSON.stringify(decamelizedFinding, null, 2));
       
       const response = await fetch(
         `${config.API_URL}/api/oscal/plan-of-action-and-milestones/${id}/findings`,

@@ -136,8 +136,14 @@ async function loadFindings() {
     const response = await poamStore.getFindings(id)
     findings.value = response.data
   } catch (err) {
-    console.error('Error loading findings:', err)
-    error.value = err instanceof Error ? err.message : 'Unknown error'
+    const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+    error.value = errorMessage
+    toast.add({
+      severity: 'error',
+      summary: 'Load Failed',
+      detail: `Failed to load findings: ${errorMessage}`,
+      life: 3000
+    })
   } finally {
     loading.value = false
   }
@@ -181,11 +187,11 @@ async function deleteFinding(uuid: string) {
     
     await loadFindings() // Reload the list
   } catch (err) {
-    console.error('Error deleting finding:', err)
+    const errorMessage = err instanceof Error ? err.message : 'Unknown error'
     toast.add({
       severity: 'error',
       summary: 'Delete Failed',
-      detail: err instanceof Error ? err.message : 'Failed to delete finding',
+      detail: `Failed to delete finding: ${errorMessage}`,
       life: 3000
     })
   }
