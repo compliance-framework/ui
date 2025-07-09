@@ -31,6 +31,12 @@
       <FormTextarea v-model="subjectData.description" rows="3" required />
     </div>
 
+    <!-- Properties Section -->
+    <PropertyManager v-model="subjectData.props" />
+
+    <!-- Links Section -->
+    <LinkManager v-model="subjectData.links" />
+
     <div v-if="errorMessage" class="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
       {{ errorMessage }}
     </div>
@@ -47,6 +53,8 @@ import { ref, onMounted } from 'vue'
 import { type AssessmentSubject, useAssessmentPlanStore } from '@/stores/assessment-plans.ts'
 import { useToast } from 'primevue/usetoast'
 import FormTextarea from '@/components/forms/FormTextarea.vue'
+import PropertyManager from '@/components/forms/PropertyManager.vue'
+import LinkManager from '@/components/forms/LinkManager.vue'
 import PrimaryButton from '@/components/PrimaryButton.vue'
 import SecondaryButton from '@/components/SecondaryButton.vue'
 
@@ -66,7 +74,9 @@ const emit = defineEmits<{
 const subjectData = ref<AssessmentSubject>({
   uuid: '',
   type: '',
-  description: ''
+  description: '',
+  props: [],
+  links: []
 })
 
 const errorMessage = ref('')
@@ -76,7 +86,9 @@ onMounted(() => {
     subjectData.value = {
       uuid: props.subject.uuid,
       type: props.subject.type || '',
-      description: props.subject.description || ''
+      description: props.subject.description || '',
+      props: props.subject.props || [],
+      links: props.subject.links || []
     }
   }
 })
@@ -103,7 +115,9 @@ async function updateSubject(): Promise<void> {
     const updatedSubjectData = {
       uuid: subjectData.value.uuid,
       type: subjectData.value.type,
-      description: subjectData.value.description
+      description: subjectData.value.description,
+      props: subjectData.value.props || [],
+      links: subjectData.value.links || []
     }
 
     // Get current subjects, find and update the specific subject
