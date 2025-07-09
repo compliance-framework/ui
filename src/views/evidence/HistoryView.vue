@@ -1,6 +1,6 @@
 <template>
   <PageHeader>
-    Finding History
+    Evidence History
   </PageHeader>
   <PageSubHeader>
     {{ uuid }}
@@ -30,19 +30,19 @@
       <tbody>
       <tr
         class="hover:bg-zinc-50 dark:hover:bg-slate-800 border-b border-ccf-300 dark:border-slate-700"
-        v-for="finding in findings"
-        :key="finding.uuid"
+        v-for="item in evidence"
+        :key="item.id"
       >
         <td class="py-2 pl-4 pr-2 w-[1%]">
           <ResultStatusRing
-            :state="finding.status.state?.toLowerCase()"
+            :state="item.status.state?.toLowerCase()"
           ></ResultStatusRing>
         </td>
-        <td class="py-3 px-2 whitespace-nowrap grow">{{ finding.title }}</td>
+        <td class="py-3 px-2 whitespace-nowrap grow">{{ item.title }} <span class="text-sm dark:text-slate-400 ml-12">{{ new Date(item.end).toLocaleString() }}</span></td>
         <td class="py-2 px-2 text-right whitespace-nowrap">
           <RouterLink
             class="bg-white hover:bg-zinc-100 border px-4 py-1 rounded-md dark:bg-slate-800 border-ccf-300 dark:hover:bg-slate-700 dark:border-slate-700"
-            :to="{ name: 'finding-view', params: { id: finding._id } }"
+            :to="{ name: 'evidence:view', params: { id: item.id } }"
           >View
           </RouterLink>
         </td>
@@ -64,17 +64,17 @@ import {
 } from '@/parsers/findings.ts'
 import ResultComplianceOverTimeChart from '@/components/ResultComplianceOverTimeChart.vue'
 import ResultStatusRing from '@/components/ResultStatusRing.vue'
-import { type Finding, useFindingsStore } from '@/stores/findings.ts'
 import { calculateHeartbeatOverTimeData } from '@/parsers/heartbeats.ts'
 import { useHeartbeatsStore } from '@/stores/heartbeats.ts'
 import LabelList from '@/components/LabelList.vue'
+import { type Evidence, useEvidenceStore } from '@/stores/evidence.ts'
 
 const route = useRoute()
-const findingStore = useFindingsStore()
+const evidenceStore = useEvidenceStore()
 const heartbeatStore = useHeartbeatsStore()
 
 const uuid = route.params.uuid as string;
-const findings = ref<Finding[]>([] as Finding[])
+const evidence = ref<Evidence[]>([] as Evidence[])
 const complianceChartData = ref<ChartData<'line', DateDataPoint[]>>({
   labels: [],
   datasets: [],
@@ -85,11 +85,11 @@ const heartbeatChartData = ref<ChartData<'line', DateDataPoint[]>>({
 })
 
 onMounted(() => {
-  findingStore.history(uuid).then((resultList: DataResponse<Finding[]>) => {
-    findings.value = resultList.data;
+  evidenceStore.history(uuid).then((resultList: DataResponse<Evidence[]>) => {
+    evidence.value = resultList.data;
   })
 
-  findingStore.getComplianceForUUID(uuid).then((response) => {
+  evidenceStore.getComplianceForUUID(uuid).then((response) => {
     complianceChartData.value = calculateComplianceOverTimeData(response.data)
     // uptimeChartData.value = calculateAgentUptimeData(response.data)
   })
