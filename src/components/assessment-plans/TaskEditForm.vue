@@ -34,7 +34,7 @@
     <TaskTimingManager v-model="taskData.timing" />
 
     <!-- Task Dependencies Section -->
-    <TaskDependencyManager v-model="taskData.dependencies" />
+    <TaskDependencyManager v-model="taskData.dependencies" :assessment-plan-id="assessmentPlanId" :current-task-uuid="taskData.uuid" />
 
     <!-- Responsible Roles Section -->
     <ResponsibleRoleManager v-model="taskData.responsibleRoles" />
@@ -104,6 +104,11 @@ onMounted(() => {
       dependencies: props.task.dependencies || [],
       responsibleRoles: props.task.responsibleRoles || []
     }
+
+    // Add this debug logging
+    console.log('TaskEditForm: Task received:', props.task)
+    console.log('TaskEditForm: Dependencies set to:', taskData.value.dependencies)
+    console.log('TaskEditForm: Dependencies length:', taskData.value.dependencies?.length || 0)
   }
 })
 
