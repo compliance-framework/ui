@@ -41,7 +41,7 @@ const toast = useToast();
 
 const routes = ref([
   { name: 'profile-view-controls', label: "Controls" },
-  { name: 'profile-view-settings', label: "Settings" }
+  { name: 'profile-view-merge', label: "Merge" }
 ]);
 
 onMounted(() => {

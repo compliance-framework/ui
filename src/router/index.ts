@@ -117,9 +117,9 @@ const authenticatedRoutes = [
         },
       },
       {
-        path: 'settings',
-        name: 'profile-view-settings',
-        component: () => import('../views/profile/ProfileSettingsView.vue'),
+        path: 'merge',
+        name: 'profile-view-merge',
+        component: () => import('../views/profile/ProfileMergeView.vue'),
         meta: {
           requiresAuth: true,
         },

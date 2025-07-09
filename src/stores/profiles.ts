@@ -22,6 +22,19 @@ export interface SelectControlsByID {
   matching?: { pattern: string };
 }
 
+export interface Merge {
+  asIs?: boolean;
+  combine?: MergeCombine;
+  flat?: object
+}
+
+export type MergeOptions = 'asIs' | 'combine' | 'flat' | 'custom';
+export type MergeCombineOptions = 'use-first' | 'flat';
+
+export interface MergeCombine {
+  method: MergeCombineOptions;
+}
+
 export interface BackMatter {
   resources: BackMatterResource[];
 }
@@ -111,6 +124,33 @@ export const useProfileStore = defineStore('profiles', () => {
     return;
   }
 
+  async function getMerge(id: string): Promise<DataResponse<Merge>> {
+    const config = await configStore.getConfig();
+    const response = await fetch(`${config.API_URL}/api/oscal/profiles/${id}/merge`, {
+      credentials: 'include',
+    });
+    if (!response.ok) {
+      throw response;
+    }
+    return camelcaseKeys(await response.json(), { deep: true }) as DataResponse<Merge>;
+  }
+
+  async function updateMerge(id: string, merge: Merge): Promise<DataResponse<Merge>> {
+    const config = await configStore.getConfig();
+    const response = await fetch(`${config.API_URL}/api/oscal/profiles/${id}/merge`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(decamelizeKeys(merge, { separator: '-' })),
+      credentials: 'include',
+    });
+    if (!response.ok) {
+      throw response;
+    }
+    return camelcaseKeys(await response.json(), { deep: true }) as DataResponse<Merge>;
+  }
+
   async function getBackMatter(id: string): Promise<DataResponse<BackMatter>> {
     const config = await configStore.getConfig();
     const response = await fetch(`${config.API_URL}/api/oscal/profiles/${id}/back-matter`, {
@@ -129,6 +169,8 @@ export const useProfileStore = defineStore('profiles', () => {
     addImport,
     updateImport,
     deleteImport,
+    getMerge,
+    updateMerge,
     getBackMatter,
   }
 });
