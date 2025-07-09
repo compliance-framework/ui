@@ -28,9 +28,11 @@
 import { onMounted, ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { type PlanOfActionAndMilestones, usePlanOfActionAndMilestonesStore } from '@/stores/plan-of-action-and-milestones.ts'
+import { useToast } from 'primevue/usetoast'
 
 const route = useRoute()
 const poamStore = usePlanOfActionAndMilestonesStore()
+const toast = useToast()
 
 const poamData = ref<PlanOfActionAndMilestones | null>(null)
 const loading = ref(true)
@@ -71,7 +73,13 @@ async function downloadJson(): Promise<void> {
     document.body.removeChild(link)
     URL.revokeObjectURL(url)
   } catch (error) {
-    console.error('Error downloading JSON:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    toast.add({
+      severity: 'error',
+      summary: 'Download Failed',
+      detail: `Failed to download JSON: ${errorMessage}`,
+      life: 3000
+    })
   }
 }
 </script> 
