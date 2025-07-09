@@ -406,7 +406,7 @@ export const useAssessmentPlanStore = defineStore('assessment-plans', () => {
     const config = await configStore.getConfig()
     console.log('updateTask called with:', { planId, task })
 
-    const taskPayload = decamelizeKeys(task, { separator: '-' })
+    const taskPayload = decamelizeKeys(task, { separator: '-', deep: true })
     console.log('Sending task payload:', taskPayload)
 
     const response = await fetch(`${config.API_URL}/api/oscal/assessment-plans/${planId}/tasks/${task.uuid}`, {
