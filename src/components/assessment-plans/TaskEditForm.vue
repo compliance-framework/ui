@@ -24,6 +24,12 @@
       <FormTextarea v-model="taskData.description" rows="3" />
     </div>
 
+    <!-- Properties Section -->
+    <PropertyManager v-model="taskData.props" />
+
+    <!-- Links Section -->
+    <LinkManager v-model="taskData.links" />
+
     <div v-if="errorMessage" class="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
       {{ errorMessage }}
     </div>
@@ -41,6 +47,8 @@ import { type Task, useAssessmentPlanStore } from '@/stores/assessment-plans.ts'
 import { useToast } from 'primevue/usetoast'
 import FormInput from '@/components/forms/FormInput.vue'
 import FormTextarea from '@/components/forms/FormTextarea.vue'
+import PropertyManager from '@/components/forms/PropertyManager.vue'
+import LinkManager from '@/components/forms/LinkManager.vue'
 import PrimaryButton from '@/components/PrimaryButton.vue'
 import SecondaryButton from '@/components/SecondaryButton.vue'
 
@@ -61,7 +69,9 @@ const taskData = ref<Task>({
   uuid: '',
   type: '',
   title: '',
-  description: ''
+  description: '',
+  props: [],
+  links: []
 })
 
 const errorMessage = ref('')
@@ -73,6 +83,8 @@ onMounted(() => {
       type: props.task.type || '',
       title: props.task.title || '',
       description: props.task.description || '',
+      props: props.task.props || [],
+      links: props.task.links || []
     }
   }
 })
@@ -101,12 +113,14 @@ async function updateTask(): Promise<void> {
       ...props.task,  // Preserve all original task fields
       type: taskData.value.type,
       title: taskData.value.title,
-      description: taskData.value.description || ''
+      description: taskData.value.description || '',
+      props: taskData.value.props || [],
+      links: taskData.value.links || []
     }
 
     console.log('Updating task with data:', updatedTaskData)
     console.log('Assessment plan ID:', props.assessmentPlanId)
-    
+
     const result = await assessmentPlanStore.updateTask(props.assessmentPlanId, updatedTaskData)
     console.log('Update result:', result)
 

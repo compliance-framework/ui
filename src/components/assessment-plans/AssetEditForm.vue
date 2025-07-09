@@ -19,6 +19,12 @@
       <FormTextarea v-model="assetData.description" rows="3" required />
     </div>
 
+    <!-- Properties Section -->
+    <PropertyManager v-model="assetData.props" />
+
+    <!-- Links Section -->
+    <LinkManager v-model="assetData.links" />
+
     <div v-if="errorMessage" class="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
       {{ errorMessage }}
     </div>
@@ -36,6 +42,8 @@ import { type AssessmentAsset, useAssessmentPlanStore } from '@/stores/assessmen
 import { useToast } from 'primevue/usetoast'
 import FormInput from '@/components/forms/FormInput.vue'
 import FormTextarea from '@/components/forms/FormTextarea.vue'
+import PropertyManager from '@/components/forms/PropertyManager.vue'
+import LinkManager from '@/components/forms/LinkManager.vue'
 import PrimaryButton from '@/components/PrimaryButton.vue'
 import SecondaryButton from '@/components/SecondaryButton.vue'
 
@@ -56,6 +64,8 @@ const assetData = ref<AssessmentAsset>({
   uuid: '',
   title: '',
   description: '',
+  props: [],
+  links: [],
   components: []
 })
 
@@ -67,6 +77,8 @@ onMounted(() => {
       uuid: props.asset.uuid,
       title: props.asset.title || '',
       description: props.asset.description || '',
+      props: props.asset.props || [],
+      links: props.asset.links || [],
       components: props.asset.components || []
     }
   }
@@ -95,6 +107,8 @@ async function updateAsset(): Promise<void> {
       uuid: assetData.value.uuid,
       title: assetData.value.title || '',
       description: assetData.value.description,
+      props: assetData.value.props || [],
+      links: assetData.value.links || [],
       components: assetData.value.components || []
     }
 
