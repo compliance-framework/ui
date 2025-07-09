@@ -292,6 +292,29 @@ export interface TaskSubject {
   excludeSubjects?: ExcludeSubject[];
 }
 
+export interface Activity {
+  uuid: string;
+  title?: string;
+  description: string;
+  remarks?: string;
+  props?: Property[];
+  links?: Link[];
+  steps?: Step[];
+  relatedControls?: ReviewedControls;
+  responsibleRoles?: ResponsibleRole[];
+}
+
+export interface Step {
+  uuid: string;
+  title?: string;
+  description: string;
+  remarks?: string;
+  props?: Property[];
+  links?: Link[];
+  responsibleRoles?: ResponsibleRole[];
+  reviewedControls?: ReviewedControls;
+}
+
 export const useAssessmentPlanStore = defineStore('assessment-plans', () => {
   const configStore = useConfigStore()
 
@@ -611,6 +634,96 @@ export const useAssessmentPlanStore = defineStore('assessment-plans', () => {
     return result
   }
 
+  // Activity management functions
+  async function getActivities(id: string): Promise<DataResponse<Activity[]>> {
+    const config = await configStore.getConfig()
+    const response = await fetch(`${config.API_URL}/api/oscal/assessment-plans/${id}/activities`, {
+      credentials: 'include',
+    })
+    if (!response.ok) {
+      throw new Error(`Error: ${response.statusText}`)
+    }
+    return camelcaseKeys(await response.json(), {
+      deep: true,
+    }) as DataResponse<Activity[]>
+  }
+
+  async function createActivity(planId: string, activity: Activity): Promise<DataResponse<Activity>> {
+    const config = await configStore.getConfig()
+    console.log('[DEBUG_LOG] createActivity called with:', { planId, activity })
+
+    const response = await fetch(`${config.API_URL}/api/oscal/assessment-plans/${planId}/activities`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(decamelizeKeys(activity, { separator: '-' })),
+      credentials: 'include',
+    })
+
+    console.log('[DEBUG_LOG] Activity creation response status:', response.status)
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error('[DEBUG_LOG] Activity creation error:', errorText)
+      throw new Error(`Error: ${response.statusText} - ${errorText}`)
+    }
+
+    const result = camelcaseKeys(await response.json(), {
+      deep: true,
+    }) as DataResponse<Activity>
+    console.log('[DEBUG_LOG] Activity creation result:', result)
+    return result
+  }
+
+  async function updateActivity(planId: string, activity: Activity): Promise<DataResponse<Activity>> {
+    const config = await configStore.getConfig()
+    console.log('[DEBUG_LOG] updateActivity called with:', { planId, activity })
+
+    const response = await fetch(`${config.API_URL}/api/oscal/assessment-plans/${planId}/activities/${activity.uuid}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(decamelizeKeys(activity, { separator: '-' })),
+      credentials: 'include',
+    })
+
+    console.log('[DEBUG_LOG] Activity update response status:', response.status)
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error('[DEBUG_LOG] Activity update error:', errorText)
+      throw new Error(`Error: ${response.statusText} - ${errorText}`)
+    }
+
+    const result = camelcaseKeys(await response.json(), {
+      deep: true,
+    }) as DataResponse<Activity>
+    console.log('[DEBUG_LOG] Activity update result:', result)
+    return result
+  }
+
+  async function deleteActivity(planId: string, activityId: string): Promise<void> {
+    const config = await configStore.getConfig()
+    console.log('[DEBUG_LOG] deleteActivity called with:', { planId, activityId })
+
+    const response = await fetch(`${config.API_URL}/api/oscal/assessment-plans/${planId}/activities/${activityId}`, {
+      method: 'DELETE',
+      credentials: 'include',
+    })
+
+    console.log('[DEBUG_LOG] Activity delete response status:', response.status)
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error('[DEBUG_LOG] Activity delete error:', errorText)
+      throw new Error(`Error: ${response.statusText} - ${errorText}`)
+    }
+
+    console.log('[DEBUG_LOG] Activity deleted successfully')
+  }
+
   return {
     get,
     list,
@@ -627,5 +740,9 @@ export const useAssessmentPlanStore = defineStore('assessment-plans', () => {
     updateAssessmentSubjects,
     updateAssessmentAssets,
     createAssessmentAsset,
+    getActivities,
+    createActivity,
+    updateActivity,
+    deleteActivity,
   }
 })
