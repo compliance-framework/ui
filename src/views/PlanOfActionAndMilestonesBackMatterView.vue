@@ -69,7 +69,7 @@
                     {{ resource.rlinks.length }} Link{{ resource.rlinks.length !== 1 ? 's' : '' }}
                   </span>
                   <span v-if="resource.props?.length" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
-                    {{ resource.props.length }} Propert{{ resource.props.length !== 1 ? 'ies' : 'y' }}
+                    {{ resource.props.length }} Propert{{ resource.props.length === 1 ? 'y' : 'ies' }}
                   </span>
                   <span v-if="resource.base64?.value" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200">
                     Embedded Content

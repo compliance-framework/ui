@@ -158,6 +158,8 @@ import { useRoute, RouterLink } from 'vue-router'
 import { 
   type PlanOfActionAndMilestones, 
   type PoamItem,
+  type Observation,
+  type Risk,
   usePlanOfActionAndMilestonesStore 
 } from '@/stores/plan-of-action-and-milestones.ts'
 import MetadataEditForm from '@/components/poam/MetadataEditForm.vue'
@@ -170,12 +172,14 @@ const toast = useToast()
 
 const planOfActionAndMilestones = ref<PlanOfActionAndMilestones>({} as PlanOfActionAndMilestones)
 const poamItems = ref<PoamItem[]>([])
+const observations = ref<Observation[]>([])
+const risks = ref<Risk[]>([])
 const showEditModal = ref(false)
 
 const statistics = computed(() => ({
   poamItems: poamItems.value.length,
-  observations: poamItems.value.filter(item => item.relatedObservations && item.relatedObservations.length > 0).length,
-  risks: poamItems.value.filter(item => item.relatedRisks && item.relatedRisks.length > 0).length
+  observations: observations.value.length,
+  risks: risks.value.length
 }))
 
 onMounted(async () => {
@@ -192,6 +196,22 @@ onMounted(async () => {
       poamItems.value = itemsResponse.data
     } catch (error) {
       // Silently handle POAM items loading error - they're optional for overview
+    }
+
+    // Load observations
+    try {
+      const observationsResponse = await poamStore.getObservations(id)
+      observations.value = observationsResponse.data
+    } catch (error) {
+      // Silently handle observations loading error - they're optional for overview
+    }
+
+    // Load risks
+    try {
+      const risksResponse = await poamStore.getRisks(id)
+      risks.value = risksResponse.data
+    } catch (error) {
+      // Silently handle risks loading error - they're optional for overview
     }
 
   } catch (error) {

@@ -229,13 +229,14 @@ async function submit() {
   try {
     saving.value = true
     
+    const filteredThreatIds = formData.threatIds.filter(t => t.trim());
     const updatedRisk: Risk = {
       ...props.risk,
       title: formData.title,
       description: formData.description,
       statement: formData.statement,
       status: formData.status,
-      threatIds: formData.threatIds.filter(t => t.trim()).length > 0 ? formData.threatIds.filter(t => t.trim()) : undefined,
+      threatIds: filteredThreatIds.length > 0 ? filteredThreatIds : undefined,
       deadline: formData.deadline || undefined,
       remarks: formData.remarks || undefined
     }
