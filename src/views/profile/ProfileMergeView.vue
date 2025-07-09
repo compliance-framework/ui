@@ -33,7 +33,7 @@
 <script setup lang="ts">
 import PageCard from '@/components/PageCard.vue';
 import { useProfileStore, type Merge, type MergeOptions } from '@/stores/profiles';
-import { ref, watch, onActivated } from 'vue';
+import { ref, watch, onActivated, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
 import PrimaryButton from '@/components/PrimaryButton.vue';
@@ -65,7 +65,7 @@ function updateMerge() {
   });
 }
 
-onActivated(() => {
+function loadMergeData() {
   if (id) {
     profileStore.getMerge(id).then(resp => {
       merge.value = resp.data;
@@ -88,6 +88,14 @@ onActivated(() => {
       });
     });
   }
+}
+
+onActivated(() => {
+  loadMergeData();
+});
+
+onMounted(() => {
+  loadMergeData();
 });
 
 // Watch mergeType and update merge object

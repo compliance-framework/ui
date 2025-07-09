@@ -1,9 +1,9 @@
 <template>
   <PageHeader>Profiles</PageHeader>
     <div
-    class="mt-4 rounded-md bg-white dark:bg-slate-900 border-collapse border border-ccf-300 dark:border-slate-700"
+    class="mt-4 rounded-md bg-white dark:bg-slate-900 border border-ccf-300 dark:border-slate-700"
   >
-    <table class="table-auto w-full rounded-full dark:text-slate-300">
+    <table class="table-auto w-full rounded-full dark:text-slate-300 border-collapse">
       <tbody>
       <tr
         class="hover:bg-zinc-50 dark:hover:bg-slate-800 border-b border-ccf-300 dark:border-slate-800"
@@ -11,14 +11,12 @@
         :key="profile.uuid"
       >
         <td class="py-3 px-4 whitespace-nowrap grow">{{ profile.metadata.title }}</td>
-        <td class="py-2 px-2 text-right whitespace-nowrap">
-          <div class="flex gap-2">
+        <td class="py-3 px-4 text-right">
             <RouterLink
               class="bg-white hover:bg-zinc-100 border border-ccf-300 px-4 py-1 rounded-md dark:bg-slate-800 dark:hover:bg-slate-700 dark:border-slate-700"
               :to="{ name: 'profile-view-controls', params: { id: profile.uuid } }"
             >View
             </RouterLink>
-          </div>
         </td>
       </tr>
       </tbody>

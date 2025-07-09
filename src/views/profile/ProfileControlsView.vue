@@ -2,17 +2,15 @@
   <div>
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8 py-3">
       <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
-        <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ imports.length }}</div>
+        <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ importedCatalogsCount }}</div>
         <div class="text-sm text-blue-600 dark:text-blue-400">Imported Catalogs</div>
       </div>
       <div class="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
-        <div class="text-2xl font-bold text-green-600 dark:text-green-400">{{ imports.reduce((acc, imp) => acc + (imp.includeControls ?? []).reduce((innerAcc, group) =>
-          innerAcc + group.withIds.length, 0), 0) }}</div>
+        <div class="text-2xl font-bold text-green-600 dark:text-green-400">{{ includedControlsCount }}</div>
         <div class="text-sm text-green-600 dark:text-green-400">Included Controls</div>
       </div>
       <div class="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg">
-        <div class="text-2xl font-bold text-purple-600 dark:text-purple-400">{{ imports.reduce((acc, imp) => acc + (imp.excludeControls ?? []).reduce((innerAcc, group)  =>
-          innerAcc + group.withIds.length, 0), 0) }}</div>
+        <div class="text-2xl font-bold text-purple-600 dark:text-purple-400">{{ excludedControlsCount }}</div>
         <div class="text-sm text-purple-600 dark:text-purple-400">Excluded Controls</div>
       </div>
     </div>
@@ -47,7 +45,7 @@
 import { type BackMatter, useProfileStore, type Import } from '@/stores/profiles';
 import { type BackMatterResource } from '@/stores/component-definitions';
 import { useRoute } from 'vue-router';
-import { onActivated, ref } from 'vue';
+import { onActivated, ref, computed } from 'vue';
 import CollapsableGroup from '@/components/CollapsableGroup.vue';
 import PrimaryButton from '@/components/PrimaryButton.vue';
 import type { DataResponse } from '@/stores/types';
@@ -69,6 +67,10 @@ const importedCatalogs = ref<{ [key: string]: string }>({});
 
 const backmatter = ref<BackMatter>({} as BackMatter);
 const catalogDialogVisible = ref(false);
+
+const importedCatalogsCount = computed<number>(() => imports.value.length);
+const includedControlsCount = computed<number>(() => imports.value.reduce((acc, imp) => acc + (imp.includeControls ?? []).reduce((innerAcc, group) => innerAcc + group.withIds.length, 0), 0));
+const excludedControlsCount = computed<number>(() => imports.value.reduce((acc, imp) => acc + (imp.excludeControls ?? []).reduce((innerAcc, group) => innerAcc + group.withIds.length, 0), 0));
 
 function findResourceByHref(href: string): BackMatterResource | undefined {
   const hrefUUID = href.startsWith('#') ? href.substring(1) : href;

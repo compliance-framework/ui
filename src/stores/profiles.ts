@@ -95,7 +95,6 @@ export const useProfileStore = defineStore('profiles', () => {
     const config = await configStore.getConfig();
     const encodedHref = encodeURIComponent(importData.href);
 
-    console.log(decamelizeKeys(importData, { separator: '-' }));
     const response = await fetch(`${config.API_URL}/api/oscal/profiles/${profileId}/imports/${encodedHref}`, {
       method: 'PUT',
       headers: {
