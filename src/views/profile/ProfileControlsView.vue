@@ -44,7 +44,7 @@
 </template>
 
 <script setup lang="ts">
-import { type BackMatter, useProfileStore, type Import, type SelectControlsByID } from '@/stores/profiles';
+import { type BackMatter, useProfileStore, type Import } from '@/stores/profiles';
 import { type BackMatterResource } from '@/stores/component-definitions';
 import { useRoute } from 'vue-router';
 import { onActivated, ref } from 'vue';

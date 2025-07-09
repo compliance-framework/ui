@@ -67,7 +67,7 @@ onMounted(() => {
 
 @reference "@/assets/main.css";
 
-.router-link-exect-active {
+.router-link-exact-active {
   @apply bg-none;
 }
 
