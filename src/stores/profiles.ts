@@ -28,7 +28,7 @@ export interface Merge {
   flat?: object
 }
 
-export type MergeOptions = 'asIs' | 'combine' | 'flat' | 'custom';
+export type MergeOptions = 'asIs' | 'flat' | 'custom';
 export type MergeCombineOptions = 'use-first' | 'flat';
 
 export interface MergeCombine {
