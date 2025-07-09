@@ -30,6 +30,15 @@
     <!-- Links Section -->
     <LinkManager v-model="taskData.links" />
 
+    <!-- Task Timing Section -->
+    <TaskTimingManager v-model="taskData.timing" />
+
+    <!-- Task Dependencies Section -->
+    <TaskDependencyManager v-model="taskData.dependencies" />
+
+    <!-- Responsible Roles Section -->
+    <ResponsibleRoleManager v-model="taskData.responsibleRoles" />
+
     <div v-if="errorMessage" class="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
       {{ errorMessage }}
     </div>
@@ -49,6 +58,9 @@ import FormInput from '@/components/forms/FormInput.vue'
 import FormTextarea from '@/components/forms/FormTextarea.vue'
 import PropertyManager from '@/components/forms/PropertyManager.vue'
 import LinkManager from '@/components/forms/LinkManager.vue'
+import ResponsibleRoleManager from '@/components/forms/ResponsibleRoleManager.vue'
+import TaskTimingManager from '@/components/forms/TaskTimingManager.vue'
+import TaskDependencyManager from '@/components/forms/TaskDependencyManager.vue'
 import PrimaryButton from '@/components/PrimaryButton.vue'
 import SecondaryButton from '@/components/SecondaryButton.vue'
 
@@ -71,7 +83,10 @@ const taskData = ref<Task>({
   title: '',
   description: '',
   props: [],
-  links: []
+  links: [],
+  timing: undefined,
+  dependencies: [],
+  responsibleRoles: []
 })
 
 const errorMessage = ref('')
@@ -84,7 +99,10 @@ onMounted(() => {
       title: props.task.title || '',
       description: props.task.description || '',
       props: props.task.props || [],
-      links: props.task.links || []
+      links: props.task.links || [],
+      timing: props.task.timing,
+      dependencies: props.task.dependencies || [],
+      responsibleRoles: props.task.responsibleRoles || []
     }
   }
 })
@@ -115,7 +133,10 @@ async function updateTask(): Promise<void> {
       title: taskData.value.title,
       description: taskData.value.description || '',
       props: taskData.value.props || [],
-      links: taskData.value.links || []
+      links: taskData.value.links || [],
+      timing: taskData.value.timing,
+      dependencies: taskData.value.dependencies || [],
+      responsibleRoles: taskData.value.responsibleRoles || []
     }
 
     console.log('Updating task with data:', updatedTaskData)
