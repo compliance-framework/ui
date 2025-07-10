@@ -4,6 +4,7 @@ export interface Metadata {
   version?: string;
   lastModified?: string;
   published?: string;
+  oscalVersion?: string;
 }
 
 export type FindingStatusState = 'satisfied' | 'not-satisfied' | string;

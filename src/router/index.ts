@@ -233,6 +233,25 @@ const authenticatedRoutes = [
     }
   },
   {
+    path: '/plan-of-action-and-milestones',
+    name: 'plan-of-action-and-milestones',
+    // route level code-splitting
+    // this generates a separate chunk (About.[hash].js) for this route
+    // which is lazy-loaded when the route is visited.
+    component: () => import('../views/PlanOfActionAndMilestonesListView.vue'),
+    meta: {
+      requiresAuth: true,
+    }
+  },
+  {
+    path: '/plan-of-action-and-milestones/create',
+    name: 'plan-of-action-and-milestones-create',
+    component: () => import('../views/PlanOfActionAndMilestonesCreateView.vue'),
+    meta: {
+      requiresAuth: true,
+    }
+  },
+  {
     path: '/system-security-plans/:id',
     name: 'system-security-plan-editor',
     component: () => import('../views/SystemSecurityPlanEditorView.vue'),
@@ -266,6 +285,74 @@ const authenticatedRoutes = [
         component: () => import('../views/SystemSecurityPlanJSONView.vue')
       },
     ]
+  },
+  {
+    path: '/plan-of-action-and-milestones/:id',
+    name: 'plan-of-action-and-milestones-editor',
+    component: () => import('../views/PlanOfActionAndMilestonesEditorView.vue'),
+    meta: {
+      requiresAuth: true,
+    },
+    children: [
+      {
+        path: '',
+        name: 'plan-of-action-and-milestones-overview',
+        component: () => import('../views/PlanOfActionAndMilestonesOverviewView.vue')
+      },
+      {
+        path: 'poam-items',
+        name: 'plan-of-action-and-milestones-poam-items',
+        component: () => import('../views/PlanOfActionAndMilestonesPoamItemsView.vue')
+      },
+      {
+        path: 'import-ssp',
+        name: 'plan-of-action-and-milestones-import-ssp',
+        component: () => import('../views/PlanOfActionAndMilestonesImportSspView.vue')
+      },
+      {
+        path: 'system-id',
+        name: 'plan-of-action-and-milestones-system-id',
+        component: () => import('../views/PlanOfActionAndMilestonesSystemIdView.vue')
+      },
+      {
+        path: 'local-definitions',
+        name: 'plan-of-action-and-milestones-local-definitions',
+        component: () => import('../views/PlanOfActionAndMilestonesLocalDefinitionsView.vue')
+      },
+      {
+        path: 'observations',
+        name: 'plan-of-action-and-milestones-observations',
+        component: () => import('../views/PlanOfActionAndMilestonesObservationsView.vue')
+      },
+      {
+        path: 'risks',
+        name: 'plan-of-action-and-milestones-risks',
+        component: () => import('../views/PlanOfActionAndMilestonesRisksView.vue')
+      },
+      {
+        path: 'findings',
+        name: 'plan-of-action-and-milestones-findings',
+        component: () => import('../views/PlanOfActionAndMilestonesFindingsView.vue')
+      },
+      {
+        path: 'back-matter',
+        name: 'plan-of-action-and-milestones-back-matter',
+        component: () => import('../views/PlanOfActionAndMilestonesBackMatterView.vue')
+      },
+      {
+        path: 'json',
+        name: 'plan-of-action-and-milestones-json',
+        component: () => import('../views/PlanOfActionAndMilestonesJSONView.vue')
+      },
+    ]
+  },
+  {
+    path: '/plan-of-action-and-milestones/:id/edit',
+    name: 'plan-of-action-and-milestones-edit',
+    component: () => import('../views/PlanOfActionAndMilestonesEditView.vue'),
+    meta: {
+      requiresAuth: true,
+    }
   },
   {
     path: '/system-security-plans/:id/editor',
