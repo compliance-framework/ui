@@ -10,7 +10,7 @@ const authenticatedRoutes = [
     // route level code-splitting
     // this generates a separate chunk (About.[hash].js) for this route
     // which is lazy-loaded when the route is visited.
-    component: () => import('../views/FindingsSearchView.vue'),
+    component: () => import('../views/evidence/IndexView.vue'),
     meta: {
       requiresAuth: true,
     }
@@ -21,7 +21,7 @@ const authenticatedRoutes = [
     // route level code-splitting
     // this generates a separate chunk (About.[hash].js) for this route
     // which is lazy-loaded when the route is visited.
-    component: () => import('../views/DashboardsView.vue'),
+    component: () => import('../views/dashboard/IndexView.vue'),
     meta: {
       requiresAuth: true,
     }
@@ -32,7 +32,7 @@ const authenticatedRoutes = [
     // route level code-splitting
     // this generates a separate chunk (About.[hash].js) for this route
     // which is lazy-loaded when the route is visited.
-    component: () => import('../views/DashboardCreate.vue'),
+    component: () => import('../views/dashboard/CreateFormView.vue'),
     meta: {
       requiresAuth: true,
     }
@@ -43,7 +43,7 @@ const authenticatedRoutes = [
     // route level code-splitting
     // this generates a separate chunk (About.[hash].js) for this route
     // which is lazy-loaded when the route is visited.
-    component: () => import('../views/DashboardsView.vue'),
+    component: () => import('../views/dashboard/IndexView.vue'),
     meta: {
       requiresAuth: true,
     }
@@ -82,34 +82,12 @@ const authenticatedRoutes = [
     }
   },
   {
-    path: '/catalogs/control/:class/:id',
-    name: 'catalog-control-findings',
+    path: '/catalogs/:catalog/control/:id/evidence',
+    name: 'catalog-control-evidence',
     // route level code-splitting
     // this generates a separate chunk (About.[hash].js) for this route
     // which is lazy-loaded when the route is visited.
-    component: () => import('../views/CatalogControlFindings.vue'),
-    meta: {
-      requiresAuth: true,
-    }
-  },
-  {
-    path: '/findings/:id',
-    name: 'finding-view',
-    // route level code-splitting
-    // this generates a separate chunk (About.[hash].js) for this route
-    // which is lazy-loaded when the route is visited.
-    component: () => import('../views/FindingsView.vue'),
-    meta: {
-      requiresAuth: true,
-    }
-  },
-  {
-    path: '/findings/history/:uuid',
-    name: 'finding-history',
-    // route level code-splitting
-    // this generates a separate chunk (About.[hash].js) for this route
-    // which is lazy-loaded when the route is visited.
-    component: () => import('../views/FindingsHistoryView.vue'),
+    component: () => import('../views/EvidenceByControlView.vue'),
     meta: {
       requiresAuth: true,
     }
@@ -211,45 +189,34 @@ const authenticatedRoutes = [
     }
   },
   {
-    path: '/findings',
-    name: 'findings',
+    path: '/evidence',
+    name: 'evidence:index',
     // route level code-splitting
     // this generates a separate chunk (About.[hash].js) for this route
     // which is lazy-loaded when the route is visited.
-    component: () => import('../views/FindingsSearchView.vue'),
+    component: () => import('../views/evidence/IndexView.vue'),
     meta: {
       requiresAuth: true,
     }
   },
   {
-    path: '/findings/by-subject',
-    name: 'findings-by-subject',
+    path: '/evidence/:id',
+    name: 'evidence:view',
     // route level code-splitting
     // this generates a separate chunk (About.[hash].js) for this route
     // which is lazy-loaded when the route is visited.
-    component: () => import('../views/FindingsBySubjectSearchView.vue'),
+    component: () => import('../views/evidence/ViewView.vue'),
     meta: {
       requiresAuth: true,
     }
   },
   {
-    path: '/findings/by-class',
-    name: 'list-classes-of-findings',
+    path: '/evidence/history/:uuid',
+    name: 'evidence:history',
     // route level code-splitting
     // this generates a separate chunk (About.[hash].js) for this route
     // which is lazy-loaded when the route is visited.
-    component: () => import('../views/ControlClassesView.vue'),
-    meta: {
-      requiresAuth: true,
-    }
-  },
-  {
-    path: '/findings/by-class/:className',
-    name: 'findings-by-class',
-    // route level code-splitting
-    // this generates a separate chunk (About.[hash].js) for this route
-    // which is lazy-loaded when the route is visited.
-    component: () => import('../views/FindingsByClassSearchView.vue'),
+    component: () => import('../views/evidence/HistoryView.vue'),
     meta: {
       requiresAuth: true,
     }

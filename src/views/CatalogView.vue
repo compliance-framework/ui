@@ -44,13 +44,13 @@ onMounted(async () => {
 })
 
 onActivated(async () => {
-  catalog.value = {
-    uuid: route.params.id,
-  } as Catalog
-  groups.value = [] as Group[]
-  controls.value = [] as Control[]
   if (route.params.id !== id.value) {
     id.value = route.params.id as string
+    catalog.value = {
+      uuid: route.params.id,
+    } as Catalog
+    groups.value = [] as Group[]
+    controls.value = [] as Control[]
     await loadCatalog(toValue(id))
   }
 })

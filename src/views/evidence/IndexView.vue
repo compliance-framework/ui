@@ -1,6 +1,6 @@
 <template>
-  <PageHeader>Findings</PageHeader>
-  <PageSubHeader>Search for findings using labels</PageSubHeader>
+  <PageHeader>Evidence</PageHeader>
+  <PageSubHeader>Search for evidence using labels</PageSubHeader>
   <div class="grid grid-cols-2 gap-4 mt-4">
     <PageCard>
       <h3 class="text-lg font-semibold text-zinc-600 dark:text-slate-300">
@@ -65,37 +65,8 @@
   <div
     class="mt-4 rounded-md bg-white dark:bg-slate-900 border-collapse border border-ccf-300 dark:border-slate-700"
   >
-    <FindingsList :findings="findings" />
+    <EvidenceList :evidence="evidence" />
   </div>
-  <!--    <div class="max-w-full">-->
-  <!--      <div-->
-  <!--        class="flex items-center border-t first:border-none hover:bg-zinc-100 py-2 px-2"-->
-  <!--        v-for="finding in findings"-->
-  <!--        :key="finding.uuid"-->
-  <!--      >-->
-  <!--        <div class="shrink pr-4">-->
-  <!--          <ResultStatusRing :state="finding.status.state?.toLowerCase()"></ResultStatusRing>-->
-  <!--        </div>-->
-  <!--        <div class="flex justify-between grow gap-8 items-center">-->
-  <!--          <div class="whitespace-nowrap">{{ finding.title }}</div>-->
-  <!--          <div class="" v-if="configStore.showLabels">-->
-  <!--            <LabelList :labels="finding.labels" />-->
-  <!--          </div>-->
-  <!--        </div>-->
-  <!--        <div class="flex items-start">-->
-  <!--          <RouterLink-->
-  <!--            class="bg-gray-50 hover:bg-gray-200 text-blue-800 border border-blue-800 px-4 py-1 rounded-md text-sm mr-2"-->
-  <!--            :to="{ name: 'finding-history', params: { uuid: finding.uuid } }"-->
-  <!--            >History-->
-  <!--          </RouterLink>-->
-  <!--          <RouterLink-->
-  <!--            class="bg-blue-800 hover:bg-clue-700 text-white px-4 py-1 rounded-md text-sm"-->
-  <!--            :to="{ name: 'finding-view', params: { id: finding._id } }"-->
-  <!--            >View-->
-  <!--          </RouterLink>-->
-  <!--        </div>-->
-  <!--      </div>-->
-  <!--    </div>-->
 </template>
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
@@ -116,16 +87,16 @@ import {
 } from '@/parsers/findings.ts';
 import ResultComplianceOverTimeChart from '@/components/ResultComplianceOverTimeChart.vue';
 import ResultStatusRing from '@/components/ResultStatusRing.vue';
-import { type Finding, useFindingsStore } from '@/stores/findings.ts';
 import { useHeartbeatsStore } from '@/stores/heartbeats.ts';
 import { calculateHeartbeatOverTimeData } from '@/parsers/heartbeats.ts';
 import { useConfigStore } from '@/stores/config.ts';
 import PrimaryButton from '@/components/PrimaryButton.vue';
 import SecondaryButton from '@/components/SecondaryButton.vue';
-import FindingsList from '@/views/FindingsList.vue'
 import InfoCircleIcon from '@primevue/icons/infocircle'
+import { type Evidence, useEvidenceStore } from '@/stores/evidence.ts'
+import EvidenceList from '@/components/EvidenceList.vue'
 
-const findingsStore = useFindingsStore();
+const evidenceStore = useEvidenceStore();
 const heartbeatStore = useHeartbeatsStore();
 const configStore = useConfigStore();
 const route = useRoute();
@@ -135,7 +106,7 @@ const filter = ref<string>('');
 if (route.query.filter) {
   filter.value = route.query.filter as string;
 }
-const findings = ref<Finding[]>([]);
+const evidence = ref<Evidence[]>([]);
 const complianceChartData = ref<ChartData<'line', DateDataPoint[]>>({
   labels: [],
   datasets: [],
@@ -148,11 +119,11 @@ const heartbeatChartData = ref<ChartData<'line', DateDataPoint[]>>({
 async function search() {
   const query = new FilterParser(filter.value).parse();
   await router.push({ query: { filter: filter.value } });
-  findingsStore.search(query).then((response) => {
-    findings.value = response.data.sort(function (a, b) {
+  evidenceStore.search(query).then((response) => {
+    evidence.value = response.data.sort(function (a, b) {
       // Order results by their title for better UI consistency
-      const x = new Date(a.collected);
-      const y = new Date(b.collected);
+      const x = new Date(a.end);
+      const y = new Date(b.end);
 
       if (x > y) {
         return 1;
@@ -165,7 +136,7 @@ async function search() {
     // results.value = response.data
   });
 
-  findingsStore.getComplianceForSearch(query).then((response) => {
+  evidenceStore.getComplianceForSearch(query).then((response) => {
     complianceChartData.value = calculateComplianceOverTimeData(response.data);
   });
   heartbeatStore.overTime().then((response) => {
