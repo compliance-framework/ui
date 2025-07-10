@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router';
+import type { RouteLocationRaw } from 'vue-router';
 import { useSidebarStore } from '@/stores/sidebar'
 
-defineProps([
-  'to',
-  'title'
-])
+defineProps<{
+  to: RouteLocationRaw;
+  title?: string;
+}>()
 
 const sidebarStore = useSidebarStore()
 </script>
