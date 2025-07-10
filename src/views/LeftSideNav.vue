@@ -22,6 +22,7 @@ const userStore = useUserStore()
       <div class="overflow-y-auto max-h-full grow">
         <SideNavLink class="pl-6" :to="{ name: 'dashboards' }">Dashboards</SideNavLink>
         <SideNavLink class="pl-6" :to="{ name: 'catalog-list' }">Catalogs</SideNavLink>
+        <SideNavLink class="pl-6" :to="{ name: 'profile-list' }">Profiles</SideNavLink>
         <SideNavLink class="pl-6" :to="{ name: 'component-definitions' }">Component Definitions</SideNavLink>
         <SideNavLink class="pl-6" :to="{ name: 'system-security-plans' }">System Security Plans</SideNavLink>
         <SideNavLink class="pl-6" :to="{ name: 'plan-of-action-and-milestones' }">Plan of Action and Milestones</SideNavLink>
