@@ -1,7 +1,10 @@
 <template>
   <button
+    type="button"
     @click="sidebarStore.toggleSidebar()"
-    class="absolute -right-3 top-8 z-50 w-6 h-6 rounded-full bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110 flex items-center justify-center group"
+    :aria-expanded="!sidebarStore.isCollapsed"
+    aria-label="Toggle sidebar"
+    class="absolute -right-3 top-24 z-50 w-6 h-6 rounded-full bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110 flex items-center justify-center group"
     title="Toggle Sidebar"
   >
     <svg 
