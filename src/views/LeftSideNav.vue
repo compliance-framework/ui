@@ -9,7 +9,7 @@ import lightMiniLogo from '@/assets/logo-light-mini.svg'
 import darkMiniLogo from '@/assets/logo-dark-mini.svg'
 import { useUserStore } from '@/stores/auth'
 import { useSidebarStore } from '@/stores/sidebar'
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
 
 const userStore = useUserStore()
 const sidebarStore = useSidebarStore()
