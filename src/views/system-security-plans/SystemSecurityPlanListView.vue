@@ -93,8 +93,10 @@ import { onMounted, ref } from 'vue'
 import PageHeader from '@/components/PageHeader.vue'
 import { type SystemSecurityPlan, useSystemSecurityPlanStore } from '@/stores/system-security-plans.ts'
 import { useToast } from 'primevue/usetoast'
+import { useConfigStore } from '@/stores/config.ts'
 
 const sspStore = useSystemSecurityPlanStore()
+const configStore = useConfigStore()
 const toast = useToast()
 
 const systemSecurityPlans = ref<SystemSecurityPlan[]>([])
@@ -120,8 +122,20 @@ function formatDate(dateString?: string): string {
 
 async function downloadJson(uuid: string, title: string): Promise<void> {
   try {
-    const response = await sspStore.full(uuid)
-    const dataStr = JSON.stringify(response.data, null, 2)
+    // Get raw API response without camelCase conversion
+    const config = await configStore.getConfig()
+    const response = await fetch(
+      `${config.API_URL}/api/oscal/system-security-plans/${uuid}/full`,
+      {
+        credentials: 'include'
+      }
+    )
+    if (!response.ok) {
+      throw response
+    }
+    const data = await response.json()
+    
+    const dataStr = JSON.stringify(data, null, 2)
     const dataBlob = new Blob([dataStr], { type: 'application/json' })
     
     const url = URL.createObjectURL(dataBlob)

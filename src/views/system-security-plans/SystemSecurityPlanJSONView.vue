@@ -43,9 +43,11 @@
 import { onMounted, ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useSystemSecurityPlanStore } from '@/stores/system-security-plans.ts'
+import { useConfigStore } from '@/stores/config.ts'
 
 const route = useRoute()
 const sspStore = useSystemSecurityPlanStore()
+const configStore = useConfigStore()
 
 const sspData = ref<any>(null)
 const loading = ref(true)
@@ -61,8 +63,18 @@ onMounted(async () => {
   const id = route.params.id as string
   
   try {
-    const response = await sspStore.full(id)
-    sspData.value = response.data
+    // Get raw API response without camelCase conversion
+    const config = await configStore.getConfig()
+    const response = await fetch(
+      `${config.API_URL}/api/oscal/system-security-plans/${id}/full`,
+      {
+        credentials: 'include'
+      }
+    )
+    if (!response.ok) {
+      throw response
+    }
+    sspData.value = await response.json()
   } catch (err) {
     console.error('Error loading System Security Plan JSON:', err)
     error.value = err instanceof Error ? err.message : 'Unknown error'
