@@ -200,7 +200,7 @@
           class="border border-gray-200 dark:border-slate-700 rounded-lg p-4"
         >
           <div class="flex justify-between items-start mb-2">
-            <h4 class="font-medium text-gray-900 dark:text-slate-300">{{ item.assetId }}</h4>
+            <h4 class="font-medium text-gray-900 dark:text-slate-300">{{ item.description || item.uuid.substring(0, 8) }}</h4>
             <button
               @click="() => {}"
               class="text-blue-600 hover:text-blue-800 dark:text-blue-400 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -223,7 +223,7 @@
                 class="text-sm bg-gray-50 dark:bg-slate-800 p-2 rounded"
               >
                 <div class="font-medium">{{ impl.componentUuid }}</div>
-                <div class="text-gray-600 dark:text-slate-400 text-xs">{{ impl.description }}</div>
+                <div v-if="impl.remarks" class="text-gray-600 dark:text-slate-400 text-xs">{{ impl.remarks }}</div>
               </div>
             </div>
           </div>
@@ -296,6 +296,7 @@ import {
   type SystemImplementation,
   type SystemImplementationUser,
   type SystemComponent,
+  type InventoryItem,
   useSystemSecurityPlanStore 
 } from '@/stores/system-security-plans.ts'
 
@@ -305,7 +306,7 @@ const sspStore = useSystemSecurityPlanStore()
 const systemImplementation = ref<SystemImplementation | null>(null)
 const users = ref<SystemImplementationUser[]>([])
 const components = ref<SystemComponent[]>([])
-const inventoryItems = ref<any[]>([])
+const inventoryItems = ref<InventoryItem[]>([])
 const leveragedAuthorizations = ref<any[]>([])
 
 const systemImplementationLoading = ref(true)
