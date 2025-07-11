@@ -37,17 +37,34 @@ function getStatusColour(status: string): RGB {
 
 export function calculateComplianceOverTimeData(
   complianceData: ComplianceInterval[],
+  addzeroStatusIfMissing: string[] = [],
 ): ChartData<'line', DateDataPoint[]> {
   // First we need to build up the status map so we can then construct a data point set.
 
-  const sortedComplianceData = complianceData
+  let sortedComplianceData = complianceData
     .map((dataPoint) => {
+      let resultStatusses = dataPoint.statuses
+
+      addzeroStatusIfMissing.forEach((status) => {
+        for (let i = 0; i < dataPoint.statuses.length; i++) {
+          if (dataPoint.statuses[i].status == status) {
+            // If we find the status in the existing list, return and forget about it.
+            return;
+          }
+        }
+        // If we haven't found the required status in then list, add it with a 0 count.
+        resultStatusses = [...resultStatusses, {
+          status: status,
+          count: 0,
+        }];
+      })
+
       return {
         interval: new Date(dataPoint.interval),
-        statuses: dataPoint.statuses,
+        statuses: resultStatusses,
       };
-    })
-    .sort((a, b) => {
+    });
+  sortedComplianceData = sortedComplianceData.sort((a, b) => {
       // Order results by their title for better UI consistency
       const x = a.interval;
       const y = b.interval;

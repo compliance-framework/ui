@@ -19,7 +19,7 @@ const complianceChartData = ref<ChartData<'line', DateDataPoint[]>>({
   datasets: [],
 })
 
-evidenceStore.getComplianceForSearch(props.filter).then((response) => {
-  complianceChartData.value = calculateComplianceOverTimeData(response.data)
+evidenceStore.getComplianceForSearch(props.filter, "0m,2m,4m,6m,8m,12m,16m,20m,25m,30m,40m,50m,1h").then((response) => {
+  complianceChartData.value = calculateComplianceOverTimeData(response.data, ['satisfied', 'not-satisfied'])
 })
 </script>
