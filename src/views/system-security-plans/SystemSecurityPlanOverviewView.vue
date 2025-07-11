@@ -149,9 +149,11 @@ import {
   type SystemCharacteristics,
   useSystemSecurityPlanStore 
 } from '@/stores/system-security-plans.ts'
+import { useConfigStore } from '@/stores/config.ts'
 
 const route = useRoute()
 const sspStore = useSystemSecurityPlanStore()
+const configStore = useConfigStore()
 
 const systemSecurityPlan = ref<SystemSecurityPlan>({} as SystemSecurityPlan)
 const systemCharacteristics = ref<SystemCharacteristics | null>(null)
@@ -215,8 +217,20 @@ function formatDate(dateString?: string): string {
 
 async function downloadJson(): Promise<void> {
   try {
-    const response = await sspStore.full(route.params.id as string)
-    const dataStr = JSON.stringify(response.data, null, 2)
+    // Get raw API response without camelCase conversion
+    const config = await configStore.getConfig()
+    const response = await fetch(
+      `${config.API_URL}/api/oscal/system-security-plans/${route.params.id}/full`,
+      {
+        credentials: 'include'
+      }
+    )
+    if (!response.ok) {
+      throw response
+    }
+    const data = await response.json()
+    
+    const dataStr = JSON.stringify(data, null, 2)
     const dataBlob = new Blob([dataStr], { type: 'application/json' })
     
     const url = URL.createObjectURL(dataBlob)
