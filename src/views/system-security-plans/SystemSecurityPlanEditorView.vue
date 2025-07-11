@@ -10,28 +10,28 @@
     <div class="mt-6 border-b border-ccf-300 dark:border-slate-700">
       <nav class="-mb-px flex space-x-8">
         <RouterLink
-          :to="`/system-security-plans/${systemSecurityPlan.uuid}`"
+          :to="`/system-security-plans/${systemSecurityPlan.uuid}/editor`"
           class="px-1 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 dark:text-slate-400 dark:hover:text-slate-300"
           exact-active-class="border-b-2 border-blue-500 text-blue-600 dark:text-blue-400"
         >
           Overview
         </RouterLink>
         <RouterLink
-          :to="`/system-security-plans/${systemSecurityPlan.uuid}/system-characteristics`"
+          :to="`/system-security-plans/${systemSecurityPlan.uuid}/editor/system-characteristics`"
           class="px-1 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 dark:text-slate-400 dark:hover:text-slate-300"
           active-class="border-b-2 border-blue-500 text-blue-600 dark:text-blue-400"
         >
           System Characteristics
         </RouterLink>
         <RouterLink
-          :to="`/system-security-plans/${systemSecurityPlan.uuid}/system-implementation`"
+          :to="`/system-security-plans/${systemSecurityPlan.uuid}/editor/system-implementation`"
           class="px-1 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 dark:text-slate-400 dark:hover:text-slate-300"
           active-class="border-b-2 border-blue-500 text-blue-600 dark:text-blue-400"
         >
           System Implementation
         </RouterLink>
         <RouterLink
-          :to="`/system-security-plans/${systemSecurityPlan.uuid}/control-implementation`"
+          :to="`/system-security-plans/${systemSecurityPlan.uuid}/editor/control-implementation`"
           class="px-1 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 dark:text-slate-400 dark:hover:text-slate-300"
           active-class="border-b-2 border-blue-500 text-blue-600 dark:text-blue-400"
         >

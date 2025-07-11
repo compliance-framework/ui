@@ -177,6 +177,12 @@
               Edit
             </button>
             <button 
+              @click.stop="attachInventoryItem(item)"
+              class="px-3 py-1 bg-green-500 text-white text-sm rounded hover:bg-green-600 transition-colors"
+            >
+              Attach
+            </button>
+            <button 
               @click.stop="downloadInventoryItemJSON(item)"
               class="px-3 py-1 bg-gray-500 text-white text-sm rounded hover:bg-gray-600 transition-colors"
             >
@@ -201,6 +207,65 @@
           <p>{{ item.remarks }}</p>
         </div>
 
+        <!-- Properties -->
+        <div v-if="item.props?.length" class="mt-4">
+          <h4 class="text-lg font-medium mb-2">Properties</h4>
+          <div class="space-y-2">
+            <div 
+              v-for="prop in item.props" 
+              :key="prop.name"
+              class="bg-gray-50 dark:bg-slate-800 p-3 rounded border"
+            >
+              <div class="font-medium text-sm">{{ prop.name }}</div>
+              <div class="text-gray-600 dark:text-slate-400 text-sm mt-1">
+                {{ prop.value }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Links -->
+        <div v-if="item.links?.length" class="mt-4">
+          <h4 class="text-lg font-medium mb-2">Links</h4>
+          <div class="space-y-2">
+            <div 
+              v-for="link in item.links" 
+              :key="link.href"
+              class="bg-gray-50 dark:bg-slate-800 p-3 rounded border"
+            >
+              <div class="font-medium text-sm">{{ link.text || link.href }}</div>
+              <div class="text-gray-600 dark:text-slate-400 text-sm mt-1">
+                <a :href="link.href" target="_blank" class="text-blue-600 hover:text-blue-800 dark:text-blue-400">
+                  {{ link.href }}
+                </a>
+              </div>
+              <div v-if="link.rel" class="text-xs text-gray-500 dark:text-slate-500 mt-1">
+                Rel: {{ link.rel }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Responsible Parties -->
+        <div v-if="item.responsibleParties?.length" class="mt-4">
+          <h4 class="text-lg font-medium mb-2">Responsible Parties</h4>
+          <div class="space-y-2">
+            <div 
+              v-for="party in item.responsibleParties" 
+              :key="party.roleId"
+              class="bg-gray-50 dark:bg-slate-800 p-3 rounded border"
+            >
+              <div class="font-medium text-sm">{{ party.roleId }}</div>
+              <div v-if="party.partyUuids?.length" class="text-gray-600 dark:text-slate-400 text-sm mt-1">
+                Parties: {{ party.partyUuids.join(', ') }}
+              </div>
+              <div v-if="party.remarks" class="text-gray-600 dark:text-slate-400 text-sm mt-1">
+                {{ party.remarks }}
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div v-if="item.implementedComponents?.length" class="mt-4">
           <h4 class="text-lg font-medium mb-2">Implemented Components</h4>
           <div class="space-y-2">
@@ -221,7 +286,7 @@
   </div>
 
   <!-- User Create Modal -->
-  <Modal v-if="showCreateUserModal" @close="showCreateUserModal = false">
+  <Modal :show="showCreateUserModal" @close="showCreateUserModal = false">
     <SystemImplementationUserCreateForm 
       :ssp-id="id"
       @cancel="showCreateUserModal = false"
@@ -230,17 +295,17 @@
   </Modal>
 
   <!-- User Edit Modal -->
-  <Modal v-if="showEditUserModal && editingUser" @close="showEditUserModal = false">
+  <Modal :show="!!(showEditUserModal && editingUser)" @close="showEditUserModal = false">
     <SystemImplementationUserEditForm 
       :ssp-id="id"
-      :user="editingUser"
+      :user="editingUser!"
       @cancel="showEditUserModal = false"
       @saved="handleUserSaved"
     />
   </Modal>
 
   <!-- Component Create Modal -->
-  <Modal v-if="showCreateComponentModal" @close="showCreateComponentModal = false">
+  <Modal :show="showCreateComponentModal" @close="showCreateComponentModal = false">
     <SystemImplementationComponentCreateForm 
       :ssp-id="id"
       @cancel="showCreateComponentModal = false"
@@ -249,17 +314,17 @@
   </Modal>
 
   <!-- Component Edit Modal -->
-  <Modal v-if="showEditComponentModal && editingComponent" @close="showEditComponentModal = false">
+  <Modal :show="!!(showEditComponentModal && editingComponent)" @close="showEditComponentModal = false">
     <SystemImplementationComponentEditForm 
       :ssp-id="id"
-      :component="editingComponent"
+      :component="editingComponent!"
       @cancel="showEditComponentModal = false"
       @saved="handleComponentSaved"
     />
   </Modal>
 
   <!-- Inventory Item Create Modal -->
-  <Modal v-if="showCreateInventoryItemModal" @close="showCreateInventoryItemModal = false">
+  <Modal :show="showCreateInventoryItemModal" @close="showCreateInventoryItemModal = false">
     <SystemImplementationInventoryItemCreateForm 
       :ssp-id="id"
       @cancel="showCreateInventoryItemModal = false"
@@ -268,12 +333,22 @@
   </Modal>
 
   <!-- Inventory Item Edit Modal -->
-  <Modal v-if="showEditInventoryItemModal && editingInventoryItem" @close="showEditInventoryItemModal = false">
+  <Modal :show="!!(showEditInventoryItemModal && editingInventoryItem)" @close="showEditInventoryItemModal = false">
     <SystemImplementationInventoryItemEditForm 
       :ssp-id="id"
-      :inventory-item="editingInventoryItem"
+      :inventory-item="editingInventoryItem!"
       @cancel="showEditInventoryItemModal = false"
       @saved="handleInventoryItemSaved"
+    />
+  </Modal>
+
+  <!-- Inventory Item Attach Modal -->
+  <Modal :show="showInventoryItemAttachModal" @close="showInventoryItemAttachModal = false">
+    <SystemImplementationInventoryItemAttachModal 
+      :ssp-id="id"
+      :item="editingInventoryItem!"
+      @cancel="showInventoryItemAttachModal = false"
+      @saved="handleInventoryItemAttached"
     />
   </Modal>
 </template>
@@ -296,6 +371,7 @@ import SystemImplementationComponentCreateForm from '@/components/system-securit
 import SystemImplementationComponentEditForm from '@/components/system-security-plans/SystemImplementationComponentEditForm.vue'
 import SystemImplementationInventoryItemCreateForm from '@/components/system-security-plans/SystemImplementationInventoryItemCreateForm.vue'
 import SystemImplementationInventoryItemEditForm from '@/components/system-security-plans/SystemImplementationInventoryItemEditForm.vue'
+import SystemImplementationInventoryItemAttachModal from '@/components/system-security-plans/SystemImplementationInventoryItemAttachModal.vue'
 import { useToast } from 'primevue/usetoast'
 import decamelizeKeys from 'decamelize-keys'
 
@@ -316,6 +392,7 @@ const showCreateComponentModal = ref(false);
 const showEditComponentModal = ref(false);
 const showCreateInventoryItemModal = ref(false);
 const showEditInventoryItemModal = ref(false);
+const showInventoryItemAttachModal = ref(false);
 
 // Edit targets
 const editingUser = ref<SystemImplementationUser | null>(null);
@@ -519,5 +596,21 @@ const deleteInventoryItem = async (item: InventoryItem) => {
       life: 5000
     });
   }
+};
+
+const attachInventoryItem = (item: InventoryItem) => {
+  editingInventoryItem.value = item;
+  showInventoryItemAttachModal.value = true;
+};
+
+const handleInventoryItemAttached = (updatedItem: InventoryItem) => {
+  if (inventoryItems.value) {
+    const index = inventoryItems.value.findIndex(i => i.uuid === updatedItem.uuid);
+    if (index !== -1) {
+      inventoryItems.value[index] = updatedItem;
+    }
+  }
+  showInventoryItemAttachModal.value = false;
+  editingInventoryItem.value = null;
 };
 </script>
