@@ -153,7 +153,7 @@ const authenticatedRoutes = [
   {
     path: '/component-definitions',
     name: 'component-definitions',
-    component: () => import('../views/ComponentDefinitionListView.vue'),
+    component: () => import('../views/component-definitions/ComponentDefinitionListView.vue'),
     meta: {
       requiresAuth: true,
     }
@@ -161,7 +161,7 @@ const authenticatedRoutes = [
   {
     path: '/component-definitions/create',
     name: 'component-definition-create',
-    component: () => import('../views/ComponentDefinitionCreateView.vue'),
+    component: () => import('../views/component-definitions/ComponentDefinitionCreateView.vue'),
     meta: {
       requiresAuth: true,
     }
@@ -169,7 +169,7 @@ const authenticatedRoutes = [
   {
     path: '/component-definitions/:id',
     name: 'component-definition-editor',
-    component: () => import('../views/ComponentDefinitionEditorView.vue'),
+    component: () => import('../views/component-definitions/ComponentDefinitionEditorView.vue'),
     meta: {
       requiresAuth: true,
     },
@@ -177,39 +177,39 @@ const authenticatedRoutes = [
       {
         path: '',
         name: 'component-definition-overview',
-        component: () => import('../views/ComponentDefinitionOverviewView.vue')
+        component: () => import('../views/component-definitions/ComponentDefinitionOverviewView.vue')
       },
       {
         path: 'import-definitions',
         name: 'component-definition-import-definitions',
-        component: () => import('../views/ComponentDefinitionImportDefinitionsView.vue')
+        component: () => import('../views/component-definitions/ComponentDefinitionImportDefinitionsView.vue')
       },
       {
         path: 'components',
         name: 'component-definition-components',
-        component: () => import('../views/ComponentDefinitionComponentsView.vue')
+        component: () => import('../views/component-definitions/ComponentDefinitionComponentsView.vue')
       },
       {
         path: 'capabilities',
         name: 'component-definition-capabilities',
-        component: () => import('../views/ComponentDefinitionCapabilitiesView.vue')
+        component: () => import('../views/component-definitions/ComponentDefinitionCapabilitiesView.vue')
       },
       {
         path: 'back-matter',
         name: 'component-definition-back-matter',
-        component: () => import('../views/ComponentDefinitionBackMatterView.vue')
+        component: () => import('../views/component-definitions/ComponentDefinitionBackMatterView.vue')
       },
       {
         path: 'json',
         name: 'component-definition-json',
-        component: () => import('../views/ComponentDefinitionJSONView.vue')
+        component: () => import('../views/component-definitions/ComponentDefinitionJSONView.vue')
       },
     ]
   },
   {
     path: '/component-definitions/:id/edit',
     name: 'component-definition-edit',
-    component: () => import('../views/ComponentDefinitionEditView.vue'),
+    component: () => import('../views/component-definitions/ComponentDefinitionEditView.vue'),
     meta: {
       requiresAuth: true,
     }
