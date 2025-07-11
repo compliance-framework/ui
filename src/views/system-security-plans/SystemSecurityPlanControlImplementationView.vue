@@ -11,7 +11,7 @@
           Edit
         </button>
       </div>
-      
+
       <div v-if="controlImplementation" class="grid grid-cols-1 gap-6">
         <div v-if="controlImplementation.source">
           <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">Source</label>
@@ -57,7 +57,7 @@
     <div v-if="controlImplementation" class="bg-white dark:bg-slate-900 border border-ccf-300 dark:border-slate-700 rounded-lg p-6">
       <div class="flex justify-between items-center mb-4">
         <h3 class="text-lg font-semibold text-gray-900 dark:text-slate-300">
-          Implemented Requirements 
+          Implemented Requirements
           <span class="text-sm font-normal text-gray-500 dark:text-slate-400">({{ controlImplementation.implementedRequirements?.length || 0 }})</span>
         </h3>
         <button
@@ -69,8 +69,8 @@
       </div>
 
       <div v-if="controlImplementation.implementedRequirements?.length" class="space-y-6">
-        <div 
-          v-for="requirement in controlImplementation.implementedRequirements" 
+        <div
+          v-for="requirement in controlImplementation.implementedRequirements"
           :key="requirement.uuid"
           class="border border-gray-200 dark:border-slate-700 rounded-lg p-4"
         >
@@ -107,8 +107,8 @@
               Statements ({{ requirement.statements.length }})
             </h5>
             <div class="space-y-3">
-              <div 
-                v-for="statement in requirement.statements" 
+              <div
+                v-for="statement in requirement.statements"
                 :key="statement.uuid"
                 class="bg-gray-50 dark:bg-slate-800 p-3 rounded border"
               >
@@ -131,13 +131,13 @@
                   </div>
                 </div>
                 <p class="text-sm text-gray-600 dark:text-slate-400">{{ statement.description }}</p>
-                
+
                 <!-- Statement By Components -->
                 <div v-if="statement.byComponents?.length" class="mt-2">
                   <span class="text-xs font-medium text-gray-700 dark:text-slate-400">By Components:</span>
                   <div class="mt-1 space-y-1">
-                    <div 
-                      v-for="byComponent in statement.byComponents" 
+                    <div
+                      v-for="byComponent in statement.byComponents"
                       :key="byComponent.uuid"
                       class="text-xs bg-white dark:bg-slate-900 p-2 rounded border"
                     >
@@ -151,7 +151,7 @@
                         </button>
                       </div>
                       <p class="text-gray-600 dark:text-slate-400 mt-1">{{ byComponent.description }}</p>
-                      
+
                       <!-- Export Information -->
                       <div v-if="byComponent.export" class="mt-2 text-xs">
                         <div v-if="byComponent.export.provided?.length" class="mb-1">
@@ -204,8 +204,8 @@
               Component Implementations ({{ requirement.byComponents.length }})
             </h5>
             <div class="space-y-2">
-              <div 
-                v-for="byComponent in requirement.byComponents" 
+              <div
+                v-for="byComponent in requirement.byComponents"
                 :key="byComponent.uuid"
                 class="bg-gray-50 dark:bg-slate-800 p-3 rounded border"
               >
@@ -233,7 +233,7 @@
 
   <!-- Control Implementation Edit Modal -->
   <Modal :show="showEditControlImplementationModal && controlImplementation !== null" @close="showEditControlImplementationModal = false" size="lg">
-    <ControlImplementationEditForm 
+    <ControlImplementationEditForm
       v-if="controlImplementation"
       :ssp-id="route.params.id as string"
       :control-implementation="controlImplementation"
@@ -244,7 +244,7 @@
 
   <!-- Requirement Create Modal -->
   <Modal :show="showCreateRequirementModal" @close="showCreateRequirementModal = false" size="lg">
-    <ImplementedRequirementCreateForm 
+    <ImplementedRequirementCreateForm
       :ssp-id="route.params.id as string"
       @cancel="showCreateRequirementModal = false"
       @created="handleRequirementCreated"
@@ -253,7 +253,7 @@
 
   <!-- Requirement Edit Modal -->
   <Modal :show="showEditRequirementModal && editingRequirement !== null" @close="showEditRequirementModal = false" size="lg">
-    <ImplementedRequirementEditForm 
+    <ImplementedRequirementEditForm
       v-if="editingRequirement"
       :ssp-id="route.params.id as string"
       :requirement="editingRequirement"
@@ -264,7 +264,7 @@
 
   <!-- Statement Edit Modal -->
   <Modal :show="showEditStatementModal && editingStatement !== null" @close="showEditStatementModal = false" size="lg">
-    <StatementEditForm 
+    <StatementEditForm
       v-if="editingStatement"
       :ssp-id="route.params.id as string"
       :req-id="editingRequirement?.uuid || ''"
@@ -276,7 +276,7 @@
 
   <!-- Statement Create Modal -->
   <Modal :show="showCreateStatementModal" @close="showCreateStatementModal = false" size="lg">
-    <StatementCreateForm 
+    <StatementCreateForm
       :ssp-id="route.params.id as string"
       :req-id="editingRequirement?.uuid || ''"
       @cancel="showCreateStatementModal = false"
@@ -289,12 +289,12 @@
 import { onMounted, ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useToast } from 'primevue/usetoast'
-import { 
+import {
   type ControlImplementation,
   type ImplementedRequirement,
   type Statement,
-  useSystemSecurityPlanStore 
-} from '@/stores/system-security-plans'
+  useSystemSecurityPlanStore
+} from '@/stores/system-security-plans.ts'
 import Modal from '@/components/Modal.vue'
 import ImplementedRequirementCreateForm from '@/components/system-security-plans/ImplementedRequirementCreateForm.vue'
 import ImplementedRequirementEditForm from '@/components/system-security-plans/ImplementedRequirementEditForm.vue'
@@ -344,7 +344,7 @@ const totalByComponents = computed(() => {
 
 onMounted(async () => {
   const id = route.params.id as string
-  
+
   try {
     const response = await sspStore.getControlImplementation(id)
     controlImplementation.value = response.data
@@ -380,11 +380,11 @@ const deleteRequirement = async (requirement: ImplementedRequirement) => {
   if (!confirm(`Are you sure you want to delete requirement "${requirement.controlId}"?`)) {
     return
   }
-  
+
   try {
     await sspStore.deleteImplementedRequirement(route.params.id as string, requirement.uuid)
     if (controlImplementation.value) {
-      controlImplementation.value.implementedRequirements = 
+      controlImplementation.value.implementedRequirements =
         controlImplementation.value.implementedRequirements.filter(r => r.uuid !== requirement.uuid)
     }
     toast.add({

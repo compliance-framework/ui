@@ -6,8 +6,8 @@ import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 
 import App from './App.vue'
 import router from './router'
-import CatalogGroup from '@/views/CatalogGroup.vue'
-import CatalogControl from '@/views/CatalogControl.vue'
+import CatalogGroup from '@/views/catalog/CatalogGroup.vue'
+import CatalogControl from '@/views/catalog/CatalogControl.vue'
 
 import PrimeVue from 'primevue/config';
 import ToastService from 'primevue/toastservice';

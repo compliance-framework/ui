@@ -45,7 +45,7 @@
 import { onMounted, ref } from 'vue'
 import PageHeader from '@/components/PageHeader.vue'
 import { type Catalog, useCatalogStore } from '@/stores/catalogs.ts'
-import type { ErrorBody, ErrorResponse } from '@/stores/types'
+import type { ErrorBody, ErrorResponse } from '@/stores/types.ts'
 import { useToast } from 'primevue/usetoast'
 
 const catalogStore = useCatalogStore()
@@ -71,7 +71,7 @@ async function downloadCatalogJSON(id: string, title: string) {
   try {
     const response = await catalogStore.full(id)
     const jsonData = JSON.stringify(response.data, null, 2)
-    
+
     // Create blob and download
     const blob = new Blob([jsonData], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
@@ -82,7 +82,7 @@ async function downloadCatalogJSON(id: string, title: string) {
     link.click()
     document.body.removeChild(link)
     URL.revokeObjectURL(url)
-    
+
     toast.add({
       severity: 'success',
       summary: 'Catalog JSON Downloaded',

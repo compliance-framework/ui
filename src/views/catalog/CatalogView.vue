@@ -22,12 +22,12 @@ import PageHeader from '@/components/PageHeader.vue'
 import { type Catalog, type Group, type Control, useCatalogStore } from '@/stores/catalogs.ts'
 import { useRoute, useRouter } from 'vue-router'
 import PageSubHeader from '@/components/PageSubHeader.vue'
-import CatalogControl from '@/views/CatalogControl.vue'
+import CatalogControl from '@/views/catalog/CatalogControl.vue'
 import TertiaryButton from '@/components/TertiaryButton.vue'
 import GroupCreateModal from '@/components/catalogs/GroupCreateModal.vue'
 import ControlCreateModal from '@/components/catalogs/ControlCreateModal.vue'
 import { useToast } from 'primevue/usetoast'
-import type { ErrorResponse, ErrorBody } from '@/stores/types'
+import type { ErrorResponse, ErrorBody } from '@/stores/types.ts'
 
 const catalogStore = useCatalogStore()
 const catalog = ref<Catalog>({} as Catalog);
