@@ -47,8 +47,10 @@ import PageHeader from '@/components/PageHeader.vue'
 import { type Catalog, useCatalogStore } from '@/stores/catalogs.ts'
 import type { ErrorBody, ErrorResponse } from '@/stores/types'
 import { useToast } from 'primevue/usetoast'
+import { useConfigStore } from '@/stores/config.ts'
 
 const catalogStore = useCatalogStore()
+const configStore = useConfigStore()
 const toast = useToast();
 
 const catalogs = ref<Catalog[]>([])
@@ -69,8 +71,20 @@ onMounted(() => {
 
 async function downloadCatalogJSON(id: string, title: string) {
   try {
-    const response = await catalogStore.full(id)
-    const jsonData = JSON.stringify(response.data, null, 2)
+    // Get raw API response without camelCase conversion
+    const config = await configStore.getConfig()
+    const response = await fetch(
+      `${config.API_URL}/api/oscal/catalogs/${id}/full`,
+      {
+        credentials: 'include'
+      }
+    )
+    if (!response.ok) {
+      throw response
+    }
+    const data = await response.json()
+    
+    const jsonData = JSON.stringify(data, null, 2)
     
     // Create blob and download
     const blob = new Blob([jsonData], { type: 'application/json' })

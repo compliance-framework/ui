@@ -46,8 +46,10 @@ import { onMounted, ref } from 'vue'
 import PageHeader from '@/components/PageHeader.vue'
 import { type ComponentDefinition, useComponentDefinitionStore } from '@/stores/component-definitions.ts'
 import { useToast } from 'primevue/usetoast'
+import { useConfigStore } from '@/stores/config.ts'
 
 const componentDefinitionStore = useComponentDefinitionStore()
+const configStore = useConfigStore()
 const toast = useToast()
 
 const componentDefinitions = ref<ComponentDefinition[]>([])
@@ -60,8 +62,20 @@ onMounted(() => {
 
 async function downloadJSON(id: string, title: string) {
   try {
-    const response = await componentDefinitionStore.full(id)
-    const jsonData = JSON.stringify(response.data, null, 2)
+    // Get raw API response without camelCase conversion
+    const config = await configStore.getConfig()
+    const response = await fetch(
+      `${config.API_URL}/api/oscal/component-definitions/${id}/full`,
+      {
+        credentials: 'include'
+      }
+    )
+    if (!response.ok) {
+      throw response
+    }
+    const data = await response.json()
+    
+    const jsonData = JSON.stringify(data, null, 2)
     
     // Create blob and download
     const blob = new Blob([jsonData], { type: 'application/json' })

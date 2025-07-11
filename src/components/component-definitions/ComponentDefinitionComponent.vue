@@ -98,6 +98,7 @@ import CollapsableGroup from '@/components/CollapsableGroup.vue'
 import TertiaryButton from '@/components/TertiaryButton.vue'
 import { useComponentDefinitionStore } from '@/stores/component-definitions.ts'
 import { useToast } from 'primevue/usetoast'
+import { useConfigStore } from '@/stores/config.ts'
 
 const props = defineProps<{
   component: any
@@ -105,6 +106,7 @@ const props = defineProps<{
 }>()
 
 const componentDefinitionStore = useComponentDefinitionStore()
+const configStore = useConfigStore()
 const toast = useToast()
 const controlImplementations = ref<any[]>([])
 const responsibleRoles = ref<any[]>([])
@@ -140,8 +142,20 @@ function editComponent() {
 
 async function downloadComponentJSON() {
   try {
-    const response = await componentDefinitionStore.getDefinedComponent(props.componentDefinitionId, props.component.uuid)
-    const jsonData = JSON.stringify(response.data, null, 2)
+    // Get raw API response without camelCase conversion
+    const config = await configStore.getConfig()
+    const response = await fetch(
+      `${config.API_URL}/api/oscal/component-definitions/${props.componentDefinitionId}/components/${props.component.uuid}`,
+      {
+        credentials: 'include'
+      }
+    )
+    if (!response.ok) {
+      throw response
+    }
+    const data = await response.json()
+    
+    const jsonData = JSON.stringify(data, null, 2)
     
     // Create blob and download
     const blob = new Blob([jsonData], { type: 'application/json' })

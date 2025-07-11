@@ -87,6 +87,36 @@ export interface SystemComponent {
   links: Link[];
 }
 
+export interface InventoryItem {
+  uuid: string;
+  description: string;
+  props?: Property[];
+  links?: Link[];
+  responsibleParties?: {
+    roleId: string;
+    partyUuids: string[];
+    props?: Property[];
+    links?: Link[];
+    remarks?: string;
+  }[];
+  implementedComponents?: ImplementedComponent[];
+  remarks?: string;
+}
+
+export interface ImplementedComponent {
+  componentUuid: string;
+  props?: Property[];
+  links?: Link[];
+  responsibleParties?: {
+    roleId: string;
+    partyUuids: string[];
+    props?: Property[];
+    links?: Link[];
+    remarks?: string;
+  }[];
+  remarks?: string;
+}
+
 export interface ResponsibleRole {
   roleId: string;
   props: Property[];
@@ -452,7 +482,7 @@ export const useSystemSecurityPlanStore = defineStore(
 
     async function getSystemImplementationInventoryItems(
       id: string,
-    ): Promise<DataResponse<any[]>> {
+    ): Promise<DataResponse<InventoryItem[]>> {
       const config = await configStore.getConfig();
       const response = await fetch(
         `${config.API_URL}/api/oscal/system-security-plans/${id}/system-implementation/inventory-items`,
@@ -465,7 +495,7 @@ export const useSystemSecurityPlanStore = defineStore(
       }
       return camelcaseKeys(await response.json(), {
         deep: true,
-      }) as DataResponse<any[]>;
+      }) as DataResponse<InventoryItem[]>;
     }
 
     async function getSystemImplementationLeveragedAuthorizations(
@@ -489,8 +519,8 @@ export const useSystemSecurityPlanStore = defineStore(
     async function updateSystemImplementationInventoryItem(
       id: string,
       itemId: string,
-      item: any,
-    ): Promise<DataResponse<any>> {
+      item: InventoryItem,
+    ): Promise<DataResponse<InventoryItem>> {
       const config = await configStore.getConfig();
       const response = await fetch(
         `${config.API_URL}/api/oscal/system-security-plans/${id}/system-implementation/inventory-items/${itemId}`,
@@ -506,13 +536,13 @@ export const useSystemSecurityPlanStore = defineStore(
       if (!response.ok) {
         throw response;
       }
-      return camelcaseKeys(await response.json(), { deep: true }) as DataResponse<any>;
+      return camelcaseKeys(await response.json(), { deep: true }) as DataResponse<InventoryItem>;
     }
 
     async function createSystemImplementationInventoryItem(
       id: string,
-      item: any,
-    ): Promise<DataResponse<any>> {
+      item: InventoryItem,
+    ): Promise<DataResponse<InventoryItem>> {
       const config = await configStore.getConfig();
       const response = await fetch(
         `${config.API_URL}/api/oscal/system-security-plans/${id}/system-implementation/inventory-items`,
@@ -528,7 +558,7 @@ export const useSystemSecurityPlanStore = defineStore(
       if (!response.ok) {
         throw response;
       }
-      return camelcaseKeys(await response.json(), { deep: true }) as DataResponse<any>;
+      return camelcaseKeys(await response.json(), { deep: true }) as DataResponse<InventoryItem>;
     }
 
     async function deleteSystemImplementationUser(
@@ -538,6 +568,23 @@ export const useSystemSecurityPlanStore = defineStore(
       const config = await configStore.getConfig();
       const response = await fetch(
         `${config.API_URL}/api/oscal/system-security-plans/${id}/system-implementation/users/${userId}`,
+        {
+          method: 'DELETE',
+          credentials: 'include',
+        }
+      );
+      if (!response.ok) {
+        throw response;
+      }
+    }
+
+    async function deleteSystemImplementationInventoryItem(
+      id: string,
+      itemId: string,
+    ): Promise<void> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/system-security-plans/${id}/system-implementation/inventory-items/${itemId}`,
         {
           method: 'DELETE',
           credentials: 'include',
@@ -883,6 +930,7 @@ export const useSystemSecurityPlanStore = defineStore(
       deleteSystemImplementationComponent,
       updateSystemImplementationInventoryItem,
       createSystemImplementationInventoryItem,
+      deleteSystemImplementationInventoryItem,
 
       getControlImplementation,
       updateControlImplementation,
