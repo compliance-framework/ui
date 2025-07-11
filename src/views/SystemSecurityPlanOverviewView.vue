@@ -143,7 +143,7 @@
 
 <script setup lang="ts">
 import { onMounted, ref, computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { 
   type SystemSecurityPlan, 
   type SystemCharacteristics,
@@ -152,6 +152,7 @@ import {
 import { useConfigStore } from '@/stores/config.ts'
 
 const route = useRoute()
+const router = useRouter()
 const sspStore = useSystemSecurityPlanStore()
 const configStore = useConfigStore()
 
@@ -248,22 +249,18 @@ async function downloadJson(): Promise<void> {
 
 // Placeholder functions for editing functionality
 const editMetadata = () => {
-  console.log('Edit Metadata - functionality coming soon')
-  alert('Metadata editing functionality is in development')
+  router.push(`/system-security-plans/${systemSecurityPlan.value.uuid}/editor`)
 }
 
 const editSystemCharacteristics = () => {
-  console.log('Edit System Characteristics - functionality coming soon')
-  alert('System Characteristics editing functionality is in development')
+  router.push(`/system-security-plans/${systemSecurityPlan.value.uuid}/editor/system-characteristics`)
 }
 
 const editImplementation = () => {
-  console.log('Edit Implementation - functionality coming soon')
-  alert('Implementation editing functionality is in development')
+  router.push(`/system-security-plans/${systemSecurityPlan.value.uuid}/editor/system-implementation`)
 }
 
 const editControls = () => {
-  console.log('Edit Controls - functionality coming soon')
-  alert('Controls editing functionality is in development')
+  router.push(`/system-security-plans/${systemSecurityPlan.value.uuid}/editor/control-implementation`)
 }
 </script>
