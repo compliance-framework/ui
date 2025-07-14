@@ -117,6 +117,16 @@ export interface ImplementedComponent {
   remarks?: string;
 }
 
+export interface LeveragedAuthorization {
+  uuid: string;
+  title: string;
+  partyUuid: string;
+  dateAuthorized: string;
+  remarks?: string;
+  props?: Property[];
+  links?: Link[];
+}
+
 export interface ResponsibleRole {
   roleId: string;
   props: Property[];
@@ -444,6 +454,30 @@ export const useSystemSecurityPlanStore = defineStore(
       }) as DataResponse<SystemImplementation>;
     }
 
+    async function updateSystemImplementation(
+      id: string,
+      systemImplementation: SystemImplementation
+    ): Promise<DataResponse<SystemImplementation>> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/system-security-plans/${id}/system-implementation`,
+        {
+          method: 'PUT',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(decamelizeKeys(systemImplementation, { separator: '-' })),
+        }
+      );
+      if (!response.ok) {
+        throw response;
+      }
+      return camelcaseKeys(await response.json(), {
+        deep: true,
+      }) as DataResponse<SystemImplementation>;
+    }
+
     async function getSystemImplementationUsers(
       id: string,
     ): Promise<DataResponse<SystemImplementationUser[]>> {
@@ -519,7 +553,7 @@ export const useSystemSecurityPlanStore = defineStore(
 
     async function getSystemImplementationLeveragedAuthorizations(
       id: string,
-    ): Promise<DataResponse<any[]>> {
+    ): Promise<DataResponse<LeveragedAuthorization[]>> {
       const config = await configStore.getConfig();
       const response = await fetch(
         `${config.API_URL}/api/oscal/system-security-plans/${id}/system-implementation/leveraged-authorizations`,
@@ -532,7 +566,73 @@ export const useSystemSecurityPlanStore = defineStore(
       }
       return camelcaseKeys(await response.json(), {
         deep: true,
-      }) as DataResponse<any[]>;
+      }) as DataResponse<LeveragedAuthorization[]>;
+    }
+
+    async function createSystemImplementationLeveragedAuthorization(
+      id: string,
+      auth: Partial<LeveragedAuthorization>
+    ): Promise<DataResponse<LeveragedAuthorization>> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/system-security-plans/${id}/system-implementation/leveraged-authorizations`,
+        {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(decamelizeKeys(auth, { separator: '-' })),
+        }
+      );
+      if (!response.ok) {
+        throw response;
+      }
+      return camelcaseKeys(await response.json(), {
+        deep: true,
+      }) as DataResponse<LeveragedAuthorization>;
+    }
+
+    async function updateSystemImplementationLeveragedAuthorization(
+      id: string,
+      authId: string,
+      auth: LeveragedAuthorization
+    ): Promise<DataResponse<LeveragedAuthorization>> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/system-security-plans/${id}/system-implementation/leveraged-authorizations/${authId}`,
+        {
+          method: 'PUT',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(decamelizeKeys(auth, { separator: '-' })),
+        }
+      );
+      if (!response.ok) {
+        throw response;
+      }
+      return camelcaseKeys(await response.json(), {
+        deep: true,
+      }) as DataResponse<LeveragedAuthorization>;
+    }
+
+    async function deleteSystemImplementationLeveragedAuthorization(
+      id: string,
+      authId: string
+    ): Promise<void> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/system-security-plans/${id}/system-implementation/leveraged-authorizations/${authId}`,
+        {
+          method: 'DELETE',
+          credentials: 'include',
+        }
+      );
+      if (!response.ok) {
+        throw response;
+      }
     }
 
     async function updateSystemImplementationInventoryItem(
@@ -937,10 +1037,14 @@ export const useSystemSecurityPlanStore = defineStore(
       updateCharacteristicsDataFlowDiagram,
 
       getSystemImplementation,
+      updateSystemImplementation,
       getSystemImplementationUsers,
       getSystemImplementationComponents,
       getSystemImplementationInventoryItems,
       getSystemImplementationLeveragedAuthorizations,
+      createSystemImplementationLeveragedAuthorization,
+      updateSystemImplementationLeveragedAuthorization,
+      deleteSystemImplementationLeveragedAuthorization,
       updateSystemImplementationUser,
       createSystemImplementationUser,
       deleteSystemImplementationUser,
