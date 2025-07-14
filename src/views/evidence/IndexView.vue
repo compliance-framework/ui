@@ -173,7 +173,7 @@ const items = computed(() => [
   }
 ]);
 
-function toggleMenu(event) {
+function toggleMenu(event: Event) {
   menu.value.toggle(event);
 }
 

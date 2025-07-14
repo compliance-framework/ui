@@ -61,7 +61,7 @@ const op = ref();
 
 const configStore = useConfigStore();
 
-function toggle(event, labels) {
+function toggle(event: Event, labels: EvidenceLabel[]) {
   popoverLabels.value = labels.map((label:EvidenceLabel) => `${label.name}=${label.value}`);
   op.value.toggle(event);
 };
