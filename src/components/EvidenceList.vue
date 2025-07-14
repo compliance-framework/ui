@@ -14,7 +14,10 @@
       </td>
       <td class="py-3 px-2 whitespace-nowrap grow">{{ item.title }}</td>
       <td class="px-2" v-if="configStore.showLabels">
-        <LabelList :labels="item.labels" />
+        <div class="h-full flex items-center">
+          <button v-tooltip.top="'Show hidden labels'" type="button" class="cursor-pointer mr-2" @click="toggle($event, item.labels)"><BIconEye /></button>
+          <LabelList :show-all="configStore.showHiddenLabels" :labels="item.labels" />
+        </div>
       </td>
       <td class="py-2 px-2 text-right whitespace-nowrap">
         <RouterLink
@@ -31,12 +34,35 @@
     </tr>
     </tbody>
   </table>
+  <Popover ref="op" class=" max-w-[40rem]">
+    <div class="flex gap-2 items-center flex-wrap">
+      <Chip
+        class="mx-0.5 text-sm"
+        v-for="(label) in popoverLabels"
+        :key="label"
+        :label="label"
+      />
+    </div>
+  </Popover>
 </template>
 <script setup lang="ts">
 import LabelList from '@/components/LabelList.vue'
 import ResultStatusRing from '@/components/ResultStatusRing.vue'
 import { useConfigStore } from '@/stores/config.ts'
+import Popover from '@/volt/Popover.vue';
+import { ref } from 'vue'
+import type { EvidenceLabel } from '@/stores/evidence.ts'
+import Chip from '@/volt/Chip.vue'
+import { BIconEye } from 'bootstrap-icons-vue'
 
 defineProps(['evidence'])
+const popoverLabels = ref<string[]>([]);
+const op = ref();
+
 const configStore = useConfigStore();
+
+function toggle(event, labels) {
+  popoverLabels.value = labels.map((label:EvidenceLabel) => `${label.name}=${label.value}`);
+  op.value.toggle(event);
+};
 </script>

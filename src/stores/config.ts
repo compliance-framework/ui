@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import builtInConfig from '../defaultconfig.json'
+import type { EvidenceLabel } from '@/stores/evidence.ts'
 
 export interface Config {
   API_URL: string
@@ -9,6 +10,7 @@ export interface Config {
 export const useConfigStore = defineStore('config', () => {
   const config = ref<Config>()
   const showLabels = ref<boolean>(true);
+  const showHiddenLabels = ref<boolean>(false);
 
   async function getConfig(): Promise<Config> {
     if (config.value) {
@@ -39,5 +41,9 @@ export const useConfigStore = defineStore('config', () => {
     showLabels.value = !showLabels.value
   }
 
-  return { showLabels, toggleLabels, getConfig }
+  function toggleHiddenLabels() {
+    showHiddenLabels.value = !showHiddenLabels.value
+  }
+
+  return { showLabels, showHiddenLabels, toggleLabels, toggleHiddenLabels, getConfig }
 })
