@@ -135,62 +135,13 @@
                 <!-- Statement By Components -->
                 <div v-if="statement.byComponents?.length" class="mt-2">
                   <span class="text-xs font-medium text-gray-700 dark:text-slate-400">By Components:</span>
-                  <div class="mt-1 space-y-1">
+                  <div class="mt-1 space-y-1" v-if="ssp.uuid">
                     <div
                       v-for="byComponent in statement.byComponents"
                       :key="byComponent.uuid"
                       class="text-xs bg-white dark:bg-slate-900 p-2 rounded border"
                     >
-                      <div class="flex justify-between items-start">
-                        <span class="font-medium">{{ byComponent.componentUuid }}</span>
-                        <button
-                          @click="editByComponent(statement, byComponent)"
-                          class="text-blue-600 hover:text-blue-800 dark:text-blue-400 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          Edit
-                        </button>
-                      </div>
-                      <p class="text-gray-600 dark:text-slate-400 mt-1">{{ byComponent.description }}</p>
-
-                      <!-- Export Information -->
-                      <div v-if="byComponent.export" class="mt-2 text-xs">
-                        <div v-if="byComponent.export.provided?.length" class="mb-1">
-                          <span class="font-medium text-green-700 dark:text-green-400">Provided:</span>
-                          <div class="ml-2">
-                            <div v-for="provided in byComponent.export.provided" :key="provided.uuid" class="text-green-600 dark:text-green-400">
-                              {{ provided.description }}
-                            </div>
-                          </div>
-                        </div>
-                        <div v-if="byComponent.export.responsibilities?.length" class="mb-1">
-                          <span class="font-medium text-orange-700 dark:text-orange-400">Responsibilities:</span>
-                          <div class="ml-2">
-                            <div v-for="responsibility in byComponent.export.responsibilities" :key="responsibility.uuid" class="text-orange-600 dark:text-orange-400">
-                              {{ responsibility.description }}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      <!-- Satisfied Requirements -->
-                      <div v-if="byComponent.satisfied?.length" class="mt-2 text-xs">
-                        <span class="font-medium text-blue-700 dark:text-blue-400">Satisfied:</span>
-                        <div class="ml-2">
-                          <div v-for="satisfied in byComponent.satisfied" :key="satisfied.uuid" class="text-blue-600 dark:text-blue-400">
-                            {{ satisfied.description }}
-                          </div>
-                        </div>
-                      </div>
-
-                      <!-- Inherited Requirements -->
-                      <div v-if="byComponent.inherited?.length" class="mt-2 text-xs">
-                        <span class="font-medium text-purple-700 dark:text-purple-400">Inherited:</span>
-                        <div class="ml-2">
-                          <div v-for="inherited in byComponent.inherited" :key="inherited.uuid" class="text-purple-600 dark:text-purple-400">
-                            {{ inherited.description }}
-                          </div>
-                        </div>
-                      </div>
+                      <StatementByComponent :ssp="ssp" :statement="statement" :by-component="byComponent" />
                     </div>
                   </div>
                 </div>
@@ -292,7 +243,7 @@ import { useToast } from 'primevue/usetoast'
 import {
   type ControlImplementation,
   type ImplementedRequirement,
-  type Statement,
+  type Statement, type SystemSecurityPlan,
   useSystemSecurityPlanStore
 } from '@/stores/system-security-plans.ts'
 import Modal from '@/components/Modal.vue'
@@ -301,6 +252,7 @@ import ImplementedRequirementEditForm from '@/components/system-security-plans/I
 import ControlImplementationEditForm from '@/components/system-security-plans/ControlImplementationEditForm.vue'
 import StatementEditForm from '@/components/system-security-plans/StatementEditForm.vue'
 import StatementCreateForm from '@/components/system-security-plans/StatementCreateForm.vue'
+import StatementByComponent from '@/views/system-security-plans/partials/StatementByComponent.vue'
 
 const route = useRoute()
 const sspStore = useSystemSecurityPlanStore()
@@ -320,6 +272,8 @@ const showCreateStatementModal = ref(false)
 // Edit targets
 const editingRequirement = ref<ImplementedRequirement | null>(null)
 const editingStatement = ref<Statement | null>(null)
+
+const ssp = ref<SystemSecurityPlan>({} as SystemSecurityPlan);
 
 const totalStatements = computed(() => {
   if (!controlImplementation.value?.implementedRequirements) return 0
@@ -344,6 +298,10 @@ const totalByComponents = computed(() => {
 
 onMounted(async () => {
   const id = route.params.id as string
+
+  sspStore.get(id).then((res) => {
+    ssp.value = res.data
+  })
 
   try {
     const response = await sspStore.getControlImplementation(id)
