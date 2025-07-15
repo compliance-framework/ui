@@ -135,7 +135,7 @@
                 <!-- Statement By Components -->
                 <div v-if="statement.byComponents?.length" class="mt-2">
                   <span class="text-xs font-medium text-gray-700 dark:text-slate-400">By Components:</span>
-                  <div class="mt-1 space-y-1" v-if="ssp">
+                  <div class="mt-1 space-y-1" v-if="ssp.uuid">
                     <div
                       v-for="byComponent in statement.byComponents"
                       :key="byComponent.uuid"
