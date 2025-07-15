@@ -450,6 +450,25 @@ export const useSystemSecurityPlanStore = defineStore(
       }) as DataResponse<SystemComponent[]>;
     }
 
+    async function getSystemImplementationComponent(
+      id: string,
+      componentId: string,
+    ): Promise<DataResponse<SystemComponent>> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/system-security-plans/${id}/system-implementation/components/${componentId}`,
+        {
+          credentials: 'include',
+        }
+      );
+      if (!response.ok) {
+        throw response;
+      }
+      return camelcaseKeys(await response.json(), {
+        deep: true,
+      }) as DataResponse<SystemComponent>;
+    }
+
     async function getSystemImplementationInventoryItems(
       id: string,
     ): Promise<DataResponse<any[]>> {
@@ -878,6 +897,7 @@ export const useSystemSecurityPlanStore = defineStore(
       updateSystemImplementationUser,
       createSystemImplementationUser,
       deleteSystemImplementationUser,
+      getSystemImplementationComponent,
       updateSystemImplementationComponent,
       createSystemImplementationComponent,
       deleteSystemImplementationComponent,
