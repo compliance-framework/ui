@@ -285,14 +285,19 @@ const updateComponent = async () => {
     
     emit('saved', response.data);
   } catch (error) {
-    console.error('Failed to update component:', error);
     let errorMessage = 'Failed to update component. Please try again.';
     
     if (error instanceof Response) {
       if (error.status === 404) {
         errorMessage = 'Component not found. It may have been deleted or the system security plan may not exist.';
+      } else if (error.status === 400) {
+        errorMessage = 'Invalid component data. Please check all required fields.';
+      } else if (error.status === 409) {
+        errorMessage = 'Update conflict. Please refresh and try again.';
+      } else if (error.status === 500) {
+        errorMessage = 'Server error occurred. Please try again later.';
       } else {
-        errorMessage = `HTTP ${error.status}: ${error.statusText}`;
+        errorMessage = `Error: ${error.status} ${error.statusText}`;
       }
     }
     

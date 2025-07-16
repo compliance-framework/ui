@@ -607,7 +607,6 @@ const editComponent = async (component: SystemComponent) => {
     editingComponent.value = response.data;
     showEditComponentModal.value = true;
   } catch (error) {
-    console.error('Failed to fetch component for editing:', error);
     toast.add({
       severity: 'error',
       summary: 'Error',
@@ -630,7 +629,6 @@ const handleComponentCreated = async (newComponent: SystemComponent) => {
       const data = await sspStore.getSystemImplementationComponents(id);
       const foundComponent = data.data.find(c => c.uuid === newComponent.uuid);
       if (!foundComponent) {
-        console.error('Component was not found in backend after creation!', newComponent);
         toast.add({
           severity: 'warning',
           summary: 'Warning',
@@ -641,11 +639,9 @@ const handleComponentCreated = async (newComponent: SystemComponent) => {
         if (components.value) {
           components.value = components.value.filter(c => c.uuid !== newComponent.uuid);
         }
-      } else {
-        console.log('Component verified in backend:', foundComponent);
       }
     } catch (error) {
-      console.error('Failed to verify component creation:', error);
+      // Silently fail verification - the component creation already succeeded
     }
   }, 1000);
 };
@@ -689,11 +685,20 @@ const deleteComponent = async (component: SystemComponent) => {
       life: 3000
     });
   } catch (error) {
-    console.error('Failed to delete component:', error);
+    let errorDetail = 'Failed to delete component. Please try again.';
+    
+    if (error instanceof Response) {
+      if (error.status === 404) {
+        errorDetail = 'Component not found. It may have already been deleted.';
+      } else if (error.status === 409) {
+        errorDetail = 'Cannot delete component. It may be in use.';
+      }
+    }
+    
     toast.add({
       severity: 'error',
       summary: 'Error',
-      detail: 'Failed to delete component. Please try again.',
+      detail: errorDetail,
       life: 5000
     });
   }
