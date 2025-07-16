@@ -1,15 +1,14 @@
 import { defineStore } from 'pinia';
 import { useConfigStore } from '@/stores/config.ts';
 import type {
-  Activity, DataResponse,
+  DataResponse,
   Link,
-  Origin,
   Property,
-  RelevantEvidence
 } from '@/stores/types.ts'
 
 export interface Subject {
   _id: string;
+  uuid: string;
   type: string;
   title?: string;
   remarks?: string;

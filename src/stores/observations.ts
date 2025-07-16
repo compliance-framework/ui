@@ -1,12 +1,13 @@
 import { defineStore } from 'pinia';
 import { useConfigStore } from '@/stores/config.ts';
+import type { Activity } from '@/stores/activities.ts';
 import type {
-  Activity, DataResponse,
+  DataResponse,
   Link,
   Origin,
   Property,
-  RelevantEvidence
-} from '@/stores/types.ts'
+  RelevantEvidence,
+} from '@/stores/types.ts';
 
 export interface Observation {
   _id?: string;

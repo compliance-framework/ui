@@ -215,6 +215,65 @@ const authenticatedRoutes = [
     }
   },
   {
+    path: '/assessment-plans',
+    name: 'assessment-plans',
+    component: () => import('../views/assessment-plans/AssessmentPlanListView.vue'),
+    meta: {
+      requiresAuth: true,
+    }
+  },
+  {
+    path: '/assessment-plans/create',
+    name: 'assessment-plan-create',
+    component: () => import('../views/assessment-plans/AssessmentPlanCreateView.vue'),
+    meta: {
+      requiresAuth: true,
+    }
+  },
+  {
+    path: '/assessment-plans/:id',
+    name: 'assessment-plan-editor',
+    component: () => import('../views/assessment-plans/AssessmentPlanEditorView.vue'),
+    meta: {
+      requiresAuth: true,
+    },
+    children: [
+      {
+        path: '',
+        name: 'assessment-plan-overview',
+        component: () => import('../views/assessment-plans/AssessmentPlanOverviewView.vue')
+      },
+      {
+        path: 'tasks',
+        name: 'assessment-plan-tasks',
+        component: () => import('../views/assessment-plans/AssessmentPlanTasksView.vue')
+      },
+      {
+        path: 'subjects',
+        name: 'assessment-plan-subjects',
+        component: () => import('../views/assessment-plans/AssessmentPlanSubjectsView.vue')
+      },
+      {
+        path: 'assets',
+        name: 'assessment-plan-assets',
+        component: () => import('../views/assessment-plans/AssessmentPlanAssetsView.vue')
+      },
+      {
+        path: 'json',
+        name: 'assessment-plan-json',
+        component: () => import('../views/assessment-plans/AssessmentPlanJSONView.vue')
+      },
+    ]
+  },
+  {
+    path: '/assessment-plans/:id/edit',
+    name: 'assessment-plan-edit',
+    component: () => import('../views/assessment-plans/AssessmentPlanEditView.vue'),
+    meta: {
+      requiresAuth: true,
+    }
+  },
+  {
     path: '/subject/:id',
     name: 'admin-subject-crud',
     component: () => import('../views/SubjectEditView.vue'),

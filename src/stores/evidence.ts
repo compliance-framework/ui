@@ -1,14 +1,13 @@
 import { defineStore } from 'pinia';
 import { useConfigStore } from '@/stores/config.ts';
 import { type Filter } from '@/parsers/labelfilter.ts';
+import type {Activity} from '@/stores/activities.ts';
 import type {
-  Activity,
   DataResponse,
   Link,
   Property
 } from '@/stores/types.ts'
-import type { Catalog, Control } from '@/stores/catalogs.ts'
-import type { Dashboard } from '@/stores/filters.ts'
+import type { Control } from '@/stores/catalogs.ts'
 
 export interface EvidenceStatus {
   reason: string

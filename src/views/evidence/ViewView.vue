@@ -83,7 +83,7 @@ import { useRoute } from 'vue-router';
 import PageHeader from '@/components/PageHeader.vue';
 import PageCard from '@/components/PageCard.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
-import type { Activity } from '@/stores/types.ts'
+import type { Activity } from '@/stores/activities.ts'
 import SecondaryButton from '@/volt/SecondaryButton.vue'
 
 import Dialog from '@/volt/Dialog.vue';
