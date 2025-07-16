@@ -8,6 +8,10 @@ const props = defineProps<{
   statement: Statement,
   byComponent: ByComponent,
 }>()
+
+const emit = defineEmits<{
+  edit: [byComponent: ByComponent]
+}>()
 const component = ref<SystemComponent>({} as SystemComponent)
 
 const sspStore = useSystemSecurityPlanStore()
@@ -19,8 +23,7 @@ onMounted(() => {
 })
 
 function edit() {
-  console.log('Edit Statement By Component:', props.statement, props.byComponent)
-  alert('Statement By Component editing functionality is in development')
+  emit('edit', props.byComponent)
 }
 </script>
 

@@ -272,12 +272,25 @@ const createComponent = async () => {
     return;
   }
 
+  // Clean up protocols - remove empty ones
+  if (componentData.protocols) {
+    componentData.protocols = componentData.protocols.filter(p => p.title || p.name);
+  }
+
   saving.value = true;
   try {
+    console.log('Creating component with data:', componentData);
     const response = await sspStore.createSystemImplementationComponent(
       props.sspId,
       componentData
     );
+    
+    console.log('Component creation response:', response);
+    
+    // Verify the component was actually created
+    if (!response.data || !response.data.uuid) {
+      throw new Error('Invalid response from server - component may not have been created');
+    }
     
     toast.add({
       severity: 'success',
@@ -289,6 +302,10 @@ const createComponent = async () => {
     emit('created', response.data);
   } catch (error) {
     console.error('Failed to create component:', error);
+    if (error instanceof Response) {
+      const errorBody = await error.text();
+      console.error('Error response body:', errorBody);
+    }
     const errorMessage = error instanceof Response 
       ? `HTTP ${error.status}: ${error.statusText}`
       : 'Failed to create component. Please try again.';

@@ -600,14 +600,54 @@ const deleteUser = async (user: SystemImplementationUser) => {
 };
 
 // Component management
-const editComponent = (component: SystemComponent) => {
-  editingComponent.value = component;
-  showEditComponentModal.value = true;
+const editComponent = async (component: SystemComponent) => {
+  // Verify the component still exists before editing
+  try {
+    const response = await sspStore.getSystemImplementationComponent(id, component.uuid);
+    editingComponent.value = response.data;
+    showEditComponentModal.value = true;
+  } catch (error) {
+    console.error('Failed to fetch component for editing:', error);
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'Component not found. Please refresh the page.',
+      life: 5000
+    });
+    // Refresh the component list
+    loadData();
+  }
 };
 
-const handleComponentCreated = (newComponent: SystemComponent) => {
+const handleComponentCreated = async (newComponent: SystemComponent) => {
+  // Add the component to the local array
   components.value?.push(newComponent);
   showCreateComponentModal.value = false;
+  
+  // Verify by reloading components from backend after a short delay
+  setTimeout(async () => {
+    try {
+      const data = await sspStore.getSystemImplementationComponents(id);
+      const foundComponent = data.data.find(c => c.uuid === newComponent.uuid);
+      if (!foundComponent) {
+        console.error('Component was not found in backend after creation!', newComponent);
+        toast.add({
+          severity: 'warning',
+          summary: 'Warning',
+          detail: 'Component may not have been saved properly. Please refresh the page.',
+          life: 5000
+        });
+        // Remove from local array if not found in backend
+        if (components.value) {
+          components.value = components.value.filter(c => c.uuid !== newComponent.uuid);
+        }
+      } else {
+        console.log('Component verified in backend:', foundComponent);
+      }
+    } catch (error) {
+      console.error('Failed to verify component creation:', error);
+    }
+  }, 1000);
 };
 
 const handleComponentSaved = (updatedComponent: SystemComponent) => {
