@@ -41,7 +41,6 @@ export interface SystemImplementation {
   props: Property[];
   links: Link[];
   remarks?: string;
-  description?: string;
 }
 
 export interface SystemImplementationUser {
@@ -459,6 +458,8 @@ export const useSystemSecurityPlanStore = defineStore(
       systemImplementation: SystemImplementation
     ): Promise<DataResponse<SystemImplementation>> {
       const config = await configStore.getConfig();
+      const requestBody = decamelizeKeys(systemImplementation, { separator: '-' });
+      
       const response = await fetch(
         `${config.API_URL}/api/oscal/system-security-plans/${id}/system-implementation`,
         {
@@ -467,13 +468,17 @@ export const useSystemSecurityPlanStore = defineStore(
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(decamelizeKeys(systemImplementation, { separator: '-' })),
+          body: JSON.stringify(requestBody),
         }
       );
+      
       if (!response.ok) {
         throw response;
       }
-      return camelcaseKeys(await response.json(), {
+      
+      const responseData = await response.json();
+      
+      return camelcaseKeys(responseData, {
         deep: true,
       }) as DataResponse<SystemImplementation>;
     }
@@ -510,8 +515,6 @@ export const useSystemSecurityPlanStore = defineStore(
         throw response;
       }
       const data = await response.json();
-      console.log('Fetched components raw response:', data);
-      console.log('Number of components:', data.data?.length || 0);
       
       return camelcaseKeys(data, {
         deep: true,
@@ -827,7 +830,6 @@ export const useSystemSecurityPlanStore = defineStore(
     ): Promise<DataResponse<SystemComponent>> {
       const config = await configStore.getConfig();
       const requestBody = decamelizeKeys(component, { separator: '-' });
-      console.log('Creating component with request body:', JSON.stringify(requestBody, null, 2));
       
       const response = await fetch(
         `${config.API_URL}/api/oscal/system-security-plans/${id}/system-implementation/components`,
@@ -844,13 +846,8 @@ export const useSystemSecurityPlanStore = defineStore(
         throw response;
       }
       const responseData = await response.json();
-      console.log('Component creation raw response:', responseData);
-      console.log('Response data property:', responseData.data);
       
-      const result = camelcaseKeys(responseData, { deep: true }) as DataResponse<SystemComponent>;
-      console.log('Camelcased response:', result);
-      
-      return result;
+      return camelcaseKeys(responseData, { deep: true }) as DataResponse<SystemComponent>;
     }
 
     async function full(id: string): Promise<DataResponse<SystemSecurityPlan>> {

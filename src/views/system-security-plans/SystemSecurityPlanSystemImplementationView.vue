@@ -13,11 +13,6 @@
       </div>
       
       <div v-if="systemImplementation" class="grid grid-cols-1 gap-6">
-        <div v-if="systemImplementation.description">
-          <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">Description</label>
-          <p class="text-gray-900 dark:text-slate-300">{{ systemImplementation.description }}</p>
-        </div>
-
         <div v-if="systemImplementation.remarks">
           <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">Remarks</label>
           <p class="text-gray-900 dark:text-slate-300">{{ systemImplementation.remarks }}</p>
