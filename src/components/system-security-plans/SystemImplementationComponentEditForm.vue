@@ -286,9 +286,16 @@ const updateComponent = async () => {
     emit('saved', response.data);
   } catch (error) {
     console.error('Failed to update component:', error);
-    const errorMessage = error instanceof Response 
-      ? `HTTP ${error.status}: ${error.statusText}`
-      : 'Failed to update component. Please try again.';
+    let errorMessage = 'Failed to update component. Please try again.';
+    
+    if (error instanceof Response) {
+      if (error.status === 404) {
+        errorMessage = 'Component not found. It may have been deleted or the system security plan may not exist.';
+      } else {
+        errorMessage = `HTTP ${error.status}: ${error.statusText}`;
+      }
+    }
+    
     toast.add({
       severity: 'error',
       summary: 'Error',
