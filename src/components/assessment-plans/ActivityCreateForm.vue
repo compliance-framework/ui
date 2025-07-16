@@ -81,7 +81,7 @@ async function createActivity(): Promise<void> {
   }
 
   try {
-    const activityResult = await actitivityStore.create(activity.value)
+    const activityResult = await activityStore.create(activity.value)
     await assessmentPlanStore.associateActivity(props.assessmentPlan.uuid, props.task.uuid, activityResult.data.uuid)
 
     toast.add({
