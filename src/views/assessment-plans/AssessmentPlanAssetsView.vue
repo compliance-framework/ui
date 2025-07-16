@@ -171,29 +171,37 @@ async function onAssetUpdated(asset: AssessmentAsset) {
 }
 
 async function removeAsset(index: number) {
-  if (confirm('Are you sure you want to remove this asset?')) {
-    try {
-      assets.value.splice(index, 1)
+  confirm.require({
+    message: 'Are you sure you want to remove this asset?',
+    header: 'Confirmation',
+    icon: 'pi pi-exclamation-triangle',
+    accept: async () => {
+      try {
+        assets.value.splice(index, 1)
 
-      // Save to backend
-      const id = route.params.id as string
-      await assessmentPlanStore.updateAssessmentAssets(id, assets.value)
+        // Save to backend
+        const id = route.params.id as string
+        await assessmentPlanStore.updateAssessmentAssets(id, assets.value)
 
-      toast.add({
-        severity: 'success',
-        summary: 'Asset Removed',
-        detail: 'Asset has been removed successfully',
-        life: 3000
-      })
-    } catch (error) {
-      toast.add({
-        severity: 'error',
-        summary: 'Error removing asset',
-        detail: 'Failed to remove asset. Please try again.',
-        life: 3000
-      })
+        toast.add({
+          severity: 'success',
+          summary: 'Asset Removed',
+          detail: 'Asset has been removed successfully',
+          life: 3000
+        })
+      } catch (error) {
+        toast.add({
+          severity: 'error',
+          summary: 'Error removing asset',
+          detail: 'Failed to remove asset. Please try again.',
+          life: 3000
+        })
+      }
+    },
+    reject: () => {
+      // Optional: Handle rejection if needed
     }
-  }
+  })
 }
 
 async function loadAssets() {
