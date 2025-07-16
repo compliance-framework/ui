@@ -145,10 +145,12 @@ import { useRoute } from 'vue-router'
 import { useToast } from 'primevue/usetoast'
 import AssetCreateModal from '@/components/assessment-plans/AssetCreateModal.vue'
 import AssetEditModal from '@/components/assessment-plans/AssetEditModal.vue'
+import { useConfirm } from 'primevue/useconfirm'
 
 const assessmentPlanStore = useAssessmentPlanStore()
 const route = useRoute()
 const toast = useToast()
+const confirm = useConfirm()
 
 const assets = ref<AssessmentAsset[]>([])
 const showCreateModal = ref(false)

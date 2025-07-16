@@ -102,10 +102,12 @@ import { onMounted, ref } from 'vue'
 import { type AssessmentSubject, useAssessmentPlanStore } from '@/stores/assessment-plans.ts'
 import { useRoute } from 'vue-router'
 import { useToast } from 'primevue/usetoast'
+import { useConfirm } from 'primevue/useconfirm'
 
 const assessmentPlanStore = useAssessmentPlanStore()
 const route = useRoute()
 const toast = useToast()
+const confirm = useConfirm()
 
 const subjects = ref<AssessmentSubject[]>([])
 const showCreateModal = ref(false)
