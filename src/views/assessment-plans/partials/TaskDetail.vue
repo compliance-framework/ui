@@ -45,10 +45,10 @@ onMounted(() => {
     .getAssociatedActivities(props.assessmentPlan.uuid, props.task.uuid)
     .then((data) => {
       associatedActivities.value = data.data as FullAssociatedActivity[];
-      for (let i = 0; associatedActivities.value.length > i; i++) {
-        activityStore.get(associatedActivities.value[i].activityUuid).then((res) => {
-          associatedActivities.value[i].activity = res.data;
-        })
+      for (const activity of associatedActivities.value) {
+        activityStore.get(activity.activityUuid).then((res) => {
+          activity.activity = res.data;
+        });
       }
     });
 });
