@@ -118,29 +118,42 @@ function editSubject(subject: AssessmentSubject) {
 }
 
 async function removeSubject(index: number) {
-  if (confirm('Are you sure you want to remove this subject?')) {
-    try {
-      subjects.value.splice(index, 1)
+  confirm.require({
+    message: 'Are you sure you want to remove this subject?',
+    header: 'Confirmation',
+    icon: 'pi pi-exclamation-triangle',
+    accept: async () => {
+      try {
+        subjects.value.splice(index, 1)
 
-      // Save to backend
-      const id = route.params.id as string
-      await assessmentPlanStore.updateAssessmentSubjects(id, subjects.value)
+        // Save to backend
+        const id = route.params.id as string
+        await assessmentPlanStore.updateAssessmentSubjects(id, subjects.value)
 
+        toast.add({
+          severity: 'success',
+          summary: 'Subject Removed',
+          detail: 'Subject has been removed successfully',
+          life: 3000
+        })
+      } catch (error) {
+        toast.add({
+          severity: 'error',
+          summary: 'Error removing subject',
+          detail: 'Failed to remove subject. Please try again.',
+          life: 3000
+        })
+      }
+    },
+    reject: () => {
       toast.add({
-        severity: 'success',
-        summary: 'Subject Removed',
-        detail: 'Subject has been removed successfully',
-        life: 3000
-      })
-    } catch (error) {
-      toast.add({
-        severity: 'error',
-        summary: 'Error removing subject',
-        detail: 'Failed to remove subject. Please try again.',
+        severity: 'info',
+        summary: 'Action Cancelled',
+        detail: 'Subject removal was cancelled.',
         life: 3000
       })
     }
-  }
+  })
 }
 
 async function loadSubjects() {
