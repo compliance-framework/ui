@@ -20,12 +20,6 @@
       <FormTextarea v-model="asset.description" rows="3" required />
     </div>
 
-    <!-- Properties Section -->
-    <PropertyManager v-model="asset.props" />
-
-    <!-- Links Section -->
-    <LinkManager v-model="asset.links" />
-
     <div v-if="errorMessage" class="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
       {{ errorMessage }}
     </div>
@@ -43,8 +37,6 @@ import { type AssessmentAsset, useAssessmentPlanStore } from '@/stores/assessmen
 import { useToast } from 'primevue/usetoast'
 import FormInput from '@/components/forms/FormInput.vue'
 import FormTextarea from '@/components/forms/FormTextarea.vue'
-import PropertyManager from '@/components/forms/PropertyManager.vue'
-import LinkManager from '@/components/forms/LinkManager.vue'
 import PrimaryButton from '@/components/PrimaryButton.vue'
 import SecondaryButton from '@/components/SecondaryButton.vue'
 import TertiaryButton from '@/components/TertiaryButton.vue'
@@ -103,23 +95,9 @@ async function createAsset(): Promise<void> {
       description: asset.value.description
     }
 
-    // Add optional fields if they have meaningful values
-    if (filteredProps.length > 0) {
-      assessmentPlatform.props = filteredProps
-    }
-
-    if (filteredLinks.length > 0) {
-      assessmentPlatform.links = filteredLinks
-    }
-
     // Create the payload in the correct OSCAL AssessmentAssets structure
     const assetPayload = {
       'assessment-platforms': [assessmentPlatform]
-    }
-
-    // Add components if they exist
-    if (asset.value.components && asset.value.components.length > 0) {
-      assetPayload.components = asset.value.components
     }
 
     console.log('[DEBUG_LOG] Creating asset with payload:', assetPayload)

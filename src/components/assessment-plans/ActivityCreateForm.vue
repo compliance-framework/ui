@@ -25,15 +25,6 @@
       <FormTextarea v-model="activity.remarks" rows="2" />
     </div>
 
-    <!-- Properties Section -->
-    <PropertyManager v-model="activity.props" />
-
-    <!-- Links Section -->
-    <LinkManager v-model="activity.links" />
-
-    <!-- Responsible Roles Section -->
-    <ResponsibleRoleManager v-model="activity.responsibleRoles" />
-
     <div v-if="errorMessage" class="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
       {{ errorMessage }}
     </div>
@@ -47,13 +38,11 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { type Activity, useAssessmentPlanStore } from '@/stores/assessment-plans.ts'
+import { type Activity, useActivityStore } from '@/stores/activities.ts'
+import { type AssessmentPlan, type Task, useAssessmentPlanStore } from '@/stores/assessment-plans.ts'
 import { useToast } from 'primevue/usetoast'
 import FormInput from '@/components/forms/FormInput.vue'
 import FormTextarea from '@/components/forms/FormTextarea.vue'
-import PropertyManager from '@/components/forms/PropertyManager.vue'
-import LinkManager from '@/components/forms/LinkManager.vue'
-import ResponsibleRoleManager from '@/components/forms/ResponsibleRoleManager.vue'
 import PrimaryButton from '@/components/PrimaryButton.vue'
 import SecondaryButton from '@/components/SecondaryButton.vue'
 import TertiaryButton from '@/components/TertiaryButton.vue'
@@ -61,10 +50,12 @@ import { BIconArrowRepeat } from 'bootstrap-icons-vue'
 import { v4 as uuidv4 } from 'uuid'
 
 const assessmentPlanStore = useAssessmentPlanStore()
+const actitivityStore = useActivityStore();
 const toast = useToast()
 
 const props = defineProps<{
-  assessmentPlanId: string
+  assessmentPlan: AssessmentPlan
+  task: Task,
 }>()
 
 const emit = defineEmits<{
@@ -72,22 +63,14 @@ const emit = defineEmits<{
   cancel: []
 }>()
 
-const activity = ref<Activity>({
-  uuid: uuidv4(),
-  title: '',
-  description: '',
-  remarks: '',
-  props: [],
-  links: [],
-  responsibleRoles: []
-})
+const activity = ref<Activity>({} as Activity)
 
 const errorMessage = ref('')
 
 async function createActivity(): Promise<void> {
   errorMessage.value = ''
 
-  if (!props.assessmentPlanId) {
+  if (!props.assessmentPlan.uuid) {
     errorMessage.value = 'Assessment plan ID is missing'
     return
   }
@@ -98,17 +81,8 @@ async function createActivity(): Promise<void> {
   }
 
   try {
-    const activityData = {
-      uuid: activity.value.uuid,
-      title: activity.value.title || undefined,
-      description: activity.value.description,
-      remarks: activity.value.remarks || undefined,
-      props: activity.value.props || [],
-      links: activity.value.links || [],
-      responsibleRoles: activity.value.responsibleRoles || []
-    }
-
-    const result = await assessmentPlanStore.createActivity(props.assessmentPlanId, activityData)
+    const activityResult = await actitivityStore.create(activity.value)
+    await assessmentPlanStore.associateActivity(props.assessmentPlan.uuid, props.task.uuid, activityResult.data.uuid)
 
     toast.add({
       severity: 'success',
@@ -117,7 +91,7 @@ async function createActivity(): Promise<void> {
       life: 3000
     })
 
-    emit('created', result.data)
+    emit('created', activityResult.data)
   } catch (error) {
     toast.add({
       severity: 'error',

@@ -292,29 +292,6 @@ export interface TaskSubject {
   excludeSubjects?: ExcludeSubject[];
 }
 
-export interface Activity {
-  uuid: string;
-  title?: string;
-  description: string;
-  remarks?: string;
-  props?: Property[];
-  links?: Link[];
-  steps?: Step[];
-  relatedControls?: ReviewedControls;
-  responsibleRoles?: ResponsibleRole[];
-}
-
-export interface Step {
-  uuid: string;
-  title?: string;
-  description: string;
-  remarks?: string;
-  props?: Property[];
-  links?: Link[];
-  responsibleRoles?: ResponsibleRole[];
-  reviewedControls?: ReviewedControls;
-}
-
 export const useAssessmentPlanStore = defineStore('assessment-plans', () => {
   const configStore = useConfigStore()
 
@@ -634,10 +611,9 @@ export const useAssessmentPlanStore = defineStore('assessment-plans', () => {
     return result
   }
 
-  // Activity management functions
-  async function getActivities(id: string): Promise<DataResponse<Activity[]>> {
+  async function getAssociatedActivities(planId: string, taskId: string): Promise<DataResponse<AssociatedActivity[]>> {
     const config = await configStore.getConfig()
-    const response = await fetch(`${config.API_URL}/api/oscal/assessment-plans/${id}/activities`, {
+    const response = await fetch(`${config.API_URL}/api/oscal/assessment-plans/${planId}/tasks/${taskId}/associated-activities`, {
       credentials: 'include',
     })
     if (!response.ok) {
@@ -645,19 +621,14 @@ export const useAssessmentPlanStore = defineStore('assessment-plans', () => {
     }
     return camelcaseKeys(await response.json(), {
       deep: true,
-    }) as DataResponse<Activity[]>
+    }) as DataResponse<AssociatedActivity[]>
   }
 
-  async function createActivity(planId: string, activity: Activity): Promise<DataResponse<Activity>> {
+  async function associateActivity(planId: string, taskId: string, activityId: string): Promise<Response> {
     const config = await configStore.getConfig()
-    console.log('[DEBUG_LOG] createActivity called with:', { planId, activity })
 
-    const response = await fetch(`${config.API_URL}/api/oscal/assessment-plans/${planId}/activities`, {
+    const response = await fetch(`${config.API_URL}/api/oscal/assessment-plans/${planId}/tasks/${taskId}/associated-activities/${activityId}`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(decamelizeKeys(activity, { separator: '-' })),
       credentials: 'include',
     })
 
@@ -669,59 +640,26 @@ export const useAssessmentPlanStore = defineStore('assessment-plans', () => {
       throw new Error(`Error: ${response.statusText} - ${errorText}`)
     }
 
-    const result = camelcaseKeys(await response.json(), {
-      deep: true,
-    }) as DataResponse<Activity>
-    console.log('[DEBUG_LOG] Activity creation result:', result)
-    return result
+    return response
   }
 
-  async function updateActivity(planId: string, activity: Activity): Promise<DataResponse<Activity>> {
+  async function disassociateActivity(planId: string, taskId: string, activityId: string): Promise<Response> {
     const config = await configStore.getConfig()
-    console.log('[DEBUG_LOG] updateActivity called with:', { planId, activity })
 
-    const response = await fetch(`${config.API_URL}/api/oscal/assessment-plans/${planId}/activities/${activity.uuid}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(decamelizeKeys(activity, { separator: '-' })),
-      credentials: 'include',
-    })
-
-    console.log('[DEBUG_LOG] Activity update response status:', response.status)
-
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error('[DEBUG_LOG] Activity update error:', errorText)
-      throw new Error(`Error: ${response.statusText} - ${errorText}`)
-    }
-
-    const result = camelcaseKeys(await response.json(), {
-      deep: true,
-    }) as DataResponse<Activity>
-    console.log('[DEBUG_LOG] Activity update result:', result)
-    return result
-  }
-
-  async function deleteActivity(planId: string, activityId: string): Promise<void> {
-    const config = await configStore.getConfig()
-    console.log('[DEBUG_LOG] deleteActivity called with:', { planId, activityId })
-
-    const response = await fetch(`${config.API_URL}/api/oscal/assessment-plans/${planId}/activities/${activityId}`, {
+    const response = await fetch(`${config.API_URL}/api/oscal/assessment-plans/${planId}/tasks/${taskId}/associated-activities/${activityId}`, {
       method: 'DELETE',
       credentials: 'include',
     })
 
-    console.log('[DEBUG_LOG] Activity delete response status:', response.status)
+    console.log('[DEBUG_LOG] Activity creation response status:', response.status)
 
     if (!response.ok) {
       const errorText = await response.text()
-      console.error('[DEBUG_LOG] Activity delete error:', errorText)
+      console.error('[DEBUG_LOG] Activity creation error:', errorText)
       throw new Error(`Error: ${response.statusText} - ${errorText}`)
     }
 
-    console.log('[DEBUG_LOG] Activity deleted successfully')
+    return response
   }
 
   return {
@@ -740,9 +678,8 @@ export const useAssessmentPlanStore = defineStore('assessment-plans', () => {
     updateAssessmentSubjects,
     updateAssessmentAssets,
     createAssessmentAsset,
-    getActivities,
-    createActivity,
-    updateActivity,
-    deleteActivity,
+    getAssociatedActivities,
+    associateActivity,
+    disassociateActivity,
   }
 })

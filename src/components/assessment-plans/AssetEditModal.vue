@@ -18,22 +18,22 @@
 import PrimaryButton from '@/components/PrimaryButton.vue'
 import Modal from '@/components/Modal.vue'
 import AssetEditForm from '@/components/assessment-plans/AssetEditForm.vue'
-import type { Asset } from '@/stores/assessment-plans.ts'
+import type { AssessmentAsset } from '@/stores/assessment-plans.ts'
 
 const show = defineModel<boolean>()
 
 const emit = defineEmits({
-  updated(asset: Asset) {
+  updated(asset: AssessmentAsset) {
     return !!asset.uuid
   }
 })
 
 const props = defineProps<{
   assessmentPlanId: string
-  asset: Asset
+  asset: AssessmentAsset
 }>()
 
-function done(asset: Asset) {
+function done(asset: AssessmentAsset) {
   show.value = false
   emit('updated', asset)
 }

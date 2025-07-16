@@ -49,23 +49,44 @@ export interface RelevantEvidence {
   props?: Property[];
 }
 
-export interface Activity {
-  uuid?: string;
-  title: string;
-  description: string;
-  remarks?: string;
-  steps?: Step[];
-  links?: Link[];
+export interface ReviewedControls {
+  description?: string;
   props?: Property[];
+  links?: Link[];
+  controlSelections?: ControlSelection[];
+  controlObjectiveSelections?: ControlObjectiveSelection[];
 }
 
-export interface Step {
-  uuid?: string;
-  title: string;
-  description: string;
-  remarks?: string;
-  links?: Link[];
-  props?: Property[];
+export interface ControlSelection {
+  description?: string;
+  includeAll?: boolean;
+  includeControls?: IncludeControl[];
+  excludeControls?: ExcludeControl[];
+}
+
+export interface IncludeControl {
+  controlId: string;
+  statementIds?: string[];
+}
+
+export interface ExcludeControl {
+  controlId: string;
+  statementIds?: string[];
+}
+
+export interface ControlObjectiveSelection {
+  description?: string;
+  includeAll?: boolean;
+  includeObjectives?: IncludeObjective[];
+  excludeObjectives?: ExcludeObjective[];
+}
+
+export interface IncludeObjective {
+  objectiveId: string;
+}
+
+export interface ExcludeObjective {
+  objectiveId: string;
 }
 
 export interface Link {

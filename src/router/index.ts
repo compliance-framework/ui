@@ -249,11 +249,6 @@ const authenticatedRoutes = [
         component: () => import('../views/assessment-plans/AssessmentPlanTasksView.vue')
       },
       {
-        path: 'activities',
-        name: 'assessment-plan-activities',
-        component: () => import('../views/assessment-plans/AssessmentPlanActivitiesView.vue')
-      },
-      {
         path: 'subjects',
         name: 'assessment-plan-subjects',
         component: () => import('../views/assessment-plans/AssessmentPlanSubjectsView.vue')

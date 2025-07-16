@@ -25,12 +25,6 @@
       <FormTextarea v-model="task.description" rows="3" />
     </div>
 
-    <!-- Properties Section -->
-    <PropertyManager v-model="task.props" />
-
-    <!-- Links Section -->
-    <LinkManager v-model="task.links" />
-
     <div v-if="errorMessage" class="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
       {{ errorMessage }}
     </div>
@@ -48,8 +42,6 @@ import { type Task, useAssessmentPlanStore } from '@/stores/assessment-plans.ts'
 import { useToast } from 'primevue/usetoast'
 import FormInput from '@/components/forms/FormInput.vue'
 import FormTextarea from '@/components/forms/FormTextarea.vue'
-import PropertyManager from '@/components/forms/PropertyManager.vue'
-import LinkManager from '@/components/forms/LinkManager.vue'
 import PrimaryButton from '@/components/PrimaryButton.vue'
 import SecondaryButton from '@/components/SecondaryButton.vue'
 import TertiaryButton from '@/components/TertiaryButton.vue'

@@ -24,20 +24,11 @@
       <FormTextarea v-model="taskData.description" rows="3" />
     </div>
 
-    <!-- Properties Section -->
-    <PropertyManager v-model="taskData.props" />
-
-    <!-- Links Section -->
-    <LinkManager v-model="taskData.links" />
-
     <!-- Task Timing Section -->
     <TaskTimingManager v-model="taskData.timing" />
 
     <!-- Task Dependencies Section -->
-    <TaskDependencyManager v-model="taskData.dependencies" :assessment-plan-id="assessmentPlanId" :current-task-uuid="taskData.uuid" />
-
-    <!-- Responsible Roles Section -->
-    <ResponsibleRoleManager v-model="taskData.responsibleRoles" />
+    <TaskDependencyManager v-if="taskData.dependencies" v-model="taskData.dependencies" :assessment-plan-id="assessmentPlanId" :current-task-uuid="taskData.uuid" />
 
     <div v-if="errorMessage" class="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
       {{ errorMessage }}
@@ -51,14 +42,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
 import { type Task, useAssessmentPlanStore } from '@/stores/assessment-plans.ts'
 import { useToast } from 'primevue/usetoast'
 import FormInput from '@/components/forms/FormInput.vue'
 import FormTextarea from '@/components/forms/FormTextarea.vue'
-import PropertyManager from '@/components/forms/PropertyManager.vue'
-import LinkManager from '@/components/forms/LinkManager.vue'
-import ResponsibleRoleManager from '@/components/forms/ResponsibleRoleManager.vue'
 import TaskTimingManager from '@/components/forms/TaskTimingManager.vue'
 import TaskDependencyManager from '@/components/forms/TaskDependencyManager.vue'
 import PrimaryButton from '@/components/PrimaryButton.vue'
@@ -77,40 +65,8 @@ const emit = defineEmits<{
   cancel: []
 }>()
 
-const taskData = ref<Task>({
-  uuid: '',
-  type: '',
-  title: '',
-  description: '',
-  props: [],
-  links: [],
-  timing: undefined,
-  dependencies: [],
-  responsibleRoles: []
-})
-
+const taskData = ref(props.task)
 const errorMessage = ref('')
-
-onMounted(() => {
-  if (props.task) {
-    taskData.value = {
-      uuid: props.task.uuid,
-      type: props.task.type || '',
-      title: props.task.title || '',
-      description: props.task.description || '',
-      props: props.task.props || [],
-      links: props.task.links || [],
-      timing: props.task.timing,
-      dependencies: props.task.dependencies || [],
-      responsibleRoles: props.task.responsibleRoles || []
-    }
-
-    // Add this debug logging
-    console.log('TaskEditForm: Task received:', props.task)
-    console.log('TaskEditForm: Dependencies set to:', taskData.value.dependencies)
-    console.log('TaskEditForm: Dependencies length:', taskData.value.dependencies?.length || 0)
-  }
-})
 
 async function updateTask(): Promise<void> {
   errorMessage.value = ''
@@ -142,7 +98,7 @@ async function updateTask(): Promise<void> {
       timing: taskData.value.timing,
       dependencies: taskData.value.dependencies || [],
       responsibleRoles: taskData.value.responsibleRoles || []
-    }
+    } as Task
 
     console.log('Updating task with data:', updatedTaskData)
     console.log('Assessment plan ID:', props.assessmentPlanId)

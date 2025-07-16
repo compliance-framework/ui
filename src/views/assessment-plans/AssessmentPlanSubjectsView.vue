@@ -94,20 +94,6 @@
       <p class="text-sm text-gray-400 dark:text-slate-500 mt-2">Click "Add Subject" to create your first assessment subject.</p>
     </div>
 
-    <!-- Subject Create Modal -->
-    <SubjectCreateModal
-      v-model="showCreateModal"
-      :assessment-plan-id="route.params.id as string"
-      @created="onSubjectCreated"
-    />
-
-    <!-- Subject Edit Modal -->
-    <SubjectEditModal
-      v-model="showEditModal"
-      :assessment-plan-id="route.params.id as string"
-      :subject="editingSubject"
-      @updated="onSubjectUpdated"
-    />
   </div>
 </template>
 
@@ -116,8 +102,6 @@ import { onMounted, ref } from 'vue'
 import { type AssessmentSubject, useAssessmentPlanStore } from '@/stores/assessment-plans.ts'
 import { useRoute } from 'vue-router'
 import { useToast } from 'primevue/usetoast'
-import SubjectCreateModal from '@/components/assessment-plans/SubjectCreateModal.vue'
-import SubjectEditModal from '@/components/assessment-plans/SubjectEditModal.vue'
 
 const assessmentPlanStore = useAssessmentPlanStore()
 const route = useRoute()
@@ -131,16 +115,6 @@ const editingSubject = ref<AssessmentSubject>({} as AssessmentSubject)
 function editSubject(subject: AssessmentSubject) {
   editingSubject.value = { ...subject }
   showEditModal.value = true
-}
-
-async function onSubjectCreated(subject: AssessmentSubject) {
-  // Refresh the subjects list from the backend
-  await loadSubjects()
-}
-
-async function onSubjectUpdated(subject: AssessmentSubject) {
-  // Refresh the subjects list from the backend
-  await loadSubjects()
 }
 
 async function removeSubject(index: number) {

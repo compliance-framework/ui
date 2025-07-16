@@ -18,12 +18,12 @@
 import PrimaryButton from '@/components/PrimaryButton.vue'
 import Modal from '@/components/Modal.vue'
 import AssetCreateForm from '@/components/assessment-plans/AssetCreateForm.vue'
-import type { Asset } from '@/stores/assessment-plans.ts'
+import type { AssessmentAsset } from '@/stores/assessment-plans.ts'
 
 const show = defineModel<boolean>()
 
 const emit = defineEmits({
-  created(asset: Asset) {
+  created(asset: AssessmentAsset) {
     return !!asset.uuid
   }
 })
@@ -32,7 +32,7 @@ const props = defineProps<{
   assessmentPlanId: string
 }>()
 
-function done(asset: Asset) {
+function done(asset: AssessmentAsset) {
   show.value = false
   emit('created', asset)
 }

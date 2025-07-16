@@ -18,7 +18,7 @@
 import PrimaryButton from '@/components/PrimaryButton.vue'
 import Modal from '@/components/Modal.vue'
 import ActivityEditForm from '@/components/assessment-plans/ActivityEditForm.vue'
-import type { Activity } from '@/stores/assessment-plans.ts'
+import type { Activity } from '@/stores/activities.ts'
 
 const show = defineModel<boolean>()
 

@@ -24,15 +24,6 @@
       <FormTextarea v-model="activityData.remarks" rows="2" />
     </div>
 
-    <!-- Properties Section -->
-    <PropertyManager v-model="activityData.props" />
-
-    <!-- Links Section -->
-    <LinkManager v-model="activityData.links" />
-
-    <!-- Responsible Roles Section -->
-    <ResponsibleRoleManager v-model="activityData.responsibleRoles" />
-
     <div v-if="errorMessage" class="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
       {{ errorMessage }}
     </div>
@@ -45,18 +36,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { type Activity, useAssessmentPlanStore } from '@/stores/assessment-plans.ts'
+import { ref } from 'vue'
 import { useToast } from 'primevue/usetoast'
 import FormInput from '@/components/forms/FormInput.vue'
 import FormTextarea from '@/components/forms/FormTextarea.vue'
-import PropertyManager from '@/components/forms/PropertyManager.vue'
-import LinkManager from '@/components/forms/LinkManager.vue'
-import ResponsibleRoleManager from '@/components/forms/ResponsibleRoleManager.vue'
 import PrimaryButton from '@/components/PrimaryButton.vue'
 import SecondaryButton from '@/components/SecondaryButton.vue'
+import { useActivityStore } from '@/stores/activities.ts'
+import { type Activity } from '@/stores/activities.ts'
 
-const assessmentPlanStore = useAssessmentPlanStore()
+const activityStore = useActivityStore()
 const toast = useToast()
 
 const props = defineProps<{
@@ -69,68 +58,14 @@ const emit = defineEmits<{
   cancel: []
 }>()
 
-const activityData = ref<Activity>({
-  uuid: '',
-  title: '',
-  description: '',
-  remarks: '',
-  props: [],
-  links: [],
-  responsibleRoles: []
-})
+const activityData = ref<Activity>(props.activity)
 
 const errorMessage = ref('')
 
-onMounted(() => {
-  if (props.activity) {
-    activityData.value = {
-      uuid: props.activity.uuid,
-      title: props.activity.title || '',
-      description: props.activity.description || '',
-      remarks: props.activity.remarks || '',
-      props: props.activity.props || [],
-      links: props.activity.links || [],
-      responsibleRoles: props.activity.responsibleRoles || []
-    }
-
-    console.log('ActivityEditForm: Activity received:', props.activity)
-  }
-})
-
 async function updateActivity(): Promise<void> {
   errorMessage.value = ''
-
-  if (!props.assessmentPlanId) {
-    errorMessage.value = 'Assessment plan ID is missing'
-    return
-  }
-
-  if (!activityData.value.uuid) {
-    errorMessage.value = 'Activity UUID is missing'
-    return
-  }
-
-  if (!activityData.value.description?.trim()) {
-    errorMessage.value = 'Description is required'
-    return
-  }
-
   try {
-    // Create the updated activity data, preserving the original activity structure
-    const updatedActivityData = {
-      ...props.activity,  // Preserve all original activity fields
-      title: activityData.value.title || undefined,
-      description: activityData.value.description,
-      remarks: activityData.value.remarks || undefined,
-      props: activityData.value.props || [],
-      links: activityData.value.links || [],
-      responsibleRoles: activityData.value.responsibleRoles || []
-    }
-
-    console.log('Updating activity with data:', updatedActivityData)
-    console.log('Assessment plan ID:', props.assessmentPlanId)
-
-    const result = await assessmentPlanStore.updateActivity(props.assessmentPlanId, updatedActivityData)
+    const result = await activityStore.update(props.activity.uuid, activityData.value)
     console.log('Update result:', result)
 
     toast.add({
@@ -140,7 +75,7 @@ async function updateActivity(): Promise<void> {
       life: 3000
     })
 
-    emit('updated', updatedActivityData)
+    emit('updated', activityData.value)
   } catch (error) {
     toast.add({
       severity: 'error',
