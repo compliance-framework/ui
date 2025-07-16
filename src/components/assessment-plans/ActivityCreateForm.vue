@@ -50,7 +50,7 @@ import { BIconArrowRepeat } from 'bootstrap-icons-vue'
 import { v4 as uuidv4 } from 'uuid'
 
 const assessmentPlanStore = useAssessmentPlanStore()
-const actitivityStore = useActivityStore();
+const activityStore = useActivityStore();
 const toast = useToast()
 
 const props = defineProps<{
