@@ -55,15 +55,6 @@ export const useCatalogStore = defineStore('catalogs', () => {
     return (await response.json()) as DataResponse<Catalog>
   }
 
-  async function list(): Promise<DataResponse<Catalog[]>> {
-    const config = await configStore.getConfig()
-    const response = await fetch(`${config.API_URL}/api/oscal/catalogs`, {credentials: 'include'})
-    if (!response.ok) {
-      throw response
-    }
-    return (await response.json()) as DataResponse<Catalog[]>
-    }
-
   async function create(catalog: Catalog): Promise<DataResponse<Catalog>> {
     const config = await configStore.getConfig()
     const response = await fetch(`${config.API_URL}/api/oscal/catalogs`, {
@@ -219,7 +210,6 @@ export const useCatalogStore = defineStore('catalogs', () => {
   return {
     get,
     full,
-    list,
     create,
 
     listGroups,

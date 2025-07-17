@@ -4,11 +4,11 @@
   <div
     class="mt-4 rounded-md bg-white dark:bg-slate-900 border-collapse border border-ccf-300 dark:border-slate-700"
   >
-    <table class="table-auto w-full rounded-full dark:text-slate-300">
+    <table class="table-auto w-full rounded-full dark:text-slate-300" v-if="!loading">
       <tbody>
       <tr
         class="hover:bg-zinc-50 dark:hover:bg-slate-800 border-b border-ccf-300 dark:border-slate-800"
-        v-for="catalog in catalogs"
+        v-for="catalog in catalogs?.data"
         :key="catalog.uuid"
       >
         <td class="py-3 px-4 whitespace-nowrap grow">{{ catalog.metadata.title }}</td>
@@ -42,30 +42,16 @@
 
 </template>
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
 import PageHeader from '@/components/PageHeader.vue'
 import { type Catalog, useCatalogStore } from '@/stores/catalogs.ts'
-import type { ErrorBody, ErrorResponse } from '@/stores/types.ts'
 import { useToast } from 'primevue/usetoast'
+import { useApi } from '@/composables/useApi'
+import type { DataResponse } from '@/types'
 
 const catalogStore = useCatalogStore()
 const toast = useToast();
 
-const catalogs = ref<Catalog[]>([])
-
-onMounted(() => {
-  catalogStore.list().then((data) => {
-    catalogs.value = data.data
-  }).catch(async (response) => {
-    const error = await response.json() as ErrorResponse<ErrorBody>
-    toast.add({
-      severity: 'error',
-      summary: `Error loading catalogs - ${response.statusText}`,
-      detail: error.errors?.body ?? 'An error occurred while loading catalogs.',
-      life: 3000
-    })
-  })
-})
+const { data: catalogs, loading } = useApi<DataResponse<Catalog[]>>(new Request("/api/oscal/catalogs"))
 
 async function downloadCatalogJSON(id: string, title: string) {
   try {

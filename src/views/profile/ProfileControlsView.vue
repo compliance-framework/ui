@@ -53,7 +53,8 @@ import ProfileControlGroups from '@/components/profiles/ProfileControlGroups.vue
 import CatalogImportDialog from '@/components/profiles/CatalogImportDialog.vue';
 import { useToast } from 'primevue/usetoast';
 import { useConfirm } from 'primevue/useconfirm';
-import { type Catalog, useCatalogStore } from '@/stores/catalogs';
+import { type Catalog } from '@/stores/catalogs';
+import { useFetch } from '@/composables/useApi'
 
 const profile = useProfileStore();
 const imports = ref<Import[]>([] as Import[]);
@@ -172,18 +173,20 @@ function loadData() {
 }
 
 function openCatalogDialog() {
-  const catalogStore = useCatalogStore();
-  catalogStore.list().then((response) => {
-    catalogs.value = response.data;
-    catalogDialogVisible.value = true;
-  }).catch((error) => {
-    toast.add({
-      severity: 'error',
-      summary: 'Error loading catalogs',
-      detail: error.message,
-      life: 3000,
-    });
-  });
+  useFetch(new Request("/api/oscal/catalogs"))
+    .then((res) => res.json())
+    .then((res) => {
+      catalogs.value = res.data as Catalog[];
+      catalogDialogVisible.value = true;
+    })
+    .catch((errRes) => {
+      toast.add({
+        severity: 'error',
+        summary: 'Error loading catalogs',
+        detail: errRes.message,
+        life: 3000,
+      });
+    })
 }
 
 onActivated(() => {
