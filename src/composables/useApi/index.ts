@@ -1,5 +1,6 @@
 import { useConfigStore } from '@/stores/config.ts'
 import { ref } from 'vue'
+import type { DataResponse } from '@/types'
 
 export function useFetch(req: Request): Promise<Response> {
   return new Promise<Response>((resolve, reject) => {
@@ -41,6 +42,29 @@ export function useApi<T>(req: Request) {
       error.value = false
       res.json().then((k: T) => {
         data.value = k;
+        loading.value = false;
+      })
+    }
+  })
+
+  return { data, loading, error, response }
+}
+
+export function useDataApi<T>(req: Request) {
+  const data = ref<T>();
+  const loading = ref<boolean>(true);
+  const error = ref<boolean>(false);
+  const response = ref<Response>();
+
+  useFetch(req).then((res: Response) => {
+    response.value = res;
+    if (!res.ok) {
+      error.value = true
+      loading.value = false;
+    } else {
+      error.value = false
+      res.json().then((k: DataResponse<T>) => {
+        data.value = k.data;
         loading.value = false;
       })
     }
