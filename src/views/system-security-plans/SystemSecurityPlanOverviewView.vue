@@ -249,18 +249,19 @@ async function downloadJson(): Promise<void> {
 
 // Placeholder functions for editing functionality
 const editMetadata = () => {
-  router.push(`/system-security-plans/${systemSecurityPlan.value.uuid}/editor`)
+  // Navigate to the SSP editor view
+  router.push(`/system-security-plans/${systemSecurityPlan.value.uuid}`)
 }
 
 const editSystemCharacteristics = () => {
-  router.push(`/system-security-plans/${systemSecurityPlan.value.uuid}/editor/system-characteristics`)
+  router.push(`/system-security-plans/${systemSecurityPlan.value.uuid}/system-characteristics`)
 }
 
 const editImplementation = () => {
-  router.push(`/system-security-plans/${systemSecurityPlan.value.uuid}/editor/system-implementation`)
+  router.push(`/system-security-plans/${systemSecurityPlan.value.uuid}/system-implementation`)
 }
 
 const editControls = () => {
-  router.push(`/system-security-plans/${systemSecurityPlan.value.uuid}/editor/control-implementation`)
+  router.push(`/system-security-plans/${systemSecurityPlan.value.uuid}/control-implementation`)
 }
 </script>

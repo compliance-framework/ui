@@ -31,7 +31,7 @@
 
         <div v-if="characteristics.dateAuthorized">
           <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">Date Authorized</label>
-          <p class="text-gray-900 dark:text-slate-300">{{ formatDate(characteristics.dateAuthorized.toString()) }}</p>
+          <p class="text-gray-900 dark:text-slate-300">{{ formatDate(characteristics.dateAuthorized?.toString()) }}</p>
         </div>
 
         <div v-if="characteristics.description" class="md:col-span-2">
@@ -220,9 +220,15 @@ onMounted(async () => {
     try {
       const response = await sspStore.getCharacteristics(id)
       characteristics.value = response.data
-    } catch (err) {
+    } catch (err: any) {
       console.warn('Could not load system characteristics:', err)
-      error.value = err instanceof Error ? err.message : 'Unknown error'
+      if (err instanceof Response) {
+        error.value = `Failed to load system characteristics: ${err.status} ${err.statusText}`
+      } else if (err instanceof Error) {
+        error.value = err.message
+      } else {
+        error.value = 'Failed to load system characteristics'
+      }
     } finally {
       loading.value = false
     }
