@@ -448,39 +448,6 @@ const authenticatedRoutes = [
     }
   },
   {
-    path: '/system-security-plans/:id/editor',
-    name: 'system-security-plans-editor',
-    // route level code-splitting
-    // this generates a separate chunk (About.[hash].js) for this route
-    // which is lazy-loaded when the route is visited.
-    component: () => import('../views/system-security-plans/SystemSecurityPlanEditorView.vue'),
-    meta: {
-      requiresAuth: true,
-    },
-    children: [
-      {
-        path: '',
-        name: 'system-security-plans-characteristics',
-        component: () => import('../views/system-security-plans/SystemSecurityPlanCharacteristicsEditorView.vue')
-      },
-      {
-        path: 'diagrams',
-        name: 'system-security-plans-diagrams',
-        component: () => import('../views/system-security-plans/SystemSecurityPlanDiagramsEditorView.vue')
-      },
-      {
-        path: 'system-implementation',
-        name: 'system-security-plans-system-implementation',
-        component: () => import('../views/system-security-plans/SystemSecurityPlanSystemImplementationEditorView.vue')
-      },
-      {
-        path: 'control-implementation',
-        name: 'system-security-plans-control-implementation',
-        component: () => import('../views/system-security-plans/SystemSecurityPlanControlImplementationEditorView.vue')
-      },
-    ]
-  },
-  {
     path: '/system-security-plans/create',
     name: 'system-security-plans-create',
     // route level code-splitting

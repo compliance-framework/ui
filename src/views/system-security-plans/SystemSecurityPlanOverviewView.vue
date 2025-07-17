@@ -143,15 +143,18 @@
 
 <script setup lang="ts">
 import { onMounted, ref, computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { 
   type SystemSecurityPlan, 
   type SystemCharacteristics,
   useSystemSecurityPlanStore 
 } from '@/stores/system-security-plans.ts'
+import { useConfigStore } from '@/stores/config.ts'
 
 const route = useRoute()
+const router = useRouter()
 const sspStore = useSystemSecurityPlanStore()
+const configStore = useConfigStore()
 
 const systemSecurityPlan = ref<SystemSecurityPlan>({} as SystemSecurityPlan)
 const systemCharacteristics = ref<SystemCharacteristics | null>(null)
@@ -215,8 +218,20 @@ function formatDate(dateString?: string): string {
 
 async function downloadJson(): Promise<void> {
   try {
-    const response = await sspStore.full(route.params.id as string)
-    const dataStr = JSON.stringify(response.data, null, 2)
+    // Get raw API response without camelCase conversion
+    const config = await configStore.getConfig()
+    const response = await fetch(
+      `${config.API_URL}/api/oscal/system-security-plans/${route.params.id}/full`,
+      {
+        credentials: 'include'
+      }
+    )
+    if (!response.ok) {
+      throw response
+    }
+    const data = await response.json()
+    
+    const dataStr = JSON.stringify(data, null, 2)
     const dataBlob = new Blob([dataStr], { type: 'application/json' })
     
     const url = URL.createObjectURL(dataBlob)
@@ -234,22 +249,19 @@ async function downloadJson(): Promise<void> {
 
 // Placeholder functions for editing functionality
 const editMetadata = () => {
-  console.log('Edit Metadata - functionality coming soon')
-  alert('Metadata editing functionality is in development')
+  // Navigate to the SSP editor view
+  router.push(`/system-security-plans/${systemSecurityPlan.value.uuid}`)
 }
 
 const editSystemCharacteristics = () => {
-  console.log('Edit System Characteristics - functionality coming soon')
-  alert('System Characteristics editing functionality is in development')
+  router.push(`/system-security-plans/${systemSecurityPlan.value.uuid}/system-characteristics`)
 }
 
 const editImplementation = () => {
-  console.log('Edit Implementation - functionality coming soon')
-  alert('Implementation editing functionality is in development')
+  router.push(`/system-security-plans/${systemSecurityPlan.value.uuid}/system-implementation`)
 }
 
 const editControls = () => {
-  console.log('Edit Controls - functionality coming soon')
-  alert('Controls editing functionality is in development')
+  router.push(`/system-security-plans/${systemSecurityPlan.value.uuid}/control-implementation`)
 }
 </script>

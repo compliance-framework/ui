@@ -29,9 +29,11 @@ import { onMounted, ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { type PlanOfActionAndMilestones, usePlanOfActionAndMilestonesStore } from '@/stores/plan-of-action-and-milestones.ts'
 import { useToast } from 'primevue/usetoast'
+import { useConfigStore } from '@/stores/config.ts'
 
 const route = useRoute()
 const poamStore = usePlanOfActionAndMilestonesStore()
+const configStore = useConfigStore()
 const toast = useToast()
 
 const poamData = ref<PlanOfActionAndMilestones | null>(null)
@@ -47,8 +49,18 @@ onMounted(async () => {
   const id = route.params.id as string
   
   try {
-    const response = await poamStore.full(id)
-    poamData.value = response.data
+    // Get raw API response without camelCase conversion
+    const config = await configStore.getConfig()
+    const response = await fetch(
+      `${config.API_URL}/api/oscal/plan-of-action-and-milestones/${id}/full`,
+      {
+        credentials: 'include'
+      }
+    )
+    if (!response.ok) {
+      throw response
+    }
+    poamData.value = await response.json()
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : 'Unknown error'
     error.value = errorMessage
