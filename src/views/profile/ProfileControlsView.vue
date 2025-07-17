@@ -33,7 +33,6 @@
     <PrimaryButton class="mt-4" @click="openCatalogDialog()">Add Catalog Import</PrimaryButton>
     <CatalogImportDialog
       :visible="catalogDialogVisible"
-      :catalogs="catalogs"
       :importedCatalogs="importedCatalogs"
       @update:visible="catalogDialogVisible = $event"
       @import="addImport"
@@ -53,11 +52,10 @@ import ProfileControlGroups from '@/components/profiles/ProfileControlGroups.vue
 import CatalogImportDialog from '@/components/profiles/CatalogImportDialog.vue';
 import { useToast } from 'primevue/usetoast';
 import { useConfirm } from 'primevue/useconfirm';
-import { type Catalog, useCatalogStore } from '@/stores/catalogs';
+import { type Catalog } from '@/oscal';
 
 const profile = useProfileStore();
 const imports = ref<Import[]>([] as Import[]);
-const catalogs = ref<Catalog[]>([] as Catalog[]);
 const route = useRoute();
 const toast = useToast();
 const confirm = useConfirm();
@@ -172,18 +170,7 @@ function loadData() {
 }
 
 function openCatalogDialog() {
-  const catalogStore = useCatalogStore();
-  catalogStore.list().then((response) => {
-    catalogs.value = response.data;
-    catalogDialogVisible.value = true;
-  }).catch((error) => {
-    toast.add({
-      severity: 'error',
-      summary: 'Error loading catalogs',
-      detail: error.message,
-      life: 3000,
-    });
-  });
+  catalogDialogVisible.value = true;
 }
 
 onActivated(() => {
