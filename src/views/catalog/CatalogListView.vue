@@ -45,7 +45,7 @@
 import PageHeader from '@/components/PageHeader.vue'
 import { type Catalog, useCatalogStore } from '@/stores/catalogs.ts'
 import { useToast } from 'primevue/usetoast'
-import { useApi } from '@/composables/useApi'
+import { useApi } from '../../composables/api'
 import type { DataResponse } from '@/types'
 
 const catalogStore = useCatalogStore()

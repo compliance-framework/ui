@@ -56,7 +56,7 @@ import FormInput from '@/components/forms/FormInput.vue'
 import PrimaryButton from '@/components/PrimaryButton.vue'
 import MultiSelect from '@/volt/MultiSelect.vue';
 import { type Catalog, type Control, useCatalogStore } from '@/stores/catalogs.ts'
-import { useApi } from '@/composables/useApi'
+import { useApi } from '../../composables/api'
 import type { DataResponse } from '@/types'
 
 const router = useRouter();

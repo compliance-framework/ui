@@ -38,7 +38,7 @@ import Dialog from '@/volt/Dialog.vue';
 import PrimaryButton from '@/components/PrimaryButton.vue';
 import type { Catalog } from '@/stores/catalogs';
 import { ref, watch } from 'vue';
-import { useDataApi } from '@/composables/useApi'
+import { useDataApi } from '../../composables/api'
 
 const { data: catalogs, loading } = useDataApi<Catalog[]>(new Request("/api/oscal/catalogs"))
 
