@@ -43,10 +43,10 @@
 </template>
 <script setup lang="ts">
 import PageHeader from '@/components/PageHeader.vue'
-import { type Catalog, useCatalogStore } from '@/stores/catalogs.ts'
 import { useToast } from 'primevue/usetoast'
-import { useApi } from '../../composables/api'
-import type { DataResponse } from '@/types'
+import { useCatalogStore } from '@/stores/catalogs.ts'
+import { useApi, type DataResponse } from '@/composables/api'
+import { type Catalog } from '@/oscal'
 
 const catalogStore = useCatalogStore()
 const toast = useToast();
