@@ -33,7 +33,6 @@
     <PrimaryButton class="mt-4" @click="openCatalogDialog()">Add Catalog Import</PrimaryButton>
     <CatalogImportDialog
       :visible="catalogDialogVisible"
-      :catalogs="catalogs"
       :importedCatalogs="importedCatalogs"
       @update:visible="catalogDialogVisible = $event"
       @import="addImport"
@@ -54,11 +53,9 @@ import CatalogImportDialog from '@/components/profiles/CatalogImportDialog.vue';
 import { useToast } from 'primevue/usetoast';
 import { useConfirm } from 'primevue/useconfirm';
 import { type Catalog } from '@/stores/catalogs';
-import { useFetch } from '@/composables/useApi'
 
 const profile = useProfileStore();
 const imports = ref<Import[]>([] as Import[]);
-const catalogs = ref<Catalog[]>([] as Catalog[]);
 const route = useRoute();
 const toast = useToast();
 const confirm = useConfirm();
@@ -173,20 +170,7 @@ function loadData() {
 }
 
 function openCatalogDialog() {
-  useFetch(new Request("/api/oscal/catalogs"))
-    .then((res) => res.json())
-    .then((res: DataResponse<Catalog[]>) => {
-      catalogs.value = res.data;
-      catalogDialogVisible.value = true;
-    })
-    .catch((errRes) => {
-      toast.add({
-        severity: 'error',
-        summary: 'Error loading catalogs',
-        detail: errRes.message,
-        life: 3000,
-      });
-    })
+  catalogDialogVisible.value = true;
 }
 
 onActivated(() => {

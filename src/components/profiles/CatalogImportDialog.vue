@@ -8,8 +8,13 @@
           <th class="p-2">Actions</th>
         </tr>
       </thead>
-      <tbody>
-        <tr v-for="catalog in catalogs" :key="catalog.uuid">
+      <tbody v-if="loading">
+      <tr>
+        <td class="py-2 pr-3 font-medium text-wrap">Loading ...</td>
+      </tr>
+      </tbody>
+      <tbody v-else>
+        <tr v-for="catalog in catalogs?.data" :key="catalog.uuid">
           <td class="py-2 pr-3 font-medium text-wrap">{{ catalog.metadata.title }}</td>
           <td class="py-2 pr-3">
             <pre>{{ catalog.uuid }}</pre>
@@ -33,14 +38,17 @@ import Dialog from '@/volt/Dialog.vue';
 import PrimaryButton from '@/components/PrimaryButton.vue';
 import type { Catalog } from '@/stores/catalogs';
 
+const { data: catalogs, loading } = useApi<DataResponse<Catalog[]>>(new Request("/api/oscal/catalogs"))
+
 const props = defineProps<{
   visible: boolean;
-  catalogs: Catalog[];
   importedCatalogs: Record<string, string>;
 }>();
 const emit = defineEmits(['update:visible', 'import']);
 
 import { ref, watch } from 'vue';
+import { useApi } from '@/composables/useApi'
+import type { DataResponse } from '@/types'
 
 const localVisible = ref(props.visible);
 
