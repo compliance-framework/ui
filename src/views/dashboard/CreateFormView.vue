@@ -1,7 +1,5 @@
 <template>
-  <PageHeader>
-    New Dashboard
-  </PageHeader>
+  <PageHeader> New Dashboard </PageHeader>
   <PageCard class="mt-8 w-1/2">
     <form @submit.prevent="submit">
       <div class="mb-4">
@@ -28,7 +26,12 @@
         >
           <template #optiongroup="slotProps">
             <div class="flex items-center gap-2">
-              <img :alt="slotProps.option.label" src="https://primefaces.org/cdn/primevue/images/flag/flag_placeholder.png" :class="`flag flag-${slotProps.option.code.toLowerCase()}`" style="width: 18px" />
+              <img
+                :alt="slotProps.option.label"
+                src="https://primefaces.org/cdn/primevue/images/flag/flag_placeholder.png"
+                :class="`flag flag-${slotProps.option.code.toLowerCase()}`"
+                style="width: 18px"
+              />
               <div>{{ slotProps.option.label }}</div>
             </div>
           </template>
@@ -36,28 +39,24 @@
       </div>
 
       <div class="text-right">
-        <PrimaryButton
-          type="submit"
-        >
-          Submit
-        </PrimaryButton>
+        <PrimaryButton type="submit"> Submit </PrimaryButton>
       </div>
     </form>
   </PageCard>
 </template>
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue'
+import { onMounted, ref, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import PageHeader from '@/components/PageHeader.vue'
-import PageCard from '@/components/PageCard.vue'
-import { FilterParser } from '@/parsers/labelfilter.ts'
-import { type Dashboard, useFilterStore } from '@/stores/filters.ts'
-import FormInput from '@/components/forms/FormInput.vue'
-import PrimaryButton from '@/components/PrimaryButton.vue'
+import PageHeader from '@/components/PageHeader.vue';
+import PageCard from '@/components/PageCard.vue';
+import { FilterParser } from '@/parsers/labelfilter.ts';
+import { type Dashboard, useFilterStore } from '@/stores/filters.ts';
+import FormInput from '@/components/forms/FormInput.vue';
+import PrimaryButton from '@/components/PrimaryButton.vue';
 import MultiSelect from '@/volt/MultiSelect.vue';
-import { type Catalog, type Control, useCatalogStore } from '@/stores/catalogs.ts'
-import { useApi } from '../../composables/api'
-import type { DataResponse } from '@/types'
+import { useCatalogStore } from '@/stores/catalogs.ts';
+import type { Catalog, Control } from '@/oscal';
+import { useApi, type DataResponse } from '@/composables/api';
 
 const router = useRouter();
 const route = useRoute();
@@ -65,30 +64,32 @@ const store = useFilterStore();
 const catalogStore = useCatalogStore();
 const dashboard = ref<Dashboard>({} as Dashboard);
 
-const filter = ref<string>("");
+const filter = ref<string>('');
 onMounted(() => {
   if (route.query['filter']) {
     filter.value = route.query['filter'] as string;
   }
-})
+});
 
 interface ControlOption {
-  label: string
-  value: string
+  label: string;
+  value: string;
 }
 
 interface SelectControl {
-  label: string
-  code: string
-  items: ControlOption[]
+  label: string;
+  code: string;
+  items: ControlOption[];
 }
 
 const selectedControls = ref<ControlOption[]>([]);
-const controls = ref<SelectControl[]>([])
+const controls = ref<SelectControl[]>([]);
 
-const { data: catalogs } = useApi<DataResponse<Catalog[]>>(new Request("/api/oscal/catalogs"))
+const { data: catalogs } = useApi<DataResponse<Catalog[]>>(
+  new Request('/api/oscal/catalogs'),
+);
 
-watch(catalogs, buildControlList)
+watch(catalogs, buildControlList);
 
 async function buildControlList() {
   catalogs.value?.data.forEach((catalog) => {
@@ -98,20 +99,19 @@ async function buildControlList() {
         let controlList = [] as ControlOption[];
         if (group.controls) {
           group.controls.forEach((control) => {
-            controlList = [...controlList, ...getControlSelectList(control)]
-          })
+            controlList = [...controlList, ...getControlSelectList(control)];
+          });
 
           results.push({
             label: group.title,
             code: group.id,
-            items: controlList
-          })
+            items: controlList,
+          });
         }
-
       });
-      controls.value = [...controls.value, ...results]
-    })
-  })
+      controls.value = [...controls.value, ...results];
+    });
+  });
 }
 
 function getControlSelectList(control: Control): ControlOption[] {
@@ -124,19 +124,19 @@ function getControlSelectList(control: Control): ControlOption[] {
         subResults = getControlSelectList(cont);
       }
       results.push({
-        label: cont.id + " " + cont.title,
+        label: cont.id + ' ' + cont.title,
         value: cont.id,
-      })
-      results = [...results, ...subResults]
-    })
+      });
+      results = [...results, ...subResults];
+    });
   } else {
     results.push({
-      label: control.id + " " + control.title,
+      label: control.id + ' ' + control.title,
       value: control.id,
-    })
+    });
   }
 
-  return results
+  return results;
 }
 
 async function submit() {
@@ -150,7 +150,7 @@ async function submit() {
       ...dashboard.value,
       filter: parsedFilter,
       controls: controlIds,
-    })
+    });
     return router.push({
       name: 'evidence:index',
       query: { filter: filter.value },

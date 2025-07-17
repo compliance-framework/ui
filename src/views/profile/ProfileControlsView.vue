@@ -52,7 +52,7 @@ import ProfileControlGroups from '@/components/profiles/ProfileControlGroups.vue
 import CatalogImportDialog from '@/components/profiles/CatalogImportDialog.vue';
 import { useToast } from 'primevue/usetoast';
 import { useConfirm } from 'primevue/useconfirm';
-import { type Catalog } from '@/stores/catalogs';
+import { type Catalog } from '@/oscal';
 
 const profile = useProfileStore();
 const imports = ref<Import[]>([] as Import[]);
