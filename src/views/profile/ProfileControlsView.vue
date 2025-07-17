@@ -175,8 +175,8 @@ function loadData() {
 function openCatalogDialog() {
   useFetch(new Request("/api/oscal/catalogs"))
     .then((res) => res.json())
-    .then((res) => {
-      catalogs.value = res.data as Catalog[];
+    .then((res: DataResponse<Catalog[]>) => {
+      catalogs.value = res.data;
       catalogDialogVisible.value = true;
     })
     .catch((errRes) => {
