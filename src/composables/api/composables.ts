@@ -51,5 +51,24 @@ export function useApi<T>(req: Request) {
 }
 
 export function useDataApi<T>(req: Request) {
-  return useApi<DataResponse<T>>(req)
+  const data = ref<T>();
+  const loading = ref<boolean>(true);
+  const error = ref<boolean>(false);
+  const response = ref<Response>();
+
+  useFetch(req).then((res: Response) => {
+    response.value = res;
+    if (!res.ok) {
+      error.value = true
+      loading.value = false;
+    } else {
+      error.value = false
+      res.json().then((k: DataResponse<T>) => {
+        data.value = k.data;
+        loading.value = false;
+      })
+    }
+  })
+
+  return { data, loading, error, response }
 }
