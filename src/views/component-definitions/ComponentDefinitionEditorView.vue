@@ -6,7 +6,7 @@
     {{ componentDefinition.metadata.remarks }}
   </p>
 
-  <div class="mt-4 border-b border-ccf-300 dark:border-slate-800">
+  <div class="mt-4 border-b border-ccf-300 dark:border-slate-800 overflow-x-auto whitespace-nowrap">
     <RouterLink 
       class="px-4 py-2 inline-block text-lg border-ccf-300 dark:border-slate-700 dark:hover:bg-slate-900" 
       :to="{name: 'component-definition-overview', params: {id: componentDefinition.uuid}}"
