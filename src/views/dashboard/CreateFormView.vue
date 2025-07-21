@@ -46,7 +46,7 @@
   </PageCard>
 </template>
 <script setup lang="ts">
-import { onMounted, ref, toValue } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router';
 import PageHeader from '@/components/PageHeader.vue'
 import PageCard from '@/components/PageCard.vue'
@@ -55,7 +55,9 @@ import { type Dashboard, useFilterStore } from '@/stores/filters.ts'
 import FormInput from '@/components/forms/FormInput.vue'
 import PrimaryButton from '@/components/PrimaryButton.vue'
 import MultiSelect from '@/volt/MultiSelect.vue';
-import { type Control, type Group, useCatalogStore } from '@/stores/catalogs.ts'
+import { useCatalogStore } from '@/stores/catalogs.ts';
+import type { Catalog, Control } from '@/oscal';
+import { useApi, type DataResponse } from '@/composables/api';
 
 const router = useRouter();
 const route = useRoute();
@@ -63,53 +65,61 @@ const store = useFilterStore();
 const catalogStore = useCatalogStore();
 const dashboard = ref<Dashboard>({} as Dashboard);
 
+const filter = ref<string>("");
+onMounted(() => {
+  if (route.query['filter']) {
+    filter.value = route.query['filter'] as string;
+  }
+})
+
 interface ControlOption {
   label: string
   value: string
 }
 
-const filter = ref<string>("");
+interface SelectControl {
+  label: string
+  code: string
+  items: ControlOption[]
+}
 
 const selectedControls = ref<ControlOption[]>([]);
-const controls = ref<object[]>([]);
+const controls = ref<SelectControl[]>([])
 
-onMounted(() => {
-  if (route.query['filter']) {
-    filter.value = route.query['filter'] as string;
-  }
+const { data: catalogs } = useApi<DataResponse<Catalog[]>>(new Request("/api/oscal/catalogs"))
 
-  controls.value = [];
-  catalogStore.list().then((data) => {
-    data.data.forEach((catalog) => {
-      catalogStore.full(catalog.uuid).then((response) => {
-        const results = [] as object[];
-        response.data.groups.forEach((group) => {
-          let controlList = [] as object[];
-          if (group.controls) {
-            group.controls.forEach((control) => {
-              controlList = [...controlList, ...getControlSelectList(control)]
-            })
+watch(catalogs, buildControlList)
 
-            results.push({
-              label: group.title,
-              code: group.id,
-              items: controlList
-            })
-          }
+async function buildControlList() {
+  catalogs.value?.data.forEach((catalog) => {
+    catalogStore.full(catalog.uuid).then((response) => {
+      const results = [] as SelectControl[];
+      response.data.groups.forEach((group) => {
+        let controlList = [] as ControlOption[];
+        if (group.controls) {
+          group.controls.forEach((control) => {
+            controlList = [...controlList, ...getControlSelectList(control)]
+          })
 
-        });
-        controls.value = [...controls.value, ...results]
-      })
+          results.push({
+            label: group.title,
+            code: group.id,
+            items: controlList
+          })
+        }
+
+      });
+      controls.value = [...controls.value, ...results]
     })
   })
-})
+}
 
-function getControlSelectList(control: Control): object[] {
-  let results = [] as object[];
+function getControlSelectList(control: Control): ControlOption[] {
+  let results = [] as ControlOption[];
 
   if (control.controls) {
     control.controls.forEach((cont) => {
-      let subResults = [] as object[];
+      let subResults = [] as ControlOption[];
       if (cont.controls && cont.controls.length > 0) {
         subResults = getControlSelectList(cont);
       }
