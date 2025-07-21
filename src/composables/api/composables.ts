@@ -1,6 +1,5 @@
 import { useConfigStore } from '@/stores/config.ts';
 import { ref } from 'vue';
-import type { DataResponse } from './types.ts';
 
 export function useFetch(req: Request): Promise<Response> {
   return new Promise<Response>((resolve, reject) => {
@@ -37,42 +36,12 @@ export function useApi<T>(req: Request) {
     .then((res: Response) => {
       response.value = res;
       if (!res.ok) {
-        error.value = true;
-      } else {
-        error.value = false;
-        res.json().then((k: T) => {
-          data.value = k;
-        });
+        return Promise.reject(res)
       }
-    })
-    .catch((res: Response) => {
-      error.value = true;
-      response.value = res;
-    })
-    .finally(() => {
-      loading.value = false;
-    });
-
-  return { data, loading, error, response };
-}
-
-export function useDataApi<T>(req: Request) {
-  const data = ref<T>();
-  const loading = ref<boolean>(true);
-  const error = ref<boolean>(false);
-  const response = ref<Response>();
-
-  useFetch(req)
-    .then((res: Response) => {
-      response.value = res;
-      if (!res.ok) {
-        error.value = true;
-      } else {
-        error.value = false;
-        res.json().then((k: DataResponse<T>) => {
-          data.value = k.data;
-        });
-      }
+      error.value = false;
+      res.json().then((k: T) => {
+        data.value = k;
+      });
     })
     .catch((res: Response) => {
       error.value = true;

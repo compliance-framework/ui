@@ -14,7 +14,7 @@
       </tr>
       </tbody>
       <tbody v-else>
-        <tr v-for="catalog in catalogs" :key="catalog.uuid">
+        <tr v-for="catalog in catalogs?.data" :key="catalog.uuid">
           <td class="py-2 pr-3 font-medium text-wrap">{{ catalog.metadata.title }}</td>
           <td class="py-2 pr-3">
             <pre>{{ catalog.uuid }}</pre>
@@ -37,10 +37,10 @@
 import Dialog from '@/volt/Dialog.vue';
 import PrimaryButton from '@/components/PrimaryButton.vue';
 import { ref, watch } from 'vue';
-import { useDataApi } from '@/composables/api'
+import { type DataResponse, useApi } from '@/composables/api'
 import type { Catalog } from '@/oscal'
 
-const { data: catalogs, loading } = useDataApi<Catalog[]>(new Request("/api/oscal/catalogs"))
+const { data: catalogs, loading } = useApi<DataResponse<Catalog[]>>(new Request("/api/oscal/catalogs"))
 
 const props = defineProps<{
   visible: boolean;
