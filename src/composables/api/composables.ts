@@ -1,30 +1,30 @@
-import { useConfigStore } from '@/stores/config.ts'
-import { ref } from 'vue'
-import type { DataResponse } from './types.ts'
+import { useConfigStore } from '@/stores/config.ts';
+import { ref } from 'vue';
+import type { DataResponse } from './types.ts';
 
 export function useFetch(req: Request): Promise<Response> {
   return new Promise<Response>((resolve, reject) => {
-    const configStore = useConfigStore()
+    const configStore = useConfigStore();
     configStore.getConfig().then((config) => {
       const url = new URL(req.url, window.location.origin);
       const request = new Request(
         new Request(`${config.API_URL}${url.pathname}${url.search}`, req),
         {
           headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
           },
           credentials: 'include',
-        }
-      )
+        },
+      );
       fetch(request).then((res: Response) => {
         if (res.ok) {
-          return resolve(res)
+          return resolve(res);
         }
-        return reject(res)
-      })
-    })
-  })
+        return reject(res);
+      });
+    });
+  });
 }
 
 export function useApi<T>(req: Request) {
@@ -33,21 +33,27 @@ export function useApi<T>(req: Request) {
   const error = ref<boolean>(false);
   const response = ref<Response>();
 
-  useFetch(req).then((res: Response) => {
-    response.value = res;
-    if (!res.ok) {
-      error.value = true
+  useFetch(req)
+    .then((res: Response) => {
+      response.value = res;
+      if (!res.ok) {
+        error.value = true;
+      } else {
+        error.value = false;
+        res.json().then((k: T) => {
+          data.value = k;
+        });
+      }
+    })
+    .catch((res: Response) => {
+      error.value = true;
+      response.value = res;
+    })
+    .finally(() => {
       loading.value = false;
-    } else {
-      error.value = false
-      res.json().then((k: T) => {
-        data.value = k;
-        loading.value = false;
-      })
-    }
-  })
+    });
 
-  return { data, loading, error, response }
+  return { data, loading, error, response };
 }
 
 export function useDataApi<T>(req: Request) {
@@ -56,19 +62,25 @@ export function useDataApi<T>(req: Request) {
   const error = ref<boolean>(false);
   const response = ref<Response>();
 
-  useFetch(req).then((res: Response) => {
-    response.value = res;
-    if (!res.ok) {
-      error.value = true
+  useFetch(req)
+    .then((res: Response) => {
+      response.value = res;
+      if (!res.ok) {
+        error.value = true;
+      } else {
+        error.value = false;
+        res.json().then((k: DataResponse<T>) => {
+          data.value = k.data;
+        });
+      }
+    })
+    .catch((res: Response) => {
+      error.value = true;
+      response.value = res;
+    })
+    .finally(() => {
       loading.value = false;
-    } else {
-      error.value = false
-      res.json().then((k: DataResponse<T>) => {
-        data.value = k.data;
-        loading.value = false;
-      })
-    }
-  })
+    });
 
-  return { data, loading, error, response }
+  return { data, loading, error, response };
 }
