@@ -5,59 +5,167 @@ import SideNavLink from '@/components/navigation/SideNavLink.vue'
 import SideNavLogo from '@/components/navigation/SideNavLogo.vue'
 import lightLogo from '@/assets/logo-light.svg'
 import darkLogo from '@/assets/logo-dark.svg'
-import { useUserStore } from '@/stores/auth'
+import lightMiniLogo from '@/assets/logo-light-mini.svg'
+import darkMiniLogo from '@/assets/logo-dark-mini.svg'
+import { useSidebarStore } from '@/stores/sidebar'
+import { ref } from 'vue'
 
-const userStore = useUserStore()
+const sidebarStore = useSidebarStore()
+
+interface NavigationItem {
+  title: string
+  abbr?: string
+  name?: string
+  children?: Array<NavigationItem>
+}
+
+function abbreviated(link: NavigationItem): string {
+  // We'll take the first letter of each word in the title, unless it's overridden
+  if (link.abbr) {
+    return link.abbr
+  }
+
+  return link.title.split(" ").map((word: string) => {
+    return word[0].toUpperCase()
+  }).join("")
+}
+
+const links = ref<Array<NavigationItem>>([
+  {
+    name: 'dashboards',
+    title: 'Dashboards',
+  },
+  {
+    name: 'evidence:index',
+    title: 'Evidence',
+    abbr: 'EV',
+  },
+  {
+    name: 'catalog-list',
+    title: 'Catalogs',
+    abbr: 'CAT',
+  },
+  {
+    name: 'profile-list',
+    title: 'Profiles',
+    abbr: 'PR',
+  },
+  {
+    name: 'component-definitions',
+    title: 'Component Definitions',
+  },
+  {
+    name: 'system-security-plans',
+    title: 'System Security Plans',
+  },
+  {
+    name: 'assessment-plans',
+    title: 'Assessment Plans',
+  },
+  {
+    name: 'plan-of-action-and-milestones',
+    title: 'POA&M',
+    abbr: 'PM',
+  },
+  {
+    title: 'Admin',
+    children: [
+      {
+        name: 'admin-parties',
+        title: 'Parties',
+      },
+      {
+        name: 'admin-roles',
+        title: 'Roles',
+      },
+      {
+        name: 'admin-subjects',
+        title: 'Subjects',
+      }
+    ]
+  }
+]);
+
+const footLinks = ref<Array<NavigationItem>>([
+  {
+    name: 'logout',
+    title: 'Logout',
+  }
+])
 </script>
 
 <template>
-  <SideNav class="flex flex-col max-h-screen border-r border-r-ccf-300  dark:border-slate-700 bg-white dark:bg-slate-900">
+  <SideNav
+    class="flex flex-col max-h-screen border-r border-r-ccf-300 dark:border-slate-700 bg-white dark:bg-slate-900 max-w-80"
+  >
     <template #logo>
-      <div class="px-8 py-8">
-        <SideNavLogo alt="Vue logo" :src="lightLogo" class="w-full dark:hidden"/>
-        <SideNavLogo alt="Vue logo" :src="darkLogo" class="w-full hidden dark:block"/>
+      <div
+        class="py-8 transition-all duration-300 ease-in-out"
+        :class="{
+          'px-8': sidebarStore.open,
+          'px-2': !sidebarStore.open
+        }"
+      >
+        <!-- Light mode logos -->
+        <SideNavLogo
+          alt="Vue logo"
+          :src="!sidebarStore.open ? lightMiniLogo : lightLogo"
+          :class="!sidebarStore.open ? 'w-12 mx-auto' : 'w-full'"
+          class="block dark:hidden transition-all duration-300"
+        />
+
+        <!-- Dark mode logos -->
+        <SideNavLogo
+          alt="Vue logo"
+          :src="!sidebarStore.open ? darkMiniLogo : darkLogo"
+          :class="!sidebarStore.open ? 'w-12 mx-auto' : 'w-full'"
+          class="hidden dark:block transition-all duration-300"
+        />
       </div>
     </template>
-    <template v-if="userStore.isAuthenticated">
-      <div class="overflow-y-auto max-h-full grow">
-        <SideNavLink class="pl-6" :to="{ name: 'dashboards' }">Dashboards</SideNavLink>
-        <SideNavLink class="pl-6" :to="{ name: 'catalog-list' }">Catalogs</SideNavLink>
-        <SideNavLink class="pl-6" :to="{ name: 'profile-list' }">Profiles</SideNavLink>
-        <SideNavLink class="pl-6" :to="{ name: 'component-definitions' }">Component Definitions</SideNavLink>
-        <SideNavLink class="pl-6" :to="{ name: 'assessment-plans' }">Assessment Plans</SideNavLink>
-        <SideNavLink class="pl-6" :to="{ name: 'system-security-plans' }">System Security Plans</SideNavLink>
-        <SideNavLink class="pl-6" :to="{ name: 'plan-of-action-and-milestones' }">Plan of Action and Milestones</SideNavLink>
-        <SideNavLink class="pl-6" :to="{ name: 'admin-parties' }">Parties</SideNavLink>
-        <SideNavLink class="pl-6" :to="{ name: 'admin-roles' }">Roles</SideNavLink>
-        <SideNavCategory title="Evidence">
-          <SideNavLink :to="{ name: 'evidence:index' }">All</SideNavLink>
-<!--          <SideNavLink :to="{ name: 'findings-by-subject' }">By Subject</SideNavLink>-->
-<!--          <SideNavLink :to="{ name: 'list-classes-of-findings' }">By Control Class</SideNavLink>-->
-        </SideNavCategory>
-        <SideNavCategory title="Admin">
-          <SideNavLink :to="{ name: 'admin-subjects' }">Subjects</SideNavLink>
-        </SideNavCategory>
-        <SideNavCategory title="Continuous Compliance">
-          <SideNavLink :to="{ name: 'about' }">About</SideNavLink>
-          <SideNavLink :to="{ name: 'home' }">Docs</SideNavLink>
-        </SideNavCategory>
-        <SideNavLink :to="{ name: 'logout' }">Logout</SideNavLink>
+
+    <div class="overflow-y-auto max-h-full grow flex flex-col justify-between">
+      <!-- Top items -->
+      <div>
+        <!-- Main Navigation Items -->
+        <template
+          v-for="link in links"
+          :key="link.name"
+        >
+          <SideNavCategory :title="link.title" v-if="link.children">
+            <template
+              v-for="child in link.children"
+              :key="child.name"
+            >
+              <SideNavLink :to="{ name: child.name }" v-tooltip.focus.right="{value: `${link.title} | ${child.title}`, disabled: sidebarStore.open}">
+                {{ sidebarStore.open ? child.title : abbreviated(child) }}
+              </SideNavLink>
+            </template>
+          </SideNavCategory>
+          <SideNavLink v-else :to="{ name: link.name }" v-tooltip.focus.right="{value: link.title, disabled: sidebarStore.open}">
+            {{ sidebarStore.open ? link.title : abbreviated(link) }}
+          </SideNavLink>
+        </template>
       </div>
-    </template>
-    <template v-else>
-      <div class="overflow-y-auto max-h-full grow">
-        <SideNavLink class="pl-6" :to="{ name: 'login' }">Login</SideNavLink>
+
+      <!-- Bottom Items -->
+      <div>
+        <template
+          v-for="link in footLinks"
+          :key="link.name"
+        >
+          <SideNavLink :to="{ name: link.name }" v-tooltip.focus.right="{value: link.title, disabled: sidebarStore.open}">
+            {{ sidebarStore.open ? link.title : abbreviated(link) }}
+          </SideNavLink>
+        </template>
       </div>
-    </template>
+    </div>
   </SideNav>
 </template>
 
 <style>
 @reference "@/assets/main.css";
 
-.router-link {
-  @apply border-l-transparent border-l-8 text-zinc-700 dark:text-slate-200;
-}
 .router-link-exact-active {
   @apply bg-linear-to-r from-slate-200 to-slate-100 border-l-slate-300 dark:from-slate-700 dark:to-slate-800 dark:border-slate-500 dark:text-slate-200;
 }

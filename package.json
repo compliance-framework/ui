@@ -21,6 +21,7 @@
   "dependencies": {
     "@tailwindcss/vite": "^4.1.10",
     "@types/chart.js": "^2.9.41",
+    "@vueuse/core": "^13.5.0",
     "bootstrap-icons-vue": "^1.11.3",
     "camelcase-keys": "^9.1.3",
     "chart.js": "^4.4.7",
