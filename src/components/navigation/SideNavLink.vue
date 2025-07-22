@@ -4,7 +4,6 @@ import type { RouteLocationRaw } from 'vue-router';
 
 defineProps<{
   to: RouteLocationRaw;
-  title?: string;
 }>()
 
 </script>
