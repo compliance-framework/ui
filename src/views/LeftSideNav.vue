@@ -7,11 +7,9 @@ import lightLogo from '@/assets/logo-light.svg'
 import darkLogo from '@/assets/logo-dark.svg'
 import lightMiniLogo from '@/assets/logo-light-mini.svg'
 import darkMiniLogo from '@/assets/logo-dark-mini.svg'
-import { useUserStore } from '@/stores/auth'
 import { useSidebarStore } from '@/stores/sidebar'
-import { computed } from 'vue'
+import { ref } from 'vue'
 
-const userStore = useUserStore()
 const sidebarStore = useSidebarStore()
 
 interface NavigationItem {
@@ -20,64 +18,59 @@ interface NavigationItem {
   children?: Array<NavigationItem>
 }
 
-const navigationConfig = computed(() => {
-  const mainNav: NavigationItem[] = [
-    {
-      name: 'dashboards',
-      title: 'Dashboards',
-    },
-    {
-      name: 'evidence:index',
-      title: 'Evidence',
-    },
-    {
-      name: 'catalog-list',
-      title: 'Catalogs',
-    },
-    {
-      name: 'profile-list',
-      title: 'Profiles',
-    },
-    {
-      name: 'component-definitions',
-      title: 'Component Definitions',
-    },
-    {
-      name: 'system-security-plans',
-      title: 'System Security Plans',
-    },
-    {
-      name: 'assessment-plans',
-      title: 'Assessment Plans',
-    },
-    {
-      name: 'plan-of-action-and-milestones',
-      title: 'Plan of Action and Milestones',
-    },
-    {
-      name: 'admin-parties',
-      title: 'Parties',
-    },
-    {
-      name: 'admin-roles',
-      title: 'Roles',
-    },
-    {
-      name: 'admin-subjects',
-      title: 'Subjects',
-    }
-  ]
+const links = ref<Array<NavigationItem>>([
+  {
+    name: 'dashboards',
+    title: 'Dashboards',
+  },
+  {
+    name: 'evidence:index',
+    title: 'Evidence',
+  },
+  {
+    name: 'catalog-list',
+    title: 'Catalogs',
+  },
+  {
+    name: 'profile-list',
+    title: 'Profiles',
+  },
+  {
+    name: 'component-definitions',
+    title: 'Component Definitions',
+  },
+  {
+    name: 'system-security-plans',
+    title: 'System Security Plans',
+  },
+  {
+    name: 'assessment-plans',
+    title: 'Assessment Plans',
+  },
+  {
+    name: 'plan-of-action-and-milestones',
+    title: 'Plan of Action and Milestones',
+  },
+  {
+    name: 'admin-parties',
+    title: 'Parties',
+  },
+  {
+    name: 'admin-roles',
+    title: 'Roles',
+  },
+  {
+    name: 'admin-subjects',
+    title: 'Subjects',
+  }
+]);
 
-  const logoutItem: NavigationItem = {
+const footLinks = ref<Array<NavigationItem>>([
+  {
     name: 'logout',
     title: 'Logout',
   }
-
-  return {
-    mainNav,
-    logoutItem
-  }
-})
+])
 </script>
 
 <template>
@@ -113,28 +106,30 @@ const navigationConfig = computed(() => {
     <div class="overflow-y-auto max-h-full grow">
       <!-- Main Navigation Items -->
       <SideNavLink
-        v-for="item in navigationConfig.mainNav"
-        :key="item.name"
-        :to="{ name: item.name }"
-        :title="!sidebarStore.open ? item.title : undefined"
+        v-for="link in links"
+        :key="link.name"
+        :to="{ name: link.name }"
+        :title="!sidebarStore.open ? link.title : undefined"
       >
-        <span v-if="sidebarStore.open">{{ item.title }}</span>
+        <span v-if="sidebarStore.open">{{ link.title }}</span>
         <div v-else class="relative group">
           <div class="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 whitespace-nowrap z-50">
-            {{ item.title }}
+            {{ link.title }}
           </div>
         </div>
       </SideNavLink>
 
       <!-- Logout -->
       <SideNavLink
-        :to="{ name: navigationConfig.logoutItem.name }"
-        :title="!sidebarStore.open ? navigationConfig.logoutItem.title : undefined"
+        v-for="link in footLinks"
+        :key="link.name"
+        :to="{ name: link.name }"
+        :title="!sidebarStore.open ? link.title : undefined"
       >
-        <span v-if="sidebarStore.open">{{ navigationConfig.logoutItem.title }}</span>
+        <span v-if="sidebarStore.open">{{ link.title }}</span>
         <div v-else class="relative group">
           <div class="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-100 whitespace-nowrap z-50">
-            {{ navigationConfig.logoutItem.title }}
+            {{ link.title }}
           </div>
         </div>
       </SideNavLink>
