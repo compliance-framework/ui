@@ -13,8 +13,8 @@ import { ref } from 'vue'
 const sidebarStore = useSidebarStore()
 
 interface NavigationItem {
-  name: string
   title: string
+  name?: string
   children?: Array<NavigationItem>
 }
 
@@ -52,16 +52,21 @@ const links = ref<Array<NavigationItem>>([
     title: 'Plan of Action and Milestones',
   },
   {
-    name: 'admin-parties',
-    title: 'Parties',
-  },
-  {
-    name: 'admin-roles',
-    title: 'Roles',
-  },
-  {
-    name: 'admin-subjects',
-    title: 'Subjects',
+    title: 'Admin',
+    children: [
+      {
+        name: 'admin-parties',
+        title: 'Parties',
+      },
+      {
+        name: 'admin-roles',
+        title: 'Roles',
+      },
+      {
+        name: 'admin-subjects',
+        title: 'Subjects',
+      }
+    ]
   }
 ]);
 
@@ -103,36 +108,41 @@ const footLinks = ref<Array<NavigationItem>>([
       </div>
     </template>
 
-    <div class="overflow-y-auto max-h-full grow">
-      <!-- Main Navigation Items -->
-      <SideNavLink
-        v-for="link in links"
-        :key="link.name"
-        :to="{ name: link.name }"
-        :title="!sidebarStore.open ? link.title : undefined"
-      >
-        <span v-if="sidebarStore.open">{{ link.title }}</span>
-        <div v-else class="relative group">
-          <div class="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 whitespace-nowrap z-50">
-            {{ link.title }}
-          </div>
-        </div>
-      </SideNavLink>
+    <div class="overflow-y-auto max-h-full grow flex flex-col justify-between">
+      <!-- Top items -->
+      <div>
+        <!-- Main Navigation Items -->
+        <template
+          v-for="link in links"
+          :key="link.name"
+        >
+          <SideNavLink :to="{ name: link.name }" :title="!sidebarStore.open ? link.title : undefined">
+            <span v-if="sidebarStore.open">{{ link.title }}</span>
+            <div v-else class="relative group">
+              <div class="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 whitespace-nowrap z-50">
+                {{ link.title }}
+              </div>
+            </div>
+          </SideNavLink>
+        </template>
+      </div>
 
-      <!-- Logout -->
-      <SideNavLink
-        v-for="link in footLinks"
-        :key="link.name"
-        :to="{ name: link.name }"
-        :title="!sidebarStore.open ? link.title : undefined"
-      >
-        <span v-if="sidebarStore.open">{{ link.title }}</span>
-        <div v-else class="relative group">
-          <div class="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-100 whitespace-nowrap z-50">
-            {{ link.title }}
-          </div>
-        </div>
-      </SideNavLink>
+      <!-- Bottom Items -->
+      <div>
+        <template
+          v-for="link in footLinks"
+          :key="link.name"
+        >
+          <SideNavLink :to="{ name: link.name }" :title="!sidebarStore.open ? link.title : undefined">
+            <span v-if="sidebarStore.open">{{ link.title }}</span>
+            <div v-else class="relative group">
+              <div class="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 whitespace-nowrap z-50">
+                {{ link.title }}
+              </div>
+            </div>
+          </SideNavLink>
+        </template>
+      </div>
     </div>
   </SideNav>
 </template>
