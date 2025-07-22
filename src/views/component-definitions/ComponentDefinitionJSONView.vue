@@ -41,9 +41,11 @@ import { onMounted, ref, computed } from 'vue'
 import { useComponentDefinitionStore, type ComponentDefinition } from '@/stores/component-definitions.ts'
 import { useRoute } from 'vue-router'
 import { useToast } from 'primevue/usetoast'
+import { useConfigStore } from '@/stores/config.ts'
 
 const componentDefinitionStore = useComponentDefinitionStore()
 const route = useRoute()
+const configStore = useConfigStore()
 const toast = useToast()
 
 const componentDefinitionId = ref<string>(route.params.id as string)
@@ -64,8 +66,19 @@ async function loadComponentDefinition() {
   try {
     loading.value = true
     error.value = null
-    const response = await componentDefinitionStore.full(componentDefinitionId.value)
-    componentDefinition.value = response.data
+    
+    // Get raw API response without camelCase conversion
+    const config = await configStore.getConfig()
+    const response = await fetch(
+      `${config.API_URL}/api/oscal/component-definitions/${componentDefinitionId.value}/full`,
+      {
+        credentials: 'include'
+      }
+    )
+    if (!response.ok) {
+      throw response
+    }
+    componentDefinition.value = await response.json()
   } catch (err) {
     error.value = 'Failed to load component definition JSON. Please try again.'
     toast.add({

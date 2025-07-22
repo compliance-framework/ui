@@ -49,15 +49,14 @@
   <!--  </div>-->
 </template>
 <script setup lang="ts">
-import { onMounted, toRef, watch } from 'vue'
-import PageHeader from '@/components/PageHeader.vue';
-import { useToast } from 'primevue/usetoast';
-import { useCatalogStore } from '@/stores/catalogs.ts';
 import { useApi, type DataResponse } from '@/composables/api';
 import { type Catalog } from '@/oscal';
 import { useMustAuthenticate } from '@/composables/useMustAuthenticate';
+import PageHeader from '@/components/PageHeader.vue'
+import { useCatalogStore } from '@/stores/catalogs.ts'
+import { useToast } from 'primevue/usetoast'
 
-const catalogStore = useCatalogStore();
+const catalogStore = useCatalogStore()
 const toast = useToast();
 const { watchForUnauthenticated } = useMustAuthenticate();
 
@@ -72,7 +71,6 @@ async function downloadCatalogJSON(id: string, title: string) {
   try {
     const response = await catalogStore.full(id);
     const jsonData = JSON.stringify(response.data, null, 2);
-
     // Create blob and download
     const blob = new Blob([jsonData], { type: 'application/json' });
     const url = URL.createObjectURL(blob);

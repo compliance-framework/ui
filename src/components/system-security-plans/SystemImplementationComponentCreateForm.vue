@@ -272,12 +272,22 @@ const createComponent = async () => {
     return;
   }
 
+  // Clean up protocols - remove empty ones
+  if (componentData.protocols) {
+    componentData.protocols = componentData.protocols.filter(p => p.title || p.name);
+  }
+
   saving.value = true;
   try {
     const response = await sspStore.createSystemImplementationComponent(
       props.sspId,
       componentData
     );
+    
+    // Verify the component was actually created
+    if (!response.data || !response.data.uuid) {
+      throw new Error('Invalid response from server - component may not have been created');
+    }
     
     toast.add({
       severity: 'success',
@@ -288,10 +298,24 @@ const createComponent = async () => {
     
     emit('created', response.data);
   } catch (error) {
-    console.error('Failed to create component:', error);
-    const errorMessage = error instanceof Response 
-      ? `HTTP ${error.status}: ${error.statusText}`
-      : 'Failed to create component. Please try again.';
+    let errorMessage = 'Failed to create component. Please try again.';
+    
+    if (error instanceof Response) {
+      if (error.status === 404) {
+        errorMessage = 'System security plan not found. Please refresh the page.';
+      } else if (error.status === 400) {
+        errorMessage = 'Invalid component data. Please check all required fields.';
+      } else if (error.status === 409) {
+        errorMessage = 'A component with this UUID already exists.';
+      } else if (error.status === 500) {
+        errorMessage = 'Server error occurred. Please try again later.';
+      } else {
+        errorMessage = `Error: ${error.status} ${error.statusText}`;
+      }
+    } else if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+    
     toast.add({
       severity: 'error',
       summary: 'Error',

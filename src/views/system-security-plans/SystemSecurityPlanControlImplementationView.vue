@@ -141,7 +141,7 @@
                       :key="byComponent.uuid"
                       class="text-xs bg-white dark:bg-slate-900 p-2 rounded border"
                     >
-                      <StatementByComponent :ssp="ssp" :statement="statement" :by-component="byComponent" />
+                      <StatementByComponent :ssp="ssp" :statement="statement" :by-component="byComponent" @edit="handleEditStatementByComponent(requirement, statement, $event)" />
                     </div>
                   </div>
                 </div>
@@ -234,6 +234,19 @@
       @created="handleStatementCreated"
     />
   </Modal>
+
+  <!-- Statement By Component Edit Modal -->
+  <Modal :show="showEditStatementByComponentModal && editingByComponent !== null" @close="showEditStatementByComponentModal = false" size="xl">
+    <StatementByComponentEditForm
+      v-if="editingByComponent && editingRequirement && editingStatement"
+      :ssp-id="route.params.id as string"
+      :requirement="editingRequirement"
+      :statement="editingStatement"
+      :by-component="editingByComponent"
+      @cancel="showEditStatementByComponentModal = false"
+      @saved="handleStatementByComponentSaved"
+    />
+  </Modal>
 </template>
 
 <script setup lang="ts">
@@ -244,6 +257,7 @@ import {
   type ControlImplementation,
   type ImplementedRequirement,
   type Statement, type SystemSecurityPlan,
+  type ByComponent,
   useSystemSecurityPlanStore
 } from '@/stores/system-security-plans.ts'
 import Modal from '@/components/Modal.vue'
@@ -253,6 +267,7 @@ import ControlImplementationEditForm from '@/components/system-security-plans/Co
 import StatementEditForm from '@/components/system-security-plans/StatementEditForm.vue'
 import StatementCreateForm from '@/components/system-security-plans/StatementCreateForm.vue'
 import StatementByComponent from '@/views/system-security-plans/partials/StatementByComponent.vue'
+import StatementByComponentEditForm from '@/components/system-security-plans/StatementByComponentEditForm.vue'
 
 const route = useRoute()
 const sspStore = useSystemSecurityPlanStore()
@@ -268,10 +283,12 @@ const showEditRequirementModal = ref(false)
 const showEditControlImplementationModal = ref(false)
 const showEditStatementModal = ref(false)
 const showCreateStatementModal = ref(false)
+const showEditStatementByComponentModal = ref(false)
 
 // Edit targets
 const editingRequirement = ref<ImplementedRequirement | null>(null)
 const editingStatement = ref<Statement | null>(null)
+const editingByComponent = ref<ByComponent | null>(null)
 
 const ssp = ref<SystemSecurityPlan>({} as SystemSecurityPlan);
 
@@ -430,9 +447,36 @@ const createComponent = (statement: Statement) => {
   alert('Create Component functionality is in development')
 }
 
-const editByComponent = (statement: any, byComponent: any) => {
-  console.log('Edit Statement By Component:', statement, byComponent)
-  alert('Statement By Component editing functionality is in development')
+const handleEditStatementByComponent = (requirement: ImplementedRequirement, statement: Statement, byComponent: ByComponent) => {
+  editingRequirement.value = requirement
+  editingStatement.value = statement
+  editingByComponent.value = byComponent
+  showEditStatementByComponentModal.value = true
+}
+
+const handleStatementByComponentSaved = (updatedByComponent: ByComponent) => {
+  if (controlImplementation.value && editingRequirement.value && editingStatement.value) {
+    const reqIndex = controlImplementation.value.implementedRequirements.findIndex(r => r.uuid === editingRequirement.value?.uuid)
+    if (reqIndex !== -1) {
+      const requirement = controlImplementation.value.implementedRequirements[reqIndex]
+      if (requirement.statements) {
+        const statementIndex = requirement.statements.findIndex(s => s.uuid === editingStatement.value?.uuid)
+        if (statementIndex !== -1) {
+          const statement = requirement.statements[statementIndex]
+          if (statement.byComponents) {
+            const byCompIndex = statement.byComponents.findIndex(bc => bc.uuid === updatedByComponent.uuid)
+            if (byCompIndex !== -1) {
+              statement.byComponents[byCompIndex] = updatedByComponent
+            }
+          }
+        }
+      }
+    }
+  }
+  showEditStatementByComponentModal.value = false
+  editingByComponent.value = null
+  editingStatement.value = null
+  editingRequirement.value = null
 }
 
 const editRequirementByComponent = (requirement: ImplementedRequirement, byComponent: any) => {

@@ -41,7 +41,6 @@ export interface SystemImplementation {
   props: Property[];
   links: Link[];
   remarks?: string;
-  description?: string;
 }
 
 export interface SystemImplementationUser {
@@ -85,6 +84,46 @@ export interface SystemComponent {
   remarks: string;
   props: Property[];
   links: Link[];
+}
+
+export interface InventoryItem {
+  uuid: string;
+  description: string;
+  props?: Property[];
+  links?: Link[];
+  responsibleParties?: {
+    roleId: string;
+    partyUuids: string[];
+    props?: Property[];
+    links?: Link[];
+    remarks?: string;
+  }[];
+  implementedComponents?: ImplementedComponent[];
+  remarks?: string;
+}
+
+export interface ImplementedComponent {
+  componentUuid: string;
+  props?: Property[];
+  links?: Link[];
+  responsibleParties?: {
+    roleId: string;
+    partyUuids: string[];
+    props?: Property[];
+    links?: Link[];
+    remarks?: string;
+  }[];
+  remarks?: string;
+}
+
+export interface LeveragedAuthorization {
+  uuid: string;
+  title: string;
+  partyUuid: string;
+  dateAuthorized: string;
+  remarks?: string;
+  props?: Property[];
+  links?: Link[];
 }
 
 export interface ResponsibleRole {
@@ -414,6 +453,36 @@ export const useSystemSecurityPlanStore = defineStore(
       }) as DataResponse<SystemImplementation>;
     }
 
+    async function updateSystemImplementation(
+      id: string,
+      systemImplementation: SystemImplementation
+    ): Promise<DataResponse<SystemImplementation>> {
+      const config = await configStore.getConfig();
+      const requestBody = decamelizeKeys(systemImplementation, { separator: '-' });
+      
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/system-security-plans/${id}/system-implementation`,
+        {
+          method: 'PUT',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestBody),
+        }
+      );
+      
+      if (!response.ok) {
+        throw response;
+      }
+      
+      const responseData = await response.json();
+      
+      return camelcaseKeys(responseData, {
+        deep: true,
+      }) as DataResponse<SystemImplementation>;
+    }
+
     async function getSystemImplementationUsers(
       id: string,
     ): Promise<DataResponse<SystemImplementationUser[]>> {
@@ -445,7 +514,9 @@ export const useSystemSecurityPlanStore = defineStore(
       if (!response.ok) {
         throw response;
       }
-      return camelcaseKeys(await response.json(), {
+      const data = await response.json();
+      
+      return camelcaseKeys(data, {
         deep: true,
       }) as DataResponse<SystemComponent[]>;
     }
@@ -471,7 +542,7 @@ export const useSystemSecurityPlanStore = defineStore(
 
     async function getSystemImplementationInventoryItems(
       id: string,
-    ): Promise<DataResponse<any[]>> {
+    ): Promise<DataResponse<InventoryItem[]>> {
       const config = await configStore.getConfig();
       const response = await fetch(
         `${config.API_URL}/api/oscal/system-security-plans/${id}/system-implementation/inventory-items`,
@@ -484,12 +555,12 @@ export const useSystemSecurityPlanStore = defineStore(
       }
       return camelcaseKeys(await response.json(), {
         deep: true,
-      }) as DataResponse<any[]>;
+      }) as DataResponse<InventoryItem[]>;
     }
 
     async function getSystemImplementationLeveragedAuthorizations(
       id: string,
-    ): Promise<DataResponse<any[]>> {
+    ): Promise<DataResponse<LeveragedAuthorization[]>> {
       const config = await configStore.getConfig();
       const response = await fetch(
         `${config.API_URL}/api/oscal/system-security-plans/${id}/system-implementation/leveraged-authorizations`,
@@ -502,14 +573,80 @@ export const useSystemSecurityPlanStore = defineStore(
       }
       return camelcaseKeys(await response.json(), {
         deep: true,
-      }) as DataResponse<any[]>;
+      }) as DataResponse<LeveragedAuthorization[]>;
+    }
+
+    async function createSystemImplementationLeveragedAuthorization(
+      id: string,
+      auth: Partial<LeveragedAuthorization>
+    ): Promise<DataResponse<LeveragedAuthorization>> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/system-security-plans/${id}/system-implementation/leveraged-authorizations`,
+        {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(decamelizeKeys(auth, { separator: '-' })),
+        }
+      );
+      if (!response.ok) {
+        throw response;
+      }
+      return camelcaseKeys(await response.json(), {
+        deep: true,
+      }) as DataResponse<LeveragedAuthorization>;
+    }
+
+    async function updateSystemImplementationLeveragedAuthorization(
+      id: string,
+      authId: string,
+      auth: LeveragedAuthorization
+    ): Promise<DataResponse<LeveragedAuthorization>> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/system-security-plans/${id}/system-implementation/leveraged-authorizations/${authId}`,
+        {
+          method: 'PUT',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(decamelizeKeys(auth, { separator: '-' })),
+        }
+      );
+      if (!response.ok) {
+        throw response;
+      }
+      return camelcaseKeys(await response.json(), {
+        deep: true,
+      }) as DataResponse<LeveragedAuthorization>;
+    }
+
+    async function deleteSystemImplementationLeveragedAuthorization(
+      id: string,
+      authId: string
+    ): Promise<void> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/system-security-plans/${id}/system-implementation/leveraged-authorizations/${authId}`,
+        {
+          method: 'DELETE',
+          credentials: 'include',
+        }
+      );
+      if (!response.ok) {
+        throw response;
+      }
     }
 
     async function updateSystemImplementationInventoryItem(
       id: string,
       itemId: string,
-      item: any,
-    ): Promise<DataResponse<any>> {
+      item: InventoryItem,
+    ): Promise<DataResponse<InventoryItem>> {
       const config = await configStore.getConfig();
       const response = await fetch(
         `${config.API_URL}/api/oscal/system-security-plans/${id}/system-implementation/inventory-items/${itemId}`,
@@ -525,13 +662,13 @@ export const useSystemSecurityPlanStore = defineStore(
       if (!response.ok) {
         throw response;
       }
-      return camelcaseKeys(await response.json(), { deep: true }) as DataResponse<any>;
+      return camelcaseKeys(await response.json(), { deep: true }) as DataResponse<InventoryItem>;
     }
 
     async function createSystemImplementationInventoryItem(
       id: string,
-      item: any,
-    ): Promise<DataResponse<any>> {
+      item: InventoryItem,
+    ): Promise<DataResponse<InventoryItem>> {
       const config = await configStore.getConfig();
       const response = await fetch(
         `${config.API_URL}/api/oscal/system-security-plans/${id}/system-implementation/inventory-items`,
@@ -547,7 +684,7 @@ export const useSystemSecurityPlanStore = defineStore(
       if (!response.ok) {
         throw response;
       }
-      return camelcaseKeys(await response.json(), { deep: true }) as DataResponse<any>;
+      return camelcaseKeys(await response.json(), { deep: true }) as DataResponse<InventoryItem>;
     }
 
     async function deleteSystemImplementationUser(
@@ -557,6 +694,23 @@ export const useSystemSecurityPlanStore = defineStore(
       const config = await configStore.getConfig();
       const response = await fetch(
         `${config.API_URL}/api/oscal/system-security-plans/${id}/system-implementation/users/${userId}`,
+        {
+          method: 'DELETE',
+          credentials: 'include',
+        }
+      );
+      if (!response.ok) {
+        throw response;
+      }
+    }
+
+    async function deleteSystemImplementationInventoryItem(
+      id: string,
+      itemId: string,
+    ): Promise<void> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/system-security-plans/${id}/system-implementation/inventory-items/${itemId}`,
         {
           method: 'DELETE',
           credentials: 'include',
@@ -675,6 +829,8 @@ export const useSystemSecurityPlanStore = defineStore(
       component: Partial<SystemComponent>,
     ): Promise<DataResponse<SystemComponent>> {
       const config = await configStore.getConfig();
+      const requestBody = decamelizeKeys(component, { separator: '-' });
+      
       const response = await fetch(
         `${config.API_URL}/api/oscal/system-security-plans/${id}/system-implementation/components`,
         {
@@ -682,14 +838,16 @@ export const useSystemSecurityPlanStore = defineStore(
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(decamelizeKeys(component, { separator: '-' })),
+          body: JSON.stringify(requestBody),
           credentials: 'include',
         }
       );
       if (!response.ok) {
         throw response;
       }
-      return camelcaseKeys(await response.json(), { deep: true }) as DataResponse<SystemComponent>;
+      const responseData = await response.json();
+      
+      return camelcaseKeys(responseData, { deep: true }) as DataResponse<SystemComponent>;
     }
 
     async function full(id: string): Promise<DataResponse<SystemSecurityPlan>> {
@@ -874,6 +1032,31 @@ export const useSystemSecurityPlanStore = defineStore(
       return camelcaseKeys(await response.json(), { deep: true }) as DataResponse<Statement>;
     }
 
+    async function updateStatementByComponent(
+      id: string,
+      reqId: string,
+      stmtId: string,
+      byComponentId: string,
+      byComponent: ByComponent,
+    ): Promise<DataResponse<ByComponent>> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/system-security-plans/${id}/control-implementation/implemented-requirements/${reqId}/statements/${stmtId}/by-components/${byComponentId}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(decamelizeKeys(byComponent, { separator: '-' })),
+          credentials: 'include',
+        }
+      );
+      if (!response.ok) {
+        throw response;
+      }
+      return camelcaseKeys(await response.json(), { deep: true }) as DataResponse<ByComponent>;
+    }
+
     return {
       get,
       list,
@@ -890,10 +1073,14 @@ export const useSystemSecurityPlanStore = defineStore(
       updateCharacteristicsDataFlowDiagram,
 
       getSystemImplementation,
+      updateSystemImplementation,
       getSystemImplementationUsers,
       getSystemImplementationComponents,
       getSystemImplementationInventoryItems,
       getSystemImplementationLeveragedAuthorizations,
+      createSystemImplementationLeveragedAuthorization,
+      updateSystemImplementationLeveragedAuthorization,
+      deleteSystemImplementationLeveragedAuthorization,
       updateSystemImplementationUser,
       createSystemImplementationUser,
       deleteSystemImplementationUser,
@@ -903,6 +1090,7 @@ export const useSystemSecurityPlanStore = defineStore(
       deleteSystemImplementationComponent,
       updateSystemImplementationInventoryItem,
       createSystemImplementationInventoryItem,
+      deleteSystemImplementationInventoryItem,
 
       getControlImplementation,
       updateControlImplementation,
@@ -912,6 +1100,7 @@ export const useSystemSecurityPlanStore = defineStore(
       deleteImplementedRequirement,
       updateImplementedRequirementStatement,
       createImplementedRequirementStatement,
+      updateStatementByComponent,
     };
   },
 );

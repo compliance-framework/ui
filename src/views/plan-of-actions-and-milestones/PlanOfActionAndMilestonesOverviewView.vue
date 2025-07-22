@@ -165,9 +165,11 @@ import {
 import MetadataEditForm from '@/components/poam/MetadataEditForm.vue'
 import Modal from '@/components/Modal.vue'
 import { useToast } from 'primevue/usetoast'
+import { useConfigStore } from '@/stores/config.ts'
 
 const route = useRoute()
 const poamStore = usePlanOfActionAndMilestonesStore()
+const configStore = useConfigStore()
 const toast = useToast()
 
 const planOfActionAndMilestones = ref<PlanOfActionAndMilestones>({} as PlanOfActionAndMilestones)
@@ -232,8 +234,20 @@ function formatDate(dateString?: string): string {
 
 async function downloadJson(): Promise<void> {
   try {
-    const response = await poamStore.full(route.params.id as string)
-    const dataStr = JSON.stringify(response.data, null, 2)
+    // Get raw API response without camelCase conversion
+    const config = await configStore.getConfig()
+    const response = await fetch(
+      `${config.API_URL}/api/oscal/plan-of-action-and-milestones/${route.params.id}/full`,
+      {
+        credentials: 'include'
+      }
+    )
+    if (!response.ok) {
+      throw response
+    }
+    const data = await response.json()
+    
+    const dataStr = JSON.stringify(data, null, 2)
     const dataBlob = new Blob([dataStr], { type: 'application/json' })
     
     const url = URL.createObjectURL(dataBlob)
