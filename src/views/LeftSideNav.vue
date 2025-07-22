@@ -14,8 +14,20 @@ const sidebarStore = useSidebarStore()
 
 interface NavigationItem {
   title: string
+  abbr?: string
   name?: string
   children?: Array<NavigationItem>
+}
+
+function abbreviated(link: NavigationItem): string {
+  // We'll take the first letter of each word in the title, unless it's overridden
+  if (link.abbr) {
+    return link.abbr
+  }
+
+  return link.title.split(" ").map((word: string) => {
+    return word[0].toUpperCase()
+  }).join("")
 }
 
 const links = ref<Array<NavigationItem>>([
@@ -26,14 +38,17 @@ const links = ref<Array<NavigationItem>>([
   {
     name: 'evidence:index',
     title: 'Evidence',
+    abbr: 'EV',
   },
   {
     name: 'catalog-list',
     title: 'Catalogs',
+    abbr: 'CAT',
   },
   {
     name: 'profile-list',
     title: 'Profiles',
+    abbr: 'PR',
   },
   {
     name: 'component-definitions',
@@ -49,7 +64,8 @@ const links = ref<Array<NavigationItem>>([
   },
   {
     name: 'plan-of-action-and-milestones',
-    title: 'Plan of Action and Milestones',
+    title: 'POA&M',
+    abbr: 'PM',
   },
   {
     title: 'Admin',
@@ -116,28 +132,18 @@ const footLinks = ref<Array<NavigationItem>>([
           v-for="link in links"
           :key="link.name"
         >
-          <SideNavCategory :title="link.title" :name="link.title" v-if="link.children">
+          <SideNavCategory :title="link.title" v-if="link.children">
             <template
               v-for="child in link.children"
               :key="child.name"
             >
-              <SideNavLink :to="{ name: child.name }" :title="!sidebarStore.open ? child.title : undefined">
-                <span v-if="sidebarStore.open">{{ child.title }}</span>
-                <div v-else class="relative group">
-                  <div class="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 whitespace-nowrap z-50">
-                    {{ child.title }}
-                  </div>
-                </div>
+              <SideNavLink :to="{ name: child.name }" v-tooltip.right="{value: `${link.title} | ${child.title}`, disabled: sidebarStore.open}">
+                {{ sidebarStore.open ? child.title : abbreviated(child) }}
               </SideNavLink>
             </template>
           </SideNavCategory>
-          <SideNavLink v-else :to="{ name: link.name }" :title="!sidebarStore.open ? link.title : undefined">
-            <span v-if="sidebarStore.open">{{ link.title }}</span>
-            <div v-else class="relative group">
-              <div class="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 whitespace-nowrap z-50">
-                {{ link.title }}
-              </div>
-            </div>
+          <SideNavLink v-else :to="{ name: link.name }" v-tooltip.right="{value: link.title, disabled: sidebarStore.open}">
+            {{ sidebarStore.open ? link.title : abbreviated(link) }}
           </SideNavLink>
         </template>
       </div>
@@ -148,13 +154,8 @@ const footLinks = ref<Array<NavigationItem>>([
           v-for="link in footLinks"
           :key="link.name"
         >
-          <SideNavLink :to="{ name: link.name }" :title="!sidebarStore.open ? link.title : undefined">
-            <span v-if="sidebarStore.open">{{ link.title }}</span>
-            <div v-else class="relative group">
-              <div class="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 whitespace-nowrap z-50">
-                {{ link.title }}
-              </div>
-            </div>
+          <SideNavLink :to="{ name: link.name }" v-tooltip.right="{value: link.title, disabled: sidebarStore.open}">
+            {{ sidebarStore.open ? link.title : abbreviated(link) }}
           </SideNavLink>
         </template>
       </div>
@@ -165,9 +166,6 @@ const footLinks = ref<Array<NavigationItem>>([
 <style>
 @reference "@/assets/main.css";
 
-.router-link {
-  @apply border-l-transparent border-l-8 text-zinc-700 dark:text-slate-200;
-}
 .router-link-exact-active {
   @apply bg-linear-to-r from-slate-200 to-slate-100 border-l-slate-300 dark:from-slate-700 dark:to-slate-800 dark:border-slate-500 dark:text-slate-200;
 }
