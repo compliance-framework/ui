@@ -19,6 +19,7 @@ const sidebarStore = useSidebarStore()
       'pl-2': sidebarStore.isCollapsed
     }"
     :title="title"
+    :aria-label="title || ''"
     :aria-label="title"
   >
     <slot />
