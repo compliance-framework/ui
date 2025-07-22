@@ -1,7 +1,7 @@
 <template>
   <div>
     <PageHeader>System Security Plans</PageHeader>
-    
+
     <div class="my-4 overflow-hidden rounded-lg border border-ccf-300 bg-white shadow dark:border-slate-700 dark:bg-slate-900">
       <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-ccf-300 dark:divide-slate-700">
@@ -56,6 +56,7 @@
                   >
                     {{ ssp.metadata.title }}
                   </RouterLink>
+                  <Chip class="ml-2" v-if="systemStore.system.securityPlan.uuid == ssp.uuid" :label="'Active'" />
                 </td>
                 <td class="px-6 py-4 text-sm text-gray-500 dark:text-slate-400">
                   {{ ssp.metadata.version }}
@@ -78,6 +79,13 @@
                     >
                       JSON
                     </button>
+                    <button
+                      @click="setAsGlobal(ssp)"
+                      class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1 rounded-md"
+                      title="Download Full JSON"
+                    >
+                      Set
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -94,10 +102,13 @@ import PageHeader from '@/components/PageHeader.vue'
 import { type SystemSecurityPlan, useSystemSecurityPlanStore } from '@/stores/system-security-plans.ts'
 import { useToast } from 'primevue/usetoast'
 import { useConfigStore } from '@/stores/config.ts'
+import { useSystemStore } from '@/stores/system.ts'
+import Chip from '@/volt/Chip.vue'
 
 const sspStore = useSystemSecurityPlanStore()
 const configStore = useConfigStore()
 const toast = useToast()
+const systemStore = useSystemStore();
 
 const systemSecurityPlans = ref<SystemSecurityPlan[]>([])
 const loading = ref(true)
@@ -114,6 +125,10 @@ onMounted(async () => {
     loading.value = false
   }
 })
+
+function setAsGlobal(ssp: SystemSecurityPlan) {
+  systemStore.setSecurityPlan(ssp)
+}
 
 function formatDate(dateString?: string): string {
   if (!dateString) return 'N/A'
@@ -134,10 +149,10 @@ async function downloadJson(uuid: string, title: string): Promise<void> {
       throw response
     }
     const data = await response.json()
-    
+
     const dataStr = JSON.stringify(data, null, 2)
     const dataBlob = new Blob([dataStr], { type: 'application/json' })
-    
+
     const url = URL.createObjectURL(dataBlob)
     const link = document.createElement('a')
     link.href = url
@@ -146,7 +161,7 @@ async function downloadJson(uuid: string, title: string): Promise<void> {
     link.click()
     document.body.removeChild(link)
     URL.revokeObjectURL(url)
-    
+
     toast.add({
       severity: 'success',
       summary: 'SSP JSON Downloaded',
