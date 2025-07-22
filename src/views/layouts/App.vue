@@ -13,15 +13,15 @@ const sidebarStore = useSidebarStore()
     <div
       class="fixed top-0 left-0 h-full transition-all duration-300 ease-in-out z-40"
       :class="{
-        'w-80': !sidebarStore.isCollapsed,
-        'w-16': sidebarStore.isCollapsed
+        'w-80': sidebarStore.open,
+        'w-16': !sidebarStore.open
       }"
     >
       <LeftSideNav
         class="h-full transition-all duration-300 ease-in-out"
         :class="{
-          'w-80': !sidebarStore.isCollapsed,
-          'w-16': sidebarStore.isCollapsed
+          'w-80': sidebarStore.open,
+          'w-16': !sidebarStore.open
         }"
       />
 
@@ -32,8 +32,8 @@ const sidebarStore = useSidebarStore()
     <main
       class="flex-1 transition-all duration-300 ease-in-out px-12 py-4 bg-zinc-50 dark:bg-slate-950 text-zinc-800 dark:text-slate-50 overflow-auto"
       :class="{
-        'ml-80': !sidebarStore.isCollapsed,
-        'ml-16': sidebarStore.isCollapsed
+        'ml-80': sidebarStore.open,
+        'ml-16': !sidebarStore.open
       }"
     >
       <router-view v-slot="{ Component }">

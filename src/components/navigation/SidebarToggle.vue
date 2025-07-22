@@ -1,8 +1,8 @@
 <template>
   <button
     type="button"
-    @click="sidebarStore.toggleSidebar()"
-    :aria-expanded="!sidebarStore.isCollapsed"
+    @click="sidebarStore.toggle()"
+    :aria-expanded="sidebarStore.open"
     aria-controls="sidebar"
     aria-label="Toggle sidebar"
     class="absolute -right-3 top-24 z-50 w-6 h-6 rounded-full bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110 flex items-center justify-center group"
@@ -11,8 +11,8 @@
     <svg
       class="w-3 h-3 text-gray-600 dark:text-slate-300 transition-transform duration-300"
       :class="{
-        'rotate-180': sidebarStore.isCollapsed,
-        'rotate-0': !sidebarStore.isCollapsed
+        'rotate-180': !sidebarStore.open,
+        'rotate-0': sidebarStore.open
       }"
       fill="none"
       stroke="currentColor"

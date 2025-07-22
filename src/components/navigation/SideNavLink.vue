@@ -15,8 +15,8 @@ const sidebarStore = useSidebarStore()
     :to="to"
     class="block py-2 router-link transition-all duration-300 hover:bg-gray-50 dark:hover:bg-slate-800"
     :class="{
-      'pl-6': !sidebarStore.isCollapsed,
-      'pl-2': sidebarStore.isCollapsed
+      'pl-6': sidebarStore.open,
+      'pl-2': !sidebarStore.open
     }"
     :title="title"
     :aria-label="title"
