@@ -11,15 +11,14 @@ defineProps<{
 const sidebarStore = useSidebarStore()
 </script>
 <template>
-  <RouterLink 
-    :to="to" 
+  <RouterLink
+    :to="to"
     class="block py-2 router-link transition-all duration-300 hover:bg-gray-50 dark:hover:bg-slate-800"
     :class="{
       'pl-6': !sidebarStore.isCollapsed,
       'pl-2': sidebarStore.isCollapsed
     }"
     :title="title"
-    :aria-label="title || ''"
     :aria-label="title"
   >
     <slot />
