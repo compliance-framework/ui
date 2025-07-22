@@ -282,39 +282,6 @@ const authenticatedRoutes = [
     }
   },
   {
-    path: '/findings',
-    name: 'findings',
-    // route level code-splitting
-    // this generates a separate chunk (About.[hash].js) for this route
-    // which is lazy-loaded when the route is visited.
-    component: () => import('../views/evidence/IndexView.vue'),
-    meta: {
-      requiresAuth: true,
-    }
-  },
-  {
-    path: '/findings/by-subject',
-    name: 'findings-by-subject',
-    // route level code-splitting
-    // this generates a separate chunk (About.[hash].js) for this route
-    // which is lazy-loaded when the route is visited.
-    component: () => import('../views/evidence/IndexView.vue'),
-    meta: {
-      requiresAuth: true,
-    }
-  },
-  {
-    path: '/findings/by-control-class',
-    name: 'list-classes-of-findings',
-    // route level code-splitting
-    // this generates a separate chunk (About.[hash].js) for this route
-    // which is lazy-loaded when the route is visited.
-    component: () => import('../views/ControlClassesView.vue'),
-    meta: {
-      requiresAuth: true,
-    }
-  },
-  {
     path: '/evidence',
     name: 'evidence:index',
     // route level code-splitting
