@@ -116,7 +116,22 @@ const footLinks = ref<Array<NavigationItem>>([
           v-for="link in links"
           :key="link.name"
         >
-          <SideNavLink :to="{ name: link.name }" :title="!sidebarStore.open ? link.title : undefined">
+          <SideNavCategory :title="link.title" :name="link.title" v-if="link.children">
+            <template
+              v-for="child in link.children"
+              :key="child.name"
+            >
+              <SideNavLink :to="{ name: child.name }" :title="!sidebarStore.open ? child.title : undefined">
+                <span v-if="sidebarStore.open">{{ child.title }}</span>
+                <div v-else class="relative group">
+                  <div class="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 whitespace-nowrap z-50">
+                    {{ child.title }}
+                  </div>
+                </div>
+              </SideNavLink>
+            </template>
+          </SideNavCategory>
+          <SideNavLink v-else :to="{ name: link.name }" :title="!sidebarStore.open ? link.title : undefined">
             <span v-if="sidebarStore.open">{{ link.title }}</span>
             <div v-else class="relative group">
               <div class="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 whitespace-nowrap z-50">
