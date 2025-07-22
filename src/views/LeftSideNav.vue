@@ -137,12 +137,12 @@ const footLinks = ref<Array<NavigationItem>>([
               v-for="child in link.children"
               :key="child.name"
             >
-              <SideNavLink :to="{ name: child.name }" v-tooltip.focus.right="{value: `${link.title} | ${child.title}`, disabled: sidebarStore.open}">
+              <SideNavLink :to="{ name: child.name }" v-tooltip.right="{value: `${link.title} | ${child.title}`, disabled: sidebarStore.open}">
                 {{ sidebarStore.open ? child.title : abbreviated(child) }}
               </SideNavLink>
             </template>
           </SideNavCategory>
-          <SideNavLink v-else :to="{ name: link.name }" v-tooltip.focus.right="{value: link.title, disabled: sidebarStore.open}">
+          <SideNavLink v-else :to="{ name: link.name }" v-tooltip.hover.right="{value: link.title, disabled: sidebarStore.open}">
             {{ sidebarStore.open ? link.title : abbreviated(link) }}
           </SideNavLink>
         </template>
@@ -154,7 +154,7 @@ const footLinks = ref<Array<NavigationItem>>([
           v-for="link in footLinks"
           :key="link.name"
         >
-          <SideNavLink :to="{ name: link.name }" v-tooltip.focus.right="{value: link.title, disabled: sidebarStore.open}">
+          <SideNavLink :to="{ name: link.name }" v-tooltip.right="{value: link.title, disabled: sidebarStore.open}">
             {{ sidebarStore.open ? link.title : abbreviated(link) }}
           </SideNavLink>
         </template>
