@@ -550,7 +550,7 @@ const totalByComponents = computed(() => {
 
 onMounted(async () => {
 
-  const id = systemStore.system.securityPlan.uuid;
+  const id = systemStore.system.securityPlan?.uuid as string;
 
   sspStore.get(id).then((res) => {
     ssp.value = res.data;
