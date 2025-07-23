@@ -41,6 +41,11 @@ const links = ref<Array<NavigationItem>>([
     abbr: 'EV',
   },
   {
+    name: 'controls:index',
+    title: 'Controls',
+    abbr: 'CON',
+  },
+  {
     name: 'catalog-list',
     title: 'Catalogs',
     abbr: 'CAT',

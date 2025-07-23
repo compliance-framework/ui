@@ -8,9 +8,9 @@ import { useLocalStorage } from '@vueuse/core'
 type PartialSystemSecurityPlan = Pick<SystemSecurityPlan, "uuid" | "metadata">
 
 interface System {
-  securityPlan: PartialSystemSecurityPlan;
-  assessmentPlan: AssessmentPlan;
-  poam: PlanOfActionAndMilestones;
+  securityPlan?: PartialSystemSecurityPlan;
+  assessmentPlan?: AssessmentPlan;
+  poam?: PlanOfActionAndMilestones;
 }
 
 export const useSystemStore = defineStore('system', () => {

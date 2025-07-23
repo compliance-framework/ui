@@ -56,7 +56,7 @@
                   >
                     {{ ssp.metadata.title }}
                   </RouterLink>
-                  <Chip class="ml-2" v-if="systemStore.system.securityPlan.uuid == ssp.uuid" :label="'Active'" />
+                  <Chip class="ml-2" v-if="systemStore.system.securityPlan?.uuid == ssp.uuid" :label="'Active'" />
                 </td>
                 <td class="px-6 py-4 text-sm text-gray-500 dark:text-slate-400">
                   {{ ssp.metadata.version }}
