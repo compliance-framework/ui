@@ -1,3 +1,5 @@
+import type { BackMatterResource } from '@/stores/component-definitions.ts'
+
 export interface Link {
   href: string;
   rel?: string;
@@ -60,4 +62,9 @@ export interface Control {
   links: Link[];
   props: Property[];
   controls: Control[];
+}
+
+export interface Profile {
+  uuid: string;
+  metadata: Metadata;
 }

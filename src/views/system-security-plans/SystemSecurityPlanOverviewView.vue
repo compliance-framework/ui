@@ -3,13 +3,13 @@
     <!-- Metadata Section -->
     <div class="bg-white dark:bg-slate-900 border border-ccf-300 dark:border-slate-700 rounded-lg p-6">
       <h3 class="text-lg font-semibold mb-4 text-gray-900 dark:text-slate-300">System Security Plan Metadata</h3>
-      
+
       <div v-if="systemSecurityPlan.metadata" class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">Title</label>
           <p class="text-gray-900 dark:text-slate-300">{{ systemSecurityPlan.metadata.title }}</p>
         </div>
-        
+
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">UUID</label>
           <p class="text-sm text-gray-600 dark:text-slate-400 font-mono">{{ systemSecurityPlan.uuid }}</p>
@@ -25,9 +25,23 @@
           <p class="text-gray-900 dark:text-slate-300">{{ formatDate(systemSecurityPlan.metadata.lastModified) }}</p>
         </div>
 
-        <div v-if="systemSecurityPlan.metadata.published" class="md:col-span-2">
+
+        <div v-if="systemSecurityPlan.metadata.published">
           <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">Published</label>
           <p class="text-gray-900 dark:text-slate-300">{{ formatDate(systemSecurityPlan.metadata.published) }}</p>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">Profile</label>
+          <Select
+            placeholder="Profile"
+            :loading="loadingProfiles"
+            checkmark
+            class="w-full"
+            v-model="selectedProfile"
+            :options="profileItems"
+            optionLabel="name"
+          />
         </div>
 
         <div v-if="systemSecurityPlan.metadata.remarks" class="md:col-span-2">
@@ -44,7 +58,7 @@
     <!-- Actions Section -->
     <div class="bg-white dark:bg-slate-900 border border-ccf-300 dark:border-slate-700 rounded-lg p-6">
       <h3 class="text-lg font-semibold mb-4 text-gray-900 dark:text-slate-300">Actions</h3>
-      
+
       <div class="flex flex-wrap gap-3">
         <button
           @click="editMetadata"
@@ -110,13 +124,13 @@
     <!-- System Characteristics Summary -->
     <div v-if="systemCharacteristics" class="bg-white dark:bg-slate-900 border border-ccf-300 dark:border-slate-700 rounded-lg p-6">
       <h3 class="text-lg font-semibold mb-4 text-gray-900 dark:text-slate-300">System Characteristics Summary</h3>
-      
+
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div v-if="systemCharacteristics.systemName">
           <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">System Name</label>
           <p class="text-gray-900 dark:text-slate-300">{{ systemCharacteristics.systemName }}</p>
         </div>
-        
+
         <div v-if="systemCharacteristics.systemNameShort">
           <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">System Name (Short)</label>
           <p class="text-gray-900 dark:text-slate-300">{{ systemCharacteristics.systemNameShort }}</p>
@@ -142,19 +156,24 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, computed } from 'vue'
+import { onMounted, ref, watch, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { 
-  type SystemSecurityPlan, 
+import {
+  type SystemSecurityPlan,
   type SystemCharacteristics,
-  useSystemSecurityPlanStore 
+  useSystemSecurityPlanStore
 } from '@/stores/system-security-plans.ts'
 import { useConfigStore } from '@/stores/config.ts'
+import { type DataResponse, useApi, useFetch } from '@/composables/api'
+import type { Profile } from '@/oscal'
+import { useMustAuthenticate } from '@/composables/useMustAuthenticate'
+import Select from '@/volt/Select.vue';
 
 const route = useRoute()
 const router = useRouter()
 const sspStore = useSystemSecurityPlanStore()
 const configStore = useConfigStore()
+const {watchForUnauthenticated} = useMustAuthenticate()
 
 const systemSecurityPlan = ref<SystemSecurityPlan>({} as SystemSecurityPlan)
 const systemCharacteristics = ref<SystemCharacteristics | null>(null)
@@ -172,13 +191,61 @@ const statistics = computed(() => ({
   leveragedAuthorizations: systemImplementationStats.value.leveragedAuthorizations
 }))
 
+const profileItems = ref<Array<{name: string, value: string}>>([]);
+const {
+  data: profiles,
+  loading: loadingProfiles,
+  response: profileListResponse,
+} = useApi<DataResponse<Profile[]>>(new Request('/api/oscal/profiles'));
+watchForUnauthenticated(profileListResponse)
+watch(profiles, () => {
+  profileItems.value = profiles.value?.data.map((item) => {
+    return {
+      name: item.metadata.title,
+      value: item.uuid,
+    }
+  }) || []
+})
+
+const selectedProfile = ref();
+
 onMounted(async () => {
   const id = route.params.id as string
-  
+
   try {
     // Load basic SSP data
     const sspResponse = await sspStore.get(id)
     systemSecurityPlan.value = sspResponse.data
+
+    useFetch(new Request(`/api/oscal/system-security-plans/${systemSecurityPlan.value.uuid}/profile`))
+      .then((res) => res.ok ? res.json() : Promise.reject(res))
+      .then((res: DataResponse<Profile>) => {
+        if (res.data) {
+          selectedProfile.value = {
+            name: res.data.metadata.title,
+            value: res.data.uuid,
+          }
+        }
+      })
+      .catch((error: Response) => {
+        // 404 is fine. The rest, throw.
+        if (error.status !== 404) {
+          return error
+        }
+      })
+      .finally(() => {
+        watch(selectedProfile, async () => {
+          await useFetch(new Request(`/api/oscal/system-security-plans/${systemSecurityPlan.value.uuid}/profile`, {
+            method: 'POST',
+            body: JSON.stringify({
+              profileId: selectedProfile.value.value,
+            }),
+            headers: {
+              'Content-Type': 'application/json',
+            }
+          }));
+        })
+      })
 
     // Load system characteristics
     try {
@@ -230,10 +297,10 @@ async function downloadJson(): Promise<void> {
       throw response
     }
     const data = await response.json()
-    
+
     const dataStr = JSON.stringify(data, null, 2)
     const dataBlob = new Blob([dataStr], { type: 'application/json' })
-    
+
     const url = URL.createObjectURL(dataBlob)
     const link = document.createElement('a')
     link.href = url

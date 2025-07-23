@@ -55,17 +55,22 @@ const links = ref<Array<NavigationItem>>([
     title: 'Component Definitions',
   },
   {
-    name: 'system-security-plans',
-    title: 'System Security Plans',
-  },
-  {
-    name: 'assessment-plans',
-    title: 'Assessment Plans',
-  },
-  {
-    name: 'plan-of-action-and-milestones',
-    title: 'POA&M',
-    abbr: 'PM',
+    title: 'Implementation',
+    children: [
+      {
+        name: 'system-security-plans',
+        title: 'System Security Plans',
+      },
+      {
+        name: 'assessment-plans',
+        title: 'Assessment Plans',
+      },
+      {
+        name: 'plan-of-action-and-milestones',
+        title: 'POA&M',
+        abbr: 'PM',
+      },
+    ]
   },
   {
     title: 'Admin',

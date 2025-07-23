@@ -1,25 +1,29 @@
 import { useRouter, useRoute } from 'vue-router';
-import { type Ref, watch } from 'vue'
+import { type Ref, watch } from 'vue';
 
-function gotoLogin() {
-  const router = useRouter();
+export const useMustAuthenticate = () => {
   const route = useRoute();
-  return router.push({
-    name: 'login',
-    query: {
-      next: route.fullPath,
-    },
-  });
-}
+  const router = useRouter();
 
-function watchForUnauthenticated(response: Ref<Response | undefined>) {
-  return watch(response, () => {
-    if (response.value?.status === 401) {
-      return gotoLogin()
-    }
-  });
-}
+  function gotoLogin() {
+    return router.push({
+      name: 'login',
+      query: {
+        next: route.fullPath,
+      },
+    });
+  }
 
-export function useMustAuthenticate() {
-  return { gotoLogin, watchForUnauthenticated };
-}
+  function watchForUnauthenticated(response: Ref<Response | undefined>) {
+    return watch(response, () => {
+      if (response.value?.status === 401) {
+        return gotoLogin();
+      }
+    });
+  }
+
+  return {
+    gotoLogin,
+    watchForUnauthenticated,
+  };
+};
