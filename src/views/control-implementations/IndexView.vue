@@ -41,10 +41,10 @@
     <div v-if="catalogLoading">Loading Catalog ...</div>
     <div v-else-if="!catalog">No Catalog</div>
     <div v-else>
-      <CatalogTree :catalog="catalog" />
+      <Tree :value="nodes" />
     </div>
 
-    <div class="hidden space-y-6">
+    <div class="space-y-6">
       <!-- Control Implementation Overview -->
       <div
         class="bg-white dark:bg-slate-900 border border-ccf-300 dark:border-slate-700 rounded-lg p-6"
@@ -411,7 +411,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, computed, watch } from 'vue';
+import { onMounted, ref, computed, watch, type Ref } from 'vue'
 import { useRoute } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
 import {
@@ -438,8 +438,10 @@ import type { Catalog, Profile } from '@/oscal';
 import PageHeader from '@/components/PageHeader.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
 import { useMustAuthenticate } from '@/composables/useMustAuthenticate';
-import CatalogTree from '@/components/catalogs/CatalogTree.vue'
 import { useStorage } from '@vueuse/core'
+import { useCatalogTree } from '@/composables/useCatalogTree'
+
+import Tree from '@/volt/Tree.vue';
 
 const { gotoLogin } = useMustAuthenticate();
 const systemStore = useSystemStore();
@@ -469,6 +471,7 @@ if (systemStore.system.securityPlan) {
 }
 
 const catalog = useStorage<Catalog | undefined>('catalog', {} as Catalog);
+const { nodes, build } = useCatalogTree()
 const catalogLoading = ref<boolean>(false);
 watch(profile, () => {
   if (!profile.value) {
@@ -483,6 +486,7 @@ watch(profile, () => {
       .then((res: Response) => res.ok ? res.json() : Promise.reject(res))
       .then((data: DataResponse<Catalog>) => {
         catalog.value = data.data;
+        build(catalog as Ref<Catalog>)
       })
       .catch((error: Response) => {
         if (error.status === 401) {
@@ -492,6 +496,8 @@ watch(profile, () => {
       .finally(() => {
         catalogLoading.value = false;
       });
+  } else {
+    build(catalog as Ref<Catalog>)
   }
 });
 
@@ -543,15 +549,18 @@ const totalByComponents = computed(() => {
 });
 
 onMounted(async () => {
+
   const id = systemStore.system.securityPlan.uuid;
 
   sspStore.get(id).then((res) => {
     ssp.value = res.data;
+
   });
 
   try {
     const response = await sspStore.getControlImplementation(id);
     controlImplementation.value = response.data;
+    console.log(controlImplementation.value)
   } catch (err) {
     console.error('Error loading control implementation:', err);
     error.value = err instanceof Error ? err.message : 'Unknown error';

@@ -13,7 +13,6 @@ export function useFetch(req: Request): Promise<Response> {
         headers: req.headers,
         credentials: 'include',
         body: req.body,
-        duplex: 'half',
       });
 
       fetch(request).then((res: Response) => {

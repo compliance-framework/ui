@@ -1,5 +1,6 @@
 import type { Catalog, Control, Group } from '@/oscal'
-import { ref } from 'vue'
+import { ref, toValue } from 'vue'
+import type { MaybeRefOrGetter } from '@vueuse/core'
 
 export interface TreeNode {
   key: string
@@ -13,8 +14,8 @@ export const useCatalogTree = () => {
   const nodes = ref<Array<TreeNode>>([])
   const expandedKeys = ref<{[key: string]: boolean}>({})
 
-  function build(catalog: Catalog) {
-    nodes.value = buildChildren(catalog)
+  function build(catalog: MaybeRefOrGetter<Catalog>) {
+    nodes.value = buildChildren(toValue(catalog))
   }
 
   function buildChildren(node: Group | Catalog): Array<TreeNode> {
