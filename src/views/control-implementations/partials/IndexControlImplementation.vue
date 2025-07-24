@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import Badge from '@/volt/Badge.vue';
+import Drawer from '@/volt/Drawer.vue';
 import type { Control } from '@/oscal';
 import type {
   ImplementedRequirement,
@@ -8,11 +9,14 @@ import type {
 import PartDisplay from '@/components/PartDisplay.vue';
 import type { Part } from '@/stores/types.ts';
 import { ref, watchEffect } from 'vue';
+import { useToggle } from '@/composables/useToggle'
 
 const { control, implementation } = defineProps<{
   control: Control;
   implementation: ImplementedRequirement | undefined | null;
 }>();
+const selectedPart = ref<Part>();
+const { value: drawerOpen, set: setDrawer } = useToggle();
 
 const statements = ref<{ [key: string]: Statement }>({});
 watchEffect(() => {
@@ -62,22 +66,10 @@ function onMouseLeave(e: MouseEvent) {
   }
 }
 
-function onPartSelect(e: Event, asd: Part) {
+function onPartSelect(e: Event, part: Part) {
   e.preventDefault();
-  console.log('selected ' + asd.id);
-}
-
-function findStatement(part: Part): Statement | null | undefined {
-  if (implementation) {
-    if (implementation.statements) {
-      for (const statement of implementation.statements ?? []) {
-        if (statement.statementId == part.id) {
-          return statement;
-        }
-      }
-    }
-  }
-  return;
+  selectedPart.value = part
+  setDrawer(true)
 }
 </script>
 
@@ -118,7 +110,12 @@ function findStatement(part: Part): Statement | null | undefined {
     </div>
     <!--    <PartDisplayEditor v-for="part in control.parts?.filter(part => part.name == 'statement') || []" :key="part.id" :part="part"></PartDisplayEditor>-->
   </div>
-  {{ implementation }}
+
+  <Drawer v-model:visible="drawerOpen" header="Implementation" position="right" class="w-full! md:w-1/2! lg:w-3/5!">
+    <div v-for="stmnt in statements[selectedPart?.id]?.byComponents || []" :key="stmnt.id" class="py-4">
+      {{ stmnt.description }}
+    </div>
+  </Drawer>
 </template>
 
 <style>
