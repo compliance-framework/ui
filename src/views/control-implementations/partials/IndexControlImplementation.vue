@@ -49,27 +49,42 @@ function onMouseLeave(e: MouseEvent) {
     }
   }
 }
+
+function onPartSelect(e: Event, asd: Part) {
+  e.preventDefault();
+  console.log('selected ' + asd.id)
+}
 </script>
 
 <template>
   <div
-    class="border-l-8 dark:border-l-slate-700 dark:bg-slate-800 px-4 py-2 rounded-xl part-display"
+    class="part-display"
   >
-    <PartDisplay
-      v-for="part in control.parts?.filter(
-        (part) => part.name == 'statement',
-      ) || []"
-      :key="part.id"
-      :part="part"
-      @mouseover="onMouseOver"
-      @mouseout="onMouseLeave"
-    >
-      <template #default="{ part }">
-        <p v-if="getText(part)">
-          {{ getText(part) }}
-        </p>
-      </template>
-    </PartDisplay>
+      <div
+        class="pl-4 py-2 border-l-8 dark:border-l-slate-700 dark:bg-slate-800 rounded-xl "
+      >
+        <PartDisplay
+          v-for="part in control.parts?.filter(
+            (part) => part.name == 'statement',
+          ) || []"
+          :key="part.id"
+          :part="part"
+          @mouseover="onMouseOver"
+          @mouseout="onMouseLeave"
+          @selected="onPartSelect"
+        >
+          <template #default="{ part }">
+            <p
+              v-if="getText(part)"
+              class="p-0.5"
+              @mouseover="onMouseOver"
+              @mouseout="onMouseLeave"
+            >
+              {{ getText(part) }}
+            </p>
+          </template>
+        </PartDisplay>
+      </div>
     <!--    <PartDisplayEditor v-for="part in control.parts?.filter(part => part.name == 'statement') || []" :key="part.id" :part="part"></PartDisplayEditor>-->
   </div>
   {{ implementation }}
@@ -79,6 +94,6 @@ function onMouseLeave(e: MouseEvent) {
 @reference "@/assets/main.css";
 
 .part-display .hover  {
-  @apply bg-blue-500 cursor-pointer outline-1;
+  @apply bg-blue-500 cursor-pointer;
 }
 </style>
