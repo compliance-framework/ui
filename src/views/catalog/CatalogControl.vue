@@ -57,7 +57,11 @@
           <TertiaryButton v-if="!objective" class="ml-2">Add Objective</TertiaryButton>
           <TertiaryButton v-if="!guidance" class="ml-2">Add Guidance</TertiaryButton>
 
-          <PartDisplayEditor v-for="part in control.parts" :key="part.id" :part="part"></PartDisplayEditor>
+          <PartDisplayEditor v-for="part in control.parts" :key="part.id" :part="part">
+            <template #header>
+              <h3 class=" text-lg font-medium capitalize">{{ part.name }}</h3>
+            </template>
+          </PartDisplayEditor>
         </div>
         <div class="rounded-md border border-ccf-300 dark:border-slate-700">
           <table class="table-auto">

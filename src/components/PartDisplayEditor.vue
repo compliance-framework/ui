@@ -1,6 +1,6 @@
 <template>
   <div class="mb-2">
-    <h3 class=" text-lg font-medium capitalize">{{ props.part.name }}</h3>
+    <slot name="header"></slot>
 
     <div class="whitespace-pre-wrap">
       {{ text }}

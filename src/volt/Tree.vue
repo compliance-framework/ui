@@ -55,7 +55,7 @@ const theme = ref<TreePassThroughOptions>({
     wrapper: `overflow-auto p-scrollable:flex-1`,
     rootChildren: `flex flex-col list-none m-0 gap-[4px] pt-[2px] pb-0 px-0`,
     node: `p-0 outline-none focus-visible:*:first:outline focus-visible:*:first:-outline-offset-1 focus-visible:*:first:outline-primary`,
-    nodeContent: `group rounded-md px-2 py-1 flex items-center text-surface-700 dark:text-surface-0 gap-1 transition-colors duration-200
+    nodeContent: `group rounded-md px-2 py-1 flex items-start text-surface-700 dark:text-surface-0 gap-1 transition-colors duration-200
         hover:p-selectable:not-p-selected:bg-surface-100 hover:p-selectable:not-p-selected:text-surface-700
         dark:hover:p-selectable:not-p-selected:bg-surface-800 dark:hover:p-selectable:not-p-selected:text-surface-0
         p-selected:bg-highlight
@@ -71,7 +71,7 @@ const theme = ref<TreePassThroughOptions>({
         group-hover:group-p-selectable:not-group-p-selected:text-surface-600
         dark:group-hover:group-p-selectable:not-group-p-selected:text-surface-300
         transition-colors duration-200`,
-    nodeLabel: ``,
+    nodeLabel: `grow`,
     pcNodeCheckbox: {
         root: `relative inline-flex select-none w-5 h-5 align-bottom`,
         input: `peer cursor-pointer disabled:cursor-default appearance-none

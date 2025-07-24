@@ -27,7 +27,7 @@ export const useCatalogTree = () => {
   }
 
   function buildControls(...controls: Array<Control>): Array<TreeNode> {
-    const result = [] as Array<TreeNode>
+    let result = [] as Array<TreeNode>
     controls.forEach(control => {
       result.push({
         key: control.id,
@@ -37,11 +37,12 @@ export const useCatalogTree = () => {
         children: buildControlChildren(control),
       })
     })
+    result = result.sort((a, b) => a.key.localeCompare(b.key, undefined, {numeric: true, sensitivity: 'base'}))
     return result
   }
 
   function buildGroups(...groups: Array<Group>): Array<TreeNode> {
-    const result = [] as Array<TreeNode>
+    let result = [] as Array<TreeNode>
     groups.forEach(group => {
       result.push({
         key: group.id,
@@ -51,6 +52,7 @@ export const useCatalogTree = () => {
         children: buildChildren(group),
       })
     })
+    result = result.sort((a, b) => a.key.localeCompare(b.key, undefined, {numeric: true, sensitivity: 'base'}))
     return result
   }
 

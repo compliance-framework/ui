@@ -41,7 +41,28 @@
     <div v-if="catalogLoading">Loading Catalog ...</div>
     <div v-else-if="!catalog">No Catalog</div>
     <div v-else>
-      <Tree :value="nodes" />
+      <Tree :value="nodes" :filter="true" filterMode="lenient">
+        <template #group="slotProps">
+          <div class="flex items-center gap-x-3">
+            <div class="w-8">
+              <Badge class="text-base">{{ slotProps.node.data.id }}</Badge>
+            </div>
+            <h4>{{ slotProps.node.data.title }}</h4>
+          </div>
+        </template>
+        <template #control="slotProps">
+          <div>
+            <div class="flex items-center gap-x-3">
+              <Badge class="text-base">{{ slotProps.node.data.id }}</Badge>
+              <h4>{{ slotProps.node.data.title }}</h4>
+              <p>{{ controlImplementations[slotProps.node.data.id]?.statements?.length || 0 }}</p>
+            </div>
+            <div class="py-4">
+                <IndexControlImplementation :control="slotProps.node.data" :implementation="controlImplementations[slotProps.node.data.id]" />
+            </div>
+          </div>
+        </template>
+      </Tree>
     </div>
 
     <div class="space-y-6">
@@ -432,9 +453,10 @@ import StatementByComponent from '@/views/system-security-plans/partials/Stateme
 import StatementByComponentEditForm from '@/components/system-security-plans/StatementByComponentEditForm.vue';
 
 import Message from '@/volt/Message.vue';
+import Badge from '@/volt/Badge.vue';
 import { useSystemStore } from '@/stores/system.ts';
 import { type DataResponse, useApi, useFetch } from '@/composables/api';
-import type { Catalog, Profile } from '@/oscal';
+import type { Catalog, Profile, Part } from '@/oscal';
 import PageHeader from '@/components/PageHeader.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
 import { useMustAuthenticate } from '@/composables/useMustAuthenticate';
@@ -442,6 +464,8 @@ import { useStorage } from '@vueuse/core'
 import { useCatalogTree } from '@/composables/useCatalogTree'
 
 import Tree from '@/volt/Tree.vue';
+import PartDisplayEditor from '@/components/PartDisplayEditor.vue'
+import IndexControlImplementation from '@/views/control-implementations/partials/IndexControlImplementation.vue'
 
 const { gotoLogin } = useMustAuthenticate();
 const systemStore = useSystemStore();
@@ -470,6 +494,8 @@ if (systemStore.system.securityPlan) {
     });
 }
 
+
+const controlImplementations = ref<{[key: string]: ImplementedRequirement}>({})
 const catalog = useStorage<Catalog | undefined>('catalog', {} as Catalog);
 const { nodes, build } = useCatalogTree()
 const catalogLoading = ref<boolean>(false);
@@ -533,7 +559,6 @@ const totalStatements = computed(() => {
     0,
   );
 });
-
 const totalByComponents = computed(() => {
   if (!controlImplementation.value?.implementedRequirements) return 0;
   let total = 0;
@@ -560,7 +585,12 @@ onMounted(async () => {
   try {
     const response = await sspStore.getControlImplementation(id);
     controlImplementation.value = response.data;
-    console.log(controlImplementation.value)
+
+    const implementations = controlImplementation.value?.implementedRequirements || [] as ImplementedRequirement[];
+    for (let impl of implementations) {
+      controlImplementations.value[impl.controlId] = impl;
+    }
+
   } catch (err) {
     console.error('Error loading control implementation:', err);
     error.value = err instanceof Error ? err.message : 'Unknown error';
