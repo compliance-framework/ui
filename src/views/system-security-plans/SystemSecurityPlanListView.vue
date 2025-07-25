@@ -80,7 +80,7 @@
                       JSON
                     </button>
                     <button
-                      @click="setAsGlobal(ssp)"
+                      @click="systemStore.setSecurityPlan(ssp)"
                       class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1 rounded-md"
                       title="Download Full JSON"
                     >
@@ -125,10 +125,6 @@ onMounted(async () => {
     loading.value = false
   }
 })
-
-function setAsGlobal(ssp: SystemSecurityPlan) {
-  systemStore.setSecurityPlan(ssp)
-}
 
 function formatDate(dateString?: string): string {
   if (!dateString) return 'N/A'

@@ -30,7 +30,7 @@
             >JSON
             </button>
             <button
-              @click="setAsGlobal(assessmentPlan)"
+              @click="systemStore.setAssessmentPlan(assessmentPlan)"
               class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1 rounded-md"
               title="Download Full JSON"
             >
@@ -71,10 +71,6 @@ onMounted(() => {
     assessmentPlans.value = data.data
   })
 })
-
-function setAsGlobal(ap: AssessmentPlan) {
-  systemStore.setAssessmentPlan(ap)
-}
 
 async function downloadJSON(id: string, title: string) {
   try {

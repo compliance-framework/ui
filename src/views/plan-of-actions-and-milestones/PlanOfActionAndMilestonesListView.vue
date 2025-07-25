@@ -80,7 +80,7 @@
                       JSON
                     </button>
                     <button
-                      @click="setAsGlobal(poam)"
+                      @click="systemStore.setPoam(poam)"
                       class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1 rounded-md"
                       title="Download Full JSON"
                     >
@@ -142,10 +142,6 @@ onMounted(async () => {
     loading.value = false
   }
 })
-
-function setAsGlobal(poam: PlanOfActionAndMilestones) {
-  systemStore.setPoam(poam)
-}
 
 function formatDate(dateString?: string): string {
   if (!dateString) return 'N/A'
