@@ -230,3 +230,23 @@ export interface Statement {
   byComponents?: ByComponent[];
   remarks?: string;
 }
+
+export interface ImplementedRequirement {
+  uuid: string;
+  controlId: string;
+  props: Property[];
+  links: Link[];
+  setParameters?: SetParameter[];
+  responsibleRoles?: ResponsibleRole[];
+  remarks?: string;
+  byComponents?: ByComponent[];
+  statements?: Statement[];
+}
+
+export interface ControlImplementation {
+  uuid: string;
+  source?: string;
+  description: string;
+  setParameters?: SetParameter[];
+  implementedRequirements: ImplementedRequirement[];
+}

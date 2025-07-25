@@ -77,7 +77,7 @@ function onPartSelect(e: Event, part: Part) {
 <template>
   <div class="part-display">
     <div
-      class="px-4 py-2 border-l-8 dark:border-l-slate-700 dark:bg-slate-800 rounded-xl"
+      class="px-4 py-2 border-l-8 border-l-ccf-300 dark:border-l-slate-700 bg-ccf-200 dark:bg-slate-800 rounded-xl"
     >
       <PartDisplay
         v-for="part in control.parts?.filter(
@@ -106,7 +106,6 @@ function onPartSelect(e: Event, part: Part) {
         </template>
       </PartDisplay>
     </div>
-    <!--    <PartDisplayEditor v-for="part in control.parts?.filter(part => part.name == 'statement') || []" :key="part.id" :part="part"></PartDisplayEditor>-->
   </div>
 
   <Drawer v-model:visible="drawerOpen" header="Implementation" position="right" class="w-full! md:w-1/2! lg:w-3/5!">
@@ -118,6 +117,6 @@ function onPartSelect(e: Event, part: Part) {
 @reference "@/assets/main.css";
 
 .part-display .hover {
-  @apply dark:bg-slate-600 cursor-pointer;
+  @apply bg-gray-100 dark:bg-slate-600 cursor-pointer;
 }
 </style>
