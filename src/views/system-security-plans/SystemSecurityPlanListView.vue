@@ -56,7 +56,7 @@
                   >
                     {{ ssp.metadata.title }}
                   </RouterLink>
-                  <Chip class="ml-2" v-if="systemStore.system.securityPlan?.uuid == ssp.uuid" :label="'Active'" />
+                  <Badge severity="info" class="ml-2" v-if="systemStore.system.securityPlan?.uuid == ssp.uuid" :value="'Active'" />
                 </td>
                 <td class="px-6 py-4 text-sm text-gray-500 dark:text-slate-400">
                   {{ ssp.metadata.version }}
@@ -103,7 +103,7 @@ import { type SystemSecurityPlan, useSystemSecurityPlanStore } from '@/stores/sy
 import { useToast } from 'primevue/usetoast'
 import { useConfigStore } from '@/stores/config.ts'
 import { useSystemStore } from '@/stores/system.ts'
-import Chip from '@/volt/Chip.vue'
+import Badge from '@/volt/Badge.vue'
 
 const sspStore = useSystemSecurityPlanStore()
 const configStore = useConfigStore()
