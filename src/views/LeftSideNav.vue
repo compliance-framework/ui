@@ -51,18 +51,9 @@ const links = ref<Array<NavigationItem>>([
     abbr: 'RIS',
   },
   {
-    name: 'catalog-list',
-    title: 'Catalogs',
-    abbr: 'CAT',
-  },
-  {
-    name: 'profile-list',
-    title: 'Profiles',
-    abbr: 'PR',
-  },
-  {
-    name: 'component-definitions',
-    title: 'Component Definitions',
+    name: 'inventory:index',
+    title: 'Inventory',
+    abbr: 'INV',
   },
   {
     title: 'Implementation',
@@ -85,6 +76,20 @@ const links = ref<Array<NavigationItem>>([
   {
     title: 'Admin',
     children: [
+      {
+        name: 'catalog-list',
+        title: 'Catalogs',
+        abbr: 'CAT',
+      },
+      {
+        name: 'profile-list',
+        title: 'Profiles',
+        abbr: 'PR',
+      },
+      {
+        name: 'component-definitions',
+        title: 'Component Definitions',
+      },
       {
         name: 'admin-parties',
         title: 'Parties',

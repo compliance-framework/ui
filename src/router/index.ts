@@ -65,6 +65,14 @@ const authenticatedRoutes = [
     }
   },
   {
+    path: 'inventory',
+    name: 'inventory:index',
+    component: () => import('../views/InventoryView.vue'),
+    meta: {
+      requiresAuth: true,
+    }
+  },
+  {
     path: '/catalogs',
     name: 'catalog-list',
     // route level code-splitting

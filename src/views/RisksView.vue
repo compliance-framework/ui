@@ -1,5 +1,5 @@
 <template>
-  <PageHeader>Risks Register</PageHeader>
+  <PageHeader>Risk Register</PageHeader>
   <div class="p-6">
     <div class="flex justify-between items-center mb-6">
       <button
