@@ -159,6 +159,9 @@ const footLinks = ref<Array<NavigationItem>>([
           :key="link.name"
         >
           <SideNavCategory :title="link.title" v-if="link.children">
+            <template #title>
+              <span>{{ sidebarStore.open ? link.title : abbreviated(link) }}</span>
+            </template>
             <template
               v-for="child in link.children"
               :key="child.name"

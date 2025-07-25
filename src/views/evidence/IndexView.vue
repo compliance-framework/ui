@@ -52,10 +52,7 @@
         Save
       </PrimaryButton>
       <div class="card flex justify-center">
-        <SecondaryButton type="button" class="dark:bg-slate-800 dark:hover:bg-slate-700 dark:border-slate-700 hover:dark:border-slate-600" @click="toggleMenu" aria-haspopup="true" aria-controls="overlay_menu" >
-          <BIconThreeDotsVertical />
-        </SecondaryButton>
-        <Menu ref="menu" id="overlay_menu" :model="items" :popup="true" />
+        <BurgerMenu :items="menuItems" />
       </div>
     </div>
   </div>
@@ -67,7 +64,7 @@
   </div>
 </template>
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router';
 import PageHeader from '@/components/PageHeader.vue';
 import PageCard from '@/components/PageCard.vue';
@@ -90,9 +87,7 @@ import SecondaryButton from '@/components/SecondaryButton.vue';
 import InfoCircleIcon from '@primevue/icons/infocircle'
 import { type Evidence, useEvidenceStore } from '@/stores/evidence.ts'
 import EvidenceList from '@/components/EvidenceList.vue'
-import Menu from '@/volt/Menu.vue';
-import Button from '@/volt/Button.vue';
-import {BIconThreeDotsVertical} from 'bootstrap-icons-vue';
+import BurgerMenu from '@/components/BurgerMenu.vue'
 
 const evidenceStore = useEvidenceStore();
 const heartbeatStore = useHeartbeatsStore();
@@ -100,8 +95,6 @@ const configStore = useConfigStore();
 const route = useRoute();
 const router = useRouter();
 
-const showAllLabels = ref(false);
-const menu = ref();
 const filter = ref<string>('');
 if (route.query.filter) {
   filter.value = route.query.filter as string;
@@ -151,7 +144,7 @@ async function save() {
   });
 }
 
-const items = computed(() => [
+const menuItems = ref([
   {
     label: 'Labels',
     items: [
@@ -172,10 +165,6 @@ const items = computed(() => [
     ]
   }
 ]);
-
-function toggleMenu(event: Event) {
-  menu.value.toggle(event);
-}
 
 onMounted(() => {
   search();
