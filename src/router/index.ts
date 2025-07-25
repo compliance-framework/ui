@@ -57,6 +57,14 @@ const authenticatedRoutes = [
     }
   },
   {
+    path: 'risks',
+    name: 'risks:index',
+    component: () => import('../views/RisksView.vue'),
+    meta: {
+      requiresAuth: true,
+    }
+  },
+  {
     path: '/catalogs',
     name: 'catalog-list',
     // route level code-splitting

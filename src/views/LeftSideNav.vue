@@ -46,6 +46,11 @@ const links = ref<Array<NavigationItem>>([
     abbr: 'CON',
   },
   {
+    name: 'risks:index',
+    title: 'Risk Register',
+    abbr: 'RIS',
+  },
+  {
     name: 'catalog-list',
     title: 'Catalogs',
     abbr: 'CAT',
