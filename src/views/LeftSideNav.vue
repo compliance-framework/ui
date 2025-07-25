@@ -36,9 +36,9 @@ const links = ref<Array<NavigationItem>>([
     title: 'Dashboards',
   },
   {
-    name: 'evidence:index',
-    title: 'Evidence',
-    abbr: 'EV',
+    name: 'system:overview',
+    title: 'System',
+    abbr: 'SYS',
   },
   {
     name: 'controls:index',
@@ -54,6 +54,11 @@ const links = ref<Array<NavigationItem>>([
     name: 'inventory:index',
     title: 'Inventory',
     abbr: 'INV',
+  },
+  {
+    name: 'evidence:index',
+    title: 'Evidence',
+    abbr: 'EV',
   },
   {
     title: 'Implementation',
@@ -116,6 +121,7 @@ const footLinks = ref<Array<NavigationItem>>([
 
 <template>
   <SideNav
+    id="app-sidenav"
     class="flex flex-col max-h-screen border-r border-r-ccf-300 dark:border-slate-700 bg-white dark:bg-slate-900 max-w-80"
   >
     <template #logo>
@@ -186,7 +192,7 @@ const footLinks = ref<Array<NavigationItem>>([
 <style>
 @reference "@/assets/main.css";
 
-.router-link-exact-active {
+#app-sidenav .router-link-active {
   @apply bg-linear-to-r from-slate-200 to-slate-100 border-l-slate-300 dark:from-slate-700 dark:to-slate-800 dark:border-slate-500 dark:text-slate-200;
 }
 </style>

@@ -57,6 +57,31 @@ const authenticatedRoutes = [
     }
   },
   {
+    path: 'system',
+    name: 'system',
+    component: () => import('../views/SystemView.vue'),
+    children: [
+      {
+        path: '',
+        name: 'system:overview',
+        component: () => import('../views/system/Overview.vue'),
+      },
+      {
+        path: 'users',
+        name: 'system:users',
+        component: () => import('../views/system/Users.vue'),
+      },
+      {
+        path: 'components',
+        name: 'system:components',
+        component: () => import('../views/system/Components.vue'),
+      },
+    ],
+    meta: {
+      requiresAuth: true,
+    }
+  },
+  {
     path: 'risks',
     name: 'risks:index',
     component: () => import('../views/RisksView.vue'),

@@ -43,10 +43,10 @@ const theme = ref<PanelPassThroughOptions>({
     footer: `pt-0 pb-[1.125rem] px-[1.125rem] `,
     transition: {
         enterFromClass: 'max-h-0',
-        enterActiveClass: 'overflow-hidden transition-[max-height] duration-1000 ease-[cubic-bezier(0.42,0,0.58,1)]',
+        enterActiveClass: 'overflow-hidden transition-[max-height] duration-300 ease-[cubic-bezier(0.42,0,0.58,1)]',
         enterToClass: 'max-h-[1000px]',
         leaveFromClass: 'max-h-[1000px]',
-        leaveActiveClass: 'overflow-hidden transition-[max-height] duration-[450ms] ease-[cubic-bezier(0,1,0,1)]',
+        leaveActiveClass: 'overflow-hidden transition-[max-height] duration-200 ease-[cubic-bezier(0,1,0,1)]',
         leaveToClass: 'max-h-0'
     }
 });
