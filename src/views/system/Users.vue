@@ -1,17 +1,20 @@
 <template>
   <div class="p-4">
-      <div class="flex justify-between items-center mb-6">
-        <h3 class="text-lg font-semibold dark:text-slate-300">System Users</h3>
+    <div class="flex justify-between items-center mb-6">
+      <h3 class="text-lg font-semibold dark:text-slate-300">System Users</h3>
       <button
         @click="showCreateUserModal = true"
         class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
       >
         Create User
       </button>
-      </div>
+    </div>
 
     <div class="space-y-4">
-      <div v-if="users?.length === 0" class="text-center py-8 text-gray-500 dark:text-slate-400">
+      <div
+        v-if="users?.length === 0"
+        class="text-center py-8 text-gray-500 dark:text-slate-400"
+      >
         No users defined. Create your first user to get started.
       </div>
 
@@ -19,13 +22,23 @@
         <template #header>
           <div class="flex items-center gap-2 py-2">
             <span class="font-medium">{{ user.title }}</span>
-            <span v-if="user.shortName" class="text-sm text-gray-500 dark:text-slate-400">({{ user.shortName }})</span>
+            <span
+              v-if="user.shortName"
+              class="text-sm text-gray-500 dark:text-slate-400"
+              >({{ user.shortName }})</span
+            >
           </div>
         </template>
         <div class="py-3 px-4 flex justify-between items-center">
           <div class="flex items-center space-x-3">
-            <span class="font-medium text-gray-900 dark:text-slate-300">{{ user.title }}</span>
-            <span v-if="user.shortName" class="text-sm text-gray-500 dark:text-slate-400">({{ user.shortName }})</span>
+            <span class="font-medium text-gray-900 dark:text-slate-300">{{
+              user.title
+            }}</span>
+            <span
+              v-if="user.shortName"
+              class="text-sm text-gray-500 dark:text-slate-400"
+              >({{ user.shortName }})</span
+            >
           </div>
           <div class="flex gap-2">
             <button
@@ -48,24 +61,48 @@
             </button>
           </div>
         </div>
-        <div class="px-4 py-4 bg-gray-50 dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700">
-          <p class="text-sm text-gray-600 dark:text-slate-400 mb-3">{{ user.description }}</p>
+        <div
+          class="px-4 py-4 bg-gray-50 dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700"
+        >
+          <p class="text-sm text-gray-600 dark:text-slate-400 mb-3">
+            {{ user.description }}
+          </p>
 
           <div v-if="user.roleIds?.length" class="mb-3">
-            <span class="text-sm font-medium text-gray-700 dark:text-slate-300">Roles:</span>
+            <span class="text-sm font-medium text-gray-700 dark:text-slate-300"
+              >Roles:</span
+            >
             <div class="flex flex-wrap gap-1 mt-1">
-              <span v-for="role in user.roleIds" :key="role" class="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded text-xs">
+              <span
+                v-for="role in user.roleIds"
+                :key="role"
+                class="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded text-xs"
+              >
                 {{ role }}
               </span>
             </div>
           </div>
 
           <div v-if="user.authorizedPrivileges?.length" class="space-y-2">
-            <span class="text-sm font-medium text-gray-700 dark:text-slate-300">Authorized Privileges:</span>
-            <div v-for="privilege in user.authorizedPrivileges" :key="privilege.title" class="bg-white dark:bg-slate-900 p-3 rounded border border-gray-200 dark:border-slate-600">
+            <span class="text-sm font-medium text-gray-700 dark:text-slate-300"
+              >Authorized Privileges:</span
+            >
+            <div
+              v-for="privilege in user.authorizedPrivileges"
+              :key="privilege.title"
+              class="bg-white dark:bg-slate-900 p-3 rounded border border-gray-200 dark:border-slate-600"
+            >
               <div class="font-medium text-sm">{{ privilege.title }}</div>
-              <div v-if="privilege.description" class="text-xs text-gray-600 dark:text-slate-400 mt-1">{{ privilege.description }}</div>
-              <div v-if="privilege.functionsPerformed?.length" class="text-xs text-blue-600 dark:text-blue-400 mt-1">
+              <div
+                v-if="privilege.description"
+                class="text-xs text-gray-600 dark:text-slate-400 mt-1"
+              >
+                {{ privilege.description }}
+              </div>
+              <div
+                v-if="privilege.functionsPerformed?.length"
+                class="text-xs text-blue-600 dark:text-blue-400 mt-1"
+              >
                 Functions: {{ privilege.functionsPerformed.join(', ') }}
               </div>
             </div>
@@ -78,16 +115,19 @@
   <!-- User Create Modal -->
   <Modal :show="showCreateUserModal" @close="showCreateUserModal = false">
     <SystemImplementationUserCreateForm
-      :ssp-id="id"
+      :ssp-id="systemSecurityPlan?.uuid as string"
       @cancel="showCreateUserModal = false"
       @created="handleUserCreated"
     />
   </Modal>
 
   <!-- User Edit Modal -->
-  <Modal :show="!!(showEditUserModal && editingUser)" @close="showEditUserModal = false">
+  <Modal
+    :show="!!(showEditUserModal && editingUser)"
+    @close="showEditUserModal = false"
+  >
     <SystemImplementationUserEditForm
-      :ssp-id="id"
+      :ssp-id="systemSecurityPlan?.uuid as string"
       :user="editingUser!"
       @cancel="showEditUserModal = false"
       @saved="handleUserSaved"
@@ -111,11 +151,11 @@ import SystemImplementationUserEditForm from '@/components/system-security-plans
 import {
   type SystemImplementationUser,
   type SystemSecurityPlan,
-  useSystemSecurityPlanStore
+  useSystemSecurityPlanStore,
 } from '@/stores/system-security-plans.ts';
 import type { DataResponse } from '@/stores/types.ts';
-import { useSystemStore } from '@/stores/system.ts'
-import Badge from '@/volt/Badge.vue'
+import { useSystemStore } from '@/stores/system.ts';
+import Badge from '@/volt/Badge.vue';
 
 const route = useRoute();
 const toast = useToast();
@@ -137,9 +177,11 @@ const editingUser = ref<SystemImplementationUser | null>(null);
 const loadData = () => {
   systemSecurityPlan.value = system.securityPlan as SystemSecurityPlan;
 
-  sspStore.getSystemImplementationUsers(system.securityPlan?.uuid as string).then((data: DataResponse<SystemImplementationUser[]>) => {
-    users.value = data.data;
-  });
+  sspStore
+    .getSystemImplementationUsers(system.securityPlan?.uuid as string)
+    .then((data: DataResponse<SystemImplementationUser[]>) => {
+      users.value = data.data;
+    });
 };
 
 onMounted(() => {
@@ -159,7 +201,7 @@ const handleUserCreated = (newUser: SystemImplementationUser) => {
 
 const handleUserSaved = (updatedUser: SystemImplementationUser) => {
   if (users.value) {
-    const index = users.value.findIndex(u => u.uuid === updatedUser.uuid);
+    const index = users.value.findIndex((u) => u.uuid === updatedUser.uuid);
     if (index !== -1) {
       users.value[index] = updatedUser;
     }
@@ -185,15 +227,18 @@ const deleteUser = async (user: SystemImplementationUser) => {
   }
 
   try {
-    await sspStore.deleteSystemImplementationUser(id, user.uuid);
+    await sspStore.deleteSystemImplementationUser(
+      systemSecurityPlan.value?.uuid as string,
+      user.uuid,
+    );
     if (users.value) {
-      users.value = users.value.filter(u => u.uuid !== user.uuid);
+      users.value = users.value.filter((u) => u.uuid !== user.uuid);
     }
     toast.add({
       severity: 'success',
       summary: 'Success',
       detail: 'User deleted successfully.',
-      life: 3000
+      life: 3000,
     });
   } catch (error) {
     console.error('Failed to delete user:', error);
@@ -201,9 +246,8 @@ const deleteUser = async (user: SystemImplementationUser) => {
       severity: 'error',
       summary: 'Error',
       detail: 'Failed to delete user. Please try again.',
-      life: 5000
+      life: 5000,
     });
   }
 };
-
 </script>
