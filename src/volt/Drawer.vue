@@ -32,7 +32,7 @@ defineProps<Props>();
 const theme = ref<DrawerPassThroughOptions>({
     root: `flex flex-col pointer-events-auto relative
         border-ccf-200 dark:border-slate-700
-        bg-white dark:bg-slate-900
+        bg-white dark:bg-slate-950
         text-gray-700 dark:text-gray-200
         shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_8px_10px_-6px_rgba(0,0,0,0.1)]
         p-left:w-80 p-left:h-full p-left:border-r

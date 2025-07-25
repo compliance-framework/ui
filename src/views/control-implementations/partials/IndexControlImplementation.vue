@@ -10,6 +10,7 @@ import PartDisplay from '@/components/PartDisplay.vue';
 import type { Part } from '@/stores/types.ts';
 import { ref, watchEffect } from 'vue';
 import { useToggle } from '@/composables/useToggle'
+import ControlStatementImplementation from '@/views/control-implementations/partials/ControlStatementImplementation.vue'
 
 const { control, implementation } = defineProps<{
   control: Control;
@@ -51,8 +52,8 @@ function getText(_part: Part): string | null {
 function onMouseOver(e: MouseEvent) {
   const { target } = e;
   if (target instanceof HTMLElement) {
-    if (target.parentNode instanceof HTMLElement) {
-      target.parentNode.classList.add('hover');
+    if (target.closest("*[data-type='part']") instanceof HTMLElement) {
+      target.closest("*[data-type='part']")?.classList.add('hover');
     }
   }
 }
@@ -60,8 +61,8 @@ function onMouseOver(e: MouseEvent) {
 function onMouseLeave(e: MouseEvent) {
   const { target } = e;
   if (target instanceof HTMLElement) {
-    if (target.parentNode instanceof HTMLElement) {
-      target.parentNode.classList.remove('hover');
+    if (target.closest("*[data-type='part']") instanceof HTMLElement) {
+      target.closest("*[data-type='part']")?.classList.remove('hover');
     }
   }
 }
@@ -90,12 +91,9 @@ function onPartSelect(e: Event, part: Part) {
       >
         <template #default="{ part }">
           <div
-            v-if="getText(part)"
             class="p-0.5"
-            @mouseover="onMouseOver"
-            @mouseout="onMouseLeave"
           >
-            <span>{{ getText(part) }}</span>
+            <span v-if="getText(part)">{{ getText(part) }}</span>
             <template v-if="statements[part.id]">
               <Badge
                 class="ml-2"
@@ -112,9 +110,7 @@ function onPartSelect(e: Event, part: Part) {
   </div>
 
   <Drawer v-model:visible="drawerOpen" header="Implementation" position="right" class="w-full! md:w-1/2! lg:w-3/5!">
-    <div v-for="stmnt in statements[selectedPart?.id]?.byComponents || []" :key="stmnt.id" class="py-4">
-      {{ stmnt.description }}
-    </div>
+    <ControlStatementImplementation v-if="selectedPart && statements[selectedPart.id]" :statement="statements[selectedPart.id]" />
   </Drawer>
 </template>
 

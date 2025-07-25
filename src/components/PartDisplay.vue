@@ -15,7 +15,7 @@ function onSelect(e: Event, part: Part) {
 </script>
 
 <template>
-  <div :id="part.id" @click.stop="onSelect($event, part)">
+  <div :id="part.id" data-type="part" @click.stop="onSelect($event, part)">
     <slot name="default" :part="part"></slot>
     <div
       v-if="part.parts"
