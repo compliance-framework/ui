@@ -1,0 +1,267 @@
+<template>
+  <div class="p-4">
+    <div class="flex justify-between items-center mb-6">
+      <h3 class="text-lg font-semibold dark:text-slate-300">
+        Leveraged Authorizations
+      </h3>
+      <button
+        @click="showCreateLeveragedAuthModal = true"
+        class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
+      >
+        Create Authorization
+      </button>
+    </div>
+
+    <div class="space-y-4">
+      <div
+        v-if="leveragedAuthorizations?.length === 0"
+        class="text-center py-8 text-gray-500 dark:text-slate-400"
+      >
+        No leveraged authorizations defined. Create your first authorization to
+        get started.
+      </div>
+
+      <Panel
+        v-for="auth in leveragedAuthorizations"
+        :key="auth.uuid"
+        collapsed
+        toggleable
+      >
+        <template #header>
+          <div class="flex items-center gap-2 py-2">
+            <span class="font-medium text-gray-900 dark:text-slate-300">{{
+              auth.title
+            }}</span>
+            <span
+              class="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-2 py-1 rounded text-xs"
+            >
+              {{ new Date(auth.dateAuthorized).toLocaleDateString() }}
+            </span>
+          </div>
+        </template>
+        <div>
+          <div class="py-3 px-4 flex justify-between items-center">
+            <div class="flex items-center space-x-3"></div>
+            <div class="flex gap-2">
+              <button
+                @click.stop="editLeveragedAuth(auth)"
+                class="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 transition-colors"
+              >
+                Edit
+              </button>
+              <button
+                @click.stop="downloadLeveragedAuthJSON(auth)"
+                class="px-3 py-1 bg-gray-500 text-white text-sm rounded hover:bg-gray-600 transition-colors"
+              >
+                JSON
+              </button>
+              <button
+                @click.stop="deleteLeveragedAuth(auth)"
+                class="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+        <div
+          class="px-4 py-4 bg-gray-50 dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700"
+        >
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
+            <div>
+              <span
+                class="text-sm font-medium text-gray-700 dark:text-slate-300"
+                >Party UUID:</span
+              >
+              <span
+                class="text-sm text-gray-600 dark:text-slate-400 ml-2 font-mono"
+                >{{ auth.partyUuid }}</span
+              >
+            </div>
+            <div>
+              <span
+                class="text-sm font-medium text-gray-700 dark:text-slate-300"
+                >Date Authorized:</span
+              >
+              <span class="text-sm text-gray-600 dark:text-slate-400 ml-2">{{
+                new Date(auth.dateAuthorized).toLocaleDateString()
+              }}</span>
+            </div>
+          </div>
+
+          <div v-if="auth.remarks" class="mb-3">
+            <span class="text-sm font-medium text-gray-700 dark:text-slate-300"
+              >Remarks:</span
+            >
+            <p class="text-sm text-gray-600 dark:text-slate-400 mt-1">
+              {{ auth.remarks }}
+            </p>
+          </div>
+
+          <div v-if="auth.props?.length" class="space-y-2">
+            <span class="text-sm font-medium text-gray-700 dark:text-slate-300"
+              >Properties:</span
+            >
+            <div
+              v-for="prop in auth.props"
+              :key="prop.name"
+              class="bg-white dark:bg-slate-900 p-3 rounded border border-gray-200 dark:border-slate-600"
+            >
+              <div class="font-medium text-sm">{{ prop.name }}</div>
+              <div class="text-xs text-gray-600 dark:text-slate-400 mt-1">
+                {{ prop.value }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </Panel>
+    </div>
+  </div>
+
+  <!-- Leveraged Authorization Create Modal -->
+  <Modal
+    :show="showCreateLeveragedAuthModal"
+    @close="showCreateLeveragedAuthModal = false"
+  >
+    <SystemImplementationLeveragedAuthorizationCreateForm
+      :ssp-id="id"
+      @cancel="showCreateLeveragedAuthModal = false"
+      @created="handleLeveragedAuthCreated"
+    />
+  </Modal>
+
+  <!-- Leveraged Authorization Edit Modal -->
+  <Modal
+    :show="!!(showEditLeveragedAuthModal && editingLeveragedAuth)"
+    @close="showEditLeveragedAuthModal = false"
+  >
+    <SystemImplementationLeveragedAuthorizationEditForm
+      :ssp-id="id"
+      :auth="editingLeveragedAuth!"
+      @cancel="showEditLeveragedAuthModal = false"
+      @saved="handleLeveragedAuthSaved"
+    />
+  </Modal>
+</template>
+<script setup lang="ts">
+import { onMounted, ref } from 'vue';
+import { useRoute } from 'vue-router';
+import { useToast } from 'primevue/usetoast';
+import decamelizeKeys from 'decamelize-keys';
+
+// Form components
+import Modal from '@/components/Modal.vue';
+import SystemImplementationLeveragedAuthorizationCreateForm from '@/components/system-security-plans/SystemImplementationLeveragedAuthorizationCreateForm.vue';
+import SystemImplementationLeveragedAuthorizationEditForm from '@/components/system-security-plans/SystemImplementationLeveragedAuthorizationEditForm.vue';
+
+// Types and stores
+import {
+  type SystemSecurityPlan,
+  type LeveragedAuthorization,
+  useSystemSecurityPlanStore,
+} from '@/stores/system-security-plans.ts';
+import type { DataResponse } from '@/stores/types.ts';
+import Panel from '@/volt/Panel.vue';
+import { useSystemStore } from '@/stores/system.ts';
+
+const route = useRoute();
+const toast = useToast();
+const { system } = useSystemStore();
+const id = route.params.id as string;
+const sspStore = useSystemSecurityPlanStore();
+
+// Data
+const systemSecurityPlan = ref<SystemSecurityPlan | null>(null);
+const leveragedAuthorizations = ref<LeveragedAuthorization[] | null>(null);
+
+const showCreateLeveragedAuthModal = ref(false);
+const showEditLeveragedAuthModal = ref(false);
+
+// Edit targets
+const editingLeveragedAuth = ref<LeveragedAuthorization | null>(null);
+
+const loadData = () => {
+  systemSecurityPlan.value = system.securityPlan as SystemSecurityPlan;
+
+  sspStore
+    .getSystemImplementationLeveragedAuthorizations(system.securityPlan?.uuid as string)
+    .then((data: DataResponse<LeveragedAuthorization[]>) => {
+      leveragedAuthorizations.value = data.data;
+    });
+};
+
+onMounted(() => {
+  loadData();
+});
+
+// Leveraged Authorization management
+const editLeveragedAuth = (auth: LeveragedAuthorization) => {
+  editingLeveragedAuth.value = auth;
+  showEditLeveragedAuthModal.value = true;
+};
+
+const handleLeveragedAuthCreated = (newAuth: LeveragedAuthorization) => {
+  leveragedAuthorizations.value?.push(newAuth);
+  showCreateLeveragedAuthModal.value = false;
+};
+
+const handleLeveragedAuthSaved = (updatedAuth: LeveragedAuthorization) => {
+  if (leveragedAuthorizations.value) {
+    const index = leveragedAuthorizations.value.findIndex(
+      (a) => a.uuid === updatedAuth.uuid,
+    );
+    if (index !== -1) {
+      leveragedAuthorizations.value[index] = updatedAuth;
+    }
+  }
+  showEditLeveragedAuthModal.value = false;
+  editingLeveragedAuth.value = null;
+};
+
+const downloadLeveragedAuthJSON = (auth: LeveragedAuthorization) => {
+  const dataStr = JSON.stringify(decamelizeKeys(auth), null, 2);
+  const dataBlob = new Blob([dataStr], { type: 'application/json' });
+  const url = URL.createObjectURL(dataBlob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `leveraged-auth-${auth.uuid}.json`;
+  link.click();
+  URL.revokeObjectURL(url);
+};
+
+const deleteLeveragedAuth = async (auth: LeveragedAuthorization) => {
+  if (
+    !confirm(
+      `Are you sure you want to delete leveraged authorization "${auth.title}"?`,
+    )
+  ) {
+    return;
+  }
+
+  try {
+    await sspStore.deleteSystemImplementationLeveragedAuthorization(
+      id,
+      auth.uuid,
+    );
+    if (leveragedAuthorizations.value) {
+      leveragedAuthorizations.value = leveragedAuthorizations.value.filter(
+        (a) => a.uuid !== auth.uuid,
+      );
+    }
+    toast.add({
+      severity: 'success',
+      summary: 'Success',
+      detail: 'Leveraged authorization deleted successfully.',
+      life: 3000,
+    });
+  } catch (error) {
+    console.error('Failed to delete leveraged authorization:', error);
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'Failed to delete leveraged authorization. Please try again.',
+      life: 5000,
+    });
+  }
+};
+</script>

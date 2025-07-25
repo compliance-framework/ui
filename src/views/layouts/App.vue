@@ -11,7 +11,7 @@ const sidebarStore = useSidebarStore();
   <div class="flex h-screen">
     <!-- Sidebar -->
     <div
-      class="fixed top-0 left-0 h-full transition-all duration-300 ease-in-out z-40"
+      class="fixed top-0 left-0 h-full transition-all duration-300 ease-in-out z-10"
       :class="{
         'w-80': sidebarStore.open,
         'w-24': !sidebarStore.open,

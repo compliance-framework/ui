@@ -250,3 +250,33 @@ export interface ControlImplementation {
   setParameters?: SetParameter[];
   implementedRequirements: ImplementedRequirement[];
 }
+
+export interface ImplementedComponent {
+  componentUuid: string;
+  props?: Property[];
+  links?: Link[];
+  responsibleParties?: {
+    roleId: string;
+    partyUuids: string[];
+    props?: Property[];
+    links?: Link[];
+    remarks?: string;
+  }[];
+  remarks?: string;
+}
+
+export interface InventoryItem {
+  uuid: string;
+  description: string;
+  props?: Property[];
+  links?: Link[];
+  responsibleParties?: {
+    roleId: string;
+    partyUuids: string[];
+    props?: Property[];
+    links?: Link[];
+    remarks?: string;
+  }[];
+  implementedComponents?: ImplementedComponent[];
+  remarks?: string;
+}
