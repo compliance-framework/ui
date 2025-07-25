@@ -2,33 +2,19 @@
   <PageHeader>
     Inventory
     <template #menu>
-      <SecondaryButton
-        type="button"
-        class="dark:bg-slate-800 dark:hover:bg-slate-700 dark:border-slate-700 hover:dark:border-slate-600"
-        @click="menu.toggle($event)"
-        aria-haspopup="true"
-        aria-controls="overlay_menu"
-      >
-        <BIconThreeDotsVertical />
-      </SecondaryButton>
-      <Menu
-        ref="menu"
-        id="overlay_menu"
-        :model="[
+      <BurgerMenu :items="[
           {
             label: 'Create New',
             command: () => {
               showCreateInventoryItemModal = true;
             },
           },
-        ]"
-        :popup="true"
-      />
+        ]" />
     </template>
   </PageHeader>
   <PageSubHeader>Manage system inventory</PageSubHeader>
 
-  <div class="mt-12">
+  <div class="mt-4">
     <div v-if="inventoryItemsLoading" class="text-center py-4">
       <p class="text-gray-500 dark:text-slate-400">Loading inventory items...</p>
     </div>
@@ -181,6 +167,7 @@ import Badge from '@/volt/Badge.vue';
 import { BIconThreeDotsVertical } from 'bootstrap-icons-vue';
 import { useToggle } from '@/composables/useToggle';
 import { useProps } from '@/composables/useProps';
+import BurgerMenu from '@/components/BurgerMenu.vue'
 
 const sspStore = useSystemSecurityPlanStore();
 const toast = useToast();

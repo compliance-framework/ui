@@ -47,8 +47,8 @@ const theme = ref<DrawerPassThroughOptions>({
     mask: `p-modal:bg-black/50`,
     transition: {
         enterFromClass: `p-left:-translate-x-full p-right:translate-x-full p-top:-translate-y-full p-bottom:translate-y-full p-full-screen:opacity-0`,
-        enterActiveClass: `transition-transform duration-400 ease-out p-full-screen:transition-opacity`,
-        leaveActiveClass: `transition-transform duration-200 ease-in p-full-screen:transition-opacity`,
+        enterActiveClass: `transition-transform duration-100 ease-out p-full-screen:transition-opacity`,
+        leaveActiveClass: `transition-transform duration-100 ease-in p-full-screen:transition-opacity`,
         leaveToClass: `p-left:-translate-x-full p-right:translate-x-full p-top:-translate-y-full p-bottom:translate-y-full p-full-screen:opacity-0`
     }
 });
