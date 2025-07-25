@@ -9,6 +9,7 @@
           {label: 'Overview', route: 'system:overview'},
           {label: 'System Users', route: 'system:users'},
           {label: 'System Components', route: 'system:components'},
+          {label: 'Leveraged Authorizations', route: 'system:authorizations'},
           ]" :key="tab.label" :value="tab.route" as="div" class="flex items-center gap-2">
           <RouterLink
             :to="{ name: tab.route }"

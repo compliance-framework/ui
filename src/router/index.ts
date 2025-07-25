@@ -76,6 +76,11 @@ const authenticatedRoutes = [
         name: 'system:components',
         component: () => import('../views/system/Components.vue'),
       },
+      {
+        path: 'authorizations',
+        name: 'system:authorizations',
+        component: () => import('../views/system/Authorizations.vue'),
+      },
     ],
     meta: {
       requiresAuth: true,
