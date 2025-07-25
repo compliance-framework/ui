@@ -1,7 +1,7 @@
 <template>
   <div>
     <PageHeader>Plan of Action and Milestones</PageHeader>
-    
+
     <div class="my-4 overflow-hidden rounded-lg border border-ccf-300 bg-white shadow dark:border-slate-700 dark:bg-slate-900">
       <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-ccf-300 dark:divide-slate-700">
@@ -56,6 +56,7 @@
                   >
                     {{ poam.metadata?.title }}
                   </RouterLink>
+                  <Badge severity="info" class="ml-2" v-if="systemStore.system.poam?.uuid == poam.uuid" :value="'Active'" />
                 </td>
                 <td class="px-6 py-4 text-sm text-gray-500 dark:text-slate-400">
                   {{ poam.metadata?.version }}
@@ -77,6 +78,13 @@
                       title="Download Full JSON"
                     >
                       JSON
+                    </button>
+                    <button
+                      @click="setAsGlobal(poam)"
+                      class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1 rounded-md"
+                      title="Download Full JSON"
+                    >
+                      Set
                     </button>
                   </div>
                 </td>
@@ -105,10 +113,13 @@ import PageHeader from '@/components/PageHeader.vue'
 import { type PlanOfActionAndMilestones, usePlanOfActionAndMilestonesStore } from '@/stores/plan-of-action-and-milestones.ts'
 import { useToast } from 'primevue/usetoast'
 import { useConfigStore } from '@/stores/config.ts'
+import Badge from '@/volt/Badge.vue'
+import { useSystemStore } from '@/stores/system.ts'
 
 const poamStore = usePlanOfActionAndMilestonesStore()
 const configStore = useConfigStore()
 const toast = useToast()
+const systemStore = useSystemStore();
 
 const planOfActionAndMilestones = ref<PlanOfActionAndMilestones[]>([])
 const loading = ref(true)
@@ -132,6 +143,10 @@ onMounted(async () => {
   }
 })
 
+function setAsGlobal(poam: PlanOfActionAndMilestones) {
+  systemStore.setPoam(poam)
+}
+
 function formatDate(dateString?: string): string {
   if (!dateString) return 'N/A'
   return new Date(dateString).toLocaleDateString()
@@ -151,10 +166,10 @@ async function downloadJson(uuid: string, title: string): Promise<void> {
       throw response
     }
     const data = await response.json()
-    
+
     const dataStr = JSON.stringify(data, null, 2)
     const dataBlob = new Blob([dataStr], { type: 'application/json' })
-    
+
     const url = URL.createObjectURL(dataBlob)
     const link = document.createElement('a')
     link.href = url
@@ -163,7 +178,7 @@ async function downloadJson(uuid: string, title: string): Promise<void> {
     link.click()
     document.body.removeChild(link)
     URL.revokeObjectURL(url)
-    
+
     toast.add({
       severity: 'success',
       summary: 'POAM JSON Downloaded',
@@ -180,4 +195,4 @@ async function downloadJson(uuid: string, title: string): Promise<void> {
     })
   }
 }
-</script> 
+</script>
