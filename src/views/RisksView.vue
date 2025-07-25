@@ -86,7 +86,7 @@
     <!-- Create Modal -->
     <Modal :show="showCreateModal" @close="showCreateModal = false" size="lg">
       <RiskCreateForm
-        :poam-id="route.params.id as string"
+        :poam-id="system.poam?.uuid as string"
         @cancel="showCreateModal = false"
         @created="handleRiskCreated"
       />
@@ -96,7 +96,7 @@
     <Modal :show="showEditModal && editingRisk !== null" @close="showEditModal = false" size="lg">
       <RiskEditForm
         v-if="editingRisk"
-        :poam-id="route.params.id as string"
+        :poam-id="system.poam?.uuid as string"
         :risk="editingRisk"
         @cancel="showEditModal = false"
         @saved="handleRiskSaved"
