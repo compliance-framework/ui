@@ -11,7 +11,11 @@
         v-for="assessmentPlan in assessmentPlans"
         :key="assessmentPlan.uuid"
       >
-        <td class="py-3 px-4 whitespace-nowrap grow">{{ assessmentPlan.metadata.title }}</td>
+        <td class="py-3 px-4 whitespace-nowrap grow">
+          {{ assessmentPlan.metadata.title }}
+          <Badge severity="info" class="ml-2" v-if="systemStore.system.assessmentPlan?.uuid == assessmentPlan.uuid" :value="'Active'" />
+        </td>
+
         <td class="py-2 px-2 text-right whitespace-nowrap">
           <div class="flex gap-2">
             <RouterLink
@@ -24,6 +28,12 @@
               @click="downloadJSON(assessmentPlan.uuid, assessmentPlan.metadata.title)"
               title="Download Full JSON"
             >JSON
+            </button>
+            <button
+              @click="systemStore.setAssessmentPlan(assessmentPlan)"
+              class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1 rounded-md"
+            >
+              Set
             </button>
           </div>
         </td>
@@ -46,9 +56,12 @@ import { onMounted, ref } from 'vue'
 import PageHeader from '@/components/PageHeader.vue'
 import { type AssessmentPlan, useAssessmentPlanStore } from '@/stores/assessment-plans.ts'
 import { useToast } from 'primevue/usetoast'
+import { useSystemStore } from '@/stores/system.ts'
+import Badge from '@/volt/Badge.vue'
 
 const assessmentPlanStore = useAssessmentPlanStore()
 const toast = useToast()
+const systemStore = useSystemStore();
 
 const assessmentPlans = ref<AssessmentPlan[]>([])
 
