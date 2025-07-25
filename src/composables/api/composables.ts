@@ -6,16 +6,15 @@ export function useFetch(req: Request): Promise<Response> {
     const configStore = useConfigStore();
     configStore.getConfig().then((config) => {
       const url = new URL(req.url, window.location.origin);
-      const request = new Request(
-        new Request(`${config.API_URL}${url.pathname}${url.search}`, req),
-        {
-          headers: {
-            Accept: 'application/json',
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include',
-        },
-      );
+      req.headers.set('Accept', 'application/json');
+      req.headers.set('Content-Type', 'application/json');
+      const request = new Request(`${config.API_URL}${url.pathname}${url.search}`, {
+        method: req.method,
+        headers: req.headers,
+        credentials: 'include',
+        body: req.body,
+      });
+
       fetch(request).then((res: Response) => {
         if (res.ok) {
           return resolve(res);

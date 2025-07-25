@@ -41,6 +41,11 @@ const links = ref<Array<NavigationItem>>([
     abbr: 'EV',
   },
   {
+    name: 'controls:index',
+    title: 'Controls',
+    abbr: 'CON',
+  },
+  {
     name: 'catalog-list',
     title: 'Catalogs',
     abbr: 'CAT',
@@ -55,17 +60,22 @@ const links = ref<Array<NavigationItem>>([
     title: 'Component Definitions',
   },
   {
-    name: 'system-security-plans',
-    title: 'System Security Plans',
-  },
-  {
-    name: 'assessment-plans',
-    title: 'Assessment Plans',
-  },
-  {
-    name: 'plan-of-action-and-milestones',
-    title: 'POA&M',
-    abbr: 'PM',
+    title: 'Implementation',
+    children: [
+      {
+        name: 'system-security-plans',
+        title: 'System Security Plans',
+      },
+      {
+        name: 'assessment-plans',
+        title: 'Assessment Plans',
+      },
+      {
+        name: 'plan-of-action-and-milestones',
+        title: 'POA&M',
+        abbr: 'PM',
+      },
+    ]
   },
   {
     title: 'Admin',
@@ -137,12 +147,12 @@ const footLinks = ref<Array<NavigationItem>>([
               v-for="child in link.children"
               :key="child.name"
             >
-              <SideNavLink :to="{ name: child.name }" v-tooltip.focus.right="{value: `${link.title} | ${child.title}`, disabled: sidebarStore.open}">
+              <SideNavLink :to="{ name: child.name }" v-tooltip.right="{value: `${link.title} | ${child.title}`, disabled: sidebarStore.open}">
                 {{ sidebarStore.open ? child.title : abbreviated(child) }}
               </SideNavLink>
             </template>
           </SideNavCategory>
-          <SideNavLink v-else :to="{ name: link.name }" v-tooltip.focus.right="{value: link.title, disabled: sidebarStore.open}">
+          <SideNavLink v-else :to="{ name: link.name }" v-tooltip.hover.right="{value: link.title, disabled: sidebarStore.open}">
             {{ sidebarStore.open ? link.title : abbreviated(link) }}
           </SideNavLink>
         </template>
@@ -154,7 +164,7 @@ const footLinks = ref<Array<NavigationItem>>([
           v-for="link in footLinks"
           :key="link.name"
         >
-          <SideNavLink :to="{ name: link.name }" v-tooltip.focus.right="{value: link.title, disabled: sidebarStore.open}">
+          <SideNavLink :to="{ name: link.name }" v-tooltip.right="{value: link.title, disabled: sidebarStore.open}">
             {{ sidebarStore.open ? link.title : abbreviated(link) }}
           </SideNavLink>
         </template>

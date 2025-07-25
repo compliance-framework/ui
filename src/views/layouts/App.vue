@@ -14,7 +14,7 @@ const sidebarStore = useSidebarStore();
       class="fixed top-0 left-0 h-full transition-all duration-300 ease-in-out z-40"
       :class="{
         'w-80': sidebarStore.open,
-        'w-18': !sidebarStore.open,
+        'w-24': !sidebarStore.open,
       }"
     >
       <LeftSideNav class="h-full w-full transition-all duration-300 ease-in-out" />
@@ -27,7 +27,7 @@ const sidebarStore = useSidebarStore();
       class="grow transition-all duration-300 ease-in-out px-12 py-4 bg-zinc-50 dark:bg-slate-950 text-zinc-800 dark:text-slate-50 overflow-auto"
       :class="{
         'ml-80': sidebarStore.open,
-        'ml-18': !sidebarStore.open,
+        'ml-24': !sidebarStore.open,
       }"
     >
       <router-view v-slot="{ Component }">
