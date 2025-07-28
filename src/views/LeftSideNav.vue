@@ -72,6 +72,10 @@ const links = ref<Array<NavigationItem>>([
         title: 'Assessment Plans',
       },
       {
+        name: 'assessment-results',
+        title: 'Assessment Results',
+      },
+      {
         name: 'plan-of-action-and-milestones',
         title: 'POA&M',
         abbr: 'PM',

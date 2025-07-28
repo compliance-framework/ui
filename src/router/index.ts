@@ -513,6 +513,70 @@ const authenticatedRoutes = [
     }
   },
   {
+    path: '/assessment-results',
+    name: 'assessment-results',
+    component: () => import('../views/assessment-results/AssessmentResultsListView.vue'),
+    meta: {
+      requiresAuth: true,
+    }
+  },
+  {
+    path: '/assessment-results/create',
+    name: 'assessment-results-create',
+    component: () => import('../views/assessment-results/AssessmentResultsCreateView.vue'),
+    meta: {
+      requiresAuth: true,
+    }
+  },
+  {
+    path: '/assessment-results/:id',
+    name: 'assessment-results-editor',
+    component: () => import('../views/assessment-results/AssessmentResultsEditorView.vue'),
+    meta: {
+      requiresAuth: true,
+    },
+    children: [
+      {
+        path: '',
+        name: 'assessment-results-overview',
+        component: () => import('../views/assessment-results/AssessmentResultsOverviewView.vue')
+      },
+      {
+        path: 'import-ap',
+        name: 'assessment-results-import-ap',
+        component: () => import('../views/assessment-results/AssessmentResultsImportApView.vue')
+      },
+      {
+        path: 'results',
+        name: 'assessment-results-results',
+        component: () => import('../views/assessment-results/AssessmentResultsResultsView.vue')
+      },
+      {
+        path: 'local-definitions',
+        name: 'assessment-results-local-definitions',
+        component: () => import('../views/assessment-results/AssessmentResultsLocalDefinitionsView.vue')
+      },
+      {
+        path: 'back-matter',
+        name: 'assessment-results-back-matter',
+        component: () => import('../views/assessment-results/AssessmentResultsBackMatterView.vue')
+      },
+      {
+        path: 'json',
+        name: 'assessment-results-json',
+        component: () => import('../views/assessment-results/AssessmentResultsJSONView.vue')
+      },
+    ]
+  },
+  {
+    path: '/assessment-results/:id/edit',
+    name: 'assessment-results-edit',
+    component: () => import('../views/assessment-results/AssessmentResultsEditView.vue'),
+    meta: {
+      requiresAuth: true,
+    }
+  },
+  {
     path: '/about',
     name: 'about',
     component: () => import('../views/AboutView.vue'),
