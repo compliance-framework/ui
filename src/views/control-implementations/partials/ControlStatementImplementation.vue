@@ -18,11 +18,13 @@ import Textarea from '@/volt/Textarea.vue';
 import { useApi } from '@/composables/api';
 import type { DataResponse } from '@/types';
 import { useCloned } from '@vueuse/core'
+import BurgerMenu from '@/components/BurgerMenu.vue'
+import { useToggle } from '@/composables/useToggle'
 
 const sspStore = useSystemSecurityPlanStore();
 const { system } = useSystemStore();
 
-const showCreateForm = ref(false)
+const { value: showCreateForm, set: setCreateForm } = useToggle(false)
 
 const { statement, implementation } = defineProps<{
   statement: Statement;
@@ -66,6 +68,13 @@ onMounted(() => {
   }
 });
 
+function resetCreateForm() {
+  setCreateForm(false)
+  newByComponent.value = {
+    uuid: uuidv4(),
+  } as ByComponent
+}
+
 async function create() {
   const clonedStatement = useCloned(localStatement).cloned;
   clonedStatement.value.byComponents = [
@@ -82,7 +91,7 @@ async function create() {
     newByComponent.value = {
       uuid: uuidv4(),
     } as ByComponent
-    showCreateForm.value = false
+    setCreateForm(false)
     emit('updated', res.data);
   });
 }
@@ -90,7 +99,17 @@ async function create() {
 
 <template>
   <div class="pb-24">
-    <h4 class="font-medium text-xl mb-4">Components</h4>
+    <div class="flex items-center mb-4 gap-x-4">
+      <h4 class="font-medium text-xl">Components</h4>
+      <BurgerMenu :items="[
+        {
+          label: 'Add Component',
+          command: () => {
+            setCreateForm(true)
+          }
+        }
+      ]" />
+    </div>
     <div
       v-for="byComponent in localStatement.byComponents || []"
       :key="byComponent.uuid"
@@ -98,8 +117,6 @@ async function create() {
     >
       <StatementByComponent :by-component="byComponent" />
     </div>
-
-    <Button @click="showCreateForm = true" v-if="!showCreateForm">Add Component</Button>
 
     <form @submit.prevent="create" v-if="showCreateForm">
       <div class="h-0.5 dark:bg-slate-800 bg-gray-400 w-full my-4"></div>
@@ -127,7 +144,8 @@ async function create() {
       </div>
 
       <div class="text-right">
-        <Button type="submit" @click="showCreateForm = true">Create</Button>
+        <secondary-button @click="resetCreateForm">Cancel</secondary-button>
+        <primary-button type="submit">Create</primary-button>
       </div>
     </form>
   </div>
