@@ -168,9 +168,11 @@ import { type DataResponse, useApi, useFetch } from '@/composables/api'
 import type { Profile } from '@/oscal'
 import { useMustAuthenticate } from '@/composables/useMustAuthenticate'
 import Select from '@/volt/Select.vue';
+import { useToast } from 'primevue/usetoast'
 
 const route = useRoute()
 const router = useRouter()
+const toast = useToast()
 const sspStore = useSystemSecurityPlanStore()
 const configStore = useConfigStore()
 const {watchForUnauthenticated} = useMustAuthenticate()
@@ -235,11 +237,22 @@ onMounted(async () => {
       })
       .finally(() => {
         watch(selectedProfile, async () => {
-          sspStore.attachProfile(systemSecurityPlan.value.uuid, selectedProfile.value.value).then((res) => {
-            console.log('Successfully attached profile', res)
-          }).catch((error: Response) => {
-            console.error(error)
-          });
+          sspStore.attachProfile(systemSecurityPlan.value.uuid, selectedProfile.value.value)
+            .then(() => {
+              toast.add({
+                severity: 'success',
+                summary: 'Profile updated',
+                life: 3000
+              })
+            })
+            .catch((error: Response) => {
+              toast.add({
+                severity: 'error',
+                summary: 'Failed to set profile',
+                detail: `Received error status from API. Status: ${error.status}`,
+                life: 3000
+              })
+            });
         })
       })
 

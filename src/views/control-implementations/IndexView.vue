@@ -129,7 +129,7 @@ if (systemStore.system.securityPlan) {
 const controlImplementations = ref<{ [key: string]: ImplementedRequirement }>(
   {},
 );
-const catalog = useStorage<Catalog | undefined>('catalog', {} as Catalog);
+const catalog = ref<Catalog | undefined>({} as Catalog);
 const { nodes, build } = useCatalogTree();
 const catalogLoading = ref<boolean>(false);
 watch(profile, () => {
@@ -137,25 +137,21 @@ watch(profile, () => {
     return;
   }
 
-  if (!catalog.value?.uuid) {
-    catalogLoading.value = true;
-    useFetch(new Request(`/api/oscal/profiles/${profile.value.uuid}/resolved`))
-      .then((res: Response) => (res.ok ? res.json() : Promise.reject(res)))
-      .then((data: DataResponse<Catalog>) => {
-        catalog.value = data.data;
-        build(catalog as Ref<Catalog>);
-      })
-      .catch((error: Response) => {
-        if (error.status === 401) {
-          return gotoLogin();
-        }
-      })
-      .finally(() => {
-        catalogLoading.value = false;
-      });
-  } else {
-    build(catalog as Ref<Catalog>);
-  }
+  catalogLoading.value = true;
+  useFetch(new Request(`/api/oscal/profiles/${profile.value.uuid}/resolved`))
+    .then((res: Response) => (res.ok ? res.json() : Promise.reject(res)))
+    .then((data: DataResponse<Catalog>) => {
+      catalog.value = data.data;
+      build(catalog as Ref<Catalog>);
+    })
+    .catch((error: Response) => {
+      if (error.status === 401) {
+        return gotoLogin();
+      }
+    })
+    .finally(() => {
+      catalogLoading.value = false;
+    });
 });
 
 const sspStore = useSystemSecurityPlanStore();
