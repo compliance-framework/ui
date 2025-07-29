@@ -151,6 +151,8 @@
         </div>
       </div>
     </template>
+
+    <Diagrams></Diagrams>
   </div>
 
 </template>
@@ -169,6 +171,7 @@ import type { Profile } from '@/oscal';
 import { useMustAuthenticate } from '@/composables/useMustAuthenticate';
 import Select from '@/volt/Select.vue';
 import { useSystemStore } from '@/stores/system.ts';
+import Diagrams from './Diagrams.vue'
 
 const route = useRoute();
 const router = useRouter();
