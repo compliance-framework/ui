@@ -74,6 +74,10 @@ function onMouseLeave(e: MouseEvent) {
   }
 }
 
+function updateStatement(statement: Statement) {
+  statements.value[statement.statementId] = statement
+}
+
 async function onPartSelect(e: Event, part: Part) {
   e.preventDefault();
   selectedPart.value = part
@@ -144,6 +148,7 @@ async function onPartSelect(e: Event, part: Part) {
   <Drawer v-model:visible="drawerOpen" header="Implementation" position="right" class="w-full! md:w-1/2! lg:w-3/5!">
     <ControlStatementImplementation
       v-if="selectedPart && statements[selectedPart.id]"
+      @updated="updateStatement"
       :implementation="selectedImplementation"
       :statement="statements[selectedPart.id]"
     />

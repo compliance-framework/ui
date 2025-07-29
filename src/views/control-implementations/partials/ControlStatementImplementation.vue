@@ -75,6 +75,44 @@ function resetCreateForm() {
   } as ByComponent
 }
 
+function deleteByComponent(byComp: ByComponent) {
+  const clonedStatement = useCloned(localStatement).cloned;
+  clonedStatement.value.byComponents = clonedStatement.value.byComponents?.filter((comp: ByComponent) => {
+    return byComp.uuid !== comp.uuid;
+  });
+  sspStore.updateImplementedRequirementStatement(
+    system.securityPlan?.uuid as string,
+    implementation.uuid,
+    statement.uuid,
+    clonedStatement.value,
+  ).then((res) => {
+    localStatement.value = res.data;
+    newByComponent.value = {
+      uuid: uuidv4(),
+    } as ByComponent
+    setCreateForm(false)
+    emit('updated', res.data);
+  });
+}
+
+function updateByComponent(byComp: ByComponent) {
+  const clonedStatement = useCloned(localStatement).cloned;
+  clonedStatement.value.byComponents = clonedStatement.value.byComponents?.map((comp: ByComponent) => byComp.uuid == comp.uuid ? byComp : comp);
+  sspStore.updateImplementedRequirementStatement(
+    system.securityPlan?.uuid as string,
+    implementation.uuid,
+    statement.uuid,
+    clonedStatement.value,
+  ).then((res) => {
+    localStatement.value = res.data;
+    newByComponent.value = {
+      uuid: uuidv4(),
+    } as ByComponent
+    setCreateForm(false)
+    emit('updated', res.data);
+  });
+}
+
 async function create() {
   const clonedStatement = useCloned(localStatement).cloned;
   clonedStatement.value.byComponents = [
@@ -111,11 +149,11 @@ async function create() {
       ]" />
     </div>
     <div
-      v-for="byComponent in localStatement.byComponents || []"
+      v-for="(byComponent, index) in localStatement.byComponents || []"
       :key="byComponent.uuid"
-      class="mb-4"
     >
-      <StatementByComponent :by-component="byComponent" />
+      <div class="h-0.5 w-full bg-gray-200 dark:bg-slate-700 my-4" v-if="index !== 0"></div>
+      <StatementByComponent @save="updateByComponent" @delete="deleteByComponent" :by-component="byComponent" />
     </div>
 
     <form @submit.prevent="create" v-if="showCreateForm">

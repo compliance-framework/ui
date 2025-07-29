@@ -1,48 +1,107 @@
 <script setup lang="ts">
 import { useSystemSecurityPlanStore } from '@/stores/system-security-plans.ts'
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, watchEffect } from 'vue'
 import type {SystemComponent, ByComponent} from '@/oscal';
 import { useSystemStore } from '@/stores/system.ts'
+import BurgerMenu from '@/components/BurgerMenu.vue'
+import Textarea from '@/volt/Textarea.vue'
+import { useToggle } from '@/composables/useToggle'
+import { useConfirm } from 'primevue/useconfirm'
 
 const { byComponent } = defineProps<{
   byComponent: ByComponent,
 }>()
-
 const emit = defineEmits<{
-  edit: [byComponent: ByComponent]
+  save: [byComponent: ByComponent]
+  delete: [byComponent: ByComponent]
 }>()
-const component = ref<SystemComponent>({} as SystemComponent)
 
 const { system } = useSystemStore()
-
 const sspStore = useSystemSecurityPlanStore()
+const confirm = useConfirm()
 
-onMounted(() => {
-  if (system.securityPlan) {
-    sspStore.getSystemImplementationComponent(system.securityPlan.uuid, byComponent.componentUuid).then((response) => {
-      component.value = response.data
-    })
-  }
+const localComponent = ref<ByComponent>(byComponent)
+watchEffect(() => {
+  localComponent.value = byComponent
 })
 
-function edit() {
-  emit('edit', byComponent)
+const { value: editing, set: setEditing} = useToggle();
+
+const component = ref<SystemComponent>({} as SystemComponent)
+if (system.securityPlan) {
+  sspStore.getSystemImplementationComponent(system.securityPlan.uuid, byComponent.componentUuid).then((response) => {
+    component.value = response.data
+  })
+}
+
+function save() {
+  emit('save', localComponent.value)
+  setEditing(false)
+}
+
+function deleteStatement() {
+  emit('delete', localComponent.value)
+}
+
+function confirmDelete() {
+  confirm.require({
+    message: 'Are you sure you want to delete this implementation statement?',
+    header: 'Delete Statement',
+    rejectProps: {
+      label: "Cancel",
+    },
+    acceptProps: {
+      label: "Yes",
+      severity: "danger",
+    },
+    accept: () => {
+      deleteStatement()
+    },
+  })
+}
+
+function cancel() {
+  setEditing(false)
 }
 </script>
 
 <template>
-  <div class="flex justify-between items-start">
-    <span>{{ component.title }}</span>
-    <button
-      @click="edit"
-      class="text-blue-600 hover:text-blue-800 dark:text-blue-400 disabled:opacity-50 disabled:cursor-not-allowed"
-    >
-      Edit
-    </button>
+  <div class="flex justify-between items-center">
+    <h4 class="font-medium">{{ component.title }}</h4>
+    <BurgerMenu :items="[
+      {
+        label: 'Edit',
+        command() {
+          setEditing(true)
+        }
+      },
+      {
+        label: 'Delete',
+        command() {
+          confirmDelete()
+        }
+      }
+    ]" />
   </div>
-  <p class="text-gray-600 dark:text-slate-400 mt-1">
-    {{ byComponent.description }}
-  </p>
+  <div class="text-gray-600 dark:text-slate-400">
+    <template v-if="!editing">
+      <p class="whitespace-pre-wrap py-2">
+        {{ byComponent.description }}
+      </p>
+    </template>
+    <template v-else>
+      <Textarea
+        v-model="localComponent.description"
+        autoResize
+        class="resize-none w-full"
+        placeholder="Description"
+      />
+      <div class="flex gap-x-2">
+        <secondary-button @click="cancel">Cancel</secondary-button>
+        <primary-button @click="save">Save</primary-button>
+      </div>
+    </template>
+  </div>
 
   <!-- Export Information -->
   <div v-if="byComponent.export" class="mt-2 text-xs">
