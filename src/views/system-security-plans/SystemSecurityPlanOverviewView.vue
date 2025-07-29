@@ -235,15 +235,11 @@ onMounted(async () => {
       })
       .finally(() => {
         watch(selectedProfile, async () => {
-          await useFetch(new Request(`/api/oscal/system-security-plans/${systemSecurityPlan.value.uuid}/profile`, {
-            method: 'POST',
-            body: JSON.stringify({
-              profileId: selectedProfile.value.value,
-            }),
-            headers: {
-              'Content-Type': 'application/json',
-            }
-          }));
+          sspStore.attachProfile(systemSecurityPlan.value.uuid, selectedProfile.value.value).then((res) => {
+            console.log('Successfully attached profile', res)
+          }).catch((error: Response) => {
+            console.error(error)
+          });
         })
       })
 

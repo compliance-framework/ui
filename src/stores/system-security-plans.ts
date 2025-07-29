@@ -286,6 +286,30 @@ export const useSystemSecurityPlanStore = defineStore(
       return (await response.json()) as DataResponse<SystemSecurityPlan[]>;
     }
 
+    async function attachProfile<T>(
+      id: string,
+      selectedProfileId: string,
+    ): Promise<T> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/system-security-plans/${id}/profile`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            profileId: selectedProfileId,
+          }),
+          credentials: 'include',
+        },
+      );
+      if (!response.ok) {
+        throw response;
+      }
+      return response.json();
+    }
+
     async function getCharacteristics(
       id: string,
     ): Promise<DataResponse<SystemCharacteristics>> {
@@ -303,6 +327,7 @@ export const useSystemSecurityPlanStore = defineStore(
         deep: true,
       }) as DataResponse<SystemCharacteristics>;
     }
+
 
     async function updateCharacteristics(
       id: string,
@@ -1062,6 +1087,7 @@ export const useSystemSecurityPlanStore = defineStore(
       list,
       full,
       create,
+      attachProfile,
 
       getCharacteristics,
       getCharacteristicsAuthorizationBoundary,
