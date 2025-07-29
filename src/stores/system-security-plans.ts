@@ -459,7 +459,7 @@ export const useSystemSecurityPlanStore = defineStore(
     ): Promise<DataResponse<SystemImplementation>> {
       const config = await configStore.getConfig();
       const requestBody = decamelizeKeys(systemImplementation, { separator: '-' });
-      
+
       const response = await fetch(
         `${config.API_URL}/api/oscal/system-security-plans/${id}/system-implementation`,
         {
@@ -471,13 +471,13 @@ export const useSystemSecurityPlanStore = defineStore(
           body: JSON.stringify(requestBody),
         }
       );
-      
+
       if (!response.ok) {
         throw response;
       }
-      
+
       const responseData = await response.json();
-      
+
       return camelcaseKeys(responseData, {
         deep: true,
       }) as DataResponse<SystemImplementation>;
@@ -515,7 +515,7 @@ export const useSystemSecurityPlanStore = defineStore(
         throw response;
       }
       const data = await response.json();
-      
+
       return camelcaseKeys(data, {
         deep: true,
       }) as DataResponse<SystemComponent[]>;
@@ -830,7 +830,7 @@ export const useSystemSecurityPlanStore = defineStore(
     ): Promise<DataResponse<SystemComponent>> {
       const config = await configStore.getConfig();
       const requestBody = decamelizeKeys(component, { separator: '-' });
-      
+
       const response = await fetch(
         `${config.API_URL}/api/oscal/system-security-plans/${id}/system-implementation/components`,
         {
@@ -846,7 +846,7 @@ export const useSystemSecurityPlanStore = defineStore(
         throw response;
       }
       const responseData = await response.json();
-      
+
       return camelcaseKeys(responseData, { deep: true }) as DataResponse<SystemComponent>;
     }
 
@@ -999,7 +999,7 @@ export const useSystemSecurityPlanStore = defineStore(
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(decamelizeKeys(statement, { separator: '-' })),
+          body: JSON.stringify(decamelizeKeys(statement, { separator: '-', deep: true })),
           credentials: 'include',
         }
       );

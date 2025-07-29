@@ -14,6 +14,8 @@ import ToastService from 'primevue/toastservice';
 import ConfirmationService from 'primevue/confirmationservice';
 import Tooltip from 'primevue/tooltip';
 import TooltipPt from '@/volt/Tooltip';
+import PrimaryButton from '@/volt/PrimaryButton.vue'
+import SecondaryButton from '@/volt/SecondaryButton.vue'
 
 const app = createApp(App)
 
@@ -30,6 +32,8 @@ app.use(PrimeVue, {
 });
 app.use(ConfirmationService);
 app.directive('tooltip', Tooltip);
+app.component('PrimaryButton', PrimaryButton)
+app.component('SecondaryButton', SecondaryButton)
 
 // This is a recursive component so should be registered globally
 app.component('CatalogGroup', CatalogGroup)
