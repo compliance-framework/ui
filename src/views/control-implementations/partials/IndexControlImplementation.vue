@@ -25,7 +25,7 @@ const drawerLoading = useToggle();
 const sspStore = useSystemSecurityPlanStore();
 const { system } = useSystemStore();
 
-const selectedImplementation = ref(implementation)
+const selectedImplementation = ref<ImplementedRequirement>(implementation as ImplementedRequirement);
 const statements = ref<{ [key: string]: Statement }>({});
 watchEffect(() => {
   statements.value = {};
@@ -142,7 +142,6 @@ async function onPartSelect(e: Event, part: Part) {
   </div>
 
   <Drawer v-model:visible="drawerOpen" header="Implementation" position="right" class="w-full! md:w-1/2! lg:w-3/5!">
-    {{ implementation }}
     <ControlStatementImplementation
       v-if="selectedPart && statements[selectedPart.id]"
       :implementation="selectedImplementation"
