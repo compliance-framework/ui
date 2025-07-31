@@ -22,7 +22,14 @@ onMounted(() => {
 });
 
 function onDrawIoMessage(e: MessageEvent) {
-  const req = JSON.parse(e.data);
+  // Check if data is already an object or needs parsing
+  let req;
+  try {
+    req = typeof e.data === 'string' ? JSON.parse(e.data) : e.data;
+  } catch (error) {
+    console.error('Failed to parse message data:', error);
+    return;
+  }
 
   switch (req.event) {
     case "init":

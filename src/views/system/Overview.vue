@@ -3,8 +3,11 @@
 <!--      System Security Plan-->
 <!--    </h3>-->
   <div class="p-4">
+    <div v-if="!systemSecurityPlan?.uuid" class="text-gray-500 dark:text-slate-400 text-center py-8">
+      No system security plan data available.
+    </div>
     <div
-      v-if="systemSecurityPlan.metadata"
+      v-else-if="systemSecurityPlan.metadata"
       class="grid grid-cols-1 md:grid-cols-2 gap-6"
     >
       <div>
@@ -221,6 +224,11 @@ const selectedProfile = ref();
 onMounted(async () => {
   try {
     // Load basic SSP data
+    if (!system.securityPlan?.uuid) {
+      console.error('No security plan selected');
+      return;
+    }
+    
     systemSecurityPlan.value = system.securityPlan as SystemSecurityPlan;
 
     useFetch(
