@@ -10,6 +10,12 @@ import type {
 import camelcaseKeys from 'camelcase-keys';
 import decamelizeKeys from 'decamelize-keys';
 
+export interface MetadataUpdateRequest {
+  title?: string;
+  version?: string;
+  remarks?: string;
+}
+
 export interface Diagram {
   uuid: string;
   description: string;
@@ -1084,8 +1090,8 @@ export const useSystemSecurityPlanStore = defineStore(
 
     async function updateMetadata(
       id: string,
-      metadata: any
-    ): Promise<DataResponse<any>> {
+      metadata: MetadataUpdateRequest
+    ): Promise<DataResponse<Metadata>> {
       const config = await configStore.getConfig();
       const response = await fetch(
         `${config.API_URL}/api/oscal/system-security-plans/${id}/metadata`,
@@ -1105,7 +1111,7 @@ export const useSystemSecurityPlanStore = defineStore(
       }
       return camelcaseKeys(
         await response.json(),
-      ) as DataResponse<any>;
+      ) as DataResponse<Metadata>;
     }
 
     return {
