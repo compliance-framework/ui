@@ -3,6 +3,32 @@
 <!--      System Security Plan-->
 <!--    </h3>-->
   <div class="p-4">
+    <!-- Edit/Save buttons -->
+    <div class="flex justify-end mb-4 gap-2" v-if="systemSecurityPlan?.uuid">
+      <button
+        v-if="!isEditing"
+        @click="startEditing"
+        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
+      >
+        Edit
+      </button>
+      <button
+        v-if="isEditing"
+        @click="saveChanges"
+        :disabled="saving"
+        class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md disabled:opacity-50"
+      >
+        {{ saving ? 'Saving...' : 'Save' }}
+      </button>
+      <button
+        v-if="isEditing"
+        @click="cancelEditing"
+        :disabled="saving"
+        class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md disabled:opacity-50"
+      >
+        Cancel
+      </button>
+    </div>
     <div v-if="!systemSecurityPlan?.uuid" class="text-gray-500 dark:text-slate-400 text-center py-8">
       No system security plan data available.
     </div>
@@ -15,7 +41,12 @@
           class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
           >Title</label
         >
-        <p class="text-gray-900 dark:text-slate-300">
+        <input
+          v-if="isEditing"
+          v-model="editableData.metadata.title"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-800 dark:border-slate-600 dark:text-slate-300"
+        />
+        <p v-else class="text-gray-900 dark:text-slate-300">
           {{ systemSecurityPlan.metadata.title }}
         </p>
       </div>
@@ -35,7 +66,12 @@
           class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
           >Version</label
         >
-        <p class="text-gray-900 dark:text-slate-300">
+        <input
+          v-if="isEditing"
+          v-model="editableData.metadata.version"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-800 dark:border-slate-600 dark:text-slate-300"
+        />
+        <p v-else class="text-gray-900 dark:text-slate-300">
           {{ systemSecurityPlan.metadata.version || 'N/A' }}
         </p>
       </div>
@@ -98,7 +134,12 @@
             class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
             >System Name</label
           >
-          <p class="text-gray-900 dark:text-slate-300">
+          <input
+            v-if="isEditing"
+            v-model="editableData.systemCharacteristics.systemName"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-800 dark:border-slate-600 dark:text-slate-300"
+          />
+          <p v-else class="text-gray-900 dark:text-slate-300">
             {{ systemCharacteristics.systemName }}
           </p>
         </div>
@@ -108,7 +149,12 @@
             class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
             >System Name (Short)</label
           >
-          <p class="text-gray-900 dark:text-slate-300">
+          <input
+            v-if="isEditing"
+            v-model="editableData.systemCharacteristics.systemNameShort"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-800 dark:border-slate-600 dark:text-slate-300"
+          />
+          <p v-else class="text-gray-900 dark:text-slate-300">
             {{ systemCharacteristics.systemNameShort }}
           </p>
         </div>
@@ -138,7 +184,13 @@
             class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
           >Remarks</label
           >
-          <p class="text-gray-900 dark:text-slate-300">
+          <textarea
+            v-if="isEditing"
+            v-model="editableData.metadata.remarks"
+            rows="3"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-800 dark:border-slate-600 dark:text-slate-300"
+          />
+          <p v-else class="text-gray-900 dark:text-slate-300">
             {{ systemSecurityPlan.metadata.remarks }}
           </p>
         </div>
@@ -148,7 +200,13 @@
             class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
             >Description</label
           >
-          <p class="text-gray-900 dark:text-slate-300">
+          <textarea
+            v-if="isEditing"
+            v-model="editableData.systemCharacteristics.description"
+            rows="4"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-800 dark:border-slate-600 dark:text-slate-300"
+          />
+          <p v-else class="text-gray-900 dark:text-slate-300">
             {{ systemCharacteristics.description }}
           </p>
         </div>
@@ -180,7 +238,8 @@ import { useToast } from 'primevue/usetoast'
 const route = useRoute();
 const router = useRouter();
 const toast = useToast();
-const { system } = useSystemStore();
+const systemStore = useSystemStore();
+const { system } = systemStore;
 const sspStore = useSystemSecurityPlanStore();
 const configStore = useConfigStore();
 const { watchForUnauthenticated } = useMustAuthenticate();
@@ -192,6 +251,22 @@ const systemImplementationStats = ref({
   components: 0,
   inventoryItems: 0,
   leveragedAuthorizations: 0,
+});
+
+// Edit mode state
+const isEditing = ref(false);
+const saving = ref(false);
+const editableData = ref({
+  metadata: {
+    title: '',
+    version: '',
+    remarks: ''
+  },
+  systemCharacteristics: {
+    systemName: '',
+    systemNameShort: '',
+    description: ''
+  }
 });
 
 const statistics = computed(() => ({
@@ -225,7 +300,6 @@ onMounted(async () => {
   try {
     // Load basic SSP data
     if (!system.securityPlan?.uuid) {
-      console.error('No security plan selected');
       return;
     }
     
@@ -326,6 +400,100 @@ onMounted(async () => {
 function formatDate(dateString?: string): string {
   if (!dateString) return 'N/A';
   return new Date(dateString).toLocaleDateString();
+}
+
+// Edit mode functions
+function startEditing() {
+  // Copy current data to editable state
+  editableData.value = {
+    metadata: {
+      title: systemSecurityPlan.value.metadata?.title || '',
+      version: systemSecurityPlan.value.metadata?.version || '',
+      remarks: systemSecurityPlan.value.metadata?.remarks || ''
+    },
+    systemCharacteristics: {
+      systemName: systemCharacteristics.value?.systemName || '',
+      systemNameShort: systemCharacteristics.value?.systemNameShort || '',
+      description: systemCharacteristics.value?.description || ''
+    }
+  };
+  isEditing.value = true;
+}
+
+function cancelEditing() {
+  isEditing.value = false;
+  // Reset editable data
+  editableData.value = {
+    metadata: {
+      title: '',
+      version: '',
+      remarks: ''
+    },
+    systemCharacteristics: {
+      systemName: '',
+      systemNameShort: '',
+      description: ''
+    }
+  };
+}
+
+async function saveChanges() {
+  saving.value = true;
+  
+  try {
+    // Update metadata
+    const metadataUpdate = {
+      title: editableData.value.metadata.title,
+      version: editableData.value.metadata.version,
+      remarks: editableData.value.metadata.remarks
+    };
+    
+    // Update system characteristics
+    const characteristicsUpdate = {
+      ...systemCharacteristics.value,
+      systemName: editableData.value.systemCharacteristics.systemName,
+      systemNameShort: editableData.value.systemCharacteristics.systemNameShort,
+      description: editableData.value.systemCharacteristics.description
+    } as SystemCharacteristics;
+    
+    // Call APIs to update both metadata and characteristics
+    const [metadataResponse, characteristicsResponse] = await Promise.all([
+      sspStore.updateMetadata(systemSecurityPlan.value.uuid, metadataUpdate),
+      sspStore.updateCharacteristics(systemSecurityPlan.value.uuid, characteristicsUpdate)
+    ]);
+    
+    // Update local state with responses
+    systemSecurityPlan.value.metadata = {
+      ...systemSecurityPlan.value.metadata,
+      ...metadataResponse.data
+    };
+    systemCharacteristics.value = characteristicsResponse.data;
+    
+    // Update the system store to reflect changes
+    systemStore.setSecurityPlan({
+      ...systemSecurityPlan.value,
+      metadata: systemSecurityPlan.value.metadata
+    });
+    
+    toast.add({
+      severity: 'success',
+      summary: 'Success',
+      detail: 'System Security Plan updated successfully',
+      life: 3000
+    });
+    
+    isEditing.value = false;
+  } catch (error) {
+    console.error('Error saving changes:', error);
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'Failed to save changes',
+      life: 3000
+    });
+  } finally {
+    saving.value = false;
+  }
 }
 
 async function downloadJson(): Promise<void> {

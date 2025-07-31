@@ -1082,12 +1082,39 @@ export const useSystemSecurityPlanStore = defineStore(
       return camelcaseKeys(await response.json(), { deep: true }) as DataResponse<ByComponent>;
     }
 
+    async function updateMetadata(
+      id: string,
+      metadata: any
+    ): Promise<DataResponse<any>> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/system-security-plans/${id}/metadata`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(
+            decamelizeKeys(metadata, { separator: '-' }),
+          ),
+          credentials: 'include',
+        },
+      );
+      if (!response.ok) {
+        throw response;
+      }
+      return camelcaseKeys(
+        await response.json(),
+      ) as DataResponse<any>;
+    }
+
     return {
       get,
       list,
       full,
       create,
       attachProfile,
+      updateMetadata,
 
       getCharacteristics,
       getCharacteristicsAuthorizationBoundary,
