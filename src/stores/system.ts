@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import type { SystemSecurityPlan } from '@/stores/system-security-plans.ts';
 import type { AssessmentPlan } from '@/stores/assessment-plans.ts';
 import type { PlanOfActionAndMilestones } from '@/stores/plan-of-action-and-milestones.ts';
+import type { AssessmentResults } from '@/stores/assessment-results.ts';
 import { ref } from 'vue';
 import { useLocalStorage } from '@vueuse/core'
 
@@ -11,6 +12,7 @@ interface System {
   securityPlan?: PartialSystemSecurityPlan;
   assessmentPlan?: AssessmentPlan;
   poam?: PlanOfActionAndMilestones;
+  assessmentResults?: AssessmentResults;
 }
 
 export const useSystemStore = defineStore('system', () => {
@@ -31,10 +33,15 @@ export const useSystemStore = defineStore('system', () => {
     system.value.poam = poam;
   }
 
+  function setAssessmentResults(assessmentResults: AssessmentResults) {
+    system.value.assessmentResults = assessmentResults;
+  }
+
   return {
     system,
     setSecurityPlan,
     setAssessmentPlan,
     setPoam,
+    setAssessmentResults,
   };
 });
