@@ -80,7 +80,7 @@
                       JSON
                     </button>
                     <button
-                      @click="systemStore.setSecurityPlan(ssp)"
+                      @click="setAsActiveSystem(ssp)"
                       class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1 rounded-md"
                     >
                       Set
@@ -128,6 +128,26 @@ onMounted(async () => {
 function formatDate(dateString?: string): string {
   if (!dateString) return 'N/A'
   return new Date(dateString).toLocaleDateString()
+}
+
+function setAsActiveSystem(ssp: SystemSecurityPlan) {
+  try {
+    systemStore.setSecurityPlan(ssp);
+    toast.add({
+      severity: 'success',
+      summary: 'Success',
+      detail: `Set "${ssp.metadata.title}" as active system`,
+      life: 3000
+    });
+  } catch (error) {
+    console.error('Error setting system:', error);
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'Failed to set as active system',
+      life: 3000
+    });
+  }
 }
 
 async function downloadJson(uuid: string, title: string): Promise<void> {
