@@ -15,7 +15,7 @@
     </div>
 
     <div v-if="tasks.length > 0">
-      <div class="space-y-8" v-if="assessmentPlan">
+      <div class="space-y-6" v-if="assessmentPlan">
         <div v-for="(task, index) in tasks" :key="task.uuid || index">
           <TaskDetail
             @updated="taskUpdated"
@@ -23,6 +23,8 @@
             :task="task"
             :assessment-plan="assessmentPlan"
           />
+          <!-- Add divider between tasks -->
+          <hr v-if="index < tasks.length - 1" class="mt-6 border-gray-200 dark:border-slate-700" />
         </div>
       </div>
     </div>
