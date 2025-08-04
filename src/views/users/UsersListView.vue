@@ -20,23 +20,39 @@
           </tr>
         </thead>
         <tbody class="table-body">
-          <tr
-          v-for="user in users"
-          :key="user.id"
-          class="hover:bg-zinc-50 dark:hover:bg-slate-800 border-b border-ccf-300 dark:border-slate-700 last:border-b-0"
-          >
-            <td class="py-2 px-6">{{ user.email }}</td>
-            <td class="py-1 px-6">{{ user.firstName }}</td>
-            <td class="py-1 px-6">{{ user.lastName }}</td>
-            <td class="py-1 px-6">
-              <RouterLink
-                :to="`/users/${user.id}`"
-                class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-              >
-                View
-              </RouterLink>
-            </td>
-          </tr>
+          <template v-if="loading">
+            <tr>
+              <td colspan="4" class="px-6 py-4 text-center text-gray-500 dark:text-slate-400">
+                Loading...
+              </td>
+            </tr>
+          </template>
+          <template v-else-if="error">
+            <tr>
+              <td colspan="4" class="px-6 py-4 text-center text-red-500">
+                Error loading users
+              </td>
+            </tr>
+          </template>
+          <template v-else>
+            <tr
+            v-for="user in users?.data"
+            :key="user.id"
+            class="hover:bg-zinc-50 dark:hover:bg-slate-800 border-b border-ccf-300 dark:border-slate-700 last:border-b-0"
+            >
+              <td class="py-2 px-6">{{ user.email }}</td>
+              <td class="py-1 px-6">{{ user.firstName }}</td>
+              <td class="py-1 px-6">{{ user.lastName }}</td>
+              <td class="py-1 px-6">
+                <RouterLink
+                  :to="{ name: 'user-view', params: { id: user.id } }"
+                  class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                >
+                  View
+                </RouterLink>
+              </td>
+            </tr>
+          </template>
         </tbody>
       </table>
     </div>
@@ -44,18 +60,16 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted } from 'vue';
-import { type CCFUser, useUserManagementStore } from '@/stores/user-management';
+import { type CCFUser  } from '@/stores/types';
 import PageHeader from '@/components/PageHeader.vue';
-import PrimaryButton from '@/components/PrimaryButton.vue';
+import { useApi } from '@/composables/api';
+import { type DataResponse } from '@/types';
+import { useMustAuthenticate } from '@/composables/useMustAuthenticate';
 
-const users = ref<CCFUser[]>([]);
+const { watchForUnauthenticated } = useMustAuthenticate();
+const { data: users, loading, error, response } = useApi<DataResponse<CCFUser[]>>(new Request('/api/users'))
+watchForUnauthenticated(response);
 
-onMounted(async () => {
-  const userManagementStore = useUserManagementStore();
-  const response = await userManagementStore.list();
-  users.value = response.data;
-});
 </script>
 
 <style scoped>
@@ -66,7 +80,7 @@ onMounted(async () => {
 }
 
 .table-body {
-  @apply divide-y divide-ccf-300 bg-white dark:divide-slate-700 dark:bg-slate-900;
+  @apply divide-y bg-white dark:divide-slate-700 dark:bg-slate-900;
 }
 
 
