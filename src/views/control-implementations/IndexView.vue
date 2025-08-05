@@ -55,12 +55,7 @@
             <div class="flex items-center gap-x-3">
               <Badge class="text-base">{{ slotProps.node.data.id }}</Badge>
               <h4>{{ slotProps.node.data.title }}</h4>
-              <Badge severity="info"
-                >{{
-                  controlImplementations[slotProps.node.data.id]?.statements
-                    ?.length || 0
-                }}
-              </Badge>
+              <ControlEvidenceCounter :control="slotProps.node.data" />
             </div>
             <div class="py-4">
               <IndexControlImplementation
@@ -92,6 +87,7 @@ import type {
 } from '@/oscal';
 import PageHeader from '@/components/PageHeader.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
+import ControlEvidenceCounter from './partials/ControlEvidenceCounter.vue';
 import { useMustAuthenticate } from '@/composables/useMustAuthenticate';
 import { useStorage } from '@vueuse/core';
 import { useCatalogTree } from '@/composables/useCatalogTree';
