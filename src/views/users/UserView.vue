@@ -32,8 +32,8 @@
     </div>
     <div class="mt-4">
       <PrimaryButton @click="editUserVisible = true" class="mr-2">Update User</PrimaryButton>
-      <PrimaryButton class="mr-2">Lock User</PrimaryButton>
-      <PrimaryButton>Delete User</PrimaryButton>
+      <PrimaryButton @click="updateLock" class="mr-2">{{ user.data.isLocked ? 'Unlock User' : 'Lock User' }}</PrimaryButton>
+      <PrimaryButton @click="deleteUser">Delete User</PrimaryButton>
     </div>
 
     <Dialog header="Edit User" modal v-model:visible="editUserVisible">
@@ -57,10 +57,12 @@ import PrimaryButton from '@/components/PrimaryButton.vue';
 import Dialog from '@/volt/Dialog.vue';
 import UserEditForm from '@/components/users/UserEditForm.vue';
 import { useUserManagementStore } from '@/stores/user-management';
+import { useConfirm } from 'primevue/useconfirm';
 
 const route = useRoute();
 const router = useRouter();
 const toast = useToast();
+const confirm = useConfirm();
 const userManagement = useUserManagementStore();
 
 const user = ref<DataResponse<CCFUser>>({} as DataResponse<CCFUser>);
@@ -97,6 +99,62 @@ function saveUser() {
       detail: error.errors.body,
       life: 3000,
     });
+  });
+}
+
+function updateLock() {
+  user.value.data.isLocked = !user.value.data.isLocked;
+  userManagement.updateUser(user.value.data.id, user.value.data).then(() => {
+    toast.add({
+      severity: 'success',
+      summary: 'User lock status updated',
+      detail: `User ${user.value.data.firstName} ${user.value.data.lastName} is now ${user.value.data.isLocked ? 'locked' : 'unlocked'}.`,
+      life: 3000,
+    });
+  }).catch(async (response) => {
+    const error = await response.json() as ErrorResponse<ErrorBody>;
+    toast.add({
+      severity: 'error',
+      summary: `Error updating user - ${response.statusText}`,
+      detail: error.errors.body,
+      life: 3000,
+    });
+  });
+}
+
+function deleteUser() {
+  confirm.require({
+    message: `Are you sure you want to delete user ${user.value.data.firstName} ${user.value.data.lastName}? This action cannot be undone.`,
+    header: 'Confirm Deletion',
+    icon: 'pi pi-exclamation-triangle',
+    rejectProps: {
+      label: 'Cancel',
+      severity: 'secondary',
+    },
+    acceptProps: {
+      label: 'Delete',
+      severity: 'danger',
+    },
+    accept: async () => {
+      try {
+        await userManagement.deleteUser(user.value.data.id);
+        toast.add({
+          severity: 'success',
+          summary: 'User deleted successfully',
+          detail: `User ${user.value.data.firstName} ${user.value.data.lastName} has been deleted.`,
+          life: 3000,
+        });
+        router.push({ name: 'users-list' });
+      } catch (response) {
+        const error = await (response as Response).json() as ErrorResponse<ErrorBody>;
+        toast.add({
+          severity: 'error',
+          summary: `Error deleting user - ${response.statusText}`,
+          detail: error.errors.body,
+          life: 3000,
+        });
+      }
+    },
   });
 }
 
