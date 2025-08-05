@@ -57,6 +57,12 @@
       </table>
     </div>
   </div>
+  <PrimaryButton class="mt-4" @click="showDialog = true">
+    Create User
+  </PrimaryButton>
+  <Dialog modal header="Create User" v-model:visible="showDialog">
+    <UserCreateForm @cancel="showDialog = false" @create="handleUserCreate" />
+  </Dialog>
 </template>
 
 <script lang="ts" setup>
@@ -64,19 +70,52 @@ import { ref, onMounted } from 'vue';
 import PageHeader from '@/components/PageHeader.vue';
 import type { DataResponse, CCFUser } from '@/stores/types';
 import { useUserManagementStore } from '@/stores/user-management';
+import PrimaryButton from '@/components/PrimaryButton.vue';
+import UserCreateForm from '@/components/users/UserCreateForm.vue';
+import Dialog from '@/volt/Dialog.vue';
+import { useToast } from 'primevue/usetoast';
 
 const loading = ref(true);
 const error = ref(false);
 const users = ref<DataResponse<CCFUser[]>>({} as DataResponse<CCFUser[]>);
+const showDialog = ref(false);
+const toast = useToast();
 
 const userManagement = useUserManagementStore();
+
+async function handleUserCreate(newUser: CCFUser) {
+  try {
+    const retval = await userManagement.createUser(newUser);
+    users.value.data.push(retval.data);
+    showDialog.value = false;
+    toast.add({
+      severity: 'success',
+      summary: 'User created successfully',
+      detail: `User ${newUser.firstName} ${newUser.lastName} has been created.`,
+      life: 3000,
+    });
+  } catch (response) {
+    const errorResponse = await (response as Response).json();
+    toast.add({
+      severity: 'error',
+      summary: 'Error creating user',
+      detail: errorResponse.errors.body,
+      life: 3000,
+    });
+  }
+}
 
 onMounted(async () => {
   try {
     users.value = await userManagement.listUsers();
   } catch (response) {
     const errorResponse = await (response as Response).json();
-    console.error('Error loading users:', errorResponse);
+    toast.add({
+      severity: 'error',
+      summary: 'Error loading users',
+      detail: errorResponse.errors.body,
+      life: 3000,
+    });
     error.value = true;
   } finally {
     loading.value = false;

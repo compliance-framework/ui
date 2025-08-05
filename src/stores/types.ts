@@ -162,3 +162,10 @@ export interface CCFUser {
   updatedAt?: Date;
 }
 
+export interface CCFUserCreate {
+  email: string;
+  firstName: string;
+  lastName: string;
+  password: string;
+}
+
