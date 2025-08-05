@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "ccf-ui.fullname" . }}-config
+  labels:
+    {{- include "ccf-ui.labels" . | nindent 4 }}
+data:
+  config.json: |
+    {
+      "API_URL": {{ .Values.ui.config.apiUrl | quote }}
+    }
+  # Additional configuration data
+  {{- if .Values.configMap.data }}
+  {{- toYaml .Values.configMap.data | nindent 2 }}
+  {{- end }}

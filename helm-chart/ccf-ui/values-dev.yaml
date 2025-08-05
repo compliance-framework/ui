@@ -1,0 +1,14 @@
+# Development overrides for ccf-ui
+global:
+  environment: dev
+
+ui:
+  image:
+    pullPolicy: Never
+  
+  config:
+    # For local development with port-forward or same namespace deployment
+    apiUrl: "http://localhost:8080"
+  
+  env:
+    NODE_ENV: "development"

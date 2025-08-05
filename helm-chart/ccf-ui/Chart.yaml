@@ -1,0 +1,24 @@
+apiVersion: v2
+name: ccf-ui
+description: A Helm chart for CCF UI (Compliance Configuration Framework UI)
+type: application
+
+# Chart version - increment this when you make changes to the chart
+version: 0.1.0
+
+# Application version - this is the version of CCF UI being deployed
+appVersion: "1.0.0"
+
+keywords:
+  - ccf
+  - ui
+  - compliance
+  - oscal
+  
+maintainers:
+  - name: CCF Team
+    email: ccf@example.com
+
+home: https://github.com/compliance-framework/ui
+sources:
+  - https://github.com/compliance-framework/ui

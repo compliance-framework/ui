@@ -1,0 +1,84 @@
+# Default values for ccf-ui.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Global settings
+global:
+  # Environment name (dev, staging, prod)
+  environment: dev
+
+# CCF UI Configuration
+ui:
+  # Number of UI replicas
+  replicaCount: 1
+  
+  image:
+    repository: ccf-ui
+    tag: latest
+    pullPolicy: Never  # Set to Always for production
+  
+  service:
+    type: NodePort
+    port: 3000
+    nodePort: 30300
+  
+  # Resource limits and requests
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+  
+  # Environment variables
+  env:
+    NODE_ENV: "production"
+  
+  # Configuration
+  config:
+    # Backend API URL - will be overridden per environment
+    apiUrl: "http://localhost:8080"
+
+# Ingress configuration (optional)
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  hosts:
+    - host: ui.ccf.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+  #  - secretName: ccf-ui-tls
+  #    hosts:
+  #      - ui.ccf.local
+
+# Additional ConfigMap data
+configMap:
+  # Add any additional configuration here
+  data: {}
+
+# Security context
+securityContext:
+  runAsNonRoot: false  # nginx needs to run as root initially
+  # runAsUser: 101  # nginx user
+  # fsGroup: 101
+
+# Probes
+livenessProbe:
+  httpGet:
+    path: /
+    port: 80
+  initialDelaySeconds: 30
+  periodSeconds: 10
+
+readinessProbe:
+  httpGet:
+    path: /
+    port: 80
+  initialDelaySeconds: 5
+  periodSeconds: 5

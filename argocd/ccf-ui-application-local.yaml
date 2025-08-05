@@ -1,0 +1,45 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ccf-ui-local
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  
+  source:
+    # For local development, use file path instead of Git URL
+    repoURL: file:///Users/sonny/Github/ui
+    targetRevision: HEAD
+    path: helm-chart/ccf-ui
+    
+    helm:
+      valueFiles:
+        - values-dev.yaml
+      
+      parameters:
+        - name: ui.image.repository
+          value: ccf-ui
+        - name: ui.image.tag
+          value: latest
+        - name: ui.config.apiUrl
+          value: "http://localhost:8080"
+  
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: default
+  
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
