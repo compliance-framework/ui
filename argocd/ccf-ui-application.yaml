@@ -13,7 +13,7 @@ spec:
   # Source of the application manifests
   source:
     repoURL: https://github.com/compliance-framework/ui
-    targetRevision: HEAD
+    targetRevision: chore-kubernetes-deployment  # Use the branch we just pushed
     path: helm-chart/ccf-ui
     
     # Helm specific config
@@ -27,7 +27,7 @@ spec:
         - name: ui.image.repository
           value: ccf-ui
         - name: ui.image.tag
-          value: local
+          value: latest
   
   # Destination cluster and namespace
   destination:
