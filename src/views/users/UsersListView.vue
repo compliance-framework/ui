@@ -60,16 +60,28 @@
 </template>
 
 <script lang="ts" setup>
-import { type CCFUser  } from '@/stores/types';
+import { ref, onMounted } from 'vue';
 import PageHeader from '@/components/PageHeader.vue';
-import { useApi } from '@/composables/api';
-import { type DataResponse } from '@/types';
-import { useMustAuthenticate } from '@/composables/useMustAuthenticate';
+import type { DataResponse, CCFUser } from '@/stores/types';
+import { useUserManagementStore } from '@/stores/user-management';
 
-const { watchForUnauthenticated } = useMustAuthenticate();
-const { data: users, loading, error, response } = useApi<DataResponse<CCFUser[]>>(new Request('/api/users'))
-watchForUnauthenticated(response);
+const loading = ref(true);
+const error = ref(false);
+const users = ref<DataResponse<CCFUser[]>>({} as DataResponse<CCFUser[]>);
 
+const userManagement = useUserManagementStore();
+
+onMounted(async () => {
+  try {
+    users.value = await userManagement.listUsers();
+  } catch (response) {
+    const errorResponse = await (response as Response).json();
+    console.error('Error loading users:', errorResponse);
+    error.value = true;
+  } finally {
+    loading.value = false;
+  }
+});
 </script>
 
 <style scoped>
