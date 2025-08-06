@@ -142,7 +142,7 @@ const theme = ref({
   pcInputText: {
     root: `flex-auto w-[1%] appearance-none rounded-md outline-hidden
         p-has-dropdown:rounded-e-none p-has-e-icon:pe-10
-        bg-white dark:bg-slate-800
+        bg-gray-50 dark:bg-slate-950
         p-filled:bg-white dark:p-filled:bg-slate-800
         text-surface-700 dark:text-surface-0
         placeholder:text-surface-500 dark:placeholder:text-surface-400

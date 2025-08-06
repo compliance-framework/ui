@@ -3,62 +3,87 @@
   <PageSubHeader>
     Create a new piece of evidence to support your control implementations.
   </PageSubHeader>
-  <form @submit.prevent="submit">
-    <div>
-      <label for="title">Title</label>
-      <InputText id="title" v-model="evidence.title" required />
-    </div>
-    <div>
-      <label for="description">Description</label>
-      <Textarea id="description" v-model="evidence.description" />
-    </div>
-    <div>
-      <label for="start">Start Date</label>
-      <DatePicker
-        v-model="evidence.start"
-        placeholder="Select start date"
-        required
-      />
-    </div>
-    <div>
-      <label for="end">End Date</label>
-      <DatePicker
-        v-model="evidence.end"
-        placeholder="Select end date"
-        required
-      />
-    </div>
-    <div>
-      <label for="status">Status</label>
-      <SelectButton
-        v-model="status.state"
-        :options="['satisfied', 'not-satisfied', 'in-progress']"
-        required
-      />
-    </div>
-    <div>
-      <label for="reason">Reason</label>
-      <InputText id="reason" v-model="status.reason" />
-    </div>
-    <div>
-      <p>Labels</p>
-      <button type="button" @click="addLabel" class="border">Add</button>
-      <div
-        v-for="(label, index) in labels"
-        :key="index"
-        class="mb-2 flex items-center justify-start"
-      >
-        <InputText v-model="label.name" placeholder="Label name" class="mb-2" />
-        <InputText
-          v-model="label.value"
-          placeholder="Label value"
-          class="mb-2"
-        />
-        <button type="button" @click="removeLabel(index)">X</button>
+  <div class="mt-4">
+    <form @submit.prevent="submit">
+      <div class="mb-2">
+        <label for="title">Title</label>
+        <InputText id="title" v-model="evidence.title" required class="block" />
       </div>
-    </div>
-    <button type="submit">Create Evidence</button>
-  </form>
+      <div class="mb-2">
+        <label for="description">Description</label>
+        <Textarea
+          id="description"
+          v-model="evidence.description"
+          class="block"
+        />
+      </div>
+      <div class="mb-2">
+        <label for="start">Start Date</label>
+        <div>
+          <DatePicker
+            v-model="evidence.start"
+            placeholder="Select start date"
+            required
+          />
+        </div>
+      </div>
+      <div class="mb-2">
+        <label for="end">End Date</label>
+        <div>
+          <DatePicker
+            v-model="evidence.end"
+            placeholder="Select end date"
+            required
+          />
+        </div>
+      </div>
+      <div class="mb-2">
+        <label for="status">Status</label>
+        <div>
+          <SelectButton
+            v-model="status.state"
+            :options="['satisfied', 'not-satisfied', 'in-progress']"
+            required
+          />
+        </div>
+      </div>
+      <div class="mb-2">
+        <label for="reason">Reason</label>
+        <div>
+          <InputText id="reason" v-model="status.reason" />
+        </div>
+      </div>
+      <div class="mb-2">
+        <div class="flex items-center gap-2 mb-2">
+          <p>Labels</p>
+          <secondary-button size="small" type="button" @click="addLabel"
+            >Add</secondary-button
+          >
+        </div>
+
+        <div class="flex flex-col gap-y-1">
+          <div
+            v-for="(label, index) in labels"
+            :key="index"
+            class="flex items-center justify-start"
+          >
+            <InputText
+              v-model="label.name"
+              placeholder="Label name"
+              size="small"
+            />
+            <InputText
+              v-model="label.value"
+              placeholder="Label value"
+              size="small"
+            />
+            <button type="button" @click="removeLabel(index)">X</button>
+          </div>
+        </div>
+      </div>
+      <primary-button type="submit">Create Evidence</primary-button>
+    </form>
+  </div>
 </template>
 <script setup lang="ts">
 import { ref } from 'vue';
