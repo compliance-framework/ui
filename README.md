@@ -3,6 +3,17 @@
 > [!WARNING]
 > This repository is still very much in development, and not ready for use yet.
 
+## Deployment
+
+All Kubernetes, Helm, and ArgoCD deployment configurations have been moved to a centralized repository:
+**https://github.com/compliance-framework/ccf-deployments**
+
+Please refer to that repository for:
+- Helm charts
+- ArgoCD configurations
+- Environment-specific deployments
+- Deployment scripts and documentation
+
 ## Project Setup
 
 Install and use NVM:
