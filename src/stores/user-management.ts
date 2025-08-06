@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 import { useConfigStore } from "@/stores/config.ts";
-import type { DataResponse, CCFUser } from "@/stores/types.ts";
+import type { DataResponse, CCFUser, CCFUserCreate } from "@/stores/types.ts";
 
 export const useUserManagementStore = defineStore("user-management", () => {
   const configStore = useConfigStore();
@@ -57,7 +57,7 @@ export const useUserManagementStore = defineStore("user-management", () => {
     }
   }
 
-  async function createUser(user: CCFUser): Promise<DataResponse<CCFUser>> {
+  async function createUser(user: CCFUserCreate): Promise<DataResponse<CCFUser>> {
     const config = await configStore.getConfig();
     const response = await fetch(`${config.API_URL}/api/users`, {
       method: "POST",

@@ -149,7 +149,7 @@ function deleteUser() {
         const error = await (response as Response).json() as ErrorResponse<ErrorBody>;
         toast.add({
           severity: 'error',
-          summary: `Error deleting user - ${response.statusText}`,
+          summary: `Error deleting user - ${(response as Response).statusText}`,
           detail: error.errors.body,
           life: 3000,
         });

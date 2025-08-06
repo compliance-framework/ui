@@ -68,7 +68,7 @@
 <script lang="ts" setup>
 import { ref, onMounted } from 'vue';
 import PageHeader from '@/components/PageHeader.vue';
-import type { DataResponse, CCFUser } from '@/stores/types';
+import type { DataResponse, CCFUser, CCFUserCreate } from '@/stores/types';
 import { useUserManagementStore } from '@/stores/user-management';
 import PrimaryButton from '@/components/PrimaryButton.vue';
 import UserCreateForm from '@/components/users/UserCreateForm.vue';
@@ -83,7 +83,7 @@ const toast = useToast();
 
 const userManagement = useUserManagementStore();
 
-async function handleUserCreate(newUser: CCFUser) {
+async function handleUserCreate(newUser: CCFUserCreate) {
   try {
     const retval = await userManagement.createUser(newUser);
     users.value.data.push(retval.data);
