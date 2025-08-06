@@ -92,7 +92,14 @@
               placeholder="Label value"
               size="small"
             />
-            <button type="button" @click="removeLabel(index)">X</button>
+            <TertiaryButton
+              type="button"
+              class="!px-1 ml-1"
+              @click="removeLabel(index)"
+              aria-label="Remove label"
+            >
+              <BIconX />
+            </TertiaryButton>
           </div>
         </div>
       </div>
@@ -117,15 +124,11 @@ import Textarea from '@/volt/Textarea.vue';
 import InputText from '@/volt/InputText.vue';
 import SelectButton from '@/volt/SelectButton.vue';
 import TertiaryButton from '@/components/TertiaryButton.vue';
-import { BIconArrowRepeat } from 'bootstrap-icons-vue';
+import { BIconArrowRepeat, BIconX } from 'bootstrap-icons-vue';
 
 const evidenceStore = useEvidenceStore();
 const evidence = ref<Partial<Evidence>>({
   uuid: uuidv4(),
-  status: {
-    state: '',
-    reason: '',
-  },
 });
 const status = ref<EvidenceStatus>({
   state: '',
