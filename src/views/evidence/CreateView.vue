@@ -22,7 +22,6 @@
     </div>
     <div>
       <label for="end">End Date</label>
-      <input id="end" type="datetime-local" v-model="evidence.end" required />
       <DatePicker
         v-model="evidence.end"
         placeholder="Select end date"
@@ -31,7 +30,6 @@
     </div>
     <div>
       <label for="status">Status</label>
-      {{ status }}
       <SelectButton
         v-model="status.state"
         :options="['satisfied', 'not-satisfied', 'in-progress']"
@@ -44,7 +42,7 @@
     </div>
     <div>
       <p>Labels</p>
-      <button type="button" @click="labels.push({})" class="border">Add</button>
+      <button type="button" @click="addLabel" class="border">Add</button>
       <div
         v-for="(label, index) in labels"
         :key="index"
@@ -56,6 +54,7 @@
           placeholder="Label value"
           class="mb-2"
         />
+        <button type="button" @click="removeLabel(index)">X</button>
       </div>
     </div>
     <button type="submit">Create Evidence</button>
@@ -89,12 +88,26 @@ const status = ref<EvidenceStatus>({
   reason: '',
 });
 const labels = ref<EvidenceLabel[]>([]);
-const error = ref<string | null>(null);
-const success = ref<boolean>(false);
 
 async function submit() {
-  const response = await evidenceStore.create(evidence.value);
+  const flatLabels = {} as Record<string, string>;
+  labels.value.forEach((label) => {
+    flatLabels[label.name] = label.value;
+  });
+  const response = await evidenceStore.create({
+    ...evidence.value,
+    status: status.value,
+    labels: flatLabels,
+  });
   evidence.value = response.data;
   router.push({ name: 'evidence:view', params: { id: response.data.id } });
+}
+
+function addLabel() {
+  labels.value.push({ name: '', value: '' });
+}
+
+function removeLabel(index: number) {
+  labels.value.splice(index, 1);
 }
 </script>

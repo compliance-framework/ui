@@ -31,6 +31,10 @@ export interface Evidence {
   activities: Activity[];
 }
 
+export interface FlatLabelEvidence extends Omit<Evidence, 'labels'> {
+  labels: Record<string, string>;
+}
+
 export interface ComplianceIntervalStatus {
   status: string;
   count: number;
@@ -96,7 +100,7 @@ export const useEvidenceStore = defineStore('evidence', () => {
   }
 
   async function create(
-    evidence: Partial<Evidence>,
+    evidence: Partial<FlatLabelEvidence>,
   ): Promise<DataResponse<Evidence>> {
     const config = await configStore.getConfig();
     const response = await fetch(`${config.API_URL}/api/evidence`, {
