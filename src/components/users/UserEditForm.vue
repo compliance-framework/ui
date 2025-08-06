@@ -40,8 +40,15 @@ const props = defineProps<{
   user: CCFUser;
 }>();
 
-const user = ref<CCFUser>(props.user);
+const user = reactive({ ...props.user });
 
+// Keep local user in sync with prop changes
+watch(
+  () => props.user,
+  (newUser) => {
+    Object.assign(user, newUser);
+  }
+);
 const emit = defineEmits<{
   cancel: [];
   saved: [user: CCFUser];

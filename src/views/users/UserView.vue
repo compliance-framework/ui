@@ -1,10 +1,8 @@
 <template>
   <template v-if="loading">
-    <tr>
-      <td colspan="4" class="px-6 py-4 text-center text-gray-500 dark:text-slate-400">
-        Loading...
-      </td>
-    </tr>
+    <div class="px-6 py-4 text-center text-gray-500 dark:text-slate-400">
+      Loading...
+    </div>
   </template>
   <template v-else-if="user">
     <PageHeader>Viewing user: {{ user.data.firstName }} {{ user.data.lastName }}</PageHeader>
@@ -103,12 +101,14 @@ function saveUser() {
 }
 
 function updateLock() {
-  user.value.data.isLocked = !user.value.data.isLocked;
-  userManagement.updateUser(user.value.data.id, user.value.data).then(() => {
+  const newIsLocked = !user.value.data.isLocked;
+  const updatedUser = { ...user.value.data, isLocked: newIsLocked };
+  userManagement.updateUser(user.value.data.id, updatedUser).then(() => {
+    user.value.data.isLocked = newIsLocked;
     toast.add({
       severity: 'success',
       summary: 'User lock status updated',
-      detail: `User ${user.value.data.firstName} ${user.value.data.lastName} is now ${user.value.data.isLocked ? 'locked' : 'unlocked'}.`,
+      detail: `User ${user.value.data.firstName} ${user.value.data.lastName} is now ${newIsLocked ? 'locked' : 'unlocked'}.`,
       life: 3000,
     });
   }).catch(async (response) => {

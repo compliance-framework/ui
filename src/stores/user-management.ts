@@ -41,7 +41,7 @@ export const useUserManagementStore = defineStore("user-management", () => {
       credentials: "include",
     });
     if (!response.ok) {
-      throw response
+      throw response;
     }
     return (await response.json()) as DataResponse<CCFUser>;
   }
