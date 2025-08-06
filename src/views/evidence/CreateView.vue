@@ -6,6 +6,21 @@
   <div class="mt-4">
     <form @submit.prevent="submit">
       <div class="mb-2">
+        <label for="uuid">UUID</label>
+        <div class="flex items-center place-items-stretch">
+          <InputText
+            v-model="evidence.uuid"
+            class="rounded-r-none border-r-0"
+          />
+          <TertiaryButton
+            type="button"
+            @click="generateUuid"
+            class="py-3 rounded-l-none"
+            ><BIconArrowRepeat
+          /></TertiaryButton>
+        </div>
+      </div>
+      <div class="mb-2">
         <label for="title">Title</label>
         <InputText id="title" v-model="evidence.title" required class="block" />
       </div>
@@ -96,13 +111,17 @@ import {
   type EvidenceStatus,
 } from '@/stores/evidence.ts';
 import router from '@/router';
+import { v4 as uuidv4 } from 'uuid';
 import DatePicker from '@/volt/DatePicker.vue';
 import Textarea from '@/volt/Textarea.vue';
 import InputText from '@/volt/InputText.vue';
 import SelectButton from '@/volt/SelectButton.vue';
+import TertiaryButton from '@/components/TertiaryButton.vue';
+import { BIconArrowRepeat } from 'bootstrap-icons-vue';
 
 const evidenceStore = useEvidenceStore();
 const evidence = ref<Partial<Evidence>>({
+  uuid: uuidv4(),
   status: {
     state: '',
     reason: '',
@@ -125,7 +144,10 @@ async function submit() {
     labels: flatLabels,
   });
   evidence.value = response.data;
-  router.push({ name: 'evidence:view', params: { id: response.data.id } });
+  return await router.push({
+    name: 'evidence:view',
+    params: { id: response.data.id },
+  });
 }
 
 function addLabel() {
@@ -134,5 +156,9 @@ function addLabel() {
 
 function removeLabel(index: number) {
   labels.value.splice(index, 1);
+}
+
+function generateUuid() {
+  evidence.value.uuid = uuidv4();
 }
 </script>
