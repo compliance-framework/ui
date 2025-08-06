@@ -69,7 +69,11 @@ const loading = ref(true);
 const editUserVisible = ref(false);
 
 onMounted(async () => {
-  try {
+  await getData();
+});
+
+async function getData() {
+    try {
     user.value = await userManagement.getUser(route.params.id as string);
   } catch (response) {
     const error = await (response as Response).json() as ErrorResponse<ErrorBody>;
@@ -78,15 +82,16 @@ onMounted(async () => {
   } finally {
     loading.value = false;
   }
-});
+}
 
-function saveUser() {
+function saveUser(updatedUser: CCFUser) {
   editUserVisible.value = false;
-  userManagement.updateUser(user.value.data.id, user.value.data).then(() => {
+  userManagement.updateUser(user.value.data.id, updatedUser).then(async () => {
+    await getData();
     toast.add({
       severity: 'success',
       summary: 'User updated successfully',
-      detail: `User ${user.value.data.firstName} ${user.value.data.lastName} has been updated.`,
+      detail: `User ${updatedUser.firstName} ${updatedUser.lastName} has been updated.`,
       life: 3000,
     });
   }).catch(async (response) => {

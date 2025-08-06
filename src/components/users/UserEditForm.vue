@@ -30,7 +30,7 @@
 <script setup lang="ts">
 
 import { type CCFUser } from '@/stores/types';
-import { defineProps, ref, defineEmits } from 'vue';
+import { defineProps, reactive, defineEmits, watch } from 'vue';
 import FormInput from '../forms/FormInput.vue';
 import PrimaryButton from '../PrimaryButton.vue';
 
@@ -45,13 +45,13 @@ const user = reactive({ ...props.user });
 // Keep local user in sync with prop changes
 watch(
   () => props.user,
-  (newUser) => {
+  (newUser: CCFUser) => {
     Object.assign(user, newUser);
   }
 );
 const emit = defineEmits<{
   cancel: [];
-  saved: [user: CCFUser];
+  saved: [updatedUser: CCFUser];
 }>();
 
 </script>
