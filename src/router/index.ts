@@ -577,6 +577,22 @@ const authenticatedRoutes = [
     }
   },
   {
+    path: "/users",
+    name: "users-list",
+    component: () => import('../views/users/UsersListView.vue'),
+    meta: {
+      requiresAuth: true,
+    },
+  },
+  {
+    path: "/users/:id",
+    name: "user-view",
+    component: () => import('../views/users/UserView.vue'),
+    meta: {
+      requiresAuth: true,
+    }
+  },
+  {
     path: '/about',
     name: 'about',
     component: () => import('../views/AboutView.vue'),
