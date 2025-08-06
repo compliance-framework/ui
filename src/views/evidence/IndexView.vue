@@ -5,7 +5,12 @@
     <PageCard>
       <h3 class="text-lg font-semibold text-zinc-600 dark:text-slate-300">
         Compliance over time
-        <InfoCircleIcon class="inline-block ml-1" v-tooltip.top="'This shows the compliance of findings over time from Observations sent back from the agents, grouped by whether each control is classed as \'Satisfied\' or \'Unsatisfied\'.'"/>
+        <InfoCircleIcon
+          class="inline-block ml-1"
+          v-tooltip.top="
+            'This shows the compliance of findings over time from Observations sent back from the agents, grouped by whether each control is classed as \'Satisfied\' or \'Unsatisfied\'.'
+          "
+        />
       </h3>
       <div class="h-32">
         <ResultComplianceOverTimeChart :data="complianceChartData" />
@@ -14,7 +19,12 @@
     <PageCard>
       <h3 class="text-lg font-semibold text-zinc-600 dark:text-slate-300">
         Agent health
-        <InfoCircleIcon class="inline-block ml-1" v-tooltip.top="'This shows the amount of agents over time that are responding to heartbeats sent to them by the central API server'"/>
+        <InfoCircleIcon
+          class="inline-block ml-1"
+          v-tooltip.top="
+            'This shows the amount of agents over time that are responding to heartbeats sent to them by the central API server'
+          "
+        />
       </h3>
       <div class="h-32">
         <ResultComplianceOverTimeChart :data="heartbeatChartData" />
@@ -64,15 +74,13 @@
   </div>
 </template>
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import PageHeader from '@/components/PageHeader.vue';
 import PageCard from '@/components/PageCard.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
 import { FilterParser } from '@/parsers/labelfilter.ts';
-import {
-  BIconSearch,
-} from 'bootstrap-icons-vue';
+import { BIconSearch } from 'bootstrap-icons-vue';
 import type { ChartData } from 'chart.js';
 import {
   calculateComplianceOverTimeData,
@@ -84,10 +92,10 @@ import { calculateHeartbeatOverTimeData } from '@/parsers/heartbeats.ts';
 import { useConfigStore } from '@/stores/config.ts';
 import PrimaryButton from '@/components/PrimaryButton.vue';
 import SecondaryButton from '@/components/SecondaryButton.vue';
-import InfoCircleIcon from '@primevue/icons/infocircle'
-import { type Evidence, useEvidenceStore } from '@/stores/evidence.ts'
-import EvidenceList from '@/components/EvidenceList.vue'
-import BurgerMenu from '@/components/BurgerMenu.vue'
+import InfoCircleIcon from '@primevue/icons/infocircle';
+import { type Evidence, useEvidenceStore } from '@/stores/evidence.ts';
+import EvidenceList from '@/components/EvidenceList.vue';
+import BurgerMenu from '@/components/BurgerMenu.vue';
 
 const evidenceStore = useEvidenceStore();
 const heartbeatStore = useHeartbeatsStore();
@@ -129,9 +137,17 @@ async function search() {
     // results.value = response.data
   });
 
-  evidenceStore.getComplianceForSearch(query, "0m,2m,4m,6m,8m,12m,16m,20m,25m,30m,40m,50m,1h").then((response) => {
-    complianceChartData.value = calculateComplianceOverTimeData(response.data, ['satisfied', 'not-satisfied']);
-  });
+  evidenceStore
+    .getComplianceForSearch(
+      query,
+      '0m,2m,4m,6m,8m,12m,16m,20m,25m,30m,40m,50m,1h',
+    )
+    .then((response) => {
+      complianceChartData.value = calculateComplianceOverTimeData(
+        response.data,
+        ['satisfied', 'not-satisfied'],
+      );
+    });
   heartbeatStore.overTime().then((response) => {
     heartbeatChartData.value = calculateHeartbeatOverTimeData(response.data);
   });
@@ -153,17 +169,31 @@ const menuItems = ref([
         icon: 'pi pi-upload',
         command: () => {
           configStore.toggleLabels();
-        }
+        },
       },
       {
         label: configStore.showHiddenLabels ? 'Hide Hidden' : 'Show Hidden',
         icon: 'pi pi-upload',
         command: () => {
           configStore.toggleHiddenLabels();
-        }
-      }
-    ]
-  }
+        },
+      },
+    ],
+  },
+  {
+    label: 'Evidence',
+    items: [
+      {
+        label: 'Create New',
+        icon: 'pi pi-plus',
+        command: async () => {
+          await router.push({
+            name: 'evidence:create',
+          });
+        },
+      },
+    ],
+  },
 ]);
 
 onMounted(() => {
