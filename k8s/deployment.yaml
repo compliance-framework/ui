@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ccf-ui-deployment
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ccf-ui
+  template:
+    metadata:
+      labels:
+        app: ccf-ui
+    spec:
+      containers:
+      - name: ccf-ui
+        image: ccf-ui:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: config-volume
+          mountPath: /app/config.json
+          subPath: config.json
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+      volumes:
+      - name: config-volume
+        configMap:
+          name: ccf-ui-config
