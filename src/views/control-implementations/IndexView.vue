@@ -81,7 +81,6 @@ import { type DataResponse, useFetch } from '@/composables/api';
 import type {
   Catalog,
   Profile,
-  SystemSecurityPlan,
   ControlImplementation,
   ImplementedRequirement,
 } from '@/oscal';
@@ -89,7 +88,6 @@ import PageHeader from '@/components/PageHeader.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
 import ControlEvidenceCounter from './partials/ControlEvidenceCounter.vue';
 import { useMustAuthenticate } from '@/composables/useMustAuthenticate';
-import { useStorage } from '@vueuse/core';
 import { useCatalogTree } from '@/composables/useCatalogTree';
 
 import Tree from '@/volt/Tree.vue';
