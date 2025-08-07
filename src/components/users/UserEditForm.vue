@@ -48,21 +48,24 @@ watch(
     Object.assign(user, newUser);
   }
 );
+
 const emit = defineEmits<{
   cancel: [];
-  saved: [updatedUser: DataResponse<CCFUser>];
+  saved: [updatedUser: DataResponse<CCFUser> | undefined];
   error: [error: string];
 }>();
-const instance = useApi();
 
 const user = reactive({ ...props.user });
 
+const instance = useApi();
+const { data: updatedUser, execute } = await useAxios<DataResponse<CCFUser>>(`/api/users/${user.id}`, {
+    method: 'PUT',
+  data: user,
+}, instance, { immediate: false });
+
 async function updateUser() {
   try {
-    const { data: updatedUser } = await useAxios<DataResponse<CCFUser>>(`/api/users/${user.id}`, {
-      method: 'PUT',
-      data: user,
-    }, instance);
+    await execute();
     emit('saved', updatedUser.value);
   } catch (error) {
     const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
