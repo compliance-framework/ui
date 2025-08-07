@@ -59,7 +59,7 @@ const user = reactive({ ...props.user });
 
 const toast = useToast();
 const instance = useApi();
-const { data: updatedUser, execute } = await useAxios<DataResponse<CCFUser>>(`/api/users/${user.id}`, {
+const { data: updatedUser, execute } = useAxios<DataResponse<CCFUser>>(`/api/users/${user.id}`, {
     method: 'PUT',
   data: user,
 }, instance, { immediate: false });
