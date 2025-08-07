@@ -98,7 +98,6 @@ async function createUser() {
     emit('create', response.data.value?.data)
   } catch (error) {
     const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
-    console.error('Error creating user:', errorResponse.response?.data.errors.body);
     emit('error', errorResponse.response?.data.errors.body ?? 'Unknown error occurred');
     return;
   }

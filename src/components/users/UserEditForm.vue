@@ -51,6 +51,7 @@ watch(
 const emit = defineEmits<{
   cancel: [];
   saved: [updatedUser: DataResponse<CCFUser>];
+  error: [error: string];
 }>();
 const instance = useApi();
 
@@ -62,17 +63,10 @@ async function updateUser() {
       method: 'PUT',
       data: user,
     }, instance);
-    console.log(updatedUser);
     emit('saved', updatedUser.value);
   } catch (error) {
     const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
-    if (errorResponse.response) {
-      console.error('Error updating user:', errorResponse.response.data.errors.body);
-    } else {
-      console.error('Error updating user:', errorResponse.message);
-    }
+    emit('error', errorResponse.response?.data.errors.body ?? 'Unknown error occurred');
   }
 }
-
-
 </script>

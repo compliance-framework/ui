@@ -39,6 +39,7 @@
         :user="user.data"
         @saved="saveUser"
         @cancel="editUserVisible = false"
+        @error="handleError"
       ></UserEditForm>
     </Dialog>
   </template>
@@ -72,7 +73,6 @@ const { data: updatedUserData, execute: lockExecute } = useAxios<DataResponse<CC
 watch(error, (err) => {
   if (err) {
     const errorResponse = err as AxiosError<ErrorResponse<ErrorBody>>;
-    console.log(err);
     toast.add({
       severity: 'error',
       summary: 'Error loading user',
@@ -88,6 +88,15 @@ const editUserVisible = ref(false);
 function saveUser(updatedUser: DataResponse<CCFUser>) {
   editUserVisible.value = false;
   user.value = updatedUser;
+}
+
+function handleError(error: string) {
+  toast.add({
+    severity: 'error',
+    summary: 'Error updating user',
+    detail: error,
+    life: 3000,
+  });
 }
 
 async function updateLock() {
