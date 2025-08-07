@@ -10,6 +10,7 @@ const useApi = () => {
   const configStore = useConfigStore();
   const router = useRouter();
   const toast = useToast();
+  let cachedURL = '';
 
   const instance: AxiosInstance = axios.create({
     withCredentials: true,
@@ -17,10 +18,10 @@ const useApi = () => {
 
   instance.interceptors.request.use(
     async (config) => {
-      const apiUrl = await configStore.getConfig().then(c => c.API_URL);
-      if (apiUrl) {
-        config.baseURL = apiUrl;
+      if (!cachedURL) {
+        cachedURL = await configStore.getConfig().then(c => c.API_URL);
       }
+      config.baseURL = cachedURL;
       return config;
     },
     (error) => {
@@ -52,15 +53,16 @@ const useApi = () => {
 
 const useGuestApi = () => {
   const configStore = useConfigStore();
+  let cachedURL = '';
 
   const instance: AxiosInstance = axios.create();
 
   instance.interceptors.request.use(
     async (config) => {
-      const apiUrl = await configStore.getConfig().then(c => c.API_URL);
-      if (apiUrl) {
-        config.baseURL = apiUrl;
+      if (!cachedURL) {
+        cachedURL = await configStore.getConfig().then(c => c.API_URL);
       }
+      config.baseURL = cachedURL;
       return config;
     },
     (error) => {
