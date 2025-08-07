@@ -24,7 +24,7 @@
     </div>
 
     <div class="border-t-1 border-t-ccf-300">
-      <PrimaryButton class="mt-4" @click.prevent="checkUser">
+      <PrimaryButton class="mt-4" @click.prevent="createUser">
         Save User
       </PrimaryButton>
 
@@ -37,10 +37,13 @@
 
 <script setup lang="ts">
 
-import { type CCFUserCreate } from '@/stores/types';
+import type { CCFUserCreate, CCFUser, DataResponse, ErrorResponse, ErrorBody } from '@/stores/types';
 import { ref, defineEmits, watch, reactive } from 'vue';
 import FormInput from '../forms/FormInput.vue';
 import PrimaryButton from '../PrimaryButton.vue';
+import { useApi } from '@/composables/axios';
+import { useAxios } from '@vueuse/integrations/useAxios';
+import type { AxiosError } from 'axios';
 
 const passwords = reactive({
   password: '',
@@ -60,17 +63,45 @@ const user = ref<CCFUserCreate>({} as CCFUserCreate);
 
 const emit = defineEmits<{
   cancel: [];
-  create: [user: CCFUserCreate];
+  create: [user: CCFUser];
+  error: [error: string];
 }>();
 
+const instance = useApi();
+const { execute } = useAxios<DataResponse<CCFUser>>("/api/users",
+  {
+    method: "POST",
+    headers: {'Content-Type': 'application/json'}
+  },
+  instance,
+  {
+    immediate: false
+  }
+);
 
-function checkUser() {
+async function createUser() {
   if (passwords.error) {
     return;
   }
-
   user.value.password = passwords.password;
-  emit('create', user.value);
+
+  try {
+    const response = await execute({
+      data: user.value,
+    });
+
+    if (!response.data.value) {
+      emit('error', "Failed to create user - no user was returned");
+      return;
+    }
+
+    emit('create', response.data.value?.data)
+  } catch (error) {
+    const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
+    console.error('Error creating user:', errorResponse.response?.data.errors.body);
+    emit('error', errorResponse.response?.data.errors.body ?? 'Unknown error occurred');
+    return;
+  }
 }
 
 </script>
