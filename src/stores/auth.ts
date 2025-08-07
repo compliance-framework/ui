@@ -20,6 +20,12 @@ export const useUserStore = defineStore("user", {
       isAuthenticated: ref<boolean>(false),
     }
   },
+  actions: {
+    logout() {
+      this.isAuthenticated = false;
+      this.user = null;
+    }
+  },
   persist: true
 });
 
