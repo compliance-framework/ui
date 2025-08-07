@@ -44,6 +44,7 @@ import PrimaryButton from '../PrimaryButton.vue';
 import { useApi } from '@/composables/axios';
 import { useAxios } from '@vueuse/integrations/useAxios';
 import type { AxiosError } from 'axios';
+import { useToast } from 'primevue/usetoast';
 
 const passwords = reactive({
   password: '',
@@ -64,9 +65,9 @@ const user = ref<CCFUserCreate>({} as CCFUserCreate);
 const emit = defineEmits<{
   cancel: [];
   create: [user: CCFUser];
-  error: [error: string];
 }>();
 
+const toast = useToast();
 const instance = useApi();
 const { execute } = useAxios<DataResponse<CCFUser>>("/api/users",
   {
@@ -91,14 +92,24 @@ async function createUser() {
     });
 
     if (!response.data.value) {
-      emit('error', "Failed to create user - no user was returned");
+      toast.add({
+        severity: 'error',
+        summary: 'Error creating user',
+        detail: 'User creation failed, please try again.',
+        life: 3000,
+      });
       return;
     }
 
     emit('create', response.data.value?.data);
   } catch (error) {
     const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
-    emit('error', errorResponse.response?.data.errors.body ?? 'Unknown error occurred');
+    toast.add({
+      severity: 'error',
+      summary: 'Error creating user',
+      detail: errorResponse.response?.data.errors.body ?? 'Unknown error occurred',
+      life: 3000,
+    });
     return;
   }
 }

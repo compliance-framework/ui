@@ -39,7 +39,6 @@
         :user="user.data"
         @saved="saveUser"
         @cancel="editUserVisible = false"
-        @error="handleError"
       ></UserEditForm>
     </Dialog>
   </template>
@@ -90,15 +89,6 @@ function saveUser(updatedUser?: DataResponse<CCFUser>) {
   if (updatedUser) {
     user.value = updatedUser;
   }
-}
-
-function handleError(error: string) {
-  toast.add({
-    severity: 'error',
-    summary: 'Error updating user',
-    detail: error,
-    life: 3000,
-  });
 }
 
 async function updateLock() {

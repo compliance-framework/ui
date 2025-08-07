@@ -61,7 +61,7 @@
     Create User
   </PrimaryButton>
   <Dialog modal header="Create User" v-model:visible="showDialog">
-    <UserCreateForm @cancel="showDialog = false" @create="completed" @error="handleError" />
+    <UserCreateForm @cancel="showDialog = false" @create="completed" />
   </Dialog>
 </template>
 
@@ -90,15 +90,6 @@ function completed(newUser: CCFUser) {
     severity: 'success',
     summary: 'User created successfully',
     detail: `User ${newUser.firstName} ${newUser.lastName} has been created.`,
-    life: 3000,
-  });
-}
-
-function handleError(error: string) {
-  toast.add({
-    severity: 'error',
-    summary: 'Error creating user',
-    detail: error,
     life: 3000,
   });
 }

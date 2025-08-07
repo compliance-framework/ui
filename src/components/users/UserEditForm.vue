@@ -36,6 +36,7 @@ import PrimaryButton from '../PrimaryButton.vue';
 import { useApi } from '@/composables/axios';
 import { useAxios } from '@vueuse/integrations/useAxios';
 import type { AxiosError } from 'axios';
+import { useToast } from 'primevue/usetoast';
 
 const props = defineProps<{
   user: CCFUser;
@@ -52,11 +53,11 @@ watch(
 const emit = defineEmits<{
   cancel: [];
   saved: [updatedUser: DataResponse<CCFUser> | undefined];
-  error: [error: string];
 }>();
 
 const user = reactive({ ...props.user });
 
+const toast = useToast();
 const instance = useApi();
 const { data: updatedUser, execute } = await useAxios<DataResponse<CCFUser>>(`/api/users/${user.id}`, {
     method: 'PUT',
@@ -69,7 +70,12 @@ async function updateUser() {
     emit('saved', updatedUser.value);
   } catch (error) {
     const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
-    emit('error', errorResponse.response?.data.errors.body ?? 'Unknown error occurred');
+    toast.add({
+      severity: 'error',
+      summary: 'Error updating user',
+      detail: errorResponse.response?.data.errors.body ?? 'An error occurred while updating the user.',
+      life: 3000,
+    });
   }
 }
 </script>
