@@ -20,7 +20,7 @@
           </tr>
         </thead>
         <tbody class="table-body">
-          <template v-if="loading">
+          <template v-if="isLoading">
             <tr>
               <td colspan="4" class="px-6 py-4 text-center text-gray-500 dark:text-slate-400">
                 Loading...
@@ -61,65 +61,41 @@
     Create User
   </PrimaryButton>
   <Dialog modal header="Create User" v-model:visible="showDialog">
-    <UserCreateForm @cancel="showDialog = false" @create="handleUserCreate" />
+    <UserCreateForm @cancel="showDialog = false" @create="completed" />
   </Dialog>
 </template>
 
 <script lang="ts" setup>
 import { ref, onMounted } from 'vue';
 import PageHeader from '@/components/PageHeader.vue';
-import type { DataResponse, CCFUser, CCFUserCreate } from '@/stores/types';
-import { useUserManagementStore } from '@/stores/user-management';
+import type { DataResponse, CCFUser} from '@/stores/types';
 import PrimaryButton from '@/components/PrimaryButton.vue';
 import UserCreateForm from '@/components/users/UserCreateForm.vue';
 import Dialog from '@/volt/Dialog.vue';
 import { useToast } from 'primevue/usetoast';
+import { useApi } from '@/composables/axios';
+import { useAxios } from '@vueuse/integrations/useAxios';
 
-const loading = ref(true);
-const error = ref(false);
-const users = ref<DataResponse<CCFUser[]>>({} as DataResponse<CCFUser[]>);
+const instance = useApi();
+
 const showDialog = ref(false);
 const toast = useToast();
 
-const userManagement = useUserManagementStore();
+const { data: users, isLoading, error, execute } = useAxios<DataResponse<CCFUser[]>>('/api/users', instance, { immediate: false });
 
-async function handleUserCreate(newUser: CCFUserCreate) {
-  try {
-    const retval = await userManagement.createUser(newUser);
-    users.value.data.push(retval.data);
-    showDialog.value = false;
-    toast.add({
-      severity: 'success',
-      summary: 'User created successfully',
-      detail: `User ${newUser.firstName} ${newUser.lastName} has been created.`,
-      life: 3000,
-    });
-  } catch (response) {
-    const errorResponse = await (response as Response).json();
-    toast.add({
-      severity: 'error',
-      summary: 'Error creating user',
-      detail: errorResponse.errors.body,
-      life: 3000,
-    });
-  }
+function completed(newUser: CCFUser) {
+  showDialog.value = false;
+  users.value?.data.push(newUser);
+  toast.add({
+    severity: 'success',
+    summary: 'User created successfully',
+    detail: `User ${newUser.firstName} ${newUser.lastName} has been created.`,
+    life: 3000,
+  });
 }
 
 onMounted(async () => {
-  try {
-    users.value = await userManagement.listUsers();
-  } catch (response) {
-    const errorResponse = await (response as Response).json();
-    toast.add({
-      severity: 'error',
-      summary: 'Error loading users',
-      detail: errorResponse.errors.body,
-      life: 3000,
-    });
-    error.value = true;
-  } finally {
-    loading.value = false;
-  }
+  execute();
 });
 </script>
 

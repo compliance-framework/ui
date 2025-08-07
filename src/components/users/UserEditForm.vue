@@ -16,7 +16,7 @@
     </div>
 
     <div class="border-t-1 border-t-ccf-300">
-      <PrimaryButton class="mt-4" @click.prevent="emit('saved', user)">
+      <PrimaryButton class="mt-4" @click.prevent="updateUser">
         Save User
       </PrimaryButton>
 
@@ -29,18 +29,18 @@
 
 <script setup lang="ts">
 
-import { type CCFUser } from '@/stores/types';
+import type { CCFUser, DataResponse, ErrorBody, ErrorResponse } from '@/stores/types';
 import { defineProps, reactive, defineEmits, watch } from 'vue';
 import FormInput from '../forms/FormInput.vue';
 import PrimaryButton from '../PrimaryButton.vue';
-
-
+import { useApi } from '@/composables/axios';
+import { useAxios } from '@vueuse/integrations/useAxios';
+import type { AxiosError } from 'axios';
+import { useToast } from 'primevue/usetoast';
 
 const props = defineProps<{
   user: CCFUser;
 }>();
-
-const user = reactive({ ...props.user });
 
 // Keep local user in sync with prop changes
 watch(
@@ -49,9 +49,33 @@ watch(
     Object.assign(user, newUser);
   }
 );
+
 const emit = defineEmits<{
   cancel: [];
-  saved: [updatedUser: CCFUser];
+  saved: [updatedUser: DataResponse<CCFUser> | undefined];
 }>();
 
+const user = reactive({ ...props.user });
+
+const toast = useToast();
+const instance = useApi();
+const { data: updatedUser, execute } = useAxios<DataResponse<CCFUser>>(`/api/users/${user.id}`, {
+    method: 'PUT',
+  data: user,
+}, instance, { immediate: false });
+
+async function updateUser() {
+  try {
+    await execute();
+    emit('saved', updatedUser.value);
+  } catch (error) {
+    const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
+    toast.add({
+      severity: 'error',
+      summary: 'Error updating user',
+      detail: errorResponse.response?.data.errors.body ?? 'An error occurred while updating the user.',
+      life: 3000,
+    });
+  }
+}
 </script>

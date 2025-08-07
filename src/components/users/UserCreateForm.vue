@@ -24,7 +24,7 @@
     </div>
 
     <div class="border-t-1 border-t-ccf-300">
-      <PrimaryButton class="mt-4" @click.prevent="checkUser">
+      <PrimaryButton class="mt-4" @click.prevent="createUser">
         Save User
       </PrimaryButton>
 
@@ -37,10 +37,14 @@
 
 <script setup lang="ts">
 
-import { type CCFUserCreate } from '@/stores/types';
+import type { CCFUserCreate, CCFUser, DataResponse, ErrorResponse, ErrorBody } from '@/stores/types';
 import { ref, defineEmits, watch, reactive } from 'vue';
 import FormInput from '../forms/FormInput.vue';
 import PrimaryButton from '../PrimaryButton.vue';
+import { useApi } from '@/composables/axios';
+import { useAxios } from '@vueuse/integrations/useAxios';
+import type { AxiosError } from 'axios';
+import { useToast } from 'primevue/usetoast';
 
 const passwords = reactive({
   password: '',
@@ -60,17 +64,54 @@ const user = ref<CCFUserCreate>({} as CCFUserCreate);
 
 const emit = defineEmits<{
   cancel: [];
-  create: [user: CCFUserCreate];
+  create: [user: CCFUser];
 }>();
 
+const toast = useToast();
+const instance = useApi();
+const { execute } = useAxios<DataResponse<CCFUser>>("/api/users",
+  {
+    method: "POST",
+    headers: {'Content-Type': 'application/json'}
+  },
+  instance,
+  {
+    immediate: false
+  }
+);
 
-function checkUser() {
+async function createUser() {
   if (passwords.error) {
     return;
   }
-
   user.value.password = passwords.password;
-  emit('create', user.value);
+
+  try {
+    const response = await execute({
+      data: user.value,
+    });
+
+    if (!response.data.value) {
+      toast.add({
+        severity: 'error',
+        summary: 'Error creating user',
+        detail: 'User creation failed, please try again.',
+        life: 3000,
+      });
+      return;
+    }
+
+    emit('create', response.data.value?.data);
+  } catch (error) {
+    const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
+    toast.add({
+      severity: 'error',
+      summary: 'Error creating user',
+      detail: errorResponse.response?.data.errors.body ?? 'Unknown error occurred',
+      life: 3000,
+    });
+    return;
+  }
 }
 
 </script>

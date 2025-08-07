@@ -45,7 +45,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, watch } from 'vue';
 import PageHeader from '@/components/PageHeader.vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
@@ -54,77 +54,65 @@ import PageCard from '@/components/PageCard.vue';
 import PrimaryButton from '@/components/PrimaryButton.vue';
 import Dialog from '@/volt/Dialog.vue';
 import UserEditForm from '@/components/users/UserEditForm.vue';
-import { useUserManagementStore } from '@/stores/user-management';
 import { useConfirm } from 'primevue/useconfirm';
+import { useApi } from '@/composables/axios';
+import { useAxios } from '@vueuse/integrations/useAxios';
+import type { AxiosError } from 'axios';
 
 const route = useRoute();
 const router = useRouter();
 const toast = useToast();
 const confirm = useConfirm();
-const userManagement = useUserManagementStore();
 
-const user = ref<DataResponse<CCFUser>>({} as DataResponse<CCFUser>);
-const loading = ref(true);
+const instance = useApi();
+const { data: user, isLoading: loading, error } = useAxios<DataResponse<CCFUser>>(`/api/users/${route.params.id}`, instance);
+const { execute: deleteExecute } = useAxios<void>(`/api/users/${route.params.id}`, { method: 'DELETE' }, instance, { immediate: false });
+const { data: updatedUserData, execute: lockExecute } = useAxios<DataResponse<CCFUser>>(`/api/users/${route.params.id}`, { method: 'PUT' }, instance, { immediate: false });
+
+watch(error, (err) => {
+  if (err) {
+    const errorResponse = err as AxiosError<ErrorResponse<ErrorBody>>;
+    toast.add({
+      severity: 'error',
+      summary: 'Error loading user',
+      detail: errorResponse.response?.data.errors.body || 'An error occurred while loading the user data.',
+      life: 3000,
+    });
+    router.push({ name: 'users-list' });
+  }
+});
 
 const editUserVisible = ref(false);
 
-onMounted(async () => {
-  await getData();
-});
-
-async function getData() {
-    try {
-    user.value = await userManagement.getUser(route.params.id as string);
-  } catch (response) {
-    const error = await (response as Response).json() as ErrorResponse<ErrorBody>;
-    toast.add({ severity: 'error', summary: 'Error loading user', detail: error.errors.body, life: 3000 });
-    router.push({ name: 'users-list' });
-  } finally {
-    loading.value = false;
+function saveUser(updatedUser?: DataResponse<CCFUser>) {
+  editUserVisible.value = false;
+  if (updatedUser) {
+    user.value = updatedUser;
   }
 }
 
-function saveUser(updatedUser: CCFUser) {
-  editUserVisible.value = false;
-  userManagement.updateUser(user.value.data.id, updatedUser).then(async () => {
-    await getData();
-    toast.add({
-      severity: 'success',
-      summary: 'User updated successfully',
-      detail: `User ${updatedUser.firstName} ${updatedUser.lastName} has been updated.`,
-      life: 3000,
-    });
-  }).catch(async (response) => {
-    const error = await response.json() as ErrorResponse<ErrorBody>;
-    toast.add({
-      severity: 'error',
-      summary: `Error updating user - ${response.statusText}`,
-      detail: error.errors.body,
-      life: 3000,
-    });
-  });
-}
-
-function updateLock() {
+async function updateLock() {
   const newIsLocked = !user.value.data.isLocked;
   const updatedUser = { ...user.value.data, isLocked: newIsLocked };
-  userManagement.updateUser(user.value.data.id, updatedUser).then(() => {
-    user.value.data.isLocked = newIsLocked;
+  try {
+    await lockExecute({ data: updatedUser });
+    user.value = updatedUserData.value ?? user.value;
+
     toast.add({
       severity: 'success',
-      summary: 'User lock status updated',
-      detail: `User ${user.value.data.firstName} ${user.value.data.lastName} is now ${newIsLocked ? 'locked' : 'unlocked'}.`,
+      summary: `User ${newIsLocked ? 'locked' : 'unlocked'} successfully`,
+      detail: `User ${updatedUser.firstName} ${updatedUser.lastName} has been ${newIsLocked ? 'locked' : 'unlocked'}.`,
       life: 3000,
     });
-  }).catch(async (response) => {
-    const error = await response.json() as ErrorResponse<ErrorBody>;
+  } catch (error) {
+    const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
     toast.add({
       severity: 'error',
-      summary: `Error updating user - ${response.statusText}`,
-      detail: error.errors.body,
+      summary: `Error ${newIsLocked ? 'locking' : 'unlocking'} user`,
+      detail: errorResponse.response?.data.errors.body || 'An error occurred while updating the user lock status.',
       life: 3000,
     });
-  });
+  }
 }
 
 function deleteUser() {
@@ -142,7 +130,7 @@ function deleteUser() {
     },
     accept: async () => {
       try {
-        await userManagement.deleteUser(user.value.data.id);
+        await deleteExecute();
         toast.add({
           severity: 'success',
           summary: 'User deleted successfully',
@@ -150,12 +138,12 @@ function deleteUser() {
           life: 3000,
         });
         router.push({ name: 'users-list' });
-      } catch (response) {
-        const error = await (response as Response).json() as ErrorResponse<ErrorBody>;
+      } catch (error) {
+        const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
         toast.add({
           severity: 'error',
-          summary: `Error deleting user - ${(response as Response).statusText}`,
-          detail: error.errors.body,
+          summary: 'Error deleting user',
+          detail: errorResponse.response?.data.errors.body || 'An error occurred while deleting the user.',
           life: 3000,
         });
       }
