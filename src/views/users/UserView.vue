@@ -85,9 +85,11 @@ watch(error, (err) => {
 
 const editUserVisible = ref(false);
 
-function saveUser(updatedUser: DataResponse<CCFUser>) {
+function saveUser(updatedUser?: DataResponse<CCFUser>) {
   editUserVisible.value = false;
-  user.value = updatedUser;
+  if (updatedUser) {
+    user.value = updatedUser;
+  }
 }
 
 function handleError(error: string) {
