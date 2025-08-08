@@ -135,7 +135,7 @@ watch(evidence, () => {
     return;
   }
   for (const link of evidence.value.links) {
-    if (link.href[0] === '#') {
+    if (typeof link.href === 'string' && link.href.startsWith('#')) {
       const resource = evidence.value.backMatter?.resources.find(
         (r: BackMatterResource) => r.uuid === link.href.substring(1),
       );
