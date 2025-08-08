@@ -9,9 +9,7 @@
     <div>
       <PageCard>
         <h3 class="text-lg flex items-center mb-2">
-          <span>
-            Evidence
-          </span>
+          <span> Evidence </span>
           <span
             :class="[
               'rounded-md px-2 py-1 text-sm ml-4 font-light',
@@ -29,12 +27,47 @@
             {{ evidence.title }}
           </p>
           <p class="pt-1">{{ evidence.description }}</p>
-          <SecondaryButton
-            @click="showActivities(evidence)"
-            class="mt-4"
-          >
+          <SecondaryButton @click="showActivities(evidence)" class="mt-4">
             View Tasks
           </SecondaryButton>
+        </div>
+      </PageCard>
+    </div>
+
+    <div>
+      <PageCard>
+        <h3 class="text-lg font-semibold text-zinc-600 dark:text-slate-300">
+          Media
+        </h3>
+        <div class="mt-2">
+          <template v-for="link in evidence.links" :key="link.href">
+            <template v-if="link.href[0] === '#'">
+              <template
+                v-if="
+                  evidence.backMatter?.resources.find(
+                    (r) => r.uuid === link.href.substring(1),
+                  )
+                "
+              >
+                <div class="border border-ccf-300 rounded-md overflow-hidden">
+                  <BackMatterDisplay
+                    :resource="
+                      evidence.backMatter.resources.find(
+                        (r) => r.uuid === link.href.substring(1),
+                      ) as BackMatterResource
+                    "
+                  />
+                  <div class="border-t border-ccf-300 py-2 px-4">
+                    {{
+                      evidence.backMatter.resources.find(
+                        (r) => r.uuid === link.href.substring(1),
+                      )?.title
+                    }}
+                  </div>
+                </div>
+              </template>
+            </template>
+          </template>
         </div>
       </PageCard>
     </div>
@@ -43,7 +76,8 @@
       v-model:visible="showActivitiesModal"
       maximizable
       modal
-      header="Tasks">
+      header="Tasks"
+    >
       <div class="px-12 flex-grow">
         <div v-for="activity in activities" :key="activity.uuid">
           <div class="flex items-center">
@@ -66,7 +100,9 @@
           </div>
         </div>
       </div>
-      <div class="mt-4 border-t border-zinc-300 dark:border-slate-400 text-right py-4 px-4">
+      <div
+        class="mt-4 border-t border-zinc-300 dark:border-slate-400 text-right py-4 px-4"
+      >
         <SecondaryButton
           @click="toggleActivitiesModal(false)"
           class="px-2 py-1 shadow"
@@ -83,11 +119,13 @@ import { useRoute } from 'vue-router';
 import PageHeader from '@/components/PageHeader.vue';
 import PageCard from '@/components/PageCard.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
-import type { Activity } from '@/stores/activities.ts'
-import SecondaryButton from '@/volt/SecondaryButton.vue'
+import BackMatterDisplay from '@/components/BackMatterDisplay.vue';
+import type { Activity } from '@/stores/activities.ts';
+import SecondaryButton from '@/volt/SecondaryButton.vue';
 
 import Dialog from '@/volt/Dialog.vue';
-import { type Evidence, useEvidenceStore } from '@/stores/evidence.ts'
+import { type Evidence, useEvidenceStore } from '@/stores/evidence.ts';
+import type { BackMatterResource } from '@/oscal';
 
 const evidenceStore = useEvidenceStore();
 const route = useRoute();
