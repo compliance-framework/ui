@@ -1,10 +1,10 @@
 <template>
-  <h4>Some file upload</h4>
-  <input type="file" @change="onFileChange" />
+  <InputText type="file" @change="onFileChange" />
 </template>
 
 <script lang="ts" setup>
 import type { Base64 } from '@/oscal';
+import InputText from '@/volt/InputText.vue';
 
 const emit = defineEmits<{
   uploaded: [file: File, base64: Base64];
