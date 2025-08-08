@@ -46,8 +46,18 @@
             class="border border-ccf-300 rounded-md overflow-hidden"
           >
             <BackMatterDisplay :resource="media" />
-            <div class="border-t border-ccf-300 py-2 px-4">
-              {{ media.title }}
+            <div
+              class="border-t border-ccf-300 py-2 px-4 flex justify-between items-center"
+            >
+              <span>
+                {{ media.title || media.uuid }}
+              </span>
+              <a
+                :download="media.title || media.uuid"
+                :href="`data:${media.base64?.mediaType};base64,${media.base64?.value}`"
+              >
+                <BIconDownload />
+              </a>
             </div>
           </div>
         </div>
@@ -104,6 +114,7 @@ import PageSubHeader from '@/components/PageSubHeader.vue';
 import BackMatterDisplay from '@/components/BackMatterDisplay.vue';
 import type { Activity } from '@/stores/activities.ts';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
+import { BIconDownload } from 'bootstrap-icons-vue';
 
 import Dialog from '@/volt/Dialog.vue';
 import { type Evidence, useEvidenceStore } from '@/stores/evidence.ts';
