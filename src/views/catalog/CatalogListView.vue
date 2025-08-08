@@ -49,28 +49,28 @@
   <!--  </div>-->
 </template>
 <script setup lang="ts">
-import { useApi, type DataResponse } from '@/composables/api';
+import { type DataResponse } from '@/composables/api';
 import { type Catalog } from '@/oscal';
-import { useMustAuthenticate } from '@/composables/useMustAuthenticate';
 import PageHeader from '@/components/PageHeader.vue'
-import { useCatalogStore } from '@/stores/catalogs.ts'
 import { useToast } from 'primevue/usetoast'
+import { useApi } from '@/composables/axios'
+import { useAxios } from '@vueuse/integrations/useAxios'
 
-const catalogStore = useCatalogStore()
+
 const toast = useToast();
-const { watchForUnauthenticated } = useMustAuthenticate();
+const instance = useApi();
 
 const {
   data: catalogs,
-  loading,
-  response,
-} = useApi<DataResponse<Catalog[]>>(new Request('/api/oscal/catalogs'));
-watchForUnauthenticated(response)
+  isLoading: loading,
+} = useAxios<DataResponse<Catalog[]>>('/api/oscal/catalogs', instance);
+
+const { execute } = useAxios<DataResponse<Catalog>>(instance);
 
 async function downloadCatalogJSON(id: string, title: string) {
   try {
-    const response = await catalogStore.full(id);
-    const jsonData = JSON.stringify(response.data, null, 2);
+    const response = await execute(`/api/oscal/catalogs/${id}/full`);
+    const jsonData = JSON.stringify(response.data.value?.data, null, 2);
     // Create blob and download
     const blob = new Blob([jsonData], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
