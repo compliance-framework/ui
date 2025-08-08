@@ -28,7 +28,7 @@ function onFileChange(event: Event) {
         console.error('Error reading file:', err);
       });
   } else {
-    console.error('No file selected');
+    // No file selected; this is a normal case (user canceled or did not choose a file).
   }
 }
 
