@@ -1,3 +1,5 @@
+import camelcaseKeys from 'camelcase-keys';
+import decamelizeKeys from 'decamelize-keys';
 import { defineStore } from 'pinia';
 import { useConfigStore } from '@/stores/config.ts';
 import { type Filter } from '@/parsers/labelfilter.ts';
@@ -69,7 +71,10 @@ export const useEvidenceStore = defineStore('evidence', () => {
   async function get(id: string): Promise<DataResponse<Evidence>> {
     const config = await configStore.getConfig();
     const response = await fetch(`${config.API_URL}/api/evidence/${id}`);
-    return (await response.json()) as DataResponse<Evidence>;
+    const responseJson = await response.json();
+    return camelcaseKeys(responseJson, {
+      deep: true,
+    }) as DataResponse<Evidence>;
   }
 
   async function getForControl(controlId: string): Promise<ForControlResponse> {
@@ -108,7 +113,12 @@ export const useEvidenceStore = defineStore('evidence', () => {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(evidence),
+      body: JSON.stringify(
+        decamelizeKeys(evidence, {
+          separator: '-',
+          deep: true,
+        }),
+      ),
     });
 
     if (!response.ok) {

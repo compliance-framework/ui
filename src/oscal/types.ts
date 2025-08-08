@@ -117,12 +117,19 @@ export interface Citation {
   links?: Link[];
 }
 
+export interface Base64 {
+  filename: string;
+  mediaType: string;
+  value: string;
+}
+
 export interface BackMatterResource {
   uuid: string;
   title: string;
   description: string;
   remarks?: string;
   citation?: Citation;
+  base64?: Base64;
   props?: Property[];
   links?: Link[];
   rlinks?: ResourceLink[];
