@@ -107,12 +107,6 @@ export const useEvidenceStore = defineStore('evidence', () => {
   async function create(
     evidence: Partial<FlatLabelEvidence>,
   ): Promise<DataResponse<Evidence>> {
-    console.log(
-      decamelizeKeys(evidence, {
-        separator: '-',
-        deep: true,
-      }),
-    );
     const config = await configStore.getConfig();
     const response = await fetch(`${config.API_URL}/api/evidence`, {
       method: 'POST',

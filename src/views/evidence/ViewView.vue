@@ -40,34 +40,16 @@
           Media
         </h3>
         <div class="mt-2">
-          <template v-for="link in evidence.links" :key="link.href">
-            <template v-if="link.href[0] === '#'">
-              <template
-                v-if="
-                  evidence.backMatter?.resources.find(
-                    (r) => r.uuid === link.href.substring(1),
-                  )
-                "
-              >
-                <div class="border border-ccf-300 rounded-md overflow-hidden">
-                  <BackMatterDisplay
-                    :resource="
-                      evidence.backMatter.resources.find(
-                        (r) => r.uuid === link.href.substring(1),
-                      ) as BackMatterResource
-                    "
-                  />
-                  <div class="border-t border-ccf-300 py-2 px-4">
-                    {{
-                      evidence.backMatter.resources.find(
-                        (r) => r.uuid === link.href.substring(1),
-                      )?.title
-                    }}
-                  </div>
-                </div>
-              </template>
-            </template>
-          </template>
+          <div
+            v-for="media in displayableMedia"
+            :key="media.uuid"
+            class="border border-ccf-300 rounded-md overflow-hidden"
+          >
+            <BackMatterDisplay :resource="media" />
+            <div class="border-t border-ccf-300 py-2 px-4">
+              {{ media.title }}
+            </div>
+          </div>
         </div>
       </PageCard>
     </div>
@@ -114,7 +96,7 @@
   </div>
 </template>
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import PageHeader from '@/components/PageHeader.vue';
 import PageCard from '@/components/PageCard.vue';
@@ -134,6 +116,24 @@ const id = route.params.id as string;
 const evidence = ref<Evidence>({} as Evidence);
 const activities = ref<Activity[]>([] as Activity[]);
 const showActivitiesModal = ref(false);
+
+const displayableMedia = ref<BackMatterResource[]>([]);
+watch(evidence, () => {
+  displayableMedia.value = [];
+  if (!evidence.value.links) {
+    return;
+  }
+  for (const link of evidence.value.links) {
+    if (link.href[0] === '#') {
+      const resource = evidence.value.backMatter?.resources.find(
+        (r: BackMatterResource) => r.uuid === link.href.substring(1),
+      );
+      if (resource) {
+        displayableMedia.value.push(resource);
+      }
+    }
+  }
+});
 
 enum FindingStatusColor {
   UNKNOWN = 'grey',
