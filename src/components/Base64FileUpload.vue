@@ -27,9 +27,8 @@ function onFileChange(event: Event) {
       .catch((err) => {
         console.error('Error reading file:', err);
       });
-    console.log('File selected:', file.name);
   } else {
-    console.log('No file selected');
+    console.error('No file selected');
   }
 }
 
