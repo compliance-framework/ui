@@ -39,7 +39,7 @@
         <h3 class="text-lg font-semibold text-zinc-600 dark:text-slate-300">
           Media
         </h3>
-        <div class="mt-2">
+        <div class="flex flex-col gap-y-4">
           <div
             v-for="media in displayableMedia"
             :key="media.uuid"
