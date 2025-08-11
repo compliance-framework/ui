@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { type Catalog, type Group, useCatalogStore } from '@/stores/catalogs.ts'
+import type { Catalog, Group } from '@/stores/catalogs.ts'
 import FormInput from '@/components/forms/FormInput.vue'
 import { ref } from 'vue'
 import PrimaryButton from '@/components/PrimaryButton.vue'
-
-const catalogStore = useCatalogStore();
+import { useDataApi } from '@/composables/axios';
+import type { AxiosError } from 'axios';
+import type { ErrorResponse, ErrorBody } from '@/stores/types.ts';
 
 const props = defineProps<{
   catalog: Catalog,
@@ -17,16 +18,40 @@ const emit = defineEmits({
   }
 })
 
+const { execute: executeCreateGroup } = useDataApi<Group>(`/api/oscal/catalogs/${props.catalog.uuid}/groups`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+});
+
+const { execute: executeCreateGroupGroup } = useDataApi<Group>(`/api/oscal/catalogs/${props.catalog.uuid}/groups/${props.parent?.id}/groups`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+});
+
 const group = ref({} as Group)
 
 async function createGroup(): Promise<void> {
   let response;
-  if (props.parent) {
-    response = await catalogStore.createGroupGroup(props.catalog, props.parent, group.value)
-  } else {
-    response = await catalogStore.createGroup(props.catalog, group.value)
+  try {
+    if (props.parent) {
+      response = await executeCreateGroupGroup({
+        data: group.value,
+      });
+    } else {
+      response = await executeCreateGroup({
+        data: group.value,
+      });
+    }
+
+    if (response.data.value) {
+      emit('created', response.data.value.data);
+    }
+  } catch (error) {
+    const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
+    console.error('Error creating group:', errorResponse.response?.data.errors.body || 'An error occurred while creating the group.');
+    return;
   }
-  emit('created', response.data)
+
 }
 </script>
 
