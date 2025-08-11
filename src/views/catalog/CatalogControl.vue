@@ -131,11 +131,12 @@ const props = defineProps<{
 }>();
 
 const { data: controls } = useDataApi<Control[]>(
-  `/api/oscal/catalogs/${props.catalog.uuid}/controls/${props.control.id}/controls`,
+  `/api/oscal/catalogs/${props.catalog.uuid}/controls/${props.control.id}/controls`, {}, { immediate: true }
 );
 const { data: compliance } = useDataApi<ComplianceIntervalStatus[] | null>(
-  `/api/evidence/compliance-by-control/${props.control.id}`, {}, { initialData: null}
+  `/api/evidence/compliance-by-control/${props.control.id}`, {}, { immediate: true, initialData: null }
 );
+
 
 const objective = ref<Part | undefined>(getPart('assessment-objective'));
 const statement = ref<Part | undefined>(getPart('statement'));
@@ -161,9 +162,6 @@ function getPart(type: string) {
     return part.name == type;
   });
 }
-
-onMounted(() => {
-});
 
 const showControlForm = ref<boolean>(false);
 

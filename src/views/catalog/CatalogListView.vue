@@ -11,7 +11,7 @@
       <tbody>
         <tr
           class="hover:bg-zinc-50 dark:hover:bg-slate-800 border-b border-ccf-300 dark:border-slate-800"
-          v-for="catalog in catalogs?.data"
+          v-for="catalog in catalogs"
           :key="catalog.uuid"
         >
           <td class="py-3 px-4 whitespace-nowrap grow">
@@ -49,23 +49,20 @@
   <!--  </div>-->
 </template>
 <script setup lang="ts">
-import { type DataResponse } from '@/composables/api';
 import { type Catalog } from '@/oscal';
 import PageHeader from '@/components/PageHeader.vue'
 import { useToast } from 'primevue/usetoast'
-import { useApi } from '@/composables/axios'
-import { useAxios } from '@vueuse/integrations/useAxios'
+import { useDataApi } from '@/composables/axios'
 
 
 const toast = useToast();
-const instance = useApi();
 
 const {
   data: catalogs,
   isLoading: loading,
-} = useAxios<DataResponse<Catalog[]>>('/api/oscal/catalogs', instance);
+} = useDataApi<Catalog[]>('/api/oscal/catalogs');
 
-const { execute } = useAxios<DataResponse<Catalog>>(instance);
+const { execute } = useDataApi<Catalog>('/api/oscal/catalogs', {}, { immediate: false });
 
 async function downloadCatalogJSON(id: string, title: string) {
   try {

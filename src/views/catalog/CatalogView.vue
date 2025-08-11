@@ -39,8 +39,8 @@ const router = useRouter();
 const id = ref<string>(route.params.id as string);
 
 const { data: catalog, execute } = useDataApi<Catalog>();
-const { data: groups, execute: groupExecute } = useApiData<Group[]>();
-const { data: controls, execute: catalogExecute } = useApiData<Control[]>();
+const { data: groups, execute: groupExecute } = useDataApi<Group[]>();
+const { data: controls, execute: catalogExecute } = useDataApi<Control[]>();
 
 async function loadData() {
   try {

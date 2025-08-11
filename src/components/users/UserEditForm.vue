@@ -29,12 +29,11 @@
 
 <script setup lang="ts">
 
-import type { CCFUser, DataResponse, ErrorBody, ErrorResponse } from '@/stores/types';
+import type { CCFUser, ErrorBody, ErrorResponse } from '@/stores/types';
 import { defineProps, reactive, defineEmits, watch } from 'vue';
 import FormInput from '../forms/FormInput.vue';
 import PrimaryButton from '../PrimaryButton.vue';
-import { useApi } from '@/composables/axios';
-import { useAxios } from '@vueuse/integrations/useAxios';
+import { useDataApi } from '@/composables/axios';
 import type { AxiosError } from 'axios';
 import { useToast } from 'primevue/usetoast';
 
@@ -52,17 +51,16 @@ watch(
 
 const emit = defineEmits<{
   cancel: [];
-  saved: [updatedUser: DataResponse<CCFUser> | undefined];
+  saved: [updatedUser: CCFUser | undefined];
 }>();
 
 const user = reactive({ ...props.user });
 
 const toast = useToast();
-const instance = useApi();
-const { data: updatedUser, execute } = useAxios<DataResponse<CCFUser>>(`/api/users/${user.id}`, {
+const { data: updatedUser, execute } = useDataApi<CCFUser>(`/api/users/${user.id}`, {
     method: 'PUT',
   data: user,
-}, instance, { immediate: false });
+}, { immediate: false });
 
 async function updateUser() {
   try {

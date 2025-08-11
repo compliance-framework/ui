@@ -37,12 +37,11 @@
 
 <script setup lang="ts">
 
-import type { CCFUserCreate, CCFUser, DataResponse, ErrorResponse, ErrorBody } from '@/stores/types';
+import type { CCFUserCreate, CCFUser, ErrorResponse, ErrorBody } from '@/stores/types';
 import { ref, defineEmits, watch, reactive } from 'vue';
 import FormInput from '../forms/FormInput.vue';
 import PrimaryButton from '../PrimaryButton.vue';
-import { useApi } from '@/composables/axios';
-import { useAxios } from '@vueuse/integrations/useAxios';
+import { useDataApi } from '@/composables/axios';
 import type { AxiosError } from 'axios';
 import { useToast } from 'primevue/usetoast';
 
@@ -68,13 +67,11 @@ const emit = defineEmits<{
 }>();
 
 const toast = useToast();
-const instance = useApi();
-const { execute } = useAxios<DataResponse<CCFUser>>("/api/users",
+const { data: createdUser, execute } = useDataApi<CCFUser>("/api/users",
   {
     method: "POST",
     headers: {'Content-Type': 'application/json'}
   },
-  instance,
   {
     immediate: false
   }
@@ -87,11 +84,11 @@ async function createUser() {
   user.value.password = passwords.password;
 
   try {
-    const response = await execute({
+    await execute({
       data: user.value,
     });
 
-    if (!response.data.value) {
+    if (!createdUser.value) {
       toast.add({
         severity: 'error',
         summary: 'Error creating user',
@@ -101,7 +98,7 @@ async function createUser() {
       return;
     }
 
-    emit('create', response.data.value?.data);
+    emit('create', createdUser.value);
   } catch (error) {
     const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
     toast.add({

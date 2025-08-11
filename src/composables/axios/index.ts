@@ -10,7 +10,7 @@ import { shallowRef, toValue, watch, type Ref } from 'vue';
 import { useAxios } from '@vueuse/integrations/useAxios.mjs';
 
 
-const useApi = () => {
+const useAuthenticatedInstance = () => {
   const userStore = useUserStore();
   const configStore = useConfigStore();
   const router = useRouter();
@@ -56,7 +56,7 @@ const useApi = () => {
   return instance;
 };
 
-const useGuestApi = () => {
+const useGuestInstance = () => {
   const configStore = useConfigStore();
   let cachedURL = '';
 
@@ -83,21 +83,26 @@ function useDataApi<T>(
   config?: AxiosRequestConfig | null,
   options?: UseAxiosOptions | UseAxiosOptionsWithInitialData<DataResponse<T>> | null,
 ) {
-  const instance = useApi();
+  const instance = useAuthenticatedInstance();
   const ax = useAxios<DataResponse<T>>(
     toValue(url) ?? "",
     config ?? {} as AxiosRequestConfig,
     instance,
-    options ?? {} as UseAxiosOptions
+    options ?? { immediate: true } as UseAxiosOptions
   );
 
-  const initialData = (options as UseAxiosOptionsWithInitialData<DataResponse<T>>)?.initialData.data ?? {} as T;
+  let initialData: T;
+  if (options && 'initialData' in options) {
+    initialData = options.initialData as T;
+  } else {
+    initialData = {} as T;
+  }
 
   const data = shallowRef<T>(initialData);
 
   watch(
     ax.data,
-    (val) => { data.value = val?.data ?? {} as T; },
+    (val) => { data.value = val?.data ?? initialData; },
     { immediate: true }
   );
 
@@ -108,4 +113,4 @@ function useDataApi<T>(
 }
 
 
-export { useApi, useGuestApi, useDataApi };
+export { useAuthenticatedInstance, useGuestInstance, useDataApi };

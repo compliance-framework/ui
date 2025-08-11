@@ -5,38 +5,38 @@
     </div>
   </template>
   <template v-else-if="user">
-    <PageHeader>Viewing user: {{ user.data.firstName }} {{ user.data.lastName }}</PageHeader>
+    <PageHeader>Viewing user: {{ user.firstName }} {{ user.lastName }}</PageHeader>
     <div class="flex flex-col md:flex-row gap-4 pt-10">
       <PageCard class="flex-grow">
         <div class="p-4">
           <h2 class="text-lg font-semibold mb-4">User Details</h2>
-          <p><strong>ID:</strong> {{ user.data.id }} </p>
-          <p><strong>Email:</strong> {{ user.data.email }}</p>
-          <p><strong>First Name:</strong> {{ user.data.firstName }}</p>
-          <p><strong>Last Name:</strong> {{ user.data.lastName }}</p>
+          <p><strong>ID:</strong> {{ user.id }} </p>
+          <p><strong>Email:</strong> {{ user.email }}</p>
+          <p><strong>First Name:</strong> {{ user.firstName }}</p>
+          <p><strong>Last Name:</strong> {{ user.lastName }}</p>
         </div>
       </PageCard>
       <PageCard class="flex-grow">
         <div class="p-4">
           <h2 class="text-lg font-semibold mb-4">User Metadata</h2>
-          <p><strong>Created At:</strong> {{ formatDate(user.data.createdAt) }}</p>
-          <p><strong>Updated At:</strong> {{ formatDate(user.data.updatedAt) }}</p>
-          <p><strong>Failed Logins:</strong> {{ user.data.failedLogins }} failed attempts</p>
-          <p><strong>Last Login:</strong> {{ formatDate(user.data.lastLogin) ?? "Never logged in" }}</p>
-          <p><strong>Is Active:</strong> {{ user.data.isActive ? "Yes" : "No" }}</p>
-          <p><strong>Is Locked out:</strong> {{ user.data.isLocked ? "Yes" : "No" }}</p>
+          <p><strong>Created At:</strong> {{ formatDate(user.createdAt) }}</p>
+          <p><strong>Updated At:</strong> {{ formatDate(user.updatedAt) }}</p>
+          <p><strong>Failed Logins:</strong> {{ user.failedLogins }} failed attempts</p>
+          <p><strong>Last Login:</strong> {{ formatDate(user.lastLogin) ?? "Never logged in" }}</p>
+          <p><strong>Is Active:</strong> {{ user.isActive ? "Yes" : "No" }}</p>
+          <p><strong>Is Locked out:</strong> {{ user.isLocked ? "Yes" : "No" }}</p>
         </div>
       </PageCard>
     </div>
     <div class="mt-4">
       <PrimaryButton @click="editUserVisible = true" class="mr-2">Update User</PrimaryButton>
-      <PrimaryButton @click="updateLock" class="mr-2">{{ user.data.isLocked ? 'Unlock User' : 'Lock User' }}</PrimaryButton>
+      <PrimaryButton @click="updateLock" class="mr-2">{{ user.isLocked ? 'Unlock User' : 'Lock User' }}</PrimaryButton>
       <PrimaryButton @click="deleteUser">Delete User</PrimaryButton>
     </div>
 
     <Dialog header="Edit User" modal v-model:visible="editUserVisible">
       <UserEditForm
-        :user="user.data"
+        :user="user"
         @saved="saveUser"
         @cancel="editUserVisible = false"
       ></UserEditForm>
@@ -49,14 +49,13 @@ import { ref, watch } from 'vue';
 import PageHeader from '@/components/PageHeader.vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
-import type { ErrorBody, ErrorResponse, DataResponse, CCFUser } from '@/stores/types';
+import type { ErrorBody, ErrorResponse, CCFUser } from '@/stores/types';
 import PageCard from '@/components/PageCard.vue';
 import PrimaryButton from '@/components/PrimaryButton.vue';
 import Dialog from '@/volt/Dialog.vue';
 import UserEditForm from '@/components/users/UserEditForm.vue';
 import { useConfirm } from 'primevue/useconfirm';
-import { useApi } from '@/composables/axios';
-import { useAxios } from '@vueuse/integrations/useAxios';
+import { useDataApi } from '@/composables/axios';
 import type { AxiosError } from 'axios';
 
 const route = useRoute();
@@ -64,10 +63,9 @@ const router = useRouter();
 const toast = useToast();
 const confirm = useConfirm();
 
-const instance = useApi();
-const { data: user, isLoading: loading, error } = useAxios<DataResponse<CCFUser>>(`/api/users/${route.params.id}`, instance);
-const { execute: deleteExecute } = useAxios<void>(`/api/users/${route.params.id}`, { method: 'DELETE' }, instance, { immediate: false });
-const { data: updatedUserData, execute: lockExecute } = useAxios<DataResponse<CCFUser>>(`/api/users/${route.params.id}`, { method: 'PUT' }, instance, { immediate: false });
+const { data: user, isLoading: loading, error } = useDataApi<CCFUser>(`/api/users/${route.params.id}`);
+const { execute: deleteExecute } = useDataApi<void>(`/api/users/${route.params.id}`, { method: 'DELETE' }, { immediate: false });
+const { data: updatedUserData, execute: lockExecute } = useDataApi<CCFUser>(`/api/users/${route.params.id}`, { method: 'PUT' }, { immediate: false });
 
 watch(error, (err) => {
   if (err) {
@@ -84,7 +82,7 @@ watch(error, (err) => {
 
 const editUserVisible = ref(false);
 
-function saveUser(updatedUser?: DataResponse<CCFUser>) {
+function saveUser(updatedUser?: CCFUser) {
   editUserVisible.value = false;
   if (updatedUser) {
     user.value = updatedUser;
@@ -92,8 +90,8 @@ function saveUser(updatedUser?: DataResponse<CCFUser>) {
 }
 
 async function updateLock() {
-  const newIsLocked = !user.value.data.isLocked;
-  const updatedUser = { ...user.value.data, isLocked: newIsLocked };
+  const newIsLocked = !user.value.isLocked;
+  const updatedUser = { ...user.value, isLocked: newIsLocked };
   try {
     await lockExecute({ data: updatedUser });
     user.value = updatedUserData.value ?? user.value;
@@ -117,7 +115,7 @@ async function updateLock() {
 
 function deleteUser() {
   confirm.require({
-    message: `Are you sure you want to delete user ${user.value.data.firstName} ${user.value.data.lastName}? This action cannot be undone.`,
+    message: `Are you sure you want to delete user ${user.value.firstName} ${user.value.lastName}? This action cannot be undone.`,
     header: 'Confirm Deletion',
     icon: 'pi pi-exclamation-triangle',
     rejectProps: {
@@ -134,7 +132,7 @@ function deleteUser() {
         toast.add({
           severity: 'success',
           summary: 'User deleted successfully',
-          detail: `User ${user.value.data.firstName} ${user.value.data.lastName} has been deleted.`,
+          detail: `User ${user.value.firstName} ${user.value.lastName} has been deleted.`,
           life: 3000,
         });
         router.push({ name: 'users-list' });
