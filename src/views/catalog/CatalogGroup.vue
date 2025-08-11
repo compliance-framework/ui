@@ -31,22 +31,22 @@
   </CollapsableGroup>
 </template>
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { ref } from 'vue'
 import CollapsableGroup from '@/components/CollapsableGroup.vue'
-import { type Catalog, type Group, type Control, useCatalogStore } from '@/stores/catalogs.ts'
+import { type Catalog, type Group, type Control  } from '@/stores/catalogs.ts'
 import TertiaryButton from '@/components/TertiaryButton.vue'
 import GroupCreateModal from '@/components/catalogs/GroupCreateModal.vue'
 import ControlCreateModal from '@/components/catalogs/ControlCreateModal.vue'
 import PartDisplayEditor from '@/components/PartDisplayEditor.vue'
+import { useDataApi } from '@/composables/axios'
 
 const props = defineProps<{
   catalog: Catalog,
   group: Group,
 }>()
 
-const catalogStore = useCatalogStore()
-const groups = ref<Group[]>([]);
-const controls = ref<Control[]>([]);
+const { data: groups } = useDataApi<Group[]>(`/api/oscal/catalogs/${props.catalog.uuid}/groups/${props.group.id}/groups`);
+const { data: controls } = useDataApi<Control[]>(`/api/oscal/catalogs/${props.catalog.uuid}/groups/${props.group.id}/controls`);
 
 function hasPart(type: string) {
   return props.group.parts?.find((part) => {
@@ -60,22 +60,12 @@ function getPart(type: string) {
   })
 }
 
-onMounted(() => {
-  catalogStore.listGroupGroups(props.catalog.uuid, props.group).then((data) => {
-    groups.value = data.data
-  })
-  catalogStore.listGroupControls(props.catalog.uuid, props.group).then((data) => {
-    controls.value = data.data
-  });
-})
-
-
 const showGroupForm = ref<boolean>(false);
 const showControlForm = ref<boolean>(false);
 function groupCreated(group: Group) {
-  groups.value.push(group)
+  groups.value?.push(group)
 }
 function controlCreated(control: Control) {
-  controls.value.push(control)
+  controls.value?.push(control)
 }
 </script>

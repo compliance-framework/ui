@@ -36,7 +36,7 @@
           </template>
           <template v-else>
             <tr
-            v-for="user in users?.data"
+            v-for="user in users"
             :key="user.id"
             class="hover:bg-zinc-50 dark:hover:bg-slate-800 border-b border-ccf-300 dark:border-slate-700 last:border-b-0"
             >
@@ -68,24 +68,21 @@
 <script lang="ts" setup>
 import { ref, onMounted } from 'vue';
 import PageHeader from '@/components/PageHeader.vue';
-import type { DataResponse, CCFUser} from '@/stores/types';
+import type { CCFUser } from '@/stores/types';
 import PrimaryButton from '@/components/PrimaryButton.vue';
 import UserCreateForm from '@/components/users/UserCreateForm.vue';
 import Dialog from '@/volt/Dialog.vue';
 import { useToast } from 'primevue/usetoast';
-import { useApi } from '@/composables/axios';
-import { useAxios } from '@vueuse/integrations/useAxios';
-
-const instance = useApi();
+import { useDataApi } from '@/composables/axios';
 
 const showDialog = ref(false);
 const toast = useToast();
 
-const { data: users, isLoading, error, execute } = useAxios<DataResponse<CCFUser[]>>('/api/users', instance, { immediate: false });
+const { data: users, isLoading, error, execute } = useDataApi<CCFUser[]>('/api/users', {}, { immediate: false });
 
 function completed(newUser: CCFUser) {
   showDialog.value = false;
-  users.value?.data.push(newUser);
+  users.value?.push(newUser);
   toast.add({
     severity: 'success',
     summary: 'User created successfully',

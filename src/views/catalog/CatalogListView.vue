@@ -11,7 +11,7 @@
       <tbody>
         <tr
           class="hover:bg-zinc-50 dark:hover:bg-slate-800 border-b border-ccf-300 dark:border-slate-800"
-          v-for="catalog in catalogs?.data"
+          v-for="catalog in catalogs"
           :key="catalog.uuid"
         >
           <td class="py-3 px-4 whitespace-nowrap grow">
@@ -49,28 +49,25 @@
   <!--  </div>-->
 </template>
 <script setup lang="ts">
-import { useApi, type DataResponse } from '@/composables/api';
 import { type Catalog } from '@/oscal';
-import { useMustAuthenticate } from '@/composables/useMustAuthenticate';
 import PageHeader from '@/components/PageHeader.vue'
-import { useCatalogStore } from '@/stores/catalogs.ts'
 import { useToast } from 'primevue/usetoast'
+import { useDataApi } from '@/composables/axios'
 
-const catalogStore = useCatalogStore()
+
 const toast = useToast();
-const { watchForUnauthenticated } = useMustAuthenticate();
 
 const {
   data: catalogs,
-  loading,
-  response,
-} = useApi<DataResponse<Catalog[]>>(new Request('/api/oscal/catalogs'));
-watchForUnauthenticated(response)
+  isLoading: loading,
+} = useDataApi<Catalog[]>('/api/oscal/catalogs');
+
+const { execute } = useDataApi<Catalog>('/api/oscal/catalogs', {}, { immediate: false });
 
 async function downloadCatalogJSON(id: string, title: string) {
   try {
-    const response = await catalogStore.full(id);
-    const jsonData = JSON.stringify(response.data, null, 2);
+    const response = await execute(`/api/oscal/catalogs/${id}/full`);
+    const jsonData = JSON.stringify(response.data.value?.data, null, 2);
     // Create blob and download
     const blob = new Blob([jsonData], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
