@@ -18,7 +18,7 @@
 </template>
 
 <script setup lang="ts">
-import { onActivated, ref  } from 'vue'
+import { onActivated, ref } from 'vue'
 import PageHeader from '@/components/PageHeader.vue'
 import { type Catalog, type Group, type Control } from '@/stores/catalogs.ts'
 import { useRoute, useRouter } from 'vue-router'
