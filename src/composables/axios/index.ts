@@ -3,6 +3,11 @@ import { useConfigStore } from '@/stores/config.ts';
 import { useUserStore } from '@/stores/auth';
 import { useRouter } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
+import type { UseAxiosOptions, UseAxiosOptionsWithInitialData } from '@vueuse/integrations/useAxios.mjs';
+import type { AxiosRequestConfig } from 'axios';
+import type { DataResponse } from '@/stores/types.ts';
+import { shallowRef, toValue, watch, type Ref } from 'vue';
+import { useAxios } from '@vueuse/integrations/useAxios.mjs';
 
 
 const useApi = () => {
@@ -73,4 +78,34 @@ const useGuestApi = () => {
   return instance;
 };
 
-export { useApi, useGuestApi };
+function useDataApi<T>(
+  url?: Ref | string | null,
+  config?: AxiosRequestConfig | null,
+  options?: UseAxiosOptions | UseAxiosOptionsWithInitialData<DataResponse<T>> | null,
+) {
+  const instance = useApi();
+  const ax = useAxios<DataResponse<T>>(
+    toValue(url) ?? "",
+    config ?? {} as AxiosRequestConfig,
+    instance,
+    options ?? {} as UseAxiosOptions
+  );
+
+  const initialData = (options as UseAxiosOptionsWithInitialData<DataResponse<T>>)?.initialData.data ?? {} as T;
+
+  const data = shallowRef<T>(initialData);
+
+  watch(
+    ax.data,
+    (val) => { data.value = val?.data ?? {} as T; },
+    { immediate: true }
+  );
+
+  return {
+    ...ax,
+    data,
+  }
+}
+
+
+export { useApi, useGuestApi, useDataApi };

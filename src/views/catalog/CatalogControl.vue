@@ -117,24 +117,25 @@ import ResultStatusBadge from '@/components/ResultStatusBadge.vue';
 import {
   type Catalog,
   type Control,
-  useCatalogStore,
 } from '@/stores/catalogs.ts';
 import TertiaryButton from '@/components/TertiaryButton.vue';
 import ControlCreateModal from '@/components/catalogs/ControlCreateModal.vue';
 import type { Part } from '@/stores/types.ts';
 import PartDisplayEditor from '@/components/PartDisplayEditor.vue'
 import { useRouter } from 'vue-router'
-import { useEvidenceStore } from '@/stores/evidence.ts'
+import { useDataApi } from '@/composables/axios';
 
 const props = defineProps<{
   catalog: Catalog;
   control: Control;
 }>();
 
-const evidenceStore = useEvidenceStore();
-const catalogStore = useCatalogStore();
-const controls = ref<Control[]>([]);
-const compliance = ref<ComplianceIntervalStatus[] | null>(null);
+const { data: controls } = useDataApi<Control[]>(
+  `/api/oscal/catalogs/${props.catalog.uuid}/controls/${props.control.id}/controls`,
+);
+const { data: compliance } = useDataApi<ComplianceIntervalStatus[] | null>(
+  `/api/evidence/compliance-by-control/${props.control.id}`, {}, { initialData: null}
+);
 
 const objective = ref<Part | undefined>(getPart('assessment-objective'));
 const statement = ref<Part | undefined>(getPart('statement'));
@@ -162,16 +163,6 @@ function getPart(type: string) {
 }
 
 onMounted(() => {
-  catalogStore
-    .listControlControls(props.catalog.uuid, props.control)
-    .then((data) => {
-      controls.value = data.data;
-    });
-  evidenceStore
-    .getComplianceForControl(props.control)
-    .then((data) => {
-      compliance.value = data.data;
-    });
 });
 
 const showControlForm = ref<boolean>(false);

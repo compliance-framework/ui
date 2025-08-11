@@ -1,6 +1,6 @@
 <template>
   <PageHeader>Catalog</PageHeader>
-  <PageSubHeader>{{ catalog.metadata?.title }}</PageSubHeader>
+  <PageSubHeader>{{ catalog?.metadata?.title }}</PageSubHeader>
 
   <div
     class="mt-4 rounded-md bg-white dark:bg-slate-900 border-collapse border border-ccf-300 dark:border-slate-700"
@@ -16,32 +16,48 @@
   </div>
   <div class="h-screen w-full"></div> <!-- A screen height div to prevent collapse scrolling back up after closing -->
 </template>
+
 <script setup lang="ts">
-import { onActivated, onMounted, ref, toValue } from 'vue'
+import { onActivated, ref  } from 'vue'
 import PageHeader from '@/components/PageHeader.vue'
-import { type Catalog, type Group, type Control, useCatalogStore } from '@/stores/catalogs.ts'
+import { type Catalog, type Group, type Control } from '@/stores/catalogs.ts'
 import { useRoute, useRouter } from 'vue-router'
+import CatalogGroup from '@/views/catalog/CatalogGroup.vue'
 import PageSubHeader from '@/components/PageSubHeader.vue'
 import CatalogControl from '@/views/catalog/CatalogControl.vue'
-import TertiaryButton from '@/components/TertiaryButton.vue'
 import GroupCreateModal from '@/components/catalogs/GroupCreateModal.vue'
 import ControlCreateModal from '@/components/catalogs/ControlCreateModal.vue'
 import { useToast } from 'primevue/usetoast'
 import type { ErrorResponse, ErrorBody } from '@/stores/types.ts'
+import { useDataApi } from '@/composables/axios'
+import type { AxiosError } from 'axios'
 
-const catalogStore = useCatalogStore()
-const catalog = ref<Catalog>({} as Catalog);
-const groups = ref<Group[]>([]);
-const controls = ref<Control[]>([]);
+
 const toast = useToast();
-
 const route = useRoute();
 const router = useRouter();
 const id = ref<string>(route.params.id as string);
 
-onMounted(async () => {
-  await loadCatalog(toValue(id))
-})
+const { data: catalog, execute } = useDataApi<Catalog>();
+const { data: groups, execute: groupExecute } = useApiData<Group[]>();
+const { data: controls, execute: catalogExecute } = useApiData<Control[]>();
+
+async function loadData() {
+  try {
+    await execute(`/api/oscal/catalogs/${id.value}`, { params: { page: 1, size: 1000}});
+    await groupExecute(`/api/oscal/catalogs/${id.value}/groups`);
+    await catalogExecute(`/api/oscal/catalogs/${id.value}/controls`);
+  } catch (error) {
+    const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
+    toast.add({
+      severity: 'error',
+      summary: 'Error loading catalog data',
+      detail: errorResponse.response?.data.errors.body || 'An error occurred while loading the catalog data.',
+      life: 3000,
+    });
+  router.push({ name: 'catalog-list' });
+  }
+}
 
 onActivated(async () => {
   if (route.params.id !== id.value) {
@@ -49,32 +65,11 @@ onActivated(async () => {
     catalog.value = {
       uuid: route.params.id,
     } as Catalog
-    groups.value = [] as Group[]
-    controls.value = [] as Control[]
-    await loadCatalog(toValue(id))
+    groups.value = [] as Group[];
+    controls.value = [] as Control[];
   }
+  await loadData();
 })
-
-async function loadCatalog(id: string) {
-  catalogStore.get(id).then((data) => {
-    catalog.value = data.data
-    catalogStore.listGroups(id).then((data) => {
-      groups.value = data.data
-    })
-    catalogStore.listControls(id).then((data) => {
-      controls.value = data.data
-    })
-  }).catch(async (response) => {
-    const error = await (response.json()) as ErrorResponse<ErrorBody>;
-    toast.add({
-      severity: 'error',
-      summary: `Error loading catalog - ${response.statusText}`,
-      detail: error.errors.body,
-      life: 3000,
-    });
-    router.push({ name: 'catalog-list' });
-  });
-}
 
 const showGroupForm = ref<boolean>(false);
 const showControlForm = ref<boolean>(false);

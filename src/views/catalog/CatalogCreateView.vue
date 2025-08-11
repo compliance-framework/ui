@@ -28,7 +28,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import PageHeader from '@/components/PageHeader.vue'
-import { type Catalog, useCatalogStore } from '@/stores/catalogs.ts'
+import { type Catalog } from '@/stores/catalogs.ts'
 import { useRouter } from 'vue-router'
 import PageSubHeader from '@/components/PageSubHeader.vue'
 import TertiaryButton from '@/components/TertiaryButton.vue'
@@ -37,21 +37,37 @@ import FormInput from '@/components/forms/FormInput.vue'
 import PrimaryButton from '@/components/PrimaryButton.vue'
 import { BIconArrowRepeat } from 'bootstrap-icons-vue'
 import { v4 as uuidv4 } from 'uuid';
+import { useToast } from 'primevue/usetoast'
+import { useDataApi } from '@/composables/axios'
+import type { ErrorResponse, ErrorBody } from '@/stores/types.ts'
+import type { AxiosError } from 'axios';
 
-const catalogStore = useCatalogStore()
 const catalog = ref<Catalog>({
   metadata: {}
 } as Catalog);
+const toast = useToast();
+
+const { execute } = useDataApi<Catalog>("/api/oscal/catalogs");
 
 const router = useRouter();
 
 async function submit() {
-  catalogStore.create(catalog.value).then((response) => {
-    return router.push({
-      name: 'catalog-view',
-      params: { id: response.data.uuid },
+  try {
+    await execute({
+      method: 'POST',
+      data: catalog.value
     });
-  })
+    router.push({ name: 'catalog-view', params: { id: catalog.value.uuid } });
+  } catch (error) {
+    const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
+    toast.add({
+      severity: 'error',
+      summary: 'Error creating catalog',
+      detail: errorResponse.response?.data.errors.body || 'An error occurred while creating the catalog.',
+      life: 3000,
+    });
+    return;
+  }
 }
 
 function generateUuid() {
