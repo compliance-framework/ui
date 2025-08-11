@@ -1,23 +1,27 @@
 <template>
-  <PageHeader>{{ profile?.metadata.title }}</PageHeader>
-  <PageSubHeader>{{ profile?.uuid }}</PageSubHeader>
+  <template v-if="isLoading">
+    <PageHeader>Loading profile...</PageHeader>
+  </template>
+  <template v-else>
+    <PageHeader>{{ profile?.metadata?.title }}</PageHeader>
+    <PageSubHeader>{{ profile?.uuid }}</PageSubHeader>
 
+    <Tabs value="main">
+      <TabList>
+        <Tab v-for="route in routes" :key="route.name" :value="route.name" as="div">
+          <RouterLink :to="{ name: route.name, params: { id: profile?.uuid } }">
+            {{ route.label }}
+          </RouterLink>
+        </Tab>
+      </TabList>
+    </Tabs>
 
-  <Tabs value="main">
-    <TabList>
-      <Tab v-for="route in routes" :key="route.name" :value="route.name" as="div">
-        <RouterLink :to="{ name: route.name, params: { id: profile?.uuid } }">
-          {{ route.label }}
-        </RouterLink>
-      </Tab>
-    </TabList>
-  </Tabs>
-
-  <RouterView v-slot="{ Component }">
-    <KeepAlive>
-      <component :is="Component" />
-    </KeepAlive>
-  </RouterView>
+    <RouterView v-slot="{ Component }">
+      <KeepAlive>
+        <component :is="Component" />
+      </KeepAlive>
+    </RouterView>
+  </template>
 </template>
 
 <script setup lang="ts">
@@ -28,37 +32,40 @@ import Tabs from '@/volt/Tabs.vue';
 import TabList from '@/volt/TabList.vue';
 import Tab from '@/volt/Tab.vue';
 
-import { useProfileStore, type Profile } from '@/stores/profiles';
-import { onMounted, ref } from 'vue';
-import { useRoute } from 'vue-router';
+import type { Profile } from '@/stores/profiles';
+import { onMounted, ref, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
+import { useDataApi } from '@/composables/axios';
+import type { AxiosError } from 'axios';
+import type { ErrorResponse, ErrorBody } from '@/stores/types';
 
-
-const profileStore = useProfileStore();
-const profile = ref<Profile>();
 const route = useRoute();
+const router = useRouter();
 const toast = useToast();
+const { data: profile, error, isLoading, execute } = useDataApi<Profile>();
+
+watch(error, () => {
+  if (error.value) {
+    const errorResponse = error.value as AxiosError<ErrorResponse<ErrorBody>>;
+    toast.add({
+      severity: 'error',
+      summary: 'Error loading profile',
+      detail: errorResponse.response?.data.errors.body || 'An error occurred while loading the profile data.',
+      life: 3000,
+    });
+    router.push({ name: 'profile-list' });
+  }
+});
+
 
 const routes = ref([
   { name: 'profile-view-controls', label: "Controls" },
   { name: 'profile-view-merge', label: "Merge" }
 ]);
 
-onMounted(() => {
-  const id = route.params.id as string;
-  if (id) {
-    profileStore.get(id).then(resp => {
-      profile.value = resp.data;
-    }).catch(async (response) => {
-      const error = await response.json();
-      toast.add({
-        severity: 'error',
-        summary: `Error loading profile - ${response.statusText}`,
-        detail: error.errors.body,
-        life: 3000,
-      });
-    });
-  }
+onMounted(async() => {
+  await execute("/api/oscal/profiles/" + route.params.id);
 });
 
 </script>
