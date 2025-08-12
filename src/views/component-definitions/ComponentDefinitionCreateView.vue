@@ -34,7 +34,7 @@
 import { ref } from 'vue'
 import PageHeader from '@/components/PageHeader.vue'
 import PageSubHeader from '@/components/PageSubHeader.vue'
-import { type ComponentDefinition, useComponentDefinitionStore } from '@/stores/component-definitions.ts'
+import { type ComponentDefinition } from '@/stores/component-definitions.ts'
 import { useRouter } from 'vue-router'
 import TertiaryButton from '@/components/TertiaryButton.vue'
 import PageCard from '@/components/PageCard.vue'
@@ -44,8 +44,10 @@ import PrimaryButton from '@/components/PrimaryButton.vue'
 import { BIconArrowRepeat } from 'bootstrap-icons-vue'
 import { v4 as uuidv4 } from 'uuid'
 import { useToast } from 'primevue/usetoast'
+import { useDataApi, decamelizeKeys } from '@/composables/axios'
+import type { AxiosError } from 'axios'
+import type { ErrorResponse, ErrorBody } from '@/stores/types'
 
-const componentDefinitionStore = useComponentDefinitionStore()
 const componentDefinition = ref<ComponentDefinition>({
   metadata: {
     title: '',
@@ -53,21 +55,30 @@ const componentDefinition = ref<ComponentDefinition>({
   }
 } as ComponentDefinition)
 
+const { data, execute: createComponentDefinition } = useDataApi<ComponentDefinition>(
+  '/api/oscal/component-definitions',
+  { method: 'POST', transformRequest: [decamelizeKeys] },
+  { immediate: false }
+)
+
 const router = useRouter()
 const toast = useToast()
 
 async function submit() {
   try {
-    const response = await componentDefinitionStore.create(componentDefinition.value)
+    await createComponentDefinition({
+      data: componentDefinition.value
+    })
     await router.push({
       name: 'component-definition-overview',
-      params: { id: response.data.uuid },
+      params: { id: data.value?.uuid },
     })
   } catch (error) {
+    const responseError = error as AxiosError<ErrorResponse<ErrorBody>>
     toast.add({
       severity: 'error',
       summary: 'Error creating component definition',
-      detail: 'Failed to create component definition. Please check your input and try again.',
+      detail: `Failed to create component definition: ${responseError.response?.data.errors.body || 'Unknown error'}. Please check your input and try again.`,
       life: 3000
     })
   }
