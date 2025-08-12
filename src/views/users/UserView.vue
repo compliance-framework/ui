@@ -90,6 +90,7 @@ function saveUser(updatedUser?: CCFUser) {
 }
 
 async function updateLock() {
+  if (!user.value) return;
   const newIsLocked = !user.value.isLocked;
   const updatedUser = { ...user.value, isLocked: newIsLocked };
   try {
@@ -114,6 +115,7 @@ async function updateLock() {
 }
 
 function deleteUser() {
+  if (!user.value) return;
   confirm.require({
     message: `Are you sure you want to delete user ${user.value.firstName} ${user.value.lastName}? This action cannot be undone.`,
     header: 'Confirm Deletion',
@@ -129,6 +131,7 @@ function deleteUser() {
     accept: async () => {
       try {
         await deleteExecute();
+        if (!user.value) return;
         toast.add({
           severity: 'success',
           summary: 'User deleted successfully',

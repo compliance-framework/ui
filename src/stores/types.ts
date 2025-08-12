@@ -1,3 +1,5 @@
+import type { BackMatterResource } from './component-definitions';
+
 export interface Metadata {
   title: string;
   remarks?: string;
@@ -169,3 +171,36 @@ export interface CCFUserCreate {
   password: string;
 }
 
+export interface Profile {
+  uuid: string;
+  metadata: Metadata;
+}
+
+export interface Import {
+  href: string;
+  includeControls: SelectControlsByID[];
+  excludeControls: SelectControlsByID[];
+}
+
+export interface SelectControlsByID {
+  withIds: string[];
+  withChildControls?: string;
+  matching?: { pattern: string };
+}
+
+export interface Merge {
+  asIs?: boolean;
+  combine?: MergeCombine;
+  flat?: object
+}
+
+export type MergeOptions = 'asIs' | 'flat' | 'custom';
+export type MergeCombineOptions = 'use-first' | 'flat';
+
+export interface MergeCombine {
+  method: MergeCombineOptions;
+}
+
+export interface BackMatter {
+  resources: BackMatterResource[];
+}

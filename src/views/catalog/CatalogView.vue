@@ -4,11 +4,12 @@
 
   <div
     class="mt-4 rounded-md bg-white dark:bg-slate-900 border-collapse border border-ccf-300 dark:border-slate-700"
+    v-if="catalog"
   >
     <CatalogGroup v-for="group in groups" :key="group.id" :group="group" :catalog="catalog" />
     <CatalogControl v-for="control in controls" :key="control.id" :control="control" :catalog="catalog" />
   </div>
-  <div class="mt-4">
+  <div class="mt-4" v-if="catalog">
 <!--    <TertiaryButton v-if="controls.length == 0" @click="showGroupForm = true">Add Group</TertiaryButton>-->
 <!--    <TertiaryButton v-if="groups.length == 0" @click="showControlForm = true" class="ml-2">Add Control</TertiaryButton>-->
     <GroupCreateModal @created="groupCreated" :catalog="catalog" v-model="showGroupForm" />
@@ -74,9 +75,9 @@ onActivated(async () => {
 const showGroupForm = ref<boolean>(false);
 const showControlForm = ref<boolean>(false);
 function groupCreated(group: Group) {
-  groups.value.push(group)
+  groups.value?.push(group)
 }
 function controlCreated(control: Control) {
-  controls.value.push(control)
+  controls.value?.push(control)
 }
 </script>

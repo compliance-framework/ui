@@ -1,5 +1,8 @@
 <template>
-  <div>
+  <template v-if="importsLoading || backmatterLoading">
+    <PageHeader>Loading profile controls...</PageHeader>
+  </template>
+  <template v-else>
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8 py-3">
       <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
         <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ importedCatalogsCount }}</div>
@@ -27,7 +30,7 @@
         <hr class="my-4 border-ccf-300 dark:border-slate-700 border-dashed" />
         <p>Excluded Controls</p>
         <ProfileControlGroups :groups="imp.excludeControls" />
-        <PrimaryButton class="mt-2" @click="save(imp)">Save</PrimaryButton>
+        <PrimaryButton class="mt-2" @click="save(toValue(imp))">Save</PrimaryButton>
       </div>
     </CollapsableGroup>
     <PrimaryButton class="mt-4" @click="openCatalogDialog()">Add Catalog Import</PrimaryButton>
@@ -37,25 +40,25 @@
       @update:visible="catalogDialogVisible = $event"
       @import="addImport"
     />
-  </div>
+  </template>
 </template>
 
 <script setup lang="ts">
-import { type BackMatter, useProfileStore, type Import } from '@/stores/profiles';
+import { type BackMatter, type Import } from '@/stores/types';
 import { type BackMatterResource } from '@/stores/component-definitions';
 import { useRoute } from 'vue-router';
-import { onActivated, ref, computed } from 'vue';
+import { ref, computed, toValue } from 'vue';
 import CollapsableGroup from '@/components/CollapsableGroup.vue';
 import PrimaryButton from '@/components/PrimaryButton.vue';
-import type { DataResponse } from '@/stores/types';
 import ProfileControlGroups from '@/components/profiles/ProfileControlGroups.vue';
 import CatalogImportDialog from '@/components/profiles/CatalogImportDialog.vue';
 import { useToast } from 'primevue/usetoast';
 import { useConfirm } from 'primevue/useconfirm';
 import { type Catalog } from '@/oscal';
+import { useDataApi, decamelizeKeys } from '@/composables/axios';
+import type { ErrorResponse, ErrorBody } from '@/stores/types';
+import { type AxiosError } from 'axios';
 
-const profile = useProfileStore();
-const imports = ref<Import[]>([] as Import[]);
 const route = useRoute();
 const toast = useToast();
 const confirm = useConfirm();
@@ -63,33 +66,41 @@ const id = route.params.id as string;
 
 const importedCatalogs = ref<{ [key: string]: string }>({});
 
-const backmatter = ref<BackMatter>({} as BackMatter);
+const { data: imports, isLoading: importsLoading, execute: loadImports } = useDataApi<Import[]>(`/api/oscal/profiles/${id}/imports`, {}, {immediate: true});
+const { data: backmatter, isLoading: backmatterLoading, execute: loadBackmatter } = useDataApi<BackMatter>(`/api/oscal/profiles/${id}/back-matter`, {}, {immediate: true});
+const { data: updatedImport, execute: updateImport } = useDataApi<Import>(null, { method: 'PUT', transformRequest: [decamelizeKeys] }, { immediate: false });
+const { execute: deleteImport } = useDataApi(null, { method: 'DELETE' }, { immediate: false });
+const { execute: addImportExecute } = useDataApi<Import>(null, { method: 'POST' }, { immediate: false });
+
 const catalogDialogVisible = ref(false);
 
-const importedCatalogsCount = computed<number>(() => imports.value.length);
-const includedControlsCount = computed<number>(() => imports.value.reduce((acc, imp) => acc + (imp.includeControls ?? []).reduce((innerAcc, group) => innerAcc + group.withIds.length, 0), 0));
-const excludedControlsCount = computed<number>(() => imports.value.reduce((acc, imp) => acc + (imp.excludeControls ?? []).reduce((innerAcc, group) => innerAcc + group.withIds.length, 0), 0));
+const importedCatalogsCount = computed<number>(() => imports.value?.length ?? 0);
+const includedControlsCount = computed<number>(() => imports.value?.reduce((acc, imp) => acc + (imp.includeControls ?? []).reduce((innerAcc, group) => innerAcc + group.withIds.length, 0), 0) ?? 0);
+const excludedControlsCount = computed<number>(() => imports.value?.reduce((acc, imp) => acc + (imp.excludeControls ?? []).reduce((innerAcc, group) => innerAcc + group.withIds.length, 0), 0) ?? 0);
 
 function findResourceByHref(href: string): BackMatterResource | undefined {
   const hrefUUID = href.startsWith('#') ? href.substring(1) : href;
   return backmatter.value?.resources.find((resource) => resource.uuid === hrefUUID);
 }
 
-function save(imp: Import) {
-  profile.updateImport(id, imp).then((newImp: DataResponse<Import>) => {
+async function save(imp: Import) {
+  try {
+    await updateImport(`/api/oscal/profiles/${id}/imports/${encodeURIComponent(imp.href)}`, { data: imp });
+    await loadImports();
     toast.add({
       severity: 'success',
       summary: 'Import saved successfully',
-      detail: `Import ${findResourceByHref(newImp.data.href)?.title || 'No Title'} has been updated.`,
+      detail: `Import ${findResourceByHref(updatedImport.value?.href ?? "")?.title || 'No Title'} has been updated.`,
       life: 3000,
     });
-  }).catch((error) => {
+  } catch (error) {
     console.error('Error saving import:', error);
-  });
+  }
 }
 
 function gatherImportedCatalogs() {
   importedCatalogs.value = {};
+  if (!imports.value) return;
   for (const imp of imports.value) {
       const resource = findResourceByHref(imp.href);
       if (resource) {
@@ -103,9 +114,18 @@ function gatherImportedCatalogs() {
     }
 }
 
-function addImport(catalog: Catalog) {
-  profile.addImport(id, catalog.uuid).then(() => {
-    loadData();
+async function addImport(catalog: Catalog) {
+  try {
+    await addImportExecute(`/api/oscal/profiles/${id}/imports/add`, {
+      data: {
+        uuid: catalog.uuid,
+        type: 'catalog',
+      }
+    });
+    await loadImports();
+    await loadBackmatter();
+    gatherImportedCatalogs();
+
     toast.add({
       severity: 'success',
       summary: 'Catalog imported successfully',
@@ -113,14 +133,15 @@ function addImport(catalog: Catalog) {
       life: 3000,
     });
     catalogDialogVisible.value = false;
-  }).catch((error) => {
+  } catch(error) {
+    const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
     toast.add({
       severity: 'error',
       summary: 'Error importing catalog',
-      detail: error.message,
+      detail: errorResponse.response?.data.errors.body || 'An error occurred while importing the catalog.',
       life: 3000,
     });
-  });
+  }
 }
 
 function removeImport(imp: Import) {
@@ -136,45 +157,33 @@ function removeImport(imp: Import) {
       label: 'Remove',
       severity: 'danger',
     },
-    accept: () => {
-      profile.deleteImport(id, imp.href).then(() => {
-        loadData();
-        gatherImportedCatalogs();
+    accept: async () => {
+      try {
+        await deleteImport(`/api/oscal/profiles/${id}/imports/${encodeURIComponent(imp.href)}`);
         toast.add({
           severity: 'success',
           summary: 'Import removed successfully',
-          detail: `Import ${findResourceByHref(imp.href)?.title || 'No Title'} has been removed.`,
+          detail: `Import ${findResourceByHref(imp.href)?.title ?? imp.href} has been removed.`,
           life: 3000,
         });
-      }).catch((error) => {
+        await loadImports();
+        await loadBackmatter();
+        gatherImportedCatalogs();
+      } catch (error) {
+        const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
         toast.add({
           severity: 'error',
           summary: 'Error removing import',
-          detail: error.message,
+          detail: errorResponse?.response?.data?.errors.body ?? 'An error occurred while removing the import.',
           life: 3000,
         });
-      });
+      }
     }
-  });
-}
-
-function loadData() {
-  Promise.all([
-    profile.listImports(id),
-    profile.getBackMatter(id)
-  ]).then(([importsData, backmatterData]) => {
-    imports.value = importsData.data;
-    backmatter.value = backmatterData.data;
-    gatherImportedCatalogs();
   });
 }
 
 function openCatalogDialog() {
   catalogDialogVisible.value = true;
 }
-
-onActivated(() => {
-  loadData();
-});
 
 </script>

@@ -1,5 +1,5 @@
 <template>
-  <PageCard>
+  <PageCard v-if="merge">
     <h1 class="text-2xl font-bold mb-6">Merge Settings</h1>
     <form class="space-y-4">
       <div>
@@ -32,74 +32,58 @@
 
 <script setup lang="ts">
 import PageCard from '@/components/PageCard.vue';
-import { useProfileStore, type Merge, type MergeOptions } from '@/stores/profiles';
-import { ref, watch, onActivated, onMounted } from 'vue';
+import { type Merge, type MergeOptions } from '@/stores/types';
+import { ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
 import PrimaryButton from '@/components/PrimaryButton.vue';
+import { decamelizeKeys, useDataApi } from '@/composables/axios';
+import type { AxiosError } from 'axios';
+import type { ErrorResponse, ErrorBody } from '@/stores/types';
 
-const profileStore = useProfileStore();
 const route = useRoute();
 const toast = useToast();
-const merge = ref<Merge>({} as Merge);
 const id = route.params.id as string;
+
+const { data: merge } = useDataApi<Merge>(`/api/oscal/profiles/${id}/merge`);
+const { data: updatedMerge, execute: updateMergeExecute } = useDataApi<Merge>(`/api/oscal/profiles/${id}/merge`, { method: 'PUT', transformRequest: [decamelizeKeys] }, { immediate: false });
+
+watch(merge, () => {
+  if (merge.value) {
+    mergeType.value = merge.value.asIs ? 'asIs' : merge.value.flat ? 'flat' : 'custom';
+    combineEnabled.value = !!merge.value.combine;
+  }
+}, { immediate: true });
 
 const mergeType = ref<MergeOptions>('asIs');
 const combineEnabled = ref(false);
 
-function updateMerge() {
-  profileStore.updateMerge(id, merge.value).then(() => {
+async function updateMerge() {
+  if (!merge.value) return;
+  try {
+    await updateMergeExecute({
+      data: merge.value
+    })
+    merge.value = updatedMerge.value;
     toast.add({
       severity: 'success',
       summary: 'Merge settings updated successfully',
       life: 3000,
     });
-  }).catch(async (response) => {
-    const error = await response.json();
+  } catch (error) {
+    const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
     toast.add({
       severity: 'error',
-      summary: `Error updating merge settings - ${response.statusText}`,
-      detail: error.errors.body,
+      summary: `Error updating merge settings - ${errorResponse.response?.statusText || 'Unknown error'}`,
+      detail: errorResponse.response?.data.errors.body || 'An error occurred while updating merge settings.',
       life: 3000,
-    });
-  });
-}
-
-function loadMergeData() {
-  if (id) {
-    profileStore.getMerge(id).then(resp => {
-      merge.value = resp.data;
-      // Set mergeType and combineEnabled based on loaded data
-      if ('flat' in merge.value) {
-        mergeType.value = 'flat';
-      } else if ('custom' in merge.value) {
-        mergeType.value = 'custom';
-      } else {
-        mergeType.value = 'asIs';
-      }
-      combineEnabled.value = !!merge.value.combine;
-    }).catch(async (response) => {
-      const error = await response.json();
-      toast.add({
-        severity: 'error',
-        summary: `Error loading merge settings - ${response.statusText}`,
-        detail: error.errors.body,
-        life: 3000,
-      });
     });
   }
 }
 
-onActivated(() => {
-  loadMergeData();
-});
-
-onMounted(() => {
-  loadMergeData();
-});
-
 // Watch mergeType and update merge object
 watch(mergeType, (type) => {
+  if (!merge.value) return;
   if (type === 'asIs') {
     merge.value.asIs = true;
     delete merge.value.flat;
@@ -113,6 +97,7 @@ watch(mergeType, (type) => {
 
 // Watch combineEnabled and update merge.combine
 watch(combineEnabled, (enabled) => {
+  if (!merge.value) return;
   if (enabled) {
     if (!merge.value.combine) {
       merge.value.combine = { method: 'use-first' };

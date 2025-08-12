@@ -166,6 +166,6 @@ function getPart(type: string) {
 const showControlForm = ref<boolean>(false);
 
 function controlCreated(control: Control) {
-  controls.value.push(control);
+  controls.value?.push(control);
 }
 </script>
