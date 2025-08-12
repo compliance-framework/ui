@@ -32,7 +32,7 @@ import Tabs from '@/volt/Tabs.vue';
 import TabList from '@/volt/TabList.vue';
 import Tab from '@/volt/Tab.vue';
 
-import type { Profile } from '@/stores/profiles';
+import type { Profile } from '@/stores/types';
 import { onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useToast } from 'primevue/usetoast';

@@ -1,4 +1,4 @@
-import type { SelectControlsByID } from '@/stores/profiles';
+import type { SelectControlsByID } from '@/stores/types';
 
 export function useProfileControlGroups() {
   function createGroup(groups: SelectControlsByID[]) {

@@ -36,7 +36,7 @@
 
 <script lang="ts" setup>
 import PageHeader from '@/components/PageHeader.vue';
-import { type Profile } from '@/stores/profiles';
+import { type Profile } from '@/stores/types';
 import { useDataApi } from '@/composables/axios';
 import { watch } from 'vue';
 import { useToast } from 'primevue/usetoast';

@@ -32,7 +32,7 @@
 
 <script setup lang="ts">
 import PageCard from '@/components/PageCard.vue';
-import { type Merge, type MergeOptions } from '@/stores/profiles';
+import { type Merge, type MergeOptions } from '@/stores/types';
 import { ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useToast } from 'primevue/usetoast';

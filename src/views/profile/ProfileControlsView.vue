@@ -44,7 +44,7 @@
 </template>
 
 <script setup lang="ts">
-import { type BackMatter, type Import } from '@/stores/profiles';
+import { type BackMatter, type Import } from '@/stores/types';
 import { type BackMatterResource } from '@/stores/component-definitions';
 import { useRoute } from 'vue-router';
 import { ref, computed, toValue } from 'vue';
