@@ -19,12 +19,12 @@
       </thead>
       <tbody v-if="isLoading">
         <tr>
-          <td class="py-2 px-4 font-medium text-wrap">Loading ...</td>
+          <td class="py-2 px-4 font-medium text-wrap" aria-live="polite" role="status">Loading ...</td>
         </tr>
       </tbody>
       <tbody v-else-if="error">
         <tr>
-          <td class="py-2 px-4 font-medium text-wrap text-red-500">Error loading subjects</td>
+          <td class="py-2 px-4 font-medium text-wrap text-red-500" aria-live="assertive" role="alert">Error loading subjects</td>
         </tr>
       </tbody>
       <tbody v-else>
