@@ -30,7 +30,7 @@
         <hr class="my-4 border-ccf-300 dark:border-slate-700 border-dashed" />
         <p>Excluded Controls</p>
         <ProfileControlGroups :groups="imp.excludeControls" />
-        <PrimaryButton class="mt-2" @click="save(imp)">Save</PrimaryButton>
+        <PrimaryButton class="mt-2" @click="save(toValue(imp))">Save</PrimaryButton>
       </div>
     </CollapsableGroup>
     <PrimaryButton class="mt-4" @click="openCatalogDialog()">Add Catalog Import</PrimaryButton>
@@ -44,21 +44,20 @@
 </template>
 
 <script setup lang="ts">
-import { type BackMatter, useProfileStore, type Import } from '@/stores/profiles';
+import { type BackMatter, type Import } from '@/stores/profiles';
 import { type BackMatterResource } from '@/stores/component-definitions';
 import { useRoute } from 'vue-router';
-import { onActivated, ref, computed } from 'vue';
+import { onActivated, ref, computed, toValue } from 'vue';
 import CollapsableGroup from '@/components/CollapsableGroup.vue';
 import PrimaryButton from '@/components/PrimaryButton.vue';
-import type { DataResponse } from '@/stores/types';
 import ProfileControlGroups from '@/components/profiles/ProfileControlGroups.vue';
 import CatalogImportDialog from '@/components/profiles/CatalogImportDialog.vue';
 import { useToast } from 'primevue/usetoast';
 import { useConfirm } from 'primevue/useconfirm';
 import { type Catalog } from '@/oscal';
-import { useDataApi } from '@/composables/axios';
-
-const profile = useProfileStore();
+import { useDataApi, decamelizeKeys } from '@/composables/axios';
+import type { ErrorResponse, ErrorBody } from '@/stores/types';
+import { type AxiosError } from 'axios';
 
 const route = useRoute();
 const toast = useToast();
@@ -67,8 +66,12 @@ const id = route.params.id as string;
 
 const importedCatalogs = ref<{ [key: string]: string }>({});
 
-const { data: imports, isLoading: importsLoading } = useDataApi<Import[]>(`/api/oscal/profiles/${id}/imports`, {}, {immediate: true});
-const { data: backmatter, isLoading: backmatterLoading } = useDataApi<BackMatter>(`/api/oscal/profiles/${id}/back-matter`, {}, {immediate: true});
+const { data: imports, isLoading: importsLoading, execute: loadImports } = useDataApi<Import[]>(`/api/oscal/profiles/${id}/imports`, {}, {immediate: true});
+const { data: backmatter, isLoading: backmatterLoading, execute: loadBackmatter } = useDataApi<BackMatter>(`/api/oscal/profiles/${id}/back-matter`, {}, {immediate: true});
+const { execute: updateImport } = useDataApi<Import>(null, { method: 'PUT', transformRequest: [decamelizeKeys] }, { immediate: false });
+const { execute: deleteImport } = useDataApi(null, { method: 'DELETE' }, { immediate: false });
+const { execute: addImportExecute } = useDataApi<Import>(null, { method: 'POST' }, { immediate: false });
+
 const catalogDialogVisible = ref(false);
 
 const importedCatalogsCount = computed<number>(() => imports.value?.length ?? 0);
@@ -80,17 +83,18 @@ function findResourceByHref(href: string): BackMatterResource | undefined {
   return backmatter.value?.resources.find((resource) => resource.uuid === hrefUUID);
 }
 
-function save(imp: Import) {
-  profile.updateImport(id, imp).then((newImp: DataResponse<Import>) => {
+async function save(imp: Import) {
+  try {
+    const request = await updateImport(`/api/oscal/profiles/${id}/imports/${encodeURIComponent(imp.href)}`, { data: imp });
     toast.add({
       severity: 'success',
       summary: 'Import saved successfully',
-      detail: `Import ${findResourceByHref(newImp.data.href)?.title || 'No Title'} has been updated.`,
+      detail: `Import ${findResourceByHref(request.data.value?.data.href ?? "")?.title || 'No Title'} has been updated.`,
       life: 3000,
     });
-  }).catch((error) => {
+  } catch (error) {
     console.error('Error saving import:', error);
-  });
+  }
 }
 
 function gatherImportedCatalogs() {
@@ -109,8 +113,18 @@ function gatherImportedCatalogs() {
     }
 }
 
-function addImport(catalog: Catalog) {
-  profile.addImport(id, catalog.uuid).then(() => {
+async function addImport(catalog: Catalog) {
+  try {
+    await addImportExecute(`/api/oscal/profiles/${id}/imports/add`, {
+      data: {
+        uuid: catalog.uuid,
+        type: 'catalog',
+      }
+    });
+    await loadImports();
+    await loadBackmatter();
+    gatherImportedCatalogs();
+
     toast.add({
       severity: 'success',
       summary: 'Catalog imported successfully',
@@ -118,14 +132,15 @@ function addImport(catalog: Catalog) {
       life: 3000,
     });
     catalogDialogVisible.value = false;
-  }).catch((error) => {
+  } catch(error) {
+    const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
     toast.add({
       severity: 'error',
       summary: 'Error importing catalog',
-      detail: error.message,
+      detail: errorResponse.response?.data.errors.body || 'An error occurred while importing the catalog.',
       life: 3000,
     });
-  });
+  }
 }
 
 function removeImport(imp: Import) {
@@ -141,23 +156,27 @@ function removeImport(imp: Import) {
       label: 'Remove',
       severity: 'danger',
     },
-    accept: () => {
-      profile.deleteImport(id, imp.href).then(() => {
-        gatherImportedCatalogs();
+    accept: async () => {
+      try {
+        await deleteImport(`/api/oscal/profiles/${id}/imports/${encodeURIComponent(imp.href)}`);
         toast.add({
           severity: 'success',
           summary: 'Import removed successfully',
-          detail: `Import ${findResourceByHref(imp.href)?.title || 'No Title'} has been removed.`,
+          detail: `Import ${findResourceByHref(imp.href)?.title ?? imp.href} has been removed.`,
           life: 3000,
         });
-      }).catch((error) => {
+        await loadImports();
+        await loadBackmatter();
+        gatherImportedCatalogs();
+      } catch (error) {
+        const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
         toast.add({
           severity: 'error',
           summary: 'Error removing import',
-          detail: error.message,
+          detail: errorResponse?.response?.data?.errors.body ?? 'An error occurred while removing the import.',
           life: 3000,
         });
-      });
+      }
     }
   });
 }

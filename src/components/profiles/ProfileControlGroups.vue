@@ -22,6 +22,7 @@ import ProfileControlEditor from '@/components/profiles/ProfileControlEditor.vue
 import { useProfileControlGroups } from './useProfileControlGroups';
 import type { SelectControlsByID } from '@/stores/profiles';
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const props = defineProps<{ groups: (SelectControlsByID & { _newId?: string })[] }>();
 const { createGroup, removeGroup } = useProfileControlGroups();
 </script>
