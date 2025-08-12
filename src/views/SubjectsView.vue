@@ -17,7 +17,17 @@
           <th class="px-4 py-2">Actions</th>
         </tr>
       </thead>
-      <tbody>
+      <tbody v-if="isLoading">
+        <tr>
+          <td class="py-2 px-4 font-medium text-wrap">Loading ...</td>
+        </tr>
+      </tbody>
+      <tbody v-else-if="error">
+        <tr>
+          <td class="py-2 px-4 font-medium text-wrap text-red-500">Error loading subjects</td>
+        </tr>
+      </tbody>
+      <tbody v-else>
       <tr v-for="subject in subjects" :key="subject._id" class="hover:bg-zinc-50 dark:hover:bg-slate-800 border-b border-ccf-300 dark:border-slate-800">
         <td class="py-2 px-4 whitespace-nowrap">{{ subject.title }}</td>
         <td class="py-2 px-4">{{ subject.remarks }}</td>
@@ -37,21 +47,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
 import PageHeader from '@/components/PageHeader.vue'
-import { useApiStore, type DataResponse } from '@/stores/api'
 import type { Subject } from '@/stores/subjects'
-import LabelList from '@/components/LabelList.vue'
-import ResultStatusRing from '@/components/ResultStatusRing.vue'
 import PageSubHeader from '@/components/PageSubHeader.vue'
+import { useDataApi } from '@/composables/axios'
 
-const apiStore = useApiStore()
+const { data: subjects, isLoading, error } = useDataApi<Subject[]>('/api/subjects');
 
-const subjects = ref<Subject[]>([])
-
-onMounted(async () => {
-  apiStore.getAllSubjects().then((response: DataResponse<Subject[]>) => {
-    subjects.value = response.data || []
-  })
-})
 </script>
