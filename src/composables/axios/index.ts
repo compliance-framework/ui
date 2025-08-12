@@ -9,6 +9,7 @@ import type { DataResponse } from '@/stores/types.ts';
 import { shallowRef, toValue, watch, type Ref } from 'vue';
 import { useAxios } from '@vueuse/integrations/useAxios.mjs';
 import camelcaseKeys from 'camelcase-keys';
+import { default as _decamelizeKeys } from 'decamelize-keys';
 
 
 const useAuthenticatedInstance = () => {
@@ -125,5 +126,10 @@ function useDataApi<T>(
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const decamelizeKeys = (data: any) => {
+  return JSON.stringify(_decamelizeKeys(data, { separator: '-', deep: true }));
+};
 
-export { useAuthenticatedInstance, useGuestInstance, useDataApi };
+
+export { useAuthenticatedInstance, useGuestInstance, useDataApi, decamelizeKeys };
