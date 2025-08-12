@@ -4,7 +4,7 @@ import { useUserStore } from '@/stores/auth';
 import { useRouter } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
 import type { UseAxiosOptions, UseAxiosOptionsWithInitialData } from '@vueuse/integrations/useAxios.mjs';
-import type { AxiosRequestConfig } from 'axios';
+import type { AxiosHeaders, AxiosRequestConfig } from 'axios';
 import type { DataResponse } from '@/stores/types.ts';
 import { shallowRef, toValue, watch, type Ref } from 'vue';
 import { useAxios } from '@vueuse/integrations/useAxios.mjs';
@@ -127,15 +127,9 @@ function useDataApi<T>(
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const decamelizeKeys = (data: any, headers: { [key: string]: string }) => {
-  const lowerCaseHeaders = Object.keys(headers).reduce((acc, key) => {
-    acc[key.toLowerCase()] = headers[key];
-    return acc;
-  }, {} as { [key: string]: string });
-
-  if (!('content-type' in lowerCaseHeaders)) {
-    headers['Content-Type'] = 'application/json';
-  }
+const decamelizeKeys = (data: any, headers: AxiosHeaders) => {
+  // Enforce Content-Type header for JSON data
+  headers.set('Content-Type', 'application/json');
 
   return JSON.stringify(_decamelizeKeys(data, { separator: '-', deep: true }));
 };
