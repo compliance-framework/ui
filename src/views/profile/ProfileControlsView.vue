@@ -1,5 +1,8 @@
 <template>
-  <div>
+  <template v-if="importsLoading || backmatterLoading">
+    <PageHeader>Loading profile controls...</PageHeader>
+  </template>
+  <template v-else>
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8 py-3">
       <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
         <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ importedCatalogsCount }}</div>
@@ -37,7 +40,7 @@
       @update:visible="catalogDialogVisible = $event"
       @import="addImport"
     />
-  </div>
+  </template>
 </template>
 
 <script setup lang="ts">
@@ -53,9 +56,10 @@ import CatalogImportDialog from '@/components/profiles/CatalogImportDialog.vue';
 import { useToast } from 'primevue/usetoast';
 import { useConfirm } from 'primevue/useconfirm';
 import { type Catalog } from '@/oscal';
+import { useDataApi } from '@/composables/axios';
 
 const profile = useProfileStore();
-const imports = ref<Import[]>([] as Import[]);
+
 const route = useRoute();
 const toast = useToast();
 const confirm = useConfirm();
@@ -63,12 +67,13 @@ const id = route.params.id as string;
 
 const importedCatalogs = ref<{ [key: string]: string }>({});
 
-const backmatter = ref<BackMatter>({} as BackMatter);
+const { data: imports, isLoading: importsLoading } = useDataApi<Import[]>(`/api/oscal/profiles/${id}/imports`, {}, {immediate: true});
+const { data: backmatter, isLoading: backmatterLoading } = useDataApi<BackMatter>(`/api/oscal/profiles/${id}/back-matter`, {}, {immediate: true});
 const catalogDialogVisible = ref(false);
 
-const importedCatalogsCount = computed<number>(() => imports.value.length);
-const includedControlsCount = computed<number>(() => imports.value.reduce((acc, imp) => acc + (imp.includeControls ?? []).reduce((innerAcc, group) => innerAcc + group.withIds.length, 0), 0));
-const excludedControlsCount = computed<number>(() => imports.value.reduce((acc, imp) => acc + (imp.excludeControls ?? []).reduce((innerAcc, group) => innerAcc + group.withIds.length, 0), 0));
+const importedCatalogsCount = computed<number>(() => imports.value?.length ?? 0);
+const includedControlsCount = computed<number>(() => imports.value?.reduce((acc, imp) => acc + (imp.includeControls ?? []).reduce((innerAcc, group) => innerAcc + group.withIds.length, 0), 0) ?? 0);
+const excludedControlsCount = computed<number>(() => imports.value?.reduce((acc, imp) => acc + (imp.excludeControls ?? []).reduce((innerAcc, group) => innerAcc + group.withIds.length, 0), 0) ?? 0);
 
 function findResourceByHref(href: string): BackMatterResource | undefined {
   const hrefUUID = href.startsWith('#') ? href.substring(1) : href;
@@ -90,6 +95,7 @@ function save(imp: Import) {
 
 function gatherImportedCatalogs() {
   importedCatalogs.value = {};
+  if (!imports.value) return;
   for (const imp of imports.value) {
       const resource = findResourceByHref(imp.href);
       if (resource) {
@@ -105,7 +111,6 @@ function gatherImportedCatalogs() {
 
 function addImport(catalog: Catalog) {
   profile.addImport(id, catalog.uuid).then(() => {
-    loadData();
     toast.add({
       severity: 'success',
       summary: 'Catalog imported successfully',
@@ -138,7 +143,6 @@ function removeImport(imp: Import) {
     },
     accept: () => {
       profile.deleteImport(id, imp.href).then(() => {
-        loadData();
         gatherImportedCatalogs();
         toast.add({
           severity: 'success',
@@ -158,23 +162,11 @@ function removeImport(imp: Import) {
   });
 }
 
-function loadData() {
-  Promise.all([
-    profile.listImports(id),
-    profile.getBackMatter(id)
-  ]).then(([importsData, backmatterData]) => {
-    imports.value = importsData.data;
-    backmatter.value = backmatterData.data;
-    gatherImportedCatalogs();
-  });
-}
-
 function openCatalogDialog() {
   catalogDialogVisible.value = true;
 }
 
-onActivated(() => {
-  loadData();
+onActivated(async () => {
 });
 
 </script>

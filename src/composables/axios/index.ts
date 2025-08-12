@@ -8,6 +8,7 @@ import type { AxiosRequestConfig } from 'axios';
 import type { DataResponse } from '@/stores/types.ts';
 import { shallowRef, toValue, watch, type Ref } from 'vue';
 import { useAxios } from '@vueuse/integrations/useAxios.mjs';
+import camelcaseKeys from 'camelcase-keys';
 
 
 const useAuthenticatedInstance = () => {
@@ -53,6 +54,20 @@ const useAuthenticatedInstance = () => {
     }
   );
 
+  instance.interceptors.response.use(
+    (response) => {
+      // Brute force camelcase conversion. OSCAL apis are all kebab-case so should be converted to
+      // camel case, but any manually written APIs will be camel case and therefore won't change
+      if (response.data) {
+        response.data = camelcaseKeys(response.data, { deep: true });
+      }
+      return response;
+    },
+    (error) => {
+      return Promise.reject(error);
+    }
+  );
+
   return instance;
 };
 
@@ -91,14 +106,12 @@ function useDataApi<T>(
     options ?? { immediate: true } as UseAxiosOptions
   );
 
-  let initialData: T;
+  let initialData: T | undefined = undefined;
   if (options && 'initialData' in options) {
     initialData = options.initialData as T;
-  } else {
-    initialData = {} as T;
   }
 
-  const data = shallowRef<T>(initialData);
+  const data = shallowRef<T | undefined>(initialData);
 
   watch(
     ax.data,
