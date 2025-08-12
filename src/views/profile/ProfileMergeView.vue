@@ -59,7 +59,7 @@ const mergeType = ref<MergeOptions>('asIs');
 const combineEnabled = ref(false);
 
 async function updateMerge() {
-  if (!merge.value) { return }
+  if (!merge.value) return;
   try {
     await updateMergeExecute({
       data: merge.value

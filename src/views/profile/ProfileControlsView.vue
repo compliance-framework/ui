@@ -47,7 +47,7 @@
 import { type BackMatter, type Import } from '@/stores/profiles';
 import { type BackMatterResource } from '@/stores/component-definitions';
 import { useRoute } from 'vue-router';
-import { onActivated, ref, computed, toValue } from 'vue';
+import { ref, computed, toValue } from 'vue';
 import CollapsableGroup from '@/components/CollapsableGroup.vue';
 import PrimaryButton from '@/components/PrimaryButton.vue';
 import ProfileControlGroups from '@/components/profiles/ProfileControlGroups.vue';
@@ -68,7 +68,7 @@ const importedCatalogs = ref<{ [key: string]: string }>({});
 
 const { data: imports, isLoading: importsLoading, execute: loadImports } = useDataApi<Import[]>(`/api/oscal/profiles/${id}/imports`, {}, {immediate: true});
 const { data: backmatter, isLoading: backmatterLoading, execute: loadBackmatter } = useDataApi<BackMatter>(`/api/oscal/profiles/${id}/back-matter`, {}, {immediate: true});
-const { execute: updateImport } = useDataApi<Import>(null, { method: 'PUT', transformRequest: [decamelizeKeys] }, { immediate: false });
+const { data: updatedImport, execute: updateImport } = useDataApi<Import>(null, { method: 'PUT', transformRequest: [decamelizeKeys] }, { immediate: false });
 const { execute: deleteImport } = useDataApi(null, { method: 'DELETE' }, { immediate: false });
 const { execute: addImportExecute } = useDataApi<Import>(null, { method: 'POST' }, { immediate: false });
 
@@ -85,11 +85,12 @@ function findResourceByHref(href: string): BackMatterResource | undefined {
 
 async function save(imp: Import) {
   try {
-    const request = await updateImport(`/api/oscal/profiles/${id}/imports/${encodeURIComponent(imp.href)}`, { data: imp });
+    await updateImport(`/api/oscal/profiles/${id}/imports/${encodeURIComponent(imp.href)}`, { data: imp });
+    await loadImports();
     toast.add({
       severity: 'success',
       summary: 'Import saved successfully',
-      detail: `Import ${findResourceByHref(request.data.value?.data.href ?? "")?.title || 'No Title'} has been updated.`,
+      detail: `Import ${findResourceByHref(updatedImport.value?.href ?? "")?.title || 'No Title'} has been updated.`,
       life: 3000,
     });
   } catch (error) {
@@ -184,8 +185,5 @@ function removeImport(imp: Import) {
 function openCatalogDialog() {
   catalogDialogVisible.value = true;
 }
-
-onActivated(async () => {
-});
 
 </script>

@@ -128,9 +128,15 @@ function useDataApi<T>(
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const decamelizeKeys = (data: any, headers: { [key: string]: string }) => {
-  if(!("content-type" in headers) || !('Content-Type' in headers)) {
+  const lowerCaseHeaders = Object.keys(headers).reduce((acc, key) => {
+    acc[key.toLowerCase()] = headers[key];
+    return acc;
+  }, {} as { [key: string]: string });
+
+  if (!('content-type' in lowerCaseHeaders)) {
     headers['Content-Type'] = 'application/json';
   }
+
   return JSON.stringify(_decamelizeKeys(data, { separator: '-', deep: true }));
 };
 
