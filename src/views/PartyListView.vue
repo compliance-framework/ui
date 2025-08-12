@@ -5,7 +5,13 @@
   <div
     class="mt-4 rounded-md bg-white dark:bg-slate-900 border-collapse border border-ccf-300 dark:border-slate-700"
   >
-    <CollapsableGroup v-for="party in parties" :key="party.uuid">
+    <template v-if="isLoading">
+      <p aria-live="polite" role="status">Loading...</p>
+    </template>
+    <template v-if="error">
+      <p class="text-red-500" aria-live="assertive" role="alert">Error loading parties</p>
+    </template>
+    <CollapsableGroup v-else v-for="party in parties" :key="party.uuid">
       <template #header>
         <div class="py-2 px-4 flex items-center gap-4">
           <h3>
@@ -17,24 +23,17 @@
         </div>
       </template>
       <div class="px-4 py-4 dark:bg-slate-950 border-b border-ccf-300 dark:border-slate-700">
-        <p>{{ party.remarks}}</p>
+        <p>{{ party.remarks }}</p>
       </div>
     </CollapsableGroup>
   </div>
 </template>
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
 import PageHeader from '@/components/PageHeader.vue'
 import PageSubHeader from '@/components/PageSubHeader.vue'
-import { type Party, usePartyStore } from '@/stores/parties.ts'
+import type { Party } from '@/stores/types.ts'
 import CollapsableGroup from '@/components/CollapsableGroup.vue'
+import { useDataApi } from '@/composables/axios'
 
-const partyStore = usePartyStore()
-const parties = ref<Party[]>([] as Party[]);
-
-onMounted(() => {
-  partyStore.list().then((data) => {
-    parties.value = data.data
-  })
-})
+const { data: parties, isLoading, error } = useDataApi<Party[]>('/api/oscal/parties');
 </script>
