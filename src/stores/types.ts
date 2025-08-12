@@ -227,3 +227,13 @@ export interface Party {
   emailAddresses: string[];
   telephoneNumbers: string[];
 }
+
+export interface Role {
+  id: string;
+  title?: string;
+  shortName?: string;
+  description?: string;
+  links: Link[];
+  props: Property[];
+  remarks?: string;
+}

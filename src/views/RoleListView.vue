@@ -29,7 +29,7 @@
 import PageHeader from '@/components/PageHeader.vue'
 import PageSubHeader from '@/components/PageSubHeader.vue'
 import CollapsableGroup from '@/components/CollapsableGroup.vue'
-import { type Role } from '@/stores/roles.ts'
+import { type Role } from '@/stores/types.ts'
 import { useDataApi } from '@/composables/axios';
 
 const { data: roles, isLoading, error } = useDataApi<Role[]>('/api/oscal/roles');
