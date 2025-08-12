@@ -204,3 +204,36 @@ export interface MergeCombine {
 export interface BackMatter {
   resources: BackMatterResource[];
 }
+
+export interface Address {
+  addrLines?: string[];
+  city?: string;
+  country?: string;
+  postalCode?: string;
+  state?: string;
+  type?: string;
+}
+
+export interface Party {
+  uuid: string;
+  locationUuids: string;
+  memberOfOrganizations: string;
+  name: string;
+  remarks: string;
+  shortName: string;
+  type: string;
+
+  addresses: Address[];
+  emailAddresses: string[];
+  telephoneNumbers: string[];
+}
+
+export interface Role {
+  id: string;
+  title?: string;
+  shortName?: string;
+  description?: string;
+  links: Link[];
+  props: Property[];
+  remarks?: string;
+}
