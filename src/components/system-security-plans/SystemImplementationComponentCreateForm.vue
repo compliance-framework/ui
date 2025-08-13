@@ -7,7 +7,7 @@
       <label class="inline-block pb-2 dark:text-slate-300">UUID</label>
       <div class="flex gap-2">
         <FormInput v-model="componentData.uuid" placeholder="Component UUID" class="flex-1" readonly />
-        <button 
+        <button
           type="button"
           @click="generateUUID"
           class="px-3 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors"
@@ -48,8 +48,8 @@
       <div class="p-4 border border-ccf-300 dark:border-slate-700 rounded-md bg-gray-50 dark:bg-slate-800">
         <div class="mb-3">
           <label class="inline-block pb-1 text-sm dark:text-slate-300">State <span class="text-red-500">*</span></label>
-          <select 
-            v-model="componentData.status!.state" 
+          <select
+            v-model="componentData.status!.state"
             class="w-full p-2 border border-ccf-300 dark:border-slate-700 rounded-md bg-white dark:bg-slate-900 dark:text-slate-300"
             required
           >
@@ -61,7 +61,7 @@
             <option value="other">Other</option>
           </select>
         </div>
-        
+
         <div>
           <label class="inline-block pb-1 text-sm dark:text-slate-300">Remarks</label>
           <FormTextarea v-model="componentData.status!.remarks" rows="2" />
@@ -73,14 +73,14 @@
     <div class="mb-6">
       <label class="inline-block pb-2 dark:text-slate-300">Protocols</label>
       <div class="space-y-4">
-        <div 
-          v-for="(protocol, index) in componentData.protocols" 
+        <div
+          v-for="(protocol, index) in componentData.protocols"
           :key="index"
           class="p-4 border border-ccf-300 dark:border-slate-700 rounded-md bg-gray-50 dark:bg-slate-800"
         >
           <div class="flex justify-between items-start mb-3">
             <h4 class="text-sm font-medium dark:text-slate-300">Protocol {{ index + 1 }}</h4>
-            <button 
+            <button
               type="button"
               @click="removeProtocol(index)"
               class="text-red-500 hover:text-red-700"
@@ -88,7 +88,7 @@
               Remove
             </button>
           </div>
-          
+
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
             <div>
               <label class="inline-block pb-1 text-sm dark:text-slate-300">Title</label>
@@ -99,30 +99,30 @@
               <FormInput v-model="protocol.name" placeholder="Protocol name" />
             </div>
           </div>
-          
+
           <!-- Port Ranges -->
           <div class="mb-3">
             <label class="inline-block pb-1 text-sm dark:text-slate-300">Port Ranges</label>
             <div class="space-y-2">
               <div v-for="(range, rangeIndex) in protocol.portRanges" :key="rangeIndex" class="flex gap-2">
-                <FormInput 
-                  v-model="range.transport" 
+                <FormInput
+                  v-model="range.transport"
                   placeholder="Transport (TCP/UDP)"
                   class="flex-1"
                 />
-                <FormInput 
-                  v-model="range.start" 
+                <FormInput
+                  v-model="range.start"
                   placeholder="Start port"
                   type="number"
                   class="w-24"
                 />
-                <FormInput 
-                  v-model="range.end" 
+                <FormInput
+                  v-model="range.end"
                   placeholder="End port"
                   type="number"
                   class="w-24"
                 />
-                <button 
+                <button
                   type="button"
                   @click="removePortRange(index, rangeIndex)"
                   class="px-2 py-1 text-red-500 hover:text-red-700"
@@ -130,7 +130,7 @@
                   ×
                 </button>
               </div>
-              <button 
+              <button
                 type="button"
                 @click="addPortRange(index)"
                 class="text-sm px-3 py-1 bg-gray-200 dark:bg-slate-700 text-gray-700 dark:text-slate-300 rounded hover:bg-gray-300 dark:hover:bg-slate-600 transition-colors"
@@ -140,8 +140,8 @@
             </div>
           </div>
         </div>
-        
-        <button 
+
+        <button
           type="button"
           @click="addProtocol"
           class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors"
@@ -152,14 +152,14 @@
     </div>
 
     <div class="flex justify-end gap-4">
-      <button 
-        type="button" 
+      <button
+        type="button"
         @click="$emit('cancel')"
         class="px-4 py-2 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 rounded-md hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
       >
         Cancel
       </button>
-      <button 
+      <button
         type="submit"
         :disabled="saving"
         class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 transition-colors"
@@ -172,15 +172,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue';
+import { reactive, onMounted } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import FormInput from '@/components/forms/FormInput.vue';
 import FormTextarea from '@/components/forms/FormTextarea.vue';
-import { 
-  type SystemComponent,
-  useSystemSecurityPlanStore 
-} from '@/stores/system-security-plans.ts';
-import type { Protocol } from '@/stores/types.ts';
+import type { SystemComponent } from '@/stores/system-security-plans.ts';
+import { useDataApi, decamelizeKeys } from '@/composables/axios';
+import type { AxiosError } from 'axios';
+import type { ErrorResponse, ErrorBody } from '@/stores/types';
 
 const props = defineProps<{
   sspId: string;
@@ -191,9 +190,11 @@ const emit = defineEmits<{
   created: [component: SystemComponent];
 }>();
 
-const sspStore = useSystemSecurityPlanStore();
 const toast = useToast();
-const saving = ref(false);
+const { data: newComponent, execute: executeCreate, isLoading: saving } = useDataApi<SystemComponent>(`/api/oscal/system-security-plans/${props.sspId}/system-implementation/components`, {
+  method: 'POST',
+  transformRequest: [decamelizeKeys]
+}, { immediate: false });
 
 const componentData = reactive<Partial<SystemComponent>>({
   uuid: '',
@@ -277,53 +278,33 @@ const createComponent = async () => {
     componentData.protocols = componentData.protocols.filter(p => p.title || p.name);
   }
 
-  saving.value = true;
   try {
-    const response = await sspStore.createSystemImplementationComponent(
-      props.sspId,
-      componentData
-    );
-    
+    await executeCreate({
+      data: componentData
+    });
+
     // Verify the component was actually created
-    if (!response.data || !response.data.uuid) {
+    if (!newComponent.value || !newComponent.value.uuid) {
       throw new Error('Invalid response from server - component may not have been created');
     }
-    
+
     toast.add({
       severity: 'success',
       summary: 'Success',
       detail: 'Component created successfully.',
       life: 3000
     });
-    
-    emit('created', response.data);
+
+    emit('created', newComponent.value);
   } catch (error) {
-    let errorMessage = 'Failed to create component. Please try again.';
-    
-    if (error instanceof Response) {
-      if (error.status === 404) {
-        errorMessage = 'System security plan not found. Please refresh the page.';
-      } else if (error.status === 400) {
-        errorMessage = 'Invalid component data. Please check all required fields.';
-      } else if (error.status === 409) {
-        errorMessage = 'A component with this UUID already exists.';
-      } else if (error.status === 500) {
-        errorMessage = 'Server error occurred. Please try again later.';
-      } else {
-        errorMessage = `Error: ${error.status} ${error.statusText}`;
-      }
-    } else if (error instanceof Error) {
-      errorMessage = error.message;
-    }
-    
+    const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
+
     toast.add({
       severity: 'error',
       summary: 'Error',
-      detail: errorMessage,
+      detail: errorResponse.response?.data.errors.body || 'An error occurred while creating the component.',
       life: 5000
     });
-  } finally {
-    saving.value = false;
   }
 };
 </script>

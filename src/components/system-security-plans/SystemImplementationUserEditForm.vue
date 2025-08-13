@@ -29,12 +29,12 @@
       <label class="inline-block pb-2 dark:text-slate-300">Role IDs</label>
       <div class="space-y-2">
         <div v-for="(roleId, index) in userData.roleIds || []" :key="index" class="flex gap-2">
-          <FormInput 
-            v-model="userData.roleIds![index]" 
+          <FormInput
+            v-model="userData.roleIds![index]"
             placeholder="Role ID"
             class="flex-1"
           />
-          <button 
+          <button
             type="button"
             @click="removeRoleId(index)"
             class="px-3 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
@@ -42,7 +42,7 @@
             Remove
           </button>
         </div>
-        <button 
+        <button
           type="button"
           @click="addRoleId"
           class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
@@ -56,14 +56,14 @@
     <div class="mb-6">
       <label class="inline-block pb-2 dark:text-slate-300">Authorized Privileges</label>
       <div class="space-y-4">
-        <div 
-          v-for="(privilege, index) in userData.authorizedPrivileges" 
+        <div
+          v-for="(privilege, index) in userData.authorizedPrivileges"
           :key="index"
           class="p-4 border border-ccf-300 dark:border-slate-700 rounded-md bg-gray-50 dark:bg-slate-800"
         >
           <div class="flex justify-between items-start mb-3">
             <h4 class="text-sm font-medium dark:text-slate-300">Privilege {{ index + 1 }}</h4>
-            <button 
+            <button
               type="button"
               @click="removePrivilege(index)"
               class="text-red-500 hover:text-red-700"
@@ -71,27 +71,27 @@
               Remove
             </button>
           </div>
-          
+
           <div class="mb-3">
             <label class="inline-block pb-1 text-sm dark:text-slate-300">Title</label>
             <FormInput v-model="privilege.title" placeholder="Privilege title" />
           </div>
-          
+
           <div class="mb-3">
             <label class="inline-block pb-1 text-sm dark:text-slate-300">Description</label>
             <FormTextarea v-model="privilege.description" rows="2" />
           </div>
-          
+
           <div class="mb-3">
             <label class="inline-block pb-1 text-sm dark:text-slate-300">Functions Performed</label>
             <div class="space-y-2">
               <div v-for="(func, funcIndex) in privilege.functionsPerformed || []" :key="funcIndex" class="flex gap-2">
-                <FormInput 
-                  v-model="privilege.functionsPerformed![funcIndex]" 
+                <FormInput
+                  v-model="privilege.functionsPerformed![funcIndex]"
                   placeholder="Function description"
                   class="flex-1"
                 />
-                <button 
+                <button
                   type="button"
                   @click="removeFunctionPerformed(index, funcIndex)"
                   class="px-2 py-1 text-red-500 hover:text-red-700"
@@ -99,7 +99,7 @@
                   ×
                 </button>
               </div>
-              <button 
+              <button
                 type="button"
                 @click="addFunctionPerformed(index)"
                 class="text-sm px-3 py-1 bg-gray-200 dark:bg-slate-700 text-gray-700 dark:text-slate-300 rounded hover:bg-gray-300 dark:hover:bg-slate-600 transition-colors"
@@ -109,8 +109,8 @@
             </div>
           </div>
         </div>
-        
-        <button 
+
+        <button
           type="button"
           @click="addPrivilege"
           class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors"
@@ -121,14 +121,14 @@
     </div>
 
     <div class="flex justify-end gap-4">
-      <button 
-        type="button" 
+      <button
+        type="button"
         @click="$emit('cancel')"
         class="px-4 py-2 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 rounded-md hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
       >
         Cancel
       </button>
-      <button 
+      <button
         type="submit"
         :disabled="saving"
         class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 transition-colors"
@@ -141,15 +141,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue';
+import { reactive, onMounted } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import FormInput from '@/components/forms/FormInput.vue';
 import FormTextarea from '@/components/forms/FormTextarea.vue';
-import { 
-  type SystemImplementationUser, 
-  type AuthorizedPrivilege,
-  useSystemSecurityPlanStore 
-} from '@/stores/system-security-plans.ts';
+import type { SystemImplementationUser } from '@/stores/system-security-plans.ts';
+import { useDataApi, decamelizeKeys } from '@/composables/axios';
+import type { AxiosError } from 'axios';
+import type { ErrorResponse, ErrorBody } from '@/stores/types';
 
 const props = defineProps<{
   sspId: string;
@@ -161,9 +160,16 @@ const emit = defineEmits<{
   saved: [user: SystemImplementationUser];
 }>();
 
-const sspStore = useSystemSecurityPlanStore();
 const toast = useToast();
-const saving = ref(false);
+
+const { data: updatedUserm, execute: executeUpdate, isLoading: saving } = useDataApi<SystemImplementationUser>(
+  `/api/oscal/system-security-plans/${props.sspId}/system-implementation/users/${props.user.uuid}`,
+  {
+    method: 'PUT',
+    transformRequest: [decamelizeKeys]
+  },
+  { immediate: false }
+);
 
 const userData = reactive<SystemImplementationUser>({
   uuid: '',
@@ -241,35 +247,27 @@ const updateUser = async () => {
     return;
   }
 
-  saving.value = true;
   try {
-    const response = await sspStore.updateSystemImplementationUser(
-      props.sspId,
-      userData.uuid,
-      userData
-    );
-    
+    await executeUpdate({
+      data: userData
+    });
+
     toast.add({
-      severity: 'success',
-      summary: 'Success',
-      detail: 'User updated successfully.',
+        severity: 'success',
+        summary: 'Success',
+        detail: 'User updated successfully.',
       life: 3000
     });
-    
-    emit('saved', response.data);
+
+    emit('saved', updatedUserm.value!);
   } catch (error) {
-    console.error('Failed to update user:', error);
-    const errorMessage = error instanceof Response 
-      ? `HTTP ${error.status}: ${error.statusText}`
-      : 'Failed to update user. Please try again.';
+    const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
     toast.add({
       severity: 'error',
-      summary: 'Error',
-      detail: errorMessage,
+      summary: 'Error Updating User',
+      detail: errorResponse.response?.data.errors.body || 'An error occurred while updating the user.',
       life: 5000
     });
-  } finally {
-    saving.value = false;
   }
 };
 </script>

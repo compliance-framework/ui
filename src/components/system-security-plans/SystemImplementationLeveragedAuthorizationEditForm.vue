@@ -20,11 +20,11 @@
 
       <div class="mb-4">
         <label class="inline-block pb-2 dark:text-slate-300">Date Authorized <span class="text-red-500">*</span></label>
-        <FormInput 
-          v-model="authData.dateAuthorized" 
-          type="date" 
+        <FormInput
+          v-model="authData.dateAuthorized"
+          type="date"
           placeholder="Date when authorization was granted"
-          required 
+          required
         />
       </div>
 
@@ -38,17 +38,17 @@
         <label class="inline-block pb-2 dark:text-slate-300">Properties</label>
         <div class="space-y-2">
           <div v-for="(prop, index) in authData.props || []" :key="index" class="flex gap-2">
-            <FormInput 
-              v-model="prop.name" 
+            <FormInput
+              v-model="prop.name"
               placeholder="Property name"
               class="flex-1"
             />
-            <FormInput 
-              v-model="prop.value" 
+            <FormInput
+              v-model="prop.value"
               placeholder="Property value"
               class="flex-1"
             />
-            <button 
+            <button
               type="button"
               @click="removeProperty(index)"
               class="px-3 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
@@ -56,7 +56,7 @@
               Remove
             </button>
           </div>
-          <button 
+          <button
             type="button"
             @click="addProperty"
             class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors"
@@ -71,22 +71,22 @@
         <label class="inline-block pb-2 dark:text-slate-300">Links</label>
         <div class="space-y-2">
           <div v-for="(link, index) in authData.links || []" :key="index" class="flex gap-2">
-            <FormInput 
-              v-model="link.href" 
+            <FormInput
+              v-model="link.href"
               placeholder="Link URL"
               class="flex-1"
             />
-            <FormInput 
-              v-model="link.text" 
+            <FormInput
+              v-model="link.text"
               placeholder="Link text"
               class="flex-1"
             />
-            <FormInput 
-              v-model="link.rel" 
+            <FormInput
+              v-model="link.rel"
               placeholder="Relationship"
               class="flex-1"
             />
-            <button 
+            <button
               type="button"
               @click="removeLink(index)"
               class="px-3 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
@@ -94,7 +94,7 @@
               Remove
             </button>
           </div>
-          <button 
+          <button
             type="button"
             @click="addLink"
             class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors"
@@ -105,14 +105,14 @@
       </div>
 
       <div class="flex justify-end gap-4">
-        <button 
-          type="button" 
+        <button
+          type="button"
           @click="$emit('cancel')"
           class="px-4 py-2 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 rounded-md hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
         >
           Cancel
         </button>
-        <button 
+        <button
           type="submit"
           :disabled="saving"
           class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 transition-colors"
@@ -125,14 +125,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue';
+import { reactive, onMounted } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import FormInput from '@/components/forms/FormInput.vue';
 import FormTextarea from '@/components/forms/FormTextarea.vue';
-import { 
-  type LeveragedAuthorization,
-  useSystemSecurityPlanStore 
-} from '@/stores/system-security-plans.ts';
+import type { LeveragedAuthorization } from '@/stores/system-security-plans.ts';
+import { useDataApi, decamelizeKeys } from '@/composables/axios';
+import type { AxiosError } from 'axios';
+import type { ErrorResponse, ErrorBody } from '@/stores/types';
 
 const props = defineProps<{
   sspId: string;
@@ -144,9 +144,14 @@ const emit = defineEmits<{
   saved: [auth: LeveragedAuthorization];
 }>();
 
-const sspStore = useSystemSecurityPlanStore();
 const toast = useToast();
-const saving = ref(false);
+const { data: updatedLeveragedAuthorization, execute: updateAuthorization, isLoading: saving } = useDataApi<LeveragedAuthorization>(
+  `/api/oscal/system-security-plans/${props.sspId}/system-implementation/leveraged-authorizations/${props.auth.uuid}`,
+  {
+    method: 'put',
+    transformRequest: [decamelizeKeys]
+  }, { immediate: false }
+);
 
 const authData = reactive<LeveragedAuthorization>({
   uuid: '',
@@ -208,26 +213,24 @@ const saveLeveragedAuthorization = async () => {
 
   saving.value = true;
   try {
-    const response = await sspStore.updateSystemImplementationLeveragedAuthorization(
-      props.sspId,
-      authData.uuid,
-      authData
-    );
-    
+    await updateAuthorization({
+      data: authData
+    });
+
     toast.add({
       severity: 'success',
       summary: 'Success',
       detail: 'Leveraged authorization updated successfully.',
       life: 3000
     });
-    
-    emit('saved', response.data);
+
+    emit('saved', updatedLeveragedAuthorization.value!);
   } catch (error) {
-    console.error('Failed to update leveraged authorization:', error);
+    const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
     toast.add({
       severity: 'error',
       summary: 'Error',
-      detail: 'Failed to update leveraged authorization. Please try again.',
+      detail: `Failed to update leveraged authorization. ${errorResponse.response?.data.errors.body || 'An unknown error occurred'}. Please try again.`,
       life: 5000
     });
   } finally {
