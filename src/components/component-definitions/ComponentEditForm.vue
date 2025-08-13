@@ -32,8 +32,8 @@
     <!-- Temporarily disabled - these fields don't exist in current DB schema
     <div class="mb-4">
       <label class="inline-block pb-2 dark:text-slate-300">Properties</label>
-      <FormTextarea 
-        v-model="componentData.props" 
+      <FormTextarea
+        v-model="componentData.props"
         placeholder="Additional properties (JSON format)"
         rows="3"
       />
@@ -41,8 +41,8 @@
 
     <div class="mb-4">
       <label class="inline-block pb-2 dark:text-slate-300">Links</label>
-      <FormTextarea 
-        v-model="componentData.links" 
+      <FormTextarea
+        v-model="componentData.links"
         placeholder="External links (JSON format)"
         rows="3"
       />
@@ -52,7 +52,7 @@
     <div v-if="errorMessage" class="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
       {{ errorMessage }}
     </div>
-    
+
     <div class="flex gap-2">
       <PrimaryButton type="submit">Update Component</PrimaryButton>
       <SecondaryButton type="button" @click="$emit('cancel')">Cancel</SecondaryButton>
@@ -62,25 +62,33 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useComponentDefinitionStore } from '@/stores/component-definitions.ts'
+import type { DefinedComponent } from '@/stores/component-definitions.ts'
 import FormInput from '@/components/forms/FormInput.vue'
 import FormTextarea from '@/components/forms/FormTextarea.vue'
 import PrimaryButton from '@/components/PrimaryButton.vue'
 import SecondaryButton from '@/components/SecondaryButton.vue'
 import { useToast } from 'primevue/usetoast'
+import { useDataApi, decamelizeKeys } from '@/composables/axios'
+import type { AxiosError } from 'axios'
+import type { ErrorResponse, ErrorBody } from '@/stores/types'
 
-const componentDefinitionStore = useComponentDefinitionStore()
 const toast = useToast()
 
 const props = defineProps<{
   componentDefinitionId: string
-  component: any
+  component: DefinedComponent
 }>()
 
 const emit = defineEmits<{
-  updated: [component: any]
+  updated: [component: DefinedComponent]
   cancel: []
 }>()
+
+const { data: definedComponent, execute } = useDataApi<DefinedComponent>(
+  `/api/oscal/component-definitions/${props.componentDefinitionId}/components/${props.component.uuid}`,
+  { method: 'PUT', transformRequest: [decamelizeKeys] },
+  { immediate: false }
+)
 
 const componentData = ref({
   uuid: '',
@@ -116,25 +124,25 @@ onMounted(() => {
 
 async function updateComponent(): Promise<void> {
   errorMessage.value = ''
-  
-  const actualComponentDefinitionId = props.componentDefinitionId || props.component?.componentDefinitionId
-  
+
+  const actualComponentDefinitionId = props.componentDefinitionId
+
   if (!actualComponentDefinitionId) {
     errorMessage.value = 'Component definition ID is missing'
     return
   }
-  
+
   if (!componentData.value.uuid) {
     errorMessage.value = 'Component UUID is missing'
     return
   }
-  
-  if (!componentData.value.type?.trim() || !componentData.value.title?.trim() || 
+
+  if (!componentData.value.type?.trim() || !componentData.value.title?.trim() ||
       !componentData.value.description?.trim() || !componentData.value.purpose?.trim()) {
     errorMessage.value = 'All required fields must be filled'
     return
   }
-  
+
   try {
     // Only include fields that the backend supports for updates
     const updatedComponentData = {
@@ -147,15 +155,19 @@ async function updateComponent(): Promise<void> {
       links: [], // Required by TypeScript interface but not stored in DB
       // Skip responsibleRoles, protocols, controlImplementations - they don't exist in DB schema
     }
-    
-    const response = await componentDefinitionStore.updateComponent(
-      actualComponentDefinitionId,
-      componentData.value.uuid,
-      updatedComponentData
-    )
-    emit('updated', response.data)
+
+    await execute({
+      data: updatedComponentData
+    });
+    toast.add({
+      severity: 'success',
+      summary: 'Component updated successfully',
+      life: 3000
+    })
+    emit('updated', definedComponent.value!);
   } catch (error) {
-    const errorText = error instanceof Error ? error.message : 'Failed to update component'
+    const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>
+    const errorText = errorResponse.response?.data.errors.body || 'An error occurred while updating the component.'
     toast.add({
       severity: 'error',
       summary: 'Error updating component',
