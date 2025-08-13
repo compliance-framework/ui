@@ -20,15 +20,15 @@
           </button>
         </div>
       </div>
-      
+
       <div v-if="loading" class="text-center py-8">
         <p class="text-gray-500 dark:text-slate-400">Loading full component definition...</p>
       </div>
-      
+
       <div v-else-if="error" class="text-center py-8">
         <p class="text-red-500 dark:text-red-400">{{ error }}</p>
       </div>
-      
+
       <div v-else class="border border-ccf-300 dark:border-slate-700 rounded-md">
         <pre class="bg-gray-50 dark:bg-slate-800 p-4 rounded-md overflow-auto max-h-96 text-sm"><code>{{ formattedJSON }}</code></pre>
       </div>
@@ -37,67 +37,35 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, computed } from 'vue'
-import { useComponentDefinitionStore, type ComponentDefinition } from '@/stores/component-definitions.ts'
+import { ref, computed } from 'vue'
+import { type ComponentDefinition } from '@/stores/component-definitions.ts'
 import { useRoute } from 'vue-router'
 import { useToast } from 'primevue/usetoast'
-import { useConfigStore } from '@/stores/config.ts'
+import { useDataApi } from '@/composables/axios'
+import decamelizeKeys from 'decamelize-keys'
+import { format } from 'path'
 
-const componentDefinitionStore = useComponentDefinitionStore()
 const route = useRoute()
-const configStore = useConfigStore()
 const toast = useToast()
 
 const componentDefinitionId = ref<string>(route.params.id as string)
-const componentDefinition = ref<ComponentDefinition | null>(null)
-const loading = ref<boolean>(true)
-const error = ref<string | null>(null)
+
+const { data: componentDefinition, isLoading: loading, error } = useDataApi<ComponentDefinition>(
+  `/api/oscal/component-definitions/${componentDefinitionId.value}/full`,
+  {},
+  { immediate: true }
+)
 
 const formattedJSON = computed(() => {
   if (!componentDefinition.value) return ''
-  return JSON.stringify(componentDefinition.value, null, 2)
+  return JSON.stringify(decamelizeKeys(componentDefinition.value, { separator: '-', deep: true }), null, 2)
 })
-
-onMounted(async () => {
-  await loadComponentDefinition()
-})
-
-async function loadComponentDefinition() {
-  try {
-    loading.value = true
-    error.value = null
-    
-    // Get raw API response without camelCase conversion
-    const config = await configStore.getConfig()
-    const response = await fetch(
-      `${config.API_URL}/api/oscal/component-definitions/${componentDefinitionId.value}/full`,
-      {
-        credentials: 'include'
-      }
-    )
-    if (!response.ok) {
-      throw response
-    }
-    componentDefinition.value = await response.json()
-  } catch (err) {
-    error.value = 'Failed to load component definition JSON. Please try again.'
-    toast.add({
-      severity: 'error',
-      summary: 'Error Loading JSON',
-      detail: 'Failed to load full component definition JSON',
-      life: 3000
-    })
-  } finally {
-    loading.value = false
-  }
-}
 
 async function downloadJSON() {
   if (!componentDefinition.value) return
-  
+
   try {
-    const jsonData = JSON.stringify(componentDefinition.value, null, 2)
-    const blob = new Blob([jsonData], { type: 'application/json' })
+    const blob = new Blob([formattedJSON.value], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
@@ -106,7 +74,7 @@ async function downloadJSON() {
     link.click()
     document.body.removeChild(link)
     URL.revokeObjectURL(url)
-    
+
     toast.add({
       severity: 'success',
       summary: 'JSON Downloaded',
@@ -125,11 +93,10 @@ async function downloadJSON() {
 
 async function copyToClipboard() {
   if (!componentDefinition.value) return
-  
+
   try {
-    const jsonData = JSON.stringify(componentDefinition.value, null, 2)
-    await navigator.clipboard.writeText(jsonData)
-    
+    await navigator.clipboard.writeText(formattedJSON.value)
+
     toast.add({
       severity: 'success',
       summary: 'Copied to Clipboard',
