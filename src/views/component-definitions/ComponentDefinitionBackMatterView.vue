@@ -3,8 +3,8 @@
     <div v-if="backMatter && backMatter.resources?.length > 0" class="p-4">
       <h3 class="text-lg font-semibold mb-4 dark:text-slate-300">Back Matter Resources</h3>
       <div class="space-y-4">
-        <div 
-          v-for="resource in backMatter.resources" 
+        <div
+          v-for="resource in backMatter.resources"
           :key="resource.uuid"
           class="border border-ccf-300 dark:border-slate-700 rounded-md p-4"
         >
@@ -17,9 +17,9 @@
               <div v-if="resource.citation?.text" class="text-xs text-gray-500 dark:text-slate-500">
                 <strong>Citation:</strong> {{ resource.citation.text }}
               </div>
-              <div v-if="resource.rlinks?.length > 0" class="flex flex-wrap gap-2">
-                <a 
-                  v-for="link in resource.rlinks" 
+              <div v-if="resource.rlinks && resource.rlinks.length > 0" class="flex flex-wrap gap-2">
+                <a
+                  v-for="link in resource.rlinks"
                   :key="link.href"
                   :href="link.href"
                   target="_blank"
@@ -53,33 +53,19 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
-import { useComponentDefinitionStore, type BackMatterResource } from '@/stores/component-definitions.ts'
+import {  ref } from 'vue'
+import { type BackMatterResource } from '@/stores/component-definitions.ts'
 import { useRoute } from 'vue-router'
-import { useToast } from 'primevue/usetoast'
 import TertiaryButton from '@/components/TertiaryButton.vue'
 import BackMatterResourceCreateModal from '@/components/component-definitions/BackMatterResourceCreateModal.vue'
+import type { BackMatter } from '@/stores/types'
+import { useDataApi } from '@/composables/axios'
 
-const componentDefinitionStore = useComponentDefinitionStore()
-const toast = useToast()
-const backMatter = ref<any>(null)
 const route = useRoute()
 const componentDefinitionId = ref<string>(route.params.id as string)
 const showCreateModal = ref<boolean>(false)
 
-onMounted(async () => {
-  try {
-    const response = await componentDefinitionStore.getBackMatter(componentDefinitionId.value)
-    backMatter.value = response.data
-  } catch (error) {
-    toast.add({
-      severity: 'error',
-      summary: 'Error Loading Back Matter',
-      detail: 'Failed to load back matter resources for this component definition',
-      life: 3000
-    })
-  }
-})
+const { data: backMatter } = useDataApi<BackMatter>(`/api/oscal/component-definitions/${componentDefinitionId.value}/back-matter`)
 
 function closeCreateModal() {
   showCreateModal.value = false
