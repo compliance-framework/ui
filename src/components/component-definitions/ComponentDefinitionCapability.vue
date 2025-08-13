@@ -19,7 +19,7 @@
         </div>
       </div>
     </template>
-    
+
     <div class="px-4 py-4 dark:bg-slate-950 border-b border-ccf-300 dark:border-slate-700">
       <div class="flex items-start justify-between gap-4">
         <div class="grow">
@@ -27,17 +27,17 @@
             <h4 class="font-medium text-gray-900 dark:text-slate-300 mb-2">Description</h4>
             <p class="text-gray-700 dark:text-slate-400">{{ capability.description }}</p>
           </div>
-          
+
           <div v-if="capability.remarks" class="mb-4">
             <h4 class="font-medium text-gray-900 dark:text-slate-300 mb-2">Remarks</h4>
             <p class="text-gray-700 dark:text-slate-400">{{ capability.remarks }}</p>
           </div>
 
-          <div v-if="capability.incorporatesComponents?.length > 0" class="mb-4">
+          <div v-if="capability.incorporatesComponents?.length ?? 0 > 0" class="mb-4">
             <h4 class="font-medium text-gray-900 dark:text-slate-300 mb-2">Incorporates Components</h4>
             <div class="space-y-2">
-              <div 
-                v-for="comp in capability.incorporatesComponents" 
+              <div
+                v-for="comp in capability.incorporatesComponents"
                 :key="comp.componentUuid"
                 class="bg-gray-50 dark:bg-slate-800 p-3 rounded-md"
               >
@@ -51,11 +51,11 @@
             </div>
           </div>
 
-          <div v-if="capability.controlImplementations?.length > 0" class="mb-4">
+          <div v-if="capability.controlImplementations?.length ?? 0 > 0" class="mb-4">
             <h4 class="font-medium text-gray-900 dark:text-slate-300 mb-2">Control Implementations</h4>
             <div class="space-y-2">
-              <div 
-                v-for="impl in capability.controlImplementations" 
+              <div
+                v-for="impl in capability.controlImplementations"
                 :key="impl.uuid"
                 class="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-md"
               >
@@ -72,7 +72,7 @@
             </div>
           </div>
         </div>
-        
+
         <div class="rounded-md border border-ccf-300 dark:border-slate-700 min-w-48">
           <table class="table-auto w-full">
             <tbody>
@@ -87,13 +87,13 @@
                 <td class="px-2 py-1">Name</td>
                 <td class="px-2 py-1">{{ capability.name }}</td>
               </tr>
-              <tr class="border-t dark:border-slate-700" v-if="capability.incorporatesComponents?.length > 0">
+              <tr class="border-t dark:border-slate-700" v-if="capability.incorporatesComponents?.length ?? 0 > 0">
                 <td class="px-2 py-1">Components</td>
-                <td class="px-2 py-1">{{ capability.incorporatesComponents.length }}</td>
+                <td class="px-2 py-1">{{ capability.incorporatesComponents?.length }}</td>
               </tr>
-              <tr class="border-t dark:border-slate-700" v-if="capability.controlImplementations?.length > 0">
+              <tr class="border-t dark:border-slate-700" v-if="capability.controlImplementations?.length ?? 0 > 0">
                 <td class="px-2 py-1">Controls</td>
-                <td class="px-2 py-1">{{ capability.controlImplementations.length }}</td>
+                <td class="px-2 py-1">{{ capability.controlImplementations?.length }}</td>
               </tr>
             </tbody>
           </table>
@@ -106,14 +106,15 @@
 <script setup lang="ts">
 import CollapsableGroup from '@/components/CollapsableGroup.vue'
 import TertiaryButton from '@/components/TertiaryButton.vue'
+import type { Capability } from '@/stores/component-definitions'
 
 const props = defineProps<{
-  capability: any
+  capability: Capability
   componentDefinitionId: string
 }>()
 
 const emit = defineEmits<{
-  edit: [capability: any]
+  edit: [capability: Capability]
 }>()
 
 function editCapability() {

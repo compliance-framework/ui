@@ -22,7 +22,7 @@
     <div v-if="errorMessage" class="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
       {{ errorMessage }}
     </div>
-    
+
     <div class="flex gap-2">
       <PrimaryButton type="submit">Update Capability</PrimaryButton>
       <SecondaryButton type="button" @click="$emit('cancel')">Cancel</SecondaryButton>
@@ -32,23 +32,23 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useComponentDefinitionStore } from '@/stores/component-definitions.ts'
+import type { Capability } from '@/stores/component-definitions'
 import { useToast } from 'primevue/usetoast'
 import FormInput from '@/components/forms/FormInput.vue'
 import FormTextarea from '@/components/forms/FormTextarea.vue'
 import PrimaryButton from '@/components/PrimaryButton.vue'
 import SecondaryButton from '@/components/SecondaryButton.vue'
+import { useDataApi, decamelizeKeys } from '@/composables/axios'
 
-const componentDefinitionStore = useComponentDefinitionStore()
 const toast = useToast()
 
 const props = defineProps<{
   componentDefinitionId: string
-  capability: any
+  capability: Capability
 }>()
 
 const emit = defineEmits<{
-  updated: [capability: any]
+  updated: [capability: Capability]
   cancel: []
 }>()
 
@@ -57,6 +57,12 @@ const capabilityData = ref({
   name: '',
   description: '',
 })
+
+const { data: updatedCapability, execute } = useDataApi<Capability>(
+  `/api/oscal/component-definitions/${props.componentDefinitionId}/capabilities/${props.capability.uuid}`,
+  { method: 'PUT', transformRequest: [decamelizeKeys] },
+  { immediate: false }
+)
 
 const errorMessage = ref('')
 
@@ -72,24 +78,24 @@ onMounted(() => {
 
 async function updateCapability(): Promise<void> {
   errorMessage.value = ''
-  
-  const actualComponentDefinitionId = props.componentDefinitionId || props.capability?.componentDefinitionId
-  
+
+  const actualComponentDefinitionId = props.componentDefinitionId
+
   if (!actualComponentDefinitionId) {
     errorMessage.value = 'Component definition ID is missing'
     return
   }
-  
+
   if (!capabilityData.value.uuid) {
     errorMessage.value = 'Capability UUID is missing'
     return
   }
-  
+
   if (!capabilityData.value.name?.trim() || !capabilityData.value.description?.trim()) {
     errorMessage.value = 'Name and description are required'
     return
   }
-  
+
   try {
     // Only include fields that the backend supports for updates
     const updatedCapabilityData = {
@@ -99,13 +105,11 @@ async function updateCapability(): Promise<void> {
       props: [], // Required by TypeScript interface but not stored in DB
       links: [], // Required by TypeScript interface but not stored in DB
     }
-    
-    const response = await componentDefinitionStore.updateCapability(
-      actualComponentDefinitionId,
-      capabilityData.value.uuid,
-      updatedCapabilityData
-    )
-    emit('updated', response.data)
+
+    await execute({
+      data: updatedCapabilityData,
+    })
+    emit('updated', updatedCapability.value!)
   } catch (error) {
     toast.add({
       severity: 'error',

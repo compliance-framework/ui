@@ -1,14 +1,14 @@
 <template>
-  <div class="my-4 rounded-md bg-white dark:bg-slate-900 border-collapse border border-ccf-300 dark:border-slate-700 p-6">
+  <div class="my-4 rounded-md bg-white dark:bg-slate-900 border-collapse border border-ccf-300 dark:border-slate-700 p-6" v-if="componentDefinition && characteristics">
     <div v-if="componentDefinition.metadata">
       <h3 class="text-lg font-semibold mb-4 dark:text-slate-300">Metadata</h3>
-      
+
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">Title</label>
           <p class="text-gray-900 dark:text-slate-300">{{ componentDefinition.metadata.title }}</p>
         </div>
-        
+
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">UUID</label>
           <p class="text-sm text-gray-600 dark:text-slate-400 font-mono">{{ componentDefinition.uuid }}</p>
@@ -45,7 +45,7 @@
       <!-- Feature Notice -->
       <div class="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md">
         <p class="text-sm text-blue-800 dark:text-blue-200">
-          <strong>Available Features:</strong> You can edit components (title, description, purpose, type, remarks) and capabilities (name, description). 
+          <strong>Available Features:</strong> You can edit components (title, description, purpose, type, remarks) and capabilities (name, description).
           Component definition metadata is read-only but can be viewed for reference.
         </p>
       </div>
@@ -74,40 +74,36 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, computed } from 'vue'
-import { type ComponentDefinition, type ComponentDefinitionCharacteristics, useComponentDefinitionStore } from '@/stores/component-definitions.ts'
+import { computed } from 'vue'
+import type { Capability, ComponentDefinition, ComponentDefinitionCharacteristics, DefinedComponent, ImportComponentDefinition } from '@/stores/component-definitions.ts'
 import { useRoute } from 'vue-router'
-import { useToast } from 'primevue/usetoast'
+import { useDataApi } from '@/composables/axios'
 
-const componentDefinitionStore = useComponentDefinitionStore()
-const componentDefinition = ref<ComponentDefinition>({} as ComponentDefinition)
-const characteristics = ref<ComponentDefinitionCharacteristics>({} as ComponentDefinitionCharacteristics)
 const route = useRoute()
-const toast = useToast()
+
+const { data: componentDefinition } = useDataApi<ComponentDefinition>(
+  `/api/oscal/component-definitions/${route.params.id}`
+)
+const { data: characteristics } = useDataApi<ComponentDefinitionCharacteristics>(
+  `/api/oscal/component-definitions/${route.params.id}/characteristics`,
+  {},
+  { initialData: {} as ComponentDefinitionCharacteristics, immediate: true }
+)
+
+const { data: importComponentDefinitions } = useDataApi<ImportComponentDefinition[]>(
+  `/api/oscal/component-definitions/${route.params.id}/import-component-definitions`
+)
+const { data: components } = useDataApi<DefinedComponent[]>(
+  `/api/oscal/component-definitions/${route.params.id}/components`
+)
+const { data: capabilities } = useDataApi<Capability[]>(
+  `/api/oscal/component-definitions/${route.params.id}/capabilities`
+)
 
 const componentCounts = computed(() => ({
-  components: characteristics.value.components?.length || 0,
-  capabilities: characteristics.value.capabilities?.length || 0,
-  importDefinitions: characteristics.value.importComponentDefinitions?.length || 0
+  components: components.value?.length || 0,
+  capabilities: capabilities.value?.length || 0,
+  importDefinitions: importComponentDefinitions.value?.length || 0
 }))
 
-onMounted(async () => {
-  const id = route.params.id as string
-  try {
-    // Load both metadata and characteristics separately, like SSP does
-    const [metadataResponse, characteristicsResponse] = await Promise.all([
-      componentDefinitionStore.get(id),
-      componentDefinitionStore.getCharacteristics(id)
-    ])
-    componentDefinition.value = metadataResponse.data
-    characteristics.value = characteristicsResponse.data
-  } catch (error) {
-    toast.add({
-      severity: 'error',
-      summary: 'Error loading component definition',
-      detail: 'Failed to load component definition overview. Please try again.',
-      life: 3000
-    })
-  }
-})
 </script>

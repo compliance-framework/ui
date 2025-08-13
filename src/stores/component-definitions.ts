@@ -28,6 +28,7 @@ export interface Capability {
   description: string;
   props: Property[];
   links: Link[];
+  remarks?: string;
   incorporatesComponents?: IncorporatesComponent[];
   controlImplementations?: ControlImplementation[];
 }

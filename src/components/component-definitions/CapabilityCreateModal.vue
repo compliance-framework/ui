@@ -18,11 +18,12 @@
 import PrimaryButton from '@/components/PrimaryButton.vue'
 import Modal from '@/components/Modal.vue'
 import CapabilityCreateForm from '@/components/component-definitions/CapabilityCreateForm.vue'
+import type { Capability } from '@/stores/component-definitions.ts'
 
 const show = defineModel<boolean>()
 
 const emit = defineEmits({
-  created(capability: any) {
+  created(capability: Capability) {
     return !!capability.uuid
   }
 })
@@ -31,7 +32,7 @@ const props = defineProps<{
   componentDefinitionId: string
 }>()
 
-function done(capability: any) {
+function done(capability: Capability) {
   show.value = false
   emit('created', capability)
 }

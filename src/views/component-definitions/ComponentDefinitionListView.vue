@@ -42,41 +42,27 @@
 
 </template>
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
 import PageHeader from '@/components/PageHeader.vue'
-import { type ComponentDefinition, useComponentDefinitionStore } from '@/stores/component-definitions.ts'
+import { type ComponentDefinition } from '@/stores/component-definitions.ts'
 import { useToast } from 'primevue/usetoast'
-import { useConfigStore } from '@/stores/config.ts'
+import { useDataApi } from '@/composables/axios'
+import type { AxiosError } from 'axios'
+import { type ErrorResponse, type ErrorBody } from '@/stores/types'
+import decamelizeKeys from 'decamelize-keys'
 
-const componentDefinitionStore = useComponentDefinitionStore()
-const configStore = useConfigStore()
 const toast = useToast()
 
-const componentDefinitions = ref<ComponentDefinition[]>([])
-
-onMounted(() => {
-  componentDefinitionStore.list().then((data) => {
-    componentDefinitions.value = data.data
-  })
-})
+const { data: componentDefinitions } = useDataApi<ComponentDefinition[]>(
+  '/api/oscal/component-definitions'
+)
+const { execute: executeDownloadJSON } = useDataApi<ComponentDefinition>();
 
 async function downloadJSON(id: string, title: string) {
   try {
     // Get raw API response without camelCase conversion
-    const config = await configStore.getConfig()
-    const response = await fetch(
-      `${config.API_URL}/api/oscal/component-definitions/${id}/full`,
-      {
-        credentials: 'include'
-      }
-    )
-    if (!response.ok) {
-      throw response
-    }
-    const data = await response.json()
-    
-    const jsonData = JSON.stringify(data, null, 2)
-    
+    const response = await executeDownloadJSON(`/api/oscal/component-definitions/${id}/full`);
+    const jsonData = JSON.stringify(decamelizeKeys(response.data.value?.data ?? {}, {deep: true, separator: "-"}), null, 2)
+
     // Create blob and download
     const blob = new Blob([jsonData], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
@@ -87,7 +73,7 @@ async function downloadJSON(id: string, title: string) {
     link.click()
     document.body.removeChild(link)
     URL.revokeObjectURL(url)
-    
+
     toast.add({
       severity: 'success',
       summary: 'JSON Downloaded',
@@ -95,10 +81,11 @@ async function downloadJSON(id: string, title: string) {
       life: 3000
     })
   } catch (error) {
+    const responseError = error as AxiosError<ErrorResponse<ErrorBody>>;
     toast.add({
       severity: 'error',
       summary: 'Download Failed',
-      detail: 'Failed to download component definition JSON',
+      detail: `Failed to download component definition JSON: ${responseError.response?.data.errors.body || 'Unknown error'}`,
       life: 3000
     })
   }

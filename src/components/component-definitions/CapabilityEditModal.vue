@@ -18,21 +18,22 @@
 import PrimaryButton from '@/components/PrimaryButton.vue'
 import Modal from '@/components/Modal.vue'
 import CapabilityEditForm from '@/components/component-definitions/CapabilityEditForm.vue'
+import type { Capability } from '@/stores/component-definitions.ts'
 
 const show = defineModel<boolean>()
 
 const emit = defineEmits({
-  updated(capability: any) {
+  updated(capability: Capability) {
     return !!capability.uuid
   }
 })
 
 const props = defineProps<{
   componentDefinitionId: string
-  capability: any
+  capability: Capability
 }>()
 
-function done(capability: any) {
+function done(capability: Capability) {
   show.value = false
   emit('updated', capability)
 }

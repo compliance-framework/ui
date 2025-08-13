@@ -34,14 +34,14 @@
       <label class="inline-block pb-2 dark:text-slate-300">Resource Links</label>
       <div class="space-y-2">
         <div v-for="(link, index) in resource.rlinks" :key="index" class="flex gap-2">
-          <FormInput 
-            v-model="link.href" 
-            placeholder="https://example.com/resource" 
+          <FormInput
+            v-model="link.href"
+            placeholder="https://example.com/resource"
             class="flex-1"
           />
-          <FormInput 
-            v-model="link.mediaType" 
-            placeholder="application/pdf" 
+          <FormInput
+            v-model="link.mediaType"
+            placeholder="application/pdf"
             class="w-40"
           />
           <TertiaryButton type="button" @click="removeResourceLink(index)" class="px-2">
@@ -57,7 +57,7 @@
     <div v-if="errorMessage" class="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
       {{ errorMessage }}
     </div>
-    
+
     <div class="flex gap-2">
       <PrimaryButton type="submit">Create Resource</PrimaryButton>
       <SecondaryButton type="button" @click="$emit('cancel')">Cancel</SecondaryButton>
@@ -67,7 +67,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useComponentDefinitionStore, type BackMatterResource, type ResourceLink, type Citation } from '@/stores/component-definitions.ts'
+import {  type BackMatterResource, type Citation } from '@/stores/component-definitions.ts'
 import FormInput from '@/components/forms/FormInput.vue'
 import FormTextarea from '@/components/forms/FormTextarea.vue'
 import PrimaryButton from '@/components/PrimaryButton.vue'
@@ -76,8 +76,8 @@ import TertiaryButton from '@/components/TertiaryButton.vue'
 import { BIconArrowRepeat } from 'bootstrap-icons-vue'
 import { v4 as uuidv4 } from 'uuid'
 import { useToast } from 'primevue/usetoast'
+import { useDataApi, decamelizeKeys } from '@/composables/axios'
 
-const componentDefinitionStore = useComponentDefinitionStore()
 const toast = useToast()
 
 const props = defineProps<{
@@ -100,21 +100,27 @@ const resource = ref<BackMatterResource>({
   rlinks: []
 })
 
+const { data: createdResource, execute } = useDataApi<BackMatterResource>(
+  `/api/oscal/component-definitions/${props.componentDefinitionId}/back-matter`,
+  { method: 'POST', transformRequest: [decamelizeKeys] },
+  { immediate: false }
+)
+
 const errorMessage = ref('')
 
 async function createResource(): Promise<void> {
   errorMessage.value = ''
-  
+
   if (!props.componentDefinitionId) {
     errorMessage.value = 'Component definition ID is missing'
     return
   }
-  
+
   if (!resource.value.title?.trim() || !resource.value.description?.trim()) {
     errorMessage.value = 'Title and description are required'
     return
   }
-  
+
   try {
     const resourceData: any = {
       uuid: resource.value.uuid,
@@ -124,23 +130,22 @@ async function createResource(): Promise<void> {
     if (resource.value.remarks?.trim()) {
       resourceData.remarks = resource.value.remarks.trim()
     }
-    
+
     if (resource.value.citation?.text?.trim()) {
       resourceData.citation = {
         text: resource.value.citation.text.trim()
       }
     }
-    
+
     const validLinks = resource.value.rlinks?.filter(link => link.href.trim())
     if (validLinks && validLinks.length > 0) {
       resourceData.rlinks = validLinks
     }
-    
-    const response = await componentDefinitionStore.createBackMatterResource(
-      props.componentDefinitionId,
-      resourceData
-    )
-    emit('created', response.data)
+
+    await execute({
+      data: resourceData,
+    })
+    emit('created', createdResource.value!)
   } catch (error) {
     const errorText = error instanceof Error ? error.message : 'Failed to create back matter resource'
     toast.add({

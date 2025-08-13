@@ -33,8 +33,8 @@
     <!-- Temporarily disabled - these fields don't exist in current DB schema
     <div class="mb-4">
       <label class="inline-block pb-2 dark:text-slate-300">Properties</label>
-      <FormTextarea 
-        v-model="component.props" 
+      <FormTextarea
+        v-model="component.props"
         placeholder="Additional properties (JSON format)"
         rows="3"
       />
@@ -42,8 +42,8 @@
 
     <div class="mb-4">
       <label class="inline-block pb-2 dark:text-slate-300">Links</label>
-      <FormTextarea 
-        v-model="component.links" 
+      <FormTextarea
+        v-model="component.links"
         placeholder="External links (JSON format)"
         rows="3"
       />
@@ -59,7 +59,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useComponentDefinitionStore } from '@/stores/component-definitions.ts'
+import type { DefinedComponent } from '@/stores/component-definitions.ts'
 import FormInput from '@/components/forms/FormInput.vue'
 import FormTextarea from '@/components/forms/FormTextarea.vue'
 import PrimaryButton from '@/components/PrimaryButton.vue'
@@ -67,8 +67,10 @@ import TertiaryButton from '@/components/TertiaryButton.vue'
 import { BIconArrowRepeat } from 'bootstrap-icons-vue'
 import { v4 as uuidv4 } from 'uuid'
 import { useToast } from 'primevue/usetoast'
+import { useDataApi, decamelizeKeys } from '@/composables/axios'
+import type { AxiosError } from 'axios'
+import type { ErrorBody, ErrorResponse } from '@/stores/types'
 
-const componentDefinitionStore = useComponentDefinitionStore()
 const toast = useToast()
 
 const props = defineProps<{
@@ -76,7 +78,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  created: [component: any]
+  created: [component: DefinedComponent]
 }>()
 
 const component = ref({
@@ -92,22 +94,28 @@ const component = ref({
   // controlImplementations: [],
 })
 
+const { data: createdComponent, execute } = useDataApi<DefinedComponent[]>(
+  `/api/oscal/component-definitions/${props.componentDefinitionId}/components`,
+  { method: 'POST', transformRequest: [decamelizeKeys] },
+  { immediate: false }
+)
+
 const errorMessage = ref('')
 
 async function createComponent(): Promise<void> {
   errorMessage.value = ''
-  
+
   if (!props.componentDefinitionId) {
     errorMessage.value = 'Component definition ID is missing'
     return
   }
-  
-  if (!component.value.type?.trim() || !component.value.title?.trim() || 
+
+  if (!component.value.type?.trim() || !component.value.title?.trim() ||
       !component.value.description?.trim() || !component.value.purpose?.trim()) {
     errorMessage.value = 'All required fields must be filled'
     return
   }
-  
+
   try {
     // Only include fields that the backend supports for creation
     const componentData = {
@@ -120,20 +128,26 @@ async function createComponent(): Promise<void> {
       links: [], // Required by TypeScript interface but not stored in DB
       // Skip responsibleRoles, protocols, controlImplementations - they don't exist in DB schema
     }
-    
-    const response = await componentDefinitionStore.createComponent(
-      props.componentDefinitionId,
-      componentData
-    )
-    emit('created', response.data)
+
+    await execute({
+      data: [componentData] // TODO: API should accept single object, not array
+    })
+    toast.add({
+      severity: 'success',
+      summary: 'Component created successfully',
+      detail: `Component ${component.value.title} has been created.`,
+      life: 3000
+    })
+    emit('created', createdComponent.value![0])
   } catch (error) {
-    const errorText = error instanceof Error ? error.message : 'Failed to create component'
+    const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
+    const errorText = errorResponse.response?.data.errors.body || 'An error occurred while creating the component.';
     toast.add({
       severity: 'error',
       summary: 'Error creating component',
       detail: errorText,
       life: 3000
-    })
+    });
     errorMessage.value = errorText
   }
 }

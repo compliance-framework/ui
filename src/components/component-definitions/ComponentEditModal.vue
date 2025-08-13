@@ -1,8 +1,8 @@
 <template>
   <Modal :show="show" @close="show = false">
     <div class="px-12 py-8">
-      <ComponentEditForm 
-        @updated="done" 
+      <ComponentEditForm
+        @updated="done"
         :component-definition-id="componentDefinitionId"
         :component="component"
       />
@@ -22,19 +22,20 @@
 import PrimaryButton from '@/components/PrimaryButton.vue'
 import Modal from '@/components/Modal.vue'
 import ComponentEditForm from '@/components/component-definitions/ComponentEditForm.vue'
+import type { DefinedComponent } from '@/stores/component-definitions.ts'
 
 const show = defineModel<boolean>()
 
 const emit = defineEmits<{
-  updated: [component: any]
+  updated: [component: DefinedComponent]
 }>()
 
 const props = defineProps<{
   componentDefinitionId: string
-  component: any
+  component: DefinedComponent
 }>()
 
-function done(component: any) {
+function done(component: DefinedComponent) {
   show.value = false
   emit('updated', component)
 }
