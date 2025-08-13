@@ -33,7 +33,7 @@
             <p class="text-gray-700 dark:text-slate-400">{{ capability.remarks }}</p>
           </div>
 
-          <div v-if="capability.incorporatesComponents?.length > 0" class="mb-4">
+          <div v-if="capability.incorporatesComponents?.length ?? 0 > 0" class="mb-4">
             <h4 class="font-medium text-gray-900 dark:text-slate-300 mb-2">Incorporates Components</h4>
             <div class="space-y-2">
               <div
@@ -51,7 +51,7 @@
             </div>
           </div>
 
-          <div v-if="capability.controlImplementations?.length > 0" class="mb-4">
+          <div v-if="capability.controlImplementations?.length ?? 0 > 0" class="mb-4">
             <h4 class="font-medium text-gray-900 dark:text-slate-300 mb-2">Control Implementations</h4>
             <div class="space-y-2">
               <div
@@ -87,13 +87,13 @@
                 <td class="px-2 py-1">Name</td>
                 <td class="px-2 py-1">{{ capability.name }}</td>
               </tr>
-              <tr class="border-t dark:border-slate-700" v-if="capability.incorporatesComponents?.length > 0">
+              <tr class="border-t dark:border-slate-700" v-if="capability.incorporatesComponents?.length ?? 0 > 0">
                 <td class="px-2 py-1">Components</td>
-                <td class="px-2 py-1">{{ capability.incorporatesComponents.length }}</td>
+                <td class="px-2 py-1">{{ capability.incorporatesComponents?.length }}</td>
               </tr>
-              <tr class="border-t dark:border-slate-700" v-if="capability.controlImplementations?.length > 0">
+              <tr class="border-t dark:border-slate-700" v-if="capability.controlImplementations?.length ?? 0 > 0">
                 <td class="px-2 py-1">Controls</td>
-                <td class="px-2 py-1">{{ capability.controlImplementations.length }}</td>
+                <td class="px-2 py-1">{{ capability.controlImplementations?.length }}</td>
               </tr>
             </tbody>
           </table>
