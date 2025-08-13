@@ -23,8 +23,8 @@
     <!-- Temporarily disabled - these fields may not be in current DB schema
     <div class="mb-4">
       <label class="inline-block pb-2 dark:text-slate-300">Properties</label>
-      <FormTextarea 
-        v-model="capability.props" 
+      <FormTextarea
+        v-model="capability.props"
         placeholder="Additional properties (JSON format)"
         rows="3"
       />
@@ -32,8 +32,8 @@
 
     <div class="mb-4">
       <label class="inline-block pb-2 dark:text-slate-300">Links</label>
-      <FormTextarea 
-        v-model="capability.links" 
+      <FormTextarea
+        v-model="capability.links"
         placeholder="External links (JSON format)"
         rows="3"
       />
@@ -43,7 +43,7 @@
     <div v-if="errorMessage" class="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
       {{ errorMessage }}
     </div>
-    
+
     <div class="flex gap-2">
       <PrimaryButton type="submit">Create Capability</PrimaryButton>
       <SecondaryButton type="button" @click="$emit('cancel')">Cancel</SecondaryButton>
@@ -53,7 +53,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useComponentDefinitionStore } from '@/stores/component-definitions.ts'
+import type { Capability } from '@/stores/component-definitions.ts'
 import { useToast } from 'primevue/usetoast'
 import FormInput from '@/components/forms/FormInput.vue'
 import FormTextarea from '@/components/forms/FormTextarea.vue'
@@ -62,8 +62,8 @@ import SecondaryButton from '@/components/SecondaryButton.vue'
 import TertiaryButton from '@/components/TertiaryButton.vue'
 import { BIconArrowRepeat } from 'bootstrap-icons-vue'
 import { v4 as uuidv4 } from 'uuid'
+import { useDataApi, decamelizeKeys } from '@/composables/axios'
 
-const componentDefinitionStore = useComponentDefinitionStore()
 const toast = useToast()
 
 const props = defineProps<{
@@ -71,7 +71,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  created: [capability: any]
+  created: [capability: Capability]
   cancel: []
 }>()
 
@@ -85,21 +85,30 @@ const capability = ref({
   // controlImplementations: [],
 })
 
+const { data: newCapability, execute } = useDataApi<Capability[]>(
+  `/api/oscal/component-definitions/${props.componentDefinitionId}/capabilities`,
+  {
+    method: 'POST',
+    transformRequest: [decamelizeKeys]
+  },
+  { immediate: false }
+)
+
 const errorMessage = ref('')
 
 async function createCapability(): Promise<void> {
   errorMessage.value = ''
-  
+
   if (!props.componentDefinitionId) {
     errorMessage.value = 'Component definition ID is missing'
     return
   }
-  
+
   if (!capability.value.name?.trim() || !capability.value.description?.trim()) {
     errorMessage.value = 'Name and description are required'
     return
   }
-  
+
   try {
     // Only include fields that the backend supports for capability creation
     const capabilityData = {
@@ -110,12 +119,11 @@ async function createCapability(): Promise<void> {
       links: [], // Required by TypeScript interface but not stored in DB
       // Skip incorporatesComponents, controlImplementations - they may not exist in DB schema
     }
-    
-    const response = await componentDefinitionStore.createCapability(
-      props.componentDefinitionId,
-      capabilityData
-    )
-    emit('created', response.data)
+
+    await execute({
+      data: [capabilityData]
+    })
+    emit('created', newCapability.value![0])
   } catch (error) {
     toast.add({
       severity: 'error',
