@@ -96,34 +96,22 @@
   </div>
 </template>
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
 import PageHeader from '@/components/PageHeader.vue'
-import { type SystemSecurityPlan, useSystemSecurityPlanStore } from '@/stores/system-security-plans.ts'
+import type { SystemSecurityPlan } from '@/stores/system-security-plans.ts'
 import { useToast } from 'primevue/usetoast'
-import { useConfigStore } from '@/stores/config.ts'
 import { useSystemStore } from '@/stores/system.ts'
 import Badge from '@/volt/Badge.vue'
+import { useDataApi } from '@/composables/axios'
+import decamelizeKeys from 'decamelize-keys'
+import type { AxiosError } from 'axios'
+import type { ErrorResponse, ErrorBody } from '@/stores/types.ts'
 
-const sspStore = useSystemSecurityPlanStore()
-const configStore = useConfigStore()
 const toast = useToast()
 const systemStore = useSystemStore();
 
-const systemSecurityPlans = ref<SystemSecurityPlan[]>([])
-const loading = ref(true)
-const error = ref<string | null>(null)
+const { data: systemSecurityPlans, isLoading: loading, error } = useDataApi<SystemSecurityPlan[]>('/api/oscal/system-security-plans')
+const { data: systemSecurityPlanJSON, execute } = useDataApi<SystemSecurityPlan>()
 
-onMounted(async () => {
-  try {
-    const response = await sspStore.list()
-    systemSecurityPlans.value = response.data
-  } catch (err) {
-    console.error('Error loading System Security Plans:', err)
-    error.value = err instanceof Error ? err.message : 'Unknown error'
-  } finally {
-    loading.value = false
-  }
-})
 
 function formatDate(dateString?: string): string {
   if (!dateString) return 'N/A'
@@ -132,20 +120,11 @@ function formatDate(dateString?: string): string {
 
 async function downloadJson(uuid: string, title: string): Promise<void> {
   try {
-    // Get raw API response without camelCase conversion
-    const config = await configStore.getConfig()
-    const response = await fetch(
-      `${config.API_URL}/api/oscal/system-security-plans/${uuid}/full`,
-      {
-        credentials: 'include'
-      }
+    await execute(
+      `/api/oscal/system-security-plans/${uuid}/full`,
     )
-    if (!response.ok) {
-      throw response
-    }
-    const data = await response.json()
 
-    const dataStr = JSON.stringify(data, null, 2)
+    const dataStr = JSON.stringify(decamelizeKeys(systemSecurityPlanJSON.value!), null, 2)
     const dataBlob = new Blob([dataStr], { type: 'application/json' })
 
     const url = URL.createObjectURL(dataBlob)
@@ -164,11 +143,11 @@ async function downloadJson(uuid: string, title: string): Promise<void> {
       life: 3000
     })
   } catch (err) {
-    console.error('Error downloading JSON:', err)
+    const errorResponse = err as AxiosError<ErrorResponse<ErrorBody>>
     toast.add({
       severity: 'error',
       summary: 'Download Failed',
-      detail: 'Failed to download SSP JSON. Full SSP export may not be available.',
+      detail: `Failed to download SSP JSON: ${errorResponse.response?.data.errors.body ?? "Full SSP export may not be available."}`,
       life: 3000
     })
   }
