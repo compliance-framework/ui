@@ -1,4 +1,5 @@
 <template>
+  <template v-if="ssp">
   <div class="space-y-6">
     <!-- Control Implementation Overview -->
     <div class="bg-white dark:bg-slate-900 border border-ccf-300 dark:border-slate-700 rounded-lg p-6">
@@ -247,18 +248,19 @@
       @saved="handleStatementByComponentSaved"
     />
   </Modal>
+  </template>
 </template>
 
-<script setup lang="ts">
-import { onMounted, ref, computed } from 'vue'
+<script setup lang='ts'>
+import { ref, computed, type Component } from 'vue'
 import { useRoute } from 'vue-router'
 import { useToast } from 'primevue/usetoast'
-import {
-  type ControlImplementation,
-  type ImplementedRequirement,
-  type Statement, type SystemSecurityPlan,
-  type ByComponent,
-  useSystemSecurityPlanStore
+import type {
+  ControlImplementation,
+  ImplementedRequirement,
+  Statement,
+  SystemSecurityPlan,
+  ByComponent,
 } from '@/stores/system-security-plans.ts'
 import Modal from '@/components/Modal.vue'
 import ImplementedRequirementCreateForm from '@/components/system-security-plans/ImplementedRequirementCreateForm.vue'
@@ -268,13 +270,11 @@ import StatementEditForm from '@/components/system-security-plans/StatementEditF
 import StatementCreateForm from '@/components/system-security-plans/StatementCreateForm.vue'
 import StatementByComponent from '@/views/system-security-plans/partials/StatementByComponent.vue'
 import StatementByComponentEditForm from '@/components/system-security-plans/StatementByComponentEditForm.vue'
+import { useDataApi } from '@/composables/axios'
 
 const route = useRoute()
-const sspStore = useSystemSecurityPlanStore()
 const toast = useToast()
 
-const controlImplementation = ref<ControlImplementation | null>(null)
-const loading = ref(true)
 const error = ref<string | null>(null)
 
 // Modal states
@@ -290,11 +290,14 @@ const editingRequirement = ref<ImplementedRequirement | null>(null)
 const editingStatement = ref<Statement | null>(null)
 const editingByComponent = ref<ByComponent | null>(null)
 
-const ssp = ref<SystemSecurityPlan>({} as SystemSecurityPlan);
+const { data: ssp, isLoading: sspLoading } = useDataApi<SystemSecurityPlan>(`/api/oscal/system-security-plans/${route.params.id}`)
+const { data: controlImplementation, isLoading: ciLoading } = useDataApi<ControlImplementation>(`/api/oscal/system-security-plans/${route.params.id}/control-implementation`)
+const { execute: executeDelete } = useDataApi<void>(null, { method: 'DELETE' })
+const loading = computed<boolean>(() => sspLoading.value || ciLoading.value)
 
 const totalStatements = computed(() => {
   if (!controlImplementation.value?.implementedRequirements) return 0
-  return controlImplementation.value.implementedRequirements.reduce((total: number, req: any) => {
+  return controlImplementation.value.implementedRequirements.reduce((total: number, req: ImplementedRequirement) => {
     return total + (req.statements?.length || 0)
   }, 0)
 })
@@ -302,33 +305,15 @@ const totalStatements = computed(() => {
 const totalByComponents = computed(() => {
   if (!controlImplementation.value?.implementedRequirements) return 0
   let total = 0
-  controlImplementation.value.implementedRequirements.forEach((req: any) => {
+  controlImplementation.value.implementedRequirements.forEach((req: ImplementedRequirement) => {
     total += req.byComponents?.length || 0
     if (req.statements) {
-      req.statements.forEach((statement: any) => {
+      req.statements.forEach((statement: Statement) => {
         total += statement.byComponents?.length || 0
       })
     }
   })
   return total
-})
-
-onMounted(async () => {
-  const id = route.params.id as string
-
-  sspStore.get(id).then((res) => {
-    ssp.value = res.data
-  })
-
-  try {
-    const response = await sspStore.getControlImplementation(id)
-    controlImplementation.value = response.data
-  } catch (err) {
-    console.error('Error loading control implementation:', err)
-    error.value = err instanceof Error ? err.message : 'Unknown error'
-  } finally {
-    loading.value = false
-  }
 })
 
 // Control Implementation management
@@ -357,7 +342,7 @@ const deleteRequirement = async (requirement: ImplementedRequirement) => {
   }
 
   try {
-    await sspStore.deleteImplementedRequirement(route.params.id as string, requirement.uuid)
+    await executeDelete(`/api/oscal/system-security-plans/${route.params.id}/control-implementation/implemented-requirements/${requirement.uuid}`)
     if (controlImplementation.value) {
       controlImplementation.value.implementedRequirements =
         controlImplementation.value.implementedRequirements.filter(r => r.uuid !== requirement.uuid)
@@ -479,7 +464,7 @@ const handleStatementByComponentSaved = (updatedByComponent: ByComponent) => {
   editingRequirement.value = null
 }
 
-const editRequirementByComponent = (requirement: ImplementedRequirement, byComponent: any) => {
+const editRequirementByComponent = (requirement: ImplementedRequirement, byComponent: Component) => {
   console.log('Edit Requirement By Component:', requirement, byComponent)
   alert('Requirement By Component editing functionality is in development')
 }

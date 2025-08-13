@@ -7,7 +7,7 @@
       <label class="inline-block pb-2 dark:text-slate-300">UUID</label>
       <div class="flex gap-2">
         <FormInput v-model="statementData.uuid" placeholder="Statement UUID" class="flex-1" readonly />
-        <button 
+        <button
           type="button"
           @click="generateUUID"
           class="px-3 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors"
@@ -31,14 +31,14 @@
     <div class="mb-6">
       <label class="inline-block pb-2 dark:text-slate-300">Properties</label>
       <div class="space-y-3">
-        <div 
-          v-for="(prop, index) in statementData.props" 
+        <div
+          v-for="(prop, index) in statementData.props"
           :key="index"
           class="p-3 border border-ccf-300 dark:border-slate-700 rounded-md bg-gray-50 dark:bg-slate-800"
         >
           <div class="flex justify-between items-start mb-2">
             <h4 class="text-sm font-medium dark:text-slate-300">Property {{ index + 1 }}</h4>
-            <button 
+            <button
               type="button"
               @click="removeProperty(index)"
               class="text-red-500 hover:text-red-700"
@@ -46,7 +46,7 @@
               Remove
             </button>
           </div>
-          
+
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
               <label class="inline-block pb-1 text-sm dark:text-slate-300">Name</label>
@@ -58,8 +58,8 @@
             </div>
           </div>
         </div>
-        
-        <button 
+
+        <button
           type="button"
           @click="addProperty"
           class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors"
@@ -73,14 +73,14 @@
     <div class="mb-6">
       <label class="inline-block pb-2 dark:text-slate-300">Links</label>
       <div class="space-y-3">
-        <div 
-          v-for="(link, index) in statementData.links" 
+        <div
+          v-for="(link, index) in statementData.links"
           :key="index"
           class="p-3 border border-ccf-300 dark:border-slate-700 rounded-md bg-gray-50 dark:bg-slate-800"
         >
           <div class="flex justify-between items-start mb-2">
             <h4 class="text-sm font-medium dark:text-slate-300">Link {{ index + 1 }}</h4>
-            <button 
+            <button
               type="button"
               @click="removeLink(index)"
               class="text-red-500 hover:text-red-700"
@@ -88,7 +88,7 @@
               Remove
             </button>
           </div>
-          
+
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
               <label class="inline-block pb-1 text-sm dark:text-slate-300">Href</label>
@@ -104,8 +104,8 @@
             <FormInput v-model="link.text" placeholder="Link text" />
           </div>
         </div>
-        
-        <button 
+
+        <button
           type="button"
           @click="addLink"
           class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors"
@@ -116,14 +116,14 @@
     </div>
 
       <div class="flex justify-end gap-4">
-        <button 
-          type="button" 
+        <button
+          type="button"
           @click="$emit('cancel')"
           class="px-4 py-2 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 rounded-md hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
         >
           Cancel
         </button>
-        <button 
+        <button
           type="submit"
           :disabled="saving"
           class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 transition-colors"
@@ -136,16 +136,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue';
+import { reactive, onMounted } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import FormInput from '@/components/forms/FormInput.vue';
 import FormTextarea from '@/components/forms/FormTextarea.vue';
-import { 
-  type Statement,
-  type CreateStatementRequest,
-  useSystemSecurityPlanStore 
+import type {
+ Statement,
+ CreateStatementRequest,
 } from '@/stores/system-security-plans';
-import type { Property, Link } from '@/stores/types';
+import { useDataApi, decamelizeKeys } from '@/composables/axios';
+import type { AxiosError } from 'axios';
+import type { ErrorBody, ErrorResponse } from '@/stores/types.ts';
 
 const props = defineProps<{
   sspId: string;
@@ -157,9 +158,14 @@ const emit = defineEmits<{
   created: [statement: Statement];
 }>();
 
-const sspStore = useSystemSecurityPlanStore();
 const toast = useToast();
-const saving = ref(false);
+const { data: newStatement, execute: createStatementApi, isLoading: saving } = useDataApi<Statement>(
+  `/api/oscal/system-security-plans/${props.sspId}/control-implementation/implemented-requirements/${props.reqId}/statements`,
+  {
+    method: 'POST',
+    transformRequest: [decamelizeKeys]
+  }, { immediate: false }
+);
 
 const statementData = reactive<CreateStatementRequest>({
   uuid: '',
@@ -213,7 +219,7 @@ const createStatement = async () => {
     });
     return;
   }
-  
+
   if (!statementData.statementId.trim()) {
     toast.add({
       severity: 'error',
@@ -224,35 +230,28 @@ const createStatement = async () => {
     return;
   }
 
-  saving.value = true;
   try {
-    const response = await sspStore.createImplementedRequirementStatement(
-      props.sspId,
-      props.reqId,
-      statementData
-    );
-    
+    await createStatementApi({
+      data: statementData
+    });
+
     toast.add({
       severity: 'success',
       summary: 'Success',
       detail: 'Statement created successfully.',
       life: 3000
     });
-    
-    emit('created', response.data);
+
+    emit('created', newStatement.value!);
   } catch (error) {
-    console.error('Failed to create statement:', error);
-    const errorMessage = error instanceof Response 
-      ? `HTTP ${error.status}: ${error.statusText}`
-      : 'Failed to create statement. Please try again.';
+    const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
+    const errorMessage = errorResponse.response?.data?.errors.body || 'Failed to create statement.';
     toast.add({
       severity: 'error',
       summary: 'Error',
       detail: errorMessage,
       life: 5000
     });
-  } finally {
-    saving.value = false;
   }
 };
-</script> 
+</script>

@@ -133,7 +133,7 @@
           <TabPanel value="overview">
             <SystemImplementationOverviewForm
               :ssp-id="id"
-              :system-implementation="systemImplementation"
+              :system-implementation="systemImplementation!"
               @saved="handleOverviewSaved"
             />
           </TabPanel>
@@ -444,7 +444,7 @@
   </Modal>
 </template>
 <script setup lang="ts">
-import { onMounted, ref, computed } from 'vue';
+import { ref, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
 import decamelizeKeys from 'decamelize-keys';
@@ -468,30 +468,31 @@ import SystemImplementationLeveragedAuthorizationCreateForm from '@/components/s
 import SystemImplementationLeveragedAuthorizationEditForm from '@/components/system-security-plans/SystemImplementationLeveragedAuthorizationEditForm.vue';
 
 // Types and stores
-import {
-  type SystemComponent,
-  type SystemImplementationUser,
-  type SystemSecurityPlan,
-  type LeveragedAuthorization,
-  type SystemImplementation,
-  useSystemSecurityPlanStore
+import type {
+  SystemComponent,
+  SystemImplementationUser,
+  LeveragedAuthorization,
+  SystemImplementation,
 } from '@/stores/system-security-plans.ts';
-import type { DataResponse } from '@/stores/types.ts';
+import { useDataApi } from '@/composables/axios';
 
 const route = useRoute();
 const toast = useToast();
 const id = route.params.id as string;
-const sspStore = useSystemSecurityPlanStore();
 
 // Tab state
 const activeTab = ref('overview');
 
 // Data
-const systemSecurityPlan = ref<SystemSecurityPlan | null>(null);
-const systemImplementation = ref<SystemImplementation | null>(null);
-const users = ref<SystemImplementationUser[] | null>(null);
-const components = ref<SystemComponent[] | null>(null);
-const leveragedAuthorizations = ref<LeveragedAuthorization[] | null>(null);
+const { data: systemImplementation } = useDataApi<SystemImplementation>(`/api/oscal/system-security-plans/${id}/system-implementation`);
+const { data: users } = useDataApi<SystemImplementationUser[]>(`/api/oscal/system-security-plans/${id}/system-implementation/users`);
+const { data: components } = useDataApi<SystemComponent[]>(`/api/oscal/system-security-plans/${id}/system-implementation/components`);
+const { data: leveragedAuthorizations } = useDataApi<LeveragedAuthorization[]>(`/api/oscal/system-security-plans/${id}/system-implementation/leveraged-authorizations`);
+
+// Modification APIs
+const { execute: executeDeleteUser } = useDataApi<void>(null, { method: 'DELETE' });
+const { execute: executeDeleteComponent } = useDataApi<void>(null, { method: 'DELETE' });
+const { execute: executeDeleteLeveragedAuth } = useDataApi<void>(null, { method: 'DELETE' });
 
 // Modal states
 const showCreateUserModal = ref(false);
@@ -542,32 +543,6 @@ const componentTypeDistribution = computed(() => {
     .sort((a, b) => b.count - a.count);
 });
 
-const loadData = () => {
-  sspStore.get(id).then((data) => {
-    systemSecurityPlan.value = data.data;
-  });
-
-  sspStore.getSystemImplementation(id).then((data) => {
-    systemImplementation.value = data.data;
-  });
-
-  sspStore.getSystemImplementationUsers(id).then((data: DataResponse<SystemImplementationUser[]>) => {
-    users.value = data.data;
-  });
-
-  sspStore.getSystemImplementationComponents(id).then((data: DataResponse<SystemComponent[]>) => {
-    components.value = data.data;
-  });
-
-  sspStore.getSystemImplementationLeveragedAuthorizations(id).then((data: DataResponse<LeveragedAuthorization[]>) => {
-    leveragedAuthorizations.value = data.data;
-  });
-};
-
-onMounted(() => {
-  loadData();
-});
-
 // Overview handlers
 const handleOverviewSaved = (updatedSystemImplementation: SystemImplementation) => {
   systemImplementation.value = updatedSystemImplementation;
@@ -596,7 +571,7 @@ const handleUserSaved = (updatedUser: SystemImplementationUser) => {
 };
 
 const downloadUserJSON = (user: SystemImplementationUser) => {
-  const dataStr = JSON.stringify(decamelizeKeys(user), null, 2);
+  const dataStr = JSON.stringify(decamelizeKeys(user, {separator: '-', deep: true}), null, 2);
   const dataBlob = new Blob([dataStr], { type: 'application/json' });
   const url = URL.createObjectURL(dataBlob);
   const link = document.createElement('a');
@@ -612,7 +587,7 @@ const deleteUser = async (user: SystemImplementationUser) => {
   }
 
   try {
-    await sspStore.deleteSystemImplementationUser(id, user.uuid);
+    await executeDeleteUser(`/api/oscal/system-security-plans/${id}/system-implementation/users/${user.uuid}`);
     if (users.value) {
       users.value = users.value.filter(u => u.uuid !== user.uuid);
     }
@@ -635,49 +610,14 @@ const deleteUser = async (user: SystemImplementationUser) => {
 
 // Component management
 const editComponent = async (component: SystemComponent) => {
-  // Verify the component still exists before editing
-  try {
-    const response = await sspStore.getSystemImplementationComponent(id, component.uuid);
-    editingComponent.value = response.data;
-    showEditComponentModal.value = true;
-  } catch (error) {
-    toast.add({
-      severity: 'error',
-      summary: 'Error',
-      detail: 'Component not found. Please refresh the page.',
-      life: 5000
-    });
-    // Refresh the component list
-    loadData();
-  }
+  editingComponent.value = component;
+  showEditComponentModal.value = true;
 };
 
 const handleComponentCreated = async (newComponent: SystemComponent) => {
   // Add the component to the local array
   components.value?.push(newComponent);
   showCreateComponentModal.value = false;
-
-  // Verify by reloading components from backend after a short delay
-  setTimeout(async () => {
-    try {
-      const data = await sspStore.getSystemImplementationComponents(id);
-      const foundComponent = data.data.find(c => c.uuid === newComponent.uuid);
-      if (!foundComponent) {
-        toast.add({
-          severity: 'warning',
-          summary: 'Warning',
-          detail: 'Component may not have been saved properly. Please refresh the page.',
-          life: 5000
-        });
-        // Remove from local array if not found in backend
-        if (components.value) {
-          components.value = components.value.filter(c => c.uuid !== newComponent.uuid);
-        }
-      }
-    } catch (error) {
-      // Silently fail verification - the component creation already succeeded
-    }
-  }, 1000);
 };
 
 const handleComponentSaved = (updatedComponent: SystemComponent) => {
@@ -692,7 +632,7 @@ const handleComponentSaved = (updatedComponent: SystemComponent) => {
 };
 
 const downloadComponentJSON = (component: SystemComponent) => {
-  const dataStr = JSON.stringify(decamelizeKeys(component), null, 2);
+  const dataStr = JSON.stringify(decamelizeKeys(component, {separator: '-', deep: true}), null, 2);
   const dataBlob = new Blob([dataStr], { type: 'application/json' });
   const url = URL.createObjectURL(dataBlob);
   const link = document.createElement('a');
@@ -708,7 +648,7 @@ const deleteComponent = async (component: SystemComponent) => {
   }
 
   try {
-    await sspStore.deleteSystemImplementationComponent(id, component.uuid);
+    await executeDeleteComponent(`/api/oscal/system-security-plans/${id}/system-implementation/components/${component.uuid}`);
     if (components.value) {
       components.value = components.value.filter(c => c.uuid !== component.uuid);
     }
@@ -761,7 +701,7 @@ const handleLeveragedAuthSaved = (updatedAuth: LeveragedAuthorization) => {
 };
 
 const downloadLeveragedAuthJSON = (auth: LeveragedAuthorization) => {
-  const dataStr = JSON.stringify(decamelizeKeys(auth), null, 2);
+  const dataStr = JSON.stringify(decamelizeKeys(auth, {separator: '-', deep: true}), null, 2);
   const dataBlob = new Blob([dataStr], { type: 'application/json' });
   const url = URL.createObjectURL(dataBlob);
   const link = document.createElement('a');
@@ -777,7 +717,7 @@ const deleteLeveragedAuth = async (auth: LeveragedAuthorization) => {
   }
 
   try {
-    await sspStore.deleteSystemImplementationLeveragedAuthorization(id, auth.uuid);
+    await executeDeleteLeveragedAuth(`/api/oscal/system-security-plans/${id}/system-implementation/leveraged-authorizations/${auth.uuid}`);
     if (leveragedAuthorizations.value) {
       leveragedAuthorizations.value = leveragedAuthorizations.value.filter(a => a.uuid !== auth.uuid);
     }
