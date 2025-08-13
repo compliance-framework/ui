@@ -89,7 +89,7 @@
           </button>
         </div>
       </div>
-      
+
       <div class="p-6">
         <div v-if="characteristics" class="space-y-6">
           <div v-if="characteristics.description" class="prose prose-sm dark:prose-invert max-w-none">
@@ -155,7 +155,7 @@
             </svg>
           </div>
         </div>
-        
+
         <div class="p-4">
           <div v-if="networkArchitecture">
             <div v-if="networkArchitecture.description" class="mb-4">
@@ -169,8 +169,8 @@
                 </svg>
                 {{ networkArchitecture.diagrams.length }} Diagram{{ networkArchitecture.diagrams.length !== 1 ? 's' : '' }}
               </div>
-              <div 
-                v-for="(diagram, index) in networkArchitecture.diagrams" 
+              <div
+                v-for="(diagram, index) in networkArchitecture.diagrams"
                 :key="diagram.uuid"
                 class="border-l-4 border-green-500 pl-3 py-2 hover:bg-gray-50 dark:hover:bg-slate-800 rounded-r transition-colors"
               >
@@ -214,7 +214,7 @@
             </svg>
           </div>
         </div>
-        
+
         <div class="p-4">
           <div v-if="dataFlow">
             <div v-if="dataFlow.description" class="mb-4">
@@ -228,8 +228,8 @@
                 </svg>
                 {{ dataFlow.diagrams.length }} Diagram{{ dataFlow.diagrams.length !== 1 ? 's' : '' }}
               </div>
-              <div 
-                v-for="(diagram, index) in dataFlow.diagrams" 
+              <div
+                v-for="(diagram, index) in dataFlow.diagrams"
                 :key="diagram.uuid"
                 class="border-l-4 border-blue-500 pl-3 py-2 hover:bg-gray-50 dark:hover:bg-slate-800 rounded-r transition-colors"
               >
@@ -273,7 +273,7 @@
             </svg>
           </div>
         </div>
-        
+
         <div class="p-4">
           <div v-if="authorizationBoundary">
             <div v-if="authorizationBoundary.description" class="mb-4">
@@ -287,8 +287,8 @@
                 </svg>
                 {{ authorizationBoundary.diagrams.length }} Diagram{{ authorizationBoundary.diagrams.length !== 1 ? 's' : '' }}
               </div>
-              <div 
-                v-for="(diagram, index) in authorizationBoundary.diagrams" 
+              <div
+                v-for="(diagram, index) in authorizationBoundary.diagrams"
                 :key="diagram.uuid"
                 class="border-l-4 border-purple-500 pl-3 py-2 hover:bg-gray-50 dark:hover:bg-slate-800 rounded-r transition-colors"
               >
@@ -326,82 +326,26 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, computed } from 'vue'
+import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { 
-  type SystemCharacteristics,
-  type DiagramGrouping,
-  useSystemSecurityPlanStore 
+import type {
+  SystemCharacteristics,
+  DiagramGrouping,
 } from '@/stores/system-security-plans.ts'
+import { useDataApi } from '@/composables/axios'
 
 const route = useRoute()
-const sspStore = useSystemSecurityPlanStore()
 
-const characteristics = ref<SystemCharacteristics | null>(null)
-const networkArchitecture = ref<DiagramGrouping | null>(null)
-const dataFlow = ref<DiagramGrouping | null>(null)
-const authorizationBoundary = ref<DiagramGrouping | null>(null)
-
-const loading = ref(true)
-const networkArchitectureLoading = ref(true)
-const dataFlowLoading = ref(true)
-const authorizationBoundaryLoading = ref(true)
-const error = ref<string | null>(null)
-
-onMounted(async () => {
-  const id = route.params.id as string
-  
-  try {
-    // Load system characteristics
-    try {
-      const response = await sspStore.getCharacteristics(id)
-      characteristics.value = response.data
-    } catch (err: any) {
-      console.warn('Could not load system characteristics:', err)
-      if (err instanceof Response) {
-        error.value = `Failed to load system characteristics: ${err.status} ${err.statusText}`
-      } else if (err instanceof Error) {
-        error.value = err.message
-      } else {
-        error.value = 'Failed to load system characteristics'
-      }
-    } finally {
-      loading.value = false
-    }
-
-    // Load network architecture
-    try {
-      const response = await sspStore.getCharacteristicsNetworkArchitecture(id)
-      networkArchitecture.value = response.data
-    } catch (err) {
-      console.warn('Could not load network architecture:', err)
-    } finally {
-      networkArchitectureLoading.value = false
-    }
-
-    // Load data flow
-    try {
-      const response = await sspStore.getCharacteristicsDataFlow(id)
-      dataFlow.value = response.data
-    } catch (err) {
-      console.warn('Could not load data flow:', err)
-    } finally {
-      dataFlowLoading.value = false
-    }
-
-    // Load authorization boundary
-    try {
-      const response = await sspStore.getCharacteristicsAuthorizationBoundary(id)
-      authorizationBoundary.value = response.data
-    } catch (err) {
-      console.warn('Could not load authorization boundary:', err)
-    } finally {
-      authorizationBoundaryLoading.value = false
-    }
-  } catch (error) {
-    console.error('Error loading system characteristics:', error)
-  }
-})
+const { data: characteristics, isLoading: loading, error } = useDataApi<SystemCharacteristics>(`/api/oscal/system-security-plans/${route.params.id}/system-characteristics`)
+const { data: networkArchitecture, isLoading: networkArchitectureLoading } = useDataApi<DiagramGrouping | null>(
+  `/api/oscal/system-security-plans/${route.params.id}/system-characteristics/network-architecture`
+)
+const { data: authorizationBoundary, isLoading: authorizationBoundaryLoading } = useDataApi<DiagramGrouping | null>(
+  `/api/oscal/system-security-plans/${route.params.id}/system-characteristics/authorization-boundary`
+)
+const { data: dataFlow, isLoading: dataFlowLoading } = useDataApi<DiagramGrouping | null>(
+  `/api/oscal/system-security-plans/${route.params.id}/system-characteristics/data-flow`
+)
 
 function formatDate(dateString?: string): string {
   if (!dateString) return 'N/A'
@@ -415,7 +359,7 @@ const authorizationStatus = computed(() => {
   const now = new Date()
   const diffTime = now.getTime() - authDate.getTime()
   const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
-  
+
   // Consider re-authorization needed after 365 days
   if (diffDays > 365) return 'Needs Review'
   return 'Authorized'
