@@ -15,8 +15,8 @@ spec:
     spec:
       containers:
       - name: ccf-ui
-        image: ccf-ui:latest
-        imagePullPolicy: Never
+        image: ghcr.io/compliance-framework/ui:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 80
         volumeMounts:
