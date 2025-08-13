@@ -211,7 +211,6 @@ const saveLeveragedAuthorization = async () => {
     return;
   }
 
-  saving.value = true;
   try {
     await updateAuthorization({
       data: authData
@@ -233,8 +232,6 @@ const saveLeveragedAuthorization = async () => {
       detail: `Failed to update leveraged authorization. ${errorResponse.response?.data.errors.body || 'An unknown error occurred'}. Please try again.`,
       life: 5000
     });
-  } finally {
-    saving.value = false;
   }
 };
 </script>

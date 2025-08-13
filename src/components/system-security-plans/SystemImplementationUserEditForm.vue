@@ -162,7 +162,7 @@ const emit = defineEmits<{
 
 const toast = useToast();
 
-const { data: updatedUserm, execute: executeUpdate, isLoading: saving } = useDataApi<SystemImplementationUser>(
+const { data: updatedUser, execute: executeUpdate, isLoading: saving } = useDataApi<SystemImplementationUser>(
   `/api/oscal/system-security-plans/${props.sspId}/system-implementation/users/${props.user.uuid}`,
   {
     method: 'PUT',
@@ -259,7 +259,7 @@ const updateUser = async () => {
       life: 3000
     });
 
-    emit('saved', updatedUserm.value!);
+    emit('saved', updatedUser.value!);
   } catch (error) {
     const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
     toast.add({
