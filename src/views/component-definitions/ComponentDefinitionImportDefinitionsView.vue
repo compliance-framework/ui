@@ -72,7 +72,7 @@ const showEditModal = ref<boolean>(false)
 const selectedImportDefinition = ref<ImportComponentDefinition>({} as ImportComponentDefinition)
 
 const { data: importDefinitions } = useDataApi<ImportComponentDefinition[]>(
-  `/api/oscal/component-definitions/${componentDefinitionId.value}/import-component-definitions`, {}, {initialData: [] as ImportComponentDefinition[] }
+  `/api/oscal/component-definitions/${componentDefinitionId.value}/import-component-definitions`, {}, { initialData: [] as ImportComponentDefinition[] }
 )
 
 function editImportDefinition(importDef: ImportComponentDefinition) {

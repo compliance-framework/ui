@@ -85,7 +85,7 @@ async function downloadJSON(id: string, title: string) {
     toast.add({
       severity: 'error',
       summary: 'Download Failed',
-      detail: 'Failed to download component definition JSON: ' + responseError.response?.data.errors.body || 'Unknown error' ,
+      detail: `Failed to download component definition JSON: ${responseError.response?.data.errors.body || 'Unknown error'}`,
       life: 3000
     })
   }
