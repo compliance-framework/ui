@@ -31,8 +31,8 @@
         <div class="p-4 border border-ccf-300 dark:border-slate-700 rounded-md bg-gray-50 dark:bg-slate-800">
           <div class="mb-3">
             <label class="inline-block pb-1 text-sm dark:text-slate-300">State</label>
-            <select 
-              v-model="byComponentData.implementationStatus!.state" 
+            <select
+              v-model="byComponentData.implementationStatus!.state"
               class="w-full p-2 border border-ccf-300 dark:border-slate-700 rounded-md bg-white dark:bg-slate-900 dark:text-slate-300"
             >
               <option value="">Select status</option>
@@ -43,7 +43,7 @@
               <option value="not-applicable">Not Applicable</option>
             </select>
           </div>
-          
+
           <div>
             <label class="inline-block pb-1 text-sm dark:text-slate-300">Remarks</label>
             <FormTextarea v-model="byComponentData.implementationStatus!.remarks" rows="2" />
@@ -55,19 +55,19 @@
       <div class="mb-6">
         <label class="inline-block pb-2 dark:text-slate-300">Export</label>
         <div class="p-4 border border-ccf-300 dark:border-slate-700 rounded-md bg-gray-50 dark:bg-slate-800">
-          
+
           <!-- Provided -->
           <div class="mb-4">
             <h4 class="text-sm font-medium dark:text-slate-300 mb-2">Provided</h4>
             <div class="space-y-2">
-              <div 
-                v-for="(provided, index) in byComponentData.export?.provided || []" 
+              <div
+                v-for="(provided, index) in byComponentData.export?.provided || []"
                 :key="provided.uuid"
                 class="p-3 border border-ccf-200 dark:border-slate-600 rounded bg-white dark:bg-slate-900"
               >
                 <div class="flex justify-between items-start mb-2">
                   <span class="text-xs text-gray-500 dark:text-slate-400">UUID: {{ provided.uuid }}</span>
-                  <button 
+                  <button
                     type="button"
                     @click="removeProvided(index)"
                     class="text-red-500 hover:text-red-700 text-sm"
@@ -77,7 +77,7 @@
                 </div>
                 <FormTextarea v-model="provided.description" placeholder="Description of what is provided" rows="2" />
               </div>
-              <button 
+              <button
                 type="button"
                 @click="addProvided"
                 class="text-sm px-3 py-1 bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded hover:bg-green-200 dark:hover:bg-green-900/30 transition-colors"
@@ -91,14 +91,14 @@
           <div>
             <h4 class="text-sm font-medium dark:text-slate-300 mb-2">Responsibilities</h4>
             <div class="space-y-2">
-              <div 
-                v-for="(responsibility, index) in byComponentData.export?.responsibilities || []" 
+              <div
+                v-for="(responsibility, index) in byComponentData.export?.responsibilities || []"
                 :key="responsibility.uuid"
                 class="p-3 border border-ccf-200 dark:border-slate-600 rounded bg-white dark:bg-slate-900"
               >
                 <div class="flex justify-between items-start mb-2">
                   <span class="text-xs text-gray-500 dark:text-slate-400">UUID: {{ responsibility.uuid }}</span>
-                  <button 
+                  <button
                     type="button"
                     @click="removeResponsibility(index)"
                     class="text-red-500 hover:text-red-700 text-sm"
@@ -108,7 +108,7 @@
                 </div>
                 <FormTextarea v-model="responsibility.description" placeholder="Description of responsibility" rows="2" />
               </div>
-              <button 
+              <button
                 type="button"
                 @click="addResponsibility"
                 class="text-sm px-3 py-1 bg-orange-100 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400 rounded hover:bg-orange-200 dark:hover:bg-orange-900/30 transition-colors"
@@ -124,14 +124,14 @@
       <div class="mb-6">
         <label class="inline-block pb-2 dark:text-slate-300">Inherited</label>
         <div class="space-y-2">
-          <div 
-            v-for="(inherited, index) in byComponentData.inherited" 
+          <div
+            v-for="(inherited, index) in byComponentData.inherited"
             :key="inherited.uuid"
             class="p-3 border border-ccf-300 dark:border-slate-700 rounded-md bg-gray-50 dark:bg-slate-800"
           >
             <div class="flex justify-between items-start mb-2">
               <span class="text-xs text-gray-500 dark:text-slate-400">UUID: {{ inherited.uuid }}</span>
-              <button 
+              <button
                 type="button"
                 @click="removeInherited(index)"
                 class="text-red-500 hover:text-red-700 text-sm"
@@ -141,7 +141,7 @@
             </div>
             <FormTextarea v-model="inherited.description" placeholder="Description of inherited control" rows="2" />
           </div>
-          <button 
+          <button
             type="button"
             @click="addInherited"
             class="text-sm px-3 py-1 bg-purple-100 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 rounded hover:bg-purple-200 dark:hover:bg-purple-900/30 transition-colors"
@@ -155,14 +155,14 @@
       <div class="mb-6">
         <label class="inline-block pb-2 dark:text-slate-300">Satisfied</label>
         <div class="space-y-2">
-          <div 
-            v-for="(satisfied, index) in byComponentData.satisfied" 
+          <div
+            v-for="(satisfied, index) in byComponentData.satisfied"
             :key="satisfied.uuid"
             class="p-3 border border-ccf-300 dark:border-slate-700 rounded-md bg-gray-50 dark:bg-slate-800"
           >
             <div class="flex justify-between items-start mb-2">
               <span class="text-xs text-gray-500 dark:text-slate-400">UUID: {{ satisfied.uuid }}</span>
-              <button 
+              <button
                 type="button"
                 @click="removeSatisfied(index)"
                 class="text-red-500 hover:text-red-700 text-sm"
@@ -172,7 +172,7 @@
             </div>
             <FormTextarea v-model="satisfied.description" placeholder="Description of satisfied requirement" rows="2" />
           </div>
-          <button 
+          <button
             type="button"
             @click="addSatisfied"
             class="text-sm px-3 py-1 bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 rounded hover:bg-blue-200 dark:hover:bg-blue-900/30 transition-colors"
@@ -186,14 +186,14 @@
       <div class="mb-6">
         <label class="inline-block pb-2 dark:text-slate-300">Set Parameters</label>
         <div class="space-y-2">
-          <div 
-            v-for="(param, index) in byComponentData.setParameters" 
+          <div
+            v-for="(param, index) in byComponentData.setParameters"
             :key="index"
             class="p-3 border border-ccf-300 dark:border-slate-700 rounded-md bg-gray-50 dark:bg-slate-800"
           >
             <div class="flex justify-between items-start mb-2">
               <h4 class="text-sm font-medium dark:text-slate-300">Parameter {{ index + 1 }}</h4>
-              <button 
+              <button
                 type="button"
                 @click="removeParameter(index)"
                 class="text-red-500 hover:text-red-700 text-sm"
@@ -212,7 +212,7 @@
               </div>
             </div>
           </div>
-          <button 
+          <button
             type="button"
             @click="addParameter"
             class="text-sm px-3 py-1 bg-gray-200 dark:bg-slate-700 text-gray-700 dark:text-slate-300 rounded hover:bg-gray-300 dark:hover:bg-slate-600 transition-colors"
@@ -226,14 +226,14 @@
       <div class="mb-6">
         <label class="inline-block pb-2 dark:text-slate-300">Responsible Roles</label>
         <div class="space-y-2">
-          <div 
-            v-for="(role, index) in byComponentData.responsibleRoles" 
+          <div
+            v-for="(role, index) in byComponentData.responsibleRoles"
             :key="index"
             class="p-3 border border-ccf-300 dark:border-slate-700 rounded-md bg-gray-50 dark:bg-slate-800"
           >
             <div class="flex justify-between items-start mb-2">
               <h4 class="text-sm font-medium dark:text-slate-300">Role {{ index + 1 }}</h4>
-              <button 
+              <button
                 type="button"
                 @click="removeRole(index)"
                 class="text-red-500 hover:text-red-700 text-sm"
@@ -247,14 +247,14 @@
             </div>
             <div>
               <label class="inline-block pb-1 text-sm dark:text-slate-300">Party UUIDs (comma-separated)</label>
-              <FormInput 
-                :model-value="role.partyUuids?.join(', ')" 
+              <FormInput
+                :model-value="role.partyUuids?.join(', ')"
                 @update:model-value="updateRolePartyUuids(index, $event)"
-                placeholder="Enter UUIDs separated by commas" 
+                placeholder="Enter UUIDs separated by commas"
               />
             </div>
           </div>
-          <button 
+          <button
             type="button"
             @click="addRole"
             class="text-sm px-3 py-1 bg-gray-200 dark:bg-slate-700 text-gray-700 dark:text-slate-300 rounded hover:bg-gray-300 dark:hover:bg-slate-600 transition-colors"
@@ -272,14 +272,14 @@
 
       <!-- Form Actions -->
       <div class="flex justify-end gap-4">
-        <button 
-          type="button" 
+        <button
+          type="button"
           @click="$emit('cancel')"
           class="px-4 py-2 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 rounded-md hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
         >
           Cancel
         </button>
-        <button 
+        <button
           type="submit"
           :disabled="saving"
           class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 transition-colors"
@@ -292,16 +292,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue';
+import { reactive, onMounted } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import FormInput from '@/components/forms/FormInput.vue';
 import FormTextarea from '@/components/forms/FormTextarea.vue';
-import { 
-  type ByComponent,
-  type Statement,
-  type ImplementedRequirement,
-  useSystemSecurityPlanStore 
+import type {
+  ByComponent,
+  Statement,
+  ImplementedRequirement,
 } from '@/stores/system-security-plans.ts';
+import { useDataApi, decamelizeKeys } from '@/composables/axios';
+import type { AxiosError } from 'axios';
+import type { ErrorBody, ErrorResponse } from '@/stores/types';
 
 const props = defineProps<{
   sspId: string;
@@ -315,9 +317,14 @@ const emit = defineEmits<{
   saved: [byComponent: ByComponent];
 }>();
 
-const sspStore = useSystemSecurityPlanStore();
 const toast = useToast();
-const saving = ref(false);
+const { data: updatedByComponent, execute: updateByComponentApi, isLoading: saving } = useDataApi<ByComponent>(
+  `/api/oscal/system-security-plans/${props.sspId}/control-implementation/implemented-requirements/${props.requirement.uuid}/statements/${props.statement.uuid}/by-components/${props.byComponent.uuid}`,
+  {
+    method: 'PUT',
+    transformRequest: [decamelizeKeys]
+  }, { immediate: false }
+);
 
 const byComponentData = reactive<ByComponent>({
   uuid: '',
@@ -497,37 +504,28 @@ const updateByComponent = async () => {
     return;
   }
 
-  saving.value = true;
   try {
-    const response = await sspStore.updateStatementByComponent(
-      props.sspId,
-      props.requirement.uuid,
-      props.statement.uuid,
-      byComponentData.uuid,
-      byComponentData
-    );
-    
+    await updateByComponentApi({
+      data: byComponentData
+    });
+
     toast.add({
       severity: 'success',
       summary: 'Success',
       detail: 'By-Component updated successfully.',
       life: 3000
     });
-    
-    emit('saved', response.data);
+
+    emit('saved', updatedByComponent.value!);
   } catch (error) {
-    console.error('Failed to update by-component:', error);
-    const errorMessage = error instanceof Response 
-      ? `HTTP ${error.status}: ${error.statusText}`
-      : 'Failed to update by-component. Please try again.';
+    const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
+    const errorMessage = errorResponse.response?.data?.errors.body || 'An unexpected error occurred.';
     toast.add({
       severity: 'error',
       summary: 'Error',
       detail: errorMessage,
       life: 5000
     });
-  } finally {
-    saving.value = false;
   }
 };
 </script>
