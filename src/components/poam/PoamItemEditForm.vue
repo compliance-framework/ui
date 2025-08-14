@@ -3,7 +3,7 @@
     <h3 class="text-lg font-semibold text-gray-900 dark:text-slate-300 mb-4">
       Edit POAM Item
     </h3>
-    
+
     <form @submit.prevent="submit" class="space-y-4">
       <div>
         <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">
@@ -64,9 +64,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
-import { type PoamItem, usePlanOfActionAndMilestonesStore } from '@/stores/plan-of-action-and-milestones.ts'
+import { reactive, onMounted } from 'vue'
+import type { PoamItem } from '@/stores/plan-of-action-and-milestones.ts'
 import { useToast } from 'primevue/usetoast'
+import { useDataApi, decamelizeKeys } from '@/composables/axios'
+import type { AxiosError } from 'axios'
+import type { ErrorResponse, ErrorBody } from '@/stores/types'
 
 const props = defineProps<{
   poamId: string
@@ -78,10 +81,13 @@ const emit = defineEmits<{
   saved: [item: PoamItem]
 }>()
 
-const poamStore = usePlanOfActionAndMilestonesStore()
 const toast = useToast()
-
-const saving = ref(false)
+const { data: updatedPOAMItem, isLoading: saving, execute: updatePoamItem } = useDataApi<PoamItem>(`/api/oscal/plan-of-action-and-milestones/${props.poamId}/poam-items/${props.item.uuid}`,
+  {
+    method: 'PUT',
+    transformRequest: [decamelizeKeys]
+  }, { immediate: false }
+)
 
 const formData = reactive({
   title: '',
@@ -109,26 +115,29 @@ async function submit() {
 
   try {
     saving.value = true
-    
+
     const updatedItem: PoamItem = {
       ...props.item,
       title: formData.title,
       description: formData.description,
       remarks: formData.remarks || undefined
     }
-    
-    const response = await poamStore.updatePoamItem(props.poamId, props.item.uuid!, updatedItem)
-    
+
+    await updatePoamItem({
+      data: updatedItem
+    })
+
     toast.add({
       severity: 'success',
       summary: 'POAM Item Updated',
       detail: 'POAM item updated successfully',
       life: 3000
     })
-    
-    emit('saved', response.data)
+
+    emit('saved', updatedPOAMItem.value!)
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>
+    const errorMessage = errorResponse.response?.data.errors.body || 'Unknown error'
     toast.add({
       severity: 'error',
       summary: 'Update Failed',
@@ -139,4 +148,4 @@ async function submit() {
     saving.value = false
   }
 }
-</script> 
+</script>

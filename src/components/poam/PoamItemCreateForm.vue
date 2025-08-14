@@ -3,7 +3,7 @@
     <h3 class="text-lg font-semibold text-gray-900 dark:text-slate-300 mb-4">
       Create POAM Item
     </h3>
-    
+
     <form @submit.prevent="submit" class="space-y-4">
       <div>
         <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">
@@ -64,9 +64,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
-import { type PoamItem, usePlanOfActionAndMilestonesStore } from '@/stores/plan-of-action-and-milestones.ts'
+import { reactive } from 'vue'
+import type { PoamItem } from '@/stores/plan-of-action-and-milestones.ts'
 import { useToast } from 'primevue/usetoast'
+import { useDataApi, decamelizeKeys } from '@/composables/axios';
+import type { AxiosError } from 'axios'
+import type { ErrorResponse, ErrorBody } from '@/stores/types'
 
 const props = defineProps<{
   poamId: string
@@ -77,10 +80,13 @@ const emit = defineEmits<{
   created: [item: PoamItem]
 }>()
 
-const poamStore = usePlanOfActionAndMilestonesStore()
 const toast = useToast()
 
-const saving = ref(false)
+const { data: updatedPoamItem, isLoading: saving, execute: createPoamItem } = useDataApi<PoamItem>(
+  `/api/oscal/plan-of-action-and-milestones/${props.poamId}/poam-items`,
+  { method: 'POST', transformRequest: [decamelizeKeys] },
+  { immediate: false }
+)
 
 const formData = reactive({
   title: '',
@@ -100,35 +106,34 @@ async function submit() {
   }
 
   try {
-    saving.value = true
-    
     const newItem: Partial<PoamItem> = {
       uuid: crypto.randomUUID(),
       title: formData.title,
       description: formData.description,
       remarks: formData.remarks || undefined
     }
-    
-    const response = await poamStore.createPoamItem(props.poamId, newItem)
-    
+
+    await createPoamItem({
+      data: newItem,
+    })
+
     toast.add({
       severity: 'success',
       summary: 'POAM Item Created',
       detail: 'POAM item created successfully',
       life: 3000
     })
-    
-    emit('created', response.data)
+
+    emit('created', updatedPoamItem.value!)
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>
+    const errorMessage = errorResponse.response?.data.errors.body || 'Unknown error'
     toast.add({
       severity: 'error',
       summary: 'Creation Failed',
       detail: `Failed to create POAM item: ${errorMessage}`,
       life: 3000
     })
-  } finally {
-    saving.value = false
   }
 }
-</script> 
+</script>
