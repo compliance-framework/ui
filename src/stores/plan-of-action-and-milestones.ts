@@ -289,6 +289,7 @@ export interface PlanOfActionAndMilestones {
   metadata: Metadata;
   poamItems: PoamItem[];
   backMatter?: BackMatter;
+  systemId?: SystemId;
   remarks?: string;
 }
 
@@ -411,42 +412,42 @@ export const usePlanOfActionAndMilestonesStore = defineStore(
     async function updatePoamItem(id: string, itemId: string, item: PoamItem): Promise<DataResponse<PoamItem>> {
       // Create a deep copy to avoid modifying the original
       const itemCopy = JSON.parse(JSON.stringify(item))
-      
+
       // Convert nested related objects to use kebab-case field names
       if (itemCopy.relatedFindings) {
         itemCopy.relatedFindings = itemCopy.relatedFindings.map((finding: any) => ({
           'finding-uuid': finding.findingUuid
         }))
       }
-      
+
       if (itemCopy.relatedObservations) {
         itemCopy.relatedObservations = itemCopy.relatedObservations.map((observation: any) => ({
           'observation-uuid': observation.observationUuid
         }))
       }
-      
+
       if (itemCopy.relatedRisks) {
         itemCopy.relatedRisks = itemCopy.relatedRisks.map((risk: any) => ({
           'risk-uuid': risk.riskUuid
         }))
       }
-      
-      // Convert other fields to kebab-case 
+
+      // Convert other fields to kebab-case
       const decamelizedItem = decamelizeKeys(itemCopy, { separator: '-' })
-      
+
       // Restore the manually converted nested objects after decamelization
       if (itemCopy.relatedFindings) {
         decamelizedItem['related-findings'] = itemCopy.relatedFindings
       }
-      
+
       if (itemCopy.relatedObservations) {
         decamelizedItem['related-observations'] = itemCopy.relatedObservations
       }
-      
+
       if (itemCopy.relatedRisks) {
         decamelizedItem['related-risks'] = itemCopy.relatedRisks
       }
-      
+
       const config = await configStore.getConfig();
       const response = await fetch(
         `${config.API_URL}/api/oscal/plan-of-action-and-milestones/${id}/poam-items/${itemId}`,
@@ -459,11 +460,11 @@ export const usePlanOfActionAndMilestonesStore = defineStore(
           credentials: 'include',
         }
       );
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const responseData = await response.json();
       return camelcaseKeys(responseData, { deep: true }) as DataResponse<PoamItem>;
     }
@@ -842,7 +843,7 @@ export const usePlanOfActionAndMilestonesStore = defineStore(
     async function createFinding(id: string, finding: Partial<Finding>): Promise<DataResponse<Finding>> {
       const config = await configStore.getConfig();
       const decamelizedFinding = decamelizeKeys(finding, { separator: '-' });
-      
+
       const response = await fetch(
         `${config.API_URL}/api/oscal/plan-of-action-and-milestones/${id}/findings`,
         {
@@ -1150,4 +1151,4 @@ export const usePlanOfActionAndMilestonesStore = defineStore(
       deleteBackMatterResource,
     };
   },
-); 
+);

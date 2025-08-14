@@ -59,6 +59,10 @@ const poam = ref<PlanOfActionAndMilestones>({
     version: '',
     remarks: ''
   },
+  systemId: {
+    id: 'change-me',
+    identifierType: ''
+  },
   poamItems: []
 } as PlanOfActionAndMilestones)
 

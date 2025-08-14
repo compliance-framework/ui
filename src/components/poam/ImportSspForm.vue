@@ -57,9 +57,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
-import { type ImportSsp, usePlanOfActionAndMilestonesStore } from '@/stores/plan-of-action-and-milestones.ts'
+import { reactive, computed, onMounted } from 'vue'
+import type { ImportSsp } from '@/stores/plan-of-action-and-milestones.ts'
 import { useToast } from 'primevue/usetoast'
+import { useDataApi } from '@/composables/axios'
 
 const props = defineProps<{
   poamId: string
@@ -71,10 +72,14 @@ const emit = defineEmits<{
   saved: [importSsp: ImportSsp]
 }>()
 
-const poamStore = usePlanOfActionAndMilestonesStore()
 const toast = useToast()
 
-const saving = ref(false)
+const { data: updatedImportSsp, isLoading: saving, execute } = useDataApi<ImportSsp>(
+  `/api/oscal/plan-of-action-and-milestones/${props.poamId}/import-ssp`,
+  null,
+  { immediate: false }
+)
+
 const isEditing = computed(() => !!props.importSsp)
 
 const formData = reactive({
@@ -100,19 +105,22 @@ async function handleSubmit() {
     return
   }
 
-  saving.value = true
-
   try {
     const importSspData: ImportSsp = {
       href: formData.href.trim(),
       remarks: formData.remarks.trim() || undefined
     }
 
-    let response
     if (isEditing.value) {
-      response = await poamStore.updateImportSsp(props.poamId, importSspData)
+      await execute({
+        data: importSspData,
+        method: 'PUT'
+      })
     } else {
-      response = await poamStore.createImportSsp(props.poamId, importSspData)
+      await execute({
+        data: importSspData,
+        method: 'POST'
+      })
     }
 
     toast.add({
@@ -122,7 +130,7 @@ async function handleSubmit() {
       life: 3000
     })
 
-    emit('saved', response.data)
+    emit('saved', updatedImportSsp.value!)
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : 'Unknown error'
     toast.add({
@@ -131,8 +139,6 @@ async function handleSubmit() {
       detail: `Failed to save import SSP: ${errorMessage}`,
       life: 3000
     })
-  } finally {
-    saving.value = false
   }
 }
-</script> 
+</script>
