@@ -118,9 +118,11 @@ const router = useRouter()
 const configStore = useConfigStore()
 const toast = useToast()
 
-const { execute: executeDelete } = useDataApi<void>(`/api/oscal/assessment-results/${props.assessmentResults.uuid}`, {
-  method: 'DELETE',
-}, { immediate: false})
+const { execute: executeDelete } = useDataApi<void>(`/api/oscal/assessment-results/${props.assessmentResults.uuid}`,
+  {
+    method: 'DELETE',
+  }, { immediate: false }
+)
 
 function formatDate(dateString?: string): string {
   if (!dateString) return 'N/A'

@@ -251,11 +251,11 @@ async function createResult() {
     await loadResults()
     emit('update')
   } catch (err) {
-    const errorRespose = err as AxiosError<ErrorResponse<ErrorBody>>
+    const errorResponse = err as AxiosError<ErrorResponse<ErrorBody>>
     toast.add({
       severity: 'error',
       summary: 'Error',
-      detail: `Failed to create result: ${errorRespose?.response?.data?.errors.body || 'Unknown error'}`,
+      detail: `Failed to create result: ${errorResponse?.response?.data?.errors.body || 'Unknown error'}`,
       life: 5000
     })
   }
