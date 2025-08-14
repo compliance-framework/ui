@@ -9,7 +9,7 @@
         >
           Download JSON
         </button>
-        <button
+        <!-- <button
           v-if="!isEditing"
           @click="startEditing"
           class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md"
@@ -29,7 +29,7 @@
           >
             Cancel
           </button>
-        </template>
+        </template> -->
       </div>
     </div>
 
@@ -70,87 +70,86 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, computed } from 'vue'
-import { useAssessmentPlanStore } from '@/stores/assessment-plans.ts'
+import { ref, computed } from 'vue'
+import type { AssessmentPlan } from '@/stores/assessment-plans.ts'
 import { useRoute } from 'vue-router'
 import { useToast } from 'primevue/usetoast'
+import { useDataApi } from '@/composables/axios'
+import decamelizeKeys from 'decamelize-keys'
 
-const assessmentPlanStore = useAssessmentPlanStore()
 const route = useRoute()
 const toast = useToast()
 
-const assessmentPlan = ref<any>(null)
-const loading = ref(true)
-const error = ref<string | null>(null)
 const isEditing = ref(false)
 const editableJSON = ref('')
 const jsonError = ref<string | null>(null)
+
+const { data: assessmentPlan, error, isLoading: loading } = useDataApi<AssessmentPlan>(`/api/oscal/assessment-plans/${route.params.id}/full`)
 
 const formattedJSON = computed(() => {
   if (!assessmentPlan.value) return ''
   return JSON.stringify(assessmentPlan.value, null, 2)
 })
 
-function startEditing() {
-  editableJSON.value = formattedJSON.value
-  isEditing.value = true
-  jsonError.value = null
-}
+// function startEditing() {
+//   editableJSON.value = formattedJSON.value
+//   isEditing.value = true
+//   jsonError.value = null
+// }
 
-function cancelEditing() {
-  isEditing.value = false
-  editableJSON.value = ''
-  jsonError.value = null
-}
+// function cancelEditing() {
+//   isEditing.value = false
+//   editableJSON.value = ''
+//   jsonError.value = null
+// }
 
-function validateJSON(): boolean {
-  try {
-    JSON.parse(editableJSON.value)
-    jsonError.value = null
-    return true
-  } catch (err) {
-    jsonError.value = err instanceof Error ? err.message : 'Invalid JSON format'
-    return false
-  }
-}
+// function validateJSON(): boolean {
+//   try {
+//     JSON.parse(editableJSON.value)
+//     jsonError.value = null
+//     return true
+//   } catch (err) {
+//     jsonError.value = err instanceof Error ? err.message : 'Invalid JSON format'
+//     return false
+//   }
+// }
 
-async function saveJSON() {
-  if (!validateJSON()) {
-    return
-  }
+// async function saveJSON() {
+//   if (!validateJSON()) {
+//     return
+//   }
 
-  try {
-    const parsedJSON = JSON.parse(editableJSON.value)
-    const id = route.params.id as string
+//   try {
+//     const parsedJSON = JSON.parse(editableJSON.value)
+//     const id = route.params.id as string
 
-    await assessmentPlanStore.update(id, parsedJSON)
+//     await assessmentPlanStore.update(id, parsedJSON)
 
-    // Reload the data
-    await loadAssessmentPlan()
+//     // Reload the data
+//     await loadAssessmentPlan()
 
-    toast.add({
-      severity: 'success',
-      summary: 'JSON Updated',
-      detail: 'Assessment plan JSON has been updated successfully',
-      life: 3000
-    })
+//     toast.add({
+//       severity: 'success',
+//       summary: 'JSON Updated',
+//       detail: 'Assessment plan JSON has been updated successfully',
+//       life: 3000
+//     })
 
-    isEditing.value = false
-  } catch (error) {
-    toast.add({
-      severity: 'error',
-      summary: 'Error updating JSON',
-      detail: 'Failed to update assessment plan JSON. Please check the format and try again.',
-      life: 3000
-    })
-  }
-}
+//     isEditing.value = false
+//   } catch (error) {
+//     toast.add({
+//       severity: 'error',
+//       summary: 'Error updating JSON',
+//       detail: 'Failed to update assessment plan JSON. Please check the format and try again.',
+//       life: 3000
+//     })
+//   }
+// }
 
 async function downloadJSON() {
   try {
     const id = route.params.id as string
-    const response = await assessmentPlanStore.full(id)
-    const jsonData = JSON.stringify(response.data, null, 2)
+    const jsonData = JSON.stringify(decamelizeKeys(assessmentPlan.value!, {separator: "-", deep: true}), null, 2)
 
     // Create blob and download
     const blob = new Blob([jsonData], { type: 'application/json' })
@@ -178,29 +177,4 @@ async function downloadJSON() {
     })
   }
 }
-
-async function loadAssessmentPlan() {
-  loading.value = true
-  error.value = null
-
-  try {
-    const id = route.params.id as string
-    const response = await assessmentPlanStore.get(id)
-    assessmentPlan.value = response.data
-  } catch (err) {
-    error.value = 'Failed to load assessment plan'
-    toast.add({
-      severity: 'error',
-      summary: 'Error loading assessment plan',
-      detail: 'Failed to load assessment plan JSON. Please try again.',
-      life: 3000
-    })
-  } finally {
-    loading.value = false
-  }
-}
-
-onMounted(() => {
-  loadAssessmentPlan()
-})
 </script>

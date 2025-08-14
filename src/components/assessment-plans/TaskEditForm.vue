@@ -43,7 +43,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { type Task, useAssessmentPlanStore } from '@/stores/assessment-plans.ts'
+import type { Task } from '@/stores/assessment-plans.ts'
 import { useToast } from 'primevue/usetoast'
 import FormInput from '@/components/forms/FormInput.vue'
 import FormTextarea from '@/components/forms/FormTextarea.vue'
@@ -51,8 +51,8 @@ import TaskTimingManager from '@/components/forms/TaskTimingManager.vue'
 import TaskDependencyManager from '@/components/forms/TaskDependencyManager.vue'
 import PrimaryButton from '@/components/PrimaryButton.vue'
 import SecondaryButton from '@/components/SecondaryButton.vue'
+import { useDataApi, decamelizeKeys } from '@/composables/axios'
 
-const assessmentPlanStore = useAssessmentPlanStore()
 const toast = useToast()
 
 const props = defineProps<{
@@ -67,6 +67,13 @@ const emit = defineEmits<{
 
 const taskData = ref(props.task)
 const errorMessage = ref('')
+
+const { data: updatedTask, execute: updateTaskApi } = useDataApi<Task>(`/api/oscal/assessment-plans/${props.assessmentPlanId}/tasks/${taskData.value.uuid}`,
+  {
+    method: "PUT",
+    transformRequest: [decamelizeKeys]
+  }, { immediate: false }
+);
 
 async function updateTask(): Promise<void> {
   errorMessage.value = ''
@@ -100,11 +107,9 @@ async function updateTask(): Promise<void> {
       responsibleRoles: taskData.value.responsibleRoles || []
     } as Task
 
-    console.log('Updating task with data:', updatedTaskData)
-    console.log('Assessment plan ID:', props.assessmentPlanId)
-
-    const result = await assessmentPlanStore.updateTask(props.assessmentPlanId, updatedTaskData)
-    console.log('Update result:', result)
+    await updateTaskApi({
+      data: updatedTaskData
+    })
 
     toast.add({
       severity: 'success',
@@ -113,7 +118,7 @@ async function updateTask(): Promise<void> {
       life: 3000
     })
 
-    emit('updated', updatedTaskData)
+    emit('updated', updatedTask.value!)
   } catch (error) {
     toast.add({
       severity: 'error',

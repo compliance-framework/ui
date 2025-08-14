@@ -47,10 +47,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import PageHeader from '@/components/PageHeader.vue'
 import PageSubHeader from '@/components/PageSubHeader.vue'
-import { type AssessmentPlan, useAssessmentPlanStore } from '@/stores/assessment-plans.ts'
+import type { AssessmentPlan } from '@/stores/assessment-plans.ts'
 import { useRouter } from 'vue-router'
 import TertiaryButton from '@/components/TertiaryButton.vue'
 import PageCard from '@/components/PageCard.vue'
@@ -60,8 +60,10 @@ import PrimaryButton from '@/components/PrimaryButton.vue'
 import { BIconArrowRepeat } from 'bootstrap-icons-vue'
 import { v4 as uuidv4 } from 'uuid'
 import { useToast } from 'primevue/usetoast'
+import { useDataApi, decamelizeKeys } from '@/composables/axios'
+import type { AxiosError } from 'axios'
+import type { ErrorResponse, ErrorBody } from '@/stores/types.ts'
 
-const assessmentPlanStore = useAssessmentPlanStore()
 const assessmentPlan = ref<AssessmentPlan>({
   metadata: {
     title: '',
@@ -73,6 +75,13 @@ const assessmentPlan = ref<AssessmentPlan>({
     remarks: ''
   }
 } as AssessmentPlan)
+
+const { data: newAP, execute: executeCreate } = useDataApi<AssessmentPlan>('/api/oscal/assessment-plans',
+  {
+    method: 'POST',
+    transformRequest: [decamelizeKeys]
+  }, { immediate: false }
+)
 
 const router = useRouter()
 const toast = useToast()
@@ -113,7 +122,9 @@ async function submit() {
       return
     }
 
-    const response = await assessmentPlanStore.create(assessmentPlan.value)
+    await executeCreate({
+      data: assessmentPlan.value
+    })
 
     toast.add({
       severity: 'success',
@@ -124,13 +135,14 @@ async function submit() {
 
     await router.push({
       name: 'assessment-plan-overview',
-      params: { id: response.data.uuid },
+      params: { id: newAP.value!.uuid },
     })
   } catch (error) {
+    const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>
     toast.add({
       severity: 'error',
       summary: 'Error creating assessment plan',
-      detail: 'Failed to create assessment plan. Please check your input and try again.',
+      detail: `Failed to create assessment plan ${errorResponse.response?.data?.errors.body || 'Unknown error'}. Please check your input and try again.`,
       life: 3000
     })
   }
@@ -139,4 +151,8 @@ async function submit() {
 function generateUuid() {
   assessmentPlan.value.uuid = uuidv4()
 }
+
+onMounted(() => {
+  generateUuid()
+})
 </script>

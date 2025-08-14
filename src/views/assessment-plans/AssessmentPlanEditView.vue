@@ -1,5 +1,14 @@
 <template>
   <PageHeader>Edit Assessment Plan</PageHeader>
+  <template v-if="loading">
+    <p>Loading assessment plans...</p>
+  </template>
+  <template v-else-if="error">
+    <p class="text-red-500">
+      Error loading assessment plan: {{ ( error as AxiosError<ErrorResponse<ErrorBody>>).response?.data.errors.body || 'Unknown error' }}
+    </p>
+  </template>
+  <template v-if="assessmentPlan">
   <PageSubHeader>{{ assessmentPlan.metadata?.title }}</PageSubHeader>
 
   <PageCard class="mt-8 w-1/2">
@@ -67,49 +76,40 @@
         </div>
       </div>
     </form>
-
-    <div v-else class="text-center py-8">
-      <p class="text-gray-500 dark:text-slate-400">Loading assessment plan...</p>
-    </div>
   </PageCard>
+  </template>
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
 import PageHeader from '@/components/PageHeader.vue'
 import PageSubHeader from '@/components/PageSubHeader.vue'
 import PageCard from '@/components/PageCard.vue'
 import FormInput from '@/components/forms/FormInput.vue'
 import FormTextarea from '@/components/forms/FormTextarea.vue'
 import PrimaryButton from '@/components/PrimaryButton.vue'
-import { type AssessmentPlan, useAssessmentPlanStore } from '@/stores/assessment-plans.ts'
+import type { AssessmentPlan } from '@/stores/assessment-plans.ts'
 import { useRoute, useRouter } from 'vue-router'
 import { useToast } from 'primevue/usetoast'
+import { useDataApi, decamelizeKeys } from '@/composables/axios'
+import type { ErrorBody, ErrorResponse } from '@/stores/types'
+import type { AxiosError } from 'axios'
 
-const assessmentPlanStore = useAssessmentPlanStore()
 const route = useRoute()
 const router = useRouter()
 const toast = useToast()
 
-const assessmentPlan = ref<AssessmentPlan>({
-  metadata: {
-    title: '',
-    version: '',
-    remarks: '',
-    published: ''
-  },
-  importSsp: {
-    href: '',
-    remarks: ''
-  }
-} as AssessmentPlan)
-
-const loading = ref(true)
+const { data: assessmentPlan, isLoading: loading, error } = useDataApi<AssessmentPlan>(`/api/oscal/assessment-plans/${route.params.id}`)
+const { execute: executeUpdate } = useDataApi<AssessmentPlan>(`/api/oscal/assessment-plans/${route.params.id}`,
+  {
+    method: 'PUT',
+    transformRequest: [decamelizeKeys]
+  }, { immediate: false}
+)
 
 async function submit() {
   try {
     // Validate required fields
-    if (!assessmentPlan.value.metadata.title) {
+    if (!assessmentPlan.value!.metadata.title) {
       toast.add({
         severity: 'error',
         summary: 'Validation Error',
@@ -119,7 +119,7 @@ async function submit() {
       return
     }
 
-    if (!assessmentPlan.value.importSsp.href) {
+    if (!assessmentPlan.value!.importSsp.href) {
       toast.add({
         severity: 'error',
         summary: 'Validation Error',
@@ -131,7 +131,7 @@ async function submit() {
 
     // Validate URL format
     try {
-      new URL(assessmentPlan.value.importSsp.href)
+      new URL(assessmentPlan.value!.importSsp.href)
     } catch {
       toast.add({
         severity: 'error',
@@ -143,10 +143,11 @@ async function submit() {
     }
 
     // Update last modified timestamp
-    assessmentPlan.value.metadata.lastModified = new Date().toISOString()
+    assessmentPlan.value!.metadata.lastModified = new Date().toISOString()
 
-    const id = route.params.id as string
-    await assessmentPlanStore.update(id, assessmentPlan.value)
+    await executeUpdate({
+      data: assessmentPlan.value
+    })
 
     toast.add({
       severity: 'success',
@@ -158,7 +159,7 @@ async function submit() {
     // Redirect back to overview
     await router.push({
       name: 'assessment-plan-overview',
-      params: { id: assessmentPlan.value.uuid },
+      params: { id: assessmentPlan.value!.uuid },
     })
   } catch (error) {
     toast.add({
@@ -169,29 +170,4 @@ async function submit() {
     })
   }
 }
-
-onMounted(async () => {
-  const id = route.params.id as string
-  try {
-    const response = await assessmentPlanStore.get(id)
-    assessmentPlan.value = response.data
-
-    // Ensure required nested objects exist
-    if (!assessmentPlan.value.metadata) {
-      assessmentPlan.value.metadata = { title: '', version: '', remarks: '', published: '' }
-    }
-    if (!assessmentPlan.value.importSsp) {
-      assessmentPlan.value.importSsp = { href: '', remarks: '' }
-    }
-  } catch (error) {
-    toast.add({
-      severity: 'error',
-      summary: 'Error loading assessment plan',
-      detail: 'Failed to load assessment plan for editing. Please try again.',
-      life: 3000
-    })
-  } finally {
-    loading.value = false
-  }
-})
 </script>
