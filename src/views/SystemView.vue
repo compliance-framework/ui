@@ -1,8 +1,14 @@
 <template>
   <PageHeader>System Security Plan</PageHeader>
-  <PageSubHeader>{{ systemSecurityPlan.metadata?.title }}</PageSubHeader>
+  <PageSubHeader v-if="systemSecurityPlan?.metadata">{{ systemSecurityPlan.metadata.title }}</PageSubHeader>
+  
+  <div v-if="!systemSecurityPlan?.uuid" class="p-4">
+    <div class="bg-yellow-50 border border-yellow-200 rounded-md p-4">
+      <p class="text-yellow-800">No System Security Plan selected. Please go to the <RouterLink to="/system-security-plans" class="text-blue-600 hover:text-blue-800 underline">System Security Plans</RouterLink> page and select a plan.</p>
+    </div>
+  </div>
 
-  <div>
+  <div v-else>
     <Tabs :value="activeRoute as string">
       <TabList>
         <Tab v-for="tab in [
@@ -29,20 +35,21 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import PageHeader from '@/components/PageHeader.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
 import {
   type SystemSecurityPlan,
 } from '@/stores/system-security-plans.ts';
-import { RouterView, useRoute } from 'vue-router'
+import { RouterView, RouterLink, useRoute } from 'vue-router'
 import { useSystemStore } from '@/stores/system.ts';
 import Tabs from '@/volt/Tabs.vue'
 import Tab from '@/volt/Tab.vue'
 import TabList from '@/volt/TabList.vue'
 
 const { system } = useSystemStore();
-const systemSecurityPlan = ref<SystemSecurityPlan>(system.securityPlan as SystemSecurityPlan);
+// Use computed to make it reactive to system store changes
+const systemSecurityPlan = computed(() => system.securityPlan || {} as SystemSecurityPlan);
 
 const route = useRoute();
 const activeRoute = ref(route.name)

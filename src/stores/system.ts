@@ -19,10 +19,14 @@ export const useSystemStore = defineStore('system', () => {
   const system = useLocalStorage<System>('system', {} as System);
 
   function setSecurityPlan(plan: SystemSecurityPlan) {
-    system.value.securityPlan = {
-      metadata: plan.metadata,
-      uuid: plan.uuid,
-    } as PartialSystemSecurityPlan;
+    // Create a new object to ensure reactivity
+    system.value = {
+      ...system.value,
+      securityPlan: {
+        metadata: plan.metadata,
+        uuid: plan.uuid,
+      } as PartialSystemSecurityPlan
+    };
   }
 
   function setAssessmentPlan(plan: AssessmentPlan) {
