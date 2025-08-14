@@ -10,7 +10,7 @@
       </button>
     </div>
 
-    <div v-if="subjects.length > 0">
+    <div v-if="subjects && subjects.length > 0">
       <div class="space-y-4">
         <div
           v-for="(subject, index) in subjects"
@@ -99,17 +99,16 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { type AssessmentSubject, useAssessmentPlanStore } from '@/stores/assessment-plans.ts'
+import type { AssessmentSubject } from '@/stores/assessment-plans.ts'
 import { useRoute } from 'vue-router'
 import { useToast } from 'primevue/usetoast'
 import { useConfirm } from 'primevue/useconfirm'
+import { useDataApi } from '@/composables/axios'
 
-const assessmentPlanStore = useAssessmentPlanStore()
 const route = useRoute()
 const toast = useToast()
 const confirm = useConfirm()
 
-const subjects = ref<AssessmentSubject[]>([])
 const showCreateModal = ref(false)
 const showEditModal = ref(false)
 const editingSubject = ref<AssessmentSubject>({} as AssessmentSubject)
@@ -119,25 +118,41 @@ function editSubject(subject: AssessmentSubject) {
   showEditModal.value = true
 }
 
+const { data: subjects, execute: loadSubjects } = useDataApi<AssessmentSubject[]>(`/api/oscal/assessment-plans/${route.params.id}/assessment-subjects`,
+  null,
+  { immediate: false,
+    initialData: [] as AssessmentSubject[]
+  }
+)
+
 async function removeSubject(index: number) {
+  if (!subjects.value ) return;
   confirm.require({
     message: 'Are you sure you want to remove this subject?',
     header: 'Confirmation',
     icon: 'pi pi-exclamation-triangle',
+    acceptProps: {
+      label: 'Yes, Delete Subject',
+      severity: 'danger'
+    },
+    rejectProps: {
+      label: 'No',
+      severity: 'secondary'
+    },
     accept: async () => {
       try {
-        subjects.value.splice(index, 1)
+        subjects.value!.splice(index, 1)
 
         // Save to backend
-        const id = route.params.id as string
-        await assessmentPlanStore.updateAssessmentSubjects(id, subjects.value)
+        // Unable to execute at the moment due to missing API endpoint to update subjects without updating the entire assessment plan
+        throw new Error('API endpoint not implemented yet')
 
-        toast.add({
-          severity: 'success',
-          summary: 'Subject Removed',
-          detail: 'Subject has been removed successfully',
-          life: 3000
-        })
+        // toast.add({
+        //   severity: 'success',
+        //   summary: 'Subject Removed',
+        //   detail: 'Subject has been removed successfully',
+        //   life: 3000
+        // })
       } catch (error) {
         toast.add({
           severity: 'error',
@@ -156,21 +171,6 @@ async function removeSubject(index: number) {
       })
     }
   })
-}
-
-async function loadSubjects() {
-  const id = route.params.id as string
-  try {
-    const response = await assessmentPlanStore.getAssessmentSubjects(id)
-    subjects.value = response.data || []
-  } catch (error) {
-    toast.add({
-      severity: 'error',
-      summary: 'Error loading subjects',
-      detail: 'Failed to load assessment plan subjects. Please try again.',
-      life: 3000
-    })
-  }
 }
 
 onMounted(async () => {
