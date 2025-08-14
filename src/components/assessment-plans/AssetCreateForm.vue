@@ -33,7 +33,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { type AssessmentAsset, useAssessmentPlanStore } from '@/stores/assessment-plans.ts'
+import type { AssessmentAsset } from '@/stores/assessment-plans.ts'
 import { useToast } from 'primevue/usetoast'
 import FormInput from '@/components/forms/FormInput.vue'
 import FormTextarea from '@/components/forms/FormTextarea.vue'
@@ -42,8 +42,8 @@ import SecondaryButton from '@/components/SecondaryButton.vue'
 import TertiaryButton from '@/components/TertiaryButton.vue'
 import { BIconArrowRepeat } from 'bootstrap-icons-vue'
 import { v4 as uuidv4 } from 'uuid'
+import { useDataApi, decamelizeKeys } from '@/composables/axios'
 
-const assessmentPlanStore = useAssessmentPlanStore()
 const toast = useToast()
 
 const props = defineProps<{
@@ -63,6 +63,17 @@ const asset = ref<AssessmentAsset>({
   links: [],
   components: []
 })
+
+const { execute: executeCreateAsset } = useDataApi<AssessmentAsset>(
+  `/api/oscal/assessment-plans/${props.assessmentPlanId}/assessment-assets`,
+  {
+    method: 'POST',
+    transformRequest: [decamelizeKeys]
+  },
+  {
+    immediate: false
+  }
+)
 
 const errorMessage = ref('')
 
@@ -100,10 +111,10 @@ async function createAsset(): Promise<void> {
       'assessment-platforms': [assessmentPlatform]
     }
 
-    console.log('[DEBUG_LOG] Creating asset with payload:', assetPayload)
-
     // Use the dedicated asset creation endpoint
-    await assessmentPlanStore.createAssessmentAsset(props.assessmentPlanId, assetPayload)
+    await executeCreateAsset({
+      data: assetPayload
+    })
 
     toast.add({
       severity: 'success',

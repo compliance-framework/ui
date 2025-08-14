@@ -10,7 +10,7 @@
       </button>
     </div>
 
-    <div v-if="assets.length > 0">
+    <div v-if="assets && assets.length > 0">
       <div class="space-y-4">
         <div
           v-for="(asset, index) in assets"
@@ -140,22 +140,26 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { type AssessmentAsset, useAssessmentPlanStore } from '@/stores/assessment-plans.ts'
+import type { AssessmentAsset } from '@/stores/assessment-plans.ts'
 import { useRoute } from 'vue-router'
 import { useToast } from 'primevue/usetoast'
 import AssetCreateModal from '@/components/assessment-plans/AssetCreateModal.vue'
 import AssetEditModal from '@/components/assessment-plans/AssetEditModal.vue'
 import { useConfirm } from 'primevue/useconfirm'
+import { useDataApi } from '@/composables/axios'
 
-const assessmentPlanStore = useAssessmentPlanStore()
 const route = useRoute()
 const toast = useToast()
 const confirm = useConfirm()
 
-const assets = ref<AssessmentAsset[]>([])
 const showCreateModal = ref(false)
 const showEditModal = ref(false)
 const editingAsset = ref<AssessmentAsset>({} as AssessmentAsset)
+
+const { data: assets, execute: loadAssets } = useDataApi<AssessmentAsset[]>(`/api/oscal/assessment-plans/${route.params.id}/assessment-assets`, null, {
+  immediate: false,
+  initialData: [] as AssessmentAsset[]
+})
 
 function editAsset(asset: AssessmentAsset) {
   editingAsset.value = { ...asset }
@@ -177,20 +181,26 @@ async function removeAsset(index: number) {
     message: 'Are you sure you want to remove this asset?',
     header: 'Confirmation',
     icon: 'pi pi-exclamation-triangle',
+    acceptProps: {
+      label: 'Yes, Delete Asset',
+      severity: 'danger'
+    },
+    rejectProps: {
+      label: 'No',
+      severity: 'secondary'
+    },
     accept: async () => {
       try {
-        assets.value.splice(index, 1)
+        assets.value!.splice(index, 1)
 
-        // Save to backend
-        const id = route.params.id as string
-        await assessmentPlanStore.updateAssessmentAssets(id, assets.value)
+        throw new Error('API endpoint not implemented yet')
 
-        toast.add({
-          severity: 'success',
-          summary: 'Asset Removed',
-          detail: 'Asset has been removed successfully',
-          life: 3000
-        })
+        // toast.add({
+        //   severity: 'success',
+        //   summary: 'Asset Removed',
+        //  detail: 'Asset has been removed successfully',
+        //  life: 3000
+        // })
       } catch (error) {
         toast.add({
           severity: 'error',
@@ -204,21 +214,6 @@ async function removeAsset(index: number) {
       // Optional: Handle rejection if needed
     }
   })
-}
-
-async function loadAssets() {
-  const id = route.params.id as string
-  try {
-    const response = await assessmentPlanStore.getAssessmentAssets(id)
-    assets.value = response.data || []
-  } catch (error) {
-    toast.add({
-      severity: 'error',
-      summary: 'Error loading assets',
-      detail: 'Failed to load assessment plan assets. Please try again.',
-      life: 3000
-    })
-  }
 }
 
 onMounted(async () => {

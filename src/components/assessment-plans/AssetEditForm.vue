@@ -1,6 +1,6 @@
 <template>
   <form @submit.prevent="updateAsset()">
-    <h1 class="text-xl font-semibold mb-6 dark:text-slate-300">Edit asset</h1>
+    <h1 class="text-xl font-semibold mb-6 dark:text-slate-300">Edit asset (WIP)</h1>
 
     <div class="mb-4">
       <label class="inline-block pb-2 dark:text-slate-300">UUID</label>
@@ -32,14 +32,13 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { type AssessmentAsset, useAssessmentPlanStore } from '@/stores/assessment-plans.ts'
+import { type AssessmentAsset } from '@/stores/assessment-plans.ts'
 import { useToast } from 'primevue/usetoast'
 import FormInput from '@/components/forms/FormInput.vue'
 import FormTextarea from '@/components/forms/FormTextarea.vue'
 import PrimaryButton from '@/components/PrimaryButton.vue'
 import SecondaryButton from '@/components/SecondaryButton.vue'
 
-const assessmentPlanStore = useAssessmentPlanStore()
 const toast = useToast()
 
 const props = defineProps<{
@@ -60,24 +59,24 @@ async function updateAsset(): Promise<void> {
   errorMessage.value = ''
 
   try {
-    // Get current assets, find and update the specific asset
-    const response = await assessmentPlanStore.get(props.assessmentPlanId)
-    let assets = response.data.assessmentAssets || []
-    assets = assets.map((asset: AssessmentAsset) => {
-      if (asset.uuid == assetData.value.uuid) {
-        return assetData.value
-      }
-      return asset
-    })
+    // TODO: fix the endpoints to be OSCAL compatable
 
-    await assessmentPlanStore.updateAssessmentAssets(props.assessmentPlanId, assets)
+    // // Get current assets, find and update the specific asset
+    // const response = await assessmentPlanStore.get(props.assessmentPlanId)
+    // let assets = response.data.assessmentAssets || []
+    // assets = assets.map((asset: AssessmentAsset) => {
+    //   if (asset.uuid == assetData.value.uuid) {
+    //     return assetData.value
+    //   }
+    //   return asset
+    // })
 
-    toast.add({
-      severity: 'success',
-      summary: 'Asset Updated',
-      detail: 'Asset has been updated successfully',
-      life: 3000
-    })
+    // toast.add({
+    //   severity: 'success',
+    //   summary: 'Asset Updated',
+    //   detail: 'Asset has been updated successfully',
+    //   life: 3000
+    // })
 
     emit('updated', assetData.value)
   } catch (error) {
