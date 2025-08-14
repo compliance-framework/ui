@@ -17,7 +17,7 @@
     <div v-else-if="error" class="text-center py-8">
       <p class="text-red-500">Error loading results: {{ error }}</p>
     </div>
-    <div v-else-if="!results.length" class="text-center py-8">
+    <div v-else-if="results && !results.length" class="text-center py-8">
       <p class="text-gray-500 dark:text-slate-400">No results found.</p>
     </div>
     <div v-else class="space-y-4">
@@ -158,10 +158,13 @@
 <script setup lang="ts">
 import { ref, onMounted, type PropType } from 'vue'
 import { useRouter } from 'vue-router'
-import Dialog from 'primevue/dialog'
-import { useAssessmentResultsStore, type AssessmentResults, type Result } from '@/stores/assessment-results'
+import Dialog from '@/volt/Dialog.vue'
+import type { AssessmentResults, Result } from '@/stores/assessment-results'
 import { useToast } from 'primevue/usetoast'
 import { v4 as uuidv4 } from 'uuid'
+import { useDataApi, decamelizeKeys } from '@/composables/axios'
+import type { AxiosError } from 'axios'
+import type { ErrorResponse, ErrorBody } from '@/stores/types'
 
 const props = defineProps({
   assessmentResults: {
@@ -173,14 +176,31 @@ const props = defineProps({
 const emit = defineEmits(['update'])
 
 const router = useRouter()
-const arStore = useAssessmentResultsStore()
 const toast = useToast()
 
-const results = ref<Result[]>([])
-const loading = ref(true)
-const error = ref<string | null>(null)
+const { data: results, isLoading: loading, error, execute: loadResults} = useDataApi<Result[]>(
+  `/api/oscal/assessment-results/${props.assessmentResults.uuid}/results`,
+  null,
+  { immediate: false }
+)
+
+const { isLoading: creating, execute: executeCreate } = useDataApi<Result>(
+  `/api/oscal/assessment-results/${props.assessmentResults.uuid}/results`,
+  {
+    method: 'POST',
+    transformRequest: [decamelizeKeys]
+  },
+  { immediate: false }
+)
+
+const { execute: executeDelete } = useDataApi<void>(null,
+  {
+    method: 'DELETE'
+  },
+  { immediate: false }
+)
+
 const showCreateModal = ref(false)
-const creating = ref(false)
 
 const newResult = ref({
   title: '',
@@ -189,34 +209,12 @@ const newResult = ref({
   end: ''
 })
 
-async function loadResults() {
-  try {
-    loading.value = true
-    error.value = null
-    const response = await arStore.getResults(props.assessmentResults.uuid)
-    results.value = response.data
-  } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : 'Unknown error'
-    error.value = errorMessage
-    toast.add({
-      severity: 'error',
-      summary: 'Load Failed',
-      detail: `Failed to load results: ${errorMessage}`,
-      life: 3000
-    })
-  } finally {
-    loading.value = false
-  }
-}
-
 function formatDate(dateString?: string): string {
   if (!dateString) return 'N/A'
   return new Date(dateString).toLocaleString()
 }
 
 async function createResult() {
-  creating.value = true
-  
   try {
     const result = {
       uuid: uuidv4(),
@@ -230,16 +228,18 @@ async function createResult() {
         }]
       }
     }
-    
-    await arStore.createResult(props.assessmentResults.uuid, result)
-    
+
+    await executeCreate({
+      data: result
+    })
+
     toast.add({
       severity: 'success',
       summary: 'Success',
       detail: 'Result created successfully',
       life: 3000
     })
-    
+
     showCreateModal.value = false
     newResult.value = {
       title: '',
@@ -247,19 +247,17 @@ async function createResult() {
       start: new Date().toISOString().slice(0, 16),
       end: ''
     }
-    
+
     await loadResults()
     emit('update')
   } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+    const errorResponse = err as AxiosError<ErrorResponse<ErrorBody>>
     toast.add({
       severity: 'error',
       summary: 'Error',
-      detail: `Failed to create result: ${errorMessage}`,
+      detail: `Failed to create result: ${errorResponse?.response?.data?.errors.body || 'Unknown error'}`,
       life: 5000
     })
-  } finally {
-    creating.value = false
   }
 }
 
@@ -273,15 +271,15 @@ async function deleteResult(resultId: string) {
   }
 
   try {
-    await arStore.deleteResult(props.assessmentResults.uuid, resultId)
-    
+    await executeDelete(`/api/oscal/assessment-results/${props.assessmentResults.uuid}/results/${resultId}`)
+
     toast.add({
       severity: 'success',
       summary: 'Success',
       detail: 'Result deleted successfully',
       life: 3000
     })
-    
+
     await loadResults()
     emit('update')
   } catch (err) {

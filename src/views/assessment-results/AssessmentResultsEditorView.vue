@@ -88,40 +88,38 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { onMounted, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import PageHeader from '@/components/PageHeader.vue'
-import { type AssessmentResults, useAssessmentResultsStore } from '@/stores/assessment-results'
+import type { AssessmentResults } from '@/stores/assessment-results'
 import { useToast } from 'primevue/usetoast'
+import { useDataApi } from '@/composables/axios'
+import type { AxiosError } from 'axios'
+import type { ErrorResponse, ErrorBody } from '@/stores/types'
 
 const route = useRoute()
-const arStore = useAssessmentResultsStore()
 const toast = useToast()
+const router = useRouter()
 
-const assessmentResults = ref<AssessmentResults | null>(null)
-const loading = ref(true)
-const error = ref<string | null>(null)
+const { data: assessmentResults, execute: loadAssessmentResults, isLoading: loading, error
+ } = useDataApi<AssessmentResults>(
+  `/api/oscal/assessment-results/${route.params.id}`,
+  null,
+  { immediate: false }
+)
 
-async function loadAssessmentResults() {
-  try {
-    loading.value = true
-    error.value = null
-    const id = route.params.id as string
-    const response = await arStore.get(id)
-    assessmentResults.value = response.data
-  } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : 'Unknown error'
-    error.value = errorMessage
+watch(error, () => {
+  if (error.value) {
+    const errorResponse = error.value as AxiosError<ErrorResponse<ErrorBody>>
     toast.add({
       severity: 'error',
-      summary: 'Load Failed',
-      detail: `Failed to load Assessment Results: ${errorMessage}`,
-      life: 3000
+      summary: 'Error Loading Assessment Results',
+      detail: errorResponse.response?.data.errors.body || 'An unexpected error occurred.',
+      life: 5000
     })
-  } finally {
-    loading.value = false
+    router.push({ name: 'assessment-results' })
   }
-}
+})
 
 async function refreshData() {
   await loadAssessmentResults()

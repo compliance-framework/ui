@@ -47,8 +47,11 @@
 
 <script setup lang="ts">
 import { ref, onMounted, type PropType } from 'vue'
-import { useAssessmentResultsStore, type AssessmentResults } from '@/stores/assessment-results'
+import type { AssessmentResults } from '@/stores/assessment-results'
 import { useToast } from 'primevue/usetoast'
+import { useDataApi, decamelizeKeys } from '@/composables/axios'
+import type { AxiosError } from 'axios'
+import type { ErrorResponse, ErrorBody } from '@/stores/types'
 
 const props = defineProps({
   assessmentResults: {
@@ -59,10 +62,8 @@ const props = defineProps({
 
 const emit = defineEmits(['update'])
 
-const arStore = useAssessmentResultsStore()
 const toast = useToast()
 
-const updating = ref(false)
 const formData = ref({
   href: '',
   remarks: ''
@@ -76,30 +77,37 @@ onMounted(() => {
   }
 })
 
+const { execute: executeUpdate, isLoading: updating } = useDataApi(
+  `/api/oscal/assessment-results/${props.assessmentResults.uuid}/import-ap`,
+  {
+    method: 'PUT',
+    transformRequest: [decamelizeKeys]
+  },
+  { immediate: false }
+)
+
 async function updateImportAp() {
-  updating.value = true
-  
   try {
-    await arStore.updateImportAp(props.assessmentResults.uuid, formData.value)
-    
+    await executeUpdate({
+      data: formData.value
+    })
+
     toast.add({
       severity: 'success',
       summary: 'Success',
       detail: 'Import AP updated successfully',
       life: 3000
     })
-    
+
     emit('update')
   } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+    const errorResponse = err as AxiosError<ErrorResponse<ErrorBody>>
     toast.add({
       severity: 'error',
       summary: 'Error',
-      detail: `Failed to update Import AP: ${errorMessage}`,
+      detail: `Failed to update Import AP: ${errorResponse?.response?.data?.errors.body || 'Unknown error'}`,
       life: 5000
     })
-  } finally {
-    updating.value = false
   }
 }
 </script>

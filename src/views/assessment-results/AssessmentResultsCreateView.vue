@@ -68,7 +68,7 @@
           <!-- Initial Result -->
           <div class="border-t pt-6">
             <h3 class="text-lg font-medium text-gray-900 dark:text-slate-200 mb-4">Initial Result</h3>
-            
+
             <!-- Result Title -->
             <div>
               <label for="resultTitle" class="block text-sm font-medium text-gray-700 dark:text-slate-300">
@@ -125,15 +125,13 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import PageHeader from '@/components/PageHeader.vue'
-import { useAssessmentResultsStore } from '@/stores/assessment-results'
+import type { AssessmentResults } from '@/stores/assessment-results.ts'
 import { useToast } from 'primevue/usetoast'
 import { v4 as uuidv4 } from 'uuid'
+import { useDataApi, decamelizeKeys } from '@/composables/axios'
 
 const router = useRouter()
-const arStore = useAssessmentResultsStore()
 const toast = useToast()
-
-const loading = ref(false)
 
 const formData = ref({
   uuid: uuidv4(),
@@ -162,30 +160,37 @@ const formData = ref({
   results: [] as any[]
 })
 
+const { data: newAR, isLoading: loading, execute: executeCreate } = useDataApi<AssessmentResults>('/api/oscal/assessment-results',
+  {
+    method: 'POST',
+    transformRequest: [decamelizeKeys],
+  }, { immediate: false }
+)
+
 async function createAssessmentResults() {
-  loading.value = true
-  
   try {
     // Prepare the assessment results object
     const assessmentResults = {
       ...formData.value,
       results: [formData.value.result]
     }
-    
+
     // Remove the temporary result field
     delete (assessmentResults as any).result
-    
-    const response = await arStore.create(assessmentResults)
-    
+
+     await executeCreate({
+      data: assessmentResults
+     })
+
     toast.add({
       severity: 'success',
       summary: 'Success',
       detail: 'Assessment Results created successfully',
       life: 3000
     })
-    
+
     // Navigate to the created assessment results
-    router.push(`/assessment-results/${response.data.uuid}`)
+    router.push(`/assessment-results/${newAR.value!.uuid}`)
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : 'Unknown error'
     toast.add({
@@ -194,8 +199,6 @@ async function createAssessmentResults() {
       detail: `Failed to create Assessment Results: ${errorMessage}`,
       life: 5000
     })
-  } finally {
-    loading.value = false
   }
 }
 </script>
