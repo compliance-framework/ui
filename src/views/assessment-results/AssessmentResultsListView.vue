@@ -107,40 +107,19 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
 import PageHeader from '@/components/PageHeader.vue'
-import { type AssessmentResults, useAssessmentResultsStore } from '@/stores/assessment-results.ts'
+import type {  AssessmentResults } from '@/stores/assessment-results.ts'
 import { useToast } from 'primevue/usetoast'
 import { useConfigStore } from '@/stores/config.ts'
 import Badge from '@/volt/Badge.vue'
 import { useSystemStore } from '@/stores/system.ts'
+import { useDataApi } from '@/composables/axios'
 
-const arStore = useAssessmentResultsStore()
 const configStore = useConfigStore()
 const toast = useToast()
 const systemStore = useSystemStore();
 
-const assessmentResults = ref<AssessmentResults[]>([])
-const loading = ref(true)
-const error = ref<string | null>(null)
-
-onMounted(async () => {
-  try {
-    const response = await arStore.list()
-    assessmentResults.value = response.data
-  } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : 'Unknown error'
-    error.value = errorMessage
-    toast.add({
-      severity: 'error',
-      summary: 'Load Failed',
-      detail: `Failed to load Assessment Results: ${errorMessage}`,
-      life: 3000
-    })
-  } finally {
-    loading.value = false
-  }
-})
+const { data: assessmentResults, error, isLoading: loading } = useDataApi<AssessmentResults[]>("/api/oscal/assessment-results");
 
 function formatDate(dateString?: string): string {
   if (!dateString) return 'N/A'

@@ -69,7 +69,7 @@
           <!-- Import AP -->
           <div class="border-t pt-6">
             <h3 class="text-lg font-medium text-gray-900 dark:text-slate-200 mb-4">Import Assessment Plan</h3>
-            
+
             <div>
               <label for="importApHref" class="block text-sm font-medium text-gray-700 dark:text-slate-300">
                 Href <span class="text-red-500">*</span>
@@ -123,17 +123,15 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import PageHeader from '@/components/PageHeader.vue'
-import { useAssessmentResultsStore } from '@/stores/assessment-results'
+import type { AssessmentResults } from '@/stores/assessment-results'
 import { useToast } from 'primevue/usetoast'
+import { useDataApi, decamelizeKeys } from '@/composables/axios'
 
 const router = useRouter()
 const route = useRoute()
-const arStore = useAssessmentResultsStore()
 const toast = useToast()
 
 const assessmentResultsId = route.params.id as string
-const loading = ref(true)
-const updating = ref(false)
 const error = ref<string | null>(null)
 
 const formData = ref({
@@ -153,6 +151,20 @@ const formData = ref({
   results: [] as any[]
 })
 
+const { data: ar, execute: executeLoad, isLoading: loading } = useDataApi<AssessmentResults>(
+  `/api/oscal/assessment-results/${assessmentResultsId}`,
+  null,
+  { immediate: false }
+)
+const { execute: executeUpdate, isLoading: updating } = useDataApi<AssessmentResults>(
+  `/api/oscal/assessment-results/${assessmentResultsId}`,
+  {
+    method: 'PUT',
+    transformRequest: [decamelizeKeys],
+  },
+  { immediate: false }
+)
+
 // Computed property for datetime-local input
 const publishedDate = computed({
   get: () => {
@@ -166,24 +178,26 @@ const publishedDate = computed({
 
 async function loadAssessmentResults() {
   try {
-    const response = await arStore.get(assessmentResultsId)
-    const ar = response.data
-    
+    await executeLoad()
+    if (!ar.value) {
+      throw new Error('Assessment Results not found')
+    }
+
     formData.value = {
-      uuid: ar.uuid,
+      uuid: ar.value.uuid,
       metadata: {
-        title: ar.metadata?.title || '',
-        version: ar.metadata?.version || '',
-        published: ar.metadata?.published || '',
-        lastModified: ar.metadata?.lastModified || '',
-        oscalVersion: ar.metadata?.oscalVersion || '1.1.3',
-        remarks: ar.metadata?.remarks || ''
+        title: ar.value.metadata?.title || '',
+        version: ar.value.metadata?.version || '',
+        published: ar.value.metadata?.published || '',
+        lastModified: ar.value.metadata?.lastModified || '',
+        oscalVersion: ar.value.metadata?.oscalVersion || '1.1.3',
+        remarks: ar.value.metadata?.remarks || ''
       },
       importAp: {
-        href: ar.importAp?.href || '',
-        remarks: ar.importAp?.remarks || ''
+        href: ar.value.importAp?.href || '',
+        remarks: ar.value.importAp?.remarks || ''
       },
-      results: ar.results || []
+      results: ar.value.results || []
     }
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : 'Unknown error'
@@ -194,24 +208,23 @@ async function loadAssessmentResults() {
       detail: `Failed to load Assessment Results: ${errorMessage}`,
       life: 3000
     })
-  } finally {
-    loading.value = false
   }
 }
 
 async function updateAssessmentResults() {
-  updating.value = true
-  
+
   try {
-    await arStore.update(assessmentResultsId, formData.value)
-    
+    await executeUpdate({
+      data: formData.value
+    })
+
     toast.add({
       severity: 'success',
       summary: 'Success',
       detail: 'Assessment Results updated successfully',
       life: 3000
     })
-    
+
     router.push(`/assessment-results/${assessmentResultsId}`)
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : 'Unknown error'
@@ -221,8 +234,6 @@ async function updateAssessmentResults() {
       detail: `Failed to update Assessment Results: ${errorMessage}`,
       life: 5000
     })
-  } finally {
-    updating.value = false
   }
 }
 
