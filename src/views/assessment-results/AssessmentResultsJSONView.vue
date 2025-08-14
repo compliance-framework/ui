@@ -16,17 +16,18 @@
     <div v-else-if="error" class="text-center py-8">
       <p class="text-red-500">Error loading assessment results: {{ error }}</p>
     </div>
-    <div v-else class="bg-gray-900 rounded-lg p-4 overflow-x-auto">
-      <pre class="text-sm text-gray-300 font-mono">{{ jsonContent }}</pre>
+    <div v-else-if="jsonContent" class="bg-gray-900 rounded-lg p-4 overflow-x-auto">
+      <pre class="text-sm text-gray-300 font-mono">{{ decamelizeKeys(jsonContent, { separator: "-", deep: true }) }}</pre>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, type PropType } from 'vue'
-import { useAssessmentResultsStore, type AssessmentResults } from '@/stores/assessment-results'
-import { useConfigStore } from '@/stores/config'
+import { type PropType } from 'vue'
+import { type AssessmentResults } from '@/stores/assessment-results'
 import { useToast } from 'primevue/usetoast'
+import { useDataApi } from '@/composables/axios'
+import decamelizeKeys from 'decamelize-keys'
 
 const props = defineProps({
   assessmentResults: {
@@ -35,51 +36,16 @@ const props = defineProps({
   }
 })
 
-const arStore = useAssessmentResultsStore()
-const configStore = useConfigStore()
 const toast = useToast()
 
-const jsonContent = ref('')
-const loading = ref(true)
-const error = ref<string | null>(null)
-
-async function loadFullAssessmentResults() {
-  try {
-    loading.value = true
-    error.value = null
-    
-    // Get raw API response without camelCase conversion for display
-    const config = await configStore.getConfig()
-    const response = await fetch(
-      `${config.API_URL}/api/oscal/assessment-results/${props.assessmentResults.uuid}/full`,
-      {
-        credentials: 'include'
-      }
-    )
-    
-    if (!response.ok) {
-      throw new Error(`Failed to load: ${response.statusText}`)
-    }
-    
-    const data = await response.json()
-    jsonContent.value = JSON.stringify(data.data || data, null, 2)
-  } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : 'Unknown error'
-    error.value = errorMessage
-    toast.add({
-      severity: 'error',
-      summary: 'Load Failed',
-      detail: `Failed to load full assessment results: ${errorMessage}`,
-      life: 3000
-    })
-  } finally {
-    loading.value = false
-  }
-}
+const { data: jsonContent, isLoading: loading, error } = useDataApi<AssessmentResults>(
+  `/api/oscal/assessment-results/${props.assessmentResults.uuid}/full`
+)
 
 async function downloadJson() {
+  if (!jsonContent.value) return;
   try {
-    const dataBlob = new Blob([jsonContent.value], { type: 'application/json' })
+    const dataBlob = new Blob([JSON.stringify(decamelizeKeys(jsonContent.value, { separator: "-", deep: true }), null, 2)], { type: 'application/json' })
     const url = URL.createObjectURL(dataBlob)
     const link = document.createElement('a')
     link.href = url
@@ -106,7 +72,4 @@ async function downloadJson() {
   }
 }
 
-onMounted(() => {
-  loadFullAssessmentResults()
-})
 </script>
