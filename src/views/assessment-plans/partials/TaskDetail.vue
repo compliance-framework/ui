@@ -1,22 +1,24 @@
 <script setup lang="ts">
-import {
-  type AssessmentPlan,
-  type AssociatedActivity,
-  type Task,
-  useAssessmentPlanStore,
-} from '@/stores/assessment-plans.ts';
-import TaskEditModal from '@/components/assessment-plans/TaskEditModal.vue';
 import { onMounted, ref } from 'vue';
+
 import { useToast } from 'primevue/usetoast';
 import { useConfirm } from 'primevue/useconfirm';
-import { type Activity, useActivityStore } from '@/stores/activities.ts';
+
+import { useDataApi } from '@/composables/axios';
+
+import type { AssessmentPlan, AssociatedActivity, Task } from '@/stores/assessment-plans.ts';
+import type { Activity } from '@/stores/activities.ts';
+
 import Timeline from '@/volt/Timeline.vue';
 import Chip from '@/volt/Chip.vue';
+import TaskEditModal from '@/components/assessment-plans/TaskEditModal.vue';
+
+interface FullAssociatedActivity extends AssociatedActivity {
+  activity: Activity;
+}
 
 const toast = useToast();
 const confirm = useConfirm();
-const assessmentPlanStore = useAssessmentPlanStore();
-const activityStore = useActivityStore();
 
 const props = defineProps<{
   assessmentPlan: AssessmentPlan;
@@ -30,27 +32,31 @@ const emit = defineEmits<{
 
 const showEditModal = ref(false);
 
+const { data: associatedActivities, execute: fetchAssociatedActivities } = useDataApi<FullAssociatedActivity[]>(
+  `/api/oscal/assessment-plans/${props.assessmentPlan.uuid}/tasks/${props.task.uuid}/associated-activities`,
+  {},
+  {
+    immediate: false,
+  },
+);
+const { execute: getActivities } = useDataApi<Activity>();
+const { execute: deleteTask } = useDataApi<void>(`/api/oscal/assessment-plans/${props.assessmentPlan.uuid}/tasks/${props.task.uuid}`, {
+  method: 'DELETE',
+}, { immediate: false });
+
+
 function editTask() {
   showEditModal.value = true;
 }
 
-interface FullAssociatedActivity extends AssociatedActivity {
-  activity: Activity;
-}
-
-const associatedActivities = ref<FullAssociatedActivity[]>([]);
-
-onMounted(() => {
-  assessmentPlanStore
-    .getAssociatedActivities(props.assessmentPlan.uuid, props.task.uuid)
-    .then((data) => {
-      associatedActivities.value = data.data as FullAssociatedActivity[];
-      for (const activity of associatedActivities.value) {
-        activityStore.get(activity.activityUuid).then((res) => {
-          activity.activity = res.data;
-        });
-      }
-    });
+onMounted(async() => {
+  await fetchAssociatedActivities();
+  if (!associatedActivities.value) return;
+  for (const activity of associatedActivities.value!) {
+    const {data: activityData } = await getActivities(`/api/oscal/activities/${activity.activityUuid}`);
+    if (!activityData.value) continue;
+    activity.activity = activityData.value.data;
+  }
 });
 
 async function onTaskUpdated(task: Task) {
@@ -69,10 +75,7 @@ async function removeTask() {
       severity: 'danger',
     },
     accept: async () => {
-      await assessmentPlanStore.deleteTask(
-        props.assessmentPlan.uuid,
-        props.task.uuid,
-      );
+      await deleteTask();
       emit('deleted', props.task);
       toast.add({
         severity: 'success',

@@ -38,7 +38,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { type Task, useAssessmentPlanStore } from '@/stores/assessment-plans.ts'
+import type { Task, AssessmentPlan } from '@/stores/assessment-plans.ts'
 import { useToast } from 'primevue/usetoast'
 import FormInput from '@/components/forms/FormInput.vue'
 import FormTextarea from '@/components/forms/FormTextarea.vue'
@@ -47,8 +47,8 @@ import SecondaryButton from '@/components/SecondaryButton.vue'
 import TertiaryButton from '@/components/TertiaryButton.vue'
 import { BIconArrowRepeat } from 'bootstrap-icons-vue'
 import { v4 as uuidv4 } from 'uuid'
+import { useDataApi, decamelizeKeys } from '@/composables/axios'
 
-const assessmentPlanStore = useAssessmentPlanStore()
 const toast = useToast()
 
 const props = defineProps<{
@@ -68,6 +68,12 @@ const task = ref<Task>({
   props: [],
   links: []
 })
+const { data: newTask, execute: executeCreateTask } = useDataApi<Task>(`/api/oscal/assessment-plans/${props.assessmentPlanId}/tasks`,
+  {
+    method: 'POST',
+    transformRequest: [decamelizeKeys]
+  }, { immediate: false }
+)
 
 const errorMessage = ref('')
 
@@ -85,21 +91,9 @@ async function createTask(): Promise<void> {
   }
 
   try {
-    const taskData = {
-      uuid: task.value.uuid,
-      type: task.value.type,
-      title: task.value.title,
-      description: task.value.description || '',
-      props: task.value.props || [],
-      links: task.value.links || []
-    }
-
-    // Get current tasks and add the new one
-    const response = await assessmentPlanStore.get(props.assessmentPlanId)
-    const currentTasks = response.data.tasks || []
-    const updatedTasks = [...currentTasks, taskData]
-
-    await assessmentPlanStore.updateTasks(props.assessmentPlanId, updatedTasks)
+    await executeCreateTask({
+      data: task.value
+    })
 
     toast.add({
       severity: 'success',
@@ -108,7 +102,7 @@ async function createTask(): Promise<void> {
       life: 3000
     })
 
-    emit('created', taskData)
+    emit('created', newTask.value!)
   } catch (error) {
     toast.add({
       severity: 'error',
