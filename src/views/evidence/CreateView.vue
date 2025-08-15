@@ -3,7 +3,7 @@
   <PageSubHeader>
     Create a new piece of evidence to support your control implementations.
   </PageSubHeader>
-  <div class="mt-4">
+  <div class="mt-4 bg-white dark:bg-slate-900 rounded-md border border-ccf-300 dark:border-slate-700 p-8">
     <form @submit.prevent="submit">
       <div class="flex">
         <div>
@@ -129,11 +129,10 @@ import { ref } from 'vue';
 import PageHeader from '@/components/PageHeader.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
 import Base64FileUpload from '@/components/Base64FileUpload.vue';
-import {
-  useEvidenceStore,
-  type Evidence,
-  type EvidenceLabel,
-  type EvidenceStatus,
+import type {
+  Evidence,
+  EvidenceLabel,
+  EvidenceStatus,
 } from '@/stores/evidence.ts';
 import router from '@/router';
 import { v4 as uuidv4 } from 'uuid';
@@ -144,8 +143,17 @@ import SelectButton from '@/volt/SelectButton.vue';
 import TertiaryButton from '@/components/TertiaryButton.vue';
 import { BIconArrowRepeat, BIconX } from 'bootstrap-icons-vue';
 import type { BackMatterResource, Base64 } from '@/oscal';
+import { useDataApi, decamelizeKeys } from '@/composables/axios';
 
-const evidenceStore = useEvidenceStore();
+
+const { data: createdEvidence, execute: createEvidence } = useDataApi<Evidence>(
+  '/api/evidence',
+  {
+    method: 'POST',
+    transformRequest: [decamelizeKeys]
+  }, { immediate: false }
+);
+
 const evidence = ref<Partial<Evidence>>({
   uuid: uuidv4(),
 });
@@ -161,18 +169,20 @@ async function submit() {
   labels.value.forEach((label) => {
     flatLabels[label.name] = label.value;
   });
-  const response = await evidenceStore.create({
-    ...evidence.value,
-    status: status.value,
-    labels: flatLabels,
-    backMatter: {
-      resources: backmatterResources.value,
-    },
+  await createEvidence({
+    data: {
+      ...evidence.value,
+      status: status.value,
+      labels: flatLabels,
+      backMatter: {
+        resources: backmatterResources.value,
+      }
+    }
   });
-  evidence.value = response.data;
+  evidence.value = createdEvidence.value!;
   return await router.push({
     name: 'evidence:view',
-    params: { id: response.data.id },
+    params: { id: createdEvidence.value!.id },
   });
 }
 

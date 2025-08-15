@@ -52,12 +52,11 @@
   </div>
 </template>
 <script setup lang="ts">
-import {  onMounted, ref } from 'vue'
+import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import PageHeader from '@/components/PageHeader.vue'
 import PageSubHeader from '@/components/PageSubHeader.vue'
 import PageCard from '@/components/PageCard.vue'
-import { type DataResponse } from '@/stores/api.ts'
 import type { ChartData } from 'chart.js'
 import {
   calculateComplianceOverTimeData, type DateDataPoint
@@ -65,37 +64,36 @@ import {
 import ResultComplianceOverTimeChart from '@/components/ResultComplianceOverTimeChart.vue'
 import ResultStatusRing from '@/components/ResultStatusRing.vue'
 import { calculateHeartbeatOverTimeData } from '@/parsers/heartbeats.ts'
-import { useHeartbeatsStore } from '@/stores/heartbeats.ts'
-import LabelList from '@/components/LabelList.vue'
-import { type Evidence, useEvidenceStore } from '@/stores/evidence.ts'
+import type { HeartbeatInterval } from '@/stores/heartbeats.ts'
+import type { Evidence, ComplianceInterval } from '@/stores/evidence.ts'
+import { useDataApi } from '@/composables/axios'
 
 const route = useRoute()
-const evidenceStore = useEvidenceStore()
-const heartbeatStore = useHeartbeatsStore()
 
 const uuid = route.params.uuid as string;
-const evidence = ref<Evidence[]>([] as Evidence[])
-const complianceChartData = ref<ChartData<'line', DateDataPoint[]>>({
-  labels: [],
-  datasets: [],
-})
-const heartbeatChartData = ref<ChartData<'line', DateDataPoint[]>>({
-  labels: [],
-  datasets: [],
-})
 
-onMounted(() => {
-  evidenceStore.history(uuid).then((resultList: DataResponse<Evidence[]>) => {
-    evidence.value = resultList.data;
-  })
+const { data: evidence } = useDataApi<Evidence[]>(`/api/evidence/history/${uuid}`);
+const { data: complianceOverTime } = useDataApi<ComplianceInterval[]>(`/api/evidence/status-over-time/${uuid}`,
+  {
+    params: {
+      interval: '0m,2m,4m,6m,8m,12m,16m,20m,25m,30m,40m,50m,1h',
+    },
+    method: 'GET',
+  }
+);
+const complianceChartData = computed<ChartData<'line', DateDataPoint[]>>(() => {
+  return calculateComplianceOverTimeData(
+    complianceOverTime.value ?? [],
+    ['satisfied', 'not-satisfied'],
+  );
+});
 
-  evidenceStore.getComplianceForUUID(uuid, "0m,2m,4m,6m,8m,12m,16m,20m,25m,30m,40m,50m,1h").then((response) => {
-    complianceChartData.value = calculateComplianceOverTimeData(response.data, ['satisfied', 'not-satisfied'])
-    // uptimeChartData.value = calculateAgentUptimeData(response.data)
-  })
-
-  heartbeatStore.overTime().then((response) => {
-    heartbeatChartData.value = calculateHeartbeatOverTimeData(response.data)
-  })
-})
+const { data: heartbeats } = useDataApi<HeartbeatInterval[]>('/api/agent/heartbeat/over-time',
+  {
+    method: 'GET',
+  }
+);
+const heartbeatChartData = computed<ChartData<'line', DateDataPoint[]>>(() => {
+  return calculateHeartbeatOverTimeData(heartbeats.value ?? []);
+});
 </script>
