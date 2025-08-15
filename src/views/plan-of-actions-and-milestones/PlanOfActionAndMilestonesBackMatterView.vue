@@ -44,11 +44,11 @@
             <div class="flex justify-between items-center p-6">
               <div class="flex-1">
                 <div class="flex items-center gap-2 mb-1">
-                  <svg 
+                  <svg
                     class="w-4 h-4 text-gray-400 dark:text-slate-500 transition-transform duration-200"
                     :class="{ 'rotate-90': isOpen }"
-                    fill="none" 
-                    stroke="currentColor" 
+                    fill="none"
+                    stroke="currentColor"
                     viewBox="0 0 24 24"
                   >
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -60,7 +60,7 @@
                 <p v-if="resource.description" class="text-gray-600 dark:text-slate-400 mt-1 line-clamp-2">
                   {{ resource.description }}
                 </p>
-                
+
                 <div class="mt-3 flex flex-wrap gap-2">
                   <span v-if="resource.documentIds?.length" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
                     {{ resource.documentIds.length }} Document ID{{ resource.documentIds.length !== 1 ? 's' : '' }}
@@ -76,7 +76,7 @@
                   </span>
                 </div>
               </div>
-              
+
               <div class="ml-4 flex gap-2">
                 <button
                   @click.stop="editResource(resource)"
@@ -93,7 +93,7 @@
               </div>
             </div>
           </template>
-          
+
           <div class="px-6 pb-6">
             <BackMatterResourceDetails :resource="resource" />
           </div>
@@ -116,22 +116,25 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, computed } from 'vue'
+import { ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { type BackMatter, type Resource, usePlanOfActionAndMilestonesStore } from '@/stores/plan-of-action-and-milestones.ts'
+import type { BackMatter, Resource } from '@/stores/plan-of-action-and-milestones.ts'
 import Modal from '@/components/Modal.vue'
 import CollapsableGroup from '@/components/CollapsableGroup.vue'
 import BackMatterResourceForm from '@/components/poam/BackMatterResourceForm.vue'
 import BackMatterResourceDetails from '@/components/poam/BackMatterResourceDetails.vue'
 import { useToast } from 'primevue/usetoast'
+import { useDataApi } from '@/composables/axios'
+import type { AxiosError } from 'axios'
+import type { ErrorResponse, ErrorBody } from '@/stores/types'
 
 const route = useRoute()
-const poamStore = usePlanOfActionAndMilestonesStore()
 const toast = useToast()
 
-const backMatter = ref<BackMatter | null>(null)
-const loading = ref(true)
-const error = ref<string | null>(null)
+const { data: backMatter, error, isLoading: loading, execute: loadBackMatter } = useDataApi<BackMatter>(
+  `/api/oscal/plan-of-action-and-milestones/${route.params.id}/back-matter`
+)
+const { execute: executeDelete } = useDataApi<void>(null, { method: 'DELETE' }, { immediate: false })
 
 // Modal states
 const showCreateModal = ref(false)
@@ -141,31 +144,6 @@ const editingResource = ref<Resource | null>(null)
 const resources = computed(() => {
   return backMatter.value?.resources || []
 })
-
-onMounted(async () => {
-  await loadBackMatter()
-})
-
-async function loadBackMatter() {
-  const id = route.params.id as string
-  
-  try {
-    loading.value = true
-    const response = await poamStore.getBackMatter(id)
-    backMatter.value = response.data
-  } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : 'Unknown error'
-    error.value = errorMessage
-    toast.add({
-      severity: 'error',
-      summary: 'Load Failed',
-      detail: `Failed to load back matter: ${errorMessage}`,
-      life: 3000
-    })
-  } finally {
-    loading.value = false
-  }
-}
 
 function editResource(resource: Resource) {
   editingResource.value = { ...resource }
@@ -179,18 +157,19 @@ async function deleteResource(resourceId: string) {
 
   try {
     const id = route.params.id as string
-    await poamStore.deleteBackMatterResource(id, resourceId)
-    
+    await executeDelete(`/api/oscal/plan-of-action-and-milestones/${id}/back-matter/resources/${resourceId}`)
+
     toast.add({
       severity: 'success',
       summary: 'Resource Deleted',
       detail: 'Back matter resource deleted successfully',
       life: 3000
     })
-    
+
     await loadBackMatter() // Reload the list
   } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+    const errorResponse = err as AxiosError<ErrorResponse<ErrorBody>>
+    const errorMessage = errorResponse.response?.data?.errors?.body || 'Unknown error occurred'
     toast.add({
       severity: 'error',
       summary: 'Delete Failed',
@@ -223,9 +202,9 @@ function handleResourceSaved(savedResource: Resource) {
     }
     backMatter.value.resources.push(savedResource)
   }
-  
+
   closeModal()
-  
+
   toast.add({
     severity: 'success',
     summary: 'Resource Saved',
@@ -233,4 +212,4 @@ function handleResourceSaved(savedResource: Resource) {
     life: 3000
   })
 }
-</script> 
+</script>
