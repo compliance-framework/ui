@@ -18,7 +18,7 @@
       <p class="text-red-500">Error loading risks: {{ error }}</p>
     </div>
 
-    <div v-else-if="!risks.length" class="text-center py-8">
+    <div v-else-if="!risks?.length" class="text-center py-8">
       <p class="text-gray-500 dark:text-slate-400">No risks found.</p>
     </div>
 
@@ -106,24 +106,25 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { ref } from 'vue'
 import { useRoute } from 'vue-router'
-import { type Risk, usePlanOfActionAndMilestonesStore } from '@/stores/plan-of-action-and-milestones.ts'
+import { type Risk } from '@/stores/plan-of-action-and-milestones.ts'
 import Modal from '@/components/Modal.vue'
 import RiskCreateForm from '@/components/poam/RiskCreateForm.vue'
 import RiskEditForm from '@/components/poam/RiskEditForm.vue'
 import { useToast } from 'primevue/usetoast'
 import PageHeader from '@/components/PageHeader.vue'
 import { useSystemStore } from '@/stores/system.ts'
+import { useDataApi } from '@/composables/axios'
 
 const route = useRoute()
-const poamStore = usePlanOfActionAndMilestonesStore()
 const toast = useToast()
 const { system } = useSystemStore()
 
-const risks = ref<Risk[]>([])
-const loading = ref(true)
-const error = ref<string | null>(null)
+const { data: risks, error, isLoading: loading, execute: loadRisks } = useDataApi<Risk[]>(
+  `/api/oscal/plan-of-action-and-milestones/${system.poam?.uuid}/risks`
+)
+const { execute: executeDeleteRisk } = useDataApi<void>(null, { method: 'DELETE' }, { immediate: false })
 
 // Modal states
 const showCreateModal = ref(false)
@@ -132,33 +133,6 @@ const showEditModal = ref(false)
 // Edit targets
 const editingRisk = ref<Risk | null>(null)
 
-onMounted(async () => {
-  await loadRisks()
-})
-
-async function loadRisks() {
-  if (!system.poam?.uuid) {
-    return;
-  }
-
-  try {
-    loading.value = true
-    const response = await poamStore.getRisks(system.poam?.uuid)
-    risks.value = response.data
-  } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : 'Unknown error'
-    error.value = errorMessage
-    toast.add({
-      severity: 'error',
-      summary: 'Load Failed',
-      detail: `Failed to load risks: ${errorMessage}`,
-      life: 3000
-    })
-  } finally {
-    loading.value = false
-  }
-}
-
 // Risk management
 const editRisk = (risk: Risk) => {
   editingRisk.value = risk
@@ -166,11 +140,13 @@ const editRisk = (risk: Risk) => {
 }
 
 const handleRiskCreated = (newRisk: Risk) => {
+  if (!risks.value) return
   risks.value.push(newRisk)
   showCreateModal.value = false
 }
 
 const handleRiskSaved = (updatedRisk: Risk) => {
+  if (!risks.value || !updatedRisk) return
   const index = risks.value.findIndex(risk => risk.uuid === updatedRisk.uuid)
   if (index !== -1) {
     risks.value[index] = updatedRisk
@@ -186,7 +162,7 @@ async function deleteRisk(uuid: string) {
 
   try {
     const id = route.params.id as string
-    await poamStore.deleteRisk(id, uuid)
+    await executeDeleteRisk(`/api/oscal/plan-of-action-and-milestones/${id}/risks/${uuid}`)
 
     toast.add({
       severity: 'success',
