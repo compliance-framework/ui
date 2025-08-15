@@ -11,8 +11,8 @@
           Components
         </label>
         <div class="space-y-4">
-          <div 
-            v-for="(component, index) in formData.components || []" 
+          <div
+            v-for="(component, index) in formData.components || []"
             :key="index"
             class="border border-gray-300 dark:border-slate-600 rounded-lg p-4 bg-gray-50 dark:bg-slate-800"
           >
@@ -26,7 +26,7 @@
                 Remove
               </button>
             </div>
-            
+
             <div class="grid grid-cols-2 gap-3">
               <div>
                 <label class="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
@@ -40,7 +40,7 @@
                   class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-300"
                 />
               </div>
-              
+
               <div>
                 <label class="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
                   Type *
@@ -64,7 +64,7 @@
                 </select>
               </div>
             </div>
-            
+
             <div class="mt-3">
               <label class="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
                 Description
@@ -76,7 +76,7 @@
                 class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-300"
               />
             </div>
-            
+
             <div class="grid grid-cols-2 gap-3 mt-3">
               <div>
                 <label class="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
@@ -95,7 +95,7 @@
                   <option value="other">Other</option>
                 </select>
               </div>
-              
+
               <div>
                 <label class="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
                   Status Reason
@@ -108,7 +108,7 @@
                 />
               </div>
             </div>
-            
+
             <div class="mt-3">
               <label class="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
                 Remarks
@@ -121,7 +121,7 @@
               />
             </div>
           </div>
-          
+
           <button
             type="button"
             @click="addComponent"
@@ -138,8 +138,8 @@
           Inventory Items
         </label>
         <div class="space-y-4">
-          <div 
-            v-for="(item, index) in formData.inventoryItems || []" 
+          <div
+            v-for="(item, index) in formData.inventoryItems || []"
             :key="index"
             class="border border-gray-300 dark:border-slate-600 rounded-lg p-4 bg-gray-50 dark:bg-slate-800"
           >
@@ -153,7 +153,7 @@
                 Remove
               </button>
             </div>
-            
+
             <div>
               <label class="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
                 Description *
@@ -166,7 +166,7 @@
                 class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-300"
               />
             </div>
-            
+
             <div class="mt-3">
               <label class="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
                 Remarks
@@ -179,7 +179,7 @@
               />
             </div>
           </div>
-          
+
           <button
             type="button"
             @click="addInventoryItem"
@@ -201,8 +201,8 @@
               Components
             </label>
             <div class="space-y-2">
-              <div 
-                v-for="(component, index) in formData.assessmentAssets?.components || []" 
+              <div
+                v-for="(component, index) in formData.assessmentAssets?.components || []"
                 :key="index"
                 class="flex gap-2 items-center"
               >
@@ -268,8 +268,11 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { usePlanOfActionAndMilestonesStore, type LocalDefinitions, type SystemComponent, type InventoryItem } from '@/stores/plan-of-action-and-milestones'
+import type { LocalDefinitions} from '@/stores/plan-of-action-and-milestones'
 import { useToast } from 'primevue/usetoast'
+import { useDataApi, decamelizeKeys } from '@/composables/axios'
+import type { AxiosError } from 'axios'
+import type { ErrorResponse, ErrorBody } from '@/stores/types'
 
 interface Props {
   poamId: string
@@ -284,9 +287,13 @@ interface Emits {
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 
-const poamStore = usePlanOfActionAndMilestonesStore()
 const toast = useToast()
-const loading = ref(false)
+
+const { data: newLD, isLoading: loading, execute: saveLD } = useDataApi<LocalDefinitions>(
+  `/api/oscal/plan-of-actions-and-milestones/${props.poamId}/local-definitions`,
+  null,
+  { immediate: false}
+)
 
 const formData = ref<LocalDefinitions>({
   components: [],
@@ -311,11 +318,7 @@ onMounted(() => {
 })
 
 function generateUUID(): string {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    const r = Math.random() * 16 | 0
-    const v = c === 'x' ? r : (r & 0x3 | 0x8)
-    return v.toString(16)
-  })
+  return crypto.randomUUID()
 }
 
 function addComponent() {
@@ -382,8 +385,6 @@ function removeAssessmentComponent(index: number) {
 
 async function handleSubmit() {
   try {
-    loading.value = true
-    
     // Clean up empty items
     if (formData.value.components) {
       formData.value.components = formData.value.components.filter(c => c.title && c.type && c.status?.state)
@@ -395,24 +396,30 @@ async function handleSubmit() {
       formData.value.assessmentAssets.components = formData.value.assessmentAssets.components.filter(c => c.title)
     }
 
-    let response
     if (props.localDefinitions) {
-      response = await poamStore.updateLocalDefinitions(props.poamId, formData.value)
+      await saveLD({
+        data: formData.value,
+        method: 'PUT',
+        transformRequest: [decamelizeKeys]
+      })
     } else {
-      response = await poamStore.createLocalDefinitions(props.poamId, formData.value)
+      await saveLD({
+        data: formData.value,
+        method: 'POST',
+        transformRequest: [decamelizeKeys]
+      })
     }
 
-    emit('saved', response.data)
+    emit('saved', newLD.value!)
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>
+    const errorMessage = errorResponse.response?.data.errors?.body || 'An unexpected error occurred'
     toast.add({
       severity: 'error',
       summary: 'Save Failed',
       detail: `Failed to save local definitions: ${errorMessage}`,
       life: 3000
     })
-  } finally {
-    loading.value = false
   }
 }
 </script>
