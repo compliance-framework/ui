@@ -74,7 +74,7 @@
   </div>
 </template>
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import PageHeader from '@/components/PageHeader.vue';
 import PageCard from '@/components/PageCard.vue';
@@ -87,18 +87,17 @@ import {
   type DateDataPoint,
 } from '@/parsers/findings.ts';
 import ResultComplianceOverTimeChart from '@/components/ResultComplianceOverTimeChart.vue';
-import { useHeartbeatsStore } from '@/stores/heartbeats.ts';
+import type  { HeartbeatInterval } from '@/stores/heartbeats.ts';
 import { calculateHeartbeatOverTimeData } from '@/parsers/heartbeats.ts';
 import { useConfigStore } from '@/stores/config.ts';
 import PrimaryButton from '@/components/PrimaryButton.vue';
 import SecondaryButton from '@/components/SecondaryButton.vue';
 import InfoCircleIcon from '@primevue/icons/infocircle';
-import { type Evidence, useEvidenceStore } from '@/stores/evidence.ts';
+import type { ComplianceInterval, Evidence, } from '@/stores/evidence.ts';
 import EvidenceList from '@/components/EvidenceList.vue';
 import BurgerMenu from '@/components/BurgerMenu.vue';
+import { useDataApi } from '@/composables/axios';
 
-const evidenceStore = useEvidenceStore();
-const heartbeatStore = useHeartbeatsStore();
 const configStore = useConfigStore();
 const route = useRoute();
 const router = useRouter();
@@ -107,50 +106,66 @@ const filter = ref<string>('');
 if (route.query.filter) {
   filter.value = route.query.filter as string;
 }
-const evidence = ref<Evidence[]>([]);
-const complianceChartData = ref<ChartData<'line', DateDataPoint[]>>({
-  labels: [],
-  datasets: [],
+
+const { data: evidenceData, execute: loadEvidence } = useDataApi<Evidence[]>('/api/evidence/search',
+  {
+    method: 'POST',
+  }, { immediate: false }
+);
+
+const evidence = computed(() => {
+  return evidenceData.value
+    ? [...evidenceData.value].sort((a, b) => {
+        // Order results by their end date for better UI consistency
+        const x = new Date(a.end);
+        const y = new Date(b.end);
+
+        if (x > y) {
+          return 1;
+        }
+        if (x < y) {
+          return -1;
+        }
+        return 0;
+      })
+    : [];
 });
-const heartbeatChartData = ref<ChartData<'line', DateDataPoint[]>>({
-  labels: [],
-  datasets: [],
+
+const { data: complianceOverTime, execute: loadComplianceOverTime } = useDataApi<ComplianceInterval[]>('/api/evidence/status-over-time',
+  {
+    params: {
+      interval: '0m,2m,4m,6m,8m,12m,16m,20m,25m,30m,40m,50m,1h',
+    },
+    method: 'POST',
+  }, { immediate: false }
+);
+const complianceChartData = computed<ChartData<'line', DateDataPoint[]>>(() => {
+  return calculateComplianceOverTimeData(
+    complianceOverTime.value ?? [],
+    ['satisfied', 'not-satisfied'],
+  );
+});
+
+const { data: heartbeats, execute: loadHeartbeats } = useDataApi<HeartbeatInterval[]>('/api/agent/heartbeat/over-time',
+  {
+    method: 'GET',
+  }, { immediate: false }
+);
+const heartbeatChartData = computed<ChartData<'line', DateDataPoint[]>>(() => {
+  return calculateHeartbeatOverTimeData(heartbeats.value ?? []);
 });
 
 async function search() {
   const query = new FilterParser(filter.value).parse();
-  await router.push({ query: { filter: filter.value } });
-  evidenceStore.search(query).then((response) => {
-    evidence.value = response.data.sort(function (a, b) {
-      // Order results by their title for better UI consistency
-      const x = new Date(a.end);
-      const y = new Date(b.end);
 
-      if (x > y) {
-        return 1;
-      }
-      if (x < y) {
-        return -1;
-      }
-      return 0;
-    });
-    // results.value = response.data
+  await loadEvidence({
+    data: {filter: query}
   });
 
-  evidenceStore
-    .getComplianceForSearch(
-      query,
-      '0m,2m,4m,6m,8m,12m,16m,20m,25m,30m,40m,50m,1h',
-    )
-    .then((response) => {
-      complianceChartData.value = calculateComplianceOverTimeData(
-        response.data,
-        ['satisfied', 'not-satisfied'],
-      );
-    });
-  heartbeatStore.overTime().then((response) => {
-    heartbeatChartData.value = calculateHeartbeatOverTimeData(response.data);
+  await loadComplianceOverTime({
+    data: { filter: query },
   });
+  await loadHeartbeats();
 }
 
 async function save() {
