@@ -18,7 +18,7 @@
       <p class="text-red-500">Error loading POAM items: {{ error }}</p>
     </div>
 
-    <div v-else-if="!poamItems.length" class="text-center py-8">
+    <div v-else-if="poamItems && !poamItems.length" class="text-center py-8">
       <p class="text-gray-500 dark:text-slate-400">No POAM items found.</p>
     </div>
 
@@ -33,11 +33,11 @@
             <div class="flex justify-between items-center p-6">
               <div class="flex-1">
                 <div class="flex items-center gap-2 mb-1">
-                  <svg 
+                  <svg
                     class="w-4 h-4 text-gray-400 dark:text-slate-500 transition-transform duration-200"
                     :class="{ 'rotate-90': isOpen }"
-                    fill="none" 
-                    stroke="currentColor" 
+                    fill="none"
+                    stroke="currentColor"
                     viewBox="0 0 24 24"
                   >
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -45,7 +45,7 @@
                   <h3 class="text-lg font-medium text-gray-900 dark:text-slate-300">{{ item.title }}</h3>
                 </div>
                 <p class="text-gray-600 dark:text-slate-400 mt-1 line-clamp-2">{{ item.description }}</p>
-                
+
                 <div class="mt-3 flex flex-wrap gap-2">
                   <span v-if="item.relatedFindings?.length" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
                     {{ item.relatedFindings.length }} Findings
@@ -58,7 +58,7 @@
                   </span>
                 </div>
               </div>
-              
+
               <div class="ml-4 flex gap-2">
                 <button
                   @click.stop="attachItems(item)"
@@ -81,7 +81,7 @@
               </div>
             </div>
           </template>
-          
+
           <div class="px-6 pb-6">
             <PoamItemDetails :item="item" :poam-id="route.params.id as string" />
           </div>
@@ -91,7 +91,7 @@
 
     <!-- Create Modal -->
     <Modal :show="showCreateModal" @close="showCreateModal = false" size="lg">
-      <PoamItemCreateForm 
+      <PoamItemCreateForm
         :poam-id="route.params.id as string"
         @cancel="showCreateModal = false"
         @created="handleItemCreated"
@@ -100,7 +100,7 @@
 
     <!-- Edit Modal -->
     <Modal :show="showEditModal && editingItem !== null" @close="showEditModal = false" size="lg">
-      <PoamItemEditForm 
+      <PoamItemEditForm
         v-if="editingItem"
         :poam-id="route.params.id as string"
         :item="editingItem"
@@ -111,7 +111,7 @@
 
     <!-- Attach Modal -->
     <Modal :show="showAttachModal && attachingItem !== null" @close="showAttachModal = false" size="lg">
-      <PoamItemAttachModal 
+      <PoamItemAttachModal
         v-if="attachingItem"
         :poam-id="route.params.id as string"
         :item="attachingItem"
@@ -123,9 +123,9 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { ref } from 'vue'
 import { useRoute } from 'vue-router'
-import { type PoamItem, usePlanOfActionAndMilestonesStore } from '@/stores/plan-of-action-and-milestones.ts'
+import type { PoamItem } from '@/stores/plan-of-action-and-milestones.ts'
 import Modal from '@/components/Modal.vue'
 import CollapsableGroup from '@/components/CollapsableGroup.vue'
 import PoamItemDetails from '@/components/poam/PoamItemDetails.vue'
@@ -133,14 +133,14 @@ import PoamItemCreateForm from '@/components/poam/PoamItemCreateForm.vue'
 import PoamItemEditForm from '@/components/poam/PoamItemEditForm.vue'
 import PoamItemAttachModal from '@/components/poam/PoamItemAttachModal.vue'
 import { useToast } from 'primevue/usetoast'
+import { useDataApi } from '@/composables/axios'
+
 
 const route = useRoute()
-const poamStore = usePlanOfActionAndMilestonesStore()
 const toast = useToast()
 
-const poamItems = ref<PoamItem[]>([])
-const loading = ref(true)
-const error = ref<string | null>(null)
+const { data: poamItems, isLoading: loading, error, execute: refreshItems } = useDataApi<PoamItem[]>(`/api/oscal/plan-of-action-and-milestones/${route.params.id}/poam-items`)
+const { execute: deletePoamItem } = useDataApi<void>(null, { method: 'DELETE' }, { immediate: false })
 
 // Modal states
 const showCreateModal = ref(false)
@@ -151,31 +151,6 @@ const showAttachModal = ref(false)
 const editingItem = ref<PoamItem | null>(null)
 const attachingItem = ref<PoamItem | null>(null)
 
-onMounted(async () => {
-  await loadPoamItems()
-})
-
-async function loadPoamItems() {
-  const id = route.params.id as string
-  
-  try {
-    loading.value = true
-    const response = await poamStore.getPoamItems(id)
-    poamItems.value = response.data
-  } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : 'Unknown error'
-    error.value = errorMessage
-    toast.add({
-      severity: 'error',
-      summary: 'Load Failed',
-      detail: `Failed to load POAM items: ${errorMessage}`,
-      life: 3000
-    })
-  } finally {
-    loading.value = false
-  }
-}
-
 // Item management
 const editItem = (item: PoamItem) => {
   editingItem.value = item
@@ -183,11 +158,13 @@ const editItem = (item: PoamItem) => {
 }
 
 const handleItemCreated = (newItem: PoamItem) => {
+  if (!poamItems.value) return
   poamItems.value.push(newItem)
   showCreateModal.value = false
 }
 
 const handleItemSaved = (updatedItem: PoamItem) => {
+  if (!poamItems.value) return
   const index = poamItems.value.findIndex(item => item.uuid === updatedItem.uuid)
   if (index !== -1) {
     poamItems.value[index] = updatedItem
@@ -203,16 +180,16 @@ async function deleteItem(uuid: string) {
 
   try {
     const id = route.params.id as string
-    await poamStore.deletePoamItem(id, uuid)
-    
+    await deletePoamItem(`/api/oscal/plan-of-action-and-milestones/${id}/poam-items/${uuid}`)
+
     toast.add({
       severity: 'success',
       summary: 'POAM Item Deleted',
       detail: 'POAM item deleted successfully',
       life: 3000
     })
-    
-    await loadPoamItems() // Reload the list
+
+    await refreshItems() // Reload the list
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : 'Unknown error'
     toast.add({
@@ -230,6 +207,7 @@ const attachItems = (item: PoamItem) => {
 }
 
 const handleItemAttached = (updatedItem: PoamItem) => {
+  if (!poamItems.value) return
   const index = poamItems.value.findIndex(item => item.uuid === updatedItem.uuid)
   if (index !== -1) {
     poamItems.value[index] = updatedItem
@@ -237,4 +215,4 @@ const handleItemAttached = (updatedItem: PoamItem) => {
   showAttachModal.value = false
   attachingItem.value = null
 }
-</script> 
+</script>

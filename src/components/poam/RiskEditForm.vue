@@ -3,7 +3,7 @@
     <h3 class="text-lg font-semibold text-gray-900 dark:text-slate-300 mb-4">
       Edit Risk
     </h3>
-    
+
     <form @submit.prevent="submit" class="space-y-4">
       <div>
         <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">
@@ -137,9 +137,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
-import { type Risk, usePlanOfActionAndMilestonesStore } from '@/stores/plan-of-action-and-milestones.ts'
+import { reactive, onMounted } from 'vue'
+import type { Risk } from '@/stores/plan-of-action-and-milestones.ts'
 import { useToast } from 'primevue/usetoast'
+import { useDataApi, decamelizeKeys } from '@/composables/axios';
 
 const props = defineProps<{
   poamId: string
@@ -151,10 +152,15 @@ const emit = defineEmits<{
   saved: [risk: Risk]
 }>()
 
-const poamStore = usePlanOfActionAndMilestonesStore()
 const toast = useToast()
 
-const saving = ref(false)
+const { data: returnedRisk, isLoading: saving, execute: updateRisk } = useDataApi<Risk>(
+  `/api/oscal/plan-of-action-and-milestones/${props.poamId}/risks/${props.risk.uuid}`,
+  {
+    method: 'PUT',
+  transformRequest: [decamelizeKeys]
+  }, { immediate: false }
+)
 
 const formData = reactive({
   title: '',
@@ -227,8 +233,6 @@ async function submit() {
   }
 
   try {
-    saving.value = true
-    
     const filteredThreatIds = formData.threatIds.filter(t => t.trim());
     const updatedRisk: Risk = {
       ...props.risk,
@@ -240,17 +244,19 @@ async function submit() {
       deadline: formData.deadline || undefined,
       remarks: formData.remarks || undefined
     }
-    
-    const response = await poamStore.updateRisk(props.poamId, props.risk.uuid!, updatedRisk)
-    
+
+     await updateRisk({
+      data: updatedRisk
+    })
+
     toast.add({
       severity: 'success',
       summary: 'Risk Updated',
       detail: 'Risk updated successfully',
       life: 3000
     })
-    
-    emit('saved', response.data)
+
+    emit('saved', returnedRisk.value!)
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     toast.add({
@@ -259,8 +265,6 @@ async function submit() {
       detail: `Failed to update risk: ${errorMessage}`,
       life: 3000
     })
-  } finally {
-    saving.value = false
   }
 }
-</script> 
+</script>

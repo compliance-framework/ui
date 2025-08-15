@@ -3,7 +3,7 @@
     <h3 class="text-lg font-semibold text-gray-900 dark:text-slate-300 mb-4">
       Edit Finding
     </h3>
-    
+
     <form @submit.prevent="submit" class="space-y-4">
       <div>
         <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">
@@ -164,9 +164,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
-import { type Finding, usePlanOfActionAndMilestonesStore } from '@/stores/plan-of-action-and-milestones.ts'
+import { reactive, onMounted } from 'vue'
+import type { Finding } from '@/stores/plan-of-action-and-milestones.ts'
 import { useToast } from 'primevue/usetoast'
+import { useDataApi, decamelizeKeys } from '@/composables/axios';
 
 const props = defineProps<{
   poamId: string
@@ -178,10 +179,15 @@ const emit = defineEmits<{
   saved: [finding: Finding]
 }>()
 
-const poamStore = usePlanOfActionAndMilestonesStore()
 const toast = useToast()
 
-const saving = ref(false)
+const { data: returnedFinding, isLoading: saving, execute: executeUpdate } = useDataApi<Finding>(
+  `/api/oscal/plan-of-action-and-milestones/${props.poamId}/findings/${props.finding.uuid}`,
+  {
+    method: 'PUT',
+    transformRequest: [decamelizeKeys]
+  }
+)
 
 const formData = reactive({
   title: '',
@@ -265,8 +271,6 @@ async function submit() {
   }
 
   try {
-    saving.value = true
-    
     const updatedFinding: Finding = {
       ...props.finding,
       title: formData.title,
@@ -278,17 +282,19 @@ async function submit() {
       relatedRisks: formData.relatedRisks.filter(r => r.trim()).length > 0 ? formData.relatedRisks.filter(r => r.trim()) : undefined,
       remarks: formData.remarks || undefined
     }
-    
-    const response = await poamStore.updateFinding(props.poamId, props.finding.uuid!, updatedFinding)
-    
+
+    await executeUpdate({
+      data: updatedFinding
+    })
+
     toast.add({
       severity: 'success',
       summary: 'Finding Updated',
       detail: 'Finding updated successfully',
       life: 3000
     })
-    
-    emit('saved', response.data)
+
+    emit('saved', returnedFinding.value!)
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     toast.add({
@@ -297,8 +303,6 @@ async function submit() {
       detail: `Failed to update finding: ${errorMessage}`,
       life: 3000
     })
-  } finally {
-    saving.value = false
   }
 }
-</script> 
+</script>

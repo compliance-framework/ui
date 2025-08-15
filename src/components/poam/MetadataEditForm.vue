@@ -106,9 +106,11 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { usePlanOfActionAndMilestonesStore } from '@/stores/plan-of-action-and-milestones'
 import type { Metadata } from '@/stores/types'
 import { useToast } from 'primevue/usetoast'
+import { useDataApi } from '@/composables/axios'
+import type { AxiosError } from 'axios'
+import type { ErrorResponse, ErrorBody } from '@/stores/types'
 
 interface Props {
   poamId: string
@@ -123,9 +125,13 @@ interface Emits {
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 
-const poamStore = usePlanOfActionAndMilestonesStore()
 const toast = useToast()
-const loading = ref(false)
+
+const { data: updatedMetadata, isLoading: loading, execute: updateMetadata } = useDataApi<Metadata>(`/api/oscal/plan-of-action-and-milestones/${props.poamId}/metadata`,
+  {
+    method: 'PUT',
+  }, { immediate: false }
+)
 
 const formData = ref<Partial<Metadata>>({
   title: '',
@@ -156,8 +162,6 @@ onMounted(() => {
 
 async function handleSubmit() {
   try {
-    loading.value = true
-    
     // Convert datetime-local back to ISO string
     const formatDateForAPI = (dateString: string) => {
       if (!dateString) return undefined
@@ -174,18 +178,18 @@ async function handleSubmit() {
       remarks: formData.value.remarks || ''
     }
 
-    const response = await poamStore.updateMetadata(props.poamId, metadataToSave)
-    emit('saved', response.data)
+    await updateMetadata({
+      data: metadataToSave,
+    })
+    emit('saved', updatedMetadata.value!)
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>
     toast.add({
       severity: 'error',
       summary: 'Save Failed',
-      detail: `Failed to save metadata: ${errorMessage}`,
+      detail: `Failed to save metadata: ${errorResponse.response?.data.errors.body}. Please check your input and try again.`,
       life: 3000
     })
-  } finally {
-    loading.value = false
   }
 }
-</script> 
+</script>

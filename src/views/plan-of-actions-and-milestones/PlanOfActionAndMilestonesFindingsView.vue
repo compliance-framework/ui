@@ -18,7 +18,7 @@
       <p class="text-red-500">Error loading findings: {{ error }}</p>
     </div>
 
-    <div v-else-if="!findings.length" class="text-center py-8">
+    <div v-else-if="!findings?.length" class="text-center py-8">
       <p class="text-gray-500 dark:text-slate-400">No findings found.</p>
     </div>
 
@@ -32,24 +32,24 @@
           <div class="flex-1">
             <h3 class="text-lg font-medium text-gray-900 dark:text-slate-300">{{ finding.title || 'Untitled Finding' }}</h3>
             <p class="text-gray-600 dark:text-slate-400 mt-2">{{ finding.description }}</p>
-            
+
             <div v-if="finding.target" class="mt-3">
               <h4 class="text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">Target</h4>
               <p class="text-sm text-gray-600 dark:text-slate-400">{{ JSON.stringify(finding.target) }}</p>
             </div>
-            
+
             <div v-if="finding.status" class="mt-3">
               <h4 class="text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">Status</h4>
               <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
                 {{ finding.status.state }}
               </span>
             </div>
-            
+
             <div v-if="finding.implementationStatus" class="mt-3">
               <h4 class="text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">Implementation Status</h4>
               <p class="text-sm text-gray-600 dark:text-slate-400">{{ JSON.stringify(finding.implementationStatus) }}</p>
             </div>
-            
+
             <div class="mt-4 flex flex-wrap gap-2">
               <span v-if="finding.relatedObservations?.length" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
                 {{ finding.relatedObservations.length }} Related Observations
@@ -59,7 +59,7 @@
               </span>
             </div>
           </div>
-          
+
           <div class="ml-4 flex gap-2">
             <button
               @click="editFinding(finding)"
@@ -80,7 +80,7 @@
 
     <!-- Create Modal -->
     <Modal :show="showCreateModal" @close="showCreateModal = false" size="lg">
-      <FindingCreateForm 
+      <FindingCreateForm
         :poam-id="route.params.id as string"
         @cancel="showCreateModal = false"
         @created="handleFindingCreated"
@@ -89,7 +89,7 @@
 
     <!-- Edit Modal -->
     <Modal :show="showEditModal && editingFinding !== null" @close="showEditModal = false" size="lg">
-      <FindingEditForm 
+      <FindingEditForm
         v-if="editingFinding"
         :poam-id="route.params.id as string"
         :finding="editingFinding"
@@ -101,21 +101,22 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { ref } from 'vue'
 import { useRoute } from 'vue-router'
-import { type Finding, usePlanOfActionAndMilestonesStore } from '@/stores/plan-of-action-and-milestones.ts'
+import type { Finding } from '@/stores/plan-of-action-and-milestones.ts'
 import Modal from '@/components/Modal.vue'
 import FindingCreateForm from '@/components/poam/FindingCreateForm.vue'
 import FindingEditForm from '@/components/poam/FindingEditForm.vue'
 import { useToast } from 'primevue/usetoast'
+import { useDataApi } from '@/composables/axios'
 
 const route = useRoute()
-const poamStore = usePlanOfActionAndMilestonesStore()
 const toast = useToast()
 
-const findings = ref<Finding[]>([])
-const loading = ref(true)
-const error = ref<string | null>(null)
+const { data: findings, error, isLoading: loading, execute: loadFindings } = useDataApi<Finding[]>(
+  `/api/oscal/plan-of-action-and-milestones/${route.params.id}/findings`
+)
+const { execute: executeDelete } = useDataApi<void>(null, { method: 'DELETE' }, { immediate: false })
 
 // Modal states
 const showCreateModal = ref(false)
@@ -124,31 +125,6 @@ const showEditModal = ref(false)
 // Edit targets
 const editingFinding = ref<Finding | null>(null)
 
-onMounted(async () => {
-  await loadFindings()
-})
-
-async function loadFindings() {
-  const id = route.params.id as string
-  
-  try {
-    loading.value = true
-    const response = await poamStore.getFindings(id)
-    findings.value = response.data
-  } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : 'Unknown error'
-    error.value = errorMessage
-    toast.add({
-      severity: 'error',
-      summary: 'Load Failed',
-      detail: `Failed to load findings: ${errorMessage}`,
-      life: 3000
-    })
-  } finally {
-    loading.value = false
-  }
-}
-
 // Finding management
 const editFinding = (finding: Finding) => {
   editingFinding.value = finding
@@ -156,11 +132,17 @@ const editFinding = (finding: Finding) => {
 }
 
 const handleFindingCreated = (newFinding: Finding) => {
+  if (!findings.value) {
+    findings.value = []
+  }
   findings.value.push(newFinding)
   showCreateModal.value = false
 }
 
 const handleFindingSaved = (updatedFinding: Finding) => {
+  if (!findings.value) {
+    findings.value = []
+  }
   const index = findings.value.findIndex(finding => finding.uuid === updatedFinding.uuid)
   if (index !== -1) {
     findings.value[index] = updatedFinding
@@ -176,15 +158,15 @@ async function deleteFinding(uuid: string) {
 
   try {
     const id = route.params.id as string
-    await poamStore.deleteFinding(id, uuid)
-    
+    await executeDelete(`/api/oscal/plan-of-action-and-milestones/${id}/findings/${uuid}`)
+
     toast.add({
       severity: 'success',
       summary: 'Finding Deleted',
       detail: 'Finding deleted successfully',
       life: 3000
     })
-    
+
     await loadFindings() // Reload the list
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : 'Unknown error'
@@ -196,4 +178,4 @@ async function deleteFinding(uuid: string) {
     })
   }
 }
-</script> 
+</script>

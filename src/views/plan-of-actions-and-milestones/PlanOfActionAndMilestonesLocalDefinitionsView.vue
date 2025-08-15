@@ -33,8 +33,8 @@
         <div v-if="localDefinitions.components && localDefinitions.components.length > 0">
           <h3 class="text-lg font-medium text-gray-900 dark:text-slate-300 mb-3">Components</h3>
           <div class="space-y-3">
-            <div 
-              v-for="(component, index) in localDefinitions.components" 
+            <div
+              v-for="(component, index) in localDefinitions.components"
               :key="index"
               class="p-4 bg-gray-50 dark:bg-slate-800 rounded border"
             >
@@ -65,8 +65,8 @@
         <div v-if="localDefinitions.inventoryItems && localDefinitions.inventoryItems.length > 0">
           <h3 class="text-lg font-medium text-gray-900 dark:text-slate-300 mb-3">Inventory Items</h3>
           <div class="space-y-3">
-            <div 
-              v-for="(item, index) in localDefinitions.inventoryItems" 
+            <div
+              v-for="(item, index) in localDefinitions.inventoryItems"
               :key="index"
               class="p-4 bg-gray-50 dark:bg-slate-800 rounded border"
             >
@@ -95,8 +95,8 @@
             <div class="p-4 bg-gray-50 dark:bg-slate-800 rounded border">
               <h4 class="font-medium text-gray-900 dark:text-slate-300 mb-3">Components</h4>
               <div class="space-y-2">
-                <div 
-                  v-for="(component, index) in localDefinitions.assessmentAssets.components" 
+                <div
+                  v-for="(component, index) in localDefinitions.assessmentAssets.components"
                   :key="index"
                   class="p-3 bg-white dark:bg-slate-900 rounded border"
                 >
@@ -142,7 +142,7 @@
 
     <!-- Create Modal -->
     <Modal :show="showCreateModal" @close="showCreateModal = false" size="lg">
-      <LocalDefinitionsForm 
+      <LocalDefinitionsForm
         :poam-id="route.params.id as string"
         :local-definitions="undefined"
         @cancel="showCreateModal = false"
@@ -152,7 +152,7 @@
 
     <!-- Edit Modal -->
     <Modal :show="showEditModal" @close="showEditModal = false" size="lg">
-      <LocalDefinitionsForm 
+      <LocalDefinitionsForm
         :poam-id="route.params.id as string"
         :local-definitions="localDefinitions || undefined"
         @cancel="showEditModal = false"
@@ -163,51 +163,25 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { ref } from 'vue'
 import { useRoute } from 'vue-router'
-import { type LocalDefinitions, usePlanOfActionAndMilestonesStore } from '@/stores/plan-of-action-and-milestones.ts'
+import type { LocalDefinitions } from '@/stores/plan-of-action-and-milestones.ts'
 import Modal from '@/components/Modal.vue'
 import LocalDefinitionsForm from '@/components/poam/LocalDefinitionsForm.vue'
-import { useToast } from 'primevue/usetoast'
+import { useDataApi } from '@/composables/axios'
 
 const route = useRoute()
-const poamStore = usePlanOfActionAndMilestonesStore()
-const toast = useToast()
 
-const loading = ref(true)
-const error = ref<string | null>(null)
-const localDefinitions = ref<LocalDefinitions | null>(null)
 const showCreateModal = ref(false)
 const showEditModal = ref(false)
 
-onMounted(async () => {
-  await loadLocalDefinitions()
-})
-
-async function loadLocalDefinitions() {
-  const id = route.params.id as string
-  
-  try {
-    loading.value = true
-    const response = await poamStore.getLocalDefinitions(id)
-    localDefinitions.value = response.data
-  } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : 'Unknown error'
-    error.value = errorMessage
-    toast.add({
-      severity: 'error',
-      summary: 'Load Failed',
-      detail: `Failed to load local definitions: ${errorMessage}`,
-      life: 3000
-    })
-  } finally {
-    loading.value = false
-  }
-}
+const { data: localDefinitions, error, isLoading: loading } = useDataApi<LocalDefinitions | null>(
+  `/api/oscal/plan-of-action-and-milestones/${route.params.id}/local-definitions`
+)
 
 function handleLocalDefinitionsSaved(savedLocalDefinitions: LocalDefinitions) {
   localDefinitions.value = savedLocalDefinitions
   showCreateModal.value = false
   showEditModal.value = false
 }
-</script> 
+</script>

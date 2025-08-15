@@ -35,10 +35,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import PageHeader from '@/components/PageHeader.vue'
 import PageSubHeader from '@/components/PageSubHeader.vue'
-import { type PlanOfActionAndMilestones, usePlanOfActionAndMilestonesStore } from '@/stores/plan-of-action-and-milestones.ts'
+import type { PlanOfActionAndMilestones } from '@/stores/plan-of-action-and-milestones.ts'
 import { useRouter } from 'vue-router'
 import TertiaryButton from '@/components/TertiaryButton.vue'
 import PageCard from '@/components/PageCard.vue'
@@ -48,8 +48,10 @@ import PrimaryButton from '@/components/PrimaryButton.vue'
 import { BIconArrowRepeat } from 'bootstrap-icons-vue'
 import { v4 as uuidv4 } from 'uuid'
 import { useToast } from 'primevue/usetoast'
+import { useDataApi, decamelizeKeys } from '@/composables/axios'
+import type { AxiosError } from 'axios'
+import type { ErrorResponse, ErrorBody } from '@/stores/types'
 
-const poamStore = usePlanOfActionAndMilestonesStore()
 const poam = ref<PlanOfActionAndMilestones>({
   uuid: '',
   metadata: {
@@ -57,30 +59,49 @@ const poam = ref<PlanOfActionAndMilestones>({
     version: '',
     remarks: ''
   },
+  systemId: {
+    id: 'change-me',
+    identifierType: ''
+  },
   poamItems: []
 } as PlanOfActionAndMilestones)
 
 const router = useRouter()
 const toast = useToast()
 
+const { data: newPOAM, execute: executeCreate } = useDataApi<PlanOfActionAndMilestones>('/api/oscal/plan-of-action-and-milestones/',
+  {
+    method: "POST",
+    transformRequest: [decamelizeKeys],
+  }, { immediate: false }
+);
+
 async function submit() {
   try {
-    const response = await poamStore.create(poam.value)
+    await executeCreate({
+      data: poam.value,
+    })
+
     await router.push({
       name: 'plan-of-action-and-milestones-overview',
-      params: { id: response.data.uuid },
+      params: { id: newPOAM.value!.uuid },
     })
   } catch (error) {
+    const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>
     toast.add({
       severity: 'error',
       summary: 'Error creating POAM',
-      detail: 'Failed to create Plan of Action and Milestones. Please check your input and try again.',
+      detail: `Failed to create Plan of Action and Milestones: ${errorResponse.response?.data.errors.body}. Please check your input and try again.`,
       life: 3000
     })
   }
 }
 
+onMounted(() => {
+  generateUuid()
+})
+
 function generateUuid() {
   poam.value.uuid = uuidv4()
 }
-</script> 
+</script>

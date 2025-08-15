@@ -71,9 +71,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
-import { type SystemId, usePlanOfActionAndMilestonesStore } from '@/stores/plan-of-action-and-milestones.ts'
+import { reactive, computed, onMounted } from 'vue'
+import type { SystemId } from '@/stores/plan-of-action-and-milestones.ts'
 import { useToast } from 'primevue/usetoast'
+import { useDataApi, decamelizeKeys } from '@/composables/axios'
 
 const props = defineProps<{
   poamId: string
@@ -85,11 +86,13 @@ const emit = defineEmits<{
   saved: [systemId: SystemId]
 }>()
 
-const poamStore = usePlanOfActionAndMilestonesStore()
 const toast = useToast()
-
-const saving = ref(false)
 const isEditing = computed(() => !!props.systemId)
+
+const { data: systemId, isLoading: saving, execute: saveSystemId } = useDataApi<SystemId>(
+  `/api/oscal/plan-of-action-and-milestones/${props.poamId}/system-id`,
+  null , { immediate: false }
+)
 
 const formData = reactive({
   identifier: '',
@@ -107,8 +110,6 @@ onMounted(() => {
 })
 
 async function handleSubmit() {
-  saving.value = true
-
   try {
     const systemIdData: SystemId = {
       id: formData.identifier.trim() || undefined,
@@ -116,11 +117,18 @@ async function handleSubmit() {
       remarks: formData.remarks.trim() || undefined
     }
 
-    let response
     if (isEditing.value) {
-      response = await poamStore.updateSystemId(props.poamId, systemIdData)
+      await saveSystemId({
+        method: 'PUT',
+        data: systemIdData,
+        transformRequest: [decamelizeKeys]
+      })
     } else {
-      response = await poamStore.createSystemId(props.poamId, systemIdData)
+      await saveSystemId({
+        method: 'POST',
+        data: systemIdData,
+        transformRequest: [decamelizeKeys]
+      })
     }
 
     toast.add({
@@ -130,7 +138,7 @@ async function handleSubmit() {
       life: 3000
     })
 
-    emit('saved', response.data)
+    emit('saved', systemId.value!)
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : 'Unknown error'
     toast.add({
@@ -139,8 +147,6 @@ async function handleSubmit() {
       detail: `Failed to save system ID: ${errorMessage}`,
       life: 3000
     })
-  } finally {
-    saving.value = false
   }
 }
-</script> 
+</script>

@@ -218,9 +218,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted, watch } from 'vue'
+import { computed,  watch } from 'vue'
 import type { PoamItem, Finding, Observation, Risk } from '@/stores/plan-of-action-and-milestones'
-import { usePlanOfActionAndMilestonesStore } from '@/stores/plan-of-action-and-milestones'
+import { useDataApi } from '@/composables/axios'
 
 interface Props {
   item: PoamItem
@@ -241,73 +241,13 @@ const debugInfo = computed(() => {
   return JSON.stringify(props.item, null, 2)
 })
 
-// Store for fetching related item data
-const poamStore = usePlanOfActionAndMilestonesStore()
-
-// Data for related items
-const relatedFindingsData = ref<Finding[]>([])
-const relatedObservationsData = ref<Observation[]>([])
-const relatedRisksData = ref<Risk[]>([])
-
-// Loading states
-const loadingFindings = ref(false)
-const loadingObservations = ref(false)
-const loadingRisks = ref(false)
-
-// Fetch related item data
-async function loadRelatedFindings() {
-  if (!props.item.relatedFindings?.length) return
-  
-  loadingFindings.value = true
-  try {
-    const response = await poamStore.getFindings(props.poamId)
-    const allFindings = response.data
-    relatedFindingsData.value = allFindings.filter(finding => 
-      props.item.relatedFindings?.some(related => related.findingUuid === finding.uuid)
-    )
-  } catch (error) {
-    // Silently handle error - related findings are optional
-  } finally {
-    loadingFindings.value = false
-  }
-}
-
-async function loadRelatedObservations() {
-  if (!props.item.relatedObservations?.length) return
-  
-  loadingObservations.value = true
-  try {
-    const response = await poamStore.getObservations(props.poamId)
-    const allObservations = response.data
-    relatedObservationsData.value = allObservations.filter(observation => 
-      props.item.relatedObservations?.some(related => related.observationUuid === observation.uuid)
-    )
-  } catch (error) {
-    // Silently handle error - related observations are optional
-  } finally {
-    loadingObservations.value = false
-  }
-}
-
-async function loadRelatedRisks() {
-  if (!props.item.relatedRisks?.length) return
-  
-  loadingRisks.value = true
-  try {
-    const response = await poamStore.getRisks(props.poamId)
-    const allRisks = response.data
-    relatedRisksData.value = allRisks.filter(risk => 
-      props.item.relatedRisks?.some(related => related.riskUuid === risk.uuid)
-    )
-  } catch (error) {
-    // Silently handle error - related risks are optional
-  } finally {
-    loadingRisks.value = false
-  }
-}
+const { data: relatedFindingsData, isLoading: loadingFindings, execute: loadRelatedFindings } = useDataApi<Finding[]>(`/api/oscal/plan-of-action-and-milestones/${props.poamId}/findings`)
+const { data: relatedObservationsData, isLoading: loadingObservations, execute: loadRelatedObservations } = useDataApi<Observation[]>(`/api/oscal/plan-of-action-and-milestones/${props.poamId}/observations`)
+const { data: relatedRisksData, isLoading: loadingRisks, execute: loadRelatedRisks } = useDataApi<Risk[]>(`/api/oscal/plan-of-action-and-milestones/${props.poamId}/risks`)
 
 // Helper function to get item display info
 function getFindingDisplayInfo(uuid: string) {
+  if (!relatedFindingsData.value) return {};
   const finding = relatedFindingsData.value.find(f => f.uuid === uuid)
   return {
     title: finding?.title || 'Unknown Finding',
@@ -317,6 +257,7 @@ function getFindingDisplayInfo(uuid: string) {
 }
 
 function getObservationDisplayInfo(uuid: string) {
+  if (!relatedObservationsData.value) return {};
   const observation = relatedObservationsData.value.find(o => o.uuid === uuid)
   return {
     title: observation?.title || 'Unknown Observation',
@@ -326,6 +267,7 @@ function getObservationDisplayInfo(uuid: string) {
 }
 
 function getRiskDisplayInfo(uuid: string) {
+  if (!relatedRisksData.value) return {};
   const risk = relatedRisksData.value.find(r => r.uuid === uuid)
   return {
     title: risk?.title || 'Unknown Risk',
@@ -333,13 +275,6 @@ function getRiskDisplayInfo(uuid: string) {
     uuid: uuid
   }
 }
-
-// Load related items when component mounts
-onMounted(() => {
-  loadRelatedFindings()
-  loadRelatedObservations()
-  loadRelatedRisks()
-})
 
 // Watch for changes to the item prop and reload related items
 watch(
@@ -349,7 +284,7 @@ watch(
     const findingsChanged = JSON.stringify(newItem.relatedFindings) !== JSON.stringify(oldItem?.relatedFindings)
     const observationsChanged = JSON.stringify(newItem.relatedObservations) !== JSON.stringify(oldItem?.relatedObservations)
     const risksChanged = JSON.stringify(newItem.relatedRisks) !== JSON.stringify(oldItem?.relatedRisks)
-    
+
     if (findingsChanged) {
       loadRelatedFindings()
     }
@@ -362,4 +297,4 @@ watch(
   },
   { deep: true }
 )
-</script> 
+</script>

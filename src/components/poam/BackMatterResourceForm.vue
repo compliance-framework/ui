@@ -251,8 +251,11 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { usePlanOfActionAndMilestonesStore, type Resource } from '@/stores/plan-of-action-and-milestones'
+import type { Resource } from '@/stores/plan-of-action-and-milestones'
 import { useToast } from 'primevue/usetoast'
+import { useDataApi, decamelizeKeys } from '@/composables/axios'
+import type { AxiosError } from 'axios'
+import type { ErrorResponse, ErrorBody } from '@/stores/types'
 
 interface Props {
   poamId: string
@@ -268,9 +271,13 @@ interface Emits {
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 
-const poamStore = usePlanOfActionAndMilestonesStore()
+const { data: returnedResource, isLoading: loading, execute } = useDataApi<Resource>(
+  null,
+  { transformRequest: [decamelizeKeys] },
+  { immediate: false }
+)
+
 const toast = useToast()
-const loading = ref(false)
 
 const formData = ref<Partial<Resource>>({
   uuid: '',
@@ -310,11 +317,7 @@ onMounted(() => {
 })
 
 function generateUUID(): string {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    const r = Math.random() * 16 | 0
-    const v = c === 'x' ? r : (r & 0x3 | 0x8)
-    return v.toString(16)
-  })
+  return crypto.randomUUID()
 }
 
 function addDocumentId() {
@@ -361,8 +364,6 @@ function removeProperty(index: number) {
 
 async function handleSubmit() {
   try {
-    loading.value = true
-    
     // Clean up empty items
     if (formData.value.documentIds) {
       formData.value.documentIds = formData.value.documentIds.filter(d => d.scheme || d.identifier)
@@ -374,24 +375,28 @@ async function handleSubmit() {
       formData.value.props = formData.value.props.filter(p => p.name || p.value)
     }
 
-    let response
     if (props.isEdit && formData.value.uuid) {
-      response = await poamStore.updateBackMatterResource(props.poamId, formData.value.uuid, formData.value as Resource)
+      await execute(`/api/oscal/plan-of-action-and-milestones/${props.poamId}/back-matter/resources/${formData.value.uuid}`, {
+        method: 'PUT',
+        data: formData.value,
+      })
     } else {
-      response = await poamStore.createBackMatterResource(props.poamId, formData.value)
+      await execute(`/api/oscal/plan-of-action-and-milestones/${props.poamId}/back-matter/resources`, {
+        method: 'POST',
+        data: formData.value,
+      })
     }
 
-    emit('saved', response.data)
+    emit('saved', returnedResource.value!)
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>
+    const errorMessage = errorResponse.response?.data?.errors?.body || 'Unknown error occurred'
     toast.add({
       severity: 'error',
       summary: 'Save Failed',
       detail: `Failed to save back matter resource: ${errorMessage}`,
       life: 3000
     })
-  } finally {
-    loading.value = false
   }
 }
-</script> 
+</script>

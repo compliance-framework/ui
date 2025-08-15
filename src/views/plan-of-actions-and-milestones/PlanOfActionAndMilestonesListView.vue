@@ -107,40 +107,22 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
 import PageHeader from '@/components/PageHeader.vue'
-import { type PlanOfActionAndMilestones, usePlanOfActionAndMilestonesStore } from '@/stores/plan-of-action-and-milestones.ts'
+import type { PlanOfActionAndMilestones } from '@/stores/plan-of-action-and-milestones.ts'
 import { useToast } from 'primevue/usetoast'
-import { useConfigStore } from '@/stores/config.ts'
 import Badge from '@/volt/Badge.vue'
 import { useSystemStore } from '@/stores/system.ts'
+import { useDataApi } from '@/composables/axios'
+import decamelizeKeys from 'decamelize-keys'
 
-const poamStore = usePlanOfActionAndMilestonesStore()
-const configStore = useConfigStore()
 const toast = useToast()
 const systemStore = useSystemStore();
 
-const planOfActionAndMilestones = ref<PlanOfActionAndMilestones[]>([])
-const loading = ref(true)
-const error = ref<string | null>(null)
-
-onMounted(async () => {
-  try {
-    const response = await poamStore.list()
-    planOfActionAndMilestones.value = response.data
-  } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : 'Unknown error'
-    error.value = errorMessage
-    toast.add({
-      severity: 'error',
-      summary: 'Load Failed',
-      detail: `Failed to load Plan of Action and Milestones: ${errorMessage}`,
-      life: 3000
-    })
-  } finally {
-    loading.value = false
-  }
-})
+const { data: planOfActionAndMilestones, error, isLoading: loading } = useDataApi<PlanOfActionAndMilestones[]>('/api/oscal/plan-of-action-and-milestones')
+const { data: poamJSON, execute: executeDownload } = useDataApi<PlanOfActionAndMilestones>('/api/oscal/plan-of-action-and-milestones/download',
+  null,
+  { immediate: false }
+)
 
 function formatDate(dateString?: string): string {
   if (!dateString) return 'N/A'
@@ -150,19 +132,9 @@ function formatDate(dateString?: string): string {
 async function downloadJson(uuid: string, title: string): Promise<void> {
   try {
     // Get raw API response without camelCase conversion
-    const config = await configStore.getConfig()
-    const response = await fetch(
-      `${config.API_URL}/api/oscal/plan-of-action-and-milestones/${uuid}/full`,
-      {
-        credentials: 'include'
-      }
-    )
-    if (!response.ok) {
-      throw response
-    }
-    const data = await response.json()
+    await executeDownload(`/api/oscal/plan-of-action-and-milestones/${uuid}/full`)
 
-    const dataStr = JSON.stringify(data, null, 2)
+    const dataStr = JSON.stringify(decamelizeKeys(poamJSON.value!, { deep: true, separator: '-' }), null, 2)
     const dataBlob = new Blob([dataStr], { type: 'application/json' })
 
     const url = URL.createObjectURL(dataBlob)

@@ -3,7 +3,7 @@
     <h3 class="text-lg font-semibold text-gray-900 dark:text-slate-300 mb-4">
       Attach / Detach Items to POAM Item
     </h3>
-    
+
     <div class="mb-6">
       <h4 class="text-md font-medium text-gray-700 dark:text-slate-400 mb-2">{{ item.title }}</h4>
       <p class="text-sm text-gray-600 dark:text-slate-400">{{ item.description }}</p>
@@ -195,9 +195,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
-import { type PoamItem, type Finding, type Observation, type Risk, usePlanOfActionAndMilestonesStore } from '@/stores/plan-of-action-and-milestones.ts'
+import { ref, reactive, computed } from 'vue'
+import type { PoamItem, Finding, Observation, Risk } from '@/stores/plan-of-action-and-milestones.ts'
 import { useToast } from 'primevue/usetoast'
+import { useDataApi, decamelizeKeys } from '@/composables/axios'
+import type { AxiosError } from 'axios'
+import type { ErrorResponse, ErrorBody } from '@/stores/types'
 
 const props = defineProps<{
   poamId: string
@@ -209,19 +212,24 @@ const emit = defineEmits<{
   saved: [item: PoamItem]
 }>()
 
-const poamStore = usePlanOfActionAndMilestonesStore()
 const toast = useToast()
 
-const loading = ref(false)
-const saving = ref(false)
-const error = ref<string | null>(null)
 const searchQuery = ref('')
 const activeTab = ref<'findings' | 'observations' | 'risks'>('findings')
 
 // Data
-const findings = ref<Finding[]>([])
-const observations = ref<Observation[]>([])
-const risks = ref<Risk[]>([])
+const { data: findings, isLoading: loadFindings, error: findingsError } = useDataApi<Finding[]>(`/api/oscal/plan-of-action-and-milestones/${props.poamId}/findings`)
+const { data: observations, isLoading: loadObservations, error: observationsError } = useDataApi<Observation[]>(`/api/oscal/plan-of-action-and-milestones/${props.poamId}/observations`)
+const { data: risks, isLoading: loadRisks, error: risksError } = useDataApi<Risk[]>(`/api/oscal/plan-of-action-and-milestones/${props.poamId}/risks`)
+const { data: updatedPoamItem, execute: updatePoamItem, isLoading: saving } = useDataApi<PoamItem>(`/api/oscal/plan-of-action-and-milestones/${props.poamId}/poam-items/${props.item.uuid}`,
+  {
+    method: 'PUT',
+    transformRequest: [decamelizeKeys]
+  }, { immediate: false }
+)
+
+const loading = computed(() => loadFindings.value || loadObservations.value || loadRisks.value)
+const error = computed(() => findingsError.value || observationsError.value || risksError.value)
 
 // Working copy of the item with changes
 const workingItem = reactive<PoamItem>({
@@ -241,7 +249,7 @@ const tabs = [
 
 // Computed properties
 const filteredFindings = computed(() => {
-  return findings.value.filter(finding => 
+  return findings.value?.filter(finding =>
     finding.title?.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
     finding.description?.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
     finding.uuid?.toLowerCase().includes(searchQuery.value.toLowerCase())
@@ -249,7 +257,7 @@ const filteredFindings = computed(() => {
 })
 
 const filteredObservations = computed(() => {
-  return observations.value.filter(observation => 
+  return observations.value?.filter(observation =>
     observation.title?.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
     observation.description?.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
     observation.uuid?.toLowerCase().includes(searchQuery.value.toLowerCase())
@@ -257,7 +265,7 @@ const filteredObservations = computed(() => {
 })
 
 const filteredRisks = computed(() => {
-  return risks.value.filter(risk => 
+  return risks.value?.filter(risk =>
     risk.title?.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
     risk.description?.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
     risk.uuid?.toLowerCase().includes(searchQuery.value.toLowerCase())
@@ -267,25 +275,25 @@ const filteredRisks = computed(() => {
 // Methods
 function getAvailableCount(type: string): number {
   switch (type) {
-    case 'findings': return findings.value.length
-    case 'observations': return observations.value.length
-    case 'risks': return risks.value.length
+    case 'findings': return findings.value?.length || 0
+    case 'observations': return observations.value?.length || 0
+    case 'risks': return risks.value?.length || 0
     default: return 0
   }
 }
 
 function getFilteredItems(): any[] {
   switch (activeTab.value) {
-    case 'findings': return filteredFindings.value
-    case 'observations': return filteredObservations.value
-    case 'risks': return filteredRisks.value
+    case 'findings': return filteredFindings.value || []
+    case 'observations': return filteredObservations.value || []
+    case 'risks': return filteredRisks.value || []
     default: return []
   }
 }
 
 function isAttached(uuid: string | undefined, type: string): boolean {
   if (!uuid) return false
-  
+
   switch (type) {
     case 'findings':
       return workingItem.relatedFindings?.some(f => f.findingUuid === uuid) || false
@@ -308,7 +316,7 @@ function attachItem(uuid: string | undefined, type: string) {
     })
     return
   }
-  
+
   // Prevent duplicate attachments
   if (isAttached(uuid, type)) {
     toast.add({
@@ -319,7 +327,7 @@ function attachItem(uuid: string | undefined, type: string) {
     })
     return
   }
-  
+
   switch (type) {
     case 'findings':
       if (!workingItem.relatedFindings) workingItem.relatedFindings = []
@@ -338,7 +346,7 @@ function attachItem(uuid: string | undefined, type: string) {
 
 function detachItem(uuid: string | undefined, type: string) {
   if (!uuid) return
-  
+
   switch (type) {
     case 'findings':
       if (workingItem.relatedFindings) {
@@ -358,63 +366,29 @@ function detachItem(uuid: string | undefined, type: string) {
   }
 }
 
-async function loadData() {
-  loading.value = true
-  error.value = null
-  
-  try {
-    // Load all available items
-    const [findingsResponse, observationsResponse, risksResponse] = await Promise.all([
-      poamStore.getFindings(props.poamId),
-      poamStore.getObservations(props.poamId),
-      poamStore.getRisks(props.poamId)
-    ])
-    
-    findings.value = findingsResponse.data
-    observations.value = observationsResponse.data
-    risks.value = risksResponse.data
-  } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : 'Unknown error'
-    error.value = errorMessage
-    toast.add({
-      severity: 'error',
-      summary: 'Load Failed',
-      detail: `Failed to load available items: ${errorMessage}`,
-      life: 3000
-    })
-  } finally {
-    loading.value = false
-  }
-}
-
 async function saveChanges() {
-  saving.value = true
-  
   try {
-    const response = await poamStore.updatePoamItem(props.poamId, props.item.uuid!, workingItem)
-    
+    await updatePoamItem({
+      data: workingItem
+    })
+
     toast.add({
       severity: 'success',
       summary: 'POAM Item Updated',
       detail: 'Related items have been updated successfully',
       life: 3000
     })
-    
-    emit('saved', response.data)
+
+    emit('saved', updatedPoamItem.value!)
   } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+    const errorResponse = err as AxiosError<ErrorResponse<ErrorBody>>
+    const errorMessage = errorResponse.response?.data.errors.body || 'Unknown error'
     toast.add({
       severity: 'error',
       summary: 'Update Failed',
       detail: `Failed to update POAM item: ${errorMessage}`,
       life: 3000
     })
-  } finally {
-    saving.value = false
   }
 }
-
-onMounted(() => {
-  loadData()
-})
-</script> 
+</script>
