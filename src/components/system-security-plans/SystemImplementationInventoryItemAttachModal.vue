@@ -1,15 +1,15 @@
 <template>
   <div class="px-8 py-6 max-w-4xl mx-auto">
     <h2 class="text-xl font-semibold mb-6 dark:text-slate-300">Manage Inventory Item Relationships</h2>
-    
+
     <div v-if="loading" class="text-center py-8">
       <p class="text-gray-500 dark:text-slate-400">Loading available items...</p>
     </div>
-    
+
     <div v-else-if="error" class="text-center py-8">
       <p class="text-red-500 dark:text-red-400">{{ error }}</p>
     </div>
-    
+
     <div v-else>
       <!-- Tabs -->
       <div class="border-b border-gray-200 dark:border-slate-700 mb-6">
@@ -54,7 +54,7 @@
             Add Property
           </button>
         </div>
-        
+
         <div v-for="(prop, index) in workingItem.props" :key="index" class="border border-gray-200 dark:border-slate-600 rounded-lg p-4">
           <div class="grid grid-cols-3 gap-4">
             <div>
@@ -98,7 +98,7 @@
             Add Link
           </button>
         </div>
-        
+
         <div v-for="(link, index) in workingItem.links" :key="index" class="border border-gray-200 dark:border-slate-600 rounded-lg p-4">
           <div class="grid grid-cols-2 gap-4">
             <div>
@@ -151,7 +151,7 @@
             Add Responsible Party
           </button>
         </div>
-        
+
         <div v-for="(party, index) in workingItem.responsibleParties" :key="index" class="border border-gray-200 dark:border-slate-600 rounded-lg p-4">
           <div class="space-y-4">
             <div>
@@ -205,7 +205,7 @@
             Add Component
           </button>
         </div>
-        
+
         <div v-for="(component, index) in workingItem.implementedComponents" :key="index" class="border border-gray-200 dark:border-slate-600 rounded-lg p-4">
           <div class="space-y-4">
             <div>
@@ -262,9 +262,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
-import { type InventoryItem, type SystemComponent, useSystemSecurityPlanStore } from '@/stores/system-security-plans.ts'
+import { ref, reactive, onMounted, computed } from 'vue'
+import { type InventoryItem, type SystemComponent } from '@/stores/system-security-plans.ts'
 import { useToast } from 'primevue/usetoast'
+import { useDataApi, decamelizeKeys } from '@/composables/axios'
 
 const props = defineProps<{
   sspId: string
@@ -276,17 +277,25 @@ const emit = defineEmits<{
   saved: [item: InventoryItem]
 }>()
 
-const sspStore = useSystemSecurityPlanStore()
 const toast = useToast()
 
-const loading = ref(false)
+const { data: availableComponents, isLoading: loadingComponents, error: componentError } = useDataApi<SystemComponent[]>(
+  `/api/oscal/system-security-plans/${props.sspId}/system-implementation/components`
+)
+
+const { data: updatedItem, execute: updateItem } = useDataApi<InventoryItem>(
+  `/api/oscal/system-security-plans/${props.sspId}/system-implementation/inventory-items/${props.item.uuid}`,
+  {
+    method: 'PUT',
+    transformRequest: [decamelizeKeys]
+  }
+)
+
+const loading = computed(() => loadingComponents.value)
 const saving = ref(false)
-const error = ref<string | null>(null)
+const error = computed(() => componentError.value)
 const searchQuery = ref('')
 const activeTab = ref<'props' | 'links' | 'responsible-parties' | 'implemented-components'>('props')
-
-// Data
-const availableComponents = ref<SystemComponent[]>([])
 
 // Working copy of the item with changes
 const workingItem = reactive<InventoryItem>({
@@ -367,46 +376,22 @@ function removeImplementedComponent(index: number) {
   workingItem.implementedComponents?.splice(index, 1)
 }
 
-async function loadData() {
-  loading.value = true
-  error.value = null
-  
-  try {
-    // Load available components
-    const componentsResponse = await sspStore.getSystemImplementationComponents(props.sspId)
-    availableComponents.value = componentsResponse.data
-  } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : 'Unknown error'
-    error.value = errorMessage
-    toast.add({
-      severity: 'error',
-      summary: 'Load Failed',
-      detail: `Failed to load available components: ${errorMessage}`,
-      life: 3000
-    })
-  } finally {
-    loading.value = false
-  }
-}
-
 async function saveChanges() {
   try {
     saving.value = true
-    
-    const response = await sspStore.updateSystemImplementationInventoryItem(
-      props.sspId,
-      workingItem.uuid,
-      workingItem
-    )
-    
+
+    await updateItem({
+      data: workingItem
+    })
+
     toast.add({
       severity: 'success',
       summary: 'Success',
       detail: 'Inventory item relationships updated successfully.',
       life: 3000
     })
-    
-    emit('saved', response.data)
+
+    emit('saved', updatedItem.value!)
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     toast.add({
@@ -421,13 +406,11 @@ async function saveChanges() {
 }
 
 onMounted(() => {
-  loadData()
-  
   // Initialize party UUID strings
   if (workingItem.responsibleParties) {
-    partyUuidStrings.value = workingItem.responsibleParties.map(party => 
+    partyUuidStrings.value = workingItem.responsibleParties.map(party =>
       party.partyUuids?.join(', ') || ''
     )
   }
 })
-</script> 
+</script>

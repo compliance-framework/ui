@@ -7,7 +7,7 @@
       <label class="inline-block pb-2 dark:text-slate-300">UUID</label>
       <div class="flex gap-2">
         <FormInput v-model="inventoryItemData.uuid" placeholder="Inventory Item UUID" class="flex-1" readonly />
-        <button 
+        <button
           type="button"
           @click="generateUUID"
           class="px-3 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors"
@@ -28,14 +28,14 @@
     </div>
 
     <div class="flex justify-end gap-4">
-      <button 
-        type="button" 
+      <button
+        type="button"
         @click="$emit('cancel')"
         class="px-4 py-2 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 rounded-md hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
       >
         Cancel
       </button>
-      <button 
+      <button
         type="submit"
         :disabled="saving"
         class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 transition-colors"
@@ -48,14 +48,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue';
+import { reactive, onMounted } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import FormInput from '@/components/forms/FormInput.vue';
 import FormTextarea from '@/components/forms/FormTextarea.vue';
-import { 
-  type InventoryItem,
-  useSystemSecurityPlanStore 
-} from '@/stores/system-security-plans.ts';
+import type { InventoryItem } from '@/stores/system-security-plans.ts';
+import { useDataApi, decamelizeKeys } from '@/composables/axios';
 
 const props = defineProps<{
   sspId: string;
@@ -66,9 +64,16 @@ const emit = defineEmits<{
   created: [inventoryItem: InventoryItem];
 }>();
 
-const sspStore = useSystemSecurityPlanStore();
 const toast = useToast();
-const saving = ref(false);
+
+const { data: newItem, isLoading: saving, execute: createItem } = useDataApi<InventoryItem>(
+  `/api/oscal/system-security-plans/${props.sspId}/system-implementation/inventory-items`,
+  {
+    method: 'POST',
+    transformRequest: [decamelizeKeys]
+  },
+  { immediate: false }
+);
 
 const inventoryItemData = reactive<InventoryItem>({
   uuid: '',
@@ -98,21 +103,18 @@ onMounted(() => {
 
 async function createInventoryItem() {
   try {
-    saving.value = true;
-    
-    const response = await sspStore.createSystemImplementationInventoryItem(
-      props.sspId,
-      inventoryItemData
-    );
-    
+    await createItem({
+      data: inventoryItemData
+    });
+
     toast.add({
       severity: 'success',
       summary: 'Success',
       detail: 'Inventory item created successfully.',
       life: 3000
     });
-    
-    emit('created', response.data);
+
+    emit('created', newItem.value!);
   } catch (error) {
     console.error('Failed to create inventory item:', error);
     toast.add({
@@ -121,8 +123,6 @@ async function createInventoryItem() {
       detail: 'Failed to create inventory item. Please try again.',
       life: 5000
     });
-  } finally {
-    saving.value = false;
   }
 }
-</script> 
+</script>
