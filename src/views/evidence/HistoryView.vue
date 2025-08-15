@@ -65,7 +65,7 @@ import ResultComplianceOverTimeChart from '@/components/ResultComplianceOverTime
 import ResultStatusRing from '@/components/ResultStatusRing.vue'
 import { calculateHeartbeatOverTimeData } from '@/parsers/heartbeats.ts'
 import type { HeartbeatInterval } from '@/stores/heartbeats.ts'
-import type { Evidence,  ComplianceInterval } from '@/stores/evidence.ts'
+import type { Evidence, ComplianceInterval } from '@/stores/evidence.ts'
 import { useDataApi } from '@/composables/axios'
 
 const route = useRoute()

@@ -93,7 +93,7 @@ import { useConfigStore } from '@/stores/config.ts';
 import PrimaryButton from '@/components/PrimaryButton.vue';
 import SecondaryButton from '@/components/SecondaryButton.vue';
 import InfoCircleIcon from '@primevue/icons/infocircle';
-import type { ComplianceInterval, Evidence, } from '@/stores/evidence.ts';
+import type { ComplianceInterval, Evidence } from '@/stores/evidence.ts';
 import EvidenceList from '@/components/EvidenceList.vue';
 import BurgerMenu from '@/components/BurgerMenu.vue';
 import { useDataApi } from '@/composables/axios';
