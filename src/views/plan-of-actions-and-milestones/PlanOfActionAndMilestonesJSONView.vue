@@ -25,57 +25,32 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, computed } from 'vue'
+import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { type PlanOfActionAndMilestones, usePlanOfActionAndMilestonesStore } from '@/stores/plan-of-action-and-milestones.ts'
+import type { PlanOfActionAndMilestones } from '@/stores/plan-of-action-and-milestones.ts'
 import { useToast } from 'primevue/usetoast'
-import { useConfigStore } from '@/stores/config.ts'
+import { useDataApi } from '@/composables/axios'
+import decamelizeKeys from 'decamelize-keys'
 
 const route = useRoute()
-const poamStore = usePlanOfActionAndMilestonesStore()
-const configStore = useConfigStore()
 const toast = useToast()
 
-const poamData = ref<PlanOfActionAndMilestones | null>(null)
-const loading = ref(true)
-const error = ref<string | null>(null)
+const { data: poamData, isLoading: loading, error } = useDataApi<PlanOfActionAndMilestones>(`/api/oscal/plan-of-action-and-milestones/${route.params.id}/full`)
+
 
 const formattedJson = computed(() => {
   if (!poamData.value) return ''
-  return JSON.stringify(poamData.value, null, 2)
-})
-
-onMounted(async () => {
-  const id = route.params.id as string
-  
-  try {
-    // Get raw API response without camelCase conversion
-    const config = await configStore.getConfig()
-    const response = await fetch(
-      `${config.API_URL}/api/oscal/plan-of-action-and-milestones/${id}/full`,
-      {
-        credentials: 'include'
-      }
-    )
-    if (!response.ok) {
-      throw response
-    }
-    poamData.value = await response.json()
-  } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : 'Unknown error'
-    error.value = errorMessage
-  } finally {
-    loading.value = false
-  }
+  return JSON.stringify(
+    decamelizeKeys(poamData.value, { "separator": '-', deep: true }),
+   null, 2)
 })
 
 async function downloadJson(): Promise<void> {
   if (!poamData.value) return
-  
+
   try {
-    const dataStr = JSON.stringify(poamData.value, null, 2)
-    const dataBlob = new Blob([dataStr], { type: 'application/json' })
-    
+    const dataBlob = new Blob([formattedJson.value], { type: 'application/json' })
+
     const url = URL.createObjectURL(dataBlob)
     const link = document.createElement('a')
     link.href = url
@@ -94,4 +69,4 @@ async function downloadJson(): Promise<void> {
     })
   }
 }
-</script> 
+</script>
