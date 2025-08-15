@@ -18,7 +18,7 @@
       <p class="text-red-500">Error loading observations: {{ error }}</p>
     </div>
 
-    <div v-else-if="!observations.length" class="text-center py-8">
+    <div v-else-if="observations?.length == 0" class="text-center py-8">
       <p class="text-gray-500 dark:text-slate-400">No observations found.</p>
     </div>
 
@@ -32,7 +32,7 @@
           <div class="flex-1">
             <h3 class="text-lg font-medium text-gray-900 dark:text-slate-300">{{ observation.title || 'Untitled Observation' }}</h3>
             <p class="text-gray-600 dark:text-slate-400 mt-2">{{ observation.description }}</p>
-            
+
             <div class="mt-4 flex flex-wrap gap-2">
               <span v-if="observation.methods?.length" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
                 {{ observation.methods.length }} Methods
@@ -54,7 +54,7 @@
               </div>
             </div>
           </div>
-          
+
           <div class="ml-4 flex gap-2">
             <button
               @click="editObservation(observation)"
@@ -75,7 +75,7 @@
 
     <!-- Create Modal -->
     <Modal :show="showCreateModal" @close="showCreateModal = false" size="lg">
-      <ObservationCreateForm 
+      <ObservationCreateForm
         :poam-id="route.params.id as string"
         @cancel="showCreateModal = false"
         @created="handleObservationCreated"
@@ -84,7 +84,7 @@
 
     <!-- Edit Modal -->
     <Modal :show="showEditModal && editingObservation !== null" @close="showEditModal = false" size="lg">
-      <ObservationEditForm 
+      <ObservationEditForm
         v-if="editingObservation"
         :poam-id="route.params.id as string"
         :observation="editingObservation"
@@ -96,21 +96,23 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { ref } from 'vue'
 import { useRoute } from 'vue-router'
-import { type Observation, usePlanOfActionAndMilestonesStore } from '@/stores/plan-of-action-and-milestones.ts'
+import type { Observation } from '@/stores/plan-of-action-and-milestones.ts'
 import Modal from '@/components/Modal.vue'
 import ObservationCreateForm from '@/components/poam/ObservationCreateForm.vue'
 import ObservationEditForm from '@/components/poam/ObservationEditForm.vue'
 import { useToast } from 'primevue/usetoast'
+import { useDataApi } from '@/composables/axios'
 
 const route = useRoute()
-const poamStore = usePlanOfActionAndMilestonesStore()
 const toast = useToast()
 
-const observations = ref<Observation[]>([])
-const loading = ref(true)
-const error = ref<string | null>(null)
+const { data: observations, error, isLoading: loading, execute: refreshData } = useDataApi<Observation[]>(
+  `/api/oscal/plan-of-action-and-milestones/${route.params.id}/observations`
+)
+
+const { execute: executeDelete } = useDataApi<void>(null, { method: 'DELETE' }, { immediate: false })
 
 // Modal states
 const showCreateModal = ref(false)
@@ -119,31 +121,6 @@ const showEditModal = ref(false)
 // Edit targets
 const editingObservation = ref<Observation | null>(null)
 
-onMounted(async () => {
-  await loadObservations()
-})
-
-async function loadObservations() {
-  const id = route.params.id as string
-  
-  try {
-    loading.value = true
-    const response = await poamStore.getObservations(id)
-    observations.value = response.data
-  } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : 'Unknown error'
-    error.value = errorMessage
-    toast.add({
-      severity: 'error',
-      summary: 'Load Failed',
-      detail: `Failed to load observations: ${errorMessage}`,
-      life: 3000
-    })
-  } finally {
-    loading.value = false
-  }
-}
-
 // Observation management
 const editObservation = (observation: Observation) => {
   editingObservation.value = observation
@@ -151,14 +128,14 @@ const editObservation = (observation: Observation) => {
 }
 
 const handleObservationCreated = (newObservation: Observation) => {
-  observations.value.push(newObservation)
+  observations.value!.push(newObservation)
   showCreateModal.value = false
 }
 
 const handleObservationSaved = (updatedObservation: Observation) => {
-  const index = observations.value.findIndex(obs => obs.uuid === updatedObservation.uuid)
+  const index = observations.value!.findIndex(obs => obs.uuid === updatedObservation.uuid)
   if (index !== -1) {
-    observations.value[index] = updatedObservation
+    observations.value![index] = updatedObservation
   }
   showEditModal.value = false
   editingObservation.value = null
@@ -171,16 +148,16 @@ async function deleteObservation(uuid: string) {
 
   try {
     const id = route.params.id as string
-    await poamStore.deleteObservation(id, uuid)
-    
+    await executeDelete(`/api/oscal/plan-of-action-and-milestones/${id}/observations/${uuid}`)
+
     toast.add({
       severity: 'success',
       summary: 'Observation Deleted',
       detail: 'Observation deleted successfully',
       life: 3000
     })
-    
-    await loadObservations() // Reload the list
+
+    await refreshData() // Reload the list
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : 'Unknown error'
     toast.add({
@@ -196,4 +173,4 @@ function formatDate(dateString?: string): string {
   if (!dateString) return 'N/A'
   return new Date(dateString).toLocaleDateString()
 }
-</script> 
+</script>

@@ -3,7 +3,7 @@
     <h3 class="text-lg font-semibold text-gray-900 dark:text-slate-300 mb-4">
       Edit Observation
     </h3>
-    
+
     <form @submit.prevent="submit" class="space-y-4">
       <div>
         <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">
@@ -146,9 +146,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
-import { type Observation, usePlanOfActionAndMilestonesStore } from '@/stores/plan-of-action-and-milestones.ts'
+import { reactive, onMounted } from 'vue'
+import type { Observation } from '@/stores/plan-of-action-and-milestones.ts'
 import { useToast } from 'primevue/usetoast'
+import { useDataApi, decamelizeKeys } from '@/composables/axios'
 
 const props = defineProps<{
   poamId: string
@@ -160,10 +161,16 @@ const emit = defineEmits<{
   saved: [observation: Observation]
 }>()
 
-const poamStore = usePlanOfActionAndMilestonesStore()
 const toast = useToast()
 
-const saving = ref(false)
+const { data: returnedObservation, isLoading: saving, execute: executeUpdate } = useDataApi<Observation>(
+  `/api/oscal/plan-of-action-and-milestones/${props.poamId}/observations/${props.observation.uuid}`,
+  {
+    method: 'PUT',
+    transformRequest: [decamelizeKeys]
+  },
+  { immediate: false }
+)
 
 const formData = reactive({
   title: '',
@@ -216,8 +223,6 @@ async function submit() {
   }
 
   try {
-    saving.value = true
-    
     const updatedObservation: Observation = {
       ...props.observation,
       title: formData.title || undefined,
@@ -228,17 +233,19 @@ async function submit() {
       expires: formData.expires || undefined,
       remarks: formData.remarks || undefined
     }
-    
-    const response = await poamStore.updateObservation(props.poamId, props.observation.uuid!, updatedObservation)
-    
+
+    await executeUpdate({
+      data: updatedObservation,
+    })
+
     toast.add({
       severity: 'success',
       summary: 'Observation Updated',
       detail: 'Observation updated successfully',
       life: 3000
     })
-    
-    emit('saved', response.data)
+
+    emit('saved', returnedObservation.value!)
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     toast.add({
@@ -247,8 +254,6 @@ async function submit() {
       detail: `Failed to update observation: ${errorMessage}`,
       life: 3000
     })
-  } finally {
-    saving.value = false
   }
 }
-</script> 
+</script>

@@ -3,7 +3,7 @@
     <h3 class="text-lg font-semibold text-gray-900 dark:text-slate-300 mb-4">
       Create Observation
     </h3>
-    
+
     <form @submit.prevent="submit" class="space-y-4">
       <div>
         <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">
@@ -146,9 +146,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
-import { type Observation, usePlanOfActionAndMilestonesStore } from '@/stores/plan-of-action-and-milestones.ts'
+import { reactive } from 'vue'
+import type { Observation } from '@/stores/plan-of-action-and-milestones.ts'
 import { useToast } from 'primevue/usetoast'
+import { useDataApi, decamelizeKeys } from '@/composables/axios'
 
 const props = defineProps<{
   poamId: string
@@ -159,10 +160,16 @@ const emit = defineEmits<{
   created: [observation: Observation]
 }>()
 
-const poamStore = usePlanOfActionAndMilestonesStore()
 const toast = useToast()
 
-const saving = ref(false)
+const { data: returnedObservation, isLoading: saving, execute: executeCreate } = useDataApi<Observation>(
+  `/api/oscal/plan-of-action-and-milestones/${props.poamId}/observations`,
+  {
+    method: 'POST',
+    transformRequest: [decamelizeKeys]
+  },
+  { immediate: false }
+)
 
 const formData = reactive({
   title: '',
@@ -204,8 +211,6 @@ async function submit() {
   }
 
   try {
-    saving.value = true
-    
     const newObservation: Partial<Observation> = {
       uuid: crypto.randomUUID(),
       title: formData.title || undefined,
@@ -216,17 +221,19 @@ async function submit() {
       expires: formData.expires || undefined,
       remarks: formData.remarks || undefined
     }
-    
-    const response = await poamStore.createObservation(props.poamId, newObservation)
-    
+
+    await executeCreate({
+      data: newObservation,
+    })
+
     toast.add({
       severity: 'success',
       summary: 'Observation Created',
       detail: 'Observation created successfully',
       life: 3000
     })
-    
-    emit('created', response.data)
+
+    emit('created', returnedObservation.value!)
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     toast.add({
@@ -235,8 +242,6 @@ async function submit() {
       detail: `Failed to create observation: ${errorMessage}`,
       life: 3000
     })
-  } finally {
-    saving.value = false
   }
 }
-</script> 
+</script>
