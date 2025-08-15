@@ -19,14 +19,14 @@
     </div>
 
     <div class="flex justify-end gap-4">
-      <button 
-        type="button" 
+      <button
+        type="button"
         @click="$emit('cancel')"
         class="px-4 py-2 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 rounded-md hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
       >
         Cancel
       </button>
-      <button 
+      <button
         type="submit"
         :disabled="saving"
         class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 transition-colors"
@@ -39,14 +39,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue';
+import { reactive, onMounted } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import FormInput from '@/components/forms/FormInput.vue';
 import FormTextarea from '@/components/forms/FormTextarea.vue';
-import { 
-  type InventoryItem,
-  useSystemSecurityPlanStore 
-} from '@/stores/system-security-plans.ts';
+import type { InventoryItem } from '@/stores/system-security-plans.ts';
+import { useDataApi, decamelizeKeys } from '@/composables/axios';
 
 const props = defineProps<{
   sspId: string;
@@ -58,9 +56,15 @@ const emit = defineEmits<{
   saved: [inventoryItem: InventoryItem];
 }>();
 
-const sspStore = useSystemSecurityPlanStore();
 const toast = useToast();
-const saving = ref(false);
+
+const { data: updatedItem, isLoading: saving, execute: updateItem } = useDataApi<InventoryItem>(
+  `/api/oscal/system-security-plans/${props.sspId}/system-implementation/inventory-items/${props.inventoryItem.uuid}`,
+  {
+    method: 'PUT',
+    transformRequest: [decamelizeKeys]
+  }, { immediate: false }
+);
 
 const inventoryItemData = reactive<InventoryItem>({
   uuid: '',
@@ -81,22 +85,18 @@ onMounted(() => {
 
 async function saveInventoryItem() {
   try {
-    saving.value = true;
-    
-    const response = await sspStore.updateSystemImplementationInventoryItem(
-      props.sspId,
-      inventoryItemData.uuid,
-      inventoryItemData
-    );
-    
+    await updateItem({
+      data: inventoryItemData
+    });
+
     toast.add({
       severity: 'success',
       summary: 'Success',
       detail: 'Inventory item updated successfully.',
       life: 3000
     });
-    
-    emit('saved', response.data);
+
+    emit('saved', updatedItem.value!);
   } catch (error) {
     console.error('Failed to update inventory item:', error);
     toast.add({
@@ -105,8 +105,6 @@ async function saveInventoryItem() {
       detail: 'Failed to update inventory item. Please try again.',
       life: 5000
     });
-  } finally {
-    saving.value = false;
   }
 }
-</script> 
+</script>

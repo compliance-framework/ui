@@ -19,7 +19,7 @@
       <p class="text-gray-500 dark:text-slate-400">Loading inventory items...</p>
     </div>
 
-    <div v-else-if="inventoryItems.length === 0" class="text-center py-4">
+    <div v-else-if="inventoryItems?.length === 0" class="text-center py-4">
       <p class="text-gray-500 dark:text-slate-400">No inventory items defined.</p>
     </div>
 
@@ -146,12 +146,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
-import { useSystemSecurityPlanStore } from '@/stores/system-security-plans.ts';
+import { onMounted, ref } from 'vue';
 import type { InventoryItem } from '@/oscal';
 import { useSystemStore } from '@/stores/system.ts';
-import CollapsableGroup from '@/components/CollapsableGroup.vue';
-import type { DataResponse } from '@/stores/types.ts';
 import decamelizeKeys from 'decamelize-keys';
 import SystemImplementationInventoryItemEditForm from '@/components/system-security-plans/SystemImplementationInventoryItemEditForm.vue';
 import Modal from '@/components/Modal.vue';
@@ -160,21 +157,56 @@ import SystemImplementationInventoryItemCreateForm from '@/components/system-sec
 import { useToast } from 'primevue/usetoast';
 import PageHeader from '@/components/PageHeader.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
-import SecondaryButton from '@/components/SecondaryButton.vue';
-import Menu from '@/volt/Menu.vue';
 import Panel from '@/volt/Panel.vue';
 import Badge from '@/volt/Badge.vue';
-import { BIconThreeDotsVertical } from 'bootstrap-icons-vue';
-import { useToggle } from '@/composables/useToggle';
 import { useProps } from '@/composables/useProps';
-import BurgerMenu from '@/components/BurgerMenu.vue'
+import BurgerMenu from '@/components/BurgerMenu.vue';
+import { useDataApi } from '@/composables/axios';
+import type { AxiosError }  from 'axios';
+import type { ErrorResponse, ErrorBody } from '@/stores/types.ts';
+import { useRouter } from 'vue-router';
 
-const sspStore = useSystemSecurityPlanStore();
 const toast = useToast();
+const { system } = useSystemStore();
+const router = useRouter();
 
-const inventoryItems = ref<InventoryItem[]>([]);
+const {data: inventoryItems, isLoading: inventoryItemsLoading, execute: loadInventoryItems} = useDataApi<InventoryItem[]>(
+  `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/system-implementation/inventory-items`,
+  null,
+  { immediate: false }
+);
 
-const inventoryItemsLoading = ref(true);
+const { execute: executeDelete } = useDataApi<void>(
+  null,
+  {
+    method: 'DELETE',
+  },
+  { immediate: false }
+);
+
+onMounted(async () => {
+  if (!system.securityPlan?.uuid) {
+    toast.add({
+      severity: 'error',
+      summary: 'No Security Plan set',
+      detail: 'Please select or create a security plan.',
+      life: 5000,
+    });
+    await router.push({ name: 'system-security-plans' });
+  }
+  try {
+    await loadInventoryItems();
+  } catch (error) {
+    const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
+    toast.add({
+      severity: 'error',
+      summary: 'Failed to load inventory items',
+      detail: errorResponse.response?.data?.errors?.body || 'An unknown error occurred.',
+      life: 5000,
+    });
+  }
+});
+
 const menu = ref();
 
 const editingInventoryItem = ref<InventoryItem | null>(null);
@@ -182,23 +214,7 @@ const showCreateInventoryItemModal = ref(false);
 const showEditInventoryItemModal = ref(false);
 const showInventoryItemAttachModal = ref(false);
 
-const { system } = useSystemStore();
 const { firstOfProps } = useProps();
-
-onMounted(() => {
-  if (!system.securityPlan?.uuid) {
-    return;
-  }
-
-  sspStore
-    .getSystemImplementationInventoryItems(system.securityPlan?.uuid)
-    .then((data: DataResponse<InventoryItem[]>) => {
-      inventoryItems.value = data.data;
-    })
-    .finally(() => {
-      inventoryItemsLoading.value = false;
-    });
-});
 
 function toggleMenu(event: Event) {
   menu.value.toggle(event);
@@ -256,10 +272,7 @@ const deleteInventoryItem = async (item: InventoryItem) => {
   }
 
   try {
-    await sspStore.deleteSystemImplementationInventoryItem(
-      system.securityPlan?.uuid as string,
-      item.uuid,
-    );
+    await executeDelete(`/api/oscal/system-security-plans/${system.securityPlan?.uuid}/system-implementation/inventory-items/${item.uuid}`);
     if (inventoryItems.value) {
       inventoryItems.value = inventoryItems.value.filter(
         (i) => i.uuid !== item.uuid,
