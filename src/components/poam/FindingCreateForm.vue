@@ -3,7 +3,7 @@
     <h3 class="text-lg font-semibold text-gray-900 dark:text-slate-300 mb-4">
       Create Finding
     </h3>
-    
+
     <form @submit.prevent="submit" class="space-y-4">
       <div>
         <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">
@@ -179,9 +179,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
-import { type Finding, usePlanOfActionAndMilestonesStore } from '@/stores/plan-of-action-and-milestones.ts'
+import { reactive } from 'vue'
+import type { Finding } from '@/stores/plan-of-action-and-milestones.ts'
 import { useToast } from 'primevue/usetoast'
+import { useDataApi, decamelizeKeys } from '@/composables/axios'
 
 const props = defineProps<{
   poamId: string
@@ -192,10 +193,15 @@ const emit = defineEmits<{
   created: [finding: Finding]
 }>()
 
-const poamStore = usePlanOfActionAndMilestonesStore()
 const toast = useToast()
 
-const saving = ref(false)
+const { data: createdFinding, isLoading: saving, execute: executeCreate } = useDataApi<Finding>(
+  `/api/oscal/plan-of-action-and-milestones/${props.poamId}/findings`,
+  {
+    method: 'POST',
+    transformRequest: [decamelizeKeys]
+  }, { immediate: false }
+)
 
 const formData = reactive({
   title: '',
@@ -275,8 +281,6 @@ async function submit() {
   }
 
   try {
-    saving.value = true
-    
     const newFinding: Partial<Finding> = {
       uuid: crypto.randomUUID(),
       title: formData.title,
@@ -288,20 +292,22 @@ async function submit() {
       relatedRisks: formData.relatedRisks.filter(r => r.riskUuid.trim()).length > 0 ? formData.relatedRisks.filter(r => r.riskUuid.trim()).map(r => ({ riskUuid: r.riskUuid })) : undefined,
       remarks: formData.remarks || undefined
     }
-    
-    const response = await poamStore.createFinding(props.poamId, newFinding)
-    
+
+    await executeCreate({
+      data: newFinding,
+    })
+
     toast.add({
       severity: 'success',
       summary: 'Finding Created',
       detail: 'Finding created successfully',
       life: 3000
     })
-    
-    emit('created', response.data)
+
+    emit('created', createdFinding.value!)
   } catch (error) {
     let errorMessage = 'Failed to create finding. Please try again.'
-    
+
     if (error instanceof Response) {
       try {
         const errorData = await error.json()
@@ -312,7 +318,7 @@ async function submit() {
     } else if (error instanceof Error) {
       errorMessage = error.message
     }
-    
+
     toast.add({
       severity: 'error',
       summary: 'Creation Failed',
@@ -323,4 +329,4 @@ async function submit() {
     saving.value = false
   }
 }
-</script> 
+</script>
