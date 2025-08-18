@@ -5,14 +5,22 @@
 
 ## Deployment
 
-All Kubernetes, Helm, and ArgoCD deployment configurations have been moved to a centralized repository:
-**https://github.com/compliance-framework/ccf-deployments**
+For Kubernetes deployments, please use the centralized deployment repository:
+**[ccf-deployments](../ccf-deployments/)**
 
-Please refer to that repository for:
-- Helm charts
-- ArgoCD configurations
-- Environment-specific deployments
-- Deployment scripts and documentation
+The centralized deployment provides:
+- Production-ready Helm charts
+- ArgoCD GitOps configurations
+- Multi-environment support (dev, staging, prod)
+- Traefik ingress with HTTPS
+- Runtime configuration via ConfigMaps
+- Complete deployment automation
+
+Quick start:
+```bash
+cd ../ccf-deployments
+./scripts/deploy-all-with-gitops.sh
+```
 
 ## Project Setup
 
