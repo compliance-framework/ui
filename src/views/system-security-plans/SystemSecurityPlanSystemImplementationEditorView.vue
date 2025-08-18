@@ -31,9 +31,7 @@
               v-if="userRoleCount > 0"
               class="text-xs text-blue-500 dark:text-blue-300 mt-1"
             >
-              {{ userRoleCount }} role{{
-                userRoleCount !== 1 ? 's' : ''
-              }}
+              {{ userRoleCount }} role{{ userRoleCount !== 1 ? 's' : '' }}
               assigned
             </div>
           </div>
