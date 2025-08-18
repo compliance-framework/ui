@@ -6,7 +6,9 @@
 
     <form @submit.prevent="submit" class="space-y-4">
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
+        >
           Title <span class="text-red-500">*</span>
         </label>
         <input
@@ -19,7 +21,9 @@
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
+        >
           Description <span class="text-red-500">*</span>
         </label>
         <textarea
@@ -32,7 +36,9 @@
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
+        >
           Status <span class="text-red-500">*</span>
         </label>
         <select
@@ -49,7 +55,9 @@
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
+        >
           Target (JSON) <span class="text-red-500">*</span>
         </label>
         <textarea
@@ -68,12 +76,15 @@
 }'
         ></textarea>
         <p class="text-xs text-gray-500 dark:text-slate-400 mt-1">
-          Required fields: type, target-id, status. Optional: title, description, implementation-status, remarks
+          Required fields: type, target-id, status. Optional: title,
+          description, implementation-status, remarks
         </p>
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
+        >
           Implementation Status (JSON)
         </label>
         <textarea
@@ -87,11 +98,17 @@
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
+        >
           Related Observations
         </label>
         <div class="space-y-2">
-          <div v-for="(observation, index) in formData.relatedObservations" :key="index" class="flex gap-2">
+          <div
+            v-for="(observation, index) in formData.relatedObservations"
+            :key="index"
+            class="flex gap-2"
+          >
             <input
               v-model="formData.relatedObservations[index].observationUuid"
               type="text"
@@ -117,11 +134,17 @@
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
+        >
           Related Risks
         </label>
         <div class="space-y-2">
-          <div v-for="(risk, index) in formData.relatedRisks" :key="index" class="flex gap-2">
+          <div
+            v-for="(risk, index) in formData.relatedRisks"
+            :key="index"
+            class="flex gap-2"
+          >
             <input
               v-model="formData.relatedRisks[index].riskUuid"
               type="text"
@@ -147,7 +170,9 @@
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
+        >
           Remarks
         </label>
         <textarea
@@ -168,7 +193,13 @@
         </button>
         <button
           type="submit"
-          :disabled="!formData.title || !formData.description || !formData.target || !formData.status || saving"
+          :disabled="
+            !formData.title ||
+            !formData.description ||
+            !formData.target ||
+            !formData.status ||
+            saving
+          "
           class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {{ saving ? 'Creating...' : 'Create' }}
@@ -179,29 +210,34 @@
 </template>
 
 <script setup lang="ts">
-import { reactive } from 'vue'
-import type { Finding } from '@/stores/plan-of-action-and-milestones.ts'
-import { useToast } from 'primevue/usetoast'
-import { useDataApi, decamelizeKeys } from '@/composables/axios'
+import { reactive } from 'vue';
+import type { Finding } from '@/stores/plan-of-action-and-milestones.ts';
+import { useToast } from 'primevue/usetoast';
+import { useDataApi, decamelizeKeys } from '@/composables/axios';
 
 const props = defineProps<{
-  poamId: string
-}>()
+  poamId: string;
+}>();
 
 const emit = defineEmits<{
-  cancel: []
-  created: [finding: Finding]
-}>()
+  cancel: [];
+  created: [finding: Finding];
+}>();
 
-const toast = useToast()
+const toast = useToast();
 
-const { data: createdFinding, isLoading: saving, execute: executeCreate } = useDataApi<Finding>(
+const {
+  data: createdFinding,
+  isLoading: saving,
+  execute: executeCreate,
+} = useDataApi<Finding>(
   `/api/oscal/plan-of-action-and-milestones/${props.poamId}/findings`,
   {
     method: 'POST',
-    transformRequest: [decamelizeKeys]
-  }, { immediate: false }
-)
+    transformRequest: [decamelizeKeys],
+  },
+  { immediate: false },
+);
 
 const formData = reactive({
   title: '',
@@ -211,31 +247,31 @@ const formData = reactive({
   implementationStatus: '',
   relatedObservations: [] as { observationUuid: string }[],
   relatedRisks: [] as { riskUuid: string }[],
-  remarks: ''
-})
+  remarks: '',
+});
 
 function addRelatedObservation() {
-  formData.relatedObservations.push({ observationUuid: '' })
+  formData.relatedObservations.push({ observationUuid: '' });
 }
 
 function removeRelatedObservation(index: number) {
-  formData.relatedObservations.splice(index, 1)
+  formData.relatedObservations.splice(index, 1);
 }
 
 function addRelatedRisk() {
-  formData.relatedRisks.push({ riskUuid: '' })
+  formData.relatedRisks.push({ riskUuid: '' });
 }
 
 function removeRelatedRisk(index: number) {
-  formData.relatedRisks.splice(index, 1)
+  formData.relatedRisks.splice(index, 1);
 }
 
 function parseJsonField(value: string): any {
-  if (!value.trim()) return undefined
+  if (!value.trim()) return undefined;
   try {
-    return JSON.parse(value)
+    return JSON.parse(value);
   } catch (e) {
-    return undefined
+    return undefined;
   }
 }
 
@@ -245,9 +281,9 @@ async function submit() {
       severity: 'error',
       summary: 'Validation Error',
       detail: 'Title is required',
-      life: 3000
-    })
-    return
+      life: 3000,
+    });
+    return;
   }
 
   if (!formData.description) {
@@ -255,9 +291,9 @@ async function submit() {
       severity: 'error',
       summary: 'Validation Error',
       detail: 'Description is required',
-      life: 3000
-    })
-    return
+      life: 3000,
+    });
+    return;
   }
 
   if (!formData.status) {
@@ -265,9 +301,9 @@ async function submit() {
       severity: 'error',
       summary: 'Validation Error',
       detail: 'Status is required',
-      life: 3000
-    })
-    return
+      life: 3000,
+    });
+    return;
   }
 
   if (!formData.target) {
@@ -275,9 +311,9 @@ async function submit() {
       severity: 'error',
       summary: 'Validation Error',
       detail: 'Target is required',
-      life: 3000
-    })
-    return
+      life: 3000,
+    });
+    return;
   }
 
   try {
@@ -288,45 +324,60 @@ async function submit() {
       status: { state: formData.status },
       target: parseJsonField(formData.target),
       implementationStatus: parseJsonField(formData.implementationStatus),
-      relatedObservations: formData.relatedObservations.filter(o => o.observationUuid.trim()).length > 0 ? formData.relatedObservations.filter(o => o.observationUuid.trim()).map(o => ({ observationUuid: o.observationUuid })) : undefined,
-      relatedRisks: formData.relatedRisks.filter(r => r.riskUuid.trim()).length > 0 ? formData.relatedRisks.filter(r => r.riskUuid.trim()).map(r => ({ riskUuid: r.riskUuid })) : undefined,
-      remarks: formData.remarks || undefined
-    }
+      relatedObservations:
+        formData.relatedObservations.filter((o) => o.observationUuid.trim())
+          .length > 0
+          ? formData.relatedObservations
+              .filter((o) => o.observationUuid.trim())
+              .map((o) => ({ observationUuid: o.observationUuid }))
+          : undefined,
+      relatedRisks:
+        formData.relatedRisks.filter((r) => r.riskUuid.trim()).length > 0
+          ? formData.relatedRisks
+              .filter((r) => r.riskUuid.trim())
+              .map((r) => ({ riskUuid: r.riskUuid }))
+          : undefined,
+      remarks: formData.remarks || undefined,
+    };
 
     await executeCreate({
       data: newFinding,
-    })
+    });
 
     toast.add({
       severity: 'success',
       summary: 'Finding Created',
       detail: 'Finding created successfully',
-      life: 3000
-    })
+      life: 3000,
+    });
 
-    emit('created', createdFinding.value!)
+    emit('created', createdFinding.value!);
   } catch (error) {
-    let errorMessage = 'Failed to create finding. Please try again.'
+    let errorMessage = 'Failed to create finding. Please try again.';
 
     if (error instanceof Response) {
       try {
-        const errorData = await error.json()
-        errorMessage = errorData.message || errorData.error || errorData.detail || errorMessage
+        const errorData = await error.json();
+        errorMessage =
+          errorData.message ||
+          errorData.error ||
+          errorData.detail ||
+          errorMessage;
       } catch (e) {
-        errorMessage = `HTTP ${error.status}: ${error.statusText}`
+        errorMessage = `HTTP ${error.status}: ${error.statusText}`;
       }
     } else if (error instanceof Error) {
-      errorMessage = error.message
+      errorMessage = error.message;
     }
 
     toast.add({
       severity: 'error',
       summary: 'Creation Failed',
       detail: errorMessage,
-      life: 5000
-    })
+      life: 5000,
+    });
   } finally {
-    saving.value = false
+    saving.value = false;
   }
 }
 </script>

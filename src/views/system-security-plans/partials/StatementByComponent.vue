@@ -1,35 +1,38 @@
 <script setup lang="ts">
-import type { ByComponent, Statement, SystemComponent, SystemSecurityPlan } from '@/stores/system-security-plans.ts'
-import { onMounted, } from 'vue'
-import { useDataApi } from '@/composables/axios'
-
+import type {
+  ByComponent,
+  Statement,
+  SystemComponent,
+  SystemSecurityPlan,
+} from '@/stores/system-security-plans.ts';
+import { onMounted } from 'vue';
+import { useDataApi } from '@/composables/axios';
 
 const props = defineProps<{
-  ssp: SystemSecurityPlan,
-  statement: Statement,
-  byComponent: ByComponent,
-}>()
+  ssp: SystemSecurityPlan;
+  statement: Statement;
+  byComponent: ByComponent;
+}>();
 
 const emit = defineEmits<{
-  edit: [byComponent: ByComponent]
-}>()
+  edit: [byComponent: ByComponent];
+}>();
 
 const { data: component } = useDataApi<SystemComponent>(
   `/api/oscal/system-security-plans/${props.ssp.uuid}/system-implementation/components/${props.byComponent.componentUuid}`,
   {
     method: 'GET',
-  }
+  },
 );
-
 
 onMounted(() => {
   // sspStore.getSystemImplementationComponent(props.ssp.uuid, props.byComponent.componentUuid).then((response) => {
   //   component.value = response.data
   // })
-})
+});
 
 function edit() {
-  emit('edit', props.byComponent)
+  emit('edit', props.byComponent);
 }
 </script>
 
@@ -64,7 +67,10 @@ function edit() {
           </div>
         </div>
       </div>
-      <div v-if="props.byComponent.export.responsibilities?.length" class="mb-1">
+      <div
+        v-if="props.byComponent.export.responsibilities?.length"
+        class="mb-1"
+      >
         <span class="font-medium text-orange-700 dark:text-orange-400"
           >Responsibilities:</span
         >
@@ -82,7 +88,9 @@ function edit() {
 
     <!-- Satisfied Requirements -->
     <div v-if="props.byComponent.satisfied?.length" class="mt-2 text-xs">
-      <span class="font-medium text-blue-700 dark:text-blue-400">Satisfied:</span>
+      <span class="font-medium text-blue-700 dark:text-blue-400"
+        >Satisfied:</span
+      >
       <div class="ml-2">
         <div
           v-for="satisfied in props.byComponent.satisfied"

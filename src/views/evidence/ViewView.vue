@@ -126,7 +126,7 @@ import type { BackMatterResource } from '@/oscal';
 const route = useRoute();
 const id = route.params.id as string;
 
-const { data: evidence } = useDataApi<Evidence>(`/api/evidence/${id}`)
+const { data: evidence } = useDataApi<Evidence>(`/api/evidence/${id}`);
 
 const activities = ref<Activity[]>([] as Activity[]);
 const showActivitiesModal = ref(false);

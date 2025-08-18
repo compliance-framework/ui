@@ -1,46 +1,51 @@
 <script setup lang="ts">
-import { useSystemSecurityPlanStore } from '@/stores/system-security-plans.ts'
-import { onMounted, ref, watchEffect } from 'vue'
-import type {SystemComponent, ByComponent} from '@/oscal';
-import { useSystemStore } from '@/stores/system.ts'
-import BurgerMenu from '@/components/BurgerMenu.vue'
-import Textarea from '@/volt/Textarea.vue'
-import { useToggle } from '@/composables/useToggle'
-import { useConfirm } from 'primevue/useconfirm'
+import { useSystemSecurityPlanStore } from '@/stores/system-security-plans.ts';
+import { onMounted, ref, watchEffect } from 'vue';
+import type { SystemComponent, ByComponent } from '@/oscal';
+import { useSystemStore } from '@/stores/system.ts';
+import BurgerMenu from '@/components/BurgerMenu.vue';
+import Textarea from '@/volt/Textarea.vue';
+import { useToggle } from '@/composables/useToggle';
+import { useConfirm } from 'primevue/useconfirm';
 
 const { byComponent } = defineProps<{
-  byComponent: ByComponent,
-}>()
+  byComponent: ByComponent;
+}>();
 const emit = defineEmits<{
-  save: [byComponent: ByComponent]
-  delete: [byComponent: ByComponent]
-}>()
+  save: [byComponent: ByComponent];
+  delete: [byComponent: ByComponent];
+}>();
 
-const { system } = useSystemStore()
-const sspStore = useSystemSecurityPlanStore()
-const confirm = useConfirm()
+const { system } = useSystemStore();
+const sspStore = useSystemSecurityPlanStore();
+const confirm = useConfirm();
 
-const localComponent = ref<ByComponent>(byComponent)
+const localComponent = ref<ByComponent>(byComponent);
 watchEffect(() => {
-  localComponent.value = byComponent
-})
+  localComponent.value = byComponent;
+});
 
-const { value: editing, set: setEditing} = useToggle();
+const { value: editing, set: setEditing } = useToggle();
 
-const component = ref<SystemComponent>({} as SystemComponent)
+const component = ref<SystemComponent>({} as SystemComponent);
 if (system.securityPlan) {
-  sspStore.getSystemImplementationComponent(system.securityPlan.uuid, byComponent.componentUuid).then((response) => {
-    component.value = response.data
-  })
+  sspStore
+    .getSystemImplementationComponent(
+      system.securityPlan.uuid,
+      byComponent.componentUuid,
+    )
+    .then((response) => {
+      component.value = response.data;
+    });
 }
 
 function save() {
-  emit('save', localComponent.value)
-  setEditing(false)
+  emit('save', localComponent.value);
+  setEditing(false);
 }
 
 function deleteStatement() {
-  emit('delete', localComponent.value)
+  emit('delete', localComponent.value);
 }
 
 function confirmDelete() {
@@ -48,40 +53,42 @@ function confirmDelete() {
     message: 'Are you sure you want to delete this implementation statement?',
     header: 'Delete Statement',
     rejectProps: {
-      label: "Cancel",
+      label: 'Cancel',
     },
     acceptProps: {
-      label: "Yes",
-      severity: "danger",
+      label: 'Yes',
+      severity: 'danger',
     },
     accept: () => {
-      deleteStatement()
+      deleteStatement();
     },
-  })
+  });
 }
 
 function cancel() {
-  setEditing(false)
+  setEditing(false);
 }
 </script>
 
 <template>
   <div class="flex justify-between items-center">
     <h4 class="font-medium">{{ component.title }}</h4>
-    <BurgerMenu :items="[
-      {
-        label: 'Edit',
-        command() {
-          setEditing(true)
-        }
-      },
-      {
-        label: 'Delete',
-        command() {
-          confirmDelete()
-        }
-      }
-    ]" />
+    <BurgerMenu
+      :items="[
+        {
+          label: 'Edit',
+          command() {
+            setEditing(true);
+          },
+        },
+        {
+          label: 'Delete',
+          command() {
+            confirmDelete();
+          },
+        },
+      ]"
+    />
   </div>
   <div class="text-gray-600 dark:text-slate-400">
     <template v-if="!editing">

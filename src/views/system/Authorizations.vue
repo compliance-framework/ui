@@ -184,7 +184,9 @@ const loadData = () => {
   systemSecurityPlan.value = system.securityPlan as SystemSecurityPlan;
 
   sspStore
-    .getSystemImplementationLeveragedAuthorizations(system.securityPlan?.uuid as string)
+    .getSystemImplementationLeveragedAuthorizations(
+      system.securityPlan?.uuid as string,
+    )
     .then((data: DataResponse<LeveragedAuthorization[]>) => {
       leveragedAuthorizations.value = data.data;
     });

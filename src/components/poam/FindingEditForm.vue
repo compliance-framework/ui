@@ -6,7 +6,9 @@
 
     <form @submit.prevent="submit" class="space-y-4">
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
+        >
           Title <span class="text-red-500">*</span>
         </label>
         <input
@@ -19,7 +21,9 @@
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
+        >
           Description <span class="text-red-500">*</span>
         </label>
         <textarea
@@ -32,7 +36,9 @@
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
+        >
           Target (JSON) <span class="text-red-500">*</span>
         </label>
         <textarea
@@ -45,7 +51,9 @@
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
+        >
           Status
         </label>
         <select
@@ -60,7 +68,9 @@
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
+        >
           Implementation Status (JSON)
         </label>
         <textarea
@@ -72,11 +82,17 @@
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
+        >
           Related Observations
         </label>
         <div class="space-y-2">
-          <div v-for="(observation, index) in formData.relatedObservations" :key="index" class="flex gap-2">
+          <div
+            v-for="(observation, index) in formData.relatedObservations"
+            :key="index"
+            class="flex gap-2"
+          >
             <input
               v-model="formData.relatedObservations[index]"
               type="text"
@@ -102,11 +118,17 @@
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
+        >
           Related Risks
         </label>
         <div class="space-y-2">
-          <div v-for="(risk, index) in formData.relatedRisks" :key="index" class="flex gap-2">
+          <div
+            v-for="(risk, index) in formData.relatedRisks"
+            :key="index"
+            class="flex gap-2"
+          >
             <input
               v-model="formData.relatedRisks[index]"
               type="text"
@@ -132,7 +154,9 @@
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
+        >
           Remarks
         </label>
         <textarea
@@ -153,7 +177,12 @@
         </button>
         <button
           type="submit"
-          :disabled="!formData.title || !formData.description || !formData.target || saving"
+          :disabled="
+            !formData.title ||
+            !formData.description ||
+            !formData.target ||
+            saving
+          "
           class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {{ saving ? 'Saving...' : 'Save' }}
@@ -164,30 +193,34 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, onMounted } from 'vue'
-import type { Finding } from '@/stores/plan-of-action-and-milestones.ts'
-import { useToast } from 'primevue/usetoast'
+import { reactive, onMounted } from 'vue';
+import type { Finding } from '@/stores/plan-of-action-and-milestones.ts';
+import { useToast } from 'primevue/usetoast';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 
 const props = defineProps<{
-  poamId: string
-  finding: Finding
-}>()
+  poamId: string;
+  finding: Finding;
+}>();
 
 const emit = defineEmits<{
-  cancel: []
-  saved: [finding: Finding]
-}>()
+  cancel: [];
+  saved: [finding: Finding];
+}>();
 
-const toast = useToast()
+const toast = useToast();
 
-const { data: returnedFinding, isLoading: saving, execute: executeUpdate } = useDataApi<Finding>(
+const {
+  data: returnedFinding,
+  isLoading: saving,
+  execute: executeUpdate,
+} = useDataApi<Finding>(
   `/api/oscal/plan-of-action-and-milestones/${props.poamId}/findings/${props.finding.uuid}`,
   {
     method: 'PUT',
-    transformRequest: [decamelizeKeys]
-  }
-)
+    transformRequest: [decamelizeKeys],
+  },
+);
 
 const formData = reactive({
   title: '',
@@ -197,45 +230,53 @@ const formData = reactive({
   implementationStatus: '',
   relatedObservations: [] as string[],
   relatedRisks: [] as string[],
-  remarks: ''
-})
+  remarks: '',
+});
 
 onMounted(() => {
   // Initialize form with existing data
-  formData.title = props.finding.title || ''
-  formData.description = props.finding.description
-  formData.target = props.finding.target ? JSON.stringify(props.finding.target, null, 2) : ''
-  formData.status = props.finding.status?.state || ''
-  formData.implementationStatus = props.finding.implementationStatus ? JSON.stringify(props.finding.implementationStatus, null, 2) : ''
+  formData.title = props.finding.title || '';
+  formData.description = props.finding.description;
+  formData.target = props.finding.target
+    ? JSON.stringify(props.finding.target, null, 2)
+    : '';
+  formData.status = props.finding.status?.state || '';
+  formData.implementationStatus = props.finding.implementationStatus
+    ? JSON.stringify(props.finding.implementationStatus, null, 2)
+    : '';
   // Handle related observations - extract UUIDs from objects
-  formData.relatedObservations = props.finding.relatedObservations?.map((obs: any) => obs.observationUuid || obs) || []
+  formData.relatedObservations =
+    props.finding.relatedObservations?.map(
+      (obs: any) => obs.observationUuid || obs,
+    ) || [];
   // Handle related risks - extract UUIDs from objects
-  formData.relatedRisks = props.finding.relatedRisks?.map((risk: any) => risk.riskUuid || risk) || []
-  formData.remarks = props.finding.remarks || ''
-})
+  formData.relatedRisks =
+    props.finding.relatedRisks?.map((risk: any) => risk.riskUuid || risk) || [];
+  formData.remarks = props.finding.remarks || '';
+});
 
 function addRelatedObservation() {
-  formData.relatedObservations.push('')
+  formData.relatedObservations.push('');
 }
 
 function removeRelatedObservation(index: number) {
-  formData.relatedObservations.splice(index, 1)
+  formData.relatedObservations.splice(index, 1);
 }
 
 function addRelatedRisk() {
-  formData.relatedRisks.push('')
+  formData.relatedRisks.push('');
 }
 
 function removeRelatedRisk(index: number) {
-  formData.relatedRisks.splice(index, 1)
+  formData.relatedRisks.splice(index, 1);
 }
 
 function parseJsonField(value: string): any {
-  if (!value.trim()) return undefined
+  if (!value.trim()) return undefined;
   try {
-    return JSON.parse(value)
+    return JSON.parse(value);
   } catch (e) {
-    return undefined
+    return undefined;
   }
 }
 
@@ -245,9 +286,9 @@ async function submit() {
       severity: 'error',
       summary: 'Validation Error',
       detail: 'Title is required',
-      life: 3000
-    })
-    return
+      life: 3000,
+    });
+    return;
   }
 
   if (!formData.description) {
@@ -255,9 +296,9 @@ async function submit() {
       severity: 'error',
       summary: 'Validation Error',
       detail: 'Description is required',
-      life: 3000
-    })
-    return
+      life: 3000,
+    });
+    return;
   }
 
   if (!formData.target) {
@@ -265,9 +306,9 @@ async function submit() {
       severity: 'error',
       summary: 'Validation Error',
       detail: 'Target is required',
-      life: 3000
-    })
-    return
+      life: 3000,
+    });
+    return;
   }
 
   try {
@@ -278,31 +319,38 @@ async function submit() {
       target: parseJsonField(formData.target),
       status: formData.status ? { state: formData.status } : undefined,
       implementationStatus: parseJsonField(formData.implementationStatus),
-      relatedObservations: formData.relatedObservations.filter(o => o.trim()).length > 0 ? formData.relatedObservations.filter(o => o.trim()) : undefined,
-      relatedRisks: formData.relatedRisks.filter(r => r.trim()).length > 0 ? formData.relatedRisks.filter(r => r.trim()) : undefined,
-      remarks: formData.remarks || undefined
-    }
+      relatedObservations:
+        formData.relatedObservations.filter((o) => o.trim()).length > 0
+          ? formData.relatedObservations.filter((o) => o.trim())
+          : undefined,
+      relatedRisks:
+        formData.relatedRisks.filter((r) => r.trim()).length > 0
+          ? formData.relatedRisks.filter((r) => r.trim())
+          : undefined,
+      remarks: formData.remarks || undefined,
+    };
 
     await executeUpdate({
-      data: updatedFinding
-    })
+      data: updatedFinding,
+    });
 
     toast.add({
       severity: 'success',
       summary: 'Finding Updated',
       detail: 'Finding updated successfully',
-      life: 3000
-    })
+      life: 3000,
+    });
 
-    emit('saved', returnedFinding.value!)
+    emit('saved', returnedFinding.value!);
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    const errorMessage =
+      error instanceof Error ? error.message : 'Unknown error';
     toast.add({
       severity: 'error',
       summary: 'Update Failed',
       detail: `Failed to update finding: ${errorMessage}`,
-      life: 3000
-    })
+      life: 3000,
+    });
   }
 }
 </script>

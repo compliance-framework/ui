@@ -6,7 +6,11 @@ import { useConfirm } from 'primevue/useconfirm';
 
 import { useDataApi } from '@/composables/axios';
 
-import type { AssessmentPlan, AssociatedActivity, Task } from '@/stores/assessment-plans.ts';
+import type {
+  AssessmentPlan,
+  AssociatedActivity,
+  Task,
+} from '@/stores/assessment-plans.ts';
 import type { Activity } from '@/stores/activities.ts';
 
 import Timeline from '@/volt/Timeline.vue';
@@ -32,28 +36,34 @@ const emit = defineEmits<{
 
 const showEditModal = ref(false);
 
-const { data: associatedActivities, execute: fetchAssociatedActivities } = useDataApi<FullAssociatedActivity[]>(
-  `/api/oscal/assessment-plans/${props.assessmentPlan.uuid}/tasks/${props.task.uuid}/associated-activities`,
-  {},
-  {
-    immediate: false,
-  },
-);
+const { data: associatedActivities, execute: fetchAssociatedActivities } =
+  useDataApi<FullAssociatedActivity[]>(
+    `/api/oscal/assessment-plans/${props.assessmentPlan.uuid}/tasks/${props.task.uuid}/associated-activities`,
+    {},
+    {
+      immediate: false,
+    },
+  );
 const { execute: getActivities } = useDataApi<Activity>();
-const { execute: deleteTask } = useDataApi<void>(`/api/oscal/assessment-plans/${props.assessmentPlan.uuid}/tasks/${props.task.uuid}`, {
-  method: 'DELETE',
-}, { immediate: false });
-
+const { execute: deleteTask } = useDataApi<void>(
+  `/api/oscal/assessment-plans/${props.assessmentPlan.uuid}/tasks/${props.task.uuid}`,
+  {
+    method: 'DELETE',
+  },
+  { immediate: false },
+);
 
 function editTask() {
   showEditModal.value = true;
 }
 
-onMounted(async() => {
+onMounted(async () => {
   await fetchAssociatedActivities();
   if (!associatedActivities.value) return;
   for (const activity of associatedActivities.value!) {
-    const {data: activityData } = await getActivities(`/api/oscal/activities/${activity.activityUuid}`);
+    const { data: activityData } = await getActivities(
+      `/api/oscal/activities/${activity.activityUuid}`,
+    );
     if (!activityData.value) continue;
     activity.activity = activityData.value.data;
   }
@@ -92,7 +102,9 @@ async function removeTask() {
   <div class="flex items-center justify-between">
     <div class="flex items-center">
       <Chip :label="props.task.type" class="mr-2" />
-      <h3 class="font-medium text-lg text-gray-900 dark:text-slate-300 inline-block">
+      <h3
+        class="font-medium text-lg text-gray-900 dark:text-slate-300 inline-block"
+      >
         {{ props.task.title }}
       </h3>
     </div>
@@ -118,7 +130,6 @@ async function removeTask() {
     >
     <p class="mt-1 text-gray-900 dark:text-slate-300">
       {{ props.task.description }}
-
     </p>
   </div>
 
@@ -127,7 +138,11 @@ async function removeTask() {
     <div v-for="activity in associatedActivities" :key="activity.activityUuid">
       <h4>{{ activity.activity?.title }}</h4>
       <h5 class="font-medium text-lg">Steps:</h5>
-      <Timeline :value="activity.activity?.steps" :hide-opposite="true" class="mt-8" >
+      <Timeline
+        :value="activity.activity?.steps"
+        :hide-opposite="true"
+        class="mt-8"
+      >
         <template #content="slotProps">
           <h2 class="font-medium">{{ slotProps.item.title }}</h2>
           <p class="py-2">{{ slotProps.item.description }}</p>

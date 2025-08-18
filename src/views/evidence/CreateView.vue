@@ -3,7 +3,9 @@
   <PageSubHeader>
     Create a new piece of evidence to support your control implementations.
   </PageSubHeader>
-  <div class="mt-4 bg-white dark:bg-slate-900 rounded-md border border-ccf-300 dark:border-slate-700 p-8">
+  <div
+    class="mt-4 bg-white dark:bg-slate-900 rounded-md border border-ccf-300 dark:border-slate-700 p-8"
+  >
     <form @submit.prevent="submit">
       <div class="flex">
         <div>
@@ -145,13 +147,13 @@ import { BIconArrowRepeat, BIconX } from 'bootstrap-icons-vue';
 import type { BackMatterResource, Base64 } from '@/oscal';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 
-
 const { data: createdEvidence, execute: createEvidence } = useDataApi<Evidence>(
   '/api/evidence',
   {
     method: 'POST',
-    transformRequest: [decamelizeKeys]
-  }, { immediate: false }
+    transformRequest: [decamelizeKeys],
+  },
+  { immediate: false },
 );
 
 const evidence = ref<Partial<Evidence>>({
@@ -176,8 +178,8 @@ async function submit() {
       labels: flatLabels,
       backMatter: {
         resources: backmatterResources.value,
-      }
-    }
+      },
+    },
   });
   evidence.value = createdEvidence.value!;
   return await router.push({

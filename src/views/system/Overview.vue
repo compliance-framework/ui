@@ -1,7 +1,7 @@
 <template>
-<!--    <h3 class="text-lg font-semibold mb-4 text-gray-900 dark:text-slate-300">-->
-<!--      System Security Plan-->
-<!--    </h3>-->
+  <!--    <h3 class="text-lg font-semibold mb-4 text-gray-900 dark:text-slate-300">-->
+  <!--      System Security Plan-->
+  <!--    </h3>-->
   <div class="p-4">
     <div
       v-if="systemSecurityPlan.metadata"
@@ -72,22 +72,17 @@
           optionLabel="name"
         />
       </div>
-
     </div>
 
     <div v-else class="text-center py-4">
       <p class="text-gray-500 dark:text-slate-400">Loading metadata...</p>
     </div>
 
-
-
     <!-- System Characteristics Summary -->
-    <template
-      v-if="systemCharacteristics"
-    >
-<!--      <h3 class="text-lg font-semibold mb-4 text-gray-900 dark:text-slate-300">-->
-<!--        System Characteristics Summary-->
-<!--      </h3>-->
+    <template v-if="systemCharacteristics">
+      <!--      <h3 class="text-lg font-semibold mb-4 text-gray-900 dark:text-slate-300">-->
+      <!--        System Characteristics Summary-->
+      <!--      </h3>-->
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
         <div v-if="systemCharacteristics.systemName">
@@ -133,7 +128,7 @@
         <div v-if="systemSecurityPlan.metadata.remarks" class="md:col-span-2">
           <label
             class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
-          >Remarks</label
+            >Remarks</label
           >
           <p class="text-gray-900 dark:text-slate-300">
             {{ systemSecurityPlan.metadata.remarks }}
@@ -154,7 +149,6 @@
 
     <Diagrams></Diagrams>
   </div>
-
 </template>
 
 <script setup lang="ts">
@@ -171,8 +165,8 @@ import type { Profile } from '@/oscal';
 import { useMustAuthenticate } from '@/composables/useMustAuthenticate';
 import Select from '@/volt/Select.vue';
 import { useSystemStore } from '@/stores/system.ts';
-import Diagrams from './Diagrams.vue'
-import { useToast } from 'primevue/usetoast'
+import Diagrams from './Diagrams.vue';
+import { useToast } from 'primevue/usetoast';
 
 const route = useRoute();
 const router = useRouter();
@@ -245,28 +239,34 @@ onMounted(async () => {
       })
       .finally(() => {
         watch(selectedProfile, async () => {
-          sspStore.attachProfile(systemSecurityPlan.value.uuid, selectedProfile.value.value)
+          sspStore
+            .attachProfile(
+              systemSecurityPlan.value.uuid,
+              selectedProfile.value.value,
+            )
             .then(() => {
               toast.add({
                 severity: 'success',
                 summary: 'Profile updated',
-                life: 3000
-              })
+                life: 3000,
+              });
             })
             .catch((error: Response) => {
               toast.add({
                 severity: 'error',
                 summary: 'Failed to set profile',
                 detail: `Received error status from API. Status: ${error.status}`,
-                life: 3000
-              })
+                life: 3000,
+              });
             });
         });
       });
 
     // Load system characteristics
     try {
-      const characteristicsResponse = await sspStore.getCharacteristics(systemSecurityPlan.value.uuid);
+      const characteristicsResponse = await sspStore.getCharacteristics(
+        systemSecurityPlan.value.uuid,
+      );
       systemCharacteristics.value = characteristicsResponse.data;
     } catch (error) {
       console.warn('Could not load system characteristics:', error);
@@ -281,9 +281,15 @@ onMounted(async () => {
         leveragedAuthsResponse,
       ] = await Promise.allSettled([
         sspStore.getSystemImplementationUsers(systemSecurityPlan.value.uuid),
-        sspStore.getSystemImplementationComponents(systemSecurityPlan.value.uuid),
-        sspStore.getSystemImplementationInventoryItems(systemSecurityPlan.value.uuid),
-        sspStore.getSystemImplementationLeveragedAuthorizations(systemSecurityPlan.value.uuid),
+        sspStore.getSystemImplementationComponents(
+          systemSecurityPlan.value.uuid,
+        ),
+        sspStore.getSystemImplementationInventoryItems(
+          systemSecurityPlan.value.uuid,
+        ),
+        sspStore.getSystemImplementationLeveragedAuthorizations(
+          systemSecurityPlan.value.uuid,
+        ),
       ]);
 
       systemImplementationStats.value = {

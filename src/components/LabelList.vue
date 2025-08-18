@@ -11,7 +11,7 @@
 </template>
 <script setup lang="ts">
 import { computed } from 'vue';
-import type { EvidenceLabel } from '@/stores/evidence.ts'
+import type { EvidenceLabel } from '@/stores/evidence.ts';
 
 const { labels, showAll, excludeKeys } = defineProps({
   labels: {
@@ -33,8 +33,7 @@ const { labels, showAll, excludeKeys } = defineProps({
 });
 
 function shouldHide(label: EvidenceLabel): boolean {
-  return label.name.substring(0, 1) != '_' &&
-  !excludeKeys.includes(label.name)
+  return label.name.substring(0, 1) != '_' && !excludeKeys.includes(label.name);
 }
 
 interface ListLabel {
@@ -47,7 +46,7 @@ interface ListLabel {
 const sortedLabels = computed(() => {
   const localLabels = labels as EvidenceLabel[];
   return localLabels
-    .map((label:EvidenceLabel) => {
+    .map((label: EvidenceLabel) => {
       return {
         name: label.name,
         value: label.value,
@@ -55,10 +54,10 @@ const sortedLabels = computed(() => {
         shouldHide: shouldHide(label),
       } as ListLabel;
     })
-    .sort((a: ListLabel, b : ListLabel): number => {
+    .sort((a: ListLabel, b: ListLabel): number => {
       // put hidden items last
       if (a.shouldHide < b.shouldHide) {
-        return 1
+        return 1;
       }
 
       // then sort alphabetically
@@ -70,7 +69,7 @@ const sortedLabels = computed(() => {
         return true;
       }
       // if not, follow our normal rules
-      return a.shouldHide
-    })
+      return a.shouldHide;
+    });
 });
 </script>

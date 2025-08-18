@@ -1,53 +1,53 @@
-import { defineStore } from 'pinia'
-import { useConfigStore } from '@/stores/config.ts'
-import { type Filter } from '@/parsers/labelfilter.ts'
-import type { Subject } from './subjects'
+import { defineStore } from 'pinia';
+import { useConfigStore } from '@/stores/config.ts';
+import { type Filter } from '@/parsers/labelfilter.ts';
+import type { Subject } from './subjects';
 
 export interface Metadata {
-  title: string
+  title: string;
 }
 
 export interface Plan {
-  uuid: string
-  metadata: Metadata
-  resultFilter: Filter
+  uuid: string;
+  metadata: Metadata;
+  resultFilter: Filter;
 }
 
 export interface Observation {
-  uuid: string
-  title: string
-  description: string
+  uuid: string;
+  title: string;
+  description: string;
 }
 
 export interface Activity {
-  id: string
-  title: string
-  description: string
+  id: string;
+  title: string;
+  description: string;
 }
 
 export interface Task {
-  id: string
-  title: string
-  description: string
-  activities: Activity[]
+  id: string;
+  title: string;
+  description: string;
+  activities: Activity[];
 }
 
 export interface FindingTargetImplementationStatus {
-  remarks: string
-  state: string
+  remarks: string;
+  state: string;
 }
 
 export interface FindingTargetStatus {
-  reason: string
-  remarks: string
-  state: string
+  reason: string;
+  remarks: string;
+  state: string;
 }
 
 export interface FindingTarget {
-  type: string
-  title: string
-  status: FindingTargetStatus
-  implementationStatus: FindingTargetImplementationStatus
+  type: string;
+  title: string;
+  status: FindingTargetStatus;
+  implementationStatus: FindingTargetImplementationStatus;
 }
 
 // export interface Finding {
@@ -60,51 +60,50 @@ export interface FindingTarget {
 // }
 
 export interface Log {
-  title: string
-  description: string
+  title: string;
+  description: string;
 }
 
-
 export interface Result {
-  uuid: string
-  title: string
-  start: string
-  end: string
-  streamId: string
-  observations: Observation[]
+  uuid: string;
+  title: string;
+  start: string;
+  end: string;
+  streamId: string;
+  observations: Observation[];
   // findings: Finding[]
-  assessmentLogEntries: Log[]
-  labels: LabelMap,
+  assessmentLogEntries: Log[];
+  labels: LabelMap;
 }
 
 export interface LabelMap {
-  [label: string]: string
+  [label: string]: string;
 }
 
 export interface ComplianceBySearchResultRecord {
-  title: string
-  interval: string
-  findings: number
-  findings_pass: number
-  findings_fail: number
-  observations: number
-  hasRecords: boolean
+  title: string;
+  interval: string;
+  findings: number;
+  findings_pass: number;
+  findings_fail: number;
+  observations: number;
+  hasRecords: boolean;
 }
 
 export interface ComplianceBySearchResult {
-  id: string
-  records: ComplianceBySearchResultRecord[]
+  id: string;
+  records: ComplianceBySearchResultRecord[];
 }
 
 export interface DataResponse<T> {
-  data: T
+  data: T;
 }
 
 export const useApiStore = defineStore('api', () => {
-  const configStore = useConfigStore()
+  const configStore = useConfigStore();
 
   async function createPlan(plan: Plan, filter: Filter): Promise<Plan> {
-    const config = await configStore.getConfig()
+    const config = await configStore.getConfig();
     const response = await fetch(`${config.API_URL}/api/assessment-plans`, {
       method: 'POST',
       headers: {
@@ -114,140 +113,175 @@ export const useApiStore = defineStore('api', () => {
         ...plan,
         filter,
       }),
-    })
+    });
 
     if (!response.ok) {
-      throw new Error(`Error: ${response.statusText}`)
+      throw new Error(`Error: ${response.statusText}`);
     }
 
-    const data = (await response.json()) as DataResponse<Plan>
-    const planData = data.data as Plan
+    const data = (await response.json()) as DataResponse<Plan>;
+    const planData = data.data as Plan;
     return {
       ...plan,
       ...planData,
-    } as Plan
+    } as Plan;
   }
 
   async function getPlan(id: string): Promise<DataResponse<Plan>> {
-    const config = await configStore.getConfig()
-    const response = await fetch(`${config.API_URL}/api/assessment-plans/${id}`)
-    return (await response.json()) as DataResponse<Plan>
+    const config = await configStore.getConfig();
+    const response = await fetch(
+      `${config.API_URL}/api/assessment-plans/${id}`,
+    );
+    return (await response.json()) as DataResponse<Plan>;
   }
 
   async function getPlans(): Promise<DataResponse<Plan[]>> {
-    const config = await configStore.getConfig()
-    const response = await fetch(`${config.API_URL}/api/assessment-plans`)
-    return (await response.json()) as DataResponse<Plan[]>
+    const config = await configStore.getConfig();
+    const response = await fetch(`${config.API_URL}/api/assessment-plans`);
+    return (await response.json()) as DataResponse<Plan[]>;
   }
 
   async function getResult(id: string): Promise<DataResponse<Result>> {
-    const config = await configStore.getConfig()
-    const response = await fetch(`${config.API_URL}/api/assessment-results/${id}`)
-    return (await response.json()) as DataResponse<Result>
+    const config = await configStore.getConfig();
+    const response = await fetch(
+      `${config.API_URL}/api/assessment-results/${id}`,
+    );
+    return (await response.json()) as DataResponse<Result>;
   }
 
-  async function searchResults(filter: Filter): Promise<DataResponse<Result[]>> {
-    const config = await configStore.getConfig()
-    const response = await fetch(`${config.API_URL}/api/assessment-results/search`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
+  async function searchResults(
+    filter: Filter,
+  ): Promise<DataResponse<Result[]>> {
+    const config = await configStore.getConfig();
+    const response = await fetch(
+      `${config.API_URL}/api/assessment-results/search`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          filter: filter,
+        }),
       },
-      body: JSON.stringify({
-        "filter": filter,
-      }),
-    })
+    );
 
     if (!response.ok) {
-      throw new Error(`Error: ${response.statusText}`)
+      throw new Error(`Error: ${response.statusText}`);
     }
 
-    return (await response.json()) as DataResponse<Result[]>
+    return (await response.json()) as DataResponse<Result[]>;
   }
 
-  async function getComplianceForSearch(filter: Filter): Promise<DataResponse<ComplianceBySearchResult[]>> {
-    const config = await configStore.getConfig()
-    const response = await fetch(`${config.API_URL}/api/assessment-results/compliance-by-search`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
+  async function getComplianceForSearch(
+    filter: Filter,
+  ): Promise<DataResponse<ComplianceBySearchResult[]>> {
+    const config = await configStore.getConfig();
+    const response = await fetch(
+      `${config.API_URL}/api/assessment-results/compliance-by-search`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          filter: filter,
+        }),
       },
-      body: JSON.stringify({
-        "filter": filter,
-      }),
-    })
+    );
 
     if (!response.ok) {
-      throw new Error(`Error: ${response.statusText}`)
+      throw new Error(`Error: ${response.statusText}`);
     }
 
-    return (await response.json()) as DataResponse<ComplianceBySearchResult[]>
+    return (await response.json()) as DataResponse<ComplianceBySearchResult[]>;
   }
 
-  async function getComplianceForStream(stream: string): Promise<DataResponse<ComplianceBySearchResult[]>> {
-    const config = await configStore.getConfig()
-    const response = await fetch(`${config.API_URL}/api/assessment-results/compliance-by-stream`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
+  async function getComplianceForStream(
+    stream: string,
+  ): Promise<DataResponse<ComplianceBySearchResult[]>> {
+    const config = await configStore.getConfig();
+    const response = await fetch(
+      `${config.API_URL}/api/assessment-results/compliance-by-stream`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          streamId: stream,
+        }),
       },
-      body: JSON.stringify({
-        "streamId": stream,
-      }),
-    })
+    );
 
     if (!response.ok) {
-      throw new Error(`Error: ${response.statusText}`)
+      throw new Error(`Error: ${response.statusText}`);
     }
 
-    return (await response.json()) as DataResponse<ComplianceBySearchResult[]>
+    return (await response.json()) as DataResponse<ComplianceBySearchResult[]>;
   }
 
   async function getPlanResults(id: string): Promise<DataResponse<Result[]>> {
-    const config = await configStore.getConfig()
-    const response = await fetch(`${config.API_URL}/api/assessment-results/plan/${id}`)
-    return (await response.json()) as DataResponse<Result[]>
+    const config = await configStore.getConfig();
+    const response = await fetch(
+      `${config.API_URL}/api/assessment-results/plan/${id}`,
+    );
+    return (await response.json()) as DataResponse<Result[]>;
   }
 
-  async function getStreamResults(streamId: string): Promise<DataResponse<Result[]>> {
-    const config = await configStore.getConfig()
-    const response = await fetch(`${config.API_URL}/api/assessment-results/stream/${streamId}`)
-    return (await response.json()) as DataResponse<Result[]>
+  async function getStreamResults(
+    streamId: string,
+  ): Promise<DataResponse<Result[]>> {
+    const config = await configStore.getConfig();
+    const response = await fetch(
+      `${config.API_URL}/api/assessment-results/stream/${streamId}`,
+    );
+    return (await response.json()) as DataResponse<Result[]>;
   }
 
   async function getSubjectById(subjectId: string) {
-    const config = await configStore.getConfig()
-    const response = await fetch(`${config.API_URL}/api/subjects/${subjectId}`)
-    return (await response.json()) as DataResponse<Subject>
+    const config = await configStore.getConfig();
+    const response = await fetch(`${config.API_URL}/api/subjects/${subjectId}`);
+    return (await response.json()) as DataResponse<Subject>;
   }
 
-  async function patchBySubjectId(subjectId: string, title: string, remarks: string) {
-    const config = await configStore.getConfig()
-    const response = await fetch(`${config.API_URL}/api/subjects/${subjectId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        title,
-        remarks,
-      })
-    })
-    return (await response.json()) as DataResponse<Subject>
+  async function patchBySubjectId(
+    subjectId: string,
+    title: string,
+    remarks: string,
+  ) {
+    const config = await configStore.getConfig();
+    const response = await fetch(
+      `${config.API_URL}/api/subjects/${subjectId}`,
+      {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title,
+          remarks,
+        }),
+      },
+    );
+    return (await response.json()) as DataResponse<Subject>;
   }
   async function getAllSubjects() {
-    const config = await configStore.getConfig()
-    const response = await fetch(`${config.API_URL}/api/subjects`)
-    return (await response.json()) as DataResponse<Subject[]>
+    const config = await configStore.getConfig();
+    const response = await fetch(`${config.API_URL}/api/subjects`);
+    return (await response.json()) as DataResponse<Subject[]>;
   }
 
   async function deleteSubjectById(subjectId: string) {
-    const config = await configStore.getConfig()
-    const response = await fetch(`${config.API_URL}/api/subjects/${subjectId}`, {
-      method: 'DELETE'
-    })
+    const config = await configStore.getConfig();
+    const response = await fetch(
+      `${config.API_URL}/api/subjects/${subjectId}`,
+      {
+        method: 'DELETE',
+      },
+    );
     if (!response.ok) {
-      throw new Error('Failed to delete subject')
+      throw new Error('Failed to delete subject');
     }
-    return
+    return;
   }
 
   return {
@@ -264,5 +298,5 @@ export const useApiStore = defineStore('api', () => {
     patchBySubjectId,
     getAllSubjects,
     deleteSubjectById,
-  }
-})
+  };
+});

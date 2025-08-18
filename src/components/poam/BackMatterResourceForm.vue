@@ -8,7 +8,9 @@
       <!-- Basic Information -->
       <div class="grid grid-cols-2 gap-4">
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+          <label
+            class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2"
+          >
             Title
           </label>
           <input
@@ -21,7 +23,9 @@
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2"
+        >
           Description
         </label>
         <textarea
@@ -33,7 +37,9 @@
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2"
+        >
           Remarks
         </label>
         <textarea
@@ -46,12 +52,19 @@
 
       <!-- Citation -->
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2"
+        >
           Citation Text
         </label>
         <textarea
           :value="formData.citation?.text || ''"
-          @input="(e) => { if (!formData.citation) formData.citation = { text: '' }; formData.citation.text = (e.target as HTMLTextAreaElement).value }"
+          @input="
+            (e) => {
+              if (!formData.citation) formData.citation = { text: '' };
+              formData.citation.text = (e.target as HTMLTextAreaElement).value;
+            }
+          "
           rows="2"
           placeholder="Citation or reference information"
           class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-300"
@@ -60,7 +73,9 @@
 
       <!-- Document IDs -->
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2"
+        >
           Document Identifiers
         </label>
         <div class="space-y-2">
@@ -101,7 +116,9 @@
 
       <!-- External Links -->
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2"
+        >
           External Links
         </label>
         <div class="space-y-2">
@@ -142,7 +159,9 @@
 
       <!-- Properties -->
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2"
+        >
           Properties
         </label>
         <div class="space-y-2">
@@ -183,30 +202,60 @@
 
       <!-- Base64 Content -->
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2"
+        >
           Embedded Content
         </label>
         <div class="space-y-3">
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
+              <label
+                class="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1"
+              >
                 Filename
               </label>
               <input
                 :value="formData.base64?.filename || ''"
-                @input="(e) => { if (!formData.base64) formData.base64 = { filename: '', mediaType: '', value: '' }; formData.base64.filename = (e.target as HTMLInputElement).value }"
+                @input="
+                  (e) => {
+                    if (!formData.base64)
+                      formData.base64 = {
+                        filename: '',
+                        mediaType: '',
+                        value: '',
+                      };
+                    formData.base64.filename = (
+                      e.target as HTMLInputElement
+                    ).value;
+                  }
+                "
                 type="text"
                 placeholder="document.pdf"
                 class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-300"
               />
             </div>
             <div>
-              <label class="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
+              <label
+                class="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1"
+              >
                 Media Type
               </label>
               <input
                 :value="formData.base64?.mediaType || ''"
-                @input="(e) => { if (!formData.base64) formData.base64 = { filename: '', mediaType: '', value: '' }; formData.base64.mediaType = (e.target as HTMLInputElement).value }"
+                @input="
+                  (e) => {
+                    if (!formData.base64)
+                      formData.base64 = {
+                        filename: '',
+                        mediaType: '',
+                        value: '',
+                      };
+                    formData.base64.mediaType = (
+                      e.target as HTMLInputElement
+                    ).value;
+                  }
+                "
                 type="text"
                 placeholder="application/pdf"
                 class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-300"
@@ -214,12 +263,26 @@
             </div>
           </div>
           <div>
-            <label class="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
+            <label
+              class="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1"
+            >
               Base64 Content
             </label>
             <textarea
               :value="formData.base64?.value || ''"
-              @input="(e) => { if (!formData.base64) formData.base64 = { filename: '', mediaType: '', value: '' }; formData.base64.value = (e.target as HTMLTextAreaElement).value }"
+              @input="
+                (e) => {
+                  if (!formData.base64)
+                    formData.base64 = {
+                      filename: '',
+                      mediaType: '',
+                      value: '',
+                    };
+                  formData.base64.value = (
+                    e.target as HTMLTextAreaElement
+                  ).value;
+                }
+              "
               rows="4"
               placeholder="Paste base64 encoded content here"
               class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-300 font-mono text-xs"
@@ -242,7 +305,7 @@
           :disabled="loading"
           class="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-md"
         >
-          {{ loading ? 'Saving...' : (isEdit ? 'Update' : 'Create') }}
+          {{ loading ? 'Saving...' : isEdit ? 'Update' : 'Create' }}
         </button>
       </div>
     </form>
@@ -250,34 +313,38 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import type { Resource } from '@/stores/plan-of-action-and-milestones'
-import { useToast } from 'primevue/usetoast'
-import { useDataApi, decamelizeKeys } from '@/composables/axios'
-import type { AxiosError } from 'axios'
-import type { ErrorResponse, ErrorBody } from '@/stores/types'
+import { ref, onMounted } from 'vue';
+import type { Resource } from '@/stores/plan-of-action-and-milestones';
+import { useToast } from 'primevue/usetoast';
+import { useDataApi, decamelizeKeys } from '@/composables/axios';
+import type { AxiosError } from 'axios';
+import type { ErrorResponse, ErrorBody } from '@/stores/types';
 
 interface Props {
-  poamId: string
-  resource?: Resource | null
-  isEdit?: boolean
+  poamId: string;
+  resource?: Resource | null;
+  isEdit?: boolean;
 }
 
 interface Emits {
-  (e: 'cancel'): void
-  (e: 'saved', resource: Resource): void
+  (e: 'cancel'): void;
+  (e: 'saved', resource: Resource): void;
 }
 
-const props = defineProps<Props>()
-const emit = defineEmits<Emits>()
+const props = defineProps<Props>();
+const emit = defineEmits<Emits>();
 
-const { data: returnedResource, isLoading: loading, execute } = useDataApi<Resource>(
+const {
+  data: returnedResource,
+  isLoading: loading,
+  execute,
+} = useDataApi<Resource>(
   null,
   { transformRequest: [decamelizeKeys] },
-  { immediate: false }
-)
+  { immediate: false },
+);
 
-const toast = useToast()
+const toast = useToast();
 
 const formData = ref<Partial<Resource>>({
   uuid: '',
@@ -285,7 +352,7 @@ const formData = ref<Partial<Resource>>({
   description: '',
   remarks: '',
   citation: {
-    text: ''
+    text: '',
   },
   documentIds: [],
   rlinks: [],
@@ -293,9 +360,9 @@ const formData = ref<Partial<Resource>>({
   base64: {
     filename: '',
     mediaType: '',
-    value: ''
-  }
-})
+    value: '',
+  },
+});
 
 onMounted(() => {
   if (props.resource) {
@@ -308,95 +375,110 @@ onMounted(() => {
       documentIds: [...(props.resource.documentIds || [])],
       rlinks: [...(props.resource.rlinks || [])],
       props: [...(props.resource.props || [])],
-      base64: props.resource.base64 || { filename: '', mediaType: '', value: '' }
-    }
+      base64: props.resource.base64 || {
+        filename: '',
+        mediaType: '',
+        value: '',
+      },
+    };
   } else {
     // Generate UUID for new resources
-    formData.value.uuid = generateUUID()
+    formData.value.uuid = generateUUID();
   }
-})
+});
 
 function generateUUID(): string {
-  return crypto.randomUUID()
+  return crypto.randomUUID();
 }
 
 function addDocumentId() {
   if (!formData.value.documentIds) {
-    formData.value.documentIds = []
+    formData.value.documentIds = [];
   }
   formData.value.documentIds.push({
     scheme: '',
-    identifier: ''
-  })
+    identifier: '',
+  });
 }
 
 function removeDocumentId(index: number) {
-  formData.value.documentIds?.splice(index, 1)
+  formData.value.documentIds?.splice(index, 1);
 }
 
 function addLink() {
   if (!formData.value.rlinks) {
-    formData.value.rlinks = []
+    formData.value.rlinks = [];
   }
   formData.value.rlinks.push({
     href: '',
-    mediaType: ''
-  })
+    mediaType: '',
+  });
 }
 
 function removeLink(index: number) {
-  formData.value.rlinks?.splice(index, 1)
+  formData.value.rlinks?.splice(index, 1);
 }
 
 function addProperty() {
   if (!formData.value.props) {
-    formData.value.props = []
+    formData.value.props = [];
   }
   formData.value.props.push({
     name: '',
-    value: ''
-  })
+    value: '',
+  });
 }
 
 function removeProperty(index: number) {
-  formData.value.props?.splice(index, 1)
+  formData.value.props?.splice(index, 1);
 }
 
 async function handleSubmit() {
   try {
     // Clean up empty items
     if (formData.value.documentIds) {
-      formData.value.documentIds = formData.value.documentIds.filter(d => d.scheme || d.identifier)
+      formData.value.documentIds = formData.value.documentIds.filter(
+        (d) => d.scheme || d.identifier,
+      );
     }
     if (formData.value.rlinks) {
-      formData.value.rlinks = formData.value.rlinks.filter(l => l.href)
+      formData.value.rlinks = formData.value.rlinks.filter((l) => l.href);
     }
     if (formData.value.props) {
-      formData.value.props = formData.value.props.filter(p => p.name || p.value)
+      formData.value.props = formData.value.props.filter(
+        (p) => p.name || p.value,
+      );
     }
 
     if (props.isEdit && formData.value.uuid) {
-      await execute(`/api/oscal/plan-of-action-and-milestones/${props.poamId}/back-matter/resources/${formData.value.uuid}`, {
-        method: 'PUT',
-        data: formData.value,
-      })
+      await execute(
+        `/api/oscal/plan-of-action-and-milestones/${props.poamId}/back-matter/resources/${formData.value.uuid}`,
+        {
+          method: 'PUT',
+          data: formData.value,
+        },
+      );
     } else {
-      await execute(`/api/oscal/plan-of-action-and-milestones/${props.poamId}/back-matter/resources`, {
-        method: 'POST',
-        data: formData.value,
-      })
+      await execute(
+        `/api/oscal/plan-of-action-and-milestones/${props.poamId}/back-matter/resources`,
+        {
+          method: 'POST',
+          data: formData.value,
+        },
+      );
     }
 
-    emit('saved', returnedResource.value!)
+    emit('saved', returnedResource.value!);
   } catch (error) {
-    const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>
-    const errorMessage = errorResponse.response?.data?.errors?.body || 'Unknown error occurred'
+    const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
+    const errorMessage =
+      errorResponse.response?.data?.errors?.body || 'Unknown error occurred';
     toast.add({
       severity: 'error',
       summary: 'Save Failed',
       detail: `Failed to save back matter resource: ${errorMessage}`,
-      life: 3000
-    })
+      life: 3000,
+    });
   }
 }
 </script>

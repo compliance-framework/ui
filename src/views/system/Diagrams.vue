@@ -90,14 +90,18 @@ const sspStore = useSystemSecurityPlanStore();
 const { system } = useSystemStore();
 const toast = useToast();
 
-const systemSecurityPlan = ref<SystemSecurityPlan | null>(system.securityPlan as SystemSecurityPlan || null);
+const systemSecurityPlan = ref<SystemSecurityPlan | null>(
+  (system.securityPlan as SystemSecurityPlan) || null,
+);
 const authorizationBoundary = ref<DiagramGrouping>({} as DiagramGrouping);
 const networkArchitecture = ref<DiagramGrouping>({} as DiagramGrouping);
 const dataFlow = ref<DiagramGrouping>({} as DiagramGrouping);
 
 onMounted(() => {
   sspStore
-    .getCharacteristicsAuthorizationBoundary(systemSecurityPlan.value?.uuid as string)
+    .getCharacteristicsAuthorizationBoundary(
+      systemSecurityPlan.value?.uuid as string,
+    )
     .then((data: DataResponse<DiagramGrouping>) => {
       authorizationBoundary.value = data.data;
       if (!data.data?.diagrams?.length) {
@@ -108,12 +112,18 @@ onMounted(() => {
         ];
       }
     });
-  sspStore.getCharacteristicsNetworkArchitecture(systemSecurityPlan.value?.uuid as string).then((data) => {
-    networkArchitecture.value = data.data;
-  });
-  sspStore.getCharacteristicsDataFlow(systemSecurityPlan.value?.uuid as string).then((data) => {
-    dataFlow.value = data.data;
-  });
+  sspStore
+    .getCharacteristicsNetworkArchitecture(
+      systemSecurityPlan.value?.uuid as string,
+    )
+    .then((data) => {
+      networkArchitecture.value = data.data;
+    });
+  sspStore
+    .getCharacteristicsDataFlow(systemSecurityPlan.value?.uuid as string)
+    .then((data) => {
+      dataFlow.value = data.data;
+    });
 });
 
 async function saveAuthorizationBoundaryDiagram(diagram: Diagram) {

@@ -1,7 +1,7 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect } from 'vitest';
 
-import { calculateComplianceOverTimeData } from '@/parsers/findings.ts'
-import type { ComplianceInterval } from '@/stores/findings.ts'
+import { calculateComplianceOverTimeData } from '@/parsers/findings.ts';
+import type { ComplianceInterval } from '@/stores/findings.ts';
 
 describe('EvidenceFiller', () => {
   it('fills missing statusses', () => {
@@ -12,11 +12,18 @@ describe('EvidenceFiller', () => {
           {
             status: 'satisfied',
             count: 1,
-          }
-        ]
-      }
-    ] as ComplianceInterval[]
-    expect(calculateComplianceOverTimeData(statusData).datasets.length).toEqual(1)
-    expect(calculateComplianceOverTimeData(statusData, ['satisfied', 'not-satisfied']).datasets.length).toEqual(2)
-  })
-})
+          },
+        ],
+      },
+    ] as ComplianceInterval[];
+    expect(calculateComplianceOverTimeData(statusData).datasets.length).toEqual(
+      1,
+    );
+    expect(
+      calculateComplianceOverTimeData(statusData, [
+        'satisfied',
+        'not-satisfied',
+      ]).datasets.length,
+    ).toEqual(2);
+  });
+});

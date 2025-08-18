@@ -1,59 +1,72 @@
-import type { Catalog, Control, Group } from '@/oscal'
-import { ref, toValue } from 'vue'
-import type { MaybeRefOrGetter } from '@vueuse/core'
+import type { Catalog, Control, Group } from '@/oscal';
+import { ref, toValue } from 'vue';
+import type { MaybeRefOrGetter } from '@vueuse/core';
 
 export interface TreeNode {
-  key: string
-  label: string
+  key: string;
+  label: string;
   type: string;
   data: Control | Group;
-  children?: Array<TreeNode>
+  children?: Array<TreeNode>;
 }
 
 export const useCatalogTree = () => {
-  const nodes = ref<Array<TreeNode>>([])
-  const expandedKeys = ref<{[key: string]: boolean}>({})
+  const nodes = ref<Array<TreeNode>>([]);
+  const expandedKeys = ref<{ [key: string]: boolean }>({});
 
   function build(catalog: MaybeRefOrGetter<Catalog>) {
-    nodes.value = buildChildren(toValue(catalog))
+    nodes.value = buildChildren(toValue(catalog));
   }
 
   function buildChildren(node: Group | Catalog): Array<TreeNode> {
-    return [...buildGroups(...node.groups??[]), ...buildControls(...node.controls??[])]
+    return [
+      ...buildGroups(...(node.groups ?? [])),
+      ...buildControls(...(node.controls ?? [])),
+    ];
   }
 
   function buildControlChildren(node: Control): Array<TreeNode> {
-    return [...buildControls(...node.controls??[])]
+    return [...buildControls(...(node.controls ?? []))];
   }
 
   function buildControls(...controls: Array<Control>): Array<TreeNode> {
-    let result = [] as Array<TreeNode>
-    controls.forEach(control => {
+    let result = [] as Array<TreeNode>;
+    controls.forEach((control) => {
       result.push({
         key: control.id,
         label: control.title,
         type: 'control',
         data: control,
         children: buildControlChildren(control),
-      })
-    })
-    result = result.sort((a, b) => a.key.localeCompare(b.key, undefined, {numeric: true, sensitivity: 'base'}))
-    return result
+      });
+    });
+    result = result.sort((a, b) =>
+      a.key.localeCompare(b.key, undefined, {
+        numeric: true,
+        sensitivity: 'base',
+      }),
+    );
+    return result;
   }
 
   function buildGroups(...groups: Array<Group>): Array<TreeNode> {
-    let result = [] as Array<TreeNode>
-    groups.forEach(group => {
+    let result = [] as Array<TreeNode>;
+    groups.forEach((group) => {
       result.push({
         key: group.id,
         label: group.title,
         type: 'group',
         data: group,
         children: buildChildren(group),
-      })
-    })
-    result = result.sort((a, b) => a.key.localeCompare(b.key, undefined, {numeric: true, sensitivity: 'base'}))
-    return result
+      });
+    });
+    result = result.sort((a, b) =>
+      a.key.localeCompare(b.key, undefined, {
+        numeric: true,
+        sensitivity: 'base',
+      }),
+    );
+    return result;
   }
 
   function expandAll() {
@@ -62,11 +75,11 @@ export const useCatalogTree = () => {
     }
 
     expandedKeys.value = { ...expandedKeys.value };
-  };
+  }
 
   function collapseAll() {
     expandedKeys.value = {};
-  };
+  }
 
   function expandNode(node: TreeNode) {
     if (node.children && node.children.length) {
@@ -76,7 +89,7 @@ export const useCatalogTree = () => {
         expandNode(child);
       }
     }
-  };
+  }
 
   return {
     nodes,

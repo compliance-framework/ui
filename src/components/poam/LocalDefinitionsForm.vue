@@ -1,13 +1,17 @@
 <template>
   <div class="p-6">
     <h3 class="text-lg font-medium text-gray-900 dark:text-slate-300 mb-4">
-      {{ localDefinitions ? 'Edit Local Definitions' : 'Create Local Definitions' }}
+      {{
+        localDefinitions ? 'Edit Local Definitions' : 'Create Local Definitions'
+      }}
     </h3>
 
     <form @submit.prevent="handleSubmit" class="space-y-6">
       <!-- Components Section -->
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2"
+        >
           Components
         </label>
         <div class="space-y-4">
@@ -17,7 +21,9 @@
             class="border border-gray-300 dark:border-slate-600 rounded-lg p-4 bg-gray-50 dark:bg-slate-800"
           >
             <div class="flex justify-between items-center mb-3">
-              <span class="font-medium text-gray-900 dark:text-slate-300">Component {{ index + 1 }}</span>
+              <span class="font-medium text-gray-900 dark:text-slate-300"
+                >Component {{ index + 1 }}</span
+              >
               <button
                 type="button"
                 @click="removeComponent(index)"
@@ -29,7 +35,9 @@
 
             <div class="grid grid-cols-2 gap-3">
               <div>
-                <label class="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
+                <label
+                  class="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1"
+                >
                   Title *
                 </label>
                 <input
@@ -42,7 +50,9 @@
               </div>
 
               <div>
-                <label class="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
+                <label
+                  class="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1"
+                >
                   Type *
                 </label>
                 <select
@@ -66,7 +76,9 @@
             </div>
 
             <div class="mt-3">
-              <label class="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
+              <label
+                class="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1"
+              >
                 Description
               </label>
               <textarea
@@ -79,7 +91,9 @@
 
             <div class="grid grid-cols-2 gap-3 mt-3">
               <div>
-                <label class="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
+                <label
+                  class="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1"
+                >
                   Status State *
                 </label>
                 <select
@@ -90,14 +104,18 @@
                   <option value="">Select state</option>
                   <option value="operational">Operational</option>
                   <option value="under-development">Under Development</option>
-                  <option value="under-major-modification">Under Major Modification</option>
+                  <option value="under-major-modification">
+                    Under Major Modification
+                  </option>
                   <option value="disposition">Disposition</option>
                   <option value="other">Other</option>
                 </select>
               </div>
 
               <div>
-                <label class="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
+                <label
+                  class="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1"
+                >
                   Status Reason
                 </label>
                 <input
@@ -110,7 +128,9 @@
             </div>
 
             <div class="mt-3">
-              <label class="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
+              <label
+                class="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1"
+              >
                 Remarks
               </label>
               <textarea
@@ -134,7 +154,9 @@
 
       <!-- Inventory Items Section -->
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2"
+        >
           Inventory Items
         </label>
         <div class="space-y-4">
@@ -144,7 +166,9 @@
             class="border border-gray-300 dark:border-slate-600 rounded-lg p-4 bg-gray-50 dark:bg-slate-800"
           >
             <div class="flex justify-between items-center mb-3">
-              <span class="font-medium text-gray-900 dark:text-slate-300">Inventory Item {{ index + 1 }}</span>
+              <span class="font-medium text-gray-900 dark:text-slate-300"
+                >Inventory Item {{ index + 1 }}</span
+              >
               <button
                 type="button"
                 @click="removeInventoryItem(index)"
@@ -155,7 +179,9 @@
             </div>
 
             <div>
-              <label class="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
+              <label
+                class="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1"
+              >
                 Description *
               </label>
               <textarea
@@ -168,7 +194,9 @@
             </div>
 
             <div class="mt-3">
-              <label class="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
+              <label
+                class="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1"
+              >
                 Remarks
               </label>
               <textarea
@@ -192,17 +220,24 @@
 
       <!-- Assessment Assets Section -->
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2"
+        >
           Assessment Assets
         </label>
-        <div class="border border-gray-300 dark:border-slate-600 rounded-lg p-4 bg-gray-50 dark:bg-slate-800">
+        <div
+          class="border border-gray-300 dark:border-slate-600 rounded-lg p-4 bg-gray-50 dark:bg-slate-800"
+        >
           <div>
-            <label class="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
+            <label
+              class="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1"
+            >
               Components
             </label>
             <div class="space-y-2">
               <div
-                v-for="(component, index) in formData.assessmentAssets?.components || []"
+                v-for="(component, index) in formData.assessmentAssets
+                  ?.components || []"
                 :key="index"
                 class="flex gap-2 items-center"
               >
@@ -234,7 +269,9 @@
 
       <!-- Remarks Section -->
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2"
+        >
           Remarks
         </label>
         <textarea
@@ -259,7 +296,7 @@
           :disabled="loading"
           class="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-md"
         >
-          {{ loading ? 'Saving...' : (localDefinitions ? 'Update' : 'Create') }}
+          {{ loading ? 'Saving...' : localDefinitions ? 'Update' : 'Create' }}
         </button>
       </div>
     </form>
@@ -267,42 +304,46 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import type { LocalDefinitions} from '@/stores/plan-of-action-and-milestones'
-import { useToast } from 'primevue/usetoast'
-import { useDataApi, decamelizeKeys } from '@/composables/axios'
-import type { AxiosError } from 'axios'
-import type { ErrorResponse, ErrorBody } from '@/stores/types'
+import { ref, onMounted } from 'vue';
+import type { LocalDefinitions } from '@/stores/plan-of-action-and-milestones';
+import { useToast } from 'primevue/usetoast';
+import { useDataApi, decamelizeKeys } from '@/composables/axios';
+import type { AxiosError } from 'axios';
+import type { ErrorResponse, ErrorBody } from '@/stores/types';
 
 interface Props {
-  poamId: string
-  localDefinitions?: LocalDefinitions
+  poamId: string;
+  localDefinitions?: LocalDefinitions;
 }
 
 interface Emits {
-  (e: 'cancel'): void
-  (e: 'saved', localDefinitions: LocalDefinitions): void
+  (e: 'cancel'): void;
+  (e: 'saved', localDefinitions: LocalDefinitions): void;
 }
 
-const props = defineProps<Props>()
-const emit = defineEmits<Emits>()
+const props = defineProps<Props>();
+const emit = defineEmits<Emits>();
 
-const toast = useToast()
+const toast = useToast();
 
-const { data: newLD, isLoading: loading, execute: saveLD } = useDataApi<LocalDefinitions>(
+const {
+  data: newLD,
+  isLoading: loading,
+  execute: saveLD,
+} = useDataApi<LocalDefinitions>(
   `/api/oscal/plan-of-actions-and-milestones/${props.poamId}/local-definitions`,
   null,
-  { immediate: false}
-)
+  { immediate: false },
+);
 
 const formData = ref<LocalDefinitions>({
   components: [],
   inventoryItems: [],
   assessmentAssets: {
-    components: []
+    components: [],
   },
-  remarks: ''
-})
+  remarks: '',
+});
 
 onMounted(() => {
   if (props.localDefinitions) {
@@ -310,20 +351,22 @@ onMounted(() => {
       components: [...(props.localDefinitions.components || [])],
       inventoryItems: [...(props.localDefinitions.inventoryItems || [])],
       assessmentAssets: {
-        components: [...(props.localDefinitions.assessmentAssets?.components || [])]
+        components: [
+          ...(props.localDefinitions.assessmentAssets?.components || []),
+        ],
       },
-      remarks: props.localDefinitions.remarks || ''
-    }
+      remarks: props.localDefinitions.remarks || '',
+    };
   }
-})
+});
 
 function generateUUID(): string {
-  return crypto.randomUUID()
+  return crypto.randomUUID();
 }
 
 function addComponent() {
   if (!formData.value.components) {
-    formData.value.components = []
+    formData.value.components = [];
   }
   formData.value.components.push({
     uuid: generateUUID(),
@@ -333,37 +376,37 @@ function addComponent() {
     status: {
       state: '',
       reason: '',
-      remarks: ''
+      remarks: '',
     },
-    remarks: ''
-  })
+    remarks: '',
+  });
 }
 
 function removeComponent(index: number) {
-  formData.value.components?.splice(index, 1)
+  formData.value.components?.splice(index, 1);
 }
 
 function addInventoryItem() {
   if (!formData.value.inventoryItems) {
-    formData.value.inventoryItems = []
+    formData.value.inventoryItems = [];
   }
   formData.value.inventoryItems.push({
     uuid: generateUUID(),
     description: '',
-    remarks: ''
-  })
+    remarks: '',
+  });
 }
 
 function removeInventoryItem(index: number) {
-  formData.value.inventoryItems?.splice(index, 1)
+  formData.value.inventoryItems?.splice(index, 1);
 }
 
 function addAssessmentComponent() {
   if (!formData.value.assessmentAssets) {
-    formData.value.assessmentAssets = { components: [] }
+    formData.value.assessmentAssets = { components: [] };
   }
   if (!formData.value.assessmentAssets.components) {
-    formData.value.assessmentAssets.components = []
+    formData.value.assessmentAssets.components = [];
   }
   formData.value.assessmentAssets.components.push({
     uuid: generateUUID(),
@@ -373,53 +416,60 @@ function addAssessmentComponent() {
     status: {
       state: '',
       reason: '',
-      remarks: ''
+      remarks: '',
     },
-    remarks: ''
-  })
+    remarks: '',
+  });
 }
 
 function removeAssessmentComponent(index: number) {
-  formData.value.assessmentAssets?.components?.splice(index, 1)
+  formData.value.assessmentAssets?.components?.splice(index, 1);
 }
 
 async function handleSubmit() {
   try {
     // Clean up empty items
     if (formData.value.components) {
-      formData.value.components = formData.value.components.filter(c => c.title && c.type && c.status?.state)
+      formData.value.components = formData.value.components.filter(
+        (c) => c.title && c.type && c.status?.state,
+      );
     }
     if (formData.value.inventoryItems) {
-      formData.value.inventoryItems = formData.value.inventoryItems.filter(i => i.description)
+      formData.value.inventoryItems = formData.value.inventoryItems.filter(
+        (i) => i.description,
+      );
     }
     if (formData.value.assessmentAssets?.components) {
-      formData.value.assessmentAssets.components = formData.value.assessmentAssets.components.filter(c => c.title)
+      formData.value.assessmentAssets.components =
+        formData.value.assessmentAssets.components.filter((c) => c.title);
     }
 
     if (props.localDefinitions) {
       await saveLD({
         data: formData.value,
         method: 'PUT',
-        transformRequest: [decamelizeKeys]
-      })
+        transformRequest: [decamelizeKeys],
+      });
     } else {
       await saveLD({
         data: formData.value,
         method: 'POST',
-        transformRequest: [decamelizeKeys]
-      })
+        transformRequest: [decamelizeKeys],
+      });
     }
 
-    emit('saved', newLD.value!)
+    emit('saved', newLD.value!);
   } catch (error) {
-    const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>
-    const errorMessage = errorResponse.response?.data.errors?.body || 'An unexpected error occurred'
+    const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
+    const errorMessage =
+      errorResponse.response?.data.errors?.body ||
+      'An unexpected error occurred';
     toast.add({
       severity: 'error',
       summary: 'Save Failed',
       detail: `Failed to save local definitions: ${errorMessage}`,
-      life: 3000
-    })
+      life: 3000,
+    });
   }
 }
 </script>

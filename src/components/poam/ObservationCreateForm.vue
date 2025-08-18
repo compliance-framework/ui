@@ -6,7 +6,9 @@
 
     <form @submit.prevent="submit" class="space-y-4">
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
+        >
           Title
         </label>
         <input
@@ -18,7 +20,9 @@
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
+        >
           Description <span class="text-red-500">*</span>
         </label>
         <textarea
@@ -31,11 +35,17 @@
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
+        >
           Methods <span class="text-red-500">*</span>
         </label>
         <div class="space-y-2">
-          <div v-for="(method, index) in formData.methods" :key="index" class="flex gap-2">
+          <div
+            v-for="(method, index) in formData.methods"
+            :key="index"
+            class="flex gap-2"
+          >
             <input
               v-model="formData.methods[index]"
               type="text"
@@ -62,11 +72,17 @@
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
+        >
           Types
         </label>
         <div class="space-y-2">
-          <div v-for="(type, index) in formData.types" :key="index" class="flex gap-2">
+          <div
+            v-for="(type, index) in formData.types"
+            :key="index"
+            class="flex gap-2"
+          >
             <input
               v-model="formData.types[index]"
               type="text"
@@ -92,7 +108,9 @@
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
+        >
           Collected Date
         </label>
         <input
@@ -103,7 +121,9 @@
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
+        >
           Expires Date
         </label>
         <input
@@ -114,7 +134,9 @@
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
+        >
           Remarks
         </label>
         <textarea
@@ -135,7 +157,9 @@
         </button>
         <button
           type="submit"
-          :disabled="!formData.description || !formData.methods.length || saving"
+          :disabled="
+            !formData.description || !formData.methods.length || saving
+          "
           class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {{ saving ? 'Creating...' : 'Create' }}
@@ -146,30 +170,34 @@
 </template>
 
 <script setup lang="ts">
-import { reactive } from 'vue'
-import type { Observation } from '@/stores/plan-of-action-and-milestones.ts'
-import { useToast } from 'primevue/usetoast'
-import { useDataApi, decamelizeKeys } from '@/composables/axios'
+import { reactive } from 'vue';
+import type { Observation } from '@/stores/plan-of-action-and-milestones.ts';
+import { useToast } from 'primevue/usetoast';
+import { useDataApi, decamelizeKeys } from '@/composables/axios';
 
 const props = defineProps<{
-  poamId: string
-}>()
+  poamId: string;
+}>();
 
 const emit = defineEmits<{
-  cancel: []
-  created: [observation: Observation]
-}>()
+  cancel: [];
+  created: [observation: Observation];
+}>();
 
-const toast = useToast()
+const toast = useToast();
 
-const { data: returnedObservation, isLoading: saving, execute: executeCreate } = useDataApi<Observation>(
+const {
+  data: returnedObservation,
+  isLoading: saving,
+  execute: executeCreate,
+} = useDataApi<Observation>(
   `/api/oscal/plan-of-action-and-milestones/${props.poamId}/observations`,
   {
     method: 'POST',
-    transformRequest: [decamelizeKeys]
+    transformRequest: [decamelizeKeys],
   },
-  { immediate: false }
-)
+  { immediate: false },
+);
 
 const formData = reactive({
   title: '',
@@ -178,36 +206,40 @@ const formData = reactive({
   types: [] as string[],
   collected: '',
   expires: '',
-  remarks: ''
-})
+  remarks: '',
+});
 
 function addMethod() {
-  formData.methods.push('')
+  formData.methods.push('');
 }
 
 function removeMethod(index: number) {
   if (formData.methods.length > 1) {
-    formData.methods.splice(index, 1)
+    formData.methods.splice(index, 1);
   }
 }
 
 function addType() {
-  formData.types.push('')
+  formData.types.push('');
 }
 
 function removeType(index: number) {
-  formData.types.splice(index, 1)
+  formData.types.splice(index, 1);
 }
 
 async function submit() {
-  if (!formData.description || !formData.methods.length || formData.methods.some(m => !m.trim())) {
+  if (
+    !formData.description ||
+    !formData.methods.length ||
+    formData.methods.some((m) => !m.trim())
+  ) {
     toast.add({
       severity: 'error',
       summary: 'Validation Error',
       detail: 'Description and at least one method are required',
-      life: 3000
-    })
-    return
+      life: 3000,
+    });
+    return;
   }
 
   try {
@@ -215,33 +247,37 @@ async function submit() {
       uuid: crypto.randomUUID(),
       title: formData.title || undefined,
       description: formData.description,
-      methods: formData.methods.filter(m => m.trim()),
-      types: formData.types.filter(t => t.trim()).length > 0 ? formData.types.filter(t => t.trim()) : undefined,
+      methods: formData.methods.filter((m) => m.trim()),
+      types:
+        formData.types.filter((t) => t.trim()).length > 0
+          ? formData.types.filter((t) => t.trim())
+          : undefined,
       collected: formData.collected || undefined,
       expires: formData.expires || undefined,
-      remarks: formData.remarks || undefined
-    }
+      remarks: formData.remarks || undefined,
+    };
 
     await executeCreate({
       data: newObservation,
-    })
+    });
 
     toast.add({
       severity: 'success',
       summary: 'Observation Created',
       detail: 'Observation created successfully',
-      life: 3000
-    })
+      life: 3000,
+    });
 
-    emit('created', returnedObservation.value!)
+    emit('created', returnedObservation.value!);
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    const errorMessage =
+      error instanceof Error ? error.message : 'Unknown error';
     toast.add({
       severity: 'error',
       summary: 'Creation Failed',
       detail: `Failed to create observation: ${errorMessage}`,
-      life: 3000
-    })
+      life: 3000,
+    });
   }
 }
 </script>

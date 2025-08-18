@@ -8,7 +8,12 @@
         <label class="inline-block pb-2">ID</label>
         <div class="flex items-center place-items-stretch">
           <FormInput v-model="catalog.uuid" class="rounded-r-none border-r-0" />
-          <TertiaryButton type="button" @click="generateUuid" class="py-3 rounded-l-none"><BIconArrowRepeat /></TertiaryButton>
+          <TertiaryButton
+            type="button"
+            @click="generateUuid"
+            class="py-3 rounded-l-none"
+            ><BIconArrowRepeat
+          /></TertiaryButton>
         </div>
       </div>
       <div class="mb-4">
@@ -16,38 +21,34 @@
         <FormInput v-model="catalog.metadata.title" />
       </div>
       <div class="text-right">
-        <PrimaryButton
-          type="submit"
-        >
-          Submit
-        </PrimaryButton>
+        <PrimaryButton type="submit"> Submit </PrimaryButton>
       </div>
     </form>
   </PageCard>
 </template>
 <script setup lang="ts">
-import { ref } from 'vue'
-import PageHeader from '@/components/PageHeader.vue'
-import { type Catalog } from '@/stores/catalogs.ts'
-import { useRouter } from 'vue-router'
-import PageSubHeader from '@/components/PageSubHeader.vue'
-import TertiaryButton from '@/components/TertiaryButton.vue'
-import PageCard from '@/components/PageCard.vue'
-import FormInput from '@/components/forms/FormInput.vue'
-import PrimaryButton from '@/components/PrimaryButton.vue'
-import { BIconArrowRepeat } from 'bootstrap-icons-vue'
+import { ref } from 'vue';
+import PageHeader from '@/components/PageHeader.vue';
+import { type Catalog } from '@/stores/catalogs.ts';
+import { useRouter } from 'vue-router';
+import PageSubHeader from '@/components/PageSubHeader.vue';
+import TertiaryButton from '@/components/TertiaryButton.vue';
+import PageCard from '@/components/PageCard.vue';
+import FormInput from '@/components/forms/FormInput.vue';
+import PrimaryButton from '@/components/PrimaryButton.vue';
+import { BIconArrowRepeat } from 'bootstrap-icons-vue';
 import { v4 as uuidv4 } from 'uuid';
-import { useToast } from 'primevue/usetoast'
-import { useDataApi } from '@/composables/axios'
-import type { ErrorResponse, ErrorBody } from '@/stores/types.ts'
+import { useToast } from 'primevue/usetoast';
+import { useDataApi } from '@/composables/axios';
+import type { ErrorResponse, ErrorBody } from '@/stores/types.ts';
 import type { AxiosError } from 'axios';
 
 const catalog = ref<Catalog>({
-  metadata: {}
+  metadata: {},
 } as Catalog);
 const toast = useToast();
 
-const { execute } = useDataApi<Catalog>("/api/oscal/catalogs");
+const { execute } = useDataApi<Catalog>('/api/oscal/catalogs');
 
 const router = useRouter();
 
@@ -55,7 +56,7 @@ async function submit() {
   try {
     await execute({
       method: 'POST',
-      data: catalog.value
+      data: catalog.value,
     });
     router.push({ name: 'catalog-view', params: { id: catalog.value.uuid } });
   } catch (error) {
@@ -63,7 +64,9 @@ async function submit() {
     toast.add({
       severity: 'error',
       summary: 'Error creating catalog',
-      detail: errorResponse.response?.data.errors.body || 'An error occurred while creating the catalog.',
+      detail:
+        errorResponse.response?.data.errors.body ||
+        'An error occurred while creating the catalog.',
       life: 3000,
     });
     return;

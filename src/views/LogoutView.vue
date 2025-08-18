@@ -12,7 +12,7 @@ const authStore = useAuthStore();
 
 onMounted(() => {
   authStore.logout().then(() => {
-    router.push({ name: "login" });
+    router.push({ name: 'login' });
   });
 });
 </script>

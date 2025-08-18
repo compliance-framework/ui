@@ -57,8 +57,17 @@ const route = useRoute();
 
 const showCreateModal = ref(false);
 
-const { data: assessmentPlan, execute: refreshAssessmentPlan } = useDataApi<AssessmentPlan>(`/api/oscal/assessment-plans/${route.params.id}`, null, { immediate: false });
-const { data: tasks, execute: refreshTasks } = useDataApi<Task[]>(`/api/oscal/assessment-plans/${route.params.id}/tasks`, null, { immediate: false });
+const { data: assessmentPlan, execute: refreshAssessmentPlan } =
+  useDataApi<AssessmentPlan>(
+    `/api/oscal/assessment-plans/${route.params.id}`,
+    null,
+    { immediate: false },
+  );
+const { data: tasks, execute: refreshTasks } = useDataApi<Task[]>(
+  `/api/oscal/assessment-plans/${route.params.id}/tasks`,
+  null,
+  { immediate: false },
+);
 
 async function taskUpdated(task: Task) {
   if (!tasks.value) return;
@@ -68,12 +77,12 @@ async function taskUpdated(task: Task) {
 }
 
 async function taskDeleted(task: Task) {
-  if (!tasks.value) return
+  if (!tasks.value) return;
   tasks.value = tasks.value.filter((value) => value.uuid != task.uuid);
 }
 
 async function taskCreated(task: Task) {
-  if (!tasks.value) return
+  if (!tasks.value) return;
   tasks.value.push(task);
 }
 

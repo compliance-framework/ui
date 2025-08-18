@@ -7,7 +7,9 @@
     <form @submit.prevent="handleSubmit" class="space-y-6">
       <!-- Title -->
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2"
+        >
           Title *
         </label>
         <input
@@ -21,7 +23,9 @@
 
       <!-- Version -->
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2"
+        >
           Version *
         </label>
         <input
@@ -35,7 +39,9 @@
 
       <!-- OSCAL Version -->
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2"
+        >
           OSCAL Version
         </label>
         <input
@@ -48,7 +54,9 @@
 
       <!-- Published Date -->
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2"
+        >
           Published Date
         </label>
         <input
@@ -60,7 +68,9 @@
 
       <!-- Last Modified -->
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2"
+        >
           Last Modified
         </label>
         <input
@@ -72,7 +82,9 @@
 
       <!-- Remarks -->
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2"
+        >
           Remarks
         </label>
         <textarea
@@ -105,33 +117,39 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import type { Metadata } from '@/stores/types'
-import { useToast } from 'primevue/usetoast'
-import { useDataApi } from '@/composables/axios'
-import type { AxiosError } from 'axios'
-import type { ErrorResponse, ErrorBody } from '@/stores/types'
+import { ref, onMounted } from 'vue';
+import type { Metadata } from '@/stores/types';
+import { useToast } from 'primevue/usetoast';
+import { useDataApi } from '@/composables/axios';
+import type { AxiosError } from 'axios';
+import type { ErrorResponse, ErrorBody } from '@/stores/types';
 
 interface Props {
-  poamId: string
-  metadata: Metadata
+  poamId: string;
+  metadata: Metadata;
 }
 
 interface Emits {
-  (e: 'cancel'): void
-  (e: 'saved', metadata: Metadata): void
+  (e: 'cancel'): void;
+  (e: 'saved', metadata: Metadata): void;
 }
 
-const props = defineProps<Props>()
-const emit = defineEmits<Emits>()
+const props = defineProps<Props>();
+const emit = defineEmits<Emits>();
 
-const toast = useToast()
+const toast = useToast();
 
-const { data: updatedMetadata, isLoading: loading, execute: updateMetadata } = useDataApi<Metadata>(`/api/oscal/plan-of-action-and-milestones/${props.poamId}/metadata`,
+const {
+  data: updatedMetadata,
+  isLoading: loading,
+  execute: updateMetadata,
+} = useDataApi<Metadata>(
+  `/api/oscal/plan-of-action-and-milestones/${props.poamId}/metadata`,
   {
     method: 'PUT',
-  }, { immediate: false }
-)
+  },
+  { immediate: false },
+);
 
 const formData = ref<Partial<Metadata>>({
   title: '',
@@ -139,16 +157,16 @@ const formData = ref<Partial<Metadata>>({
   oscalVersion: '',
   published: '',
   lastModified: '',
-  remarks: ''
-})
+  remarks: '',
+});
 
 onMounted(() => {
   // Convert dates to datetime-local format
   const formatDateForInput = (dateString?: string) => {
-    if (!dateString) return ''
-    const date = new Date(dateString)
-    return date.toISOString().slice(0, 16) // Format as YYYY-MM-DDTHH:MM
-  }
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toISOString().slice(0, 16); // Format as YYYY-MM-DDTHH:MM
+  };
 
   formData.value = {
     title: props.metadata.title || '',
@@ -156,17 +174,17 @@ onMounted(() => {
     oscalVersion: props.metadata.oscalVersion || '',
     published: formatDateForInput(props.metadata.published),
     lastModified: formatDateForInput(props.metadata.lastModified),
-    remarks: props.metadata.remarks || ''
-  }
-})
+    remarks: props.metadata.remarks || '',
+  };
+});
 
 async function handleSubmit() {
   try {
     // Convert datetime-local back to ISO string
     const formatDateForAPI = (dateString: string) => {
-      if (!dateString) return undefined
-      return new Date(dateString).toISOString()
-    }
+      if (!dateString) return undefined;
+      return new Date(dateString).toISOString();
+    };
 
     const metadataToSave: Metadata = {
       ...props.metadata,
@@ -175,21 +193,21 @@ async function handleSubmit() {
       oscalVersion: formData.value.oscalVersion || '',
       published: formatDateForAPI(formData.value.published || ''),
       lastModified: formatDateForAPI(formData.value.lastModified || ''),
-      remarks: formData.value.remarks || ''
-    }
+      remarks: formData.value.remarks || '',
+    };
 
     await updateMetadata({
       data: metadataToSave,
-    })
-    emit('saved', updatedMetadata.value!)
+    });
+    emit('saved', updatedMetadata.value!);
   } catch (error) {
-    const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>
+    const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
     toast.add({
       severity: 'error',
       summary: 'Save Failed',
       detail: `Failed to save metadata: ${errorResponse.response?.data.errors.body}. Please check your input and try again.`,
-      life: 3000
-    })
+      life: 3000,
+    });
   }
 }
 </script>

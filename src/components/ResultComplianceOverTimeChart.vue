@@ -42,7 +42,7 @@
   ></LineChart>
 </template>
 <script setup lang="ts">
-import LineChart from './charts/LineChart.vue'
+import LineChart from './charts/LineChart.vue';
 
-defineProps(['data'])
+defineProps(['data']);
 </script>

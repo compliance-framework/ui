@@ -1,36 +1,56 @@
 <template>
   <div class="px-12 py-8">
     <form @submit.prevent="updateByComponent()">
-      <h1 class="text-xl font-semibold mb-6 dark:text-slate-300">Edit By-Component Implementation</h1>
+      <h1 class="text-xl font-semibold mb-6 dark:text-slate-300">
+        Edit By-Component Implementation
+      </h1>
 
       <!-- Component UUID (Read-only) -->
       <div class="mb-4">
-        <label class="inline-block pb-2 dark:text-slate-300">Component UUID</label>
-        <div class="p-3 bg-gray-50 dark:bg-slate-800 border border-ccf-300 dark:border-slate-700 rounded-md">
-          <span class="text-gray-600 dark:text-slate-400 font-mono">{{ byComponentData.componentUuid }}</span>
+        <label class="inline-block pb-2 dark:text-slate-300"
+          >Component UUID</label
+        >
+        <div
+          class="p-3 bg-gray-50 dark:bg-slate-800 border border-ccf-300 dark:border-slate-700 rounded-md"
+        >
+          <span class="text-gray-600 dark:text-slate-400 font-mono">{{
+            byComponentData.componentUuid
+          }}</span>
         </div>
       </div>
 
       <!-- UUID (Read-only) -->
       <div class="mb-4">
         <label class="inline-block pb-2 dark:text-slate-300">UUID</label>
-        <div class="p-3 bg-gray-50 dark:bg-slate-800 border border-ccf-300 dark:border-slate-700 rounded-md">
-          <span class="text-gray-600 dark:text-slate-400 font-mono">{{ byComponentData.uuid }}</span>
+        <div
+          class="p-3 bg-gray-50 dark:bg-slate-800 border border-ccf-300 dark:border-slate-700 rounded-md"
+        >
+          <span class="text-gray-600 dark:text-slate-400 font-mono">{{
+            byComponentData.uuid
+          }}</span>
         </div>
       </div>
 
       <!-- Description -->
       <div class="mb-4">
-        <label class="inline-block pb-2 dark:text-slate-300">Description <span class="text-red-500">*</span></label>
+        <label class="inline-block pb-2 dark:text-slate-300"
+          >Description <span class="text-red-500">*</span></label
+        >
         <FormTextarea v-model="byComponentData.description" required rows="4" />
       </div>
 
       <!-- Implementation Status -->
       <div class="mb-6">
-        <label class="inline-block pb-2 dark:text-slate-300">Implementation Status</label>
-        <div class="p-4 border border-ccf-300 dark:border-slate-700 rounded-md bg-gray-50 dark:bg-slate-800">
+        <label class="inline-block pb-2 dark:text-slate-300"
+          >Implementation Status</label
+        >
+        <div
+          class="p-4 border border-ccf-300 dark:border-slate-700 rounded-md bg-gray-50 dark:bg-slate-800"
+        >
           <div class="mb-3">
-            <label class="inline-block pb-1 text-sm dark:text-slate-300">State</label>
+            <label class="inline-block pb-1 text-sm dark:text-slate-300"
+              >State</label
+            >
             <select
               v-model="byComponentData.implementationStatus!.state"
               class="w-full p-2 border border-ccf-300 dark:border-slate-700 rounded-md bg-white dark:bg-slate-900 dark:text-slate-300"
@@ -45,8 +65,13 @@
           </div>
 
           <div>
-            <label class="inline-block pb-1 text-sm dark:text-slate-300">Remarks</label>
-            <FormTextarea v-model="byComponentData.implementationStatus!.remarks" rows="2" />
+            <label class="inline-block pb-1 text-sm dark:text-slate-300"
+              >Remarks</label
+            >
+            <FormTextarea
+              v-model="byComponentData.implementationStatus!.remarks"
+              rows="2"
+            />
           </div>
         </div>
       </div>
@@ -54,19 +79,25 @@
       <!-- Export -->
       <div class="mb-6">
         <label class="inline-block pb-2 dark:text-slate-300">Export</label>
-        <div class="p-4 border border-ccf-300 dark:border-slate-700 rounded-md bg-gray-50 dark:bg-slate-800">
-
+        <div
+          class="p-4 border border-ccf-300 dark:border-slate-700 rounded-md bg-gray-50 dark:bg-slate-800"
+        >
           <!-- Provided -->
           <div class="mb-4">
-            <h4 class="text-sm font-medium dark:text-slate-300 mb-2">Provided</h4>
+            <h4 class="text-sm font-medium dark:text-slate-300 mb-2">
+              Provided
+            </h4>
             <div class="space-y-2">
               <div
-                v-for="(provided, index) in byComponentData.export?.provided || []"
+                v-for="(provided, index) in byComponentData.export?.provided ||
+                []"
                 :key="provided.uuid"
                 class="p-3 border border-ccf-200 dark:border-slate-600 rounded bg-white dark:bg-slate-900"
               >
                 <div class="flex justify-between items-start mb-2">
-                  <span class="text-xs text-gray-500 dark:text-slate-400">UUID: {{ provided.uuid }}</span>
+                  <span class="text-xs text-gray-500 dark:text-slate-400"
+                    >UUID: {{ provided.uuid }}</span
+                  >
                   <button
                     type="button"
                     @click="removeProvided(index)"
@@ -75,7 +106,11 @@
                     Remove
                   </button>
                 </div>
-                <FormTextarea v-model="provided.description" placeholder="Description of what is provided" rows="2" />
+                <FormTextarea
+                  v-model="provided.description"
+                  placeholder="Description of what is provided"
+                  rows="2"
+                />
               </div>
               <button
                 type="button"
@@ -89,15 +124,20 @@
 
           <!-- Responsibilities -->
           <div>
-            <h4 class="text-sm font-medium dark:text-slate-300 mb-2">Responsibilities</h4>
+            <h4 class="text-sm font-medium dark:text-slate-300 mb-2">
+              Responsibilities
+            </h4>
             <div class="space-y-2">
               <div
-                v-for="(responsibility, index) in byComponentData.export?.responsibilities || []"
+                v-for="(responsibility, index) in byComponentData.export
+                  ?.responsibilities || []"
                 :key="responsibility.uuid"
                 class="p-3 border border-ccf-200 dark:border-slate-600 rounded bg-white dark:bg-slate-900"
               >
                 <div class="flex justify-between items-start mb-2">
-                  <span class="text-xs text-gray-500 dark:text-slate-400">UUID: {{ responsibility.uuid }}</span>
+                  <span class="text-xs text-gray-500 dark:text-slate-400"
+                    >UUID: {{ responsibility.uuid }}</span
+                  >
                   <button
                     type="button"
                     @click="removeResponsibility(index)"
@@ -106,7 +146,11 @@
                     Remove
                   </button>
                 </div>
-                <FormTextarea v-model="responsibility.description" placeholder="Description of responsibility" rows="2" />
+                <FormTextarea
+                  v-model="responsibility.description"
+                  placeholder="Description of responsibility"
+                  rows="2"
+                />
               </div>
               <button
                 type="button"
@@ -130,7 +174,9 @@
             class="p-3 border border-ccf-300 dark:border-slate-700 rounded-md bg-gray-50 dark:bg-slate-800"
           >
             <div class="flex justify-between items-start mb-2">
-              <span class="text-xs text-gray-500 dark:text-slate-400">UUID: {{ inherited.uuid }}</span>
+              <span class="text-xs text-gray-500 dark:text-slate-400"
+                >UUID: {{ inherited.uuid }}</span
+              >
               <button
                 type="button"
                 @click="removeInherited(index)"
@@ -139,7 +185,11 @@
                 Remove
               </button>
             </div>
-            <FormTextarea v-model="inherited.description" placeholder="Description of inherited control" rows="2" />
+            <FormTextarea
+              v-model="inherited.description"
+              placeholder="Description of inherited control"
+              rows="2"
+            />
           </div>
           <button
             type="button"
@@ -161,7 +211,9 @@
             class="p-3 border border-ccf-300 dark:border-slate-700 rounded-md bg-gray-50 dark:bg-slate-800"
           >
             <div class="flex justify-between items-start mb-2">
-              <span class="text-xs text-gray-500 dark:text-slate-400">UUID: {{ satisfied.uuid }}</span>
+              <span class="text-xs text-gray-500 dark:text-slate-400"
+                >UUID: {{ satisfied.uuid }}</span
+              >
               <button
                 type="button"
                 @click="removeSatisfied(index)"
@@ -170,7 +222,11 @@
                 Remove
               </button>
             </div>
-            <FormTextarea v-model="satisfied.description" placeholder="Description of satisfied requirement" rows="2" />
+            <FormTextarea
+              v-model="satisfied.description"
+              placeholder="Description of satisfied requirement"
+              rows="2"
+            />
           </div>
           <button
             type="button"
@@ -184,7 +240,9 @@
 
       <!-- Set Parameters -->
       <div class="mb-6">
-        <label class="inline-block pb-2 dark:text-slate-300">Set Parameters</label>
+        <label class="inline-block pb-2 dark:text-slate-300"
+          >Set Parameters</label
+        >
         <div class="space-y-2">
           <div
             v-for="(param, index) in byComponentData.setParameters"
@@ -192,7 +250,9 @@
             class="p-3 border border-ccf-300 dark:border-slate-700 rounded-md bg-gray-50 dark:bg-slate-800"
           >
             <div class="flex justify-between items-start mb-2">
-              <h4 class="text-sm font-medium dark:text-slate-300">Parameter {{ index + 1 }}</h4>
+              <h4 class="text-sm font-medium dark:text-slate-300">
+                Parameter {{ index + 1 }}
+              </h4>
               <button
                 type="button"
                 @click="removeParameter(index)"
@@ -203,12 +263,22 @@
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
-                <label class="inline-block pb-1 text-sm dark:text-slate-300">Parameter ID</label>
-                <FormInput v-model="param.paramId" placeholder="e.g., ac-1_prm_1" />
+                <label class="inline-block pb-1 text-sm dark:text-slate-300"
+                  >Parameter ID</label
+                >
+                <FormInput
+                  v-model="param.paramId"
+                  placeholder="e.g., ac-1_prm_1"
+                />
               </div>
               <div>
-                <label class="inline-block pb-1 text-sm dark:text-slate-300">Value</label>
-                <FormInput v-model="param.values[0]" placeholder="Parameter value" />
+                <label class="inline-block pb-1 text-sm dark:text-slate-300"
+                  >Value</label
+                >
+                <FormInput
+                  v-model="param.values[0]"
+                  placeholder="Parameter value"
+                />
               </div>
             </div>
           </div>
@@ -224,7 +294,9 @@
 
       <!-- Responsible Roles -->
       <div class="mb-6">
-        <label class="inline-block pb-2 dark:text-slate-300">Responsible Roles</label>
+        <label class="inline-block pb-2 dark:text-slate-300"
+          >Responsible Roles</label
+        >
         <div class="space-y-2">
           <div
             v-for="(role, index) in byComponentData.responsibleRoles"
@@ -232,7 +304,9 @@
             class="p-3 border border-ccf-300 dark:border-slate-700 rounded-md bg-gray-50 dark:bg-slate-800"
           >
             <div class="flex justify-between items-start mb-2">
-              <h4 class="text-sm font-medium dark:text-slate-300">Role {{ index + 1 }}</h4>
+              <h4 class="text-sm font-medium dark:text-slate-300">
+                Role {{ index + 1 }}
+              </h4>
               <button
                 type="button"
                 @click="removeRole(index)"
@@ -242,11 +316,18 @@
               </button>
             </div>
             <div class="mb-2">
-              <label class="inline-block pb-1 text-sm dark:text-slate-300">Role ID</label>
-              <FormInput v-model="role.roleId" placeholder="e.g., system-owner, maintainer" />
+              <label class="inline-block pb-1 text-sm dark:text-slate-300"
+                >Role ID</label
+              >
+              <FormInput
+                v-model="role.roleId"
+                placeholder="e.g., system-owner, maintainer"
+              />
             </div>
             <div>
-              <label class="inline-block pb-1 text-sm dark:text-slate-300">Party UUIDs (comma-separated)</label>
+              <label class="inline-block pb-1 text-sm dark:text-slate-300"
+                >Party UUIDs (comma-separated)</label
+              >
               <FormInput
                 :model-value="role.partyUuids?.join(', ')"
                 @update:model-value="updateRolePartyUuids(index, $event)"
@@ -318,12 +399,17 @@ const emit = defineEmits<{
 }>();
 
 const toast = useToast();
-const { data: updatedByComponent, execute: updateByComponentApi, isLoading: saving } = useDataApi<ByComponent>(
+const {
+  data: updatedByComponent,
+  execute: updateByComponentApi,
+  isLoading: saving,
+} = useDataApi<ByComponent>(
   `/api/oscal/system-security-plans/${props.sspId}/control-implementation/implemented-requirements/${props.requirement.uuid}/statements/${props.statement.uuid}/by-components/${props.byComponent.uuid}`,
   {
     method: 'PUT',
-    transformRequest: [decamelizeKeys]
-  }, { immediate: false }
+    transformRequest: [decamelizeKeys],
+  },
+  { immediate: false },
 );
 
 const byComponentData = reactive<ByComponent>({
@@ -337,27 +423,34 @@ const byComponentData = reactive<ByComponent>({
   remarks: '',
   implementationStatus: {
     state: '',
-    remarks: ''
+    remarks: '',
   },
   export: undefined,
   inherited: [],
-  satisfied: []
+  satisfied: [],
 });
 
 onMounted(() => {
   // Deep copy the by-component data
   Object.assign(byComponentData, {
     ...props.byComponent,
-    implementationStatus: props.byComponent.implementationStatus || { state: '', remarks: '' },
-    export: props.byComponent.export ? {
-      ...props.byComponent.export,
-      provided: [...(props.byComponent.export.provided || [])],
-      responsibilities: [...(props.byComponent.export.responsibilities || [])]
-    } : undefined,
+    implementationStatus: props.byComponent.implementationStatus || {
+      state: '',
+      remarks: '',
+    },
+    export: props.byComponent.export
+      ? {
+          ...props.byComponent.export,
+          provided: [...(props.byComponent.export.provided || [])],
+          responsibilities: [
+            ...(props.byComponent.export.responsibilities || []),
+          ],
+        }
+      : undefined,
     inherited: [...(props.byComponent.inherited || [])],
     satisfied: [...(props.byComponent.satisfied || [])],
     setParameters: [...(props.byComponent.setParameters || [])],
-    responsibleRoles: [...(props.byComponent.responsibleRoles || [])]
+    responsibleRoles: [...(props.byComponent.responsibleRoles || [])],
   });
 });
 
@@ -370,7 +463,7 @@ const addProvided = () => {
       props: [],
       links: [],
       provided: [],
-      responsibilities: []
+      responsibilities: [],
     };
   }
   if (!byComponentData.export.provided) {
@@ -380,7 +473,7 @@ const addProvided = () => {
     uuid: crypto.randomUUID(),
     description: '',
     props: [],
-    links: []
+    links: [],
   });
 };
 
@@ -396,7 +489,7 @@ const addResponsibility = () => {
       props: [],
       links: [],
       provided: [],
-      responsibilities: []
+      responsibilities: [],
     };
   }
   if (!byComponentData.export.responsibilities) {
@@ -406,7 +499,7 @@ const addResponsibility = () => {
     uuid: crypto.randomUUID(),
     description: '',
     props: [],
-    links: []
+    links: [],
   });
 };
 
@@ -424,7 +517,7 @@ const addInherited = () => {
     providedUuid: '',
     description: '',
     props: [],
-    links: []
+    links: [],
   });
 };
 
@@ -442,7 +535,7 @@ const addSatisfied = () => {
     responsibilityUuid: '',
     description: '',
     props: [],
-    links: []
+    links: [],
   });
 };
 
@@ -459,7 +552,7 @@ const addParameter = () => {
     paramId: '',
     values: [''],
     props: [],
-    links: []
+    links: [],
   });
 };
 
@@ -476,7 +569,7 @@ const addRole = () => {
     roleId: '',
     partyUuids: [],
     props: [],
-    links: []
+    links: [],
   });
 };
 
@@ -485,11 +578,14 @@ const removeRole = (index: number) => {
 };
 
 const updateRolePartyUuids = (index: number, value: string) => {
-  if (byComponentData.responsibleRoles && byComponentData.responsibleRoles[index]) {
+  if (
+    byComponentData.responsibleRoles &&
+    byComponentData.responsibleRoles[index]
+  ) {
     byComponentData.responsibleRoles[index].partyUuids = value
       .split(',')
-      .map(uuid => uuid.trim())
-      .filter(uuid => uuid.length > 0);
+      .map((uuid) => uuid.trim())
+      .filter((uuid) => uuid.length > 0);
   }
 };
 
@@ -499,32 +595,34 @@ const updateByComponent = async () => {
       severity: 'error',
       summary: 'Validation Error',
       detail: 'Description is required.',
-      life: 3000
+      life: 3000,
     });
     return;
   }
 
   try {
     await updateByComponentApi({
-      data: byComponentData
+      data: byComponentData,
     });
 
     toast.add({
       severity: 'success',
       summary: 'Success',
       detail: 'By-Component updated successfully.',
-      life: 3000
+      life: 3000,
     });
 
     emit('saved', updatedByComponent.value!);
   } catch (error) {
     const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
-    const errorMessage = errorResponse.response?.data?.errors.body || 'An unexpected error occurred.';
+    const errorMessage =
+      errorResponse.response?.data?.errors.body ||
+      'An unexpected error occurred.';
     toast.add({
       severity: 'error',
       summary: 'Error',
       detail: errorMessage,
-      life: 5000
+      life: 5000,
     });
   }
 };

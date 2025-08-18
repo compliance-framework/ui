@@ -5,12 +5,14 @@
     </div>
   </template>
   <template v-else-if="user">
-    <PageHeader>Viewing user: {{ user.firstName }} {{ user.lastName }}</PageHeader>
+    <PageHeader
+      >Viewing user: {{ user.firstName }} {{ user.lastName }}</PageHeader
+    >
     <div class="flex flex-col md:flex-row gap-4 pt-10">
       <PageCard class="flex-grow">
         <div class="p-4">
           <h2 class="text-lg font-semibold mb-4">User Details</h2>
-          <p><strong>ID:</strong> {{ user.id }} </p>
+          <p><strong>ID:</strong> {{ user.id }}</p>
           <p><strong>Email:</strong> {{ user.email }}</p>
           <p><strong>First Name:</strong> {{ user.firstName }}</p>
           <p><strong>Last Name:</strong> {{ user.lastName }}</p>
@@ -21,16 +23,28 @@
           <h2 class="text-lg font-semibold mb-4">User Metadata</h2>
           <p><strong>Created At:</strong> {{ formatDate(user.createdAt) }}</p>
           <p><strong>Updated At:</strong> {{ formatDate(user.updatedAt) }}</p>
-          <p><strong>Failed Logins:</strong> {{ user.failedLogins }} failed attempts</p>
-          <p><strong>Last Login:</strong> {{ formatDate(user.lastLogin) ?? "Never logged in" }}</p>
-          <p><strong>Is Active:</strong> {{ user.isActive ? "Yes" : "No" }}</p>
-          <p><strong>Is Locked out:</strong> {{ user.isLocked ? "Yes" : "No" }}</p>
+          <p>
+            <strong>Failed Logins:</strong> {{ user.failedLogins }} failed
+            attempts
+          </p>
+          <p>
+            <strong>Last Login:</strong>
+            {{ formatDate(user.lastLogin) ?? 'Never logged in' }}
+          </p>
+          <p><strong>Is Active:</strong> {{ user.isActive ? 'Yes' : 'No' }}</p>
+          <p>
+            <strong>Is Locked out:</strong> {{ user.isLocked ? 'Yes' : 'No' }}
+          </p>
         </div>
       </PageCard>
     </div>
     <div class="mt-4">
-      <PrimaryButton @click="editUserVisible = true" class="mr-2">Update User</PrimaryButton>
-      <PrimaryButton @click="updateLock" class="mr-2">{{ user.isLocked ? 'Unlock User' : 'Lock User' }}</PrimaryButton>
+      <PrimaryButton @click="editUserVisible = true" class="mr-2"
+        >Update User</PrimaryButton
+      >
+      <PrimaryButton @click="updateLock" class="mr-2">{{
+        user.isLocked ? 'Unlock User' : 'Lock User'
+      }}</PrimaryButton>
       <PrimaryButton @click="deleteUser">Delete User</PrimaryButton>
     </div>
 
@@ -63,9 +77,21 @@ const router = useRouter();
 const toast = useToast();
 const confirm = useConfirm();
 
-const { data: user, isLoading: loading, error } = useDataApi<CCFUser>(`/api/users/${route.params.id}`);
-const { execute: deleteExecute } = useDataApi<void>(`/api/users/${route.params.id}`, { method: 'DELETE' }, { immediate: false });
-const { data: updatedUserData, execute: lockExecute } = useDataApi<CCFUser>(`/api/users/${route.params.id}`, { method: 'PUT' }, { immediate: false });
+const {
+  data: user,
+  isLoading: loading,
+  error,
+} = useDataApi<CCFUser>(`/api/users/${route.params.id}`);
+const { execute: deleteExecute } = useDataApi<void>(
+  `/api/users/${route.params.id}`,
+  { method: 'DELETE' },
+  { immediate: false },
+);
+const { data: updatedUserData, execute: lockExecute } = useDataApi<CCFUser>(
+  `/api/users/${route.params.id}`,
+  { method: 'PUT' },
+  { immediate: false },
+);
 
 watch(error, (err) => {
   if (err) {
@@ -73,7 +99,9 @@ watch(error, (err) => {
     toast.add({
       severity: 'error',
       summary: 'Error loading user',
-      detail: errorResponse.response?.data.errors.body || 'An error occurred while loading the user data.',
+      detail:
+        errorResponse.response?.data.errors.body ||
+        'An error occurred while loading the user data.',
       life: 3000,
     });
     router.push({ name: 'users-list' });
@@ -108,7 +136,9 @@ async function updateLock() {
     toast.add({
       severity: 'error',
       summary: `Error ${newIsLocked ? 'locking' : 'unlocking'} user`,
-      detail: errorResponse.response?.data.errors.body || 'An error occurred while updating the user lock status.',
+      detail:
+        errorResponse.response?.data.errors.body ||
+        'An error occurred while updating the user lock status.',
       life: 3000,
     });
   }
@@ -144,7 +174,9 @@ function deleteUser() {
         toast.add({
           severity: 'error',
           summary: 'Error deleting user',
-          detail: errorResponse.response?.data.errors.body || 'An error occurred while deleting the user.',
+          detail:
+            errorResponse.response?.data.errors.body ||
+            'An error occurred while deleting the user.',
           life: 3000,
         });
       }
@@ -163,5 +195,4 @@ function formatDate(date?: string | Date | null): string | null {
     minute: '2-digit',
   });
 }
-
 </script>

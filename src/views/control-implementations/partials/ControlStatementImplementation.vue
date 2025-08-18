@@ -1,30 +1,26 @@
 <script setup lang="ts">
-import { v4 as uuidv4 } from 'uuid'
-import type {
-  ByComponent,
-  Statement,
-  SystemComponent,
-} from '@/oscal';
+import { v4 as uuidv4 } from 'uuid';
+import type { ByComponent, Statement, SystemComponent } from '@/oscal';
 import StatementByComponent from '@/views/control-implementations/partials/StatementByComponent.vue';
 import {
   type ImplementedRequirement,
   useSystemSecurityPlanStore,
 } from '@/stores/system-security-plans.ts';
-import { computed, onMounted, ref, toValue, watch } from 'vue'
+import { computed, onMounted, ref, toValue, watch } from 'vue';
 import { useSystemStore } from '@/stores/system.ts';
 import Select from '@/volt/Select.vue';
 import Button from '@/volt/Button.vue';
 import Textarea from '@/volt/Textarea.vue';
 import { useApi } from '@/composables/api';
 import type { DataResponse } from '@/types';
-import { useCloned } from '@vueuse/core'
-import BurgerMenu from '@/components/BurgerMenu.vue'
-import { useToggle } from '@/composables/useToggle'
+import { useCloned } from '@vueuse/core';
+import BurgerMenu from '@/components/BurgerMenu.vue';
+import { useToggle } from '@/composables/useToggle';
 
 const sspStore = useSystemSecurityPlanStore();
 const { system } = useSystemStore();
 
-const { value: showCreateForm, set: setCreateForm } = useToggle(false)
+const { value: showCreateForm, set: setCreateForm } = useToggle(false);
 
 const { statement, implementation } = defineProps<{
   statement: Statement;
@@ -34,7 +30,7 @@ const localStatement = ref(statement);
 
 const emit = defineEmits<{
   updated: [statement: Statement];
-}>()
+}>();
 
 const { data: components, loading: componentsLoading } = useApi<
   DataResponse<SystemComponent[]>
@@ -69,48 +65,55 @@ onMounted(() => {
 });
 
 function resetCreateForm() {
-  setCreateForm(false)
+  setCreateForm(false);
   newByComponent.value = {
     uuid: uuidv4(),
-  } as ByComponent
+  } as ByComponent;
 }
 
 function deleteByComponent(byComp: ByComponent) {
   const clonedStatement = useCloned(localStatement).cloned;
-  clonedStatement.value.byComponents = clonedStatement.value.byComponents?.filter((comp: ByComponent) => {
-    return byComp.uuid !== comp.uuid;
-  });
-  sspStore.updateImplementedRequirementStatement(
-    system.securityPlan?.uuid as string,
-    implementation.uuid,
-    statement.uuid,
-    clonedStatement.value,
-  ).then((res) => {
-    localStatement.value = res.data;
-    newByComponent.value = {
-      uuid: uuidv4(),
-    } as ByComponent
-    setCreateForm(false)
-    emit('updated', res.data);
-  });
+  clonedStatement.value.byComponents =
+    clonedStatement.value.byComponents?.filter((comp: ByComponent) => {
+      return byComp.uuid !== comp.uuid;
+    });
+  sspStore
+    .updateImplementedRequirementStatement(
+      system.securityPlan?.uuid as string,
+      implementation.uuid,
+      statement.uuid,
+      clonedStatement.value,
+    )
+    .then((res) => {
+      localStatement.value = res.data;
+      newByComponent.value = {
+        uuid: uuidv4(),
+      } as ByComponent;
+      setCreateForm(false);
+      emit('updated', res.data);
+    });
 }
 
 function updateByComponent(byComp: ByComponent) {
   const clonedStatement = useCloned(localStatement).cloned;
-  clonedStatement.value.byComponents = clonedStatement.value.byComponents?.map((comp: ByComponent) => byComp.uuid == comp.uuid ? byComp : comp);
-  sspStore.updateImplementedRequirementStatement(
-    system.securityPlan?.uuid as string,
-    implementation.uuid,
-    statement.uuid,
-    clonedStatement.value,
-  ).then((res) => {
-    localStatement.value = res.data;
-    newByComponent.value = {
-      uuid: uuidv4(),
-    } as ByComponent
-    setCreateForm(false)
-    emit('updated', res.data);
-  });
+  clonedStatement.value.byComponents = clonedStatement.value.byComponents?.map(
+    (comp: ByComponent) => (byComp.uuid == comp.uuid ? byComp : comp),
+  );
+  sspStore
+    .updateImplementedRequirementStatement(
+      system.securityPlan?.uuid as string,
+      implementation.uuid,
+      statement.uuid,
+      clonedStatement.value,
+    )
+    .then((res) => {
+      localStatement.value = res.data;
+      newByComponent.value = {
+        uuid: uuidv4(),
+      } as ByComponent;
+      setCreateForm(false);
+      emit('updated', res.data);
+    });
 }
 
 async function create() {
@@ -119,19 +122,21 @@ async function create() {
     ...(statement.byComponents || []),
     toValue(newByComponent),
   ];
-  sspStore.updateImplementedRequirementStatement(
-    system.securityPlan?.uuid as string,
-    implementation.uuid,
-    statement.uuid,
-    clonedStatement.value,
-  ).then((res) => {
-    localStatement.value = res.data;
-    newByComponent.value = {
-      uuid: uuidv4(),
-    } as ByComponent
-    setCreateForm(false)
-    emit('updated', res.data);
-  });
+  sspStore
+    .updateImplementedRequirementStatement(
+      system.securityPlan?.uuid as string,
+      implementation.uuid,
+      statement.uuid,
+      clonedStatement.value,
+    )
+    .then((res) => {
+      localStatement.value = res.data;
+      newByComponent.value = {
+        uuid: uuidv4(),
+      } as ByComponent;
+      setCreateForm(false);
+      emit('updated', res.data);
+    });
 }
 </script>
 
@@ -139,21 +144,30 @@ async function create() {
   <div class="pb-24">
     <div class="flex items-center mb-4 gap-x-4">
       <h4 class="font-medium text-xl">Components</h4>
-      <BurgerMenu :items="[
-        {
-          label: 'Add Component',
-          command: () => {
-            setCreateForm(true)
-          }
-        }
-      ]" />
+      <BurgerMenu
+        :items="[
+          {
+            label: 'Add Component',
+            command: () => {
+              setCreateForm(true);
+            },
+          },
+        ]"
+      />
     </div>
     <div
       v-for="(byComponent, index) in localStatement.byComponents || []"
       :key="byComponent.uuid"
     >
-      <div class="h-0.5 w-full bg-gray-200 dark:bg-slate-700 my-4" v-if="index !== 0"></div>
-      <StatementByComponent @save="updateByComponent" @delete="deleteByComponent" :by-component="byComponent" />
+      <div
+        class="h-0.5 w-full bg-gray-200 dark:bg-slate-700 my-4"
+        v-if="index !== 0"
+      ></div>
+      <StatementByComponent
+        @save="updateByComponent"
+        @delete="deleteByComponent"
+        :by-component="byComponent"
+      />
     </div>
 
     <form @submit.prevent="create" v-if="showCreateForm">

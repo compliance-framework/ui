@@ -146,7 +146,7 @@ export interface ErrorResponse<T> {
 }
 
 export interface ErrorBody {
-  body: string
+  body: string;
 }
 
 export interface CCFUser {
@@ -191,7 +191,7 @@ export interface SelectControlsByID {
 export interface Merge {
   asIs?: boolean;
   combine?: MergeCombine;
-  flat?: object
+  flat?: object;
 }
 
 export type MergeOptions = 'asIs' | 'flat' | 'custom';

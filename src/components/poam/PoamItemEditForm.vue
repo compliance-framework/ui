@@ -6,7 +6,9 @@
 
     <form @submit.prevent="submit" class="space-y-4">
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
+        >
           Title <span class="text-red-500">*</span>
         </label>
         <input
@@ -19,7 +21,9 @@
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
+        >
           Description <span class="text-red-500">*</span>
         </label>
         <textarea
@@ -32,7 +36,9 @@
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
+        >
           Remarks
         </label>
         <textarea
@@ -64,43 +70,49 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, onMounted } from 'vue'
-import type { PoamItem } from '@/stores/plan-of-action-and-milestones.ts'
-import { useToast } from 'primevue/usetoast'
-import { useDataApi, decamelizeKeys } from '@/composables/axios'
-import type { AxiosError } from 'axios'
-import type { ErrorResponse, ErrorBody } from '@/stores/types'
+import { reactive, onMounted } from 'vue';
+import type { PoamItem } from '@/stores/plan-of-action-and-milestones.ts';
+import { useToast } from 'primevue/usetoast';
+import { useDataApi, decamelizeKeys } from '@/composables/axios';
+import type { AxiosError } from 'axios';
+import type { ErrorResponse, ErrorBody } from '@/stores/types';
 
 const props = defineProps<{
-  poamId: string
-  item: PoamItem
-}>()
+  poamId: string;
+  item: PoamItem;
+}>();
 
 const emit = defineEmits<{
-  cancel: []
-  saved: [item: PoamItem]
-}>()
+  cancel: [];
+  saved: [item: PoamItem];
+}>();
 
-const toast = useToast()
-const { data: updatedPOAMItem, isLoading: saving, execute: updatePoamItem } = useDataApi<PoamItem>(`/api/oscal/plan-of-action-and-milestones/${props.poamId}/poam-items/${props.item.uuid}`,
+const toast = useToast();
+const {
+  data: updatedPOAMItem,
+  isLoading: saving,
+  execute: updatePoamItem,
+} = useDataApi<PoamItem>(
+  `/api/oscal/plan-of-action-and-milestones/${props.poamId}/poam-items/${props.item.uuid}`,
   {
     method: 'PUT',
-    transformRequest: [decamelizeKeys]
-  }, { immediate: false }
-)
+    transformRequest: [decamelizeKeys],
+  },
+  { immediate: false },
+);
 
 const formData = reactive({
   title: '',
   description: '',
-  remarks: ''
-})
+  remarks: '',
+});
 
 onMounted(() => {
   // Pre-populate form with existing item data
-  formData.title = props.item.title
-  formData.description = props.item.description
-  formData.remarks = props.item.remarks || ''
-})
+  formData.title = props.item.title;
+  formData.description = props.item.description;
+  formData.remarks = props.item.remarks || '';
+});
 
 async function submit() {
   if (!formData.title || !formData.description) {
@@ -108,44 +120,45 @@ async function submit() {
       severity: 'error',
       summary: 'Validation Error',
       detail: 'Title and description are required',
-      life: 3000
-    })
-    return
+      life: 3000,
+    });
+    return;
   }
 
   try {
-    saving.value = true
+    saving.value = true;
 
     const updatedItem: PoamItem = {
       ...props.item,
       title: formData.title,
       description: formData.description,
-      remarks: formData.remarks || undefined
-    }
+      remarks: formData.remarks || undefined,
+    };
 
     await updatePoamItem({
-      data: updatedItem
-    })
+      data: updatedItem,
+    });
 
     toast.add({
       severity: 'success',
       summary: 'POAM Item Updated',
       detail: 'POAM item updated successfully',
-      life: 3000
-    })
+      life: 3000,
+    });
 
-    emit('saved', updatedPOAMItem.value!)
+    emit('saved', updatedPOAMItem.value!);
   } catch (error) {
-    const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>
-    const errorMessage = errorResponse.response?.data.errors.body || 'Unknown error'
+    const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
+    const errorMessage =
+      errorResponse.response?.data.errors.body || 'Unknown error';
     toast.add({
       severity: 'error',
       summary: 'Update Failed',
       detail: `Failed to update POAM item: ${errorMessage}`,
-      life: 3000
-    })
+      life: 3000,
+    });
   } finally {
-    saving.value = false
+    saving.value = false;
   }
 }
 </script>

@@ -7,7 +7,9 @@
         @cancel="$emit('close')"
       />
     </div>
-    <div class="border-t border-t-ccf-300 dark:border-slate-700 text-right py-4 px-4">
+    <div
+      class="border-t border-t-ccf-300 dark:border-slate-700 text-right py-4 px-4"
+    >
       <PrimaryButton
         @click="$emit('close')"
         class="px-2 py-1 border-ccf-300 dark:border-slate-700 border rounded-md shadow"
@@ -19,23 +21,23 @@
 </template>
 
 <script setup lang="ts">
-import Modal from '@/components/Modal.vue'
-import PrimaryButton from '@/components/PrimaryButton.vue'
-import BackMatterResourceCreateForm from './BackMatterResourceCreateForm.vue'
-import type { BackMatterResource } from '@/stores/component-definitions.ts'
+import Modal from '@/components/Modal.vue';
+import PrimaryButton from '@/components/PrimaryButton.vue';
+import BackMatterResourceCreateForm from './BackMatterResourceCreateForm.vue';
+import type { BackMatterResource } from '@/stores/component-definitions.ts';
 
 defineProps<{
-  isOpen: boolean
-  componentDefinitionId: string
-}>()
+  isOpen: boolean;
+  componentDefinitionId: string;
+}>();
 
 const emit = defineEmits<{
-  close: []
-  created: [resource: BackMatterResource]
-}>()
+  close: [];
+  created: [resource: BackMatterResource];
+}>();
 
 function handleCreated(resource: BackMatterResource) {
-  emit('created', resource)
-  emit('close')
+  emit('created', resource);
+  emit('close');
 }
 </script>

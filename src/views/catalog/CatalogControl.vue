@@ -4,7 +4,8 @@
       <div class="py-2 px-4 flex items-center gap-4">
         <span
           class="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-800 text-gray-800 dark:text-slate-300 rounded-md text-sm whitespace-nowrap px-4 py-1"
-          >{{ control.id }}</span>
+          >{{ control.id }}</span
+        >
         <div class="grow">
           {{ control.title }}
           <span class="text-gray-400 dark:text-slate-300 text-sm px-2 py-1"
@@ -12,7 +13,10 @@
           >
         </div>
         <ResultStatusBadge
-          v-if="compliance && compliance?.reduce((total, current) => total + current.count, 0)"
+          v-if="
+            compliance &&
+            compliance?.reduce((total, current) => total + current.count, 0)
+          "
           :gray="
             compliance?.reduce(
               (total, current) =>
@@ -45,21 +49,32 @@
         ></ResultStatusBadge>
         <TertiaryButton
           v-if="control.class"
-          class="bg-white hover:bg-zinc-100  dark:bg-slate-800 dark:hover:bg-slate-600"
+          class="bg-white hover:bg-zinc-100 dark:bg-slate-800 dark:hover:bg-slate-600"
           @click.stop="gotoFindings"
-        >Findings</TertiaryButton>
+          >Findings</TertiaryButton
+        >
       </div>
     </template>
-    <div class="px-4 py-4 dark:bg-slate-950 border-b border-ccf-300 dark:border-slate-700">
+    <div
+      class="px-4 py-4 dark:bg-slate-950 border-b border-ccf-300 dark:border-slate-700"
+    >
       <div class="flex items-start justify-between gap-4">
         <div>
           <TertiaryButton v-if="!statement">Add Statement</TertiaryButton>
-          <TertiaryButton v-if="!objective" class="ml-2">Add Objective</TertiaryButton>
-          <TertiaryButton v-if="!guidance" class="ml-2">Add Guidance</TertiaryButton>
+          <TertiaryButton v-if="!objective" class="ml-2"
+            >Add Objective</TertiaryButton
+          >
+          <TertiaryButton v-if="!guidance" class="ml-2"
+            >Add Guidance</TertiaryButton
+          >
 
-          <PartDisplayEditor v-for="part in control.parts" :key="part.id" :part="part">
+          <PartDisplayEditor
+            v-for="part in control.parts"
+            :key="part.id"
+            :part="part"
+          >
             <template #header>
-              <h3 class=" text-lg font-medium capitalize">{{ part.name }}</h3>
+              <h3 class="text-lg font-medium capitalize">{{ part.name }}</h3>
             </template>
           </PartDisplayEditor>
         </div>
@@ -94,9 +109,9 @@
         />
       </div>
       <div class="mt-4">
-<!--        <TertiaryButton @click="showControlForm = true" class="ml-2"-->
-<!--          >Add Control</TertiaryButton-->
-<!--        >-->
+        <!--        <TertiaryButton @click="showControlForm = true" class="ml-2"-->
+        <!--          >Add Control</TertiaryButton-->
+        <!--        >-->
         <ControlCreateModal
           @created="controlCreated"
           :catalog="catalog"
@@ -110,19 +125,14 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import CollapsableGroup from '@/components/CollapsableGroup.vue';
-import {
-  type ComplianceIntervalStatus,
-} from '@/stores/findings.ts';
+import { type ComplianceIntervalStatus } from '@/stores/findings.ts';
 import ResultStatusBadge from '@/components/ResultStatusBadge.vue';
-import {
-  type Catalog,
-  type Control,
-} from '@/stores/catalogs.ts';
+import { type Catalog, type Control } from '@/stores/catalogs.ts';
 import TertiaryButton from '@/components/TertiaryButton.vue';
 import ControlCreateModal from '@/components/catalogs/ControlCreateModal.vue';
 import type { Part } from '@/stores/types.ts';
-import PartDisplayEditor from '@/components/PartDisplayEditor.vue'
-import { useRouter } from 'vue-router'
+import PartDisplayEditor from '@/components/PartDisplayEditor.vue';
+import { useRouter } from 'vue-router';
 import { useDataApi } from '@/composables/axios';
 
 const props = defineProps<{
@@ -131,12 +141,15 @@ const props = defineProps<{
 }>();
 
 const { data: controls } = useDataApi<Control[]>(
-  `/api/oscal/catalogs/${props.catalog.uuid}/controls/${props.control.id}/controls`, {}, { immediate: true }
+  `/api/oscal/catalogs/${props.catalog.uuid}/controls/${props.control.id}/controls`,
+  {},
+  { immediate: true },
 );
 const { data: compliance } = useDataApi<ComplianceIntervalStatus[] | null>(
-  `/api/evidence/compliance-by-control/${props.control.id}`, {}, { immediate: true, initialData: null }
+  `/api/evidence/compliance-by-control/${props.control.id}`,
+  {},
+  { immediate: true, initialData: null },
 );
-
 
 const objective = ref<Part | undefined>(getPart('assessment-objective'));
 const statement = ref<Part | undefined>(getPart('statement'));
@@ -154,7 +167,7 @@ function gotoFindings() {
   router.push({
     name: 'catalog-control-evidence',
     params: { catalog: props.catalog.uuid, id: props.control.id },
-  })
+  });
 }
 
 function getPart(type: string) {

@@ -1,12 +1,10 @@
-<template>
-  Work In Progress
-</template>
+<template>Work In Progress</template>
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import {
   type SystemSecurityPlan,
-  useSystemSecurityPlanStore
-} from '@/stores/system-security-plans.ts'
+  useSystemSecurityPlanStore,
+} from '@/stores/system-security-plans.ts';
 import { useRoute } from 'vue-router';
 
 const route = useRoute();
@@ -20,5 +18,4 @@ onMounted(() => {
     systemSecurityPlan.value = data.data;
   });
 });
-
 </script>

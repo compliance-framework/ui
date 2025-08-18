@@ -1,7 +1,9 @@
 <template>
   <div class="px-6 py-4">
     <div class="flex justify-between items-center mb-6">
-      <h3 class="text-lg font-semibold dark:text-slate-300">System Implementation Overview</h3>
+      <h3 class="text-lg font-semibold dark:text-slate-300">
+        System Implementation Overview
+      </h3>
       <div class="flex gap-2">
         <button
           v-if="!isEditing"
@@ -46,7 +48,11 @@
       <div class="mb-6">
         <label class="inline-block pb-2 dark:text-slate-300">Properties</label>
         <div class="space-y-2">
-          <div v-for="(prop, index) in overviewData.props || []" :key="index" class="flex gap-2">
+          <div
+            v-for="(prop, index) in overviewData.props || []"
+            :key="index"
+            class="flex gap-2"
+          >
             <FormInput
               v-model="prop.name"
               :disabled="!isEditing"
@@ -85,7 +91,11 @@
       <div class="mb-6">
         <label class="inline-block pb-2 dark:text-slate-300">Links</label>
         <div class="space-y-2">
-          <div v-for="(link, index) in overviewData.links || []" :key="index" class="flex gap-2">
+          <div
+            v-for="(link, index) in overviewData.links || []"
+            :key="index"
+            class="flex gap-2"
+          >
             <FormInput
               v-model="link.href"
               :disabled="!isEditing"
@@ -152,23 +162,27 @@ const emit = defineEmits<{
 const toast = useToast();
 const isEditing = ref(false);
 
-const { data: updatedSystemImplementation, execute: executeUpdate, isLoading: saving } = useDataApi<SystemImplementation>(
+const {
+  data: updatedSystemImplementation,
+  execute: executeUpdate,
+  isLoading: saving,
+} = useDataApi<SystemImplementation>(
   `/api/oscal/system-security-plans/${props.sspId}/system-implementation`,
   { method: 'PUT', transformRequest: [decamelizeKeys] },
-  { immediate: false }
+  { immediate: false },
 );
 
 const overviewData = reactive<SystemImplementation>({
   remarks: undefined,
   props: [],
-  links: []
+  links: [],
 });
 
 // Store original data for cancel functionality
 const originalData = reactive<SystemImplementation>({
   remarks: undefined,
   props: [],
-  links: []
+  links: [],
 });
 
 const loadData = (data: SystemImplementation | null) => {
@@ -176,15 +190,15 @@ const loadData = (data: SystemImplementation | null) => {
     // Only extract the fields that belong in SystemImplementation
     const newData: SystemImplementation = {
       remarks: data.remarks,
-      props: [...(data.props || [])].map(p => ({ ...p })),
-      links: [...(data.links || [])].map(l => ({ ...l }))
+      props: [...(data.props || [])].map((p) => ({ ...p })),
+      links: [...(data.links || [])].map((l) => ({ ...l })),
     };
 
     Object.assign(overviewData, newData);
     Object.assign(originalData, {
       remarks: newData.remarks,
-      props: [...(newData.props || [])].map(p => ({ ...p })),
-      links: [...(newData.links || [])].map(l => ({ ...l }))
+      props: [...(newData.props || [])].map((p) => ({ ...p })),
+      links: [...(newData.links || [])].map((l) => ({ ...l })),
     });
   }
 };
@@ -194,19 +208,23 @@ onMounted(() => {
 });
 
 // Watch for changes to the systemImplementation prop
-watch(() => props.systemImplementation, (newValue) => {
-  if (newValue && !isEditing.value) {
-    loadData(newValue);
-  }
-}, { immediate: false });
+watch(
+  () => props.systemImplementation,
+  (newValue) => {
+    if (newValue && !isEditing.value) {
+      loadData(newValue);
+    }
+  },
+  { immediate: false },
+);
 
 const startEditing = () => {
   isEditing.value = true;
   // Store current data as original for potential cancel
   Object.assign(originalData, {
     remarks: overviewData.remarks,
-    props: [...(overviewData.props || [])].map(p => ({ ...p })),
-    links: [...(overviewData.links || [])].map(l => ({ ...l }))
+    props: [...(overviewData.props || [])].map((p) => ({ ...p })),
+    links: [...(overviewData.links || [])].map((l) => ({ ...l })),
   });
 };
 
@@ -215,15 +233,15 @@ const cancelEditing = () => {
   // Restore original data
   Object.assign(overviewData, {
     remarks: originalData.remarks,
-    props: [...(originalData.props || [])].map(p => ({ ...p })),
-    links: [...(originalData.links || [])].map(l => ({ ...l }))
+    props: [...(originalData.props || [])].map((p) => ({ ...p })),
+    links: [...(originalData.links || [])].map((l) => ({ ...l })),
   });
 
   toast.add({
     severity: 'info',
     summary: 'Cancelled',
     detail: 'Changes have been discarded.',
-    life: 3000
+    life: 3000,
   });
 };
 
@@ -231,7 +249,7 @@ const addProperty = () => {
   if (!overviewData.props) overviewData.props = [];
   overviewData.props.push({
     name: '',
-    value: ''
+    value: '',
   });
 };
 
@@ -246,7 +264,7 @@ const addLink = () => {
   overviewData.links.push({
     href: '',
     text: '',
-    rel: ''
+    rel: '',
   });
 };
 
@@ -264,11 +282,11 @@ const saveOverview = async () => {
     const dataToSave: SystemImplementation = {
       remarks: overviewData.remarks,
       props: overviewData.props || [],
-      links: overviewData.links || []
+      links: overviewData.links || [],
     };
 
     await executeUpdate({
-      data: dataToSave
+      data: dataToSave,
     });
 
     // Update both current and original data with saved response
@@ -279,7 +297,7 @@ const saveOverview = async () => {
       severity: 'success',
       summary: 'Success',
       detail: 'System implementation overview updated successfully.',
-      life: 3000
+      life: 3000,
     });
 
     emit('saved', updatedSystemImplementation.value!);
@@ -289,8 +307,10 @@ const saveOverview = async () => {
     toast.add({
       severity: 'error',
       summary: 'Error',
-      detail: errorResponse.response?.data.errors.body || 'An unknown error occurred.',
-      life: 5000
+      detail:
+        errorResponse.response?.data.errors.body ||
+        'An unknown error occurred.',
+      life: 5000,
     });
   }
 };

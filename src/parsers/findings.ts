@@ -1,5 +1,5 @@
 import { type ChartData, type ChartDataset } from 'chart.js';
-import type { ComplianceInterval } from '@/stores/findings.ts'
+import type { ComplianceInterval } from '@/stores/findings.ts';
 
 export interface DateDataPoint {
   interval: Date;
@@ -41,42 +41,44 @@ export function calculateComplianceOverTimeData(
 ): ChartData<'line', DateDataPoint[]> {
   // First we need to build up the status map so we can then construct a data point set.
 
-  let sortedComplianceData = complianceData
-    .map((dataPoint) => {
-      let resultStatusses = dataPoint.statuses
+  let sortedComplianceData = complianceData.map((dataPoint) => {
+    let resultStatusses = dataPoint.statuses;
 
-      addzeroStatusIfMissing.forEach((status) => {
-        for (let i = 0; i < dataPoint.statuses.length; i++) {
-          if (dataPoint.statuses[i].status == status) {
-            // If we find the status in the existing list, return and forget about it.
-            return;
-          }
+    addzeroStatusIfMissing.forEach((status) => {
+      for (let i = 0; i < dataPoint.statuses.length; i++) {
+        if (dataPoint.statuses[i].status == status) {
+          // If we find the status in the existing list, return and forget about it.
+          return;
         }
-        // If we haven't found the required status in then list, add it with a 0 count.
-        resultStatusses = [...resultStatusses, {
+      }
+      // If we haven't found the required status in then list, add it with a 0 count.
+      resultStatusses = [
+        ...resultStatusses,
+        {
           status: status,
           count: 0,
-        }];
-      })
-
-      return {
-        interval: new Date(dataPoint.interval),
-        statuses: resultStatusses,
-      };
+        },
+      ];
     });
+
+    return {
+      interval: new Date(dataPoint.interval),
+      statuses: resultStatusses,
+    };
+  });
   sortedComplianceData = sortedComplianceData.sort((a, b) => {
-      // Order results by their title for better UI consistency
-      const x = a.interval;
-      const y = b.interval;
+    // Order results by their title for better UI consistency
+    const x = a.interval;
+    const y = b.interval;
 
-      if (x > y) {
-        return 1;
-      }
-      if (x < y) {
-        return -1;
-      }
-      return 0;
-    });
+    if (x > y) {
+      return 1;
+    }
+    if (x < y) {
+      return -1;
+    }
+    return 0;
+  });
 
   // We want to split the data by the status names, so we can build different tracks for them.
   const datasets: { [key: string]: DateDataPoint[] } = {};
@@ -103,10 +105,10 @@ export function calculateComplianceOverTimeData(
         backgroundColor: {
           axis: 'y',
           colors: {
-              100: `rgba(${color.r},${color.g},${color.b}, .5)`,
-              // 70: `rgba(${color.r},${color.g},${color.b}, .6)`,
-              // 30: `rgba(${color.r},${color.g},${color.b}, .4)`,
-              0: `rgba(${color.r},${color.g},${color.b}, 0)`,
+            100: `rgba(${color.r},${color.g},${color.b}, .5)`,
+            // 70: `rgba(${color.r},${color.g},${color.b}, .6)`,
+            // 30: `rgba(${color.r},${color.g},${color.b}, .4)`,
+            0: `rgba(${color.r},${color.g},${color.b}, 0)`,
           },
         },
       },
@@ -130,6 +132,6 @@ export function calculateComplianceOverTimeData(
   });
 
   return {
-    datasets: finalDataset as ChartDataset<"line", DateDataPoint[]>[],
+    datasets: finalDataset as ChartDataset<'line', DateDataPoint[]>[],
   };
 }

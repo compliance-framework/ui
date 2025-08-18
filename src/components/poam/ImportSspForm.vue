@@ -6,7 +6,9 @@
 
     <form @submit.prevent="handleSubmit" class="space-y-4">
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
+        >
           Href <span class="text-red-500">*</span>
         </label>
         <input
@@ -22,7 +24,9 @@
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
+        >
           Remarks
         </label>
         <textarea
@@ -49,7 +53,7 @@
           :disabled="!formData.href || saving"
           class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {{ saving ? 'Saving...' : (isEditing ? 'Update' : 'Create') }}
+          {{ saving ? 'Saving...' : isEditing ? 'Update' : 'Create' }}
         </button>
       </div>
     </form>
@@ -57,42 +61,46 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, computed, onMounted } from 'vue'
-import type { ImportSsp } from '@/stores/plan-of-action-and-milestones.ts'
-import { useToast } from 'primevue/usetoast'
-import { useDataApi } from '@/composables/axios'
+import { reactive, computed, onMounted } from 'vue';
+import type { ImportSsp } from '@/stores/plan-of-action-and-milestones.ts';
+import { useToast } from 'primevue/usetoast';
+import { useDataApi } from '@/composables/axios';
 
 const props = defineProps<{
-  poamId: string
-  importSsp?: ImportSsp
-}>()
+  poamId: string;
+  importSsp?: ImportSsp;
+}>();
 
 const emit = defineEmits<{
-  cancel: []
-  saved: [importSsp: ImportSsp]
-}>()
+  cancel: [];
+  saved: [importSsp: ImportSsp];
+}>();
 
-const toast = useToast()
+const toast = useToast();
 
-const { data: updatedImportSsp, isLoading: saving, execute } = useDataApi<ImportSsp>(
+const {
+  data: updatedImportSsp,
+  isLoading: saving,
+  execute,
+} = useDataApi<ImportSsp>(
   `/api/oscal/plan-of-action-and-milestones/${props.poamId}/import-ssp`,
   null,
-  { immediate: false }
-)
+  { immediate: false },
+);
 
-const isEditing = computed(() => !!props.importSsp)
+const isEditing = computed(() => !!props.importSsp);
 
 const formData = reactive({
   href: '',
-  remarks: ''
-})
+  remarks: '',
+});
 
 onMounted(() => {
   if (props.importSsp) {
-    formData.href = props.importSsp.href
-    formData.remarks = props.importSsp.remarks || ''
+    formData.href = props.importSsp.href;
+    formData.remarks = props.importSsp.remarks || '';
   }
-})
+});
 
 async function handleSubmit() {
   if (!formData.href.trim()) {
@@ -100,45 +108,45 @@ async function handleSubmit() {
       severity: 'error',
       summary: 'Validation Error',
       detail: 'Href is required',
-      life: 3000
-    })
-    return
+      life: 3000,
+    });
+    return;
   }
 
   try {
     const importSspData: ImportSsp = {
       href: formData.href.trim(),
-      remarks: formData.remarks.trim() || undefined
-    }
+      remarks: formData.remarks.trim() || undefined,
+    };
 
     if (isEditing.value) {
       await execute({
         data: importSspData,
-        method: 'PUT'
-      })
+        method: 'PUT',
+      });
     } else {
       await execute({
         data: importSspData,
-        method: 'POST'
-      })
+        method: 'POST',
+      });
     }
 
     toast.add({
       severity: 'success',
       summary: isEditing.value ? 'Import SSP Updated' : 'Import SSP Created',
       detail: 'Import SSP data saved successfully',
-      life: 3000
-    })
+      life: 3000,
+    });
 
-    emit('saved', updatedImportSsp.value!)
+    emit('saved', updatedImportSsp.value!);
   } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+    const errorMessage = err instanceof Error ? err.message : 'Unknown error';
     toast.add({
       severity: 'error',
       summary: 'Save Failed',
       detail: `Failed to save import SSP: ${errorMessage}`,
-      life: 3000
-    })
+      life: 3000,
+    });
   }
 }
 </script>

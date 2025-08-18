@@ -1,7 +1,11 @@
 <template>
-  <div class="my-4 rounded-md bg-white dark:bg-slate-900 border-collapse border border-ccf-300 dark:border-slate-700 p-6">
+  <div
+    class="my-4 rounded-md bg-white dark:bg-slate-900 border-collapse border border-ccf-300 dark:border-slate-700 p-6"
+  >
     <div class="flex justify-between items-center mb-6">
-      <h3 class="text-lg font-semibold dark:text-slate-300">Assessment Plan JSON</h3>
+      <h3 class="text-lg font-semibold dark:text-slate-300">
+        Assessment Plan JSON
+      </h3>
       <div class="flex gap-3">
         <button
           @click="downloadJSON"
@@ -34,7 +38,9 @@
     </div>
 
     <div v-if="loading" class="text-center py-8">
-      <p class="text-gray-500 dark:text-slate-400">Loading assessment plan...</p>
+      <p class="text-gray-500 dark:text-slate-400">
+        Loading assessment plan...
+      </p>
     </div>
 
     <div v-else-if="error" class="text-center py-8">
@@ -43,7 +49,9 @@
 
     <div v-else>
       <div v-if="!isEditing" class="relative">
-        <pre class="bg-gray-50 dark:bg-slate-800 p-4 rounded-lg overflow-auto text-sm font-mono border border-gray-200 dark:border-slate-600 max-h-96"><code>{{ formattedJSON }}</code></pre>
+        <pre
+          class="bg-gray-50 dark:bg-slate-800 p-4 rounded-lg overflow-auto text-sm font-mono border border-gray-200 dark:border-slate-600 max-h-96"
+        ><code>{{ formattedJSON }}</code></pre>
       </div>
 
       <div v-else class="relative">
@@ -53,16 +61,22 @@
           placeholder="Enter valid JSON..."
         ></textarea>
 
-        <div v-if="jsonError" class="mt-2 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded text-red-700 dark:text-red-300 text-sm">
+        <div
+          v-if="jsonError"
+          class="mt-2 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded text-red-700 dark:text-red-300 text-sm"
+        >
           <strong>JSON Error:</strong> {{ jsonError }}
         </div>
       </div>
 
       <!-- JSON Validation Notice -->
-      <div class="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md">
+      <div
+        class="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md"
+      >
         <p class="text-sm text-yellow-800 dark:text-yellow-200">
-          <strong>Warning:</strong> Editing JSON directly can break the assessment plan structure.
-          Make sure the JSON is valid and follows the OSCAL Assessment Plan schema before saving.
+          <strong>Warning:</strong> Editing JSON directly can break the
+          assessment plan structure. Make sure the JSON is valid and follows the
+          OSCAL Assessment Plan schema before saving.
         </p>
       </div>
     </div>
@@ -70,26 +84,32 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import type { AssessmentPlan } from '@/stores/assessment-plans.ts'
-import { useRoute } from 'vue-router'
-import { useToast } from 'primevue/usetoast'
-import { useDataApi } from '@/composables/axios'
-import decamelizeKeys from 'decamelize-keys'
+import { ref, computed } from 'vue';
+import type { AssessmentPlan } from '@/stores/assessment-plans.ts';
+import { useRoute } from 'vue-router';
+import { useToast } from 'primevue/usetoast';
+import { useDataApi } from '@/composables/axios';
+import decamelizeKeys from 'decamelize-keys';
 
-const route = useRoute()
-const toast = useToast()
+const route = useRoute();
+const toast = useToast();
 
-const isEditing = ref(false)
-const editableJSON = ref('')
-const jsonError = ref<string | null>(null)
+const isEditing = ref(false);
+const editableJSON = ref('');
+const jsonError = ref<string | null>(null);
 
-const { data: assessmentPlan, error, isLoading: loading } = useDataApi<AssessmentPlan>(`/api/oscal/assessment-plans/${route.params.id}/full`)
+const {
+  data: assessmentPlan,
+  error,
+  isLoading: loading,
+} = useDataApi<AssessmentPlan>(
+  `/api/oscal/assessment-plans/${route.params.id}/full`,
+);
 
 const formattedJSON = computed(() => {
-  if (!assessmentPlan.value) return ''
-  return JSON.stringify(assessmentPlan.value, null, 2)
-})
+  if (!assessmentPlan.value) return '';
+  return JSON.stringify(assessmentPlan.value, null, 2);
+});
 
 // function startEditing() {
 //   editableJSON.value = formattedJSON.value
@@ -148,33 +168,37 @@ const formattedJSON = computed(() => {
 
 async function downloadJSON() {
   try {
-    const id = route.params.id as string
-    const jsonData = JSON.stringify(decamelizeKeys(assessmentPlan.value!, {separator: "-", deep: true}), null, 2)
+    const id = route.params.id as string;
+    const jsonData = JSON.stringify(
+      decamelizeKeys(assessmentPlan.value!, { separator: '-', deep: true }),
+      null,
+      2,
+    );
 
     // Create blob and download
-    const blob = new Blob([jsonData], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `assessment-plan-${id}.json`
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    URL.revokeObjectURL(url)
+    const blob = new Blob([jsonData], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `assessment-plan-${id}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
 
     toast.add({
       severity: 'success',
       summary: 'JSON Downloaded',
       detail: 'Assessment plan JSON downloaded successfully',
-      life: 3000
-    })
+      life: 3000,
+    });
   } catch (error) {
     toast.add({
       severity: 'error',
       summary: 'Download Failed',
       detail: 'Failed to download assessment plan JSON',
-      life: 3000
-    })
+      life: 3000,
+    });
   }
 }
 </script>

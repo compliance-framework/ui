@@ -14,13 +14,27 @@
     </div>
     <div class="mb-4">
       <label class="inline-block pb-2 dark:text-slate-300">Password</label>
-      <FormInput v-model="passwords.password" type="password" placeholder="Password" required />
-      <span v-if="passwords.error" class="text-red-500">{{ passwords.error }}</span>
+      <FormInput
+        v-model="passwords.password"
+        type="password"
+        placeholder="Password"
+        required
+      />
+      <span v-if="passwords.error" class="text-red-500">{{
+        passwords.error
+      }}</span>
     </div>
 
     <div class="mb-4">
-      <label class="inline-block pb-2 dark:text-slate-300">Confirm Password</label>
-      <FormInput v-model="passwords.confirmPassword" type="password" placeholder="Confirm Password" required />
+      <label class="inline-block pb-2 dark:text-slate-300"
+        >Confirm Password</label
+      >
+      <FormInput
+        v-model="passwords.confirmPassword"
+        type="password"
+        placeholder="Confirm Password"
+        required
+      />
     </div>
 
     <div class="border-t-1 border-t-ccf-300">
@@ -36,8 +50,12 @@
 </template>
 
 <script setup lang="ts">
-
-import type { CCFUserCreate, CCFUser, ErrorResponse, ErrorBody } from '@/stores/types';
+import type {
+  CCFUserCreate,
+  CCFUser,
+  ErrorResponse,
+  ErrorBody,
+} from '@/stores/types';
 import { ref, defineEmits, watch, reactive } from 'vue';
 import FormInput from '../forms/FormInput.vue';
 import PrimaryButton from '../PrimaryButton.vue';
@@ -67,14 +85,15 @@ const emit = defineEmits<{
 }>();
 
 const toast = useToast();
-const { data: createdUser, execute } = useDataApi<CCFUser>("/api/users",
+const { data: createdUser, execute } = useDataApi<CCFUser>(
+  '/api/users',
   {
-    method: "POST",
-    headers: {'Content-Type': 'application/json'}
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
   },
   {
-    immediate: false
-  }
+    immediate: false,
+  },
 );
 
 async function createUser() {
@@ -104,11 +123,11 @@ async function createUser() {
     toast.add({
       severity: 'error',
       summary: 'Error creating user',
-      detail: errorResponse.response?.data.errors.body ?? 'Unknown error occurred',
+      detail:
+        errorResponse.response?.data.errors.body ?? 'Unknown error occurred',
       life: 3000,
     });
     return;
   }
 }
-
 </script>

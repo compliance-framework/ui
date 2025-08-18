@@ -2,13 +2,19 @@
   <div>
     <PageHeader>Plan of Action and Milestones</PageHeader>
     <template v-if="isLoading">
-      <div class="text-center text-gray-500 dark:text-slate-400">Loading...</div>
+      <div class="text-center text-gray-500 dark:text-slate-400">
+        Loading...
+      </div>
     </template>
     <template v-else-if="error">
-      <div class="text-center text-red-500">Error loading Plan of Action and Milestones: {{ error }}</div>
+      <div class="text-center text-red-500">
+        Error loading Plan of Action and Milestones: {{ error }}
+      </div>
     </template>
     <template v-else-if="planOfActionAndMilestones">
-      <PageSubHeader>{{ planOfActionAndMilestones.metadata?.title }}</PageSubHeader>
+      <PageSubHeader>{{
+        planOfActionAndMilestones.metadata?.title
+      }}</PageSubHeader>
 
       <div class="mt-4 text-gray-600 dark:text-slate-400">
         {{ planOfActionAndMilestones.metadata?.remarks }}
@@ -101,33 +107,38 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
-import PageHeader from '@/components/PageHeader.vue'
-import PageSubHeader from '@/components/PageSubHeader.vue'
-import type { PlanOfActionAndMilestones } from '@/stores/plan-of-action-and-milestones.ts'
-import { RouterView, useRoute, useRouter } from 'vue-router'
-import { useDataApi } from '@/composables/axios'
-import { useToast } from 'primevue/usetoast'
-import type { AxiosError } from 'axios'
-import type { ErrorResponse, ErrorBody } from '@/stores/types'
+import { ref, watch } from 'vue';
+import PageHeader from '@/components/PageHeader.vue';
+import PageSubHeader from '@/components/PageSubHeader.vue';
+import type { PlanOfActionAndMilestones } from '@/stores/plan-of-action-and-milestones.ts';
+import { RouterView, useRoute, useRouter } from 'vue-router';
+import { useDataApi } from '@/composables/axios';
+import { useToast } from 'primevue/usetoast';
+import type { AxiosError } from 'axios';
+import type { ErrorResponse, ErrorBody } from '@/stores/types';
 
-const router = useRouter()
-const toast = useToast()
-const route = useRoute()
-const id = ref<string>(route.params.id as string)
+const router = useRouter();
+const toast = useToast();
+const route = useRoute();
+const id = ref<string>(route.params.id as string);
 
-const { data: planOfActionAndMilestones, error, isLoading } = useDataApi<PlanOfActionAndMilestones>(`/api/oscal/plan-of-action-and-milestones/${id.value}`)
+const {
+  data: planOfActionAndMilestones,
+  error,
+  isLoading,
+} = useDataApi<PlanOfActionAndMilestones>(
+  `/api/oscal/plan-of-action-and-milestones/${id.value}`,
+);
 watch(error, () => {
   if (error.value) {
-    const errorResponse = error.value as AxiosError<ErrorResponse<ErrorBody>>
+    const errorResponse = error.value as AxiosError<ErrorResponse<ErrorBody>>;
     toast.add({
       severity: 'error',
       summary: 'Error loading POAM',
       detail: `Failed to load Plan of Action and Milestones: ${errorResponse.response?.data.errors.body}. Please try again later.`,
-      life: 3000
-    })
-    router.push({ name: 'plan-of-action-and-milestones' })
+      life: 3000,
+    });
+    router.push({ name: 'plan-of-action-and-milestones' });
   }
-})
-
+});
 </script>

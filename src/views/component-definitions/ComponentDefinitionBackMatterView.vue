@@ -1,7 +1,11 @@
 <template>
-  <div class="my-4 rounded-md bg-white dark:bg-slate-900 border-collapse border border-ccf-300 dark:border-slate-700">
+  <div
+    class="my-4 rounded-md bg-white dark:bg-slate-900 border-collapse border border-ccf-300 dark:border-slate-700"
+  >
     <div v-if="backMatter && backMatter.resources?.length > 0" class="p-4">
-      <h3 class="text-lg font-semibold mb-4 dark:text-slate-300">Back Matter Resources</h3>
+      <h3 class="text-lg font-semibold mb-4 dark:text-slate-300">
+        Back Matter Resources
+      </h3>
       <div class="space-y-4">
         <div
           v-for="resource in backMatter.resources"
@@ -9,15 +13,35 @@
           class="border border-ccf-300 dark:border-slate-700 rounded-md p-4"
         >
           <div>
-            <p class="font-medium text-gray-900 dark:text-slate-300">{{ resource.title }}</p>
-            <p class="text-sm text-gray-600 dark:text-slate-400" v-if="resource.description">{{ resource.description }}</p>
-            <p class="text-sm text-gray-600 dark:text-slate-400" v-if="resource.remarks">{{ resource.remarks }}</p>
+            <p class="font-medium text-gray-900 dark:text-slate-300">
+              {{ resource.title }}
+            </p>
+            <p
+              class="text-sm text-gray-600 dark:text-slate-400"
+              v-if="resource.description"
+            >
+              {{ resource.description }}
+            </p>
+            <p
+              class="text-sm text-gray-600 dark:text-slate-400"
+              v-if="resource.remarks"
+            >
+              {{ resource.remarks }}
+            </p>
             <div class="mt-2 space-y-1">
-              <p class="text-xs text-gray-500 dark:text-slate-500">UUID: {{ resource.uuid }}</p>
-              <div v-if="resource.citation?.text" class="text-xs text-gray-500 dark:text-slate-500">
+              <p class="text-xs text-gray-500 dark:text-slate-500">
+                UUID: {{ resource.uuid }}
+              </p>
+              <div
+                v-if="resource.citation?.text"
+                class="text-xs text-gray-500 dark:text-slate-500"
+              >
                 <strong>Citation:</strong> {{ resource.citation.text }}
               </div>
-              <div v-if="resource.rlinks && resource.rlinks.length > 0" class="flex flex-wrap gap-2">
+              <div
+                v-if="resource.rlinks && resource.rlinks.length > 0"
+                class="flex flex-wrap gap-2"
+              >
                 <a
                   v-for="link in resource.rlinks"
                   :key="link.href"
@@ -25,7 +49,10 @@
                   target="_blank"
                   class="text-xs text-blue-600 dark:text-blue-400 hover:underline"
                 >
-                  {{ link.href }} <span v-if="link.mediaType" class="text-gray-400">({{ link.mediaType }})</span>
+                  {{ link.href }}
+                  <span v-if="link.mediaType" class="text-gray-400"
+                    >({{ link.mediaType }})</span
+                  >
                 </a>
               </div>
             </div>
@@ -34,13 +61,19 @@
       </div>
     </div>
     <div v-else class="p-8 text-center">
-      <p class="text-gray-500 dark:text-slate-400 mb-4">No back matter resources defined.</p>
-      <TertiaryButton @click="showCreateModal = true">Add Resource</TertiaryButton>
+      <p class="text-gray-500 dark:text-slate-400 mb-4">
+        No back matter resources defined.
+      </p>
+      <TertiaryButton @click="showCreateModal = true"
+        >Add Resource</TertiaryButton
+      >
     </div>
   </div>
 
   <div class="mt-4" v-if="backMatter && backMatter.resources?.length > 0">
-    <TertiaryButton @click="showCreateModal = true">Add Resource</TertiaryButton>
+    <TertiaryButton @click="showCreateModal = true"
+      >Add Resource</TertiaryButton
+    >
   </div>
 
   <!-- Back Matter Resource Create Modal -->
@@ -53,32 +86,34 @@
 </template>
 
 <script setup lang="ts">
-import {  ref } from 'vue'
-import { type BackMatterResource } from '@/stores/component-definitions.ts'
-import { useRoute } from 'vue-router'
-import TertiaryButton from '@/components/TertiaryButton.vue'
-import BackMatterResourceCreateModal from '@/components/component-definitions/BackMatterResourceCreateModal.vue'
-import type { BackMatter } from '@/stores/types'
-import { useDataApi } from '@/composables/axios'
+import { ref } from 'vue';
+import { type BackMatterResource } from '@/stores/component-definitions.ts';
+import { useRoute } from 'vue-router';
+import TertiaryButton from '@/components/TertiaryButton.vue';
+import BackMatterResourceCreateModal from '@/components/component-definitions/BackMatterResourceCreateModal.vue';
+import type { BackMatter } from '@/stores/types';
+import { useDataApi } from '@/composables/axios';
 
-const route = useRoute()
-const componentDefinitionId = ref<string>(route.params.id as string)
-const showCreateModal = ref<boolean>(false)
+const route = useRoute();
+const componentDefinitionId = ref<string>(route.params.id as string);
+const showCreateModal = ref<boolean>(false);
 
-const { data: backMatter } = useDataApi<BackMatter>(`/api/oscal/component-definitions/${componentDefinitionId.value}/back-matter`)
+const { data: backMatter } = useDataApi<BackMatter>(
+  `/api/oscal/component-definitions/${componentDefinitionId.value}/back-matter`,
+);
 
 function closeCreateModal() {
-  showCreateModal.value = false
+  showCreateModal.value = false;
 }
 
 function handleResourceCreated(resource: BackMatterResource) {
   // Add the new resource to the existing resources
   if (!backMatter.value) {
-    backMatter.value = { resources: [] }
+    backMatter.value = { resources: [] };
   }
   if (!backMatter.value.resources) {
-    backMatter.value.resources = []
+    backMatter.value.resources = [];
   }
-  backMatter.value.resources.push(resource)
+  backMatter.value.resources.push(resource);
 }
 </script>

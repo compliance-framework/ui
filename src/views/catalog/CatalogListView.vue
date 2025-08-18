@@ -50,19 +50,21 @@
 </template>
 <script setup lang="ts">
 import { type Catalog } from '@/oscal';
-import PageHeader from '@/components/PageHeader.vue'
-import { useToast } from 'primevue/usetoast'
-import { useDataApi } from '@/composables/axios'
-
+import PageHeader from '@/components/PageHeader.vue';
+import { useToast } from 'primevue/usetoast';
+import { useDataApi } from '@/composables/axios';
 
 const toast = useToast();
 
-const {
-  data: catalogs,
-  isLoading: loading,
-} = useDataApi<Catalog[]>('/api/oscal/catalogs');
+const { data: catalogs, isLoading: loading } = useDataApi<Catalog[]>(
+  '/api/oscal/catalogs',
+);
 
-const { execute } = useDataApi<Catalog>('/api/oscal/catalogs', {}, { immediate: false });
+const { execute } = useDataApi<Catalog>(
+  '/api/oscal/catalogs',
+  {},
+  { immediate: false },
+);
 
 async function downloadCatalogJSON(id: string, title: string) {
   try {

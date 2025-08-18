@@ -1,10 +1,6 @@
 import { defineStore } from 'pinia';
 import { useConfigStore } from '@/stores/config.ts';
-import type {
-  DataResponse,
-  Link,
-  Property,
-} from '@/stores/types.ts'
+import type { DataResponse, Link, Property } from '@/stores/types.ts';
 
 export interface Subject {
   _id: string;

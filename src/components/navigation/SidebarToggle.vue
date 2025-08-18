@@ -12,19 +12,24 @@
       class="w-3 h-3 text-gray-600 dark:text-slate-300 transition-transform duration-300"
       :class="{
         'rotate-180': !sidebarStore.open,
-        'rotate-0': sidebarStore.open
+        'rotate-0': sidebarStore.open,
       }"
       fill="none"
       stroke="currentColor"
       viewBox="0 0 24 24"
     >
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M15 19l-7-7 7-7"
+      />
     </svg>
   </button>
 </template>
 
 <script setup lang="ts">
-import { useSidebarStore } from '@/stores/sidebar'
+import { useSidebarStore } from '@/stores/sidebar';
 
-const sidebarStore = useSidebarStore()
+const sidebarStore = useSidebarStore();
 </script>

@@ -6,33 +6,51 @@
     class="mt-4 rounded-md bg-white dark:bg-slate-900 border-collapse border border-ccf-300 dark:border-slate-700"
     v-if="catalog"
   >
-    <CatalogGroup v-for="group in groups" :key="group.id" :group="group" :catalog="catalog" />
-    <CatalogControl v-for="control in controls" :key="control.id" :control="control" :catalog="catalog" />
+    <CatalogGroup
+      v-for="group in groups"
+      :key="group.id"
+      :group="group"
+      :catalog="catalog"
+    />
+    <CatalogControl
+      v-for="control in controls"
+      :key="control.id"
+      :control="control"
+      :catalog="catalog"
+    />
   </div>
   <div class="mt-4" v-if="catalog">
-<!--    <TertiaryButton v-if="controls.length == 0" @click="showGroupForm = true">Add Group</TertiaryButton>-->
-<!--    <TertiaryButton v-if="groups.length == 0" @click="showControlForm = true" class="ml-2">Add Control</TertiaryButton>-->
-    <GroupCreateModal @created="groupCreated" :catalog="catalog" v-model="showGroupForm" />
-    <ControlCreateModal @created="controlCreated" :catalog="catalog" v-model="showControlForm" />
+    <!--    <TertiaryButton v-if="controls.length == 0" @click="showGroupForm = true">Add Group</TertiaryButton>-->
+    <!--    <TertiaryButton v-if="groups.length == 0" @click="showControlForm = true" class="ml-2">Add Control</TertiaryButton>-->
+    <GroupCreateModal
+      @created="groupCreated"
+      :catalog="catalog"
+      v-model="showGroupForm"
+    />
+    <ControlCreateModal
+      @created="controlCreated"
+      :catalog="catalog"
+      v-model="showControlForm"
+    />
   </div>
-  <div class="h-screen w-full"></div> <!-- A screen height div to prevent collapse scrolling back up after closing -->
+  <div class="h-screen w-full"></div>
+  <!-- A screen height div to prevent collapse scrolling back up after closing -->
 </template>
 
 <script setup lang="ts">
-import { onActivated, ref } from 'vue'
-import PageHeader from '@/components/PageHeader.vue'
-import { type Catalog, type Group, type Control } from '@/stores/catalogs.ts'
-import { useRoute, useRouter } from 'vue-router'
-import CatalogGroup from '@/views/catalog/CatalogGroup.vue'
-import PageSubHeader from '@/components/PageSubHeader.vue'
-import CatalogControl from '@/views/catalog/CatalogControl.vue'
-import GroupCreateModal from '@/components/catalogs/GroupCreateModal.vue'
-import ControlCreateModal from '@/components/catalogs/ControlCreateModal.vue'
-import { useToast } from 'primevue/usetoast'
-import type { ErrorResponse, ErrorBody } from '@/stores/types.ts'
-import { useDataApi } from '@/composables/axios'
-import type { AxiosError } from 'axios'
-
+import { onActivated, ref } from 'vue';
+import PageHeader from '@/components/PageHeader.vue';
+import { type Catalog, type Group, type Control } from '@/stores/catalogs.ts';
+import { useRoute, useRouter } from 'vue-router';
+import CatalogGroup from '@/views/catalog/CatalogGroup.vue';
+import PageSubHeader from '@/components/PageSubHeader.vue';
+import CatalogControl from '@/views/catalog/CatalogControl.vue';
+import GroupCreateModal from '@/components/catalogs/GroupCreateModal.vue';
+import ControlCreateModal from '@/components/catalogs/ControlCreateModal.vue';
+import { useToast } from 'primevue/usetoast';
+import type { ErrorResponse, ErrorBody } from '@/stores/types.ts';
+import { useDataApi } from '@/composables/axios';
+import type { AxiosError } from 'axios';
 
 const toast = useToast();
 const route = useRoute();
@@ -45,7 +63,9 @@ const { data: controls, execute: catalogExecute } = useDataApi<Control[]>();
 
 async function loadData() {
   try {
-    await execute(`/api/oscal/catalogs/${id.value}`, { params: { page: 1, size: 1000}});
+    await execute(`/api/oscal/catalogs/${id.value}`, {
+      params: { page: 1, size: 1000 },
+    });
     await groupExecute(`/api/oscal/catalogs/${id.value}/groups`);
     await catalogExecute(`/api/oscal/catalogs/${id.value}/controls`);
   } catch (error) {
@@ -53,31 +73,33 @@ async function loadData() {
     toast.add({
       severity: 'error',
       summary: 'Error loading catalog data',
-      detail: errorResponse.response?.data.errors.body || 'An error occurred while loading the catalog data.',
+      detail:
+        errorResponse.response?.data.errors.body ||
+        'An error occurred while loading the catalog data.',
       life: 3000,
     });
-  router.push({ name: 'catalog-list' });
+    router.push({ name: 'catalog-list' });
   }
 }
 
 onActivated(async () => {
   if (route.params.id !== id.value) {
-    id.value = route.params.id as string
+    id.value = route.params.id as string;
     catalog.value = {
       uuid: route.params.id,
-    } as Catalog
+    } as Catalog;
     groups.value = [] as Group[];
     controls.value = [] as Control[];
   }
   await loadData();
-})
+});
 
 const showGroupForm = ref<boolean>(false);
 const showControlForm = ref<boolean>(false);
 function groupCreated(group: Group) {
-  groups.value?.push(group)
+  groups.value?.push(group);
 }
 function controlCreated(control: Control) {
-  controls.value?.push(control)
+  controls.value?.push(control);
 }
 </script>

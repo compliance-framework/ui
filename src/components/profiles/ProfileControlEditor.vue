@@ -1,5 +1,7 @@
 <template>
-  <div class="px-4 py-4 bg-white dark:bg-slate-950 border-b border-ccf-300 dark:border-slate-700">
+  <div
+    class="px-4 py-4 bg-white dark:bg-slate-950 border-b border-ccf-300 dark:border-slate-700"
+  >
     <p class="font-medium mb-2">By ID</p>
     <div class="flex flex-wrap gap-2 mb-2">
       <Chip
@@ -23,34 +25,34 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { type PropType } from 'vue'
-import Chip from '@/volt/Chip.vue'
-import PrimaryButton from '@/components/PrimaryButton.vue'
-import FormInput from '../forms/FormInput.vue'
+import { ref } from 'vue';
+import { type PropType } from 'vue';
+import Chip from '@/volt/Chip.vue';
+import PrimaryButton from '@/components/PrimaryButton.vue';
+import FormInput from '../forms/FormInput.vue';
 
 const props = defineProps({
   modelValue: {
     type: Array as PropType<string[]>,
-    required: true
-  }
-})
+    required: true,
+  },
+});
 const emit = defineEmits<{
-  (e: 'update:modelValue', v: string[]): void
-}>()
+  (e: 'update:modelValue', v: string[]): void;
+}>();
 
-const newId = ref('')
+const newId = ref('');
 
 function add() {
-  const val = newId.value.trim()
-  if (!val) return
-  emit('update:modelValue', [...props.modelValue, val])
-  newId.value = ''
+  const val = newId.value.trim();
+  if (!val) return;
+  emit('update:modelValue', [...props.modelValue, val]);
+  newId.value = '';
 }
 
 function remove(index: number) {
-  const arr = [...props.modelValue]
-  arr.splice(index, 1)
-  emit('update:modelValue', arr)
+  const arr = [...props.modelValue];
+  arr.splice(index, 1);
+  emit('update:modelValue', arr);
 }
 </script>
