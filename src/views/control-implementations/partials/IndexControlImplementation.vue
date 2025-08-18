@@ -102,7 +102,12 @@ async function onPartSelect(e: Event, part: Part) {
         controlId: control.id,
       } as ImplementedRequirement
     });
-    selectedImplementation.value = response.data.value!.data;
+    if (response.data.value && response.data.value.data) {
+      selectedImplementation.value = response.data.value.data;
+    } else {
+      // Handle error: response.data.value is null or missing data
+      throw new Error("Failed to create implemented requirement: response data is missing.");
+    }
   }
 
   if (!statements.value[selectedPart.value.id]) {
@@ -118,7 +123,11 @@ async function onPartSelect(e: Event, part: Part) {
         } as CreateStatementRequest,
       }
     );
-    statements.value[selectedPart.value.id] = response.data.value!.data;
+    if (response.data.value) {
+      statements.value[selectedPart.value.id] = response.data.value.data;
+    } else {
+      console.error('Failed to create statement: response.data.value is null or undefined', response);
+    }
   }
 
   drawerLoading.set(false);

@@ -82,7 +82,12 @@ async function deleteByComponent(byComp: ByComponent) {
       data: clonedStatement.value
     }
    )
-   localStatement.value = res.data.value!.data;
+   if (res.data.value && res.data.value.data) {
+     localStatement.value = res.data.value.data;
+   } else {
+     console.error('API response missing expected data:', res.data);
+     return;
+   }
     newByComponent.value = {
       uuid: uuidv4(),
     } as ByComponent
@@ -125,7 +130,12 @@ async function create() {
       data: clonedStatement.value
     }
    )
-   localStatement.value = res.data.value!.data;
+   if (res.data.value && res.data.value.data) {
+     localStatement.value = res.data.value.data;
+   } else {
+     console.error('Failed to create: response data is missing');
+     return;
+   }
     newByComponent.value = {
       uuid: uuidv4(),
     } as ByComponent
