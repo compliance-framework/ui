@@ -113,37 +113,35 @@
   </div>
 
   <!-- User Create Modal -->
-  <Modal :show="showCreateUserModal" @close="showCreateUserModal = false">
+  <Dialog v-model:visible="showCreateUserModal" modal header="Create User">
     <SystemImplementationUserCreateForm
-      :ssp-id="systemSecurityPlan?.uuid as string"
+      :ssp-id="sspId"
       @cancel="showCreateUserModal = false"
       @created="handleUserCreated"
     />
-  </Modal>
+  </Dialog>
 
   <!-- User Edit Modal -->
-  <Modal
-    :show="!!(showEditUserModal && editingUser)"
-    @close="showEditUserModal = false"
-  >
+  <Dialog v-model:visible="showEditUserModal" modal header="Edit User">
     <SystemImplementationUserEditForm
-      :ssp-id="systemSecurityPlan?.uuid as string"
+      v-if="editingUser"
+      :ssp-id="sspId"
       :user="editingUser!"
       @cancel="showEditUserModal = false"
       @saved="handleUserSaved"
     />
-  </Modal>
+  </Dialog>
 </template>
+
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
 import decamelizeKeys from 'decamelize-keys';
+import Dialog from '@/volt/Dialog.vue';
 
 // Form components
-import Modal from '@/components/Modal.vue';
 import Panel from '@/volt/Panel.vue';
-import CollapsableGroup from '@/components/CollapsableGroup.vue';
 import SystemImplementationUserCreateForm from '@/components/system-security-plans/SystemImplementationUserCreateForm.vue';
 import SystemImplementationUserEditForm from '@/components/system-security-plans/SystemImplementationUserEditForm.vue';
 
@@ -155,7 +153,6 @@ import {
 } from '@/stores/system-security-plans.ts';
 import type { DataResponse } from '@/stores/types.ts';
 import { useSystemStore } from '@/stores/system.ts';
-import Badge from '@/volt/Badge.vue';
 
 const route = useRoute();
 const toast = useToast();
@@ -165,6 +162,7 @@ const { system } = useSystemStore();
 
 // Data
 const systemSecurityPlan = ref<SystemSecurityPlan | null>(null);
+const sspId = computed(() => systemSecurityPlan.value?.uuid ?? '');
 const users = ref<SystemImplementationUser[] | null>(null);
 
 // Modal states
