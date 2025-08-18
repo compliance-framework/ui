@@ -6,22 +6,16 @@ import type {
   SystemComponent,
 } from '@/oscal';
 import StatementByComponent from '@/views/control-implementations/partials/StatementByComponent.vue';
-import {
-  type ImplementedRequirement,
-  useSystemSecurityPlanStore,
-} from '@/stores/system-security-plans.ts';
+import type { ImplementedRequirement } from '@/stores/system-security-plans.ts';
 import { computed, onMounted, ref, toValue, watch } from 'vue'
 import { useSystemStore } from '@/stores/system.ts';
 import Select from '@/volt/Select.vue';
-import Button from '@/volt/Button.vue';
 import Textarea from '@/volt/Textarea.vue';
-import { useApi } from '@/composables/api';
-import type { DataResponse } from '@/types';
 import { useCloned } from '@vueuse/core'
 import BurgerMenu from '@/components/BurgerMenu.vue'
 import { useToggle } from '@/composables/useToggle'
+import { useDataApi, decamelizeKeys } from '@/composables/axios';
 
-const sspStore = useSystemSecurityPlanStore();
 const { system } = useSystemStore();
 
 const { value: showCreateForm, set: setCreateForm } = useToggle(false)
@@ -30,22 +24,24 @@ const { statement, implementation } = defineProps<{
   statement: Statement;
   implementation: ImplementedRequirement;
 }>();
-const localStatement = ref(statement);
+const localStatement = ref<Statement>(statement);
 
 const emit = defineEmits<{
   updated: [statement: Statement];
 }>()
 
-const { data: components, loading: componentsLoading } = useApi<
-  DataResponse<SystemComponent[]>
->(
-  new Request(
+const { data: components, isLoading: componentsLoading } = useDataApi<SystemComponent[]>(
     `/api/oscal/system-security-plans/${system.securityPlan?.uuid as string}/system-implementation/components`,
-  ),
+)
+const { execute: executeUpdate } = useDataApi<Statement>(null,
+  {
+    transformRequest: [decamelizeKeys],
+    method: "PUT"
+  },
 );
 
 const componentItems = computed(() => {
-  return toValue(components.value?.data || []).map((item) => {
+  return toValue(components.value || []).map((item) => {
     return {
       name: item.title,
       value: item.uuid,
@@ -75,42 +71,51 @@ function resetCreateForm() {
   } as ByComponent
 }
 
-function deleteByComponent(byComp: ByComponent) {
+async function deleteByComponent(byComp: ByComponent) {
   const clonedStatement = useCloned(localStatement).cloned;
   clonedStatement.value.byComponents = clonedStatement.value.byComponents?.filter((comp: ByComponent) => {
     return byComp.uuid !== comp.uuid;
   });
-  sspStore.updateImplementedRequirementStatement(
-    system.securityPlan?.uuid as string,
-    implementation.uuid,
-    statement.uuid,
-    clonedStatement.value,
-  ).then((res) => {
-    localStatement.value = res.data;
+  try {
+    const res = await executeUpdate(`/api/oscal/system-security-plans/${system.securityPlan?.uuid}/control-implementation/implemented-requirements/${implementation.uuid}/statements/${statement.uuid}`,
+    {
+      data: clonedStatement.value
+    }
+   )
+   if (res.data.value && res.data.value.data) {
+     localStatement.value = res.data.value.data;
+   } else {
+     console.error('API response missing expected data:', res.data);
+     return;
+   }
     newByComponent.value = {
       uuid: uuidv4(),
     } as ByComponent
     setCreateForm(false)
-    emit('updated', res.data);
-  });
+    emit('updated', localStatement.value);
+  } catch (err) {
+    console.error(err);
+  }
 }
 
-function updateByComponent(byComp: ByComponent) {
+async function updateByComponent(byComp: ByComponent) {
   const clonedStatement = useCloned(localStatement).cloned;
   clonedStatement.value.byComponents = clonedStatement.value.byComponents?.map((comp: ByComponent) => byComp.uuid == comp.uuid ? byComp : comp);
-  sspStore.updateImplementedRequirementStatement(
-    system.securityPlan?.uuid as string,
-    implementation.uuid,
-    statement.uuid,
-    clonedStatement.value,
-  ).then((res) => {
-    localStatement.value = res.data;
+  try {
+    const res = await executeUpdate(`/api/oscal/system-security-plans/${system.securityPlan?.uuid}/control-implementation/implemented-requirements/${implementation.uuid}/statements/${statement.uuid}`,
+    {
+      data: clonedStatement.value
+    }
+   )
+   localStatement.value = res.data.value!.data;
     newByComponent.value = {
       uuid: uuidv4(),
     } as ByComponent
     setCreateForm(false)
-    emit('updated', res.data);
-  });
+    emit('updated', localStatement.value);
+  } catch (err) {
+    console.error(err);
+  }
 }
 
 async function create() {
@@ -119,19 +124,26 @@ async function create() {
     ...(statement.byComponents || []),
     toValue(newByComponent),
   ];
-  sspStore.updateImplementedRequirementStatement(
-    system.securityPlan?.uuid as string,
-    implementation.uuid,
-    statement.uuid,
-    clonedStatement.value,
-  ).then((res) => {
-    localStatement.value = res.data;
+  try {
+    const res = await executeUpdate(`/api/oscal/system-security-plans/${system.securityPlan?.uuid}/control-implementation/implemented-requirements/${implementation.uuid}/statements/${statement.uuid}`,
+    {
+      data: clonedStatement.value
+    }
+   )
+   if (res.data.value && res.data.value.data) {
+     localStatement.value = res.data.value.data;
+   } else {
+     console.error('Failed to create: response data is missing');
+     return;
+   }
     newByComponent.value = {
       uuid: uuidv4(),
     } as ByComponent
     setCreateForm(false)
-    emit('updated', res.data);
-  });
+    emit('updated', localStatement.value);
+  } catch (err) {
+    console.error(err);
+  }
 }
 </script>
 

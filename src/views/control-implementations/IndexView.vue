@@ -1,5 +1,5 @@
 <template>
-  <h4 v-if="baseLoading" class="text-gray-600">Loading ...</h4>
+  <h4 v-if="loading" class="text-gray-600">Loading ...</h4>
 
   <Message
     v-else-if="!systemStore.system.securityPlan"
@@ -71,13 +71,10 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, watch, type Ref } from 'vue';
-import { useSystemSecurityPlanStore } from '@/stores/system-security-plans.ts';
-
+import { onMounted, ref, watch, computed, type Ref } from 'vue';
 import Message from '@/volt/Message.vue';
 import Badge from '@/volt/Badge.vue';
 import { useSystemStore } from '@/stores/system.ts';
-import { type DataResponse, useFetch } from '@/composables/api';
 import type {
   Catalog,
   Profile,
@@ -87,92 +84,66 @@ import type {
 import PageHeader from '@/components/PageHeader.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
 import ControlEvidenceCounter from './partials/ControlEvidenceCounter.vue';
-import { useMustAuthenticate } from '@/composables/useMustAuthenticate';
 import { useCatalogTree } from '@/composables/useCatalogTree';
-
+import { useDataApi } from '@/composables/axios';
 import Tree from '@/volt/Tree.vue';
 import IndexControlImplementation from '@/views/control-implementations/partials/IndexControlImplementation.vue';
+import type { AxiosError } from 'axios';
 
-const { gotoLogin } = useMustAuthenticate();
 const systemStore = useSystemStore();
-const baseLoading = ref(true);
-const profile = ref();
-if (systemStore.system.securityPlan) {
-  useFetch(
-    new Request(
-      `/api/oscal/system-security-plans/${systemStore.system.securityPlan.uuid}/profile`,
-    ),
-  )
-    .then((res) => (res.ok ? res.json() : Promise.reject(res)))
-    .then((res: DataResponse<Profile>) => {
-      if (res.data) {
-        profile.value = res.data;
-      }
-    })
-    .catch((error: Response) => {
-      // 404 is fine. The rest, throw.
-      if (error.status !== 404) {
-        return error;
-      }
-    })
-    .finally(() => {
-      baseLoading.value = false;
-    });
-}
+
+const { data: profile, isLoading: baseLoading, execute: fetchProfile } = useDataApi<Profile>(
+  `/api/oscal/system-security-plans/${systemStore.system.securityPlan?.uuid}/profile`,
+  null,
+  { immediate: false }
+);
+const { data: catalog, isLoading: catalogLoading, execute: fetchResolvedcatalog } = useDataApi<Catalog>();
+const { data : controlImplementation, isLoading: controlImplementationLoading, execute: fetchControlImplementations } = useDataApi<ControlImplementation | null>(
+  `/api/oscal/system-security-plans/${systemStore.system.securityPlan?.uuid}/control-implementation`,
+  null,
+  { immediate: false }
+);
+
+const loading = computed<boolean>(() => baseLoading.value || catalogLoading.value || controlImplementationLoading.value);
+
 
 const controlImplementations = ref<{ [key: string]: ImplementedRequirement }>(
   {},
 );
-const catalog = ref<Catalog | undefined>({} as Catalog);
+
+const error = ref<AxiosError<unknown> | null>(null);
+
 const { nodes, build } = useCatalogTree();
-const catalogLoading = ref<boolean>(false);
-watch(profile, () => {
+
+watch(profile, async () => {
   if (!profile.value) {
     return;
   }
-
-  catalogLoading.value = true;
-  useFetch(new Request(`/api/oscal/profiles/${profile.value.uuid}/resolved`))
-    .then((res: Response) => (res.ok ? res.json() : Promise.reject(res)))
-    .then((data: DataResponse<Catalog>) => {
-      catalog.value = data.data;
-      build(catalog as Ref<Catalog>);
-    })
-    .catch((error: Response) => {
-      if (error.status === 401) {
-        return gotoLogin();
-      }
-    })
-    .finally(() => {
-      catalogLoading.value = false;
-    });
+  try {
+    await fetchResolvedcatalog(`/api/oscal/profiles/${profile.value.uuid}/resolved`);
+    build(catalog as Ref<Catalog>);
+  } catch (err) {
+    error.value = err as AxiosError<unknown>;
+  }
 });
 
-const sspStore = useSystemSecurityPlanStore();
+onMounted(async () => {
+  try {
+    await fetchProfile();
+  } catch (err) {
+    error.value = err as AxiosError<unknown>;
+  }
 
-const controlImplementation = ref<ControlImplementation | null>(null);
-const loading = ref(true);
-const error = ref<string | null>(null);
+  try {
+    await fetchControlImplementations();
+    const implementations =
+    controlImplementation.value?.implementedRequirements || ([] as ImplementedRequirement[]);
+    for (const impl of implementations) {
+      controlImplementations.value[impl.controlId] = impl;
+    }
 
-onMounted(() => {
-  const id = systemStore.system.securityPlan?.uuid as string;
-  sspStore
-    .getControlImplementation(id)
-    .then((res) => {
-      controlImplementation.value = res.data;
-      const implementations =
-        controlImplementation.value?.implementedRequirements ||
-        ([] as ImplementedRequirement[]);
-      for (const impl of implementations) {
-        controlImplementations.value[impl.controlId] = impl;
-      }
-    })
-    .catch((err) => {
-      console.error('Error loading control implementation:', err);
-      error.value = err instanceof Error ? err.message : 'Unknown error';
-    })
-    .finally(() => {
-      loading.value = false;
-    });
+  } catch (err) {
+    error.value = err as AxiosError<unknown>;
+  }
 });
 </script>

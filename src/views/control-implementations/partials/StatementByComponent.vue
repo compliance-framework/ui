@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { useSystemSecurityPlanStore } from '@/stores/system-security-plans.ts'
-import { onMounted, ref, watchEffect } from 'vue'
+import { ref, watchEffect } from 'vue'
 import type {SystemComponent, ByComponent} from '@/oscal';
 import { useSystemStore } from '@/stores/system.ts'
 import BurgerMenu from '@/components/BurgerMenu.vue'
 import Textarea from '@/volt/Textarea.vue'
 import { useToggle } from '@/composables/useToggle'
 import { useConfirm } from 'primevue/useconfirm'
+import { useDataApi } from '@/composables/axios';
 
 const { byComponent } = defineProps<{
   byComponent: ByComponent,
@@ -17,7 +17,6 @@ const emit = defineEmits<{
 }>()
 
 const { system } = useSystemStore()
-const sspStore = useSystemSecurityPlanStore()
 const confirm = useConfirm()
 
 const localComponent = ref<ByComponent>(byComponent)
@@ -27,12 +26,9 @@ watchEffect(() => {
 
 const { value: editing, set: setEditing} = useToggle();
 
-const component = ref<SystemComponent>({} as SystemComponent)
-if (system.securityPlan) {
-  sspStore.getSystemImplementationComponent(system.securityPlan.uuid, byComponent.componentUuid).then((response) => {
-    component.value = response.data
-  })
-}
+const {data: component } = useDataApi<SystemComponent>(
+  `/api/oscal/system-security-plans/${system.securityPlan?.uuid as string}/system-implementation/components/${byComponent.componentUuid}`,
+);
 
 function save() {
   emit('save', localComponent.value)
@@ -67,7 +63,7 @@ function cancel() {
 
 <template>
   <div class="flex justify-between items-center">
-    <h4 class="font-medium">{{ component.title }}</h4>
+    <h4 class="font-medium">{{ component?.title }}</h4>
     <BurgerMenu :items="[
       {
         label: 'Edit',

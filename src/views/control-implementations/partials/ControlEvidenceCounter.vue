@@ -34,22 +34,14 @@
 <script lang="ts" setup>
 import ResultStatusBadge from '@/components/ResultStatusBadge.vue';
 import type { Control } from '@/oscal';
-import {
-  useEvidenceStore,
-  type ComplianceIntervalStatus,
-} from '@/stores/evidence';
-import { onMounted, ref } from 'vue';
+import type { ComplianceIntervalStatus } from '@/stores/evidence';
+import { useDataApi } from '@/composables/axios';
 
 const { control } = defineProps<{
   control: Control;
 }>();
 
-const evidenceStore = useEvidenceStore();
-const evidenceCounts = ref<ComplianceIntervalStatus[]>([]);
-
-onMounted(() => {
-  evidenceStore.getComplianceForControl(control).then((compliance) => {
-    evidenceCounts.value = compliance.data || [];
-  });
-});
+const { data: evidenceCounts } = useDataApi<ComplianceIntervalStatus[]>(
+  `/api/evidence/compliance-by-control/${control.id}`,
+);
 </script>
