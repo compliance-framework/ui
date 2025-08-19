@@ -54,7 +54,7 @@ async function submit(updatedEvidence: Partial<Evidence>, labels: EvidenceLabel[
       }
     }
   });
-  //evidence.value = createdEvidence.value!;
+
   return await router.push({
     name: 'evidence:view',
     params: { id: createdEvidence.value!.id },
