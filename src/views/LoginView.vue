@@ -34,7 +34,7 @@
 import PageCard from '@/components/PageCard.vue';
 import { ref } from 'vue';
 import PrimaryButton from '@/components/PrimaryButton.vue';
-import { useAuthStore } from '@/stores/auth';
+import { useUserStore } from '@/stores/auth';
 import { useRoute, useRouter } from 'vue-router';
 import type { DataResponse } from '@/stores/api.ts'
 import FormInput from '@/components/forms/FormInput.vue'
@@ -42,6 +42,8 @@ import lightLogo from '@/assets/logo-light.svg'
 import darkLogo from '@/assets/logo-dark.svg'
 import SideNavLogo from '@/components/navigation/SideNavLogo.vue'
 import { useToast } from 'primevue/usetoast';
+import { useGuestApi } from '@/composables/axios';
+import type { AxiosError } from 'axios';
 
 interface AuthError {
   email: string[];
@@ -52,39 +54,51 @@ const email = ref('');
 const password = ref('');
 const errors = ref<AuthError>({} as AuthError);
 
+const user = useUserStore();
 
-const authStore = useAuthStore();
+const { execute: login } = useGuestApi<DataResponse<AuthError>>('/api/auth/login',
+  {
+    method: 'POST',
+  }, { immediate: false }
+);
 
 const route = useRoute();
 const router = useRouter();
 const toast = useToast();
 
-function onSubmit() {
+async function onSubmit() {
   errors.value = {} as AuthError;
-  authStore
-    .login(email.value, password.value)
-    .then(() => {
-      toast.add({
-        severity: 'success',
-        summary: 'Login Successful',
-        detail: 'You have successfully logged in.',
-        life: 3000,
-      });
-      if (route.query.hasOwnProperty('next')) {
-        return router.push(route.query.next as string);
+  try {
+    await login({
+      data: {
+        email: email.value,
+        password: password.value,
       }
-      return router.push({ name: 'home' });
-    })
-    .catch(async (response) => {
-      if (response.status === 401) {
-        const errorResponse = (await response.json()) as DataResponse<AuthError>;
-        errors.value = errorResponse.data as AuthError;
-      }
-      toast.add({
-        severity: 'error',
-        summary: 'Login Failed',
-        life: 3000,
-      });
     });
+    user.isAuthenticated = true;
+
+    toast.add({
+      severity: 'success',
+      summary: 'Login Successful',
+      detail: 'You have successfully logged in.',
+      life: 3000,
+    });
+    if (route.query.hasOwnProperty('next')) {
+      return router.push(route.query.next as string);
+    }
+    return router.push({ name: 'home' });
+  } catch (error) {
+    const response = error as AxiosError<DataResponse<AuthError>>;
+    if (response.status === 401) {
+      const errorResponse = response.response?.data;
+      errors.value = errorResponse?.data as AuthError;
+    }
+
+    toast.add({
+      severity: 'error',
+      summary: 'Login Failed',
+      life: 3000,
+    });
+  }
 }
 </script>
