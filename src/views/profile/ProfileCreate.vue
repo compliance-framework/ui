@@ -77,7 +77,7 @@ async function submit() {
       detail: 'The profile has been created successfully.',
       life: 3000,
     });
-    router.push({ name: 'profile-view', params: { id: response.data.value?.data.uuid } });
+    router.push({ name: 'profile:view', params: { id: response.data.value?.data.uuid } });
   } catch (error) {
     const { response } = error as AxiosError<ErrorResponse<ErrorBody>>;
     toast.add({
