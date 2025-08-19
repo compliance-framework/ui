@@ -160,20 +160,39 @@ import Modal from '@/components/Modal.vue';
 import SystemImplementationComponentCreateForm from '@/components/system-security-plans/SystemImplementationComponentCreateForm.vue';
 import SystemImplementationComponentEditForm from '@/components/system-security-plans/SystemImplementationComponentEditForm.vue';
 
-// Types and stores
-import { useSystemSecurityPlanStore } from '@/stores/system-security-plans.ts';
+// Types and stores;
 import { type SystemComponent, type SystemSecurityPlan } from '@/oscal';
-import type { DataResponse } from '@/stores/types.ts';
 import { useSystemStore } from '@/stores/system.ts';
 import Panel from '@/volt/Panel.vue';
+import { useDataApi } from '@/composables/axios';
 
 const toast = useToast();
 const { system } = useSystemStore();
-const sspStore = useSystemSecurityPlanStore();
+
 
 // Data
 const systemSecurityPlan = ref<SystemSecurityPlan | null>(null);
-const components = ref<SystemComponent[] | null>(null);
+
+const { data: components, execute: fetchComponents } = useDataApi<SystemComponent[]>(
+  `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/system-implementation/components`,
+  { method: 'GET' },
+  { immediate: false }
+);
+
+const { execute: executeDeleteComponent } = useDataApi<void>(null,
+  {
+    method: 'DELETE',
+  },
+  { immediate: false }
+);
+
+const { execute: executeGetComponent } = useDataApi<SystemComponent>(
+  null,
+  {
+    method: 'GET',
+  },
+  { immediate: false }
+);
 
 // Modal states
 const showCreateComponentModal = ref(false);
@@ -182,35 +201,33 @@ const showEditComponentModal = ref(false);
 // Edit targets
 const editingComponent = ref<SystemComponent | null>(null);
 
-const loadData = () => {
+const loadData = async () => {
   systemSecurityPlan.value = system.securityPlan as SystemSecurityPlan;
 
-  sspStore
-    .getSystemImplementationComponents(system.securityPlan?.uuid as string)
-    .then((data: DataResponse<SystemComponent[]>) => {
-      components.value = data.data;
-    });
+  await fetchComponents();
 };
 
-onMounted(() => {
-  loadData();
+onMounted(async () => {
+  await loadData();
 });
 
 // Component management
 const editComponent = async (component: SystemComponent) => {
   // Verify the component still exists before editing
   try {
-    const response = await sspStore.getSystemImplementationComponent(
-      system.securityPlan?.uuid as string,
-      component.uuid,
+    const response = await executeGetComponent(
+      `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/system-implementation/components/${component.uuid}`
     );
-    editingComponent.value = response.data;
+    if ( !response.data || !response.data.value) {
+      throw new Error('Component not found');
+    }
+    editingComponent.value = response.data.value.data;
     showEditComponentModal.value = true;
   } catch (error) {
     toast.add({
       severity: 'error',
       summary: 'Error',
-      detail: 'Component not found. Please refresh the page.',
+      detail: `Component not found. Please refresh the page. ${error}`,
       life: 5000,
     });
     // Refresh the component list
@@ -223,34 +240,7 @@ const handleComponentCreated = async (newComponent: SystemComponent) => {
   components.value?.push(newComponent);
   showCreateComponentModal.value = false;
 
-  // Verify by reloading components from backend after a short delay
-  setTimeout(async () => {
-    try {
-      const data = await sspStore.getSystemImplementationComponents(
-        system.securityPlan?.uuid as string,
-      );
-      const foundComponent = data.data.find(
-        (c) => c.uuid === newComponent.uuid,
-      );
-      if (!foundComponent) {
-        toast.add({
-          severity: 'warning',
-          summary: 'Warning',
-          detail:
-            'Component may not have been saved properly. Please refresh the page.',
-          life: 5000,
-        });
-        // Remove from local array if not found in backend
-        if (components.value) {
-          components.value = components.value.filter(
-            (c) => c.uuid !== newComponent.uuid,
-          );
-        }
-      }
-    } catch (error) {
-      // Silently fail verification - the component creation already succeeded
-    }
-  }, 1000);
+  await loadData();
 };
 
 const handleComponentSaved = (updatedComponent: SystemComponent) => {
@@ -278,27 +268,20 @@ const downloadComponentJSON = (component: SystemComponent) => {
 };
 
 const deleteComponent = async (component: SystemComponent) => {
-  if (
-    !confirm(`Are you sure you want to delete component "${component.title}"?`)
-  ) {
+  if (!confirm(`Are you sure you want to delete component "${component.title}"?`)) {
     return;
   }
 
   try {
-    await sspStore.deleteSystemImplementationComponent(
-      system.securityPlan?.uuid as string,
-      component.uuid,
-    );
+    await executeDeleteComponent(`/api/oscal/system-security-plans/${system.securityPlan?.uuid}/system-implementation/components/${component.uuid}`);
     if (components.value) {
-      components.value = components.value.filter(
-        (c) => c.uuid !== component.uuid,
-      );
+      components.value = components.value.filter(c => c.uuid !== component.uuid);
     }
     toast.add({
       severity: 'success',
       summary: 'Success',
       detail: 'Component deleted successfully.',
-      life: 3000,
+      life: 3000
     });
   } catch (error) {
     let errorDetail = 'Failed to delete component. Please try again.';
@@ -315,11 +298,10 @@ const deleteComponent = async (component: SystemComponent) => {
       severity: 'error',
       summary: 'Error',
       detail: errorDetail,
-      life: 5000,
+      life: 5000
     });
   }
 };
-
 const formatComponentType = (type: string): string => {
   // Format common OSCAL component types
   const typeMap: Record<string, string> = {
