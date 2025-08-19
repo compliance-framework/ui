@@ -1,8 +1,5 @@
 <template>
   <div class="p-6">
-    <h3 class="text-lg font-semibold text-gray-900 dark:text-slate-300 mb-4">
-      {{ isEditing ? 'Edit System ID' : 'Create System ID' }}
-    </h3>
 
     <form @submit.prevent="handleSubmit" class="space-y-4">
       <div>

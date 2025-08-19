@@ -113,7 +113,12 @@
   </div>
 
   <!-- User Create Modal -->
-  <Dialog v-model:visible="showCreateUserModal" modal header="Create User">
+  <Dialog
+    v-model:visible="showCreateUserModal"
+    modal
+    header="Create User"
+    class="custom-colors"
+  >
     <SystemImplementationUserCreateForm
       :ssp-id="sspId"
       @cancel="showCreateUserModal = false"
@@ -122,7 +127,12 @@
   </Dialog>
 
   <!-- User Edit Modal -->
-  <Dialog v-model:visible="showEditUserModal" modal header="Edit User">
+  <Dialog
+    v-model:visible="showEditUserModal"
+    modal
+    header="Edit User"
+    class="custom-colors"
+  >
     <SystemImplementationUserEditForm
       v-if="editingUser"
       :ssp-id="sspId"
@@ -249,3 +259,34 @@ const deleteUser = async (user: SystemImplementationUser) => {
   }
 };
 </script>
+
+<style>
+.custom-colors .p-dialog-content {
+  background-color: white; /* light mode */
+  color: #1f2937; /* slate-800 text */
+}
+
+.custom-colors .p-dialog-header {
+  background-color: #f3f4f6; /* light gray header */
+  color: #111827; /* dark header text */
+}
+
+.custom-colors .p-dialog-mask {
+  background-color: rgba(0, 85, 255, 0.7); /* semi-transparent gray */
+}
+
+/* Dark mode */
+.dark .custom-colors .p-dialog-content {
+  background-color: #1f2937; /* slate-900 */
+  color: #e5e7eb; /* slate-200 text */
+}
+
+.dark .custom-colors .p-dialog-header {
+  background-color: #111827;
+  color: #e5e7eb;
+}
+
+.dark .custom-colors .p-dialog-mask {
+  background-color: rgba(30, 41, 59, 0.95);
+}
+</style>

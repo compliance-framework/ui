@@ -126,37 +126,37 @@
   </div>
 
   <!-- Component Create Modal -->
-  <Modal
-    :show="showCreateComponentModal"
-    @close="showCreateComponentModal = false"
+  <Dialog
+    v-model:visible="showCreateComponentModal" modal header="Create System Component"
   >
     <SystemImplementationComponentCreateForm
-      :ssp-id="system.securityPlan?.uuid as string"
+      :ssp-id="sspId"
       @cancel="showCreateComponentModal = false"
       @created="handleComponentCreated"
     />
-  </Modal>
+</Dialog>
 
   <!-- Component Edit Modal -->
-  <Modal
-    :show="!!(showEditComponentModal && editingComponent)"
-    @close="showEditComponentModal = false"
+  <Dialog
+    v-model:visible="showEditComponentModal"
+    modal header = "Edit System Component"
   >
     <SystemImplementationComponentEditForm
-      :ssp-id="system.securityPlan?.uuid as string"
+      v-if="editingComponent"
+      :ssp-id="sspId"
       :component="editingComponent!"
       @cancel="showEditComponentModal = false"
       @saved="handleComponentSaved"
     />
-  </Modal>
+</Dialog>
 </template>
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import decamelizeKeys from 'decamelize-keys';
+import Dialog from '@/volt/Dialog.vue'
 
 // Form components
-import Modal from '@/components/Modal.vue';
 import SystemImplementationComponentCreateForm from '@/components/system-security-plans/SystemImplementationComponentCreateForm.vue';
 import SystemImplementationComponentEditForm from '@/components/system-security-plans/SystemImplementationComponentEditForm.vue';
 
@@ -170,6 +170,8 @@ import Panel from '@/volt/Panel.vue';
 const toast = useToast();
 const { system } = useSystemStore();
 const sspStore = useSystemSecurityPlanStore();
+
+const sspId = computed(() => system.securityPlan?.uuid ?? '');
 
 // Data
 const systemSecurityPlan = ref<SystemSecurityPlan | null>(null);
