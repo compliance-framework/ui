@@ -155,6 +155,14 @@ const authenticatedRoutes = [
     },
   },
   {
+    path: '/profiles/create',
+    name: 'profile:create',
+    component: () => import('../views/profile/ProfileCreate.vue'),
+    meta: {
+      requiresAuth: true,
+    },
+  },
+  {
     path: '/profiles/:id',
     name: 'profile-view',
     component: () => import('../views/profile/ProfileView.vue'),

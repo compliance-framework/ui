@@ -174,6 +174,10 @@ export interface CCFUserCreate {
 export interface Profile {
   uuid: string;
   metadata: Metadata;
+  import: Import;
+  merge: Merge;
+  modify: Modify;
+  backMatter: BackMatter;
 }
 
 export interface Import {
@@ -199,6 +203,11 @@ export type MergeCombineOptions = 'use-first' | 'flat';
 
 export interface MergeCombine {
   method: MergeCombineOptions;
+}
+
+export interface Modify {
+  setParameters: unknown[];
+  alters: unknown[];
 }
 
 export interface BackMatter {
