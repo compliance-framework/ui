@@ -38,6 +38,14 @@
       </tbody>
     </table>
   </div>
+  <div class="my-4">
+    <RouterLink
+      :to="{ name: 'profile:create' }"
+      class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md inline-block ml-4"
+    >
+      Create New Profile
+    </RouterLink>
+  </div>
 </template>
 
 <script lang="ts" setup>
