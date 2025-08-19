@@ -5,7 +5,7 @@
         <div>
           <div class="mb-2">
             <label for="uuid">UUID</label>
-            <div class="flex items-center place-items-stretch">
+            <div class="flex items-center place-items-stretch" v-if="!updating">
               <InputText
                 v-model="evidence.uuid"
                 class="rounded-r-none border-r-0"
@@ -16,6 +16,11 @@
                 class="py-3 rounded-l-none"
                 ><BIconArrowRepeat
               /></TertiaryButton>
+            </div>
+            <div class="flex items-center place-items-stretch" v-else>
+              <div class="flex items-center bg-gray-100 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-md px-3 py-2">
+                <span class="text-sm text-gray-600 dark:text-slate-400 font-mono">{{ evidence.uuid }}</span>
+              </div>
             </div>
           </div>
           <div class="mb-2">
@@ -71,7 +76,7 @@
               <InputText id="reason" v-model="status.reason" />
             </div>
           </div>
-          <div class="mb-2">
+          <div class="mb-2" v-if="!updating">
             <div class="flex items-center gap-2 mb-2">
               <p>Labels</p>
               <secondary-button size="small" type="button" @click="addLabel"
@@ -116,7 +121,7 @@
           <Base64FileUpload @uploaded="onUpload" />
         </div>
       </div>
-      <primary-button type="submit">Create Evidence</primary-button>
+      <primary-button type="submit">{{ props.updating ? 'Update' : 'Create' }} Evidence</primary-button>
     </form>
   </div>
 </template>
@@ -137,6 +142,7 @@ import Base64FileUpload from '@/components/Base64FileUpload.vue';
 const props = defineProps<{
   backmatterResources: BackMatterResource[];
   evidence?: Partial<Evidence>;
+  updating?: boolean;
 }>();
 
 const backmatterResources = ref<BackMatterResource[]>(props.backmatterResources || []);
