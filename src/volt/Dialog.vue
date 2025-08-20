@@ -54,7 +54,7 @@ interface Props extends /* @vue-ignore */ DialogProps {
 const props = defineProps<Props>();
 
 const getSizeClass = () => {
-  const size = props.size as string
+  const size = props.size
   const sizes: {[size: string]: string} = {
     'sm': 'w-1/4',
     'md': 'w-1/3',
@@ -109,18 +109,22 @@ function mergePtPart(
 ) {
   if (!a && !b) return undefined;
 
-  const normalize = (val: typeof a): DialogPassThroughAttributes => {
+  const normalize = (val: typeof a): DialogPassThroughAttributes | undefined => {
     if (!val) return {};
     if (typeof val === 'string') return { class: val };
     if (typeof val === 'function') {
-      // evaluate function with empty options or pass through later
-      const res = val({} as any); // TODO: pass real options if you have them
-      return normalize(res);
+      console.warn("Unable to normalize dialog pass through attribute: ", val);
+      return;
     }
     return val as DialogPassThroughAttributes;
   };
   const aObj = normalize(a);
   const bObj = normalize(b);
+
+  if (!aObj || !bObj) {
+    return {};
+  }
+
   const mergedClass = [aObj.class, bObj.class].filter(Boolean).join(' ');
   return { ...aObj, ...bObj, class: mergedClass };
 }
