@@ -93,6 +93,7 @@ import { computed, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import type { ImportSsp } from '@/stores/plan-of-action-and-milestones.ts';
 import ImportSspForm from '@/components/poam/ImportSspForm.vue';
+import Dialog from '@/volt/Dialog.vue';
 import { useDataApi } from '@/composables/axios';
 import { getPoamIdFromRoute } from '../../utils/get-poam-id-from-route';
 
