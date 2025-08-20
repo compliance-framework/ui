@@ -1,7 +1,6 @@
 <template>
   <div class="px-12 py-8">
     <form @submit.prevent="updateStatement()">
-      <h1 class="text-xl font-semibold mb-6 dark:text-slate-300">Edit Statement</h1>
 
     <div class="mb-4">
       <label class="inline-block pb-2 dark:text-slate-300">UUID</label>

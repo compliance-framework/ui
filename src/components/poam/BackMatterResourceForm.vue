@@ -1,8 +1,5 @@
 <template>
   <div class="p-6">
-    <h3 class="text-lg font-medium text-gray-900 dark:text-slate-300 mb-4">
-      {{ isEdit ? 'Edit Resource' : 'Create Resource' }}
-    </h3>
 
     <form @submit.prevent="handleSubmit" class="space-y-6">
       <!-- Basic Information -->

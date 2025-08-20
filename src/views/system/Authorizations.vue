@@ -119,29 +119,28 @@
   </div>
 
   <!-- Leveraged Authorization Create Modal -->
-  <Modal
-    :show="showCreateLeveragedAuthModal"
-    @close="showCreateLeveragedAuthModal = false"
+  <Dialog
+    v-model:visible="showCreateLeveragedAuthModal" modal header="Create Leveraged Authorization"
   >
     <SystemImplementationLeveragedAuthorizationCreateForm
       :ssp-id="id"
       @cancel="showCreateLeveragedAuthModal = false"
       @created="handleLeveragedAuthCreated"
     />
-  </Modal>
+  </Dialog>
 
   <!-- Leveraged Authorization Edit Modal -->
-  <Modal
-    :show="!!(showEditLeveragedAuthModal && editingLeveragedAuth)"
-    @close="showEditLeveragedAuthModal = false"
+  <Dialog
+    v-model:visible="showEditLeveragedAuthModal" modal header="Edit Leveraged Authorization"
   >
     <SystemImplementationLeveragedAuthorizationEditForm
+      v-if=editingLeveragedAuth
       :ssp-id="id"
       :auth="editingLeveragedAuth!"
       @cancel="showEditLeveragedAuthModal = false"
       @saved="handleLeveragedAuthSaved"
     />
-  </Modal>
+  </Dialog>
 </template>
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
@@ -150,7 +149,7 @@ import { useToast } from 'primevue/usetoast';
 import decamelizeKeys from 'decamelize-keys';
 
 // Form components
-import Modal from '@/components/Modal.vue';
+import Dialog from '@/volt/Dialog.vue';
 import SystemImplementationLeveragedAuthorizationCreateForm from '@/components/system-security-plans/SystemImplementationLeveragedAuthorizationCreateForm.vue';
 import SystemImplementationLeveragedAuthorizationEditForm from '@/components/system-security-plans/SystemImplementationLeveragedAuthorizationEditForm.vue';
 

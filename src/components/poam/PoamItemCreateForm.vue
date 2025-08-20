@@ -1,8 +1,5 @@
 <template>
   <div class="p-6">
-    <h3 class="text-lg font-semibold text-gray-900 dark:text-slate-300 mb-4">
-      Create POAM Item
-    </h3>
 
     <form @submit.prevent="submit" class="space-y-4">
       <div>

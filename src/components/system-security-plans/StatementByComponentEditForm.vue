@@ -1,7 +1,6 @@
 <template>
   <div class="px-12 py-8">
     <form @submit.prevent="updateByComponent()">
-      <h1 class="text-xl font-semibold mb-6 dark:text-slate-300">Edit By-Component Implementation</h1>
 
       <!-- Component UUID (Read-only) -->
       <div class="mb-4">

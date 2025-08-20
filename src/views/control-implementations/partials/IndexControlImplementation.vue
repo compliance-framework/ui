@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { v4 as uuidv4 } from 'uuid'
+import { v4 as uuidv4 } from 'uuid';
 import Badge from '@/volt/Badge.vue';
 import Drawer from '@/volt/Drawer.vue';
 import type { Control } from '@/oscal';
@@ -21,7 +21,9 @@ const { value: drawerOpen, set: setDrawer } = useToggle();
 const drawerLoading = useToggle();
 const { system } = useSystemStore();
 
-const selectedImplementation = ref<ImplementedRequirement>(implementation as ImplementedRequirement);
+const selectedImplementation = ref<ImplementedRequirement>(
+  implementation as ImplementedRequirement,
+);
 const statements = ref<{ [key: string]: Statement }>({});
 watchEffect(() => {
   statements.value = {};
@@ -86,13 +88,13 @@ function onMouseLeave(e: MouseEvent) {
 }
 
 function updateStatement(statement: Statement) {
-  statements.value[statement.statementId] = statement
+  statements.value[statement.statementId] = statement;
 }
 
 async function onPartSelect(e: Event, part: Part) {
   e.preventDefault();
-  selectedPart.value = part
-  setDrawer(true)
+  selectedPart.value = part;
+  setDrawer(true);
   drawerLoading.set(true);
 
   if (!selectedImplementation.value) {
@@ -150,9 +152,7 @@ async function onPartSelect(e: Event, part: Part) {
         @selected="onPartSelect"
       >
         <template #default="{ part }">
-          <div
-            class="p-0.5"
-          >
+          <div class="p-0.5">
             <span v-if="getText(part)">{{ getText(part) }}</span>
             <template v-if="statements[part.id]">
               <Badge
@@ -168,7 +168,12 @@ async function onPartSelect(e: Event, part: Part) {
     </div>
   </div>
 
-  <Drawer v-model:visible="drawerOpen" header="Implementation" position="right" class="w-full! md:w-1/2! lg:w-3/5!">
+  <Drawer
+    v-model:visible="drawerOpen"
+    header="Implementation"
+    position="right"
+    class="w-full! md:w-1/2! lg:w-3/5!"
+  >
     <ControlStatementImplementation
       v-if="selectedPart && statements[selectedPart.id]"
       @updated="updateStatement"

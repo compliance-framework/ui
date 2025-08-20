@@ -1,5 +1,5 @@
 <template>
-  <Modal :show="show" @close="show = false">
+  <Dialog v-model:visible="show" modal>
     <div class="px-12 py-8">
       <TaskCreateForm @created="done" @cancel="show = false" :assessment-plan-id="assessmentPlanId" />
     </div>
@@ -11,12 +11,12 @@
         Close
       </PrimaryButton>
     </div>
-  </Modal>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
 import PrimaryButton from '@/components/PrimaryButton.vue'
-import Modal from '@/components/Modal.vue'
+import Dialog from '@/volt/Dialog.vue';
 import TaskCreateForm from '@/components/assessment-plans/TaskCreateForm.vue'
 import type { Task } from '@/stores/assessment-plans.ts'
 

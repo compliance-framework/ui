@@ -1,5 +1,5 @@
-<template>
-  <Modal :show="show" @close="show = false">
+<template> 
+  <Dialog v-model:visible="show" modal>
     <div class="px-12 py-8">
       <CapabilityEditForm @updated="done" @cancel="show = false" :component-definition-id="componentDefinitionId" :capability="capability" />
     </div>
@@ -11,12 +11,12 @@
         Close
       </PrimaryButton>
     </div>
-  </Modal>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
 import PrimaryButton from '@/components/PrimaryButton.vue'
-import Modal from '@/components/Modal.vue'
+import Dialog from '@/volt/Dialog.vue'
 import CapabilityEditForm from '@/components/component-definitions/CapabilityEditForm.vue'
 import type { Capability } from '@/stores/component-definitions.ts'
 
