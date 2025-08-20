@@ -1,19 +1,16 @@
 <script setup lang="ts">
-import { v4 as uuidv4 } from 'uuid'
+import { v4 as uuidv4 } from 'uuid';
 import Badge from '@/volt/Badge.vue';
 import Drawer from '@/volt/Drawer.vue';
 import type { Control } from '@/oscal';
-import {
-  type ByComponent, type CreateStatementRequest,
-  type ImplementedRequirement, type ResponsibleRole,
-  type Statement, useSystemSecurityPlanStore
-} from '@/stores/system-security-plans.ts'
+import type {  CreateStatementRequest, ImplementedRequirement, Statement } from '@/stores/system-security-plans.ts'
 import PartDisplay from '@/components/PartDisplay.vue';
-import type { Link, Part, Property } from '@/stores/types.ts'
+import type { Part } from '@/stores/types.ts'
 import { ref, watchEffect } from 'vue';
 import { useToggle } from '@/composables/useToggle'
 import ControlStatementImplementation from '@/views/control-implementations/partials/ControlStatementImplementation.vue'
 import { useSystemStore } from '@/stores/system.ts'
+import { useDataApi, decamelizeKeys } from '@/composables/axios';
 
 const { control, implementation } = defineProps<{
   control: Control;
@@ -22,10 +19,11 @@ const { control, implementation } = defineProps<{
 const selectedPart = ref<Part>();
 const { value: drawerOpen, set: setDrawer } = useToggle();
 const drawerLoading = useToggle();
-const sspStore = useSystemSecurityPlanStore();
 const { system } = useSystemStore();
 
-const selectedImplementation = ref<ImplementedRequirement>(implementation as ImplementedRequirement);
+const selectedImplementation = ref<ImplementedRequirement>(
+  implementation as ImplementedRequirement,
+);
 const statements = ref<{ [key: string]: Statement }>({});
 watchEffect(() => {
   statements.value = {};
@@ -34,6 +32,21 @@ watchEffect(() => {
   }
 });
 
+const { execute: executeCreate } = useDataApi<ImplementedRequirement>(
+  `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/control-implementation/implemented-requirements`,
+  {
+    method: 'POST',
+    transformRequest: [decamelizeKeys],
+  }, { immediate: false }
+);
+
+const { execute: executeCreateStatement } = useDataApi<Statement>(
+  null,
+  {
+    method: 'POST',
+    transformRequest: [decamelizeKeys],
+  }, { immediate: false }
+);
 
 function getLabel(part: Part): string {
   if (part.props) {
@@ -75,36 +88,48 @@ function onMouseLeave(e: MouseEvent) {
 }
 
 function updateStatement(statement: Statement) {
-  statements.value[statement.statementId] = statement
+  statements.value[statement.statementId] = statement;
 }
 
 async function onPartSelect(e: Event, part: Part) {
   e.preventDefault();
-  selectedPart.value = part
-  setDrawer(true)
+  selectedPart.value = part;
+  setDrawer(true);
   drawerLoading.set(true);
 
   if (!selectedImplementation.value) {
-    const response = await sspStore.createImplementedRequirement(system.securityPlan?.uuid as string, {
-      uuid: uuidv4(),
-      controlId: control.id,
-    } as ImplementedRequirement);
-    selectedImplementation.value = response.data;
+    const response = await executeCreate({
+      data: {
+        uuid: uuidv4(),
+        controlId: control.id,
+      } as ImplementedRequirement
+    });
+    if (response.data.value && response.data.value.data) {
+      selectedImplementation.value = response.data.value.data;
+    } else {
+      // Handle error: response.data.value is null or missing data
+      throw new Error("Failed to create implemented requirement: response data is missing.");
+    }
   }
 
   if (!statements.value[selectedPart.value.id]) {
-    const response = await sspStore.createImplementedRequirementStatement(
-      system.securityPlan?.uuid as string,
-      selectedImplementation.value.uuid,
+    const response= await executeCreateStatement(
+      `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/control-implementation/implemented-requirements/${selectedImplementation.value.uuid}/statements`,
       {
-        uuid: uuidv4(),
-        statementId: selectedPart.value.id,
-        byComponents: [],
-        props: [],
-        links: [],
-      } as CreateStatementRequest,
-    )
-    statements.value[selectedPart.value.id] = response.data
+        data: {
+          uuid: uuidv4(),
+          statementId: selectedPart.value.id,
+          byComponents: [],
+          props: [],
+          links: [],
+        } as CreateStatementRequest,
+      }
+    );
+    if (response.data.value) {
+      statements.value[selectedPart.value.id] = response.data.value.data;
+    } else {
+      console.error('Failed to create statement: response.data.value is null or undefined', response);
+    }
   }
 
   drawerLoading.set(false);
@@ -127,9 +152,7 @@ async function onPartSelect(e: Event, part: Part) {
         @selected="onPartSelect"
       >
         <template #default="{ part }">
-          <div
-            class="p-0.5"
-          >
+          <div class="p-0.5">
             <span v-if="getText(part)">{{ getText(part) }}</span>
             <template v-if="statements[part.id]">
               <Badge
@@ -145,7 +168,12 @@ async function onPartSelect(e: Event, part: Part) {
     </div>
   </div>
 
-  <Drawer v-model:visible="drawerOpen" header="Implementation" position="right" class="w-full! md:w-1/2! lg:w-3/5!">
+  <Drawer
+    v-model:visible="drawerOpen"
+    header="Implementation"
+    position="right"
+    class="w-full! md:w-1/2! lg:w-3/5!"
+  >
     <ControlStatementImplementation
       v-if="selectedPart && statements[selectedPart.id]"
       @updated="updateStatement"

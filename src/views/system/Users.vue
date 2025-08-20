@@ -145,7 +145,6 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
-import { useRoute } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
 import decamelizeKeys from 'decamelize-keys';
 import Dialog from '@/volt/Dialog.vue';
@@ -156,44 +155,45 @@ import SystemImplementationUserCreateForm from '@/components/system-security-pla
 import SystemImplementationUserEditForm from '@/components/system-security-plans/SystemImplementationUserEditForm.vue';
 
 // Types and stores
-import {
-  type SystemImplementationUser,
-  type SystemSecurityPlan,
-  useSystemSecurityPlanStore,
-} from '@/stores/system-security-plans.ts';
-import type { DataResponse } from '@/stores/types.ts';
+import type { SystemImplementationUser, SystemSecurityPlan } from '@/stores/system-security-plans.ts';
 import { useSystemStore } from '@/stores/system.ts';
+import { useDataApi } from '@/composables/axios';
 
-const route = useRoute();
 const toast = useToast();
-const id = route.params.id as string;
-const sspStore = useSystemSecurityPlanStore();
 const { system } = useSystemStore();
 
 // Data
 const systemSecurityPlan = ref<SystemSecurityPlan | null>(null);
 const sspId = computed(() => systemSecurityPlan.value?.uuid ?? '');
-const users = ref<SystemImplementationUser[] | null>(null);
 
 // Modal states
 const showCreateUserModal = ref(false);
 const showEditUserModal = ref(false);
 
+const { data: users, execute: fetchUsers } = useDataApi<SystemImplementationUser[]>(
+  `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/system-implementation/users`,
+  { method: 'GET' },
+  { immediate: false }
+);
+
+const { execute: executeDelete } = useDataApi<void>(null,
+  {
+    method: 'DELETE',
+  },
+  { immediate: false }
+);
+
 // Edit targets
 const editingUser = ref<SystemImplementationUser | null>(null);
 
-const loadData = () => {
+const loadData = async () => {
   systemSecurityPlan.value = system.securityPlan as SystemSecurityPlan;
 
-  sspStore
-    .getSystemImplementationUsers(system.securityPlan?.uuid as string)
-    .then((data: DataResponse<SystemImplementationUser[]>) => {
-      users.value = data.data;
-    });
+  await fetchUsers();
 };
 
-onMounted(() => {
-  loadData();
+onMounted(async () => {
+  await loadData();
 });
 
 // User management
@@ -235,10 +235,7 @@ const deleteUser = async (user: SystemImplementationUser) => {
   }
 
   try {
-    await sspStore.deleteSystemImplementationUser(
-      systemSecurityPlan.value?.uuid as string,
-      user.uuid,
-    );
+    await executeDelete(`/api/oscal/system-security-plans/${system.securityPlan?.uuid}/system-implementation/users/${user.uuid}`);
     if (users.value) {
       users.value = users.value.filter((u) => u.uuid !== user.uuid);
     }

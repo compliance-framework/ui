@@ -126,6 +126,38 @@ function useDataApi<T>(
   }
 }
 
+function useGuestApi<T>(
+  url?: Ref | string | null,
+  config?: AxiosRequestConfig | null,
+  options?: UseAxiosOptions | UseAxiosOptionsWithInitialData<DataResponse<T>> | null,
+) {
+  const instance = useGuestInstance();
+  const ax = useAxios<DataResponse<T>>(
+    toValue(url) ?? "",
+    config ?? {} as AxiosRequestConfig,
+    instance,
+    options ?? { immediate: true } as UseAxiosOptions
+  );
+
+  let initialData: T | undefined = undefined;
+  if (options && 'initialData' in options) {
+    initialData = options.initialData as T;
+  }
+
+  const data = shallowRef<T | undefined>(initialData);
+
+  watch(
+    ax.data,
+    (val) => { data.value = val?.data ?? initialData; },
+    { immediate: true }
+  );
+
+  return {
+    ...ax,
+    data,
+  }
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const decamelizeKeys = (data: any, headers: AxiosHeaders) => {
   // Enforce Content-Type header for JSON data
@@ -135,4 +167,4 @@ const decamelizeKeys = (data: any, headers: AxiosHeaders) => {
 };
 
 
-export { useAuthenticatedInstance, useGuestInstance, useDataApi, decamelizeKeys };
+export { useAuthenticatedInstance, useGuestInstance, useDataApi, useGuestApi, decamelizeKeys };

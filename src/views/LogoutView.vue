@@ -4,15 +4,14 @@
 
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
-import { useAuthStore } from '@/stores/auth';
+import { useUserStore } from '@/stores/auth';
 import { onMounted } from 'vue';
 
 const router = useRouter();
-const authStore = useAuthStore();
+const user = useUserStore();
 
 onMounted(() => {
-  authStore.logout().then(() => {
-    router.push({ name: "login" });
-  });
+  user.isAuthenticated = false;
+  router.push({ name: "login" });
 });
 </script>

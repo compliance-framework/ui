@@ -10,7 +10,7 @@
         <!--        <SystemCharacteristicsDiagramGroupForm v-model="authorizationBoundary" />-->
         <div
           class="overflow-hidden border border-ccf-300 dark:border-slate-700 rounded-md"
-          v-for="diagram in authorizationBoundary.diagrams"
+          v-for="diagram in authorizationBoundary?.diagrams"
           :key="diagram.uuid"
         >
           <DrawIODiagramEditor
@@ -30,7 +30,7 @@
         <!--        <SystemCharacteristicsDiagramGroupForm v-model="networkArchitecture" />-->
         <div
           class="overflow-hidden border border-ccf-300 dark:border-slate-700 rounded-md"
-          v-for="diagram in networkArchitecture.diagrams"
+          v-for="diagram in networkArchitecture?.diagrams"
           :key="diagram.uuid"
         >
           <DrawIODiagramEditor
@@ -50,7 +50,7 @@
         <!--        <SystemCharacteristicsDiagramGroupForm v-model="dataFlow" />-->
         <div
           class="overflow-hidden border border-ccf-300 dark:border-slate-700 rounded-md"
-          v-for="diagram in dataFlow.diagrams"
+          v-for="diagram in dataFlow?.diagrams"
           :key="diagram.uuid"
         >
           <DrawIODiagramEditor
@@ -67,62 +67,76 @@
 </template>
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
-import PageHeader from '@/components/PageHeader.vue';
-import {
-  type Diagram,
-  type DiagramGrouping,
-  type SystemSecurityPlan,
-  useSystemSecurityPlanStore,
-} from '@/stores/system-security-plans.ts';
-import { useRoute } from 'vue-router';
-import PageSubHeader from '@/components/PageSubHeader.vue';
-import SystemCharacteristicsForm from '@/components/SystemCharacteristicsForm.vue';
-import SystemCharacteristicsDiagramGroupForm from '@/components/SystemCharacteristicsDiagramGroupForm.vue';
+import type { Diagram, DiagramGrouping, SystemSecurityPlan } from '@/stores/system-security-plans.ts';
 import DrawIODiagramEditor from '@/components/DrawIODiagramEditor.vue';
 import CollapsableGroup from '@/components/CollapsableGroup.vue';
-import type { DataResponse } from '@/stores/types.ts';
 import { v4 } from 'uuid';
 import { useToast } from 'primevue/usetoast';
 import { useSystemStore } from '@/stores/system.ts';
+import { useDataApi, decamelizeKeys } from '@/composables/axios';
 
-const route = useRoute();
-const sspStore = useSystemSecurityPlanStore();
 const { system } = useSystemStore();
 const toast = useToast();
 
 const systemSecurityPlan = ref<SystemSecurityPlan | null>(system.securityPlan as SystemSecurityPlan || null);
-const authorizationBoundary = ref<DiagramGrouping>({} as DiagramGrouping);
-const networkArchitecture = ref<DiagramGrouping>({} as DiagramGrouping);
-const dataFlow = ref<DiagramGrouping>({} as DiagramGrouping);
 
-onMounted(() => {
-  sspStore
-    .getCharacteristicsAuthorizationBoundary(systemSecurityPlan.value?.uuid as string)
-    .then((data: DataResponse<DiagramGrouping>) => {
-      authorizationBoundary.value = data.data;
-      if (!data.data?.diagrams?.length) {
-        authorizationBoundary.value.diagrams = [
-          {
-            uuid: v4(),
-          } as Diagram,
-        ];
-      }
-    });
-  sspStore.getCharacteristicsNetworkArchitecture(systemSecurityPlan.value?.uuid as string).then((data) => {
-    networkArchitecture.value = data.data;
-  });
-  sspStore.getCharacteristicsDataFlow(systemSecurityPlan.value?.uuid as string).then((data) => {
-    dataFlow.value = data.data;
-  });
+const { data: authorizationBoundary, execute: fetchAuthorizationBoundaryDiagram } = useDataApi<DiagramGrouping>(
+  `/api/oscal/system-security-plans/${systemSecurityPlan.value?.uuid}/system-characteristics/authorization-boundary`,
+  { method: "GET" },
+  { initialData: { diagrams: [ { uuid: v4() }] } as DiagramGrouping, immediate: false }
+);
+
+const { data: networkArchitecture, execute: fetchNetworkArchitectureDiagram } = useDataApi<DiagramGrouping>(
+  `/api/oscal/system-security-plans/${systemSecurityPlan.value?.uuid}/system-characteristics/network-architecture`,
+  { method: "GET" },
+  { initialData: {} as DiagramGrouping, immediate: false }
+);
+
+const { data: dataFlow, execute: fetchDataFlowDiagram } = useDataApi<DiagramGrouping>(
+  `/api/oscal/system-security-plans/${systemSecurityPlan.value?.uuid}/system-characteristics/data-flow`,
+  { method: "GET" },
+  { initialData: {} as DiagramGrouping, immediate: false }
+);
+
+// Required multiple commands due to if more than 1 diagram is present, axios will end up cancelling the requests.
+const { execute: saveABDiagram } = useDataApi<Diagram>(
+  null,
+  {
+    method: 'PUT',
+    transformRequest: [decamelizeKeys],
+  },
+  { immediate: false }
+);
+
+const { execute: saveNADiagram } = useDataApi<Diagram>(
+  null,
+  {
+    method: 'PUT',
+    transformRequest: [decamelizeKeys],
+  },
+  { immediate: false }
+);
+
+const { execute: saveDFDiagram } = useDataApi<Diagram>(
+  null,
+  {
+    method: 'PUT',
+    transformRequest: [decamelizeKeys],
+  },
+  { immediate: false }
+);
+
+onMounted(async () => {
+  await fetchAuthorizationBoundaryDiagram();
+  await fetchNetworkArchitectureDiagram();
+  await fetchDataFlowDiagram();
 });
 
 async function saveAuthorizationBoundaryDiagram(diagram: Diagram) {
   if (systemSecurityPlan.value != null) {
-    const response =
-      await sspStore.updateCharacteristicsAuthorizationBoundaryDiagram(
-        systemSecurityPlan.value.uuid,
-        diagram,
-      );
+    await saveABDiagram(`/api/oscal/system-security-plans/${systemSecurityPlan.value.uuid}/system-characteristics/authorization-boundary/diagrams/${diagram.uuid}`, {
+      data: diagram,
+    });
     toast.add({
       severity: 'success',
       summary: 'Diagram Saved',
@@ -134,11 +148,9 @@ async function saveAuthorizationBoundaryDiagram(diagram: Diagram) {
 
 async function saveNetworkArchitectureDiagram(diagram: Diagram) {
   if (systemSecurityPlan.value != null) {
-    const response =
-      await sspStore.updateCharacteristicsNetworkArchitectureDiagram(
-        systemSecurityPlan.value.uuid,
-        diagram,
-      );
+    await saveNADiagram(`/api/oscal/system-security-plans/${systemSecurityPlan.value.uuid}/system-characteristics/network-architecture/diagrams/${diagram.uuid}`, {
+      data: diagram,
+    });
     toast.add({
       severity: 'success',
       summary: 'Diagram Saved',
@@ -150,10 +162,9 @@ async function saveNetworkArchitectureDiagram(diagram: Diagram) {
 
 async function saveDataFlowDiagram(diagram: Diagram) {
   if (systemSecurityPlan.value != null) {
-    const response = await sspStore.updateCharacteristicsDataFlowDiagram(
-      systemSecurityPlan.value.uuid,
-      diagram,
-    );
+    await saveDFDiagram(`/api/oscal/system-security-plans/${systemSecurityPlan.value.uuid}/system-characteristics/data-flow/diagrams/${diagram.uuid}`, {
+      data: diagram,
+    });
     toast.add({
       severity: 'success',
       summary: 'Diagram Saved',
