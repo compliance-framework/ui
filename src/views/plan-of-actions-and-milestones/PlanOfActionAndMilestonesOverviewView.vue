@@ -141,15 +141,20 @@
       </div>
 
       <!-- Edit Metadata Modal -->
-      <Modal :show="showEditModal" @close="showEditModal = false" size="lg">
+      <Dialog
+        v-model:visible="showEditModal"
+        size="lg"
+        modal
+        header="Edit POAM Metadata"
+      >
         <MetadataEditForm
           v-if="showEditModal && planOfActionAndMilestones.metadata"
-          :poam-id="route.params.id as string"
+          :poam-id="poamId"
           :metadata="planOfActionAndMilestones.metadata"
           @cancel="showEditModal = false"
           @saved="handleMetadataSaved"
         />
-      </Modal>
+      </Dialog>
 
       <!-- Summary Statistics -->
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -243,17 +248,20 @@ import type {
   Risk,
 } from '@/stores/plan-of-action-and-milestones.ts';
 import MetadataEditForm from '@/components/poam/MetadataEditForm.vue';
-import Modal from '@/components/Modal.vue';
+import Dialog from '@/volt/Dialog.vue';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi } from '@/composables/axios';
 import type { AxiosError } from 'axios';
 import type { ErrorResponse, ErrorBody, Metadata } from '@/stores/types';
 import decamelizeKeys from 'decamelize-keys';
+import { getPoamIdFromRoute } from '../../utils/get-poam-id-from-route';
 
 const route = useRoute();
 const toast = useToast();
 
 const showEditModal = ref(false);
+
+const poamId = computed(() => getPoamIdFromRoute(route));
 
 const { data: planOfActionAndMilestones } =
   useDataApi<PlanOfActionAndMilestones>(

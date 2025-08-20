@@ -231,7 +231,7 @@
           <!-- Overview Tab -->
           <TabPanel value="overview">
             <SystemImplementationOverviewForm
-              :ssp-id="id"
+              :ssp-id="sspId"
               :system-implementation="systemImplementation!"
               @saved="handleOverviewSaved"
             />
@@ -634,76 +634,80 @@
   </div>
 
   <!-- User Create Modal -->
-  <Modal :show="showCreateUserModal" @close="showCreateUserModal = false">
+  <Dialog v-model:visible="showCreateUserModal" modal header="Create User">
     <SystemImplementationUserCreateForm
-      :ssp-id="id"
+      :ssp-id="sspId"
       @cancel="showCreateUserModal = false"
       @created="handleUserCreated"
     />
-  </Modal>
+  </Dialog>
 
   <!-- User Edit Modal -->
-  <Modal
-    :show="!!(showEditUserModal && editingUser)"
-    @close="showEditUserModal = false"
-  >
+  <Dialog v-model:visible="showEditUserModal" modal header="Edit User">
     <SystemImplementationUserEditForm
-      :ssp-id="id"
-      :user="editingUser!"
+      v-if="editingUser"
+      :ssp-id="sspId"
+      :user="editingUser"
       @cancel="showEditUserModal = false"
       @saved="handleUserSaved"
     />
-  </Modal>
+  </Dialog>
 
   <!-- Component Create Modal -->
-  <Modal
-    :show="showCreateComponentModal"
-    @close="showCreateComponentModal = false"
+  <Dialog
+    v-model:visible="showCreateComponentModal"
+    modal
+    header="Create Component"
   >
     <SystemImplementationComponentCreateForm
-      :ssp-id="id"
+      :ssp-id="sspId"
       @cancel="showCreateComponentModal = false"
       @created="handleComponentCreated"
     />
-  </Modal>
+  </Dialog>
 
   <!-- Component Edit Modal -->
-  <Modal
-    :show="!!(showEditComponentModal && editingComponent)"
-    @close="showEditComponentModal = false"
+  <Dialog
+    v-model:visible="showEditComponentModal"
+    modal
+    header="Edit Component"
   >
     <SystemImplementationComponentEditForm
-      :ssp-id="id"
+      v-if="editingComponent"
+      :ssp-id="sspId"
       :component="editingComponent!"
       @cancel="showEditComponentModal = false"
       @saved="handleComponentSaved"
     />
-  </Modal>
+  </Dialog>
 
   <!-- Leveraged Authorization Create Modal -->
-  <Modal
-    :show="showCreateLeveragedAuthModal"
-    @close="showCreateLeveragedAuthModal = false"
+  <Dialog
+    v-model:visible="showCreateLeveragedAuthModal"
+    modal
+    header="Create Leveraged Authorization"
   >
     <SystemImplementationLeveragedAuthorizationCreateForm
-      :ssp-id="id"
+      :ssp-id="sspId"
       @cancel="showCreateLeveragedAuthModal = false"
       @created="handleLeveragedAuthCreated"
     />
-  </Modal>
+  </Dialog>
 
   <!-- Leveraged Authorization Edit Modal -->
-  <Modal
-    :show="!!(showEditLeveragedAuthModal && editingLeveragedAuth)"
-    @close="showEditLeveragedAuthModal = false"
+  <Dialog
+    v-model:visible="showEditLeveragedAuthModal"
+    modal
+    header="Edit Leveraged Authorization"
   >
     <SystemImplementationLeveragedAuthorizationEditForm
-      :ssp-id="id"
+      v-if="editingLeveragedAuth"
+      :ssp-id="sspId"
       :auth="editingLeveragedAuth!"
       @cancel="showEditLeveragedAuthModal = false"
       @saved="handleLeveragedAuthSaved"
     />
-  </Modal>
+  </Dialog>
 </template>
 <script setup lang="ts">
 import { ref, computed } from 'vue';
@@ -719,7 +723,7 @@ import TabPanels from '@/volt/TabPanels.vue';
 import TabPanel from '@/volt/TabPanel.vue';
 
 // Form components
-import Modal from '@/components/Modal.vue';
+import Dialog from '@/volt/Dialog.vue';
 import CollapsableGroup from '@/components/CollapsableGroup.vue';
 import SystemImplementationOverviewForm from '@/components/system-security-plans/SystemImplementationOverviewForm.vue';
 import SystemImplementationUserCreateForm from '@/components/system-security-plans/SystemImplementationUserCreateForm.vue';
@@ -740,23 +744,23 @@ import { useDataApi } from '@/composables/axios';
 
 const route = useRoute();
 const toast = useToast();
-const id = route.params.id as string;
+const sspId = route.params.id as string;
 
 // Tab state
 const activeTab = ref('overview');
 
 // Data
 const { data: systemImplementation } = useDataApi<SystemImplementation>(
-  `/api/oscal/system-security-plans/${id}/system-implementation`,
+  `/api/oscal/system-security-plans/${sspId}/system-implementation`,
 );
 const { data: users } = useDataApi<SystemImplementationUser[]>(
-  `/api/oscal/system-security-plans/${id}/system-implementation/users`,
+  `/api/oscal/system-security-plans/${sspId}/system-implementation/users`,
 );
 const { data: components } = useDataApi<SystemComponent[]>(
-  `/api/oscal/system-security-plans/${id}/system-implementation/components`,
+  `/api/oscal/system-security-plans/${sspId}/system-implementation/components`,
 );
 const { data: leveragedAuthorizations } = useDataApi<LeveragedAuthorization[]>(
-  `/api/oscal/system-security-plans/${id}/system-implementation/leveraged-authorizations`,
+  `/api/oscal/system-security-plans/${sspId}/system-implementation/leveraged-authorizations`,
 );
 
 // Modification APIs
@@ -875,7 +879,7 @@ const deleteUser = async (user: SystemImplementationUser) => {
 
   try {
     await executeDeleteUser(
-      `/api/oscal/system-security-plans/${id}/system-implementation/users/${user.uuid}`,
+      `/api/oscal/system-security-plans/${sspId}/system-implementation/users/${user.uuid}`,
     );
     if (users.value) {
       users.value = users.value.filter((u) => u.uuid !== user.uuid);
@@ -946,7 +950,7 @@ const deleteComponent = async (component: SystemComponent) => {
 
   try {
     await executeDeleteComponent(
-      `/api/oscal/system-security-plans/${id}/system-implementation/components/${component.uuid}`,
+      `/api/oscal/system-security-plans/${sspId}/system-implementation/components/${component.uuid}`,
     );
     if (components.value) {
       components.value = components.value.filter(
@@ -1029,7 +1033,7 @@ const deleteLeveragedAuth = async (auth: LeveragedAuthorization) => {
 
   try {
     await executeDeleteLeveragedAuth(
-      `/api/oscal/system-security-plans/${id}/system-implementation/leveraged-authorizations/${auth.uuid}`,
+      `/api/oscal/system-security-plans/${sspId}/system-implementation/leveraged-authorizations/${auth.uuid}`,
     );
     if (leveragedAuthorizations.value) {
       leveragedAuthorizations.value = leveragedAuthorizations.value.filter(

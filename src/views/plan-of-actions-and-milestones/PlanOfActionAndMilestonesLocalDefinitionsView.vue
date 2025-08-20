@@ -214,39 +214,56 @@
     </div>
 
     <!-- Create Modal -->
-    <Modal :show="showCreateModal" @close="showCreateModal = false" size="lg">
+    <Dialog
+      v-model:visible="showCreateModal"
+      size="lg"
+      modal
+      :header="dialogHeader"
+    >
       <LocalDefinitionsForm
-        :poam-id="route.params.id as string"
+        :poam-id="poamId"
         :local-definitions="undefined"
         @cancel="showCreateModal = false"
         @saved="handleLocalDefinitionsSaved"
       />
-    </Modal>
+    </Dialog>
 
     <!-- Edit Modal -->
-    <Modal :show="showEditModal" @close="showEditModal = false" size="lg">
+    <Dialog
+      v-model:visible="showEditModal"
+      size="lg"
+      modal
+      :header="dialogHeader"
+    >
       <LocalDefinitionsForm
-        :poam-id="route.params.id as string"
+        :poam-id="poamId"
         :local-definitions="localDefinitions || undefined"
         @cancel="showEditModal = false"
         @saved="handleLocalDefinitionsSaved"
       />
-    </Modal>
+    </Dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import type { LocalDefinitions } from '@/stores/plan-of-action-and-milestones.ts';
-import Modal from '@/components/Modal.vue';
+import Dialog from '@/volt/Dialog.vue';
 import LocalDefinitionsForm from '@/components/poam/LocalDefinitionsForm.vue';
 import { useDataApi } from '@/composables/axios';
+import { getPoamIdFromRoute } from '../../utils/get-poam-id-from-route';
 
 const route = useRoute();
 
 const showCreateModal = ref(false);
 const showEditModal = ref(false);
+
+const poamId = computed(() => getPoamIdFromRoute(route));
+
+const dialogHeader = computed(() =>
+  showCreateModal.value ? 'Create Local Definitions' : 'Edit Local Definitions',
+);
 
 const {
   data: localDefinitions,

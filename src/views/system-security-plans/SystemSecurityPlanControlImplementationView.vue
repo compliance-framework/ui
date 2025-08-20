@@ -275,96 +275,100 @@
     </div>
 
     <!-- Control Implementation Edit Modal -->
-    <Modal
-      :show="
-        showEditControlImplementationModal && controlImplementation !== null
-      "
-      @close="showEditControlImplementationModal = false"
+    <Dialog
+      v-model:visible="showEditControlImplementationModal"
       size="lg"
+      modal
+      header="Edit Control Implementation"
     >
       <ControlImplementationEditForm
         v-if="controlImplementation"
-        :ssp-id="route.params.id as string"
+        :ssp-id="sspId"
         :control-implementation="controlImplementation"
         @cancel="showEditControlImplementationModal = false"
         @saved="handleControlImplementationSaved"
       />
-    </Modal>
+    </Dialog>
 
     <!-- Requirement Create Modal -->
-    <Modal
-      :show="showCreateRequirementModal"
-      @close="showCreateRequirementModal = false"
+    <Dialog
+      v-model:visible="showCreateRequirementModal"
       size="lg"
+      modal
+      header="Create Implemented Requirement"
     >
       <ImplementedRequirementCreateForm
-        :ssp-id="route.params.id as string"
+        :ssp-id="sspId"
         @cancel="showCreateRequirementModal = false"
         @created="handleRequirementCreated"
       />
-    </Modal>
+    </Dialog>
 
     <!-- Requirement Edit Modal -->
-    <Modal
-      :show="showEditRequirementModal && editingRequirement !== null"
-      @close="showEditRequirementModal = false"
+    <Dialog
+      v-model:visible="showEditRequirementModal"
       size="lg"
+      modal
+      header="Edit Implemented Requirement"
     >
       <ImplementedRequirementEditForm
         v-if="editingRequirement"
-        :ssp-id="route.params.id as string"
+        :ssp-id="sspId"
         :requirement="editingRequirement"
         @cancel="showEditRequirementModal = false"
         @saved="handleRequirementSaved"
       />
-    </Modal>
+    </Dialog>
 
     <!-- Statement Edit Modal -->
-    <Modal
-      :show="showEditStatementModal && editingStatement !== null"
-      @close="showEditStatementModal = false"
+    <Dialog
+      v-model:visible="showEditStatementModal"
       size="lg"
+      modal
+      header="Edit Statement"
     >
       <StatementEditForm
         v-if="editingStatement"
-        :ssp-id="route.params.id as string"
+        :ssp-id="sspId"
         :req-id="editingRequirement?.uuid || ''"
         :statement="editingStatement"
         @cancel="showEditStatementModal = false"
         @saved="handleStatementSaved"
       />
-    </Modal>
+    </Dialog>
 
     <!-- Statement Create Modal -->
-    <Modal
-      :show="showCreateStatementModal"
-      @close="showCreateStatementModal = false"
+    <Dialog
+      v-model:visible="showCreateStatementModal"
       size="lg"
+      modal
+      header="Create New Statement"
     >
       <StatementCreateForm
-        :ssp-id="route.params.id as string"
+        :ssp-id="sspId"
         :req-id="editingRequirement?.uuid || ''"
         @cancel="showCreateStatementModal = false"
         @created="handleStatementCreated"
       />
-    </Modal>
+    </Dialog>
 
     <!-- Statement By Component Edit Modal -->
-    <Modal
-      :show="showEditStatementByComponentModal && editingByComponent !== null"
-      @close="showEditStatementByComponentModal = false"
+    <Dialog
+      v-model:visible="showEditStatementByComponentModal"
       size="xl"
+      modal
+      header="Edit By-Component Implementation"
     >
       <StatementByComponentEditForm
         v-if="editingByComponent && editingRequirement && editingStatement"
-        :ssp-id="route.params.id as string"
+        :ssp-id="sspId"
         :requirement="editingRequirement"
         :statement="editingStatement"
         :by-component="editingByComponent"
         @cancel="showEditStatementByComponentModal = false"
         @saved="handleStatementByComponentSaved"
       />
-    </Modal>
+    </Dialog>
   </template>
 </template>
 
@@ -379,7 +383,7 @@ import type {
   SystemSecurityPlan,
   ByComponent,
 } from '@/stores/system-security-plans.ts';
-import Modal from '@/components/Modal.vue';
+import Dialog from '@/volt/Dialog.vue';
 import ImplementedRequirementCreateForm from '@/components/system-security-plans/ImplementedRequirementCreateForm.vue';
 import ImplementedRequirementEditForm from '@/components/system-security-plans/ImplementedRequirementEditForm.vue';
 import ControlImplementationEditForm from '@/components/system-security-plans/ControlImplementationEditForm.vue';
@@ -388,11 +392,14 @@ import StatementCreateForm from '@/components/system-security-plans/StatementCre
 import StatementByComponent from '@/views/system-security-plans/partials/StatementByComponent.vue';
 import StatementByComponentEditForm from '@/components/system-security-plans/StatementByComponentEditForm.vue';
 import { useDataApi } from '@/composables/axios';
+import { getPoamIdFromRoute } from '@/utils/get-poam-id-from-route';
 
 const route = useRoute();
 const toast = useToast();
 
 const error = ref<string | null>(null);
+
+const sspId = computed(() => getPoamIdFromRoute(route));
 
 // Modal states
 const showCreateRequirementModal = ref(false);

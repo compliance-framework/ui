@@ -113,34 +113,43 @@
   </div>
 
   <!-- User Create Modal -->
-  <Modal :show="showCreateUserModal" @close="showCreateUserModal = false">
+  <Dialog
+    v-model:visible="showCreateUserModal"
+    modal
+    header="Create User"
+    class="custom-colors"
+  >
     <SystemImplementationUserCreateForm
-      :ssp-id="systemSecurityPlan?.uuid as string"
+      :ssp-id="sspId"
       @cancel="showCreateUserModal = false"
       @created="handleUserCreated"
     />
-  </Modal>
+  </Dialog>
 
   <!-- User Edit Modal -->
-  <Modal
-    :show="!!(showEditUserModal && editingUser)"
-    @close="showEditUserModal = false"
+  <Dialog
+    v-model:visible="showEditUserModal"
+    modal
+    header="Edit User"
+    class="custom-colors"
   >
     <SystemImplementationUserEditForm
-      :ssp-id="systemSecurityPlan?.uuid as string"
+      v-if="editingUser"
+      :ssp-id="sspId"
       :user="editingUser!"
       @cancel="showEditUserModal = false"
       @saved="handleUserSaved"
     />
-  </Modal>
+  </Dialog>
 </template>
+
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import decamelizeKeys from 'decamelize-keys';
+import Dialog from '@/volt/Dialog.vue';
 
 // Form components
-import Modal from '@/components/Modal.vue';
 import Panel from '@/volt/Panel.vue';
 import SystemImplementationUserCreateForm from '@/components/system-security-plans/SystemImplementationUserCreateForm.vue';
 import SystemImplementationUserEditForm from '@/components/system-security-plans/SystemImplementationUserEditForm.vue';
@@ -158,6 +167,7 @@ const { system } = useSystemStore();
 
 // Data
 const systemSecurityPlan = ref<SystemSecurityPlan | null>(null);
+const sspId = computed(() => systemSecurityPlan.value?.uuid ?? '');
 
 // Modal states
 const showCreateUserModal = ref(false);
@@ -254,3 +264,34 @@ const deleteUser = async (user: SystemImplementationUser) => {
   }
 };
 </script>
+
+<style>
+.custom-colors .p-dialog-content {
+  background-color: white; /* light mode */
+  color: #1f2937; /* slate-800 text */
+}
+
+.custom-colors .p-dialog-header {
+  background-color: #f3f4f6; /* light gray header */
+  color: #111827; /* dark header text */
+}
+
+.custom-colors .p-dialog-mask {
+  background-color: rgba(0, 85, 255, 0.7); /* semi-transparent gray */
+}
+
+/* Dark mode */
+.dark .custom-colors .p-dialog-content {
+  background-color: #1f2937; /* slate-900 */
+  color: #e5e7eb; /* slate-200 text */
+}
+
+.dark .custom-colors .p-dialog-header {
+  background-color: #111827;
+  color: #e5e7eb;
+}
+
+.dark .custom-colors .p-dialog-mask {
+  background-color: rgba(30, 41, 59, 0.95);
+}
+</style>

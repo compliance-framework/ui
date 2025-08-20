@@ -105,61 +105,64 @@
           </template>
 
           <div class="px-6 pb-6">
-            <PoamItemDetails
-              :item="item"
-              :poam-id="route.params.id as string"
-            />
+            <PoamItemDetails :item="item" :poam-id="poamId" />
           </div>
         </CollapsableGroup>
       </div>
     </div>
 
     <!-- Create Modal -->
-    <Modal :show="showCreateModal" @close="showCreateModal = false" size="lg">
+    <Dialog
+      v-model:visible="showCreateModal"
+      size="lg"
+      modal
+      header="Create POAM Item"
+    >
       <PoamItemCreateForm
-        :poam-id="route.params.id as string"
+        :poam-id="poamId"
         @cancel="showCreateModal = false"
         @created="handleItemCreated"
       />
-    </Modal>
+    </Dialog>
 
     <!-- Edit Modal -->
-    <Modal
-      :show="showEditModal && editingItem !== null"
-      @close="showEditModal = false"
+    <Dialog
+      v-model:visible="showEditModal"
       size="lg"
+      modal
+      header="Edit POAM Item"
     >
       <PoamItemEditForm
         v-if="editingItem"
-        :poam-id="route.params.id as string"
+        :poam-id="poamId"
         :item="editingItem"
         @cancel="showEditModal = false"
         @saved="handleItemSaved"
       />
-    </Modal>
+    </Dialog>
 
     <!-- Attach Modal -->
-    <Modal
-      :show="showAttachModal && attachingItem !== null"
-      @close="showAttachModal = false"
+    <Dialog
+      v-model:visible="showAttachModal"
       size="lg"
+      header="Attach / Detach Items to POAM Item"
     >
       <PoamItemAttachModal
         v-if="attachingItem"
-        :poam-id="route.params.id as string"
+        :poam-id="poamId"
         :item="attachingItem"
         @cancel="showAttachModal = false"
         @saved="handleItemAttached"
       />
-    </Modal>
+    </Dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import type { PoamItem } from '@/stores/plan-of-action-and-milestones.ts';
-import Modal from '@/components/Modal.vue';
+import Dialog from '@/volt/Dialog.vue';
 import CollapsableGroup from '@/components/CollapsableGroup.vue';
 import PoamItemDetails from '@/components/poam/PoamItemDetails.vue';
 import PoamItemCreateForm from '@/components/poam/PoamItemCreateForm.vue';
@@ -167,6 +170,7 @@ import PoamItemEditForm from '@/components/poam/PoamItemEditForm.vue';
 import PoamItemAttachModal from '@/components/poam/PoamItemAttachModal.vue';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi } from '@/composables/axios';
+import { getPoamIdFromRoute } from '../../utils/get-poam-id-from-route';
 
 const route = useRoute();
 const toast = useToast();
@@ -193,6 +197,8 @@ const showAttachModal = ref(false);
 // Edit targets
 const editingItem = ref<PoamItem | null>(null);
 const attachingItem = ref<PoamItem | null>(null);
+
+const poamId = computed(() => getPoamIdFromRoute(route));
 
 // Item management
 const editItem = (item: PoamItem) => {

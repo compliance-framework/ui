@@ -109,43 +109,52 @@
     </div>
 
     <!-- Create Modal -->
-    <Modal :show="showCreateModal" @close="showCreateModal = false" size="lg">
+    <Dialog
+      v-model:visible="showCreateModal"
+      size="lg"
+      modal
+      header="Create Finding"
+    >
       <FindingCreateForm
-        :poam-id="route.params.id as string"
+        :poam-id="poamId"
         @cancel="showCreateModal = false"
         @created="handleFindingCreated"
       />
-    </Modal>
+    </Dialog>
 
     <!-- Edit Modal -->
-    <Modal
-      :show="showEditModal && editingFinding !== null"
-      @close="showEditModal = false"
+    <Dialog
+      v-model:visible="showEditModal"
       size="lg"
+      modal
+      header="Edit Finding"
     >
       <FindingEditForm
         v-if="editingFinding"
-        :poam-id="route.params.id as string"
+        :poam-id="poamId"
         :finding="editingFinding"
         @cancel="showEditModal = false"
         @saved="handleFindingSaved"
       />
-    </Modal>
+    </Dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import type { Finding } from '@/stores/plan-of-action-and-milestones.ts';
-import Modal from '@/components/Modal.vue';
+import Dialog from '@/volt/Dialog.vue';
 import FindingCreateForm from '@/components/poam/FindingCreateForm.vue';
 import FindingEditForm from '@/components/poam/FindingEditForm.vue';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi } from '@/composables/axios';
+import { getPoamIdFromRoute } from '../../utils/get-poam-id-from-route';
 
 const route = useRoute();
 const toast = useToast();
+
+const poamId = computed(() => getPoamIdFromRoute(route));
 
 const {
   data: findings,

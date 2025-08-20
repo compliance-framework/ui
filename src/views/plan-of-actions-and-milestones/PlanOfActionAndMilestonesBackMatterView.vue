@@ -134,20 +134,16 @@
     </div>
 
     <!-- Create/Edit Resource Modal -->
-    <Modal
-      :show="showCreateModal || showEditModal"
-      @close="closeModal"
-      size="lg"
-    >
+    <Dialog v-model:visible="isOpen" size="lg" modal :header="dialogHeader">
       <BackMatterResourceForm
         v-if="showCreateModal || showEditModal"
-        :poam-id="route.params.id as string"
+        :poam-id="poamId"
         :resource="editingResource"
         :is-edit="showEditModal"
         @cancel="closeModal"
         @saved="handleResourceSaved"
       />
-    </Modal>
+    </Dialog>
   </div>
 </template>
 
@@ -158,7 +154,7 @@ import type {
   BackMatter,
   Resource,
 } from '@/stores/plan-of-action-and-milestones.ts';
-import Modal from '@/components/Modal.vue';
+import Dialog from '@/volt/Dialog.vue';
 import CollapsableGroup from '@/components/CollapsableGroup.vue';
 import BackMatterResourceForm from '@/components/poam/BackMatterResourceForm.vue';
 import BackMatterResourceDetails from '@/components/poam/BackMatterResourceDetails.vue';
@@ -166,6 +162,7 @@ import { useToast } from 'primevue/usetoast';
 import { useDataApi } from '@/composables/axios';
 import type { AxiosError } from 'axios';
 import type { ErrorResponse, ErrorBody } from '@/stores/types';
+import { getPoamIdFromRoute } from '../../utils/get-poam-id-from-route';
 
 const route = useRoute();
 const toast = useToast();
@@ -188,6 +185,19 @@ const { execute: executeDelete } = useDataApi<void>(
 const showCreateModal = ref(false);
 const showEditModal = ref(false);
 const editingResource = ref<Resource | null>(null);
+
+const poamId = computed(() => getPoamIdFromRoute(route));
+
+const isOpen = computed({
+  get: () => showCreateModal.value || showEditModal.value,
+  set: (val: boolean) => {
+    if (!val) closeModal();
+  },
+});
+
+const dialogHeader = computed(() =>
+  showCreateModal.value ? 'Create Resource' : 'Edit Resource',
+);
 
 const resources = computed(() => {
   return backMatter.value?.resources || [];

@@ -118,51 +118,43 @@
   </div>
 
   <!-- Inventory Item Create Modal -->
-  <Modal
-    :show="showCreateInventoryItemModal"
-    @close="showCreateInventoryItemModal = false"
-  >
+  <Dialog v-model:visible="showCreateInventoryItemModal" modal>
+    >
     <SystemImplementationInventoryItemCreateForm
-      :ssp-id="system.securityPlan?.uuid as string"
+      :ssp-id="sspId"
       @cancel="showCreateInventoryItemModal = false"
       @created="handleInventoryItemCreated"
     />
-  </Modal>
+  </Dialog>
 
   <!-- Inventory Item Edit Modal -->
-  <Modal
-    :show="!!(showEditInventoryItemModal && editingInventoryItem)"
-    @close="showEditInventoryItemModal = false"
-  >
+  <Dialog v-model:visible="showEditInventoryItemModal" modal>
     <SystemImplementationInventoryItemEditForm
-      :ssp-id="system.securityPlan?.uuid as string"
+      :ssp-id="sspId"
       :inventory-item="editingInventoryItem!"
       @cancel="showEditInventoryItemModal = false"
       @saved="handleInventoryItemSaved"
     />
-  </Modal>
+  </Dialog>
 
   <!-- Inventory Item Attach Modal -->
-  <Modal
-    :show="showInventoryItemAttachModal"
-    @close="showInventoryItemAttachModal = false"
-  >
+  <Dialog v-model:visible="showInventoryItemAttachModal" modal>
     <SystemImplementationInventoryItemAttachModal
-      :ssp-id="system.securityPlan?.uuid as string"
+      :ssp-id="sspId"
       :item="editingInventoryItem!"
       @cancel="showInventoryItemAttachModal = false"
       @saved="handleInventoryItemAttached"
     />
-  </Modal>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import type { InventoryItem } from '@/oscal';
 import { useSystemStore } from '@/stores/system.ts';
 import decamelizeKeys from 'decamelize-keys';
 import SystemImplementationInventoryItemEditForm from '@/components/system-security-plans/SystemImplementationInventoryItemEditForm.vue';
-import Modal from '@/components/Modal.vue';
+import Dialog from '@/volt/Dialog.vue';
 import SystemImplementationInventoryItemAttachModal from '@/components/system-security-plans/SystemImplementationInventoryItemAttachModal.vue';
 import SystemImplementationInventoryItemCreateForm from '@/components/system-security-plans/SystemImplementationInventoryItemCreateForm.vue';
 import { useToast } from 'primevue/usetoast';
@@ -180,6 +172,7 @@ import { useRouter } from 'vue-router';
 const toast = useToast();
 const { system } = useSystemStore();
 const router = useRouter();
+const sspId = computed(() => system.securityPlan?.uuid ?? '');
 
 const {
   data: inventoryItems,

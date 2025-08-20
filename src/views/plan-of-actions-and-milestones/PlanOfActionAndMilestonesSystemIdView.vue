@@ -75,39 +75,56 @@
     </div>
 
     <!-- Create Modal -->
-    <Modal :show="showCreateModal" @close="showCreateModal = false" size="lg">
+    <Dialog
+      v-model:visible="showCreateModal"
+      size="lg"
+      modal
+      :header="dialogHeader"
+    >
       <SystemIdForm
-        :poam-id="route.params.id as string"
+        :poam-id="poamId"
         :system-id="undefined"
         @cancel="showCreateModal = false"
         @saved="handleSystemIdSaved"
       />
-    </Modal>
+    </Dialog>
 
     <!-- Edit Modal -->
-    <Modal :show="showEditModal" @close="showEditModal = false" size="lg">
+    <Dialog
+      v-model:visible="showEditModal"
+      size="lg"
+      modal
+      :header="dialogHeader"
+    >
       <SystemIdForm
-        :poam-id="route.params.id as string"
+        :poam-id="poamId"
         :system-id="systemId || undefined"
         @cancel="showEditModal = false"
         @saved="handleSystemIdSaved"
       />
-    </Modal>
+    </Dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import type { SystemId } from '@/stores/plan-of-action-and-milestones.ts';
-import Modal from '@/components/Modal.vue';
+import Dialog from '@/volt/Dialog.vue';
 import SystemIdForm from '@/components/poam/SystemIdForm.vue';
 import { useDataApi } from '@/composables/axios';
+import { getPoamIdFromRoute } from '../../utils/get-poam-id-from-route';
 
 const route = useRoute();
 
 const showCreateModal = ref(false);
 const showEditModal = ref(false);
+
+const poamId = computed(() => getPoamIdFromRoute(route));
+
+const dialogHeader = computed(() =>
+  showCreateModal.value ? 'Create System ID' : 'Edit System ID',
+);
 
 const {
   data: systemId,

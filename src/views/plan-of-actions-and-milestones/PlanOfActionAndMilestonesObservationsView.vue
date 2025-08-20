@@ -93,40 +93,47 @@
     </div>
 
     <!-- Create Modal -->
-    <Modal :show="showCreateModal" @close="showCreateModal = false" size="lg">
+    <Dialog
+      v-model:visible="showCreateModal"
+      size="lg"
+      modal
+      header="Create Observation"
+    >
       <ObservationCreateForm
-        :poam-id="route.params.id as string"
+        :poam-id="poamId"
         @cancel="showCreateModal = false"
         @created="handleObservationCreated"
       />
-    </Modal>
+    </Dialog>
 
     <!-- Edit Modal -->
-    <Modal
-      :show="showEditModal && editingObservation !== null"
-      @close="showEditModal = false"
+    <Dialog
+      v-model:visible="showEditModal"
       size="lg"
+      modal
+      header="Edit Observation"
     >
       <ObservationEditForm
         v-if="editingObservation"
-        :poam-id="route.params.id as string"
+        :poam-id="poamId"
         :observation="editingObservation"
         @cancel="showEditModal = false"
         @saved="handleObservationSaved"
       />
-    </Modal>
+    </Dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import type { Observation } from '@/stores/plan-of-action-and-milestones.ts';
-import Modal from '@/components/Modal.vue';
+import Dialog from '@/volt/Dialog.vue';
 import ObservationCreateForm from '@/components/poam/ObservationCreateForm.vue';
 import ObservationEditForm from '@/components/poam/ObservationEditForm.vue';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi } from '@/composables/axios';
+import { getPoamIdFromRoute } from '../../utils/get-poam-id-from-route';
 
 const route = useRoute();
 const toast = useToast();
@@ -149,6 +156,8 @@ const { execute: executeDelete } = useDataApi<void>(
 // Modal states
 const showCreateModal = ref(false);
 const showEditModal = ref(false);
+
+const poamId = computed(() => getPoamIdFromRoute(route));
 
 // Edit targets
 const editingObservation = ref<Observation | null>(null);

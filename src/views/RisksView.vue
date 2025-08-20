@@ -115,36 +115,32 @@
     </div>
 
     <!-- Create Modal -->
-    <Modal :show="showCreateModal" @close="showCreateModal = false" size="lg">
+    <Dialog v-model:visible="showCreateModal" modal size="lg">
       <RiskCreateForm
-        :poam-id="system.poam?.uuid as string"
+        :poam-id="poamUuid"
         @cancel="showCreateModal = false"
         @created="handleRiskCreated"
       />
-    </Modal>
+    </Dialog>
 
     <!-- Edit Modal -->
-    <Modal
-      :show="showEditModal && editingRisk !== null"
-      @close="showEditModal = false"
-      size="lg"
-    >
+    <Dialog v-model:visible="showEditModal" modal size="lg">
       <RiskEditForm
         v-if="editingRisk"
-        :poam-id="system.poam?.uuid as string"
+        :poam-id="poamUuid"
         :risk="editingRisk"
         @cancel="showEditModal = false"
         @saved="handleRiskSaved"
       />
-    </Modal>
+    </Dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { type Risk } from '@/stores/plan-of-action-and-milestones.ts';
-import Modal from '@/components/Modal.vue';
+import Dialog from '@/volt/Dialog.vue';
 import RiskCreateForm from '@/components/poam/RiskCreateForm.vue';
 import RiskEditForm from '@/components/poam/RiskEditForm.vue';
 import { useToast } from 'primevue/usetoast';
@@ -155,6 +151,8 @@ import { useDataApi } from '@/composables/axios';
 const route = useRoute();
 const toast = useToast();
 const { system } = useSystemStore();
+
+const poamUuid = computed(() => system.poam?.uuid ?? '');
 
 const {
   data: risks,

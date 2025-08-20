@@ -1,5 +1,5 @@
 <template>
-  <Modal :show="isOpen" @close="$emit('close')">
+  <<Dialog v-model:visible="isOpen" @hide="$emit('close')" modal>
     <div class="px-12 py-8">
       <ImportDefinitionEditForm
         :component-definition-id="componentDefinitionId"
@@ -19,11 +19,11 @@
         Close
       </PrimaryButton>
     </div>
-  </Modal>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
-import Modal from '@/components/Modal.vue';
+import Dialog from '@/volt/Dialog.vue';
 import PrimaryButton from '@/components/PrimaryButton.vue';
 import ImportDefinitionEditForm from './ImportDefinitionEditForm.vue';
 import type { ImportComponentDefinition } from '@/stores/component-definitions.ts';
