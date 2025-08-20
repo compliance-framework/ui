@@ -67,7 +67,7 @@
     </div>
 
     <!-- Create Modal -->
-    <Dialog v-model:visible="showCreateModal" size="lg" modal>
+    <Dialog v-model:visible="showCreateModal" size="lg" modal :header="dialogHeader">
       <ImportSspForm
         :poam-id="poamId"
         :import-ssp="undefined"
@@ -77,7 +77,7 @@
     </Dialog>
 
     <!-- Edit Modal -->
-    <Dialog v-model:visible="showEditModal" size="lg" modal>
+    <Dialog v-model:visible="showEditModal" size="lg" modal :header="dialogHeader">
       <ImportSspForm
         :poam-id="poamId"
         :import-ssp="importSsp || undefined"
@@ -116,4 +116,8 @@ function handleImportSspSaved(savedImportSsp: ImportSsp) {
   showCreateModal.value = false;
   showEditModal.value = false;
 }
+
+const dialogHeader = computed(() =>
+  showCreateModal.value ? 'Create Import SSP' : 'Edit Import SSP',
+);
 </script>
