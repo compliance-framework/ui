@@ -1,6 +1,6 @@
 <template>
   <template v-if="evidence">
-<div class="flex items-center justify-between mb-2">
+    <div class="flex items-center justify-between mb-2">
       <PageHeader>
         {{ evidence.title }}
       </PageHeader>

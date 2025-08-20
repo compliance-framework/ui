@@ -92,20 +92,36 @@ import type { AxiosError } from 'axios';
 
 const systemStore = useSystemStore();
 
-const { data: profile, isLoading: baseLoading, execute: fetchProfile } = useDataApi<Profile>(
+const {
+  data: profile,
+  isLoading: baseLoading,
+  execute: fetchProfile,
+} = useDataApi<Profile>(
   `/api/oscal/system-security-plans/${systemStore.system.securityPlan?.uuid}/profile`,
   null,
-  { immediate: false }
+  { immediate: false },
 );
-const { data: catalog, isLoading: catalogLoading, execute: fetchResolvedcatalog } = useDataApi<Catalog>();
-const { data : controlImplementation, isLoading: controlImplementationLoading, execute: fetchControlImplementations } = useDataApi<ControlImplementation | null>(
+const {
+  data: catalog,
+  isLoading: catalogLoading,
+  execute: fetchResolvedcatalog,
+} = useDataApi<Catalog>();
+const {
+  data: controlImplementation,
+  isLoading: controlImplementationLoading,
+  execute: fetchControlImplementations,
+} = useDataApi<ControlImplementation | null>(
   `/api/oscal/system-security-plans/${systemStore.system.securityPlan?.uuid}/control-implementation`,
   null,
-  { immediate: false }
+  { immediate: false },
 );
 
-const loading = computed<boolean>(() => baseLoading.value || catalogLoading.value || controlImplementationLoading.value);
-
+const loading = computed<boolean>(
+  () =>
+    baseLoading.value ||
+    catalogLoading.value ||
+    controlImplementationLoading.value,
+);
 
 const controlImplementations = ref<{ [key: string]: ImplementedRequirement }>(
   {},
@@ -120,7 +136,9 @@ watch(profile, async () => {
     return;
   }
   try {
-    await fetchResolvedcatalog(`/api/oscal/profiles/${profile.value.uuid}/resolved`);
+    await fetchResolvedcatalog(
+      `/api/oscal/profiles/${profile.value.uuid}/resolved`,
+    );
     build(catalog as Ref<Catalog>);
   } catch (err) {
     error.value = err as AxiosError<unknown>;
@@ -137,11 +155,11 @@ onMounted(async () => {
   try {
     await fetchControlImplementations();
     const implementations =
-    controlImplementation.value?.implementedRequirements || ([] as ImplementedRequirement[]);
+      controlImplementation.value?.implementedRequirements ||
+      ([] as ImplementedRequirement[]);
     for (const impl of implementations) {
       controlImplementations.value[impl.controlId] = impl;
     }
-
   } catch (err) {
     error.value = err as AxiosError<unknown>;
   }
