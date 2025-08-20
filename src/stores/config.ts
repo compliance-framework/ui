@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import builtInConfig from '../defaultconfig.json';
-import type { EvidenceLabel } from '@/stores/evidence.ts';
 
 export interface Config {
   API_URL: string;
@@ -27,7 +26,7 @@ export const useConfigStore = defineStore('config', () => {
       } catch (e: unknown) {
         if (e instanceof SyntaxError) {
           console.error(
-            'Unable to read the configuration response. Reverting to builin config.',
+            'Unable to read the configuration response. Reverting to built-in config.',
           );
         } else {
           throw e;
