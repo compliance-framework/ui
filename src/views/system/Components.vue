@@ -139,7 +139,7 @@
   <!-- Component Edit Modal -->
   <Dialog
     v-model:visible="showEditComponentModal"
-    modal header = "Edit System Component"
+    modal header="Edit System Component"
   >
     <SystemImplementationComponentEditForm
       v-if="editingComponent"
