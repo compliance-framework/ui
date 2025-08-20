@@ -31,3 +31,5 @@ coverage
 
 logs/
 tests_output/
+
+eslint-report.json

@@ -51,9 +51,29 @@ jobs:
           mkdir -p /tmp/.buildx-cache
           docker load < /tmp/.buildx-cache/image.tar
 
-      - name: Run formatting heck using the `build` image
+      - name: Run formatting check using the `build` image
         run: |
           docker run --rm ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:build npm run format-check
+      - name: Run ESLint using the `build` image
+        run: |
+          docker run --rm ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:build npm run lint:report
+
+      - name: Count ESLint errors
+        id: count-errors
+        run: |
+          ERRORS=$(jq '[.[] | .messages[] | select(.severity == 2)] | length' eslint-report.json)
+          WARNINGS=$(jq '[.[] | .messages[] | select(.severity == 1)] | length' eslint-report.json)
+          echo "errors=$ERRORS" >> $GITHUB_OUTPUT
+          echo "warnings=$WARNINGS" >> $GITHUB_OUTPUT
+
+      - name: Comment on PR
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          message: |
+            ESLint results:
+            Errors: ${{ steps.count-errors.outputs.errors }}
+            Warnings: ${{ steps.count-errors.outputs.warnings }}
 
       - name: Run tests using the `build` image
         run: |
