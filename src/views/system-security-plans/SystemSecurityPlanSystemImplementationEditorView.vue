@@ -396,8 +396,6 @@
   <!-- User Edit Modal -->
   <Dialog v-model:visible="showEditUserModal" modal header="Edit User">
     <SystemImplementationUserEditForm
-      v-if="editingUser!"
-      :ssp-id="sspId"
       v-if="editingUser"
       :ssp-id="sspId"
       :user="editingUser"
