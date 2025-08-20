@@ -54,7 +54,7 @@ interface Props extends /* @vue-ignore */ DialogProps {
 const props = defineProps<Props>();
 
 const getSizeClass = () => {
-  const size = props.size
+  const size = props.size;
   const sizes: {[size: string]: string} = {
     'sm': 'w-1/4',
     'md': 'w-1/3',

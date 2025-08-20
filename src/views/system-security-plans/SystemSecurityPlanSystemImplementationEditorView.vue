@@ -398,7 +398,9 @@
     <SystemImplementationUserEditForm
       v-if="editingUser!"
       :ssp-id="sspId"
-      :user="editingUser!"
+      v-if="editingUser"
+      :ssp-id="sspId"
+      :user="editingUser"
       @cancel="showEditUserModal = false"
       @saved="handleUserSaved"
     />
