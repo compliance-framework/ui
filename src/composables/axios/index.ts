@@ -76,7 +76,9 @@ const useGuestInstance = () => {
   const configStore = useConfigStore();
   let cachedURL = '';
 
-  const instance: AxiosInstance = axios.create();
+  const instance: AxiosInstance = axios.create({
+    withCredentials: true
+  });
 
   instance.interceptors.request.use(
     async (config) => {
