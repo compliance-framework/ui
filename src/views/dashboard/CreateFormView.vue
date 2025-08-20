@@ -50,18 +50,15 @@ import { useRouter, useRoute } from 'vue-router';
 import PageHeader from '@/components/PageHeader.vue';
 import PageCard from '@/components/PageCard.vue';
 import { FilterParser } from '@/parsers/labelfilter.ts';
-import { type Dashboard, useFilterStore } from '@/stores/filters.ts';
+import type { Dashboard } from '@/stores/filters.ts';
 import FormInput from '@/components/forms/FormInput.vue';
 import PrimaryButton from '@/components/PrimaryButton.vue';
 import MultiSelect from '@/volt/MultiSelect.vue';
-import { useCatalogStore } from '@/stores/catalogs.ts';
 import type { Catalog, Control } from '@/oscal';
-import { useApi, type DataResponse } from '@/composables/api';
+import { useDataApi, decamelizeKeys } from '@/composables/axios';
 
 const router = useRouter();
 const route = useRoute();
-const store = useFilterStore();
-const catalogStore = useCatalogStore();
 const dashboard = ref<Dashboard>({} as Dashboard);
 
 const filter = ref<string>('');
@@ -85,17 +82,29 @@ interface SelectControl {
 const selectedControls = ref<ControlOption[]>([]);
 const controls = ref<SelectControl[]>([]);
 
-const { data: catalogs } = useApi<DataResponse<Catalog[]>>(
-  new Request('/api/oscal/catalogs'),
+const { data: catalogs } = useDataApi<Catalog[]>('/api/oscal/catalogs');
+const { execute: fetchFullCatalog } = useDataApi<Catalog>(null, null, {
+  abortPrevious: false,
+});
+const { execute: createDashboard } = useDataApi<Dashboard>(
+  '/api/filters',
+  {
+    method: 'POST',
+    transformRequest: [decamelizeKeys],
+  },
+  { immediate: false },
 );
 
 watch(catalogs, buildControlList);
 
 async function buildControlList() {
-  catalogs.value?.data.forEach((catalog) => {
-    catalogStore.full(catalog.uuid).then((response) => {
+  catalogs.value?.forEach(async (catalog) => {
+    try {
+      const response = await fetchFullCatalog(
+        `/api/oscal/catalogs/${catalog.uuid}/full`,
+      );
       const results = [] as SelectControl[];
-      response.data.groups.forEach((group) => {
+      response.data.value?.data.groups.forEach((group) => {
         let controlList = [] as ControlOption[];
         if (group.controls) {
           group.controls.forEach((control) => {
@@ -110,7 +119,9 @@ async function buildControlList() {
         }
       });
       controls.value = [...controls.value, ...results];
-    });
+    } catch (error) {
+      console.error('Error fetching full catalog:', error);
+    }
   });
 }
 
@@ -146,10 +157,12 @@ async function submit() {
   });
   try {
     const parsedFilter = new FilterParser(filter.value).parse();
-    await store.create({
-      ...dashboard.value,
-      filter: parsedFilter,
-      controls: controlIds,
+    await createDashboard({
+      data: {
+        ...dashboard.value,
+        filter: parsedFilter,
+        controls: controlIds,
+      },
     });
     return router.push({
       name: 'evidence:index',

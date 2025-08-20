@@ -155,45 +155,50 @@ import SystemImplementationLeveragedAuthorizationCreateForm from '@/components/s
 import SystemImplementationLeveragedAuthorizationEditForm from '@/components/system-security-plans/SystemImplementationLeveragedAuthorizationEditForm.vue';
 
 // Types and stores
-import {
-  type SystemSecurityPlan,
-  type LeveragedAuthorization,
-  useSystemSecurityPlanStore,
+import type {
+  SystemSecurityPlan,
+  LeveragedAuthorization,
 } from '@/stores/system-security-plans.ts';
-import type { DataResponse } from '@/stores/types.ts';
 import Panel from '@/volt/Panel.vue';
 import { useSystemStore } from '@/stores/system.ts';
+import { useDataApi } from '@/composables/axios';
 
 const route = useRoute();
 const toast = useToast();
 const { system } = useSystemStore();
 const id = route.params.id as string;
-const sspStore = useSystemSecurityPlanStore();
 
 // Data
 const systemSecurityPlan = ref<SystemSecurityPlan | null>(null);
-const leveragedAuthorizations = ref<LeveragedAuthorization[] | null>(null);
 
 const showCreateLeveragedAuthModal = ref(false);
 const showEditLeveragedAuthModal = ref(false);
 
+const { data: leveragedAuthorizations, execute: fetchLeveragedAuthorizations } =
+  useDataApi<LeveragedAuthorization[]>(
+    `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/system-implementation/leveraged-authorizations`,
+    { method: 'GET' },
+    { immediate: false },
+  );
+
+const { execute: executeDelete } = useDataApi<void>(
+  null,
+  {
+    method: 'DELETE',
+  },
+  { immediate: false },
+);
+
 // Edit targets
 const editingLeveragedAuth = ref<LeveragedAuthorization | null>(null);
 
-const loadData = () => {
+const loadData = async () => {
   systemSecurityPlan.value = system.securityPlan as SystemSecurityPlan;
-
-  sspStore
-    .getSystemImplementationLeveragedAuthorizations(
-      system.securityPlan?.uuid as string,
-    )
-    .then((data: DataResponse<LeveragedAuthorization[]>) => {
-      leveragedAuthorizations.value = data.data;
-    });
+  await fetchLeveragedAuthorizations();
 };
 
-onMounted(() => {
-  loadData();
+onMounted(async () => {
+  await loadData();
 });
 
 // Leveraged Authorization management
@@ -241,9 +246,8 @@ const deleteLeveragedAuth = async (auth: LeveragedAuthorization) => {
   }
 
   try {
-    await sspStore.deleteSystemImplementationLeveragedAuthorization(
-      id,
-      auth.uuid,
+    await executeDelete(
+      `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/system-implementation/leveraged-authorizations/${auth.uuid}`,
     );
     if (leveragedAuthorizations.value) {
       leveragedAuthorizations.value = leveragedAuthorizations.value.filter(

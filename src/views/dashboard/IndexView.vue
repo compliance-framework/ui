@@ -32,22 +32,29 @@
   </div>
 </template>
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
 import PageHeader from '@/components/PageHeader.vue';
 import PageCard from '@/components/PageCard.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
-import { type Dashboard, useFilterStore } from '@/stores/filters.ts';
+import type { Dashboard } from '@/stores/filters.ts';
 import DashboardChart from '@/views/dashboard/DashboardChart.vue';
 import { useConfirm } from 'primevue/useconfirm';
 import { useToast } from 'primevue/usetoast';
 import Button from '@/volt/Button.vue';
 import Chip from '@/volt/Chip.vue';
+import { useDataApi } from '@/composables/axios';
 
-const dashboardsStore = useFilterStore();
 const confirm = useConfirm();
 const toast = useToast();
 
-const dashboards = ref<Dashboard[]>([]);
+const { data: dashboards, execute: refreshDashboards } =
+  useDataApi<Dashboard[]>('/api/filters');
+const { execute: executeDelete } = useDataApi<void>(
+  null,
+  {
+    method: 'DELETE',
+  },
+  { immediate: false },
+);
 
 function deleteDashboard(dashboard: Dashboard) {
   confirm.require({
@@ -75,15 +82,7 @@ function deleteDashboard(dashboard: Dashboard) {
 }
 
 async function sendDeleteDashboard(dashboard: Dashboard) {
-  await dashboardsStore.destroy(dashboard.id as string);
-  dashboardsStore.list().then((data) => {
-    dashboards.value = data.data;
-  });
+  await executeDelete(`/api/filters/${dashboard.id}`);
+  await refreshDashboards();
 }
-
-onMounted(() => {
-  dashboardsStore.list().then((data) => {
-    dashboards.value = data.data;
-  });
-});
 </script>

@@ -1,8 +1,13 @@
 <template>
   <template v-if="evidence">
-    <PageHeader>
-      {{ evidence.title }}
-    </PageHeader>
+<div class="flex items-center justify-between mb-2">
+      <PageHeader>
+        {{ evidence.title }}
+      </PageHeader>
+      <SecondaryButton class="ml-4" @click="directToUpdate()">
+        Update Evidence
+      </SecondaryButton>
+    </div>
     <PageSubHeader>
       {{ evidence.uuid }}
     </PageSubHeader>
@@ -109,7 +114,7 @@
 </template>
 <script setup lang="ts">
 import { ref, watch } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import PageHeader from '@/components/PageHeader.vue';
 import PageCard from '@/components/PageCard.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
@@ -124,6 +129,7 @@ import type { Evidence } from '@/stores/evidence.ts';
 import type { BackMatterResource } from '@/oscal';
 
 const route = useRoute();
+const router = useRouter();
 const id = route.params.id as string;
 
 const { data: evidence } = useDataApi<Evidence>(`/api/evidence/${id}`);
@@ -173,5 +179,12 @@ function getEvidenceStatusColor(status?: string): string {
       status?.toUpperCase() as keyof typeof FindingStatusColor
     ] || FindingStatusColor.UNKNOWN
   );
+}
+
+function directToUpdate() {
+  return router.push({
+    name: 'evidence:update',
+    params: { id: evidence.value!.id },
+  });
 }
 </script>
