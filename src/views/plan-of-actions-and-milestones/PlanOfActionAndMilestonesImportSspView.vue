@@ -67,7 +67,12 @@
     </div>
 
     <!-- Create Modal -->
-    <Dialog v-model:visible="showCreateModal" size="lg" modal :header="dialogHeader">
+    <Dialog
+      v-model:visible="showCreateModal"
+      size="lg"
+      modal
+      :header="dialogHeader"
+    >
       <ImportSspForm
         :poam-id="poamId"
         :import-ssp="undefined"
@@ -77,7 +82,12 @@
     </Dialog>
 
     <!-- Edit Modal -->
-    <Dialog v-model:visible="showEditModal" size="lg" modal :header="dialogHeader">
+    <Dialog
+      v-model:visible="showEditModal"
+      size="lg"
+      modal
+      :header="dialogHeader"
+    >
       <ImportSspForm
         :poam-id="poamId"
         :import-ssp="importSsp || undefined"

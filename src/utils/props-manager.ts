@@ -18,7 +18,7 @@ class PropertyManager {
 }
 
 export function usePropertyManager(props: Property[]) {
-  const manager = new PropertyManager(props)
+  const manager = new PropertyManager(props);
 
-  return { manager }
+  return { manager };
 }

@@ -9,7 +9,9 @@ export function useProfileControlGroups() {
     groups.splice(idx, 1);
   }
 
-  function addControlId(controlGroup: SelectControlsByID & { _newId?: string }) {
+  function addControlId(
+    controlGroup: SelectControlsByID & { _newId?: string },
+  ) {
     if (controlGroup._newId && controlGroup._newId.trim() !== '') {
       if (!controlGroup.withIds) controlGroup.withIds = [];
       controlGroup.withIds.push(controlGroup._newId.trim());

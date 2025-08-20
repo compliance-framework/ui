@@ -1,7 +1,7 @@
 <template>
-<!--    <h3 class="text-lg font-semibold mb-4 text-gray-900 dark:text-slate-300">-->
-<!--      System Security Plan-->
-<!--    </h3>-->
+  <!--    <h3 class="text-lg font-semibold mb-4 text-gray-900 dark:text-slate-300">-->
+  <!--      System Security Plan-->
+  <!--    </h3>-->
   <div class="p-4">
     <div
       v-if="systemSecurityPlan.metadata"
@@ -72,22 +72,17 @@
           optionLabel="name"
         />
       </div>
-
     </div>
 
     <div v-else class="text-center py-4">
       <p class="text-gray-500 dark:text-slate-400">Loading metadata...</p>
     </div>
 
-
-
     <!-- System Characteristics Summary -->
-    <template
-      v-if="systemCharacteristics"
-    >
-<!--      <h3 class="text-lg font-semibold mb-4 text-gray-900 dark:text-slate-300">-->
-<!--        System Characteristics Summary-->
-<!--      </h3>-->
+    <template v-if="systemCharacteristics">
+      <!--      <h3 class="text-lg font-semibold mb-4 text-gray-900 dark:text-slate-300">-->
+      <!--        System Characteristics Summary-->
+      <!--      </h3>-->
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
         <div v-if="systemCharacteristics.systemName">
@@ -133,7 +128,7 @@
         <div v-if="systemSecurityPlan.metadata.remarks" class="md:col-span-2">
           <label
             class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
-          >Remarks</label
+            >Remarks</label
           >
           <p class="text-gray-900 dark:text-slate-300">
             {{ systemSecurityPlan.metadata.remarks }}
@@ -154,7 +149,6 @@
 
     <Diagrams></Diagrams>
   </div>
-
 </template>
 
 <script setup lang="ts">
@@ -166,7 +160,7 @@ import type {
   SystemImplementationUser,
   SystemComponent,
   InventoryItem,
-  LeveragedAuthorization
+  LeveragedAuthorization,
 } from '@/stores/system-security-plans.ts';
 import { useConfigStore } from '@/stores/config.ts';
 import type { Profile } from '@/oscal';
@@ -177,7 +171,6 @@ import { useToast } from 'primevue/usetoast';
 import { useDataApi } from '@/composables/axios';
 import type { AxiosError } from 'axios';
 import type { ErrorResponse, ErrorBody } from '@/stores/types.ts';
-
 
 const route = useRoute();
 const toast = useToast();
@@ -214,56 +207,84 @@ watch(profiles, () => {
     }) || [];
 });
 
-const { data: systemCharacteristics } = useDataApi<SystemCharacteristics>(`/api/oscal/system-security-plans/${system.securityPlan?.uuid}/system-characteristics`);
-
-const { execute: executeAttachedProfile } = useDataApi<Profile>(`/api/oscal/system-security-plans/${system.securityPlan?.uuid}/profile`,
-  {
-    method: 'GET',
-  }, { immediate: false }
+const { data: systemCharacteristics } = useDataApi<SystemCharacteristics>(
+  `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/system-characteristics`,
 );
 
-const { execute: attachProfile } = useDataApi<void>(`/api/oscal/system-security-plans/${system.securityPlan?.uuid}/profile`, {
-  method: 'PUT',
-}, { immediate: false });
+const { execute: executeAttachedProfile } = useDataApi<Profile>(
+  `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/profile`,
+  {
+    method: 'GET',
+  },
+  { immediate: false },
+);
 
-const { execute: executeSIUsers } = useDataApi<SystemImplementationUser[]>(`/api/oscal/system-security-plans/${system.securityPlan?.uuid}/system-implementation/users`, {
-  method: 'GET',
-}, { immediate: false });
-const { execute: executeSIComponents } = useDataApi<SystemComponent[]>(`/api/oscal/system-security-plans/${system.securityPlan?.uuid}/system-implementation/components`, {
-  method: 'GET',
-}, { immediate: false });
-const { execute: executeSIInventory } = useDataApi<InventoryItem[]>(`/api/oscal/system-security-plans/${system.securityPlan?.uuid}/system-implementation/inventory-items`, {
-  method: 'GET',
-}, { immediate: false });
-const { execute: executeSILeveragedAuths } = useDataApi<LeveragedAuthorization[]>(`/api/oscal/system-security-plans/${system.securityPlan?.uuid}/system-implementation/leveraged-authorizations`, {
-  method: 'GET',
-}, { immediate: false });
+const { execute: attachProfile } = useDataApi<void>(
+  `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/profile`,
+  {
+    method: 'PUT',
+  },
+  { immediate: false },
+);
 
-const selectedProfile = ref<{ name: string, value: string } | null>(null);
+const { execute: executeSIUsers } = useDataApi<SystemImplementationUser[]>(
+  `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/system-implementation/users`,
+  {
+    method: 'GET',
+  },
+  { immediate: false },
+);
+const { execute: executeSIComponents } = useDataApi<SystemComponent[]>(
+  `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/system-implementation/components`,
+  {
+    method: 'GET',
+  },
+  { immediate: false },
+);
+const { execute: executeSIInventory } = useDataApi<InventoryItem[]>(
+  `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/system-implementation/inventory-items`,
+  {
+    method: 'GET',
+  },
+  { immediate: false },
+);
+const { execute: executeSILeveragedAuths } = useDataApi<
+  LeveragedAuthorization[]
+>(
+  `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/system-implementation/leveraged-authorizations`,
+  {
+    method: 'GET',
+  },
+  { immediate: false },
+);
+
+const selectedProfile = ref<{ name: string; value: string } | null>(null);
 
 onMounted(async () => {
   try {
     // Load basic SSP data
     systemSecurityPlan.value = system.securityPlan as SystemSecurityPlan;
 
-       try {
+    try {
       const { data } = await executeAttachedProfile();
       if (data.value) {
         selectedProfile.value = {
           name: data.value.data.metadata.title,
           value: data.value.data.uuid,
-        }
+        };
       }
     } catch (error) {
-      const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>
+      const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
       if (errorResponse.response?.status !== 404) {
         // 404s are fine, just means no profile is attached
         toast.add({
           severity: 'error',
           summary: 'Error Loading Profile',
-          detail: errorResponse.response?.data.errors.body || 'An error occurred while loading the profile.',
-          life: 3000
-        })
+          detail:
+            errorResponse.response?.data.errors.body ||
+            'An error occurred while loading the profile.',
+          life: 3000,
+        });
       }
     }
 
@@ -272,41 +293,61 @@ onMounted(async () => {
         await attachProfile({
           data: {
             profileId: selectedProfile.value?.value,
-          }
-        })
+          },
+        });
         toast.add({
           severity: 'success',
           summary: 'Profile updated',
-          life: 3000
-        })
-      } catch(error) {
-        const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>
+          life: 3000,
+        });
+      } catch (error) {
+        const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
         toast.add({
           severity: 'error',
           summary: 'Failed to set profile',
           detail: `Received error status from API. Status: ${errorResponse.status}`,
-          life: 3000
-        })
+          life: 3000,
+        });
       }
-    })
+    });
 
     // Load system implementation statistics
-        try {
-      const [usersResponse, componentsResponse, inventoryResponse, leveragedAuthsResponse] = await Promise.allSettled([
+    try {
+      const [
+        usersResponse,
+        componentsResponse,
+        inventoryResponse,
+        leveragedAuthsResponse,
+      ] = await Promise.allSettled([
         executeSIUsers(),
         executeSIComponents(),
         executeSIInventory(),
-        executeSILeveragedAuths()
-      ])
+        executeSILeveragedAuths(),
+      ]);
 
       systemImplementationStats.value = {
-        users: usersResponse.status === 'fulfilled' ? usersResponse.value.data.value?.data.length ?? 0 : 0,
-        components: componentsResponse.status === 'fulfilled' ? componentsResponse.value.data.value?.data.length ?? 0 : 0,
-        inventoryItems: inventoryResponse.status === 'fulfilled' ? inventoryResponse.value.data.value?.data.length ?? 0 : 0,
-        leveragedAuthorizations: leveragedAuthsResponse.status === 'fulfilled' ? leveragedAuthsResponse.value.data.value?.data.length ?? 0 : 0
-      }
+        users:
+          usersResponse.status === 'fulfilled'
+            ? (usersResponse.value.data.value?.data.length ?? 0)
+            : 0,
+        components:
+          componentsResponse.status === 'fulfilled'
+            ? (componentsResponse.value.data.value?.data.length ?? 0)
+            : 0,
+        inventoryItems:
+          inventoryResponse.status === 'fulfilled'
+            ? (inventoryResponse.value.data.value?.data.length ?? 0)
+            : 0,
+        leveragedAuthorizations:
+          leveragedAuthsResponse.status === 'fulfilled'
+            ? (leveragedAuthsResponse.value.data.value?.data.length ?? 0)
+            : 0,
+      };
     } catch (error) {
-      console.warn('Could not load some system implementation statistics:', error)
+      console.warn(
+        'Could not load some system implementation statistics:',
+        error,
+      );
     }
   } catch (error) {
     console.error('Error loading System Security Plan overview:', error);

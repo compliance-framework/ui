@@ -8,7 +8,12 @@
 
     <Tabs value="main">
       <TabList>
-        <Tab v-for="route in routes" :key="route.name" :value="route.name" as="div">
+        <Tab
+          v-for="route in routes"
+          :key="route.name"
+          :value="route.name"
+          as="div"
+        >
           <RouterLink :to="{ name: route.name, params: { id: profile?.uuid } }">
             {{ route.label }}
           </RouterLink>
@@ -51,31 +56,29 @@ watch(error, () => {
     toast.add({
       severity: 'error',
       summary: 'Error loading profile',
-      detail: errorResponse.response?.data.errors.body || 'An error occurred while loading the profile data.',
+      detail:
+        errorResponse.response?.data.errors.body ||
+        'An error occurred while loading the profile data.',
       life: 3000,
     });
     router.push({ name: 'profile-list' });
   }
 });
 
-
 const routes = ref([
-  { name: 'profile-view-controls', label: "Controls" },
-  { name: 'profile-view-merge', label: "Merge" }
+  { name: 'profile-view-controls', label: 'Controls' },
+  { name: 'profile-view-merge', label: 'Merge' },
 ]);
 
-onMounted(async() => {
-  await execute("/api/oscal/profiles/" + route.params.id);
+onMounted(async () => {
+  await execute('/api/oscal/profiles/' + route.params.id);
 });
-
 </script>
 
 <style scoped>
-
 @reference "@/assets/main.css";
 
 .router-link-exact-active {
   @apply bg-none;
 }
-
 </style>

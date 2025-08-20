@@ -87,7 +87,7 @@ import {
   type DateDataPoint,
 } from '@/parsers/findings.ts';
 import ResultComplianceOverTimeChart from '@/components/ResultComplianceOverTimeChart.vue';
-import type  { HeartbeatInterval } from '@/stores/heartbeats.ts';
+import type { HeartbeatInterval } from '@/stores/heartbeats.ts';
 import { calculateHeartbeatOverTimeData } from '@/parsers/heartbeats.ts';
 import { useConfigStore } from '@/stores/config.ts';
 import PrimaryButton from '@/components/PrimaryButton.vue';
@@ -107,10 +107,12 @@ if (route.query.filter) {
   filter.value = route.query.filter as string;
 }
 
-const { data: evidenceData, execute: loadEvidence } = useDataApi<Evidence[]>('/api/evidence/search',
+const { data: evidenceData, execute: loadEvidence } = useDataApi<Evidence[]>(
+  '/api/evidence/search',
   {
     method: 'POST',
-  }, { immediate: false }
+  },
+  { immediate: false },
 );
 
 const evidence = computed(() => {
@@ -131,25 +133,32 @@ const evidence = computed(() => {
     : [];
 });
 
-const { data: complianceOverTime, execute: loadComplianceOverTime } = useDataApi<ComplianceInterval[]>('/api/evidence/status-over-time',
-  {
-    params: {
-      interval: '0m,2m,4m,6m,8m,12m,16m,20m,25m,30m,40m,50m,1h',
+const { data: complianceOverTime, execute: loadComplianceOverTime } =
+  useDataApi<ComplianceInterval[]>(
+    '/api/evidence/status-over-time',
+    {
+      params: {
+        interval: '0m,2m,4m,6m,8m,12m,16m,20m,25m,30m,40m,50m,1h',
+      },
+      method: 'POST',
     },
-    method: 'POST',
-  }, { immediate: false }
-);
-const complianceChartData = computed<ChartData<'line', DateDataPoint[]>>(() => {
-  return calculateComplianceOverTimeData(
-    complianceOverTime.value ?? [],
-    ['satisfied', 'not-satisfied'],
+    { immediate: false },
   );
+const complianceChartData = computed<ChartData<'line', DateDataPoint[]>>(() => {
+  return calculateComplianceOverTimeData(complianceOverTime.value ?? [], [
+    'satisfied',
+    'not-satisfied',
+  ]);
 });
 
-const { data: heartbeats, execute: loadHeartbeats } = useDataApi<HeartbeatInterval[]>('/api/agent/heartbeat/over-time',
+const { data: heartbeats, execute: loadHeartbeats } = useDataApi<
+  HeartbeatInterval[]
+>(
+  '/api/agent/heartbeat/over-time',
   {
     method: 'GET',
-  }, { immediate: false }
+  },
+  { immediate: false },
 );
 const heartbeatChartData = computed<ChartData<'line', DateDataPoint[]>>(() => {
   return calculateHeartbeatOverTimeData(heartbeats.value ?? []);
@@ -159,7 +168,7 @@ async function search() {
   const query = new FilterParser(filter.value).parse();
 
   await loadEvidence({
-    data: {filter: query}
+    data: { filter: query },
   });
 
   await loadComplianceOverTime({

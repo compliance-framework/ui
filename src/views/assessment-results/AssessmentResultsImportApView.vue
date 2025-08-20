@@ -1,10 +1,15 @@
 <template>
   <div class="p-6">
-    <h2 class="text-xl font-semibold text-gray-900 dark:text-slate-200 mb-6">Import Assessment Plan</h2>
+    <h2 class="text-xl font-semibold text-gray-900 dark:text-slate-200 mb-6">
+      Import Assessment Plan
+    </h2>
 
     <form @submit.prevent="updateImportAp" class="space-y-4">
       <div>
-        <label for="href" class="block text-sm font-medium text-gray-700 dark:text-slate-300">
+        <label
+          for="href"
+          class="block text-sm font-medium text-gray-700 dark:text-slate-300"
+        >
           Href <span class="text-red-500">*</span>
         </label>
         <input
@@ -21,7 +26,10 @@
       </div>
 
       <div>
-        <label for="remarks" class="block text-sm font-medium text-gray-700 dark:text-slate-300">
+        <label
+          for="remarks"
+          class="block text-sm font-medium text-gray-700 dark:text-slate-300"
+        >
           Remarks
         </label>
         <textarea
@@ -46,68 +54,68 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, type PropType } from 'vue'
-import type { AssessmentResults } from '@/stores/assessment-results'
-import { useToast } from 'primevue/usetoast'
-import { useDataApi, decamelizeKeys } from '@/composables/axios'
-import type { AxiosError } from 'axios'
-import type { ErrorResponse, ErrorBody } from '@/stores/types'
+import { ref, onMounted, type PropType } from 'vue';
+import type { AssessmentResults } from '@/stores/assessment-results';
+import { useToast } from 'primevue/usetoast';
+import { useDataApi, decamelizeKeys } from '@/composables/axios';
+import type { AxiosError } from 'axios';
+import type { ErrorResponse, ErrorBody } from '@/stores/types';
 
 const props = defineProps({
   assessmentResults: {
     type: Object as PropType<AssessmentResults>,
-    required: true
-  }
-})
+    required: true,
+  },
+});
 
-const emit = defineEmits(['update'])
+const emit = defineEmits(['update']);
 
-const toast = useToast()
+const toast = useToast();
 
 const formData = ref({
   href: '',
-  remarks: ''
-})
+  remarks: '',
+});
 
 onMounted(() => {
   // Initialize form with current data
   formData.value = {
     href: props.assessmentResults.importAp?.href || '',
-    remarks: props.assessmentResults.importAp?.remarks || ''
-  }
-})
+    remarks: props.assessmentResults.importAp?.remarks || '',
+  };
+});
 
 const { execute: executeUpdate, isLoading: updating } = useDataApi(
   `/api/oscal/assessment-results/${props.assessmentResults.uuid}/import-ap`,
   {
     method: 'PUT',
-    transformRequest: [decamelizeKeys]
+    transformRequest: [decamelizeKeys],
   },
-  { immediate: false }
-)
+  { immediate: false },
+);
 
 async function updateImportAp() {
   try {
     await executeUpdate({
-      data: formData.value
-    })
+      data: formData.value,
+    });
 
     toast.add({
       severity: 'success',
       summary: 'Success',
       detail: 'Import AP updated successfully',
-      life: 3000
-    })
+      life: 3000,
+    });
 
-    emit('update')
+    emit('update');
   } catch (err) {
-    const errorResponse = err as AxiosError<ErrorResponse<ErrorBody>>
+    const errorResponse = err as AxiosError<ErrorResponse<ErrorBody>>;
     toast.add({
       severity: 'error',
       summary: 'Error',
       detail: `Failed to update Import AP: ${errorResponse?.response?.data?.errors.body || 'Unknown error'}`,
-      life: 5000
-    })
+      life: 5000,
+    });
   }
 }
 </script>

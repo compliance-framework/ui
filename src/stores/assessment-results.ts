@@ -1,10 +1,4 @@
-import type {
-  Metadata,
-  Property,
-  Link,
-  Actor,
-  Origin,
-} from '@/stores/types';
+import type { Metadata, Property, Link, Actor, Origin } from '@/stores/types';
 
 export interface ImportAp {
   href: string;

@@ -4,9 +4,9 @@ import type { AssessmentPlan } from '@/stores/assessment-plans.ts';
 import type { PlanOfActionAndMilestones } from '@/stores/plan-of-action-and-milestones.ts';
 import type { AssessmentResults } from '@/stores/assessment-results.ts';
 import { ref } from 'vue';
-import { useLocalStorage } from '@vueuse/core'
+import { useLocalStorage } from '@vueuse/core';
 
-type PartialSystemSecurityPlan = Pick<SystemSecurityPlan, "uuid" | "metadata">
+type PartialSystemSecurityPlan = Pick<SystemSecurityPlan, 'uuid' | 'metadata'>;
 
 interface System {
   securityPlan?: PartialSystemSecurityPlan;

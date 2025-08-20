@@ -1,6 +1,6 @@
 <template>
   <template v-if="evidence">
-<div class="flex items-center justify-between mb-2">
+    <div class="flex items-center justify-between mb-2">
       <PageHeader>
         {{ evidence.title }}
       </PageHeader>
@@ -132,7 +132,7 @@ const route = useRoute();
 const router = useRouter();
 const id = route.params.id as string;
 
-const { data: evidence } = useDataApi<Evidence>(`/api/evidence/${id}`)
+const { data: evidence } = useDataApi<Evidence>(`/api/evidence/${id}`);
 
 const activities = ref<Activity[]>([] as Activity[]);
 const showActivitiesModal = ref(false);

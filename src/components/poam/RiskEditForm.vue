@@ -1,9 +1,10 @@
 <template>
   <div class="p-6">
-
     <form @submit.prevent="submit" class="space-y-4">
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
+        >
           Title <span class="text-red-500">*</span>
         </label>
         <input
@@ -16,7 +17,9 @@
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
+        >
           Description <span class="text-red-500">*</span>
         </label>
         <textarea
@@ -29,7 +32,9 @@
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
+        >
           Statement <span class="text-red-500">*</span>
         </label>
         <textarea
@@ -42,7 +47,9 @@
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
+        >
           Status <span class="text-red-500">*</span>
         </label>
         <select
@@ -61,11 +68,17 @@
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
+        >
           Threat IDs
         </label>
         <div class="space-y-2">
-          <div v-for="(threatId, index) in formData.threatIds" :key="index" class="flex gap-2">
+          <div
+            v-for="(threatId, index) in formData.threatIds"
+            :key="index"
+            class="flex gap-2"
+          >
             <input
               v-model="formData.threatIds[index]"
               type="text"
@@ -91,7 +104,9 @@
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
+        >
           Deadline
         </label>
         <input
@@ -102,7 +117,9 @@
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
+        >
           Remarks
         </label>
         <textarea
@@ -123,7 +140,13 @@
         </button>
         <button
           type="submit"
-          :disabled="!formData.title || !formData.description || !formData.statement || !formData.status || saving"
+          :disabled="
+            !formData.title ||
+            !formData.description ||
+            !formData.statement ||
+            !formData.status ||
+            saving
+          "
           class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {{ saving ? 'Saving...' : 'Save' }}
@@ -134,30 +157,35 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, onMounted } from 'vue'
-import type { Risk } from '@/stores/plan-of-action-and-milestones.ts'
-import { useToast } from 'primevue/usetoast'
+import { reactive, onMounted } from 'vue';
+import type { Risk } from '@/stores/plan-of-action-and-milestones.ts';
+import { useToast } from 'primevue/usetoast';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 
 const props = defineProps<{
-  poamId: string
-  risk: Risk
-}>()
+  poamId: string;
+  risk: Risk;
+}>();
 
 const emit = defineEmits<{
-  cancel: []
-  saved: [risk: Risk]
-}>()
+  cancel: [];
+  saved: [risk: Risk];
+}>();
 
-const toast = useToast()
+const toast = useToast();
 
-const { data: returnedRisk, isLoading: saving, execute: updateRisk } = useDataApi<Risk>(
+const {
+  data: returnedRisk,
+  isLoading: saving,
+  execute: updateRisk,
+} = useDataApi<Risk>(
   `/api/oscal/plan-of-action-and-milestones/${props.poamId}/risks/${props.risk.uuid}`,
   {
     method: 'PUT',
-  transformRequest: [decamelizeKeys]
-  }, { immediate: false }
-)
+    transformRequest: [decamelizeKeys],
+  },
+  { immediate: false },
+);
 
 const formData = reactive({
   title: '',
@@ -166,26 +194,26 @@ const formData = reactive({
   status: '',
   threatIds: [] as string[],
   deadline: '',
-  remarks: ''
-})
+  remarks: '',
+});
 
 onMounted(() => {
   // Initialize form with existing data
-  formData.title = props.risk.title || ''
-  formData.description = props.risk.description
-  formData.statement = props.risk.statement || ''
-  formData.status = props.risk.status
-  formData.threatIds = [...(props.risk.threatIds || [])]
-  formData.deadline = props.risk.deadline || ''
-  formData.remarks = props.risk.remarks || ''
-})
+  formData.title = props.risk.title || '';
+  formData.description = props.risk.description;
+  formData.statement = props.risk.statement || '';
+  formData.status = props.risk.status;
+  formData.threatIds = [...(props.risk.threatIds || [])];
+  formData.deadline = props.risk.deadline || '';
+  formData.remarks = props.risk.remarks || '';
+});
 
 function addThreatId() {
-  formData.threatIds.push('')
+  formData.threatIds.push('');
 }
 
 function removeThreatId(index: number) {
-  formData.threatIds.splice(index, 1)
+  formData.threatIds.splice(index, 1);
 }
 
 async function submit() {
@@ -194,9 +222,9 @@ async function submit() {
       severity: 'error',
       summary: 'Validation Error',
       detail: 'Title is required',
-      life: 3000
-    })
-    return
+      life: 3000,
+    });
+    return;
   }
 
   if (!formData.description) {
@@ -204,9 +232,9 @@ async function submit() {
       severity: 'error',
       summary: 'Validation Error',
       detail: 'Description is required',
-      life: 3000
-    })
-    return
+      life: 3000,
+    });
+    return;
   }
 
   if (!formData.statement) {
@@ -214,9 +242,9 @@ async function submit() {
       severity: 'error',
       summary: 'Validation Error',
       detail: 'Statement is required',
-      life: 3000
-    })
-    return
+      life: 3000,
+    });
+    return;
   }
 
   if (!formData.status) {
@@ -224,13 +252,13 @@ async function submit() {
       severity: 'error',
       summary: 'Validation Error',
       detail: 'Status is required',
-      life: 3000
-    })
-    return
+      life: 3000,
+    });
+    return;
   }
 
   try {
-    const filteredThreatIds = formData.threatIds.filter(t => t.trim());
+    const filteredThreatIds = formData.threatIds.filter((t) => t.trim());
     const updatedRisk: Risk = {
       ...props.risk,
       title: formData.title,
@@ -239,29 +267,30 @@ async function submit() {
       status: formData.status,
       threatIds: filteredThreatIds.length > 0 ? filteredThreatIds : undefined,
       deadline: formData.deadline || undefined,
-      remarks: formData.remarks || undefined
-    }
+      remarks: formData.remarks || undefined,
+    };
 
-     await updateRisk({
-      data: updatedRisk
-    })
+    await updateRisk({
+      data: updatedRisk,
+    });
 
     toast.add({
       severity: 'success',
       summary: 'Risk Updated',
       detail: 'Risk updated successfully',
-      life: 3000
-    })
+      life: 3000,
+    });
 
-    emit('saved', returnedRisk.value!)
+    emit('saved', returnedRisk.value!);
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    const errorMessage =
+      error instanceof Error ? error.message : 'Unknown error';
     toast.add({
       severity: 'error',
       summary: 'Update Failed',
       detail: `Failed to update risk: ${errorMessage}`,
-      life: 3000
-    })
+      life: 3000,
+    });
   }
 }
 </script>

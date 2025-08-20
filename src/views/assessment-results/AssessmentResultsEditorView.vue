@@ -1,6 +1,8 @@
 <template>
   <div v-if="loading" class="flex justify-center items-center min-h-screen">
-    <div class="text-gray-500 dark:text-slate-400">Loading Assessment Results...</div>
+    <div class="text-gray-500 dark:text-slate-400">
+      Loading Assessment Results...
+    </div>
   </div>
   <div v-else-if="error" class="flex justify-center items-center min-h-screen">
     <div class="text-red-500">Error: {{ error }}</div>
@@ -17,7 +19,7 @@
           :class="[
             $route.name === 'assessment-results-overview'
               ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-slate-400 dark:hover:text-slate-300'
+              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-slate-400 dark:hover:text-slate-300',
           ]"
         >
           Overview
@@ -28,7 +30,7 @@
           :class="[
             $route.name === 'assessment-results-import-ap'
               ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-slate-400 dark:hover:text-slate-300'
+              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-slate-400 dark:hover:text-slate-300',
           ]"
         >
           Import AP
@@ -39,7 +41,7 @@
           :class="[
             $route.name === 'assessment-results-results'
               ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-slate-400 dark:hover:text-slate-300'
+              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-slate-400 dark:hover:text-slate-300',
           ]"
         >
           Results
@@ -50,7 +52,7 @@
           :class="[
             $route.name === 'assessment-results-local-definitions'
               ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-slate-400 dark:hover:text-slate-300'
+              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-slate-400 dark:hover:text-slate-300',
           ]"
         >
           Local Definitions
@@ -61,7 +63,7 @@
           :class="[
             $route.name === 'assessment-results-back-matter'
               ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-slate-400 dark:hover:text-slate-300'
+              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-slate-400 dark:hover:text-slate-300',
           ]"
         >
           Back Matter
@@ -72,7 +74,7 @@
           :class="[
             $route.name === 'assessment-results-json'
               ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-slate-400 dark:hover:text-slate-300'
+              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-slate-400 dark:hover:text-slate-300',
           ]"
         >
           JSON
@@ -81,58 +83,72 @@
     </div>
 
     <!-- Content Area -->
-    <div class="bg-white dark:bg-slate-900 border border-ccf-300 dark:border-slate-700 rounded-lg shadow">
-      <RouterView :assessment-results="assessmentResults" @update="refreshData" />
+    <div
+      class="bg-white dark:bg-slate-900 border border-ccf-300 dark:border-slate-700 rounded-lg shadow"
+    >
+      <RouterView
+        :assessment-results="assessmentResults"
+        @update="refreshData"
+      />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import PageHeader from '@/components/PageHeader.vue'
-import type { AssessmentResults } from '@/stores/assessment-results'
-import { useToast } from 'primevue/usetoast'
-import { useDataApi } from '@/composables/axios'
-import type { AxiosError } from 'axios'
-import type { ErrorResponse, ErrorBody } from '@/stores/types'
+import { onMounted, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import PageHeader from '@/components/PageHeader.vue';
+import type { AssessmentResults } from '@/stores/assessment-results';
+import { useToast } from 'primevue/usetoast';
+import { useDataApi } from '@/composables/axios';
+import type { AxiosError } from 'axios';
+import type { ErrorResponse, ErrorBody } from '@/stores/types';
 
-const route = useRoute()
-const toast = useToast()
-const router = useRouter()
+const route = useRoute();
+const toast = useToast();
+const router = useRouter();
 
-const { data: assessmentResults, execute: loadAssessmentResults, isLoading: loading, error
- } = useDataApi<AssessmentResults>(
+const {
+  data: assessmentResults,
+  execute: loadAssessmentResults,
+  isLoading: loading,
+  error,
+} = useDataApi<AssessmentResults>(
   `/api/oscal/assessment-results/${route.params.id}`,
   null,
-  { immediate: false }
-)
+  { immediate: false },
+);
 
 watch(error, () => {
   if (error.value) {
-    const errorResponse = error.value as AxiosError<ErrorResponse<ErrorBody>>
+    const errorResponse = error.value as AxiosError<ErrorResponse<ErrorBody>>;
     toast.add({
       severity: 'error',
       summary: 'Error Loading Assessment Results',
-      detail: errorResponse.response?.data.errors.body || 'An unexpected error occurred.',
-      life: 5000
-    })
-    router.push({ name: 'assessment-results' })
+      detail:
+        errorResponse.response?.data.errors.body ||
+        'An unexpected error occurred.',
+      life: 5000,
+    });
+    router.push({ name: 'assessment-results' });
   }
-})
+});
 
 async function refreshData() {
-  await loadAssessmentResults()
+  await loadAssessmentResults();
 }
 
 onMounted(() => {
-  loadAssessmentResults()
-})
+  loadAssessmentResults();
+});
 
 // Reload data when the route changes
-watch(() => route.params.id, () => {
-  if (route.params.id) {
-    loadAssessmentResults()
-  }
-})
+watch(
+  () => route.params.id,
+  () => {
+    if (route.params.id) {
+      loadAssessmentResults();
+    }
+  },
+);
 </script>

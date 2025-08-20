@@ -1,11 +1,11 @@
 type Condition = {
   label: string;
-  operator: "=" | "!=";
+  operator: '=' | '!=';
   value: string;
 };
 
 type Query = {
-  operator: "and" | "or" | "AND" | "OR";
+  operator: 'and' | 'or' | 'AND' | 'OR';
   scopes: Scope[];
 };
 
@@ -29,7 +29,12 @@ export class FilterParser {
   private tokenize(input: string): string[] {
     // Tokenize the input string (preserve parentheses and logical operators)
     const regex = /\(|\)|\bAND\b|\band\b|\bOR\b|\bor\b|!=|=|\s+|[^()\s=!]+/gi;
-    return input.match(regex)?.map(token => token.trim()).filter(token => token) || [];
+    return (
+      input
+        .match(regex)
+        ?.map((token) => token.trim())
+        .filter((token) => token) || []
+    );
   }
 
   private peek(): string | undefined {
@@ -67,22 +72,29 @@ export class FilterParser {
 
   private parseQuery(): Scope {
     const scopes: Scope[] = [];
-    let operator: "AND" | "and" | "OR" | "or" | undefined;
+    let operator: 'AND' | 'and' | 'OR' | 'or' | undefined;
 
     while (this.position < this.tokens.length) {
       const token = this.peek();
 
-      if (token === "(") {
+      if (token === '(') {
         // Handle nested query
         this.consume(); // Consume '('
         scopes.push(this.parseQuery());
-        this.expect(")"); // Consume ')'
-      } else if (token === "AND" || token === "and" || token === "OR" || token === "or") {
+        this.expect(')'); // Consume ')'
+      } else if (
+        token === 'AND' ||
+        token === 'and' ||
+        token === 'OR' ||
+        token === 'or'
+      ) {
         // Set the operator for this query
         if (operator && operator !== token) {
-          throw new Error(`Mixed logical operators without grouping: '${operator}' and '${token}'`);
+          throw new Error(
+            `Mixed logical operators without grouping: '${operator}' and '${token}'`,
+          );
         }
-        operator = token.toLowerCase() as "AND" | "and" | "OR" | "or";
+        operator = token.toLowerCase() as 'AND' | 'and' | 'OR' | 'or';
         this.consume(); // Consume 'AND' or 'OR'
       } else if (token && /[a-zA-Z0-9_]+/.test(token)) {
         // Parse a condition
@@ -94,7 +106,7 @@ export class FilterParser {
 
     // Default to "AND" if no operator is explicitly specified
     if (!operator) {
-      operator = "and";
+      operator = 'and';
     }
 
     return { query: { operator, scopes } };
@@ -109,10 +121,10 @@ export class FilterParser {
       throw new Error("Invalid condition format, expected 'label=|!=value'");
     }
 
-    if (operator !== "=" && operator !== "!=") {
+    if (operator !== '=' && operator !== '!=') {
       throw new Error(`Unsupported operator: ${operator}`);
     }
 
-    return { label, operator: operator as "=" | "!=", value };
+    return { label, operator: operator as '=' | '!=', value };
   }
 }

@@ -1,9 +1,17 @@
 <template>
   <div class="px-12 py-8">
     <div class="mb-4">
-      <label class="inline-block pb-2 dark:text-slate-300" v-tooltip.top="'Email cannot be edited'">Email</label>
-        <div class="p-3 bg-gray-50 dark:bg-slate-800 border border-ccf-300 dark:border-slate-700 rounded-md">
-        <span class="text-gray-600 dark:text-slate-400 font-mono">{{ user.email }}</span>
+      <label
+        class="inline-block pb-2 dark:text-slate-300"
+        v-tooltip.top="'Email cannot be edited'"
+        >Email</label
+      >
+      <div
+        class="p-3 bg-gray-50 dark:bg-slate-800 border border-ccf-300 dark:border-slate-700 rounded-md"
+      >
+        <span class="text-gray-600 dark:text-slate-400 font-mono">{{
+          user.email
+        }}</span>
       </div>
     </div>
     <div class="mb-4">
@@ -28,7 +36,6 @@
 </template>
 
 <script setup lang="ts">
-
 import type { CCFUser, ErrorBody, ErrorResponse } from '@/stores/types';
 import { defineProps, reactive, defineEmits, watch } from 'vue';
 import FormInput from '../forms/FormInput.vue';
@@ -46,7 +53,7 @@ watch(
   () => props.user,
   (newUser: CCFUser) => {
     Object.assign(user, newUser);
-  }
+  },
 );
 
 const emit = defineEmits<{
@@ -57,10 +64,14 @@ const emit = defineEmits<{
 const user = reactive({ ...props.user });
 
 const toast = useToast();
-const { data: updatedUser, execute } = useDataApi<CCFUser>(`/api/users/${user.id}`, {
+const { data: updatedUser, execute } = useDataApi<CCFUser>(
+  `/api/users/${user.id}`,
+  {
     method: 'PUT',
-  data: user,
-}, { immediate: false });
+    data: user,
+  },
+  { immediate: false },
+);
 
 async function updateUser() {
   try {
@@ -71,7 +82,9 @@ async function updateUser() {
     toast.add({
       severity: 'error',
       summary: 'Error updating user',
-      detail: errorResponse.response?.data.errors.body ?? 'An error occurred while updating the user.',
+      detail:
+        errorResponse.response?.data.errors.body ??
+        'An error occurred while updating the user.',
       life: 3000,
     });
   }

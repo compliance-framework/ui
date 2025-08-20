@@ -8,8 +8,8 @@
 
 <script setup lang="ts">
 defineOptions({
-  inheritAttrs: false
-})
+  inheritAttrs: false,
+});
 
-const model = defineModel()
+const model = defineModel();
 </script>

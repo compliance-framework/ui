@@ -1,111 +1,134 @@
 <template>
   <div class="px-12 py-8">
     <form @submit.prevent="updateStatement()">
-
-    <div class="mb-4">
-      <label class="inline-block pb-2 dark:text-slate-300">UUID</label>
-      <div class="p-3 bg-gray-50 dark:bg-slate-800 border border-ccf-300 dark:border-slate-700 rounded-md">
-        <span class="text-gray-600 dark:text-slate-400 font-mono">{{ statementData.uuid }}</span>
-      </div>
-    </div>
-
-    <div class="mb-4">
-      <label class="inline-block pb-2 dark:text-slate-300">Statement ID <span class="text-red-500">*</span></label>
-      <FormInput v-model="statementData.statementId" placeholder="e.g., au-1_smt" required />
-    </div>
-
-    <div class="mb-4">
-      <label class="inline-block pb-2 dark:text-slate-300">Remarks</label>
-      <FormTextarea v-model="statementData.remarks" rows="3" />
-    </div>
-
-    <!-- Properties -->
-    <div class="mb-6">
-      <label class="inline-block pb-2 dark:text-slate-300">Properties</label>
-      <div class="space-y-3">
+      <div class="mb-4">
+        <label class="inline-block pb-2 dark:text-slate-300">UUID</label>
         <div
-          v-for="(prop, index) in statementData.props"
-          :key="index"
-          class="p-3 border border-ccf-300 dark:border-slate-700 rounded-md bg-gray-50 dark:bg-slate-800"
+          class="p-3 bg-gray-50 dark:bg-slate-800 border border-ccf-300 dark:border-slate-700 rounded-md"
         >
-          <div class="flex justify-between items-start mb-2">
-            <h4 class="text-sm font-medium dark:text-slate-300">Property {{ index + 1 }}</h4>
-            <button
-              type="button"
-              @click="removeProperty(index)"
-              class="text-red-500 hover:text-red-700"
-            >
-              Remove
-            </button>
-          </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div>
-              <label class="inline-block pb-1 text-sm dark:text-slate-300">Name</label>
-              <FormInput v-model="prop.name" placeholder="Property name" />
-            </div>
-            <div>
-              <label class="inline-block pb-1 text-sm dark:text-slate-300">Value</label>
-              <FormInput v-model="prop.value" placeholder="Property value" />
-            </div>
-          </div>
+          <span class="text-gray-600 dark:text-slate-400 font-mono">{{
+            statementData.uuid
+          }}</span>
         </div>
-
-        <button
-          type="button"
-          @click="addProperty"
-          class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors"
-        >
-          Add Property
-        </button>
       </div>
-    </div>
 
-    <!-- Links -->
-    <div class="mb-6">
-      <label class="inline-block pb-2 dark:text-slate-300">Links</label>
-      <div class="space-y-3">
-        <div
-          v-for="(link, index) in statementData.links"
-          :key="index"
-          class="p-3 border border-ccf-300 dark:border-slate-700 rounded-md bg-gray-50 dark:bg-slate-800"
+      <div class="mb-4">
+        <label class="inline-block pb-2 dark:text-slate-300"
+          >Statement ID <span class="text-red-500">*</span></label
         >
-          <div class="flex justify-between items-start mb-2">
-            <h4 class="text-sm font-medium dark:text-slate-300">Link {{ index + 1 }}</h4>
-            <button
-              type="button"
-              @click="removeLink(index)"
-              class="text-red-500 hover:text-red-700"
-            >
-              Remove
-            </button>
+        <FormInput
+          v-model="statementData.statementId"
+          placeholder="e.g., au-1_smt"
+          required
+        />
+      </div>
+
+      <div class="mb-4">
+        <label class="inline-block pb-2 dark:text-slate-300">Remarks</label>
+        <FormTextarea v-model="statementData.remarks" rows="3" />
+      </div>
+
+      <!-- Properties -->
+      <div class="mb-6">
+        <label class="inline-block pb-2 dark:text-slate-300">Properties</label>
+        <div class="space-y-3">
+          <div
+            v-for="(prop, index) in statementData.props"
+            :key="index"
+            class="p-3 border border-ccf-300 dark:border-slate-700 rounded-md bg-gray-50 dark:bg-slate-800"
+          >
+            <div class="flex justify-between items-start mb-2">
+              <h4 class="text-sm font-medium dark:text-slate-300">
+                Property {{ index + 1 }}
+              </h4>
+              <button
+                type="button"
+                @click="removeProperty(index)"
+                class="text-red-500 hover:text-red-700"
+              >
+                Remove
+              </button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label class="inline-block pb-1 text-sm dark:text-slate-300"
+                  >Name</label
+                >
+                <FormInput v-model="prop.name" placeholder="Property name" />
+              </div>
+              <div>
+                <label class="inline-block pb-1 text-sm dark:text-slate-300"
+                  >Value</label
+                >
+                <FormInput v-model="prop.value" placeholder="Property value" />
+              </div>
+            </div>
           </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div>
-              <label class="inline-block pb-1 text-sm dark:text-slate-300">Href</label>
-              <FormInput v-model="link.href" placeholder="URL or reference" />
-            </div>
-            <div>
-              <label class="inline-block pb-1 text-sm dark:text-slate-300">Rel</label>
-              <FormInput v-model="link.rel" placeholder="Relationship" />
-            </div>
-          </div>
-          <div class="mt-2">
-            <label class="inline-block pb-1 text-sm dark:text-slate-300">Text</label>
-            <FormInput v-model="link.text" placeholder="Link text" />
-          </div>
+          <button
+            type="button"
+            @click="addProperty"
+            class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors"
+          >
+            Add Property
+          </button>
         </div>
-
-        <button
-          type="button"
-          @click="addLink"
-          class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors"
-        >
-          Add Link
-        </button>
       </div>
-    </div>
+
+      <!-- Links -->
+      <div class="mb-6">
+        <label class="inline-block pb-2 dark:text-slate-300">Links</label>
+        <div class="space-y-3">
+          <div
+            v-for="(link, index) in statementData.links"
+            :key="index"
+            class="p-3 border border-ccf-300 dark:border-slate-700 rounded-md bg-gray-50 dark:bg-slate-800"
+          >
+            <div class="flex justify-between items-start mb-2">
+              <h4 class="text-sm font-medium dark:text-slate-300">
+                Link {{ index + 1 }}
+              </h4>
+              <button
+                type="button"
+                @click="removeLink(index)"
+                class="text-red-500 hover:text-red-700"
+              >
+                Remove
+              </button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label class="inline-block pb-1 text-sm dark:text-slate-300"
+                  >Href</label
+                >
+                <FormInput v-model="link.href" placeholder="URL or reference" />
+              </div>
+              <div>
+                <label class="inline-block pb-1 text-sm dark:text-slate-300"
+                  >Rel</label
+                >
+                <FormInput v-model="link.rel" placeholder="Relationship" />
+              </div>
+            </div>
+            <div class="mt-2">
+              <label class="inline-block pb-1 text-sm dark:text-slate-300"
+                >Text</label
+              >
+              <FormInput v-model="link.text" placeholder="Link text" />
+            </div>
+          </div>
+
+          <button
+            type="button"
+            @click="addLink"
+            class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors"
+          >
+            Add Link
+          </button>
+        </div>
+      </div>
 
       <div class="flex justify-end gap-4">
         <button
@@ -149,12 +172,17 @@ const emit = defineEmits<{
 }>();
 
 const toast = useToast();
-const { data: updatedStatement, execute: updateStatementApi, isLoading: saving } = useDataApi<Statement>(
+const {
+  data: updatedStatement,
+  execute: updateStatementApi,
+  isLoading: saving,
+} = useDataApi<Statement>(
   `/api/oscal/system-security-plans/${props.sspId}/control-implementation/implemented-requirements/${props.reqId}/statements/${props.statement.uuid}`,
   {
     method: 'PUT',
-    transformRequest: [decamelizeKeys]
-  }, { immediate: false }
+    transformRequest: [decamelizeKeys],
+  },
+  { immediate: false },
 );
 
 const statementData = reactive<Statement>({
@@ -162,7 +190,7 @@ const statementData = reactive<Statement>({
   statementId: '',
   props: [],
   links: [],
-  remarks: ''
+  remarks: '',
 });
 
 onMounted(() => {
@@ -171,7 +199,7 @@ onMounted(() => {
     statementId: props.statement.statementId,
     remarks: props.statement.remarks,
     props: [...(props.statement.props || [])],
-    links: [...(props.statement.links || [])]
+    links: [...(props.statement.links || [])],
   });
 });
 
@@ -181,7 +209,7 @@ const addProperty = () => {
     value: '',
     class: '',
     ns: '',
-    uuid: crypto.randomUUID()
+    uuid: crypto.randomUUID(),
   });
 };
 
@@ -193,7 +221,7 @@ const addLink = () => {
   statementData.links.push({
     href: '',
     rel: '',
-    text: ''
+    text: '',
   });
 };
 
@@ -207,32 +235,34 @@ const updateStatement = async () => {
       severity: 'error',
       summary: 'Validation Error',
       detail: 'Statement ID is required.',
-      life: 3000
+      life: 3000,
     });
     return;
   }
 
   try {
     await updateStatementApi({
-      data: statementData
+      data: statementData,
     });
 
     toast.add({
       severity: 'success',
       summary: 'Success',
       detail: 'Statement updated successfully.',
-      life: 3000
+      life: 3000,
     });
 
     emit('saved', updatedStatement.value!);
   } catch (error) {
     const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
-    const errorMessage = errorResponse.response?.data?.errors.body || 'Failed to update statement.';
+    const errorMessage =
+      errorResponse.response?.data?.errors.body ||
+      'Failed to update statement.';
     toast.add({
       severity: 'error',
       summary: 'Error',
       detail: errorMessage,
-      life: 5000
+      life: 5000,
     });
   }
 };

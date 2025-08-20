@@ -265,10 +265,10 @@ export const useSystemSecurityPlanStore = defineStore(
         `${config.API_URL}/api/oscal/system-security-plans/${id}`,
         {
           credentials: 'include',
-        }
+        },
       );
       if (!response.ok) {
-        throw response
+        throw response;
       }
       return (await response.json()) as DataResponse<SystemSecurityPlan>;
     }
@@ -278,10 +278,10 @@ export const useSystemSecurityPlanStore = defineStore(
         `${config.API_URL}/api/oscal/system-security-plans`,
         {
           credentials: 'include',
-        }
+        },
       );
       if (!response.ok) {
-        throw response
+        throw response;
       }
       return (await response.json()) as DataResponse<SystemSecurityPlan[]>;
     }
@@ -318,7 +318,7 @@ export const useSystemSecurityPlanStore = defineStore(
         `${config.API_URL}/api/oscal/system-security-plans/${id}/system-characteristics`,
         {
           credentials: 'include',
-        }
+        },
       );
       if (!response.ok) {
         throw response;
@@ -327,7 +327,6 @@ export const useSystemSecurityPlanStore = defineStore(
         deep: true,
       }) as DataResponse<SystemCharacteristics>;
     }
-
 
     async function updateCharacteristics(
       id: string,
@@ -363,7 +362,7 @@ export const useSystemSecurityPlanStore = defineStore(
         `${config.API_URL}/api/oscal/system-security-plans/${id}/system-characteristics/authorization-boundary`,
         {
           credentials: 'include',
-        }
+        },
       );
       if (!response.ok) {
         throw response;
@@ -381,7 +380,7 @@ export const useSystemSecurityPlanStore = defineStore(
         `${config.API_URL}/api/oscal/system-security-plans/${id}/system-characteristics/network-architecture`,
         {
           credentials: 'include',
-        }
+        },
       );
       if (!response.ok) {
         throw response;
@@ -450,10 +449,10 @@ export const useSystemSecurityPlanStore = defineStore(
         `${config.API_URL}/api/oscal/system-security-plans/${id}/system-characteristics/data-flow`,
         {
           credentials: 'include',
-        }
+        },
       );
       if (!response.ok) {
-        throw response
+        throw response;
       }
       return camelcaseKeys(await response.json(), {
         deep: true,
@@ -468,7 +467,7 @@ export const useSystemSecurityPlanStore = defineStore(
         `${config.API_URL}/api/oscal/system-security-plans/${id}/system-implementation`,
         {
           credentials: 'include',
-        }
+        },
       );
       if (!response.ok) {
         throw response;
@@ -480,10 +479,12 @@ export const useSystemSecurityPlanStore = defineStore(
 
     async function updateSystemImplementation(
       id: string,
-      systemImplementation: SystemImplementation
+      systemImplementation: SystemImplementation,
     ): Promise<DataResponse<SystemImplementation>> {
       const config = await configStore.getConfig();
-      const requestBody = decamelizeKeys(systemImplementation, { separator: '-' });
+      const requestBody = decamelizeKeys(systemImplementation, {
+        separator: '-',
+      });
 
       const response = await fetch(
         `${config.API_URL}/api/oscal/system-security-plans/${id}/system-implementation`,
@@ -494,7 +495,7 @@ export const useSystemSecurityPlanStore = defineStore(
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(requestBody),
-        }
+        },
       );
 
       if (!response.ok) {
@@ -516,7 +517,7 @@ export const useSystemSecurityPlanStore = defineStore(
         `${config.API_URL}/api/oscal/system-security-plans/${id}/system-implementation/users`,
         {
           credentials: 'include',
-        }
+        },
       );
       if (!response.ok) {
         throw response;
@@ -534,7 +535,7 @@ export const useSystemSecurityPlanStore = defineStore(
         `${config.API_URL}/api/oscal/system-security-plans/${id}/system-implementation/components`,
         {
           credentials: 'include',
-        }
+        },
       );
       if (!response.ok) {
         throw response;
@@ -555,7 +556,7 @@ export const useSystemSecurityPlanStore = defineStore(
         `${config.API_URL}/api/oscal/system-security-plans/${id}/system-implementation/components/${componentId}`,
         {
           credentials: 'include',
-        }
+        },
       );
       if (!response.ok) {
         throw response;
@@ -572,8 +573,8 @@ export const useSystemSecurityPlanStore = defineStore(
       const response = await fetch(
         `${config.API_URL}/api/oscal/system-security-plans/${id}/system-implementation/inventory-items`,
         {
-          credentials: 'include'
-        }
+          credentials: 'include',
+        },
       );
       if (!response.ok) {
         throw response;
@@ -590,8 +591,8 @@ export const useSystemSecurityPlanStore = defineStore(
       const response = await fetch(
         `${config.API_URL}/api/oscal/system-security-plans/${id}/system-implementation/leveraged-authorizations`,
         {
-          credentials: 'include'
-        }
+          credentials: 'include',
+        },
       );
       if (!response.ok) {
         throw response;
@@ -603,7 +604,7 @@ export const useSystemSecurityPlanStore = defineStore(
 
     async function createSystemImplementationLeveragedAuthorization(
       id: string,
-      auth: Partial<LeveragedAuthorization>
+      auth: Partial<LeveragedAuthorization>,
     ): Promise<DataResponse<LeveragedAuthorization>> {
       const config = await configStore.getConfig();
       const response = await fetch(
@@ -615,7 +616,7 @@ export const useSystemSecurityPlanStore = defineStore(
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(decamelizeKeys(auth, { separator: '-' })),
-        }
+        },
       );
       if (!response.ok) {
         throw response;
@@ -628,7 +629,7 @@ export const useSystemSecurityPlanStore = defineStore(
     async function updateSystemImplementationLeveragedAuthorization(
       id: string,
       authId: string,
-      auth: LeveragedAuthorization
+      auth: LeveragedAuthorization,
     ): Promise<DataResponse<LeveragedAuthorization>> {
       const config = await configStore.getConfig();
       const response = await fetch(
@@ -640,7 +641,7 @@ export const useSystemSecurityPlanStore = defineStore(
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(decamelizeKeys(auth, { separator: '-' })),
-        }
+        },
       );
       if (!response.ok) {
         throw response;
@@ -652,7 +653,7 @@ export const useSystemSecurityPlanStore = defineStore(
 
     async function deleteSystemImplementationLeveragedAuthorization(
       id: string,
-      authId: string
+      authId: string,
     ): Promise<void> {
       const config = await configStore.getConfig();
       const response = await fetch(
@@ -660,7 +661,7 @@ export const useSystemSecurityPlanStore = defineStore(
         {
           method: 'DELETE',
           credentials: 'include',
-        }
+        },
       );
       if (!response.ok) {
         throw response;
@@ -682,12 +683,14 @@ export const useSystemSecurityPlanStore = defineStore(
           },
           body: JSON.stringify(decamelizeKeys(item, { separator: '-' })),
           credentials: 'include',
-        }
+        },
       );
       if (!response.ok) {
         throw response;
       }
-      return camelcaseKeys(await response.json(), { deep: true }) as DataResponse<InventoryItem>;
+      return camelcaseKeys(await response.json(), {
+        deep: true,
+      }) as DataResponse<InventoryItem>;
     }
 
     async function createSystemImplementationInventoryItem(
@@ -704,12 +707,14 @@ export const useSystemSecurityPlanStore = defineStore(
           },
           body: JSON.stringify(decamelizeKeys(item, { separator: '-' })),
           credentials: 'include',
-        }
+        },
       );
       if (!response.ok) {
         throw response;
       }
-      return camelcaseKeys(await response.json(), { deep: true }) as DataResponse<InventoryItem>;
+      return camelcaseKeys(await response.json(), {
+        deep: true,
+      }) as DataResponse<InventoryItem>;
     }
 
     async function deleteSystemImplementationUser(
@@ -722,7 +727,7 @@ export const useSystemSecurityPlanStore = defineStore(
         {
           method: 'DELETE',
           credentials: 'include',
-        }
+        },
       );
       if (!response.ok) {
         throw response;
@@ -739,7 +744,7 @@ export const useSystemSecurityPlanStore = defineStore(
         {
           method: 'DELETE',
           credentials: 'include',
-        }
+        },
       );
       if (!response.ok) {
         throw response;
@@ -756,7 +761,7 @@ export const useSystemSecurityPlanStore = defineStore(
         {
           method: 'DELETE',
           credentials: 'include',
-        }
+        },
       );
       if (!response.ok) {
         throw response;
@@ -770,8 +775,8 @@ export const useSystemSecurityPlanStore = defineStore(
       const response = await fetch(
         `${config.API_URL}/api/oscal/system-security-plans/${id}/control-implementation`,
         {
-          credentials: 'include'
-        }
+          credentials: 'include',
+        },
       );
       if (!response.ok) {
         throw response;
@@ -796,12 +801,14 @@ export const useSystemSecurityPlanStore = defineStore(
           },
           body: JSON.stringify(decamelizeKeys(user, { separator: '-' })),
           credentials: 'include',
-        }
+        },
       );
       if (!response.ok) {
         throw response;
       }
-      return camelcaseKeys(await response.json(), { deep: true }) as DataResponse<SystemImplementationUser>;
+      return camelcaseKeys(await response.json(), {
+        deep: true,
+      }) as DataResponse<SystemImplementationUser>;
     }
 
     async function createSystemImplementationUser(
@@ -818,12 +825,14 @@ export const useSystemSecurityPlanStore = defineStore(
           },
           body: JSON.stringify(decamelizeKeys(user, { separator: '-' })),
           credentials: 'include',
-        }
+        },
       );
       if (!response.ok) {
         throw response;
       }
-      return camelcaseKeys(await response.json(), { deep: true }) as DataResponse<SystemImplementationUser>;
+      return camelcaseKeys(await response.json(), {
+        deep: true,
+      }) as DataResponse<SystemImplementationUser>;
     }
 
     async function updateSystemImplementationComponent(
@@ -841,12 +850,14 @@ export const useSystemSecurityPlanStore = defineStore(
           },
           body: JSON.stringify(decamelizeKeys(component, { separator: '-' })),
           credentials: 'include',
-        }
+        },
       );
       if (!response.ok) {
         throw response;
       }
-      return camelcaseKeys(await response.json(), { deep: true }) as DataResponse<SystemComponent>;
+      return camelcaseKeys(await response.json(), {
+        deep: true,
+      }) as DataResponse<SystemComponent>;
     }
 
     async function createSystemImplementationComponent(
@@ -865,14 +876,16 @@ export const useSystemSecurityPlanStore = defineStore(
           },
           body: JSON.stringify(requestBody),
           credentials: 'include',
-        }
+        },
       );
       if (!response.ok) {
         throw response;
       }
       const responseData = await response.json();
 
-      return camelcaseKeys(responseData, { deep: true }) as DataResponse<SystemComponent>;
+      return camelcaseKeys(responseData, {
+        deep: true,
+      }) as DataResponse<SystemComponent>;
     }
 
     async function full(id: string): Promise<DataResponse<SystemSecurityPlan>> {
@@ -880,8 +893,8 @@ export const useSystemSecurityPlanStore = defineStore(
       const response = await fetch(
         `${config.API_URL}/api/oscal/system-security-plans/${id}/full`,
         {
-          credentials: 'include'
-        }
+          credentials: 'include',
+        },
       );
       if (!response.ok) {
         throw response;
@@ -891,7 +904,9 @@ export const useSystemSecurityPlanStore = defineStore(
       }) as DataResponse<SystemSecurityPlan>;
     }
 
-    async function create(ssp: Partial<SystemSecurityPlan>): Promise<DataResponse<SystemSecurityPlan>> {
+    async function create(
+      ssp: Partial<SystemSecurityPlan>,
+    ): Promise<DataResponse<SystemSecurityPlan>> {
       const config = await configStore.getConfig();
       const response = await fetch(
         `${config.API_URL}/api/oscal/system-security-plans`,
@@ -902,12 +917,14 @@ export const useSystemSecurityPlanStore = defineStore(
           },
           body: JSON.stringify(decamelizeKeys(ssp, { separator: '-' })),
           credentials: 'include',
-        }
+        },
       );
       if (!response.ok) {
         throw response;
       }
-      return camelcaseKeys(await response.json(), { deep: true }) as DataResponse<SystemSecurityPlan>;
+      return camelcaseKeys(await response.json(), {
+        deep: true,
+      }) as DataResponse<SystemSecurityPlan>;
     }
 
     async function updateControlImplementation(
@@ -922,14 +939,18 @@ export const useSystemSecurityPlanStore = defineStore(
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(decamelizeKeys(controlImplementation, { separator: '-' })),
+          body: JSON.stringify(
+            decamelizeKeys(controlImplementation, { separator: '-' }),
+          ),
           credentials: 'include',
-        }
+        },
       );
       if (!response.ok) {
         throw response;
       }
-      return camelcaseKeys(await response.json(), { deep: true }) as DataResponse<ControlImplementation>;
+      return camelcaseKeys(await response.json(), {
+        deep: true,
+      }) as DataResponse<ControlImplementation>;
     }
 
     async function getImplementedRequirements(
@@ -939,13 +960,15 @@ export const useSystemSecurityPlanStore = defineStore(
       const response = await fetch(
         `${config.API_URL}/api/oscal/system-security-plans/${id}/control-implementation/implemented-requirements`,
         {
-          credentials: 'include'
-        }
+          credentials: 'include',
+        },
       );
       if (!response.ok) {
         throw response;
       }
-      return camelcaseKeys(await response.json(), { deep: true }) as DataResponse<ImplementedRequirement[]>;
+      return camelcaseKeys(await response.json(), {
+        deep: true,
+      }) as DataResponse<ImplementedRequirement[]>;
     }
 
     async function createImplementedRequirement(
@@ -962,12 +985,14 @@ export const useSystemSecurityPlanStore = defineStore(
           },
           body: JSON.stringify(decamelizeKeys(requirement, { separator: '-' })),
           credentials: 'include',
-        }
+        },
       );
       if (!response.ok) {
         throw response;
       }
-      return camelcaseKeys(await response.json(), { deep: true }) as DataResponse<ImplementedRequirement>;
+      return camelcaseKeys(await response.json(), {
+        deep: true,
+      }) as DataResponse<ImplementedRequirement>;
     }
 
     async function updateImplementedRequirement(
@@ -985,12 +1010,14 @@ export const useSystemSecurityPlanStore = defineStore(
           },
           body: JSON.stringify(decamelizeKeys(requirement, { separator: '-' })),
           credentials: 'include',
-        }
+        },
       );
       if (!response.ok) {
         throw response;
       }
-      return camelcaseKeys(await response.json(), { deep: true }) as DataResponse<ImplementedRequirement>;
+      return camelcaseKeys(await response.json(), {
+        deep: true,
+      }) as DataResponse<ImplementedRequirement>;
     }
 
     async function deleteImplementedRequirement(
@@ -1003,7 +1030,7 @@ export const useSystemSecurityPlanStore = defineStore(
         {
           method: 'DELETE',
           credentials: 'include',
-        }
+        },
       );
       if (!response.ok) {
         throw response;
@@ -1024,14 +1051,18 @@ export const useSystemSecurityPlanStore = defineStore(
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(decamelizeKeys(statement, { separator: '-', deep: true })),
+          body: JSON.stringify(
+            decamelizeKeys(statement, { separator: '-', deep: true }),
+          ),
           credentials: 'include',
-        }
+        },
       );
       if (!response.ok) {
         throw response;
       }
-      return camelcaseKeys(await response.json(), { deep: true }) as DataResponse<Statement>;
+      return camelcaseKeys(await response.json(), {
+        deep: true,
+      }) as DataResponse<Statement>;
     }
 
     async function createImplementedRequirementStatement(
@@ -1049,12 +1080,14 @@ export const useSystemSecurityPlanStore = defineStore(
           },
           body: JSON.stringify(decamelizeKeys(statement, { separator: '-' })),
           credentials: 'include',
-        }
+        },
       );
       if (!response.ok) {
         throw response;
       }
-      return camelcaseKeys(await response.json(), { deep: true }) as DataResponse<Statement>;
+      return camelcaseKeys(await response.json(), {
+        deep: true,
+      }) as DataResponse<Statement>;
     }
 
     async function updateStatementByComponent(
@@ -1074,12 +1107,14 @@ export const useSystemSecurityPlanStore = defineStore(
           },
           body: JSON.stringify(decamelizeKeys(byComponent, { separator: '-' })),
           credentials: 'include',
-        }
+        },
       );
       if (!response.ok) {
         throw response;
       }
-      return camelcaseKeys(await response.json(), { deep: true }) as DataResponse<ByComponent>;
+      return camelcaseKeys(await response.json(), {
+        deep: true,
+      }) as DataResponse<ByComponent>;
     }
 
     return {

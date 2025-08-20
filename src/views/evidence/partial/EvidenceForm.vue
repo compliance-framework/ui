@@ -1,5 +1,7 @@
 <template>
-  <div class="mt-4 bg-white dark:bg-slate-900 rounded-md border border-ccf-300 dark:border-slate-700 p-8">
+  <div
+    class="mt-4 bg-white dark:bg-slate-900 rounded-md border border-ccf-300 dark:border-slate-700 p-8"
+  >
     <form @submit.prevent="$emit('submit', evidence, labels, status)">
       <div class="flex">
         <div>
@@ -18,8 +20,13 @@
               /></TertiaryButton>
             </div>
             <div class="flex items-center place-items-stretch" v-else>
-              <div class="flex items-center bg-gray-100 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-md px-3 py-2">
-                <span class="text-sm text-gray-600 dark:text-slate-400 font-mono">{{ evidence.uuid }}</span>
+              <div
+                class="flex items-center bg-gray-100 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-md px-3 py-2"
+              >
+                <span
+                  class="text-sm text-gray-600 dark:text-slate-400 font-mono"
+                  >{{ evidence.uuid }}</span
+                >
               </div>
             </div>
           </div>
@@ -121,13 +128,19 @@
           <Base64FileUpload @uploaded="onUpload" />
         </div>
       </div>
-      <primary-button type="submit">{{ props.updating ? 'Update' : 'Create' }} Evidence</primary-button>
+      <primary-button type="submit"
+        >{{ props.updating ? 'Update' : 'Create' }} Evidence</primary-button
+      >
     </form>
   </div>
 </template>
 
 <script lang="ts" setup>
-import type { Evidence, EvidenceLabel, EvidenceStatus } from '@/stores/evidence';
+import type {
+  Evidence,
+  EvidenceLabel,
+  EvidenceStatus,
+} from '@/stores/evidence';
 import { ref } from 'vue';
 import type { BackMatterResource, Base64 } from '@/oscal';
 import { v4 as uuidv4 } from 'uuid';
@@ -136,7 +149,7 @@ import Textarea from '@/volt/Textarea.vue';
 import InputText from '@/volt/InputText.vue';
 import SelectButton from '@/volt/SelectButton.vue';
 import TertiaryButton from '@/components/TertiaryButton.vue';
-import { BIconArrowRepeat, BIconX } from 'bootstrap-icons-vue'
+import { BIconArrowRepeat, BIconX } from 'bootstrap-icons-vue';
 import Base64FileUpload from '@/components/Base64FileUpload.vue';
 
 const props = defineProps<{
@@ -145,10 +158,14 @@ const props = defineProps<{
   updating?: boolean;
 }>();
 
-const backmatterResources = ref<BackMatterResource[]>(props.backmatterResources || []);
-const evidence = ref<Partial<Evidence>>(props.evidence || {
-  uuid: uuidv4(),
-});
+const backmatterResources = ref<BackMatterResource[]>(
+  props.backmatterResources || [],
+);
+const evidence = ref<Partial<Evidence>>(
+  props.evidence || {
+    uuid: uuidv4(),
+  },
+);
 const status = ref<EvidenceStatus>({
   state: '',
   reason: '',
@@ -156,7 +173,7 @@ const status = ref<EvidenceStatus>({
 const labels = ref<EvidenceLabel[]>([]);
 
 defineEmits<{
-  submit: [Partial<Evidence>, EvidenceLabel[], EvidenceStatus] ;
+  submit: [Partial<Evidence>, EvidenceLabel[], EvidenceStatus];
 }>();
 
 function onUpload(file: File, base64: Base64) {

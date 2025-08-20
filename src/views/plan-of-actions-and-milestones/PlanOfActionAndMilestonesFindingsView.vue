@@ -123,7 +123,12 @@
     </Dialog>
 
     <!-- Edit Modal -->
-    <Dialog v-model:visible="showEditModal" size="lg" modal header="Edit Finding">
+    <Dialog
+      v-model:visible="showEditModal"
+      size="lg"
+      modal
+      header="Edit Finding"
+    >
       <FindingEditForm
         v-if="editingFinding"
         :poam-id="poamId"

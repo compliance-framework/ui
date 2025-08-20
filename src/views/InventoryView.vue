@@ -2,25 +2,31 @@
   <PageHeader>
     Inventory
     <template #menu>
-      <BurgerMenu :items="[
+      <BurgerMenu
+        :items="[
           {
             label: 'Create New',
             command: () => {
               showCreateInventoryItemModal = true;
             },
           },
-        ]" />
+        ]"
+      />
     </template>
   </PageHeader>
   <PageSubHeader>Manage system inventory</PageSubHeader>
 
   <div class="mt-4">
     <div v-if="inventoryItemsLoading" class="text-center py-4">
-      <p class="text-gray-500 dark:text-slate-400">Loading inventory items...</p>
+      <p class="text-gray-500 dark:text-slate-400">
+        Loading inventory items...
+      </p>
     </div>
 
     <div v-else-if="inventoryItems?.length === 0" class="text-center py-4">
-      <p class="text-gray-500 dark:text-slate-400">No inventory items defined.</p>
+      <p class="text-gray-500 dark:text-slate-400">
+        No inventory items defined.
+      </p>
     </div>
 
     <Panel
@@ -32,8 +38,13 @@
     >
       <template #header>
         <div class="flex items-center gap-2 py-2">
-          <span class="font-bold">{{ firstOfProps(item.props, 'asset-id')?.value }}</span>
-          <Badge :value="firstOfProps(item.props, 'asset-type')?.value" severity="info" />
+          <span class="font-bold">{{
+            firstOfProps(item.props, 'asset-id')?.value
+          }}</span>
+          <Badge
+            :value="firstOfProps(item.props, 'asset-type')?.value"
+            severity="info"
+          />
         </div>
       </template>
       <div
@@ -107,9 +118,8 @@
   </div>
 
   <!-- Inventory Item Create Modal -->
-  <Dialog
-    v-model:visible="showCreateInventoryItemModal" modal>
-  >
+  <Dialog v-model:visible="showCreateInventoryItemModal" modal>
+    >
     <SystemImplementationInventoryItemCreateForm
       :ssp-id="sspId"
       @cancel="showCreateInventoryItemModal = false"
@@ -118,9 +128,7 @@
   </Dialog>
 
   <!-- Inventory Item Edit Modal -->
-  <Dialog
-    v-model:visible="showEditInventoryItemModal" modal
-  >
+  <Dialog v-model:visible="showEditInventoryItemModal" modal>
     <SystemImplementationInventoryItemEditForm
       :ssp-id="sspId"
       :inventory-item="editingInventoryItem!"
@@ -130,9 +138,7 @@
   </Dialog>
 
   <!-- Inventory Item Attach Modal -->
-  <Dialog
-    v-model:visible="showInventoryItemAttachModal" modal
-  >
+  <Dialog v-model:visible="showInventoryItemAttachModal" modal>
     <SystemImplementationInventoryItemAttachModal
       :ssp-id="sspId"
       :item="editingInventoryItem!"
@@ -148,7 +154,7 @@ import type { InventoryItem } from '@/oscal';
 import { useSystemStore } from '@/stores/system.ts';
 import decamelizeKeys from 'decamelize-keys';
 import SystemImplementationInventoryItemEditForm from '@/components/system-security-plans/SystemImplementationInventoryItemEditForm.vue';
-import Dialog from '@/volt/Dialog.vue'
+import Dialog from '@/volt/Dialog.vue';
 import SystemImplementationInventoryItemAttachModal from '@/components/system-security-plans/SystemImplementationInventoryItemAttachModal.vue';
 import SystemImplementationInventoryItemCreateForm from '@/components/system-security-plans/SystemImplementationInventoryItemCreateForm.vue';
 import { useToast } from 'primevue/usetoast';
@@ -159,7 +165,7 @@ import Badge from '@/volt/Badge.vue';
 import { useProps } from '@/composables/useProps';
 import BurgerMenu from '@/components/BurgerMenu.vue';
 import { useDataApi } from '@/composables/axios';
-import type { AxiosError }  from 'axios';
+import type { AxiosError } from 'axios';
 import type { ErrorResponse, ErrorBody } from '@/stores/types.ts';
 import { useRouter } from 'vue-router';
 
@@ -168,10 +174,14 @@ const { system } = useSystemStore();
 const router = useRouter();
 const sspId = computed(() => system.securityPlan?.uuid ?? '');
 
-const {data: inventoryItems, isLoading: inventoryItemsLoading, execute: loadInventoryItems} = useDataApi<InventoryItem[]>(
+const {
+  data: inventoryItems,
+  isLoading: inventoryItemsLoading,
+  execute: loadInventoryItems,
+} = useDataApi<InventoryItem[]>(
   `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/system-implementation/inventory-items`,
   null,
-  { immediate: false }
+  { immediate: false },
 );
 
 const { execute: executeDelete } = useDataApi<void>(
@@ -179,7 +189,7 @@ const { execute: executeDelete } = useDataApi<void>(
   {
     method: 'DELETE',
   },
-  { immediate: false }
+  { immediate: false },
 );
 
 onMounted(async () => {
@@ -199,7 +209,9 @@ onMounted(async () => {
     toast.add({
       severity: 'error',
       summary: 'Failed to load inventory items',
-      detail: errorResponse.response?.data?.errors?.body || 'An unknown error occurred.',
+      detail:
+        errorResponse.response?.data?.errors?.body ||
+        'An unknown error occurred.',
       life: 5000,
     });
   }
@@ -270,7 +282,9 @@ const deleteInventoryItem = async (item: InventoryItem) => {
   }
 
   try {
-    await executeDelete(`/api/oscal/system-security-plans/${system.securityPlan?.uuid}/system-implementation/inventory-items/${item.uuid}`);
+    await executeDelete(
+      `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/system-implementation/inventory-items/${item.uuid}`,
+    );
     if (inventoryItems.value) {
       inventoryItems.value = inventoryItems.value.filter(
         (i) => i.uuid !== item.uuid,
@@ -303,6 +317,4 @@ const downloadInventoryItemJSON = (item: InventoryItem) => {
   link.click();
   URL.revokeObjectURL(url);
 };
-
-
 </script>

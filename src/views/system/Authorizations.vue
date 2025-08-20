@@ -120,7 +120,9 @@
 
   <!-- Leveraged Authorization Create Modal -->
   <Dialog
-    v-model:visible="showCreateLeveragedAuthModal" modal header="Create Leveraged Authorization"
+    v-model:visible="showCreateLeveragedAuthModal"
+    modal
+    header="Create Leveraged Authorization"
   >
     <SystemImplementationLeveragedAuthorizationCreateForm
       :ssp-id="id"
@@ -131,10 +133,12 @@
 
   <!-- Leveraged Authorization Edit Modal -->
   <Dialog
-    v-model:visible="showEditLeveragedAuthModal" modal header="Edit Leveraged Authorization"
+    v-model:visible="showEditLeveragedAuthModal"
+    modal
+    header="Edit Leveraged Authorization"
   >
     <SystemImplementationLeveragedAuthorizationEditForm
-      v-if=editingLeveragedAuth
+      v-if="editingLeveragedAuth"
       :ssp-id="id"
       :auth="editingLeveragedAuth!"
       @cancel="showEditLeveragedAuthModal = false"
@@ -154,7 +158,10 @@ import SystemImplementationLeveragedAuthorizationCreateForm from '@/components/s
 import SystemImplementationLeveragedAuthorizationEditForm from '@/components/system-security-plans/SystemImplementationLeveragedAuthorizationEditForm.vue';
 
 // Types and stores
-import type { SystemSecurityPlan, LeveragedAuthorization } from '@/stores/system-security-plans.ts';
+import type {
+  SystemSecurityPlan,
+  LeveragedAuthorization,
+} from '@/stores/system-security-plans.ts';
 import Panel from '@/volt/Panel.vue';
 import { useSystemStore } from '@/stores/system.ts';
 import { useDataApi } from '@/composables/axios';
@@ -170,17 +177,19 @@ const systemSecurityPlan = ref<SystemSecurityPlan | null>(null);
 const showCreateLeveragedAuthModal = ref(false);
 const showEditLeveragedAuthModal = ref(false);
 
-const { data: leveragedAuthorizations, execute: fetchLeveragedAuthorizations } = useDataApi<LeveragedAuthorization[]>(
-  `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/system-implementation/leveraged-authorizations`,
-  { method: 'GET' },
-  { immediate: false }
-);
+const { data: leveragedAuthorizations, execute: fetchLeveragedAuthorizations } =
+  useDataApi<LeveragedAuthorization[]>(
+    `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/system-implementation/leveraged-authorizations`,
+    { method: 'GET' },
+    { immediate: false },
+  );
 
-const { execute: executeDelete } = useDataApi<void>(null,
+const { execute: executeDelete } = useDataApi<void>(
+  null,
   {
     method: 'DELETE',
   },
-  { immediate: false }
+  { immediate: false },
 );
 
 // Edit targets
@@ -240,7 +249,9 @@ const deleteLeveragedAuth = async (auth: LeveragedAuthorization) => {
   }
 
   try {
-    await executeDelete(`/api/oscal/system-security-plans/${system.securityPlan?.uuid}/system-implementation/leveraged-authorizations/${auth.uuid}`);
+    await executeDelete(
+      `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/system-implementation/leveraged-authorizations/${auth.uuid}`,
+    );
     if (leveragedAuthorizations.value) {
       leveragedAuthorizations.value = leveragedAuthorizations.value.filter(
         (a) => a.uuid !== auth.uuid,

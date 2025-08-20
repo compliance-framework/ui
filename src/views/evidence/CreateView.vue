@@ -6,7 +6,8 @@
   <EvidenceForm
     :backmatter-resources="backmatterResources"
     :evidence="evidence"
-    @submit="submit"></EvidenceForm>
+    @submit="submit"
+  ></EvidenceForm>
 </template>
 <script setup lang="ts">
 import { ref } from 'vue';
@@ -15,7 +16,7 @@ import PageSubHeader from '@/components/PageSubHeader.vue';
 import type {
   Evidence,
   EvidenceLabel,
-  EvidenceStatus
+  EvidenceStatus,
 } from '@/stores/evidence.ts';
 import router from '@/router';
 import { v4 as uuidv4 } from 'uuid';
@@ -24,22 +25,25 @@ import EvidenceForm from './partial/EvidenceForm.vue';
 import type { BackMatterResource } from '@/oscal';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 
-
 const { data: createdEvidence, execute: createEvidence } = useDataApi<Evidence>(
   '/api/evidence',
   {
     method: 'POST',
-    transformRequest: [decamelizeKeys]
-  }, { immediate: false }
+    transformRequest: [decamelizeKeys],
+  },
+  { immediate: false },
 );
-
 
 const backmatterResources = ref<BackMatterResource[]>([]);
 const evidence = ref<Partial<Evidence>>({
   uuid: uuidv4(),
 });
 
-async function submit(updatedEvidence: Partial<Evidence>, labels: EvidenceLabel[], status: EvidenceStatus) {
+async function submit(
+  updatedEvidence: Partial<Evidence>,
+  labels: EvidenceLabel[],
+  status: EvidenceStatus,
+) {
   const flatLabels = {} as Record<string, string>;
   labels.forEach((label) => {
     flatLabels[label.name] = label.value;
@@ -51,8 +55,8 @@ async function submit(updatedEvidence: Partial<Evidence>, labels: EvidenceLabel[
       labels: flatLabels,
       backMatter: {
         resources: backmatterResources.value,
-      }
-    }
+      },
+    },
   });
 
   return await router.push({

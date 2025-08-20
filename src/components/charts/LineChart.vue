@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { Line } from 'vue-chartjs'
-import { useCharts } from './chart-defaults'
+import { Line } from 'vue-chartjs';
+import { useCharts } from './chart-defaults';
 
-useCharts()
+useCharts();
 
-const props = defineProps(['data', 'options'])
+const props = defineProps(['data', 'options']);
 </script>
 
 <template>

@@ -2,12 +2,17 @@
   <div>
     <PageHeader>Create Assessment Results</PageHeader>
 
-    <div class="my-4 p-6 bg-white dark:bg-slate-900 border border-ccf-300 dark:border-slate-700 rounded-lg shadow">
+    <div
+      class="my-4 p-6 bg-white dark:bg-slate-900 border border-ccf-300 dark:border-slate-700 rounded-lg shadow"
+    >
       <form @submit.prevent="createAssessmentResults">
         <div class="grid grid-cols-1 gap-6">
           <!-- Title -->
           <div>
-            <label for="title" class="block text-sm font-medium text-gray-700 dark:text-slate-300">
+            <label
+              for="title"
+              class="block text-sm font-medium text-gray-700 dark:text-slate-300"
+            >
               Title <span class="text-red-500">*</span>
             </label>
             <input
@@ -21,7 +26,10 @@
 
           <!-- Version -->
           <div>
-            <label for="version" class="block text-sm font-medium text-gray-700 dark:text-slate-300">
+            <label
+              for="version"
+              class="block text-sm font-medium text-gray-700 dark:text-slate-300"
+            >
               Version <span class="text-red-500">*</span>
             </label>
             <input
@@ -36,7 +44,10 @@
 
           <!-- Import AP (Href) -->
           <div>
-            <label for="importApHref" class="block text-sm font-medium text-gray-700 dark:text-slate-300">
+            <label
+              for="importApHref"
+              class="block text-sm font-medium text-gray-700 dark:text-slate-300"
+            >
               Import Assessment Plan (Href) <span class="text-red-500">*</span>
             </label>
             <input
@@ -48,13 +59,17 @@
               class="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-800 dark:text-slate-300"
             />
             <p class="mt-1 text-sm text-gray-500 dark:text-slate-400">
-              Reference to the assessment plan UUID (e.g., #uuid-of-assessment-plan)
+              Reference to the assessment plan UUID (e.g.,
+              #uuid-of-assessment-plan)
             </p>
           </div>
 
           <!-- Import AP Remarks -->
           <div>
-            <label for="importApRemarks" class="block text-sm font-medium text-gray-700 dark:text-slate-300">
+            <label
+              for="importApRemarks"
+              class="block text-sm font-medium text-gray-700 dark:text-slate-300"
+            >
               Import AP Remarks
             </label>
             <textarea
@@ -67,11 +82,18 @@
 
           <!-- Initial Result -->
           <div class="border-t pt-6">
-            <h3 class="text-lg font-medium text-gray-900 dark:text-slate-200 mb-4">Initial Result</h3>
+            <h3
+              class="text-lg font-medium text-gray-900 dark:text-slate-200 mb-4"
+            >
+              Initial Result
+            </h3>
 
             <!-- Result Title -->
             <div>
-              <label for="resultTitle" class="block text-sm font-medium text-gray-700 dark:text-slate-300">
+              <label
+                for="resultTitle"
+                class="block text-sm font-medium text-gray-700 dark:text-slate-300"
+              >
                 Result Title <span class="text-red-500">*</span>
               </label>
               <input
@@ -86,7 +108,10 @@
 
             <!-- Result Description -->
             <div class="mt-4">
-              <label for="resultDescription" class="block text-sm font-medium text-gray-700 dark:text-slate-300">
+              <label
+                for="resultDescription"
+                class="block text-sm font-medium text-gray-700 dark:text-slate-300"
+              >
                 Result Description <span class="text-red-500">*</span>
               </label>
               <textarea
@@ -122,16 +147,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-import PageHeader from '@/components/PageHeader.vue'
-import type { AssessmentResults } from '@/stores/assessment-results.ts'
-import { useToast } from 'primevue/usetoast'
-import { v4 as uuidv4 } from 'uuid'
-import { useDataApi, decamelizeKeys } from '@/composables/axios'
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
+import PageHeader from '@/components/PageHeader.vue';
+import type { AssessmentResults } from '@/stores/assessment-results.ts';
+import { useToast } from 'primevue/usetoast';
+import { v4 as uuidv4 } from 'uuid';
+import { useDataApi, decamelizeKeys } from '@/composables/axios';
 
-const router = useRouter()
-const toast = useToast()
+const router = useRouter();
+const toast = useToast();
 
 const formData = ref({
   uuid: uuidv4(),
@@ -140,11 +165,11 @@ const formData = ref({
     version: '',
     published: new Date().toISOString(),
     lastModified: new Date().toISOString(),
-    oscalVersion: '1.1.3'
+    oscalVersion: '1.1.3',
   },
   importAp: {
     href: '',
-    remarks: ''
+    remarks: '',
   },
   result: {
     uuid: uuidv4(),
@@ -152,53 +177,61 @@ const formData = ref({
     description: '',
     start: new Date().toISOString(),
     reviewedControls: {
-      controlSelections: [{
-        includeAll: {}
-      }]
-    }
+      controlSelections: [
+        {
+          includeAll: {},
+        },
+      ],
+    },
   },
-  results: [] as any[]
-})
+  results: [] as any[],
+});
 
-const { data: newAR, isLoading: loading, execute: executeCreate } = useDataApi<AssessmentResults>('/api/oscal/assessment-results',
+const {
+  data: newAR,
+  isLoading: loading,
+  execute: executeCreate,
+} = useDataApi<AssessmentResults>(
+  '/api/oscal/assessment-results',
   {
     method: 'POST',
     transformRequest: [decamelizeKeys],
-  }, { immediate: false }
-)
+  },
+  { immediate: false },
+);
 
 async function createAssessmentResults() {
   try {
     // Prepare the assessment results object
     const assessmentResults = {
       ...formData.value,
-      results: [formData.value.result]
-    }
+      results: [formData.value.result],
+    };
 
     // Remove the temporary result field
-    delete (assessmentResults as any).result
+    delete (assessmentResults as any).result;
 
-     await executeCreate({
-      data: assessmentResults
-     })
+    await executeCreate({
+      data: assessmentResults,
+    });
 
     toast.add({
       severity: 'success',
       summary: 'Success',
       detail: 'Assessment Results created successfully',
-      life: 3000
-    })
+      life: 3000,
+    });
 
     // Navigate to the created assessment results
-    router.push(`/assessment-results/${newAR.value!.uuid}`)
+    router.push(`/assessment-results/${newAR.value!.uuid}`);
   } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+    const errorMessage = err instanceof Error ? err.message : 'Unknown error';
     toast.add({
       severity: 'error',
       summary: 'Error',
       detail: `Failed to create Assessment Results: ${errorMessage}`,
-      life: 5000
-    })
+      life: 5000,
+    });
   }
 }
 </script>

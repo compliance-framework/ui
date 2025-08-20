@@ -1,8 +1,12 @@
 <template>
   <PageCard class="mx-auto mt-12 max-w-96 py-8">
     <div class="px-8 pb-8">
-      <SideNavLogo alt="Vue logo" :src="lightLogo" class="w-full dark:hidden"/>
-      <SideNavLogo alt="Vue logo" :src="darkLogo" class="w-full hidden dark:block"/>
+      <SideNavLogo alt="Vue logo" :src="lightLogo" class="w-full dark:hidden" />
+      <SideNavLogo
+        alt="Vue logo"
+        :src="darkLogo"
+        class="w-full hidden dark:block"
+      />
     </div>
     <form @submit.prevent="onSubmit" class="space-y-4">
       <div>
@@ -12,7 +16,11 @@
           >Email</label
         >
         <FormInput v-model="email" placeholder="Email" />
-        <span class="text-sm text-red-500 dark:text-red-500" v-for="error in errors.email">{{ error }}</span>
+        <span
+          class="text-sm text-red-500 dark:text-red-500"
+          v-for="error in errors.email"
+          >{{ error }}</span
+        >
       </div>
       <div>
         <label
@@ -21,7 +29,9 @@
           >Password</label
         >
         <FormInput v-model="password" placeholder="Password" type="password" />
-        <span class="dark:text-red-500" v-for="error in errors.password">{{ error }}</span>
+        <span class="dark:text-red-500" v-for="error in errors.password">{{
+          error
+        }}</span>
       </div>
       <div>
         <PrimaryButton type="submit" class="w-full"> Login </PrimaryButton>
@@ -36,11 +46,11 @@ import { ref } from 'vue';
 import PrimaryButton from '@/components/PrimaryButton.vue';
 import { useUserStore } from '@/stores/auth';
 import { useRoute, useRouter } from 'vue-router';
-import type { DataResponse } from '@/stores/api.ts'
-import FormInput from '@/components/forms/FormInput.vue'
-import lightLogo from '@/assets/logo-light.svg'
-import darkLogo from '@/assets/logo-dark.svg'
-import SideNavLogo from '@/components/navigation/SideNavLogo.vue'
+import type { DataResponse } from '@/stores/api.ts';
+import FormInput from '@/components/forms/FormInput.vue';
+import lightLogo from '@/assets/logo-light.svg';
+import darkLogo from '@/assets/logo-dark.svg';
+import SideNavLogo from '@/components/navigation/SideNavLogo.vue';
 import { useToast } from 'primevue/usetoast';
 import { useGuestApi } from '@/composables/axios';
 import type { AxiosError } from 'axios';
@@ -56,10 +66,12 @@ const errors = ref<AuthError>({} as AuthError);
 
 const user = useUserStore();
 
-const { execute: login } = useGuestApi<DataResponse<AuthError>>('/api/auth/login',
+const { execute: login } = useGuestApi<DataResponse<AuthError>>(
+  '/api/auth/login',
   {
     method: 'POST',
-  }, { immediate: false }
+  },
+  { immediate: false },
 );
 
 const route = useRoute();
@@ -73,7 +85,7 @@ async function onSubmit() {
       data: {
         email: email.value,
         password: password.value,
-      }
+      },
     });
     user.isAuthenticated = true;
 

@@ -7,18 +7,17 @@
   >
     <EvidenceList :evidence="evidence" />
   </div>
-
 </template>
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
-import PageHeader from '@/components/PageHeader.vue'
-import { useRoute } from 'vue-router'
-import PageSubHeader from '@/components/PageSubHeader.vue'
-import EvidenceList from '@/components/EvidenceList.vue'
-import { type Evidence, useEvidenceStore } from '@/stores/evidence.ts'
-import type { Control } from '@/stores/catalogs.ts'
+import { onMounted, ref } from 'vue';
+import PageHeader from '@/components/PageHeader.vue';
+import { useRoute } from 'vue-router';
+import PageSubHeader from '@/components/PageSubHeader.vue';
+import EvidenceList from '@/components/EvidenceList.vue';
+import { type Evidence, useEvidenceStore } from '@/stores/evidence.ts';
+import type { Control } from '@/stores/catalogs.ts';
 
-const evidenceStore = useEvidenceStore()
+const evidenceStore = useEvidenceStore();
 const evidence = ref<Evidence[]>([]);
 const control = ref<Control>({} as Control);
 
@@ -27,8 +26,8 @@ const controlId = route.params.id as string;
 
 onMounted(() => {
   evidenceStore.getForControl(controlId).then((data) => {
-    control.value = data.metadata.control
-    evidence.value = data.data
-  })
-})
+    control.value = data.metadata.control;
+    evidence.value = data.data;
+  });
+});
 </script>

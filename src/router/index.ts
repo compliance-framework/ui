@@ -401,12 +401,12 @@ const authenticatedRoutes = [
     },
   },
   {
-    path: "/evidence/:id/update",
+    path: '/evidence/:id/update',
     name: 'evidence:update',
     component: () => import('../views/evidence/UpdateView.vue'),
     meta: {
       requiresAuth: true,
-    }
+    },
   },
   {
     path: '/evidence/history/:uuid',

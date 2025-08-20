@@ -155,7 +155,10 @@ import SystemImplementationUserCreateForm from '@/components/system-security-pla
 import SystemImplementationUserEditForm from '@/components/system-security-plans/SystemImplementationUserEditForm.vue';
 
 // Types and stores
-import type { SystemImplementationUser, SystemSecurityPlan } from '@/stores/system-security-plans.ts';
+import type {
+  SystemImplementationUser,
+  SystemSecurityPlan,
+} from '@/stores/system-security-plans.ts';
 import { useSystemStore } from '@/stores/system.ts';
 import { useDataApi } from '@/composables/axios';
 
@@ -170,17 +173,20 @@ const sspId = computed(() => systemSecurityPlan.value?.uuid ?? '');
 const showCreateUserModal = ref(false);
 const showEditUserModal = ref(false);
 
-const { data: users, execute: fetchUsers } = useDataApi<SystemImplementationUser[]>(
+const { data: users, execute: fetchUsers } = useDataApi<
+  SystemImplementationUser[]
+>(
   `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/system-implementation/users`,
   { method: 'GET' },
-  { immediate: false }
+  { immediate: false },
 );
 
-const { execute: executeDelete } = useDataApi<void>(null,
+const { execute: executeDelete } = useDataApi<void>(
+  null,
   {
     method: 'DELETE',
   },
-  { immediate: false }
+  { immediate: false },
 );
 
 // Edit targets
@@ -235,7 +241,9 @@ const deleteUser = async (user: SystemImplementationUser) => {
   }
 
   try {
-    await executeDelete(`/api/oscal/system-security-plans/${system.securityPlan?.uuid}/system-implementation/users/${user.uuid}`);
+    await executeDelete(
+      `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/system-implementation/users/${user.uuid}`,
+    );
     if (users.value) {
       users.value = users.value.filter((u) => u.uuid !== user.uuid);
     }

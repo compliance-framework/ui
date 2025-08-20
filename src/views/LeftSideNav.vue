@@ -1,33 +1,36 @@
 <script setup lang="ts">
-import SideNavCategory from '@/components/navigation/SideNavCategory.vue'
-import SideNav from '@/components/navigation/SideNav.vue'
-import SideNavLink from '@/components/navigation/SideNavLink.vue'
-import SideNavLogo from '@/components/navigation/SideNavLogo.vue'
-import lightLogo from '@/assets/logo-light.svg'
-import darkLogo from '@/assets/logo-dark.svg'
-import lightMiniLogo from '@/assets/logo-light-mini.svg'
-import darkMiniLogo from '@/assets/logo-dark-mini.svg'
-import { useSidebarStore } from '@/stores/sidebar'
-import { ref } from 'vue'
+import SideNavCategory from '@/components/navigation/SideNavCategory.vue';
+import SideNav from '@/components/navigation/SideNav.vue';
+import SideNavLink from '@/components/navigation/SideNavLink.vue';
+import SideNavLogo from '@/components/navigation/SideNavLogo.vue';
+import lightLogo from '@/assets/logo-light.svg';
+import darkLogo from '@/assets/logo-dark.svg';
+import lightMiniLogo from '@/assets/logo-light-mini.svg';
+import darkMiniLogo from '@/assets/logo-dark-mini.svg';
+import { useSidebarStore } from '@/stores/sidebar';
+import { ref } from 'vue';
 
-const sidebarStore = useSidebarStore()
+const sidebarStore = useSidebarStore();
 
 interface NavigationItem {
-  title: string
-  abbr?: string
-  name?: string
-  children?: Array<NavigationItem>
+  title: string;
+  abbr?: string;
+  name?: string;
+  children?: Array<NavigationItem>;
 }
 
 function abbreviated(link: NavigationItem): string {
   // We'll take the first letter of each word in the title, unless it's overridden
   if (link.abbr) {
-    return link.abbr
+    return link.abbr;
   }
 
-  return link.title.split(" ").map((word: string) => {
-    return word[0].toUpperCase()
-  }).join("")
+  return link.title
+    .split(' ')
+    .map((word: string) => {
+      return word[0].toUpperCase();
+    })
+    .join('');
 }
 
 const links = ref<Array<NavigationItem>>([
@@ -80,7 +83,7 @@ const links = ref<Array<NavigationItem>>([
         title: 'POA&M',
         abbr: 'PM',
       },
-    ]
+    ],
   },
   {
     title: 'Admin',
@@ -114,17 +117,17 @@ const links = ref<Array<NavigationItem>>([
       {
         name: 'users-list',
         title: 'System Users',
-      }
-    ]
-  }
+      },
+    ],
+  },
 ]);
 
 const footLinks = ref<Array<NavigationItem>>([
   {
     name: 'logout',
     title: 'Logout',
-  }
-])
+  },
+]);
 </script>
 
 <template>
@@ -137,7 +140,7 @@ const footLinks = ref<Array<NavigationItem>>([
         class="py-8 transition-all duration-300 ease-in-out"
         :class="{
           'px-8': sidebarStore.open,
-          'px-2': !sidebarStore.open
+          'px-2': !sidebarStore.open,
         }"
       >
         <!-- Light mode logos -->
@@ -162,24 +165,33 @@ const footLinks = ref<Array<NavigationItem>>([
       <!-- Top items -->
       <div>
         <!-- Main Navigation Items -->
-        <template
-          v-for="link in links"
-          :key="link.name"
-        >
+        <template v-for="link in links" :key="link.name">
           <SideNavCategory :title="link.title" v-if="link.children">
             <template #title>
-              <span>{{ sidebarStore.open ? link.title : abbreviated(link) }}</span>
+              <span>{{
+                sidebarStore.open ? link.title : abbreviated(link)
+              }}</span>
             </template>
-            <template
-              v-for="child in link.children"
-              :key="child.name"
-            >
-              <SideNavLink :to="{ name: child.name }" v-tooltip.right="{value: `${link.title} | ${child.title}`, disabled: sidebarStore.open}">
+            <template v-for="child in link.children" :key="child.name">
+              <SideNavLink
+                :to="{ name: child.name }"
+                v-tooltip.right="{
+                  value: `${link.title} | ${child.title}`,
+                  disabled: sidebarStore.open,
+                }"
+              >
                 {{ sidebarStore.open ? child.title : abbreviated(child) }}
               </SideNavLink>
             </template>
           </SideNavCategory>
-          <SideNavLink v-else :to="{ name: link.name }" v-tooltip.hover.right="{value: link.title, disabled: sidebarStore.open}">
+          <SideNavLink
+            v-else
+            :to="{ name: link.name }"
+            v-tooltip.hover.right="{
+              value: link.title,
+              disabled: sidebarStore.open,
+            }"
+          >
             {{ sidebarStore.open ? link.title : abbreviated(link) }}
           </SideNavLink>
         </template>
@@ -187,11 +199,11 @@ const footLinks = ref<Array<NavigationItem>>([
 
       <!-- Bottom Items -->
       <div>
-        <template
-          v-for="link in footLinks"
-          :key="link.name"
-        >
-          <SideNavLink :to="{ name: link.name }" v-tooltip.right="{value: link.title, disabled: sidebarStore.open}">
+        <template v-for="link in footLinks" :key="link.name">
+          <SideNavLink
+            :to="{ name: link.name }"
+            v-tooltip.right="{ value: link.title, disabled: sidebarStore.open }"
+          >
             {{ sidebarStore.open ? link.title : abbreviated(link) }}
           </SideNavLink>
         </template>

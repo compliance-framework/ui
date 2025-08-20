@@ -3,13 +3,17 @@ import { v4 as uuidv4 } from 'uuid';
 import Badge from '@/volt/Badge.vue';
 import Drawer from '@/volt/Drawer.vue';
 import type { Control } from '@/oscal';
-import type {  CreateStatementRequest, ImplementedRequirement, Statement } from '@/stores/system-security-plans.ts'
+import type {
+  CreateStatementRequest,
+  ImplementedRequirement,
+  Statement,
+} from '@/stores/system-security-plans.ts';
 import PartDisplay from '@/components/PartDisplay.vue';
-import type { Part } from '@/stores/types.ts'
+import type { Part } from '@/stores/types.ts';
 import { ref, watchEffect } from 'vue';
-import { useToggle } from '@/composables/useToggle'
-import ControlStatementImplementation from '@/views/control-implementations/partials/ControlStatementImplementation.vue'
-import { useSystemStore } from '@/stores/system.ts'
+import { useToggle } from '@/composables/useToggle';
+import ControlStatementImplementation from '@/views/control-implementations/partials/ControlStatementImplementation.vue';
+import { useSystemStore } from '@/stores/system.ts';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 
 const { control, implementation } = defineProps<{
@@ -37,7 +41,8 @@ const { execute: executeCreate } = useDataApi<ImplementedRequirement>(
   {
     method: 'POST',
     transformRequest: [decamelizeKeys],
-  }, { immediate: false }
+  },
+  { immediate: false },
 );
 
 const { execute: executeCreateStatement } = useDataApi<Statement>(
@@ -45,7 +50,8 @@ const { execute: executeCreateStatement } = useDataApi<Statement>(
   {
     method: 'POST',
     transformRequest: [decamelizeKeys],
-  }, { immediate: false }
+  },
+  { immediate: false },
 );
 
 function getLabel(part: Part): string {
@@ -102,18 +108,20 @@ async function onPartSelect(e: Event, part: Part) {
       data: {
         uuid: uuidv4(),
         controlId: control.id,
-      } as ImplementedRequirement
+      } as ImplementedRequirement,
     });
     if (response.data.value && response.data.value.data) {
       selectedImplementation.value = response.data.value.data;
     } else {
       // Handle error: response.data.value is null or missing data
-      throw new Error("Failed to create implemented requirement: response data is missing.");
+      throw new Error(
+        'Failed to create implemented requirement: response data is missing.',
+      );
     }
   }
 
   if (!statements.value[selectedPart.value.id]) {
-    const response= await executeCreateStatement(
+    const response = await executeCreateStatement(
       `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/control-implementation/implemented-requirements/${selectedImplementation.value.uuid}/statements`,
       {
         data: {
@@ -123,12 +131,15 @@ async function onPartSelect(e: Event, part: Part) {
           props: [],
           links: [],
         } as CreateStatementRequest,
-      }
+      },
     );
     if (response.data.value) {
       statements.value[selectedPart.value.id] = response.data.value.data;
     } else {
-      console.error('Failed to create statement: response.data.value is null or undefined', response);
+      console.error(
+        'Failed to create statement: response.data.value is null or undefined',
+        response,
+      );
     }
   }
 

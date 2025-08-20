@@ -10,9 +10,9 @@ import {
   LineElement,
   PointElement,
   Title,
-  Tooltip
-} from 'chart.js'
-import gradient from 'chartjs-plugin-gradient'
+  Tooltip,
+} from 'chart.js';
+import gradient from 'chartjs-plugin-gradient';
 import 'chartjs-adapter-luxon';
 
 export function useCharts() {
@@ -30,7 +30,7 @@ export function useCharts() {
     TimeSeriesScale,
     LinearScale,
     gradient,
-  )
+  );
 
   ChartJS.defaults.set({
     plugins: {
@@ -80,6 +80,6 @@ export function useCharts() {
         display: false,
       },
       suggestedMin: 0,
-    }
-  })
+    },
+  });
 }

@@ -55,11 +55,11 @@ const props = defineProps<Props>();
 
 const getSizeClass = () => {
   const size = props.size;
-  const sizes: {[size: string]: string} = {
-    'sm': 'w-1/4',
-    'md': 'w-1/3',
-    'lg': 'w-1/2',
-  }
+  const sizes: { [size: string]: string } = {
+    sm: 'w-1/4',
+    md: 'w-1/3',
+    lg: 'w-1/2',
+  };
   if (size) {
     if (sizes.hasOwnProperty(size)) {
       return sizes[size];
@@ -73,12 +73,14 @@ const sizeClass = computed(() => getSizeClass());
 // --- Defaults in OBJECT FORM (each part has { class: '...' }) ---
 const defaultTheme: DialogPassThroughOptions = {
   root: {
-    class: `max-h-[90%] max-w-screen rounded-xl
+    class:
+      `max-h-[90%] max-w-screen rounded-xl
             border border-surface-200 dark:border-surface-700
             bg-white dark:bg-slate-900
             text-surface-700 dark:text-surface-0 shadow-lg
             p-maximized:w-screen p-maximized:h-screen p-maximized:top-0
-            p-maximized:start-0 p-maximized:max-h-full p-maximized:rounded-none ` + sizeClass.value,
+            p-maximized:start-0 p-maximized:max-h-full p-maximized:rounded-none ` +
+      sizeClass.value,
   },
   header: { class: 'flex items-center justify-between shrink-0 p-5' },
   title: { class: 'font-semibold text-xl dark:text-gray-200' },
@@ -109,11 +111,13 @@ function mergePtPart(
 ) {
   if (!a && !b) return undefined;
 
-  const normalize = (val: typeof a): DialogPassThroughAttributes | undefined => {
+  const normalize = (
+    val: typeof a,
+  ): DialogPassThroughAttributes | undefined => {
     if (!val) return {};
     if (typeof val === 'string') return { class: val };
     if (typeof val === 'function') {
-      console.warn("Unable to normalize dialog pass through attribute: ", val);
+      console.warn('Unable to normalize dialog pass through attribute: ', val);
       return;
     }
     return val as DialogPassThroughAttributes;
@@ -143,6 +147,4 @@ const mergedTheme = computed<DialogPassThroughOptions>(() => {
     transition: { ...defaultTheme.transition, ...(user.transition ?? {}) },
   };
 });
-
-
 </script>

@@ -78,9 +78,14 @@ export const useFindingsStore = defineStore('findings', () => {
     return (await response.json()) as DataResponse<Finding[]>;
   }
 
-  async function searchForControlID(_class: string, id: string): Promise<DataResponse<Finding[]>> {
+  async function searchForControlID(
+    _class: string,
+    id: string,
+  ): Promise<DataResponse<Finding[]>> {
     const config = await configStore.getConfig();
-    const response = await fetch(`${config.API_URL}/api/findings/by-control/${_class}/${id}`);
+    const response = await fetch(
+      `${config.API_URL}/api/findings/by-control/${_class}/${id}`,
+    );
 
     if (!response.ok) {
       throw new Error(`Error: ${response.statusText}`);
@@ -236,7 +241,6 @@ export const useFindingsStore = defineStore('findings', () => {
     }
     return (await response.json()) as DataResponse<string[]>;
   }
-
 
   // async function getStreamResults(streamId: string): Promise<DataResponse<Result[]>> {
   //   const config = await configStore.getConfig()

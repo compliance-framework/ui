@@ -1,28 +1,25 @@
 <template>
   <PageHeader>Users List</PageHeader>
-  <div class="my-4 overflow-hidden rounded-lg border border-ccf-300 bg-white shadow dark:border-slate-700 dark:bg-slate-900">
+  <div
+    class="my-4 overflow-hidden rounded-lg border border-ccf-300 bg-white shadow dark:border-slate-700 dark:bg-slate-900"
+  >
     <div class="overflow-x-auto">
       <table class="min-w-full divide-y divide-ccf-300 dark:divide-slate-700">
         <thead class="bg-gray-50 dark:bg-slate-800">
           <tr>
-            <th class="table-header">
-              Email
-            </th>
-            <th class="table-header">
-              Firstname
-            </th>
-            <th class="table-header">
-              Lastname
-            </th>
-            <th class="table-header">
-              Actions
-            </th>
+            <th class="table-header">Email</th>
+            <th class="table-header">Firstname</th>
+            <th class="table-header">Lastname</th>
+            <th class="table-header">Actions</th>
           </tr>
         </thead>
         <tbody class="table-body">
           <template v-if="isLoading">
             <tr>
-              <td colspan="4" class="px-6 py-4 text-center text-gray-500 dark:text-slate-400">
+              <td
+                colspan="4"
+                class="px-6 py-4 text-center text-gray-500 dark:text-slate-400"
+              >
                 Loading...
               </td>
             </tr>
@@ -36,9 +33,9 @@
           </template>
           <template v-else>
             <tr
-            v-for="user in users"
-            :key="user.id"
-            class="hover:bg-zinc-50 dark:hover:bg-slate-800 border-b border-ccf-300 dark:border-slate-700 last:border-b-0"
+              v-for="user in users"
+              :key="user.id"
+              class="hover:bg-zinc-50 dark:hover:bg-slate-800 border-b border-ccf-300 dark:border-slate-700 last:border-b-0"
             >
               <td class="py-2 px-6">{{ user.email }}</td>
               <td class="py-1 px-6">{{ user.firstName }}</td>
@@ -78,7 +75,12 @@ import { useDataApi } from '@/composables/axios';
 const showDialog = ref(false);
 const toast = useToast();
 
-const { data: users, isLoading, error, execute } = useDataApi<CCFUser[]>('/api/users', {}, { immediate: false });
+const {
+  data: users,
+  isLoading,
+  error,
+  execute,
+} = useDataApi<CCFUser[]>('/api/users', {}, { immediate: false });
 
 function completed(newUser: CCFUser) {
   showDialog.value = false;
@@ -106,6 +108,4 @@ onMounted(async () => {
 .table-body {
   @apply divide-y bg-white dark:divide-slate-700 dark:bg-slate-900;
 }
-
-
 </style>

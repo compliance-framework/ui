@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { RouterLink } from 'vue-router'
+import { RouterLink } from 'vue-router';
 
 defineProps({
   src: String,
   alt: String,
-})
+});
 
 defineOptions({
-  inheritAttrs: false
-})
+  inheritAttrs: false,
+});
 </script>
 <template>
   <RouterLink :to="{ name: 'home' }">

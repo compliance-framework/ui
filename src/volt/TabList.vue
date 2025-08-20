@@ -1,17 +1,20 @@
 <template>
-    <TabList
-        unstyled
-        :pt="theme"
-        :ptOptions="{
-            mergeProps: ptViewMerge
-        }"
-    >
-        <slot></slot>
-    </TabList>
+  <TabList
+    unstyled
+    :pt="theme"
+    :ptOptions="{
+      mergeProps: ptViewMerge,
+    }"
+  >
+    <slot></slot>
+  </TabList>
 </template>
 
 <script setup lang="ts">
-import TabList, { type TabListPassThroughOptions, type TabListProps } from 'primevue/tablist';
+import TabList, {
+  type TabListPassThroughOptions,
+  type TabListProps,
+} from 'primevue/tablist';
 import { ref } from 'vue';
 import { ptViewMerge } from './utils';
 
@@ -25,14 +28,14 @@ const navButton = `!absolute flex-shrink-0 top-0 z-20 h-full flex items-center j
         transition-colors duration-200`;
 
 const theme = ref<TabListPassThroughOptions>({
-    root: `flex relative border-b border-b-ccf-300 dark:border-b-slate-700`,
-    prevButton: navButton + ` start-0`,
-    nextButton: navButton + ` end-0`,
-    content: `flex-grow
+  root: `flex relative border-b border-b-ccf-300 dark:border-b-slate-700`,
+  prevButton: navButton + ` start-0`,
+  nextButton: navButton + ` end-0`,
+  content: `flex-grow
         p-scrollable:overflow-x-auto p-scrollable:overflow-y-hidden p-scrollable:overscroll-y-contain p-scrollable:overscroll-x-auto
         scroll-smooth [scrollbar-width:none] text-zinc-800 dark:text-zinc-50`,
-    tabList: `relative flex bg-surface-0 dark:bg-surface-900
+  tabList: `relative flex bg-surface-0 dark:bg-surface-900
         p-scrollable:overflow-hidden`,
-    activeBar: `z-10 block absolute -bottom-px h-px bg-primary transition-[left] duration-200 ease-[cubic-bezier(0.35,0,0.25,1)]`
+  activeBar: `z-10 block absolute -bottom-px h-px bg-primary transition-[left] duration-200 ease-[cubic-bezier(0.35,0,0.25,1)]`,
 });
 </script>

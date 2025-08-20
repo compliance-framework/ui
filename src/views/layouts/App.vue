@@ -17,7 +17,9 @@ const sidebarStore = useSidebarStore();
         'w-24': !sidebarStore.open,
       }"
     >
-      <LeftSideNav class="h-full w-full transition-all duration-300 ease-in-out" />
+      <LeftSideNav
+        class="h-full w-full transition-all duration-300 ease-in-out"
+      />
 
       <!-- Toggle Button -->
       <SidebarToggle />

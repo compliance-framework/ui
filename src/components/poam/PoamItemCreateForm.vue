@@ -1,9 +1,10 @@
 <template>
   <div class="p-6">
-
     <form @submit.prevent="submit" class="space-y-4">
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
+        >
           Title <span class="text-red-500">*</span>
         </label>
         <input
@@ -16,7 +17,9 @@
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
+        >
           Description <span class="text-red-500">*</span>
         </label>
         <textarea
@@ -29,7 +32,9 @@
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1">
+        <label
+          class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
+        >
           Remarks
         </label>
         <textarea
@@ -61,35 +66,39 @@
 </template>
 
 <script setup lang="ts">
-import { reactive } from 'vue'
-import type { PoamItem } from '@/stores/plan-of-action-and-milestones.ts'
-import { useToast } from 'primevue/usetoast'
+import { reactive } from 'vue';
+import type { PoamItem } from '@/stores/plan-of-action-and-milestones.ts';
+import { useToast } from 'primevue/usetoast';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
-import type { AxiosError } from 'axios'
-import type { ErrorResponse, ErrorBody } from '@/stores/types'
+import type { AxiosError } from 'axios';
+import type { ErrorResponse, ErrorBody } from '@/stores/types';
 
 const props = defineProps<{
-  poamId: string
-}>()
+  poamId: string;
+}>();
 
 const emit = defineEmits<{
-  cancel: []
-  created: [item: PoamItem]
-}>()
+  cancel: [];
+  created: [item: PoamItem];
+}>();
 
-const toast = useToast()
+const toast = useToast();
 
-const { data: updatedPoamItem, isLoading: saving, execute: createPoamItem } = useDataApi<PoamItem>(
+const {
+  data: updatedPoamItem,
+  isLoading: saving,
+  execute: createPoamItem,
+} = useDataApi<PoamItem>(
   `/api/oscal/plan-of-action-and-milestones/${props.poamId}/poam-items`,
   { method: 'POST', transformRequest: [decamelizeKeys] },
-  { immediate: false }
-)
+  { immediate: false },
+);
 
 const formData = reactive({
   title: '',
   description: '',
-  remarks: ''
-})
+  remarks: '',
+});
 
 async function submit() {
   if (!formData.title || !formData.description) {
@@ -97,9 +106,9 @@ async function submit() {
       severity: 'error',
       summary: 'Validation Error',
       detail: 'Title and description are required',
-      life: 3000
-    })
-    return
+      life: 3000,
+    });
+    return;
   }
 
   try {
@@ -107,30 +116,31 @@ async function submit() {
       uuid: crypto.randomUUID(),
       title: formData.title,
       description: formData.description,
-      remarks: formData.remarks || undefined
-    }
+      remarks: formData.remarks || undefined,
+    };
 
     await createPoamItem({
       data: newItem,
-    })
+    });
 
     toast.add({
       severity: 'success',
       summary: 'POAM Item Created',
       detail: 'POAM item created successfully',
-      life: 3000
-    })
+      life: 3000,
+    });
 
-    emit('created', updatedPoamItem.value!)
+    emit('created', updatedPoamItem.value!);
   } catch (error) {
-    const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>
-    const errorMessage = errorResponse.response?.data.errors.body || 'Unknown error'
+    const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
+    const errorMessage =
+      errorResponse.response?.data.errors.body || 'Unknown error';
     toast.add({
       severity: 'error',
       summary: 'Creation Failed',
       detail: `Failed to create POAM item: ${errorMessage}`,
-      life: 3000
-    })
+      life: 3000,
+    });
   }
 }
 </script>

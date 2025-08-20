@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { ref } from 'vue';
 
 export const useToggle = (initialValue = false) => {
   const value = ref<boolean>(initialValue);

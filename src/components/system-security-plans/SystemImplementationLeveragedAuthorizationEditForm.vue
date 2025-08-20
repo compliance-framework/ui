@@ -1,24 +1,41 @@
 <template>
   <div class="px-12 py-8">
     <form @submit.prevent="saveLeveragedAuthorization()">
-
       <div class="mb-4">
         <label class="inline-block pb-2 dark:text-slate-300">UUID</label>
-        <FormInput v-model="authData.uuid" placeholder="Authorization UUID" readonly />
+        <FormInput
+          v-model="authData.uuid"
+          placeholder="Authorization UUID"
+          readonly
+        />
       </div>
 
       <div class="mb-4">
-        <label class="inline-block pb-2 dark:text-slate-300">Title <span class="text-red-500">*</span></label>
-        <FormInput v-model="authData.title" placeholder="Authorization title (e.g., GovCloud, FedRAMP)" required />
+        <label class="inline-block pb-2 dark:text-slate-300"
+          >Title <span class="text-red-500">*</span></label
+        >
+        <FormInput
+          v-model="authData.title"
+          placeholder="Authorization title (e.g., GovCloud, FedRAMP)"
+          required
+        />
       </div>
 
       <div class="mb-4">
-        <label class="inline-block pb-2 dark:text-slate-300">Party UUID <span class="text-red-500">*</span></label>
-        <FormInput v-model="authData.partyUuid" placeholder="UUID of the party providing the authorization" required />
+        <label class="inline-block pb-2 dark:text-slate-300"
+          >Party UUID <span class="text-red-500">*</span></label
+        >
+        <FormInput
+          v-model="authData.partyUuid"
+          placeholder="UUID of the party providing the authorization"
+          required
+        />
       </div>
 
       <div class="mb-4">
-        <label class="inline-block pb-2 dark:text-slate-300">Date Authorized <span class="text-red-500">*</span></label>
+        <label class="inline-block pb-2 dark:text-slate-300"
+          >Date Authorized <span class="text-red-500">*</span></label
+        >
         <FormInput
           v-model="authData.dateAuthorized"
           type="date"
@@ -29,14 +46,21 @@
 
       <div class="mb-4">
         <label class="inline-block pb-2 dark:text-slate-300">Remarks</label>
-        <FormTextarea v-model="authData.remarks" placeholder="Additional remarks about this authorization" />
+        <FormTextarea
+          v-model="authData.remarks"
+          placeholder="Additional remarks about this authorization"
+        />
       </div>
 
       <!-- Properties Section -->
       <div class="mb-6">
         <label class="inline-block pb-2 dark:text-slate-300">Properties</label>
         <div class="space-y-2">
-          <div v-for="(prop, index) in authData.props || []" :key="index" class="flex gap-2">
+          <div
+            v-for="(prop, index) in authData.props || []"
+            :key="index"
+            class="flex gap-2"
+          >
             <FormInput
               v-model="prop.name"
               placeholder="Property name"
@@ -69,7 +93,11 @@
       <div class="mb-6">
         <label class="inline-block pb-2 dark:text-slate-300">Links</label>
         <div class="space-y-2">
-          <div v-for="(link, index) in authData.links || []" :key="index" class="flex gap-2">
+          <div
+            v-for="(link, index) in authData.links || []"
+            :key="index"
+            class="flex gap-2"
+          >
             <FormInput
               v-model="link.href"
               placeholder="Link URL"
@@ -144,12 +172,17 @@ const emit = defineEmits<{
 }>();
 
 const toast = useToast();
-const { data: updatedLeveragedAuthorization, execute: updateAuthorization, isLoading: saving } = useDataApi<LeveragedAuthorization>(
+const {
+  data: updatedLeveragedAuthorization,
+  execute: updateAuthorization,
+  isLoading: saving,
+} = useDataApi<LeveragedAuthorization>(
   `/api/oscal/system-security-plans/${props.sspId}/system-implementation/leveraged-authorizations/${props.auth.uuid}`,
   {
     method: 'put',
-    transformRequest: [decamelizeKeys]
-  }, { immediate: false }
+    transformRequest: [decamelizeKeys],
+  },
+  { immediate: false },
 );
 
 const authData = reactive<LeveragedAuthorization>({
@@ -159,14 +192,14 @@ const authData = reactive<LeveragedAuthorization>({
   dateAuthorized: '',
   remarks: '',
   props: [],
-  links: []
+  links: [],
 });
 
 onMounted(() => {
   Object.assign(authData, {
     ...props.auth,
-    props: [...(props.auth.props || [])].map(p => ({ ...p })),
-    links: [...(props.auth.links || [])].map(l => ({ ...l }))
+    props: [...(props.auth.props || [])].map((p) => ({ ...p })),
+    links: [...(props.auth.links || [])].map((l) => ({ ...l })),
   });
 });
 
@@ -174,7 +207,7 @@ const addProperty = () => {
   if (!authData.props) authData.props = [];
   authData.props.push({
     name: '',
-    value: ''
+    value: '',
   });
 };
 
@@ -189,7 +222,7 @@ const addLink = () => {
   authData.links.push({
     href: '',
     text: '',
-    rel: ''
+    rel: '',
   });
 };
 
@@ -200,26 +233,30 @@ const removeLink = (index: number) => {
 };
 
 const saveLeveragedAuthorization = async () => {
-  if (!authData.title?.trim() || !authData.partyUuid?.trim() || !authData.dateAuthorized?.trim()) {
+  if (
+    !authData.title?.trim() ||
+    !authData.partyUuid?.trim() ||
+    !authData.dateAuthorized?.trim()
+  ) {
     toast.add({
       severity: 'error',
       summary: 'Validation Error',
       detail: 'Title, Party UUID, and Date Authorized are required fields.',
-      life: 3000
+      life: 3000,
     });
     return;
   }
 
   try {
     await updateAuthorization({
-      data: authData
+      data: authData,
     });
 
     toast.add({
       severity: 'success',
       summary: 'Success',
       detail: 'Leveraged authorization updated successfully.',
-      life: 3000
+      life: 3000,
     });
 
     emit('saved', updatedLeveragedAuthorization.value!);
@@ -229,7 +266,7 @@ const saveLeveragedAuthorization = async () => {
       severity: 'error',
       summary: 'Error',
       detail: `Failed to update leveraged authorization. ${errorResponse.response?.data.errors.body || 'An unknown error occurred'}. Please try again.`,
-      life: 5000
+      life: 5000,
     });
   }
 };

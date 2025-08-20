@@ -3,23 +3,23 @@
 
   <div
     class="mt-4 rounded-md bg-white dark:bg-slate-900 border-collapse border dark:border-slate-700"
-  >
-
-  </div>
-
+  ></div>
 </template>
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
-import PageHeader from '@/components/PageHeader.vue'
-import { type SystemSecurityPlan, useSystemSecurityPlanStore } from '@/stores/system-security-plans.ts'
+import { onMounted, ref } from 'vue';
+import PageHeader from '@/components/PageHeader.vue';
+import {
+  type SystemSecurityPlan,
+  useSystemSecurityPlanStore,
+} from '@/stores/system-security-plans.ts';
 
-const sspStore = useSystemSecurityPlanStore()
+const sspStore = useSystemSecurityPlanStore();
 
-const systemSecurityPlans = ref<SystemSecurityPlan[]>([])
+const systemSecurityPlans = ref<SystemSecurityPlan[]>([]);
 
 onMounted(() => {
   sspStore.list().then((data) => {
-    systemSecurityPlans.value = data.data
-  })
-})
+    systemSecurityPlans.value = data.data;
+  });
+});
 </script>

@@ -1,7 +1,9 @@
 <template>
   <div class="p-6">
     <div class="flex justify-between items-center mb-6">
-      <h2 class="text-xl font-semibold text-gray-900 dark:text-slate-200">Results</h2>
+      <h2 class="text-xl font-semibold text-gray-900 dark:text-slate-200">
+        Results
+      </h2>
       <button
         @click="showCreateModal = true"
         class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
@@ -34,7 +36,9 @@
             <p class="mt-1 text-sm text-gray-600 dark:text-slate-400">
               {{ result.description }}
             </p>
-            <div class="mt-2 flex items-center gap-4 text-sm text-gray-500 dark:text-slate-400">
+            <div
+              class="mt-2 flex items-center gap-4 text-sm text-gray-500 dark:text-slate-400"
+            >
               <span>Start: {{ formatDate(result.start) }}</span>
               <span v-if="result.end">End: {{ formatDate(result.end) }}</span>
             </div>
@@ -84,7 +88,10 @@
     >
       <form @submit.prevent="createResult" class="space-y-4">
         <div>
-          <label for="title" class="block text-sm font-medium text-gray-700 dark:text-slate-300">
+          <label
+            for="title"
+            class="block text-sm font-medium text-gray-700 dark:text-slate-300"
+          >
             Title <span class="text-red-500">*</span>
           </label>
           <input
@@ -97,7 +104,10 @@
         </div>
 
         <div>
-          <label for="description" class="block text-sm font-medium text-gray-700 dark:text-slate-300">
+          <label
+            for="description"
+            class="block text-sm font-medium text-gray-700 dark:text-slate-300"
+          >
             Description <span class="text-red-500">*</span>
           </label>
           <textarea
@@ -110,7 +120,10 @@
         </div>
 
         <div>
-          <label for="start" class="block text-sm font-medium text-gray-700 dark:text-slate-300">
+          <label
+            for="start"
+            class="block text-sm font-medium text-gray-700 dark:text-slate-300"
+          >
             Start Date <span class="text-red-500">*</span>
           </label>
           <input
@@ -123,7 +136,10 @@
         </div>
 
         <div>
-          <label for="end" class="block text-sm font-medium text-gray-700 dark:text-slate-300">
+          <label
+            for="end"
+            class="block text-sm font-medium text-gray-700 dark:text-slate-300"
+          >
             End Date
           </label>
           <input
@@ -156,62 +172,68 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, type PropType } from 'vue'
-import { useRouter } from 'vue-router'
-import Dialog from '@/volt/Dialog.vue'
-import type { AssessmentResults, Result } from '@/stores/assessment-results'
-import { useToast } from 'primevue/usetoast'
-import { v4 as uuidv4 } from 'uuid'
-import { useDataApi, decamelizeKeys } from '@/composables/axios'
-import type { AxiosError } from 'axios'
-import type { ErrorResponse, ErrorBody } from '@/stores/types'
+import { ref, onMounted, type PropType } from 'vue';
+import { useRouter } from 'vue-router';
+import Dialog from '@/volt/Dialog.vue';
+import type { AssessmentResults, Result } from '@/stores/assessment-results';
+import { useToast } from 'primevue/usetoast';
+import { v4 as uuidv4 } from 'uuid';
+import { useDataApi, decamelizeKeys } from '@/composables/axios';
+import type { AxiosError } from 'axios';
+import type { ErrorResponse, ErrorBody } from '@/stores/types';
 
 const props = defineProps({
   assessmentResults: {
     type: Object as PropType<AssessmentResults>,
-    required: true
-  }
-})
+    required: true,
+  },
+});
 
-const emit = defineEmits(['update'])
+const emit = defineEmits(['update']);
 
-const router = useRouter()
-const toast = useToast()
+const router = useRouter();
+const toast = useToast();
 
-const { data: results, isLoading: loading, error, execute: loadResults} = useDataApi<Result[]>(
+const {
+  data: results,
+  isLoading: loading,
+  error,
+  execute: loadResults,
+} = useDataApi<Result[]>(
   `/api/oscal/assessment-results/${props.assessmentResults.uuid}/results`,
   null,
-  { immediate: false }
-)
+  { immediate: false },
+);
 
 const { isLoading: creating, execute: executeCreate } = useDataApi<Result>(
   `/api/oscal/assessment-results/${props.assessmentResults.uuid}/results`,
   {
     method: 'POST',
-    transformRequest: [decamelizeKeys]
+    transformRequest: [decamelizeKeys],
   },
-  { immediate: false }
-)
+  { immediate: false },
+);
 
-const { execute: executeDelete } = useDataApi<void>(null,
+const { execute: executeDelete } = useDataApi<void>(
+  null,
   {
-    method: 'DELETE'
+    method: 'DELETE',
   },
-  { immediate: false }
-)
+  { immediate: false },
+);
 
-const showCreateModal = ref(false)
+const showCreateModal = ref(false);
 
 const newResult = ref({
   title: '',
   description: '',
   start: new Date().toISOString().slice(0, 16),
-  end: ''
-})
+  end: '',
+});
 
 function formatDate(dateString?: string): string {
-  if (!dateString) return 'N/A'
-  return new Date(dateString).toLocaleString()
+  if (!dateString) return 'N/A';
+  return new Date(dateString).toLocaleString();
 }
 
 async function createResult() {
@@ -221,79 +243,91 @@ async function createResult() {
       title: newResult.value.title,
       description: newResult.value.description,
       start: new Date(newResult.value.start).toISOString(),
-      end: newResult.value.end ? new Date(newResult.value.end).toISOString() : undefined,
+      end: newResult.value.end
+        ? new Date(newResult.value.end).toISOString()
+        : undefined,
       reviewedControls: {
-        controlSelections: [{
-          includeAll: {}
-        }]
-      }
-    }
+        controlSelections: [
+          {
+            includeAll: {},
+          },
+        ],
+      },
+    };
 
     await executeCreate({
-      data: result
-    })
+      data: result,
+    });
 
     toast.add({
       severity: 'success',
       summary: 'Success',
       detail: 'Result created successfully',
-      life: 3000
-    })
+      life: 3000,
+    });
 
-    showCreateModal.value = false
+    showCreateModal.value = false;
     newResult.value = {
       title: '',
       description: '',
       start: new Date().toISOString().slice(0, 16),
-      end: ''
-    }
+      end: '',
+    };
 
-    await loadResults()
-    emit('update')
+    await loadResults();
+    emit('update');
   } catch (err) {
-    const errorResponse = err as AxiosError<ErrorResponse<ErrorBody>>
+    const errorResponse = err as AxiosError<ErrorResponse<ErrorBody>>;
     toast.add({
       severity: 'error',
       summary: 'Error',
       detail: `Failed to create result: ${errorResponse?.response?.data?.errors.body || 'Unknown error'}`,
-      life: 5000
-    })
+      life: 5000,
+    });
   }
 }
 
 function editResult(result: Result) {
-  router.push(`/assessment-results/${props.assessmentResults.uuid}/results/${result.uuid}/edit`)
+  router.push(
+    `/assessment-results/${props.assessmentResults.uuid}/results/${result.uuid}/edit`,
+  );
 }
 
 async function deleteResult(resultId: string) {
-  if (!confirm('Are you sure you want to delete this result? This action cannot be undone.')) {
-    return
+  if (
+    !confirm(
+      'Are you sure you want to delete this result? This action cannot be undone.',
+    )
+  ) {
+    return;
   }
 
   try {
-    await executeDelete(`/api/oscal/assessment-results/${props.assessmentResults.uuid}/results/${resultId}`)
+    await executeDelete(
+      `/api/oscal/assessment-results/${props.assessmentResults.uuid}/results/${resultId}`,
+    );
 
     toast.add({
       severity: 'success',
       summary: 'Success',
       detail: 'Result deleted successfully',
-      life: 3000
-    })
+      life: 3000,
+    });
 
-    await loadResults()
-    emit('update')
+    await loadResults();
+    emit('update');
   } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+    const errorMessage = err instanceof Error ? err.message : 'Unknown error';
     toast.add({
       severity: 'error',
       summary: 'Error',
       detail: `Failed to delete result: ${errorMessage}`,
-      life: 5000
-    })
+      life: 5000,
+    });
   }
 }
 
 onMounted(() => {
-  loadResults()
-})
+  loadResults();
+});
 </script>

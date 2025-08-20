@@ -5,15 +5,24 @@
     <div v-if="loading" class="flex justify-center items-center min-h-screen">
       <div class="text-gray-500 dark:text-slate-400">Loading...</div>
     </div>
-    <div v-else-if="error" class="flex justify-center items-center min-h-screen">
+    <div
+      v-else-if="error"
+      class="flex justify-center items-center min-h-screen"
+    >
       <div class="text-red-500">Error: {{ error }}</div>
     </div>
-    <div v-else class="my-4 p-6 bg-white dark:bg-slate-900 border border-ccf-300 dark:border-slate-700 rounded-lg shadow">
+    <div
+      v-else
+      class="my-4 p-6 bg-white dark:bg-slate-900 border border-ccf-300 dark:border-slate-700 rounded-lg shadow"
+    >
       <form @submit.prevent="updateAssessmentResults">
         <div class="grid grid-cols-1 gap-6">
           <!-- Title -->
           <div>
-            <label for="title" class="block text-sm font-medium text-gray-700 dark:text-slate-300">
+            <label
+              for="title"
+              class="block text-sm font-medium text-gray-700 dark:text-slate-300"
+            >
               Title <span class="text-red-500">*</span>
             </label>
             <input
@@ -27,7 +36,10 @@
 
           <!-- Version -->
           <div>
-            <label for="version" class="block text-sm font-medium text-gray-700 dark:text-slate-300">
+            <label
+              for="version"
+              class="block text-sm font-medium text-gray-700 dark:text-slate-300"
+            >
               Version <span class="text-red-500">*</span>
             </label>
             <input
@@ -42,7 +54,10 @@
 
           <!-- Published Date -->
           <div>
-            <label for="published" class="block text-sm font-medium text-gray-700 dark:text-slate-300">
+            <label
+              for="published"
+              class="block text-sm font-medium text-gray-700 dark:text-slate-300"
+            >
               Published Date
             </label>
             <input
@@ -55,7 +70,10 @@
 
           <!-- Remarks -->
           <div>
-            <label for="remarks" class="block text-sm font-medium text-gray-700 dark:text-slate-300">
+            <label
+              for="remarks"
+              class="block text-sm font-medium text-gray-700 dark:text-slate-300"
+            >
               Remarks
             </label>
             <textarea
@@ -68,10 +86,17 @@
 
           <!-- Import AP -->
           <div class="border-t pt-6">
-            <h3 class="text-lg font-medium text-gray-900 dark:text-slate-200 mb-4">Import Assessment Plan</h3>
+            <h3
+              class="text-lg font-medium text-gray-900 dark:text-slate-200 mb-4"
+            >
+              Import Assessment Plan
+            </h3>
 
             <div>
-              <label for="importApHref" class="block text-sm font-medium text-gray-700 dark:text-slate-300">
+              <label
+                for="importApHref"
+                class="block text-sm font-medium text-gray-700 dark:text-slate-300"
+              >
                 Href <span class="text-red-500">*</span>
               </label>
               <input
@@ -85,7 +110,10 @@
             </div>
 
             <div class="mt-4">
-              <label for="importApRemarks" class="block text-sm font-medium text-gray-700 dark:text-slate-300">
+              <label
+                for="importApRemarks"
+                class="block text-sm font-medium text-gray-700 dark:text-slate-300"
+              >
                 Import AP Remarks
               </label>
               <textarea
@@ -120,19 +148,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
-import PageHeader from '@/components/PageHeader.vue'
-import type { AssessmentResults } from '@/stores/assessment-results'
-import { useToast } from 'primevue/usetoast'
-import { useDataApi, decamelizeKeys } from '@/composables/axios'
+import { ref, computed, onMounted } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
+import PageHeader from '@/components/PageHeader.vue';
+import type { AssessmentResults } from '@/stores/assessment-results';
+import { useToast } from 'primevue/usetoast';
+import { useDataApi, decamelizeKeys } from '@/composables/axios';
 
-const router = useRouter()
-const route = useRoute()
-const toast = useToast()
+const router = useRouter();
+const route = useRoute();
+const toast = useToast();
 
-const assessmentResultsId = route.params.id as string
-const error = ref<string | null>(null)
+const assessmentResultsId = route.params.id as string;
+const error = ref<string | null>(null);
 
 const formData = ref({
   uuid: '',
@@ -142,45 +170,54 @@ const formData = ref({
     published: '',
     lastModified: '',
     oscalVersion: '1.1.3',
-    remarks: ''
+    remarks: '',
   },
   importAp: {
     href: '',
-    remarks: ''
+    remarks: '',
   },
-  results: [] as any[]
-})
+  results: [] as any[],
+});
 
-const { data: ar, execute: executeLoad, isLoading: loading } = useDataApi<AssessmentResults>(
+const {
+  data: ar,
+  execute: executeLoad,
+  isLoading: loading,
+} = useDataApi<AssessmentResults>(
   `/api/oscal/assessment-results/${assessmentResultsId}`,
   null,
-  { immediate: false }
-)
-const { execute: executeUpdate, isLoading: updating } = useDataApi<AssessmentResults>(
-  `/api/oscal/assessment-results/${assessmentResultsId}`,
-  {
-    method: 'PUT',
-    transformRequest: [decamelizeKeys],
-  },
-  { immediate: false }
-)
+  { immediate: false },
+);
+const { execute: executeUpdate, isLoading: updating } =
+  useDataApi<AssessmentResults>(
+    `/api/oscal/assessment-results/${assessmentResultsId}`,
+    {
+      method: 'PUT',
+      transformRequest: [decamelizeKeys],
+    },
+    { immediate: false },
+  );
 
 // Computed property for datetime-local input
 const publishedDate = computed({
   get: () => {
-    if (!formData.value.metadata.published) return ''
-    return new Date(formData.value.metadata.published).toISOString().slice(0, 16)
+    if (!formData.value.metadata.published) return '';
+    return new Date(formData.value.metadata.published)
+      .toISOString()
+      .slice(0, 16);
   },
   set: (value: string) => {
-    formData.value.metadata.published = value ? new Date(value).toISOString() : ''
-  }
-})
+    formData.value.metadata.published = value
+      ? new Date(value).toISOString()
+      : '';
+  },
+});
 
 async function loadAssessmentResults() {
   try {
-    await executeLoad()
+    await executeLoad();
     if (!ar.value) {
-      throw new Error('Assessment Results not found')
+      throw new Error('Assessment Results not found');
     }
 
     formData.value = {
@@ -191,53 +228,52 @@ async function loadAssessmentResults() {
         published: ar.value.metadata?.published || '',
         lastModified: ar.value.metadata?.lastModified || '',
         oscalVersion: ar.value.metadata?.oscalVersion || '1.1.3',
-        remarks: ar.value.metadata?.remarks || ''
+        remarks: ar.value.metadata?.remarks || '',
       },
       importAp: {
         href: ar.value.importAp?.href || '',
-        remarks: ar.value.importAp?.remarks || ''
+        remarks: ar.value.importAp?.remarks || '',
       },
-      results: ar.value.results || []
-    }
+      results: ar.value.results || [],
+    };
   } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : 'Unknown error'
-    error.value = errorMessage
+    const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+    error.value = errorMessage;
     toast.add({
       severity: 'error',
       summary: 'Load Failed',
       detail: `Failed to load Assessment Results: ${errorMessage}`,
-      life: 3000
-    })
+      life: 3000,
+    });
   }
 }
 
 async function updateAssessmentResults() {
-
   try {
     await executeUpdate({
-      data: formData.value
-    })
+      data: formData.value,
+    });
 
     toast.add({
       severity: 'success',
       summary: 'Success',
       detail: 'Assessment Results updated successfully',
-      life: 3000
-    })
+      life: 3000,
+    });
 
-    router.push(`/assessment-results/${assessmentResultsId}`)
+    router.push(`/assessment-results/${assessmentResultsId}`);
   } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+    const errorMessage = err instanceof Error ? err.message : 'Unknown error';
     toast.add({
       severity: 'error',
       summary: 'Error',
       detail: `Failed to update Assessment Results: ${errorMessage}`,
-      life: 5000
-    })
+      life: 5000,
+    });
   }
 }
 
 onMounted(() => {
-  loadAssessmentResults()
-})
+  loadAssessmentResults();
+});
 </script>

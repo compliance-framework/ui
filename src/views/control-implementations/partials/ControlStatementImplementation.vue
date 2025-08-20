@@ -1,24 +1,20 @@
 <script setup lang="ts">
-import { v4 as uuidv4 } from 'uuid'
-import type {
-  ByComponent,
-  Statement,
-  SystemComponent,
-} from '@/oscal';
+import { v4 as uuidv4 } from 'uuid';
+import type { ByComponent, Statement, SystemComponent } from '@/oscal';
 import StatementByComponent from '@/views/control-implementations/partials/StatementByComponent.vue';
 import type { ImplementedRequirement } from '@/stores/system-security-plans.ts';
-import { computed, onMounted, ref, toValue, watch } from 'vue'
+import { computed, onMounted, ref, toValue, watch } from 'vue';
 import { useSystemStore } from '@/stores/system.ts';
 import Select from '@/volt/Select.vue';
 import Textarea from '@/volt/Textarea.vue';
-import { useCloned } from '@vueuse/core'
-import BurgerMenu from '@/components/BurgerMenu.vue'
-import { useToggle } from '@/composables/useToggle'
+import { useCloned } from '@vueuse/core';
+import BurgerMenu from '@/components/BurgerMenu.vue';
+import { useToggle } from '@/composables/useToggle';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 
 const { system } = useSystemStore();
 
-const { value: showCreateForm, set: setCreateForm } = useToggle(false)
+const { value: showCreateForm, set: setCreateForm } = useToggle(false);
 
 const { statement, implementation } = defineProps<{
   statement: Statement;
@@ -28,17 +24,17 @@ const localStatement = ref<Statement>(statement);
 
 const emit = defineEmits<{
   updated: [statement: Statement];
-}>()
+}>();
 
-const { data: components, isLoading: componentsLoading } = useDataApi<SystemComponent[]>(
-    `/api/oscal/system-security-plans/${system.securityPlan?.uuid as string}/system-implementation/components`,
-)
-const { execute: executeUpdate } = useDataApi<Statement>(null,
-  {
-    transformRequest: [decamelizeKeys],
-    method: "PUT"
-  },
+const { data: components, isLoading: componentsLoading } = useDataApi<
+  SystemComponent[]
+>(
+  `/api/oscal/system-security-plans/${system.securityPlan?.uuid as string}/system-implementation/components`,
 );
+const { execute: executeUpdate } = useDataApi<Statement>(null, {
+  transformRequest: [decamelizeKeys],
+  method: 'PUT',
+});
 
 const componentItems = computed(() => {
   return toValue(components.value || []).map((item) => {
@@ -65,33 +61,35 @@ onMounted(() => {
 });
 
 function resetCreateForm() {
-  setCreateForm(false)
+  setCreateForm(false);
   newByComponent.value = {
     uuid: uuidv4(),
-  } as ByComponent
+  } as ByComponent;
 }
 
 async function deleteByComponent(byComp: ByComponent) {
   const clonedStatement = useCloned(localStatement).cloned;
-  clonedStatement.value.byComponents = clonedStatement.value.byComponents?.filter((comp: ByComponent) => {
-    return byComp.uuid !== comp.uuid;
-  });
+  clonedStatement.value.byComponents =
+    clonedStatement.value.byComponents?.filter((comp: ByComponent) => {
+      return byComp.uuid !== comp.uuid;
+    });
   try {
-    const res = await executeUpdate(`/api/oscal/system-security-plans/${system.securityPlan?.uuid}/control-implementation/implemented-requirements/${implementation.uuid}/statements/${statement.uuid}`,
-    {
-      data: clonedStatement.value
+    const res = await executeUpdate(
+      `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/control-implementation/implemented-requirements/${implementation.uuid}/statements/${statement.uuid}`,
+      {
+        data: clonedStatement.value,
+      },
+    );
+    if (res.data.value && res.data.value.data) {
+      localStatement.value = res.data.value.data;
+    } else {
+      console.error('API response missing expected data:', res.data);
+      return;
     }
-   )
-   if (res.data.value && res.data.value.data) {
-     localStatement.value = res.data.value.data;
-   } else {
-     console.error('API response missing expected data:', res.data);
-     return;
-   }
     newByComponent.value = {
       uuid: uuidv4(),
-    } as ByComponent
-    setCreateForm(false)
+    } as ByComponent;
+    setCreateForm(false);
     emit('updated', localStatement.value);
   } catch (err) {
     console.error(err);
@@ -100,18 +98,21 @@ async function deleteByComponent(byComp: ByComponent) {
 
 async function updateByComponent(byComp: ByComponent) {
   const clonedStatement = useCloned(localStatement).cloned;
-  clonedStatement.value.byComponents = clonedStatement.value.byComponents?.map((comp: ByComponent) => byComp.uuid == comp.uuid ? byComp : comp);
+  clonedStatement.value.byComponents = clonedStatement.value.byComponents?.map(
+    (comp: ByComponent) => (byComp.uuid == comp.uuid ? byComp : comp),
+  );
   try {
-    const res = await executeUpdate(`/api/oscal/system-security-plans/${system.securityPlan?.uuid}/control-implementation/implemented-requirements/${implementation.uuid}/statements/${statement.uuid}`,
-    {
-      data: clonedStatement.value
-    }
-   )
-   localStatement.value = res.data.value!.data;
+    const res = await executeUpdate(
+      `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/control-implementation/implemented-requirements/${implementation.uuid}/statements/${statement.uuid}`,
+      {
+        data: clonedStatement.value,
+      },
+    );
+    localStatement.value = res.data.value!.data;
     newByComponent.value = {
       uuid: uuidv4(),
-    } as ByComponent
-    setCreateForm(false)
+    } as ByComponent;
+    setCreateForm(false);
     emit('updated', localStatement.value);
   } catch (err) {
     console.error(err);
@@ -125,21 +126,22 @@ async function create() {
     toValue(newByComponent),
   ];
   try {
-    const res = await executeUpdate(`/api/oscal/system-security-plans/${system.securityPlan?.uuid}/control-implementation/implemented-requirements/${implementation.uuid}/statements/${statement.uuid}`,
-    {
-      data: clonedStatement.value
+    const res = await executeUpdate(
+      `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/control-implementation/implemented-requirements/${implementation.uuid}/statements/${statement.uuid}`,
+      {
+        data: clonedStatement.value,
+      },
+    );
+    if (res.data.value && res.data.value.data) {
+      localStatement.value = res.data.value.data;
+    } else {
+      console.error('Failed to create: response data is missing');
+      return;
     }
-   )
-   if (res.data.value && res.data.value.data) {
-     localStatement.value = res.data.value.data;
-   } else {
-     console.error('Failed to create: response data is missing');
-     return;
-   }
     newByComponent.value = {
       uuid: uuidv4(),
-    } as ByComponent
-    setCreateForm(false)
+    } as ByComponent;
+    setCreateForm(false);
     emit('updated', localStatement.value);
   } catch (err) {
     console.error(err);
@@ -151,21 +153,30 @@ async function create() {
   <div class="pb-24">
     <div class="flex items-center mb-4 gap-x-4">
       <h4 class="font-medium text-xl">Components</h4>
-      <BurgerMenu :items="[
-        {
-          label: 'Add Component',
-          command: () => {
-            setCreateForm(true)
-          }
-        }
-      ]" />
+      <BurgerMenu
+        :items="[
+          {
+            label: 'Add Component',
+            command: () => {
+              setCreateForm(true);
+            },
+          },
+        ]"
+      />
     </div>
     <div
       v-for="(byComponent, index) in localStatement.byComponents || []"
       :key="byComponent.uuid"
     >
-      <div class="h-0.5 w-full bg-gray-200 dark:bg-slate-700 my-4" v-if="index !== 0"></div>
-      <StatementByComponent @save="updateByComponent" @delete="deleteByComponent" :by-component="byComponent" />
+      <div
+        class="h-0.5 w-full bg-gray-200 dark:bg-slate-700 my-4"
+        v-if="index !== 0"
+      ></div>
+      <StatementByComponent
+        @save="updateByComponent"
+        @delete="deleteByComponent"
+        :by-component="byComponent"
+      />
     </div>
 
     <form @submit.prevent="create" v-if="showCreateForm">

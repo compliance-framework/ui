@@ -12,6 +12,6 @@ const user = useUserStore();
 
 onMounted(() => {
   user.isAuthenticated = false;
-  router.push({ name: "login" });
+  router.push({ name: 'login' });
 });
 </script>

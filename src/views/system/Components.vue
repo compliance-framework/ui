@@ -127,19 +127,22 @@
 
   <!-- Component Create Modal -->
   <Dialog
-    v-model:visible="showCreateComponentModal" modal header="Create System Component"
+    v-model:visible="showCreateComponentModal"
+    modal
+    header="Create System Component"
   >
     <SystemImplementationComponentCreateForm
       :ssp-id="sspId"
       @cancel="showCreateComponentModal = false"
       @created="handleComponentCreated"
     />
-</Dialog>
+  </Dialog>
 
   <!-- Component Edit Modal -->
   <Dialog
     v-model:visible="showEditComponentModal"
-    modal header="Edit System Component"
+    modal
+    header="Edit System Component"
   >
     <SystemImplementationComponentEditForm
       v-if="editingComponent"
@@ -148,13 +151,13 @@
       @cancel="showEditComponentModal = false"
       @saved="handleComponentSaved"
     />
-</Dialog>
+  </Dialog>
 </template>
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import decamelizeKeys from 'decamelize-keys';
-import Dialog from '@/volt/Dialog.vue'
+import Dialog from '@/volt/Dialog.vue';
 
 // Form components
 import SystemImplementationComponentCreateForm from '@/components/system-security-plans/SystemImplementationComponentCreateForm.vue';
@@ -169,23 +172,25 @@ import { useDataApi } from '@/composables/axios';
 const toast = useToast();
 const { system } = useSystemStore();
 
-
 const sspId = computed(() => system.securityPlan?.uuid ?? '');
 
 // Data
 const systemSecurityPlan = ref<SystemSecurityPlan | null>(null);
 
-const { data: components, execute: fetchComponents } = useDataApi<SystemComponent[]>(
+const { data: components, execute: fetchComponents } = useDataApi<
+  SystemComponent[]
+>(
   `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/system-implementation/components`,
   { method: 'GET' },
-  { immediate: false }
+  { immediate: false },
 );
 
-const { execute: executeDeleteComponent } = useDataApi<void>(null,
+const { execute: executeDeleteComponent } = useDataApi<void>(
+  null,
   {
     method: 'DELETE',
   },
-  { immediate: false }
+  { immediate: false },
 );
 
 const { execute: executeGetComponent } = useDataApi<SystemComponent>(
@@ -193,7 +198,7 @@ const { execute: executeGetComponent } = useDataApi<SystemComponent>(
   {
     method: 'GET',
   },
-  { immediate: false }
+  { immediate: false },
 );
 
 // Modal states
@@ -218,9 +223,9 @@ const editComponent = async (component: SystemComponent) => {
   // Verify the component still exists before editing
   try {
     const response = await executeGetComponent(
-      `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/system-implementation/components/${component.uuid}`
+      `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/system-implementation/components/${component.uuid}`,
     );
-    if ( !response.data || !response.data.value) {
+    if (!response.data || !response.data.value) {
       throw new Error('Component not found');
     }
     editingComponent.value = response.data.value.data;
@@ -270,20 +275,26 @@ const downloadComponentJSON = (component: SystemComponent) => {
 };
 
 const deleteComponent = async (component: SystemComponent) => {
-  if (!confirm(`Are you sure you want to delete component "${component.title}"?`)) {
+  if (
+    !confirm(`Are you sure you want to delete component "${component.title}"?`)
+  ) {
     return;
   }
 
   try {
-    await executeDeleteComponent(`/api/oscal/system-security-plans/${system.securityPlan?.uuid}/system-implementation/components/${component.uuid}`);
+    await executeDeleteComponent(
+      `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/system-implementation/components/${component.uuid}`,
+    );
     if (components.value) {
-      components.value = components.value.filter(c => c.uuid !== component.uuid);
+      components.value = components.value.filter(
+        (c) => c.uuid !== component.uuid,
+      );
     }
     toast.add({
       severity: 'success',
       summary: 'Success',
       detail: 'Component deleted successfully.',
-      life: 3000
+      life: 3000,
     });
   } catch (error) {
     let errorDetail = 'Failed to delete component. Please try again.';
@@ -300,7 +311,7 @@ const deleteComponent = async (component: SystemComponent) => {
       severity: 'error',
       summary: 'Error',
       detail: errorDetail,
-      life: 5000
+      life: 5000,
     });
   }
 };
