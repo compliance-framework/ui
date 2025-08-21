@@ -239,7 +239,7 @@ const confirmDelete = async (uuid: string) => {
     },
     accept: async () => {
       try {
-        if (!poamUuid) {
+        if (!poamUuid.value) {
           throw new Error('No POA&M ID found.');
         }
         await executeDeleteRisk(
