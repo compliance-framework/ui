@@ -54,7 +54,12 @@
               JSON
             </button>
             <button
-              @click.stop="deleteUser(user)"
+              @click.stop="
+                confirmDeleteDialog(() => deleteUser(user), {
+                  itemName: user.title,
+                  itemType: 'user',
+                })
+              "
               class="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition-colors"
             >
               Delete
@@ -161,9 +166,12 @@ import type {
 } from '@/stores/system-security-plans.ts';
 import { useSystemStore } from '@/stores/system.ts';
 import { useDataApi } from '@/composables/axios';
+import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
 
 const toast = useToast();
 const { system } = useSystemStore();
+
+const { confirmDeleteDialog } = useDeleteConfirmationDialog();
 
 // Data
 const systemSecurityPlan = ref<SystemSecurityPlan | null>(null);
@@ -236,10 +244,6 @@ const downloadUserJSON = (user: SystemImplementationUser) => {
 };
 
 const deleteUser = async (user: SystemImplementationUser) => {
-  if (!confirm(`Are you sure you want to delete user "${user.title}"?`)) {
-    return;
-  }
-
   try {
     await executeDelete(
       `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/system-implementation/users/${user.uuid}`,

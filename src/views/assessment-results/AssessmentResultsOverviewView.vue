@@ -152,7 +152,12 @@
         </button>
 
         <button
-          @click="deleteAssessmentResults"
+          @click.prevent="
+            confirmDeleteDialog(() => deleteAssessmentResults(), {
+              itemName: props.assessmentResults.metadata.title,
+              itemType: 'assessment results',
+            })
+          "
           class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700"
         >
           Delete
@@ -169,6 +174,7 @@ import { useConfigStore } from '@/stores/config';
 import { useToast } from 'primevue/usetoast';
 import type { AssessmentResults } from '@/stores/assessment-results';
 import { useDataApi } from '@/composables/axios';
+import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
 
 const props = defineProps({
   assessmentResults: {
@@ -180,6 +186,8 @@ const props = defineProps({
 const router = useRouter();
 const configStore = useConfigStore();
 const toast = useToast();
+
+const { confirmDeleteDialog } = useDeleteConfirmationDialog();
 
 const { execute: executeDelete } = useDataApi<void>(
   `/api/oscal/assessment-results/${props.assessmentResults.uuid}`,
@@ -238,14 +246,6 @@ async function downloadJson() {
 }
 
 async function deleteAssessmentResults() {
-  if (
-    !confirm(
-      'Are you sure you want to delete this Assessment Results? This action cannot be undone.',
-    )
-  ) {
-    return;
-  }
-
   try {
     await executeDelete();
 
@@ -263,7 +263,7 @@ async function deleteAssessmentResults() {
       severity: 'error',
       summary: 'Delete Failed',
       detail: `Failed to delete Assessment Results: ${errorMessage}`,
-      life: 3000,
+      life: 5000,
     });
   }
 }

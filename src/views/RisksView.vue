@@ -119,7 +119,11 @@
             </button>
             <button
               v-if="risk.uuid"
-              @click="confirmDelete(risk.uuid)"
+              @click="
+                confirmDeleteDialog(() => deleteRisk(risk.uuid!), {
+                  itemType: 'risk',
+                })
+              "
               class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md text-sm"
             >
               Delete
@@ -153,7 +157,6 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
-import { useRoute } from 'vue-router';
 import { type Risk } from '@/stores/plan-of-action-and-milestones.ts';
 import Dialog from '@/volt/Dialog.vue';
 import Message from '@/volt/Message.vue';
@@ -163,12 +166,12 @@ import { useToast } from 'primevue/usetoast';
 import PageHeader from '@/components/PageHeader.vue';
 import { useSystemStore } from '@/stores/system.ts';
 import { useDataApi } from '@/composables/axios';
-import { useConfirm } from 'primevue/useconfirm';
+import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
 
 const toast = useToast();
 const { system } = useSystemStore();
 
-const confirm = useConfirm();
+const { confirmDeleteDialog } = useDeleteConfirmationDialog();
 
 const poamDefined = ref<boolean>(!!system.poam);
 const poamUuid = computed(() => system.poam?.uuid ?? '');
@@ -225,45 +228,30 @@ const handleRiskSaved = (updatedRisk: Risk) => {
   editingRisk.value = null;
 };
 
-const confirmDelete = async (uuid: string) => {
-  confirm.require({
-    message: 'Are you sure you want to delete this risk?',
-    header: 'Confirm Deletion',
-    rejectProps: {
-      label: 'Cancel',
-      severity: 'secondary',
-      outlined: true,
-    },
-    acceptProps: {
-      label: 'Confirm',
-    },
-    accept: async () => {
-      try {
-        if (!poamUuid.value) {
-          throw new Error('No POA&M ID found.');
-        }
-        await executeDeleteRisk(
-          `/api/oscal/plan-of-action-and-milestones/${poamUuid.value}/risks/${uuid}`,
-        );
-        toast.add({
-          severity: 'success',
-          summary: 'Risk Deleted',
-          detail: 'Risk deleted successfully',
-          life: 3000,
-        });
-        await loadRisks(); // Reload the list
-      } catch (err) {
-        const errorMessage =
-          err instanceof Error ? err.message : 'Unknown error';
-        toast.add({
-          severity: 'error',
-          summary: 'Delete Failed',
-          detail: `Failed to delete risk: ${errorMessage}`,
-          life: 3000,
-        });
-      }
-    },
-  });
+const deleteRisk = async (uuid: string) => {
+  try {
+    if (!poamUuid.value) {
+      throw new Error('No POA&M ID found.');
+    }
+    await executeDeleteRisk(
+      `/api/oscal/plan-of-action-and-milestones/${poamUuid.value}/risks/${uuid}`,
+    );
+    toast.add({
+      severity: 'success',
+      summary: 'Risk Deleted',
+      detail: 'Risk deleted successfully',
+      life: 3000,
+    });
+    await loadRisks(); // Reload the list
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+    toast.add({
+      severity: 'error',
+      summary: 'Delete Failed',
+      detail: `Failed to delete risk: ${errorMessage}`,
+      life: 5000,
+    });
+  }
 };
 
 function formatDate(dateString?: string): string {

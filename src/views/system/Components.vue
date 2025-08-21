@@ -68,7 +68,12 @@
               JSON
             </button>
             <button
-              @click.stop="deleteComponent(component)"
+              @click.stop="
+                confirmDeleteDialog(() => deleteComponent(component), {
+                  itemName: component.title,
+                  itemType: 'component',
+                })
+              "
               class="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition-colors"
             >
               Delete
@@ -168,9 +173,12 @@ import { type SystemComponent, type SystemSecurityPlan } from '@/oscal';
 import { useSystemStore } from '@/stores/system.ts';
 import Panel from '@/volt/Panel.vue';
 import { useDataApi } from '@/composables/axios';
+import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
 
 const toast = useToast();
 const { system } = useSystemStore();
+
+const { confirmDeleteDialog } = useDeleteConfirmationDialog();
 
 const sspId = computed(() => system.securityPlan?.uuid ?? '');
 
@@ -275,12 +283,6 @@ const downloadComponentJSON = (component: SystemComponent) => {
 };
 
 const deleteComponent = async (component: SystemComponent) => {
-  if (
-    !confirm(`Are you sure you want to delete component "${component.title}"?`)
-  ) {
-    return;
-  }
-
   try {
     await executeDeleteComponent(
       `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/system-implementation/components/${component.uuid}`,

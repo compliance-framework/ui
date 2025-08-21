@@ -82,7 +82,12 @@
               Edit
             </button>
             <button
-              @click="deleteObservation(observation.uuid || '')"
+              @click="
+                confirmDeleteDialog(
+                  () => deleteObservation(observation.uuid!),
+                  { itemType: 'observation' },
+                )
+              "
               class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md text-sm"
             >
               Delete
@@ -134,9 +139,12 @@ import ObservationEditForm from '@/components/poam/ObservationEditForm.vue';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi } from '@/composables/axios';
 import { getPoamIdFromRoute } from '../../utils/get-poam-id-from-route';
+import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
 
 const route = useRoute();
 const toast = useToast();
+
+const { confirmDeleteDialog } = useDeleteConfirmationDialog();
 
 const {
   data: observations,
@@ -185,10 +193,6 @@ const handleObservationSaved = (updatedObservation: Observation) => {
 };
 
 async function deleteObservation(uuid: string) {
-  if (!uuid || !confirm('Are you sure you want to delete this observation?')) {
-    return;
-  }
-
   try {
     const id = route.params.id as string;
     await executeDelete(

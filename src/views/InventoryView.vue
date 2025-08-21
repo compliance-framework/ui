@@ -93,7 +93,12 @@
                 JSON
               </button>
               <button
-                @click.stop="deleteInventoryItem(item)"
+                @click.stop="
+                  confirmDeleteDialog(() => deleteInventoryItem(item), {
+                    itemName: item.description || item.uuid,
+                    itemType: 'inventory item',
+                  })
+                "
                 class="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition-colors"
               >
                 Delete
@@ -181,11 +186,13 @@ import BurgerMenu from '@/components/BurgerMenu.vue';
 import { useDataApi } from '@/composables/axios';
 import type { AxiosError } from 'axios';
 import type { ErrorResponse, ErrorBody } from '@/stores/types.ts';
-import { useRouter } from 'vue-router';
+import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
 
 const toast = useToast();
 const { system } = useSystemStore();
 const sspId = computed(() => system.securityPlan?.uuid ?? '');
+
+const { confirmDeleteDialog } = useDeleteConfirmationDialog();
 
 const {
   data: inventoryItems,
@@ -280,17 +287,14 @@ function attachInventoryItem(item: InventoryItem) {
 }
 
 const deleteInventoryItem = async (item: InventoryItem) => {
-  if (
-    !confirm(
-      `Are you sure you want to delete inventory item "${item.description || item.uuid}"?`,
-    )
-  ) {
-    return;
+  if (!sspId.value) {
+    throw new Error(
+      `Cannot delete inventory item "${item.description || item.uuid}" without a valid SSP ID.`,
+    );
   }
-
   try {
     await executeDelete(
-      `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/system-implementation/inventory-items/${item.uuid}`,
+      `/api/oscal/system-security-plans/${sspId.value}/system-implementation/inventory-items/${item.uuid}`,
     );
     if (inventoryItems.value) {
       inventoryItems.value = inventoryItems.value.filter(

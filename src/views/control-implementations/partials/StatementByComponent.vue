@@ -5,8 +5,8 @@ import { useSystemStore } from '@/stores/system.ts';
 import BurgerMenu from '@/components/BurgerMenu.vue';
 import Textarea from '@/volt/Textarea.vue';
 import { useToggle } from '@/composables/useToggle';
-import { useConfirm } from 'primevue/useconfirm';
 import { useDataApi } from '@/composables/axios';
+import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
 
 const { byComponent } = defineProps<{
   byComponent: ByComponent;
@@ -17,7 +17,8 @@ const emit = defineEmits<{
 }>();
 
 const { system } = useSystemStore();
-const confirm = useConfirm();
+
+const { confirmDeleteDialog } = useDeleteConfirmationDialog();
 
 const localComponent = ref<ByComponent>(byComponent);
 watchEffect(() => {
@@ -35,25 +36,8 @@ function save() {
   setEditing(false);
 }
 
-function deleteStatement() {
+async function deleteStatement() {
   emit('delete', localComponent.value);
-}
-
-function confirmDelete() {
-  confirm.require({
-    message: 'Are you sure you want to delete this implementation statement?',
-    header: 'Delete Statement',
-    rejectProps: {
-      label: 'Cancel',
-    },
-    acceptProps: {
-      label: 'Yes',
-      severity: 'danger',
-    },
-    accept: () => {
-      deleteStatement();
-    },
-  });
 }
 
 function cancel() {
@@ -75,7 +59,9 @@ function cancel() {
         {
           label: 'Delete',
           command() {
-            confirmDelete();
+            confirmDeleteDialog(() => deleteStatement(), {
+              itemType: 'implementation statement',
+            });
           },
         },
       ]"
