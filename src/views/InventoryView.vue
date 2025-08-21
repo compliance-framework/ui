@@ -1,151 +1,164 @@
 <template>
-  <PageHeader>
-    Inventory
-    <template #menu>
-      <BurgerMenu
-        :items="[
-          {
-            label: 'Create New',
-            command: () => {
-              showCreateInventoryItemModal = true;
+  <Message v-if="!system.securityPlan" severity="error" variant="outlined">
+    <h4 class="font-bold">System Security Plan not selected</h4>
+    <p>You have not selected a system security plan for editing.</p>
+    <p>
+      Please return to the
+      <RouterLink :to="{ name: 'system-security-plans' }" class="underline"
+        >SSP Page
+      </RouterLink>
+      to select one
+    </p>
+  </Message>
+  <div v-else>
+    <PageHeader>
+      Inventory
+      <template #menu>
+        <BurgerMenu
+          :items="[
+            {
+              label: 'Create New',
+              command: () => {
+                showCreateInventoryItemModal = true;
+              },
             },
-          },
-        ]"
-      />
-    </template>
-  </PageHeader>
-  <PageSubHeader>Manage system inventory</PageSubHeader>
-
-  <div class="mt-4">
-    <div v-if="inventoryItemsLoading" class="text-center py-4">
-      <p class="text-gray-500 dark:text-slate-400">
-        Loading inventory items...
-      </p>
-    </div>
-
-    <div v-else-if="inventoryItems?.length === 0" class="text-center py-4">
-      <p class="text-gray-500 dark:text-slate-400">
-        No inventory items defined.
-      </p>
-    </div>
-
-    <Panel
-      v-for="item in inventoryItems"
-      :key="item.uuid"
-      toggleable
-      collapsed
-      class="my-2"
-    >
-      <template #header>
-        <div class="flex items-center gap-2 py-2">
-          <span class="font-bold">{{
-            firstOfProps(item.props, 'asset-id')?.value
-          }}</span>
-          <Badge
-            :value="firstOfProps(item.props, 'asset-type')?.value"
-            severity="info"
-          />
-        </div>
+          ]"
+        />
       </template>
-      <div
-        class="px-4 py-4 bg-gray-50 dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700"
-      >
-        <div class="py-3 px-4 flex justify-between items-center">
-          <div class="flex items-center space-x-3">
-            <span class="font-medium text-gray-900 dark:text-slate-300">{{
-              item.description || 'Inventory Item'
-            }}</span>
-            <span
-              class="bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 px-2 py-1 rounded text-xs font-mono"
-            >
-              {{ item.uuid.substring(0, 8) }}...
-            </span>
-          </div>
-          <div class="flex gap-2">
-            <button
-              @click.stop="editInventoryItem(item)"
-              class="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 transition-colors"
-            >
-              Edit
-            </button>
-            <button
-              @click.stop="attachInventoryItem(item)"
-              class="px-3 py-1 bg-green-500 text-white text-sm rounded hover:bg-green-600 transition-colors"
-            >
-              Attach
-            </button>
-            <button
-              @click.stop="downloadInventoryItemJSON(item)"
-              class="px-3 py-1 bg-gray-500 text-white text-sm rounded hover:bg-gray-600 transition-colors"
-            >
-              JSON
-            </button>
-            <button
-              @click.stop="deleteInventoryItem(item)"
-              class="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition-colors"
-            >
-              Delete
-            </button>
-          </div>
-        </div>
+    </PageHeader>
+    <PageSubHeader>Manage system inventory</PageSubHeader>
 
-        <p class="text-sm text-gray-600 dark:text-slate-400 mb-3">
-          {{ item.description }}
+    <div class="mt-4">
+      <div v-if="inventoryItemsLoading" class="text-center py-4">
+        <p class="text-gray-500 dark:text-slate-400">
+          Loading inventory items...
         </p>
+      </div>
 
-        <div v-if="item.implementedComponents?.length" class="space-y-2">
-          <span class="text-sm font-medium text-gray-700 dark:text-slate-300"
-            >Implemented Components:</span
-          >
-          <div
-            v-for="impl in item.implementedComponents"
-            :key="impl.componentUuid"
-            class="bg-white dark:bg-slate-900 p-3 rounded border border-gray-200 dark:border-slate-600"
-          >
-            <div class="font-medium text-sm font-mono">
-              {{ impl.componentUuid }}
+      <div v-else-if="inventoryItems?.length === 0" class="text-center py-4">
+        <p class="text-gray-500 dark:text-slate-400">
+          No inventory items defined.
+        </p>
+      </div>
+
+      <Panel
+        v-for="item in inventoryItems"
+        :key="item.uuid"
+        toggleable
+        collapsed
+        class="my-2"
+      >
+        <template #header>
+          <div class="flex items-center gap-2 py-2">
+            <span class="font-bold">{{
+              firstOfProps(item.props, 'asset-id')?.value
+            }}</span>
+            <Badge
+              :value="firstOfProps(item.props, 'asset-type')?.value"
+              severity="info"
+            />
+          </div>
+        </template>
+        <div
+          class="px-4 py-4 bg-gray-50 dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700"
+        >
+          <div class="py-3 px-4 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+              <span class="font-medium text-gray-900 dark:text-slate-300">{{
+                item.description || 'Inventory Item'
+              }}</span>
+              <span
+                class="bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 px-2 py-1 rounded text-xs font-mono"
+              >
+                {{ item.uuid.substring(0, 8) }}...
+              </span>
             </div>
-            <div
-              v-if="impl.remarks"
-              class="text-xs text-gray-600 dark:text-slate-400 mt-1"
+            <div class="flex gap-2">
+              <button
+                @click.stop="editInventoryItem(item)"
+                class="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 transition-colors"
+              >
+                Edit
+              </button>
+              <button
+                @click.stop="attachInventoryItem(item)"
+                class="px-3 py-1 bg-green-500 text-white text-sm rounded hover:bg-green-600 transition-colors"
+              >
+                Attach
+              </button>
+              <button
+                @click.stop="downloadInventoryItemJSON(item)"
+                class="px-3 py-1 bg-gray-500 text-white text-sm rounded hover:bg-gray-600 transition-colors"
+              >
+                JSON
+              </button>
+              <button
+                @click.stop="deleteInventoryItem(item)"
+                class="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+
+          <p class="text-sm text-gray-600 dark:text-slate-400 mb-3">
+            {{ item.description }}
+          </p>
+
+          <div v-if="item.implementedComponents?.length" class="space-y-2">
+            <span class="text-sm font-medium text-gray-700 dark:text-slate-300"
+              >Implemented Components:</span
             >
-              {{ impl.remarks }}
+            <div
+              v-for="impl in item.implementedComponents"
+              :key="impl.componentUuid"
+              class="bg-white dark:bg-slate-900 p-3 rounded border border-gray-200 dark:border-slate-600"
+            >
+              <div class="font-medium text-sm font-mono">
+                {{ impl.componentUuid }}
+              </div>
+              <div
+                v-if="impl.remarks"
+                class="text-xs text-gray-600 dark:text-slate-400 mt-1"
+              >
+                {{ impl.remarks }}
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </Panel>
+      </Panel>
+    </div>
+
+    <!-- Inventory Item Create Modal -->
+    <Dialog v-model:visible="showCreateInventoryItemModal" modal>
+      >
+      <SystemImplementationInventoryItemCreateForm
+        :ssp-id="sspId"
+        @cancel="showCreateInventoryItemModal = false"
+        @created="handleInventoryItemCreated"
+      />
+    </Dialog>
+
+    <!-- Inventory Item Edit Modal -->
+    <Dialog v-model:visible="showEditInventoryItemModal" modal>
+      <SystemImplementationInventoryItemEditForm
+        :ssp-id="sspId"
+        :inventory-item="editingInventoryItem!"
+        @cancel="showEditInventoryItemModal = false"
+        @saved="handleInventoryItemSaved"
+      />
+    </Dialog>
+
+    <!-- Inventory Item Attach Modal -->
+    <Dialog v-model:visible="showInventoryItemAttachModal" modal>
+      <SystemImplementationInventoryItemAttachModal
+        :ssp-id="sspId"
+        :item="editingInventoryItem!"
+        @cancel="showInventoryItemAttachModal = false"
+        @saved="handleInventoryItemAttached"
+      />
+    </Dialog>
   </div>
-
-  <!-- Inventory Item Create Modal -->
-  <Dialog v-model:visible="showCreateInventoryItemModal" modal>
-    >
-    <SystemImplementationInventoryItemCreateForm
-      :ssp-id="sspId"
-      @cancel="showCreateInventoryItemModal = false"
-      @created="handleInventoryItemCreated"
-    />
-  </Dialog>
-
-  <!-- Inventory Item Edit Modal -->
-  <Dialog v-model:visible="showEditInventoryItemModal" modal>
-    <SystemImplementationInventoryItemEditForm
-      :ssp-id="sspId"
-      :inventory-item="editingInventoryItem!"
-      @cancel="showEditInventoryItemModal = false"
-      @saved="handleInventoryItemSaved"
-    />
-  </Dialog>
-
-  <!-- Inventory Item Attach Modal -->
-  <Dialog v-model:visible="showInventoryItemAttachModal" modal>
-    <SystemImplementationInventoryItemAttachModal
-      :ssp-id="sspId"
-      :item="editingInventoryItem!"
-      @cancel="showInventoryItemAttachModal = false"
-      @saved="handleInventoryItemAttached"
-    />
-  </Dialog>
 </template>
 
 <script setup lang="ts">
@@ -155,6 +168,7 @@ import { useSystemStore } from '@/stores/system.ts';
 import decamelizeKeys from 'decamelize-keys';
 import SystemImplementationInventoryItemEditForm from '@/components/system-security-plans/SystemImplementationInventoryItemEditForm.vue';
 import Dialog from '@/volt/Dialog.vue';
+import Message from '@/volt/Message.vue';
 import SystemImplementationInventoryItemAttachModal from '@/components/system-security-plans/SystemImplementationInventoryItemAttachModal.vue';
 import SystemImplementationInventoryItemCreateForm from '@/components/system-security-plans/SystemImplementationInventoryItemCreateForm.vue';
 import { useToast } from 'primevue/usetoast';
@@ -193,16 +207,10 @@ const { execute: executeDelete } = useDataApi<void>(
 );
 
 onMounted(async () => {
-  if (!system.securityPlan?.uuid) {
-    toast.add({
-      severity: 'error',
-      summary: 'No Security Plan set',
-      detail: 'Please select or create a security plan.',
-      life: 5000,
-    });
-    await router.push({ name: 'system-security-plans' });
-  }
   try {
+    if (!system.securityPlan?.uuid) {
+      return;
+    }
     await loadInventoryItems();
   } catch (error) {
     const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
