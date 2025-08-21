@@ -6,7 +6,12 @@
         <label class="inline-block pb-2">ID</label>
         <div class="flex items-center place-items-stretch">
           <FormInput v-model="profile.uuid" class="rounded-r-none border-r-0" />
-          <TertiaryButton type="button" @click="profile.uuid = uuidv4()" class="py-3 rounded-l-none"><BIconArrowRepeat /></TertiaryButton>
+          <TertiaryButton
+            type="button"
+            @click="profile.uuid = uuidv4()"
+            class="py-3 rounded-l-none"
+            ><BIconArrowRepeat
+          /></TertiaryButton>
         </div>
       </div>
       <div class="mb-4">
@@ -18,9 +23,7 @@
         <FormTextarea v-model="profile.metadata.remarks" />
       </div>
       <div class="text-right">
-        <PrimaryButton
-          type="submit"
-        >
+        <PrimaryButton type="submit">
           Create Plan of Action and Milestones
         </PrimaryButton>
       </div>
@@ -32,7 +35,15 @@
 import { ref } from 'vue';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import { useRouter } from 'vue-router';
-import type { ErrorResponse, ErrorBody, Profile, BackMatter, Merge, Import, Modify } from '@/stores/types.ts';
+import type {
+  ErrorResponse,
+  ErrorBody,
+  Profile,
+  BackMatter,
+  Merge,
+  Import,
+  Modify,
+} from '@/stores/types.ts';
 import type { Metadata } from '@/oscal';
 import { v4 as uuidv4 } from 'uuid';
 import { useToast } from 'primevue/usetoast';
@@ -55,7 +66,6 @@ const profile = ref<Profile>({
   import: {} as Import,
   modify: {} as Modify,
   backMatter: { resources: [] } as BackMatter,
-
 } as Profile);
 const { execute: createProfile } = useDataApi<Profile>(
   '/api/oscal/profiles',
@@ -77,16 +87,20 @@ async function submit() {
       detail: 'The profile has been created successfully.',
       life: 3000,
     });
-    router.push({ name: 'profile:view-controls', params: { id: response.data.value?.data.uuid } });
+    router.push({
+      name: 'profile:view-controls',
+      params: { id: response.data.value?.data.uuid },
+    });
   } catch (error) {
     const { response } = error as AxiosError<ErrorResponse<ErrorBody>>;
     toast.add({
       severity: 'error',
       summary: 'Error',
-      detail: response?.data?.errors?.body || 'An error occurred while creating the profile.',
+      detail:
+        response?.data?.errors?.body ||
+        'An error occurred while creating the profile.',
       life: 3000,
     });
   }
 }
-
 </script>

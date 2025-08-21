@@ -30,8 +30,11 @@
           <td class="py-3 px-4 text-right">
             <RouterLink
               class="bg-white hover:bg-zinc-100 border border-ccf-300 px-4 py-1 rounded-md dark:bg-slate-800 dark:hover:bg-slate-700 dark:border-slate-700"
-              :to="{ name: 'profile:view-controls', params: { id: profile.uuid } }"
-            >View
+              :to="{
+                name: 'profile:view-controls',
+                params: { id: profile.uuid },
+              }"
+              >View
             </RouterLink>
           </td>
         </tr>
