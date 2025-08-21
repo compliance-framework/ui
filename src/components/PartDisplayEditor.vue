@@ -11,7 +11,6 @@
 import { type Part } from '@/stores/types.ts';
 
 import { onMounted, ref } from 'vue';
-import PartDisplay from '@/components/PartDisplay.vue';
 
 const props = defineProps<{
   part: Part;
