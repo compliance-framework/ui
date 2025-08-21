@@ -63,7 +63,6 @@ const toast = useToast();
 const { data: dashboards, execute: refreshDashboards } =
   useDataApi<Dashboard[]>('/api/filters');
 
-console.log(dashboards.value);
 const { execute: executeDelete } = useDataApi<void>(
   null,
   {
