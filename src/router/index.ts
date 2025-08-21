@@ -186,6 +186,14 @@ const authenticatedRoutes = [
           requiresAuth: true,
         },
       },
+      {
+        path: 'json',
+        name: 'profile:view-json',
+        component: () => import('../views/profile/ProfileJSONView.vue'),
+        meta: {
+          requiresAuth: true,
+        },
+      },
     ],
   },
   {
