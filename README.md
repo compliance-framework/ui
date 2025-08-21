@@ -3,6 +3,25 @@
 > [!WARNING]
 > This repository is still very much in development, and not ready for use yet.
 
+## Deployment
+
+For Kubernetes deployments, please use the centralized deployment repository:
+**[ccf-deployments](../ccf-deployments/)**
+
+The centralized deployment provides:
+- Production-ready Helm charts
+- ArgoCD GitOps configurations
+- Multi-environment support (dev, staging, prod)
+- Traefik ingress with HTTPS
+- Runtime configuration via ConfigMaps
+- Complete deployment automation
+
+Quick start:
+```bash
+cd ../ccf-deployments
+./scripts/deploy-all-with-gitops.sh
+```
+
 ## Project Setup
 
 Install and use NVM:
