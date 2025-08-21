@@ -55,19 +55,17 @@ jobs:
         run: |
           docker run --rm ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:build npm run format:check
 
-      - name: Run ESLint using the `build` image
-        run: |
-          docker run --rm \
-            -v ${{ github.workspace }}:/app \
-            -w /app \
-            ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:build \
-            npm run lint:report
-
-      - name: Count ESLint errors
+      - name: Run ESLint and count errors
         id: count-errors
         run: |
-          ERRORS=$(jq '[.[] | .messages[] | select(.severity == 2)] | length' eslint-report.json)
-          WARNINGS=$(jq '[.[] | .messages[] | select(.severity == 1)] | length' eslint-report.json)
+          OUTPUT=$(docker run --rm \
+            -w /app \
+            ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:build \
+            sh -c "npm run lint -- --format json") || true
+
+          ERRORS=$(echo "$OUTPUT" | jq '[.[] | .messages[] | select(.severity == 2)] | length')
+          WARNINGS=$(echo "$OUTPUT" | jq '[.[] | .messages[] | select(.severity == 1)] | length')
+
           echo "errors=$ERRORS" >> $GITHUB_OUTPUT
           echo "warnings=$WARNINGS" >> $GITHUB_OUTPUT
 
