@@ -80,7 +80,7 @@ const useGuestInstance = () => {
   let cachedURL = '';
 
   const instance: AxiosInstance = axios.create({
-    withCredentials: true
+    withCredentials: true,
   });
 
   instance.interceptors.request.use(

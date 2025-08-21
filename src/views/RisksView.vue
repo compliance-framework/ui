@@ -1,28 +1,43 @@
 <template>
-  <PageHeader>Risk Register</PageHeader>
-  <div class="p-6">
-    <div class="flex justify-between items-center mb-6">
-      <button
-        @click="showCreateModal = true"
-        class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md"
-      >
-        Add Risk
-      </button>
-    </div>
+  <div v-if="loading" class="text-center py-8">
+    <p class="text-gray-500 dark:text-slate-400">Loading risks...</p>
+  </div>
 
-    <div v-if="loading" class="text-center py-8">
-      <p class="text-gray-500 dark:text-slate-400">Loading risks...</p>
-    </div>
+  <Message v-else-if="!poamDefined" severity="error" variant="outlined">
+    <h4 class="font-bold">Plan Of Action and Milestones not selected</h4>
+    <p>
+      No Plan Of Action and Milestones (POA&M) has been selected for editing.
+    </p>
+    <p>
+      Please return to the
+      <RouterLink
+        :to="{ name: 'plan-of-action-and-milestones' }"
+        class="underline"
+        >POA&M
+      </RouterLink>
+      to select one
+    </p>
+  </Message>
 
-    <div v-else-if="error" class="text-center py-8">
-      <p class="text-red-500">Error loading risks: {{ error }}</p>
-    </div>
+  <div v-else-if="error" class="text-center py-8">
+    <p class="text-red-500">Error loading risks: {{ error }}</p>
+  </div>
 
-    <div v-else-if="!risks?.length" class="text-center py-8">
-      <p class="text-gray-500 dark:text-slate-400">No risks found.</p>
-    </div>
+  <div v-else-if="!risks?.length" class="text-center py-8">
+    <p class="text-gray-500 dark:text-slate-400">No risks found.</p>
+  </div>
 
-    <div v-else class="space-y-4">
+  <div v-else class="space-y-4">
+    <PageHeader>Risk Register</PageHeader>
+    <div class="p-6">
+      <div class="flex justify-between items-center mb-6">
+        <button
+          @click="showCreateModal = true"
+          class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md"
+        >
+          Add Risk
+        </button>
+      </div>
       <div
         v-for="risk in risks"
         :key="risk.uuid"
@@ -137,10 +152,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { type Risk } from '@/stores/plan-of-action-and-milestones.ts';
 import Dialog from '@/volt/Dialog.vue';
+import Message from '@/volt/Message.vue';
 import RiskCreateForm from '@/components/poam/RiskCreateForm.vue';
 import RiskEditForm from '@/components/poam/RiskEditForm.vue';
 import { useToast } from 'primevue/usetoast';
@@ -152,6 +168,8 @@ const route = useRoute();
 const toast = useToast();
 const { system } = useSystemStore();
 
+const poamDefined = ref<boolean>(!!system.poam);
+
 const poamUuid = computed(() => system.poam?.uuid ?? '');
 
 const {
@@ -161,7 +179,16 @@ const {
   execute: loadRisks,
 } = useDataApi<Risk[]>(
   `/api/oscal/plan-of-action-and-milestones/${system.poam?.uuid}/risks`,
+  {},
+  { immediate: false },
 );
+
+onMounted(() => {
+  if (system.poam) {
+    loadRisks();
+  }
+});
+
 const { execute: executeDeleteRisk } = useDataApi<void>(
   null,
   { method: 'DELETE' },
@@ -214,7 +241,6 @@ async function deleteRisk(uuid: string) {
       detail: 'Risk deleted successfully',
       life: 3000,
     });
-
     await loadRisks(); // Reload the list
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : 'Unknown error';
