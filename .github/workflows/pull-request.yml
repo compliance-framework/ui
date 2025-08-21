@@ -61,7 +61,7 @@ jobs:
           OUTPUT=$(docker run --rm \
             -w /app \
             ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:build \
-            sh -c "npm run lint -- --format json") || true
+            sh -c  "npx eslint 'src/**/*.{js,ts,vue}' -f json") || true
 
           ERRORS=$(echo "$OUTPUT" | jq '[.[] | .messages[] | select(.severity == 2)] | length')
           WARNINGS=$(echo "$OUTPUT" | jq '[.[] | .messages[] | select(.severity == 1)] | length')
