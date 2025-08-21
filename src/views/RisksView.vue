@@ -23,12 +23,11 @@
     <p class="text-red-500">Error loading risks: {{ error }}</p>
   </div>
 
-  <div v-else-if="!risks?.length" class="text-center py-8">
-    <p class="text-gray-500 dark:text-slate-400">No risks found.</p>
-  </div>
-
   <div v-else class="space-y-4">
     <PageHeader>Risk Register</PageHeader>
+    <div v-if="!risks?.length" class="text-center py-8">
+      <p class="text-gray-500 dark:text-slate-400">No risks found.</p>
+    </div>
     <div class="p-6">
       <div class="flex justify-between items-center mb-6">
         <button
@@ -119,7 +118,8 @@
               Edit
             </button>
             <button
-              @click="deleteRisk(risk.uuid || '')"
+              v-if="risk.uuid"
+              @click="confirmDelete(risk.uuid)"
               class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md text-sm"
             >
               Delete
@@ -163,13 +163,14 @@ import { useToast } from 'primevue/usetoast';
 import PageHeader from '@/components/PageHeader.vue';
 import { useSystemStore } from '@/stores/system.ts';
 import { useDataApi } from '@/composables/axios';
+import { useConfirm } from 'primevue/useconfirm';
 
-const route = useRoute();
 const toast = useToast();
 const { system } = useSystemStore();
 
-const poamDefined = ref<boolean>(!!system.poam);
+const confirm = useConfirm();
 
+const poamDefined = ref<boolean>(!!system.poam);
 const poamUuid = computed(() => system.poam?.uuid ?? '');
 
 const {
@@ -224,34 +225,46 @@ const handleRiskSaved = (updatedRisk: Risk) => {
   editingRisk.value = null;
 };
 
-async function deleteRisk(uuid: string) {
-  if (!uuid || !confirm('Are you sure you want to delete this risk?')) {
-    return;
-  }
-
-  try {
-    const id = route.params.id as string;
-    await executeDeleteRisk(
-      `/api/oscal/plan-of-action-and-milestones/${id}/risks/${uuid}`,
-    );
-
-    toast.add({
-      severity: 'success',
-      summary: 'Risk Deleted',
-      detail: 'Risk deleted successfully',
-      life: 3000,
-    });
-    await loadRisks(); // Reload the list
-  } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-    toast.add({
-      severity: 'error',
-      summary: 'Delete Failed',
-      detail: `Failed to delete risk: ${errorMessage}`,
-      life: 3000,
-    });
-  }
-}
+const confirmDelete = async (uuid: string) => {
+  confirm.require({
+    message: 'Are you sure you want to delete this risk?',
+    header: 'Confirm Deletion',
+    rejectProps: {
+      label: 'Cancel',
+      severity: 'secondary',
+      outlined: true,
+    },
+    acceptProps: {
+      label: 'Confirm',
+    },
+    accept: async () => {
+      try {
+        if (!poamUuid) {
+          throw new Error('No POA&M ID found.');
+        }
+        await executeDeleteRisk(
+          `/api/oscal/plan-of-action-and-milestones/${poamUuid.value}/risks/${uuid}`,
+        );
+        toast.add({
+          severity: 'success',
+          summary: 'Risk Deleted',
+          detail: 'Risk deleted successfully',
+          life: 3000,
+        });
+        await loadRisks(); // Reload the list
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : 'Unknown error';
+        toast.add({
+          severity: 'error',
+          summary: 'Delete Failed',
+          detail: `Failed to delete risk: ${errorMessage}`,
+          life: 3000,
+        });
+      }
+    },
+  });
+};
 
 function formatDate(dateString?: string): string {
   if (!dateString) return 'N/A';
