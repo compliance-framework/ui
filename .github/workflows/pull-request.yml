@@ -57,8 +57,11 @@ jobs:
 
       - name: Run ESLint using the `build` image
         run: |
-          docker run --rm ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:build npm run lint:report
-        continue-on-error: true
+          docker run --rm \
+            -v ${{ github.workspace }}:/app \
+            -w /app \
+            ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:build \
+            npm run lint:report
 
       - name: Count ESLint errors
         id: count-errors
