@@ -59,12 +59,12 @@ jobs:
           cache-to: type=local,dest=/tmp/.buildx-cache,mode=max
           push: false
 
-      # - name: Save `build` image to cache
-      #   if: inputs.cache_key
-      #   run: |
-      #     mkdir -p /tmp/.buildx-cache
-      #     docker images
-      #     docker save ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:build > /tmp/.buildx-cache/image.tar
+      - name: Save `build` image to cache
+        if: inputs.cache_key
+        run: |
+          mkdir -p /tmp/.buildx-cache
+          docker images
+          docker save ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:build > /tmp/.buildx-cache/image.tar
 
       - name: Save Build Cache
         uses: actions/cache@v3
