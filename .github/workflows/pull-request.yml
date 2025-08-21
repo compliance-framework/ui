@@ -74,9 +74,15 @@ jobs:
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           message: |
-            ESLint results:
-            Errors: ${{ steps.count-errors.outputs.errors }}
-            Warnings: ${{ steps.count-errors.outputs.warnings }}
+            ## 🧹 ESLint Report
+
+            | Status | Count |
+            |--------|-------|
+            | ❌ Errors   | **${{ steps.count-errors.outputs.errors }}** |
+            | ⚠️ Warnings | **${{ steps.count-errors.outputs.warnings }}** |
+
+            ---
+            ✅ *Linting completed automatically by CI.*
 
       - name: Run tests using the `build` image
         run: |
