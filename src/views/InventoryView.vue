@@ -185,7 +185,6 @@ import { useRouter } from 'vue-router';
 
 const toast = useToast();
 const { system } = useSystemStore();
-const router = useRouter();
 const sspId = computed(() => system.securityPlan?.uuid ?? '');
 
 const {
