@@ -51,9 +51,38 @@ jobs:
           mkdir -p /tmp/.buildx-cache
           docker load < /tmp/.buildx-cache/image.tar
 
-      - name: Run formatting heck using the `build` image
+      - name: Run formatting check using the `build` image
         run: |
-          docker run --rm ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:build npm run format-check
+          docker run --rm ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:build npm run format:check
+
+      - name: Run ESLint and count errors
+        id: count-errors
+        run: |
+          OUTPUT=$(docker run --rm \
+            -w /app \
+            ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:build \
+            sh -c "npx eslint 'src/**/*.{js,ts,vue}' -f json") || true
+
+          ERRORS=$(echo "$OUTPUT" | jq '[.[] | .messages[] | select(.severity == 2)] | length')
+          WARNINGS=$(echo "$OUTPUT" | jq '[.[] | .messages[] | select(.severity == 1)] | length')
+
+          echo "errors=$ERRORS" >> $GITHUB_OUTPUT
+          echo "warnings=$WARNINGS" >> $GITHUB_OUTPUT
+
+      - name: Comment on PR
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          message: |
+            ## 🧹 ESLint Report
+
+            | Status | Count |
+            |--------|-------|
+            | ❌ Errors   | **${{ steps.count-errors.outputs.errors }}** |
+            | ⚠️ Warnings | **${{ steps.count-errors.outputs.warnings }}** |
+
+            ---
+            ✅ *Linting completed automatically by CI.*
 
       - name: Run tests using the `build` image
         run: |

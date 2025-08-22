@@ -11,14 +11,15 @@
     "test:e2e": "nightwatch tests/e2e/*",
     "build-only": "vite build",
     "type-check": "vue-tsc --build",
-    "lint": "eslint . --fix",
-    "format-check": "prettier --check src/",
-    "format": "prettier --write src/",
-    "format-staged": "lint-staged",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format:fix": "prettier --write src/",
+    "format:staged": "lint-staged",
+    "format:check": "prettier --check src/",
     "prepare": "husky"
   },
   "lint-staged": {
-    "*.{js,ts,tsx,vue,json,css,md}": "npm run format"
+    "*.{js,ts,tsx,vue,json,css,md}": "npm run format:fix"
   },
   "engines": {
     "npm": "^10.1",
