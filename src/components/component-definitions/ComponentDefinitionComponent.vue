@@ -133,10 +133,6 @@ import {
 } from '@/stores/component-definitions.ts';
 import { useToast } from 'primevue/usetoast';
 import { useConfigStore } from '@/stores/config.ts';
-// import type {
-//   ByComponent,
-//   SystemComponent,
-// } from '@/stores/system-security-plans';
 
 const props = defineProps<{
   component: DefinedComponent;
