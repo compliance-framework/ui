@@ -1,5 +1,5 @@
 <template>
-  <Dialog v-model:visible="props.isOpen" @hide="$emit('close')" modal>
+  <Dialog v-model:visible="isOpen" @hide="$emit('close')" modal>
     <div class="px-12 py-8">
       <ImportDefinitionEditForm
         :component-definition-id="componentDefinitionId"
@@ -28,7 +28,7 @@ import PrimaryButton from '@/components/PrimaryButton.vue';
 import ImportDefinitionEditForm from './ImportDefinitionEditForm.vue';
 import type { ImportComponentDefinition } from '@/stores/component-definitions.ts';
 
-const props = defineProps<{
+defineProps<{
   isOpen: boolean;
   componentDefinitionId: string;
   importDefinition: ImportComponentDefinition;

@@ -13,13 +13,13 @@ export function useDeleteConfirmationDialog() {
     deleteFunction: () => Promise<void>,
     opts: DeleteConfirmationOptions = {},
   ) => {
-    let deleteConfirmMessage = 'Are you sure want to delete this resource?';
+    let deleteConfirmMessage = 'Are you sure you want to delete this resource?';
     if (opts.itemName && opts.itemType) {
-      deleteConfirmMessage = `Are you sure want to delete ${opts.itemType} "${opts.itemName}"?`;
+      deleteConfirmMessage = `Are you sure you want to delete ${opts.itemType} "${opts.itemName}"?`;
     } else if (opts.itemType) {
-      deleteConfirmMessage = `Are you sure want to delete this ${opts.itemType}?`;
+      deleteConfirmMessage = `Are you sure you want to delete this ${opts.itemType}?`;
     } else if (opts.itemName) {
-      deleteConfirmMessage = `Are you sure want to delete resource "${opts.itemName}"?`;
+      deleteConfirmMessage = `Are you sure you want to delete resource "${opts.itemName}"?`;
     }
 
     deleteConfirmMessage += ' This action cannot be undone.';
@@ -42,7 +42,7 @@ export function useDeleteConfirmationDialog() {
         toast.add({
           severity: 'info',
           summary: 'Cancelled',
-          detail: 'Inventory item deletion cancelled',
+          detail: 'Resource deletion cancelled',
           life: 3000,
         });
       },
