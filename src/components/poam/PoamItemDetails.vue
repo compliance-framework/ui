@@ -351,7 +351,7 @@ interface Props {
 
 const props = defineProps<Props>();
 
-const emit = defineEmits<{
+defineEmits<{
   detach: [{ type: 'findings' | 'observations' | 'risks'; uuid: string }];
 }>();
 

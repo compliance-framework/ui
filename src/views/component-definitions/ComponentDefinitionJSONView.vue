@@ -99,11 +99,14 @@ async function downloadJSON() {
       detail: 'Component definition JSON downloaded successfully',
       life: 3000,
     });
-  } catch (err) {
+  } catch (error) {
     toast.add({
       severity: 'error',
       summary: 'Download Failed',
-      detail: 'Failed to download component definition JSON',
+      detail:
+        error instanceof Error
+          ? error.message
+          : 'Failed to download component definition JSON',
       life: 3000,
     });
   }
@@ -121,11 +124,14 @@ async function copyToClipboard() {
       detail: 'Component definition JSON copied to clipboard',
       life: 3000,
     });
-  } catch (err) {
+  } catch (error) {
     toast.add({
       severity: 'error',
       summary: 'Copy Failed',
-      detail: 'Failed to copy JSON to clipboard',
+      detail:
+        error instanceof Error
+          ? error.message
+          : 'Failed to copy JSON to clipboard',
       life: 3000,
     });
   }

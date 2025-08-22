@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { useSidebarStore } from '@/stores/sidebar';
 import ChevronRightIcon from '@primevue/icons/chevronright';
 import ChevronDownIcon from '@primevue/icons/chevrondown';
 import { useToggle } from '@/composables/useToggle';

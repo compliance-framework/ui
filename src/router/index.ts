@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import AppLayout from '@/views/layouts/App.vue';
-import GuestLayout from '@/views/layouts/Guest.vue';
+import GuestLayout from '@/views/layouts/GuestLayout.vue';
 import { useUserStore } from '@/stores/auth';
 
 const authenticatedRoutes = [
@@ -64,22 +64,22 @@ const authenticatedRoutes = [
       {
         path: '',
         name: 'system:overview',
-        component: () => import('../views/system/Overview.vue'),
+        component: () => import('../views/system/OverviewView.vue'),
       },
       {
         path: 'users',
         name: 'system:users',
-        component: () => import('../views/system/Users.vue'),
+        component: () => import('../views/system/UsersView.vue'),
       },
       {
         path: 'components',
         name: 'system:components',
-        component: () => import('../views/system/Components.vue'),
+        component: () => import('../views/system/ComponentsView.vue'),
       },
       {
         path: 'authorizations',
         name: 'system:authorizations',
-        component: () => import('../views/system/Authorizations.vue'),
+        component: () => import('../views/system/AuthorizationsView.vue'),
       },
     ],
     meta: {

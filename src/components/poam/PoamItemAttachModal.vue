@@ -373,6 +373,7 @@ function getAvailableCount(type: string): number {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function getFilteredItems(): any[] {
   switch (activeTab.value) {
     case 'findings':

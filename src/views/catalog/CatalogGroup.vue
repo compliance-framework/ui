@@ -46,8 +46,6 @@
         />
       </div>
       <div class="mt-4">
-        <!--        <TertiaryButton v-if="controls.length == 0" @click="showGroupForm = true">Add Group</TertiaryButton>-->
-        <!--        <TertiaryButton v-if="groups.length == 0" @click="showControlForm = true" class="ml-2">Add Control</TertiaryButton>-->
         <GroupCreateModal
           @created="groupCreated"
           :catalog="catalog"
@@ -68,7 +66,6 @@
 import { ref } from 'vue';
 import CollapsableGroup from '@/components/CollapsableGroup.vue';
 import { type Catalog, type Group, type Control } from '@/stores/catalogs.ts';
-import TertiaryButton from '@/components/TertiaryButton.vue';
 import GroupCreateModal from '@/components/catalogs/GroupCreateModal.vue';
 import ControlCreateModal from '@/components/catalogs/ControlCreateModal.vue';
 import PartDisplayEditor from '@/components/PartDisplayEditor.vue';

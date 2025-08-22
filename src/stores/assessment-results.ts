@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import type { Metadata, Property, Link, Actor, Origin } from '@/stores/types';
 
 export interface ImportAp {

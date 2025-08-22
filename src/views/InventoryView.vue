@@ -231,18 +231,12 @@ onMounted(async () => {
   }
 });
 
-const menu = ref();
-
 const editingInventoryItem = ref<InventoryItem | null>(null);
 const showCreateInventoryItemModal = ref(false);
 const showEditInventoryItemModal = ref(false);
 const showInventoryItemAttachModal = ref(false);
 
 const { firstOfProps } = useProps();
-
-function toggleMenu(event: Event) {
-  menu.value.toggle(event);
-}
 
 // Inventory Item management
 const editInventoryItem = (item: InventoryItem) => {

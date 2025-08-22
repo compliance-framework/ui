@@ -666,7 +666,9 @@ export const useAssessmentPlanStore = defineStore('assessment-plans', () => {
 
   async function createAssessmentAsset(
     planId: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     asset: any,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ): Promise<DataResponse<any>> {
     const config = await configStore.getConfig();
     console.log('[DEBUG_LOG] createAssessmentAsset called with:', {
@@ -696,6 +698,7 @@ export const useAssessmentPlanStore = defineStore('assessment-plans', () => {
 
     const result = camelcaseKeys(await response.json(), {
       deep: true,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     }) as DataResponse<any>;
     console.log('[DEBUG_LOG] Asset creation result:', result);
     return result;

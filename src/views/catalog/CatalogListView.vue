@@ -87,12 +87,14 @@ async function downloadCatalogJSON(id: string, title: string) {
       detail: `Catalog "${title}" JSON downloaded successfully`,
       life: 3000,
     });
-  } catch {
+  } catch (error) {
     toast.add({
       severity: 'error',
       summary: 'Download Failed',
       detail:
-        'Failed to download catalog JSON. Full catalog export may not be available.',
+        error instanceof Error
+          ? error.message
+          : 'Failed to download catalog JSON. Full catalog export may not be available.',
       life: 3000,
     });
   }

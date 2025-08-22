@@ -40,7 +40,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import PageHeader from '@/components/PageHeader.vue';
 import PageCard from '@/components/PageCard.vue';
@@ -63,7 +63,6 @@ const route = useRoute();
 const subjectId = route.params.id as string;
 
 const form = ref<Subject>({} as Subject);
-const showDeleteModal = ref<boolean>(false);
 
 onMounted(async () => {
   apiStore.getSubjectById(subjectId).then((data: DataResponse<Subject>) => {
@@ -78,7 +77,7 @@ const updateSubject = async () => {
       form.value.title as string,
       form.value.remarks as string,
     )
-    .then((subject: DataResponse<Subject>) => {
+    .then(() => {
       window.location.reload();
     });
 };
@@ -97,7 +96,8 @@ async function deleteSubject() {
     toast.add({
       severity: 'error',
       summary: 'Error',
-      detail: 'Failed to delete subject.',
+      detail:
+        error instanceof Error ? error.message : 'Failed to delete subject.',
       life: 5000,
     });
   }

@@ -199,7 +199,10 @@ async function removeSubject(index: number) {
         toast.add({
           severity: 'error',
           summary: 'Error removing subject',
-          detail: 'Failed to remove subject. Please try again.',
+          detail:
+            error instanceof Error
+              ? error.message
+              : 'Failed to remove subject. Please try again.',
           life: 3000,
         });
       }

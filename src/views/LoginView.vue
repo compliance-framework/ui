@@ -19,6 +19,7 @@
         <span
           class="text-sm text-red-500 dark:text-red-500"
           v-for="error in errors.email"
+          :key="error"
           >{{ error }}</span
         >
       </div>
@@ -29,9 +30,12 @@
           >Password</label
         >
         <FormInput v-model="password" placeholder="Password" type="password" />
-        <span class="dark:text-red-500" v-for="error in errors.password">{{
-          error
-        }}</span>
+        <span
+          class="dark:text-red-500"
+          v-for="error in errors.password"
+          :key="error"
+          >{{ error }}</span
+        >
       </div>
       <div>
         <PrimaryButton type="submit" class="w-full"> Login </PrimaryButton>

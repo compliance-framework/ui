@@ -317,30 +317,4 @@ const deleteComponent = async (component: SystemComponent) => {
     });
   }
 };
-const formatComponentType = (type: string): string => {
-  // Format common OSCAL component types
-  const typeMap: Record<string, string> = {
-    software: 'Software',
-    hardware: 'Hardware',
-    service: 'Service',
-    policy: 'Policy',
-    physical: 'Physical',
-    'org-defined': 'Organization Defined',
-    process: 'Process',
-    procedure: 'Procedure',
-    plan: 'Plan',
-    guidance: 'Guidance',
-    standard: 'Standard',
-    validation: 'Validation',
-    unspecified: 'Unspecified',
-  };
-
-  return (
-    typeMap[type.toLowerCase()] ||
-    type
-      .split('-')
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ')
-  );
-};
 </script>

@@ -232,12 +232,12 @@ function editAsset(asset: AssessmentAsset) {
   showEditModal.value = true;
 }
 
-async function onAssetCreated(asset: AssessmentAsset) {
+async function onAssetCreated() {
   // Refresh the assets list from the backend
   await loadAssets();
 }
 
-async function onAssetUpdated(asset: AssessmentAsset) {
+async function onAssetUpdated() {
   // Refresh the assets list from the backend
   await loadAssets();
 }
