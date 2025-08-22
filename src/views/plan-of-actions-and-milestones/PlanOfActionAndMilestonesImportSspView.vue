@@ -105,14 +105,14 @@ import type { ImportSsp } from '@/stores/plan-of-action-and-milestones.ts';
 import ImportSspForm from '@/components/poam/ImportSspForm.vue';
 import Dialog from '@/volt/Dialog.vue';
 import { useDataApi } from '@/composables/axios';
-import { getPoamIdFromRoute } from '../../utils/get-poam-id-from-route';
+import { getIdFromRoute } from '../../utils/get-poam-id-from-route';
 
 const route = useRoute();
 
 const showCreateModal = ref(false);
 const showEditModal = ref(false);
 
-const poamId = computed(() => getPoamIdFromRoute(route));
+const poamId = computed(() => getIdFromRoute(route));
 
 const {
   data: importSsp,

@@ -164,7 +164,7 @@ import { useToast } from 'primevue/usetoast';
 import { useDataApi } from '@/composables/axios';
 import type { AxiosError } from 'axios';
 import type { ErrorResponse, ErrorBody } from '@/stores/types';
-import { getPoamIdFromRoute } from '../../utils/get-poam-id-from-route';
+import { getIdFromRoute } from '../../utils/get-poam-id-from-route';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
 
 const route = useRoute();
@@ -191,7 +191,7 @@ const showCreateModal = ref(false);
 const showEditModal = ref(false);
 const editingResource = ref<Resource | null>(null);
 
-const poamId = computed(() => getPoamIdFromRoute(route));
+const poamId = computed(() => getIdFromRoute(route));
 
 const isOpen = computed({
   get: () => showCreateModal.value || showEditModal.value,

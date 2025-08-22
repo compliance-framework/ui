@@ -181,14 +181,14 @@
     <!-- Asset Create Modal -->
     <AssetCreateModal
       v-model="showCreateModal"
-      :assessment-plan-id="route.params.id as string"
+      :assessment-plan-id="assessmentPlanId"
       @created="onAssetCreated"
     />
 
     <!-- Asset Edit Modal -->
     <AssetEditModal
       v-model="showEditModal"
-      :assessment-plan-id="route.params.id as string"
+      :assessment-plan-id="assessmentPlanId"
       :asset="editingAsset"
       @updated="onAssetUpdated"
     />
@@ -204,10 +204,15 @@ import AssetCreateModal from '@/components/assessment-plans/AssetCreateModal.vue
 import AssetEditModal from '@/components/assessment-plans/AssetEditModal.vue';
 import { useConfirm } from 'primevue/useconfirm';
 import { useDataApi } from '@/composables/axios';
+import { getIdFromRoute } from '@/utils/get-poam-id-from-route';
+import type { AxiosError } from 'axios';
+import type { ErrorBody, ErrorResponse } from '@/stores/types';
 
 const route = useRoute();
 const toast = useToast();
 const confirm = useConfirm();
+
+const assessmentPlanId = ref(getIdFromRoute(route));
 
 const showCreateModal = ref(false);
 const showEditModal = ref(false);
@@ -263,10 +268,14 @@ async function removeAsset(index: number) {
         //  life: 3000
         // })
       } catch (error) {
+        const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
         toast.add({
           severity: 'error',
           summary: 'Error removing asset',
-          detail: 'Failed to remove asset. Please try again.',
+          detail:
+            errorResponse.response?.data.errors.body ||
+            (error as Error).message ||
+            'An unknown error occurred.',
           life: 3000,
         });
       }

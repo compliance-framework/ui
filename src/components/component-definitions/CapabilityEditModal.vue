@@ -35,7 +35,7 @@ const emit = defineEmits({
   },
 });
 
-const props = defineProps<{
+defineProps<{
   componentDefinitionId: string;
   capability: Capability;
 }>();

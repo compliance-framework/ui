@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import PrimaryButton from '@/components/PrimaryButton.vue';
-import FormInput from '@/components/forms/FormInput.vue';
 import { type DiagramGrouping } from '@/stores/system-security-plans.ts';
 import FormTextarea from '@/components/forms/FormTextarea.vue';
 

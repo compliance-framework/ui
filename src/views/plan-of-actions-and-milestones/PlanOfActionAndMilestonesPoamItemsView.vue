@@ -174,7 +174,7 @@ import PoamItemEditForm from '@/components/poam/PoamItemEditForm.vue';
 import PoamItemAttachModal from '@/components/poam/PoamItemAttachModal.vue';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi } from '@/composables/axios';
-import { getPoamIdFromRoute } from '../../utils/get-poam-id-from-route';
+import { getIdFromRoute } from '../../utils/get-poam-id-from-route';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
 
 const route = useRoute();
@@ -205,7 +205,7 @@ const showAttachModal = ref(false);
 const editingItem = ref<PoamItem | null>(null);
 const attachingItem = ref<PoamItem | null>(null);
 
-const poamId = computed(() => getPoamIdFromRoute(route));
+const poamId = computed(() => getIdFromRoute(route));
 
 // Item management
 const editItem = (item: PoamItem) => {

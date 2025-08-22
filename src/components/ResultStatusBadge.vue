@@ -18,6 +18,6 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 defineProps(['green', 'gray', 'red']);
 </script>

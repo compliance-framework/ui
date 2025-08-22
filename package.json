@@ -11,7 +11,7 @@
     "test:e2e": "nightwatch tests/e2e/*",
     "build-only": "vite build",
     "type-check": "vue-tsc --build",
-    "lint": "eslint . --fix",
+    "lint": "eslint src/ --fix",
     "format-check": "prettier --check src/",
     "format": "prettier --write src/",
     "format-staged": "lint-staged",

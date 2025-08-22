@@ -35,7 +35,7 @@
     >
       <div class="flex items-start justify-between gap-4">
         <div class="grow">
-          <div v-if="component.description" class="mb-4">
+          <div class="mb-4">
             <h4 class="font-medium text-gray-900 dark:text-slate-300 mb-2">
               Description
             </h4>
@@ -44,7 +44,7 @@
             </p>
           </div>
 
-          <div v-if="component.purpose" class="mb-4">
+          <div class="mb-4">
             <h4 class="font-medium text-gray-900 dark:text-slate-300 mb-2">
               Purpose
             </h4>
@@ -108,10 +108,10 @@
               </tr>
               <tr
                 class="border-t dark:border-slate-700"
-                v-if="component.protocols?.length > 0"
+                v-if="component.protocols && component.protocols?.length > 0"
               >
                 <td class="px-2 py-1">Protocols</td>
-                <td class="px-2 py-1">{{ component.protocols.length }}</td>
+                <td class="px-2 py-1">{{ component.protocols?.length }}</td>
               </tr>
             </tbody>
           </table>
@@ -125,20 +125,29 @@
 import { onMounted, ref } from 'vue';
 import CollapsableGroup from '@/components/CollapsableGroup.vue';
 import TertiaryButton from '@/components/TertiaryButton.vue';
-import { useComponentDefinitionStore } from '@/stores/component-definitions.ts';
+import {
+  useComponentDefinitionStore,
+  type ControlImplementation,
+  type DefinedComponent,
+  type ResponsibleRole,
+} from '@/stores/component-definitions.ts';
 import { useToast } from 'primevue/usetoast';
 import { useConfigStore } from '@/stores/config.ts';
+// import type {
+//   ByComponent,
+//   SystemComponent,
+// } from '@/stores/system-security-plans';
 
 const props = defineProps<{
-  component: any;
+  component: DefinedComponent;
   componentDefinitionId: string;
 }>();
 
 const componentDefinitionStore = useComponentDefinitionStore();
 const configStore = useConfigStore();
 const toast = useToast();
-const controlImplementations = ref<any[]>([]);
-const responsibleRoles = ref<any[]>([]);
+const controlImplementations = ref<ControlImplementation[]>([]);
+const responsibleRoles = ref<ResponsibleRole[]>([]);
 
 onMounted(async () => {
   try {
@@ -152,18 +161,21 @@ onMounted(async () => {
     // Load responsible roles (would be in the component data)
     responsibleRoles.value = props.component.responsibleRoles || [];
   } catch (error) {
+    console.warn('Error: ', error);
     toast.add({
       severity: 'error',
       summary: 'Error Loading Component Details',
       detail:
-        'Failed to load control implementations and roles for this component',
+        error instanceof Error
+          ? error.message
+          : 'Unexpected error loading control implementations and roles for this component.',
       life: 3000,
     });
   }
 });
 
 const emit = defineEmits<{
-  edit: [component: any];
+  edit: [component: DefinedComponent];
 }>();
 
 function editComponent() {
@@ -192,7 +204,8 @@ async function downloadComponentJSON() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `${props.component.title?.replace(/[^a-zA-Z0-9]/g, '_') || 'component'}-component.json`;
+    link.download = `${props.component.title.replace(/[^a-zA-Z0-9]/g, '_') || 'component'}-component.json`;
+
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -208,7 +221,10 @@ async function downloadComponentJSON() {
     toast.add({
       severity: 'error',
       summary: 'Download Failed',
-      detail: 'Failed to download component JSON',
+      detail:
+        error instanceof Error
+          ? error.message
+          : 'Unexpected error downloading component JSON.',
       life: 3000,
     });
   }
