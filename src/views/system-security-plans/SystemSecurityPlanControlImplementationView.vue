@@ -150,7 +150,12 @@
                   Edit
                 </button>
                 <button
-                  @click="deleteRequirement(requirement)"
+                  @click="
+                    confirmDeleteDialog(() => deleteRequirement(requirement), {
+                      itemName: requirement.controlId,
+                      itemType: 'requirement',
+                    })
+                  "
                   class="text-red-600 hover:text-red-800 dark:text-red-400 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Delete
@@ -393,9 +398,12 @@ import StatementByComponent from '@/views/system-security-plans/partials/Stateme
 import StatementByComponentEditForm from '@/components/system-security-plans/StatementByComponentEditForm.vue';
 import { useDataApi } from '@/composables/axios';
 import { getPoamIdFromRoute } from '@/utils/get-poam-id-from-route';
+import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
 
 const route = useRoute();
 const toast = useToast();
+
+const { confirmDeleteDialog } = useDeleteConfirmationDialog();
 
 const error = ref<string | null>(null);
 
@@ -473,14 +481,6 @@ const editRequirement = (requirement: ImplementedRequirement) => {
 };
 
 const deleteRequirement = async (requirement: ImplementedRequirement) => {
-  if (
-    !confirm(
-      `Are you sure you want to delete requirement "${requirement.controlId}"?`,
-    )
-  ) {
-    return;
-  }
-
   try {
     await executeDelete(
       `/api/oscal/system-security-plans/${route.params.id}/control-implementation/implemented-requirements/${requirement.uuid}`,

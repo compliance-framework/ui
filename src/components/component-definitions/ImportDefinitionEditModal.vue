@@ -1,5 +1,5 @@
 <template>
-  <<Dialog v-model:visible="isOpen" @hide="$emit('close')" modal>
+  <Dialog v-model:visible="isOpen" @hide="$emit('close')" modal>
     <div class="px-12 py-8">
       <ImportDefinitionEditForm
         :component-definition-id="componentDefinitionId"

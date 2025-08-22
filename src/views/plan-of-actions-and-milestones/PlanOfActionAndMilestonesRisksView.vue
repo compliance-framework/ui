@@ -106,7 +106,11 @@
               Edit
             </button>
             <button
-              @click="deleteRisk(risk.uuid || '')"
+              @click="
+                confirmDeleteDialog(() => deleteRisk(risk.uuid!), {
+                  itemType: 'risk',
+                })
+              "
               class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md text-sm"
             >
               Delete
@@ -153,11 +157,14 @@ import RiskEditForm from '@/components/poam/RiskEditForm.vue';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi } from '@/composables/axios';
 import { getPoamIdFromRoute } from '../../utils/get-poam-id-from-route';
+import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
 
 const route = useRoute();
 const toast = useToast();
 
 const poamId = computed(() => getPoamIdFromRoute(route));
+
+const { confirmDeleteDialog } = useDeleteConfirmationDialog();
 
 const {
   data: risks,
@@ -207,10 +214,6 @@ const handleRiskSaved = (updatedRisk: Risk) => {
 };
 
 async function deleteRisk(uuid: string) {
-  if (!uuid || !confirm('Are you sure you want to delete this risk?')) {
-    return;
-  }
-
   try {
     const id = route.params.id as string;
     await executeDelete(

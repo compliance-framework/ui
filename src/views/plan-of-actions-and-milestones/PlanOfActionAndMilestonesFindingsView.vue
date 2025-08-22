@@ -98,7 +98,11 @@
               Edit
             </button>
             <button
-              @click="deleteFinding(finding.uuid || '')"
+              @click="
+                confirmDeleteDialog(() => deleteFinding(finding.uuid!), {
+                  itemType: 'finding',
+                })
+              "
               class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md text-sm"
             >
               Delete
@@ -150,11 +154,13 @@ import FindingEditForm from '@/components/poam/FindingEditForm.vue';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi } from '@/composables/axios';
 import { getPoamIdFromRoute } from '../../utils/get-poam-id-from-route';
+import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
 
 const route = useRoute();
 const toast = useToast();
 
 const poamId = computed(() => getPoamIdFromRoute(route));
+const { confirmDeleteDialog } = useDeleteConfirmationDialog();
 
 const {
   data: findings,
@@ -206,10 +212,6 @@ const handleFindingSaved = (updatedFinding: Finding) => {
 };
 
 async function deleteFinding(uuid: string) {
-  if (!uuid || !confirm('Are you sure you want to delete this finding?')) {
-    return;
-  }
-
   try {
     const id = route.params.id as string;
     await executeDelete(

@@ -68,7 +68,11 @@
               Edit
             </button>
             <button
-              @click="deleteResult(result.uuid)"
+              @click="
+                confirmDeleteDialog(() => deleteResult(result.uuid), {
+                  itemType: 'result',
+                })
+              "
               class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md text-sm"
             >
               Delete
@@ -181,6 +185,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import type { AxiosError } from 'axios';
 import type { ErrorResponse, ErrorBody } from '@/stores/types';
+import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
 
 const props = defineProps({
   assessmentResults: {
@@ -193,6 +198,8 @@ const emit = defineEmits(['update']);
 
 const router = useRouter();
 const toast = useToast();
+
+const { confirmDeleteDialog } = useDeleteConfirmationDialog();
 
 const {
   data: results,
@@ -294,14 +301,6 @@ function editResult(result: Result) {
 }
 
 async function deleteResult(resultId: string) {
-  if (
-    !confirm(
-      'Are you sure you want to delete this result? This action cannot be undone.',
-    )
-  ) {
-    return;
-  }
-
   try {
     await executeDelete(
       `/api/oscal/assessment-results/${props.assessmentResults.uuid}/results/${resultId}`,

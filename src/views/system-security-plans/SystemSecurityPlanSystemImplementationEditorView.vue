@@ -293,7 +293,12 @@
                             JSON
                           </button>
                           <button
-                            @click.stop="deleteUser(user)"
+                            @click.stop="
+                              confirmDeleteDialog(() => deleteUser(user), {
+                                itemName: user.title,
+                                itemType: 'user',
+                              })
+                            "
                             class="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition-colors"
                           >
                             Delete
@@ -430,7 +435,15 @@
                             JSON
                           </button>
                           <button
-                            @click.stop="deleteComponent(component)"
+                            @click.stop="
+                              confirmDeleteDialog(
+                                () => deleteComponent(component),
+                                {
+                                  itemName: component.title,
+                                  itemType: 'component',
+                                },
+                              )
+                            "
                             class="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition-colors"
                           >
                             Delete
@@ -556,7 +569,15 @@
                             JSON
                           </button>
                           <button
-                            @click.stop="deleteLeveragedAuth(auth)"
+                            @click.stop="
+                              confirmDeleteDialog(
+                                () => deleteLeveragedAuth(auth),
+                                {
+                                  itemName: auth.title,
+                                  itemType: 'leveraged authorization',
+                                },
+                              )
+                            "
                             class="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition-colors"
                           >
                             Delete
@@ -741,9 +762,13 @@ import type {
   SystemImplementation,
 } from '@/stores/system-security-plans.ts';
 import { useDataApi } from '@/composables/axios';
+import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
 
 const route = useRoute();
 const toast = useToast();
+
+const { confirmDeleteDialog } = useDeleteConfirmationDialog();
+
 const sspId = route.params.id as string;
 
 // Tab state
@@ -873,10 +898,6 @@ const downloadUserJSON = (user: SystemImplementationUser) => {
 };
 
 const deleteUser = async (user: SystemImplementationUser) => {
-  if (!confirm(`Are you sure you want to delete user "${user.title}"?`)) {
-    return;
-  }
-
   try {
     await executeDeleteUser(
       `/api/oscal/system-security-plans/${sspId}/system-implementation/users/${user.uuid}`,
@@ -942,12 +963,6 @@ const downloadComponentJSON = (component: SystemComponent) => {
 };
 
 const deleteComponent = async (component: SystemComponent) => {
-  if (
-    !confirm(`Are you sure you want to delete component "${component.title}"?`)
-  ) {
-    return;
-  }
-
   try {
     await executeDeleteComponent(
       `/api/oscal/system-security-plans/${sspId}/system-implementation/components/${component.uuid}`,
@@ -1023,14 +1038,6 @@ const downloadLeveragedAuthJSON = (auth: LeveragedAuthorization) => {
 };
 
 const deleteLeveragedAuth = async (auth: LeveragedAuthorization) => {
-  if (
-    !confirm(
-      `Are you sure you want to delete leveraged authorization "${auth.title}"?`,
-    )
-  ) {
-    return;
-  }
-
   try {
     await executeDeleteLeveragedAuth(
       `/api/oscal/system-security-plans/${sspId}/system-implementation/leveraged-authorizations/${auth.uuid}`,

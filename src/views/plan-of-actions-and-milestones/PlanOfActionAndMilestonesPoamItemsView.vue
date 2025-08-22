@@ -95,7 +95,11 @@
                   Edit
                 </button>
                 <button
-                  @click.stop="deleteItem(item.uuid || '')"
+                  @click.stop="
+                    confirmDeleteDialog(() => deleteItem(item.uuid!), {
+                      itemType: 'POAM item',
+                    })
+                  "
                   class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md text-sm"
                 >
                   Delete
@@ -171,9 +175,12 @@ import PoamItemAttachModal from '@/components/poam/PoamItemAttachModal.vue';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi } from '@/composables/axios';
 import { getPoamIdFromRoute } from '../../utils/get-poam-id-from-route';
+import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
 
 const route = useRoute();
 const toast = useToast();
+
+const { confirmDeleteDialog } = useDeleteConfirmationDialog();
 
 const {
   data: poamItems,
@@ -225,10 +232,6 @@ const handleItemSaved = (updatedItem: PoamItem) => {
 };
 
 async function deleteItem(uuid: string) {
-  if (!uuid || !confirm('Are you sure you want to delete this POAM item?')) {
-    return;
-  }
-
   try {
     const id = route.params.id as string;
     await deletePoamItem(

@@ -56,7 +56,12 @@
                 JSON
               </button>
               <button
-                @click.stop="deleteLeveragedAuth(auth)"
+                @click.stop="
+                  confirmDeleteDialog(() => deleteLeveragedAuth(auth), {
+                    itemName: auth.title,
+                    itemType: 'leveraged authorization',
+                  })
+                "
                 class="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition-colors"
               >
                 Delete
@@ -165,10 +170,14 @@ import type {
 import Panel from '@/volt/Panel.vue';
 import { useSystemStore } from '@/stores/system.ts';
 import { useDataApi } from '@/composables/axios';
+import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
 
 const route = useRoute();
 const toast = useToast();
 const { system } = useSystemStore();
+
+const { confirmDeleteDialog } = useDeleteConfirmationDialog();
+
 const id = route.params.id as string;
 
 // Data
@@ -240,14 +249,6 @@ const downloadLeveragedAuthJSON = (auth: LeveragedAuthorization) => {
 };
 
 const deleteLeveragedAuth = async (auth: LeveragedAuthorization) => {
-  if (
-    !confirm(
-      `Are you sure you want to delete leveraged authorization "${auth.title}"?`,
-    )
-  ) {
-    return;
-  }
-
   try {
     await executeDelete(
       `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/system-implementation/leveraged-authorizations/${auth.uuid}`,
