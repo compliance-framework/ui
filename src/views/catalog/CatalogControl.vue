@@ -157,12 +157,6 @@ const guidance = ref<Part | undefined>(getPart('guidance'));
 
 const router = useRouter();
 
-function hasPart(type: string) {
-  return props.control.parts?.find((part) => {
-    return part.name == type;
-  });
-}
-
 function gotoFindings() {
   router.push({
     name: 'catalog-control-evidence',

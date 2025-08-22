@@ -397,7 +397,7 @@ import StatementCreateForm from '@/components/system-security-plans/StatementCre
 import StatementByComponent from '@/views/system-security-plans/partials/StatementByComponent.vue';
 import StatementByComponentEditForm from '@/components/system-security-plans/StatementByComponentEditForm.vue';
 import { useDataApi } from '@/composables/axios';
-import { getPoamIdFromRoute } from '@/utils/get-poam-id-from-route';
+import { getIdFromRoute } from '@/utils/get-poam-id-from-route';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
 
 const route = useRoute();
@@ -407,7 +407,7 @@ const { confirmDeleteDialog } = useDeleteConfirmationDialog();
 
 const error = ref<string | null>(null);
 
-const sspId = computed(() => getPoamIdFromRoute(route));
+const sspId = computed(() => getIdFromRoute(route));
 
 // Modal states
 const showCreateRequirementModal = ref(false);

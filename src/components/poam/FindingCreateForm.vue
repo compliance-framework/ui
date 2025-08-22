@@ -262,11 +262,12 @@ function removeRelatedRisk(index: number) {
   formData.relatedRisks.splice(index, 1);
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function parseJsonField(value: string): any {
   if (!value.trim()) return undefined;
   try {
     return JSON.parse(value);
-  } catch (e) {
+  } catch {
     return undefined;
   }
 }
@@ -359,7 +360,7 @@ async function submit() {
           errorData.error ||
           errorData.detail ||
           errorMessage;
-      } catch (e) {
+      } catch {
         errorMessage = `HTTP ${error.status}: ${error.statusText}`;
       }
     } else if (error instanceof Error) {

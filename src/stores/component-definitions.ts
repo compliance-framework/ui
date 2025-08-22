@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { defineStore } from 'pinia';
 import { useConfigStore } from '@/stores/config.ts';
 import type { DataResponse, Link, Metadata, Property } from '@/stores/types.ts';

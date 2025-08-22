@@ -1,14 +1,6 @@
-import { defineStore } from 'pinia';
-import { useConfigStore } from '@/stores/config';
-import type {
-  DataResponse,
-  FindingStatus,
-  Link,
-  Metadata,
-  Property,
-} from '@/stores/types';
-import camelcaseKeys from 'camelcase-keys';
-import decamelizeKeys from 'decamelize-keys';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
+import type { FindingStatus, Link, Metadata, Property } from '@/stores/types';
 
 export interface Revision {
   title?: string;

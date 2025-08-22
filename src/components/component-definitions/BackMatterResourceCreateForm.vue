@@ -155,7 +155,7 @@ async function createResource(): Promise<void> {
   }
 
   try {
-    const resourceData: any = {
+    const resourceData: BackMatterResource = {
       uuid: resource.value.uuid,
       title: resource.value.title.trim(),
       description: resource.value.description.trim(),

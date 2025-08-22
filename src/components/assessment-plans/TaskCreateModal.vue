@@ -34,7 +34,7 @@ const emit = defineEmits({
   },
 });
 
-const props = defineProps<{
+defineProps<{
   assessmentPlanId: string;
 }>();
 

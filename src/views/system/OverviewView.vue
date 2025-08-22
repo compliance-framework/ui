@@ -152,8 +152,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, watch, computed } from 'vue';
-import { useRoute } from 'vue-router';
+import { onMounted, ref, watch } from 'vue';
 import type {
   SystemSecurityPlan,
   SystemCharacteristics,
@@ -162,20 +161,17 @@ import type {
   InventoryItem,
   LeveragedAuthorization,
 } from '@/stores/system-security-plans.ts';
-import { useConfigStore } from '@/stores/config.ts';
 import type { Profile } from '@/oscal';
 import Select from '@/volt/Select.vue';
 import { useSystemStore } from '@/stores/system.ts';
-import Diagrams from './Diagrams.vue';
+import Diagrams from './DiagramsView.vue';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi } from '@/composables/axios';
 import type { AxiosError } from 'axios';
 import type { ErrorResponse, ErrorBody } from '@/stores/types.ts';
 
-const route = useRoute();
 const toast = useToast();
 const { system } = useSystemStore();
-const configStore = useConfigStore();
 const systemSecurityPlan = ref<SystemSecurityPlan>({} as SystemSecurityPlan);
 const systemImplementationStats = ref({
   users: 0,
@@ -183,14 +179,6 @@ const systemImplementationStats = ref({
   inventoryItems: 0,
   leveragedAuthorizations: 0,
 });
-
-const statistics = computed(() => ({
-  systemUsers: systemImplementationStats.value.users,
-  systemComponents: systemImplementationStats.value.components,
-  inventoryItems: systemImplementationStats.value.inventoryItems,
-  leveragedAuthorizations:
-    systemImplementationStats.value.leveragedAuthorizations,
-}));
 
 const profileItems = ref<Array<{ name: string; value: string }>>([]);
 const { data: profiles, isLoading: loadingProfiles } = useDataApi<Profile[]>(
@@ -357,36 +345,5 @@ onMounted(async () => {
 function formatDate(dateString?: string): string {
   if (!dateString) return 'N/A';
   return new Date(dateString).toLocaleDateString();
-}
-
-async function downloadJson(): Promise<void> {
-  try {
-    // Get raw API response without camelCase conversion
-    const config = await configStore.getConfig();
-    const response = await fetch(
-      `${config.API_URL}/api/oscal/system-security-plans/${route.params.id}/full`,
-      {
-        credentials: 'include',
-      },
-    );
-    if (!response.ok) {
-      throw response;
-    }
-    const data = await response.json();
-
-    const dataStr = JSON.stringify(data, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
-
-    const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `ssp-${systemSecurityPlan.value.uuid}.json`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  } catch (err) {
-    console.error('Error downloading JSON:', err);
-  }
 }
 </script>

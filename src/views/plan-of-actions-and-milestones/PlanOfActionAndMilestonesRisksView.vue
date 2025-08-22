@@ -156,13 +156,13 @@ import RiskCreateForm from '@/components/poam/RiskCreateForm.vue';
 import RiskEditForm from '@/components/poam/RiskEditForm.vue';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi } from '@/composables/axios';
-import { getPoamIdFromRoute } from '../../utils/get-poam-id-from-route';
+import { getIdFromRoute } from '../../utils/get-poam-id-from-route';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
 
 const route = useRoute();
 const toast = useToast();
 
-const poamId = computed(() => getPoamIdFromRoute(route));
+const poamId = computed(() => getIdFromRoute(route));
 
 const { confirmDeleteDialog } = useDeleteConfirmationDialog();
 

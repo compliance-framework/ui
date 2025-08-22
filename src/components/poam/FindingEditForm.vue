@@ -243,10 +243,12 @@ onMounted(() => {
   // Handle related observations - extract UUIDs from objects
   formData.relatedObservations =
     props.finding.relatedObservations?.map(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (obs: any) => obs.observationUuid || obs,
     ) || [];
   // Handle related risks - extract UUIDs from objects
   formData.relatedRisks =
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     props.finding.relatedRisks?.map((risk: any) => risk.riskUuid || risk) || [];
   formData.remarks = props.finding.remarks || '';
 });
@@ -267,11 +269,12 @@ function removeRelatedRisk(index: number) {
   formData.relatedRisks.splice(index, 1);
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function parseJsonField(value: string): any {
   if (!value.trim()) return undefined;
   try {
     return JSON.parse(value);
-  } catch (e) {
+  } catch {
     return undefined;
   }
 }

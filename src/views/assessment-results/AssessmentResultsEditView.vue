@@ -176,7 +176,7 @@ const formData = ref({
     href: '',
     remarks: '',
   },
-  results: [] as any[],
+  results: [] as any[], // eslint-disable-line @typescript-eslint/no-explicit-any
 });
 
 const {

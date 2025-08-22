@@ -196,7 +196,10 @@ async function downloadJSON() {
     toast.add({
       severity: 'error',
       summary: 'Download Failed',
-      detail: 'Failed to download assessment plan JSON',
+      detail:
+        error instanceof Error
+          ? error.message
+          : 'Failed to download assessment plan JSON',
       life: 3000,
     });
   }

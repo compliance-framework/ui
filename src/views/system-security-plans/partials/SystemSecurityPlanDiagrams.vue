@@ -67,7 +67,6 @@
 </template>
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
-import PageHeader from '@/components/PageHeader.vue';
 import {
   type Diagram,
   type DiagramGrouping,
@@ -75,9 +74,6 @@ import {
   useSystemSecurityPlanStore,
 } from '@/stores/system-security-plans.ts';
 import { useRoute } from 'vue-router';
-import PageSubHeader from '@/components/PageSubHeader.vue';
-import SystemCharacteristicsForm from '@/components/SystemCharacteristicsForm.vue';
-import SystemCharacteristicsDiagramGroupForm from '@/components/SystemCharacteristicsDiagramGroupForm.vue';
 import DrawIODiagramEditor from '@/components/DrawIODiagramEditor.vue';
 import CollapsableGroup from '@/components/CollapsableGroup.vue';
 import type { DataResponse } from '@/stores/types.ts';
@@ -120,11 +116,10 @@ onMounted(() => {
 
 async function saveAuthorizationBoundaryDiagram(diagram: Diagram) {
   if (systemSecurityPlan.value != null) {
-    const response =
-      await sspStore.updateCharacteristicsAuthorizationBoundaryDiagram(
-        systemSecurityPlan.value.uuid,
-        diagram,
-      );
+    await sspStore.updateCharacteristicsAuthorizationBoundaryDiagram(
+      systemSecurityPlan.value.uuid,
+      diagram,
+    );
     toast.add({
       severity: 'success',
       summary: 'Diagram Saved',
@@ -136,11 +131,10 @@ async function saveAuthorizationBoundaryDiagram(diagram: Diagram) {
 
 async function saveNetworkArchitectureDiagram(diagram: Diagram) {
   if (systemSecurityPlan.value != null) {
-    const response =
-      await sspStore.updateCharacteristicsNetworkArchitectureDiagram(
-        systemSecurityPlan.value.uuid,
-        diagram,
-      );
+    await sspStore.updateCharacteristicsNetworkArchitectureDiagram(
+      systemSecurityPlan.value.uuid,
+      diagram,
+    );
     toast.add({
       severity: 'success',
       summary: 'Diagram Saved',
@@ -152,7 +146,7 @@ async function saveNetworkArchitectureDiagram(diagram: Diagram) {
 
 async function saveDataFlowDiagram(diagram: Diagram) {
   if (systemSecurityPlan.value != null) {
-    const response = await sspStore.updateCharacteristicsDataFlowDiagram(
+    await sspStore.updateCharacteristicsDataFlowDiagram(
       systemSecurityPlan.value.uuid,
       diagram,
     );

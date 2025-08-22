@@ -58,7 +58,7 @@ const configStore = useConfigStore();
 const toast = useToast();
 
 const sspId = ref<string>(route.params.id as string);
-const sspData = ref<any>(null);
+const sspData = ref<any>(); // eslint-disable-line @typescript-eslint/no-explicit-any
 const loading = ref<boolean>(true);
 const error = ref<string | null>(null);
 
@@ -88,12 +88,14 @@ async function loadSystemSecurityPlan() {
       throw response;
     }
     sspData.value = await response.json();
-  } catch (err) {
-    error.value = 'Failed to load system security plan JSON. Please try again.';
+  } catch (error) {
     toast.add({
       severity: 'error',
       summary: 'Error Loading JSON',
-      detail: 'Failed to load full system security plan JSON',
+      detail:
+        error instanceof Error
+          ? error.message
+          : 'Failed to load system security plan JSON. Please try again.',
       life: 3000,
     });
   } finally {
@@ -122,11 +124,14 @@ async function downloadJSON() {
       detail: 'System security plan JSON downloaded successfully',
       life: 3000,
     });
-  } catch (err) {
+  } catch (error) {
     toast.add({
       severity: 'error',
       summary: 'Download Failed',
-      detail: 'Failed to download system security plan JSON',
+      detail:
+        error instanceof Error
+          ? error.message
+          : 'Failed to download system security plan JSON',
       life: 3000,
     });
   }
@@ -145,11 +150,14 @@ async function copyToClipboard() {
       detail: 'System security plan JSON copied to clipboard',
       life: 3000,
     });
-  } catch (err) {
+  } catch (error) {
     toast.add({
       severity: 'error',
       summary: 'Copy Failed',
-      detail: 'Failed to copy JSON to clipboard',
+      detail:
+        error instanceof Error
+          ? error.message
+          : 'Failed to copy JSON to clipboard',
       life: 3000,
     });
   }

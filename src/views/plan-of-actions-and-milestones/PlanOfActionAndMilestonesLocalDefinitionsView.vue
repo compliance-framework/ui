@@ -252,14 +252,14 @@ import type { LocalDefinitions } from '@/stores/plan-of-action-and-milestones.ts
 import Dialog from '@/volt/Dialog.vue';
 import LocalDefinitionsForm from '@/components/poam/LocalDefinitionsForm.vue';
 import { useDataApi } from '@/composables/axios';
-import { getPoamIdFromRoute } from '../../utils/get-poam-id-from-route';
+import { getIdFromRoute } from '../../utils/get-poam-id-from-route';
 
 const route = useRoute();
 
 const showCreateModal = ref(false);
 const showEditModal = ref(false);
 
-const poamId = computed(() => getPoamIdFromRoute(route));
+const poamId = computed(() => getIdFromRoute(route));
 
 const dialogHeader = computed(() =>
   showCreateModal.value ? 'Create Local Definitions' : 'Edit Local Definitions',

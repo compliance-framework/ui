@@ -196,7 +196,9 @@ async function submit() {
       severity: 'error',
       summary: 'Error updating assessment plan',
       detail:
-        'Failed to update assessment plan. Please check your input and try again.',
+        error instanceof Error
+          ? error.message
+          : 'Failed to update assessment plan. Please check your input and try again.',
       life: 3000,
     });
   }

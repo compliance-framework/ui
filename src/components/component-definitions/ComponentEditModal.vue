@@ -32,7 +32,7 @@ const emit = defineEmits<{
   updated: [component: DefinedComponent];
 }>();
 
-const props = defineProps<{
+defineProps<{
   componentDefinitionId: string;
   component: DefinedComponent;
 }>();

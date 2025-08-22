@@ -184,6 +184,7 @@ const formData = ref({
       ],
     },
   },
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   results: [] as any[],
 });
 
@@ -209,7 +210,7 @@ async function createAssessmentResults() {
     };
 
     // Remove the temporary result field
-    delete (assessmentResults as any).result;
+    delete (assessmentResults as any).result; // eslint-disable-line @typescript-eslint/no-explicit-any
 
     await executeCreate({
       data: assessmentResults,

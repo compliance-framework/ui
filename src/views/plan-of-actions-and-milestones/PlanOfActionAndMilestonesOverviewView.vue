@@ -254,14 +254,14 @@ import { useDataApi } from '@/composables/axios';
 import type { AxiosError } from 'axios';
 import type { ErrorResponse, ErrorBody, Metadata } from '@/stores/types';
 import decamelizeKeys from 'decamelize-keys';
-import { getPoamIdFromRoute } from '../../utils/get-poam-id-from-route';
+import { getIdFromRoute } from '../../utils/get-poam-id-from-route';
 
 const route = useRoute();
 const toast = useToast();
 
 const showEditModal = ref(false);
 
-const poamId = computed(() => getPoamIdFromRoute(route));
+const poamId = computed(() => getIdFromRoute(route));
 
 const { data: planOfActionAndMilestones } =
   useDataApi<PlanOfActionAndMilestones>(
