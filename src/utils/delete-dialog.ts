@@ -42,7 +42,7 @@ export function useDeleteConfirmationDialog() {
         toast.add({
           severity: 'info',
           summary: 'Cancelled',
-          detail: 'Inventory item deletion cancelled',
+          detail: 'Resource deletion cancelled',
           life: 3000,
         });
       },
