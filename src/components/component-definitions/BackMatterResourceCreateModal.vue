@@ -1,5 +1,5 @@
 <template>
-  <Dialog v-model:visible="showCreateForm" @hide="$emit('close')" modal>
+  <Dialog v-model:visible="showCreateForm" modal>
     <div class="px-12 py-8">
       <BackMatterResourceCreateForm
         :component-definition-id="componentDefinitionId"
@@ -25,14 +25,19 @@ import Dialog from '@/volt/Dialog.vue';
 import PrimaryButton from '@/components/PrimaryButton.vue';
 import BackMatterResourceCreateForm from './BackMatterResourceCreateForm.vue';
 import type { BackMatterResource } from '@/stores/component-definitions.ts';
-import { ref } from 'vue';
+import { computed } from 'vue';
 
 const props = defineProps<{
   isOpen: boolean;
   componentDefinitionId: string;
 }>();
 
-const showCreateForm = ref(props.isOpen);
+const showCreateForm = computed({
+  get: () => props.isOpen,
+  set: (value) => {
+    if (!value) emit('close');
+  },
+});
 
 const emit = defineEmits<{
   close: [];
