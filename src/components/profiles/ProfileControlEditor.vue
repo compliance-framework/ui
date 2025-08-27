@@ -22,6 +22,8 @@
         optionLabel="value"
         dropdown
         @complete="search"
+        @keydown.enter="add"
+        forceSelection
       >
         <template #option="slotProps">
           <div class="flex items-center">
