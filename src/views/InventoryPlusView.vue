@@ -235,19 +235,19 @@
             </div>
 
             <!-- Implemented Components -->
-            <div v-if="item.implemented_components?.length" class="mt-3">
+            <div v-if="item.implementedComponents?.length" class="mt-3">
               <span
                 class="text-sm font-medium text-gray-700 dark:text-slate-300"
               >
                 Implemented Components:
               </span>
               <div
-                v-for="impl in item.implemented_components"
-                :key="impl.component_uuid || impl.componentUuid"
+                v-for="impl in item.implementedComponents"
+                :key="impl.componentUuid"
                 class="bg-white dark:bg-slate-900 p-3 rounded border border-gray-200 dark:border-slate-600 mt-2"
               >
                 <div class="font-medium text-sm font-mono">
-                  {{ impl.component_uuid || impl.componentUuid }}
+                  {{ impl.componentUuid }}
                 </div>
                 <div
                   v-if="impl.remarks"
