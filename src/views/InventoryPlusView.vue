@@ -29,7 +29,6 @@
               <input
                 type="checkbox"
                 v-model="filters.includeSSP"
-                @change="loadInventoryItems"
                 class="mr-2"
               />
               System Security Plans
@@ -38,7 +37,6 @@
               <input
                 type="checkbox"
                 v-model="filters.includeEvidence"
-                @change="loadInventoryItems"
                 class="mr-2"
               />
               Evidence Collection
@@ -47,7 +45,6 @@
               <input
                 type="checkbox"
                 v-model="filters.includePOAM"
-                @change="loadInventoryItems"
                 class="mr-2"
               />
               POA&Ms
@@ -64,7 +61,6 @@
             optionLabel="label"
             optionValue="value"
             placeholder="All types"
-            @change="loadInventoryItems"
             class="w-full"
           />
         </div>
@@ -78,7 +74,6 @@
             optionLabel="label"
             optionValue="value"
             placeholder="All items"
-            @change="loadInventoryItems"
             class="w-full"
           />
         </div>
@@ -104,7 +99,7 @@
           </span>
         </div>
         <button
-          @click="loadInventoryItems"
+          @click="() => loadInventoryItems()"
           class="text-blue-600 hover:text-blue-800 dark:text-blue-400 text-sm"
         >
           Refresh
@@ -144,8 +139,8 @@
               severity="info"
             />
             <Badge
-              :value="item.source_type"
-              :severity="getSourceSeverity(item.source_type)"
+              :value="item.sourceType"
+              :severity="getSourceSeverity(item.sourceType)"
             />
             <span class="text-xs text-gray-500 dark:text-slate-400 ml-2">
               from {{ item.source }}
@@ -173,7 +168,7 @@
                 <p class="font-medium text-gray-900 dark:text-slate-300">
                   {{ item.source }}
                   <span class="text-xs text-gray-500 dark:text-slate-500 ml-1">
-                    ({{ item.source_id.substring(0, 8) }}...)
+                    ({{ item.sourceId.substring(0, 8) }}...)
                   </span>
                 </p>
               </div>
@@ -188,14 +183,14 @@
               </span>
               <div class="flex gap-2">
                 <button
-                  v-if="system.securityPlan && item.source_type === 'ssp'"
+                  v-if="system.securityPlan && item.sourceType === 'ssp'"
                   @click.stop="editInventoryItem(item)"
                   class="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 transition-colors"
                 >
                   Edit
                 </button>
                 <button
-                  v-if="system.securityPlan && item.source_type !== 'ssp'"
+                  v-if="system.securityPlan && item.sourceType !== 'ssp'"
                   @click.stop="attachInventoryItem(item)"
                   class="px-3 py-1 bg-green-500 text-white text-sm rounded hover:bg-green-600 transition-colors"
                 >
@@ -208,7 +203,7 @@
                   JSON
                 </button>
                 <button
-                  v-if="system.securityPlan && item.source_type === 'ssp'"
+                  v-if="system.securityPlan && item.sourceType === 'ssp'"
                   @click.stop="
                     confirmDeleteDialog(() => deleteInventoryItem(item), {
                       itemName: item.description || item.uuid,
@@ -339,8 +334,8 @@ import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
 // Extended inventory item type with source information
 interface InventoryItemWithSource extends InventoryItem {
   source: string;
-  source_id: string;
-  source_type: string;
+  sourceId: string;
+  sourceType: string;
 }
 
 const toast = useToast();
@@ -416,23 +411,21 @@ const buildQueryParams = () => {
   return params.toString();
 };
 
+const inventoryUrl = ref(`/api/oscal/inventory?${buildQueryParams()}`);
+
 const {
-  data: inventoryResponse,
+  data: inventoryItems,
   isLoading: inventoryItemsLoading,
   execute: loadInventoryItems,
-} = useDataApi<{ data: InventoryItemWithSource[] }>(
-  computed(() => `/api/oscal/inventory?${buildQueryParams()}`),
-  null,
-  { immediate: false },
-);
-
-const inventoryItems = computed(() => inventoryResponse.value?.data || []);
+} = useDataApi<InventoryItemWithSource[]>(inventoryUrl, null, {
+  immediate: false,
+});
 
 // Calculate source statistics
 const sourceStats = computed(() => {
   const stats = { ssp: 0, evidence: 0, poam: 0, ap: 0, ar: 0 };
-  inventoryItems.value.forEach((item) => {
-    switch (item.source_type) {
+  (inventoryItems.value || []).forEach((item) => {
+    switch (item.sourceType) {
       case 'ssp':
         stats.ssp++;
         break;
@@ -459,6 +452,30 @@ const { execute: executeDelete } = useDataApi<void>(
     method: 'DELETE',
   },
   { immediate: false },
+);
+
+// Watch filters and reload when they change
+watch(
+  () => buildQueryParams(),
+  async (newParams) => {
+    const newUrl = `/api/oscal/inventory?${newParams}`;
+    console.log('Filter changed, new URL:', newUrl);
+    inventoryUrl.value = newUrl;
+    try {
+      // Pass the new URL directly to execute
+      await loadInventoryItems(newUrl);
+    } catch (error) {
+      const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
+      toast.add({
+        severity: 'error',
+        summary: 'Failed to load inventory items',
+        detail:
+          errorResponse.response?.data?.errors?.body ||
+          'An unknown error occurred.',
+        life: 5000,
+      });
+    }
+  },
 );
 
 onMounted(async () => {
@@ -552,7 +569,7 @@ function attachInventoryItem(item: InventoryItemWithSource) {
 }
 
 const deleteInventoryItem = async (item: InventoryItemWithSource) => {
-  if (!sspId.value || item.source_type !== 'ssp') {
+  if (!sspId.value || item.sourceType !== 'ssp') {
     toast.add({
       severity: 'error',
       summary: 'Error',
