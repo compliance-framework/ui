@@ -46,10 +46,16 @@
         class="px-4 py-4 bg-white dark:bg-slate-950 border border-ccf-300 dark:border-slate-700"
       >
         <p>Included Controls</p>
-        <ProfileControlGroups :groups="imp.includeControls" />
+        <ProfileControlGroups
+          :groups="imp.includeControls"
+          :catalog="importedCatalogsByHref[imp.href]"
+        />
         <hr class="my-4 border-ccf-300 dark:border-slate-700 border-dashed" />
         <p>Excluded Controls</p>
-        <ProfileControlGroups :groups="imp.excludeControls" />
+        <ProfileControlGroups
+          :groups="imp.excludeControls"
+          :catalog="importedCatalogsByHref[imp.href]"
+        />
         <PrimaryButton class="mt-2" @click="save(toValue(imp))"
           >Save</PrimaryButton
         >
@@ -60,7 +66,7 @@
     >
     <CatalogImportDialog
       :visible="catalogDialogVisible"
-      :importedCatalogs="importedCatalogs"
+      :importedCatalogs="importedCatalogsByUUID"
       @update:visible="catalogDialogVisible = $event"
       @import="addImport"
     />
@@ -71,7 +77,7 @@
 import { type BackMatter, type Import } from '@/stores/types';
 import { type BackMatterResource } from '@/stores/component-definitions';
 import { useRoute } from 'vue-router';
-import { ref, computed, toValue } from 'vue';
+import { ref, computed, toValue, watch } from 'vue';
 import CollapsableGroup from '@/components/CollapsableGroup.vue';
 import PrimaryButton from '@/components/PrimaryButton.vue';
 import ProfileControlGroups from '@/components/profiles/ProfileControlGroups.vue';
@@ -89,7 +95,8 @@ const toast = useToast();
 const confirm = useConfirm();
 const id = route.params.id as string;
 
-const importedCatalogs = ref<{ [key: string]: string }>({});
+const importedCatalogsByUUID = ref<{ [key: string]: string }>({});
+const importedCatalogsByHref = ref<{ [key: string]: string }>({});
 
 const {
   data: imports,
@@ -180,8 +187,9 @@ async function save(imp: Import) {
   }
 }
 
-function gatherImportedCatalogs() {
-  importedCatalogs.value = {};
+watch(imports, async () => {
+  importedCatalogsByUUID.value = {};
+  importedCatalogsByHref.value = {};
   if (!imports.value) return;
   for (const imp of imports.value) {
     const resource = findResourceByHref(imp.href);
@@ -192,12 +200,13 @@ function gatherImportedCatalogs() {
           rlink.href.startsWith('#')
         ) {
           const uuid = rlink.href.substring(1, rlink.href.length);
-          importedCatalogs.value[uuid] = imp.href;
+          importedCatalogsByUUID.value[uuid] = imp.href;
+          importedCatalogsByHref.value[imp.href] = uuid;
         }
       }
     }
   }
-}
+});
 
 async function addImport(catalog: Catalog) {
   try {
@@ -209,7 +218,6 @@ async function addImport(catalog: Catalog) {
     });
     await loadImports();
     await loadBackmatter();
-    gatherImportedCatalogs();
 
     toast.add({
       severity: 'success',
@@ -257,7 +265,6 @@ function removeImport(imp: Import) {
         });
         await loadImports();
         await loadBackmatter();
-        gatherImportedCatalogs();
       } catch (error) {
         const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
         toast.add({

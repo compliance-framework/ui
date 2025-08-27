@@ -1,5 +1,10 @@
 <template>
-  <Dialog v-model:visible="localVisible" modal header="Add Catalog">
+  <Dialog
+    v-model:visible="localVisible"
+    modal
+    class="md:w-3/4"
+    header="Add Catalog"
+  >
     <table class="table-fixed">
       <thead
         class="bg-ccf-100 dark:bg-slate-800 text-ccf-700 dark:text-slate-200"
