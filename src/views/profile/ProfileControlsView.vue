@@ -216,8 +216,9 @@ async function addImport(catalog: Catalog) {
         type: 'catalog',
       },
     });
-    await loadImports();
+
     await loadBackmatter();
+    await loadImports();
 
     toast.add({
       severity: 'success',
@@ -263,8 +264,8 @@ function removeImport(imp: Import) {
           detail: `Import ${findResourceByHref(imp.href)?.title ?? imp.href} has been removed.`,
           life: 3000,
         });
-        await loadImports();
         await loadBackmatter();
+        await loadImports();
       } catch (error) {
         const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
         toast.add({
