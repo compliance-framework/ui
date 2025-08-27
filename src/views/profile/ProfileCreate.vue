@@ -23,9 +23,7 @@
         <FormTextarea v-model="profile.metadata.remarks" />
       </div>
       <div class="text-right">
-        <PrimaryButton type="submit">
-          Create Plan of Action and Milestones
-        </PrimaryButton>
+        <PrimaryButton type="submit"> Create Profile </PrimaryButton>
       </div>
     </form>
   </PageCard>
@@ -62,7 +60,9 @@ const toast = useToast();
 const profile = ref<Profile>({
   uuid: uuidv4(),
   metadata: {} as Metadata,
-  merge: {} as Merge,
+  merge: {
+    asIs: true,
+  } as Merge,
   import: {} as Import,
   modify: {} as Modify,
   backMatter: { resources: [] } as BackMatter,
