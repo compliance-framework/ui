@@ -59,6 +59,11 @@ const links = ref<Array<NavigationItem>>([
     abbr: 'INV',
   },
   {
+    name: 'inventory-plus:index',
+    title: 'Inventory Plus',
+    abbr: 'INV+',
+  },
+  {
     name: 'evidence:index',
     title: 'Evidence',
     abbr: 'EV',

@@ -1,0 +1,598 @@
+<template>
+  <div>
+    <PageHeader>
+      Inventory Plus
+      <template #menu>
+        <BurgerMenu
+          :items="[
+            {
+              label: 'Create New',
+              command: () => {
+                showCreateInventoryItemModal = true;
+              },
+              disabled: !system.securityPlan,
+            },
+          ]"
+        />
+      </template>
+    </PageHeader>
+    <PageSubHeader>All system inventory from all sources</PageSubHeader>
+
+    <!-- Filters Section -->
+    <div class="mb-4 p-4 bg-gray-50 dark:bg-slate-800 rounded-lg">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <!-- Source Filters -->
+        <div>
+          <label class="block text-sm font-medium mb-2">Sources</label>
+          <div class="space-y-2">
+            <label class="flex items-center">
+              <input
+                type="checkbox"
+                v-model="filters.includeSSP"
+                @change="loadInventoryItems"
+                class="mr-2"
+              />
+              System Security Plans
+            </label>
+            <label class="flex items-center">
+              <input
+                type="checkbox"
+                v-model="filters.includeEvidence"
+                @change="loadInventoryItems"
+                class="mr-2"
+              />
+              Evidence Collection
+            </label>
+            <label class="flex items-center">
+              <input
+                type="checkbox"
+                v-model="filters.includePOAM"
+                @change="loadInventoryItems"
+                class="mr-2"
+              />
+              POA&Ms
+            </label>
+          </div>
+        </div>
+
+        <!-- Item Type Filter -->
+        <div>
+          <label class="block text-sm font-medium mb-2">Item Type</label>
+          <Select
+            v-model="filters.itemType"
+            :options="itemTypeOptions"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="All types"
+            @change="loadInventoryItems"
+            class="w-full"
+          />
+        </div>
+
+        <!-- SSP Attachment Filter -->
+        <div>
+          <label class="block text-sm font-medium mb-2">SSP Attachment</label>
+          <Select
+            v-model="filters.attachedToSSP"
+            :options="attachmentOptions"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="All items"
+            @change="loadInventoryItems"
+            class="w-full"
+          />
+        </div>
+      </div>
+    </div>
+
+    <!-- Statistics Bar -->
+    <div class="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-4 text-sm">
+          <span>
+            <strong>{{ inventoryItems?.length || 0 }}</strong> total items
+          </span>
+          <span v-if="sourceStats.ssp > 0">
+            <Badge value="SSP" severity="info" /> {{ sourceStats.ssp }}
+          </span>
+          <span v-if="sourceStats.evidence > 0">
+            <Badge value="Evidence" severity="success" />
+            {{ sourceStats.evidence }}
+          </span>
+          <span v-if="sourceStats.poam > 0">
+            <Badge value="POA&M" severity="warning" /> {{ sourceStats.poam }}
+          </span>
+        </div>
+        <button
+          @click="loadInventoryItems"
+          class="text-blue-600 hover:text-blue-800 dark:text-blue-400 text-sm"
+        >
+          Refresh
+        </button>
+      </div>
+    </div>
+
+    <div class="mt-4">
+      <div v-if="inventoryItemsLoading" class="text-center py-4">
+        <p class="text-gray-500 dark:text-slate-400">
+          Loading inventory items...
+        </p>
+      </div>
+
+      <div v-else-if="inventoryItems?.length === 0" class="text-center py-4">
+        <p class="text-gray-500 dark:text-slate-400">
+          No inventory items found with current filters.
+        </p>
+      </div>
+
+      <Panel
+        v-for="item in inventoryItems"
+        :key="item.uuid"
+        toggleable
+        collapsed
+        class="my-2"
+      >
+        <template #header>
+          <div class="flex items-center gap-2 py-2">
+            <span class="font-bold">{{
+              firstOfProps(item.props, 'asset-id')?.value || item.description
+            }}</span>
+            <Badge
+              :value="
+                firstOfProps(item.props, 'asset-type')?.value || 'unknown'
+              "
+              severity="info"
+            />
+            <Badge
+              :value="item.source_type"
+              :severity="getSourceSeverity(item.source_type)"
+            />
+            <span class="text-xs text-gray-500 dark:text-slate-400 ml-2">
+              from {{ item.source }}
+            </span>
+          </div>
+        </template>
+        <div
+          class="px-4 py-4 bg-gray-50 dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700"
+        >
+          <div class="py-3 px-4">
+            <!-- Item Details -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <span class="text-sm text-gray-600 dark:text-slate-400"
+                  >Description:</span
+                >
+                <p class="font-medium text-gray-900 dark:text-slate-300">
+                  {{ item.description || 'No description' }}
+                </p>
+              </div>
+              <div>
+                <span class="text-sm text-gray-600 dark:text-slate-400"
+                  >Source:</span
+                >
+                <p class="font-medium text-gray-900 dark:text-slate-300">
+                  {{ item.source }}
+                  <span class="text-xs text-gray-500 dark:text-slate-500 ml-1">
+                    ({{ item.source_id.substring(0, 8) }}...)
+                  </span>
+                </p>
+              </div>
+            </div>
+
+            <!-- UUID and Actions -->
+            <div class="flex justify-between items-center">
+              <span
+                class="bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 px-2 py-1 rounded text-xs font-mono"
+              >
+                {{ item.uuid.substring(0, 8) }}...
+              </span>
+              <div class="flex gap-2">
+                <button
+                  v-if="system.securityPlan && item.source_type === 'ssp'"
+                  @click.stop="editInventoryItem(item)"
+                  class="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 transition-colors"
+                >
+                  Edit
+                </button>
+                <button
+                  v-if="system.securityPlan && item.source_type !== 'ssp'"
+                  @click.stop="attachInventoryItem(item)"
+                  class="px-3 py-1 bg-green-500 text-white text-sm rounded hover:bg-green-600 transition-colors"
+                >
+                  Attach to SSP
+                </button>
+                <button
+                  @click.stop="downloadInventoryItemJSON(item)"
+                  class="px-3 py-1 bg-gray-500 text-white text-sm rounded hover:bg-gray-600 transition-colors"
+                >
+                  JSON
+                </button>
+                <button
+                  v-if="system.securityPlan && item.source_type === 'ssp'"
+                  @click.stop="
+                    confirmDeleteDialog(() => deleteInventoryItem(item), {
+                      itemName: item.description || item.uuid,
+                      itemType: 'inventory item',
+                    })
+                  "
+                  class="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition-colors"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+
+            <!-- Properties -->
+            <div v-if="item.props && item.props.length > 0" class="mt-3">
+              <span
+                class="text-sm font-medium text-gray-700 dark:text-slate-300"
+              >
+                Properties:
+              </span>
+              <div class="flex flex-wrap gap-2 mt-1">
+                <Chip
+                  v-for="prop in item.props"
+                  :key="prop.name"
+                  :label="`${prop.name}: ${prop.value}`"
+                  class="text-xs"
+                />
+              </div>
+            </div>
+
+            <!-- Implemented Components -->
+            <div v-if="item.implemented_components?.length" class="mt-3">
+              <span
+                class="text-sm font-medium text-gray-700 dark:text-slate-300"
+              >
+                Implemented Components:
+              </span>
+              <div
+                v-for="impl in item.implemented_components"
+                :key="impl.component_uuid || impl.componentUuid"
+                class="bg-white dark:bg-slate-900 p-3 rounded border border-gray-200 dark:border-slate-600 mt-2"
+              >
+                <div class="font-medium text-sm font-mono">
+                  {{ impl.component_uuid || impl.componentUuid }}
+                </div>
+                <div
+                  v-if="impl.remarks"
+                  class="text-xs text-gray-600 dark:text-slate-400 mt-1"
+                >
+                  {{ impl.remarks }}
+                </div>
+              </div>
+            </div>
+
+            <!-- Remarks -->
+            <div v-if="item.remarks" class="mt-3">
+              <span
+                class="text-sm font-medium text-gray-700 dark:text-slate-300"
+              >
+                Remarks:
+              </span>
+              <p class="text-sm text-gray-600 dark:text-slate-400 mt-1">
+                {{ item.remarks }}
+              </p>
+            </div>
+          </div>
+        </div>
+      </Panel>
+    </div>
+
+    <!-- Inventory Item Create Modal -->
+    <Dialog v-model:visible="showCreateInventoryItemModal" modal>
+      <SystemImplementationInventoryItemCreateForm
+        v-if="system.securityPlan"
+        :ssp-id="sspId"
+        @cancel="showCreateInventoryItemModal = false"
+        @created="handleInventoryItemCreated"
+      />
+    </Dialog>
+
+    <!-- Inventory Item Edit Modal -->
+    <Dialog v-model:visible="showEditInventoryItemModal" modal>
+      <SystemImplementationInventoryItemEditForm
+        v-if="system.securityPlan"
+        :ssp-id="sspId"
+        :inventory-item="editingInventoryItem!"
+        @cancel="showEditInventoryItemModal = false"
+        @saved="handleInventoryItemSaved"
+      />
+    </Dialog>
+
+    <!-- Inventory Item Attach Modal -->
+    <Dialog v-model:visible="showInventoryItemAttachModal" modal>
+      <SystemImplementationInventoryItemAttachModal
+        v-if="system.securityPlan"
+        :ssp-id="sspId"
+        :item="editingInventoryItem!"
+        @cancel="showInventoryItemAttachModal = false"
+        @saved="handleInventoryItemAttached"
+      />
+    </Dialog>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { computed, onMounted, ref, reactive, watch } from 'vue';
+import type { InventoryItem } from '@/oscal';
+import { useSystemStore } from '@/stores/system.ts';
+import decamelizeKeys from 'decamelize-keys';
+import SystemImplementationInventoryItemEditForm from '@/components/system-security-plans/SystemImplementationInventoryItemEditForm.vue';
+import Dialog from '@/volt/Dialog.vue';
+import SystemImplementationInventoryItemAttachModal from '@/components/system-security-plans/SystemImplementationInventoryItemAttachModal.vue';
+import SystemImplementationInventoryItemCreateForm from '@/components/system-security-plans/SystemImplementationInventoryItemCreateForm.vue';
+import { useToast } from 'primevue/usetoast';
+import PageHeader from '@/components/PageHeader.vue';
+import PageSubHeader from '@/components/PageSubHeader.vue';
+import Panel from '@/volt/Panel.vue';
+import Badge from '@/volt/Badge.vue';
+import Chip from '@/volt/Chip.vue';
+import Select from '@/volt/Select.vue';
+import { useProps } from '@/composables/useProps';
+import BurgerMenu from '@/components/BurgerMenu.vue';
+import { useDataApi } from '@/composables/axios';
+import type { AxiosError } from 'axios';
+import type { ErrorResponse, ErrorBody } from '@/stores/types.ts';
+import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
+
+// Extended inventory item type with source information
+interface InventoryItemWithSource extends InventoryItem {
+  source: string;
+  source_id: string;
+  source_type: string;
+}
+
+const toast = useToast();
+const { system } = useSystemStore();
+const sspId = computed(() => system.securityPlan?.uuid ?? '');
+
+const { confirmDeleteDialog } = useDeleteConfirmationDialog();
+
+// Filters state
+const filters = reactive({
+  includeSSP: true,
+  includeEvidence: true,
+  includePOAM: true,
+  includeAP: false,
+  includeAR: false,
+  itemType: null as string | null,
+  attachedToSSP: null as boolean | null,
+});
+
+// Filter options
+const itemTypeOptions = [
+  { label: 'All types', value: null },
+  { label: 'Operating System', value: 'operating-system' },
+  { label: 'Database', value: 'database' },
+  { label: 'Web Server', value: 'web-server' },
+  { label: 'Firewall', value: 'firewall' },
+  { label: 'Router', value: 'router' },
+  { label: 'Switch', value: 'switch' },
+  { label: 'Appliance', value: 'appliance' },
+  { label: 'DNS Server', value: 'dns-server' },
+  { label: 'Email Server', value: 'email-server' },
+  { label: 'Directory Server', value: 'directory-server' },
+  { label: 'Storage Array', value: 'storage-array' },
+];
+
+const attachmentOptions = [
+  { label: 'All items', value: null },
+  { label: 'Attached to SSP', value: true },
+  { label: 'Not attached to SSP', value: false },
+];
+
+// Build query parameters based on filters
+const buildQueryParams = () => {
+  const params = new URLSearchParams();
+
+  if (
+    !filters.includeSSP &&
+    !filters.includeEvidence &&
+    !filters.includePOAM &&
+    !filters.includeAP &&
+    !filters.includeAR
+  ) {
+    // If no sources selected, include all by default
+    params.append('include_ssp', 'true');
+    params.append('include_evidence', 'true');
+    params.append('include_poam', 'true');
+  } else {
+    params.append('include_ssp', filters.includeSSP.toString());
+    params.append('include_evidence', filters.includeEvidence.toString());
+    params.append('include_poam', filters.includePOAM.toString());
+    params.append('include_ap', filters.includeAP.toString());
+    params.append('include_ar', filters.includeAR.toString());
+  }
+
+  if (filters.itemType) {
+    params.append('item_type', filters.itemType);
+  }
+
+  if (filters.attachedToSSP !== null) {
+    params.append('attached_to_ssp', filters.attachedToSSP.toString());
+  }
+
+  return params.toString();
+};
+
+const {
+  data: inventoryResponse,
+  isLoading: inventoryItemsLoading,
+  execute: loadInventoryItems,
+} = useDataApi<{ data: InventoryItemWithSource[] }>(
+  computed(() => `/api/oscal/inventory?${buildQueryParams()}`),
+  null,
+  { immediate: false },
+);
+
+const inventoryItems = computed(() => inventoryResponse.value?.data || []);
+
+// Calculate source statistics
+const sourceStats = computed(() => {
+  const stats = { ssp: 0, evidence: 0, poam: 0, ap: 0, ar: 0 };
+  inventoryItems.value.forEach((item) => {
+    switch (item.source_type) {
+      case 'ssp':
+        stats.ssp++;
+        break;
+      case 'evidence':
+        stats.evidence++;
+        break;
+      case 'poam':
+        stats.poam++;
+        break;
+      case 'ap':
+        stats.ap++;
+        break;
+      case 'ar':
+        stats.ar++;
+        break;
+    }
+  });
+  return stats;
+});
+
+const { execute: executeDelete } = useDataApi<void>(
+  null,
+  {
+    method: 'DELETE',
+  },
+  { immediate: false },
+);
+
+onMounted(async () => {
+  try {
+    await loadInventoryItems();
+  } catch (error) {
+    const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
+    toast.add({
+      severity: 'error',
+      summary: 'Failed to load inventory items',
+      detail:
+        errorResponse.response?.data?.errors?.body ||
+        'An unknown error occurred.',
+      life: 5000,
+    });
+  }
+});
+
+const editingInventoryItem = ref<InventoryItemWithSource | null>(null);
+const showCreateInventoryItemModal = ref(false);
+const showEditInventoryItemModal = ref(false);
+const showInventoryItemAttachModal = ref(false);
+
+const { firstOfProps } = useProps();
+
+// Get severity color for source badge
+const getSourceSeverity = (sourceType: string) => {
+  switch (sourceType) {
+    case 'ssp':
+      return 'info';
+    case 'evidence':
+      return 'success';
+    case 'poam':
+      return 'warning';
+    case 'ap':
+      return 'secondary';
+    case 'ar':
+      return 'danger';
+    default:
+      return 'secondary';
+  }
+};
+
+// Inventory Item management
+const editInventoryItem = (item: InventoryItemWithSource) => {
+  editingInventoryItem.value = item;
+  showEditInventoryItemModal.value = true;
+};
+
+const handleInventoryItemCreated = async (newItem: InventoryItem) => {
+  showCreateInventoryItemModal.value = false;
+  // Reload items to show the new one
+  await loadInventoryItems();
+  toast.add({
+    severity: 'success',
+    summary: 'Success',
+    detail: 'Inventory item created successfully.',
+    life: 3000,
+  });
+};
+
+const handleInventoryItemSaved = async (updatedItem: InventoryItem) => {
+  showEditInventoryItemModal.value = false;
+  editingInventoryItem.value = null;
+  // Reload items to show the updated one
+  await loadInventoryItems();
+  toast.add({
+    severity: 'success',
+    summary: 'Success',
+    detail: 'Inventory item updated successfully.',
+    life: 3000,
+  });
+};
+
+const handleInventoryItemAttached = async (updatedItem: InventoryItem) => {
+  showInventoryItemAttachModal.value = false;
+  editingInventoryItem.value = null;
+  // Reload items to show the updated attachment
+  await loadInventoryItems();
+  toast.add({
+    severity: 'success',
+    summary: 'Success',
+    detail: 'Inventory item attached to SSP successfully.',
+    life: 3000,
+  });
+};
+
+function attachInventoryItem(item: InventoryItemWithSource) {
+  editingInventoryItem.value = item;
+  showInventoryItemAttachModal.value = true;
+}
+
+const deleteInventoryItem = async (item: InventoryItemWithSource) => {
+  if (!sspId.value || item.source_type !== 'ssp') {
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'Can only delete items attached to the current SSP.',
+      life: 5000,
+    });
+    return;
+  }
+
+  try {
+    await executeDelete(
+      `/api/oscal/system-security-plans/${sspId.value}/system-implementation/inventory-items/${item.uuid}`,
+    );
+    // Reload items after deletion
+    await loadInventoryItems();
+    toast.add({
+      severity: 'success',
+      summary: 'Success',
+      detail: 'Inventory item deleted successfully.',
+      life: 3000,
+    });
+  } catch (error) {
+    console.error('Failed to delete inventory item:', error);
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'Failed to delete inventory item. Please try again.',
+      life: 5000,
+    });
+  }
+};
+
+const downloadInventoryItemJSON = (item: InventoryItemWithSource) => {
+  const dataStr = JSON.stringify(decamelizeKeys(item), null, 2);
+  const dataBlob = new Blob([dataStr], { type: 'application/json' });
+  const url = URL.createObjectURL(dataBlob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `inventory-item-${item.uuid}.json`;
+  link.click();
+  URL.revokeObjectURL(url);
+};
+</script>
