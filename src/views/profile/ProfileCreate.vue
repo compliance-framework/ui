@@ -64,7 +64,10 @@ const profile = ref<Profile>({
     asIs: true,
   } as Merge,
   import: {} as Import,
-  modify: {} as Modify,
+  modify: {
+    setParameters: [],
+    alters: [],
+  } as Modify,
   backMatter: { resources: [] } as BackMatter,
 } as Profile);
 const { execute: createProfile } = useDataApi<Profile>(

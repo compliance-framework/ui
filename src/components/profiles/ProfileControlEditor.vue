@@ -14,7 +14,7 @@
     </div>
     <div class="flex gap-2">
       <AutoComplete
-        v-model="newId"
+        v-model="selectedControl"
         type="text"
         placeholder="Enter control ID (e.g. ac-1)"
         class="grow"
@@ -64,17 +64,17 @@ const emit = defineEmits<{
   (e: 'update:modelValue', v: string[]): void;
 }>();
 
-const newId = ref<ControlOption>({ label: '', value: '' });
+const selectedControl = ref<ControlOption>({ label: '', value: '' });
 
 const items = ref<ControlOption[]>([]);
 
 function add() {
-  const val = newId.value.value.trim();
+  const val = selectedControl.value.value.trim();
   if (!val) return;
   if (!props.modelValue.includes(val)) {
     emit('update:modelValue', [...props.modelValue, val]);
   }
-  newId.value = { label: '', value: '' };
+  selectedControl.value = { label: '', value: '' };
 }
 
 function remove(index: number) {

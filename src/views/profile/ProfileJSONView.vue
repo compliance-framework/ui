@@ -3,10 +3,14 @@
     <pre
       class="mt-2 p-2 overflow-x-auto whitespace-pre-wrap break-words text-sm"
       >{{
-        decamelizeKeys(profile ?? ({} as Profile), {
-          separator: '-',
-          deep: true,
-        })
+        JSON.stringify(
+          decamelizeKeys(profile ?? ({} as Profile), {
+            separator: '-',
+            deep: true,
+          }),
+          null,
+          2,
+        )
       }}
     </pre>
   </PageCard>

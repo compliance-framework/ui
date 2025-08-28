@@ -39,12 +39,12 @@ const createControlList = (
           `/api/oscal/catalogs/${catalogUUID}/full`,
         );
         const results = [] as SelectControl[];
-        response.data.value?.data.groups.forEach((group) => {
+        for (const group of response.data.value?.data.groups || []) {
           let controlList = [] as ControlOption[];
           if (group.controls) {
-            group.controls.forEach((control) => {
+            for (const control of group.controls) {
               controlList = [...controlList, ...getControlSelectList(control)];
-            });
+            }
 
             results.push({
               label: group.title,
@@ -52,7 +52,7 @@ const createControlList = (
               items: controlList,
             });
           }
-        });
+        }
         controls.value = [...controls.value, ...results];
       } catch (error) {
         const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
