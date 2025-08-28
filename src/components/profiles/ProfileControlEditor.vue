@@ -24,7 +24,7 @@
         @complete="search"
         @keydown.enter="add"
         forceSelection
-        :virtualScrollerOptions="{ itemSize: 20 }"
+        :virtualScrollerOptions="{ itemSize: 38 }"
       >
         <template #option="slotProps">
           <div class="flex items-center">
