@@ -14,7 +14,10 @@
       <div
         class="px-4 py-4 bg-ccf-100 dark:bg-slate-950 border border-ccf-300 dark:border-slate-700"
       >
-        <ProfileControlEditor v-model="controlGroup.withIds" />
+        <ProfileControlEditor
+          v-model="controlGroup.withIds"
+          :controlList="controls"
+        />
       </div>
     </CollapsableGroup>
     <PrimaryButton @click="createGroup(groups)" class="mt-4"
@@ -29,10 +32,14 @@ import PrimaryButton from '@/components/PrimaryButton.vue';
 import ProfileControlEditor from '@/components/profiles/ProfileControlEditor.vue';
 import { useProfileControlGroups } from './useProfileControlGroups';
 import type { SelectControlsByID } from '@/stores/types';
+import { createControlList } from '@/composables/useControlList';
+import { ref } from 'vue';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const props = defineProps<{
   groups: (SelectControlsByID & { _newId?: string })[];
+  catalog: string;
 }>();
+const catalogUUID = ref<string[]>([props.catalog]);
 const { createGroup, removeGroup } = useProfileControlGroups();
+const { controls } = createControlList(catalogUUID);
 </script>

@@ -31,7 +31,7 @@
             <RouterLink
               class="bg-white hover:bg-zinc-100 border border-ccf-300 px-4 py-1 rounded-md dark:bg-slate-800 dark:hover:bg-slate-700 dark:border-slate-700"
               :to="{
-                name: 'profile-view-controls',
+                name: 'profile:view-controls',
                 params: { id: profile.uuid },
               }"
               >View
@@ -40,6 +40,14 @@
         </tr>
       </tbody>
     </table>
+  </div>
+  <div class="my-4">
+    <RouterLink
+      :to="{ name: 'profile:create' }"
+      class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md inline-block ml-4"
+    >
+      Create New Profile
+    </RouterLink>
   </div>
 </template>
 
