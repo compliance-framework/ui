@@ -103,10 +103,6 @@ async function buildControlList() {
       const response = await fetchFullCatalog(
         `/api/oscal/catalogs/${catalog.uuid}/full`,
       );
-      console.log(
-        catalog.metadata.title,
-        response.data.value?.data.metadata.title,
-      );
       const results = [] as SelectControl[];
       for (const group of response.data.value?.data.groups || []) {
         let controlList = [] as ControlOption[];
@@ -123,7 +119,6 @@ async function buildControlList() {
         }
       }
       controls.value = [...controls.value, ...results];
-      console.log(controls.value);
     } catch (error) {
       console.error('Error fetching full catalog:', error);
     }
