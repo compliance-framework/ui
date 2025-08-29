@@ -36,6 +36,16 @@ const { execute: executeUpdate } = useDataApi<Statement>(null, {
   method: 'PUT',
 });
 
+const { execute: executeDelete } = useDataApi<Statement>(null, {
+  transformRequest: [decamelizeKeys],
+  method: 'DELETE',
+});
+
+const { execute: executeCreate } = useDataApi<ByComponent>(null, {
+  transformRequest: [decamelizeKeys],
+  method: 'POST',
+});
+
 const componentItems = computed(() => {
   return toValue(components.value || []).map((item) => {
     return {
@@ -68,72 +78,55 @@ function resetCreateForm() {
 }
 
 async function deleteByComponent(byComp: ByComponent) {
-  const clonedStatement = useCloned(localStatement).cloned;
-  clonedStatement.value.byComponents =
-    clonedStatement.value.byComponents?.filter((comp: ByComponent) => {
-      return byComp.uuid !== comp.uuid;
-    });
-  try {
-    const res = await executeUpdate(
-      `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/control-implementation/implemented-requirements/${implementation.uuid}/statements/${statement.uuid}`,
-      {
-        data: clonedStatement.value,
-      },
+  const updatedStatement = useCloned(localStatement).cloned;
+  updatedStatement.value.byComponents =
+    updatedStatement.value.byComponents?.filter(
+      (comp: ByComponent) => byComp.uuid != comp.uuid,
     );
-    if (res.data.value && res.data.value.data) {
-      localStatement.value = res.data.value.data;
-    } else {
-      console.error('API response missing expected data:', res.data);
-      return;
-    }
+  try {
+    await executeDelete(
+      `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/control-implementation/implemented-requirements/${implementation.uuid}/statements/${statement.uuid}/by-components/${byComp.uuid}`,
+    );
+    localStatement.value = updatedStatement.value;
+    setCreateForm(false);
+    emit('updated', localStatement.value);
     newByComponent.value = {
       uuid: uuidv4(),
     } as ByComponent;
-    setCreateForm(false);
-    emit('updated', localStatement.value);
   } catch (err) {
     console.error(err);
   }
 }
 
 async function updateByComponent(byComp: ByComponent) {
-  const clonedStatement = useCloned(localStatement).cloned;
-  clonedStatement.value.byComponents = clonedStatement.value.byComponents?.map(
-    (comp: ByComponent) => (byComp.uuid == comp.uuid ? byComp : comp),
-  );
   try {
-    const res = await executeUpdate(
-      `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/control-implementation/implemented-requirements/${implementation.uuid}/statements/${statement.uuid}`,
+    await executeUpdate(
+      `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/control-implementation/implemented-requirements/${implementation.uuid}/statements/${statement.uuid}/by-components/${byComp.uuid}`,
       {
-        data: clonedStatement.value,
+        data: byComp,
       },
     );
-    localStatement.value = res.data.value!.data;
+    newByComponent.value = byComp;
+    setCreateForm(false);
+    emit('updated', localStatement.value);
     newByComponent.value = {
       uuid: uuidv4(),
     } as ByComponent;
-    setCreateForm(false);
-    emit('updated', localStatement.value);
   } catch (err) {
     console.error(err);
   }
 }
 
 async function create() {
-  const clonedStatement = useCloned(localStatement).cloned;
-  clonedStatement.value.byComponents = [
-    ...(statement.byComponents || []),
-    toValue(newByComponent),
-  ];
   try {
-    const res = await executeUpdate(
-      `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/control-implementation/implemented-requirements/${implementation.uuid}/statements/${statement.uuid}`,
+    const res = await executeCreate(
+      `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/control-implementation/implemented-requirements/${implementation.uuid}/statements/${statement.uuid}/by-components`,
       {
-        data: clonedStatement.value,
+        data: newByComponent.value,
       },
     );
     if (res.data.value && res.data.value.data) {
-      localStatement.value = res.data.value.data;
+      localStatement.value.byComponents?.push(res.data.value.data);
     } else {
       console.error('Failed to create: response data is missing');
       return;
