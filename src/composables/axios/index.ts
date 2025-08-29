@@ -6,11 +6,11 @@ import { useToast } from 'primevue/usetoast';
 import type {
   UseAxiosOptions,
   UseAxiosOptionsWithInitialData,
-} from '@vueuse/integrations/useAxios.mjs';
+} from '@vueuse/integrations/useAxios';
 import type { AxiosHeaders, AxiosRequestConfig } from 'axios';
 import type { DataResponse } from '@/stores/types.ts';
 import { shallowRef, toValue, watch, type Ref } from 'vue';
-import { useAxios } from '@vueuse/integrations/useAxios.mjs';
+import { useAxios } from '@vueuse/integrations/useAxios';
 import camelcaseKeys from 'camelcase-keys';
 import { default as _decamelizeKeys } from 'decamelize-keys';
 
