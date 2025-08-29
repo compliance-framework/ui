@@ -96,7 +96,7 @@
             <strong>{{ inventoryItems?.length || 0 }}</strong> total items
           </span>
           <span v-if="sourceStats.ssp > 0">
-            <Badge value="SSP" severity="info" /> {{ sourceStats.ssp }}
+            <Badge value="SSP" severity="secondary" /> {{ sourceStats.ssp }}
           </span>
           <span v-if="sourceStats.evidence > 0">
             <Badge value="Evidence" severity="success" />
@@ -106,7 +106,7 @@
             <Badge value="POAM" severity="warning" /> {{ sourceStats.poam }}
           </span>
           <span v-if="sourceStats.ap > 0">
-            <Badge value="AP" severity="contrast" /> {{ sourceStats.ap }}
+            <Badge value="AP" severity="info" /> {{ sourceStats.ap }}
           </span>
           <span v-if="sourceStats.ar > 0">
             <Badge value="AR" severity="danger" /> {{ sourceStats.ar }}
@@ -531,20 +531,22 @@ const showInventoryItemAttachModal = ref(false);
 const { firstOfProps } = useProps();
 
 // Get severity color for source badge
+// Use different severities that have better distinction
+// PrimeVue severities: success (green), info (blue), warning (yellow/orange), danger (red), secondary (gray)
 const getSourceSeverity = (sourceType: string) => {
   switch (sourceType) {
     case 'ssp':
-      return 'info';
+      return 'secondary'; // Gray - different from info blue used for asset types
     case 'evidence':
-      return 'success';
+      return 'success'; // Green - good for discovered items
     case 'poam':
-      return 'warning';
+      return 'warning'; // Orange/Yellow - items needing action
     case 'assessment-plan':
     case 'ap':
-      return 'contrast';
+      return 'info'; // Blue - planned assessments
     case 'assessment-results':
     case 'ar':
-      return 'danger';
+      return 'danger'; // Red - findings that need attention
     default:
       return 'secondary';
   }
