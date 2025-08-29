@@ -72,19 +72,6 @@
             class="w-full"
           />
         </div>
-
-        <!-- Status Filter -->
-        <div>
-          <label class="block text-sm font-medium mb-2">Status</label>
-          <Select
-            v-model="filters.status"
-            :options="statusOptions"
-            optionLabel="label"
-            optionValue="value"
-            placeholder="All statuses"
-            class="w-full"
-          />
-        </div>
       </div>
     </div>
 
@@ -372,7 +359,6 @@ const filters = reactive({
   includeAP: false,
   includeAR: false,
   itemType: null as string | null,
-  status: null as string | null,
 });
 
 // Filter options
@@ -389,15 +375,6 @@ const itemTypeOptions = [
   { label: 'Email Server', value: 'email-server' },
   { label: 'Directory Server', value: 'directory-server' },
   { label: 'Storage Array', value: 'storage-array' },
-];
-
-const statusOptions = [
-  { label: 'All statuses', value: null },
-  { label: 'Operational', value: 'operational' },
-  { label: 'Under Maintenance', value: 'under-maintenance' },
-  { label: 'Planned', value: 'planned' },
-  { label: 'Pending Approval', value: 'pending-approval' },
-  { label: 'Disposed', value: 'disposed' },
 ];
 
 // Build query parameters based on filters
@@ -425,10 +402,6 @@ const buildQueryParams = () => {
 
   if (filters.itemType) {
     params.append('item_type', filters.itemType);
-  }
-
-  if (filters.status) {
-    params.append('status', filters.status);
   }
 
   return params.toString();
