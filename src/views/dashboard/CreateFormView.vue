@@ -98,13 +98,13 @@ const { execute: createDashboard } = useDataApi<Dashboard>(
 watch(catalogs, buildControlList);
 
 async function buildControlList() {
-  catalogs.value?.forEach(async (catalog) => {
+  for (const catalog of catalogs.value || []) {
     try {
       const response = await fetchFullCatalog(
         `/api/oscal/catalogs/${catalog.uuid}/full`,
       );
       const results = [] as SelectControl[];
-      response.data.value?.data.groups.forEach((group) => {
+      for (const group of response.data.value?.data.groups || []) {
         let controlList = [] as ControlOption[];
         if (group.controls) {
           group.controls.forEach((control) => {
@@ -117,12 +117,12 @@ async function buildControlList() {
             items: controlList,
           });
         }
-      });
+      }
       controls.value = [...controls.value, ...results];
     } catch (error) {
       console.error('Error fetching full catalog:', error);
     }
-  });
+  }
 }
 
 function getControlSelectList(control: Control): ControlOption[] {
