@@ -10,7 +10,7 @@
               command: () => {
                 showCreateInventoryItemModal = true;
               },
-              disabled: !system.securityPlan,
+              disabled: false, // Allow creating unattached inventory
             },
           ]"
         />
@@ -47,7 +47,15 @@
                 v-model="filters.includePOAM"
                 class="mr-2"
               />
-              POA&Ms
+              Plan of Action & Milestones
+            </label>
+            <label class="flex items-center">
+              <input type="checkbox" v-model="filters.includeAP" class="mr-2" />
+              Assessment Plans
+            </label>
+            <label class="flex items-center">
+              <input type="checkbox" v-model="filters.includeAR" class="mr-2" />
+              Assessment Results
             </label>
           </div>
         </div>
@@ -65,15 +73,15 @@
           />
         </div>
 
-        <!-- SSP Attachment Filter -->
+        <!-- Status Filter -->
         <div>
-          <label class="block text-sm font-medium mb-2">SSP Attachment</label>
+          <label class="block text-sm font-medium mb-2">Status</label>
           <Select
-            v-model="filters.attachedToSSP"
-            :options="attachmentOptions"
+            v-model="filters.status"
+            :options="statusOptions"
             optionLabel="label"
             optionValue="value"
-            placeholder="All items"
+            placeholder="All statuses"
             class="w-full"
           />
         </div>
@@ -95,7 +103,13 @@
             {{ sourceStats.evidence }}
           </span>
           <span v-if="sourceStats.poam > 0">
-            <Badge value="POA&M" severity="warning" /> {{ sourceStats.poam }}
+            <Badge value="POAM" severity="warning" /> {{ sourceStats.poam }}
+          </span>
+          <span v-if="sourceStats.ap > 0">
+            <Badge value="AP" severity="contrast" /> {{ sourceStats.ap }}
+          </span>
+          <span v-if="sourceStats.ar > 0">
+            <Badge value="AR" severity="danger" /> {{ sourceStats.ar }}
           </span>
         </div>
         <button
@@ -190,11 +204,18 @@
                   Edit
                 </button>
                 <button
-                  v-if="system.securityPlan && item.sourceType !== 'ssp'"
+                  v-if="system.securityPlan && item.sourceType === 'ssp'"
                   @click.stop="attachInventoryItem(item)"
                   class="px-3 py-1 bg-green-500 text-white text-sm rounded hover:bg-green-600 transition-colors"
                 >
-                  Attach to SSP
+                  Attach
+                </button>
+                <button
+                  v-if="system.securityPlan && item.sourceType !== 'ssp'"
+                  @click.stop="attachToSSP(item)"
+                  class="px-3 py-1 bg-indigo-500 text-white text-sm rounded hover:bg-indigo-600 transition-colors"
+                >
+                  Add to SSP
                 </button>
                 <button
                   @click.stop="downloadInventoryItemJSON(item)"
@@ -276,9 +297,8 @@
 
     <!-- Inventory Item Create Modal -->
     <Dialog v-model:visible="showCreateInventoryItemModal" modal>
-      <SystemImplementationInventoryItemCreateForm
-        v-if="system.securityPlan"
-        :ssp-id="sspId"
+      <InventoryItemCreateForm
+        :ssp-id="system.securityPlan ? sspId : undefined"
         @cancel="showCreateInventoryItemModal = false"
         @created="handleInventoryItemCreated"
       />
@@ -316,7 +336,7 @@ import decamelizeKeys from 'decamelize-keys';
 import SystemImplementationInventoryItemEditForm from '@/components/system-security-plans/SystemImplementationInventoryItemEditForm.vue';
 import Dialog from '@/volt/Dialog.vue';
 import SystemImplementationInventoryItemAttachModal from '@/components/system-security-plans/SystemImplementationInventoryItemAttachModal.vue';
-import SystemImplementationInventoryItemCreateForm from '@/components/system-security-plans/SystemImplementationInventoryItemCreateForm.vue';
+import InventoryItemCreateForm from '@/components/inventory/InventoryItemCreateForm.vue';
 import { useToast } from 'primevue/usetoast';
 import PageHeader from '@/components/PageHeader.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
@@ -352,7 +372,7 @@ const filters = reactive({
   includeAP: false,
   includeAR: false,
   itemType: null as string | null,
-  attachedToSSP: null as boolean | null,
+  status: null as string | null,
 });
 
 // Filter options
@@ -371,10 +391,13 @@ const itemTypeOptions = [
   { label: 'Storage Array', value: 'storage-array' },
 ];
 
-const attachmentOptions = [
-  { label: 'All items', value: null },
-  { label: 'Attached to SSP', value: true },
-  { label: 'Not attached to SSP', value: false },
+const statusOptions = [
+  { label: 'All statuses', value: null },
+  { label: 'Operational', value: 'operational' },
+  { label: 'Under Maintenance', value: 'under-maintenance' },
+  { label: 'Planned', value: 'planned' },
+  { label: 'Pending Approval', value: 'pending-approval' },
+  { label: 'Disposed', value: 'disposed' },
 ];
 
 // Build query parameters based on filters
@@ -404,8 +427,8 @@ const buildQueryParams = () => {
     params.append('item_type', filters.itemType);
   }
 
-  if (filters.attachedToSSP !== null) {
-    params.append('attached_to_ssp', filters.attachedToSSP.toString());
+  if (filters.status) {
+    params.append('status', filters.status);
   }
 
   return params.toString();
@@ -434,6 +457,12 @@ const sourceStats = computed(() => {
         break;
       case 'poam':
         stats.poam++;
+        break;
+      case 'assessment-plan':
+        stats.ap++;
+        break;
+      case 'assessment-results':
+        stats.ar++;
         break;
       case 'ap':
         stats.ap++;
@@ -510,8 +539,10 @@ const getSourceSeverity = (sourceType: string) => {
       return 'success';
     case 'poam':
       return 'warning';
+    case 'assessment-plan':
     case 'ap':
-      return 'secondary';
+      return 'contrast';
+    case 'assessment-results':
     case 'ar':
       return 'danger';
     default:
@@ -566,6 +597,17 @@ const handleInventoryItemAttached = async (updatedItem: InventoryItem) => {
 function attachInventoryItem(item: InventoryItemWithSource) {
   editingInventoryItem.value = item;
   showInventoryItemAttachModal.value = true;
+}
+
+async function attachToSSP(item: InventoryItemWithSource) {
+  // This would add a non-SSP inventory item to the SSP
+  // For now, show a message that this needs to be implemented
+  toast.add({
+    severity: 'info',
+    summary: 'Feature Coming Soon',
+    detail: 'Adding external inventory items to SSP will be implemented soon.',
+    life: 3000,
+  });
 }
 
 const deleteInventoryItem = async (item: InventoryItemWithSource) => {
