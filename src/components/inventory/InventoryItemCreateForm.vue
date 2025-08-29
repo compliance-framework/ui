@@ -219,7 +219,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   cancel: [];
-  created: [inventoryItem: any];
+  created: [inventoryItem: InventoryItem];
 }>();
 
 const toast = useToast();
@@ -233,15 +233,25 @@ const selectedAssessmentPlanId = ref('');
 const selectedAssessmentResultsId = ref('');
 const assetType = ref('');
 
+// Type for OSCAL documents with basic metadata
+interface OscalDocument {
+  uuid: string;
+  metadata?: {
+    title?: string;
+  };
+}
+
 // Load available SSPs, POAMs, Assessment Plans, and Assessment Results
-const { data: sspList } = useDataApi<any[]>('/api/oscal/system-security-plans');
-const { data: poamList } = useDataApi<any[]>(
+const { data: sspList } = useDataApi<OscalDocument[]>(
+  '/api/oscal/system-security-plans',
+);
+const { data: poamList } = useDataApi<OscalDocument[]>(
   '/api/oscal/plan-of-action-and-milestones',
 );
-const { data: assessmentPlanList } = useDataApi<any[]>(
+const { data: assessmentPlanList } = useDataApi<OscalDocument[]>(
   '/api/oscal/assessment-plans',
 );
-const { data: assessmentResultsList } = useDataApi<any[]>(
+const { data: assessmentResultsList } = useDataApi<OscalDocument[]>(
   '/api/oscal/assessment-results',
 );
 
@@ -284,7 +294,7 @@ const {
   data: newItem,
   isLoading: saving,
   execute: createItem,
-} = useDataApi<any>(
+} = useDataApi<InventoryItem>(
   null,
   {
     method: 'POST',
@@ -368,12 +378,15 @@ const createInventoryItem = async () => {
       });
       emit('created', newItem.value);
     }
-  } catch (error: any) {
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error
+        ? error.message
+        : 'Failed to create inventory item';
     toast.add({
       severity: 'error',
       summary: 'Error',
-      detail:
-        error?.response?.data?.message || 'Failed to create inventory item',
+      detail: errorMessage,
       life: 3000,
     });
   }
