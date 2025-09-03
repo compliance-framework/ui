@@ -33,3 +33,6 @@ logs/
 tests_output/
 
 eslint-report.json
+
+# Husky test files
+test-husky.js
