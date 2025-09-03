@@ -574,8 +574,7 @@ function attachInventoryItem(item: InventoryItemWithSource) {
   showInventoryItemAttachModal.value = true;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-async function attachToSSP(item: InventoryItemWithSource) {
+async function attachToSSP(_item: InventoryItemWithSource) {
   // This would add a non-SSP inventory item to the SSP
   // For now, show a message that this needs to be implemented
   // The item parameter will be used when this feature is implemented
