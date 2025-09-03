@@ -294,8 +294,8 @@
     <!-- Inventory Item Edit Modal -->
     <Dialog v-model:visible="showEditInventoryItemModal" modal>
       <SystemImplementationInventoryItemEditForm
-        v-if="system.securityPlan"
-        :ssp-id="sspId"
+        v-if="system.securityPlan && editingInventoryItem"
+        :ssp-id="editingInventoryItem.sourceId || sspId"
         :inventory-item="editingInventoryItem!"
         @cancel="showEditInventoryItemModal = false"
         @saved="handleInventoryItemSaved"
@@ -305,8 +305,8 @@
     <!-- Inventory Item Attach Modal -->
     <Dialog v-model:visible="showInventoryItemAttachModal" modal>
       <SystemImplementationInventoryItemAttachModal
-        v-if="system.securityPlan"
-        :ssp-id="sspId"
+        v-if="system.securityPlan && editingInventoryItem"
+        :ssp-id="editingInventoryItem.sourceId || sspId"
         :item="editingInventoryItem!"
         @cancel="showInventoryItemAttachModal = false"
         @saved="handleInventoryItemAttached"
@@ -588,11 +588,11 @@ async function attachToSSP(item: InventoryItemWithSource) {
 }
 
 const deleteInventoryItem = async (item: InventoryItemWithSource) => {
-  if (!sspId.value || item.sourceType !== 'ssp') {
+  if (item.sourceType !== 'ssp' || !item.sourceId) {
     toast.add({
       severity: 'error',
       summary: 'Error',
-      detail: 'Can only delete items attached to the current SSP.',
+      detail: 'Can only delete SSP inventory items.',
       life: 5000,
     });
     return;
@@ -600,7 +600,7 @@ const deleteInventoryItem = async (item: InventoryItemWithSource) => {
 
   try {
     await executeDelete(
-      `/api/oscal/system-security-plans/${sspId.value}/system-implementation/inventory-items/${item.uuid}`,
+      `/api/oscal/system-security-plans/${item.sourceId}/system-implementation/inventory-items/${item.uuid}`,
     );
     // Reload items after deletion
     await loadInventoryItems();

@@ -70,7 +70,9 @@ export const useEvidenceStore = defineStore('evidence', () => {
 
   async function get(id: string): Promise<DataResponse<Evidence>> {
     const config = await configStore.getConfig();
-    const response = await fetch(`${config.API_URL}/api/evidence/${id}`);
+    const response = await fetch(`${config.API_URL}/api/evidence/${id}`, {
+      credentials: 'include',
+    });
     const responseJson = await response.json();
     return camelcaseKeys(responseJson, {
       deep: true,
@@ -81,6 +83,9 @@ export const useEvidenceStore = defineStore('evidence', () => {
     const config = await configStore.getConfig();
     const response = await fetch(
       `${config.API_URL}/api/evidence/for-control/${controlId}`,
+      {
+        credentials: 'include',
+      },
     );
     return (await response.json()) as ForControlResponse;
   }
@@ -89,6 +94,7 @@ export const useEvidenceStore = defineStore('evidence', () => {
     const config = await configStore.getConfig();
     const response = await fetch(`${config.API_URL}/api/evidence/search`, {
       method: 'POST',
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
       },
@@ -110,6 +116,7 @@ export const useEvidenceStore = defineStore('evidence', () => {
     const config = await configStore.getConfig();
     const response = await fetch(`${config.API_URL}/api/evidence`, {
       method: 'POST',
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
       },
@@ -134,6 +141,7 @@ export const useEvidenceStore = defineStore('evidence', () => {
       `${config.API_URL}/api/evidence/history/${uuid}`,
       {
         method: 'GET',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -159,6 +167,7 @@ export const useEvidenceStore = defineStore('evidence', () => {
         }),
       {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -187,6 +196,7 @@ export const useEvidenceStore = defineStore('evidence', () => {
         }),
       {
         method: 'GET',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -206,6 +216,9 @@ export const useEvidenceStore = defineStore('evidence', () => {
     const config = await configStore.getConfig();
     const response = await fetch(
       `${config.API_URL}/api/evidence/compliance-by-control/${control.id}`,
+      {
+        credentials: 'include',
+      },
     );
     return (await response.json()) as DataResponse<ComplianceIntervalStatus[]>;
   }
