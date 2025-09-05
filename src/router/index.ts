@@ -57,6 +57,14 @@ const authenticatedRoutes = [
     },
   },
   {
+    path: 'workflows',
+    name: 'workflow:index',
+    component: () => import('../views/workflows/WorkFlowIndexView.vue'),
+    meta: {
+      requiresAuth: true,
+    },
+  },
+  {
     path: 'system',
     name: 'system',
     component: () => import('../views/SystemView.vue'),
