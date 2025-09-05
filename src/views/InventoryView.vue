@@ -1,7 +1,7 @@
 <template>
   <div>
     <PageHeader>
-      Inventory Plus
+      Inventory
       <template #menu>
         <BurgerMenu
           :items="[
