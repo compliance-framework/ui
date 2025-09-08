@@ -33,13 +33,28 @@ const createControlList = (
   watch(catalogUUIDs, buildControlList, { immediate: true });
 
   async function buildControlList() {
+    console.log('[useControlList] Building control list: start');
+    // Clear before (re)building for consistent demos/UX
+    controls.value = [];
     catalogIDs.forEach(async (catalogUUID) => {
       try {
+        console.time(`[useControlList] fetch catalog ${catalogUUID}`);
         const response = await fetchFullCatalog(
           `/api/oscal/catalogs/${catalogUUID}/full`,
         );
+        console.timeEnd(`[useControlList] fetch catalog ${catalogUUID}`);
+        const fullCatalog =
+          response.data.value?.data ?? (undefined as Catalog | undefined);
+        if (!fullCatalog) {
+          console.warn(
+            `[useControlList] No catalog payload for ${catalogUUID}; skipping`,
+          );
+          return;
+        }
         const results = [] as SelectControl[];
-        for (const group of response.data.value?.data.groups || []) {
+        let groupCount = 0;
+        let itemCount = 0;
+        for (const group of fullCatalog.groups || []) {
           let controlList = [] as ControlOption[];
           if (group.controls) {
             for (const control of group.controls) {
@@ -51,9 +66,14 @@ const createControlList = (
               code: group.id,
               items: controlList,
             });
+            groupCount += 1;
+            itemCount += controlList.length;
           }
         }
         controls.value = [...controls.value, ...results];
+        console.log(
+          `[useControlList] Processed catalog ${catalogUUID}: groups=${groupCount}, items=${itemCount}, totalItemsAccumulated=${controls.value.reduce((n, g) => n + g.items.length, 0)}`,
+        );
       } catch (error) {
         const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
         console.error('Error fetching full catalog:', errorResponse);
@@ -61,6 +81,7 @@ const createControlList = (
           errorResponse.response?.data || 'An unknown error occurred';
       }
     });
+    console.log('[useControlList] Building control list: done');
   }
 
   function getControlSelectList(control: Control): ControlOption[] {

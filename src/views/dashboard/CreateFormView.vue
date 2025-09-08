@@ -23,6 +23,7 @@
           placeholder="Select Controls"
           class="w-full"
           :virtualScrollerOptions="{ itemSize: 44 }"
+          :disabled="loading"
         >
           <template #optiongroup="slotProps">
             <div class="flex items-center gap-2">
@@ -81,6 +82,7 @@ interface SelectControl {
 
 const selectedControls = ref<ControlOption[]>([]);
 const controls = ref<SelectControl[]>([]);
+const loading = ref<boolean>(true);
 
 const { data: catalogs } = useDataApi<Catalog[]>('/api/oscal/catalogs');
 const { execute: fetchFullCatalog } = useDataApi<Catalog>(null, null, {
@@ -98,13 +100,28 @@ const { execute: createDashboard } = useDataApi<Dashboard>(
 watch(catalogs, buildControlList);
 
 async function buildControlList() {
+  console.log('[CreateFormView] Building control list: start');
+  // Reset before rebuilding to avoid duplicates on re-runs
+  controls.value = [];
   for (const catalog of catalogs.value || []) {
     try {
+      console.time(`[CreateFormView] fetch catalog ${catalog.uuid}`);
       const response = await fetchFullCatalog(
         `/api/oscal/catalogs/${catalog.uuid}/full`,
       );
+      console.timeEnd(`[CreateFormView] fetch catalog ${catalog.uuid}`);
+      // useAxios execute() returns AxiosResponse; payload is in response.data.data
+      const fullCatalog = response?.data.value?.data as Catalog | undefined;
+      if (!fullCatalog) {
+        console.warn(
+          `[CreateFormView] No catalog payload for ${catalog.uuid}; skipping`,
+        );
+        continue;
+      }
       const results = [] as SelectControl[];
-      for (const group of response.data.value?.data.groups || []) {
+      let groupCount = 0;
+      let itemCount = 0;
+      for (const group of fullCatalog.groups || []) {
         let controlList = [] as ControlOption[];
         if (group.controls) {
           group.controls.forEach((control) => {
@@ -116,13 +133,24 @@ async function buildControlList() {
             code: group.id,
             items: controlList,
           });
+          groupCount += 1;
+          itemCount += controlList.length;
         }
       }
       controls.value = [...controls.value, ...results];
+      console.log(
+        `[CreateFormView] Processed catalog ${catalog.uuid}: groups=${groupCount}, items=${itemCount}, totalItemsAccumulated=${controls.value.reduce((n, g) => n + g.items.length, 0)}`,
+      );
     } catch (error) {
-      console.error('Error fetching full catalog:', error);
+      console.error(
+        `[CreateFormView] Error fetching full catalog ${catalog.uuid}:`,
+        error,
+      );
+    } finally {
+      loading.value = false;
     }
   }
+  console.log('[CreateFormView] Building control list: done');
 }
 
 function getControlSelectList(control: Control): ControlOption[] {
