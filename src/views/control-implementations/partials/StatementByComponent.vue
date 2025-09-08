@@ -148,4 +148,23 @@ function cancel() {
       </div>
     </div>
   </div>
+
+  <!-- Implementation Status -->
+  <div v-if="byComponent.implementationStatus" class="mt-2 text-xs">
+    <span class="font-medium text-purple-700 dark:text-purple-400"
+      >Implementation Status:</span
+    >
+    <div class="ml-2">
+      <span class="font-medium text-purple-700 dark:text-purple-400"
+        >State: {{ byComponent.implementationStatus.state }}</span
+      >
+    </div>
+    <div v-if="byComponent.implementationStatus.remarks">
+      <div class="ml-2">
+        <span class="font-medium text-purple-700 dark:text-purple-400"
+          >Remarks: {{ byComponent.implementationStatus.remarks }}</span
+        >
+      </div>
+    </div>
+  </div>
 </template>

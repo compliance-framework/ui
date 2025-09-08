@@ -11,8 +11,12 @@ import { useCloned } from '@vueuse/core';
 import BurgerMenu from '@/components/BurgerMenu.vue';
 import { useToggle } from '@/composables/useToggle';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
+import { useToast } from 'primevue/usetoast';
 
 const { system } = useSystemStore();
+const toast = useToast();
+
+const showError = ref(false);
 
 const { value: showCreateForm, set: setCreateForm } = useToggle(false);
 
@@ -57,6 +61,9 @@ const componentItems = computed(() => {
 
 const newByComponent = ref<ByComponent>({
   uuid: uuidv4(),
+  implementationStatus: {
+    state: '',
+  },
 } as ByComponent);
 const selectedComponent = ref();
 watch(selectedComponent, () => {
@@ -72,8 +79,14 @@ onMounted(() => {
 
 function resetCreateForm() {
   setCreateForm(false);
+  showError.value = false;
+  selectedComponent.value = null;
+
   newByComponent.value = {
     uuid: uuidv4(),
+    implementationStatus: {
+      state: '',
+    },
   } as ByComponent;
 }
 
@@ -118,6 +131,10 @@ async function updateByComponent(byComp: ByComponent) {
 }
 
 async function create() {
+  if (!newByComponent.value.componentUuid) {
+    showError.value = true;
+    return;
+  }
   try {
     const res = await executeCreate(
       `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/control-implementation/implemented-requirements/${implementation.uuid}/statements/${statement.uuid}/by-components`,
@@ -136,8 +153,17 @@ async function create() {
     } as ByComponent;
     setCreateForm(false);
     emit('updated', localStatement.value);
-  } catch (err) {
-    console.error(err);
+  } catch (error) {
+    console.error(error);
+    toast.add({
+      severity: 'error',
+      summary: 'Error Creating By-Component',
+      detail:
+        error instanceof Error
+          ? error.message
+          : 'Unexpected error creating a by-component.',
+      life: 3000,
+    });
   }
 }
 </script>
@@ -177,14 +203,18 @@ async function create() {
       <h4 class="mb-4">New Component Implementation</h4>
       <div class="mb-2">
         <Select
-          placeholder="Component"
+          placeholder="Select a component"
           :loading="componentsLoading"
           checkmark
           class="w-full"
           v-model="selectedComponent"
           :options="componentItems"
           optionLabel="name"
+          v-on:update:model-value="showError = false"
         />
+        <small v-if="showError" class="p-error" style="color: red">
+          Please select a valid component.
+        </small>
       </div>
 
       <div class="mb-2">
@@ -196,7 +226,6 @@ async function create() {
           placeholder="Description"
         />
       </div>
-
       <div class="text-right">
         <secondary-button @click="resetCreateForm">Cancel</secondary-button>
         <primary-button type="submit">Create</primary-button>
