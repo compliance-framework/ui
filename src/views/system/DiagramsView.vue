@@ -16,16 +16,45 @@
       </template>
       <div class="px-4 py-4 border-b border-ccf-300 dark:border-slate-700">
         <!--        <SystemCharacteristicsDiagramGroupForm v-model="authorizationBoundary" />-->
+        <template v-if="authorizationBoundary?.diagrams?.length">
+          <div
+            class="overflow-hidden border border-ccf-300 dark:border-slate-700 rounded-md"
+            v-for="diagram in authorizationBoundary?.diagrams"
+            :key="diagram.uuid"
+          >
+            <div
+              class="flex justify-end items-center gap-2 px-3 py-2 bg-ccf-50 dark:bg-slate-800 border-b border-ccf-300 dark:border-slate-700"
+            >
+              <button
+                class="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition-colors"
+                @click.stop.prevent="
+                  confirmDeleteDialog(
+                    () => deleteDiagram('authorization-boundary', diagram),
+                    {
+                      itemType: 'diagram',
+                      itemName: diagram.caption || diagram.uuid,
+                    },
+                  )
+                "
+              >
+                Delete Diagram
+              </button>
+            </div>
+            <DrawIODiagramEditor
+              class="h-184"
+              :diagram="diagram"
+              @saved="saveAuthorizationBoundaryDiagram"
+            />
+          </div>
+        </template>
         <div
-          class="overflow-hidden border border-ccf-300 dark:border-slate-700 rounded-md"
-          v-for="diagram in authorizationBoundary?.diagrams"
-          :key="diagram.uuid"
+          v-else
+          class="flex items-center justify-center py-8 text-sm text-gray-500 dark:text-slate-400 border border-dashed border-ccf-300 dark:border-slate-700 rounded-md bg-ccf-50/50 dark:bg-slate-800"
         >
-          <DrawIODiagramEditor
-            class="h-184"
-            :diagram="diagram"
-            @saved="saveAuthorizationBoundaryDiagram"
-          />
+          <div class="flex items-center gap-2">
+            <PlusIcon class="w-4 h-4 text-gray-400" />
+            <span>No diagrams yet. Use "Add Diagram" to create one.</span>
+          </div>
         </div>
       </div>
     </CollapsableGroup>
@@ -44,16 +73,45 @@
       </template>
       <div class="px-4 py-4 border-b border-ccf-300 dark:border-slate-700">
         <!--        <SystemCharacteristicsDiagramGroupForm v-model="networkArchitecture" />-->
+        <template v-if="networkArchitecture?.diagrams?.length">
+          <div
+            class="overflow-hidden border border-ccf-300 dark:border-slate-700 rounded-md"
+            v-for="diagram in networkArchitecture?.diagrams"
+            :key="diagram.uuid"
+          >
+            <div
+              class="flex justify-end items-center gap-2 px-3 py-2 bg-ccf-50 dark:bg-slate-800 border-b border-ccf-300 dark:border-slate-700"
+            >
+              <button
+                class="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition-colors"
+                @click.stop.prevent="
+                  confirmDeleteDialog(
+                    () => deleteDiagram('network-architecture', diagram),
+                    {
+                      itemType: 'diagram',
+                      itemName: diagram.caption || diagram.uuid,
+                    },
+                  )
+                "
+              >
+                Delete Diagram
+              </button>
+            </div>
+            <DrawIODiagramEditor
+              class="h-168"
+              :diagram="diagram"
+              @saved="saveNetworkArchitectureDiagram"
+            />
+          </div>
+        </template>
         <div
-          class="overflow-hidden border border-ccf-300 dark:border-slate-700 rounded-md"
-          v-for="diagram in networkArchitecture?.diagrams"
-          :key="diagram.uuid"
+          v-else
+          class="flex items-center justify-center py-8 text-sm text-gray-500 dark:text-slate-400 border border-dashed border-ccf-300 dark:border-slate-700 rounded-md bg-ccf-50/50 dark:bg-slate-800"
         >
-          <DrawIODiagramEditor
-            class="h-168"
-            :diagram="diagram"
-            @saved="saveNetworkArchitectureDiagram"
-          />
+          <div class="flex items-center gap-2">
+            <PlusIcon class="w-4 h-4 text-gray-400" />
+            <span>No diagrams yet. Use "Add Diagram" to create one.</span>
+          </div>
         </div>
       </div>
     </CollapsableGroup>
@@ -72,16 +130,45 @@
       </template>
       <div class="px-4 py-4 border-b border-ccf-300 dark:border-slate-700">
         <!--        <SystemCharacteristicsDiagramGroupForm v-model="dataFlow" />-->
+        <template v-if="dataFlow?.diagrams?.length">
+          <div
+            class="overflow-hidden border border-ccf-300 dark:border-slate-700 rounded-md"
+            v-for="diagram in dataFlow?.diagrams"
+            :key="diagram.uuid"
+          >
+            <div
+              class="flex justify-end items-center gap-2 px-3 py-2 bg-ccf-50 dark:bg-slate-800 border-b border-ccf-300 dark:border-slate-700"
+            >
+              <button
+                class="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition-colors"
+                @click.stop.prevent="
+                  confirmDeleteDialog(
+                    () => deleteDiagram('data-flow', diagram),
+                    {
+                      itemType: 'diagram',
+                      itemName: diagram.caption || diagram.uuid,
+                    },
+                  )
+                "
+              >
+                Delete Diagram
+              </button>
+            </div>
+            <DrawIODiagramEditor
+              class="h-168"
+              :diagram="diagram"
+              @saved="saveDataFlowDiagram"
+            />
+          </div>
+        </template>
         <div
-          class="overflow-hidden border border-ccf-300 dark:border-slate-700 rounded-md"
-          v-for="diagram in dataFlow?.diagrams"
-          :key="diagram.uuid"
+          v-else
+          class="flex items-center justify-center py-8 text-sm text-gray-500 dark:text-slate-400 border border-dashed border-ccf-300 dark:border-slate-700 rounded-md bg-ccf-50/50 dark:bg-slate-800"
         >
-          <DrawIODiagramEditor
-            class="h-168"
-            :diagram="diagram"
-            @saved="saveDataFlowDiagram"
-          />
+          <div class="flex items-center gap-2">
+            <PlusIcon class="w-4 h-4 text-gray-400" />
+            <span>No diagrams yet. Use "Add Diagram" to create one.</span>
+          </div>
         </div>
       </div>
     </CollapsableGroup>
@@ -105,9 +192,12 @@ import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import PrimaryButton from '@/components/PrimaryButton.vue';
 import type { AxiosError } from 'axios';
 import type { ErrorBody, ErrorResponse } from '@/stores/types';
+import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
+import PlusIcon from '@primevue/icons/plus';
 
 const { system } = useSystemStore();
 const toast = useToast();
+const { confirmDeleteDialog } = useDeleteConfirmationDialog();
 
 const systemSecurityPlan = ref<SystemSecurityPlan | null>(
   (system.securityPlan as SystemSecurityPlan) || null,
@@ -173,6 +263,15 @@ const { data: createdDiagram, execute: createDiagram } = useDataApi<Diagram>(
   {
     method: 'POST',
     transformRequest: [decamelizeKeys],
+  },
+  { immediate: false },
+);
+
+// Delete Diagram (reusable for all categories)
+const { execute: deleteDiagramRequest } = useDataApi<unknown>(
+  null,
+  {
+    method: 'DELETE',
   },
   { immediate: false },
 );
@@ -318,5 +417,60 @@ function addNetworkArchitectureDiagram() {
 
 function addDataFlowDiagram() {
   return addDiagram('data-flow');
+}
+
+async function deleteDiagram(
+  kind: DiagramKind,
+  diagram: Diagram,
+): Promise<void> {
+  let grouping: Ref<DiagramGrouping | undefined>;
+  let label = '';
+  switch (kind) {
+    case 'authorization-boundary':
+      grouping = authorizationBoundary as unknown as Ref<
+        DiagramGrouping | undefined
+      >;
+      label = 'Authorization Boundary';
+      break;
+    case 'network-architecture':
+      grouping = networkArchitecture as unknown as Ref<
+        DiagramGrouping | undefined
+      >;
+      label = 'Network Architecture';
+      break;
+    case 'data-flow':
+      grouping = dataFlow as unknown as Ref<DiagramGrouping | undefined>;
+      label = 'Data Flow';
+      break;
+  }
+
+  try {
+    if (!systemSecurityPlan.value) return;
+    await deleteDiagramRequest(
+      `/api/oscal/system-security-plans/${systemSecurityPlan.value.uuid}/system-characteristics/${kind}/diagrams/${diagram.uuid}`,
+    );
+
+    if (!grouping?.value?.diagrams) return;
+    grouping.value.diagrams = grouping.value.diagrams.filter(
+      (d) => d.uuid !== diagram.uuid,
+    ) as Diagram[];
+
+    toast.add({
+      severity: 'success',
+      summary: 'Diagram Deleted',
+      detail: `${label} diagram deleted successfully.`,
+      life: 3000,
+    });
+  } catch (error) {
+    const err = error as AxiosError<ErrorResponse<ErrorBody>>;
+    const msg =
+      err?.response?.data?.errors?.body ?? 'An unknown error occurred.';
+    toast.add({
+      severity: 'error',
+      summary: 'Delete Failed',
+      detail: `Could not delete ${label} diagram: ${msg}`,
+      life: 4000,
+    });
+  }
 }
 </script>
