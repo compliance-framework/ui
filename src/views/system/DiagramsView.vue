@@ -4,7 +4,15 @@
   >
     <CollapsableGroup open>
       <template #header>
-        <div class="py-2 px-4 text-lg">Authorization Boundary</div>
+        <div class="py-2 px-4 text-lg flex items-center justify-between">
+          <span>Authorization Boundary</span>
+          <PrimaryButton
+            class="p-small"
+            @click.stop.prevent="addAuthorizationBoundaryDiagram"
+          >
+            Add Diagram
+          </PrimaryButton>
+        </div>
       </template>
       <div class="px-4 py-4 border-b border-ccf-300 dark:border-slate-700">
         <!--        <SystemCharacteristicsDiagramGroupForm v-model="authorizationBoundary" />-->
@@ -52,7 +60,15 @@
 
     <CollapsableGroup>
       <template #header>
-        <div class="py-2 px-4 text-lg">Data Flow</div>
+        <div class="py-2 px-4 text-lg flex items-center justify-between">
+          <span>Data Flow</span>
+          <PrimaryButton
+            class="p-small"
+            @click.stop.prevent="addDataFlowDiagram"
+          >
+            Add Diagram
+          </PrimaryButton>
+        </div>
       </template>
       <div class="px-4 py-4 border-b border-ccf-300 dark:border-slate-700">
         <!--        <SystemCharacteristicsDiagramGroupForm v-model="dataFlow" />-->
@@ -153,6 +169,28 @@ const { execute: saveDFDiagram } = useDataApi<Diagram>(
 
 // Create Network Architecture Diagram
 const { data: createdNADiagram, execute: createNADiagram } =
+  useDataApi<Diagram>(
+    null,
+    {
+      method: 'POST',
+      transformRequest: [decamelizeKeys],
+    },
+    { immediate: false },
+  );
+
+// Create Authorization Boundary Diagram
+const { data: createdABDiagram, execute: createABDiagram } =
+  useDataApi<Diagram>(
+    null,
+    {
+      method: 'POST',
+      transformRequest: [decamelizeKeys],
+    },
+    { immediate: false },
+  );
+
+// Create Data Flow Diagram
+const { data: createdDFDiagram, execute: createDFDiagram } =
   useDataApi<Diagram>(
     null,
     {
@@ -264,6 +302,110 @@ async function addNetworkArchitectureDiagram() {
       summary: 'Create Failed',
       detail:
         'Could not create Network Architecture diagram: ' +
+          errorResponse.response?.data.errors.body ||
+        'An unknown error occurred.',
+      life: 4000,
+    });
+  }
+}
+
+async function addAuthorizationBoundaryDiagram() {
+  if (!systemSecurityPlan.value) return;
+
+  try {
+    await createABDiagram(
+      `/api/oscal/system-security-plans/${systemSecurityPlan.value.uuid}/system-characteristics/authorization-boundary/diagrams`,
+      {
+        data: {
+          uuid: v4(),
+          description: '',
+          props: [],
+          links: [],
+          caption: '',
+          remarks: '',
+        },
+      },
+    );
+
+    const created = createdABDiagram.value;
+    if (!created) return;
+
+    if (!authorizationBoundary.value) {
+      authorizationBoundary.value = {
+        diagrams: [],
+      } as unknown as DiagramGrouping;
+    }
+    if (!authorizationBoundary.value.diagrams) {
+      authorizationBoundary.value.diagrams = [] as Diagram[];
+    }
+
+    authorizationBoundary.value.diagrams.push(created);
+
+    toast.add({
+      severity: 'success',
+      summary: 'Diagram Created',
+      detail: 'New Authorization Boundary diagram added.',
+      life: 3000,
+    });
+  } catch (error) {
+    const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
+    toast.add({
+      severity: 'error',
+      summary: 'Create Failed',
+      detail:
+        'Could not create Authorization Boundary diagram: ' +
+          errorResponse.response?.data.errors.body ||
+        'An unknown error occurred.',
+      life: 4000,
+    });
+  }
+}
+
+async function addDataFlowDiagram() {
+  if (!systemSecurityPlan.value) return;
+
+  try {
+    await createDFDiagram(
+      `/api/oscal/system-security-plans/${systemSecurityPlan.value.uuid}/system-characteristics/data-flow/diagrams`,
+      {
+        data: {
+          uuid: v4(),
+          description: '',
+          props: [],
+          links: [],
+          caption: '',
+          remarks: '',
+        },
+      },
+    );
+
+    const created = createdDFDiagram.value;
+    if (!created) return;
+
+    if (!dataFlow.value) {
+      dataFlow.value = {
+        diagrams: [],
+      } as unknown as DiagramGrouping;
+    }
+    if (!dataFlow.value.diagrams) {
+      dataFlow.value.diagrams = [] as Diagram[];
+    }
+
+    dataFlow.value.diagrams.push(created);
+
+    toast.add({
+      severity: 'success',
+      summary: 'Diagram Created',
+      detail: 'New Data Flow diagram added.',
+      life: 3000,
+    });
+  } catch (error) {
+    const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
+    toast.add({
+      severity: 'error',
+      summary: 'Create Failed',
+      detail:
+        'Could not create Data Flow diagram: ' +
           errorResponse.response?.data.errors.body ||
         'An unknown error occurred.',
       life: 4000,
