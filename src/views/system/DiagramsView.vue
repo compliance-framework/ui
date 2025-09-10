@@ -24,7 +24,15 @@
 
     <CollapsableGroup>
       <template #header>
-        <div class="py-2 px-4 text-lg">Network Architecture</div>
+        <div class="py-2 px-4 text-lg flex items-center justify-between">
+          <span>Network Architecture</span>
+          <PrimaryButton
+            class="p-small"
+            @click.stop.prevent="addNetworkArchitectureDiagram"
+          >
+            Add Diagram
+          </PrimaryButton>
+        </div>
       </template>
       <div class="px-4 py-4 border-b border-ccf-300 dark:border-slate-700">
         <!--        <SystemCharacteristicsDiagramGroupForm v-model="networkArchitecture" />-->
@@ -78,6 +86,9 @@ import { v4 } from 'uuid';
 import { useToast } from 'primevue/usetoast';
 import { useSystemStore } from '@/stores/system.ts';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
+import PrimaryButton from '@/components/PrimaryButton.vue';
+import type { AxiosError } from 'axios';
+import type { ErrorBody, ErrorResponse } from '@/stores/types';
 
 const { system } = useSystemStore();
 const toast = useToast();
@@ -128,7 +139,7 @@ const { execute: saveNADiagram } = useDataApi<Diagram>(
     method: 'PUT',
     transformRequest: [decamelizeKeys],
   },
-  { immediate: false },
+  { immediate: false, abortPrevious: false },
 );
 
 const { execute: saveDFDiagram } = useDataApi<Diagram>(
@@ -139,6 +150,17 @@ const { execute: saveDFDiagram } = useDataApi<Diagram>(
   },
   { immediate: false },
 );
+
+// Create Network Architecture Diagram
+const { data: createdNADiagram, execute: createNADiagram } =
+  useDataApi<Diagram>(
+    null,
+    {
+      method: 'POST',
+      transformRequest: [decamelizeKeys],
+    },
+    { immediate: false },
+  );
 
 onMounted(async () => {
   await fetchAuthorizationBoundaryDiagram();
@@ -193,6 +215,58 @@ async function saveDataFlowDiagram(diagram: Diagram) {
       summary: 'Diagram Saved',
       detail: 'Data Flow diagram saved successfully.',
       life: 3000,
+    });
+  }
+}
+
+async function addNetworkArchitectureDiagram() {
+  if (!systemSecurityPlan.value) return;
+
+  try {
+    await createNADiagram(
+      `/api/oscal/system-security-plans/${systemSecurityPlan.value.uuid}/system-characteristics/network-architecture/diagrams`,
+      {
+        data: {
+          uuid: v4(),
+          description: '',
+          props: [],
+          links: [],
+          caption: '',
+          remarks: '',
+        },
+      },
+    );
+
+    const created = createdNADiagram.value;
+    if (!created) return;
+
+    if (!networkArchitecture.value) {
+      networkArchitecture.value = {
+        diagrams: [],
+      } as unknown as DiagramGrouping;
+    }
+    if (!networkArchitecture.value.diagrams) {
+      networkArchitecture.value.diagrams = [] as Diagram[];
+    }
+
+    networkArchitecture.value.diagrams.push(created);
+
+    toast.add({
+      severity: 'success',
+      summary: 'Diagram Created',
+      detail: 'New Network Architecture diagram added.',
+      life: 3000,
+    });
+  } catch (error) {
+    const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
+    toast.add({
+      severity: 'error',
+      summary: 'Create Failed',
+      detail:
+        'Could not create Network Architecture diagram: ' +
+          errorResponse.response?.data.errors.body ||
+        'An unknown error occurred.',
+      life: 4000,
     });
   }
 }
