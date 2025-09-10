@@ -18,6 +18,8 @@ import Chip from '@/volt/Chip.vue';
 import TaskEditModal from '@/components/assessment-plans/TaskEditModal.vue';
 import Badge from '@/volt/Badge.vue';
 import Panel from '@/volt/Panel.vue';
+import { ac } from 'vitest/dist/chunks/reporters.nr4dxCkA.js';
+import TaskTiming from './TaskTiming.vue';
 
 interface FullAssociatedActivity extends AssociatedActivity {
   activity: Activity;
@@ -37,6 +39,7 @@ const emit = defineEmits<{
 }>();
 
 const showEditModal = ref(false);
+const activities = ref<Activity[]>([]);
 
 const { data: associatedActivities, execute: fetchAssociatedActivities } =
   useDataApi<FullAssociatedActivity[]>(
@@ -46,7 +49,7 @@ const { data: associatedActivities, execute: fetchAssociatedActivities } =
       immediate: false,
     },
   );
-const { execute: getActivities } = useDataApi<Activity>();
+const { execute: getActivity } = useDataApi<Activity>();
 const { execute: deleteTask } = useDataApi<void>(
   `/api/oscal/assessment-plans/${props.assessmentPlan.uuid}/tasks/${props.task.uuid}`,
   {
@@ -62,13 +65,16 @@ function editTask() {
 onMounted(async () => {
   await fetchAssociatedActivities();
   if (!associatedActivities.value) return;
+  const localActivities = [];
   for (const activity of associatedActivities.value!) {
-    const { data: activityData } = await getActivities(
+    const { data: activityData } = await getActivity(
       `/api/oscal/activities/${activity.activityUuid}`,
     );
     if (!activityData.value) continue;
     activity.activity = activityData.value.data;
+    localActivities.push(activityData.value.data);
   }
+  activities.value = localActivities;
 });
 
 async function onTaskUpdated(task: Task) {
@@ -105,6 +111,9 @@ async function removeTask() {
     <template #header>
       <div class="flex items-center gap-2 py-2">
         <span class="font-bold">{{ props.task.title }}</span>
+        <div>
+          <TaskTiming :timing="props.task.timing" v-if="props.task.timing" />
+        </div>
         <Badge value="AC-1" severity="info" />
         <div class="flex gap-2">
           <button
@@ -126,36 +135,27 @@ async function removeTask() {
       class="px-4 py-4 bg-gray-50 dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700"
     >
       <div v-if="props.task.description" class="mt-2 px-4">
-        <span class="font-medium text-gray-700 dark:text-slate-400"
-          >Description:</span
-        >
-        <p class="mt-1 text-gray-900 dark:text-slate-300">
+        <p class="mt-1 dark:text-slate-300 whitespace-pre-wrap">
           {{ props.task.description }}
         </p>
       </div>
 
       <div v-if="props.task.remarks" class="mt-2 px-4">
-        <span class="font-medium text-gray-700 dark:text-slate-400"
-          >Remarks:</span
-        >
-        <p class="mt-1 text-gray-900 dark:text-slate-300 whitespace-pre-wrap">
+        <span class="font-medium dark:text-slate-200">Remarks:</span>
+        <p class="mt-1 dark:text-slate-300 whitespace-pre-wrap">
           {{ props.task.remarks }}
         </p>
       </div>
 
       <div class="px-4 mt-4">
         <span class="font-medium text-lg">Activities</span>
-        <div
-          v-for="activity in associatedActivities"
-          :key="activity.activityUuid"
-        >
-          <h4>{{ activity.activity?.title }}</h4>
-          <h5 class="font-medium text-lg">Steps:</h5>
-          <Timeline
-            :value="activity.activity?.steps"
-            :hide-opposite="true"
-            class="mt-8"
-          >
+        <div v-for="activity in activities" :key="activity.uuid">
+          <h4>{{ activity?.title }}</h4>
+          <p class="mt-1 text-gray-900 dark:text-slate-300 whitespace-pre-wrap">
+            {{ activity.description }}
+          </p>
+          <h5 class="font-medium text-lg mt-4">Steps:</h5>
+          <Timeline :value="activity?.steps" :hide-opposite="true" class="mt-8">
             <template #content="slotProps">
               <h2 class="font-medium">{{ slotProps.item.title }}</h2>
               <p class="py-2">{{ slotProps.item.description }}</p>

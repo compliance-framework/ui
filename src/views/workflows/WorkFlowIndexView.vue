@@ -5,7 +5,7 @@
       <PageSubHeader>Configure continuous compliance activity</PageSubHeader>
     </div>
     <button
-      @click="showCreateModal = true"
+      @click="toggleCreate"
       class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
     >
       Add Task
@@ -30,14 +30,14 @@
 
   <div v-else>
     <div v-if="tasksLoaded">
-      <div class="space-y-8" v-if="assessmentPlan">
+      <div class="space-y-8" v-if="systemStore.system.assessmentPlan">
         <TaskDetailPanel
           v-for="(task, index) in tasks"
           :key="task.uuid || index"
           @updated="taskUpdated"
           @deleted="taskDeleted"
           :task="task"
-          :assessment-plan="assessmentPlan"
+          :assessment-plan="systemStore.system.assessmentPlan"
         />
       </div>
     </div>
@@ -51,39 +51,29 @@
 
     <!-- Task Create Modal -->
     <TaskCreateModal
-      v-model="showCreateModal"
+      v-model="creating"
       @created="taskCreated"
-      :assessment-plan-id="route.params.id as string"
+      :assessment-plan-id="systemStore.system.assessmentPlan.uuid"
     />
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
-import type { AssessmentPlan, Task } from '@/stores/assessment-plans.ts';
-import { useRoute } from 'vue-router';
+import { onMounted } from 'vue';
+import type { Task } from '@/oscal';
 import TaskCreateModal from '@/components/assessment-plans/TaskCreateModal.vue';
-import TaskDetail from '@/views/assessment-plans/partials/TaskDetail.vue';
 import { useDataApi } from '@/composables/axios';
 import { useSystemStore } from '@/stores/system';
 import Message from '@/volt/Message.vue';
-import Panel from '@/volt/Panel.vue';
 import TaskDetailPanel from './partials/TaskDetailPanel.vue';
 import PageHeader from '@/components/PageHeader.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
+import { useToggle } from '@/composables/useToggle';
 
 const systemStore = useSystemStore();
 
-const route = useRoute();
+const { value: creating, toggle: toggleCreate } = useToggle(false);
 
-const showCreateModal = ref(false);
-
-const { data: assessmentPlan, execute: refreshAssessmentPlan } =
-  useDataApi<AssessmentPlan>(
-    `/api/oscal/assessment-plans/${systemStore.system.assessmentPlan?.uuid}`,
-    null,
-    { immediate: false },
-  );
 const {
   data: tasks,
   execute: refreshTasks,
@@ -112,7 +102,6 @@ async function taskCreated(task: Task) {
 }
 
 onMounted(async () => {
-  await refreshAssessmentPlan();
   await refreshTasks();
 });
 </script>

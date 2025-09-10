@@ -1,6 +1,12 @@
 <template>
-  <Dialog v-model:visible="show" modal>
-    <div class="px-12 py-8">
+  <Dialog
+    header="Edit Task"
+    size="lg"
+    v-model:visible="show"
+    modal
+    :draggable="false"
+  >
+    <div>
       <TaskEditForm
         @updated="done"
         @cancel="show = false"

@@ -1,13 +1,13 @@
 <template>
   <form @submit.prevent="createTask()">
-    <h1 class="text-xl font-semibold mb-6 dark:text-slate-300">
-      Create a new task
-    </h1>
-
     <div class="mb-4">
       <label class="inline-block pb-2 dark:text-slate-300">UUID</label>
       <div class="flex items-center place-items-stretch">
-        <FormInput v-model="task.uuid" class="rounded-r-none border-r-0" />
+        <FormInput
+          v-model="task.uuid"
+          disabled
+          class="rounded-r-none border-r-0"
+        />
         <TertiaryButton
           type="button"
           @click="generateUuid"
@@ -28,13 +28,29 @@
       <label class="inline-block pb-2 dark:text-slate-300"
         >Type <span class="text-red-500">*</span></label
       >
-      <FormInput v-model="task.type" required />
+      <div>
+        <Select
+          v-model="task.type"
+          :options="[{ name: 'Action', value: 'action' }]"
+          optionLabel="name"
+          optionValue="value"
+          class="w-full"
+        />
+      </div>
     </div>
 
     <div class="mb-4">
       <label class="inline-block pb-2 dark:text-slate-300">Description</label>
       <FormTextarea v-model="task.description" rows="3" />
     </div>
+
+    <div class="mb-4">
+      <label class="inline-block pb-2 dark:text-slate-300">Remarks</label>
+      <FormTextarea v-model="task.remarks" rows="3" />
+    </div>
+
+    <!-- Task Timing Section -->
+    <TaskTimingManager v-model="task.timing" />
 
     <div
       v-if="errorMessage"
@@ -54,7 +70,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import type { Task } from '@/stores/assessment-plans.ts';
+import type { Task } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import FormInput from '@/components/forms/FormInput.vue';
 import FormTextarea from '@/components/forms/FormTextarea.vue';
@@ -64,6 +80,8 @@ import TertiaryButton from '@/components/TertiaryButton.vue';
 import { BIconArrowRepeat } from 'bootstrap-icons-vue';
 import { v4 as uuidv4 } from 'uuid';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
+import Select from '@/volt/Select.vue';
+import TaskTimingManager from '../forms/TaskTimingManager.vue';
 
 const toast = useToast();
 
@@ -78,7 +96,7 @@ const emit = defineEmits<{
 
 const task = ref<Task>({
   uuid: uuidv4(),
-  type: '',
+  type: 'action',
   title: '',
   description: '',
   props: [],
