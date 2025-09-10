@@ -90,7 +90,7 @@
   <!-- A screen height div to prevent collapse scrolling back up after closing -->
 </template>
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, type Ref } from 'vue';
 import type {
   Diagram,
   DiagramGrouping,
@@ -167,38 +167,15 @@ const { execute: saveDFDiagram } = useDataApi<Diagram>(
   { immediate: false },
 );
 
-// Create Network Architecture Diagram
-const { data: createdNADiagram, execute: createNADiagram } =
-  useDataApi<Diagram>(
-    null,
-    {
-      method: 'POST',
-      transformRequest: [decamelizeKeys],
-    },
-    { immediate: false },
-  );
-
-// Create Authorization Boundary Diagram
-const { data: createdABDiagram, execute: createABDiagram } =
-  useDataApi<Diagram>(
-    null,
-    {
-      method: 'POST',
-      transformRequest: [decamelizeKeys],
-    },
-    { immediate: false },
-  );
-
-// Create Data Flow Diagram
-const { data: createdDFDiagram, execute: createDFDiagram } =
-  useDataApi<Diagram>(
-    null,
-    {
-      method: 'POST',
-      transformRequest: [decamelizeKeys],
-    },
-    { immediate: false },
-  );
+// Create Diagram (reusable for all categories)
+const { data: createdDiagram, execute: createDiagram } = useDataApi<Diagram>(
+  null,
+  {
+    method: 'POST',
+    transformRequest: [decamelizeKeys],
+  },
+  { immediate: false },
+);
 
 onMounted(async () => {
   await fetchAuthorizationBoundaryDiagram();
@@ -257,12 +234,38 @@ async function saveDataFlowDiagram(diagram: Diagram) {
   }
 }
 
-async function addNetworkArchitectureDiagram() {
+type DiagramKind =
+  | 'authorization-boundary'
+  | 'network-architecture'
+  | 'data-flow';
+
+async function addDiagram(kind: DiagramKind) {
   if (!systemSecurityPlan.value) return;
 
+  let grouping: Ref<DiagramGrouping | undefined>;
+  let label = '';
+  switch (kind) {
+    case 'authorization-boundary':
+      grouping = authorizationBoundary as unknown as Ref<
+        DiagramGrouping | undefined
+      >;
+      label = 'Authorization Boundary';
+      break;
+    case 'network-architecture':
+      grouping = networkArchitecture as unknown as Ref<
+        DiagramGrouping | undefined
+      >;
+      label = 'Network Architecture';
+      break;
+    case 'data-flow':
+      grouping = dataFlow as unknown as Ref<DiagramGrouping | undefined>;
+      label = 'Data Flow';
+      break;
+  }
+
   try {
-    await createNADiagram(
-      `/api/oscal/system-security-plans/${systemSecurityPlan.value.uuid}/system-characteristics/network-architecture/diagrams`,
+    await createDiagram(
+      `/api/oscal/system-security-plans/${systemSecurityPlan.value.uuid}/system-characteristics/${kind}/diagrams`,
       {
         data: {
           uuid: v4(),
@@ -275,141 +278,45 @@ async function addNetworkArchitectureDiagram() {
       },
     );
 
-    const created = createdNADiagram.value;
+    const created = createdDiagram.value;
     if (!created) return;
 
-    if (!networkArchitecture.value) {
-      networkArchitecture.value = {
-        diagrams: [],
-      } as unknown as DiagramGrouping;
+    if (!grouping.value) {
+      grouping.value = { diagrams: [] } as unknown as DiagramGrouping;
     }
-    if (!networkArchitecture.value.diagrams) {
-      networkArchitecture.value.diagrams = [] as Diagram[];
+    if (!grouping.value.diagrams) {
+      grouping.value.diagrams = [] as Diagram[];
     }
-
-    networkArchitecture.value.diagrams.push(created);
+    grouping.value.diagrams.push(created);
 
     toast.add({
       severity: 'success',
       summary: 'Diagram Created',
-      detail: 'New Network Architecture diagram added.',
+      detail: `New ${label} diagram added.`,
       life: 3000,
     });
   } catch (error) {
-    const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
+    const err = error as AxiosError<ErrorResponse<ErrorBody>>;
+    const msg =
+      err?.response?.data?.errors?.body ?? 'An unknown error occurred.';
     toast.add({
       severity: 'error',
       summary: 'Create Failed',
-      detail:
-        'Could not create Network Architecture diagram: ' +
-          errorResponse.response?.data.errors.body ||
-        'An unknown error occurred.',
+      detail: `Could not create ${label} diagram: ${msg}`,
       life: 4000,
     });
   }
 }
 
-async function addAuthorizationBoundaryDiagram() {
-  if (!systemSecurityPlan.value) return;
-
-  try {
-    await createABDiagram(
-      `/api/oscal/system-security-plans/${systemSecurityPlan.value.uuid}/system-characteristics/authorization-boundary/diagrams`,
-      {
-        data: {
-          uuid: v4(),
-          description: '',
-          props: [],
-          links: [],
-          caption: '',
-          remarks: '',
-        },
-      },
-    );
-
-    const created = createdABDiagram.value;
-    if (!created) return;
-
-    if (!authorizationBoundary.value) {
-      authorizationBoundary.value = {
-        diagrams: [],
-      } as unknown as DiagramGrouping;
-    }
-    if (!authorizationBoundary.value.diagrams) {
-      authorizationBoundary.value.diagrams = [] as Diagram[];
-    }
-
-    authorizationBoundary.value.diagrams.push(created);
-
-    toast.add({
-      severity: 'success',
-      summary: 'Diagram Created',
-      detail: 'New Authorization Boundary diagram added.',
-      life: 3000,
-    });
-  } catch (error) {
-    const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
-    toast.add({
-      severity: 'error',
-      summary: 'Create Failed',
-      detail:
-        'Could not create Authorization Boundary diagram: ' +
-          errorResponse.response?.data.errors.body ||
-        'An unknown error occurred.',
-      life: 4000,
-    });
-  }
+function addAuthorizationBoundaryDiagram() {
+  return addDiagram('authorization-boundary');
 }
 
-async function addDataFlowDiagram() {
-  if (!systemSecurityPlan.value) return;
+function addNetworkArchitectureDiagram() {
+  return addDiagram('network-architecture');
+}
 
-  try {
-    await createDFDiagram(
-      `/api/oscal/system-security-plans/${systemSecurityPlan.value.uuid}/system-characteristics/data-flow/diagrams`,
-      {
-        data: {
-          uuid: v4(),
-          description: '',
-          props: [],
-          links: [],
-          caption: '',
-          remarks: '',
-        },
-      },
-    );
-
-    const created = createdDFDiagram.value;
-    if (!created) return;
-
-    if (!dataFlow.value) {
-      dataFlow.value = {
-        diagrams: [],
-      } as unknown as DiagramGrouping;
-    }
-    if (!dataFlow.value.diagrams) {
-      dataFlow.value.diagrams = [] as Diagram[];
-    }
-
-    dataFlow.value.diagrams.push(created);
-
-    toast.add({
-      severity: 'success',
-      summary: 'Diagram Created',
-      detail: 'New Data Flow diagram added.',
-      life: 3000,
-    });
-  } catch (error) {
-    const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
-    toast.add({
-      severity: 'error',
-      summary: 'Create Failed',
-      detail:
-        'Could not create Data Flow diagram: ' +
-          errorResponse.response?.data.errors.body ||
-        'An unknown error occurred.',
-      life: 4000,
-    });
-  }
+function addDataFlowDiagram() {
+  return addDiagram('data-flow');
 }
 </script>
