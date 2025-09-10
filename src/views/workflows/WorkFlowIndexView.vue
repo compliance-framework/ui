@@ -1,4 +1,17 @@
 <template>
+  <div class="flex justify-between items-center mb-6">
+    <div>
+      <PageHeader>Workflows</PageHeader>
+      <PageSubHeader>Configure continuous compliance activity</PageSubHeader>
+    </div>
+    <button
+      @click="showCreateModal = true"
+      class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
+    >
+      Add Task
+    </button>
+  </div>
+
   <Message
     v-if="!systemStore.system.assessmentPlan"
     severity="error"
@@ -15,30 +28,17 @@
     </p>
   </Message>
 
-  <div
-    v-else
-    class="my-4 rounded-md bg-white dark:bg-slate-900 border-collapse border border-ccf-300 dark:border-slate-700 p-6"
-  >
-    <div class="flex justify-between items-center mb-6">
-      <h3 class="text-lg font-semibold dark:text-slate-300">Workflows</h3>
-      <button
-        @click="showCreateModal = true"
-        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
-      >
-        Add Task
-      </button>
-    </div>
-
+  <div v-else>
     <div v-if="tasksLoaded">
       <div class="space-y-8" v-if="assessmentPlan">
-        <div v-for="(task, index) in tasks" :key="task.uuid || index">
-          <TaskDetail
-            @updated="taskUpdated"
-            @deleted="taskDeleted"
-            :task="task"
-            :assessment-plan="assessmentPlan"
-          />
-        </div>
+        <TaskDetailPanel
+          v-for="(task, index) in tasks"
+          :key="task.uuid || index"
+          @updated="taskUpdated"
+          @deleted="taskDeleted"
+          :task="task"
+          :assessment-plan="assessmentPlan"
+        />
       </div>
     </div>
 
@@ -52,14 +52,14 @@
     <!-- Task Create Modal -->
     <TaskCreateModal
       v-model="showCreateModal"
-      :assessment-plan-id="route.params.id as string"
       @created="taskCreated"
+      :assessment-plan-id="route.params.id as string"
     />
   </div>
 </template>
 
 <script setup lang="ts">
-import { onActivated, onMounted, ref } from 'vue';
+import { onMounted, ref } from 'vue';
 import type { AssessmentPlan, Task } from '@/stores/assessment-plans.ts';
 import { useRoute } from 'vue-router';
 import TaskCreateModal from '@/components/assessment-plans/TaskCreateModal.vue';
@@ -67,6 +67,10 @@ import TaskDetail from '@/views/assessment-plans/partials/TaskDetail.vue';
 import { useDataApi } from '@/composables/axios';
 import { useSystemStore } from '@/stores/system';
 import Message from '@/volt/Message.vue';
+import Panel from '@/volt/Panel.vue';
+import TaskDetailPanel from './partials/TaskDetailPanel.vue';
+import PageHeader from '@/components/PageHeader.vue';
+import PageSubHeader from '@/components/PageSubHeader.vue';
 
 const systemStore = useSystemStore();
 

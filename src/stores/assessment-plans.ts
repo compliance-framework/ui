@@ -239,6 +239,7 @@ export interface Task {
   type: string;
   title: string;
   description?: string;
+  remarks?: string;
   props?: Property[];
   links?: Link[];
   timing?: TaskTiming;
