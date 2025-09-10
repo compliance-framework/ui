@@ -6,19 +6,14 @@ import { useConfirm } from 'primevue/useconfirm';
 
 import { useDataApi } from '@/composables/axios';
 
-import type {
-  AssessmentPlan,
-  AssociatedActivity,
-  Task,
-} from '@/stores/assessment-plans.ts';
+import type { AssessmentPlan } from '@/stores/assessment-plans.ts';
 import type { Activity } from '@/stores/activities.ts';
+import type { Task, AssociatedActivity } from '@/oscal';
 
 import Timeline from '@/volt/Timeline.vue';
-import Chip from '@/volt/Chip.vue';
-import TaskEditModal from '@/components/assessment-plans/TaskEditModal.vue';
+import TaskEditModal from './TaskEditModal.vue';
 import Badge from '@/volt/Badge.vue';
 import Panel from '@/volt/Panel.vue';
-import { ac } from 'vitest/dist/chunks/reporters.nr4dxCkA.js';
 import TaskTiming from './TaskTiming.vue';
 
 interface FullAssociatedActivity extends AssociatedActivity {

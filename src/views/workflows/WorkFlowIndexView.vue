@@ -61,7 +61,7 @@
 <script setup lang="ts">
 import { onMounted } from 'vue';
 import type { Task } from '@/oscal';
-import TaskCreateModal from '@/components/assessment-plans/TaskCreateModal.vue';
+import TaskCreateModal from './partials/TaskCreateModal.vue';
 import { useDataApi } from '@/composables/axios';
 import { useSystemStore } from '@/stores/system';
 import Message from '@/volt/Message.vue';
