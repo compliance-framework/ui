@@ -236,7 +236,7 @@ const { execute: saveABDiagram } = useDataApi<Diagram>(
     method: 'PUT',
     transformRequest: [decamelizeKeys],
   },
-  { immediate: false },
+  { immediate: false, abortPrevious: false },
 );
 
 const { execute: saveNADiagram } = useDataApi<Diagram>(
@@ -254,7 +254,7 @@ const { execute: saveDFDiagram } = useDataApi<Diagram>(
     method: 'PUT',
     transformRequest: [decamelizeKeys],
   },
-  { immediate: false },
+  { immediate: false, abortPrevious: false },
 );
 
 // Create Diagram (reusable for all categories)
