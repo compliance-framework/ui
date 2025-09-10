@@ -338,9 +338,10 @@ type DiagramKind =
   | 'network-architecture'
   | 'data-flow';
 
-async function addDiagram(kind: DiagramKind) {
-  if (!systemSecurityPlan.value) return;
-
+function resolveGrouping(kind: DiagramKind): {
+  grouping: Ref<DiagramGrouping | undefined>;
+  label: string;
+} {
   let grouping: Ref<DiagramGrouping | undefined>;
   let label = '';
   switch (kind) {
@@ -361,6 +362,13 @@ async function addDiagram(kind: DiagramKind) {
       label = 'Data Flow';
       break;
   }
+  return { grouping, label };
+}
+
+async function addDiagram(kind: DiagramKind) {
+  if (!systemSecurityPlan.value) return;
+
+  const { grouping, label } = resolveGrouping(kind);
 
   try {
     await createDiagram(
@@ -423,26 +431,7 @@ async function deleteDiagram(
   kind: DiagramKind,
   diagram: Diagram,
 ): Promise<void> {
-  let grouping: Ref<DiagramGrouping | undefined>;
-  let label = '';
-  switch (kind) {
-    case 'authorization-boundary':
-      grouping = authorizationBoundary as unknown as Ref<
-        DiagramGrouping | undefined
-      >;
-      label = 'Authorization Boundary';
-      break;
-    case 'network-architecture':
-      grouping = networkArchitecture as unknown as Ref<
-        DiagramGrouping | undefined
-      >;
-      label = 'Network Architecture';
-      break;
-    case 'data-flow':
-      grouping = dataFlow as unknown as Ref<DiagramGrouping | undefined>;
-      label = 'Data Flow';
-      break;
-  }
+  const { grouping, label } = resolveGrouping(kind);
 
   try {
     if (!systemSecurityPlan.value) return;
