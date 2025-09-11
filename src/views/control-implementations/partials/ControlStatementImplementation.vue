@@ -119,7 +119,6 @@ async function updateByComponent(byComp: ByComponent) {
         data: byComp,
       },
     );
-    newByComponent.value = byComp;
     setCreateForm(false);
     emit('updated', localStatement.value);
     newByComponent.value = {
