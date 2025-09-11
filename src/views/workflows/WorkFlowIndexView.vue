@@ -70,7 +70,7 @@ import type { Task } from '@/oscal';
 import { useDataApi } from '@/composables/axios';
 import { useSystemStore } from '@/stores/system';
 import Message from '@/volt/Message.vue';
-import TaskDetailPanel from './partials/TaskDetailPanel.vue';
+import TaskDetailPanel from './partials/TaskPanel.vue';
 import PageHeader from '@/components/PageHeader.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
 import { useToggle } from '@/composables/useToggle';
