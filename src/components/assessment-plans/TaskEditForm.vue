@@ -1,5 +1,7 @@
 <template>
   <form @submit.prevent="updateTask()">
+    <h1 class="text-xl font-semibold mb-6 dark:text-slate-300">Edit task</h1>
+
     <div class="mb-4">
       <label class="inline-block pb-2 dark:text-slate-300">UUID</label>
       <div
@@ -22,25 +24,12 @@
       <label class="inline-block pb-2 dark:text-slate-300"
         >Type <span class="text-red-500">*</span></label
       >
-      <div>
-        <Select
-          v-model="taskData.type"
-          :options="[{ name: 'Action', value: 'action' }]"
-          optionLabel="name"
-          optionValue="value"
-          class="w-full"
-        />
-      </div>
+      <FormInput v-model="taskData.type" required />
     </div>
 
     <div class="mb-4">
       <label class="inline-block pb-2 dark:text-slate-300">Description</label>
       <FormTextarea v-model="taskData.description" rows="3" />
-    </div>
-
-    <div class="mb-4">
-      <label class="inline-block pb-2 dark:text-slate-300">Remarks</label>
-      <FormTextarea v-model="taskData.remarks" rows="3" />
     </div>
 
     <!-- Task Timing Section -->
@@ -81,7 +70,6 @@ import TaskDependencyManager from '@/components/forms/TaskDependencyManager.vue'
 import PrimaryButton from '@/components/PrimaryButton.vue';
 import SecondaryButton from '@/components/SecondaryButton.vue';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
-import Select from '@/volt/Select.vue';
 
 const toast = useToast();
 

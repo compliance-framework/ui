@@ -1,6 +1,6 @@
 <template>
-  <Dialog header="New Activity" v-model:visible="show" modal>
-    <div>
+  <Dialog v-model:visible="show" modal>
+    <div class="px-12 py-8">
       <ActivityCreateForm
         @created="done"
         @cancel="show = false"

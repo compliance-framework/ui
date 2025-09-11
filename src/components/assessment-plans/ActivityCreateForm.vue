@@ -1,5 +1,9 @@
 <template>
   <form @submit.prevent="createActivity()">
+    <h1 class="text-xl font-semibold mb-6 dark:text-slate-300">
+      Create a new activity
+    </h1>
+
     <div class="mb-4">
       <label class="inline-block pb-2 dark:text-slate-300">UUID</label>
       <div class="flex items-center place-items-stretch">
@@ -48,10 +52,10 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import { type Activity, type Task } from '@/oscal';
-import { useActivityStore } from '@/stores/activities.ts';
+import { type Activity, useActivityStore } from '@/stores/activities.ts';
 import {
   type AssessmentPlan,
+  type Task,
   useAssessmentPlanStore,
 } from '@/stores/assessment-plans.ts';
 import { useToast } from 'primevue/usetoast';
@@ -95,39 +99,6 @@ async function createActivity(): Promise<void> {
   }
 
   try {
-    /**
- *
- *
- * async function create(activity: Activity): Promise<DataResponse<Activity>> {
-    const config = await configStore.getConfig();
-    const response = await fetch(`${config.API_URL}/api/oscal/activities`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(decamelizeKeys(activity, { separator: '-' })),
-      credentials: 'include',
-    });
-    if (!response.ok) {
-      throw new Error(`Error: ${response.statusText}`);
-    }
-    return camelcaseKeys(await response.json(), {
-      deep: true,
-    }) as DataResponse<Activity>;
-  }
- *
- *
- * const response = await fetch(
-      `${config.API_URL}/api/oscal/assessment-plans/${planId}/tasks/${taskId}/associated-activities/${activityId}`,
-      {
-        method: 'POST',
-        credentials: 'include',
-      },
-    );
-
-
- */
-
     const activityResult = await activityStore.create(activity.value);
     await assessmentPlanStore.associateActivity(
       props.assessmentPlan.uuid,

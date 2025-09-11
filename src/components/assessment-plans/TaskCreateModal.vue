@@ -1,6 +1,6 @@
 <template>
-  <Dialog header="Create Task" :draggable="false" v-model:visible="show" modal>
-    <div>
+  <Dialog v-model:visible="show" modal>
+    <div class="px-12 py-8">
       <TaskCreateForm
         @created="done"
         @cancel="show = false"
@@ -24,7 +24,7 @@
 import PrimaryButton from '@/components/PrimaryButton.vue';
 import Dialog from '@/volt/Dialog.vue';
 import TaskCreateForm from '@/components/assessment-plans/TaskCreateForm.vue';
-import type { Task } from '@/oscal';
+import type { Task } from '@/stores/assessment-plans.ts';
 
 const show = defineModel<boolean>();
 
