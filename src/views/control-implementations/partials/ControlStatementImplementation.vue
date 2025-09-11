@@ -11,8 +11,12 @@ import { useCloned } from '@vueuse/core';
 import BurgerMenu from '@/components/BurgerMenu.vue';
 import { useToggle } from '@/composables/useToggle';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
+import { useToast } from 'primevue/usetoast';
 
 const { system } = useSystemStore();
+const toast = useToast();
+
+const showError = ref(false);
 
 const { value: showCreateForm, set: setCreateForm } = useToggle(false);
 
@@ -36,6 +40,16 @@ const { execute: executeUpdate } = useDataApi<Statement>(null, {
   method: 'PUT',
 });
 
+const { execute: executeDelete } = useDataApi<Statement>(null, {
+  transformRequest: [decamelizeKeys],
+  method: 'DELETE',
+});
+
+const { execute: executeCreate } = useDataApi<ByComponent>(null, {
+  transformRequest: [decamelizeKeys],
+  method: 'POST',
+});
+
 const componentItems = computed(() => {
   return toValue(components.value || []).map((item) => {
     return {
@@ -47,6 +61,9 @@ const componentItems = computed(() => {
 
 const newByComponent = ref<ByComponent>({
   uuid: uuidv4(),
+  implementationStatus: {
+    state: '',
+  },
 } as ByComponent);
 const selectedComponent = ref();
 watch(selectedComponent, () => {
@@ -62,78 +79,72 @@ onMounted(() => {
 
 function resetCreateForm() {
   setCreateForm(false);
+  showError.value = false;
+  selectedComponent.value = null;
+
   newByComponent.value = {
     uuid: uuidv4(),
+    implementationStatus: {
+      state: '',
+    },
   } as ByComponent;
 }
 
 async function deleteByComponent(byComp: ByComponent) {
-  const clonedStatement = useCloned(localStatement).cloned;
-  clonedStatement.value.byComponents =
-    clonedStatement.value.byComponents?.filter((comp: ByComponent) => {
-      return byComp.uuid !== comp.uuid;
-    });
-  try {
-    const res = await executeUpdate(
-      `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/control-implementation/implemented-requirements/${implementation.uuid}/statements/${statement.uuid}`,
-      {
-        data: clonedStatement.value,
-      },
+  const updatedStatement = useCloned(localStatement).cloned;
+  updatedStatement.value.byComponents =
+    updatedStatement.value.byComponents?.filter(
+      (comp: ByComponent) => byComp.uuid !== comp.uuid,
     );
-    if (res.data.value && res.data.value.data) {
-      localStatement.value = res.data.value.data;
-    } else {
-      console.error('API response missing expected data:', res.data);
-      return;
-    }
+  try {
+    await executeDelete(
+      `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/control-implementation/implemented-requirements/${implementation.uuid}/statements/${statement.uuid}/by-components/${byComp.uuid}`,
+    );
+    localStatement.value = updatedStatement.value;
+    setCreateForm(false);
+    emit('updated', localStatement.value);
     newByComponent.value = {
       uuid: uuidv4(),
     } as ByComponent;
-    setCreateForm(false);
-    emit('updated', localStatement.value);
   } catch (err) {
     console.error(err);
   }
 }
 
 async function updateByComponent(byComp: ByComponent) {
-  const clonedStatement = useCloned(localStatement).cloned;
-  clonedStatement.value.byComponents = clonedStatement.value.byComponents?.map(
-    (comp: ByComponent) => (byComp.uuid == comp.uuid ? byComp : comp),
-  );
   try {
-    const res = await executeUpdate(
-      `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/control-implementation/implemented-requirements/${implementation.uuid}/statements/${statement.uuid}`,
+    await executeUpdate(
+      `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/control-implementation/implemented-requirements/${implementation.uuid}/statements/${statement.uuid}/by-components/${byComp.uuid}`,
       {
-        data: clonedStatement.value,
+        data: byComp,
       },
     );
-    localStatement.value = res.data.value!.data;
+    setCreateForm(false);
+    emit('updated', localStatement.value);
     newByComponent.value = {
       uuid: uuidv4(),
     } as ByComponent;
-    setCreateForm(false);
-    emit('updated', localStatement.value);
   } catch (err) {
     console.error(err);
   }
 }
 
 async function create() {
-  const clonedStatement = useCloned(localStatement).cloned;
-  clonedStatement.value.byComponents = [
-    ...(statement.byComponents || []),
-    toValue(newByComponent),
-  ];
+  if (!newByComponent.value.componentUuid) {
+    showError.value = true;
+    return;
+  }
   try {
-    const res = await executeUpdate(
-      `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/control-implementation/implemented-requirements/${implementation.uuid}/statements/${statement.uuid}`,
+    const res = await executeCreate(
+      `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/control-implementation/implemented-requirements/${implementation.uuid}/statements/${statement.uuid}/by-components`,
       {
-        data: clonedStatement.value,
+        data: newByComponent.value,
       },
     );
     if (res.data.value && res.data.value.data) {
-      localStatement.value = res.data.value.data;
+      if (!localStatement.value.byComponents)
+        localStatement.value.byComponents = [];
+      localStatement.value.byComponents.push(res.data.value.data);
     } else {
       console.error('Failed to create: response data is missing');
       return;
@@ -143,8 +154,17 @@ async function create() {
     } as ByComponent;
     setCreateForm(false);
     emit('updated', localStatement.value);
-  } catch (err) {
-    console.error(err);
+  } catch (error) {
+    console.error(error);
+    toast.add({
+      severity: 'error',
+      summary: 'Error Creating By-Component',
+      detail:
+        error instanceof Error
+          ? error.message
+          : 'Unexpected error creating a by-component.',
+      life: 3000,
+    });
   }
 }
 </script>
@@ -184,14 +204,18 @@ async function create() {
       <h4 class="mb-4">New Component Implementation</h4>
       <div class="mb-2">
         <Select
-          placeholder="Component"
+          placeholder="Select a component"
           :loading="componentsLoading"
           checkmark
           class="w-full"
           v-model="selectedComponent"
           :options="componentItems"
           optionLabel="name"
+          v-on:update:model-value="showError = false"
         />
+        <small v-if="showError" class="p-error" style="color: red">
+          Please select a valid component.
+        </small>
       </div>
 
       <div class="mb-2">
@@ -203,7 +227,6 @@ async function create() {
           placeholder="Description"
         />
       </div>
-
       <div class="text-right">
         <secondary-button @click="resetCreateForm">Cancel</secondary-button>
         <primary-button type="submit">Create</primary-button>
