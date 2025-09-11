@@ -94,7 +94,7 @@ async function deleteByComponent(byComp: ByComponent) {
   const updatedStatement = useCloned(localStatement).cloned;
   updatedStatement.value.byComponents =
     updatedStatement.value.byComponents?.filter(
-      (comp: ByComponent) => byComp.uuid != comp.uuid,
+      (comp: ByComponent) => byComp.uuid !== comp.uuid,
     );
   try {
     await executeDelete(
