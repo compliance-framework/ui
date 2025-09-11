@@ -54,6 +54,11 @@ const links = ref<Array<NavigationItem>>([
     abbr: 'WF',
   },
   {
+    name: 'workflow:dashboard',
+    title: 'Workflow Dashboard',
+    abbr: 'WD',
+  },
+  {
     name: 'risks:index',
     title: 'Risk Register',
     abbr: 'RIS',

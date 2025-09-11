@@ -65,6 +65,14 @@ const authenticatedRoutes = [
     },
   },
   {
+    path: 'workflows/dashboard',
+    name: 'workflow:dashboard',
+    component: () => import('../views/workflows/WorkflowDashboardView.vue'),
+    meta: {
+      requiresAuth: true,
+    },
+  },
+  {
     path: 'system',
     name: 'system',
     component: () => import('../views/SystemView.vue'),
