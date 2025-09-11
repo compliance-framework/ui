@@ -142,7 +142,8 @@ async function create() {
       },
     );
     if (res.data.value && res.data.value.data) {
-      localStatement.value.byComponents?.push(res.data.value.data);
+      if (!localStatement.value.byComponents) localStatement.value.byComponents = [];
+      localStatement.value.byComponents.push(res.data.value.data);
     } else {
       console.error('Failed to create: response data is missing');
       return;
