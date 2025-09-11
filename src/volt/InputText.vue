@@ -28,8 +28,9 @@ const theme = ref<InputTextPassThroughOptions>({
         border border-surface-300 dark:border-surface-700
         enabled:hover:border-surface-400 dark:enabled:hover:border-surface-600
         enabled:focus:border-primary
-        disabled:bg-surface-200 disabled:text-surface-500
-        dark:disabled:bg-surface-700 dark:disabled:text-surface-400
+        disabled:cursor-not-allowed
+        disabled:bg-neutral-100 disabled:text-zinc-400
+        dark:disabled:bg-slate-800 dark:disabled:text-slate-400
         p-invalid:border-red-400 dark:p-invalid:border-red-300
         p-invalid:placeholder:text-red-600 dark:p-invalid:placeholder:text-red-400
         px-3 py-2 p-fluid:w-full

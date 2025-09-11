@@ -49,6 +49,11 @@ const links = ref<Array<NavigationItem>>([
     abbr: 'CON',
   },
   {
+    name: 'workflow:index',
+    title: 'Workflows',
+    abbr: 'WF',
+  },
+  {
     name: 'risks:index',
     title: 'Risk Register',
     abbr: 'RIS',
