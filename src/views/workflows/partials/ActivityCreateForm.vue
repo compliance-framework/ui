@@ -57,15 +57,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, Text } from 'vue';
-import { type Activity, type Task } from '@/oscal';
+import { ref } from 'vue';
+import type { Activity, Task } from '@/oscal';
 import { useActivityStore } from '@/stores/activities.ts';
 import {
   type AssessmentPlan,
   useAssessmentPlanStore,
 } from '@/stores/assessment-plans.ts';
 import { useToast } from 'primevue/usetoast';
-import FormInput from '@/components/forms/FormInput.vue';
 import PrimaryButton from '@/components/PrimaryButton.vue';
 import SecondaryButton from '@/components/SecondaryButton.vue';
 import TertiaryButton from '@/components/TertiaryButton.vue';
@@ -156,7 +155,7 @@ async function createActivity(): Promise<void> {
       life: 3000,
     });
 
-    emit('created', activityResult.data);
+    emit('created', activityResult.data as Activity);
   } catch (error) {
     toast.add({
       severity: 'error',

@@ -1,12 +1,12 @@
 <template>
   <form @submit.prevent="createTask()">
     <div class="mb-4">
-      <label class="inline-block pb-2 dark:text-slate-300">UUID</label>
+      <Label>UUID</Label>
       <div class="flex items-center place-items-stretch">
         <InputText
           v-model="task.uuid"
           disabled
-          class="rounded-r-none border-r-0"
+          class="rounded-r-none border-r-0 grow"
         />
         <SecondaryButton
           type="button"
@@ -18,35 +18,35 @@
     </div>
 
     <div class="mb-4">
-      <label class="inline-block pb-2 dark:text-slate-300"
-        >Title <span class="text-red-500">*</span></label
-      >
-      <InputText v-model="task.title" required />
+      <Label required>Title</Label>
+      <InputText v-model="task.title" required class="block w-full" />
     </div>
 
     <div class="mb-4">
-      <label class="inline-block pb-2 dark:text-slate-300"
-        >Type <span class="text-red-500">*</span></label
-      >
-      <div>
-        <Select
-          v-model="task.type"
-          :options="[{ name: 'Action', value: 'action' }]"
-          optionLabel="name"
-          optionValue="value"
-          class="w-full"
-        />
-      </div>
+      <Label required>Type</Label>
+      <Select
+        v-model="task.type"
+        :options="[{ name: 'Action', value: 'action' }]"
+        optionLabel="name"
+        optionValue="value"
+        class="block w-full"
+      />
     </div>
 
     <div class="mb-4">
-      <label class="inline-block pb-2 dark:text-slate-300">Description</label>
-      <Textarea v-model="task.description" rows="3" />
+      <Label>Description</Label>
+      <Textarea
+        v-model="task.description"
+        class="block w-full field-sizing-content"
+      />
     </div>
 
     <div class="mb-4">
-      <label class="inline-block pb-2 dark:text-slate-300">Remarks</label>
-      <Textarea v-model="task.remarks" rows="3" />
+      <Label>Remarks</Label>
+      <Textarea
+        v-model="task.remarks"
+        class="block w-full field-sizing-content"
+      />
     </div>
 
     <!-- Task Timing Section -->
@@ -80,6 +80,7 @@ import TaskTimingManager from './TaskTimingManager.vue';
 import InputText from '@/volt/InputText.vue';
 import Textarea from '@/volt/Textarea.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
+import Label from '@/volt/Label.vue';
 
 const toast = useToast();
 

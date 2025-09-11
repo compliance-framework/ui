@@ -5,7 +5,7 @@
       <PageSubHeader>Configure continuous compliance activity</PageSubHeader>
     </div>
     <button
-      @click="toggleCreate"
+      @click="toggleCreating"
       class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
     >
       Add Task
@@ -49,19 +49,24 @@
       </p>
     </div>
 
-    <!-- Task Create Modal -->
-    <TaskCreateModal
-      v-model="creating"
-      @created="taskCreated"
-      :assessment-plan-id="systemStore.system.assessmentPlan.uuid"
-    />
+    <Dialog
+      header="Create Task"
+      :draggable="false"
+      v-model:visible="creating"
+      modal
+    >
+      <TaskCreateForm
+        @created="taskCreated"
+        @cancel="setCreating(false)"
+        :assessment-plan-id="systemStore.system.assessmentPlan?.uuid"
+      />
+    </Dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { onMounted } from 'vue';
 import type { Task } from '@/oscal';
-import TaskCreateModal from './partials/TaskCreateModal.vue';
 import { useDataApi } from '@/composables/axios';
 import { useSystemStore } from '@/stores/system';
 import Message from '@/volt/Message.vue';
@@ -69,10 +74,16 @@ import TaskDetailPanel from './partials/TaskDetailPanel.vue';
 import PageHeader from '@/components/PageHeader.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
 import { useToggle } from '@/composables/useToggle';
+import TaskCreateForm from './partials/TaskCreateForm.vue';
+import Dialog from '@/volt/Dialog.vue';
 
 const systemStore = useSystemStore();
 
-const { value: creating, toggle: toggleCreate } = useToggle(false);
+const {
+  value: creating,
+  toggle: toggleCreating,
+  set: setCreating,
+} = useToggle(false);
 
 const {
   data: tasks,
@@ -99,6 +110,7 @@ async function taskDeleted(task: Task) {
 async function taskCreated(task: Task) {
   if (!tasks.value) return;
   tasks.value.push(task);
+  setCreating(false);
 }
 
 onMounted(async () => {

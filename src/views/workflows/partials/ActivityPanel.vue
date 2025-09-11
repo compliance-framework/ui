@@ -4,11 +4,15 @@ import type { Activity } from '@/oscal';
 import Timeline from '@/volt/Timeline.vue';
 import Panel from '@/volt/Panel.vue';
 
-import ActivityEditModal from './ActivityEditModal.vue';
-
 import { useToggle } from '@/composables/useToggle';
+import Dialog from '@/volt/Dialog.vue';
+import ActivityEditForm from './ActivityEditForm.vue';
 
-const { value: editing, toggle: toggleEditing } = useToggle(false);
+const {
+  value: editing,
+  toggle: toggleEditing,
+  set: setEditing,
+} = useToggle(false);
 
 const props = defineProps<{
   activity: Activity;
@@ -21,6 +25,7 @@ const emit = defineEmits<{
 
 async function onActivityUpdated(activity: Activity) {
   emit('updated', activity);
+  setEditing(false);
 }
 
 async function remove() {
@@ -80,9 +85,11 @@ async function remove() {
     </div>
   </Panel>
 
-  <ActivityEditModal
-    v-model="editing"
-    :activity="props.activity"
-    @updated="onActivityUpdated"
-  />
+  <Dialog header="Edit Activity" size="lg" v-model:visible="editing" modal>
+    <ActivityEditForm
+      @updated="onActivityUpdated"
+      @cancel="toggleEditing"
+      :activity="activity"
+    />
+  </Dialog>
 </template>
