@@ -76,11 +76,7 @@ const errorMessage = ref('');
 async function updateActivity(): Promise<void> {
   errorMessage.value = '';
   try {
-    const result = await activityStore.update(
-      props.activity.uuid,
-      activityData.value,
-    );
-    console.log('Update result:', result);
+    await activityStore.update(props.activity.uuid, activityData.value);
 
     toast.add({
       severity: 'success',

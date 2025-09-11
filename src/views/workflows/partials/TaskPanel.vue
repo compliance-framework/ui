@@ -171,7 +171,7 @@ function activityCreated(activity: Activity) {
 
       <div v-if="props.task.tasks && props.task.tasks.length" class="px-4 mt-4">
         <h3>Sub Tasks</h3>
-        <TaskDetailPanel
+        <TaskPanel
           v-for="(task, index) in props.task.tasks"
           :key="task.uuid || index"
           :task="task"

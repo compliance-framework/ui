@@ -108,39 +108,6 @@ async function createActivity(): Promise<void> {
   }
 
   try {
-    /**
- *
- *
- * async function create(activity: Activity): Promise<DataResponse<Activity>> {
-    const config = await configStore.getConfig();
-    const response = await fetch(`${config.API_URL}/api/oscal/activities`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(decamelizeKeys(activity, { separator: '-' })),
-      credentials: 'include',
-    });
-    if (!response.ok) {
-      throw new Error(`Error: ${response.statusText}`);
-    }
-    return camelcaseKeys(await response.json(), {
-      deep: true,
-    }) as DataResponse<Activity>;
-  }
- *
- *
- * const response = await fetch(
-      `${config.API_URL}/api/oscal/assessment-plans/${planId}/tasks/${taskId}/associated-activities/${activityId}`,
-      {
-        method: 'POST',
-        credentials: 'include',
-      },
-    );
-
-
- */
-
     const activityResult = await activityStore.create(activity.value);
     await assessmentPlanStore.associateActivity(
       props.assessmentPlan.uuid,
