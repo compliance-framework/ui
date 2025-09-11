@@ -103,6 +103,14 @@ const authenticatedRoutes = [
     },
   },
   {
+    path: 'inventory-plus',
+    name: 'inventory-plus:index',
+    component: () => import('../views/InventoryPlusView.vue'),
+    meta: {
+      requiresAuth: true,
+    },
+  },
+  {
     path: '/catalogs',
     name: 'catalog-list',
     // route level code-splitting
@@ -155,8 +163,16 @@ const authenticatedRoutes = [
     },
   },
   {
+    path: '/profiles/create',
+    name: 'profile:create',
+    component: () => import('../views/profile/ProfileCreate.vue'),
+    meta: {
+      requiresAuth: true,
+    },
+  },
+  {
     path: '/profiles/:id',
-    name: 'profile-view',
+    name: 'profile:view',
     component: () => import('../views/profile/ProfileView.vue'),
     meta: {
       requiresAuth: true,
@@ -164,7 +180,7 @@ const authenticatedRoutes = [
     children: [
       {
         path: '',
-        name: 'profile-view-controls',
+        name: 'profile:view-controls',
         component: () => import('../views/profile/ProfileControlsView.vue'),
         meta: {
           requiresAuth: true,
@@ -172,8 +188,16 @@ const authenticatedRoutes = [
       },
       {
         path: 'merge',
-        name: 'profile-view-merge',
+        name: 'profile:view-merge',
         component: () => import('../views/profile/ProfileMergeView.vue'),
+        meta: {
+          requiresAuth: true,
+        },
+      },
+      {
+        path: 'json',
+        name: 'profile:view-json',
+        component: () => import('../views/profile/ProfileJSONView.vue'),
         meta: {
           requiresAuth: true,
         },
