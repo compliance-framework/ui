@@ -1,6 +1,6 @@
 <template>
-  <Dialog v-model:visible="show" modal>
-    <div class="px-12 py-8">
+  <Dialog header="New Activity" v-model:visible="show" modal>
+    <div>
       <ActivityCreateForm
         @created="done"
         @cancel="show = false"
@@ -24,7 +24,7 @@
 <script setup lang="ts">
 import PrimaryButton from '@/components/PrimaryButton.vue';
 import Dialog from '@/volt/Dialog.vue';
-import ActivityCreateForm from '@/components/assessment-plans/ActivityCreateForm.vue';
+import ActivityCreateForm from './ActivityCreateForm.vue';
 import type { Activity } from '@/stores/activities.ts';
 import type { AssessmentPlan, Task } from '@/stores/assessment-plans.ts';
 

@@ -1,46 +1,40 @@
 <template>
   <form @submit.prevent="updateTask()">
     <div class="mb-4">
-      <label class="inline-block pb-2 dark:text-slate-300">UUID</label>
-      <div
-        class="p-3 bg-gray-50 dark:bg-slate-800 border border-ccf-300 dark:border-slate-700 rounded-md"
-      >
-        <span class="text-gray-600 dark:text-slate-400 font-mono">{{
-          taskData.uuid
-        }}</span>
-      </div>
+      <Label>UUID</Label>
+      <InputText v-model="taskData.uuid" disabled class="block w-full mt-1" />
     </div>
 
     <div class="mb-4">
-      <label class="inline-block pb-2 dark:text-slate-300"
-        >Title <span class="text-red-500">*</span></label
-      >
-      <InputText v-model="taskData.title" required />
+      <Label required>Title</Label>
+      <InputText v-model="taskData.title" required class="block w-full mt-1" />
     </div>
 
     <div class="mb-4">
-      <label class="inline-block pb-2 dark:text-slate-300"
-        >Type <span class="text-red-500">*</span></label
-      >
-      <div>
-        <Select
-          v-model="taskData.type"
-          :options="[{ name: 'Action', value: 'action' }]"
-          optionLabel="name"
-          optionValue="value"
-          class="w-full"
-        />
-      </div>
+      <Label required>Type</Label>
+      <Select
+        v-model="taskData.type"
+        :options="[{ name: 'Action', value: 'action' }]"
+        optionLabel="name"
+        optionValue="value"
+        class="block w-full mt-1"
+      />
     </div>
 
     <div class="mb-4">
-      <label class="inline-block pb-2 dark:text-slate-300">Description</label>
-      <Textarea v-model="taskData.description" rows="3" />
+      <Label>Description</Label>
+      <Textarea
+        v-model="taskData.description"
+        class="block w-full mt-1 field-sizing-content"
+      />
     </div>
 
     <div class="mb-4">
-      <label class="inline-block pb-2 dark:text-slate-300">Remarks</label>
-      <Textarea v-model="taskData.remarks" rows="3" />
+      <Label>Remarks</Label>
+      <Textarea
+        v-model="taskData.remarks"
+        class="block w-full mt-1 field-sizing-content"
+      />
     </div>
 
     <!-- Task Timing Section -->
@@ -70,6 +64,7 @@ import TaskTimingManager from './TaskTimingManager.vue';
 import PrimaryButton from '@/components/PrimaryButton.vue';
 import SecondaryButton from '@/components/SecondaryButton.vue';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
+import Label from '@/volt/Label.vue';
 import Select from '@/volt/Select.vue';
 import InputText from '@/volt/InputText.vue';
 import Textarea from '@/volt/Textarea.vue';

@@ -12,9 +12,10 @@ import type { Task, AssociatedActivity } from '@/oscal';
 
 import Timeline from '@/volt/Timeline.vue';
 import TaskEditModal from './TaskEditModal.vue';
-import Badge from '@/volt/Badge.vue';
+import ActivityCreateModal from './ActivityCreateModal.vue';
 import Panel from '@/volt/Panel.vue';
 import TaskTiming from './TaskTiming.vue';
+import { useToggle } from '@/composables/useToggle';
 
 interface FullAssociatedActivity extends AssociatedActivity {
   activity: Activity;
@@ -22,6 +23,8 @@ interface FullAssociatedActivity extends AssociatedActivity {
 
 const toast = useToast();
 const confirm = useConfirm();
+const { value: creatingActivity, toggle: toggleCreatingActivity } =
+  useToggle(false);
 
 const props = defineProps<{
   assessmentPlan: AssessmentPlan;
@@ -102,14 +105,14 @@ async function removeTask() {
 </script>
 
 <template>
-  <Panel toggleable collapsed class="my-2">
+  <Panel toggleable class="my-2">
     <template #header>
       <div class="flex items-center gap-2 py-2">
         <span class="font-bold">{{ props.task.title }}</span>
         <div>
           <TaskTiming :timing="props.task.timing" v-if="props.task.timing" />
         </div>
-        <Badge value="AC-1" severity="info" />
+        <!-- <Badge value="AC-1" severity="info" /> -->
         <div class="flex gap-2">
           <button
             @click="editTask"
@@ -144,19 +147,60 @@ async function removeTask() {
 
       <div class="px-4 mt-4">
         <span class="font-medium text-lg">Activities</span>
-        <div v-for="activity in activities" :key="activity.uuid">
-          <h4>{{ activity?.title }}</h4>
-          <p class="mt-1 text-gray-900 dark:text-slate-300 whitespace-pre-wrap">
-            {{ activity.description }}
-          </p>
-          <h5 class="font-medium text-lg mt-4">Steps:</h5>
-          <Timeline :value="activity?.steps" :hide-opposite="true" class="mt-8">
-            <template #content="slotProps">
-              <h2 class="font-medium">{{ slotProps.item.title }}</h2>
-              <p class="py-2">{{ slotProps.item.description }}</p>
-            </template>
-          </Timeline>
-        </div>
+
+        <Panel
+          v-for="activity in activities"
+          :key="activity.uuid"
+          toggleable
+          collapsed
+          class="my-2"
+        >
+          <template #header>
+            <div class="flex items-center gap-2 py-2">
+              <span class="font-bold">{{ activity?.title }}</span>
+              <!-- <Badge value="AC-1" severity="info" /> -->
+              <div class="flex gap-2">
+                <button
+                  @click="editTask"
+                  class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                >
+                  Edit
+                </button>
+                <button
+                  @click="removeTask"
+                  class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
+          </template>
+          <div
+            class="px-4 py-4 bg-gray-50 dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700"
+          >
+            <div v-if="activity.description">
+              <p class="mt-1 dark:text-slate-300 whitespace-pre-wrap">
+                {{ activity.description }}
+              </p>
+            </div>
+
+            <h5 class="font-medium text-lg mt-4">Steps:</h5>
+            <Timeline
+              :value="activity?.steps"
+              :hide-opposite="true"
+              class="mt-8"
+            >
+              <template #content="slotProps">
+                <h2 class="font-medium">{{ slotProps.item.title }}</h2>
+                <p class="py-2">{{ slotProps.item.description }}</p>
+              </template>
+            </Timeline>
+          </div>
+        </Panel>
+
+        <secondary-button @click="toggleCreatingActivity"
+          >Add Activity
+        </secondary-button>
       </div>
 
       <div v-if="props.task.tasks && props.task.tasks.length" class="px-4 mt-4">
@@ -168,14 +212,20 @@ async function removeTask() {
           :assessment-plan="assessmentPlan"
         />
       </div>
-
-      <!-- Task Edit Modal -->
-      <TaskEditModal
-        v-model="showEditModal"
-        :assessment-plan-id="props.assessmentPlan.uuid"
-        :task="props.task"
-        @updated="onTaskUpdated"
-      />
     </div>
   </Panel>
+
+  <!-- Task Edit Modal -->
+  <TaskEditModal
+    v-model="showEditModal"
+    :assessment-plan-id="props.assessmentPlan.uuid"
+    :task="props.task"
+    @updated="onTaskUpdated"
+  />
+
+  <ActivityCreateModal
+    v-model="creatingActivity"
+    :assessment-plan="props.assessmentPlan"
+    :task="props.task"
+  />
 </template>

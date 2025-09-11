@@ -1,37 +1,43 @@
 <template>
   <form @submit.prevent="createActivity()">
-    <h1 class="text-xl font-semibold mb-6 dark:text-slate-300">
-      Create a new activity
-    </h1>
-
     <div class="mb-4">
-      <label class="inline-block pb-2 dark:text-slate-300">UUID</label>
+      <Label>UUID</Label>
       <div class="flex items-center place-items-stretch">
-        <InputText v-model="activity.uuid" class="rounded-r-none border-r-0" />
+        <InputText
+          v-model="activity.uuid"
+          disabled
+          class="rounded-r-none border-r-0 grow"
+        />
         <TertiaryButton
           type="button"
           @click="generateUuid"
           class="py-3 rounded-l-none"
-          ><BIconArrowRepeat
-        /></TertiaryButton>
+        >
+          <BIconArrowRepeat />
+        </TertiaryButton>
       </div>
     </div>
 
     <div class="mb-4">
-      <label class="inline-block pb-2 dark:text-slate-300">Title</label>
-      <InputText v-model="activity.title" />
+      <Label required>Title</Label>
+      <InputText v-model="activity.title" class="block w-full" />
     </div>
 
     <div class="mb-4">
-      <label class="inline-block pb-2 dark:text-slate-300"
-        >Description <span class="text-red-500">*</span></label
-      >
-      <Textarea v-model="activity.description" rows="3" required />
+      <Label required>Description</Label>
+      <Textarea
+        v-model="activity.description"
+        required
+        class="block w-full field-sizing-content"
+      />
     </div>
 
     <div class="mb-4">
-      <label class="inline-block pb-2 dark:text-slate-300">Remarks</label>
-      <Textarea v-model="activity.remarks" rows="2" />
+      <Label>Remarks</Label>
+      <Textarea
+        v-model="activity.remarks"
+        class="block w-full field-sizing-content"
+      />
     </div>
 
     <div
@@ -43,27 +49,29 @@
 
     <div class="flex gap-2">
       <PrimaryButton type="submit">Create Activity</PrimaryButton>
-      <SecondaryButton type="button" @click="$emit('cancel')">
-        Cancel
-      </SecondaryButton>
+      <SecondaryButton type="button" @click="$emit('cancel')"
+        >Cancel</SecondaryButton
+      >
     </div>
   </form>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import { type Activity, useActivityStore } from '@/stores/activities.ts';
+import { ref, Text } from 'vue';
+import { type Activity, type Task } from '@/oscal';
+import { useActivityStore } from '@/stores/activities.ts';
 import {
   type AssessmentPlan,
   useAssessmentPlanStore,
 } from '@/stores/assessment-plans.ts';
-import type { Task } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
+import FormInput from '@/components/forms/FormInput.vue';
 import PrimaryButton from '@/components/PrimaryButton.vue';
 import SecondaryButton from '@/components/SecondaryButton.vue';
 import TertiaryButton from '@/components/TertiaryButton.vue';
 import { BIconArrowRepeat } from 'bootstrap-icons-vue';
 import { v4 as uuidv4 } from 'uuid';
+import Label from '@/volt/Label.vue';
 import InputText from '@/volt/InputText.vue';
 import Textarea from '@/volt/Textarea.vue';
 
@@ -81,7 +89,9 @@ const emit = defineEmits<{
   cancel: [];
 }>();
 
-const activity = ref<Activity>({} as Activity);
+const activity = ref<Activity>({
+  uuid: uuidv4(),
+} as Activity);
 
 const errorMessage = ref('');
 
@@ -99,6 +109,39 @@ async function createActivity(): Promise<void> {
   }
 
   try {
+    /**
+ *
+ *
+ * async function create(activity: Activity): Promise<DataResponse<Activity>> {
+    const config = await configStore.getConfig();
+    const response = await fetch(`${config.API_URL}/api/oscal/activities`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(decamelizeKeys(activity, { separator: '-' })),
+      credentials: 'include',
+    });
+    if (!response.ok) {
+      throw new Error(`Error: ${response.statusText}`);
+    }
+    return camelcaseKeys(await response.json(), {
+      deep: true,
+    }) as DataResponse<Activity>;
+  }
+ *
+ *
+ * const response = await fetch(
+      `${config.API_URL}/api/oscal/assessment-plans/${planId}/tasks/${taskId}/associated-activities/${activityId}`,
+      {
+        method: 'POST',
+        credentials: 'include',
+      },
+    );
+
+
+ */
+
     const activityResult = await activityStore.create(activity.value);
     await assessmentPlanStore.associateActivity(
       props.assessmentPlan.uuid,
