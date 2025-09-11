@@ -1,11 +1,7 @@
 <template>
   <form @submit.prevent="updateActivity()">
-    <h1 class="text-xl font-semibold mb-6 dark:text-slate-300">
-      Edit activity
-    </h1>
-
     <div class="mb-4">
-      <label class="inline-block pb-2 dark:text-slate-300">UUID</label>
+      <Label>UUID</Label>
       <div
         class="p-3 bg-gray-50 dark:bg-slate-800 border border-ccf-300 dark:border-slate-700 rounded-md"
       >
@@ -16,20 +12,24 @@
     </div>
 
     <div class="mb-4">
-      <label class="inline-block pb-2 dark:text-slate-300">Title</label>
-      <InputText v-model="activityData.title" />
+      <Label required>Title</Label>
+      <InputText v-model="activityData.title" class="block w-full" />
     </div>
 
     <div class="mb-4">
-      <label class="inline-block pb-2 dark:text-slate-300"
-        >Description <span class="text-red-500">*</span></label
-      >
-      <Textarea v-model="activityData.description" rows="3" required />
+      <Label required>Description</Label>
+      <Textarea
+        v-model="activityData.description"
+        class="block w-full field-sizing-content"
+      />
     </div>
 
     <div class="mb-4">
-      <label class="inline-block pb-2 dark:text-slate-300">Remarks</label>
-      <Textarea v-model="activityData.remarks" rows="2" />
+      <Label>Remarks</Label>
+      <Textarea
+        v-model="activityData.remarks"
+        class="block w-full field-sizing-content"
+      />
     </div>
 
     <div
@@ -52,15 +52,15 @@
 import { ref } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import { useActivityStore } from '@/stores/activities.ts';
-import { type Activity } from '@/stores/activities.ts';
+import { type Activity } from '@/oscal';
 import InputText from '@/volt/InputText.vue';
 import Textarea from '@/volt/Textarea.vue';
+import Label from '@/volt/Label.vue';
 
 const activityStore = useActivityStore();
 const toast = useToast();
 
 const props = defineProps<{
-  assessmentPlanId: string;
   activity: Activity;
 }>();
 

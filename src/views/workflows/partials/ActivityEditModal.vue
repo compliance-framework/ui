@@ -1,10 +1,9 @@
 <template>
-  <Dialog v-model:visible="show" modal>
-    <div class="px-12 py-8">
+  <Dialog header="Edit Activity" size="lg" v-model:visible="show" modal>
+    <div>
       <ActivityEditForm
         @updated="done"
         @cancel="show = false"
-        :assessment-plan-id="assessmentPlanId"
         :activity="activity"
       />
     </div>
@@ -24,19 +23,16 @@
 <script setup lang="ts">
 import PrimaryButton from '@/components/PrimaryButton.vue';
 import Dialog from '@/volt/Dialog.vue';
-import ActivityEditForm from '@/components/assessment-plans/ActivityEditForm.vue';
-import type { Activity } from '@/stores/activities.ts';
+import ActivityEditForm from './ActivityEditForm.vue';
+import type { Activity } from '@/oscal';
 
 const show = defineModel<boolean>();
 
-const emit = defineEmits({
-  updated(activity: Activity) {
-    return !!activity.uuid;
-  },
-});
+const emit = defineEmits<{
+  updated: [activity: Activity];
+}>();
 
-defineProps<{
-  assessmentPlanId: string;
+const props = defineProps<{
   activity: Activity;
 }>();
 

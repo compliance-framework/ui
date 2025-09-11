@@ -56,7 +56,7 @@ import FormTextarea from '@/components/forms/FormTextarea.vue';
 import PrimaryButton from '@/components/PrimaryButton.vue';
 import SecondaryButton from '@/components/SecondaryButton.vue';
 import { useActivityStore } from '@/stores/activities.ts';
-import { type Activity } from '@/stores/activities.ts';
+import { type Activity } from '@/oscal';
 
 const activityStore = useActivityStore();
 const toast = useToast();

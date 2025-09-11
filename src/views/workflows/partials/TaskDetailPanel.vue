@@ -7,8 +7,7 @@ import { useConfirm } from 'primevue/useconfirm';
 import { useDataApi } from '@/composables/axios';
 
 import type { AssessmentPlan } from '@/stores/assessment-plans.ts';
-import type { Activity } from '@/stores/activities.ts';
-import type { Task, AssociatedActivity } from '@/oscal';
+import type { Task, Activity, AssociatedActivity } from '@/oscal';
 
 import Timeline from '@/volt/Timeline.vue';
 import TaskEditModal from './TaskEditModal.vue';
@@ -16,6 +15,7 @@ import ActivityCreateModal from './ActivityCreateModal.vue';
 import Panel from '@/volt/Panel.vue';
 import TaskTiming from './TaskTiming.vue';
 import { useToggle } from '@/composables/useToggle';
+import ActivityPanel from './ActivityPanel.vue';
 
 interface FullAssociatedActivity extends AssociatedActivity {
   activity: Activity;
@@ -148,12 +148,10 @@ async function removeTask() {
       <div class="px-4 mt-4">
         <span class="font-medium text-lg">Activities</span>
 
-        <Panel
+        <ActivityPanel
           v-for="activity in activities"
           :key="activity.uuid"
-          toggleable
-          collapsed
-          class="my-2"
+          :activity="activity"
         >
           <template #header>
             <div class="flex items-center gap-2 py-2">
@@ -196,7 +194,7 @@ async function removeTask() {
               </template>
             </Timeline>
           </div>
-        </Panel>
+        </ActivityPanel>
 
         <secondary-button @click="toggleCreatingActivity"
           >Add Activity
