@@ -2,10 +2,7 @@
 
 
 
-export interface Profile {
-  uuid: string;
-  metadata: Metadata;
-}
+
 
 export interface PortRange {
   end: number;
@@ -36,21 +33,6 @@ export interface SystemComponent {
   remarks: string;
   props: Property[];
   links: Link[];
-}
-
-export interface SystemCharacteristics {
-  systemName?: string;
-  systemNameShort?: string;
-  description?: string;
-  dateAuthorized?: Date;
-  securitySensitivityLevel?: string;
-  remarks?: string;
-}
-
-export interface SystemSecurityPlan {
-  uuid: string;
-  metadata: Metadata;
-  systemCharacteristics: SystemCharacteristics;
 }
 
 export interface SetParameter {

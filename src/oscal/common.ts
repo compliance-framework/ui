@@ -13,11 +13,14 @@ export interface Property {
   remarks?: string;
 }
 
-export interface Responsible {
-  roleId: string;
-  remarks?: string;
+export interface HasPropAndLink {
   props?: Property[];
   links?: Link[];
+}
+
+export interface Responsible extends HasPropAndLink {
+  roleId: string;
+  remarks?: string;
 }
 
 export interface ResponsibleRole extends Responsible {
