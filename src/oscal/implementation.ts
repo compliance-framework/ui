@@ -1,20 +1,8 @@
-import type { HasPropAndLink, ResponsibleRole } from './common';
-import type { Metadata } from './metadata';
-
-export interface SystemCharacteristics {
-  systemName?: string;
-  systemNameShort?: string;
-  description?: string;
-  dateAuthorized?: Date;
-  securitySensitivityLevel?: string;
-  remarks?: string;
-}
-
-export interface SystemSecurityPlan {
-  uuid: string;
-  metadata: Metadata;
-  systemCharacteristics: SystemCharacteristics;
-}
+import type {
+  HasPropAndLink,
+  ResponsibleParty,
+  ResponsibleRole,
+} from './common';
 
 export interface SystemComponent extends HasPropAndLink {
   uuid: string;
@@ -67,10 +55,35 @@ export interface SystemUser extends HasPropAndLink {
   authorizedPrivileges?: AuthorizedPrivilege[];
 }
 
+export interface InventoryItem extends HasPropAndLink {
+  uuid: string;
+  description: string;
+  responsibleParties?: ResponsibleParty[];
+  implementedComponents?: ImplementedComponent[];
+  remarks?: string;
+}
+
+export interface ImplementedComponent extends HasPropAndLink {
+  componentUuid: string;
+  responsibleParties?: ResponsibleParty[];
+  remarks?: string;
+}
+
 export interface AuthorizedPrivilege {
   title: string;
   description?: string;
   functionsPerformed: string[];
+}
+
+enum SystemIDType {
+  FedRAMP = "https://fedramp.gov",
+  OSCAL = "http://fedramp.gov/ns/oscal",
+  RFC4122 = "https://ietf.org/rfc/rfc4122",
+}
+
+export interface SystemID {
+  id: string;
+  identifierType?: SystemIDType | string;
 }
 
 export interface Protocol {
@@ -103,3 +116,9 @@ export type ImplementationStatus = {
   state: ImplementationStatusState | string;
   remarks?: string;
 };
+
+export interface SetParameter {
+  paramId: string;
+  values: string[];
+  remarks?: string;
+}
