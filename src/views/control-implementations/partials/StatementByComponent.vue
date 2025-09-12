@@ -7,6 +7,7 @@ import Textarea from '@/volt/Textarea.vue';
 import { useToggle } from '@/composables/useToggle';
 import { useDataApi } from '@/composables/axios';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
+import VueMarkdown from 'vue-markdown-render';
 
 const { byComponent } = defineProps<{
   byComponent: ByComponent;
@@ -69,8 +70,8 @@ function cancel() {
   </div>
   <div class="text-gray-600 dark:text-slate-400">
     <template v-if="!editing">
-      <p class="whitespace-pre-wrap py-2">
-        {{ byComponent.description }}
+      <p class="prose prose-slate dark:prose-invert">
+        <VueMarkdown :source="localComponent.description" />
       </p>
     </template>
     <template v-else>
