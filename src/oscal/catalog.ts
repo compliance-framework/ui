@@ -1,4 +1,5 @@
 import type { Link, Property } from './common';
+import type { Part } from './controls';
 import type { BackMatter, Metadata } from './metadata';
 
 export interface Catalog {
@@ -8,18 +9,6 @@ export interface Catalog {
   groups?: Group[];
   controls?: Control[];
   backMatter?: BackMatter;
-}
-
-export interface Part {
-  id: string;
-  name: string;
-  ns?: string;
-  class?: string;
-  title?: string;
-  prose?: string;
-  props?: Property[];
-  links?: Link[];
-  parts?: Part[];
 }
 
 export interface Group {

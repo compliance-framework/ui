@@ -1,42 +1,4 @@
-export interface ReviewedControls {
-  description?: string;
-  props?: Property[];
-  links?: Link[];
-  controlSelections?: ControlSelection[];
-  controlObjectiveSelections?: ControlObjectiveSelection[];
-}
 
-export interface ControlSelection {
-  description?: string;
-  includeAll?: boolean;
-  includeControls?: IncludeControl[];
-  excludeControls?: ExcludeControl[];
-}
-
-export interface IncludeControl {
-  controlId: string;
-  statementIds?: string[];
-}
-
-export interface ExcludeControl {
-  controlId: string;
-  statementIds?: string[];
-}
-
-export interface ControlObjectiveSelection {
-  description?: string;
-  includeAll?: boolean;
-  includeObjectives?: IncludeObjective[];
-  excludeObjectives?: ExcludeObjective[];
-}
-
-export interface IncludeObjective {
-  objectiveId: string;
-}
-
-export interface ExcludeObjective {
-  objectiveId: string;
-}
 
 export interface Task {
   uuid: string;
@@ -54,26 +16,7 @@ export interface Task {
   responsibleRoles?: ResponsibleRole[];
 }
 
-export interface TaskTiming {
-  onDate?: string;
-  withinDateRange?: DateRange;
-  atFrequency?: Frequency;
-}
 
-export interface DateRange {
-  start: string;
-  end: string;
-}
-
-export interface Frequency {
-  period: string;
-  unit: string;
-}
-
-export interface TaskDependency {
-  taskUuid: string;
-  remarks?: string;
-}
 
 export interface IncludeSubject {
   subjectUuid: string;
