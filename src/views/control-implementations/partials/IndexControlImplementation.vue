@@ -15,7 +15,7 @@ import { useToggle } from '@/composables/useToggle';
 import ControlStatementImplementation from '@/views/control-implementations/partials/ControlStatementImplementation.vue';
 import { useSystemStore } from '@/stores/system.ts';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
-import vueMarkdown from 'vue-markdown-render';
+import VueMarkdown from 'vue-markdown-render';
 
 const { control, implementation } = defineProps<{
   control: Control;
@@ -169,7 +169,7 @@ async function onPartSelect(e: Event, part: Part) {
               v-if="getText(part)"
               class="prose prose-slate dark:prose-invert"
             >
-              <vue-markdown :source="getText(part) ?? ''" />
+              <VueMarkdown :source="getText(part) ?? ''" />
             </div>
             <template v-if="statements[part.id]">
               <Badge
