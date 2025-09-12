@@ -1,5 +1,5 @@
 import type { Link, Property } from './common';
-import type { Part } from './controls';
+import type { Parameter, Part } from './controls';
 import type { BackMatter, Metadata } from './metadata';
 
 export interface Catalog {
@@ -32,37 +32,4 @@ export interface Control {
   links?: Link[];
   props?: Property[];
   controls?: Control[];
-}
-
-export interface ParameterGuideline {
-  prose: string;
-}
-
-export interface ParameterConstraintTest {
-  expression: string;
-  remarks?: string;
-}
-
-export interface ParameterConstraint {
-  description: string;
-  tests: ParameterConstraintTest[];
-}
-
-export interface ParameterSelection {
-  howMany: 'one' | 'one-or-more';
-  choice: string[];
-}
-
-export interface Parameter {
-  id: string;
-  class?: string;
-  props?: Property[];
-  links?: Link[];
-  label?: string;
-  usage?: string;
-  constraints?: ParameterConstraint[];
-  guidelines?: ParameterGuideline[];
-  values?: string[];
-  select?: ParameterSelection;
-  remarks?: string;
 }
