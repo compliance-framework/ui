@@ -3,10 +3,10 @@ import type { Link, Property } from './common';
 export interface Metadata {
   title: string;
   remarks?: string;
-  version?: string;
-  lastModified?: string;
+  version: string;
+  lastModified: string;
   published?: string;
-  oscalVersion?: string;
+  oscalVersion: string;
 }
 
 export interface BackMatter {
