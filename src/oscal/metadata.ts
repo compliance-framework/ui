@@ -9,15 +9,32 @@ export interface Metadata {
   oscalVersion?: string;
 }
 
+export interface BackMatter {
+  resources: BackMatterResource[];
+}
+
+export interface BackMatterResource {
+  uuid: string;
+  title?: string;
+  description?: string;
+  remarks?: string;
+  props?: Property[];
+
+  documentIds?: DocumentID[];
+  citation?: Citation;
+  base64?: Base64;
+  rlinks?: ResourceLink[];
+}
+
 enum HashAlgorithm {
-  SHA224 = "SHA-224",
-  SHA256 = "SHA-256",
-  SHA384 = "SHA-384",
-  SHA512 = "SHA-512",
-  SHA3224 = "SHA3-224",
-  SHA3256 = "SHA3-256",
-  SHA3384 = "SHA3-384",
-  SHA3512 = "SHA3-512",
+  SHA224 = 'SHA-224',
+  SHA256 = 'SHA-256',
+  SHA384 = 'SHA-384',
+  SHA512 = 'SHA-512',
+  SHA3224 = 'SHA3-224',
+  SHA3256 = 'SHA3-256',
+  SHA3384 = 'SHA3-384',
+  SHA3512 = 'SHA3-512',
 }
 
 export interface Hash {
@@ -26,7 +43,7 @@ export interface Hash {
 }
 
 enum DocumentIDScheme {
-  DOI = "http://www.doi.org/",
+  DOI = 'http://www.doi.org/',
 }
 
 export interface DocumentID {
@@ -50,21 +67,4 @@ export interface Base64 {
   filename?: string;
   mediaType?: string;
   value: string;
-}
-
-export interface BackMatterResource {
-  uuid: string;
-  title?: string;
-  description?: string;
-  remarks?: string;
-  props?: Property[];
-
-  documentIds?: DocumentID[];
-  citation?: Citation;
-  base64?: Base64;
-  rlinks?: ResourceLink[];
-}
-
-export interface BackMatter {
-  resources: BackMatterResource[];
 }
