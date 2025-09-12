@@ -225,11 +225,16 @@ async function create() {
           cols="30"
           class="resize-none w-full"
           placeholder="Description"
+          @keyup.ctrl.enter="create"
         />
       </div>
       <div class="text-right">
         <secondary-button @click="resetCreateForm">Cancel</secondary-button>
-        <primary-button type="submit">Create</primary-button>
+        <primary-button
+          type="submit"
+          v-tooltip.bottom="'ctrl + enter to create'"
+          >Create</primary-button
+        >
       </div>
     </form>
   </div>

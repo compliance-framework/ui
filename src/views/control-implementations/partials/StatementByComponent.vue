@@ -79,10 +79,13 @@ function cancel() {
         autoResize
         class="resize-none w-full"
         placeholder="Description"
+        @keyup.ctrl.enter="save"
       />
       <div class="flex gap-x-2">
         <secondary-button @click="cancel">Cancel</secondary-button>
-        <primary-button @click="save">Save</primary-button>
+        <primary-button @click="save" v-tooltip="'ctrl + enter to save'"
+          >Save</primary-button
+        >
       </div>
     </template>
   </div>
