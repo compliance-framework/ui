@@ -107,12 +107,7 @@ export interface Statement {
   links?: Link[];
 }
 
-export interface ResponsibleParty {
-  roleId: string;
-  partyUuids: string[];
-  props?: Property[];
-  links?: Link[];
-}
+
 
 export interface ImplementedComponent {
   componentUuid: string;

@@ -1,34 +1,4 @@
-export interface Link {
-  href: string;
-  rel?: string;
-  text?: string;
-}
 
-export interface Property {
-  uuid?: string;
-  name?: string;
-  value?: string;
-  class?: string;
-  ns?: string;
-  remarks?: string;
-}
-
-export interface Metadata {
-  title: string;
-  remarks?: string;
-  version?: string;
-  lastModified?: string;
-  published?: string;
-  oscalVersion?: string;
-}
-
-export interface ResponsibleRole {
-  roleId: string;
-  props: Property[];
-  links: Link[];
-  partyUuids?: string[];
-  remarks?: string;
-}
 
 export interface Catalog {
   uuid: string;
@@ -104,39 +74,6 @@ export interface SystemComponent {
   remarks: string;
   props: Property[];
   links: Link[];
-}
-
-export interface ResourceLink {
-  href: string;
-  mediaType?: string;
-}
-
-export interface Citation {
-  text: string;
-  props?: Property[];
-  links?: Link[];
-}
-
-export interface Base64 {
-  filename: string;
-  mediaType: string;
-  value: string;
-}
-
-export interface BackMatterResource {
-  uuid: string;
-  title: string;
-  description: string;
-  remarks?: string;
-  citation?: Citation;
-  base64?: Base64;
-  props?: Property[];
-  links?: Link[];
-  rlinks?: ResourceLink[];
-}
-
-export interface BackMatter {
-  resources: BackMatterResource[];
 }
 
 export interface SystemCharacteristics {
