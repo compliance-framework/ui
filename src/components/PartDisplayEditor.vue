@@ -2,13 +2,14 @@
   <div class="mb-2">
     <slot name="header"></slot>
 
-    <div class="whitespace-pre-wrap">
-      {{ text }}
+    <div class="prose prose-slate dark:prose-invert">
+      <VueMarkdown :source="text" />
     </div>
   </div>
 </template>
 <script setup lang="ts">
 import { type Part } from '@/stores/types.ts';
+import VueMarkdown from 'vue-markdown-render';
 
 import { onMounted, ref } from 'vue';
 
