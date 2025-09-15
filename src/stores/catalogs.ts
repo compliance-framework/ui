@@ -1,40 +1,7 @@
 import { defineStore } from 'pinia';
 import { useConfigStore } from '@/stores/config.ts';
-import type {
-  DataResponse,
-  Link,
-  Metadata,
-  Part,
-  Property,
-} from '@/stores/types.ts';
-
-export interface Catalog {
-  uuid: string;
-  metadata: Metadata;
-  groups: Group[];
-  controls: Control[];
-}
-
-export interface Group {
-  id: string;
-  title: string;
-  class?: string;
-  parts: Part[];
-  links: Link[];
-  props: Property[];
-  groups: Group[];
-  controls: Control[];
-}
-
-export interface Control {
-  id: string;
-  title: string;
-  class: string;
-  parts: Part[];
-  links: Link[];
-  props: Property[];
-  controls: Control[];
-}
+import type { DataResponse } from '@/stores/types.ts';
+import type { Catalog, Control, Group } from '@/oscal';
 
 export const useCatalogStore = defineStore('catalogs', () => {
   const configStore = useConfigStore();

@@ -15,7 +15,7 @@ import { useRoute } from 'vue-router';
 import PageSubHeader from '@/components/PageSubHeader.vue';
 import EvidenceList from '@/components/EvidenceList.vue';
 import { type Evidence, useEvidenceStore } from '@/stores/evidence.ts';
-import type { Control } from '@/stores/catalogs.ts';
+import type { Control } from '@/oscal';
 
 const evidenceStore = useEvidenceStore();
 const evidence = ref<Evidence[]>([]);

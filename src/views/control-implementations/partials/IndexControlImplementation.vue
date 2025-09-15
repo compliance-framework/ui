@@ -8,14 +8,14 @@ import type {
   Statement,
 } from '@/stores/system-security-plans.ts';
 import PartDisplay from '@/components/PartDisplay.vue';
-import type { Part } from '@/stores/types.ts';
+import type { Part } from '@/oscal';
 import { ref, watchEffect } from 'vue';
 import { useToggle } from '@/composables/useToggle';
 import ControlStatementImplementation from '@/views/control-implementations/partials/ControlStatementImplementation.vue';
 import { useSystemStore } from '@/stores/system.ts';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import VueMarkdown from 'vue-markdown-render';
-import type { Control } from '@/stores/catalogs';
+import type { Control } from '@/oscal';
 
 const { control, implementation } = defineProps<{
   control: Control;

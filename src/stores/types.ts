@@ -106,18 +106,6 @@ export interface Property {
   remarks?: string;
 }
 
-export interface Part {
-  class: string;
-  id: string;
-  links: Link[];
-  name: string;
-  ns: string;
-  parts: Part[];
-  props: Property[];
-  prose: string;
-  title: string;
-}
-
 export interface PortRange {
   end: number;
   start: number;
