@@ -115,7 +115,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import FormInput from '@/components/forms/FormInput.vue';
-import type { TaskTiming } from '@/stores/assessment-plans.ts';
+import type { TaskTiming } from '@/oscal';
 
 const props = defineProps<{
   modelValue?: TaskTiming;

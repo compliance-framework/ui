@@ -366,18 +366,6 @@ const authenticatedRoutes = [
           import('../views/assessment-plans/AssessmentPlanTasksView.vue'),
       },
       {
-        path: 'subjects',
-        name: 'assessment-plan-subjects',
-        component: () =>
-          import('../views/assessment-plans/AssessmentPlanSubjectsView.vue'),
-      },
-      {
-        path: 'assets',
-        name: 'assessment-plan-assets',
-        component: () =>
-          import('../views/assessment-plans/AssessmentPlanAssetsView.vue'),
-      },
-      {
         path: 'json',
         name: 'assessment-plan-json',
         component: () =>

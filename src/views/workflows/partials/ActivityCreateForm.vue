@@ -58,12 +58,9 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import type { Activity, Task } from '@/oscal';
+import type { Activity, AssessmentPlan, Task } from '@/oscal';
 import { useActivityStore } from '@/stores/activities.ts';
-import {
-  type AssessmentPlan,
-  useAssessmentPlanStore,
-} from '@/stores/assessment-plans.ts';
+import { useAssessmentPlanStore } from '@/stores/assessment-plans.ts';
 import { useToast } from 'primevue/usetoast';
 import PrimaryButton from '@/components/PrimaryButton.vue';
 import SecondaryButton from '@/components/SecondaryButton.vue';

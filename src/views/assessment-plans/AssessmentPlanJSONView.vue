@@ -85,7 +85,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import type { AssessmentPlan } from '@/stores/assessment-plans.ts';
+import type { AssessmentPlan } from '@/oscal';
 import { useRoute } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi } from '@/composables/axios';

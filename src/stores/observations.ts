@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { useConfigStore } from '@/stores/config.ts';
-import type { Activity } from '@/stores/activities.ts';
+import type { Activity } from '@/oscal';
 import type {
   DataResponse,
   Link,

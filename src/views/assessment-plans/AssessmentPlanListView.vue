@@ -77,7 +77,7 @@
 </template>
 <script setup lang="ts">
 import PageHeader from '@/components/PageHeader.vue';
-import type { AssessmentPlan } from '@/stores/assessment-plans.ts';
+import type { AssessmentPlan } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { useSystemStore } from '@/stores/system.ts';
 import Badge from '@/volt/Badge.vue';

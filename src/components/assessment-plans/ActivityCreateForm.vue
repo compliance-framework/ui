@@ -52,12 +52,9 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import { type Activity, useActivityStore } from '@/stores/activities.ts';
-import {
-  type AssessmentPlan,
-  type Task,
-  useAssessmentPlanStore,
-} from '@/stores/assessment-plans.ts';
+import { useActivityStore } from '@/stores/activities.ts';
+import type { AssessmentPlan, Task, Activity } from '@/oscal';
+import { useAssessmentPlanStore } from '@/stores/assessment-plans.ts';
 import { useToast } from 'primevue/usetoast';
 import FormInput from '@/components/forms/FormInput.vue';
 import FormTextarea from '@/components/forms/FormTextarea.vue';
