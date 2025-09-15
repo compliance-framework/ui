@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Catalog, Control, Group } from '@/stores/catalogs.ts';
+import type { Catalog, Control, Group } from '@/oscal';
 import FormInput from '@/components/forms/FormInput.vue';
 import { ref } from 'vue';
 import PrimaryButton from '@/components/PrimaryButton.vue';

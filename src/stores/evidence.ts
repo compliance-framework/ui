@@ -5,7 +5,7 @@ import { useConfigStore } from '@/stores/config.ts';
 import { type Filter } from '@/parsers/labelfilter.ts';
 import type { Activity } from '@/stores/activities.ts';
 import type { DataResponse, Link, Property } from '@/stores/types.ts';
-import type { Control } from '@/stores/catalogs.ts';
+import type { Control } from '@/oscal';
 import type { BackMatter } from '@/oscal';
 
 export interface EvidenceStatus {

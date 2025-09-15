@@ -8,7 +8,7 @@
   </div>
 </template>
 <script setup lang="ts">
-import { type Part } from '@/stores/types.ts';
+import { type Part } from '@/oscal';
 import VueMarkdown from 'vue-markdown-render';
 
 import { onMounted, ref } from 'vue';

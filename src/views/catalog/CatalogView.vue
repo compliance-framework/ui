@@ -40,7 +40,7 @@
 <script setup lang="ts">
 import { onActivated, ref } from 'vue';
 import PageHeader from '@/components/PageHeader.vue';
-import { type Catalog, type Group, type Control } from '@/stores/catalogs.ts';
+import { type Catalog, type Group, type Control } from '@/oscal';
 import { useRoute, useRouter } from 'vue-router';
 import CatalogGroup from '@/views/catalog/CatalogGroup.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';

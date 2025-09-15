@@ -1,6 +1,6 @@
 import { ref, toValue } from 'vue';
 import type { MaybeRefOrGetter } from '@vueuse/core';
-import type { Catalog, Control, Group } from '@/stores/catalogs';
+import type { Catalog, Control, Group } from '@/oscal';
 
 export interface TreeNode {
   key: string;

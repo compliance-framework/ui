@@ -65,7 +65,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import CollapsableGroup from '@/components/CollapsableGroup.vue';
-import { type Catalog, type Group, type Control } from '@/stores/catalogs.ts';
+import { type Catalog, type Group, type Control } from '@/oscal';
 import GroupCreateModal from '@/components/catalogs/GroupCreateModal.vue';
 import ControlCreateModal from '@/components/catalogs/ControlCreateModal.vue';
 import PartDisplayEditor from '@/components/PartDisplayEditor.vue';

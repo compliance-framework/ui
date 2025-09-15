@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Catalog, Group } from '@/stores/catalogs.ts';
+import type { Catalog, Group } from '@/oscal';
 import GroupCreateForm from '@/components/catalogs/GroupCreateForm.vue';
 import Dialog from '@/volt/Dialog.vue';
 

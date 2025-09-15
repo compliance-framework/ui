@@ -1,5 +1,5 @@
 import { type Filter } from '@/parsers/labelfilter.ts';
-import type { Control } from '@/stores/catalogs.ts';
+import type { Control } from '@/oscal';
 
 export interface Dashboard {
   id?: string;
