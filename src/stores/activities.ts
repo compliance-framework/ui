@@ -1,11 +1,37 @@
 import { defineStore } from 'pinia';
 import { useConfigStore } from '@/stores/config.ts';
 import type {
+  Link,
+  Property,
+  ReviewedControls,
   DataResponse,
 } from '@/stores/types.ts';
 import camelcaseKeys from 'camelcase-keys';
 import decamelizeKeys from 'decamelize-keys';
-import type { Activity } from '@/oscal';
+import type { ResponsibleRole } from '@/stores/assessment-plans.ts';
+
+export interface Activity {
+  uuid: string;
+  title?: string;
+  description: string;
+  remarks?: string;
+  props?: Property[];
+  links?: Link[];
+  steps?: Step[];
+  relatedControls?: ReviewedControls;
+  responsibleRoles?: ResponsibleRole[];
+}
+
+export interface Step {
+  uuid: string;
+  title?: string;
+  description: string;
+  remarks?: string;
+  props?: Property[];
+  links?: Link[];
+  responsibleRoles?: ResponsibleRole[];
+  reviewedControls?: ReviewedControls;
+}
 
 export const useActivityStore = defineStore('activities', () => {
   const configStore = useConfigStore();
