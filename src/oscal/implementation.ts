@@ -76,9 +76,9 @@ export interface AuthorizedPrivilege {
 }
 
 enum SystemIDType {
-  FedRAMP = "https://fedramp.gov",
-  OSCAL = "http://fedramp.gov/ns/oscal",
-  RFC4122 = "https://ietf.org/rfc/rfc4122",
+  FedRAMP = 'https://fedramp.gov',
+  OSCAL = 'http://fedramp.gov/ns/oscal',
+  RFC4122 = 'https://ietf.org/rfc/rfc4122',
 }
 
 export interface SystemID {
