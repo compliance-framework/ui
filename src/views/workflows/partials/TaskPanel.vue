@@ -9,7 +9,6 @@ import { useDataApi } from '@/composables/axios';
 import type { AssessmentPlan } from '@/stores/assessment-plans.ts';
 import type { Task, Activity, AssociatedActivity } from '@/oscal';
 
-import Timeline from '@/volt/Timeline.vue';
 import Panel from '@/volt/Panel.vue';
 import TaskTiming from './TaskTiming.vue';
 import { useToggle } from '@/composables/useToggle';
@@ -17,7 +16,6 @@ import ActivityPanel from './ActivityPanel.vue';
 import ActivityCreateForm from './ActivityCreateForm.vue';
 import Dialog from '@/volt/Dialog.vue';
 import TaskEditForm from './TaskEditForm.vue';
-import { set } from '@vueuse/core';
 
 interface FullAssociatedActivity extends AssociatedActivity {
   activity: Activity;
@@ -30,11 +28,7 @@ const {
   toggle: toggleCreatingActivity,
   set: setCreatingActivity,
 } = useToggle(false);
-const {
-  value: editingTask,
-  toggle: toggleEditingTask,
-  set: setEditingTask,
-} = useToggle(false);
+const { value: editingTask, set: setEditingTask } = useToggle(false);
 
 const props = defineProps<{
   assessmentPlan: AssessmentPlan;
