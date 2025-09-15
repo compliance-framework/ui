@@ -1,6 +1,7 @@
 import type {
   HasPropAndLink,
   RelatedObservation,
+  RelatedRisk,
   ResponsibleParty,
   ResponsibleRole,
 } from './common';
