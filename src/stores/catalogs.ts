@@ -1,7 +1,5 @@
 import { defineStore } from 'pinia';
 import { useConfigStore } from '@/stores/config.ts';
-import type { DataResponse } from '@/stores/types.ts';
-import type { Catalog, Control, Group } from '@/oscal';
 import type {
   DataResponse,
   Link,
