@@ -30,3 +30,15 @@ export interface ResponsibleRole extends Responsible {
 export interface ResponsibleParty extends Responsible {
   partyUuids: string[];
 }
+
+export interface RelatedFinding {
+  findingUuid: string;
+}
+
+export interface RelatedObservation {
+  observationUuid: string;
+}
+
+export interface RelatedRisk {
+  riskUuid: string;
+}

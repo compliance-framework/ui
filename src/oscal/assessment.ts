@@ -1,5 +1,6 @@
 import type {
   HasPropAndLink,
+  RelatedObservation,
   ResponsibleParty,
   ResponsibleRole,
 } from './common';
@@ -165,7 +166,7 @@ export interface SubjectReference extends HasPropAndLink {
   remarks?: string;
 }
 
-export interface AssessmentAsset extends HasPropAndLink {
+export interface AssessmentAssets extends HasPropAndLink {
   components?: SystemComponent[];
   assessmentPlatforms: AssessmentPlatform[];
 }
@@ -255,14 +256,6 @@ export interface RelatedTask extends HasPropAndLink {
 export interface IdentifiedSubject {
   subjectPlaceholderUuid: string;
   subjects: AssessmentSubject[];
-}
-
-export interface RelatedObservation {
-  observationUuid: string;
-}
-
-export interface RelatedRisk {
-  riskUuid: string;
 }
 
 export interface Observation extends HasPropAndLink {

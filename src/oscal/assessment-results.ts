@@ -2,7 +2,7 @@ import type { HasPropAndLink, ResponsibleParty } from './common';
 import type { BackMatter, Metadata } from './metadata';
 import type {
   Activity,
-  AssessmentAsset,
+  AssessmentAssets,
   AssessmentPart,
   Finding,
   LocalObjective,
@@ -55,7 +55,7 @@ export interface ResultLocalDefinitions {
   components?: SystemComponent[];
   inventoryItems?: InventoryItem[];
   users?: SystemUser[];
-  assessmentAssets?: AssessmentAsset[];
+  assessmentAssets?: AssessmentAssets;
   tasks?: Task[];
 }
 
