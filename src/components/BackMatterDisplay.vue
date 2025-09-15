@@ -1,5 +1,5 @@
 <template>
-  <slot name="img" v-if="resource.base64?.mediaType.startsWith('image/')">
+  <slot name="img" v-if="resource.base64?.mediaType?.startsWith('image/')">
     <img
       :src="`data:${resource.base64.mediaType};base64,${resource.base64.value}`"
       :alt="resource.title"

@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref, watchEffect } from 'vue';
-import type { SystemComponent, ByComponent } from '@/oscal';
 import { useSystemStore } from '@/stores/system.ts';
 import BurgerMenu from '@/components/BurgerMenu.vue';
 import Textarea from '@/volt/Textarea.vue';
@@ -8,6 +7,10 @@ import { useToggle } from '@/composables/useToggle';
 import { useDataApi } from '@/composables/axios';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
 import VueMarkdown from 'vue-markdown-render';
+import type {
+  ByComponent,
+  SystemComponent,
+} from '@/stores/system-security-plans';
 
 const { byComponent } = defineProps<{
   byComponent: ByComponent;

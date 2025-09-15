@@ -1,8 +1,12 @@
 <script setup lang="ts">
 import { v4 as uuidv4 } from 'uuid';
-import type { ByComponent, Statement, SystemComponent } from '@/oscal';
 import StatementByComponent from '@/views/control-implementations/partials/StatementByComponent.vue';
-import type { ImplementedRequirement } from '@/stores/system-security-plans.ts';
+import type {
+  ByComponent,
+  ImplementedRequirement,
+  Statement,
+  SystemComponent,
+} from '@/stores/system-security-plans.ts';
 import { computed, onMounted, ref, toValue, watch } from 'vue';
 import { useSystemStore } from '@/stores/system.ts';
 import Select from '@/volt/Select.vue';

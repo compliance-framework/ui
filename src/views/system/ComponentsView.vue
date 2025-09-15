@@ -169,11 +169,14 @@ import SystemImplementationComponentCreateForm from '@/components/system-securit
 import SystemImplementationComponentEditForm from '@/components/system-security-plans/SystemImplementationComponentEditForm.vue';
 
 // Types and stores;
-import { type SystemComponent, type SystemSecurityPlan } from '@/oscal';
 import { useSystemStore } from '@/stores/system.ts';
 import Panel from '@/volt/Panel.vue';
 import { useDataApi } from '@/composables/axios';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
+import type {
+  SystemComponent,
+  SystemSecurityPlan,
+} from '@/stores/system-security-plans';
 
 const toast = useToast();
 const { system } = useSystemStore();

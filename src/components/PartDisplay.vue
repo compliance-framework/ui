@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Part } from '@/oscal';
+import type { Part } from '@/stores/types';
 
 const { part } = defineProps<{
   part: Part;
