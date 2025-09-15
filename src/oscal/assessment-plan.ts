@@ -19,7 +19,7 @@ export interface AssessmentPlan {
   uuid: string;
   metadata: Metadata;
   importSsp: ImportSSP;
-  localDefinitions?: LocalDefinitions;
+  localDefinitions?: AssessmentPlanLocalDefinitions;
   termsAndConditions?: TermsAndConditions;
   reviewedControls: ReviewedControls;
   assessmentSubjects?: AssessmentSubject[];
@@ -28,7 +28,7 @@ export interface AssessmentPlan {
   backMatter?: BackMatter;
 }
 
-export interface LocalDefinitions {
+export interface AssessmentPlanLocalDefinitions {
   components?: SystemComponent[];
   inventoryItems?: InventoryItem[];
   users?: SystemUser[];
