@@ -1,10 +1,10 @@
 import { defineStore } from 'pinia';
 import { useConfigStore } from '@/stores/config.ts';
 import type {
-  DataResponse,
   Link,
   Property,
   ReviewedControls,
+  DataResponse,
 } from '@/stores/types.ts';
 import camelcaseKeys from 'camelcase-keys';
 import decamelizeKeys from 'decamelize-keys';

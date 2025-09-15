@@ -2,7 +2,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import Badge from '@/volt/Badge.vue';
 import Drawer from '@/volt/Drawer.vue';
-import type { Control } from '@/oscal';
 import type {
   CreateStatementRequest,
   ImplementedRequirement,
@@ -16,6 +15,7 @@ import ControlStatementImplementation from '@/views/control-implementations/part
 import { useSystemStore } from '@/stores/system.ts';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import VueMarkdown from 'vue-markdown-render';
+import type { Control } from '@/stores/catalogs';
 
 const { control, implementation } = defineProps<{
   control: Control;

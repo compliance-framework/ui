@@ -75,12 +75,6 @@ import { onMounted, ref, watch, computed, type Ref } from 'vue';
 import Message from '@/volt/Message.vue';
 import Badge from '@/volt/Badge.vue';
 import { useSystemStore } from '@/stores/system.ts';
-import type {
-  Catalog,
-  Profile,
-  ControlImplementation,
-  ImplementedRequirement,
-} from '@/oscal';
 import PageHeader from '@/components/PageHeader.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
 import ControlEvidenceCounter from './partials/ControlEvidenceCounter.vue';
@@ -89,6 +83,12 @@ import { useDataApi } from '@/composables/axios';
 import Tree from '@/volt/Tree.vue';
 import IndexControlImplementation from '@/views/control-implementations/partials/IndexControlImplementation.vue';
 import type { AxiosError } from 'axios';
+import type { Profile } from '@/stores/types';
+import type { Catalog } from '@/stores/catalogs';
+import type {
+  ControlImplementation,
+  ImplementedRequirement,
+} from '@/stores/system-security-plans';
 
 const systemStore = useSystemStore();
 
