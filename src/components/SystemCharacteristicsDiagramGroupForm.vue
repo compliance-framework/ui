@@ -1,18 +1,18 @@
 <script setup lang="ts">
 import PrimaryButton from '@/components/PrimaryButton.vue';
-import { type DiagramGrouping } from '@/oscal';
 import FormTextarea from '@/components/forms/FormTextarea.vue';
+import type { Diagrammable } from '@/stores/system-security-plans';
 
-const model = defineModel<DiagramGrouping>({ required: true });
+const model = defineModel<Diagrammable>({ required: true });
 
 const emit = defineEmits({
-  updated(grouping: DiagramGrouping) {
+  updated(grouping: Diagrammable) {
     return !!grouping.description;
   },
 });
 
 async function updateCharacteristics() {
-  emit('updated', model.value as DiagramGrouping);
+  emit('updated', model.value as Diagrammable);
 }
 </script>
 

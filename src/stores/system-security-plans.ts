@@ -26,10 +26,10 @@ import type {
   SystemUser,
 } from '@/oscal';
 
-// export type DiagramGrouping =
-//   | AuthorizationBoundary
-//   | DataFlow
-//   | NetworkArchitecture;
+export type Diagrammable =
+  | AuthorizationBoundary
+  | DataFlow
+  | NetworkArchitecture;
 
 export interface CreateStatementRequest {
   uuid: string;

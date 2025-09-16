@@ -67,18 +67,17 @@
 </template>
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
-import {
-  type Diagram,
-  type DiagramGrouping,
-  type SystemSecurityPlan,
-} from '@/oscal';
+import type { Diagram, SystemSecurityPlan } from '@/oscal';
 import { useRoute } from 'vue-router';
 import DrawIODiagramEditor from '@/components/DrawIODiagramEditor.vue';
 import CollapsableGroup from '@/components/CollapsableGroup.vue';
 import type { DataResponse } from '@/stores/types.ts';
 import { v4 } from 'uuid';
 import { useToast } from 'primevue/usetoast';
-import { useSystemSecurityPlanStore } from '@/stores/system-security-plans';
+import {
+  useSystemSecurityPlanStore,
+  type Diagrammable,
+} from '@/stores/system-security-plans';
 
 const route = useRoute();
 const id = route.params.id as string;
@@ -86,9 +85,9 @@ const sspStore = useSystemSecurityPlanStore();
 const toast = useToast();
 
 const systemSecurityPlan = ref<SystemSecurityPlan | null>(null);
-const authorizationBoundary = ref<DiagramGrouping>({} as DiagramGrouping);
-const networkArchitecture = ref<DiagramGrouping>({} as DiagramGrouping);
-const dataFlow = ref<DiagramGrouping>({} as DiagramGrouping);
+const authorizationBoundary = ref<Diagrammable>({} as Diagrammable);
+const networkArchitecture = ref<Diagrammable>({} as Diagrammable);
+const dataFlow = ref<Diagrammable>({} as Diagrammable);
 
 onMounted(() => {
   sspStore.get(id).then((data) => {
@@ -96,7 +95,7 @@ onMounted(() => {
   });
   sspStore
     .getCharacteristicsAuthorizationBoundary(id)
-    .then((data: DataResponse<DiagramGrouping>) => {
+    .then((data: DataResponse<Diagrammable>) => {
       authorizationBoundary.value = data.data;
       if (!data.data?.diagrams?.length) {
         authorizationBoundary.value.diagrams = [

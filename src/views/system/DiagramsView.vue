@@ -178,7 +178,7 @@
 </template>
 <script setup lang="ts">
 import { onMounted, ref, type Ref } from 'vue';
-import type { Diagram, DiagramGrouping, SystemSecurityPlan } from '@/oscal';
+import type { Diagram, SystemSecurityPlan } from '@/oscal';
 import DrawIODiagramEditor from '@/components/DrawIODiagramEditor.vue';
 import CollapsableGroup from '@/components/CollapsableGroup.vue';
 import { v4 } from 'uuid';
@@ -190,6 +190,7 @@ import type { AxiosError } from 'axios';
 import type { ErrorBody, ErrorResponse } from '@/stores/types';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
 import PlusIcon from '@primevue/icons/plus';
+import type { Diagrammable } from '@/stores/system-security-plans';
 
 const { system } = useSystemStore();
 const toast = useToast();
@@ -202,27 +203,27 @@ const systemSecurityPlan = ref<SystemSecurityPlan | null>(
 const {
   data: authorizationBoundary,
   execute: fetchAuthorizationBoundaryDiagram,
-} = useDataApi<DiagramGrouping>(
+} = useDataApi<Diagrammable>(
   `/api/oscal/system-security-plans/${systemSecurityPlan.value?.uuid}/system-characteristics/authorization-boundary`,
   { method: 'GET' },
   {
-    initialData: { diagrams: [{ uuid: v4() }] } as DiagramGrouping,
+    initialData: { diagrams: [{ uuid: v4() }] } as Diagrammable,
     immediate: false,
   },
 );
 
 const { data: networkArchitecture, execute: fetchNetworkArchitectureDiagram } =
-  useDataApi<DiagramGrouping>(
+  useDataApi<Diagrammable>(
     `/api/oscal/system-security-plans/${systemSecurityPlan.value?.uuid}/system-characteristics/network-architecture`,
     { method: 'GET' },
-    { initialData: {} as DiagramGrouping, immediate: false },
+    { initialData: {} as Diagrammable, immediate: false },
   );
 
 const { data: dataFlow, execute: fetchDataFlowDiagram } =
-  useDataApi<DiagramGrouping>(
+  useDataApi<Diagrammable>(
     `/api/oscal/system-security-plans/${systemSecurityPlan.value?.uuid}/system-characteristics/data-flow`,
     { method: 'GET' },
-    { initialData: {} as DiagramGrouping, immediate: false },
+    { initialData: {} as Diagrammable, immediate: false },
   );
 
 // Required multiple commands due to if more than 1 diagram is present, axios will end up cancelling the requests.
@@ -335,26 +336,26 @@ type DiagramKind =
   | 'data-flow';
 
 function resolveGrouping(kind: DiagramKind): {
-  grouping: Ref<DiagramGrouping | undefined>;
+  grouping: Ref<Diagrammable | undefined>;
   label: string;
 } {
-  let grouping: Ref<DiagramGrouping | undefined>;
+  let grouping: Ref<Diagrammable | undefined>;
   let label = '';
   switch (kind) {
     case 'authorization-boundary':
       grouping = authorizationBoundary as unknown as Ref<
-        DiagramGrouping | undefined
+        Diagrammable | undefined
       >;
       label = 'Authorization Boundary';
       break;
     case 'network-architecture':
       grouping = networkArchitecture as unknown as Ref<
-        DiagramGrouping | undefined
+        Diagrammable | undefined
       >;
       label = 'Network Architecture';
       break;
     case 'data-flow':
-      grouping = dataFlow as unknown as Ref<DiagramGrouping | undefined>;
+      grouping = dataFlow as unknown as Ref<Diagrammable | undefined>;
       label = 'Data Flow';
       break;
   }
@@ -385,7 +386,7 @@ async function addDiagram(kind: DiagramKind) {
     if (!created) return;
 
     if (!grouping.value) {
-      grouping.value = { diagrams: [] } as unknown as DiagramGrouping;
+      grouping.value = { diagrams: [] } as unknown as Diagrammable;
     }
     if (!grouping.value.diagrams) {
       grouping.value.diagrams = [] as Diagram[];
