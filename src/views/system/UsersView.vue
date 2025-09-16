@@ -160,10 +160,7 @@ import SystemImplementationUserCreateForm from '@/components/system-security-pla
 import SystemImplementationUserEditForm from '@/components/system-security-plans/SystemImplementationUserEditForm.vue';
 
 // Types and stores
-import type {
-  SystemUser,
-  SystemSecurityPlan,
-} from '@/stores/system-security-plans.ts';
+import type { SystemUser, SystemSecurityPlan } from '@/oscal';
 import { useSystemStore } from '@/stores/system.ts';
 import { useDataApi } from '@/composables/axios';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';

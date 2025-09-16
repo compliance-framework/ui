@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import PrimaryButton from '@/components/PrimaryButton.vue';
-import { type DiagramGrouping } from '@/stores/system-security-plans.ts';
+import { type DiagramGrouping } from '@/oscal';
 import FormTextarea from '@/components/forms/FormTextarea.vue';
 
 const model = defineModel<DiagramGrouping>({ required: true });

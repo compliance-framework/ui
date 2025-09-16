@@ -1,10 +1,8 @@
 <script setup lang="ts">
 import PrimaryButton from '@/components/PrimaryButton.vue';
 import FormInput from '@/components/forms/FormInput.vue';
-import {
-  type SystemCharacteristics,
-  useSystemSecurityPlanStore,
-} from '@/stores/system-security-plans.ts';
+import { type SystemCharacteristics } from '@/oscal';
+import { useSystemSecurityPlanStore } from '@/stores/system-security-plans.ts';
 import FormTextarea from '@/components/forms/FormTextarea.vue';
 import { onMounted, ref } from 'vue';
 

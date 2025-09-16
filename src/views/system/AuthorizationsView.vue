@@ -163,10 +163,7 @@ import SystemImplementationLeveragedAuthorizationCreateForm from '@/components/s
 import SystemImplementationLeveragedAuthorizationEditForm from '@/components/system-security-plans/SystemImplementationLeveragedAuthorizationEditForm.vue';
 
 // Types and stores
-import type {
-  SystemSecurityPlan,
-  LeveragedAuthorization,
-} from '@/stores/system-security-plans.ts';
+import type { SystemSecurityPlan, LeveragedAuthorization } from '@/oscal';
 import Panel from '@/volt/Panel.vue';
 import { useSystemStore } from '@/stores/system.ts';
 import { useDataApi } from '@/composables/axios';

@@ -160,7 +160,7 @@ import type {
   SystemComponent,
   InventoryItem,
   LeveragedAuthorization,
-} from '@/stores/system-security-plans.ts';
+} from '@/oscal';
 import type { Profile } from '@/oscal';
 import Select from '@/volt/Select.vue';
 import { useSystemStore } from '@/stores/system.ts';

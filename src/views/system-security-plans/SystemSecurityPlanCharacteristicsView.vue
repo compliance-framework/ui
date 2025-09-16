@@ -698,10 +698,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
-import type {
-  SystemCharacteristics,
-  DiagramGrouping,
-} from '@/stores/system-security-plans.ts';
+import type { SystemCharacteristics, DiagramGrouping } from '@/oscal';
 import { useDataApi } from '@/composables/axios';
 
 const route = useRoute();

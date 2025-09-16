@@ -85,10 +85,7 @@ import IndexControlImplementation from '@/views/control-implementations/partials
 import type { AxiosError } from 'axios';
 import type { Profile } from '@/stores/types';
 import type { Catalog } from '@/oscal';
-import type {
-  ControlImplementation,
-  ImplementedRequirement,
-} from '@/stores/system-security-plans';
+import type { ControlImplementation, ImplementedRequirement } from '@/oscal';
 
 const systemStore = useSystemStore();
 

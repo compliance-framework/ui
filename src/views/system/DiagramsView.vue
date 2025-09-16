@@ -178,11 +178,7 @@
 </template>
 <script setup lang="ts">
 import { onMounted, ref, type Ref } from 'vue';
-import type {
-  Diagram,
-  DiagramGrouping,
-  SystemSecurityPlan,
-} from '@/stores/system-security-plans.ts';
+import type { Diagram, DiagramGrouping, SystemSecurityPlan } from '@/oscal';
 import DrawIODiagramEditor from '@/components/DrawIODiagramEditor.vue';
 import CollapsableGroup from '@/components/CollapsableGroup.vue';
 import { v4 } from 'uuid';

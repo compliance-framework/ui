@@ -272,7 +272,7 @@ import type {
   SystemUser,
   SystemComponent,
   LeveragedAuthorization,
-} from '@/stores/system-security-plans.ts';
+} from '@/oscal';
 import type { InventoryItem, Profile } from '@/oscal';
 import Select from '@/volt/Select.vue';
 import { useToast } from 'primevue/usetoast';

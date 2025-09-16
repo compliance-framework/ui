@@ -7,10 +7,7 @@ import { useToggle } from '@/composables/useToggle';
 import { useDataApi } from '@/composables/axios';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
 import VueMarkdown from 'vue-markdown-render';
-import type {
-  ByComponent,
-  SystemComponent,
-} from '@/stores/system-security-plans';
+import type { ByComponent, SystemComponent } from '@/oscal';
 
 const { byComponent } = defineProps<{
   byComponent: ByComponent;

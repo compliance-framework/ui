@@ -122,7 +122,7 @@
 </template>
 <script setup lang="ts">
 import PageHeader from '@/components/PageHeader.vue';
-import type { SystemSecurityPlan } from '@/stores/system-security-plans.ts';
+import type { SystemSecurityPlan } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { useSystemStore } from '@/stores/system.ts';
 import Badge from '@/volt/Badge.vue';

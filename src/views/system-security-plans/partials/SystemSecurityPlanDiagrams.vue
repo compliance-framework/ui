@@ -71,14 +71,14 @@ import {
   type Diagram,
   type DiagramGrouping,
   type SystemSecurityPlan,
-  useSystemSecurityPlanStore,
-} from '@/stores/system-security-plans.ts';
+} from '@/oscal';
 import { useRoute } from 'vue-router';
 import DrawIODiagramEditor from '@/components/DrawIODiagramEditor.vue';
 import CollapsableGroup from '@/components/CollapsableGroup.vue';
 import type { DataResponse } from '@/stores/types.ts';
 import { v4 } from 'uuid';
 import { useToast } from 'primevue/usetoast';
+import { useSystemSecurityPlanStore } from '@/stores/system-security-plans';
 
 const route = useRoute();
 const id = route.params.id as string;

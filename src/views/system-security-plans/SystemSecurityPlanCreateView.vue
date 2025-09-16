@@ -8,10 +8,8 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import PageHeader from '@/components/PageHeader.vue';
-import {
-  type SystemSecurityPlan,
-  useSystemSecurityPlanStore,
-} from '@/stores/system-security-plans.ts';
+import { type SystemSecurityPlan } from '@/oscal';
+import { useSystemSecurityPlanStore } from '@/stores/system-security-plans';
 
 const sspStore = useSystemSecurityPlanStore();
 

@@ -6,7 +6,7 @@ import type {
   CreateStatementRequest,
   ImplementedRequirement,
   Statement,
-} from '@/stores/system-security-plans.ts';
+} from '@/oscal';
 import PartDisplay from '@/components/PartDisplay.vue';
 import type { Part } from '@/oscal';
 import { ref, watchEffect } from 'vue';

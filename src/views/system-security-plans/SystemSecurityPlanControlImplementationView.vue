@@ -387,7 +387,7 @@ import type {
   Statement,
   SystemSecurityPlan,
   ByComponent,
-} from '@/stores/system-security-plans.ts';
+} from '@/oscal';
 import Dialog from '@/volt/Dialog.vue';
 import ImplementedRequirementCreateForm from '@/components/system-security-plans/ImplementedRequirementCreateForm.vue';
 import ImplementedRequirementEditForm from '@/components/system-security-plans/ImplementedRequirementEditForm.vue';

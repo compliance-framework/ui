@@ -6,7 +6,7 @@ import type {
   ImplementedRequirement,
   Statement,
   SystemComponent,
-} from '@/stores/system-security-plans.ts';
+} from '@/oscal';
 import { computed, onMounted, ref, toValue, watch } from 'vue';
 import { useSystemStore } from '@/stores/system.ts';
 import Select from '@/volt/Select.vue';

@@ -760,7 +760,7 @@ import type {
   SystemUser,
   LeveragedAuthorization,
   SystemImplementation,
-} from '@/stores/system-security-plans.ts';
+} from '@/oscal';
 import { useDataApi } from '@/composables/axios';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
 
