@@ -49,14 +49,12 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import {
-  useComponentDefinitionStore,
-  type ImportComponentDefinition,
-} from '@/stores/component-definitions.ts';
+import { useComponentDefinitionStore } from '@/stores/component-definitions.ts';
 import { useToast } from 'primevue/usetoast';
 import FormInput from '@/components/forms/FormInput.vue';
 import PrimaryButton from '@/components/PrimaryButton.vue';
 import SecondaryButton from '@/components/SecondaryButton.vue';
+import type { ImportComponentDefinition } from '@/oscal';
 
 const componentDefinitionStore = useComponentDefinitionStore();
 const toast = useToast();

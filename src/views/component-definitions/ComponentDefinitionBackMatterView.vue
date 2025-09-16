@@ -87,11 +87,10 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import { type BackMatterResource } from '@/stores/component-definitions.ts';
+import type { BackMatterResource, BackMatter } from '@/oscal';
 import { useRoute } from 'vue-router';
 import TertiaryButton from '@/components/TertiaryButton.vue';
 import BackMatterResourceCreateModal from '@/components/component-definitions/BackMatterResourceCreateModal.vue';
-import type { BackMatter } from '@/stores/types';
 import { useDataApi } from '@/composables/axios';
 
 const route = useRoute();

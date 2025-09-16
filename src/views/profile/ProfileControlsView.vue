@@ -74,8 +74,8 @@
 </template>
 
 <script setup lang="ts">
-import { type BackMatter, type Import } from '@/stores/types';
-import { type BackMatterResource } from '@/stores/component-definitions';
+import { type Import } from '@/stores/types';
+import type { BackMatterResource, BackMatter } from '@/oscal';
 import { useRoute } from 'vue-router';
 import { ref, computed, toValue, watch } from 'vue';
 import CollapsableGroup from '@/components/CollapsableGroup.vue';

@@ -121,12 +121,12 @@ import { computed } from 'vue';
 import type {
   Capability,
   ComponentDefinition,
-  ComponentDefinitionCharacteristics,
   DefinedComponent,
   ImportComponentDefinition,
-} from '@/stores/component-definitions.ts';
+} from '@/oscal';
 import { useRoute } from 'vue-router';
 import { useDataApi } from '@/composables/axios';
+import type { ComponentDefinitionCharacteristics } from '@/stores/component-definitions';
 
 const route = useRoute();
 

@@ -47,7 +47,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import type { Capability } from '@/stores/component-definitions';
+import type { Capability } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import FormInput from '@/components/forms/FormInput.vue';
 import FormTextarea from '@/components/forms/FormTextarea.vue';

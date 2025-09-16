@@ -82,7 +82,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import { type ImportComponentDefinition } from '@/stores/component-definitions.ts';
+import { type ImportComponentDefinition } from '@/oscal';
 import { useRoute } from 'vue-router';
 import TertiaryButton from '@/components/TertiaryButton.vue';
 import ImportDefinitionEditModal from '@/components/component-definitions/ImportDefinitionEditModal.vue';

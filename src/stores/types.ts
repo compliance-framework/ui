@@ -1,4 +1,4 @@
-import type { BackMatterResource } from './component-definitions';
+import type { BackMatter } from '@/oscal';
 
 export interface Metadata {
   title: string;
@@ -196,10 +196,6 @@ export interface MergeCombine {
 export interface Modify {
   setParameters: unknown[];
   alters: unknown[];
-}
-
-export interface BackMatter {
-  resources: BackMatterResource[];
 }
 
 export interface Address {

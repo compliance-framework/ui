@@ -81,7 +81,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import type { DefinedComponent } from '@/stores/component-definitions.ts';
+import type { DefinedComponent } from '@/oscal';
 import FormInput from '@/components/forms/FormInput.vue';
 import FormTextarea from '@/components/forms/FormTextarea.vue';
 import PrimaryButton from '@/components/PrimaryButton.vue';

@@ -87,7 +87,7 @@
 import { ref, watch } from 'vue';
 import PageHeader from '@/components/PageHeader.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
-import type { ComponentDefinition } from '@/stores/component-definitions.ts';
+import type { ComponentDefinition } from '@/oscal';
 import { RouterView, useRoute, useRouter } from 'vue-router';
 import { useDataApi } from '@/composables/axios';
 import type { AxiosError } from 'axios';

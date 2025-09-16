@@ -26,7 +26,7 @@
 import Dialog from '@/volt/Dialog.vue';
 import PrimaryButton from '@/components/PrimaryButton.vue';
 import ImportDefinitionEditForm from './ImportDefinitionEditForm.vue';
-import type { ImportComponentDefinition } from '@/stores/component-definitions.ts';
+import type { ImportComponentDefinition } from '@/oscal';
 import { computed } from 'vue';
 
 const props = defineProps<{

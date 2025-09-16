@@ -46,7 +46,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { type DefinedComponent } from '@/stores/component-definitions.ts';
+import { type DefinedComponent } from '@/oscal';
 import { useRoute } from 'vue-router';
 import TertiaryButton from '@/components/TertiaryButton.vue';
 import ComponentDefinitionComponent from '@/components/component-definitions/ComponentDefinitionComponent.vue';

@@ -125,14 +125,14 @@
 import { onMounted, ref } from 'vue';
 import CollapsableGroup from '@/components/CollapsableGroup.vue';
 import TertiaryButton from '@/components/TertiaryButton.vue';
-import {
-  useComponentDefinitionStore,
-  type ControlImplementation,
-  type DefinedComponent,
-  type ResponsibleRole,
-} from '@/stores/component-definitions.ts';
+import { useComponentDefinitionStore } from '@/stores/component-definitions.ts';
 import { useToast } from 'primevue/usetoast';
 import { useConfigStore } from '@/stores/config.ts';
+import type {
+  ComponentDefinitionControlImplementation,
+  DefinedComponent,
+  ResponsibleRole,
+} from '@/oscal';
 
 const props = defineProps<{
   component: DefinedComponent;
@@ -142,7 +142,9 @@ const props = defineProps<{
 const componentDefinitionStore = useComponentDefinitionStore();
 const configStore = useConfigStore();
 const toast = useToast();
-const controlImplementations = ref<ControlImplementation[]>([]);
+const controlImplementations = ref<ComponentDefinitionControlImplementation[]>(
+  [],
+);
 const responsibleRoles = ref<ResponsibleRole[]>([]);
 
 onMounted(async () => {
