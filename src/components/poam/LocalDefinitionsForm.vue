@@ -299,7 +299,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import type { LocalDefinitions } from '@/stores/plan-of-action-and-milestones';
+import type { POAMLocalDefinitions } from '@/stores/plan-of-action-and-milestones';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import type { AxiosError } from 'axios';
@@ -307,12 +307,12 @@ import type { ErrorResponse, ErrorBody } from '@/stores/types';
 
 interface Props {
   poamId: string;
-  localDefinitions?: LocalDefinitions;
+  localDefinitions?: POAMLocalDefinitions;
 }
 
 interface Emits {
   (e: 'cancel'): void;
-  (e: 'saved', localDefinitions: LocalDefinitions): void;
+  (e: 'saved', localDefinitions: POAMLocalDefinitions): void;
 }
 
 const props = defineProps<Props>();
@@ -324,13 +324,13 @@ const {
   data: newLD,
   isLoading: loading,
   execute: saveLD,
-} = useDataApi<LocalDefinitions>(
+} = useDataApi<POAMLocalDefinitions>(
   `/api/oscal/plan-of-actions-and-milestones/${props.poamId}/local-definitions`,
   null,
   { immediate: false },
 );
 
-const formData = ref<LocalDefinitions>({
+const formData = ref<POAMLocalDefinitions>({
   components: [],
   inventoryItems: [],
   assessmentAssets: {

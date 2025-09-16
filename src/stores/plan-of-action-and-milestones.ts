@@ -256,7 +256,7 @@ export interface AssessmentAssets {
   }[];
 }
 
-export interface LocalDefinitions {
+export interface POAMLocalDefinitions {
   components?: SystemComponent[];
   inventoryItems?: InventoryItem[];
   assessmentAssets?: AssessmentAssets;
