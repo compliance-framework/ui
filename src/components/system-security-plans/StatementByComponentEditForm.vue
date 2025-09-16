@@ -543,8 +543,6 @@ const addParameter = () => {
   byComponentData.setParameters.push({
     paramId: '',
     values: [''],
-    props: [],
-    links: [],
   });
 };
 
