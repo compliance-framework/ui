@@ -172,7 +172,7 @@ import { type PropType } from 'vue';
 import { useRouter } from 'vue-router';
 import { useConfigStore } from '@/stores/config';
 import { useToast } from 'primevue/usetoast';
-import type { AssessmentResults } from '@/stores/assessment-results';
+import type { AssessmentResults } from '@/oscal';
 import { useDataApi } from '@/composables/axios';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
 

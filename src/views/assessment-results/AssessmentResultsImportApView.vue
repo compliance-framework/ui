@@ -55,7 +55,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, type PropType } from 'vue';
-import type { AssessmentResults } from '@/stores/assessment-results';
+import type { AssessmentResults } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import type { AxiosError } from 'axios';

@@ -98,7 +98,7 @@
 import { onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import PageHeader from '@/components/PageHeader.vue';
-import type { AssessmentResults } from '@/stores/assessment-results';
+import type { AssessmentResults } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi } from '@/composables/axios';
 import type { AxiosError } from 'axios';

@@ -33,7 +33,7 @@
 
 <script setup lang="ts">
 import { type PropType } from 'vue';
-import { type AssessmentResults } from '@/stores/assessment-results';
+import { type AssessmentResults } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi } from '@/composables/axios';
 import decamelizeKeys from 'decamelize-keys';

@@ -179,7 +179,7 @@
 import { ref, onMounted, type PropType } from 'vue';
 import { useRouter } from 'vue-router';
 import Dialog from '@/volt/Dialog.vue';
-import type { AssessmentResults, Result } from '@/stores/assessment-results';
+import type { AssessmentResults, Result } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { v4 as uuidv4 } from 'uuid';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';

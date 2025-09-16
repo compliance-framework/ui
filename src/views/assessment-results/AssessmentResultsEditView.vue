@@ -151,7 +151,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import PageHeader from '@/components/PageHeader.vue';
-import type { AssessmentResults } from '@/stores/assessment-results';
+import type { AssessmentResults } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 

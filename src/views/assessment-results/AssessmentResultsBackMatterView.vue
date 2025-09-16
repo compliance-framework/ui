@@ -15,7 +15,7 @@
 
 <script setup lang="ts">
 import { type PropType } from 'vue';
-import type { AssessmentResults } from '@/stores/assessment-results';
+import type { AssessmentResults } from '@/oscal';
 
 defineProps({
   assessmentResults: {
