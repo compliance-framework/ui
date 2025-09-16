@@ -31,7 +31,7 @@
         ></textarea>
       </div>
 
-      <div>
+      <!-- <div>
         <label
           class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
         >
@@ -44,7 +44,7 @@
           class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-800 dark:text-slate-300"
           placeholder='{"type": "component", "componentId": "example", "title": "Component Name", "status": {"state": "implemented"}}'
         ></textarea>
-      </div>
+      </div> -->
 
       <div>
         <label
