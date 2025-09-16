@@ -156,11 +156,11 @@ import { onMounted, ref, watch } from 'vue';
 import type {
   SystemSecurityPlan,
   SystemCharacteristics,
-  SystemImplementationUser,
+  SystemUser,
   SystemComponent,
   InventoryItem,
   LeveragedAuthorization,
-} from '@/stores/system-security-plans.ts';
+} from '@/oscal';
 import type { Profile } from '@/oscal';
 import Select from '@/volt/Select.vue';
 import { useSystemStore } from '@/stores/system.ts';
@@ -215,7 +215,7 @@ const { execute: attachProfile } = useDataApi<void>(
   { immediate: false },
 );
 
-const { execute: executeSIUsers } = useDataApi<SystemImplementationUser[]>(
+const { execute: executeSIUsers } = useDataApi<SystemUser[]>(
   `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/system-implementation/users`,
   {
     method: 'GET',

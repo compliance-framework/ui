@@ -698,11 +698,9 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
-import type {
-  SystemCharacteristics,
-  DiagramGrouping,
-} from '@/stores/system-security-plans.ts';
+import type { SystemCharacteristics } from '@/oscal';
 import { useDataApi } from '@/composables/axios';
+import type { Diagrammable } from '@/stores/system-security-plans';
 
 const route = useRoute();
 
@@ -714,15 +712,15 @@ const {
   `/api/oscal/system-security-plans/${route.params.id}/system-characteristics`,
 );
 const { data: networkArchitecture, isLoading: networkArchitectureLoading } =
-  useDataApi<DiagramGrouping | null>(
+  useDataApi<Diagrammable | null>(
     `/api/oscal/system-security-plans/${route.params.id}/system-characteristics/network-architecture`,
   );
 const { data: authorizationBoundary, isLoading: authorizationBoundaryLoading } =
-  useDataApi<DiagramGrouping | null>(
+  useDataApi<Diagrammable | null>(
     `/api/oscal/system-security-plans/${route.params.id}/system-characteristics/authorization-boundary`,
   );
 const { data: dataFlow, isLoading: dataFlowLoading } =
-  useDataApi<DiagramGrouping | null>(
+  useDataApi<Diagrammable | null>(
     `/api/oscal/system-security-plans/${route.params.id}/system-characteristics/data-flow`,
   );
 

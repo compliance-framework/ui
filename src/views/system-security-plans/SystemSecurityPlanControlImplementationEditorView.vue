@@ -1,11 +1,9 @@
 <template>Work In Progress</template>
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
-import {
-  type SystemSecurityPlan,
-  useSystemSecurityPlanStore,
-} from '@/stores/system-security-plans.ts';
+import { type SystemSecurityPlan } from '@/oscal';
 import { useRoute } from 'vue-router';
+import { useSystemSecurityPlanStore } from '@/stores/system-security-plans';
 
 const route = useRoute();
 const id = route.params.id as string;

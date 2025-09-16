@@ -4,7 +4,7 @@ import type {
   Statement,
   SystemComponent,
   SystemSecurityPlan,
-} from '@/stores/system-security-plans.ts';
+} from '@/oscal';
 import { onMounted } from 'vue';
 import { useDataApi } from '@/composables/axios';
 

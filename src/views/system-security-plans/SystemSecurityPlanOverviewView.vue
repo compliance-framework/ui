@@ -269,10 +269,10 @@ import { useRoute, useRouter } from 'vue-router';
 import type {
   SystemSecurityPlan,
   SystemCharacteristics,
-  SystemImplementationUser,
+  SystemUser,
   SystemComponent,
   LeveragedAuthorization,
-} from '@/stores/system-security-plans.ts';
+} from '@/oscal';
 import type { InventoryItem, Profile } from '@/oscal';
 import Select from '@/volt/Select.vue';
 import { useToast } from 'primevue/usetoast';
@@ -322,7 +322,7 @@ const { execute: attachProfile } = useDataApi<void>(
   },
   { immediate: false },
 );
-const { execute: executeSIUsers } = useDataApi<SystemImplementationUser[]>(
+const { execute: executeSIUsers } = useDataApi<SystemUser[]>(
   `/api/oscal/system-security-plans/${route.params.id}/system-implementation/users`,
   {
     method: 'GET',

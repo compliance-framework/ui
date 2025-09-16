@@ -209,7 +209,7 @@ import { reactive, onMounted } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import FormInput from '@/components/forms/FormInput.vue';
 import FormTextarea from '@/components/forms/FormTextarea.vue';
-import type { SystemComponent } from '@/stores/system-security-plans.ts';
+import type { SystemComponent } from '@/oscal';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import type { AxiosError } from 'axios';
 import type { ErrorResponse, ErrorBody } from '@/stores/types';
@@ -265,7 +265,7 @@ onMounted(() => {
 });
 
 const addProtocol = () => {
-  componentData.protocols.push({
+  componentData.protocols?.push({
     uuid: crypto.randomUUID(),
     title: '',
     name: '',
@@ -274,7 +274,7 @@ const addProtocol = () => {
 };
 
 const removeProtocol = (index: number) => {
-  componentData.protocols.splice(index, 1);
+  componentData.protocols?.splice(index, 1);
 };
 
 const addPortRange = (protocolIndex: number) => {
@@ -303,7 +303,7 @@ const updateComponent = async () => {
   if (
     !componentData.title.trim() ||
     !componentData.description.trim() ||
-    !componentData.purpose.trim() ||
+    !componentData.purpose?.trim() ||
     !componentData.type.trim()
   ) {
     toast.add({

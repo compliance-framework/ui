@@ -155,7 +155,7 @@ import { reactive, onMounted } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import FormInput from '@/components/forms/FormInput.vue';
 import FormTextarea from '@/components/forms/FormTextarea.vue';
-import type { ImplementedRequirement } from '@/stores/system-security-plans.ts';
+import type { ImplementedRequirement } from '@/oscal';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import type { AxiosError } from 'axios';
 import type { ErrorBody, ErrorResponse } from '@/stores/types.ts';
@@ -202,7 +202,7 @@ onMounted(() => {
 });
 
 const addProperty = () => {
-  requirementData.props.push({
+  requirementData.props?.push({
     name: '',
     value: '',
     class: '',
@@ -212,11 +212,11 @@ const addProperty = () => {
 };
 
 const removeProperty = (index: number) => {
-  requirementData.props.splice(index, 1);
+  requirementData.props?.splice(index, 1);
 };
 
 const addLink = () => {
-  requirementData.links.push({
+  requirementData.links?.push({
     href: '',
     rel: '',
     text: '',
@@ -224,7 +224,7 @@ const addLink = () => {
 };
 
 const removeLink = (index: number) => {
-  requirementData.links.splice(index, 1);
+  requirementData.links?.splice(index, 1);
 };
 
 const updateRequirement = async () => {

@@ -325,10 +325,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed } from 'vue';
-import {
-  type InventoryItem,
-  type SystemComponent,
-} from '@/stores/system-security-plans.ts';
+import { type InventoryItem, type SystemComponent } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 

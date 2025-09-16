@@ -52,7 +52,7 @@
 import { ref } from 'vue';
 import PageHeader from '@/components/PageHeader.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
-import { type SystemSecurityPlan } from '@/stores/system-security-plans.ts';
+import { type SystemSecurityPlan } from '@/oscal';
 import { RouterView, useRoute } from 'vue-router';
 import { useSystemStore } from '@/stores/system.ts';
 import Tabs from '@/volt/Tabs.vue';

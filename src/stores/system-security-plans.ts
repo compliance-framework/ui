@@ -2,223 +2,34 @@
 
 import { defineStore } from 'pinia';
 import { useConfigStore } from '@/stores/config';
-import type {
-  DataResponse,
-  Link,
-  Metadata,
-  Property,
-  Protocol,
-} from '@/stores/types';
+import type { DataResponse } from '@/stores/types';
 import camelcaseKeys from 'camelcase-keys';
 import decamelizeKeys from 'decamelize-keys';
+import type {
+  AuthorizationBoundary,
+  ByComponent,
+  ControlImplementation,
+  DataFlow,
+  Diagram,
+  ImplementedRequirement,
+  InventoryItem,
+  LeveragedAuthorization,
+  Link,
+  NetworkArchitecture,
+  Property,
+  ResponsibleRole,
+  Statement,
+  SystemCharacteristics,
+  SystemComponent,
+  SystemImplementation,
+  SystemSecurityPlan,
+  SystemUser,
+} from '@/oscal';
 
-export interface Diagram {
-  uuid: string;
-  description: string;
-  props: Property[];
-  links: Link[];
-  caption: string;
-  remarks: string;
-}
-
-export interface DiagramGrouping {
-  uuid: string;
-  description: string;
-  remarks: string;
-  props: Property[];
-  links: Link[];
-  diagrams: Diagram[];
-}
-
-export interface SystemCharacteristics {
-  systemName?: string;
-  systemNameShort?: string;
-  description?: string;
-  dateAuthorized?: Date;
-  securitySensitivityLevel?: string;
-  remarks?: string;
-}
-
-export interface SystemImplementation {
-  props: Property[];
-  links: Link[];
-  remarks?: string;
-}
-
-export interface SystemImplementationUser {
-  uuid: string;
-  title: string;
-  shortName: string;
-  description: string;
-  props: Property[];
-  links: Link[];
-  roleIds?: string[];
-  authorizedPrivileges?: AuthorizedPrivilege[];
-}
-
-export interface AuthorizedPrivilege {
-  title: string;
-  description: string;
-  props: Property[];
-  links: Link[];
-  functionsPerformed?: string[];
-}
-
-export interface SystemComponentStatus {
-  remarks: string;
-  state: string;
-}
-
-export interface PortRange {
-  transport: string;
-  start?: number;
-  end?: number;
-}
-
-export interface SystemComponent {
-  uuid: string;
-  type: string;
-  title: string;
-  description: string;
-  purpose: string;
-  status: SystemComponentStatus;
-  protocols: Protocol[];
-  remarks: string;
-  props: Property[];
-  links: Link[];
-}
-
-export interface InventoryItem {
-  uuid: string;
-  description: string;
-  props?: Property[];
-  links?: Link[];
-  responsibleParties?: {
-    roleId: string;
-    partyUuids: string[];
-    props?: Property[];
-    links?: Link[];
-    remarks?: string;
-  }[];
-  implementedComponents?: ImplementedComponent[];
-  remarks?: string;
-}
-
-export interface ImplementedComponent {
-  componentUuid: string;
-  props?: Property[];
-  links?: Link[];
-  responsibleParties?: {
-    roleId: string;
-    partyUuids: string[];
-    props?: Property[];
-    links?: Link[];
-    remarks?: string;
-  }[];
-  remarks?: string;
-}
-
-export interface LeveragedAuthorization {
-  uuid: string;
-  title: string;
-  partyUuid: string;
-  dateAuthorized: string;
-  remarks?: string;
-  props?: Property[];
-  links?: Link[];
-}
-
-export interface ResponsibleRole {
-  roleId: string;
-  props: Property[];
-  links: Link[];
-  partyUuids?: string[];
-  remarks?: string;
-}
-
-export interface SetParameter {
-  paramId: string;
-  values: string[];
-  props: Property[];
-  links: Link[];
-  remarks?: string;
-}
-
-export interface ImplementationStatus {
-  state: string;
-  remarks?: string;
-}
-
-export interface ProvidedControlImplementation {
-  uuid: string;
-  description: string;
-  props: Property[];
-  links: Link[];
-  remarks?: string;
-}
-
-export interface ControlImplementationResponsibility {
-  uuid: string;
-  providedUuid?: string;
-  description: string;
-  props: Property[];
-  links: Link[];
-  remarks?: string;
-}
-
-export interface Export {
-  uuid: string;
-  description: string;
-  props: Property[];
-  links: Link[];
-  remarks?: string;
-  provided?: ProvidedControlImplementation[];
-  responsibilities?: ControlImplementationResponsibility[];
-}
-
-export interface InheritedControlImplementation {
-  uuid: string;
-  providedUuid: string;
-  description: string;
-  props: Property[];
-  links: Link[];
-  remarks?: string;
-}
-
-export interface SatisfiedControlImplementationResponsibility {
-  uuid: string;
-  responsibilityUuid: string;
-  description: string;
-  props: Property[];
-  links: Link[];
-  remarks?: string;
-}
-
-export interface ByComponent {
-  uuid: string;
-  componentUuid: string;
-  description: string;
-  props: Property[];
-  links: Link[];
-  setParameters?: SetParameter[];
-  responsibleRoles?: ResponsibleRole[];
-  remarks?: string;
-  implementationStatus?: ImplementationStatus;
-  export?: Export;
-  inherited?: InheritedControlImplementation[];
-  satisfied?: SatisfiedControlImplementationResponsibility[];
-}
-
-export interface Statement {
-  uuid: string;
-  statementId: string;
-  description?: string;
-  props: Property[];
-  links: Link[];
-  responsibleRoles?: ResponsibleRole[];
-  byComponents?: ByComponent[];
-  remarks?: string;
-}
+export type Diagrammable =
+  | AuthorizationBoundary
+  | DataFlow
+  | NetworkArchitecture;
 
 export interface CreateStatementRequest {
   uuid: string;
@@ -229,32 +40,6 @@ export interface CreateStatementRequest {
   responsibleRoles?: ResponsibleRole[];
   byComponents?: ByComponent[];
   remarks?: string;
-}
-
-export interface ImplementedRequirement {
-  uuid: string;
-  controlId: string;
-  props: Property[];
-  links: Link[];
-  setParameters?: SetParameter[];
-  responsibleRoles?: ResponsibleRole[];
-  remarks?: string;
-  byComponents?: ByComponent[];
-  statements?: Statement[];
-}
-
-export interface ControlImplementation {
-  uuid: string;
-  source?: string;
-  description: string;
-  setParameters?: SetParameter[];
-  implementedRequirements: ImplementedRequirement[];
-}
-
-export interface SystemSecurityPlan {
-  uuid: string;
-  metadata: Metadata;
-  systemCharacteristics: SystemCharacteristics;
 }
 
 export const useSystemSecurityPlanStore = defineStore(
@@ -358,7 +143,7 @@ export const useSystemSecurityPlanStore = defineStore(
 
     async function getCharacteristicsAuthorizationBoundary(
       id: string,
-    ): Promise<DataResponse<DiagramGrouping>> {
+    ): Promise<DataResponse<AuthorizationBoundary>> {
       const config = await configStore.getConfig();
       const response = await fetch(
         `${config.API_URL}/api/oscal/system-security-plans/${id}/system-characteristics/authorization-boundary`,
@@ -371,12 +156,12 @@ export const useSystemSecurityPlanStore = defineStore(
       }
       return camelcaseKeys(await response.json(), {
         deep: true,
-      }) as DataResponse<DiagramGrouping>;
+      }) as DataResponse<AuthorizationBoundary>;
     }
 
     async function getCharacteristicsNetworkArchitecture(
       id: string,
-    ): Promise<DataResponse<DiagramGrouping>> {
+    ): Promise<DataResponse<NetworkArchitecture>> {
       const config = await configStore.getConfig();
       const response = await fetch(
         `${config.API_URL}/api/oscal/system-security-plans/${id}/system-characteristics/network-architecture`,
@@ -389,7 +174,7 @@ export const useSystemSecurityPlanStore = defineStore(
       }
       return camelcaseKeys(await response.json(), {
         deep: true,
-      }) as DataResponse<DiagramGrouping>;
+      }) as DataResponse<NetworkArchitecture>;
     }
 
     async function updateCharacteristicsAuthorizationBoundaryDiagram(
@@ -445,7 +230,7 @@ export const useSystemSecurityPlanStore = defineStore(
 
     async function getCharacteristicsDataFlow(
       id: string,
-    ): Promise<DataResponse<DiagramGrouping>> {
+    ): Promise<DataResponse<DataFlow>> {
       const config = await configStore.getConfig();
       const response = await fetch(
         `${config.API_URL}/api/oscal/system-security-plans/${id}/system-characteristics/data-flow`,
@@ -458,7 +243,7 @@ export const useSystemSecurityPlanStore = defineStore(
       }
       return camelcaseKeys(await response.json(), {
         deep: true,
-      }) as DataResponse<DiagramGrouping>;
+      }) as DataResponse<DataFlow>;
     }
 
     async function getSystemImplementation(
@@ -513,7 +298,7 @@ export const useSystemSecurityPlanStore = defineStore(
 
     async function getSystemImplementationUsers(
       id: string,
-    ): Promise<DataResponse<SystemImplementationUser[]>> {
+    ): Promise<DataResponse<SystemUser[]>> {
       const config = await configStore.getConfig();
       const response = await fetch(
         `${config.API_URL}/api/oscal/system-security-plans/${id}/system-implementation/users`,
@@ -526,7 +311,7 @@ export const useSystemSecurityPlanStore = defineStore(
       }
       return camelcaseKeys(await response.json(), {
         deep: true,
-      }) as DataResponse<SystemImplementationUser[]>;
+      }) as DataResponse<SystemUser[]>;
     }
 
     async function getSystemImplementationComponents(
@@ -791,8 +576,8 @@ export const useSystemSecurityPlanStore = defineStore(
     async function updateSystemImplementationUser(
       id: string,
       userId: string,
-      user: SystemImplementationUser,
-    ): Promise<DataResponse<SystemImplementationUser>> {
+      user: SystemUser,
+    ): Promise<DataResponse<SystemUser>> {
       const config = await configStore.getConfig();
       const response = await fetch(
         `${config.API_URL}/api/oscal/system-security-plans/${id}/system-implementation/users/${userId}`,
@@ -810,13 +595,13 @@ export const useSystemSecurityPlanStore = defineStore(
       }
       return camelcaseKeys(await response.json(), {
         deep: true,
-      }) as DataResponse<SystemImplementationUser>;
+      }) as DataResponse<SystemUser>;
     }
 
     async function createSystemImplementationUser(
       id: string,
-      user: Partial<SystemImplementationUser>,
-    ): Promise<DataResponse<SystemImplementationUser>> {
+      user: Partial<SystemUser>,
+    ): Promise<DataResponse<SystemUser>> {
       const config = await configStore.getConfig();
       const response = await fetch(
         `${config.API_URL}/api/oscal/system-security-plans/${id}/system-implementation/users`,
@@ -834,7 +619,7 @@ export const useSystemSecurityPlanStore = defineStore(
       }
       return camelcaseKeys(await response.json(), {
         deep: true,
-      }) as DataResponse<SystemImplementationUser>;
+      }) as DataResponse<SystemUser>;
     }
 
     async function updateSystemImplementationComponent(

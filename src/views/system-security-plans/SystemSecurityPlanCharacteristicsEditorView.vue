@@ -9,7 +9,7 @@ import { ref } from 'vue';
 import { useRoute } from 'vue-router';
 import SystemCharacteristicsForm from '@/components/SystemCharacteristicsForm.vue';
 import { useToast } from 'primevue/usetoast';
-import type { SystemCharacteristics } from '@/stores/system-security-plans.ts';
+import type { SystemCharacteristics } from '@/oscal';
 
 const route = useRoute();
 const id = ref<string>(route.params.id as string);

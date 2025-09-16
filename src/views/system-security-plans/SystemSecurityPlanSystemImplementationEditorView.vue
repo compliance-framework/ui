@@ -757,10 +757,10 @@ import SystemImplementationLeveragedAuthorizationEditForm from '@/components/sys
 // Types and stores
 import type {
   SystemComponent,
-  SystemImplementationUser,
+  SystemUser,
   LeveragedAuthorization,
   SystemImplementation,
-} from '@/stores/system-security-plans.ts';
+} from '@/oscal';
 import { useDataApi } from '@/composables/axios';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
 
@@ -778,7 +778,7 @@ const activeTab = ref('overview');
 const { data: systemImplementation } = useDataApi<SystemImplementation>(
   `/api/oscal/system-security-plans/${sspId}/system-implementation`,
 );
-const { data: users } = useDataApi<SystemImplementationUser[]>(
+const { data: users } = useDataApi<SystemUser[]>(
   `/api/oscal/system-security-plans/${sspId}/system-implementation/users`,
 );
 const { data: components } = useDataApi<SystemComponent[]>(
@@ -808,7 +808,7 @@ const showCreateLeveragedAuthModal = ref(false);
 const showEditLeveragedAuthModal = ref(false);
 
 // Edit targets
-const editingUser = ref<SystemImplementationUser | null>(null);
+const editingUser = ref<SystemUser | null>(null);
 const editingComponent = ref<SystemComponent | null>(null);
 const editingLeveragedAuth = ref<LeveragedAuthorization | null>(null);
 
@@ -861,17 +861,17 @@ const handleOverviewSaved = (
 };
 
 // User management
-const editUser = (user: SystemImplementationUser) => {
+const editUser = (user: SystemUser) => {
   editingUser.value = user;
   showEditUserModal.value = true;
 };
 
-const handleUserCreated = (newUser: SystemImplementationUser) => {
+const handleUserCreated = (newUser: SystemUser) => {
   users.value?.push(newUser);
   showCreateUserModal.value = false;
 };
 
-const handleUserSaved = (updatedUser: SystemImplementationUser) => {
+const handleUserSaved = (updatedUser: SystemUser) => {
   if (users.value) {
     const index = users.value.findIndex((u) => u.uuid === updatedUser.uuid);
     if (index !== -1) {
@@ -882,7 +882,7 @@ const handleUserSaved = (updatedUser: SystemImplementationUser) => {
   editingUser.value = null;
 };
 
-const downloadUserJSON = (user: SystemImplementationUser) => {
+const downloadUserJSON = (user: SystemUser) => {
   const dataStr = JSON.stringify(
     decamelizeKeys(user, { separator: '-', deep: true }),
     null,
@@ -897,7 +897,7 @@ const downloadUserJSON = (user: SystemImplementationUser) => {
   URL.revokeObjectURL(url);
 };
 
-const deleteUser = async (user: SystemImplementationUser) => {
+const deleteUser = async (user: SystemUser) => {
   try {
     await executeDeleteUser(
       `/api/oscal/system-security-plans/${sspId}/system-implementation/users/${user.uuid}`,

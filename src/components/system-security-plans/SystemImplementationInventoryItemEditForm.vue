@@ -51,7 +51,7 @@ import { reactive, onMounted } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import FormInput from '@/components/forms/FormInput.vue';
 import FormTextarea from '@/components/forms/FormTextarea.vue';
-import type { InventoryItem } from '@/stores/system-security-plans.ts';
+import type { InventoryItem } from '@/oscal';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 
 const props = defineProps<{

@@ -145,7 +145,7 @@ import { ref, reactive, onMounted, watch } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import FormInput from '@/components/forms/FormInput.vue';
 import FormTextarea from '@/components/forms/FormTextarea.vue';
-import type { SystemImplementation } from '@/stores/system-security-plans.ts';
+import type { SystemImplementation } from '@/oscal';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import type { AxiosError } from 'axios';
 import type { ErrorResponse, ErrorBody } from '@/stores/types';
@@ -173,6 +173,8 @@ const {
 );
 
 const overviewData = reactive<SystemImplementation>({
+  users: [],
+  components: [],
   remarks: undefined,
   props: [],
   links: [],
@@ -180,6 +182,8 @@ const overviewData = reactive<SystemImplementation>({
 
 // Store original data for cancel functionality
 const originalData = reactive<SystemImplementation>({
+  users: [],
+  components: [],
   remarks: undefined,
   props: [],
   links: [],
@@ -189,6 +193,8 @@ const loadData = (data: SystemImplementation | null) => {
   if (data) {
     // Only extract the fields that belong in SystemImplementation
     const newData: SystemImplementation = {
+      users: data.users,
+      components: data.components,
       remarks: data.remarks,
       props: [...(data.props || [])].map((p) => ({ ...p })),
       links: [...(data.links || [])].map((l) => ({ ...l })),
@@ -280,6 +286,8 @@ const saveOverview = async () => {
   try {
     // Only send the fields that belong in SystemImplementation
     const dataToSave: SystemImplementation = {
+      users: overviewData.users,
+      components: overviewData.components,
       remarks: overviewData.remarks,
       props: overviewData.props || [],
       links: overviewData.links || [],

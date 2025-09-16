@@ -18,16 +18,6 @@
         </div>
 
         <div v-if="controlImplementation" class="grid grid-cols-1 gap-6">
-          <div v-if="controlImplementation.source">
-            <label
-              class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
-              >Source</label
-            >
-            <p class="text-gray-900 dark:text-slate-300">
-              {{ controlImplementation.source }}
-            </p>
-          </div>
-
           <div v-if="controlImplementation.description">
             <label
               class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
@@ -387,7 +377,7 @@ import type {
   Statement,
   SystemSecurityPlan,
   ByComponent,
-} from '@/stores/system-security-plans.ts';
+} from '@/oscal';
 import Dialog from '@/volt/Dialog.vue';
 import ImplementedRequirementCreateForm from '@/components/system-security-plans/ImplementedRequirementCreateForm.vue';
 import ImplementedRequirementEditForm from '@/components/system-security-plans/ImplementedRequirementEditForm.vue';

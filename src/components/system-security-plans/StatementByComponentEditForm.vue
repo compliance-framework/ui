@@ -373,11 +373,7 @@ import { reactive, onMounted } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import FormInput from '@/components/forms/FormInput.vue';
 import FormTextarea from '@/components/forms/FormTextarea.vue';
-import type {
-  ByComponent,
-  Statement,
-  ImplementedRequirement,
-} from '@/stores/system-security-plans.ts';
+import type { ByComponent, Statement, ImplementedRequirement } from '@/oscal';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import type { AxiosError } from 'axios';
 import type { ErrorBody, ErrorResponse } from '@/stores/types';
@@ -547,8 +543,6 @@ const addParameter = () => {
   byComponentData.setParameters.push({
     paramId: '',
     values: [''],
-    props: [],
-    links: [],
   });
 };
 

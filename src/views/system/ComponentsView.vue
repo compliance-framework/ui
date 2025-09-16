@@ -173,10 +173,7 @@ import { useSystemStore } from '@/stores/system.ts';
 import Panel from '@/volt/Panel.vue';
 import { useDataApi } from '@/composables/axios';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
-import type {
-  SystemComponent,
-  SystemSecurityPlan,
-} from '@/stores/system-security-plans';
+import type { SystemComponent, SystemSecurityPlan } from '@/oscal';
 
 const toast = useToast();
 const { system } = useSystemStore();
