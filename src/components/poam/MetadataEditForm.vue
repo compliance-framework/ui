@@ -188,7 +188,7 @@ async function handleSubmit() {
       version: formData.value.version || '',
       oscalVersion: formData.value.oscalVersion || '',
       published: formatDateForAPI(formData.value.published || ''),
-      lastModified: formatDateForAPI(formData.value.lastModified || ''),
+      lastModified: formatDateForAPI(formData.value.lastModified || '') || '',
       remarks: formData.value.remarks || '',
     };
 
