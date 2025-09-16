@@ -2,137 +2,24 @@
 
 import { defineStore } from 'pinia';
 import { useConfigStore } from '@/stores/config.ts';
-import type { DataResponse, Link, Metadata, Property } from '@/stores/types.ts';
+import type { DataResponse } from '@/stores/types.ts';
 import camelcaseKeys from 'camelcase-keys';
 import decamelizeKeys from 'decamelize-keys';
-
-export interface ComponentDefinition {
-  uuid: string;
-  metadata: Metadata;
-}
-
-export interface DefinedComponent {
-  uuid: string;
-  type: string;
-  title: string;
-  description: string;
-  purpose?: string;
-  props: Property[];
-  links: Link[];
-  responsibleRoles?: ResponsibleRole[];
-  protocols?: Protocol[];
-  controlImplementations?: ControlImplementation[];
-}
-
-export interface Capability {
-  uuid: string;
-  name: string;
-  description: string;
-  props: Property[];
-  links: Link[];
-  remarks?: string;
-  incorporatesComponents?: IncorporatesComponent[];
-  controlImplementations?: ControlImplementation[];
-}
-
-export interface ResponsibleRole {
-  roleId: string;
-  props: Property[];
-  links: Link[];
-  partyUuids?: string[];
-}
-
-export interface Protocol {
-  uuid?: string;
-  name: string;
-  title?: string;
-  portRanges?: PortRange[];
-}
-
-export interface PortRange {
-  start: number;
-  end: number;
-  transport: string;
-}
-
-export interface ControlImplementation {
-  uuid: string;
-  source: string;
-  description: string;
-  props: Property[];
-  links: Link[];
-  implementedRequirements: ImplementedRequirement[];
-}
-
-export interface ImplementedRequirement {
-  uuid: string;
-  controlId: string;
-  description: string;
-  props: Property[];
-  links: Link[];
-  statements?: Statement[];
-}
-
-export interface Statement {
-  statementId: string;
-  uuid: string;
-  description: string;
-  props: Property[];
-  links: Link[];
-}
-
-export interface IncorporatesComponent {
-  componentUuid: string;
-  description: string;
-}
-
-export interface BackMatterResource {
-  uuid: string;
-  title: string;
-  description: string;
-  remarks?: string;
-  citation?: Citation;
-  props?: Property[];
-  links?: Link[];
-  rlinks?: ResourceLink[];
-}
-
-export interface Citation {
-  text: string;
-  props?: Property[];
-  links?: Link[];
-}
-
-export interface ResourceLink {
-  href: string;
-  mediaType?: string;
-}
-
-export interface ImportComponentDefinition {
-  href: string;
-  includeAll?: boolean;
-  includeComponents?: SelectComponentById[];
-  excludeComponents?: SelectComponentById[];
-  includeControls?: { withId: string }[];
-}
-
-export interface SelectComponentById {
-  componentId: string;
-  matchingElements?: MatchingElement[];
-}
-
-export interface MatchingElement {
-  name: string;
-  ns?: string;
-  class?: string;
-  id?: string;
-}
+import type {
+  BackMatter,
+  BackMatterResource,
+  Capability,
+  ComponentDefinition,
+  ComponentDefinitionControlImplementation,
+  DefinedComponent,
+  ImportComponentDefinition,
+} from '@/oscal';
 
 export interface ComponentDefinitionCharacteristics {
   importComponentDefinitions?: ImportComponentDefinition[];
   components?: DefinedComponent[];
   capabilities?: Capability[];
-  backMatter?: any[];
+  backMatter?: BackMatter;
 }
 
 export const useComponentDefinitionStore = defineStore(
@@ -339,7 +226,7 @@ export const useComponentDefinitionStore = defineStore(
     async function getControlImplementations(
       id: string,
       componentId: string,
-    ): Promise<DataResponse<ControlImplementation[]>> {
+    ): Promise<DataResponse<ComponentDefinitionControlImplementation[]>> {
       const config = await configStore.getConfig();
       const response = await fetch(
         `${config.API_URL}/api/oscal/component-definitions/${id}/components/${componentId}/control-implementations`,
@@ -349,7 +236,7 @@ export const useComponentDefinitionStore = defineStore(
       );
       return camelcaseKeys(await response.json(), {
         deep: true,
-      }) as DataResponse<ControlImplementation[]>;
+      }) as DataResponse<ComponentDefinitionControlImplementation[]>;
     }
 
     async function getCapabilities(
