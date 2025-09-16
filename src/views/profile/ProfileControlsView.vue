@@ -47,13 +47,13 @@
       >
         <p>Included Controls</p>
         <ProfileControlGroups
-          :groups="imp.includeControls"
+          :groups="imp.includeControls as ProfileSelectControlByID[]"
           :catalog="importedCatalogsByHref[imp.href]"
         />
         <hr class="my-4 border-ccf-300 dark:border-slate-700 border-dashed" />
         <p>Excluded Controls</p>
         <ProfileControlGroups
-          :groups="imp.excludeControls"
+          :groups="imp.excludeControls as ProfileSelectControlByID[]"
           :catalog="importedCatalogsByHref[imp.href]"
         />
         <PrimaryButton class="mt-2" @click="save(toValue(imp))"
@@ -75,7 +75,11 @@
 
 <script setup lang="ts">
 import { type Import } from '@/oscal';
-import type { BackMatterResource, BackMatter } from '@/oscal';
+import type {
+  BackMatterResource,
+  BackMatter,
+  ProfileSelectControlByID,
+} from '@/oscal';
 import { useRoute } from 'vue-router';
 import { ref, computed, toValue, watch } from 'vue';
 import CollapsableGroup from '@/components/CollapsableGroup.vue';

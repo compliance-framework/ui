@@ -15,7 +15,7 @@
         class="px-4 py-4 bg-ccf-100 dark:bg-slate-950 border border-ccf-300 dark:border-slate-700"
       >
         <ProfileControlEditor
-          v-model="controlGroup.withIds"
+          v-model="controlGroup.withIds as string[]"
           :controlList="controls"
         />
       </div>
@@ -36,7 +36,7 @@ import { createControlList } from '@/composables/useControlList';
 import { ref } from 'vue';
 
 const props = defineProps<{
-  groups: (ProfileSelectControlByID[] & { _newId?: string })[];
+  groups: (ProfileSelectControlByID & { _newId?: string })[];
   catalog: string;
 }>();
 const catalogUUID = ref<string[]>([props.catalog]);
