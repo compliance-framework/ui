@@ -190,9 +190,14 @@
 
 <script setup lang="ts">
 import { reactive, onMounted } from 'vue';
-import type { Finding } from '@/stores/plan-of-action-and-milestones.ts';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
+import type {
+  Finding,
+  FindingTarget,
+  RelatedObservation,
+  RelatedRisk,
+} from '@/oscal';
 
 const props = defineProps<{
   poamId: string;
@@ -221,11 +226,11 @@ const {
 const formData = reactive({
   title: '',
   description: '',
-  target: '',
+  target: {} as FindingTarget,
   status: '',
   implementationStatus: '',
-  relatedObservations: [] as string[],
-  relatedRisks: [] as string[],
+  relatedObservations: [] as RelatedObservation[],
+  relatedRisks: [] as RelatedRisk[],
   remarks: '',
 });
 
@@ -233,13 +238,7 @@ onMounted(() => {
   // Initialize form with existing data
   formData.title = props.finding.title || '';
   formData.description = props.finding.description;
-  formData.target = props.finding.target
-    ? JSON.stringify(props.finding.target, null, 2)
-    : '';
-  formData.status = props.finding.status?.state || '';
-  formData.implementationStatus = props.finding.implementationStatus
-    ? JSON.stringify(props.finding.implementationStatus, null, 2)
-    : '';
+  formData.target = props.finding.target;
   // Handle related observations - extract UUIDs from objects
   formData.relatedObservations =
     props.finding.relatedObservations?.map(
@@ -254,7 +253,7 @@ onMounted(() => {
 });
 
 function addRelatedObservation() {
-  formData.relatedObservations.push('');
+  formData.relatedObservations.push({ observationUuid: '' });
 }
 
 function removeRelatedObservation(index: number) {
@@ -262,21 +261,11 @@ function removeRelatedObservation(index: number) {
 }
 
 function addRelatedRisk() {
-  formData.relatedRisks.push('');
+  formData.relatedRisks.push({ riskUuid: '' });
 }
 
 function removeRelatedRisk(index: number) {
   formData.relatedRisks.splice(index, 1);
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function parseJsonField(value: string): any {
-  if (!value.trim()) return undefined;
-  try {
-    return JSON.parse(value);
-  } catch {
-    return undefined;
-  }
 }
 
 async function submit() {
@@ -315,16 +304,15 @@ async function submit() {
       ...props.finding,
       title: formData.title,
       description: formData.description,
-      target: parseJsonField(formData.target),
-      status: formData.status ? { state: formData.status } : undefined,
-      implementationStatus: parseJsonField(formData.implementationStatus),
+      target: formData.target,
       relatedObservations:
-        formData.relatedObservations.filter((o) => o.trim()).length > 0
-          ? formData.relatedObservations.filter((o) => o.trim())
+        formData.relatedObservations.filter((o) => o.observationUuid.trim())
+          .length > 0
+          ? formData.relatedObservations.filter((o) => o.observationUuid.trim())
           : undefined,
       relatedRisks:
-        formData.relatedRisks.filter((r) => r.trim()).length > 0
-          ? formData.relatedRisks.filter((r) => r.trim())
+        formData.relatedRisks.filter((r) => r.riskUuid.trim()).length > 0
+          ? formData.relatedRisks.filter((r) => r.riskUuid.trim())
           : undefined,
       remarks: formData.remarks || undefined,
     };

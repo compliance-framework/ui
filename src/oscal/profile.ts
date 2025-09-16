@@ -11,6 +11,7 @@ export interface Profile {
 
 export interface Import {
   href: string;
+  includeAll?: boolean;
   includeControls?: ProfileSelectControlByID[];
   excludeControls?: ProfileSelectControlByID[];
 }

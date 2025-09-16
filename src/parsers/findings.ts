@@ -1,5 +1,5 @@
+import type { ComplianceInterval } from '@/stores/evidence';
 import { type ChartData, type ChartDataset } from 'chart.js';
-import type { ComplianceInterval } from '@/stores/findings.ts';
 
 export interface DateDataPoint {
   interval: Date;

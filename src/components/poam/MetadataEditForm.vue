@@ -114,7 +114,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import type { Metadata } from '@/stores/types';
+import type { Metadata } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi } from '@/composables/axios';
 import type { AxiosError } from 'axios';

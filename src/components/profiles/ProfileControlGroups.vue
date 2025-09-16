@@ -31,12 +31,12 @@ import CollapsableGroup from '@/components/CollapsableGroup.vue';
 import PrimaryButton from '@/components/PrimaryButton.vue';
 import ProfileControlEditor from '@/components/profiles/ProfileControlEditor.vue';
 import { useProfileControlGroups } from './useProfileControlGroups';
-import type { SelectControlsByID } from '@/stores/types';
+import type { ProfileSelectControlByID } from '@/oscal';
 import { createControlList } from '@/composables/useControlList';
 import { ref } from 'vue';
 
 const props = defineProps<{
-  groups: (SelectControlsByID & { _newId?: string })[];
+  groups: (ProfileSelectControlByID[] & { _newId?: string })[];
   catalog: string;
 }>();
 const catalogUUID = ref<string[]>([props.catalog]);

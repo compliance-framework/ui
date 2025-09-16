@@ -252,9 +252,10 @@ import Dialog from '@/volt/Dialog.vue';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi } from '@/composables/axios';
 import type { AxiosError } from 'axios';
-import type { ErrorResponse, ErrorBody, Metadata } from '@/stores/types';
+import type { ErrorResponse, ErrorBody } from '@/stores/types';
 import decamelizeKeys from 'decamelize-keys';
 import { getIdFromRoute } from '../../utils/get-poam-id-from-route';
+import type { Metadata } from '@/oscal';
 
 const route = useRoute();
 const toast = useToast();

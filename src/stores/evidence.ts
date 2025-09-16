@@ -3,8 +3,8 @@ import decamelizeKeys from 'decamelize-keys';
 import { defineStore } from 'pinia';
 import { useConfigStore } from '@/stores/config.ts';
 import { type Filter } from '@/parsers/labelfilter.ts';
-import type { Activity } from '@/oscal';
-import type { DataResponse, Link, Property } from '@/stores/types.ts';
+import type { Activity, Link, Property } from '@/oscal';
+import type { DataResponse } from '@/stores/types.ts';
 import type { Control } from '@/oscal';
 import type { BackMatter } from '@/oscal';
 
