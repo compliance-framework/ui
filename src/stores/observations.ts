@@ -1,13 +1,8 @@
 import { defineStore } from 'pinia';
 import { useConfigStore } from '@/stores/config.ts';
 import type { Activity } from '@/oscal';
-import type {
-  DataResponse,
-  Link,
-  Origin,
-  Property,
-  RelevantEvidence,
-} from '@/stores/types.ts';
+import type { Link, Origin, Property, RelevantEvidence } from '@/oscal';
+import type { DataResponse } from './types';
 
 export interface Observation {
   _id?: string;

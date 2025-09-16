@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref, useTemplateRef } from 'vue';
 import type { Diagram } from '@/oscal';
-import type { Property } from '@/stores/types.ts';
+import type { Property } from '@/oscal';
 
 const frame = useTemplateRef('frame');
 

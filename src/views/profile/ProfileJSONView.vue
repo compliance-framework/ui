@@ -20,7 +20,7 @@
 import PageCard from '@/components/PageCard.vue';
 import { useRoute } from 'vue-router';
 import { useDataApi } from '@/composables/axios';
-import type { Profile } from '@/stores/types';
+import type { Profile } from '@/oscal';
 import decamelizeKeys from 'decamelize-keys';
 import { onActivated } from 'vue';
 

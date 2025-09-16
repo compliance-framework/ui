@@ -1,15 +1,8 @@
 import { defineStore } from 'pinia';
 import { useConfigStore } from '@/stores/config.ts';
 import { type Filter } from '@/parsers/labelfilter.ts';
-import type {
-  ControlReference,
-  DataResponse,
-  FindingStatus,
-  Link,
-  Origin,
-  Property,
-  RiskReference,
-} from '@/stores/types.ts';
+import type { Link, Origin, Property } from '@/oscal';
+import type { DataResponse } from './types';
 
 export interface Finding {
   _id?: string;

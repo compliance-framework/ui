@@ -54,6 +54,7 @@ import { useToast } from 'primevue/usetoast';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import type { AxiosError } from 'axios';
 import type { ErrorResponse, ErrorBody } from '@/stores/types';
+import type { Metadata } from '@/oscal';
 
 const poam = ref<POAM>({
   uuid: '',
@@ -61,7 +62,7 @@ const poam = ref<POAM>({
     title: '',
     version: '',
     remarks: '',
-  },
+  } as Metadata,
   systemId: {
     id: 'change-me',
     identifierType: '',

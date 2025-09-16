@@ -1,4 +1,4 @@
-import type { Property } from '@/stores/types.ts';
+import type { Property } from '@/oscal';
 
 class PropertyManager {
   props: Property[];

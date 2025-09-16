@@ -32,7 +32,7 @@
 import PageHeader from '@/components/PageHeader.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
 import CollapsableGroup from '@/components/CollapsableGroup.vue';
-import { type Role } from '@/stores/types.ts';
+import { type Role } from '@/oscal';
 import { useDataApi } from '@/composables/axios';
 
 const {

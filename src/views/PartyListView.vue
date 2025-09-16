@@ -37,7 +37,7 @@
 <script setup lang="ts">
 import PageHeader from '@/components/PageHeader.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
-import type { Party } from '@/stores/types.ts';
+import type { Party } from '@/oscal';
 import CollapsableGroup from '@/components/CollapsableGroup.vue';
 import { useDataApi } from '@/composables/axios';
 

@@ -74,7 +74,7 @@
 </template>
 
 <script setup lang="ts">
-import { type Import } from '@/stores/types';
+import { type Import } from '@/oscal';
 import type { BackMatterResource, BackMatter } from '@/oscal';
 import { useRoute } from 'vue-router';
 import { ref, computed, toValue, watch } from 'vue';
@@ -143,7 +143,7 @@ const includedControlsCount = computed<number>(
       (acc, imp) =>
         acc +
         (imp.includeControls ?? []).reduce(
-          (innerAcc, group) => innerAcc + group.withIds.length,
+          (innerAcc, group) => innerAcc + (group.withIds?.length || 0),
           0,
         ),
       0,
@@ -155,7 +155,7 @@ const excludedControlsCount = computed<number>(
       (acc, imp) =>
         acc +
         (imp.excludeControls ?? []).reduce(
-          (innerAcc, group) => innerAcc + group.withIds.length,
+          (innerAcc, group) => innerAcc + (group.withIds?.length || 0),
           0,
         ),
       0,

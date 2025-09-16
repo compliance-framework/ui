@@ -33,14 +33,7 @@
 import { ref } from 'vue';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import { useRouter } from 'vue-router';
-import type {
-  ErrorResponse,
-  ErrorBody,
-  Profile,
-  Merge,
-  Import,
-  Modify,
-} from '@/stores/types.ts';
+import type { Profile, Merge, Import, Modify } from '@/oscal';
 import type { BackMatter, Metadata } from '@/oscal';
 import { v4 as uuidv4 } from 'uuid';
 import { useToast } from 'primevue/usetoast';
@@ -53,6 +46,7 @@ import TertiaryButton from '@/components/TertiaryButton.vue';
 import FormTextarea from '@/components/forms/FormTextarea.vue';
 import { BIconArrowRepeat } from 'bootstrap-icons-vue';
 import type { AxiosError } from 'axios';
+import type { ErrorBody, ErrorResponse } from '@/stores/types';
 
 const router = useRouter();
 const toast = useToast();
@@ -62,7 +56,7 @@ const profile = ref<Profile>({
   merge: {
     asIs: true,
   } as Merge,
-  import: {} as Import,
+  imports: [] as Import[],
   modify: {
     setParameters: [],
     alters: [],
