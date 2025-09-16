@@ -269,7 +269,7 @@ import { useRoute, useRouter } from 'vue-router';
 import type {
   SystemSecurityPlan,
   SystemCharacteristics,
-  SystemImplementationUser,
+  SystemUser,
   SystemComponent,
   LeveragedAuthorization,
 } from '@/stores/system-security-plans.ts';
@@ -322,7 +322,7 @@ const { execute: attachProfile } = useDataApi<void>(
   },
   { immediate: false },
 );
-const { execute: executeSIUsers } = useDataApi<SystemImplementationUser[]>(
+const { execute: executeSIUsers } = useDataApi<SystemUser[]>(
   `/api/oscal/system-security-plans/${route.params.id}/system-implementation/users`,
   {
     method: 'GET',

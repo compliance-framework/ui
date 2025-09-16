@@ -161,7 +161,7 @@ import SystemImplementationUserEditForm from '@/components/system-security-plans
 
 // Types and stores
 import type {
-  SystemImplementationUser,
+  SystemUser,
   SystemSecurityPlan,
 } from '@/stores/system-security-plans.ts';
 import { useSystemStore } from '@/stores/system.ts';
@@ -181,9 +181,7 @@ const sspId = computed(() => systemSecurityPlan.value?.uuid ?? '');
 const showCreateUserModal = ref(false);
 const showEditUserModal = ref(false);
 
-const { data: users, execute: fetchUsers } = useDataApi<
-  SystemImplementationUser[]
->(
+const { data: users, execute: fetchUsers } = useDataApi<SystemUser[]>(
   `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/system-implementation/users`,
   { method: 'GET' },
   { immediate: false },
@@ -198,7 +196,7 @@ const { execute: executeDelete } = useDataApi<void>(
 );
 
 // Edit targets
-const editingUser = ref<SystemImplementationUser | null>(null);
+const editingUser = ref<SystemUser | null>(null);
 
 const loadData = async () => {
   systemSecurityPlan.value = system.securityPlan as SystemSecurityPlan;
@@ -211,17 +209,17 @@ onMounted(async () => {
 });
 
 // User management
-const editUser = (user: SystemImplementationUser) => {
+const editUser = (user: SystemUser) => {
   editingUser.value = user;
   showEditUserModal.value = true;
 };
 
-const handleUserCreated = (newUser: SystemImplementationUser) => {
+const handleUserCreated = (newUser: SystemUser) => {
   users.value?.push(newUser);
   showCreateUserModal.value = false;
 };
 
-const handleUserSaved = (updatedUser: SystemImplementationUser) => {
+const handleUserSaved = (updatedUser: SystemUser) => {
   if (users.value) {
     const index = users.value.findIndex((u) => u.uuid === updatedUser.uuid);
     if (index !== -1) {
@@ -232,7 +230,7 @@ const handleUserSaved = (updatedUser: SystemImplementationUser) => {
   editingUser.value = null;
 };
 
-const downloadUserJSON = (user: SystemImplementationUser) => {
+const downloadUserJSON = (user: SystemUser) => {
   const dataStr = JSON.stringify(decamelizeKeys(user), null, 2);
   const dataBlob = new Blob([dataStr], { type: 'application/json' });
   const url = URL.createObjectURL(dataBlob);
@@ -243,7 +241,7 @@ const downloadUserJSON = (user: SystemImplementationUser) => {
   URL.revokeObjectURL(url);
 };
 
-const deleteUser = async (user: SystemImplementationUser) => {
+const deleteUser = async (user: SystemUser) => {
   try {
     await executeDelete(
       `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/system-implementation/users/${user.uuid}`,

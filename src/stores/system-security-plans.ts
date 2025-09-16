@@ -45,7 +45,7 @@ export interface SystemImplementation {
   remarks?: string;
 }
 
-export interface SystemImplementationUser {
+export interface SystemUser {
   uuid: string;
   title: string;
   shortName: string;
@@ -513,7 +513,7 @@ export const useSystemSecurityPlanStore = defineStore(
 
     async function getSystemImplementationUsers(
       id: string,
-    ): Promise<DataResponse<SystemImplementationUser[]>> {
+    ): Promise<DataResponse<SystemUser[]>> {
       const config = await configStore.getConfig();
       const response = await fetch(
         `${config.API_URL}/api/oscal/system-security-plans/${id}/system-implementation/users`,
@@ -526,7 +526,7 @@ export const useSystemSecurityPlanStore = defineStore(
       }
       return camelcaseKeys(await response.json(), {
         deep: true,
-      }) as DataResponse<SystemImplementationUser[]>;
+      }) as DataResponse<SystemUser[]>;
     }
 
     async function getSystemImplementationComponents(
@@ -791,8 +791,8 @@ export const useSystemSecurityPlanStore = defineStore(
     async function updateSystemImplementationUser(
       id: string,
       userId: string,
-      user: SystemImplementationUser,
-    ): Promise<DataResponse<SystemImplementationUser>> {
+      user: SystemUser,
+    ): Promise<DataResponse<SystemUser>> {
       const config = await configStore.getConfig();
       const response = await fetch(
         `${config.API_URL}/api/oscal/system-security-plans/${id}/system-implementation/users/${userId}`,
@@ -810,13 +810,13 @@ export const useSystemSecurityPlanStore = defineStore(
       }
       return camelcaseKeys(await response.json(), {
         deep: true,
-      }) as DataResponse<SystemImplementationUser>;
+      }) as DataResponse<SystemUser>;
     }
 
     async function createSystemImplementationUser(
       id: string,
-      user: Partial<SystemImplementationUser>,
-    ): Promise<DataResponse<SystemImplementationUser>> {
+      user: Partial<SystemUser>,
+    ): Promise<DataResponse<SystemUser>> {
       const config = await configStore.getConfig();
       const response = await fetch(
         `${config.API_URL}/api/oscal/system-security-plans/${id}/system-implementation/users`,
@@ -834,7 +834,7 @@ export const useSystemSecurityPlanStore = defineStore(
       }
       return camelcaseKeys(await response.json(), {
         deep: true,
-      }) as DataResponse<SystemImplementationUser>;
+      }) as DataResponse<SystemUser>;
     }
 
     async function updateSystemImplementationComponent(

@@ -255,19 +255,19 @@ import { reactive, onMounted } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import FormInput from '@/components/forms/FormInput.vue';
 import FormTextarea from '@/components/forms/FormTextarea.vue';
-import type { SystemImplementationUser } from '@/stores/system-security-plans.ts';
+import type { SystemUser } from '@/stores/system-security-plans.ts';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import type { AxiosError } from 'axios';
 import type { ErrorResponse, ErrorBody } from '@/stores/types';
 
 const props = defineProps<{
   sspId: string;
-  user: SystemImplementationUser;
+  user: SystemUser;
 }>();
 
 const emit = defineEmits<{
   cancel: [];
-  saved: [user: SystemImplementationUser];
+  saved: [user: SystemUser];
 }>();
 
 const toast = useToast();
@@ -276,7 +276,7 @@ const {
   data: updatedUser,
   execute: executeUpdate,
   isLoading: saving,
-} = useDataApi<SystemImplementationUser>(
+} = useDataApi<SystemUser>(
   `/api/oscal/system-security-plans/${props.sspId}/system-implementation/users/${props.user.uuid}`,
   {
     method: 'PUT',
@@ -285,7 +285,7 @@ const {
   { immediate: false },
 );
 
-const userData = reactive<SystemImplementationUser>({
+const userData = reactive<SystemUser>({
   uuid: '',
   title: '',
   shortName: '',

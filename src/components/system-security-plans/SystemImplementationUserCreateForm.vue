@@ -241,7 +241,7 @@ import { reactive, onMounted } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import FormInput from '@/components/forms/FormInput.vue';
 import FormTextarea from '@/components/forms/FormTextarea.vue';
-import type { SystemImplementationUser } from '@/stores/system-security-plans.ts';
+import type { SystemUser } from '@/stores/system-security-plans.ts';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import type { AxiosError } from 'axios';
 import type { ErrorResponse, ErrorBody } from '@/stores/types';
@@ -252,7 +252,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   cancel: [];
-  created: [user: SystemImplementationUser];
+  created: [user: SystemUser];
 }>();
 
 const toast = useToast();
@@ -261,13 +261,13 @@ const {
   data: newUser,
   execute: executeCreate,
   isLoading: saving,
-} = useDataApi<SystemImplementationUser>(
+} = useDataApi<SystemUser>(
   `/api/oscal/system-security-plans/${props.sspId}/system-implementation/users`,
   { method: 'POST', transformRequest: [decamelizeKeys] },
   { immediate: false },
 );
 
-const userData = reactive<Partial<SystemImplementationUser>>({
+const userData = reactive<Partial<SystemUser>>({
   uuid: '',
   title: '',
   shortName: '',
