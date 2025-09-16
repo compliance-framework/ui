@@ -151,7 +151,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import PageHeader from '@/components/PageHeader.vue';
-import type { AssessmentResults } from '@/stores/assessment-results';
+import type { AssessmentResult } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 
@@ -183,13 +183,13 @@ const {
   data: ar,
   execute: executeLoad,
   isLoading: loading,
-} = useDataApi<AssessmentResults>(
+} = useDataApi<AssessmentResult>(
   `/api/oscal/assessment-results/${assessmentResultsId}`,
   null,
   { immediate: false },
 );
 const { execute: executeUpdate, isLoading: updating } =
-  useDataApi<AssessmentResults>(
+  useDataApi<AssessmentResult>(
     `/api/oscal/assessment-results/${assessmentResultsId}`,
     {
       method: 'PUT',
@@ -231,8 +231,8 @@ async function loadAssessmentResults() {
         remarks: ar.value.metadata?.remarks || '',
       },
       importAp: {
-        href: ar.value.importAp?.href || '',
-        remarks: ar.value.importAp?.remarks || '',
+        href: ar.value.importAP?.href || '',
+        remarks: ar.value.importAP?.remarks || '',
       },
       results: ar.value.results || [],
     };

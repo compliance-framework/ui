@@ -179,7 +179,7 @@
 import { ref, onMounted, type PropType } from 'vue';
 import { useRouter } from 'vue-router';
 import Dialog from '@/volt/Dialog.vue';
-import type { AssessmentResults, Result } from '@/stores/assessment-results';
+import type { AssessmentResult, Result } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { v4 as uuidv4 } from 'uuid';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
@@ -189,7 +189,7 @@ import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
 
 const props = defineProps({
   assessmentResults: {
-    type: Object as PropType<AssessmentResults>,
+    type: Object as PropType<AssessmentResult>,
     required: true,
   },
 });

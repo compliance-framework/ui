@@ -133,7 +133,7 @@
 
 <script setup lang="ts">
 import PageHeader from '@/components/PageHeader.vue';
-import type { AssessmentResults } from '@/stores/assessment-results.ts';
+import type { AssessmentResult } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { useConfigStore } from '@/stores/config.ts';
 import Badge from '@/volt/Badge.vue';
@@ -148,7 +148,7 @@ const {
   data: assessmentResults,
   error,
   isLoading: loading,
-} = useDataApi<AssessmentResults[]>('/api/oscal/assessment-results');
+} = useDataApi<AssessmentResult[]>('/api/oscal/assessment-results');
 
 function formatDate(dateString?: string): string {
   if (!dateString) return 'N/A';

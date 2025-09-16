@@ -95,11 +95,11 @@
             >Href</label
           >
           <p class="mt-1 text-sm text-gray-900 dark:text-slate-200">
-            {{ assessmentResults.importAp?.href || 'N/A' }}
+            {{ assessmentResults.importAP?.href || 'N/A' }}
           </p>
         </div>
 
-        <div v-if="assessmentResults.importAp?.remarks">
+        <div v-if="assessmentResults.importAP?.remarks">
           <label
             class="block text-sm font-medium text-gray-700 dark:text-slate-300"
             >Remarks</label
@@ -107,7 +107,7 @@
           <p
             class="mt-1 text-sm text-gray-900 dark:text-slate-200 whitespace-pre-wrap"
           >
-            {{ assessmentResults.importAp.remarks }}
+            {{ assessmentResults.importAP.remarks }}
           </p>
         </div>
       </div>
@@ -172,13 +172,13 @@ import { type PropType } from 'vue';
 import { useRouter } from 'vue-router';
 import { useConfigStore } from '@/stores/config';
 import { useToast } from 'primevue/usetoast';
-import type { AssessmentResults } from '@/stores/assessment-results';
+import type { AssessmentResult } from '@/oscal';
 import { useDataApi } from '@/composables/axios';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
 
 const props = defineProps({
   assessmentResults: {
-    type: Object as PropType<AssessmentResults>,
+    type: Object as PropType<AssessmentResult>,
     required: true,
   },
 });
