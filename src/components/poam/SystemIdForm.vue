@@ -74,7 +74,7 @@
 
 <script setup lang="ts">
 import { reactive, computed, onMounted } from 'vue';
-import type { SystemID } from '@/stores/plan-of-action-and-milestones.ts';
+import type { SystemID } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 

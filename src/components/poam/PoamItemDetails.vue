@@ -336,12 +336,7 @@
 
 <script setup lang="ts">
 import { computed, watch } from 'vue';
-import type {
-  POAMItem,
-  Finding,
-  Observation,
-  Risk,
-} from '@/stores/plan-of-action-and-milestones';
+import type { POAMItem, Finding, Observation, Risk } from '@/oscal';
 import { useDataApi } from '@/composables/axios';
 
 interface Props {

@@ -248,7 +248,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { useRoute } from 'vue-router';
-import type { POAMLocalDefinitions } from '@/stores/plan-of-action-and-milestones.ts';
+import type { POAMLocalDefinitions } from '@/oscal';
 import Dialog from '@/volt/Dialog.vue';
 import LocalDefinitionsForm from '@/components/poam/LocalDefinitionsForm.vue';
 import { useDataApi } from '@/composables/axios';

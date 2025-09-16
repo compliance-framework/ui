@@ -233,12 +233,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue';
-import type {
-  POAMItem,
-  Finding,
-  Observation,
-  Risk,
-} from '@/stores/plan-of-action-and-milestones.ts';
+import type { POAMItem, Finding, Observation, Risk } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import type { AxiosError } from 'axios';

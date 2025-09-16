@@ -101,7 +101,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { useRoute } from 'vue-router';
-import type { ImportSSP } from '@/stores/plan-of-action-and-milestones.ts';
+import type { ImportSSP } from '@/oscal';
 import ImportSspForm from '@/components/poam/ImportSspForm.vue';
 import Dialog from '@/volt/Dialog.vue';
 import { useDataApi } from '@/composables/axios';

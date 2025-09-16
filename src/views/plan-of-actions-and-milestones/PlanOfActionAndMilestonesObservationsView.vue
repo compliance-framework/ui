@@ -132,7 +132,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { useRoute } from 'vue-router';
-import type { Observation } from '@/stores/plan-of-action-and-milestones.ts';
+import type { Observation } from '@/oscal';
 import Dialog from '@/volt/Dialog.vue';
 import ObservationCreateForm from '@/components/poam/ObservationCreateForm.vue';
 import ObservationEditForm from '@/components/poam/ObservationEditForm.vue';

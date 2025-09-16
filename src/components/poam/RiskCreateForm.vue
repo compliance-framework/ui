@@ -158,7 +158,7 @@
 
 <script setup lang="ts">
 import { reactive } from 'vue';
-import type { Risk } from '@/stores/plan-of-action-and-milestones.ts';
+import type { Risk } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import type { AxiosError } from 'axios';

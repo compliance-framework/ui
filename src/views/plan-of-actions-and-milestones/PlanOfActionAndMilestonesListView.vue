@@ -133,7 +133,7 @@
 
 <script setup lang="ts">
 import PageHeader from '@/components/PageHeader.vue';
-import type { POAM } from '@/stores/plan-of-action-and-milestones.ts';
+import type { POAM } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import Badge from '@/volt/Badge.vue';
 import { useSystemStore } from '@/stores/system.ts';

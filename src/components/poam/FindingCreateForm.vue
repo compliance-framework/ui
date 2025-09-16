@@ -207,7 +207,7 @@
 
 <script setup lang="ts">
 import { reactive } from 'vue';
-import type { Finding } from '@/stores/plan-of-action-and-milestones.ts';
+import type { Finding } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import type { FindingTarget } from '@/oscal';

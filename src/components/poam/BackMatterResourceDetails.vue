@@ -211,7 +211,7 @@
 </template>
 
 <script setup lang="ts">
-import { type BackMatterResource } from '@/stores/plan-of-action-and-milestones';
+import { type BackMatterResource } from '@/oscal';
 
 interface Props {
   resource: BackMatterResource;

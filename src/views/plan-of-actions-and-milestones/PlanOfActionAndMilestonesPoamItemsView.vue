@@ -165,7 +165,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { useRoute } from 'vue-router';
-import type { POAMItem } from '@/stores/plan-of-action-and-milestones.ts';
+import type { POAMItem } from '@/oscal';
 import Dialog from '@/volt/Dialog.vue';
 import CollapsableGroup from '@/components/CollapsableGroup.vue';
 import PoamItemDetails from '@/components/poam/PoamItemDetails.vue';

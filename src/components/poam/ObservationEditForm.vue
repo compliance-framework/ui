@@ -167,7 +167,7 @@
 
 <script setup lang="ts">
 import { reactive, onMounted } from 'vue';
-import type { Observation } from '@/stores/plan-of-action-and-milestones.ts';
+import type { Observation } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 

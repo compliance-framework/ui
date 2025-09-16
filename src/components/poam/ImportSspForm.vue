@@ -58,7 +58,7 @@
 
 <script setup lang="ts">
 import { reactive, computed, onMounted } from 'vue';
-import type { ImportSSP } from '@/stores/plan-of-action-and-milestones.ts';
+import type { ImportSSP } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi } from '@/composables/axios';
 

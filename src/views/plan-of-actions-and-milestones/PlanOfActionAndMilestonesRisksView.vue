@@ -150,7 +150,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { useRoute } from 'vue-router';
-import type { Risk } from '@/stores/plan-of-action-and-milestones.ts';
+import type { Risk } from '@/oscal';
 import Dialog from '@/volt/Dialog.vue';
 import RiskCreateForm from '@/components/poam/RiskCreateForm.vue';
 import RiskEditForm from '@/components/poam/RiskEditForm.vue';

@@ -109,7 +109,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { useRoute } from 'vue-router';
-import type { SystemID } from '@/stores/plan-of-action-and-milestones.ts';
+import type { SystemID } from '@/oscal';
 import Dialog from '@/volt/Dialog.vue';
 import SystemIdForm from '@/components/poam/SystemIdForm.vue';
 import { useDataApi } from '@/composables/axios';
