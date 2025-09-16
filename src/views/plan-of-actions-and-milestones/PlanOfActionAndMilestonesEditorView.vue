@@ -110,7 +110,7 @@
 import { ref, watch } from 'vue';
 import PageHeader from '@/components/PageHeader.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
-import type { PlanOfActionAndMilestones } from '@/stores/plan-of-action-and-milestones.ts';
+import type { POAM } from '@/stores/plan-of-action-and-milestones.ts';
 import { RouterView, useRoute, useRouter } from 'vue-router';
 import { useDataApi } from '@/composables/axios';
 import { useToast } from 'primevue/usetoast';
@@ -126,9 +126,7 @@ const {
   data: planOfActionAndMilestones,
   error,
   isLoading,
-} = useDataApi<PlanOfActionAndMilestones>(
-  `/api/oscal/plan-of-action-and-milestones/${id.value}`,
-);
+} = useDataApi<POAM>(`/api/oscal/plan-of-action-and-milestones/${id.value}`);
 watch(error, () => {
   if (error.value) {
     const errorResponse = error.value as AxiosError<ErrorResponse<ErrorBody>>;

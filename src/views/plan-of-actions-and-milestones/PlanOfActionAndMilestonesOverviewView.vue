@@ -242,8 +242,8 @@
 import { ref, computed } from 'vue';
 import { useRoute, RouterLink } from 'vue-router';
 import type {
-  PlanOfActionAndMilestones,
-  PoamItem,
+  POAM,
+  POAMItem,
   Observation,
   Risk,
 } from '@/stores/plan-of-action-and-milestones.ts';
@@ -263,11 +263,10 @@ const showEditModal = ref(false);
 
 const poamId = computed(() => getIdFromRoute(route));
 
-const { data: planOfActionAndMilestones } =
-  useDataApi<PlanOfActionAndMilestones>(
-    `/api/oscal/plan-of-action-and-milestones/${route.params.id}`,
-  );
-const { data: poamItems } = useDataApi<PoamItem[]>(
+const { data: planOfActionAndMilestones } = useDataApi<POAM>(
+  `/api/oscal/plan-of-action-and-milestones/${route.params.id}`,
+);
+const { data: poamItems } = useDataApi<POAMItem[]>(
   `/api/oscal/plan-of-action-and-milestones/${route.params.id}/poam-items`,
 );
 const { data: observations } = useDataApi<Observation[]>(
@@ -276,12 +275,11 @@ const { data: observations } = useDataApi<Observation[]>(
 const { data: risks } = useDataApi<Risk[]>(
   `/api/oscal/plan-of-action-and-milestones/${route.params.id}/risks`,
 );
-const { data: fullPOAM, execute: executeJSON } =
-  useDataApi<PlanOfActionAndMilestones>(
-    `/api/oscal/plan-of-action-and-milestones/${route.params.id}/full`,
-    null,
-    { immediate: false },
-  );
+const { data: fullPOAM, execute: executeJSON } = useDataApi<POAM>(
+  `/api/oscal/plan-of-action-and-milestones/${route.params.id}/full`,
+  null,
+  { immediate: false },
+);
 
 const statistics = computed(() => ({
   poamItems: poamItems.value?.length ?? 0,

@@ -337,7 +337,7 @@
 <script setup lang="ts">
 import { computed, watch } from 'vue';
 import type {
-  PoamItem,
+  POAMItem,
   Finding,
   Observation,
   Risk,
@@ -345,7 +345,7 @@ import type {
 import { useDataApi } from '@/composables/axios';
 
 interface Props {
-  item: PoamItem;
+  item: POAMItem;
   poamId: string;
 }
 

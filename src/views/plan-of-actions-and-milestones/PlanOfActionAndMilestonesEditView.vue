@@ -59,7 +59,7 @@
 <script setup lang="ts">
 import PageHeader from '@/components/PageHeader.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
-import type { PlanOfActionAndMilestones } from '@/stores/plan-of-action-and-milestones.ts';
+import type { POAM } from '@/stores/plan-of-action-and-milestones.ts';
 import { useRouter, useRoute } from 'vue-router';
 import PageCard from '@/components/PageCard.vue';
 import FormInput from '@/components/forms/FormInput.vue';
@@ -75,11 +75,10 @@ const router = useRouter();
 const route = useRoute();
 const toast = useToast();
 
-const { data: planOfActionAndMilestones } =
-  useDataApi<PlanOfActionAndMilestones>(
-    `/api/oscal/plan-of-action-and-milestones/${route.params.id}`,
-  );
-const { execute: updatePOAM } = useDataApi<PlanOfActionAndMilestones>(
+const { data: planOfActionAndMilestones } = useDataApi<POAM>(
+  `/api/oscal/plan-of-action-and-milestones/${route.params.id}`,
+);
+const { execute: updatePOAM } = useDataApi<POAM>(
   `/api/oscal/plan-of-action-and-milestones/${route.params.id}`,
   {
     method: 'PUT',

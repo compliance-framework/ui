@@ -74,18 +74,18 @@
 
 <script setup lang="ts">
 import { reactive, computed, onMounted } from 'vue';
-import type { SystemId } from '@/stores/plan-of-action-and-milestones.ts';
+import type { SystemID } from '@/stores/plan-of-action-and-milestones.ts';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 
 const props = defineProps<{
   poamId: string;
-  systemId?: SystemId;
+  systemId?: SystemID;
 }>();
 
 const emit = defineEmits<{
   cancel: [];
-  saved: [systemId: SystemId];
+  saved: [systemId: SystemID];
 }>();
 
 const toast = useToast();
@@ -95,7 +95,7 @@ const {
   data: systemId,
   isLoading: saving,
   execute: saveSystemId,
-} = useDataApi<SystemId>(
+} = useDataApi<SystemID>(
   `/api/oscal/plan-of-action-and-milestones/${props.poamId}/system-id`,
   null,
   { immediate: false },
@@ -118,7 +118,7 @@ onMounted(() => {
 
 async function handleSubmit() {
   try {
-    const systemIdData: SystemId = {
+    const systemIdData: SystemID = {
       id: formData.identifier.trim() || undefined,
       identifierType: formData.identifierType.trim() || undefined,
       remarks: formData.remarks.trim() || undefined,

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import type { FindingStatus, Link, Metadata, Property } from '@/stores/types';
+import type { Link, Property, Finding as OFinding, Metadata } from '@/oscal';
 
 export interface Revision {
   title?: string;
@@ -94,7 +94,7 @@ export interface RelatedObservation {
   observationUuid: string;
 }
 
-export interface PoamItem {
+export interface POAMItem {
   uuid?: string;
   title: string;
   description: string;
@@ -142,22 +142,9 @@ export interface Risk {
   remarks?: string;
 }
 
-export interface Finding {
-  uuid?: string;
-  title?: string;
-  description: string;
-  target: any; // Required field
-  implementationStatus?: any;
-  status?: FindingStatus;
-  relatedObservations?: any[];
-  relatedRisks?: any[];
-  props?: Property[];
-  links?: Link[];
-  origins?: Origin[];
-  remarks?: string;
-}
+export type Finding = OFinding;
 
-export interface Resource {
+export interface BackMatterResource {
   uuid: string;
   title?: string;
   description?: string;
@@ -185,15 +172,15 @@ export interface Resource {
 }
 
 export interface BackMatter {
-  resources?: Resource[];
+  resources?: BackMatterResource[];
 }
 
-export interface ImportSsp {
+export interface ImportSSP {
   href: string;
   remarks?: string;
 }
 
-export interface SystemId {
+export interface SystemID {
   id?: string;
   identifier?: string;
   identifierType?: string;
@@ -276,11 +263,11 @@ export interface LocalDefinitions {
   remarks?: string;
 }
 
-export interface PlanOfActionAndMilestones {
+export interface POAM {
   uuid: string;
   metadata: Metadata;
-  poamItems: PoamItem[];
+  poamItems: POAMItem[];
   backMatter?: BackMatter;
-  systemId?: SystemId;
+  systemId?: SystemID;
   remarks?: string;
 }

@@ -67,7 +67,7 @@
 
 <script setup lang="ts">
 import { reactive, onMounted } from 'vue';
-import type { PoamItem } from '@/stores/plan-of-action-and-milestones.ts';
+import type { POAMItem } from '@/stores/plan-of-action-and-milestones.ts';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import type { AxiosError } from 'axios';
@@ -75,12 +75,12 @@ import type { ErrorResponse, ErrorBody } from '@/stores/types';
 
 const props = defineProps<{
   poamId: string;
-  item: PoamItem;
+  item: POAMItem;
 }>();
 
 const emit = defineEmits<{
   cancel: [];
-  saved: [item: PoamItem];
+  saved: [item: POAMItem];
 }>();
 
 const toast = useToast();
@@ -88,7 +88,7 @@ const {
   data: updatedPOAMItem,
   isLoading: saving,
   execute: updatePoamItem,
-} = useDataApi<PoamItem>(
+} = useDataApi<POAMItem>(
   `/api/oscal/plan-of-action-and-milestones/${props.poamId}/poam-items/${props.item.uuid}`,
   {
     method: 'PUT',
@@ -124,7 +124,7 @@ async function submit() {
   try {
     saving.value = true;
 
-    const updatedItem: PoamItem = {
+    const updatedItem: POAMItem = {
       ...props.item,
       title: formData.title,
       description: formData.description,

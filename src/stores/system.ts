@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import type { AssessmentPlan, SystemSecurityPlan } from '@/oscal';
-import type { PlanOfActionAndMilestones } from '@/stores/plan-of-action-and-milestones.ts';
+import type { POAM } from '@/stores/plan-of-action-and-milestones.ts';
 import type { AssessmentResult } from '@/oscal';
 import { useLocalStorage } from '@vueuse/core';
 
@@ -9,7 +9,7 @@ type PartialSystemSecurityPlan = Pick<SystemSecurityPlan, 'uuid' | 'metadata'>;
 interface System {
   securityPlan?: PartialSystemSecurityPlan;
   assessmentPlan?: AssessmentPlan;
-  poam?: PlanOfActionAndMilestones;
+  poam?: POAM;
   assessmentResults?: AssessmentResult;
 }
 
@@ -27,7 +27,7 @@ export const useSystemStore = defineStore('system', () => {
     system.value.assessmentPlan = plan;
   }
 
-  function setPoam(poam: PlanOfActionAndMilestones) {
+  function setPoam(poam: POAM) {
     system.value.poam = poam;
   }
 
