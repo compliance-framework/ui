@@ -133,7 +133,7 @@
 
 <script setup lang="ts">
 import PageHeader from '@/components/PageHeader.vue';
-import type { AssessmentResults } from '@/stores/assessment-results.ts';
+import type { AssessmentResults } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { useConfigStore } from '@/stores/config.ts';
 import Badge from '@/volt/Badge.vue';

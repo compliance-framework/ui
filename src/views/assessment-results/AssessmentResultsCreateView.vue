@@ -150,7 +150,7 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import PageHeader from '@/components/PageHeader.vue';
-import type { AssessmentResults } from '@/stores/assessment-results.ts';
+import type { AssessmentResults } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { v4 as uuidv4 } from 'uuid';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';

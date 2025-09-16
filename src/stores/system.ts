@@ -2,7 +2,7 @@ import { defineStore } from 'pinia';
 import type { SystemSecurityPlan } from '@/stores/system-security-plans.ts';
 import type { AssessmentPlan } from '@/oscal';
 import type { PlanOfActionAndMilestones } from '@/stores/plan-of-action-and-milestones.ts';
-import type { AssessmentResults } from '@/stores/assessment-results.ts';
+import type { AssessmentResults } from '@/oscal';
 import { useLocalStorage } from '@vueuse/core';
 
 type PartialSystemSecurityPlan = Pick<SystemSecurityPlan, 'uuid' | 'metadata'>;
