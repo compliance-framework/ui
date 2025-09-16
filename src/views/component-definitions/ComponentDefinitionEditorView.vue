@@ -29,15 +29,6 @@
       <RouterLink
         class="px-4 py-2 inline-block text-lg border-ccf-300 dark:border-slate-700 dark:hover:bg-slate-900"
         :to="{
-          name: 'component-definition-import-definitions',
-          params: { id: componentDefinition.uuid },
-        }"
-      >
-        Import Definitions
-      </RouterLink>
-      <RouterLink
-        class="px-4 py-2 inline-block text-lg border-ccf-300 dark:border-slate-700 dark:hover:bg-slate-900"
-        :to="{
           name: 'component-definition-components',
           params: { id: componentDefinition.uuid },
         }"
@@ -87,7 +78,7 @@
 import { ref, watch } from 'vue';
 import PageHeader from '@/components/PageHeader.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
-import type { ComponentDefinition } from '@/stores/component-definitions.ts';
+import type { ComponentDefinition } from '@/oscal';
 import { RouterView, useRoute, useRouter } from 'vue-router';
 import { useDataApi } from '@/composables/axios';
 import type { AxiosError } from 'axios';

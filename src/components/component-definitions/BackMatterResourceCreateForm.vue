@@ -97,10 +97,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import {
-  type BackMatterResource,
-  type Citation,
-} from '@/stores/component-definitions.ts';
+import type { BackMatterResource, Citation } from '@/oscal';
 import FormInput from '@/components/forms/FormInput.vue';
 import FormTextarea from '@/components/forms/FormTextarea.vue';
 import PrimaryButton from '@/components/PrimaryButton.vue';

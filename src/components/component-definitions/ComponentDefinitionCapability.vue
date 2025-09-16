@@ -149,7 +149,7 @@
 <script setup lang="ts">
 import CollapsableGroup from '@/components/CollapsableGroup.vue';
 import TertiaryButton from '@/components/TertiaryButton.vue';
-import type { Capability } from '@/stores/component-definitions';
+import type { Capability } from '@/oscal';
 
 const props = defineProps<{
   capability: Capability;

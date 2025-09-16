@@ -37,12 +37,11 @@ import type {
   ErrorResponse,
   ErrorBody,
   Profile,
-  BackMatter,
   Merge,
   Import,
   Modify,
 } from '@/stores/types.ts';
-import type { Metadata } from '@/oscal';
+import type { BackMatter, Metadata } from '@/oscal';
 import { v4 as uuidv4 } from 'uuid';
 import { useToast } from 'primevue/usetoast';
 

@@ -24,7 +24,7 @@
 import Dialog from '@/volt/Dialog.vue';
 import PrimaryButton from '@/components/PrimaryButton.vue';
 import BackMatterResourceCreateForm from './BackMatterResourceCreateForm.vue';
-import type { BackMatterResource } from '@/stores/component-definitions.ts';
+import type { BackMatterResource } from '@/oscal';
 import { computed } from 'vue';
 
 const props = defineProps<{

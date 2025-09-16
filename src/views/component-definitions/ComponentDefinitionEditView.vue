@@ -82,7 +82,7 @@
 <script setup lang="ts">
 import PageHeader from '@/components/PageHeader.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
-import { type ComponentDefinition } from '@/stores/component-definitions.ts';
+import { type ComponentDefinition } from '@/oscal';
 import { useRouter, useRoute } from 'vue-router';
 import PageCard from '@/components/PageCard.vue';
 import SecondaryButton from '@/components/SecondaryButton.vue';

@@ -53,7 +53,7 @@
 </template>
 <script setup lang="ts">
 import PageHeader from '@/components/PageHeader.vue';
-import { type ComponentDefinition } from '@/stores/component-definitions.ts';
+import { type ComponentDefinition } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi } from '@/composables/axios';
 import type { AxiosError } from 'axios';

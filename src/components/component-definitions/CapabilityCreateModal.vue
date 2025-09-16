@@ -23,7 +23,7 @@
 import PrimaryButton from '@/components/PrimaryButton.vue';
 import Dialog from '@/volt/Dialog.vue';
 import CapabilityCreateForm from '@/components/component-definitions/CapabilityCreateForm.vue';
-import type { Capability } from '@/stores/component-definitions.ts';
+import type { Capability } from '@/oscal';
 
 const show = defineModel<boolean>();
 

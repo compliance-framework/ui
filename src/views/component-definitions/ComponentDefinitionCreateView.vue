@@ -40,7 +40,7 @@
 import { ref } from 'vue';
 import PageHeader from '@/components/PageHeader.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
-import { type ComponentDefinition } from '@/stores/component-definitions.ts';
+import { type ComponentDefinition } from '@/oscal';
 import { useRouter } from 'vue-router';
 import TertiaryButton from '@/components/TertiaryButton.vue';
 import PageCard from '@/components/PageCard.vue';

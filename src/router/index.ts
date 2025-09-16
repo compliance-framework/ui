@@ -276,14 +276,6 @@ const authenticatedRoutes = [
           ),
       },
       {
-        path: 'import-definitions',
-        name: 'component-definition-import-definitions',
-        component: () =>
-          import(
-            '../views/component-definitions/ComponentDefinitionImportDefinitionsView.vue'
-          ),
-      },
-      {
         path: 'components',
         name: 'component-definition-components',
         component: () =>
