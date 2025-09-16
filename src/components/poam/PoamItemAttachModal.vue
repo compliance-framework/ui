@@ -77,10 +77,10 @@
                   >UUID: {{ finding.uuid }}</span
                 >
                 <span
-                  v-if="finding.status?.state"
+                  v-if="finding.target.status?.state"
                   class="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
                 >
-                  {{ finding.status.state }}
+                  {{ finding.target.status.state }}
                 </span>
               </div>
             </div>
@@ -234,7 +234,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue';
 import type {
-  PoamItem,
+  POAMItem,
   Finding,
   Observation,
   Risk,
@@ -246,12 +246,12 @@ import type { ErrorResponse, ErrorBody } from '@/stores/types';
 
 const props = defineProps<{
   poamId: string;
-  item: PoamItem;
+  item: POAMItem;
 }>();
 
 const emit = defineEmits<{
   cancel: [];
-  saved: [item: PoamItem];
+  saved: [item: POAMItem];
 }>();
 
 const toast = useToast();
@@ -285,7 +285,7 @@ const {
   data: updatedPoamItem,
   execute: updatePoamItem,
   isLoading: saving,
-} = useDataApi<PoamItem>(
+} = useDataApi<POAMItem>(
   `/api/oscal/plan-of-action-and-milestones/${props.poamId}/poam-items/${props.item.uuid}`,
   {
     method: 'PUT',
@@ -302,7 +302,7 @@ const error = computed(
 );
 
 // Working copy of the item with changes
-const workingItem = reactive<PoamItem>({
+const workingItem = reactive<POAMItem>({
   ...props.item,
   relatedFindings: [...(props.item.relatedFindings || [])].filter(
     (f) => f.findingUuid && f.findingUuid.trim() !== '',

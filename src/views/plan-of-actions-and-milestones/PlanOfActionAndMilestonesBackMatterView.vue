@@ -154,7 +154,7 @@ import { ref, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import type {
   BackMatter,
-  Resource,
+  BackMatterResource,
 } from '@/stores/plan-of-action-and-milestones.ts';
 import Dialog from '@/volt/Dialog.vue';
 import CollapsableGroup from '@/components/CollapsableGroup.vue';
@@ -189,7 +189,7 @@ const { execute: executeDelete } = useDataApi<void>(
 // Modal states
 const showCreateModal = ref(false);
 const showEditModal = ref(false);
-const editingResource = ref<Resource | null>(null);
+const editingResource = ref<BackMatterResource | null>(null);
 
 const poamId = computed(() => getIdFromRoute(route));
 
@@ -208,7 +208,7 @@ const resources = computed(() => {
   return backMatter.value?.resources || [];
 });
 
-function editResource(resource: Resource) {
+function editResource(resource: BackMatterResource) {
   editingResource.value = { ...resource };
   showEditModal.value = true;
 }
@@ -247,7 +247,7 @@ function closeModal() {
   editingResource.value = null;
 }
 
-function handleResourceSaved(savedResource: Resource) {
+function handleResourceSaved(savedResource: BackMatterResource) {
   if (showEditModal.value) {
     // Update existing resource in the list
     const index = resources.value.findIndex(

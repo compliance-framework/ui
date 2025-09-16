@@ -50,13 +50,13 @@
         </select>
       </div>
 
-      <div>
+      <!-- <div>
         <label
           class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
         >
           Target (JSON) <span class="text-red-500">*</span>
-        </label>
-        <textarea
+        </label> -->
+      <!-- <textarea
           v-model="formData.target"
           required
           rows="6"
@@ -70,12 +70,12 @@
     "state": "implemented"
   }
 }'
-        ></textarea>
-        <p class="text-xs text-gray-500 dark:text-slate-400 mt-1">
+        ></textarea> -->
+      <!-- <p class="text-xs text-gray-500 dark:text-slate-400 mt-1">
           Required fields: type, target-id, status. Optional: title,
           description, implementation-status, remarks
         </p>
-      </div>
+      </div> -->
 
       <div>
         <label
@@ -210,6 +210,7 @@ import { reactive } from 'vue';
 import type { Finding } from '@/stores/plan-of-action-and-milestones.ts';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
+import type { FindingTarget } from '@/oscal';
 
 const props = defineProps<{
   poamId: string;
@@ -239,7 +240,7 @@ const formData = reactive({
   title: '',
   description: '',
   status: '',
-  target: '',
+  target: {} as FindingTarget,
   implementationStatus: '',
   relatedObservations: [] as { observationUuid: string }[],
   relatedRisks: [] as { riskUuid: string }[],
@@ -260,16 +261,6 @@ function addRelatedRisk() {
 
 function removeRelatedRisk(index: number) {
   formData.relatedRisks.splice(index, 1);
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function parseJsonField(value: string): any {
-  if (!value.trim()) return undefined;
-  try {
-    return JSON.parse(value);
-  } catch {
-    return undefined;
-  }
 }
 
 async function submit() {
@@ -318,9 +309,7 @@ async function submit() {
       uuid: crypto.randomUUID(),
       title: formData.title,
       description: formData.description,
-      status: { state: formData.status },
-      target: parseJsonField(formData.target),
-      implementationStatus: parseJsonField(formData.implementationStatus),
+      target: formData.target,
       relatedObservations:
         formData.relatedObservations.filter((o) => o.observationUuid.trim())
           .length > 0

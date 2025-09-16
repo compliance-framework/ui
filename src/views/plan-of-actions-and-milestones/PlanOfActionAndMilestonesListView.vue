@@ -133,7 +133,7 @@
 
 <script setup lang="ts">
 import PageHeader from '@/components/PageHeader.vue';
-import type { PlanOfActionAndMilestones } from '@/stores/plan-of-action-and-milestones.ts';
+import type { POAM } from '@/stores/plan-of-action-and-milestones.ts';
 import { useToast } from 'primevue/usetoast';
 import Badge from '@/volt/Badge.vue';
 import { useSystemStore } from '@/stores/system.ts';
@@ -147,15 +147,12 @@ const {
   data: planOfActionAndMilestones,
   error,
   isLoading: loading,
-} = useDataApi<PlanOfActionAndMilestones[]>(
-  '/api/oscal/plan-of-action-and-milestones',
+} = useDataApi<POAM[]>('/api/oscal/plan-of-action-and-milestones');
+const { data: poamJSON, execute: executeDownload } = useDataApi<POAM>(
+  '/api/oscal/plan-of-action-and-milestones/download',
+  null,
+  { immediate: false },
 );
-const { data: poamJSON, execute: executeDownload } =
-  useDataApi<PlanOfActionAndMilestones>(
-    '/api/oscal/plan-of-action-and-milestones/download',
-    null,
-    { immediate: false },
-  );
 
 function formatDate(dateString?: string): string {
   if (!dateString) return 'N/A';

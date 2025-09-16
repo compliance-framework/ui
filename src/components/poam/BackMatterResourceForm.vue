@@ -310,7 +310,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import type { Resource } from '@/stores/plan-of-action-and-milestones';
+import type { BackMatterResource } from '@/stores/plan-of-action-and-milestones';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import type { AxiosError } from 'axios';
@@ -318,13 +318,13 @@ import type { ErrorResponse, ErrorBody } from '@/stores/types';
 
 interface Props {
   poamId: string;
-  resource?: Resource | null;
+  resource?: BackMatterResource | null;
   isEdit?: boolean;
 }
 
 interface Emits {
   (e: 'cancel'): void;
-  (e: 'saved', resource: Resource): void;
+  (e: 'saved', resource: BackMatterResource): void;
 }
 
 const props = defineProps<Props>();
@@ -334,7 +334,7 @@ const {
   data: returnedResource,
   isLoading: loading,
   execute,
-} = useDataApi<Resource>(
+} = useDataApi<BackMatterResource>(
   null,
   { transformRequest: [decamelizeKeys] },
   { immediate: false },
@@ -342,7 +342,7 @@ const {
 
 const toast = useToast();
 
-const formData = ref<Partial<Resource>>({
+const formData = ref<Partial<BackMatterResource>>({
   uuid: '',
   title: '',
   description: '',

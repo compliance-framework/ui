@@ -1,16 +1,16 @@
-import type { SelectControlsByID } from '@/stores/types';
+import type { ProfileSelectControlByID } from '@/oscal';
 
 export function useProfileControlGroups() {
-  function createGroup(groups: SelectControlsByID[]) {
+  function createGroup(groups: ProfileSelectControlByID[]) {
     groups.push({ withIds: [] });
   }
 
-  function removeGroup(groups: SelectControlsByID[], idx: number) {
+  function removeGroup(groups: ProfileSelectControlByID[], idx: number) {
     groups.splice(idx, 1);
   }
 
   function addControlId(
-    controlGroup: SelectControlsByID & { _newId?: string },
+    controlGroup: ProfileSelectControlByID & { _newId?: string },
   ) {
     if (controlGroup._newId && controlGroup._newId.trim() !== '') {
       if (!controlGroup.withIds) controlGroup.withIds = [];

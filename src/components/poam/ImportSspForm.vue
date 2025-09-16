@@ -58,18 +58,18 @@
 
 <script setup lang="ts">
 import { reactive, computed, onMounted } from 'vue';
-import type { ImportSsp } from '@/stores/plan-of-action-and-milestones.ts';
+import type { ImportSSP } from '@/stores/plan-of-action-and-milestones.ts';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi } from '@/composables/axios';
 
 const props = defineProps<{
   poamId: string;
-  importSsp?: ImportSsp;
+  importSsp?: ImportSSP;
 }>();
 
 const emit = defineEmits<{
   cancel: [];
-  saved: [importSsp: ImportSsp];
+  saved: [importSsp: ImportSSP];
 }>();
 
 const toast = useToast();
@@ -78,7 +78,7 @@ const {
   data: updatedImportSsp,
   isLoading: saving,
   execute,
-} = useDataApi<ImportSsp>(
+} = useDataApi<ImportSSP>(
   `/api/oscal/plan-of-action-and-milestones/${props.poamId}/import-ssp`,
   null,
   { immediate: false },
@@ -110,7 +110,7 @@ async function handleSubmit() {
   }
 
   try {
-    const importSspData: ImportSsp = {
+    const importSspData: ImportSSP = {
       href: formData.href.trim(),
       remarks: formData.remarks.trim() || undefined,
     };

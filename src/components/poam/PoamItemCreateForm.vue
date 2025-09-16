@@ -67,7 +67,7 @@
 
 <script setup lang="ts">
 import { reactive } from 'vue';
-import type { PoamItem } from '@/stores/plan-of-action-and-milestones.ts';
+import type { POAMItem } from '@/stores/plan-of-action-and-milestones.ts';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import type { AxiosError } from 'axios';
@@ -79,7 +79,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   cancel: [];
-  created: [item: PoamItem];
+  created: [item: POAMItem];
 }>();
 
 const toast = useToast();
@@ -88,7 +88,7 @@ const {
   data: updatedPoamItem,
   isLoading: saving,
   execute: createPoamItem,
-} = useDataApi<PoamItem>(
+} = useDataApi<POAMItem>(
   `/api/oscal/plan-of-action-and-milestones/${props.poamId}/poam-items`,
   { method: 'POST', transformRequest: [decamelizeKeys] },
   { immediate: false },
@@ -112,7 +112,7 @@ async function submit() {
   }
 
   try {
-    const newItem: Partial<PoamItem> = {
+    const newItem: Partial<POAMItem> = {
       uuid: crypto.randomUUID(),
       title: formData.title,
       description: formData.description,

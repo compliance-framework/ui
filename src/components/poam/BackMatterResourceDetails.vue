@@ -211,10 +211,10 @@
 </template>
 
 <script setup lang="ts">
-import { type Resource } from '@/stores/plan-of-action-and-milestones';
+import { type BackMatterResource } from '@/stores/plan-of-action-and-milestones';
 
 interface Props {
-  resource: Resource;
+  resource: BackMatterResource;
 }
 
 defineProps<Props>();

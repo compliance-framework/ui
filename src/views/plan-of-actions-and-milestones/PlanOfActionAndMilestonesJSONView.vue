@@ -35,7 +35,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
-import type { PlanOfActionAndMilestones } from '@/stores/plan-of-action-and-milestones.ts';
+import type { POAM } from '@/stores/plan-of-action-and-milestones.ts';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi } from '@/composables/axios';
 import decamelizeKeys from 'decamelize-keys';
@@ -47,7 +47,7 @@ const {
   data: poamData,
   isLoading: loading,
   error,
-} = useDataApi<PlanOfActionAndMilestones>(
+} = useDataApi<POAM>(
   `/api/oscal/plan-of-action-and-milestones/${route.params.id}/full`,
 );
 

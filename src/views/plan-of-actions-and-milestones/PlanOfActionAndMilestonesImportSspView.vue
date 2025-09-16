@@ -101,7 +101,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { useRoute } from 'vue-router';
-import type { ImportSsp } from '@/stores/plan-of-action-and-milestones.ts';
+import type { ImportSSP } from '@/stores/plan-of-action-and-milestones.ts';
 import ImportSspForm from '@/components/poam/ImportSspForm.vue';
 import Dialog from '@/volt/Dialog.vue';
 import { useDataApi } from '@/composables/axios';
@@ -118,11 +118,11 @@ const {
   data: importSsp,
   isLoading: loading,
   error,
-} = useDataApi<ImportSsp | null>(
+} = useDataApi<ImportSSP | null>(
   `/api/oscal/plan-of-action-and-milestones/${route.params.id}/import-ssp`,
 );
 
-function handleImportSspSaved(savedImportSsp: ImportSsp) {
+function handleImportSspSaved(savedImportSsp: ImportSSP) {
   importSsp.value = savedImportSsp;
   showCreateModal.value = false;
   showEditModal.value = false;

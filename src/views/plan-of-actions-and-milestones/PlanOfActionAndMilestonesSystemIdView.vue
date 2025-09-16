@@ -109,7 +109,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { useRoute } from 'vue-router';
-import type { SystemId } from '@/stores/plan-of-action-and-milestones.ts';
+import type { SystemID } from '@/stores/plan-of-action-and-milestones.ts';
 import Dialog from '@/volt/Dialog.vue';
 import SystemIdForm from '@/components/poam/SystemIdForm.vue';
 import { useDataApi } from '@/composables/axios';
@@ -130,11 +130,11 @@ const {
   data: systemId,
   isLoading: loading,
   error,
-} = useDataApi<SystemId | null>(
+} = useDataApi<SystemID | null>(
   `/api/oscal/plan-of-action-and-milestones/${route.params.id}/system-id`,
 );
 
-function handleSystemIdSaved(savedSystemId: SystemId) {
+function handleSystemIdSaved(savedSystemId: SystemID) {
   systemId.value = savedSystemId;
   showCreateModal.value = false;
   showEditModal.value = false;

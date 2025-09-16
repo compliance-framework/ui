@@ -114,7 +114,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import type { Metadata } from '@/stores/types';
+import type { Metadata } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi } from '@/composables/axios';
 import type { AxiosError } from 'axios';
@@ -188,7 +188,7 @@ async function handleSubmit() {
       version: formData.value.version || '',
       oscalVersion: formData.value.oscalVersion || '',
       published: formatDateForAPI(formData.value.published || ''),
-      lastModified: formatDateForAPI(formData.value.lastModified || ''),
+      lastModified: formatDateForAPI(formData.value.lastModified || '') || '',
       remarks: formData.value.remarks || '',
     };
 

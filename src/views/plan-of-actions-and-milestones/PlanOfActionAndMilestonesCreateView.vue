@@ -41,7 +41,7 @@
 import { ref, onMounted } from 'vue';
 import PageHeader from '@/components/PageHeader.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
-import type { PlanOfActionAndMilestones } from '@/stores/plan-of-action-and-milestones.ts';
+import type { POAM } from '@/stores/plan-of-action-and-milestones.ts';
 import { useRouter } from 'vue-router';
 import TertiaryButton from '@/components/TertiaryButton.vue';
 import PageCard from '@/components/PageCard.vue';
@@ -54,33 +54,33 @@ import { useToast } from 'primevue/usetoast';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import type { AxiosError } from 'axios';
 import type { ErrorResponse, ErrorBody } from '@/stores/types';
+import type { Metadata } from '@/oscal';
 
-const poam = ref<PlanOfActionAndMilestones>({
+const poam = ref<POAM>({
   uuid: '',
   metadata: {
     title: '',
     version: '',
     remarks: '',
-  },
+  } as Metadata,
   systemId: {
     id: 'change-me',
     identifierType: '',
   },
   poamItems: [],
-} as PlanOfActionAndMilestones);
+} as POAM);
 
 const router = useRouter();
 const toast = useToast();
 
-const { data: newPOAM, execute: executeCreate } =
-  useDataApi<PlanOfActionAndMilestones>(
-    '/api/oscal/plan-of-action-and-milestones/',
-    {
-      method: 'POST',
-      transformRequest: [decamelizeKeys],
-    },
-    { immediate: false },
-  );
+const { data: newPOAM, execute: executeCreate } = useDataApi<POAM>(
+  '/api/oscal/plan-of-action-and-milestones/',
+  {
+    method: 'POST',
+    transformRequest: [decamelizeKeys],
+  },
+  { immediate: false },
+);
 
 async function submit() {
   try {

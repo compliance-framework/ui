@@ -125,7 +125,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import CollapsableGroup from '@/components/CollapsableGroup.vue';
-import { type ComplianceIntervalStatus } from '@/stores/findings.ts';
 import ResultStatusBadge from '@/components/ResultStatusBadge.vue';
 import { type Catalog, type Control } from '@/oscal';
 import TertiaryButton from '@/components/TertiaryButton.vue';
@@ -134,6 +133,7 @@ import type { Part } from '@/oscal';
 import PartDisplayEditor from '@/components/PartDisplayEditor.vue';
 import { useRouter } from 'vue-router';
 import { useDataApi } from '@/composables/axios';
+import type { ComplianceIntervalStatus } from '@/stores/evidence';
 
 const props = defineProps<{
   catalog: Catalog;

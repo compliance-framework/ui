@@ -165,7 +165,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { useRoute } from 'vue-router';
-import type { PoamItem } from '@/stores/plan-of-action-and-milestones.ts';
+import type { POAMItem } from '@/stores/plan-of-action-and-milestones.ts';
 import Dialog from '@/volt/Dialog.vue';
 import CollapsableGroup from '@/components/CollapsableGroup.vue';
 import PoamItemDetails from '@/components/poam/PoamItemDetails.vue';
@@ -187,7 +187,7 @@ const {
   isLoading: loading,
   error,
   execute: refreshItems,
-} = useDataApi<PoamItem[]>(
+} = useDataApi<POAMItem[]>(
   `/api/oscal/plan-of-action-and-milestones/${route.params.id}/poam-items`,
 );
 const { execute: deletePoamItem } = useDataApi<void>(
@@ -202,24 +202,24 @@ const showEditModal = ref(false);
 const showAttachModal = ref(false);
 
 // Edit targets
-const editingItem = ref<PoamItem | null>(null);
-const attachingItem = ref<PoamItem | null>(null);
+const editingItem = ref<POAMItem | null>(null);
+const attachingItem = ref<POAMItem | null>(null);
 
 const poamId = computed(() => getIdFromRoute(route));
 
 // Item management
-const editItem = (item: PoamItem) => {
+const editItem = (item: POAMItem) => {
   editingItem.value = item;
   showEditModal.value = true;
 };
 
-const handleItemCreated = (newItem: PoamItem) => {
+const handleItemCreated = (newItem: POAMItem) => {
   if (!poamItems.value) return;
   poamItems.value.push(newItem);
   showCreateModal.value = false;
 };
 
-const handleItemSaved = (updatedItem: PoamItem) => {
+const handleItemSaved = (updatedItem: POAMItem) => {
   if (!poamItems.value) return;
   const index = poamItems.value.findIndex(
     (item) => item.uuid === updatedItem.uuid,
@@ -257,12 +257,12 @@ async function deleteItem(uuid: string) {
   }
 }
 
-const attachItems = (item: PoamItem) => {
+const attachItems = (item: POAMItem) => {
   attachingItem.value = item;
   showAttachModal.value = true;
 };
 
-const handleItemAttached = (updatedItem: PoamItem) => {
+const handleItemAttached = (updatedItem: POAMItem) => {
   if (!poamItems.value) return;
   const index = poamItems.value.findIndex(
     (item) => item.uuid === updatedItem.uuid,

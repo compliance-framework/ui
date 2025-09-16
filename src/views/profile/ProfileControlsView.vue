@@ -47,13 +47,13 @@
       >
         <p>Included Controls</p>
         <ProfileControlGroups
-          :groups="imp.includeControls"
+          :groups="imp.includeControls as ProfileSelectControlByID[]"
           :catalog="importedCatalogsByHref[imp.href]"
         />
         <hr class="my-4 border-ccf-300 dark:border-slate-700 border-dashed" />
         <p>Excluded Controls</p>
         <ProfileControlGroups
-          :groups="imp.excludeControls"
+          :groups="imp.excludeControls as ProfileSelectControlByID[]"
           :catalog="importedCatalogsByHref[imp.href]"
         />
         <PrimaryButton class="mt-2" @click="save(toValue(imp))"
@@ -74,8 +74,12 @@
 </template>
 
 <script setup lang="ts">
-import { type Import } from '@/stores/types';
-import type { BackMatterResource, BackMatter } from '@/oscal';
+import { type Import } from '@/oscal';
+import type {
+  BackMatterResource,
+  BackMatter,
+  ProfileSelectControlByID,
+} from '@/oscal';
 import { useRoute } from 'vue-router';
 import { ref, computed, toValue, watch } from 'vue';
 import CollapsableGroup from '@/components/CollapsableGroup.vue';
@@ -143,7 +147,7 @@ const includedControlsCount = computed<number>(
       (acc, imp) =>
         acc +
         (imp.includeControls ?? []).reduce(
-          (innerAcc, group) => innerAcc + group.withIds.length,
+          (innerAcc, group) => innerAcc + (group.withIds?.length || 0),
           0,
         ),
       0,
@@ -155,7 +159,7 @@ const excludedControlsCount = computed<number>(
       (acc, imp) =>
         acc +
         (imp.excludeControls ?? []).reduce(
-          (innerAcc, group) => innerAcc + group.withIds.length,
+          (innerAcc, group) => innerAcc + (group.withIds?.length || 0),
           0,
         ),
       0,

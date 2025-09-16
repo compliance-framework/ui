@@ -83,8 +83,7 @@ import { useDataApi } from '@/composables/axios';
 import Tree from '@/volt/Tree.vue';
 import IndexControlImplementation from '@/views/control-implementations/partials/IndexControlImplementation.vue';
 import type { AxiosError } from 'axios';
-import type { Profile } from '@/stores/types';
-import type { Catalog } from '@/oscal';
+import type { Catalog, Profile } from '@/oscal';
 import type { ControlImplementation, ImplementedRequirement } from '@/oscal';
 
 const systemStore = useSystemStore();

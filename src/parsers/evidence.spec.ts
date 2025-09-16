@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 
 import { calculateComplianceOverTimeData } from '@/parsers/findings.ts';
-import type { ComplianceInterval } from '@/stores/findings.ts';
+import type { ComplianceInterval } from '@/stores/evidence';
 
 describe('EvidenceFiller', () => {
   it('fills missing statusses', () => {
