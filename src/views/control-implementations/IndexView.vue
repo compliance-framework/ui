@@ -44,7 +44,7 @@
       <Tree :value="nodes" :filter="true" filterMode="lenient">
         <template #group="slotProps">
           <div class="flex items-center gap-x-3">
-            <div class="w-8">
+            <div>
               <Badge class="text-base">{{ slotProps.node.data.id }}</Badge>
             </div>
             <h4>{{ slotProps.node.data.title }}</h4>
