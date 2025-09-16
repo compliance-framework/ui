@@ -260,7 +260,7 @@ async function submit() {
         formData.types.filter((t) => t.trim()).length > 0
           ? formData.types.filter((t) => t.trim())
           : undefined,
-      collected: formData.collected || undefined,
+      collected: formData.collected || '',
       expires: formData.expires || undefined,
       remarks: formData.remarks || undefined,
     };
