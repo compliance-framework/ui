@@ -56,7 +56,7 @@
 import { ref, onMounted } from 'vue';
 import PageHeader from '@/components/PageHeader.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
-import type { AssessmentPlan } from '@/stores/assessment-plans.ts';
+import type { AssessmentPlan } from '@/oscal';
 import { useRouter } from 'vue-router';
 import TertiaryButton from '@/components/TertiaryButton.vue';
 import PageCard from '@/components/PageCard.vue';

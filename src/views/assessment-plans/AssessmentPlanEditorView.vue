@@ -43,24 +43,6 @@
       <RouterLink
         class="px-4 py-2 inline-block text-lg border-ccf-300 dark:border-slate-700 dark:hover:bg-slate-900"
         :to="{
-          name: 'assessment-plan-subjects',
-          params: { id: assessmentPlan.uuid },
-        }"
-      >
-        Subjects
-      </RouterLink>
-      <RouterLink
-        class="px-4 py-2 inline-block text-lg border-ccf-300 dark:border-slate-700 dark:hover:bg-slate-900"
-        :to="{
-          name: 'assessment-plan-assets',
-          params: { id: assessmentPlan.uuid },
-        }"
-      >
-        Assets
-      </RouterLink>
-      <RouterLink
-        class="px-4 py-2 inline-block text-lg border-ccf-300 dark:border-slate-700 dark:hover:bg-slate-900"
-        :to="{
           name: 'assessment-plan-json',
           params: { id: assessmentPlan.uuid },
         }"
@@ -83,7 +65,7 @@
 import { watch, ref, toValue } from 'vue';
 import PageHeader from '@/components/PageHeader.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
-import type { AssessmentPlan } from '@/stores/assessment-plans.ts';
+import type { AssessmentPlan } from '@/oscal';
 import { RouterView, useRoute, useRouter } from 'vue-router';
 import { useDataApi } from '@/composables/axios';
 import type { AxiosError } from 'axios';

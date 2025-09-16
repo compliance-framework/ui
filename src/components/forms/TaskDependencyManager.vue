@@ -106,7 +106,7 @@
 import { computed, ref, onMounted, watch } from 'vue';
 import FormInput from '@/components/forms/FormInput.vue';
 import FormTextarea from '@/components/forms/FormTextarea.vue';
-import type { TaskDependency, Task } from '@/stores/assessment-plans.ts';
+import type { TaskDependency, Task } from '@/oscal';
 import { useAssessmentPlanStore } from '@/stores/assessment-plans.ts';
 
 const props = defineProps<{

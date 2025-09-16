@@ -25,8 +25,7 @@
 import PrimaryButton from '@/components/PrimaryButton.vue';
 import Dialog from '@/volt/Dialog.vue';
 import ActivityCreateForm from '@/components/assessment-plans/ActivityCreateForm.vue';
-import type { Activity } from '@/stores/activities.ts';
-import type { AssessmentPlan, Task } from '@/stores/assessment-plans.ts';
+import type { AssessmentPlan, Task, Activity } from '@/oscal';
 
 const show = defineModel<boolean>();
 

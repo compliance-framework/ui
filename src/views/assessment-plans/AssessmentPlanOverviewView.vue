@@ -105,24 +105,6 @@
           >
             Manage Tasks
           </RouterLink>
-          <RouterLink
-            :to="{
-              name: 'assessment-plan-subjects',
-              params: { id: assessmentPlan.uuid },
-            }"
-            class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md"
-          >
-            Manage Subjects
-          </RouterLink>
-          <RouterLink
-            :to="{
-              name: 'assessment-plan-assets',
-              params: { id: assessmentPlan.uuid },
-            }"
-            class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-md"
-          >
-            Manage Assets
-          </RouterLink>
         </div>
 
         <!-- Feature Notice -->
@@ -152,16 +134,6 @@
               Subjects
             </div>
           </div>
-          <div class="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-lg">
-            <div
-              class="text-2xl font-bold text-orange-600 dark:text-orange-400"
-            >
-              {{ assessmentCounts.assets }}
-            </div>
-            <div class="text-sm text-orange-600 dark:text-orange-400">
-              Assets
-            </div>
-          </div>
           <div class="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg">
             <div
               class="text-2xl font-bold text-purple-600 dark:text-purple-400"
@@ -186,12 +158,7 @@
 
 <script setup lang="ts">
 import { computed, onActivated } from 'vue';
-import type {
-  Task,
-  AssessmentAsset,
-  AssessmentPlan,
-  AssessmentSubject,
-} from '@/stores/assessment-plans.ts';
+import type { Task, AssessmentPlan, AssessmentSubject } from '@/oscal';
 import { useRoute } from 'vue-router';
 import { useDataApi } from '@/composables/axios';
 
@@ -212,16 +179,11 @@ const { data: subjects, execute: refreshSubjects } = useDataApi<
 >(`/api/oscal/assessment-plans/${route.params.id}/assessment-subjects`, null, {
   immediate: false,
 });
-const { data: assets, execute: refreshAssets } = useDataApi<AssessmentAsset[]>(
-  `/api/oscal/assessment-plans/${route.params.id}/assessment-assets`,
-  null,
-  { immediate: false },
-);
 
 const assessmentCounts = computed(() => ({
   tasks: tasks.value?.length || 0,
   subjects: subjects.value?.length || 0,
-  assets: assets.value?.length || 0,
+  // assets: assets.value?.length || 0,
   localComponents: 'N/A', // TODO: Add API endpoint for local definitions / components
 }));
 
@@ -229,7 +191,6 @@ onActivated(async () => {
   await refreshAssessmentPlan();
   await refreshTasks();
   await refreshSubjects();
-  await refreshAssets();
 });
 
 function formatDate(dateString: string): string {

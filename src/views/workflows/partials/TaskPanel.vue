@@ -6,7 +6,7 @@ import { useConfirm } from 'primevue/useconfirm';
 
 import { useDataApi } from '@/composables/axios';
 
-import type { AssessmentPlan } from '@/stores/assessment-plans.ts';
+import type { AssessmentPlan } from '@/oscal';
 import type { Task, Activity, AssociatedActivity } from '@/oscal';
 
 import Panel from '@/volt/Panel.vue';

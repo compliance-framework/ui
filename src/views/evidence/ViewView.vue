@@ -119,7 +119,7 @@ import PageHeader from '@/components/PageHeader.vue';
 import PageCard from '@/components/PageCard.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
 import BackMatterDisplay from '@/components/BackMatterDisplay.vue';
-import type { Activity } from '@/stores/activities.ts';
+import type { Activity } from '@/oscal';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
 import { BIconDownload } from 'bootstrap-icons-vue';
 import { useDataApi } from '@/composables/axios';

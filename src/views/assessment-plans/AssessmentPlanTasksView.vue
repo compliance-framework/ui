@@ -47,7 +47,7 @@
 
 <script setup lang="ts">
 import { onActivated, ref } from 'vue';
-import type { AssessmentPlan, Task } from '@/stores/assessment-plans.ts';
+import type { AssessmentPlan, Task } from '@/oscal';
 import { useRoute } from 'vue-router';
 import TaskCreateModal from '@/components/assessment-plans/TaskCreateModal.vue';
 import TaskDetail from '@/views/assessment-plans/partials/TaskDetail.vue';

@@ -103,7 +103,7 @@ import PageCard from '@/components/PageCard.vue';
 import FormInput from '@/components/forms/FormInput.vue';
 import FormTextarea from '@/components/forms/FormTextarea.vue';
 import PrimaryButton from '@/components/PrimaryButton.vue';
-import type { AssessmentPlan } from '@/stores/assessment-plans.ts';
+import type { AssessmentPlan } from '@/oscal';
 import { useRoute, useRouter } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';

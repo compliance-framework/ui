@@ -167,7 +167,7 @@ export interface SubjectReference extends HasPropAndLink {
   remarks?: string;
 }
 
-export interface AssessmentAssets extends HasPropAndLink {
+export interface AssessmentAssets {
   components?: SystemComponent[];
   assessmentPlatforms: AssessmentPlatform[];
 }

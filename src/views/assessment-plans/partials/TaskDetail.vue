@@ -10,8 +10,8 @@ import type {
   AssessmentPlan,
   AssociatedActivity,
   Task,
-} from '@/stores/assessment-plans.ts';
-import type { Activity } from '@/stores/activities.ts';
+  Activity,
+} from '@/oscal';
 
 import Timeline from '@/volt/Timeline.vue';
 import Chip from '@/volt/Chip.vue';
