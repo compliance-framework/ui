@@ -150,7 +150,7 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import PageHeader from '@/components/PageHeader.vue';
-import type { AssessmentResults } from '@/oscal';
+import type { AssessmentResult } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { v4 as uuidv4 } from 'uuid';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
@@ -192,7 +192,7 @@ const {
   data: newAR,
   isLoading: loading,
   execute: executeCreate,
-} = useDataApi<AssessmentResults>(
+} = useDataApi<AssessmentResult>(
   '/api/oscal/assessment-results',
   {
     method: 'POST',

@@ -98,7 +98,7 @@
 import { onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import PageHeader from '@/components/PageHeader.vue';
-import type { AssessmentResults } from '@/oscal';
+import type { AssessmentResult } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi } from '@/composables/axios';
 import type { AxiosError } from 'axios';
@@ -113,7 +113,7 @@ const {
   execute: loadAssessmentResults,
   isLoading: loading,
   error,
-} = useDataApi<AssessmentResults>(
+} = useDataApi<AssessmentResult>(
   `/api/oscal/assessment-results/${route.params.id}`,
   null,
   { immediate: false },

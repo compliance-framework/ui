@@ -55,7 +55,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, type PropType } from 'vue';
-import type { AssessmentResults } from '@/oscal';
+import type { AssessmentResult } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import type { AxiosError } from 'axios';
@@ -63,7 +63,7 @@ import type { ErrorResponse, ErrorBody } from '@/stores/types';
 
 const props = defineProps({
   assessmentResults: {
-    type: Object as PropType<AssessmentResults>,
+    type: Object as PropType<AssessmentResult>,
     required: true,
   },
 });
@@ -80,8 +80,8 @@ const formData = ref({
 onMounted(() => {
   // Initialize form with current data
   formData.value = {
-    href: props.assessmentResults.importAp?.href || '',
-    remarks: props.assessmentResults.importAp?.remarks || '',
+    href: props.assessmentResults.importAP?.href || '',
+    remarks: props.assessmentResults.importAP?.remarks || '',
   };
 });
 

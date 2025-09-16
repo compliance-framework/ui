@@ -16,11 +16,11 @@
 
 <script setup lang="ts">
 import { type PropType } from 'vue';
-import type { AssessmentResults } from '@/oscal';
+import type { AssessmentResult } from '@/oscal';
 
 defineProps({
   assessmentResults: {
-    type: Object as PropType<AssessmentResults>,
+    type: Object as PropType<AssessmentResult>,
     required: true,
   },
 });

@@ -33,14 +33,14 @@
 
 <script setup lang="ts">
 import { type PropType } from 'vue';
-import { type AssessmentResults } from '@/oscal';
+import { type AssessmentResult } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi } from '@/composables/axios';
 import decamelizeKeys from 'decamelize-keys';
 
 const props = defineProps({
   assessmentResults: {
-    type: Object as PropType<AssessmentResults>,
+    type: Object as PropType<AssessmentResult>,
     required: true,
   },
 });
@@ -51,7 +51,7 @@ const {
   data: jsonContent,
   isLoading: loading,
   error,
-} = useDataApi<AssessmentResults>(
+} = useDataApi<AssessmentResult>(
   `/api/oscal/assessment-results/${props.assessmentResults.uuid}/full`,
 );
 
