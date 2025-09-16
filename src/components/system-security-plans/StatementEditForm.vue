@@ -204,7 +204,7 @@ onMounted(() => {
 });
 
 const addProperty = () => {
-  statementData.props.push({
+  statementData.props?.push({
     name: '',
     value: '',
     class: '',
@@ -214,11 +214,11 @@ const addProperty = () => {
 };
 
 const removeProperty = (index: number) => {
-  statementData.props.splice(index, 1);
+  statementData.props?.splice(index, 1);
 };
 
 const addLink = () => {
-  statementData.links.push({
+  statementData.links?.push({
     href: '',
     rel: '',
     text: '',
@@ -226,7 +226,7 @@ const addLink = () => {
 };
 
 const removeLink = (index: number) => {
-  statementData.links.splice(index, 1);
+  statementData.links?.splice(index, 1);
 };
 
 const updateStatement = async () => {

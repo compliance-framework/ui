@@ -298,8 +298,6 @@ const addPrivilege = () => {
   userData.authorizedPrivileges!.push({
     title: '',
     description: '',
-    props: [],
-    links: [],
     functionsPerformed: [],
   });
 };

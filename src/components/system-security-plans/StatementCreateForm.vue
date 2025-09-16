@@ -163,10 +163,11 @@ import { reactive, onMounted } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import FormInput from '@/components/forms/FormInput.vue';
 import FormTextarea from '@/components/forms/FormTextarea.vue';
-import type { Statement, CreateStatementRequest } from '@/oscal';
+import type { Statement } from '@/oscal';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import type { AxiosError } from 'axios';
 import type { ErrorBody, ErrorResponse } from '@/stores/types.ts';
+import type { CreateStatementRequest } from '@/stores/system-security-plans';
 
 const props = defineProps<{
   sspId: string;

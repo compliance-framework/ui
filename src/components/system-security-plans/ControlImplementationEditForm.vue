@@ -2,25 +2,6 @@
   <div class="px-12 py-8">
     <form @submit.prevent="updateControlImplementation()">
       <div class="mb-4">
-        <label class="inline-block pb-2 dark:text-slate-300">UUID</label>
-        <div
-          class="p-3 bg-gray-50 dark:bg-slate-800 border border-ccf-300 dark:border-slate-700 rounded-md"
-        >
-          <span class="text-gray-600 dark:text-slate-400 font-mono">{{
-            controlImplData.uuid
-          }}</span>
-        </div>
-      </div>
-
-      <div class="mb-4">
-        <label class="inline-block pb-2 dark:text-slate-300">Source</label>
-        <FormInput
-          v-model="controlImplData.source"
-          placeholder="Source of control implementation"
-        />
-      </div>
-
-      <div class="mb-4">
         <label class="inline-block pb-2 dark:text-slate-300"
           >Description <span class="text-red-500">*</span></label
         >
@@ -168,8 +149,6 @@ const {
 );
 
 const controlImplData = reactive<ControlImplementation>({
-  uuid: '',
-  source: '',
   description: '',
   setParameters: [],
   implementedRequirements: [],
@@ -182,8 +161,6 @@ onMounted(() => {
       (p) => ({
         ...p,
         values: [...(p.values || [])],
-        props: [...(p.props || [])],
-        links: [...(p.links || [])],
       }),
     ),
   });
@@ -193,8 +170,6 @@ const addParameter = () => {
   controlImplData.setParameters!.push({
     paramId: '',
     values: [''],
-    props: [],
-    links: [],
     remarks: '',
   });
 };

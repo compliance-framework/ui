@@ -325,8 +325,6 @@ const addPrivilege = () => {
   userData.authorizedPrivileges.push({
     title: '',
     description: '',
-    props: [],
-    links: [],
     functionsPerformed: [],
   });
 };
@@ -365,7 +363,7 @@ const removeFunctionPerformed = (
 };
 
 const updateUser = async () => {
-  if (!userData.title.trim() || !userData.description.trim()) {
+  if (!userData.title?.trim() || !userData.description?.trim()) {
     toast.add({
       severity: 'error',
       summary: 'Validation Error',

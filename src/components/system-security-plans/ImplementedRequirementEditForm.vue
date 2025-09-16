@@ -202,7 +202,7 @@ onMounted(() => {
 });
 
 const addProperty = () => {
-  requirementData.props.push({
+  requirementData.props?.push({
     name: '',
     value: '',
     class: '',
@@ -212,11 +212,11 @@ const addProperty = () => {
 };
 
 const removeProperty = (index: number) => {
-  requirementData.props.splice(index, 1);
+  requirementData.props?.splice(index, 1);
 };
 
 const addLink = () => {
-  requirementData.links.push({
+  requirementData.links?.push({
     href: '',
     rel: '',
     text: '',
@@ -224,7 +224,7 @@ const addLink = () => {
 };
 
 const removeLink = (index: number) => {
-  requirementData.links.splice(index, 1);
+  requirementData.links?.splice(index, 1);
 };
 
 const updateRequirement = async () => {

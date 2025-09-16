@@ -2,11 +2,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import Badge from '@/volt/Badge.vue';
 import Drawer from '@/volt/Drawer.vue';
-import type {
-  CreateStatementRequest,
-  ImplementedRequirement,
-  Statement,
-} from '@/oscal';
+import type { ImplementedRequirement, Statement } from '@/oscal';
 import PartDisplay from '@/components/PartDisplay.vue';
 import type { Part } from '@/oscal';
 import { ref, watchEffect } from 'vue';
@@ -16,6 +12,7 @@ import { useSystemStore } from '@/stores/system.ts';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import VueMarkdown from 'vue-markdown-render';
 import type { Control } from '@/oscal';
+import type { CreateStatementRequest } from '@/stores/system-security-plans';
 
 const { control, implementation } = defineProps<{
   control: Control;

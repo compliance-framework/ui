@@ -265,7 +265,7 @@ onMounted(() => {
 });
 
 const addProtocol = () => {
-  componentData.protocols.push({
+  componentData.protocols?.push({
     uuid: crypto.randomUUID(),
     title: '',
     name: '',
@@ -274,7 +274,7 @@ const addProtocol = () => {
 };
 
 const removeProtocol = (index: number) => {
-  componentData.protocols.splice(index, 1);
+  componentData.protocols?.splice(index, 1);
 };
 
 const addPortRange = (protocolIndex: number) => {
@@ -303,7 +303,7 @@ const updateComponent = async () => {
   if (
     !componentData.title.trim() ||
     !componentData.description.trim() ||
-    !componentData.purpose.trim() ||
+    !componentData.purpose?.trim() ||
     !componentData.type.trim()
   ) {
     toast.add({
