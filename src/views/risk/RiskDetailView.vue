@@ -170,6 +170,7 @@ import type {
 } from '@/oscal/assessment';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
+import { cloneDeep } from '@/utils/clone-deep';
 
 const route = useRoute();
 const toast = useToast();
@@ -294,10 +295,6 @@ onMounted(async () => {
     });
   }
 });
-
-function cloneDeep<T>(value: T): T {
-  return JSON.parse(JSON.stringify(value)) as T;
-}
 
 function formatDate(date?: string) {
   if (!date) return 'None';

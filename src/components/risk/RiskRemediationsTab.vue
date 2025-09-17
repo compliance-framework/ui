@@ -159,6 +159,7 @@ import Dialog from '@/volt/Dialog.vue';
 import { useToast } from 'primevue/usetoast';
 import type { Risk } from '@/stores/plan-of-action-and-milestones';
 import type { Response } from '@/oscal/assessment';
+import { cloneDeep } from '@/utils/clone-deep';
 
 const props = defineProps<{
   risk: Risk | null;
@@ -193,10 +194,6 @@ const working = reactive<EditableRemediation>({
 const editorTitle = computed(() =>
   editingIndex.value === null ? 'Add Remediation' : 'Edit Remediation',
 );
-
-function cloneDeep<T>(value: T): T {
-  return JSON.parse(JSON.stringify(value)) as T;
-}
 
 function resetWorking() {
   working.uuid = undefined;

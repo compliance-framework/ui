@@ -191,6 +191,9 @@ import Dialog from '@/volt/Dialog.vue';
 import { useToast } from 'primevue/usetoast';
 import type { Risk } from '@/stores/plan-of-action-and-milestones';
 import type { MitigatingFactor, SubjectReference } from '@/oscal/assessment';
+import { cloneDeep } from '@/utils/clone-deep';
+
+const DEFAULT_SUBJECT_TYPE = 'subject';
 
 const props = defineProps<{
   risk: Risk | null;
@@ -201,8 +204,7 @@ const emit = defineEmits<{
   save: [factors: MitigatingFactor[]];
 }>();
 
-interface EditableSubject
-  extends Pick<SubjectReference, 'subjectUuid' | 'type'> {}
+type EditableSubject = Pick<SubjectReference, 'subjectUuid' | 'type'>;
 
 interface EditableMitigatingFactor {
   uuid?: string;
@@ -226,10 +228,6 @@ const editorTitle = computed(() =>
     ? 'Add Mitigating Factor'
     : 'Edit Mitigating Factor',
 );
-
-function cloneDeep<T>(value: T): T {
-  return JSON.parse(JSON.stringify(value)) as T;
-}
 
 function resetWorking() {
   working.uuid = undefined;
@@ -279,7 +277,7 @@ function sanitizeSubjects(
   const sanitized = subjects
     .map((subject) => ({
       subjectUuid: subject.subjectUuid.trim(),
-      type: subject.type.trim() || 'subject',
+      type: subject.type.trim() || DEFAULT_SUBJECT_TYPE,
     }))
     .filter((subject) => subject.subjectUuid);
   return sanitized.length ? sanitized : undefined;

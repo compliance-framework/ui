@@ -204,6 +204,9 @@ import Dialog from '@/volt/Dialog.vue';
 import { useToast } from 'primevue/usetoast';
 import type { Risk } from '@/stores/plan-of-action-and-milestones';
 import type { Characterization, Facet } from '@/oscal/assessment';
+import { cloneDeep } from '@/utils/clone-deep';
+
+const DEFAULT_FACET_SYSTEM = 'custom';
 
 const props = defineProps<{
   risk: Risk | null;
@@ -229,10 +232,6 @@ const editorTitle = computed(() =>
     ? 'Add Characterization'
     : 'Edit Characterization',
 );
-
-function cloneDeep<T>(value: T): T {
-  return JSON.parse(JSON.stringify(value)) as T;
-}
 
 function startCreate() {
   editingIndex.value = null;
@@ -277,7 +276,7 @@ function removeFacet(index: number) {
 function sanitizeFacets(facets: EditableFacet[]): Facet[] {
   return facets.map((facet) => ({
     name: facet.name.trim(),
-    system: facet.system?.trim() || 'custom',
+    system: facet.system?.trim() || DEFAULT_FACET_SYSTEM,
     value: facet.value.trim(),
     remarks: facet.remarks?.trim() || undefined,
   }));
