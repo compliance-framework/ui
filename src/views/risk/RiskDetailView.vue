@@ -170,7 +170,7 @@ import type {
 } from '@/oscal/assessment';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
-import { cloneDeep } from '@/utils/clone-deep';
+import { cloneFnJSON as cloneDeep } from '@vueuse/core';
 
 const route = useRoute();
 const toast = useToast();

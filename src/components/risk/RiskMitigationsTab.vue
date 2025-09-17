@@ -191,7 +191,7 @@ import Dialog from '@/volt/Dialog.vue';
 import { useToast } from 'primevue/usetoast';
 import type { Risk } from '@/stores/plan-of-action-and-milestones';
 import type { MitigatingFactor, SubjectReference } from '@/oscal/assessment';
-import { cloneDeep } from '@/utils/clone-deep';
+import { cloneFnJSON as cloneDeep } from '@vueuse/core';
 
 const DEFAULT_SUBJECT_TYPE = 'subject';
 
