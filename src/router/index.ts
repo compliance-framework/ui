@@ -119,9 +119,9 @@ const authenticatedRoutes = [
     },
   },
   {
-    path: 'inventory-plus',
-    name: 'inventory-plus:index',
-    component: () => import('../views/InventoryPlusView.vue'),
+    path: 'inventory',
+    name: 'inventory:index',
+    component: () => import('../views/InventoryView.vue'),
     meta: {
       requiresAuth: true,
     },
