@@ -204,11 +204,16 @@
                         class="text-xs bg-white dark:bg-slate-900 p-2 rounded border"
                       >
                         <StatementByComponent
-                          :ssp="ssp"
-                          :statement="statement"
                           :by-component="byComponent"
-                          @edit="
-                            handleEditStatementByComponent(
+                          @save="
+                            handleSaveStatementByComponent(
+                              requirement,
+                              statement,
+                              $event,
+                            )
+                          "
+                          @delete="
+                            handleDeleteStatementByComponent(
                               requirement,
                               statement,
                               $event,
@@ -384,7 +389,7 @@ import ImplementedRequirementEditForm from '@/components/system-security-plans/I
 import ControlImplementationEditForm from '@/components/system-security-plans/ControlImplementationEditForm.vue';
 import StatementEditForm from '@/components/system-security-plans/StatementEditForm.vue';
 import StatementCreateForm from '@/components/system-security-plans/StatementCreateForm.vue';
-import StatementByComponent from '@/views/system-security-plans/partials/StatementByComponent.vue';
+import StatementByComponent from '@/views/control-implementations/partials/StatementByComponent.vue';
 import StatementByComponentEditForm from '@/components/system-security-plans/StatementByComponentEditForm.vue';
 import { useDataApi } from '@/composables/axios';
 import { getIdFromRoute } from '@/utils/get-poam-id-from-route';
@@ -636,5 +641,102 @@ const editRequirementByComponent = (
 ) => {
   console.log('Edit Requirement By Component:', requirement, byComponent);
   alert('Requirement By Component editing functionality is in development');
+};
+
+const handleSaveStatementByComponent = async (
+  requirement: ImplementedRequirement,
+  statement: Statement,
+  updatedByComponent: ByComponent,
+) => {
+  try {
+    // Update the local data
+    if (controlImplementation.value) {
+      const reqIndex =
+        controlImplementation.value.implementedRequirements.findIndex(
+          (r) => r.uuid === requirement.uuid,
+        );
+      if (reqIndex !== -1) {
+        const req =
+          controlImplementation.value.implementedRequirements[reqIndex];
+        if (req.statements) {
+          const statementIndex = req.statements.findIndex(
+            (s) => s.uuid === statement.uuid,
+          );
+          if (statementIndex !== -1) {
+            const stmt = req.statements[statementIndex];
+            if (stmt.byComponents) {
+              const byCompIndex = stmt.byComponents.findIndex(
+                (bc) => bc.uuid === updatedByComponent.uuid,
+              );
+              if (byCompIndex !== -1) {
+                stmt.byComponents[byCompIndex] = updatedByComponent;
+              }
+            }
+          }
+        }
+      }
+    }
+    toast.add({
+      severity: 'success',
+      summary: 'Success',
+      detail: 'Statement by-component updated successfully.',
+      life: 3000,
+    });
+  } catch (error) {
+    console.error('Failed to save statement by-component:', error);
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'Failed to save statement by-component. Please try again.',
+      life: 5000,
+    });
+  }
+};
+
+const handleDeleteStatementByComponent = async (
+  requirement: ImplementedRequirement,
+  statement: Statement,
+  byComponentToDelete: ByComponent,
+) => {
+  try {
+    // Update the local data
+    if (controlImplementation.value) {
+      const reqIndex =
+        controlImplementation.value.implementedRequirements.findIndex(
+          (r) => r.uuid === requirement.uuid,
+        );
+      if (reqIndex !== -1) {
+        const req =
+          controlImplementation.value.implementedRequirements[reqIndex];
+        if (req.statements) {
+          const statementIndex = req.statements.findIndex(
+            (s) => s.uuid === statement.uuid,
+          );
+          if (statementIndex !== -1) {
+            const stmt = req.statements[statementIndex];
+            if (stmt.byComponents) {
+              stmt.byComponents = stmt.byComponents.filter(
+                (bc) => bc.uuid !== byComponentToDelete.uuid,
+              );
+            }
+          }
+        }
+      }
+    }
+    toast.add({
+      severity: 'success',
+      summary: 'Success',
+      detail: 'Statement by-component deleted successfully.',
+      life: 3000,
+    });
+  } catch (error) {
+    console.error('Failed to delete statement by-component:', error);
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'Failed to delete statement by-component. Please try again.',
+      life: 5000,
+    });
+  }
 };
 </script>
