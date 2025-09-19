@@ -105,20 +105,6 @@
                   <option value="other">Other</option>
                 </select>
               </div>
-
-              <div>
-                <label
-                  class="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1"
-                >
-                  Status Reason
-                </label>
-                <input
-                  v-model="component.status.reason"
-                  type="text"
-                  placeholder="Status reason"
-                  class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-300"
-                />
-              </div>
             </div>
 
             <div class="mt-3">
@@ -335,6 +321,7 @@ const formData = ref<POAMLocalDefinitions>({
   inventoryItems: [],
   assessmentAssets: {
     components: [],
+    assessmentPlatforms: [],
   },
   remarks: '',
 });
@@ -348,6 +335,8 @@ onMounted(() => {
         components: [
           ...(props.localDefinitions.assessmentAssets?.components || []),
         ],
+        assessmentPlatforms:
+          props.localDefinitions.assessmentAssets?.assessmentPlatforms || [],
       },
       remarks: props.localDefinitions.remarks || '',
     };
@@ -369,7 +358,6 @@ function addComponent() {
     description: '',
     status: {
       state: '',
-      reason: '',
       remarks: '',
     },
     remarks: '',
@@ -397,7 +385,10 @@ function removeInventoryItem(index: number) {
 
 function addAssessmentComponent() {
   if (!formData.value.assessmentAssets) {
-    formData.value.assessmentAssets = { components: [] };
+    formData.value.assessmentAssets = {
+      components: [],
+      assessmentPlatforms: [],
+    };
   }
   if (!formData.value.assessmentAssets.components) {
     formData.value.assessmentAssets.components = [];
@@ -409,7 +400,6 @@ function addAssessmentComponent() {
     description: '',
     status: {
       state: '',
-      reason: '',
       remarks: '',
     },
     remarks: '',

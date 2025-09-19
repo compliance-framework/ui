@@ -158,7 +158,8 @@
 
 <script setup lang="ts">
 import { reactive, onMounted } from 'vue';
-import type { Risk } from '@/oscal';
+import type { Risk, ThreatID } from '@/oscal';
+import { ThreatIDSystem } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 
@@ -192,7 +193,7 @@ const formData = reactive({
   description: '',
   statement: '',
   status: '',
-  threatIds: [] as string[],
+  threatIds: [] as ThreatID[],
   deadline: '',
   remarks: '',
 });
@@ -209,7 +210,7 @@ onMounted(() => {
 });
 
 function addThreatId() {
-  formData.threatIds.push('');
+  formData.threatIds.push({ id: '', system: ThreatIDSystem.OSCAL });
 }
 
 function removeThreatId(index: number) {
@@ -258,7 +259,7 @@ async function submit() {
   }
 
   try {
-    const filteredThreatIds = formData.threatIds.filter((t) => t.trim());
+    const filteredThreatIds = formData.threatIds.filter((t) => t.id.trim());
     const updatedRisk: Risk = {
       ...props.risk,
       title: formData.title,

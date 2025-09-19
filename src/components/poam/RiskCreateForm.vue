@@ -158,7 +158,7 @@
 
 <script setup lang="ts">
 import { reactive } from 'vue';
-import type { Risk } from '@/oscal';
+import { ThreatIDSystem, type Risk, type ThreatID } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import type { AxiosError } from 'axios';
@@ -193,13 +193,13 @@ const formData = reactive({
   description: '',
   statement: '',
   status: '',
-  threatIds: [] as string[],
+  threatIds: [] as ThreatID[],
   deadline: '',
   remarks: '',
 });
 
 function addThreatId() {
-  formData.threatIds.push('');
+  formData.threatIds.push({ id: '', system: ThreatIDSystem.OSCAL });
 }
 
 function removeThreatId(index: number) {
@@ -255,8 +255,8 @@ async function submit() {
       statement: formData.statement,
       status: formData.status,
       threatIds:
-        formData.threatIds.filter((t) => t.trim()).length > 0
-          ? formData.threatIds.filter((t) => t.trim())
+        formData.threatIds.filter((t) => t.id.trim()).length > 0
+          ? formData.threatIds.filter((t) => t.id.trim())
           : undefined,
       deadline: formData.deadline || undefined,
       remarks: formData.remarks || undefined,

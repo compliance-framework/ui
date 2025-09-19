@@ -300,7 +300,7 @@ export interface ThreatID {
   href?: string;
 }
 
-enum ThreatIDSystem {
+export enum ThreatIDSystem {
   FedRAMP = 'http://fedramp.gov',
   OSCAL = 'http://fedramp.gov/ns/oscal',
 }
