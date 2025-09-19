@@ -99,6 +99,19 @@
           </div>
 
           <div class="ml-4 flex gap-2">
+            <RouterLink
+              v-if="risk.uuid"
+              :to="{
+                name: 'plan-of-action-and-milestones-risk-detail',
+                params: { id: route.params.id, riskId: risk.uuid },
+              }"
+            >
+              <button
+                class="bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 px-3 py-1 rounded-md text-sm"
+              >
+                Open
+              </button>
+            </RouterLink>
             <button
               @click="editRisk(risk)"
               class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-sm"
@@ -148,7 +161,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import type { Risk } from '@/oscal';
 import Dialog from '@/volt/Dialog.vue';
@@ -212,6 +225,28 @@ const handleRiskSaved = (updatedRisk: Risk) => {
   showEditModal.value = false;
   editingRisk.value = null;
 };
+
+const handleRiskUpdated = (event: Event) => {
+  const detail = (event as CustomEvent<{ risk: Risk; poamId?: string }>).detail;
+  if (!detail?.risk?.uuid) return;
+  if (detail.poamId && detail.poamId !== route.params.id) return;
+  if (!risks.value) return;
+  const index = risks.value.findIndex((risk) => risk.uuid === detail.risk.uuid);
+  if (index !== -1) {
+    risks.value[index] = detail.risk;
+  }
+};
+
+onMounted(() => {
+  window.addEventListener('risk-updated', handleRiskUpdated as EventListener);
+});
+
+onUnmounted(() => {
+  window.removeEventListener(
+    'risk-updated',
+    handleRiskUpdated as EventListener,
+  );
+});
 
 async function deleteRisk(uuid: string) {
   try {
