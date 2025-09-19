@@ -167,7 +167,7 @@
 
 <script setup lang="ts">
 import { reactive, onMounted } from 'vue';
-import type { Observation } from '@/stores/plan-of-action-and-milestones.ts';
+import type { Observation } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 
@@ -260,7 +260,7 @@ async function submit() {
         formData.types.filter((t) => t.trim()).length > 0
           ? formData.types.filter((t) => t.trim())
           : undefined,
-      collected: formData.collected || undefined,
+      collected: formData.collected || '',
       expires: formData.expires || undefined,
       remarks: formData.remarks || undefined,
     };

@@ -310,7 +310,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import type { BackMatterResource } from '@/stores/plan-of-action-and-milestones';
+import type { BackMatterResource } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import type { AxiosError } from 'axios';

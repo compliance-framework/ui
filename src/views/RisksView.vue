@@ -157,7 +157,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
-import { type Risk } from '@/stores/plan-of-action-and-milestones.ts';
+import { type Risk } from '@/oscal';
 import Dialog from '@/volt/Dialog.vue';
 import Message from '@/volt/Message.vue';
 import RiskCreateForm from '@/components/poam/RiskCreateForm.vue';

@@ -8,7 +8,7 @@
           Identifier
         </label>
         <input
-          v-model="formData.identifier"
+          v-model="formData.id"
           type="text"
           class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-800 dark:text-slate-300"
           placeholder="Enter system identifier"
@@ -35,23 +35,6 @@
         </p>
       </div>
 
-      <div>
-        <label
-          class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
-        >
-          Remarks
-        </label>
-        <textarea
-          v-model="formData.remarks"
-          rows="3"
-          class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-800 dark:text-slate-300"
-          placeholder="Optional remarks about the system ID"
-        ></textarea>
-        <p class="text-xs text-gray-500 dark:text-slate-400 mt-1">
-          Optional remarks about the system identifier
-        </p>
-      </div>
-
       <div class="flex justify-end gap-3 pt-4">
         <button
           type="button"
@@ -74,7 +57,7 @@
 
 <script setup lang="ts">
 import { reactive, computed, onMounted } from 'vue';
-import type { SystemID } from '@/stores/plan-of-action-and-milestones.ts';
+import type { SystemID } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 
@@ -102,26 +85,23 @@ const {
 );
 
 const formData = reactive({
-  identifier: '',
+  id: '',
   identifierType: '',
-  remarks: '',
 });
 
 onMounted(() => {
   if (props.systemId) {
     // Handle both id and identifier fields from backend
-    formData.identifier = props.systemId.identifier || props.systemId.id || '';
+    formData.id = props.systemId.id || props.systemId.id || '';
     formData.identifierType = props.systemId.identifierType || '';
-    formData.remarks = props.systemId.remarks || '';
   }
 });
 
 async function handleSubmit() {
   try {
     const systemIdData: SystemID = {
-      id: formData.identifier.trim() || undefined,
+      id: formData.id.trim() || '',
       identifierType: formData.identifierType.trim() || undefined,
-      remarks: formData.remarks.trim() || undefined,
     };
 
     if (isEditing.value) {

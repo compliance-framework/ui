@@ -59,7 +59,7 @@
 <script setup lang="ts">
 import PageHeader from '@/components/PageHeader.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
-import type { POAM } from '@/stores/plan-of-action-and-milestones.ts';
+import type { POAM } from '@/oscal';
 import { useRouter, useRoute } from 'vue-router';
 import PageCard from '@/components/PageCard.vue';
 import FormInput from '@/components/forms/FormInput.vue';

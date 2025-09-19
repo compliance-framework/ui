@@ -152,10 +152,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { useRoute } from 'vue-router';
-import type {
-  BackMatter,
-  BackMatterResource,
-} from '@/stores/plan-of-action-and-milestones.ts';
+import type { BackMatter, BackMatterResource } from '@/oscal';
 import Dialog from '@/volt/Dialog.vue';
 import CollapsableGroup from '@/components/CollapsableGroup.vue';
 import BackMatterResourceForm from '@/components/poam/BackMatterResourceForm.vue';

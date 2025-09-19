@@ -41,7 +41,7 @@
 import { ref, onMounted } from 'vue';
 import PageHeader from '@/components/PageHeader.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
-import type { POAM } from '@/stores/plan-of-action-and-milestones.ts';
+import type { POAM } from '@/oscal';
 import { useRouter } from 'vue-router';
 import TertiaryButton from '@/components/TertiaryButton.vue';
 import PageCard from '@/components/PageCard.vue';

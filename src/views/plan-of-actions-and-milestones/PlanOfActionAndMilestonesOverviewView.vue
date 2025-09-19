@@ -241,12 +241,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { useRoute, RouterLink } from 'vue-router';
-import type {
-  POAM,
-  POAMItem,
-  Observation,
-  Risk,
-} from '@/stores/plan-of-action-and-milestones.ts';
+import type { POAM, POAMItem, Observation, Risk } from '@/oscal';
 import MetadataEditForm from '@/components/poam/MetadataEditForm.vue';
 import Dialog from '@/volt/Dialog.vue';
 import { useToast } from 'primevue/usetoast';

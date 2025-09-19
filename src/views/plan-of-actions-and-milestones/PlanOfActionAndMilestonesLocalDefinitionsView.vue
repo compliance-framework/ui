@@ -248,7 +248,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { useRoute } from 'vue-router';
-import type { LocalDefinitions } from '@/stores/plan-of-action-and-milestones.ts';
+import type { POAMLocalDefinitions } from '@/oscal';
 import Dialog from '@/volt/Dialog.vue';
 import LocalDefinitionsForm from '@/components/poam/LocalDefinitionsForm.vue';
 import { useDataApi } from '@/composables/axios';
@@ -269,11 +269,13 @@ const {
   data: localDefinitions,
   error,
   isLoading: loading,
-} = useDataApi<LocalDefinitions | null>(
+} = useDataApi<POAMLocalDefinitions | null>(
   `/api/oscal/plan-of-action-and-milestones/${route.params.id}/local-definitions`,
 );
 
-function handleLocalDefinitionsSaved(savedLocalDefinitions: LocalDefinitions) {
+function handleLocalDefinitionsSaved(
+  savedLocalDefinitions: POAMLocalDefinitions,
+) {
   localDefinitions.value = savedLocalDefinitions;
   showCreateModal.value = false;
   showEditModal.value = false;

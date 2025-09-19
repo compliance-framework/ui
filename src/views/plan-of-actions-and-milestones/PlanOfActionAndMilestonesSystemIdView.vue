@@ -36,7 +36,7 @@
           <p
             class="text-gray-900 dark:text-slate-300 font-mono text-sm break-all"
           >
-            {{ systemId.id || systemId.identifier }}
+            {{ systemId.id || systemId.id }}
           </p>
         </div>
 
@@ -47,16 +47,6 @@
           >
           <p class="text-gray-900 dark:text-slate-300">
             {{ systemId.identifierType }}
-          </p>
-        </div>
-
-        <div v-if="systemId.remarks">
-          <label
-            class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
-            >Remarks</label
-          >
-          <p class="text-gray-900 dark:text-slate-300 whitespace-pre-wrap">
-            {{ systemId.remarks }}
           </p>
         </div>
       </div>
@@ -109,7 +99,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { useRoute } from 'vue-router';
-import type { SystemID } from '@/stores/plan-of-action-and-milestones.ts';
+import type { SystemID } from '@/oscal';
 import Dialog from '@/volt/Dialog.vue';
 import SystemIdForm from '@/components/poam/SystemIdForm.vue';
 import { useDataApi } from '@/composables/axios';

@@ -67,7 +67,7 @@
 
 <script setup lang="ts">
 import { reactive, onMounted } from 'vue';
-import type { POAMItem } from '@/stores/plan-of-action-and-milestones.ts';
+import type { POAMItem } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import type { AxiosError } from 'axios';

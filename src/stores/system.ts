@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import type { AssessmentPlan, SystemSecurityPlan } from '@/oscal';
-import type { POAM } from '@/stores/plan-of-action-and-milestones.ts';
+import type { POAM } from '@/oscal';
 import type { AssessmentResult } from '@/oscal';
 import { useLocalStorage } from '@vueuse/core';
 

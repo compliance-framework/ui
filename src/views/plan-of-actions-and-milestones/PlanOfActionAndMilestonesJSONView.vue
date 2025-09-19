@@ -35,7 +35,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
-import type { POAM } from '@/stores/plan-of-action-and-milestones.ts';
+import type { POAM } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi } from '@/composables/axios';
 import decamelizeKeys from 'decamelize-keys';

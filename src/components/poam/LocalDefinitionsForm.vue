@@ -105,20 +105,6 @@
                   <option value="other">Other</option>
                 </select>
               </div>
-
-              <div>
-                <label
-                  class="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1"
-                >
-                  Status Reason
-                </label>
-                <input
-                  v-model="component.status.reason"
-                  type="text"
-                  placeholder="Status reason"
-                  class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-300"
-                />
-              </div>
             </div>
 
             <div class="mt-3">
@@ -299,7 +285,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import type { LocalDefinitions } from '@/stores/plan-of-action-and-milestones';
+import type { POAMLocalDefinitions } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import type { AxiosError } from 'axios';
@@ -307,12 +293,12 @@ import type { ErrorResponse, ErrorBody } from '@/stores/types';
 
 interface Props {
   poamId: string;
-  localDefinitions?: LocalDefinitions;
+  localDefinitions?: POAMLocalDefinitions;
 }
 
 interface Emits {
   (e: 'cancel'): void;
-  (e: 'saved', localDefinitions: LocalDefinitions): void;
+  (e: 'saved', localDefinitions: POAMLocalDefinitions): void;
 }
 
 const props = defineProps<Props>();
@@ -324,17 +310,18 @@ const {
   data: newLD,
   isLoading: loading,
   execute: saveLD,
-} = useDataApi<LocalDefinitions>(
+} = useDataApi<POAMLocalDefinitions>(
   `/api/oscal/plan-of-actions-and-milestones/${props.poamId}/local-definitions`,
   null,
   { immediate: false },
 );
 
-const formData = ref<LocalDefinitions>({
+const formData = ref<POAMLocalDefinitions>({
   components: [],
   inventoryItems: [],
   assessmentAssets: {
     components: [],
+    assessmentPlatforms: [],
   },
   remarks: '',
 });
@@ -348,6 +335,8 @@ onMounted(() => {
         components: [
           ...(props.localDefinitions.assessmentAssets?.components || []),
         ],
+        assessmentPlatforms:
+          props.localDefinitions.assessmentAssets?.assessmentPlatforms || [],
       },
       remarks: props.localDefinitions.remarks || '',
     };
@@ -369,7 +358,6 @@ function addComponent() {
     description: '',
     status: {
       state: '',
-      reason: '',
       remarks: '',
     },
     remarks: '',
@@ -397,7 +385,10 @@ function removeInventoryItem(index: number) {
 
 function addAssessmentComponent() {
   if (!formData.value.assessmentAssets) {
-    formData.value.assessmentAssets = { components: [] };
+    formData.value.assessmentAssets = {
+      components: [],
+      assessmentPlatforms: [],
+    };
   }
   if (!formData.value.assessmentAssets.components) {
     formData.value.assessmentAssets.components = [];
@@ -409,7 +400,6 @@ function addAssessmentComponent() {
     description: '',
     status: {
       state: '',
-      reason: '',
       remarks: '',
     },
     remarks: '',
