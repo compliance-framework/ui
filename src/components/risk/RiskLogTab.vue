@@ -65,7 +65,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import type { RiskLogEntry } from '@/oscal/assessment';
+import type { RiskLogEntry } from '@/oscal';
 
 const props = defineProps<{
   entries?: RiskLogEntry[];
