@@ -114,7 +114,10 @@
               <ul
                 class="list-disc list-inside text-sm text-gray-700 dark:text-slate-300 mt-2"
               >
-                <li v-for="obs in risk.relatedObservations" :key="obs">
+                <li
+                  v-for="obs in risk.relatedObservations"
+                  :key="obs.observationUuid"
+                >
                   {{ obs }}
                 </li>
               </ul>
@@ -162,8 +165,12 @@ import RiskMitigationsTab from '@/components/risk/RiskMitigationsTab.vue';
 import RiskRemediationsTab from '@/components/risk/RiskRemediationsTab.vue';
 import RiskLogTab from '@/components/risk/RiskLogTab.vue';
 import { useSystemStore } from '@/stores/system';
-import type { Risk } from '@/stores/plan-of-action-and-milestones';
-import type { Characterization, MitigatingFactor, Response } from '@/oscal';
+import type {
+  Characterization,
+  MitigatingFactor,
+  Response,
+  Risk,
+} from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import { cloneFnJSON as cloneDeep } from '@vueuse/core';

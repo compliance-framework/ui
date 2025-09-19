@@ -157,8 +157,7 @@
 import { computed, reactive, ref } from 'vue';
 import Dialog from '@/volt/Dialog.vue';
 import { useToast } from 'primevue/usetoast';
-import type { Risk } from '@/stores/plan-of-action-and-milestones';
-import type { Response } from '@/oscal';
+import type { Response, Risk } from '@/oscal';
 import { cloneFnJSON as cloneDeep } from '@vueuse/core';
 
 const props = defineProps<{
