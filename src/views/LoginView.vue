@@ -50,7 +50,7 @@ import { ref } from 'vue';
 import PrimaryButton from '@/components/PrimaryButton.vue';
 import { useUserStore } from '@/stores/auth';
 import { useRoute, useRouter } from 'vue-router';
-import type { DataResponse } from '@/stores/api.ts';
+// import type { DataResponse } from '@/stores/api.ts';
 import FormInput from '@/components/forms/FormInput.vue';
 import lightLogo from '@/assets/logo-light.svg';
 import darkLogo from '@/assets/logo-dark.svg';
@@ -58,6 +58,7 @@ import SideNavLogo from '@/components/navigation/SideNavLogo.vue';
 import { useToast } from 'primevue/usetoast';
 import { useGuestApi } from '@/composables/axios';
 import type { AxiosError } from 'axios';
+import type { DataResponse } from '@/stores/types';
 
 interface AuthError {
   email: string[];

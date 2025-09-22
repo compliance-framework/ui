@@ -221,14 +221,6 @@ const authenticatedRoutes = [
     ],
   },
   {
-    path: '/subjects',
-    name: 'admin-subjects',
-    component: () => import('../views/SubjectsView.vue'),
-    meta: {
-      requiresAuth: true,
-    },
-  },
-  {
     path: '/parties',
     name: 'admin-parties',
     component: () => import('../views/PartyListView.vue'),
@@ -378,14 +370,6 @@ const authenticatedRoutes = [
     name: 'assessment-plan-edit',
     component: () =>
       import('../views/assessment-plans/AssessmentPlanEditView.vue'),
-    meta: {
-      requiresAuth: true,
-    },
-  },
-  {
-    path: '/subject/:id',
-    name: 'admin-subject-crud',
-    component: () => import('../views/SubjectEditView.vue'),
     meta: {
       requiresAuth: true,
     },
