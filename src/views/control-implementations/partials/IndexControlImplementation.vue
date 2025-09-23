@@ -182,6 +182,37 @@ async function onPartSelect(e: Event, part: Part) {
     </div>
   </div>
 
+  <!-- Requirement-level By-Components (directly on the implemented requirement) -->
+  <div v-if="implementation?.byComponents?.length" class="mt-4">
+    <div
+      class="px-4 py-3 bg-gray-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700"
+    >
+      <div class="flex items-center justify-between mb-2">
+        <h4 class="text-sm font-medium text-gray-700 dark:text-slate-300">
+          Requirement-level Components
+        </h4>
+        <Badge :value="implementation.byComponents.length" severity="info" />
+      </div>
+      <div class="space-y-2">
+        <div
+          v-for="byComponent in implementation.byComponents"
+          :key="byComponent.uuid"
+          class="text-xs text-gray-700 dark:text-slate-300 bg-white dark:bg-slate-900 p-2 rounded border dark:border-slate-700"
+        >
+          <div class="font-medium">
+            {{ byComponent.componentUuid }}
+          </div>
+          <div
+            v-if="byComponent.description"
+            class="prose prose-slate dark:prose-invert mt-1"
+          >
+            <VueMarkdown :source="byComponent.description" />
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <Drawer
     v-model:visible="drawerOpen"
     header="Implementation"
@@ -192,6 +223,7 @@ async function onPartSelect(e: Event, part: Part) {
       v-if="selectedPart && statements[selectedPart.id]"
       @updated="updateStatement"
       :implementation="selectedImplementation"
+      :ssp-id="system.securityPlan?.uuid"
       :statement="statements[selectedPart.id]"
     />
   </Drawer>
