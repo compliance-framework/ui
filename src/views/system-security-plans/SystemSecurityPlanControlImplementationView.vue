@@ -391,7 +391,7 @@ import StatementEditForm from '@/components/system-security-plans/StatementEditF
 import StatementCreateForm from '@/components/system-security-plans/StatementCreateForm.vue';
 import StatementByComponent from '@/views/control-implementations/partials/StatementByComponent.vue';
 import StatementByComponentEditForm from '@/components/system-security-plans/StatementByComponentEditForm.vue';
-import { useDataApi } from '@/composables/axios';
+import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import { getIdFromRoute } from '@/utils/get-poam-id-from-route';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
 
@@ -425,6 +425,10 @@ const { data: controlImplementation, isLoading: ciLoading } =
     `/api/oscal/system-security-plans/${route.params.id}/control-implementation`,
   );
 const { execute: executeDelete } = useDataApi<void>(null, { method: 'DELETE' });
+const { execute: executeUpdateByComponent } = useDataApi<ByComponent>(null, {
+  method: 'PUT',
+  transformRequest: [decamelizeKeys],
+});
 const loading = computed<boolean>(() => sspLoading.value || ciLoading.value);
 
 const totalStatements = computed(() => {
@@ -649,6 +653,23 @@ const handleSaveStatementByComponent = async (
   updatedByComponent: ByComponent,
 ) => {
   try {
+    if (!sspId.value) {
+      toast.add({
+        severity: 'error',
+        summary: 'Missing System Plan',
+        detail: 'Unable to determine which system security plan to update.',
+        life: 4000,
+      });
+      return;
+    }
+    const response = await executeUpdateByComponent(
+      `/api/oscal/system-security-plans/${sspId.value}/control-implementation/implemented-requirements/${requirement.uuid}/statements/${statement.uuid}/by-components/${updatedByComponent.uuid}`,
+      {
+        data: updatedByComponent,
+      },
+    );
+    const persistedByComponent =
+      response.data.value?.data ?? updatedByComponent;
     // Update the local data
     if (controlImplementation.value) {
       const reqIndex =
@@ -669,7 +690,7 @@ const handleSaveStatementByComponent = async (
                 (bc) => bc.uuid === updatedByComponent.uuid,
               );
               if (byCompIndex !== -1) {
-                stmt.byComponents[byCompIndex] = updatedByComponent;
+                stmt.byComponents[byCompIndex] = persistedByComponent;
               }
             }
           }
@@ -699,6 +720,18 @@ const handleDeleteStatementByComponent = async (
   byComponentToDelete: ByComponent,
 ) => {
   try {
+    if (!sspId.value) {
+      toast.add({
+        severity: 'error',
+        summary: 'Missing System Plan',
+        detail: 'Unable to determine which system security plan to update.',
+        life: 4000,
+      });
+      return;
+    }
+    await executeDelete(
+      `/api/oscal/system-security-plans/${sspId.value}/control-implementation/implemented-requirements/${requirement.uuid}/statements/${statement.uuid}/by-components/${byComponentToDelete.uuid}`,
+    );
     // Update the local data
     if (controlImplementation.value) {
       const reqIndex =

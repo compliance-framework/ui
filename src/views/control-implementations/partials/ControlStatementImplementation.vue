@@ -7,7 +7,8 @@ import type {
   Statement,
   SystemComponent,
 } from '@/oscal';
-import { computed, onMounted, ref, toValue, watch } from 'vue';
+import { computed, ref, toValue, watch } from 'vue';
+import { useRoute } from 'vue-router';
 import { useSystemStore } from '@/stores/system.ts';
 import Select from '@/volt/Select.vue';
 import Textarea from '@/volt/Textarea.vue';
@@ -24,21 +25,36 @@ const showError = ref(false);
 
 const { value: showCreateForm, set: setCreateForm } = useToggle(false);
 
-const { statement, implementation } = defineProps<{
+const route = useRoute();
+
+const {
+  statement,
+  implementation,
+  sspId: providedSspId,
+} = defineProps<{
   statement: Statement;
   implementation: ImplementedRequirement;
+  sspId?: string;
 }>();
 const localStatement = ref<Statement>(statement);
+
+const resolvedSspId = computed(() => {
+  if (providedSspId) return providedSspId;
+  const routeId = route.params.id;
+  if (typeof routeId === 'string' && routeId.length) return routeId;
+  if (Array.isArray(routeId) && routeId.length) return routeId[0];
+  return system.securityPlan?.uuid;
+});
 
 const emit = defineEmits<{
   updated: [statement: Statement];
 }>();
 
-const { data: components, isLoading: componentsLoading } = useDataApi<
-  SystemComponent[]
->(
-  `/api/oscal/system-security-plans/${system.securityPlan?.uuid as string}/system-implementation/components`,
-);
+const {
+  data: components,
+  isLoading: componentsLoading,
+  execute: fetchComponents,
+} = useDataApi<SystemComponent[]>(null, null, { immediate: false });
 const { execute: executeUpdate } = useDataApi<Statement>(null, {
   transformRequest: [decamelizeKeys],
   method: 'PUT',
@@ -53,6 +69,17 @@ const { execute: executeCreate } = useDataApi<ByComponent>(null, {
   transformRequest: [decamelizeKeys],
   method: 'POST',
 });
+
+watch(
+  resolvedSspId,
+  async (id) => {
+    if (!id) return;
+    await fetchComponents(
+      `/api/oscal/system-security-plans/${id}/system-implementation/components`,
+    );
+  },
+  { immediate: true },
+);
 
 const componentItems = computed(() => {
   return toValue(components.value || []).map((item) => {
@@ -75,12 +102,6 @@ watch(selectedComponent, () => {
   newByComponent.value.componentUuid = selectedComponent.value.value;
 });
 
-onMounted(() => {
-  if (!system.securityPlan?.uuid) {
-    return;
-  }
-});
-
 function resetCreateForm() {
   setCreateForm(false);
   showError.value = false;
@@ -95,6 +116,16 @@ function resetCreateForm() {
 }
 
 async function deleteByComponent(byComp: ByComponent) {
+  const sspId = resolvedSspId.value;
+  if (!sspId) {
+    toast.add({
+      severity: 'error',
+      summary: 'Missing System Plan',
+      detail: 'Unable to determine which system security plan to update.',
+      life: 4000,
+    });
+    return;
+  }
   const updatedStatement = useCloned(localStatement).cloned;
   updatedStatement.value.byComponents =
     updatedStatement.value.byComponents?.filter(
@@ -102,7 +133,7 @@ async function deleteByComponent(byComp: ByComponent) {
     );
   try {
     await executeDelete(
-      `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/control-implementation/implemented-requirements/${implementation.uuid}/statements/${statement.uuid}/by-components/${byComp.uuid}`,
+      `/api/oscal/system-security-plans/${sspId}/control-implementation/implemented-requirements/${implementation.uuid}/statements/${statement.uuid}/by-components/${byComp.uuid}`,
     );
     localStatement.value = updatedStatement.value;
     setCreateForm(false);
@@ -116,9 +147,19 @@ async function deleteByComponent(byComp: ByComponent) {
 }
 
 async function updateByComponent(byComp: ByComponent) {
+  const sspId = resolvedSspId.value;
+  if (!sspId) {
+    toast.add({
+      severity: 'error',
+      summary: 'Missing System Plan',
+      detail: 'Unable to determine which system security plan to update.',
+      life: 4000,
+    });
+    return;
+  }
   try {
     await executeUpdate(
-      `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/control-implementation/implemented-requirements/${implementation.uuid}/statements/${statement.uuid}/by-components/${byComp.uuid}`,
+      `/api/oscal/system-security-plans/${sspId}/control-implementation/implemented-requirements/${implementation.uuid}/statements/${statement.uuid}/by-components/${byComp.uuid}`,
       {
         data: byComp,
       },
@@ -134,13 +175,23 @@ async function updateByComponent(byComp: ByComponent) {
 }
 
 async function create() {
+  const sspId = resolvedSspId.value;
   if (!newByComponent.value.componentUuid) {
     showError.value = true;
     return;
   }
+  if (!sspId) {
+    toast.add({
+      severity: 'error',
+      summary: 'Missing System Plan',
+      detail: 'Unable to determine which system security plan to update.',
+      life: 4000,
+    });
+    return;
+  }
   try {
     const res = await executeCreate(
-      `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/control-implementation/implemented-requirements/${implementation.uuid}/statements/${statement.uuid}/by-components`,
+      `/api/oscal/system-security-plans/${sspId}/control-implementation/implemented-requirements/${implementation.uuid}/statements/${statement.uuid}/by-components`,
       {
         data: newByComponent.value,
       },
