@@ -199,7 +199,7 @@
                 </button>
                 <button
                   v-if="system.securityPlan && item.sourceType !== 'ssp'"
-                  @click.stop="attachToSSP(item)"
+                  @click.stop="attachToSSP()"
                   class="px-3 py-1 bg-indigo-500 text-white text-sm rounded hover:bg-indigo-600 transition-colors"
                 >
                   Add to SSP
@@ -573,8 +573,7 @@ function attachInventoryItem(item: InventoryItemWithSource) {
   showInventoryItemAttachModal.value = true;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-async function attachToSSP(_item: InventoryItemWithSource) {
+async function attachToSSP() {
   // This would add a non-SSP inventory item to the SSP
   // For now, show a message that this needs to be implemented
   // The item parameter will be used when this feature is implemented
