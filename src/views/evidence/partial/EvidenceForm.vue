@@ -167,10 +167,10 @@ const evidence = ref<Partial<Evidence>>(
   },
 );
 const status = ref<EvidenceStatus>({
-  state: '',
-  reason: '',
+  state: props.evidence?.status?.state || '',
+  reason: props.evidence?.status?.reason || '',
 });
-const labels = ref<EvidenceLabel[]>([]);
+const labels = ref<EvidenceLabel[]>(props.evidence?.labels || []);
 
 defineEmits<{
   submit: [Partial<Evidence>, EvidenceLabel[], EvidenceStatus];
