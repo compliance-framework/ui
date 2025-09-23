@@ -188,7 +188,7 @@ async function removeStep(step: Step) {
       <Timeline
         :value="stepList"
         :hide-opposite="true"
-        class="mt-8"
+        class="my-2"
         ref="steps"
       >
         <template #content="slotProps">
@@ -208,7 +208,9 @@ async function removeStep(step: Step) {
                 ><BIconTrash
               /></Button>
             </div>
-            <p class="py-2 fonnt-light">{{ slotProps.item.description }}</p>
+            <div class="prose prose-slate dark:prose-invert">
+              <VueMarkdown :source="slotProps.item.description" />
+            </div>
           </div>
         </template>
       </Timeline>
