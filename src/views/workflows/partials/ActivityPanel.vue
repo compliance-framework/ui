@@ -147,7 +147,7 @@ async function removeStep(step: Step) {
 </script>
 
 <template>
-  <Panel toggleable class="my-2">
+  <Panel toggleable collapsed class="my-2">
     <template #header>
       <div class="flex items-center gap-2 py-2">
         <span class="font-bold">{{ props.activity?.title }}</span>
