@@ -15,14 +15,16 @@ import { useActivityStore } from '@/stores/activities';
 import { useToast } from 'primevue/usetoast';
 import StepEditForm from './StepEditForm.vue';
 import Button from '@/volt/Button.vue';
-import { BIconPencil } from 'bootstrap-icons-vue';
+import { BIconPencil, BIconTrash } from 'bootstrap-icons-vue';
 import StepCreateForm from './StepCreateForm.vue';
+import { useConfirm } from 'primevue/useconfirm';
 
 const { value: editingActivity, set: setEditingActivity } = useToggle(false);
 const { value: editingStep, set: setEditingStep } = useToggle(false);
 const { value: creatingStep, set: setCreatingStep } = useToggle(false);
 const activityStore = useActivityStore();
 const toast = useToast();
+const confirm = useConfirm();
 
 const props = defineProps<{
   activity: Activity;
@@ -110,6 +112,38 @@ async function updateActivity(activity: Activity): Promise<void> {
     });
   }
 }
+
+async function removeStep(step: Step) {
+  confirm.require({
+    message: `You are about to delete "${step.title}".`,
+    header: 'Delete Step ?',
+    rejectProps: {
+      label: 'Cancel',
+      severity: 'secondary',
+      outlined: true,
+    },
+    acceptProps: {
+      label: 'Delete',
+    },
+    accept: async () => {
+      // TODO. This triggers an update to the API. Maybe there is a clearer and more explicit way to achieve the reordering updates and the explicit ones ?
+      stepList.value = stepList.value.filter((i) => i.uuid !== step.uuid);
+      const activity = {
+        ...props.activity,
+        steps: stepList.value,
+      };
+      emit('updated', activity);
+    },
+    reject: () => {
+      toast.add({
+        severity: 'info',
+        summary: 'Cancelled',
+        detail: 'Resource deletion cancelled',
+        life: 3000,
+      });
+    },
+  });
+}
 </script>
 
 <template>
@@ -158,16 +192,24 @@ async function updateActivity(activity: Activity): Promise<void> {
         ref="steps"
       >
         <template #content="slotProps">
-          <div class="flex items-center">
-            <h5>{{ slotProps.item.title }}</h5>
-            <Button
-              variant="text"
-              size="small"
-              @click="editStep(slotProps.item)"
-              ><BIconPencil
-            /></Button>
+          <div class="cursor-grab">
+            <div class="flex items-center">
+              <h5 class="mr-2">{{ slotProps.item.title }}</h5>
+              <Button
+                variant="text"
+                size="small"
+                @click="editStep(slotProps.item)"
+                ><BIconPencil
+              /></Button>
+              <Button
+                variant="text"
+                size="small"
+                @click="removeStep(slotProps.item)"
+                ><BIconTrash
+              /></Button>
+            </div>
+            <p class="py-2 fonnt-light">{{ slotProps.item.description }}</p>
           </div>
-          <p class="py-2 fonnt-light">{{ slotProps.item.description }}</p>
         </template>
       </Timeline>
       <Button size="small" @click="setCreatingStep(true)">Add Step</Button>
