@@ -110,7 +110,7 @@ function activityCreated(activity: Activity) {
 </script>
 
 <template>
-  <Panel toggleable collapsed class="my-2">
+  <Panel toggleable class="my-2">
     <template #header>
       <div class="flex items-center gap-2 py-2">
         <span>{{ props.task.title }}</span>

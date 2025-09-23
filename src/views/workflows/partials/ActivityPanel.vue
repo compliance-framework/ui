@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Activity } from '@/oscal';
+import type { Activity, Step } from '@/oscal';
 
 import Timeline from '@/volt/Timeline.vue';
 import Panel from '@/volt/Panel.vue';
@@ -9,11 +9,21 @@ import Dialog from '@/volt/Dialog.vue';
 import ActivityEditForm from './ActivityEditForm.vue';
 import VueMarkdown from 'vue-markdown-render';
 
+import {
+  moveArrayElement,
+  useSortable,
+} from '@vueuse/integrations/useSortable';
+import { useTemplateRef, ref, nextTick, watch, toValue } from 'vue';
+import { useActivityStore } from '@/stores/activities';
+import { useToast } from 'primevue/usetoast';
+
 const {
   value: editing,
   toggle: toggleEditing,
   set: setEditing,
 } = useToggle(false);
+const activityStore = useActivityStore();
+const toast = useToast();
 
 const props = defineProps<{
   activity: Activity;
@@ -24,6 +34,20 @@ const emit = defineEmits<{
   remove: [activity: Activity];
 }>();
 
+const stepList = ref<Step[]>(props.activity?.steps || []);
+
+const steps = useTemplateRef<HTMLElement>('steps');
+useSortable(steps, stepList, {
+  dragoverBubble: true,
+});
+
+watch(stepList, () => {
+  updateActivity({
+    ...props.activity,
+    steps: toValue(stepList),
+  });
+});
+
 async function onActivityUpdated(activity: Activity) {
   emit('updated', activity);
   setEditing(false);
@@ -32,10 +56,33 @@ async function onActivityUpdated(activity: Activity) {
 async function remove() {
   emit('remove', props.activity);
 }
+
+async function updateActivity(activity: Activity): Promise<void> {
+  try {
+    await activityStore.update(props.activity.uuid, activity);
+
+    toast.add({
+      severity: 'success',
+      summary: 'Activity Updated',
+      detail: 'Activity has been updated successfully',
+      life: 3000,
+    });
+
+    emit('updated', activity);
+  } catch (error) {
+    toast.add({
+      severity: 'error',
+      summary: 'Error Updating Activity',
+      detail:
+        error instanceof Error ? error.message : 'Failed to update activity',
+      life: 3000,
+    });
+  }
+}
 </script>
 
 <template>
-  <Panel toggleable collapsed class="my-2">
+  <Panel toggleable class="my-2">
     <template #header>
       <div class="flex items-center gap-2 py-2">
         <span class="font-bold">{{ props.activity?.title }}</span>
@@ -74,9 +121,10 @@ async function remove() {
 
       <h5 class="font-medium text-lg mt-4">Steps:</h5>
       <Timeline
-        :value="props.activity?.steps"
+        :value="stepList"
         :hide-opposite="true"
         class="mt-8"
+        ref="steps"
       >
         <template #content="slotProps">
           <h2 class="font-medium">{{ slotProps.item.title }}</h2>
