@@ -574,9 +574,6 @@ function attachInventoryItem(item: InventoryItemWithSource) {
 }
 
 async function attachToSSP() {
-  // This would add a non-SSP inventory item to the SSP
-  // For now, show a message that this needs to be implemented
-  // The item parameter will be used when this feature is implemented
   toast.add({
     severity: 'info',
     summary: 'Feature Coming Soon',
