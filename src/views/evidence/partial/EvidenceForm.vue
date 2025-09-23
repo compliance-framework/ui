@@ -65,7 +65,9 @@
                 v-model="evidence.end"
                 placeholder="Select end date"
                 required
-                :min-date="evidence.start ? new Date(evidence.start) : undefined"
+                :min-date="
+                  evidence.start ? new Date(evidence.start) : undefined
+                "
               />
               <div v-if="dateValidationError" class="text-red-500 text-sm mt-1">
                 {{ dateValidationError }}
