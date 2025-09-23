@@ -7,6 +7,7 @@ import Panel from '@/volt/Panel.vue';
 import { useToggle } from '@/composables/useToggle';
 import Dialog from '@/volt/Dialog.vue';
 import ActivityEditForm from './ActivityEditForm.vue';
+import VueMarkdown from 'vue-markdown-render';
 
 const {
   value: editing,
@@ -55,20 +56,20 @@ async function remove() {
         </div>
       </div>
     </template>
-    <div
-      class="px-4 py-4 bg-gray-50 dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700"
-    >
-      <div v-if="props.activity.description">
-        <p class="mt-1 dark:text-slate-300 whitespace-pre-wrap">
-          {{ props.activity.description }}
-        </p>
+    <div class="border-t border-gray-200 dark:border-slate-700">
+      <div
+        v-if="props.activity.description"
+        class="prose prose-slate dark:prose-invert w-full max-w-full"
+      >
+        <VueMarkdown :source="props.activity.description" />
       </div>
 
-      <div v-if="props.activity.remarks" class="mt-2">
-        <span class="font-medium dark:text-slate-200">Remarks:</span>
-        <p class="mt-1 dark:text-slate-300 whitespace-pre-wrap">
-          {{ props.activity.remarks }}
-        </p>
+      <div
+        v-if="props.activity.remarks"
+        class="mt-2 prose prose-slate dark:prose-invert"
+      >
+        <h5 class="font-medium dark:text-slate-200">Remarks:</h5>
+        <VueMarkdown :source="props.activity.remarks" />
       </div>
 
       <h5 class="font-medium text-lg mt-4">Steps:</h5>

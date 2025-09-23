@@ -16,6 +16,7 @@ import ActivityPanel from './ActivityPanel.vue';
 import ActivityCreateForm from './ActivityCreateForm.vue';
 import Dialog from '@/volt/Dialog.vue';
 import TaskEditForm from './TaskEditForm.vue';
+import VueMarkdown from 'vue-markdown-render';
 
 interface FullAssociatedActivity extends AssociatedActivity {
   activity: Activity;
@@ -109,10 +110,10 @@ function activityCreated(activity: Activity) {
 </script>
 
 <template>
-  <Panel toggleable class="my-2">
+  <Panel toggleable collapsed class="my-2">
     <template #header>
       <div class="flex items-center gap-2 py-2">
-        <span class="font-bold">{{ props.task.title }}</span>
+        <span>{{ props.task.title }}</span>
         <div>
           <TaskTiming :timing="props.task.timing" v-if="props.task.timing" />
         </div>
@@ -133,24 +134,24 @@ function activityCreated(activity: Activity) {
         </div>
       </div>
     </template>
-    <div
-      class="px-4 py-4 bg-gray-50 dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700"
-    >
-      <div v-if="props.task.description" class="mt-2 px-4">
-        <p class="mt-1 dark:text-slate-300 whitespace-pre-wrap">
-          {{ props.task.description }}
-        </p>
+    <div class="border-t border-gray-200 dark:border-slate-700">
+      <div
+        v-if="props.task.description"
+        class="mt-2 prose prose-slate dark:prose-invert max-w-full"
+      >
+        <VueMarkdown :source="props.task.description" />
       </div>
 
-      <div v-if="props.task.remarks" class="mt-2 px-4">
-        <span class="font-medium dark:text-slate-200">Remarks:</span>
-        <p class="mt-1 dark:text-slate-300 whitespace-pre-wrap">
-          {{ props.task.remarks }}
-        </p>
+      <div
+        v-if="props.task.remarks"
+        class="mt-2 prose prose-slate dark:prose-invert max-w-full"
+      >
+        <h5 class="font-base">Remarks:</h5>
+        <VueMarkdown :source="props.task.remarks" />
       </div>
 
-      <div class="px-4 mt-4">
-        <span class="font-medium text-lg">Activities</span>
+      <div class="mt-4">
+        <h5 class="font-base">Activities</h5>
 
         <ActivityPanel
           v-for="activity in activities"
@@ -158,13 +159,13 @@ function activityCreated(activity: Activity) {
           :activity="activity"
         />
 
-        <secondary-button @click="toggleCreatingActivity"
+        <secondary-button size="small" @click="toggleCreatingActivity"
           >Add Activity
         </secondary-button>
       </div>
 
-      <div v-if="props.task.tasks && props.task.tasks.length" class="px-4 mt-4">
-        <h3>Sub Tasks</h3>
+      <div v-if="props.task.tasks && props.task.tasks.length" class="mt-4">
+        <h5>Sub Tasks</h5>
         <TaskPanel
           v-for="(task, index) in props.task.tasks"
           :key="task.uuid || index"
