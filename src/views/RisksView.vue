@@ -23,146 +23,125 @@
     <p class="text-red-500">Error loading risks: {{ error }}</p>
   </div>
 
-  <div v-else class="space-y-4">
-    <PageHeader>Risk Register</PageHeader>
+  <div v-else>
+    <div class="flex items-center justfy-between mb-4">
+      <div class="grow">
+        <PageHeader>Risk Register</PageHeader>
+        <PageSubHeader>Manage business and cyber risks centrally</PageSubHeader>
+      </div>
+      <Button @click="showCreateModal = true" size="small">Add Risk</Button>
+    </div>
+
     <div v-if="!risks?.length" class="text-center py-8">
       <p class="text-gray-500 dark:text-slate-400">No risks found.</p>
     </div>
-    <div class="p-6">
-      <div class="flex justify-between items-center mb-6">
-        <button
-          @click="showCreateModal = true"
-          class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md"
-        >
-          Add Risk
-        </button>
-      </div>
-      <div
-        v-for="risk in risks"
-        :key="risk.uuid"
-        class="bg-white dark:bg-slate-900 border border-ccf-300 dark:border-slate-700 rounded-lg p-6"
-      >
-        <div class="flex justify-between items-start">
-          <div class="flex-1">
-            <h3 class="text-lg font-medium text-gray-900 dark:text-slate-300">
-              {{ risk.title || 'Untitled Risk' }}
-            </h3>
-            <p class="text-gray-600 dark:text-slate-400 mt-2">
-              {{ risk.description }}
-            </p>
 
-            <div v-if="risk.statement" class="mt-3">
-              <h4
-                class="text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
-              >
-                Statement
-              </h4>
-              <p class="text-sm text-gray-600 dark:text-slate-400">
-                {{ risk.statement }}
-              </p>
-            </div>
+    <div>
+      <Panel v-for="risk in risks" :key="risk.uuid" class="mb-4">
+        <template #header>
+          <div class="grow flex items-center gap-2 text-lg">
+            <h4 class="grow">{{ risk.title || 'Untitled Risk' }}</h4>
 
-            <div class="mt-3">
-              <h4
-                class="text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
+            <!-- <Badge value="AC-1" severity="info" /> -->
+            <div class="flex">
+              <Button @click="editRisk(risk)" variant="text" size="small">
+                <BIconPencil />
+              </Button>
+              <Button
+                v-if="risk.uuid"
+                variant="text"
+                size="small"
+                @click="
+                  confirmDeleteDialog(() => deleteRisk(risk.uuid!), {
+                    itemType: 'risk',
+                  })
+                "
               >
-                Status
-              </h4>
-              <span
-                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
-              >
-                {{ risk.status }}
-              </span>
-            </div>
-
-            <div class="mt-4 flex flex-wrap gap-2">
-              <span
-                v-if="risk.threatIds?.length"
-                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
-              >
-                {{ risk.threatIds.length }} Threats
-              </span>
-              <span
-                v-if="risk.characterizations?.length"
-                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
-              >
-                {{ risk.characterizations.length }} Characterizations
-              </span>
-              <span
-                v-if="risk.mitigatingFactors?.length"
-                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-              >
-                {{ risk.mitigatingFactors.length }} Mitigating Factors
-              </span>
-              <span
-                v-if="risk.remediations?.length"
-                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
-              >
-                {{ risk.remediations.length }} Remediations
-              </span>
-            </div>
-
-            <div
-              v-if="risk.deadline"
-              class="mt-3 text-sm text-gray-500 dark:text-slate-400"
-            >
-              <strong>Deadline:</strong> {{ formatDate(risk.deadline) }}
-            </div>
-          </div>
-
-          <div class="ml-4 flex gap-2">
-            <RouterLink
-              v-if="risk.uuid"
-              :to="{ name: 'risks:detail', params: { riskId: risk.uuid } }"
-            >
-              <button
-                class="bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 px-3 py-1 rounded-md text-sm"
+                <BIconTrash />
+              </Button>
+              <Button
+                v-if="risk.uuid"
+                size="small"
+                variant="outlined"
+                @click="
+                  router.push({
+                    name: 'risks:detail',
+                    params: { riskId: risk.uuid },
+                  })
+                "
               >
                 Open
-              </button>
-            </RouterLink>
-            <button
-              @click="editRisk(risk)"
-              class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-sm"
-            >
-              Edit
-            </button>
-            <button
-              v-if="risk.uuid"
-              @click="
-                confirmDeleteDialog(() => deleteRisk(risk.uuid!), {
-                  itemType: 'risk',
-                })
-              "
-              class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md text-sm"
-            >
-              Delete
-            </button>
+              </Button>
+            </div>
+          </div>
+        </template>
+        <div>
+          <div v-if="risk.deadline" class="mb-2">
+            <span>Deadline: </span>
+            <span class="font-light">{{ formatDate(risk.deadline) }}</span>
+          </div>
+
+          <p class="font-light">
+            {{ risk.description }}
+          </p>
+
+          <div v-if="risk.statement" class="mt-3">
+            <h5 class="font-base">Statement</h5>
+            <p class="font-light">
+              {{ risk.statement }}
+            </p>
+          </div>
+
+          <div class="mt-3">
+            <h5>Status</h5>
+            <Badge :value="risk.status" />
+          </div>
+
+          <div class="mt-3 flex flex-wrap gap-2">
+            <Badge
+              v-if="risk.threatIds?.length"
+              :value="`${risk.threatIds.length} Threats`"
+            />
+            <Badge
+              v-if="risk.characterizations?.length"
+              :value="`${risk.characterizations.length} Characterizations`"
+              severity="success"
+            />
+            <Badge
+              v-if="risk.mitigatingFactors?.length"
+              :value="`${risk.mitigatingFactors.length} Mitigating Factors`"
+              severity="info"
+            />
+            <Badge
+              v-if="risk.remediations?.length"
+              :value="`${risk.remediations.length} Remediations`"
+              severity="warn"
+            />
           </div>
         </div>
-      </div>
+      </Panel>
     </div>
-
-    <!-- Create Modal -->
-    <Dialog v-model:visible="showCreateModal" modal size="lg">
-      <RiskCreateForm
-        :poam-id="poamUuid"
-        @cancel="showCreateModal = false"
-        @created="handleRiskCreated"
-      />
-    </Dialog>
-
-    <!-- Edit Modal -->
-    <Dialog v-model:visible="showEditModal" modal size="lg">
-      <RiskEditForm
-        v-if="editingRisk"
-        :poam-id="poamUuid"
-        :risk="editingRisk"
-        @cancel="showEditModal = false"
-        @saved="handleRiskSaved"
-      />
-    </Dialog>
   </div>
+
+  <!-- Create Modal -->
+  <Dialog v-model:visible="showCreateModal" modal size="lg">
+    <RiskCreateForm
+      :poam-id="poamUuid"
+      @cancel="showCreateModal = false"
+      @created="handleRiskCreated"
+    />
+  </Dialog>
+
+  <!-- Edit Modal -->
+  <Dialog v-model:visible="showEditModal" modal size="lg">
+    <RiskEditForm
+      v-if="editingRisk"
+      :poam-id="poamUuid"
+      :risk="editingRisk"
+      @cancel="showEditModal = false"
+      @saved="handleRiskSaved"
+    />
+  </Dialog>
 </template>
 
 <script setup lang="ts">
@@ -177,9 +156,16 @@ import PageHeader from '@/components/PageHeader.vue';
 import { useSystemStore } from '@/stores/system.ts';
 import { useDataApi } from '@/composables/axios';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
+import PageSubHeader from '@/components/PageSubHeader.vue';
+import Button from '@/volt/Button.vue';
+import Panel from '@/volt/Panel.vue';
+import { useRouter } from 'vue-router';
+import { BIconPencil, BIconTrash } from 'bootstrap-icons-vue';
+import Badge from '@/volt/Badge.vue';
 
 const toast = useToast();
 const { system } = useSystemStore();
+const router = useRouter();
 
 const { confirmDeleteDialog } = useDeleteConfirmationDialog();
 

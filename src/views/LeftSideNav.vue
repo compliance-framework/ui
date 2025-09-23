@@ -134,7 +134,7 @@ const footLinks = ref<Array<NavigationItem>>([
 <template>
   <SideNav
     id="app-sidenav"
-    class="flex flex-col max-h-screen border-r border-r-ccf-300 dark:border-slate-700 bg-white dark:bg-slate-900 max-w-80"
+    class="flex flex-col max-h-screen border-r border-r-ccf-300 dark:border-slate-700 bg-white dark:bg-[#060c1e] max-w-80"
   >
     <template #logo>
       <div
@@ -162,7 +162,9 @@ const footLinks = ref<Array<NavigationItem>>([
       </div>
     </template>
 
-    <div class="overflow-y-auto max-h-full grow flex flex-col justify-between">
+    <div
+      class="overflow-y-auto max-h-full grow flex flex-col justify-between px-4"
+    >
       <!-- Top items -->
       <div>
         <!-- Main Navigation Items -->
@@ -217,6 +219,6 @@ const footLinks = ref<Array<NavigationItem>>([
 @reference "@/assets/main.css";
 
 #app-sidenav .router-link-active {
-  @apply bg-linear-to-r from-slate-200 to-slate-100 border-l-slate-300 dark:from-slate-700 dark:to-slate-800 dark:border-slate-500 dark:text-slate-200;
+  @apply dark:bg-[#0a1330] dark:border-[#cb3cff] dark:text-slate-200;
 }
 </style>

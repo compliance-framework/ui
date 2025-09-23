@@ -26,7 +26,7 @@ const sidebarStore = useSidebarStore();
     </div>
     <!-- Main Content -->
     <main
-      class="grow transition-all duration-300 ease-in-out px-12 py-4 bg-zinc-50 dark:bg-slate-950 text-zinc-800 dark:text-slate-50 overflow-auto"
+      class="grow transition-all duration-300 ease-in-out px-12 py-4 bg-zinc-50 dark:bg-[#050917] text-zinc-800 dark:text-slate-50 overflow-auto"
       :class="{
         'ml-80': sidebarStore.open,
         'ml-24': !sidebarStore.open,

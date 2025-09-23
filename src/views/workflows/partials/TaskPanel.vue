@@ -16,6 +16,7 @@ import ActivityPanel from './ActivityPanel.vue';
 import ActivityCreateForm from './ActivityCreateForm.vue';
 import Dialog from '@/volt/Dialog.vue';
 import TaskEditForm from './TaskEditForm.vue';
+import Button from '@/volt/Button.vue';
 
 interface FullAssociatedActivity extends AssociatedActivity {
   activity: Activity;
@@ -106,51 +107,48 @@ function activityCreated(activity: Activity) {
   activities.value.push(activity);
   setCreatingActivity(false);
 }
+
+import { BIconPencil, BIconTrash } from 'bootstrap-icons-vue';
 </script>
 
 <template>
-  <Panel toggleable class="my-2">
+  <Panel toggleable collapsed class="my-2">
     <template #header>
-      <div class="flex items-center gap-2 py-2">
-        <span class="font-bold">{{ props.task.title }}</span>
+      <div class="grow flex items-center gap-2">
         <div>
-          <TaskTiming :timing="props.task.timing" v-if="props.task.timing" />
+          <span>{{ props.task.title }}</span>
+          <div>
+            <TaskTiming :timing="props.task.timing" v-if="props.task.timing" />
+          </div>
         </div>
+
         <!-- <Badge value="AC-1" severity="info" /> -->
-        <div class="flex gap-2">
-          <button
-            @click="setEditingTask(true)"
-            class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-          >
-            Edit
-          </button>
-          <button
-            @click="removeTask"
-            class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
-          >
-            Remove
-          </button>
+        <div class="flex">
+          <Button variant="text" size="small" @click="setEditingTask(true)"
+            ><BIconPencil
+          /></Button>
+          <Button variant="text" size="small" @click="removeTask"
+            ><BIconTrash
+          /></Button>
         </div>
       </div>
     </template>
-    <div
-      class="px-4 py-4 bg-gray-50 dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700"
-    >
-      <div v-if="props.task.description" class="mt-2 px-4">
+    <div>
+      <div v-if="props.task.description">
         <p class="mt-1 dark:text-slate-300 whitespace-pre-wrap">
           {{ props.task.description }}
         </p>
       </div>
 
-      <div v-if="props.task.remarks" class="mt-2 px-4">
-        <span class="font-medium dark:text-slate-200">Remarks:</span>
-        <p class="mt-1 dark:text-slate-300 whitespace-pre-wrap">
+      <div v-if="props.task.remarks" class="mt-2">
+        <h5>Remarks:</h5>
+        <p class="font-light whitespace-pre-wrap">
           {{ props.task.remarks }}
         </p>
       </div>
 
-      <div class="px-4 mt-4">
-        <span class="font-medium text-lg">Activities</span>
+      <div class="mt-4">
+        <!-- <h5>Activities</h5> -->
 
         <ActivityPanel
           v-for="activity in activities"
@@ -158,19 +156,22 @@ function activityCreated(activity: Activity) {
           :activity="activity"
         />
 
-        <secondary-button @click="toggleCreatingActivity"
+        <Button @click="toggleCreatingActivity" size="small"
           >Add Activity
-        </secondary-button>
+        </Button>
       </div>
 
-      <div v-if="props.task.tasks && props.task.tasks.length" class="px-4 mt-4">
-        <h3>Sub Tasks</h3>
+      <div v-if="props.task.tasks && props.task.tasks.length" class="mt-4">
+        <h4>Sub Tasks</h4>
         <TaskPanel
           v-for="(task, index) in props.task.tasks"
           :key="task.uuid || index"
           :task="task"
           :assessment-plan="assessmentPlan"
         />
+        <Button @click="toggleCreatingActivity" size="small"
+          >Add Sub Task
+        </Button>
       </div>
     </div>
   </Panel>
