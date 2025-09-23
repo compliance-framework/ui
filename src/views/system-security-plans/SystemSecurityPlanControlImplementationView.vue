@@ -359,7 +359,7 @@
       modal
       header="Edit By-Component Implementation"
     >
-      <StatementByComponentEditForm
+      <ByComponentEditForm
         v-if="editingByComponent && editingRequirement && editingStatement"
         :ssp-id="sspId"
         :requirement="editingRequirement"
@@ -369,11 +369,28 @@
         @saved="handleStatementByComponentSaved"
       />
     </Dialog>
+
+    <!-- Requirement By Component Edit Modal -->
+    <Dialog
+      v-model:visible="showEditRequirementByComponentModal"
+      size="xl"
+      modal
+      header="Edit Component Implementation"
+    >
+      <ByComponentEditForm
+        v-if="editingByComponent && editingRequirement && !editingStatement"
+        :ssp-id="sspId"
+        :requirement="editingRequirement"
+        :by-component="editingByComponent"
+        @cancel="showEditRequirementByComponentModal = false"
+        @saved="handleRequirementByComponentSaved"
+      />
+    </Dialog>
   </template>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, type Component } from 'vue';
+import { ref, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
 import type {
@@ -390,7 +407,7 @@ import ControlImplementationEditForm from '@/components/system-security-plans/Co
 import StatementEditForm from '@/components/system-security-plans/StatementEditForm.vue';
 import StatementCreateForm from '@/components/system-security-plans/StatementCreateForm.vue';
 import StatementByComponent from '@/views/control-implementations/partials/StatementByComponent.vue';
-import StatementByComponentEditForm from '@/components/system-security-plans/StatementByComponentEditForm.vue';
+import ByComponentEditForm from '@/components/system-security-plans/ByComponentEditForm.vue';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import { getIdFromRoute } from '@/utils/get-poam-id-from-route';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
@@ -411,6 +428,7 @@ const showEditControlImplementationModal = ref(false);
 const showEditStatementModal = ref(false);
 const showCreateStatementModal = ref(false);
 const showEditStatementByComponentModal = ref(false);
+const showEditRequirementByComponentModal = ref(false);
 
 // Edit targets
 const editingRequirement = ref<ImplementedRequirement | null>(null);
@@ -591,17 +609,6 @@ const createComponent = (statement: Statement) => {
   alert('Create Component functionality is in development');
 };
 
-const handleEditStatementByComponent = (
-  requirement: ImplementedRequirement,
-  statement: Statement,
-  byComponent: ByComponent,
-) => {
-  editingRequirement.value = requirement;
-  editingStatement.value = statement;
-  editingByComponent.value = byComponent;
-  showEditStatementByComponentModal.value = true;
-};
-
 const handleStatementByComponentSaved = (updatedByComponent: ByComponent) => {
   if (
     controlImplementation.value &&
@@ -639,12 +646,39 @@ const handleStatementByComponentSaved = (updatedByComponent: ByComponent) => {
   editingRequirement.value = null;
 };
 
+const handleRequirementByComponentSaved = (updatedByComponent: ByComponent) => {
+  if (controlImplementation.value && editingRequirement.value) {
+    const reqIndex =
+      controlImplementation.value.implementedRequirements.findIndex(
+        (r) => r.uuid === editingRequirement.value?.uuid,
+      );
+    if (reqIndex !== -1) {
+      const requirement =
+        controlImplementation.value.implementedRequirements[reqIndex];
+      if (requirement.byComponents) {
+        const byCompIndex = requirement.byComponents.findIndex(
+          (bc) => bc.uuid === updatedByComponent.uuid,
+        );
+        if (byCompIndex !== -1) {
+          requirement.byComponents[byCompIndex] = updatedByComponent;
+        }
+      }
+    }
+  }
+  showEditRequirementByComponentModal.value = false;
+  editingByComponent.value = null;
+  editingRequirement.value = null;
+  editingStatement.value = null;
+};
+
 const editRequirementByComponent = (
   requirement: ImplementedRequirement,
-  byComponent: Component,
+  byComponent: ByComponent,
 ) => {
-  console.log('Edit Requirement By Component:', requirement, byComponent);
-  alert('Requirement By Component editing functionality is in development');
+  editingRequirement.value = requirement;
+  editingByComponent.value = byComponent;
+  editingStatement.value = null;
+  showEditRequirementByComponentModal.value = true;
 };
 
 const handleSaveStatementByComponent = async (
