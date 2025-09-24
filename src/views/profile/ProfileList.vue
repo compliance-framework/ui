@@ -45,7 +45,9 @@
               v-for="profile in profiles"
               :key="profile.uuid"
             >
-              <td class="px-6 py-4 text-sm font-medium text-gray-900 dark:text-slate-300">
+              <td
+                class="px-6 py-4 text-sm font-medium text-gray-900 dark:text-slate-300"
+              >
                 {{ profile.metadata.title }}
               </td>
               <td class="px-6 py-4 text-right text-sm font-medium">
