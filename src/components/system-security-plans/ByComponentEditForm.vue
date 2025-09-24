@@ -381,7 +381,7 @@ import type { ErrorBody, ErrorResponse } from '@/stores/types';
 const props = defineProps<{
   sspId: string;
   requirement: ImplementedRequirement;
-  statement: Statement;
+  statement?: Statement;
   byComponent: ByComponent;
 }>();
 
@@ -391,12 +391,16 @@ const emit = defineEmits<{
 }>();
 
 const toast = useToast();
+const endpoint = props.statement
+  ? `/api/oscal/system-security-plans/${props.sspId}/control-implementation/implemented-requirements/${props.requirement.uuid}/statements/${props.statement.uuid}/by-components/${props.byComponent.uuid}`
+  : `/api/oscal/system-security-plans/${props.sspId}/control-implementation/implemented-requirements/${props.requirement.uuid}/by-components/${props.byComponent.uuid}`;
+
 const {
   data: updatedByComponent,
   execute: updateByComponentApi,
   isLoading: saving,
 } = useDataApi<ByComponent>(
-  `/api/oscal/system-security-plans/${props.sspId}/control-implementation/implemented-requirements/${props.requirement.uuid}/statements/${props.statement.uuid}/by-components/${props.byComponent.uuid}`,
+  endpoint,
   {
     method: 'PUT',
     transformRequest: [decamelizeKeys],
@@ -606,7 +610,8 @@ const updateByComponent = async () => {
   } catch (error) {
     const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
     const errorMessage =
-      errorResponse.response?.data?.errors.body ||
+      errorResponse.response?.data?.errors?.body ||
+      errorResponse.message ||
       'An unexpected error occurred.';
     toast.add({
       severity: 'error',
