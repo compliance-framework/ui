@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watchEffect, computed } from 'vue';
+import { ref, watchEffect } from 'vue';
 import { useSystemStore } from '@/stores/system.ts';
 import BurgerMenu from '@/components/BurgerMenu.vue';
 import Textarea from '@/volt/Textarea.vue';
@@ -8,8 +8,6 @@ import { useDataApi } from '@/composables/axios';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
 import VueMarkdown from 'vue-markdown-render';
 import type { ByComponent, SystemComponent } from '@/oscal';
-import Dialog from '@/volt/Dialog.vue';
-import EvidenceAttachModal from '@/components/evidence/EvidenceAttachModal.vue';
 
 const { byComponent } = defineProps<{
   byComponent: ByComponent;
@@ -30,9 +28,6 @@ watchEffect(() => {
 
 const { value: editing, set: setEditing } = useToggle();
 
-// Attach Evidence dialog state
-const showAttachEvidence = ref(false);
-
 const { data: component } = useDataApi<SystemComponent>(
   `/api/oscal/system-security-plans/${system.securityPlan?.uuid as string}/system-implementation/components/${byComponent.componentUuid}`,
 );
@@ -49,43 +44,6 @@ async function deleteStatement() {
 function cancel() {
   setEditing(false);
 }
-
-function openAttachEvidence() {
-  showAttachEvidence.value = true;
-}
-
-function closeAttachEvidence() {
-  showAttachEvidence.value = false;
-}
-
-function handleEvidenceSaved(updated: ByComponent) {
-  // bubble up to parent save handler; parent persists via API
-  emit('save', updated);
-  closeAttachEvidence();
-}
-
-function extractEvidenceId(href?: string): string | null {
-  if (!href) return null;
-  try {
-    const parts = href.split('/').filter(Boolean);
-    const idx = parts.lastIndexOf('evidence');
-    if (idx !== -1 && parts[idx + 1]) return parts[idx + 1];
-    return null;
-  } catch {
-    return null;
-  }
-}
-
-const evidenceLinks = computed(() => {
-  const links = localComponent.value.links || [];
-  return links
-    .filter((l) => l.rel === 'related-evidence' && l.href)
-    .map((l) => {
-      const id = extractEvidenceId(l.href);
-      return id ? { id, text: l.text || id } : null;
-    })
-    .filter((x): x is { id: string; text: string } => !!x);
-});
 </script>
 
 <template>
@@ -105,12 +63,6 @@ const evidenceLinks = computed(() => {
             confirmDeleteDialog(() => deleteStatement(), {
               itemType: 'implementation statement',
             });
-          },
-        },
-        {
-          label: 'Link Evidence',
-          command() {
-            openAttachEvidence();
           },
         },
       ]"
@@ -219,35 +171,4 @@ const evidenceLinks = computed(() => {
       </div>
     </div>
   </div>
-
-  <!-- Linked Evidence -->
-  <div v-if="evidenceLinks.length" class="mt-2 text-xs">
-    <span class="font-medium text-indigo-700 dark:text-indigo-400"
-      >Evidence ({{ evidenceLinks.length }}):</span
-    >
-    <div class="ml-2 flex flex-wrap gap-1 mt-1">
-      <RouterLink
-        v-for="ev in evidenceLinks"
-        :key="ev.id"
-        :to="{ name: 'evidence:view', params: { id: ev.id } }"
-        class="inline-block bg-gray-100 dark:bg-slate-700 text-gray-800 dark:text-slate-200 px-2 py-0.5 rounded hover:underline"
-      >
-        {{ ev.text }}
-      </RouterLink>
-    </div>
-  </div>
-
-  <!-- Attach Evidence Dialog -->
-  <Dialog
-    v-model:visible="showAttachEvidence"
-    size="xl"
-    modal
-    header="Link Evidence"
-  >
-    <EvidenceAttachModal
-      :by-component="localComponent"
-      @cancel="closeAttachEvidence"
-      @saved="handleEvidenceSaved"
-    />
-  </Dialog>
 </template>
