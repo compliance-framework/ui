@@ -64,7 +64,7 @@ import { useAssessmentPlanStore } from '@/stores/assessment-plans.ts';
 import { useToast } from 'primevue/usetoast';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
-import TertiaryButton from '@/components/TertiaryButton.vue';
+import TertiaryButton from '@/volt/TertiaryButton.vue';
 import { BIconArrowRepeat } from 'bootstrap-icons-vue';
 import { v4 as uuidv4 } from 'uuid';
 import Label from '@/volt/Label.vue';

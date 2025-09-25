@@ -42,7 +42,7 @@ import PageHeader from '@/components/PageHeader.vue';
 import PageCard from '@/components/PageCard.vue';
 import FormInput from '@/components/forms/FormInput.vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
-import TertiaryButton from '@/components/TertiaryButton.vue';
+import TertiaryButton from '@/volt/TertiaryButton.vue';
 import FormTextarea from '@/components/forms/FormTextarea.vue';
 import { BIconArrowRepeat } from 'bootstrap-icons-vue';
 import type { AxiosError } from 'axios';

@@ -48,7 +48,7 @@
 import { ref, computed } from 'vue';
 import type { Capability } from '@/oscal';
 import { useRoute } from 'vue-router';
-import TertiaryButton from '@/components/TertiaryButton.vue';
+import TertiaryButton from '@/volt/TertiaryButton.vue';
 import ComponentDefinitionCapability from '@/components/component-definitions/ComponentDefinitionCapability.vue';
 import CapabilityCreateModal from '@/components/component-definitions/CapabilityCreateModal.vue';
 import CapabilityEditModal from '@/components/component-definitions/CapabilityEditModal.vue';

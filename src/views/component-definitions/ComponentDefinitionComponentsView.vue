@@ -48,7 +48,7 @@
 import { ref, computed } from 'vue';
 import { type DefinedComponent } from '@/oscal';
 import { useRoute } from 'vue-router';
-import TertiaryButton from '@/components/TertiaryButton.vue';
+import TertiaryButton from '@/volt/TertiaryButton.vue';
 import ComponentDefinitionComponent from '@/components/component-definitions/ComponentDefinitionComponent.vue';
 import ComponentCreateModal from '@/components/component-definitions/ComponentCreateModal.vue';
 import ComponentEditModal from '@/components/component-definitions/ComponentEditModal.vue';

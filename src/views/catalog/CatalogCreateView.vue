@@ -32,7 +32,7 @@ import PageHeader from '@/components/PageHeader.vue';
 import { type Catalog } from '@/oscal';
 import { useRouter } from 'vue-router';
 import PageSubHeader from '@/components/PageSubHeader.vue';
-import TertiaryButton from '@/components/TertiaryButton.vue';
+import TertiaryButton from '@/volt/TertiaryButton.vue';
 import PageCard from '@/components/PageCard.vue';
 import FormInput from '@/components/forms/FormInput.vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
