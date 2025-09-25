@@ -7,12 +7,9 @@
         <h3 class="text-lg font-semibold dark:text-slate-300">
           Assessment Tasks
         </h3>
-        <button
-          @click="showCreateModal = true"
-          class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
-        >
+        <PrimaryButton @click="showCreateModal = true">
           Add Task
-        </button>
+        </PrimaryButton>
       </div>
 
       <div v-if="tasks.length > 0">
@@ -50,6 +47,7 @@ import { onActivated, ref } from 'vue';
 import type { AssessmentPlan, Task } from '@/oscal';
 import { useRoute } from 'vue-router';
 import TaskCreateModal from '@/components/assessment-plans/TaskCreateModal.vue';
+import PrimaryButton from '@/volt/PrimaryButton.vue';
 import TaskDetail from '@/views/assessment-plans/partials/TaskDetail.vue';
 import { useDataApi } from '@/composables/axios';
 

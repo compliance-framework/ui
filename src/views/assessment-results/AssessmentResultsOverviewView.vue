@@ -135,33 +135,26 @@
       class="flex justify-between items-center pt-6 border-t border-gray-200 dark:border-slate-700"
     >
       <div>
-        <RouterLink
+        <TertiaryButton
           :to="`/assessment-results/${assessmentResults.uuid}/edit`"
-          class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 inline-block"
         >
           Edit Metadata
-        </RouterLink>
+        </TertiaryButton>
       </div>
 
       <div class="flex gap-2">
-        <button
-          @click="downloadJson"
-          class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700"
-        >
-          Download JSON
-        </button>
+        <PrimaryButton @click="downloadJson"> Download JSON </PrimaryButton>
 
-        <button
+        <PrimaryButton
           @click.prevent="
             confirmDeleteDialog(() => deleteAssessmentResults(), {
               itemName: props.assessmentResults.metadata.title,
               itemType: 'assessment results',
             })
           "
-          class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700"
         >
           Delete
-        </button>
+        </PrimaryButton>
       </div>
     </div>
   </div>
@@ -172,6 +165,8 @@ import { type PropType } from 'vue';
 import { useRouter } from 'vue-router';
 import { useConfigStore } from '@/stores/config';
 import { useToast } from 'primevue/usetoast';
+import PrimaryButton from '@/volt/PrimaryButton.vue';
+import TertiaryButton from '@/volt/TertiaryButton.vue';
 import type { AssessmentResult } from '@/oscal';
 import { useDataApi } from '@/composables/axios';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';

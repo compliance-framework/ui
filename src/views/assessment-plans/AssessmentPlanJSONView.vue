@@ -7,12 +7,7 @@
         Assessment Plan JSON
       </h3>
       <div class="flex gap-3">
-        <button
-          @click="downloadJSON"
-          class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
-        >
-          Download JSON
-        </button>
+        <PrimaryButton @click="downloadJSON"> Download JSON </PrimaryButton>
         <!-- <button
           v-if="!isEditing"
           @click="startEditing"
@@ -88,6 +83,7 @@ import { ref, computed } from 'vue';
 import type { AssessmentPlan } from '@/oscal';
 import { useRoute } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
+import PrimaryButton from '@/volt/PrimaryButton.vue';
 import { useDataApi } from '@/composables/axios';
 import decamelizeKeys from 'decamelize-keys';
 
