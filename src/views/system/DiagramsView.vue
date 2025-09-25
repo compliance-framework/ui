@@ -185,7 +185,7 @@ import { v4 } from 'uuid';
 import { useToast } from 'primevue/usetoast';
 import { useSystemStore } from '@/stores/system.ts';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
-import PrimaryButton from '@/components/PrimaryButton.vue';
+import PrimaryButton from '@/volt/PrimaryButton.vue';
 import type { AxiosError } from 'axios';
 import type { ErrorBody, ErrorResponse } from '@/stores/types';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';

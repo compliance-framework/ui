@@ -66,7 +66,7 @@
 import { ref, onMounted } from 'vue';
 import PageHeader from '@/components/PageHeader.vue';
 import type { CCFUser } from '@/stores/types';
-import PrimaryButton from '@/components/PrimaryButton.vue';
+import PrimaryButton from '@/volt/PrimaryButton.vue';
 import UserCreateForm from '@/components/users/UserCreateForm.vue';
 import Dialog from '@/volt/Dialog.vue';
 import { useToast } from 'primevue/usetoast';

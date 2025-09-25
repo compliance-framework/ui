@@ -28,7 +28,7 @@
 
 <script setup lang="ts">
 import CollapsableGroup from '@/components/CollapsableGroup.vue';
-import PrimaryButton from '@/components/PrimaryButton.vue';
+import PrimaryButton from '@/volt/PrimaryButton.vue';
 import ProfileControlEditor from '@/components/profiles/ProfileControlEditor.vue';
 import { useProfileControlGroups } from './useProfileControlGroups';
 import type { ProfileSelectControlByID } from '@/oscal';

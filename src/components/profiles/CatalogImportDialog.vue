@@ -48,7 +48,7 @@
 
 <script setup lang="ts">
 import Dialog from '@/volt/Dialog.vue';
-import PrimaryButton from '@/components/PrimaryButton.vue';
+import PrimaryButton from '@/volt/PrimaryButton.vue';
 import { ref, watch } from 'vue';
 import { type DataResponse, useApi } from '@/composables/api';
 import type { Catalog } from '@/oscal';

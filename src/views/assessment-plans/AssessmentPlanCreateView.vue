@@ -62,7 +62,7 @@ import TertiaryButton from '@/components/TertiaryButton.vue';
 import PageCard from '@/components/PageCard.vue';
 import FormInput from '@/components/forms/FormInput.vue';
 import FormTextarea from '@/components/forms/FormTextarea.vue';
-import PrimaryButton from '@/components/PrimaryButton.vue';
+import PrimaryButton from '@/volt/PrimaryButton.vue';
 import { BIconArrowRepeat } from 'bootstrap-icons-vue';
 import { v4 as uuidv4 } from 'uuid';
 import { useToast } from 'primevue/usetoast';
