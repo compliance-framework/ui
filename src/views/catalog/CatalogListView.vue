@@ -37,19 +37,18 @@
             <td class="px-6 py-4 text-right text-sm font-medium">
               <div class="flex gap-2 justify-end">
                 <RouterLink
-                  class="bg-white hover:bg-zinc-100 border border-ccf-300 px-4 py-1 rounded-md dark:bg-slate-800 dark:hover:bg-slate-700 dark:border-slate-700"
+                  class="inline-flex cursor-pointer select-none items-center justify-center overflow-hidden relative px-3 py-2 gap-2 rounded-md disabled:pointer-events-none disabled:opacity-60 transition-colors duration-200 bg-surface-100 hover:bg-surface-200 active:bg-surface-300 border border-surface-100 hover:border-surface-200 active:border-surface-300 text-surface-700 no-underline"
                   :to="{ name: 'catalog-view', params: { id: catalog.uuid } }"
                   >View
                 </RouterLink>
-                <button
-                  class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1 rounded-md"
+                <PrimaryButton
                   @click="
                     downloadCatalogJSON(catalog.uuid, catalog.metadata.title)
                   "
                   title="Download Full Catalog JSON"
                 >
                   JSON
-                </button>
+                </PrimaryButton>
               </div>
             </td>
           </tr>
@@ -69,6 +68,7 @@
 <script setup lang="ts">
 import { type Catalog } from '@/oscal';
 import PageHeader from '@/components/PageHeader.vue';
+import PrimaryButton from '@/volt/PrimaryButton.vue';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi } from '@/composables/axios';
 
