@@ -41,13 +41,9 @@
       </div>
 
       <div class="flex justify-end gap-2 pt-4">
-        <button
-          type="submit"
-          :disabled="updating"
-          class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
-        >
+        <PrimaryButton type="submit" :disabled="updating">
           {{ updating ? 'Updating...' : 'Update Import AP' }}
-        </button>
+        </PrimaryButton>
       </div>
     </form>
   </div>
@@ -58,6 +54,7 @@ import { ref, onMounted, type PropType } from 'vue';
 import type { AssessmentResult } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
+import PrimaryButton from '@/volt/PrimaryButton.vue';
 import type { AxiosError } from 'axios';
 import type { ErrorResponse, ErrorBody } from '@/stores/types';
 

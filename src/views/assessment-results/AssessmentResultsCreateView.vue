@@ -126,19 +126,10 @@
 
           <!-- Buttons -->
           <div class="flex justify-end gap-4 pt-6 border-t">
-            <RouterLink
-              to="/assessment-results"
-              class="px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-md text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800"
-            >
-              Cancel
-            </RouterLink>
-            <button
-              type="submit"
-              :disabled="loading"
-              class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
+            <TertiaryButton to="/assessment-results"> Cancel </TertiaryButton>
+            <PrimaryButton type="submit" :disabled="loading">
               {{ loading ? 'Creating...' : 'Create Assessment Results' }}
-            </button>
+            </PrimaryButton>
           </div>
         </div>
       </form>
@@ -153,6 +144,8 @@ import PageHeader from '@/components/PageHeader.vue';
 import type { AssessmentResult } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { v4 as uuidv4 } from 'uuid';
+import TertiaryButton from '@/volt/TertiaryButton.vue';
+import PrimaryButton from '@/volt/PrimaryButton.vue';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 
 const router = useRouter();

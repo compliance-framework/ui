@@ -65,7 +65,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
 import type { ErrorBody, ErrorResponse, CCFUser } from '@/stores/types';
 import PageCard from '@/components/PageCard.vue';
-import PrimaryButton from '@/components/PrimaryButton.vue';
+import PrimaryButton from '@/volt/PrimaryButton.vue';
 import Dialog from '@/volt/Dialog.vue';
 import UserEditForm from '@/components/users/UserEditForm.vue';
 import { useConfirm } from 'primevue/useconfirm';

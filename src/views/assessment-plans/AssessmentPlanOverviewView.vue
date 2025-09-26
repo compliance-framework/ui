@@ -87,24 +87,22 @@
 
         <!-- Actions -->
         <div class="mt-6 flex gap-3 flex-wrap">
-          <RouterLink
+          <TertiaryButton
             :to="{
               name: 'assessment-plan-edit',
               params: { id: assessmentPlan.uuid },
             }"
-            class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md"
           >
             Edit Assessment Plan
-          </RouterLink>
-          <RouterLink
+          </TertiaryButton>
+          <TertiaryButton
             :to="{
               name: 'assessment-plan-tasks',
               params: { id: assessmentPlan.uuid },
             }"
-            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
           >
             Manage Tasks
-          </RouterLink>
+          </TertiaryButton>
         </div>
 
         <!-- Feature Notice -->
@@ -161,6 +159,7 @@ import { computed, onActivated } from 'vue';
 import type { Task, AssessmentPlan, AssessmentSubject } from '@/oscal';
 import { useRoute } from 'vue-router';
 import { useDataApi } from '@/composables/axios';
+import TertiaryButton from '@/volt/TertiaryButton.vue';
 
 const route = useRoute();
 const { data: assessmentPlan, execute: refreshAssessmentPlan } =

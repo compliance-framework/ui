@@ -4,12 +4,7 @@
       <h2 class="text-xl font-semibold text-gray-900 dark:text-slate-200">
         JSON View
       </h2>
-      <button
-        @click="downloadJson"
-        class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700"
-      >
-        Download JSON
-      </button>
+      <PrimaryButton @click="downloadJson"> Download JSON </PrimaryButton>
     </div>
 
     <div v-if="loading" class="text-center py-8">
@@ -36,6 +31,7 @@ import { type PropType } from 'vue';
 import { type AssessmentResult } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi } from '@/composables/axios';
+import PrimaryButton from '@/volt/PrimaryButton.vue';
 import decamelizeKeys from 'decamelize-keys';
 
 const props = defineProps({

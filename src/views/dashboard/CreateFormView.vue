@@ -53,7 +53,7 @@ import PageCard from '@/components/PageCard.vue';
 import { FilterParser } from '@/parsers/labelfilter.ts';
 import type { Dashboard } from '@/stores/filters.ts';
 import FormInput from '@/components/forms/FormInput.vue';
-import PrimaryButton from '@/components/PrimaryButton.vue';
+import PrimaryButton from '@/volt/PrimaryButton.vue';
 import MultiSelect from '@/volt/MultiSelect.vue';
 import type { Catalog, Control } from '@/oscal';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';

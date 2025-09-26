@@ -124,7 +124,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import CollapsableGroup from '@/components/CollapsableGroup.vue';
-import TertiaryButton from '@/components/TertiaryButton.vue';
+import TertiaryButton from '@/volt/TertiaryButton.vue';
 import { useComponentDefinitionStore } from '@/stores/component-definitions.ts';
 import { useToast } from 'primevue/usetoast';
 import { useConfigStore } from '@/stores/config.ts';

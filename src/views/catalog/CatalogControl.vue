@@ -127,7 +127,7 @@ import { ref } from 'vue';
 import CollapsableGroup from '@/components/CollapsableGroup.vue';
 import ResultStatusBadge from '@/components/ResultStatusBadge.vue';
 import { type Catalog, type Control } from '@/oscal';
-import TertiaryButton from '@/components/TertiaryButton.vue';
+import TertiaryButton from '@/volt/TertiaryButton.vue';
 import ControlCreateModal from '@/components/catalogs/ControlCreateModal.vue';
 import type { Part } from '@/oscal';
 import PartDisplayEditor from '@/components/PartDisplayEditor.vue';

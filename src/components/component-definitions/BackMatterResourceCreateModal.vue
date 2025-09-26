@@ -22,7 +22,7 @@
 
 <script setup lang="ts">
 import Dialog from '@/volt/Dialog.vue';
-import PrimaryButton from '@/components/PrimaryButton.vue';
+import PrimaryButton from '@/volt/PrimaryButton.vue';
 import BackMatterResourceCreateForm from './BackMatterResourceCreateForm.vue';
 import type { BackMatterResource } from '@/oscal';
 import { computed } from 'vue';

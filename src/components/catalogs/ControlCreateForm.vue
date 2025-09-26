@@ -2,7 +2,7 @@
 import type { Catalog, Control, Group } from '@/oscal';
 import FormInput from '@/components/forms/FormInput.vue';
 import { ref } from 'vue';
-import PrimaryButton from '@/components/PrimaryButton.vue';
+import PrimaryButton from '@/volt/PrimaryButton.vue';
 import { useDataApi } from '@/composables/axios';
 
 const props = defineProps<{

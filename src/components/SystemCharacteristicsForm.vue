@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import PrimaryButton from '@/components/PrimaryButton.vue';
+import PrimaryButton from '@/volt/PrimaryButton.vue';
 import FormInput from '@/components/forms/FormInput.vue';
 import { type SystemCharacteristics } from '@/oscal';
 import { useSystemSecurityPlanStore } from '@/stores/system-security-plans.ts';

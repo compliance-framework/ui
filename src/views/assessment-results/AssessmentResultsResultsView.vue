@@ -4,12 +4,9 @@
       <h2 class="text-xl font-semibold text-gray-900 dark:text-slate-200">
         Results
       </h2>
-      <button
-        @click="showCreateModal = true"
-        class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
-      >
+      <PrimaryButton @click="showCreateModal = true">
         Add Result
-      </button>
+      </PrimaryButton>
     </div>
 
     <!-- Results List -->
@@ -55,28 +52,21 @@
             </div>
           </div>
           <div class="flex gap-2 ml-4">
-            <RouterLink
+            <TertiaryButton
               :to="`/assessment-results/${assessmentResults.uuid}/results/${result.uuid}`"
-              class="bg-white hover:bg-zinc-100 border border-ccf-300 px-3 py-1 rounded-md text-sm dark:bg-slate-800 dark:hover:bg-slate-700 dark:border-slate-700"
             >
               View
-            </RouterLink>
-            <button
-              @click="editResult(result)"
-              class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-sm"
-            >
-              Edit
-            </button>
-            <button
+            </TertiaryButton>
+            <PrimaryButton @click="editResult(result)"> Edit </PrimaryButton>
+            <PrimaryButton
               @click="
                 confirmDeleteDialog(() => deleteResult(result.uuid), {
                   itemType: 'result',
                 })
               "
-              class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md text-sm"
             >
               Delete
-            </button>
+            </PrimaryButton>
           </div>
         </div>
       </div>
@@ -155,20 +145,12 @@
         </div>
 
         <div class="flex justify-end gap-2 pt-4">
-          <button
-            type="button"
-            @click="showCreateModal = false"
-            class="px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-md text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800"
-          >
+          <TertiaryButton type="button" @click="showCreateModal = false">
             Cancel
-          </button>
-          <button
-            type="submit"
-            :disabled="creating"
-            class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
-          >
+          </TertiaryButton>
+          <PrimaryButton type="submit" :disabled="creating">
             {{ creating ? 'Creating...' : 'Create' }}
-          </button>
+          </PrimaryButton>
         </div>
       </form>
     </Dialog>
@@ -179,6 +161,8 @@
 import { ref, onMounted, type PropType } from 'vue';
 import { useRouter } from 'vue-router';
 import Dialog from '@/volt/Dialog.vue';
+import PrimaryButton from '@/volt/PrimaryButton.vue';
+import TertiaryButton from '@/volt/TertiaryButton.vue';
 import type { AssessmentResult, Result } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { v4 as uuidv4 } from 'uuid';

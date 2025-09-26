@@ -22,7 +22,7 @@
 </template>
 
 <script setup lang="ts">
-import PrimaryButton from '@/components/PrimaryButton.vue';
+import PrimaryButton from '@/volt/PrimaryButton.vue';
 import Dialog from '@/volt/Dialog.vue';
 import ActivityEditForm from '@/components/assessment-plans/ActivityEditForm.vue';
 import type { Activity } from '@/oscal';

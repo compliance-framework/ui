@@ -90,8 +90,8 @@ import ResultComplianceOverTimeChart from '@/components/ResultComplianceOverTime
 import type { HeartbeatInterval } from '@/stores/heartbeats.ts';
 import { calculateHeartbeatOverTimeData } from '@/parsers/heartbeats.ts';
 import { useConfigStore } from '@/stores/config.ts';
-import PrimaryButton from '@/components/PrimaryButton.vue';
-import SecondaryButton from '@/components/SecondaryButton.vue';
+import PrimaryButton from '@/volt/PrimaryButton.vue';
+import SecondaryButton from '@/volt/SecondaryButton.vue';
 import InfoCircleIcon from '@primevue/icons/infocircle';
 import type { ComplianceInterval, Evidence } from '@/stores/evidence.ts';
 import EvidenceList from '@/components/EvidenceList.vue';

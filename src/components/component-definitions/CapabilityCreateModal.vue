@@ -20,7 +20,7 @@
 </template>
 
 <script setup lang="ts">
-import PrimaryButton from '@/components/PrimaryButton.vue';
+import PrimaryButton from '@/volt/PrimaryButton.vue';
 import Dialog from '@/volt/Dialog.vue';
 import CapabilityCreateForm from '@/components/component-definitions/CapabilityCreateForm.vue';
 import type { Capability } from '@/oscal';

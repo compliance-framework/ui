@@ -41,7 +41,7 @@
 import { ref } from 'vue';
 import { type PropType } from 'vue';
 import Chip from '@/volt/Chip.vue';
-import PrimaryButton from '@/components/PrimaryButton.vue';
+import PrimaryButton from '@/volt/PrimaryButton.vue';
 import AutoComplete from '@/volt/AutoComplete.vue';
 import type {
   ControlOption,

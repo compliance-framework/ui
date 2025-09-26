@@ -2,30 +2,45 @@
   <PageHeader>Component Definitions</PageHeader>
 
   <div
-    class="my-4 rounded-md bg-white dark:bg-slate-900 border-collapse border border-ccf-300 dark:border-slate-700"
+    class="my-4 overflow-hidden rounded-lg border border-ccf-300 bg-white shadow dark:border-slate-700 dark:bg-slate-900"
   >
-    <table class="table-auto w-full rounded-full dark:text-slate-300">
+    <table class="table-auto w-full dark:text-slate-300">
+      <thead class="bg-gray-50 dark:bg-slate-800">
+        <tr class="border-b border-ccf-300 dark:border-slate-700">
+          <th
+            class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-slate-400"
+          >
+            Title
+          </th>
+          <th
+            class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-slate-400"
+          >
+            Actions
+          </th>
+        </tr>
+      </thead>
       <tbody>
         <tr
           class="hover:bg-zinc-50 dark:hover:bg-slate-800 border-b border-ccf-300 dark:border-slate-800"
           v-for="componentDefinition in componentDefinitions"
           :key="componentDefinition.uuid"
         >
-          <td class="py-3 px-4 whitespace-nowrap grow">
+          <td
+            class="px-6 py-4 text-sm font-medium text-gray-900 dark:text-slate-300"
+          >
             {{ componentDefinition.metadata.title }}
           </td>
-          <td class="py-2 px-2 text-right whitespace-nowrap">
-            <div class="flex gap-2">
+          <td class="px-6 py-4 text-right text-sm font-medium">
+            <div class="flex gap-2 justify-end">
               <RouterLink
-                class="bg-white hover:bg-zinc-100 border border-ccf-300 px-4 py-1 rounded-md dark:bg-slate-800 dark:hover:bg-slate-700 dark:border-slate-700"
                 :to="{
                   name: 'component-definition-overview',
                   params: { id: componentDefinition.uuid },
                 }"
+                class="inline-flex cursor-pointer select-none items-center justify-center overflow-hidden relative px-3 py-2 gap-2 rounded-md disabled:pointer-events-none disabled:opacity-60 transition-colors duration-200 bg-surface-100 hover:bg-surface-200 active:bg-surface-300 border border-surface-100 hover:border-surface-200 active:border-surface-300 text-surface-700 no-underline"
                 >View
               </RouterLink>
-              <button
-                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1 rounded-md"
+              <PrimaryButton
                 @click="
                   downloadJSON(
                     componentDefinition.uuid,
@@ -35,7 +50,7 @@
                 title="Download Full JSON"
               >
                 JSON
-              </button>
+              </PrimaryButton>
             </div>
           </td>
         </tr>
@@ -44,11 +59,9 @@
   </div>
 
   <div class="mt-4">
-    <RouterLink
-      class="bg-transparent font-light hover:bg-zinc-100 dark:text-slate-300 dark:hover:bg-slate-800 border border-ccf-300 dark:border-slate-700 px-4 py-1 rounded-md"
-      :to="{ name: 'component-definition-create' }"
-      >Create Component Definition
-    </RouterLink>
+    <TertiaryButton :to="{ name: 'component-definition-create' }">
+      Create Component Definition
+    </TertiaryButton>
   </div>
 </template>
 <script setup lang="ts">
@@ -56,6 +69,7 @@ import PageHeader from '@/components/PageHeader.vue';
 import { type ComponentDefinition } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi } from '@/composables/axios';
+import PrimaryButton from '@/volt/PrimaryButton.vue';
 import type { AxiosError } from 'axios';
 import { type ErrorResponse, type ErrorBody } from '@/stores/types';
 import decamelizeKeys from 'decamelize-keys';

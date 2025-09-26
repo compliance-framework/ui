@@ -83,7 +83,7 @@ import type {
 import { useRoute } from 'vue-router';
 import { ref, computed, toValue, watch } from 'vue';
 import CollapsableGroup from '@/components/CollapsableGroup.vue';
-import PrimaryButton from '@/components/PrimaryButton.vue';
+import PrimaryButton from '@/volt/PrimaryButton.vue';
 import ProfileControlGroups from '@/components/profiles/ProfileControlGroups.vue';
 import PageHeader from '@/components/PageHeader.vue';
 import CatalogImportDialog from '@/components/profiles/CatalogImportDialog.vue';
