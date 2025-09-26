@@ -8,12 +8,12 @@
       <thead class="bg-gray-50 dark:bg-slate-800">
         <tr class="border-b border-ccf-300 dark:border-slate-700">
           <th
-            class="py-3 px-4 text-left font-medium text-gray-900 dark:text-slate-300"
+            class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-slate-400"
           >
             Title
           </th>
           <th
-            class="py-3 px-4 text-right font-medium text-gray-900 dark:text-slate-300"
+            class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-slate-400"
           >
             Actions
           </th>
@@ -32,13 +32,14 @@
           </td>
           <td class="px-6 py-4 text-right text-sm font-medium">
             <div class="flex gap-2 justify-end">
-              <TertiaryButton
+              <RouterLink
                 :to="{
                   name: 'component-definition-overview',
                   params: { id: componentDefinition.uuid },
                 }"
+                class="inline-flex cursor-pointer select-none items-center justify-center overflow-hidden relative px-3 py-2 gap-2 rounded-md disabled:pointer-events-none disabled:opacity-60 transition-colors duration-200 bg-surface-100 hover:bg-surface-200 active:bg-surface-300 border border-surface-100 hover:border-surface-200 active:border-surface-300 text-surface-700 no-underline"
                 >View
-              </TertiaryButton>
+              </RouterLink>
               <PrimaryButton
                 @click="
                   downloadJSON(
@@ -68,7 +69,6 @@ import PageHeader from '@/components/PageHeader.vue';
 import { type ComponentDefinition } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi } from '@/composables/axios';
-import TertiaryButton from '@/volt/TertiaryButton.vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
 import type { AxiosError } from 'axios';
 import { type ErrorResponse, type ErrorBody } from '@/stores/types';

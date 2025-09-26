@@ -10,7 +10,11 @@
             <th class="table-header">Email</th>
             <th class="table-header">Firstname</th>
             <th class="table-header">Lastname</th>
-            <th class="table-header text-right">Actions</th>
+            <th
+              class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-slate-400"
+            >
+              Actions
+            </th>
           </tr>
         </thead>
         <tbody class="table-body">
@@ -37,15 +41,24 @@
               :key="user.id"
               class="hover:bg-zinc-50 dark:hover:bg-slate-800 border-b border-ccf-300 dark:border-slate-700 last:border-b-0"
             >
-              <td class="py-2 px-6">{{ user.email }}</td>
-              <td class="py-1 px-6">{{ user.firstName }}</td>
-              <td class="py-1 px-6">{{ user.lastName }}</td>
-              <td class="py-1 px-6 text-right">
-                <TertiaryButton
+              <td
+                class="px-6 py-4 text-sm font-medium text-gray-900 dark:text-slate-300"
+              >
+                {{ user.email }}
+              </td>
+              <td class="px-6 py-4 text-sm text-gray-500 dark:text-slate-400">
+                {{ user.firstName }}
+              </td>
+              <td class="px-6 py-4 text-sm text-gray-500 dark:text-slate-400">
+                {{ user.lastName }}
+              </td>
+              <td class="px-6 py-4 text-right text-sm font-medium">
+                <RouterLink
                   :to="{ name: 'user-view', params: { id: user.id } }"
+                  class="inline-flex cursor-pointer select-none items-center justify-center overflow-hidden relative px-3 py-2 gap-2 rounded-md disabled:pointer-events-none disabled:opacity-60 transition-colors duration-200 bg-surface-100 hover:bg-surface-200 active:bg-surface-300 border border-surface-100 hover:border-surface-200 active:border-surface-300 text-surface-700 no-underline"
                 >
                   View
-                </TertiaryButton>
+                </RouterLink>
               </td>
             </tr>
           </template>
@@ -66,7 +79,6 @@ import { ref, onMounted } from 'vue';
 import PageHeader from '@/components/PageHeader.vue';
 import type { CCFUser } from '@/stores/types';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
-import TertiaryButton from '@/volt/TertiaryButton.vue';
 import UserCreateForm from '@/components/users/UserCreateForm.vue';
 import Dialog from '@/volt/Dialog.vue';
 import { useToast } from 'primevue/usetoast';
