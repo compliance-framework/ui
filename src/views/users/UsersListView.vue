@@ -10,7 +10,7 @@
             <th class="table-header">Email</th>
             <th class="table-header">Firstname</th>
             <th class="table-header">Lastname</th>
-            <th class="table-header">Actions</th>
+            <th class="table-header text-right">Actions</th>
           </tr>
         </thead>
         <tbody class="table-body">
@@ -40,13 +40,12 @@
               <td class="py-2 px-6">{{ user.email }}</td>
               <td class="py-1 px-6">{{ user.firstName }}</td>
               <td class="py-1 px-6">{{ user.lastName }}</td>
-              <td class="py-1 px-6">
-                <RouterLink
+              <td class="py-1 px-6 text-right">
+                <TertiaryButton
                   :to="{ name: 'user-view', params: { id: user.id } }"
-                  class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
                 >
                   View
-                </RouterLink>
+                </TertiaryButton>
               </td>
             </tr>
           </template>
@@ -67,6 +66,7 @@ import { ref, onMounted } from 'vue';
 import PageHeader from '@/components/PageHeader.vue';
 import type { CCFUser } from '@/stores/types';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
+import TertiaryButton from '@/volt/TertiaryButton.vue';
 import UserCreateForm from '@/components/users/UserCreateForm.vue';
 import Dialog from '@/volt/Dialog.vue';
 import { useToast } from 'primevue/usetoast';
