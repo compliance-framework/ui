@@ -2,12 +2,11 @@
   <div class="p-4">
     <div class="flex justify-between items-center mb-6">
       <h3 class="text-lg font-semibold dark:text-slate-300">System Users</h3>
-      <button
+      <PrimaryButton
         @click="showCreateUserModal = true"
-        class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
       >
         Create User
-      </button>
+      </PrimaryButton>
     </div>
 
     <div class="space-y-4">
@@ -41,29 +40,26 @@
             >
           </div>
           <div class="flex gap-2">
-            <button
+            <TertiaryButton
               @click.stop="editUser(user)"
-              class="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 transition-colors"
             >
               Edit
-            </button>
-            <button
+            </TertiaryButton>
+            <TertiaryButton
               @click.stop="downloadUserJSON(user)"
-              class="px-3 py-1 bg-gray-500 text-white text-sm rounded hover:bg-gray-600 transition-colors"
             >
               JSON
-            </button>
-            <button
+            </TertiaryButton>
+            <TertiaryButton
               @click.stop="
                 confirmDeleteDialog(() => deleteUser(user), {
                   itemName: user.title,
                   itemType: 'user',
                 })
               "
-              class="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition-colors"
             >
               Delete
-            </button>
+            </TertiaryButton>
           </div>
         </div>
         <div
@@ -153,6 +149,8 @@ import { computed, onMounted, ref } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import decamelizeKeys from 'decamelize-keys';
 import Dialog from '@/volt/Dialog.vue';
+import PrimaryButton from '@/volt/PrimaryButton.vue';
+import TertiaryButton from '@/volt/TertiaryButton.vue';
 
 // Form components
 import Panel from '@/volt/Panel.vue';

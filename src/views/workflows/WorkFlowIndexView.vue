@@ -4,12 +4,11 @@
       <PageHeader>Workflows</PageHeader>
       <PageSubHeader>Configure continuous compliance activity</PageSubHeader>
     </div>
-    <button
+    <PrimaryButton
       @click="toggleCreating"
-      class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
     >
       Add Task
-    </button>
+    </PrimaryButton>
   </div>
 
   <Message
@@ -76,6 +75,7 @@ import PageSubHeader from '@/components/PageSubHeader.vue';
 import { useToggle } from '@/composables/useToggle';
 import TaskCreateForm from './partials/TaskCreateForm.vue';
 import Dialog from '@/volt/Dialog.vue';
+import PrimaryButton from '@/volt/PrimaryButton.vue';
 
 const systemStore = useSystemStore();
 

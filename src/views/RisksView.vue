@@ -30,12 +30,11 @@
     </div>
     <div class="p-6">
       <div class="flex justify-between items-center mb-6">
-        <button
+        <PrimaryButton
           @click="showCreateModal = true"
-          class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md"
         >
           Add Risk
-        </button>
+        </PrimaryButton>
       </div>
       <div
         v-for="risk in risks"
@@ -111,33 +110,27 @@
           </div>
 
           <div class="ml-4 flex gap-2">
-            <RouterLink
+            <TertiaryButton
               v-if="risk.uuid"
               :to="{ name: 'risks:detail', params: { riskId: risk.uuid } }"
             >
-              <button
-                class="bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 px-3 py-1 rounded-md text-sm"
-              >
-                Open
-              </button>
-            </RouterLink>
-            <button
+              Open
+            </TertiaryButton>
+            <TertiaryButton
               @click="editRisk(risk)"
-              class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-sm"
             >
               Edit
-            </button>
-            <button
+            </TertiaryButton>
+            <TertiaryButton
               v-if="risk.uuid"
               @click="
                 confirmDeleteDialog(() => deleteRisk(risk.uuid!), {
                   itemType: 'risk',
                 })
               "
-              class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md text-sm"
             >
               Delete
-            </button>
+            </TertiaryButton>
           </div>
         </div>
       </div>
@@ -170,6 +163,8 @@ import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { type Risk } from '@/oscal';
 import Dialog from '@/volt/Dialog.vue';
 import Message from '@/volt/Message.vue';
+import PrimaryButton from '@/volt/PrimaryButton.vue';
+import TertiaryButton from '@/volt/TertiaryButton.vue';
 import RiskCreateForm from '@/components/poam/RiskCreateForm.vue';
 import RiskEditForm from '@/components/poam/RiskEditForm.vue';
 import { useToast } from 'primevue/usetoast';
