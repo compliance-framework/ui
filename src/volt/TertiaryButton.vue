@@ -17,13 +17,12 @@ import Button, {
   type ButtonPassThroughOptions,
   type ButtonProps,
 } from 'primevue/button';
-import { ref } from 'vue';
 import { ptViewMerge } from './utils';
 
 interface Props extends /* @vue-ignore */ ButtonProps {}
 defineProps<Props>();
 
-const theme = ref<ButtonPassThroughOptions>({
+const theme: ButtonPassThroughOptions = {
   root: `inline-flex cursor-pointer select-none items-center justify-center overflow-hidden relative
         px-3 py-2 gap-2 rounded-md disabled:pointer-events-none disabled:opacity-60 transition-colors duration-200
         bg-transparent enabled:hover:bg-zinc-100 enabled:active:bg-zinc-200
