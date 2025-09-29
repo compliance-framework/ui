@@ -7,7 +7,7 @@ import type {
   Statement,
   SystemComponent,
 } from '@/oscal';
-import { computed, ref, toValue, watch } from 'vue';
+import { computed, onMounted, ref, toValue, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useSystemStore } from '@/stores/system.ts';
 import Select from '@/volt/Select.vue';
@@ -17,13 +17,21 @@ import BurgerMenu from '@/components/BurgerMenu.vue';
 import { useToggle } from '@/composables/useToggle';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import { useToast } from 'primevue/usetoast';
+import Dialog from '@/volt/Dialog.vue';
+import Button from '@/volt/Button.vue';
+import StatementCreateForm from '@/components/system-security-plans/StatementCreateForm.vue';
+import StatementEditForm from '@/components/system-security-plans/StatementEditForm.vue';
 
 const { system } = useSystemStore();
 const toast = useToast();
 
 const showError = ref(false);
 
-const { value: showCreateForm, set: setCreateForm } = useToggle(false);
+const showCreateStatementModal = ref(false);
+const showEditStatementModal = ref(false);
+
+const { value: showCreateComponentForm, set: setCreateComponentForm } =
+  useToggle(false);
 
 const route = useRoute();
 
@@ -35,8 +43,10 @@ const {
   statement: Statement;
   implementation: ImplementedRequirement;
   sspId?: string;
+  partid?: string;
 }>();
-const localStatement = ref<Statement>(statement);
+
+const localStatement = ref<Statement | undefined>(statement);
 
 const resolvedSspId = computed(() => {
   if (providedSspId) return providedSspId;
@@ -102,8 +112,14 @@ watch(selectedComponent, () => {
   newByComponent.value.componentUuid = selectedComponent.value.value;
 });
 
-function resetCreateForm() {
-  setCreateForm(false);
+onMounted(() => {
+  if (!system.securityPlan?.uuid) {
+    return;
+  }
+});
+
+function resetCreateComponentForm() {
+  setCreateComponentForm(false);
   showError.value = false;
   selectedComponent.value = null;
 
@@ -127,6 +143,12 @@ async function deleteByComponent(byComp: ByComponent) {
     return;
   }
   const updatedStatement = useCloned(localStatement).cloned;
+
+  if (!updatedStatement.value || !statement) {
+    console.error('No statement defined');
+    return;
+  }
+
   updatedStatement.value.byComponents =
     updatedStatement.value.byComponents?.filter(
       (comp: ByComponent) => byComp.uuid !== comp.uuid,
@@ -136,7 +158,7 @@ async function deleteByComponent(byComp: ByComponent) {
       `/api/oscal/system-security-plans/${sspId}/control-implementation/implemented-requirements/${implementation.uuid}/statements/${statement.uuid}/by-components/${byComp.uuid}`,
     );
     localStatement.value = updatedStatement.value;
-    setCreateForm(false);
+    setCreateComponentForm(false);
     emit('updated', localStatement.value);
     newByComponent.value = {
       uuid: uuidv4(),
@@ -157,6 +179,9 @@ async function updateByComponent(byComp: ByComponent) {
     });
     return;
   }
+  if (!localStatement.value || !statement) {
+    return;
+  }
   try {
     await executeUpdate(
       `/api/oscal/system-security-plans/${sspId}/control-implementation/implemented-requirements/${implementation.uuid}/statements/${statement.uuid}/by-components/${byComp.uuid}`,
@@ -164,7 +189,7 @@ async function updateByComponent(byComp: ByComponent) {
         data: byComp,
       },
     );
-    setCreateForm(false);
+    setCreateComponentForm(false);
     emit('updated', localStatement.value);
     newByComponent.value = {
       uuid: uuidv4(),
@@ -174,9 +199,13 @@ async function updateByComponent(byComp: ByComponent) {
   }
 }
 
-async function create() {
+async function createByComponent() {
   const sspId = resolvedSspId.value;
-  if (!newByComponent.value.componentUuid) {
+  if (
+    !newByComponent.value.componentUuid ||
+    !localStatement.value ||
+    !statement
+  ) {
     showError.value = true;
     return;
   }
@@ -207,7 +236,7 @@ async function create() {
     newByComponent.value = {
       uuid: uuidv4(),
     } as ByComponent;
-    setCreateForm(false);
+    setCreateComponentForm(false);
     emit('updated', localStatement.value);
   } catch (error) {
     console.error(error);
@@ -222,77 +251,161 @@ async function create() {
     });
   }
 }
+
+function updateStatement(updatedStatement: Statement) {
+  localStatement.value = updatedStatement;
+  showCreateStatementModal.value = false;
+  showEditStatementModal.value = false;
+  emit('updated', localStatement.value);
+}
 </script>
 
 <template>
   <div class="pb-24">
-    <div class="flex items-center mb-4 gap-x-4">
-      <h4 class="font-medium text-xl">Components</h4>
-      <BurgerMenu
-        :items="[
-          {
-            label: 'Add Component',
-            command: () => {
-              setCreateForm(true);
-            },
-          },
-        ]"
-      />
-    </div>
-    <div
-      v-for="(byComponent, index) in localStatement.byComponents || []"
-      :key="byComponent.uuid"
-    >
-      <div
-        class="h-0.5 w-full bg-gray-200 dark:bg-slate-700 my-4"
-        v-if="index !== 0"
-      ></div>
-      <StatementByComponent
-        @save="updateByComponent"
-        @delete="deleteByComponent"
-        :by-component="byComponent"
-      />
-    </div>
-
-    <form @submit.prevent="create" v-if="showCreateForm">
-      <div class="h-0.5 dark:bg-slate-800 bg-gray-400 w-full my-4"></div>
-      <h4 class="mb-4">New Component Implementation</h4>
-      <div class="mb-2">
-        <Select
-          placeholder="Select a component"
-          :loading="componentsLoading"
-          checkmark
-          class="w-full"
-          v-model="selectedComponent"
-          :options="componentItems"
-          optionLabel="name"
-          v-on:update:model-value="showError = false"
-        />
-        <small v-if="showError" class="p-error" style="color: red">
-          Please select a valid component.
-        </small>
+    <div v-if="statement">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+        <div>
+          <h5 class="text-sm font-medium text-gray-500">Statement ID</h5>
+          <p class="text-sm">{{ localStatement?.statementId }}</p>
+        </div>
+        <div>
+          <h5 class="text-sm font-medium text-gray-500">Remarks</h5>
+          <p class="text-sm">{{ localStatement?.remarks || 'None' }}</p>
+        </div>
+        <div>
+          <h5 class="text-sm font-medium text-gray-500">Description</h5>
+          <p class="text-sm">{{ localStatement?.description || 'None' }}</p>
+        </div>
+        <div>
+          <h5 class="text-sm font-medium text-gray-500">Props</h5>
+          <p class="text-sm">{{ localStatement?.props || 'None' }}</p>
+        </div>
+        <div>
+          <h5 class="text-sm font-medium text-gray-500">Links</h5>
+          <p class="text-sm">{{ localStatement?.links || 'None' }}</p>
+        </div>
       </div>
 
-      <div class="mb-2">
-        <Textarea
-          v-model="newByComponent.description"
-          rows="5"
-          cols="30"
-          class="resize-none w-full"
-          placeholder="Description"
-          @keyup.ctrl.enter="create"
-        />
-      </div>
-      <div class="text-right">
-        <secondary-button @click="resetCreateForm">Cancel</secondary-button>
-        <primary-button
-          type="submit"
-          v-tooltip.bottom="'ctrl + enter to create'"
-          >Create</primary-button
+      <div class="flex items-center mb-4 gap-x-4">
+        <Button
+          label="Edit Statement"
+          @click="showEditStatementModal = true"
+          class="text-blue-600 hover:text-blue-800 dark:text-blue-400 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
         >
+          Edit
+        </Button>
       </div>
-    </form>
+
+      <div class="flex items-center mb-4 gap-x-4">
+        <h5 class="font-medium text-xl">Components</h5>
+        <BurgerMenu
+          :items="[
+            {
+              label: 'Add Component',
+              command: () => {
+                setCreateComponentForm(true);
+              },
+            },
+          ]"
+        />
+      </div>
+      <template v-if="localStatement">
+        <div
+          v-for="(byComponent, index) in localStatement.byComponents || []"
+          :key="byComponent.uuid"
+        >
+          <div
+            class="h-0.5 w-full bg-gray-200 dark:bg-slate-700 my-4"
+            v-if="index !== 0"
+          ></div>
+          <StatementByComponent
+            @save="updateByComponent"
+            @delete="deleteByComponent"
+            :by-component="byComponent"
+          />
+        </div>
+      </template>
+
+      <form @submit.prevent="createByComponent" v-if="showCreateComponentForm">
+        <div class="h-0.5 dark:bg-slate-800 bg-gray-400 w-full my-4"></div>
+        <h4 class="mb-4">New Component Implementation</h4>
+        <div class="mb-2">
+          <Select
+            placeholder="Select a component"
+            :loading="componentsLoading"
+            checkmark
+            class="w-full"
+            v-model="selectedComponent"
+            :options="componentItems"
+            optionLabel="name"
+            v-on:update:model-value="showError = false"
+          />
+          <small v-if="showError" class="p-error" style="color: red">
+            Please select a valid component.
+          </small>
+        </div>
+
+        <div class="mb-2">
+          <Textarea
+            v-model="newByComponent.description"
+            rows="5"
+            cols="30"
+            class="resize-none w-full"
+            placeholder="Description"
+            @keyup.ctrl.enter="createByComponent"
+          />
+        </div>
+        <div class="text-right">
+          <secondary-button @click="resetCreateComponentForm"
+            >Cancel</secondary-button
+          >
+          <primary-button
+            type="submit"
+            v-tooltip.bottom="'ctrl + enter to create'"
+            >Create</primary-button
+          >
+        </div>
+      </form>
+    </div>
+    <div v-else>
+      <Button
+        label="Create Statement"
+        @click="showCreateStatementModal = true"
+        class="text-green-600 hover:text-green-800 dark:text-green-400 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+      </Button>
+    </div>
   </div>
+
+  <Dialog
+    v-model:visible="showCreateStatementModal"
+    size="lg"
+    modal
+    header="Create New Statement"
+  >
+    <StatementCreateForm
+      :ssp-id="system.securityPlan?.uuid || ''"
+      :req-id="implementation.uuid || ''"
+      :smt-id="partid || ''"
+      @cancel="showCreateStatementModal = false"
+      @created="updateStatement"
+    />
+  </Dialog>
+  <Dialog
+    v-model:visible="showEditStatementModal"
+    size="lg"
+    modal
+    header="Edit Statement"
+  >
+    <StatementEditForm
+      v-if="localStatement"
+      :ssp-id="system.securityPlan?.uuid || ''"
+      :req-id="implementation.uuid || ''"
+      :statement="localStatement"
+      @cancel="showEditStatementModal = false"
+      @saved="updateStatement"
+    />
+  </Dialog>
 </template>
 
 <style scoped></style>
