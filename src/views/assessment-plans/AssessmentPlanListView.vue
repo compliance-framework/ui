@@ -64,18 +64,16 @@
     </div>
 
     <div class="mt-4">
-      <RouterLink
-        :to="{ name: 'assessment-plan-create' }"
-        class="inline-flex cursor-pointer select-none items-center justify-center overflow-hidden relative px-3 py-2 gap-2 rounded-md disabled:pointer-events-none disabled:opacity-60 transition-colors duration-200 bg-surface-100 hover:bg-surface-200 active:bg-surface-300 border border-surface-100 hover:border-surface-200 active:border-surface-300 text-surface-700 no-underline"
-        >Create Assessment Plan
-      </RouterLink>
+      <TertiaryButton :to="{ name: 'assessment-plan-create' }">
+        Create Assessment Plan
+      </TertiaryButton>
     </div>
   </template>
-</template>
+
 <script setup lang="ts">
 import PageHeader from '@/components/PageHeader.vue';
-import PrimaryButton from '@/components/PrimaryButton.vue';
-import TertiaryButton from '@/components/TertiaryButton.vue';
+import PrimaryButton from '@/volt/PrimaryButton.vue';
+import TertiaryButton from '@/volt/TertiaryButton.vue';
 import type { AssessmentPlan } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { useSystemStore } from '@/stores/system.ts';

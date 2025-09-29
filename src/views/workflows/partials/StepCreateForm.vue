@@ -50,8 +50,8 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import type { Step } from '@/oscal';
-import PrimaryButton from '@/components/PrimaryButton.vue';
-import SecondaryButton from '@/components/SecondaryButton.vue';
+import PrimaryButton from '@/volt/PrimaryButton.vue';
+import SecondaryButton from '@/volt/SecondaryButton.vue';
 import Label from '@/volt/Label.vue';
 import InputText from '@/volt/InputText.vue';
 import Textarea from '@/volt/Textarea.vue';

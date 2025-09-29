@@ -47,7 +47,7 @@
 <script setup lang="ts">
 import PageCard from '@/components/PageCard.vue';
 import { ref } from 'vue';
-import PrimaryButton from '@/components/PrimaryButton.vue';
+import PrimaryButton from '@/volt/PrimaryButton.vue';
 import { useUserStore } from '@/stores/auth';
 import { useRoute, useRouter } from 'vue-router';
 // import type { DataResponse } from '@/stores/api.ts';

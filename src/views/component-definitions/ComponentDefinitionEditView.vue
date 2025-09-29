@@ -85,7 +85,7 @@ import PageSubHeader from '@/components/PageSubHeader.vue';
 import { type ComponentDefinition } from '@/oscal';
 import { useRouter, useRoute } from 'vue-router';
 import PageCard from '@/components/PageCard.vue';
-import SecondaryButton from '@/components/SecondaryButton.vue';
+import SecondaryButton from '@/volt/SecondaryButton.vue';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi } from '@/composables/axios';
 import type { AxiosError } from 'axios';

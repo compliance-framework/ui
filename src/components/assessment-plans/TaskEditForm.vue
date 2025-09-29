@@ -67,8 +67,8 @@ import FormInput from '@/components/forms/FormInput.vue';
 import FormTextarea from '@/components/forms/FormTextarea.vue';
 import TaskTimingManager from '@/components/forms/TaskTimingManager.vue';
 import TaskDependencyManager from '@/components/forms/TaskDependencyManager.vue';
-import PrimaryButton from '@/components/PrimaryButton.vue';
-import SecondaryButton from '@/components/SecondaryButton.vue';
+import PrimaryButton from '@/volt/PrimaryButton.vue';
+import SecondaryButton from '@/volt/SecondaryButton.vue';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 
 const toast = useToast();
