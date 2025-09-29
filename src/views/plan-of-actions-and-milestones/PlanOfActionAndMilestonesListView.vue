@@ -91,25 +91,18 @@
                 </td>
                 <td class="px-6 py-4 text-right text-sm font-medium">
                   <div class="flex gap-2 justify-end">
-                    <RouterLink
-                      :to="`/plan-of-action-and-milestones/${poam.uuid}`"
-                      class="bg-white hover:bg-zinc-100 border border-ccf-300 px-4 py-1 rounded-md dark:bg-slate-800 dark:hover:bg-slate-700 dark:border-slate-700"
-                    >
+                    <TertiaryButton :to="`/plan-of-action-and-milestones/${poam.uuid}`">
                       View
-                    </RouterLink>
-                    <button
+                    </TertiaryButton>
+                    <PrimaryButton
                       @click="downloadJson(poam.uuid, poam.metadata?.title)"
-                      class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1 rounded-md"
                       title="Download Full JSON"
                     >
                       JSON
-                    </button>
-                    <button
-                      @click="systemStore.setPoam(poam)"
-                      class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1 rounded-md"
-                    >
+                    </PrimaryButton>
+                    <PrimaryButton @click="systemStore.setPoam(poam)">
                       Set
-                    </button>
+                    </PrimaryButton>
                   </div>
                 </td>
               </tr>
@@ -121,18 +114,17 @@
 
     <!-- Create Button -->
     <div class="mt-4">
-      <RouterLink
-        to="/plan-of-action-and-milestones/create"
-        class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md inline-block"
-      >
+      <TertiaryButton to="/plan-of-action-and-milestones/create">
         Create New POAM
-      </RouterLink>
+      </TertiaryButton>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import PageHeader from '@/components/PageHeader.vue';
+import PrimaryButton from '@/volt/PrimaryButton.vue';
+import TertiaryButton from '@/volt/TertiaryButton.vue';
 import type { POAM } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import Badge from '@/volt/Badge.vue';
