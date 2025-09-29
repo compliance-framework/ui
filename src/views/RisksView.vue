@@ -30,9 +30,7 @@
     </div>
     <div class="p-6">
       <div class="flex justify-between items-center mb-6">
-        <PrimaryButton
-          @click="showCreateModal = true"
-        >
+        <PrimaryButton @click="showCreateModal = true">
           Add Risk
         </PrimaryButton>
       </div>
@@ -116,11 +114,7 @@
             >
               Open
             </TertiaryButton>
-            <TertiaryButton
-              @click="editRisk(risk)"
-            >
-              Edit
-            </TertiaryButton>
+            <TertiaryButton @click="editRisk(risk)"> Edit </TertiaryButton>
             <TertiaryButton
               v-if="risk.uuid"
               @click="

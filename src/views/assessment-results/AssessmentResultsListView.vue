@@ -100,7 +100,9 @@
                     >
                       JSON
                     </PrimaryButton>
-                    <PrimaryButton @click="systemStore.setAssessmentResults(ar)">
+                    <PrimaryButton
+                      @click="systemStore.setAssessmentResults(ar)"
+                    >
                       Set
                     </PrimaryButton>
                   </div>

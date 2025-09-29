@@ -99,9 +99,7 @@
             <Badge value="AR" severity="danger" /> {{ sourceStats.ar }}
           </span>
         </div>
-        <TertiaryButton
-          @click="() => loadInventoryItems()"
-        >
+        <TertiaryButton @click="() => loadInventoryItems()">
           Refresh
         </TertiaryButton>
       </div>
@@ -200,9 +198,7 @@
                 >
                   Add to SSP
                 </PrimaryButton>
-                <TertiaryButton
-                  @click.stop="downloadInventoryItemJSON(item)"
-                >
+                <TertiaryButton @click.stop="downloadInventoryItemJSON(item)">
                   JSON
                 </TertiaryButton>
                 <TertiaryButton

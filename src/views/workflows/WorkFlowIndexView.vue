@@ -4,11 +4,7 @@
       <PageHeader>Workflows</PageHeader>
       <PageSubHeader>Configure continuous compliance activity</PageSubHeader>
     </div>
-    <PrimaryButton
-      @click="toggleCreating"
-    >
-      Add Task
-    </PrimaryButton>
+    <PrimaryButton @click="toggleCreating"> Add Task </PrimaryButton>
   </div>
 
   <Message

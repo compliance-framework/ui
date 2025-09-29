@@ -4,9 +4,7 @@
       <h3 class="text-lg font-semibold dark:text-slate-300">
         Leveraged Authorizations
       </h3>
-      <PrimaryButton
-        @click="showCreateLeveragedAuthModal = true"
-      >
+      <PrimaryButton @click="showCreateLeveragedAuthModal = true">
         Create Authorization
       </PrimaryButton>
     </div>
@@ -42,14 +40,10 @@
           <div class="py-3 px-4 flex justify-between items-center">
             <div class="flex items-center space-x-3"></div>
             <div class="flex gap-2">
-              <TertiaryButton
-                @click.stop="editLeveragedAuth(auth)"
-              >
+              <TertiaryButton @click.stop="editLeveragedAuth(auth)">
                 Edit
               </TertiaryButton>
-              <TertiaryButton
-                @click.stop="downloadLeveragedAuthJSON(auth)"
-              >
+              <TertiaryButton @click.stop="downloadLeveragedAuthJSON(auth)">
                 JSON
               </TertiaryButton>
               <TertiaryButton

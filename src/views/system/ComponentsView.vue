@@ -5,9 +5,7 @@
       <h3 class="text-lg font-semibold dark:text-slate-300">
         System Components
       </h3>
-      <PrimaryButton
-        @click="showCreateComponentModal = true"
-      >
+      <PrimaryButton @click="showCreateComponentModal = true">
         Create Component
       </PrimaryButton>
     </div>
@@ -54,14 +52,10 @@
             }}</span>
           </div>
           <div class="flex gap-2">
-            <TertiaryButton
-              @click.stop="editComponent(component)"
-            >
+            <TertiaryButton @click.stop="editComponent(component)">
               Edit
             </TertiaryButton>
-            <TertiaryButton
-              @click.stop="downloadComponentJSON(component)"
-            >
+            <TertiaryButton @click.stop="downloadComponentJSON(component)">
               JSON
             </TertiaryButton>
             <TertiaryButton

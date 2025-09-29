@@ -91,7 +91,9 @@
                 </td>
                 <td class="px-6 py-4 text-right text-sm font-medium">
                   <div class="flex gap-2 justify-end">
-                    <TertiaryButton :to="`/plan-of-action-and-milestones/${poam.uuid}`">
+                    <TertiaryButton
+                      :to="`/plan-of-action-and-milestones/${poam.uuid}`"
+                    >
                       View
                     </TertiaryButton>
                     <PrimaryButton

@@ -2,9 +2,7 @@
   <div class="p-4">
     <div class="flex justify-between items-center mb-6">
       <h3 class="text-lg font-semibold dark:text-slate-300">System Users</h3>
-      <PrimaryButton
-        @click="showCreateUserModal = true"
-      >
+      <PrimaryButton @click="showCreateUserModal = true">
         Create User
       </PrimaryButton>
     </div>
@@ -40,14 +38,8 @@
             >
           </div>
           <div class="flex gap-2">
-            <TertiaryButton
-              @click.stop="editUser(user)"
-            >
-              Edit
-            </TertiaryButton>
-            <TertiaryButton
-              @click.stop="downloadUserJSON(user)"
-            >
+            <TertiaryButton @click.stop="editUser(user)"> Edit </TertiaryButton>
+            <TertiaryButton @click.stop="downloadUserJSON(user)">
               JSON
             </TertiaryButton>
             <TertiaryButton
