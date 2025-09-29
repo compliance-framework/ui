@@ -10,16 +10,32 @@
   </template>
   <template v-if="assessmentPlans">
     <div
-      class="my-4 rounded-md bg-white dark:bg-slate-900 border-collapse border border-ccf-300 dark:border-slate-700"
+      class="my-4 overflow-hidden rounded-lg border border-ccf-300 bg-white shadow dark:border-slate-700 dark:bg-slate-900"
     >
-      <table class="table-auto w-full rounded-full dark:text-slate-300">
+      <table class="table-auto w-full dark:text-slate-300">
+        <thead class="bg-gray-50 dark:bg-slate-800">
+          <tr class="border-b border-ccf-300 dark:border-slate-700">
+            <th
+              class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-slate-400"
+            >
+              Title
+            </th>
+            <th
+              class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-slate-400"
+            >
+              Actions
+            </th>
+          </tr>
+        </thead>
         <tbody>
           <tr
             class="hover:bg-zinc-50 dark:hover:bg-slate-800 border-b border-ccf-300 dark:border-slate-800"
             v-for="assessmentPlan in assessmentPlans"
             :key="assessmentPlan.uuid"
           >
-            <td class="py-3 px-4 whitespace-nowrap grow">
+            <td
+              class="px-6 py-4 text-sm font-medium text-gray-900 dark:text-slate-300"
+            >
               {{ assessmentPlan.metadata.title }}
               <Badge
                 severity="info"
@@ -31,8 +47,8 @@
               />
             </td>
 
-            <td class="py-2 px-2 text-right whitespace-nowrap">
-              <div class="flex gap-2">
+            <td class="px-6 py-4 text-right text-sm font-medium">
+              <div class="flex gap-2 justify-end">
                 <RouterLinkButton
                   :to="{
                     name: 'assessment-plan-overview',
