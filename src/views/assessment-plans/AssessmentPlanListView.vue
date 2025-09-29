@@ -33,16 +33,14 @@
 
             <td class="py-2 px-2 text-right whitespace-nowrap">
               <div class="flex gap-2">
-                <RouterLink
-                  class="bg-white hover:bg-zinc-100 border border-ccf-300 px-4 py-1 rounded-md dark:bg-slate-800 dark:hover:bg-slate-700 dark:border-slate-700"
+                <TertiaryButton
                   :to="{
                     name: 'assessment-plan-overview',
                     params: { id: assessmentPlan.uuid },
                   }"
                   >View
-                </RouterLink>
-                <button
-                  class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1 rounded-md"
+                </TertiaryButton>
+                <PrimaryButton
                   @click="
                     downloadJSON(
                       assessmentPlan.uuid,
@@ -52,13 +50,12 @@
                   title="Download Full JSON"
                 >
                   JSON
-                </button>
-                <button
+                </PrimaryButton>
+                <PrimaryButton
                   @click="systemStore.setAssessmentPlan(assessmentPlan)"
-                  class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1 rounded-md"
                 >
                   Set
-                </button>
+                </PrimaryButton>
               </div>
             </td>
           </tr>
@@ -68,8 +65,8 @@
 
     <div class="mt-4">
       <RouterLink
-        class="bg-transparent font-light hover:bg-zinc-100 dark:text-slate-300 dark:hover:bg-slate-800 border border-ccf-300 dark:border-slate-700 px-4 py-1 rounded-md"
         :to="{ name: 'assessment-plan-create' }"
+        class="inline-flex cursor-pointer select-none items-center justify-center overflow-hidden relative px-3 py-2 gap-2 rounded-md disabled:pointer-events-none disabled:opacity-60 transition-colors duration-200 bg-surface-100 hover:bg-surface-200 active:bg-surface-300 border border-surface-100 hover:border-surface-200 active:border-surface-300 text-surface-700 no-underline"
         >Create Assessment Plan
       </RouterLink>
     </div>
@@ -77,6 +74,8 @@
 </template>
 <script setup lang="ts">
 import PageHeader from '@/components/PageHeader.vue';
+import PrimaryButton from '@/components/PrimaryButton.vue';
+import TertiaryButton from '@/components/TertiaryButton.vue';
 import type { AssessmentPlan } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { useSystemStore } from '@/stores/system.ts';

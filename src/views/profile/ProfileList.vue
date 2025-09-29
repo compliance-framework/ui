@@ -29,11 +29,11 @@
           </td>
           <td class="py-3 px-4 text-right">
             <RouterLink
-              class="bg-white hover:bg-zinc-100 border border-ccf-300 px-4 py-1 rounded-md dark:bg-slate-800 dark:hover:bg-slate-700 dark:border-slate-700"
               :to="{
                 name: 'profile:view-controls',
                 params: { id: profile.uuid },
               }"
+              class="inline-flex cursor-pointer select-none items-center justify-center overflow-hidden relative px-3 py-2 gap-2 rounded-md disabled:pointer-events-none disabled:opacity-60 transition-colors duration-200 bg-surface-100 hover:bg-surface-200 active:bg-surface-300 border border-surface-100 hover:border-surface-200 active:border-surface-300 text-surface-700 no-underline"
               >View
             </RouterLink>
           </td>
@@ -44,7 +44,7 @@
   <div class="my-4">
     <RouterLink
       :to="{ name: 'profile:create' }"
-      class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md inline-block ml-4"
+      class="inline-flex cursor-pointer select-none items-center justify-center overflow-hidden relative px-3 py-2 gap-2 rounded-md disabled:pointer-events-none disabled:opacity-60 transition-colors duration-200 bg-primary-600 hover:bg-primary-700 active:bg-primary-800 text-white no-underline ml-4"
     >
       Create New Profile
     </RouterLink>
