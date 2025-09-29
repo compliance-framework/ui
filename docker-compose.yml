@@ -10,9 +10,9 @@ services:
       - .:/app
       # Prevent our node_modules from being used inside the container.
       - /app/node_modules
-    entrypoint: ['npm', 'run', 'dev']
+    entrypoint: ["npm", "run", "dev"]
     ports:
-      - '3000:3000'
+      - "3000:3000"
 #  ui-prod:
 #    build:
 #      context: .
