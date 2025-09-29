@@ -47,5 +47,5 @@ const theme: ButtonPassThroughOptions = {
   pcBadge: {
     root: `min-w-4 h-4 leading-4`,
   },
-});
+};
 </script>
