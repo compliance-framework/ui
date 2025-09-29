@@ -5,6 +5,7 @@
     :ptOptions="{
       mergeProps: ptViewMerge,
     }"
+    @click="handleClick"
   >
     <template v-for="(_, slotName) in $slots" #[slotName]="slotProps">
       <slot :name="slotName" v-bind="slotProps ?? {}" />
@@ -18,9 +19,21 @@ import Button, {
   type ButtonProps,
 } from 'primevue/button';
 import { ptViewMerge } from './utils';
+import { useRouter } from 'vue-router';
+import type { RouteLocationRaw } from 'vue-router';
 
-interface Props extends /* @vue-ignore */ ButtonProps {}
-defineProps<Props>();
+interface Props extends /* @vue-ignore */ ButtonProps {
+  to?: RouteLocationRaw;
+}
+
+const props = defineProps<Props>();
+const router = useRouter();
+
+function handleClick(event: MouseEvent) {
+  if (props.to) {
+    router.push(props.to);
+  }
+}
 
 const theme: ButtonPassThroughOptions = {
   root: `inline-flex cursor-pointer select-none items-center justify-center overflow-hidden relative
