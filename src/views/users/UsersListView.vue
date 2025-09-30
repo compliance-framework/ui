@@ -73,6 +73,7 @@ import { useToast } from 'primevue/usetoast';
 import { useDataApi } from '@/composables/axios';
 import RouterLinkButton from '@/components/RouterLinkButton.vue';
 import type { AxiosError } from 'axios';
+import { useErrorToast } from '@/composables/useErrorToast';
 
 const showDialog = ref(false);
 const toast = useToast();
@@ -102,6 +103,12 @@ watch(
     }
   },
 );
+
+// Automatically show toast when error occurs
+useErrorToast(error, {
+  summary: 'Error loading users',
+  life: 3000,
+});
 
 function completed(newUser: CCFUser) {
   showDialog.value = false;
