@@ -27,12 +27,14 @@ interface Props extends /* @vue-ignore */ ButtonProps {
 }
 
 const props = defineProps<Props>();
+const emit = defineEmits(['click']);
 const router = useRouter();
 
 function handleClick(event: MouseEvent) {
   if (props.to) {
     router.push(props.to);
   }
+  emit('click', event);
 }
 
 const theme: ButtonPassThroughOptions = {
