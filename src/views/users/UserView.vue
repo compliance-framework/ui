@@ -71,6 +71,7 @@ import UserEditForm from '@/components/users/UserEditForm.vue';
 import { useConfirm } from 'primevue/useconfirm';
 import { useDataApi } from '@/composables/axios';
 import type { AxiosError } from 'axios';
+import { formatAxiosError } from '@/utils/error-formatting';
 
 const route = useRoute();
 const router = useRouter();
@@ -96,12 +97,11 @@ const { data: updatedUserData, execute: lockExecute } = useDataApi<CCFUser>(
 watch(error, (err) => {
   if (err) {
     const errorResponse = err as AxiosError<ErrorResponse<ErrorBody>>;
+    const formattedError = formatAxiosError(errorResponse);
     toast.add({
       severity: 'error',
-      summary: 'Error loading user',
-      detail:
-        errorResponse.response?.data.errors.body ||
-        'An error occurred while loading the user data.',
+      summary: `Error loading user${formattedError.statusCode ? `: ${formattedError.summary}` : ''}`,
+      detail: formattedError.detail,
       life: 3000,
     });
     router.push({ name: 'users-list' });
@@ -133,12 +133,11 @@ async function updateLock() {
     });
   } catch (error) {
     const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
+    const formattedError = formatAxiosError(errorResponse);
     toast.add({
       severity: 'error',
-      summary: `Error ${newIsLocked ? 'locking' : 'unlocking'} user`,
-      detail:
-        errorResponse.response?.data.errors.body ||
-        'An error occurred while updating the user lock status.',
+      summary: `Error ${newIsLocked ? 'locking' : 'unlocking'} user${formattedError.statusCode ? `: ${formattedError.summary}` : ''}`,
+      detail: formattedError.detail,
       life: 3000,
     });
   }
@@ -171,12 +170,11 @@ function deleteUser() {
         router.push({ name: 'users-list' });
       } catch (error) {
         const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
+        const formattedError = formatAxiosError(errorResponse);
         toast.add({
           severity: 'error',
-          summary: 'Error deleting user',
-          detail:
-            errorResponse.response?.data.errors.body ||
-            'An error occurred while deleting the user.',
+          summary: `Error deleting user${formattedError.statusCode ? `: ${formattedError.summary}` : ''}`,
+          detail: formattedError.detail,
           life: 3000,
         });
       }

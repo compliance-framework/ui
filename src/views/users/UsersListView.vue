@@ -71,6 +71,7 @@ import UserCreateForm from '@/components/users/UserCreateForm.vue';
 import Dialog from '@/volt/Dialog.vue';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi } from '@/composables/axios';
+import { useErrorToast } from '@/composables/useErrorToast';
 
 const showDialog = ref(false);
 const toast = useToast();
@@ -81,6 +82,12 @@ const {
   error,
   execute,
 } = useDataApi<CCFUser[]>('/api/users', {}, { immediate: false });
+
+// Automatically show toast when error occurs
+useErrorToast(error, {
+  summary: 'Error loading users',
+  life: 3000,
+});
 
 function completed(newUser: CCFUser) {
   showDialog.value = false;

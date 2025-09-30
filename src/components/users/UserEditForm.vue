@@ -43,6 +43,7 @@ import PrimaryButton from '../PrimaryButton.vue';
 import { useDataApi } from '@/composables/axios';
 import type { AxiosError } from 'axios';
 import { useToast } from 'primevue/usetoast';
+import { formatAxiosError } from '@/utils/error-formatting';
 
 const props = defineProps<{
   user: CCFUser;
@@ -79,12 +80,11 @@ async function updateUser() {
     emit('saved', updatedUser.value);
   } catch (error) {
     const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
+    const formattedError = formatAxiosError(errorResponse);
     toast.add({
       severity: 'error',
-      summary: 'Error updating user',
-      detail:
-        errorResponse.response?.data.errors.body ??
-        'An error occurred while updating the user.',
+      summary: `Error updating user${formattedError.statusCode ? `: ${formattedError.summary}` : ''}`,
+      detail: formattedError.detail,
       life: 3000,
     });
   }
