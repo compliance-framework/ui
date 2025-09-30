@@ -21,7 +21,7 @@
                   name: 'component-definition-overview',
                   params: { id: componentDefinition.uuid },
                 }"
-                class="inline-flex cursor-pointer select-none items-center justify-center overflow-hidden relative px-3 py-2 gap-2 rounded-md disabled:pointer-events-none disabled:opacity-60 transition-colors duration-200 bg-surface-100 hover:bg-surface-200 active:bg-surface-300 border border-surface-100 hover:border-surface-200 active:border-surface-300 text-surface-700 no-underline"
+                class="action-link"
                 >View
               </RouterLink>
               <PrimaryButton

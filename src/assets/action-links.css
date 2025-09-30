@@ -1,5 +1,5 @@
 /* Action link styles for list view buttons */
-.action-link-primary {
+.action-link {
   @apply inline-flex cursor-pointer select-none items-center justify-center overflow-hidden relative;
   @apply px-3 py-2 gap-2 rounded-md;
   @apply disabled:pointer-events-none disabled:opacity-60;
@@ -9,9 +9,25 @@
   @apply text-surface-700 no-underline;
 }
 
+.action-link-primary {
+  @apply inline-flex cursor-pointer select-none items-center justify-center overflow-hidden relative;
+  @apply px-3 py-2 gap-2 rounded-md;
+  @apply disabled:pointer-events-none disabled:opacity-60;
+  @apply transition-colors duration-200;
+  @apply bg-primary-600 hover:bg-primary-700 active:bg-primary-800;
+  @apply border border-primary-600 hover:border-primary-700 active:border-primary-800;
+  @apply text-white no-underline;
+}
+
 /* Dark mode support */
-.dark .action-link-primary {
+.dark .action-link {
   @apply dark:bg-surface-800 dark:hover:bg-surface-700 dark:active:bg-surface-600;
   @apply dark:border-surface-800 dark:hover:border-surface-700 dark:active:border-surface-600;
   @apply dark:text-surface-300;
+}
+
+.dark .action-link-primary {
+  @apply dark:bg-primary-700 dark:hover:bg-primary-800 dark:active:bg-primary-900;
+  @apply dark:border-primary-700 dark:hover:border-primary-800 dark:active:border-primary-900;
+  @apply dark:text-white;
 }
