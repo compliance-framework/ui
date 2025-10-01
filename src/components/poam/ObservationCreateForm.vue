@@ -239,9 +239,6 @@ async function submit() {
   }
 
   try {
-    // const [year, month, day] = formData.collected.split('-').map(Number);
-    // const [hour, minute] = pickedTime.split(':').map(Number);
-    // const dateObj = new Date(year, month - 1, day, hour, minute, 0);
     const newObservation: Partial<Observation> = {
       uuid: crypto.randomUUID(),
       title: formData.title || undefined,
