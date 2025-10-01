@@ -186,7 +186,7 @@ const dateValidationError = computed(() => {
   const startDate = new Date(evidence.value.start);
   const endDate = new Date(evidence.value.end);
 
-  if (startDate >= endDate) {
+  if (startDate > endDate) {
     return 'End date must be after start date';
   }
   return null;
