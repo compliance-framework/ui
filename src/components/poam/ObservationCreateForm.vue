@@ -239,6 +239,9 @@ async function submit() {
   }
 
   try {
+    // const [year, month, day] = formData.collected.split('-').map(Number);
+    // const [hour, minute] = pickedTime.split(':').map(Number);
+    // const dateObj = new Date(year, month - 1, day, hour, minute, 0);
     const newObservation: Partial<Observation> = {
       uuid: crypto.randomUUID(),
       title: formData.title || undefined,
@@ -248,8 +251,8 @@ async function submit() {
         formData.types.filter((t) => t.trim()).length > 0
           ? formData.types.filter((t) => t.trim())
           : undefined,
-      collected: formData.collected || undefined,
-      expires: formData.expires || undefined,
+      collected: new Date(formData.collected).toISOString() || undefined,
+      expires: new Date(formData.expires).toISOString() || undefined,
       remarks: formData.remarks || undefined,
     };
 
