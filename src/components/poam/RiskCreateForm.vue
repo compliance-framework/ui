@@ -258,7 +258,7 @@ async function submit() {
         formData.threatIds.filter((t) => t.id.trim()).length > 0
           ? formData.threatIds.filter((t) => t.id.trim())
           : undefined,
-      deadline: formData.deadline || undefined,
+      deadline: new Date(formData.deadline).toISOString() || undefined,
       remarks: formData.remarks || undefined,
     };
 
