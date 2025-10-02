@@ -262,7 +262,7 @@ function updateStatement(updatedStatement: Statement) {
 
 <template>
   <div class="pb-24">
-    <div v-if="statement">
+    <div v-if="localStatement">
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
         <div>
           <h5 class="text-sm font-medium text-gray-500">Statement ID</h5>
