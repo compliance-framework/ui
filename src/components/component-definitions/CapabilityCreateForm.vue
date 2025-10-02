@@ -104,8 +104,8 @@ const capability = ref({
   // controlImplementations: [],
 });
 
-const { data: newCapability, execute } = useDataApi<Capability[]>(
-  `/api/oscal/component-definitions/${props.componentDefinitionId}/capabilities`,
+const { data: newCapability, execute } = useDataApi<Capability>(
+  `/api/oscal/component-definitions/${props.componentDefinitionId}/capability`,
   {
     method: 'POST',
     transformRequest: [decamelizeKeys],
@@ -140,9 +140,9 @@ async function createCapability(): Promise<void> {
     };
 
     await execute({
-      data: [capabilityData],
+      data: capabilityData,
     });
-    emit('created', newCapability.value![0]);
+    emit('created', newCapability.value!);
   } catch (error) {
     toast.add({
       severity: 'error',

@@ -330,9 +330,9 @@ export const useComponentDefinitionStore = defineStore(
       capability: Capability,
     ): Promise<DataResponse<Capability>> {
       const config = await configStore.getConfig();
-      const payload = [decamelizeKeys(capability, { separator: '-' })];
+      const payload = decamelizeKeys(capability, { separator: '-' });
       const response = await fetch(
-        `${config.API_URL}/api/oscal/component-definitions/${id}/capabilities`,
+        `${config.API_URL}/api/oscal/component-definitions/${id}/capability`,
         {
           method: 'POST',
           headers: {
