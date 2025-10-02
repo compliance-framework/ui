@@ -248,8 +248,8 @@ async function submit() {
         formData.types.filter((t) => t.trim()).length > 0
           ? formData.types.filter((t) => t.trim())
           : undefined,
-      collected: formData.collected || undefined,
-      expires: formData.expires || undefined,
+      collected: new Date(formData.collected).toISOString() || undefined,
+      expires: new Date(formData.expires).toISOString() || undefined,
       remarks: formData.remarks || undefined,
     };
 
