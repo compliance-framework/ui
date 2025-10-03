@@ -26,17 +26,7 @@
             >
           </div>
         </template>
-        <div class="py-3 px-4 flex justify-between items-center">
-          <div class="flex items-center space-x-3">
-            <span class="font-medium text-gray-900 dark:text-slate-300">{{
-              user.title
-            }}</span>
-            <span
-              v-if="user.shortName"
-              class="text-sm text-gray-500 dark:text-slate-400"
-              >({{ user.shortName }})</span
-            >
-          </div>
+        <div class="py-3 px-4 flex justify-end items-center">
           <div class="flex gap-2">
             <TertiaryButton @click.stop="editUser(user)"> Edit </TertiaryButton>
             <TertiaryButton @click.stop="downloadUserJSON(user)">
