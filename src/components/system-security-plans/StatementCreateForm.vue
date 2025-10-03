@@ -172,6 +172,7 @@ import type { CreateStatementRequest } from '@/stores/system-security-plans';
 const props = defineProps<{
   sspId: string;
   reqId: string;
+  smtId?: string;
 }>();
 
 const emit = defineEmits<{
@@ -195,7 +196,7 @@ const {
 
 const statementData = reactive<CreateStatementRequest>({
   uuid: '',
-  statementId: '',
+  statementId: props.smtId ?? '',
   props: [],
   links: [],
   remarks: '',
