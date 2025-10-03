@@ -46,8 +46,6 @@ const evidence = computed<Partial<Evidence>>(() => {
   }
   return {
     ...evidenceData.value,
-    start: '',
-    end: '',
   };
 });
 

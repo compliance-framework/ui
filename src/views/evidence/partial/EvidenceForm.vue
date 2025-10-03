@@ -2,7 +2,7 @@
   <div
     class="mt-4 bg-white dark:bg-slate-900 rounded-md border border-ccf-300 dark:border-slate-700 p-8"
   >
-    <form @submit.prevent="$emit('submit', evidence, labels, status)">
+    <form @submit.prevent="handleSubmit">
       <div class="flex">
         <div>
           <div class="mb-2">
@@ -54,6 +54,7 @@
                 v-model="evidence.start"
                 placeholder="Select start date"
                 required
+                :max-date="evidence.end ? new Date(evidence.end) : undefined"
               />
             </div>
           </div>
@@ -64,7 +65,13 @@
                 v-model="evidence.end"
                 placeholder="Select end date"
                 required
+                :min-date="
+                  evidence.start ? new Date(evidence.start) : undefined
+                "
               />
+              <div v-if="dateValidationError" class="text-red-500 text-sm mt-1">
+                {{ dateValidationError }}
+              </div>
             </div>
           </div>
           <div class="mb-2">
@@ -128,7 +135,7 @@
           <Base64FileUpload @uploaded="onUpload" />
         </div>
       </div>
-      <primary-button type="submit"
+      <primary-button type="submit" :disabled="!isFormValid"
         >{{ props.updating ? 'Update' : 'Create' }} Evidence</primary-button
       >
     </form>
@@ -141,7 +148,7 @@ import type {
   EvidenceLabel,
   EvidenceStatus,
 } from '@/stores/evidence';
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import type { BackMatterResource, Base64 } from '@/oscal';
 import { v4 as uuidv4 } from 'uuid';
 import DatePicker from '@/volt/DatePicker.vue';
@@ -167,14 +174,38 @@ const evidence = ref<Partial<Evidence>>(
   },
 );
 const status = ref<EvidenceStatus>({
-  state: '',
-  reason: '',
+  state: props.evidence?.status?.state || '',
+  reason: props.evidence?.status?.reason || '',
 });
-const labels = ref<EvidenceLabel[]>([]);
+const labels = ref<EvidenceLabel[]>(props.evidence?.labels || []);
 
-defineEmits<{
+// Date validation
+const dateValidationError = computed(() => {
+  if (!evidence.value.start || !evidence.value.end) return null;
+
+  const startDate = new Date(evidence.value.start);
+  const endDate = new Date(evidence.value.end);
+
+  if (startDate > endDate) {
+    return 'End date must be after start date';
+  }
+  return null;
+});
+
+const isFormValid = computed(() => {
+  return !dateValidationError.value;
+});
+
+const emit = defineEmits<{
   submit: [Partial<Evidence>, EvidenceLabel[], EvidenceStatus];
 }>();
+
+function handleSubmit() {
+  if (!isFormValid.value) {
+    return; // Prevent submission if validation fails
+  }
+  emit('submit', evidence.value, labels.value, status.value);
+}
 
 function onUpload(file: File, base64: Base64) {
   const id = uuidv4();
