@@ -31,7 +31,7 @@
             {{ componentDefinition.metadata.title }}
           </td>
           <td class="py-2 px-2 text-right whitespace-nowrap">
-            <div class="flex gap-2">
+            <div class="flex gap-2 justify-end">
               <RouterLinkButton
                 variant="outlined"
                 :to="{
