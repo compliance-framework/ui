@@ -91,9 +91,11 @@
                 </td>
                 <td class="px-6 py-4 text-right text-sm font-medium">
                   <div class="flex gap-2 justify-end">
-                    <TertiaryButton :to="`/system-security-plans/${ssp.uuid}`">
+                    <RouterLinkButton
+                      :to="`/system-security-plans/${ssp.uuid}`"
+                    >
                       View
-                    </TertiaryButton>
+                    </RouterLinkButton>
                     <PrimaryButton
                       @click="downloadJson(ssp.uuid, ssp.metadata.title)"
                       title="Download Full JSON"
@@ -125,6 +127,7 @@ import { useDataApi } from '@/composables/axios';
 import decamelizeKeys from 'decamelize-keys';
 import type { AxiosError } from 'axios';
 import type { ErrorResponse, ErrorBody } from '@/stores/types.ts';
+import RouterLinkButton from '@/components/RouterLinkButton.vue';
 
 const toast = useToast();
 const systemStore = useSystemStore();

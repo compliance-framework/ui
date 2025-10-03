@@ -33,13 +33,13 @@
 
             <td class="py-2 px-2 text-right whitespace-nowrap">
               <div class="flex gap-2">
-                <TertiaryButton
+                <RouterLinkButton
                   :to="{
                     name: 'assessment-plan-overview',
                     params: { id: assessmentPlan.uuid },
                   }"
                   >View
-                </TertiaryButton>
+                </RouterLinkButton>
                 <PrimaryButton
                   @click="
                     downloadJSON(
@@ -64,9 +64,9 @@
     </div>
 
     <div class="mt-4">
-      <TertiaryButton :to="{ name: 'assessment-plan-create' }">
+      <RouterLinkButton :to="{ name: 'assessment-plan-create' }">
         Create Assessment Plan
-      </TertiaryButton>
+      </RouterLinkButton>
     </div>
   </template>
 </template>
@@ -74,7 +74,6 @@
 <script setup lang="ts">
 import PageHeader from '@/components/PageHeader.vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
-import TertiaryButton from '@/volt/TertiaryButton.vue';
 import type { AssessmentPlan } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { useSystemStore } from '@/stores/system.ts';
@@ -84,6 +83,7 @@ import type { AxiosError } from 'axios';
 import type { ErrorResponse, ErrorBody } from '@/stores/types.ts';
 import decamelizeKeys from 'decamelize-keys';
 import { computed } from 'vue';
+import RouterLinkButton from '@/components/RouterLinkButton.vue';
 
 const toast = useToast();
 const systemStore = useSystemStore();

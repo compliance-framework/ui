@@ -43,21 +43,21 @@
   </div>
 
   <div class="mt-4">
-    <TertiaryButton :to="{ name: 'component-definition-create' }">
+    <RouterLinkButton :to="{ name: 'component-definition-create' }">
       Create Component Definition
-    </TertiaryButton>
+    </RouterLinkButton>
   </div>
 </template>
 <script setup lang="ts">
 import PageHeader from '@/components/PageHeader.vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
-import TertiaryButton from '@/volt/TertiaryButton.vue';
 import { type ComponentDefinition } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi } from '@/composables/axios';
 import type { AxiosError } from 'axios';
 import { type ErrorResponse, type ErrorBody } from '@/stores/types';
 import decamelizeKeys from 'decamelize-keys';
+import RouterLinkButton from '@/components/RouterLinkButton.vue';
 
 const toast = useToast();
 

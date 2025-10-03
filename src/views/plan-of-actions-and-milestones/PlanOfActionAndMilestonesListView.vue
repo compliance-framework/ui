@@ -91,11 +91,11 @@
                 </td>
                 <td class="px-6 py-4 text-right text-sm font-medium">
                   <div class="flex gap-2 justify-end">
-                    <TertiaryButton
+                    <RouterLinkButton
                       :to="`/plan-of-action-and-milestones/${poam.uuid}`"
                     >
                       View
-                    </TertiaryButton>
+                    </RouterLinkButton>
                     <PrimaryButton
                       @click="downloadJson(poam.uuid, poam.metadata?.title)"
                       title="Download Full JSON"
@@ -116,9 +116,9 @@
 
     <!-- Create Button -->
     <div class="mt-4">
-      <TertiaryButton to="/plan-of-action-and-milestones/create">
+      <RouterLinkButton to="/plan-of-action-and-milestones/create">
         Create New POAM
-      </TertiaryButton>
+      </RouterLinkButton>
     </div>
   </div>
 </template>
@@ -126,13 +126,13 @@
 <script setup lang="ts">
 import PageHeader from '@/components/PageHeader.vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
-import TertiaryButton from '@/volt/TertiaryButton.vue';
 import type { POAM } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import Badge from '@/volt/Badge.vue';
 import { useSystemStore } from '@/stores/system.ts';
 import { useDataApi } from '@/composables/axios';
 import decamelizeKeys from 'decamelize-keys';
+import RouterLinkButton from '@/components/RouterLinkButton.vue';
 
 const toast = useToast();
 const systemStore = useSystemStore();

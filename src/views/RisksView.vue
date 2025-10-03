@@ -108,12 +108,13 @@
           </div>
 
           <div class="ml-4 flex gap-2">
-            <TertiaryButton
+            <RouterLinkButton
               v-if="risk.uuid"
+              variant="text"
               :to="{ name: 'risks:detail', params: { riskId: risk.uuid } }"
             >
               Open
-            </TertiaryButton>
+            </RouterLinkButton>
             <TertiaryButton @click="editRisk(risk)"> Edit </TertiaryButton>
             <TertiaryButton
               v-if="risk.uuid"
@@ -166,6 +167,7 @@ import PageHeader from '@/components/PageHeader.vue';
 import { useSystemStore } from '@/stores/system.ts';
 import { useDataApi } from '@/composables/axios';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
+import RouterLinkButton from '@/components/RouterLinkButton.vue';
 
 const toast = useToast();
 const { system } = useSystemStore();

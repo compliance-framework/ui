@@ -19,10 +19,10 @@
           </td>
           <td class="py-2 px-2 text-right whitespace-nowrap">
             <div class="flex gap-2">
-              <TertiaryButton
+              <RouterLinkButton
                 :to="{ name: 'catalog-view', params: { id: catalog.uuid } }"
                 >View
-              </TertiaryButton>
+              </RouterLinkButton>
               <PrimaryButton
                 @click="
                   downloadCatalogJSON(catalog.uuid, catalog.metadata.title)
@@ -53,6 +53,7 @@ import PrimaryButton from '@/volt/PrimaryButton.vue';
 import TertiaryButton from '@/volt/TertiaryButton.vue';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi } from '@/composables/axios';
+import RouterLinkButton from '@/components/RouterLinkButton.vue';
 
 const toast = useToast();
 

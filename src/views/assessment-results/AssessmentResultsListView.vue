@@ -91,9 +91,9 @@
                 </td>
                 <td class="px-6 py-4 text-right text-sm font-medium">
                   <div class="flex gap-2 justify-end">
-                    <TertiaryButton :to="`/assessment-results/${ar.uuid}`">
+                    <RouterLinkButton :to="`/assessment-results/${ar.uuid}`">
                       View
-                    </TertiaryButton>
+                    </RouterLinkButton>
                     <PrimaryButton
                       @click="downloadJson(ar.uuid, ar.metadata?.title)"
                       title="Download Full JSON"
@@ -116,9 +116,9 @@
 
     <!-- Create Button -->
     <div class="mt-4">
-      <TertiaryButton to="/assessment-results/create">
+      <RouterLinkButton to="/assessment-results/create">
         Create New Assessment Results
-      </TertiaryButton>
+      </RouterLinkButton>
     </div>
   </div>
 </template>
@@ -126,13 +126,13 @@
 <script setup lang="ts">
 import PageHeader from '@/components/PageHeader.vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
-import TertiaryButton from '@/volt/TertiaryButton.vue';
 import type { AssessmentResult } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { useConfigStore } from '@/stores/config.ts';
 import Badge from '@/volt/Badge.vue';
 import { useSystemStore } from '@/stores/system.ts';
 import { useDataApi } from '@/composables/axios';
+import RouterLinkButton from '@/components/RouterLinkButton.vue';
 
 const configStore = useConfigStore();
 const toast = useToast();
