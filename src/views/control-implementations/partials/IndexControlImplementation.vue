@@ -10,7 +10,6 @@ import { useToggle } from '@/composables/useToggle';
 import ControlStatementImplementation from '@/views/control-implementations/partials/ControlStatementImplementation.vue';
 import { useSystemStore } from '@/stores/system.ts';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
-import VueMarkdown from 'vue-markdown-render';
 import type { Control } from '@/oscal';
 import type { CreateStatementRequest } from '@/stores/system-security-plans';
 
@@ -19,7 +18,7 @@ const { control, implementation } = defineProps<{
   implementation: ImplementedRequirement | undefined | null;
 }>();
 const selectedPart = ref<Part>();
-const { value: drawerOpen, set: setDrawer } = useToggle();
+const { value: statementDrawerOpen, set: setStatementDrawer } = useToggle();
 const drawerLoading = useToggle();
 const { system } = useSystemStore();
 
@@ -98,8 +97,10 @@ function updateStatement(statement: Statement) {
 async function onPartSelect(e: Event, part: Part) {
   e.preventDefault();
   selectedPart.value = part;
-  setDrawer(true);
+  setStatementDrawer(true);
   drawerLoading.set(true);
+
+  console.log('Selected part', part);
 
   if (!selectedImplementation.value) {
     const response = await executeCreate({
@@ -162,12 +163,9 @@ async function onPartSelect(e: Event, part: Part) {
       >
         <template #default="{ part }">
           <div class="p-0.5">
-            <div
-              v-if="getText(part)"
-              class="prose prose-slate dark:prose-invert"
-            >
-              <VueMarkdown :source="getText(part) ?? ''" />
-            </div>
+            <p v-if="getText(part)" class="prose prose-slate dark:prose-invert">
+              {{ getText(part) ?? '' }}
+            </p>
             <template v-if="statements[part.id]">
               <Badge
                 class="ml-2"
@@ -182,39 +180,8 @@ async function onPartSelect(e: Event, part: Part) {
     </div>
   </div>
 
-  <!-- Requirement-level By-Components (directly on the implemented requirement) -->
-  <div v-if="implementation?.byComponents?.length" class="mt-4">
-    <div
-      class="px-4 py-3 bg-gray-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700"
-    >
-      <div class="flex items-center justify-between mb-2">
-        <h4 class="text-sm font-medium text-gray-700 dark:text-slate-300">
-          Requirement-level Components
-        </h4>
-        <Badge :value="implementation.byComponents.length" severity="info" />
-      </div>
-      <div class="space-y-2">
-        <div
-          v-for="byComponent in implementation.byComponents"
-          :key="byComponent.uuid"
-          class="text-xs text-gray-700 dark:text-slate-300 bg-white dark:bg-slate-900 p-2 rounded border dark:border-slate-700"
-        >
-          <div class="font-medium">
-            {{ byComponent.componentUuid }}
-          </div>
-          <div
-            v-if="byComponent.description"
-            class="prose prose-slate dark:prose-invert mt-1"
-          >
-            <VueMarkdown :source="byComponent.description" />
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <Drawer
-    v-model:visible="drawerOpen"
+    v-model:visible="statementDrawerOpen"
     header="Implementation"
     position="right"
     class="w-full! md:w-1/2! lg:w-3/5!"

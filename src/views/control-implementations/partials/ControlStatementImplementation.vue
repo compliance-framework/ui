@@ -293,19 +293,6 @@ async function create() {
       </div>
     </form>
   </div>
-
-  <!--  uuid: string;-->
-  <!--  componentUuid: string;-->
-  <!--  description: string;-->
-  <!--  props: Property[];-->
-  <!--  links: Link[];-->
-  <!--  setParameters?: SetParameter[];-->
-  <!--  responsibleRoles?: ResponsibleRole[];-->
-  <!--  remarks?: string;-->
-  <!--  implementationStatus?: ImplementationStatus;-->
-  <!--  export?: Export;-->
-  <!--  inherited?: InheritedControlImplementation[];-->
-  <!--  satisfied?: SatisfiedControlImplementationResponsibility[];-->
 </template>
 
 <style scoped></style>
