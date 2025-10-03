@@ -22,20 +22,9 @@ import { ptViewMerge } from './utils';
 import { useRouter } from 'vue-router';
 import type { RouteLocationRaw } from 'vue-router';
 
-interface Props extends /* @vue-ignore */ ButtonProps {
-  to?: RouteLocationRaw;
-}
+interface Props extends /* @vue-ignore */ ButtonProps {}
 
 const props = defineProps<Props>();
-const emit = defineEmits(['click']);
-const router = useRouter();
-
-function handleClick(event: MouseEvent) {
-  if (props.to) {
-    router.push(props.to);
-  }
-  emit('click', event);
-}
 
 const theme: ButtonPassThroughOptions = {
   root: `inline-flex cursor-pointer select-none items-center justify-center overflow-hidden relative
