@@ -20,8 +20,7 @@ import Button, {
 import { ptViewMerge } from './utils';
 
 interface Props extends /* @vue-ignore */ ButtonProps {}
-
-const props = defineProps<Props>();
+defineProps<Props>();
 
 const theme: ButtonPassThroughOptions = {
   root: `inline-flex cursor-pointer select-none items-center justify-center overflow-hidden relative
