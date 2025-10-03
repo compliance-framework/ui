@@ -28,26 +28,23 @@
             {{ profile.metadata.title }}
           </td>
           <td class="py-3 px-4 text-right">
-            <RouterLink
+            <RouterLinkButton
+              variant="outlined"
               :to="{
                 name: 'profile:view-controls',
                 params: { id: profile.uuid },
               }"
-              class="action-link"
               >View
-            </RouterLink>
+            </RouterLinkButton>
           </td>
         </tr>
       </tbody>
     </table>
   </div>
   <div class="my-4">
-    <RouterLink
-      :to="{ name: 'profile:create' }"
-      class="action-link-primary ml-4"
-    >
+    <RouterLinkButton :to="{ name: 'profile:create' }">
       Create New Profile
-    </RouterLink>
+    </RouterLinkButton>
   </div>
 </template>
 
@@ -59,6 +56,7 @@ import { watch } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import type { AxiosError } from 'axios';
 import type { ErrorResponse, ErrorBody } from '@/stores/types';
+import RouterLinkButton from '@/components/RouterLinkButton.vue';
 
 const toast = useToast();
 

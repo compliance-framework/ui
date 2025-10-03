@@ -16,15 +16,16 @@
           </td>
           <td class="py-2 px-2 text-right whitespace-nowrap">
             <div class="flex gap-2">
-              <RouterLink
+              <RouterLinkButton
+                variant="outlined"
                 :to="{
                   name: 'component-definition-overview',
                   params: { id: componentDefinition.uuid },
                 }"
-                class="action-link"
                 >View
-              </RouterLink>
+              </RouterLinkButton>
               <PrimaryButton
+                variant="text"
                 @click="
                   downloadJSON(
                     componentDefinition.uuid,

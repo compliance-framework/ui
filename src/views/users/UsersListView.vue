@@ -41,12 +41,12 @@
               <td class="py-1 px-6">{{ user.firstName }}</td>
               <td class="py-1 px-6">{{ user.lastName }}</td>
               <td class="py-1 px-6">
-                <RouterLink
+                <RouterLinkButton
+                  variant="outlined"
                   :to="{ name: 'user-view', params: { id: user.id } }"
-                  class="action-link"
                 >
                   View
-                </RouterLink>
+                </RouterLinkButton>
               </td>
             </tr>
           </template>
@@ -71,6 +71,7 @@ import UserCreateForm from '@/components/users/UserCreateForm.vue';
 import Dialog from '@/volt/Dialog.vue';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi } from '@/composables/axios';
+import RouterLinkButton from '@/components/RouterLinkButton.vue';
 
 const showDialog = ref(false);
 const toast = useToast();
