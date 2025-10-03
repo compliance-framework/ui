@@ -55,6 +55,19 @@
             <div class="flex items-center gap-x-3">
               <Badge class="text-base">{{ slotProps.node.data.id }}</Badge>
               <h4>{{ slotProps.node.data.title }}</h4>
+              <Badge class="text-base">{{
+                controlImplementations[slotProps.node.data.id]?.byComponents
+                  ?.length || 0
+              }}</Badge>
+              <Button
+                variant="text"
+                @click="
+                  openImplementationDrawer(
+                    controlImplementations[slotProps.node.data.id],
+                  )
+                "
+                ><BIconEye
+              /></Button>
               <ControlEvidenceCounter :control="slotProps.node.data" />
             </div>
             <div class="py-4">
@@ -68,6 +81,33 @@
       </Tree>
     </div>
   </div>
+
+  <Drawer
+    v-model:visible="controlDrawerOpen"
+    header="Implementation"
+    position="right"
+    class="w-full! md:w-1/2! lg:w-3/5!"
+  >
+    <div class="flex items-center mb-4 gap-x-4">
+      <h4 class="font-medium text-xl">Components</h4>
+      <Badge
+        :value="selectedImplementedRequirement?.byComponents?.length"
+        severity="info"
+      />
+    </div>
+    <div
+      v-for="(
+        byComponent, index
+      ) in selectedImplementedRequirement?.byComponents || []"
+      :key="byComponent.uuid"
+    >
+      <div
+        class="h-0.5 w-full bg-gray-200 dark:bg-slate-700 my-4"
+        v-if="index !== 0"
+      ></div>
+      <StatementByComponent :by-component="byComponent" />
+    </div>
+  </Drawer>
 </template>
 
 <script setup lang="ts">
@@ -85,8 +125,14 @@ import IndexControlImplementation from '@/views/control-implementations/partials
 import type { AxiosError } from 'axios';
 import type { Catalog, Profile } from '@/oscal';
 import type { ControlImplementation, ImplementedRequirement } from '@/oscal';
+import { useToggle } from '@/composables/useToggle';
+import Button from '@/volt/Button.vue';
+import { BIconEye } from 'bootstrap-icons-vue';
+import Drawer from '@/volt/Drawer.vue';
+import StatementByComponent from './partials/StatementByComponent.vue';
 
 const systemStore = useSystemStore();
+const { value: controlDrawerOpen, set: setControlDrawer } = useToggle();
 
 const {
   data: profile,
@@ -122,6 +168,7 @@ const loading = computed<boolean>(
 const controlImplementations = ref<{ [key: string]: ImplementedRequirement }>(
   {},
 );
+const selectedImplementedRequirement = ref<ImplementedRequirement>();
 
 const error = ref<AxiosError<unknown> | null>(null);
 
@@ -140,6 +187,11 @@ watch(profile, async () => {
     error.value = err as AxiosError<unknown>;
   }
 });
+
+function openImplementationDrawer(req: ImplementedRequirement) {
+  setControlDrawer(true);
+  selectedImplementedRequirement.value = req;
+}
 
 onMounted(async () => {
   try {

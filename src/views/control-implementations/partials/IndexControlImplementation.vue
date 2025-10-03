@@ -10,7 +10,6 @@ import { useToggle } from '@/composables/useToggle';
 import ControlStatementImplementation from '@/views/control-implementations/partials/ControlStatementImplementation.vue';
 import { useSystemStore } from '@/stores/system.ts';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
-import VueMarkdown from 'vue-markdown-render';
 import type { Control } from '@/oscal';
 import type { CreateStatementRequest } from '@/stores/system-security-plans';
 
@@ -19,7 +18,7 @@ const { control, implementation } = defineProps<{
   implementation: ImplementedRequirement | undefined | null;
 }>();
 const selectedPart = ref<Part>();
-const { value: drawerOpen, set: setDrawer } = useToggle();
+const { value: statementDrawerOpen, set: setStatementDrawer } = useToggle();
 const drawerLoading = useToggle();
 const { system } = useSystemStore();
 
@@ -98,8 +97,10 @@ function updateStatement(statement: Statement) {
 async function onPartSelect(e: Event, part: Part) {
   e.preventDefault();
   selectedPart.value = part;
-  setDrawer(true);
+  setStatementDrawer(true);
   drawerLoading.set(true);
+
+  console.log('Selected part', part);
 
   if (!selectedImplementation.value) {
     const response = await executeCreate({
@@ -162,12 +163,9 @@ async function onPartSelect(e: Event, part: Part) {
       >
         <template #default="{ part }">
           <div class="p-0.5">
-            <div
-              v-if="getText(part)"
-              class="prose prose-slate dark:prose-invert"
-            >
-              <VueMarkdown :source="getText(part) ?? ''" />
-            </div>
+            <p v-if="getText(part)" class="prose prose-slate dark:prose-invert">
+              {{ getText(part) ?? '' }}
+            </p>
             <template v-if="statements[part.id]">
               <Badge
                 class="ml-2"
@@ -183,7 +181,7 @@ async function onPartSelect(e: Event, part: Part) {
   </div>
 
   <Drawer
-    v-model:visible="drawerOpen"
+    v-model:visible="statementDrawerOpen"
     header="Implementation"
     position="right"
     class="w-full! md:w-1/2! lg:w-3/5!"
@@ -192,6 +190,7 @@ async function onPartSelect(e: Event, part: Part) {
       v-if="selectedPart && statements[selectedPart.id]"
       @updated="updateStatement"
       :implementation="selectedImplementation"
+      :ssp-id="system.securityPlan?.uuid"
       :statement="statements[selectedPart.id]"
     />
   </Drawer>
