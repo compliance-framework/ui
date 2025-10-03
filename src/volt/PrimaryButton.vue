@@ -5,7 +5,6 @@
     :ptOptions="{
       mergeProps: ptViewMerge,
     }"
-    @click="handleClick"
   >
     <template v-for="(_, slotName) in $slots" #[slotName]="slotProps">
       <slot :name="slotName" v-bind="slotProps ?? {}" />
@@ -20,8 +19,6 @@ import Button, {
 } from 'primevue/button';
 import { ref } from 'vue';
 import { ptViewMerge } from './utils';
-import { useRouter } from 'vue-router';
-import type { RouteLocationRaw } from 'vue-router';
 
 interface Props extends /* @vue-ignore */ ButtonProps {}
 
