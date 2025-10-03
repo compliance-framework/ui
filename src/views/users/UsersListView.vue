@@ -41,12 +41,12 @@
               <td class="py-1 px-6">{{ user.firstName }}</td>
               <td class="py-1 px-6">{{ user.lastName }}</td>
               <td class="py-1 px-6">
-                <RouterLink
+                <RouterLinkButton
+                  variant="outlined"
                   :to="{ name: 'user-view', params: { id: user.id } }"
-                  class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
                 >
                   View
-                </RouterLink>
+                </RouterLinkButton>
               </td>
             </tr>
           </template>
@@ -66,11 +66,12 @@
 import { ref, onMounted } from 'vue';
 import PageHeader from '@/components/PageHeader.vue';
 import type { CCFUser } from '@/stores/types';
-import PrimaryButton from '@/components/PrimaryButton.vue';
+import PrimaryButton from '@/volt/PrimaryButton.vue';
 import UserCreateForm from '@/components/users/UserCreateForm.vue';
 import Dialog from '@/volt/Dialog.vue';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi } from '@/composables/axios';
+import RouterLinkButton from '@/components/RouterLinkButton.vue';
 
 const showDialog = ref(false);
 const toast = useToast();

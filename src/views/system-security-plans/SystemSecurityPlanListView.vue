@@ -91,25 +91,20 @@
                 </td>
                 <td class="px-6 py-4 text-right text-sm font-medium">
                   <div class="flex gap-2 justify-end">
-                    <RouterLink
+                    <RouterLinkButton
                       :to="`/system-security-plans/${ssp.uuid}`"
-                      class="bg-white hover:bg-zinc-100 border border-ccf-300 px-4 py-1 rounded-md dark:bg-slate-800 dark:hover:bg-slate-700 dark:border-slate-700"
                     >
                       View
-                    </RouterLink>
-                    <button
+                    </RouterLinkButton>
+                    <PrimaryButton
                       @click="downloadJson(ssp.uuid, ssp.metadata.title)"
-                      class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1 rounded-md"
                       title="Download Full JSON"
                     >
                       JSON
-                    </button>
-                    <button
-                      @click="systemStore.setSecurityPlan(ssp)"
-                      class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1 rounded-md"
-                    >
+                    </PrimaryButton>
+                    <PrimaryButton @click="systemStore.setSecurityPlan(ssp)">
                       Set
-                    </button>
+                    </PrimaryButton>
                   </div>
                 </td>
               </tr>
@@ -122,6 +117,8 @@
 </template>
 <script setup lang="ts">
 import PageHeader from '@/components/PageHeader.vue';
+import PrimaryButton from '@/volt/PrimaryButton.vue';
+import TertiaryButton from '@/volt/TertiaryButton.vue';
 import type { SystemSecurityPlan } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { useSystemStore } from '@/stores/system.ts';
@@ -130,6 +127,7 @@ import { useDataApi } from '@/composables/axios';
 import decamelizeKeys from 'decamelize-keys';
 import type { AxiosError } from 'axios';
 import type { ErrorResponse, ErrorBody } from '@/stores/types.ts';
+import RouterLinkButton from '@/components/RouterLinkButton.vue';
 
 const toast = useToast();
 const systemStore = useSystemStore();

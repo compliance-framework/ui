@@ -30,12 +30,9 @@
     </div>
     <div class="p-6">
       <div class="flex justify-between items-center mb-6">
-        <button
-          @click="showCreateModal = true"
-          class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md"
-        >
+        <PrimaryButton @click="showCreateModal = true">
           Add Risk
-        </button>
+        </PrimaryButton>
       </div>
       <div
         v-for="risk in risks"
@@ -111,33 +108,24 @@
           </div>
 
           <div class="ml-4 flex gap-2">
-            <RouterLink
+            <RouterLinkButton
               v-if="risk.uuid"
+              variant="text"
               :to="{ name: 'risks:detail', params: { riskId: risk.uuid } }"
             >
-              <button
-                class="bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 px-3 py-1 rounded-md text-sm"
-              >
-                Open
-              </button>
-            </RouterLink>
-            <button
-              @click="editRisk(risk)"
-              class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-sm"
-            >
-              Edit
-            </button>
-            <button
+              Open
+            </RouterLinkButton>
+            <TertiaryButton @click="editRisk(risk)"> Edit </TertiaryButton>
+            <TertiaryButton
               v-if="risk.uuid"
               @click="
                 confirmDeleteDialog(() => deleteRisk(risk.uuid!), {
                   itemType: 'risk',
                 })
               "
-              class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md text-sm"
             >
               Delete
-            </button>
+            </TertiaryButton>
           </div>
         </div>
       </div>
@@ -170,6 +158,8 @@ import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { type Risk } from '@/oscal';
 import Dialog from '@/volt/Dialog.vue';
 import Message from '@/volt/Message.vue';
+import PrimaryButton from '@/volt/PrimaryButton.vue';
+import TertiaryButton from '@/volt/TertiaryButton.vue';
 import RiskCreateForm from '@/components/poam/RiskCreateForm.vue';
 import RiskEditForm from '@/components/poam/RiskEditForm.vue';
 import { useToast } from 'primevue/usetoast';
@@ -177,6 +167,7 @@ import PageHeader from '@/components/PageHeader.vue';
 import { useSystemStore } from '@/stores/system.ts';
 import { useDataApi } from '@/composables/axios';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
+import RouterLinkButton from '@/components/RouterLinkButton.vue';
 
 const toast = useToast();
 const { system } = useSystemStore();

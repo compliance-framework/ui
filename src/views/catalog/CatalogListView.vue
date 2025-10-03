@@ -19,20 +19,18 @@
           </td>
           <td class="py-2 px-2 text-right whitespace-nowrap">
             <div class="flex gap-2">
-              <RouterLink
-                class="bg-white hover:bg-zinc-100 border border-ccf-300 px-4 py-1 rounded-md dark:bg-slate-800 dark:hover:bg-slate-700 dark:border-slate-700"
+              <RouterLinkButton
                 :to="{ name: 'catalog-view', params: { id: catalog.uuid } }"
                 >View
-              </RouterLink>
-              <button
-                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1 rounded-md"
+              </RouterLinkButton>
+              <PrimaryButton
                 @click="
                   downloadCatalogJSON(catalog.uuid, catalog.metadata.title)
                 "
                 title="Download Full Catalog JSON"
               >
                 JSON
-              </button>
+              </PrimaryButton>
             </div>
           </td>
         </tr>
@@ -51,8 +49,11 @@
 <script setup lang="ts">
 import { type Catalog } from '@/oscal';
 import PageHeader from '@/components/PageHeader.vue';
+import PrimaryButton from '@/volt/PrimaryButton.vue';
+import TertiaryButton from '@/volt/TertiaryButton.vue';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi } from '@/composables/axios';
+import RouterLinkButton from '@/components/RouterLinkButton.vue';
 
 const toast = useToast();
 

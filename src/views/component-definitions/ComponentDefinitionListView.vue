@@ -16,16 +16,16 @@
           </td>
           <td class="py-2 px-2 text-right whitespace-nowrap">
             <div class="flex gap-2">
-              <RouterLink
-                class="bg-white hover:bg-zinc-100 border border-ccf-300 px-4 py-1 rounded-md dark:bg-slate-800 dark:hover:bg-slate-700 dark:border-slate-700"
+              <RouterLinkButton
+                variant="outlined"
                 :to="{
                   name: 'component-definition-overview',
                   params: { id: componentDefinition.uuid },
                 }"
                 >View
-              </RouterLink>
-              <button
-                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1 rounded-md"
+              </RouterLinkButton>
+              <PrimaryButton
+                variant="text"
                 @click="
                   downloadJSON(
                     componentDefinition.uuid,
@@ -35,7 +35,7 @@
                 title="Download Full JSON"
               >
                 JSON
-              </button>
+              </PrimaryButton>
             </div>
           </td>
         </tr>
@@ -44,21 +44,21 @@
   </div>
 
   <div class="mt-4">
-    <RouterLink
-      class="bg-transparent font-light hover:bg-zinc-100 dark:text-slate-300 dark:hover:bg-slate-800 border border-ccf-300 dark:border-slate-700 px-4 py-1 rounded-md"
-      :to="{ name: 'component-definition-create' }"
-      >Create Component Definition
-    </RouterLink>
+    <RouterLinkButton :to="{ name: 'component-definition-create' }">
+      Create Component Definition
+    </RouterLinkButton>
   </div>
 </template>
 <script setup lang="ts">
 import PageHeader from '@/components/PageHeader.vue';
+import PrimaryButton from '@/volt/PrimaryButton.vue';
 import { type ComponentDefinition } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi } from '@/composables/axios';
 import type { AxiosError } from 'axios';
 import { type ErrorResponse, type ErrorBody } from '@/stores/types';
 import decamelizeKeys from 'decamelize-keys';
+import RouterLinkButton from '@/components/RouterLinkButton.vue';
 
 const toast = useToast();
 

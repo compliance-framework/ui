@@ -33,16 +33,14 @@
 
             <td class="py-2 px-2 text-right whitespace-nowrap">
               <div class="flex gap-2">
-                <RouterLink
-                  class="bg-white hover:bg-zinc-100 border border-ccf-300 px-4 py-1 rounded-md dark:bg-slate-800 dark:hover:bg-slate-700 dark:border-slate-700"
+                <RouterLinkButton
                   :to="{
                     name: 'assessment-plan-overview',
                     params: { id: assessmentPlan.uuid },
                   }"
                   >View
-                </RouterLink>
-                <button
-                  class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1 rounded-md"
+                </RouterLinkButton>
+                <PrimaryButton
                   @click="
                     downloadJSON(
                       assessmentPlan.uuid,
@@ -52,13 +50,12 @@
                   title="Download Full JSON"
                 >
                   JSON
-                </button>
-                <button
+                </PrimaryButton>
+                <PrimaryButton
                   @click="systemStore.setAssessmentPlan(assessmentPlan)"
-                  class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1 rounded-md"
                 >
                   Set
-                </button>
+                </PrimaryButton>
               </div>
             </td>
           </tr>
@@ -67,16 +64,16 @@
     </div>
 
     <div class="mt-4">
-      <RouterLink
-        class="bg-transparent font-light hover:bg-zinc-100 dark:text-slate-300 dark:hover:bg-slate-800 border border-ccf-300 dark:border-slate-700 px-4 py-1 rounded-md"
-        :to="{ name: 'assessment-plan-create' }"
-        >Create Assessment Plan
-      </RouterLink>
+      <RouterLinkButton :to="{ name: 'assessment-plan-create' }">
+        Create Assessment Plan
+      </RouterLinkButton>
     </div>
   </template>
 </template>
+
 <script setup lang="ts">
 import PageHeader from '@/components/PageHeader.vue';
+import PrimaryButton from '@/volt/PrimaryButton.vue';
 import type { AssessmentPlan } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { useSystemStore } from '@/stores/system.ts';
@@ -86,6 +83,7 @@ import type { AxiosError } from 'axios';
 import type { ErrorResponse, ErrorBody } from '@/stores/types.ts';
 import decamelizeKeys from 'decamelize-keys';
 import { computed } from 'vue';
+import RouterLinkButton from '@/components/RouterLinkButton.vue';
 
 const toast = useToast();
 const systemStore = useSystemStore();

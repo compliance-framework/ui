@@ -148,7 +148,7 @@ import DatePicker from '@/volt/DatePicker.vue';
 import Textarea from '@/volt/Textarea.vue';
 import InputText from '@/volt/InputText.vue';
 import SelectButton from '@/volt/SelectButton.vue';
-import TertiaryButton from '@/components/TertiaryButton.vue';
+import TertiaryButton from '@/volt/TertiaryButton.vue';
 import { BIconArrowRepeat, BIconX } from 'bootstrap-icons-vue';
 import Base64FileUpload from '@/components/Base64FileUpload.vue';
 
