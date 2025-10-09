@@ -58,9 +58,9 @@ import { useAssessmentPlanStore } from '@/stores/assessment-plans.ts';
 import { useToast } from 'primevue/usetoast';
 import FormInput from '@/components/forms/FormInput.vue';
 import FormTextarea from '@/components/forms/FormTextarea.vue';
-import PrimaryButton from '@/components/PrimaryButton.vue';
-import SecondaryButton from '@/components/SecondaryButton.vue';
-import TertiaryButton from '@/components/TertiaryButton.vue';
+import PrimaryButton from '@/volt/PrimaryButton.vue';
+import SecondaryButton from '@/volt/SecondaryButton.vue';
+import TertiaryButton from '@/volt/TertiaryButton.vue';
 import { BIconArrowRepeat } from 'bootstrap-icons-vue';
 import { v4 as uuidv4 } from 'uuid';
 

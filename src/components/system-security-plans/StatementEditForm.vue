@@ -200,6 +200,7 @@ onMounted(() => {
     remarks: props.statement.remarks,
     props: [...(props.statement.props || [])],
     links: [...(props.statement.links || [])],
+    byComponents: props.statement.byComponents,
   });
 });
 

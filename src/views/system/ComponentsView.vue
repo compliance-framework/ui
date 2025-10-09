@@ -5,12 +5,9 @@
       <h3 class="text-lg font-semibold dark:text-slate-300">
         System Components
       </h3>
-      <button
-        @click="showCreateComponentModal = true"
-        class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
-      >
+      <PrimaryButton @click="showCreateComponentModal = true">
         Create Component
-      </button>
+      </PrimaryButton>
     </div>
 
     <div class="space-y-4">
@@ -48,36 +45,24 @@
             </span>
           </div>
         </template>
-        <div class="py-3 px-4 flex justify-between items-center">
-          <div class="flex items-center space-x-3">
-            <span class="font-medium text-gray-900 dark:text-slate-300">{{
-              component.title
-            }}</span>
-          </div>
+        <div class="py-3 px-4 flex justify-end items-center">
           <div class="flex gap-2">
-            <button
-              @click.stop="editComponent(component)"
-              class="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 transition-colors"
-            >
+            <TertiaryButton @click.stop="editComponent(component)">
               Edit
-            </button>
-            <button
-              @click.stop="downloadComponentJSON(component)"
-              class="px-3 py-1 bg-gray-500 text-white text-sm rounded hover:bg-gray-600 transition-colors"
-            >
+            </TertiaryButton>
+            <TertiaryButton @click.stop="downloadComponentJSON(component)">
               JSON
-            </button>
-            <button
+            </TertiaryButton>
+            <TertiaryButton
               @click.stop="
                 confirmDeleteDialog(() => deleteComponent(component), {
                   itemName: component.title,
                   itemType: 'component',
                 })
               "
-              class="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition-colors"
             >
               Delete
-            </button>
+            </TertiaryButton>
           </div>
         </div>
         <div
@@ -163,6 +148,8 @@ import { computed, onMounted, ref } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import decamelizeKeys from 'decamelize-keys';
 import Dialog from '@/volt/Dialog.vue';
+import PrimaryButton from '@/volt/PrimaryButton.vue';
+import TertiaryButton from '@/volt/TertiaryButton.vue';
 
 // Form components
 import SystemImplementationComponentCreateForm from '@/components/system-security-plans/SystemImplementationComponentCreateForm.vue';

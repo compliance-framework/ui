@@ -10,16 +10,32 @@
   </template>
   <template v-if="assessmentPlans">
     <div
-      class="my-4 rounded-md bg-white dark:bg-slate-900 border-collapse border border-ccf-300 dark:border-slate-700"
+      class="my-4 overflow-hidden rounded-lg border border-ccf-300 bg-white shadow dark:border-slate-700 dark:bg-slate-900"
     >
-      <table class="table-auto w-full rounded-full dark:text-slate-300">
+      <table class="table-auto w-full dark:text-slate-300">
+        <thead class="bg-gray-50 dark:bg-slate-800">
+          <tr class="border-b border-ccf-300 dark:border-slate-700">
+            <th
+              class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-slate-400"
+            >
+              Title
+            </th>
+            <th
+              class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-slate-400"
+            >
+              Actions
+            </th>
+          </tr>
+        </thead>
         <tbody>
           <tr
             class="hover:bg-zinc-50 dark:hover:bg-slate-800 border-b border-ccf-300 dark:border-slate-800"
             v-for="assessmentPlan in assessmentPlans"
             :key="assessmentPlan.uuid"
           >
-            <td class="py-3 px-4 whitespace-nowrap grow">
+            <td
+              class="px-6 py-4 text-sm font-medium text-gray-900 dark:text-slate-300"
+            >
               {{ assessmentPlan.metadata.title }}
               <Badge
                 severity="info"
@@ -31,18 +47,16 @@
               />
             </td>
 
-            <td class="py-2 px-2 text-right whitespace-nowrap">
-              <div class="flex gap-2">
-                <RouterLink
-                  class="bg-white hover:bg-zinc-100 border border-ccf-300 px-4 py-1 rounded-md dark:bg-slate-800 dark:hover:bg-slate-700 dark:border-slate-700"
+            <td class="px-6 py-4 text-right text-sm font-medium">
+              <div class="flex gap-2 justify-end">
+                <RouterLinkButton
                   :to="{
                     name: 'assessment-plan-overview',
                     params: { id: assessmentPlan.uuid },
                   }"
                   >View
-                </RouterLink>
-                <button
-                  class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1 rounded-md"
+                </RouterLinkButton>
+                <PrimaryButton
                   @click="
                     downloadJSON(
                       assessmentPlan.uuid,
@@ -52,13 +66,12 @@
                   title="Download Full JSON"
                 >
                   JSON
-                </button>
-                <button
+                </PrimaryButton>
+                <PrimaryButton
                   @click="systemStore.setAssessmentPlan(assessmentPlan)"
-                  class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1 rounded-md"
                 >
                   Set
-                </button>
+                </PrimaryButton>
               </div>
             </td>
           </tr>
@@ -67,16 +80,16 @@
     </div>
 
     <div class="mt-4">
-      <RouterLink
-        class="bg-transparent font-light hover:bg-zinc-100 dark:text-slate-300 dark:hover:bg-slate-800 border border-ccf-300 dark:border-slate-700 px-4 py-1 rounded-md"
-        :to="{ name: 'assessment-plan-create' }"
-        >Create Assessment Plan
-      </RouterLink>
+      <RouterLinkButton :to="{ name: 'assessment-plan-create' }">
+        Create Assessment Plan
+      </RouterLinkButton>
     </div>
   </template>
 </template>
+
 <script setup lang="ts">
 import PageHeader from '@/components/PageHeader.vue';
+import PrimaryButton from '@/volt/PrimaryButton.vue';
 import type { AssessmentPlan } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { useSystemStore } from '@/stores/system.ts';
@@ -86,6 +99,7 @@ import type { AxiosError } from 'axios';
 import type { ErrorResponse, ErrorBody } from '@/stores/types.ts';
 import decamelizeKeys from 'decamelize-keys';
 import { computed } from 'vue';
+import RouterLinkButton from '@/components/RouterLinkButton.vue';
 
 const toast = useToast();
 const systemStore = useSystemStore();

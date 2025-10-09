@@ -84,8 +84,8 @@ import { ref } from 'vue';
 import type { DefinedComponent } from '@/oscal';
 import FormInput from '@/components/forms/FormInput.vue';
 import FormTextarea from '@/components/forms/FormTextarea.vue';
-import PrimaryButton from '@/components/PrimaryButton.vue';
-import TertiaryButton from '@/components/TertiaryButton.vue';
+import PrimaryButton from '@/volt/PrimaryButton.vue';
+import TertiaryButton from '@/volt/TertiaryButton.vue';
 import { BIconArrowRepeat } from 'bootstrap-icons-vue';
 import { v4 as uuidv4 } from 'uuid';
 import { useToast } from 'primevue/usetoast';
@@ -116,8 +116,8 @@ const component = ref({
   // controlImplementations: [],
 });
 
-const { data: createdComponent, execute } = useDataApi<DefinedComponent[]>(
-  `/api/oscal/component-definitions/${props.componentDefinitionId}/components`,
+const { data: createdComponent, execute } = useDataApi<DefinedComponent>(
+  `/api/oscal/component-definitions/${props.componentDefinitionId}/component`,
   { method: 'POST', transformRequest: [decamelizeKeys] },
   { immediate: false },
 );
@@ -156,7 +156,7 @@ async function createComponent(): Promise<void> {
     };
 
     await execute({
-      data: [componentData], // TODO: API should accept single object, not array
+      data: componentData,
     });
     toast.add({
       severity: 'success',
@@ -164,7 +164,7 @@ async function createComponent(): Promise<void> {
       detail: `Component ${component.value.title} has been created.`,
       life: 3000,
     });
-    emit('created', createdComponent.value![0]);
+    emit('created', createdComponent.value!);
   } catch (error) {
     const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
     const errorText =

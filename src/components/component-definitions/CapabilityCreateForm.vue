@@ -76,9 +76,9 @@ import type { Capability } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import FormInput from '@/components/forms/FormInput.vue';
 import FormTextarea from '@/components/forms/FormTextarea.vue';
-import PrimaryButton from '@/components/PrimaryButton.vue';
-import SecondaryButton from '@/components/SecondaryButton.vue';
-import TertiaryButton from '@/components/TertiaryButton.vue';
+import PrimaryButton from '@/volt/PrimaryButton.vue';
+import SecondaryButton from '@/volt/SecondaryButton.vue';
+import TertiaryButton from '@/volt/TertiaryButton.vue';
 import { BIconArrowRepeat } from 'bootstrap-icons-vue';
 import { v4 as uuidv4 } from 'uuid';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
@@ -104,8 +104,8 @@ const capability = ref({
   // controlImplementations: [],
 });
 
-const { data: newCapability, execute } = useDataApi<Capability[]>(
-  `/api/oscal/component-definitions/${props.componentDefinitionId}/capabilities`,
+const { data: newCapability, execute } = useDataApi<Capability>(
+  `/api/oscal/component-definitions/${props.componentDefinitionId}/capability`,
   {
     method: 'POST',
     transformRequest: [decamelizeKeys],
@@ -140,9 +140,9 @@ async function createCapability(): Promise<void> {
     };
 
     await execute({
-      data: [capabilityData],
+      data: capabilityData,
     });
-    emit('created', newCapability.value![0]);
+    emit('created', newCapability.value!);
   } catch (error) {
     toast.add({
       severity: 'error',

@@ -99,12 +99,9 @@
             <Badge value="AR" severity="danger" /> {{ sourceStats.ar }}
           </span>
         </div>
-        <button
-          @click="() => loadInventoryItems()"
-          class="text-blue-600 hover:text-blue-800 dark:text-blue-400 text-sm"
-        >
+        <TertiaryButton @click="() => loadInventoryItems()">
           Refresh
-        </button>
+        </TertiaryButton>
       </div>
     </div>
 
@@ -183,34 +180,28 @@
                 {{ item.uuid.substring(0, 8) }}...
               </span>
               <div class="flex gap-2">
-                <button
+                <TertiaryButton
                   v-if="system.securityPlan && item.sourceType === 'ssp'"
                   @click.stop="editInventoryItem(item)"
-                  class="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 transition-colors"
                 >
                   Edit
-                </button>
-                <button
+                </TertiaryButton>
+                <PrimaryButton
                   v-if="system.securityPlan && item.sourceType === 'ssp'"
                   @click.stop="attachInventoryItem(item)"
-                  class="px-3 py-1 bg-green-500 text-white text-sm rounded hover:bg-green-600 transition-colors"
                 >
                   Attach
-                </button>
-                <button
+                </PrimaryButton>
+                <PrimaryButton
                   v-if="system.securityPlan && item.sourceType !== 'ssp'"
                   @click.stop="attachToSSP()"
-                  class="px-3 py-1 bg-indigo-500 text-white text-sm rounded hover:bg-indigo-600 transition-colors"
                 >
                   Add to SSP
-                </button>
-                <button
-                  @click.stop="downloadInventoryItemJSON(item)"
-                  class="px-3 py-1 bg-gray-500 text-white text-sm rounded hover:bg-gray-600 transition-colors"
-                >
+                </PrimaryButton>
+                <TertiaryButton @click.stop="downloadInventoryItemJSON(item)">
                   JSON
-                </button>
-                <button
+                </TertiaryButton>
+                <TertiaryButton
                   v-if="system.securityPlan && item.sourceType === 'ssp'"
                   @click.stop="
                     confirmDeleteDialog(() => deleteInventoryItem(item), {
@@ -218,10 +209,9 @@
                       itemType: 'inventory item',
                     })
                   "
-                  class="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition-colors"
                 >
                   Delete
-                </button>
+                </TertiaryButton>
               </div>
             </div>
 
@@ -327,6 +317,8 @@ import InventoryItemCreateForm from '@/components/inventory/InventoryItemCreateF
 import { useToast } from 'primevue/usetoast';
 import PageHeader from '@/components/PageHeader.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
+import PrimaryButton from '@/volt/PrimaryButton.vue';
+import TertiaryButton from '@/volt/TertiaryButton.vue';
 import Panel from '@/volt/Panel.vue';
 import Badge from '@/volt/Badge.vue';
 import Chip from '@/volt/Chip.vue';

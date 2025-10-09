@@ -204,11 +204,16 @@
                         class="text-xs bg-white dark:bg-slate-900 p-2 rounded border"
                       >
                         <StatementByComponent
-                          :ssp="ssp"
-                          :statement="statement"
                           :by-component="byComponent"
-                          @edit="
-                            handleEditStatementByComponent(
+                          @save="
+                            handleSaveStatementByComponent(
+                              requirement,
+                              statement,
+                              $event,
+                            )
+                          "
+                          @delete="
+                            handleDeleteStatementByComponent(
                               requirement,
                               statement,
                               $event,
@@ -354,7 +359,7 @@
       modal
       header="Edit By-Component Implementation"
     >
-      <StatementByComponentEditForm
+      <ByComponentEditForm
         v-if="editingByComponent && editingRequirement && editingStatement"
         :ssp-id="sspId"
         :requirement="editingRequirement"
@@ -364,11 +369,28 @@
         @saved="handleStatementByComponentSaved"
       />
     </Dialog>
+
+    <!-- Requirement By Component Edit Modal -->
+    <Dialog
+      v-model:visible="showEditRequirementByComponentModal"
+      size="xl"
+      modal
+      header="Edit Component Implementation"
+    >
+      <ByComponentEditForm
+        v-if="editingByComponent && editingRequirement && !editingStatement"
+        :ssp-id="sspId"
+        :requirement="editingRequirement"
+        :by-component="editingByComponent"
+        @cancel="showEditRequirementByComponentModal = false"
+        @saved="handleRequirementByComponentSaved"
+      />
+    </Dialog>
   </template>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, type Component } from 'vue';
+import { ref, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
 import type {
@@ -384,9 +406,9 @@ import ImplementedRequirementEditForm from '@/components/system-security-plans/I
 import ControlImplementationEditForm from '@/components/system-security-plans/ControlImplementationEditForm.vue';
 import StatementEditForm from '@/components/system-security-plans/StatementEditForm.vue';
 import StatementCreateForm from '@/components/system-security-plans/StatementCreateForm.vue';
-import StatementByComponent from '@/views/system-security-plans/partials/StatementByComponent.vue';
-import StatementByComponentEditForm from '@/components/system-security-plans/StatementByComponentEditForm.vue';
-import { useDataApi } from '@/composables/axios';
+import StatementByComponent from '@/views/control-implementations/partials/StatementByComponent.vue';
+import ByComponentEditForm from '@/components/system-security-plans/ByComponentEditForm.vue';
+import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import { getIdFromRoute } from '@/utils/get-poam-id-from-route';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
 
@@ -406,6 +428,7 @@ const showEditControlImplementationModal = ref(false);
 const showEditStatementModal = ref(false);
 const showCreateStatementModal = ref(false);
 const showEditStatementByComponentModal = ref(false);
+const showEditRequirementByComponentModal = ref(false);
 
 // Edit targets
 const editingRequirement = ref<ImplementedRequirement | null>(null);
@@ -420,6 +443,10 @@ const { data: controlImplementation, isLoading: ciLoading } =
     `/api/oscal/system-security-plans/${route.params.id}/control-implementation`,
   );
 const { execute: executeDelete } = useDataApi<void>(null, { method: 'DELETE' });
+const { execute: executeUpdateByComponent } = useDataApi<ByComponent>(null, {
+  method: 'PUT',
+  transformRequest: [decamelizeKeys],
+});
 const loading = computed<boolean>(() => sspLoading.value || ciLoading.value);
 
 const totalStatements = computed(() => {
@@ -582,17 +609,6 @@ const createComponent = (statement: Statement) => {
   alert('Create Component functionality is in development');
 };
 
-const handleEditStatementByComponent = (
-  requirement: ImplementedRequirement,
-  statement: Statement,
-  byComponent: ByComponent,
-) => {
-  editingRequirement.value = requirement;
-  editingStatement.value = statement;
-  editingByComponent.value = byComponent;
-  showEditStatementByComponentModal.value = true;
-};
-
 const handleStatementByComponentSaved = (updatedByComponent: ByComponent) => {
   if (
     controlImplementation.value &&
@@ -630,11 +646,164 @@ const handleStatementByComponentSaved = (updatedByComponent: ByComponent) => {
   editingRequirement.value = null;
 };
 
+const handleRequirementByComponentSaved = (updatedByComponent: ByComponent) => {
+  if (controlImplementation.value && editingRequirement.value) {
+    const reqIndex =
+      controlImplementation.value.implementedRequirements.findIndex(
+        (r) => r.uuid === editingRequirement.value?.uuid,
+      );
+    if (reqIndex !== -1) {
+      const requirement =
+        controlImplementation.value.implementedRequirements[reqIndex];
+      if (requirement.byComponents) {
+        const byCompIndex = requirement.byComponents.findIndex(
+          (bc) => bc.uuid === updatedByComponent.uuid,
+        );
+        if (byCompIndex !== -1) {
+          requirement.byComponents[byCompIndex] = updatedByComponent;
+        }
+      }
+    }
+  }
+  showEditRequirementByComponentModal.value = false;
+  editingByComponent.value = null;
+  editingRequirement.value = null;
+  editingStatement.value = null;
+};
+
 const editRequirementByComponent = (
   requirement: ImplementedRequirement,
-  byComponent: Component,
+  byComponent: ByComponent,
 ) => {
-  console.log('Edit Requirement By Component:', requirement, byComponent);
-  alert('Requirement By Component editing functionality is in development');
+  editingRequirement.value = requirement;
+  editingByComponent.value = byComponent;
+  editingStatement.value = null;
+  showEditRequirementByComponentModal.value = true;
+};
+
+const handleSaveStatementByComponent = async (
+  requirement: ImplementedRequirement,
+  statement: Statement,
+  updatedByComponent: ByComponent,
+) => {
+  try {
+    if (!sspId.value) {
+      toast.add({
+        severity: 'error',
+        summary: 'Missing System Plan',
+        detail: 'Unable to determine which system security plan to update.',
+        life: 4000,
+      });
+      return;
+    }
+    const response = await executeUpdateByComponent(
+      `/api/oscal/system-security-plans/${sspId.value}/control-implementation/implemented-requirements/${requirement.uuid}/statements/${statement.uuid}/by-components/${updatedByComponent.uuid}`,
+      {
+        data: updatedByComponent,
+      },
+    );
+    const persistedByComponent =
+      response.data.value?.data ?? updatedByComponent;
+    // Update the local data
+    if (controlImplementation.value) {
+      const reqIndex =
+        controlImplementation.value.implementedRequirements.findIndex(
+          (r) => r.uuid === requirement.uuid,
+        );
+      if (reqIndex !== -1) {
+        const req =
+          controlImplementation.value.implementedRequirements[reqIndex];
+        if (req.statements) {
+          const statementIndex = req.statements.findIndex(
+            (s) => s.uuid === statement.uuid,
+          );
+          if (statementIndex !== -1) {
+            const stmt = req.statements[statementIndex];
+            if (stmt.byComponents) {
+              const byCompIndex = stmt.byComponents.findIndex(
+                (bc) => bc.uuid === updatedByComponent.uuid,
+              );
+              if (byCompIndex !== -1) {
+                stmt.byComponents[byCompIndex] = persistedByComponent;
+              }
+            }
+          }
+        }
+      }
+    }
+    toast.add({
+      severity: 'success',
+      summary: 'Success',
+      detail: 'Statement by-component updated successfully.',
+      life: 3000,
+    });
+  } catch (error) {
+    console.error('Failed to save statement by-component:', error);
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'Failed to save statement by-component. Please try again.',
+      life: 5000,
+    });
+  }
+};
+
+const handleDeleteStatementByComponent = async (
+  requirement: ImplementedRequirement,
+  statement: Statement,
+  byComponentToDelete: ByComponent,
+) => {
+  try {
+    if (!sspId.value) {
+      toast.add({
+        severity: 'error',
+        summary: 'Missing System Plan',
+        detail: 'Unable to determine which system security plan to update.',
+        life: 4000,
+      });
+      return;
+    }
+    await executeDelete(
+      `/api/oscal/system-security-plans/${sspId.value}/control-implementation/implemented-requirements/${requirement.uuid}/statements/${statement.uuid}/by-components/${byComponentToDelete.uuid}`,
+    );
+    // Update the local data
+    if (controlImplementation.value) {
+      const reqIndex =
+        controlImplementation.value.implementedRequirements.findIndex(
+          (r) => r.uuid === requirement.uuid,
+        );
+      if (reqIndex !== -1) {
+        const req =
+          controlImplementation.value.implementedRequirements[reqIndex];
+        if (req.statements) {
+          const statementIndex = req.statements.findIndex(
+            (s) => s.uuid === statement.uuid,
+          );
+          if (statementIndex !== -1) {
+            const stmt = req.statements[statementIndex];
+            if (stmt.byComponents) {
+              stmt.byComponents = stmt.byComponents.filter(
+                (bc) => bc.uuid !== byComponentToDelete.uuid,
+              );
+            }
+          }
+        }
+      }
+    }
+    toast.add({
+      severity: 'success',
+      summary: 'Success',
+      detail: 'Statement by-component deleted successfully.',
+      life: 3000,
+    });
+  } catch (error) {
+    console.error('Failed to delete statement by-component:', error);
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'Failed to delete statement by-component. Please try again.',
+      life: 5000,
+    });
+  }
 };
 </script>

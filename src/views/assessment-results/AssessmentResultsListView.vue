@@ -91,25 +91,20 @@
                 </td>
                 <td class="px-6 py-4 text-right text-sm font-medium">
                   <div class="flex gap-2 justify-end">
-                    <RouterLink
-                      :to="`/assessment-results/${ar.uuid}`"
-                      class="bg-white hover:bg-zinc-100 border border-ccf-300 px-4 py-1 rounded-md dark:bg-slate-800 dark:hover:bg-slate-700 dark:border-slate-700"
-                    >
+                    <RouterLinkButton :to="`/assessment-results/${ar.uuid}`">
                       View
-                    </RouterLink>
-                    <button
+                    </RouterLinkButton>
+                    <PrimaryButton
                       @click="downloadJson(ar.uuid, ar.metadata?.title)"
-                      class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1 rounded-md"
                       title="Download Full JSON"
                     >
                       JSON
-                    </button>
-                    <button
+                    </PrimaryButton>
+                    <PrimaryButton
                       @click="systemStore.setAssessmentResults(ar)"
-                      class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1 rounded-md"
                     >
                       Set
-                    </button>
+                    </PrimaryButton>
                   </div>
                 </td>
               </tr>
@@ -121,24 +116,23 @@
 
     <!-- Create Button -->
     <div class="mt-4">
-      <RouterLink
-        to="/assessment-results/create"
-        class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md inline-block"
-      >
+      <RouterLinkButton to="/assessment-results/create">
         Create New Assessment Results
-      </RouterLink>
+      </RouterLinkButton>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import PageHeader from '@/components/PageHeader.vue';
+import PrimaryButton from '@/volt/PrimaryButton.vue';
 import type { AssessmentResult } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { useConfigStore } from '@/stores/config.ts';
 import Badge from '@/volt/Badge.vue';
 import { useSystemStore } from '@/stores/system.ts';
 import { useDataApi } from '@/composables/axios';
+import RouterLinkButton from '@/components/RouterLinkButton.vue';
 
 const configStore = useConfigStore();
 const toast = useToast();

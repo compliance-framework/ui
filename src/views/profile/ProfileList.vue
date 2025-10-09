@@ -1,19 +1,36 @@
 <template>
   <PageHeader>Profiles</PageHeader>
   <div
-    class="mt-4 rounded-md bg-white dark:bg-slate-900 border border-ccf-300 dark:border-slate-700"
+    class="mt-4 overflow-hidden rounded-lg border border-ccf-300 bg-white shadow dark:border-slate-700 dark:bg-slate-900"
   >
-    <table
-      class="table-auto w-full rounded-full dark:text-slate-300 border-collapse"
-    >
+    <table class="table-auto w-full dark:text-slate-300">
+      <thead class="bg-gray-50 dark:bg-slate-800">
+        <tr class="border-b border-ccf-300 dark:border-slate-700">
+          <th
+            class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-slate-400"
+          >
+            Title
+          </th>
+          <th
+            class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-slate-400"
+          >
+            Actions
+          </th>
+        </tr>
+      </thead>
       <tbody v-if="isLoading">
         <tr>
-          <td class="py-3 px-4 font-medium text-wrap">Loading ...</td>
+          <td
+            colspan="2"
+            class="px-6 py-4 text-center text-gray-500 dark:text-slate-400"
+          >
+            Loading...
+          </td>
         </tr>
       </tbody>
       <tbody v-else-if="error">
         <tr>
-          <td class="py-3 px-4 font-medium text-wrap text-red-500">
+          <td colspan="2" class="px-6 py-4 text-center text-red-500">
             Error loading profiles
           </td>
         </tr>
@@ -24,30 +41,29 @@
           v-for="profile in profiles"
           :key="profile.uuid"
         >
-          <td class="py-3 px-4 whitespace-nowrap grow">
+          <td
+            class="px-6 py-4 text-sm font-medium text-gray-900 dark:text-slate-300"
+          >
             {{ profile.metadata.title }}
           </td>
-          <td class="py-3 px-4 text-right">
-            <RouterLink
-              class="bg-white hover:bg-zinc-100 border border-ccf-300 px-4 py-1 rounded-md dark:bg-slate-800 dark:hover:bg-slate-700 dark:border-slate-700"
+          <td class="px-6 py-4 text-right text-sm font-medium">
+            <RouterLinkButton
+              variant="outlined"
               :to="{
                 name: 'profile:view-controls',
                 params: { id: profile.uuid },
               }"
               >View
-            </RouterLink>
+            </RouterLinkButton>
           </td>
         </tr>
       </tbody>
     </table>
   </div>
   <div class="my-4">
-    <RouterLink
-      :to="{ name: 'profile:create' }"
-      class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md inline-block ml-4"
-    >
+    <RouterLinkButton :to="{ name: 'profile:create' }">
       Create New Profile
-    </RouterLink>
+    </RouterLinkButton>
   </div>
 </template>
 
@@ -59,6 +75,7 @@ import { watch } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import type { AxiosError } from 'axios';
 import type { ErrorResponse, ErrorBody } from '@/stores/types';
+import RouterLinkButton from '@/components/RouterLinkButton.vue';
 
 const toast = useToast();
 

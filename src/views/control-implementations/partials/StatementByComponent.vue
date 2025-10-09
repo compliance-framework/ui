@@ -70,7 +70,7 @@ function cancel() {
   </div>
   <div class="text-gray-600 dark:text-slate-400">
     <template v-if="!editing">
-      <p class="prose prose-slate dark:prose-invert">
+      <p class="prose prose-slate dark:prose-invert max-w-full">
         <VueMarkdown :source="localComponent.description" />
       </p>
     </template>
@@ -154,7 +154,7 @@ function cancel() {
   </div>
 
   <!-- Implementation Status -->
-  <div v-if="byComponent.implementationStatus" class="mt-2 text-xs">
+  <!-- <div v-if="byComponent.implementationStatus" class="mt-2 text-xs">
     <span class="font-medium text-purple-700 dark:text-purple-400"
       >Implementation Status:</span
     >
@@ -170,5 +170,5 @@ function cancel() {
         >
       </div>
     </div>
-  </div>
+  </div> -->
 </template>

@@ -89,7 +89,7 @@
 import { ref } from 'vue';
 import type { BackMatterResource, BackMatter } from '@/oscal';
 import { useRoute } from 'vue-router';
-import TertiaryButton from '@/components/TertiaryButton.vue';
+import TertiaryButton from '@/volt/TertiaryButton.vue';
 import BackMatterResourceCreateModal from '@/components/component-definitions/BackMatterResourceCreateModal.vue';
 import { useDataApi } from '@/composables/axios';
 

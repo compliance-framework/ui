@@ -10,18 +10,17 @@ import { useToggle } from '@/composables/useToggle';
 import ControlStatementImplementation from '@/views/control-implementations/partials/ControlStatementImplementation.vue';
 import { useSystemStore } from '@/stores/system.ts';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
-import VueMarkdown from 'vue-markdown-render';
 import type { Control } from '@/oscal';
-import type { CreateStatementRequest } from '@/stores/system-security-plans';
 
 const { control, implementation } = defineProps<{
   control: Control;
   implementation: ImplementedRequirement | undefined | null;
 }>();
 const selectedPart = ref<Part>();
-const { value: drawerOpen, set: setDrawer } = useToggle();
+const { value: statementDrawerOpen, set: setStatementDrawer } = useToggle();
 const drawerLoading = useToggle();
 const { system } = useSystemStore();
+const showCreateStatementModal = ref(false);
 
 const selectedImplementation = ref<ImplementedRequirement>(
   implementation as ImplementedRequirement,
@@ -36,15 +35,6 @@ watchEffect(() => {
 
 const { execute: executeCreate } = useDataApi<ImplementedRequirement>(
   `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/control-implementation/implemented-requirements`,
-  {
-    method: 'POST',
-    transformRequest: [decamelizeKeys],
-  },
-  { immediate: false },
-);
-
-const { execute: executeCreateStatement } = useDataApi<Statement>(
-  null,
   {
     method: 'POST',
     transformRequest: [decamelizeKeys],
@@ -93,15 +83,19 @@ function onMouseLeave(e: MouseEvent) {
 
 function updateStatement(statement: Statement) {
   statements.value[statement.statementId] = statement;
+  showCreateStatementModal.value = false;
 }
 
 async function onPartSelect(e: Event, part: Part) {
   e.preventDefault();
   selectedPart.value = part;
-  setDrawer(true);
+  setStatementDrawer(true);
   drawerLoading.set(true);
 
+  console.log('Selected part', part);
+
   if (!selectedImplementation.value) {
+    console.debug('Creating implemented requirement for control ', control.id);
     const response = await executeCreate({
       data: {
         uuid: uuidv4(),
@@ -117,30 +111,6 @@ async function onPartSelect(e: Event, part: Part) {
       );
     }
   }
-
-  if (!statements.value[selectedPart.value.id]) {
-    const response = await executeCreateStatement(
-      `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/control-implementation/implemented-requirements/${selectedImplementation.value.uuid}/statements`,
-      {
-        data: {
-          uuid: uuidv4(),
-          statementId: selectedPart.value.id,
-          byComponents: [],
-          props: [],
-          links: [],
-        } as CreateStatementRequest,
-      },
-    );
-    if (response.data.value) {
-      statements.value[selectedPart.value.id] = response.data.value.data;
-    } else {
-      console.error(
-        'Failed to create statement: response.data.value is null or undefined',
-        response,
-      );
-    }
-  }
-
   drawerLoading.set(false);
 }
 </script>
@@ -162,12 +132,9 @@ async function onPartSelect(e: Event, part: Part) {
       >
         <template #default="{ part }">
           <div class="p-0.5">
-            <div
-              v-if="getText(part)"
-              class="prose prose-slate dark:prose-invert"
-            >
-              <VueMarkdown :source="getText(part) ?? ''" />
-            </div>
+            <p v-if="getText(part)" class="prose prose-slate dark:prose-invert">
+              {{ getText(part) ?? '' }}
+            </p>
             <template v-if="statements[part.id]">
               <Badge
                 class="ml-2"
@@ -183,16 +150,18 @@ async function onPartSelect(e: Event, part: Part) {
   </div>
 
   <Drawer
-    v-model:visible="drawerOpen"
-    header="Implementation"
+    v-model:visible="statementDrawerOpen"
+    header="Implementation Statement"
     position="right"
     class="w-full! md:w-1/2! lg:w-3/5!"
   >
     <ControlStatementImplementation
-      v-if="selectedPart && statements[selectedPart.id]"
+      v-if="selectedPart"
       @updated="updateStatement"
       :implementation="selectedImplementation"
+      :ssp-id="system.securityPlan?.uuid"
       :statement="statements[selectedPart.id]"
+      :partid="selectedPart.id"
     />
   </Drawer>
 </template>

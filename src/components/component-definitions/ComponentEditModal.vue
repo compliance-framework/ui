@@ -21,7 +21,7 @@
 </template>
 
 <script setup lang="ts">
-import PrimaryButton from '@/components/PrimaryButton.vue';
+import PrimaryButton from '@/volt/PrimaryButton.vue';
 import Dialog from '@/volt/Dialog.vue';
 import ComponentEditForm from '@/components/component-definitions/ComponentEditForm.vue';
 import type { DefinedComponent } from '@/oscal';

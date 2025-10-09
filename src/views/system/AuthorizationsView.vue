@@ -4,12 +4,9 @@
       <h3 class="text-lg font-semibold dark:text-slate-300">
         Leveraged Authorizations
       </h3>
-      <button
-        @click="showCreateLeveragedAuthModal = true"
-        class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
-      >
+      <PrimaryButton @click="showCreateLeveragedAuthModal = true">
         Create Authorization
-      </button>
+      </PrimaryButton>
     </div>
 
     <div class="space-y-4">
@@ -43,29 +40,22 @@
           <div class="py-3 px-4 flex justify-between items-center">
             <div class="flex items-center space-x-3"></div>
             <div class="flex gap-2">
-              <button
-                @click.stop="editLeveragedAuth(auth)"
-                class="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 transition-colors"
-              >
+              <TertiaryButton @click.stop="editLeveragedAuth(auth)">
                 Edit
-              </button>
-              <button
-                @click.stop="downloadLeveragedAuthJSON(auth)"
-                class="px-3 py-1 bg-gray-500 text-white text-sm rounded hover:bg-gray-600 transition-colors"
-              >
+              </TertiaryButton>
+              <TertiaryButton @click.stop="downloadLeveragedAuthJSON(auth)">
                 JSON
-              </button>
-              <button
+              </TertiaryButton>
+              <TertiaryButton
                 @click.stop="
                   confirmDeleteDialog(() => deleteLeveragedAuth(auth), {
                     itemName: auth.title,
                     itemType: 'leveraged authorization',
                   })
                 "
-                class="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition-colors"
               >
                 Delete
-              </button>
+              </TertiaryButton>
             </div>
           </div>
         </div>
@@ -159,6 +149,8 @@ import decamelizeKeys from 'decamelize-keys';
 
 // Form components
 import Dialog from '@/volt/Dialog.vue';
+import PrimaryButton from '@/volt/PrimaryButton.vue';
+import TertiaryButton from '@/volt/TertiaryButton.vue';
 import SystemImplementationLeveragedAuthorizationCreateForm from '@/components/system-security-plans/SystemImplementationLeveragedAuthorizationCreateForm.vue';
 import SystemImplementationLeveragedAuthorizationEditForm from '@/components/system-security-plans/SystemImplementationLeveragedAuthorizationEditForm.vue';
 
