@@ -2,94 +2,78 @@
 
 ## Overview
 
-This document describes the standardized approach for handling errors from Axios HTTP requests in the CCF UI application. We provide two complementary utilities to ensure consistent, user-friendly error messages across the application.
+The CCF UI exposes a consistent set of utilities for surfacing errors. These helpers separate transport concerns (Axios responses) from application-level failures and give developers the choice of presenting feedback as a toast or a modal dialog.
 
 ## Available Utilities
 
-### 1. `formatAxiosError` (Utility Function)
+### `formatAxiosError`
 
 **Location:** `src/utils/error-formatting.ts`
 
-A utility function that formats `AxiosError` objects into user-friendly messages with HTTP status codes and API error details.
+Converts an `AxiosError` into `{ summary, detail, statusCode }`, pulling useful information from the HTTP response.
 
-### 2. `useErrorToast` (Composable)
+### `formatError`
+
+**Location:** `src/utils/error-formatting.ts`
+
+Normalizes any thrown value (plain `Error`, string, custom object) into the same structure as `formatAxiosError`. Use this when the failure is not an Axios response.
+
+### `useErrorToast`
 
 **Location:** `src/composables/useErrorToast.ts`
 
-A Vue composable that automatically watches error refs and displays toast notifications. Built on top of `formatAxiosError`.
+Watches a reactive Axios error ref (e.g., from `useDataApi`) and automatically emits a PrimeVue toast with formatted details. Returns a `showErrorToast` helper for manual invocation.
+
+### `useAxiosErrorDialog`
+
+**Location:** `src/composables/useAxiosErrorDialog.ts`
+
+Watches an Axios error ref and opens the shared error dialog when a failure occurs. Also exposes `showAxiosErrorDialog` for manual use.
+
+### `errorDialog` service
+
+**Location:** `src/services/error-dialog.ts`
+
+Service-style API with methods:
+
+- `errorDialog.show({...})` – display a dialog given explicit summary/detail.
+- `errorDialog.showAxiosError(error, options)` – convenience wrapper around `formatAxiosError`.
+- `errorDialog.showError(error, options)` – convenience wrapper around `formatError`.
+- `errorDialog.hide()` – close the dialog programmatically.
+
+### `ErrorDialogHost` component
+
+**Location:** `src/components/notifications/ErrorDialogHost.vue`
+
+Renders a global dialog surface driven by the service above. It is already mounted in `src/App.vue`.
 
 ---
 
-## When to Use Each Approach
+## Choosing a Tool
 
-### Use `useErrorToast` Composable For:
-
-✅ **Simple list/detail views** - When you just need to show an error toast  
-✅ **Reactive error refs** - Errors from `useDataApi` or `useGuestApi`  
-✅ **Automatic error handling** - When no additional logic is needed  
-✅ **Loading/error states** - Simple data fetching scenarios
-
-**Example use cases:**
-
-- User list views
-- Data tables
-- Simple detail pages
-- Read-only displays
-
-### Use `formatAxiosError` Utility Directly For:
-
-✅ **Try-catch blocks** - Errors caught in async functions  
-✅ **Complex error handling** - When you need additional logic  
-✅ **Form submissions** - Create/update/delete operations  
-✅ **Custom error messages** - When you need full control  
-✅ **Multiple error scenarios** - Different handling for different errors
-
-**Example use cases:**
-
-- Form submissions
-- Multi-step operations
-- Error handling with redirects
-- Conditional error responses
+- Use **`useErrorToast`** for straightforward Axios error refs (list/detail views, data tables) when a toast is sufficient.
+- Use **`useAxiosErrorDialog`** when the user must acknowledge a failure before continuing.
+- Call **`errorDialog.showAxiosError`** inside `catch` blocks for manual flows (e.g., form submissions, CRUD actions).
+- Use **`formatError`** for non-Axios failures before calling `toast.add` or `errorDialog.showError`.
 
 ---
 
 ## Usage Examples
 
-### Pattern 1: Simple List View (useErrorToast)
-
-**Before:**
+### 1. Toast on List Fetch Failure
 
 ```vue
-<template>
-  <template v-else-if="error">
-    <tr>
-      <td colspan="4" class="text-center text-red-500">Error loading users</td>
-    </tr>
-  </template>
-</template>
-
 <script setup lang="ts">
-const { data: users, isLoading, error } = useDataApi<User[]>('/api/users');
-</script>
-```
-
-**After:**
-
-```vue
-<template>
-  <template v-else-if="error">
-    <tr>
-      <td colspan="4" class="text-center text-red-500">Error loading users</td>
-    </tr>
-  </template>
-</template>
-
-<script setup lang="ts">
+import { useDataApi } from '@/composables/axios';
 import { useErrorToast } from '@/composables/useErrorToast';
+import type { CCFUser } from '@/stores/types';
 
-const { data: users, isLoading, error } = useDataApi<User[]>('/api/users');
+const {
+  data: users,
+  isLoading,
+  error,
+} = useDataApi<CCFUser[]>('/api/users', {}, { immediate: false });
 
-// Automatically show toast when error occurs
 useErrorToast(error, {
   summary: 'Error loading users',
   life: 3000,
@@ -97,300 +81,85 @@ useErrorToast(error, {
 </script>
 ```
 
-**Benefits:**
+### 2. Dialog on Critical Fetch Failure
 
-- ✅ Users get a toast notification (won't miss the error)
-- ✅ Toast includes HTTP status code (e.g., "Error loading users: 404 Not Found")
-- ✅ Detailed API error message shown
-- ✅ Only 1 line of code added
+```vue
+<script setup lang="ts">
+import { useRoute, useRouter } from 'vue-router';
+import { useDataApi } from '@/composables/axios';
+import { useAxiosErrorDialog } from '@/composables/useAxiosErrorDialog';
+import type { CCFUser } from '@/stores/types';
 
----
+const route = useRoute();
+const router = useRouter();
 
-### Pattern 2: Try-Catch in Form Submission (formatAxiosError)
+const { data: user, error } = useDataApi<CCFUser>(
+  `/api/users/${route.params.id}`,
+);
 
-**Before:**
-
-```typescript
-try {
-  await executeCreate({ data: assessmentResults });
-  toast.add({
-    severity: 'success',
-    summary: 'Success',
-    detail: 'Assessment Results created successfully',
-  });
-} catch (err) {
-  const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-  toast.add({
-    severity: 'error',
-    summary: 'Error',
-    detail: `Failed to create Assessment Results: ${errorMessage}`,
-    life: 5000,
-  });
-}
+useAxiosErrorDialog(error, {
+  summary: 'Error loading user',
+  onClose: () => router.push({ name: 'users-list' }),
+});
+</script>
 ```
 
-**After:**
+### 3. Form Submission with Toast
 
-```typescript
+```ts
+import { useToast } from 'primevue/usetoast';
 import { formatAxiosError } from '@/utils/error-formatting';
 import type { AxiosError } from 'axios';
-import type { ErrorResponse, ErrorBody } from '@/stores/types';
+import type { ErrorBody, ErrorResponse } from '@/stores/types';
+
+const toast = useToast();
+
+async function saveUser() {
+  try {
+    await apiCall();
+    toast.add({
+      severity: 'success',
+      summary: 'Success',
+      detail: 'User updated successfully.',
+      life: 3000,
+    });
+  } catch (err) {
+    const formatted = formatAxiosError(
+      err as AxiosError<ErrorResponse<ErrorBody>>,
+    );
+    toast.add({
+      severity: 'error',
+      summary: `Error updating user: ${formatted.summary}`,
+      detail: formatted.detail,
+      life: 4000,
+    });
+  }
+}
+```
+
+### 4. Manual Dialog from Catch Block
+
+```ts
+import { errorDialog } from '@/services/error-dialog';
 
 try {
-  await executeCreate({ data: assessmentResults });
-  toast.add({
-    severity: 'success',
-    summary: 'Success',
-    detail: 'Assessment Results created successfully',
-  });
+  await deleteThing();
 } catch (err) {
-  const error = err as AxiosError<ErrorResponse<ErrorBody>>;
-  const formatted = formatAxiosError(error);
-
-  toast.add({
-    severity: 'error',
-    summary: `Failed to create Assessment Results: ${formatted.summary}`,
-    detail: formatted.detail,
-    life: 5000,
+  errorDialog.showError(err, {
+    summary: 'Delete failed',
+    onClose: () => console.log('Dialog dismissed'),
   });
 }
 ```
 
-**Benefits:**
-
-- ✅ Shows HTTP status code in summary
-- ✅ Extracts API error message from response
-- ✅ Handles network errors gracefully
-- ✅ Consistent error formatting
-
 ---
 
-### Pattern 3: Watch Error with Custom Logic (useErrorToast with manual control)
+## Checklist Before Shipping
 
-**Before:**
-
-```typescript
-watch(error, (err) => {
-  if (err) {
-    const errorResponse = err as AxiosError<ErrorResponse<ErrorBody>>;
-    toast.add({
-      severity: 'error',
-      summary: 'Error loading user',
-      detail:
-        errorResponse.response?.data.errors.body ||
-        'An error occurred while loading the user data.',
-      life: 3000,
-    });
-    router.push({ name: 'users-list' });
-  }
-});
-```
-
-**After:**
-
-```typescript
-import { useErrorToast } from '@/composables/useErrorToast';
-
-const { showErrorToast } = useErrorToast(error, {
-  summary: 'Error loading user',
-  autoShow: false, // Disable automatic toast
-});
-
-watch(error, (err) => {
-  if (err) {
-    showErrorToast(err);
-    router.push({ name: 'users-list' });
-  }
-});
-```
-
-**Benefits:**
-
-- ✅ Simplified error formatting
-- ✅ Consistent with other error handling
-- ✅ Still allows custom logic (redirect)
-
----
-
-## Advanced Usage
-
-### Custom Error Message Extraction
-
-When you need different error messages based on status codes or other conditions:
-
-```typescript
-import { useErrorToast } from '@/composables/useErrorToast';
-
-const { data, error } = useDataApi<AssessmentResult>('/api/assessment-results');
-
-useErrorToast(error, {
-  summary: 'Assessment Error',
-  extractMessage: (err) => {
-    // Custom logic based on status code
-    if (err.response?.status === 404) {
-      return 'Assessment result not found. It may have been deleted.';
-    }
-    if (err.response?.status === 403) {
-      return 'You do not have permission to view this assessment.';
-    }
-    // Fallback to API error message
-    return (
-      err.response?.data?.errors?.body || 'Failed to load assessment results'
-    );
-  },
-});
-```
-
-### Configuring Toast Lifetime
-
-```typescript
-useErrorToast(error, {
-  summary: 'Critical Error',
-  life: 10000, // Show for 10 seconds instead of default 5
-});
-```
-
----
-
-## Error Message Priority
-
-The utilities extract error messages in this order of preference:
-
-1. **API Error Body** - `response.data.errors.body` (most specific)
-2. **Axios Error Message** - `error.message` (general error)
-3. **Network Error Message** - Special message for connection issues
-4. **Generic Fallback** - "An unexpected error occurred. Please try again."
-
----
-
-## HTTP Status Code Mapping
-
-The utilities automatically map status codes to user-friendly titles:
-
-| Status Code | Title               |
-| ----------- | ------------------- |
-| 400         | Bad Request         |
-| 401         | Unauthorized        |
-| 403         | Forbidden           |
-| 404         | Not Found           |
-| 409         | Conflict            |
-| 422         | Validation Error    |
-| 429         | Too Many Requests   |
-| 500         | Server Error        |
-| 502         | Bad Gateway         |
-| 503         | Service Unavailable |
-| 504         | Gateway Timeout     |
-| Other       | Error {code}        |
-
----
-
-## Best Practices
-
-### ✅ Do This:
-
-1. **Always provide a summary** - Helps users understand what operation failed
-
-   ```typescript
-   useErrorToast(error, { summary: 'Error loading users' });
-   ```
-
-2. **Keep inline error displays** - For accessibility (screen readers, visual cues)
-
-   ```vue
-   <template v-else-if="error">
-     <td class="text-red-500">Error loading data</td>
-   </template>
-   ```
-
-3. **Use appropriate toast lifetime** - 3-5 seconds for info, 5-10 for errors
-
-   ```typescript
-   useErrorToast(error, { life: 5000 });
-   ```
-
-4. **Cast errors properly in try-catch** - Ensures type safety
-   ```typescript
-   const error = err as AxiosError<ErrorResponse<ErrorBody>>;
-   ```
-
-### ❌ Avoid This:
-
-1. **Don't remove inline error displays** - Some users may miss toasts
-2. **Don't use generic summaries** - "Error" is less helpful than "Error loading users"
-3. **Don't ignore status codes** - They provide valuable context
-4. **Don't skip error handling** - All API calls should handle errors
-
----
-
-## Migration Checklist
-
-When updating a component to use the new utilities:
-
-- [ ] Import the appropriate utility (`useErrorToast` or `formatAxiosError`)
-- [ ] Import required types (`AxiosError`, `ErrorResponse`, `ErrorBody`)
-- [ ] Add error toast handling (composable call or try-catch formatting)
-- [ ] Provide a descriptive summary for the error context
-- [ ] Test with different error scenarios (404, 500, network error)
-- [ ] Keep any existing inline error displays for accessibility
-- [ ] Update any custom error watchers to use the new utilities
-
----
-
-## Testing Error Scenarios
-
-To properly test error handling:
-
-1. **404 Not Found** - Request non-existent resource
-2. **500 Server Error** - Backend error
-3. **422 Validation Error** - Invalid form data
-4. **Network Error** - Disconnect network/stop API server
-5. **Timeout** - Slow network conditions
-
----
-
-## Examples by Feature Area
-
-### Users Management
-
-```typescript
-// UsersListView.vue
-useErrorToast(error, { summary: 'Error loading users' });
-
-// UserView.vue
-useErrorToast(error, { summary: 'Error loading user' });
-
-// UserCreateView.vue (in try-catch)
-const formatted = formatAxiosError(error);
-toast.add({
-  severity: 'error',
-  summary: `Error creating user: ${formatted.summary}`,
-  detail: formatted.detail,
-});
-```
-
-### Assessment Results
-
-```typescript
-// AssessmentResultsListView.vue
-useErrorToast(error, { summary: 'Error loading assessment results' });
-
-// AssessmentResultsCreateView.vue (in try-catch)
-const formatted = formatAxiosError(error);
-toast.add({
-  severity: 'error',
-  summary: `Failed to create assessment: ${formatted.summary}`,
-  detail: formatted.detail,
-});
-```
-
----
-
-## Summary
-
-- **Two utilities:** `formatAxiosError` (function) and `useErrorToast` (composable)
-- **Choose based on context:** Composable for reactive refs, function for try-catch
-- **Consistent error messages:** HTTP status codes + API error details
-- **Better UX:** Users always see informative error notifications
-- **Easy to use:** Minimal code changes required
-
-For questions or issues, please consult the team or create a GitHub issue.
+- [ ] Decide between toast or dialog based on UX (non-blocking vs requiring acknowledgment).
+- [ ] Use `useErrorToast` or `useAxiosErrorDialog` when working with `useDataApi` error refs.
+- [ ] In manual `try/catch` blocks:
+  - [ ] Call `formatAxiosError` for Axios failures.
+  - [ ] Call `formatError` for non-Axios failures.
+  - [ ] Pass the formatted output to `toast.add` **or** `errorDialog.show`.
+- [ ] Ensure any navigation or recovery logic runs after the toast/dialog logic so the user sees the feedback.

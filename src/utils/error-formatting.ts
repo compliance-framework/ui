@@ -1,3 +1,4 @@
+import { isAxiosError } from 'axios';
 import type { AxiosError } from 'axios';
 import type { ErrorResponse, ErrorBody } from '@/stores/types';
 
@@ -55,6 +56,75 @@ export function formatAxiosError(
     summary: getErrorSummary(statusCode),
     detail: apiErrorMessage || getErrorDetail(error),
     statusCode,
+  };
+}
+
+/**
+ * Optional overrides when formatting unknown errors
+ */
+export interface FormatErrorOptions {
+  /**
+   * Override the default summary ("Error") when no better title is available.
+   */
+  defaultSummary?: string;
+
+  /**
+   * Override the default detail fallback when the error is not descriptive.
+   */
+  defaultDetail?: string;
+}
+
+/**
+ * Format unknown errors (Axios, Error, string, or otherwise) into a common structure.
+ *
+ * This helper lets any caller rely on consistent summary/detail strings regardless of the
+ * error origin. Axios errors continue to surface their status codes and response messages.
+ *
+ * @param error - The error to format (may be AxiosError, Error, string, or any value)
+ * @param options - Optional overrides for summary/detail defaults
+ * @returns Formatted error object with summary, detail, and optional status code
+ */
+export function formatError(
+  error: unknown,
+  options: FormatErrorOptions = {},
+): FormattedError {
+  if (isAxiosError<ErrorResponse<ErrorBody>>(error)) {
+    return formatAxiosError(error);
+  }
+
+  const defaultSummary = options.defaultSummary ?? 'Error';
+  const defaultDetail =
+    options.defaultDetail ?? 'An unexpected error occurred. Please try again.';
+
+  if (error instanceof Error) {
+    return {
+      summary: defaultSummary,
+      detail: error.message || defaultDetail,
+    };
+  }
+
+  if (typeof error === 'string') {
+    return {
+      summary: defaultSummary,
+      detail: error || defaultDetail,
+    };
+  }
+
+  if (
+    error &&
+    typeof error === 'object' &&
+    'message' in error &&
+    typeof (error as { message?: unknown }).message === 'string'
+  ) {
+    return {
+      summary: defaultSummary,
+      detail: (error as { message: string }).message || defaultDetail,
+    };
+  }
+
+  return {
+    summary: defaultSummary,
+    detail: defaultDetail,
   };
 }
 

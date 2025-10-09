@@ -5,7 +5,7 @@ import type { ErrorResponse, ErrorBody } from '@/stores/types';
 import { formatAxiosError } from '@/utils/error-formatting';
 
 /**
- * Configuration options for the useErrorToast composable
+ * Configuration options for the Axios error toast composable
  */
 export interface ErrorToastOptions {
   /**
@@ -23,8 +23,8 @@ export interface ErrorToastOptions {
   life?: number;
 
   /**
-   * Whether to automatically show the toast when error occurs
-   * Set to false if you need custom handling before showing the toast
+   * Whether to automatically show the toast when error occurs.
+   * Set to false if you need custom handling before showing the toast.
    * @default true
    */
   autoShow?: boolean;
@@ -41,51 +41,11 @@ export interface ErrorToastOptions {
 }
 
 /**
- * Composable to automatically display toast notifications for Axios errors
+ * Composable to automatically display toast notifications for Axios errors.
  *
- * This composable watches a reactive error ref (typically from useDataApi or useGuestApi)
+ * This composable watches a reactive Axios error ref (typically from useDataApi or useGuestApi)
  * and automatically displays a toast notification when an error occurs. It extracts
  * HTTP status codes and API error messages to provide informative feedback to users.
- *
- * @example
- * Basic usage with automatic toast:
- * ```typescript
- * const { data, error, isLoading } = useDataApi<User[]>('/api/users');
- * useErrorToast(error, { summary: 'Error loading users' });
- * ```
- *
- * @example
- * Manual control with custom handling:
- * ```typescript
- * const { data, error } = useDataApi<User>(`/api/users/${id}`);
- * const { showErrorToast } = useErrorToast(error, {
- *   summary: 'Error loading user',
- *   autoShow: false
- * });
- *
- * watch(error, (err) => {
- *   if (err) {
- *     showErrorToast(err);
- *     // Additional custom handling
- *     router.push({ name: 'users-list' });
- *   }
- * });
- * ```
- *
- * @example
- * Custom error message extraction:
- * ```typescript
- * const { data, error } = useDataApi<AssessmentResult>('/api/assessment-results');
- * useErrorToast(error, {
- *   summary: 'Assessment Results Error',
- *   extractMessage: (err) => {
- *     if (err.response?.status === 404) {
- *       return 'Assessment result not found. It may have been deleted.';
- *     }
- *     return err.response?.data?.errors?.body || 'Failed to load assessment results';
- *   }
- * });
- * ```
  *
  * @param errorRef - Reactive reference to an AxiosError (typically from useDataApi)
  * @param options - Configuration options for the error toast
@@ -107,7 +67,7 @@ export function useErrorToast(
   });
 
   /**
-   * Manually show an error toast for the given error
+   * Manually show an error toast for the given Axios error.
    *
    * Use this when autoShow is false or when you need to show
    * an error toast outside of the automatic watcher.
