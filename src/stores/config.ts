@@ -16,6 +16,14 @@ export const useConfigStore = defineStore('config', () => {
       return config.value;
     }
 
+    if (import.meta.env.VITE_API_URL) {
+      config.value = {
+        ...builtInConfig,
+        API_URL: import.meta.env.VITE_API_URL,
+      };
+      return config.value;
+    }
+
     const response = await fetch(
       window.location.origin + import.meta.env.BASE_URL + '/config.json',
     );

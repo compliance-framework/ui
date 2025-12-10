@@ -2,6 +2,7 @@
   <DatePicker
     unstyled
     :pt="theme"
+    :update-model-type="undefined"
     :ptOptions="{
       mergeProps: ptViewMerge,
     }"

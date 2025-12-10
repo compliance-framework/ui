@@ -118,7 +118,6 @@
 <script setup lang="ts">
 import PageHeader from '@/components/PageHeader.vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
-import TertiaryButton from '@/volt/TertiaryButton.vue';
 import type { SystemSecurityPlan } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { useSystemStore } from '@/stores/system.ts';
