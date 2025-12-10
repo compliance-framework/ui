@@ -7,7 +7,7 @@ import type {
   Statement,
   SystemComponent,
 } from '@/oscal';
-import { computed, onMounted, ref, toValue, watch } from 'vue';
+import { computed, nextTick, onMounted, ref, toValue, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useSystemStore } from '@/stores/system.ts';
 import Select from '@/volt/Select.vue';
@@ -21,6 +21,7 @@ import Dialog from '@/volt/Dialog.vue';
 import Button from '@/volt/Button.vue';
 import StatementCreateForm from '@/components/system-security-plans/StatementCreateForm.vue';
 import StatementEditForm from '@/components/system-security-plans/StatementEditForm.vue';
+import SystemImplementationComponentCreateForm from '@/components/system-security-plans/SystemImplementationComponentCreateForm.vue';
 
 const { system } = useSystemStore();
 const toast = useToast();
@@ -29,6 +30,7 @@ const showError = ref(false);
 
 const showCreateStatementModal = ref(false);
 const showEditStatementModal = ref(false);
+const showCreateComponentModal = ref(false);
 
 const { value: showCreateComponentForm, set: setCreateComponentForm } =
   useToggle(false);
@@ -258,6 +260,22 @@ function updateStatement(updatedStatement: Statement) {
   showEditStatementModal.value = false;
   emit('updated', localStatement.value);
 }
+
+function handleComponentCreated(newComponent: SystemComponent) {
+  if (components.value) {
+    components.value.push(newComponent);
+  }
+  showCreateComponentModal.value = false;
+  nextTick(() => {
+    const found = componentItems.value.find(
+      (item) => item.value === newComponent.uuid,
+    );
+    if (found) {
+      selectedComponent.value = found;
+    }
+    setCreateComponentForm(true);
+  });
+}
 </script>
 
 <template>
@@ -306,6 +324,12 @@ function updateStatement(updatedStatement: Statement) {
                 setCreateComponentForm(true);
               },
             },
+            {
+              label: 'Create New Component',
+              command: () => {
+                showCreateComponentModal = true;
+              },
+            },
           ]"
         />
       </div>
@@ -328,7 +352,16 @@ function updateStatement(updatedStatement: Statement) {
 
       <form @submit.prevent="createByComponent" v-if="showCreateComponentForm">
         <div class="h-0.5 dark:bg-slate-800 bg-gray-400 w-full my-4"></div>
-        <h4 class="mb-4">New Component Implementation</h4>
+        <div class="flex justify-between items-center mb-4">
+          <h4 class="m-0">New Component Implementation</h4>
+          <Button
+            label="Create New"
+            class="!text-xs !py-1 !px-2 !text-blue-600 hover:!text-blue-800 dark:!text-blue-400"
+            severity="secondary"
+            text
+            @click="showCreateComponentModal = true"
+          />
+        </div>
         <div class="mb-2">
           <Select
             placeholder="Select a component"
@@ -404,6 +437,17 @@ function updateStatement(updatedStatement: Statement) {
       :statement="localStatement"
       @cancel="showEditStatementModal = false"
       @saved="updateStatement"
+    />
+  </Dialog>
+  <Dialog
+    v-model:visible="showCreateComponentModal"
+    modal
+    header="Create System Component"
+  >
+    <SystemImplementationComponentCreateForm
+      :ssp-id="resolvedSspId"
+      @cancel="showCreateComponentModal = false"
+      @created="handleComponentCreated"
     />
   </Dialog>
 </template>
