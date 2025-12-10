@@ -445,7 +445,7 @@ function handleComponentCreated(newComponent: SystemComponent) {
     header="Create System Component"
   >
     <SystemImplementationComponentCreateForm
-      :ssp-id="resolvedSspId"
+      :ssp-id="resolvedSspId || ''"
       @cancel="showCreateComponentModal = false"
       @created="handleComponentCreated"
     />
