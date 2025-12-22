@@ -16,6 +16,13 @@
           <p><strong>Email:</strong> {{ user.email }}</p>
           <p><strong>First Name:</strong> {{ user.firstName }}</p>
           <p><strong>Last Name:</strong> {{ user.lastName }}</p>
+          <p><strong>Auth Method:</strong> {{ user.authMethod ?? 'N/A' }}</p>
+          <p>
+            <strong>Auth Provider:</strong>
+            {{
+              user.authProvider ?? (user.authMethod === 'oidc' ? 'OIDC' : 'N/A')
+            }}
+          </p>
         </div>
       </PageCard>
       <PageCard class="flex-grow">
@@ -34,6 +41,10 @@
           <p><strong>Is Active:</strong> {{ user.isActive ? 'Yes' : 'No' }}</p>
           <p>
             <strong>Is Locked out:</strong> {{ user.isLocked ? 'Yes' : 'No' }}
+          </p>
+          <p>
+            <strong>User Attributes:</strong>
+            {{ user.userAttributes ?? 'None' }}
           </p>
         </div>
       </PageCard>
@@ -81,14 +92,14 @@ const {
   data: user,
   isLoading: loading,
   error,
-} = useDataApi<CCFUser>(`/api/users/${route.params.id}`);
+} = useDataApi<CCFUser>(`/api/admin/users/${route.params.id}`);
 const { execute: deleteExecute } = useDataApi<void>(
-  `/api/users/${route.params.id}`,
+  `/api/admin/users/${route.params.id}`,
   { method: 'DELETE' },
   { immediate: false },
 );
 const { data: updatedUserData, execute: lockExecute } = useDataApi<CCFUser>(
-  `/api/users/${route.params.id}`,
+  `/api/admin/users/${route.params.id}`,
   { method: 'PUT' },
   { immediate: false },
 );

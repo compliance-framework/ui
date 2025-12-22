@@ -81,7 +81,7 @@ const {
   isLoading,
   error,
   execute,
-} = useDataApi<CCFUser[]>('/api/users', {}, { immediate: false });
+} = useDataApi<CCFUser[]>('/api/admin/users', {}, { immediate: false });
 
 function completed(newUser: CCFUser) {
   showDialog.value = false;

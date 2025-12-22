@@ -1,11 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-
-interface User {
-  sub: string;
-  givenName: string;
-  familyName: string;
-}
+import type { CCFUser } from '@/stores/types';
 
 export interface AuthResponse {
   auth_token: string;
@@ -14,7 +9,7 @@ export interface AuthResponse {
 export const useUserStore = defineStore('user', {
   state: () => {
     return {
-      user: null as User | null,
+      user: null as CCFUser | null,
       isAuthenticated: ref<boolean>(false),
     };
   },

@@ -86,7 +86,7 @@ const emit = defineEmits<{
 
 const toast = useToast();
 const { data: createdUser, execute } = useDataApi<CCFUser>(
-  '/api/users',
+  '/api/admin/users',
   {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

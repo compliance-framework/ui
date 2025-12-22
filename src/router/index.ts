@@ -746,6 +746,11 @@ const publicRoutes = [
     component: () => import('@/views/LoginView.vue'),
   },
   {
+    path: 'sso/callback',
+    name: 'sso-callback',
+    component: () => import('@/views/SSOCallbackView.vue'),
+  },
+  {
     path: 'logout',
     name: 'logout',
     component: () => import('@/views/LogoutView.vue'),
@@ -755,6 +760,13 @@ const publicRoutes = [
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
+    {
+      path: '/login',
+      redirect: (to) => ({
+        path: '/auth/login',
+        query: to.query,
+      }),
+    },
     {
       path: '/auth',
       name: 'auth',

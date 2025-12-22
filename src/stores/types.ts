@@ -21,6 +21,9 @@ export interface CCFUser {
   email: string;
   firstName: string;
   lastName: string;
+  authMethod?: string;
+  authProvider?: string;
+  userAttributes?: string;
 
   lastLogin?: Date;
   isActive?: boolean;
