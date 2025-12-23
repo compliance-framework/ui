@@ -13,7 +13,6 @@ import { FilterParser } from '@/parsers/labelfilter.ts';
 import type { Dashboard } from '@/stores/filters.ts';
 import FormInput from '@/components/forms/FormInput.vue';
 import type { Evidence, EvidenceLabel } from '@/stores/evidence.ts';
-import MultiSelect from '@/volt/MultiSelect.vue';
 import { useSystemStore } from '@/stores/system.ts';
 import Select from '@/volt/Select.vue';
 import Textarea from '@/volt/Textarea.vue';
