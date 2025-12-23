@@ -143,6 +143,18 @@ const { execute: fetchEvidenceForLabels } = useDataApi<Evidence[]>(
   { immediate: false },
 );
 
+const { execute: fetchDashboardsByControl } = useDataApi<
+  DashboardWithControls[]
+>(
+  '/api/filters',
+  {
+    params: {
+      controlId: implementation.controlId,
+    },
+  },
+  { immediate: false },
+);
+
 const { execute: fetchAllDashboards } = useDataApi<DashboardWithControls[]>(
   '/api/filters',
   {},
@@ -364,8 +376,8 @@ function resetEvidenceLinkingForm() {
   newLabelValue.value = '';
 }
 
-async function loadAvailableEvidence() {
-  if (availableEvidence.value.length > 0) return; // Already loaded
+async function loadAvailableEvidence(forceReload = false) {
+  if (!forceReload && availableEvidence.value.length > 0) return; // Already loaded
   evidenceLoading.value = true;
   try {
     const res = await fetchEvidenceForLabels({
@@ -390,23 +402,27 @@ async function loadAvailableEvidence() {
 
 /**
  * Fetches dashboards linked to the current control.
- * TODO: Replace with a dedicated API endpoint that filters by control ID server-side
- * for better performance. Currently fetches all dashboards and filters client-side.
  */
 async function loadDashboardsForControl() {
   dashboardsLoading.value = true;
   try {
-    const res = await fetchAllDashboards();
+    const res = await fetchDashboardsByControl();
     const dashboardList = res.data.value?.data || res.data.value || [];
-    allDashboards.value = dashboardList as DashboardWithControls[];
-    const controlId = implementation.controlId;
-    existingDashboards.value = allDashboards.value.filter((dashboard) =>
-      dashboard.controls?.some((c) => c.id === controlId),
-    );
+    existingDashboards.value = dashboardList as DashboardWithControls[];
   } catch (error) {
     console.error('Failed to load dashboards:', error);
   } finally {
     dashboardsLoading.value = false;
+  }
+}
+
+async function loadAllDashboards() {
+  try {
+    const res = await fetchAllDashboards();
+    const dashboardList = res.data.value?.data || res.data.value || [];
+    allDashboards.value = dashboardList as DashboardWithControls[];
+  } catch (error) {
+    console.error('Failed to load all dashboards:', error);
   }
 }
 
@@ -429,7 +445,7 @@ async function linkExistingDashboard() {
   const newControlIds = [...existingControlIds, controlId];
 
   try {
-    await updateDashboard(`/api/filters/${dashboard.id || dashboard.uuid}`, {
+    await updateDashboard(`/api/filters/${dashboard.id}`, {
       data: {
         name: dashboard.name,
         filter: dashboard.filter,
@@ -469,7 +485,7 @@ async function unlinkDashboard(dashboard: DashboardWithControls) {
     [];
 
   try {
-    await updateDashboard(`/api/filters/${dashboard.id || dashboard.uuid}`, {
+    await updateDashboard(`/api/filters/${dashboard.id}`, {
       data: {
         name: dashboard.name,
         filter: dashboard.filter,
@@ -499,28 +515,66 @@ async function unlinkDashboard(dashboard: DashboardWithControls) {
 
 // Convert a Filter object back to a string for URL query params
 function filterToString(
-  filter: import('@/parsers/labelfilter.ts').Filter,
+  filter: import('@/parsers/labelfilter.ts').Filter | undefined,
 ): string {
-  function scopeToString(scope: {
-    condition?: { label: string; operator: string; value: string };
-    query?: { operator: string; scopes: any[] };
-  }): string {
-    if (scope.condition) {
-      return `${scope.condition.label}${scope.condition.operator}${scope.condition.value}`;
+  function scopeToString(
+    scope: import('@/parsers/labelfilter.ts').Scope | undefined,
+    path = 'scope',
+  ): string {
+    if (!scope) {
+      throw new Error(`Invalid filter: missing ${path}.`);
     }
+
+    if (scope.condition) {
+      const { label, operator, value } = scope.condition;
+      if (!label || !operator || value === undefined || value === null) {
+        throw new Error(`Malformed condition at ${path}.`);
+      }
+      return `${label}${operator}${value}`;
+    }
+
     if (scope.query) {
-      const parts = scope.query.scopes.map(scopeToString);
-      const joined = parts.join(` ${scope.query.operator} `);
+      const operator =
+        scope.query.operator && scope.query.operator.trim().length > 0
+          ? scope.query.operator
+          : 'and';
+      const scopes = scope.query.scopes?.filter(Boolean) ?? [];
+      if (!scopes.length) {
+        throw new Error(`Query at ${path} has no scopes.`);
+      }
+      const parts = scopes.map((childScope, index) =>
+        scopeToString(childScope, `${path}.query.scopes[${index}]`),
+      );
+      const joined = parts.join(` ${operator} `);
       return parts.length > 1 ? `(${joined})` : joined;
     }
-    return '';
+
+    throw new Error(`Scope at ${path} is missing both condition and query.`);
   }
+
+  if (!filter || !filter.scope) {
+    throw new Error('Filter is missing a valid scope.');
+  }
+
   return scopeToString(filter.scope);
 }
 
 function viewDashboardEvidence(dashboard: DashboardWithControls) {
-  const filterString = filterToString(dashboard.filter);
-  router.push({ name: 'evidence:index', query: { filter: filterString } });
+  try {
+    const filterString = filterToString(dashboard.filter);
+    router.push({ name: 'evidence:index', query: { filter: filterString } });
+  } catch (error) {
+    console.error('Unable to build dashboard filter string.', error);
+    toast.add({
+      severity: 'error',
+      summary: 'Invalid Dashboard Filter',
+      detail:
+        error instanceof Error
+          ? error.message
+          : 'Unable to open evidence because the filter is invalid.',
+      life: 4000,
+    });
+  }
 }
 
 // Available label names from selected baseline evidence
@@ -613,8 +667,16 @@ function removeLabelCondition(index: number) {
 
 watch(showEvidenceLinkingForm, (show) => {
   if (show) {
-    loadAvailableEvidence();
+    loadAvailableEvidence(true);
     loadDashboardsForControl();
+    loadAllDashboards();
+  }
+});
+
+watch(showLinkExistingForm, (show) => {
+  if (show) {
+    loadDashboardsForControl();
+    loadAllDashboards();
   }
 });
 
@@ -628,10 +690,19 @@ async function submitEvidenceLinking() {
     });
     return;
   }
+  if (!evidenceDashboard.value.filter?.trim()) {
+    toast.add({
+      severity: 'error',
+      summary: 'Validation Error',
+      detail: 'Please build a label filter before creating the dashboard.',
+      life: 3000,
+    });
+    return;
+  }
   try {
     const controlIds = [implementation.controlId];
     const parsedFilter = new FilterParser(
-      evidenceDashboard.value.filter,
+      evidenceDashboard.value.filter.trim(),
     ).parse();
     await createEvidenceDashboard({
       data: {
@@ -648,11 +719,7 @@ async function submitEvidenceLinking() {
     });
     // Refresh dashboards list and reset form for next entry
     await loadDashboardsForControl();
-    evidenceDashboard.value = { name: '', filter: '' };
-    selectedBaselineEvidence.value = null;
-    labelConditions.value = [];
-    newLabelName.value = '';
-    newLabelValue.value = '';
+    resetEvidenceLinkingForm();
   } catch (error) {
     console.error(error);
     toast.add({
@@ -822,14 +889,12 @@ async function submitEvidenceLinking() {
           <div class="space-y-2">
             <div
               v-for="dashboard in existingDashboards"
-              :key="dashboard.id || dashboard.uuid"
+              :key="dashboard.id"
               class="p-3 bg-gray-50 dark:bg-slate-800 rounded-md flex items-center justify-between gap-4"
             >
               <span class="font-medium">{{ dashboard.name }}</span>
               <div class="flex items-center gap-3">
-                <DashboardEvidenceCounter
-                  :dashboard-id="(dashboard.id || dashboard.uuid)!"
-                />
+                <DashboardEvidenceCounter :dashboard-id="dashboard.id!" />
                 <Button
                   type="button"
                   severity="secondary"
@@ -838,7 +903,7 @@ async function submitEvidenceLinking() {
                   @click="viewDashboardEvidence(dashboard)"
                   class="text-blue-600 hover:text-blue-800"
                 >
-                  View Evidences
+                  View Evidence
                 </Button>
                 <Button
                   type="button"
