@@ -1,15 +1,15 @@
-type Condition = {
+export type Condition = {
   label: string;
   operator: '=' | '!=';
   value: string;
 };
 
-type Query = {
+export type Query = {
   operator: 'and' | 'or' | 'AND' | 'OR';
   scopes: Scope[];
 };
 
-type Scope = {
+export type Scope = {
   condition?: Condition;
   query?: Query;
 };
