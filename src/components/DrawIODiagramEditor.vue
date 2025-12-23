@@ -1,15 +1,22 @@
 <script setup lang="ts">
-import { onMounted, ref, useTemplateRef } from 'vue';
+import { onMounted, onBeforeUnmount, ref, useTemplateRef, computed } from 'vue';
 import type { Diagram } from '@/oscal';
 import type { Property } from '@/oscal';
+import type { ThemeChangeDetail } from '@/composables/useTheme';
 
-const frame = useTemplateRef('frame');
+const DRAWIO_URL = 'https://embed.diagrams.net/?spin=0&proto=json';
+const DRAWIO_ORIGIN = new URL(DRAWIO_URL).origin;
+
+const frame = useTemplateRef<HTMLIFrameElement>('frame');
+const xmlCache = new Map<string, string>();
 
 const props = defineProps<{
   diagram: Diagram;
 }>();
 
 const currentDiagram = ref<Diagram>(props.diagram);
+const latestXml = ref<string>('');
+const diagramId = computed(() => currentDiagram.value.uuid);
 
 const emit = defineEmits({
   saved(diagram: Diagram) {
@@ -19,9 +26,21 @@ const emit = defineEmits({
 
 onMounted(() => {
   window.addEventListener('message', onDrawIoMessage);
+  window.addEventListener('theme-change', onThemeChange as EventListener);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener('message', onDrawIoMessage);
+  window.removeEventListener('theme-change', onThemeChange as EventListener);
+  if (diagramId.value) {
+    xmlCache.delete(diagramId.value);
+  }
 });
 
 function onDrawIoMessage(e: MessageEvent) {
+  if (e.source !== frame.value?.contentWindow || e.origin !== DRAWIO_ORIGIN) {
+    return;
+  }
   const req = JSON.parse(e.data);
 
   switch (req.event) {
@@ -32,8 +51,9 @@ function onDrawIoMessage(e: MessageEvent) {
       exportXml(props.diagram);
       break;
     case 'autosave':
-      // Ignored for now
-      // exportXml();
+      if (req.xml) {
+        updateXmlState(req.xml);
+      }
       break;
     case 'load':
       // Ignored for now
@@ -42,6 +62,9 @@ function onDrawIoMessage(e: MessageEvent) {
     case 'export':
       if (req.message.diagram != props.diagram.uuid) {
         break;
+      }
+      if (req.xml) {
+        updateXmlState(req.xml);
       }
 
       const pngProp = {
@@ -112,51 +135,99 @@ function findExistingXml() {
   });
 }
 
-function loadXml() {
-  const existingXml = findExistingXml();
-  let dark = false;
+function isDarkModeEnabled(): boolean {
+  if (typeof document !== 'undefined') {
+    return document.documentElement.classList.contains('dark');
+  }
   if (
     window.matchMedia &&
     window.matchMedia('(prefers-color-scheme: dark)').matches
   ) {
-    dark = true;
+    return true;
   }
-  if (existingXml) {
-    frame.value?.contentWindow?.postMessage(
-      JSON.stringify({
-        action: 'load',
-        xml: atob(existingXml.value as string),
-        noExitBtn: 1,
-        autosave: 1,
-        title: currentDiagram.value.uuid,
-        dark: dark,
-      }),
-      '*',
-    );
-    return;
-  }
-
-  frame.value?.contentWindow?.postMessage(
-    JSON.stringify({
-      action: 'load',
-      xml: ``,
-      noExitBtn: 1,
-      autosave: 1,
-      dark: dark,
-    }),
-    '*',
-  );
+  return false;
 }
 
-function exportXml(diagram: Diagram) {
-  frame.value?.contentWindow?.postMessage(
-    JSON.stringify({
-      action: 'export',
-      format: `png`,
-      diagram: diagram.uuid,
-    }),
-    '*',
-  );
+function sendLoadMessage({
+  xml,
+  dark,
+  title,
+  encoded,
+}: {
+  xml: string;
+  dark: boolean;
+  title?: string;
+  encoded?: boolean;
+}) {
+  postToFrame({
+    action: 'load',
+    xml: encoded ? atob(xml) : xml,
+    noExitBtn: 1,
+    autosave: 1,
+    title: title ?? currentDiagram.value.uuid,
+    dark,
+  });
+}
+
+function updateXmlState(xml: string) {
+  latestXml.value = xml;
+  if (diagramId.value) {
+    xmlCache.set(diagramId.value, xml);
+  }
+}
+
+function loadXml() {
+  const existingXml = findExistingXml();
+  const dark = isDarkModeEnabled();
+  if (existingXml?.value) {
+    const decoded = atob(existingXml.value as string);
+    updateXmlState(decoded);
+    sendLoadMessage({
+      xml: decoded,
+      dark,
+    });
+    return;
+  }
+  updateXmlState('');
+  sendLoadMessage({ xml: '', dark });
+}
+
+function exportXml(diagram: Diagram, options?: { format?: string }) {
+  postToFrame({
+    action: 'export',
+    format: options?.format ?? `xmlpng`,
+    diagram: diagram.uuid,
+  });
+}
+
+function postToFrame(message: Record<string, unknown>) {
+  if (!frame.value?.contentWindow) return;
+  frame.value.contentWindow.postMessage(JSON.stringify(message), DRAWIO_ORIGIN);
+}
+
+function resolveXmlForReload() {
+  const id = diagramId.value;
+  if (id && xmlCache.has(id)) {
+    return xmlCache.get(id) ?? '';
+  }
+  if (latestXml.value) {
+    return latestXml.value;
+  }
+  const stored = findExistingXml();
+  if (stored?.value) {
+    try {
+      return atob(stored.value as string);
+    } catch {
+      return '';
+    }
+  }
+  return '';
+}
+
+function onThemeChange(event: CustomEvent<ThemeChangeDetail>) {
+  const isDark = event.detail.theme === 'dark';
+  const xml = resolveXmlForReload();
+  sendLoadMessage({ xml, dark: isDark });
 }
 </script>
 

@@ -63,7 +63,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import PageHeader from '@/components/PageHeader.vue';
 import type { CCFUser } from '@/stores/types';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
@@ -72,6 +72,7 @@ import Dialog from '@/volt/Dialog.vue';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi } from '@/composables/axios';
 import RouterLinkButton from '@/components/RouterLinkButton.vue';
+import type { AxiosError } from 'axios';
 
 const showDialog = ref(false);
 const toast = useToast();
@@ -81,7 +82,26 @@ const {
   isLoading,
   error,
   execute,
-} = useDataApi<CCFUser[]>('/api/users', {}, { immediate: false });
+} = useDataApi<CCFUser[]>('/api/admin/users', {}, { immediate: false });
+
+// TODO: Move this 403 handling into a shared composable so other views can reuse it.
+watch(
+  () => error.value,
+  (err) => {
+    if (!err) {
+      return;
+    }
+    const status = (err as AxiosError).response?.status;
+    if (status === 403) {
+      toast.add({
+        severity: 'warn',
+        summary: 'Insufficient permissions',
+        detail: "You don't have access to manage system users.",
+        life: 4000,
+      });
+    }
+  },
+);
 
 function completed(newUser: CCFUser) {
   showDialog.value = false;

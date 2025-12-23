@@ -65,7 +65,7 @@ const user = reactive({ ...props.user });
 
 const toast = useToast();
 const { data: updatedUser, execute } = useDataApi<CCFUser>(
-  `/api/users/${user.id}`,
+  `/api/admin/users/${user.id}`,
   {
     method: 'PUT',
     data: user,

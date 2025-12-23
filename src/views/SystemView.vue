@@ -1,14 +1,18 @@
 <template>
   <Message v-if="!systemSecurityPlan" severity="error" variant="outlined">
-    <h4 class="font-bold">System Security Plan not selected</h4>
-    <p>You have not selected a system security plan for editing.</p>
-    <p>
-      Please return to the
-      <RouterLink :to="{ name: 'system-security-plans' }" class="underline"
-        >SSP Page
-      </RouterLink>
-      to select one
-    </p>
+    <div class="space-y-2 text-gray-700 dark:text-slate-200">
+      <h4 class="text-base font-semibold">System Security Plan not selected</h4>
+      <p>You have not selected a system security plan for editing.</p>
+      <p>
+        Please return to the
+        <RouterLink
+          :to="{ name: 'system-security-plans' }"
+          class="font-medium underline text-blue-600 dark:text-blue-300"
+          >SSP Page
+        </RouterLink>
+        to select one
+      </p>
+    </div>
   </Message>
   <div v-else>
     <PageSubHeader>{{ systemSecurityPlan.metadata?.title }}</PageSubHeader>

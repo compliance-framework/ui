@@ -16,6 +16,11 @@
           <p><strong>Email:</strong> {{ user.email }}</p>
           <p><strong>First Name:</strong> {{ user.firstName }}</p>
           <p><strong>Last Name:</strong> {{ user.lastName }}</p>
+          <p><strong>Auth Method:</strong> {{ user.authMethod ?? 'N/A' }}</p>
+          <p>
+            <strong>Auth Provider:</strong>
+            {{ user.authProvider ?? 'N/A' }}
+          </p>
         </div>
       </PageCard>
       <PageCard class="flex-grow">
@@ -35,6 +40,16 @@
           <p>
             <strong>Is Locked out:</strong> {{ user.isLocked ? 'Yes' : 'No' }}
           </p>
+          <div class="mt-2">
+            <strong>User Attributes:</strong>
+            <template v-if="formattedUserAttributes">
+              <pre
+                class="mt-2 rounded bg-gray-100 dark:bg-slate-800/80 p-3 text-sm overflow-auto text-gray-800 dark:text-slate-100"
+                >{{ formattedUserAttributes }}</pre
+              >
+            </template>
+            <span v-else>None</span>
+          </div>
         </div>
       </PageCard>
     </div>
@@ -59,7 +74,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, watch, computed } from 'vue';
 import PageHeader from '@/components/PageHeader.vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
@@ -81,14 +96,14 @@ const {
   data: user,
   isLoading: loading,
   error,
-} = useDataApi<CCFUser>(`/api/users/${route.params.id}`);
+} = useDataApi<CCFUser>(`/api/admin/users/${route.params.id}`);
 const { execute: deleteExecute } = useDataApi<void>(
-  `/api/users/${route.params.id}`,
+  `/api/admin/users/${route.params.id}`,
   { method: 'DELETE' },
   { immediate: false },
 );
 const { data: updatedUserData, execute: lockExecute } = useDataApi<CCFUser>(
-  `/api/users/${route.params.id}`,
+  `/api/admin/users/${route.params.id}`,
   { method: 'PUT' },
   { immediate: false },
 );
@@ -105,6 +120,22 @@ watch(error, (err) => {
       life: 3000,
     });
     router.push({ name: 'users-list' });
+  }
+});
+
+const formattedUserAttributes = computed(() => {
+  if (!user.value || !user.value.userAttributes) {
+    return null;
+  }
+  const attributes = user.value.userAttributes;
+  try {
+    const parsed =
+      typeof attributes === 'string' ? JSON.parse(attributes) : attributes;
+    return JSON.stringify(parsed, null, 2);
+  } catch {
+    return typeof attributes === 'string'
+      ? attributes
+      : JSON.stringify(attributes, null, 2);
   }
 });
 

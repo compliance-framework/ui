@@ -4,19 +4,23 @@
   </div>
 
   <Message v-else-if="!poamDefined" severity="error" variant="outlined">
-    <h4 class="font-bold">Plan Of Action and Milestones not selected</h4>
-    <p>
-      No Plan Of Action and Milestones (POA&M) has been selected for editing.
-    </p>
-    <p>
-      Please return to the
-      <RouterLink
-        :to="{ name: 'plan-of-action-and-milestones' }"
-        class="underline"
-        >POA&M
-      </RouterLink>
-      to select one
-    </p>
+    <div class="space-y-2 text-gray-700 dark:text-slate-200">
+      <h4 class="text-base font-semibold">
+        Plan Of Action and Milestones not selected
+      </h4>
+      <p>
+        No Plan Of Action and Milestones (POA&M) has been selected for editing.
+      </p>
+      <p>
+        Please return to the
+        <RouterLink
+          :to="{ name: 'plan-of-action-and-milestones' }"
+          class="font-medium underline text-blue-600 dark:text-blue-300"
+          >POA&M
+        </RouterLink>
+        to select one
+      </p>
+    </div>
   </Message>
 
   <div v-else-if="error" class="text-center py-8">
