@@ -63,9 +63,7 @@ const newLabelName = ref('');
 const newLabelValue = ref('');
 
 // Existing dashboards for this control
-interface DashboardWithControls extends Omit<Dashboard, 'controls'> {
-  controls: { id: string }[];
-}
+type DashboardWithControls = Dashboard;
 const existingDashboards = ref<DashboardWithControls[]>([]);
 const allDashboards = ref<DashboardWithControls[]>([]);
 const dashboardsLoading = ref(false);
@@ -394,6 +392,12 @@ async function loadAvailableEvidence(forceReload = false) {
       }));
   } catch (error) {
     console.error('Failed to load evidence:', error);
+    toast.add({
+      severity: 'error',
+      summary: 'Failed to load evidence',
+      detail: 'Evidence could not be loaded. Please try again later.',
+      life: 3000,
+    });
   } finally {
     evidenceLoading.value = false;
   }
@@ -422,6 +426,15 @@ async function loadAllDashboards() {
     allDashboards.value = dashboardList as DashboardWithControls[];
   } catch (error) {
     console.error('Failed to load all dashboards:', error);
+    toast.add({
+      severity: 'error',
+      summary: 'Error Loading Dashboards',
+      detail:
+        error instanceof Error
+          ? error.message
+          : 'Failed to load dashboards. Please try again later.',
+      life: 3000,
+    });
   }
 }
 
@@ -459,6 +472,7 @@ async function linkExistingDashboard() {
     });
     // Refresh and reset
     await loadDashboardsForControl();
+    await loadAllDashboards();
     selectedDashboardToLink.value = null;
     setLinkExistingForm(false);
   } catch (error) {
@@ -498,6 +512,7 @@ async function unlinkDashboard(dashboard: DashboardWithControls) {
       life: 3000,
     });
     await loadDashboardsForControl();
+    await loadAllDashboards();
   } catch (error) {
     console.error(error);
     toast.add({
@@ -526,7 +541,13 @@ function filterToString(
 
     if (scope.condition) {
       const { label, operator, value } = scope.condition;
-      if (!label || !operator || value === undefined || value === null) {
+      if (
+        !label ||
+        !operator ||
+        value === undefined ||
+        value === null ||
+        (typeof value === 'string' && value.length === 0)
+      ) {
         throw new Error(`Malformed condition at ${path}.`);
       }
       return `${label}${operator}${value}`;
@@ -664,18 +685,19 @@ function removeLabelCondition(index: number) {
   labelConditions.value.splice(index, 1);
 }
 
-watch(showEvidenceLinkingForm, (show) => {
+watch(showEvidenceLinkingForm, async (show) => {
   if (show) {
-    loadAvailableEvidence(true);
-    loadDashboardsForControl();
-    loadAllDashboards();
+    await Promise.all([
+      loadAvailableEvidence(true),
+      loadDashboardsForControl(),
+      loadAllDashboards(),
+    ]);
   }
 });
 
-watch(showLinkExistingForm, (show) => {
+watch(showLinkExistingForm, async (show) => {
   if (show) {
-    loadDashboardsForControl();
-    loadAllDashboards();
+    await Promise.all([loadDashboardsForControl(), loadAllDashboards()]);
   }
 });
 
@@ -698,11 +720,27 @@ async function submitEvidenceLinking() {
     });
     return;
   }
+  const controlIds = [implementation.controlId];
+  let parsedFilter;
   try {
-    const controlIds = [implementation.controlId];
-    const parsedFilter = new FilterParser(
+    parsedFilter = new FilterParser(
       evidenceDashboard.value.filter.trim(),
     ).parse();
+  } catch (parseError) {
+    console.error(
+      'Failed to parse label filter for evidence dashboard:',
+      parseError,
+    );
+    toast.add({
+      severity: 'error',
+      summary: 'Invalid Label Filter',
+      detail:
+        'The label filter you entered is invalid. Please check its syntax and try again.',
+      life: 3000,
+    });
+    return;
+  }
+  try {
     await createEvidenceDashboard({
       data: {
         name: evidenceDashboard.value.name,
