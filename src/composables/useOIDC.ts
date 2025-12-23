@@ -29,7 +29,7 @@ export function useOIDC() {
         (provider) => provider.enabled !== false,
       );
     } catch (_error) {
-      console.error('Failed to load SSO providers:', _error);
+      console.error('Failed to load SSO providers:');
       error.value = 'Failed to load SSO providers';
       providers.value = [];
     } finally {
@@ -49,10 +49,9 @@ export function useOIDC() {
     let config;
     try {
       config = await configStore.getConfig();
-    } catch (_error) {
-      console.error('Failed to initiate SSO login:', _error);
+    } catch (err) {
       error.value = 'Failed to initiate SSO login';
-      throw _error instanceof Error ? _error : new Error('SSO init failed');
+      throw err instanceof Error ? err : new Error('SSO init failed');
     }
     window.location.href = `${config.API_URL}/api/auth/sso/${provider.name}`;
   };

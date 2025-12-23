@@ -4,6 +4,9 @@ import type { Diagram } from '@/oscal';
 import type { Property } from '@/oscal';
 import type { ThemeChangeDetail } from '@/composables/useTheme';
 
+const DRAWIO_URL = 'https://embed.diagrams.net/?spin=0&proto=json';
+const DRAWIO_ORIGIN = new URL(DRAWIO_URL).origin;
+
 const frame = useTemplateRef<HTMLIFrameElement>('frame');
 const xmlCache = new Map<string, string>();
 
@@ -35,7 +38,7 @@ onBeforeUnmount(() => {
 });
 
 function onDrawIoMessage(e: MessageEvent) {
-  if (e.source !== frame.value?.contentWindow) {
+  if (e.source !== frame.value?.contentWindow || e.origin !== DRAWIO_ORIGIN) {
     return;
   }
   const req = JSON.parse(e.data);
@@ -156,17 +159,14 @@ function sendLoadMessage({
   title?: string;
   encoded?: boolean;
 }) {
-  frame.value?.contentWindow?.postMessage(
-    JSON.stringify({
-      action: 'load',
-      xml: encoded ? atob(xml) : xml,
-      noExitBtn: 1,
-      autosave: 1,
-      title: title ?? currentDiagram.value.uuid,
-      dark,
-    }),
-    '*',
-  );
+  postToFrame({
+    action: 'load',
+    xml: encoded ? atob(xml) : xml,
+    noExitBtn: 1,
+    autosave: 1,
+    title: title ?? currentDiagram.value.uuid,
+    dark,
+  });
 }
 
 function updateXmlState(xml: string) {
@@ -193,14 +193,16 @@ function loadXml() {
 }
 
 function exportXml(diagram: Diagram, options?: { format?: string }) {
-  frame.value?.contentWindow?.postMessage(
-    JSON.stringify({
-      action: 'export',
-      format: options?.format ?? `xmlpng`,
-      diagram: diagram.uuid,
-    }),
-    '*',
-  );
+  postToFrame({
+    action: 'export',
+    format: options?.format ?? `xmlpng`,
+    diagram: diagram.uuid,
+  });
+}
+
+function postToFrame(message: Record<string, unknown>) {
+  if (!frame.value?.contentWindow) return;
+  frame.value.contentWindow.postMessage(JSON.stringify(message), DRAWIO_ORIGIN);
 }
 
 function resolveXmlForReload() {
