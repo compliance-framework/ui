@@ -1,7 +1,6 @@
 import { ref } from 'vue';
 import { useConfigStore } from '@/stores/config';
 import { useGuestApi } from '@/composables/axios';
-import type { DataResponse } from '@/stores/types';
 
 export interface OIDCProvider {
   name: string;
@@ -26,7 +25,8 @@ export function useOIDC() {
     try {
       await fetchProviders();
       providers.value = providersData.value ?? [];
-    } catch (e) {
+    } catch (_error) {
+      console.error('Failed to load SSO providers:', _error);
       error.value = 'Failed to load SSO providers';
       providers.value = [];
     } finally {
@@ -38,7 +38,8 @@ export function useOIDC() {
     try {
       const config = await configStore.getConfig();
       window.location.href = `${config.API_URL}/api/auth/sso/${providerName}`;
-    } catch (e) {
+    } catch (_error) {
+      console.error('Failed to initiate SSO login:', _error);
       error.value = 'Failed to initiate SSO login';
     }
   };
