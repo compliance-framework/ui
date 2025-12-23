@@ -46,14 +46,15 @@ export function useOIDC() {
       error.value = unavailableMessage;
       throw new Error(unavailableMessage);
     }
+    let config;
     try {
-      const config = await configStore.getConfig();
-      window.location.href = `${config.API_URL}/api/auth/sso/${provider.name}`;
+      config = await configStore.getConfig();
     } catch (_error) {
       console.error('Failed to initiate SSO login:', _error);
       error.value = 'Failed to initiate SSO login';
       throw _error instanceof Error ? _error : new Error('SSO init failed');
     }
+    window.location.href = `${config.API_URL}/api/auth/sso/${provider.name}`;
   };
 
   return {

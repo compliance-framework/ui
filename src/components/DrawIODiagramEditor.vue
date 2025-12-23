@@ -1,16 +1,19 @@
 <script setup lang="ts">
-import { onMounted, onBeforeUnmount, ref, useTemplateRef } from 'vue';
+import { onMounted, onBeforeUnmount, ref, useTemplateRef, computed } from 'vue';
 import type { Diagram } from '@/oscal';
 import type { Property } from '@/oscal';
 import type { ThemeChangeDetail } from '@/composables/useTheme';
 
-const frame = useTemplateRef('frame');
+const frame = useTemplateRef<HTMLIFrameElement>('frame');
+const xmlCache = new Map<string, string>();
 
 const props = defineProps<{
   diagram: Diagram;
 }>();
 
 const currentDiagram = ref<Diagram>(props.diagram);
+const latestXml = ref<string>('');
+const diagramId = computed(() => currentDiagram.value.uuid);
 
 const emit = defineEmits({
   saved(diagram: Diagram) {
@@ -26,9 +29,15 @@ onMounted(() => {
 onBeforeUnmount(() => {
   window.removeEventListener('message', onDrawIoMessage);
   window.removeEventListener('theme-change', onThemeChange as EventListener);
+  if (diagramId.value) {
+    xmlCache.delete(diagramId.value);
+  }
 });
 
 function onDrawIoMessage(e: MessageEvent) {
+  if (e.source !== frame.value?.contentWindow) {
+    return;
+  }
   const req = JSON.parse(e.data);
 
   switch (req.event) {
@@ -39,8 +48,9 @@ function onDrawIoMessage(e: MessageEvent) {
       exportXml(props.diagram);
       break;
     case 'autosave':
-      // Ignored for now
-      // exportXml();
+      if (req.xml) {
+        updateXmlState(req.xml);
+      }
       break;
     case 'load':
       // Ignored for now
@@ -49,6 +59,9 @@ function onDrawIoMessage(e: MessageEvent) {
     case 'export':
       if (req.message.diagram != props.diagram.uuid) {
         break;
+      }
+      if (req.xml) {
+        updateXmlState(req.xml);
       }
 
       const pngProp = {
@@ -132,61 +145,87 @@ function isDarkModeEnabled(): boolean {
   return false;
 }
 
-function loadXml() {
-  const existingXml = findExistingXml();
-  const dark = isDarkModeEnabled();
-  if (existingXml) {
-    frame.value?.contentWindow?.postMessage(
-      JSON.stringify({
-        action: 'load',
-        xml: atob(existingXml.value as string),
-        noExitBtn: 1,
-        autosave: 1,
-        title: currentDiagram.value.uuid,
-        dark: dark,
-      }),
-      '*',
-    );
-    return;
-  }
-
+function sendLoadMessage({
+  xml,
+  dark,
+  title,
+  encoded,
+}: {
+  xml: string;
+  dark: boolean;
+  title?: string;
+  encoded?: boolean;
+}) {
   frame.value?.contentWindow?.postMessage(
     JSON.stringify({
       action: 'load',
-      xml: ``,
+      xml: encoded ? atob(xml) : xml,
       noExitBtn: 1,
       autosave: 1,
-      dark: dark,
+      title: title ?? currentDiagram.value.uuid,
+      dark,
     }),
     '*',
   );
 }
 
-function exportXml(diagram: Diagram) {
+function updateXmlState(xml: string) {
+  latestXml.value = xml;
+  if (diagramId.value) {
+    xmlCache.set(diagramId.value, xml);
+  }
+}
+
+function loadXml() {
+  const existingXml = findExistingXml();
+  const dark = isDarkModeEnabled();
+  if (existingXml?.value) {
+    const decoded = atob(existingXml.value as string);
+    updateXmlState(decoded);
+    sendLoadMessage({
+      xml: decoded,
+      dark,
+    });
+    return;
+  }
+  updateXmlState('');
+  sendLoadMessage({ xml: '', dark });
+}
+
+function exportXml(diagram: Diagram, options?: { format?: string }) {
   frame.value?.contentWindow?.postMessage(
     JSON.stringify({
       action: 'export',
-      format: `png`,
+      format: options?.format ?? `xmlpng`,
       diagram: diagram.uuid,
     }),
     '*',
   );
 }
 
+function resolveXmlForReload() {
+  const id = diagramId.value;
+  if (id && xmlCache.has(id)) {
+    return xmlCache.get(id) ?? '';
+  }
+  if (latestXml.value) {
+    return latestXml.value;
+  }
+  const stored = findExistingXml();
+  if (stored?.value) {
+    try {
+      return atob(stored.value as string);
+    } catch (_error) {
+      return '';
+    }
+  }
+  return '';
+}
+
 function onThemeChange(event: CustomEvent<ThemeChangeDetail>) {
   const isDark = event.detail.theme === 'dark';
-  const existingXml = findExistingXml();
-  frame.value?.contentWindow?.postMessage(
-    JSON.stringify({
-      action: 'load',
-      xml: existingXml?.value ? atob(existingXml.value as string) : '',
-      noExitBtn: 1,
-      autosave: 1,
-      title: currentDiagram.value.uuid,
-      dark: isDark,
-    }),
-    '*',
-  );
+  const xml = resolveXmlForReload();
+  sendLoadMessage({ xml, dark: isDark });
 }
 </script>
 

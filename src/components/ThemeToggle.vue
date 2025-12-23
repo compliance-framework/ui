@@ -30,6 +30,7 @@ const handleContextMenu = (event: MouseEvent) => {
     @contextmenu="handleContextMenu"
     type="button"
     aria-label="Toggle theme"
+    title="Left click toggles theme. Right click matches system preference."
   >
     <svg
       class="h-6 w-6 text-gray-700 dark:text-amber-300 transition-colors"

@@ -1,4 +1,4 @@
-import { ref, computed } from 'vue';
+import { ref, computed, onScopeDispose } from 'vue';
 
 type Theme = 'light' | 'dark';
 export type ThemeChangeDetail = { theme: Theme };
@@ -9,6 +9,11 @@ const isClient = typeof window !== 'undefined';
 const systemPreference = ref<Theme>('light');
 const theme = ref<Theme>('light');
 const isSystemTheme = ref(true);
+
+let initialized = false;
+let mediaQuery: MediaQueryList | null = null;
+let removeMediaQueryListener: (() => void) | null = null;
+let consumerCount = 0;
 
 const applyThemeClass = (value: Theme) => {
   if (!isClient) return;
@@ -24,34 +29,51 @@ const persistThemeSelection = () => {
   }
 };
 
+const dispatchThemeChange = (value: Theme) => {
+  if (!isClient) return;
+  window.dispatchEvent(
+    new CustomEvent<ThemeChangeDetail>('theme-change', {
+      detail: { theme: value },
+    }),
+  );
+};
+
 const updateTheme = (value: Theme) => {
   theme.value = value;
   applyThemeClass(value);
   persistThemeSelection();
-  if (isClient) {
-    window.dispatchEvent(
-      new CustomEvent<ThemeChangeDetail>('theme-change', {
-        detail: { theme: value },
-      }),
-    );
-  }
+  dispatchThemeChange(value);
 };
 
-const updateSystemPreference = () => {
-  if (!isClient) return;
-  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  systemPreference.value = prefersDark ? 'dark' : 'light';
+const handleMediaQueryChange = (event: MediaQueryListEvent) => {
+  systemPreference.value = event.matches ? 'dark' : 'light';
   if (isSystemTheme.value) {
     updateTheme(systemPreference.value);
   }
 };
 
-if (isClient) {
+const initializeTheme = () => {
+  if (initialized) {
+    return;
+  }
+
+  if (!isClient) {
+    initialized = true;
+    return;
+  }
+
+  mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+  mediaQuery.addEventListener('change', handleMediaQueryChange);
+  removeMediaQueryListener = () => {
+    mediaQuery?.removeEventListener('change', handleMediaQueryChange);
+    mediaQuery = null;
+    removeMediaQueryListener = null;
+    initialized = false;
+  };
+
+  systemPreference.value = mediaQuery.matches ? 'dark' : 'light';
+
   const storedTheme = localStorage.getItem(THEME_STORAGE_KEY) as Theme | null;
-  const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-
-  updateSystemPreference();
-
   if (storedTheme === 'light' || storedTheme === 'dark') {
     isSystemTheme.value = false;
     updateTheme(storedTheme);
@@ -60,17 +82,23 @@ if (isClient) {
     updateTheme(systemPreference.value);
   }
 
-  mediaQuery.addEventListener('change', () => {
-    systemPreference.value = mediaQuery.matches ? 'dark' : 'light';
-    if (isSystemTheme.value) {
-      updateTheme(systemPreference.value);
+  initialized = true;
+};
+
+const registerConsumer = () => {
+  consumerCount += 1;
+  onScopeDispose(() => {
+    consumerCount = Math.max(consumerCount - 1, 0);
+    if (consumerCount === 0 && removeMediaQueryListener) {
+      removeMediaQueryListener();
     }
   });
-} else {
-  theme.value = 'light';
-}
+};
 
 export function useTheme() {
+  initializeTheme();
+  registerConsumer();
+
   const toggleTheme = () => {
     isSystemTheme.value = false;
     const nextTheme = theme.value === 'dark' ? 'light' : 'dark';

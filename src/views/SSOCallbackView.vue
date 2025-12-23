@@ -58,13 +58,25 @@ const fetchCurrentUser = async () => {
   return response.data.data;
 };
 
+const isSafeRelativePath = (path: string) => {
+  if (!path.startsWith('/') || path.startsWith('//')) return false;
+  return !/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(path);
+};
+
 const resolveNextLocation = (): RouteLocationRaw => {
   const nextParam = route.query.next;
-  if (typeof nextParam === 'string' && nextParam.trim().length > 0) {
+  if (
+    typeof nextParam === 'string' &&
+    nextParam.trim().length > 0 &&
+    isSafeRelativePath(nextParam)
+  ) {
     return { path: nextParam };
   }
   return { name: 'home' };
 };
+
+const SUCCESS_TOAST_DURATION = 2500;
+const ERROR_TOAST_DURATION = 4000;
 
 onMounted(async () => {
   try {
@@ -77,13 +89,13 @@ onMounted(async () => {
       severity: 'success',
       summary: 'Welcome back',
       detail: 'You are now signed in via SSO.',
-      life: 2500,
+      life: SUCCESS_TOAST_DURATION,
     });
 
     const nextLocation = resolveNextLocation();
     setTimeout(() => {
       router.replace(nextLocation);
-    }, 800);
+    }, SUCCESS_TOAST_DURATION);
   } catch (error) {
     console.error('Failed to finalize SSO login', error);
     status.value = 'error';
@@ -91,9 +103,9 @@ onMounted(async () => {
       severity: 'error',
       summary: 'SSO Login Failed',
       detail: 'Please try signing in again.',
-      life: 4000,
+      life: ERROR_TOAST_DURATION,
     });
-    setTimeout(goToLogin, 2000);
+    setTimeout(goToLogin, ERROR_TOAST_DURATION);
   }
 });
 </script>
