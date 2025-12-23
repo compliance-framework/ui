@@ -1,6 +1,7 @@
 import { ref, computed } from 'vue';
 
 type Theme = 'light' | 'dark';
+export type ThemeChangeDetail = { theme: Theme };
 
 const THEME_STORAGE_KEY = 'theme';
 const isClient = typeof window !== 'undefined';
@@ -9,9 +10,8 @@ const systemPreference = ref<Theme>('light');
 const theme = ref<Theme>('light');
 const isSystemTheme = ref(true);
 
-const applyThemeClass = (value: Theme, context: string) => {
+const applyThemeClass = (value: Theme) => {
   if (!isClient) return;
-  console.log(`[theme] applyThemeClass -> ${value} (context: ${context})`);
   document.documentElement.classList.toggle('dark', value === 'dark');
 };
 
@@ -25,14 +25,16 @@ const persistThemeSelection = () => {
 };
 
 const updateTheme = (value: Theme) => {
-  console.log('[theme] updateTheme', {
-    previous: theme.value,
-    next: value,
-    isSystemTheme: isSystemTheme.value,
-  });
   theme.value = value;
-  applyThemeClass(value, isSystemTheme.value ? 'system' : 'manual');
+  applyThemeClass(value);
   persistThemeSelection();
+  if (isClient) {
+    window.dispatchEvent(
+      new CustomEvent<ThemeChangeDetail>('theme-change', {
+        detail: { theme: value },
+      }),
+    );
+  }
 };
 
 const updateSystemPreference = () => {
@@ -72,15 +74,11 @@ export function useTheme() {
   const toggleTheme = () => {
     isSystemTheme.value = false;
     const nextTheme = theme.value === 'dark' ? 'light' : 'dark';
-    console.log('[theme] toggleTheme', { current: theme.value, nextTheme });
     updateTheme(nextTheme);
   };
 
   const useSystemValue = () => {
     isSystemTheme.value = true;
-    console.log('[theme] useSystemValue', {
-      systemPreference: systemPreference.value,
-    });
     updateTheme(systemPreference.value);
   };
 

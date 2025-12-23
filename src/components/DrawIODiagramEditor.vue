@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { onMounted, ref, useTemplateRef } from 'vue';
+import { onMounted, onBeforeUnmount, ref, useTemplateRef } from 'vue';
 import type { Diagram } from '@/oscal';
 import type { Property } from '@/oscal';
+import type { ThemeChangeDetail } from '@/composables/useTheme';
 
 const frame = useTemplateRef('frame');
 
@@ -19,6 +20,12 @@ const emit = defineEmits({
 
 onMounted(() => {
   window.addEventListener('message', onDrawIoMessage);
+  window.addEventListener('theme-change', onThemeChange as EventListener);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener('message', onDrawIoMessage);
+  window.removeEventListener('theme-change', onThemeChange as EventListener);
 });
 
 function onDrawIoMessage(e: MessageEvent) {
@@ -112,15 +119,22 @@ function findExistingXml() {
   });
 }
 
-function loadXml() {
-  const existingXml = findExistingXml();
-  let dark = false;
+function isDarkModeEnabled(): boolean {
+  if (typeof document !== 'undefined') {
+    return document.documentElement.classList.contains('dark');
+  }
   if (
     window.matchMedia &&
     window.matchMedia('(prefers-color-scheme: dark)').matches
   ) {
-    dark = true;
+    return true;
   }
+  return false;
+}
+
+function loadXml() {
+  const existingXml = findExistingXml();
+  const dark = isDarkModeEnabled();
   if (existingXml) {
     frame.value?.contentWindow?.postMessage(
       JSON.stringify({
@@ -154,6 +168,22 @@ function exportXml(diagram: Diagram) {
       action: 'export',
       format: `png`,
       diagram: diagram.uuid,
+    }),
+    '*',
+  );
+}
+
+function onThemeChange(event: CustomEvent<ThemeChangeDetail>) {
+  const isDark = event.detail.theme === 'dark';
+  const existingXml = findExistingXml();
+  frame.value?.contentWindow?.postMessage(
+    JSON.stringify({
+      action: 'load',
+      xml: existingXml?.value ? atob(existingXml.value as string) : '',
+      noExitBtn: 1,
+      autosave: 1,
+      title: currentDiagram.value.uuid,
+      dark: isDark,
     }),
     '*',
   );
