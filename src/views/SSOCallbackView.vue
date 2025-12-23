@@ -25,7 +25,7 @@
 
 <script setup lang="ts">
 import { onMounted, ref, computed } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
+import { useRouter, useRoute, type RouteLocationRaw } from 'vue-router';
 import { useUserStore } from '@/stores/auth';
 import { useGuestInstance } from '@/composables/axios';
 import { useToast } from 'primevue/usetoast';
@@ -58,6 +58,14 @@ const fetchCurrentUser = async () => {
   return response.data.data;
 };
 
+const resolveNextLocation = (): RouteLocationRaw => {
+  const nextParam = route.query.next;
+  if (typeof nextParam === 'string' && nextParam.trim().length > 0) {
+    return { path: nextParam };
+  }
+  return { name: 'home' };
+};
+
 onMounted(async () => {
   try {
     const user = await fetchCurrentUser();
@@ -72,9 +80,9 @@ onMounted(async () => {
       life: 2500,
     });
 
-    const next = (route.query.next as string) ?? { name: 'home' };
+    const nextLocation = resolveNextLocation();
     setTimeout(() => {
-      router.replace(next);
+      router.replace(nextLocation);
     }, 800);
   } catch (error) {
     console.error('Failed to finalize SSO login', error);

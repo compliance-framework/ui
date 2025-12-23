@@ -64,7 +64,7 @@
           :key="provider.name"
           @click="loginWithSSO(provider.name)"
           :disabled="isSSOLoading"
-          class="w-full flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          class="w-full flex items-center justify-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-100 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           <img
             v-if="provider.iconUrl"
@@ -183,8 +183,19 @@ const route = useRoute();
 const router = useRouter();
 const toast = useToast();
 
-const loginWithSSO = (providerName: string) => {
-  initiateLogin(providerName);
+const loginWithSSO = async (providerName: string) => {
+  try {
+    await initiateLogin(providerName);
+  } catch (err) {
+    console.error('SSO login failed to start', err);
+    toast.add({
+      severity: 'error',
+      summary: 'SSO unavailable',
+      detail:
+        err instanceof Error ? err.message : 'Unable to start the SSO flow.',
+      life: 4000,
+    });
+  }
 };
 
 const formatProviderLabel = (provider: OIDCProvider) => {
@@ -213,7 +224,6 @@ watch(
 
 onMounted(() => {
   loadProviders();
-  resolveLoginNotice();
 });
 
 async function onSubmit() {

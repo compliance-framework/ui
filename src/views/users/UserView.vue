@@ -19,9 +19,7 @@
           <p><strong>Auth Method:</strong> {{ user.authMethod ?? 'N/A' }}</p>
           <p>
             <strong>Auth Provider:</strong>
-            {{
-              user.authProvider ?? (user.authMethod === 'oidc' ? 'OIDC' : 'N/A')
-            }}
+            {{ user.authProvider ?? 'N/A' }}
           </p>
         </div>
       </PageCard>

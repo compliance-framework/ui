@@ -24,7 +24,10 @@ export function useOIDC() {
     error.value = null;
     try {
       await fetchProviders();
-      providers.value = providersData.value ?? [];
+      const fetchedProviders = providersData.value ?? [];
+      providers.value = fetchedProviders.filter(
+        (provider) => provider.enabled !== false,
+      );
     } catch (_error) {
       console.error('Failed to load SSO providers:', _error);
       error.value = 'Failed to load SSO providers';
@@ -35,12 +38,21 @@ export function useOIDC() {
   };
 
   const initiateLogin = async (providerName: string) => {
+    const provider = providers.value.find(
+      (p) => p.name === providerName && p.enabled !== false,
+    );
+    if (!provider) {
+      const unavailableMessage = 'Selected SSO provider is not available.';
+      error.value = unavailableMessage;
+      throw new Error(unavailableMessage);
+    }
     try {
       const config = await configStore.getConfig();
-      window.location.href = `${config.API_URL}/api/auth/sso/${providerName}`;
+      window.location.href = `${config.API_URL}/api/auth/sso/${provider.name}`;
     } catch (_error) {
       console.error('Failed to initiate SSO login:', _error);
       error.value = 'Failed to initiate SSO login';
+      throw _error instanceof Error ? _error : new Error('SSO init failed');
     }
   };
 
