@@ -9,18 +9,17 @@
 
 <script lang="ts" setup>
 import ResultStatusBadge from '@/components/ResultStatusBadge.vue';
-import type { Control } from '@/oscal';
 import type { ComplianceIntervalStatus } from '@/stores/evidence';
 import { useDataApi } from '@/composables/axios';
 import { computed } from 'vue';
 import { computeEvidenceStatusCounts } from '@/composables/useEvidenceStatusCounts';
 
-const { control } = defineProps<{
-  control: Control;
+const { dashboardId } = defineProps<{
+  dashboardId: string;
 }>();
 
 const { data: evidenceCounts } = useDataApi<ComplianceIntervalStatus[]>(
-  `/api/evidence/compliance-by-control/${control.id}`,
+  `/api/evidence/compliance-by-filter/${dashboardId}`,
 );
 
 const counts = computed(() =>

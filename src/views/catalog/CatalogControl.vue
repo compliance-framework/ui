@@ -13,39 +13,10 @@
           >
         </div>
         <ResultStatusBadge
-          v-if="
-            compliance &&
-            compliance?.reduce((total, current) => total + current.count, 0)
-          "
-          :gray="
-            compliance?.reduce(
-              (total, current) =>
-                ['satisfied', 'not-satisfied'].includes(
-                  current.status?.toLowerCase(),
-                )
-                  ? total
-                  : total + current.count,
-              0,
-            )
-          "
-          :red="
-            compliance?.reduce(
-              (total, current) =>
-                current.status?.toLowerCase() == 'not-satisfied'
-                  ? total + current.count
-                  : total,
-              0,
-            )
-          "
-          :green="
-            compliance?.reduce(
-              (total, current) =>
-                current.status?.toLowerCase() == 'satisfied'
-                  ? total + current.count
-                  : total,
-              0,
-            )
-          "
+          v-if="complianceCounts.total"
+          :gray="complianceCounts.gray"
+          :red="complianceCounts.red"
+          :green="complianceCounts.green"
         ></ResultStatusBadge>
         <TertiaryButton
           v-if="control.class"
@@ -123,7 +94,7 @@
   </CollapsableGroup>
 </template>
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import CollapsableGroup from '@/components/CollapsableGroup.vue';
 import ResultStatusBadge from '@/components/ResultStatusBadge.vue';
 import { type Catalog, type Control } from '@/oscal';
@@ -134,6 +105,7 @@ import PartDisplayEditor from '@/components/PartDisplayEditor.vue';
 import { useRouter } from 'vue-router';
 import { useDataApi } from '@/composables/axios';
 import type { ComplianceIntervalStatus } from '@/stores/evidence';
+import { computeEvidenceStatusCounts } from '@/composables/useEvidenceStatusCounts';
 
 const props = defineProps<{
   catalog: Catalog;
@@ -149,6 +121,10 @@ const { data: compliance } = useDataApi<ComplianceIntervalStatus[] | null>(
   `/api/evidence/compliance-by-control/${props.control.id}`,
   {},
   { immediate: true, initialData: null },
+);
+
+const complianceCounts = computed(() =>
+  computeEvidenceStatusCounts(compliance.value || []),
 );
 
 const objective = ref<Part | undefined>(getPart('assessment-objective'));
