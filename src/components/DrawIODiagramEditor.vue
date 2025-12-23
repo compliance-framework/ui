@@ -215,7 +215,7 @@ function resolveXmlForReload() {
   if (stored?.value) {
     try {
       return atob(stored.value as string);
-    } catch (_error) {
+    } catch {
       return '';
     }
   }

@@ -132,7 +132,7 @@ const formattedUserAttributes = computed(() => {
     const parsed =
       typeof attributes === 'string' ? JSON.parse(attributes) : attributes;
     return JSON.stringify(parsed, null, 2);
-  } catch (_error) {
+  } catch {
     return typeof attributes === 'string'
       ? attributes
       : JSON.stringify(attributes, null, 2);
