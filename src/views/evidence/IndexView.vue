@@ -226,6 +226,8 @@ async function search() {
 onMounted(() => {
   if (route.query.filter) {
     uiStore.setEvidenceFilter(route.query.filter as string);
+  } else {
+    uiStore.setEvidenceFilter('');
   }
   search();
 });
@@ -238,22 +240,28 @@ async function save() {
 }
 
 function share() {
-  const url = new URL(window.location.href);
-  if (filter.value) {
-    url.searchParams.set('filter', filter.value);
-  } else {
-    url.searchParams.delete('filter');
-  }
+  const url = window.location.href;
 
-  navigator.clipboard.writeText(url.toString()).then(() => {
-    toast.add({
-      severity: 'success',
-      summary: 'Link Copied',
-      detail:
-        'The link to this evidence search has been copied to your clipboard.',
-      life: 3000,
+  navigator.clipboard
+    .writeText(url)
+    .then(() => {
+      toast.add({
+        severity: 'success',
+        summary: 'Link Copied',
+        detail:
+          'The link to this evidence search has been copied to your clipboard.',
+        life: 3000,
+      });
+    })
+    .catch((err) => {
+      console.error('Failed to copy to clipboard:', err);
+      toast.add({
+        severity: 'error',
+        summary: 'Copy Failed',
+        detail: 'Unable to copy the link to your clipboard. Please try again.',
+        life: 4000,
+      });
     });
-  });
 }
 
 const menuItems = ref([

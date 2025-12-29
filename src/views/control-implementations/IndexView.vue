@@ -174,7 +174,6 @@ const {
   execute: fetchResolvedcatalog,
 } = useDataApi<Catalog>();
 const {
-  data: controlImplementation,
   isLoading: controlImplementationLoading,
   execute: fetchControlImplementations,
 } = useDataApi<ControlImplementation | null>(
@@ -219,6 +218,16 @@ function openImplementationDrawer(req: ImplementedRequirement) {
   selectedImplementedRequirement.value = req;
 }
 
+watch(
+  () => uiStore.controlImplementationDrawerOpen,
+  (isOpen) => {
+    if (!isOpen && uiStore.controlImplementationSelectedRequirementId) {
+      uiStore.setControlImplementationSelectedRequirementId(null);
+      selectedImplementedRequirement.value = undefined;
+    }
+  },
+);
+
 onMounted(async () => {
   try {
     await fetchProfile();
@@ -227,11 +236,15 @@ onMounted(async () => {
   }
 
   try {
-    await fetchControlImplementations();
-    const implementations =
-      controlImplementation.value?.implementedRequirements ||
-      ([] as ImplementedRequirement[]);
-    for (const impl of implementations) {
+    const { data: implementationResponse } =
+      await fetchControlImplementations();
+    const implementation = implementationResponse?.value?.data;
+
+    if (!implementation) {
+      return;
+    }
+    const implementedRequirements = implementation.implementedRequirements;
+    for (const impl of implementedRequirements) {
       controlImplementations.value[impl.controlId] = impl;
       if (
         uiStore.controlImplementationSelectedRequirementId === impl.uuid &&
@@ -239,15 +252,6 @@ onMounted(async () => {
       ) {
         selectedImplementedRequirement.value = impl;
       }
-    }
-
-    // Clear any stale selected requirement ID when the drawer is closed.
-    if (
-      !uiStore.controlImplementationDrawerOpen &&
-      uiStore.controlImplementationSelectedRequirementId
-    ) {
-      uiStore.setControlImplementationSelectedRequirementId(null);
-      selectedImplementedRequirement.value = undefined;
     }
   } catch (err) {
     error.value = err as AxiosError<unknown>;
