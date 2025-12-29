@@ -2,7 +2,7 @@
   <div class="px-8 pb-8">
     <SideNavLogo alt="Vue logo" :src="lightLogo" class="w-full dark:hidden" />
     <SideNavLogo
-      alt="Vue logo"
+      alt="Continuous Compliance Framework"
       :src="darkLogo"
       class="w-full hidden dark:block"
     />

@@ -20,7 +20,7 @@
         />
         <span
           class="text-sm text-red-500 dark:text-red-500"
-          v-for="error in errors.email"
+          v-for="error in (errors.email || [])"
           :key="error"
           >{{ error }}</span
         >
@@ -98,7 +98,7 @@ async function onSubmit() {
     // Optionally redirect to login after a delay
     setTimeout(() => {
       router.push({ name: 'login' });
-    }, 3000);
+    }, 5000);
   } catch (error) {
     const response = error as AxiosError<DataResponse<AuthError>>;
     if (response.response?.data?.data) {

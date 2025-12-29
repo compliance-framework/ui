@@ -24,13 +24,13 @@
         />
         <span
           class="text-sm text-red-500 dark:text-red-500"
-          v-for="error in errors.password"
+          v-for="error in (errors.password || [])"
           :key="error"
           >{{ error }}</span
         >
         <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
           Password must be at least 8 characters and include uppercase,
-          lowercase, number, and special character.
+          lowercase, number, and a special character (allowed: !@#$%^&*(),.?":{}|<>_-).
         </p>
         <p
           v-if="password && !passwordRequirementsMet"
@@ -119,11 +119,16 @@ const { execute: resetPassword } = useGuestApi<string>(
 );
 
 const passwordMismatch = computed(() => {
-  return (
-    confirmPassword.value &&
-    password.value &&
-    confirmPassword.value !== password.value
-  );
+  const pw = password.value;
+  const cpw = confirmPassword.value;
+
+  // No mismatch when both fields are empty (initial state)
+  if (!pw && !cpw) {
+    return false;
+  }
+
+  // Treat any difference (including empty confirm when password is set) as mismatch
+  return pw !== cpw;
 });
 
 const passwordRequirementsMet = computed(() => {
@@ -238,15 +243,35 @@ async function onSubmit() {
       router.push({ name: 'login' });
     }, 5000);
   } catch (error) {
-    const response = error as AxiosError<DataResponse<AuthError>>;
-    if (response.response?.data?.data) {
-      errors.value = response.response.data.data as AuthError;
-    } else {
-      const errorMessage =
-        response.response?.status === 401
-          ? 'This reset link is invalid or has expired. Please request a new password reset link.'
-          : 'Unable to reset password. Please try again.';
+    const axiosError = error as AxiosError<DataResponse<AuthError>>;
+    const status = axiosError.response?.status;
 
+    if (axiosError.response?.data?.data) {
+      errors.value = axiosError.response.data.data as AuthError;
+    } else {
+      let errorMessage: string;
+
+      switch (status) {
+        case 401:
+          errorMessage =
+            'This reset link is invalid or has expired. Please request a new password reset link.';
+          break;
+        case 422:
+          errorMessage =
+            'There was a problem with the information provided. Please review your input and try again.';
+          break;
+        case 500:
+          errorMessage =
+            'A server error occurred while resetting your password. Please try again later.';
+          break;
+        default:
+          errorMessage = 'Unable to reset password. Please try again.';
+      }
+
+      console.error('Password reset failed', {
+        status,
+        data: axiosError.response?.data,
+      });
       toast.add({
         severity: 'error',
         summary: 'Reset Failed',
