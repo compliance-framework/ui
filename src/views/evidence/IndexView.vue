@@ -61,6 +61,10 @@
           </SecondaryButton>
         </div>
       </form>
+      <SecondaryButton @click.prevent="share" class="text-sm">
+        <BIconShare class="mr-2" />
+        Share
+      </SecondaryButton>
       <PrimaryButton @click.prevent="save" class="text-sm">
         Save
       </PrimaryButton>
@@ -86,7 +90,7 @@ import PageCard from '@/components/PageCard.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
 import Message from '@/volt/Message.vue';
 import { FilterParser } from '@/parsers/labelfilter.ts';
-import { BIconSearch } from 'bootstrap-icons-vue';
+import { BIconSearch, BIconShare } from 'bootstrap-icons-vue';
 import type { ChartData } from 'chart.js';
 import {
   calculateComplianceOverTimeData,
@@ -96,6 +100,7 @@ import ResultComplianceOverTimeChart from '@/components/ResultComplianceOverTime
 import type { HeartbeatInterval } from '@/stores/heartbeats.ts';
 import { calculateHeartbeatOverTimeData } from '@/parsers/heartbeats.ts';
 import { useConfigStore } from '@/stores/config.ts';
+import { useToast } from 'primevue/usetoast';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
 import InfoCircleIcon from '@primevue/icons/infocircle';
@@ -108,11 +113,16 @@ const configStore = useConfigStore();
 const route = useRoute();
 const router = useRouter();
 const uiStore = useUIStore();
+const toast = useToast();
 const error = ref<AxiosError | null>(null);
 
 const filter = computed({
   get: () => uiStore.evidenceFilter,
   set: (val) => {
+    // Avoid updating if the value is already the same to prevent redundant cycles
+    if (val === uiStore.evidenceFilter) {
+      return;
+    }
     uiStore.setEvidenceFilter(val);
     // Update URL query parameter without reloading page
     router.replace({
@@ -121,17 +131,20 @@ const filter = computed({
   },
 });
 
-if (route.query.filter) {
-  filter.value = route.query.filter as string;
-}
-
 watch(
   () => route.query.filter,
   (newFilter) => {
-    if (newFilter !== undefined) {
-      uiStore.setEvidenceFilter(newFilter as string);
-      search();
+    // Avoid redundant updates when the change originated from the filter setter
+    if (newFilter === uiStore.evidenceFilter) {
+      return;
     }
+
+    if (typeof newFilter === 'string') {
+      uiStore.setEvidenceFilter(newFilter);
+    } else {
+      uiStore.setEvidenceFilter('');
+    }
+    search();
   },
 );
 
@@ -211,6 +224,9 @@ async function search() {
 }
 
 onMounted(() => {
+  if (route.query.filter) {
+    uiStore.setEvidenceFilter(route.query.filter as string);
+  }
   search();
 });
 
@@ -218,6 +234,25 @@ async function save() {
   await router.push({
     name: 'dashboards.create',
     query: { filter: filter.value },
+  });
+}
+
+function share() {
+  const url = new URL(window.location.href);
+  if (filter.value) {
+    url.searchParams.set('filter', filter.value);
+  } else {
+    url.searchParams.delete('filter');
+  }
+
+  navigator.clipboard.writeText(url.toString()).then(() => {
+    toast.add({
+      severity: 'success',
+      summary: 'Link Copied',
+      detail:
+        'The link to this evidence search has been copied to your clipboard.',
+      life: 3000,
+    });
   });
 }
 

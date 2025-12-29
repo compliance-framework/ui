@@ -151,12 +151,12 @@ const uiStore = useUIStore();
 
 const controlDrawerOpen = computed({
   get: () => uiStore.controlImplementationDrawerOpen,
-  set: (val) => uiStore.setDrawerOpen(val),
+  set: (val) => uiStore.setControlImplementationDrawerOpen(val),
 });
 
 const expandedKeys = computed({
   get: () => uiStore.controlImplementationExpandedKeys,
-  set: (val) => uiStore.setExpandedKeys(val),
+  set: (val) => uiStore.setControlImplementationExpandedKeys(val),
 });
 
 const {
@@ -214,8 +214,8 @@ watch(profile, async () => {
 });
 
 function openImplementationDrawer(req: ImplementedRequirement) {
-  uiStore.setDrawerOpen(true);
-  uiStore.setSelectedRequirementId(req.uuid);
+  uiStore.setControlImplementationDrawerOpen(true);
+  uiStore.setControlImplementationSelectedRequirementId(req.uuid);
   selectedImplementedRequirement.value = req;
 }
 
@@ -239,6 +239,15 @@ onMounted(async () => {
       ) {
         selectedImplementedRequirement.value = impl;
       }
+    }
+
+    // Clear any stale selected requirement ID when the drawer is closed.
+    if (
+      !uiStore.controlImplementationDrawerOpen &&
+      uiStore.controlImplementationSelectedRequirementId
+    ) {
+      uiStore.setControlImplementationSelectedRequirementId(null);
+      selectedImplementedRequirement.value = undefined;
     }
   } catch (err) {
     error.value = err as AxiosError<unknown>;
