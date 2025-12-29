@@ -31,6 +31,7 @@
           v-model="password"
           placeholder="Enter new password"
           type="password"
+          id="password"
         />
         <span
           class="text-sm text-red-500 dark:text-red-500"
@@ -53,6 +54,7 @@
           v-model="confirmPassword"
           placeholder="Confirm new password"
           type="password"
+          id="confirmPassword"
         />
         <span
           class="text-sm text-red-500 dark:text-red-500"
@@ -81,32 +83,6 @@
         Back to Login
       </router-link>
     </div>
-
-    <!-- Success Message -->
-    <div
-      v-if="successMessage"
-      class="mx-8 mt-4 p-4 bg-green-50 border border-green-200 rounded-md"
-    >
-      <div class="flex">
-        <div class="flex-shrink-0">
-          <svg
-            class="h-5 w-5 text-green-400"
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 20 20"
-            fill="currentColor"
-          >
-            <path
-              fill-rule="evenodd"
-              d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-              clip-rule="evenodd"
-            />
-          </svg>
-        </div>
-        <div class="ml-3">
-          <p class="text-sm text-green-800">{{ successMessage }}</p>
-        </div>
-      </div>
-    </div>
   </PageCard>
 </template>
 
@@ -134,7 +110,7 @@ const confirmPassword = ref('');
 const token = ref('');
 const errors = ref<AuthError>({} as AuthError);
 const isLoading = ref(false);
-const successMessage = ref('');
+const tokenPattern = /^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$/;
 
 const router = useRouter();
 const route = useRoute();
@@ -156,13 +132,15 @@ const passwordMismatch = computed(() => {
   );
 });
 
+const isTokenFormatValid = computed(() => tokenPattern.test(token.value));
+
 const isFormValid = computed(() => {
   return (
     password.value &&
     confirmPassword.value &&
     !passwordMismatch.value &&
     password.value.length >= 8 &&
-    token.value
+    isTokenFormatValid.value
   );
 });
 
@@ -175,8 +153,8 @@ onMounted(() => {
     token.value = tokenParam[0] || '';
   }
 
-  // If no token is provided, redirect to forgot password
-  if (!token.value) {
+  // If token is missing or invalid, redirect to forgot password
+  if (!token.value || !isTokenFormatValid.value) {
     toast.add({
       severity: 'error',
       summary: 'Invalid Reset Link',
@@ -188,21 +166,26 @@ onMounted(() => {
 });
 
 async function onSubmit() {
-  if (!isFormValid.value) return;
+  if (!isFormValid.value) {
+    toast.add({
+      severity: 'error',
+      summary: 'Invalid Reset Link',
+      detail: 'Please request a new password reset link.',
+      life: 4000,
+    });
+    return;
+  }
 
   errors.value = {} as AuthError;
   isLoading.value = true;
 
   try {
-    const response = await resetPassword({
+    await resetPassword({
       data: {
         password: password.value,
         token: token.value,
       },
     });
-
-    successMessage.value =
-      response.data.value?.data || 'Password has been reset successfully.';
 
     toast.add({
       severity: 'success',
@@ -223,7 +206,7 @@ async function onSubmit() {
     } else {
       const errorMessage =
         response.response?.status === 401
-          ? 'This reset link is invalid or has expired.'
+          ? 'This reset link is invalid or has expired. Please request a new password reset link.'
           : 'Unable to reset password. Please try again.';
 
       toast.add({
