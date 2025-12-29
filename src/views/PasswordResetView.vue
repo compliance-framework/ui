@@ -1,24 +1,13 @@
 <template>
-  <PageCard class="mx-auto mt-12 max-w-96 py-8">
-    <div class="px-8 pb-8">
-      <SideNavLogo alt="Vue logo" :src="lightLogo" class="w-full dark:hidden" />
-      <SideNavLogo
-        alt="Vue logo"
-        :src="darkLogo"
-        class="w-full hidden dark:block"
-      />
-    </div>
-
-    <div class="px-8">
-      <h2
-        class="text-2xl font-bold text-center text-gray-900 dark:text-gray-100 mb-2"
-      >
-        Reset Password
-      </h2>
-      <p class="text-sm text-center text-gray-600 dark:text-gray-400 mb-6">
-        Enter your new password below.
+  <PageCard class="mx-auto mt-12 max-w-96 py-8 space-y-6">
+    <AuthFormHeader
+      title="Reset Password"
+      subtitle="Enter your new password below."
+    >
+      <p v-if="tokenError" class="mt-4 text-sm text-red-600 dark:text-red-400">
+        {{ tokenError }}
       </p>
-    </div>
+    </AuthFormHeader>
 
     <form @submit.prevent="onSubmit" class="space-y-4 px-8">
       <div>
@@ -40,7 +29,14 @@
           >{{ error }}</span
         >
         <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-          Password must be at least 8 characters long.
+          Password must be at least 8 characters and include uppercase,
+          lowercase, number, and special character.
+        </p>
+        <p
+          v-if="password && !passwordRequirementsMet"
+          class="text-xs text-red-500 dark:text-red-500 mt-1"
+        >
+          Ensure your password meets all complexity requirements.
         </p>
       </div>
 
@@ -92,13 +88,11 @@ import { ref, computed, onMounted } from 'vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
 import { useRouter, useRoute } from 'vue-router';
 import FormInput from '@/components/forms/FormInput.vue';
-import lightLogo from '@/assets/logo-light.svg';
-import darkLogo from '@/assets/logo-dark.svg';
-import SideNavLogo from '@/components/navigation/SideNavLogo.vue';
 import { useToast } from 'primevue/usetoast';
 import { useGuestApi } from '@/composables/axios';
 import type { AxiosError } from 'axios';
 import type { DataResponse } from '@/stores/types';
+import AuthFormHeader from '@/components/auth/AuthFormHeader.vue';
 
 interface AuthError {
   password: string[];
@@ -110,7 +104,7 @@ const confirmPassword = ref('');
 const token = ref('');
 const errors = ref<AuthError>({} as AuthError);
 const isLoading = ref(false);
-const tokenPattern = /^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$/;
+const tokenError = ref('');
 
 const router = useRouter();
 const route = useRoute();
@@ -132,14 +126,56 @@ const passwordMismatch = computed(() => {
   );
 });
 
-const isTokenFormatValid = computed(() => tokenPattern.test(token.value));
+const passwordRequirementsMet = computed(() => {
+  const value = password.value;
+  if (!value) {
+    return false;
+  }
+  return (
+    value.length >= 8 &&
+    /[A-Z]/.test(value) &&
+    /[a-z]/.test(value) &&
+    /\d/.test(value) &&
+    /[!@#$%^&*(),.?":{}|<>_\-]/.test(value)
+  );
+});
+
+function isValidBase64UrlSegment(segment: string) {
+  if (!segment) {
+    return false;
+  }
+  let normalized = segment.replace(/-/g, '+').replace(/_/g, '/');
+  while (normalized.length % 4 !== 0) {
+    normalized += '=';
+  }
+
+  try {
+    atob(normalized);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+const isTokenFormatValid = computed(() => {
+  if (!token.value) {
+    return false;
+  }
+
+  const parts = token.value.split('.');
+  if (parts.length !== 3) {
+    return false;
+  }
+
+  return parts.every(isValidBase64UrlSegment);
+});
 
 const isFormValid = computed(() => {
   return (
     password.value &&
     confirmPassword.value &&
     !passwordMismatch.value &&
-    password.value.length >= 8 &&
+    passwordRequirementsMet.value &&
     isTokenFormatValid.value
   );
 });
@@ -161,7 +197,8 @@ onMounted(() => {
       detail: 'This password reset link is invalid or has expired.',
       life: 4000,
     });
-    router.push({ name: 'forgot-password' });
+    tokenError.value =
+      'This password reset link appears invalid or expired. Please request a new link.';
   }
 });
 
@@ -169,8 +206,9 @@ async function onSubmit() {
   if (!isFormValid.value) {
     toast.add({
       severity: 'error',
-      summary: 'Invalid Reset Link',
-      detail: 'Please request a new password reset link.',
+      summary: 'Invalid Form Submission',
+      detail:
+        'Please complete all required fields with valid values before resetting your password.',
       life: 4000,
     });
     return;
@@ -198,7 +236,7 @@ async function onSubmit() {
     // Redirect to login after a short delay
     setTimeout(() => {
       router.push({ name: 'login' });
-    }, 2000);
+    }, 5000);
   } catch (error) {
     const response = error as AxiosError<DataResponse<AuthError>>;
     if (response.response?.data?.data) {

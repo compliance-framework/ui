@@ -1,25 +1,9 @@
 <template>
-  <PageCard class="mx-auto mt-12 max-w-96 py-8">
-    <div class="px-8 pb-8">
-      <SideNavLogo alt="Vue logo" :src="lightLogo" class="w-full dark:hidden" />
-      <SideNavLogo
-        alt="Vue logo"
-        :src="darkLogo"
-        class="w-full hidden dark:block"
-      />
-    </div>
-
-    <div class="px-8">
-      <h2
-        class="text-2xl font-bold text-center text-gray-900 dark:text-gray-100 mb-2"
-      >
-        Forgot Password
-      </h2>
-      <p class="text-sm text-center text-gray-600 dark:text-gray-400 mb-6">
-        Enter your email address and we'll send you a link to reset your
-        password.
-      </p>
-    </div>
+  <PageCard class="mx-auto mt-12 max-w-96 py-8 space-y-6">
+    <AuthFormHeader
+      title="Forgot Password"
+      subtitle="Enter your email address and we'll send you a link to reset your password."
+    />
 
     <form @submit.prevent="onSubmit" class="space-y-4 px-8">
       <div>
@@ -66,13 +50,11 @@ import { ref } from 'vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
 import { useRouter } from 'vue-router';
 import FormInput from '@/components/forms/FormInput.vue';
-import lightLogo from '@/assets/logo-light.svg';
-import darkLogo from '@/assets/logo-dark.svg';
-import SideNavLogo from '@/components/navigation/SideNavLogo.vue';
 import { useToast } from 'primevue/usetoast';
 import { useGuestApi } from '@/composables/axios';
 import type { AxiosError } from 'axios';
 import type { DataResponse } from '@/stores/types';
+import AuthFormHeader from '@/components/auth/AuthFormHeader.vue';
 
 interface AuthError {
   email: string[];
