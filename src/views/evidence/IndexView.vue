@@ -1,6 +1,9 @@
 <template>
   <PageHeader>Evidence</PageHeader>
   <PageSubHeader>Search for evidence using labels</PageSubHeader>
+  <Message v-if="error" severity="error" class="mt-4">
+    {{ error.message }}
+  </Message>
   <div class="grid grid-cols-2 gap-4 mt-4">
     <PageCard>
       <h3 class="text-lg font-semibold text-zinc-600 dark:text-slate-300">
@@ -74,11 +77,14 @@
   </div>
 </template>
 <script setup lang="ts">
-import { onMounted, ref, computed } from 'vue';
+import { onMounted, ref, computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import type { AxiosError } from 'axios';
+import { useUIStore } from '@/stores/ui.ts';
 import PageHeader from '@/components/PageHeader.vue';
 import PageCard from '@/components/PageCard.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
+import Message from '@/volt/Message.vue';
 import { FilterParser } from '@/parsers/labelfilter.ts';
 import { BIconSearch } from 'bootstrap-icons-vue';
 import type { ChartData } from 'chart.js';
@@ -101,11 +107,33 @@ import { useDataApi } from '@/composables/axios';
 const configStore = useConfigStore();
 const route = useRoute();
 const router = useRouter();
+const uiStore = useUIStore();
+const error = ref<AxiosError | null>(null);
 
-const filter = ref<string>('');
+const filter = computed({
+  get: () => uiStore.evidenceFilter,
+  set: (val) => {
+    uiStore.setEvidenceFilter(val);
+    // Update URL query parameter without reloading page
+    router.replace({
+      query: { ...route.query, filter: val || undefined },
+    });
+  },
+});
+
 if (route.query.filter) {
   filter.value = route.query.filter as string;
 }
+
+watch(
+  () => route.query.filter,
+  (newFilter) => {
+    if (newFilter !== undefined) {
+      uiStore.setEvidenceFilter(newFilter as string);
+      search();
+    }
+  },
+);
 
 const { data: evidenceData, execute: loadEvidence } = useDataApi<Evidence[]>(
   '/api/evidence/search',
@@ -167,15 +195,24 @@ const heartbeatChartData = computed<ChartData<'line', DateDataPoint[]>>(() => {
 async function search() {
   const query = new FilterParser(filter.value).parse();
 
-  await loadEvidence({
-    data: { filter: query },
-  });
-
-  await loadComplianceOverTime({
-    data: { filter: query },
-  });
-  await loadHeartbeats();
+  try {
+    await Promise.all([
+      loadEvidence({
+        data: { filter: query },
+      }),
+      loadComplianceOverTime({
+        data: { filter: query },
+      }),
+      loadHeartbeats(),
+    ]);
+  } catch (err) {
+    error.value = err as AxiosError;
+  }
 }
+
+onMounted(() => {
+  search();
+});
 
 async function save() {
   await router.push({
@@ -219,8 +256,4 @@ const menuItems = ref([
     ],
   },
 ]);
-
-onMounted(() => {
-  search();
-});
 </script>
