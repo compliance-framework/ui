@@ -1,6 +1,10 @@
 <template>
   <div class="px-8 pb-8">
-    <SideNavLogo alt="Continuous Compliance Framework" :src="lightLogo" class="w-full dark:hidden" />
+    <SideNavLogo
+      alt="Continuous Compliance Framework"
+      :src="lightLogo"
+      class="w-full dark:hidden"
+    />
     <SideNavLogo
       alt="Continuous Compliance Framework"
       :src="darkLogo"

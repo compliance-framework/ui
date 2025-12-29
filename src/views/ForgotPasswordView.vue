@@ -20,7 +20,7 @@
         />
         <span
           class="text-sm text-red-500 dark:text-red-500"
-          v-for="error in (errors.email || [])"
+          v-for="error in errors.email || []"
           :key="error"
           >{{ error }}</span
         >
