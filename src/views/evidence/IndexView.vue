@@ -1,6 +1,9 @@
 <template>
   <PageHeader>Evidence</PageHeader>
   <PageSubHeader>Search for evidence using labels</PageSubHeader>
+  <Message v-if="error" severity="error" class="mt-4">
+    {{ error.message }}
+  </Message>
   <div class="grid grid-cols-2 gap-4 mt-4">
     <PageCard>
       <h3 class="text-lg font-semibold text-zinc-600 dark:text-slate-300">
@@ -58,6 +61,10 @@
           </SecondaryButton>
         </div>
       </form>
+      <SecondaryButton @click.prevent="share" class="text-sm">
+        <BIconShare class="mr-2" />
+        Share
+      </SecondaryButton>
       <PrimaryButton @click.prevent="save" class="text-sm">
         Save
       </PrimaryButton>
@@ -74,13 +81,16 @@
   </div>
 </template>
 <script setup lang="ts">
-import { onMounted, ref, computed } from 'vue';
+import { onMounted, ref, computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import type { AxiosError } from 'axios';
+import { useUIStore } from '@/stores/ui.ts';
 import PageHeader from '@/components/PageHeader.vue';
 import PageCard from '@/components/PageCard.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
+import Message from '@/volt/Message.vue';
 import { FilterParser } from '@/parsers/labelfilter.ts';
-import { BIconSearch } from 'bootstrap-icons-vue';
+import { BIconSearch, BIconShare } from 'bootstrap-icons-vue';
 import type { ChartData } from 'chart.js';
 import {
   calculateComplianceOverTimeData,
@@ -90,6 +100,7 @@ import ResultComplianceOverTimeChart from '@/components/ResultComplianceOverTime
 import type { HeartbeatInterval } from '@/stores/heartbeats.ts';
 import { calculateHeartbeatOverTimeData } from '@/parsers/heartbeats.ts';
 import { useConfigStore } from '@/stores/config.ts';
+import { useToast } from 'primevue/usetoast';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
 import InfoCircleIcon from '@primevue/icons/infocircle';
@@ -101,11 +112,41 @@ import { useDataApi } from '@/composables/axios';
 const configStore = useConfigStore();
 const route = useRoute();
 const router = useRouter();
+const uiStore = useUIStore();
+const toast = useToast();
+const error = ref<AxiosError | null>(null);
 
-const filter = ref<string>('');
-if (route.query.filter) {
-  filter.value = route.query.filter as string;
-}
+const filter = computed({
+  get: () => uiStore.evidenceFilter,
+  set: (val) => {
+    // Avoid updating if the value is already the same to prevent redundant cycles
+    if (val === uiStore.evidenceFilter) {
+      return;
+    }
+    uiStore.setEvidenceFilter(val);
+    // Update URL query parameter without reloading page
+    router.replace({
+      query: { ...route.query, filter: val || undefined },
+    });
+  },
+});
+
+watch(
+  () => route.query.filter,
+  (newFilter) => {
+    // Avoid redundant updates when the change originated from the filter setter
+    if (newFilter === uiStore.evidenceFilter) {
+      return;
+    }
+
+    if (typeof newFilter === 'string') {
+      uiStore.setEvidenceFilter(newFilter);
+    } else {
+      uiStore.setEvidenceFilter('');
+    }
+    search();
+  },
+);
 
 const { data: evidenceData, execute: loadEvidence } = useDataApi<Evidence[]>(
   '/api/evidence/search',
@@ -167,21 +208,60 @@ const heartbeatChartData = computed<ChartData<'line', DateDataPoint[]>>(() => {
 async function search() {
   const query = new FilterParser(filter.value).parse();
 
-  await loadEvidence({
-    data: { filter: query },
-  });
-
-  await loadComplianceOverTime({
-    data: { filter: query },
-  });
-  await loadHeartbeats();
+  try {
+    await Promise.all([
+      loadEvidence({
+        data: { filter: query },
+      }),
+      loadComplianceOverTime({
+        data: { filter: query },
+      }),
+      loadHeartbeats(),
+    ]);
+  } catch (err) {
+    error.value = err as AxiosError;
+  }
 }
+
+onMounted(() => {
+  if (route.query.filter) {
+    uiStore.setEvidenceFilter(route.query.filter as string);
+  } else {
+    uiStore.setEvidenceFilter('');
+  }
+  search();
+});
 
 async function save() {
   await router.push({
     name: 'dashboards.create',
     query: { filter: filter.value },
   });
+}
+
+function share() {
+  const url = window.location.href;
+
+  navigator.clipboard
+    .writeText(url)
+    .then(() => {
+      toast.add({
+        severity: 'success',
+        summary: 'Link Copied',
+        detail:
+          'The link to this evidence search has been copied to your clipboard.',
+        life: 3000,
+      });
+    })
+    .catch((err) => {
+      console.error('Failed to copy to clipboard:', err);
+      toast.add({
+        severity: 'error',
+        summary: 'Copy Failed',
+        detail: 'Unable to copy the link to your clipboard. Please try again.',
+        life: 4000,
+      });
+    });
 }
 
 const menuItems = ref([
@@ -219,8 +299,4 @@ const menuItems = ref([
     ],
   },
 ]);
-
-onMounted(() => {
-  search();
-});
 </script>

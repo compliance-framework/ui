@@ -51,7 +51,12 @@
     <div v-if="catalogLoading">Loading Catalog ...</div>
     <div v-else-if="!catalog">No Catalog</div>
     <div v-else>
-      <Tree :value="nodes" :filter="true" filterMode="lenient">
+      <Tree
+        v-model:expandedKeys="expandedKeys"
+        :value="nodes"
+        :filter="true"
+        filterMode="lenient"
+      >
         <template #group="slotProps">
           <div class="flex items-center gap-x-3">
             <div>
@@ -125,6 +130,7 @@ import { onMounted, ref, watch, computed, type Ref } from 'vue';
 import Message from '@/volt/Message.vue';
 import Badge from '@/volt/Badge.vue';
 import { useSystemStore } from '@/stores/system.ts';
+import { useUIStore } from '@/stores/ui.ts';
 import PageHeader from '@/components/PageHeader.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
 import ControlEvidenceCounter from './partials/ControlEvidenceCounter.vue';
@@ -135,14 +141,23 @@ import IndexControlImplementation from '@/views/control-implementations/partials
 import type { AxiosError } from 'axios';
 import type { Catalog, Profile } from '@/oscal';
 import type { ControlImplementation, ImplementedRequirement } from '@/oscal';
-import { useToggle } from '@/composables/useToggle';
 import Button from '@/volt/Button.vue';
 import { BIconEye } from 'bootstrap-icons-vue';
 import Drawer from '@/volt/Drawer.vue';
 import StatementByComponent from './partials/StatementByComponent.vue';
 
 const systemStore = useSystemStore();
-const { value: controlDrawerOpen, set: setControlDrawer } = useToggle();
+const uiStore = useUIStore();
+
+const controlDrawerOpen = computed({
+  get: () => uiStore.controlImplementationDrawerOpen,
+  set: (val) => uiStore.setControlImplementationDrawerOpen(val),
+});
+
+const expandedKeys = computed({
+  get: () => uiStore.controlImplementationExpandedKeys,
+  set: (val) => uiStore.setControlImplementationExpandedKeys(val),
+});
 
 const {
   data: profile,
@@ -159,7 +174,6 @@ const {
   execute: fetchResolvedcatalog,
 } = useDataApi<Catalog>();
 const {
-  data: controlImplementation,
   isLoading: controlImplementationLoading,
   execute: fetchControlImplementations,
 } = useDataApi<ControlImplementation | null>(
@@ -199,9 +213,20 @@ watch(profile, async () => {
 });
 
 function openImplementationDrawer(req: ImplementedRequirement) {
-  setControlDrawer(true);
+  uiStore.setControlImplementationDrawerOpen(true);
+  uiStore.setControlImplementationSelectedRequirementId(req.uuid);
   selectedImplementedRequirement.value = req;
 }
+
+watch(
+  () => uiStore.controlImplementationDrawerOpen,
+  (isOpen) => {
+    if (!isOpen && uiStore.controlImplementationSelectedRequirementId) {
+      uiStore.setControlImplementationSelectedRequirementId(null);
+      selectedImplementedRequirement.value = undefined;
+    }
+  },
+);
 
 onMounted(async () => {
   try {
@@ -211,12 +236,22 @@ onMounted(async () => {
   }
 
   try {
-    await fetchControlImplementations();
-    const implementations =
-      controlImplementation.value?.implementedRequirements ||
-      ([] as ImplementedRequirement[]);
-    for (const impl of implementations) {
+    const { data: implementationResponse } =
+      await fetchControlImplementations();
+    const implementation = implementationResponse?.value?.data;
+
+    if (!implementation) {
+      return;
+    }
+    const implementedRequirements = implementation.implementedRequirements;
+    for (const impl of implementedRequirements) {
       controlImplementations.value[impl.controlId] = impl;
+      if (
+        uiStore.controlImplementationSelectedRequirementId === impl.uuid &&
+        uiStore.controlImplementationDrawerOpen
+      ) {
+        selectedImplementedRequirement.value = impl;
+      }
     }
   } catch (err) {
     error.value = err as AxiosError<unknown>;
