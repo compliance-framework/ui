@@ -31,7 +31,7 @@
         <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
           Password must be at least 8 characters and include uppercase,
           lowercase, number, and a special character (allowed:
-          !@#$%^&*(),.?":{}|&lt;&gt;_-).
+          !@#$%^&*(),.?":{}|<>;_-).
         </p>
         <p
           v-if="password && !passwordRequirementsMet"
