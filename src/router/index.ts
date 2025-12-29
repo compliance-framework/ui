@@ -746,6 +746,16 @@ const publicRoutes = [
     component: () => import('@/views/LoginView.vue'),
   },
   {
+    path: 'forgot-password',
+    name: 'forgot-password',
+    component: () => import('@/views/ForgotPasswordView.vue'),
+  },
+  {
+    path: 'password-reset',
+    name: 'password-reset',
+    component: () => import('@/views/PasswordResetView.vue'),
+  },
+  {
     path: 'sso/callback',
     name: 'sso-callback',
     component: () => import('@/views/SSOCallbackView.vue'),

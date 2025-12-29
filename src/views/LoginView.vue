@@ -40,6 +40,15 @@
       <div>
         <PrimaryButton type="submit" class="w-full"> Login </PrimaryButton>
       </div>
+
+      <div class="text-center">
+        <router-link
+          :to="{ name: 'forgot-password' }"
+          class="text-sm text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
+        >
+          Forgot Password?
+        </router-link>
+      </div>
     </form>
 
     <!-- SSO Divider -->
