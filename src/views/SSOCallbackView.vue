@@ -96,7 +96,7 @@ onMounted(async () => {
     setTimeout(() => {
       router.replace(nextLocation);
     }, SUCCESS_TOAST_DURATION);
-  } catch (error) {
+  } catch {
     console.error('Failed to finalize SSO login');
     status.value = 'error';
     toast.add({

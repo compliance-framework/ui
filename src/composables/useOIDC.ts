@@ -28,7 +28,7 @@ export function useOIDC() {
       providers.value = fetchedProviders.filter(
         (provider) => provider.enabled !== false,
       );
-    } catch (_error) {
+    } catch {
       console.error('Failed to load SSO providers:');
       error.value = 'Failed to load SSO providers';
       providers.value = [];
