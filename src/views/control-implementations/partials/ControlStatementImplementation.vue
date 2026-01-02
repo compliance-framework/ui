@@ -83,7 +83,7 @@ const {
   implementation,
   sspId: providedSspId,
 } = defineProps<{
-  statement: Statement;
+  statement?: Statement;
   implementation: ImplementedRequirement;
   sspId?: string;
   partid?: string;
@@ -237,6 +237,10 @@ async function deleteByComponent(byComp: ByComponent) {
     console.error('No statement defined');
     return;
   }
+  if (!statement.uuid) {
+    console.error('Statement UUID is missing');
+    return;
+  }
 
   updatedStatement.value.byComponents =
     updatedStatement.value.byComponents?.filter(
@@ -268,7 +272,8 @@ async function updateByComponent(byComp: ByComponent) {
     });
     return;
   }
-  if (!localStatement.value || !statement) {
+  if (!localStatement.value || !statement || !statement.uuid) {
+    console.error('No statement or statement UUID defined');
     return;
   }
   try {
@@ -293,7 +298,8 @@ async function createByComponent() {
   if (
     !newByComponent.value.componentUuid ||
     !localStatement.value ||
-    !statement
+    !statement ||
+    !statement.uuid
   ) {
     showError.value = true;
     return;
