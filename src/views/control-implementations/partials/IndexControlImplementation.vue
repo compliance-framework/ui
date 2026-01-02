@@ -5,7 +5,7 @@ import Drawer from '@/volt/Drawer.vue';
 import type { ImplementedRequirement, Statement } from '@/oscal';
 import PartDisplay from '@/components/PartDisplay.vue';
 import type { Part } from '@/oscal';
-import { ref, watchEffect } from 'vue';
+import { ref, watchEffect, watch } from 'vue';
 import { useToggle } from '@/composables/useToggle';
 import ControlStatementImplementation from '@/views/control-implementations/partials/ControlStatementImplementation.vue';
 import { useSystemStore } from '@/stores/system.ts';
@@ -22,10 +22,22 @@ const drawerLoading = useToggle();
 const { system } = useSystemStore();
 const showCreateStatementModal = ref(false);
 
-const selectedImplementation = ref<ImplementedRequirement>(
-  implementation as ImplementedRequirement,
-);
+const selectedImplementation = ref<ImplementedRequirement | undefined>();
 const statements = ref<{ [key: string]: Statement }>({});
+
+// Watch for changes in the implementation prop and update local ref
+watch(
+  () => implementation,
+  (newImplementation) => {
+    if (newImplementation) {
+      selectedImplementation.value = newImplementation;
+    } else {
+      selectedImplementation.value = undefined;
+    }
+  },
+  { immediate: true },
+);
+
 watchEffect(() => {
   statements.value = {};
   for (const statement of implementation?.statements || []) {
@@ -89,28 +101,32 @@ function updateStatement(statement: Statement) {
 async function onPartSelect(e: Event, part: Part) {
   e.preventDefault();
   selectedPart.value = part;
-  setStatementDrawer(true);
   drawerLoading.set(true);
 
-  console.log('Selected part', part);
-
   if (!selectedImplementation.value) {
-    console.debug('Creating implemented requirement for control ', control.id);
-    const response = await executeCreate({
-      data: {
-        uuid: uuidv4(),
-        controlId: control.id,
-      } as ImplementedRequirement,
-    });
-    if (response.data.value && response.data.value.data) {
-      selectedImplementation.value = response.data.value.data;
-    } else {
-      // Handle error: response.data.value is null or missing data
-      throw new Error(
-        'Failed to create implemented requirement: response data is missing.',
-      );
+    try {
+      const response = await executeCreate({
+        data: {
+          uuid: uuidv4(),
+          controlId: control.id,
+        } as ImplementedRequirement,
+      });
+      if (response.data.value && response.data.value.data) {
+        selectedImplementation.value = response.data.value.data;
+      } else {
+        throw new Error(
+          'Failed to create implemented requirement: response data is missing.',
+        );
+      }
+    } catch (error) {
+      console.error('Error creating implemented requirement:', error);
+      setStatementDrawer(false);
+      drawerLoading.set(false);
+      return;
     }
   }
+
+  setStatementDrawer(true);
   drawerLoading.set(false);
 }
 </script>
@@ -156,20 +172,31 @@ async function onPartSelect(e: Event, part: Part) {
     class="w-full! md:w-1/2! lg:w-3/5!"
   >
     <ControlStatementImplementation
-      v-if="selectedPart"
+      v-if="selectedPart && selectedImplementation"
       @updated="updateStatement"
       :implementation="selectedImplementation"
       :ssp-id="system.securityPlan?.uuid"
       :statement="statements[selectedPart.id]"
       :partid="selectedPart.id"
     />
+    <div v-else-if="selectedPart && !selectedImplementation" class="p-4">
+      <p class="text-gray-600">Loading implementation...</p>
+    </div>
+    <div v-else class="p-4">
+      <p class="text-gray-600">No part selected</p>
+    </div>
   </Drawer>
 </template>
 
 <style>
-@reference "@/assets/main.css";
-
 .part-display .hover {
-  @apply bg-gray-100 dark:bg-slate-600 cursor-pointer;
+  background-color: rgb(243 244 246);
+  cursor: pointer;
+}
+
+@media (prefers-color-scheme: dark) {
+  .part-display .hover {
+    background-color: rgb(71 85 105);
+  }
 }
 </style>
