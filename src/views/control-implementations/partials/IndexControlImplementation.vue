@@ -22,9 +22,7 @@ const drawerLoading = useToggle();
 const { system } = useSystemStore();
 const showCreateStatementModal = ref(false);
 
-const selectedImplementation = ref<ImplementedRequirement | undefined>(
-  implementation || undefined,
-);
+const selectedImplementation = ref<ImplementedRequirement | undefined>();
 const statements = ref<{ [key: string]: Statement }>({});
 
 // Watch for changes in the implementation prop and update local ref
