@@ -89,7 +89,6 @@
               <IndexControlImplementation
                 :control="slotProps.node.data"
                 :implementation="controlImplementations[slotProps.node.data.id]"
-                @refresh="handleRefresh"
               />
             </div>
           </div>
@@ -217,31 +216,6 @@ function openImplementationDrawer(req: ImplementedRequirement) {
   uiStore.setControlImplementationDrawerOpen(true);
   uiStore.setControlImplementationSelectedRequirementId(req.uuid);
   selectedImplementedRequirement.value = req;
-}
-
-async function handleRefresh() {
-  try {
-    const { data: implementationResponse } =
-      await fetchControlImplementations();
-    const implementation = implementationResponse?.value?.data;
-
-    if (!implementation) {
-      return;
-    }
-    const implementedRequirements = implementation.implementedRequirements;
-    controlImplementations.value = {}; // Clear existing data
-    for (const impl of implementedRequirements) {
-      controlImplementations.value[impl.controlId] = impl;
-      if (
-        uiStore.controlImplementationSelectedRequirementId === impl.uuid &&
-        uiStore.controlImplementationDrawerOpen
-      ) {
-        selectedImplementedRequirement.value = impl;
-      }
-    }
-  } catch (err) {
-    error.value = err as AxiosError<unknown>;
-  }
 }
 
 watch(

@@ -5,7 +5,7 @@ import Drawer from '@/volt/Drawer.vue';
 import type { ImplementedRequirement, Statement } from '@/oscal';
 import PartDisplay from '@/components/PartDisplay.vue';
 import type { Part } from '@/oscal';
-import { ref, watchEffect } from 'vue';
+import { ref, watchEffect, watch } from 'vue';
 import { useToggle } from '@/composables/useToggle';
 import ControlStatementImplementation from '@/views/control-implementations/partials/ControlStatementImplementation.vue';
 import { useSystemStore } from '@/stores/system.ts';
@@ -22,10 +22,23 @@ const drawerLoading = useToggle();
 const { system } = useSystemStore();
 const showCreateStatementModal = ref(false);
 
-const selectedImplementation = ref<ImplementedRequirement>(
-  implementation as ImplementedRequirement,
+const selectedImplementation = ref<ImplementedRequirement | undefined>(
+  implementation || undefined,
 );
 const statements = ref<{ [key: string]: Statement }>({});
+
+// Watch for changes in the implementation prop and update local ref
+watch(
+  () => implementation,
+  (newImplementation) => {
+    if (newImplementation) {
+      selectedImplementation.value = newImplementation;
+    } else {
+      selectedImplementation.value = undefined;
+    }
+  },
+  { immediate: true },
+);
 
 watchEffect(() => {
   statements.value = {};
@@ -177,15 +190,15 @@ async function onPartSelect(e: Event, part: Part) {
   </Drawer>
 </template>
 
-<style scoped>
-@import '@/assets/main.css';
-
+<style>
 .part-display .hover {
   background-color: rgb(243 244 246);
   cursor: pointer;
 }
 
-.part-display .hover.dark {
-  background-color: rgb(71 85 105);
+@media (prefers-color-scheme: dark) {
+  .part-display .hover {
+    background-color: rgb(71 85 105);
+  }
 }
 </style>
