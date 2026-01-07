@@ -54,7 +54,9 @@
                 v-model="evidence.start"
                 placeholder="Select start date"
                 required
-                :max-date="evidence.end ? new Date(evidence.end) : new Date(Date.now())"
+                :max-date="
+                  evidence.end ? new Date(evidence.end) : new Date(Date.now())
+                "
               />
             </div>
           </div>
@@ -65,7 +67,11 @@
                 v-model="evidence.end"
                 placeholder="Select end date"
                 required
-                :min-date="evidence.start ? new Date(evidence.start) : new Date(Date.now())"
+                :min-date="
+                  evidence.start
+                    ? new Date(evidence.start)
+                    : new Date(Date.now())
+                "
               />
               <div v-if="dateValidationError" class="text-red-500 text-sm mt-1">
                 {{ dateValidationError }}
