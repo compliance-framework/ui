@@ -33,9 +33,9 @@
       <p>
         Please return to the
         <RouterLink
-          :to="{ name: 'system-security-plans' }"
+          :to="{ name: 'system' }"
           class="font-medium underline text-blue-600 dark:text-blue-300"
-          >SSP Page
+          >System Page
         </RouterLink>
         to select one
       </p>
