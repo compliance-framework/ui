@@ -117,7 +117,7 @@ const component = ref({
 });
 
 const { data: createdComponent, execute } = useDataApi<DefinedComponent>(
-  `/api/oscal/component-definitions/${props.componentDefinitionId}/component`,
+  `/api/oscal/component-definitions/${props.componentDefinitionId}/components`,
   { method: 'POST', transformRequest: [decamelizeKeys] },
   { immediate: false },
 );
