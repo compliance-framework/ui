@@ -200,10 +200,9 @@ async function buildControlList() {
         `[CreateFormView] Error fetching full catalog ${catalog.uuid}:`,
         error,
       );
-    } finally {
-      loadingControls.value = false;
     }
   }
+  loadingControls.value = false;
   console.log('[CreateFormView] Building control list: done');
 }
 
@@ -256,20 +255,18 @@ async function buildComponentList() {
         );
       }
 
-      let itemCount = componentList.length;
       components.value = [...components.value, ...results];
       console.log(
-        `[CreateFormView] Processed componentDefinition ${componentDefinition.uuid}: items=${itemCount}, totalItemsAccumulated=${components.value.reduce((n, g) => n + g.items.length, 0)}`,
+        `[CreateFormView] Processed componentDefinition ${componentDefinition.uuid}: items=${componentList.length}, totalItemsAccumulated=${components.value.reduce((n, g) => n + g.items.length, 0)}`,
       );
     } catch (error) {
       console.error(
         `[CreateFormView] Error fetching full componentDefinition ${componentDefinition.uuid}:`,
         error,
       );
-    } finally {
-      loadingComponents.value = false;
     }
   }
+  loadingComponents.value = false;
   console.log('[CreateFormView] Building component list: done');
 }
 
