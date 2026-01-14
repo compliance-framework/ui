@@ -11,7 +11,8 @@ export interface Dashboard {
 }
 
 /** Used for creating a Dashboard: controls and components passed as arrays of IDs */
-export interface DashboardCreate extends Omit<Dashboard, 'controls' | 'components'> {
+export interface DashboardCreate
+  extends Omit<Dashboard, 'controls' | 'components'> {
   controls: string[];
   components: string[];
 }

@@ -84,7 +84,12 @@ import type { Dashboard } from '@/stores/filters.ts';
 import FormInput from '@/components/forms/FormInput.vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
 import MultiSelect from '@/volt/MultiSelect.vue';
-import type { Catalog, ComponentDefinition, Control, DefinedComponent } from '@/oscal';
+import type {
+  Catalog,
+  ComponentDefinition,
+  Control,
+  DefinedComponent,
+} from '@/oscal';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 
 const router = useRouter();
@@ -128,9 +133,14 @@ const loadingControls = ref<boolean>(true);
 const loadingComponents = ref<boolean>(true);
 
 const { data: catalogs } = useDataApi<Catalog[]>('/api/oscal/catalogs');
-const { data: componentDefinitions } = useDataApi<ComponentDefinition[]>('/api/oscal/component-definitions');
-const { execute: fetchFullCatalog } = useDataApi<Catalog>(null, null, { abortPrevious: false });
-const { execute: fetchFullComponentDefinition } = useDataApi<ComponentDefinition>(null, null, { abortPrevious: false });
+const { data: componentDefinitions } = useDataApi<ComponentDefinition[]>(
+  '/api/oscal/component-definitions',
+);
+const { execute: fetchFullCatalog } = useDataApi<Catalog>(null, null, {
+  abortPrevious: false,
+});
+const { execute: fetchFullComponentDefinition } =
+  useDataApi<ComponentDefinition>(null, null, { abortPrevious: false });
 const { execute: createDashboard } = useDataApi<Dashboard>(
   '/api/filters',
   {
@@ -203,13 +213,19 @@ async function buildComponentList() {
   components.value = [];
   for (const componentDefinition of componentDefinitions.value || []) {
     try {
-      console.time(`[CreateFormView] fetch componentDefinition ${componentDefinition.uuid}`);
+      console.time(
+        `[CreateFormView] fetch componentDefinition ${componentDefinition.uuid}`,
+      );
       const response = await fetchFullComponentDefinition(
         `/api/oscal/component-definitions/${componentDefinition.uuid}/full`,
       );
-      console.timeEnd(`[CreateFormView] fetch componentDefinition ${componentDefinition.uuid}`);
+      console.timeEnd(
+        `[CreateFormView] fetch componentDefinition ${componentDefinition.uuid}`,
+      );
       // useAxios execute() returns AxiosResponse; payload is in response.data.data
-      const fullComponentDefinition = response?.data.value?.data as ComponentDefinition | undefined;
+      const fullComponentDefinition = response?.data.value?.data as
+        | ComponentDefinition
+        | undefined;
       if (!fullComponentDefinition) {
         console.warn(
           `[CreateFormView] No componentDefinition payload for ${componentDefinition.uuid}; skipping`,
@@ -220,8 +236,13 @@ async function buildComponentList() {
       let componentList = [] as ComponentOption[];
       if (fullComponentDefinition.components) {
         fullComponentDefinition.components.forEach((component) => {
-          console.log(`[CreateFormView] Added component ${component.title} for definition ${componentDefinition.uuid}`)
-          componentList = [...componentList, ...getComponentSelectList(component)];
+          console.log(
+            `[CreateFormView] Added component ${component.title} for definition ${componentDefinition.uuid}`,
+          );
+          componentList = [
+            ...componentList,
+            ...getComponentSelectList(component),
+          ];
         });
 
         results.push({
@@ -230,7 +251,9 @@ async function buildComponentList() {
           items: componentList,
         });
       } else {
-        console.log(`[CreateFormView] No components defined for component definition ${componentDefinition.uuid}`)
+        console.log(
+          `[CreateFormView] No components defined for component definition ${componentDefinition.uuid}`,
+        );
       }
 
       let itemCount = componentList.length;
@@ -275,11 +298,15 @@ function getControlSelectList(control: Control): ControlOption[] {
   return results;
 }
 
-function getComponentSelectList(component: DefinedComponent): ComponentOption[] {
-    return [{
+function getComponentSelectList(
+  component: DefinedComponent,
+): ComponentOption[] {
+  return [
+    {
       label: component.title,
       value: component.uuid,
-    }];
+    },
+  ];
 }
 
 async function submit() {
@@ -290,7 +317,7 @@ async function submit() {
   });
   selectedComponents.value.forEach((component) => {
     componentIds.push(component.value);
-  })
+  });
   try {
     const parsedFilter = new FilterParser(filter.value).parse();
     await createDashboard({
