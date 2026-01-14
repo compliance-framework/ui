@@ -23,7 +23,36 @@
           placeholder="Select Controls"
           class="w-full"
           :virtualScrollerOptions="{ itemSize: 44 }"
-          :disabled="loading"
+          :disabled="loadingControls"
+        >
+          <template #optiongroup="slotProps">
+            <div class="flex items-center gap-2">
+              <img
+                :alt="slotProps.option.label"
+                src="https://primefaces.org/cdn/primevue/images/flag/flag_placeholder.png"
+                :class="`flag flag-${slotProps.option.code.toLowerCase()}`"
+                style="width: 18px"
+              />
+              <div>{{ slotProps.option.label }}</div>
+            </div>
+          </template>
+        </MultiSelect>
+      </div>
+
+      <div class="mb-4">
+        <label class="inline-block pb-2">Components</label>
+        <MultiSelect
+          v-model="selectedComponents"
+          :options="components"
+          filter
+          optionLabel="label"
+          optionGroupLabel="label"
+          optionGroupChildren="items"
+          display="chip"
+          placeholder="Select Components"
+          class="w-full"
+          :virtualScrollerOptions="{ itemSize: 44 }"
+          :disabled="loadingComponents"
         >
           <template #optiongroup="slotProps">
             <div class="flex items-center gap-2">
@@ -55,7 +84,7 @@ import type { Dashboard } from '@/stores/filters.ts';
 import FormInput from '@/components/forms/FormInput.vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
 import MultiSelect from '@/volt/MultiSelect.vue';
-import type { Catalog, Control } from '@/oscal';
+import type { Catalog, ComponentDefinition, Control, DefinedComponent } from '@/oscal';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 
 const router = useRouter();
@@ -74,20 +103,34 @@ interface ControlOption {
   value: string;
 }
 
+interface ComponentOption {
+  label: string;
+  value: string;
+}
+
 interface SelectControl {
   label: string;
   code: string;
   items: ControlOption[];
 }
 
+interface SelectComponent {
+  label: string;
+  code: string;
+  items: ComponentOption[];
+}
+
 const selectedControls = ref<ControlOption[]>([]);
+const selectedComponents = ref<ComponentOption[]>([]);
 const controls = ref<SelectControl[]>([]);
-const loading = ref<boolean>(true);
+const components = ref<SelectComponent[]>([]);
+const loadingControls = ref<boolean>(true);
+const loadingComponents = ref<boolean>(true);
 
 const { data: catalogs } = useDataApi<Catalog[]>('/api/oscal/catalogs');
-const { execute: fetchFullCatalog } = useDataApi<Catalog>(null, null, {
-  abortPrevious: false,
-});
+const { data: componentDefinitions } = useDataApi<ComponentDefinition[]>('/api/oscal/component-definitions');
+const { execute: fetchFullCatalog } = useDataApi<Catalog>(null, null, { abortPrevious: false });
+const { execute: fetchFullComponentDefinition } = useDataApi<ComponentDefinition>(null, null, { abortPrevious: false });
 const { execute: createDashboard } = useDataApi<Dashboard>(
   '/api/filters',
   {
@@ -98,6 +141,7 @@ const { execute: createDashboard } = useDataApi<Dashboard>(
 );
 
 watch(catalogs, buildControlList);
+watch(componentDefinitions, buildComponentList);
 
 async function buildControlList() {
   console.log('[CreateFormView] Building control list: start');
@@ -147,10 +191,63 @@ async function buildControlList() {
         error,
       );
     } finally {
-      loading.value = false;
+      loadingControls.value = false;
     }
   }
   console.log('[CreateFormView] Building control list: done');
+}
+
+async function buildComponentList() {
+  console.log('[CreateFormView] Building component list: start');
+  // Reset before rebuilding to avoid duplicates on re-runs
+  components.value = [];
+  for (const componentDefinition of componentDefinitions.value || []) {
+    try {
+      console.time(`[CreateFormView] fetch componentDefinition ${componentDefinition.uuid}`);
+      const response = await fetchFullComponentDefinition(
+        `/api/oscal/component-definitions/${componentDefinition.uuid}/full`,
+      );
+      console.timeEnd(`[CreateFormView] fetch componentDefinition ${componentDefinition.uuid}`);
+      // useAxios execute() returns AxiosResponse; payload is in response.data.data
+      const fullComponentDefinition = response?.data.value?.data as ComponentDefinition | undefined;
+      if (!fullComponentDefinition) {
+        console.warn(
+          `[CreateFormView] No componentDefinition payload for ${componentDefinition.uuid}; skipping`,
+        );
+        continue;
+      }
+      const results = [] as SelectComponent[];
+      let componentList = [] as ComponentOption[];
+      if (fullComponentDefinition.components) {
+        fullComponentDefinition.components.forEach((component) => {
+          console.log(`[CreateFormView] Added component ${component.title} for definition ${componentDefinition.uuid}`)
+          componentList = [...componentList, ...getComponentSelectList(component)];
+        });
+
+        results.push({
+          label: componentDefinition.metadata.title,
+          code: componentDefinition.uuid,
+          items: componentList,
+        });
+      } else {
+        console.log(`[CreateFormView] No components defined for component definition ${componentDefinition.uuid}`)
+      }
+
+      let itemCount = componentList.length;
+      components.value = [...components.value, ...results];
+      console.log(
+        `[CreateFormView] Processed componentDefinition ${componentDefinition.uuid}: items=${itemCount}, totalItemsAccumulated=${components.value.reduce((n, g) => n + g.items.length, 0)}`,
+      );
+    } catch (error) {
+      console.error(
+        `[CreateFormView] Error fetching full componentDefinition ${componentDefinition.uuid}:`,
+        error,
+      );
+    } finally {
+      loadingComponents.value = false;
+    }
+  }
+  console.log('[CreateFormView] Building component list: done');
 }
 
 function getControlSelectList(control: Control): ControlOption[] {
@@ -178,11 +275,22 @@ function getControlSelectList(control: Control): ControlOption[] {
   return results;
 }
 
+function getComponentSelectList(component: DefinedComponent): ComponentOption[] {
+    return [{
+      label: component.title,
+      value: component.uuid,
+    }];
+}
+
 async function submit() {
   const controlIds = [] as string[];
+  const componentIds = [] as string[];
   selectedControls.value.forEach((control) => {
     controlIds.push(control.value);
   });
+  selectedComponents.value.forEach((component) => {
+    componentIds.push(component.value);
+  })
   try {
     const parsedFilter = new FilterParser(filter.value).parse();
     await createDashboard({
@@ -190,6 +298,7 @@ async function submit() {
         ...dashboard.value,
         filter: parsedFilter,
         controls: controlIds,
+        components: componentIds,
       },
     });
     return router.push({

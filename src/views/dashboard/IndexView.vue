@@ -17,6 +17,13 @@
               class="mx-1"
               v-tooltip.top="control.title"
             />
+            <Chip
+              v-for="component in dashboard.components"
+              :key="component.uuid"
+              :label="component.title"
+              class="mx-1"
+              v-tooltip.top="component.title"
+            />
           </div>
         </div>
         <div class="h-32">
