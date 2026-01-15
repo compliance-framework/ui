@@ -52,7 +52,6 @@ import PageSubHeader from '@/components/PageSubHeader.vue';
 import CatalogControl from '@/views/catalog/CatalogControl.vue';
 import GroupCreateModal from '@/components/catalogs/GroupCreateModal.vue';
 import ControlCreateModal from '@/components/catalogs/ControlCreateModal.vue';
-import RouterLinkButton from '@/components/RouterLinkButton.vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
 import { useToast } from 'primevue/usetoast';
 import type { ErrorResponse, ErrorBody } from '@/stores/types.ts';
