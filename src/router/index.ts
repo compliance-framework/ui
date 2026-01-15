@@ -237,6 +237,14 @@ const authenticatedRoutes = [
     },
   },
   {
+    path: '/admin/import',
+    name: 'admin-import',
+    component: () => import('../views/admin/ImportView.vue'),
+    meta: {
+      requiresAuth: true,
+    },
+  },
+  {
     path: '/component-definitions',
     name: 'component-definitions',
     component: () =>
