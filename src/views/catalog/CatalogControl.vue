@@ -26,11 +26,14 @@
         >
         <TertiaryButton
           class="bg-white hover:bg-zinc-100 dark:bg-slate-800 dark:hover:bg-slate-600"
+<<<<<<< HEAD
           @click.stop="showEdit = true"
           >Edit</TertiaryButton
         >
         <TertiaryButton
           class="bg-white hover:bg-zinc-100 dark:bg-slate-800 dark:hover:bg-slate-600"
+=======
+>>>>>>> 1a10cc4 (feat(ui): add Delete actions for catalog/group/control and fix button event forwarding)
           @click.stop="deleteControl()"
           >Delete</TertiaryButton
         >
@@ -154,10 +157,14 @@ const guidance = ref<Part | undefined>(getPart('guidance'));
 const router = useRouter();
 const toast = useToast();
 const { confirmDeleteDialog } = useDeleteConfirmationDialog();
+<<<<<<< HEAD
 const emit = defineEmits<{
   (e: 'deleted', id: string): void;
   (e: 'updated', id: string): void;
 }>();
+=======
+const emit = defineEmits<{ (e: 'deleted', id: string): void }>();
+>>>>>>> 1a10cc4 (feat(ui): add Delete actions for catalog/group/control and fix button event forwarding)
 const { execute: del } = useDataApi<void>(
   '/api/oscal/catalogs',
   {},
@@ -215,10 +222,13 @@ async function deleteControl() {
   );
 }
 
+<<<<<<< HEAD
 function onUpdated(updated: Control) {
   emit('updated', updated.id);
 }
 
+=======
+>>>>>>> 1a10cc4 (feat(ui): add Delete actions for catalog/group/control and fix button event forwarding)
 function onChildDeleted(id: string) {
   const idx = controls.value?.findIndex((c) => c.id === id) ?? -1;
   if (idx >= 0 && controls.value) {

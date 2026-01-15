@@ -14,6 +14,7 @@
         </div>
         <TertiaryButton
           class="bg-white hover:bg-zinc-100 dark:bg-slate-800 dark:hover:bg-slate-600"
+<<<<<<< HEAD
           @click.stop="showEdit = true"
           >Edit</TertiaryButton
         >
@@ -34,6 +35,8 @@
         >
         <TertiaryButton
           class="bg-white hover:bg-zinc-100 dark:bg-slate-800 dark:hover:bg-slate-600"
+=======
+>>>>>>> 1a10cc4 (feat(ui): add Delete actions for catalog/group/control and fix button event forwarding)
           @click.stop="deleteGroup()"
           >Delete</TertiaryButton
         >
@@ -121,10 +124,14 @@ const props = defineProps<{
   catalog: Catalog;
   group: Group;
 }>();
+<<<<<<< HEAD
 const emit = defineEmits<{
   (e: 'deleted', id: string): void;
   (e: 'updated', id: string): void;
 }>();
+=======
+const emit = defineEmits<{ (e: 'deleted', id: string): void }>();
+>>>>>>> 1a10cc4 (feat(ui): add Delete actions for catalog/group/control and fix button event forwarding)
 const toast = useToast();
 const { confirmDeleteDialog } = useDeleteConfirmationDialog();
 const { execute: del } = useDataApi<void>(
@@ -203,8 +210,11 @@ async function deleteGroup() {
     { itemName: props.group.id, itemType: 'group' },
   );
 }
+<<<<<<< HEAD
 
 function onUpdated(updated: Group) {
   emit('updated', updated.id);
 }
+=======
+>>>>>>> 1a10cc4 (feat(ui): add Delete actions for catalog/group/control and fix button event forwarding)
 </script>
