@@ -37,6 +37,12 @@
                 >View
               </RouterLinkButton>
               <PrimaryButton
+                @click="deleteCatalog(catalog.uuid, catalog.metadata.title)"
+                title="Delete Catalog"
+              >
+                Delete
+              </PrimaryButton>
+              <PrimaryButton
                 @click="
                   downloadCatalogJSON(catalog.uuid, catalog.metadata.title)
                 "
@@ -66,14 +72,21 @@ import PrimaryButton from '@/volt/PrimaryButton.vue';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi } from '@/composables/axios';
 import RouterLinkButton from '@/components/RouterLinkButton.vue';
+import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
 
 const toast = useToast();
+const { confirmDeleteDialog } = useDeleteConfirmationDialog();
 
 const { data: catalogs, isLoading: loading } = useDataApi<Catalog[]>(
   '/api/oscal/catalogs',
 );
 
 const { execute } = useDataApi<Catalog>(
+  '/api/oscal/catalogs',
+  {},
+  { immediate: false },
+);
+const { execute: del } = useDataApi<void>(
   '/api/oscal/catalogs',
   {},
   { immediate: false },
@@ -111,5 +124,36 @@ async function downloadCatalogJSON(id: string, title: string) {
       life: 3000,
     });
   }
+}
+
+async function deleteCatalog(uuid: string, title: string) {
+  await confirmDeleteDialog(
+    async () => {
+      try {
+        await del(`/api/oscal/catalogs/${uuid}`, { method: 'DELETE' });
+        toast.add({
+          severity: 'success',
+          summary: 'Catalog deleted',
+          detail: `Catalog "${title}" deleted successfully`,
+          life: 3000,
+        });
+        const idx = catalogs.value?.findIndex((c) => c.uuid === uuid) ?? -1;
+        if (idx >= 0 && catalogs.value) {
+          catalogs.value.splice(idx, 1);
+        }
+      } catch (error) {
+        toast.add({
+          severity: 'error',
+          summary: 'Delete Failed',
+          detail:
+            error instanceof Error
+              ? error.message
+              : 'Failed to delete catalog.',
+          life: 3000,
+        });
+      }
+    },
+    { itemName: title, itemType: 'catalog' },
+  );
 }
 </script>

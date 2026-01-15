@@ -24,6 +24,11 @@
           @click.stop="gotoFindings"
           >Findings</TertiaryButton
         >
+        <TertiaryButton
+          class="bg-white hover:bg-zinc-100 dark:bg-slate-800 dark:hover:bg-slate-600"
+          @click.stop="deleteControl()"
+          >Delete</TertiaryButton
+        >
       </div>
     </template>
     <div
@@ -77,6 +82,7 @@
           :key="child.id"
           :control="child"
           :catalog="props.catalog"
+          @deleted="onChildDeleted"
         />
       </div>
       <div class="mt-4">
@@ -106,6 +112,8 @@ import { useRouter } from 'vue-router';
 import { useDataApi } from '@/composables/axios';
 import type { ComplianceIntervalStatus } from '@/stores/evidence';
 import { computeEvidenceStatusCounts } from '@/composables/useEvidenceStatusCounts';
+import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
+import { useToast } from 'primevue/usetoast';
 
 const props = defineProps<{
   catalog: Catalog;
@@ -132,6 +140,14 @@ const statement = ref<Part | undefined>(getPart('statement'));
 const guidance = ref<Part | undefined>(getPart('guidance'));
 
 const router = useRouter();
+const toast = useToast();
+const { confirmDeleteDialog } = useDeleteConfirmationDialog();
+const emit = defineEmits<{ (e: 'deleted', id: string): void }>();
+const { execute: del } = useDataApi<void>(
+  '/api/oscal/catalogs',
+  {},
+  { immediate: false },
+);
 
 function gotoFindings() {
   router.push({
@@ -150,5 +166,43 @@ const showControlForm = ref<boolean>(false);
 
 function controlCreated(control: Control) {
   controls.value?.push(control);
+}
+
+async function deleteControl() {
+  await confirmDeleteDialog(
+    async () => {
+      try {
+        await del(
+          `/api/oscal/catalogs/${props.catalog.uuid}/controls/${props.control.id}`,
+          { method: 'DELETE' },
+        );
+        toast.add({
+          severity: 'success',
+          summary: 'Control deleted',
+          detail: `Control "${props.control.id}" deleted successfully`,
+          life: 3000,
+        });
+        emit('deleted', props.control.id);
+      } catch (error) {
+        toast.add({
+          severity: 'error',
+          summary: 'Delete Failed',
+          detail:
+            error instanceof Error
+              ? error.message
+              : 'Failed to delete control.',
+          life: 3000,
+        });
+      }
+    },
+    { itemName: props.control.id, itemType: 'control' },
+  );
+}
+
+function onChildDeleted(id: string) {
+  const idx = controls.value?.findIndex((c) => c.id === id) ?? -1;
+  if (idx >= 0 && controls.value) {
+    controls.value.splice(idx, 1);
+  }
 }
 </script>
