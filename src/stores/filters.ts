@@ -1,5 +1,5 @@
 import { type Filter } from '@/parsers/labelfilter.ts';
-import type { Control, DefinedComponent } from '@/oscal';
+import type { Control, SystemComponent } from '@/oscal';
 
 export interface Dashboard {
   id?: string;
@@ -7,7 +7,7 @@ export interface Dashboard {
   name: string;
   filter: Filter;
   controls: Control[];
-  components: DefinedComponent[];
+  components: SystemComponent[];
 }
 
 /** Used for creating a Dashboard: controls and components passed as arrays of IDs */

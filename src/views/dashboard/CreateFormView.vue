@@ -86,9 +86,9 @@ import PrimaryButton from '@/volt/PrimaryButton.vue';
 import MultiSelect from '@/volt/MultiSelect.vue';
 import type {
   Catalog,
-  ComponentDefinition,
+  SystemSecurityPlan,
   Control,
-  DefinedComponent,
+  SystemComponent,
 } from '@/oscal';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 
@@ -133,14 +133,17 @@ const loadingControls = ref<boolean>(true);
 const loadingComponents = ref<boolean>(true);
 
 const { data: catalogs } = useDataApi<Catalog[]>('/api/oscal/catalogs');
-const { data: componentDefinitions } = useDataApi<ComponentDefinition[]>(
-  '/api/oscal/component-definitions',
+const { data: systemSecurityPlans } = useDataApi<SystemSecurityPlan[]>(
+  '/api/oscal/system-security-plans',
 );
 const { execute: fetchFullCatalog } = useDataApi<Catalog>(null, null, {
   abortPrevious: false,
 });
-const { execute: fetchFullComponentDefinition } =
-  useDataApi<ComponentDefinition>(null, null, { abortPrevious: false });
+const { execute: fetchFullSystemSecurityPlan } = useDataApi<SystemSecurityPlan>(
+  null,
+  null,
+  { abortPrevious: false },
+);
 const { execute: createDashboard } = useDataApi<Dashboard>(
   '/api/filters',
   {
@@ -151,7 +154,7 @@ const { execute: createDashboard } = useDataApi<Dashboard>(
 );
 
 watch(catalogs, buildControlList);
-watch(componentDefinitions, buildComponentList);
+watch(systemSecurityPlans, buildComponentList);
 
 async function buildControlList() {
   console.log('[CreateFormView] Building control list: start');
@@ -210,58 +213,60 @@ async function buildComponentList() {
   console.log('[CreateFormView] Building component list: start');
   // Reset before rebuilding to avoid duplicates on re-runs
   components.value = [];
-  for (const componentDefinition of componentDefinitions.value || []) {
+  for (const systemSecurityPlan of systemSecurityPlans.value || []) {
     try {
       console.time(
-        `[CreateFormView] fetch componentDefinition ${componentDefinition.uuid}`,
+        `[CreateFormView] fetch systemSecurityPlan ${systemSecurityPlan.uuid}`,
       );
-      const response = await fetchFullComponentDefinition(
-        `/api/oscal/component-definitions/${componentDefinition.uuid}/full`,
+      const response = await fetchFullSystemSecurityPlan(
+        `/api/oscal/system-security-plans/${systemSecurityPlan.uuid}/full`,
       );
       console.timeEnd(
-        `[CreateFormView] fetch componentDefinition ${componentDefinition.uuid}`,
+        `[CreateFormView] fetch systemSecurityPlan ${systemSecurityPlan.uuid}`,
       );
       // useAxios execute() returns AxiosResponse; payload is in response.data.data
-      const fullComponentDefinition = response?.data.value?.data as
-        | ComponentDefinition
+      const fullSystemSecurityPlan = response?.data.value?.data as
+        | SystemSecurityPlan
         | undefined;
-      if (!fullComponentDefinition) {
+      if (!fullSystemSecurityPlan) {
         console.warn(
-          `[CreateFormView] No componentDefinition payload for ${componentDefinition.uuid}; skipping`,
+          `[CreateFormView] No systemSecurityPlan payload for ${systemSecurityPlan.uuid}; skipping`,
         );
         continue;
       }
       const results = [] as SelectComponent[];
       let componentList = [] as ComponentOption[];
-      if (fullComponentDefinition.components) {
-        fullComponentDefinition.components.forEach((component) => {
-          console.log(
-            `[CreateFormView] Added component ${component.title} for definition ${componentDefinition.uuid}`,
-          );
-          componentList = [
-            ...componentList,
-            ...getComponentSelectList(component),
-          ];
-        });
+      if (fullSystemSecurityPlan.systemImplementation.components) {
+        fullSystemSecurityPlan.systemImplementation.components.forEach(
+          (component) => {
+            console.log(
+              `[CreateFormView] Added component ${component.title} for plan ${systemSecurityPlan.uuid}`,
+            );
+            componentList = [
+              ...componentList,
+              ...getComponentSelectList(component),
+            ];
+          },
+        );
 
         results.push({
-          label: componentDefinition.metadata.title,
-          code: componentDefinition.uuid,
+          label: systemSecurityPlan.metadata.title,
+          code: systemSecurityPlan.uuid,
           items: componentList,
         });
       } else {
         console.log(
-          `[CreateFormView] No components defined for component definition ${componentDefinition.uuid}`,
+          `[CreateFormView] No components defined for systemSecurityPlan ${systemSecurityPlan.uuid}`,
         );
       }
 
       components.value = [...components.value, ...results];
       console.log(
-        `[CreateFormView] Processed componentDefinition ${componentDefinition.uuid}: items=${componentList.length}, totalItemsAccumulated=${components.value.reduce((n, g) => n + g.items.length, 0)}`,
+        `[CreateFormView] Processed systemSecurityPlan ${systemSecurityPlan.uuid}: items=${componentList.length}, totalItemsAccumulated=${components.value.reduce((n, g) => n + g.items.length, 0)}`,
       );
     } catch (error) {
       console.error(
-        `[CreateFormView] Error fetching full componentDefinition ${componentDefinition.uuid}:`,
+        `[CreateFormView] Error fetching full systemSecurityPlan ${systemSecurityPlan.uuid}:`,
         error,
       );
     }
@@ -295,9 +300,7 @@ function getControlSelectList(control: Control): ControlOption[] {
   return results;
 }
 
-function getComponentSelectList(
-  component: DefinedComponent,
-): ComponentOption[] {
+function getComponentSelectList(component: SystemComponent): ComponentOption[] {
   return [
     {
       label: component.title,
