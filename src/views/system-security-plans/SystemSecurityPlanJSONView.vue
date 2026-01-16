@@ -4,9 +4,11 @@
   >
     <div class="p-6">
       <div class="flex justify-between items-center mb-4">
-        <h3 class="text-lg font-semibold dark:text-slate-300">
-          Full System Security Plan JSON
-        </h3>
+        <TooltipTitle
+          text="Full System Security Plan JSON"
+          tooltip-key="ssp.json.view"
+          underline-class="text-lg font-semibold dark:text-slate-300 underline decoration-dotted cursor-help"
+        />
         <div class="flex gap-2">
           <button
             class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
@@ -48,6 +50,7 @@
 </template>
 
 <script setup lang="ts">
+import TooltipTitle from '@/components/TooltipTitle.vue';
 import { onMounted, ref, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { useToast } from 'primevue/usetoast';

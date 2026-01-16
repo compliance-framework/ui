@@ -4,9 +4,11 @@
     <div
       class="bg-white dark:bg-slate-900 border border-ccf-300 dark:border-slate-700 rounded-lg p-6"
     >
-      <h2 class="text-2xl font-bold text-gray-900 dark:text-slate-300">
-        System Characteristics
-      </h2>
+      <TooltipTitle
+        text="System Characteristics"
+        tooltip-key="ssp.characteristics"
+        underline-class="text-2xl font-bold text-gray-900 dark:text-slate-300 underline decoration-dotted cursor-help"
+      />
       <p class="text-gray-600 dark:text-slate-400 mt-1">
         Overview of system architecture, boundaries, and security
         characteristics
@@ -696,6 +698,7 @@
 </template>
 
 <script setup lang="ts">
+import TooltipTitle from '@/components/TooltipTitle.vue';
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
 import type { SystemCharacteristics } from '@/oscal';

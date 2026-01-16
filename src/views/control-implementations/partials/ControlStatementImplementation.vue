@@ -27,6 +27,7 @@ import StatementCreateForm from '@/components/system-security-plans/StatementCre
 import StatementEditForm from '@/components/system-security-plans/StatementEditForm.vue';
 import SystemImplementationComponentCreateForm from '@/components/system-security-plans/SystemImplementationComponentCreateForm.vue';
 import DashboardEvidenceCounter from '@/views/control-implementations/partials/DashboardEvidenceCounter.vue';
+import TooltipTitle from '@/components/TooltipTitle.vue';
 
 const { system } = useSystemStore();
 const toast = useToast();
@@ -783,23 +784,43 @@ async function submitEvidenceLinking() {
     <div v-if="localStatement">
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
         <div>
-          <h5 class="text-sm font-medium text-gray-500">Statement ID</h5>
+          <TooltipTitle
+            text="Statement ID"
+            tooltip-key="statement.id"
+            underline-class="text-sm font-medium text-gray-500 underline decoration-dotted cursor-help"
+          />
           <p class="text-sm">{{ localStatement?.statementId }}</p>
         </div>
         <div>
-          <h5 class="text-sm font-medium text-gray-500">Remarks</h5>
+          <TooltipTitle
+            text="Remarks"
+            tooltip-key="statement.remarks"
+            underline-class="text-sm font-medium text-gray-500 underline decoration-dotted cursor-help"
+          />
           <p class="text-sm">{{ localStatement?.remarks || 'None' }}</p>
         </div>
         <div>
-          <h5 class="text-sm font-medium text-gray-500">Description</h5>
+          <TooltipTitle
+            text="Description"
+            tooltip-key="statement.description"
+            underline-class="text-sm font-medium text-gray-500 underline decoration-dotted cursor-help"
+          />
           <p class="text-sm">{{ localStatement?.description || 'None' }}</p>
         </div>
         <div>
-          <h5 class="text-sm font-medium text-gray-500">Props</h5>
+          <TooltipTitle
+            text="Props"
+            tooltip-key="statement.props"
+            underline-class="text-sm font-medium text-gray-500 underline decoration-dotted cursor-help"
+          />
           <p class="text-sm">{{ localStatement?.props || 'None' }}</p>
         </div>
         <div>
-          <h5 class="text-sm font-medium text-gray-500">Links</h5>
+          <TooltipTitle
+            text="Links"
+            tooltip-key="statement.links"
+            underline-class="text-sm font-medium text-gray-500 underline decoration-dotted cursor-help"
+          />
           <p class="text-sm">{{ localStatement?.links || 'None' }}</p>
         </div>
       </div>
@@ -815,7 +836,12 @@ async function submitEvidenceLinking() {
       </div>
 
       <div class="flex items-center mb-4 gap-x-4">
-        <h5 class="font-medium text-xl">Components</h5>
+        <TooltipTitle
+          text="Components"
+          tooltip-key="control.implementation.components"
+          position="bottom"
+          underline-class="font-medium text-xl underline decoration-dotted cursor-help"
+        />
         <BurgerMenu
           :items="[
             {
@@ -903,7 +929,12 @@ async function submitEvidenceLinking() {
       <!-- Evidence Linking Section -->
       <div class="mt-8">
         <div class="flex items-center mb-4 gap-x-4">
-          <h5 class="font-medium text-xl">Evidence Linking</h5>
+          <TooltipTitle
+            text="Evidence Linking"
+            tooltip-key="control.implementation.evidence"
+            position="bottom"
+            underline-class="font-medium text-xl underline decoration-dotted cursor-help"
+          />
           <BurgerMenu
             :items="[
               {
@@ -1159,12 +1190,14 @@ async function submitEvidenceLinking() {
     </div>
   </div>
 
-  <Dialog
-    v-model:visible="showCreateStatementModal"
-    size="lg"
-    modal
-    header="Create New Statement"
-  >
+  <Dialog v-model:visible="showCreateStatementModal" size="lg" modal>
+    <template #header>
+      <TooltipTitle
+        text="Create New Statement"
+        tooltip-key="control.implementation.statement"
+        position="bottom"
+      />
+    </template>
     <StatementCreateForm
       :ssp-id="system.securityPlan?.uuid || ''"
       :req-id="implementation.uuid || ''"
@@ -1173,12 +1206,14 @@ async function submitEvidenceLinking() {
       @created="updateStatement"
     />
   </Dialog>
-  <Dialog
-    v-model:visible="showEditStatementModal"
-    size="lg"
-    modal
-    header="Edit Statement"
-  >
+  <Dialog v-model:visible="showEditStatementModal" size="lg" modal>
+    <template #header>
+      <TooltipTitle
+        text="Edit Statement"
+        tooltip-key="control.implementation.statement"
+        position="bottom"
+      />
+    </template>
     <StatementEditForm
       v-if="localStatement"
       :ssp-id="system.securityPlan?.uuid || ''"

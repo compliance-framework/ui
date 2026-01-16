@@ -4,9 +4,11 @@
       class="my-4 rounded-md bg-white dark:bg-slate-900 border-collapse border border-ccf-300 dark:border-slate-700 p-6"
     >
       <div class="flex justify-between items-center mb-6">
-        <h3 class="text-lg font-semibold dark:text-slate-300">
-          Assessment Tasks
-        </h3>
+        <TooltipTitle
+          text="Assessment Tasks"
+          tooltip-key="assessment.tasks"
+          underline-class="text-lg font-semibold dark:text-slate-300 underline decoration-dotted cursor-help"
+        />
         <button
           @click="showCreateModal = true"
           class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
@@ -46,6 +48,7 @@
 </template>
 
 <script setup lang="ts">
+import TooltipTitle from '@/components/TooltipTitle.vue';
 import { onActivated, ref } from 'vue';
 import type { AssessmentPlan, Task } from '@/oscal';
 import { useRoute } from 'vue-router';
