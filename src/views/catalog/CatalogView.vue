@@ -25,8 +25,11 @@
     <PrimaryButton @click="deleteCurrentCatalog" class="mr-2"
       >Delete</PrimaryButton
     >
-    <!--    <TertiaryButton v-if="controls.length == 0" @click="showGroupForm = true">Add Group</TertiaryButton>-->
-    <!--    <TertiaryButton v-if="groups.length == 0" @click="showControlForm = true" class="ml-2">Add Control</TertiaryButton>-->
+    <PrimaryButton @click="showEdit = true" class="mr-2">Edit</PrimaryButton>
+    <TertiaryButton @click="showGroupForm = true">Add Group</TertiaryButton>
+    <TertiaryButton @click="showControlForm = true" class="ml-2"
+      >Add Control</TertiaryButton
+    >
     <GroupCreateModal
       @created="groupCreated"
       :catalog="catalog"
@@ -36,6 +39,11 @@
       @created="controlCreated"
       :catalog="catalog"
       v-model="showControlForm"
+    />
+    <CatalogEditModal
+      v-model="showEdit"
+      :catalog="catalog"
+      @updated="onCatalogUpdated"
     />
   </div>
   <div class="h-screen w-full"></div>
@@ -52,6 +60,7 @@ import PageSubHeader from '@/components/PageSubHeader.vue';
 import CatalogControl from '@/views/catalog/CatalogControl.vue';
 import GroupCreateModal from '@/components/catalogs/GroupCreateModal.vue';
 import ControlCreateModal from '@/components/catalogs/ControlCreateModal.vue';
+import CatalogEditModal from '@/components/catalogs/CatalogEditModal.vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
 import { useToast } from 'primevue/usetoast';
 import type { ErrorResponse, ErrorBody } from '@/stores/types.ts';
@@ -109,6 +118,7 @@ onActivated(async () => {
 
 const showGroupForm = ref<boolean>(false);
 const showControlForm = ref<boolean>(false);
+const showEdit = ref<boolean>(false);
 function groupCreated(group: Group) {
   groups.value?.push(group);
 }
@@ -162,5 +172,11 @@ async function deleteCatalog(uuid: string, title: string) {
 
 function deleteCurrentCatalog() {
   deleteCatalog(catalogId.value, catalog.value?.metadata?.title || '');
+}
+
+function onCatalogUpdated(updated: Catalog) {
+  catalog.value = updated;
+  groupExecute(`/api/oscal/catalogs/${catalogId.value}/groups`);
+  catalogExecute(`/api/oscal/catalogs/${catalogId.value}/controls`);
 }
 </script>

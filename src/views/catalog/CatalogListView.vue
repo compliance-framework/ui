@@ -1,5 +1,10 @@
 <template>
   <PageHeader>Catalogs</PageHeader>
+  <div class="mt-2 flex justify-end">
+    <RouterLinkButton :to="{ name: 'catalog-create' }"
+      >Create Catalog</RouterLinkButton
+    >
+  </div>
 
   <div
     class="mt-4 overflow-hidden rounded-lg border border-ccf-300 bg-white shadow dark:border-slate-700 dark:bg-slate-900"
@@ -56,14 +61,6 @@
       </tbody>
     </table>
   </div>
-
-  <!--  <div class="mt-4">-->
-  <!--    <RouterLink-->
-  <!--      class="bg-transparent font-light hover:bg-zinc-100 dark:text-slate-300 dark:hover:bg-slate-800 border border-ccf-300 dark:border-slate-700 px-4 py-1 rounded-md"-->
-  <!--      :to="{ name: 'catalog-create' }"-->
-  <!--    >Create Catalog-->
-  <!--    </RouterLink>-->
-  <!--  </div>-->
 </template>
 <script setup lang="ts">
 import { type Catalog } from '@/oscal';
