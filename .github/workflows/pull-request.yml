@@ -5,12 +5,6 @@ on:
     branches:
       - main
   pull_request: {}
-  pull_request_target: {}
-
-permissions:
-  contents: read
-  issues: write
-  pull-requests: write
 
 jobs:
   docker-build:
@@ -88,6 +82,7 @@ jobs:
             echo "---"
             echo "✅ Linting completed automatically by CI."
           } >> "$GITHUB_STEP_SUMMARY"
+<<<<<<< HEAD
       - name: Comment on PR
         uses: marocchino/sticky-pull-request-comment@v2
         if: ${{ github.event_name == 'pull_request_target' }}
@@ -103,6 +98,8 @@ jobs:
 
             ---
             ✅ *Linting completed automatically by CI.*
+=======
+>>>>>>> 5fc96e6 (ci: remove pull_request_target; switch ESLint report to step summary)
 
       - name: Run tests using the `build` image
         run: |
