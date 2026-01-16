@@ -26,6 +26,11 @@
         >
         <TertiaryButton
           class="bg-white hover:bg-zinc-100 dark:bg-slate-800 dark:hover:bg-slate-600"
+          @click.stop="showEdit = true"
+          >Edit</TertiaryButton
+        >
+        <TertiaryButton
+          class="bg-white hover:bg-zinc-100 dark:bg-slate-800 dark:hover:bg-slate-600"
           @click.stop="deleteControl()"
           >Delete</TertiaryButton
         >
@@ -95,6 +100,12 @@
           :parent-control="props.control"
           v-model="showControlForm"
         />
+        <ControlEditModal
+          v-model="showEdit"
+          :catalog="catalog"
+          :control="props.control"
+          @updated="onUpdated"
+        />
       </div>
     </div>
   </CollapsableGroup>
@@ -106,6 +117,7 @@ import ResultStatusBadge from '@/components/ResultStatusBadge.vue';
 import { type Catalog, type Control } from '@/oscal';
 import TertiaryButton from '@/volt/TertiaryButton.vue';
 import ControlCreateModal from '@/components/catalogs/ControlCreateModal.vue';
+import ControlEditModal from '@/components/catalogs/ControlEditModal.vue';
 import type { Part } from '@/oscal';
 import PartDisplayEditor from '@/components/PartDisplayEditor.vue';
 import { useRouter } from 'vue-router';
@@ -142,7 +154,10 @@ const guidance = ref<Part | undefined>(getPart('guidance'));
 const router = useRouter();
 const toast = useToast();
 const { confirmDeleteDialog } = useDeleteConfirmationDialog();
-const emit = defineEmits<{ (e: 'deleted', id: string): void }>();
+const emit = defineEmits<{
+  (e: 'deleted', id: string): void;
+  (e: 'updated', id: string): void;
+}>();
 const { execute: del } = useDataApi<void>(
   '/api/oscal/catalogs',
   {},
@@ -163,6 +178,7 @@ function getPart(type: string) {
 }
 
 const showControlForm = ref<boolean>(false);
+const showEdit = ref<boolean>(false);
 
 function controlCreated(control: Control) {
   controls.value?.push(control);
@@ -197,6 +213,10 @@ async function deleteControl() {
     },
     { itemName: props.control.id, itemType: 'control' },
   );
+}
+
+function onUpdated(updated: Control) {
+  emit('updated', updated.id);
 }
 
 function onChildDeleted(id: string) {

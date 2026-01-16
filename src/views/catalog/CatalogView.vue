@@ -12,6 +12,7 @@
       :group="group"
       :catalog="catalog"
       @deleted="onGroupDeleted"
+      @updated="reloadLists"
     />
     <CatalogControl
       v-for="control in controls"
@@ -19,6 +20,7 @@
       :control="control"
       :catalog="catalog"
       @deleted="onControlDeleted"
+      @updated="reloadLists"
     />
   </div>
   <div class="mt-4" v-if="catalog">
@@ -174,6 +176,10 @@ function deleteCurrentCatalog() {
   deleteCatalog(catalogId.value, catalog.value?.metadata?.title || '');
 }
 
+function reloadLists() {
+  groupExecute(`/api/oscal/catalogs/${catalogId.value}/groups`);
+  catalogExecute(`/api/oscal/catalogs/${catalogId.value}/controls`);
+}
 function onCatalogUpdated(updated: Catalog) {
   catalog.value = updated;
   groupExecute(`/api/oscal/catalogs/${catalogId.value}/groups`);

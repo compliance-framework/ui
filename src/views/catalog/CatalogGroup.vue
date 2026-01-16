@@ -14,6 +14,11 @@
         </div>
         <TertiaryButton
           class="bg-white hover:bg-zinc-100 dark:bg-slate-800 dark:hover:bg-slate-600"
+          @click.stop="showEdit = true"
+          >Edit</TertiaryButton
+        >
+        <TertiaryButton
+          class="bg-white hover:bg-zinc-100 dark:bg-slate-800 dark:hover:bg-slate-600"
           @click.stop="deleteGroup()"
           >Delete</TertiaryButton
         >
@@ -62,6 +67,12 @@
           :parent="props.group"
           v-model="showGroupForm"
         />
+        <GroupEditModal
+          v-model="showEdit"
+          :catalog="catalog"
+          :group="props.group"
+          @updated="onUpdated"
+        />
         <ControlCreateModal
           @created="controlCreated"
           :catalog="catalog"
@@ -78,6 +89,7 @@ import CollapsableGroup from '@/components/CollapsableGroup.vue';
 import { type Catalog, type Group, type Control } from '@/oscal';
 import GroupCreateModal from '@/components/catalogs/GroupCreateModal.vue';
 import ControlCreateModal from '@/components/catalogs/ControlCreateModal.vue';
+import GroupEditModal from '@/components/catalogs/GroupEditModal.vue';
 import PartDisplayEditor from '@/components/PartDisplayEditor.vue';
 import { useDataApi } from '@/composables/axios';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
@@ -87,7 +99,10 @@ const props = defineProps<{
   catalog: Catalog;
   group: Group;
 }>();
-const emit = defineEmits<{ (e: 'deleted', id: string): void }>();
+const emit = defineEmits<{
+  (e: 'deleted', id: string): void;
+  (e: 'updated', id: string): void;
+}>();
 const toast = useToast();
 const { confirmDeleteDialog } = useDeleteConfirmationDialog();
 const { execute: del } = useDataApi<void>(
@@ -117,6 +132,7 @@ function getPart(type: string) {
 
 const showGroupForm = ref<boolean>(false);
 const showControlForm = ref<boolean>(false);
+const showEdit = ref<boolean>(false);
 function groupCreated(group: Group) {
   groups.value?.push(group);
 }
@@ -163,5 +179,9 @@ async function deleteGroup() {
     },
     { itemName: props.group.id, itemType: 'group' },
   );
+}
+
+function onUpdated(updated: Group) {
+  emit('updated', updated.id);
 }
 </script>
