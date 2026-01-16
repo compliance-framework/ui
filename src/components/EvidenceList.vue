@@ -12,7 +12,7 @@
             :state="item.status.state?.toLowerCase()"
           ></ResultStatusRing>
         </td>
-        <td class="py-3 px-2 whitespace-nowrap grow">{{ item.title }}</td>
+        <td class="py-3 px-2 break-words max-w-2xl">{{ item.title }}</td>
         <td class="px-2" v-if="configStore.showLabels">
           <div class="h-full flex items-center">
             <button
