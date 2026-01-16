@@ -156,7 +156,7 @@ async function createComponent(): Promise<void> {
     };
 
     await execute({
-      data: componentData,
+      data: [componentData],
     });
     toast.add({
       severity: 'success',
