@@ -11,6 +11,7 @@ import ControlStatementImplementation from '@/views/control-implementations/part
 import { useSystemStore } from '@/stores/system.ts';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import type { Control } from '@/oscal';
+import TooltipTitle from '@/components/TooltipTitle.vue';
 
 const { control, implementation } = defineProps<{
   control: Control;
@@ -167,10 +168,16 @@ async function onPartSelect(e: Event, part: Part) {
 
   <Drawer
     v-model:visible="statementDrawerOpen"
-    header="Implementation Statement"
     position="right"
     class="w-full! md:w-1/2! lg:w-3/5!"
   >
+    <template #header>
+      <TooltipTitle
+        text="Implementation Statement"
+        tooltip-key="system.implementation.statement.drawer"
+        position="bottom"
+      />
+    </template>
     <ControlStatementImplementation
       v-if="selectedPart && selectedImplementation"
       @updated="updateStatement"

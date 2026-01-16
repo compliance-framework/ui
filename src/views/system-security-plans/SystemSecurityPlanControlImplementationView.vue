@@ -6,9 +6,11 @@
         class="bg-white dark:bg-slate-900 border border-ccf-300 dark:border-slate-700 rounded-lg p-6"
       >
         <div class="flex justify-between items-center mb-4">
-          <h3 class="text-lg font-semibold text-gray-900 dark:text-slate-300">
-            Control Implementation
-          </h3>
+          <TooltipTitle
+            text="Control Implementation"
+            tooltip-key="ssp.control.implementation"
+            underline-class="text-lg font-semibold text-gray-900 dark:text-slate-300 underline decoration-dotted cursor-help"
+          />
           <button
             @click="editControlImplementation"
             class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
@@ -92,14 +94,18 @@
         class="bg-white dark:bg-slate-900 border border-ccf-300 dark:border-slate-700 rounded-lg p-6"
       >
         <div class="flex justify-between items-center mb-4">
-          <h3 class="text-lg font-semibold text-gray-900 dark:text-slate-300">
-            Implemented Requirements
+          <div class="flex items-center gap-2">
+            <TooltipTitle
+              text="Implemented Requirements"
+              tooltip-key="control.implementation.requirements"
+              underline-class="text-lg font-semibold text-gray-900 dark:text-slate-300 underline decoration-dotted cursor-help"
+            />
             <span class="text-sm font-normal text-gray-500 dark:text-slate-400"
               >({{
                 controlImplementation.implementedRequirements?.length || 0
               }})</span
             >
-          </h3>
+          </div>
           <button
             @click="addRequirement"
             class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
@@ -390,6 +396,7 @@
 </template>
 
 <script setup lang="ts">
+import TooltipTitle from '@/components/TooltipTitle.vue';
 import { ref, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
