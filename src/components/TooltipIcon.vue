@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import InfoCircleIcon from '@primevue/icons/infocircle';
+import type { Component } from 'vue';
 
-const props = withDefaults(
+withDefaults(
   defineProps<{
     text: string;
     position?: 'top' | 'bottom' | 'left' | 'right';
-    icon?: any;
+    icon?: Component;
     iconClass?: string;
   }>(),
   {
