@@ -11,17 +11,27 @@
       :key="group.id"
       :group="group"
       :catalog="catalog"
+      @deleted="onGroupDeleted"
+      @updated="reloadLists"
     />
     <CatalogControl
       v-for="control in controls"
       :key="control.id"
       :control="control"
       :catalog="catalog"
+      @deleted="onControlDeleted"
+      @updated="reloadLists"
     />
   </div>
   <div class="mt-4" v-if="catalog">
-    <!--    <TertiaryButton v-if="controls.length == 0" @click="showGroupForm = true">Add Group</TertiaryButton>-->
-    <!--    <TertiaryButton v-if="groups.length == 0" @click="showControlForm = true" class="ml-2">Add Control</TertiaryButton>-->
+    <PrimaryButton @click="deleteCurrentCatalog" class="mr-2"
+      >Delete</PrimaryButton
+    >
+    <PrimaryButton @click="showEdit = true" class="mr-2">Edit</PrimaryButton>
+    <TertiaryButton @click="showGroupForm = true">Add Group</TertiaryButton>
+    <TertiaryButton @click="showControlForm = true" class="ml-2"
+      >Add Control</TertiaryButton
+    >
     <GroupCreateModal
       @created="groupCreated"
       :catalog="catalog"
@@ -31,6 +41,11 @@
       @created="controlCreated"
       :catalog="catalog"
       v-model="showControlForm"
+    />
+    <CatalogEditModal
+      v-model="showEdit"
+      :catalog="catalog"
+      @updated="onCatalogUpdated"
     />
   </div>
   <div class="h-screen w-full"></div>
@@ -47,27 +62,36 @@ import PageSubHeader from '@/components/PageSubHeader.vue';
 import CatalogControl from '@/views/catalog/CatalogControl.vue';
 import GroupCreateModal from '@/components/catalogs/GroupCreateModal.vue';
 import ControlCreateModal from '@/components/catalogs/ControlCreateModal.vue';
+import CatalogEditModal from '@/components/catalogs/CatalogEditModal.vue';
+import PrimaryButton from '@/volt/PrimaryButton.vue';
 import { useToast } from 'primevue/usetoast';
 import type { ErrorResponse, ErrorBody } from '@/stores/types.ts';
 import { useDataApi } from '@/composables/axios';
 import type { AxiosError } from 'axios';
+import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
 
 const toast = useToast();
+const { confirmDeleteDialog } = useDeleteConfirmationDialog();
 const route = useRoute();
 const router = useRouter();
-const id = ref<string>(route.params.id as string);
+const catalogId = ref<string>(route.params.id as string);
 
 const { data: catalog, execute } = useDataApi<Catalog>();
 const { data: groups, execute: groupExecute } = useDataApi<Group[]>();
 const { data: controls, execute: catalogExecute } = useDataApi<Control[]>();
+const { execute: del } = useDataApi<void>(
+  '/api/oscal/catalogs',
+  {},
+  { immediate: false },
+);
 
 async function loadData() {
   try {
-    await execute(`/api/oscal/catalogs/${id.value}`, {
+    await execute(`/api/oscal/catalogs/${catalogId.value}`, {
       params: { page: 1, size: 1000 },
     });
-    await groupExecute(`/api/oscal/catalogs/${id.value}/groups`);
-    await catalogExecute(`/api/oscal/catalogs/${id.value}/controls`);
+    await groupExecute(`/api/oscal/catalogs/${catalogId.value}/groups`);
+    await catalogExecute(`/api/oscal/catalogs/${catalogId.value}/controls`);
   } catch (error) {
     const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
     toast.add({
@@ -83,8 +107,8 @@ async function loadData() {
 }
 
 onActivated(async () => {
-  if (route.params.id !== id.value) {
-    id.value = route.params.id as string;
+  if (route.params.id !== catalogId.value) {
+    catalogId.value = route.params.id as string;
     catalog.value = {
       uuid: route.params.id,
     } as Catalog;
@@ -96,10 +120,69 @@ onActivated(async () => {
 
 const showGroupForm = ref<boolean>(false);
 const showControlForm = ref<boolean>(false);
+const showEdit = ref<boolean>(false);
 function groupCreated(group: Group) {
   groups.value?.push(group);
 }
 function controlCreated(control: Control) {
   controls.value?.push(control);
+}
+function onControlDeleted(controlId: string) {
+  const idx = controls.value?.findIndex((c) => c.id === controlId) ?? -1;
+  if (idx >= 0 && controls.value) {
+    controls.value.splice(idx, 1);
+  }
+  groupExecute(`/api/oscal/catalogs/${catalogId.value}/groups`);
+  catalogExecute(`/api/oscal/catalogs/${catalogId.value}/controls`);
+}
+function onGroupDeleted(groupId: string) {
+  const idx = groups.value?.findIndex((g) => g.id === groupId) ?? -1;
+  if (idx >= 0 && groups.value) {
+    groups.value.splice(idx, 1);
+  }
+  groupExecute(`/api/oscal/catalogs/${catalogId.value}/groups`);
+  catalogExecute(`/api/oscal/catalogs/${catalogId.value}/controls`);
+}
+
+async function deleteCatalog(uuid: string, title: string) {
+  await confirmDeleteDialog(
+    async () => {
+      try {
+        await del(`/api/oscal/catalogs/${uuid}`, { method: 'DELETE' });
+        toast.add({
+          severity: 'success',
+          summary: 'Catalog deleted',
+          detail: `Catalog "${title}" deleted successfully`,
+          life: 3000,
+        });
+        router.push({ name: 'catalog-list' });
+      } catch (error) {
+        toast.add({
+          severity: 'error',
+          summary: 'Delete Failed',
+          detail:
+            error instanceof Error
+              ? error.message
+              : 'Failed to delete catalog.',
+          life: 3000,
+        });
+      }
+    },
+    { itemName: title, itemType: 'catalog' },
+  );
+}
+
+function deleteCurrentCatalog() {
+  deleteCatalog(catalogId.value, catalog.value?.metadata?.title || '');
+}
+
+function reloadLists() {
+  groupExecute(`/api/oscal/catalogs/${catalogId.value}/groups`);
+  catalogExecute(`/api/oscal/catalogs/${catalogId.value}/controls`);
+}
+function onCatalogUpdated(updated: Catalog) {
+  catalog.value = updated;
+  groupExecute(`/api/oscal/catalogs/${catalogId.value}/groups`);
+  catalogExecute(`/api/oscal/catalogs/${catalogId.value}/controls`);
 }
 </script>
