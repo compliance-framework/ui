@@ -604,34 +604,56 @@ function viewDashboardEvidence(dashboard: DashboardWithControls) {
   }
 }
 
-// Available label names from selected baseline evidence
-const availableLabelNames = computed(() => {
-  if (!selectedBaselineEvidence.value?.labels) return [];
-  const names = new Set(
-    selectedBaselineEvidence.value.labels.map((l) => l.name),
+// Get unique titles for the dropdown (only show each title once)
+const uniqueEvidenceTitles = computed(() => {
+  const titleMap = new Map<string, SearchableEvidence>();
+  for (const ev of availableEvidence.value) {
+    if (!titleMap.has(ev.title)) {
+      titleMap.set(ev.title, ev);
+    }
+  }
+  return Array.from(titleMap.values());
+});
+
+// Get all evidence entries that match the selected title
+const evidenceEntriesForSelectedTitle = computed(() => {
+  if (!selectedBaselineEvidence.value) return [];
+  return availableEvidence.value.filter(
+    (ev) => ev.title === selectedBaselineEvidence.value!.title,
   );
+});
+
+// Available label names from ALL evidence entries with the selected title
+const availableLabelNames = computed(() => {
+  if (evidenceEntriesForSelectedTitle.value.length === 0) return [];
+  const names = new Set<string>();
+  for (const ev of evidenceEntriesForSelectedTitle.value) {
+    if (ev.labels) {
+      for (const label of ev.labels) {
+        names.add(label.name);
+      }
+    }
+  }
   return Array.from(names).sort();
 });
 
-// Filter evidence that matches all current label conditions
-const filteredEvidenceByConditions = computed(() => {
-  if (labelConditions.value.length === 0) return availableEvidence.value;
-  return availableEvidence.value.filter((ev) => {
-    if (!ev.labels) return false;
-    // Evidence must have ALL current label conditions
-    return labelConditions.value.every((condition) =>
-      ev.labels?.some(
-        (l) => l.name === condition.name && l.value === condition.value,
-      ),
-    );
-  });
-});
-
-// Available values for the selected label name (from evidence matching current conditions)
+// Available values for the selected label name (from evidence entries with the selected title that match current conditions)
 const availableLabelValues = computed(() => {
   if (!newLabelName.value) return [];
   const values = new Set<string>();
-  for (const ev of filteredEvidenceByConditions.value) {
+  // Filter evidence entries with the selected title that match current conditions
+  const relevantEvidence = evidenceEntriesForSelectedTitle.value.filter(
+    (ev) => {
+      if (!ev.labels) return false;
+      // Must match all current label conditions
+      return labelConditions.value.every((condition) =>
+        ev.labels?.some(
+          (l) => l.name === condition.name && l.value === condition.value,
+        ),
+      );
+    },
+  );
+  for (const ev of relevantEvidence) {
     if (ev.labels) {
       for (const label of ev.labels) {
         if (label.name === newLabelName.value) {
@@ -1066,7 +1088,7 @@ async function submitEvidenceLinking() {
             <div class="flex flex-col gap-2">
               <Select
                 v-model="selectedBaselineEvidence"
-                :options="availableEvidence"
+                :options="uniqueEvidenceTitles"
                 optionLabel="title"
                 filter
                 :filterFields="['title', 'searchText']"
