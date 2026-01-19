@@ -83,6 +83,14 @@ const authenticatedRoutes = [
         path: 'components',
         name: 'system:components',
         component: () => import('../views/system/ComponentsView.vue'),
+        children: [
+          {
+            path: ':componentId/dashboards',
+            name: 'system-component-dashboards',
+            component: () =>
+              import('../views/system/partials/ComponentDashboardsView.vue'),
+          },
+        ],
       },
       {
         path: 'authorizations',
