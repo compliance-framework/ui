@@ -24,6 +24,7 @@ const { execute: executeCreateGroup } = useDataApi<Group>(
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
   },
+  { immediate: false },
 );
 
 const { execute: executeCreateGroupGroup } = useDataApi<Group>(
@@ -32,6 +33,7 @@ const { execute: executeCreateGroupGroup } = useDataApi<Group>(
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
   },
+  { immediate: false },
 );
 
 const group = ref({} as Group);

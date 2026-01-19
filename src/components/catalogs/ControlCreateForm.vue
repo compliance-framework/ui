@@ -3,7 +3,7 @@ import type { Catalog, Control, Group } from '@/oscal';
 import FormInput from '@/components/forms/FormInput.vue';
 import { ref } from 'vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
-import { useDataApi } from '@/composables/axios';
+import { useDataApi, decamelizeKeys } from '@/composables/axios';
 
 const props = defineProps<{
   catalog: Catalog;
@@ -25,6 +25,7 @@ const { execute: executeCreateControl } = useDataApi<Control>(
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
   },
+  { immediate: false },
 );
 
 const { execute: executeCreateNestedControl } = useDataApi<Control>(
@@ -33,6 +34,7 @@ const { execute: executeCreateNestedControl } = useDataApi<Control>(
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
   },
+  { immediate: false },
 );
 
 const { execute: executeCreateGroupControl } = useDataApi<Control>(
@@ -41,12 +43,16 @@ const { execute: executeCreateGroupControl } = useDataApi<Control>(
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
   },
+  { immediate: false },
 );
 
 async function createControl(): Promise<void> {
   let response;
   try {
-    if (props.parentControl) {
+    if (!control.value.id || !control.value.title) {
+      throw new Error('ID and Title are required');
+    }
+    if (props.parentControl?.id) {
       response = await executeCreateNestedControl({
         method: 'POST',
         data: control.value,
@@ -55,7 +61,7 @@ async function createControl(): Promise<void> {
           (data, headers) => decamelizeKeys(data as any, headers as any),
         ],
       });
-    } else if (props.parentGroup) {
+    } else if (props.parentGroup?.id) {
       response = await executeCreateGroupControl({
         method: 'POST',
         data: control.value,
