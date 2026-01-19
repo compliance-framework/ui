@@ -48,15 +48,30 @@ async function createControl(): Promise<void> {
   try {
     if (props.parentControl) {
       response = await executeCreateNestedControl({
+        method: 'POST',
         data: control.value,
+        headers: { 'Content-Type': 'application/json' },
+        transformRequest: [
+          (data, headers) => decamelizeKeys(data as any, headers as any),
+        ],
       });
     } else if (props.parentGroup) {
       response = await executeCreateGroupControl({
+        method: 'POST',
         data: control.value,
+        headers: { 'Content-Type': 'application/json' },
+        transformRequest: [
+          (data, headers) => decamelizeKeys(data as any, headers as any),
+        ],
       });
     } else {
       response = await executeCreateControl({
+        method: 'POST',
         data: control.value,
+        headers: { 'Content-Type': 'application/json' },
+        transformRequest: [
+          (data, headers) => decamelizeKeys(data as any, headers as any),
+        ],
       });
     }
     if (response.data.value) {

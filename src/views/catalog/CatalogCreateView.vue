@@ -39,7 +39,7 @@ import PrimaryButton from '@/volt/PrimaryButton.vue';
 import { BIconArrowRepeat } from 'bootstrap-icons-vue';
 import { v4 as uuidv4 } from 'uuid';
 import { useToast } from 'primevue/usetoast';
-import { useDataApi } from '@/composables/axios';
+import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import type { ErrorResponse, ErrorBody } from '@/stores/types.ts';
 import type { AxiosError } from 'axios';
 
@@ -48,15 +48,33 @@ const catalog = ref<Catalog>({
 } as Catalog);
 const toast = useToast();
 
-const { execute } = useDataApi<Catalog>('/api/oscal/catalogs');
+const { execute } = useDataApi<Catalog>('/api/oscal/catalogs', {
+  headers: { 'Content-Type': 'application/json' },
+  transformRequest: [
+    (data, headers) => decamelizeKeys(data as any, headers as any),
+  ],
+});
 
 const router = useRouter();
 
 async function submit() {
   try {
+    if (!catalog.value.uuid || !catalog.value.metadata?.title) {
+      toast.add({
+        severity: 'warn',
+        summary: 'Missing required fields',
+        detail: 'Please set ID and Name before submitting.',
+        life: 3000,
+      });
+      return;
+    }
     await execute({
       method: 'POST',
       data: catalog.value,
+      headers: { 'Content-Type': 'application/json' },
+      transformRequest: [
+        (data, headers) => decamelizeKeys(data as any, headers as any),
+      ],
     });
     router.push({ name: 'catalog-view', params: { id: catalog.value.uuid } });
   } catch (error) {
