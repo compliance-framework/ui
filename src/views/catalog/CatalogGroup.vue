@@ -19,6 +19,21 @@
         >
         <TertiaryButton
           class="bg-white hover:bg-zinc-100 dark:bg-slate-800 dark:hover:bg-slate-600"
+          @click.stop="showEditDescription = true"
+          >Edit Description</TertiaryButton
+        >
+        <TertiaryButton
+          class="bg-white hover:bg-zinc-100 dark:bg-slate-800 dark:hover:bg-slate-600"
+          @click.stop="showGroupForm = true"
+          >Add Group</TertiaryButton
+        >
+        <TertiaryButton
+          class="bg-white hover:bg-zinc-100 dark:bg-slate-800 dark:hover:bg-slate-600"
+          @click.stop="showControlForm = true"
+          >Add Control</TertiaryButton
+        >
+        <TertiaryButton
+          class="bg-white hover:bg-zinc-100 dark:bg-slate-800 dark:hover:bg-slate-600"
           @click.stop="deleteGroup()"
           >Delete</TertiaryButton
         >
@@ -67,6 +82,12 @@
           :parent="props.group"
           v-model="showGroupForm"
         />
+        <GroupDescriptionModal
+          v-model="showEditDescription"
+          :catalog="catalog"
+          :group="props.group"
+          @updated="onUpdated"
+        />
         <GroupEditModal
           v-model="showEdit"
           :catalog="catalog"
@@ -90,6 +111,7 @@ import { type Catalog, type Group, type Control } from '@/oscal';
 import GroupCreateModal from '@/components/catalogs/GroupCreateModal.vue';
 import ControlCreateModal from '@/components/catalogs/ControlCreateModal.vue';
 import GroupEditModal from '@/components/catalogs/GroupEditModal.vue';
+import GroupDescriptionModal from '@/components/catalogs/GroupDescriptionModal.vue';
 import PartDisplayEditor from '@/components/PartDisplayEditor.vue';
 import { useDataApi } from '@/composables/axios';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
@@ -133,6 +155,7 @@ function getPart(type: string) {
 const showGroupForm = ref<boolean>(false);
 const showControlForm = ref<boolean>(false);
 const showEdit = ref<boolean>(false);
+const showEditDescription = ref<boolean>(false);
 function groupCreated(group: Group) {
   groups.value?.push(group);
 }
