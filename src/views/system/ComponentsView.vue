@@ -49,6 +49,9 @@
         </template>
         <div class="py-3 px-4 flex justify-end items-center">
           <div class="flex gap-2">
+            <TertiaryButton @click.stop="openDashboardDrawer(component)">
+              Dashboards
+            </TertiaryButton>
             <TertiaryButton @click.stop="editComponent(component)">
               Edit
             </TertiaryButton>
@@ -117,6 +120,20 @@
     </div>
   </div>
 
+  <!-- Component Dashboard Drawer -->
+  <Drawer
+    v-model:visible="dashboardDrawerOpen"
+    header="Dashboards"
+    position="right"
+    class="w-full! md:w-1/2! lg:w-3/5!"
+  >
+    <ComponentDashboardsView
+      v-if="selectedComponent"
+      :ssp-id="sspId"
+      :component="selectedComponent"
+    />
+  </Drawer>
+
   <!-- Component Create Modal -->
   <Dialog
     v-model:visible="showCreateComponentModal"
@@ -145,18 +162,22 @@
     />
   </Dialog>
 </template>
+
 <script setup lang="ts">
 import TooltipTitle from '@/components/TooltipTitle.vue';
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, watch, ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
 import decamelizeKeys from 'decamelize-keys';
 import Dialog from '@/volt/Dialog.vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
 import TertiaryButton from '@/volt/TertiaryButton.vue';
+import Drawer from '@/volt/Drawer.vue';
 
 // Form components
 import SystemImplementationComponentCreateForm from '@/components/system-security-plans/SystemImplementationComponentCreateForm.vue';
 import SystemImplementationComponentEditForm from '@/components/system-security-plans/SystemImplementationComponentEditForm.vue';
+import ComponentDashboardsView from '@/views/system/partials/ComponentDashboardsView.vue';
 
 // Types and stores;
 import { useSystemStore } from '@/stores/system.ts';
@@ -165,6 +186,8 @@ import { useDataApi } from '@/composables/axios';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
 import type { SystemComponent, SystemSecurityPlan } from '@/oscal';
 
+const route = useRoute();
+const router = useRouter();
 const toast = useToast();
 const { system } = useSystemStore();
 
@@ -197,6 +220,41 @@ const { execute: executeGetComponent } = useDataApi<SystemComponent>(
     method: 'GET',
   },
   { immediate: false },
+);
+
+const selectedComponent = ref<SystemComponent>();
+
+const dashboardDrawerOpen = computed({
+  get: () => !!route.params.componentId,
+  set: (val) => {
+    if (!val) {
+      router.push({ path: '/system/components' });
+    }
+  },
+});
+
+function openDashboardDrawer(component: SystemComponent) {
+  router.push({
+    name: 'system-component-dashboards',
+    params: { componentId: component.uuid },
+  });
+}
+
+watch(
+  () => route.params.componentId,
+  (componentId) => {
+    if (!componentId || !components.value) {
+      selectedComponent.value = undefined;
+      return;
+    }
+
+    const found = components.value.find((c) => c.uuid === componentId);
+
+    if (found) {
+      selectedComponent.value = found;
+    }
+  },
+  { immediate: true },
 );
 
 // Modal states

@@ -469,6 +469,7 @@ async function linkExistingDashboard() {
         name: dashboard.name,
         filter: dashboard.filter,
         controls: newControlIds,
+        components: dashboard.components?.map((c) => c.uuid),
       },
     });
     toast.add({
@@ -510,6 +511,7 @@ async function unlinkDashboard(dashboard: DashboardWithControls) {
         name: dashboard.name,
         filter: dashboard.filter,
         controls: newControlIds,
+        components: dashboard.components?.map((c) => c.uuid),
       },
     });
     toast.add({
