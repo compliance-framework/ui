@@ -27,6 +27,7 @@ import StatementCreateForm from '@/components/system-security-plans/StatementCre
 import StatementEditForm from '@/components/system-security-plans/StatementEditForm.vue';
 import SystemImplementationComponentCreateForm from '@/components/system-security-plans/SystemImplementationComponentCreateForm.vue';
 import DashboardEvidenceCounter from '@/views/control-implementations/partials/DashboardEvidenceCounter.vue';
+import TooltipTitle from '@/components/TooltipTitle.vue';
 
 const { system } = useSystemStore();
 const toast = useToast();
@@ -605,34 +606,56 @@ function viewDashboardEvidence(dashboard: DashboardWithControls) {
   }
 }
 
-// Available label names from selected baseline evidence
-const availableLabelNames = computed(() => {
-  if (!selectedBaselineEvidence.value?.labels) return [];
-  const names = new Set(
-    selectedBaselineEvidence.value.labels.map((l) => l.name),
+// Get unique titles for the dropdown (only show each title once)
+const uniqueEvidenceTitles = computed(() => {
+  const titleMap = new Map<string, SearchableEvidence>();
+  for (const ev of availableEvidence.value) {
+    if (!titleMap.has(ev.title)) {
+      titleMap.set(ev.title, ev);
+    }
+  }
+  return Array.from(titleMap.values());
+});
+
+// Get all evidence entries that match the selected title
+const evidenceEntriesForSelectedTitle = computed(() => {
+  if (!selectedBaselineEvidence.value) return [];
+  return availableEvidence.value.filter(
+    (ev) => ev.title === selectedBaselineEvidence.value!.title,
   );
+});
+
+// Available label names from ALL evidence entries with the selected title
+const availableLabelNames = computed(() => {
+  if (evidenceEntriesForSelectedTitle.value.length === 0) return [];
+  const names = new Set<string>();
+  for (const ev of evidenceEntriesForSelectedTitle.value) {
+    if (ev.labels) {
+      for (const label of ev.labels) {
+        names.add(label.name);
+      }
+    }
+  }
   return Array.from(names).sort();
 });
 
-// Filter evidence that matches all current label conditions
-const filteredEvidenceByConditions = computed(() => {
-  if (labelConditions.value.length === 0) return availableEvidence.value;
-  return availableEvidence.value.filter((ev) => {
-    if (!ev.labels) return false;
-    // Evidence must have ALL current label conditions
-    return labelConditions.value.every((condition) =>
-      ev.labels?.some(
-        (l) => l.name === condition.name && l.value === condition.value,
-      ),
-    );
-  });
-});
-
-// Available values for the selected label name (from evidence matching current conditions)
+// Available values for the selected label name (from evidence entries with the selected title that match current conditions)
 const availableLabelValues = computed(() => {
   if (!newLabelName.value) return [];
   const values = new Set<string>();
-  for (const ev of filteredEvidenceByConditions.value) {
+  // Filter evidence entries with the selected title that match current conditions
+  const relevantEvidence = evidenceEntriesForSelectedTitle.value.filter(
+    (ev) => {
+      if (!ev.labels) return false;
+      // Must match all current label conditions
+      return labelConditions.value.every((condition) =>
+        ev.labels?.some(
+          (l) => l.name === condition.name && l.value === condition.value,
+        ),
+      );
+    },
+  );
+  for (const ev of relevantEvidence) {
     if (ev.labels) {
       for (const label of ev.labels) {
         if (label.name === newLabelName.value) {
@@ -785,23 +808,43 @@ async function submitEvidenceLinking() {
     <div v-if="localStatement">
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
         <div>
-          <h5 class="text-sm font-medium text-gray-500">Statement ID</h5>
+          <TooltipTitle
+            text="Statement ID"
+            tooltip-key="statement.id"
+            underline-class="text-sm font-medium text-gray-500 underline decoration-dotted cursor-help"
+          />
           <p class="text-sm">{{ localStatement?.statementId }}</p>
         </div>
         <div>
-          <h5 class="text-sm font-medium text-gray-500">Remarks</h5>
+          <TooltipTitle
+            text="Remarks"
+            tooltip-key="statement.remarks"
+            underline-class="text-sm font-medium text-gray-500 underline decoration-dotted cursor-help"
+          />
           <p class="text-sm">{{ localStatement?.remarks || 'None' }}</p>
         </div>
         <div>
-          <h5 class="text-sm font-medium text-gray-500">Description</h5>
+          <TooltipTitle
+            text="Description"
+            tooltip-key="statement.description"
+            underline-class="text-sm font-medium text-gray-500 underline decoration-dotted cursor-help"
+          />
           <p class="text-sm">{{ localStatement?.description || 'None' }}</p>
         </div>
         <div>
-          <h5 class="text-sm font-medium text-gray-500">Props</h5>
+          <TooltipTitle
+            text="Props"
+            tooltip-key="statement.props"
+            underline-class="text-sm font-medium text-gray-500 underline decoration-dotted cursor-help"
+          />
           <p class="text-sm">{{ localStatement?.props || 'None' }}</p>
         </div>
         <div>
-          <h5 class="text-sm font-medium text-gray-500">Links</h5>
+          <TooltipTitle
+            text="Links"
+            tooltip-key="statement.links"
+            underline-class="text-sm font-medium text-gray-500 underline decoration-dotted cursor-help"
+          />
           <p class="text-sm">{{ localStatement?.links || 'None' }}</p>
         </div>
       </div>
@@ -817,7 +860,12 @@ async function submitEvidenceLinking() {
       </div>
 
       <div class="flex items-center mb-4 gap-x-4">
-        <h5 class="font-medium text-xl">Components</h5>
+        <TooltipTitle
+          text="Components"
+          tooltip-key="control.implementation.components"
+          position="bottom"
+          underline-class="font-medium text-xl underline decoration-dotted cursor-help"
+        />
         <BurgerMenu
           :items="[
             {
@@ -905,7 +953,12 @@ async function submitEvidenceLinking() {
       <!-- Evidence Linking Section -->
       <div class="mt-8">
         <div class="flex items-center mb-4 gap-x-4">
-          <h5 class="font-medium text-xl">Evidence Linking</h5>
+          <TooltipTitle
+            text="Evidence Linking"
+            tooltip-key="control.implementation.evidence"
+            position="bottom"
+            underline-class="font-medium text-xl underline decoration-dotted cursor-help"
+          />
           <BurgerMenu
             :items="[
               {
@@ -1037,7 +1090,7 @@ async function submitEvidenceLinking() {
             <div class="flex flex-col gap-2">
               <Select
                 v-model="selectedBaselineEvidence"
-                :options="availableEvidence"
+                :options="uniqueEvidenceTitles"
                 optionLabel="title"
                 filter
                 :filterFields="['title', 'searchText']"
@@ -1161,12 +1214,14 @@ async function submitEvidenceLinking() {
     </div>
   </div>
 
-  <Dialog
-    v-model:visible="showCreateStatementModal"
-    size="lg"
-    modal
-    header="Create New Statement"
-  >
+  <Dialog v-model:visible="showCreateStatementModal" size="lg" modal>
+    <template #header>
+      <TooltipTitle
+        text="Create New Statement"
+        tooltip-key="control.implementation.statement"
+        position="bottom"
+      />
+    </template>
     <StatementCreateForm
       :ssp-id="system.securityPlan?.uuid || ''"
       :req-id="implementation.uuid || ''"
@@ -1175,12 +1230,14 @@ async function submitEvidenceLinking() {
       @created="updateStatement"
     />
   </Dialog>
-  <Dialog
-    v-model:visible="showEditStatementModal"
-    size="lg"
-    modal
-    header="Edit Statement"
-  >
+  <Dialog v-model:visible="showEditStatementModal" size="lg" modal>
+    <template #header>
+      <TooltipTitle
+        text="Edit Statement"
+        tooltip-key="control.implementation.statement"
+        position="bottom"
+      />
+    </template>
     <StatementEditForm
       v-if="localStatement"
       :ssp-id="system.securityPlan?.uuid || ''"

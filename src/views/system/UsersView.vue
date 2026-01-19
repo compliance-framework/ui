@@ -1,7 +1,12 @@
 <template>
   <div class="p-4">
     <div class="flex justify-between items-center mb-6">
-      <h3 class="text-lg font-semibold dark:text-slate-300">System Users</h3>
+      <TooltipTitle
+        text="System Users"
+        tooltip-key="system.users"
+        position="bottom"
+        underline-class="text-lg font-semibold dark:text-slate-300 underline decoration-dotted cursor-help"
+      />
       <PrimaryButton @click="showCreateUserModal = true">
         Create User
       </PrimaryButton>
@@ -133,6 +138,7 @@ import decamelizeKeys from 'decamelize-keys';
 import Dialog from '@/volt/Dialog.vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
 import TertiaryButton from '@/volt/TertiaryButton.vue';
+import TooltipTitle from '@/components/TooltipTitle.vue';
 
 // Form components
 import Panel from '@/volt/Panel.vue';

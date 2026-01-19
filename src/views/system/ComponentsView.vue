@@ -2,9 +2,11 @@
   <!-- Tabbed Interface -->
   <div class="p-4">
     <div class="flex justify-between items-center mb-6">
-      <h3 class="text-lg font-semibold dark:text-slate-300">
-        System Components
-      </h3>
+      <TooltipTitle
+        text="System Components"
+        tooltip-key="system.components"
+        underline-class="text-lg font-semibold dark:text-slate-300 underline decoration-dotted cursor-help"
+      />
       <PrimaryButton @click="showCreateComponentModal = true">
         Create Component
       </PrimaryButton>
@@ -162,6 +164,7 @@
 </template>
 
 <script setup lang="ts">
+import TooltipTitle from '@/components/TooltipTitle.vue';
 import { computed, onMounted, watch, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
