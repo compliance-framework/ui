@@ -69,9 +69,11 @@ import type { ErrorResponse, ErrorBody } from '@/stores/types.ts';
 import { useDataApi } from '@/composables/axios';
 import type { AxiosError } from 'axios';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
+import { useCatalogDelete } from '@/composables/catalog';
 
 const toast = useToast();
 const { confirmDeleteDialog } = useDeleteConfirmationDialog();
+const { deleteCatalog: deleteCatalogAction } = useCatalogDelete();
 const route = useRoute();
 const router = useRouter();
 const catalogId = ref<string>(route.params.id as string);
@@ -127,49 +129,17 @@ function groupCreated(group: Group) {
 function controlCreated(control: Control) {
   controls.value?.push(control);
 }
-function onControlDeleted(controlId: string) {
-  const idx = controls.value?.findIndex((c) => c.id === controlId) ?? -1;
-  if (idx >= 0 && controls.value) {
-    controls.value.splice(idx, 1);
-  }
-  groupExecute(`/api/oscal/catalogs/${catalogId.value}/groups`);
-  catalogExecute(`/api/oscal/catalogs/${catalogId.value}/controls`);
+function onControlDeleted(_controlId: string) {
+  reloadLists();
 }
-function onGroupDeleted(groupId: string) {
-  const idx = groups.value?.findIndex((g) => g.id === groupId) ?? -1;
-  if (idx >= 0 && groups.value) {
-    groups.value.splice(idx, 1);
-  }
-  groupExecute(`/api/oscal/catalogs/${catalogId.value}/groups`);
-  catalogExecute(`/api/oscal/catalogs/${catalogId.value}/controls`);
+function onGroupDeleted(_groupId: string) {
+  reloadLists();
 }
 
 async function deleteCatalog(uuid: string, title: string) {
-  await confirmDeleteDialog(
-    async () => {
-      try {
-        await del(`/api/oscal/catalogs/${uuid}`, { method: 'DELETE' });
-        toast.add({
-          severity: 'success',
-          summary: 'Catalog deleted',
-          detail: `Catalog "${title}" deleted successfully`,
-          life: 3000,
-        });
-        router.push({ name: 'catalog-list' });
-      } catch (error) {
-        toast.add({
-          severity: 'error',
-          summary: 'Delete Failed',
-          detail:
-            error instanceof Error
-              ? error.message
-              : 'Failed to delete catalog.',
-          life: 3000,
-        });
-      }
-    },
-    { itemName: title, itemType: 'catalog' },
-  );
+  await deleteCatalogAction(uuid, title, () => {
+    router.push({ name: 'catalog-list' });
+  });
 }
 
 function deleteCurrentCatalog() {

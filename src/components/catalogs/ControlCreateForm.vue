@@ -24,6 +24,9 @@ const { execute: executeCreateControl } = useDataApi<Control>(
   {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    transformRequest: [
+      (data, headers) => decamelizeKeys(data as any, headers as any),
+    ],
   },
   { immediate: false },
 );
@@ -33,6 +36,9 @@ const { execute: executeCreateNestedControl } = useDataApi<Control>(
   {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    transformRequest: [
+      (data, headers) => decamelizeKeys(data as any, headers as any),
+    ],
   },
   { immediate: false },
 );
@@ -42,6 +48,9 @@ const { execute: executeCreateGroupControl } = useDataApi<Control>(
   {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    transformRequest: [
+      (data, headers) => decamelizeKeys(data as any, headers as any),
+    ],
   },
   { immediate: false },
 );
@@ -52,33 +61,18 @@ async function createControl(): Promise<void> {
     if (!control.value.id || !control.value.title) {
       throw new Error('ID and Title are required');
     }
-    if (props.parentControl?.id) {
-      response = await executeCreateNestedControl({
-        method: 'POST',
-        data: control.value,
-        headers: { 'Content-Type': 'application/json' },
-        transformRequest: [
-          (data, headers) => decamelizeKeys(data as any, headers as any),
-        ],
-      });
-    } else if (props.parentGroup?.id) {
-      response = await executeCreateGroupControl({
-        method: 'POST',
-        data: control.value,
-        headers: { 'Content-Type': 'application/json' },
-        transformRequest: [
-          (data, headers) => decamelizeKeys(data as any, headers as any),
-        ],
-      });
+    if (props.parentControl) {
+      if (!props.parentControl.id) {
+        throw new Error('Parent Control ID is required');
+      }
+      response = await executeCreateNestedControl({ data: control.value });
+    } else if (props.parentGroup) {
+      if (!props.parentGroup.id) {
+        throw new Error('Parent Group ID is required');
+      }
+      response = await executeCreateGroupControl({ data: control.value });
     } else {
-      response = await executeCreateControl({
-        method: 'POST',
-        data: control.value,
-        headers: { 'Content-Type': 'application/json' },
-        transformRequest: [
-          (data, headers) => decamelizeKeys(data as any, headers as any),
-        ],
-      });
+      response = await executeCreateControl({ data: control.value });
     }
     if (response.data.value) {
       emit('created', response.data.value.data);

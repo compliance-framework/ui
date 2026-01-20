@@ -4,7 +4,7 @@ import Dialog from '@/volt/Dialog.vue';
 import FormInput from '@/components/forms/FormInput.vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
 import { ref, watchEffect } from 'vue';
-import { useDataApi } from '@/composables/axios';
+import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import { useToast } from 'primevue/usetoast';
 
 const show = defineModel<boolean>();
@@ -29,7 +29,13 @@ watchEffect(() => {
 
 const { execute: update } = useDataApi<Catalog>(
   `/api/oscal/catalogs/${props.catalog.uuid}`,
-  { method: 'PUT', headers: { 'Content-Type': 'application/json' } },
+  {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    transformRequest: [
+      (data, headers) => decamelizeKeys(data as any, headers as any),
+    ],
+  },
   { immediate: false },
 );
 

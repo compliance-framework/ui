@@ -47,14 +47,7 @@ async function submit() {
     class: form.value.class || undefined,
   } as Control;
   try {
-    const resp = await update({
-      method: 'PUT',
-      data: payload,
-      headers: { 'Content-Type': 'application/json' },
-      transformRequest: [
-        (data, headers) => decamelizeKeys(data as any, headers as any),
-      ],
-    });
+    const resp = await update({ data: payload });
     const updated = resp.data.value?.data;
     if (updated) {
       toast.add({

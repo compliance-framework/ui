@@ -71,10 +71,6 @@ async function submit() {
     await execute({
       method: 'POST',
       data: catalog.value,
-      headers: { 'Content-Type': 'application/json' },
-      transformRequest: [
-        (data, headers) => decamelizeKeys(data as any, headers as any),
-      ],
     });
     router.push({ name: 'catalog-view', params: { id: catalog.value.uuid } });
   } catch (error) {
