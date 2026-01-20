@@ -68,11 +68,9 @@ import { useToast } from 'primevue/usetoast';
 import type { ErrorResponse, ErrorBody } from '@/stores/types.ts';
 import { useDataApi } from '@/composables/axios';
 import type { AxiosError } from 'axios';
-import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
 import { useCatalogDelete } from '@/composables/catalog';
 
 const toast = useToast();
-const { confirmDeleteDialog } = useDeleteConfirmationDialog();
 const { deleteCatalog: deleteCatalogAction } = useCatalogDelete();
 const route = useRoute();
 const router = useRouter();
@@ -81,11 +79,6 @@ const catalogId = ref<string>(route.params.id as string);
 const { data: catalog, execute } = useDataApi<Catalog>();
 const { data: groups, execute: groupExecute } = useDataApi<Group[]>();
 const { data: controls, execute: catalogExecute } = useDataApi<Control[]>();
-const { execute: del } = useDataApi<void>(
-  '/api/oscal/catalogs',
-  {},
-  { immediate: false },
-);
 
 async function loadData() {
   try {
@@ -129,10 +122,10 @@ function groupCreated(group: Group) {
 function controlCreated(control: Control) {
   controls.value?.push(control);
 }
-function onControlDeleted(_controlId: string) {
+function onControlDeleted() {
   reloadLists();
 }
-function onGroupDeleted(_groupId: string) {
+function onGroupDeleted() {
   reloadLists();
 }
 

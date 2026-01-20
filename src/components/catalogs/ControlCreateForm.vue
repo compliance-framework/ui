@@ -25,6 +25,7 @@ const { execute: executeCreateControl } = useDataApi<Control>(
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     transformRequest: [
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (data, headers) => decamelizeKeys(data as any, headers as any),
     ],
   },
@@ -37,6 +38,7 @@ const { execute: executeCreateNestedControl } = useDataApi<Control>(
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     transformRequest: [
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (data, headers) => decamelizeKeys(data as any, headers as any),
     ],
   },
@@ -49,6 +51,7 @@ const { execute: executeCreateGroupControl } = useDataApi<Control>(
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     transformRequest: [
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (data, headers) => decamelizeKeys(data as any, headers as any),
     ],
   },

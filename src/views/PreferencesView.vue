@@ -121,11 +121,9 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { useUserStore } from '@/stores/auth';
 import { useAuthenticatedInstance } from '@/composables/axios';
 import type { CCFUser } from '@/stores/types';
 
-const userStore = useUserStore();
 const axios = useAuthenticatedInstance();
 const user = ref<CCFUser | null>(null);
 const loading = ref(true);
