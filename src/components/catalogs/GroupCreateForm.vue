@@ -3,7 +3,7 @@ import type { Catalog, Group } from '@/oscal';
 import FormInput from '@/components/forms/FormInput.vue';
 import { ref } from 'vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
-import { useDataApi } from '@/composables/axios';
+import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import type { AxiosError } from 'axios';
 import type { ErrorResponse, ErrorBody } from '@/stores/types.ts';
 
@@ -24,6 +24,7 @@ const { execute: executeCreateGroup } = useDataApi<Group>(
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
   },
+  { immediate: false },
 );
 
 const { execute: executeCreateGroupGroup } = useDataApi<Group>(
@@ -32,6 +33,7 @@ const { execute: executeCreateGroupGroup } = useDataApi<Group>(
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
   },
+  { immediate: false },
 );
 
 const group = ref({} as Group);
@@ -39,13 +41,26 @@ const group = ref({} as Group);
 async function createGroup(): Promise<void> {
   let response;
   try {
+    if (!group.value.id || !group.value.title) {
+      throw new Error('ID and Title are required');
+    }
     if (props.parent) {
       response = await executeCreateGroupGroup({
+        method: 'POST',
         data: group.value,
+        headers: { 'Content-Type': 'application/json' },
+        transformRequest: [
+          (data, headers) => decamelizeKeys(data as any, headers as any),
+        ],
       });
     } else {
       response = await executeCreateGroup({
+        method: 'POST',
         data: group.value,
+        headers: { 'Content-Type': 'application/json' },
+        transformRequest: [
+          (data, headers) => decamelizeKeys(data as any, headers as any),
+        ],
       });
     }
 

@@ -3,7 +3,7 @@ import type { Catalog, Control, Group } from '@/oscal';
 import FormInput from '@/components/forms/FormInput.vue';
 import { ref } from 'vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
-import { useDataApi } from '@/composables/axios';
+import { useDataApi, decamelizeKeys } from '@/composables/axios';
 
 const props = defineProps<{
   catalog: Catalog;
@@ -24,7 +24,11 @@ const { execute: executeCreateControl } = useDataApi<Control>(
   {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    transformRequest: [
+      (data, headers) => decamelizeKeys(data as any, headers as any),
+    ],
   },
+  { immediate: false },
 );
 
 const { execute: executeCreateNestedControl } = useDataApi<Control>(
@@ -32,7 +36,11 @@ const { execute: executeCreateNestedControl } = useDataApi<Control>(
   {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    transformRequest: [
+      (data, headers) => decamelizeKeys(data as any, headers as any),
+    ],
   },
+  { immediate: false },
 );
 
 const { execute: executeCreateGroupControl } = useDataApi<Control>(
@@ -40,24 +48,31 @@ const { execute: executeCreateGroupControl } = useDataApi<Control>(
   {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    transformRequest: [
+      (data, headers) => decamelizeKeys(data as any, headers as any),
+    ],
   },
+  { immediate: false },
 );
 
 async function createControl(): Promise<void> {
   let response;
   try {
+    if (!control.value.id || !control.value.title) {
+      throw new Error('ID and Title are required');
+    }
     if (props.parentControl) {
-      response = await executeCreateNestedControl({
-        data: control.value,
-      });
+      if (!props.parentControl.id) {
+        throw new Error('Parent Control ID is required');
+      }
+      response = await executeCreateNestedControl({ data: control.value });
     } else if (props.parentGroup) {
-      response = await executeCreateGroupControl({
-        data: control.value,
-      });
+      if (!props.parentGroup.id) {
+        throw new Error('Parent Group ID is required');
+      }
+      response = await executeCreateGroupControl({ data: control.value });
     } else {
-      response = await executeCreateControl({
-        data: control.value,
-      });
+      response = await executeCreateControl({ data: control.value });
     }
     if (response.data.value) {
       emit('created', response.data.value.data);

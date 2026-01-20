@@ -1,13 +1,41 @@
 <template>
   <CollapsableGroup>
     <template #header>
-      <div class="py-4 px-4">
+      <div class="py-4 px-4 flex items-center gap-4">
         <span
           class="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-800 text-gray-800 dark:text-slate-300 rounded-md text-sm px-2 py-1 mr-2"
           >{{ group.id }}</span
-        >{{ group.title }}
-        <span class="text-gray-400 dark:text-slate-300 text-sm px-2 py-1"
-          >Group</span
+        >
+        <div class="grow">
+          {{ group.title }}
+          <span class="text-gray-400 dark:text-slate-300 text-sm px-2 py-1"
+            >Group</span
+          >
+        </div>
+        <TertiaryButton
+          class="bg-white hover:bg-zinc-100 dark:bg-slate-800 dark:hover:bg-slate-600"
+          @click.stop="showEdit = true"
+          >Edit</TertiaryButton
+        >
+        <TertiaryButton
+          class="bg-white hover:bg-zinc-100 dark:bg-slate-800 dark:hover:bg-slate-600"
+          @click.stop="showEditDescription = true"
+          >Edit Description</TertiaryButton
+        >
+        <TertiaryButton
+          class="bg-white hover:bg-zinc-100 dark:bg-slate-800 dark:hover:bg-slate-600"
+          @click.stop="showGroupForm = true"
+          >Add Group</TertiaryButton
+        >
+        <TertiaryButton
+          class="bg-white hover:bg-zinc-100 dark:bg-slate-800 dark:hover:bg-slate-600"
+          @click.stop="showControlForm = true"
+          >Add Control</TertiaryButton
+        >
+        <TertiaryButton
+          class="bg-white hover:bg-zinc-100 dark:bg-slate-800 dark:hover:bg-slate-600"
+          @click.stop="deleteGroup()"
+          >Delete</TertiaryButton
         >
       </div>
     </template>
@@ -37,12 +65,14 @@
           :key="control.id"
           :control="control"
           :catalog="props.catalog"
+          @deleted="onChildControlDeleted"
         />
         <CatalogGroup
           v-for="group in groups"
           :key="group.id"
           :group="group"
           :catalog="props.catalog"
+          @deleted="onChildGroupDeleted"
         />
       </div>
       <div class="mt-4">
@@ -51,6 +81,18 @@
           :catalog="catalog"
           :parent="props.group"
           v-model="showGroupForm"
+        />
+        <GroupDescriptionModal
+          v-model="showEditDescription"
+          :catalog="catalog"
+          :group="props.group"
+          @updated="onUpdated"
+        />
+        <GroupEditModal
+          v-model="showEdit"
+          :catalog="catalog"
+          :group="props.group"
+          @updated="onUpdated"
         />
         <ControlCreateModal
           @created="controlCreated"
@@ -68,13 +110,28 @@ import CollapsableGroup from '@/components/CollapsableGroup.vue';
 import { type Catalog, type Group, type Control } from '@/oscal';
 import GroupCreateModal from '@/components/catalogs/GroupCreateModal.vue';
 import ControlCreateModal from '@/components/catalogs/ControlCreateModal.vue';
+import GroupEditModal from '@/components/catalogs/GroupEditModal.vue';
+import GroupDescriptionModal from '@/components/catalogs/GroupDescriptionModal.vue';
 import PartDisplayEditor from '@/components/PartDisplayEditor.vue';
 import { useDataApi } from '@/composables/axios';
+import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
+import { useToast } from 'primevue/usetoast';
 
 const props = defineProps<{
   catalog: Catalog;
   group: Group;
 }>();
+const emit = defineEmits<{
+  (e: 'deleted', id: string): void;
+  (e: 'updated', id: string): void;
+}>();
+const toast = useToast();
+const { confirmDeleteDialog } = useDeleteConfirmationDialog();
+const { execute: del } = useDataApi<void>(
+  '/api/oscal/catalogs',
+  {},
+  { immediate: false },
+);
 
 const { data: groups } = useDataApi<Group[]>(
   `/api/oscal/catalogs/${props.catalog.uuid}/groups/${props.group.id}/groups`,
@@ -97,10 +154,57 @@ function getPart(type: string) {
 
 const showGroupForm = ref<boolean>(false);
 const showControlForm = ref<boolean>(false);
+const showEdit = ref<boolean>(false);
+const showEditDescription = ref<boolean>(false);
 function groupCreated(group: Group) {
   groups.value?.push(group);
 }
 function controlCreated(control: Control) {
   controls.value?.push(control);
+}
+
+function onChildGroupDeleted(id: string) {
+  const idx = groups.value?.findIndex((g) => g.id === id) ?? -1;
+  if (idx >= 0 && groups.value) {
+    groups.value.splice(idx, 1);
+  }
+}
+function onChildControlDeleted(id: string) {
+  const idx = controls.value?.findIndex((c) => c.id === id) ?? -1;
+  if (idx >= 0 && controls.value) {
+    controls.value.splice(idx, 1);
+  }
+}
+async function deleteGroup() {
+  await confirmDeleteDialog(
+    async () => {
+      try {
+        await del(
+          `/api/oscal/catalogs/${props.catalog.uuid}/groups/${props.group.id}`,
+          { method: 'DELETE' },
+        );
+        toast.add({
+          severity: 'success',
+          summary: 'Group deleted',
+          detail: `Group "${props.group.id}" deleted successfully`,
+          life: 3000,
+        });
+        emit('deleted', props.group.id);
+      } catch (error) {
+        toast.add({
+          severity: 'error',
+          summary: 'Delete Failed',
+          detail:
+            error instanceof Error ? error.message : 'Failed to delete group.',
+          life: 3000,
+        });
+      }
+    },
+    { itemName: props.group.id, itemType: 'group' },
+  );
+}
+
+function onUpdated(updated: Group) {
+  emit('updated', updated.id);
 }
 </script>
