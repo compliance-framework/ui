@@ -22,6 +22,11 @@
           display="chip"
           placeholder="Select Controls"
           class="w-full"
+          :class="
+            disableControlSelection
+              ? 'opacity-50 cursor-not-allowed bg-gray-100'
+              : ''
+          "
           :virtualScrollerOptions="{ itemSize: 44 }"
           :disabled="disableControlSelection"
         >
@@ -51,6 +56,11 @@
           display="chip"
           placeholder="Select Components"
           class="w-full"
+          :class="
+            disableComponentSelection
+              ? 'opacity-50 cursor-not-allowed bg-gray-100'
+              : ''
+          "
           :virtualScrollerOptions="{ itemSize: 44 }"
           :disabled="disableComponentSelection"
         >
