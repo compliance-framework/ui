@@ -179,11 +179,14 @@ async function loadAllDashboards() {
   }
 }
 
-// Dashboards available for linking (not already linked to this component)
+// Dashboards available for linking (not already linked to this component or any controls)
 const availableDashboardsToLink = computed(() => {
   const componentId = component.uuid;
   return allDashboards.value.filter(
-    (dashboard) => !dashboard.components?.some((c) => c.uuid === componentId),
+    (dashboard) =>
+      !dashboard.components?.some(
+        (component) => component.uuid === componentId,
+      ) && !dashboard.controls?.length,
   );
 });
 
@@ -203,7 +206,6 @@ async function linkExistingDashboard() {
         name: dashboard.name,
         filter: dashboard.filter,
         components: newComponentIds,
-        controls: dashboard.controls?.map((c) => c.id),
       },
     });
     toast.add({
@@ -245,7 +247,6 @@ async function unlinkDashboard(dashboard: DashboardWithComponents) {
       data: {
         name: dashboard.name,
         filter: dashboard.filter,
-        controls: dashboard.controls?.map((c) => c.id),
         components: newComponentIds,
       },
     });

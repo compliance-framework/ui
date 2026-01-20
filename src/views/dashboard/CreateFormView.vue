@@ -23,7 +23,7 @@
           placeholder="Select Controls"
           class="w-full"
           :virtualScrollerOptions="{ itemSize: 44 }"
-          :disabled="loadingControls"
+          :disabled="disableControlSelection"
         >
           <template #optiongroup="slotProps">
             <div class="flex items-center gap-2">
@@ -52,7 +52,7 @@
           placeholder="Select Components"
           class="w-full"
           :virtualScrollerOptions="{ itemSize: 44 }"
-          :disabled="loadingComponents"
+          :disabled="disableComponentSelection"
         >
           <template #optiongroup="slotProps">
             <div class="flex items-center gap-2">
@@ -75,7 +75,7 @@
   </PageCard>
 </template>
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import PageHeader from '@/components/PageHeader.vue';
 import PageCard from '@/components/PageCard.vue';
@@ -131,6 +131,12 @@ const controls = ref<SelectControl[]>([]);
 const components = ref<SelectComponent[]>([]);
 const loadingControls = ref<boolean>(true);
 const loadingComponents = ref<boolean>(true);
+const disableControlSelection = computed(
+  () => loadingControls.value || selectedComponents.value.length > 0,
+);
+const disableComponentSelection = computed(
+  () => loadingComponents.value || selectedControls.value.length > 0,
+);
 
 const { data: catalogs } = useDataApi<Catalog[]>('/api/oscal/catalogs');
 const { data: systemSecurityPlans } = useDataApi<SystemSecurityPlan[]>(
