@@ -83,11 +83,6 @@ const { execute } = useDataApi<Catalog>(
   {},
   { immediate: false },
 );
-const { execute: del } = useDataApi<void>(
-  '/api/oscal/catalogs',
-  {},
-  { immediate: false },
-);
 
 async function downloadCatalogJSON(id: string, title: string) {
   try {

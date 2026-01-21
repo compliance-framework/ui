@@ -2,6 +2,7 @@
 import { RouterView } from 'vue-router';
 import LeftSideNav from '@/views/LeftSideNav.vue';
 import SidebarToggle from '@/components/navigation/SidebarToggle.vue';
+import ProfileDropdown from '@/components/ProfileDropdown.vue';
 import { useSidebarStore } from '@/stores/sidebar';
 
 const sidebarStore = useSidebarStore();
@@ -24,19 +25,37 @@ const sidebarStore = useSidebarStore();
       <!-- Toggle Button -->
       <SidebarToggle />
     </div>
+
     <!-- Main Content -->
     <main
-      class="grow transition-all duration-300 ease-in-out px-12 py-4 bg-zinc-50 dark:bg-slate-950 text-zinc-800 dark:text-slate-50 overflow-auto"
+      class="grow transition-all duration-300 ease-in-out bg-zinc-50 dark:bg-slate-950 text-zinc-800 dark:text-slate-50 overflow-auto"
       :class="{
         'ml-80': sidebarStore.open,
         'ml-24': !sidebarStore.open,
       }"
     >
-      <router-view v-slot="{ Component }">
-        <KeepAlive include="CatalogView">
-          <component :is="Component" />
-        </KeepAlive>
-      </router-view>
+      <!-- Header -->
+      <header
+        class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-3 relative z-40"
+      >
+        <div class="flex items-center justify-between">
+          <div class="flex-1">
+            <!-- Breadcrumb or page title can go here -->
+          </div>
+
+          <!-- Profile Dropdown -->
+          <ProfileDropdown />
+        </div>
+      </header>
+
+      <!-- Page Content -->
+      <div class="px-12 py-4">
+        <router-view v-slot="{ Component }">
+          <KeepAlive include="CatalogView">
+            <component :is="Component" />
+          </KeepAlive>
+        </router-view>
+      </div>
     </main>
   </div>
 </template>

@@ -34,6 +34,7 @@ const { execute: update } = useDataApi<Control>(
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     transformRequest: [
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (data, headers) => decamelizeKeys(data as any, headers as any),
     ],
   },

@@ -50,6 +50,7 @@ async function createGroup(): Promise<void> {
         data: group.value,
         headers: { 'Content-Type': 'application/json' },
         transformRequest: [
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (data, headers) => decamelizeKeys(data as any, headers as any),
         ],
       });
@@ -59,6 +60,7 @@ async function createGroup(): Promise<void> {
         data: group.value,
         headers: { 'Content-Type': 'application/json' },
         transformRequest: [
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (data, headers) => decamelizeKeys(data as any, headers as any),
         ],
       });
