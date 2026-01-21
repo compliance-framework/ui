@@ -7,17 +7,15 @@ import ProfileDropdown from '../ProfileDropdown.vue';
 // Mock all the dependencies
 vi.mock('@/composables/axios', () => ({
   useAuthenticatedInstance: () => ({
-    get: vi
-      .fn()
-      .mockResolvedValue({
+    get: vi.fn().mockResolvedValue({
+      data: {
         data: {
-          data: {
-            firstName: 'John',
-            lastName: 'Doe',
-            email: 'john@example.com',
-          },
+          firstName: 'John',
+          lastName: 'Doe',
+          email: 'john@example.com',
         },
-      }),
+      },
+    }),
     post: vi.fn().mockResolvedValue({}),
   }),
 }));
@@ -49,6 +47,7 @@ const router = createRouter({
 });
 
 describe('ProfileDropdown', () => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let wrapper: any;
 
   beforeEach(() => {
