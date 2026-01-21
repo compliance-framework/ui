@@ -26,7 +26,7 @@ vi.mock('@/stores/auth', () => ({
   }),
 }));
 
-vi.mock('@/usetoast/UseToast', () => ({
+vi.mock('primevue/usetoast', () => ({
   useToast: () => ({
     add: vi.fn(),
     remove: vi.fn(),

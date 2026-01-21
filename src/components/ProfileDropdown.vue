@@ -203,6 +203,19 @@ const handleClickOutside = (event: MouseEvent) => {
 
 // Handle keyboard events
 const handleKeyDown = (event: KeyboardEvent) => {
+  // Only handle keyboard events when the dropdown button or menu is focused
+  const dropdownButton = document.getElementById('profile-dropdown-button');
+  const dropdownMenu = document.getElementById('profile-menu');
+  const activeElement = document.activeElement;
+
+  const isDropdownFocused =
+    activeElement === dropdownButton ||
+    (dropdownMenu && dropdownMenu.contains(activeElement));
+
+  if (!isDropdownFocused) {
+    return;
+  }
+
   if (!isOpen.value) {
     if (
       event.key === 'Enter' ||
