@@ -56,7 +56,8 @@
         <router-link
           to="/preferences"
           role="menuitem"
-          class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+          tabindex="-1"
+          class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:bg-gray-100 dark:focus:bg-gray-700"
           @click="closeDropdown"
         >
           <div class="flex items-center space-x-2">
@@ -86,7 +87,8 @@
         <button
           @click="handleLogout"
           role="menuitem"
-          class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+          tabindex="-1"
+          class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:bg-gray-100 dark:focus:bg-gray-700"
         >
           <div class="flex items-center space-x-2">
             <svg
@@ -124,6 +126,7 @@ const axios = useAuthenticatedInstance();
 const isOpen = ref(false);
 const dropdownRef = ref<HTMLElement>();
 const user = ref<CCFUser | null>(null);
+const currentFocusedIndex = ref(-1);
 
 // Computed properties for user info
 const userName = computed(() => {
@@ -166,11 +169,15 @@ const loadUserData = async () => {
 // Toggle dropdown
 const toggleDropdown = () => {
   isOpen.value = !isOpen.value;
+  if (isOpen.value) {
+    currentFocusedIndex.value = -1;
+  }
 };
 
 // Close dropdown
 const closeDropdown = () => {
   isOpen.value = false;
+  currentFocusedIndex.value = -1;
 };
 
 // Handle logout
@@ -196,8 +203,53 @@ const handleClickOutside = (event: MouseEvent) => {
 
 // Handle keyboard events
 const handleKeyDown = (event: KeyboardEvent) => {
-  if (event.key === 'Escape' && isOpen.value) {
-    closeDropdown();
+  if (!isOpen.value) {
+    if (
+      event.key === 'Enter' ||
+      event.key === ' ' ||
+      event.key === 'ArrowDown'
+    ) {
+      event.preventDefault();
+      toggleDropdown();
+      currentFocusedIndex.value = 0;
+    }
+    return;
+  }
+
+  switch (event.key) {
+    case 'Escape':
+      closeDropdown();
+      break;
+    case 'ArrowDown':
+      event.preventDefault();
+      currentFocusedIndex.value = (currentFocusedIndex.value + 1) % 2; // 2 menu items
+      focusMenuItem(currentFocusedIndex.value);
+      break;
+    case 'ArrowUp':
+      event.preventDefault();
+      currentFocusedIndex.value =
+        currentFocusedIndex.value === 0 ? 1 : currentFocusedIndex.value - 1;
+      focusMenuItem(currentFocusedIndex.value);
+      break;
+    case 'Enter':
+    case ' ':
+      event.preventDefault();
+      activateMenuItem(currentFocusedIndex.value);
+      break;
+  }
+};
+
+const focusMenuItem = (index: number) => {
+  const menuItems = dropdownRef.value?.querySelectorAll('[role="menuitem"]');
+  if (menuItems && menuItems[index]) {
+    (menuItems[index] as HTMLElement).focus();
+  }
+};
+
+const activateMenuItem = (index: number) => {
+  const menuItems = dropdownRef.value?.querySelectorAll('[role="menuitem"]');
+  if (menuItems && menuItems[index]) {
+    (menuItems[index] as HTMLElement).click();
   }
 };
 

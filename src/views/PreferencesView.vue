@@ -142,7 +142,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import { useAuthenticatedInstance } from '@/composables/axios';
 import type { CCFUser } from '@/stores/types';
 import PageHeader from '@/components/PageHeader.vue';
@@ -156,6 +156,7 @@ const digestSubscribed = ref(false);
 const updateError = ref<string | null>(null);
 const updateSuccess = ref(false);
 const loadError = ref<string | null>(null);
+const successTimeoutId = ref<number | null>(null);
 
 // Load user data and digest subscription
 const loadUserData = async () => {
@@ -191,7 +192,7 @@ const updateDigestSubscription = async () => {
 
     updateSuccess.value = true;
     // Hide success message after 3 seconds
-    setTimeout(() => {
+    successTimeoutId.value = window.setTimeout(() => {
       updateSuccess.value = false;
     }, 3000);
   } catch (error) {
@@ -206,5 +207,11 @@ const updateDigestSubscription = async () => {
 
 onMounted(() => {
   loadUserData();
+});
+
+onUnmounted(() => {
+  if (successTimeoutId.value) {
+    clearTimeout(successTimeoutId.value);
+  }
 });
 </script>
