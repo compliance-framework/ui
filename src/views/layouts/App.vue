@@ -36,7 +36,7 @@ const sidebarStore = useSidebarStore();
     >
       <!-- Header -->
       <header
-        class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-3"
+        class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-3 relative z-40"
       >
         <div class="flex items-center justify-between">
           <div class="flex-1">

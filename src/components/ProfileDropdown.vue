@@ -3,6 +3,10 @@
     <!-- Profile Button -->
     <button
       @click="toggleDropdown"
+      :aria-expanded="isOpen"
+      aria-haspopup="true"
+      aria-controls="profile-menu"
+      id="profile-dropdown-button"
       class="flex items-center space-x-2 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
     >
       <!-- User Avatar (placeholder for now) -->
@@ -32,6 +36,9 @@
     <!-- Dropdown Menu -->
     <div
       v-if="isOpen"
+      id="profile-menu"
+      role="menu"
+      aria-labelledby="profile-dropdown-button"
       class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg z-50"
     >
       <div class="py-1">
@@ -48,6 +55,7 @@
         <!-- Menu Items -->
         <router-link
           to="/preferences"
+          role="menuitem"
           class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
           @click="closeDropdown"
         >
@@ -77,6 +85,7 @@
 
         <button
           @click="handleLogout"
+          role="menuitem"
           class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
         >
           <div class="flex items-center space-x-2">
@@ -119,7 +128,10 @@ const user = ref<CCFUser | null>(null);
 // Computed properties for user info
 const userName = computed(() => {
   if (!user.value) return 'Loading...';
-  return `${user.value.firstName} ${user.value.lastName}`;
+  if (user.value.firstName || user.value.lastName) {
+    return `${user.value.firstName || ''} ${user.value.lastName || ''}`.trim();
+  }
+  return 'Unknown User';
 });
 
 const userEmail = computed(() => {
@@ -128,7 +140,16 @@ const userEmail = computed(() => {
 
 const userInitials = computed(() => {
   if (!user.value) return 'U';
-  return `${user.value.firstName[0]}${user.value.lastName[0]}`.toUpperCase();
+
+  const firstName = user.value.firstName ? user.value.firstName.trim() : '';
+  const lastName = user.value.lastName ? user.value.lastName.trim() : '';
+
+  const firstInitial = firstName.length > 0 ? firstName[0] : '';
+  const lastInitial = lastName.length > 0 ? lastName[0] : '';
+
+  const initials = `${firstInitial}${lastInitial}`.trim();
+
+  return initials ? initials.toUpperCase() : 'U';
 });
 
 // Load user data
@@ -138,6 +159,7 @@ const loadUserData = async () => {
     user.value = response.data.data;
   } catch (error) {
     console.error('Error loading user data:', error);
+    user.value = null;
   }
 };
 
@@ -172,12 +194,21 @@ const handleClickOutside = (event: MouseEvent) => {
   }
 };
 
+// Handle keyboard events
+const handleKeyDown = (event: KeyboardEvent) => {
+  if (event.key === 'Escape' && isOpen.value) {
+    closeDropdown();
+  }
+};
+
 onMounted(() => {
   loadUserData();
   document.addEventListener('click', handleClickOutside);
+  document.addEventListener('keydown', handleKeyDown);
 });
 
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside);
+  document.removeEventListener('keydown', handleKeyDown);
 });
 </script>

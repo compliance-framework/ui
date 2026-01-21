@@ -2,6 +2,27 @@
   <template v-if="loading">
     <PageHeader>Loading preferences...</PageHeader>
   </template>
+  <template v-else-if="loadError">
+    <PageHeader>Error Loading Preferences</PageHeader>
+
+    <div class="max-w-2xl mx-auto">
+      <PageCard class="mb-6">
+        <div class="p-6">
+          <div class="p-4 bg-red-50 dark:bg-red-900/20 rounded-lg">
+            <p class="text-sm text-red-800 dark:text-red-200">
+              {{ loadError }}
+            </p>
+            <button
+              @click="loadUserData"
+              class="mt-3 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      </PageCard>
+    </div>
+  </template>
   <template v-else>
     <PageHeader>User Preferences</PageHeader>
 
@@ -38,6 +59,7 @@
                     @change="updateDigestSubscription"
                     :disabled="updating"
                     class="sr-only peer"
+                    aria-label="Toggle email digest subscription"
                   />
                   <div
                     class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"
@@ -123,6 +145,8 @@
 import { ref, onMounted } from 'vue';
 import { useAuthenticatedInstance } from '@/composables/axios';
 import type { CCFUser } from '@/stores/types';
+import PageHeader from '@/components/PageHeader.vue';
+import PageCard from '@/components/PageCard.vue';
 
 const axios = useAuthenticatedInstance();
 const user = ref<CCFUser | null>(null);
@@ -131,6 +155,7 @@ const updating = ref(false);
 const digestSubscribed = ref(false);
 const updateError = ref<string | null>(null);
 const updateSuccess = ref(false);
+const loadError = ref<string | null>(null);
 
 // Load user data and digest subscription
 const loadUserData = async () => {
@@ -146,6 +171,8 @@ const loadUserData = async () => {
     digestSubscribed.value = subscriptionResponse.data.data.subscribed;
   } catch (error) {
     console.error('Error loading user data:', error);
+    loadError.value =
+      'Failed to load preferences. Please refresh the page to try again.';
   } finally {
     loading.value = false;
   }
