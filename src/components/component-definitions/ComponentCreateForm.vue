@@ -115,7 +115,7 @@ const component = ref({
   // controlImplementations: [],
 });
 
-const { data: createdComponent, execute } = useDataApi<DefinedComponent[]>(
+const { execute } = useDataApi<DefinedComponent[]>(
   `/api/oscal/component-definitions/${props.componentDefinitionId}/components`,
   { method: 'POST', transformRequest: [decamelizeKeys] },
   { immediate: false },
@@ -154,16 +154,16 @@ async function createComponent(): Promise<void> {
       // Skip responsibleRoles, protocols, controlImplementations - they don't exist in DB schema
     };
 
-    await execute({
+    const response = await execute({
       data: [componentData],
     });
 
-    // Wait for the data ref to be updated and validate it
-    if (!createdComponent.value || createdComponent.value.length === 0) {
+    // Use response data directly to avoid race condition with data ref updates
+    if (!response.data.value?.data || response.data.value.data.length === 0) {
       throw new Error('No component was created. Please try again.');
     }
 
-    const createdComponentData = createdComponent.value[0];
+    const createdComponentData = response.data.value.data[0];
 
     // Validate that the created component has a UUID
     if (!createdComponentData.uuid) {
@@ -181,7 +181,11 @@ async function createComponent(): Promise<void> {
     let errorText = 'An error occurred while creating the component.';
 
     if (error instanceof AxiosError) {
-      errorText = error.response?.data.errors.body || errorText;
+      const axiosError = error as AxiosError<{ errors?: { body?: string } }>;
+      const bodyMessage = axiosError.response?.data?.errors?.body;
+      if (typeof bodyMessage === 'string' && bodyMessage.trim().length > 0) {
+        errorText = bodyMessage;
+      }
     } else if (error instanceof Error) {
       errorText = error.message;
     }
