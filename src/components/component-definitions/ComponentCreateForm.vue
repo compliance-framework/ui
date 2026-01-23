@@ -90,8 +90,7 @@ import { BIconArrowRepeat } from 'bootstrap-icons-vue';
 import { v4 as uuidv4 } from 'uuid';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
-import type { AxiosError } from 'axios';
-import type { ErrorBody, ErrorResponse } from '@/stores/types';
+import { AxiosError } from 'axios';
 
 const toast = useToast();
 
@@ -116,7 +115,7 @@ const component = ref({
   // controlImplementations: [],
 });
 
-const { data: createdComponent, execute } = useDataApi<DefinedComponent>(
+const { execute } = useDataApi<DefinedComponent[]>(
   `/api/oscal/component-definitions/${props.componentDefinitionId}/components`,
   { method: 'POST', transformRequest: [decamelizeKeys] },
   { immediate: false },
@@ -155,21 +154,42 @@ async function createComponent(): Promise<void> {
       // Skip responsibleRoles, protocols, controlImplementations - they don't exist in DB schema
     };
 
-    await execute({
+    const response = await execute({
       data: [componentData],
     });
+
+    // Use response data directly to avoid race condition with data ref updates
+    if (!response.data.value?.data || response.data.value.data.length === 0) {
+      throw new Error('No component was created. Please try again.');
+    }
+
+    const createdComponentData = response.data.value.data[0];
+
+    // Validate that the created component has a UUID
+    if (!createdComponentData.uuid) {
+      throw new Error('Created component is missing UUID. Please try again.');
+    }
+
     toast.add({
       severity: 'success',
       summary: 'Component created successfully',
       detail: `Component ${component.value.title} has been created.`,
       life: 3000,
     });
-    emit('created', createdComponent.value!);
+    emit('created', createdComponentData);
   } catch (error) {
-    const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
-    const errorText =
-      errorResponse.response?.data.errors.body ||
-      'An error occurred while creating the component.';
+    let errorText = 'An error occurred while creating the component.';
+
+    if (error instanceof AxiosError) {
+      const axiosError = error as AxiosError<{ errors?: { body?: string } }>;
+      const bodyMessage = axiosError.response?.data?.errors?.body;
+      if (typeof bodyMessage === 'string' && bodyMessage.trim().length > 0) {
+        errorText = bodyMessage;
+      }
+    } else if (error instanceof Error) {
+      errorText = error.message;
+    }
+
     toast.add({
       severity: 'error',
       summary: 'Error creating component',
