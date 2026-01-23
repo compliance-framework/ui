@@ -104,7 +104,7 @@ const capability = ref({
   // controlImplementations: [],
 });
 
-const { execute } = useDataApi<Capability[]>(
+const { data: newCapability, execute } = useDataApi<Capability[]>(
   `/api/oscal/component-definitions/${props.componentDefinitionId}/capabilities`,
   {
     method: 'POST',
@@ -139,16 +139,16 @@ async function createCapability(): Promise<void> {
       // Skip incorporatesComponents, controlImplementations - they may not exist in DB schema
     };
 
-    const response = await execute({
+    await execute({
       data: capabilityData,
     });
 
-    // Validate response before accessing the first element
-    if (!response.data.value?.data || response.data.value.data.length === 0) {
+    // Wait for the data ref to be updated and validate it
+    if (!newCapability.value || newCapability.value.length === 0) {
       throw new Error('No capability was created. Please try again.');
     }
 
-    const createdCapabilityData = response.data.value.data[0];
+    const createdCapabilityData = newCapability.value[0];
 
     // Validate that the created capability has a UUID
     if (!createdCapabilityData.uuid) {
