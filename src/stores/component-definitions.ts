@@ -332,7 +332,7 @@ export const useComponentDefinitionStore = defineStore(
       const config = await configStore.getConfig();
       const payload = decamelizeKeys(capability, { separator: '-' });
       const response = await fetch(
-        `${config.API_URL}/api/oscal/component-definitions/${id}/capability`,
+        `${config.API_URL}/api/oscal/component-definitions/${id}/capabilities`,
         {
           method: 'POST',
           headers: {

@@ -116,7 +116,7 @@ const component = ref({
   // controlImplementations: [],
 });
 
-const { data: createdComponent, execute } = useDataApi<DefinedComponent>(
+const { data: createdComponent, execute } = useDataApi<DefinedComponent[]>(
   `/api/oscal/component-definitions/${props.componentDefinitionId}/components`,
   { method: 'POST', transformRequest: [decamelizeKeys] },
   { immediate: false },
@@ -164,7 +164,7 @@ async function createComponent(): Promise<void> {
       detail: `Component ${component.value.title} has been created.`,
       life: 3000,
     });
-    emit('created', createdComponent.value!);
+    emit('created', createdComponent.value![0]);
   } catch (error) {
     const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
     const errorText =
