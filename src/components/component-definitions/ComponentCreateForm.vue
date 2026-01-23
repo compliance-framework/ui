@@ -116,7 +116,7 @@ const component = ref({
   // controlImplementations: [],
 });
 
-const { data: createdComponent, execute } = useDataApi<DefinedComponent[]>(
+const { execute } = useDataApi<DefinedComponent[]>(
   `/api/oscal/component-definitions/${props.componentDefinitionId}/components`,
   { method: 'POST', transformRequest: [decamelizeKeys] },
   { immediate: false },
@@ -155,16 +155,29 @@ async function createComponent(): Promise<void> {
       // Skip responsibleRoles, protocols, controlImplementations - they don't exist in DB schema
     };
 
-    await execute({
+    const response = await execute({
       data: [componentData],
     });
+
+    // Validate response before accessing the first element
+    if (!response.data.value?.data || response.data.value.data.length === 0) {
+      throw new Error('No component was created. Please try again.');
+    }
+
+    const createdComponentData = response.data.value.data[0];
+
+    // Validate that the created component has a UUID
+    if (!createdComponentData.uuid) {
+      throw new Error('Created component is missing UUID. Please try again.');
+    }
+
     toast.add({
       severity: 'success',
       summary: 'Component created successfully',
       detail: `Component ${component.value.title} has been created.`,
       life: 3000,
     });
-    emit('created', createdComponent.value![0]);
+    emit('created', createdComponentData);
   } catch (error) {
     const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
     const errorText =
