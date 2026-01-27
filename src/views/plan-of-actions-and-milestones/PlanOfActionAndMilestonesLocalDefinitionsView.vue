@@ -4,21 +4,13 @@
       <h2 class="text-xl font-semibold text-gray-900 dark:text-slate-300">
         Local Definitions
       </h2>
-      <div class="flex gap-2">
-        <button
-          @click="showCreateModal = true"
-          class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md"
-        >
-          Create New Local Definitions
-        </button>
-        <button
-          v-if="localDefinitions"
-          @click="showEditModal = true"
-          class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
-        >
-          Edit Local Definitions
-        </button>
-      </div>
+      <button
+        v-if="localDefinitions"
+        @click="showEditModal = true"
+        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
+      >
+        Edit Local Definitions
+      </button>
     </div>
 
     <div v-if="loading" class="text-center py-8">
@@ -253,6 +245,7 @@ import Dialog from '@/volt/Dialog.vue';
 import LocalDefinitionsForm from '@/components/poam/LocalDefinitionsForm.vue';
 import { useDataApi } from '@/composables/axios';
 import { getIdFromRoute } from '../../utils/get-poam-id-from-route';
+import type { AxiosError } from 'axios';
 
 const route = useRoute();
 
@@ -267,11 +260,19 @@ const dialogHeader = computed(() =>
 
 const {
   data: localDefinitions,
-  error,
+  error: rawError,
   isLoading: loading,
 } = useDataApi<POAMLocalDefinitions | null>(
   `/api/oscal/plan-of-action-and-milestones/${route.params.id}/local-definitions`,
 );
+
+// A 404 means no local definitions exist yet — treat as empty, not as an error
+const error = computed(() => {
+  if (!rawError.value) return null;
+  const status = (rawError.value as AxiosError)?.response?.status;
+  if (status === 404) return null;
+  return rawError.value;
+});
 
 function handleLocalDefinitionsSaved(
   savedLocalDefinitions: POAMLocalDefinitions,
