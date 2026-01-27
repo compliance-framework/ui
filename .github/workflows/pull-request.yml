@@ -82,24 +82,6 @@ jobs:
             echo "---"
             echo "✅ Linting completed automatically by CI."
           } >> "$GITHUB_STEP_SUMMARY"
-<<<<<<< HEAD
-      - name: Comment on PR
-        uses: marocchino/sticky-pull-request-comment@v2
-        if: ${{ github.event_name == 'pull_request_target' }}
-        with:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          message: |
-            ## 🧹 ESLint Report
-
-            | Status | Count |
-            |--------|-------|
-            | ❌ Errors   | **${{ steps.count-errors.outputs.errors }}** |
-            | ⚠️ Warnings | **${{ steps.count-errors.outputs.warnings }}** |
-
-            ---
-            ✅ *Linting completed automatically by CI.*
-=======
->>>>>>> 5fc96e6 (ci: remove pull_request_target; switch ESLint report to step summary)
 
       - name: Run tests using the `build` image
         run: |
