@@ -42,10 +42,22 @@
       <div class="flex items-start justify-between gap-4">
         <div>
           <TertiaryButton v-if="!statement">Add Statement</TertiaryButton>
-          <TertiaryButton v-if="!objective" class="ml-2"
+          <TertiaryButton
+            v-if="statement"
+            class="ml-2"
+            @click="showEditStatement = true"
+            >Edit Statement</TertiaryButton
+          >
+          <TertiaryButton
+            v-if="!objective"
+            class="ml-2"
+            @click="showEditObjective = true"
             >Add Objective</TertiaryButton
           >
-          <TertiaryButton v-if="!guidance" class="ml-2"
+          <TertiaryButton
+            v-if="!guidance"
+            class="ml-2"
+            @click="showEditGuidance = true"
             >Add Guidance</TertiaryButton
           >
 
@@ -100,6 +112,27 @@
           :parent-control="props.control"
           v-model="showControlForm"
         />
+        <ControlPartEditModal
+          v-model="showEditStatement"
+          :catalog="catalog"
+          :control="props.control"
+          type="statement"
+          @updated="onUpdated"
+        />
+        <ControlPartEditModal
+          v-model="showEditObjective"
+          :catalog="catalog"
+          :control="props.control"
+          type="assessment-objective"
+          @updated="onUpdated"
+        />
+        <ControlPartEditModal
+          v-model="showEditGuidance"
+          :catalog="catalog"
+          :control="props.control"
+          type="guidance"
+          @updated="onUpdated"
+        />
         <ControlEditModal
           v-model="showEdit"
           :catalog="catalog"
@@ -118,6 +151,7 @@ import { type Catalog, type Control } from '@/oscal';
 import TertiaryButton from '@/volt/TertiaryButton.vue';
 import ControlCreateModal from '@/components/catalogs/ControlCreateModal.vue';
 import ControlEditModal from '@/components/catalogs/ControlEditModal.vue';
+import ControlPartEditModal from '@/components/catalogs/ControlPartEditModal.vue';
 import type { Part } from '@/oscal';
 import PartDisplayEditor from '@/components/PartDisplayEditor.vue';
 import { useRouter } from 'vue-router';
@@ -179,6 +213,9 @@ function getPart(type: string) {
 
 const showControlForm = ref<boolean>(false);
 const showEdit = ref<boolean>(false);
+const showEditStatement = ref<boolean>(false);
+const showEditObjective = ref<boolean>(false);
+const showEditGuidance = ref<boolean>(false);
 
 function controlCreated(control: Control) {
   controls.value?.push(control);

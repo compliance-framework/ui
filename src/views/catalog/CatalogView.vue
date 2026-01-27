@@ -138,7 +138,6 @@ async function deleteCatalog(uuid: string, title: string) {
 function deleteCurrentCatalog() {
   deleteCatalog(catalogId.value, catalog.value?.metadata?.title || '');
 }
-
 function reloadLists() {
   groupExecute(`/api/oscal/catalogs/${catalogId.value}/groups`);
   catalogExecute(`/api/oscal/catalogs/${catalogId.value}/controls`);
