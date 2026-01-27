@@ -7,12 +7,14 @@ const mockExecute = vi.fn().mockResolvedValue({});
 const mockData = shallowRef(undefined);
 const mockIsLoading = ref(false);
 
+const mockUseDataApi = vi.fn().mockReturnValue({
+  data: mockData,
+  isLoading: mockIsLoading,
+  execute: mockExecute,
+});
+
 vi.mock('@/composables/axios', () => ({
-  useDataApi: () => ({
-    data: mockData,
-    isLoading: mockIsLoading,
-    execute: mockExecute,
-  }),
+  useDataApi: (...args: unknown[]) => mockUseDataApi(...args),
   decamelizeKeys: vi.fn((data: unknown) => JSON.stringify(data)),
 }));
 
@@ -44,12 +46,13 @@ describe('LocalDefinitionsForm', () => {
 
   describe('API URL', () => {
     it('uses the correct API URL (singular plan-of-action-and-milestones)', () => {
-      // The useDataApi mock is called with the URL during setup.
-      // We verify the component source uses the right URL by checking the mock was invoked.
-      // The real validation is that the import succeeds and the component renders
-      // with the corrected URL (plan-of-action-and-milestones, not plan-of-actions-and-milestones).
-      const wrapper = mountForm();
-      expect(wrapper.exists()).toBe(true);
+      mountForm();
+
+      const url = mockUseDataApi.mock.calls[0][0];
+      expect(url).toBe(
+        '/api/oscal/plan-of-action-and-milestones/test-poam-id/local-definitions',
+      );
+      expect(url).not.toContain('plan-of-actions-and-milestones');
     });
   });
 
