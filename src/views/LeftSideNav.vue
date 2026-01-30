@@ -104,6 +104,10 @@ const links = ref<Array<NavigationItem>>([
         abbr: 'PR',
       },
       {
+        name: 'profile-build-props',
+        title: 'Build Profile by Props',
+      },
+      {
         name: 'component-definitions',
         title: 'Component Definitions',
       },
@@ -118,11 +122,6 @@ const links = ref<Array<NavigationItem>>([
       {
         name: 'users-list',
         title: 'System Users',
-      },
-      {
-        name: 'admin-import',
-        title: 'Import',
-        abbr: 'IMP',
       },
     ],
   },
