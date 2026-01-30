@@ -1,5 +1,10 @@
 <template>
   <PageHeader>Profiles</PageHeader>
+  <div class="mt-2">
+    <RouterLinkButton class="mr-2" :to="{ name: 'profile:build-props' }">
+      Build Profile by Props
+    </RouterLinkButton>
+  </div>
   <div
     class="mt-4 overflow-hidden rounded-lg border border-ccf-300 bg-white shadow dark:border-slate-700 dark:bg-slate-900"
   >
@@ -63,6 +68,9 @@
   <div class="my-4">
     <RouterLinkButton :to="{ name: 'profile:create' }">
       Create New Profile
+    </RouterLinkButton>
+    <RouterLinkButton class="ml-2" :to="{ name: 'profile:build-props' }">
+      Build Profile by Props
     </RouterLinkButton>
   </div>
 </template>
