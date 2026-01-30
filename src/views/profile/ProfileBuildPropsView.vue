@@ -27,6 +27,25 @@
             </p>
           </div>
           <div>
+            <label class="block text-sm font-medium mb-1">Select Catalog</label>
+            <select
+              v-model="selectedCatalog"
+              @change="selectCatalog(selectedCatalog)"
+              class="w-full rounded border px-3 py-2 dark:bg-slate-800 dark:text-slate-200"
+            >
+              <option value="" disabled>Select a catalog</option>
+              <option v-for="c in catalogs || []" :key="c.uuid" :value="c.uuid">
+                {{ c.metadata?.title || c.uuid }}
+              </option>
+            </select>
+            <p
+              v-if="!catalogs || catalogs.length === 0"
+              class="text-xs mt-1 text-gray-500"
+            >
+              No catalogs found. Import or create a catalog first.
+            </p>
+          </div>
+          <div>
             <label class="block text-sm font-medium mb-1">Match Strategy</label>
             <select
               v-model="matchStrategy"
@@ -141,12 +160,19 @@ import PrimaryButton from '@/volt/PrimaryButton.vue';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import type { AxiosHeaders } from 'axios';
+import type { Catalog } from '@/oscal';
 
 const toast = useToast();
 const uuidRe =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
 
 const catalogId = ref<string>('');
+const { data: catalogs } = useDataApi<Catalog[]>('/api/oscal/catalogs');
+const selectedCatalog = ref<string>('');
+function selectCatalog(id: string) {
+  selectedCatalog.value = id;
+  catalogId.value = id;
+}
 const matchStrategy = ref<'any' | 'all'>('any');
 const title = ref<string>('Prop-Matched Profile');
 const version = ref<string>('1.0.0');
