@@ -65,6 +65,98 @@ const authenticatedRoutes = [
     },
   },
   {
+    path: 'workflow-definitions/:id',
+    name: 'workflow-definition-editor',
+    component: () =>
+      import('../views/workflows/WorkflowDefinitionEditorView.vue'),
+    meta: {
+      requiresAuth: true,
+    },
+    children: [
+      {
+        path: '',
+        name: 'workflow-definition-overview',
+        component: () =>
+          import('../views/workflows/WorkflowDefinitionOverviewView.vue'),
+      },
+      {
+        path: 'steps',
+        name: 'workflow-definition-steps',
+        component: () =>
+          import('../views/workflows/WorkflowDefinitionStepsView.vue'),
+      },
+      {
+        path: 'controls',
+        name: 'workflow-definition-controls',
+        component: () =>
+          import('../views/workflows/WorkflowDefinitionControlsView.vue'),
+      },
+      {
+        path: 'json',
+        name: 'workflow-definition-json',
+        component: () =>
+          import('../views/workflows/WorkflowDefinitionJSONView.vue'),
+      },
+    ],
+  },
+  {
+    path: 'workflow-instances',
+    name: 'workflow-instances:index',
+    component: () =>
+      import('../views/workflow-instances/WorkflowInstancesIndexView.vue'),
+    meta: {
+      requiresAuth: true,
+    },
+  },
+  {
+    path: 'workflow-instances/:id',
+    name: 'workflow-instance-editor',
+    component: () =>
+      import('../views/workflow-instances/WorkflowInstanceEditorView.vue'),
+    meta: {
+      requiresAuth: true,
+    },
+    children: [
+      {
+        path: '',
+        name: 'workflow-instance-overview',
+        component: () =>
+          import(
+            '../views/workflow-instances/WorkflowInstanceOverviewView.vue'
+          ),
+      },
+      {
+        path: 'roles',
+        name: 'workflow-instance-roles',
+        component: () =>
+          import('../views/workflow-instances/WorkflowInstanceRolesView.vue'),
+      },
+      {
+        path: 'executions',
+        name: 'workflow-instance-executions',
+        component: () =>
+          import(
+            '../views/workflow-instances/WorkflowInstanceExecutionsView.vue'
+          ),
+      },
+      {
+        path: 'json',
+        name: 'workflow-instance-json',
+        component: () =>
+          import('../views/workflow-instances/WorkflowInstanceJSONView.vue'),
+      },
+    ],
+  },
+  {
+    path: 'workflow-executions/:id',
+    name: 'workflow-execution-view',
+    component: () =>
+      import('../views/workflow-executions/WorkflowExecutionView.vue'),
+    meta: {
+      requiresAuth: true,
+    },
+  },
+  {
     path: 'system',
     name: 'system',
     component: () => import('../views/SystemView.vue'),

@@ -50,8 +50,13 @@ const links = ref<Array<NavigationItem>>([
   },
   {
     name: 'workflow:index',
-    title: 'Workflows',
-    abbr: 'WF',
+    title: 'Workflow Definitions',
+    abbr: 'WD',
+  },
+  {
+    name: 'workflow-instances:index',
+    title: 'Workflow Instances',
+    abbr: 'WI',
   },
   {
     name: 'risks:index',

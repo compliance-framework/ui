@@ -27,7 +27,6 @@ const createControlList = (
     abortPrevious: false,
   });
   const controls = ref<SelectControl[]>([]);
-  const catalogIDs = toValue(catalogUUIDs);
   const errorRef = ref<string | ErrorResponse<unknown> | null>(null);
 
   watch(catalogUUIDs, buildControlList, { immediate: true });
@@ -36,7 +35,7 @@ const createControlList = (
     console.log('[useControlList] Building control list: start');
     // Clear before (re)building for consistent demos/UX
     controls.value = [];
-    catalogIDs.forEach(async (catalogUUID) => {
+    toValue(catalogUUIDs).forEach(async (catalogUUID) => {
       try {
         console.time(`[useControlList] fetch catalog ${catalogUUID}`);
         const response = await fetchFullCatalog(
