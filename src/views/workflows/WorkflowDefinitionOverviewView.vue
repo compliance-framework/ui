@@ -139,7 +139,6 @@ import { useWorkflowDefinitionStore } from '@/stores/workflows/definitions';
 import { useToast } from 'primevue/usetoast';
 import type {
   WorkflowDefinitionUpdate,
-  WorkflowDefinitionStatus,
   CadenceType,
   EvidenceType,
 } from '@/types/workflows';
@@ -174,13 +173,6 @@ const errorMessage = ref('');
 const isSubmitting = ref(false);
 const selectedEvidenceTypes = ref<EvidenceType[]>([]);
 
-const statusOptions: Array<{ label: string; value: WorkflowDefinitionStatus }> =
-  [
-    { label: 'Draft', value: 'draft' },
-    { label: 'Published', value: 'published' },
-    { label: 'Deprecated', value: 'deprecated' },
-  ];
-
 const cadenceOptions: Array<{ label: string; value: CadenceType }> = [
   { label: 'Daily', value: 'daily' },
   { label: 'Weekly', value: 'weekly' },
@@ -211,7 +203,7 @@ function initForm() {
     form.evidenceRequired = store.definition.evidenceRequired;
     selectedEvidenceTypes.value = parseEvidenceRequired(
       store.definition.evidenceRequired,
-    );
+    ).map((req) => req.type);
 
     originalForm.value = { ...form };
   }

@@ -196,13 +196,9 @@ import PrimaryButton from '@/volt/PrimaryButton.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
 import Badge from '@/volt/Badge.vue';
 import Dialog from '@/volt/Dialog.vue';
-import Label from '@/volt/Label.vue';
-import InputText from '@/volt/InputText.vue';
-import Select from '@/volt/Select.vue';
 import AutoComplete from '@/volt/AutoComplete.vue';
 import Message from '@/volt/Message.vue';
-interface User extends CCFUser {}
-interface DisplayUser extends User {
+interface DisplayUser extends CCFUser {
   displayName: string;
 }
 
@@ -232,7 +228,7 @@ const availableRoles = computed(() => {
 });
 
 // Users API
-const { execute: fetchUsers, data: usersData } = useDataApi<User[]>(
+const { execute: fetchUsers, data: usersData } = useDataApi<CCFUser[]>(
   '/api/admin/users',
   null,
   {
@@ -263,7 +259,7 @@ async function searchUsers(event: { query: string }) {
     const displayUsers = filtered.map(toDisplayUser);
     userSuggestions.value = displayUsers;
     displayUsers.forEach(cacheUser);
-  } catch (error) {
+  } catch {
     userSuggestions.value = [
       {
         id: event.query,
@@ -277,7 +273,7 @@ async function searchUsers(event: { query: string }) {
   }
 }
 
-function toDisplayUser(user: User): DisplayUser {
+function toDisplayUser(user: CCFUser): DisplayUser {
   const displayName =
     `${user.firstName} ${user.lastName}`.trim() || user.email || user.id;
   return {

@@ -1,17 +1,36 @@
-import type { EvidenceType } from '@/types/workflows';
+import type { EvidenceRequirement, EvidenceType } from '@/types/workflows';
 
 export function parseEvidenceRequired(
-  rawValue?: string | null,
-): EvidenceType[] {
+  rawValue?: string | EvidenceRequirement[] | null,
+): EvidenceRequirement[] {
   if (!rawValue) {
     return [];
   }
 
+  // Already an array (new format)
+  if (Array.isArray(rawValue)) {
+    return rawValue;
+  }
+
+  // Try to parse as JSON string (legacy format fallback)
   try {
     const parsed = JSON.parse(rawValue);
     if (Array.isArray(parsed)) {
-      return parsed.filter(
-        (value): value is EvidenceType => typeof value === 'string',
+      // Check if it's the new format (objects with type/description/required)
+      if (
+        parsed.length > 0 &&
+        typeof parsed[0] === 'object' &&
+        'type' in parsed[0]
+      ) {
+        return parsed as EvidenceRequirement[];
+      }
+      // Legacy format: array of strings - convert to new format
+      return parsed.map(
+        (type: string): EvidenceRequirement => ({
+          type: type as EvidenceType,
+          description: '',
+          required: true,
+        }),
       );
     }
   } catch {
@@ -21,10 +40,22 @@ export function parseEvidenceRequired(
   return [];
 }
 
-export function stringifyEvidenceRequired(values: EvidenceType[]): string {
-  return JSON.stringify(values);
+export function stringifyEvidenceRequired(types: EvidenceType[]): string {
+  return JSON.stringify(types);
 }
 
-export function hasEvidenceRequirement(rawValue?: string | null): boolean {
-  return parseEvidenceRequired(rawValue).length > 0;
+export function hasEvidenceRequirement(
+  rawValue?: string | EvidenceRequirement[] | null,
+): boolean {
+  const requirements = parseEvidenceRequired(rawValue);
+  return requirements.length > 0;
+}
+
+export function getRequiredEvidenceTypes(
+  requirements?: EvidenceRequirement[] | null,
+): EvidenceType[] {
+  if (!requirements || !Array.isArray(requirements)) {
+    return [];
+  }
+  return requirements.filter((req) => req.required).map((req) => req.type);
 }

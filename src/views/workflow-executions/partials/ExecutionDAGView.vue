@@ -82,7 +82,7 @@
                 Role:
                 {{
                   (step.workflowStepDefinition || step.stepDefinition)
-                    .responsibleRole
+                    ?.responsibleRole
                 }}
               </div>
             </div>

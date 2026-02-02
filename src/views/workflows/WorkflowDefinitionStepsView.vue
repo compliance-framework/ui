@@ -103,7 +103,7 @@
       v-model:visible="showForm"
       :header="editingStep ? 'Edit Step' : 'Add Step'"
       position="right"
-      class="w-full max-w-lg"
+      class="w-full! md:w-1/2! lg:w-3/5!"
     >
       <StepDefinitionForm
         :step="editingStep ?? undefined"

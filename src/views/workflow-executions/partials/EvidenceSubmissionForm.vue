@@ -2,9 +2,12 @@
   <div
     class="p-4 border-2 border-dashed border-blue-300 dark:border-blue-700 rounded-lg bg-blue-50/50 dark:bg-blue-900/10"
   >
-    <h4 class="text-sm font-medium text-gray-900 dark:text-slate-200 mb-4">
-      Submit Evidence
+    <h4 class="text-sm font-medium text-gray-900 dark:text-slate-200 mb-2">
+      Add Evidence
     </h4>
+    <p class="text-xs text-gray-600 dark:text-slate-400 mb-4">
+      Evidence will be submitted when you complete the step
+    </p>
 
     <div class="space-y-4">
       <!-- Evidence Type Selector -->
@@ -25,19 +28,27 @@
         <input
           id="file"
           type="file"
+          multiple
           @change="handleFileChange"
           accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif"
           class="w-full px-3 py-2 border border-ccf-300 dark:border-slate-700 rounded-md bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-200"
         />
         <small class="text-gray-500 dark:text-slate-400">
-          Supported: PDF, Word, Images (max 10MB)
+          Supported: PDF, Word, Images (max 10MB per file, multiple files
+          allowed)
         </small>
-        <div
-          v-if="selectedFile"
-          class="mt-2 text-sm text-green-600 dark:text-green-400"
-        >
-          <i class="pi pi-check-circle mr-1"></i>
-          {{ selectedFile.name }} ({{ formatFileSize(selectedFile.size) }})
+        <div v-if="selectedFiles.length > 0" class="mt-2 space-y-1">
+          <div class="text-sm text-green-600 dark:text-green-400">
+            <i class="pi pi-check-circle mr-1"></i>
+            {{ selectedFiles.length }} file(s) selected:
+          </div>
+          <div
+            v-for="file in selectedFiles"
+            :key="file.name"
+            class="text-xs text-gray-600 dark:text-slate-400 ml-4"
+          >
+            • {{ file.name }} ({{ formatFileSize(file.size) }})
+          </div>
         </div>
       </div>
 
@@ -76,15 +87,15 @@
         {{ submitError }}
       </Message>
 
-      <!-- Submit Button -->
+      <!-- Add Evidence Button -->
       <PrimaryButton
         @click="handleSubmit"
         :disabled="isSubmitting || !canSubmit"
         class="w-full"
       >
         <i v-if="isSubmitting" class="pi pi-spin pi-spinner mr-2"></i>
-        <i v-else class="pi pi-upload mr-2"></i>
-        Submit Evidence
+        <i v-else class="pi pi-plus mr-2"></i>
+        Add Evidence
       </PrimaryButton>
     </div>
   </div>
@@ -92,8 +103,11 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { useStepExecutions } from '@/composables/workflows';
-import type { StepExecution, EvidenceType } from '@/types/workflows';
+import type {
+  StepExecution,
+  EvidenceType,
+  StepExecutionEvidenceSubmit,
+} from '@/types/workflows';
 import Label from '@/volt/Label.vue';
 import Select from '@/volt/Select.vue';
 import InputText from '@/volt/InputText.vue';
@@ -107,10 +121,10 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  'evidence-submitted': [];
+  'evidence-submitted': [evidence: StepExecutionEvidenceSubmit];
 }>();
 
-const { submitEvidence } = useStepExecutions();
+// No longer using submitEvidence from composable - evidence is collected locally
 
 const evidenceForm = ref<{
   type: EvidenceType | '';
@@ -122,7 +136,7 @@ const evidenceForm = ref<{
   linkUrl: '',
 });
 
-const selectedFile = ref<File | null>(null);
+const selectedFiles = ref<File[]>([]);
 const isSubmitting = ref(false);
 const submitError = ref('');
 
@@ -164,7 +178,8 @@ const isLinkEvidenceType = computed(() => {
 const canSubmit = computed(() => {
   if (!evidenceForm.value.type) return false;
 
-  if (isFileEvidenceType.value && !selectedFile.value) return false;
+  if (isFileEvidenceType.value && selectedFiles.value.length === 0)
+    return false;
   if (
     isAttestationEvidenceType.value &&
     !evidenceForm.value.attestationText.trim()
@@ -179,16 +194,17 @@ const canSubmit = computed(() => {
 function handleFileChange(event: Event) {
   const target = event.target as HTMLInputElement;
   if (target.files && target.files.length > 0) {
-    const file = target.files[0];
+    const files = Array.from(target.files);
 
-    // Validate file size (10MB max)
-    if (file.size > 10 * 1024 * 1024) {
-      submitError.value = 'File size must be less than 10MB';
-      selectedFile.value = null;
+    // Validate each file size (10MB max)
+    const oversizedFiles = files.filter((file) => file.size > 10 * 1024 * 1024);
+    if (oversizedFiles.length > 0) {
+      submitError.value = `The following files exceed 10MB limit: ${oversizedFiles.map((f) => f.name).join(', ')}`;
+      selectedFiles.value = [];
       return;
     }
 
-    selectedFile.value = file;
+    selectedFiles.value = files;
     submitError.value = '';
   }
 }
@@ -206,35 +222,64 @@ async function handleSubmit() {
   submitError.value = '';
 
   try {
-    await submitEvidence(
-      props.step.id,
-      {
+    // Handle file uploads - create separate evidence for each file
+    if (selectedFiles.value.length > 0) {
+      for (const file of selectedFiles.value) {
+        const fileData = await fileToBase64(file);
+
+        const evidence: StepExecutionEvidenceSubmit = {
+          evidenceType: evidenceForm.value.type as EvidenceType,
+          file: file,
+          fileName: file.name,
+          fileData,
+          fileSize: file.size,
+        };
+
+        // Emit each evidence item to parent component
+        emit('evidence-submitted', evidence);
+      }
+    } else {
+      // Handle non-file evidence (attestation, link)
+      const evidence: StepExecutionEvidenceSubmit = {
         evidenceType: evidenceForm.value.type as EvidenceType,
-        file: selectedFile.value || undefined,
         attestationText: evidenceForm.value.attestationText || undefined,
         linkUrl: evidenceForm.value.linkUrl || undefined,
-      },
-      () => {
-        // Reset form
-        evidenceForm.value = {
-          type: '',
-          attestationText: '',
-          linkUrl: '',
-        };
-        selectedFile.value = null;
+      };
 
-        // Clear file input
-        const fileInput = document.getElementById('file') as HTMLInputElement;
-        if (fileInput) fileInput.value = '';
+      // Emit the evidence to parent component
+      emit('evidence-submitted', evidence);
+    }
 
-        emit('evidence-submitted');
-      },
-    );
+    // Reset form
+    evidenceForm.value = {
+      type: '',
+      attestationText: '',
+      linkUrl: '',
+    };
+    selectedFiles.value = [];
+
+    // Clear file input
+    const fileInput = document.getElementById('file') as HTMLInputElement;
+    if (fileInput) fileInput.value = '';
   } catch (error) {
     submitError.value =
-      error instanceof Error ? error.message : 'Failed to submit evidence';
+      error instanceof Error ? error.message : 'Failed to collect evidence';
   } finally {
     isSubmitting.value = false;
   }
+}
+
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => {
+      // Remove the data URL prefix (e.g., "data:image/png;base64,")
+      const result = reader.result as string;
+      const base64 = result.split(',')[1];
+      resolve(base64);
+    };
+    reader.onerror = (error) => reject(error);
+  });
 }
 </script>

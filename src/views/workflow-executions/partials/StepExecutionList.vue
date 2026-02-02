@@ -42,7 +42,8 @@
               class="mt-2 text-sm text-gray-600 dark:text-slate-400"
             >
               {{
-                (step.workflowStepDefinition || step.stepDefinition).description
+                (step.workflowStepDefinition || step.stepDefinition)
+                  ?.description
               }}
             </p>
             <div
@@ -57,7 +58,7 @@
                 <i class="pi pi-user mr-1"></i>
                 {{
                   (step.workflowStepDefinition || step.stepDefinition)
-                    .responsibleRole
+                    ?.responsibleRole
                 }}
               </span>
               <span v-if="step.startedAt">

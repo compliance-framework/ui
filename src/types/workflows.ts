@@ -94,7 +94,7 @@ export interface StepDefinition {
   name: string;
   description?: string;
   responsibleRole?: string;
-  evidenceRequired: string;
+  evidenceRequired: EvidenceRequirement[];
   estimatedDurationMinutes?: number;
   order: number;
   createdAt: string;
@@ -107,7 +107,7 @@ export interface StepDefinitionCreate {
   name: string;
   description?: string;
   responsibleRole?: string;
-  evidenceRequired?: string;
+  evidenceRequired?: EvidenceRequirement[];
   estimatedDurationMinutes?: number;
   order?: number;
   dependsOn?: string[];
@@ -117,7 +117,7 @@ export interface StepDefinitionUpdate {
   name?: string;
   description?: string;
   responsibleRole?: string;
-  evidenceRequired?: string;
+  evidenceRequired?: EvidenceRequirement[];
   estimatedDurationMinutes?: number;
   order?: number;
   dependsOn?: string[];
@@ -137,6 +137,7 @@ export interface WorkflowInstance {
   controlId?: string;
   cadence: CadenceType;
   status: WorkflowInstanceStatus;
+  isActive?: boolean; // Backend field for active status (camelCase)
   lastExecutionId?: string;
   lastExecutionAt?: string;
   nextScheduledAt?: string;
@@ -241,6 +242,27 @@ export interface StepExecutionStatusUpdate {
   status: StepExecutionStatus;
 }
 
+// New transition request matching the updated API
+export interface StepTransitionRequest {
+  status: 'in_progress' | 'completed';
+  evidence?: StepExecutionEvidenceSubmit[];
+  notes?: string;
+  userId: string;
+  userType: 'user' | 'group' | 'email';
+}
+
+export interface CanTransitionResponse {
+  canTransition: boolean;
+  userId: string;
+  userType: string;
+}
+
+export interface EvidenceRequirement {
+  type: EvidenceType;
+  required: boolean;
+  description?: string;
+}
+
 export interface StepExecutionEvidence {
   id: string;
   stepExecutionId: string;
@@ -256,8 +278,12 @@ export interface StepExecutionEvidence {
 export interface StepExecutionEvidenceSubmit {
   evidenceType: EvidenceType;
   file?: File;
+  fileName?: string;
+  fileData?: string; // base64 encoded file data
+  fileSize?: number;
   attestationText?: string;
   linkUrl?: string;
+  metadata?: string; // Additional metadata for the evidence
 }
 
 export interface StepExecutionFail {

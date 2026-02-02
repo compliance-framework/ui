@@ -66,7 +66,7 @@ async function copyToClipboard() {
       detail: 'JSON copied to clipboard',
       life: 3000,
     });
-  } catch (error) {
+  } catch {
     toast.add({
       severity: 'error',
       summary: 'Copy Failed',

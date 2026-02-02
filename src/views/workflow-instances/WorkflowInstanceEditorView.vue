@@ -254,7 +254,7 @@ async function confirmExecute() {
         });
       },
     );
-  } catch (error) {
+  } catch {
     // Error handled by composable
   } finally {
     isExecuting.value = false;

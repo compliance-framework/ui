@@ -259,7 +259,6 @@ import {
 } from '@/composables/workflows';
 import type {
   WorkflowInstance,
-  WorkflowDefinition,
   WorkflowInstanceStatus,
   CadenceType,
 } from '@/types/workflows';
@@ -364,7 +363,7 @@ async function confirmExecute() {
 
   isExecuting.value = true;
   try {
-    const execution = await startExecution(
+    await startExecution(
       { workflowInstanceId: executingInstance.value.id },
       (exec) => {
         toast.add({
@@ -381,7 +380,7 @@ async function confirmExecute() {
       },
     );
     showExecuteDialog.value = false;
-  } catch (error) {
+  } catch {
     // Error handled by composable
   } finally {
     isExecuting.value = false;

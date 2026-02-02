@@ -79,17 +79,67 @@
     </div>
 
     <!-- Evidence Types (if evidence required) -->
-    <div v-if="form.evidenceRequiredEnabled">
-      <Label for="step-evidence-types">Evidence Types</Label>
-      <MultiSelect
-        id="step-evidence-types"
-        v-model="form.evidenceTypes"
-        :options="evidenceTypeOptions"
-        optionLabel="label"
-        optionValue="value"
-        placeholder="Select allowed evidence types"
-        class="w-full"
-      />
+    <div v-if="form.evidenceRequiredEnabled" class="space-y-3">
+      <div class="flex items-center justify-between">
+        <Label>Evidence Requirements</Label>
+        <SecondaryButton
+          type="button"
+          size="small"
+          @click="
+            form.evidenceItems.push({
+              type: 'document',
+              description: '',
+              required: true,
+            })
+          "
+        >
+          <i class="pi pi-plus mr-1"></i>
+          Add Evidence
+        </SecondaryButton>
+      </div>
+
+      <div
+        v-for="(item, index) in form.evidenceItems"
+        :key="index"
+        class="p-3 border border-gray-200 dark:border-slate-600 rounded-lg space-y-3"
+      >
+        <div class="flex items-center gap-2">
+          <Select
+            v-model="item.type"
+            :options="evidenceTypeOptions"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Select type"
+            class="w-40"
+          />
+          <div class="flex items-center gap-2 ml-auto">
+            <input
+              :id="'required-' + index"
+              v-model="item.required"
+              type="checkbox"
+              class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            />
+            <Label :for="'required-' + index" class="mb-0 text-sm"
+              >Required</Label
+            >
+          </div>
+          <SecondaryButton
+            v-if="form.evidenceItems.length > 1"
+            type="button"
+            size="small"
+            severity="danger"
+            @click="form.evidenceItems.splice(index, 1)"
+          >
+            <i class="pi pi-trash mr-1"></i>
+            Remove
+          </SecondaryButton>
+        </div>
+        <InputText
+          v-model="item.description"
+          placeholder="Description (e.g., 'Security assessment report')"
+          class="w-full"
+        />
+      </div>
     </div>
 
     <!-- Dependencies -->
@@ -136,15 +186,14 @@ import type {
   StepDefinition,
   StepDefinitionCreate,
   StepDefinitionUpdate,
+  EvidenceRequirement,
   EvidenceType,
 } from '@/types/workflows';
-import {
-  parseEvidenceRequired,
-  stringifyEvidenceRequired,
-} from '@/utils/workflows';
+import { parseEvidenceRequired } from '@/utils/workflows';
 import Label from '@/volt/Label.vue';
 import InputText from '@/volt/InputText.vue';
 import Textarea from '@/volt/Textarea.vue';
+import Select from '@/volt/Select.vue';
 import MultiSelect from '@/volt/MultiSelect.vue';
 import Message from '@/volt/Message.vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
@@ -163,19 +212,27 @@ const emit = defineEmits<{
 
 const { createStep, updateStep } = useWorkflowStepDefinitions();
 
+type EvidenceItem = {
+  type: EvidenceType;
+  description: string;
+  required: boolean;
+};
+
 type StepFormState = {
   workflowDefinitionId: string;
   name: string;
   description: string;
   responsibleRole: string;
   evidenceRequiredEnabled: boolean;
-  evidenceTypes: EvidenceType[];
+  evidenceItems: EvidenceItem[];
   estimatedDurationMinutes: number;
   order: number;
   dependsOn: string[];
 };
 
-const defaultEvidenceTypes: EvidenceType[] = ['document', 'attestation'];
+const defaultEvidenceItems: EvidenceItem[] = [
+  { type: 'document', description: '', required: true },
+];
 
 const form = reactive<StepFormState>({
   workflowDefinitionId: props.workflowDefinitionId,
@@ -183,7 +240,7 @@ const form = reactive<StepFormState>({
   description: '',
   responsibleRole: '',
   evidenceRequiredEnabled: true,
-  evidenceTypes: [...defaultEvidenceTypes],
+  evidenceItems: [...defaultEvidenceItems],
   estimatedDurationMinutes: 30,
   order: 1,
   dependsOn: [],
@@ -215,8 +272,14 @@ function initForm() {
     form.description = props.step.description || '';
     form.responsibleRole = props.step.responsibleRole || '';
     form.evidenceRequiredEnabled = parsedEvidence.length > 0;
-    form.evidenceTypes =
-      parsedEvidence.length > 0 ? parsedEvidence : [...defaultEvidenceTypes];
+    form.evidenceItems =
+      parsedEvidence.length > 0
+        ? parsedEvidence.map((req) => ({
+            type: req.type,
+            description: req.description || '',
+            required: req.required,
+          }))
+        : [...defaultEvidenceItems];
     form.estimatedDurationMinutes = props.step.estimatedDurationMinutes || 30;
     form.order = props.step.order;
     form.dependsOn = props.step.dependsOn?.map((d) => d.dependsOnStepId) || [];
@@ -226,7 +289,7 @@ function initForm() {
     form.description = '';
     form.responsibleRole = '';
     form.evidenceRequiredEnabled = true;
-    form.evidenceTypes = [...defaultEvidenceTypes];
+    form.evidenceItems = [...defaultEvidenceItems];
     form.estimatedDurationMinutes = 30;
     form.order = props.availableSteps.length + 1;
     form.dependsOn = [];
@@ -254,10 +317,14 @@ function validate(): boolean {
   return true;
 }
 
-function buildEvidencePayload(): string {
-  return stringifyEvidenceRequired(
-    form.evidenceRequiredEnabled ? form.evidenceTypes : [],
-  );
+function buildEvidencePayload(): EvidenceRequirement[] {
+  return form.evidenceRequiredEnabled
+    ? form.evidenceItems.map((item) => ({
+        type: item.type,
+        description: item.description,
+        required: item.required,
+      }))
+    : [];
 }
 
 async function handleSubmit() {

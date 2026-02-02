@@ -412,7 +412,6 @@ const connections = computed<Connection[]>(() => {
   const outgoingUsage = new Map<string, number>();
   const incomingUsage = new Map<string, number>();
 
-  const allNodeYs = nodes.value.map((n) => n.y);
   props.steps.forEach((step) => {
     getParentIds(step).forEach((parentId) => {
       const fromNode = nodeMap.get(parentId);

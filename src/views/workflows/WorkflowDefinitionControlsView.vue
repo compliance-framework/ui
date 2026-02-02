@@ -135,7 +135,7 @@ import { useControlRelationships } from '@/composables/workflows';
 import { useDataApi } from '@/composables/axios';
 import { createControlList } from '@/composables/useControlList';
 import type { ControlRelationship } from '@/types/workflows';
-import type { Catalog, Control } from '@/oscal';
+import type { Catalog } from '@/oscal';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
 import Dialog from '@/volt/Dialog.vue';

@@ -2,7 +2,7 @@
   <Drawer
     v-model:visible="isVisible"
     position="right"
-    class="w-full md:w-[600px]"
+    class="w-full! md:w-1/2! lg:w-3/5!"
     :header="stepName"
   >
     <template v-if="step">
@@ -101,12 +101,13 @@
           </h4>
           <div class="space-y-1">
             <div
-              v-for="req in evidenceRequirements"
-              :key="req"
+              v-for="(req, index) in evidenceRequirements"
+              :key="req.type + '-' + index"
               class="flex items-center gap-2 text-sm text-gray-700 dark:text-slate-300"
             >
               <i class="pi pi-check-circle text-blue-600"></i>
-              <span class="capitalize">{{ req }}</span>
+              <span class="capitalize">{{ req.description || req.type }}</span>
+              <span v-if="req.required" class="text-xs text-amber-600">*</span>
             </div>
           </div>
         </div>
@@ -154,11 +155,63 @@
           </div>
         </div>
 
+        <!-- Collected Evidence (not yet submitted) -->
+        <div v-if="collectedEvidence.length > 0" class="space-y-2">
+          <h4 class="text-sm font-medium text-gray-900 dark:text-slate-200">
+            Collected Evidence ({{ collectedEvidence.length }})
+            <Badge severity="info" size="small" class="ml-2"
+              >Ready to submit</Badge
+            >
+          </h4>
+          <div class="space-y-2">
+            <div
+              v-for="(evidence, index) in collectedEvidence"
+              :key="index"
+              class="p-3 border border-blue-300 dark:border-blue-700 bg-blue-50/50 dark:bg-blue-900/10 rounded-lg"
+            >
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <i class="pi pi-file-edit text-blue-600"></i>
+                  <div>
+                    <div
+                      class="text-sm font-medium text-gray-900 dark:text-slate-200 capitalize"
+                    >
+                      {{ evidence.evidenceType }}
+                    </div>
+                    <div class="text-xs text-blue-600 dark:text-blue-400">
+                      Will be submitted when step is completed
+                    </div>
+                  </div>
+                </div>
+                <SecondaryButton
+                  size="small"
+                  severity="danger"
+                  @click="collectedEvidence.splice(index, 1)"
+                >
+                  <i class="pi pi-times"></i>
+                </SecondaryButton>
+              </div>
+              <div
+                v-if="evidence.attestationText"
+                class="mt-2 text-sm text-gray-600 dark:text-slate-400"
+              >
+                {{ evidence.attestationText }}
+              </div>
+              <div
+                v-if="evidence.file"
+                class="mt-2 text-sm text-gray-600 dark:text-slate-400"
+              >
+                File: {{ evidence.file.name }}
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Evidence Submission Form -->
         <EvidenceSubmissionForm
           v-if="canSubmitEvidence"
           :step="step"
-          :evidence-requirements="evidenceRequirements"
+          :evidence-requirements="requiredEvidenceTypes"
           @evidence-submitted="handleEvidenceSubmitted"
         />
 
@@ -174,6 +227,18 @@
           />
         </div>
       </div>
+
+      <!-- Permission/Status Message -->
+      <Message
+        v-if="!canStart && !canComplete && !canFail && step"
+        :severity="getNoActionMessageSeverity()"
+        class="mt-4"
+      >
+        <div class="text-sm">
+          <strong>{{ getNoActionMessageTitle() }}</strong>
+          <div class="mt-1">{{ getNoActionMessage() }}</div>
+        </div>
+      </Message>
 
       <!-- Actions -->
       <div
@@ -232,7 +297,9 @@ import { useStepExecutions } from '@/composables/workflows';
 import type {
   StepExecution,
   StepExecutionEvidence,
+  StepExecutionEvidenceSubmit,
   EvidenceType,
+  EvidenceRequirement,
 } from '@/types/workflows';
 import Drawer from '@/volt/Drawer.vue';
 import Badge from '@/volt/Badge.vue';
@@ -253,7 +320,8 @@ const emit = defineEmits<{
   'step-updated': [];
 }>();
 
-const { startStep, completeStep, failStep } = useStepExecutions();
+const { startStep, completeStep, failStep, canTransition } =
+  useStepExecutions();
 
 const isVisible = computed({
   get: () => props.visible,
@@ -262,6 +330,8 @@ const isVisible = computed({
 
 const isProcessing = ref(false);
 const completionNotes = ref('');
+const collectedEvidence = ref<StepExecutionEvidenceSubmit[]>([]);
+const userCanTransition = ref(false);
 
 const stepDefinition = computed(() => {
   return props.step?.workflowStepDefinition || props.step?.stepDefinition;
@@ -271,36 +341,38 @@ const stepName = computed(() => {
   return stepDefinition.value?.name || 'Step Details';
 });
 
-const evidenceRequirements = computed(() => {
+const evidenceRequirements = computed<EvidenceRequirement[]>(() => {
   if (!stepDefinition.value?.evidenceRequired) return [];
-  try {
-    const parsed = JSON.parse(stepDefinition.value.evidenceRequired);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
+  return stepDefinition.value.evidenceRequired;
+});
+
+const requiredEvidenceTypes = computed<EvidenceType[]>(() => {
+  return evidenceRequirements.value
+    .filter((req) => req.required)
+    .map((req) => req.type);
 });
 
 const hasRequiredEvidence = computed(() => {
-  if (evidenceRequirements.value.length === 0) return true;
-  if (!props.step?.evidence) return false;
+  if (requiredEvidenceTypes.value.length === 0) return true;
 
-  const submittedTypes = props.step.evidence.map((e) => e.evidenceType);
-  return evidenceRequirements.value.every((req) =>
-    submittedTypes.includes(req),
-  );
+  // Combine already submitted evidence and newly collected evidence
+  const submittedTypes = props.step?.evidence?.map((e) => e.evidenceType) || [];
+  const collectedTypes = collectedEvidence.value.map((e) => e.evidenceType);
+  const allTypes = [...submittedTypes, ...collectedTypes];
+
+  return requiredEvidenceTypes.value.every((type) => allTypes.includes(type));
 });
 
 const canStart = computed(() => {
-  return props.step?.status === 'pending';
+  return props.step?.status === 'pending' && userCanTransition.value;
 });
 
 const canComplete = computed(() => {
-  return props.step?.status === 'in_progress';
+  return props.step?.status === 'in_progress' && userCanTransition.value;
 });
 
 const canFail = computed(() => {
-  return props.step?.status === 'in_progress';
+  return props.step?.status === 'in_progress' && userCanTransition.value;
 });
 
 const canSubmitEvidence = computed(() => {
@@ -358,16 +430,16 @@ async function handleComplete() {
 
   isProcessing.value = true;
   try {
-    // Update completion notes if provided
-    if (completionNotes.value) {
-      // TODO: Add API call to update completion notes
-      // For now, we'll just pass it in the completion
-    }
-
-    await completeStep(props.step.id, () => {
-      emit('step-updated');
-      close();
-    });
+    // Complete step with collected evidence and notes
+    await completeStep(
+      props.step.id,
+      collectedEvidence.value.length > 0 ? collectedEvidence.value : undefined,
+      completionNotes.value || undefined,
+      () => {
+        emit('step-updated');
+        close();
+      },
+    );
   } finally {
     isProcessing.value = false;
   }
@@ -392,8 +464,9 @@ async function handleFail() {
   }
 }
 
-function handleEvidenceSubmitted() {
-  emit('step-updated');
+function handleEvidenceSubmitted(evidence: StepExecutionEvidenceSubmit) {
+  // Collect evidence locally instead of submitting immediately
+  collectedEvidence.value.push(evidence);
 }
 
 function downloadEvidence(evidence: StepExecutionEvidence) {
@@ -402,16 +475,76 @@ function downloadEvidence(evidence: StepExecutionEvidence) {
   }
 }
 
+function getNoActionMessageSeverity(): 'info' | 'warn' | 'secondary' {
+  if (!userCanTransition.value) return 'warn';
+  if (props.step?.status === 'completed') return 'info';
+  if (props.step?.status === 'blocked') return 'secondary';
+  return 'info';
+}
+
+function getNoActionMessageTitle(): string {
+  if (!userCanTransition.value) return 'No Permission';
+  if (props.step?.status === 'completed') return 'Step Completed';
+  if (props.step?.status === 'blocked') return 'Step Blocked';
+  if (props.step?.status === 'failed') return 'Step Failed';
+  if (props.step?.status === 'skipped') return 'Step Skipped';
+  return 'No Actions Available';
+}
+
+function getNoActionMessage(): string {
+  if (!userCanTransition.value) {
+    const role = stepDefinition.value?.responsibleRole;
+    return `You don't have permission to transition this step. This step is assigned to the "${role}" role.`;
+  }
+
+  switch (props.step?.status) {
+    case 'completed':
+      return 'This step has already been completed. No further actions are needed.';
+    case 'blocked':
+      return 'This step is blocked by dependencies. Complete the required steps first.';
+    case 'failed':
+      return 'This step has failed. You can retry the workflow execution from the main view.';
+    case 'skipped':
+      return 'This step was skipped during execution.';
+    default:
+      return 'No actions are currently available for this step.';
+  }
+}
+
 function close() {
   isVisible.value = false;
   completionNotes.value = '';
+  collectedEvidence.value = [];
 }
 
-// Reset completion notes when step changes
+// Reset state and check permissions when step changes
 watch(
   () => props.step?.id,
-  () => {
+  async (newId) => {
     completionNotes.value = '';
+    collectedEvidence.value = [];
+    userCanTransition.value = false;
+
+    if (newId && props.step) {
+      console.log('[StepExecutionPanel] Checking permissions for step:', {
+        stepId: newId,
+        status: props.step.status,
+        role: stepDefinition.value?.responsibleRole,
+      });
+
+      // Check if user can transition this step
+      try {
+        userCanTransition.value = await canTransition(newId);
+        console.log(
+          '[StepExecutionPanel] Permission check result:',
+          userCanTransition.value,
+        );
+      } catch (error) {
+        console.error('[StepExecutionPanel] Permission check failed:', error);
+        userCanTransition.value = false;
+      }
+    }
   },
+  { immediate: true },
 );
 </script>
