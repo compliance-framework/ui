@@ -191,11 +191,18 @@ const rules = ref<Array<{ name: string; operator: string; value: string }>>([
 ]);
 const submitting = ref<boolean>(false);
 
-const canSubmit = computed(
-  () =>
-    uuidRe.test(catalogId.value) &&
-    rules.value.every((r) => r.operator && r.value),
-);
+const canSubmit = computed(() => {
+  const rs = rules.value;
+  const hasValidRules =
+    rs.length > 0 &&
+    rs.every(
+      (r) =>
+        !!r.operator &&
+        typeof r.value === 'string' &&
+        r.value.trim().length > 0,
+    );
+  return uuidRe.test(catalogId.value) && hasValidRules;
+});
 
 function addRule() {
   rules.value.push({ name: '', operator: 'equals', value: '' });
