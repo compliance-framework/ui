@@ -153,7 +153,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import PageHeader from '@/components/PageHeader.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
@@ -173,11 +173,21 @@ function selectCatalog(id: string) {
   selectedCatalog.value = id;
   catalogId.value = id;
 }
+watch(
+  catalogs,
+  (val) => {
+    if (val && val.length > 0 && !catalogId.value) {
+      selectedCatalog.value = val[0].uuid;
+      catalogId.value = val[0].uuid;
+    }
+  },
+  { immediate: true },
+);
 const matchStrategy = ref<'any' | 'all'>('any');
 const title = ref<string>('Prop-Matched Profile');
 const version = ref<string>('1.0.0');
 const rules = ref<Array<{ name: string; operator: string; value: string }>>([
-  { name: 'class', operator: 'equals', value: 'technical' },
+  { name: 'label', operator: 'contains', value: 'AC-' },
 ]);
 const submitting = ref<boolean>(false);
 
