@@ -85,6 +85,11 @@ const authenticatedRoutes = [
         component: () => import('../views/system/ComponentsView.vue'),
       },
       {
+        path: 'components/dashboards/:componentId',
+        name: 'system-component-dashboards',
+        component: () => import('../views/system/ComponentsView.vue'),
+      },
+      {
         path: 'authorizations',
         name: 'system:authorizations',
         component: () => import('../views/system/AuthorizationsView.vue'),
