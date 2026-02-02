@@ -41,7 +41,9 @@
     >
       <div class="flex items-start justify-between gap-4">
         <div>
-          <TertiaryButton v-if="!statement">Add Statement</TertiaryButton>
+          <TertiaryButton v-if="!statement" @click="showEditStatement = true"
+            >Add Statement</TertiaryButton
+          >
           <TertiaryButton
             v-if="statement"
             class="ml-2"
