@@ -123,7 +123,7 @@ const links = ref<Array<NavigationItem>>([
         name: 'admin-import',
         title: 'Import',
         abbr: 'IMP',
-      },
+      },      
     ],
   },
 ]);

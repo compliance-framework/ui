@@ -93,6 +93,11 @@ const authenticatedRoutes = [
         ],
       },
       {
+        path: 'components/dashboards/:componentId',
+        name: 'system-component-dashboards',
+        component: () => import('../views/system/ComponentsView.vue'),
+      },
+      {
         path: 'authorizations',
         name: 'system:authorizations',
         component: () => import('../views/system/AuthorizationsView.vue'),
@@ -190,6 +195,14 @@ const authenticatedRoutes = [
     path: '/profiles/create',
     name: 'profile:create',
     component: () => import('../views/profile/ProfileCreate.vue'),
+    meta: {
+      requiresAuth: true,
+    },
+  },
+  {
+    path: '/profiles/build-props',
+    name: 'profile-build-props',
+    component: () => import('../views/profile/ProfileBuildPropsView.vue'),
     meta: {
       requiresAuth: true,
     },
