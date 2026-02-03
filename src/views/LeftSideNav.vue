@@ -104,10 +104,6 @@ const links = ref<Array<NavigationItem>>([
         abbr: 'PR',
       },
       {
-        name: 'profile-build-props',
-        title: 'Build Profile by Props',
-      },
-      {
         name: 'component-definitions',
         title: 'Component Definitions',
       },
