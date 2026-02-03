@@ -83,6 +83,14 @@ const authenticatedRoutes = [
         path: 'components',
         name: 'system:components',
         component: () => import('../views/system/ComponentsView.vue'),
+        children: [
+          {
+            path: ':componentId/dashboards',
+            name: 'system-component-dashboards',
+            component: () =>
+              import('../views/system/partials/ComponentDashboardsView.vue'),
+          },
+        ],
       },
       {
         path: 'components/dashboards/:componentId',
@@ -245,6 +253,14 @@ const authenticatedRoutes = [
     path: '/roles',
     name: 'admin-roles',
     component: () => import('../views/RoleListView.vue'),
+    meta: {
+      requiresAuth: true,
+    },
+  },
+  {
+    path: '/admin/import',
+    name: 'admin-import',
+    component: () => import('../views/admin/ImportView.vue'),
     meta: {
       requiresAuth: true,
     },
@@ -741,6 +757,14 @@ const authenticatedRoutes = [
     path: '/users/:id',
     name: 'user-view',
     component: () => import('../views/users/UserView.vue'),
+    meta: {
+      requiresAuth: true,
+    },
+  },
+  {
+    path: '/preferences',
+    name: 'preferences',
+    component: () => import('../views/PreferencesView.vue'),
     meta: {
       requiresAuth: true,
     },
