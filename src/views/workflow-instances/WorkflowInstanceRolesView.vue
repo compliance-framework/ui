@@ -189,28 +189,27 @@
 import { ref, reactive, computed, watch } from 'vue';
 import { useWorkflowInstanceStore } from '@/stores/workflows/instances';
 import { useWorkflowInstances } from '@/composables/workflows';
-import { useDataApi } from '@/composables/axios';
+import {
+  useUserSearch,
+  type DisplayUser,
+} from '@/composables/workflows/useUserSearch';
 import type { RoleAssignment } from '@/types/workflows';
-import type { CCFUser } from '@/stores/types';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
 import Badge from '@/volt/Badge.vue';
 import Dialog from '@/volt/Dialog.vue';
 import AutoComplete from '@/volt/AutoComplete.vue';
 import Message from '@/volt/Message.vue';
-interface DisplayUser extends CCFUser {
-  displayName: string;
-}
 
 const store = useWorkflowInstanceStore();
 const { createRoleAssignment, deleteRoleAssignment } = useWorkflowInstances();
+const { userSuggestions, searchUsers, loadUsersByIds, getCachedUser } =
+  useUserSearch();
 
 const showAssignDialog = ref(false);
 const roleUserSelections = reactive<Record<string, DisplayUser | null>>({});
-const userSuggestions = ref<DisplayUser[]>([]);
 const isAssigning = ref(false);
 const assignError = ref('');
-const userCache = ref<Record<string, DisplayUser>>({});
 
 const workflowRoles = computed(() => {
   const steps = store.instance?.workflowDefinition?.steps ?? [];
@@ -227,69 +226,6 @@ const availableRoles = computed(() => {
   return workflowRoles.value.filter((role) => !assigned.has(role));
 });
 
-// Users API
-const { execute: fetchUsers, data: usersData } = useDataApi<CCFUser[]>(
-  '/api/admin/users',
-  null,
-  {
-    immediate: false,
-  },
-);
-
-const { execute: fetchUserById, data: fetchedUser } = useDataApi<CCFUser>(
-  null,
-  null,
-  {
-    immediate: false,
-  },
-);
-
-async function searchUsers(event: { query: string }) {
-  try {
-    await fetchUsers(`/api/admin/users?search=${event.query}`);
-    const payload = usersData.value ?? [];
-    const normalized = event.query.trim().toLowerCase();
-    const filtered = normalized
-      ? payload.filter((user) => {
-          const name = `${user.firstName} ${user.lastName}`.toLowerCase();
-          const email = (user.email || '').toLowerCase();
-          return name.includes(normalized) || email.includes(normalized);
-        })
-      : payload;
-    const displayUsers = filtered.map(toDisplayUser);
-    userSuggestions.value = displayUsers;
-    displayUsers.forEach(cacheUser);
-  } catch {
-    userSuggestions.value = [
-      {
-        id: event.query,
-        email: `${event.query.toLowerCase().replace(/\s+/g, '.')}@example.com`,
-        firstName: event.query,
-        lastName: '',
-        failedLogins: 0,
-        displayName: event.query,
-      } as DisplayUser,
-    ];
-  }
-}
-
-function toDisplayUser(user: CCFUser): DisplayUser {
-  const displayName =
-    `${user.firstName} ${user.lastName}`.trim() || user.email || user.id;
-  return {
-    ...user,
-    displayName,
-  };
-}
-
-function cacheUser(user: DisplayUser | undefined) {
-  if (!user) return;
-  userCache.value = {
-    ...userCache.value,
-    [user.id]: user,
-  };
-}
-
 async function loadAssignedUsers() {
   const ids = Array.from(
     new Set(
@@ -298,20 +234,7 @@ async function loadAssignedUsers() {
         .filter(Boolean) as string[],
     ),
   );
-  const missing = ids.filter((id) => !userCache.value[id]);
-  await Promise.all(
-    missing.map(async (id) => {
-      try {
-        await fetchUserById(`/api/admin/users/${id}`);
-        const payload = fetchedUser.value;
-        if (payload) {
-          cacheUser(toDisplayUser(payload));
-        }
-      } catch (error) {
-        console.warn('Failed to load user', id, error);
-      }
-    }),
-  );
+  await loadUsersByIds(ids);
 }
 
 watch(
@@ -325,7 +248,7 @@ watch(
 const enrichedAssignments = computed(() =>
   store.roleAssignments.map((assignment) => {
     const id = assignment.assignedToId ?? assignment.userId;
-    const user = id ? userCache.value[id] : undefined;
+    const user = getCachedUser(id);
     const effectiveRole = (assignment.role ||
       assignment.roleName ||
       'Unknown') as string;

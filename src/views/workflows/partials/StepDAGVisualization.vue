@@ -160,10 +160,20 @@ const emit = defineEmits<{
   stepClick: [stepId: string];
 }>();
 
-const nodeWidth = 200;
-const nodeHeight = 50;
-const horizontalGap = 120;
-const verticalGap = 40;
+// DAG Layout Constants
+const DAG_CONFIG = {
+  NODE_WIDTH: 200,
+  NODE_HEIGHT: 50,
+  HORIZONTAL_GAP: 120,
+  VERTICAL_GAP: 40,
+  PADDING: 20,
+  SORT_THRESHOLD: 0.001,
+} as const;
+
+const nodeWidth = DAG_CONFIG.NODE_WIDTH;
+const nodeHeight = DAG_CONFIG.NODE_HEIGHT;
+const horizontalGap = DAG_CONFIG.HORIZONTAL_GAP;
+const verticalGap = DAG_CONFIG.VERTICAL_GAP;
 
 const selectedStep = computed(() => {
   if (!props.selectedStepId) return null;
@@ -223,15 +233,12 @@ function getAnchorY(node: NodePosition, index: number, total: number): number {
   return node.y + spacing * (index + 1);
 }
 
-// Build a dependency graph and compute levels using topological layering
-const nodes = computed<NodePosition[]>(() => {
-  if (props.steps.length === 0) return [];
-
+function buildDependencyMaps(steps: StepDefinition[]) {
   const dependencyMap = new Map<string, string[]>();
   const dependentMap = new Map<string, Set<string>>();
   const inDegree = new Map<string, number>();
 
-  props.steps.forEach((step) => {
+  steps.forEach((step) => {
     const parentIds = getParentIds(step);
     dependencyMap.set(step.id, parentIds);
     inDegree.set(step.id, parentIds.length);
@@ -248,12 +255,16 @@ const nodes = computed<NodePosition[]>(() => {
     }
   });
 
+  return { dependencyMap, dependentMap, inDegree };
+}
+
+function computeDownstreamLevels(
+  steps: StepDefinition[],
+  dependentMap: Map<string, Set<string>>,
+): Map<string, number> {
   const downstreamLevels = new Map<string, number>();
 
-  const computeDownstreamDepth = (
-    stepId: string,
-    visited: Set<string>,
-  ): number => {
+  const computeDepth = (stepId: string, visited: Set<string>): number => {
     if (downstreamLevels.has(stepId)) {
       return downstreamLevels.get(stepId)!;
     }
@@ -270,30 +281,39 @@ const nodes = computed<NodePosition[]>(() => {
     }
 
     const depth =
-      Math.max(
-        ...children.map((childId) => computeDownstreamDepth(childId, visited)),
-      ) + 1;
+      Math.max(...children.map((childId) => computeDepth(childId, visited))) +
+      1;
     downstreamLevels.set(stepId, depth);
     visited.delete(stepId);
     return depth;
   };
 
   let maxDepth = 0;
-  props.steps.forEach((step) => {
-    const depth = computeDownstreamDepth(step.id, new Set());
+  steps.forEach((step) => {
+    const depth = computeDepth(step.id, new Set());
     if (depth > maxDepth) {
       maxDepth = depth;
     }
   });
 
+  return downstreamLevels;
+}
+
+function assignLevelsToSteps(
+  steps: StepDefinition[],
+  downstreamLevels: Map<string, number>,
+  dependencyMap: Map<string, string[]>,
+  dependentMap: Map<string, Set<string>>,
+): Map<string, number> {
+  const maxDepth = Math.max(...Array.from(downstreamLevels.values()));
   const levelMap = new Map<string, number>();
-  props.steps.forEach((step) => {
+
+  steps.forEach((step) => {
     const depth = downstreamLevels.get(step.id) ?? 0;
     levelMap.set(step.id, maxDepth - depth);
   });
 
-  // Adjust sink nodes that end earlier than other branches so they stay near their parent stage
-  props.steps.forEach((step) => {
+  steps.forEach((step) => {
     const children = dependentMap.get(step.id) ?? new Set();
     const parents = dependencyMap.get(step.id) ?? [];
     if (children.size === 0 && parents.length > 0) {
@@ -308,15 +328,28 @@ const nodes = computed<NodePosition[]>(() => {
     }
   });
 
+  return levelMap;
+}
+
+function groupStepsByLevel(
+  steps: StepDefinition[],
+  levelMap: Map<string, number>,
+): Map<number, StepDefinition[]> {
   const levelGroups = new Map<number, StepDefinition[]>();
-  props.steps.forEach((step) => {
+  steps.forEach((step) => {
     const level = levelMap.get(step.id) ?? 0;
     if (!levelGroups.has(level)) {
       levelGroups.set(level, []);
     }
     levelGroups.get(level)!.push(step);
   });
+  return levelGroups;
+}
 
+function calculateNodePositions(
+  levelGroups: Map<number, StepDefinition[]>,
+  dependencyMap: Map<string, string[]>,
+): NodePosition[] {
   const maxStepsInLevel = Math.max(
     ...Array.from(levelGroups.values()).map((group) => group.length),
     1,
@@ -350,17 +383,18 @@ const nodes = computed<NodePosition[]>(() => {
     const stepsInLevel = levelGroups.get(level)!;
     const sorted = stepsInLevel.slice().sort((a, b) => {
       const keyDiff = getSortKey(a) - getSortKey(b);
-      if (Math.abs(keyDiff) > 0.001) {
+      if (Math.abs(keyDiff) > DAG_CONFIG.SORT_THRESHOLD) {
         return keyDiff;
       }
       return a.order - b.order;
     });
 
-    const levelX = level * (nodeWidth + horizontalGap) + 20;
+    const levelX = level * (nodeWidth + horizontalGap) + DAG_CONFIG.PADDING;
     const totalHeight =
       sorted.length * (nodeHeight + verticalGap) - verticalGap;
     const startY =
-      (maxStepsInLevel * (nodeHeight + verticalGap) - totalHeight) / 2 + 20;
+      (maxStepsInLevel * (nodeHeight + verticalGap) - totalHeight) / 2 +
+      DAG_CONFIG.PADDING;
 
     sorted.forEach((step, idx) => {
       const evidenceRequired = hasEvidenceRequirement(step.evidenceRequired);
@@ -382,6 +416,22 @@ const nodes = computed<NodePosition[]>(() => {
   });
 
   return positions;
+}
+
+// Build a dependency graph and compute levels using topological layering
+const nodes = computed<NodePosition[]>(() => {
+  if (props.steps.length === 0) return [];
+
+  const { dependencyMap, dependentMap } = buildDependencyMaps(props.steps);
+  const downstreamLevels = computeDownstreamLevels(props.steps, dependentMap);
+  const levelMap = assignLevelsToSteps(
+    props.steps,
+    downstreamLevels,
+    dependencyMap,
+    dependentMap,
+  );
+  const levelGroups = groupStepsByLevel(props.steps, levelMap);
+  return calculateNodePositions(levelGroups, dependencyMap);
 });
 
 const connections = computed<Connection[]>(() => {
@@ -455,13 +505,13 @@ const connections = computed<Connection[]>(() => {
 const svgWidth = computed(() => {
   if (nodes.value.length === 0) return 400;
   const maxX = Math.max(...nodes.value.map((n) => n.x + nodeWidth));
-  return maxX + 40;
+  return maxX + DAG_CONFIG.PADDING * 2;
 });
 
 const svgHeight = computed(() => {
   if (nodes.value.length === 0) return 200;
   const maxY = Math.max(...nodes.value.map((n) => n.y + nodeHeight));
-  return maxY + 40;
+  return maxY + DAG_CONFIG.PADDING * 2;
 });
 
 function truncateText(text: string | undefined, maxLength: number): string {

@@ -232,7 +232,15 @@ export function useStepExecutions() {
       );
       return evidenceRequirements.value || [];
     } catch (error) {
-      console.error('Failed to get evidence requirements:', error);
+      toast.add({
+        severity: 'error',
+        summary: 'Error Loading Evidence Requirements',
+        detail:
+          error instanceof Error
+            ? error.message
+            : 'Failed to load evidence requirements',
+        life: 3000,
+      });
       return [];
     }
   }
@@ -244,7 +252,6 @@ export function useStepExecutions() {
     try {
       const currentUser = userStore.user;
       if (!currentUser || !currentUser.id) {
-        console.warn('[canTransition] No current user or user ID');
         return false;
       }
 
@@ -254,32 +261,40 @@ export function useStepExecutions() {
       });
 
       const url = `${BASE_URL}/${id}/can-transition?${queryParams}`;
-      console.log('[canTransition] Checking permission:', {
-        url,
-        userId: currentUser.id,
-        userType: 'user',
-      });
-
       await executeCanTransition(url);
 
-      console.log('[canTransition] Response:', canTransitionData.value);
-
-      const result = canTransitionData.value?.canTransition || false;
-      console.log('[canTransition] Result:', result);
-
-      return result;
+      return canTransitionData.value?.canTransition || false;
     } catch (error) {
-      console.error(
-        '[canTransition] Failed to check transition permission:',
-        error,
-      );
+      toast.add({
+        severity: 'error',
+        summary: 'Error Checking Permissions',
+        detail:
+          error instanceof Error
+            ? error.message
+            : 'Failed to check step permissions',
+        life: 3000,
+      });
       return false;
     }
   }
 
   /**
    * Update the status of a step execution (LEGACY - kept for backward compatibility)
-   * @deprecated Use transitionStep instead
+   *
+   * @deprecated Use `transitionStep()` instead. This function will be removed in v2.0.
+   *
+   * Migration example:
+   * ```ts
+   * // Old way:
+   * await updateStepStatus(stepId, { status: 'in_progress' });
+   *
+   * // New way:
+   * await transitionStep(stepId, 'in_progress');
+   * ```
+   *
+   * @param id - The step execution ID
+   * @param data - Status update data
+   * @param onSuccess - Optional callback on success
    */
   async function updateStepStatus(
     id: string,
@@ -348,20 +363,32 @@ export function useStepExecutions() {
 
   /**
    * Submit evidence for a step execution (LEGACY - evidence should be submitted with completeStep)
-   * @deprecated Evidence is now submitted as part of the transition request in completeStep()
+   *
+   * @deprecated Evidence is now submitted as part of the transition request in `completeStep()`.
+   * This function will be removed in v2.0.
+   *
+   * Migration example:
+   * ```ts
+   * // Old way (deprecated):
+   * await submitEvidence(stepId, evidenceData);
+   * await updateStepStatus(stepId, { status: 'completed' });
+   *
+   * // New way:
+   * await completeStep(stepId, [evidenceData], 'Completion notes');
+   * ```
    *
    * This function is kept for backward compatibility but should not be used in new code.
-   * Instead, collect evidence and pass it to completeStep().
+   * Instead, collect evidence and pass it to `completeStep()`.
+   *
+   * @param stepExecutionId - The step execution ID
+   * @param data - Evidence submission data
+   * @param onSuccess - Optional callback on success
    */
   async function submitEvidence(
     stepExecutionId: string,
     data: StepExecutionEvidenceSubmit,
     onSuccess?: (evidence: StepExecutionEvidence) => void,
   ) {
-    console.warn(
-      'submitEvidence is deprecated. Evidence should be submitted with completeStep() using the new transition API.',
-    );
-
     // For backward compatibility, we'll show a success message but explain the new flow
     toast.add({
       severity: 'info',

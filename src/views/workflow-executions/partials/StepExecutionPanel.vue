@@ -230,13 +230,13 @@
 
       <!-- Permission/Status Message -->
       <Message
-        v-if="!canStart && !canComplete && !canFail && step"
-        :severity="getNoActionMessageSeverity()"
+        v-if="showNoActionMessage"
+        :severity="noActionMessageSeverity"
         class="mt-4"
       >
         <div class="text-sm">
-          <strong>{{ getNoActionMessageTitle() }}</strong>
-          <div class="mt-1">{{ getNoActionMessage() }}</div>
+          <strong>{{ noActionMessageTitle }}</strong>
+          <div class="mt-1">{{ noActionMessage }}</div>
         </div>
       </Message>
 
@@ -269,7 +269,7 @@
         <SecondaryButton
           v-if="canFail"
           severity="danger"
-          @click="handleFail"
+          @click="openFailDialog"
           :disabled="isProcessing"
         >
           <i class="pi pi-times mr-2"></i>
@@ -289,11 +289,55 @@
       </Message>
     </template>
   </Drawer>
+
+  <!-- Fail Step Dialog -->
+  <Dialog
+    v-model:visible="showFailDialog"
+    header="Mark Step as Failed"
+    :draggable="false"
+    modal
+    class="w-full max-w-md"
+  >
+    <div class="space-y-4">
+      <p class="text-sm text-gray-600 dark:text-slate-400">
+        Please provide a reason for marking this step as failed. This may block
+        dependent steps and could cause the workflow execution to fail.
+      </p>
+      <div>
+        <Label for="failureReason" required>Failure Reason</Label>
+        <Textarea
+          id="failureReason"
+          v-model="failureReason"
+          rows="4"
+          placeholder="Describe why this step failed..."
+          class="w-full"
+          autofocus
+        />
+      </div>
+    </div>
+    <template #footer>
+      <div class="flex justify-end gap-3">
+        <SecondaryButton @click="showFailDialog = false">
+          Cancel
+        </SecondaryButton>
+        <SecondaryButton
+          severity="danger"
+          @click="handleFail"
+          :disabled="!failureReason.trim() || isProcessing"
+        >
+          <i v-if="isProcessing" class="pi pi-spin pi-spinner mr-2"></i>
+          <i v-else class="pi pi-times mr-2"></i>
+          Mark as Failed
+        </SecondaryButton>
+      </div>
+    </template>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
 import { useStepExecutions } from '@/composables/workflows';
+import { useStepPermissions } from '@/composables/workflows/useStepPermissions';
 import type {
   StepExecution,
   StepExecutionEvidence,
@@ -302,6 +346,7 @@ import type {
   EvidenceRequirement,
 } from '@/types/workflows';
 import Drawer from '@/volt/Drawer.vue';
+import Dialog from '@/volt/Dialog.vue';
 import Badge from '@/volt/Badge.vue';
 import Label from '@/volt/Label.vue';
 import Textarea from '@/volt/Textarea.vue';
@@ -332,18 +377,21 @@ const isProcessing = ref(false);
 const completionNotes = ref('');
 const collectedEvidence = ref<StepExecutionEvidenceSubmit[]>([]);
 const userCanTransition = ref(false);
+const showFailDialog = ref(false);
+const failureReason = ref('');
 
 const stepDefinition = computed(() => {
   return props.step?.workflowStepDefinition || props.step?.stepDefinition;
 });
 
 const stepName = computed(() => {
-  return stepDefinition.value?.name || 'Step Details';
+  return stepDefinition.value?.name ?? 'Step Details';
 });
 
 const evidenceRequirements = computed<EvidenceRequirement[]>(() => {
-  if (!stepDefinition.value?.evidenceRequired) return [];
-  return stepDefinition.value.evidenceRequired;
+  const requirements = stepDefinition.value?.evidenceRequired;
+  if (!requirements || !Array.isArray(requirements)) return [];
+  return requirements;
 });
 
 const requiredEvidenceTypes = computed<EvidenceType[]>(() => {
@@ -355,7 +403,6 @@ const requiredEvidenceTypes = computed<EvidenceType[]>(() => {
 const hasRequiredEvidence = computed(() => {
   if (requiredEvidenceTypes.value.length === 0) return true;
 
-  // Combine already submitted evidence and newly collected evidence
   const submittedTypes = props.step?.evidence?.map((e) => e.evidenceType) || [];
   const collectedTypes = collectedEvidence.value.map((e) => e.evidenceType);
   const allTypes = [...submittedTypes, ...collectedTypes];
@@ -363,21 +410,17 @@ const hasRequiredEvidence = computed(() => {
   return requiredEvidenceTypes.value.every((type) => allTypes.includes(type));
 });
 
-const canStart = computed(() => {
-  return props.step?.status === 'pending' && userCanTransition.value;
-});
-
-const canComplete = computed(() => {
-  return props.step?.status === 'in_progress' && userCanTransition.value;
-});
-
-const canFail = computed(() => {
-  return props.step?.status === 'in_progress' && userCanTransition.value;
-});
-
-const canSubmitEvidence = computed(() => {
-  return props.step?.status === 'in_progress';
-});
+const stepRef = computed(() => props.step);
+const {
+  canStart,
+  canComplete,
+  canFail,
+  canSubmitEvidence,
+  noActionMessageSeverity,
+  noActionMessageTitle,
+  noActionMessage,
+  showNoActionMessage,
+} = useStepPermissions(stepRef, stepDefinition, userCanTransition);
 
 function getStepStatusSeverity(
   status: string,
@@ -445,20 +488,21 @@ async function handleComplete() {
   }
 }
 
-async function handleFail() {
-  if (!props.step) return;
+function openFailDialog() {
+  failureReason.value = '';
+  showFailDialog.value = true;
+}
 
-  const reason = prompt(
-    'Please provide a reason for marking this step as failed:',
-  );
-  if (!reason) return;
+async function handleFail() {
+  if (!props.step || !failureReason.value.trim()) return;
 
   isProcessing.value = true;
   try {
-    await failStep(props.step.id, reason, () => {
+    await failStep(props.step.id, failureReason.value, () => {
       emit('step-updated');
       close();
     });
+    showFailDialog.value = false;
   } finally {
     isProcessing.value = false;
   }
@@ -472,42 +516,6 @@ function handleEvidenceSubmitted(evidence: StepExecutionEvidenceSubmit) {
 function downloadEvidence(evidence: StepExecutionEvidence) {
   if (evidence.fileUrl) {
     window.open(evidence.fileUrl, '_blank');
-  }
-}
-
-function getNoActionMessageSeverity(): 'info' | 'warn' | 'secondary' {
-  if (!userCanTransition.value) return 'warn';
-  if (props.step?.status === 'completed') return 'info';
-  if (props.step?.status === 'blocked') return 'secondary';
-  return 'info';
-}
-
-function getNoActionMessageTitle(): string {
-  if (!userCanTransition.value) return 'No Permission';
-  if (props.step?.status === 'completed') return 'Step Completed';
-  if (props.step?.status === 'blocked') return 'Step Blocked';
-  if (props.step?.status === 'failed') return 'Step Failed';
-  if (props.step?.status === 'skipped') return 'Step Skipped';
-  return 'No Actions Available';
-}
-
-function getNoActionMessage(): string {
-  if (!userCanTransition.value) {
-    const role = stepDefinition.value?.responsibleRole;
-    return `You don't have permission to transition this step. This step is assigned to the "${role}" role.`;
-  }
-
-  switch (props.step?.status) {
-    case 'completed':
-      return 'This step has already been completed. No further actions are needed.';
-    case 'blocked':
-      return 'This step is blocked by dependencies. Complete the required steps first.';
-    case 'failed':
-      return 'This step has failed. You can retry the workflow execution from the main view.';
-    case 'skipped':
-      return 'This step was skipped during execution.';
-    default:
-      return 'No actions are currently available for this step.';
   }
 }
 
@@ -526,21 +534,9 @@ watch(
     userCanTransition.value = false;
 
     if (newId && props.step) {
-      console.log('[StepExecutionPanel] Checking permissions for step:', {
-        stepId: newId,
-        status: props.step.status,
-        role: stepDefinition.value?.responsibleRole,
-      });
-
-      // Check if user can transition this step
       try {
         userCanTransition.value = await canTransition(newId);
-        console.log(
-          '[StepExecutionPanel] Permission check result:',
-          userCanTransition.value,
-        );
-      } catch (error) {
-        console.error('[StepExecutionPanel] Permission check failed:', error);
+      } catch {
         userCanTransition.value = false;
       }
     }
