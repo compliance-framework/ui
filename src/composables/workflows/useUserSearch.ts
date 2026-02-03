@@ -31,7 +31,9 @@ export function useUserSearch() {
    */
   function toDisplayUser(user: CCFUser): DisplayUser {
     const displayName =
-      `${user.firstName} ${user.lastName}`.trim() || user.email || user.id;
+      `${user.firstName.trim()} ${user.lastName.trim()}`.trim() ||
+      user.email ||
+      user.id;
     return {
       ...user,
       displayName,

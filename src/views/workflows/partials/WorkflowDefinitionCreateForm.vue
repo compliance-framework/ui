@@ -95,7 +95,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue';
+import { ref, reactive, watch } from 'vue';
 import { useWorkflowDefinitions } from '@/composables/workflows';
 import type {
   WorkflowDefinition,
@@ -148,6 +148,10 @@ const evidenceOptions: Array<{ label: string; value: EvidenceType }> = [
   { label: 'Screenshot', value: 'screenshot' },
   { label: 'Automatic Evidence', value: 'automatic' },
 ];
+
+watch(selectedEvidenceTypes, (newTypes) => {
+  form.evidenceRequired = stringifyEvidenceRequired(newTypes);
+});
 
 function validate(): boolean {
   // Clear previous errors

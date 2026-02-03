@@ -75,7 +75,7 @@ describe('useUserSearch', () => {
 
       const displayUser = toDisplayUser(user);
 
-      expect(displayUser.displayName).toBe('John     Doe');
+      expect(displayUser.displayName).toBe('John Doe');
     });
   });
 
