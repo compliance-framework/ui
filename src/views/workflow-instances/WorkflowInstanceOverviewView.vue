@@ -54,8 +54,12 @@
             v-model="cronExpression"
             placeholder="* * * * * *"
             class="w-full font-mono"
+            :invalid="!!errors.cronExpression"
           />
-          <small class="text-gray-500 dark:text-slate-400">
+          <small v-if="errors.cronExpression" class="text-red-500">
+            {{ errors.cronExpression }}
+          </small>
+          <small v-else class="text-gray-500 dark:text-slate-400">
             Format: second minute hour day month weekday
           </small>
         </div>
@@ -271,6 +275,18 @@ function validate(): boolean {
   if (!form.name?.trim()) {
     errors.name = 'Name is required';
     return false;
+  }
+
+  if (selectedCadence.value === 'custom') {
+    if (!cronExpression.value.trim()) {
+      errors.cronExpression = 'Cron expression is required';
+      return false;
+    }
+    const parts = cronExpression.value.trim().split(/\s+/);
+    if (parts.length !== 6) {
+      errors.cronExpression = 'Cron expression must have exactly 6 fields';
+      return false;
+    }
   }
 
   return true;

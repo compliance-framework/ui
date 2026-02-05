@@ -234,7 +234,17 @@ function onDefinitionChange() {
       form.name = `${selectedDefinition.value.name} Instance`;
     }
     if (selectedDefinition.value.suggestedCadence) {
-      form.cadence = selectedDefinition.value.suggestedCadence;
+      const suggestedCadence = selectedDefinition.value.suggestedCadence;
+      form.cadence = suggestedCadence;
+
+      // Sync selectedCadence and cronExpression with the suggested cadence
+      if (suggestedCadence.startsWith('cron:')) {
+        selectedCadence.value = 'custom';
+        cronExpression.value = suggestedCadence.slice(5);
+      } else {
+        selectedCadence.value = suggestedCadence;
+        cronExpression.value = '';
+      }
     }
   }
 }
