@@ -7,7 +7,7 @@
       aria-haspopup="true"
       aria-controls="profile-menu"
       id="profile-dropdown-button"
-      class="flex items-center space-x-2 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+      class="flex items-center space-x-2 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 relative"
     >
       <!-- User Avatar (placeholder for now) -->
       <div
@@ -15,6 +15,14 @@
       >
         {{ userInitials }}
       </div>
+
+      <!-- Task Count Badge -->
+      <span
+        v-if="taskCount > 0"
+        class="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center"
+      >
+        {{ taskCount > 9 ? '9+' : taskCount }}
+      </span>
 
       <!-- Dropdown Arrow -->
       <svg
@@ -53,6 +61,39 @@
         </div>
 
         <!-- Menu Items -->
+        <router-link
+          to="/my-tasks"
+          role="menuitem"
+          tabindex="-1"
+          class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:bg-gray-100 dark:focus:bg-gray-700"
+          @click="closeDropdown"
+        >
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+              <svg
+                class="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+                />
+              </svg>
+              <span>My Tasks</span>
+            </div>
+            <span
+              v-if="taskCount > 0"
+              class="ml-2 bg-red-500 text-white text-xs font-bold rounded-full h-5 min-w-[1.25rem] px-1.5 flex items-center justify-center"
+            >
+              {{ taskCount > 9 ? '9+' : taskCount }}
+            </span>
+          </div>
+        </router-link>
+
         <router-link
           to="/preferences"
           role="menuitem"
@@ -117,16 +158,19 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '@/stores/auth';
 import { useAuthenticatedInstance } from '@/composables/axios';
+import { useMyAssignments } from '@/composables/workflows/useMyAssignments';
 import type { CCFUser } from '@/stores/types';
 
 const router = useRouter();
 const userStore = useUserStore();
 const axios = useAuthenticatedInstance();
+const { getAssignmentCount } = useMyAssignments();
 
 const isOpen = ref(false);
 const dropdownRef = ref<HTMLElement>();
 const user = ref<CCFUser | null>(null);
 const currentFocusedIndex = ref(-1);
+const taskCount = ref(0);
 
 // Computed properties for user info
 const userName = computed(() => {
@@ -166,6 +210,24 @@ const loadUserData = async () => {
   }
 };
 
+// Load task count
+const loadTaskCount = async () => {
+  if (!userStore.isAuthenticated || !isMounted) {
+    return;
+  }
+  try {
+    const count = await getAssignmentCount();
+    if (isMounted) {
+      taskCount.value = count;
+    }
+  } catch (error) {
+    console.error('Error loading task count:', error);
+    if (isMounted) {
+      taskCount.value = 0;
+    }
+  }
+};
+
 // Toggle dropdown
 const toggleDropdown = () => {
   isOpen.value = !isOpen.value;
@@ -182,6 +244,7 @@ const closeDropdown = () => {
 
 // Handle logout
 const handleLogout = async () => {
+  stopTaskPolling();
   try {
     await axios.post('/api/auth/logout');
     userStore.logout();
@@ -235,13 +298,13 @@ const handleKeyDown = (event: KeyboardEvent) => {
       break;
     case 'ArrowDown':
       event.preventDefault();
-      currentFocusedIndex.value = (currentFocusedIndex.value + 1) % 2; // 2 menu items
+      currentFocusedIndex.value = (currentFocusedIndex.value + 1) % 3; // 3 menu items
       focusMenuItem(currentFocusedIndex.value);
       break;
     case 'ArrowUp':
       event.preventDefault();
       currentFocusedIndex.value =
-        currentFocusedIndex.value === 0 ? 1 : currentFocusedIndex.value - 1;
+        currentFocusedIndex.value === 0 ? 2 : currentFocusedIndex.value - 1;
       focusMenuItem(currentFocusedIndex.value);
       break;
     case 'Enter':
@@ -266,14 +329,54 @@ const activateMenuItem = (index: number) => {
   }
 };
 
+const POLLING_INTERVAL = 60000;
+let intervalId: ReturnType<typeof setInterval> | null = null;
+let isPolling = false;
+let isMounted = false;
+
+const startTaskPolling = () => {
+  if (isPolling || document.visibilityState === 'hidden') {
+    return;
+  }
+  isPolling = true;
+  intervalId = setInterval(loadTaskCount, POLLING_INTERVAL);
+};
+
+const stopTaskPolling = () => {
+  if (intervalId !== null) {
+    clearInterval(intervalId);
+    intervalId = null;
+  }
+  isPolling = false;
+};
+
+const handleVisibilityChange = () => {
+  if (document.visibilityState === 'hidden') {
+    stopTaskPolling();
+  } else {
+    // Immediately refresh once when tab becomes visible, then resume polling
+    loadTaskCount();
+    startTaskPolling();
+  }
+};
+
 onMounted(() => {
+  isMounted = true;
   loadUserData();
+  loadTaskCount();
   document.addEventListener('click', handleClickOutside);
   document.addEventListener('keydown', handleKeyDown);
+  document.addEventListener('visibilitychange', handleVisibilityChange);
+
+  // Refresh task count every 60 seconds while the page is visible
+  startTaskPolling();
 });
 
 onUnmounted(() => {
+  isMounted = false;
   document.removeEventListener('click', handleClickOutside);
   document.removeEventListener('keydown', handleKeyDown);
+  document.removeEventListener('visibilitychange', handleVisibilityChange);
+  stopTaskPolling();
 });
 </script>
