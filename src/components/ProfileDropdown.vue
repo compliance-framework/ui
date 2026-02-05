@@ -212,6 +212,9 @@ const loadUserData = async () => {
 
 // Load task count
 const loadTaskCount = async () => {
+  if (!userStore.isAuthenticated) {
+    return;
+  }
   try {
     taskCount.value = await getAssignmentCount();
   } catch (error) {
@@ -236,6 +239,7 @@ const closeDropdown = () => {
 
 // Handle logout
 const handleLogout = async () => {
+  stopTaskPolling();
   try {
     await axios.post('/api/auth/logout');
     userStore.logout();
@@ -320,23 +324,51 @@ const activateMenuItem = (index: number) => {
   }
 };
 
+const POLLING_INTERVAL = 60000;
 let intervalId: ReturnType<typeof setInterval> | null = null;
+let isPolling = false;
+
+const startTaskPolling = () => {
+  if (isPolling || document.visibilityState === 'hidden') {
+    return;
+  }
+  isPolling = true;
+  intervalId = setInterval(loadTaskCount, POLLING_INTERVAL);
+};
+
+const stopTaskPolling = () => {
+  if (intervalId !== null) {
+    clearInterval(intervalId);
+    intervalId = null;
+  }
+  isPolling = false;
+};
+
+const handleVisibilityChange = () => {
+  if (document.visibilityState === 'hidden') {
+    stopTaskPolling();
+  } else {
+    // Immediately refresh once when tab becomes visible, then resume polling
+    loadTaskCount();
+    startTaskPolling();
+  }
+};
 
 onMounted(() => {
   loadUserData();
   loadTaskCount();
   document.addEventListener('click', handleClickOutside);
   document.addEventListener('keydown', handleKeyDown);
+  document.addEventListener('visibilitychange', handleVisibilityChange);
 
-  // Refresh task count every 60 seconds
-  intervalId = setInterval(loadTaskCount, 60000);
+  // Refresh task count every 60 seconds while the page is visible
+  startTaskPolling();
 });
 
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside);
   document.removeEventListener('keydown', handleKeyDown);
-  if (intervalId) {
-    clearInterval(intervalId);
-  }
+  document.removeEventListener('visibilitychange', handleVisibilityChange);
+  stopTaskPolling();
 });
 </script>

@@ -5,6 +5,11 @@ import { createPinia, setActivePinia } from 'pinia';
 import ProfileDropdown from '../ProfileDropdown.vue';
 
 // Mock all the dependencies
+const mockData = {
+  value: { data: [], total: 0, limit: 10, offset: 0, hasMore: false },
+};
+const mockExecute = vi.fn().mockResolvedValue({});
+
 vi.mock('@/composables/axios', () => ({
   useAuthenticatedInstance: () => ({
     get: vi.fn().mockResolvedValue({
@@ -17,6 +22,10 @@ vi.mock('@/composables/axios', () => ({
       },
     }),
     post: vi.fn().mockResolvedValue({}),
+  }),
+  useDataApi: () => ({
+    data: mockData,
+    execute: mockExecute,
   }),
 }));
 

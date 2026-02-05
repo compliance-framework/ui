@@ -31,7 +31,10 @@
       </PageCard>
 
       <!-- Loading State -->
-      <PageCard v-if="loading && assignments.length === 0" class="mb-6">
+      <PageCard
+        v-if="loading && (!assignments || assignments.length === 0)"
+        class="mb-6"
+      >
         <div class="p-8 text-center">
           <i class="pi pi-spin pi-spinner text-4xl text-gray-400"></i>
           <p class="mt-4 text-gray-600 dark:text-slate-400">
@@ -46,7 +49,10 @@
       </Message>
 
       <!-- Empty State -->
-      <PageCard v-else-if="assignments.length === 0" class="mb-6">
+      <PageCard
+        v-else-if="assignments && assignments.length === 0"
+        class="mb-6"
+      >
         <div class="p-8 text-center">
           <i class="pi pi-check-circle text-6xl text-green-500 mb-4"></i>
           <h3
@@ -74,7 +80,11 @@
               v-for="step in assignments"
               :key="step.id"
               @click="openStepPanel(step)"
-              class="border border-gray-200 dark:border-slate-700 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-slate-800 cursor-pointer transition-colors"
+              @keydown.enter="openStepPanel(step)"
+              @keydown.space.prevent="openStepPanel(step)"
+              tabindex="0"
+              role="button"
+              class="border border-gray-200 dark:border-slate-700 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-slate-800 cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <div class="flex items-start justify-between">
                 <div class="flex-1">
@@ -159,7 +169,8 @@
             </SecondaryButton>
 
             <span class="text-sm text-gray-600 dark:text-slate-400">
-              Showing {{ offset + 1 }} - {{ offset + assignments.length }} of
+              Showing {{ offset + 1 }} -
+              {{ Math.min(offset + assignments.length, total) }} of
               {{ total }}
             </span>
 
@@ -195,8 +206,19 @@ import Message from '@/volt/Message.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
 import StepExecutionPanel from '@/views/workflow-executions/partials/StepExecutionPanel.vue';
 
+console.log('[MyTasksView] Calling useMyAssignments...');
+const myAssignmentsResult = useMyAssignments();
+console.log('[MyTasksView] useMyAssignments result:', myAssignmentsResult);
+console.log(
+  '[MyTasksView] assignments from result:',
+  myAssignmentsResult.assignments,
+);
+
 const { assignments, total, loading, error, fetchMyAssignments } =
-  useMyAssignments();
+  myAssignmentsResult;
+
+console.log('[MyTasksView] Destructured assignments:', assignments);
+console.log('[MyTasksView] assignments.value:', assignments?.value);
 
 const statusFilter = ref('');
 const limit = ref(10);
@@ -213,16 +235,12 @@ const statusOptions = [
 ];
 
 async function loadAssignments() {
-  try {
-    const response = await fetchMyAssignments({
-      status: statusFilter.value || undefined,
-      limit: limit.value,
-      offset: offset.value,
-    });
-    hasMore.value = response.hasMore;
-  } catch (err) {
-    console.error('Failed to load assignments:', err);
-  }
+  const response = await fetchMyAssignments({
+    status: statusFilter.value || undefined,
+    limit: limit.value,
+    offset: offset.value,
+  });
+  hasMore.value = response.hasMore;
 }
 
 function nextPage() {
@@ -309,6 +327,7 @@ function formatStatus(status: string): string {
 function formatDate(dateString: string | undefined): string {
   if (!dateString) return '-';
   const date = new Date(dateString);
+  if (isNaN(date.getTime())) return '-';
   return date.toLocaleDateString(undefined, {
     year: 'numeric',
     month: 'short',

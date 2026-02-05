@@ -1,5 +1,5 @@
 import { ref, type Ref } from 'vue';
-import { useAuthenticatedInstance } from '@/composables/axios';
+import { useDataApi } from '@/composables/axios';
 import type { StepExecution } from '@/types/workflows';
 
 const BASE_URL = '/api/workflows/step-executions';
@@ -22,12 +22,13 @@ export interface MyAssignmentsResponse {
 }
 
 export function useMyAssignments() {
-  const axios = useAuthenticatedInstance();
-
   const assignments: Ref<StepExecution[]> = ref([]);
   const total = ref(0);
   const loading = ref(false);
   const error: Ref<string | null> = ref(null);
+
+  const { execute: executeMyAssignments, response: axiosResponse } =
+    useDataApi<MyAssignmentsResponse>(BASE_URL, null, { immediate: false });
 
   /**
    * Fetch user's assigned step executions
@@ -54,12 +55,26 @@ export function useMyAssignments() {
         ? `${BASE_URL}/my?${queryString}`
         : `${BASE_URL}/my`;
 
-      const response = await axios.get<MyAssignmentsResponse>(url);
+      await executeMyAssignments(url);
 
-      assignments.value = response.data.data;
-      total.value = response.data.total;
+      if (axiosResponse.value?.data) {
+        // axiosResponse.value.data is already the MyAssignmentsResponse (camelCased by interceptor)
+        const responseData = axiosResponse.value
+          .data as unknown as MyAssignmentsResponse;
 
-      return response.data;
+        assignments.value = responseData.data || [];
+        total.value = responseData.total || 0;
+
+        return {
+          data: responseData.data || [],
+          total: responseData.total || 0,
+          limit: responseData.limit || 10,
+          offset: responseData.offset || 0,
+          hasMore: responseData.hasMore || false,
+        };
+      }
+
+      throw new Error('No data returned from API');
     } catch (err) {
       error.value =
         err instanceof Error ? err.message : 'Failed to fetch assignments';
@@ -74,18 +89,25 @@ export function useMyAssignments() {
    */
   async function getAssignmentCount(): Promise<number> {
     try {
-      const response = await fetchMyAssignments({
-        limit: 1,
-        status: 'pending,in_progress',
-      });
-      return response.total;
+      const params = new URLSearchParams();
+      params.append('status', 'pending');
+      params.append('status', 'in_progress');
+      params.append('limit', '1');
+
+      const url = `${BASE_URL}/my?${params.toString()}`;
+      await executeMyAssignments(url);
+
+      const responseData = axiosResponse.value?.data as unknown as
+        | MyAssignmentsResponse
+        | undefined;
+      return responseData?.total ?? 0;
     } catch (err) {
       console.error('Failed to get assignment count:', err);
       return 0;
     }
   }
 
-  return {
+  const returnValue = {
     assignments,
     total,
     loading,
@@ -93,4 +115,12 @@ export function useMyAssignments() {
     fetchMyAssignments,
     getAssignmentCount,
   };
+
+  console.log('[useMyAssignments] Returning:', returnValue);
+  console.log(
+    '[useMyAssignments] assignments in return:',
+    returnValue.assignments,
+  );
+
+  return returnValue;
 }
