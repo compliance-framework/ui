@@ -81,7 +81,12 @@
               :key="step.id"
               @click="openStepPanel(step)"
               @keydown.enter="openStepPanel(step)"
-              @keydown.space.prevent="openStepPanel(step)"
+              @keydown.space="
+                (event) => {
+                  event.preventDefault();
+                  openStepPanel(step);
+                }
+              "
               tabindex="0"
               role="button"
               class="border border-gray-200 dark:border-slate-700 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-slate-800 cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -206,19 +211,8 @@ import Message from '@/volt/Message.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
 import StepExecutionPanel from '@/views/workflow-executions/partials/StepExecutionPanel.vue';
 
-console.log('[MyTasksView] Calling useMyAssignments...');
-const myAssignmentsResult = useMyAssignments();
-console.log('[MyTasksView] useMyAssignments result:', myAssignmentsResult);
-console.log(
-  '[MyTasksView] assignments from result:',
-  myAssignmentsResult.assignments,
-);
-
 const { assignments, total, loading, error, fetchMyAssignments } =
-  myAssignmentsResult;
-
-console.log('[MyTasksView] Destructured assignments:', assignments);
-console.log('[MyTasksView] assignments.value:', assignments?.value);
+  useMyAssignments();
 
 const statusFilter = ref('');
 const limit = ref(10);
@@ -232,15 +226,23 @@ const statusOptions = [
   { label: 'Pending', value: 'pending' },
   { label: 'In Progress', value: 'in_progress' },
   { label: 'Blocked', value: 'blocked' },
+  { label: 'Completed', value: 'completed' },
+  { label: 'Failed', value: 'failed' },
+  { label: 'Skipped', value: 'skipped' },
 ];
 
 async function loadAssignments() {
-  const response = await fetchMyAssignments({
-    status: statusFilter.value || undefined,
-    limit: limit.value,
-    offset: offset.value,
-  });
-  hasMore.value = response.hasMore;
+  try {
+    const response = await fetchMyAssignments({
+      status: statusFilter.value || undefined,
+      limit: limit.value,
+      offset: offset.value,
+    });
+    hasMore.value = response.hasMore;
+  } catch (err) {
+    console.error('[MyTasksView] Failed to load assignments:', err);
+    hasMore.value = false;
+  }
 }
 
 function nextPage() {

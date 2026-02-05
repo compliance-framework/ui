@@ -212,14 +212,19 @@ const loadUserData = async () => {
 
 // Load task count
 const loadTaskCount = async () => {
-  if (!userStore.isAuthenticated) {
+  if (!userStore.isAuthenticated || !isMounted) {
     return;
   }
   try {
-    taskCount.value = await getAssignmentCount();
+    const count = await getAssignmentCount();
+    if (isMounted) {
+      taskCount.value = count;
+    }
   } catch (error) {
     console.error('Error loading task count:', error);
-    taskCount.value = 0;
+    if (isMounted) {
+      taskCount.value = 0;
+    }
   }
 };
 
@@ -327,6 +332,7 @@ const activateMenuItem = (index: number) => {
 const POLLING_INTERVAL = 60000;
 let intervalId: ReturnType<typeof setInterval> | null = null;
 let isPolling = false;
+let isMounted = false;
 
 const startTaskPolling = () => {
   if (isPolling || document.visibilityState === 'hidden') {
@@ -355,6 +361,7 @@ const handleVisibilityChange = () => {
 };
 
 onMounted(() => {
+  isMounted = true;
   loadUserData();
   loadTaskCount();
   document.addEventListener('click', handleClickOutside);
@@ -366,6 +373,7 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+  isMounted = false;
   document.removeEventListener('click', handleClickOutside);
   document.removeEventListener('keydown', handleKeyDown);
   document.removeEventListener('visibilitychange', handleVisibilityChange);

@@ -103,7 +103,7 @@ export function useMyAssignments() {
     }
   }
 
-  const returnValue = {
+  return {
     assignments,
     total,
     loading,
@@ -111,12 +111,4 @@ export function useMyAssignments() {
     fetchMyAssignments,
     getAssignmentCount,
   };
-
-  console.log('[useMyAssignments] Returning:', returnValue);
-  console.log(
-    '[useMyAssignments] assignments in return:',
-    returnValue.assignments,
-  );
-
-  return returnValue;
 }
