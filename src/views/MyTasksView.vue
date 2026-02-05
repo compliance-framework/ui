@@ -182,7 +182,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, watch, onMounted } from 'vue';
 import { useMyAssignments } from '@/composables/workflows/useMyAssignments';
 import type { StepExecution } from '@/types/workflows';
 import PageHeader from '@/components/PageHeader.vue';
@@ -315,6 +315,11 @@ function formatDate(dateString: string | undefined): string {
     day: 'numeric',
   });
 }
+
+watch(statusFilter, () => {
+  offset.value = 0;
+  loadAssignments();
+});
 
 onMounted(() => {
   loadAssignments();

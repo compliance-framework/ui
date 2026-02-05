@@ -89,7 +89,7 @@
               v-if="taskCount > 0"
               class="ml-2 bg-red-500 text-white text-xs font-bold rounded-full h-5 min-w-[1.25rem] px-1.5 flex items-center justify-center"
             >
-              {{ taskCount > 99 ? '99+' : taskCount }}
+              {{ taskCount > 9 ? '9+' : taskCount }}
             </span>
           </div>
         </router-link>
@@ -320,6 +320,8 @@ const activateMenuItem = (index: number) => {
   }
 };
 
+let intervalId: ReturnType<typeof setInterval> | null = null;
+
 onMounted(() => {
   loadUserData();
   loadTaskCount();
@@ -327,14 +329,14 @@ onMounted(() => {
   document.addEventListener('keydown', handleKeyDown);
 
   // Refresh task count every 60 seconds
-  const intervalId = setInterval(loadTaskCount, 60000);
-  onUnmounted(() => {
-    clearInterval(intervalId);
-  });
+  intervalId = setInterval(loadTaskCount, 60000);
 });
 
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside);
   document.removeEventListener('keydown', handleKeyDown);
+  if (intervalId) {
+    clearInterval(intervalId);
+  }
 });
 </script>

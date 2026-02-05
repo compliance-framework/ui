@@ -74,7 +74,10 @@ export function useMyAssignments() {
    */
   async function getAssignmentCount(): Promise<number> {
     try {
-      const response = await fetchMyAssignments({ limit: 1 });
+      const response = await fetchMyAssignments({
+        limit: 1,
+        status: 'pending,in_progress',
+      });
       return response.total;
     } catch (err) {
       console.error('Failed to get assignment count:', err);
