@@ -1,7 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { ref } from 'vue';
 import { useStepPermissions } from '../useStepPermissions';
-import type { StepExecution, StepDefinition } from '@/types/workflows';
+import type {
+  StepExecution,
+  StepDefinition,
+  EvidenceType,
+  EvidenceRequirement,
+} from '@/types/workflows';
 
 // Helper to create test step definition
 const createStepDef = (
@@ -19,7 +24,9 @@ const createStepDef = (
   }) as StepDefinition;
 
 // Helper to create evidence requirement
-const createEvidenceReq = (type: string = 'document'): any => ({
+const createEvidenceReq = (
+  type: EvidenceType = 'document',
+): EvidenceRequirement => ({
   type,
   required: true,
   description: 'Test evidence',

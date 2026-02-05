@@ -854,6 +854,14 @@ const authenticatedRoutes = [
     },
   },
   {
+    path: '/my-tasks',
+    name: 'my-tasks',
+    component: () => import('../views/MyTasksView.vue'),
+    meta: {
+      requiresAuth: true,
+    },
+  },
+  {
     path: '/preferences',
     name: 'preferences',
     component: () => import('../views/PreferencesView.vue'),

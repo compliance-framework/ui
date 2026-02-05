@@ -175,6 +175,7 @@ export interface WorkflowExecution {
   completedAt?: string;
   cancelledAt?: string;
   cancelledReason?: string;
+  dueDate?: string;
   parentExecutionId?: string;
   createdAt: string;
   updatedAt: string;
@@ -236,6 +237,8 @@ export interface StepExecution {
   createdAt: string;
   updatedAt: string;
   evidence?: StepExecutionEvidence[];
+  // Preloaded relationship (from API)
+  workflowExecution?: WorkflowExecution;
 }
 
 export interface StepExecutionStatusUpdate {

@@ -4,7 +4,7 @@ import type { CCFUser } from '@/stores/types';
 
 // Mock useDataApi
 vi.mock('@/composables/axios', () => ({
-  useDataApi: vi.fn((url: string | null) => ({
+  useDataApi: vi.fn(() => ({
     execute: vi.fn(),
     data: { value: null },
   })),

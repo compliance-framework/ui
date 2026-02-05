@@ -10,6 +10,7 @@ export { useWorkflowInstances } from './useWorkflowInstances';
 export { useWorkflowExecutions } from './useWorkflowExecutions';
 export { useStepExecutions } from './useStepExecutions';
 export { useControlRelationships } from './useControlRelationships';
+export { useMyAssignments } from './useMyAssignments';
 
 // Re-export types for convenience
 export type {
