@@ -147,6 +147,7 @@ import Select from '@/volt/Select.vue';
 import Message from '@/volt/Message.vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
+import { validateCronExpression } from '@/utils/cron';
 
 const props = defineProps<{
   preselectedDefinitionId?: string;
@@ -273,9 +274,9 @@ function validate(): boolean {
       errors.cronExpression = 'Cron expression is required';
       return false;
     }
-    const parts = cronExpression.value.trim().split(/\s+/);
-    if (parts.length !== 6) {
-      errors.cronExpression = 'Cron expression must have exactly 6 fields';
+    const cronError = validateCronExpression(cronExpression.value.trim());
+    if (cronError) {
+      errors.cronExpression = cronError;
       return false;
     }
   }
