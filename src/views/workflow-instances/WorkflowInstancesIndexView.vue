@@ -310,7 +310,10 @@ const statusOptions = [
 ];
 
 function formatCadence(cadence: CadenceType): string {
-  const labels: Record<CadenceType, string> = {
+  if (cadence.startsWith('cron:')) {
+    return `Custom (${cadence.slice(5)})`;
+  }
+  const labels: Record<string, string> = {
     daily: 'Daily',
     weekly: 'Weekly',
     monthly: 'Monthly',
