@@ -33,7 +33,8 @@ export type CadenceType =
   | 'monthly'
   | 'quarterly'
   | 'annually'
-  | 'on_demand';
+  | 'on_demand'
+  | `cron:${string}`;
 
 export type EvidenceType =
   | 'document'

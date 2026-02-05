@@ -137,11 +137,7 @@
 import { ref, reactive, computed, watch } from 'vue';
 import { useWorkflowDefinitionStore } from '@/stores/workflows/definitions';
 import { useToast } from 'primevue/usetoast';
-import type {
-  WorkflowDefinitionUpdate,
-  CadenceType,
-  EvidenceType,
-} from '@/types/workflows';
+import type { WorkflowDefinitionUpdate, EvidenceType } from '@/types/workflows';
 import Label from '@/volt/Label.vue';
 import InputText from '@/volt/InputText.vue';
 import Textarea from '@/volt/Textarea.vue';
@@ -173,7 +169,7 @@ const errorMessage = ref('');
 const isSubmitting = ref(false);
 const selectedEvidenceTypes = ref<EvidenceType[]>([]);
 
-const cadenceOptions: Array<{ label: string; value: CadenceType }> = [
+const cadenceOptions: Array<{ label: string; value: string }> = [
   { label: 'Daily', value: 'daily' },
   { label: 'Weekly', value: 'weekly' },
   { label: 'Monthly', value: 'monthly' },

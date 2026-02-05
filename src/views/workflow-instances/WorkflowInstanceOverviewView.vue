@@ -35,13 +35,29 @@
           <Label for="cadence" required>Execution Cadence</Label>
           <Select
             id="cadence"
-            v-model="form.cadence"
+            v-model="selectedCadence"
             :options="cadenceOptions"
             optionLabel="label"
             optionValue="value"
             placeholder="Select cadence"
             class="w-full"
           />
+        </div>
+
+        <!-- Custom Cron Expression -->
+        <div v-if="selectedCadence === 'custom'">
+          <Label for="cronExpression" required
+            >Cron Expression (6 fields)</Label
+          >
+          <InputText
+            id="cronExpression"
+            v-model="cronExpression"
+            placeholder="* * * * * *"
+            class="w-full font-mono"
+          />
+          <small class="text-gray-500 dark:text-slate-400">
+            Format: second minute hour day month weekday
+          </small>
         </div>
       </div>
 
@@ -190,14 +206,34 @@ const errors = reactive<Record<string, string>>({});
 const errorMessage = ref('');
 const isSubmitting = ref(false);
 
-const cadenceOptions: Array<{ label: string; value: CadenceType }> = [
+const selectedCadence = ref<string>('monthly');
+const cronExpression = ref('');
+
+const cadenceOptions: Array<{ label: string; value: string }> = [
   { label: 'Daily', value: 'daily' },
   { label: 'Weekly', value: 'weekly' },
   { label: 'Monthly', value: 'monthly' },
   { label: 'Quarterly', value: 'quarterly' },
   { label: 'Annually', value: 'annually' },
   { label: 'On Demand', value: 'on_demand' },
+  { label: 'Custom (Cron)', value: 'custom' },
 ];
+
+watch(selectedCadence, (val) => {
+  if (val === 'custom') {
+    form.cadence = cronExpression.value
+      ? `cron:${cronExpression.value}`
+      : form.cadence;
+  } else {
+    form.cadence = val as CadenceType;
+  }
+});
+
+watch(cronExpression, (val) => {
+  if (selectedCadence.value === 'custom' && val) {
+    form.cadence = `cron:${val}`;
+  }
+});
 
 const hasChanges = computed(() => {
   return JSON.stringify(form) !== JSON.stringify(originalForm.value);
@@ -208,6 +244,15 @@ function initForm() {
     form.name = store.instance.name;
     form.description = store.instance.description || '';
     form.cadence = store.instance.cadence;
+
+    // Handle custom cron cadence
+    if (store.instance.cadence.startsWith('cron:')) {
+      selectedCadence.value = 'custom';
+      cronExpression.value = store.instance.cadence.slice(5);
+    } else {
+      selectedCadence.value = store.instance.cadence;
+      cronExpression.value = '';
+    }
 
     originalForm.value = { ...form };
   }
