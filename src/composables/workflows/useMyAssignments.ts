@@ -30,9 +30,6 @@ export function useMyAssignments() {
   const { execute: executeMyAssignments, response: axiosResponse } =
     useDataApi<MyAssignmentsResponse>(BASE_URL, null, { immediate: false });
 
-  /**
-   * Fetch user's assigned step executions
-   */
   async function fetchMyAssignments(
     filter: MyAssignmentsFilter = {},
   ): Promise<MyAssignmentsResponse> {
@@ -58,7 +55,6 @@ export function useMyAssignments() {
       await executeMyAssignments(url);
 
       if (axiosResponse.value?.data) {
-        // axiosResponse.value.data is already the MyAssignmentsResponse (camelCased by interceptor)
         const responseData = axiosResponse.value
           .data as unknown as MyAssignmentsResponse;
 
