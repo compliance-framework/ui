@@ -27,6 +27,12 @@ export type StepExecutionStatus =
   | 'failed'
   | 'skipped';
 
+export const REASSIGNABLE_STEP_EXECUTION_STATUSES: StepExecutionStatus[] = [
+  'pending',
+  'blocked',
+  'in_progress',
+];
+
 export type CadenceType =
   | 'daily'
   | 'weekly'
@@ -230,6 +236,7 @@ export interface StepExecution {
   assigneeId?: string;
   assignedToType?: string;
   assignedToId?: string;
+  assignedAt?: string;
   startedAt?: string;
   completedAt?: string;
   failedAt?: string;
@@ -238,6 +245,7 @@ export interface StepExecution {
   createdAt: string;
   updatedAt: string;
   evidence?: StepExecutionEvidence[];
+  reassignmentHistory?: StepReassignmentHistory[];
   // Preloaded relationship (from API)
   workflowExecution?: WorkflowExecution;
 }
@@ -292,6 +300,27 @@ export interface StepExecutionEvidenceSubmit {
 
 export interface StepExecutionFail {
   reason: string;
+}
+
+export interface StepReassignmentRequest {
+  assignedToType: 'email';
+  assignedToId: string;
+  reason?: string;
+}
+
+export interface StepReassignmentHistory {
+  id: string;
+  stepExecutionId: string;
+  workflowExecutionId: string;
+  previousAssignedToType?: string;
+  previousAssignedToId?: string;
+  newAssignedToType: string;
+  newAssignedToId: string;
+  reason?: string;
+  reassignedByUserId?: string;
+  reassignedByEmail?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // ============================================================================

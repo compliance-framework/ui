@@ -276,6 +276,15 @@
           Mark Failed
         </SecondaryButton>
 
+        <SecondaryButton
+          v-if="canReassign"
+          @click="openReassignDialog"
+          :disabled="isProcessing"
+        >
+          <i class="pi pi-send mr-2"></i>
+          Reassign Task
+        </SecondaryButton>
+
         <SecondaryButton @click="close"> Close </SecondaryButton>
       </div>
 
@@ -332,11 +341,96 @@
       </div>
     </template>
   </Dialog>
+
+  <!-- Reassign Step Dialog -->
+  <Dialog
+    v-model:visible="showReassignDialog"
+    header="Reassign Task"
+    :draggable="false"
+    modal
+    class="w-full max-w-xl"
+  >
+    <form id="reassign-form" @submit.prevent="handleReassign" class="space-y-4">
+      <p class="text-sm text-gray-600 dark:text-slate-400">
+        Select a user to transfer this task to.
+      </p>
+
+      <div>
+        <Label for="reassign-user" required>Assignee (Email)</Label>
+        <AutoComplete
+          id="reassign-user"
+          v-model="selectedReassignUser"
+          :suggestions="userSuggestions"
+          optionLabel="displayName"
+          placeholder="Search users by name or email..."
+          class="w-full"
+          aria-required="true"
+          :forceSelection="true"
+          :disabled="isProcessing"
+          @complete="searchUsers"
+        >
+          <template #item="{ item }">
+            <div class="flex flex-col">
+              <span class="font-medium text-gray-900 dark:text-slate-100">
+                {{ item.displayName }}
+              </span>
+              <span class="text-sm text-gray-500 dark:text-slate-400">
+                {{ item.email }}
+              </span>
+            </div>
+          </template>
+          <template #selected="{ value }">
+            <div class="flex flex-col">
+              <span class="font-medium text-gray-900 dark:text-slate-100">
+                {{ value?.displayName }}
+              </span>
+              <span class="text-sm text-gray-500 dark:text-slate-400">
+                {{ value?.email }}
+              </span>
+            </div>
+          </template>
+        </AutoComplete>
+      </div>
+
+      <div>
+        <Label for="reassign-reason">Reason (Optional)</Label>
+        <Textarea
+          id="reassign-reason"
+          v-model="reassignReason"
+          rows="3"
+          placeholder="Add context for this reassignment..."
+          class="w-full"
+          :disabled="isProcessing"
+        />
+      </div>
+
+      <Message v-if="reassignError" severity="error">
+        {{ reassignError }}
+      </Message>
+    </form>
+    <template #footer>
+      <div class="flex justify-end gap-3">
+        <SecondaryButton type="button" @click="closeReassignDialog">
+          Cancel
+        </SecondaryButton>
+        <PrimaryButton
+          form="reassign-form"
+          type="submit"
+          :disabled="isProcessing"
+        >
+          <i v-if="isProcessing" class="pi pi-spin pi-spinner mr-2"></i>
+          <i v-else class="pi pi-send mr-2"></i>
+          Reassign
+        </PrimaryButton>
+      </div>
+    </template>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
-import { useStepExecutions } from '@/composables/workflows';
+import { useStepExecutions, useUserSearch } from '@/composables/workflows';
+import { type DisplayUser } from '@/composables/workflows/useUserSearch';
 import { useStepPermissions } from '@/composables/workflows/useStepPermissions';
 import type {
   StepExecution,
@@ -345,6 +439,7 @@ import type {
   EvidenceType,
   EvidenceRequirement,
 } from '@/types/workflows';
+import { REASSIGNABLE_STEP_EXECUTION_STATUSES } from '@/types/workflows';
 import Drawer from '@/volt/Drawer.vue';
 import Dialog from '@/volt/Dialog.vue';
 import Badge from '@/volt/Badge.vue';
@@ -353,11 +448,13 @@ import Textarea from '@/volt/Textarea.vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
 import Message from '@/volt/Message.vue';
+import AutoComplete from '@/volt/AutoComplete.vue';
 import EvidenceSubmissionForm from './EvidenceSubmissionForm.vue';
 
 const props = defineProps<{
   step: StepExecution | null;
   visible: boolean;
+  openReassignOnOpen?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -365,8 +462,14 @@ const emit = defineEmits<{
   'step-updated': [];
 }>();
 
-const { startStep, completeStep, failStep, canTransition } =
-  useStepExecutions();
+const {
+  startStep,
+  completeStep,
+  failStep,
+  canTransition,
+  reassignStepExecution,
+} = useStepExecutions();
+const { userSuggestions, searchUsers } = useUserSearch();
 
 const isVisible = computed({
   get: () => props.visible,
@@ -379,6 +482,11 @@ const collectedEvidence = ref<StepExecutionEvidenceSubmit[]>([]);
 const userCanTransition = ref(false);
 const showFailDialog = ref(false);
 const failureReason = ref('');
+const showReassignDialog = ref(false);
+const selectedReassignUser = ref<DisplayUser | null>(null);
+const reassignReason = ref('');
+const reassignError = ref('');
+const hasAutoOpenedReassign = ref(false);
 
 const stepDefinition = computed(() => {
   return props.step?.workflowStepDefinition || props.step?.stepDefinition;
@@ -421,6 +529,14 @@ const {
   noActionMessage,
   showNoActionMessage,
 } = useStepPermissions(stepRef, stepDefinition, userCanTransition);
+
+const canReassign = computed(() => {
+  return (
+    !!props.step &&
+    userCanTransition.value &&
+    REASSIGNABLE_STEP_EXECUTION_STATUSES.includes(props.step.status)
+  );
+});
 
 function getStepStatusSeverity(
   status: string,
@@ -508,6 +624,53 @@ async function handleFail() {
   }
 }
 
+function openReassignDialog() {
+  reassignError.value = '';
+  selectedReassignUser.value = null;
+  reassignReason.value = '';
+  showReassignDialog.value = true;
+}
+
+function closeReassignDialog() {
+  showReassignDialog.value = false;
+  reassignError.value = '';
+}
+
+async function handleReassign() {
+  if (!props.step) return;
+
+  const selectedUser = selectedReassignUser.value;
+  if (!selectedUser?.email) {
+    reassignError.value = 'Please select a valid user with an email address.';
+    return;
+  }
+
+  if (!canReassign.value) {
+    reassignError.value =
+      'This step cannot be reassigned in its current state.';
+    return;
+  }
+
+  isProcessing.value = true;
+  reassignError.value = '';
+
+  try {
+    await reassignStepExecution(props.step.id, {
+      assignedToType: 'email',
+      assignedToId: selectedUser.email,
+      reason: reassignReason.value.trim() || undefined,
+    });
+    emit('step-updated');
+    closeReassignDialog();
+    close();
+  } catch (error) {
+    reassignError.value =
+      error instanceof Error ? error.message : 'Failed to reassign step.';
+  } finally {
+    isProcessing.value = false;
+  }
+}
+
 function handleEvidenceSubmitted(evidence: StepExecutionEvidenceSubmit) {
   // Collect evidence locally instead of submitting immediately
   collectedEvidence.value.push(evidence);
@@ -523,6 +686,8 @@ function close() {
   isVisible.value = false;
   completionNotes.value = '';
   collectedEvidence.value = [];
+  hasAutoOpenedReassign.value = false;
+  closeReassignDialog();
 }
 
 // Reset state and check permissions when step changes
@@ -539,6 +704,29 @@ watch(
       } catch {
         userCanTransition.value = false;
       }
+    }
+    hasAutoOpenedReassign.value = false;
+  },
+  { immediate: true },
+);
+
+watch(
+  [() => props.visible, () => props.openReassignOnOpen, canReassign],
+  ([visible, openReassignOnOpen, isReassignable]) => {
+    if (!visible) {
+      hasAutoOpenedReassign.value = false;
+      closeReassignDialog();
+      return;
+    }
+
+    if (
+      openReassignOnOpen &&
+      isReassignable &&
+      !showReassignDialog.value &&
+      !hasAutoOpenedReassign.value
+    ) {
+      openReassignDialog();
+      hasAutoOpenedReassign.value = true;
     }
   },
   { immediate: true },
