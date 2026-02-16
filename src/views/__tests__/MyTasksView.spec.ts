@@ -77,7 +77,8 @@ function mountComponent() {
         Message: { template: '<div><slot /></div>' },
         SecondaryButton: { template: '<button><slot /></button>' },
         StepExecutionPanel: {
-          props: ['step', 'visible'],
+          name: 'StepExecutionPanel',
+          props: ['step', 'visible', 'openReassignOnOpen'],
           emits: ['update:visible', 'step-updated'],
           template:
             '<div><button class="emit-update" @click="$emit(\'step-updated\')">emit</button></div>',
@@ -131,6 +132,9 @@ describe('MyTasksView', () => {
       (wrapper.vm as unknown as { selectedStep: StepExecution | null })
         .selectedStep?.id,
     ).toBe('step-1');
+
+    const panel = wrapper.findComponent({ name: 'StepExecutionPanel' });
+    expect(panel.props('openReassignOnOpen')).toBe(true);
   });
 
   it('refreshes assignments when step-updated is emitted by panel', async () => {

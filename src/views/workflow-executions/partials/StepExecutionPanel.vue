@@ -713,8 +713,13 @@ watch(
 watch(
   [() => props.visible, () => props.openReassignOnOpen, canReassign],
   ([visible, openReassignOnOpen, isReassignable]) => {
+    if (!visible) {
+      hasAutoOpenedReassign.value = false;
+      closeReassignDialog();
+      return;
+    }
+
     if (
-      visible &&
       openReassignOnOpen &&
       isReassignable &&
       !showReassignDialog.value &&
@@ -725,15 +730,5 @@ watch(
     }
   },
   { immediate: true },
-);
-
-watch(
-  () => props.visible,
-  (visible) => {
-    if (!visible) {
-      hasAutoOpenedReassign.value = false;
-      closeReassignDialog();
-    }
-  },
 );
 </script>

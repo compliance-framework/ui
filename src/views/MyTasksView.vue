@@ -160,10 +160,14 @@
                     @pointerdown.stop
                     @mousedown.stop
                     @click.stop
+                    @keydown.enter.stop
+                    @keydown.space.stop
                   >
                     <SecondaryButton
                       size="small"
                       @click.stop="openReassignPanel(step)"
+                      @keydown.enter.stop
+                      @keydown.space.stop
                     >
                       <i class="pi pi-send mr-1"></i>
                       Reassign
