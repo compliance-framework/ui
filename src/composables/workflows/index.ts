@@ -11,6 +11,7 @@ export { useWorkflowExecutions } from './useWorkflowExecutions';
 export { useStepExecutions } from './useStepExecutions';
 export { useControlRelationships } from './useControlRelationships';
 export { useMyAssignments } from './useMyAssignments';
+export { useUserSearch } from './useUserSearch';
 
 // Re-export types for convenience
 export type {

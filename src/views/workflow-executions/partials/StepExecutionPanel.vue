@@ -362,9 +362,9 @@
           v-model="selectedReassignUser"
           :suggestions="userSuggestions"
           optionLabel="displayName"
-          :filterBy="['displayName', 'email']"
           placeholder="Search users by name or email..."
           class="w-full"
+          aria-required="true"
           :forceSelection="true"
           :disabled="isProcessing"
           @complete="searchUsers"
@@ -429,11 +429,8 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
-import { useStepExecutions } from '@/composables/workflows';
-import {
-  useUserSearch,
-  type DisplayUser,
-} from '@/composables/workflows/useUserSearch';
+import { useStepExecutions, useUserSearch } from '@/composables/workflows';
+import { type DisplayUser } from '@/composables/workflows/useUserSearch';
 import { useStepPermissions } from '@/composables/workflows/useStepPermissions';
 import type {
   StepExecution,
@@ -442,6 +439,7 @@ import type {
   EvidenceType,
   EvidenceRequirement,
 } from '@/types/workflows';
+import { REASSIGNABLE_STEP_EXECUTION_STATUSES } from '@/types/workflows';
 import Drawer from '@/volt/Drawer.vue';
 import Dialog from '@/volt/Dialog.vue';
 import Badge from '@/volt/Badge.vue';
@@ -456,6 +454,7 @@ import EvidenceSubmissionForm from './EvidenceSubmissionForm.vue';
 const props = defineProps<{
   step: StepExecution | null;
   visible: boolean;
+  openReassignOnOpen?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -487,6 +486,7 @@ const showReassignDialog = ref(false);
 const selectedReassignUser = ref<DisplayUser | null>(null);
 const reassignReason = ref('');
 const reassignError = ref('');
+const hasAutoOpenedReassign = ref(false);
 
 const stepDefinition = computed(() => {
   return props.step?.workflowStepDefinition || props.step?.stepDefinition;
@@ -531,11 +531,10 @@ const {
 } = useStepPermissions(stepRef, stepDefinition, userCanTransition);
 
 const canReassign = computed(() => {
-  const reassignableStatuses = ['pending', 'blocked', 'in_progress'];
   return (
     !!props.step &&
     userCanTransition.value &&
-    reassignableStatuses.includes(props.step.status)
+    REASSIGNABLE_STEP_EXECUTION_STATUSES.includes(props.step.status)
   );
 });
 
@@ -687,6 +686,7 @@ function close() {
   isVisible.value = false;
   completionNotes.value = '';
   collectedEvidence.value = [];
+  hasAutoOpenedReassign.value = false;
   closeReassignDialog();
 }
 
@@ -705,7 +705,35 @@ watch(
         userCanTransition.value = false;
       }
     }
+    hasAutoOpenedReassign.value = false;
   },
   { immediate: true },
+);
+
+watch(
+  [() => props.visible, () => props.openReassignOnOpen, canReassign],
+  ([visible, openReassignOnOpen, isReassignable]) => {
+    if (
+      visible &&
+      openReassignOnOpen &&
+      isReassignable &&
+      !showReassignDialog.value &&
+      !hasAutoOpenedReassign.value
+    ) {
+      openReassignDialog();
+      hasAutoOpenedReassign.value = true;
+    }
+  },
+  { immediate: true },
+);
+
+watch(
+  () => props.visible,
+  (visible) => {
+    if (!visible) {
+      hasAutoOpenedReassign.value = false;
+      closeReassignDialog();
+    }
+  },
 );
 </script>

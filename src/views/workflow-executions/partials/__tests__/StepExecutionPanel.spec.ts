@@ -20,9 +20,6 @@ vi.mock('@/composables/workflows', () => ({
     canTransition: mockCanTransition,
     reassignStepExecution: mockReassignStepExecution,
   }),
-}));
-
-vi.mock('@/composables/workflows/useUserSearch', () => ({
   useUserSearch: () => ({
     userSuggestions: mockUserSuggestions,
     searchUsers: mockSearchUsers,

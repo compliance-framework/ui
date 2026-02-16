@@ -65,6 +65,18 @@ describe('useStepExecutions reassignment', () => {
     });
   });
 
+  function getReassignApi(executeReassignStepExecution: unknown): ApiMock {
+    const reassignApi = apiMocks.find(
+      (apiMock) => apiMock.execute === executeReassignStepExecution,
+    );
+
+    if (!reassignApi) {
+      throw new Error('Unable to locate reassign API mock');
+    }
+
+    return reassignApi;
+  }
+
   it('calls the reassign endpoint with expected payload', async () => {
     const expected: StepExecution = {
       id: 'step-1',
@@ -78,7 +90,7 @@ describe('useStepExecutions reassignment', () => {
     };
 
     const composable = useStepExecutions();
-    const reassignApi = apiMocks[8];
+    const reassignApi = getReassignApi(composable.executeReassignStepExecution);
     reassignApi.execute.mockImplementation(async () => {
       reassignApi.data.value = expected;
     });
@@ -103,9 +115,13 @@ describe('useStepExecutions reassignment', () => {
   });
 
   it('registers kebab-case transform for reassignment API', () => {
-    useStepExecutions();
+    const composable = useStepExecutions();
 
-    const reassignCall = mockUseDataApi.mock.calls[8];
+    const reassignApi = getReassignApi(composable.executeReassignStepExecution);
+    const reassignCallIndex = apiMocks.findIndex(
+      (apiMock) => apiMock === reassignApi,
+    );
+    const reassignCall = mockUseDataApi.mock.calls[reassignCallIndex];
     const config = reassignCall[1] as { transformRequest?: unknown[] };
     expect(config.transformRequest).toBeDefined();
     expect(Array.isArray(config.transformRequest)).toBe(true);
@@ -126,7 +142,7 @@ describe('useStepExecutions reassignment', () => {
     const onSuccess = vi.fn();
 
     const composable = useStepExecutions();
-    const reassignApi = apiMocks[8];
+    const reassignApi = getReassignApi(composable.executeReassignStepExecution);
     reassignApi.execute.mockImplementation(async () => {
       reassignApi.data.value = expected;
     });
@@ -151,7 +167,7 @@ describe('useStepExecutions reassignment', () => {
 
   it('propagates reassignment errors and shows error toast', async () => {
     const composable = useStepExecutions();
-    const reassignApi = apiMocks[8];
+    const reassignApi = getReassignApi(composable.executeReassignStepExecution);
     reassignApi.execute.mockRejectedValue(new Error('Invalid assignee'));
 
     await expect(

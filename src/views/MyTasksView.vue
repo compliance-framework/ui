@@ -79,7 +79,7 @@
             <div
               v-for="step in assignments"
               :key="step.id"
-              @click="openStepPanel(step)"
+              @click="handleTaskCardClick($event, step)"
               @keydown.enter="openStepPanel(step)"
               @keydown.space="
                 (event) => {
@@ -153,16 +153,22 @@
                   </div>
                 </div>
 
-                <div class="ml-4">
-                  <SecondaryButton
+                <div class="ml-4 flex items-center gap-2">
+                  <div
                     v-if="canQuickReassign(step)"
-                    size="small"
-                    @click.stop="openReassignPanel(step)"
+                    data-card-action="reassign"
+                    @pointerdown.stop
+                    @mousedown.stop
+                    @click.stop
                   >
-                    <i class="pi pi-send mr-1"></i>
-                    Reassign
-                  </SecondaryButton>
-                  <i class="pi pi-chevron-right text-gray-400"></i>
+                    <SecondaryButton
+                      size="small"
+                      @click.stop="openReassignPanel(step)"
+                    >
+                      <i class="pi pi-send mr-1"></i>
+                      Reassign
+                    </SecondaryButton>
+                  </div>
                 </div>
               </div>
             </div>
@@ -199,6 +205,7 @@
     <!-- Step Execution Panel (reused from workflow executions) -->
     <StepExecutionPanel
       :step="selectedStep"
+      :open-reassign-on-open="openReassignOnPanelOpen"
       v-model:visible="showStepPanel"
       @step-updated="handleStepUpdated"
     />
@@ -209,6 +216,7 @@
 import { ref, watch, onMounted } from 'vue';
 import { useMyAssignments } from '@/composables/workflows/useMyAssignments';
 import type { StepExecution } from '@/types/workflows';
+import { REASSIGNABLE_STEP_EXECUTION_STATUSES } from '@/types/workflows';
 import PageHeader from '@/components/PageHeader.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
 import PageCard from '@/components/PageCard.vue';
@@ -228,6 +236,7 @@ const offset = ref(0);
 const hasMore = ref(false);
 const selectedStep = ref<StepExecution | null>(null);
 const showStepPanel = ref(false);
+const openReassignOnPanelOpen = ref(false);
 
 const statusOptions = [
   { label: 'All Statuses', value: '' },
@@ -264,11 +273,29 @@ function previousPage() {
 }
 
 function openStepPanel(step: StepExecution) {
+  openReassignOnPanelOpen.value = false;
   selectedStep.value = step;
   showStepPanel.value = true;
 }
 
+function handleTaskCardClick(event: MouseEvent, step: StepExecution) {
+  const clickedAction = event
+    .composedPath()
+    .some(
+      (node) =>
+        node instanceof Element &&
+        node.closest('[data-card-action="reassign"]') !== null,
+    );
+
+  if (clickedAction) {
+    return;
+  }
+
+  openStepPanel(step);
+}
+
 function openReassignPanel(step: StepExecution) {
+  openReassignOnPanelOpen.value = true;
   selectedStep.value = step;
   showStepPanel.value = true;
 }
@@ -278,7 +305,7 @@ function handleStepUpdated() {
 }
 
 function canQuickReassign(step: StepExecution): boolean {
-  return ['pending', 'blocked', 'in_progress'].includes(step.status);
+  return REASSIGNABLE_STEP_EXECUTION_STATUSES.includes(step.status);
 }
 
 function getStepName(step: StepExecution): string {
@@ -357,6 +384,12 @@ function formatDate(dateString: string | undefined): string {
 watch(statusFilter, () => {
   offset.value = 0;
   loadAssignments();
+});
+
+watch(showStepPanel, (visible) => {
+  if (!visible) {
+    openReassignOnPanelOpen.value = false;
+  }
 });
 
 onMounted(() => {

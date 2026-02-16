@@ -27,6 +27,12 @@ export type StepExecutionStatus =
   | 'failed'
   | 'skipped';
 
+export const REASSIGNABLE_STEP_EXECUTION_STATUSES: StepExecutionStatus[] = [
+  'pending',
+  'blocked',
+  'in_progress',
+];
+
 export type CadenceType =
   | 'daily'
   | 'weekly'
