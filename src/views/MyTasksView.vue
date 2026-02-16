@@ -154,6 +154,14 @@
                 </div>
 
                 <div class="ml-4">
+                  <SecondaryButton
+                    v-if="canQuickReassign(step)"
+                    size="small"
+                    @click.stop="openReassignPanel(step)"
+                  >
+                    <i class="pi pi-send mr-1"></i>
+                    Reassign
+                  </SecondaryButton>
                   <i class="pi pi-chevron-right text-gray-400"></i>
                 </div>
               </div>
@@ -260,8 +268,17 @@ function openStepPanel(step: StepExecution) {
   showStepPanel.value = true;
 }
 
+function openReassignPanel(step: StepExecution) {
+  selectedStep.value = step;
+  showStepPanel.value = true;
+}
+
 function handleStepUpdated() {
   loadAssignments();
+}
+
+function canQuickReassign(step: StepExecution): boolean {
+  return ['pending', 'blocked', 'in_progress'].includes(step.status);
 }
 
 function getStepName(step: StepExecution): string {

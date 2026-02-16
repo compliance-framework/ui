@@ -50,6 +50,8 @@ export type {
   StepExecutionEvidence,
   StepExecutionEvidenceSubmit,
   StepExecutionFail,
+  StepReassignmentRequest,
+  StepReassignmentHistory,
   StepExecutionListParams,
 
   // Control Relationship types

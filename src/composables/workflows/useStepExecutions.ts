@@ -11,6 +11,7 @@ import type {
   StepExecutionEvidence,
   CanTransitionResponse,
   EvidenceRequirement,
+  StepReassignmentRequest,
 } from '@/types/workflows';
 
 const BASE_URL = '/api/workflows/step-executions';
@@ -81,6 +82,19 @@ export function useStepExecutions() {
 
   // Mark step as failed
   const { execute: executeFailStep } = useDataApi<StepExecution>(
+    BASE_URL,
+    {
+      method: 'PUT',
+      transformRequest: [decamelizeKeys],
+    },
+    { immediate: false },
+  );
+
+  // Reassign step execution
+  const {
+    data: reassignedStepExecution,
+    execute: executeReassignStepExecution,
+  } = useDataApi<StepExecution>(
     BASE_URL,
     {
       method: 'PUT',
@@ -458,6 +472,43 @@ export function useStepExecutions() {
     });
   }
 
+  /**
+   * Reassign a step execution to a new email assignee.
+   */
+  async function reassignStepExecution(
+    id: string,
+    data: StepReassignmentRequest,
+    onSuccess?: (stepExecution: StepExecution) => void,
+  ) {
+    try {
+      await executeReassignStepExecution(`${BASE_URL}/${id}/reassign`, {
+        data,
+      });
+
+      toast.add({
+        severity: 'success',
+        summary: 'Task Reassigned',
+        detail: 'Step has been reassigned successfully',
+        life: 3000,
+      });
+
+      if (reassignedStepExecution.value && onSuccess) {
+        onSuccess(reassignedStepExecution.value);
+      }
+
+      return reassignedStepExecution.value;
+    } catch (error) {
+      toast.add({
+        severity: 'error',
+        summary: 'Reassignment Failed',
+        detail:
+          error instanceof Error ? error.message : 'Failed to reassign step',
+        life: 3000,
+      });
+      throw error;
+    }
+  }
+
   return {
     // Reactive data
     stepExecutions,
@@ -471,6 +522,7 @@ export function useStepExecutions() {
     canTransitionData,
     updatedStepExecution,
     submittedEvidence,
+    reassignedStepExecution,
 
     // New API methods
     transitionStep,
@@ -483,6 +535,7 @@ export function useStepExecutions() {
     startStep,
     completeStep,
     failStep,
+    reassignStepExecution,
 
     // Legacy methods (backward compatibility)
     updateStepStatus,
@@ -493,5 +546,6 @@ export function useStepExecutions() {
     fetchStepExecution,
     executeCanTransition,
     executeGetEvidenceRequirements,
+    executeReassignStepExecution,
   };
 }
