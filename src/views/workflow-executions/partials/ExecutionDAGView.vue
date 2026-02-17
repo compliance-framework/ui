@@ -21,6 +21,10 @@
           <span class="text-gray-600 dark:text-slate-400">In Progress</span>
         </div>
         <div class="flex items-center gap-2">
+          <div class="w-3 h-3 rounded-full bg-orange-500"></div>
+          <span class="text-gray-600 dark:text-slate-400">Overdue</span>
+        </div>
+        <div class="flex items-center gap-2">
           <div class="w-3 h-3 rounded-full bg-green-500"></div>
           <span class="text-gray-600 dark:text-slate-400">Completed</span>
         </div>
@@ -157,6 +161,8 @@ function getStepNodeClasses(step: StepExecution) {
       return `${baseClasses} border-green-500 bg-green-50 dark:bg-green-900/20`;
     case 'in_progress':
       return `${baseClasses} border-blue-500 bg-blue-50 dark:bg-blue-900/20 animate-pulse`;
+    case 'overdue':
+      return `${baseClasses} border-orange-500 bg-orange-50 dark:bg-orange-900/20`;
     case 'failed':
       return `${baseClasses} border-red-500 bg-red-50 dark:bg-red-900/20`;
     case 'blocked':
@@ -174,6 +180,8 @@ function getStepTextClasses(step: StepExecution) {
       return 'text-green-700 dark:text-green-300';
     case 'in_progress':
       return 'text-blue-700 dark:text-blue-300';
+    case 'overdue':
+      return 'text-orange-700 dark:text-orange-300';
     case 'failed':
       return 'text-red-700 dark:text-red-300';
     case 'blocked':

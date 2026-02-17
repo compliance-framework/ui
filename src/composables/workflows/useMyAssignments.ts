@@ -81,13 +81,14 @@ export function useMyAssignments() {
   }
 
   /**
-   * Get count of pending/in-progress assignments
+   * Get count of unresolved assignments
    */
   async function getAssignmentCount(): Promise<number> {
     try {
       const params = new URLSearchParams();
       params.append('status', 'pending');
       params.append('status', 'in_progress');
+      params.append('status', 'overdue');
       params.append('limit', '1');
 
       const url = `${BASE_URL}/my?${params.toString()}`;

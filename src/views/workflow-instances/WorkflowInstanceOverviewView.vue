@@ -63,6 +63,24 @@
             Format: second minute hour day month weekday
           </small>
         </div>
+
+        <!-- Grace Period -->
+        <div>
+          <Label for="gracePeriodDays">Grace Period (Days)</Label>
+          <InputText
+            id="gracePeriodDays"
+            v-model="gracePeriodDaysInput"
+            type="number"
+            min="0"
+            step="1"
+            placeholder="e.g. 7"
+            class="w-full"
+            :invalid="!!errors.gracePeriodDays"
+          />
+          <small v-if="errors.gracePeriodDays" class="text-red-500">
+            {{ errors.gracePeriodDays }}
+          </small>
+        </div>
       </div>
 
       <!-- Error Message -->
@@ -196,6 +214,11 @@ import Message from '@/volt/Message.vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
 import { validateCronExpression } from '@/utils/cron';
+import {
+  DEFAULT_GRACE_PERIOD_DAYS,
+  parseGracePeriodInput,
+  toGracePeriodInputValue,
+} from '@/utils/workflows';
 
 const store = useWorkflowInstanceStore();
 const toast = useToast();
@@ -210,6 +233,9 @@ const originalForm = ref<WorkflowInstanceUpdate>({});
 const errors = reactive<Record<string, string>>({});
 const errorMessage = ref('');
 const isSubmitting = ref(false);
+const gracePeriodDaysInput = ref(
+  toGracePeriodInputValue(DEFAULT_GRACE_PERIOD_DAYS),
+);
 
 const selectedCadence = ref<string>('monthly');
 const cronExpression = ref('');
@@ -249,6 +275,11 @@ function initForm() {
     form.name = store.instance.name;
     form.description = store.instance.description || '';
     form.cadence = store.instance.cadence;
+    form.gracePeriodDays =
+      store.instance.gracePeriodDays ?? DEFAULT_GRACE_PERIOD_DAYS;
+    gracePeriodDaysInput.value = toGracePeriodInputValue(
+      store.instance.gracePeriodDays,
+    );
 
     // Handle custom cron cadence
     if (store.instance.cadence.startsWith('cron:')) {
@@ -289,6 +320,13 @@ function validate(): boolean {
       return false;
     }
   }
+
+  const parsedGracePeriod = parseGracePeriodInput(gracePeriodDaysInput.value);
+  if (parsedGracePeriod.error) {
+    errors.gracePeriodDays = parsedGracePeriod.error;
+    return false;
+  }
+  form.gracePeriodDays = parsedGracePeriod.value;
 
   return true;
 }

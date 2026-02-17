@@ -15,6 +15,7 @@ export type WorkflowInstanceStatus = 'active' | 'inactive';
 export type WorkflowExecutionStatus =
   | 'pending'
   | 'in_progress'
+  | 'overdue'
   | 'completed'
   | 'failed'
   | 'cancelled';
@@ -23,6 +24,7 @@ export type StepExecutionStatus =
   | 'pending'
   | 'blocked'
   | 'in_progress'
+  | 'overdue'
   | 'completed'
   | 'failed'
   | 'skipped';
@@ -31,6 +33,7 @@ export const REASSIGNABLE_STEP_EXECUTION_STATUSES: StepExecutionStatus[] = [
   'pending',
   'blocked',
   'in_progress',
+  'overdue',
 ];
 
 export type CadenceType =
@@ -62,6 +65,7 @@ export interface WorkflowDefinition {
   status: WorkflowDefinitionStatus;
   suggestedCadence?: CadenceType;
   evidenceRequired: string;
+  gracePeriodDays?: number;
   createdAt: string;
   updatedAt: string;
   stepCount?: number;
@@ -74,6 +78,7 @@ export interface WorkflowDefinitionCreate {
   version?: string;
   suggestedCadence?: CadenceType;
   evidenceRequired?: string;
+  gracePeriodDays?: number;
 }
 
 export interface WorkflowDefinitionUpdate {
@@ -83,6 +88,7 @@ export interface WorkflowDefinitionUpdate {
   status?: WorkflowDefinitionStatus;
   suggestedCadence?: CadenceType;
   evidenceRequired?: string;
+  gracePeriodDays?: number;
 }
 
 // ============================================================================
@@ -103,6 +109,7 @@ export interface StepDefinition {
   responsibleRole?: string;
   evidenceRequired: EvidenceRequirement[];
   estimatedDurationMinutes?: number;
+  gracePeriodDays?: number;
   order: number;
   createdAt: string;
   updatedAt: string;
@@ -116,6 +123,7 @@ export interface StepDefinitionCreate {
   responsibleRole?: string;
   evidenceRequired?: EvidenceRequirement[];
   estimatedDurationMinutes?: number;
+  gracePeriodDays?: number;
   order?: number;
   dependsOn?: string[];
 }
@@ -126,6 +134,7 @@ export interface StepDefinitionUpdate {
   responsibleRole?: string;
   evidenceRequired?: EvidenceRequirement[];
   estimatedDurationMinutes?: number;
+  gracePeriodDays?: number;
   order?: number;
   dependsOn?: string[];
 }
@@ -143,6 +152,7 @@ export interface WorkflowInstance {
   systemId?: string;
   controlId?: string;
   cadence: CadenceType;
+  gracePeriodDays?: number;
   status: WorkflowInstanceStatus;
   isActive?: boolean; // Backend field for active status (camelCase)
   lastExecutionId?: string;
@@ -159,12 +169,14 @@ export interface WorkflowInstanceCreate {
   systemId?: string;
   controlId?: string;
   cadence: CadenceType;
+  gracePeriodDays?: number;
 }
 
 export interface WorkflowInstanceUpdate {
   name?: string;
   description?: string;
   cadence?: CadenceType;
+  gracePeriodDays?: number;
 }
 
 // ============================================================================
@@ -183,6 +195,8 @@ export interface WorkflowExecution {
   cancelledAt?: string;
   cancelledReason?: string;
   dueDate?: string;
+  overdueAt?: string;
+  failureReason?: string;
   parentExecutionId?: string;
   createdAt: string;
   updatedAt: string;
@@ -203,6 +217,7 @@ export interface WorkflowExecutionStatusDetails {
   pendingSteps: number;
   blockedSteps: number;
   inProgressSteps: number;
+  overdueSteps?: number;
 }
 
 export interface WorkflowExecutionMetrics {
@@ -237,6 +252,8 @@ export interface StepExecution {
   assignedToType?: string;
   assignedToId?: string;
   assignedAt?: string;
+  dueDate?: string;
+  overdueAt?: string;
   startedAt?: string;
   completedAt?: string;
   failedAt?: string;

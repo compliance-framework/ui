@@ -56,6 +56,24 @@
           />
         </div>
 
+        <!-- Grace Period -->
+        <div>
+          <Label for="gracePeriodDays">Grace Period (Days)</Label>
+          <InputText
+            id="gracePeriodDays"
+            v-model="gracePeriodDaysInput"
+            type="number"
+            min="0"
+            step="1"
+            placeholder="e.g. 7"
+            class="w-full"
+            :invalid="!!errors.gracePeriodDays"
+          />
+          <small v-if="errors.gracePeriodDays" class="text-red-500">
+            {{ errors.gracePeriodDays }}
+          </small>
+        </div>
+
         <!-- Evidence Required Types -->
         <div>
           <Label for="definition-evidence-required"
@@ -147,6 +165,9 @@ import PrimaryButton from '@/volt/PrimaryButton.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
 import MultiSelect from '@/volt/MultiSelect.vue';
 import {
+  DEFAULT_GRACE_PERIOD_DAYS,
+  parseGracePeriodInput,
+  toGracePeriodInputValue,
   stringifyEvidenceRequired,
   parseEvidenceRequired,
 } from '@/utils/workflows';
@@ -168,6 +189,9 @@ const errors = reactive<Record<string, string>>({});
 const errorMessage = ref('');
 const isSubmitting = ref(false);
 const selectedEvidenceTypes = ref<EvidenceType[]>([]);
+const gracePeriodDaysInput = ref(
+  toGracePeriodInputValue(DEFAULT_GRACE_PERIOD_DAYS),
+);
 
 const cadenceOptions: Array<{ label: string; value: string }> = [
   { label: 'Daily', value: 'daily' },
@@ -197,6 +221,11 @@ function initForm() {
     form.status = store.definition.status;
     form.suggestedCadence = store.definition.suggestedCadence;
     form.evidenceRequired = store.definition.evidenceRequired;
+    form.gracePeriodDays =
+      store.definition.gracePeriodDays ?? DEFAULT_GRACE_PERIOD_DAYS;
+    gracePeriodDaysInput.value = toGracePeriodInputValue(
+      store.definition.gracePeriodDays,
+    );
     selectedEvidenceTypes.value = parseEvidenceRequired(
       store.definition.evidenceRequired,
     ).map((req) => req.type);
@@ -219,6 +248,13 @@ function validate(): boolean {
     errors.name = 'Name is required';
     return false;
   }
+
+  const parsedGracePeriod = parseGracePeriodInput(gracePeriodDaysInput.value);
+  if (parsedGracePeriod.error) {
+    errors.gracePeriodDays = parsedGracePeriod.error;
+    return false;
+  }
+  form.gracePeriodDays = parsedGracePeriod.value;
 
   return true;
 }

@@ -1,5 +1,34 @@
 import type { EvidenceRequirement, EvidenceType } from '@/types/workflows';
 
+export const DEFAULT_GRACE_PERIOD_DAYS = 7;
+
+export function toGracePeriodInputValue(
+  gracePeriodDays?: number | null,
+  fallback = DEFAULT_GRACE_PERIOD_DAYS,
+): string {
+  return String(gracePeriodDays ?? fallback);
+}
+
+export function parseGracePeriodInput(
+  input: string,
+  fallback = DEFAULT_GRACE_PERIOD_DAYS,
+): { value: number; error?: string } {
+  const trimmed = input.trim();
+  if (trimmed === '') {
+    return { value: fallback };
+  }
+
+  const parsed = Number(trimmed);
+  if (!Number.isInteger(parsed) || parsed < 0) {
+    return {
+      value: fallback,
+      error: 'Grace period must be a whole number greater than or equal to 0',
+    };
+  }
+
+  return { value: parsed };
+}
+
 export function parseEvidenceRequired(
   rawValue?: string | EvidenceRequirement[] | null,
 ): EvidenceRequirement[] {

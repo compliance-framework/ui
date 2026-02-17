@@ -25,6 +25,9 @@
               <Badge :severity="getStepStatusSeverity(step.status)">
                 {{ formatStatus(step.status) }}
               </Badge>
+              <Badge v-if="step.overdueAt" severity="danger">
+                Overdue since {{ formatDate(step.overdueAt) }}
+              </Badge>
               <h4
                 class="text-base font-medium text-gray-900 dark:text-slate-200"
               >
@@ -64,6 +67,10 @@
               <span v-if="step.startedAt">
                 <i class="pi pi-clock mr-1"></i>
                 Started: {{ formatDate(step.startedAt) }}
+              </span>
+              <span v-if="step.dueDate">
+                <i class="pi pi-calendar mr-1"></i>
+                Due: {{ formatDate(step.dueDate) }}
               </span>
               <span v-if="step.completedAt">
                 <i class="pi pi-check mr-1"></i>
@@ -161,6 +168,7 @@ function getStepStatusSeverity(
     pending: 'secondary',
     blocked: 'warn',
     in_progress: 'info',
+    overdue: 'danger',
     completed: 'success',
     failed: 'danger',
     skipped: 'contrast',

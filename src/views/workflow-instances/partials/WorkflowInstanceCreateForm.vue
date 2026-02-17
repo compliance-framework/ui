@@ -108,6 +108,27 @@
       </small>
     </div>
 
+    <!-- Grace Period -->
+    <div>
+      <Label for="gracePeriodDays">Grace Period (Days)</Label>
+      <InputText
+        id="gracePeriodDays"
+        v-model="gracePeriodDaysInput"
+        type="number"
+        min="0"
+        step="1"
+        placeholder="e.g. 7"
+        class="w-full"
+        :invalid="!!errors.gracePeriodDays"
+      />
+      <small v-if="errors.gracePeriodDays" class="text-red-500">
+        {{ errors.gracePeriodDays }}
+      </small>
+      <small v-else class="text-gray-500 dark:text-slate-400">
+        Optional override for this workflow instance.
+      </small>
+    </div>
+
     <!-- Error Message -->
     <Message v-if="errorMessage" severity="error">
       {{ errorMessage }}
@@ -148,6 +169,11 @@ import Message from '@/volt/Message.vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
 import { validateCronExpression } from '@/utils/cron';
+import {
+  DEFAULT_GRACE_PERIOD_DAYS,
+  parseGracePeriodInput,
+  toGracePeriodInputValue,
+} from '@/utils/workflows';
 
 const props = defineProps<{
   preselectedDefinitionId?: string;
@@ -173,11 +199,15 @@ const form = reactive<WorkflowInstanceCreate>({
   cadence: 'monthly',
   systemId: props.preselectedSystemId,
   controlId: props.preselectedControlId,
+  gracePeriodDays: DEFAULT_GRACE_PERIOD_DAYS,
 });
 
 const errors = reactive<Record<string, string>>({});
 const errorMessage = ref('');
 const isSubmitting = ref(false);
+const gracePeriodDaysInput = ref(
+  toGracePeriodInputValue(DEFAULT_GRACE_PERIOD_DAYS),
+);
 
 const selectedCadence = ref<string>('monthly');
 const cronExpression = ref('');
@@ -247,6 +277,16 @@ function onDefinitionChange() {
         cronExpression.value = '';
       }
     }
+
+    if (
+      selectedDefinition.value.gracePeriodDays != null &&
+      gracePeriodDaysInput.value.trim() === ''
+    ) {
+      gracePeriodDaysInput.value = String(
+        selectedDefinition.value.gracePeriodDays,
+      );
+      form.gracePeriodDays = selectedDefinition.value.gracePeriodDays;
+    }
   }
 }
 
@@ -280,6 +320,13 @@ function validate(): boolean {
       return false;
     }
   }
+
+  const parsedGracePeriod = parseGracePeriodInput(gracePeriodDaysInput.value);
+  if (parsedGracePeriod.error) {
+    errors.gracePeriodDays = parsedGracePeriod.error;
+    return false;
+  }
+  form.gracePeriodDays = parsedGracePeriod.value;
 
   return true;
 }

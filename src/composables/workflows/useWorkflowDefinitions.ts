@@ -10,6 +10,18 @@ import type {
 
 const BASE_URL = '/api/workflows/definitions';
 
+function buildDefinitionPayload(
+  data: WorkflowDefinitionCreate | WorkflowDefinitionUpdate,
+) {
+  const { gracePeriodDays, ...rest } = data;
+  return {
+    ...rest,
+    ...(gracePeriodDays != null
+      ? { 'grace-period-days': gracePeriodDays }
+      : {}),
+  };
+}
+
 /**
  * Composable for managing workflow definitions.
  * Provides CRUD operations for workflow definition templates.
@@ -94,7 +106,7 @@ export function useWorkflowDefinitions() {
     onSuccess?: (definition: WorkflowDefinition) => void,
   ) {
     try {
-      await executeCreate({ data });
+      await executeCreate({ data: buildDefinitionPayload(data) });
       toast.add({
         severity: 'success',
         summary: 'Definition Created',
@@ -128,7 +140,9 @@ export function useWorkflowDefinitions() {
     onSuccess?: (definition: WorkflowDefinition) => void,
   ) {
     try {
-      await executeUpdate(`${BASE_URL}/${id}`, { data });
+      await executeUpdate(`${BASE_URL}/${id}`, {
+        data: buildDefinitionPayload(data),
+      });
       toast.add({
         severity: 'success',
         summary: 'Definition Updated',

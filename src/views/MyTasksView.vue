@@ -9,7 +9,7 @@
       <!-- Filters -->
       <PageCard class="mb-6">
         <div class="p-4">
-          <div class="flex gap-4 items-end">
+          <div class="flex flex-wrap gap-4 items-end">
             <div class="flex-1">
               <Label for="statusFilter">Status</Label>
               <Select
@@ -20,6 +20,24 @@
                 option-value="value"
                 placeholder="All Statuses"
                 class="w-full"
+              />
+            </div>
+            <div>
+              <Label for="dueAfterFilter">Due After</Label>
+              <input
+                id="dueAfterFilter"
+                v-model="dueAfterFilter"
+                type="date"
+                class="w-full min-w-[12rem] px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-200"
+              />
+            </div>
+            <div>
+              <Label for="dueBeforeFilter">Due Before</Label>
+              <input
+                id="dueBeforeFilter"
+                v-model="dueBeforeFilter"
+                type="date"
+                class="w-full min-w-[12rem] px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-200"
               />
             </div>
             <SecondaryButton @click="loadAssignments" :disabled="loading">
@@ -77,7 +95,7 @@
 
           <div class="space-y-4">
             <div
-              v-for="step in assignments"
+              v-for="step in sortedAssignments"
               :key="step.id"
               @click="handleTaskCardClick($event, step)"
               @keydown.enter="openStepPanel(step)"
@@ -89,7 +107,13 @@
               "
               tabindex="0"
               role="button"
-              class="border border-gray-200 dark:border-slate-700 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-slate-800 cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+              class="border rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-slate-800 cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+              :class="{
+                'border-red-300 dark:border-red-700 bg-red-50/40 dark:bg-red-900/10':
+                  step.status === 'overdue',
+                'border-gray-200 dark:border-slate-700':
+                  step.status !== 'overdue',
+              }"
             >
               <div class="flex items-start justify-between">
                 <div class="flex-1">
@@ -101,6 +125,9 @@
                     </h4>
                     <Badge :severity="getStepStatusSeverity(step.status)">
                       {{ formatStatus(step.status) }}
+                    </Badge>
+                    <Badge v-if="step.overdueAt" severity="danger">
+                      Overdue since {{ formatDate(step.overdueAt) }}
                     </Badge>
                   </div>
 
@@ -122,12 +149,12 @@
                         {{ getWorkflowName(step) }}
                       </div>
                     </div>
-                    <div v-if="getWorkflowDueDate(step)">
+                    <div v-if="getEffectiveDueDate(step)">
                       <span class="text-gray-500 dark:text-slate-500"
                         >Due Date:</span
                       >
                       <div class="font-medium" :class="getDueDateClass(step)">
-                        {{ formatDate(getWorkflowDueDate(step)) }}
+                        {{ formatDate(getEffectiveDueDate(step)) }}
                       </div>
                     </div>
                     <div v-if="step.assignedToType">
@@ -217,7 +244,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue';
+import { computed, ref, watch, onMounted } from 'vue';
 import { useMyAssignments } from '@/composables/workflows/useMyAssignments';
 import type { StepExecution } from '@/types/workflows';
 import { REASSIGNABLE_STEP_EXECUTION_STATUSES } from '@/types/workflows';
@@ -235,6 +262,8 @@ const { assignments, total, loading, error, fetchMyAssignments } =
   useMyAssignments();
 
 const statusFilter = ref('');
+const dueAfterFilter = ref('');
+const dueBeforeFilter = ref('');
 const limit = ref(10);
 const offset = ref(0);
 const hasMore = ref(false);
@@ -246,16 +275,44 @@ const statusOptions = [
   { label: 'All Statuses', value: '' },
   { label: 'Pending', value: 'pending' },
   { label: 'In Progress', value: 'in_progress' },
+  { label: 'Overdue', value: 'overdue' },
   { label: 'Blocked', value: 'blocked' },
   { label: 'Completed', value: 'completed' },
   { label: 'Failed', value: 'failed' },
   { label: 'Skipped', value: 'skipped' },
 ];
 
+const sortedAssignments = computed(() => {
+  if (!assignments.value || assignments.value.length === 0) return [];
+
+  const unresolved = new Set(['pending', 'blocked', 'in_progress', 'overdue']);
+
+  return [...assignments.value].sort((a, b) => {
+    const aUnresolved = unresolved.has(a.status);
+    const bUnresolved = unresolved.has(b.status);
+
+    if (aUnresolved !== bUnresolved) {
+      return aUnresolved ? -1 : 1;
+    }
+
+    const aDue = getEffectiveDueDate(a);
+    const bDue = getEffectiveDueDate(b);
+    if (aDue && bDue) {
+      return new Date(aDue).getTime() - new Date(bDue).getTime();
+    }
+    if (aDue) return -1;
+    if (bDue) return 1;
+
+    return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+  });
+});
+
 async function loadAssignments() {
   try {
     const response = await fetchMyAssignments({
       status: statusFilter.value || undefined,
+      dueAfter: dueAfterFilter.value || undefined,
+      dueBefore: dueBeforeFilter.value || undefined,
       limit: limit.value,
       offset: offset.value,
     });
@@ -334,12 +391,12 @@ function getWorkflowName(step: StepExecution): string {
   );
 }
 
-function getWorkflowDueDate(step: StepExecution): string | undefined {
-  return step.workflowExecution?.dueDate;
+function getEffectiveDueDate(step: StepExecution): string | undefined {
+  return step.dueDate || step.workflowExecution?.dueDate;
 }
 
 function getDueDateClass(step: StepExecution): string {
-  const dueDate = getWorkflowDueDate(step);
+  const dueDate = getEffectiveDueDate(step);
   if (!dueDate) return 'text-gray-900 dark:text-slate-200';
 
   const due = new Date(dueDate);
@@ -348,7 +405,8 @@ function getDueDateClass(step: StepExecution): string {
     (due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
   );
 
-  if (daysDiff < 0) return 'text-red-600 dark:text-red-400';
+  if (step.status === 'overdue' || daysDiff < 0)
+    return 'text-red-600 dark:text-red-400';
   if (daysDiff < 3) return 'text-amber-600 dark:text-amber-400';
   return 'text-gray-900 dark:text-slate-200';
 }
@@ -363,6 +421,7 @@ function getStepStatusSeverity(
     pending: 'secondary',
     blocked: 'warn',
     in_progress: 'info',
+    overdue: 'danger',
     completed: 'success',
     failed: 'danger',
     skipped: 'secondary',
@@ -386,6 +445,11 @@ function formatDate(dateString: string | undefined): string {
 }
 
 watch(statusFilter, () => {
+  offset.value = 0;
+  loadAssignments();
+});
+
+watch([dueAfterFilter, dueBeforeFilter], () => {
   offset.value = 0;
   loadAssignments();
 });
