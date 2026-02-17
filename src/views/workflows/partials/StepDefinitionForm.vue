@@ -72,7 +72,7 @@
       <Label for="step-grace-period">Grace Period (days)</Label>
       <input
         id="step-grace-period"
-        v-model.number="form.gracePeriodDays"
+        v-model="gracePeriodDaysInput"
         type="number"
         min="0"
         placeholder="7"
@@ -80,7 +80,7 @@
         :class="{ 'border-red-500': !!errors.gracePeriodDays }"
       />
       <small class="text-gray-500 dark:text-slate-400">
-        Number of days after due date before this step is marked as failed
+        Number of days after due date before this step is marked as overdue
       </small>
       <small v-if="errors.gracePeriodDays" class="text-red-500 block">
         {{ errors.gracePeriodDays }}
@@ -211,7 +211,9 @@ import type {
 } from '@/types/workflows';
 import {
   DEFAULT_GRACE_PERIOD_DAYS,
+  parseGracePeriodInput,
   parseEvidenceRequired,
+  toGracePeriodInputValue,
 } from '@/utils/workflows';
 import Label from '@/volt/Label.vue';
 import InputText from '@/volt/InputText.vue';
@@ -274,6 +276,9 @@ const form = reactive<StepFormState>({
 const errors = reactive<Record<string, string>>({});
 const errorMessage = ref('');
 const isSubmitting = ref(false);
+const gracePeriodDaysInput = ref(
+  toGracePeriodInputValue(DEFAULT_GRACE_PERIOD_DAYS),
+);
 
 const evidenceTypeOptions: Array<{ label: string; value: EvidenceType }> = [
   { label: 'Document', value: 'document' },
@@ -308,6 +313,9 @@ function initForm() {
     form.estimatedDurationMinutes = props.step.estimatedDurationMinutes || 30;
     form.gracePeriodDays =
       props.step.gracePeriodDays ?? DEFAULT_GRACE_PERIOD_DAYS;
+    gracePeriodDaysInput.value = toGracePeriodInputValue(
+      props.step.gracePeriodDays,
+    );
     form.order = props.step.order;
     form.dependsOn = props.step.dependsOn?.map((d) => d.dependsOnStepId) || [];
   } else {
@@ -319,6 +327,9 @@ function initForm() {
     form.evidenceItems = [...defaultEvidenceItems];
     form.estimatedDurationMinutes = 30;
     form.gracePeriodDays = DEFAULT_GRACE_PERIOD_DAYS;
+    gracePeriodDaysInput.value = toGracePeriodInputValue(
+      DEFAULT_GRACE_PERIOD_DAYS,
+    );
     form.order = props.availableSteps.length + 1;
     form.dependsOn = [];
   }
@@ -333,10 +344,12 @@ function validate(): boolean {
     return false;
   }
 
-  if (form.gracePeriodDays < 0) {
-    errors.gracePeriodDays = 'Grace period must be 0 or greater';
+  const parsedGracePeriod = parseGracePeriodInput(gracePeriodDaysInput.value);
+  if (parsedGracePeriod.error) {
+    errors.gracePeriodDays = parsedGracePeriod.error;
     return false;
   }
+  form.gracePeriodDays = parsedGracePeriod.value;
 
   // Check for circular dependencies
   if (form.dependsOn.length > 0 && props.step) {

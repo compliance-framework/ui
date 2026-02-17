@@ -67,7 +67,9 @@
       <!-- Actions -->
       <div class="mt-6 flex gap-3">
         <SecondaryButton
-          v-if="execution.status === 'in_progress'"
+          v-if="
+            execution.status === 'in_progress' || execution.status === 'overdue'
+          "
           @click="handleCancel"
           severity="danger"
         >
