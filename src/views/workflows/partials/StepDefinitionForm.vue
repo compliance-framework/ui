@@ -355,15 +355,14 @@ function validate(): boolean {
     form.gracePeriodDays = props.step
       ? (props.step.gracePeriodDays ?? effectiveDefaultGracePeriodDays)
       : effectiveDefaultGracePeriodDays;
-    return true;
+  } else {
+    const parsedGracePeriod = parseGracePeriodInput(gracePeriodDaysInput.value);
+    if (parsedGracePeriod.error) {
+      errors.gracePeriodDays = parsedGracePeriod.error;
+      return false;
+    }
+    form.gracePeriodDays = parsedGracePeriod.value;
   }
-
-  const parsedGracePeriod = parseGracePeriodInput(gracePeriodDaysInput.value);
-  if (parsedGracePeriod.error) {
-    errors.gracePeriodDays = parsedGracePeriod.error;
-    return false;
-  }
-  form.gracePeriodDays = parsedGracePeriod.value;
 
   // Check for circular dependencies
   if (form.dependsOn.length > 0 && props.step) {

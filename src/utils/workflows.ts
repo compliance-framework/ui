@@ -22,7 +22,7 @@ export function parseGracePeriodInput(
   if (!Number.isInteger(parsed) || parsed < 0) {
     return {
       value: fallback,
-      error: 'Grace period must be a whole number greater than or equal to 0',
+      error: 'Grace period must be a non-negative whole number (no decimals)',
     };
   }
 
