@@ -352,9 +352,7 @@ function validate(): boolean {
   if (gracePeriodDaysInput.value.trim() === '') {
     // Empty input is treated as "use current upstream default" rather than
     // persisting a nullable value for steps.
-    form.gracePeriodDays = props.step
-      ? (props.step.gracePeriodDays ?? effectiveDefaultGracePeriodDays)
-      : effectiveDefaultGracePeriodDays;
+    form.gracePeriodDays = effectiveDefaultGracePeriodDays;
   } else {
     const parsedGracePeriod = parseGracePeriodInput(gracePeriodDaysInput.value);
     if (parsedGracePeriod.error) {

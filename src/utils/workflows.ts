@@ -18,13 +18,14 @@ export function parseGracePeriodInput(
     return { value: fallback };
   }
 
-  const parsed = Number(trimmed);
-  if (!Number.isInteger(parsed) || parsed < 0) {
+  if (!/^\d+$/.test(trimmed)) {
     return {
       value: fallback,
       error: 'Grace period must be a non-negative whole number (no decimals)',
     };
   }
+
+  const parsed = Number.parseInt(trimmed, 10);
 
   return { value: parsed };
 }

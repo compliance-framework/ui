@@ -33,7 +33,6 @@ describe('workflows utils', () => {
     it('accepts valid integer inputs', () => {
       expect(parseGracePeriodInput('0')).toEqual({ value: 0 });
       expect(parseGracePeriodInput('7')).toEqual({ value: 7 });
-      expect(parseGracePeriodInput('7.0')).toEqual({ value: 7 });
     });
 
     it('rejects negative values', () => {
@@ -45,6 +44,21 @@ describe('workflows utils', () => {
 
     it('rejects decimal values', () => {
       expect(parseGracePeriodInput('7.5', 9)).toEqual({
+        value: 9,
+        error: 'Grace period must be a non-negative whole number (no decimals)',
+      });
+      expect(parseGracePeriodInput('7.0', 9)).toEqual({
+        value: 9,
+        error: 'Grace period must be a non-negative whole number (no decimals)',
+      });
+    });
+
+    it('rejects scientific and non-decimal numeric formats', () => {
+      expect(parseGracePeriodInput('1e2', 9)).toEqual({
+        value: 9,
+        error: 'Grace period must be a non-negative whole number (no decimals)',
+      });
+      expect(parseGracePeriodInput('0x10', 9)).toEqual({
         value: 9,
         error: 'Grace period must be a non-negative whole number (no decimals)',
       });
