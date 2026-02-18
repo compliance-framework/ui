@@ -74,7 +74,7 @@
         {{ errors.gracePeriodDays }}
       </small>
       <small v-else class="text-gray-500 dark:text-slate-400">
-        Optional override for overdue escalation grace period.
+        Default grace period for overdue escalation (in days).
       </small>
     </div>
 

@@ -228,6 +228,7 @@ const props = defineProps<{
   workflowDefinitionId: string;
   availableSteps: StepDefinition[];
   step?: StepDefinition | null;
+  defaultGracePeriodDays?: number;
 }>();
 
 const emit = defineEmits<{
@@ -251,7 +252,7 @@ type StepFormState = {
   evidenceRequiredEnabled: boolean;
   evidenceItems: EvidenceItem[];
   estimatedDurationMinutes: number;
-  gracePeriodDays?: number;
+  gracePeriodDays: number;
   order: number;
   dependsOn: string[];
 };
@@ -259,6 +260,9 @@ type StepFormState = {
 const defaultEvidenceItems: EvidenceItem[] = [
   { type: 'document', description: '', required: true },
 ];
+// Step-level default comes from the parent workflow model when provided.
+const effectiveDefaultGracePeriodDays =
+  props.defaultGracePeriodDays ?? DEFAULT_GRACE_PERIOD_DAYS;
 
 const form = reactive<StepFormState>({
   workflowDefinitionId: props.workflowDefinitionId,
@@ -268,7 +272,7 @@ const form = reactive<StepFormState>({
   evidenceRequiredEnabled: true,
   evidenceItems: [...defaultEvidenceItems],
   estimatedDurationMinutes: 30,
-  gracePeriodDays: DEFAULT_GRACE_PERIOD_DAYS,
+  gracePeriodDays: effectiveDefaultGracePeriodDays,
   order: 1,
   dependsOn: [],
 });
@@ -277,7 +281,7 @@ const errors = reactive<Record<string, string>>({});
 const errorMessage = ref('');
 const isSubmitting = ref(false);
 const gracePeriodDaysInput = ref(
-  toGracePeriodInputValue(DEFAULT_GRACE_PERIOD_DAYS),
+  toGracePeriodInputValue(effectiveDefaultGracePeriodDays),
 );
 
 const evidenceTypeOptions: Array<{ label: string; value: EvidenceType }> = [
@@ -311,11 +315,12 @@ function initForm() {
           }))
         : [...defaultEvidenceItems];
     form.estimatedDurationMinutes = props.step.estimatedDurationMinutes || 30;
-    form.gracePeriodDays = props.step.gracePeriodDays;
+    form.gracePeriodDays =
+      props.step.gracePeriodDays ?? effectiveDefaultGracePeriodDays;
     gracePeriodDaysInput.value =
       props.step.gracePeriodDays != null
         ? toGracePeriodInputValue(props.step.gracePeriodDays)
-        : '';
+        : toGracePeriodInputValue(effectiveDefaultGracePeriodDays);
     form.order = props.step.order;
     form.dependsOn = props.step.dependsOn?.map((d) => d.dependsOnStepId) || [];
   } else {
@@ -326,9 +331,9 @@ function initForm() {
     form.evidenceRequiredEnabled = true;
     form.evidenceItems = [...defaultEvidenceItems];
     form.estimatedDurationMinutes = 30;
-    form.gracePeriodDays = DEFAULT_GRACE_PERIOD_DAYS;
+    form.gracePeriodDays = effectiveDefaultGracePeriodDays;
     gracePeriodDaysInput.value = toGracePeriodInputValue(
-      DEFAULT_GRACE_PERIOD_DAYS,
+      effectiveDefaultGracePeriodDays,
     );
     form.order = props.availableSteps.length + 1;
     form.dependsOn = [];
@@ -345,9 +350,11 @@ function validate(): boolean {
   }
 
   if (gracePeriodDaysInput.value.trim() === '') {
+    // Empty input is treated as "use current upstream default" rather than
+    // persisting a nullable value for steps.
     form.gracePeriodDays = props.step
-      ? props.step.gracePeriodDays
-      : DEFAULT_GRACE_PERIOD_DAYS;
+      ? (props.step.gracePeriodDays ?? effectiveDefaultGracePeriodDays)
+      : effectiveDefaultGracePeriodDays;
     return true;
   }
 

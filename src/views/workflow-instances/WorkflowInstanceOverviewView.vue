@@ -275,11 +275,17 @@ function initForm() {
     form.name = store.instance.name;
     form.description = store.instance.description || '';
     form.cadence = store.instance.cadence;
-    form.gracePeriodDays = store.instance.gracePeriodDays;
-    gracePeriodDaysInput.value =
-      store.instance.gracePeriodDays != null
-        ? toGracePeriodInputValue(store.instance.gracePeriodDays)
-        : '';
+    // Default precedence for instance editing:
+    // 1) explicit instance override, 2) workflow definition default,
+    // 3) global platform fallback.
+    const defaultGracePeriodDays =
+      store.instance.workflowDefinition?.gracePeriodDays ??
+      DEFAULT_GRACE_PERIOD_DAYS;
+    form.gracePeriodDays =
+      store.instance.gracePeriodDays ?? defaultGracePeriodDays;
+    gracePeriodDaysInput.value = toGracePeriodInputValue(
+      store.instance.gracePeriodDays ?? defaultGracePeriodDays,
+    );
 
     // Handle custom cron cadence
     if (store.instance.cadence.startsWith('cron:')) {
@@ -319,11 +325,6 @@ function validate(): boolean {
       errors.cronExpression = cronError;
       return false;
     }
-  }
-
-  if (gracePeriodDaysInput.value.trim() === '') {
-    form.gracePeriodDays = undefined;
-    return true;
   }
 
   const parsedGracePeriod = parseGracePeriodInput(gracePeriodDaysInput.value);
@@ -371,11 +372,8 @@ function formatDate(dateString: string): string {
 }
 
 watch(gracePeriodDaysInput, (value) => {
-  if (value.trim() === '') {
-    form.gracePeriodDays = undefined;
-    return;
-  }
-
+  // Keep hasChanges reactive for grace-period-only edits by mirroring valid
+  // input into the form model before submit-time validation runs.
   const parsedGracePeriod = parseGracePeriodInput(value);
   if (!parsedGracePeriod.error) {
     form.gracePeriodDays = parsedGracePeriod.value;

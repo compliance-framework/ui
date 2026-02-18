@@ -125,7 +125,7 @@
         {{ errors.gracePeriodDays }}
       </small>
       <small v-else class="text-gray-500 dark:text-slate-400">
-        Optional override for this workflow instance.
+        Default grace period for this workflow instance (in days).
       </small>
     </div>
 
@@ -208,6 +208,9 @@ const isSubmitting = ref(false);
 const gracePeriodDaysInput = ref(
   toGracePeriodInputValue(DEFAULT_GRACE_PERIOD_DAYS),
 );
+// Tracks the active upstream default used by this form so we can distinguish
+// "still on default" from "user explicitly customized" when switching defs.
+const currentGracePeriodDefault = ref(DEFAULT_GRACE_PERIOD_DAYS);
 
 const selectedCadence = ref<string>('monthly');
 const cronExpression = ref('');
@@ -278,20 +281,20 @@ function onDefinitionChange() {
       }
     }
 
-    if (selectedDefinition.value.gracePeriodDays != null) {
-      const parsedGracePeriod = parseGracePeriodInput(
-        gracePeriodDaysInput.value,
-      );
-      if (
-        !parsedGracePeriod.error &&
-        parsedGracePeriod.value === DEFAULT_GRACE_PERIOD_DAYS
-      ) {
-        gracePeriodDaysInput.value = String(
-          selectedDefinition.value.gracePeriodDays,
-        );
-        form.gracePeriodDays = selectedDefinition.value.gracePeriodDays;
-      }
+    const definitionGracePeriodDefault =
+      selectedDefinition.value.gracePeriodDays ?? DEFAULT_GRACE_PERIOD_DAYS;
+    const parsedGracePeriod = parseGracePeriodInput(gracePeriodDaysInput.value);
+    if (
+      !parsedGracePeriod.error &&
+      parsedGracePeriod.value === currentGracePeriodDefault.value
+    ) {
+      // User has not diverged from the previous default, so carry forward the
+      // newly selected definition default.
+      gracePeriodDaysInput.value = String(definitionGracePeriodDefault);
+      form.gracePeriodDays = definitionGracePeriodDefault;
     }
+    // Always update baseline default after selection change.
+    currentGracePeriodDefault.value = definitionGracePeriodDefault;
   }
 }
 
