@@ -21,9 +21,7 @@ function buildInstancePayload(
   const { gracePeriodDays, ...rest } = data;
   return {
     ...rest,
-    ...(gracePeriodDays != null
-      ? { 'grace-period-days': gracePeriodDays }
-      : {}),
+    ...(gracePeriodDays != null ? { gracePeriodDays } : {}),
   };
 }
 

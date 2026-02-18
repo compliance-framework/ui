@@ -69,7 +69,7 @@
 
     <!-- Grace Period -->
     <div>
-      <Label for="step-grace-period">Grace Period (days)</Label>
+      <Label for="step-grace-period">Grace Period (Days)</Label>
       <input
         id="step-grace-period"
         v-model="gracePeriodDaysInput"

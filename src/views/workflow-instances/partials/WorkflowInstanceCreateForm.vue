@@ -280,7 +280,8 @@ function onDefinitionChange() {
 
     if (
       selectedDefinition.value.gracePeriodDays != null &&
-      gracePeriodDaysInput.value.trim() === ''
+      parseGracePeriodInput(gracePeriodDaysInput.value).value ===
+        DEFAULT_GRACE_PERIOD_DAYS
     ) {
       gracePeriodDaysInput.value = String(
         selectedDefinition.value.gracePeriodDays,
