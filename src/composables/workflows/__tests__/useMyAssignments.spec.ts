@@ -216,7 +216,7 @@ describe('useMyAssignments', () => {
   });
 
   describe('getAssignmentCount', () => {
-    it('fetches count with pending and in_progress statuses', async () => {
+    it('fetches count with pending, in_progress, and overdue statuses', async () => {
       const mockResponse: MyAssignmentsResponse = {
         data: [],
         total: 5,
@@ -236,6 +236,7 @@ describe('useMyAssignments', () => {
       const callUrl = mockExecute.mock.calls[0][0] as string;
       expect(callUrl).toContain('status=pending');
       expect(callUrl).toContain('status=in_progress');
+      expect(callUrl).toContain('status=overdue');
       expect(callUrl).toContain('limit=1');
     });
 

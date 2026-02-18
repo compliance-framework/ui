@@ -251,7 +251,7 @@ type StepFormState = {
   evidenceRequiredEnabled: boolean;
   evidenceItems: EvidenceItem[];
   estimatedDurationMinutes: number;
-  gracePeriodDays: number;
+  gracePeriodDays?: number;
   order: number;
   dependsOn: string[];
 };
@@ -311,11 +311,11 @@ function initForm() {
           }))
         : [...defaultEvidenceItems];
     form.estimatedDurationMinutes = props.step.estimatedDurationMinutes || 30;
-    form.gracePeriodDays =
-      props.step.gracePeriodDays ?? DEFAULT_GRACE_PERIOD_DAYS;
-    gracePeriodDaysInput.value = toGracePeriodInputValue(
-      props.step.gracePeriodDays,
-    );
+    form.gracePeriodDays = props.step.gracePeriodDays;
+    gracePeriodDaysInput.value =
+      props.step.gracePeriodDays != null
+        ? toGracePeriodInputValue(props.step.gracePeriodDays)
+        : '';
     form.order = props.step.order;
     form.dependsOn = props.step.dependsOn?.map((d) => d.dependsOnStepId) || [];
   } else {
@@ -342,6 +342,13 @@ function validate(): boolean {
   if (!form.name?.trim()) {
     errors.name = 'Step name is required';
     return false;
+  }
+
+  if (gracePeriodDaysInput.value.trim() === '') {
+    form.gracePeriodDays = props.step
+      ? props.step.gracePeriodDays
+      : DEFAULT_GRACE_PERIOD_DAYS;
+    return true;
   }
 
   const parsedGracePeriod = parseGracePeriodInput(gracePeriodDaysInput.value);

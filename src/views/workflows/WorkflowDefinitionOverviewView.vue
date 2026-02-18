@@ -221,11 +221,11 @@ function initForm() {
     form.status = store.definition.status;
     form.suggestedCadence = store.definition.suggestedCadence;
     form.evidenceRequired = store.definition.evidenceRequired;
-    form.gracePeriodDays =
-      store.definition.gracePeriodDays ?? DEFAULT_GRACE_PERIOD_DAYS;
-    gracePeriodDaysInput.value = toGracePeriodInputValue(
-      store.definition.gracePeriodDays,
-    );
+    form.gracePeriodDays = store.definition.gracePeriodDays;
+    gracePeriodDaysInput.value =
+      store.definition.gracePeriodDays != null
+        ? toGracePeriodInputValue(store.definition.gracePeriodDays)
+        : '';
     selectedEvidenceTypes.value = parseEvidenceRequired(
       store.definition.evidenceRequired,
     ).map((req) => req.type);
@@ -247,6 +247,11 @@ function validate(): boolean {
   if (!form.name?.trim()) {
     errors.name = 'Name is required';
     return false;
+  }
+
+  if (gracePeriodDaysInput.value.trim() === '') {
+    form.gracePeriodDays = undefined;
+    return true;
   }
 
   const parsedGracePeriod = parseGracePeriodInput(gracePeriodDaysInput.value);
@@ -302,6 +307,11 @@ watch(
 );
 
 watch(gracePeriodDaysInput, (value) => {
+  if (value.trim() === '') {
+    form.gracePeriodDays = undefined;
+    return;
+  }
+
   const parsedGracePeriod = parseGracePeriodInput(value);
   if (!parsedGracePeriod.error) {
     form.gracePeriodDays = parsedGracePeriod.value;

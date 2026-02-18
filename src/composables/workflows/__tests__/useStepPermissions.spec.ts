@@ -186,6 +186,25 @@ describe('useStepPermissions', () => {
 
       expect(canComplete.value).toBe(false);
     });
+
+    it('returns true when step is overdue and user can transition', () => {
+      const step = ref<StepExecution>({
+        id: '123',
+        status: 'overdue',
+        workflowExecutionId: 'exec-1',
+        workflowStepDefinitionId: 'def-1',
+      } as StepExecution);
+      const stepDefinition = ref<StepDefinition | null>(createStepDef());
+      const userCanTransition = ref(true);
+
+      const { canComplete } = useStepPermissions(
+        step,
+        stepDefinition,
+        userCanTransition,
+      );
+
+      expect(canComplete.value).toBe(true);
+    });
   });
 
   describe('canFail', () => {
@@ -225,6 +244,25 @@ describe('useStepPermissions', () => {
       );
 
       expect(canFail.value).toBe(false);
+    });
+
+    it('returns true when step is overdue and user can transition', () => {
+      const step = ref<StepExecution>({
+        id: '123',
+        status: 'overdue',
+        workflowExecutionId: 'exec-1',
+        workflowStepDefinitionId: 'def-1',
+      } as StepExecution);
+      const stepDefinition = ref<StepDefinition | null>(createStepDef());
+      const userCanTransition = ref(true);
+
+      const { canFail } = useStepPermissions(
+        step,
+        stepDefinition,
+        userCanTransition,
+      );
+
+      expect(canFail.value).toBe(true);
     });
   });
 
@@ -291,6 +329,27 @@ describe('useStepPermissions', () => {
       );
 
       expect(canSubmitEvidence.value).toBe(false);
+    });
+
+    it('returns true when step is overdue', () => {
+      const step = ref<StepExecution>({
+        id: '123',
+        status: 'overdue',
+        workflowExecutionId: 'exec-1',
+        workflowStepDefinitionId: 'def-1',
+      } as StepExecution);
+      const stepDefinition = ref<StepDefinition | null>(
+        createStepDef({ evidenceRequired: [createEvidenceReq()] }),
+      );
+      const userCanTransition = ref(true);
+
+      const { canSubmitEvidence } = useStepPermissions(
+        step,
+        stepDefinition,
+        userCanTransition,
+      );
+
+      expect(canSubmitEvidence.value).toBe(true);
     });
   });
 

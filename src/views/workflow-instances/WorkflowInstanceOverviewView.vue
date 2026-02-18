@@ -275,11 +275,11 @@ function initForm() {
     form.name = store.instance.name;
     form.description = store.instance.description || '';
     form.cadence = store.instance.cadence;
-    form.gracePeriodDays =
-      store.instance.gracePeriodDays ?? DEFAULT_GRACE_PERIOD_DAYS;
-    gracePeriodDaysInput.value = toGracePeriodInputValue(
-      store.instance.gracePeriodDays,
-    );
+    form.gracePeriodDays = store.instance.gracePeriodDays;
+    gracePeriodDaysInput.value =
+      store.instance.gracePeriodDays != null
+        ? toGracePeriodInputValue(store.instance.gracePeriodDays)
+        : '';
 
     // Handle custom cron cadence
     if (store.instance.cadence.startsWith('cron:')) {
@@ -319,6 +319,11 @@ function validate(): boolean {
       errors.cronExpression = cronError;
       return false;
     }
+  }
+
+  if (gracePeriodDaysInput.value.trim() === '') {
+    form.gracePeriodDays = undefined;
+    return true;
   }
 
   const parsedGracePeriod = parseGracePeriodInput(gracePeriodDaysInput.value);
@@ -366,6 +371,11 @@ function formatDate(dateString: string): string {
 }
 
 watch(gracePeriodDaysInput, (value) => {
+  if (value.trim() === '') {
+    form.gracePeriodDays = undefined;
+    return;
+  }
+
   const parsedGracePeriod = parseGracePeriodInput(value);
   if (!parsedGracePeriod.error) {
     form.gracePeriodDays = parsedGracePeriod.value;
