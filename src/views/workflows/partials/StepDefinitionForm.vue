@@ -343,18 +343,18 @@ function initForm() {
 function validate(): boolean {
   Object.keys(errors).forEach((key) => delete errors[key]);
   errorMessage.value = '';
-
+  const normalizedGracePeriodInput = String(gracePeriodDaysInput.value ?? '');
   if (!form.name?.trim()) {
     errors.name = 'Step name is required';
     return false;
   }
 
-  if (gracePeriodDaysInput.value.trim() === '') {
+  if (normalizedGracePeriodInput.trim() === '') {
     // Empty input is treated as "use current upstream default" rather than
     // persisting a nullable value for steps.
     form.gracePeriodDays = effectiveDefaultGracePeriodDays;
   } else {
-    const parsedGracePeriod = parseGracePeriodInput(gracePeriodDaysInput.value);
+    const parsedGracePeriod = parseGracePeriodInput(normalizedGracePeriodInput);
     if (parsedGracePeriod.error) {
       errors.gracePeriodDays = parsedGracePeriod.error;
       return false;
