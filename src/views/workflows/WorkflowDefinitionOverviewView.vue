@@ -301,6 +301,13 @@ watch(
   { deep: true },
 );
 
+watch(gracePeriodDaysInput, (value) => {
+  const parsedGracePeriod = parseGracePeriodInput(value);
+  if (!parsedGracePeriod.error) {
+    form.gracePeriodDays = parsedGracePeriod.value;
+  }
+});
+
 // Initialize form when definition loads
 watch(
   () => store.definition,

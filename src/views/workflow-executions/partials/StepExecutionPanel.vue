@@ -509,6 +509,7 @@ const selectedReassignUser = ref<DisplayUser | null>(null);
 const reassignReason = ref('');
 const reassignError = ref('');
 const hasAutoOpenedReassign = ref(false);
+let latestPermissionRequestId = 0;
 
 const stepDefinition = computed(() => {
   return props.step?.workflowStepDefinition || props.step?.stepDefinition;
@@ -714,28 +715,34 @@ function close() {
 }
 
 async function refreshTransitionPermission(stepId?: string) {
+  const requestId = ++latestPermissionRequestId;
+
   if (!stepId) {
-    userCanTransition.value = false;
+    if (requestId === latestPermissionRequestId && !props.step?.id) {
+      userCanTransition.value = false;
+    }
     return;
   }
 
   try {
-    userCanTransition.value = await canTransition(stepId);
+    const canTransitionResult = await canTransition(stepId);
+    if (requestId === latestPermissionRequestId && stepId === props.step?.id) {
+      userCanTransition.value = canTransitionResult;
+    }
   } catch {
-    userCanTransition.value = false;
+    if (requestId === latestPermissionRequestId && stepId === props.step?.id) {
+      userCanTransition.value = false;
+    }
   }
 }
 
 // Reset state and check permissions when step changes
 watch(
   () => props.step?.id,
-  (newId) => {
+  () => {
     completionNotes.value = '';
     collectedEvidence.value = [];
-
-    if (!newId) {
-      userCanTransition.value = false;
-    }
+    userCanTransition.value = false;
     hasAutoOpenedReassign.value = false;
   },
   { immediate: true },

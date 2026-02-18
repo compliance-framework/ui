@@ -365,6 +365,13 @@ function formatDate(dateString: string): string {
   return new Date(dateString).toLocaleString();
 }
 
+watch(gracePeriodDaysInput, (value) => {
+  const parsedGracePeriod = parseGracePeriodInput(value);
+  if (!parsedGracePeriod.error) {
+    form.gracePeriodDays = parsedGracePeriod.value;
+  }
+});
+
 // Initialize form when instance loads
 watch(
   () => store.instance,

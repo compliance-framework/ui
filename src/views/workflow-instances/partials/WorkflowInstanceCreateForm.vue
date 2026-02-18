@@ -278,15 +278,19 @@ function onDefinitionChange() {
       }
     }
 
-    if (
-      selectedDefinition.value.gracePeriodDays != null &&
-      parseGracePeriodInput(gracePeriodDaysInput.value).value ===
-        DEFAULT_GRACE_PERIOD_DAYS
-    ) {
-      gracePeriodDaysInput.value = String(
-        selectedDefinition.value.gracePeriodDays,
+    if (selectedDefinition.value.gracePeriodDays != null) {
+      const parsedGracePeriod = parseGracePeriodInput(
+        gracePeriodDaysInput.value,
       );
-      form.gracePeriodDays = selectedDefinition.value.gracePeriodDays;
+      if (
+        !parsedGracePeriod.error &&
+        parsedGracePeriod.value === DEFAULT_GRACE_PERIOD_DAYS
+      ) {
+        gracePeriodDaysInput.value = String(
+          selectedDefinition.value.gracePeriodDays,
+        );
+        form.gracePeriodDays = selectedDefinition.value.gracePeriodDays;
+      }
     }
   }
 }
