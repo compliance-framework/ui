@@ -231,7 +231,7 @@ import PageHeader from '@/components/PageHeader.vue';
 import PageCard from '@/components/PageCard.vue';
 import TooltipTitle from '@/components/TooltipTitle.vue';
 
-interface DigestSubscriptionPreferences {
+interface SubscriptionsPreferences {
   subscribed: boolean;
   taskAvailableEmailSubscribed: boolean;
   taskDailyDigestSubscribed: boolean;
@@ -244,7 +244,7 @@ const updating = ref(false);
 const digestSubscribed = ref(false);
 const taskAvailableEmailSubscribed = ref(false);
 const taskDailyDigestSubscribed = ref(false);
-const lastSavedPreferences = ref<DigestSubscriptionPreferences>({
+const lastSavedPreferences = ref<SubscriptionsPreferences>({
   subscribed: false,
   taskAvailableEmailSubscribed: false,
   taskDailyDigestSubscribed: false,
@@ -272,17 +272,17 @@ const taskDailyDigestTooltipText = computed(() =>
     : 'Inactive: You will not receive daily task digest emails.',
 );
 
-// Load user data and digest subscription
+// Load user data and subscriptions
 const loadUserData = async () => {
   try {
     // Get current user info
     const userResponse = await axios.get<{ data: CCFUser }>('/api/users/me');
     user.value = userResponse.data.data;
 
-    // Get digest subscription status
+    // Get subscriptions status
     const subscriptionResponse = await axios.get<{
-      data: DigestSubscriptionPreferences;
-    }>('/api/users/me/digest-subscription');
+      data: SubscriptionsPreferences;
+    }>('/api/users/me/subscriptions');
 
     digestSubscribed.value = subscriptionResponse.data.data.subscribed;
     taskAvailableEmailSubscribed.value =
@@ -313,7 +313,7 @@ const updateEmailPreferences = async () => {
   updateSuccess.value = false;
 
   try {
-    await axios.put('/api/users/me/digest-subscription', {
+    await axios.put('/api/users/me/subscriptions', {
       subscribed: digestSubscribed.value,
       taskAvailableEmailSubscribed: taskAvailableEmailSubscribed.value,
       taskDailyDigestSubscribed: taskDailyDigestSubscribed.value,

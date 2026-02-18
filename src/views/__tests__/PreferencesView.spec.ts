@@ -53,7 +53,7 @@ describe('PreferencesView', () => {
         });
       }
 
-      if (url === '/api/users/me/digest-subscription') {
+      if (url === '/api/users/me/subscriptions') {
         return Promise.resolve({
           data: {
             data: {
@@ -221,7 +221,7 @@ describe('PreferencesView', () => {
           });
         }
 
-        if (url === '/api/users/me/digest-subscription') {
+        if (url === '/api/users/me/subscriptions') {
           return Promise.resolve({
             data: {
               data: {
@@ -273,7 +273,7 @@ describe('PreferencesView', () => {
       await wrapper.vm.updateEmailPreferences();
 
       expect(mockAxios.put).toHaveBeenCalledWith(
-        '/api/users/me/digest-subscription',
+        '/api/users/me/subscriptions',
         {
           subscribed: true,
           taskAvailableEmailSubscribed: true,
