@@ -10,10 +10,10 @@ export function toGracePeriodInputValue(
 }
 
 export function parseGracePeriodInput(
-  input: string,
+  input: string | number | null | undefined,
   fallback = DEFAULT_GRACE_PERIOD_DAYS,
 ): { value: number; error?: string } {
-  const trimmed = input.trim();
+  const trimmed = String(input ?? '').trim();
   if (trimmed === '') {
     return { value: fallback };
   }

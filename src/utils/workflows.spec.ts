@@ -23,6 +23,10 @@ describe('workflows utils', () => {
   });
 
   describe('parseGracePeriodInput', () => {
+    it('accepts numeric values from number-backed inputs', () => {
+      expect(parseGracePeriodInput(7)).toEqual({ value: 7 });
+      expect(parseGracePeriodInput(0)).toEqual({ value: 0 });
+    });
     it('returns fallback for empty input', () => {
       expect(parseGracePeriodInput('')).toEqual({
         value: DEFAULT_GRACE_PERIOD_DAYS,
