@@ -57,6 +57,27 @@
       </small>
     </div>
 
+    <!-- Grace Period -->
+    <div>
+      <Label for="gracePeriodDays">Grace Period (Days)</Label>
+      <InputText
+        id="gracePeriodDays"
+        v-model="gracePeriodDaysInput"
+        type="number"
+        min="0"
+        step="1"
+        placeholder="e.g. 7"
+        class="w-full"
+        :invalid="!!errors.gracePeriodDays"
+      />
+      <small v-if="errors.gracePeriodDays" class="text-red-500">
+        {{ errors.gracePeriodDays }}
+      </small>
+      <small v-else class="text-gray-500 dark:text-slate-400">
+        Default grace period for overdue escalation (in days).
+      </small>
+    </div>
+
     <!-- Evidence Required Types -->
     <div>
       <Label for="definition-create-evidence">Required Evidence Types</Label>
@@ -110,7 +131,12 @@ import Message from '@/volt/Message.vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
 import MultiSelect from '@/volt/MultiSelect.vue';
-import { stringifyEvidenceRequired } from '@/utils/workflows';
+import {
+  DEFAULT_GRACE_PERIOD_DAYS,
+  parseGracePeriodInput,
+  stringifyEvidenceRequired,
+  toGracePeriodInputValue,
+} from '@/utils/workflows';
 
 const emit = defineEmits<{
   created: [definition: WorkflowDefinition];
@@ -125,12 +151,16 @@ const form = reactive<WorkflowDefinitionCreate>({
   version: '1.0.0',
   suggestedCadence: undefined,
   evidenceRequired: stringifyEvidenceRequired([]),
+  gracePeriodDays: DEFAULT_GRACE_PERIOD_DAYS,
 });
 
 const errors = reactive<Record<string, string>>({});
 const errorMessage = ref('');
 const isSubmitting = ref(false);
 const selectedEvidenceTypes = ref<EvidenceType[]>([]);
+const gracePeriodDaysInput = ref(
+  toGracePeriodInputValue(DEFAULT_GRACE_PERIOD_DAYS),
+);
 
 const cadenceOptions: Array<{ label: string; value: string }> = [
   { label: 'Daily', value: 'daily' },
@@ -166,6 +196,13 @@ function validate(): boolean {
     errors.name = 'Name must be less than 255 characters';
     return false;
   }
+
+  const parsedGracePeriod = parseGracePeriodInput(gracePeriodDaysInput.value);
+  if (parsedGracePeriod.error) {
+    errors.gracePeriodDays = parsedGracePeriod.error;
+    return false;
+  }
+  form.gracePeriodDays = parsedGracePeriod.value;
 
   return true;
 }

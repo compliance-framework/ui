@@ -11,6 +11,14 @@
         <Badge :severity="getStepStatusSeverity(step.status)" size="large">
           {{ formatStatus(step.status) }}
         </Badge>
+        <Badge
+          v-if="step.overdueAt"
+          severity="danger"
+          size="large"
+          class="ml-2"
+        >
+          Overdue since {{ formatDate(step.overdueAt) }}
+        </Badge>
       </div>
 
       <!-- Step Details -->
@@ -50,6 +58,20 @@
 
         <!-- Timestamps -->
         <div class="grid grid-cols-2 gap-4 text-sm">
+          <div v-if="step.dueDate">
+            <div class="text-xs text-gray-500 dark:text-slate-400">Due</div>
+            <div class="text-gray-900 dark:text-slate-200">
+              {{ formatDate(step.dueDate) }}
+            </div>
+          </div>
+          <div v-if="step.overdueAt">
+            <div class="text-xs text-gray-500 dark:text-slate-400">
+              Overdue At
+            </div>
+            <div class="text-red-700 dark:text-red-300">
+              {{ formatDate(step.overdueAt) }}
+            </div>
+          </div>
           <div v-if="step.startedAt">
             <div class="text-xs text-gray-500 dark:text-slate-400">Started</div>
             <div class="text-gray-900 dark:text-slate-200">
@@ -216,7 +238,7 @@
         />
 
         <!-- Completion Notes Input -->
-        <div v-if="step.status === 'in_progress'">
+        <div v-if="step.status === 'in_progress' || step.status === 'overdue'">
           <Label for="completionNotes">Completion Notes (Optional)</Label>
           <Textarea
             id="completionNotes"
@@ -487,6 +509,7 @@ const selectedReassignUser = ref<DisplayUser | null>(null);
 const reassignReason = ref('');
 const reassignError = ref('');
 const hasAutoOpenedReassign = ref(false);
+let latestPermissionRequestId = 0;
 
 const stepDefinition = computed(() => {
   return props.step?.workflowStepDefinition || props.step?.stepDefinition;
@@ -548,6 +571,7 @@ function getStepStatusSeverity(
     pending: 'secondary',
     blocked: 'warn',
     in_progress: 'info',
+    overdue: 'danger',
     completed: 'success',
     failed: 'danger',
     skipped: 'secondary',
@@ -690,22 +714,46 @@ function close() {
   closeReassignDialog();
 }
 
+async function refreshTransitionPermission(stepId?: string) {
+  const requestId = ++latestPermissionRequestId;
+
+  if (!stepId) {
+    if (requestId === latestPermissionRequestId && !props.step?.id) {
+      userCanTransition.value = false;
+    }
+    return;
+  }
+
+  try {
+    const canTransitionResult = await canTransition(stepId);
+    if (requestId === latestPermissionRequestId && stepId === props.step?.id) {
+      userCanTransition.value = canTransitionResult;
+    }
+  } catch {
+    if (requestId === latestPermissionRequestId && stepId === props.step?.id) {
+      userCanTransition.value = false;
+    }
+  }
+}
+
 // Reset state and check permissions when step changes
 watch(
   () => props.step?.id,
-  async (newId) => {
+  () => {
     completionNotes.value = '';
     collectedEvidence.value = [];
     userCanTransition.value = false;
-
-    if (newId && props.step) {
-      try {
-        userCanTransition.value = await canTransition(newId);
-      } catch {
-        userCanTransition.value = false;
-      }
-    }
     hasAutoOpenedReassign.value = false;
+  },
+  { immediate: true },
+);
+
+watch(
+  [() => props.visible, () => props.step?.id],
+  ([visible, stepId]) => {
+    if (visible) {
+      refreshTransitionPermission(stepId);
+    }
   },
   { immediate: true },
 );

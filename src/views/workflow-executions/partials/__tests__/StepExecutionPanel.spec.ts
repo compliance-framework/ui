@@ -28,6 +28,7 @@ vi.mock('@/composables/workflows', () => ({
 
 function createStep(
   status: StepExecution['status'] = 'pending',
+  overrides: Partial<StepExecution> = {},
 ): StepExecution {
   return {
     id: 'step-1',
@@ -45,6 +46,7 @@ function createStep(
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     },
+    ...overrides,
   };
 }
 
@@ -161,5 +163,30 @@ describe('StepExecutionPanel reassignment', () => {
       reason: 'Out of office handoff',
     });
     expect(wrapper.emitted('step-updated')).toBeTruthy();
+  });
+});
+
+describe('StepExecutionPanel overdue behavior', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockCanTransition.mockResolvedValue(true);
+  });
+
+  it('shows overdue metadata and allows completion notes for overdue steps', async () => {
+    const wrapper = mountComponent(
+      createStep('overdue', { overdueAt: '2026-01-10T12:00:00.000Z' }),
+    );
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('Overdue since');
+    expect(wrapper.find('#completionNotes').exists()).toBe(true);
+  });
+
+  it('shows complete/fail actions for overdue steps when user can transition', async () => {
+    const wrapper = mountComponent(createStep('overdue'));
+    await flushPromises();
+
+    expect(hasButton(wrapper, 'Complete Step')).toBe(true);
+    expect(hasButton(wrapper, 'Mark Failed')).toBe(true);
   });
 });

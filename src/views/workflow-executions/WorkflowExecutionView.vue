@@ -40,8 +40,17 @@
         <Badge :severity="getStatusSeverity(execution.status)">
           {{ execution.status }}
         </Badge>
+        <Badge v-if="execution.overdueAt" severity="danger">
+          Overdue since {{ formatDate(execution.overdueAt) }}
+        </Badge>
         <span class="text-sm text-gray-500 dark:text-slate-400">
           Started: {{ formatDate(execution.triggeredAt) }}
+        </span>
+        <span
+          v-if="execution.dueDate"
+          class="text-sm text-gray-500 dark:text-slate-400"
+        >
+          Due: {{ formatDate(execution.dueDate) }}
         </span>
         <span
           v-if="execution.completedAt"
@@ -51,17 +60,23 @@
         </span>
       </div>
 
+      <Message v-if="execution.failureReason" severity="error" class="mt-4">
+        {{ execution.failureReason }}
+      </Message>
+
       <!-- Actions -->
       <div class="mt-6 flex gap-3">
         <SecondaryButton
-          v-if="execution.status === 'in_progress'"
+          v-if="
+            execution.status === 'in_progress' || execution.status === 'overdue'
+          "
           @click="handleCancel"
           severity="danger"
         >
           Cancel Execution
         </SecondaryButton>
         <SecondaryButton
-          v-if="execution.status === 'failed'"
+          v-if="execution.status === 'failed' || execution.status === 'overdue'"
           @click="handleRetry"
         >
           Retry Execution
@@ -78,7 +93,7 @@
       <!-- Execution Status Details -->
       <div
         v-if="executionStatus"
-        class="mt-6 grid grid-cols-2 md:grid-cols-5 gap-4"
+        class="mt-6 grid grid-cols-2 md:grid-cols-6 gap-4"
       >
         <div
           class="p-4 rounded-lg border border-ccf-300 dark:border-slate-700 bg-white dark:bg-slate-900"
@@ -108,6 +123,16 @@
           </div>
           <div class="text-2xl font-semibold text-blue-600 dark:text-blue-400">
             {{ executionStatus.inProgressSteps }}
+          </div>
+        </div>
+        <div
+          class="p-4 rounded-lg border border-ccf-300 dark:border-slate-700 bg-white dark:bg-slate-900"
+        >
+          <div class="text-sm text-gray-500 dark:text-slate-400">Overdue</div>
+          <div
+            class="text-2xl font-semibold text-orange-600 dark:text-orange-400"
+          >
+            {{ executionStatus.overdueSteps || 0 }}
           </div>
         </div>
         <div
@@ -227,6 +252,7 @@ function getStatusSeverity(
   > = {
     pending: 'secondary',
     in_progress: 'info',
+    overdue: 'danger',
     completed: 'success',
     failed: 'danger',
     cancelled: 'warn',

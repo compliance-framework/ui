@@ -22,6 +22,7 @@ vi.mock('@/composables/workflows/useMyAssignments', () => ({
 
 function createStep(
   status: StepExecution['status'] = 'pending',
+  overrides: Partial<StepExecution> = {},
 ): StepExecution {
   return {
     id: 'step-1',
@@ -57,6 +58,7 @@ function createStep(
         updatedAt: new Date().toISOString(),
       },
     },
+    ...overrides,
   };
 }
 
@@ -148,5 +150,65 @@ describe('MyTasksView', () => {
     await flushPromises();
 
     expect(mockFetchMyAssignments).toHaveBeenCalledTimes(2);
+  });
+
+  it('sorts unresolved assignments first and by nearest due date', async () => {
+    const overdueDueSoon = createStep('overdue', {
+      id: 'step-overdue-1',
+      dueDate: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-01T00:00:00.000Z',
+    });
+    const inProgressDueLater = createStep('in_progress', {
+      id: 'step-in-progress-1',
+      dueDate: '2026-01-03T00:00:00.000Z',
+      updatedAt: '2026-01-02T00:00:00.000Z',
+    });
+    const completedMostRecent = createStep('completed', {
+      id: 'step-completed-1',
+      dueDate: undefined,
+      updatedAt: '2026-01-04T00:00:00.000Z',
+    });
+
+    mockAssignments.value = [
+      completedMostRecent,
+      inProgressDueLater,
+      overdueDueSoon,
+    ];
+    mockTotal.value = 3;
+
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    const sortedAssignments = (
+      wrapper.vm as unknown as { sortedAssignments: StepExecution[] }
+    ).sortedAssignments;
+    expect(sortedAssignments.map((step) => step.id)).toEqual([
+      'step-overdue-1',
+      'step-in-progress-1',
+      'step-completed-1',
+    ]);
+  });
+
+  it('applies due-date filters when loading assignments', async () => {
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    mockFetchMyAssignments.mockClear();
+
+    (wrapper.vm as unknown as { dueAfterFilter: string }).dueAfterFilter =
+      '2026-01-01';
+    await flushPromises();
+
+    (wrapper.vm as unknown as { dueBeforeFilter: string }).dueBeforeFilter =
+      '2026-01-31';
+    await flushPromises();
+
+    const lastCall =
+      mockFetchMyAssignments.mock.calls[
+        mockFetchMyAssignments.mock.calls.length - 1
+      ][0];
+
+    expect(lastCall.dueAfter).toBe('2026-01-01');
+    expect(lastCall.dueBefore).toBe('2026-01-31');
   });
 });

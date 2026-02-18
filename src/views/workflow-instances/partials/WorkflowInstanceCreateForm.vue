@@ -108,6 +108,27 @@
       </small>
     </div>
 
+    <!-- Grace Period -->
+    <div>
+      <Label for="gracePeriodDays">Grace Period (Days)</Label>
+      <InputText
+        id="gracePeriodDays"
+        v-model="gracePeriodDaysInput"
+        type="number"
+        min="0"
+        step="1"
+        placeholder="e.g. 7"
+        class="w-full"
+        :invalid="!!errors.gracePeriodDays"
+      />
+      <small v-if="errors.gracePeriodDays" class="text-red-500">
+        {{ errors.gracePeriodDays }}
+      </small>
+      <small v-else class="text-gray-500 dark:text-slate-400">
+        Default grace period for this workflow instance (in days).
+      </small>
+    </div>
+
     <!-- Error Message -->
     <Message v-if="errorMessage" severity="error">
       {{ errorMessage }}
@@ -148,6 +169,11 @@ import Message from '@/volt/Message.vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
 import { validateCronExpression } from '@/utils/cron';
+import {
+  DEFAULT_GRACE_PERIOD_DAYS,
+  parseGracePeriodInput,
+  toGracePeriodInputValue,
+} from '@/utils/workflows';
 
 const props = defineProps<{
   preselectedDefinitionId?: string;
@@ -173,11 +199,18 @@ const form = reactive<WorkflowInstanceCreate>({
   cadence: 'monthly',
   systemId: props.preselectedSystemId,
   controlId: props.preselectedControlId,
+  gracePeriodDays: DEFAULT_GRACE_PERIOD_DAYS,
 });
 
 const errors = reactive<Record<string, string>>({});
 const errorMessage = ref('');
 const isSubmitting = ref(false);
+const gracePeriodDaysInput = ref(
+  toGracePeriodInputValue(DEFAULT_GRACE_PERIOD_DAYS),
+);
+// Tracks the active upstream default used by this form so we can distinguish
+// "still on default" from "user explicitly customized" when switching defs.
+const currentGracePeriodDefault = ref(DEFAULT_GRACE_PERIOD_DAYS);
 
 const selectedCadence = ref<string>('monthly');
 const cronExpression = ref('');
@@ -247,6 +280,21 @@ function onDefinitionChange() {
         cronExpression.value = '';
       }
     }
+
+    const definitionGracePeriodDefault =
+      selectedDefinition.value.gracePeriodDays ?? DEFAULT_GRACE_PERIOD_DAYS;
+    const parsedGracePeriod = parseGracePeriodInput(gracePeriodDaysInput.value);
+    if (
+      !parsedGracePeriod.error &&
+      parsedGracePeriod.value === currentGracePeriodDefault.value
+    ) {
+      // User has not diverged from the previous default, so carry forward the
+      // newly selected definition default.
+      gracePeriodDaysInput.value = String(definitionGracePeriodDefault);
+      form.gracePeriodDays = definitionGracePeriodDefault;
+    }
+    // Always update baseline default after selection change.
+    currentGracePeriodDefault.value = definitionGracePeriodDefault;
   }
 }
 
@@ -280,6 +328,13 @@ function validate(): boolean {
       return false;
     }
   }
+
+  const parsedGracePeriod = parseGracePeriodInput(gracePeriodDaysInput.value);
+  if (parsedGracePeriod.error) {
+    errors.gracePeriodDays = parsedGracePeriod.error;
+    return false;
+  }
+  form.gracePeriodDays = parsedGracePeriod.value;
 
   return true;
 }

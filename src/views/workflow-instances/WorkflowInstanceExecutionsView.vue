@@ -178,6 +178,7 @@ function getStatusSeverity(
   > = {
     pending: 'secondary',
     in_progress: 'info',
+    overdue: 'danger',
     completed: 'success',
     failed: 'danger',
     cancelled: 'warn',

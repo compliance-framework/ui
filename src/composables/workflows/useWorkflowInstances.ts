@@ -15,6 +15,16 @@ import type {
 const BASE_URL = '/api/workflows/instances';
 const ROLE_ASSIGNMENTS_URL = '/api/workflows/role-assignments';
 
+function buildInstancePayload(
+  data: WorkflowInstanceCreate | WorkflowInstanceUpdate,
+) {
+  const { gracePeriodDays, ...rest } = data;
+  return {
+    ...rest,
+    ...(gracePeriodDays != null ? { gracePeriodDays } : {}),
+  };
+}
+
 /**
  * Composable for managing workflow instances.
  * Provides CRUD operations for workflow instances bound to systems/controls.
@@ -143,7 +153,7 @@ export function useWorkflowInstances() {
     onSuccess?: (instance: WorkflowInstance) => void,
   ) {
     try {
-      await executeCreate({ data });
+      await executeCreate({ data: buildInstancePayload(data) });
       toast.add({
         severity: 'success',
         summary: 'Instance Created',
@@ -177,7 +187,9 @@ export function useWorkflowInstances() {
     onSuccess?: (instance: WorkflowInstance) => void,
   ) {
     try {
-      await executeUpdate(`${BASE_URL}/${id}`, { data });
+      await executeUpdate(`${BASE_URL}/${id}`, {
+        data: buildInstancePayload(data),
+      });
       toast.add({
         severity: 'success',
         summary: 'Instance Updated',

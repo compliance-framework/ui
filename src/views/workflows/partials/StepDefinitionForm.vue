@@ -67,6 +67,26 @@
       />
     </div>
 
+    <!-- Grace Period -->
+    <div>
+      <Label for="step-grace-period">Grace Period (Days)</Label>
+      <input
+        id="step-grace-period"
+        v-model="gracePeriodDaysInput"
+        type="number"
+        min="0"
+        placeholder="7"
+        class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        :class="{ 'border-red-500': !!errors.gracePeriodDays }"
+      />
+      <small class="text-gray-500 dark:text-slate-400">
+        Number of days after due date before this step is marked as overdue
+      </small>
+      <small v-if="errors.gracePeriodDays" class="text-red-500 block">
+        {{ errors.gracePeriodDays }}
+      </small>
+    </div>
+
     <!-- Evidence Required -->
     <div class="flex items-center gap-3">
       <input
@@ -189,7 +209,12 @@ import type {
   EvidenceRequirement,
   EvidenceType,
 } from '@/types/workflows';
-import { parseEvidenceRequired } from '@/utils/workflows';
+import {
+  DEFAULT_GRACE_PERIOD_DAYS,
+  parseGracePeriodInput,
+  parseEvidenceRequired,
+  toGracePeriodInputValue,
+} from '@/utils/workflows';
 import Label from '@/volt/Label.vue';
 import InputText from '@/volt/InputText.vue';
 import Textarea from '@/volt/Textarea.vue';
@@ -203,6 +228,7 @@ const props = defineProps<{
   workflowDefinitionId: string;
   availableSteps: StepDefinition[];
   step?: StepDefinition | null;
+  defaultGracePeriodDays?: number;
 }>();
 
 const emit = defineEmits<{
@@ -226,6 +252,7 @@ type StepFormState = {
   evidenceRequiredEnabled: boolean;
   evidenceItems: EvidenceItem[];
   estimatedDurationMinutes: number;
+  gracePeriodDays: number;
   order: number;
   dependsOn: string[];
 };
@@ -233,6 +260,9 @@ type StepFormState = {
 const defaultEvidenceItems: EvidenceItem[] = [
   { type: 'document', description: '', required: true },
 ];
+// Step-level default comes from the parent workflow model when provided.
+const effectiveDefaultGracePeriodDays =
+  props.defaultGracePeriodDays ?? DEFAULT_GRACE_PERIOD_DAYS;
 
 const form = reactive<StepFormState>({
   workflowDefinitionId: props.workflowDefinitionId,
@@ -242,6 +272,7 @@ const form = reactive<StepFormState>({
   evidenceRequiredEnabled: true,
   evidenceItems: [...defaultEvidenceItems],
   estimatedDurationMinutes: 30,
+  gracePeriodDays: effectiveDefaultGracePeriodDays,
   order: 1,
   dependsOn: [],
 });
@@ -249,6 +280,9 @@ const form = reactive<StepFormState>({
 const errors = reactive<Record<string, string>>({});
 const errorMessage = ref('');
 const isSubmitting = ref(false);
+const gracePeriodDaysInput = ref(
+  toGracePeriodInputValue(effectiveDefaultGracePeriodDays),
+);
 
 const evidenceTypeOptions: Array<{ label: string; value: EvidenceType }> = [
   { label: 'Document', value: 'document' },
@@ -281,6 +315,12 @@ function initForm() {
           }))
         : [...defaultEvidenceItems];
     form.estimatedDurationMinutes = props.step.estimatedDurationMinutes || 30;
+    form.gracePeriodDays =
+      props.step.gracePeriodDays ?? effectiveDefaultGracePeriodDays;
+    gracePeriodDaysInput.value =
+      props.step.gracePeriodDays != null
+        ? toGracePeriodInputValue(props.step.gracePeriodDays)
+        : toGracePeriodInputValue(effectiveDefaultGracePeriodDays);
     form.order = props.step.order;
     form.dependsOn = props.step.dependsOn?.map((d) => d.dependsOnStepId) || [];
   } else {
@@ -291,6 +331,10 @@ function initForm() {
     form.evidenceRequiredEnabled = true;
     form.evidenceItems = [...defaultEvidenceItems];
     form.estimatedDurationMinutes = 30;
+    form.gracePeriodDays = effectiveDefaultGracePeriodDays;
+    gracePeriodDaysInput.value = toGracePeriodInputValue(
+      effectiveDefaultGracePeriodDays,
+    );
     form.order = props.availableSteps.length + 1;
     form.dependsOn = [];
   }
@@ -303,6 +347,19 @@ function validate(): boolean {
   if (!form.name?.trim()) {
     errors.name = 'Step name is required';
     return false;
+  }
+
+  if (gracePeriodDaysInput.value.trim() === '') {
+    // Empty input is treated as "use current upstream default" rather than
+    // persisting a nullable value for steps.
+    form.gracePeriodDays = effectiveDefaultGracePeriodDays;
+  } else {
+    const parsedGracePeriod = parseGracePeriodInput(gracePeriodDaysInput.value);
+    if (parsedGracePeriod.error) {
+      errors.gracePeriodDays = parsedGracePeriod.error;
+      return false;
+    }
+    form.gracePeriodDays = parsedGracePeriod.value;
   }
 
   // Check for circular dependencies
@@ -342,6 +399,7 @@ async function handleSubmit() {
         responsibleRole: form.responsibleRole || undefined,
         evidenceRequired: buildEvidencePayload(),
         estimatedDurationMinutes: form.estimatedDurationMinutes || undefined,
+        gracePeriodDays: form.gracePeriodDays,
         order: form.order,
         dependsOn: form.dependsOn,
       };
@@ -358,6 +416,7 @@ async function handleSubmit() {
         responsibleRole: form.responsibleRole || undefined,
         evidenceRequired: buildEvidencePayload(),
         estimatedDurationMinutes: form.estimatedDurationMinutes || undefined,
+        gracePeriodDays: form.gracePeriodDays,
         order: form.order,
         dependsOn: form.dependsOn,
       };

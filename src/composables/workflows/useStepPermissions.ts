@@ -15,15 +15,25 @@ export function useStepPermissions(
   });
 
   const canComplete = computed(() => {
-    return step.value?.status === 'in_progress' && userCanTransition.value;
+    return (
+      (step.value?.status === 'in_progress' ||
+        step.value?.status === 'overdue') &&
+      userCanTransition.value
+    );
   });
 
   const canFail = computed(() => {
-    return step.value?.status === 'in_progress' && userCanTransition.value;
+    return (
+      (step.value?.status === 'in_progress' ||
+        step.value?.status === 'overdue') &&
+      userCanTransition.value
+    );
   });
 
   const canSubmitEvidence = computed(() => {
-    return step.value?.status === 'in_progress';
+    return (
+      step.value?.status === 'in_progress' || step.value?.status === 'overdue'
+    );
   });
 
   const noActionMessageSeverity = computed(
@@ -41,6 +51,7 @@ export function useStepPermissions(
     if (step.value?.status === 'blocked') return 'Step Blocked';
     if (step.value?.status === 'failed') return 'Step Failed';
     if (step.value?.status === 'skipped') return 'Step Skipped';
+    if (step.value?.status === 'overdue') return 'Step Overdue';
     return 'No Actions Available';
   });
 
@@ -59,6 +70,8 @@ export function useStepPermissions(
         return 'This step has failed. You can retry the workflow execution from the main view.';
       case 'skipped':
         return 'This step was skipped during execution.';
+      case 'overdue':
+        return 'This step is overdue. Complete it as soon as possible or mark it as failed with context.';
       default:
         return 'No actions are currently available for this step.';
     }
