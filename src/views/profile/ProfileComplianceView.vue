@@ -171,6 +171,14 @@
         </div>
       </div>
     </template>
+
+    <template v-else>
+      <div
+        class="rounded border border-dashed border-zinc-300 bg-zinc-50 p-6 text-sm text-zinc-600"
+      >
+        No compliance data available.
+      </div>
+    </template>
   </div>
 </template>
 
@@ -217,16 +225,31 @@ watch(error, () => {
   });
 });
 
-const satisfiedWidth = computed(
-  () => `${summary.value?.compliancePercent ?? 0}%`,
-);
+const satisfiedWidth = computed(() => {
+  if (!summary.value) return '0%';
+  return `${percent(summary.value.satisfied, summary.value.totalControls)}%`;
+});
 const notSatisfiedWidth = computed(() => {
   if (!summary.value) return '0%';
-  return `${percent(summary.value.notSatisfied, summary.value.totalControls)}%`;
+  const sat = percent(summary.value.satisfied, summary.value.totalControls);
+  const notSat = percent(
+    summary.value.notSatisfied,
+    summary.value.totalControls,
+  );
+  // Fill remaining space to avoid rounding gaps
+  const remaining = 100 - sat;
+  const notSatCapped = Math.min(notSat, remaining);
+  return `${notSatCapped}%`;
 });
 const unknownWidth = computed(() => {
   if (!summary.value) return '0%';
-  return `${percent(summary.value.unknown, summary.value.totalControls)}%`;
+  const sat = percent(summary.value.satisfied, summary.value.totalControls);
+  const notSat = percent(
+    summary.value.notSatisfied,
+    summary.value.totalControls,
+  );
+  const used = Math.min(sat + notSat, 100);
+  return `${100 - used}%`;
 });
 
 function percent(part: number, total: number): number {
