@@ -631,6 +631,14 @@ const authenticatedRoutes = [
           ),
       },
       {
+        path: 'compliance',
+        name: 'system-security-plan-compliance',
+        component: () =>
+          import(
+            '../views/system-security-plans/SystemSecurityPlanComplianceView.vue'
+          ),
+      },
+      {
         path: 'json',
         name: 'system-security-plan-json',
         component: () =>

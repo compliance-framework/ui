@@ -20,7 +20,7 @@
     >
       <RouterLink
         class="px-4 py-2 inline-block text-lg border-ccf-300 dark:border-slate-700 dark:hover:bg-slate-900"
-        :to="{ name: 'system-security-plan-overview', params: { id: id } }"
+        :to="{ name: 'system-security-plan-overview', params: { id: sspId } }"
       >
         Overview
       </RouterLink>
@@ -28,7 +28,7 @@
         class="px-4 py-2 inline-block text-lg border-ccf-300 dark:border-slate-700 dark:hover:bg-slate-900"
         :to="{
           name: 'system-security-plan-characteristics',
-          params: { id: id },
+          params: { id: sspId },
         }"
       >
         System Characteristics
@@ -37,7 +37,7 @@
         class="px-4 py-2 inline-block text-lg border-ccf-300 dark:border-slate-700 dark:hover:bg-slate-900"
         :to="{
           name: 'system-security-plan-system-implementation',
-          params: { id: id },
+          params: { id: sspId },
         }"
       >
         System Implementation
@@ -46,14 +46,23 @@
         class="px-4 py-2 inline-block text-lg border-ccf-300 dark:border-slate-700 dark:hover:bg-slate-900"
         :to="{
           name: 'system-security-plan-control-implementation',
-          params: { id: id },
+          params: { id: sspId },
         }"
       >
         Control Implementation
       </RouterLink>
       <RouterLink
         class="px-4 py-2 inline-block text-lg border-ccf-300 dark:border-slate-700 dark:hover:bg-slate-900"
-        :to="{ name: 'system-security-plan-json', params: { id: id } }"
+        :to="{
+          name: 'system-security-plan-compliance',
+          params: { id: sspId },
+        }"
+      >
+        Compliance
+      </RouterLink>
+      <RouterLink
+        class="px-4 py-2 inline-block text-lg border-ccf-300 dark:border-slate-700 dark:hover:bg-slate-900"
+        :to="{ name: 'system-security-plan-json', params: { id: sspId } }"
       >
         JSON
       </RouterLink>
@@ -70,7 +79,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, toValue, watch } from 'vue';
+import { computed, watch } from 'vue';
 import PageHeader from '@/components/PageHeader.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
 import type { SystemSecurityPlan } from '@/oscal';
@@ -83,15 +92,29 @@ import type { ErrorResponse, ErrorBody } from '@/stores/types.ts';
 const route = useRoute();
 const router = useRouter();
 const toast = useToast();
-const id = ref<string>(route.params.id as string);
+const sspId = computed(() => String(route.params.id || ''));
 
 const {
   data: systemSecurityPlan,
   isLoading,
   error,
-} = useDataApi<SystemSecurityPlan>(
-  `/api/oscal/system-security-plans/${toValue(id)}`,
+  execute: loadSystemSecurityPlan,
+} = useDataApi<SystemSecurityPlan>(null, null, {
+  immediate: false,
+});
+
+watch(
+  sspId,
+  async (id) => {
+    if (!id) {
+      return;
+    }
+
+    await loadSystemSecurityPlan(`/api/oscal/system-security-plans/${id}`);
+  },
+  { immediate: true },
 );
+
 watch(error, () => {
   if (error.value) {
     const errorResponse = error.value as AxiosError<ErrorResponse<ErrorBody>>;
