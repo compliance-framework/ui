@@ -141,18 +141,32 @@
             <div class="mb-2 flex items-center justify-between gap-2 text-sm">
               <p class="font-medium text-zinc-900">{{ group.title }}</p>
               <p class="text-zinc-600">
-                {{ group.satisfied }}/{{ group.totalControls }} ({{
-                  group.compliancePercent
-                }}%)
+                {{ group.compliancePercent }}% compliant
               </p>
             </div>
             <div class="h-2.5 overflow-hidden rounded-full bg-zinc-200">
               <div
                 class="h-full bg-emerald-600"
-                :style="{
-                  width: `${percent(group.satisfied, group.totalControls)}%`,
-                }"
+                :style="{ width: groupSatisfiedWidth(group) }"
               ></div>
+              <div
+                class="h-full bg-red-500"
+                :style="{ width: groupNotSatisfiedWidth(group) }"
+              ></div>
+              <div
+                class="h-full bg-slate-400"
+                :style="{ width: groupUnknownWidth(group) }"
+              ></div>
+            </div>
+            <div
+              class="mt-2 flex flex-wrap items-center gap-4 text-xs text-zinc-600"
+            >
+              <span>{{ group.satisfied }} satisfied</span>
+              <span>{{ group.notSatisfied }} not satisfied</span>
+              <span>{{ group.unknown }} unknown</span>
+              <span v-if="progress?.implementation">
+                {{ groupNotImplementedCount(group.id) }} not implemented
+              </span>
             </div>
           </div>
         </div>
@@ -234,7 +248,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, onActivated, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
 import type { AxiosError } from 'axios';
@@ -244,6 +258,7 @@ import { useProfileCompliance } from '@/composables/useProfileCompliance';
 import { useDataApi } from '@/composables/axios';
 import type {
   ProfileComplianceControl,
+  ProfileComplianceGroup,
   ProfileComplianceStatusCount,
 } from '@/types/compliance';
 import type { ErrorBody, ErrorResponse } from '@/stores/types';
@@ -276,6 +291,7 @@ const {
 const hasCurrentProgress = computed(
   () => progress.value?.scope.id === profileId.value,
 );
+const hasActivatedOnce = ref(false);
 
 async function loadProfileAndCompliance(currentSspId: string) {
   profileLoading.value = true;
@@ -324,6 +340,19 @@ watch(
   },
   { immediate: true },
 );
+
+onActivated(async () => {
+  if (!sspId.value) {
+    return;
+  }
+
+  if (!hasActivatedOnce.value) {
+    hasActivatedOnce.value = true;
+    return;
+  }
+
+  await loadProfileAndCompliance(sspId.value);
+});
 
 watch(error, () => {
   if (!error.value) return;
@@ -382,6 +411,30 @@ function statusCount(
       (item: ProfileComplianceStatusCount) => item.status === status,
     )?.count || 0
   );
+}
+
+function groupSatisfiedWidth(group: ProfileComplianceGroup): string {
+  return `${percent(group.satisfied, group.totalControls)}%`;
+}
+
+function groupNotSatisfiedWidth(group: ProfileComplianceGroup): string {
+  const sat = percent(group.satisfied, group.totalControls);
+  const notSat = percent(group.notSatisfied, group.totalControls);
+  const remaining = 100 - sat;
+  return `${Math.min(notSat, remaining)}%`;
+}
+
+function groupUnknownWidth(group: ProfileComplianceGroup): string {
+  const sat = percent(group.satisfied, group.totalControls);
+  const notSat = percent(group.notSatisfied, group.totalControls);
+  const used = Math.min(sat + notSat, 100);
+  return `${100 - used}%`;
+}
+
+function groupNotImplementedCount(groupId: string): number {
+  return controls.value.filter(
+    (control) => control.groupId === groupId && control.implemented === false,
+  ).length;
 }
 
 function statusClass(status: string): string {
