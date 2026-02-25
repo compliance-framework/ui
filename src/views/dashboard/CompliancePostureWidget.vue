@@ -137,6 +137,7 @@ import PageCard from '@/components/PageCard.vue';
 import { useDataApi } from '@/composables/axios';
 import type { SystemSecurityPlan, Profile } from '@/oscal';
 import type { ProfileComplianceSummary } from '@/types/compliance';
+import { computeComplianceWidths } from '@/utils/compliance';
 
 interface ComplianceItem {
   sspId: string;
@@ -223,27 +224,16 @@ onMounted(async () => {
   }
 });
 
-function pct(part: number, total: number): number {
-  if (!total) return 0;
-  return Math.round((part / total) * 100);
-}
-
 function satisfiedWidth(summary: ProfileComplianceSummary): number {
-  return pct(summary.satisfied, summary.totalControls);
+  return computeComplianceWidths(summary).satisfied;
 }
 
 function notSatisfiedWidth(summary: ProfileComplianceSummary): number {
-  const sat = satisfiedWidth(summary);
-  const notSat = pct(summary.notSatisfied, summary.totalControls);
-  const remaining = 100 - sat;
-  return Math.min(notSat, remaining);
+  return computeComplianceWidths(summary).notSatisfied;
 }
 
 function unknownWidth(summary: ProfileComplianceSummary): number {
-  const sat = satisfiedWidth(summary);
-  const notSat = notSatisfiedWidth(summary);
-  const used = Math.min(sat + notSat, 100);
-  return 100 - used;
+  return computeComplianceWidths(summary).unknown;
 }
 
 function navigateToCompliance(sspId: string) {

@@ -166,18 +166,20 @@
             <div
               class="bg-emerald-600"
               :style="{
-                width: `${satisfiedWidth(compliancePreview.summary)}%`,
+                width: `${complianceWidths(compliancePreview.summary).satisfied}%`,
               }"
             ></div>
             <div
               class="bg-red-500"
               :style="{
-                width: `${notSatisfiedWidth(compliancePreview.summary)}%`,
+                width: `${complianceWidths(compliancePreview.summary).notSatisfied}%`,
               }"
             ></div>
             <div
               class="bg-slate-400"
-              :style="{ width: `${unknownWidth(compliancePreview.summary)}%` }"
+              :style="{
+                width: `${complianceWidths(compliancePreview.summary).unknown}%`,
+              }"
             ></div>
           </div>
         </div>
@@ -313,6 +315,7 @@ import type {
   ProfileComplianceProgress,
   ProfileComplianceSummary,
 } from '@/types/compliance';
+import { computeComplianceWidths } from '@/utils/compliance';
 
 const toast = useToast();
 const { system } = useSystemStore();
@@ -529,27 +532,8 @@ onMounted(async () => {
   }
 });
 
-function pct(part: number, total: number): number {
-  if (!total) return 0;
-  return Math.round((part / total) * 100);
-}
-
-function satisfiedWidth(summary: ProfileComplianceSummary): number {
-  return pct(summary.satisfied, summary.totalControls);
-}
-
-function notSatisfiedWidth(summary: ProfileComplianceSummary): number {
-  const sat = satisfiedWidth(summary);
-  const notSat = pct(summary.notSatisfied, summary.totalControls);
-  const remaining = 100 - sat;
-  return Math.min(notSat, remaining);
-}
-
-function unknownWidth(summary: ProfileComplianceSummary): number {
-  const sat = satisfiedWidth(summary);
-  const notSat = notSatisfiedWidth(summary);
-  const used = Math.min(sat + notSat, 100);
-  return 100 - used;
+function complianceWidths(summary: ProfileComplianceSummary) {
+  return computeComplianceWidths(summary);
 }
 
 function formatDate(dateString?: string): string {
