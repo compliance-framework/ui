@@ -324,6 +324,14 @@ const authenticatedRoutes = [
         },
       },
       {
+        path: 'compliance',
+        name: 'profile:view-compliance',
+        component: () => import('../views/profile/ProfileComplianceView.vue'),
+        meta: {
+          requiresAuth: true,
+        },
+      },
+      {
         path: 'json',
         name: 'profile:view-json',
         component: () => import('../views/profile/ProfileJSONView.vue'),
@@ -620,6 +628,14 @@ const authenticatedRoutes = [
         component: () =>
           import(
             '../views/system-security-plans/SystemSecurityPlanControlImplementationView.vue'
+          ),
+      },
+      {
+        path: 'compliance',
+        name: 'system-security-plan-compliance',
+        component: () =>
+          import(
+            '../views/system-security-plans/SystemSecurityPlanComplianceView.vue'
           ),
       },
       {

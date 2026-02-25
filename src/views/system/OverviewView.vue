@@ -78,6 +78,148 @@
       <p class="text-gray-500 dark:text-slate-400">Loading metadata...</p>
     </div>
 
+    <div
+      class="mt-8 rounded-lg border border-ccf-300 bg-white p-6 dark:border-slate-700 dark:bg-slate-900"
+    >
+      <div class="mb-4 flex items-center justify-between gap-3">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-slate-300">
+          Compliance
+        </h3>
+        <RouterLink
+          v-if="systemSecurityPlan.uuid"
+          :to="{
+            name: 'system-security-plan-compliance',
+            params: { id: systemSecurityPlan.uuid },
+          }"
+          class="text-sm font-medium text-blue-600 underline dark:text-blue-300"
+        >
+          Open full compliance view
+        </RouterLink>
+      </div>
+
+      <div
+        v-if="loadingCompliancePreview"
+        class="text-sm text-gray-500 dark:text-slate-400"
+      >
+        Loading compliance progress...
+      </div>
+
+      <template v-else-if="compliancePreview?.summary">
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-5">
+          <div class="rounded-lg border border-emerald-200 bg-emerald-50 p-4">
+            <p class="text-xs uppercase tracking-wide text-emerald-700">
+              Satisfied
+            </p>
+            <p class="mt-2 text-3xl font-semibold text-emerald-800">
+              {{ compliancePreview.summary.satisfied }}
+            </p>
+          </div>
+          <div class="rounded-lg border border-red-200 bg-red-50 p-4">
+            <p class="text-xs uppercase tracking-wide text-red-700">
+              Not Satisfied
+            </p>
+            <p class="mt-2 text-3xl font-semibold text-red-800">
+              {{ compliancePreview.summary.notSatisfied }}
+            </p>
+          </div>
+          <div class="rounded-lg border border-slate-300 bg-slate-100 p-4">
+            <p class="text-xs uppercase tracking-wide text-slate-700">
+              Unknown
+            </p>
+            <p class="mt-2 text-3xl font-semibold text-slate-800">
+              {{ compliancePreview.summary.unknown }}
+            </p>
+          </div>
+          <div class="rounded-lg border border-blue-200 bg-blue-50 p-4">
+            <p class="text-xs uppercase tracking-wide text-blue-700">
+              Compliance
+            </p>
+            <p class="mt-2 text-3xl font-semibold text-blue-800">
+              {{ compliancePreview.summary.compliancePercent }}%
+            </p>
+          </div>
+          <div class="rounded-lg border border-indigo-200 bg-indigo-50 p-4">
+            <p class="text-xs uppercase tracking-wide text-indigo-700">
+              Assessed
+            </p>
+            <p class="mt-2 text-3xl font-semibold text-indigo-800">
+              {{ compliancePreview.summary.assessedPercent }}%
+            </p>
+          </div>
+        </div>
+
+        <div class="mt-5">
+          <div class="mb-2 flex items-center justify-between text-sm">
+            <span class="text-gray-600 dark:text-slate-400">
+              {{ compliancePreview.summary.satisfied }}/{{
+                compliancePreview.summary.totalControls
+              }}
+              controls satisfied
+            </span>
+            <span class="font-semibold text-gray-900 dark:text-slate-200">
+              {{ compliancePreview.summary.compliancePercent }}%
+            </span>
+          </div>
+          <div
+            class="flex h-3 w-full overflow-hidden rounded-full bg-zinc-200 dark:bg-slate-700"
+          >
+            <div
+              class="bg-emerald-600"
+              :style="{
+                width: `${complianceWidths(compliancePreview.summary).satisfied}%`,
+              }"
+            ></div>
+            <div
+              class="bg-red-500"
+              :style="{
+                width: `${complianceWidths(compliancePreview.summary).notSatisfied}%`,
+              }"
+            ></div>
+            <div
+              class="bg-slate-400"
+              :style="{
+                width: `${complianceWidths(compliancePreview.summary).unknown}%`,
+              }"
+            ></div>
+          </div>
+        </div>
+
+        <div
+          v-if="compliancePreview.implementation"
+          class="mt-4 rounded-lg border border-ccf-300 bg-white p-4 dark:border-slate-700 dark:bg-slate-900"
+        >
+          <div class="mb-2 flex items-center justify-between text-sm">
+            <span class="text-gray-600 dark:text-slate-400">
+              Implementation Coverage
+            </span>
+            <span class="font-semibold text-gray-900 dark:text-slate-200">
+              {{ compliancePreview.implementation.implementationPercent }}%
+            </span>
+          </div>
+          <div
+            class="flex h-3 w-full overflow-hidden rounded-full bg-zinc-200 dark:bg-slate-700"
+          >
+            <div
+              class="bg-blue-600"
+              :style="{
+                width: `${compliancePreview.implementation.implementationPercent}%`,
+              }"
+            ></div>
+          </div>
+          <div class="mt-2 text-xs text-gray-600 dark:text-slate-400">
+            {{ compliancePreview.implementation.implementedControls }}
+            implemented,
+            {{ compliancePreview.implementation.unimplementedControls }} not
+            implemented
+          </div>
+        </div>
+      </template>
+
+      <div v-else class="text-sm text-gray-500 dark:text-slate-400">
+        Select a profile to view compliance posture.
+      </div>
+    </div>
+
     <!-- System Characteristics Summary -->
     <template v-if="systemCharacteristics">
       <!--      <h3 class="text-lg font-semibold mb-4 text-gray-900 dark:text-slate-300">-->
@@ -169,6 +311,11 @@ import { useToast } from 'primevue/usetoast';
 import { useDataApi } from '@/composables/axios';
 import type { AxiosError } from 'axios';
 import type { ErrorResponse, ErrorBody } from '@/stores/types.ts';
+import type {
+  ProfileComplianceProgress,
+  ProfileComplianceSummary,
+} from '@/types/compliance';
+import { computeComplianceWidths } from '@/utils/compliance';
 
 const toast = useToast();
 const { system } = useSystemStore();
@@ -247,6 +394,46 @@ const { execute: executeSILeveragedAuths } = useDataApi<
 );
 
 const selectedProfile = ref<{ name: string; value: string } | null>(null);
+const compliancePreview = ref<ProfileComplianceProgress | null>(null);
+const loadingCompliancePreview = ref(false);
+
+const { execute: executeCompliance } = useDataApi<ProfileComplianceProgress>(
+  null,
+  null,
+  { immediate: false },
+);
+
+async function loadCompliancePreview(profileId?: string) {
+  const sspId = system.securityPlan?.uuid || systemSecurityPlan.value.uuid;
+  if (!profileId || !sspId) {
+    compliancePreview.value = null;
+    return;
+  }
+
+  loadingCompliancePreview.value = true;
+  try {
+    const { data } = await executeCompliance(
+      `/api/oscal/profiles/${profileId}/compliance-progress?includeControls=false&sspId=${sspId}`,
+    );
+    compliancePreview.value = data.value?.data || null;
+  } catch (error) {
+    compliancePreview.value = null;
+
+    const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
+    if (errorResponse.response?.status !== 404) {
+      toast.add({
+        severity: 'error',
+        summary: 'Error loading compliance progress',
+        detail:
+          errorResponse.response?.data.errors.body ||
+          'Unable to load compliance progress.',
+        life: 3000,
+      });
+    }
+  } finally {
+    loadingCompliancePreview.value = false;
+  }
+}
 
 onMounted(async () => {
   try {
@@ -276,6 +463,8 @@ onMounted(async () => {
       }
     }
 
+    await loadCompliancePreview(selectedProfile.value?.value);
+
     watch(selectedProfile, async () => {
       try {
         await attachProfile({
@@ -288,6 +477,7 @@ onMounted(async () => {
           summary: 'Profile updated',
           life: 3000,
         });
+        await loadCompliancePreview(selectedProfile.value?.value);
       } catch (error) {
         const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
         toast.add({
@@ -341,6 +531,10 @@ onMounted(async () => {
     console.error('Error loading System Security Plan overview:', error);
   }
 });
+
+function complianceWidths(summary: ProfileComplianceSummary) {
+  return computeComplianceWidths(summary);
+}
 
 function formatDate(dateString?: string): string {
   if (!dateString) return 'N/A';
