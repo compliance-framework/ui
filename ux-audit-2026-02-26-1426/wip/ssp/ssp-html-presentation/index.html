@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SSP Design Presentation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Space+Grotesk:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="shell" id="shell">
+      <header class="topbar">
+        <div class="topbar-left">
+          <h1>SSP Design Flow Presentation</h1>
+          <p id="frameCounter">Frame 1 / 1</p>
+        </div>
+        <div class="topbar-right">
+          <button id="prevBtn" class="btn" type="button" aria-label="Previous frame">
+            Prev
+          </button>
+          <button id="nextBtn" class="btn" type="button" aria-label="Next frame">
+            Next
+          </button>
+          <select id="frameSelect" aria-label="Select frame"></select>
+          <button id="fitBtn" class="btn" type="button" aria-label="Toggle fit mode">
+            Fit Width
+          </button>
+          <button
+            id="fullscreenBtn"
+            class="btn btn-primary"
+            type="button"
+            aria-label="Enter full screen"
+          >
+            Full Screen
+          </button>
+        </div>
+      </header>
+
+      <main class="main-layout">
+        <section class="viewer-column">
+          <div class="viewer-stage" id="viewerStage">
+            <button id="leftArrow" class="arrow arrow-left" type="button" aria-label="Previous frame">
+              &larr;
+            </button>
+            <div class="frame-viewport" id="frameViewport">
+              <div class="frame-canvas-wrap" id="frameCanvasWrap">
+                <div class="frame-canvas" id="frameCanvas"></div>
+              </div>
+            </div>
+            <button id="rightArrow" class="arrow arrow-right" type="button" aria-label="Next frame">
+              &rarr;
+            </button>
+          </div>
+        </section>
+
+        <aside class="notes-column" id="notesColumn">
+          <h2 id="notesTitle">Frame title</h2>
+          <p id="notesSection" class="notes-section">Section</p>
+          <p id="notesSummary" class="notes-summary">Summary</p>
+
+          <div class="notes-block">
+            <h3>Old UI</h3>
+            <ul id="oldUiBullets"></ul>
+          </div>
+
+          <div class="notes-block">
+            <h3>New Design</h3>
+            <ul id="newDesignBullets"></ul>
+          </div>
+
+          <div class="notes-block">
+            <h3>Why This Change</h3>
+            <ul id="whyBullets"></ul>
+          </div>
+
+          <div class="notes-block">
+            <h3>Frame metadata</h3>
+            <p><strong>ID:</strong> <code id="metaId">-</code></p>
+            <p><strong>Name:</strong> <code id="metaName">-</code></p>
+            <p><strong>Size:</strong> <code id="metaSize">-</code></p>
+          </div>
+
+          <div class="notes-block">
+            <h3>Controls</h3>
+            <ul>
+              <li><code>&larr;</code> / <code>&rarr;</code>: previous and next frame</li>
+              <li><code>F</code>: toggle full screen app mode</li>
+              <li><code>Fit Width</code>: toggle fit-width and 1:1 scale</li>
+            </ul>
+          </div>
+        </aside>
+      </main>
+    </div>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
