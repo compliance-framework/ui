@@ -98,7 +98,7 @@ Observed user pain:
 
 Colleague feedback and validation:
 
-- A colleague warned that some OSCAL catalogs "don't really have statements" (or specific controls don't), so a statement-driven design can look broken.
+- Some OSCAL catalogs "don't really have statements" (or specific controls don't), so a statement-driven design can look broken.
 - We reproduced this on the running app via Chrome DevTools:
   - `ac-14.1 Necessary Uses` has no catalog statement parts and renders an empty statement card.
   - Additional examples encountered in-page: `ac-17.5`, `ac-17.7`, `ac-17.8`.
