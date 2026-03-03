@@ -174,6 +174,16 @@ Statement row:
 - ACTION shows `IMPLEMENT`.
   - This maps to the existing statement implementation drawer opened by selecting a catalog statement `part`.
 
+Expanded statement detail row (visualized in `YMNpx`):
+
+- For an expanded statement, render a full-width detail block under the statement row.
+- The block displays nested catalog parts (recursive hierarchy) with visible indentation per level.
+- Long prose wraps to multiple lines (`fixed-width` content area), preserving readability without breaking table columns.
+- Interaction hint remains explicit: each line maps to a `part.id` and is clickable in the real UI (current behavior via `PartDisplay` recursion).
+- Circular number badges in this block represent per-part component counts (`Statement.byComponents.length`) for parts that already have implementation content.
+  - Example shown in the concept: `1` on the root part and `3` on a nested part, matching the semantics of current `/controls` badges.
+  - Placement decision: badges are side-by-side with their matching line in a fixed right-side meta slot (not floating above lines), to avoid indentation/alignment ambiguity.
+
 ### Evidence column (chips)
 
 Decision made in-thread:
@@ -288,6 +298,8 @@ Backend references:
 - Evidence display respects current semantics:
   - If evidence endpoint returns no data, show neutral placeholder (or show nothing; design currently uses `NO DATA` chip).
 - Selection highlight is single-meaning (no dual-use amber backgrounds).
+- Nested statement content remains legible for deep/multi-line parts (expanded detail block pattern).
+- Per-part component counts are visible in nested content via inline number badges (when available).
 
 ## 11) References (Thread-derived)
 
