@@ -17,6 +17,112 @@
   --color-ccf-950: var(--color-gray-950);
 }
 
+:root {
+  --ui-v2-font-primary: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+  --ui-v2-font-secondary:
+    'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, Monaco, Consolas,
+    'Liberation Mono', 'Courier New', monospace;
+
+  --ui-v2-type-body: 0.875rem;
+  --ui-v2-type-nav: 0.75rem;
+  --ui-v2-type-label: 0.75rem;
+  --ui-v2-type-meta: 0.6875rem;
+  --ui-v2-tracking-wide: 1px;
+
+  --ui-v2-background: #eff1f5;
+  --ui-v2-surface: #e6e9ef;
+  --ui-v2-card: #dce0e8;
+  --ui-v2-border: #ccd0da;
+
+  --ui-v2-foreground: #4c4f69;
+  --ui-v2-muted-foreground: #5c5f77;
+  --ui-v2-secondary-foreground: #7c7f93;
+  --ui-v2-tertiary-foreground: #9ca0b0;
+
+  --ui-v2-primary: #df8e1d;
+  --ui-v2-primary-foreground: #4c4f69;
+  --ui-v2-primary-tint-10: #df8e1d1a;
+  --ui-v2-primary-stroke-30: #df8e1d4d;
+
+  --ui-v2-success: #40a02b;
+  --ui-v2-success-tint-10: #40a02b1a;
+
+  --ui-v2-warning: #df8e1d;
+  --ui-v2-error: #d20f39;
+  --ui-v2-error-tint-10: #d20f391a;
+
+  --ui-v2-info: #1e66f5;
+  --ui-v2-info-tint-10: #1e66f51a;
+}
+
+:root.dark {
+  --ui-v2-background: #1e1e2e;
+  --ui-v2-surface: #181825;
+  --ui-v2-card: #11111b;
+  --ui-v2-border: #313244;
+
+  --ui-v2-foreground: #cdd6f4;
+  --ui-v2-muted-foreground: #bac2de;
+  --ui-v2-secondary-foreground: #6c7086;
+  --ui-v2-tertiary-foreground: #585b70;
+
+  --ui-v2-primary: #f9e2af;
+  --ui-v2-primary-foreground: #11111b;
+  --ui-v2-primary-tint-10: #f9e2af1a;
+  --ui-v2-primary-stroke-30: #f9e2af4d;
+
+  --ui-v2-success: #a6e3a1;
+  --ui-v2-success-tint-10: #a6e3a11a;
+
+  --ui-v2-warning: #f9e2af;
+  --ui-v2-error: #f38ba8;
+  --ui-v2-error-tint-10: #f38ba81a;
+
+  --ui-v2-info: #89b4fa;
+  --ui-v2-info-tint-10: #89b4fa1a;
+}
+
+.ui-v2 {
+  background: var(--ui-v2-background);
+  color: var(--ui-v2-foreground);
+  font-family: var(--ui-v2-font-secondary);
+  font-size: var(--ui-v2-type-body);
+  line-height: 1.55;
+}
+
+.ui-v2-display {
+  font-family: var(--ui-v2-font-primary);
+}
+
+.ui-v2-label {
+  font-size: var(--ui-v2-type-label);
+  font-weight: 600;
+  letter-spacing: var(--ui-v2-tracking-wide);
+  text-transform: uppercase;
+}
+
+.ui-v2-nav {
+  font-size: var(--ui-v2-type-nav);
+  font-weight: 500;
+  letter-spacing: var(--ui-v2-tracking-wide);
+  text-transform: uppercase;
+}
+
+.ui-v2-meta {
+  font-size: var(--ui-v2-type-meta);
+  line-height: 1.45;
+}
+
+.ui-v2-link {
+  color: var(--ui-v2-foreground);
+  text-decoration: none;
+  transition: color 160ms ease;
+}
+
+.ui-v2-link:hover {
+  color: var(--ui-v2-primary);
+}
+
 html,
 body {
   @apply font-sans;

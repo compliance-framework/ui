@@ -85,19 +85,19 @@ Legend: `[ ]` not started, `[~]` in progress, `[x]` done, `[-]` blocked.
 
 ## 7.2 Foundations: tokens, typography, and theming
 
-- [ ] P1-01 Add V2 token map from `new-design.pen` variables to CSS variables.
-- [ ] P1-02 Implement Latte and Mocha themes in app CSS with deterministic token naming.
-- [ ] P1-03 Add Space Grotesk and JetBrains Mono font loading and fallback stack.
-- [ ] P1-04 Define typography scale utilities (title, section, label, body, meta).
+- [x] P1-01 Add V2 token map from `new-design.pen` variables to CSS variables.
+- [x] P1-02 Implement Latte and Mocha themes in app CSS with deterministic token naming.
+- [x] P1-03 Add Space Grotesk and JetBrains Mono font loading and fallback stack.
+- [~] P1-04 Define typography scale utilities (title, section, label, body, meta).
 - [ ] P1-05 Implement zero-radius rule and border standards as reusable utilities.
-- [ ] P1-06 Implement semantic color tokens (success/warn/error/info).
+- [x] P1-06 Implement semantic color tokens (success/warn/error/info).
 - [ ] P1-07 Validate contrast ratios for all token combinations used in key components.
 - [ ] P1-08 Add visual test page for tokens (colors, type scale, spacing, border usage).
 - [ ] P1-09 Add theme regression snapshot test baseline.
 
 ## 7.3 Foundations: V2 architecture and routing
 
-- [ ] P2-01 Add V2 layout scaffold (guest and app variants).
+- [~] P2-01 Add V2 layout scaffold (guest and app variants).
 - [ ] P2-02 Add route-level UI version switch mechanism (meta or feature flag).
 - [ ] P2-03 Add V2 navigation shell container preserving existing router behavior.
 - [ ] P2-04 Ensure PrimeVue services (toast/confirm/tooltip) render with V2 wrappers.
@@ -148,13 +148,13 @@ Legend: `[ ]` not started, `[~]` in progress, `[x]` done, `[-]` blocked.
 
 ## 7.6 Wave 1 migration: auth and global shell
 
-- [ ] W1-01 Migrate auth layout to V2 (guest shell).
-- [ ] W1-02 Migrate Login view using V2 form template.
-- [ ] W1-03 Migrate Forgot Password view using V2 form template.
-- [ ] W1-04 Migrate Password Reset view using V2 form template.
-- [ ] W1-05 Migrate SSO callback loading/error states.
-- [ ] W1-06 Migrate logout confirmation view/dialog.
-- [ ] W1-07 Validate auth flows under success, error, and timeout conditions.
+- [x] W1-01 Migrate auth layout to V2 (guest shell).
+- [x] W1-02 Migrate Login view using V2 form template.
+- [x] W1-03 Migrate Forgot Password view using V2 form template.
+- [x] W1-04 Migrate Password Reset view using V2 form template.
+- [x] W1-05 Migrate SSO callback loading/error states.
+- [x] W1-06 Migrate logout confirmation view/dialog.
+- [~] W1-07 Validate auth flows under success, error, and timeout conditions.
 - [ ] W1-08 Migrate app shell (sidebar + header + content container).
 - [ ] W1-09 Surface Active SSP indicator globally in app shell.
 - [ ] W1-10 Validate responsive behavior (desktop + mobile breakpoints).
@@ -323,7 +323,19 @@ A route family is done only when all are true:
 ## 12. Immediate Next Actions (Week 1)
 
 - [ ] N-01 Finalize route inventory and assign wave ownership.
-- [ ] N-02 Implement token/theme foundation and font stack.
-- [ ] N-03 Implement V2 app/guest layout scaffolds and route switch mechanism.
+- [x] N-02 Implement token/theme foundation and font stack.
+- [~] N-03 Implement V2 app/guest layout scaffolds and route switch mechanism.
 - [ ] N-04 Deliver Active SSP indicator + prerequisite gate components.
-- [ ] N-05 Migrate Auth flows end-to-end as first vertical slice.
+- [~] N-05 Migrate Auth flows end-to-end as first vertical slice.
+
+## 13. Execution Log
+
+- 2026-03-03: Implemented V2 auth vertical slice and set `/auth/*` routes to V2 views.
+- 2026-03-03: Added Latte/Mocha V2 design tokens and semantic color variables in `src/assets/main.css`.
+- 2026-03-03: Added Space Grotesk + JetBrains Mono font loading in `index.html`.
+- 2026-03-03: Added `GuestV2Layout` with redesigned two-column auth shell.
+- 2026-03-03: Added V2 auth primitives (`AuthPanelCard`, `AuthInput`, `AuthPrimaryButton`).
+- 2026-03-03: Added V2 auth views for login, forgot password, password reset, SSO callback, and logout.
+- 2026-03-03: Validation run: `npm run type-check`, `npm run build-only`, `npm run lint`, `npm run test:unit`.
+- 2026-03-03: Tuned V2 typography scale to style guide defaults (body 14px, nav/labels 12px, meta 11px) and removed hardcoded tiny text sizes from V2 auth layouts/views.
+- 2026-03-03: Simplified login feedback by removing success/error login toasts and keeping inline field/form messaging in V2 login view.

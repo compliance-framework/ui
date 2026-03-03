@@ -1,7 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import AppLayout from '@/views/layouts/App.vue';
-import GuestLayout from '@/views/layouts/GuestLayout.vue';
+import GuestV2Layout from '@/views/layouts/GuestV2Layout.vue';
 import { useUserStore } from '@/stores/auth';
+import { RouteNames } from './routeNames';
 
 const authenticatedRoutes = [
   {
@@ -211,14 +212,6 @@ const authenticatedRoutes = [
     path: 'risks/:riskId',
     name: 'risks:detail',
     component: () => import('../views/risk/RiskDetailView.vue'),
-    meta: {
-      requiresAuth: true,
-    },
-  },
-  {
-    path: 'inventory',
-    name: 'inventory:index',
-    component: () => import('../views/InventoryView.vue'),
     meta: {
       requiresAuth: true,
     },
@@ -896,27 +889,27 @@ const publicRoutes = [
   {
     path: 'login',
     name: 'login',
-    component: () => import('@/views/LoginView.vue'),
+    component: () => import('@/views/auth-v2/LoginView.vue'),
   },
   {
     path: 'forgot-password',
     name: 'forgot-password',
-    component: () => import('@/views/ForgotPasswordView.vue'),
+    component: () => import('@/views/auth-v2/ForgotPasswordView.vue'),
   },
   {
     path: 'password-reset',
     name: 'password-reset',
-    component: () => import('@/views/PasswordResetView.vue'),
+    component: () => import('@/views/auth-v2/PasswordResetView.vue'),
   },
   {
     path: 'sso/callback',
     name: 'sso-callback',
-    component: () => import('@/views/SSOCallbackView.vue'),
+    component: () => import('@/views/auth-v2/SSOCallbackView.vue'),
   },
   {
     path: 'logout',
     name: 'logout',
-    component: () => import('@/views/LogoutView.vue'),
+    component: () => import('@/views/auth-v2/LogoutView.vue'),
   },
 ];
 
@@ -933,11 +926,11 @@ const router = createRouter({
     {
       path: '/auth',
       name: 'auth',
-      component: GuestLayout,
+      component: GuestV2Layout,
       children: publicRoutes,
       meta: {
         requiresAuth: false,
-        asd: false,
+        hideThemeToggle: true,
       },
     },
     {
@@ -949,6 +942,11 @@ const router = createRouter({
         requiresAuth: true,
       },
     },
+    {
+      path: '/:pathMatch(.*)*',
+      name: 'not-found',
+      component: () => import('@/views/NotFoundView.vue'),
+    },
   ],
 });
 
@@ -958,7 +956,7 @@ router.beforeEach((to, from, next) => {
   const isAuthenticated = userStore.isAuthenticated;
   if (requiresAuth && !isAuthenticated) {
     // Redirect to the login page if the user is not authenticated
-    return next({ name: 'login', query: { next: to.fullPath } });
+    return next({ name: RouteNames.LOGIN, query: { next: to.fullPath } });
   }
 
   // Proceed to the requested route
