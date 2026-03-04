@@ -1,5 +1,11 @@
 <template>
-  <Message v-if="!systemSecurityPlan" severity="error" variant="outlined">
+  <RouterView v-if="isV2SystemRoute" v-slot="{ Component }">
+    <KeepAlive>
+      <component :is="Component" />
+    </KeepAlive>
+  </RouterView>
+
+  <Message v-else-if="!systemSecurityPlan" severity="error" variant="outlined">
     <div class="space-y-2 text-gray-700 dark:text-slate-200">
       <h4 class="text-base font-semibold">System Security Plan not selected</h4>
       <p>You have not selected a system security plan for editing.</p>
@@ -14,6 +20,7 @@
       </p>
     </div>
   </Message>
+
   <div v-else>
     <PageSubHeader>{{ systemSecurityPlan.metadata?.title }}</PageSubHeader>
 
@@ -53,7 +60,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed } from 'vue';
 import PageHeader from '@/components/PageHeader.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
 import { type SystemSecurityPlan } from '@/oscal';
@@ -65,10 +72,13 @@ import TabList from '@/volt/TabList.vue';
 import Message from '@/volt/Message.vue';
 
 const { system } = useSystemStore();
-const systemSecurityPlan = ref<SystemSecurityPlan>(
-  system.securityPlan as SystemSecurityPlan,
+const route = useRoute();
+
+const systemSecurityPlan = computed(
+  () => system.securityPlan as SystemSecurityPlan | undefined,
 );
 
-const route = useRoute();
-const activeRoute = ref(route.name as string);
+const activeRoute = computed(() => route.name as string);
+
+const isV2SystemRoute = computed(() => route.meta.uiVersion === 'v2');
 </script>

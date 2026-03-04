@@ -13,12 +13,22 @@
       <SpinnerIcon class="animate-spin" />
     </template>
     <template #filtericon>
-      <SearchIcon class="text-surface-400" />
+      <SearchIcon
+        :class="
+          isV2Route
+            ? 'text-[var(--ui-v2-secondary-foreground)]'
+            : 'text-surface-400'
+        "
+      />
     </template>
     <template #clearicon="{ clearCallback }">
       <TimesIcon
         @click="clearCallback"
-        class="text-surface-400 absolute top-1/2 -mt-2 end-10"
+        :class="
+          isV2Route
+            ? 'absolute top-1/2 -mt-2 end-10 text-[var(--ui-v2-secondary-foreground)]'
+            : 'text-surface-400 absolute top-1/2 -mt-2 end-10'
+        "
       />
     </template>
     <template v-for="(_, slotName) in $slots" #[slotName]="slotProps">
@@ -36,13 +46,16 @@ import MultiSelect, {
   type MultiSelectPassThroughOptions,
   type MultiSelectProps,
 } from 'primevue/multiselect';
-import { ref } from 'vue';
+import { computed } from 'vue';
 import { ptViewMerge } from './utils';
+import { useIsV2Route } from './useRouteUiVersion';
 
 interface Props extends /* @vue-ignore */ MultiSelectProps {}
 defineProps<Props>();
 
-const theme = ref<MultiSelectPassThroughOptions>({
+const isV2Route = useIsV2Route();
+
+const legacyTheme: MultiSelectPassThroughOptions = {
   root: `inline-flex cursor-pointer relative select-none rounded-md p-fluid:flex
         bg-surface-0 dark:bg-surface-950
         border border-ccf-300 dark:border-slate-700 dark:hover:border-slate-600
@@ -146,5 +159,98 @@ const theme = ref<MultiSelectPassThroughOptions>({
     leaveActiveClass: 'transition-opacity duration-100 ease-linear',
     leaveToClass: 'opacity-0',
   },
-});
+};
+
+const v2Theme: MultiSelectPassThroughOptions = {
+  root: `inline-flex cursor-pointer relative select-none rounded-none p-fluid:flex
+        min-h-6 bg-[var(--ui-v2-primary-tint-15)] border border-[var(--ui-v2-primary)]
+        p-focus:border-[var(--ui-v2-primary)] p-focus:bg-[var(--ui-v2-primary-tint-15)]
+        p-invalid:border-[var(--ui-v2-error)] p-invalid:bg-[var(--ui-v2-error-tint-10)]
+        p-disabled:pointer-events-none p-disabled:bg-[var(--ui-v2-surface)] p-disabled:border-[var(--ui-v2-border)] p-disabled:text-[var(--ui-v2-secondary-foreground)]
+        transition-colors duration-150`,
+  labelContainer: `overflow-hidden flex-auto`,
+  label: `flex items-center gap-1 whitespace-nowrap overflow-hidden text-ellipsis px-2 py-[4px] p-has-chip:py-[2px] p-has-chip:px-[4px]
+        font-[var(--ui-v2-font-secondary)] text-[11px] font-bold tracking-[1px] leading-none uppercase
+        text-[var(--ui-v2-foreground)] p-placeholder:text-[var(--ui-v2-tertiary-foreground)]
+        p-disabled:text-[var(--ui-v2-secondary-foreground)]
+        p-empty:overflow-hidden p-empty:opacity-0
+        p-small:text-[10px] p-small:px-2 p-small:py-[4px]
+        p-large:text-[11px] p-large:px-2 p-large:py-[4px]`,
+  chipItem: `bg-[var(--ui-v2-surface)] rounded-none border border-[var(--ui-v2-border)]`,
+  pcChip: {
+    root: `inline-flex items-center gap-1 px-2 py-[2px] rounded-none border border-[var(--ui-v2-border)]
+            bg-[var(--ui-v2-surface)] text-[var(--ui-v2-muted-foreground)] font-[var(--ui-v2-font-secondary)] text-[10px] font-semibold tracking-[0.5px] p-removable:pe-1`,
+    removeIcon:
+      'cursor-pointer text-[10px] w-3 h-3 rounded-none text-[var(--ui-v2-secondary-foreground)]',
+  },
+  dropdown: `flex items-center justify-center shrink-0 bg-transparent
+        text-[var(--ui-v2-foreground)] w-8 rounded-none border-s border-[var(--ui-v2-primary)]`,
+  overlay: `absolute top-0 left-0 rounded-none p-portal-self:min-w-full
+        bg-[var(--ui-v2-card)] border border-[var(--ui-v2-border)] text-[var(--ui-v2-foreground)]`,
+  header: `flex items-center p-1 gap-2`,
+  pcHeaderCheckbox: {
+    root: `relative inline-flex select-none w-5 h-5 align-bottom`,
+    input: `peer cursor-pointer disabled:cursor-default appearance-none
+            absolute start-0 top-0 w-full h-full m-0 p-0 opacity-0 z-10
+            border border-transparent rounded-none`,
+    box: `flex justify-center items-center rounded-none w-4 h-4
+            border border-[var(--ui-v2-border)] bg-[var(--ui-v2-surface)] text-[var(--ui-v2-muted-foreground)]
+            peer-enabled:peer-hover:border-[var(--ui-v2-border)]
+            p-checked:border-[var(--ui-v2-primary)] p-checked:bg-[var(--ui-v2-primary)] p-checked:text-[var(--ui-v2-primary-foreground)]
+            peer-focus-visible:outline-1 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[var(--ui-v2-primary)] peer-focus-visible:outline
+            transition-colors duration-150`,
+    icon: `text-[10px] w-3 h-3 transition-none`,
+  },
+  pcFilterContainer: {
+    root: `relative flex-auto`,
+  },
+  pcFilter: {
+    root: `w-full appearance-none rounded-none outline-hidden
+            bg-[var(--ui-v2-surface)] text-[var(--ui-v2-foreground)]
+            placeholder:text-[var(--ui-v2-tertiary-foreground)]
+            border border-[var(--ui-v2-border)]
+            enabled:hover:border-[var(--ui-v2-border)] enabled:focus:border-[var(--ui-v2-primary)]
+            font-[var(--ui-v2-font-secondary)] text-[11px] font-semibold tracking-[0.5px]
+            ps-2 pe-8 py-[4px] p-fluid:w-full transition-colors duration-150`,
+  },
+  pcFilterIconContainer: {
+    root: `absolute top-1/2 -mt-2 leading-none end-3 z-1 text-[var(--ui-v2-secondary-foreground)]`,
+  },
+  listContainer: `overflow-auto`,
+  virtualScroller: ``,
+  list: `m-0 p-1 list-none gap-[2px] flex flex-col`,
+  optionGroup: `m-0 px-2 py-[4px] bg-transparent text-[var(--ui-v2-secondary-foreground)]
+        font-[var(--ui-v2-font-secondary)] text-[10px] font-bold tracking-[1px] uppercase`,
+  option: `cursor-pointer whitespace-nowrap relative overflow-hidden flex items-center gap-2 h-6 px-2 py-[4px]
+        rounded-none bg-[var(--ui-v2-surface)] border border-transparent
+        text-[var(--ui-v2-muted-foreground)] font-[var(--ui-v2-font-secondary)] text-[11px] font-semibold tracking-[1px]
+        p-focus:bg-[var(--ui-v2-primary-tint-15)] p-focus:border-[var(--ui-v2-primary)] p-focus:text-[var(--ui-v2-foreground)]
+        p-selected:bg-[var(--ui-v2-primary-tint-15)] p-selected:border-[var(--ui-v2-primary)] p-selected:text-[var(--ui-v2-foreground)] p-selected:font-bold
+        transition-colors duration-150`,
+  optionLabel: ``,
+  pcOptionCheckbox: {
+    root: `relative inline-flex select-none w-5 h-5 align-bottom`,
+    input: `peer cursor-pointer disabled:cursor-default appearance-none
+            absolute start-0 top-0 w-full h-full m-0 p-0 opacity-0 z-10
+            border border-transparent rounded-none`,
+    box: `flex justify-center items-center rounded-none w-4 h-4
+            border border-[var(--ui-v2-border)] bg-[var(--ui-v2-surface)] text-[var(--ui-v2-muted-foreground)]
+            peer-enabled:peer-hover:border-[var(--ui-v2-border)]
+            p-checked:border-[var(--ui-v2-primary)] p-checked:bg-[var(--ui-v2-primary)] p-checked:text-[var(--ui-v2-primary-foreground)]
+            peer-focus-visible:outline-1 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[var(--ui-v2-primary)] peer-focus-visible:outline
+            transition-colors duration-150`,
+    icon: `text-[10px] w-3 h-3 transition-none`,
+  },
+  emptyMessage: `px-3 py-2 ui-v2-meta text-[var(--ui-v2-muted-foreground)]`,
+  transition: {
+    enterFromClass: 'opacity-0 scale-y-75',
+    enterActiveClass: 'transition duration-120 ease-[cubic-bezier(0,0,0.2,1)]',
+    leaveActiveClass: 'transition-opacity duration-100 ease-linear',
+    leaveToClass: 'opacity-0',
+  },
+};
+
+const theme = computed<MultiSelectPassThroughOptions>(() =>
+  isV2Route.value ? v2Theme : legacyTheme,
+);
 </script>

@@ -21,13 +21,16 @@ import AutoComplete, {
   type AutoCompletePassThroughOptions,
   type AutoCompleteProps,
 } from 'primevue/autocomplete';
-import { ref } from 'vue';
+import { computed } from 'vue';
 import { ptViewMerge } from './utils';
+import { useIsV2Route } from './useRouteUiVersion';
 
 interface Props extends /* @vue-ignore */ AutoCompleteProps {}
 defineProps<Props>();
 
-const theme = ref<AutoCompletePassThroughOptions>({
+const isV2Route = useIsV2Route();
+
+const legacyTheme: AutoCompletePassThroughOptions = {
   root: `inline-flex p-fluid:flex`,
   pcInputText: {
     root: `appearance-none rounded-md outline-hidden
@@ -110,5 +113,79 @@ const theme = ref<AutoCompletePassThroughOptions>({
     leaveActiveClass: 'transition-opacity duration-100 ease-linear',
     leaveToClass: 'opacity-0',
   },
-});
+};
+
+const v2Theme: AutoCompletePassThroughOptions = {
+  root: `inline-flex p-fluid:flex`,
+  pcInputText: {
+    root: `ui-v2-body appearance-none rounded-none outline-hidden
+            h-11 bg-[var(--ui-v2-surface)] text-[var(--ui-v2-foreground)]
+            placeholder:text-[var(--ui-v2-tertiary-foreground)]
+            border border-[var(--ui-v2-border)]
+            enabled:hover:border-[var(--ui-v2-border)] enabled:focus:border-[var(--ui-v2-primary)]
+            disabled:cursor-not-allowed disabled:bg-[var(--ui-v2-surface)] disabled:text-[var(--ui-v2-secondary-foreground)]
+            p-invalid:border-[var(--ui-v2-error)] p-invalid:placeholder:text-[var(--ui-v2-error)]
+            px-[14px] py-[10px] p-fluid:w-full
+            p-small:h-7 p-small:text-[11px] p-small:px-[10px] p-small:py-[6px]
+            p-large:h-11 p-large:text-[14px] p-large:px-[14px] p-large:py-[10px]
+            p-has-dropdown:flex-auto p-has-dropdown:w-[1%] p-has-dropdown:rounded-e-none
+            transition-colors duration-150 grow`,
+  },
+  inputMultiple: `m-0 list-none cursor-text overflow-hidden flex items-center flex-wrap
+        px-[14px] py-[10px] not-p-empty:px-1 gap-1 text-[var(--ui-v2-foreground)] bg-[var(--ui-v2-surface)]
+        border border-[var(--ui-v2-border)] rounded-none p-has-dropdown:rounded-e-none w-full
+        hover:border-[var(--ui-v2-border)] p-focus:border-[var(--ui-v2-primary)]
+        p-invalid:border-[var(--ui-v2-error)]
+        p-disabled:pointer-events-none p-disabled:bg-[var(--ui-v2-surface)] p-disabled:text-[var(--ui-v2-secondary-foreground)]
+        transition-colors duration-150 outline-none`,
+  chipItem: ``,
+  pcChip: {
+    root: `inline-flex items-center rounded-none gap-1 px-2 py-[2px] border border-[var(--ui-v2-border)]
+            bg-[var(--ui-v2-surface)] text-[var(--ui-v2-muted-foreground)]
+            font-[var(--ui-v2-font-secondary)] text-[10px] font-semibold tracking-[0.5px] p-removable:pe-1`,
+    image: `rounded-none w-8 h-8 -ms-2`,
+    icon: `text-[var(--ui-v2-foreground)] text-base w-4 h-4`,
+    label: ``,
+    removeIcon: `cursor-pointer text-[10px] w-3 h-3 rounded-none
+            text-[var(--ui-v2-secondary-foreground)]
+            focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-v2-primary)]`,
+  },
+  chipIcon: ``,
+  inputChip: `flex-auto inline-flex py-1 max-w-30`,
+  input: `border-none outline-none bg-transparent m-0 p-0 shadow-none rounded-none w-full text-inherit
+        placeholder:text-[var(--ui-v2-tertiary-foreground)]`,
+  loader: `absolute top-1/2 -mt-2 end-3 p-has-dropdown:end-[3.25rem] text-[var(--ui-v2-secondary-foreground)]`,
+  dropdown: `cursor-pointer inline-flex items-center justify-center select-none overflow-hidden relative w-10 shrink-0 rounded-none
+        border border-s-0 border-[var(--ui-v2-border)]
+        bg-[var(--ui-v2-surface)] text-[var(--ui-v2-secondary-foreground)]
+        hover:border-[var(--ui-v2-border)] hover:text-[var(--ui-v2-secondary-foreground)]
+        focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-v2-primary)]
+        transition-colors duration-150`,
+  dropdownIcon: ``,
+  overlay: `p-portal-self:min-w-full absolute top-0 left-0 rounded-none
+        bg-[var(--ui-v2-card)] border border-[var(--ui-v2-border)] text-[var(--ui-v2-foreground)]`,
+  virtualScroller: ``,
+  listContainer: `overflow-auto`,
+  list: `m-0 p-1 list-none flex flex-col gap-[2px]`,
+  optionGroup: `m-0 px-3 py-2 ui-v2-nav text-[var(--ui-v2-secondary-foreground)] bg-transparent`,
+  option: `cursor-pointer whitespace-nowrap relative overflow-hidden flex items-center h-6 px-2 py-[4px] rounded-none
+        text-[var(--ui-v2-muted-foreground)] font-[var(--ui-v2-font-secondary)] text-[11px] font-semibold tracking-[1px]
+        bg-[var(--ui-v2-surface)] border border-transparent
+        p-focus:bg-[var(--ui-v2-primary-tint-15)] p-focus:border-[var(--ui-v2-primary)] p-focus:text-[var(--ui-v2-foreground)]
+        p-selected:bg-[var(--ui-v2-primary-tint-15)] p-selected:border-[var(--ui-v2-primary)] p-selected:text-[var(--ui-v2-foreground)] p-selected:font-bold
+        transition-colors duration-150`,
+  emptyMessage: `px-3 py-2 ui-v2-meta text-[var(--ui-v2-muted-foreground)]`,
+  searchResultMessage: ``,
+  selectedMessage: ``,
+  transition: {
+    enterFromClass: 'opacity-0 scale-y-75',
+    enterActiveClass: 'transition duration-120 ease-[cubic-bezier(0,0,0.2,1)]',
+    leaveActiveClass: 'transition-opacity duration-100 ease-linear',
+    leaveToClass: 'opacity-0',
+  },
+};
+
+const theme = computed<AutoCompletePassThroughOptions>(() =>
+  isV2Route.value ? v2Theme : legacyTheme,
+);
 </script>

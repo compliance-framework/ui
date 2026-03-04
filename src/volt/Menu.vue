@@ -18,13 +18,16 @@ import Menu, {
   type MenuPassThroughOptions,
   type MenuProps,
 } from 'primevue/menu';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { ptViewMerge } from './utils';
+import { useIsV2Route } from './useRouteUiVersion';
 
 interface Props extends /* @vue-ignore */ MenuProps {}
 defineProps<Props>();
 
-const theme = ref<MenuPassThroughOptions>({
+const isV2Route = useIsV2Route();
+
+const legacyTheme: MenuPassThroughOptions = {
   root: `bg-white dark:bg-slate-800
         text-ccf-700 dark:text-slate-200
         border border-ccf-200 dark:border-slate-700
@@ -49,7 +52,37 @@ const theme = ref<MenuPassThroughOptions>({
     leaveActiveClass: 'transition-opacity duration-100 ease-linear',
     leaveToClass: 'opacity-0',
   },
-});
+};
+
+const v2Theme: MenuPassThroughOptions = {
+  root: `bg-[var(--ui-v2-card)] text-[var(--ui-v2-foreground)]
+        border border-[var(--ui-v2-border)] rounded-none min-w-[220px]`,
+  list: `m-0 p-1 list-none outline-none flex flex-col gap-[2px]`,
+  item: `p-disabled:opacity-60 p-disabled:pointer-events-none`,
+  itemContent: `group transition-colors duration-150 rounded-none border border-transparent
+        bg-[var(--ui-v2-surface)] text-[var(--ui-v2-muted-foreground)]
+        p-focus:border-[var(--ui-v2-primary)] p-focus:bg-[var(--ui-v2-primary-tint-15)] p-focus:text-[var(--ui-v2-foreground)]
+        hover:border-[var(--ui-v2-primary)] hover:bg-[var(--ui-v2-primary-tint-15)] hover:text-[var(--ui-v2-foreground)]`,
+  itemLink: `cursor-pointer flex items-center no-underline overflow-hidden relative text-inherit
+        h-6 px-2 py-[4px] gap-2 select-none outline-none
+        font-[var(--ui-v2-font-secondary)] text-[11px] font-semibold tracking-[1px]`,
+  itemIcon: `text-[var(--ui-v2-success)]
+        p-focus:text-[var(--ui-v2-success)] group-hover:text-[var(--ui-v2-success)]`,
+  itemLabel: ``,
+  submenuLabel: `bg-transparent px-2 py-[4px] text-[var(--ui-v2-secondary-foreground)]
+        font-[var(--ui-v2-font-secondary)] text-[10px] font-bold tracking-[1px] uppercase`,
+  separator: `border-t border-[var(--ui-v2-border)]`,
+  transition: {
+    enterFromClass: 'opacity-0 scale-y-75',
+    enterActiveClass: 'transition duration-120 ease-[cubic-bezier(0,0,0.2,1)]',
+    leaveActiveClass: 'transition-opacity duration-100 ease-linear',
+    leaveToClass: 'opacity-0',
+  },
+};
+
+const theme = computed<MenuPassThroughOptions>(() =>
+  isV2Route.value ? v2Theme : legacyTheme,
+);
 
 const el = ref();
 defineExpose({

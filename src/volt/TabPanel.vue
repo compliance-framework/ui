@@ -16,13 +16,24 @@ import TabPanel, {
   type TabPanelPassThroughOptions,
   type TabPanelProps,
 } from 'primevue/tabpanel';
-import { ref } from 'vue';
+import { computed } from 'vue';
 import { ptViewMerge } from './utils';
+import { useIsV2Route } from './useRouteUiVersion';
 
 interface Props extends /* @vue-ignore */ TabPanelProps {}
 const props = defineProps<Props>();
 
-const theme = ref<TabPanelPassThroughOptions>({
+const isV2Route = useIsV2Route();
+
+const legacyTheme: TabPanelPassThroughOptions = {
   root: ``,
-});
+};
+
+const v2Theme: TabPanelPassThroughOptions = {
+  root: ``,
+};
+
+const theme = computed<TabPanelPassThroughOptions>(() =>
+  isV2Route.value ? v2Theme : legacyTheme,
+);
 </script>

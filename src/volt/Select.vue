@@ -13,12 +13,22 @@
       <SpinnerIcon class="animate-spin" />
     </template>
     <template #filtericon>
-      <SearchIcon class="text-surface-400" />
+      <SearchIcon
+        :class="
+          isV2Route
+            ? 'text-[var(--ui-v2-secondary-foreground)]'
+            : 'text-surface-400'
+        "
+      />
     </template>
     <template #clearicon="{ clearCallback }">
       <TimesIcon
         @click="clearCallback"
-        class="text-surface-400 absolute top-1/2 -mt-2 end-10"
+        :class="
+          isV2Route
+            ? 'absolute top-1/2 -mt-2 end-10 text-[var(--ui-v2-secondary-foreground)]'
+            : 'text-surface-400 absolute top-1/2 -mt-2 end-10'
+        "
       />
     </template>
     <template v-for="(_, slotName) in $slots" #[slotName]="slotProps">
@@ -36,13 +46,16 @@ import Select, {
   type SelectPassThroughOptions,
   type SelectProps,
 } from 'primevue/select';
-import { ref } from 'vue';
+import { computed } from 'vue';
 import { ptViewMerge } from './utils';
+import { useIsV2Route } from './useRouteUiVersion';
 
 interface Props extends /* @vue-ignore */ SelectProps {}
 defineProps<Props>();
 
-const theme = ref<SelectPassThroughOptions>({
+const isV2Route = useIsV2Route();
+
+const legacyTheme: SelectPassThroughOptions = {
   root: `inline-flex cursor-pointer relative select-none rounded-md p-fluid:flex
         bg-white dark:bg-slate-900
         border border-ccf-300 hover:border-ccf-400 dark:border-slate-700 dark:hover:border-slate-600
@@ -107,5 +120,69 @@ const theme = ref<SelectPassThroughOptions>({
     leaveActiveClass: 'transition-opacity duration-100 ease-linear',
     leaveToClass: 'opacity-0',
   },
-});
+};
+
+const v2Theme: SelectPassThroughOptions = {
+  root: `inline-flex cursor-pointer relative select-none rounded-none p-fluid:flex
+        h-6 bg-[var(--ui-v2-primary-tint-15)] border border-[var(--ui-v2-primary)]
+        p-focus:border-[var(--ui-v2-primary)] p-focus:bg-[var(--ui-v2-primary-tint-15)]
+        p-invalid:border-[var(--ui-v2-error)] p-invalid:bg-[var(--ui-v2-error-tint-10)]
+        p-disabled:pointer-events-none p-disabled:bg-[var(--ui-v2-surface)] p-disabled:border-[var(--ui-v2-border)] p-disabled:text-[var(--ui-v2-secondary-foreground)]
+        transition-colors duration-150`,
+  label: `block whitespace-nowrap overflow-hidden flex-auto w-[1%]
+        py-[4px] px-2 overflow-ellipsis
+        p-clearable:pe-7 p-empty:overflow-hidden p-empty:opacity-0 p-editable:cursor-default
+        font-[var(--ui-v2-font-secondary)] text-[11px] font-bold tracking-[1px] leading-none uppercase
+        text-[var(--ui-v2-foreground)] bg-transparent border-none outline-none
+        p-placeholder:text-[var(--ui-v2-tertiary-foreground)]
+        p-disabled:text-[var(--ui-v2-secondary-foreground)]
+        p-small:text-[10px] p-small:px-2 p-small:py-[4px]
+        p-large:text-[11px] p-large:px-2 p-large:py-[4px]`,
+  dropdown: `flex items-center justify-center shrink-0 bg-transparent
+        text-[var(--ui-v2-foreground)] w-8 rounded-none border-s border-[var(--ui-v2-primary)]`,
+  overlay: `absolute top-0 left-0 rounded-none p-portal-self:min-w-full
+        bg-[var(--ui-v2-card)] border border-[var(--ui-v2-border)] text-[var(--ui-v2-foreground)]`,
+  header: `p-1`,
+  pcFilterContainer: {
+    root: `relative`,
+  },
+  pcFilter: {
+    root: `w-full appearance-none rounded-none outline-hidden
+            bg-[var(--ui-v2-surface)] text-[var(--ui-v2-foreground)]
+            placeholder:text-[var(--ui-v2-tertiary-foreground)]
+            border border-[var(--ui-v2-border)]
+            enabled:hover:border-[var(--ui-v2-border)] enabled:focus:border-[var(--ui-v2-primary)]
+            font-[var(--ui-v2-font-secondary)] text-[11px] font-semibold tracking-[0.5px]
+            ps-2 pe-8 py-[4px] p-fluid:w-full transition-colors duration-150`,
+  },
+  pcFilterIconContainer: {
+    root: `absolute top-1/2 -mt-2 leading-none end-3 z-1 text-[var(--ui-v2-secondary-foreground)]`,
+  },
+  listContainer: `overflow-auto`,
+  list: `m-0 p-1 list-none gap-[2px] flex flex-col`,
+  optionGroup: `m-0 px-2 py-[4px] bg-transparent text-[var(--ui-v2-secondary-foreground)]
+        font-[var(--ui-v2-font-secondary)] text-[10px] font-bold tracking-[1px] uppercase`,
+  optionGroupLabel: ``,
+  option: `cursor-pointer whitespace-nowrap relative overflow-hidden flex items-center h-6
+        px-2 py-[4px] rounded-none border border-transparent bg-[var(--ui-v2-surface)]
+        text-[var(--ui-v2-muted-foreground)] font-[var(--ui-v2-font-secondary)] text-[11px] font-semibold tracking-[1px]
+        p-focus:bg-[var(--ui-v2-primary-tint-15)] p-focus:border-[var(--ui-v2-primary)] p-focus:text-[var(--ui-v2-foreground)]
+        p-selected:bg-[var(--ui-v2-primary-tint-15)] p-selected:border-[var(--ui-v2-primary)] p-selected:text-[var(--ui-v2-foreground)] p-selected:font-bold
+        transition-colors duration-150`,
+  optionLabel: ``,
+  optionCheckIcon: `relative -ms-[0.25rem] me-[0.25rem] text-[var(--ui-v2-success)]`,
+  optionBlankIcon: ``,
+  emptyMessage: `px-3 py-2 ui-v2-meta text-[var(--ui-v2-muted-foreground)]`,
+  virtualScroller: ``,
+  transition: {
+    enterFromClass: 'opacity-0 scale-y-75',
+    enterActiveClass: 'transition duration-120 ease-[cubic-bezier(0,0,0.2,1)]',
+    leaveActiveClass: 'transition-opacity duration-100 ease-linear',
+    leaveToClass: 'opacity-0',
+  },
+};
+
+const theme = computed<SelectPassThroughOptions>(() =>
+  isV2Route.value ? v2Theme : legacyTheme,
+);
 </script>

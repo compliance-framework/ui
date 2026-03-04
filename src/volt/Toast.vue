@@ -6,6 +6,9 @@
       mergeProps: ptViewMerge,
     }"
   >
+    <template #messageicon="{ class: iconClass }">
+      <span :class="[iconClass, 'ui-v2-toast-accent']" />
+    </template>
     <template #closeicon>
       <TimesIcon />
     </template>
@@ -21,13 +24,20 @@ import Toast, {
   type ToastPassThroughOptions,
   type ToastProps,
 } from 'primevue/toast';
-import { ref } from 'vue';
+import { computed } from 'vue';
+import { useRoute } from 'vue-router';
 import { ptViewMerge } from './utils';
 
 interface Props extends /* @vue-ignore */ ToastProps {}
 defineProps<Props>();
 
-const theme = ref<ToastPassThroughOptions>({
+const route = useRoute();
+
+const isV2Route = computed(() =>
+  route.matched.some((record) => record.meta.uiVersion === 'v2'),
+);
+
+const legacyTheme: ToastPassThroughOptions = {
   root: `w-96 rounded-md whitespace-pre-line break-words
         p-top-center:-translate-x-1/2 p-bottom-center:-translate-x-1/2
         p-center:min-w-[20vw] p-center:-translate-x-1/2 p-center:-translate-y-1/2`,
@@ -62,5 +72,40 @@ const theme = ref<ToastPassThroughOptions>({
     leaveActiveClass: 'transition-all duration-500',
     leaveToClass: 'max-h-0 opacity-0 mb-0 overflow-hidden',
   },
-});
+};
+
+const v2Theme: ToastPassThroughOptions = {
+  root: `w-[420px] whitespace-pre-line break-words
+        p-top-center:-translate-x-1/2 p-bottom-center:-translate-x-1/2
+        p-center:min-w-[20vw] p-center:-translate-x-1/2 p-center:-translate-y-1/2`,
+  message: `mb-3 rounded-none border bg-[var(--ui-v2-surface)] text-[var(--ui-v2-foreground)]
+        p-info:border-[var(--ui-v2-info-stroke-30)] p-info:bg-[var(--ui-v2-info-tint-10)]
+        p-success:border-[var(--ui-v2-success-stroke-30)] p-success:bg-[var(--ui-v2-success-tint-10)]
+        p-warn:border-[var(--ui-v2-primary-stroke-30)] p-warn:bg-[var(--ui-v2-primary-tint-10)]
+        p-error:border-[var(--ui-v2-error)] p-error:bg-[var(--ui-v2-error-tint-10)]
+        p-secondary:border-[var(--ui-v2-border)] p-secondary:bg-[var(--ui-v2-surface)]
+        p-contrast:border-[var(--ui-v2-foreground)] p-contrast:bg-[var(--ui-v2-foreground)] p-contrast:text-[var(--ui-v2-background)]`,
+  messageContent: `flex items-stretch p-3 gap-[10px]`,
+  messageIcon: `m-0 block w-[3px] min-w-[3px] self-stretch h-auto shrink-0 overflow-hidden rounded-none
+        [&>*]:hidden`,
+  messageText: `flex-auto flex flex-col gap-1`,
+  summary:
+    'font-[var(--ui-v2-font-secondary)] text-[11px] font-bold uppercase tracking-[1px] text-[var(--ui-v2-foreground)]',
+  detail:
+    'font-[var(--ui-v2-font-secondary)] text-[12px] font-normal leading-[1.6] text-[var(--ui-v2-muted-foreground)] p-contrast:text-[var(--ui-v2-background)]',
+  buttonContainer: `hidden`,
+  closeButton: `hidden`,
+  closeIcon: `hidden`,
+  transition: {
+    enterFromClass: 'opacity-0 translate-y-1/2',
+    enterActiveClass: 'transition-all duration-300',
+    leaveFromClass: 'max-h-[1000px]',
+    leaveActiveClass: 'transition-all duration-300',
+    leaveToClass: 'max-h-0 opacity-0 mb-0 overflow-hidden',
+  },
+};
+
+const theme = computed<ToastPassThroughOptions>(() =>
+  isV2Route.value ? v2Theme : legacyTheme,
+);
 </script>

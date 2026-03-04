@@ -134,11 +134,14 @@ import ChevronLeftIcon from '@primevue/icons/chevronleft';
 import ChevronRightIcon from '@primevue/icons/chevronright';
 import ChevronUpIcon from '@primevue/icons/chevronup';
 import DatePicker from 'primevue/datepicker';
-import { ref } from 'vue';
+import { computed } from 'vue';
 import SecondaryButton from './SecondaryButton.vue';
 import { ptViewMerge } from './utils';
+import { useIsV2Route } from './useRouteUiVersion';
 
-const theme = ref({
+const isV2Route = useIsV2Route();
+
+const legacyTheme = {
   root: `inline-flex max-w-full relative p-fluid:flex`,
   pcInputText: {
     root: `flex-auto w-[1%] appearance-none rounded-md outline-hidden
@@ -246,5 +249,74 @@ const theme = ref({
     leaveActiveClass: 'transition-opacity duration-100 ease-linear',
     leaveToClass: 'opacity-0',
   },
-});
+};
+
+const v2Theme = {
+  ...legacyTheme,
+  root: 'inline-flex max-w-full relative p-fluid:flex',
+  pcInputText: {
+    ...legacyTheme.pcInputText,
+    root: `ui-v2-body flex-auto w-[1%] appearance-none rounded-none outline-hidden
+        p-has-dropdown:rounded-e-none p-has-e-icon:pe-10
+        h-11 bg-[var(--ui-v2-surface)] text-[var(--ui-v2-foreground)]
+        placeholder:text-[var(--ui-v2-tertiary-foreground)]
+        border border-[var(--ui-v2-border)]
+        enabled:hover:border-[var(--ui-v2-border)] enabled:focus:border-[var(--ui-v2-primary)]
+        disabled:cursor-not-allowed disabled:bg-[var(--ui-v2-surface)] disabled:text-[var(--ui-v2-secondary-foreground)]
+        p-invalid:border-[var(--ui-v2-error)] p-invalid:placeholder:text-[var(--ui-v2-error)]
+        px-[14px] py-[10px] p-fluid:w-full
+        p-small:h-7 p-small:text-[11px] p-small:px-[10px] p-small:py-[6px]
+        p-large:h-11 p-large:text-[14px] p-large:px-[14px] p-large:py-[10px]
+        transition-colors duration-150`,
+  },
+  dropdown: `cursor-pointer inline-flex items-center justify-center select-none overflow-hidden relative w-10 shrink-0 rounded-none
+        border border-s-0 border-[var(--ui-v2-border)]
+        bg-[var(--ui-v2-surface)] text-[var(--ui-v2-secondary-foreground)]
+        hover:border-[var(--ui-v2-border)] hover:text-[var(--ui-v2-secondary-foreground)]
+        focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-v2-primary)]
+        transition-colors duration-150`,
+  inputIconContainer:
+    'cursor-pointer absolute top-1/2 end-3 -mt-2 leading-none p-small:*:size-[0.875rem] p-large:*:size-[1.125rem] text-[var(--ui-v2-secondary-foreground)]',
+  panel: `p-portal-self:min-w-full w-auto p-3 rounded-none
+        p-inline:inline-block p-inline:overflow-x-auto p-inline:shadow-none
+        border border-[var(--ui-v2-border)]
+        bg-[var(--ui-v2-card)] text-[var(--ui-v2-foreground)]`,
+  calendar: `flex-auto border-s border-[var(--ui-v2-border)] gap-3 px-3 first:ps-0 first:border-s-0 last:pe-0`,
+  header: `flex items-center justify-between pt-0 px-0 pb-2 ui-v2-nav gap-2
+        bg-[var(--ui-v2-card)] text-[var(--ui-v2-foreground)]
+        border-b border-[var(--ui-v2-border)]`,
+  selectMonth: `border-none bg-transparent m-0 cursor-pointer ui-v2-nav transition-colors duration-150
+        py-1 px-2 rounded-none text-[var(--ui-v2-foreground)]
+        enabled:hover:bg-[var(--ui-v2-surface)] enabled:hover:text-[var(--ui-v2-primary)]
+        focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-v2-primary)]`,
+  selectYear: `border-none bg-transparent m-0 cursor-pointer ui-v2-nav transition-colors duration-150
+        py-1 px-2 rounded-none text-[var(--ui-v2-foreground)]
+        enabled:hover:bg-[var(--ui-v2-surface)] enabled:hover:text-[var(--ui-v2-primary)]
+        focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-v2-primary)]`,
+  weekHeaderLabel: 'font-medium text-[var(--ui-v2-secondary-foreground)]',
+  weekDay: 'font-medium text-[var(--ui-v2-foreground)]',
+  day: `flex items-center justify-center cursor-pointer my-0 mx-auto overflow-hidden relative w-8 h-8
+        rounded-none p-1 transition-colors duration-150 border border-transparent text-[var(--ui-v2-foreground)]
+        focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-v2-primary)]
+        p-disabled:opacity-60 p-disabled:pointer-events-none
+        hover:bg-[var(--ui-v2-surface)] hover:text-[var(--ui-v2-primary)]
+        p-selected:bg-[var(--ui-v2-primary)] p-selected:text-[var(--ui-v2-primary-foreground)]
+        p-today:border-[var(--ui-v2-border)] p-today:bg-[var(--ui-v2-background)]`,
+  month: `w-1/3 inline-flex items-center justify-center cursor-pointer overflow-hidden relative
+        p-[0.375rem] transition-colors duration-150 rounded-none text-[var(--ui-v2-foreground)]
+        focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-v2-primary)]
+        hover:bg-[var(--ui-v2-surface)] hover:text-[var(--ui-v2-primary)]
+        p-selected:bg-[var(--ui-v2-primary)] p-selected:text-[var(--ui-v2-primary-foreground)]`,
+  year: `w-1/2 inline-flex items-center justify-center cursor-pointer overflow-hidden relative
+        p-[0.375rem] transition-colors duration-150 rounded-none text-[var(--ui-v2-foreground)]
+        focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-v2-primary)]
+        hover:bg-[var(--ui-v2-surface)] hover:text-[var(--ui-v2-primary)]
+        p-selected:bg-[var(--ui-v2-primary)] p-selected:text-[var(--ui-v2-primary-foreground)]`,
+  timePicker:
+    'flex items-center justify-center border-t border-[var(--ui-v2-border)] p-0 gap-2 not-p-time-only:pt-2 not-p-time-only:pb-0 not-p-time-only:px-0',
+  buttonbar:
+    'flex justify-between items-center pt-2 pb-0 px-0 border-t border-[var(--ui-v2-border)]',
+};
+
+const theme = computed(() => (isV2Route.value ? v2Theme : legacyTheme));
 </script>

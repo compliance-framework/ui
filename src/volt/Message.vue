@@ -21,13 +21,16 @@ import Message, {
   type MessagePassThroughOptions,
   type MessageProps,
 } from 'primevue/message';
-import { ref } from 'vue';
+import { computed } from 'vue';
 import { ptViewMerge } from './utils';
+import { useIsV2Route } from './useRouteUiVersion';
 
 interface Props extends /* @vue-ignore */ MessageProps {}
 defineProps<Props>();
 
-const theme = ref<MessagePassThroughOptions>({
+const isV2Route = useIsV2Route();
+
+const legacyTheme: MessagePassThroughOptions = {
   root: `rounded-md outline outline-1
         p-outlined:bg-transparent p-outlined:outline p-outlined:outline-1
         p-simple:bg-transparent p-simple:outline-none
@@ -78,5 +81,33 @@ const theme = ref<MessagePassThroughOptions>({
     leaveActiveClass: 'overflow-hidden transition-all duration-300 ease-in',
     leaveToClass: 'max-h-0 opacity-0 !m-0',
   },
-});
+};
+
+const v2Theme: MessagePassThroughOptions = {
+  root: `rounded-none border border-[var(--ui-v2-border)] border-s-[3px] text-[var(--ui-v2-foreground)]
+        p-outlined:bg-transparent p-outlined:outline-none
+        p-simple:bg-transparent p-simple:outline-none p-simple:border-none
+        p-info:bg-[var(--ui-v2-info-tint-10)] p-info:border-[var(--ui-v2-info-stroke-30)] p-info:border-s-[var(--ui-v2-info)]
+        p-success:bg-[var(--ui-v2-success-tint-10)] p-success:border-[var(--ui-v2-success-stroke-30)] p-success:border-s-[var(--ui-v2-success)]
+        p-warn:bg-[var(--ui-v2-primary-tint-10)] p-warn:border-[var(--ui-v2-primary-stroke-30)] p-warn:border-s-[var(--ui-v2-primary)]
+        p-error:bg-[var(--ui-v2-error-tint-10)] p-error:border-[var(--ui-v2-error)] p-error:border-s-[var(--ui-v2-error)]
+        p-secondary:bg-[var(--ui-v2-surface)] p-secondary:border-[var(--ui-v2-border)] p-secondary:border-s-[var(--ui-v2-border)]
+        p-contrast:bg-[var(--ui-v2-foreground)] p-contrast:border-[var(--ui-v2-foreground)] p-contrast:text-[var(--ui-v2-background)]`,
+  content: `flex items-start p-simple:p-0 p-4 gap-3 h-full`,
+  icon: `hidden`,
+  text: `font-[var(--ui-v2-font-secondary)] text-[12px] font-normal leading-[1.6] text-[var(--ui-v2-muted-foreground)] p-contrast:text-[var(--ui-v2-background)]`,
+  closeButton: `hidden`,
+  closeIcon: `hidden`,
+  transition: {
+    enterFromClass: 'opacity-0',
+    enterActiveClass: 'transition-opacity duration-240',
+    leaveFromClass: 'max-h-40',
+    leaveActiveClass: 'overflow-hidden transition-all duration-240 ease-in',
+    leaveToClass: 'max-h-0 opacity-0 !m-0',
+  },
+};
+
+const theme = computed<MessagePassThroughOptions>(() =>
+  isV2Route.value ? v2Theme : legacyTheme,
+);
 </script>

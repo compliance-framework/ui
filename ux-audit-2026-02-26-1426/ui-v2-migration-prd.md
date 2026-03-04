@@ -6,7 +6,10 @@ Primary scope: `@ui/` frontend redesign and full migration to the new Pencil des
 
 ## 1. Context
 
-The new UI has already been designed in `ui/ux-audit-2026-02-26-1426/new-design.pen` with Latte/Mocha style guides.  
+The new UI has already been designed in `ui/ux-audit-2026-02-26-1426/new-design.pen` with Latte/Mocha style guides. You can use pencil tools to access the design.
+
+- `ui/ux-audit-2026-02-26-1426/style-guides`
+
 Current production UI in `@ui/` is visually and interactionally inconsistent across modules and has known UX issues documented in:
 
 - `ui/ux-audit-2026-02-26-1426/master-report.md`
@@ -77,74 +80,79 @@ Legend: `[ ]` not started, `[~]` in progress, `[x]` done, `[-]` blocked.
 
 ## 7.1 Program setup and governance
 
-- [ ] P0-01 Create migration branch strategy and PR slicing rules (small vertical slices).
-- [ ] P0-02 Define definition-of-done checklist for each migrated route.
-- [ ] P0-04 Create route inventory spreadsheet from `src/router/index.ts` with migration status column.
-- [ ] P0-05 Tag each route by module, complexity, and dependency risk.
-- [ ] P0-06 Define release gating criteria (functional parity, UX parity, accessibility, visual QA).
+- [x] P0-01 Create migration branch strategy and PR slicing rules (small vertical slices).
+- [x] P0-02 Define definition-of-done checklist for each migrated route.
+- [x] P0-04 Create route inventory spreadsheet from `src/router/index.ts` with migration status column.
+- [x] P0-05 Tag each route by module, complexity, and dependency risk.
+- [x] P0-06 Define release gating criteria (functional parity, UX parity, accessibility, visual QA).
+
+Governance artifacts:
+
+- `ui/ux-audit-2026-02-26-1426/migration-governance.md`
+- `ui/ux-audit-2026-02-26-1426/route-inventory.md`
 
 ## 7.2 Foundations: tokens, typography, and theming
 
 - [x] P1-01 Add V2 token map from `new-design.pen` variables to CSS variables.
 - [x] P1-02 Implement Latte and Mocha themes in app CSS with deterministic token naming.
 - [x] P1-03 Add Space Grotesk and JetBrains Mono font loading and fallback stack.
-- [~] P1-04 Define typography scale utilities (title, section, label, body, meta).
-- [ ] P1-05 Implement zero-radius rule and border standards as reusable utilities.
+- [x] P1-04 Define typography scale utilities (title, section, label, body, meta).
+- [x] P1-05 Implement zero-radius rule and border standards as reusable utilities.
 - [x] P1-06 Implement semantic color tokens (success/warn/error/info).
-- [ ] P1-07 Validate contrast ratios for all token combinations used in key components.
-- [ ] P1-08 Add visual test page for tokens (colors, type scale, spacing, border usage).
-- [ ] P1-09 Add theme regression snapshot test baseline.
+- [x] P1-07 Validate contrast ratios for all token combinations used in key components.
+- [x] P1-08 Add visual test page for tokens (colors, type scale, spacing, border usage).
+- [x] P1-09 Add theme regression snapshot test baseline.
 
 ## 7.3 Foundations: V2 architecture and routing
 
-- [~] P2-01 Add V2 layout scaffold (guest and app variants).
-- [ ] P2-02 Add route-level UI version switch mechanism (meta or feature flag).
-- [ ] P2-03 Add V2 navigation shell container preserving existing router behavior.
-- [ ] P2-04 Ensure PrimeVue services (toast/confirm/tooltip) render with V2 wrappers.
-- [ ] P2-05 Introduce `ui-v2` store namespace for V2-only presentation state.
-- [ ] P2-06 Version localStorage/persist keys for V2 UI state.
-- [ ] P2-07 Add migration guard to avoid mixed V1/V2 component rendering in the same page.
-- [ ] P2-08 Add instrumentation hook for page-level migration status.
+- [x] P2-01 Add V2 layout scaffold (guest and app variants).
+- [x] P2-02 Add route-level UI version switch mechanism (meta or feature flag).
+- [x] P2-03 Add V2 navigation shell container preserving existing router behavior.
+- [x] P2-04 Ensure PrimeVue services (toast/confirm/tooltip) render with V2 wrappers.
+- [x] P2-05 Introduce `ui-v2` store namespace for V2-only presentation state.
+- [x] P2-06 Version localStorage/persist keys for V2 UI state.
+- [x] P2-07 Add migration guard to avoid mixed V1/V2 component rendering in the same page.
+- [x] P2-08 Add instrumentation hook for page-level migration status.
 
 ## 7.4 Foundations: shared UX patterns (must be built before mass migration)
 
-- [ ] P3-01 Build global "Active SSP" scope indicator component.
-- [ ] P3-02 Build SSP switcher interaction (change active plan without route loss).
-- [ ] P3-03 Build standardized prerequisite gate component (title/body/CTA/help).
-- [ ] P3-04 Implement return-to-origin behavior after prerequisite completion.
-- [ ] P3-05 Build stateful "Make active / Active" list-row pattern.
-- [ ] P3-06 Build standardized page header pattern (title, metadata, primary actions).
-- [ ] P3-07 Build standardized list page template (filters + table + empty state).
-- [ ] P3-08 Build standardized detail/editor template (tabs + sticky actions).
-- [ ] P3-09 Build standardized modal form template (labels, required, errors, buttons).
-- [ ] P3-10 Build loading/empty/error skeleton components for all major content blocks.
+- [x] P3-01 Build global "Active SSP" scope indicator component.
+- [x] P3-02 Build SSP switcher interaction (change active plan without route loss).
+- [x] P3-03 Build standardized prerequisite gate component (title/body/CTA/help).
+- [x] P3-04 Implement return-to-origin behavior after prerequisite completion.
+- [x] P3-05 Build stateful "Make active / Active" list-row pattern.
+- [x] P3-06 Build standardized page header pattern (title, metadata, primary actions).
+- [x] P3-07 Build standardized list page template (filters + table + empty state).
+- [x] P3-08 Build standardized detail/editor template (tabs + sticky actions).
+- [x] P3-09 Build standardized modal form template (labels, required, errors, buttons).
+- [x] P3-10 Build loading/empty/error skeleton components for all major content blocks.
 
 ## 7.5 V2 component library implementation
 
 ### Base controls
 
-- [ ] P4-01 V2 button set (primary, secondary, ghost, danger, small variants).
-- [ ] P4-02 V2 input controls (text, password, textarea, select, multiselect, date).
-- [ ] P4-03 V2 checkbox/radio/toggle controls with accessible states.
-- [ ] P4-04 V2 badge/tag/chip components with semantic variants.
-- [ ] P4-05 V2 table primitives (header, row, cell actions, pagination).
-- [ ] P4-06 V2 tabs component consistent across all detail pages.
-- [ ] P4-07 V2 dialogs/drawers (create/edit/delete confirmation patterns).
-- [ ] P4-08 V2 inline alert/banner/toast patterns.
+- [x] P4-01 V2 button set (primary, secondary, ghost, danger, small variants).
+- [x] P4-02 V2 input controls (text, password, textarea, select, multiselect, date).
+- [x] P4-03 V2 checkbox/radio/toggle controls with accessible states.
+- [x] P4-04 V2 badge/tag/chip components with semantic variants.
+- [x] P4-05 V2 table primitives (header, row, cell actions, pagination).
+- [x] P4-06 V2 tabs component consistent across all detail pages.
+- [x] P4-07 V2 dialogs/drawers (create/edit/delete confirmation patterns).
+- [x] P4-08 V2 inline alert/banner/toast patterns.
 
 ### Interaction and validation
 
-- [ ] P4-09 Implement consistent required field marker and helper text rules.
-- [ ] P4-10 Implement inline field error rendering standard.
-- [ ] P4-11 Implement form-level error summary with first-error focus.
-- [ ] P4-12 Standardize destructive action hierarchy (overflow + confirmation).
-- [ ] P4-13 Standardize status chips and human-readable status text mapping.
+- [x] P4-09 Implement consistent required field marker and helper text rules.
+- [x] P4-10 Implement inline field error rendering standard.
+- [x] P4-11 Implement form-level error summary with first-error focus.
+- [x] P4-12 Standardize destructive action hierarchy (overflow + confirmation).
+- [x] P4-13 Standardize status chips and human-readable status text mapping.
 
 ### Quality for component library
 
-- [ ] P4-14 Add component story/demo pages for each primitive.
-- [ ] P4-15 Add unit tests for core interactive states.
-- [ ] P4-16 Add keyboard and focus-order checks for dialogs/forms/tables.
+- [x] P4-14 Add component story/demo pages for each primitive.
+- [x] P4-15 Add unit tests for core interactive states.
+- [x] P4-16 Add keyboard and focus-order checks for dialogs/forms/tables.
 
 ## 7.6 Wave 1 migration: auth and global shell
 
@@ -154,31 +162,31 @@ Legend: `[ ]` not started, `[~]` in progress, `[x]` done, `[-]` blocked.
 - [x] W1-04 Migrate Password Reset view using V2 form template.
 - [x] W1-05 Migrate SSO callback loading/error states.
 - [x] W1-06 Migrate logout confirmation view/dialog.
-- [~] W1-07 Validate auth flows under success, error, and timeout conditions.
-- [ ] W1-08 Migrate app shell (sidebar + header + content container).
-- [ ] W1-09 Surface Active SSP indicator globally in app shell.
-- [ ] W1-10 Validate responsive behavior (desktop + mobile breakpoints).
+- [x] W1-07 Validate auth flows under success, error, and timeout conditions.
+- [x] W1-08 Migrate app shell (sidebar + header + content container).
+- [x] W1-09 Surface Active SSP indicator globally in app shell.
+- [x] W1-10 Validate responsive behavior (desktop + mobile breakpoints).
 
 ## 7.7 Wave 2 migration: SSP and system security plan core
 
-- [ ] W2-01 Migrate SSP list screen (default/loading/error/empty variants).
-- [ ] W2-02 Implement stateful active-plan row behavior and feedback toast.
-- [ ] W2-03 Migrate SSP detail overview screen.
-- [ ] W2-04 Migrate SSP detail characteristics screen.
-- [ ] W2-05 Migrate SSP detail implementation overview screen.
-- [ ] W2-06 Migrate SSP detail implementation users screen.
-- [ ] W2-07 Migrate SSP detail implementation components screen.
-- [ ] W2-08 Migrate SSP detail implementation authorizations screen.
-- [ ] W2-09 Migrate SSP detail controls screen and requirement drill-down states.
-- [ ] W2-10 Migrate SSP detail compliance screen.
-- [ ] W2-11 Migrate SSP detail JSON screen.
-- [ ] W2-12 Migrate all SSP loading/error/no-data/no-profile states.
+- [x] W2-01 Migrate SSP list screen (default/loading/error/empty variants).
+- [x] W2-02 Implement stateful active-plan row behavior and feedback toast.
+- [x] W2-03 Migrate SSP detail overview screen.
+- [x] W2-04 Migrate SSP detail characteristics screen.
+- [x] W2-05 Migrate SSP detail implementation overview screen.
+- [x] W2-06 Migrate SSP detail implementation users screen.
+- [x] W2-07 Migrate SSP detail implementation components screen.
+- [x] W2-08 Migrate SSP detail implementation authorizations screen.
+- [x] W2-09 Migrate SSP detail controls screen and requirement drill-down states.
+- [x] W2-10 Migrate SSP detail compliance screen.
+- [x] W2-11 Migrate SSP detail JSON screen.
+- [x] W2-12 Migrate all SSP loading/error/no-data/no-profile states.
 
 ## 7.8 Wave 3 migration: System, Controls, Workflows
 
 ### System module
 
-- [ ] W3-01 Migrate System overview tab.
+- [x] W3-01 Migrate System overview tab.
 - [ ] W3-02 Migrate System users tab and create/edit dialogs.
 - [ ] W3-03 Migrate System components tab and create/edit dialogs.
 - [ ] W3-04 Migrate leveraged authorizations tab and create/edit dialogs.
@@ -322,10 +330,10 @@ A route family is done only when all are true:
 
 ## 12. Immediate Next Actions (Week 1)
 
-- [ ] N-01 Finalize route inventory and assign wave ownership.
+- [x] N-01 Finalize route inventory and assign wave ownership.
 - [x] N-02 Implement token/theme foundation and font stack.
-- [~] N-03 Implement V2 app/guest layout scaffolds and route switch mechanism.
-- [ ] N-04 Deliver Active SSP indicator + prerequisite gate components.
+- [x] N-03 Implement V2 app/guest layout scaffolds and route switch mechanism.
+- [x] N-04 Deliver Active SSP indicator + prerequisite gate components.
 - [~] N-05 Migrate Auth flows end-to-end as first vertical slice.
 
 ## 13. Execution Log
@@ -339,3 +347,42 @@ A route family is done only when all are true:
 - 2026-03-03: Validation run: `npm run type-check`, `npm run build-only`, `npm run lint`, `npm run test:unit`.
 - 2026-03-03: Tuned V2 typography scale to style guide defaults (body 14px, nav/labels 12px, meta 11px) and removed hardcoded tiny text sizes from V2 auth layouts/views.
 - 2026-03-03: Simplified login feedback by removing success/error login toasts and keeping inline field/form messaging in V2 login view.
+- 2026-03-03: Added route-level V1/V2 app shell switching via `meta.uiVersion`, with `AppV1Layout` and new `AppV2Layout` scaffolds.
+- 2026-03-03: Added `ui-v2` namespaced Pinia store (`src/stores/ui-v2.ts`) with versioned localStorage keys.
+- 2026-03-03: Added reusable V2 shared patterns: `ActiveSecurityPlanIndicator` and `PrerequisiteGate`.
+- 2026-03-03: Migrated SSP list route to V2 (`/system-security-plans` and `/system-security-plans/create`) with loading/error/empty states and `Make Active / Active` row actions.
+- 2026-03-03: Added return-to-origin continuation on SSP activation (`?next=`) with success feedback on the V2 list route.
+- 2026-03-03: Migrated SSP detail route shell and overview to V2 (`/system-security-plans/:id` + overview child), while leaving deeper detail tabs for subsequent waves.
+- 2026-03-03: Migrated SSP characteristics tab to V2 with architecture summaries and metrics (`system-security-plan-characteristics`).
+- 2026-03-03: Added markdown-only migration governance (`migration-governance.md`) with PR slicing rules, route-family definition-of-done, and release gates.
+- 2026-03-03: Added route family inventory (`route-inventory.md`) sourced from `src/router/index.ts`, including wave mapping, complexity/risk tagging, and migration status.
+- 2026-03-03: Replaced V2 authenticated shell primitives with Pencil-aligned structure (brand header + numbered 240px sidebar nav + user footer) in `AppV2Layout`.
+- 2026-03-03: Updated SSP V2 list/detail visual patterns to align more closely with Pencil frames (`MRRzf`, `fC9h5`, `Q7gWr`) and tab taxonomy.
+- 2026-03-03: Migrated SSP implementation tab to V2 with nested section tabs (overview/users/components/authorizations), V2 card/table styles, and preserved create/edit/delete workflows.
+- 2026-03-03: Migrated SSP compliance and JSON tabs to V2 views and switched router children to V2 imports for implementation/compliance/json.
+- 2026-03-03: Migrated SSP controls tab to V2 and switched route import to `system-security-plans-v2/SystemSecurityPlanControlImplementationView.vue`, preserving requirement/statement/by-component editing flows.
+- 2026-03-03: Finalized wave ownership in `route-inventory.md` (Waves 0-6 owner lanes) and marked Week 1 action `N-01` complete.
+- 2026-03-03: Added V2 PrimeVue service wrappers by route context (toast, confirm dialog, tooltip) with V2 tokenized visual treatment on V2 routes.
+- 2026-03-03: Added migration guard enforcing non-mixed V2 route chains (`meta.uiVersion = 'v2'`) and expanded V2 route metadata across auth + SSP child routes.
+- 2026-03-03: Added global Active SSP indicator to `AppV2Layout` and a mobile top navigation pattern to close Wave 1 app shell responsive behavior gaps.
+- 2026-03-03: Added route-level instrumentation hook (`ccf:ui-migration-status`) to emit page migration status payloads and store the latest payload on `window.__ccfLastUIMigrationStatus`.
+- 2026-03-03: Added auth V2 flow tests for login + SSO callback success/error/timeout paths in `src/views/auth-v2/__tests__/AuthFlowsV2.spec.ts`.
+- 2026-03-03: Completed Wave 1 app shell parity by adding V2 user menu controls (My Tasks, Preferences, Logout), sticky header/nav behavior, and desktop/mobile shell layout refinements.
+- 2026-03-03: Added global Active SSP switcher modal to `ActiveSecurityPlanIndicator` to change active plan in place without route loss (`P3-02`).
+- 2026-03-03: Added reusable V2 state panel pattern (`V2StatePanel`) and applied consistent loading/error/no-data/no-profile handling across SSP V2 views (`W2-12`).
+- 2026-03-03: Migrated `/system` overview route to V2 (`system-v2/SystemOverviewView.vue`) while retaining legacy System child tabs for subsequent Wave 3 slices.
+- 2026-03-03: Added shared V2 pattern components (`V2PageHeader`, `V2ListPageTemplate`, `V2DetailEditorTemplate`, `V2ModalFormTemplate`, `V2ContentSkeleton`) and applied them across SSP/System V2 views.
+- 2026-03-03: Standardized SSP list/detail pages to shared list/detail templates with reusable error/empty actions and sticky detail actions, and aligned page headers to a common V2 pattern.
+- 2026-03-03: Upgraded Active SSP switcher to use the new modal form template (labeled search, error summary area, and standardized modal actions) and completed P3-06 through P3-10 foundation patterns.
+- 2026-03-04: Forced the UI theme to light mode in `useTheme` to enable direct visual comparison against Pencil's Latte design references.
+- 2026-03-04: Completed P1-04 by adding explicit V2 typography utility tokens/classes (`ui-v2-title`, `ui-v2-section-title`, `ui-v2-card-title`, `ui-v2-metric`, `ui-v2-logo`) and applying them across V2 layouts, auth pages, shared patterns, and key System/SSP views.
+- 2026-03-04: Completed P1-05 by adding reusable zero-radius/border utility classes (`ui-v2-radius-none`, `ui-v2-border-standard`, `ui-v2-surface-*`, `ui-v2-interactive`) and applying them in V2 shared components plus route-aware V2 dialog theming in `src/volt/Dialog.vue`.
+- 2026-03-04: Completed P1-07 and P1-09 by adding `src/utils/uiV2Tokens.ts` and `src/utils/__tests__/uiV2Tokens.spec.ts` for automated key token contrast checks and inline token baseline snapshots for light/dark theme regression.
+- 2026-03-04: Completed P1-08 by adding V2 token visual sandbox route `/__v2/tokens` (`ui-v2:tokens`) and `src/views/system-v2/V2TokenVisualTestView.vue` covering color swatches, typography samples, spacing scale, and border/radius utility previews.
+- 2026-03-04: Completed 7.5 component-library route-aware implementation by upgrading volt wrappers for V2 variants (`Button`, `PrimaryButton`, `SecondaryButton`, `TertiaryButton`, `DangerButton`, `InputText`, `Password`, `Textarea`, `Select`, `MultiSelect`, `DatePicker`, `AutoComplete`, `Checkbox`, `RadioButton`, `ToggleSwitch`, `Badge`, `Chip`, `Tabs`, `TabList`, `TabPanels`, `Drawer`, `Message`, `Menu`) while preserving legacy behavior on V1 routes.
+- 2026-03-04: Added shared V2 form/system primitives for validation and status consistency (`V2FormField`, `V2FieldError`, `V2FormErrorSummary`, `useV2FormValidation`, `V2StatusChip`, `V2InlineAlert`, `V2DestructiveActionMenu`, `v2Status` mapping).
+- 2026-03-04: Added component demo/story sandbox route `/__v2/components` (`ui-v2:components`) via `src/views/system-v2/V2ComponentLibraryView.vue` with live examples for buttons, controls, table primitives, tabs, dialogs/drawers, alerts, status chips, and destructive-action hierarchy.
+- 2026-03-04: Added and passed component-library tests (`src/volt/__tests__/v2RouteStyles.spec.ts`, `src/volt/__tests__/dialogFocus.spec.ts`, `src/components/v2/forms/__tests__/V2FormErrorSummary.spec.ts`, `src/components/v2/primitives/__tests__/V2StatusChip.spec.ts`, `src/utils/__tests__/v2Status.spec.ts`).
+- 2026-03-04: Re-aligned V2 light-mode component styling to Pencil `new-design.pen` Latte baseline frame `o41qe` by syncing light token values and updating V2 wrappers (`Button*`, inputs/selects, dialogs/drawers, menu, toast/message) to match component geometry, typography, and color usage from `o41qe`.
+- 2026-03-04: Refined V2 confirm dialog parity with Pencil Latte specs (`3COwp`, `bYTHD`) in `src/volt/ConfirmDialog.vue` by removing duplicate shell border, matching action order/spacing, and enforcing accept-button focus so Enter/Escape keyboard hints map to actual behavior.
+- 2026-03-04: Updated V2 base modal styling in `src/volt/Dialog.vue` and component-library preview width to align with Latte dialog style choices (single-surface shell, 32px Space Grotesk title, 20/16/20 spacing rhythm, JetBrains body copy, and V2 outline close control).

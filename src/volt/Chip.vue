@@ -25,13 +25,16 @@ import Chip, {
   type ChipPassThroughOptions,
   type ChipProps,
 } from 'primevue/chip';
-import { ref } from 'vue';
+import { computed } from 'vue';
 import { ptViewMerge } from './utils';
+import { useIsV2Route } from './useRouteUiVersion';
 
 interface Props extends /* @vue-ignore */ ChipProps {}
 defineProps<Props>();
 
-const theme = ref<ChipPassThroughOptions>({
+const isV2Route = useIsV2Route();
+
+const legacyTheme: ChipPassThroughOptions = {
   root: `inline-flex items-center rounded-2xl gap-2 px-3 py-2
         bg-ccf-100 dark:bg-slate-800
         text-ccf-900 dark:text-slate-300
@@ -39,5 +42,16 @@ const theme = ref<ChipPassThroughOptions>({
         p-removable:pe-2`,
   image: `rounded-full w-8 h-8 -ms-2`,
   icon: `text-ccf-900 dark:text-slate-300 text-base w-4 h-4`,
-});
+};
+
+const v2Theme: ChipPassThroughOptions = {
+  root: `inline-flex items-center rounded-none gap-2 px-3 py-1.5 border border-[var(--ui-v2-border)]
+        bg-[var(--ui-v2-surface)] text-[var(--ui-v2-foreground)] ui-v2-nav p-removable:pe-2`,
+  image: `rounded-none w-8 h-8 -ms-2`,
+  icon: `text-[var(--ui-v2-secondary-foreground)] text-base w-4 h-4`,
+};
+
+const theme = computed<ChipPassThroughOptions>(() =>
+  isV2Route.value ? v2Theme : legacyTheme,
+);
 </script>

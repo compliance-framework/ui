@@ -44,15 +44,11 @@ const pageEyebrow = computed(() => {
             :src="darkMiniLogo"
             class="hidden h-3 w-3 object-contain dark:block"
           />
-          <span class="text-[14px] font-bold leading-none tracking-[2px]"
-            >CCF</span
-          >
+          <span class="ui-v2-logo text-[var(--ui-v2-foreground)]">CCF</span>
         </div>
 
         <div class="space-y-4">
-          <h1
-            class="ui-v2-display text-5xl font-bold uppercase leading-[0.95] tracking-[-0.02em] text-[var(--ui-v2-foreground)]"
-          >
+          <h1 class="ui-v2-title text-[var(--ui-v2-foreground)]">
             Secure Compliance Workspace
           </h1>
           <p class="max-w-[28ch] text-[var(--ui-v2-muted-foreground)]">

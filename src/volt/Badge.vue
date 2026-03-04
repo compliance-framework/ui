@@ -17,13 +17,16 @@ import Badge, {
   type BadgePassThroughOptions,
   type BadgeProps,
 } from 'primevue/badge';
-import { ref } from 'vue';
+import { computed } from 'vue';
 import { ptViewMerge } from './utils';
+import { useIsV2Route } from './useRouteUiVersion';
 
 interface Props extends /* @vue-ignore */ BadgeProps {}
 defineProps<Props>();
 
-const theme = ref<BadgePassThroughOptions>({
+const isV2Route = useIsV2Route();
+
+const legacyTheme: BadgePassThroughOptions = {
   root: `inline-flex items-center justify-center rounded-md
         py-0 px-2 text-xs font-bold min-w-6 h-6
         bg-gray-200 dark:bg-slate-700 text-primary-contrast
@@ -38,5 +41,26 @@ const theme = ref<BadgePassThroughOptions>({
         p-small:text-[0.625rem] p-small:min-w-5 p-small:h-5
         p-large:text-sm p-large:min-w-7 p-large:h-7
         p-xlarge:text-base p-xlarge:min-w-8 p-xlarge:h-8`,
-});
+};
+
+const v2Theme: BadgePassThroughOptions = {
+  root: `inline-flex items-center justify-center rounded-none ui-v2-nav
+        py-0 px-2 min-w-6 h-6 border border-[var(--ui-v2-border)]
+        bg-[var(--ui-v2-surface)] text-[var(--ui-v2-foreground)]
+        p-empty:min-w-2 p-empty:h-2 p-empty:rounded-none p-empty:p-0
+        p-circle:p-0 p-circle:rounded-none
+        p-secondary:bg-[var(--ui-v2-surface)] p-secondary:text-[var(--ui-v2-secondary-foreground)]
+        p-success:bg-[var(--ui-v2-success-tint-10)] p-success:border-[var(--ui-v2-success)] p-success:text-[var(--ui-v2-success)]
+        p-info:bg-[var(--ui-v2-info-tint-10)] p-info:border-[var(--ui-v2-info)] p-info:text-[var(--ui-v2-info)]
+        p-warn:bg-[var(--ui-v2-primary-tint-10)] p-warn:border-[var(--ui-v2-warning)] p-warn:text-[var(--ui-v2-warning)]
+        p-danger:bg-[var(--ui-v2-error-tint-10)] p-danger:border-[var(--ui-v2-error)] p-danger:text-[var(--ui-v2-error)]
+        p-contrast:bg-[var(--ui-v2-foreground)] p-contrast:border-[var(--ui-v2-foreground)] p-contrast:text-[var(--ui-v2-background)]
+        p-small:text-[10px] p-small:min-w-5 p-small:h-5
+        p-large:text-[12px] p-large:min-w-7 p-large:h-7
+        p-xlarge:text-[13px] p-xlarge:min-w-8 p-xlarge:h-8`,
+};
+
+const theme = computed<BadgePassThroughOptions>(() =>
+  isV2Route.value ? v2Theme : legacyTheme,
+);
 </script>

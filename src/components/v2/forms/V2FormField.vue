@@ -1,0 +1,83 @@
+<script setup lang="ts">
+import { computed } from 'vue';
+import V2FieldError from './V2FieldError.vue';
+
+const props = withDefaults(
+  defineProps<{
+    inputId?: string;
+    label: string;
+    required?: boolean;
+    helperText?: string;
+    error?: string;
+  }>(),
+  {
+    inputId: undefined,
+    required: false,
+    helperText: undefined,
+    error: undefined,
+  },
+);
+
+const normalizedId = computed(() => {
+  if (props.inputId) {
+    return props.inputId;
+  }
+
+  return props.label
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
+});
+
+const helperId = computed(() => `${normalizedId.value}-hint`);
+const errorId = computed(() => `${normalizedId.value}-error`);
+
+const describedBy = computed(() => {
+  const ids: string[] = [];
+
+  if (props.helperText) {
+    ids.push(helperId.value);
+  }
+
+  if (props.error) {
+    ids.push(errorId.value);
+  }
+
+  return ids.join(' ') || undefined;
+});
+</script>
+
+<template>
+  <div class="space-y-2">
+    <label
+      :for="normalizedId"
+      class="inline-flex items-center gap-1 font-[var(--ui-v2-font-secondary)] text-[11px] font-bold uppercase tracking-[1px] text-[var(--ui-v2-secondary-foreground)]"
+    >
+      <span>{{ label }}</span>
+      <span
+        v-if="required"
+        class="text-[var(--ui-v2-error)]"
+        aria-hidden="true"
+      >
+        *
+      </span>
+      <slot name="labelSuffix" />
+    </label>
+
+    <slot
+      :inputId="normalizedId"
+      :describedBy="describedBy"
+      :invalid="Boolean(error)"
+    />
+
+    <p
+      v-if="helperText"
+      :id="helperId"
+      class="ui-v2-meta text-[var(--ui-v2-muted-foreground)]"
+    >
+      {{ helperText }}
+    </p>
+
+    <V2FieldError :id="errorId" :message="error" />
+  </div>
+</template>

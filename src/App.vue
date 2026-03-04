@@ -7,7 +7,12 @@ import ThemeToggle from '@/components/ThemeToggle.vue';
 
 const route = useRoute();
 
-const showThemeToggle = computed(() => !route.meta.hideThemeToggle);
+const showThemeToggle = computed(
+  () =>
+    !route.matched.some(
+      (record) => record.meta.hideThemeToggle || record.meta.uiVersion === 'v2',
+    ),
+);
 </script>
 
 <template>

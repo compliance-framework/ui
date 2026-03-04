@@ -17,13 +17,16 @@ import SelectButton, {
   type SelectButtonPassThroughOptions,
   type SelectButtonProps,
 } from 'primevue/selectbutton';
-import { ref } from 'vue';
+import { computed } from 'vue';
 import { ptViewMerge } from './utils';
+import { useIsV2Route } from './useRouteUiVersion';
 
 interface Props extends /* @vue-ignore */ SelectButtonProps {}
 defineProps<Props>();
 
-const theme = ref<SelectButtonPassThroughOptions>({
+const isV2Route = useIsV2Route();
+
+const legacyTheme: SelectButtonPassThroughOptions = {
   root: `inline-flex select-none rounded-md
         p-invalid:outline p-invalid:outline-offset-0 p-invalid:outline-red-400 dark:p-invalid:outline-red-300`,
   pcToggleButton: {
@@ -48,5 +51,27 @@ const theme = ref<SelectButtonPassThroughOptions>({
     icon: ``,
     label: ``,
   },
-});
+};
+
+const v2Theme: SelectButtonPassThroughOptions = {
+  root: `inline-flex select-none rounded-none p-invalid:outline p-invalid:outline-offset-0 p-invalid:outline-[var(--ui-v2-error)]`,
+  pcToggleButton: {
+    root: `inline-flex items-center justify-center overflow-hidden relative cursor-pointer select-none grow
+            border border-[var(--ui-v2-border)] rounded-none
+            bg-[var(--ui-v2-background)] text-[var(--ui-v2-secondary-foreground)] ui-v2-nav
+            p-checked:text-[var(--ui-v2-primary)]
+            focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-v2-primary)] focus-visible:relative focus-visible:z-10
+            disabled:cursor-default disabled:bg-[var(--ui-v2-surface)] disabled:border-[var(--ui-v2-border)] disabled:text-[var(--ui-v2-secondary-foreground)]
+            p-invalid:border-[var(--ui-v2-error)] transition-colors duration-150 p-1 p-small:text-[11px] p-large:text-[13px]`,
+    content: `relative flex-auto inline-flex items-center justify-center gap-2 py-1 px-3
+            rounded-none transition-colors duration-150
+            p-checked:bg-[var(--ui-v2-primary-tint-10)]`,
+    icon: ``,
+    label: ``,
+  },
+};
+
+const theme = computed<SelectButtonPassThroughOptions>(() =>
+  isV2Route.value ? v2Theme : legacyTheme,
+);
 </script>

@@ -7,7 +7,17 @@
     }"
   >
     <template #closebutton="{ closeCallback }">
-      <SecondaryButton variant="text" rounded @click="closeCallback" autofocus>
+      <SecondaryButton
+        variant="text"
+        :rounded="!isV2Route"
+        :class="
+          isV2Route
+            ? 'ui-v2-radius-none border border-[var(--ui-v2-border)] bg-[var(--ui-v2-background)] text-[var(--ui-v2-foreground)] hover:border-[var(--ui-v2-primary)] hover:text-[var(--ui-v2-primary)]'
+            : ''
+        "
+        @click="closeCallback"
+        autofocus
+      >
         <template #icon>
           <TimesIcon />
         </template>
@@ -25,14 +35,17 @@ import Drawer, {
   type DrawerPassThroughOptions,
   type DrawerProps,
 } from 'primevue/drawer';
-import { ref } from 'vue';
+import { computed } from 'vue';
 import SecondaryButton from './SecondaryButton.vue';
 import { ptViewMerge } from './utils';
+import { useIsV2Route } from './useRouteUiVersion';
 
 interface Props extends /* @vue-ignore */ DrawerProps {}
 defineProps<Props>();
 
-const theme = ref<DrawerPassThroughOptions>({
+const isV2Route = useIsV2Route();
+
+const legacyTheme: DrawerPassThroughOptions = {
   root: `flex flex-col pointer-events-auto relative
         border-ccf-200 dark:border-slate-700
         bg-white dark:bg-slate-950
@@ -54,5 +67,37 @@ const theme = ref<DrawerPassThroughOptions>({
     leaveActiveClass: `transition-transform duration-100 ease-in p-full-screen:transition-opacity`,
     leaveToClass: `p-left:-translate-x-full p-right:translate-x-full p-top:-translate-y-full p-bottom:translate-y-full p-full-screen:opacity-0`,
   },
-});
+};
+
+const v2Theme: DrawerPassThroughOptions = {
+  root: `flex flex-col pointer-events-auto relative rounded-none
+        border-0 border-[var(--ui-v2-border)]
+        bg-[var(--ui-v2-card)] text-[var(--ui-v2-foreground)] font-[var(--ui-v2-font-secondary)]
+        p-left:w-[520px] p-left:h-full p-left:border-r
+        p-right:w-[520px] p-right:h-full p-right:border-s
+        p-top:h-[560px] p-top:w-full p-top:border-b
+        p-bottom:h-[560px] p-bottom:w-full p-bottom:border-t
+        p-full-screen:transition-opacity p-full-screen:transform-none p-full-screen:w-screen p-full-screen:h-screen p-full-screen:max-h-full p-full-screen:top-0 p-full-screen:left-0`,
+  header: 'flex items-center justify-between flex-shrink-0 px-5 pb-0 pt-5',
+  title:
+    'font-[var(--ui-v2-font-primary)] text-[16px] font-bold uppercase leading-[1.1] text-[var(--ui-v2-foreground)]',
+  content:
+    'overflow-y-auto flex-grow px-5 pb-5 pt-3 bg-[var(--ui-v2-card)] text-[var(--ui-v2-muted-foreground)] font-[var(--ui-v2-font-secondary)]',
+  footer: 'p-5 pt-3 bg-[var(--ui-v2-card)] font-[var(--ui-v2-font-secondary)]',
+  mask: 'p-modal:bg-black/45',
+  transition: {
+    enterFromClass:
+      'p-left:-translate-x-full p-right:translate-x-full p-top:-translate-y-full p-bottom:translate-y-full p-full-screen:opacity-0',
+    enterActiveClass:
+      'transition-transform duration-120 ease-out p-full-screen:transition-opacity',
+    leaveActiveClass:
+      'transition-transform duration-120 ease-in p-full-screen:transition-opacity',
+    leaveToClass:
+      'p-left:-translate-x-full p-right:translate-x-full p-top:-translate-y-full p-bottom:translate-y-full p-full-screen:opacity-0',
+  },
+};
+
+const theme = computed<DrawerPassThroughOptions>(() =>
+  isV2Route.value ? v2Theme : legacyTheme,
+);
 </script>

@@ -16,13 +16,24 @@ import Tabs, {
   type TabsPassThroughOptions,
   type TabsProps,
 } from 'primevue/tabs';
-import { ref } from 'vue';
+import { computed } from 'vue';
 import { ptViewMerge } from './utils';
+import { useIsV2Route } from './useRouteUiVersion';
 
 interface Props extends /* @vue-ignore */ TabsProps {}
 const props = defineProps<Props>();
 
-const theme = ref<TabsPassThroughOptions>({
+const isV2Route = useIsV2Route();
+
+const legacyTheme: TabsPassThroughOptions = {
   root: `flex flex-col`,
-});
+};
+
+const v2Theme: TabsPassThroughOptions = {
+  root: `flex flex-col border border-[var(--ui-v2-border)] bg-[var(--ui-v2-card)]`,
+};
+
+const theme = computed<TabsPassThroughOptions>(() =>
+  isV2Route.value ? v2Theme : legacyTheme,
+);
 </script>
