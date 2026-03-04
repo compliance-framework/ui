@@ -1,9 +1,17 @@
 <script setup lang="ts">
-import { RouterView } from 'vue-router';
+import { computed } from 'vue';
+import { RouterView, useRoute } from 'vue-router';
 import V2SideNavigation from '@/components/v2/navigation/V2SideNavigation.vue';
 import V2TopNavigation from '@/components/v2/navigation/V2TopNavigation.vue';
 import V2UserMenu from '@/components/v2/navigation/V2UserMenu.vue';
 import ActiveSecurityPlanIndicator from '@/components/v2/system/ActiveSecurityPlanIndicator.vue';
+
+const route = useRoute();
+
+const showActiveSecurityPlanIndicator = computed(() => {
+  const routeName = String(route.name || '');
+  return !routeName.startsWith('system-security-plan');
+});
 </script>
 
 <template>
@@ -25,7 +33,7 @@ import ActiveSecurityPlanIndicator from '@/components/v2/system/ActiveSecurityPl
       <V2SideNavigation />
 
       <main class="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-10 lg:py-8">
-        <div class="mb-6">
+        <div v-if="showActiveSecurityPlanIndicator" class="mb-6">
           <ActiveSecurityPlanIndicator />
         </div>
 

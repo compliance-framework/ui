@@ -1,621 +1,587 @@
 <template>
-  <div class="space-y-6">
-    <V2StatePanel
-      v-if="systemSecurityPlanLoading"
-      kind="loading"
-      title="Loading"
-      description="Loading overview details..."
-    />
+  <div class="space-y-4">
+    <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <article
+        v-for="card in statsCards"
+        :key="card.label"
+        class="border border-[var(--ui-v2-border)] bg-[var(--ui-v2-card)] p-5"
+      >
+        <p
+          class="ui-v2-label text-[11px] text-[var(--ui-v2-secondary-foreground)]"
+        >
+          {{ card.label }}
+        </p>
+        <p class="ui-v2-metric mt-1 text-[var(--ui-v2-foreground)]">
+          {{ card.value }}
+        </p>
+      </article>
+    </section>
 
-    <V2StatePanel
-      v-else-if="systemSecurityPlanError"
-      kind="error"
-      title="Load failed"
-      :description="systemSecurityPlanErrorMessage"
+    <section
+      class="border border-[var(--ui-v2-border)] bg-[var(--ui-v2-card)] p-5"
     >
-      <template #actions>
-        <div class="flex flex-wrap gap-2">
-          <button
-            type="button"
-            class="ui-v2-nav border border-[var(--ui-v2-error)] bg-[var(--ui-v2-error)] px-4 py-2 font-semibold text-[var(--ui-v2-background)]"
-            @click="reloadOverview"
-          >
-            Retry
-          </button>
-          <RouterLink
-            :to="{ name: 'system-security-plans' }"
-            class="ui-v2-nav border border-[var(--ui-v2-border)] bg-[var(--ui-v2-background)] px-4 py-2 text-[var(--ui-v2-foreground)]"
-          >
-            Back to list
-          </RouterLink>
+      <div class="flex items-center">
+        <h2 class="ui-v2-card-title text-[var(--ui-v2-foreground)]">
+          COMPLIANCE PREVIEW
+        </h2>
+      </div>
+
+      <div class="mt-3 flex items-center">
+        <p
+          class="ui-v2-label text-[11px] text-[var(--ui-v2-secondary-foreground)]"
+        >
+          {{ complianceMetaLabel }}
+        </p>
+      </div>
+
+      <template v-if="showComplianceLoading">
+        <div class="mt-3 grid gap-2 md:grid-cols-3">
+          <div
+            v-for="index in 3"
+            :key="`overview-compliance-skeleton-${index}`"
+            class="h-[72px] border border-[var(--ui-v2-border)] bg-[var(--ui-v2-surface)]"
+          />
+        </div>
+        <div
+          class="mt-2 h-[10px] border border-[var(--ui-v2-border)] bg-[var(--ui-v2-surface)]"
+        />
+      </template>
+
+      <template v-else-if="showNoProfileState">
+        <div
+          class="mt-3 flex gap-2.5 border border-[color:var(--ui-v2-info)_/_0.3] bg-[color:var(--ui-v2-info)_/_0.1] p-4"
+        >
+          <div class="w-[3px] shrink-0 bg-[var(--ui-v2-info)]" />
+          <div class="space-y-1">
+            <p class="ui-v2-label text-[11px] text-[var(--ui-v2-foreground)]">
+              NO PROFILE IS ATTACHED TO THIS SYSTEM SECURITY PLAN.
+            </p>
+            <p
+              class="ui-v2-nav text-[11px] text-[var(--ui-v2-muted-foreground)]"
+            >
+              Attach a profile using the PROFILE selector above to view
+              progress.
+            </p>
+          </div>
         </div>
       </template>
-    </V2StatePanel>
 
-    <V2StatePanel
-      v-else-if="!systemSecurityPlan"
-      kind="empty"
-      title="No plan found"
-      description="This system security plan is unavailable or has been removed."
-      cta-label="Back to list"
-      :cta-to="{ name: 'system-security-plans' }"
-    />
-
-    <template v-else>
-      <section
-        class="border border-[var(--ui-v2-border)] bg-[var(--ui-v2-card)] p-6"
-      >
-        <p class="ui-v2-label mb-3 text-[var(--ui-v2-secondary-foreground)]">
-          Metadata
+      <template v-else-if="showNoDataOrErrorState">
+        <div
+          class="mt-3 flex gap-2.5 border border-[color:var(--ui-v2-primary)_/_0.3] bg-[color:var(--ui-v2-primary)_/_0.1] p-4"
+        >
+          <div class="w-[3px] shrink-0 bg-[var(--ui-v2-primary)]" />
+          <div class="space-y-1">
+            <p class="ui-v2-label text-[11px] text-[var(--ui-v2-foreground)]">
+              {{ warningBannerTitle }}
+            </p>
+            <p
+              class="ui-v2-nav text-[11px] text-[var(--ui-v2-muted-foreground)]"
+            >
+              {{ warningBannerBody }}
+            </p>
+          </div>
+        </div>
+        <p
+          class="ui-v2-nav mt-3 text-[11px] text-[var(--ui-v2-secondary-foreground)]"
+        >
+          {{ noDataFooterText }}
         </p>
+      </template>
 
-        <div class="grid gap-6 md:grid-cols-2">
-          <div>
-            <p class="ui-v2-label text-[var(--ui-v2-secondary-foreground)]">
-              Title
-            </p>
-            <p class="mt-1 text-[var(--ui-v2-foreground)]">
-              {{ systemSecurityPlan.metadata?.title || 'N/A' }}
-            </p>
-          </div>
-
-          <div>
-            <p class="ui-v2-label text-[var(--ui-v2-secondary-foreground)]">
-              UUID
+      <template v-else>
+        <div class="mt-3 grid gap-2 md:grid-cols-5">
+          <article
+            v-for="item in summaryItems"
+            :key="item.label"
+            class="space-y-0.5 border border-[var(--ui-v2-border)] bg-[var(--ui-v2-surface)] p-3"
+          >
+            <p
+              class="ui-v2-label text-[10px] text-[var(--ui-v2-secondary-foreground)]"
+            >
+              {{ item.label }}
             </p>
             <p
-              class="ui-v2-meta mt-1 break-all text-[var(--ui-v2-tertiary-foreground)]"
+              class="font-[var(--ui-v2-font-primary)] text-2xl font-bold"
+              :class="item.valueClass"
             >
-              {{ systemSecurityPlan.uuid }}
+              {{ item.value }}
             </p>
-          </div>
+          </article>
+        </div>
 
-          <div>
-            <p class="ui-v2-label text-[var(--ui-v2-secondary-foreground)]">
-              Version
-            </p>
-            <p class="mt-1 text-[var(--ui-v2-foreground)]">
-              {{ systemSecurityPlan.metadata?.version || 'N/A' }}
-            </p>
-          </div>
-
-          <div>
-            <p class="ui-v2-label text-[var(--ui-v2-secondary-foreground)]">
-              Last Modified
-            </p>
-            <p class="mt-1 text-[var(--ui-v2-foreground)]">
-              {{ formatDate(systemSecurityPlan.metadata?.lastModified) }}
-            </p>
-          </div>
-
-          <div v-if="systemSecurityPlan.metadata?.published">
-            <p class="ui-v2-label text-[var(--ui-v2-secondary-foreground)]">
-              Published
-            </p>
-            <p class="mt-1 text-[var(--ui-v2-foreground)]">
-              {{ formatDate(systemSecurityPlan.metadata?.published) }}
-            </p>
-          </div>
-
-          <div>
-            <p
-              class="ui-v2-label mb-1 text-[var(--ui-v2-secondary-foreground)]"
-            >
-              Profile
-            </p>
-            <Select
-              v-model="selectedProfile"
-              placeholder="Select profile"
-              :loading="loadingProfiles"
-              :options="profileItems"
-              option-label="name"
-              class="w-full"
-            />
+        <div class="mt-3 space-y-1.5">
+          <div class="ui-v2-nav flex items-center justify-between text-[11px]">
+            <span class="text-[var(--ui-v2-secondary-foreground)]">
+              {{ satisfiedCount }}/{{ totalControls }} CONTROLS SATISFIED
+            </span>
+            <span class="font-bold text-[var(--ui-v2-foreground)]">
+              {{ compliancePercent }}%
+            </span>
           </div>
 
           <div
-            v-if="systemSecurityPlan.metadata?.remarks"
-            class="md:col-span-2"
+            class="flex h-[10px] overflow-hidden border border-[var(--ui-v2-border)] bg-[var(--ui-v2-surface)]"
           >
-            <p class="ui-v2-label text-[var(--ui-v2-secondary-foreground)]">
-              Remarks
-            </p>
-            <p class="mt-1 text-[var(--ui-v2-foreground)]">
-              {{ systemSecurityPlan.metadata.remarks }}
-            </p>
+            <div
+              class="h-full bg-[var(--ui-v2-success)]"
+              :style="{ width: `${satisfiedBarPercent}%` }"
+            />
+            <div
+              class="h-full bg-[var(--ui-v2-error)]"
+              :style="{ width: `${notSatisfiedBarPercent}%` }"
+            />
+            <div
+              class="h-full bg-[var(--ui-v2-tertiary-foreground)]"
+              :style="{ width: `${unknownBarPercent}%` }"
+            />
           </div>
         </div>
-      </section>
 
-      <V2StatePanel
-        v-if="profileResolved && !attachedProfileId"
-        kind="info"
-        title="No profile attached"
-        description="Select a profile in Metadata to enable compliance and control mapping workflows for this plan."
-      />
+        <div class="mt-2 space-y-1.5">
+          <div class="ui-v2-nav flex items-center justify-between text-[11px]">
+            <span class="text-[var(--ui-v2-secondary-foreground)]">
+              IMPLEMENTATION COVERAGE
+            </span>
+            <span class="font-bold text-[var(--ui-v2-foreground)]">
+              {{ implementationPercent }}%
+            </span>
+          </div>
 
-      <section
-        class="border border-[var(--ui-v2-border)] bg-[var(--ui-v2-card)] p-6"
-      >
-        <p class="ui-v2-label mb-3 text-[var(--ui-v2-secondary-foreground)]">
-          Quick Actions
-        </p>
+          <div
+            class="flex h-[10px] overflow-hidden border border-[var(--ui-v2-border)] bg-[var(--ui-v2-surface)]"
+          >
+            <div
+              class="h-full bg-[var(--ui-v2-info)]"
+              :style="{ width: `${implementationPercent}%` }"
+            />
+          </div>
 
-        <div class="flex flex-wrap gap-2">
-          <RouterLink
-            :to="{
-              name: 'system-security-plan-characteristics',
-              params: { id: sspId },
-            }"
-            class="ui-v2-nav border border-[var(--ui-v2-border)] bg-[var(--ui-v2-background)] px-3 py-2 text-[var(--ui-v2-foreground)]"
+          <p
+            class="ui-v2-nav text-[11px] text-[var(--ui-v2-secondary-foreground)]"
           >
-            Edit Characteristics
-          </RouterLink>
-          <RouterLink
-            :to="{
-              name: 'system-security-plan-system-implementation',
-              params: { id: sspId },
-            }"
-            class="ui-v2-nav border border-[var(--ui-v2-border)] bg-[var(--ui-v2-background)] px-3 py-2 text-[var(--ui-v2-foreground)]"
-          >
-            Edit Implementation
-          </RouterLink>
-          <RouterLink
-            :to="{
-              name: 'system-security-plan-control-implementation',
-              params: { id: sspId },
-            }"
-            class="ui-v2-nav border border-[var(--ui-v2-border)] bg-[var(--ui-v2-background)] px-3 py-2 text-[var(--ui-v2-foreground)]"
-          >
-            Edit Controls
-          </RouterLink>
-          <button
-            class="ui-v2-nav border border-[var(--ui-v2-primary)] bg-[var(--ui-v2-primary)] px-3 py-2 font-semibold text-[var(--ui-v2-primary-foreground)]"
-            type="button"
-            @click="downloadJson"
-          >
-            Download JSON
-          </button>
-        </div>
-      </section>
-
-      <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <div
-          class="border border-[var(--ui-v2-border)] bg-[var(--ui-v2-card)] p-4"
-          v-for="stat in statsCards"
-          :key="stat.label"
-        >
-          <p class="ui-v2-label text-[var(--ui-v2-secondary-foreground)]">
-            {{ stat.label }}
-          </p>
-          <p class="ui-v2-metric mt-2 text-[var(--ui-v2-foreground)]">
-            {{ stat.value }}
+            {{ implementedControls }} IMPLEMENTED / {{ unimplementedControls }}
+            NOT IMPLEMENTED
           </p>
         </div>
-      </section>
+      </template>
+    </section>
 
-      <section
-        v-if="systemCharacteristics"
-        class="border border-[var(--ui-v2-border)] bg-[var(--ui-v2-card)] p-6"
-      >
-        <p class="ui-v2-label mb-3 text-[var(--ui-v2-secondary-foreground)]">
-          System Characteristics
-        </p>
+    <section
+      class="border border-[var(--ui-v2-border)] bg-[var(--ui-v2-card)] p-5"
+    >
+      <h2 class="ui-v2-card-title text-[var(--ui-v2-foreground)]">
+        SYSTEM CHARACTERISTICS SUMMARY
+      </h2>
 
-        <div class="grid gap-6 md:grid-cols-2">
-          <div v-if="systemCharacteristics.systemName">
-            <p class="ui-v2-label text-[var(--ui-v2-secondary-foreground)]">
-              System Name
+      <div class="mt-3 grid gap-4 md:grid-cols-2">
+        <div class="space-y-2">
+          <div class="space-y-0.5">
+            <p
+              class="ui-v2-label text-[11px] text-[var(--ui-v2-secondary-foreground)]"
+            >
+              SYSTEM NAME
             </p>
-            <p class="mt-1 text-[var(--ui-v2-foreground)]">
-              {{ systemCharacteristics.systemName }}
+            <p
+              class="ui-v2-nav text-[12px] font-bold text-[var(--ui-v2-foreground)]"
+            >
+              {{ systemName }}
             </p>
           </div>
 
-          <div v-if="systemCharacteristics.systemNameShort">
-            <p class="ui-v2-label text-[var(--ui-v2-secondary-foreground)]">
-              System Name (Short)
+          <div class="space-y-0.5">
+            <p
+              class="ui-v2-label text-[11px] text-[var(--ui-v2-secondary-foreground)]"
+            >
+              SYSTEM NAME (SHORT)
             </p>
-            <p class="mt-1 text-[var(--ui-v2-foreground)]">
-              {{ systemCharacteristics.systemNameShort }}
-            </p>
-          </div>
-
-          <div v-if="systemCharacteristics.securitySensitivityLevel">
-            <p class="ui-v2-label text-[var(--ui-v2-secondary-foreground)]">
-              Security Sensitivity
-            </p>
-            <p class="mt-1 text-[var(--ui-v2-foreground)]">
-              {{ systemCharacteristics.securitySensitivityLevel }}
+            <p
+              class="ui-v2-nav text-[12px] font-bold text-[var(--ui-v2-foreground)]"
+            >
+              {{ systemNameShort }}
             </p>
           </div>
 
-          <div v-if="systemCharacteristics.dateAuthorized">
-            <p class="ui-v2-label text-[var(--ui-v2-secondary-foreground)]">
-              Date Authorized
+          <div class="space-y-0.5">
+            <p
+              class="ui-v2-label text-[11px] text-[var(--ui-v2-secondary-foreground)]"
+            >
+              SECURITY SENSITIVITY LEVEL
             </p>
-            <p class="mt-1 text-[var(--ui-v2-foreground)]">
-              {{ formatDate(systemCharacteristics.dateAuthorized.toString()) }}
-            </p>
-          </div>
-
-          <div v-if="systemCharacteristics.description" class="md:col-span-2">
-            <p class="ui-v2-label text-[var(--ui-v2-secondary-foreground)]">
-              Description
-            </p>
-            <p class="mt-1 text-[var(--ui-v2-foreground)]">
-              {{ systemCharacteristics.description }}
+            <p
+              class="ui-v2-nav text-[12px] font-bold text-[var(--ui-v2-foreground)]"
+            >
+              {{ securitySensitivity }}
             </p>
           </div>
         </div>
-      </section>
 
-      <V2StatePanel
-        v-else-if="systemCharacteristicsLoading"
-        kind="loading"
-        title="Loading"
-        description="Loading system characteristics..."
-      />
+        <div class="space-y-2">
+          <div class="space-y-0.5">
+            <p
+              class="ui-v2-label text-[11px] text-[var(--ui-v2-secondary-foreground)]"
+            >
+              DATE AUTHORIZED
+            </p>
+            <p
+              class="ui-v2-nav text-[12px] font-bold text-[var(--ui-v2-foreground)]"
+            >
+              {{ dateAuthorized }}
+            </p>
+          </div>
 
-      <V2StatePanel
-        v-else-if="systemCharacteristicsError"
-        kind="error"
-        title="Load failed"
-        :description="systemCharacteristicsErrorMessage"
-      />
-
-      <V2StatePanel
-        v-else
-        kind="empty"
-        title="No characteristics data"
-        description="No system characteristics have been recorded for this plan yet."
-      />
-    </template>
+          <div class="space-y-0.5">
+            <p
+              class="ui-v2-label text-[11px] text-[var(--ui-v2-secondary-foreground)]"
+            >
+              DESCRIPTION
+            </p>
+            <p
+              class="ui-v2-nav text-[11px] font-semibold text-[var(--ui-v2-muted-foreground)]"
+            >
+              {{ systemDescription }}
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
-import type { AxiosError } from 'axios';
-import decamelizeKeys from 'decamelize-keys';
-import Select from '@/volt/Select.vue';
-import { useToast } from 'primevue/usetoast';
+import { computed, inject, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import type {
   InventoryItem,
   LeveragedAuthorization,
-  Profile,
   SystemCharacteristics,
   SystemComponent,
-  SystemSecurityPlan,
   SystemUser,
 } from '@/oscal';
-import type { ErrorBody, ErrorResponse } from '@/stores/types.ts';
 import { useDataApi } from '@/composables/axios';
-import V2StatePanel from '@/components/v2/system/V2StatePanel.vue';
+import { useProfileCompliance } from '@/composables/useProfileCompliance';
+import {
+  sspDetailProfileBindingKey,
+  type SspDetailProfileBinding,
+} from './sspDetailProfileBinding';
 
 const route = useRoute();
-const toast = useToast();
-
 const sspId = computed(() => String(route.params.id || ''));
 
+const { data: systemCharacteristics, execute: loadSystemCharacteristics } =
+  useDataApi<SystemCharacteristics>(null, null, {
+    immediate: false,
+  });
+
+const { data: users, execute: loadUsers } = useDataApi<SystemUser[]>(
+  null,
+  null,
+  { immediate: false },
+);
+
+const { data: components, execute: loadComponents } = useDataApi<
+  SystemComponent[]
+>(null, null, { immediate: false });
+
+const { data: inventoryItems, execute: loadInventory } = useDataApi<
+  InventoryItem[]
+>(null, null, { immediate: false });
+
+const { data: leveragedAuthorizations, execute: loadAuthorizations } =
+  useDataApi<LeveragedAuthorization[]>(null, null, { immediate: false });
+
+const profileBinding = inject<SspDetailProfileBinding | null>(
+  sspDetailProfileBindingKey,
+  null,
+);
+
+const profileItems = computed(() => profileBinding?.profileItems.value || []);
+const profileResolved = computed(
+  () => profileBinding?.profileResolved.value || false,
+);
+const selectedProfileId = computed(
+  () => profileBinding?.selectedProfileId.value || '',
+);
+
 const {
-  data: systemSecurityPlan,
-  isLoading: systemSecurityPlanLoading,
-  error: systemSecurityPlanError,
-  execute: executeLoadSystemSecurityPlan,
-} = useDataApi<SystemSecurityPlan>(
-  computed(() => `/api/oscal/system-security-plans/${sspId.value}`),
-);
-
-const {
-  data: systemCharacteristics,
-  isLoading: systemCharacteristicsLoading,
-  error: systemCharacteristicsError,
-  execute: executeLoadSystemCharacteristics,
-} = useDataApi<SystemCharacteristics>(
-  computed(
-    () =>
-      `/api/oscal/system-security-plans/${sspId.value}/system-characteristics`,
-  ),
-);
-
-const { data: profiles, isLoading: loadingProfiles } = useDataApi<Profile[]>(
-  '/api/oscal/profiles',
-);
-
-const profileItems = computed(
-  () =>
-    profiles.value?.map((item) => ({
-      name: item.metadata.title,
-      value: item.uuid,
-    })) || [],
-);
-
-const selectedProfile = ref<{ name: string; value: string }>({
-  name: '',
-  value: '',
-});
-
-const attachedProfileId = ref<string>('');
-const profileResolved = ref(false);
-
-const systemSecurityPlanErrorMessage = computed(() => {
-  if (!systemSecurityPlanError.value) {
-    return 'Unable to load system security plan overview.';
-  }
-  if (typeof systemSecurityPlanError.value === 'string') {
-    return systemSecurityPlanError.value;
-  }
-  if (systemSecurityPlanError.value instanceof Error) {
-    return systemSecurityPlanError.value.message;
-  }
-  return 'Unable to load system security plan overview.';
-});
-
-const systemCharacteristicsErrorMessage = computed(() => {
-  if (!systemCharacteristicsError.value) {
-    return 'Unable to load system characteristics.';
-  }
-  if (typeof systemCharacteristicsError.value === 'string') {
-    return systemCharacteristicsError.value;
-  }
-  if (systemCharacteristicsError.value instanceof Error) {
-    return systemCharacteristicsError.value.message;
-  }
-  return 'Unable to load system characteristics.';
-});
-
-const { execute: executeAttachedProfile } = useDataApi<Profile>(
-  null,
-  { method: 'GET' },
-  { immediate: false },
-);
-
-const { execute: attachProfile } = useDataApi<void>(
-  null,
-  { method: 'PUT' },
-  { immediate: false },
-);
-
-const { execute: executeSIUsers } = useDataApi<SystemUser[]>(
-  null,
-  { method: 'GET' },
-  { immediate: false },
-);
-
-const { execute: executeSIComponents } = useDataApi<SystemComponent[]>(
-  null,
-  { method: 'GET' },
-  { immediate: false },
-);
-
-const { execute: executeSIInventory } = useDataApi<InventoryItem[]>(
-  null,
-  { method: 'GET' },
-  { immediate: false },
-);
-
-const { execute: executeSILeveragedAuths } = useDataApi<
-  LeveragedAuthorization[]
->(null, { method: 'GET' }, { immediate: false });
-
-const { execute: executeDownloadJSON } = useDataApi<SystemSecurityPlan>(
-  null,
-  { method: 'GET' },
-  { immediate: false },
-);
-
-const systemImplementationStats = ref({
-  users: 0,
-  components: 0,
-  inventoryItems: 0,
-  leveragedAuthorizations: 0,
-});
-
-const statsCards = computed(() => [
-  { label: 'System Users', value: systemImplementationStats.value.users },
-  { label: 'Components', value: systemImplementationStats.value.components },
-  {
-    label: 'Inventory Items',
-    value: systemImplementationStats.value.inventoryItems,
-  },
-  {
-    label: 'Leveraged Authorizations',
-    value: systemImplementationStats.value.leveragedAuthorizations,
-  },
-]);
+  progress,
+  summary,
+  isLoading: complianceLoading,
+  error: complianceError,
+  loadCompliance,
+} = useProfileCompliance(selectedProfileId);
 
 watch(
   sspId,
   async (id) => {
     if (!id) {
-      profileResolved.value = true;
+      systemCharacteristics.value = undefined;
+      users.value = undefined;
+      components.value = undefined;
+      inventoryItems.value = undefined;
+      leveragedAuthorizations.value = undefined;
       return;
     }
 
-    profileResolved.value = false;
     await Promise.allSettled([
-      loadAttachedProfile(id),
-      loadSystemImplementationStats(id),
+      loadSystemCharacteristics(
+        `/api/oscal/system-security-plans/${id}/system-characteristics`,
+      ),
+      loadUsers(
+        `/api/oscal/system-security-plans/${id}/system-implementation/users`,
+      ),
+      loadComponents(
+        `/api/oscal/system-security-plans/${id}/system-implementation/components`,
+      ),
+      loadInventory(
+        `/api/oscal/system-security-plans/${id}/system-implementation/inventory-items`,
+      ),
+      loadAuthorizations(
+        `/api/oscal/system-security-plans/${id}/system-implementation/leveraged-authorizations`,
+      ),
     ]);
-    profileResolved.value = true;
   },
   { immediate: true },
 );
 
-watch(selectedProfile, async (profile) => {
-  const profileId = profile?.value || '';
-  if (!sspId.value || !profileId || profileId === attachedProfileId.value) {
-    return;
-  }
+watch(
+  [sspId, selectedProfileId],
+  async ([id, profileId]) => {
+    if (!id || !profileId) {
+      return;
+    }
 
-  try {
-    await attachProfile(
-      `/api/oscal/system-security-plans/${sspId.value}/profile`,
-      {
-        data: {
-          profileId,
-        },
-      },
-    );
+    await loadCompliance({
+      includeControls: false,
+      sspId: id,
+    });
+  },
+  { immediate: true },
+);
 
-    attachedProfileId.value = profileId;
-    toast.add({
-      severity: 'success',
-      summary: 'Profile Updated',
-      life: 2500,
-    });
-  } catch (error) {
-    const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
-    toast.add({
-      severity: 'error',
-      summary: 'Failed to Set Profile',
-      detail:
-        errorResponse.response?.data.errors.body ||
-        'An error occurred while assigning this profile.',
-      life: 3000,
-    });
-  }
+const statsCards = computed(() => [
+  { label: 'USERS', value: users.value?.length || 0 },
+  { label: 'COMPONENTS', value: components.value?.length || 0 },
+  {
+    label: 'AUTHORIZATIONS',
+    value: leveragedAuthorizations.value?.length || 0,
+  },
+  { label: 'INVENTORY', value: inventoryItems.value?.length || 0 },
+]);
+
+const selectedProfileLabel = computed(() => {
+  const selected = profileItems.value.find(
+    (item) => item.value === selectedProfileId.value,
+  );
+  return selected?.label || '';
 });
 
-async function loadAttachedProfile(id: string): Promise<void> {
-  try {
-    const response = await executeAttachedProfile(
-      `/api/oscal/system-security-plans/${id}/profile`,
-    );
-    const attachedProfile = response.data.value?.data;
-
-    if (!attachedProfile) {
-      selectedProfile.value = { name: '', value: '' };
-      attachedProfileId.value = '';
-      return;
-    }
-
-    selectedProfile.value = {
-      name: attachedProfile.metadata.title,
-      value: attachedProfile.uuid,
-    };
-    attachedProfileId.value = attachedProfile.uuid;
-  } catch (error) {
-    const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
-    if (errorResponse.response?.status === 404) {
-      selectedProfile.value = { name: '', value: '' };
-      attachedProfileId.value = '';
-      return;
-    }
-
-    toast.add({
-      severity: 'error',
-      summary: 'Error Loading Profile',
-      detail:
-        errorResponse.response?.data.errors.body ||
-        'An error occurred while loading the attached profile.',
-      life: 3000,
-    });
-  }
-}
-
-async function reloadOverview(): Promise<void> {
-  if (!sspId.value) {
-    return;
+const complianceMetaLabel = computed(() => {
+  if (!selectedProfileId.value) {
+    return 'NO PROFILE IS ATTACHED';
   }
 
-  await Promise.allSettled([
-    executeLoadSystemSecurityPlan(
-      `/api/oscal/system-security-plans/${sspId.value}`,
-    ),
-    executeLoadSystemCharacteristics(
-      `/api/oscal/system-security-plans/${sspId.value}/system-characteristics`,
-    ),
-    loadAttachedProfile(sspId.value),
-    loadSystemImplementationStats(sspId.value),
-  ]);
-  profileResolved.value = true;
-}
+  return `PROFILE: ${selectedProfileLabel.value.toUpperCase()}`;
+});
 
-async function loadSystemImplementationStats(id: string): Promise<void> {
-  const [usersResponse, componentsResponse, inventoryResponse, leveragedAuths] =
-    await Promise.allSettled([
-      executeSIUsers(
-        `/api/oscal/system-security-plans/${id}/system-implementation/users`,
-      ),
-      executeSIComponents(
-        `/api/oscal/system-security-plans/${id}/system-implementation/components`,
-      ),
-      executeSIInventory(
-        `/api/oscal/system-security-plans/${id}/system-implementation/inventory-items`,
-      ),
-      executeSILeveragedAuths(
-        `/api/oscal/system-security-plans/${id}/system-implementation/leveraged-authorizations`,
-      ),
-    ]);
+const hasCurrentCompliance = computed(() =>
+  Boolean(
+    progress.value &&
+      selectedProfileId.value &&
+      progress.value.scope.id === selectedProfileId.value,
+  ),
+);
 
-  systemImplementationStats.value = {
-    users:
-      usersResponse.status === 'fulfilled'
-        ? (usersResponse.value.data.value?.data.length ?? 0)
-        : 0,
-    components:
-      componentsResponse.status === 'fulfilled'
-        ? (componentsResponse.value.data.value?.data.length ?? 0)
-        : 0,
-    inventoryItems:
-      inventoryResponse.status === 'fulfilled'
-        ? (inventoryResponse.value.data.value?.data.length ?? 0)
-        : 0,
-    leveragedAuthorizations:
-      leveragedAuths.status === 'fulfilled'
-        ? (leveragedAuths.value.data.value?.data.length ?? 0)
-        : 0,
-  };
-}
+const totalControls = computed(() =>
+  hasCurrentCompliance.value ? summary.value?.totalControls || 0 : 0,
+);
+const satisfiedCount = computed(() =>
+  hasCurrentCompliance.value ? summary.value?.satisfied || 0 : 0,
+);
+const notSatisfiedCount = computed(() =>
+  hasCurrentCompliance.value ? summary.value?.notSatisfied || 0 : 0,
+);
+const unknownCount = computed(() =>
+  hasCurrentCompliance.value ? summary.value?.unknown || 0 : 0,
+);
 
-async function downloadJson(): Promise<void> {
-  if (!systemSecurityPlan.value || !sspId.value) {
-    return;
+const compliancePercent = computed(() =>
+  hasCurrentCompliance.value ? summary.value?.compliancePercent || 0 : 0,
+);
+const assessedPercent = computed(() =>
+  hasCurrentCompliance.value ? summary.value?.assessedPercent || 0 : 0,
+);
+
+const implementedControls = computed(() => {
+  if (!hasCurrentCompliance.value) {
+    return 0;
   }
 
-  try {
-    const response = await executeDownloadJSON(
-      `/api/oscal/system-security-plans/${sspId.value}/full`,
-    );
-    const data = response.data.value;
+  return (
+    progress.value?.implementation?.implementedControls ||
+    summary.value?.implementedControls ||
+    0
+  );
+});
 
-    if (!data) {
-      throw new Error('No JSON payload returned.');
-    }
-
-    const dataStr = JSON.stringify(
-      decamelizeKeys(data, { separator: '-', deep: true }),
-      null,
-      2,
-    );
-
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `ssp-${systemSecurityPlan.value.uuid}.json`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  } catch (error) {
-    const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
-    toast.add({
-      severity: 'error',
-      summary: 'Download Failed',
-      detail:
-        errorResponse.response?.data.errors.body ||
-        'Unable to download this SSP JSON right now.',
-      life: 3000,
-    });
+const unimplementedControls = computed(() => {
+  if (!hasCurrentCompliance.value) {
+    return 0;
   }
+
+  if (progress.value?.implementation) {
+    return progress.value.implementation.unimplementedControls;
+  }
+
+  return Math.max(totalControls.value - implementedControls.value, 0);
+});
+
+const implementationPercent = computed(() => {
+  if (!hasCurrentCompliance.value) {
+    return 0;
+  }
+
+  if (progress.value?.implementation) {
+    return progress.value.implementation.implementationPercent;
+  }
+
+  return calculatePercent(implementedControls.value, totalControls.value);
+});
+
+const showComplianceLoading = computed(
+  () =>
+    Boolean(selectedProfileId.value) &&
+    (complianceLoading.value ||
+      (!hasCurrentCompliance.value && !complianceError.value)),
+);
+
+const showNoProfileState = computed(
+  () => !selectedProfileId.value && profileResolved.value,
+);
+
+const showNoDataOrErrorState = computed(() => {
+  if (!selectedProfileId.value || showComplianceLoading.value) {
+    return false;
+  }
+
+  if (complianceError.value) {
+    return true;
+  }
+
+  return hasCurrentCompliance.value && totalControls.value === 0;
+});
+
+const warningBannerTitle = computed(() => {
+  if (complianceError.value) {
+    return 'COMPLIANCE PARTLY AVAILABLE DUE TO DATA SYNC/PROFILE DELAY.';
+  }
+  return 'NO COMPLIANCE DATA AVAILABLE';
+});
+
+const warningBannerBody = computed(() => {
+  if (complianceError.value) {
+    return 'Compliance results could not be fully loaded for this SSP/profile pair.';
+  }
+  return 'No compliance results exist yet for this SSP/profile pair.';
+});
+
+const noDataFooterText = computed(() => {
+  if (complianceError.value) {
+    return 'Unable to load compliance data.';
+  }
+  return 'No compliance data available.';
+});
+
+const summaryItems = computed(() => [
+  {
+    label: 'SATISFIED',
+    value: satisfiedCount.value,
+    valueClass: 'text-[var(--ui-v2-success)]',
+  },
+  {
+    label: 'NOT SAT',
+    value: notSatisfiedCount.value,
+    valueClass: 'text-[var(--ui-v2-error)]',
+  },
+  {
+    label: 'UNKNOWN',
+    value: unknownCount.value,
+    valueClass: 'text-[var(--ui-v2-secondary-foreground)]',
+  },
+  {
+    label: 'COMPLIANCE',
+    value: `${compliancePercent.value}%`,
+    valueClass: 'text-[var(--ui-v2-info)]',
+  },
+  {
+    label: 'ASSESSED',
+    value: `${assessedPercent.value}%`,
+    valueClass: 'text-[var(--ui-v2-foreground)]',
+  },
+]);
+
+const satisfiedBarPercent = computed(() =>
+  calculateBarPercent(satisfiedCount.value, totalControls.value),
+);
+const notSatisfiedBarPercent = computed(() =>
+  calculateBarPercent(notSatisfiedCount.value, totalControls.value),
+);
+const unknownBarPercent = computed(() =>
+  calculateBarPercent(unknownCount.value, totalControls.value),
+);
+
+const systemName = computed(
+  () => systemCharacteristics.value?.systemName || 'N/A',
+);
+const systemNameShort = computed(
+  () => systemCharacteristics.value?.systemNameShort || 'N/A',
+);
+const securitySensitivity = computed(
+  () => systemCharacteristics.value?.securitySensitivityLevel || 'N/A',
+);
+const dateAuthorized = computed(() =>
+  formatDateToken(systemCharacteristics.value?.dateAuthorized?.toString()),
+);
+const systemDescription = computed(
+  () =>
+    systemCharacteristics.value?.description ||
+    'No system description has been recorded yet.',
+);
+
+function calculateBarPercent(part: number, total: number): number {
+  if (!total) {
+    return 0;
+  }
+
+  return Number(((part / total) * 100).toFixed(2));
 }
 
-function formatDate(dateString?: string): string {
-  if (!dateString) return 'N/A';
-  return new Date(dateString).toLocaleDateString();
+function calculatePercent(part: number, total: number): number {
+  if (!total) {
+    return 0;
+  }
+
+  return Math.round((part / total) * 100);
+}
+
+function formatDateToken(dateString?: string): string {
+  if (!dateString) {
+    return 'N/A';
+  }
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+    return dateString;
+  }
+
+  const parsedDate = new Date(dateString);
+  if (Number.isNaN(parsedDate.getTime())) {
+    return 'N/A';
+  }
+
+  const year = parsedDate.getUTCFullYear();
+  const month = String(parsedDate.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(parsedDate.getUTCDate()).padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
 }
 </script>
