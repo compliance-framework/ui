@@ -1,7 +1,7 @@
 # PRD: UI V2 Migration and Full Cutover
 
 Status: Draft v1.0  
-Last updated: 2026-03-03  
+Last updated: 2026-03-04  
 Primary scope: `@ui/` frontend redesign and full migration to the new Pencil design (`new-design.pen`)
 
 ## 1. Context
@@ -55,6 +55,42 @@ We need a controlled, trackable migration plan that allows incremental delivery 
 - Implement new design tokens first (Latte + Mocha).
 - Build reusable V2 components before module migration.
 - Enforce shared page templates for list, detail, and modal screens.
+
+### 4.3.1 Design reference map (Pencil)
+
+Primary source of truth:
+
+- `ui/ux-audit-2026-02-26-1426/new-design.pen`
+
+Component baseline frame (use for 1:1 visual parity checks):
+
+- `Design System / Components / Latte` (node id: `o41qe`)
+
+Key component specimens in `o41qe`:
+
+- Buttons: Primary `HbLao`, Outline `lXeK5`, Outline Small `KYLbY`
+- Fields: Email `wAhfs`, Password `6i7JZ`
+- Dropdown: Trigger `cziSt`, Menu `coHnK`
+- Dialogs (confirm overlays): Neutral `3COwp`, Destructive `bYTHD`
+- Drawers: List `H1pZG`, Form `bAHLT`
+- Toasts: Notice `Dvbui`, Info `zuMCk`, Success `cTCmg`, Error `pOC0f`
+- Inline banners: Notice `4Zf6e`, Info `tHwBb`, Success `rjQjc`, Error `NheDG`
+
+Implementation reference locations in `@ui/`:
+
+- Route-aware wrapper components: `src/volt/`
+- Shared V2 primitives/patterns: `src/components/v2/`
+- Component parity sandbox route `/__v2/components`: `src/views/system-v2/V2ComponentLibraryView.vue`
+- Token parity sandbox route `/__v2/tokens`: `src/views/system-v2/V2TokenVisualTestView.vue`
+
+#### Mandatory behavior (no invention)
+
+Implementation must match Pencil strictly. Do not invent UI in code.
+
+If a needed element/state is not present in Pencil:
+
+- Present options and get explicit user approval before implementing.
+- Log the approval decision in the execution log with rationale and impacted components/routes.
 
 ## 5. Success Metrics
 
@@ -128,6 +164,8 @@ Governance artifacts:
 - [x] P3-10 Build loading/empty/error skeleton components for all major content blocks.
 
 ## 7.5 V2 component library implementation
+
+Design lookup quick link: see `4.3.1 Design reference map (Pencil)` for node ids and local implementation locations.
 
 ### Base controls
 
@@ -327,6 +365,7 @@ A route family is done only when all are true:
 5. Visual QA approved against Pencil design.
 6. Route-level tests added/updated and passing.
 7. No remaining imports from V1-only UI components for that route family.
+8. Pencil node id(s) referenced for changed UI, or explicit user-approved deviation logged.
 
 ## 12. Immediate Next Actions (Week 1)
 

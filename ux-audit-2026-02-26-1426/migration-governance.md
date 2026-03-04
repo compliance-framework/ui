@@ -1,6 +1,6 @@
 # UI V2 Migration Governance
 
-Last updated: 2026-03-03
+Last updated: 2026-03-04
 
 This file defines migration operating rules for `@ui/`.
 
@@ -11,6 +11,22 @@ Tracking mode: **Markdown only** (no GitHub Issues/Projects).
 - PRD and task tracker: `ui/ux-audit-2026-02-26-1426/ui-v2-migration-prd.md`
 - Route inventory and migration status: `ui/ux-audit-2026-02-26-1426/route-inventory.md`
 - This governance file: `ui/ux-audit-2026-02-26-1426/migration-governance.md`
+
+## Pencil-First Implementation Policy (Mandatory)
+
+Pencil is the source of truth for V2 UI. Implementations MUST be derived from the Pencil design and its variables, not invented in code.
+
+Rules:
+
+1. Before implementing or changing any V2 UI element, locate the matching design in `ui/ux-audit-2026-02-26-1426/new-design.pen`.
+2. Record the Pencil node id(s) used (frame + component specimen id) in the PRD execution log for that slice.
+3. Do not create new layouts/components/styles by interpretation or extrapolation.
+
+If the required element is missing or ambiguous in Pencil:
+
+- Stop and request user approval before implementing.
+- Include the closest existing Pencil specimen id(s), what is missing, and one or two concrete options.
+- After approval, document the decision in the PRD execution log and update `route-inventory.md` mapping notes when route-family mapping is affected.
 
 ## P0-01 PR Slicing Rules
 
@@ -29,6 +45,8 @@ Each migration PR must be a vertical slice and satisfy all rules below.
    - Preserve auth/session/API behavior and existing route semantics.
 6. **Validation in every PR**
    - Run `npm run type-check`, `npm run lint`, `npm run build-only`, `npm run test:unit`.
+7. **No design invention**
+   - Every V2 visual change must cite Pencil node id(s), or have explicit user approval documented in the PRD execution log.
 
 ## P0-02 Definition of Done (Per Route Family)
 
@@ -41,6 +59,7 @@ A route family is complete only when all checks pass:
 - [ ] No V1-only component imports remain in migrated routes
 - [ ] Tests and checks pass (`type-check`, `lint`, `build-only`, `test:unit`)
 - [ ] Route inventory updated with status and notes
+- [ ] Pencil reference node id(s) recorded, or explicit user-approved deviation logged in the PRD execution log
 
 ## P0-06 Release Gates
 
