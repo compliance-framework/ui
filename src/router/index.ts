@@ -116,6 +116,14 @@ const authenticatedRoutes = [
     },
   },
   {
+    path: 'poam-items',
+    name: 'poam-items:index',
+    component: () => import('../views/poam/CCFPoamItemsListView.vue'),
+    meta: {
+      requiresAuth: true,
+    },
+  },
+  {
     path: 'risks/:riskId',
     name: 'risks:detail',
     component: () => import('../views/risk/RiskDetailView.vue'),
