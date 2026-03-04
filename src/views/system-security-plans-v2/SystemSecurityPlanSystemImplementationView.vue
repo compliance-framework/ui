@@ -43,9 +43,7 @@
             {{ users?.length || 0 }}
           </p>
           <p class="ui-v2-meta mt-2 text-[var(--ui-v2-tertiary-foreground)]">
-            {{ userRoleCount }} role{{
-              userRoleCount === 1 ? '' : 's'
-            }}
+            {{ userRoleCount }} role{{ userRoleCount === 1 ? '' : 's' }}
             assigned
           </p>
         </div>
@@ -440,9 +438,7 @@
                       <p
                         class="ui-v2-meta mt-1 text-[var(--ui-v2-tertiary-foreground)]"
                       >
-                        {{
-                          new Date(auth.dateAuthorized).toLocaleDateString()
-                        }}
+                        {{ new Date(auth.dateAuthorized).toLocaleDateString() }}
                         · party {{ auth.partyUuid }}
                       </p>
                     </div>
