@@ -124,11 +124,6 @@ const links = ref<Array<NavigationItem>>([
         name: 'users-list',
         title: 'System Users',
       },
-      {
-        name: 'admin-import',
-        title: 'Import',
-        abbr: 'IMP',
-      },
     ],
   },
 ]);
