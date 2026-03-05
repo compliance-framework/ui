@@ -8,7 +8,103 @@ const DRAWIO_URL =
   'https://embed.diagrams.net/?spin=0&proto=json&configure=1&noSaveBtn=1&saveAndExit=0&noExitBtn=1';
 const DRAWIO_ORIGIN = new URL(DRAWIO_URL).origin;
 const DRAWIO_EDITOR_CONFIG = {
-  css: `.geMenubar > a.geItem:nth-last-child(2),
+  customFonts: ['Space Grotesk', 'JetBrains Mono'],
+  defaultFonts: [
+    'Space Grotesk',
+    'JetBrains Mono',
+    'Helvetica',
+    'Verdana',
+    'Times New Roman',
+    'Garamond',
+    'Courier New',
+  ],
+  fontCss:
+    "@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap');",
+  defaultTextStyle:
+    'text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;fontFamily=Space Grotesk;fontColor=#4c4f69;',
+  defaultVertexStyle: {
+    rounded: '0',
+    fontFamily: 'Space Grotesk',
+    fontSize: '12',
+    fontColor: '#4c4f69',
+    fillColor: '#dce0e8',
+    strokeColor: '#ccd0da',
+  },
+  defaultEdgeStyle: {
+    edgeStyle: 'orthogonalEdgeStyle',
+    rounded: '0',
+    jettySize: 'auto',
+    orthogonalLoop: '1',
+    fontFamily: 'Space Grotesk',
+    fontSize: '12',
+    fontColor: '#4c4f69',
+    strokeColor: '#6c6f85',
+  },
+  customPresetColors: [
+    'DF8E1D',
+    '1E66F5',
+    '40A02B',
+    'D20F39',
+    '4C4F69',
+    '5C5F77',
+    '6C6F85',
+    '8C8FA1',
+    'EFF1F5',
+    'E6E9EF',
+    'DCE0E8',
+    'CCD0DA',
+  ],
+  css: `.geMenubarContainer,
+        .geToolbarContainer,
+        .geSidebarContainer,
+        .geFormatContainer,
+        .mxPopupMenu,
+        .geDialog,
+        .geBtn,
+        .geLabel,
+        .geItem,
+        .geStatus,
+        .geTitle,
+        .geHint,
+        .geToolbarButton,
+        .geSidebar,
+        .geFormatSection,
+        .geFormatSectionTitle {
+          font-family: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace !important;
+          color: #4c4f69 !important;
+        }
+
+        .geMenubarContainer,
+        .geMenubar {
+          background: #dce0e8 !important;
+          border-color: #ccd0da !important;
+        }
+
+        .geToolbarContainer,
+        .geToolbar {
+          background: #e6e9ef !important;
+          border-color: #ccd0da !important;
+        }
+
+        .geSidebarContainer,
+        .geFormatContainer,
+        .geSidebar,
+        .geFormatSection {
+          background: #eff1f5 !important;
+          border-color: #ccd0da !important;
+        }
+
+        .geItem:hover,
+        .geToolbarButton:hover,
+        .geButton:hover,
+        .geBtn:hover {
+          background: #df8e1d15 !important;
+          color: #4c4f69 !important;
+        }
+
+        .geMenubar > a.geItem:nth-child(5),
+        .geMenubar > a.geItem:nth-child(6),
+        .geMenubar > a.geItem:nth-last-child(2),
         .geMenubar > a.geItem:nth-last-child(3) {
           display: none !important;
         }`,

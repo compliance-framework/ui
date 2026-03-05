@@ -162,42 +162,37 @@
         class="flex h-full min-h-0 flex-col gap-2 overflow-hidden"
       >
         <div
-          class="grid shrink-0 grid-cols-1 gap-2 border border-[var(--ui-v2-border)] bg-[var(--ui-v2-surface)] p-2 md:grid-cols-5"
+          class="grid shrink-0 grid-cols-[auto_minmax(0,1fr)_auto_minmax(0,2fr)] items-center gap-2 border border-[var(--ui-v2-border)] bg-[var(--ui-v2-surface)] p-2"
         >
-          <div class="space-y-0.5 md:col-span-2">
-            <label
-              for="diagram-caption-input"
-              class="ui-v2-label text-[var(--ui-v2-secondary-foreground)]"
-            >
-              NAME
-            </label>
-            <InputText
-              id="diagram-caption-input"
-              v-model="diagramCaption"
-              class="w-full"
-              size="small"
-              placeholder="Untitled Diagram"
-              :disabled="isWorking"
-            />
-          </div>
+          <label
+            for="diagram-caption-input"
+            class="ui-v2-label whitespace-nowrap text-[var(--ui-v2-secondary-foreground)]"
+          >
+            NAME
+          </label>
+          <InputText
+            id="diagram-caption-input"
+            v-model="diagramCaption"
+            class="w-full"
+            size="small"
+            placeholder="Untitled Diagram"
+            :disabled="isWorking"
+          />
 
-          <div class="space-y-0.5 md:col-span-3">
-            <label
-              for="diagram-description-input"
-              class="ui-v2-label text-[var(--ui-v2-secondary-foreground)]"
-            >
-              DESCRIPTION
-            </label>
-            <Textarea
-              id="diagram-description-input"
-              v-model="diagramDescription"
-              class="w-full"
-              size="small"
-              rows="1"
-              placeholder="No description provided."
-              :disabled="isWorking"
-            />
-          </div>
+          <label
+            for="diagram-description-input"
+            class="ui-v2-label whitespace-nowrap text-[var(--ui-v2-secondary-foreground)]"
+          >
+            DESCRIPTION
+          </label>
+          <InputText
+            id="diagram-description-input"
+            v-model="diagramDescription"
+            class="w-full"
+            size="small"
+            placeholder="No description provided."
+            :disabled="isWorking"
+          />
         </div>
 
         <DrawIODiagramEditor
@@ -227,7 +222,6 @@ import type { ErrorBody, ErrorResponse } from '@/stores/types';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
 import Drawer from '@/volt/Drawer.vue';
 import InputText from '@/volt/InputText.vue';
-import Textarea from '@/volt/Textarea.vue';
 
 type DiagramKind =
   | 'authorization-boundary'
