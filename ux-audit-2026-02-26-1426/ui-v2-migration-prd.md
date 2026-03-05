@@ -211,14 +211,14 @@ Design lookup quick link: see `4.3.1 Design reference map (Pencil)` for node ids
 - [x] W2-02 Implement stateful active-plan row behavior and feedback toast.
 - [x] W2-03 Migrate SSP detail overview screen.
 - [x] W2-04 Migrate SSP detail characteristics screen.
-- [x] W2-05 Migrate SSP detail implementation overview screen.
-- [x] W2-06 Migrate SSP detail implementation users screen.
-- [x] W2-07 Migrate SSP detail implementation components screen.
-- [x] W2-08 Migrate SSP detail implementation authorizations screen.
-- [x] W2-09 Migrate SSP detail controls screen and requirement drill-down states.
-- [x] W2-10 Migrate SSP detail compliance screen.
-- [x] W2-11 Migrate SSP detail JSON screen.
-- [x] W2-12 Migrate all SSP loading/error/no-data/no-profile states.
+- [ ] W2-05 Migrate SSP detail implementation overview screen.
+- [ ] W2-06 Migrate SSP detail implementation users screen.
+- [ ] W2-07 Migrate SSP detail implementation components screen.
+- [ ] W2-08 Migrate SSP detail implementation authorizations screen.
+- [ ] W2-09 Migrate SSP detail controls screen and requirement drill-down states.
+- [ ] W2-10 Migrate SSP detail compliance screen.
+- [ ] W2-11 Migrate SSP detail JSON screen.
+- [ ] W2-12 Migrate all SSP loading/error/no-data/no-profile states.
 
 ## 7.8 Wave 3 migration: System, Controls, Workflows
 
@@ -433,3 +433,7 @@ A route family is done only when all are true:
 - 2026-03-04: Corrected draw.io menubar-hiding selector to account for trailing status element (`.geStatus`), ensuring both `Extras` and `Help` are actually hidden in the embedded Characteristics editor.
 - 2026-03-04: Applied draw.io editor theme alignment for Characteristics (`configure` object) with Space Grotesk/JetBrains Mono font defaults, CCF Latte color presets, and chrome surface/border styling to visually match V2 while preserving existing editing workflow.
 - 2026-03-04: Simplified Characteristics editor metadata controls to a single compact row with side-by-side labels/inputs, and switched Description from textarea to single-line input to eliminate perceived text-size mismatch and reduce vertical chrome.
+- 2026-03-05: Approved deviation from Pencil on SSP Implementation Overview (`MksAD`) to improve read-mode UX: removed view-mode `ADD PROPERTY`/`ADD LINK` actions and switched properties/links to read-optimized list rendering; add operations now route through `EDIT` mode in `src/views/system-security-plans-v2/SystemSecurityPlanSystemImplementationView.vue`.
+- 2026-03-05: Approved follow-up deviation on SSP Implementation Overview (`MksAD`): property names in read mode are now rendered as chips for scanability while values remain inline text in `src/views/system-security-plans-v2/SystemSecurityPlanSystemImplementationView.vue`.
+- 2026-03-05: Approved follow-up deviation on SSP Implementation Overview (`MksAD`): removed boxed inner frames around remarks/properties/links to match the lighter, label/value-only presentation style used by SSP Overview Characteristics Summary.
+- 2026-03-05: Tuned Overview property-name chips to a flat, borderless tag style with truncation/tooltips and switched property rows to flexible inline layout to reduce visual boxiness and awkward line breaks.
