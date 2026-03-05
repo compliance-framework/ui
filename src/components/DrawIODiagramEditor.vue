@@ -4,8 +4,15 @@ import type { Diagram } from '@/oscal';
 import type { Property } from '@/oscal';
 import type { ThemeChangeDetail } from '@/composables/useTheme';
 
-const DRAWIO_URL = 'https://embed.diagrams.net/?spin=0&proto=json';
+const DRAWIO_URL =
+  'https://embed.diagrams.net/?spin=0&proto=json&configure=1&noSaveBtn=1&saveAndExit=0&noExitBtn=1';
 const DRAWIO_ORIGIN = new URL(DRAWIO_URL).origin;
+const DRAWIO_EDITOR_CONFIG = {
+  css: `.geMenubar > a.geItem:nth-last-child(2),
+        .geMenubar > a.geItem:nth-last-child(3) {
+          display: none !important;
+        }`,
+};
 
 const frame = useTemplateRef<HTMLIFrameElement>('frame');
 const xmlCache = new Map<string, string>();
@@ -44,11 +51,17 @@ function onDrawIoMessage(e: MessageEvent) {
   const req = JSON.parse(e.data);
 
   switch (req.event) {
+    case 'configure':
+      postToFrame({
+        action: 'configure',
+        config: DRAWIO_EDITOR_CONFIG,
+      });
+      break;
     case 'init':
       loadXml();
       break;
     case 'save':
-      exportXml(props.diagram);
+      exportXml(currentDiagram.value);
       break;
     case 'autosave':
       if (req.xml) {
@@ -162,6 +175,8 @@ function sendLoadMessage({
   postToFrame({
     action: 'load',
     xml: encoded ? atob(xml) : xml,
+    noSaveBtn: 1,
+    saveAndExit: 0,
     noExitBtn: 1,
     autosave: 1,
     title: title ?? currentDiagram.value.uuid,
@@ -200,6 +215,14 @@ function exportXml(diagram: Diagram, options?: { format?: string }) {
   });
 }
 
+function requestSave() {
+  exportXml(currentDiagram.value);
+}
+
+defineExpose({
+  requestSave,
+});
+
 function postToFrame(message: Record<string, unknown>) {
   if (!frame.value?.contentWindow) return;
   frame.value.contentWindow.postMessage(JSON.stringify(message), DRAWIO_ORIGIN);
@@ -232,10 +255,5 @@ function onThemeChange(event: CustomEvent<ThemeChangeDetail>) {
 </script>
 
 <template>
-  <iframe
-    ref="frame"
-    class="w-full"
-    src="https://embed.diagrams.net/?spin=0&proto=json"
-    frameborder="0"
-  ></iframe>
+  <iframe ref="frame" class="w-full" :src="DRAWIO_URL" frameborder="0"></iframe>
 </template>

@@ -5,10 +5,18 @@ import {
   ChevronDown,
   ChevronUp,
   Copy,
+  Eye,
+  X,
   type LucideProps,
 } from 'lucide-vue-next';
 
-type V2LucideName = 'check' | 'chevron-down' | 'chevron-up' | 'copy';
+type V2LucideName =
+  | 'check'
+  | 'chevron-down'
+  | 'chevron-up'
+  | 'copy'
+  | 'view'
+  | 'x';
 
 const props = withDefaults(
   defineProps<{
@@ -29,6 +37,8 @@ const iconMap = {
   'chevron-down': ChevronDown,
   'chevron-up': ChevronUp,
   copy: Copy,
+  view: Eye,
+  x: X,
 } as const;
 
 const icon = computed(() => iconMap[props.name]);

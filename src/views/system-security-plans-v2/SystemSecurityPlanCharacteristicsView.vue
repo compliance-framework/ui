@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-6">
+  <div class="space-y-8">
     <section
       v-if="characteristicsLoading"
       class="border border-[var(--ui-v2-border)] bg-[var(--ui-v2-card)] p-6"
@@ -19,166 +19,231 @@
     </section>
 
     <template v-else>
-      <V2PageHeader
-        eyebrow="Characteristics"
-        title="System Characteristics"
-        description="Review architecture boundaries, authorization posture, and profile completeness."
-      />
-
       <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <div
+        <article
           v-for="card in metricCards"
           :key="card.label"
-          class="border border-[var(--ui-v2-border)] bg-[var(--ui-v2-card)] p-4"
+          class="min-h-[120px] border border-[var(--ui-v2-border)] bg-[var(--ui-v2-card)] p-5"
         >
           <p class="ui-v2-label text-[var(--ui-v2-secondary-foreground)]">
             {{ card.label }}
           </p>
-          <p class="ui-v2-metric mt-2 text-[var(--ui-v2-foreground)]">
+          <p class="ui-v2-metric mt-1" :class="card.valueClass">
             {{ card.value }}
           </p>
-          <p class="ui-v2-meta mt-2 text-[var(--ui-v2-tertiary-foreground)]">
-            {{ card.helper }}
-          </p>
-        </div>
-      </section>
-
-      <section
-        v-if="hasCoreCharacteristics"
-        class="border border-[var(--ui-v2-border)] bg-[var(--ui-v2-card)] p-6"
-      >
-        <p class="ui-v2-label mb-3 text-[var(--ui-v2-secondary-foreground)]">
-          Core Fields
-        </p>
-
-        <div class="grid gap-6 md:grid-cols-2">
-          <div>
-            <p class="ui-v2-label text-[var(--ui-v2-secondary-foreground)]">
-              System Name
-            </p>
-            <p class="mt-1 text-[var(--ui-v2-foreground)]">
-              {{ characteristics?.systemName || 'N/A' }}
-            </p>
-          </div>
-
-          <div>
-            <p class="ui-v2-label text-[var(--ui-v2-secondary-foreground)]">
-              System Name (Short)
-            </p>
-            <p class="mt-1 text-[var(--ui-v2-foreground)]">
-              {{ characteristics?.systemNameShort || 'N/A' }}
-            </p>
-          </div>
-
-          <div>
-            <p class="ui-v2-label text-[var(--ui-v2-secondary-foreground)]">
-              Security Sensitivity
-            </p>
-            <p class="mt-1 text-[var(--ui-v2-foreground)]">
-              {{ characteristics?.securitySensitivityLevel || 'N/A' }}
-            </p>
-          </div>
-
-          <div>
-            <p class="ui-v2-label text-[var(--ui-v2-secondary-foreground)]">
-              Date Authorized
-            </p>
-            <p class="mt-1 text-[var(--ui-v2-foreground)]">
-              {{ formatDate(characteristics?.dateAuthorized?.toString()) }}
-            </p>
-          </div>
-
-          <div class="md:col-span-2" v-if="characteristics?.description">
-            <p class="ui-v2-label text-[var(--ui-v2-secondary-foreground)]">
-              Description
-            </p>
-            <p class="mt-1 text-[var(--ui-v2-foreground)]">
-              {{ characteristics.description }}
-            </p>
-          </div>
-
-          <div class="md:col-span-2" v-if="characteristics?.remarks">
-            <p class="ui-v2-label text-[var(--ui-v2-secondary-foreground)]">
-              Remarks
-            </p>
-            <p class="mt-1 text-[var(--ui-v2-muted-foreground)] italic">
-              {{ characteristics.remarks }}
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <V2StatePanel
-        v-else
-        kind="empty"
-        title="No characteristics data"
-        description="No core system characteristics have been recorded for this plan yet."
-      />
-
-      <section class="grid gap-4 xl:grid-cols-3">
-        <article
-          v-for="diagramSet in diagramSets"
-          :key="diagramSet.key"
-          class="border border-[var(--ui-v2-border)] bg-[var(--ui-v2-card)] p-5"
-        >
-          <h3 class="ui-v2-card-title text-[var(--ui-v2-foreground)]">
-            {{ diagramSet.label }}
-          </h3>
-
           <p
-            class="mt-2 text-[var(--ui-v2-muted-foreground)]"
-            v-if="diagramSet.model?.description"
+            class="mt-2 font-[var(--ui-v2-font-secondary)] text-[11px] font-semibold tracking-[1px] text-[var(--ui-v2-tertiary-foreground)]"
           >
-            {{ diagramSet.model.description }}
+            {{ card.meta }}
           </p>
-
-          <p
-            v-if="diagramSet.loading"
-            class="ui-v2-meta mt-3 text-[var(--ui-v2-tertiary-foreground)]"
-          >
-            Loading diagrams...
-          </p>
-
-          <p
-            v-else-if="diagramSet.count === 0"
-            class="ui-v2-meta mt-3 text-[var(--ui-v2-tertiary-foreground)]"
-          >
-            No diagrams defined.
-          </p>
-
-          <div v-else class="mt-3 space-y-3">
-            <div
-              v-for="diagram in diagramSet.model?.diagrams || []"
-              :key="diagram.uuid"
-              class="border border-[var(--ui-v2-border)] bg-[var(--ui-v2-background)] p-3"
-            >
-              <p class="ui-v2-nav text-[var(--ui-v2-foreground)]">
-                {{ diagram.caption || 'Untitled Diagram' }}
-              </p>
-              <p
-                v-if="diagram.description"
-                class="ui-v2-meta mt-2 text-[var(--ui-v2-muted-foreground)]"
-              >
-                {{ diagram.description }}
-              </p>
-            </div>
-          </div>
         </article>
       </section>
+
+      <section class="space-y-4">
+        <header class="flex items-center justify-between">
+          <h2 class="ui-v2-section-title text-[var(--ui-v2-foreground)]">
+            DIAGRAMS
+          </h2>
+        </header>
+
+        <div class="grid gap-4 xl:grid-cols-3">
+          <article
+            v-for="diagramSet in diagramSets"
+            :key="diagramSet.kind"
+            class="flex min-h-[190px] flex-col gap-3 border border-[var(--ui-v2-border)] bg-[var(--ui-v2-card)] p-5"
+          >
+            <header class="flex items-center justify-between gap-2">
+              <h3 class="ui-v2-card-title text-[var(--ui-v2-foreground)]">
+                {{ diagramSet.label }}
+              </h3>
+
+              <button
+                type="button"
+                class="inline-flex h-7 items-center justify-center border border-[var(--ui-v2-primary)] bg-[var(--ui-v2-primary)] px-2.5 font-[var(--ui-v2-font-secondary)] text-[11px] font-bold tracking-[1px] text-[var(--ui-v2-foreground)] uppercase transition-colors duration-150 hover:bg-[var(--ui-v2-primary)] disabled:cursor-not-allowed disabled:opacity-60"
+                :disabled="isWorking || addingKind === diagramSet.kind"
+                @click="addDiagram(diagramSet.kind)"
+              >
+                {{
+                  addingKind === diagramSet.kind ? 'ADDING...' : 'ADD DIAGRAM'
+                }}
+              </button>
+            </header>
+
+            <p
+              v-if="diagramSet.loading"
+              class="font-[var(--ui-v2-font-secondary)] text-[10px] font-semibold tracking-[1px] text-[var(--ui-v2-secondary-foreground)]"
+            >
+              LOADING DIAGRAMS...
+            </p>
+
+            <div
+              v-else-if="diagramSet.diagrams.length === 0"
+              class="flex items-center border border-[var(--ui-v2-border)] bg-[var(--ui-v2-background)] px-3 py-3"
+            >
+              <p
+                class="font-[var(--ui-v2-font-secondary)] text-[10px] font-semibold tracking-[1px] text-[var(--ui-v2-secondary-foreground)]"
+              >
+                No diagrams yet. Use Add Diagram to create one.
+              </p>
+            </div>
+
+            <div v-else class="space-y-2">
+              <article
+                v-for="diagram in diagramSet.diagrams"
+                :key="diagram.uuid"
+                class="space-y-1.5 border border-[var(--ui-v2-border)] bg-[var(--ui-v2-surface)] p-2.5"
+              >
+                <div class="flex items-center justify-between gap-2">
+                  <p
+                    class="truncate font-[var(--ui-v2-font-secondary)] text-[11px] font-bold tracking-[1px] text-[var(--ui-v2-foreground)]"
+                    :title="diagram.caption || 'Untitled Diagram'"
+                  >
+                    {{ diagram.caption || 'Untitled Diagram' }}
+                  </p>
+
+                  <div class="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      class="inline-flex h-[22px] items-center justify-center gap-1 border border-[var(--ui-v2-border)] bg-[var(--ui-v2-surface)] px-2 font-[var(--ui-v2-font-secondary)] text-[9px] font-bold tracking-[1px] text-[var(--ui-v2-info)] uppercase transition-colors duration-150 hover:border-[var(--ui-v2-info)] hover:bg-[var(--ui-v2-info-tint-10)] disabled:cursor-not-allowed disabled:opacity-60"
+                      :disabled="isWorking"
+                      @click="editDiagram(diagramSet.kind, diagram)"
+                    >
+                      <V2LucideIcon name="view" :size="12" />
+                      <span>EDIT</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      class="inline-flex h-[22px] w-[22px] items-center justify-center border border-[var(--ui-v2-error)] bg-[var(--ui-v2-error-tint-10)] text-[var(--ui-v2-error)] transition-colors duration-150 hover:bg-[var(--ui-v2-error-tint-10)] disabled:cursor-not-allowed disabled:opacity-60"
+                      :disabled="isWorking"
+                      @click="confirmDeleteDiagram(diagramSet.kind, diagram)"
+                    >
+                      <V2LucideIcon name="x" :size="12" />
+                    </button>
+                  </div>
+                </div>
+
+                <p
+                  class="font-[var(--ui-v2-font-secondary)] text-[10px] font-semibold tracking-[1px] text-[var(--ui-v2-secondary-foreground)]"
+                >
+                  {{ diagram.description || 'No description provided.' }}
+                </p>
+              </article>
+            </div>
+          </article>
+        </div>
+      </section>
     </template>
+
+    <Drawer v-model:visible="diagramDrawerVisible" position="full">
+      <template #header>
+        <div
+          class="flex min-w-0 flex-1 items-center justify-between gap-3 pr-2"
+        >
+          <h3
+            class="font-[var(--ui-v2-font-primary)] text-[16px] font-bold uppercase leading-[1.1] text-[var(--ui-v2-foreground)]"
+          >
+            {{ diagramDrawerTitle }}
+          </h3>
+
+          <button
+            type="button"
+            class="inline-flex h-8 items-center justify-center border border-[var(--ui-v2-primary)] bg-[var(--ui-v2-primary)] px-3 font-[var(--ui-v2-font-secondary)] text-[11px] font-bold tracking-[1px] text-[var(--ui-v2-foreground)] uppercase transition-colors duration-150 hover:bg-[var(--ui-v2-primary)] disabled:cursor-not-allowed disabled:opacity-60"
+            :disabled="!activeDiagram || isWorking"
+            @click="requestDiagramSave"
+          >
+            {{ diagramSaveRequested ? 'SAVING...' : 'SAVE DIAGRAM' }}
+          </button>
+        </div>
+      </template>
+
+      <div
+        v-if="activeDiagram"
+        class="flex h-full min-h-0 flex-col gap-2 overflow-hidden"
+      >
+        <div
+          class="grid shrink-0 grid-cols-1 gap-2 border border-[var(--ui-v2-border)] bg-[var(--ui-v2-surface)] p-2 md:grid-cols-5"
+        >
+          <div class="space-y-0.5 md:col-span-2">
+            <label
+              for="diagram-caption-input"
+              class="ui-v2-label text-[var(--ui-v2-secondary-foreground)]"
+            >
+              NAME
+            </label>
+            <InputText
+              id="diagram-caption-input"
+              v-model="diagramCaption"
+              class="w-full"
+              size="small"
+              placeholder="Untitled Diagram"
+              :disabled="isWorking"
+            />
+          </div>
+
+          <div class="space-y-0.5 md:col-span-3">
+            <label
+              for="diagram-description-input"
+              class="ui-v2-label text-[var(--ui-v2-secondary-foreground)]"
+            >
+              DESCRIPTION
+            </label>
+            <Textarea
+              id="diagram-description-input"
+              v-model="diagramDescription"
+              class="w-full"
+              size="small"
+              rows="1"
+              placeholder="No description provided."
+              :disabled="isWorking"
+            />
+          </div>
+        </div>
+
+        <DrawIODiagramEditor
+          ref="diagramEditorRef"
+          :key="activeDiagram.uuid"
+          :diagram="activeDiagram"
+          class="min-h-0 flex-1 border border-[var(--ui-v2-border)] bg-[var(--ui-v2-surface)]"
+          @saved="handleEditorSaved"
+        />
+      </div>
+    </Drawer>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, watch } from 'vue';
+import type { AxiosError } from 'axios';
+import { computed, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
-import { useDataApi } from '@/composables/axios';
-import type { SystemCharacteristics } from '@/oscal';
+import { useToast } from 'primevue/usetoast';
+import { v4 as uuidv4 } from 'uuid';
+import { decamelizeKeys, useDataApi } from '@/composables/axios';
+import type { Diagram, SystemCharacteristics } from '@/oscal';
+import DrawIODiagramEditor from '@/components/DrawIODiagramEditor.vue';
+import V2LucideIcon from '@/components/v2/primitives/V2LucideIcon.vue';
 import type { Diagrammable } from '@/stores/system-security-plans';
-import V2PageHeader from '@/components/v2/patterns/V2PageHeader.vue';
-import V2StatePanel from '@/components/v2/system/V2StatePanel.vue';
+import type { ErrorBody, ErrorResponse } from '@/stores/types';
+import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
+import Drawer from '@/volt/Drawer.vue';
+import InputText from '@/volt/InputText.vue';
+import Textarea from '@/volt/Textarea.vue';
+
+type DiagramKind =
+  | 'authorization-boundary'
+  | 'network-architecture'
+  | 'data-flow';
+type DiagramDrawerMode = 'create' | 'edit';
+
+interface DiagramDrawerContext {
+  kind: DiagramKind;
+  diagramId: string;
+  mode: DiagramDrawerMode;
+}
 
 const route = useRoute();
+const toast = useToast();
+const { confirmDeleteDialog } = useDeleteConfirmationDialog();
 const sspId = computed(() => String(route.params.id || ''));
 
 const {
@@ -189,15 +254,15 @@ const {
 } = useDataApi<SystemCharacteristics>(null, null, { immediate: false });
 
 const {
-  data: networkArchitecture,
-  isLoading: networkArchitectureLoading,
-  execute: loadNetworkArchitecture,
-} = useDataApi<Diagrammable | null>(null, null, { immediate: false });
-
-const {
   data: authorizationBoundary,
   isLoading: authorizationBoundaryLoading,
   execute: loadAuthorizationBoundary,
+} = useDataApi<Diagrammable | null>(null, null, { immediate: false });
+
+const {
+  data: networkArchitecture,
+  isLoading: networkArchitectureLoading,
+  execute: loadNetworkArchitecture,
 } = useDataApi<Diagrammable | null>(null, null, { immediate: false });
 
 const {
@@ -206,9 +271,52 @@ const {
   execute: loadDataFlow,
 } = useDataApi<Diagrammable | null>(null, null, { immediate: false });
 
+const { data: createdDiagram, execute: createDiagramRequest } =
+  useDataApi<Diagram>(
+    null,
+    {
+      method: 'POST',
+      transformRequest: [decamelizeKeys],
+    },
+    { immediate: false },
+  );
+
+const { execute: saveDiagramRequest } = useDataApi<Diagram>(
+  null,
+  {
+    method: 'PUT',
+    transformRequest: [decamelizeKeys],
+  },
+  { immediate: false, abortPrevious: false },
+);
+
+const { execute: deleteDiagramRequest } = useDataApi<void>(
+  null,
+  {
+    method: 'DELETE',
+  },
+  { immediate: false },
+);
+
+const addingKind = ref<DiagramKind | null>(null);
+const diagramMutationInFlight = ref(false);
+const diagramSaveRequested = ref(false);
+const diagramDrawerVisible = ref(false);
+const activeDiagramContext = ref<DiagramDrawerContext | null>(null);
+const diagramCaption = ref('');
+const diagramDescription = ref('');
+const diagramEditorRef = ref<{ requestSave: () => void } | null>(null);
+
 watch(
   sspId,
   async (id) => {
+    diagramDrawerVisible.value = false;
+    activeDiagramContext.value = null;
+    addingKind.value = null;
+    diagramSaveRequested.value = false;
+    diagramCaption.value = '';
+    diagramDescription.value = '';
+
     if (!id) {
       return;
     }
@@ -217,11 +325,11 @@ watch(
       loadCharacteristics(
         `/api/oscal/system-security-plans/${id}/system-characteristics`,
       ),
-      loadNetworkArchitecture(
-        `/api/oscal/system-security-plans/${id}/system-characteristics/network-architecture`,
-      ),
       loadAuthorizationBoundary(
         `/api/oscal/system-security-plans/${id}/system-characteristics/authorization-boundary`,
+      ),
+      loadNetworkArchitecture(
+        `/api/oscal/system-security-plans/${id}/system-characteristics/network-architecture`,
       ),
       loadDataFlow(
         `/api/oscal/system-security-plans/${id}/system-characteristics/data-flow`,
@@ -229,6 +337,47 @@ watch(
     ]);
   },
   { immediate: true },
+);
+
+watch(diagramDrawerVisible, (visible) => {
+  if (!visible) {
+    activeDiagramContext.value = null;
+    diagramSaveRequested.value = false;
+    diagramCaption.value = '';
+    diagramDescription.value = '';
+  }
+});
+
+const activeDiagram = computed<Diagram | null>(() => {
+  const context = activeDiagramContext.value;
+  if (!context) {
+    return null;
+  }
+
+  return findDiagram(context.kind, context.diagramId);
+});
+
+watch(activeDiagram, (diagram) => {
+  if (diagramDrawerVisible.value && !diagram) {
+    diagramDrawerVisible.value = false;
+    return;
+  }
+
+  diagramCaption.value = diagram?.caption || '';
+  diagramDescription.value = diagram?.description || '';
+});
+
+const diagramDrawerTitle = computed(() =>
+  activeDiagramContext.value?.mode === 'create'
+    ? 'Add Diagram'
+    : 'Edit Diagram',
+);
+
+const isWorking = computed(
+  () =>
+    diagramMutationInFlight.value ||
+    addingKind.value !== null ||
+    diagramSaveRequested.value,
 );
 
 const errorMessage = computed(() => {
@@ -244,25 +393,9 @@ const errorMessage = computed(() => {
   return 'Unable to load system characteristics.';
 });
 
-const hasCoreCharacteristics = computed(() => {
-  if (!characteristics.value) {
-    return false;
-  }
-
-  const model = characteristics.value;
-  return Boolean(
-    model.systemName ||
-      model.systemNameShort ||
-      model.securitySensitivityLevel ||
-      model.dateAuthorized ||
-      model.description ||
-      model.remarks,
-  );
-});
-
 const authorizationStatus = computed(() => {
   if (!characteristics.value?.dateAuthorized) {
-    return 'Not Authorized';
+    return 'NOT AUTHORIZED';
   }
 
   const authDate = new Date(characteristics.value.dateAuthorized.toString());
@@ -272,10 +405,20 @@ const authorizationStatus = computed(() => {
   );
 
   if (diffDays > 365) {
-    return 'Needs Review';
+    return 'NEEDS REVIEW';
   }
 
-  return 'Authorized';
+  return 'AUTHORIZED';
+});
+
+const authorizationStatusClass = computed(() => {
+  if (authorizationStatus.value === 'AUTHORIZED') {
+    return 'text-[var(--ui-v2-success)]';
+  }
+  if (authorizationStatus.value === 'NEEDS REVIEW') {
+    return 'text-[var(--ui-v2-primary)]';
+  }
+  return 'text-[var(--ui-v2-error)]';
 });
 
 const daysSinceAuthorization = computed(() => {
@@ -291,31 +434,31 @@ const daysSinceAuthorization = computed(() => {
 });
 
 const totalDiagrams = computed(() => {
-  const networkCount = networkArchitecture.value?.diagrams?.length || 0;
-  const dataFlowCount = dataFlow.value?.diagrams?.length || 0;
   const boundaryCount = authorizationBoundary.value?.diagrams?.length || 0;
-  return networkCount + dataFlowCount + boundaryCount;
+  const networkCount = networkArchitecture.value?.diagrams?.length || 0;
+  const flowCount = dataFlow.value?.diagrams?.length || 0;
+  return boundaryCount + networkCount + flowCount;
 });
 
 const diagramCategories = computed(() => {
-  let categories = 0;
-  if ((networkArchitecture.value?.diagrams?.length || 0) > 0) categories++;
-  if ((dataFlow.value?.diagrams?.length || 0) > 0) categories++;
-  if ((authorizationBoundary.value?.diagrams?.length || 0) > 0) categories++;
-  return categories;
+  let count = 0;
+  if ((authorizationBoundary.value?.diagrams?.length || 0) > 0) count += 1;
+  if ((networkArchitecture.value?.diagrams?.length || 0) > 0) count += 1;
+  if ((dataFlow.value?.diagrams?.length || 0) > 0) count += 1;
+  return count;
 });
 
 const fieldsCompleted = computed(() => {
   let completed = 0;
-  if (characteristics.value?.systemName) completed++;
-  if (characteristics.value?.systemNameShort) completed++;
-  if (characteristics.value?.securitySensitivityLevel) completed++;
-  if (characteristics.value?.dateAuthorized) completed++;
-  if (characteristics.value?.description) completed++;
-  if (characteristics.value?.remarks) completed++;
-  if (networkArchitecture.value) completed++;
-  if (dataFlow.value) completed++;
-  if (authorizationBoundary.value) completed++;
+  if (characteristics.value?.systemName) completed += 1;
+  if (characteristics.value?.systemNameShort) completed += 1;
+  if (characteristics.value?.securitySensitivityLevel) completed += 1;
+  if (characteristics.value?.dateAuthorized) completed += 1;
+  if (characteristics.value?.description) completed += 1;
+  if (characteristics.value?.remarks) completed += 1;
+  if (authorizationBoundary.value) completed += 1;
+  if (networkArchitecture.value) completed += 1;
+  if (dataFlow.value) completed += 1;
   return completed;
 });
 
@@ -325,58 +468,313 @@ const completenessPercentage = computed(() =>
   Math.round((fieldsCompleted.value / totalFields) * 100),
 );
 
+const securityLevelValue = computed(() => {
+  const value = characteristics.value?.securitySensitivityLevel;
+  if (!value) {
+    return 'N/A';
+  }
+  return value.toString().toUpperCase();
+});
+
 const metricCards = computed(() => [
   {
-    label: 'Security Level',
-    value: characteristics.value?.securitySensitivityLevel || 'N/A',
-    helper: 'Current sensitivity designation',
+    label: 'SECURITY LEVEL',
+    value: securityLevelValue.value,
+    valueClass: 'text-[var(--ui-v2-foreground)]',
+    meta: 'SYSTEM CHARACTERISTICS',
   },
   {
-    label: 'Authorization Status',
+    label: 'AUTH STATUS',
     value: authorizationStatus.value,
-    helper:
+    valueClass: authorizationStatusClass.value,
+    meta:
       daysSinceAuthorization.value === null
-        ? 'No authorization date set'
-        : `${daysSinceAuthorization.value} days since authorization`,
+        ? 'NO AUTHORIZATION DATE'
+        : `${daysSinceAuthorization.value} DAYS SINCE AUTHORIZATION`,
   },
   {
-    label: 'Architecture Diagrams',
+    label: 'DIAGRAMS',
     value: totalDiagrams.value,
-    helper: `${diagramCategories.value} category${diagramCategories.value === 1 ? '' : 'ies'} covered`,
+    valueClass: 'text-[var(--ui-v2-primary)]',
+    meta: `ACROSS ${diagramCategories.value} ${diagramCategories.value === 1 ? 'CATEGORY' : 'CATEGORIES'}`,
   },
   {
-    label: 'Profile Completeness',
+    label: 'PROFILE COMPLETENESS',
     value: `${completenessPercentage.value}%`,
-    helper: `${fieldsCompleted.value} of ${totalFields} fields complete`,
+    valueClass: 'text-[var(--ui-v2-primary)]',
+    meta: `${fieldsCompleted.value} OF ${totalFields} FIELDS COMPLETED`,
   },
 ]);
 
 const diagramSets = computed(() => [
   {
-    key: 'network-architecture',
-    label: 'Network Architecture',
-    model: networkArchitecture.value,
-    loading: networkArchitectureLoading.value,
-    count: networkArchitecture.value?.diagrams?.length || 0,
-  },
-  {
-    key: 'data-flow',
-    label: 'Data Flow',
-    model: dataFlow.value,
-    loading: dataFlowLoading.value,
-    count: dataFlow.value?.diagrams?.length || 0,
-  },
-  {
-    key: 'authorization-boundary',
-    label: 'Authorization Boundary',
-    model: authorizationBoundary.value,
+    kind: 'authorization-boundary' as DiagramKind,
+    label: 'AUTHORIZATION BOUNDARY',
     loading: authorizationBoundaryLoading.value,
-    count: authorizationBoundary.value?.diagrams?.length || 0,
+    diagrams: authorizationBoundary.value?.diagrams || [],
+  },
+  {
+    kind: 'network-architecture' as DiagramKind,
+    label: 'NETWORK ARCHITECTURE',
+    loading: networkArchitectureLoading.value,
+    diagrams: networkArchitecture.value?.diagrams || [],
+  },
+  {
+    kind: 'data-flow' as DiagramKind,
+    label: 'DATA FLOW',
+    loading: dataFlowLoading.value,
+    diagrams: dataFlow.value?.diagrams || [],
   },
 ]);
 
-function formatDate(dateString?: string): string {
-  if (!dateString) return 'N/A';
-  return new Date(dateString).toLocaleDateString();
+function getKindLabel(kind: DiagramKind): string {
+  switch (kind) {
+    case 'authorization-boundary':
+      return 'Authorization Boundary';
+    case 'network-architecture':
+      return 'Network Architecture';
+    case 'data-flow':
+      return 'Data Flow';
+  }
+}
+
+function getGrouping(kind: DiagramKind) {
+  switch (kind) {
+    case 'authorization-boundary':
+      return authorizationBoundary;
+    case 'network-architecture':
+      return networkArchitecture;
+    case 'data-flow':
+      return dataFlow;
+  }
+}
+
+function ensureDiagramList(kind: DiagramKind): Diagram[] {
+  const grouping = getGrouping(kind);
+  if (!grouping.value) {
+    grouping.value = {
+      diagrams: [],
+    } as unknown as Diagrammable;
+  }
+  if (!grouping.value.diagrams) {
+    grouping.value.diagrams = [];
+  }
+
+  return grouping.value.diagrams as Diagram[];
+}
+
+function findDiagram(kind: DiagramKind, diagramId: string): Diagram | null {
+  const diagrams = getGrouping(kind).value?.diagrams || [];
+  return diagrams.find((diagram) => diagram.uuid === diagramId) || null;
+}
+
+function upsertDiagram(kind: DiagramKind, diagram: Diagram): void {
+  const diagrams = ensureDiagramList(kind);
+  const index = diagrams.findIndex((item) => item.uuid === diagram.uuid);
+  if (index === -1) {
+    diagrams.push(diagram);
+    return;
+  }
+  diagrams.splice(index, 1, diagram);
+}
+
+function removeDiagram(kind: DiagramKind, diagramId: string): void {
+  const grouping = getGrouping(kind);
+  if (!grouping.value?.diagrams) {
+    return;
+  }
+  grouping.value.diagrams = grouping.value.diagrams.filter(
+    (item) => item.uuid !== diagramId,
+  );
+}
+
+function openDiagramDrawer(
+  kind: DiagramKind,
+  diagramId: string,
+  mode: DiagramDrawerMode,
+): void {
+  activeDiagramContext.value = {
+    kind,
+    diagramId,
+    mode,
+  };
+  diagramDrawerVisible.value = true;
+}
+
+async function addDiagram(kind: DiagramKind): Promise<void> {
+  if (!sspId.value || isWorking.value) {
+    return;
+  }
+
+  addingKind.value = kind;
+
+  try {
+    await createDiagramRequest(
+      `/api/oscal/system-security-plans/${sspId.value}/system-characteristics/${kind}/diagrams`,
+      {
+        data: {
+          uuid: uuidv4(),
+          caption: '',
+          description: '',
+          remarks: '',
+          props: [],
+          links: [],
+        },
+      },
+    );
+
+    const created = createdDiagram.value;
+    if (!created) {
+      throw new Error('Unable to initialize a new diagram.');
+    }
+
+    upsertDiagram(kind, created);
+    openDiagramDrawer(kind, created.uuid, 'create');
+
+    toast.add({
+      severity: 'success',
+      summary: 'Diagram Created',
+      detail: `New ${getKindLabel(kind)} diagram added.`,
+      life: 2500,
+    });
+  } catch (loadError) {
+    toast.add({
+      severity: 'error',
+      summary: 'Create Failed',
+      detail: resolveApiError(loadError, 'Unable to create diagram.'),
+      life: 3500,
+    });
+  } finally {
+    addingKind.value = null;
+  }
+}
+
+function editDiagram(kind: DiagramKind, diagram: Diagram): void {
+  openDiagramDrawer(kind, diagram.uuid, 'edit');
+}
+
+function applyDiagramMetadata(diagram: Diagram): void {
+  diagram.caption = diagramCaption.value.trim();
+  diagram.description = diagramDescription.value.trim();
+}
+
+function requestDiagramSave(): void {
+  const diagram = activeDiagram.value;
+
+  if (!diagram || !diagramDrawerVisible.value || isWorking.value) {
+    return;
+  }
+
+  const editor = diagramEditorRef.value;
+  if (!editor?.requestSave) {
+    toast.add({
+      severity: 'error',
+      summary: 'Save Unavailable',
+      detail: 'Diagram editor is still initializing. Try again.',
+      life: 3000,
+    });
+    return;
+  }
+
+  applyDiagramMetadata(diagram);
+  diagramSaveRequested.value = true;
+  editor.requestSave();
+}
+
+function handleEditorSaved(diagram: Diagram): void {
+  applyDiagramMetadata(diagram);
+  void saveDiagram(diagram);
+}
+
+async function saveDiagram(diagram: Diagram): Promise<void> {
+  const context = activeDiagramContext.value;
+  if (!context || !sspId.value || diagramMutationInFlight.value) {
+    diagramSaveRequested.value = false;
+    return;
+  }
+
+  diagramMutationInFlight.value = true;
+
+  try {
+    await saveDiagramRequest(
+      `/api/oscal/system-security-plans/${sspId.value}/system-characteristics/${context.kind}/diagrams/${diagram.uuid}`,
+      {
+        data: diagram,
+      },
+    );
+
+    upsertDiagram(context.kind, diagram);
+
+    toast.add({
+      severity: 'success',
+      summary: 'Diagram Saved',
+      detail: `${getKindLabel(context.kind)} diagram saved successfully.`,
+      life: 2500,
+    });
+  } catch (loadError) {
+    toast.add({
+      severity: 'error',
+      summary: 'Save Failed',
+      detail: resolveApiError(loadError, 'Unable to save diagram.'),
+      life: 3500,
+    });
+  } finally {
+    diagramMutationInFlight.value = false;
+    diagramSaveRequested.value = false;
+  }
+}
+
+function confirmDeleteDiagram(kind: DiagramKind, diagram: Diagram): void {
+  confirmDeleteDialog(() => deleteDiagram(kind, diagram), {
+    itemType: 'diagram',
+    itemName: diagram.caption || diagram.uuid,
+  });
+}
+
+async function deleteDiagram(
+  kind: DiagramKind,
+  diagram: Diagram,
+): Promise<void> {
+  if (!sspId.value || diagramMutationInFlight.value) {
+    return;
+  }
+
+  diagramMutationInFlight.value = true;
+
+  try {
+    await deleteDiagramRequest(
+      `/api/oscal/system-security-plans/${sspId.value}/system-characteristics/${kind}/diagrams/${diagram.uuid}`,
+    );
+
+    removeDiagram(kind, diagram.uuid);
+
+    if (activeDiagramContext.value?.diagramId === diagram.uuid) {
+      diagramDrawerVisible.value = false;
+    }
+
+    toast.add({
+      severity: 'success',
+      summary: 'Diagram Deleted',
+      detail: `${getKindLabel(kind)} diagram deleted successfully.`,
+      life: 2500,
+    });
+  } catch (loadError) {
+    toast.add({
+      severity: 'error',
+      summary: 'Delete Failed',
+      detail: resolveApiError(loadError, 'Unable to delete diagram.'),
+      life: 3500,
+    });
+  } finally {
+    diagramMutationInFlight.value = false;
+  }
+}
+
+function resolveApiError(loadError: unknown, fallbackMessage: string): string {
+  const apiError = loadError as AxiosError<ErrorResponse<ErrorBody>>;
+  return (
+    apiError.response?.data?.errors?.body ||
+    (loadError instanceof Error ? loadError.message : fallbackMessage)
+  );
 }
 </script>
