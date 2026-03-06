@@ -1630,9 +1630,9 @@ const sspId = computed(() => getIdFromRoute(route));
 
 const profileBinding = inject(sspDetailProfileBindingKey, null);
 
+const showEditControlImplementationModal = ref(false);
 const showCreateRequirementModal = ref(false);
 const showEditRequirementModal = ref(false);
-const showEditControlImplementationModal = ref(false);
 const showEditStatementModal = ref(false);
 const showCreateStatementModal = ref(false);
 

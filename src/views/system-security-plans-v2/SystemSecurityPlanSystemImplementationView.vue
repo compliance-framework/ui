@@ -13,7 +13,7 @@
             ? 'bg-[var(--ui-v2-primary-tint-15)]'
             : 'bg-[var(--ui-v2-card)]'
         "
-        @click="innerTab = tab.key"
+        @click="setInnerTab(tab.key)"
       >
         <span
           class="ui-v2-nav flex h-full items-center justify-center px-3 py-2.5 text-[11px] font-bold tracking-[1px]"
@@ -233,7 +233,7 @@
             <button
               type="button"
               class="inline-flex h-9 items-center justify-center bg-[var(--ui-v2-primary)] px-3 text-[11px] font-bold tracking-[1px] text-[var(--ui-v2-primary-foreground)]"
-              @click="showCreateUserModal = true"
+              @click="createUser"
             >
               CREATE USER
             </button>
@@ -391,7 +391,7 @@
             <button
               type="button"
               class="inline-flex h-9 items-center justify-center bg-[var(--ui-v2-primary)] px-3 text-[11px] font-bold tracking-[1px] text-[var(--ui-v2-primary-foreground)]"
-              @click="showCreateComponentModal = true"
+              @click="createComponent"
             >
               CREATE COMPONENT
             </button>
@@ -565,7 +565,7 @@
             <button
               type="button"
               class="inline-flex h-9 items-center justify-center bg-[var(--ui-v2-primary)] px-3 text-[11px] font-bold tracking-[1px] text-[var(--ui-v2-primary-foreground)]"
-              @click="showCreateLeveragedAuthModal = true"
+              @click="createLeveragedAuthorization"
             >
               CREATE AUTHORIZATION
             </button>
@@ -786,6 +786,7 @@
       v-model:visible="showOverviewEditorModal"
       modal
       header="Edit System Implementation Overview"
+      size="lg"
     >
       <SystemImplementationOverviewForm
         v-if="systemImplementation"
@@ -795,7 +796,12 @@
       />
     </Dialog>
 
-    <Dialog v-model:visible="showCreateUserModal" modal header="Create User">
+    <Dialog
+      v-model:visible="showCreateUserModal"
+      modal
+      header="Create User"
+      size="lg"
+    >
       <SystemImplementationUserCreateForm
         :ssp-id="sspId"
         @cancel="showCreateUserModal = false"
@@ -803,7 +809,12 @@
       />
     </Dialog>
 
-    <Dialog v-model:visible="showEditUserModal" modal header="Edit User">
+    <Dialog
+      v-model:visible="showEditUserModal"
+      modal
+      header="Edit User"
+      size="lg"
+    >
       <SystemImplementationUserEditForm
         v-if="editingUser"
         :ssp-id="sspId"
@@ -817,6 +828,7 @@
       v-model:visible="showCreateComponentModal"
       modal
       header="Create Component"
+      size="lg"
     >
       <SystemImplementationComponentCreateForm
         :ssp-id="sspId"
@@ -829,6 +841,7 @@
       v-model:visible="showEditComponentModal"
       modal
       header="Edit Component"
+      size="lg"
     >
       <SystemImplementationComponentEditForm
         v-if="editingComponent"
@@ -843,6 +856,7 @@
       v-model:visible="showCreateLeveragedAuthModal"
       modal
       header="Create Leveraged Authorization"
+      size="lg"
     >
       <SystemImplementationLeveragedAuthorizationCreateForm
         :ssp-id="sspId"
@@ -855,6 +869,7 @@
       v-model:visible="showEditLeveragedAuthModal"
       modal
       header="Edit Leveraged Authorization"
+      size="lg"
     >
       <SystemImplementationLeveragedAuthorizationEditForm
         v-if="editingLeveragedAuth"
@@ -868,8 +883,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
-import { useRoute } from 'vue-router';
+import { computed, onActivated, ref, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
 import decamelizeKeys from 'decamelize-keys';
 import Dialog from '@/volt/Dialog.vue';
@@ -893,16 +908,29 @@ type ImplementationTab = 'overview' | 'users' | 'components' | 'authorizations';
 type DistributionTone = 'success' | 'warning' | 'info' | 'muted';
 
 const route = useRoute();
+const router = useRouter();
 const toast = useToast();
 const { confirmDeleteDialog } = useDeleteConfirmationDialog();
 
-const sspId = String(route.params.id || '');
+const sspId = computed(() => String(route.params.id || ''));
 const innerTab = ref<ImplementationTab>('overview');
+const hasActivatedOnce = ref(false);
 
-const systemImplementationUrl = `/api/oscal/system-security-plans/${sspId}/system-implementation`;
-const usersUrl = `/api/oscal/system-security-plans/${sspId}/system-implementation/users`;
-const componentsUrl = `/api/oscal/system-security-plans/${sspId}/system-implementation/components`;
-const leveragedAuthUrl = `/api/oscal/system-security-plans/${sspId}/system-implementation/leveraged-authorizations`;
+const systemImplementationUrl = computed(
+  () => `/api/oscal/system-security-plans/${sspId.value}/system-implementation`,
+);
+const usersUrl = computed(
+  () =>
+    `/api/oscal/system-security-plans/${sspId.value}/system-implementation/users`,
+);
+const componentsUrl = computed(
+  () =>
+    `/api/oscal/system-security-plans/${sspId.value}/system-implementation/components`,
+);
+const leveragedAuthUrl = computed(
+  () =>
+    `/api/oscal/system-security-plans/${sspId.value}/system-implementation/leveraged-authorizations`,
+);
 
 const {
   data: systemImplementation,
@@ -915,18 +943,21 @@ const {
   data: users,
   isLoading: usersLoading,
   error: usersError,
+  execute: loadUsers,
 } = useDataApi<SystemUser[]>(usersUrl);
 
 const {
   data: components,
   isLoading: componentsLoading,
   error: componentsError,
+  execute: loadComponents,
 } = useDataApi<SystemComponent[]>(componentsUrl);
 
 const {
   data: leveragedAuthorizations,
   isLoading: leveragedAuthorizationsLoading,
   error: leveragedAuthorizationsError,
+  execute: loadLeveragedAuthorizations,
 } = useDataApi<LeveragedAuthorization[]>(leveragedAuthUrl);
 
 const { execute: executeDeleteUser } = useDataApi<void>(null, {
@@ -1002,6 +1033,24 @@ const authorizationsErrorMessage = computed(() =>
   toErrorMessage(leveragedAuthorizationsError.value),
 );
 
+watch(
+  () => route.query.section,
+  (section) => {
+    innerTab.value = resolveImplementationTab(section);
+  },
+  { immediate: true },
+);
+
+onActivated(() => {
+  innerTab.value = resolveImplementationTab(route.query.section);
+
+  if (hasActivatedOnce.value) {
+    void reloadAllData();
+  }
+
+  hasActivatedOnce.value = true;
+});
+
 const componentTypeDistribution = computed<
   Array<{
     type: string;
@@ -1064,7 +1113,50 @@ function toErrorMessage(error: unknown): string | null {
 }
 
 async function reloadOverview(): Promise<void> {
-  await loadSystemImplementation(systemImplementationUrl);
+  await loadSystemImplementation(systemImplementationUrl.value);
+}
+
+function resolveImplementationTab(section: unknown): ImplementationTab {
+  if (section === 'users') {
+    return 'users';
+  }
+  if (section === 'components') {
+    return 'components';
+  }
+  if (section === 'authorizations') {
+    return 'authorizations';
+  }
+  return 'overview';
+}
+
+async function reloadAllData(): Promise<void> {
+  await Promise.allSettled([
+    loadSystemImplementation(systemImplementationUrl.value),
+    loadUsers(usersUrl.value),
+    loadComponents(componentsUrl.value),
+    loadLeveragedAuthorizations(leveragedAuthUrl.value),
+  ]);
+}
+
+function setInnerTab(tab: ImplementationTab): void {
+  innerTab.value = tab;
+
+  const nextSection = tab === 'overview' ? undefined : tab;
+  const currentSection =
+    typeof route.query.section === 'string' ? route.query.section : undefined;
+
+  if (currentSection === nextSection) {
+    return;
+  }
+
+  void router.replace({
+    name: 'system-security-plan-system-implementation',
+    params: { id: sspId.value },
+    query: {
+      ...route.query,
+      section: nextSection,
+    },
+  });
 }
 
 function openOverviewEditor(): void {
@@ -1207,6 +1299,10 @@ const editUser = (user: SystemUser) => {
   showEditUserModal.value = true;
 };
 
+const createUser = () => {
+  showCreateUserModal.value = true;
+};
+
 const handleUserCreated = (newUser: SystemUser) => {
   users.value?.push(newUser);
   showCreateUserModal.value = false;
@@ -1243,7 +1339,7 @@ const downloadUserJSON = (user: SystemUser) => {
 const deleteUser = async (user: SystemUser) => {
   try {
     await executeDeleteUser(
-      `/api/oscal/system-security-plans/${sspId}/system-implementation/users/${user.uuid}`,
+      `/api/oscal/system-security-plans/${sspId.value}/system-implementation/users/${user.uuid}`,
     );
     if (users.value) {
       users.value = users.value.filter(
@@ -1269,6 +1365,10 @@ const deleteUser = async (user: SystemUser) => {
 const editComponent = (component: SystemComponent) => {
   editingComponent.value = component;
   showEditComponentModal.value = true;
+};
+
+const createComponent = () => {
+  showCreateComponentModal.value = true;
 };
 
 const handleComponentCreated = (newComponent: SystemComponent) => {
@@ -1307,7 +1407,7 @@ const downloadComponentJSON = (component: SystemComponent) => {
 const deleteComponent = async (component: SystemComponent) => {
   try {
     await executeDeleteComponent(
-      `/api/oscal/system-security-plans/${sspId}/system-implementation/components/${component.uuid}`,
+      `/api/oscal/system-security-plans/${sspId.value}/system-implementation/components/${component.uuid}`,
     );
     if (components.value) {
       components.value = components.value.filter(
@@ -1333,6 +1433,10 @@ const deleteComponent = async (component: SystemComponent) => {
 const editLeveragedAuth = (auth: LeveragedAuthorization) => {
   editingLeveragedAuth.value = auth;
   showEditLeveragedAuthModal.value = true;
+};
+
+const createLeveragedAuthorization = () => {
+  showCreateLeveragedAuthModal.value = true;
 };
 
 const handleLeveragedAuthCreated = (newAuth: LeveragedAuthorization) => {
@@ -1371,7 +1475,7 @@ const downloadLeveragedAuthJSON = (auth: LeveragedAuthorization) => {
 const deleteLeveragedAuth = async (auth: LeveragedAuthorization) => {
   try {
     await executeDeleteLeveragedAuth(
-      `/api/oscal/system-security-plans/${sspId}/system-implementation/leveraged-authorizations/${auth.uuid}`,
+      `/api/oscal/system-security-plans/${sspId.value}/system-implementation/leveraged-authorizations/${auth.uuid}`,
     );
     if (leveragedAuthorizations.value) {
       leveragedAuthorizations.value = leveragedAuthorizations.value.filter(

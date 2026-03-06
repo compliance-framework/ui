@@ -46,11 +46,30 @@
         <div
           class="ui-v2-nav flex flex-wrap items-center gap-2 text-[var(--ui-v2-secondary-foreground)]"
         >
-          <span>SYSTEM SECURITY PLANS</span>
-          <span class="text-[var(--ui-v2-tertiary-foreground)]">&gt;</span>
-          <span class="max-w-full truncate text-[var(--ui-v2-foreground)]">
-            {{ systemSecurityPlan.metadata?.title || 'SYSTEM SECURITY PLAN' }}
-          </span>
+          <template
+            v-for="(breadcrumb, index) in headerBreadcrumbs"
+            :key="`${breadcrumb.label}-${index}`"
+          >
+            <RouterLink
+              v-if="breadcrumb.to"
+              :to="breadcrumb.to"
+              class="transition-colors hover:text-[var(--ui-v2-foreground)]"
+            >
+              {{ breadcrumb.label }}
+            </RouterLink>
+            <span
+              v-else
+              class="max-w-full truncate text-[var(--ui-v2-foreground)]"
+            >
+              {{ breadcrumb.label }}
+            </span>
+            <span
+              v-if="index < headerBreadcrumbs.length - 1"
+              class="text-[var(--ui-v2-tertiary-foreground)]"
+            >
+              &gt;
+            </span>
+          </template>
         </div>
 
         <div class="flex flex-wrap items-start justify-between gap-4">
@@ -275,6 +294,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, provide, ref, watch } from 'vue';
 import type { AxiosError } from 'axios';
+import type { RouteLocationRaw } from 'vue-router';
 import { RouterView, useRoute } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
 import type { Profile, SystemSecurityPlan } from '@/oscal';
@@ -318,6 +338,12 @@ const tabs = [
   },
   { index: '06', label: 'JSON', route: 'system-security-plan-json' },
 ];
+
+interface SspHeaderBreadcrumbMetaItem {
+  label: string;
+  routeName?: string;
+  query?: Record<string, string>;
+}
 
 const {
   data: systemSecurityPlan,
@@ -398,6 +424,54 @@ const shortUuid = computed(() => {
   return `${uuid.slice(0, 4)}...${uuid.slice(-4)}`;
 });
 
+const routeHeaderBreadcrumbs = computed<SspHeaderBreadcrumbMetaItem[]>(() => {
+  const matchedRecord = [...route.matched]
+    .reverse()
+    .find((record) => Array.isArray(record.meta.sspHeaderBreadcrumbs));
+
+  return (
+    (matchedRecord?.meta.sspHeaderBreadcrumbs as
+      | SspHeaderBreadcrumbMetaItem[]
+      | undefined) || []
+  );
+});
+
+const headerBreadcrumbs = computed<
+  Array<{ label: string; to?: RouteLocationRaw }>
+>(() => {
+  const items: Array<{ label: string; to?: RouteLocationRaw }> = [
+    {
+      label: 'SYSTEM SECURITY PLANS',
+      to: { name: 'system-security-plans' },
+    },
+    {
+      label:
+        systemSecurityPlan.value?.metadata?.title || 'SYSTEM SECURITY PLAN',
+      to: sspId.value
+        ? {
+            name: 'system-security-plan-overview',
+            params: { id: sspId.value },
+          }
+        : undefined,
+    },
+  ];
+
+  routeHeaderBreadcrumbs.value.forEach((breadcrumb) => {
+    items.push({
+      label: breadcrumb.label,
+      to: breadcrumb.routeName
+        ? {
+            name: breadcrumb.routeName,
+            params: { id: sspId.value },
+            query: breadcrumb.query,
+          }
+        : undefined,
+    });
+  });
+
+  return items;
+});
+
 provide(sspDetailProfileBindingKey, {
   profileItems,
   loadingProfiles,
@@ -437,7 +511,10 @@ onBeforeUnmount(() => {
 });
 
 function isTabActive(tabRoute: string): boolean {
-  return String(route.name || '') === tabRoute;
+  return (
+    String(route.name || '') === tabRoute ||
+    route.matched.some((record) => record.meta.sspTabRoute === tabRoute)
+  );
 }
 
 function toggleProfileSwitcher(): void {
