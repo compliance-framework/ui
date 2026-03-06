@@ -41,12 +41,12 @@ const legacyTheme: ToastPassThroughOptions = {
   root: `w-96 rounded-md whitespace-pre-line break-words
         p-top-center:-translate-x-1/2 p-bottom-center:-translate-x-1/2
         p-center:min-w-[20vw] p-center:-translate-x-1/2 p-center:-translate-y-1/2`,
-  message: `mb-4 not-p-custom:border not-p-custom:backdrop-blur-sm dark:not-p-custom:backdrop-blur-md not-p-custom:rounded-md
-        p-info:bg-blue-50/95 p-info:border-blue-200 p-info:text-blue-600 dark:p-info:bg-blue-500/15 dark:p-info:border-blue-700/35 dark:p-info:text-blue-500
-        p-success:bg-green-50/95 p-success:border-green-200 p-success:text-green-600 dark:p-success:bg-green-500/15 dark:p-success:border-green-700/35 dark:p-success:text-green-500
-        p-warn:bg-yellow-50/95 p-warn:border-yellow-200 p-warn:text-yellow-600 dark:p-warn:bg-yellow-500/15 dark:p-warn:border-yellow-700/35 dark:p-warn:text-yellow-500
-        p-error:bg-red-50/95 p-error:border-red-200 p-error:text-red-600 dark:p-error:bg-red-500/15 dark:p-error:border-red-700/35 dark:p-error:text-red-500
-        p-secondary:bg-surface-100 p-secondary:border-surface-200 p-secondary:text-surface-600 dark:p-secondary:bg-surface-800 dark:p-secondary:border-surface-700 dark:p-secondary:text-surface-300
+  message: `mb-4 not-p-custom:border not-p-custom:rounded-md shadow-lg shadow-black/10 dark:shadow-black/30
+        p-info:bg-blue-50 p-info:border-blue-200 p-info:text-blue-700 dark:p-info:bg-blue-950 dark:p-info:border-blue-800 dark:p-info:text-blue-200
+        p-success:bg-green-50 p-success:border-green-200 p-success:text-green-700 dark:p-success:bg-green-950 dark:p-success:border-green-800 dark:p-success:text-green-200
+        p-warn:bg-yellow-50 p-warn:border-yellow-200 p-warn:text-yellow-700 dark:p-warn:bg-yellow-950 dark:p-warn:border-yellow-800 dark:p-warn:text-yellow-200
+        p-error:bg-red-50 p-error:border-red-200 p-error:text-red-700 dark:p-error:bg-red-950 dark:p-error:border-red-800 dark:p-error:text-red-200
+        p-secondary:bg-surface-100 p-secondary:border-surface-200 p-secondary:text-surface-700 dark:p-secondary:bg-surface-800 dark:p-secondary:border-surface-700 dark:p-secondary:text-surface-200
         p-contrast:bg-surface-900 p-contrast:border-surface-950 p-contrast:text-surface-50 dark:p-contrast:bg-surface-0 dark:p-contrast:border-surface-100 dark:p-contrast:text-surface-950`,
   messageContent: `flex items-start p-3 gap-2`,
   messageIcon: `shrink-0 text-lg w-4.5 h-4.5 mt-1`,
@@ -78,11 +78,11 @@ const v2Theme: ToastPassThroughOptions = {
   root: `w-[420px] whitespace-pre-line break-words
         p-top-center:-translate-x-1/2 p-bottom-center:-translate-x-1/2
         p-center:min-w-[20vw] p-center:-translate-x-1/2 p-center:-translate-y-1/2`,
-  message: `mb-3 rounded-none border bg-[var(--ui-v2-surface)] text-[var(--ui-v2-foreground)]
-        p-info:border-[var(--ui-v2-info-stroke-30)] p-info:bg-[var(--ui-v2-info-tint-10)]
-        p-success:border-[var(--ui-v2-success-stroke-30)] p-success:bg-[var(--ui-v2-success-tint-10)]
-        p-warn:border-[var(--ui-v2-primary-stroke-30)] p-warn:bg-[var(--ui-v2-primary-tint-10)]
-        p-error:border-[var(--ui-v2-error)] p-error:bg-[var(--ui-v2-error-tint-10)]
+  message: `mb-3 rounded-none border bg-[var(--ui-v2-surface)] text-[var(--ui-v2-foreground)] shadow-[0_10px_24px_rgba(17,17,27,0.08)] dark:shadow-[0_12px_28px_rgba(0,0,0,0.35)]
+        p-info:border-[var(--ui-v2-info-stroke-30)] p-info:bg-[var(--ui-v2-info-surface)]
+        p-success:border-[var(--ui-v2-success-stroke-30)] p-success:bg-[var(--ui-v2-success-surface)]
+        p-warn:border-[var(--ui-v2-primary-stroke-30)] p-warn:bg-[var(--ui-v2-primary-surface)]
+        p-error:border-[var(--ui-v2-error)] p-error:bg-[var(--ui-v2-error-surface)]
         p-secondary:border-[var(--ui-v2-border)] p-secondary:bg-[var(--ui-v2-surface)]
         p-contrast:border-[var(--ui-v2-foreground)] p-contrast:bg-[var(--ui-v2-foreground)] p-contrast:text-[var(--ui-v2-background)]`,
   messageContent: `flex items-stretch p-3 gap-[10px]`,

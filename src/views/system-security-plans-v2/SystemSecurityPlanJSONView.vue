@@ -1,75 +1,87 @@
 <template>
-  <div class="space-y-6">
-    <V2PageHeader eyebrow="JSON" title="Full System Security Plan JSON" />
-
-    <section
-      class="border border-[var(--ui-v2-border)] bg-[var(--ui-v2-card)] p-5 lg:p-6"
+  <section
+    v-if="loading"
+    class="flex flex-col items-center justify-center gap-2 border border-[var(--ui-v2-border)] bg-[var(--ui-v2-card)] px-5 py-6 text-center"
+  >
+    <p
+      class="font-[var(--ui-v2-font-primary)] text-[20px] font-bold text-[var(--ui-v2-foreground)]"
     >
-      <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <p class="ui-v2-meta text-[var(--ui-v2-tertiary-foreground)]">
-          View, download, or copy the complete SSP document payload.
-        </p>
-        <div class="flex gap-2">
-          <button
-            class="ui-v2-nav border border-[var(--ui-v2-primary)] bg-[var(--ui-v2-primary)] px-4 py-2 font-semibold text-[var(--ui-v2-primary-foreground)] disabled:cursor-not-allowed disabled:opacity-60"
-            :disabled="loading"
-            type="button"
-            @click="downloadJSON"
-          >
-            Download JSON
-          </button>
-          <button
-            class="ui-v2-nav border border-[var(--ui-v2-border)] bg-[var(--ui-v2-background)] px-4 py-2 text-[var(--ui-v2-foreground)] disabled:cursor-not-allowed disabled:opacity-60"
-            :disabled="loading"
-            type="button"
-            @click="copyToClipboard"
-          >
-            Copy JSON
-          </button>
-        </div>
-      </div>
+      Loading SSP JSON content...
+    </p>
+    <p
+      class="font-[var(--ui-v2-font-secondary)] text-[12px] font-semibold uppercase tracking-[1px] text-[var(--ui-v2-secondary-foreground)]"
+    >
+      Fetching full system security plan data.
+    </p>
+  </section>
 
-      <V2StatePanel
-        v-if="loading"
-        kind="loading"
-        title="Loading"
-        description="Loading full system security plan..."
-      />
+  <section
+    v-else-if="error"
+    class="flex flex-col items-center justify-center gap-2 border border-[#d20f3940] bg-[#d20f3915] px-5 py-6 text-center"
+  >
+    <p
+      class="font-[var(--ui-v2-font-primary)] text-[20px] font-bold text-[var(--ui-v2-error)]"
+    >
+      Unable to load SSP JSON content.
+    </p>
+    <p
+      class="font-[var(--ui-v2-font-secondary)] text-[12px] font-semibold uppercase tracking-[1px] text-[#b52134]"
+    >
+      Check API availability and retry.
+    </p>
+  </section>
 
-      <V2StatePanel
-        v-else-if="error"
-        kind="error"
-        title="Load failed"
-        :description="error"
+  <V2StatePanel
+    v-else-if="!hasPayload"
+    kind="empty"
+    title="No JSON payload"
+    description="No full JSON payload is available for this system security plan."
+  />
+
+  <section
+    v-else
+    class="flex flex-col gap-3 border border-[var(--ui-v2-border)] bg-[var(--ui-v2-card)] p-5"
+  >
+    <header class="flex flex-wrap items-center justify-between gap-3">
+      <h2
+        class="font-[var(--ui-v2-font-primary)] text-[18px] font-bold tracking-[0.5px] text-[var(--ui-v2-foreground)]"
       >
-        <template #actions>
-          <button
-            type="button"
-            class="ui-v2-nav border border-[var(--ui-v2-error)] bg-[var(--ui-v2-error)] px-4 py-2 font-semibold text-[var(--ui-v2-background)]"
-            @click="loadSystemSecurityPlan"
-          >
-            Retry
-          </button>
-        </template>
-      </V2StatePanel>
+        FULL SYSTEM SECURITY PLAN JSON
+      </h2>
 
-      <V2StatePanel
-        v-else-if="!sspData"
-        kind="empty"
-        title="No JSON payload"
-        description="No full JSON payload is available for this system security plan."
-      />
+      <div class="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          class="inline-flex h-8 items-center justify-center border border-[var(--ui-v2-primary)] bg-[var(--ui-v2-primary)] px-[10px] font-[var(--ui-v2-font-secondary)] text-[12px] font-bold tracking-[1px] text-[var(--ui-v2-primary-foreground)] disabled:cursor-not-allowed disabled:opacity-60"
+          @click="downloadJSON"
+        >
+          DOWNLOAD JSON
+        </button>
 
-      <div
-        v-else
-        class="overflow-auto border border-[var(--ui-v2-border)] bg-[var(--ui-v2-background)]"
-      >
-        <pre
-          class="max-h-[560px] p-4 text-[13px] leading-6 text-[var(--ui-v2-foreground)]"
-        ><code>{{ formattedJSON }}</code></pre>
+        <button
+          type="button"
+          class="inline-flex h-8 items-center justify-center border border-[var(--ui-v2-border)] bg-[var(--ui-v2-surface)] px-[10px] font-[var(--ui-v2-font-secondary)] text-[12px] font-bold tracking-[1px] text-[var(--ui-v2-foreground)] disabled:cursor-not-allowed disabled:opacity-60"
+          @click="copyToClipboard"
+        >
+          COPY JSON
+        </button>
       </div>
-    </section>
-  </div>
+    </header>
+
+    <p
+      class="font-[var(--ui-v2-font-secondary)] text-[12px] font-semibold tracking-[1px] text-[var(--ui-v2-secondary-foreground)]"
+    >
+      Raw API response from /api/oscal/system-security-plans/{id}/full
+    </p>
+
+    <div
+      class="h-[360px] overflow-auto border border-[#4c4f69] bg-[#303446] p-3"
+    >
+      <pre
+        class="m-0 whitespace-pre font-[var(--ui-v2-font-secondary)] text-[12px] font-medium leading-[1.55] text-[#e6e9ef]"
+      ><code>{{ formattedJSON }}</code></pre>
+    </div>
+  </section>
 </template>
 
 <script setup lang="ts">
@@ -77,7 +89,6 @@ import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
 import { useConfigStore } from '@/stores/config';
-import V2PageHeader from '@/components/v2/patterns/V2PageHeader.vue';
 import V2StatePanel from '@/components/v2/system/V2StatePanel.vue';
 
 const route = useRoute();
@@ -85,13 +96,18 @@ const configStore = useConfigStore();
 const toast = useToast();
 
 const sspId = ref<string>(String(route.params.id || ''));
-const sspData = ref<unknown>(null);
+const rawResponse = ref<unknown | null>(null);
 const loading = ref<boolean>(true);
 const error = ref<string | null>(null);
 
+const hasPayload = computed(() => rawResponse.value !== null);
+
 const formattedJSON = computed(() => {
-  if (!sspData.value) return '';
-  return JSON.stringify(sspData.value, null, 2);
+  if (rawResponse.value === null) {
+    return '';
+  }
+
+  return JSON.stringify(rawResponse.value, null, 2);
 });
 
 watch(
@@ -108,6 +124,7 @@ onMounted(async () => {
 
 async function loadSystemSecurityPlan() {
   if (!sspId.value) {
+    rawResponse.value = null;
     loading.value = false;
     error.value = 'No SSP id provided.';
     return;
@@ -116,6 +133,7 @@ async function loadSystemSecurityPlan() {
   try {
     loading.value = true;
     error.value = null;
+    rawResponse.value = null;
 
     const config = await configStore.getConfig();
     const response = await fetch(
@@ -124,10 +142,12 @@ async function loadSystemSecurityPlan() {
         credentials: 'include',
       },
     );
+
     if (!response.ok) {
       throw new Error(`Request failed with status ${response.status}`);
     }
-    sspData.value = await response.json();
+
+    rawResponse.value = await response.json();
   } catch (err) {
     const message =
       err instanceof Error
@@ -135,6 +155,7 @@ async function loadSystemSecurityPlan() {
         : 'Failed to load system security plan JSON.';
 
     error.value = message;
+    rawResponse.value = null;
     toast.add({
       severity: 'error',
       summary: 'Error Loading JSON',
@@ -147,13 +168,16 @@ async function loadSystemSecurityPlan() {
 }
 
 async function downloadJSON() {
-  if (!sspData.value) return;
+  if (!hasPayload.value) {
+    return;
+  }
 
   try {
-    const jsonData = JSON.stringify(sspData.value, null, 2);
+    const jsonData = formattedJSON.value;
     const blob = new Blob([jsonData], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
+
     link.href = url;
     link.download = `system-security-plan-${sspId.value}.json`;
     document.body.appendChild(link);
@@ -181,11 +205,12 @@ async function downloadJSON() {
 }
 
 async function copyToClipboard() {
-  if (!sspData.value) return;
+  if (!hasPayload.value) {
+    return;
+  }
 
   try {
-    const jsonData = JSON.stringify(sspData.value, null, 2);
-    await navigator.clipboard.writeText(jsonData);
+    await navigator.clipboard.writeText(formattedJSON.value);
 
     toast.add({
       severity: 'success',

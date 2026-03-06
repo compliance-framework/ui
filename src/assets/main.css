@@ -54,19 +54,23 @@
   --ui-v2-primary-tint-10: #df8e1d10;
   --ui-v2-primary-tint-15: #df8e1d15;
   --ui-v2-primary-stroke-30: #df8e1d30;
+  --ui-v2-primary-surface: #ede7de;
 
   --ui-v2-success: #40a02b;
   --ui-v2-success-tint-10: #40a02b10;
   --ui-v2-success-stroke-30: #40a02b30;
+  --ui-v2-success-surface: #dee9e1;
 
   --ui-v2-warning: #df8e1d;
   --ui-v2-error: #d20f39;
   --ui-v2-error-foreground: #eff1f5;
   --ui-v2-error-tint-10: #d20f3910;
+  --ui-v2-error-surface: #ecdade;
 
   --ui-v2-info: #1e66f5;
   --ui-v2-info-tint-10: #1e66f510;
   --ui-v2-info-stroke-30: #1e66f530;
+  --ui-v2-info-surface: #dae3f5;
 }
 
 :root.dark {
@@ -84,16 +88,20 @@
   --ui-v2-primary-foreground: #11111b;
   --ui-v2-primary-tint-10: #f9e2af1a;
   --ui-v2-primary-stroke-30: #f9e2af4d;
+  --ui-v2-primary-surface: #34323b;
 
   --ui-v2-success: #a6e3a1;
   --ui-v2-success-tint-10: #a6e3a11a;
+  --ui-v2-success-surface: #2c323a;
 
   --ui-v2-warning: #f9e2af;
   --ui-v2-error: #f38ba8;
   --ui-v2-error-tint-10: #f38ba81a;
+  --ui-v2-error-surface: #34293a;
 
   --ui-v2-info: #89b4fa;
   --ui-v2-info-tint-10: #89b4fa1a;
+  --ui-v2-info-surface: #292d43;
 }
 
 .ui-v2 {

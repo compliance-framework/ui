@@ -4,6 +4,8 @@ import { describe, expect, it } from 'vitest';
 import Button from '@/volt/Button.vue';
 import DataTable from '@/volt/DataTable.vue';
 import Column from '@/volt/Column.vue';
+import Toast from '@/volt/Toast.vue';
+import PrimeToast from 'primevue/toast';
 
 async function mountWithRoute(component: object, routePath: string) {
   const router = createRouter({
@@ -88,5 +90,31 @@ describe('route-aware V2 styles in volt wrappers', () => {
 
     expect(wrapper.html()).toContain('var(--ui-v2-border)');
     expect(wrapper.find('table').exists()).toBe(true);
+  });
+
+  it('uses opaque toast surfaces on V2 routes', async () => {
+    const wrapper = await mountWithRoute(Toast, '/v2');
+
+    const passThrough = wrapper.getComponent(PrimeToast).props('pt') as Record<
+      string,
+      string
+    >;
+
+    expect(passThrough.message).toContain(
+      'p-info:bg-[var(--ui-v2-info-surface)]',
+    );
+    expect(passThrough.message).not.toContain('bg-[var(--ui-v2-card)]');
+  });
+
+  it('uses opaque toast surfaces on legacy routes', async () => {
+    const wrapper = await mountWithRoute(Toast, '/v1');
+
+    const passThrough = wrapper.getComponent(PrimeToast).props('pt') as Record<
+      string,
+      string
+    >;
+
+    expect(passThrough.message).toContain('p-info:bg-blue-50');
+    expect(passThrough.message).not.toContain('/95');
   });
 });
