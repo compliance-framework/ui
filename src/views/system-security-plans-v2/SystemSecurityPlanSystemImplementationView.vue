@@ -68,13 +68,9 @@
             <p class="text-[var(--ui-v2-foreground)]">
               {{ overviewErrorMessage }}
             </p>
-            <button
-              type="button"
-              class="inline-flex h-9 items-center justify-center bg-[var(--ui-v2-primary)] px-3 text-[11px] font-bold tracking-[1px] text-[var(--ui-v2-primary-foreground)]"
-              @click="reloadOverview"
-            >
+            <PrimaryButton type="button" @click="reloadOverview">
               RETRY
-            </button>
+            </PrimaryButton>
           </div>
 
           <div v-else class="space-y-3">
@@ -85,14 +81,14 @@
                 SYSTEM IMPLEMENTATION OVERVIEW
               </p>
 
-              <button
+              <SecondaryButton
                 type="button"
-                class="inline-flex h-7 items-center justify-center border border-[var(--ui-v2-border)] bg-[var(--ui-v2-surface)] px-2.5 text-[10px] font-bold tracking-[1px] text-[var(--ui-v2-foreground)]"
+                size="small"
                 :disabled="!systemImplementation"
                 @click="openOverviewEditor"
               >
                 EDIT
-              </button>
+              </SecondaryButton>
             </div>
 
             <div class="space-y-4">
@@ -230,13 +226,9 @@
               SYSTEM USERS
             </p>
 
-            <button
-              type="button"
-              class="inline-flex h-9 items-center justify-center bg-[var(--ui-v2-primary)] px-3 text-[11px] font-bold tracking-[1px] text-[var(--ui-v2-primary-foreground)]"
-              @click="createUser"
-            >
+            <PrimaryButton type="button" @click="createUser">
               CREATE USER
-            </button>
+            </PrimaryButton>
           </div>
 
           <div
@@ -311,23 +303,23 @@
                 </div>
 
                 <div class="flex flex-wrap items-center gap-2">
-                  <button
+                  <SecondaryButton
                     type="button"
-                    class="inline-flex h-7 items-center justify-center border border-[var(--ui-v2-border)] bg-[var(--ui-v2-surface)] px-2.5 text-[10px] font-bold tracking-[1px] text-[var(--ui-v2-foreground)]"
+                    size="small"
                     @click="editUser(user)"
                   >
                     EDIT
-                  </button>
-                  <button
+                  </SecondaryButton>
+                  <SecondaryButton
                     type="button"
-                    class="inline-flex h-7 items-center justify-center border border-[var(--ui-v2-border)] bg-[var(--ui-v2-surface)] px-2.5 text-[10px] font-bold tracking-[1px] text-[var(--ui-v2-muted-foreground)]"
+                    size="small"
                     @click="downloadUserJSON(user)"
                   >
                     JSON
-                  </button>
-                  <button
+                  </SecondaryButton>
+                  <DangerButton
                     type="button"
-                    class="inline-flex h-7 items-center justify-center border border-[var(--ui-v2-error)] bg-[var(--ui-v2-error-tint-10)] px-2.5 text-[10px] font-bold tracking-[1px] text-[var(--ui-v2-error)]"
+                    size="small"
                     @click="
                       confirmDeleteDialog(() => deleteUser(user), {
                         itemName: user.title || 'User',
@@ -336,7 +328,7 @@
                     "
                   >
                     DELETE
-                  </button>
+                  </DangerButton>
                 </div>
               </div>
 
@@ -388,13 +380,9 @@
               SYSTEM COMPONENTS
             </p>
 
-            <button
-              type="button"
-              class="inline-flex h-9 items-center justify-center bg-[var(--ui-v2-primary)] px-3 text-[11px] font-bold tracking-[1px] text-[var(--ui-v2-primary-foreground)]"
-              @click="createComponent"
-            >
+            <PrimaryButton type="button" @click="createComponent">
               CREATE COMPONENT
-            </button>
+            </PrimaryButton>
           </div>
 
           <div
@@ -485,23 +473,23 @@
                 </div>
 
                 <div class="flex flex-wrap items-center gap-2">
-                  <button
+                  <SecondaryButton
                     type="button"
-                    class="inline-flex h-7 items-center justify-center border border-[var(--ui-v2-border)] bg-[var(--ui-v2-surface)] px-2.5 text-[10px] font-bold tracking-[1px] text-[var(--ui-v2-foreground)]"
+                    size="small"
                     @click="editComponent(component)"
                   >
                     EDIT
-                  </button>
-                  <button
+                  </SecondaryButton>
+                  <SecondaryButton
                     type="button"
-                    class="inline-flex h-7 items-center justify-center border border-[var(--ui-v2-border)] bg-[var(--ui-v2-surface)] px-2.5 text-[10px] font-bold tracking-[1px] text-[var(--ui-v2-muted-foreground)]"
+                    size="small"
                     @click="downloadComponentJSON(component)"
                   >
                     JSON
-                  </button>
-                  <button
+                  </SecondaryButton>
+                  <DangerButton
                     type="button"
-                    class="inline-flex h-7 items-center justify-center border border-[var(--ui-v2-error)] bg-[var(--ui-v2-error-tint-10)] px-2.5 text-[10px] font-bold tracking-[1px] text-[var(--ui-v2-error)]"
+                    size="small"
                     @click="
                       confirmDeleteDialog(() => deleteComponent(component), {
                         itemName: component.title,
@@ -510,7 +498,7 @@
                     "
                   >
                     DELETE
-                  </button>
+                  </DangerButton>
                 </div>
               </div>
 
@@ -562,13 +550,9 @@
               LEVERAGED AUTHORIZATIONS
             </p>
 
-            <button
-              type="button"
-              class="inline-flex h-9 items-center justify-center bg-[var(--ui-v2-primary)] px-3 text-[11px] font-bold tracking-[1px] text-[var(--ui-v2-primary-foreground)]"
-              @click="createLeveragedAuthorization"
-            >
+            <PrimaryButton type="button" @click="createLeveragedAuthorization">
               CREATE AUTHORIZATION
-            </button>
+            </PrimaryButton>
           </div>
 
           <div
@@ -642,23 +626,23 @@
                 </div>
 
                 <div class="flex flex-wrap items-center gap-2">
-                  <button
+                  <SecondaryButton
                     type="button"
-                    class="inline-flex h-7 items-center justify-center border border-[var(--ui-v2-border)] bg-[var(--ui-v2-surface)] px-2.5 text-[10px] font-bold tracking-[1px] text-[var(--ui-v2-foreground)]"
+                    size="small"
                     @click="editLeveragedAuth(auth)"
                   >
                     EDIT
-                  </button>
-                  <button
+                  </SecondaryButton>
+                  <SecondaryButton
                     type="button"
-                    class="inline-flex h-7 items-center justify-center border border-[var(--ui-v2-border)] bg-[var(--ui-v2-surface)] px-2.5 text-[10px] font-bold tracking-[1px] text-[var(--ui-v2-muted-foreground)]"
+                    size="small"
                     @click="downloadLeveragedAuthJSON(auth)"
                   >
                     JSON
-                  </button>
-                  <button
+                  </SecondaryButton>
+                  <DangerButton
                     type="button"
-                    class="inline-flex h-7 items-center justify-center border border-[#d20f39] bg-[#d20f3910] px-2.5 text-[10px] font-bold tracking-[1px] text-[#d20f39]"
+                    size="small"
                     @click="
                       confirmDeleteDialog(() => deleteLeveragedAuth(auth), {
                         itemName: auth.title,
@@ -667,7 +651,7 @@
                     "
                   >
                     DELETE
-                  </button>
+                  </DangerButton>
                 </div>
               </div>
 
@@ -782,103 +766,55 @@
       </aside>
     </div>
 
-    <Dialog
-      v-model:visible="showOverviewEditorModal"
-      modal
-      header="Edit System Implementation Overview"
-      size="lg"
-    >
-      <SystemImplementationOverviewForm
-        v-if="systemImplementation"
-        :ssp-id="sspId"
-        :system-implementation="systemImplementation"
-        @saved="handleOverviewSaved"
-      />
-    </Dialog>
+    <SystemImplementationOverviewModalForm
+      v-if="showOverviewEditorModal && systemImplementation"
+      :ssp-id="sspId"
+      :system-implementation="systemImplementation"
+      @cancel="showOverviewEditorModal = false"
+      @saved="handleOverviewSaved"
+    />
 
-    <Dialog
-      v-model:visible="showCreateUserModal"
-      modal
-      header="Create User"
-      size="lg"
-    >
-      <SystemImplementationUserCreateForm
-        :ssp-id="sspId"
-        @cancel="showCreateUserModal = false"
-        @created="handleUserCreated"
-      />
-    </Dialog>
+    <SystemImplementationUserModalForm
+      v-if="showCreateUserModal"
+      :ssp-id="sspId"
+      @cancel="showCreateUserModal = false"
+      @created="handleUserCreated"
+    />
+    <SystemImplementationUserModalForm
+      v-if="showEditUserModal && editingUser"
+      :ssp-id="sspId"
+      :user="editingUser"
+      @cancel="showEditUserModal = false"
+      @saved="handleUserSaved"
+    />
 
-    <Dialog
-      v-model:visible="showEditUserModal"
-      modal
-      header="Edit User"
-      size="lg"
-    >
-      <SystemImplementationUserEditForm
-        v-if="editingUser"
-        :ssp-id="sspId"
-        :user="editingUser"
-        @cancel="showEditUserModal = false"
-        @saved="handleUserSaved"
-      />
-    </Dialog>
+    <SystemImplementationComponentModalForm
+      v-if="showCreateComponentModal"
+      :ssp-id="sspId"
+      @cancel="showCreateComponentModal = false"
+      @created="handleComponentCreated"
+    />
+    <SystemImplementationComponentModalForm
+      v-if="showEditComponentModal && editingComponent"
+      :ssp-id="sspId"
+      :component="editingComponent"
+      @cancel="showEditComponentModal = false"
+      @saved="handleComponentSaved"
+    />
 
-    <Dialog
-      v-model:visible="showCreateComponentModal"
-      modal
-      header="Create Component"
-      size="lg"
-    >
-      <SystemImplementationComponentCreateForm
-        :ssp-id="sspId"
-        @cancel="showCreateComponentModal = false"
-        @created="handleComponentCreated"
-      />
-    </Dialog>
-
-    <Dialog
-      v-model:visible="showEditComponentModal"
-      modal
-      header="Edit Component"
-      size="lg"
-    >
-      <SystemImplementationComponentEditForm
-        v-if="editingComponent"
-        :ssp-id="sspId"
-        :component="editingComponent"
-        @cancel="showEditComponentModal = false"
-        @saved="handleComponentSaved"
-      />
-    </Dialog>
-
-    <Dialog
-      v-model:visible="showCreateLeveragedAuthModal"
-      modal
-      header="Create Leveraged Authorization"
-      size="lg"
-    >
-      <SystemImplementationLeveragedAuthorizationCreateForm
-        :ssp-id="sspId"
-        @cancel="showCreateLeveragedAuthModal = false"
-        @created="handleLeveragedAuthCreated"
-      />
-    </Dialog>
-
-    <Dialog
-      v-model:visible="showEditLeveragedAuthModal"
-      modal
-      header="Edit Leveraged Authorization"
-      size="lg"
-    >
-      <SystemImplementationLeveragedAuthorizationEditForm
-        v-if="editingLeveragedAuth"
-        :ssp-id="sspId"
-        :auth="editingLeveragedAuth"
-        @cancel="showEditLeveragedAuthModal = false"
-        @saved="handleLeveragedAuthSaved"
-      />
-    </Dialog>
+    <SystemImplementationAuthorizationModalForm
+      v-if="showCreateLeveragedAuthModal"
+      :ssp-id="sspId"
+      @cancel="showCreateLeveragedAuthModal = false"
+      @created="handleLeveragedAuthCreated"
+    />
+    <SystemImplementationAuthorizationModalForm
+      v-if="showEditLeveragedAuthModal && editingLeveragedAuth"
+      :ssp-id="sspId"
+      :authorization="editingLeveragedAuth"
+      @cancel="showEditLeveragedAuthModal = false"
+      @saved="handleLeveragedAuthSaved"
+    />
   </div>
 </template>
 
@@ -887,14 +823,13 @@ import { computed, onActivated, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
 import decamelizeKeys from 'decamelize-keys';
-import Dialog from '@/volt/Dialog.vue';
-import SystemImplementationOverviewForm from '@/components/system-security-plans/SystemImplementationOverviewForm.vue';
-import SystemImplementationUserCreateForm from '@/components/system-security-plans/SystemImplementationUserCreateForm.vue';
-import SystemImplementationUserEditForm from '@/components/system-security-plans/SystemImplementationUserEditForm.vue';
-import SystemImplementationComponentCreateForm from '@/components/system-security-plans/SystemImplementationComponentCreateForm.vue';
-import SystemImplementationComponentEditForm from '@/components/system-security-plans/SystemImplementationComponentEditForm.vue';
-import SystemImplementationLeveragedAuthorizationCreateForm from '@/components/system-security-plans/SystemImplementationLeveragedAuthorizationCreateForm.vue';
-import SystemImplementationLeveragedAuthorizationEditForm from '@/components/system-security-plans/SystemImplementationLeveragedAuthorizationEditForm.vue';
+import DangerButton from '@/volt/DangerButton.vue';
+import PrimaryButton from '@/volt/PrimaryButton.vue';
+import SecondaryButton from '@/volt/SecondaryButton.vue';
+import SystemImplementationOverviewModalForm from '@/components/v2/system-security-plans/forms/SystemImplementationOverviewModalForm.vue';
+import SystemImplementationUserModalForm from '@/components/v2/system-security-plans/forms/SystemImplementationUserModalForm.vue';
+import SystemImplementationComponentModalForm from '@/components/v2/system-security-plans/forms/SystemImplementationComponentModalForm.vue';
+import SystemImplementationAuthorizationModalForm from '@/components/v2/system-security-plans/forms/SystemImplementationAuthorizationModalForm.vue';
 import type {
   LeveragedAuthorization,
   SystemComponent,

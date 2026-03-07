@@ -10,11 +10,6 @@
       <SecondaryButton
         :variant="isV2Route ? undefined : 'text'"
         :rounded="!isV2Route"
-        :class="
-          isV2Route
-            ? 'ui-v2-radius-none !h-9 !w-9 !p-0 border border-[var(--ui-v2-border)] bg-[var(--ui-v2-surface)] text-[var(--ui-v2-secondary-foreground)] hover:border-[var(--ui-v2-primary)] hover:text-[var(--ui-v2-primary)] focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-v2-primary)]'
-            : ''
-        "
         aria-label="Close"
         @click="closeCallback"
         autofocus
@@ -28,11 +23,6 @@
       <SecondaryButton
         :variant="isV2Route ? undefined : 'text'"
         :rounded="!isV2Route"
-        :class="
-          isV2Route
-            ? 'ui-v2-radius-none !h-9 !w-9 !p-0 border border-[var(--ui-v2-border)] bg-[var(--ui-v2-surface)] text-[var(--ui-v2-secondary-foreground)] hover:border-[var(--ui-v2-primary)] hover:text-[var(--ui-v2-primary)] focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-v2-primary)]'
-            : ''
-        "
         :aria-label="maximized ? 'Restore' : 'Maximize'"
         @click="maximizeCallback"
         autofocus
@@ -129,7 +119,7 @@ const legacyTheme = computed<DialogPassThroughOptions>(() => ({
 const v2Theme = computed<DialogPassThroughOptions>(() => ({
   root: {
     class:
-      `max-h-[90%] max-w-screen rounded-none
+      `max-h-none max-w-screen self-start my-6 rounded-none
             border border-[var(--ui-v2-border)]
             bg-[var(--ui-v2-card)] text-[var(--ui-v2-foreground)] font-[var(--ui-v2-font-secondary)]
             p-maximized:w-screen p-maximized:h-screen p-maximized:top-0
@@ -149,7 +139,7 @@ const v2Theme = computed<DialogPassThroughOptions>(() => ({
   },
   content: {
     class:
-      'flex flex-col overflow-y-auto bg-[var(--ui-v2-card)] px-5 pb-5 pt-4 text-[var(--ui-v2-muted-foreground)] font-[var(--ui-v2-font-secondary)] p-maximized:grow',
+      'flex flex-col overflow-visible bg-[var(--ui-v2-card)] px-5 pb-5 pt-4 text-[var(--ui-v2-muted-foreground)] font-[var(--ui-v2-font-secondary)] p-maximized:grow',
   },
   footer: {
     class:
@@ -157,7 +147,7 @@ const v2Theme = computed<DialogPassThroughOptions>(() => ({
   },
   mask: {
     class:
-      'p-modal:fixed p-modal:top-0 p-modal:start-0 p-modal:h-full p-modal:w-full p-modal:bg-black/45 z-50',
+      'fixed top-0 left-0 flex h-full w-full items-start justify-center overflow-y-auto bg-black/45 px-6 py-6 z-50',
   },
   transition: {
     enterFromClass: 'opacity-0 scale-95',

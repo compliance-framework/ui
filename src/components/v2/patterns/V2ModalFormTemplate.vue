@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import PrimaryButton from '@/volt/PrimaryButton.vue';
 
 interface Props {
   title: string;
@@ -46,20 +47,39 @@ const normalizedErrors = computed(() => {
 </script>
 
 <template>
-  <div class="space-y-4">
-    <header>
-      <h3 class="ui-v2-section-title text-[var(--ui-v2-foreground)]">
-        {{ title }}
-      </h3>
-      <p v-if="description" class="mt-2 text-[var(--ui-v2-muted-foreground)]">
-        {{ description }}
-      </p>
-      <p
-        v-if="requiredHint"
-        class="ui-v2-meta mt-2 text-[var(--ui-v2-tertiary-foreground)]"
+  <div class="space-y-6">
+    <header class="flex items-start justify-between gap-4 pr-14">
+      <div class="min-w-0 space-y-2">
+        <h3 class="ui-v2-modal-title text-[var(--ui-v2-foreground)]">
+          {{ title }}
+        </h3>
+        <p
+          v-if="description"
+          class="ui-v2-body max-w-[72ch] text-[var(--ui-v2-muted-foreground)]"
+        >
+          {{ description }}
+        </p>
+        <p
+          v-if="requiredHint"
+          class="ui-v2-meta font-semibold tracking-[0.2px] text-[var(--ui-v2-tertiary-foreground)]"
+        >
+          {{ requiredHint }}
+        </p>
+      </div>
+
+      <div
+        v-if="$slots.actions || showDefaultActions"
+        class="flex shrink-0 items-start gap-3"
       >
-        {{ requiredHint }}
-      </p>
+        <slot name="actions">
+          <PrimaryButton
+            :disabled="disableSubmit || submitting"
+            @click="emit('submit')"
+          >
+            {{ submitting ? 'Saving...' : submitLabel }}
+          </PrimaryButton>
+        </slot>
+      </div>
     </header>
 
     <section
@@ -71,39 +91,17 @@ const normalizedErrors = computed(() => {
       <p class="ui-v2-label text-[var(--ui-v2-error)]">
         Please fix the following:
       </p>
-      <ul class="mt-2 list-disc space-y-1 pl-5 text-[var(--ui-v2-foreground)]">
+      <ul
+        class="ui-v2-body mt-2 list-disc space-y-1 pl-5 text-[var(--ui-v2-foreground)]"
+      >
         <li v-for="message in normalizedErrors" :key="message">
           {{ message }}
         </li>
       </ul>
     </section>
 
-    <section class="ui-v2-surface-base p-4">
+    <section>
       <slot />
     </section>
-
-    <footer
-      v-if="$slots.actions || showDefaultActions"
-      class="flex justify-end gap-2"
-    >
-      <slot name="actions">
-        <button
-          type="button"
-          class="ui-v2-nav ui-v2-interactive px-4 py-2"
-          :disabled="submitting"
-          @click="emit('cancel')"
-        >
-          {{ cancelLabel }}
-        </button>
-        <button
-          type="button"
-          class="ui-v2-nav border border-[var(--ui-v2-primary)] bg-[var(--ui-v2-primary)] px-4 py-2 font-semibold text-[var(--ui-v2-primary-foreground)] disabled:opacity-60"
-          :disabled="disableSubmit || submitting"
-          @click="emit('submit')"
-        >
-          {{ submitting ? 'Saving...' : submitLabel }}
-        </button>
-      </slot>
-    </footer>
   </div>
 </template>

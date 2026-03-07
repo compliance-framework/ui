@@ -1,4 +1,5 @@
 import type { AxiosError } from 'axios';
+import { toRaw } from 'vue';
 import type { RouteLocationNormalizedLoaded } from 'vue-router';
 import type { ErrorBody, ErrorResponse } from '@/stores/types';
 
@@ -16,7 +17,7 @@ export function getRouteParam(
 }
 
 export function cloneValue<T>(value: T): T {
-  return structuredClone(value);
+  return structuredClone(toRaw(value));
 }
 
 export function resolveApiErrorMessage(

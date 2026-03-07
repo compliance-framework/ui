@@ -24,6 +24,7 @@
     'Liberation Mono', 'Courier New', monospace;
 
   --ui-v2-type-title: 2.5rem;
+  --ui-v2-type-modal-title: 2.125rem;
   --ui-v2-type-section: 1.125rem;
   --ui-v2-type-card-title: 0.875rem;
   --ui-v2-type-metric: 2rem;
@@ -184,6 +185,15 @@
   font-weight: 700;
   letter-spacing: var(--ui-v2-tracking-tight);
   line-height: 0.95;
+  text-transform: uppercase;
+}
+
+.ui-v2-modal-title {
+  font-family: var(--ui-v2-font-primary);
+  font-size: clamp(1.875rem, 1.75rem + 0.35vw, var(--ui-v2-type-modal-title));
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 0.98;
   text-transform: uppercase;
 }
 

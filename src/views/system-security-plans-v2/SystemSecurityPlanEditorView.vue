@@ -236,14 +236,13 @@
             </div>
           </div>
 
-          <button
-            class="ui-v2-nav inline-flex h-10 items-center justify-center border border-[var(--ui-v2-primary)] bg-[var(--ui-v2-primary)] px-[18px] font-bold text-[var(--ui-v2-foreground)] disabled:cursor-not-allowed disabled:opacity-60"
+          <PrimaryButton
             type="button"
             :disabled="isActivePlan"
             @click="setAsActive"
           >
             SET ACTIVE
-          </button>
+          </PrimaryButton>
         </div>
       </header>
 
@@ -301,6 +300,7 @@ import type { Profile, SystemSecurityPlan } from '@/oscal';
 import type { ErrorBody, ErrorResponse } from '@/stores/types';
 import { useDataApi } from '@/composables/axios';
 import { useSystemStore } from '@/stores/system';
+import PrimaryButton from '@/volt/PrimaryButton.vue';
 import V2StatePanel from '@/components/v2/system/V2StatePanel.vue';
 import V2LucideIcon from '@/components/v2/primitives/V2LucideIcon.vue';
 import {

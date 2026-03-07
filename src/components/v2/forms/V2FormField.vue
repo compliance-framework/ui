@@ -48,10 +48,10 @@ const describedBy = computed(() => {
 </script>
 
 <template>
-  <div class="space-y-2">
+  <div class="space-y-2.5">
     <label
       :for="normalizedId"
-      class="inline-flex items-center gap-1 font-[var(--ui-v2-font-secondary)] text-[11px] font-bold uppercase tracking-[1px] text-[var(--ui-v2-secondary-foreground)]"
+      class="ui-v2-label inline-flex items-center gap-1 text-[var(--ui-v2-secondary-foreground)]"
     >
       <span>{{ label }}</span>
       <span

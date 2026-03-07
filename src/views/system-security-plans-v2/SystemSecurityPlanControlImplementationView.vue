@@ -9,14 +9,14 @@
         >
           CONTROL IMPLEMENTATION
         </p>
-        <button
+        <SecondaryButton
           type="button"
-          class="ui-v2-nav inline-flex h-7 items-center justify-center border border-[var(--ui-v2-border)] bg-[var(--ui-v2-surface)] px-2.5 font-bold text-[10px] tracking-[1px] text-[var(--ui-v2-foreground)] disabled:cursor-not-allowed disabled:opacity-60"
+          size="small"
           :disabled="!controlImplementation"
           @click="editControlImplementation"
         >
           EDIT
-        </button>
+        </SecondaryButton>
       </div>
 
       <div
@@ -126,13 +126,9 @@
           >
             IMPLEMENTED REQUIREMENTS (0)
           </p>
-          <button
-            type="button"
-            class="ui-v2-nav inline-flex h-9 items-center justify-center bg-[var(--ui-v2-primary)] px-3 font-bold text-[11px] tracking-[1px] text-[var(--ui-v2-foreground)]"
-            @click="addRequirement"
-          >
+          <PrimaryButton type="button" @click="addRequirement">
             ADD REQUIREMENT
-          </button>
+          </PrimaryButton>
         </div>
 
         <div
@@ -169,13 +165,9 @@
                 </span>
               </div>
 
-              <button
-                type="button"
-                class="ui-v2-nav inline-flex h-[30px] items-center justify-center bg-[var(--ui-v2-primary)] px-2 py-1 font-bold text-[9px] tracking-[1px] text-[var(--ui-v2-foreground)]"
-                @click="addRequirement"
-              >
+              <PrimaryButton type="button" size="small" @click="addRequirement">
                 ADD REQUIREMENT
-              </button>
+              </PrimaryButton>
             </div>
 
             <div
@@ -254,32 +246,32 @@
 
               <div class="flex shrink-0 items-center gap-3">
                 <div class="flex shrink-0 items-center gap-2">
-                  <button
+                  <PrimaryButton
                     type="button"
-                    class="ui-v2-nav inline-flex h-7 items-center justify-center bg-[var(--ui-v2-primary)] px-2.5 font-bold text-[10px] tracking-[1px] text-[var(--ui-v2-foreground)] disabled:cursor-not-allowed disabled:opacity-60"
+                    size="small"
                     :disabled="!selectedRequirement"
                     @click="createStatement(selectedRequirement)"
                   >
                     CREATE STATEMENT
-                  </button>
-                  <button
+                  </PrimaryButton>
+                  <SecondaryButton
                     type="button"
-                    class="ui-v2-nav inline-flex h-7 items-center justify-center border border-[var(--ui-v2-border)] bg-[var(--ui-v2-surface)] px-2.5 font-bold text-[10px] tracking-[1px] text-[var(--ui-v2-foreground)] disabled:cursor-not-allowed disabled:opacity-60"
+                    size="small"
                     :disabled="!selectedRequirement"
                     @click="editRequirement(selectedRequirement)"
                   >
                     EDIT
-                  </button>
+                  </SecondaryButton>
                 </div>
 
-                <button
+                <DangerButton
                   type="button"
-                  class="ui-v2-nav inline-flex h-7 items-center justify-center border border-[var(--ui-v2-error)] bg-[var(--ui-v2-error-tint-10)] px-2.5 font-bold text-[10px] tracking-[1px] text-[var(--ui-v2-error)] disabled:cursor-not-allowed disabled:opacity-60"
+                  size="small"
                   :disabled="!selectedRequirement"
                   @click="confirmDeleteRequirement(selectedRequirement)"
                 >
                   DELETE
-                </button>
+                </DangerButton>
               </div>
             </div>
 
@@ -362,18 +354,25 @@
                   </p>
 
                   <div class="flex items-center gap-2">
-                    <span
-                      class="ui-v2-nav text-[10px] font-bold tracking-[1px] text-[var(--ui-v2-tertiary-foreground)]"
+                    <PrimaryButton
+                      type="button"
+                      size="small"
+                      @click="
+                        createStatementByComponent(
+                          selectedRequirement,
+                          statement,
+                        )
+                      "
                     >
                       CREATE COMPONENT
-                    </span>
-                    <button
+                    </PrimaryButton>
+                    <SecondaryButton
                       type="button"
-                      class="ui-v2-nav inline-flex h-7 items-center justify-center border border-[var(--ui-v2-border)] bg-[var(--ui-v2-surface)] px-2.5 font-bold text-[10px] tracking-[1px] text-[var(--ui-v2-foreground)]"
+                      size="small"
                       @click="editStatement(selectedRequirement, statement)"
                     >
                       EDIT
-                    </button>
+                    </SecondaryButton>
                   </div>
                 </div>
 
@@ -487,20 +486,48 @@
                         </p>
                       </div>
 
-                      <span
-                        class="inline-flex items-center justify-center border px-1.5 py-[2px] font-[var(--ui-v2-font-secondary)] text-[9px] font-extrabold tracking-[1px]"
-                        :class="
-                          getImplementationStateBadgeClass(
-                            byComponent.implementationStatus?.state,
-                          )
-                        "
-                      >
-                        {{
-                          getImplementationStateBadgeLabel(
-                            byComponent.implementationStatus?.state,
-                          )
-                        }}
-                      </span>
+                      <div class="flex items-center gap-2">
+                        <span
+                          class="inline-flex items-center justify-center border px-1.5 py-[2px] font-[var(--ui-v2-font-secondary)] text-[9px] font-extrabold tracking-[1px]"
+                          :class="
+                            getImplementationStateBadgeClass(
+                              byComponent.implementationStatus?.state,
+                            )
+                          "
+                        >
+                          {{
+                            getImplementationStateBadgeLabel(
+                              byComponent.implementationStatus?.state,
+                            )
+                          }}
+                        </span>
+                        <SecondaryButton
+                          type="button"
+                          size="small"
+                          @click="
+                            editStatementByComponent(
+                              selectedRequirement,
+                              statement,
+                              byComponent,
+                            )
+                          "
+                        >
+                          EDIT
+                        </SecondaryButton>
+                        <DangerButton
+                          type="button"
+                          size="small"
+                          @click="
+                            confirmDeleteStatementByComponent(
+                              selectedRequirement,
+                              statement,
+                              byComponent,
+                            )
+                          "
+                        >
+                          DELETE
+                        </DangerButton>
+                      </div>
                     </div>
 
                     <p
@@ -935,20 +962,34 @@
                     </p>
                   </div>
 
-                  <span
-                    class="inline-flex items-center justify-center border px-1.5 py-[2px] font-[var(--ui-v2-font-secondary)] text-[9px] font-extrabold tracking-[1px]"
-                    :class="
-                      getImplementationStateBadgeClass(
-                        byComponent.implementationStatus?.state,
-                      )
-                    "
-                  >
-                    {{
-                      getImplementationStateBadgeLabel(
-                        byComponent.implementationStatus?.state,
-                      )
-                    }}
-                  </span>
+                  <div class="flex items-center gap-2">
+                    <span
+                      class="inline-flex items-center justify-center border px-1.5 py-[2px] font-[var(--ui-v2-font-secondary)] text-[9px] font-extrabold tracking-[1px]"
+                      :class="
+                        getImplementationStateBadgeClass(
+                          byComponent.implementationStatus?.state,
+                        )
+                      "
+                    >
+                      {{
+                        getImplementationStateBadgeLabel(
+                          byComponent.implementationStatus?.state,
+                        )
+                      }}
+                    </span>
+                    <SecondaryButton
+                      type="button"
+                      size="small"
+                      @click="
+                        editRequirementByComponent(
+                          selectedRequirement,
+                          byComponent,
+                        )
+                      "
+                    >
+                      EDIT
+                    </SecondaryButton>
+                  </div>
                 </div>
 
                 <p
@@ -1509,78 +1550,86 @@
       </section>
     </template>
 
-    <Dialog
-      v-model:visible="showEditControlImplementationModal"
-      size="lg"
-      modal
-      header="Edit Control Implementation"
-    >
-      <ControlImplementationEditForm
-        v-if="controlImplementation"
-        :ssp-id="sspId"
-        :control-implementation="controlImplementation"
-        @cancel="showEditControlImplementationModal = false"
-        @saved="handleControlImplementationSaved"
-      />
-    </Dialog>
+    <ControlImplementationModalForm
+      v-if="showEditControlImplementationModal && controlImplementation"
+      :ssp-id="sspId"
+      :control-implementation="controlImplementation"
+      @cancel="showEditControlImplementationModal = false"
+      @saved="handleControlImplementationSaved"
+    />
 
-    <Dialog
-      v-model:visible="showCreateRequirementModal"
-      size="lg"
-      modal
-      header="Create Implemented Requirement"
-    >
-      <ImplementedRequirementCreateForm
-        :ssp-id="sspId"
-        @cancel="showCreateRequirementModal = false"
-        @created="handleRequirementCreated"
-      />
-    </Dialog>
+    <ImplementedRequirementModalForm
+      v-if="showCreateRequirementModal"
+      :ssp-id="sspId"
+      @cancel="showCreateRequirementModal = false"
+      @created="handleRequirementCreated"
+    />
+    <ImplementedRequirementModalForm
+      v-if="showEditRequirementModal && editingRequirement"
+      :ssp-id="sspId"
+      :requirement="editingRequirement"
+      @cancel="showEditRequirementModal = false"
+      @saved="handleRequirementSaved"
+    />
 
-    <Dialog
-      v-model:visible="showEditRequirementModal"
-      size="lg"
-      modal
-      header="Edit Implemented Requirement"
-    >
-      <ImplementedRequirementEditForm
-        v-if="editingRequirement"
-        :ssp-id="sspId"
-        :requirement="editingRequirement"
-        @cancel="showEditRequirementModal = false"
-        @saved="handleRequirementSaved"
-      />
-    </Dialog>
+    <StatementModalForm
+      v-if="showEditStatementModal && editingStatement"
+      :ssp-id="sspId"
+      :req-id="editingRequirement?.uuid || ''"
+      :statement="editingStatement"
+      @cancel="showEditStatementModal = false"
+      @saved="handleStatementSaved"
+    />
+    <StatementModalForm
+      v-if="showCreateStatementModal"
+      :ssp-id="sspId"
+      :req-id="editingRequirement?.uuid || ''"
+      @cancel="showCreateStatementModal = false"
+      @created="handleStatementCreated"
+    />
 
-    <Dialog
-      v-model:visible="showEditStatementModal"
-      size="lg"
-      modal
-      header="Edit Statement"
-    >
-      <StatementEditForm
-        v-if="editingStatement"
-        :ssp-id="sspId"
-        :req-id="editingRequirement?.uuid || ''"
-        :statement="editingStatement"
-        @cancel="showEditStatementModal = false"
-        @saved="handleStatementSaved"
-      />
-    </Dialog>
+    <ByComponentModalForm
+      v-if="
+        showCreateStatementByComponentModal &&
+        editingRequirement &&
+        editingStatement
+      "
+      :ssp-id="sspId"
+      :requirement="editingRequirement"
+      :statement="editingStatement"
+      :system-components="systemComponents"
+      @cancel="showCreateStatementByComponentModal = false"
+      @created="handleStatementByComponentCreated"
+    />
+    <ByComponentModalForm
+      v-if="
+        showEditStatementByComponentModal &&
+        editingByComponent &&
+        editingRequirement &&
+        editingStatement
+      "
+      :ssp-id="sspId"
+      :requirement="editingRequirement"
+      :statement="editingStatement"
+      :by-component="editingByComponent"
+      :system-components="systemComponents"
+      @cancel="showEditStatementByComponentModal = false"
+      @saved="handleStatementByComponentSaved"
+    />
 
-    <Dialog
-      v-model:visible="showCreateStatementModal"
-      size="lg"
-      modal
-      header="Create New Statement"
-    >
-      <StatementCreateForm
-        :ssp-id="sspId"
-        :req-id="editingRequirement?.uuid || ''"
-        @cancel="showCreateStatementModal = false"
-        @created="handleStatementCreated"
-      />
-    </Dialog>
+    <ByComponentModalForm
+      v-if="
+        showEditRequirementByComponentModal &&
+        editingByComponent &&
+        editingRequirement
+      "
+      :ssp-id="sspId"
+      :requirement="editingRequirement"
+      :by-component="editingByComponent"
+      :system-components="systemComponents"
+      @cancel="showEditRequirementByComponentModal = false"
+      @saved="handleRequirementByComponentSaved"
+    />
   </div>
 </template>
 
@@ -1600,12 +1649,13 @@ import type {
   Statement,
   SystemComponent,
 } from '@/oscal';
-import Dialog from '@/volt/Dialog.vue';
-import ControlImplementationEditForm from '@/components/system-security-plans/ControlImplementationEditForm.vue';
-import ImplementedRequirementCreateForm from '@/components/system-security-plans/ImplementedRequirementCreateForm.vue';
-import ImplementedRequirementEditForm from '@/components/system-security-plans/ImplementedRequirementEditForm.vue';
-import StatementCreateForm from '@/components/system-security-plans/StatementCreateForm.vue';
-import StatementEditForm from '@/components/system-security-plans/StatementEditForm.vue';
+import DangerButton from '@/volt/DangerButton.vue';
+import PrimaryButton from '@/volt/PrimaryButton.vue';
+import SecondaryButton from '@/volt/SecondaryButton.vue';
+import ControlImplementationModalForm from '@/components/v2/system-security-plans/forms/ControlImplementationModalForm.vue';
+import ImplementedRequirementModalForm from '@/components/v2/system-security-plans/forms/ImplementedRequirementModalForm.vue';
+import StatementModalForm from '@/components/v2/system-security-plans/forms/StatementModalForm.vue';
+import ByComponentModalForm from '@/components/v2/system-security-plans/forms/ByComponentModalForm.vue';
 import { useDataApi } from '@/composables/axios';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
 import { getIdFromRoute } from '@/utils/get-poam-id-from-route';
@@ -1635,9 +1685,13 @@ const showCreateRequirementModal = ref(false);
 const showEditRequirementModal = ref(false);
 const showEditStatementModal = ref(false);
 const showCreateStatementModal = ref(false);
+const showCreateStatementByComponentModal = ref(false);
+const showEditStatementByComponentModal = ref(false);
+const showEditRequirementByComponentModal = ref(false);
 
 const editingRequirement = ref<ImplementedRequirement | null>(null);
 const editingStatement = ref<Statement | null>(null);
+const editingByComponent = ref<ByComponent | null>(null);
 
 const inspectorTab = ref<InspectorTab>('statements');
 const selectedRequirementUuid = ref('');
@@ -2171,6 +2225,37 @@ function editStatement(
   showEditStatementModal.value = true;
 }
 
+function createStatementByComponent(
+  requirement: ImplementedRequirement,
+  statement: Statement,
+): void {
+  editingRequirement.value = requirement;
+  editingStatement.value = statement;
+  editingByComponent.value = null;
+  showCreateStatementByComponentModal.value = true;
+}
+
+function editStatementByComponent(
+  requirement: ImplementedRequirement,
+  statement: Statement,
+  byComponent: ByComponent,
+): void {
+  editingRequirement.value = requirement;
+  editingStatement.value = statement;
+  editingByComponent.value = byComponent;
+  showEditStatementByComponentModal.value = true;
+}
+
+function editRequirementByComponent(
+  requirement: ImplementedRequirement,
+  byComponent: ByComponent,
+): void {
+  editingRequirement.value = requirement;
+  editingStatement.value = null;
+  editingByComponent.value = byComponent;
+  showEditRequirementByComponentModal.value = true;
+}
+
 function handleStatementSaved(updatedStatement: Statement): void {
   if (controlImplementation.value && editingRequirement.value) {
     const requirementIndex = (
@@ -2200,6 +2285,79 @@ function handleStatementSaved(updatedStatement: Statement): void {
   editingRequirement.value = null;
 }
 
+function handleStatementByComponentCreated(newByComponent: ByComponent): void {
+  if (
+    controlImplementation.value &&
+    editingRequirement.value &&
+    editingStatement.value
+  ) {
+    const requirement = (
+      controlImplementation.value.implementedRequirements || []
+    ).find((candidate) => candidate.uuid === editingRequirement.value?.uuid);
+    const statement = requirement?.statements?.find(
+      (candidate) => candidate.uuid === editingStatement.value?.uuid,
+    );
+
+    if (statement) {
+      if (!statement.byComponents) {
+        statement.byComponents = [];
+      }
+      statement.byComponents.push(newByComponent);
+    }
+  }
+
+  showCreateStatementByComponentModal.value = false;
+  editingByComponent.value = null;
+}
+
+function handleStatementByComponentSaved(
+  updatedByComponent: ByComponent,
+): void {
+  if (
+    controlImplementation.value &&
+    editingRequirement.value &&
+    editingStatement.value
+  ) {
+    const requirement = (
+      controlImplementation.value.implementedRequirements || []
+    ).find((candidate) => candidate.uuid === editingRequirement.value?.uuid);
+    const statement = requirement?.statements?.find(
+      (candidate) => candidate.uuid === editingStatement.value?.uuid,
+    );
+    const index = statement?.byComponents?.findIndex(
+      (candidate) => candidate.uuid === updatedByComponent.uuid,
+    );
+
+    if (statement?.byComponents && index !== undefined && index >= 0) {
+      statement.byComponents[index] = updatedByComponent;
+    }
+  }
+
+  showEditStatementByComponentModal.value = false;
+  editingByComponent.value = null;
+}
+
+function handleRequirementByComponentSaved(
+  updatedByComponent: ByComponent,
+): void {
+  if (controlImplementation.value && editingRequirement.value) {
+    const requirement = (
+      controlImplementation.value.implementedRequirements || []
+    ).find((candidate) => candidate.uuid === editingRequirement.value?.uuid);
+    const index = requirement?.byComponents?.findIndex(
+      (candidate) => candidate.uuid === updatedByComponent.uuid,
+    );
+
+    if (requirement?.byComponents && index !== undefined && index >= 0) {
+      requirement.byComponents[index] = updatedByComponent;
+    }
+  }
+
+  showEditRequirementByComponentModal.value = false;
+  editingByComponent.value = null;
+  editingStatement.value = null;
+}
+
 function handleStatementCreated(newStatement: Statement): void {
   if (controlImplementation.value && editingRequirement.value) {
     const requirementIndex = (
@@ -2222,6 +2380,60 @@ function handleStatementCreated(newStatement: Statement): void {
 
   showCreateStatementModal.value = false;
   editingRequirement.value = null;
+}
+
+function confirmDeleteStatementByComponent(
+  requirement: ImplementedRequirement,
+  statement: Statement,
+  byComponent: ByComponent,
+): void {
+  confirmDeleteDialog(
+    () => deleteStatementByComponent(requirement, statement, byComponent),
+    {
+      itemName: getByComponentDisplayTitle(byComponent),
+      itemType: 'by-component implementation',
+    },
+  );
+}
+
+async function deleteStatementByComponent(
+  requirement: ImplementedRequirement,
+  statement: Statement,
+  byComponent: ByComponent,
+): Promise<void> {
+  try {
+    await executeDelete(
+      `/api/oscal/system-security-plans/${route.params.id}/control-implementation/implemented-requirements/${requirement.uuid}/statements/${statement.uuid}/by-components/${byComponent.uuid}`,
+    );
+
+    const currentRequirement = (
+      controlImplementation.value?.implementedRequirements || []
+    ).find((candidate) => candidate.uuid === requirement.uuid);
+    const currentStatement = currentRequirement?.statements?.find(
+      (candidate) => candidate.uuid === statement.uuid,
+    );
+
+    if (currentStatement?.byComponents) {
+      currentStatement.byComponents = currentStatement.byComponents.filter(
+        (candidate) => candidate.uuid !== byComponent.uuid,
+      );
+    }
+
+    toast.add({
+      severity: 'success',
+      summary: 'Success',
+      detail: 'By-component implementation deleted successfully.',
+      life: 3000,
+    });
+  } catch (error) {
+    console.error('Failed to delete by-component implementation:', error);
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'Failed to delete by-component implementation. Please try again.',
+      life: 5000,
+    });
+  }
 }
 </script>
 
