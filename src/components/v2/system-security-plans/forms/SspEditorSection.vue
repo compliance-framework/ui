@@ -13,24 +13,13 @@ const props = withDefaults(
 </script>
 
 <template>
-  <section
-    :class="[
-      'space-y-4',
-      props.variant === 'card'
-        ? 'border border-[var(--ui-v2-border)] bg-[var(--ui-v2-card)] p-5'
-        : 'pb-1',
-    ]"
-  >
+  <section :class="['space-y-2']">
     <div class="flex flex-wrap items-start justify-between gap-3">
       <div class="min-w-0">
-        <h2 class="ui-v2-section-title text-[var(--ui-v2-foreground)]">
-          {{ title }}
-        </h2>
         <p
-          v-if="description"
-          class="ui-v2-meta mt-1 max-w-[72ch] text-[var(--ui-v2-muted-foreground)]"
+          class="ui-v2-label text-[10px] text-[var(--ui-v2-secondary-foreground)]"
         >
-          {{ description }}
+          {{ title }}
         </p>
       </div>
 
@@ -39,6 +28,21 @@ const props = withDefaults(
       </div>
     </div>
 
-    <slot />
+    <div
+      :class="
+        props.variant === 'card'
+          ? 'space-y-4 border border-[var(--ui-v2-border)] bg-[var(--ui-v2-surface)] p-4'
+          : 'space-y-4'
+      "
+    >
+      <slot />
+    </div>
+
+    <p
+      v-if="description"
+      class="font-[var(--ui-v2-font-secondary)] text-[9px] font-medium leading-[1.45] tracking-[0.3px] text-[var(--ui-v2-tertiary-foreground)]"
+    >
+      {{ description }}
+    </p>
   </section>
 </template>

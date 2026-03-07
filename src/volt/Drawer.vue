@@ -40,8 +40,11 @@ import SecondaryButton from './SecondaryButton.vue';
 import { ptViewMerge } from './utils';
 import { useIsV2Route } from './useRouteUiVersion';
 
-interface Props extends /* @vue-ignore */ DrawerProps {}
-defineProps<Props>();
+interface DrawerShellProps extends /* @vue-ignore */ DrawerProps {
+  theme?: DrawerPassThroughOptions;
+}
+
+const props = defineProps<DrawerShellProps>();
 
 const isV2Route = useIsV2Route();
 
@@ -97,7 +100,17 @@ const v2Theme: DrawerPassThroughOptions = {
   },
 };
 
-const theme = computed<DrawerPassThroughOptions>(() =>
-  isV2Route.value ? v2Theme : legacyTheme,
-);
+const theme = computed<DrawerPassThroughOptions>(() => {
+  const baseTheme = isV2Route.value ? v2Theme : legacyTheme;
+
+  if (!props.theme) {
+    return baseTheme;
+  }
+
+  return {
+    ...baseTheme,
+    ...props.theme,
+    transition: props.theme.transition ?? baseTheme.transition,
+  };
+});
 </script>

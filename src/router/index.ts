@@ -811,7 +811,7 @@ const authenticatedRoutes = [
     // which is lazy-loaded when the route is visited.
     component: () =>
       import(
-        '../views/system-security-plans-v2/SystemSecurityPlanListView.vue'
+        '../views/system-security-plans-v2/SystemSecurityPlanCreateView.vue'
       ),
     meta: {
       requiresAuth: true,

@@ -290,7 +290,7 @@
 
         <div class="overflow-x-auto border border-[var(--ui-v2-border)]">
           <div
-            class="flex min-w-[1020px] items-center border-b border-[var(--ui-v2-border)] bg-[var(--ui-v2-surface)] px-[10px] py-2"
+            class="flex w-full items-center border-b border-[var(--ui-v2-border)] bg-[var(--ui-v2-surface)] px-[10px] py-2"
           >
             <p
               class="ui-v2-label flex-1 text-[var(--ui-v2-secondary-foreground)]"
@@ -317,7 +317,7 @@
           <div
             v-for="(row, index) in controlRows"
             :key="row.key"
-            class="flex min-w-[1020px] items-center bg-[var(--ui-v2-background)] px-[10px] py-2"
+            class="flex w-full items-center bg-[var(--ui-v2-background)] px-[10px] py-2"
             :class="
               index < controlRows.length - 1
                 ? 'border-b border-[var(--ui-v2-border)]'

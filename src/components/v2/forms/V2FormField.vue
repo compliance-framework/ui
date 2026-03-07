@@ -6,12 +6,14 @@ const props = withDefaults(
   defineProps<{
     inputId?: string;
     label: string;
+    showLabel?: boolean;
     required?: boolean;
     helperText?: string;
     error?: string;
   }>(),
   {
     inputId: undefined,
+    showLabel: true,
     required: false,
     helperText: undefined,
     error: undefined,
@@ -51,7 +53,10 @@ const describedBy = computed(() => {
   <div class="space-y-2.5">
     <label
       :for="normalizedId"
-      class="ui-v2-label inline-flex items-center gap-1 text-[var(--ui-v2-secondary-foreground)]"
+      :class="[
+        'ui-v2-label inline-flex items-center gap-1 text-[var(--ui-v2-secondary-foreground)]',
+        !props.showLabel && 'sr-only',
+      ]"
     >
       <span>{{ label }}</span>
       <span

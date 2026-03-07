@@ -1,16 +1,18 @@
 <script setup lang="ts">
 import { computed, reactive, watch } from 'vue';
 import { useToast } from 'primevue/usetoast';
-import DangerButton from '@/volt/DangerButton.vue';
 import Textarea from '@/volt/Textarea.vue';
 import InputText from '@/volt/InputText.vue';
-import SecondaryButton from '@/volt/SecondaryButton.vue';
 import type { Link, Property, SystemImplementation } from '@/oscal';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import { toErrorSummaryItems } from '@/composables/v2/useV2FormValidation';
 import V2FormField from '@/components/v2/forms/V2FormField.vue';
 import V2EditorDrawer from '@/components/v2/patterns/V2EditorDrawer.vue';
 import V2EditorFormTemplate from '@/components/v2/patterns/V2EditorFormTemplate.vue';
+import SspEditorAddButton from '@/components/v2/system-security-plans/forms/SspEditorAddButton.vue';
+import SspEditorCollectionSection from '@/components/v2/system-security-plans/forms/SspEditorCollectionSection.vue';
+import SspEditorCompactField from '@/components/v2/system-security-plans/forms/SspEditorCompactField.vue';
+import SspEditorRemoveButton from '@/components/v2/system-security-plans/forms/SspEditorRemoveButton.vue';
 import SspEditorSection from '@/components/v2/system-security-plans/forms/SspEditorSection.vue';
 import {
   cloneValue,
@@ -131,23 +133,33 @@ async function submit(): Promise<void> {
 <template>
   <V2EditorDrawer
     title="EDIT IMPLEMENTATION OVERVIEW"
-    submit-label="SAVE OVERVIEW"
+    description="Update the shared implementation narrative, supporting properties, and reference links."
+    submit-mode="save"
     :submitting="isSaving"
     :form-id="formId"
     @close="emit('cancel')"
   >
-    <form :id="formId" class="space-y-5" @submit.prevent="submit">
-      <V2EditorFormTemplate :error-summary="errorSummary">
-        <SspEditorSection variant="plain" title="REMARKS">
+    <form :id="formId" class="space-y-4" @submit.prevent="submit">
+      <V2EditorFormTemplate
+        :error-summary="errorSummary"
+        footer-note="Changes remain scoped to the active system security plan until you save."
+      >
+        <SspEditorSection
+          variant="plain"
+          title="REMARKS *"
+          description="Describe the system implementation and additional context."
+        >
           <V2FormField
             label="REMARKS"
             input-id="system-implementation-remarks"
-            helper-text="Describe the system implementation and additional context."
+            :show-label="false"
           >
             <template #default="fieldProps">
               <Textarea
                 v-model="form.remarks"
                 :input-id="fieldProps.inputId"
+                class="h-[140px] min-h-[140px] resize-none"
+                placeholder="Describe the system implementation and any additional remarks..."
                 rows="5"
                 fluid
               />
@@ -155,100 +167,128 @@ async function submit(): Promise<void> {
           </V2FormField>
         </SspEditorSection>
 
-        <SspEditorSection variant="plain" title="PROPERTIES">
-          <div class="space-y-3">
+        <SspEditorCollectionSection title="PROPERTIES">
+          <div
+            v-if="form.props?.length"
+            class="divide-y divide-[var(--ui-v2-border)]"
+          >
             <article
               v-for="(property, index) in form.props"
               :key="`property-${index}`"
-              class="space-y-3 border border-[var(--ui-v2-border)] bg-[var(--ui-v2-background)] p-3"
+              class="grid gap-3 px-3 py-2.5 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] md:items-start"
             >
-              <div class="flex justify-end">
-                <DangerButton
-                  type="button"
-                  size="small"
-                  @click="removeProperty(index)"
-                >
-                  REMOVE
-                </DangerButton>
-              </div>
-              <div class="grid gap-3 md:grid-cols-2">
-                <V2FormField
-                  :input-id="`implementation-property-name-${index}`"
-                  label="Name"
-                  ><template #default="fieldProps"
-                    ><InputText
-                      v-model="property.name"
-                      :input-id="fieldProps.inputId"
-                      fluid /></template
-                ></V2FormField>
-                <V2FormField
-                  :input-id="`implementation-property-value-${index}`"
-                  label="Value"
-                  ><template #default="fieldProps"
-                    ><InputText
-                      v-model="property.value"
-                      :input-id="fieldProps.inputId"
-                      fluid /></template
-                ></V2FormField>
-              </div>
-            </article>
-            <SecondaryButton type="button" size="small" @click="addProperty">
-              ADD PROPERTY
-            </SecondaryButton>
-          </div>
-        </SspEditorSection>
+              <SspEditorCompactField
+                :input-id="`implementation-property-name-${index}`"
+                label="NAME"
+              >
+                <template #default="fieldProps">
+                  <InputText
+                    v-model="property.name"
+                    :input-id="fieldProps.inputId"
+                    fluid
+                  />
+                </template>
+              </SspEditorCompactField>
 
-        <SspEditorSection variant="plain" title="LINKS">
-          <div class="space-y-3">
+              <SspEditorCompactField
+                :input-id="`implementation-property-value-${index}`"
+                label="VALUE"
+              >
+                <template #default="fieldProps">
+                  <InputText
+                    v-model="property.value"
+                    :input-id="fieldProps.inputId"
+                    fluid
+                  />
+                </template>
+              </SspEditorCompactField>
+
+              <SspEditorRemoveButton @click="removeProperty(index)" />
+            </article>
+          </div>
+
+          <div v-else class="px-4 py-4">
+            <p
+              class="font-[var(--ui-v2-font-secondary)] text-[11px] font-medium leading-[1.45] tracking-[0.3px] text-[var(--ui-v2-tertiary-foreground)]"
+            >
+              No properties defined.
+            </p>
+          </div>
+
+          <template #footer>
+            <SspEditorAddButton label="ADD PROPERTY" @click="addProperty" />
+          </template>
+        </SspEditorCollectionSection>
+
+        <SspEditorCollectionSection title="LINKS">
+          <div
+            v-if="form.links?.length"
+            class="divide-y divide-[var(--ui-v2-border)]"
+          >
             <article
               v-for="(link, index) in form.links"
               :key="`link-${index}`"
-              class="space-y-3 border border-[var(--ui-v2-border)] bg-[var(--ui-v2-background)] p-3"
+              class="space-y-2.5 px-3 py-2.5"
             >
-              <div class="flex justify-end">
-                <DangerButton
-                  type="button"
-                  size="small"
-                  @click="removeLink(index)"
-                >
-                  REMOVE
-                </DangerButton>
-              </div>
-              <div class="grid gap-3 md:grid-cols-2">
-                <V2FormField
+              <div
+                class="grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] md:items-start"
+              >
+                <SspEditorCompactField
                   :input-id="`implementation-link-href-${index}`"
-                  label="Href"
-                  ><template #default="fieldProps"
-                    ><InputText
+                  label="HREF"
+                >
+                  <template #default="fieldProps">
+                    <InputText
                       v-model="link.href"
                       :input-id="fieldProps.inputId"
-                      fluid /></template
-                ></V2FormField>
-                <V2FormField
-                  :input-id="`implementation-link-text-${index}`"
-                  label="Text"
-                  ><template #default="fieldProps"
-                    ><InputText
-                      v-model="link.text"
-                      :input-id="fieldProps.inputId"
-                      fluid /></template
-                ></V2FormField>
-                <V2FormField
+                      fluid
+                    />
+                  </template>
+                </SspEditorCompactField>
+
+                <SspEditorCompactField
                   :input-id="`implementation-link-rel-${index}`"
-                  label="Rel"
-                  ><template #default="fieldProps"
-                    ><InputText
+                  label="REL"
+                >
+                  <template #default="fieldProps">
+                    <InputText
                       v-model="link.rel"
                       :input-id="fieldProps.inputId"
-                      fluid /></template
-                ></V2FormField>
+                      fluid
+                    />
+                  </template>
+                </SspEditorCompactField>
+
+                <SspEditorRemoveButton @click="removeLink(index)" />
               </div>
+
+              <SspEditorCompactField
+                :input-id="`implementation-link-text-${index}`"
+                label="TEXT"
+              >
+                <template #default="fieldProps">
+                  <InputText
+                    v-model="link.text"
+                    :input-id="fieldProps.inputId"
+                    fluid
+                  />
+                </template>
+              </SspEditorCompactField>
             </article>
-            <SecondaryButton type="button" size="small" @click="addLink">
-              ADD LINK
-            </SecondaryButton>
           </div>
-        </SspEditorSection>
+
+          <div v-else class="px-4 py-4">
+            <p
+              class="font-[var(--ui-v2-font-secondary)] text-[11px] font-medium leading-[1.45] tracking-[0.3px] text-[var(--ui-v2-tertiary-foreground)]"
+            >
+              No links defined.
+            </p>
+          </div>
+
+          <template #footer>
+            <SspEditorAddButton label="ADD LINK" @click="addLink" />
+          </template>
+        </SspEditorCollectionSection>
       </V2EditorFormTemplate>
     </form>
   </V2EditorDrawer>

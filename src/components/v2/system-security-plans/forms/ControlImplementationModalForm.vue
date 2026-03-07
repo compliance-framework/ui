@@ -1,9 +1,7 @@
 <script setup lang="ts">
 import { computed, reactive, watch } from 'vue';
 import { useToast } from 'primevue/usetoast';
-import DangerButton from '@/volt/DangerButton.vue';
 import InputText from '@/volt/InputText.vue';
-import SecondaryButton from '@/volt/SecondaryButton.vue';
 import Textarea from '@/volt/Textarea.vue';
 import type { ControlImplementation } from '@/oscal';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
@@ -14,6 +12,10 @@ import {
 import V2FormField from '@/components/v2/forms/V2FormField.vue';
 import V2EditorDrawer from '@/components/v2/patterns/V2EditorDrawer.vue';
 import V2EditorFormTemplate from '@/components/v2/patterns/V2EditorFormTemplate.vue';
+import SspEditorAddButton from '@/components/v2/system-security-plans/forms/SspEditorAddButton.vue';
+import SspEditorCollectionSection from '@/components/v2/system-security-plans/forms/SspEditorCollectionSection.vue';
+import SspEditorCompactField from '@/components/v2/system-security-plans/forms/SspEditorCompactField.vue';
+import SspEditorRemoveButton from '@/components/v2/system-security-plans/forms/SspEditorRemoveButton.vue';
 import SspEditorSection from '@/components/v2/system-security-plans/forms/SspEditorSection.vue';
 import {
   cloneValue,
@@ -134,12 +136,14 @@ async function submit(): Promise<void> {
 <template>
   <V2EditorDrawer
     title="EDIT CONTROL IMPLEMENTATION"
+    description="Refine the control narrative and parameter values for the selected implementation."
     :form-id="formId"
-    submit-label="SAVE CONTROL IMPLEMENTATION"
+    submit-mode="save"
     :submitting="saving"
+    width-class="w-screen! sm:w-[94vw]! lg:w-[760px]!"
     @close="emit('cancel')"
   >
-    <form :id="formId" class="space-y-5" @submit.prevent="submit">
+    <form :id="formId" class="space-y-4" @submit.prevent="submit">
       <V2EditorFormTemplate :error-summary="errorSummary">
         <SspEditorSection variant="plain" title="BASICS">
           <V2FormField
@@ -157,77 +161,123 @@ async function submit(): Promise<void> {
             /></template>
           </V2FormField>
         </SspEditorSection>
-        <SspEditorSection variant="plain" title="SET PARAMETERS">
-          <div class="space-y-4">
+        <SspEditorCollectionSection title="SET PARAMETERS">
+          <div
+            v-if="form.setParameters?.length"
+            class="divide-y divide-[var(--ui-v2-border)]"
+          >
             <article
-              v-for="(parameter, parameterIndex) in form.setParameters"
+              v-for="(parameter, parameterIndex) in form.setParameters || []"
               :key="`parameter-${parameterIndex}`"
-              class="space-y-4 border border-[var(--ui-v2-border)] bg-[var(--ui-v2-background)] p-4"
+              class="space-y-3 px-3 py-2.5"
             >
-              <div class="flex justify-end">
-                <DangerButton
-                  type="button"
-                  size="small"
-                  @click="removeParameter(parameterIndex)"
-                  >REMOVE PARAMETER</DangerButton
+              <div
+                class="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-start"
+              >
+                <SspEditorCompactField
+                  :input-id="`control-param-id-${parameterIndex}`"
+                  label="PARAMETER ID"
                 >
+                  <template #default="fieldProps">
+                    <InputText
+                      v-model="parameter.paramId"
+                      :input-id="fieldProps.inputId"
+                      fluid
+                    />
+                  </template>
+                </SspEditorCompactField>
+
+                <SspEditorRemoveButton
+                  label="REMOVE PARAMETER"
+                  @click="removeParameter(parameterIndex)"
+                />
               </div>
-              <V2FormField
-                :input-id="`control-param-id-${parameterIndex}`"
-                label="Parameter ID"
-                ><template #default="fieldProps"
-                  ><InputText
-                    v-model="parameter.paramId"
-                    :input-id="fieldProps.inputId"
-                    fluid /></template
-              ></V2FormField>
-              <div class="space-y-3">
+
+              <div class="space-y-2">
                 <p class="ui-v2-label text-[var(--ui-v2-secondary-foreground)]">
                   VALUES
                 </p>
-                <article
-                  v-for="(_, valueIndex) in parameter.values || []"
-                  :key="`parameter-${parameterIndex}-value-${valueIndex}`"
-                  class="grid gap-3 border border-[var(--ui-v2-border)] bg-[var(--ui-v2-surface)] p-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end"
+
+                <div
+                  class="border border-[var(--ui-v2-border)] bg-[var(--ui-v2-background)]"
                 >
-                  <V2FormField
-                    :input-id="`control-param-value-${parameterIndex}-${valueIndex}`"
-                    label="Value"
-                    ><template #default="fieldProps"
-                      ><InputText
-                        v-model="parameter.values[valueIndex]"
-                        :input-id="fieldProps.inputId"
-                        fluid /></template></V2FormField
-                  ><DangerButton
-                    type="button"
-                    size="small"
-                    @click="removeParameterValue(parameterIndex, valueIndex)"
-                    >REMOVE</DangerButton
+                  <div
+                    v-if="parameter.values?.length"
+                    class="divide-y divide-[var(--ui-v2-border)]"
                   >
-                </article>
-                <SecondaryButton
-                  type="button"
-                  size="small"
-                  @click="addParameterValue(parameterIndex)"
-                  >ADD VALUE</SecondaryButton
-                >
+                    <div
+                      v-for="(_, valueIndex) in parameter.values || []"
+                      :key="`parameter-${parameterIndex}-value-${valueIndex}`"
+                      class="grid gap-3 px-3 py-2.5 md:grid-cols-[minmax(0,1fr)_auto] md:items-start"
+                    >
+                      <SspEditorCompactField
+                        :input-id="`control-param-value-${parameterIndex}-${valueIndex}`"
+                        label="VALUE"
+                      >
+                        <template #default="fieldProps">
+                          <InputText
+                            v-model="parameter.values[valueIndex]"
+                            :input-id="fieldProps.inputId"
+                            fluid
+                          />
+                        </template>
+                      </SspEditorCompactField>
+
+                      <SspEditorRemoveButton
+                        @click="
+                          removeParameterValue(parameterIndex, valueIndex)
+                        "
+                      />
+                    </div>
+                  </div>
+
+                  <div v-else class="px-4 py-4">
+                    <p
+                      class="font-[var(--ui-v2-font-secondary)] text-[11px] font-medium leading-[1.45] tracking-[0.3px] text-[var(--ui-v2-tertiary-foreground)]"
+                    >
+                      No values added.
+                    </p>
+                  </div>
+
+                  <div
+                    class="border-t border-[var(--ui-v2-border)] px-3 py-2.5"
+                  >
+                    <SspEditorAddButton
+                      label="ADD VALUE"
+                      @click="addParameterValue(parameterIndex)"
+                    />
+                  </div>
+                </div>
               </div>
+
               <V2FormField
                 :input-id="`control-param-remarks-${parameterIndex}`"
-                label="Remarks"
-                ><template #default="fieldProps"
-                  ><Textarea
+                label="REMARKS"
+              >
+                <template #default="fieldProps">
+                  <Textarea
                     v-model="parameter.remarks"
                     :input-id="fieldProps.inputId"
                     rows="3"
-                    fluid /></template
-              ></V2FormField>
+                    fluid
+                  />
+                </template>
+              </V2FormField>
             </article>
-            <SecondaryButton type="button" size="small" @click="addParameter"
-              >ADD PARAMETER</SecondaryButton
-            >
           </div>
-        </SspEditorSection>
+
+          <div v-else class="px-4 py-4">
+            <p
+              class="font-[var(--ui-v2-font-secondary)] text-[11px] font-medium leading-[1.45] tracking-[0.3px] text-[var(--ui-v2-tertiary-foreground)]"
+            >
+              No parameters added.
+            </p>
+          </div>
+
+          <template #footer>
+            <SspEditorAddButton label="ADD PARAMETER" @click="addParameter" />
+          </template>
+        </SspEditorCollectionSection>
       </V2EditorFormTemplate>
     </form>
   </V2EditorDrawer>

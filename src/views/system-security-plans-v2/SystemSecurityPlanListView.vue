@@ -6,7 +6,24 @@
     loading-description="Retrieving system security plans..."
   >
     <template #header>
-      <V2PageHeader eyebrow="Dashboard" title="System Security Plan Library" />
+      <V2PageHeader eyebrow="Dashboard" title="System Security Plan Library">
+        <template #actions>
+          <div class="flex flex-wrap items-center gap-2">
+            <RouterLink
+              :to="{ name: 'admin-import' }"
+              class="ui-v2-nav inline-flex h-10 items-center justify-center border border-[var(--ui-v2-border)] bg-[var(--ui-v2-surface)] px-4 font-bold text-[var(--ui-v2-foreground)]"
+            >
+              IMPORT
+            </RouterLink>
+            <RouterLink
+              :to="{ name: 'system-security-plans-create' }"
+              class="ui-v2-nav inline-flex h-10 items-center justify-center border border-[var(--ui-v2-primary)] bg-[var(--ui-v2-primary)] px-4 font-bold text-[var(--ui-v2-primary-foreground)]"
+            >
+              CREATE SSP
+            </RouterLink>
+          </div>
+        </template>
+      </V2PageHeader>
     </template>
 
     <template #error-actions>
@@ -20,13 +37,40 @@
     </template>
 
     <template #empty>
-      <PrerequisiteGate
-        title="No system security plans available"
-        description="Create or import a System Security Plan before continuing with system, controls, and compliance workflows."
-        cta-label="Go to import"
-        :cta-to="{ name: 'admin-import' }"
-        hint="You can return here after import to set your active SSP."
-      />
+      <section
+        class="border border-[var(--ui-v2-border)] bg-[var(--ui-v2-card)] p-6"
+      >
+        <p class="ui-v2-label mb-2 text-[var(--ui-v2-secondary-foreground)]">
+          PREREQUISITE REQUIRED
+        </p>
+        <h2 class="ui-v2-section-title text-[var(--ui-v2-foreground)]">
+          No system security plans available
+        </h2>
+        <p class="mt-3 max-w-[70ch] text-[var(--ui-v2-muted-foreground)]">
+          Create or import a System Security Plan before continuing with system,
+          controls, and compliance workflows.
+        </p>
+
+        <div class="mt-5 flex flex-wrap gap-3">
+          <RouterLink
+            :to="{ name: 'system-security-plans-create' }"
+            class="ui-v2-nav inline-flex items-center border border-[var(--ui-v2-primary)] bg-[var(--ui-v2-primary)] px-4 py-2 font-semibold text-[var(--ui-v2-primary-foreground)]"
+          >
+            CREATE SSP
+          </RouterLink>
+
+          <RouterLink
+            :to="{ name: 'admin-import' }"
+            class="ui-v2-nav inline-flex items-center border border-[var(--ui-v2-border)] bg-[var(--ui-v2-surface)] px-4 py-2 font-semibold text-[var(--ui-v2-foreground)]"
+          >
+            GO TO IMPORT
+          </RouterLink>
+        </div>
+
+        <p class="ui-v2-meta mt-3 text-[var(--ui-v2-tertiary-foreground)]">
+          You can return here after create or import to set your active SSP.
+        </p>
+      </section>
     </template>
 
     <section
@@ -145,7 +189,6 @@ import { useDataApi } from '@/composables/axios';
 import { useSystemStore } from '@/stores/system.ts';
 import V2ListPageTemplate from '@/components/v2/patterns/V2ListPageTemplate.vue';
 import V2PageHeader from '@/components/v2/patterns/V2PageHeader.vue';
-import PrerequisiteGate from '@/components/v2/system/PrerequisiteGate.vue';
 
 const toast = useToast();
 const route = useRoute();

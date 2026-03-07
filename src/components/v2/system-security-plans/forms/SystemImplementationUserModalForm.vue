@@ -2,8 +2,6 @@
 import { computed, reactive, watch } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import InputText from '@/volt/InputText.vue';
-import DangerButton from '@/volt/DangerButton.vue';
-import SecondaryButton from '@/volt/SecondaryButton.vue';
 import Textarea from '@/volt/Textarea.vue';
 import type { SystemUser } from '@/oscal';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
@@ -14,6 +12,10 @@ import {
 import V2FormField from '@/components/v2/forms/V2FormField.vue';
 import V2EditorDrawer from '@/components/v2/patterns/V2EditorDrawer.vue';
 import V2EditorFormTemplate from '@/components/v2/patterns/V2EditorFormTemplate.vue';
+import SspEditorAddButton from '@/components/v2/system-security-plans/forms/SspEditorAddButton.vue';
+import SspEditorCollectionSection from '@/components/v2/system-security-plans/forms/SspEditorCollectionSection.vue';
+import SspEditorCompactField from '@/components/v2/system-security-plans/forms/SspEditorCompactField.vue';
+import SspEditorRemoveButton from '@/components/v2/system-security-plans/forms/SspEditorRemoveButton.vue';
 import SspEditorSection from '@/components/v2/system-security-plans/forms/SspEditorSection.vue';
 import {
   cloneValue,
@@ -184,12 +186,14 @@ async function submit(): Promise<void> {
 <template>
   <V2EditorDrawer
     :title="isEditMode ? 'EDIT USER' : 'CREATE USER'"
+    description="Maintain implementation users, role assignments, and authorized privileges."
     :form-id="formId"
-    :submit-label="isEditMode ? 'SAVE USER' : 'CREATE USER'"
+    :submit-mode="isEditMode ? 'save' : 'create'"
     :submitting="saving"
+    width-class="w-screen! sm:w-[94vw]! lg:w-[760px]!"
     @close="emit('cancel')"
   >
-    <form :id="formId" class="space-y-5" @submit.prevent="submit">
+    <form :id="formId" class="space-y-4" @submit.prevent="submit">
       <V2EditorFormTemplate :error-summary="errorSummary">
         <SspEditorSection variant="plain" title="BASICS">
           <div class="grid gap-4 lg:grid-cols-2">
@@ -233,112 +237,167 @@ async function submit(): Promise<void> {
                 fluid /></template
           ></V2FormField>
         </SspEditorSection>
-        <SspEditorSection variant="plain" title="ROLE IDS"
-          ><div class="space-y-3">
+        <SspEditorCollectionSection title="ROLE IDS">
+          <div
+            v-if="form.roleIds.length"
+            class="divide-y divide-[var(--ui-v2-border)]"
+          >
             <article
               v-for="(roleId, index) in form.roleIds"
               :key="`role-${index}`"
-              class="flex flex-col gap-3 border border-[var(--ui-v2-border)] bg-[var(--ui-v2-background)] p-3 md:flex-row md:items-end"
+              class="grid gap-3 px-3 py-2.5 md:grid-cols-[minmax(0,1fr)_auto] md:items-start"
             >
-              <V2FormField
+              <SspEditorCompactField
                 :input-id="`system-user-role-${index}`"
-                label="Role ID"
-                class="flex-1"
-                ><template #default="fieldProps"
-                  ><InputText
+                label="ROLE ID"
+              >
+                <template #default="fieldProps">
+                  <InputText
                     v-model="form.roleIds[index]"
                     :input-id="fieldProps.inputId"
-                    fluid /></template></V2FormField
-              ><DangerButton
-                type="button"
-                size="small"
-                @click="removeRoleId(index)"
-                >REMOVE</DangerButton
-              >
+                    fluid
+                  />
+                </template>
+              </SspEditorCompactField>
+
+              <SspEditorRemoveButton @click="removeRoleId(index)" />
             </article>
-            <SecondaryButton type="button" size="small" @click="addRoleId"
-              >ADD ROLE ID</SecondaryButton
+          </div>
+
+          <div v-else class="px-4 py-4">
+            <p
+              class="font-[var(--ui-v2-font-secondary)] text-[11px] font-medium leading-[1.45] tracking-[0.3px] text-[var(--ui-v2-tertiary-foreground)]"
             >
-          </div></SspEditorSection
-        >
-        <SspEditorSection variant="plain" title="AUTHORIZED PRIVILEGES"
-          ><div class="space-y-4">
+              No role IDs added.
+            </p>
+          </div>
+
+          <template #footer>
+            <SspEditorAddButton label="ADD ROLE ID" @click="addRoleId" />
+          </template>
+        </SspEditorCollectionSection>
+
+        <SspEditorCollectionSection title="AUTHORIZED PRIVILEGES">
+          <div
+            v-if="form.authorizedPrivileges.length"
+            class="divide-y divide-[var(--ui-v2-border)]"
+          >
             <article
               v-for="(privilege, privilegeIndex) in form.authorizedPrivileges"
               :key="`privilege-${privilegeIndex}`"
-              class="space-y-4 border border-[var(--ui-v2-border)] bg-[var(--ui-v2-background)] p-4"
+              class="space-y-3 px-3 py-2.5"
             >
-              <div class="flex justify-end">
-                <DangerButton
-                  type="button"
-                  size="small"
-                  @click="removePrivilege(privilegeIndex)"
-                  >REMOVE PRIVILEGE</DangerButton
-                >
-              </div>
-              <div class="grid gap-4 lg:grid-cols-2">
-                <V2FormField
+              <div
+                class="grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] md:items-start"
+              >
+                <SspEditorCompactField
                   :input-id="`privilege-title-${privilegeIndex}`"
-                  label="Title"
-                  ><template #default="fieldProps"
-                    ><InputText
+                  label="TITLE"
+                >
+                  <template #default="fieldProps">
+                    <InputText
                       v-model="privilege.title"
                       :input-id="fieldProps.inputId"
-                      fluid /></template></V2FormField
-                ><V2FormField
+                      fluid
+                    />
+                  </template>
+                </SspEditorCompactField>
+
+                <SspEditorCompactField
                   :input-id="`privilege-description-${privilegeIndex}`"
-                  label="Description"
-                  ><template #default="fieldProps"
-                    ><Textarea
+                  label="DESCRIPTION"
+                >
+                  <template #default="fieldProps">
+                    <Textarea
                       v-model="privilege.description"
                       :input-id="fieldProps.inputId"
                       rows="3"
-                      fluid /></template
-                ></V2FormField>
+                      fluid
+                    />
+                  </template>
+                </SspEditorCompactField>
+
+                <SspEditorRemoveButton
+                  label="REMOVE PRIVILEGE"
+                  @click="removePrivilege(privilegeIndex)"
+                />
               </div>
-              <div class="space-y-3">
-                <p
-                  class="font-[var(--ui-v2-font-secondary)] text-[11px] font-bold uppercase tracking-[1px] text-[var(--ui-v2-secondary-foreground)]"
-                >
+
+              <div class="space-y-2">
+                <p class="ui-v2-label text-[var(--ui-v2-secondary-foreground)]">
                   FUNCTIONS PERFORMED
                 </p>
-                <article
-                  v-for="(_, functionIndex) in privilege.functionsPerformed ||
-                  []"
-                  :key="`privilege-${privilegeIndex}-function-${functionIndex}`"
-                  class="flex flex-col gap-3 border border-[var(--ui-v2-border)] bg-[var(--ui-v2-surface)] p-3 md:flex-row md:items-end"
+
+                <div
+                  class="border border-[var(--ui-v2-border)] bg-[var(--ui-v2-background)]"
                 >
-                  <V2FormField
-                    :input-id="`privilege-function-${privilegeIndex}-${functionIndex}`"
-                    label="Function Description"
-                    class="flex-1"
-                    ><template #default="fieldProps"
-                      ><InputText
-                        v-model="privilege.functionsPerformed![functionIndex]"
-                        :input-id="fieldProps.inputId"
-                        fluid /></template></V2FormField
-                  ><DangerButton
-                    type="button"
-                    size="small"
-                    @click="
-                      removeFunctionPerformed(privilegeIndex, functionIndex)
-                    "
-                    >REMOVE</DangerButton
+                  <div
+                    v-if="privilege.functionsPerformed?.length"
+                    class="divide-y divide-[var(--ui-v2-border)]"
                   >
-                </article>
-                <SecondaryButton
-                  type="button"
-                  size="small"
-                  @click="addFunctionPerformed(privilegeIndex)"
-                  >ADD FUNCTION</SecondaryButton
-                >
+                    <div
+                      v-for="(
+                        _, functionIndex
+                      ) in privilege.functionsPerformed || []"
+                      :key="`privilege-${privilegeIndex}-function-${functionIndex}`"
+                      class="grid gap-3 px-3 py-2.5 md:grid-cols-[minmax(0,1fr)_auto] md:items-start"
+                    >
+                      <SspEditorCompactField
+                        :input-id="`privilege-function-${privilegeIndex}-${functionIndex}`"
+                        label="FUNCTION DESCRIPTION"
+                      >
+                        <template #default="fieldProps">
+                          <InputText
+                            v-model="
+                              privilege.functionsPerformed![functionIndex]
+                            "
+                            :input-id="fieldProps.inputId"
+                            fluid
+                          />
+                        </template>
+                      </SspEditorCompactField>
+
+                      <SspEditorRemoveButton
+                        @click="
+                          removeFunctionPerformed(privilegeIndex, functionIndex)
+                        "
+                      />
+                    </div>
+                  </div>
+
+                  <div v-else class="px-4 py-4">
+                    <p
+                      class="font-[var(--ui-v2-font-secondary)] text-[11px] font-medium leading-[1.45] tracking-[0.3px] text-[var(--ui-v2-tertiary-foreground)]"
+                    >
+                      No functions added.
+                    </p>
+                  </div>
+
+                  <div
+                    class="border-t border-[var(--ui-v2-border)] px-3 py-2.5"
+                  >
+                    <SspEditorAddButton
+                      label="ADD FUNCTION"
+                      @click="addFunctionPerformed(privilegeIndex)"
+                    />
+                  </div>
+                </div>
               </div>
             </article>
-            <SecondaryButton type="button" size="small" @click="addPrivilege"
-              >ADD PRIVILEGE</SecondaryButton
+          </div>
+
+          <div v-else class="px-4 py-4">
+            <p
+              class="font-[var(--ui-v2-font-secondary)] text-[11px] font-medium leading-[1.45] tracking-[0.3px] text-[var(--ui-v2-tertiary-foreground)]"
             >
-          </div></SspEditorSection
-        >
+              No authorized privileges added.
+            </p>
+          </div>
+
+          <template #footer>
+            <SspEditorAddButton label="ADD PRIVILEGE" @click="addPrivilege" />
+          </template>
+        </SspEditorCollectionSection>
       </V2EditorFormTemplate>
     </form>
   </V2EditorDrawer>

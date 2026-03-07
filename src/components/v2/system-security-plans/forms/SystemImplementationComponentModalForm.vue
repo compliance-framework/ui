@@ -2,8 +2,6 @@
 import { computed, reactive, watch } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import InputText from '@/volt/InputText.vue';
-import DangerButton from '@/volt/DangerButton.vue';
-import SecondaryButton from '@/volt/SecondaryButton.vue';
 import Textarea from '@/volt/Textarea.vue';
 import type { PortRange, Protocol, SystemComponent } from '@/oscal';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
@@ -14,6 +12,10 @@ import {
 import V2FormField from '@/components/v2/forms/V2FormField.vue';
 import V2EditorDrawer from '@/components/v2/patterns/V2EditorDrawer.vue';
 import V2EditorFormTemplate from '@/components/v2/patterns/V2EditorFormTemplate.vue';
+import SspEditorAddButton from '@/components/v2/system-security-plans/forms/SspEditorAddButton.vue';
+import SspEditorCollectionSection from '@/components/v2/system-security-plans/forms/SspEditorCollectionSection.vue';
+import SspEditorCompactField from '@/components/v2/system-security-plans/forms/SspEditorCompactField.vue';
+import SspEditorRemoveButton from '@/components/v2/system-security-plans/forms/SspEditorRemoveButton.vue';
 import SspEditorSection from '@/components/v2/system-security-plans/forms/SspEditorSection.vue';
 import {
   cloneValue,
@@ -255,12 +257,14 @@ async function submit(): Promise<void> {
 <template>
   <V2EditorDrawer
     :title="isEditMode ? 'EDIT COMPONENT' : 'CREATE COMPONENT'"
+    description="Document component metadata, operational status, and protocol details."
     :form-id="formId"
-    :submit-label="isEditMode ? 'SAVE COMPONENT' : 'CREATE COMPONENT'"
+    :submit-mode="isEditMode ? 'save' : 'create'"
     :submitting="saving"
+    width-class="w-screen! sm:w-[94vw]! lg:w-[860px]!"
     @close="emit('cancel')"
   >
-    <form :id="formId" class="space-y-5" @submit.prevent="submit">
+    <form :id="formId" class="space-y-4" @submit.prevent="submit">
       <V2EditorFormTemplate :error-summary="errorSummary">
         <SspEditorSection variant="plain" title="BASICS">
           <div class="grid gap-4 lg:grid-cols-2">
@@ -372,109 +376,162 @@ async function submit(): Promise<void> {
             ></V2FormField>
           </div>
         </SspEditorSection>
-        <SspEditorSection variant="plain" title="PROTOCOLS"
-          ><div class="space-y-4">
+        <SspEditorCollectionSection title="PROTOCOLS">
+          <div
+            v-if="form.protocols?.length"
+            class="divide-y divide-[var(--ui-v2-border)]"
+          >
             <article
-              v-for="(protocol, protocolIndex) in form.protocols"
+              v-for="(protocol, protocolIndex) in form.protocols || []"
               :key="protocol.uuid || `protocol-${protocolIndex}`"
-              class="space-y-4 border border-[var(--ui-v2-border)] bg-[var(--ui-v2-background)] p-4"
+              class="space-y-3 px-3 py-2.5"
             >
-              <div class="flex justify-end">
-                <DangerButton
-                  type="button"
-                  size="small"
-                  @click="removeProtocol(protocolIndex)"
-                  >REMOVE PROTOCOL</DangerButton
-                >
-              </div>
-              <div class="grid gap-4 lg:grid-cols-2">
-                <V2FormField
+              <div
+                class="grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] md:items-start"
+              >
+                <SspEditorCompactField
                   :input-id="`protocol-title-${protocolIndex}`"
-                  label="Title"
-                  ><template #default="fieldProps"
-                    ><InputText
+                  label="TITLE"
+                >
+                  <template #default="fieldProps">
+                    <InputText
                       v-model="protocol.title"
                       :input-id="fieldProps.inputId"
-                      fluid /></template></V2FormField
-                ><V2FormField
+                      fluid
+                    />
+                  </template>
+                </SspEditorCompactField>
+
+                <SspEditorCompactField
                   :input-id="`protocol-name-${protocolIndex}`"
-                  label="Name"
-                  ><template #default="fieldProps"
-                    ><InputText
+                  label="NAME"
+                >
+                  <template #default="fieldProps">
+                    <InputText
                       v-model="protocol.name"
                       :input-id="fieldProps.inputId"
-                      fluid /></template
-                ></V2FormField>
+                      fluid
+                    />
+                  </template>
+                </SspEditorCompactField>
+
+                <SspEditorRemoveButton
+                  label="REMOVE PROTOCOL"
+                  @click="removeProtocol(protocolIndex)"
+                />
               </div>
-              <div class="space-y-3">
+
+              <div class="space-y-2">
                 <p class="ui-v2-label text-[var(--ui-v2-secondary-foreground)]">
                   PORT RANGES
                 </p>
-                <article
-                  v-for="(range, rangeIndex) in protocol.portRanges || []"
-                  :key="`protocol-${protocolIndex}-range-${rangeIndex}`"
-                  class="grid gap-3 border border-[var(--ui-v2-border)] bg-[var(--ui-v2-surface)] p-3 lg:grid-cols-[minmax(0,1fr)_140px_140px_auto] lg:items-end"
+
+                <div
+                  class="border border-[var(--ui-v2-border)] bg-[var(--ui-v2-background)]"
                 >
-                  <V2FormField
-                    :input-id="`protocol-${protocolIndex}-transport-${rangeIndex}`"
-                    label="Transport"
-                    ><template #default="fieldProps"
-                      ><InputText
-                        v-model="range.transport"
-                        :input-id="fieldProps.inputId"
-                        fluid /></template></V2FormField
-                  ><V2FormField
-                    :input-id="`protocol-${protocolIndex}-start-${rangeIndex}`"
-                    label="Start Port"
-                    ><template #default="fieldProps"
-                      ><input
-                        :id="fieldProps.inputId"
-                        :value="range.start ?? ''"
-                        type="number"
-                        class="ui-v2-body h-10 w-full border border-[var(--ui-v2-border)] bg-[var(--ui-v2-surface)] px-3 text-[var(--ui-v2-foreground)]"
-                        @input="
-                          updatePortRangeNumber(
-                            range,
-                            'start',
-                            ($event.target as HTMLInputElement).value,
-                          )
-                        " /></template></V2FormField
-                  ><V2FormField
-                    :input-id="`protocol-${protocolIndex}-end-${rangeIndex}`"
-                    label="End Port"
-                    ><template #default="fieldProps"
-                      ><input
-                        :id="fieldProps.inputId"
-                        :value="range.end ?? ''"
-                        type="number"
-                        class="ui-v2-body h-10 w-full border border-[var(--ui-v2-border)] bg-[var(--ui-v2-surface)] px-3 text-[var(--ui-v2-foreground)]"
-                        @input="
-                          updatePortRangeNumber(
-                            range,
-                            'end',
-                            ($event.target as HTMLInputElement).value,
-                          )
-                        " /></template></V2FormField
-                  ><DangerButton
-                    type="button"
-                    size="small"
-                    @click="removePortRange(protocolIndex, rangeIndex)"
-                    >REMOVE</DangerButton
+                  <div
+                    v-if="protocol.portRanges?.length"
+                    class="divide-y divide-[var(--ui-v2-border)]"
                   >
-                </article>
-                <SecondaryButton
-                  type="button"
-                  size="small"
-                  @click="addPortRange(protocolIndex)"
-                  >ADD PORT RANGE</SecondaryButton
-                >
+                    <div
+                      v-for="(range, rangeIndex) in protocol.portRanges || []"
+                      :key="`protocol-${protocolIndex}-range-${rangeIndex}`"
+                      class="grid gap-3 px-3 py-2.5 lg:grid-cols-[minmax(0,1fr)_140px_140px_auto] lg:items-start"
+                    >
+                      <SspEditorCompactField
+                        :input-id="`protocol-${protocolIndex}-transport-${rangeIndex}`"
+                        label="TRANSPORT"
+                      >
+                        <template #default="fieldProps">
+                          <InputText
+                            v-model="range.transport"
+                            :input-id="fieldProps.inputId"
+                            fluid
+                          />
+                        </template>
+                      </SspEditorCompactField>
+
+                      <SspEditorCompactField
+                        :input-id="`protocol-${protocolIndex}-start-${rangeIndex}`"
+                        label="START PORT"
+                      >
+                        <template #default="fieldProps">
+                          <input
+                            :id="fieldProps.inputId"
+                            :value="range.start ?? ''"
+                            type="number"
+                            class="ui-v2-body h-10 w-full border border-[var(--ui-v2-border)] bg-[var(--ui-v2-surface)] px-3 text-[var(--ui-v2-foreground)]"
+                            @input="
+                              updatePortRangeNumber(
+                                range,
+                                'start',
+                                ($event.target as HTMLInputElement).value,
+                              )
+                            "
+                          />
+                        </template>
+                      </SspEditorCompactField>
+
+                      <SspEditorCompactField
+                        :input-id="`protocol-${protocolIndex}-end-${rangeIndex}`"
+                        label="END PORT"
+                      >
+                        <template #default="fieldProps">
+                          <input
+                            :id="fieldProps.inputId"
+                            :value="range.end ?? ''"
+                            type="number"
+                            class="ui-v2-body h-10 w-full border border-[var(--ui-v2-border)] bg-[var(--ui-v2-surface)] px-3 text-[var(--ui-v2-foreground)]"
+                            @input="
+                              updatePortRangeNumber(
+                                range,
+                                'end',
+                                ($event.target as HTMLInputElement).value,
+                              )
+                            "
+                          />
+                        </template>
+                      </SspEditorCompactField>
+
+                      <SspEditorRemoveButton
+                        @click="removePortRange(protocolIndex, rangeIndex)"
+                      />
+                    </div>
+                  </div>
+
+                  <div v-else class="px-4 py-4">
+                    <p
+                      class="font-[var(--ui-v2-font-secondary)] text-[11px] font-medium leading-[1.45] tracking-[0.3px] text-[var(--ui-v2-tertiary-foreground)]"
+                    >
+                      No port ranges added.
+                    </p>
+                  </div>
+
+                  <div
+                    class="border-t border-[var(--ui-v2-border)] px-3 py-2.5"
+                  >
+                    <SspEditorAddButton
+                      label="ADD PORT RANGE"
+                      @click="addPortRange(protocolIndex)"
+                    />
+                  </div>
+                </div>
               </div>
             </article>
-            <SecondaryButton type="button" size="small" @click="addProtocol"
-              >ADD PROTOCOL</SecondaryButton
+          </div>
+
+          <div v-else class="px-4 py-4">
+            <p
+              class="font-[var(--ui-v2-font-secondary)] text-[11px] font-medium leading-[1.45] tracking-[0.3px] text-[var(--ui-v2-tertiary-foreground)]"
             >
-          </div></SspEditorSection
-        >
+              No protocols added.
+            </p>
+          </div>
+
+          <template #footer>
+            <SspEditorAddButton label="ADD PROTOCOL" @click="addProtocol" />
+          </template>
+        </SspEditorCollectionSection>
       </V2EditorFormTemplate>
     </form>
   </V2EditorDrawer>

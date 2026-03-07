@@ -349,9 +349,11 @@ async function submit(): Promise<void> {
         ? 'EDIT BY-COMPONENT IMPLEMENTATION'
         : 'CREATE BY-COMPONENT IMPLEMENTATION'
     "
-    :submit-label="isEditMode ? 'SAVE COMPONENT' : 'CREATE COMPONENT'"
+    description="Map requirement behavior to a specific component and describe how the implementation is delivered."
+    :submit-mode="isEditMode ? 'save' : 'create'"
     :submitting="saving"
     :form-id="formId"
+    width-class="w-screen! sm:w-[94vw]! lg:w-[980px]!"
     @close="emit('cancel')"
   >
     <form :id="formId" class="space-y-5" @submit.prevent="submit">

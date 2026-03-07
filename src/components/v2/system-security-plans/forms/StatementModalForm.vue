@@ -1,9 +1,7 @@
 <script setup lang="ts">
 import { computed, reactive, watch } from 'vue';
 import { useToast } from 'primevue/usetoast';
-import DangerButton from '@/volt/DangerButton.vue';
 import InputText from '@/volt/InputText.vue';
-import SecondaryButton from '@/volt/SecondaryButton.vue';
 import Textarea from '@/volt/Textarea.vue';
 import type { Statement } from '@/oscal';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
@@ -11,6 +9,10 @@ import { focusFirstInvalidField } from '@/composables/v2/useV2FormValidation';
 import V2FormField from '@/components/v2/forms/V2FormField.vue';
 import V2EditorDrawer from '@/components/v2/patterns/V2EditorDrawer.vue';
 import V2EditorFormTemplate from '@/components/v2/patterns/V2EditorFormTemplate.vue';
+import SspEditorAddButton from '@/components/v2/system-security-plans/forms/SspEditorAddButton.vue';
+import SspEditorCollectionSection from '@/components/v2/system-security-plans/forms/SspEditorCollectionSection.vue';
+import SspEditorCompactField from '@/components/v2/system-security-plans/forms/SspEditorCompactField.vue';
+import SspEditorRemoveButton from '@/components/v2/system-security-plans/forms/SspEditorRemoveButton.vue';
 import {
   cloneValue,
   resolveApiErrorMessage,
@@ -183,12 +185,14 @@ async function submit(): Promise<void> {
 <template>
   <V2EditorDrawer
     :title="isEditMode ? 'EDIT STATEMENT' : 'CREATE STATEMENT'"
-    :submit-label="isEditMode ? 'SAVE STATEMENT' : 'CREATE STATEMENT'"
+    description="Capture the statement narrative, remarks, and supporting metadata."
+    :submit-mode="isEditMode ? 'save' : 'create'"
     :submitting="saving"
     :form-id="formId"
+    width-class="w-screen! sm:w-[94vw]! lg:w-[760px]!"
     @close="emit('cancel')"
   >
-    <form :id="formId" class="space-y-5" @submit.prevent="submit">
+    <form :id="formId" class="space-y-4" @submit.prevent="submit">
       <V2EditorFormTemplate :error-summary="errorSummary">
         <div class="grid gap-4 md:grid-cols-2">
           <V2FormField label="UUID" input-id="statement-uuid">
@@ -242,90 +246,75 @@ async function submit(): Promise<void> {
           </template>
         </V2FormField>
 
-        <section class="space-y-3">
-          <div class="flex items-center justify-between gap-3">
-            <p class="ui-v2-label text-[var(--ui-v2-secondary-foreground)]">
-              PROPERTIES
-            </p>
-            <SecondaryButton type="button" size="small" @click="addProperty">
-              ADD PROPERTY
-            </SecondaryButton>
-          </div>
-
-          <div v-if="form.props?.length" class="space-y-3">
+        <SspEditorCollectionSection title="PROPERTIES">
+          <div
+            v-if="form.props?.length"
+            class="divide-y divide-[var(--ui-v2-border)]"
+          >
             <article
               v-for="(property, index) in form.props"
               :key="property.uuid || `property-${index}`"
-              class="space-y-3 border border-[var(--ui-v2-border)] bg-[var(--ui-v2-background)] p-3"
+              class="grid gap-3 px-3 py-2.5 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] md:items-start"
             >
-              <div class="flex justify-end">
-                <DangerButton
-                  type="button"
-                  size="small"
-                  @click="removeProperty(index)"
-                >
-                  REMOVE
-                </DangerButton>
-              </div>
-              <div class="grid gap-3 md:grid-cols-2">
-                <V2FormField
-                  :input-id="`statement-property-name-${index}`"
-                  label="Name"
-                >
-                  <template #default="fieldProps">
-                    <InputText
-                      v-model="property.name"
-                      :input-id="fieldProps.inputId"
-                      fluid
-                    />
-                  </template>
-                </V2FormField>
-                <V2FormField
-                  :input-id="`statement-property-value-${index}`"
-                  label="Value"
-                >
-                  <template #default="fieldProps">
-                    <InputText
-                      v-model="property.value"
-                      :input-id="fieldProps.inputId"
-                      fluid
-                    />
-                  </template>
-                </V2FormField>
-              </div>
+              <SspEditorCompactField
+                :input-id="`statement-property-name-${index}`"
+                label="NAME"
+              >
+                <template #default="fieldProps">
+                  <InputText
+                    v-model="property.name"
+                    :input-id="fieldProps.inputId"
+                    fluid
+                  />
+                </template>
+              </SspEditorCompactField>
+
+              <SspEditorCompactField
+                :input-id="`statement-property-value-${index}`"
+                label="VALUE"
+              >
+                <template #default="fieldProps">
+                  <InputText
+                    v-model="property.value"
+                    :input-id="fieldProps.inputId"
+                    fluid
+                  />
+                </template>
+              </SspEditorCompactField>
+
+              <SspEditorRemoveButton @click="removeProperty(index)" />
             </article>
           </div>
-        </section>
 
-        <section class="space-y-3">
-          <div class="flex items-center justify-between gap-3">
-            <p class="ui-v2-label text-[var(--ui-v2-secondary-foreground)]">
-              LINKS
+          <div v-else class="px-4 py-4">
+            <p
+              class="font-[var(--ui-v2-font-secondary)] text-[11px] font-medium leading-[1.45] tracking-[0.3px] text-[var(--ui-v2-tertiary-foreground)]"
+            >
+              No properties added.
             </p>
-            <SecondaryButton type="button" size="small" @click="addLink">
-              ADD LINK
-            </SecondaryButton>
           </div>
 
-          <div v-if="form.links?.length" class="space-y-3">
+          <template #footer>
+            <SspEditorAddButton label="ADD PROPERTY" @click="addProperty" />
+          </template>
+        </SspEditorCollectionSection>
+
+        <SspEditorCollectionSection title="LINKS">
+          <div
+            v-if="form.links?.length"
+            class="divide-y divide-[var(--ui-v2-border)]"
+          >
             <article
               v-for="(link, index) in form.links"
               :key="`link-${index}`"
-              class="space-y-3 border border-[var(--ui-v2-border)] bg-[var(--ui-v2-background)] p-3"
+              class="space-y-2.5 px-3 py-2.5"
             >
-              <div class="flex justify-end">
-                <DangerButton
-                  type="button"
-                  size="small"
-                  @click="removeLink(index)"
-                >
-                  REMOVE
-                </DangerButton>
-              </div>
-              <div class="grid gap-3 md:grid-cols-2">
-                <V2FormField
+              <div
+                class="grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] md:items-start"
+              >
+                <SspEditorCompactField
                   :input-id="`statement-link-href-${index}`"
-                  label="Href"
+                  label="HREF"
                 >
                   <template #default="fieldProps">
                     <InputText
@@ -334,10 +323,11 @@ async function submit(): Promise<void> {
                       fluid
                     />
                   </template>
-                </V2FormField>
-                <V2FormField
+                </SspEditorCompactField>
+
+                <SspEditorCompactField
                   :input-id="`statement-link-rel-${index}`"
-                  label="Rel"
+                  label="REL"
                 >
                   <template #default="fieldProps">
                     <InputText
@@ -346,23 +336,38 @@ async function submit(): Promise<void> {
                       fluid
                     />
                   </template>
-                </V2FormField>
-                <V2FormField
-                  :input-id="`statement-link-text-${index}`"
-                  label="Text"
-                >
-                  <template #default="fieldProps">
-                    <InputText
-                      v-model="link.text"
-                      :input-id="fieldProps.inputId"
-                      fluid
-                    />
-                  </template>
-                </V2FormField>
+                </SspEditorCompactField>
+
+                <SspEditorRemoveButton @click="removeLink(index)" />
               </div>
+
+              <SspEditorCompactField
+                :input-id="`statement-link-text-${index}`"
+                label="TEXT"
+              >
+                <template #default="fieldProps">
+                  <InputText
+                    v-model="link.text"
+                    :input-id="fieldProps.inputId"
+                    fluid
+                  />
+                </template>
+              </SspEditorCompactField>
             </article>
           </div>
-        </section>
+
+          <div v-else class="px-4 py-4">
+            <p
+              class="font-[var(--ui-v2-font-secondary)] text-[11px] font-medium leading-[1.45] tracking-[0.3px] text-[var(--ui-v2-tertiary-foreground)]"
+            >
+              No links added.
+            </p>
+          </div>
+
+          <template #footer>
+            <SspEditorAddButton label="ADD LINK" @click="addLink" />
+          </template>
+        </SspEditorCollectionSection>
       </V2EditorFormTemplate>
     </form>
   </V2EditorDrawer>

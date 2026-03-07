@@ -6,6 +6,9 @@ import {
   ChevronUp,
   Copy,
   Eye,
+  Info,
+  Plus,
+  Trash2,
   X,
   type LucideProps,
 } from 'lucide-vue-next';
@@ -15,6 +18,9 @@ type V2LucideName =
   | 'chevron-down'
   | 'chevron-up'
   | 'copy'
+  | 'info'
+  | 'plus'
+  | 'trash-2'
   | 'view'
   | 'x';
 
@@ -37,6 +43,9 @@ const iconMap = {
   'chevron-down': ChevronDown,
   'chevron-up': ChevronUp,
   copy: Copy,
+  info: Info,
+  plus: Plus,
+  'trash-2': Trash2,
   view: Eye,
   x: X,
 } as const;
