@@ -252,7 +252,7 @@ Design lookup quick link: see `4.3.1 Design reference map (Pencil)` for node ids
 
 ### Dashboards
 
-- [ ] W4-01 Migrate dashboards list with safe action hierarchy.
+- [x] W4-01 Migrate dashboards list with safe action hierarchy.
 - [ ] W4-02 Migrate dashboard create/edit forms with full validation behavior.
 - [ ] W4-03 Migrate dashboard detail screens if applicable.
 
@@ -439,3 +439,4 @@ A route family is done only when all are true:
 - 2026-03-05: Tuned Overview property-name chips to a flat, borderless tag style with truncation/tooltips and switched property rows to flexible inline layout to reduce visual boxiness and awkward line breaks.
 - 2026-03-05: Approved deviation on SSP Compliance (`eo4Hs`) to remove Pencil `VIEW` affordances from group breakdown rows and controls table in `src/views/system-security-plans-v2/SystemSecurityPlanComplianceView.vue` to preserve V1 behavior parity (V1 has no equivalent actions).
 - 2026-03-05: Approved readability deviation on SSP Compliance (`eo4Hs`) to apply a full typography bump for dense table/legend/group metadata from Pencil micro sizes (8–10px) to V2 token-scale text (`ui-v2-label`/`ui-v2-nav`) in `src/views/system-security-plans-v2/SystemSecurityPlanComplianceView.vue`.
+- 2026-03-08: Migrated `/dashboards` and legacy `/dashboards/:id` list rendering to V2 in `src/views/dashboards-v2/DashboardListView.vue` using Pencil frame `rCe93` (`App / Dashboards / Latte`), added safe confirmed delete icon hierarchy, preserved existing compliance/dashboard API wiring, and added targeted unit coverage for dashboard list actions and mini-chart status semantics.

@@ -157,8 +157,8 @@ onUnmounted(() => {
   >
     <div class="ui-v2-surface-card w-full max-w-3xl p-4">
       <V2ModalFormTemplate
-        title="Select Active System Security Plan"
-        description="Search and set an active system security plan without leaving the current page."
+        title="Select System Security Plan"
+        description="Search and set an active system security plan."
         required-hint=""
         :error-summary="plansError ? plansErrorMessage : ''"
         :show-default-actions="false"
