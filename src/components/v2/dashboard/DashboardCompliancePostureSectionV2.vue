@@ -268,9 +268,7 @@ onMounted(() => {
           <p
             class="ui-v2-nav font-semibold text-[var(--ui-v2-secondary-foreground)]"
           >
-            {{ item.summary.satisfied }}/{{
-              item.summary.totalControls
-            }}
+            {{ item.summary.satisfied }}/{{ item.summary.totalControls }}
             CONTROLS SATISFIED
           </p>
           <p class="ui-v2-nav font-bold text-[var(--ui-v2-foreground)]">
