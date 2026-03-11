@@ -590,9 +590,7 @@ const pageTitle = computed(() =>
   risk.value?.title ? `Risk: ${risk.value.title}` : 'Risk Detail',
 );
 
-const loading = computed(
-  () => loadingRisk.value || loadingRiskList.value || loadingEvents.value,
-);
+const loading = computed(() => loadingRisk.value || loadingRiskList.value);
 
 const associationFields = [
   'evidenceIds',
@@ -806,6 +804,19 @@ const associationsSspId = computed(() => {
   return systemStore.system.securityPlan?.uuid || '';
 });
 
+const loadedComponentsSspId = ref('');
+const loadedControlsSspId = ref('');
+
+watch(associationsSspId, (next, prev) => {
+  if (next === prev) return;
+
+  loadedComponentsSspId.value = '';
+  loadedControlsSspId.value = '';
+  availableComponents.value = undefined;
+  profile.value = undefined;
+  resolvedCatalog.value = undefined;
+});
+
 function flattenControls(
   catalog?: Catalog,
 ): Array<{ id: string; title: string; catalogName: string }> {
@@ -850,15 +861,32 @@ async function ensureEvidenceOptions() {
 
 async function ensureComponentOptions() {
   const sspId = associationsSspId.value;
-  if (!sspId || availableComponents.value?.length) return;
+  if (!sspId) return;
+
+  if (
+    availableComponents.value?.length &&
+    loadedComponentsSspId.value === sspId
+  ) {
+    return;
+  }
+
   await executeLoadComponents(
     `/api/oscal/system-security-plans/${sspId}/system-implementation/components`,
   );
+  loadedComponentsSspId.value = sspId;
 }
 
 async function ensureControlOptions() {
   const sspId = associationsSspId.value;
-  if (!sspId || resolvedCatalog.value) return;
+  if (!sspId) return;
+
+  if (loadedControlsSspId.value !== sspId) {
+    loadedControlsSspId.value = sspId;
+    profile.value = undefined;
+    resolvedCatalog.value = undefined;
+  }
+
+  if (resolvedCatalog.value) return;
 
   if (!profile.value) {
     await executeLoadProfile(
@@ -966,18 +994,36 @@ const pickerOptions = computed<AssociationPickerOption[]>(() => {
   }
 });
 
-const linkedAssociationIds = computed(
-  () =>
-    new Set(
-      getRiskAssociations(risk.value, pickerKind.value).map((item) => item.id),
-    ),
-);
+function associationKeys(
+  kind: RiskAssociationKind,
+  item: RiskAssociationItem,
+): string[] {
+  const keys =
+    kind === 'evidence'
+      ? [item.evidenceUuid, item.evidenceId, item.id]
+      : kind === 'controls'
+        ? [item.controlId, item.id]
+        : [item.id];
+
+  return Array.from(new Set(keys.filter(Boolean) as string[]));
+}
+
+const linkedAssociationIds = computed(() => {
+  const linked = new Set<string>();
+  getRiskAssociations(risk.value, pickerKind.value).forEach((item) => {
+    associationKeys(pickerKind.value, item).forEach((key) => linked.add(key));
+  });
+  return linked;
+});
 
 const filteredPickerOptions = computed(() => {
   const search = pickerSearch.value.trim().toLowerCase();
 
   return pickerOptions.value.filter((option) => {
-    if (linkedAssociationIds.value.has(option.id)) return false;
+    const optionKeys = associationKeys(pickerKind.value, option);
+    if (optionKeys.some((key) => linkedAssociationIds.value.has(key))) {
+      return false;
+    }
 
     if (!search) return true;
 
@@ -1033,7 +1079,13 @@ async function linkAssociation(item: AssociationPickerOption) {
   if (!risk.value) return;
 
   const current = getRiskAssociations(risk.value, pickerKind.value);
-  if (current.some((entry) => entry.id === item.id)) return;
+  const itemKeys = associationKeys(pickerKind.value, item);
+  const hasDuplicate = current.some((entry) =>
+    associationKeys(pickerKind.value, entry).some((key) =>
+      itemKeys.includes(key),
+    ),
+  );
+  if (hasDuplicate) return;
 
   const payload = withUpdatedRiskAssociations(
     cloneDeep(risk.value),
