@@ -673,6 +673,7 @@ async function loadRisk() {
   loadError.value = '';
   notFound.value = false;
   risk.value = null;
+  riskEvents.value = [];
   evidenceAssociations.value = [];
   controlAssociations.value = [];
   componentAssociations.value = [];

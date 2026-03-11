@@ -276,6 +276,40 @@ function mountComponent() {
   });
 }
 
+function findButtonByText(
+  wrapper: ReturnType<typeof mountComponent>,
+  text: string,
+) {
+  return wrapper.findAll('button').find((button) => button.text() === text);
+}
+
+function findButtonContainingText(
+  wrapper: ReturnType<typeof mountComponent>,
+  text: string,
+) {
+  return wrapper
+    .findAll('button')
+    .find((button) => button.text().includes(text));
+}
+
+async function clickButtonByText(
+  wrapper: ReturnType<typeof mountComponent>,
+  text: string,
+) {
+  const button = findButtonByText(wrapper, text);
+  expect(button, `Missing button: ${text}`).toBeDefined();
+  await button!.trigger('click');
+}
+
+async function clickButtonContainingText(
+  wrapper: ReturnType<typeof mountComponent>,
+  text: string,
+) {
+  const button = findButtonContainingText(wrapper, text);
+  expect(button, `Missing button containing: ${text}`).toBeDefined();
+  await button!.trigger('click');
+}
+
 describe('RiskDetailView', () => {
   beforeEach(() => {
     resetMockApiState();
@@ -295,10 +329,7 @@ describe('RiskDetailView', () => {
     expect(text).toContain('History & Events');
     expect(text).toContain('Log');
 
-    await wrapper
-      .findAll('button')
-      .find((button) => button.text() === 'History & Events')
-      ?.trigger('click');
+    await clickButtonByText(wrapper, 'History & Events');
     await flushPromises();
 
     expect(wrapper.text()).toContain('Risk created');
@@ -331,10 +362,7 @@ describe('RiskDetailView', () => {
     const wrapper = mountComponent();
     await flushPromises();
 
-    await wrapper
-      .findAll('button')
-      .find((button) => button.text() === 'History & Events')
-      ?.trigger('click');
+    await clickButtonByText(wrapper, 'History & Events');
     await flushPromises();
 
     expect(wrapper.text()).toContain('History endpoint event');
@@ -354,10 +382,7 @@ describe('RiskDetailView', () => {
     const wrapper = mountComponent();
     await flushPromises();
 
-    await wrapper
-      .findAll('button')
-      .find((button) => button.text() === 'Evidence')
-      ?.trigger('click');
+    await clickButtonByText(wrapper, 'Evidence');
     await flushPromises();
 
     expect(wrapper.text()).toContain('Loaded Evidence 1');
@@ -376,17 +401,11 @@ describe('RiskDetailView', () => {
     const wrapper = mountComponent();
     await flushPromises();
 
-    await wrapper
-      .findAll('button')
-      .find((button) => button.text() === 'Controls')
-      ?.trigger('click');
+    await clickButtonByText(wrapper, 'Controls');
     await flushPromises();
     expect(wrapper.text()).toContain('Access Control');
 
-    await wrapper
-      .findAll('button')
-      .find((button) => button.text() === 'Components')
-      ?.trigger('click');
+    await clickButtonByText(wrapper, 'Components');
     await flushPromises();
     expect(wrapper.text()).toContain('Component One');
   });
@@ -395,22 +414,13 @@ describe('RiskDetailView', () => {
     const wrapper = mountComponent();
     await flushPromises();
 
-    await wrapper
-      .findAll('button')
-      .find((button) => button.text() === 'Evidence')
-      ?.trigger('click');
+    await clickButtonByText(wrapper, 'Evidence');
     await flushPromises();
 
-    await wrapper
-      .findAll('button')
-      .find((button) => button.text() === 'Add Evidence')
-      ?.trigger('click');
+    await clickButtonByText(wrapper, 'Add Evidence');
     await flushPromises();
 
-    await wrapper
-      .findAll('button')
-      .find((button) => button.text().includes('Evidence One'))
-      ?.trigger('click');
+    await clickButtonContainingText(wrapper, 'Evidence One');
     await flushPromises();
 
     expect(apiCalls).toContainEqual(
@@ -427,22 +437,13 @@ describe('RiskDetailView', () => {
     const wrapper = mountComponent();
     await flushPromises();
 
-    await wrapper
-      .findAll('button')
-      .find((button) => button.text() === 'Controls')
-      ?.trigger('click');
+    await clickButtonByText(wrapper, 'Controls');
     await flushPromises();
 
-    await wrapper
-      .findAll('button')
-      .find((button) => button.text() === 'Add Control')
-      ?.trigger('click');
+    await clickButtonByText(wrapper, 'Add Control');
     await flushPromises();
 
-    await wrapper
-      .findAll('button')
-      .find((button) => button.text().includes('Access Control'))
-      ?.trigger('click');
+    await clickButtonContainingText(wrapper, 'Access Control');
     await flushPromises();
 
     expect(apiCalls).toContainEqual(
@@ -461,26 +462,15 @@ describe('RiskDetailView', () => {
     const wrapper = mountComponent();
     await flushPromises();
 
-    await wrapper
-      .findAll('button')
-      .find((button) => button.text() === 'Controls')
-      ?.trigger('click');
+    await clickButtonByText(wrapper, 'Controls');
     await flushPromises();
 
-    const addControlButton = () =>
-      wrapper
-        .findAll('button')
-        .find((button) => button.text() === 'Add Control');
-
-    await addControlButton()?.trigger('click');
+    await clickButtonByText(wrapper, 'Add Control');
     await flushPromises();
-    await wrapper
-      .findAll('button')
-      .find((button) => button.text() === 'Close')
-      ?.trigger('click');
+    await clickButtonByText(wrapper, 'Close');
     await flushPromises();
 
-    await addControlButton()?.trigger('click');
+    await clickButtonByText(wrapper, 'Add Control');
     await flushPromises();
 
     const resolvedControlsCalls = apiCalls.filter((call) =>
@@ -500,16 +490,10 @@ describe('RiskDetailView', () => {
     const wrapper = mountComponent();
     await flushPromises();
 
-    await wrapper
-      .findAll('button')
-      .find((button) => button.text() === 'Components')
-      ?.trigger('click');
+    await clickButtonByText(wrapper, 'Components');
     await flushPromises();
 
-    await wrapper
-      .findAll('button')
-      .find((button) => button.text() === 'Remove')
-      ?.trigger('click');
+    await clickButtonByText(wrapper, 'Remove');
     await flushPromises();
 
     expect(apiCalls).toContainEqual(
