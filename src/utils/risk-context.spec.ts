@@ -6,15 +6,15 @@ import {
 } from './risk-context';
 
 describe('risk-context', () => {
-  it('resolves root risk routes to POA&M context', () => {
+  it('resolves root risk routes to SSP context', () => {
     const result = resolveRiskContext({
       routeName: 'risks:index',
-      selectedPoamId: 'poam-1',
+      selectedSspId: 'ssp-1',
     });
 
     expect(result).toEqual({
-      scope: 'poam',
-      id: 'poam-1',
+      scope: 'ssp',
+      id: 'ssp-1',
       listRouteName: 'risks:index',
       detailRouteName: 'risks:detail',
     });
@@ -37,30 +37,30 @@ describe('risk-context', () => {
   it('returns null when required context is missing', () => {
     const result = resolveRiskContext({
       routeName: 'risks:detail',
-      selectedPoamId: '',
+      selectedSspId: '',
     });
 
     expect(result).toBeNull();
   });
 
   it('builds collection and item endpoints for both scopes', () => {
-    const poamContext = resolveRiskContext({
+    const rootContext = resolveRiskContext({
       routeName: 'risks:index',
-      selectedPoamId: 'poam-44',
+      selectedSspId: 'ssp-44',
     });
     const sspContext = resolveRiskContext({
       routeName: 'system-security-plan-risks',
       routeId: 'ssp-44',
     });
 
-    expect(poamContext).not.toBeNull();
+    expect(rootContext).not.toBeNull();
     expect(sspContext).not.toBeNull();
 
-    expect(buildRiskCollectionEndpoint(poamContext!)).toBe(
-      '/api/oscal/plan-of-action-and-milestones/poam-44/risks',
+    expect(buildRiskCollectionEndpoint(rootContext!)).toBe(
+      '/api/oscal/system-security-plans/ssp-44/risks',
     );
-    expect(buildRiskItemEndpoint(poamContext!, 'risk-1')).toBe(
-      '/api/oscal/plan-of-action-and-milestones/poam-44/risks/risk-1',
+    expect(buildRiskItemEndpoint(rootContext!, 'risk-1')).toBe(
+      '/api/oscal/system-security-plans/ssp-44/risks/risk-1',
     );
 
     expect(buildRiskCollectionEndpoint(sspContext!)).toBe(

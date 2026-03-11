@@ -669,7 +669,7 @@ async function loadRiskEvents() {
         fetchedEvents.value,
         risk.value.riskLog?.entries,
       );
-      if (riskEvents.value.length || fetchedEvents.value) {
+      if (riskEvents.value.length > 0) {
         return;
       }
     } catch (err) {

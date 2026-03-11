@@ -78,10 +78,10 @@ export function resolveRiskContext(
   }
 
   if (routeName === 'risks:index' || routeName === 'risks:detail') {
-    if (!selectedPoamId) return null;
+    if (!selectedSspId) return null;
     return {
-      scope: 'poam',
-      id: selectedPoamId,
+      scope: 'ssp',
+      id: selectedSspId,
       listRouteName: 'risks:index',
       detailRouteName: 'risks:detail',
     };

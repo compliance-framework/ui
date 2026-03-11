@@ -465,7 +465,11 @@ watch(
       risks.value = [];
       return;
     }
-    await loadRisks(value);
+    try {
+      await loadRisks(value);
+    } catch {
+      // Error state is already captured by useDataApi().error.
+    }
   },
   { immediate: true },
 );
