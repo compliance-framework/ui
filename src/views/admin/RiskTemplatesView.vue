@@ -102,7 +102,7 @@
             type="text"
             required
             class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md dark:bg-slate-800 dark:text-slate-300"
-            placeholder="eg. aws-security-hub"
+            placeholder="e.g. aws-security-hub"
           />
         </div>
         <div>
@@ -117,7 +117,7 @@
             type="text"
             required
             class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md dark:bg-slate-800 dark:text-slate-300"
-            placeholder="eg. cis-aws-foundations"
+            placeholder="e.g. cis-aws-foundations"
           />
         </div>
       </div>
@@ -229,7 +229,7 @@
               :disabled="isReadOnly"
               type="text"
               class="flex-1 px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md dark:bg-slate-800 dark:text-slate-300"
-              placeholder="eg. SV-1234"
+              placeholder="e.g. SV-1234"
             />
             <button
               v-if="!isReadOnly"
@@ -342,6 +342,7 @@
             <input
               v-model="formData.remediationTitle"
               :disabled="isReadOnly"
+              :required="formData.enableRemediation"
               type="text"
               class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md dark:bg-slate-800 dark:text-slate-300"
               placeholder="Remediation template title"

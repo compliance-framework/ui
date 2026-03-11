@@ -165,10 +165,10 @@ describe('RiskTemplatesView', () => {
     await createButton!.trigger('click');
 
     await wrapper
-      .find('input[placeholder="eg. aws-security-hub"]')
+      .find('input[placeholder="e.g. aws-security-hub"]')
       .setValue('plugin-x');
     await wrapper
-      .find('input[placeholder="eg. cis-aws-foundations"]')
+      .find('input[placeholder="e.g. cis-aws-foundations"]')
       .setValue('policy-x');
     await wrapper
       .find('input[placeholder="machine-friendly template name"]')
