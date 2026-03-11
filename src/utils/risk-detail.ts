@@ -125,8 +125,15 @@ function normalizeCandidate(
   };
 
   if (config === ASSOCIATION_CONFIG.evidence) {
-    normalized.evidenceId = readString(record, ['evidenceId', 'id']) || id;
-    normalized.evidenceUuid = readString(record, ['evidenceUuid', 'uuid']);
+    const explicitEvidenceId = readString(record, ['evidenceId', 'id']);
+    if (explicitEvidenceId) {
+      normalized.evidenceId = explicitEvidenceId;
+    }
+
+    const evidenceUuid = readString(record, ['evidenceUuid', 'uuid']);
+    if (evidenceUuid) {
+      normalized.evidenceUuid = evidenceUuid;
+    }
   }
 
   return normalized;
@@ -150,7 +157,8 @@ function normalizeForPersistence(
   switch (kind) {
     case 'evidence':
       return items.map((item) => ({
-        evidenceId: item.evidenceId || item.id,
+        evidenceId:
+          item.evidenceId || (!item.evidenceUuid ? item.id : undefined),
         evidenceUuid: item.evidenceUuid || undefined,
         title: item.title,
         description: item.description,

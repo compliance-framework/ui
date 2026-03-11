@@ -290,6 +290,14 @@ async function submit() {
   }
 
   try {
+    let deadline: string | undefined;
+    if (formData.deadline) {
+      const parsedDeadline = new Date(formData.deadline);
+      if (!Number.isNaN(parsedDeadline.getTime())) {
+        deadline = parsedDeadline.toISOString();
+      }
+    }
+
     const newRisk: Partial<Risk> = {
       uuid: crypto.randomUUID(),
       title: formData.title,
@@ -300,7 +308,7 @@ async function submit() {
         formData.threatIds.filter((t) => t.id.trim()).length > 0
           ? formData.threatIds.filter((t) => t.id.trim())
           : undefined,
-      deadline: new Date(formData.deadline).toISOString() || undefined,
+      deadline,
       remarks: formData.remarks || undefined,
     };
 

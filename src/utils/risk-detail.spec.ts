@@ -76,6 +76,34 @@ describe('risk-detail', () => {
     ]);
   });
 
+  it('does not copy uuid into evidenceId when only uuid is present', () => {
+    const risk = makeRisk({
+      relatedEvidence: [
+        { evidenceUuid: 'uuid-only', title: 'Legacy evidence' },
+      ],
+    });
+
+    const associations = getRiskAssociations(risk, 'evidence');
+    expect(associations[0].id).toBe('uuid-only');
+    expect(associations[0].evidenceId).toBeUndefined();
+    expect(associations[0].evidenceUuid).toBe('uuid-only');
+
+    const updated = withUpdatedRiskAssociations(
+      risk,
+      'evidence',
+      associations,
+    ) as Risk & {
+      relatedEvidence?: Array<{ evidenceId?: string; evidenceUuid?: string }>;
+    };
+
+    expect(updated.relatedEvidence).toEqual([
+      expect.objectContaining({
+        evidenceId: undefined,
+        evidenceUuid: 'uuid-only',
+      }),
+    ]);
+  });
+
   it('normalizes events from raw event payload', () => {
     const events = normalizeRiskEvents([
       {

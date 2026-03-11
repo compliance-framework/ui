@@ -165,9 +165,12 @@
                   </div>
                   <div class="flex gap-2 self-start">
                     <RouterLinkButton
-                      v-if="item.id"
+                      v-if="item.evidenceId || item.id"
                       variant="text"
-                      :to="{ name: 'evidence:view', params: { id: item.id } }"
+                      :to="{
+                        name: 'evidence:view',
+                        params: { id: item.evidenceId || item.id },
+                      }"
                     >
                       Open
                     </RouterLinkButton>
