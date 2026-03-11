@@ -17,7 +17,7 @@ const mockRisk = {
   description: 'Encryption policy drift.',
   statement: 'Data at rest may not be encrypted.',
   status: 'open',
-  riskLog: { entries: [] },
+  riskLog: { entries: [] as Array<Record<string, unknown>> },
 };
 
 const mockToastAdd = vi.fn();
@@ -39,6 +39,20 @@ const { apiCalls, mockApiState, resetMockApiState } = vi.hoisted(() => {
     componentLinks: [] as Array<
       string | { riskId: string; componentId: string }
     >,
+    resolvedControls: [
+      {
+        controlId: 'AC-1',
+        catalogId: 'catalog-1',
+        title: 'Access Control',
+        class: 'SP800-53',
+      },
+    ] as Array<{
+      controlId: string;
+      catalogId: string;
+      title: string;
+      class: string;
+    }>,
+    eventResponses: {} as Record<string, unknown>,
   };
 
   const resetMockApiState = () => {
@@ -46,6 +60,15 @@ const { apiCalls, mockApiState, resetMockApiState } = vi.hoisted(() => {
     mockApiState.evidenceLinks = [];
     mockApiState.controlLinks = [];
     mockApiState.componentLinks = [];
+    mockApiState.resolvedControls = [
+      {
+        controlId: 'AC-1',
+        catalogId: 'catalog-1',
+        title: 'Access Control',
+        class: 'SP800-53',
+      },
+    ];
+    mockApiState.eventResponses = {};
   };
 
   return {
@@ -108,6 +131,8 @@ vi.mock('@/composables/axios', () => ({
         data.value = mockRisk;
       } else if (endpoint.endsWith('/system-security-plans/ssp-1/risks')) {
         data.value = [mockRisk];
+      } else if (endpoint in mockApiState.eventResponses) {
+        data.value = mockApiState.eventResponses[endpoint];
       } else if (endpoint.includes('/events')) {
         data.value = [
           {
@@ -148,14 +173,7 @@ vi.mock('@/composables/axios', () => ({
         endpoint.endsWith('/profile/profile-1/resolved-with-catalogs') ||
         endpoint.endsWith('/profiles/profile-1/resolved-with-catalogs')
       ) {
-        data.value = [
-          {
-            controlId: 'AC-1',
-            catalogId: 'catalog-1',
-            title: 'Access Control',
-            class: 'SP800-53',
-          },
-        ];
+        data.value = [...mockApiState.resolvedControls];
       } else if (
         endpoint.endsWith(
           '/system-security-plans/ssp-1/system-implementation/components',
@@ -286,6 +304,50 @@ describe('RiskDetailView', () => {
     expect(wrapper.text()).toContain('Risk created');
   });
 
+  it('continues loading events across endpoints when the first one is empty', async () => {
+    mockRisk.riskLog.entries = [
+      {
+        uuid: 'fallback-log-event',
+        title: 'Fallback Log Event',
+        start: '2026-03-11T08:00:00Z',
+        loggedBy: [],
+      },
+    ];
+    mockApiState.eventResponses[
+      '/api/oscal/system-security-plans/ssp-1/risks/risk-1/events'
+    ] = [];
+    mockApiState.eventResponses[
+      '/api/oscal/system-security-plans/ssp-1/risks/risk-1/history'
+    ] = [
+      {
+        uuid: 'evt-history-1',
+        eventType: 'status-change',
+        createdAt: '2026-03-12T11:00:00Z',
+        actorName: 'Auditor',
+        details: 'History endpoint event',
+      },
+    ];
+
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'History & Events')
+      ?.trigger('click');
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('History endpoint event');
+    expect(apiCalls).toContainEqual(
+      expect.objectContaining({
+        endpoint: '/api/oscal/system-security-plans/ssp-1/risks/risk-1/history',
+        method: 'GET',
+      }),
+    );
+
+    mockRisk.riskLog.entries = [];
+  });
+
   it('hydrates linked evidence when risk evidence endpoint returns id array', async () => {
     mockApiState.evidenceLinks = ['06d6174b-39be-443a-b282-0fb821e24a94'];
 
@@ -391,6 +453,40 @@ describe('RiskDetailView', () => {
         data: { catalogId: 'catalog-1', controlId: 'AC-1' },
       }),
     );
+  });
+
+  it('does not refetch controls repeatedly when resolved controls are empty', async () => {
+    mockApiState.resolvedControls = [];
+
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Controls')
+      ?.trigger('click');
+    await flushPromises();
+
+    const addControlButton = () =>
+      wrapper
+        .findAll('button')
+        .find((button) => button.text() === 'Add Control');
+
+    await addControlButton()?.trigger('click');
+    await flushPromises();
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Close')
+      ?.trigger('click');
+    await flushPromises();
+
+    await addControlButton()?.trigger('click');
+    await flushPromises();
+
+    const resolvedControlsCalls = apiCalls.filter((call) =>
+      call.endpoint.endsWith('/resolved-with-catalogs'),
+    );
+    expect(resolvedControlsCalls).toHaveLength(1);
   });
 
   it('removes components through SSP risk link endpoint', async () => {

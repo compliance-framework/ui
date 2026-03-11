@@ -335,8 +335,8 @@ const riskContext = computed<RiskContext | null>(() => {
     return {
       scope: 'poam',
       id: props.poamId,
-      listRouteName: 'risks:index',
-      detailRouteName: 'risks:detail',
+      listRouteName: 'plan-of-action-and-milestones-risks',
+      detailRouteName: 'plan-of-action-and-milestones-risk-detail',
     };
   }
 

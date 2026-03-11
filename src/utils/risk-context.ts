@@ -46,7 +46,6 @@ export function resolveRiskContext(
 ): RiskContext | null {
   const routeName = normalizeRouteName(input.routeName);
   const routeId = input.routeId ?? '';
-  const selectedPoamId = input.selectedPoamId ?? '';
   const selectedSspId = input.selectedSspId ?? '';
 
   if (
@@ -93,15 +92,6 @@ export function resolveRiskContext(
       id: routeId,
       listRouteName: 'system-security-plan-risks',
       detailRouteName: 'system-security-plan-risk-detail',
-    };
-  }
-
-  if (selectedPoamId) {
-    return {
-      scope: 'poam',
-      id: selectedPoamId,
-      listRouteName: 'risks:index',
-      detailRouteName: 'risks:detail',
     };
   }
 

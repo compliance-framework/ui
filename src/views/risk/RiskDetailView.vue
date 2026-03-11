@@ -656,11 +656,9 @@ async function loadRiskEvents() {
   for (const endpoint of riskEventEndpoints.value) {
     try {
       await executeFetchEvents(endpoint);
-      riskEvents.value = normalizeRiskEvents(
-        fetchedEvents.value,
-        risk.value.riskLog?.entries,
-      );
-      if (riskEvents.value.length > 0) {
+      const normalizedApiEvents = normalizeRiskEvents(fetchedEvents.value, []);
+      if (normalizedApiEvents.length > 0) {
+        riskEvents.value = normalizedApiEvents;
         return;
       }
     } catch (err) {
@@ -885,7 +883,7 @@ async function ensureControlOptions() {
     availableControlsWithCatalog.value = undefined;
   }
 
-  if (availableControlsWithCatalog.value?.length) return;
+  if (availableControlsWithCatalog.value !== undefined) return;
 
   if (!profile.value) {
     await executeLoadProfile(
@@ -903,7 +901,7 @@ async function ensureControlOptions() {
   for (const endpoint of endpoints) {
     try {
       await executeLoadResolvedControls(endpoint);
-      if (availableControlsWithCatalog.value) {
+      if (availableControlsWithCatalog.value !== undefined) {
         return;
       }
     } catch (err) {

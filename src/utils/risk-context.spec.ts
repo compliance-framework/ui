@@ -34,6 +34,29 @@ describe('risk-context', () => {
     });
   });
 
+  it('resolves POAM route context from route id', () => {
+    const result = resolveRiskContext({
+      routeName: 'plan-of-action-and-milestones-risk-detail',
+      routeId: 'poam-22',
+    });
+
+    expect(result).toEqual({
+      scope: 'poam',
+      id: 'poam-22',
+      listRouteName: 'plan-of-action-and-milestones-risks',
+      detailRouteName: 'plan-of-action-and-milestones-risk-detail',
+    });
+  });
+
+  it('does not infer POAM context from selected poam id fallback', () => {
+    const result = resolveRiskContext({
+      routeName: null,
+      selectedPoamId: 'poam-55',
+    });
+
+    expect(result).toBeNull();
+  });
+
   it('returns null when required context is missing', () => {
     const result = resolveRiskContext({
       routeName: 'risks:detail',
