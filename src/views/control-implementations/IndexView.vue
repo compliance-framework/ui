@@ -314,21 +314,41 @@ async function buildStatementSuggestionPlan(): Promise<
     statements,
     concurrencyLimit,
     async ({ requirement, statement }) => {
-      const response = await axios.post<{ data: SystemComponentSuggestion[] }>(
-        buildSuggestComponentsEndpoint(sspId, requirement.uuid, statement.uuid),
-      );
-      const suggestions = normalizeSuggestedComponentsResponse(
-        response.data.data,
-      );
-      return {
-        requirement,
-        statement,
-        suggestions,
-        unappliedSuggestions: getUnappliedSuggestions(
-          statement.byComponents,
+      try {
+        const response = await axios.post<{
+          data: SystemComponentSuggestion[];
+        }>(
+          buildSuggestComponentsEndpoint(
+            sspId,
+            requirement.uuid,
+            statement.uuid,
+          ),
+        );
+        const suggestions = normalizeSuggestedComponentsResponse(
+          response.data.data,
+        );
+        return {
+          requirement,
+          statement,
           suggestions,
-        ),
-      } as StatementSuggestionWorkItem;
+          unappliedSuggestions: getUnappliedSuggestions(
+            statement.byComponents,
+            suggestions,
+          ),
+        } as StatementSuggestionWorkItem;
+      } catch (error) {
+        console.error('Failed to fetch statement component suggestions:', {
+          requirementUuid: requirement.uuid,
+          statementUuid: statement.uuid,
+          error,
+        });
+        return {
+          requirement,
+          statement,
+          suggestions: [],
+          unappliedSuggestions: [],
+        } as StatementSuggestionWorkItem;
+      }
     },
   );
 

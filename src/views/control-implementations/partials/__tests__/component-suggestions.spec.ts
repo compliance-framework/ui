@@ -25,6 +25,7 @@ describe('component-suggestions helpers', () => {
         purpose: 'Serve API traffic',
         definedComponentId: 'comp-1',
         componentDefinitionId: 'comp-def-1',
+        relevanceScore: 0.92,
       },
       {
         name: 'Firewall',
@@ -45,6 +46,7 @@ describe('component-suggestions helpers', () => {
         purpose: 'Serve API traffic',
         definedComponentId: 'comp-1',
         componentDefinitionId: 'comp-def-1',
+        relevanceScore: 0.92,
       },
       {
         componentUuid: 'comp-2',
@@ -97,6 +99,38 @@ describe('component-suggestions helpers', () => {
         purpose: '',
         definedComponentId: 'comp-2',
         componentDefinitionId: 'comp-def-2',
+      },
+    ]);
+  });
+
+  it('ignores malformed entries missing defined component ID', () => {
+    const result = normalizeSuggestedComponentsResponse([
+      {
+        name: 'Missing ID',
+        type: 'software',
+        description: 'bad',
+        purpose: 'bad',
+      },
+      {
+        name: 'Valid',
+        type: 'service',
+        description: 'ok',
+        purpose: 'ok',
+        definedComponentId: 'comp-9',
+        componentDefinitionId: 'comp-def-9',
+      },
+    ]);
+
+    expect(result).toEqual([
+      {
+        componentUuid: 'comp-9',
+        title: 'Valid',
+        type: 'service',
+        description: 'ok',
+        purpose: 'ok',
+        definedComponentId: 'comp-9',
+        componentDefinitionId: 'comp-def-9',
+        relevanceScore: undefined,
       },
     ]);
   });

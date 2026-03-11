@@ -1,12 +1,13 @@
 import type { ByComponent } from '@/oscal';
 
 export interface SystemComponentSuggestion {
-  name: string;
-  type: string;
-  description: string;
-  purpose: string;
-  definedComponentId: string;
-  componentDefinitionId: string;
+  name?: string;
+  type?: string;
+  description?: string;
+  purpose?: string;
+  definedComponentId?: string;
+  componentDefinitionId?: string;
+  relevanceScore?: number;
 }
 
 export interface SuggestedComponent {
@@ -22,6 +23,16 @@ export interface SuggestedComponent {
 
 type SuggestionPayload = SystemComponentSuggestion[] | undefined | null;
 
+function getRelevanceScore(
+  suggestion: SystemComponentSuggestion,
+): number | undefined {
+  const { relevanceScore } = suggestion;
+  if (typeof relevanceScore === 'number' && Number.isFinite(relevanceScore)) {
+    return relevanceScore;
+  }
+  return undefined;
+}
+
 export function normalizeSuggestedComponentsResponse(
   payload: SuggestionPayload,
 ): SuggestedComponent[] {
@@ -35,12 +46,13 @@ export function normalizeSuggestedComponentsResponse(
 
     deduped.set(suggestion.definedComponentId, {
       componentUuid: suggestion.definedComponentId,
-      title: suggestion.name,
-      type: suggestion.type,
-      description: suggestion.description,
-      purpose: suggestion.purpose,
+      title: suggestion.name ?? '',
+      type: suggestion.type ?? '',
+      description: suggestion.description ?? '',
+      purpose: suggestion.purpose ?? '',
       definedComponentId: suggestion.definedComponentId,
-      componentDefinitionId: suggestion.componentDefinitionId,
+      componentDefinitionId: suggestion.componentDefinitionId ?? '',
+      relevanceScore: getRelevanceScore(suggestion),
     });
   }
 
