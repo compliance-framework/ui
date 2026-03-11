@@ -684,6 +684,7 @@ async function loadRisk() {
   loadError.value = '';
   notFound.value = false;
   risk.value = null;
+  let detailFetchError: unknown = null;
 
   if (contextMissing.value || !detailEndpoint.value || !listEndpoint.value) {
     return;
@@ -696,6 +697,7 @@ async function loadRisk() {
     }
   } catch (err) {
     if (isCanceledError(err)) return;
+    detailFetchError = err;
   }
 
   if (!risk.value) {
@@ -715,6 +717,13 @@ async function loadRisk() {
   }
 
   if (!risk.value) {
+    const detailStatus = (
+      detailFetchError as { response?: { status?: number } }
+    )?.response?.status;
+    if (detailFetchError && detailStatus !== 404) {
+      loadError.value = extractErrorMessage(detailFetchError);
+      return;
+    }
     notFound.value = true;
     return;
   }
@@ -806,6 +815,7 @@ const associationsSspId = computed(() => {
 
 const loadedComponentsSspId = ref('');
 const loadedControlsSspId = ref('');
+const evidenceOptionsLoaded = ref(false);
 
 watch(associationsSspId, (next, prev) => {
   if (next === prev) return;
@@ -847,7 +857,7 @@ function flattenControls(
 }
 
 async function ensureEvidenceOptions() {
-  if (availableEvidence.value?.length) return;
+  if (evidenceOptionsLoaded.value) return;
   const payload = {
     filter: {
       scope: {},
@@ -857,16 +867,14 @@ async function ensureEvidenceOptions() {
   await executeLoadEvidence({
     data: payload,
   });
+  evidenceOptionsLoaded.value = true;
 }
 
 async function ensureComponentOptions() {
   const sspId = associationsSspId.value;
   if (!sspId) return;
 
-  if (
-    availableComponents.value?.length &&
-    loadedComponentsSspId.value === sspId
-  ) {
+  if (loadedComponentsSspId.value === sspId) {
     return;
   }
 

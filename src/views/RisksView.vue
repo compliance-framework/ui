@@ -268,8 +268,8 @@
 
     <div v-else class="space-y-4">
       <div
-        v-for="(risk, index) in visibleRisks"
-        :key="riskIdentifier(risk) || index"
+        v-for="risk in visibleRisks"
+        :key="riskRenderKey(risk)"
         class="bg-white dark:bg-slate-900 border border-ccf-300 dark:border-slate-700 rounded-lg p-6"
       >
         <div class="flex flex-col lg:flex-row gap-4 lg:justify-between">
@@ -522,6 +522,8 @@ const { execute: executeDeleteRisk } = useDataApi<void>(
 const showCreateModal = ref(false);
 const showEditModal = ref(false);
 const editingRisk = ref<Risk | null>(null);
+const riskFallbackKeys = new WeakMap<Risk, string>();
+let riskFallbackCounter = 0;
 
 const filters = reactive<RiskFilters>({ ...defaultRiskFilters });
 const sortBy = ref<RiskSortBy>('updated');
@@ -626,6 +628,18 @@ function riskDetailRoute(riskId: string) {
 
 function riskIdentifier(risk: Risk): string {
   return getRiskIdentifier(risk);
+}
+
+function riskRenderKey(risk: Risk): string {
+  const identifier = riskIdentifier(risk);
+  if (identifier) return identifier;
+
+  const existingKey = riskFallbackKeys.get(risk);
+  if (existingKey) return existingKey;
+
+  const generatedKey = `risk-fallback-${++riskFallbackCounter}`;
+  riskFallbackKeys.set(risk, generatedKey);
+  return generatedKey;
 }
 
 function resetFilters() {
