@@ -1234,11 +1234,7 @@ async function submitEvidenceLinking() {
               type="button"
               size="small"
               class="!text-left"
-              :severity="
-                isSuggestionApplied(suggestion.componentUuid)
-                  ? 'contrast'
-                  : 'secondary'
-              "
+              severity="secondary"
               :outlined="!isSuggestionApplied(suggestion.componentUuid)"
               :disabled="
                 !localStatement ||

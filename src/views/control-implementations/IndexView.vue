@@ -244,6 +244,11 @@ interface StatementSuggestionWorkItem {
   unappliedSuggestions: SuggestedComponent[];
 }
 
+interface StatementSuggestionPlan {
+  items: StatementSuggestionWorkItem[];
+  failedFetchCount: number;
+}
+
 const bulkSuggestionsBusy = computed(
   () => preparingBulkSuggestions.value || applyingBulkSuggestions.value,
 );
@@ -303,15 +308,17 @@ async function loadControlImplementations() {
   controlImplementations.value = nextMap;
 }
 
-async function buildStatementSuggestionPlan(): Promise<
-  StatementSuggestionWorkItem[]
-> {
+async function buildStatementSuggestionPlan(): Promise<StatementSuggestionPlan> {
   const sspId = systemStore.system.securityPlan?.uuid;
   if (!sspId) {
-    return [];
+    return {
+      items: [],
+      failedFetchCount: 0,
+    };
   }
 
   const statements = getStatementWorkItems();
+  let failedFetchCount = 0;
   const planned = await mapWithConcurrency(
     statements,
     BULK_SUGGESTIONS_CONCURRENCY_LIMIT,
@@ -339,6 +346,7 @@ async function buildStatementSuggestionPlan(): Promise<
           ),
         } as StatementSuggestionWorkItem;
       } catch (error) {
+        failedFetchCount += 1;
         console.error('Failed to fetch statement component suggestions:', {
           requirementUuid: requirement.uuid,
           statementUuid: statement.uuid,
@@ -354,7 +362,10 @@ async function buildStatementSuggestionPlan(): Promise<
     },
   );
 
-  return planned.filter((item) => item.unappliedSuggestions.length > 0);
+  return {
+    items: planned.filter((item) => item.unappliedSuggestions.length > 0),
+    failedFetchCount,
+  };
 }
 
 async function mapWithConcurrency<T, R>(
@@ -486,13 +497,27 @@ async function prepareApplyAllSuggestions() {
 
   preparingBulkSuggestions.value = true;
   try {
-    const plannedItems = await buildStatementSuggestionPlan();
+    const { items: plannedItems, failedFetchCount } =
+      await buildStatementSuggestionPlan();
     const suggestionsToAdd = plannedItems.reduce(
       (sum, item) => sum + item.unappliedSuggestions.length,
       0,
     );
 
+    if (failedFetchCount > 0) {
+      const failedLabel = failedFetchCount === 1 ? 'statement' : 'statements';
+      toast.add({
+        severity: 'warn',
+        summary: 'Some Suggestions Could Not Be Loaded',
+        detail: `${failedFetchCount} ${failedLabel} failed to load suggestions. Results may be incomplete.`,
+        life: 4500,
+      });
+    }
+
     if (suggestionsToAdd === 0) {
+      if (failedFetchCount > 0) {
+        return;
+      }
       toast.add({
         severity: 'info',
         summary: 'No Pending Suggestions',
