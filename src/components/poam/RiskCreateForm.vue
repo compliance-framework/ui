@@ -272,7 +272,7 @@ import { reactive, ref } from 'vue';
 import { ThreatIDSystem, type Risk, type ThreatID } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
-import { isAxiosError, type AxiosError } from 'axios';
+import { isAxiosError } from 'axios';
 import type { ErrorResponse, ErrorBody } from '@/stores/types';
 import Dialog from '@/volt/Dialog.vue';
 import { getRiskTemplateKey, type RiskTemplate } from '@/types/risk-templates';
@@ -361,8 +361,8 @@ function getThreatIdsFromTemplate(template: RiskTemplate): ThreatID[] {
   return template.threatIds
     .filter((entry) => entry.id?.trim() && entry.system?.trim())
     .map((entry) => ({
-      id: entry.id,
-      system: entry.system,
+      id: entry.id.trim(),
+      system: entry.system.trim(),
     }));
 }
 
@@ -500,6 +500,13 @@ async function submit() {
   }
 
   try {
+    const normalizedThreatIds = formData.threatIds
+      .map((threat) => ({
+        id: threat.id.trim(),
+        system: threat.system.trim(),
+      }))
+      .filter((threat) => threat.id.length > 0 && threat.system.length > 0);
+
     const newRisk: Partial<Risk> = {
       uuid: crypto.randomUUID(),
       title: formData.title,
@@ -507,9 +514,7 @@ async function submit() {
       statement: formData.statement,
       status: formData.status,
       threatIds:
-        formData.threatIds.filter((t) => t.id.trim()).length > 0
-          ? formData.threatIds.filter((t) => t.id.trim())
-          : undefined,
+        normalizedThreatIds.length > 0 ? normalizedThreatIds : undefined,
       deadline: formData.deadline
         ? new Date(formData.deadline).toISOString()
         : undefined,
@@ -529,9 +534,17 @@ async function submit() {
 
     emit('created', returnedRisk.value!);
   } catch (error) {
-    const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
-    const errorMessage =
-      errorResponse.response?.data?.errors?.body || 'Unknown error';
+    let errorMessage = 'Unknown error';
+
+    if (isAxiosError(error)) {
+      const responseBody = (
+        error.response?.data as ErrorResponse<ErrorBody> | undefined
+      )?.errors?.body;
+      errorMessage = responseBody || error.message || errorMessage;
+    } else if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+
     toast.add({
       severity: 'error',
       summary: 'Creation Failed',

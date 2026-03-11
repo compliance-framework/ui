@@ -28,8 +28,8 @@ const riskTemplates = shallowRef([
     impactHint: 'high',
     violationIds: ['V-1', 'V-2'],
     threatIds: [
-      { system: 'mitre', id: 'TH-101', title: 'Threat 101' },
-      { system: 'mitre', id: 'TH-202', title: 'Threat 202' },
+      { system: ' mitre ', id: ' TH-101 ', title: 'Threat 101' },
+      { system: ' mitre ', id: ' TH-202 ', title: 'Threat 202' },
     ],
   },
 ]);
@@ -105,8 +105,8 @@ describe('RiskCreateForm', () => {
         impactHint: 'high',
         violationIds: ['V-1', 'V-2'],
         threatIds: [
-          { system: 'mitre', id: 'TH-101', title: 'Threat 101' },
-          { system: 'mitre', id: 'TH-202', title: 'Threat 202' },
+          { system: ' mitre ', id: ' TH-101 ', title: 'Threat 101' },
+          { system: ' mitre ', id: ' TH-202 ', title: 'Threat 202' },
         ],
       },
     ];
@@ -188,6 +188,10 @@ describe('RiskCreateForm', () => {
         description: 'Template statement from API',
         statement: 'Template statement from API',
         status: 'open',
+        threatIds: [
+          { id: 'TH-101', system: 'mitre' },
+          { id: 'TH-202', system: 'mitre' },
+        ],
         deadline: undefined,
       }),
     });
@@ -221,6 +225,32 @@ describe('RiskCreateForm', () => {
     expect(unavailableButton!.attributes('disabled')).toBeDefined();
     expect(wrapper.text()).toContain(
       'You do not have permission to use risk templates.',
+    );
+  });
+
+  it('shows non-Axios error message when creation throws runtime error', async () => {
+    mockCreateRisk.mockRejectedValueOnce(new Error('Runtime explode'));
+
+    const wrapper = mountForm();
+
+    await wrapper
+      .find('input[placeholder="Enter risk title"]')
+      .setValue('Risk A');
+    await wrapper
+      .find('textarea[placeholder="Enter risk description"]')
+      .setValue('Description A');
+    await wrapper
+      .find('textarea[placeholder="Enter risk statement"]')
+      .setValue('Statement A');
+    await wrapper.find('select').setValue('open');
+
+    await wrapper.find('form').trigger('submit');
+
+    expect(toastAdd).toHaveBeenCalledWith(
+      expect.objectContaining({
+        summary: 'Creation Failed',
+        detail: 'Failed to create risk: Runtime explode',
+      }),
     );
   });
 });
