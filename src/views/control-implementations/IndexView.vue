@@ -43,10 +43,24 @@
   </Message>
 
   <div v-else>
-    <PageHeader>Controls</PageHeader>
-    <PageSubHeader
-      >Specify how controls are implemented across the business
-    </PageSubHeader>
+    <div
+      class="mb-4 flex flex-col gap-3 md:flex-row md:items-end md:justify-between"
+    >
+      <div>
+        <PageHeader>Controls</PageHeader>
+        <PageSubHeader
+          >Specify how controls are implemented across the business
+        </PageSubHeader>
+      </div>
+      <Button
+        type="button"
+        severity="secondary"
+        :label="bulkSuggestionsButtonLabel"
+        :loading="bulkSuggestionsBusy"
+        :disabled="bulkSuggestionsOperationLocked || catalogLoading || loading"
+        @click="prepareApplyAllSuggestions"
+      />
+    </div>
 
     <div v-if="catalogLoading">Loading Catalog ...</div>
     <div v-else-if="!catalog">No Catalog</div>
@@ -127,6 +141,7 @@
 
 <script setup lang="ts">
 import { onMounted, ref, watch, computed, type Ref } from 'vue';
+import { v4 as uuidv4 } from 'uuid';
 import Message from '@/volt/Message.vue';
 import Badge from '@/volt/Badge.vue';
 import { useSystemStore } from '@/stores/system.ts';
@@ -135,19 +150,40 @@ import PageHeader from '@/components/PageHeader.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
 import ControlEvidenceCounter from './partials/ControlEvidenceCounter.vue';
 import { useCatalogTree } from '@/composables/useCatalogTree';
-import { useDataApi } from '@/composables/axios';
+import {
+  useAuthenticatedInstance,
+  useDataApi,
+  decamelizeKeys,
+} from '@/composables/axios';
 import Tree from '@/volt/Tree.vue';
 import IndexControlImplementation from '@/views/control-implementations/partials/IndexControlImplementation.vue';
 import type { AxiosError } from 'axios';
 import type { Catalog, Profile } from '@/oscal';
-import type { ControlImplementation, ImplementedRequirement } from '@/oscal';
+import type {
+  ControlImplementation,
+  ImplementedRequirement,
+  Statement,
+} from '@/oscal';
 import Button from '@/volt/Button.vue';
 import { BIconEye } from 'bootstrap-icons-vue';
 import Drawer from '@/volt/Drawer.vue';
 import StatementByComponent from './partials/StatementByComponent.vue';
+import { useToast } from 'primevue/usetoast';
+import { useConfirm } from 'primevue/useconfirm';
+import {
+  buildByComponentsEndpoint,
+  buildSuggestComponentsEndpoint,
+  getUnappliedSuggestions,
+  normalizeSuggestedComponentsResponse,
+  type SuggestedComponent,
+  type SystemComponentSuggestion,
+} from '@/views/control-implementations/partials/component-suggestions';
 
 const systemStore = useSystemStore();
 const uiStore = useUIStore();
+const toast = useToast();
+const confirm = useConfirm();
+const axios = useAuthenticatedInstance();
 
 const controlDrawerOpen = computed({
   get: () => uiStore.controlImplementationDrawerOpen,
@@ -181,7 +217,6 @@ const {
   null,
   { immediate: false },
 );
-
 const loading = computed<boolean>(
   () =>
     baseLoading.value ||
@@ -193,10 +228,354 @@ const controlImplementations = ref<{ [key: string]: ImplementedRequirement }>(
   {},
 );
 const selectedImplementedRequirement = ref<ImplementedRequirement>();
+const preparingBulkSuggestions = ref(false);
+const applyingBulkSuggestions = ref(false);
+const bulkSuggestionsConfirmOpen = ref(false);
+const BULK_SUGGESTIONS_CONCURRENCY_LIMIT = 5;
 
 const error = ref<AxiosError<unknown> | null>(null);
 
 const { nodes, build } = useCatalogTree();
+
+interface StatementSuggestionWorkItem {
+  requirement: ImplementedRequirement;
+  statement: Statement;
+  suggestions: SuggestedComponent[];
+  unappliedSuggestions: SuggestedComponent[];
+}
+
+interface StatementSuggestionPlan {
+  items: StatementSuggestionWorkItem[];
+  failedFetchCount: number;
+}
+
+const bulkSuggestionsBusy = computed(
+  () => preparingBulkSuggestions.value || applyingBulkSuggestions.value,
+);
+const bulkSuggestionsOperationLocked = computed(
+  () => bulkSuggestionsBusy.value || bulkSuggestionsConfirmOpen.value,
+);
+const bulkSuggestionsButtonLabel = computed(() => {
+  if (applyingBulkSuggestions.value) {
+    return 'Applying Suggestions...';
+  }
+  if (preparingBulkSuggestions.value) {
+    return 'Preparing Suggestions...';
+  }
+  return 'Apply All Suggestions';
+});
+
+function getStatementWorkItems(): Array<{
+  requirement: ImplementedRequirement;
+  statement: Statement;
+}> {
+  const items: Array<{
+    requirement: ImplementedRequirement;
+    statement: Statement;
+  }> = [];
+  for (const requirement of Object.values(controlImplementations.value)) {
+    for (const statement of requirement.statements ?? []) {
+      if (!statement.uuid) {
+        continue;
+      }
+      items.push({ requirement, statement });
+    }
+  }
+  return items;
+}
+
+async function loadControlImplementations() {
+  const { data: implementationResponse } = await fetchControlImplementations();
+  const implementation = implementationResponse?.value?.data;
+  if (!implementation) {
+    controlImplementations.value = {};
+    selectedImplementedRequirement.value = undefined;
+    uiStore.controlImplementationSelectedRequirementId = null;
+    uiStore.controlImplementationDrawerOpen = false;
+    return;
+  }
+
+  const nextMap: { [key: string]: ImplementedRequirement } = {};
+  let selectedRequirementFound = false;
+  for (const impl of implementation.implementedRequirements) {
+    nextMap[impl.controlId] = impl;
+    if (
+      uiStore.controlImplementationSelectedRequirementId === impl.uuid &&
+      uiStore.controlImplementationDrawerOpen
+    ) {
+      selectedImplementedRequirement.value = impl;
+      selectedRequirementFound = true;
+    }
+  }
+  if (
+    uiStore.controlImplementationDrawerOpen &&
+    uiStore.controlImplementationSelectedRequirementId &&
+    !selectedRequirementFound
+  ) {
+    selectedImplementedRequirement.value = undefined;
+    uiStore.controlImplementationSelectedRequirementId = null;
+    uiStore.controlImplementationDrawerOpen = false;
+  }
+  controlImplementations.value = nextMap;
+}
+
+async function buildStatementSuggestionPlan(): Promise<StatementSuggestionPlan> {
+  const sspId = systemStore.system.securityPlan?.uuid;
+  if (!sspId) {
+    return {
+      items: [],
+      failedFetchCount: 0,
+    };
+  }
+
+  const statements = getStatementWorkItems();
+  let failedFetchCount = 0;
+  const planned = await mapWithConcurrency(
+    statements,
+    BULK_SUGGESTIONS_CONCURRENCY_LIMIT,
+    async ({ requirement, statement }) => {
+      try {
+        const response = await axios.post<{
+          data: SystemComponentSuggestion[];
+        }>(
+          buildSuggestComponentsEndpoint(
+            sspId,
+            requirement.uuid,
+            statement.uuid,
+          ),
+        );
+        const suggestions = normalizeSuggestedComponentsResponse(
+          response.data.data,
+        );
+        return {
+          requirement,
+          statement,
+          suggestions,
+          unappliedSuggestions: getUnappliedSuggestions(
+            statement.byComponents,
+            suggestions,
+          ),
+        } as StatementSuggestionWorkItem;
+      } catch (error) {
+        failedFetchCount += 1;
+        console.error('Failed to fetch statement component suggestions:', {
+          requirementUuid: requirement.uuid,
+          statementUuid: statement.uuid,
+          error,
+        });
+        return {
+          requirement,
+          statement,
+          suggestions: [],
+          unappliedSuggestions: [],
+        } as StatementSuggestionWorkItem;
+      }
+    },
+  );
+
+  return {
+    items: planned.filter((item) => item.unappliedSuggestions.length > 0),
+    failedFetchCount,
+  };
+}
+
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  limit: number,
+  iteratorFn: (item: T) => Promise<R>,
+): Promise<R[]> {
+  if (!items.length) {
+    return [];
+  }
+
+  const safeLimit = Math.max(1, Math.min(limit, items.length));
+  const results = new Array<R>(items.length);
+  let currentIndex = 0;
+
+  const worker = async () => {
+    while (true) {
+      const index = currentIndex;
+      currentIndex += 1;
+      if (index >= items.length) {
+        return;
+      }
+      results[index] = await iteratorFn(items[index]);
+    }
+  };
+
+  await Promise.all(Array.from({ length: safeLimit }, () => worker()));
+  return results;
+}
+
+async function applySuggestionPlan(
+  plannedItems: StatementSuggestionWorkItem[],
+) {
+  const sspId = systemStore.system.securityPlan?.uuid;
+  if (!sspId) {
+    return;
+  }
+
+  applyingBulkSuggestions.value = true;
+  let createdCount = 0;
+  let failedCount = 0;
+  try {
+    const tasks = plannedItems.flatMap((item) =>
+      item.unappliedSuggestions.map((suggestion) => ({ item, suggestion })),
+    );
+    const outcomes = await mapWithConcurrency(
+      tasks,
+      BULK_SUGGESTIONS_CONCURRENCY_LIMIT,
+      async ({ item, suggestion }) => {
+        try {
+          await axios.post(
+            buildByComponentsEndpoint(
+              sspId,
+              item.requirement.uuid,
+              item.statement.uuid,
+            ),
+            {
+              uuid: uuidv4(),
+              componentUuid: suggestion.componentUuid,
+              description: '',
+              implementationStatus: {
+                state: '',
+              },
+            },
+            { transformRequest: [decamelizeKeys] },
+          );
+          return true;
+        } catch (error) {
+          console.error(
+            'Failed to apply suggested component in bulk operation:',
+            {
+              requirementUuid: item.requirement.uuid,
+              statementUuid: item.statement.uuid,
+              componentUuid: suggestion.componentUuid,
+              error,
+            },
+          );
+          return false;
+        }
+      },
+    );
+    createdCount = outcomes.filter(Boolean).length;
+    failedCount = outcomes.length - createdCount;
+  } finally {
+    try {
+      await loadControlImplementations();
+    } catch (error) {
+      console.error('Failed to refresh control implementations:', error);
+      toast.add({
+        severity: 'error',
+        summary: 'Refresh Failed',
+        detail:
+          'Some suggestions may have been applied, but the page failed to refresh automatically.',
+        life: 5000,
+      });
+    }
+
+    if (createdCount > 0 && failedCount === 0) {
+      toast.add({
+        severity: 'success',
+        summary: 'Suggestions Applied',
+        detail: `${createdCount} suggested component${createdCount === 1 ? '' : 's'} added across statements.`,
+        life: 4000,
+      });
+    } else if (createdCount > 0 && failedCount > 0) {
+      toast.add({
+        severity: 'warn',
+        summary: 'Partially Applied',
+        detail: `${createdCount} suggestion${createdCount === 1 ? '' : 's'} added, ${failedCount} failed.`,
+        life: 5000,
+      });
+    } else if (failedCount > 0) {
+      toast.add({
+        severity: 'error',
+        summary: 'Bulk Apply Failed',
+        detail: `${failedCount} suggestion${failedCount === 1 ? '' : 's'} failed to apply.`,
+        life: 5000,
+      });
+    }
+
+    applyingBulkSuggestions.value = false;
+  }
+}
+
+async function prepareApplyAllSuggestions() {
+  if (bulkSuggestionsOperationLocked.value) {
+    return;
+  }
+
+  preparingBulkSuggestions.value = true;
+  try {
+    const { items: plannedItems, failedFetchCount } =
+      await buildStatementSuggestionPlan();
+    const suggestionsToAdd = plannedItems.reduce(
+      (sum, item) => sum + item.unappliedSuggestions.length,
+      0,
+    );
+
+    if (failedFetchCount > 0) {
+      const failedLabel = failedFetchCount === 1 ? 'statement' : 'statements';
+      toast.add({
+        severity: 'warn',
+        summary: 'Some Suggestions Could Not Be Loaded',
+        detail: `${failedFetchCount} ${failedLabel} failed to load suggestions. Results may be incomplete.`,
+        life: 4500,
+      });
+    }
+
+    if (suggestionsToAdd === 0) {
+      if (failedFetchCount > 0) {
+        return;
+      }
+      toast.add({
+        severity: 'info',
+        summary: 'No Pending Suggestions',
+        detail: 'All current statement suggestions are already applied.',
+        life: 3000,
+      });
+      return;
+    }
+
+    bulkSuggestionsConfirmOpen.value = true;
+    confirm.require({
+      header: 'Apply All Suggestions',
+      message: `Apply ${suggestionsToAdd} suggested component${suggestionsToAdd === 1 ? '' : 's'} across ${plannedItems.length} statement${plannedItems.length === 1 ? '' : 's'}?`,
+      rejectProps: {
+        label: 'Cancel',
+        severity: 'secondary',
+        outlined: true,
+      },
+      acceptProps: {
+        label: 'Apply',
+      },
+      accept: async () => {
+        try {
+          await applySuggestionPlan(plannedItems);
+        } finally {
+          bulkSuggestionsConfirmOpen.value = false;
+        }
+      },
+      reject: () => {
+        bulkSuggestionsConfirmOpen.value = false;
+      },
+    });
+  } catch (bulkError) {
+    bulkSuggestionsConfirmOpen.value = false;
+    toast.add({
+      severity: 'error',
+      summary: 'Unable to Load Suggestions',
+      detail:
+        bulkError instanceof Error
+          ? bulkError.message
+          : 'Unexpected error loading component suggestions.',
+      life: 4000,
+    });
+  } finally {
+    preparingBulkSuggestions.value = false;
+  }
+}
 
 watch(profile, async () => {
   if (!profile.value) {
@@ -236,23 +615,7 @@ onMounted(async () => {
   }
 
   try {
-    const { data: implementationResponse } =
-      await fetchControlImplementations();
-    const implementation = implementationResponse?.value?.data;
-
-    if (!implementation) {
-      return;
-    }
-    const implementedRequirements = implementation.implementedRequirements;
-    for (const impl of implementedRequirements) {
-      controlImplementations.value[impl.controlId] = impl;
-      if (
-        uiStore.controlImplementationSelectedRequirementId === impl.uuid &&
-        uiStore.controlImplementationDrawerOpen
-      ) {
-        selectedImplementedRequirement.value = impl;
-      }
-    }
+    await loadControlImplementations();
   } catch (err) {
     error.value = err as AxiosError<unknown>;
   }
