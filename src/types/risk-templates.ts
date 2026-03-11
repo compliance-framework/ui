@@ -56,7 +56,25 @@ export function getRiskTemplateApiId(
 }
 
 export function getRiskTemplateKey(template: RiskTemplate): string {
-  return getRiskTemplateApiId(template) ?? template.title;
+  const apiId = getRiskTemplateApiId(template);
+  if (apiId) {
+    return apiId;
+  }
+
+  const parts = [
+    template.pluginId,
+    template.policyPackage,
+    template.name,
+    template.title,
+  ]
+    .map((value) => value?.trim())
+    .filter((value): value is string => Boolean(value && value.length > 0));
+
+  if (parts.length > 0) {
+    return parts.join('::');
+  }
+
+  return '';
 }
 
 export function getRiskTemplateUsageCount(template: RiskTemplate): number {

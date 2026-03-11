@@ -39,8 +39,8 @@
           </thead>
           <tbody>
             <tr
-              v-for="template in templates"
-              :key="getTemplateKey(template)"
+              v-for="(template, index) in templates"
+              :key="getTemplateKey(template) || `risk-template-${index}`"
               class="border-t border-ccf-300 dark:border-slate-700"
             >
               <td class="p-3 font-medium text-gray-900 dark:text-slate-200">
