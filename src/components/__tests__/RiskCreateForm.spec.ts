@@ -19,17 +19,18 @@ const createRiskLoading = ref(false);
 const riskTemplates = shallowRef([
   {
     id: 'template-1',
+    pluginId: 'plugin-a',
+    policyPackage: 'policy-a',
+    name: 'template-risk',
     title: 'Template Risk',
-    description: 'Template description',
-    defaultStatus: 'investigating',
-    defaultLikelihood: 'moderate',
-    defaultImpact: 'high',
-    suggestedControls: ['AC-2', 'AU-6'],
-    suggestedComponents: ['API Gateway'],
-    metadata: {
-      statement: 'Template statement from metadata',
-      threatIds: ['TH-101', 'TH-202'],
-    },
+    statement: 'Template statement from API',
+    likelihoodHint: 'moderate',
+    impactHint: 'high',
+    violationIds: ['V-1', 'V-2'],
+    threatIds: [
+      { system: 'mitre', id: 'TH-101', title: 'Threat 101' },
+      { system: 'mitre', id: 'TH-202', title: 'Threat 202' },
+    ],
   },
 ]);
 const templatesLoading = ref(false);
@@ -95,17 +96,18 @@ describe('RiskCreateForm', () => {
     riskTemplates.value = [
       {
         id: 'template-1',
+        pluginId: 'plugin-a',
+        policyPackage: 'policy-a',
+        name: 'template-risk',
         title: 'Template Risk',
-        description: 'Template description',
-        defaultStatus: 'investigating',
-        defaultLikelihood: 'moderate',
-        defaultImpact: 'high',
-        suggestedControls: ['AC-2', 'AU-6'],
-        suggestedComponents: ['API Gateway'],
-        metadata: {
-          statement: 'Template statement from metadata',
-          threatIds: ['TH-101', 'TH-202'],
-        },
+        statement: 'Template statement from API',
+        likelihoodHint: 'moderate',
+        impactHint: 'high',
+        violationIds: ['V-1', 'V-2'],
+        threatIds: [
+          { system: 'mitre', id: 'TH-101', title: 'Threat 101' },
+          { system: 'mitre', id: 'TH-202', title: 'Threat 202' },
+        ],
       },
     ];
     createRiskLoading.value = false;
@@ -156,14 +158,12 @@ describe('RiskCreateForm', () => {
       'Template Risk',
     );
     expect((descriptionInput.element as HTMLTextAreaElement).value).toBe(
-      'Template description',
+      'Template statement from API',
     );
     expect((statementInput.element as HTMLTextAreaElement).value).toBe(
-      'Template statement from metadata',
+      'Template statement from API',
     );
-    expect((statusSelect.element as HTMLSelectElement).value).toBe(
-      'investigating',
-    );
+    expect((statusSelect.element as HTMLSelectElement).value).toBe('');
     expect(wrapper.text()).toContain('Using template: Template Risk');
   });
 
@@ -179,14 +179,15 @@ describe('RiskCreateForm', () => {
     const applyButton = findButtonByText(wrapper, 'Apply');
 
     await applyButton!.trigger('click');
+    await wrapper.find('select').setValue('open');
     await wrapper.find('form').trigger('submit');
 
     expect(mockCreateRisk).toHaveBeenCalledWith({
       data: expect.objectContaining({
         title: 'Template Risk',
-        description: 'Template description',
-        statement: 'Template statement from metadata',
-        status: 'investigating',
+        description: 'Template statement from API',
+        statement: 'Template statement from API',
+        status: 'open',
         deadline: undefined,
       }),
     });

@@ -226,7 +226,7 @@
             <thead class="bg-gray-50 dark:bg-slate-800">
               <tr>
                 <th class="text-left p-3 font-semibold">Title</th>
-                <th class="text-left p-3 font-semibold">Description</th>
+                <th class="text-left p-3 font-semibold">Statement</th>
                 <th class="text-left p-3 font-semibold">Likelihood/Impact</th>
                 <th class="text-left p-3 font-semibold">Action</th>
               </tr>
@@ -241,7 +241,7 @@
                   {{ template.title }}
                 </td>
                 <td class="p-3 text-gray-600 dark:text-slate-400">
-                  {{ template.description }}
+                  {{ template.statement || 'N/A' }}
                 </td>
                 <td class="p-3 text-gray-600 dark:text-slate-400">
                   {{ formatLikelihoodImpact(template) }}
@@ -344,68 +344,61 @@ function getTemplateMetadataString(
 }
 
 function getStatementFromTemplate(template: RiskTemplate): string {
-  const metadataStatement = template.metadata?.statement;
-  if (typeof metadataStatement === 'string' && metadataStatement.trim()) {
-    return metadataStatement.trim();
+  if (template.statement?.trim()) {
+    return template.statement.trim();
   }
-  return template.description;
+  return template.title;
 }
 
 function getThreatIdsFromTemplate(template: RiskTemplate): ThreatID[] {
-  const metadataThreatIds = template.metadata?.threatIds;
-  if (!Array.isArray(metadataThreatIds)) {
+  if (!Array.isArray(template.threatIds)) {
     return [];
   }
 
-  return metadataThreatIds
-    .map((entry) => {
-      if (typeof entry === 'string') {
-        return entry.trim();
-      }
-
-      if (entry && typeof entry === 'object' && 'id' in entry) {
-        const id = (entry as { id?: unknown }).id;
-        return typeof id === 'string' ? id.trim() : '';
-      }
-
-      return '';
-    })
-    .filter((id) => id.length > 0)
-    .map((id) => ({ id, system: ThreatIDSystem.OSCAL }));
+  return template.threatIds
+    .filter((entry) => entry.id?.trim() && entry.system?.trim())
+    .map((entry) => ({
+      id: entry.id,
+      system: entry.system,
+    }));
 }
 
 function buildTemplateRemarks(template: RiskTemplate): string {
   const parts: string[] = [];
 
-  if (template.defaultLikelihood) {
-    parts.push(`Default likelihood: ${template.defaultLikelihood}`);
+  if (template.likelihoodHint) {
+    parts.push(`Likelihood hint: ${template.likelihoodHint}`);
   }
-  if (template.defaultImpact) {
-    parts.push(`Default impact: ${template.defaultImpact}`);
-  }
-
-  const controlsLine = getTemplateMetadataString(
-    template.suggestedControls,
-    'Suggested controls',
-  );
-  if (controlsLine) {
-    parts.push(controlsLine);
+  if (template.impactHint) {
+    parts.push(`Impact hint: ${template.impactHint}`);
   }
 
-  const componentsLine = getTemplateMetadataString(
-    template.suggestedComponents,
-    'Suggested components',
+  const violationsLine = getTemplateMetadataString(
+    template.violationIds,
+    'Violation IDs',
   );
-  if (componentsLine) {
-    parts.push(componentsLine);
+  if (violationsLine) {
+    parts.push(violationsLine);
+  }
+
+  if (template.remediationTemplate?.title) {
+    parts.push(`Remediation: ${template.remediationTemplate.title}`);
+  }
+
+  if (template.remediationTemplate?.tasks?.length) {
+    parts.push(
+      `Remediation tasks: ${template.remediationTemplate.tasks
+        .map((task) => task.title)
+        .join(', ')}`,
+    );
   }
 
   return parts.join('\n');
 }
 
 function formatLikelihoodImpact(template: RiskTemplate): string {
-  const likelihood = template.defaultLikelihood ?? 'N/A';
-  const impact = template.defaultImpact ?? 'N/A';
+  const likelihood = template.likelihoodHint ?? 'N/A';
+  const impact = template.impactHint ?? 'N/A';
   return `${likelihood} / ${impact}`;
 }
 
@@ -442,13 +435,11 @@ async function openTemplateSelector() {
 }
 
 function applyTemplate(template: RiskTemplate) {
-  formData.title = template.title;
-  formData.description = template.description;
-  formData.statement = getStatementFromTemplate(template);
+  const statement = getStatementFromTemplate(template);
 
-  if (template.defaultStatus) {
-    formData.status = template.defaultStatus;
-  }
+  formData.title = template.title;
+  formData.description = statement;
+  formData.statement = statement;
 
   const templateThreatIds = getThreatIdsFromTemplate(template);
   if (templateThreatIds.length > 0) {

@@ -7,10 +7,13 @@ import type { RiskTemplate } from '@/types/risk-templates';
 const templates = shallowRef<RiskTemplate[]>([
   {
     id: 'template-1',
+    pluginId: 'plugin-a',
+    policyPackage: 'policy-a',
+    name: 'network-risk',
     title: 'Network Risk',
-    description: 'Template description',
-    defaultLikelihood: 'high',
-    defaultImpact: 'moderate',
+    statement: 'Network risk statement',
+    likelihoodHint: 'high',
+    impactHint: 'moderate',
     usageCount: 3,
   },
 ]);
@@ -103,13 +106,6 @@ vi.mock('@/volt/Dialog.vue', () => ({
   },
 }));
 
-vi.mock('@/volt/MultiSelect.vue', () => ({
-  default: {
-    name: 'MultiSelect',
-    template: '<div class="multi-select-stub"></div>',
-  },
-}));
-
 vi.mock('@/volt/PrimaryButton.vue', () => ({
   default: {
     name: 'PrimaryButton',
@@ -138,10 +134,13 @@ describe('RiskTemplatesView', () => {
     templates.value = [
       {
         id: 'template-1',
+        pluginId: 'plugin-a',
+        policyPackage: 'policy-a',
+        name: 'network-risk',
         title: 'Network Risk',
-        description: 'Template description',
-        defaultLikelihood: 'high',
-        defaultImpact: 'moderate',
+        statement: 'Network risk statement',
+        likelihoodHint: 'high',
+        impactHint: 'moderate',
         usageCount: 3,
       },
     ];
@@ -151,13 +150,64 @@ describe('RiskTemplatesView', () => {
     updateLoading.value = false;
   });
 
+  const findButtonByText = (
+    wrapper: ReturnType<typeof mount>,
+    label: string,
+  ) => {
+    return wrapper.findAll('button').find((button) => button.text() === label);
+  };
+
+  it('creates using only required fields and leaves optional fields unset', async () => {
+    const wrapper = mount(RiskTemplatesView);
+
+    const createButton = findButtonByText(wrapper, 'Create Template');
+    expect(createButton).toBeDefined();
+    await createButton!.trigger('click');
+
+    await wrapper
+      .find('input[placeholder="eg. aws-security-hub"]')
+      .setValue('plugin-x');
+    await wrapper
+      .find('input[placeholder="eg. cis-aws-foundations"]')
+      .setValue('policy-x');
+    await wrapper
+      .find('input[placeholder="machine-friendly template name"]')
+      .setValue('template-name');
+    await wrapper
+      .find('input[placeholder="human-friendly title"]')
+      .setValue('Template Title');
+    await wrapper
+      .find('textarea[placeholder="Risk statement text"]')
+      .setValue('Risk statement body');
+
+    await wrapper.find('form').trigger('submit');
+
+    expect(mockCreateTemplate).toHaveBeenCalledWith(
+      '/api/admin/risk-templates',
+      {
+        data: expect.objectContaining({
+          pluginId: 'plugin-x',
+          policyPackage: 'policy-x',
+          name: 'template-name',
+          title: 'Template Title',
+          statement: 'Risk statement body',
+        }),
+      },
+    );
+
+    const payload = mockCreateTemplate.mock.calls[0][1].data;
+    expect(payload.likelihoodHint).toBeUndefined();
+    expect(payload.impactHint).toBeUndefined();
+    expect(payload.violationIds).toBeUndefined();
+    expect(payload.threatIds).toBeUndefined();
+    expect(payload.remediationTemplate).toBeUndefined();
+    expect(payload.isActive).toBeUndefined();
+  });
+
   it('duplicates a template with the "(Copy)" suffix', async () => {
     const wrapper = mount(RiskTemplatesView);
 
-    const duplicateButton = wrapper
-      .findAll('button')
-      .find((button) => button.text() === 'Duplicate');
-
+    const duplicateButton = findButtonByText(wrapper, 'Duplicate');
     expect(duplicateButton).toBeDefined();
 
     await duplicateButton!.trigger('click');
@@ -166,8 +216,11 @@ describe('RiskTemplatesView', () => {
       '/api/admin/risk-templates',
       {
         data: expect.objectContaining({
+          pluginId: 'plugin-a',
+          policyPackage: 'policy-a',
+          name: 'network-risk-copy',
           title: 'Network Risk (Copy)',
-          description: 'Template description',
+          statement: 'Network risk statement',
         }),
       },
     );
@@ -176,10 +229,7 @@ describe('RiskTemplatesView', () => {
   it('shows usage count warning in delete confirmation message', async () => {
     const wrapper = mount(RiskTemplatesView);
 
-    const deleteButton = wrapper
-      .findAll('button')
-      .find((button) => button.text() === 'Delete');
-
+    const deleteButton = findButtonByText(wrapper, 'Delete');
     expect(deleteButton).toBeDefined();
 
     await deleteButton!.trigger('click');
@@ -198,17 +248,17 @@ describe('RiskTemplatesView', () => {
   it('shows a validation toast when editing a template without id/uuid', async () => {
     templates.value = [
       {
+        pluginId: 'plugin-a',
+        policyPackage: 'policy-a',
+        name: 'no-id',
         title: 'No Id Template',
-        description: 'No identifier present',
+        statement: 'Statement',
       },
     ];
 
     const wrapper = mount(RiskTemplatesView);
 
-    const editButton = wrapper
-      .findAll('button')
-      .find((button) => button.text() === 'Edit');
-
+    const editButton = findButtonByText(wrapper, 'Edit');
     expect(editButton).toBeDefined();
     await editButton!.trigger('click');
 
@@ -232,9 +282,7 @@ describe('RiskTemplatesView', () => {
     });
 
     const wrapper = mount(RiskTemplatesView);
-    const duplicateButton = wrapper
-      .findAll('button')
-      .find((button) => button.text() === 'Duplicate');
+    const duplicateButton = findButtonByText(wrapper, 'Duplicate');
 
     expect(duplicateButton).toBeDefined();
     await duplicateButton!.trigger('click');
@@ -245,5 +293,44 @@ describe('RiskTemplatesView', () => {
         detail: 'Template title already exists',
       }),
     );
+  });
+
+  it('does not open delete confirmation when template has no id/uuid', async () => {
+    templates.value = [
+      {
+        pluginId: 'plugin-a',
+        policyPackage: 'policy-a',
+        name: 'no-id',
+        title: 'No Id Template',
+        statement: 'Statement',
+      },
+    ];
+
+    const wrapper = mount(RiskTemplatesView);
+
+    const deleteButton = findButtonByText(wrapper, 'Delete');
+    expect(deleteButton).toBeDefined();
+    await deleteButton!.trigger('click');
+
+    expect(confirmRequire).not.toHaveBeenCalled();
+    expect(toastAdd).toHaveBeenCalledWith(
+      expect.objectContaining({
+        summary: 'Invalid Template',
+        detail: 'Template is missing an identifier and cannot be deleted.',
+      }),
+    );
+  });
+
+  it('ignores submit attempts while in view mode', async () => {
+    const wrapper = mount(RiskTemplatesView);
+
+    const viewButton = findButtonByText(wrapper, 'View');
+    expect(viewButton).toBeDefined();
+    await viewButton!.trigger('click');
+
+    await wrapper.find('form').trigger('submit');
+
+    expect(mockCreateTemplate).not.toHaveBeenCalled();
+    expect(mockUpdateTemplate).not.toHaveBeenCalled();
   });
 });

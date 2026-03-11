@@ -28,7 +28,7 @@
           <thead class="bg-gray-50 dark:bg-slate-800">
             <tr>
               <th class="text-left p-3 font-semibold">Template Title</th>
-              <th class="text-left p-3 font-semibold">Description</th>
+              <th class="text-left p-3 font-semibold">Statement</th>
               <th class="text-left p-3 font-semibold">
                 Default Likelihood/Impact
               </th>
@@ -47,7 +47,7 @@
                 {{ template.title }}
               </td>
               <td class="p-3 text-gray-600 dark:text-slate-400">
-                {{ template.description }}
+                {{ template.statement || 'N/A' }}
               </td>
               <td class="p-3 text-gray-600 dark:text-slate-400">
                 {{ formatLikelihoodImpact(template) }}
@@ -89,171 +89,323 @@
     class="custom-colors"
   >
     <form @submit.prevent="submitTemplate" class="space-y-4 p-1">
-      <div>
-        <label
-          class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
-        >
-          Title <span class="text-red-500">*</span>
-        </label>
-        <input
-          v-model="formData.title"
-          :disabled="isReadOnly"
-          type="text"
-          required
-          class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md dark:bg-slate-800 dark:text-slate-300"
-          placeholder="Enter template title"
-        />
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label
+            class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
+          >
+            Plugin ID <span class="text-red-500">*</span>
+          </label>
+          <input
+            v-model="formData.pluginId"
+            :disabled="isReadOnly"
+            type="text"
+            required
+            class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md dark:bg-slate-800 dark:text-slate-300"
+            placeholder="eg. aws-security-hub"
+          />
+        </div>
+        <div>
+          <label
+            class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
+          >
+            Policy Package <span class="text-red-500">*</span>
+          </label>
+          <input
+            v-model="formData.policyPackage"
+            :disabled="isReadOnly"
+            type="text"
+            required
+            class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md dark:bg-slate-800 dark:text-slate-300"
+            placeholder="eg. cis-aws-foundations"
+          />
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label
+            class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
+          >
+            Name <span class="text-red-500">*</span>
+          </label>
+          <input
+            v-model="formData.name"
+            :disabled="isReadOnly"
+            type="text"
+            required
+            class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md dark:bg-slate-800 dark:text-slate-300"
+            placeholder="machine-friendly template name"
+          />
+        </div>
+        <div>
+          <label
+            class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
+          >
+            Title <span class="text-red-500">*</span>
+          </label>
+          <input
+            v-model="formData.title"
+            :disabled="isReadOnly"
+            type="text"
+            required
+            class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md dark:bg-slate-800 dark:text-slate-300"
+            placeholder="human-friendly title"
+          />
+        </div>
       </div>
 
       <div>
         <label
           class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
         >
-          Description <span class="text-red-500">*</span>
+          Statement <span class="text-red-500">*</span>
         </label>
         <textarea
-          v-model="formData.description"
+          v-model="formData.statement"
           :disabled="isReadOnly"
-          rows="3"
+          rows="4"
           required
           class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md dark:bg-slate-800 dark:text-slate-300"
-          placeholder="Enter template description"
+          placeholder="Risk statement text"
         />
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label
             class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
           >
-            Default Status
+            Likelihood Hint
           </label>
-          <select
-            v-model="formData.defaultStatus"
+          <input
+            v-model="formData.likelihoodHint"
             :disabled="isReadOnly"
+            type="text"
             class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md dark:bg-slate-800 dark:text-slate-300"
-          >
-            <option value="">Select status</option>
-            <option
-              v-for="status in statusOptions"
-              :key="status"
-              :value="status"
-            >
-              {{ status }}
-            </option>
-          </select>
+            placeholder="optional"
+          />
         </div>
-
         <div>
           <label
             class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
           >
-            Default Likelihood
+            Impact Hint
           </label>
-          <select
-            v-model="formData.defaultLikelihood"
+          <input
+            v-model="formData.impactHint"
             :disabled="isReadOnly"
+            type="text"
             class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md dark:bg-slate-800 dark:text-slate-300"
-          >
-            <option value="">Select likelihood</option>
-            <option
-              v-for="likelihood in likelihoodOptions"
-              :key="likelihood"
-              :value="likelihood"
-            >
-              {{ likelihood }}
-            </option>
-          </select>
-        </div>
-
-        <div>
-          <label
-            class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
-          >
-            Default Impact
-          </label>
-          <select
-            v-model="formData.defaultImpact"
-            :disabled="isReadOnly"
-            class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md dark:bg-slate-800 dark:text-slate-300"
-          >
-            <option value="">Select impact</option>
-            <option
-              v-for="impact in impactOptions"
-              :key="impact"
-              :value="impact"
-            >
-              {{ impact }}
-            </option>
-          </select>
+            placeholder="optional"
+          />
         </div>
       </div>
 
       <div>
-        <label
-          class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
-        >
-          Suggested Controls
-        </label>
-        <MultiSelect
-          v-model="formData.suggestedControls"
-          :options="availableControlOptions"
-          :disabled="isReadOnly"
-          :filter="true"
-          :show-clear="true"
-          placeholder="Select one or more controls"
-          display="chip"
-          class="w-full"
-        />
-        <div v-if="!isReadOnly" class="mt-2 flex gap-2">
-          <input
-            v-model="newControlOption"
-            type="text"
-            class="flex-1 px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md dark:bg-slate-800 dark:text-slate-300"
-            placeholder="Add custom control suggestion"
-            @keydown.enter.prevent="addControlOption"
-          />
+        <div class="flex items-center justify-between mb-2">
+          <label
+            class="block text-sm font-medium text-gray-700 dark:text-slate-400"
+          >
+            Violation IDs
+          </label>
           <button
+            v-if="!isReadOnly"
             type="button"
-            class="px-3 py-2 rounded-md border border-gray-300 dark:border-slate-600"
-            @click="addControlOption"
+            class="text-sm px-2 py-1 rounded border border-gray-300 dark:border-slate-600"
+            @click="addViolationId"
           >
             Add
           </button>
         </div>
+        <div v-if="formData.violationIds.length" class="space-y-2">
+          <div
+            v-for="(_, index) in formData.violationIds"
+            :key="`violation-${index}`"
+            class="flex gap-2"
+          >
+            <input
+              v-model="formData.violationIds[index]"
+              :disabled="isReadOnly"
+              type="text"
+              class="flex-1 px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md dark:bg-slate-800 dark:text-slate-300"
+              placeholder="eg. SV-1234"
+            />
+            <button
+              v-if="!isReadOnly"
+              type="button"
+              class="px-3 py-2 text-red-600"
+              @click="removeViolationId(index)"
+            >
+              Remove
+            </button>
+          </div>
+        </div>
+        <p v-else class="text-sm text-gray-500 dark:text-slate-400">
+          No violation IDs.
+        </p>
       </div>
 
       <div>
-        <label
-          class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
-        >
-          Suggested Components
-        </label>
-        <MultiSelect
-          v-model="formData.suggestedComponents"
-          :options="availableComponentOptions"
-          :disabled="isReadOnly"
-          :filter="true"
-          :show-clear="true"
-          placeholder="Select one or more components"
-          display="chip"
-          class="w-full"
-        />
-        <div v-if="!isReadOnly" class="mt-2 flex gap-2">
-          <input
-            v-model="newComponentOption"
-            type="text"
-            class="flex-1 px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md dark:bg-slate-800 dark:text-slate-300"
-            placeholder="Add custom component suggestion"
-            @keydown.enter.prevent="addComponentOption"
-          />
+        <div class="flex items-center justify-between mb-2">
+          <label
+            class="block text-sm font-medium text-gray-700 dark:text-slate-400"
+          >
+            Threat IDs
+          </label>
           <button
+            v-if="!isReadOnly"
             type="button"
-            class="px-3 py-2 rounded-md border border-gray-300 dark:border-slate-600"
-            @click="addComponentOption"
+            class="text-sm px-2 py-1 rounded border border-gray-300 dark:border-slate-600"
+            @click="addThreatId"
           >
             Add
           </button>
+        </div>
+        <div v-if="formData.threatIds.length" class="space-y-3">
+          <div
+            v-for="(threat, index) in formData.threatIds"
+            :key="`threat-${index}`"
+            class="grid grid-cols-1 md:grid-cols-4 gap-2 border border-ccf-300 dark:border-slate-700 rounded p-2"
+          >
+            <input
+              v-model="threat.system"
+              :disabled="isReadOnly"
+              type="text"
+              class="px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md dark:bg-slate-800 dark:text-slate-300"
+              placeholder="System"
+            />
+            <input
+              v-model="threat.id"
+              :disabled="isReadOnly"
+              type="text"
+              class="px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md dark:bg-slate-800 dark:text-slate-300"
+              placeholder="ID"
+            />
+            <input
+              v-model="threat.title"
+              :disabled="isReadOnly"
+              type="text"
+              class="px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md dark:bg-slate-800 dark:text-slate-300"
+              placeholder="Title"
+            />
+            <div class="flex gap-2">
+              <input
+                v-model="threat.url"
+                :disabled="isReadOnly"
+                type="text"
+                class="flex-1 px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md dark:bg-slate-800 dark:text-slate-300"
+                placeholder="URL (optional)"
+              />
+              <button
+                v-if="!isReadOnly"
+                type="button"
+                class="px-3 py-2 text-red-600"
+                @click="removeThreatId(index)"
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+        </div>
+        <p v-else class="text-sm text-gray-500 dark:text-slate-400">
+          No threat IDs.
+        </p>
+      </div>
+
+      <div class="space-y-2">
+        <div class="flex items-center gap-2">
+          <input
+            id="remediation-enabled"
+            v-model="formData.enableRemediation"
+            :disabled="isReadOnly"
+            type="checkbox"
+          />
+          <label
+            for="remediation-enabled"
+            class="text-sm font-medium text-gray-700 dark:text-slate-400"
+          >
+            Include Remediation Template
+          </label>
+        </div>
+
+        <div
+          v-if="formData.enableRemediation"
+          class="space-y-3 border border-ccf-300 dark:border-slate-700 rounded p-3"
+        >
+          <div>
+            <label
+              class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
+            >
+              Remediation Title <span class="text-red-500">*</span>
+            </label>
+            <input
+              v-model="formData.remediationTitle"
+              :disabled="isReadOnly"
+              type="text"
+              class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md dark:bg-slate-800 dark:text-slate-300"
+              placeholder="Remediation template title"
+            />
+          </div>
+
+          <div>
+            <label
+              class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
+            >
+              Remediation Description
+            </label>
+            <textarea
+              v-model="formData.remediationDescription"
+              :disabled="isReadOnly"
+              rows="2"
+              class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md dark:bg-slate-800 dark:text-slate-300"
+              placeholder="Optional"
+            />
+          </div>
+
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <label
+                class="block text-sm font-medium text-gray-700 dark:text-slate-400"
+              >
+                Remediation Tasks
+              </label>
+              <button
+                v-if="!isReadOnly"
+                type="button"
+                class="text-sm px-2 py-1 rounded border border-gray-300 dark:border-slate-600"
+                @click="addRemediationTask"
+              >
+                Add
+              </button>
+            </div>
+            <div v-if="formData.remediationTasks.length" class="space-y-2">
+              <div
+                v-for="(task, index) in formData.remediationTasks"
+                :key="`task-${index}`"
+                class="flex gap-2"
+              >
+                <input
+                  v-model="task.title"
+                  :disabled="isReadOnly"
+                  type="text"
+                  class="flex-1 px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md dark:bg-slate-800 dark:text-slate-300"
+                  :placeholder="`Task #${index + 1}`"
+                />
+                <button
+                  v-if="!isReadOnly"
+                  type="button"
+                  class="px-3 py-2 text-red-600"
+                  @click="removeRemediationTask(index)"
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
+            <p v-else class="text-sm text-gray-500 dark:text-slate-400">
+              No remediation tasks.
+            </p>
+          </div>
         </div>
       </div>
 
@@ -261,15 +413,17 @@
         <label
           class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
         >
-          Template-specific Fields/Metadata (JSON object)
+          Active State
         </label>
-        <textarea
-          v-model="formData.metadataJson"
+        <select
+          v-model="formData.isActive"
           :disabled="isReadOnly"
-          rows="6"
-          class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md font-mono text-xs dark:bg-slate-800 dark:text-slate-300"
-          placeholder='Example: {"statement":"Risk statement template","owner":"Risk Team"}'
-        />
+          class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md dark:bg-slate-800 dark:text-slate-300"
+        >
+          <option value="unset">Unset</option>
+          <option value="true">Active</option>
+          <option value="false">Inactive</option>
+        </select>
       </div>
 
       <div class="flex justify-end gap-2 pt-2">
@@ -291,11 +445,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, ref } from 'vue';
 import PageHeader from '@/components/PageHeader.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
 import Dialog from '@/volt/Dialog.vue';
-import MultiSelect from '@/volt/MultiSelect.vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
 import TertiaryButton from '@/volt/TertiaryButton.vue';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
@@ -307,34 +460,32 @@ import {
   getRiskTemplateKey,
   getRiskTemplateUsageCount,
   type RiskTemplate,
+  type ThreatIDRequest,
+  type UpsertRiskTemplateRequest,
 } from '@/types/risk-templates';
 import type { ErrorBody, ErrorResponse } from '@/stores/types';
 
 interface TemplateFormData {
+  pluginId: string;
+  policyPackage: string;
+  name: string;
   title: string;
-  description: string;
-  defaultStatus: string;
-  defaultLikelihood: string;
-  defaultImpact: string;
-  suggestedControls: string[];
-  suggestedComponents: string[];
-  metadataJson: string;
+  statement: string;
+  likelihoodHint: string;
+  impactHint: string;
+  violationIds: string[];
+  threatIds: ThreatIDRequest[];
+  enableRemediation: boolean;
+  remediationTitle: string;
+  remediationDescription: string;
+  remediationTasks: Array<{
+    title: string;
+    orderIndex: number;
+  }>;
+  isActive: 'unset' | 'true' | 'false';
 }
 
 type DialogMode = 'create' | 'edit' | 'view';
-
-const statusOptions = [
-  'open',
-  'investigating',
-  'remediating',
-  'resolved',
-  'risk-accepted',
-  'mitigation-implemented',
-  'mitigation-planned',
-];
-
-const likelihoodOptions = ['low', 'moderate', 'high', 'critical'];
-const impactOptions = ['low', 'moderate', 'high', 'critical'];
 
 const toast = useToast();
 const confirm = useConfirm();
@@ -342,10 +493,6 @@ const confirm = useConfirm();
 const dialogVisible = ref(false);
 const dialogMode = ref<DialogMode>('create');
 const selectedTemplateId = ref<string | null>(null);
-const newControlOption = ref('');
-const newComponentOption = ref('');
-const availableControlOptions = ref<string[]>([]);
-const availableComponentOptions = ref<string[]>([]);
 
 const {
   data: templates,
@@ -395,24 +542,22 @@ const dialogHeader = computed(() => {
 const isReadOnly = computed(() => dialogMode.value === 'view');
 const isSaving = computed(() => isCreating.value || isUpdating.value);
 
-watch(
-  templates,
-  () => {
-    syncSelectableOptions();
-  },
-  { immediate: true },
-);
-
 function createEmptyForm(): TemplateFormData {
   return {
+    pluginId: '',
+    policyPackage: '',
+    name: '',
     title: '',
-    description: '',
-    defaultStatus: '',
-    defaultLikelihood: '',
-    defaultImpact: '',
-    suggestedControls: [],
-    suggestedComponents: [],
-    metadataJson: '',
+    statement: '',
+    likelihoodHint: '',
+    impactHint: '',
+    violationIds: [],
+    threatIds: [],
+    enableRemediation: false,
+    remediationTitle: '',
+    remediationDescription: '',
+    remediationTasks: [],
+    isActive: 'unset',
   };
 }
 
@@ -437,42 +582,15 @@ function formatCreatedDate(template: RiskTemplate): string {
 }
 
 function formatLikelihoodImpact(template: RiskTemplate): string {
-  const likelihood = template.defaultLikelihood ?? 'N/A';
-  const impact = template.defaultImpact ?? 'N/A';
+  const likelihood = template.likelihoodHint ?? 'N/A';
+  const impact = template.impactHint ?? 'N/A';
   return `${likelihood} / ${impact}`;
-}
-
-function syncSelectableOptions() {
-  const controlSet = new Set<string>();
-  const componentSet = new Set<string>();
-
-  for (const template of templates.value ?? []) {
-    for (const control of template.suggestedControls ?? []) {
-      controlSet.add(control);
-    }
-    for (const component of template.suggestedComponents ?? []) {
-      componentSet.add(component);
-    }
-  }
-
-  for (const control of formData.value.suggestedControls) {
-    controlSet.add(control);
-  }
-  for (const component of formData.value.suggestedComponents) {
-    componentSet.add(component);
-  }
-
-  availableControlOptions.value = [...controlSet].sort();
-  availableComponentOptions.value = [...componentSet].sort();
 }
 
 function openCreateDialog() {
   dialogMode.value = 'create';
   selectedTemplateId.value = null;
   formData.value = createEmptyForm();
-  newControlOption.value = '';
-  newComponentOption.value = '';
-  syncSelectableOptions();
   dialogVisible.value = true;
 }
 
@@ -503,92 +621,144 @@ function openEditDialog(template: RiskTemplate) {
 
 function setFormFromTemplate(template: RiskTemplate) {
   formData.value = {
+    pluginId: template.pluginId ?? '',
+    policyPackage: template.policyPackage ?? '',
+    name: template.name ?? '',
     title: template.title,
-    description: template.description,
-    defaultStatus: template.defaultStatus ?? '',
-    defaultLikelihood: template.defaultLikelihood ?? '',
-    defaultImpact: template.defaultImpact ?? '',
-    suggestedControls: [...(template.suggestedControls ?? [])],
-    suggestedComponents: [...(template.suggestedComponents ?? [])],
-    metadataJson: template.metadata
-      ? JSON.stringify(template.metadata, null, 2)
-      : '',
+    statement: template.statement ?? '',
+    likelihoodHint: template.likelihoodHint ?? '',
+    impactHint: template.impactHint ?? '',
+    violationIds: [...(template.violationIds ?? [])],
+    threatIds: (template.threatIds ?? []).map((threat) => ({
+      system: threat.system,
+      id: threat.id,
+      title: threat.title,
+      url: threat.url ?? '',
+    })),
+    enableRemediation: !!template.remediationTemplate,
+    remediationTitle: template.remediationTemplate?.title ?? '',
+    remediationDescription: template.remediationTemplate?.description ?? '',
+    remediationTasks: (template.remediationTemplate?.tasks ?? []).map(
+      (task, index) => ({
+        title: task.title,
+        orderIndex: task.orderIndex ?? index,
+      }),
+    ),
+    isActive:
+      template.isActive === undefined
+        ? 'unset'
+        : template.isActive
+          ? 'true'
+          : 'false',
   };
-  newControlOption.value = '';
-  newComponentOption.value = '';
-  syncSelectableOptions();
 }
 
-function addOption(
-  currentOptions: string[],
-  selectedOptions: string[],
-  newValue: string,
-): string[] {
-  const trimmed = newValue.trim();
-  if (!trimmed) {
-    return currentOptions;
+function addViolationId() {
+  formData.value.violationIds.push('');
+}
+
+function removeViolationId(index: number) {
+  formData.value.violationIds.splice(index, 1);
+}
+
+function addThreatId() {
+  formData.value.threatIds.push({
+    system: '',
+    id: '',
+    title: '',
+    url: '',
+  });
+}
+
+function removeThreatId(index: number) {
+  formData.value.threatIds.splice(index, 1);
+}
+
+function addRemediationTask() {
+  formData.value.remediationTasks.push({
+    title: '',
+    orderIndex: formData.value.remediationTasks.length,
+  });
+}
+
+function removeRemediationTask(index: number) {
+  formData.value.remediationTasks.splice(index, 1);
+  formData.value.remediationTasks.forEach((task, taskIndex) => {
+    task.orderIndex = taskIndex;
+  });
+}
+
+function toOptionalString(value: string): string | undefined {
+  const trimmed = value.trim();
+  return trimmed ? trimmed : undefined;
+}
+
+function buildTemplatePayload(): UpsertRiskTemplateRequest {
+  const violationIds = formData.value.violationIds
+    .map((violationId) => violationId.trim())
+    .filter((violationId) => violationId.length > 0);
+
+  const threatIds = formData.value.threatIds
+    .map((threat) => ({
+      system: threat.system.trim(),
+      id: threat.id.trim(),
+      title: threat.title.trim(),
+      url: toOptionalString(threat.url ?? ''),
+    }))
+    .filter(
+      (threat) =>
+        threat.system.length > 0 ||
+        threat.id.length > 0 ||
+        threat.title.length > 0 ||
+        !!threat.url,
+    );
+
+  for (const threat of threatIds) {
+    if (!threat.system || !threat.id || !threat.title) {
+      throw new Error(
+        'Threat IDs must include system, id, and title when provided.',
+      );
+    }
   }
 
-  const optionsSet = new Set(currentOptions);
-  optionsSet.add(trimmed);
+  let remediationTemplate: UpsertRiskTemplateRequest['remediationTemplate'];
+  if (formData.value.enableRemediation) {
+    const remediationTitle = formData.value.remediationTitle.trim();
+    if (!remediationTitle) {
+      throw new Error('Remediation title is required when remediation is set.');
+    }
 
-  if (!selectedOptions.includes(trimmed)) {
-    selectedOptions.push(trimmed);
+    const remediationTasks = formData.value.remediationTasks
+      .map((task, index) => ({
+        title: task.title.trim(),
+        orderIndex: index,
+      }))
+      .filter((task) => task.title.length > 0);
+
+    remediationTemplate = {
+      title: remediationTitle,
+      description: toOptionalString(formData.value.remediationDescription),
+      tasks: remediationTasks.length ? remediationTasks : undefined,
+    };
   }
 
-  return [...optionsSet].sort();
-}
-
-function addControlOption() {
-  availableControlOptions.value = addOption(
-    availableControlOptions.value,
-    formData.value.suggestedControls,
-    newControlOption.value,
-  );
-  newControlOption.value = '';
-}
-
-function addComponentOption() {
-  availableComponentOptions.value = addOption(
-    availableComponentOptions.value,
-    formData.value.suggestedComponents,
-    newComponentOption.value,
-  );
-  newComponentOption.value = '';
-}
-
-function parseMetadata(
-  metadataJson: string,
-): Record<string, unknown> | undefined {
-  const trimmed = metadataJson.trim();
-  if (!trimmed) return undefined;
-
-  const parsed = JSON.parse(trimmed);
-  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-    throw new Error('Metadata must be a JSON object.');
-  }
-
-  return parsed as Record<string, unknown>;
-}
-
-function buildTemplatePayload(): RiskTemplate {
-  const metadata = parseMetadata(formData.value.metadataJson);
+  const isActive =
+    formData.value.isActive === 'unset'
+      ? undefined
+      : formData.value.isActive === 'true';
 
   return {
+    pluginId: formData.value.pluginId.trim(),
+    policyPackage: formData.value.policyPackage.trim(),
+    name: formData.value.name.trim(),
     title: formData.value.title.trim(),
-    description: formData.value.description.trim(),
-    defaultStatus: formData.value.defaultStatus || undefined,
-    defaultLikelihood: formData.value.defaultLikelihood || undefined,
-    defaultImpact: formData.value.defaultImpact || undefined,
-    suggestedControls:
-      formData.value.suggestedControls.length > 0
-        ? formData.value.suggestedControls
-        : undefined,
-    suggestedComponents:
-      formData.value.suggestedComponents.length > 0
-        ? formData.value.suggestedComponents
-        : undefined,
-    metadata,
+    statement: formData.value.statement.trim(),
+    likelihoodHint: toOptionalString(formData.value.likelihoodHint),
+    impactHint: toOptionalString(formData.value.impactHint),
+    violationIds: violationIds.length ? violationIds : undefined,
+    threatIds: threatIds.length ? threatIds : undefined,
+    remediationTemplate,
+    isActive,
   };
 }
 
@@ -609,11 +779,22 @@ function getApiErrorMessage(error: unknown, fallbackMessage: string): string {
 }
 
 async function submitTemplate() {
-  if (!formData.value.title.trim() || !formData.value.description.trim()) {
+  if (dialogMode.value === 'view') {
+    return;
+  }
+
+  if (
+    !formData.value.pluginId.trim() ||
+    !formData.value.policyPackage.trim() ||
+    !formData.value.name.trim() ||
+    !formData.value.title.trim() ||
+    !formData.value.statement.trim()
+  ) {
     toast.add({
       severity: 'error',
       summary: 'Validation Error',
-      detail: 'Title and description are required.',
+      detail:
+        'Plugin ID, policy package, name, title, and statement are required.',
       life: 3000,
     });
     return;
@@ -667,20 +848,42 @@ async function submitTemplate() {
 
 async function duplicateTemplate(template: RiskTemplate) {
   try {
+    if (
+      !template.pluginId?.trim() ||
+      !template.policyPackage?.trim() ||
+      !template.name?.trim() ||
+      !template.statement?.trim()
+    ) {
+      throw new Error(
+        'Template is missing required fields (pluginId, policyPackage, name, or statement) and cannot be duplicated.',
+      );
+    }
+
     const duplicatedTitle = `${template.title} (Copy)`;
-    const payload: RiskTemplate = {
+    const payload: UpsertRiskTemplateRequest = {
+      pluginId: template.pluginId,
+      policyPackage: template.policyPackage,
+      name: `${template.name}-copy`,
       title: duplicatedTitle,
-      description: template.description,
-      defaultStatus: template.defaultStatus,
-      defaultLikelihood: template.defaultLikelihood,
-      defaultImpact: template.defaultImpact,
-      suggestedControls: template.suggestedControls
-        ? [...template.suggestedControls]
+      statement: template.statement,
+      likelihoodHint: template.likelihoodHint,
+      impactHint: template.impactHint,
+      violationIds: template.violationIds
+        ? [...template.violationIds]
         : undefined,
-      suggestedComponents: template.suggestedComponents
-        ? [...template.suggestedComponents]
+      threatIds: template.threatIds
+        ? template.threatIds.map((threat) => ({ ...threat }))
         : undefined,
-      metadata: template.metadata ? { ...template.metadata } : undefined,
+      remediationTemplate: template.remediationTemplate
+        ? {
+            title: template.remediationTemplate.title,
+            description: template.remediationTemplate.description,
+            tasks: template.remediationTemplate.tasks?.map((task) => ({
+              ...task,
+            })),
+          }
+        : undefined,
+      isActive: template.isActive,
     };
 
     await executeCreate('/api/admin/risk-templates', { data: payload });
@@ -707,6 +910,17 @@ async function duplicateTemplate(template: RiskTemplate) {
 }
 
 function confirmDeleteTemplate(template: RiskTemplate) {
+  const templateId = getTemplateApiId(template);
+  if (!templateId) {
+    toast.add({
+      severity: 'error',
+      summary: 'Invalid Template',
+      detail: 'Template is missing an identifier and cannot be deleted.',
+      life: 3000,
+    });
+    return;
+  }
+
   const usageCount = getUsageCount(template);
   const usageWarning =
     usageCount > 0
