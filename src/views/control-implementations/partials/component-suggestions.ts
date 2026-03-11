@@ -78,6 +78,7 @@ export function buildByComponentsEndpoint(
 export function buildSuggestComponentsEndpoint(
   sspId: string,
   implementationUuid: string,
+  statementUuid: string,
 ): string {
-  return `/api/oscal/system-security-plans/${sspId}/control-implementation/implemented-requirements/${implementationUuid}/suggest-components`;
+  return `/api/oscal/system-security-plans/${sspId}/control-implementation/implemented-requirements/${implementationUuid}/statements/${statementUuid}/suggest-components`;
 }

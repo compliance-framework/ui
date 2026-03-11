@@ -106,8 +106,8 @@ describe('component-suggestions helpers', () => {
       '/api/oscal/system-security-plans/ssp-1/control-implementation/implemented-requirements/req-1/statements/stmt-1/by-components',
     );
 
-    expect(buildSuggestComponentsEndpoint('ssp-1', 'req-1')).toBe(
-      '/api/oscal/system-security-plans/ssp-1/control-implementation/implemented-requirements/req-1/suggest-components',
+    expect(buildSuggestComponentsEndpoint('ssp-1', 'req-1', 'stmt-1')).toBe(
+      '/api/oscal/system-security-plans/ssp-1/control-implementation/implemented-requirements/req-1/statements/stmt-1/suggest-components',
     );
   });
 });

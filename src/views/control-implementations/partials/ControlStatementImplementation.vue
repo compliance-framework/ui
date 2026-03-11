@@ -138,7 +138,7 @@ const { execute: fetchSuggestedComponentsApi } = useDataApi<
 >(
   null,
   {
-    method: 'GET',
+    method: 'POST',
   },
   { immediate: false },
 );
@@ -330,7 +330,16 @@ function setSuggestionApplying(componentUuid: string, applying: boolean) {
 async function fetchSuggestedComponents() {
   const requestId = ++latestSuggestionsRequestId;
   const sspId = resolvedSspId.value;
+  const statementUuid = localStatement.value?.uuid;
   if (!sspId) {
+    if (requestId === latestSuggestionsRequestId) {
+      suggestedComponents.value = [];
+      suggestionsError.value = '';
+      suggestionsLoading.value = false;
+    }
+    return;
+  }
+  if (!statementUuid) {
     if (requestId === latestSuggestionsRequestId) {
       suggestedComponents.value = [];
       suggestionsError.value = '';
@@ -346,15 +355,7 @@ async function fetchSuggestedComponents() {
 
   try {
     const response = await fetchSuggestedComponentsApi(
-      buildSuggestComponentsEndpoint(sspId, implementation.uuid),
-      {
-        params: {
-          controlId: implementation.controlId,
-          statementId: localStatement.value?.statementId ?? partid,
-          statementUuid: localStatement.value?.uuid,
-          partId: partid,
-        },
-      },
+      buildSuggestComponentsEndpoint(sspId, implementation.uuid, statementUuid),
     );
 
     if (requestId !== latestSuggestionsRequestId) {
