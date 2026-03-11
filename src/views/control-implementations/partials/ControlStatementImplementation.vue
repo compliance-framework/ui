@@ -287,8 +287,10 @@ watch(
   ],
   async ([sspId]) => {
     if (!sspId) {
+      latestSuggestionsRequestId += 1;
       suggestedComponents.value = [];
       suggestionsError.value = '';
+      suggestionsLoading.value = false;
       return;
     }
     await fetchSuggestedComponents();

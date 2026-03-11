@@ -288,6 +288,9 @@ async function loadControlImplementations() {
   const implementation = implementationResponse?.value?.data;
   if (!implementation) {
     controlImplementations.value = {};
+    selectedImplementedRequirement.value = undefined;
+    uiStore.controlImplementationSelectedRequirementId = null;
+    uiStore.controlImplementationDrawerOpen = false;
     return;
   }
 
