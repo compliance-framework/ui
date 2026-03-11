@@ -244,6 +244,7 @@ const controlImplementations = ref<{ [key: string]: ImplementedRequirement }>(
 const selectedImplementedRequirement = ref<ImplementedRequirement>();
 const preparingBulkSuggestions = ref(false);
 const applyingBulkSuggestions = ref(false);
+const bulkSuggestionsConfirmOpen = ref(false);
 
 const error = ref<AxiosError<unknown> | null>(null);
 
@@ -257,7 +258,10 @@ interface StatementSuggestionWorkItem {
 }
 
 const hasBulkSuggestionsInFlight = computed(
-  () => preparingBulkSuggestions.value || applyingBulkSuggestions.value,
+  () =>
+    preparingBulkSuggestions.value ||
+    applyingBulkSuggestions.value ||
+    bulkSuggestionsConfirmOpen.value,
 );
 
 function getStatementWorkItems(): Array<{
@@ -489,6 +493,7 @@ async function prepareApplyAllSuggestions() {
       return;
     }
 
+    bulkSuggestionsConfirmOpen.value = true;
     confirm.require({
       header: 'Apply All Suggestions',
       message: `Apply ${suggestionsToAdd} suggested component${suggestionsToAdd === 1 ? '' : 's'} across ${plannedItems.length} statement${plannedItems.length === 1 ? '' : 's'}?`,
@@ -501,10 +506,18 @@ async function prepareApplyAllSuggestions() {
         label: 'Apply',
       },
       accept: async () => {
-        await applySuggestionPlan(plannedItems);
+        try {
+          await applySuggestionPlan(plannedItems);
+        } finally {
+          bulkSuggestionsConfirmOpen.value = false;
+        }
+      },
+      reject: () => {
+        bulkSuggestionsConfirmOpen.value = false;
       },
     });
   } catch (bulkError) {
+    bulkSuggestionsConfirmOpen.value = false;
     toast.add({
       severity: 'error',
       summary: 'Unable to Load Suggestions',

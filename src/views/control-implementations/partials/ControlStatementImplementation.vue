@@ -228,8 +228,8 @@ const displayedSuggestions = computed(() => {
     );
     return {
       ...suggestion,
-      title: suggestion.title ?? fallback?.title ?? suggestion.componentUuid,
-      type: suggestion.type ?? fallback?.type ?? 'unknown',
+      title: suggestion.title || fallback?.title || suggestion.componentUuid,
+      type: suggestion.type || fallback?.type || 'unknown',
     };
   });
 });

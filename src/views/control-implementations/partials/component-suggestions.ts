@@ -12,12 +12,12 @@ export interface SystemComponentSuggestion {
 
 export interface SuggestedComponent {
   componentUuid: string;
-  title: string;
-  type: string;
-  description: string;
-  purpose: string;
+  title?: string;
+  type?: string;
+  description?: string;
+  purpose?: string;
   definedComponentId: string;
-  componentDefinitionId: string;
+  componentDefinitionId?: string;
   relevanceScore?: number;
 }
 
@@ -44,15 +44,17 @@ export function normalizeSuggestedComponentsResponse(
       continue;
     }
 
+    const existing = deduped.get(suggestion.definedComponentId);
     deduped.set(suggestion.definedComponentId, {
       componentUuid: suggestion.definedComponentId,
-      title: suggestion.name ?? '',
-      type: suggestion.type ?? '',
-      description: suggestion.description ?? '',
-      purpose: suggestion.purpose ?? '',
+      title: suggestion.name ?? existing?.title,
+      type: suggestion.type ?? existing?.type,
+      description: suggestion.description ?? existing?.description,
+      purpose: suggestion.purpose ?? existing?.purpose,
       definedComponentId: suggestion.definedComponentId,
-      componentDefinitionId: suggestion.componentDefinitionId ?? '',
-      relevanceScore: getRelevanceScore(suggestion),
+      componentDefinitionId:
+        suggestion.componentDefinitionId ?? existing?.componentDefinitionId,
+      relevanceScore: getRelevanceScore(suggestion) ?? existing?.relevanceScore,
     });
   }
 

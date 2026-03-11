@@ -135,6 +135,28 @@ describe('component-suggestions helpers', () => {
     ]);
   });
 
+  it('keeps missing text fields as undefined for UI fallback usage', () => {
+    const result = normalizeSuggestedComponentsResponse([
+      {
+        definedComponentId: 'comp-fallback',
+        componentDefinitionId: 'comp-def-fallback',
+      },
+    ]);
+
+    expect(result).toEqual([
+      {
+        componentUuid: 'comp-fallback',
+        title: undefined,
+        type: undefined,
+        description: undefined,
+        purpose: undefined,
+        definedComponentId: 'comp-fallback',
+        componentDefinitionId: 'comp-def-fallback',
+        relevanceScore: undefined,
+      },
+    ]);
+  });
+
   it('builds endpoint paths for by-components and suggestions', () => {
     expect(buildByComponentsEndpoint('ssp-1', 'req-1', 'stmt-1')).toBe(
       '/api/oscal/system-security-plans/ssp-1/control-implementation/implemented-requirements/req-1/statements/stmt-1/by-components',
