@@ -220,7 +220,7 @@
             <div v-else class="space-y-3">
               <div
                 v-for="item in controlAssociations"
-                :key="item.id"
+                :key="`${item.catalogId || 'default'}:${item.controlId || item.id}`"
                 class="border border-ccf-300 dark:border-slate-700 rounded-lg p-4"
               >
                 <div class="flex flex-col md:flex-row md:justify-between gap-4">
@@ -1091,8 +1091,10 @@ async function loadEvidenceAssociationOption(
   let detail = pickerOption;
 
   try {
-    await executeLoadEvidenceDetail(`/api/evidence/latest/${evidenceId}`);
-    const evidence = fetchedEvidenceDetail.value;
+    const response = (await executeLoadEvidenceDetail(
+      `/api/evidence/latest/${evidenceId}`,
+    )) as { data?: { data?: Evidence } };
+    const evidence = response?.data?.data ?? fetchedEvidenceDetail.value;
     if (evidence) {
       detail = {
         id: evidence.id || evidence.uuid || evidenceId,
@@ -1196,17 +1198,14 @@ async function refreshAssociationLinks(
     if (kind === 'evidence') {
       const links = parseEvidenceLinks(rows);
 
-      const seen = new Set<string>();
-      const mapped: AssociationPickerOption[] = [];
-
-      for (const link of links) {
-        if (seen.has(link.evidenceId)) continue;
-        const evidenceId = link.evidenceId;
-        seen.add(evidenceId);
-
-        const option = await loadEvidenceAssociationOption(evidenceId);
-        mapped.push(option);
-      }
+      const evidenceIds = Array.from(
+        new Set(links.map((link) => link.evidenceId).filter(Boolean)),
+      );
+      const mapped = await Promise.all(
+        evidenceIds.map((evidenceId) =>
+          loadEvidenceAssociationOption(evidenceId),
+        ),
+      );
 
       setAssociations('evidence', mapped);
       return;
