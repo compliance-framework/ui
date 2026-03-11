@@ -154,7 +154,11 @@ import PageHeader from '@/components/PageHeader.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
 import ControlEvidenceCounter from './partials/ControlEvidenceCounter.vue';
 import { useCatalogTree } from '@/composables/useCatalogTree';
-import { useDataApi, decamelizeKeys } from '@/composables/axios';
+import {
+  useAuthenticatedInstance,
+  useDataApi,
+  decamelizeKeys,
+} from '@/composables/axios';
 import Tree from '@/volt/Tree.vue';
 import IndexControlImplementation from '@/views/control-implementations/partials/IndexControlImplementation.vue';
 import type { AxiosError } from 'axios';
@@ -184,6 +188,7 @@ const systemStore = useSystemStore();
 const uiStore = useUIStore();
 const toast = useToast();
 const confirm = useConfirm();
+const axios = useAuthenticatedInstance();
 
 const controlDrawerOpen = computed({
   get: () => uiStore.controlImplementationDrawerOpen,
@@ -217,9 +222,6 @@ const {
   null,
   { immediate: false },
 );
-const { execute: fetchSuggestedComponentsApi } = useDataApi<
-  SystemComponentSuggestion[]
->(null, { method: 'GET' }, { immediate: false });
 const { execute: createByComponentApi } = useDataApi<ByComponent>(
   null,
   {
@@ -307,35 +309,66 @@ async function buildStatementSuggestionPlan(): Promise<
   }
 
   const statements = getStatementWorkItems();
-  const planned: StatementSuggestionWorkItem[] = [];
-
-  for (const { requirement, statement } of statements) {
-    const response = await fetchSuggestedComponentsApi(
-      buildSuggestComponentsEndpoint(sspId, requirement.uuid),
-      {
-        params: {
-          controlId: requirement.controlId,
-          statementId: statement.statementId,
-          statementUuid: statement.uuid,
-          partId: statement.statementId,
+  const concurrencyLimit = 5;
+  const planned = await mapWithConcurrency(
+    statements,
+    concurrencyLimit,
+    async ({ requirement, statement }) => {
+      const response = await axios.get<{ data: SystemComponentSuggestion[] }>(
+        buildSuggestComponentsEndpoint(sspId, requirement.uuid),
+        {
+          params: {
+            controlId: requirement.controlId,
+            statementId: statement.statementId,
+            statementUuid: statement.uuid,
+            partId: statement.statementId,
+          },
         },
-      },
-    );
-    const suggestions = normalizeSuggestedComponentsResponse(
-      response.data.value?.data,
-    );
-    planned.push({
-      requirement,
-      statement,
-      suggestions,
-      unappliedSuggestions: getUnappliedSuggestions(
-        statement.byComponents,
+      );
+      const suggestions = normalizeSuggestedComponentsResponse(
+        response.data.data,
+      );
+      return {
+        requirement,
+        statement,
         suggestions,
-      ),
-    });
-  }
+        unappliedSuggestions: getUnappliedSuggestions(
+          statement.byComponents,
+          suggestions,
+        ),
+      } as StatementSuggestionWorkItem;
+    },
+  );
 
   return planned.filter((item) => item.unappliedSuggestions.length > 0);
+}
+
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  limit: number,
+  iteratorFn: (item: T) => Promise<R>,
+): Promise<R[]> {
+  if (!items.length) {
+    return [];
+  }
+
+  const safeLimit = Math.max(1, Math.min(limit, items.length));
+  const results = new Array<R>(items.length);
+  let currentIndex = 0;
+
+  const worker = async () => {
+    while (true) {
+      const index = currentIndex;
+      currentIndex += 1;
+      if (index >= items.length) {
+        return;
+      }
+      results[index] = await iteratorFn(items[index]);
+    }
+  };
+
+  await Promise.all(Array.from({ length: safeLimit }, () => worker()));
+  return results;
 }
 
 async function applySuggestionPlan(
@@ -348,48 +381,75 @@ async function applySuggestionPlan(
 
   applyingBulkSuggestions.value = true;
   let createdCount = 0;
+  let failedCount = 0;
   try {
     for (const item of plannedItems) {
       for (const suggestion of item.unappliedSuggestions) {
-        await createByComponentApi(
-          buildByComponentsEndpoint(
-            sspId,
-            item.requirement.uuid,
-            item.statement.uuid,
-          ),
-          {
-            data: {
-              uuid: uuidv4(),
-              componentUuid: suggestion.componentUuid,
-              description: '',
-              implementationStatus: {
-                state: '',
-              },
-            } as ByComponent,
-          },
-        );
-        createdCount += 1;
+        try {
+          await createByComponentApi(
+            buildByComponentsEndpoint(
+              sspId,
+              item.requirement.uuid,
+              item.statement.uuid,
+            ),
+            {
+              data: {
+                uuid: uuidv4(),
+                componentUuid: suggestion.componentUuid,
+                description: '',
+                implementationStatus: {
+                  state: '',
+                },
+              } as ByComponent,
+            },
+          );
+          createdCount += 1;
+        } catch (error) {
+          failedCount += 1;
+          console.error(
+            'Failed to apply suggested component in bulk operation:',
+            error,
+          );
+        }
       }
     }
-
-    await loadControlImplementations();
-    toast.add({
-      severity: 'success',
-      summary: 'Suggestions Applied',
-      detail: `${createdCount} suggested component${createdCount === 1 ? '' : 's'} added across statements.`,
-      life: 4000,
-    });
-  } catch (error) {
-    toast.add({
-      severity: 'error',
-      summary: 'Bulk Apply Failed',
-      detail:
-        error instanceof Error
-          ? error.message
-          : 'Unexpected error applying suggested components.',
-      life: 4000,
-    });
   } finally {
+    try {
+      await loadControlImplementations();
+    } catch (error) {
+      console.error('Failed to refresh control implementations:', error);
+      toast.add({
+        severity: 'error',
+        summary: 'Refresh Failed',
+        detail:
+          'Some suggestions may have been applied, but the page failed to refresh automatically.',
+        life: 5000,
+      });
+    }
+
+    if (createdCount > 0 && failedCount === 0) {
+      toast.add({
+        severity: 'success',
+        summary: 'Suggestions Applied',
+        detail: `${createdCount} suggested component${createdCount === 1 ? '' : 's'} added across statements.`,
+        life: 4000,
+      });
+    } else if (createdCount > 0 && failedCount > 0) {
+      toast.add({
+        severity: 'warn',
+        summary: 'Partially Applied',
+        detail: `${createdCount} suggestion${createdCount === 1 ? '' : 's'} added, ${failedCount} failed.`,
+        life: 5000,
+      });
+    } else if (failedCount > 0) {
+      toast.add({
+        severity: 'error',
+        summary: 'Bulk Apply Failed',
+        detail: `${failedCount} suggestion${failedCount === 1 ? '' : 's'} failed to apply.`,
+        life: 5000,
+      });
+    }
+
     applyingBulkSuggestions.value = false;
   }
 }

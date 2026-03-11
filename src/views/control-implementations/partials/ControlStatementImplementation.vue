@@ -148,6 +148,7 @@ const suggestionsLoading = ref(false);
 const suggestionsError = ref('');
 const applyingSuggestedComponentUuids = ref<string[]>([]);
 const applyingAllSuggestions = ref(false);
+let latestSuggestionsRequestId = 0;
 
 const { execute: createEvidenceDashboard } = useDataApi<Dashboard>(
   '/api/filters',
@@ -327,14 +328,21 @@ function setSuggestionApplying(componentUuid: string, applying: boolean) {
 }
 
 async function fetchSuggestedComponents() {
+  const requestId = ++latestSuggestionsRequestId;
   const sspId = resolvedSspId.value;
   if (!sspId) {
-    suggestedComponents.value = [];
+    if (requestId === latestSuggestionsRequestId) {
+      suggestedComponents.value = [];
+      suggestionsError.value = '';
+      suggestionsLoading.value = false;
+    }
     return;
   }
 
-  suggestionsLoading.value = true;
-  suggestionsError.value = '';
+  if (requestId === latestSuggestionsRequestId) {
+    suggestionsLoading.value = true;
+    suggestionsError.value = '';
+  }
 
   try {
     const response = await fetchSuggestedComponentsApi(
@@ -349,17 +357,26 @@ async function fetchSuggestedComponents() {
       },
     );
 
+    if (requestId !== latestSuggestionsRequestId) {
+      return;
+    }
+
     suggestedComponents.value = normalizeSuggestedComponentsResponse(
       response.data.value?.data,
     );
   } catch (error) {
+    if (requestId !== latestSuggestionsRequestId) {
+      return;
+    }
     suggestedComponents.value = [];
     suggestionsError.value =
       error instanceof Error
         ? error.message
         : 'Unable to load component suggestions.';
   } finally {
-    suggestionsLoading.value = false;
+    if (requestId === latestSuggestionsRequestId) {
+      suggestionsLoading.value = false;
+    }
   }
 }
 
@@ -403,12 +420,22 @@ async function createStatementByComponent(
     },
   );
 
-  const created = response.data.value?.data ?? response.data.value;
-  if (!created) {
+  const created = response.data.value?.data;
+  if (!created?.uuid) {
+    console.error(
+      'Unexpected by-component create response payload:',
+      response.data.value,
+    );
+    toast.add({
+      severity: 'error',
+      summary: 'Error Creating By-Component',
+      detail: 'The server did not return a valid component implementation.',
+      life: 4000,
+    });
     return undefined;
   }
 
-  return created as ByComponent;
+  return created;
 }
 
 function resetCreateComponentForm() {
