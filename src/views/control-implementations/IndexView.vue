@@ -296,6 +296,7 @@ async function loadControlImplementations() {
   }
 
   const nextMap: { [key: string]: ImplementedRequirement } = {};
+  let selectedRequirementFound = false;
   for (const impl of implementation.implementedRequirements) {
     nextMap[impl.controlId] = impl;
     if (
@@ -303,7 +304,17 @@ async function loadControlImplementations() {
       uiStore.controlImplementationDrawerOpen
     ) {
       selectedImplementedRequirement.value = impl;
+      selectedRequirementFound = true;
     }
+  }
+  if (
+    uiStore.controlImplementationDrawerOpen &&
+    uiStore.controlImplementationSelectedRequirementId &&
+    !selectedRequirementFound
+  ) {
+    selectedImplementedRequirement.value = undefined;
+    uiStore.controlImplementationSelectedRequirementId = null;
+    uiStore.controlImplementationDrawerOpen = false;
   }
   controlImplementations.value = nextMap;
 }

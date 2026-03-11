@@ -425,11 +425,12 @@ async function createStatementByComponent(
     },
   );
 
-  const created = createdByComponentResponse.value;
+  const apiCreated = response.response.value?.data?.data;
+  const created = apiCreated ?? createdByComponentResponse.value;
   if (!created?.uuid) {
     console.error(
       'Unexpected by-component create response payload:',
-      response.response.value?.data,
+      apiCreated,
     );
     toast.add({
       severity: 'error',
