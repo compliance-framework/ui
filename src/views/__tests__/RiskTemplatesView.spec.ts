@@ -237,7 +237,12 @@ describe('RiskTemplatesView', () => {
         statement: 'Network risk statement',
         remediationTemplate: {
           title: 'Remediation',
-          tasks: [{ title: '  Task A  ' }, { title: 'Task B', orderIndex: 99 }],
+          description: '   ',
+          tasks: [
+            { title: '  Task A  ' },
+            { title: '   ', orderIndex: 55 },
+            { title: 'Task B', orderIndex: 99 },
+          ],
         },
       },
     ];
@@ -259,6 +264,64 @@ describe('RiskTemplatesView', () => {
               { title: 'Task A', orderIndex: 0 },
               { title: 'Task B', orderIndex: 1 },
             ],
+          },
+        }),
+      },
+    );
+  });
+
+  it('reindexes remediation tasks after filtering blank entries on create', async () => {
+    const wrapper = mount(RiskTemplatesView);
+
+    const createButton = findButtonByText(wrapper, 'Create Template');
+    expect(createButton).toBeDefined();
+    await createButton!.trigger('click');
+
+    await wrapper
+      .find('input[placeholder="e.g. aws-security-hub"]')
+      .setValue('plugin-x');
+    await wrapper
+      .find('input[placeholder="e.g. cis-aws-foundations"]')
+      .setValue('policy-x');
+    await wrapper
+      .find('input[placeholder="machine-friendly template name"]')
+      .setValue('template-name');
+    await wrapper
+      .find('input[placeholder="human-friendly title"]')
+      .setValue('Template Title');
+    await wrapper
+      .find('textarea[placeholder="Risk statement text"]')
+      .setValue('Risk statement body');
+
+    await wrapper.find('#remediation-enabled').setValue(true);
+    await wrapper
+      .find('input[placeholder="Remediation template title"]')
+      .setValue('Remediation title');
+
+    const addButtons = wrapper
+      .findAll('button')
+      .filter((button) => button.text() === 'Add');
+    const remediationAddButton = addButtons[addButtons.length - 1];
+
+    expect(remediationAddButton).toBeDefined();
+    await remediationAddButton.trigger('click');
+    await remediationAddButton.trigger('click');
+
+    const taskInputs = wrapper.findAll('input[placeholder^="Task #"]');
+    expect(taskInputs).toHaveLength(2);
+    await taskInputs[0].setValue('   ');
+    await taskInputs[1].setValue('  Investigate control  ');
+
+    await wrapper.find('form').trigger('submit');
+
+    expect(mockCreateTemplate).toHaveBeenCalledWith(
+      '/api/admin/risk-templates',
+      {
+        data: expect.objectContaining({
+          remediationTemplate: {
+            title: 'Remediation title',
+            description: undefined,
+            tasks: [{ title: 'Investigate control', orderIndex: 0 }],
           },
         }),
       },

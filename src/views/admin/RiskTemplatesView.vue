@@ -730,11 +730,14 @@ function buildTemplatePayload(): UpsertRiskTemplateRequest {
     }
 
     const remediationTasks = formData.value.remediationTasks
-      .map((task, index) => ({
+      .map((task) => ({
         title: task.title.trim(),
-        orderIndex: index,
       }))
-      .filter((task) => task.title.length > 0);
+      .filter((task) => task.title.length > 0)
+      .map((task, index) => ({
+        ...task,
+        orderIndex: index,
+      }));
 
     remediationTemplate = {
       title: remediationTitle,
@@ -878,11 +881,25 @@ async function duplicateTemplate(template: RiskTemplate) {
       remediationTemplate: template.remediationTemplate
         ? {
             title: template.remediationTemplate.title,
-            description: template.remediationTemplate.description,
-            tasks: template.remediationTemplate.tasks?.map((task, index) => ({
-              title: task.title.trim(),
-              orderIndex: index,
-            })),
+            description:
+              template.remediationTemplate.description?.trim() || undefined,
+            tasks: template.remediationTemplate.tasks
+              ? template.remediationTemplate.tasks.reduce(
+                  (acc, task) => {
+                    const title = task.title?.trim() || '';
+                    if (!title) {
+                      return acc;
+                    }
+
+                    acc.push({
+                      title,
+                      orderIndex: acc.length,
+                    });
+                    return acc;
+                  },
+                  [] as { title: string; orderIndex: number }[],
+                )
+              : undefined,
           }
         : undefined,
       isActive: template.isActive,
