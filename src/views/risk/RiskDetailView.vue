@@ -172,11 +172,13 @@
                   </div>
                   <div class="flex gap-2 self-start">
                     <RouterLinkButton
-                      v-if="item.evidenceId || item.id"
+                      v-if="item.evidenceId || item.evidenceUuid || item.id"
                       variant="text"
                       :to="{
-                        name: 'evidence:view',
-                        params: { id: item.evidenceId || item.id },
+                        name: 'evidence:history',
+                        params: {
+                          uuid: item.evidenceId || item.evidenceUuid || item.id,
+                        },
                       }"
                     >
                       Open
@@ -184,9 +186,7 @@
                     <button
                       class="px-3 py-1 rounded-md text-sm bg-red-600 hover:bg-red-700 text-white"
                       :disabled="saving"
-                      @click="
-                        unlinkAssociation('evidence', item.id, item.title)
-                      "
+                      @click="unlinkAssociation('evidence', item)"
                     >
                       Remove
                     </button>
@@ -245,9 +245,7 @@
                     <button
                       class="px-3 py-1 rounded-md text-sm bg-red-600 hover:bg-red-700 text-white"
                       :disabled="saving"
-                      @click="
-                        unlinkAssociation('controls', item.id, item.title)
-                      "
+                      @click="unlinkAssociation('controls', item)"
                     >
                       Remove
                     </button>
@@ -303,9 +301,7 @@
                     <button
                       class="px-3 py-1 rounded-md text-sm bg-red-600 hover:bg-red-700 text-white"
                       :disabled="saving"
-                      @click="
-                        unlinkAssociation('components', item.id, item.title)
-                      "
+                      @click="unlinkAssociation('components', item)"
                     >
                       Remove
                     </button>
@@ -431,14 +427,7 @@ import TertiaryButton from '@/volt/TertiaryButton.vue';
 import RouterLinkButton from '@/components/RouterLinkButton.vue';
 import RiskLogTab from '@/components/risk/RiskLogTab.vue';
 import { useSystemStore } from '@/stores/system';
-import type {
-  Catalog,
-  Control,
-  Group,
-  Profile,
-  Risk,
-  SystemComponent,
-} from '@/oscal';
+import type { Profile, Risk, SystemComponent } from '@/oscal';
 import type { Evidence } from '@/stores/evidence';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
@@ -451,7 +440,6 @@ import {
 import {
   getRiskAssociations,
   normalizeRiskEvents,
-  withUpdatedRiskAssociations,
   type RiskAssociationItem,
   type RiskAssociationKind,
   type RiskEventItem,
@@ -460,6 +448,30 @@ import { getRiskIdentifier } from '@/utils/risk-id';
 
 interface AssociationPickerOption extends RiskAssociationItem {
   subtitle?: string;
+  catalogId?: string;
+}
+
+interface RiskEvidenceLink {
+  riskId: string;
+  evidenceId: string;
+}
+
+interface RiskControlLink {
+  riskId: string;
+  catalogId: string | undefined;
+  controlId: string;
+}
+
+interface RiskComponentLink {
+  riskId: string;
+  componentId: string;
+}
+
+interface ResolvedControlWithCatalog {
+  controlId: string;
+  catalogId: string;
+  title?: string;
+  class?: string;
 }
 
 const tabs = [
@@ -526,15 +538,21 @@ const {
   execute: executeFetchRisks,
 } = useDataApi<Risk[]>(null, {}, { immediate: false });
 
-const {
-  data: savedRisk,
-  isLoading: saving,
-  execute: executeSave,
-} = useDataApi<Risk>(
-  null,
-  { method: 'PUT', transformRequest: [decamelizeKeys] },
-  { immediate: false },
-);
+const { data: fetchedAssociationLinks, execute: executeFetchAssociationLinks } =
+  useDataApi<unknown[]>(null, {}, { immediate: false });
+
+const { data: fetchedEvidenceDetail, execute: executeLoadEvidenceDetail } =
+  useDataApi<Evidence>(null, {}, { immediate: false });
+
+const { data: fetchedComponentDetail, execute: executeLoadComponentDetail } =
+  useDataApi<SystemComponent>(null, {}, { immediate: false });
+
+const { isLoading: savingAssociation, execute: executeAssociationMutation } =
+  useDataApi<unknown>(
+    null,
+    { transformRequest: [decamelizeKeys] },
+    { immediate: false },
+  );
 
 const {
   data: fetchedEvents,
@@ -565,13 +583,16 @@ const {
 } = useDataApi<Profile>(null, {}, { immediate: false });
 
 const {
-  data: resolvedCatalog,
-  isLoading: loadingResolvedCatalog,
-  execute: executeLoadResolvedCatalog,
-} = useDataApi<Catalog>(null, {}, { immediate: false });
+  data: availableControlsWithCatalog,
+  isLoading: loadingResolvedControls,
+  execute: executeLoadResolvedControls,
+} = useDataApi<ResolvedControlWithCatalog[]>(null, {}, { immediate: false });
 
 const risk = ref<Risk | null>(null);
 const riskEvents = ref<RiskEventItem[]>([]);
+const evidenceAssociations = ref<AssociationPickerOption[]>([]);
+const controlAssociations = ref<AssociationPickerOption[]>([]);
+const componentAssociations = ref<AssociationPickerOption[]>([]);
 const notFound = ref(false);
 const loadError = ref('');
 
@@ -591,37 +612,7 @@ const pageTitle = computed(() =>
 );
 
 const loading = computed(() => loadingRisk.value || loadingRiskList.value);
-
-const associationFields = [
-  'evidenceIds',
-  'relatedEvidence',
-  'evidence',
-  'controlIds',
-  'relatedControls',
-  'controls',
-  'componentIds',
-  'relatedComponents',
-  'components',
-] as const;
-
-function mergeSavedRiskForUi(nextRisk: Risk, returnedRisk?: Risk): Risk {
-  if (!returnedRisk) return cloneDeep(nextRisk);
-
-  const merged = {
-    ...(nextRisk as unknown as Record<string, unknown>),
-    ...(returnedRisk as unknown as Record<string, unknown>),
-  } as Record<string, unknown>;
-  const next = nextRisk as unknown as Record<string, unknown>;
-  const returned = returnedRisk as unknown as Record<string, unknown>;
-
-  associationFields.forEach((field) => {
-    if (returned[field] === undefined && next[field] !== undefined) {
-      merged[field] = cloneDeep(next[field]);
-    }
-  });
-
-  return merged as unknown as Risk;
-}
+const saving = computed(() => savingAssociation.value);
 
 function isCanceledError(err: unknown): boolean {
   const maybeError = err as { message?: string; code?: string };
@@ -684,6 +675,9 @@ async function loadRisk() {
   loadError.value = '';
   notFound.value = false;
   risk.value = null;
+  evidenceAssociations.value = [];
+  controlAssociations.value = [];
+  componentAssociations.value = [];
   let detailFetchError: unknown = null;
 
   if (contextMissing.value || !detailEndpoint.value || !listEndpoint.value) {
@@ -728,6 +722,8 @@ async function loadRisk() {
     return;
   }
 
+  syncAssociationsFromRisk();
+  await refreshAllAssociationLinks();
   await loadRiskEvents();
 }
 
@@ -737,16 +733,6 @@ watch(
     void loadRisk();
   },
   { immediate: true },
-);
-
-const evidenceAssociations = computed(() =>
-  getRiskAssociations(risk.value, 'evidence'),
-);
-const controlAssociations = computed(() =>
-  getRiskAssociations(risk.value, 'controls'),
-);
-const componentAssociations = computed(() =>
-  getRiskAssociations(risk.value, 'components'),
 );
 
 function notifyRiskUpdated(updatedRisk: Risk) {
@@ -767,45 +753,6 @@ function notifyRiskUpdated(updatedRisk: Risk) {
   );
 }
 
-async function saveRisk(nextRisk: Risk, successMessage: string) {
-  if (contextMissing.value || !detailEndpoint.value) return;
-
-  try {
-    await executeSave(detailEndpoint.value, {
-      method: 'PUT',
-      data: nextRisk,
-    });
-
-    const mergedRisk = mergeSavedRiskForUi(nextRisk, savedRisk.value);
-
-    risk.value = mergedRisk;
-
-    if (risk.value) {
-      notifyRiskUpdated(risk.value);
-    }
-
-    toast.add({
-      severity: 'success',
-      summary: 'Saved',
-      detail: successMessage,
-      life: 3000,
-    });
-
-    await loadRiskEvents();
-  } catch (err) {
-    if (isCanceledError(err)) return;
-
-    toast.add({
-      severity: 'error',
-      summary: 'Save failed',
-      detail: extractErrorMessage(err),
-      life: 4000,
-    });
-
-    throw err;
-  }
-}
-
 const associationsSspId = computed(() => {
   if (context.value?.scope === 'ssp') {
     return context.value.id;
@@ -813,47 +760,91 @@ const associationsSspId = computed(() => {
   return systemStore.system.securityPlan?.uuid || '';
 });
 
+const associationBaseEndpoint = computed(() => {
+  if (!associationsSspId.value || !resolvedRiskId.value) return null;
+  return `/api/oscal/system-security-plans/${associationsSspId.value}/risks/${resolvedRiskId.value}`;
+});
+
 const loadedComponentsSspId = ref('');
 const loadedControlsSspId = ref('');
 const evidenceOptionsLoaded = ref(false);
+const evidenceDetailCache = new Map<string, AssociationPickerOption>();
+const componentDetailCache = new Map<string, AssociationPickerOption>();
 
 watch(associationsSspId, (next, prev) => {
   if (next === prev) return;
 
   loadedComponentsSspId.value = '';
   loadedControlsSspId.value = '';
+  evidenceOptionsLoaded.value = false;
   availableComponents.value = undefined;
+  availableEvidence.value = undefined;
   profile.value = undefined;
-  resolvedCatalog.value = undefined;
+  availableControlsWithCatalog.value = undefined;
+  evidenceDetailCache.clear();
+  componentDetailCache.clear();
 });
 
-function flattenControls(
-  catalog?: Catalog,
-): Array<{ id: string; title: string; catalogName: string }> {
-  if (!catalog) return [];
+function toRecord(value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== 'object') return null;
+  return value as Record<string, unknown>;
+}
 
-  const items: Array<{ id: string; title: string; catalogName: string }> = [];
-  const catalogName = catalog.metadata?.title || catalog.uuid || 'Catalog';
+function readString(
+  value: Record<string, unknown>,
+  keys: string[],
+): string | undefined {
+  for (const key of keys) {
+    const candidate = value[key];
+    if (typeof candidate === 'string' && candidate.trim()) {
+      return candidate.trim();
+    }
+  }
+  return undefined;
+}
 
-  const pushControl = (control: Control) => {
-    items.push({
-      id: control.id,
-      title: control.title || control.id,
-      catalogName,
-    });
+function setAssociations(
+  kind: RiskAssociationKind,
+  items: AssociationPickerOption[],
+) {
+  if (kind === 'evidence') {
+    evidenceAssociations.value = items;
+    return;
+  }
+  if (kind === 'controls') {
+    controlAssociations.value = items;
+    return;
+  }
+  componentAssociations.value = items;
+}
 
-    control.controls?.forEach(pushControl);
-  };
+function getAssociations(kind: RiskAssociationKind): AssociationPickerOption[] {
+  if (kind === 'evidence') return evidenceAssociations.value;
+  if (kind === 'controls') return controlAssociations.value;
+  return componentAssociations.value;
+}
 
-  const walkGroup = (group: Group) => {
-    group.controls?.forEach(pushControl);
-    group.groups?.forEach(walkGroup);
-  };
+function syncAssociationsFromRisk() {
+  evidenceAssociations.value = getRiskAssociations(risk.value, 'evidence').map(
+    (item) => ({ ...item }),
+  );
+  controlAssociations.value = getRiskAssociations(risk.value, 'controls').map(
+    (item) => ({ ...item }),
+  );
+  componentAssociations.value = getRiskAssociations(
+    risk.value,
+    'components',
+  ).map((item) => ({ ...item }));
+}
 
-  catalog.controls?.forEach(pushControl);
-  catalog.groups?.forEach(walkGroup);
+function associationCollectionEndpoint(kind: RiskAssociationKind) {
+  if (!associationBaseEndpoint.value) return null;
+  return `${associationBaseEndpoint.value}/${kind}`;
+}
 
-  return items;
+function controlCompositeKey(catalogId?: string, controlId?: string) {
+  if (!catalogId || !controlId) return '';
+  return `${catalogId}:${controlId}`;
 }
 
 async function ensureEvidenceOptions() {
@@ -891,10 +882,10 @@ async function ensureControlOptions() {
   if (loadedControlsSspId.value !== sspId) {
     loadedControlsSspId.value = sspId;
     profile.value = undefined;
-    resolvedCatalog.value = undefined;
+    availableControlsWithCatalog.value = undefined;
   }
 
-  if (resolvedCatalog.value) return;
+  if (availableControlsWithCatalog.value?.length) return;
 
   if (!profile.value) {
     await executeLoadProfile(
@@ -904,9 +895,25 @@ async function ensureControlOptions() {
 
   if (!profile.value?.uuid) return;
 
-  await executeLoadResolvedCatalog(
-    `/api/oscal/profiles/${profile.value.uuid}/resolved`,
-  );
+  const endpoints = [
+    `/api/oscal/profile/${profile.value.uuid}/resolved-with-catalogs`,
+    `/api/oscal/profiles/${profile.value.uuid}/resolved-with-catalogs`,
+  ];
+
+  for (const endpoint of endpoints) {
+    try {
+      await executeLoadResolvedControls(endpoint);
+      if (availableControlsWithCatalog.value) {
+        return;
+      }
+    } catch (err) {
+      if (isCanceledError(err)) {
+        throw err;
+      }
+    }
+  }
+
+  availableControlsWithCatalog.value = [];
 }
 
 async function ensurePickerData(kind: RiskAssociationKind) {
@@ -926,12 +933,13 @@ async function ensurePickerData(kind: RiskAssociationKind) {
 }
 
 const controlPickerOptions = computed<AssociationPickerOption[]>(() =>
-  flattenControls(resolvedCatalog.value).map((item) => ({
-    id: item.id,
-    title: item.title,
-    controlId: item.id,
-    catalogName: item.catalogName,
-    subtitle: `${item.catalogName} • ${item.id}`,
+  (availableControlsWithCatalog.value || []).map((item) => ({
+    id: item.controlId,
+    title: item.title || item.controlId,
+    controlId: item.controlId,
+    catalogId: item.catalogId,
+    catalogName: item.catalogId,
+    subtitle: `${item.class || 'control'} • ${item.controlId}`,
   })),
 );
 
@@ -948,15 +956,385 @@ const componentPickerOptions = computed<AssociationPickerOption[]>(() =>
 const evidencePickerOptions = computed<AssociationPickerOption[]>(() =>
   (availableEvidence.value || []).map((item) => ({
     id: item.id || item.uuid,
-    evidenceId: item.id,
+    evidenceId: item.uuid || item.id,
     evidenceUuid: item.uuid,
-    title: item.title || item.id || item.uuid,
+    title: item.title || item.uuid || item.id,
     description: item.description,
     start: item.start,
     end: item.end,
-    subtitle: item.id || item.uuid,
+    subtitle: item.uuid || item.id,
   })),
 );
+
+const evidencePickerLookup = computed(() => {
+  const map = new Map<string, AssociationPickerOption>();
+  evidencePickerOptions.value.forEach((item) => {
+    [item.evidenceId, item.evidenceUuid, item.id]
+      .filter(Boolean)
+      .forEach((key) => map.set(key as string, item));
+  });
+  return map;
+});
+
+const controlPickerLookup = computed(() => {
+  const composite = new Map<string, AssociationPickerOption>();
+  const plainControl = new Map<string, AssociationPickerOption>();
+
+  controlPickerOptions.value.forEach((item) => {
+    const controlId = item.controlId || item.id;
+    const compositeKey = controlCompositeKey(item.catalogId, controlId);
+    if (compositeKey) composite.set(compositeKey, item);
+    if (controlId && !plainControl.has(controlId)) {
+      plainControl.set(controlId, item);
+    }
+  });
+
+  return {
+    composite,
+    plainControl,
+  };
+});
+
+const componentPickerLookup = computed(() => {
+  const map = new Map<string, AssociationPickerOption>();
+  componentPickerOptions.value.forEach((item) => {
+    if (item.id) {
+      map.set(item.id, item);
+    }
+  });
+  return map;
+});
+
+function normalizeIdLink(entry: unknown, keys: string[]): string | undefined {
+  if (typeof entry === 'string' && entry.trim()) {
+    return entry.trim();
+  }
+
+  const record = toRecord(entry);
+  if (!record) return undefined;
+
+  return readString(record, keys);
+}
+
+function parseEvidenceLinks(rows: unknown[]): RiskEvidenceLink[] {
+  return rows
+    .map((entry) => {
+      const evidenceId = normalizeIdLink(entry, [
+        'evidenceId',
+        'evidenceUuid',
+        'id',
+        'uuid',
+      ]);
+      if (!evidenceId) return null;
+
+      const record = toRecord(entry);
+      return {
+        riskId: record
+          ? readString(record, ['riskId']) || resolvedRiskId.value
+          : resolvedRiskId.value,
+        evidenceId,
+      };
+    })
+    .filter((item): item is RiskEvidenceLink => !!item);
+}
+
+function parseControlLinks(rows: unknown[]): RiskControlLink[] {
+  return rows
+    .map((entry) => {
+      if (typeof entry === 'string' && entry.trim()) {
+        return {
+          riskId: resolvedRiskId.value,
+          controlId: entry.trim(),
+          catalogId: undefined,
+        };
+      }
+
+      const record = toRecord(entry);
+      if (!record) return null;
+
+      const controlId = readString(record, ['controlId', 'id']);
+      if (!controlId) return null;
+
+      return {
+        riskId: readString(record, ['riskId']) || resolvedRiskId.value,
+        catalogId: readString(record, ['catalogId', 'catalogUuid', 'catalog']),
+        controlId,
+      };
+    })
+    .filter((item): item is RiskControlLink => !!item);
+}
+
+function parseComponentLinks(rows: unknown[]): RiskComponentLink[] {
+  return rows
+    .map((entry) => {
+      const componentId = normalizeIdLink(entry, ['componentId', 'id', 'uuid']);
+      if (!componentId) return null;
+
+      const record = toRecord(entry);
+      return {
+        riskId: record
+          ? readString(record, ['riskId']) || resolvedRiskId.value
+          : resolvedRiskId.value,
+        componentId,
+      };
+    })
+    .filter((item): item is RiskComponentLink => !!item);
+}
+
+async function loadEvidenceAssociationOption(
+  evidenceId: string,
+): Promise<AssociationPickerOption> {
+  const cached = evidenceDetailCache.get(evidenceId);
+  if (cached) return cached;
+
+  const pickerOption = evidencePickerLookup.value.get(evidenceId);
+  let detail = pickerOption;
+
+  try {
+    await executeLoadEvidenceDetail(`/api/evidence/latest/${evidenceId}`);
+    const evidence = fetchedEvidenceDetail.value;
+    if (evidence) {
+      detail = {
+        id: evidence.id || evidence.uuid || evidenceId,
+        evidenceId,
+        evidenceUuid: evidence.uuid || evidenceId,
+        title: evidence.title || evidence.uuid || evidence.id || evidenceId,
+        description: evidence.description,
+        start: evidence.start,
+        end: evidence.end,
+        subtitle: evidence.uuid || evidence.id || evidenceId,
+      };
+    }
+  } catch (err) {
+    if (!isCanceledError(err)) {
+      detail = pickerOption;
+    }
+  }
+
+  const normalized: AssociationPickerOption = {
+    ...(detail || {}),
+    id: detail?.id || evidenceId,
+    evidenceId,
+    evidenceUuid: detail?.evidenceUuid || evidenceId,
+    title: detail?.title || evidenceId,
+    description: detail?.description,
+    start: detail?.start,
+    end: detail?.end,
+    subtitle: detail?.subtitle || evidenceId,
+  };
+
+  evidenceDetailCache.set(evidenceId, normalized);
+  return normalized;
+}
+
+async function loadComponentAssociationOption(
+  componentId: string,
+): Promise<AssociationPickerOption> {
+  const cached = componentDetailCache.get(componentId);
+  if (cached) return cached;
+
+  const pickerOption = componentPickerLookup.value.get(componentId);
+  if (pickerOption) {
+    componentDetailCache.set(componentId, pickerOption);
+    return pickerOption;
+  }
+
+  const sspId = associationsSspId.value;
+  if (!sspId) {
+    return {
+      id: componentId,
+      title: componentId,
+      subtitle: componentId,
+    };
+  }
+
+  try {
+    await executeLoadComponentDetail(
+      `/api/oscal/system-security-plans/${sspId}/system-implementation/components/${componentId}`,
+    );
+    const component = fetchedComponentDetail.value;
+    if (component) {
+      const normalized: AssociationPickerOption = {
+        id: component.uuid || componentId,
+        title: component.title || componentId,
+        type: component.type,
+        description: component.description,
+        subtitle: `${component.type || 'component'} • ${component.uuid || componentId}`,
+      };
+      componentDetailCache.set(componentId, normalized);
+      return normalized;
+    }
+  } catch (err) {
+    if (isCanceledError(err)) {
+      throw err;
+    }
+  }
+
+  return {
+    id: componentId,
+    title: componentId,
+    subtitle: componentId,
+  };
+}
+
+async function refreshAssociationLinks(
+  kind: RiskAssociationKind,
+  notifyError = false,
+) {
+  const endpoint = associationCollectionEndpoint(kind);
+  if (!endpoint) return;
+
+  try {
+    if (kind !== 'evidence') {
+      await ensurePickerData(kind);
+    }
+    await executeFetchAssociationLinks(endpoint);
+    const rows = Array.isArray(fetchedAssociationLinks.value)
+      ? fetchedAssociationLinks.value
+      : [];
+
+    if (kind === 'evidence') {
+      const links = parseEvidenceLinks(rows);
+
+      const seen = new Set<string>();
+      const mapped: AssociationPickerOption[] = [];
+
+      for (const link of links) {
+        if (seen.has(link.evidenceId)) continue;
+        const evidenceId = link.evidenceId;
+        seen.add(evidenceId);
+
+        const option = await loadEvidenceAssociationOption(evidenceId);
+        mapped.push(option);
+      }
+
+      setAssociations('evidence', mapped);
+      return;
+    }
+
+    if (kind === 'controls') {
+      const links = parseControlLinks(rows);
+
+      const seen = new Set<string>();
+      const mapped: AssociationPickerOption[] = [];
+
+      links.forEach((link) => {
+        const catalogId = link.catalogId;
+        const controlId = link.controlId;
+
+        const option =
+          (catalogId
+            ? controlPickerLookup.value.composite.get(
+                controlCompositeKey(catalogId, controlId),
+              )
+            : undefined) ||
+          controlPickerLookup.value.plainControl.get(controlId);
+        const resolvedCatalogId = catalogId || option?.catalogId;
+        const dedupeKey =
+          controlCompositeKey(resolvedCatalogId, controlId) || controlId;
+        if (!controlId || seen.has(dedupeKey)) return;
+        seen.add(dedupeKey);
+
+        mapped.push({
+          ...(option || {}),
+          id: controlId,
+          controlId,
+          catalogId: resolvedCatalogId,
+          title: option?.title || controlId,
+          catalogName: option?.catalogName || resolvedCatalogId || 'Catalog',
+          description: option?.description,
+          subtitle:
+            option?.subtitle ||
+            `${option?.catalogName || resolvedCatalogId || 'Catalog'} • ${controlId}`,
+        });
+      });
+
+      setAssociations('controls', mapped);
+      return;
+    }
+
+    const links = parseComponentLinks(rows);
+
+    const seen = new Set<string>();
+    const mapped: AssociationPickerOption[] = [];
+
+    for (const link of links) {
+      const componentId = link.componentId;
+      if (!componentId || seen.has(componentId)) continue;
+      seen.add(componentId);
+
+      const option = await loadComponentAssociationOption(componentId);
+      mapped.push({
+        ...(option || {}),
+        id: componentId,
+        title: option?.title || componentId,
+        type: option?.type,
+        description: option?.description,
+        subtitle: option?.subtitle || componentId,
+      });
+    }
+
+    setAssociations('components', mapped);
+  } catch (err) {
+    if (isCanceledError(err)) return;
+    if (notifyError) {
+      toast.add({
+        severity: 'error',
+        summary: `Failed to load ${associationLabel(kind).toLowerCase()}`,
+        detail: extractErrorMessage(err),
+        life: 4000,
+      });
+    }
+  }
+}
+
+async function refreshAllAssociationLinks() {
+  for (const kind of ['evidence', 'controls', 'components'] as const) {
+    await refreshAssociationLinks(kind);
+  }
+}
+
+function buildAssociationCreatePayload(
+  kind: RiskAssociationKind,
+  item: AssociationPickerOption,
+) {
+  if (kind === 'evidence') {
+    const evidenceId = item.evidenceId || item.evidenceUuid || item.id;
+    return evidenceId ? { evidenceId } : null;
+  }
+
+  if (kind === 'controls') {
+    const controlId = item.controlId || item.id;
+    if (!item.catalogId || !controlId) return null;
+    return {
+      catalogId: item.catalogId,
+      controlId,
+    };
+  }
+
+  return item.id ? { componentId: item.id } : null;
+}
+
+function buildAssociationDeleteEndpoint(
+  kind: RiskAssociationKind,
+  item: AssociationPickerOption,
+) {
+  const base = associationCollectionEndpoint(kind);
+  if (!base) return null;
+
+  if (kind === 'evidence') {
+    const evidenceId = item.evidenceId || item.evidenceUuid || item.id;
+    return evidenceId ? `${base}/${encodeURIComponent(evidenceId)}` : null;
+  }
+
+  if (kind === 'controls') {
+    const controlId = item.controlId || item.id;
+    if (!item.catalogId || !controlId) return null;
+    return `${base}/${encodeURIComponent(item.catalogId)}/${encodeURIComponent(controlId)}`;
+  }
+
+  return item.id ? `${base}/${encodeURIComponent(item.id)}` : null;
+}
 
 const showAssociationPicker = ref(false);
 const pickerKind = ref<RiskAssociationKind>('evidence');
@@ -981,7 +1359,7 @@ const pickerLoading = computed(() => {
     case 'evidence':
       return loadingEvidence.value;
     case 'controls':
-      return loadingProfile.value || loadingResolvedCatalog.value;
+      return loadingProfile.value || loadingResolvedControls.value;
     case 'components':
       return loadingComponents.value;
     default:
@@ -1004,13 +1382,17 @@ const pickerOptions = computed<AssociationPickerOption[]>(() => {
 
 function associationKeys(
   kind: RiskAssociationKind,
-  item: RiskAssociationItem,
+  item: AssociationPickerOption,
 ): string[] {
   const keys =
     kind === 'evidence'
       ? [item.evidenceUuid, item.evidenceId, item.id]
       : kind === 'controls'
-        ? [item.controlId, item.id]
+        ? [
+            controlCompositeKey(item.catalogId, item.controlId || item.id),
+            item.controlId,
+            item.id,
+          ]
         : [item.id];
 
   return Array.from(new Set(keys.filter(Boolean) as string[]));
@@ -1018,7 +1400,7 @@ function associationKeys(
 
 const linkedAssociationIds = computed(() => {
   const linked = new Set<string>();
-  getRiskAssociations(risk.value, pickerKind.value).forEach((item) => {
+  getAssociations(pickerKind.value).forEach((item) => {
     associationKeys(pickerKind.value, item).forEach((key) => linked.add(key));
   });
   return linked;
@@ -1084,47 +1466,105 @@ async function openAssociationPicker(kind: RiskAssociationKind) {
 }
 
 async function linkAssociation(item: AssociationPickerOption) {
-  if (!risk.value) return;
+  if (!risk.value) {
+    return;
+  }
 
-  const current = getRiskAssociations(risk.value, pickerKind.value);
+  const current = getAssociations(pickerKind.value);
   const itemKeys = associationKeys(pickerKind.value, item);
   const hasDuplicate = current.some((entry) =>
     associationKeys(pickerKind.value, entry).some((key) =>
       itemKeys.includes(key),
     ),
   );
-  if (hasDuplicate) return;
+  if (hasDuplicate) {
+    return;
+  }
 
-  const payload = withUpdatedRiskAssociations(
-    cloneDeep(risk.value),
-    pickerKind.value,
-    [...current, item],
-  );
+  const endpoint = associationCollectionEndpoint(pickerKind.value);
+  const payload = buildAssociationCreatePayload(pickerKind.value, item);
+  if (!endpoint || !payload) {
+    toast.add({
+      severity: 'error',
+      summary: 'Link failed',
+      detail: `Unable to resolve the ${associationLabel(pickerKind.value).toLowerCase()} link payload.`,
+      life: 4000,
+    });
+    return;
+  }
 
-  await saveRisk(payload, `${associationLabel(pickerKind.value)} linked`);
-  showAssociationPicker.value = false;
+  try {
+    await executeAssociationMutation(endpoint, {
+      method: 'POST',
+      data: payload,
+    });
+    await refreshAssociationLinks(pickerKind.value, true);
+    if (risk.value) {
+      notifyRiskUpdated(risk.value);
+    }
+    toast.add({
+      severity: 'success',
+      summary: 'Saved',
+      detail: `${associationLabel(pickerKind.value)} linked`,
+      life: 3000,
+    });
+    showAssociationPicker.value = false;
+  } catch (err) {
+    if (isCanceledError(err)) return;
+    toast.add({
+      severity: 'error',
+      summary: 'Link failed',
+      detail: extractErrorMessage(err),
+      life: 4000,
+    });
+  }
 }
 
 async function unlinkAssociation(
   kind: RiskAssociationKind,
-  id: string,
-  title: string,
+  item: AssociationPickerOption,
 ) {
   if (!risk.value) return;
 
   const confirmed = window.confirm(
-    `Remove ${associationLabel(kind).toLowerCase()} "${title}" from this risk?`,
+    `Remove ${associationLabel(kind).toLowerCase()} "${item.title}" from this risk?`,
   );
   if (!confirmed) return;
 
-  const current = getRiskAssociations(risk.value, kind);
-  const payload = withUpdatedRiskAssociations(
-    cloneDeep(risk.value),
-    kind,
-    current.filter((item) => item.id !== id),
-  );
+  const endpoint = buildAssociationDeleteEndpoint(kind, item);
+  if (!endpoint) {
+    toast.add({
+      severity: 'error',
+      summary: 'Remove failed',
+      detail: `Unable to resolve the ${associationLabel(kind).toLowerCase()} delete endpoint.`,
+      life: 4000,
+    });
+    return;
+  }
 
-  await saveRisk(payload, `${associationLabel(kind)} removed`);
+  try {
+    await executeAssociationMutation(endpoint, {
+      method: 'DELETE',
+    });
+    await refreshAssociationLinks(kind, true);
+    if (risk.value) {
+      notifyRiskUpdated(risk.value);
+    }
+    toast.add({
+      severity: 'success',
+      summary: 'Saved',
+      detail: `${associationLabel(kind)} removed`,
+      life: 3000,
+    });
+  } catch (err) {
+    if (isCanceledError(err)) return;
+    toast.add({
+      severity: 'error',
+      summary: 'Remove failed',
+      detail: extractErrorMessage(err),
+      life: 4000,
+    });
+  }
 }
 
 function controlRoute(item: RiskAssociationItem) {

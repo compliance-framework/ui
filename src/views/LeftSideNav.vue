@@ -125,6 +125,10 @@ const links = ref<Array<NavigationItem>>([
         title: 'System Users',
       },
       {
+        name: 'admin-risk-templates',
+        title: 'Risk Templates',
+      },
+      {
         name: 'admin-import',
         title: 'Import',
         abbr: 'IMP',

@@ -358,6 +358,14 @@ const authenticatedRoutes = [
     },
   },
   {
+    path: '/admin/risk-templates',
+    name: 'admin-risk-templates',
+    component: () => import('../views/admin/RiskTemplatesView.vue'),
+    meta: {
+      requiresAuth: true,
+    },
+  },
+  {
     path: '/admin/import',
     name: 'admin-import',
     component: () => import('../views/admin/ImportView.vue'),
