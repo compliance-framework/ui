@@ -28,6 +28,15 @@ import StatementEditForm from '@/components/system-security-plans/StatementEditF
 import SystemImplementationComponentCreateForm from '@/components/system-security-plans/SystemImplementationComponentCreateForm.vue';
 import DashboardEvidenceCounter from '@/views/control-implementations/partials/DashboardEvidenceCounter.vue';
 import TooltipTitle from '@/components/TooltipTitle.vue';
+import {
+  buildByComponentsEndpoint,
+  buildSuggestComponentsEndpoint,
+  getExistingComponentUuidSet,
+  getUnappliedSuggestions,
+  normalizeSuggestedComponentsResponse,
+  type SuggestedComponent,
+  type SystemComponentSuggestion,
+} from '@/views/control-implementations/partials/component-suggestions';
 
 const { system } = useSystemStore();
 const toast = useToast();
@@ -83,6 +92,7 @@ const {
   statement,
   implementation,
   sspId: providedSspId,
+  partid,
 } = defineProps<{
   statement?: Statement;
   implementation: ImplementedRequirement;
@@ -123,6 +133,21 @@ const { execute: executeCreate } = useDataApi<ByComponent>(null, {
   transformRequest: [decamelizeKeys],
   method: 'POST',
 });
+const { execute: fetchSuggestedComponentsApi } = useDataApi<
+  SystemComponentSuggestion[]
+>(
+  null,
+  {
+    method: 'GET',
+  },
+  { immediate: false },
+);
+
+const suggestedComponents = ref<SuggestedComponent[]>([]);
+const suggestionsLoading = ref(false);
+const suggestionsError = ref('');
+const applyingSuggestedComponentUuids = ref<string[]>([]);
+const applyingAllSuggestions = ref(false);
 
 const { execute: createEvidenceDashboard } = useDataApi<Dashboard>(
   '/api/filters',
@@ -187,6 +212,48 @@ const componentItems = computed(() => {
     };
   });
 });
+const componentMetadataByUuid = computed(() => {
+  return new Map(
+    (components.value ?? []).map((component) => [
+      component.uuid,
+      { title: component.title, type: component.type },
+    ]),
+  );
+});
+const displayedSuggestions = computed(() => {
+  return suggestedComponents.value.map((suggestion) => {
+    const fallback = componentMetadataByUuid.value.get(
+      suggestion.componentUuid,
+    );
+    return {
+      ...suggestion,
+      title: suggestion.title ?? fallback?.title ?? suggestion.componentUuid,
+      type: suggestion.type ?? fallback?.type ?? 'unknown',
+    };
+  });
+});
+const existingComponentUuidSet = computed(() =>
+  getExistingComponentUuidSet(localStatement.value?.byComponents),
+);
+const unappliedSuggestions = computed(() =>
+  getUnappliedSuggestions(
+    localStatement.value?.byComponents,
+    displayedSuggestions.value,
+  ),
+);
+const allSuggestionsApplied = computed(
+  () =>
+    displayedSuggestions.value.length > 0 &&
+    unappliedSuggestions.value.length === 0,
+);
+
+watch(
+  () => statement,
+  (value) => {
+    localStatement.value = value;
+  },
+  { immediate: true },
+);
 
 const newByComponent = ref<ByComponent>({
   uuid: uuidv4(),
@@ -197,7 +264,7 @@ const newByComponent = ref<ByComponent>({
 const selectedComponent = ref();
 watch(selectedComponent, () => {
   // When the selected component changes, update the model
-  newByComponent.value.componentUuid = selectedComponent.value.value;
+  newByComponent.value.componentUuid = selectedComponent.value?.value;
 });
 
 onMounted(() => {
@@ -207,6 +274,126 @@ onMounted(() => {
   // Load existing dashboards for this control
   loadDashboardsForControl();
 });
+
+watch(
+  () => [
+    resolvedSspId.value,
+    implementation.uuid,
+    implementation.controlId,
+    localStatement.value?.uuid,
+    localStatement.value?.statementId,
+    partid,
+  ],
+  async ([sspId]) => {
+    if (!sspId) {
+      suggestedComponents.value = [];
+      suggestionsError.value = '';
+      return;
+    }
+    await fetchSuggestedComponents();
+  },
+  { immediate: true },
+);
+
+function isSuggestionApplied(componentUuid: string): boolean {
+  return existingComponentUuidSet.value.has(componentUuid);
+}
+
+function isSuggestionApplying(componentUuid: string): boolean {
+  return applyingSuggestedComponentUuids.value.includes(componentUuid);
+}
+
+function formatRelevanceScore(score: number | undefined): string {
+  if (typeof score !== 'number' || Number.isNaN(score)) {
+    return '';
+  }
+  return score.toFixed(2);
+}
+
+function setSuggestionApplying(componentUuid: string, applying: boolean) {
+  if (applying) {
+    if (!applyingSuggestedComponentUuids.value.includes(componentUuid)) {
+      applyingSuggestedComponentUuids.value = [
+        ...applyingSuggestedComponentUuids.value,
+        componentUuid,
+      ];
+    }
+    return;
+  }
+  applyingSuggestedComponentUuids.value =
+    applyingSuggestedComponentUuids.value.filter(
+      (uuid) => uuid !== componentUuid,
+    );
+}
+
+async function fetchSuggestedComponents() {
+  const sspId = resolvedSspId.value;
+  if (!sspId) {
+    suggestedComponents.value = [];
+    return;
+  }
+
+  suggestionsLoading.value = true;
+  suggestionsError.value = '';
+
+  try {
+    const response = await fetchSuggestedComponentsApi(
+      buildSuggestComponentsEndpoint(sspId, implementation.uuid),
+      {
+        params: {
+          controlId: implementation.controlId,
+          statementId: localStatement.value?.statementId ?? partid,
+          statementUuid: localStatement.value?.uuid,
+          partId: partid,
+        },
+      },
+    );
+
+    suggestedComponents.value = normalizeSuggestedComponentsResponse(
+      response.data.value?.data,
+    );
+  } catch (error) {
+    suggestedComponents.value = [];
+    suggestionsError.value =
+      error instanceof Error
+        ? error.message
+        : 'Unable to load component suggestions.';
+  } finally {
+    suggestionsLoading.value = false;
+  }
+}
+
+async function createStatementByComponent(
+  componentUuid: string,
+  description = '',
+): Promise<ByComponent | undefined> {
+  const sspId = resolvedSspId.value;
+  const statementUuid = localStatement.value?.uuid;
+  if (!sspId || !statementUuid) {
+    return undefined;
+  }
+
+  const response = await executeCreate(
+    buildByComponentsEndpoint(sspId, implementation.uuid, statementUuid),
+    {
+      data: {
+        uuid: uuidv4(),
+        componentUuid,
+        description,
+        implementationStatus: {
+          state: '',
+        },
+      } as ByComponent,
+    },
+  );
+
+  const created = response.data.value?.data ?? response.data.value;
+  if (!created) {
+    return undefined;
+  }
+
+  return created as ByComponent;
+}
 
 function resetCreateComponentForm() {
   setCreateComponentForm(false);
@@ -223,6 +410,7 @@ function resetCreateComponentForm() {
 
 async function deleteByComponent(byComp: ByComponent) {
   const sspId = resolvedSspId.value;
+  const statementUuid = localStatement.value?.uuid;
   if (!sspId) {
     toast.add({
       severity: 'error',
@@ -232,14 +420,13 @@ async function deleteByComponent(byComp: ByComponent) {
     });
     return;
   }
-  const updatedStatement = useCloned(localStatement).cloned;
-
-  if (!updatedStatement.value || !statement) {
-    console.error('No statement defined');
+  if (!statementUuid) {
     return;
   }
-  if (!statement.uuid) {
-    console.error('Statement UUID is missing');
+  const updatedStatement = useCloned(localStatement).cloned;
+
+  if (!updatedStatement.value) {
+    console.error('No statement defined');
     return;
   }
 
@@ -249,7 +436,7 @@ async function deleteByComponent(byComp: ByComponent) {
     );
   try {
     await executeDelete(
-      `/api/oscal/system-security-plans/${sspId}/control-implementation/implemented-requirements/${implementation.uuid}/statements/${statement.uuid}/by-components/${byComp.uuid}`,
+      `${buildByComponentsEndpoint(sspId, implementation.uuid, statementUuid)}/${byComp.uuid}`,
     );
     localStatement.value = updatedStatement.value;
     setCreateComponentForm(false);
@@ -264,6 +451,7 @@ async function deleteByComponent(byComp: ByComponent) {
 
 async function updateByComponent(byComp: ByComponent) {
   const sspId = resolvedSspId.value;
+  const statementUuid = localStatement.value?.uuid;
   if (!sspId) {
     toast.add({
       severity: 'error',
@@ -273,13 +461,13 @@ async function updateByComponent(byComp: ByComponent) {
     });
     return;
   }
-  if (!localStatement.value || !statement || !statement.uuid) {
+  if (!localStatement.value || !statementUuid) {
     console.error('No statement or statement UUID defined');
     return;
   }
   try {
     await executeUpdate(
-      `/api/oscal/system-security-plans/${sspId}/control-implementation/implemented-requirements/${implementation.uuid}/statements/${statement.uuid}/by-components/${byComp.uuid}`,
+      `${buildByComponentsEndpoint(sspId, implementation.uuid, statementUuid)}/${byComp.uuid}`,
       {
         data: byComp,
       },
@@ -295,40 +483,28 @@ async function updateByComponent(byComp: ByComponent) {
 }
 
 async function createByComponent() {
-  const sspId = resolvedSspId.value;
-  if (
-    !newByComponent.value.componentUuid ||
-    !localStatement.value ||
-    !statement ||
-    !statement.uuid
-  ) {
+  if (!newByComponent.value.componentUuid || !localStatement.value?.uuid) {
     showError.value = true;
     return;
   }
-  if (!sspId) {
-    toast.add({
-      severity: 'error',
-      summary: 'Missing System Plan',
-      detail: 'Unable to determine which system security plan to update.',
-      life: 4000,
-    });
+  if (isSuggestionApplied(newByComponent.value.componentUuid)) {
+    showError.value = false;
+    setCreateComponentForm(false);
     return;
   }
   try {
-    const res = await executeCreate(
-      `/api/oscal/system-security-plans/${sspId}/control-implementation/implemented-requirements/${implementation.uuid}/statements/${statement.uuid}/by-components`,
-      {
-        data: newByComponent.value,
-      },
+    const created = await createStatementByComponent(
+      newByComponent.value.componentUuid,
+      newByComponent.value.description ?? '',
     );
-    if (res.data.value && res.data.value.data) {
-      if (!localStatement.value.byComponents)
-        localStatement.value.byComponents = [];
-      localStatement.value.byComponents.push(res.data.value.data);
-    } else {
+    if (!created) {
       console.error('Failed to create: response data is missing');
       return;
     }
+    if (!localStatement.value.byComponents) {
+      localStatement.value.byComponents = [];
+    }
+    localStatement.value.byComponents.push(created);
     newByComponent.value = {
       uuid: uuidv4(),
     } as ByComponent;
@@ -348,11 +524,117 @@ async function createByComponent() {
   }
 }
 
+async function applySuggestedComponent(suggestion: SuggestedComponent) {
+  if (!localStatement.value?.uuid) {
+    toast.add({
+      severity: 'info',
+      summary: 'Create Statement First',
+      detail: 'Create the statement before applying component suggestions.',
+      life: 3000,
+    });
+    return;
+  }
+  if (isSuggestionApplied(suggestion.componentUuid)) {
+    return;
+  }
+
+  setSuggestionApplying(suggestion.componentUuid, true);
+  try {
+    const created = await createStatementByComponent(suggestion.componentUuid);
+    if (!created) {
+      return;
+    }
+    if (!localStatement.value.byComponents) {
+      localStatement.value.byComponents = [];
+    }
+    localStatement.value.byComponents.push(created);
+    emit('updated', localStatement.value);
+  } catch (error) {
+    toast.add({
+      severity: 'error',
+      summary: 'Error Applying Suggestion',
+      detail:
+        error instanceof Error
+          ? error.message
+          : 'Unexpected error applying suggested component.',
+      life: 3000,
+    });
+  } finally {
+    setSuggestionApplying(suggestion.componentUuid, false);
+  }
+}
+
+async function applyAllSuggestedComponents() {
+  if (!localStatement.value?.uuid) {
+    toast.add({
+      severity: 'info',
+      summary: 'Create Statement First',
+      detail: 'Create the statement before applying component suggestions.',
+      life: 3000,
+    });
+    return;
+  }
+
+  const suggestionsToApply = [...unappliedSuggestions.value];
+  if (!suggestionsToApply.length) {
+    toast.add({
+      severity: 'info',
+      summary: 'All Suggestions Applied',
+      detail: 'There are no pending component suggestions for this statement.',
+      life: 3000,
+    });
+    return;
+  }
+
+  applyingAllSuggestions.value = true;
+  let appliedCount = 0;
+  try {
+    for (const suggestion of suggestionsToApply) {
+      if (isSuggestionApplied(suggestion.componentUuid)) {
+        continue;
+      }
+      const created = await createStatementByComponent(
+        suggestion.componentUuid,
+      );
+      if (!created) {
+        continue;
+      }
+      if (!localStatement.value.byComponents) {
+        localStatement.value.byComponents = [];
+      }
+      localStatement.value.byComponents.push(created);
+      appliedCount += 1;
+    }
+    if (appliedCount > 0) {
+      emit('updated', localStatement.value);
+      toast.add({
+        severity: 'success',
+        summary: 'Suggestions Applied',
+        detail: `${appliedCount} suggested component${appliedCount === 1 ? '' : 's'} added.`,
+        life: 3000,
+      });
+    }
+  } catch (error) {
+    toast.add({
+      severity: 'error',
+      summary: 'Error Applying Suggestions',
+      detail:
+        error instanceof Error
+          ? error.message
+          : 'Unexpected error applying component suggestions.',
+      life: 3000,
+    });
+  } finally {
+    applyingAllSuggestions.value = false;
+  }
+}
+
 function updateStatement(updatedStatement: Statement) {
   localStatement.value = updatedStatement;
   showCreateStatementModal.value = false;
   showEditStatementModal.value = false;
   emit('updated', localStatement.value);
+  void fetchSuggestedComponents();
 }
 
 function handleComponentCreated(newComponent: SystemComponent) {
@@ -859,6 +1141,87 @@ async function submitEvidenceLinking() {
         </Button>
       </div>
 
+      <div class="mb-6">
+        <div class="flex items-center justify-between gap-4 mb-3">
+          <h4 class="m-0 font-medium text-base">Suggested Components</h4>
+          <Button
+            type="button"
+            severity="secondary"
+            :disabled="
+              !localStatement ||
+              applyingAllSuggestions ||
+              suggestionsLoading ||
+              unappliedSuggestions.length === 0
+            "
+            :label="
+              applyingAllSuggestions ? 'Applying...' : 'Apply All Suggestions'
+            "
+            @click="applyAllSuggestedComponents"
+          />
+        </div>
+
+        <p v-if="suggestionsLoading" class="text-sm text-gray-500">
+          Loading suggested components...
+        </p>
+        <p v-else-if="suggestionsError" class="text-sm text-red-500">
+          Failed to load suggestions. You can still add components manually.
+        </p>
+        <p
+          v-else-if="displayedSuggestions.length === 0"
+          class="text-sm text-gray-500"
+        >
+          No suggestions available for this statement.
+        </p>
+        <div v-else class="space-y-3">
+          <div class="flex flex-wrap gap-2">
+            <Button
+              v-for="suggestion in displayedSuggestions"
+              :key="suggestion.componentUuid"
+              type="button"
+              size="small"
+              class="!text-left"
+              :severity="
+                isSuggestionApplied(suggestion.componentUuid)
+                  ? 'contrast'
+                  : 'secondary'
+              "
+              :outlined="!isSuggestionApplied(suggestion.componentUuid)"
+              :disabled="
+                !localStatement ||
+                isSuggestionApplied(suggestion.componentUuid) ||
+                isSuggestionApplying(suggestion.componentUuid) ||
+                applyingAllSuggestions
+              "
+              @click="applySuggestedComponent(suggestion)"
+            >
+              <div class="flex flex-col items-start gap-1">
+                <span class="text-xs font-semibold">{{
+                  suggestion.title
+                }}</span>
+                <span class="text-xs text-gray-500">{{ suggestion.type }}</span>
+                <span
+                  v-if="formatRelevanceScore(suggestion.relevanceScore)"
+                  class="text-xs text-gray-500"
+                >
+                  Relevance:
+                  {{ formatRelevanceScore(suggestion.relevanceScore) }}
+                </span>
+                <span
+                  v-if="isSuggestionApplied(suggestion.componentUuid)"
+                  class="text-xs text-green-600"
+                >
+                  Added
+                </span>
+              </div>
+            </Button>
+          </div>
+
+          <p v-if="allSuggestionsApplied" class="text-sm text-green-600">
+            All suggestions applied.
+          </p>
+        </div>
+      </div>
+
       <div class="flex items-center mb-4 gap-x-4">
         <TooltipTitle
           text="Components"
@@ -1211,6 +1574,47 @@ async function submitEvidenceLinking() {
         class="text-green-600 hover:text-green-800 dark:text-green-400 disabled:opacity-50 disabled:cursor-not-allowed"
       >
       </Button>
+      <div class="mt-6">
+        <h4 class="m-0 mb-2 font-medium text-base">Suggested Components</h4>
+        <p v-if="suggestionsLoading" class="text-sm text-gray-500">
+          Loading suggested components...
+        </p>
+        <p v-else-if="suggestionsError" class="text-sm text-red-500">
+          Failed to load suggestions. You can still add components manually.
+        </p>
+        <p
+          v-else-if="displayedSuggestions.length === 0"
+          class="text-sm text-gray-500"
+        >
+          No suggestions available for this statement.
+        </p>
+        <div v-else class="flex flex-wrap gap-2">
+          <Button
+            v-for="suggestion in displayedSuggestions"
+            :key="suggestion.componentUuid"
+            type="button"
+            size="small"
+            severity="secondary"
+            outlined
+            disabled
+            class="!text-left"
+          >
+            <div class="flex flex-col items-start gap-1">
+              <span class="text-xs font-semibold">{{ suggestion.title }}</span>
+              <span class="text-xs text-gray-500">{{ suggestion.type }}</span>
+              <span
+                v-if="formatRelevanceScore(suggestion.relevanceScore)"
+                class="text-xs text-gray-500"
+              >
+                Relevance: {{ formatRelevanceScore(suggestion.relevanceScore) }}
+              </span>
+            </div>
+          </Button>
+        </div>
+        <p class="mt-2 text-xs text-gray-500">
+          Create the statement to apply suggested components.
+        </p>
+      </div>
     </div>
   </div>
 

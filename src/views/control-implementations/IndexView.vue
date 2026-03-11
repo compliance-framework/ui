@@ -43,10 +43,28 @@
   </Message>
 
   <div v-else>
-    <PageHeader>Controls</PageHeader>
-    <PageSubHeader
-      >Specify how controls are implemented across the business
-    </PageSubHeader>
+    <div
+      class="mb-4 flex flex-col gap-3 md:flex-row md:items-end md:justify-between"
+    >
+      <div>
+        <PageHeader>Controls</PageHeader>
+        <PageSubHeader
+          >Specify how controls are implemented across the business
+        </PageSubHeader>
+      </div>
+      <Button
+        type="button"
+        severity="secondary"
+        :label="
+          hasBulkSuggestionsInFlight
+            ? 'Applying Suggestions...'
+            : 'Apply All Suggestions'
+        "
+        :loading="hasBulkSuggestionsInFlight"
+        :disabled="hasBulkSuggestionsInFlight || catalogLoading || loading"
+        @click="prepareApplyAllSuggestions"
+      />
+    </div>
 
     <div v-if="catalogLoading">Loading Catalog ...</div>
     <div v-else-if="!catalog">No Catalog</div>
@@ -127,6 +145,7 @@
 
 <script setup lang="ts">
 import { onMounted, ref, watch, computed, type Ref } from 'vue';
+import { v4 as uuidv4 } from 'uuid';
 import Message from '@/volt/Message.vue';
 import Badge from '@/volt/Badge.vue';
 import { useSystemStore } from '@/stores/system.ts';
@@ -135,19 +154,36 @@ import PageHeader from '@/components/PageHeader.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
 import ControlEvidenceCounter from './partials/ControlEvidenceCounter.vue';
 import { useCatalogTree } from '@/composables/useCatalogTree';
-import { useDataApi } from '@/composables/axios';
+import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import Tree from '@/volt/Tree.vue';
 import IndexControlImplementation from '@/views/control-implementations/partials/IndexControlImplementation.vue';
 import type { AxiosError } from 'axios';
 import type { Catalog, Profile } from '@/oscal';
-import type { ControlImplementation, ImplementedRequirement } from '@/oscal';
+import type {
+  ByComponent,
+  ControlImplementation,
+  ImplementedRequirement,
+  Statement,
+} from '@/oscal';
 import Button from '@/volt/Button.vue';
 import { BIconEye } from 'bootstrap-icons-vue';
 import Drawer from '@/volt/Drawer.vue';
 import StatementByComponent from './partials/StatementByComponent.vue';
+import { useToast } from 'primevue/usetoast';
+import { useConfirm } from 'primevue/useconfirm';
+import {
+  buildByComponentsEndpoint,
+  buildSuggestComponentsEndpoint,
+  getUnappliedSuggestions,
+  normalizeSuggestedComponentsResponse,
+  type SuggestedComponent,
+  type SystemComponentSuggestion,
+} from '@/views/control-implementations/partials/component-suggestions';
 
 const systemStore = useSystemStore();
 const uiStore = useUIStore();
+const toast = useToast();
+const confirm = useConfirm();
 
 const controlDrawerOpen = computed({
   get: () => uiStore.controlImplementationDrawerOpen,
@@ -181,6 +217,17 @@ const {
   null,
   { immediate: false },
 );
+const { execute: fetchSuggestedComponentsApi } = useDataApi<
+  SystemComponentSuggestion[]
+>(null, { method: 'GET' }, { immediate: false });
+const { execute: createByComponentApi } = useDataApi<ByComponent>(
+  null,
+  {
+    method: 'POST',
+    transformRequest: [decamelizeKeys],
+  },
+  { immediate: false },
+);
 
 const loading = computed<boolean>(
   () =>
@@ -193,10 +240,212 @@ const controlImplementations = ref<{ [key: string]: ImplementedRequirement }>(
   {},
 );
 const selectedImplementedRequirement = ref<ImplementedRequirement>();
+const preparingBulkSuggestions = ref(false);
+const applyingBulkSuggestions = ref(false);
 
 const error = ref<AxiosError<unknown> | null>(null);
 
 const { nodes, build } = useCatalogTree();
+
+interface StatementSuggestionWorkItem {
+  requirement: ImplementedRequirement;
+  statement: Statement;
+  suggestions: SuggestedComponent[];
+  unappliedSuggestions: SuggestedComponent[];
+}
+
+const hasBulkSuggestionsInFlight = computed(
+  () => preparingBulkSuggestions.value || applyingBulkSuggestions.value,
+);
+
+function getStatementWorkItems(): Array<{
+  requirement: ImplementedRequirement;
+  statement: Statement;
+}> {
+  const items: Array<{
+    requirement: ImplementedRequirement;
+    statement: Statement;
+  }> = [];
+  for (const requirement of Object.values(controlImplementations.value)) {
+    for (const statement of requirement.statements ?? []) {
+      if (!statement.uuid) {
+        continue;
+      }
+      items.push({ requirement, statement });
+    }
+  }
+  return items;
+}
+
+async function loadControlImplementations() {
+  const { data: implementationResponse } = await fetchControlImplementations();
+  const implementation = implementationResponse?.value?.data;
+  if (!implementation) {
+    controlImplementations.value = {};
+    return;
+  }
+
+  const nextMap: { [key: string]: ImplementedRequirement } = {};
+  for (const impl of implementation.implementedRequirements) {
+    nextMap[impl.controlId] = impl;
+    if (
+      uiStore.controlImplementationSelectedRequirementId === impl.uuid &&
+      uiStore.controlImplementationDrawerOpen
+    ) {
+      selectedImplementedRequirement.value = impl;
+    }
+  }
+  controlImplementations.value = nextMap;
+}
+
+async function buildStatementSuggestionPlan(): Promise<
+  StatementSuggestionWorkItem[]
+> {
+  const sspId = systemStore.system.securityPlan?.uuid;
+  if (!sspId) {
+    return [];
+  }
+
+  const statements = getStatementWorkItems();
+  const planned = await Promise.all(
+    statements.map(async ({ requirement, statement }) => {
+      const response = await fetchSuggestedComponentsApi(
+        buildSuggestComponentsEndpoint(sspId, requirement.uuid),
+        {
+          params: {
+            controlId: requirement.controlId,
+            statementId: statement.statementId,
+            statementUuid: statement.uuid,
+            partId: statement.statementId,
+          },
+        },
+      );
+      const suggestions = normalizeSuggestedComponentsResponse(
+        response.data.value?.data,
+      );
+      return {
+        requirement,
+        statement,
+        suggestions,
+        unappliedSuggestions: getUnappliedSuggestions(
+          statement.byComponents,
+          suggestions,
+        ),
+      } as StatementSuggestionWorkItem;
+    }),
+  );
+
+  return planned.filter((item) => item.unappliedSuggestions.length > 0);
+}
+
+async function applySuggestionPlan(
+  plannedItems: StatementSuggestionWorkItem[],
+) {
+  const sspId = systemStore.system.securityPlan?.uuid;
+  if (!sspId) {
+    return;
+  }
+
+  applyingBulkSuggestions.value = true;
+  let createdCount = 0;
+  try {
+    for (const item of plannedItems) {
+      for (const suggestion of item.unappliedSuggestions) {
+        await createByComponentApi(
+          buildByComponentsEndpoint(
+            sspId,
+            item.requirement.uuid,
+            item.statement.uuid,
+          ),
+          {
+            data: {
+              uuid: uuidv4(),
+              componentUuid: suggestion.componentUuid,
+              description: '',
+              implementationStatus: {
+                state: '',
+              },
+            } as ByComponent,
+          },
+        );
+        createdCount += 1;
+      }
+    }
+
+    await loadControlImplementations();
+    toast.add({
+      severity: 'success',
+      summary: 'Suggestions Applied',
+      detail: `${createdCount} suggested component${createdCount === 1 ? '' : 's'} added across statements.`,
+      life: 4000,
+    });
+  } catch (error) {
+    toast.add({
+      severity: 'error',
+      summary: 'Bulk Apply Failed',
+      detail:
+        error instanceof Error
+          ? error.message
+          : 'Unexpected error applying suggested components.',
+      life: 4000,
+    });
+  } finally {
+    applyingBulkSuggestions.value = false;
+  }
+}
+
+async function prepareApplyAllSuggestions() {
+  if (hasBulkSuggestionsInFlight.value) {
+    return;
+  }
+
+  preparingBulkSuggestions.value = true;
+  try {
+    const plannedItems = await buildStatementSuggestionPlan();
+    const suggestionsToAdd = plannedItems.reduce(
+      (sum, item) => sum + item.unappliedSuggestions.length,
+      0,
+    );
+
+    if (suggestionsToAdd === 0) {
+      toast.add({
+        severity: 'info',
+        summary: 'No Pending Suggestions',
+        detail: 'All current statement suggestions are already applied.',
+        life: 3000,
+      });
+      return;
+    }
+
+    confirm.require({
+      header: 'Apply All Suggestions',
+      message: `Apply ${suggestionsToAdd} suggested component${suggestionsToAdd === 1 ? '' : 's'} across ${plannedItems.length} statement${plannedItems.length === 1 ? '' : 's'}?`,
+      rejectProps: {
+        label: 'Cancel',
+        severity: 'secondary',
+        outlined: true,
+      },
+      acceptProps: {
+        label: 'Apply',
+      },
+      accept: async () => {
+        await applySuggestionPlan(plannedItems);
+      },
+    });
+  } catch (bulkError) {
+    toast.add({
+      severity: 'error',
+      summary: 'Unable to Load Suggestions',
+      detail:
+        bulkError instanceof Error
+          ? bulkError.message
+          : 'Unexpected error loading component suggestions.',
+      life: 4000,
+    });
+  } finally {
+    preparingBulkSuggestions.value = false;
+  }
+}
 
 watch(profile, async () => {
   if (!profile.value) {
@@ -236,23 +485,7 @@ onMounted(async () => {
   }
 
   try {
-    const { data: implementationResponse } =
-      await fetchControlImplementations();
-    const implementation = implementationResponse?.value?.data;
-
-    if (!implementation) {
-      return;
-    }
-    const implementedRequirements = implementation.implementedRequirements;
-    for (const impl of implementedRequirements) {
-      controlImplementations.value[impl.controlId] = impl;
-      if (
-        uiStore.controlImplementationSelectedRequirementId === impl.uuid &&
-        uiStore.controlImplementationDrawerOpen
-      ) {
-        selectedImplementedRequirement.value = impl;
-      }
-    }
+    await loadControlImplementations();
   } catch (err) {
     error.value = err as AxiosError<unknown>;
   }
