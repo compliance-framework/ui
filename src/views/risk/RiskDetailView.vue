@@ -491,7 +491,9 @@ const context = computed<RiskContext | null>(() =>
 const isSspRoute = computed(
   () =>
     route.name === 'system-security-plan-risks' ||
-    route.name === 'system-security-plan-risk-detail',
+    route.name === 'system-security-plan-risk-detail' ||
+    route.name === 'risks:index' ||
+    route.name === 'risks:detail',
 );
 
 const missingContextTitle = computed(() =>
