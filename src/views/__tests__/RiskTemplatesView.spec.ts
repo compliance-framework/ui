@@ -2,8 +2,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { ref, shallowRef } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
+import type { RiskTemplate } from '@/types/risk-templates';
 
-const templates = shallowRef([
+const templates = shallowRef<RiskTemplate[]>([
   {
     id: 'template-1',
     title: 'Network Risk',
@@ -191,6 +192,58 @@ describe('RiskTemplatesView', () => {
 
     expect(mockDeleteTemplate).toHaveBeenCalledWith(
       '/api/admin/risk-templates/template-1',
+    );
+  });
+
+  it('shows a validation toast when editing a template without id/uuid', async () => {
+    templates.value = [
+      {
+        title: 'No Id Template',
+        description: 'No identifier present',
+      },
+    ];
+
+    const wrapper = mount(RiskTemplatesView);
+
+    const editButton = wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Edit');
+
+    expect(editButton).toBeDefined();
+    await editButton!.trigger('click');
+
+    expect(toastAdd).toHaveBeenCalledWith(
+      expect.objectContaining({
+        summary: 'Invalid Template',
+      }),
+    );
+  });
+
+  it('uses API error body details for duplicate failure toasts', async () => {
+    mockCreateTemplate.mockRejectedValueOnce({
+      isAxiosError: true,
+      response: {
+        data: {
+          errors: {
+            body: 'Template title already exists',
+          },
+        },
+      },
+    });
+
+    const wrapper = mount(RiskTemplatesView);
+    const duplicateButton = wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Duplicate');
+
+    expect(duplicateButton).toBeDefined();
+    await duplicateButton!.trigger('click');
+
+    expect(toastAdd).toHaveBeenCalledWith(
+      expect.objectContaining({
+        summary: 'Duplicate Failed',
+        detail: 'Template title already exists',
+      }),
     );
   });
 });

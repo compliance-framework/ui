@@ -121,15 +121,23 @@ describe('RiskCreateForm', () => {
     });
   };
 
+  const findButtonByText = (
+    wrapper: ReturnType<typeof mount>,
+    label: string,
+  ) => {
+    return wrapper.findAll('button').find((button) => button.text() === label);
+  };
+
   it('applies selected template values to the risk form', async () => {
     const wrapper = mountForm();
 
-    await wrapper.find('button').trigger('click');
+    const useTemplateButton = findButtonByText(wrapper, 'Use Template');
+    expect(useTemplateButton).toBeDefined();
+
+    await useTemplateButton!.trigger('click');
     await Promise.resolve();
 
-    const applyButton = wrapper
-      .findAll('button')
-      .find((button) => button.text() === 'Apply');
+    const applyButton = findButtonByText(wrapper, 'Apply');
 
     expect(applyButton).toBeDefined();
 
@@ -162,12 +170,13 @@ describe('RiskCreateForm', () => {
   it('submits prefilled template values when creating a risk', async () => {
     const wrapper = mountForm();
 
-    await wrapper.find('button').trigger('click');
+    const useTemplateButton = findButtonByText(wrapper, 'Use Template');
+    expect(useTemplateButton).toBeDefined();
+
+    await useTemplateButton!.trigger('click');
     await Promise.resolve();
 
-    const applyButton = wrapper
-      .findAll('button')
-      .find((button) => button.text() === 'Apply');
+    const applyButton = findButtonByText(wrapper, 'Apply');
 
     await applyButton!.trigger('click');
     await wrapper.find('form').trigger('submit');
@@ -181,5 +190,36 @@ describe('RiskCreateForm', () => {
         deadline: undefined,
       }),
     });
+  });
+
+  it('handles 403 loading templates by disabling template selection', async () => {
+    mockLoadTemplates.mockRejectedValueOnce({
+      isAxiosError: true,
+      response: { status: 403 },
+    });
+
+    const wrapper = mountForm();
+
+    const useTemplateButton = findButtonByText(wrapper, 'Use Template');
+    expect(useTemplateButton).toBeDefined();
+
+    await useTemplateButton!.trigger('click');
+    await Promise.resolve();
+
+    expect(toastAdd).toHaveBeenCalledWith(
+      expect.objectContaining({
+        summary: 'Permission Denied',
+      }),
+    );
+
+    const unavailableButton = findButtonByText(
+      wrapper,
+      'Templates Unavailable',
+    );
+    expect(unavailableButton).toBeDefined();
+    expect(unavailableButton!.attributes('disabled')).toBeDefined();
+    expect(wrapper.text()).toContain(
+      'You do not have permission to use risk templates.',
+    );
   });
 });

@@ -14,8 +14,14 @@ export interface RiskTemplate {
   createdDate?: string;
 }
 
-export function getRiskTemplateId(template: RiskTemplate): string {
-  return template.id ?? template.uuid ?? template.title;
+export function getRiskTemplateApiId(
+  template: RiskTemplate,
+): string | undefined {
+  return template.id ?? template.uuid;
+}
+
+export function getRiskTemplateKey(template: RiskTemplate): string {
+  return getRiskTemplateApiId(template) ?? template.title;
 }
 
 export function getRiskTemplateUsageCount(template: RiskTemplate): number {

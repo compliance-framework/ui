@@ -13,11 +13,20 @@
           <button
             type="button"
             @click="openTemplateSelector"
+            :disabled="templatesAccessDenied"
             class="px-3 py-2 rounded-md bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-sm"
           >
-            Use Template
+            {{
+              templatesAccessDenied ? 'Templates Unavailable' : 'Use Template'
+            }}
           </button>
         </div>
+        <p
+          v-if="templatesAccessDenied"
+          class="mt-2 text-sm text-amber-700 dark:text-amber-300"
+        >
+          You do not have permission to use risk templates.
+        </p>
         <p
           v-if="selectedTemplateName"
           class="mt-2 text-sm text-blue-700 dark:text-blue-300"
@@ -225,7 +234,7 @@
             <tbody>
               <tr
                 v-for="template in riskTemplates"
-                :key="getRiskTemplateId(template)"
+                :key="getRiskTemplateKey(template)"
                 class="border-t border-ccf-300 dark:border-slate-700"
               >
                 <td class="p-3 font-medium text-gray-900 dark:text-slate-200">
@@ -260,10 +269,10 @@ import { reactive, ref } from 'vue';
 import { ThreatIDSystem, type Risk, type ThreatID } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
-import type { AxiosError } from 'axios';
+import { isAxiosError, type AxiosError } from 'axios';
 import type { ErrorResponse, ErrorBody } from '@/stores/types';
 import Dialog from '@/volt/Dialog.vue';
-import { getRiskTemplateId, type RiskTemplate } from '@/types/risk-templates';
+import { getRiskTemplateKey, type RiskTemplate } from '@/types/risk-templates';
 
 const props = defineProps<{
   poamId: string;
@@ -311,6 +320,7 @@ const formData = reactive({
 });
 const showTemplateSelector = ref(false);
 const selectedTemplateName = ref('');
+const templatesAccessDenied = ref(false);
 
 function addThreatId() {
   formData.threatIds.push({ id: '', system: ThreatIDSystem.OSCAL });
@@ -400,10 +410,26 @@ function formatLikelihoodImpact(template: RiskTemplate): string {
 }
 
 async function openTemplateSelector() {
+  if (templatesAccessDenied.value) {
+    return;
+  }
+
   showTemplateSelector.value = true;
   try {
     await loadRiskTemplates('/api/admin/risk-templates');
   } catch (error) {
+    if (isAxiosError(error) && error.response?.status === 403) {
+      templatesAccessDenied.value = true;
+      showTemplateSelector.value = false;
+      toast.add({
+        severity: 'warn',
+        summary: 'Permission Denied',
+        detail: 'You do not have access to risk templates.',
+        life: 3000,
+      });
+      return;
+    }
+
     const errorMessage =
       error instanceof Error ? error.message : 'Failed to load templates.';
     toast.add({

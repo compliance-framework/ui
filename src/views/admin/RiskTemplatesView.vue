@@ -40,7 +40,7 @@
           <tbody>
             <tr
               v-for="template in templates"
-              :key="getTemplateId(template)"
+              :key="getTemplateKey(template)"
               class="border-t border-ccf-300 dark:border-slate-700"
             >
               <td class="p-3 font-medium text-gray-900 dark:text-slate-200">
@@ -301,11 +301,14 @@ import TertiaryButton from '@/volt/TertiaryButton.vue';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import { useToast } from 'primevue/usetoast';
 import { useConfirm } from 'primevue/useconfirm';
+import { isAxiosError, type AxiosError } from 'axios';
 import {
-  getRiskTemplateId,
+  getRiskTemplateApiId,
+  getRiskTemplateKey,
   getRiskTemplateUsageCount,
   type RiskTemplate,
 } from '@/types/risk-templates';
+import type { ErrorBody, ErrorResponse } from '@/stores/types';
 
 interface TemplateFormData {
   title: string;
@@ -413,8 +416,12 @@ function createEmptyForm(): TemplateFormData {
   };
 }
 
-function getTemplateId(template: RiskTemplate): string {
-  return getRiskTemplateId(template);
+function getTemplateApiId(template: RiskTemplate): string | undefined {
+  return getRiskTemplateApiId(template);
+}
+
+function getTemplateKey(template: RiskTemplate): string {
+  return getRiskTemplateKey(template);
 }
 
 function getUsageCount(template: RiskTemplate): number {
@@ -471,14 +478,25 @@ function openCreateDialog() {
 
 function openViewDialog(template: RiskTemplate) {
   dialogMode.value = 'view';
-  selectedTemplateId.value = getTemplateId(template);
+  selectedTemplateId.value = getTemplateApiId(template) ?? null;
   setFormFromTemplate(template);
   dialogVisible.value = true;
 }
 
 function openEditDialog(template: RiskTemplate) {
+  const templateId = getTemplateApiId(template);
+  if (!templateId) {
+    toast.add({
+      severity: 'error',
+      summary: 'Invalid Template',
+      detail: 'Template is missing an identifier and cannot be edited.',
+      life: 3000,
+    });
+    return;
+  }
+
   dialogMode.value = 'edit';
-  selectedTemplateId.value = getTemplateId(template);
+  selectedTemplateId.value = templateId;
   setFormFromTemplate(template);
   dialogVisible.value = true;
 }
@@ -574,6 +592,22 @@ function buildTemplatePayload(): RiskTemplate {
   };
 }
 
+function getApiErrorMessage(error: unknown, fallbackMessage: string): string {
+  if (isAxiosError(error)) {
+    const axiosError = error as AxiosError<ErrorResponse<ErrorBody>>;
+    const responseBody = axiosError.response?.data?.errors?.body;
+    if (responseBody) {
+      return responseBody;
+    }
+  }
+
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  return fallbackMessage;
+}
+
 async function submitTemplate() {
   if (!formData.value.title.trim() || !formData.value.description.trim()) {
     toast.add({
@@ -618,8 +652,10 @@ async function submitTemplate() {
     dialogVisible.value = false;
     await loadTemplates();
   } catch (error) {
-    const errorMessage =
-      error instanceof Error ? error.message : 'Failed to save risk template.';
+    const errorMessage = getApiErrorMessage(
+      error,
+      'Failed to save risk template.',
+    );
     toast.add({
       severity: 'error',
       summary: 'Save Failed',
@@ -657,10 +693,10 @@ async function duplicateTemplate(template: RiskTemplate) {
 
     await loadTemplates();
   } catch (error) {
-    const errorMessage =
-      error instanceof Error
-        ? error.message
-        : 'Failed to duplicate risk template.';
+    const errorMessage = getApiErrorMessage(
+      error,
+      'Failed to duplicate risk template.',
+    );
     toast.add({
       severity: 'error',
       summary: 'Duplicate Failed',
@@ -697,7 +733,13 @@ function confirmDeleteTemplate(template: RiskTemplate) {
 
 async function deleteTemplate(template: RiskTemplate) {
   try {
-    const templateId = getTemplateId(template);
+    const templateId = getTemplateApiId(template);
+    if (!templateId) {
+      throw new Error(
+        'Template is missing an identifier and cannot be deleted.',
+      );
+    }
+
     await executeDelete(`/api/admin/risk-templates/${templateId}`);
     toast.add({
       severity: 'success',
@@ -707,8 +749,10 @@ async function deleteTemplate(template: RiskTemplate) {
     });
     await loadTemplates();
   } catch (error) {
-    const errorMessage =
-      error instanceof Error ? error.message : 'Failed to delete template.';
+    const errorMessage = getApiErrorMessage(
+      error,
+      'Failed to delete template.',
+    );
     toast.add({
       severity: 'error',
       summary: 'Delete Failed',
