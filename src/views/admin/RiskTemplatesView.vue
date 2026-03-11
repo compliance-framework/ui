@@ -879,8 +879,9 @@ async function duplicateTemplate(template: RiskTemplate) {
         ? {
             title: template.remediationTemplate.title,
             description: template.remediationTemplate.description,
-            tasks: template.remediationTemplate.tasks?.map((task) => ({
-              ...task,
+            tasks: template.remediationTemplate.tasks?.map((task, index) => ({
+              title: task.title.trim(),
+              orderIndex: index,
             })),
           }
         : undefined,

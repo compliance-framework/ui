@@ -10,10 +10,21 @@ export interface RemediationTaskRequest {
   orderIndex: number;
 }
 
+export interface RemediationTask {
+  title: string;
+  orderIndex?: number;
+}
+
 export interface RemediationTemplateRequest {
   title: string;
   description?: string;
   tasks?: RemediationTaskRequest[];
+}
+
+export interface RemediationTemplate {
+  title: string;
+  description?: string;
+  tasks?: RemediationTask[];
 }
 
 export interface UpsertRiskTemplateRequest {
@@ -42,7 +53,7 @@ export interface RiskTemplate {
   impactHint?: string;
   violationIds?: string[];
   threatIds?: ThreatIDRequest[];
-  remediationTemplate?: RemediationTemplateRequest;
+  remediationTemplate?: RemediationTemplate;
   isActive?: boolean;
   usageCount?: number;
   createdAt?: string;

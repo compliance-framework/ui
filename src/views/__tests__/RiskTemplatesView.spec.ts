@@ -226,6 +226,45 @@ describe('RiskTemplatesView', () => {
     );
   });
 
+  it('normalizes remediation task orderIndex during duplication', async () => {
+    templates.value = [
+      {
+        id: 'template-1',
+        pluginId: 'plugin-a',
+        policyPackage: 'policy-a',
+        name: 'network-risk',
+        title: 'Network Risk',
+        statement: 'Network risk statement',
+        remediationTemplate: {
+          title: 'Remediation',
+          tasks: [{ title: '  Task A  ' }, { title: 'Task B', orderIndex: 99 }],
+        },
+      },
+    ];
+
+    const wrapper = mount(RiskTemplatesView);
+    const duplicateButton = findButtonByText(wrapper, 'Duplicate');
+
+    expect(duplicateButton).toBeDefined();
+    await duplicateButton!.trigger('click');
+
+    expect(mockCreateTemplate).toHaveBeenCalledWith(
+      '/api/admin/risk-templates',
+      {
+        data: expect.objectContaining({
+          remediationTemplate: {
+            title: 'Remediation',
+            description: undefined,
+            tasks: [
+              { title: 'Task A', orderIndex: 0 },
+              { title: 'Task B', orderIndex: 1 },
+            ],
+          },
+        }),
+      },
+    );
+  });
+
   it('shows usage count warning in delete confirmation message', async () => {
     const wrapper = mount(RiskTemplatesView);
 
