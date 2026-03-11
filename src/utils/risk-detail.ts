@@ -8,6 +8,8 @@ export type RiskAssociationKind =
 
 export interface RiskAssociationItem {
   id: string;
+  evidenceId?: string;
+  evidenceUuid?: string;
   title: string;
   description?: string;
   type?: string;
@@ -42,7 +44,7 @@ interface AssociationConfig {
 const ASSOCIATION_CONFIG: Record<RiskAssociationKind, AssociationConfig> = {
   evidence: {
     fields: ['relatedEvidence', 'evidence', 'evidenceItems'],
-    idKeys: ['evidenceUuid', 'evidenceId', 'uuid', 'id'],
+    idKeys: ['evidenceId', 'id', 'evidenceUuid', 'uuid'],
     titleKeys: ['title', 'name', 'id', 'uuid'],
     descriptionKeys: ['description', 'remarks'],
     startKeys: ['start', 'startDate', 'collected'],
@@ -104,7 +106,7 @@ function normalizeCandidate(
 
   const title = readString(record, config.titleKeys) || id;
 
-  return {
+  const normalized: RiskAssociationItem = {
     id,
     title,
     description: config.descriptionKeys
@@ -121,6 +123,13 @@ function normalizeCandidate(
     start: config.startKeys ? readString(record, config.startKeys) : undefined,
     end: config.endKeys ? readString(record, config.endKeys) : undefined,
   };
+
+  if (config === ASSOCIATION_CONFIG.evidence) {
+    normalized.evidenceId = readString(record, ['evidenceId', 'id']) || id;
+    normalized.evidenceUuid = readString(record, ['evidenceUuid', 'uuid']);
+  }
+
+  return normalized;
 }
 
 function normalizeAssociationArray(
@@ -141,7 +150,8 @@ function normalizeForPersistence(
   switch (kind) {
     case 'evidence':
       return items.map((item) => ({
-        evidenceUuid: item.id,
+        evidenceId: item.evidenceId || item.id,
+        evidenceUuid: item.evidenceUuid || undefined,
         title: item.title,
         description: item.description,
         start: item.start,
@@ -194,8 +204,9 @@ export function getRiskAssociations(
 
   config.fields.forEach((field) => {
     normalizeAssociationArray(source[field], config).forEach((item) => {
-      if (seen.has(item.id)) return;
-      seen.add(item.id);
+      const key = kind === 'evidence' ? item.evidenceUuid || item.id : item.id;
+      if (seen.has(key)) return;
+      seen.add(key);
       items.push(item);
     });
   });

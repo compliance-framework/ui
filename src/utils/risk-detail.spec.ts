@@ -52,6 +52,30 @@ describe('risk-detail', () => {
     ]);
   });
 
+  it('persists evidence uuid while keeping evidence id for UI routing', () => {
+    const risk = makeRisk({
+      relatedEvidence: [{ evidenceUuid: 'uuid-old', evidenceId: 'ev-old' }],
+    });
+
+    const updated = withUpdatedRiskAssociations(risk, 'evidence', [
+      {
+        id: 'ev-101',
+        evidenceId: 'ev-101',
+        evidenceUuid: 'uuid-101',
+        title: 'Evidence 101',
+      },
+    ]) as Risk & {
+      relatedEvidence?: Array<{ evidenceId?: string; evidenceUuid?: string }>;
+    };
+
+    expect(updated.relatedEvidence).toEqual([
+      expect.objectContaining({
+        evidenceId: 'ev-101',
+        evidenceUuid: 'uuid-101',
+      }),
+    ]);
+  });
+
   it('normalizes events from raw event payload', () => {
     const events = normalizeRiskEvents([
       {

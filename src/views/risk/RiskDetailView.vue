@@ -958,6 +958,8 @@ const componentPickerOptions = computed<AssociationPickerOption[]>(() =>
 const evidencePickerOptions = computed<AssociationPickerOption[]>(() =>
   (availableEvidence.value || []).map((item) => ({
     id: item.id || item.uuid,
+    evidenceId: item.id,
+    evidenceUuid: item.uuid,
     title: item.title || item.id || item.uuid,
     description: item.description,
     start: item.start,
