@@ -129,13 +129,15 @@ const { execute: executeDelete } = useDataApi<Statement>(null, {
   method: 'DELETE',
 });
 
-const { execute: executeCreate } = useDataApi<ByComponent>(null, {
-  transformRequest: [decamelizeKeys],
-  method: 'POST',
-});
-const { execute: fetchSuggestedComponentsApi } = useDataApi<
-  SystemComponentSuggestion[]
->(
+const { data: createdByComponentResponse, execute: executeCreate } =
+  useDataApi<ByComponent>(null, {
+    transformRequest: [decamelizeKeys],
+    method: 'POST',
+  });
+const {
+  data: suggestedComponentsResponse,
+  execute: fetchSuggestedComponentsApi,
+} = useDataApi<SystemComponentSuggestion[]>(
   null,
   {
     method: 'POST',
@@ -356,7 +358,7 @@ async function fetchSuggestedComponents() {
   }
 
   try {
-    const response = await fetchSuggestedComponentsApi(
+    await fetchSuggestedComponentsApi(
       buildSuggestComponentsEndpoint(sspId, implementation.uuid, statementUuid),
     );
 
@@ -365,7 +367,7 @@ async function fetchSuggestedComponents() {
     }
 
     suggestedComponents.value = normalizeSuggestedComponentsResponse(
-      response.data.value?.data,
+      suggestedComponentsResponse.value,
     );
   } catch (error) {
     if (requestId !== latestSuggestionsRequestId) {
@@ -423,11 +425,11 @@ async function createStatementByComponent(
     },
   );
 
-  const created = response.data.value?.data;
+  const created = createdByComponentResponse.value;
   if (!created?.uuid) {
     console.error(
       'Unexpected by-component create response payload:',
-      response.data.value,
+      response.response.value?.data,
     );
     toast.add({
       severity: 'error',
