@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
-import { ref, shallowRef } from 'vue';
+import { ref, shallowRef, toValue } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
 
 const mockCreateRisk = vi.fn().mockResolvedValue({});
@@ -37,8 +37,10 @@ const templatesLoading = ref(false);
 const templatesError = ref(null);
 
 vi.mock('@/composables/axios', () => ({
-  useDataApi: (url?: string, config?: { method?: string }) => {
-    if (url === '/api/admin/risk-templates') {
+  useDataApi: (url?: unknown, config?: { method?: string }) => {
+    const resolvedUrl = String(toValue(url as never) ?? '');
+
+    if (resolvedUrl === '/api/admin/risk-templates') {
       return {
         data: riskTemplates,
         isLoading: templatesLoading,
@@ -48,8 +50,7 @@ vi.mock('@/composables/axios', () => ({
     }
 
     if (
-      typeof url === 'string' &&
-      url.includes('/api/oscal/plan-of-action-and-milestones/') &&
+      resolvedUrl.includes('/api/oscal/plan-of-action-and-milestones/') &&
       config?.method === 'POST'
     ) {
       return {
@@ -59,7 +60,7 @@ vi.mock('@/composables/axios', () => ({
       };
     }
 
-    throw new Error(`Unexpected useDataApi invocation: ${url}`);
+    throw new Error(`Unexpected useDataApi invocation: ${resolvedUrl}`);
   },
   decamelizeKeys: vi.fn((data: unknown) => JSON.stringify(data)),
 }));
