@@ -157,15 +157,20 @@
 </template>
 
 <script setup lang="ts">
-import { reactive } from 'vue';
+import { computed, reactive } from 'vue';
 import { ThreatIDSystem, type Risk, type ThreatID } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import type { AxiosError } from 'axios';
 import type { ErrorResponse, ErrorBody } from '@/stores/types';
+import {
+  buildRiskCollectionEndpoint,
+  type RiskContext,
+} from '@/utils/risk-context';
 
 const props = defineProps<{
-  poamId: string;
+  poamId?: string;
+  sspId?: string;
 }>();
 
 const emit = defineEmits<{
@@ -175,12 +180,39 @@ const emit = defineEmits<{
 
 const toast = useToast();
 
+const riskContext = computed<RiskContext | null>(() => {
+  if (props.sspId) {
+    return {
+      scope: 'ssp',
+      id: props.sspId,
+      listRouteName: 'system-security-plan-risks',
+      detailRouteName: 'system-security-plan-risk-detail',
+    };
+  }
+
+  if (props.poamId) {
+    return {
+      scope: 'poam',
+      id: props.poamId,
+      listRouteName: 'risks:index',
+      detailRouteName: 'risks:detail',
+    };
+  }
+
+  return null;
+});
+
+const endpoint = computed(() => {
+  if (!riskContext.value) return null;
+  return buildRiskCollectionEndpoint(riskContext.value);
+});
+
 const {
   data: returnedRisk,
   isLoading: saving,
   execute: createRisk,
 } = useDataApi<Risk>(
-  `/api/oscal/plan-of-action-and-milestones/${props.poamId}/risks`,
+  endpoint,
   {
     method: 'POST',
     transformRequest: [decamelizeKeys],
@@ -207,6 +239,16 @@ function removeThreatId(index: number) {
 }
 
 async function submit() {
+  if (!endpoint.value) {
+    toast.add({
+      severity: 'error',
+      summary: 'Missing context',
+      detail: 'Risk creation context is not available.',
+      life: 3000,
+    });
+    return;
+  }
+
   if (!formData.title) {
     toast.add({
       severity: 'error',

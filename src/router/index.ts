@@ -631,6 +631,16 @@ const authenticatedRoutes = [
           ),
       },
       {
+        path: 'risks',
+        name: 'system-security-plan-risks',
+        component: () => import('../views/RisksView.vue'),
+      },
+      {
+        path: 'risks/:riskId',
+        name: 'system-security-plan-risk-detail',
+        component: () => import('../views/risk/RiskDetailView.vue'),
+      },
+      {
         path: 'compliance',
         name: 'system-security-plan-compliance',
         component: () =>
@@ -710,10 +720,7 @@ const authenticatedRoutes = [
       {
         path: 'risks',
         name: 'plan-of-action-and-milestones-risks',
-        component: () =>
-          import(
-            '../views/plan-of-actions-and-milestones/PlanOfActionAndMilestonesRisksView.vue'
-          ),
+        component: () => import('../views/RisksView.vue'),
       },
       {
         path: 'risks/:riskId',

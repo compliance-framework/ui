@@ -53,6 +53,12 @@
       </RouterLink>
       <RouterLink
         class="px-4 py-2 inline-block text-lg border-ccf-300 dark:border-slate-700 dark:hover:bg-slate-900"
+        :to="{ name: 'system-security-plan-risks', params: { id: sspId } }"
+      >
+        Risks
+      </RouterLink>
+      <RouterLink
+        class="px-4 py-2 inline-block text-lg border-ccf-300 dark:border-slate-700 dark:hover:bg-slate-900"
         :to="{
           name: 'system-security-plan-compliance',
           params: { id: sspId },
