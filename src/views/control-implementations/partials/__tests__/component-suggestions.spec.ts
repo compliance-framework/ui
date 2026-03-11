@@ -56,6 +56,7 @@ describe('component-suggestions helpers', () => {
         purpose: 'Protect boundary',
         definedComponentId: 'comp-2',
         componentDefinitionId: 'comp-def-2',
+        relevanceScore: undefined,
       },
     ]);
   });

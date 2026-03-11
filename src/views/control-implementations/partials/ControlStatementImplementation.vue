@@ -1626,43 +1626,9 @@ async function submitEvidenceLinking() {
       </Button>
       <div class="mt-6">
         <h4 class="m-0 mb-2 font-medium text-base">Suggested Components</h4>
-        <p v-if="suggestionsLoading" class="text-sm text-gray-500">
-          Loading suggested components...
-        </p>
-        <p v-else-if="suggestionsError" class="text-sm text-red-500">
-          Failed to load suggestions. You can still add components manually.
-        </p>
-        <p
-          v-else-if="displayedSuggestions.length === 0"
-          class="text-sm text-gray-500"
-        >
-          No suggestions available for this statement.
-        </p>
-        <div v-else class="flex flex-wrap gap-2">
-          <Button
-            v-for="suggestion in displayedSuggestions"
-            :key="suggestion.componentUuid"
-            type="button"
-            size="small"
-            severity="secondary"
-            outlined
-            disabled
-            class="!text-left"
-          >
-            <div class="flex flex-col items-start gap-1">
-              <span class="text-xs font-semibold">{{ suggestion.title }}</span>
-              <span class="text-xs text-gray-500">{{ suggestion.type }}</span>
-              <span
-                v-if="formatRelevanceScore(suggestion.relevanceScore)"
-                class="text-xs text-gray-500"
-              >
-                Relevance: {{ formatRelevanceScore(suggestion.relevanceScore) }}
-              </span>
-            </div>
-          </Button>
-        </div>
-        <p class="mt-2 text-xs text-gray-500">
-          Create the statement to apply suggested components.
+        <p class="text-sm text-gray-500">
+          Suggested components will be available after you create this
+          statement.
         </p>
       </div>
     </div>
