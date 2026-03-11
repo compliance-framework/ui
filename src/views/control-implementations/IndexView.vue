@@ -307,33 +307,33 @@ async function buildStatementSuggestionPlan(): Promise<
   }
 
   const statements = getStatementWorkItems();
-  const planned = await Promise.all(
-    statements.map(async ({ requirement, statement }) => {
-      const response = await fetchSuggestedComponentsApi(
-        buildSuggestComponentsEndpoint(sspId, requirement.uuid),
-        {
-          params: {
-            controlId: requirement.controlId,
-            statementId: statement.statementId,
-            statementUuid: statement.uuid,
-            partId: statement.statementId,
-          },
+  const planned: StatementSuggestionWorkItem[] = [];
+
+  for (const { requirement, statement } of statements) {
+    const response = await fetchSuggestedComponentsApi(
+      buildSuggestComponentsEndpoint(sspId, requirement.uuid),
+      {
+        params: {
+          controlId: requirement.controlId,
+          statementId: statement.statementId,
+          statementUuid: statement.uuid,
+          partId: statement.statementId,
         },
-      );
-      const suggestions = normalizeSuggestedComponentsResponse(
-        response.data.value?.data,
-      );
-      return {
-        requirement,
-        statement,
+      },
+    );
+    const suggestions = normalizeSuggestedComponentsResponse(
+      response.data.value?.data,
+    );
+    planned.push({
+      requirement,
+      statement,
+      suggestions,
+      unappliedSuggestions: getUnappliedSuggestions(
+        statement.byComponents,
         suggestions,
-        unappliedSuggestions: getUnappliedSuggestions(
-          statement.byComponents,
-          suggestions,
-        ),
-      } as StatementSuggestionWorkItem;
-    }),
-  );
+      ),
+    });
+  }
 
   return planned.filter((item) => item.unappliedSuggestions.length > 0);
 }

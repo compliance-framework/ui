@@ -370,6 +370,22 @@ async function createStatementByComponent(
   const sspId = resolvedSspId.value;
   const statementUuid = localStatement.value?.uuid;
   if (!sspId || !statementUuid) {
+    const missing =
+      !sspId && !statementUuid
+        ? 'system security plan and statement'
+        : !sspId
+          ? 'system security plan'
+          : 'statement';
+    console.error(
+      `Unable to create component implementation: missing ${missing}.`,
+    );
+    toast.add({
+      severity: 'error',
+      summary: 'Unable to Add Component Implementation',
+      detail:
+        'A system security plan and control statement must be selected before adding a component implementation.',
+      life: 5000,
+    });
     return undefined;
   }
 
@@ -489,7 +505,13 @@ async function createByComponent() {
   }
   if (isSuggestionApplied(newByComponent.value.componentUuid)) {
     showError.value = false;
-    setCreateComponentForm(false);
+    toast.add({
+      severity: 'warn',
+      summary: 'Component Already Linked',
+      detail:
+        'This component is already linked to the statement and cannot be reused.',
+      life: 4000,
+    });
     return;
   }
   try {
