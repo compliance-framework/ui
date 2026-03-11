@@ -446,7 +446,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import PageHeader from '@/components/PageHeader.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
 import Dialog from '@/volt/Dialog.vue';
@@ -542,6 +542,25 @@ const dialogHeader = computed(() => {
 
 const isReadOnly = computed(() => dialogMode.value === 'view');
 const isSaving = computed(() => isCreating.value || isUpdating.value);
+
+watch(
+  () => error.value,
+  (err) => {
+    if (!err) {
+      return;
+    }
+
+    const status = (err as AxiosError).response?.status;
+    if (status === 403) {
+      toast.add({
+        severity: 'warn',
+        summary: 'Insufficient permissions',
+        detail: "You don't have access to risk templates.",
+        life: 4000,
+      });
+    }
+  },
+);
 
 function createEmptyForm(): TemplateFormData {
   return {
@@ -694,16 +713,21 @@ function toOptionalString(value: string): string | undefined {
   return trimmed ? trimmed : undefined;
 }
 
-function buildTemplatePayload(): UpsertRiskTemplateRequest {
-  const violationIds = formData.value.violationIds
-    .map((violationId) => violationId.trim())
-    .filter((violationId) => violationId.length > 0);
+type ThreatIdInput = {
+  system?: string;
+  id?: string;
+  title?: string;
+  url?: string | null;
+};
 
-  const threatIds = formData.value.threatIds
+function normalizeThreatIds(
+  threats: ThreatIdInput[] | undefined,
+): ThreatIDRequest[] {
+  const normalizedThreats = (threats ?? [])
     .map((threat) => ({
-      system: threat.system.trim(),
-      id: threat.id.trim(),
-      title: threat.title.trim(),
+      system: threat.system?.trim() ?? '',
+      id: threat.id?.trim() ?? '',
+      title: threat.title?.trim() ?? '',
       url: toOptionalString(threat.url ?? ''),
     }))
     .filter(
@@ -714,13 +738,23 @@ function buildTemplatePayload(): UpsertRiskTemplateRequest {
         !!threat.url,
     );
 
-  for (const threat of threatIds) {
+  for (const threat of normalizedThreats) {
     if (!threat.system || !threat.id || !threat.title) {
       throw new Error(
         'Threat IDs must include system, id, and title when provided.',
       );
     }
   }
+
+  return normalizedThreats;
+}
+
+function buildTemplatePayload(): UpsertRiskTemplateRequest {
+  const violationIds = formData.value.violationIds
+    .map((violationId) => violationId.trim())
+    .filter((violationId) => violationId.length > 0);
+
+  const threatIds = normalizeThreatIds(formData.value.threatIds);
 
   let remediationTemplate: UpsertRiskTemplateRequest['remediationTemplate'];
   if (formData.value.enableRemediation) {
@@ -871,6 +905,7 @@ async function duplicateTemplate(template: RiskTemplate) {
     }
 
     const duplicatedTitle = `${trimmedTitle} (Copy)`;
+    const threatIds = normalizeThreatIds(template.threatIds);
     const payload: UpsertRiskTemplateRequest = {
       pluginId: trimmedPluginId,
       policyPackage: trimmedPolicyPackage,
@@ -882,9 +917,7 @@ async function duplicateTemplate(template: RiskTemplate) {
       violationIds: template.violationIds
         ? [...template.violationIds]
         : undefined,
-      threatIds: template.threatIds
-        ? template.threatIds.map((threat) => ({ ...threat }))
-        : undefined,
+      threatIds: threatIds.length ? threatIds : undefined,
       remediationTemplate: template.remediationTemplate
         ? {
             title: template.remediationTemplate.title,

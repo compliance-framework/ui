@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
-import { ref, shallowRef } from 'vue';
+import { nextTick, ref, shallowRef } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
 import type { RiskTemplate } from '@/types/risk-templates';
 
@@ -18,7 +18,7 @@ const templates = shallowRef<RiskTemplate[]>([
   },
 ]);
 const listLoading = ref(false);
-const listError = ref(null);
+const listError = ref<unknown>(null);
 
 const createLoading = ref(false);
 const updateLoading = ref(false);
@@ -226,6 +226,25 @@ describe('RiskTemplatesView', () => {
     );
   });
 
+  it('shows insufficient permissions toast when list load fails with 403', async () => {
+    mount(RiskTemplatesView);
+
+    listError.value = {
+      response: {
+        status: 403,
+      },
+    };
+    await nextTick();
+
+    expect(toastAdd).toHaveBeenCalledWith(
+      expect.objectContaining({
+        severity: 'warn',
+        summary: 'Insufficient permissions',
+        detail: "You don't have access to risk templates.",
+      }),
+    );
+  });
+
   it('trims required fields when duplicating a template', async () => {
     templates.value = [
       {
@@ -299,6 +318,85 @@ describe('RiskTemplatesView', () => {
           },
         }),
       },
+    );
+  });
+
+  it('normalizes threat ids when duplicating a template', async () => {
+    templates.value = [
+      {
+        id: 'template-1',
+        pluginId: 'plugin-a',
+        policyPackage: 'policy-a',
+        name: 'network-risk',
+        title: 'Network Risk',
+        statement: 'Network risk statement',
+        threatIds: [
+          {
+            system: '  cwe  ',
+            id: '  CWE-79  ',
+            title: '  Cross-site Scripting  ',
+            url: '  https://cwe.mitre.org/data/definitions/79.html  ',
+          },
+          { system: '  ', id: ' ', title: ' ', url: '   ' },
+        ],
+      },
+    ];
+
+    const wrapper = mount(RiskTemplatesView);
+    const duplicateButton = findButtonByText(wrapper, 'Duplicate');
+
+    expect(duplicateButton).toBeDefined();
+    await duplicateButton!.trigger('click');
+
+    expect(mockCreateTemplate).toHaveBeenCalledWith(
+      '/api/admin/risk-templates',
+      {
+        data: expect.objectContaining({
+          threatIds: [
+            {
+              system: 'cwe',
+              id: 'CWE-79',
+              title: 'Cross-site Scripting',
+              url: 'https://cwe.mitre.org/data/definitions/79.html',
+            },
+          ],
+        }),
+      },
+    );
+  });
+
+  it('rejects duplication when a threat id entry is incomplete', async () => {
+    templates.value = [
+      {
+        id: 'template-1',
+        pluginId: 'plugin-a',
+        policyPackage: 'policy-a',
+        name: 'network-risk',
+        title: 'Network Risk',
+        statement: 'Network risk statement',
+        threatIds: [
+          {
+            system: 'cwe',
+            id: '',
+            title: 'Cross-site Scripting',
+            url: '',
+          },
+        ],
+      },
+    ];
+
+    const wrapper = mount(RiskTemplatesView);
+    const duplicateButton = findButtonByText(wrapper, 'Duplicate');
+
+    expect(duplicateButton).toBeDefined();
+    await duplicateButton!.trigger('click');
+
+    expect(mockCreateTemplate).not.toHaveBeenCalled();
+    expect(toastAdd).toHaveBeenCalledWith(
+      expect.objectContaining({
+        summary: 'Duplicate Failed',
+        detail: 'Threat IDs must include system, id, and title when provided.',
+      }),
     );
   });
 
