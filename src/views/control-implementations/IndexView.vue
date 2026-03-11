@@ -55,13 +55,9 @@
       <Button
         type="button"
         severity="secondary"
-        :label="
-          hasBulkSuggestionsInFlight
-            ? 'Applying Suggestions...'
-            : 'Apply All Suggestions'
-        "
-        :loading="hasBulkSuggestionsInFlight"
-        :disabled="hasBulkSuggestionsInFlight || catalogLoading || loading"
+        :label="bulkSuggestionsButtonLabel"
+        :loading="bulkSuggestionsBusy"
+        :disabled="bulkSuggestionsOperationLocked || catalogLoading || loading"
         @click="prepareApplyAllSuggestions"
       />
     </div>
@@ -164,7 +160,6 @@ import IndexControlImplementation from '@/views/control-implementations/partials
 import type { AxiosError } from 'axios';
 import type { Catalog, Profile } from '@/oscal';
 import type {
-  ByComponent,
   ControlImplementation,
   ImplementedRequirement,
   Statement,
@@ -222,15 +217,6 @@ const {
   null,
   { immediate: false },
 );
-const { execute: createByComponentApi } = useDataApi<ByComponent>(
-  null,
-  {
-    method: 'POST',
-    transformRequest: [decamelizeKeys],
-  },
-  { immediate: false },
-);
-
 const loading = computed<boolean>(
   () =>
     baseLoading.value ||
@@ -245,6 +231,7 @@ const selectedImplementedRequirement = ref<ImplementedRequirement>();
 const preparingBulkSuggestions = ref(false);
 const applyingBulkSuggestions = ref(false);
 const bulkSuggestionsConfirmOpen = ref(false);
+const BULK_SUGGESTIONS_CONCURRENCY_LIMIT = 5;
 
 const error = ref<AxiosError<unknown> | null>(null);
 
@@ -257,12 +244,21 @@ interface StatementSuggestionWorkItem {
   unappliedSuggestions: SuggestedComponent[];
 }
 
-const hasBulkSuggestionsInFlight = computed(
-  () =>
-    preparingBulkSuggestions.value ||
-    applyingBulkSuggestions.value ||
-    bulkSuggestionsConfirmOpen.value,
+const bulkSuggestionsBusy = computed(
+  () => preparingBulkSuggestions.value || applyingBulkSuggestions.value,
 );
+const bulkSuggestionsOperationLocked = computed(
+  () => bulkSuggestionsBusy.value || bulkSuggestionsConfirmOpen.value,
+);
+const bulkSuggestionsButtonLabel = computed(() => {
+  if (applyingBulkSuggestions.value) {
+    return 'Applying Suggestions...';
+  }
+  if (preparingBulkSuggestions.value) {
+    return 'Preparing Suggestions...';
+  }
+  return 'Apply All Suggestions';
+});
 
 function getStatementWorkItems(): Array<{
   requirement: ImplementedRequirement;
@@ -316,10 +312,9 @@ async function buildStatementSuggestionPlan(): Promise<
   }
 
   const statements = getStatementWorkItems();
-  const concurrencyLimit = 5;
   const planned = await mapWithConcurrency(
     statements,
-    concurrencyLimit,
+    BULK_SUGGESTIONS_CONCURRENCY_LIMIT,
     async ({ requirement, statement }) => {
       try {
         const response = await axios.post<{
@@ -402,36 +397,47 @@ async function applySuggestionPlan(
   let createdCount = 0;
   let failedCount = 0;
   try {
-    for (const item of plannedItems) {
-      for (const suggestion of item.unappliedSuggestions) {
+    const tasks = plannedItems.flatMap((item) =>
+      item.unappliedSuggestions.map((suggestion) => ({ item, suggestion })),
+    );
+    const outcomes = await mapWithConcurrency(
+      tasks,
+      BULK_SUGGESTIONS_CONCURRENCY_LIMIT,
+      async ({ item, suggestion }) => {
         try {
-          await createByComponentApi(
+          await axios.post(
             buildByComponentsEndpoint(
               sspId,
               item.requirement.uuid,
               item.statement.uuid,
             ),
             {
-              data: {
-                uuid: uuidv4(),
-                componentUuid: suggestion.componentUuid,
-                description: '',
-                implementationStatus: {
-                  state: '',
-                },
-              } as ByComponent,
+              uuid: uuidv4(),
+              componentUuid: suggestion.componentUuid,
+              description: '',
+              implementationStatus: {
+                state: '',
+              },
             },
+            { transformRequest: [decamelizeKeys] },
           );
-          createdCount += 1;
+          return true;
         } catch (error) {
-          failedCount += 1;
           console.error(
             'Failed to apply suggested component in bulk operation:',
-            error,
+            {
+              requirementUuid: item.requirement.uuid,
+              statementUuid: item.statement.uuid,
+              componentUuid: suggestion.componentUuid,
+              error,
+            },
           );
+          return false;
         }
-      }
-    }
+      },
+    );
+    createdCount = outcomes.filter(Boolean).length;
+    failedCount = outcomes.length - createdCount;
   } finally {
     try {
       await loadControlImplementations();
@@ -474,7 +480,7 @@ async function applySuggestionPlan(
 }
 
 async function prepareApplyAllSuggestions() {
-  if (hasBulkSuggestionsInFlight.value) {
+  if (bulkSuggestionsOperationLocked.value) {
     return;
   }
 
