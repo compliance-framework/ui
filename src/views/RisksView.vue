@@ -5,14 +5,14 @@
 
   <Message v-else-if="contextMissing" severity="error" variant="outlined">
     <div class="space-y-2 text-gray-700 dark:text-slate-200">
-      <h4 class="text-base font-semibold">{{ missingContextTitle }}</h4>
-      <p>{{ missingContextDetail }}</p>
+      <h4 class="text-base font-semibold">System Security Plan not selected</h4>
+      <p>No System Security Plan has been selected for editing.</p>
       <p>
         Please return to the
         <RouterLink
-          :to="{ name: missingContextRouteName }"
+          :to="{ name: 'system-security-plans' }"
           class="font-medium underline text-blue-600 dark:text-blue-300"
-          >{{ missingContextRouteLabel }}
+          >SSP Page
         </RouterLink>
         to select one
       </p>
@@ -24,7 +24,7 @@
   </div>
 
   <div v-else class="p-6 space-y-6">
-    <PageHeader>{{ pageTitle }}</PageHeader>
+    <PageHeader>SSP Risk Register</PageHeader>
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       <div
@@ -268,8 +268,8 @@
 
     <div v-else class="space-y-4">
       <div
-        v-for="risk in visibleRisks"
-        :key="risk.uuid"
+        v-for="(risk, index) in visibleRisks"
+        :key="riskIdentifier(risk) || index"
         class="bg-white dark:bg-slate-900 border border-ccf-300 dark:border-slate-700 rounded-lg p-6"
       >
         <div class="flex flex-col lg:flex-row gap-4 lg:justify-between">
@@ -357,17 +357,17 @@
 
           <div class="flex gap-2 self-start">
             <RouterLinkButton
-              v-if="risk.uuid"
+              v-if="riskIdentifier(risk)"
               variant="text"
-              :to="riskDetailRoute(risk.uuid)"
+              :to="riskDetailRoute(riskIdentifier(risk))"
             >
               Open
             </RouterLinkButton>
             <TertiaryButton @click="editRisk(risk)">Edit</TertiaryButton>
             <TertiaryButton
-              v-if="risk.uuid"
+              v-if="riskIdentifier(risk)"
               @click="
-                confirmDeleteDialog(() => deleteRisk(risk.uuid!), {
+                confirmDeleteDialog(() => deleteRisk(riskIdentifier(risk)), {
                   itemType: 'risk',
                 })
               "
@@ -381,8 +381,7 @@
 
     <Dialog v-model:visible="showCreateModal" modal size="lg">
       <RiskCreateForm
-        :poam-id="context?.scope === 'poam' ? context.id : undefined"
-        :ssp-id="context?.scope === 'ssp' ? context.id : undefined"
+        :ssp-id="sspId"
         @cancel="showCreateModal = false"
         @created="handleRiskCreated"
       />
@@ -391,8 +390,7 @@
     <Dialog v-model:visible="showEditModal" modal size="lg">
       <RiskEditForm
         v-if="editingRisk"
-        :poam-id="context?.scope === 'poam' ? context.id : undefined"
-        :ssp-id="context?.scope === 'ssp' ? context.id : undefined"
+        :ssp-id="sspId"
         :risk="editingRisk"
         @cancel="showEditModal = false"
         @saved="handleRiskSaved"
@@ -418,12 +416,6 @@ import { useDataApi } from '@/composables/axios';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
 import RouterLinkButton from '@/components/RouterLinkButton.vue';
 import {
-  buildRiskCollectionEndpoint,
-  buildRiskItemEndpoint,
-  resolveRiskContext,
-  type RiskContext,
-} from '@/utils/risk-context';
-import {
   computeRiskSummary,
   defaultRiskFilters,
   filterRisks,
@@ -439,6 +431,7 @@ import {
   type RiskSortBy,
   type SortDirection,
 } from '@/utils/risk-register';
+import { getRiskIdentifier, sameRiskIdentifier } from '@/utils/risk-id';
 
 const route = useRoute();
 const toast = useToast();
@@ -446,46 +439,16 @@ const { system } = useSystemStore();
 
 const { confirmDeleteDialog } = useDeleteConfirmationDialog();
 
-const context = computed<RiskContext | null>(() =>
-  resolveRiskContext({
-    routeName: route.name,
-    routeId: (route.params.id as string | undefined) ?? null,
-    selectedPoamId: system.poam?.uuid,
-    selectedSspId: system.securityPlan?.uuid,
-  }),
-);
-
-const contextMissing = computed(() => !context.value);
-const isSspRoute = computed(
+const sspId = computed(
   () =>
-    route.name === 'system-security-plan-risks' ||
-    route.name === 'system-security-plan-risk-detail',
+    (route.params.id as string | undefined) || system.securityPlan?.uuid || '',
 );
 
-const missingContextTitle = computed(() =>
-  isSspRoute.value
-    ? 'System Security Plan not selected'
-    : 'Plan Of Action and Milestones not selected',
-);
-const missingContextDetail = computed(() =>
-  isSspRoute.value
-    ? 'No System Security Plan has been selected for editing.'
-    : 'No Plan Of Action and Milestones (POA&M) has been selected for editing.',
-);
-const missingContextRouteName = computed(() =>
-  isSspRoute.value ? 'system-security-plans' : 'plan-of-action-and-milestones',
-);
-const missingContextRouteLabel = computed(() =>
-  isSspRoute.value ? 'SSP Page' : 'POA&M Page',
-);
-
-const pageTitle = computed(() =>
-  context.value?.scope === 'ssp' ? 'SSP Risk Register' : 'Risk Register',
-);
+const contextMissing = computed(() => !sspId.value);
 
 const endpoint = computed(() => {
-  if (!context.value) return null;
-  return buildRiskCollectionEndpoint(context.value);
+  if (!sspId.value) return null;
+  return `/api/oscal/system-security-plans/${sspId.value}/risks`;
 });
 
 const {
@@ -510,26 +473,26 @@ watch(
 interface RiskUpdatedDetail {
   risk: Risk;
   context?: { scope: 'poam' | 'ssp'; id: string };
-  poamId?: string;
   sspId?: string;
 }
 
 const handleRiskUpdated = (event: Event) => {
   const detail = (event as CustomEvent<RiskUpdatedDetail>).detail;
-  if (!detail?.risk?.uuid || !risks.value || !context.value) return;
+  if (!detail?.risk || !risks.value || !sspId.value) return;
 
-  if (
-    detail.context &&
-    (detail.context.scope !== context.value.scope ||
-      detail.context.id !== context.value.id)
-  ) {
+  if (detail.context && detail.context.scope !== 'ssp') {
     return;
   }
 
-  if (detail.poamId && detail.poamId !== context.value.id) return;
-  if (detail.sspId && detail.sspId !== context.value.id) return;
+  if (detail.context && detail.context.id !== sspId.value) {
+    return;
+  }
 
-  const index = risks.value.findIndex((item) => item.uuid === detail.risk.uuid);
+  if (detail.sspId && detail.sspId !== sspId.value) return;
+
+  const index = risks.value.findIndex((item) =>
+    sameRiskIdentifier(item, detail.risk),
+  );
   if (index !== -1) {
     risks.value[index] = detail.risk;
   }
@@ -579,6 +542,15 @@ const statusOptions = computed(() => {
 });
 
 const editRisk = (risk: Risk) => {
+  if (!riskIdentifier(risk)) {
+    toast.add({
+      severity: 'error',
+      summary: 'Missing risk identifier',
+      detail: 'This risk cannot be edited because it has no identifier.',
+      life: 4000,
+    });
+    return;
+  }
   editingRisk.value = risk;
   showEditModal.value = true;
 };
@@ -593,7 +565,9 @@ const handleRiskCreated = (newRisk: Risk) => {
 
 const handleRiskSaved = (updatedRisk: Risk) => {
   if (!risks.value || !updatedRisk) return;
-  const index = risks.value.findIndex((risk) => risk.uuid === updatedRisk.uuid);
+  const index = risks.value.findIndex((risk) =>
+    sameRiskIdentifier(risk, updatedRisk),
+  );
   if (index !== -1) {
     risks.value[index] = updatedRisk;
   }
@@ -601,13 +575,19 @@ const handleRiskSaved = (updatedRisk: Risk) => {
   editingRisk.value = null;
 };
 
-const deleteRisk = async (uuid: string) => {
+const deleteRisk = async (riskId: string) => {
   try {
-    if (!context.value) {
-      throw new Error('No risk context found.');
+    if (!sspId.value) {
+      throw new Error('No SSP ID found.');
     }
 
-    await executeDeleteRisk(buildRiskItemEndpoint(context.value, uuid));
+    if (!riskId) {
+      throw new Error('Risk identifier is missing.');
+    }
+
+    await executeDeleteRisk(
+      `/api/oscal/system-security-plans/${sspId.value}/risks/${riskId}`,
+    );
     toast.add({
       severity: 'success',
       summary: 'Risk Deleted',
@@ -630,21 +610,18 @@ const deleteRisk = async (uuid: string) => {
 };
 
 function riskDetailRoute(riskId: string) {
-  if (!context.value) {
-    return { name: 'risks:index' };
-  }
-
-  if (context.value.detailRouteName === 'risks:detail') {
-    return {
-      name: context.value.detailRouteName,
-      params: { riskId },
-    };
+  if (!sspId.value) {
+    return { name: 'system-security-plans' };
   }
 
   return {
-    name: context.value.detailRouteName,
-    params: { id: context.value.id, riskId },
+    name: 'system-security-plan-risk-detail',
+    params: { id: sspId.value, riskId },
   };
+}
+
+function riskIdentifier(risk: Risk): string {
+  return getRiskIdentifier(risk);
 }
 
 function resetFilters() {

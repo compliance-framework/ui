@@ -1,10 +1,6 @@
 import type { Risk, RiskLogEntry } from '@/oscal';
 
-export type RiskAssociationKind =
-  | 'evidence'
-  | 'controls'
-  | 'components'
-  | 'subjects';
+export type RiskAssociationKind = 'evidence' | 'controls' | 'components';
 
 export interface RiskAssociationItem {
   id: string;
@@ -32,6 +28,8 @@ type LooseRisk = Risk & LooseRecord;
 
 interface AssociationConfig {
   fields: string[];
+  persistenceFields: string[];
+  idsField: string;
   idKeys: string[];
   titleKeys: string[];
   descriptionKeys?: string[];
@@ -43,7 +41,9 @@ interface AssociationConfig {
 
 const ASSOCIATION_CONFIG: Record<RiskAssociationKind, AssociationConfig> = {
   evidence: {
-    fields: ['relatedEvidence', 'evidence', 'evidenceItems'],
+    fields: ['evidenceIds', 'relatedEvidence', 'evidence', 'evidenceItems'],
+    persistenceFields: ['relatedEvidence', 'evidence'],
+    idsField: 'evidenceIds',
     idKeys: ['evidenceId', 'id', 'evidenceUuid', 'uuid'],
     titleKeys: ['title', 'name', 'id', 'uuid'],
     descriptionKeys: ['description', 'remarks'],
@@ -51,25 +51,27 @@ const ASSOCIATION_CONFIG: Record<RiskAssociationKind, AssociationConfig> = {
     endKeys: ['end', 'endDate', 'expires'],
   },
   controls: {
-    fields: ['relatedControls', 'controls', 'controlItems'],
+    fields: ['controlIds', 'relatedControls', 'controls', 'controlItems'],
+    persistenceFields: ['relatedControls', 'controls'],
+    idsField: 'controlIds',
     idKeys: ['controlId', 'id', 'uuid'],
     titleKeys: ['title', 'name', 'label', 'controlId'],
     descriptionKeys: ['description', 'remarks'],
     catalogKeys: ['catalogName', 'catalog', 'catalogId'],
   },
   components: {
-    fields: ['relatedComponents', 'components', 'componentItems'],
+    fields: [
+      'componentIds',
+      'relatedComponents',
+      'components',
+      'componentItems',
+    ],
+    persistenceFields: ['relatedComponents', 'components'],
+    idsField: 'componentIds',
     idKeys: ['componentUuid', 'componentId', 'id', 'uuid'],
     titleKeys: ['title', 'name', 'label', 'componentUuid', 'id'],
     descriptionKeys: ['description', 'remarks'],
     typeKeys: ['type'],
-  },
-  subjects: {
-    fields: ['relatedSubjects', 'subjects', 'subjectItems'],
-    idKeys: ['subjectUuid', 'id', 'uuid'],
-    titleKeys: ['title', 'name', 'label', 'subjectUuid', 'id'],
-    descriptionKeys: ['description', 'remarks'],
-    typeKeys: ['type', 'subjectType'],
   },
 };
 
@@ -179,16 +181,38 @@ function normalizeForPersistence(
         type: item.type,
         description: item.description,
       }));
-    case 'subjects':
-      return items.map((item) => ({
-        subjectUuid: item.id,
-        title: item.title,
-        type: item.type,
-        description: item.description,
-      }));
     default:
       return [];
   }
+}
+
+function collectAssociationIds(
+  kind: RiskAssociationKind,
+  items: RiskAssociationItem[],
+): string[] {
+  const ids = new Set<string>();
+
+  items.forEach((item) => {
+    let id = '';
+
+    switch (kind) {
+      case 'evidence':
+        id = item.evidenceId || item.evidenceUuid || item.id;
+        break;
+      case 'controls':
+        id = item.controlId || item.id;
+        break;
+      case 'components':
+        id = item.id;
+        break;
+    }
+
+    if (id) {
+      ids.add(id);
+    }
+  });
+
+  return Array.from(ids);
 }
 
 function pickExistingField(risk: LooseRisk, fields: string[]): string {
@@ -212,7 +236,10 @@ export function getRiskAssociations(
 
   config.fields.forEach((field) => {
     normalizeAssociationArray(source[field], config).forEach((item) => {
-      const key = kind === 'evidence' ? item.evidenceUuid || item.id : item.id;
+      const key =
+        kind === 'evidence'
+          ? item.evidenceUuid || item.evidenceId || item.id
+          : item.controlId || item.id;
       if (seen.has(key)) return;
       seen.add(key);
       items.push(item);
@@ -229,12 +256,14 @@ export function withUpdatedRiskAssociations(
 ): Risk {
   const config = ASSOCIATION_CONFIG[kind];
   const source = risk as LooseRisk;
-  const targetField = pickExistingField(source, config.fields);
+  const targetField = pickExistingField(source, config.persistenceFields);
   const normalized = normalizeForPersistence(kind, items);
+  const ids = collectAssociationIds(kind, items);
 
   return {
     ...(risk as LooseRisk),
     [targetField]: normalized,
+    [config.idsField]: ids,
   } as Risk;
 }
 

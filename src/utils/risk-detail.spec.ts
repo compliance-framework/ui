@@ -45,11 +45,15 @@ describe('risk-detail', () => {
         controlId: 'SC-7',
         catalogName: 'NIST SP 800-53',
       },
-    ]) as Risk & { relatedControls?: Array<{ controlId: string }> };
+    ]) as Risk & {
+      relatedControls?: Array<{ controlId: string }>;
+      controlIds?: string[];
+    };
 
     expect(updated.relatedControls).toEqual([
       expect.objectContaining({ controlId: 'SC-7' }),
     ]);
+    expect(updated.controlIds).toEqual(['SC-7']);
   });
 
   it('persists evidence uuid while keeping evidence id for UI routing', () => {
@@ -66,6 +70,7 @@ describe('risk-detail', () => {
       },
     ]) as Risk & {
       relatedEvidence?: Array<{ evidenceId?: string; evidenceUuid?: string }>;
+      evidenceIds?: string[];
     };
 
     expect(updated.relatedEvidence).toEqual([
@@ -74,6 +79,7 @@ describe('risk-detail', () => {
         evidenceUuid: 'uuid-101',
       }),
     ]);
+    expect(updated.evidenceIds).toEqual(['ev-101']);
   });
 
   it('does not copy uuid into evidenceId when only uuid is present', () => {
@@ -94,6 +100,7 @@ describe('risk-detail', () => {
       associations,
     ) as Risk & {
       relatedEvidence?: Array<{ evidenceId?: string; evidenceUuid?: string }>;
+      evidenceIds?: string[];
     };
 
     expect(updated.relatedEvidence).toEqual([
@@ -102,6 +109,17 @@ describe('risk-detail', () => {
         evidenceUuid: 'uuid-only',
       }),
     ]);
+    expect(updated.evidenceIds).toEqual(['uuid-only']);
+  });
+
+  it('reads component associations from componentIds fallback', () => {
+    const risk = makeRisk({
+      componentIds: ['comp-1', 'comp-2'],
+    });
+
+    const associations = getRiskAssociations(risk, 'components');
+
+    expect(associations.map((item) => item.id)).toEqual(['comp-1', 'comp-2']);
   });
 
   it('normalizes events from raw event payload', () => {

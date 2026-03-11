@@ -118,7 +118,6 @@ describe('RiskDetailView', () => {
     expect(text).toContain('Evidence');
     expect(text).toContain('Controls');
     expect(text).toContain('Components');
-    expect(text).toContain('Subjects');
     expect(text).toContain('History & Events');
     expect(text).toContain('Log');
 

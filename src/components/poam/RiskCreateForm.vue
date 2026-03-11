@@ -58,12 +58,13 @@
           class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-800 dark:text-slate-300"
         >
           <option value="">Select status</option>
-          <option value="open">Open</option>
-          <option value="investigating">Investigating</option>
-          <option value="resolved">Resolved</option>
-          <option value="risk-accepted">Risk Accepted</option>
-          <option value="mitigation-implemented">Mitigation Implemented</option>
-          <option value="mitigation-planned">Mitigation Planned</option>
+          <option
+            v-for="status in riskStatusOptions"
+            :key="status.value"
+            :value="status.value"
+          >
+            {{ status.label }}
+          </option>
         </select>
       </div>
 
@@ -77,13 +78,25 @@
           <div
             v-for="(threatId, index) in formData.threatIds"
             :key="index"
-            class="flex gap-2"
+            class="grid grid-cols-1 md:grid-cols-[1fr_1.2fr_1.2fr_auto] gap-2"
           >
             <input
-              v-model="formData.threatIds[index]"
+              v-model="formData.threatIds[index].id"
               type="text"
-              class="flex-1 px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-800 dark:text-slate-300"
-              placeholder="Enter threat ID"
+              class="px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-800 dark:text-slate-300"
+              placeholder="Threat ID"
+            />
+            <input
+              v-model="formData.threatIds[index].system"
+              type="text"
+              class="px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-800 dark:text-slate-300"
+              placeholder="System URI"
+            />
+            <input
+              v-model="formData.threatIds[index].href"
+              type="text"
+              class="px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-800 dark:text-slate-300"
+              placeholder="Reference URL (optional)"
             />
             <button
               type="button"
@@ -93,6 +106,12 @@
               Remove
             </button>
           </div>
+          <p
+            v-if="!formData.threatIds.length"
+            class="text-xs text-gray-500 dark:text-slate-400"
+          >
+            No threat identifiers added.
+          </p>
           <button
             type="button"
             @click="addThreatId"
@@ -180,6 +199,15 @@ const emit = defineEmits<{
 
 const toast = useToast();
 
+const riskStatusOptions = [
+  { value: 'open', label: 'Open' },
+  { value: 'investigating', label: 'Investigating' },
+  { value: 'remediating', label: 'Remediating' },
+  { value: 'deviation-requested', label: 'Deviation Requested' },
+  { value: 'deviation-approved', label: 'Deviation Approved' },
+  { value: 'closed', label: 'Closed' },
+];
+
 const riskContext = computed<RiskContext | null>(() => {
   if (props.sspId) {
     return {
@@ -231,7 +259,11 @@ const formData = reactive({
 });
 
 function addThreatId() {
-  formData.threatIds.push({ id: '', system: ThreatIDSystem.OSCAL });
+  formData.threatIds.push({
+    id: '',
+    system: ThreatIDSystem.OSCAL,
+    href: '',
+  });
 }
 
 function removeThreatId(index: number) {
@@ -298,16 +330,21 @@ async function submit() {
       }
     }
 
+    const filteredThreatIds = formData.threatIds
+      .map((item) => ({
+        id: item.id.trim(),
+        system: item.system?.trim() || ThreatIDSystem.OSCAL,
+        href: item.href?.trim() || undefined,
+      }))
+      .filter((item) => item.id);
+
     const newRisk: Partial<Risk> = {
       uuid: crypto.randomUUID(),
       title: formData.title,
       description: formData.description,
       statement: formData.statement,
       status: formData.status,
-      threatIds:
-        formData.threatIds.filter((t) => t.id.trim()).length > 0
-          ? formData.threatIds.filter((t) => t.id.trim())
-          : undefined,
+      threatIds: filteredThreatIds.length > 0 ? filteredThreatIds : undefined,
       deadline,
       remarks: formData.remarks || undefined,
     };

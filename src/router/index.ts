@@ -720,7 +720,10 @@ const authenticatedRoutes = [
       {
         path: 'risks',
         name: 'plan-of-action-and-milestones-risks',
-        component: () => import('../views/RisksView.vue'),
+        component: () =>
+          import(
+            '../views/plan-of-actions-and-milestones/PlanOfActionAndMilestonesRisksView.vue'
+          ),
       },
       {
         path: 'risks/:riskId',

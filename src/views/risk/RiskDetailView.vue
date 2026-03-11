@@ -57,7 +57,14 @@
               <span class="font-semibold">Threat IDs:</span>
               <span class="ml-1">
                 <template v-if="risk.threatIds?.length">
-                  {{ risk.threatIds.map((item) => item.id).join(', ') }}
+                  {{
+                    risk.threatIds
+                      .map((item) =>
+                        typeof item === 'string' ? item : item.id,
+                      )
+                      .filter(Boolean)
+                      .join(', ')
+                  }}
                 </template>
                 <template v-else>None</template>
               </span>
@@ -308,65 +315,6 @@
             </div>
           </div>
 
-          <div v-else-if="activeTab === 'subjects'" class="space-y-4">
-            <div class="flex items-center justify-between">
-              <h3 class="text-lg font-medium text-gray-900 dark:text-slate-200">
-                Subjects
-              </h3>
-              <button
-                class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-sm"
-                :disabled="saving"
-                @click="openAssociationPicker('subjects')"
-              >
-                Add Subject
-              </button>
-            </div>
-
-            <div
-              v-if="!subjectAssociations.length"
-              class="text-sm text-gray-600 dark:text-slate-400"
-            >
-              No subjects linked to this risk.
-            </div>
-
-            <div v-else class="space-y-3">
-              <div
-                v-for="item in subjectAssociations"
-                :key="item.id"
-                class="border border-ccf-300 dark:border-slate-700 rounded-lg p-4"
-              >
-                <div class="flex flex-col md:flex-row md:justify-between gap-4">
-                  <div class="space-y-1">
-                    <p class="font-medium text-gray-800 dark:text-slate-200">
-                      {{ item.title }}
-                    </p>
-                    <p class="text-sm text-gray-600 dark:text-slate-400">
-                      Type: {{ item.type || 'N/A' }}
-                    </p>
-                  </div>
-                  <div class="flex gap-2 self-start">
-                    <RouterLinkButton
-                      v-if="subjectRoute(item)"
-                      variant="text"
-                      :to="subjectRoute(item)!"
-                    >
-                      Open
-                    </RouterLinkButton>
-                    <button
-                      class="px-3 py-1 rounded-md text-sm bg-red-600 hover:bg-red-700 text-white"
-                      :disabled="saving"
-                      @click="
-                        unlinkAssociation('subjects', item.id, item.title)
-                      "
-                    >
-                      Remove
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
           <div v-else-if="activeTab === 'history-events'" class="space-y-4">
             <h3 class="text-lg font-medium text-gray-900 dark:text-slate-200">
               History &amp; Events
@@ -487,11 +435,9 @@ import type {
   Catalog,
   Control,
   Group,
-  InventoryItem,
   Profile,
   Risk,
   SystemComponent,
-  SystemUser,
 } from '@/oscal';
 import type { Evidence } from '@/stores/evidence';
 import { useToast } from 'primevue/usetoast';
@@ -510,6 +456,7 @@ import {
   type RiskAssociationKind,
   type RiskEventItem,
 } from '@/utils/risk-detail';
+import { getRiskIdentifier } from '@/utils/risk-id';
 
 interface AssociationPickerOption extends RiskAssociationItem {
   subtitle?: string;
@@ -520,7 +467,6 @@ const tabs = [
   { id: 'evidence', label: 'Evidence' },
   { id: 'controls', label: 'Controls' },
   { id: 'components', label: 'Components' },
-  { id: 'subjects', label: 'Subjects' },
   { id: 'history-events', label: 'History & Events' },
   { id: 'log', label: 'Log' },
 ] as const;
@@ -566,11 +512,6 @@ const listEndpoint = computed(() => {
   return buildRiskCollectionEndpoint(context.value);
 });
 
-const detailEndpoint = computed(() => {
-  if (!context.value || !riskId.value) return null;
-  return buildRiskItemEndpoint(context.value, riskId.value);
-});
-
 const {
   data: fetchedRisk,
   isLoading: loadingRisk,
@@ -603,25 +544,17 @@ const {
   data: availableEvidence,
   isLoading: loadingEvidence,
   execute: executeLoadEvidence,
-} = useDataApi<Evidence[]>(null, {}, { immediate: false });
+} = useDataApi<Evidence[]>(
+  '/api/evidence/search',
+  { method: 'POST' },
+  { immediate: false },
+);
 
 const {
   data: availableComponents,
   isLoading: loadingComponents,
   execute: executeLoadComponents,
 } = useDataApi<SystemComponent[]>(null, {}, { immediate: false });
-
-const {
-  data: availableUsers,
-  isLoading: loadingUsers,
-  execute: executeLoadUsers,
-} = useDataApi<SystemUser[]>(null, {}, { immediate: false });
-
-const {
-  data: availableInventory,
-  isLoading: loadingInventory,
-  execute: executeLoadInventory,
-} = useDataApi<InventoryItem[]>(null, {}, { immediate: false });
 
 const {
   data: profile,
@@ -642,6 +575,15 @@ const loadError = ref('');
 
 const activeTab = ref<TabId>('overview');
 
+const resolvedRiskId = computed(
+  () => getRiskIdentifier(risk.value) || riskId.value || '',
+);
+
+const detailEndpoint = computed(() => {
+  if (!context.value || !resolvedRiskId.value) return null;
+  return buildRiskItemEndpoint(context.value, resolvedRiskId.value);
+});
+
 const pageTitle = computed(() =>
   risk.value?.title ? `Risk: ${risk.value.title}` : 'Risk Detail',
 );
@@ -649,6 +591,37 @@ const pageTitle = computed(() =>
 const loading = computed(
   () => loadingRisk.value || loadingRiskList.value || loadingEvents.value,
 );
+
+const associationFields = [
+  'evidenceIds',
+  'relatedEvidence',
+  'evidence',
+  'controlIds',
+  'relatedControls',
+  'controls',
+  'componentIds',
+  'relatedComponents',
+  'components',
+] as const;
+
+function mergeSavedRiskForUi(nextRisk: Risk, returnedRisk?: Risk): Risk {
+  if (!returnedRisk) return cloneDeep(nextRisk);
+
+  const merged = {
+    ...(nextRisk as unknown as Record<string, unknown>),
+    ...(returnedRisk as unknown as Record<string, unknown>),
+  } as Record<string, unknown>;
+  const next = nextRisk as unknown as Record<string, unknown>;
+  const returned = returnedRisk as unknown as Record<string, unknown>;
+
+  associationFields.forEach((field) => {
+    if (returned[field] === undefined && next[field] !== undefined) {
+      merged[field] = cloneDeep(next[field]);
+    }
+  });
+
+  return merged as unknown as Risk;
+}
 
 function isCanceledError(err: unknown): boolean {
   const maybeError = err as { message?: string; code?: string };
@@ -672,14 +645,14 @@ function extractErrorMessage(err: unknown): string {
 }
 
 const riskEventEndpoints = computed(() => {
-  if (!context.value || !riskId.value) return [];
+  if (!context.value || !resolvedRiskId.value) return [];
 
-  const base = buildRiskItemEndpoint(context.value, riskId.value);
+  const base = buildRiskItemEndpoint(context.value, resolvedRiskId.value);
   return [
     `${base}/events`,
     `${base}/history`,
-    `/api/oscal/risks/${riskId.value}/events`,
-    `/api/oscal/risk-register/risks/${riskId.value}/events`,
+    `/api/oscal/risks/${resolvedRiskId.value}/events`,
+    `/api/oscal/risk-register/risks/${resolvedRiskId.value}/events`,
   ];
 });
 
@@ -729,7 +702,7 @@ async function loadRisk() {
     try {
       await executeFetchRisks(listEndpoint.value);
       const match = fetchedRisks.value?.find(
-        (item) => item.uuid === riskId.value,
+        (item) => getRiskIdentifier(item) === riskId.value,
       );
       if (match) {
         risk.value = cloneDeep(match);
@@ -766,9 +739,6 @@ const controlAssociations = computed(() =>
 const componentAssociations = computed(() =>
   getRiskAssociations(risk.value, 'components'),
 );
-const subjectAssociations = computed(() =>
-  getRiskAssociations(risk.value, 'subjects'),
-);
 
 function notifyRiskUpdated(updatedRisk: Risk) {
   if (typeof window === 'undefined' || !context.value) return;
@@ -792,8 +762,14 @@ async function saveRisk(nextRisk: Risk, successMessage: string) {
   if (contextMissing.value || !detailEndpoint.value) return;
 
   try {
-    await executeSave(detailEndpoint.value, { data: nextRisk });
-    risk.value = cloneDeep(savedRisk.value || nextRisk);
+    await executeSave(detailEndpoint.value, {
+      method: 'PUT',
+      data: nextRisk,
+    });
+
+    const mergedRisk = mergeSavedRiskForUi(nextRisk, savedRisk.value);
+
+    risk.value = mergedRisk;
 
     if (risk.value) {
       notifyRiskUpdated(risk.value);
@@ -859,7 +835,15 @@ function flattenControls(
 
 async function ensureEvidenceOptions() {
   if (availableEvidence.value?.length) return;
-  await executeLoadEvidence('/api/evidence');
+  const payload = {
+    filter: {
+      scope: {},
+    },
+  };
+
+  await executeLoadEvidence({
+    data: payload,
+  });
 }
 
 async function ensureComponentOptions() {
@@ -867,22 +851,6 @@ async function ensureComponentOptions() {
   if (!sspId || availableComponents.value?.length) return;
   await executeLoadComponents(
     `/api/oscal/system-security-plans/${sspId}/system-implementation/components`,
-  );
-}
-
-async function ensureUserOptions() {
-  const sspId = associationsSspId.value;
-  if (!sspId || availableUsers.value?.length) return;
-  await executeLoadUsers(
-    `/api/oscal/system-security-plans/${sspId}/system-implementation/users`,
-  );
-}
-
-async function ensureInventoryOptions() {
-  const sspId = associationsSspId.value;
-  if (!sspId || availableInventory.value?.length) return;
-  await executeLoadInventory(
-    `/api/oscal/system-security-plans/${sspId}/system-implementation/inventory-items`,
   );
 }
 
@@ -916,26 +884,7 @@ async function ensurePickerData(kind: RiskAssociationKind) {
 
   if (kind === 'components') {
     await ensureComponentOptions();
-    return;
   }
-
-  await Promise.all([
-    ensureComponentOptions(),
-    ensureUserOptions(),
-    ensureInventoryOptions(),
-  ]);
-}
-
-function dedupeOptions(
-  options: AssociationPickerOption[],
-): AssociationPickerOption[] {
-  const seen = new Set<string>();
-
-  return options.filter((option) => {
-    if (seen.has(option.id)) return false;
-    seen.add(option.id);
-    return true;
-  });
 }
 
 const controlPickerOptions = computed<AssociationPickerOption[]>(() =>
@@ -971,31 +920,6 @@ const evidencePickerOptions = computed<AssociationPickerOption[]>(() =>
   })),
 );
 
-const subjectPickerOptions = computed<AssociationPickerOption[]>(() => {
-  const fromComponents = (availableComponents.value || []).map((component) => ({
-    id: component.uuid,
-    title: component.title,
-    type: 'component',
-    subtitle: `component • ${component.uuid}`,
-  }));
-
-  const fromUsers = (availableUsers.value || []).map((user) => ({
-    id: user.uuid,
-    title: user.title || user.shortName || user.uuid,
-    type: 'user',
-    subtitle: `user • ${user.uuid}`,
-  }));
-
-  const fromInventory = (availableInventory.value || []).map((item) => ({
-    id: item.uuid,
-    title: item.description || item.uuid,
-    type: 'inventory-item',
-    subtitle: `inventory-item • ${item.uuid}`,
-  }));
-
-  return dedupeOptions([...fromComponents, ...fromUsers, ...fromInventory]);
-});
-
 const showAssociationPicker = ref(false);
 const pickerKind = ref<RiskAssociationKind>('evidence');
 const pickerSearch = ref('');
@@ -1004,7 +928,6 @@ const associationLabelMap: Record<RiskAssociationKind, string> = {
   evidence: 'Evidence',
   controls: 'Control',
   components: 'Component',
-  subjects: 'Subject',
 };
 
 function associationLabel(kind: RiskAssociationKind): string {
@@ -1023,10 +946,6 @@ const pickerLoading = computed(() => {
       return loadingProfile.value || loadingResolvedCatalog.value;
     case 'components':
       return loadingComponents.value;
-    case 'subjects':
-      return (
-        loadingComponents.value || loadingUsers.value || loadingInventory.value
-      );
     default:
       return false;
   }
@@ -1040,8 +959,6 @@ const pickerOptions = computed<AssociationPickerOption[]>(() => {
       return controlPickerOptions.value;
     case 'components':
       return componentPickerOptions.value;
-    case 'subjects':
-      return subjectPickerOptions.value;
     default:
       return [];
   }
@@ -1164,30 +1081,6 @@ function componentRoute(item: RiskAssociationItem) {
       componentId: item.id,
     },
   };
-}
-
-function subjectRoute(item: RiskAssociationItem) {
-  const type = (item.type || '').toLowerCase();
-
-  if (type.includes('component')) {
-    return {
-      name: 'system:components',
-      query: {
-        componentId: item.id,
-      },
-    };
-  }
-
-  if (type.includes('user') || type.includes('party')) {
-    return {
-      name: 'system:users',
-      query: {
-        subjectId: item.id,
-      },
-    };
-  }
-
-  return null;
 }
 
 function formatDate(value?: string) {
