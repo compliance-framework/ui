@@ -226,6 +226,38 @@ describe('RiskTemplatesView', () => {
     );
   });
 
+  it('trims required fields when duplicating a template', async () => {
+    templates.value = [
+      {
+        id: 'template-1',
+        pluginId: '  plugin-a  ',
+        policyPackage: '  policy-a  ',
+        name: '  network-risk  ',
+        title: '  Network Risk  ',
+        statement: '  Network risk statement  ',
+      },
+    ];
+
+    const wrapper = mount(RiskTemplatesView);
+    const duplicateButton = findButtonByText(wrapper, 'Duplicate');
+
+    expect(duplicateButton).toBeDefined();
+    await duplicateButton!.trigger('click');
+
+    expect(mockCreateTemplate).toHaveBeenCalledWith(
+      '/api/admin/risk-templates',
+      {
+        data: expect.objectContaining({
+          pluginId: 'plugin-a',
+          policyPackage: 'policy-a',
+          name: 'network-risk-copy',
+          title: 'Network Risk (Copy)',
+          statement: 'Network risk statement',
+        }),
+      },
+    );
+  });
+
   it('normalizes remediation task orderIndex during duplication', async () => {
     templates.value = [
       {

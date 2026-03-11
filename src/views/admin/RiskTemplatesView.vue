@@ -852,24 +852,31 @@ async function submitTemplate() {
 
 async function duplicateTemplate(template: RiskTemplate) {
   try {
+    const trimmedPluginId = template.pluginId?.trim() ?? '';
+    const trimmedPolicyPackage = template.policyPackage?.trim() ?? '';
+    const trimmedName = template.name?.trim() ?? '';
+    const trimmedTitle = template.title?.trim() ?? '';
+    const trimmedStatement = template.statement?.trim() ?? '';
+
     if (
-      !template.pluginId?.trim() ||
-      !template.policyPackage?.trim() ||
-      !template.name?.trim() ||
-      !template.statement?.trim()
+      !trimmedPluginId ||
+      !trimmedPolicyPackage ||
+      !trimmedName ||
+      !trimmedTitle ||
+      !trimmedStatement
     ) {
       throw new Error(
-        'Template is missing required fields (pluginId, policyPackage, name, or statement) and cannot be duplicated.',
+        'Template is missing required fields (pluginId, policyPackage, name, title, or statement) and cannot be duplicated.',
       );
     }
 
-    const duplicatedTitle = `${template.title} (Copy)`;
+    const duplicatedTitle = `${trimmedTitle} (Copy)`;
     const payload: UpsertRiskTemplateRequest = {
-      pluginId: template.pluginId,
-      policyPackage: template.policyPackage,
-      name: `${template.name}-copy`,
+      pluginId: trimmedPluginId,
+      policyPackage: trimmedPolicyPackage,
+      name: `${trimmedName}-copy`,
       title: duplicatedTitle,
-      statement: template.statement,
+      statement: trimmedStatement,
       likelihoodHint: template.likelihoodHint,
       impactHint: template.impactHint,
       violationIds: template.violationIds
