@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { ref } from 'vue';
 import type { SubjectTemplate } from '@/types/subject-templates';
@@ -22,12 +22,14 @@ const template = ref<SubjectTemplate | undefined>({
 const isLoading = ref(false);
 const error = ref<unknown>(null);
 const toastAdd = vi.fn();
+const fetchTemplate = vi.fn();
 
 vi.mock('@/composables/axios', () => ({
   useDataApi: () => ({
     data: template,
     isLoading,
     error,
+    execute: fetchTemplate,
   }),
 }));
 
@@ -61,6 +63,32 @@ vi.mock('@/components/PageSubHeader.vue', () => ({
 import SubjectTemplateDetailView from '../admin/SubjectTemplateDetailView.vue';
 
 describe('SubjectTemplateDetailView', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('fetches the template for the current route id', () => {
+    mount(SubjectTemplateDetailView, {
+      global: {
+        stubs: {
+          Chip: {
+            props: ['label'],
+            template: '<span>{{ label }}</span>',
+          },
+          RouterLinkButton: {
+            props: ['to'],
+            template:
+              '<button type="button" :data-to="JSON.stringify(to)"><slot /></button>',
+          },
+        },
+      },
+    });
+
+    expect(fetchTemplate).toHaveBeenCalledWith(
+      '/api/subject-templates/template-1',
+    );
+  });
+
   it('renders template details and provides edit entry point', () => {
     const wrapper = mount(SubjectTemplateDetailView, {
       global: {

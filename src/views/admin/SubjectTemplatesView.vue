@@ -311,6 +311,7 @@
         :purpose-template="formData.purposeTemplate"
         :remarks-template="formData.remarksTemplate"
         :label-schema="formData.labelSchema"
+        :disabled="isSaving"
       />
 
       <Panel toggleable collapsed>

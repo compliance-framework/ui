@@ -220,7 +220,9 @@ describe('SubjectTemplatesView', () => {
             template: '<div>SelectorLabelsBuilder</div>',
           },
           TemplatePreview: {
-            template: '<div>TemplatePreview</div>',
+            props: ['disabled'],
+            template:
+              '<div data-testid="template-preview" :data-disabled="String(disabled)">TemplatePreview</div>',
           },
         },
       },
@@ -367,5 +369,19 @@ describe('SubjectTemplatesView', () => {
         detail: 'Template is missing an identifier and cannot be edited.',
       }),
     );
+  });
+
+  it('disables template preview while saving', async () => {
+    const wrapper = mountView();
+
+    const createButton = findButtonByText(wrapper, 'Create Template');
+    expect(createButton).toBeDefined();
+    await createButton!.trigger('click');
+
+    createLoading.value = true;
+    await nextTick();
+
+    const preview = wrapper.get('[data-testid="template-preview"]');
+    expect(preview.attributes('data-disabled')).toBe('true');
   });
 });

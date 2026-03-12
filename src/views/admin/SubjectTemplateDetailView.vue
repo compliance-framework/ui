@@ -304,8 +304,19 @@ const {
   data: template,
   isLoading,
   error,
-} = useDataApi<SubjectTemplate>(
-  computed(() => `/api/subject-templates/${templateId.value}`),
+  execute: fetchTemplate,
+} = useDataApi<SubjectTemplate>(null, {}, { immediate: false });
+
+watch(
+  templateId,
+  (newTemplateId) => {
+    if (!newTemplateId) {
+      return;
+    }
+
+    fetchTemplate(`/api/subject-templates/${newTemplateId}`);
+  },
+  { immediate: true },
 );
 
 watch(

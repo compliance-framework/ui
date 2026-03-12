@@ -18,7 +18,10 @@ describe('TemplatePreview', () => {
             template: '<div><slot /><slot name="header" /></div>',
           },
           TertiaryButton: {
-            template: '<button type="button"><slot /></button>',
+            props: ['disabled'],
+            emits: ['click'],
+            template:
+              '<button type="button" :disabled="disabled" @click="$emit(\'click\')"><slot /></button>',
           },
         },
       },
@@ -31,5 +34,48 @@ describe('TemplatePreview', () => {
     expect(wrapper.text()).toContain('Repo ccf-ui - {{missing}}');
     expect(wrapper.text()).toContain('Unresolved placeholders');
     expect(wrapper.text()).toContain('missing');
+  });
+
+  it('prevents adding sample labels when disabled', async () => {
+    const wrapper = mount(TemplatePreview, {
+      props: {
+        titleTemplate: 'Repo {{repository}}',
+        descriptionTemplate: '',
+        purposeTemplate: '',
+        remarksTemplate: '',
+        labelSchema: [{ key: 'repository', description: 'Repository name' }],
+        disabled: true,
+      },
+      global: {
+        stubs: {
+          Panel: {
+            template: '<div><slot /><slot name="header" /></div>',
+          },
+          TertiaryButton: {
+            props: ['disabled'],
+            emits: ['click'],
+            template:
+              '<button type="button" :disabled="disabled" @click="$emit(\'click\')"><slot /></button>',
+          },
+        },
+      },
+    });
+
+    const addButton = wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Add Label');
+
+    expect(addButton).toBeDefined();
+    expect(addButton!.attributes('disabled')).toBeDefined();
+
+    const initialRows = wrapper.findAll(
+      'input[placeholder="Label key"]',
+    ).length;
+    await addButton!.trigger('click');
+    const rowsAfterClick = wrapper.findAll(
+      'input[placeholder="Label key"]',
+    ).length;
+
+    expect(rowsAfterClick).toBe(initialRows);
   });
 });

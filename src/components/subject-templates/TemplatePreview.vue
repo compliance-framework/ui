@@ -15,7 +15,11 @@
           <label class="inline-block pb-1 dark:text-slate-300 font-medium">
             Sample Evidence Labels
           </label>
-          <TertiaryButton type="button" @click="addSampleLabel">
+          <TertiaryButton
+            type="button"
+            :disabled="disabled"
+            @click="addSampleLabel"
+          >
             Add Label
           </TertiaryButton>
         </div>
@@ -213,6 +217,10 @@ const unresolvedKeys = computed(() => {
 });
 
 function addSampleLabel() {
+  if (props.disabled) {
+    return;
+  }
+
   sampleLabels.value.push({
     key: '',
     value: '',
@@ -220,6 +228,10 @@ function addSampleLabel() {
 }
 
 function removeSampleLabel(index: number) {
+  if (props.disabled) {
+    return;
+  }
+
   sampleLabels.value.splice(index, 1);
 }
 </script>
