@@ -358,6 +358,10 @@
             v-else-if="activeTab === 'log'"
             :entries="risk.riskLog?.entries"
           />
+          <RiskPoamItemsTab
+            v-else-if="activeTab === 'poam-items'"
+            :risk-id="riskId!"
+          />
         </div>
       </div>
     </div>
@@ -426,6 +430,7 @@ import Dialog from '@/volt/Dialog.vue';
 import TertiaryButton from '@/volt/TertiaryButton.vue';
 import RouterLinkButton from '@/components/RouterLinkButton.vue';
 import RiskLogTab from '@/components/risk/RiskLogTab.vue';
+import RiskPoamItemsTab from '@/components/risk/RiskPoamItemsTab.vue';
 import { useSystemStore } from '@/stores/system';
 import type { Profile, Risk, SystemComponent } from '@/oscal';
 import type { Evidence } from '@/stores/evidence';
@@ -481,6 +486,7 @@ const tabs = [
   { id: 'components', label: 'Components' },
   { id: 'history-events', label: 'History & Events' },
   { id: 'log', label: 'Log' },
+  { id: 'poam-items', label: 'POAM Items' },
 ] as const;
 
 type TabId = (typeof tabs)[number]['id'];
