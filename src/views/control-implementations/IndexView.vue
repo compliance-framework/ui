@@ -722,17 +722,21 @@ watch(
     try {
       await loadSspRisks(endpoint);
       loadedSspRisksFor.value = sspId;
-      console.debug('[controls:risk] Loaded SSP risks', {
-        sspId,
-        endpoint,
-        count: sspRisks.value?.length ?? 0,
-      });
+      if (import.meta.env.DEV) {
+        console.debug('[controls:risk] Loaded SSP risks', {
+          sspId,
+          endpoint,
+          count: sspRisks.value?.length ?? 0,
+        });
+      }
     } catch {
       // Error state is already handled by useDataApi.
-      console.debug('[controls:risk] Failed loading SSP risks', {
-        sspId,
-        endpoint,
-      });
+      if (import.meta.env.DEV) {
+        console.debug('[controls:risk] Failed loading SSP risks', {
+          sspId,
+          endpoint,
+        });
+      }
     }
   },
   { immediate: true },

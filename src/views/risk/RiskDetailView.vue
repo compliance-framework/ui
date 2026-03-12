@@ -151,8 +151,8 @@
 
             <div v-else class="space-y-3">
               <div
-                v-for="item in evidenceAssociations"
-                :key="evidenceAssociationKey(item)"
+                v-for="(item, associationIndex) in evidenceAssociations"
+                :key="evidenceAssociationKey(item, associationIndex)"
                 class="border border-ccf-300 dark:border-slate-700 rounded-lg p-4"
               >
                 <div class="flex flex-col md:flex-row md:justify-between gap-4">
@@ -176,8 +176,8 @@
                       class="flex flex-wrap gap-1.5 md:justify-end"
                     >
                       <span
-                        v-for="(label, index) in evidenceLabelChips(item)"
-                        :key="`${evidenceAssociationKey(item)}:label:${index}`"
+                        v-for="(label, labelIndex) in evidenceLabelChips(item)"
+                        :key="`${evidenceAssociationKey(item, associationIndex)}:label:${labelIndex}`"
                         class="inline-flex items-center rounded-full border border-emerald-300/70 bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-800 dark:border-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-200"
                       >
                         {{ label }}
@@ -445,7 +445,11 @@ import { useSystemStore } from '@/stores/system';
 import type { Profile, Risk, SystemComponent } from '@/oscal';
 import type { Evidence, EvidenceLabel } from '@/stores/evidence';
 import { useToast } from 'primevue/usetoast';
-import { useDataApi, decamelizeKeys } from '@/composables/axios';
+import {
+  useDataApi,
+  decamelizeKeys,
+  useAuthenticatedInstance,
+} from '@/composables/axios';
 import {
   buildRiskCollectionEndpoint,
   buildRiskItemEndpoint,
@@ -460,6 +464,7 @@ import {
   type RiskEventItem,
 } from '@/utils/risk-detail';
 import { getRiskIdentifier } from '@/utils/risk-id';
+import type { DataResponse } from '@/stores/types';
 
 interface AssociationPickerOption extends RiskAssociationItem {
   subtitle?: string;
@@ -504,6 +509,7 @@ type TabId = (typeof tabs)[number]['id'];
 const route = useRoute();
 const toast = useToast();
 const systemStore = useSystemStore();
+const authenticatedApi = useAuthenticatedInstance();
 
 const riskId = computed(() => route.params.riskId as string | undefined);
 
@@ -556,9 +562,6 @@ const {
 
 const { data: fetchedAssociationLinks, execute: executeFetchAssociationLinks } =
   useDataApi<unknown[]>(null, {}, { immediate: false });
-
-const { data: fetchedEvidenceDetail, execute: executeLoadEvidenceDetail } =
-  useDataApi<Evidence>(null, {}, { immediate: false });
 
 const { data: fetchedComponentDetail, execute: executeLoadComponentDetail } =
   useDataApi<SystemComponent>(null, {}, { immediate: false });
@@ -1128,10 +1131,10 @@ async function loadEvidenceAssociationOption(
   let detail = pickerOption;
 
   try {
-    const response = (await executeLoadEvidenceDetail(
+    const response = await authenticatedApi.get<DataResponse<Evidence>>(
       `/api/evidence/latest/${evidenceId}`,
-    )) as { data?: { data?: Evidence } };
-    const evidence = response?.data?.data ?? fetchedEvidenceDetail.value;
+    );
+    const evidence = response?.data?.data;
     if (evidence) {
       detail = {
         id: evidence.id || evidence.uuid || evidenceId,
@@ -1240,10 +1243,11 @@ async function refreshAssociationLinks(
       const evidenceIds = Array.from(
         new Set(links.map((link) => link.evidenceId).filter(Boolean)),
       );
-      const mapped: AssociationPickerOption[] = [];
-      for (const evidenceId of evidenceIds) {
-        mapped.push(await loadEvidenceAssociationOption(evidenceId));
-      }
+      const mapped = await Promise.all(
+        evidenceIds.map((evidenceId) =>
+          loadEvidenceAssociationOption(evidenceId),
+        ),
+      );
 
       setAssociations('evidence', mapped);
       return;
@@ -1628,8 +1632,20 @@ function formatDate(value?: string) {
   return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleString();
 }
 
-function evidenceAssociationKey(item: AssociationPickerOption): string {
-  return item.evidenceId || item.evidenceUuid || item.id || item.title;
+function evidenceAssociationKey(
+  item: AssociationPickerOption,
+  index: number,
+): string {
+  const stableIdentifiers = [
+    item.evidenceId,
+    item.evidenceUuid,
+    item.id,
+    item.subtitle,
+  ].filter(Boolean);
+  if (stableIdentifiers.length) {
+    return stableIdentifiers.join(':');
+  }
+  return `evidence-association:${index}`;
 }
 
 function evidenceLabelChips(item: AssociationPickerOption): string[] {

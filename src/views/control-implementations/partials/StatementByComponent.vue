@@ -108,7 +108,12 @@ watch(
     riskCount,
   ],
   ([totalRisks, componentUuid, currentControlId, matchedRiskCount]) => {
-    if (!componentUuid || !currentControlId || totalRisks === 0) {
+    if (
+      !import.meta.env.DEV ||
+      !componentUuid ||
+      !currentControlId ||
+      totalRisks === 0
+    ) {
       return;
     }
     const sample = (sspRisks ?? []).slice(0, 3).map((risk) => ({

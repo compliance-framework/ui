@@ -660,6 +660,17 @@ async function applySuggestedComponent(suggestion: SuggestedComponent) {
     });
     return;
   }
+  const sspId = resolvedSspId.value;
+  if (!sspId) {
+    toast.add({
+      severity: 'error',
+      summary: 'Missing System Plan',
+      detail:
+        'Unable to apply suggestions until a system security plan is set.',
+      life: 4000,
+    });
+    return;
+  }
   if (isSuggestionApplied(suggestion.componentUuid)) {
     return;
   }
@@ -678,7 +689,7 @@ async function applySuggestedComponent(suggestion: SuggestedComponent) {
   try {
     await axios.post(
       buildApplySuggestionEndpoint(
-        resolvedSspId.value!,
+        sspId,
         implementation.uuid,
         localStatement.value.uuid,
       ),
@@ -713,6 +724,17 @@ async function applyAllSuggestedComponents() {
     });
     return;
   }
+  const sspId = resolvedSspId.value;
+  if (!sspId) {
+    toast.add({
+      severity: 'error',
+      summary: 'Missing System Plan',
+      detail:
+        'Unable to apply suggestions until a system security plan is set.',
+      life: 4000,
+    });
+    return;
+  }
 
   const suggestionsToApply = [...unappliedSuggestions.value];
   if (!suggestionsToApply.length) {
@@ -729,7 +751,7 @@ async function applyAllSuggestedComponents() {
   try {
     await axios.post(
       buildApplySuggestionsEndpoint(
-        resolvedSspId.value!,
+        sspId,
         implementation.uuid,
         localStatement.value.uuid,
       ),
@@ -1276,6 +1298,7 @@ async function submitEvidenceLinking() {
             severity="secondary"
             :disabled="
               !localStatement ||
+              !resolvedSspId ||
               applyingAllSuggestions ||
               suggestionsLoading ||
               unappliedSuggestions.length === 0
@@ -1311,6 +1334,7 @@ async function submitEvidenceLinking() {
               :outlined="!isSuggestionApplied(suggestion.componentUuid)"
               :disabled="
                 !localStatement ||
+                !resolvedSspId ||
                 isSuggestionApplied(suggestion.componentUuid) ||
                 isSuggestionApplying(suggestion.componentUuid) ||
                 applyingAllSuggestions

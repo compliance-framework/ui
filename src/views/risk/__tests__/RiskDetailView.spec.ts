@@ -101,6 +101,32 @@ vi.mock('primevue/usetoast', () => ({
 
 vi.mock('@/composables/axios', () => ({
   decamelizeKeys: vi.fn((input) => input),
+  useAuthenticatedInstance: () => ({
+    get: vi.fn(async (endpoint: string) => {
+      apiCalls.push({
+        endpoint,
+        method: 'GET',
+      });
+
+      if (endpoint.startsWith('/api/evidence/latest/')) {
+        const evidenceUuid = endpoint.replace('/api/evidence/latest/', '');
+        return {
+          data: {
+            data: mockApiState.evidenceDetails[evidenceUuid] || {
+              id: 'EV-001',
+              uuid: evidenceUuid,
+              title: 'Loaded Evidence 1',
+              description: 'Hydrated from evidence details endpoint',
+              start: '2026-03-03T10:00:00Z',
+              end: '2026-03-04T10:00:00Z',
+            },
+          },
+        };
+      }
+
+      return { data: { data: undefined } };
+    }),
+  }),
   useDataApi: (initialUrl?: string, config?: { method?: string }) => {
     const data = ref();
     const isLoading = ref(false);
