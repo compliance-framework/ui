@@ -11,7 +11,7 @@ describe('subject-templates helpers', () => {
     const form = createEmptySubjectTemplateForm();
     form.name = '  GitHub Repo Subject  ';
     form.type = 'component';
-    form.sourceMode = 'automatic';
+    form.sourceMode = 'runtime-derived';
     form.titleTemplate = '  {{repository}}  ';
     form.descriptionTemplate = '  Repo {{repository}} in {{organization}}  ';
     form.purposeTemplate = '  Track repository risk  ';
@@ -62,7 +62,7 @@ describe('subject-templates helpers', () => {
     expect(payload).toEqual({
       name: 'GitHub Repo Subject',
       type: 'component',
-      sourceMode: 'automatic',
+      sourceMode: 'runtime-derived',
       titleTemplate: '{{repository}}',
       descriptionTemplate: 'Repo {{repository}} in {{organization}}',
       purposeTemplate: 'Track repository risk',

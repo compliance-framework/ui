@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, watchEffect, computed } from 'vue';
+import { useRouter } from 'vue-router';
 import { useSystemStore } from '@/stores/system.ts';
 import BurgerMenu from '@/components/BurgerMenu.vue';
 import Textarea from '@/volt/Textarea.vue';
@@ -27,6 +28,7 @@ const emit = defineEmits<{
 }>();
 
 const { system } = useSystemStore();
+const router = useRouter();
 
 const { confirmDeleteDialog } = useDeleteConfirmationDialog();
 
@@ -110,6 +112,18 @@ async function deleteStatement() {
 function cancel() {
   setEditing(false);
 }
+
+function openRisksForControl() {
+  if (!controlId) {
+    return;
+  }
+  void router.push({
+    name: 'risks:index',
+    query: {
+      controlId,
+    },
+  });
+}
 </script>
 
 <template>
@@ -121,6 +135,8 @@ function cancel() {
         :risk-count="riskCount"
         :is-capped="isRiskCountCapped"
         :highest-severity="highestSeverity"
+        clickable
+        @click="openRisksForControl"
       />
     </div>
     <BurgerMenu

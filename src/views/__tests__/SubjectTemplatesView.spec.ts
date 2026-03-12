@@ -26,14 +26,14 @@ vi.mock('@/composables/axios', () => ({
       method?: string;
     },
   ) => {
-    if (url === '/api/subject-templates' && config?.method === 'POST') {
+    if (url === '/api/admin/subject-templates' && config?.method === 'POST') {
       return {
         execute: mockCreateTemplate,
         isLoading: createLoading,
       };
     }
 
-    if (url === '/api/subject-templates') {
+    if (url === '/api/admin/subject-templates') {
       return {
         data: templates,
         isLoading: listLoading,
@@ -158,7 +158,7 @@ describe('SubjectTemplatesView', () => {
         id: 'template-1',
         name: 'Alpha Template',
         type: 'component',
-        sourceMode: 'automatic',
+        sourceMode: 'runtime-derived',
         selectorLabels: [{ key: 'plugin', value: 'github' }],
         labelSchema: [{ key: 'repository', description: 'repo' }],
         identityLabelKeys: ['repository'],
@@ -271,7 +271,7 @@ describe('SubjectTemplatesView', () => {
       id: `template-${index + 1}`,
       name: `Template ${index + 1}`,
       type: 'component',
-      sourceMode: 'automatic',
+      sourceMode: 'runtime-derived',
       selectorLabels: [{ key: 'plugin', value: 'github' }],
       labelSchema: [{ key: 'repository', description: '' }],
       identityLabelKeys: ['repository'],
@@ -296,7 +296,7 @@ describe('SubjectTemplatesView', () => {
         id: 'template-1',
         name: 'Template',
         type: 'component',
-        sourceMode: 'automatic',
+        sourceMode: 'runtime-derived',
         selectorLabels: [{ key: 'plugin', value: 'github' }],
         labelSchema: [{ key: 'repository', description: '' }],
         identityLabelKeys: ['repository'],
@@ -305,7 +305,7 @@ describe('SubjectTemplatesView', () => {
         id: 'template-2',
         name: 'Template (Copy)',
         type: 'component',
-        sourceMode: 'automatic',
+        sourceMode: 'runtime-derived',
         selectorLabels: [{ key: 'plugin', value: 'github' }],
         labelSchema: [{ key: 'repository', description: '' }],
         identityLabelKeys: ['repository'],
@@ -350,7 +350,7 @@ describe('SubjectTemplatesView', () => {
       {
         name: 'No Id Template',
         type: 'component',
-        sourceMode: 'automatic',
+        sourceMode: 'runtime-derived',
         selectorLabels: [{ key: 'plugin', value: 'github' }],
         labelSchema: [{ key: 'repository', description: '' }],
         identityLabelKeys: ['repository'],

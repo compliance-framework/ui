@@ -10,7 +10,10 @@ export const SUBJECT_TEMPLATE_TYPES = [
 
 export type SubjectTemplateType = (typeof SUBJECT_TEMPLATE_TYPES)[number];
 
-export const SUBJECT_TEMPLATE_SOURCE_MODES = ['automatic', 'manual'] as const;
+export const SUBJECT_TEMPLATE_SOURCE_MODES = [
+  'runtime-derived',
+  'manual',
+] as const;
 
 export type SubjectTemplateSourceMode =
   (typeof SUBJECT_TEMPLATE_SOURCE_MODES)[number];
@@ -30,7 +33,7 @@ export const SUBJECT_TEMPLATE_SOURCE_MODE_OPTIONS: Array<{
   label: string;
   value: SubjectTemplateSourceMode;
 }> = [
-  { label: 'Automatic', value: 'automatic' },
+  { label: 'Runtime-derived', value: 'runtime-derived' },
   { label: 'Manual', value: 'manual' },
 ];
 

@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { ByComponent } from '@/oscal';
 import {
+  buildApplySuggestionEndpoint,
+  buildApplySuggestionsEndpoint,
   buildByComponentsEndpoint,
   buildSuggestComponentsEndpoint,
   getUnappliedSuggestions,
@@ -158,13 +160,21 @@ describe('component-suggestions helpers', () => {
     ]);
   });
 
-  it('builds endpoint paths for by-components and suggestions', () => {
+  it('builds endpoint paths for by-components and suggestion actions', () => {
     expect(buildByComponentsEndpoint('ssp-1', 'req-1', 'stmt-1')).toBe(
       '/api/oscal/system-security-plans/ssp-1/control-implementation/implemented-requirements/req-1/statements/stmt-1/by-components',
     );
 
     expect(buildSuggestComponentsEndpoint('ssp-1', 'req-1', 'stmt-1')).toBe(
       '/api/oscal/system-security-plans/ssp-1/control-implementation/implemented-requirements/req-1/statements/stmt-1/suggest-components',
+    );
+
+    expect(buildApplySuggestionEndpoint('ssp-1', 'req-1', 'stmt-1')).toBe(
+      '/api/oscal/system-security-plans/ssp-1/control-implementation/implemented-requirements/req-1/statements/stmt-1/apply-suggestion',
+    );
+
+    expect(buildApplySuggestionsEndpoint('ssp-1', 'req-1', 'stmt-1')).toBe(
+      '/api/oscal/system-security-plans/ssp-1/control-implementation/implemented-requirements/req-1/statements/stmt-1/apply-suggestions',
     );
   });
 });

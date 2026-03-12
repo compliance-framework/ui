@@ -529,6 +529,27 @@ const filters = reactive<RiskFilters>({ ...defaultRiskFilters });
 const sortBy = ref<RiskSortBy>('updated');
 const sortDirection = ref<SortDirection>('desc');
 
+function readQueryString(value: unknown): string {
+  if (typeof value === 'string') {
+    return value;
+  }
+  if (Array.isArray(value) && typeof value[0] === 'string') {
+    return value[0];
+  }
+  return '';
+}
+
+watch(
+  () => route.query.controlId,
+  (value) => {
+    const next = readQueryString(value);
+    if (filters.controlId !== next) {
+      filters.controlId = next;
+    }
+  },
+  { immediate: true },
+);
+
 const riskSummary = computed(() => computeRiskSummary(risks.value || []));
 
 const filteredRisks = computed(() => filterRisks(risks.value || [], filters));

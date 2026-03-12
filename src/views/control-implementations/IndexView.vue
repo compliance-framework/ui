@@ -97,6 +97,17 @@
                 "
                 ><BIconEye
               /></Button>
+              <RiskIndicatorBadge
+                :risk-count="controlRiskCount(slotProps.node.data.id)"
+                :is-capped="
+                  controlRiskCount(slotProps.node.data.id) >= RISK_FETCH_LIMIT
+                "
+                :highest-severity="
+                  controlHighestSeverity(slotProps.node.data.id)
+                "
+                clickable
+                @click.stop="openControlRisks(slotProps.node.data.id)"
+              />
               <ControlEvidenceCounter :control="slotProps.node.data" />
             </div>
             <div class="py-4">
@@ -146,7 +157,7 @@
 
 <script setup lang="ts">
 import { onMounted, ref, watch, computed, type Ref } from 'vue';
-import { v4 as uuidv4 } from 'uuid';
+import { useRouter } from 'vue-router';
 import Message from '@/volt/Message.vue';
 import Badge from '@/volt/Badge.vue';
 import { useSystemStore } from '@/stores/system.ts';
@@ -155,11 +166,7 @@ import PageHeader from '@/components/PageHeader.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
 import ControlEvidenceCounter from './partials/ControlEvidenceCounter.vue';
 import { useCatalogTree } from '@/composables/useCatalogTree';
-import {
-  useAuthenticatedInstance,
-  useDataApi,
-  decamelizeKeys,
-} from '@/composables/axios';
+import { useAuthenticatedInstance, useDataApi } from '@/composables/axios';
 import Tree from '@/volt/Tree.vue';
 import IndexControlImplementation from '@/views/control-implementations/partials/IndexControlImplementation.vue';
 import type { AxiosError } from 'axios';
@@ -174,22 +181,25 @@ import Button from '@/volt/Button.vue';
 import { BIconEye } from 'bootstrap-icons-vue';
 import Drawer from '@/volt/Drawer.vue';
 import StatementByComponent from './partials/StatementByComponent.vue';
+import RiskIndicatorBadge from './partials/RiskIndicatorBadge.vue';
 import { useToast } from 'primevue/usetoast';
 import { useConfirm } from 'primevue/useconfirm';
 import {
-  buildByComponentsEndpoint,
+  buildApplySuggestionsEndpoint,
   buildSuggestComponentsEndpoint,
   getUnappliedSuggestions,
   normalizeSuggestedComponentsResponse,
   type SuggestedComponent,
   type SystemComponentSuggestion,
 } from '@/views/control-implementations/partials/component-suggestions';
+import { getRiskControlIds, getRiskImpact } from '@/utils/risk-register';
 
 const systemStore = useSystemStore();
 const uiStore = useUIStore();
 const toast = useToast();
 const confirm = useConfirm();
 const axios = useAuthenticatedInstance();
+const router = useRouter();
 
 const controlDrawerOpen = computed({
   get: () => uiStore.controlImplementationDrawerOpen,
@@ -277,6 +287,91 @@ const bulkSuggestionsButtonLabel = computed(() => {
   }
   return 'Apply All Suggestions';
 });
+
+function normalizeId(value?: string): string {
+  return (value || '').trim().toLowerCase();
+}
+
+function impactRank(level?: string): number {
+  const normalized = normalizeId(level);
+  if (normalized === 'critical' || normalized === 'high') return 3;
+  if (normalized === 'medium' || normalized === 'moderate') return 2;
+  if (normalized === 'low') return 1;
+  return 0;
+}
+
+function levelFromRank(rank: number): 'high' | 'medium' | 'low' | undefined {
+  if (rank >= 3) return 'high';
+  if (rank === 2) return 'medium';
+  if (rank === 1) return 'low';
+  return undefined;
+}
+
+const controlRiskStats = computed(() => {
+  const map = new Map<
+    string,
+    { count: number; highestSeverity?: 'high' | 'medium' | 'low' }
+  >();
+
+  for (const risk of sspRisks.value || []) {
+    const controlIds = Array.from(
+      new Set(
+        getRiskControlIds(risk)
+          .map((id) => normalizeId(id))
+          .filter(Boolean),
+      ),
+    );
+    const rank = impactRank(getRiskImpact(risk));
+
+    for (const controlId of controlIds) {
+      const existing = map.get(controlId);
+      if (!existing) {
+        map.set(controlId, {
+          count: 1,
+          highestSeverity: levelFromRank(rank),
+        });
+        continue;
+      }
+
+      existing.count += 1;
+      const existingRank = impactRank(existing.highestSeverity);
+      if (rank > existingRank) {
+        existing.highestSeverity = levelFromRank(rank);
+      }
+    }
+  }
+
+  return map;
+});
+
+function controlRiskCount(controlId?: string): number {
+  if (!controlId) return 0;
+  return controlRiskStats.value.get(normalizeId(controlId))?.count ?? 0;
+}
+
+function controlHighestSeverity(
+  controlId?: string,
+): 'high' | 'medium' | 'low' | undefined {
+  if (!controlId) return undefined;
+  const stats = controlRiskStats.value.get(normalizeId(controlId));
+  if (!stats || stats.count === 0) {
+    return undefined;
+  }
+  // If impact metadata is missing, still render as alerting instead of neutral.
+  return stats.highestSeverity ?? 'high';
+}
+
+function openControlRisks(controlId?: string) {
+  if (!controlId) {
+    return;
+  }
+  void router.push({
+    name: 'risks:index',
+    query: {
+      controlId,
+    },
+  });
+}
 
 function getStatementWorkItems(): Array<{
   requirement: ImplementedRequirement;
@@ -432,47 +527,45 @@ async function applySuggestionPlan(
   let createdCount = 0;
   let failedCount = 0;
   try {
-    const tasks = plannedItems.flatMap((item) =>
-      item.unappliedSuggestions.map((suggestion) => ({ item, suggestion })),
-    );
     const outcomes = await mapWithConcurrency(
-      tasks,
+      plannedItems,
       BULK_SUGGESTIONS_CONCURRENCY_LIMIT,
-      async ({ item, suggestion }) => {
+      async (item) => {
+        const suggestionCount = item.unappliedSuggestions.length;
         try {
           await axios.post(
-            buildByComponentsEndpoint(
+            buildApplySuggestionsEndpoint(
               sspId,
               item.requirement.uuid,
               item.statement.uuid,
             ),
-            {
-              uuid: uuidv4(),
-              componentUuid: suggestion.componentUuid,
-              description: '',
-              implementationStatus: {
-                state: '',
-              },
-            },
-            { transformRequest: [decamelizeKeys] },
           );
-          return true;
+          return {
+            appliedCount: suggestionCount,
+            failedCount: 0,
+          };
         } catch (error) {
-          console.error(
-            'Failed to apply suggested component in bulk operation:',
-            {
-              requirementUuid: item.requirement.uuid,
-              statementUuid: item.statement.uuid,
-              componentUuid: suggestion.componentUuid,
-              error,
-            },
-          );
-          return false;
+          console.error('Failed to apply suggested components for statement:', {
+            requirementUuid: item.requirement.uuid,
+            statementUuid: item.statement.uuid,
+            suggestionsAttempted: suggestionCount,
+            error,
+          });
+          return {
+            appliedCount: 0,
+            failedCount: suggestionCount,
+          };
         }
       },
     );
-    createdCount = outcomes.filter(Boolean).length;
-    failedCount = outcomes.length - createdCount;
+    createdCount = outcomes.reduce(
+      (sum, outcome) => sum + outcome.appliedCount,
+      0,
+    );
+    failedCount = outcomes.reduce(
+      (sum, outcome) => sum + outcome.failedCount,
+      0,
+    );
   } finally {
     try {
       await loadControlImplementations();
@@ -611,15 +704,15 @@ function openImplementationDrawer(req: ImplementedRequirement) {
 }
 
 watch(
-  [() => controlDrawerOpen.value, () => systemStore.system.securityPlan?.uuid],
-  async ([isOpen, sspId]) => {
+  () => systemStore.system.securityPlan?.uuid,
+  async (sspId) => {
     if (!sspId) {
       sspRisks.value = [];
       loadedSspRisksFor.value = null;
       return;
     }
 
-    if (!isOpen || loadedSspRisksFor.value === sspId) {
+    if (loadedSspRisksFor.value === sspId) {
       return;
     }
 

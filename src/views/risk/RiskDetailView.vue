@@ -151,8 +151,8 @@
 
             <div v-else class="space-y-3">
               <div
-                v-for="item in evidenceAssociations"
-                :key="item.id"
+                v-for="(item, associationIndex) in evidenceAssociations"
+                :key="evidenceAssociationKey(item, associationIndex)"
                 class="border border-ccf-300 dark:border-slate-700 rounded-lg p-4"
               >
                 <div class="flex flex-col md:flex-row md:justify-between gap-4">
@@ -170,26 +170,41 @@
                       </template>
                     </p>
                   </div>
-                  <div class="flex gap-2 self-start">
-                    <RouterLinkButton
-                      v-if="item.evidenceId || item.evidenceUuid || item.id"
-                      variant="text"
-                      :to="{
-                        name: 'evidence:history',
-                        params: {
-                          uuid: item.evidenceId || item.evidenceUuid || item.id,
-                        },
-                      }"
+                  <div class="flex flex-col gap-3 self-start md:items-end">
+                    <div
+                      v-if="item.labels?.length"
+                      class="flex flex-wrap gap-1.5 md:justify-end"
                     >
-                      Open
-                    </RouterLinkButton>
-                    <button
-                      class="px-3 py-1 rounded-md text-sm bg-red-600 hover:bg-red-700 text-white"
-                      :disabled="saving"
-                      @click="unlinkAssociation('evidence', item)"
-                    >
-                      Remove
-                    </button>
+                      <span
+                        v-for="(label, labelIndex) in evidenceLabelChips(item)"
+                        :key="`${evidenceAssociationKey(item, associationIndex)}:label:${labelIndex}`"
+                        class="inline-flex items-center rounded-full border border-emerald-300/70 bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-800 dark:border-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-200"
+                      >
+                        {{ label }}
+                      </span>
+                    </div>
+                    <div class="flex gap-2 self-start md:self-end">
+                      <RouterLinkButton
+                        v-if="item.evidenceId || item.evidenceUuid || item.id"
+                        variant="text"
+                        :to="{
+                          name: 'evidence:history',
+                          params: {
+                            uuid:
+                              item.evidenceId || item.evidenceUuid || item.id,
+                          },
+                        }"
+                      >
+                        Open
+                      </RouterLinkButton>
+                      <button
+                        class="px-3 py-1 rounded-md text-sm bg-red-600 hover:bg-red-700 text-white"
+                        :disabled="saving"
+                        @click="unlinkAssociation('evidence', item)"
+                      >
+                        Remove
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -428,9 +443,13 @@ import RouterLinkButton from '@/components/RouterLinkButton.vue';
 import RiskLogTab from '@/components/risk/RiskLogTab.vue';
 import { useSystemStore } from '@/stores/system';
 import type { Profile, Risk, SystemComponent } from '@/oscal';
-import type { Evidence } from '@/stores/evidence';
+import type { Evidence, EvidenceLabel } from '@/stores/evidence';
 import { useToast } from 'primevue/usetoast';
-import { useDataApi, decamelizeKeys } from '@/composables/axios';
+import {
+  useDataApi,
+  decamelizeKeys,
+  useAuthenticatedInstance,
+} from '@/composables/axios';
 import {
   buildRiskCollectionEndpoint,
   buildRiskItemEndpoint,
@@ -445,10 +464,12 @@ import {
   type RiskEventItem,
 } from '@/utils/risk-detail';
 import { getRiskIdentifier } from '@/utils/risk-id';
+import type { DataResponse } from '@/stores/types';
 
 interface AssociationPickerOption extends RiskAssociationItem {
   subtitle?: string;
   catalogId?: string;
+  labels?: EvidenceLabel[];
 }
 
 interface RiskEvidenceLink {
@@ -488,6 +509,7 @@ type TabId = (typeof tabs)[number]['id'];
 const route = useRoute();
 const toast = useToast();
 const systemStore = useSystemStore();
+const authenticatedApi = useAuthenticatedInstance();
 
 const riskId = computed(() => route.params.riskId as string | undefined);
 
@@ -540,9 +562,6 @@ const {
 
 const { data: fetchedAssociationLinks, execute: executeFetchAssociationLinks } =
   useDataApi<unknown[]>(null, {}, { immediate: false });
-
-const { data: fetchedEvidenceDetail, execute: executeLoadEvidenceDetail } =
-  useDataApi<Evidence>(null, {}, { immediate: false });
 
 const { data: fetchedComponentDetail, execute: executeLoadComponentDetail } =
   useDataApi<SystemComponent>(null, {}, { immediate: false });
@@ -961,6 +980,7 @@ const evidencePickerOptions = computed<AssociationPickerOption[]>(() =>
     description: item.description,
     start: item.start,
     end: item.end,
+    labels: normalizeEvidenceLabels(item.labels),
     subtitle: item.uuid || item.id,
   })),
 );
@@ -1037,6 +1057,27 @@ function parseEvidenceLinks(rows: unknown[]): RiskEvidenceLink[] {
     .filter((item): item is RiskEvidenceLink => !!item);
 }
 
+function normalizeEvidenceLabels(input: unknown): EvidenceLabel[] {
+  if (!Array.isArray(input)) {
+    return [];
+  }
+
+  return input
+    .map((entry) => {
+      const record = toRecord(entry);
+      if (!record) {
+        return null;
+      }
+      const name = readString(record, ['name']);
+      const value = readString(record, ['value']);
+      if (!name || !value) {
+        return null;
+      }
+      return { name, value };
+    })
+    .filter((label): label is EvidenceLabel => !!label);
+}
+
 function parseControlLinks(rows: unknown[]): RiskControlLink[] {
   return rows
     .map((entry) => {
@@ -1090,10 +1131,10 @@ async function loadEvidenceAssociationOption(
   let detail = pickerOption;
 
   try {
-    const response = (await executeLoadEvidenceDetail(
+    const response = await authenticatedApi.get<DataResponse<Evidence>>(
       `/api/evidence/latest/${evidenceId}`,
-    )) as { data?: { data?: Evidence } };
-    const evidence = response?.data?.data ?? fetchedEvidenceDetail.value;
+    );
+    const evidence = response?.data?.data;
     if (evidence) {
       detail = {
         id: evidence.id || evidence.uuid || evidenceId,
@@ -1103,6 +1144,7 @@ async function loadEvidenceAssociationOption(
         description: evidence.description,
         start: evidence.start,
         end: evidence.end,
+        labels: normalizeEvidenceLabels(evidence.labels),
         subtitle: evidence.uuid || evidence.id || evidenceId,
       };
     }
@@ -1121,6 +1163,7 @@ async function loadEvidenceAssociationOption(
     description: detail?.description,
     start: detail?.start,
     end: detail?.end,
+    labels: normalizeEvidenceLabels(detail?.labels),
     subtitle: detail?.subtitle || evidenceId,
   };
 
@@ -1587,5 +1630,28 @@ function formatDate(value?: string) {
   if (!value) return 'N/A';
   const parsed = new Date(value);
   return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleString();
+}
+
+function evidenceAssociationKey(
+  item: AssociationPickerOption,
+  index: number,
+): string {
+  const stableIdentifiers = [
+    item.evidenceId,
+    item.evidenceUuid,
+    item.id,
+    item.subtitle,
+  ].filter(Boolean);
+  if (stableIdentifiers.length) {
+    return stableIdentifiers.join(':');
+  }
+  return `evidence-association:${index}`;
+}
+
+function evidenceLabelChips(item: AssociationPickerOption): string[] {
+  if (!item.labels?.length) {
+    return [];
+  }
+  return item.labels.map((label) => `${label.name}=${label.value}`);
 }
 </script>

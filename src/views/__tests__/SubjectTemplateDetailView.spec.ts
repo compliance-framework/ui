@@ -7,7 +7,7 @@ const template = ref<SubjectTemplate | undefined>({
   id: 'template-1',
   name: 'Template One',
   type: 'component',
-  sourceMode: 'automatic',
+  sourceMode: 'runtime-derived',
   titleTemplate: '{{repository}}',
   descriptionTemplate: 'Desc',
   purposeTemplate: 'Purpose',
@@ -85,7 +85,7 @@ describe('SubjectTemplateDetailView', () => {
     });
 
     expect(fetchTemplate).toHaveBeenCalledWith(
-      '/api/subject-templates/template-1',
+      '/api/admin/subject-templates/template-1',
     );
   });
 

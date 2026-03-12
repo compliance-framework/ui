@@ -33,6 +33,7 @@ const { apiCalls, mockApiState, resetMockApiState } = vi.hoisted(() => {
 
   const mockApiState = {
     evidenceLinks: [] as Array<string | { riskId: string; evidenceId: string }>,
+    evidenceDetails: {} as Record<string, Record<string, unknown>>,
     controlLinks: [] as Array<
       string | { riskId: string; catalogId: string; controlId: string }
     >,
@@ -58,6 +59,7 @@ const { apiCalls, mockApiState, resetMockApiState } = vi.hoisted(() => {
   const resetMockApiState = () => {
     apiCalls.length = 0;
     mockApiState.evidenceLinks = [];
+    mockApiState.evidenceDetails = {};
     mockApiState.controlLinks = [];
     mockApiState.componentLinks = [];
     mockApiState.resolvedControls = [
@@ -99,6 +101,32 @@ vi.mock('primevue/usetoast', () => ({
 
 vi.mock('@/composables/axios', () => ({
   decamelizeKeys: vi.fn((input) => input),
+  useAuthenticatedInstance: () => ({
+    get: vi.fn(async (endpoint: string) => {
+      apiCalls.push({
+        endpoint,
+        method: 'GET',
+      });
+
+      if (endpoint.startsWith('/api/evidence/latest/')) {
+        const evidenceUuid = endpoint.replace('/api/evidence/latest/', '');
+        return {
+          data: {
+            data: mockApiState.evidenceDetails[evidenceUuid] || {
+              id: 'EV-001',
+              uuid: evidenceUuid,
+              title: 'Loaded Evidence 1',
+              description: 'Hydrated from evidence details endpoint',
+              start: '2026-03-03T10:00:00Z',
+              end: '2026-03-04T10:00:00Z',
+            },
+          },
+        };
+      }
+
+      return { data: { data: undefined } };
+    }),
+  }),
   useDataApi: (initialUrl?: string, config?: { method?: string }) => {
     const data = ref();
     const isLoading = ref(false);
@@ -154,12 +182,11 @@ vi.mock('@/composables/axios', () => ({
             end: '2026-03-02T10:00:00Z',
           },
         ];
-      } else if (
-        endpoint === '/api/evidence/latest/06d6174b-39be-443a-b282-0fb821e24a94'
-      ) {
-        data.value = {
+      } else if (endpoint.startsWith('/api/evidence/latest/')) {
+        const evidenceUuid = endpoint.replace('/api/evidence/latest/', '');
+        data.value = mockApiState.evidenceDetails[evidenceUuid] || {
           id: 'EV-001',
-          uuid: '06d6174b-39be-443a-b282-0fb821e24a94',
+          uuid: evidenceUuid,
           title: 'Loaded Evidence 1',
           description: 'Hydrated from evidence details endpoint',
           start: '2026-03-03T10:00:00Z',
@@ -392,6 +419,44 @@ describe('RiskDetailView', () => {
         method: 'GET',
       }),
     );
+  });
+
+  it('renders duplicate evidence titles with distinct labels', async () => {
+    const firstUuid = '06d6174b-39be-443a-b282-0fb821e24a94';
+    const secondUuid = '7f3469f4-1a7a-4f44-b291-7e288f3f9cdd';
+    mockApiState.evidenceLinks = [firstUuid, secondUuid];
+    mockApiState.evidenceDetails[firstUuid] = {
+      id: 'EV-100',
+      uuid: firstUuid,
+      title: 'Shared Evidence Title',
+      description: 'First evidence detail',
+      labels: [
+        { name: 'account', value: 'prod-a' },
+        { name: 'region', value: 'us-east-1' },
+      ],
+    };
+    mockApiState.evidenceDetails[secondUuid] = {
+      id: 'EV-200',
+      uuid: secondUuid,
+      title: 'Shared Evidence Title',
+      description: 'Second evidence detail',
+      labels: [
+        { name: 'account', value: 'prod-b' },
+        { name: 'region', value: 'us-west-2' },
+      ],
+    };
+
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    await clickButtonByText(wrapper, 'Evidence');
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('Shared Evidence Title');
+    expect(wrapper.text()).toContain('account=prod-a');
+    expect(wrapper.text()).toContain('account=prod-b');
+    expect(wrapper.text()).toContain('First evidence detail');
+    expect(wrapper.text()).toContain('Second evidence detail');
   });
 
   it('hydrates linked controls and components when endpoints return id arrays', async () => {

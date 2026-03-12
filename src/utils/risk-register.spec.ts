@@ -94,6 +94,7 @@ describe('risk-register', () => {
   it('extracts association ids from multiple field shapes', () => {
     const risk = makeRisk({
       relatedControls: [{ controlId: 'CM-1' }],
+      controlLinks: [{ controlId: 'IA-5' }],
       controlIds: ['AC-1'],
       relatedEvidence: [{ evidenceUuid: 'ev-1' }],
       evidence: [{ id: 'ev-2' }],
@@ -101,7 +102,7 @@ describe('risk-register', () => {
       relatedComponents: [{ componentUuid: 'comp-2' }],
     });
 
-    expect(getRiskControlIds(risk)).toEqual(['AC-1', 'CM-1']);
+    expect(getRiskControlIds(risk)).toEqual(['AC-1', 'CM-1', 'IA-5']);
     expect(getRiskEvidenceIds(risk)).toEqual(['ev-1', 'ev-2']);
     expect(getRiskComponentIds(risk)).toEqual(['comp-1', 'comp-2']);
   });
