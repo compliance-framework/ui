@@ -155,7 +155,10 @@ async function submit(): Promise<void> {
       },
     );
 
-    const result = persistedStatement.value!;
+    const result = {
+      ...cloneValue(form),
+      ...cloneValue(persistedStatement.value!),
+    } as Statement;
     toast.add({
       severity: 'success',
       summary: isEditMode.value ? 'Statement Saved' : 'Statement Created',

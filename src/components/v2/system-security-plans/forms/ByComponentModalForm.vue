@@ -27,6 +27,7 @@ const props = defineProps<{
   statement?: Statement | null;
   byComponent?: ByComponent | null;
   systemComponents?: SystemComponent[];
+  preferredComponentUuid?: string;
 }>();
 
 const emit = defineEmits<{
@@ -99,8 +100,8 @@ const errorSummary = computed(() =>
 );
 
 watch(
-  () => props.byComponent,
-  (value) => {
+  () => [props.byComponent, props.preferredComponentUuid] as const,
+  ([value, preferredComponentUuid]) => {
     resetErrors();
 
     if (value) {
@@ -117,6 +118,7 @@ watch(
     }
 
     resetForm();
+    form.componentUuid = String(preferredComponentUuid || '').trim();
   },
   { immediate: true },
 );

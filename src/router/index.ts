@@ -81,9 +81,10 @@ const authenticatedRoutes = [
   {
     path: 'controls',
     name: 'controls:index',
-    component: () => import('../views/control-implementations/IndexView.vue'),
+    component: () => import('../views/controls-v2/ControlsWorkspaceView.vue'),
     meta: {
       requiresAuth: true,
+      uiVersion: 'v2',
     },
   },
   {
