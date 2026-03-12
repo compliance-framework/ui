@@ -1,16 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { useRouter } from 'vue-router';
 
 const props = defineProps<{
   componentId: string;
   controlId: string;
-  sspId: string;
   riskCount: number;
   highestSeverity?: 'high' | 'medium' | 'low';
 }>();
-
-const router = useRouter();
 
 const badgeColor = computed(() => {
   if (!props.highestSeverity || props.riskCount === 0)
@@ -30,31 +26,21 @@ const badgeColor = computed(() => {
 
 const tooltipText = computed(() => {
   if (props.riskCount === 0) return 'No risks';
-  if (props.riskCount === 1) return '1 risk';
-  return `${props.riskCount} risks`;
+  if (props.riskCount === 1) return '1 risk associated';
+  return `${props.riskCount} risks associated`;
 });
-
-function navigateToRisks() {
-  router.push({
-    name: 'risks:index',
-    query: {
-      componentId: props.componentId,
-      controlId: props.controlId,
-    },
-  });
-}
 </script>
 
 <template>
-  <button
+  <span
     v-if="riskCount > 0"
     :class="[
-      'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium cursor-pointer hover:opacity-80 transition-opacity',
+      'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium',
       badgeColor,
     ]"
     :title="tooltipText"
-    @click="navigateToRisks"
+    :aria-label="tooltipText"
   >
     ⚠️ {{ riskCount }}
-  </button>
+  </span>
 </template>

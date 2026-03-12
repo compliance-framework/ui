@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watchEffect, computed } from 'vue';
+import { ref, watchEffect, computed, watch } from 'vue';
 import { useSystemStore } from '@/stores/system.ts';
 import BurgerMenu from '@/components/BurgerMenu.vue';
 import Textarea from '@/volt/Textarea.vue';
@@ -39,28 +39,43 @@ interface RiskSummary {
   impact?: string;
 }
 
-const { data: risks } = useDataApi<{ data: RiskSummary[] }>(
-  computed(() => {
-    if (
-      !system.securityPlan?.uuid ||
-      !byComponent.componentUuid ||
-      !controlId
-    ) {
-      return null;
-    }
-    return `/api/ssp/${system.securityPlan.uuid}/risks?componentId=${byComponent.componentUuid}&controlId=${controlId}&limit=100`;
-  }),
+const risksEndpoint = computed(() => {
+  if (!system.securityPlan?.uuid || !byComponent.componentUuid || !controlId) {
+    return null;
+  }
+  return `/api/ssp/${system.securityPlan.uuid}/risks?componentId=${byComponent.componentUuid}&controlId=${controlId}&limit=100`;
+});
+
+const { data: risks, execute: loadRisks } = useDataApi<RiskSummary[]>(
+  null,
+  {},
+  { immediate: false },
 );
 
-const riskCount = computed(() => risks.value?.data?.length || 0);
+watch(
+  risksEndpoint,
+  (endpoint) => {
+    if (endpoint) {
+      loadRisks(endpoint);
+    }
+  },
+  { immediate: true },
+);
+
+const riskCount = computed(() => risks.value?.length || 0);
 
 const highestSeverity = computed(() => {
-  if (!risks.value?.data?.length) return undefined;
+  if (!risks.value?.length) return undefined;
 
-  const hasHigh = risks.value.data.some((r) => r.impact === 'high');
+  const hasCritical = risks.value.some((r) => r.impact === 'critical');
+  if (hasCritical) return 'high';
+
+  const hasHigh = risks.value.some((r) => r.impact === 'high');
   if (hasHigh) return 'high';
 
-  const hasMedium = risks.value.data.some((r) => r.impact === 'medium');
+  const hasMedium = risks.value.some(
+    (r) => r.impact === 'medium' || r.impact === 'moderate',
+  );
   if (hasMedium) return 'medium';
 
   return 'low';
@@ -88,7 +103,6 @@ function cancel() {
         v-if="system.securityPlan?.uuid && byComponent.componentUuid"
         :component-id="byComponent.componentUuid"
         :control-id="controlId"
-        :ssp-id="system.securityPlan.uuid"
         :risk-count="riskCount"
         :highest-severity="highestSeverity"
       />
