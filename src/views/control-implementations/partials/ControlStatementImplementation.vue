@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import StatementByComponent from '@/views/control-implementations/partials/StatementByComponent.vue';
 import type {
   ByComponent,
+  ControlImplementation,
   ImplementedRequirement,
   Risk,
   Statement,
@@ -20,7 +21,11 @@ import Textarea from '@/volt/Textarea.vue';
 import { useCloned } from '@vueuse/core';
 import BurgerMenu from '@/components/BurgerMenu.vue';
 import { useToggle } from '@/composables/useToggle';
-import { useDataApi, decamelizeKeys } from '@/composables/axios';
+import {
+  useAuthenticatedInstance,
+  useDataApi,
+  decamelizeKeys,
+} from '@/composables/axios';
 import { useToast } from 'primevue/usetoast';
 import Dialog from '@/volt/Dialog.vue';
 import Button from '@/volt/Button.vue';
@@ -30,6 +35,8 @@ import SystemImplementationComponentCreateForm from '@/components/system-securit
 import DashboardEvidenceCounter from '@/views/control-implementations/partials/DashboardEvidenceCounter.vue';
 import TooltipTitle from '@/components/TooltipTitle.vue';
 import {
+  buildApplySuggestionEndpoint,
+  buildApplySuggestionsEndpoint,
   buildByComponentsEndpoint,
   buildSuggestComponentsEndpoint,
   getExistingComponentUuidSet,
@@ -42,6 +49,7 @@ import {
 const { system } = useSystemStore();
 const toast = useToast();
 const router = useRouter();
+const axios = useAuthenticatedInstance();
 
 const showError = ref(false);
 
@@ -461,6 +469,52 @@ async function createStatementByComponent(
   return created;
 }
 
+async function syncStatementAfterSuggestionApply() {
+  const sspId = resolvedSspId.value;
+  const statementUuid = localStatement.value?.uuid;
+  if (!sspId || !statementUuid) {
+    await fetchSuggestedComponents();
+    return;
+  }
+
+  try {
+    const response = await axios.get<{ data?: ControlImplementation }>(
+      `/api/oscal/system-security-plans/${sspId}/control-implementation`,
+    );
+    const implementationResponse = response.data?.data;
+    if (!implementationResponse) {
+      throw new Error(
+        'The server did not return control implementation data for this statement.',
+      );
+    }
+
+    const refreshedRequirement =
+      implementationResponse.implementedRequirements?.find(
+        (item) => item.uuid === implementation.uuid,
+      );
+    const refreshedStatement = refreshedRequirement?.statements?.find(
+      (item) => item.uuid === statementUuid,
+    );
+    if (!refreshedStatement) {
+      throw new Error('Unable to locate the refreshed statement data.');
+    }
+
+    localStatement.value = refreshedStatement;
+    emit('updated', refreshedStatement);
+  } catch (error) {
+    console.error('Failed to sync statement after applying suggestion:', error);
+    toast.add({
+      severity: 'warn',
+      summary: 'Refresh Needed',
+      detail:
+        'Suggestion was applied, but the latest statement data could not be loaded automatically.',
+      life: 5000,
+    });
+  } finally {
+    await fetchSuggestedComponents();
+  }
+}
+
 function resetCreateComponentForm() {
   setCreateComponentForm(false);
   showError.value = false;
@@ -609,18 +663,31 @@ async function applySuggestedComponent(suggestion: SuggestedComponent) {
   if (isSuggestionApplied(suggestion.componentUuid)) {
     return;
   }
+  if (!suggestion.componentDefinitionId || !suggestion.definedComponentId) {
+    toast.add({
+      severity: 'error',
+      summary: 'Invalid Suggestion Data',
+      detail:
+        'This suggestion is missing component identifiers and cannot be applied.',
+      life: 5000,
+    });
+    return;
+  }
 
   setSuggestionApplying(suggestion.componentUuid, true);
   try {
-    const created = await createStatementByComponent(suggestion.componentUuid);
-    if (!created) {
-      return;
-    }
-    if (!localStatement.value.byComponents) {
-      localStatement.value.byComponents = [];
-    }
-    localStatement.value.byComponents.push(created);
-    emit('updated', localStatement.value);
+    await axios.post(
+      buildApplySuggestionEndpoint(
+        resolvedSspId.value!,
+        implementation.uuid,
+        localStatement.value.uuid,
+      ),
+      {
+        componentDefinitionId: suggestion.componentDefinitionId,
+        definedComponentId: suggestion.definedComponentId,
+      },
+    );
+    await syncStatementAfterSuggestionApply();
   } catch (error) {
     toast.add({
       severity: 'error',
@@ -659,33 +726,21 @@ async function applyAllSuggestedComponents() {
   }
 
   applyingAllSuggestions.value = true;
-  let appliedCount = 0;
   try {
-    for (const suggestion of suggestionsToApply) {
-      if (isSuggestionApplied(suggestion.componentUuid)) {
-        continue;
-      }
-      const created = await createStatementByComponent(
-        suggestion.componentUuid,
-      );
-      if (!created) {
-        continue;
-      }
-      if (!localStatement.value.byComponents) {
-        localStatement.value.byComponents = [];
-      }
-      localStatement.value.byComponents.push(created);
-      appliedCount += 1;
-    }
-    if (appliedCount > 0) {
-      emit('updated', localStatement.value);
-      toast.add({
-        severity: 'success',
-        summary: 'Suggestions Applied',
-        detail: `${appliedCount} suggested component${appliedCount === 1 ? '' : 's'} added.`,
-        life: 3000,
-      });
-    }
+    await axios.post(
+      buildApplySuggestionsEndpoint(
+        resolvedSspId.value!,
+        implementation.uuid,
+        localStatement.value.uuid,
+      ),
+    );
+    await syncStatementAfterSuggestionApply();
+    toast.add({
+      severity: 'success',
+      summary: 'Suggestions Applied',
+      detail: `${suggestionsToApply.length} suggested component${suggestionsToApply.length === 1 ? '' : 's'} added.`,
+      life: 3000,
+    });
   } catch (error) {
     toast.add({
       severity: 'error',

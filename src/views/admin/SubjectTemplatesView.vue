@@ -528,14 +528,14 @@ const {
   error,
   execute: loadTemplates,
 } = useDataApi<SubjectTemplate[]>(
-  '/api/subject-templates',
+  '/api/admin/subject-templates',
   {},
   { immediate: true, initialData: [] },
 );
 
 const { execute: executeCreate, isLoading: isCreating } =
   useDataApi<SubjectTemplate>(
-    '/api/subject-templates',
+    '/api/admin/subject-templates',
     {
       method: 'POST',
       transformRequest: [decamelizeKeys],
@@ -809,7 +809,7 @@ async function submitTemplate() {
     const payload = buildUpsertSubjectTemplatePayload(formData.value);
 
     if (dialogMode.value === 'create') {
-      await executeCreate('/api/subject-templates', { data: payload });
+      await executeCreate('/api/admin/subject-templates', { data: payload });
       toast.add({
         severity: 'success',
         summary: 'Template Created',
@@ -822,7 +822,7 @@ async function submitTemplate() {
       }
 
       await executeUpdate(
-        `/api/subject-templates/${selectedTemplateId.value}`,
+        `/api/admin/subject-templates/${selectedTemplateId.value}`,
         {
           data: payload,
         },

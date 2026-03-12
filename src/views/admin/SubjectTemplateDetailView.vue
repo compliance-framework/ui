@@ -314,7 +314,7 @@ watch(
       return;
     }
 
-    fetchTemplate(`/api/subject-templates/${newTemplateId}`);
+    fetchTemplate(`/api/admin/subject-templates/${newTemplateId}`);
   },
   { immediate: true },
 );

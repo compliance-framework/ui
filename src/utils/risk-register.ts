@@ -202,6 +202,11 @@ export function getRiskControlIds(risk: Risk): string[] {
     ['controlId', 'id', 'uuid'],
     values,
   );
+  valuesFromUnknown(
+    fieldValue(loose, 'controlLinks'),
+    ['controlId', 'id', 'uuid'],
+    values,
+  );
   valuesFromUnknown(fieldValue(loose, 'controls'), ['controlId', 'id'], values);
   return Array.from(values);
 }

@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, watchEffect, computed } from 'vue';
+import { ref, watchEffect, computed, watch } from 'vue';
+import { useRouter } from 'vue-router';
 import { useSystemStore } from '@/stores/system.ts';
 import BurgerMenu from '@/components/BurgerMenu.vue';
 import Textarea from '@/volt/Textarea.vue';
@@ -27,6 +28,7 @@ const emit = defineEmits<{
 }>();
 
 const { system } = useSystemStore();
+const router = useRouter();
 
 const { confirmDeleteDialog } = useDeleteConfirmationDialog();
 
@@ -98,6 +100,34 @@ const highestSeverity = computed(() => {
   return 'low';
 });
 
+watch(
+  [
+    () => sspRisks?.length ?? 0,
+    () => byComponent.componentUuid,
+    () => controlId,
+    riskCount,
+  ],
+  ([totalRisks, componentUuid, currentControlId, matchedRiskCount]) => {
+    if (!componentUuid || !currentControlId || totalRisks === 0) {
+      return;
+    }
+    const sample = (sspRisks ?? []).slice(0, 3).map((risk) => ({
+      riskId: risk.uuid,
+      controlIds: getRiskControlIds(risk),
+      componentIds: getRiskComponentIds(risk),
+    }));
+    console.debug('[controls:risk] Component match result', {
+      componentUuid,
+      controlId: currentControlId,
+      totalRisks,
+      matchedRiskCount,
+      matchedRiskIds: relatedRisks.value.map((risk) => risk.uuid),
+      sample,
+    });
+  },
+  { immediate: true },
+);
+
 function save() {
   emit('save', localComponent.value);
   setEditing(false);
@@ -110,6 +140,18 @@ async function deleteStatement() {
 function cancel() {
   setEditing(false);
 }
+
+function openRisksForControl() {
+  if (!controlId) {
+    return;
+  }
+  void router.push({
+    name: 'risks:index',
+    query: {
+      controlId,
+    },
+  });
+}
 </script>
 
 <template>
@@ -121,6 +163,8 @@ function cancel() {
         :risk-count="riskCount"
         :is-capped="isRiskCountCapped"
         :highest-severity="highestSeverity"
+        clickable
+        @click="openRisksForControl"
       />
     </div>
     <BurgerMenu

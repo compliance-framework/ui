@@ -96,3 +96,19 @@ export function buildSuggestComponentsEndpoint(
 ): string {
   return `/api/oscal/system-security-plans/${sspId}/control-implementation/implemented-requirements/${implementationUuid}/statements/${statementUuid}/suggest-components`;
 }
+
+export function buildApplySuggestionEndpoint(
+  sspId: string,
+  implementationUuid: string,
+  statementUuid: string,
+): string {
+  return `/api/oscal/system-security-plans/${sspId}/control-implementation/implemented-requirements/${implementationUuid}/statements/${statementUuid}/apply-suggestion`;
+}
+
+export function buildApplySuggestionsEndpoint(
+  sspId: string,
+  implementationUuid: string,
+  statementUuid: string,
+): string {
+  return `/api/oscal/system-security-plans/${sspId}/control-implementation/implemented-requirements/${implementationUuid}/statements/${statementUuid}/apply-suggestions`;
+}

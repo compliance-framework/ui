@@ -5,6 +5,10 @@ const props = defineProps<{
   riskCount: number;
   isCapped?: boolean;
   highestSeverity?: 'high' | 'medium' | 'low';
+  clickable?: boolean;
+}>();
+const emit = defineEmits<{
+  click: [];
 }>();
 
 const displayCount = computed(() =>
@@ -31,18 +35,29 @@ const tooltipText = computed(() => {
   if (displayCount.value === '1') return '1 risk associated';
   return `${displayCount.value} risks associated`;
 });
+
+function onClick() {
+  if (!props.clickable) {
+    return;
+  }
+  emit('click');
+}
 </script>
 
 <template>
-  <span
+  <component
     v-if="riskCount > 0"
+    :is="clickable ? 'button' : 'span'"
+    :type="clickable ? 'button' : undefined"
     :class="[
       'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium',
+      clickable ? 'cursor-pointer hover:opacity-90' : '',
       badgeColor,
     ]"
     :title="tooltipText"
     :aria-label="tooltipText"
+    @click="onClick"
   >
     ⚠️ {{ displayCount }}
-  </span>
+  </component>
 </template>
