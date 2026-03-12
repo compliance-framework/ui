@@ -4,6 +4,7 @@ import StatementByComponent from '@/views/control-implementations/partials/State
 import type {
   ByComponent,
   ImplementedRequirement,
+  Risk,
   Statement,
   SystemComponent,
 } from '@/oscal';
@@ -100,6 +101,8 @@ const {
   partid?: string;
 }>();
 
+const RISK_FETCH_LIMIT = 100;
+
 const localStatement = ref<Statement | undefined>(statement);
 
 const resolvedSspId = computed(() => {
@@ -119,6 +122,11 @@ const {
   isLoading: componentsLoading,
   execute: fetchComponents,
 } = useDataApi<SystemComponent[]>(null, null, { immediate: false });
+const { data: sspRisks, execute: fetchSspRisks } = useDataApi<Risk[]>(
+  null,
+  {},
+  { immediate: false },
+);
 const { execute: executeUpdate } = useDataApi<Statement>(null, {
   transformRequest: [decamelizeKeys],
   method: 'PUT',
@@ -199,10 +207,19 @@ const { execute: updateDashboard } = useDataApi<Dashboard>(
 watch(
   resolvedSspId,
   async (id) => {
-    if (!id) return;
-    await fetchComponents(
-      `/api/oscal/system-security-plans/${id}/system-implementation/components`,
-    );
+    if (!id) {
+      sspRisks.value = [];
+      return;
+    }
+    const query = new URLSearchParams({ limit: `${RISK_FETCH_LIMIT}` });
+    await Promise.allSettled([
+      fetchComponents(
+        `/api/oscal/system-security-plans/${id}/system-implementation/components`,
+      ),
+      fetchSspRisks(
+        `/api/oscal/system-security-plans/${id}/risks?${query.toString()}`,
+      ),
+    ]);
   },
   { immediate: true },
 );
@@ -1310,6 +1327,9 @@ async function submitEvidenceLinking() {
             @save="updateByComponent"
             @delete="deleteByComponent"
             :by-component="byComponent"
+            :control-id="implementation.controlId"
+            :ssp-risks="sspRisks || []"
+            :risk-fetch-limit="RISK_FETCH_LIMIT"
           />
         </div>
       </template>
