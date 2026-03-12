@@ -211,6 +211,7 @@
                       >
                         <StatementByComponent
                           :by-component="byComponent"
+                          :control-id="requirement.controlId"
                           @save="
                             handleSaveStatementByComponent(
                               requirement,

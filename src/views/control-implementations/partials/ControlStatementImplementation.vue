@@ -1310,6 +1310,7 @@ async function submitEvidenceLinking() {
             @save="updateByComponent"
             @delete="deleteByComponent"
             :by-component="byComponent"
+            :control-id="implementation.controlId"
           />
         </div>
       </template>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watchEffect } from 'vue';
+import { ref, watchEffect, computed } from 'vue';
 import { useSystemStore } from '@/stores/system.ts';
 import BurgerMenu from '@/components/BurgerMenu.vue';
 import Textarea from '@/volt/Textarea.vue';
@@ -8,9 +8,11 @@ import { useDataApi } from '@/composables/axios';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
 import VueMarkdown from 'vue-markdown-render';
 import type { ByComponent, SystemComponent } from '@/oscal';
+import RiskIndicatorBadge from './RiskIndicatorBadge.vue';
 
-const { byComponent } = defineProps<{
+const { byComponent, controlId } = defineProps<{
   byComponent: ByComponent;
+  controlId: string;
 }>();
 const emit = defineEmits<{
   save: [byComponent: ByComponent];
@@ -32,6 +34,38 @@ const { data: component } = useDataApi<SystemComponent>(
   `/api/oscal/system-security-plans/${system.securityPlan?.uuid as string}/system-implementation/components/${byComponent.componentUuid}`,
 );
 
+interface RiskSummary {
+  id: string;
+  impact?: string;
+}
+
+const { data: risks } = useDataApi<{ data: RiskSummary[] }>(
+  computed(() => {
+    if (
+      !system.securityPlan?.uuid ||
+      !byComponent.componentUuid ||
+      !controlId
+    ) {
+      return null;
+    }
+    return `/api/ssp/${system.securityPlan.uuid}/risks?componentId=${byComponent.componentUuid}&controlId=${controlId}&limit=100`;
+  }),
+);
+
+const riskCount = computed(() => risks.value?.data?.length || 0);
+
+const highestSeverity = computed(() => {
+  if (!risks.value?.data?.length) return undefined;
+
+  const hasHigh = risks.value.data.some((r) => r.impact === 'high');
+  if (hasHigh) return 'high';
+
+  const hasMedium = risks.value.data.some((r) => r.impact === 'medium');
+  if (hasMedium) return 'medium';
+
+  return 'low';
+});
+
 function save() {
   emit('save', localComponent.value);
   setEditing(false);
@@ -48,7 +82,17 @@ function cancel() {
 
 <template>
   <div class="flex justify-between items-center">
-    <h4 class="font-medium">{{ component?.title }}</h4>
+    <div class="flex items-center gap-2">
+      <h4 class="font-medium">{{ component?.title }}</h4>
+      <RiskIndicatorBadge
+        v-if="system.securityPlan?.uuid && byComponent.componentUuid"
+        :component-id="byComponent.componentUuid"
+        :control-id="controlId"
+        :ssp-id="system.securityPlan.uuid"
+        :risk-count="riskCount"
+        :highest-severity="highestSeverity"
+      />
+    </div>
     <BurgerMenu
       :items="[
         {

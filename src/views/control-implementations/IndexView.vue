@@ -134,7 +134,10 @@
         class="h-0.5 w-full bg-gray-200 dark:bg-slate-700 my-4"
         v-if="index !== 0"
       ></div>
-      <StatementByComponent :by-component="byComponent" />
+      <StatementByComponent
+        :by-component="byComponent"
+        :control-id="selectedImplementedRequirement?.controlId || ''"
+      />
     </div>
   </Drawer>
 </template>
