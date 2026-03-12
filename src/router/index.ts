@@ -358,6 +358,22 @@ const authenticatedRoutes = [
     },
   },
   {
+    path: '/admin/subject-templates',
+    name: 'admin-subject-templates',
+    component: () => import('../views/admin/SubjectTemplatesView.vue'),
+    meta: {
+      requiresAuth: true,
+    },
+  },
+  {
+    path: '/admin/subject-templates/:id',
+    name: 'admin-subject-template-detail',
+    component: () => import('../views/admin/SubjectTemplateDetailView.vue'),
+    meta: {
+      requiresAuth: true,
+    },
+  },
+  {
     path: '/admin/risk-templates',
     name: 'admin-risk-templates',
     component: () => import('../views/admin/RiskTemplatesView.vue'),
