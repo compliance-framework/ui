@@ -3,20 +3,16 @@
     <p class="text-gray-500 dark:text-slate-400">Loading risks...</p>
   </div>
 
-  <Message v-else-if="!poamDefined" severity="error" variant="outlined">
+  <Message v-else-if="contextMissing" severity="error" variant="outlined">
     <div class="space-y-2 text-gray-700 dark:text-slate-200">
-      <h4 class="text-base font-semibold">
-        Plan Of Action and Milestones not selected
-      </h4>
-      <p>
-        No Plan Of Action and Milestones (POA&M) has been selected for editing.
-      </p>
+      <h4 class="text-base font-semibold">System Security Plan not selected</h4>
+      <p>No System Security Plan has been selected for editing.</p>
       <p>
         Please return to the
         <RouterLink
-          :to="{ name: 'plan-of-action-and-milestones' }"
+          :to="{ name: 'system-security-plans' }"
           class="font-medium underline text-blue-600 dark:text-blue-300"
-          >POA&M
+          >SSP Page
         </RouterLink>
         to select one
       </p>
@@ -27,103 +23,351 @@
     <p class="text-red-500">Error loading risks: {{ error }}</p>
   </div>
 
-  <div v-else class="space-y-4">
-    <PageHeader>Risk Register</PageHeader>
-    <div v-if="!risks?.length" class="text-center py-8">
+  <div v-else class="p-6 space-y-6">
+    <PageHeader>SSP Risk Register</PageHeader>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div
+        class="bg-white dark:bg-slate-900 border border-ccf-300 dark:border-slate-700 rounded-lg p-4"
+      >
+        <p
+          class="text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400"
+        >
+          Total Risks
+        </p>
+        <p
+          class="mt-2 text-2xl font-semibold text-gray-900 dark:text-slate-100"
+        >
+          {{ riskSummary.total }}
+        </p>
+      </div>
+
+      <div
+        class="bg-white dark:bg-slate-900 border border-ccf-300 dark:border-slate-700 rounded-lg p-4"
+      >
+        <p
+          class="text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400"
+        >
+          Open Risks
+        </p>
+        <p
+          class="mt-2 text-2xl font-semibold text-amber-700 dark:text-amber-300"
+        >
+          {{ riskSummary.open }}
+        </p>
+      </div>
+
+      <div
+        class="bg-white dark:bg-slate-900 border border-ccf-300 dark:border-slate-700 rounded-lg p-4"
+      >
+        <p
+          class="text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400"
+        >
+          Accepted Risks
+        </p>
+        <p
+          class="mt-2 text-2xl font-semibold text-emerald-700 dark:text-emerald-300"
+        >
+          {{ riskSummary.accepted }}
+        </p>
+      </div>
+
+      <div
+        class="bg-white dark:bg-slate-900 border border-ccf-300 dark:border-slate-700 rounded-lg p-4"
+      >
+        <p
+          class="text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400"
+        >
+          Overdue Reviews
+        </p>
+        <p class="mt-2 text-2xl font-semibold text-red-700 dark:text-red-300">
+          {{ riskSummary.overdueReviews }}
+        </p>
+      </div>
+    </div>
+
+    <div
+      class="bg-white dark:bg-slate-900 border border-ccf-300 dark:border-slate-700 rounded-lg p-4 space-y-4"
+    >
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div>
+          <label
+            class="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1"
+          >
+            Search
+          </label>
+          <input
+            v-model="filters.search"
+            type="text"
+            placeholder="Title, status, owner..."
+            class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md dark:bg-slate-800 dark:text-slate-200"
+          />
+        </div>
+
+        <div>
+          <label
+            class="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1"
+          >
+            Status
+          </label>
+          <select
+            v-model="filters.status"
+            class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md dark:bg-slate-800 dark:text-slate-200"
+          >
+            <option value="all">All</option>
+            <option
+              v-for="status in statusOptions"
+              :key="status"
+              :value="status"
+            >
+              {{ formatLabel(status) }}
+            </option>
+          </select>
+        </div>
+
+        <div>
+          <label
+            class="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1"
+          >
+            Likelihood
+          </label>
+          <select
+            v-model="filters.likelihood"
+            class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md dark:bg-slate-800 dark:text-slate-200"
+          >
+            <option value="all">All</option>
+            <option value="low">Low</option>
+            <option value="moderate">Medium</option>
+            <option value="high">High</option>
+            <option value="critical">Critical</option>
+          </select>
+        </div>
+
+        <div>
+          <label
+            class="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1"
+          >
+            Impact
+          </label>
+          <select
+            v-model="filters.impact"
+            class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md dark:bg-slate-800 dark:text-slate-200"
+          >
+            <option value="all">All</option>
+            <option value="low">Low</option>
+            <option value="moderate">Medium</option>
+            <option value="high">High</option>
+            <option value="critical">Critical</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div>
+          <label
+            class="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1"
+          >
+            Owner
+          </label>
+          <input
+            v-model="filters.owner"
+            type="text"
+            placeholder="Name, email or ID"
+            class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md dark:bg-slate-800 dark:text-slate-200"
+          />
+        </div>
+
+        <div>
+          <label
+            class="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1"
+          >
+            Review Deadline
+          </label>
+          <select
+            v-model="filters.review"
+            class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md dark:bg-slate-800 dark:text-slate-200"
+          >
+            <option value="all">All</option>
+            <option value="overdue">Overdue</option>
+            <option value="upcoming">Upcoming</option>
+          </select>
+        </div>
+
+        <div>
+          <label
+            class="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1"
+          >
+            Control ID
+          </label>
+          <input
+            v-model="filters.controlId"
+            type="text"
+            placeholder="Filter by control"
+            class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md dark:bg-slate-800 dark:text-slate-200"
+          />
+        </div>
+
+        <div>
+          <label
+            class="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1"
+          >
+            Evidence ID
+          </label>
+          <input
+            v-model="filters.evidenceId"
+            type="text"
+            placeholder="Filter by evidence"
+            class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md dark:bg-slate-800 dark:text-slate-200"
+          />
+        </div>
+
+        <div>
+          <label
+            class="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1"
+          >
+            Sort
+          </label>
+          <div class="flex gap-2">
+            <select
+              v-model="sortBy"
+              class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md dark:bg-slate-800 dark:text-slate-200"
+            >
+              <option value="updated">Updated Date</option>
+              <option value="created">Created Date</option>
+              <option value="review-deadline">Review Deadline</option>
+              <option value="status">Status</option>
+              <option value="likelihood">Likelihood</option>
+              <option value="impact">Impact</option>
+            </select>
+            <select
+              v-model="sortDirection"
+              class="w-28 px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md dark:bg-slate-800 dark:text-slate-200"
+            >
+              <option value="desc">Desc</option>
+              <option value="asc">Asc</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex justify-end">
+        <TertiaryButton @click="resetFilters">Reset Filters</TertiaryButton>
+      </div>
+    </div>
+
+    <div class="flex justify-between items-center">
+      <PrimaryButton @click="showCreateModal = true">Create Risk</PrimaryButton>
+      <p class="text-sm text-gray-500 dark:text-slate-400">
+        Showing {{ visibleRisks.length }} of {{ risks?.length || 0 }} risks
+      </p>
+    </div>
+
+    <div v-if="!visibleRisks.length" class="text-center py-8">
       <p class="text-gray-500 dark:text-slate-400">No risks found.</p>
     </div>
-    <div class="p-6">
-      <div class="flex justify-between items-center mb-6">
-        <PrimaryButton @click="showCreateModal = true">
-          Add Risk
-        </PrimaryButton>
-      </div>
+
+    <div v-else class="space-y-4">
       <div
-        v-for="risk in risks"
-        :key="risk.uuid"
+        v-for="risk in visibleRisks"
+        :key="riskRenderKey(risk)"
         class="bg-white dark:bg-slate-900 border border-ccf-300 dark:border-slate-700 rounded-lg p-6"
       >
-        <div class="flex justify-between items-start">
-          <div class="flex-1">
-            <h3 class="text-lg font-medium text-gray-900 dark:text-slate-300">
-              {{ risk.title || 'Untitled Risk' }}
-            </h3>
-            <p class="text-gray-600 dark:text-slate-400 mt-2">
-              {{ risk.description }}
-            </p>
-
-            <div v-if="risk.statement" class="mt-3">
-              <h4
-                class="text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
-              >
-                Statement
-              </h4>
-              <p class="text-sm text-gray-600 dark:text-slate-400">
-                {{ risk.statement }}
+        <div class="flex flex-col lg:flex-row gap-4 lg:justify-between">
+          <div class="flex-1 space-y-3">
+            <div>
+              <h3 class="text-lg font-medium text-gray-900 dark:text-slate-300">
+                {{ risk.title || 'Untitled Risk' }}
+              </h3>
+              <p class="text-gray-600 dark:text-slate-400 mt-1">
+                {{ risk.description || 'No description provided.' }}
               </p>
             </div>
 
-            <div class="mt-3">
-              <h4
-                class="text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
-              >
-                Status
-              </h4>
+            <div class="flex flex-wrap gap-2 items-center">
               <span
-                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                :class="statusBadgeClass(risk.status)"
               >
-                {{ risk.status }}
+                {{ formatLabel(risk.status || 'unknown') }}
               </span>
-            </div>
 
-            <div class="mt-4 flex flex-wrap gap-2">
               <span
                 v-if="risk.threatIds?.length"
                 class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
               >
                 {{ risk.threatIds.length }} Threats
               </span>
+
               <span
-                v-if="risk.characterizations?.length"
-                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+                v-if="riskEvidenceCount(risk)"
+                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200"
               >
-                {{ risk.characterizations.length }} Characterizations
+                {{ riskEvidenceCount(risk) }} Evidence
               </span>
+
               <span
-                v-if="risk.mitigatingFactors?.length"
-                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                v-if="riskControlCount(risk)"
+                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-cyan-100 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-200"
               >
-                {{ risk.mitigatingFactors.length }} Mitigating Factors
+                {{ riskControlCount(risk) }} Controls
               </span>
+
               <span
-                v-if="risk.remediations?.length"
+                v-if="riskComponentCount(risk)"
                 class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
               >
-                {{ risk.remediations.length }} Remediations
+                {{ riskComponentCount(risk) }} Components
               </span>
             </div>
 
             <div
-              v-if="risk.deadline"
-              class="mt-3 text-sm text-gray-500 dark:text-slate-400"
+              class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-sm"
             >
-              <strong>Deadline:</strong> {{ formatDate(risk.deadline) }}
+              <div>
+                <p class="text-gray-500 dark:text-slate-400">Owner</p>
+                <p class="text-gray-700 dark:text-slate-200">
+                  {{ riskOwner(risk) || 'Unassigned' }}
+                </p>
+              </div>
+              <div>
+                <p class="text-gray-500 dark:text-slate-400">Likelihood</p>
+                <p class="text-gray-700 dark:text-slate-200">
+                  {{ formatLabel(riskLikelihood(risk) || 'unknown') }}
+                </p>
+              </div>
+              <div>
+                <p class="text-gray-500 dark:text-slate-400">Impact</p>
+                <p class="text-gray-700 dark:text-slate-200">
+                  {{ formatLabel(riskImpact(risk) || 'unknown') }}
+                </p>
+              </div>
+              <div>
+                <p class="text-gray-500 dark:text-slate-400">Review Deadline</p>
+                <p
+                  class="text-gray-700 dark:text-slate-200"
+                  :class="{
+                    'text-red-600 dark:text-red-300': isReviewOverdue(risk),
+                  }"
+                >
+                  {{ formatDateTime(riskReviewDeadline(risk)) }}
+                </p>
+              </div>
             </div>
           </div>
 
-          <div class="ml-4 flex gap-2">
+          <div class="flex gap-2 self-start">
             <RouterLinkButton
-              v-if="risk.uuid"
+              v-if="riskIdentifier(risk)"
               variant="text"
-              :to="{ name: 'risks:detail', params: { riskId: risk.uuid } }"
+              :to="riskDetailRoute(riskIdentifier(risk))"
             >
               Open
             </RouterLinkButton>
-            <TertiaryButton @click="editRisk(risk)"> Edit </TertiaryButton>
+            <TertiaryButton @click="editRisk(risk)">Edit</TertiaryButton>
             <TertiaryButton
-              v-if="risk.uuid"
+              v-if="riskIdentifier(risk)"
               @click="
-                confirmDeleteDialog(() => deleteRisk(risk.uuid!), {
+                confirmDeleteDialog(() => deleteRisk(riskIdentifier(risk)), {
                   itemType: 'risk',
                 })
               "
@@ -135,20 +379,18 @@
       </div>
     </div>
 
-    <!-- Create Modal -->
     <Dialog v-model:visible="showCreateModal" modal size="lg">
       <RiskCreateForm
-        :poam-id="poamUuid"
+        :ssp-id="sspId"
         @cancel="showCreateModal = false"
         @created="handleRiskCreated"
       />
     </Dialog>
 
-    <!-- Edit Modal -->
     <Dialog v-model:visible="showEditModal" modal size="lg">
       <RiskEditForm
         v-if="editingRisk"
-        :poam-id="poamUuid"
+        :ssp-id="sspId"
         :risk="editingRisk"
         @cancel="showEditModal = false"
         @saved="handleRiskSaved"
@@ -158,55 +400,109 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
+import { useRoute } from 'vue-router';
 import { type Risk } from '@/oscal';
 import Dialog from '@/volt/Dialog.vue';
 import Message from '@/volt/Message.vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
 import TertiaryButton from '@/volt/TertiaryButton.vue';
-import RiskCreateForm from '@/components/poam/RiskCreateForm.vue';
-import RiskEditForm from '@/components/poam/RiskEditForm.vue';
+import RiskCreateForm from '@/components/risk/RiskCreateForm.vue';
+import RiskEditForm from '@/components/risk/RiskEditForm.vue';
 import { useToast } from 'primevue/usetoast';
 import PageHeader from '@/components/PageHeader.vue';
 import { useSystemStore } from '@/stores/system.ts';
 import { useDataApi } from '@/composables/axios';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
 import RouterLinkButton from '@/components/RouterLinkButton.vue';
+import {
+  computeRiskSummary,
+  defaultRiskFilters,
+  filterRisks,
+  getRiskComponentIds,
+  getRiskControlIds,
+  getRiskEvidenceIds,
+  getRiskImpact,
+  getRiskLikelihood,
+  getRiskOwnerDisplay,
+  getRiskReviewDeadline,
+  sortRisks,
+  type RiskFilters,
+  type RiskSortBy,
+  type SortDirection,
+} from '@/utils/risk-register';
+import { getRiskIdentifier, sameRiskIdentifier } from '@/utils/risk-id';
 
+const route = useRoute();
 const toast = useToast();
 const { system } = useSystemStore();
 
 const { confirmDeleteDialog } = useDeleteConfirmationDialog();
 
-const poamDefined = ref<boolean>(!!system.poam);
-const poamUuid = computed(() => system.poam?.uuid ?? '');
+const sspId = computed(
+  () =>
+    (route.params.id as string | undefined) || system.securityPlan?.uuid || '',
+);
+
+const contextMissing = computed(() => !sspId.value);
+
+const endpoint = computed(() => {
+  if (!sspId.value) return null;
+  return `/api/oscal/system-security-plans/${sspId.value}/risks`;
+});
 
 const {
   data: risks,
   error,
   isLoading: loading,
   execute: loadRisks,
-} = useDataApi<Risk[]>(
-  `/api/oscal/plan-of-action-and-milestones/${system.poam?.uuid}/risks`,
-  {},
-  { immediate: false },
+} = useDataApi<Risk[]>(null, {}, { immediate: false });
+
+watch(
+  endpoint,
+  async (value) => {
+    if (!value) {
+      risks.value = [];
+      return;
+    }
+    try {
+      await loadRisks(value);
+    } catch {
+      // Error state is already captured by useDataApi().error.
+    }
+  },
+  { immediate: true },
 );
 
+interface RiskUpdatedDetail {
+  risk: Risk;
+  context?: { scope: 'poam' | 'ssp'; id: string };
+  sspId?: string;
+}
+
 const handleRiskUpdated = (event: Event) => {
-  const detail = (event as CustomEvent<{ risk: Risk; poamId?: string }>).detail;
-  if (!detail?.risk?.uuid) return;
-  if (detail.poamId && detail.poamId !== poamUuid.value) return;
-  if (!risks.value) return;
-  const index = risks.value.findIndex((item) => item.uuid === detail.risk.uuid);
+  const detail = (event as CustomEvent<RiskUpdatedDetail>).detail;
+  if (!detail?.risk || !risks.value || !sspId.value) return;
+
+  if (detail.context && detail.context.scope !== 'ssp') {
+    return;
+  }
+
+  if (detail.context && detail.context.id !== sspId.value) {
+    return;
+  }
+
+  if (detail.sspId && detail.sspId !== sspId.value) return;
+
+  const index = risks.value.findIndex((item) =>
+    sameRiskIdentifier(item, detail.risk),
+  );
   if (index !== -1) {
     risks.value[index] = detail.risk;
   }
 };
 
 onMounted(() => {
-  if (system.poam) {
-    loadRisks();
-  }
   window.addEventListener('risk-updated', handleRiskUpdated as EventListener);
 });
 
@@ -223,28 +519,61 @@ const { execute: executeDeleteRisk } = useDataApi<void>(
   { immediate: false },
 );
 
-// Modal states
 const showCreateModal = ref(false);
 const showEditModal = ref(false);
-
-// Edit targets
 const editingRisk = ref<Risk | null>(null);
+const riskFallbackKeys = new WeakMap<Risk, string>();
+let riskFallbackCounter = 0;
 
-// Risk management
+const filters = reactive<RiskFilters>({ ...defaultRiskFilters });
+const sortBy = ref<RiskSortBy>('updated');
+const sortDirection = ref<SortDirection>('desc');
+
+const riskSummary = computed(() => computeRiskSummary(risks.value || []));
+
+const filteredRisks = computed(() => filterRisks(risks.value || [], filters));
+
+const visibleRisks = computed(() =>
+  sortRisks(filteredRisks.value, sortBy.value, sortDirection.value),
+);
+
+const statusOptions = computed(() => {
+  const statuses = new Set(
+    (risks.value || []).map((risk) => (risk.status || '').toLowerCase()),
+  );
+
+  return Array.from(statuses)
+    .filter((status) => !!status)
+    .sort((left, right) => left.localeCompare(right));
+});
+
 const editRisk = (risk: Risk) => {
+  if (!riskIdentifier(risk)) {
+    toast.add({
+      severity: 'error',
+      summary: 'Missing risk identifier',
+      detail: 'This risk cannot be edited because it has no identifier.',
+      life: 4000,
+    });
+    return;
+  }
   editingRisk.value = risk;
   showEditModal.value = true;
 };
 
 const handleRiskCreated = (newRisk: Risk) => {
-  if (!risks.value) return;
+  if (!risks.value) {
+    risks.value = [];
+  }
   risks.value.push(newRisk);
   showCreateModal.value = false;
 };
 
 const handleRiskSaved = (updatedRisk: Risk) => {
   if (!risks.value || !updatedRisk) return;
-  const index = risks.value.findIndex((risk) => risk.uuid === updatedRisk.uuid);
+  const index = risks.value.findIndex((risk) =>
+    sameRiskIdentifier(risk, updatedRisk),
+  );
   if (index !== -1) {
     risks.value[index] = updatedRisk;
   }
@@ -252,13 +581,18 @@ const handleRiskSaved = (updatedRisk: Risk) => {
   editingRisk.value = null;
 };
 
-const deleteRisk = async (uuid: string) => {
+const deleteRisk = async (riskId: string) => {
   try {
-    if (!poamUuid.value) {
-      throw new Error('No POA&M ID found.');
+    if (!sspId.value) {
+      throw new Error('No SSP ID found.');
     }
+
+    if (!riskId) {
+      throw new Error('Risk identifier is missing.');
+    }
+
     await executeDeleteRisk(
-      `/api/oscal/plan-of-action-and-milestones/${poamUuid.value}/risks/${uuid}`,
+      `/api/oscal/system-security-plans/${sspId.value}/risks/${riskId}`,
     );
     toast.add({
       severity: 'success',
@@ -266,7 +600,10 @@ const deleteRisk = async (uuid: string) => {
       detail: 'Risk deleted successfully',
       life: 3000,
     });
-    await loadRisks(); // Reload the list
+
+    if (endpoint.value) {
+      await loadRisks(endpoint.value);
+    }
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : 'Unknown error';
     toast.add({
@@ -278,8 +615,102 @@ const deleteRisk = async (uuid: string) => {
   }
 };
 
-function formatDate(dateString?: string): string {
-  if (!dateString) return 'N/A';
-  return new Date(dateString).toLocaleDateString();
+function riskDetailRoute(riskId: string) {
+  if (!sspId.value) {
+    return { name: 'system-security-plans' };
+  }
+
+  return {
+    name: 'system-security-plan-risk-detail',
+    params: { id: sspId.value, riskId },
+  };
+}
+
+function riskIdentifier(risk: Risk): string {
+  return getRiskIdentifier(risk);
+}
+
+function riskRenderKey(risk: Risk): string {
+  const identifier = riskIdentifier(risk);
+  if (identifier) return identifier;
+
+  const existingKey = riskFallbackKeys.get(risk);
+  if (existingKey) return existingKey;
+
+  const generatedKey = `risk-fallback-${++riskFallbackCounter}`;
+  riskFallbackKeys.set(risk, generatedKey);
+  return generatedKey;
+}
+
+function resetFilters() {
+  Object.assign(filters, defaultRiskFilters);
+  sortBy.value = 'updated';
+  sortDirection.value = 'desc';
+}
+
+function formatDateTime(value?: string): string {
+  if (!value) return 'N/A';
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleString();
+}
+
+function formatLabel(value?: string): string {
+  if (!value) return 'N/A';
+  return value
+    .replace(/[-_]/g, ' ')
+    .split(' ')
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+}
+
+function statusBadgeClass(status?: string): string {
+  const normalized = (status || '').toLowerCase();
+  if (normalized.includes('closed') || normalized.includes('resolved')) {
+    return 'bg-slate-200 text-slate-800 dark:bg-slate-700 dark:text-slate-200';
+  }
+  if (normalized.includes('accepted')) {
+    return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200';
+  }
+  if (normalized.includes('open') || normalized.includes('investigating')) {
+    return 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200';
+  }
+  return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
+}
+
+function riskOwner(risk: Risk): string {
+  return getRiskOwnerDisplay(risk);
+}
+
+function riskLikelihood(risk: Risk): string {
+  return getRiskLikelihood(risk);
+}
+
+function riskImpact(risk: Risk): string {
+  return getRiskImpact(risk);
+}
+
+function riskReviewDeadline(risk: Risk): string | undefined {
+  return getRiskReviewDeadline(risk);
+}
+
+function isReviewOverdue(risk: Risk): boolean {
+  const deadline = getRiskReviewDeadline(risk);
+  if (!deadline) return false;
+  const date = new Date(deadline);
+  if (Number.isNaN(date.getTime())) return false;
+  return date.getTime() < Date.now();
+}
+
+function riskEvidenceCount(risk: Risk): number {
+  return getRiskEvidenceIds(risk).length;
+}
+
+function riskControlCount(risk: Risk): number {
+  return getRiskControlIds(risk).length;
+}
+
+function riskComponentCount(risk: Risk): number {
+  return getRiskComponentIds(risk).length;
 }
 </script>

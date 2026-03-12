@@ -92,12 +92,13 @@
           class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-800 dark:text-slate-300"
         >
           <option value="">Select status</option>
-          <option value="open">Open</option>
-          <option value="investigating">Investigating</option>
-          <option value="resolved">Resolved</option>
-          <option value="risk-accepted">Risk Accepted</option>
-          <option value="mitigation-implemented">Mitigation Implemented</option>
-          <option value="mitigation-planned">Mitigation Planned</option>
+          <option
+            v-for="status in riskStatusOptions"
+            :key="status.value"
+            :value="status.value"
+          >
+            {{ status.label }}
+          </option>
         </select>
       </div>
 
@@ -111,13 +112,25 @@
           <div
             v-for="(threatId, index) in formData.threatIds"
             :key="index"
-            class="flex gap-2"
+            class="grid grid-cols-1 md:grid-cols-[1fr_1.2fr_1.2fr_auto] gap-2"
           >
             <input
               v-model="formData.threatIds[index].id"
               type="text"
-              class="flex-1 px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-800 dark:text-slate-300"
-              placeholder="Enter threat ID"
+              class="px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-800 dark:text-slate-300"
+              placeholder="Threat ID"
+            />
+            <input
+              v-model="formData.threatIds[index].system"
+              type="text"
+              class="px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-800 dark:text-slate-300"
+              placeholder="System URI"
+            />
+            <input
+              v-model="formData.threatIds[index].href"
+              type="text"
+              class="px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-800 dark:text-slate-300"
+              placeholder="Reference URL (optional)"
             />
             <button
               type="button"
@@ -127,6 +140,12 @@
               Remove
             </button>
           </div>
+          <p
+            v-if="!formData.threatIds.length"
+            class="text-xs text-gray-500 dark:text-slate-400"
+          >
+            No threat identifiers added.
+          </p>
           <button
             type="button"
             @click="addThreatId"
@@ -268,17 +287,22 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from 'vue';
+import { computed, reactive, ref } from 'vue';
 import { ThreatIDSystem, type Risk, type ThreatID } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import { isAxiosError } from 'axios';
 import type { ErrorResponse, ErrorBody } from '@/stores/types';
+import {
+  buildRiskCollectionEndpoint,
+  type RiskContext,
+} from '@/utils/risk-context';
 import Dialog from '@/volt/Dialog.vue';
 import { getRiskTemplateKey, type RiskTemplate } from '@/types/risk-templates';
 
 const props = defineProps<{
-  poamId: string;
+  poamId?: string;
+  sspId?: string;
 }>();
 
 const emit = defineEmits<{
@@ -288,12 +312,48 @@ const emit = defineEmits<{
 
 const toast = useToast();
 
+const riskStatusOptions = [
+  { value: 'open', label: 'Open' },
+  { value: 'investigating', label: 'Investigating' },
+  { value: 'remediating', label: 'Remediating' },
+  { value: 'deviation-requested', label: 'Deviation Requested' },
+  { value: 'deviation-approved', label: 'Deviation Approved' },
+  { value: 'closed', label: 'Closed' },
+];
+
+const riskContext = computed<RiskContext | null>(() => {
+  if (props.sspId) {
+    return {
+      scope: 'ssp',
+      id: props.sspId,
+      listRouteName: 'system-security-plan-risks',
+      detailRouteName: 'system-security-plan-risk-detail',
+    };
+  }
+
+  if (props.poamId) {
+    return {
+      scope: 'poam',
+      id: props.poamId,
+      listRouteName: 'plan-of-action-and-milestones-risks',
+      detailRouteName: 'plan-of-action-and-milestones-risk-detail',
+    };
+  }
+
+  return null;
+});
+
+const endpoint = computed(() => {
+  if (!riskContext.value) return null;
+  return buildRiskCollectionEndpoint(riskContext.value);
+});
+
 const {
   data: returnedRisk,
   isLoading: saving,
   execute: createRisk,
 } = useDataApi<Risk>(
-  `/api/oscal/plan-of-action-and-milestones/${props.poamId}/risks`,
+  endpoint,
   {
     method: 'POST',
     transformRequest: [decamelizeKeys],
@@ -326,7 +386,11 @@ const selectedTemplateName = ref('');
 const templatesAccessDenied = ref(false);
 
 function addThreatId() {
-  formData.threatIds.push({ id: '', system: ThreatIDSystem.OSCAL });
+  formData.threatIds.push({
+    id: '',
+    system: ThreatIDSystem.OSCAL,
+    href: '',
+  });
 }
 
 function removeThreatId(index: number) {
@@ -459,6 +523,16 @@ function applyTemplate(template: RiskTemplate) {
 }
 
 async function submit() {
+  if (!endpoint.value) {
+    toast.add({
+      severity: 'error',
+      summary: 'Missing context',
+      detail: 'Risk creation context is not available.',
+      life: 3000,
+    });
+    return;
+  }
+
   if (!formData.title) {
     toast.add({
       severity: 'error',
@@ -500,12 +574,34 @@ async function submit() {
   }
 
   try {
+    let deadline: string | undefined;
+    if (formData.deadline) {
+      const parsedDeadline = new Date(formData.deadline);
+      if (!Number.isNaN(parsedDeadline.getTime())) {
+        deadline = parsedDeadline.toISOString();
+      }
+    }
+
     const normalizedThreatIds = formData.threatIds
-      .map((threat) => ({
-        id: threat.id.trim(),
-        system: threat.system.trim(),
-      }))
-      .filter((threat) => threat.id.length > 0 && threat.system.length > 0);
+      .map((threat) => {
+        const id = threat.id.trim();
+        const system = threat.system?.trim() || ThreatIDSystem.OSCAL;
+        const href = threat.href?.trim();
+
+        if (!id) return null;
+
+        return href
+          ? {
+              id,
+              system,
+              href,
+            }
+          : {
+              id,
+              system,
+            };
+      })
+      .filter((threat): threat is ThreatID => !!threat);
 
     const newRisk: Partial<Risk> = {
       uuid: crypto.randomUUID(),
@@ -515,9 +611,7 @@ async function submit() {
       status: formData.status,
       threatIds:
         normalizedThreatIds.length > 0 ? normalizedThreatIds : undefined,
-      deadline: formData.deadline
-        ? new Date(formData.deadline).toISOString()
-        : undefined,
+      deadline,
       remarks: formData.remarks || undefined,
     };
 
@@ -534,16 +628,14 @@ async function submit() {
 
     emit('created', returnedRisk.value!);
   } catch (error) {
-    let errorMessage = 'Unknown error';
-
-    if (isAxiosError(error)) {
-      const responseBody = (
-        error.response?.data as ErrorResponse<ErrorBody> | undefined
-      )?.errors?.body;
-      errorMessage = responseBody || error.message || errorMessage;
-    } else if (error instanceof Error) {
-      errorMessage = error.message;
-    }
+    const errorMessage = isAxiosError(error)
+      ? ((error.response?.data as ErrorResponse<ErrorBody> | undefined)?.errors
+          ?.body ??
+        error.message ??
+        'Unknown error')
+      : error instanceof Error
+        ? error.message
+        : 'Unknown error';
 
     toast.add({
       severity: 'error',

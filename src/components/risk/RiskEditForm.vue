@@ -58,12 +58,13 @@
           class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-800 dark:text-slate-300"
         >
           <option value="">Select status</option>
-          <option value="open">Open</option>
-          <option value="investigating">Investigating</option>
-          <option value="resolved">Resolved</option>
-          <option value="risk-accepted">Risk Accepted</option>
-          <option value="mitigation-implemented">Mitigation Implemented</option>
-          <option value="mitigation-planned">Mitigation Planned</option>
+          <option
+            v-for="status in statusOptions"
+            :key="status.value"
+            :value="status.value"
+          >
+            {{ status.label }}
+          </option>
         </select>
       </div>
 
@@ -77,13 +78,25 @@
           <div
             v-for="(threatId, index) in formData.threatIds"
             :key="index"
-            class="flex gap-2"
+            class="grid grid-cols-1 md:grid-cols-[1fr_1.2fr_1.2fr_auto] gap-2"
           >
             <input
-              v-model="formData.threatIds[index]"
+              v-model="formData.threatIds[index].id"
               type="text"
-              class="flex-1 px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-800 dark:text-slate-300"
-              placeholder="Enter threat ID"
+              class="px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-800 dark:text-slate-300"
+              placeholder="Threat ID"
+            />
+            <input
+              v-model="formData.threatIds[index].system"
+              type="text"
+              class="px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-800 dark:text-slate-300"
+              placeholder="System URI"
+            />
+            <input
+              v-model="formData.threatIds[index].href"
+              type="text"
+              class="px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-800 dark:text-slate-300"
+              placeholder="Reference URL (optional)"
             />
             <button
               type="button"
@@ -93,6 +106,12 @@
               Remove
             </button>
           </div>
+          <p
+            v-if="!formData.threatIds.length"
+            class="text-xs text-gray-500 dark:text-slate-400"
+          >
+            No threat identifiers added.
+          </p>
           <button
             type="button"
             @click="addThreatId"
@@ -157,14 +176,17 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, onMounted } from 'vue';
+import { computed, reactive, onMounted } from 'vue';
 import type { Risk, ThreatID } from '@/oscal';
 import { ThreatIDSystem } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
+import { buildRiskItemEndpoint, type RiskContext } from '@/utils/risk-context';
+import { getRiskIdentifier } from '@/utils/risk-id';
 
 const props = defineProps<{
-  poamId: string;
+  poamId?: string;
+  sspId?: string;
   risk: Risk;
 }>();
 
@@ -175,12 +197,50 @@ const emit = defineEmits<{
 
 const toast = useToast();
 
+const riskStatusOptions = [
+  { value: 'open', label: 'Open' },
+  { value: 'investigating', label: 'Investigating' },
+  { value: 'remediating', label: 'Remediating' },
+  { value: 'deviation-requested', label: 'Deviation Requested' },
+  { value: 'deviation-approved', label: 'Deviation Approved' },
+  { value: 'closed', label: 'Closed' },
+];
+
+const riskContext = computed<RiskContext | null>(() => {
+  if (props.sspId) {
+    return {
+      scope: 'ssp',
+      id: props.sspId,
+      listRouteName: 'system-security-plan-risks',
+      detailRouteName: 'system-security-plan-risk-detail',
+    };
+  }
+
+  if (props.poamId) {
+    return {
+      scope: 'poam',
+      id: props.poamId,
+      listRouteName: 'plan-of-action-and-milestones-risks',
+      detailRouteName: 'plan-of-action-and-milestones-risk-detail',
+    };
+  }
+
+  return null;
+});
+
+const riskId = computed(() => getRiskIdentifier(props.risk));
+
+const endpoint = computed(() => {
+  if (!riskContext.value || !riskId.value) return null;
+  return buildRiskItemEndpoint(riskContext.value, riskId.value);
+});
+
 const {
   data: returnedRisk,
   isLoading: saving,
   execute: updateRisk,
 } = useDataApi<Risk>(
-  `/api/oscal/plan-of-action-and-milestones/${props.poamId}/risks/${props.risk.uuid}`,
+  endpoint,
   {
     method: 'PUT',
     transformRequest: [decamelizeKeys],
@@ -198,19 +258,65 @@ const formData = reactive({
   remarks: '',
 });
 
+const statusOptions = computed(() => {
+  if (
+    formData.status &&
+    !riskStatusOptions.some((option) => option.value === formData.status)
+  ) {
+    return [
+      { value: formData.status, label: formData.status },
+      ...riskStatusOptions,
+    ];
+  }
+  return riskStatusOptions;
+});
+
+function toDateTimeLocal(value?: string): string {
+  if (!value) return '';
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return '';
+
+  const year = parsed.getFullYear();
+  const month = String(parsed.getMonth() + 1).padStart(2, '0');
+  const day = String(parsed.getDate()).padStart(2, '0');
+  const hours = String(parsed.getHours()).padStart(2, '0');
+  const minutes = String(parsed.getMinutes()).padStart(2, '0');
+
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
 onMounted(() => {
-  // Initialize form with existing data
   formData.title = props.risk.title || '';
   formData.description = props.risk.description;
   formData.statement = props.risk.statement || '';
   formData.status = props.risk.status;
-  formData.threatIds = [...(props.risk.threatIds || [])];
-  formData.deadline = props.risk.deadline || '';
+  formData.threatIds = (props.risk.threatIds || [])
+    .map((item) => {
+      if (typeof item === 'string') {
+        return {
+          id: item,
+          system: ThreatIDSystem.OSCAL,
+          href: '',
+        };
+      }
+
+      return {
+        id: item.id || '',
+        system: item.system || ThreatIDSystem.OSCAL,
+        href: item.href || '',
+      };
+    })
+    .filter((item) => !!item.id);
+  formData.deadline = toDateTimeLocal(props.risk.deadline);
   formData.remarks = props.risk.remarks || '';
 });
 
 function addThreatId() {
-  formData.threatIds.push({ id: '', system: ThreatIDSystem.OSCAL });
+  formData.threatIds.push({
+    id: '',
+    system: ThreatIDSystem.OSCAL,
+    href: '',
+  });
 }
 
 function removeThreatId(index: number) {
@@ -218,6 +324,16 @@ function removeThreatId(index: number) {
 }
 
 async function submit() {
+  if (!endpoint.value) {
+    toast.add({
+      severity: 'error',
+      summary: 'Missing context',
+      detail: 'Risk update context is not available.',
+      life: 3000,
+    });
+    return;
+  }
+
   if (!formData.title) {
     toast.add({
       severity: 'error',
@@ -259,7 +375,22 @@ async function submit() {
   }
 
   try {
-    const filteredThreatIds = formData.threatIds.filter((t) => t.id.trim());
+    let deadline: string | undefined;
+    if (formData.deadline) {
+      const parsedDeadline = new Date(formData.deadline);
+      if (!Number.isNaN(parsedDeadline.getTime())) {
+        deadline = parsedDeadline.toISOString();
+      }
+    }
+
+    const filteredThreatIds = formData.threatIds
+      .map((item) => ({
+        id: item.id.trim(),
+        system: item.system?.trim() || ThreatIDSystem.OSCAL,
+        href: item.href?.trim() || undefined,
+      }))
+      .filter((item) => item.id);
+
     const updatedRisk: Risk = {
       ...props.risk,
       title: formData.title,
@@ -267,7 +398,7 @@ async function submit() {
       statement: formData.statement,
       status: formData.status,
       threatIds: filteredThreatIds.length > 0 ? filteredThreatIds : undefined,
-      deadline: formData.deadline || undefined,
+      deadline,
       remarks: formData.remarks || undefined,
     };
 
