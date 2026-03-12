@@ -948,6 +948,15 @@
               </div>
             </div>
           </div>
+
+          <RiskLogTab
+            v-else-if="activeTab === 'log'"
+            :entries="risk.riskLog?.entries"
+          />
+          <RiskPoamItemsTab
+            v-else-if="activeTab === 'poam-items'"
+            :risk-id="riskId!"
+          />
         </div>
       </div>
     </div>
@@ -1211,6 +1220,8 @@ import RiskAcceptModal from '@/components/risk/RiskAcceptModal.vue';
 import RiskReviewModal from '@/components/risk/RiskReviewModal.vue';
 import RiskScoreReviewModal from '@/components/risk/RiskScoreReviewModal.vue';
 import RiskOwnerAssignment from '@/components/risk/RiskOwnerAssignment.vue';
+import RiskLogTab from '@/components/risk/RiskLogTab.vue';
+import RiskPoamItemsTab from '@/components/risk/RiskPoamItemsTab.vue';
 import { useSystemStore } from '@/stores/system';
 import type { Profile, Risk, SystemComponent } from '@/oscal';
 import type { Evidence, EvidenceLabel } from '@/stores/evidence';
@@ -1362,7 +1373,9 @@ type TabId =
   | 'threats'
   | 'remediations'
   | 'reviews'
-  | 'history-events';
+  | 'history-events'
+  | 'log'
+  | 'poam-items';
 
 const route = useRoute();
 const router = useRouter();
@@ -1404,6 +1417,8 @@ const tabs = computed<Array<{ id: TabId; label: string }>>(() => {
   baseTabs.push(
     { id: 'reviews', label: 'Reviews' },
     { id: 'history-events', label: 'History & Events' },
+    { id: 'log', label: 'Log' },
+    { id: 'poam-items', label: 'POAM Items' },
   );
 
   return baseTabs;
