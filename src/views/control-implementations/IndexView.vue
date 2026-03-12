@@ -136,7 +136,9 @@
       ></div>
       <StatementByComponent
         :by-component="byComponent"
-        :control-id="selectedImplementedRequirement?.controlId || ''"
+        :control-id="selectedImplementedRequirement?.controlId"
+        :ssp-risks="sspRisks || []"
+        :risk-fetch-limit="RISK_FETCH_LIMIT"
       />
     </div>
   </Drawer>
@@ -165,6 +167,7 @@ import type { Catalog, Profile } from '@/oscal';
 import type {
   ControlImplementation,
   ImplementedRequirement,
+  Risk,
   Statement,
 } from '@/oscal';
 import Button from '@/volt/Button.vue';
@@ -231,12 +234,19 @@ const controlImplementations = ref<{ [key: string]: ImplementedRequirement }>(
   {},
 );
 const selectedImplementedRequirement = ref<ImplementedRequirement>();
+const RISK_FETCH_LIMIT = 100;
+const loadedSspRisksFor = ref<string | null>(null);
 const preparingBulkSuggestions = ref(false);
 const applyingBulkSuggestions = ref(false);
 const bulkSuggestionsConfirmOpen = ref(false);
 const BULK_SUGGESTIONS_CONCURRENCY_LIMIT = 5;
 
 const error = ref<AxiosError<unknown> | null>(null);
+const { data: sspRisks, execute: loadSspRisks } = useDataApi<Risk[]>(
+  null,
+  {},
+  { immediate: false },
+);
 
 const { nodes, build } = useCatalogTree();
 
@@ -599,6 +609,32 @@ function openImplementationDrawer(req: ImplementedRequirement) {
   uiStore.setControlImplementationSelectedRequirementId(req.uuid);
   selectedImplementedRequirement.value = req;
 }
+
+watch(
+  [() => controlDrawerOpen.value, () => systemStore.system.securityPlan?.uuid],
+  async ([isOpen, sspId]) => {
+    if (!sspId) {
+      sspRisks.value = [];
+      loadedSspRisksFor.value = null;
+      return;
+    }
+
+    if (!isOpen || loadedSspRisksFor.value === sspId) {
+      return;
+    }
+
+    const query = new URLSearchParams({ limit: `${RISK_FETCH_LIMIT}` });
+    const endpoint = `/api/oscal/system-security-plans/${sspId}/risks?${query.toString()}`;
+
+    try {
+      await loadSspRisks(endpoint);
+      loadedSspRisksFor.value = sspId;
+    } catch {
+      // Error state is already handled by useDataApi.
+    }
+  },
+  { immediate: true },
+);
 
 watch(
   () => uiStore.controlImplementationDrawerOpen,

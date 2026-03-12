@@ -212,6 +212,8 @@
                         <StatementByComponent
                           :by-component="byComponent"
                           :control-id="requirement.controlId"
+                          :ssp-risks="sspRisks || []"
+                          :risk-fetch-limit="RISK_FETCH_LIMIT"
                           @save="
                             handleSaveStatementByComponent(
                               requirement,
@@ -398,12 +400,13 @@
 
 <script setup lang="ts">
 import TooltipTitle from '@/components/TooltipTitle.vue';
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
 import type {
   ControlImplementation,
   ImplementedRequirement,
+  Risk,
   Statement,
   SystemSecurityPlan,
   ByComponent,
@@ -428,6 +431,7 @@ const { confirmDeleteDialog } = useDeleteConfirmationDialog();
 const error = ref<string | null>(null);
 
 const sspId = computed(() => getIdFromRoute(route));
+const RISK_FETCH_LIMIT = 100;
 
 // Modal states
 const showCreateRequirementModal = ref(false);
@@ -450,6 +454,11 @@ const { data: controlImplementation, isLoading: ciLoading } =
   useDataApi<ControlImplementation>(
     `/api/oscal/system-security-plans/${route.params.id}/control-implementation`,
   );
+const { data: sspRisks, execute: loadSspRisks } = useDataApi<Risk[]>(
+  null,
+  {},
+  { immediate: false },
+);
 const { execute: executeDelete } = useDataApi<void>(null, { method: 'DELETE' });
 const { execute: executeUpdateByComponent } = useDataApi<ByComponent>(null, {
   method: 'PUT',
@@ -482,6 +491,25 @@ const totalByComponents = computed(() => {
   );
   return total;
 });
+
+watch(
+  sspId,
+  async (value) => {
+    if (!value) {
+      sspRisks.value = [];
+      return;
+    }
+    const query = new URLSearchParams({ limit: `${RISK_FETCH_LIMIT}` });
+    try {
+      await loadSspRisks(
+        `/api/oscal/system-security-plans/${value}/risks?${query.toString()}`,
+      );
+    } catch {
+      // Error state is already handled by useDataApi.
+    }
+  },
+  { immediate: true },
+);
 
 // Control Implementation management
 const editControlImplementation = () => {

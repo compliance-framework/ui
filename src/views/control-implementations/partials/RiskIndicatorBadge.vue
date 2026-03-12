@@ -2,11 +2,14 @@
 import { computed } from 'vue';
 
 const props = defineProps<{
-  componentId: string;
-  controlId: string;
   riskCount: number;
+  isCapped?: boolean;
   highestSeverity?: 'high' | 'medium' | 'low';
 }>();
+
+const displayCount = computed(() =>
+  props.isCapped && props.riskCount >= 100 ? '99+' : `${props.riskCount}`,
+);
 
 const badgeColor = computed(() => {
   if (!props.highestSeverity || props.riskCount === 0)
@@ -25,9 +28,8 @@ const badgeColor = computed(() => {
 });
 
 const tooltipText = computed(() => {
-  if (props.riskCount === 0) return 'No risks';
-  if (props.riskCount === 1) return '1 risk associated';
-  return `${props.riskCount} risks associated`;
+  if (displayCount.value === '1') return '1 risk associated';
+  return `${displayCount.value} risks associated`;
 });
 </script>
 
@@ -41,6 +43,6 @@ const tooltipText = computed(() => {
     :title="tooltipText"
     :aria-label="tooltipText"
   >
-    ⚠️ {{ riskCount }}
+    ⚠️ {{ displayCount }}
   </span>
 </template>
