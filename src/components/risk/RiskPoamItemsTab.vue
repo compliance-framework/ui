@@ -111,9 +111,7 @@
                   v-if="item.milestones && item.milestones.length > 0"
                   class="text-xs text-gray-500 dark:text-slate-400"
                 >
-                  {{ completedMilestones(item) }}/{{
-                    item.milestones.length
-                  }}
+                  {{ completedMilestones(item) }}/{{ item.milestones.length }}
                   milestones
                 </span>
                 <span
