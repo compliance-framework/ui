@@ -198,6 +198,21 @@ describe('RiskCreateForm', () => {
     });
   });
 
+  it('renders manual status options without risk-accepted workflow state', () => {
+    const wrapper = mountForm();
+
+    expect(wrapper.find('option[value="open"]').exists()).toBe(true);
+    expect(wrapper.find('option[value="investigating"]').exists()).toBe(true);
+    expect(wrapper.find('option[value="mitigating-planned"]').exists()).toBe(
+      true,
+    );
+    expect(
+      wrapper.find('option[value="mitigating-implemented"]').exists(),
+    ).toBe(true);
+    expect(wrapper.find('option[value="risk-accepted"]').exists()).toBe(false);
+    expect(wrapper.find('option[value="closed"]').exists()).toBe(true);
+  });
+
   it('handles 403 loading templates by disabling template selection', async () => {
     mockLoadTemplates.mockRejectedValueOnce({
       isAxiosError: true,

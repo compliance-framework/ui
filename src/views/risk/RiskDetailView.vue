@@ -47,11 +47,11 @@
           >
             <div>
               <span class="font-semibold">Status:</span>
-              <span class="ml-1 capitalize">{{ risk.status }}</span>
+              <span class="ml-1">{{ riskStatusDisplay }}</span>
             </div>
             <div>
               <span class="font-semibold">Review Deadline:</span>
-              <span class="ml-1">{{ formatDate(risk.deadline) }}</span>
+              <span class="ml-1">{{ formatDate(overviewReviewDeadline) }}</span>
             </div>
             <div>
               <span class="font-semibold">Threat IDs:</span>
@@ -92,6 +92,224 @@
 
         <div>
           <div v-if="activeTab === 'overview'" class="space-y-4">
+            <div
+              class="bg-white dark:bg-slate-900 border border-ccf-300 dark:border-slate-700 rounded-lg p-4 space-y-4"
+            >
+              <div class="flex flex-wrap items-center justify-between gap-3">
+                <h3
+                  class="text-sm font-semibold text-gray-800 dark:text-slate-200"
+                >
+                  Lifecycle
+                </h3>
+                <div v-if="isSspContext" class="flex flex-wrap gap-2">
+                  <button
+                    v-if="canStartInvestigationAction"
+                    class="px-3 py-1 rounded-md text-sm bg-amber-600 hover:bg-amber-700 text-white disabled:opacity-60"
+                    :disabled="workflowSubmitting"
+                    @click="startInvestigation"
+                  >
+                    Start Investigation
+                  </button>
+                  <button
+                    v-if="canCloseAction"
+                    class="px-3 py-1 rounded-md text-sm bg-rose-700 hover:bg-rose-800 text-white disabled:opacity-60"
+                    :disabled="workflowSubmitting"
+                    @click="closeRisk"
+                  >
+                    Close Risk
+                  </button>
+                  <button
+                    v-if="canAcceptAction"
+                    class="px-3 py-1 rounded-md text-sm bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-60"
+                    :disabled="workflowSubmitting"
+                    @click="showAcceptModal = true"
+                  >
+                    Accept Risk
+                  </button>
+                  <button
+                    v-if="canReviewAction"
+                    class="px-3 py-1 rounded-md text-sm bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-60"
+                    :disabled="workflowSubmitting"
+                    @click="showReviewModal = true"
+                  >
+                    Review Risk
+                  </button>
+                </div>
+              </div>
+
+              <div
+                class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 text-sm text-gray-700 dark:text-slate-300"
+              >
+                <div>
+                  <p
+                    class="text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400"
+                  >
+                    Status
+                  </p>
+                  <p class="font-medium text-gray-900 dark:text-slate-100">
+                    {{ riskStatusDisplay }}
+                  </p>
+                </div>
+
+                <div>
+                  <p
+                    class="text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400"
+                  >
+                    Review Deadline
+                  </p>
+                  <p class="font-medium text-gray-900 dark:text-slate-100">
+                    {{ formatDate(overviewReviewDeadline) }}
+                  </p>
+                </div>
+
+                <div>
+                  <p
+                    class="text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400"
+                  >
+                    Last Reviewed At
+                  </p>
+                  <p class="font-medium text-gray-900 dark:text-slate-100">
+                    {{ formatDate(overviewLastReviewedAt) }}
+                  </p>
+                </div>
+
+                <div>
+                  <p
+                    class="text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400"
+                  >
+                    Source Type
+                  </p>
+                  <p class="font-medium text-gray-900 dark:text-slate-100">
+                    {{ sourceTypeDisplay }}
+                  </p>
+                </div>
+
+                <div>
+                  <p
+                    class="text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400"
+                  >
+                    First Seen
+                  </p>
+                  <p class="font-medium text-gray-900 dark:text-slate-100">
+                    {{ formatDate(overviewFirstSeenAt) }}
+                  </p>
+                </div>
+
+                <div>
+                  <p
+                    class="text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400"
+                  >
+                    Last Seen
+                  </p>
+                  <p class="font-medium text-gray-900 dark:text-slate-100">
+                    {{ formatDate(overviewLastSeenAt) }}
+                  </p>
+                </div>
+              </div>
+
+              <div
+                class="rounded-md border border-ccf-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 p-3"
+              >
+                <p
+                  class="text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400"
+                >
+                  Acceptance Justification
+                </p>
+                <p
+                  class="mt-1 text-sm text-gray-700 dark:text-slate-300 whitespace-pre-wrap"
+                >
+                  {{ overviewAcceptanceJustification || 'N/A' }}
+                </p>
+              </div>
+            </div>
+
+            <div
+              class="bg-white dark:bg-slate-900 border border-ccf-300 dark:border-slate-700 rounded-lg p-4 space-y-3"
+            >
+              <h3
+                class="text-sm font-semibold text-gray-800 dark:text-slate-200"
+              >
+                Workflow State
+              </h3>
+
+              <p class="text-sm text-gray-700 dark:text-slate-300">
+                <span class="font-semibold"
+                  >{{ workflowStageSummary.title }}:</span
+                >
+                <span class="ml-1">{{ workflowStageSummary.description }}</span>
+              </p>
+
+              <p class="text-sm text-gray-700 dark:text-slate-300">
+                <span class="font-semibold">Allowed next transitions:</span>
+                <span class="ml-1">{{ workflowNextTransitionsSummary }}</span>
+              </p>
+
+              <ul
+                class="list-disc list-inside text-sm text-gray-600 dark:text-slate-400 space-y-1"
+              >
+                <li v-for="hint in workflowHints" :key="hint">
+                  {{ hint }}
+                </li>
+              </ul>
+
+              <div
+                class="border border-ccf-300 dark:border-slate-700 rounded-md overflow-hidden"
+              >
+                <div
+                  class="px-3 py-2 bg-slate-100 dark:bg-slate-800 text-xs uppercase tracking-wide text-gray-600 dark:text-slate-300"
+                >
+                  Transition Matrix
+                </div>
+                <div class="divide-y divide-ccf-300 dark:divide-slate-700">
+                  <div
+                    v-for="row in workflowTransitionRows"
+                    :key="row.status"
+                    class="px-3 py-2 text-sm flex flex-col md:flex-row md:items-center md:justify-between gap-1"
+                    :class="
+                      row.status === normalizedRiskStatus
+                        ? 'bg-blue-50 dark:bg-blue-900/20'
+                        : ''
+                    "
+                  >
+                    <span class="font-medium text-gray-800 dark:text-slate-200">
+                      {{ riskStatusLabel(row.status) }}
+                    </span>
+                    <span class="text-gray-600 dark:text-slate-400">
+                      {{
+                        row.next.length
+                          ? row.next
+                              .map((item) => riskStatusLabel(item))
+                              .join(', ')
+                          : 'No direct status transitions'
+                      }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <p class="text-xs text-gray-500 dark:text-slate-400">
+                Review decision outcomes for Risk Accepted:
+                <span class="font-semibold">Extend</span> keeps risk accepted
+                with a new review deadline;
+                <span class="font-semibold">Reopen</span>
+                transitions the risk back to Investigating.
+              </p>
+            </div>
+
+            <RiskOwnerAssignment
+              v-if="isSspContext"
+              :initial-value="ownerAssignmentsDraft"
+              :reset-key="ownerAssignmentsResetKey"
+              :disabled="workflowSubmitting"
+              mode="overview"
+              @change="onOverviewOwnerAssignmentsChange"
+              @save="saveOverviewOwnerAssignments"
+            />
+
+            <Message v-if="ownerSaveError" severity="error" variant="outlined">
+              {{ ownerSaveError }}
+            </Message>
+
             <div
               v-if="risk.remarks"
               class="bg-white dark:bg-slate-900 border border-ccf-300 dark:border-slate-700 rounded-lg p-4"
@@ -377,6 +595,23 @@
       </div>
     </div>
 
+    <RiskAcceptModal
+      v-if="risk && isSspContext"
+      v-model:visible="showAcceptModal"
+      :submitting="workflowSubmitting"
+      :initial-owner-assignments="ownerAssignmentsSnapshot"
+      @submit="submitAcceptRisk"
+    />
+
+    <RiskReviewModal
+      v-if="risk && isSspContext"
+      v-model:visible="showReviewModal"
+      :submitting="workflowSubmitting"
+      :acceptance-justification="overviewAcceptanceJustification"
+      :review-deadline="overviewReviewDeadline"
+      @submit="submitReviewRisk"
+    />
+
     <Dialog
       v-model:visible="showAssociationPicker"
       modal
@@ -441,6 +676,9 @@ import Dialog from '@/volt/Dialog.vue';
 import TertiaryButton from '@/volt/TertiaryButton.vue';
 import RouterLinkButton from '@/components/RouterLinkButton.vue';
 import RiskLogTab from '@/components/risk/RiskLogTab.vue';
+import RiskAcceptModal from '@/components/risk/RiskAcceptModal.vue';
+import RiskReviewModal from '@/components/risk/RiskReviewModal.vue';
+import RiskOwnerAssignment from '@/components/risk/RiskOwnerAssignment.vue';
 import { useSystemStore } from '@/stores/system';
 import type { Profile, Risk, SystemComponent } from '@/oscal';
 import type { Evidence, EvidenceLabel } from '@/stores/evidence';
@@ -450,6 +688,22 @@ import {
   decamelizeKeys,
   useAuthenticatedInstance,
 } from '@/composables/axios';
+import {
+  ALLOWED_RISK_TRANSITIONS,
+  canAcceptRisk,
+  canReviewRisk,
+  getAllowedRiskTransitions,
+  normalizeRiskRegisterStatus,
+  normalizeOwnerAssignments,
+  ownerAssignmentsSignature,
+  riskStatusLabel,
+  riskWorkflowHints,
+  riskWorkflowStage,
+  riskWorkflowStageSummary,
+  type RiskOwnerAssignmentsPayload,
+  type RiskReviewDecision,
+} from '@/utils/risk-workflow';
+import { getRiskReviewDeadline } from '@/utils/risk-register';
 import {
   buildRiskCollectionEndpoint,
   buildRiskItemEndpoint,
@@ -495,6 +749,18 @@ interface ResolvedControlWithCatalog {
   class?: string;
 }
 
+interface RiskAcceptSubmitPayload {
+  justification: string;
+  reviewDeadline: string;
+  ownerUpdate?: RiskOwnerAssignmentsPayload;
+}
+
+interface RiskReviewSubmitPayload {
+  decision: RiskReviewDecision;
+  notes?: string;
+  nextReviewDeadline?: string;
+}
+
 const tabs = [
   { id: 'overview', label: 'Overview' },
   { id: 'evidence', label: 'Evidence' },
@@ -529,6 +795,8 @@ const isSspRoute = computed(
     route.name === 'risks:index' ||
     route.name === 'risks:detail',
 );
+
+const isSspContext = computed(() => context.value?.scope === 'ssp');
 
 const missingContextTitle = computed(() =>
   isSspRoute.value
@@ -574,6 +842,16 @@ const { isLoading: savingAssociation, execute: executeAssociationMutation } =
   );
 
 const {
+  data: mutatedRisk,
+  isLoading: mutatingRisk,
+  execute: executeRiskMutation,
+} = useDataApi<Risk>(
+  null,
+  { transformRequest: [decamelizeKeys] },
+  { immediate: false },
+);
+
+const {
   data: fetchedEvents,
   isLoading: loadingEvents,
   execute: executeFetchEvents,
@@ -616,6 +894,17 @@ const notFound = ref(false);
 const loadError = ref('');
 
 const activeTab = ref<TabId>('overview');
+const showAcceptModal = ref(false);
+const showReviewModal = ref(false);
+const ownerAssignmentsDraft = ref<RiskOwnerAssignmentsPayload>({
+  ownerAssignments: [],
+});
+const ownerAssignmentsSnapshot = ref<RiskOwnerAssignmentsPayload>({
+  ownerAssignments: [],
+});
+const ownerAssignmentsSnapshotSignature = ref('');
+const ownerAssignmentsResetKey = ref(0);
+const ownerSaveError = ref('');
 
 const resolvedRiskId = computed(
   () => getRiskIdentifier(risk.value) || riskId.value || '',
@@ -631,7 +920,8 @@ const pageTitle = computed(() =>
 );
 
 const loading = computed(() => loadingRisk.value || loadingRiskList.value);
-const saving = computed(() => savingAssociation.value);
+const saving = computed(() => savingAssociation.value || mutatingRisk.value);
+const workflowSubmitting = computed(() => mutatingRisk.value);
 
 function isCanceledError(err: unknown): boolean {
   const maybeError = err as { message?: string; code?: string };
@@ -641,16 +931,17 @@ function isCanceledError(err: unknown): boolean {
   );
 }
 
-function extractErrorMessage(err: unknown): string {
+function extractErrorMessage(
+  err: unknown,
+  fallback = 'Unable to complete request.',
+): string {
   const maybeError = err as {
     message?: string;
     response?: { data?: { errors?: { body?: string } } };
   };
 
   return (
-    maybeError?.response?.data?.errors?.body ||
-    maybeError?.message ||
-    'Unable to load risk.'
+    maybeError?.response?.data?.errors?.body || maybeError?.message || fallback
   );
 }
 
@@ -696,6 +987,12 @@ async function loadRisk() {
   evidenceAssociations.value = [];
   controlAssociations.value = [];
   componentAssociations.value = [];
+  showAcceptModal.value = false;
+  showReviewModal.value = false;
+  ownerSaveError.value = '';
+  ownerAssignmentsDraft.value = { ownerAssignments: [] };
+  ownerAssignmentsSnapshot.value = { ownerAssignments: [] };
+  ownerAssignmentsSnapshotSignature.value = '';
   let detailFetchError: unknown = null;
 
   if (contextMissing.value || !detailEndpoint.value || !listEndpoint.value) {
@@ -723,7 +1020,7 @@ async function loadRisk() {
       }
     } catch (err) {
       if (isCanceledError(err)) return;
-      loadError.value = extractErrorMessage(err);
+      loadError.value = extractErrorMessage(err, 'Unable to load risk.');
       return;
     }
   }
@@ -733,7 +1030,10 @@ async function loadRisk() {
       detailFetchError as { response?: { status?: number } }
     )?.response?.status;
     if (detailFetchError && detailStatus !== 404) {
-      loadError.value = extractErrorMessage(detailFetchError);
+      loadError.value = extractErrorMessage(
+        detailFetchError,
+        'Unable to load risk.',
+      );
       return;
     }
     notFound.value = true;
@@ -741,6 +1041,7 @@ async function loadRisk() {
   }
 
   syncAssociationsFromRisk();
+  syncOwnerAssignmentsFromRisk();
   await refreshAllAssociationLinks();
   await loadRiskEvents();
 }
@@ -782,6 +1083,92 @@ const associationBaseEndpoint = computed(() => {
   if (!associationsSspId.value || !resolvedRiskId.value) return null;
   return `/api/oscal/system-security-plans/${associationsSspId.value}/risks/${resolvedRiskId.value}`;
 });
+
+const normalizedRiskStatus = computed(() =>
+  normalizeRiskRegisterStatus(risk.value?.status),
+);
+
+const riskStatusDisplay = computed(() => riskStatusLabel(risk.value?.status));
+
+const overviewReviewDeadline = computed(() =>
+  risk.value ? getRiskReviewDeadline(risk.value) : undefined,
+);
+
+const overviewLastReviewedAt = computed(() =>
+  readRiskString(['lastReviewedAt', 'lastReviewed']),
+);
+
+const overviewAcceptanceJustification = computed(() =>
+  readRiskString(['acceptanceJustification']),
+);
+
+const overviewFirstSeenAt = computed(() =>
+  readRiskString(['firstSeenAt', 'firstObservedAt']),
+);
+
+const overviewLastSeenAt = computed(() =>
+  readRiskString(['lastSeenAt', 'lastObservedAt']),
+);
+
+const sourceTypeDisplay = computed(() =>
+  formatTokenLabel(readRiskString(['sourceType']) || 'manual'),
+);
+
+const workflowStage = computed(() => riskWorkflowStage(risk.value?.status));
+
+const workflowStageSummary = computed(() =>
+  riskWorkflowStageSummary(workflowStage.value),
+);
+
+const workflowHints = computed(() => riskWorkflowHints(risk.value?.status));
+
+const workflowNextTransitions = computed(() =>
+  getAllowedRiskTransitions(risk.value?.status),
+);
+
+const workflowNextTransitionsSummary = computed(() =>
+  workflowNextTransitions.value.length
+    ? workflowNextTransitions.value
+        .map((status) => riskStatusLabel(status))
+        .join(', ')
+    : 'No direct status transitions available.',
+);
+
+const workflowTransitionRows = computed(() =>
+  (
+    Object.entries(ALLOWED_RISK_TRANSITIONS) as Array<
+      [keyof typeof ALLOWED_RISK_TRANSITIONS, string[]]
+    >
+  ).map(([status, next]) => ({
+    status,
+    next,
+  })),
+);
+
+const canAcceptAction = computed(
+  () => isSspContext.value && canAcceptRisk(risk.value?.status),
+);
+
+const canReviewAction = computed(
+  () => isSspContext.value && canReviewRisk(risk.value?.status),
+);
+
+const canStartInvestigationAction = computed(
+  () => isSspContext.value && normalizedRiskStatus.value === 'open',
+);
+
+const canCloseAction = computed(
+  () => isSspContext.value && workflowNextTransitions.value.includes('closed'),
+);
+
+// TODO(BCH-1206): add mitigation workflow actions once POA&M implementation lands.
+// Planned gaps: investigating -> mitigating-planned and
+// mitigating-planned -> mitigating-implemented.
+const ownerAssignmentsDirty = computed(
+  () =>
+    ownerAssignmentsSignature(ownerAssignmentsDraft.value) !==
+    ownerAssignmentsSnapshotSignature.value,
+);
 
 const loadedComponentsSspId = ref('');
 const loadedControlsSspId = ref('');
@@ -853,6 +1240,312 @@ function syncAssociationsFromRisk() {
     risk.value,
     'components',
   ).map((item) => ({ ...item }));
+}
+
+function readRiskString(keys: string[]): string | undefined {
+  const source = toRecord(risk.value);
+  if (!source) return undefined;
+  return readString(source, keys);
+}
+
+function formatTokenLabel(value?: string): string {
+  const normalized = (value || '').trim();
+  if (!normalized) return 'N/A';
+  return normalized
+    .split(/[-_\s]+/)
+    .filter(Boolean)
+    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
+    .join(' ');
+}
+
+function ownerAssignmentsFromRisk(
+  currentRisk: Risk | null,
+): RiskOwnerAssignmentsPayload {
+  const source = toRecord(currentRisk) || {};
+  const primaryOwnerUserId = readString(source, ['primaryOwnerUserId']);
+  const rawAssignments = Array.isArray(source.ownerAssignments)
+    ? source.ownerAssignments
+    : [];
+
+  const ownerAssignments = rawAssignments
+    .map((entry) => {
+      const assignment = toRecord(entry);
+      if (!assignment) return null;
+      const ownerKind = readString(assignment, ['ownerKind']) || '';
+      const ownerRef = readString(assignment, ['ownerRef']) || '';
+      const isPrimary = Boolean(assignment.isPrimary);
+      if (ownerKind !== 'user' || !ownerRef) return null;
+      return {
+        ownerKind: 'user' as const,
+        ownerRef,
+        isPrimary,
+      };
+    })
+    .filter(
+      (
+        assignment,
+      ): assignment is RiskOwnerAssignmentsPayload['ownerAssignments'][number] =>
+        !!assignment,
+    );
+
+  return normalizeOwnerAssignments({
+    primaryOwnerUserId,
+    ownerAssignments,
+  });
+}
+
+function syncOwnerAssignmentsFromRisk() {
+  const normalized = ownerAssignmentsFromRisk(risk.value);
+  ownerAssignmentsDraft.value = cloneDeep(normalized);
+  ownerAssignmentsSnapshot.value = cloneDeep(normalized);
+  ownerAssignmentsSnapshotSignature.value =
+    ownerAssignmentsSignature(normalized);
+  ownerAssignmentsResetKey.value += 1;
+  ownerSaveError.value = '';
+}
+
+function onOverviewOwnerAssignmentsChange(
+  payload: RiskOwnerAssignmentsPayload,
+) {
+  ownerAssignmentsDraft.value = normalizeOwnerAssignments(payload);
+  ownerSaveError.value = '';
+}
+
+function applyRiskUpdate(updated: Risk | undefined) {
+  if (!updated) return;
+  risk.value = cloneDeep(updated);
+  syncOwnerAssignmentsFromRisk();
+  notifyRiskUpdated(risk.value);
+}
+
+function buildRiskPutPayload(
+  overrides: Record<string, unknown>,
+): Record<string, unknown> | null {
+  if (!risk.value) return null;
+  return {
+    ...(cloneDeep(risk.value) as Record<string, unknown>),
+    ...overrides,
+  };
+}
+
+async function saveOwnerAssignments(
+  payload: RiskOwnerAssignmentsPayload,
+  options: { showSuccessToast?: boolean } = {},
+): Promise<boolean> {
+  if (!isSspContext.value || !detailEndpoint.value) {
+    return false;
+  }
+
+  const normalized = normalizeOwnerAssignments(payload);
+  if (!normalized.primaryOwnerUserId) {
+    const detail = 'Primary owner is required before saving owner assignments.';
+    ownerSaveError.value = detail;
+    toast.add({
+      severity: 'error',
+      summary: 'Owner update failed',
+      detail,
+      life: 4000,
+    });
+    return false;
+  }
+  const updatePayload = buildRiskPutPayload({
+    primaryOwnerUserId: normalized.primaryOwnerUserId,
+    ownerAssignments: normalized.ownerAssignments,
+  });
+  if (!updatePayload) {
+    ownerSaveError.value =
+      'Unable to update owners: risk details are unavailable.';
+    return false;
+  }
+  ownerSaveError.value = '';
+
+  try {
+    await executeRiskMutation(detailEndpoint.value, {
+      method: 'PUT',
+      data: updatePayload,
+    });
+    const updatedRisk = mutatedRisk.value;
+    applyRiskUpdate(updatedRisk);
+    if (options.showSuccessToast !== false) {
+      toast.add({
+        severity: 'success',
+        summary: 'Saved',
+        detail: 'Owner assignments updated',
+        life: 3000,
+      });
+    }
+    return true;
+  } catch (err) {
+    const detail = extractErrorMessage(err);
+    ownerSaveError.value = detail;
+    toast.add({
+      severity: 'error',
+      summary: 'Owner update failed',
+      detail,
+      life: 4000,
+    });
+    return false;
+  }
+}
+
+async function saveOverviewOwnerAssignments() {
+  if (!ownerAssignmentsDirty.value) {
+    ownerAssignmentsResetKey.value += 1;
+    return;
+  }
+  await saveOwnerAssignments(ownerAssignmentsDraft.value);
+}
+
+async function updateRiskStatus(
+  status: 'investigating' | 'closed',
+  summary: string,
+  detail: string,
+) {
+  if (!isSspContext.value || !detailEndpoint.value) return;
+
+  const updatePayload = buildRiskPutPayload({ status });
+  if (!updatePayload) {
+    toast.add({
+      severity: 'error',
+      summary: 'Status update failed',
+      detail: 'Unable to update status: risk details are unavailable.',
+      life: 4000,
+    });
+    return;
+  }
+
+  try {
+    await executeRiskMutation(detailEndpoint.value, {
+      method: 'PUT',
+      data: updatePayload,
+    });
+    const updatedRisk = mutatedRisk.value;
+    applyRiskUpdate(updatedRisk);
+    await loadRiskEvents();
+    toast.add({
+      severity: 'success',
+      summary,
+      detail,
+      life: 3000,
+    });
+  } catch (err) {
+    toast.add({
+      severity: 'error',
+      summary: 'Status update failed',
+      detail: extractErrorMessage(err),
+      life: 4000,
+    });
+  }
+}
+
+async function startInvestigation() {
+  await updateRiskStatus(
+    'investigating',
+    'Investigation started',
+    'Risk status updated to Investigating.',
+  );
+}
+
+async function closeRisk() {
+  await updateRiskStatus(
+    'closed',
+    'Risk closed',
+    'Risk status updated to Closed.',
+  );
+}
+
+async function submitAcceptRisk(payload: RiskAcceptSubmitPayload) {
+  if (!isSspContext.value || !detailEndpoint.value) return;
+
+  try {
+    if (payload.ownerUpdate) {
+      const ownerSaved = await saveOwnerAssignments(payload.ownerUpdate, {
+        showSuccessToast: false,
+      });
+      if (!ownerSaved) {
+        return;
+      }
+    }
+
+    await executeRiskMutation(`${detailEndpoint.value}/accept`, {
+      method: 'POST',
+      data: {
+        justification: payload.justification,
+        reviewDeadline: payload.reviewDeadline,
+      },
+    });
+    const updatedRisk = mutatedRisk.value;
+    applyRiskUpdate(updatedRisk);
+    showAcceptModal.value = false;
+    await loadRiskEvents();
+
+    toast.add({
+      severity: 'success',
+      summary: 'Risk accepted',
+      detail: 'Risk acceptance has been recorded.',
+      life: 3000,
+    });
+  } catch (err) {
+    toast.add({
+      severity: 'error',
+      summary: 'Accept failed',
+      detail: extractErrorMessage(err),
+      life: 4000,
+    });
+  }
+}
+
+async function submitReviewRisk(payload: RiskReviewSubmitPayload) {
+  if (!isSspContext.value || !detailEndpoint.value) return;
+
+  if (payload.decision === 'extend' && !payload.nextReviewDeadline) {
+    toast.add({
+      severity: 'error',
+      summary: 'Validation Error',
+      detail: 'Next review deadline is required when decision is extend.',
+      life: 3500,
+    });
+    return;
+  }
+
+  if (payload.decision === 'reopen' && payload.nextReviewDeadline) {
+    toast.add({
+      severity: 'error',
+      summary: 'Validation Error',
+      detail: 'Next review deadline must be empty when decision is reopen.',
+      life: 3500,
+    });
+    return;
+  }
+
+  try {
+    await executeRiskMutation(`${detailEndpoint.value}/review`, {
+      method: 'POST',
+      data: {
+        decision: payload.decision,
+        notes: payload.notes,
+        nextReviewDeadline: payload.nextReviewDeadline,
+      },
+    });
+    const updatedRisk = mutatedRisk.value;
+    applyRiskUpdate(updatedRisk);
+    showReviewModal.value = false;
+    await loadRiskEvents();
+
+    toast.add({
+      severity: 'success',
+      summary: 'Review recorded',
+      detail: 'Risk review has been saved.',
+      life: 3000,
+    });
+  } catch (err) {
+    toast.add({
+      severity: 'error',
+      summary: 'Review failed',
+      detail: extractErrorMessage(err),
+      life: 4000,
+    });
+  }
 }
 
 function associationCollectionEndpoint(kind: RiskAssociationKind) {

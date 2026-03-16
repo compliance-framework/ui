@@ -11,12 +11,49 @@ const mockRoute = {
   },
 };
 
-const mockRisk = {
+type MockRisk = {
+  uuid: string;
+  title: string;
+  description: string;
+  statement: string;
+  status: string;
+  reviewDeadline?: string;
+  lastReviewedAt?: string;
+  acceptanceJustification?: string;
+  sourceType: string;
+  firstSeenAt: string;
+  lastSeenAt: string;
+  primaryOwnerUserId?: string;
+  ownerAssignments: Array<{
+    ownerKind: string;
+    ownerRef: string;
+    isPrimary: boolean;
+  }>;
+  riskLog: {
+    entries: Array<Record<string, unknown>>;
+  };
+};
+
+const mockRisk: MockRisk = {
   uuid: 'risk-1',
   title: 'Database Encryption Risk',
   description: 'Encryption policy drift.',
   statement: 'Data at rest may not be encrypted.',
   status: 'open',
+  reviewDeadline: '2026-04-01T12:00:00Z',
+  lastReviewedAt: '2026-03-01T12:00:00Z',
+  acceptanceJustification: 'Accepted pending migration.',
+  sourceType: 'manual',
+  firstSeenAt: '2026-01-01T00:00:00Z',
+  lastSeenAt: '2026-03-10T00:00:00Z',
+  primaryOwnerUserId: '8d6d887f-2a45-4d8f-9cb0-6e8d3595d87f',
+  ownerAssignments: [
+    {
+      ownerKind: 'user',
+      ownerRef: '8d6d887f-2a45-4d8f-9cb0-6e8d3595d87f',
+      isPrimary: true,
+    },
+  ],
   riskLog: { entries: [] as Array<Record<string, unknown>> },
 };
 
@@ -54,6 +91,35 @@ const { apiCalls, mockApiState, resetMockApiState } = vi.hoisted(() => {
       class: string;
     }>,
     eventResponses: {} as Record<string, unknown>,
+    acceptModalPayload: {
+      justification: 'Business accepted for now',
+      reviewDeadline: '2026-04-20T10:00:00.000Z',
+      ownerUpdate: {
+        primaryOwnerUserId: '9ca68f40-f5cd-4f7a-a788-5f5d68d56e6e',
+        ownerAssignments: [
+          {
+            ownerKind: 'user',
+            ownerRef: '9ca68f40-f5cd-4f7a-a788-5f5d68d56e6e',
+            isPrimary: true,
+          },
+        ],
+      },
+    } as Record<string, unknown>,
+    reviewModalPayload: {
+      decision: 'extend',
+      notes: 'Continue accepted status',
+      nextReviewDeadline: '2026-05-01T00:00:00.000Z',
+    } as Record<string, unknown>,
+    ownerAssignmentChangePayload: {
+      primaryOwnerUserId: '8d6d887f-2a45-4d8f-9cb0-6e8d3595d87f',
+      ownerAssignments: [
+        {
+          ownerKind: 'user',
+          ownerRef: '8d6d887f-2a45-4d8f-9cb0-6e8d3595d87f',
+          isPrimary: true,
+        },
+      ],
+    } as Record<string, unknown>,
   };
 
   const resetMockApiState = () => {
@@ -71,6 +137,35 @@ const { apiCalls, mockApiState, resetMockApiState } = vi.hoisted(() => {
       },
     ];
     mockApiState.eventResponses = {};
+    mockApiState.acceptModalPayload = {
+      justification: 'Business accepted for now',
+      reviewDeadline: '2026-04-20T10:00:00.000Z',
+      ownerUpdate: {
+        primaryOwnerUserId: '9ca68f40-f5cd-4f7a-a788-5f5d68d56e6e',
+        ownerAssignments: [
+          {
+            ownerKind: 'user',
+            ownerRef: '9ca68f40-f5cd-4f7a-a788-5f5d68d56e6e',
+            isPrimary: true,
+          },
+        ],
+      },
+    };
+    mockApiState.reviewModalPayload = {
+      decision: 'extend',
+      notes: 'Continue accepted status',
+      nextReviewDeadline: '2026-05-01T00:00:00.000Z',
+    };
+    mockApiState.ownerAssignmentChangePayload = {
+      primaryOwnerUserId: '8d6d887f-2a45-4d8f-9cb0-6e8d3595d87f',
+      ownerAssignments: [
+        {
+          ownerKind: 'user',
+          ownerRef: '8d6d887f-2a45-4d8f-9cb0-6e8d3595d87f',
+          isPrimary: true,
+        },
+      ],
+    };
   };
 
   return {
@@ -156,9 +251,83 @@ vi.mock('@/composables/axios', () => ({
       });
 
       if (endpoint.endsWith('/risks/risk-1')) {
-        data.value = mockRisk;
+        if (method === 'PUT') {
+          const payload = (requestConfig.data || {}) as Record<string, unknown>;
+
+          if ('status' in payload && typeof payload.status === 'string') {
+            mockRisk.status = payload.status;
+          }
+          if (
+            'reviewDeadline' in payload &&
+            typeof payload.reviewDeadline === 'string'
+          ) {
+            mockRisk.reviewDeadline = payload.reviewDeadline;
+          }
+          if (
+            'lastReviewedAt' in payload &&
+            typeof payload.lastReviewedAt === 'string'
+          ) {
+            mockRisk.lastReviewedAt = payload.lastReviewedAt;
+          }
+          if (
+            'acceptanceJustification' in payload &&
+            typeof payload.acceptanceJustification === 'string'
+          ) {
+            mockRisk.acceptanceJustification = payload.acceptanceJustification;
+          }
+          if (
+            'ownerAssignments' in payload &&
+            Array.isArray(payload.ownerAssignments)
+          ) {
+            mockRisk.ownerAssignments = payload.ownerAssignments as Array<{
+              ownerKind: string;
+              ownerRef: string;
+              isPrimary: boolean;
+            }>;
+          }
+          if (
+            'primaryOwnerUserId' in payload &&
+            typeof payload.primaryOwnerUserId === 'string'
+          ) {
+            mockRisk.primaryOwnerUserId = payload.primaryOwnerUserId;
+          }
+        }
+
+        data.value = { ...mockRisk };
+      } else if (
+        endpoint.endsWith('/risks/risk-1/accept') &&
+        method === 'POST'
+      ) {
+        const payload = (requestConfig.data || {}) as Record<string, unknown>;
+        mockRisk.status = 'risk-accepted';
+        if (typeof payload.justification === 'string') {
+          mockRisk.acceptanceJustification = payload.justification;
+        }
+        if (typeof payload.reviewDeadline === 'string') {
+          mockRisk.reviewDeadline = payload.reviewDeadline;
+        }
+        mockRisk.lastReviewedAt = '2026-03-16T12:00:00Z';
+        data.value = { ...mockRisk };
+      } else if (
+        endpoint.endsWith('/risks/risk-1/review') &&
+        method === 'POST'
+      ) {
+        const payload = (requestConfig.data || {}) as Record<string, unknown>;
+        if (payload.decision === 'extend') {
+          mockRisk.status = 'risk-accepted';
+          if (typeof payload.nextReviewDeadline === 'string') {
+            mockRisk.reviewDeadline = payload.nextReviewDeadline;
+          }
+        }
+        if (payload.decision === 'reopen') {
+          mockRisk.status = 'investigating';
+          mockRisk.reviewDeadline = undefined;
+          mockRisk.acceptanceJustification = undefined;
+        }
+        mockRisk.lastReviewedAt = '2026-03-16T12:30:00Z';
+        data.value = { ...mockRisk };
       } else if (endpoint.endsWith('/system-security-plans/ssp-1/risks')) {
-        data.value = [mockRisk];
+        data.value = [{ ...mockRisk }];
       } else if (endpoint in mockApiState.eventResponses) {
         data.value = mockApiState.eventResponses[endpoint];
       } else if (endpoint.includes('/events')) {
@@ -298,6 +467,32 @@ function mountComponent() {
         TertiaryButton: { template: '<button><slot /></button>' },
         RouterLinkButton: { template: '<button><slot /></button>' },
         RiskLogTab: { template: '<div>Risk log tab</div>' },
+        RiskAcceptModal: {
+          props: ['visible'],
+          emits: ['update:visible', 'submit'],
+          setup() {
+            return { mockApiState };
+          },
+          template:
+            '<div v-if="visible" data-testid="accept-modal"><button data-testid="accept-modal-submit" @click="$emit(\'submit\', mockApiState.acceptModalPayload)">Submit Accept</button></div>',
+        },
+        RiskReviewModal: {
+          props: ['visible'],
+          emits: ['update:visible', 'submit'],
+          setup() {
+            return { mockApiState };
+          },
+          template:
+            '<div v-if="visible" data-testid="review-modal"><button data-testid="review-modal-submit" @click="$emit(\'submit\', mockApiState.reviewModalPayload)">Submit Review</button></div>',
+        },
+        RiskOwnerAssignment: {
+          emits: ['change', 'save'],
+          setup() {
+            return { mockApiState };
+          },
+          template:
+            '<div data-testid="owner-assignment"><button data-testid="owner-assignment-change" @click="$emit(\'change\', mockApiState.ownerAssignmentChangePayload)">Emit Owner Change</button><button data-testid="owner-assignment-save" @click="$emit(\'save\')">Save Owner</button></div>',
+        },
       },
     },
   });
@@ -342,6 +537,18 @@ describe('RiskDetailView', () => {
     resetMockApiState();
     vi.clearAllMocks();
     vi.spyOn(window, 'confirm').mockReturnValue(true);
+    mockRisk.status = 'open';
+    mockRisk.reviewDeadline = '2026-04-01T12:00:00Z';
+    mockRisk.lastReviewedAt = '2026-03-01T12:00:00Z';
+    mockRisk.acceptanceJustification = 'Accepted pending migration.';
+    mockRisk.primaryOwnerUserId = '8d6d887f-2a45-4d8f-9cb0-6e8d3595d87f';
+    mockRisk.ownerAssignments = [
+      {
+        ownerKind: 'user',
+        ownerRef: '8d6d887f-2a45-4d8f-9cb0-6e8d3595d87f',
+        isPrimary: true,
+      },
+    ];
   });
 
   it('renders the new risk detail tabs and history event entry', async () => {
@@ -360,6 +567,275 @@ describe('RiskDetailView', () => {
     await flushPromises();
 
     expect(wrapper.text()).toContain('Risk created');
+  });
+
+  it('renders lifecycle and workflow content in the overview tab', async () => {
+    mockRisk.status = 'risk-accepted';
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    const text = wrapper.text();
+    expect(text).toContain('Lifecycle');
+    expect(text).toContain('Workflow State');
+    expect(text).toContain('Transition Matrix');
+    expect(text).toContain('Risk Accepted');
+    expect(text).toContain('Acceptance Justification');
+    expect(text).toContain('Source Type');
+  });
+
+  it('shows Accept Risk button only for investigating status', async () => {
+    mockRisk.status = 'investigating';
+    const investigatingWrapper = mountComponent();
+    await flushPromises();
+    expect(findButtonByText(investigatingWrapper, 'Accept Risk')).toBeDefined();
+
+    mockRisk.status = 'open';
+    const openWrapper = mountComponent();
+    await flushPromises();
+    expect(findButtonByText(openWrapper, 'Accept Risk')).toBeUndefined();
+  });
+
+  it('shows Review Risk button only for risk-accepted status', async () => {
+    mockRisk.status = 'risk-accepted';
+    const acceptedWrapper = mountComponent();
+    await flushPromises();
+    expect(findButtonByText(acceptedWrapper, 'Review Risk')).toBeDefined();
+
+    mockRisk.status = 'investigating';
+    const investigatingWrapper = mountComponent();
+    await flushPromises();
+    expect(
+      findButtonByText(investigatingWrapper, 'Review Risk'),
+    ).toBeUndefined();
+  });
+
+  it('shows start/close lifecycle actions for the correct statuses', async () => {
+    mockRisk.status = 'open';
+    const openWrapper = mountComponent();
+    await flushPromises();
+    expect(findButtonByText(openWrapper, 'Start Investigation')).toBeDefined();
+    expect(findButtonByText(openWrapper, 'Close Risk')).toBeDefined();
+
+    mockRisk.status = 'risk-accepted';
+    const acceptedWrapper = mountComponent();
+    await flushPromises();
+    expect(
+      findButtonByText(acceptedWrapper, 'Start Investigation'),
+    ).toBeUndefined();
+    expect(findButtonByText(acceptedWrapper, 'Close Risk')).toBeDefined();
+
+    mockRisk.status = 'investigating';
+    const investigatingWrapper = mountComponent();
+    await flushPromises();
+    expect(
+      findButtonByText(investigatingWrapper, 'Start Investigation'),
+    ).toBeUndefined();
+    expect(
+      findButtonByText(investigatingWrapper, 'Close Risk'),
+    ).toBeUndefined();
+  });
+
+  it('merges duplicate owner refs while preserving primary owner on save', async () => {
+    mockRisk.status = 'open';
+    mockApiState.ownerAssignmentChangePayload = {
+      ownerAssignments: [
+        {
+          ownerKind: 'user',
+          ownerRef: 'd6f19f16-e8b6-4f2d-b583-ef0a906f22e5',
+          isPrimary: false,
+        },
+        {
+          ownerKind: 'user',
+          ownerRef: 'd6f19f16-e8b6-4f2d-b583-ef0a906f22e5',
+          isPrimary: true,
+        },
+      ],
+    };
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    await wrapper
+      .get('[data-testid="owner-assignment-change"]')
+      .trigger('click');
+    await flushPromises();
+    await wrapper.get('[data-testid="owner-assignment-save"]').trigger('click');
+    await flushPromises();
+
+    const ownerPutCall = apiCalls.find(
+      (call) =>
+        call.endpoint ===
+          '/api/oscal/system-security-plans/ssp-1/risks/risk-1' &&
+        call.method === 'PUT' &&
+        Boolean(
+          (call.data as Record<string, unknown> | undefined)?.ownerAssignments,
+        ),
+    );
+
+    expect(ownerPutCall).toBeDefined();
+    expect(ownerPutCall?.data).toMatchObject({
+      primaryOwnerUserId: 'd6f19f16-e8b6-4f2d-b583-ef0a906f22e5',
+      ownerAssignments: [
+        {
+          ownerKind: 'user',
+          ownerRef: 'd6f19f16-e8b6-4f2d-b583-ef0a906f22e5',
+          isPrimary: true,
+        },
+      ],
+    });
+  });
+
+  it('rejects owner save when no primary owner is present', async () => {
+    mockRisk.status = 'open';
+    mockApiState.ownerAssignmentChangePayload = {
+      ownerAssignments: [],
+    };
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    await wrapper
+      .get('[data-testid="owner-assignment-change"]')
+      .trigger('click');
+    await flushPromises();
+    await wrapper.get('[data-testid="owner-assignment-save"]').trigger('click');
+    await flushPromises();
+
+    const ownerPutCalls = apiCalls.filter(
+      (call) =>
+        call.endpoint ===
+          '/api/oscal/system-security-plans/ssp-1/risks/risk-1' &&
+        call.method === 'PUT' &&
+        Boolean(
+          (call.data as Record<string, unknown> | undefined)?.ownerAssignments,
+        ),
+    );
+
+    expect(ownerPutCalls).toHaveLength(0);
+    expect(mockToastAdd).toHaveBeenCalledWith(
+      expect.objectContaining({
+        summary: 'Owner update failed',
+        detail: 'Primary owner is required before saving owner assignments.',
+      }),
+    );
+  });
+
+  it('updates risk to investigating when Start Investigation is clicked', async () => {
+    mockRisk.status = 'open';
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    await clickButtonByText(wrapper, 'Start Investigation');
+    await flushPromises();
+
+    expect(apiCalls).toContainEqual(
+      expect.objectContaining({
+        endpoint: '/api/oscal/system-security-plans/ssp-1/risks/risk-1',
+        method: 'PUT',
+        data: expect.objectContaining({
+          status: 'investigating',
+        }),
+      }),
+    );
+    expect(wrapper.text()).toContain('Investigating');
+  });
+
+  it('updates risk to closed when Close Risk is clicked from open status', async () => {
+    mockRisk.status = 'open';
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    await clickButtonByText(wrapper, 'Close Risk');
+    await flushPromises();
+
+    expect(apiCalls).toContainEqual(
+      expect.objectContaining({
+        endpoint: '/api/oscal/system-security-plans/ssp-1/risks/risk-1',
+        method: 'PUT',
+        data: expect.objectContaining({
+          status: 'closed',
+        }),
+      }),
+    );
+    expect(wrapper.text()).toContain('Closed');
+  });
+
+  it('submits owner PUT before accept POST when accept owner update is present', async () => {
+    mockRisk.status = 'investigating';
+    mockApiState.acceptModalPayload = {
+      justification: 'Temporary business acceptance',
+      reviewDeadline: '2026-05-05T00:00:00.000Z',
+      ownerUpdate: {
+        primaryOwnerUserId: '57f3438f-6e99-4f89-98f7-7481bfce3c2d',
+        ownerAssignments: [
+          {
+            ownerKind: 'user',
+            ownerRef: '57f3438f-6e99-4f89-98f7-7481bfce3c2d',
+            isPrimary: true,
+          },
+        ],
+      },
+    };
+
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    await clickButtonByText(wrapper, 'Accept Risk');
+    await flushPromises();
+    await wrapper.get('[data-testid="accept-modal-submit"]').trigger('click');
+    await flushPromises();
+
+    const ownerPutIndex = apiCalls.findIndex(
+      (call) =>
+        call.endpoint ===
+          '/api/oscal/system-security-plans/ssp-1/risks/risk-1' &&
+        call.method === 'PUT',
+    );
+    const acceptPostIndex = apiCalls.findIndex(
+      (call) =>
+        call.endpoint ===
+          '/api/oscal/system-security-plans/ssp-1/risks/risk-1/accept' &&
+        call.method === 'POST',
+    );
+
+    expect(ownerPutIndex).toBeGreaterThan(-1);
+    expect(acceptPostIndex).toBeGreaterThan(ownerPutIndex);
+  });
+
+  it('validates review payload before posting to review endpoint', async () => {
+    mockRisk.status = 'risk-accepted';
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    await clickButtonByText(wrapper, 'Review Risk');
+    await flushPromises();
+
+    mockApiState.reviewModalPayload = {
+      decision: 'extend',
+      notes: 'invalid extend payload',
+    };
+    await wrapper.get('[data-testid="review-modal-submit"]').trigger('click');
+    await flushPromises();
+
+    mockApiState.reviewModalPayload = {
+      decision: 'reopen',
+      notes: 'invalid reopen payload',
+      nextReviewDeadline: '2026-06-01T00:00:00.000Z',
+    };
+    await wrapper.get('[data-testid="review-modal-submit"]').trigger('click');
+    await flushPromises();
+
+    const reviewPosts = apiCalls.filter(
+      (call) =>
+        call.endpoint ===
+          '/api/oscal/system-security-plans/ssp-1/risks/risk-1/review' &&
+        call.method === 'POST',
+    );
+
+    expect(reviewPosts).toHaveLength(0);
+    expect(mockToastAdd).toHaveBeenCalledWith(
+      expect.objectContaining({
+        summary: 'Validation Error',
+      }),
+    );
   });
 
   it('continues loading events across endpoints when the first one is empty', async () => {

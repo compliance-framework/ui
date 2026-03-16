@@ -200,9 +200,8 @@ const toast = useToast();
 const riskStatusOptions = [
   { value: 'open', label: 'Open' },
   { value: 'investigating', label: 'Investigating' },
-  { value: 'remediating', label: 'Remediating' },
-  { value: 'deviation-requested', label: 'Deviation Requested' },
-  { value: 'deviation-approved', label: 'Deviation Approved' },
+  { value: 'mitigating-planned', label: 'Mitigating Planned' },
+  { value: 'mitigating-implemented', label: 'Mitigating Implemented' },
   { value: 'closed', label: 'Closed' },
 ];
 
