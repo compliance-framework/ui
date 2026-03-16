@@ -45,13 +45,16 @@ export const ALLOWED_RISK_TRANSITIONS: Record<
   investigating: ['mitigating-planned', 'risk-accepted'],
   'mitigating-planned': ['mitigating-implemented'],
   'mitigating-implemented': ['closed'],
-  'risk-accepted': ['closed'],
+  'risk-accepted': ['investigating', 'closed'],
   closed: [],
 };
 
 const RISK_STATUS_VALUES = new Set<RiskRegisterStatus>(
   Object.keys(STATUS_LABELS) as RiskRegisterStatus[],
 );
+const RISK_STATUS_ALIASES: Record<string, RiskRegisterStatus> = {
+  accepted: 'risk-accepted',
+};
 
 function normalizeText(value?: string): string {
   return (value || '').trim().toLowerCase();
@@ -62,6 +65,9 @@ export function normalizeRiskRegisterStatus(
 ): RiskRegisterStatus | null {
   const normalized = normalizeText(status);
   if (!normalized) return null;
+  if (normalized in RISK_STATUS_ALIASES) {
+    return RISK_STATUS_ALIASES[normalized];
+  }
   return RISK_STATUS_VALUES.has(normalized as RiskRegisterStatus)
     ? (normalized as RiskRegisterStatus)
     : null;

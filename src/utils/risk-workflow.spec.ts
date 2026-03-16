@@ -19,6 +19,7 @@ describe('risk-workflow', () => {
       expect(normalizeRiskRegisterStatus('RISK-ACCEPTED')).toBe(
         'risk-accepted',
       );
+      expect(normalizeRiskRegisterStatus('accepted')).toBe('risk-accepted');
     });
 
     it('returns null for unknown statuses', () => {
@@ -42,6 +43,10 @@ describe('risk-workflow', () => {
     expect(getAllowedRiskTransitions('investigating')).toEqual([
       'mitigating-planned',
       'risk-accepted',
+    ]);
+    expect(getAllowedRiskTransitions('risk-accepted')).toEqual([
+      'investigating',
+      'closed',
     ]);
     expect(getAllowedRiskTransitions('closed')).toEqual([]);
   });

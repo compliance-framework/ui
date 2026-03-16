@@ -67,7 +67,7 @@
           :filterBy="['displayName', 'email']"
           placeholder="Search users..."
           class="w-full"
-          :forceSelection="false"
+          :forceSelection="true"
           :disabled="disabled"
           @complete="searchUsers"
           @update:modelValue="onUserSelected(row, $event)"
@@ -97,7 +97,7 @@
         <label class="flex items-center gap-2 text-xs text-gray-600">
           <input
             type="radio"
-            name="primary-owner"
+            :name="primaryOwnerInputName"
             :checked="row.isPrimary"
             :disabled="disabled"
             @change="setPrimary(row.key)"
@@ -128,7 +128,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, getCurrentInstance, ref, watch } from 'vue';
 import AutoComplete from '@/volt/AutoComplete.vue';
 import {
   useUserSearch,
@@ -174,6 +174,7 @@ const {
 
 const rows = ref<OwnerRow[]>([]);
 const isEditing = ref(false);
+const primaryOwnerInputName = `primary-owner-${getCurrentInstance()?.uid ?? Date.now()}`;
 
 const showEditor = computed(() => props.mode === 'embedded' || isEditing.value);
 
