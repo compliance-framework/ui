@@ -30,15 +30,12 @@
 
       <div>
         <span class="font-semibold">Additional Owners:</span>
-        <span v-if="!secondaryOwnerLabels.length" class="ml-1 text-gray-500"
+        <span v-if="!secondaryOwners.length" class="ml-1 text-gray-500"
           >None</span
         >
         <ul v-else class="mt-1 list-disc list-inside">
-          <li
-            v-for="(owner, index) in secondaryOwnerLabels"
-            :key="`secondary-owner-${index}`"
-          >
-            {{ owner }}
+          <li v-for="owner in secondaryOwners" :key="owner.key">
+            {{ owner.label }}
           </li>
         </ul>
       </div>
@@ -205,10 +202,13 @@ const primaryOwnerLabel = computed(() => {
   return ownerLabel(primary);
 });
 
-const secondaryOwnerLabels = computed(() =>
+const secondaryOwners = computed(() =>
   rows.value
     .filter((row) => row.ownerRef && !row.isPrimary)
-    .map((row) => ownerLabel(row)),
+    .map((row) => ({
+      key: row.key,
+      label: ownerLabel(row),
+    })),
 );
 
 function makeFallbackUser(ownerRef: string): DisplayUser {

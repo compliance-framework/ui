@@ -27,6 +27,7 @@ describe('risk-workflow', () => {
     it('returns null for unknown statuses', () => {
       expect(normalizeRiskRegisterStatus('deviation-requested')).toBeNull();
       expect(normalizeRiskRegisterStatus('')).toBeNull();
+      expect(normalizeRiskRegisterStatus('toString')).toBeNull();
     });
   });
 

@@ -69,7 +69,7 @@ export function normalizeRiskRegisterStatus(
 ): RiskRegisterStatus | null {
   const normalized = normalizeText(status);
   if (!normalized) return null;
-  if (normalized in RISK_STATUS_ALIASES) {
+  if (Object.prototype.hasOwnProperty.call(RISK_STATUS_ALIASES, normalized)) {
     return RISK_STATUS_ALIASES[normalized];
   }
   return RISK_STATUS_VALUES.has(normalized as RiskRegisterStatus)
