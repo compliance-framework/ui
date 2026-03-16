@@ -931,16 +931,17 @@ function isCanceledError(err: unknown): boolean {
   );
 }
 
-function extractErrorMessage(err: unknown): string {
+function extractErrorMessage(
+  err: unknown,
+  fallback = 'Unable to complete request.',
+): string {
   const maybeError = err as {
     message?: string;
     response?: { data?: { errors?: { body?: string } } };
   };
 
   return (
-    maybeError?.response?.data?.errors?.body ||
-    maybeError?.message ||
-    'Unable to load risk.'
+    maybeError?.response?.data?.errors?.body || maybeError?.message || fallback
   );
 }
 
@@ -1019,7 +1020,7 @@ async function loadRisk() {
       }
     } catch (err) {
       if (isCanceledError(err)) return;
-      loadError.value = extractErrorMessage(err);
+      loadError.value = extractErrorMessage(err, 'Unable to load risk.');
       return;
     }
   }
@@ -1029,7 +1030,10 @@ async function loadRisk() {
       detailFetchError as { response?: { status?: number } }
     )?.response?.status;
     if (detailFetchError && detailStatus !== 404) {
-      loadError.value = extractErrorMessage(detailFetchError);
+      loadError.value = extractErrorMessage(
+        detailFetchError,
+        'Unable to load risk.',
+      );
       return;
     }
     notFound.value = true;
