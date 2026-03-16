@@ -627,6 +627,55 @@ describe('RiskDetailView', () => {
     ).toBeUndefined();
   });
 
+  it('merges duplicate owner refs while preserving primary owner on save', async () => {
+    mockRisk.status = 'open';
+    mockApiState.ownerAssignmentChangePayload = {
+      ownerAssignments: [
+        {
+          ownerKind: 'user',
+          ownerRef: 'd6f19f16-e8b6-4f2d-b583-ef0a906f22e5',
+          isPrimary: false,
+        },
+        {
+          ownerKind: 'user',
+          ownerRef: 'd6f19f16-e8b6-4f2d-b583-ef0a906f22e5',
+          isPrimary: true,
+        },
+      ],
+    };
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    await wrapper
+      .get('[data-testid="owner-assignment-change"]')
+      .trigger('click');
+    await flushPromises();
+    await wrapper.get('[data-testid="owner-assignment-save"]').trigger('click');
+    await flushPromises();
+
+    const ownerPutCall = apiCalls.find(
+      (call) =>
+        call.endpoint ===
+          '/api/oscal/system-security-plans/ssp-1/risks/risk-1' &&
+        call.method === 'PUT' &&
+        Boolean(
+          (call.data as Record<string, unknown> | undefined)?.ownerAssignments,
+        ),
+    );
+
+    expect(ownerPutCall).toBeDefined();
+    expect(ownerPutCall?.data).toMatchObject({
+      primaryOwnerUserId: 'd6f19f16-e8b6-4f2d-b583-ef0a906f22e5',
+      ownerAssignments: [
+        {
+          ownerKind: 'user',
+          ownerRef: 'd6f19f16-e8b6-4f2d-b583-ef0a906f22e5',
+          isPrimary: true,
+        },
+      ],
+    });
+  });
+
   it('updates risk to investigating when Start Investigation is clicked', async () => {
     mockRisk.status = 'open';
     const wrapper = mountComponent();

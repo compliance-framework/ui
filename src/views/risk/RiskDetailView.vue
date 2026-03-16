@@ -47,7 +47,7 @@
           >
             <div>
               <span class="font-semibold">Status:</span>
-              <span class="ml-1 capitalize">{{ risk.status }}</span>
+              <span class="ml-1">{{ riskStatusDisplay }}</span>
             </div>
             <div>
               <span class="font-semibold">Review Deadline:</span>
@@ -1256,21 +1256,24 @@ function normalizeOwnerAssignmentsPayload(
   payload?: RiskOwnerAssignmentsPayload,
 ): RiskOwnerAssignmentsPayload {
   const source = payload || { ownerAssignments: [] };
-  const seen = new Set<string>();
-  const assignments = (source.ownerAssignments || [])
-    .filter(
-      (assignment) => assignment.ownerKind === 'user' && assignment.ownerRef,
-    )
-    .filter((assignment) => {
-      if (seen.has(assignment.ownerRef)) return false;
-      seen.add(assignment.ownerRef);
-      return true;
-    })
-    .map((assignment) => ({
-      ownerKind: 'user' as const,
+  const mergedAssignments = new Map<
+    string,
+    RiskOwnerAssignmentsPayload['ownerAssignments'][number]
+  >();
+  for (const assignment of source.ownerAssignments || []) {
+    if (assignment.ownerKind !== 'user' || !assignment.ownerRef) continue;
+    const existing = mergedAssignments.get(assignment.ownerRef);
+    if (existing) {
+      existing.isPrimary = existing.isPrimary || !!assignment.isPrimary;
+      continue;
+    }
+    mergedAssignments.set(assignment.ownerRef, {
+      ownerKind: 'user',
       ownerRef: assignment.ownerRef,
       isPrimary: !!assignment.isPrimary,
-    }));
+    });
+  }
+  const assignments = [...mergedAssignments.values()];
 
   const primaryOwnerUserId =
     source.primaryOwnerUserId ||
