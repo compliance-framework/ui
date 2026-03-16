@@ -198,7 +198,7 @@ describe('RiskCreateForm', () => {
     });
   });
 
-  it('renders API-aligned status options for risk workflow', () => {
+  it('renders manual status options without risk-accepted workflow state', () => {
     const wrapper = mountForm();
 
     expect(wrapper.find('option[value="open"]').exists()).toBe(true);
@@ -209,7 +209,7 @@ describe('RiskCreateForm', () => {
     expect(
       wrapper.find('option[value="mitigating-implemented"]').exists(),
     ).toBe(true);
-    expect(wrapper.find('option[value="risk-accepted"]').exists()).toBe(true);
+    expect(wrapper.find('option[value="risk-accepted"]').exists()).toBe(false);
     expect(wrapper.find('option[value="closed"]').exists()).toBe(true);
   });
 

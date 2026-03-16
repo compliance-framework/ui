@@ -202,7 +202,6 @@ const riskStatusOptions = [
   { value: 'investigating', label: 'Investigating' },
   { value: 'mitigating-planned', label: 'Mitigating Planned' },
   { value: 'mitigating-implemented', label: 'Mitigating Implemented' },
-  { value: 'risk-accepted', label: 'Risk Accepted' },
   { value: 'closed', label: 'Closed' },
 ];
 

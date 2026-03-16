@@ -111,7 +111,7 @@
                     Start Investigation
                   </button>
                   <button
-                    v-if="canCloseFromOpenAction"
+                    v-if="canCloseAction"
                     class="px-3 py-1 rounded-md text-sm bg-rose-700 hover:bg-rose-800 text-white disabled:opacity-60"
                     :disabled="workflowSubmitting"
                     @click="closeRiskFromOpen"
@@ -1157,8 +1157,8 @@ const canStartInvestigationAction = computed(
   () => isSspContext.value && normalizedRiskStatus.value === 'open',
 );
 
-const canCloseFromOpenAction = computed(
-  () => isSspContext.value && normalizedRiskStatus.value === 'open',
+const canCloseAction = computed(
+  () => isSspContext.value && workflowNextTransitions.value.includes('closed'),
 );
 
 // TODO(BCH-1206): add mitigation workflow actions once POA&M implementation lands.
@@ -1337,6 +1337,17 @@ async function saveOwnerAssignments(
   }
 
   const normalized = normalizeOwnerAssignments(payload);
+  if (!normalized.primaryOwnerUserId) {
+    const detail = 'Primary owner is required before saving owner assignments.';
+    ownerSaveError.value = detail;
+    toast.add({
+      severity: 'error',
+      summary: 'Owner update failed',
+      detail,
+      life: 4000,
+    });
+    return false;
+  }
   const updatePayload = buildRiskPutPayload({
     primaryOwnerUserId: normalized.primaryOwnerUserId,
     ownerAssignments: normalized.ownerAssignments,

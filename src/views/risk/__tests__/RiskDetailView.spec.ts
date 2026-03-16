@@ -609,12 +609,20 @@ describe('RiskDetailView', () => {
     ).toBeUndefined();
   });
 
-  it('shows Start Investigation and Close Risk only for open status', async () => {
+  it('shows start/close lifecycle actions for the correct statuses', async () => {
     mockRisk.status = 'open';
     const openWrapper = mountComponent();
     await flushPromises();
     expect(findButtonByText(openWrapper, 'Start Investigation')).toBeDefined();
     expect(findButtonByText(openWrapper, 'Close Risk')).toBeDefined();
+
+    mockRisk.status = 'risk-accepted';
+    const acceptedWrapper = mountComponent();
+    await flushPromises();
+    expect(
+      findButtonByText(acceptedWrapper, 'Start Investigation'),
+    ).toBeUndefined();
+    expect(findButtonByText(acceptedWrapper, 'Close Risk')).toBeDefined();
 
     mockRisk.status = 'investigating';
     const investigatingWrapper = mountComponent();
@@ -674,6 +682,40 @@ describe('RiskDetailView', () => {
         },
       ],
     });
+  });
+
+  it('rejects owner save when no primary owner is present', async () => {
+    mockRisk.status = 'open';
+    mockApiState.ownerAssignmentChangePayload = {
+      ownerAssignments: [],
+    };
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    await wrapper
+      .get('[data-testid="owner-assignment-change"]')
+      .trigger('click');
+    await flushPromises();
+    await wrapper.get('[data-testid="owner-assignment-save"]').trigger('click');
+    await flushPromises();
+
+    const ownerPutCalls = apiCalls.filter(
+      (call) =>
+        call.endpoint ===
+          '/api/oscal/system-security-plans/ssp-1/risks/risk-1' &&
+        call.method === 'PUT' &&
+        Boolean(
+          (call.data as Record<string, unknown> | undefined)?.ownerAssignments,
+        ),
+    );
+
+    expect(ownerPutCalls).toHaveLength(0);
+    expect(mockToastAdd).toHaveBeenCalledWith(
+      expect.objectContaining({
+        summary: 'Owner update failed',
+        detail: 'Primary owner is required before saving owner assignments.',
+      }),
+    );
   });
 
   it('updates risk to investigating when Start Investigation is clicked', async () => {

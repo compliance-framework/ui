@@ -44,6 +44,13 @@
       </div>
     </div>
 
+    <p
+      v-if="ownerValidationError && showEditor"
+      class="text-xs text-red-600 dark:text-red-400"
+    >
+      {{ ownerValidationError }}
+    </p>
+
     <div
       v-if="showEditor"
       class="space-y-3 border border-ccf-300 dark:border-slate-700 rounded-md p-3"
@@ -178,8 +185,19 @@ const {
 const rows = ref<OwnerRow[]>([]);
 const isEditing = ref(false);
 const primaryOwnerInputName = `primary-owner-${getCurrentInstance()?.uid ?? Date.now()}`;
+const ownerValidationError = ref('');
 
 const showEditor = computed(() => props.mode === 'embedded' || isEditing.value);
+const hasPrimaryOwner = computed(() => {
+  const normalized = normalizeOwnerAssignments({
+    ownerAssignments: rows.value.map((row) => ({
+      ownerKind: 'user' as const,
+      ownerRef: (row.user?.id || row.ownerRef || '').trim(),
+      isPrimary: row.isPrimary,
+    })),
+  });
+  return !!normalized.primaryOwnerUserId;
+});
 
 const primaryOwnerLabel = computed(() => {
   const primary = rows.value.find((row) => row.isPrimary && row.ownerRef);
@@ -259,6 +277,7 @@ function emitChange() {
 }
 
 function setPrimary(key: string) {
+  ownerValidationError.value = '';
   rows.value = rows.value.map((row) => ({
     ...row,
     isPrimary: row.key === key,
@@ -267,6 +286,7 @@ function setPrimary(key: string) {
 }
 
 function addRow() {
+  ownerValidationError.value = '';
   if (props.mode === 'overview') {
     isEditing.value = true;
   }
@@ -285,13 +305,20 @@ function addRow() {
 function onHeaderAction() {
   if (props.mode !== 'overview') return;
   if (!isEditing.value) {
+    ownerValidationError.value = '';
     isEditing.value = true;
     return;
   }
+  if (!hasPrimaryOwner.value) {
+    ownerValidationError.value = 'Primary owner is required before saving.';
+    return;
+  }
+  ownerValidationError.value = '';
   emit('save');
 }
 
 function removeRow(key: string) {
+  ownerValidationError.value = '';
   const removed = rows.value.find((row) => row.key === key);
   rows.value = rows.value.filter((row) => row.key !== key);
 
@@ -303,6 +330,7 @@ function removeRow(key: string) {
 }
 
 function onUserSelected(row: OwnerRow, value: DisplayUser | null) {
+  ownerValidationError.value = '';
   row.user = value;
   row.ownerRef = value?.id || '';
   if (!row.ownerRef) {
