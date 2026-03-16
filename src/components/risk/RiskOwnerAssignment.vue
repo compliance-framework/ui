@@ -134,7 +134,10 @@ import {
   useUserSearch,
   type DisplayUser,
 } from '@/composables/workflows/useUserSearch';
-import type { RiskOwnerAssignmentsPayload } from '@/utils/risk-workflow';
+import {
+  normalizeOwnerAssignments,
+  type RiskOwnerAssignmentsPayload,
+} from '@/utils/risk-workflow';
 
 type OwnerMode = 'overview' | 'embedded';
 
@@ -205,74 +208,10 @@ function ownerLabel(row: OwnerRow): string {
   return row.user?.displayName || row.ownerRef;
 }
 
-function mergeAssignments(
-  assignments: Array<{
-    ownerKind: 'user';
-    ownerRef: string;
-    isPrimary: boolean;
-  }>,
-) {
-  const merged = new Map<string, (typeof assignments)[number]>();
-  for (const assignment of assignments) {
-    const ownerRef = assignment.ownerRef.trim();
-    if (!ownerRef) continue;
-    const existing = merged.get(ownerRef);
-    if (existing) {
-      existing.isPrimary = existing.isPrimary || assignment.isPrimary;
-      continue;
-    }
-    merged.set(ownerRef, {
-      ownerKind: 'user',
-      ownerRef,
-      isPrimary: !!assignment.isPrimary,
-    });
-  }
-  return [...merged.values()];
-}
-
 function normalizePayload(
   payload: RiskOwnerAssignmentsPayload | undefined,
 ): RiskOwnerAssignmentsPayload {
-  const input = payload || { ownerAssignments: [] };
-  const ownerAssignments = mergeAssignments(
-    (input.ownerAssignments || [])
-      .filter(
-        (assignment) => assignment.ownerKind === 'user' && assignment.ownerRef,
-      )
-      .map((assignment) => ({
-        ownerKind: 'user' as const,
-        ownerRef: assignment.ownerRef,
-        isPrimary: !!assignment.isPrimary,
-      })),
-  );
-
-  const firstPrimary = ownerAssignments.find(
-    (assignment) => assignment.isPrimary,
-  );
-  const primaryOwnerUserId =
-    input.primaryOwnerUserId ||
-    firstPrimary?.ownerRef ||
-    ownerAssignments[0]?.ownerRef;
-
-  if (
-    primaryOwnerUserId &&
-    !ownerAssignments.some((x) => x.ownerRef === primaryOwnerUserId)
-  ) {
-    ownerAssignments.unshift({
-      ownerKind: 'user' as const,
-      ownerRef: primaryOwnerUserId,
-      isPrimary: true,
-    });
-  }
-
-  return {
-    primaryOwnerUserId,
-    ownerAssignments: ownerAssignments.map((assignment) => ({
-      ...assignment,
-      isPrimary:
-        !!primaryOwnerUserId && assignment.ownerRef === primaryOwnerUserId,
-    })),
-  };
+  return normalizeOwnerAssignments(payload);
 }
 
 function toRows(payload: RiskOwnerAssignmentsPayload): OwnerRow[] {
@@ -298,26 +237,25 @@ async function hydrateUsers() {
 }
 
 function emitChange() {
-  const unique = mergeAssignments(
-    rows.value
-      .map((row) => ({
-        ownerKind: 'user' as const,
-        ownerRef: (row.user?.id || row.ownerRef || '').trim(),
-        isPrimary: row.isPrimary,
-      }))
-      .filter((row) => !!row.ownerRef),
+  const ownerAssignments = rows.value
+    .map((row) => ({
+      ownerKind: 'user' as const,
+      ownerRef: (row.user?.id || row.ownerRef || '').trim(),
+      isPrimary: row.isPrimary,
+    }))
+    .filter((row) => !!row.ownerRef);
+
+  const primaryOwnerUserId = ownerAssignments.find(
+    (row) => row.isPrimary,
+  )?.ownerRef;
+
+  emit(
+    'change',
+    normalizeOwnerAssignments({
+      primaryOwnerUserId,
+      ownerAssignments,
+    }),
   );
-
-  const primaryOwnerUserId =
-    unique.find((row) => row.isPrimary)?.ownerRef || unique[0]?.ownerRef;
-
-  emit('change', {
-    primaryOwnerUserId,
-    ownerAssignments: unique.map((row) => ({
-      ...row,
-      isPrimary: !!primaryOwnerUserId && row.ownerRef === primaryOwnerUserId,
-    })),
-  });
 }
 
 function setPrimary(key: string) {

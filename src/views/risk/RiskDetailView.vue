@@ -694,6 +694,8 @@ import {
   canReviewRisk,
   getAllowedRiskTransitions,
   normalizeRiskRegisterStatus,
+  normalizeOwnerAssignments,
+  ownerAssignmentsSignature,
   riskStatusLabel,
   riskWorkflowHints,
   riskWorkflowStage,
@@ -1252,57 +1254,6 @@ function formatTokenLabel(value?: string): string {
     .join(' ');
 }
 
-function normalizeOwnerAssignmentsPayload(
-  payload?: RiskOwnerAssignmentsPayload,
-): RiskOwnerAssignmentsPayload {
-  const source = payload || { ownerAssignments: [] };
-  const mergedAssignments = new Map<
-    string,
-    RiskOwnerAssignmentsPayload['ownerAssignments'][number]
-  >();
-  for (const assignment of source.ownerAssignments || []) {
-    if (assignment.ownerKind !== 'user' || !assignment.ownerRef) continue;
-    const existing = mergedAssignments.get(assignment.ownerRef);
-    if (existing) {
-      existing.isPrimary = existing.isPrimary || !!assignment.isPrimary;
-      continue;
-    }
-    mergedAssignments.set(assignment.ownerRef, {
-      ownerKind: 'user',
-      ownerRef: assignment.ownerRef,
-      isPrimary: !!assignment.isPrimary,
-    });
-  }
-  const assignments = [...mergedAssignments.values()];
-
-  const primaryOwnerUserId =
-    source.primaryOwnerUserId ||
-    assignments.find((assignment) => assignment.isPrimary)?.ownerRef ||
-    assignments[0]?.ownerRef;
-
-  if (
-    primaryOwnerUserId &&
-    !assignments.some(
-      (assignment) => assignment.ownerRef === primaryOwnerUserId,
-    )
-  ) {
-    assignments.unshift({
-      ownerKind: 'user',
-      ownerRef: primaryOwnerUserId,
-      isPrimary: true,
-    });
-  }
-
-  return {
-    primaryOwnerUserId,
-    ownerAssignments: assignments.map((assignment) => ({
-      ...assignment,
-      isPrimary:
-        !!primaryOwnerUserId && assignment.ownerRef === primaryOwnerUserId,
-    })),
-  };
-}
-
 function ownerAssignmentsFromRisk(
   currentRisk: Risk | null,
 ): RiskOwnerAssignmentsPayload {
@@ -1333,24 +1284,9 @@ function ownerAssignmentsFromRisk(
         !!assignment,
     );
 
-  return normalizeOwnerAssignmentsPayload({
+  return normalizeOwnerAssignments({
     primaryOwnerUserId,
     ownerAssignments,
-  });
-}
-
-function ownerAssignmentsSignature(
-  payload: RiskOwnerAssignmentsPayload,
-): string {
-  return JSON.stringify({
-    primaryOwnerUserId: payload.primaryOwnerUserId || '',
-    ownerAssignments: [...payload.ownerAssignments]
-      .map((assignment) => ({
-        ownerKind: assignment.ownerKind,
-        ownerRef: assignment.ownerRef,
-        isPrimary: assignment.isPrimary,
-      }))
-      .sort((left, right) => left.ownerRef.localeCompare(right.ownerRef)),
   });
 }
 
@@ -1367,7 +1303,7 @@ function syncOwnerAssignmentsFromRisk() {
 function onOverviewOwnerAssignmentsChange(
   payload: RiskOwnerAssignmentsPayload,
 ) {
-  ownerAssignmentsDraft.value = normalizeOwnerAssignmentsPayload(payload);
+  ownerAssignmentsDraft.value = normalizeOwnerAssignments(payload);
   ownerSaveError.value = '';
 }
 
@@ -1378,6 +1314,16 @@ function applyRiskUpdate(updated: Risk | undefined) {
   notifyRiskUpdated(risk.value);
 }
 
+function buildRiskPutPayload(
+  overrides: Record<string, unknown>,
+): Record<string, unknown> | null {
+  if (!risk.value) return null;
+  return {
+    ...(cloneDeep(risk.value) as Record<string, unknown>),
+    ...overrides,
+  };
+}
+
 async function saveOwnerAssignments(
   payload: RiskOwnerAssignmentsPayload,
   options: { showSuccessToast?: boolean } = {},
@@ -1386,16 +1332,22 @@ async function saveOwnerAssignments(
     return false;
   }
 
-  const normalized = normalizeOwnerAssignmentsPayload(payload);
+  const normalized = normalizeOwnerAssignments(payload);
+  const updatePayload = buildRiskPutPayload({
+    primaryOwnerUserId: normalized.primaryOwnerUserId,
+    ownerAssignments: normalized.ownerAssignments,
+  });
+  if (!updatePayload) {
+    ownerSaveError.value =
+      'Unable to update owners: risk details are unavailable.';
+    return false;
+  }
   ownerSaveError.value = '';
 
   try {
     await executeRiskMutation(detailEndpoint.value, {
       method: 'PUT',
-      data: {
-        primaryOwnerUserId: normalized.primaryOwnerUserId,
-        ownerAssignments: normalized.ownerAssignments,
-      },
+      data: updatePayload,
     });
     const updatedRisk = mutatedRisk.value;
     applyRiskUpdate(updatedRisk);
@@ -1436,12 +1388,21 @@ async function updateRiskStatus(
 ) {
   if (!isSspContext.value || !detailEndpoint.value) return;
 
+  const updatePayload = buildRiskPutPayload({ status });
+  if (!updatePayload) {
+    toast.add({
+      severity: 'error',
+      summary: 'Status update failed',
+      detail: 'Unable to update status: risk details are unavailable.',
+      life: 4000,
+    });
+    return;
+  }
+
   try {
     await executeRiskMutation(detailEndpoint.value, {
       method: 'PUT',
-      data: {
-        status,
-      },
+      data: updatePayload,
     });
     const updatedRisk = mutatedRisk.value;
     applyRiskUpdate(updatedRisk);

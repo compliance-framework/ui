@@ -27,6 +27,10 @@ export interface RiskOwnerAssignmentsPayload {
   ownerAssignments: RiskOwnerAssignmentDto[];
 }
 
+function normalizeOwnerRef(value?: string): string {
+  return (value || '').trim();
+}
+
 const STATUS_LABELS: Record<RiskRegisterStatus, string> = {
   open: 'Open',
   investigating: 'Investigating',
@@ -84,6 +88,78 @@ export function riskStatusLabel(status?: string): string {
     .filter(Boolean)
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(' ');
+}
+
+export function normalizeOwnerAssignments(
+  payload?: RiskOwnerAssignmentsPayload,
+): RiskOwnerAssignmentsPayload {
+  const source = payload || { ownerAssignments: [] };
+  const merged = new Map<string, RiskOwnerAssignmentDto>();
+
+  for (const assignment of source.ownerAssignments || []) {
+    if (assignment.ownerKind !== 'user') continue;
+    const ownerRef = normalizeOwnerRef(assignment.ownerRef);
+    if (!ownerRef) continue;
+
+    const existing = merged.get(ownerRef);
+    if (existing) {
+      existing.isPrimary = existing.isPrimary || !!assignment.isPrimary;
+      continue;
+    }
+
+    merged.set(ownerRef, {
+      ownerKind: 'user',
+      ownerRef,
+      isPrimary: !!assignment.isPrimary,
+    });
+  }
+
+  const ownerAssignments = [...merged.values()];
+  const normalizedPrimaryOwnerUserId = normalizeOwnerRef(
+    source.primaryOwnerUserId,
+  );
+  const primaryOwnerUserId =
+    normalizedPrimaryOwnerUserId ||
+    ownerAssignments.find((assignment) => assignment.isPrimary)?.ownerRef ||
+    ownerAssignments[0]?.ownerRef;
+
+  if (
+    primaryOwnerUserId &&
+    !ownerAssignments.some(
+      (assignment) => assignment.ownerRef === primaryOwnerUserId,
+    )
+  ) {
+    ownerAssignments.unshift({
+      ownerKind: 'user',
+      ownerRef: primaryOwnerUserId,
+      isPrimary: true,
+    });
+  }
+
+  return {
+    primaryOwnerUserId,
+    ownerAssignments: ownerAssignments.map((assignment) => ({
+      ...assignment,
+      isPrimary:
+        !!primaryOwnerUserId && assignment.ownerRef === primaryOwnerUserId,
+    })),
+  };
+}
+
+export function ownerAssignmentsSignature(
+  payload?: RiskOwnerAssignmentsPayload,
+): string {
+  const normalized = normalizeOwnerAssignments(payload);
+  return JSON.stringify({
+    primaryOwnerUserId: normalized.primaryOwnerUserId || '',
+    ownerAssignments: [...normalized.ownerAssignments]
+      .map((assignment) => ({
+        ownerKind: assignment.ownerKind,
+        ownerRef: assignment.ownerRef,
+        isPrimary: assignment.isPrimary,
+      }))
+      .sort((left, right) => left.ownerRef.localeCompare(right.ownerRef)),
+  });
 }
 
 export function getAllowedRiskTransitions(

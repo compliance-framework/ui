@@ -4,6 +4,8 @@ import {
   canReviewRisk,
   getAllowedRiskTransitions,
   normalizeRiskRegisterStatus,
+  normalizeOwnerAssignments,
+  ownerAssignmentsSignature,
   riskStatusLabel,
   riskWorkflowHints,
   riskWorkflowStage,
@@ -73,5 +75,68 @@ describe('risk-workflow', () => {
     expect(riskWorkflowHints('investigating')[0]).toContain('Accept Risk');
     expect(riskWorkflowHints('risk-accepted')[0]).toContain('Review Risk');
     expect(riskWorkflowHints('closed')[0]).toContain('No workflow actions');
+  });
+
+  it('normalizes owner assignments consistently across consumers', () => {
+    const normalized = normalizeOwnerAssignments({
+      ownerAssignments: [
+        {
+          ownerKind: 'user',
+          ownerRef: ' user-1 ',
+          isPrimary: false,
+        },
+        {
+          ownerKind: 'user',
+          ownerRef: 'user-1',
+          isPrimary: true,
+        },
+      ],
+    });
+
+    expect(normalized).toEqual({
+      primaryOwnerUserId: 'user-1',
+      ownerAssignments: [
+        {
+          ownerKind: 'user',
+          ownerRef: 'user-1',
+          isPrimary: true,
+        },
+      ],
+    });
+  });
+
+  it('builds stable owner-assignment signatures independent of input order', () => {
+    const left = ownerAssignmentsSignature({
+      primaryOwnerUserId: 'user-1',
+      ownerAssignments: [
+        {
+          ownerKind: 'user',
+          ownerRef: 'user-1',
+          isPrimary: true,
+        },
+        {
+          ownerKind: 'user',
+          ownerRef: 'user-2',
+          isPrimary: false,
+        },
+      ],
+    });
+    const right = ownerAssignmentsSignature({
+      primaryOwnerUserId: 'user-1',
+      ownerAssignments: [
+        {
+          ownerKind: 'user',
+          ownerRef: 'user-2',
+          isPrimary: false,
+        },
+        {
+          ownerKind: 'user',
+          ownerRef: 'user-1',
+          isPrimary: true,
+        },
+      ],
+    });
+
+    expect(left).toBe(right);
   });
 });

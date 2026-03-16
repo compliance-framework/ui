@@ -90,7 +90,11 @@ import { computed, ref, watch } from 'vue';
 import Dialog from '@/volt/Dialog.vue';
 import Message from '@/volt/Message.vue';
 import RiskOwnerAssignment from '@/components/risk/RiskOwnerAssignment.vue';
-import type { RiskOwnerAssignmentsPayload } from '@/utils/risk-workflow';
+import {
+  normalizeOwnerAssignments,
+  ownerAssignmentsSignature,
+  type RiskOwnerAssignmentsPayload,
+} from '@/utils/risk-workflow';
 
 interface RiskAcceptSubmitPayload {
   justification: string;
@@ -128,48 +132,12 @@ const localVisible = computed({
 });
 
 const ownerDraftSignature = computed(() =>
-  JSON.stringify({
-    primaryOwnerUserId: ownerDraft.value.primaryOwnerUserId || '',
-    ownerAssignments: [...ownerDraft.value.ownerAssignments]
-      .map((assignment) => ({
-        ownerKind: assignment.ownerKind,
-        ownerRef: assignment.ownerRef,
-        isPrimary: assignment.isPrimary,
-      }))
-      .sort((left, right) => left.ownerRef.localeCompare(right.ownerRef)),
-  }),
+  ownerAssignmentsSignature(ownerDraft.value),
 );
 
 const ownerDirty = computed(
   () => ownerDraftSignature.value !== ownerSnapshotSignature.value,
 );
-
-function normalizeOwners(
-  payload: RiskOwnerAssignmentsPayload,
-): RiskOwnerAssignmentsPayload {
-  const ownerAssignments = (payload.ownerAssignments || [])
-    .filter(
-      (assignment) => assignment.ownerKind === 'user' && assignment.ownerRef,
-    )
-    .map((assignment) => ({
-      ownerKind: 'user' as const,
-      ownerRef: assignment.ownerRef,
-      isPrimary: assignment.isPrimary,
-    }));
-  const primaryOwnerUserId =
-    payload.primaryOwnerUserId ||
-    ownerAssignments.find((assignment) => assignment.isPrimary)?.ownerRef ||
-    ownerAssignments[0]?.ownerRef;
-
-  return {
-    primaryOwnerUserId,
-    ownerAssignments: ownerAssignments.map((assignment) => ({
-      ...assignment,
-      isPrimary:
-        !!primaryOwnerUserId && assignment.ownerRef === primaryOwnerUserId,
-    })),
-  };
-}
 
 function toDateTimeLocal(value: Date): string {
   const year = value.getFullYear();
@@ -190,14 +158,14 @@ function resetForm() {
   justification.value = '';
   reviewDeadline.value = defaultReviewDeadline();
   includeOwnerUpdate.value = false;
-  ownerDraft.value = normalizeOwners(props.initialOwnerAssignments);
+  ownerDraft.value = normalizeOwnerAssignments(props.initialOwnerAssignments);
   ownerSnapshotSignature.value = ownerDraftSignature.value;
   ownerResetKey.value += 1;
   validationError.value = '';
 }
 
 function onOwnerDraftChange(payload: RiskOwnerAssignmentsPayload) {
-  ownerDraft.value = normalizeOwners(payload);
+  ownerDraft.value = normalizeOwnerAssignments(payload);
 }
 
 function submit() {
