@@ -114,7 +114,7 @@
                     v-if="canCloseAction"
                     class="px-3 py-1 rounded-md text-sm bg-rose-700 hover:bg-rose-800 text-white disabled:opacity-60"
                     :disabled="workflowSubmitting"
-                    @click="closeRiskFromOpen"
+                    @click="closeRisk"
                   >
                     Close Risk
                   </button>
@@ -1446,7 +1446,7 @@ async function startInvestigation() {
   );
 }
 
-async function closeRiskFromOpen() {
+async function closeRisk() {
   await updateRiskStatus(
     'closed',
     'Risk closed',
