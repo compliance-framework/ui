@@ -106,12 +106,9 @@ onMounted(async () => {
   }
 });
 
-function handleRiskCreated(newRisk: Risk) {
-  if (!risks.value) {
-    risks.value = [newRisk];
-  } else {
-    risks.value.push(newRisk);
-  }
+async function handleRiskCreated() {
+  // Reload risks to ensure SSP ID mapping is correct
+  await loadRisks('/api/risks');
 }
 
 function handleRiskUpdated(updatedRisk: Risk) {

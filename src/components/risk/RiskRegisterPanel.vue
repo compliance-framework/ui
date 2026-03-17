@@ -307,13 +307,17 @@
       class="flex items-center gap-2"
     >
       <input
+        id="select-all-risks"
         type="checkbox"
         :checked="allVisibleSelected"
         :indeterminate.prop="someVisibleSelected && !allVisibleSelected"
         class="w-4 h-4"
         @change="toggleSelectAll"
       />
-      <label class="text-sm text-gray-600 dark:text-slate-400">
+      <label
+        for="select-all-risks"
+        class="text-sm text-gray-600 dark:text-slate-400"
+      >
         Select all visible ({{ paginatedRisks.length }})
       </label>
     </div>
@@ -338,12 +342,9 @@
           <div v-if="enableBulkOps" class="flex items-start">
             <input
               type="checkbox"
-              class="w-4 h-4 mt-1"
-              :checked="
-                !!riskIdentifier(risk) &&
-                selectedRiskIds.has(riskIdentifier(risk))
-              "
-              :disabled="!riskIdentifier(risk)"
+              :checked="selectedRiskIds.has(riskIdentifier(risk))"
+              :aria-label="`Select risk: ${risk.title || riskIdentifier(risk)}`"
+              class="w-4 h-4"
               @change="toggleRiskSelection(risk)"
             />
           </div>
@@ -1103,6 +1104,14 @@ async function applyBulkOwner() {
   emit('refresh-requested');
 }
 
+function sanitizeCsvCell(value: string): string {
+  // Prevent CSV injection by prefixing formula-triggering characters
+  if (value.match(/^[=+\-@]/)) {
+    return "'" + value;
+  }
+  return value;
+}
+
 function exportCsv() {
   const selected = props.risks.filter((risk) => {
     const id = getRiskIdentifier(risk);
@@ -1140,7 +1149,11 @@ function exportCsv() {
   ]);
 
   const csvContent = [headers, ...rows]
-    .map((row) => row.map((cell) => `"${cell.replace(/"/g, '""')}"`).join(','))
+    .map((row) =>
+      row
+        .map((cell) => `"${sanitizeCsvCell(cell).replace(/"/g, '""')}"`)
+        .join(','),
+    )
     .join('\n');
 
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
