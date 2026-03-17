@@ -319,8 +319,7 @@ export function computeRiskSummary(
   let overdueReviews = 0;
 
   risks.forEach((risk) => {
-    const status = normalizeRiskStatus(risk.status);
-    if (status !== 'closed') {
+    if (!isClosedStatus(risk.status)) {
       total += 1;
     }
     if (isOpenStatus(risk.status)) open += 1;
@@ -361,12 +360,11 @@ export function filterRisks(
     }
 
     if (status !== 'all') {
-      const normalizedStatus = normalizeRiskStatus(risk.status);
       if (status === 'not-closed') {
-        if (normalizedStatus === 'closed') {
+        if (isClosedStatus(risk.status)) {
           return false;
         }
-      } else if (normalizedStatus !== status) {
+      } else if (normalizeRiskStatus(risk.status) !== status) {
         return false;
       }
     }

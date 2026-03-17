@@ -23,6 +23,7 @@ vi.mock('@/composables/axios', () => ({
     isLoading: { value: false },
     error: { value: null },
   }),
+  decamelizeKeys: (data: unknown) => data,
 }));
 
 vi.mock('vue-router', () => ({

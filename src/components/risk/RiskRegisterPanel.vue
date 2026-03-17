@@ -309,7 +309,7 @@
       <input
         type="checkbox"
         :checked="allVisibleSelected"
-        :indeterminate="someVisibleSelected && !allVisibleSelected"
+        :indeterminate.prop="someVisibleSelected && !allVisibleSelected"
         class="w-4 h-4"
         @change="toggleSelectAll"
       />
@@ -606,7 +606,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from 'vue';
+import { computed, reactive, ref, shallowRef, triggerRef, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { type Risk } from '@/oscal';
 import Dialog from '@/volt/Dialog.vue';
@@ -617,7 +617,7 @@ import RiskCreateForm from '@/components/risk/RiskCreateForm.vue';
 import RiskEditForm from '@/components/risk/RiskEditForm.vue';
 import { useToast } from 'primevue/usetoast';
 import PageHeader from '@/components/PageHeader.vue';
-import { useDataApi } from '@/composables/axios';
+import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
 import RouterLinkButton from '@/components/RouterLinkButton.vue';
 import {
@@ -675,6 +675,7 @@ const emit = defineEmits<{
   'risk-created': [risk: Risk];
   'risk-updated': [risk: Risk];
   'risk-deleted': [riskId: string, sspId: string];
+  'refresh-requested': [];
 }>();
 
 const route = useRoute();
@@ -705,7 +706,7 @@ const createSspId = ref('');
 const bulkStatusValue = ref('');
 const bulkOwnerValue = ref('');
 const bulkOperating = ref(false);
-const selectedRiskIds = ref<Set<string>>(new Set());
+const selectedRiskIds = shallowRef<Set<string>>(new Set());
 
 const riskFallbackKeys = new WeakMap<Risk, string>();
 let riskFallbackCounter = 0;
@@ -731,6 +732,7 @@ watch(
   () => {
     currentPage.value = 1;
     selectedRiskIds.value = new Set();
+    triggerRef(selectedRiskIds);
   },
 );
 
@@ -742,7 +744,7 @@ const { execute: executeDeleteRisk } = useDataApi<void>(
 
 const { execute: executePatchRisk } = useDataApi<Risk>(
   null,
-  { method: 'PUT' },
+  { method: 'PUT', transformRequest: [decamelizeKeys] },
   { immediate: false },
 );
 
@@ -821,6 +823,15 @@ const effectiveCreateSspId = computed(() => {
   return createSspId.value || undefined;
 });
 
+watch(
+  () => totalPages.value,
+  (newTotalPages) => {
+    if (currentPage.value > newTotalPages) {
+      currentPage.value = Math.max(1, newTotalPages);
+    }
+  },
+);
+
 function toggleSelectAll() {
   if (allVisibleSelected.value) {
     paginatedRisks.value.forEach((risk) => {
@@ -833,6 +844,7 @@ function toggleSelectAll() {
       if (id) selectedRiskIds.value.add(id);
     });
   }
+  triggerRef(selectedRiskIds);
 }
 
 function toggleRiskSelection(risk: Risk) {
@@ -843,6 +855,7 @@ function toggleRiskSelection(risk: Risk) {
   } else {
     selectedRiskIds.value.add(id);
   }
+  triggerRef(selectedRiskIds);
 }
 
 function openCreate() {
@@ -975,6 +988,8 @@ async function applyBulkStatus() {
   bulkStatusValue.value = '';
   bulkOperating.value = false;
   selectedRiskIds.value = new Set();
+  triggerRef(selectedRiskIds);
+  emit('refresh-requested');
 }
 
 async function applyBulkOwner() {
@@ -1014,6 +1029,8 @@ async function applyBulkOwner() {
   bulkOwnerValue.value = '';
   bulkOperating.value = false;
   selectedRiskIds.value = new Set();
+  triggerRef(selectedRiskIds);
+  emit('refresh-requested');
 }
 
 function exportCsv() {

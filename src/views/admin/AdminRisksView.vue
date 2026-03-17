@@ -14,6 +14,7 @@
     @risk-created="handleRiskCreated"
     @risk-updated="handleRiskUpdated"
     @risk-deleted="handleRiskDeleted"
+    @refresh-requested="handleRefreshRequested"
   />
 </template>
 
@@ -130,5 +131,9 @@ async function handleRiskDeleted(riskId: string) {
   risks.value = risks.value.filter(
     (risk) => getRiskIdentifier(risk) !== riskId,
   );
+}
+
+async function handleRefreshRequested() {
+  await loadRisks('/api/risks');
 }
 </script>
