@@ -229,15 +229,16 @@
     <!-- Create/Edit modal -->
     <MilestoneCreateEditModal
       v-model="showModal"
-      :poam-item-id="poamItemId"
       :milestone="editingMilestone"
+      :saving="modalSaving"
+      :save-error="modalSaveError"
       @saved="onMilestoneSaved"
     />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import MilestoneCreateEditModal from './MilestoneCreateEditModal.vue';
 import {
@@ -267,6 +268,8 @@ const { confirmDeleteDialog } = useDeleteConfirmationDialog();
 
 const showModal = ref(false);
 const editingMilestone = ref<PoamItemMilestone | null>(null);
+const modalSaving = ref(false);
+const modalSaveError = ref('');
 
 const {
   data: milestonesData,
@@ -294,7 +297,9 @@ const progressPillClass = computed(() => {
 
 function isOverdue(m: PoamItemMilestone): boolean {
   if (m.status === 'completed' || m.status === 'cancelled') return false;
-  return new Date(m.plannedCompletionDate) < new Date();
+  // Compare date strings in local timezone to avoid UTC-vs-local skew
+  const todayStr = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD
+  return m.plannedCompletionDate.substring(0, 10) < todayStr;
 }
 
 function statusDotClass(status: string): string {
@@ -319,18 +324,24 @@ function formatDate(iso: string): string {
 
 function openCreateModal() {
   editingMilestone.value = null;
+  modalSaveError.value = '';
   showModal.value = true;
 }
 
 function openEditModal(m: PoamItemMilestone) {
   editingMilestone.value = m;
+  modalSaveError.value = '';
   showModal.value = true;
 }
 
 const { createMilestone } = useMilestoneCreate(props.poamItemId);
 const { deleteMilestone } = useMilestoneDelete();
 
-async function onMilestoneSaved(payload: PoamItemMilestone) {
+async function onMilestoneSaved(
+  payload: CreateMilestoneRequest | UpdateMilestoneRequest,
+) {
+  modalSaving.value = true;
+  modalSaveError.value = '';
   try {
     if (editingMilestone.value) {
       const { updateMilestone } = useMilestoneUpdate(
@@ -351,13 +362,20 @@ async function onMilestoneSaved(payload: PoamItemMilestone) {
         life: 3000,
       });
     }
+    showModal.value = false;
     await reloadMilestones();
-  } catch {
+  } catch (err) {
+    const maybeError = err as { message?: string };
+    modalSaveError.value =
+      maybeError?.message || 'Failed to save milestone. Please try again.';
     toast.add({
       severity: 'error',
       summary: 'Failed to save milestone',
+      detail: modalSaveError.value,
       life: 4000,
     });
+  } finally {
+    modalSaving.value = false;
   }
 }
 
@@ -375,8 +393,4 @@ function confirmDelete(m: PoamItemMilestone) {
     { itemType: 'milestone' },
   );
 }
-
-onMounted(() => {
-  reloadMilestones();
-});
 </script>
