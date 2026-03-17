@@ -736,13 +736,33 @@ watch(
   },
 );
 
+watch(
+  () => [
+    filters.search,
+    filters.status,
+    filters.likelihood,
+    filters.impact,
+    filters.owner,
+    filters.review,
+    filters.controlId,
+    filters.evidenceId,
+    filters.sspId,
+    sortBy.value,
+    sortDirection.value,
+  ],
+  () => {
+    selectedRiskIds.value = new Set();
+    triggerRef(selectedRiskIds);
+  },
+);
+
 const { execute: executeDeleteRisk } = useDataApi<void>(
   null,
   { method: 'DELETE' },
   { immediate: false },
 );
 
-const { execute: executePatchRisk } = useDataApi<Risk>(
+const { execute: executeUpdateRisk } = useDataApi<Risk>(
   null,
   { method: 'PUT', transformRequest: [decamelizeKeys] },
   { immediate: false },
@@ -961,27 +981,52 @@ async function applyBulkStatus() {
     return id && selectedRiskIds.value.has(id);
   });
 
+  const CONCURRENCY_LIMIT = 5;
   let successCount = 0;
-  for (const risk of selected) {
-    const riskId = getRiskIdentifier(risk);
-    const sspId = getSspIdForRisk(risk);
-    if (!riskId || !sspId) continue;
-    try {
-      await executePatchRisk(
-        `/api/oscal/system-security-plans/${sspId}/risks/${riskId}`,
-        { data: { ...risk, status: bulkStatusValue.value } },
-      );
-      successCount++;
-    } catch {
-      // Continue with others
-    }
+  const failedRisks: string[] = [];
+
+  for (let i = 0; i < selected.length; i += CONCURRENCY_LIMIT) {
+    const batch = selected.slice(i, i + CONCURRENCY_LIMIT);
+    const results = await Promise.allSettled(
+      batch.map(async (risk) => {
+        const riskId = getRiskIdentifier(risk);
+        const sspId = getSspIdForRisk(risk);
+        if (!riskId || !sspId) throw new Error('Missing risk or SSP ID');
+        await executeUpdateRisk(
+          `/api/oscal/system-security-plans/${sspId}/risks/${riskId}`,
+          { data: { ...risk, status: bulkStatusValue.value } },
+        );
+        return riskId;
+      }),
+    );
+
+    results.forEach((result, idx) => {
+      if (result.status === 'fulfilled') {
+        successCount++;
+      } else {
+        const riskId = getRiskIdentifier(batch[idx]);
+        if (riskId) failedRisks.push(riskId);
+      }
+    });
   }
 
+  const severity =
+    successCount === 0
+      ? 'error'
+      : successCount < selected.length
+        ? 'warn'
+        : 'success';
+  const summary =
+    successCount === 0
+      ? 'Bulk Update Failed'
+      : successCount < selected.length
+        ? 'Partial Update'
+        : 'Bulk Status Updated';
   toast.add({
-    severity: 'success',
-    summary: 'Bulk Status Updated',
-    detail: `Updated ${successCount} of ${selected.length} risk(s).`,
-    life: 3000,
+    severity,
+    summary,
+    detail: `Updated ${successCount} of ${selected.length} risk(s).${failedRisks.length > 0 ? ` Failed: ${failedRisks.length}` : ''}`,
+    life: 4000,
   });
 
   showBulkStatusModal.value = false;
@@ -1000,29 +1045,54 @@ async function applyBulkOwner() {
     return id && selectedRiskIds.value.has(id);
   });
 
+  const CONCURRENCY_LIMIT = 5;
   let successCount = 0;
-  for (const risk of selected) {
-    const riskId = getRiskIdentifier(risk);
-    const sspId = getSspIdForRisk(risk);
-    if (!riskId || !sspId) continue;
-    try {
-      const updatedRisk = { ...risk } as Risk & Record<string, unknown>;
-      updatedRisk['owner'] = bulkOwnerValue.value.trim();
-      await executePatchRisk(
-        `/api/oscal/system-security-plans/${sspId}/risks/${riskId}`,
-        { data: updatedRisk },
-      );
-      successCount++;
-    } catch {
-      // Continue with others
-    }
+  const failedRisks: string[] = [];
+
+  for (let i = 0; i < selected.length; i += CONCURRENCY_LIMIT) {
+    const batch = selected.slice(i, i + CONCURRENCY_LIMIT);
+    const results = await Promise.allSettled(
+      batch.map(async (risk) => {
+        const riskId = getRiskIdentifier(risk);
+        const sspId = getSspIdForRisk(risk);
+        if (!riskId || !sspId) throw new Error('Missing risk or SSP ID');
+        const updatedRisk = { ...risk } as Risk & Record<string, unknown>;
+        updatedRisk['owner'] = bulkOwnerValue.value.trim();
+        await executeUpdateRisk(
+          `/api/oscal/system-security-plans/${sspId}/risks/${riskId}`,
+          { data: updatedRisk },
+        );
+        return riskId;
+      }),
+    );
+
+    results.forEach((result, idx) => {
+      if (result.status === 'fulfilled') {
+        successCount++;
+      } else {
+        const riskId = getRiskIdentifier(batch[idx]);
+        if (riskId) failedRisks.push(riskId);
+      }
+    });
   }
 
+  const severity =
+    successCount === 0
+      ? 'error'
+      : successCount < selected.length
+        ? 'warn'
+        : 'success';
+  const summary =
+    successCount === 0
+      ? 'Bulk Update Failed'
+      : successCount < selected.length
+        ? 'Partial Update'
+        : 'Bulk Owner Updated';
   toast.add({
-    severity: 'success',
-    summary: 'Bulk Owner Updated',
-    detail: `Updated ${successCount} of ${selected.length} risk(s).`,
-    life: 3000,
+    severity,
+    summary,
+    detail: `Updated ${successCount} of ${selected.length} risk(s).${failedRisks.length > 0 ? ` Failed: ${failedRisks.length}` : ''}`,
+    life: 4000,
   });
 
   showBulkOwnerModal.value = false;

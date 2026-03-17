@@ -125,7 +125,8 @@ function handleRiskUpdated(updatedRisk: Risk) {
   }
 }
 
-async function handleRiskDeleted(riskId: string) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+async function handleRiskDeleted(riskId: string, _sspId: string) {
   if (!risks.value) return;
 
   risks.value = risks.value.filter(
