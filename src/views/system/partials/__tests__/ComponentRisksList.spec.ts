@@ -121,13 +121,6 @@ vi.mock('@/volt/PrimaryButton.vue', () => ({
   },
 }));
 
-vi.mock('@/volt/Message.vue', () => ({
-  default: {
-    name: 'Message',
-    template: '<div><slot /></div>',
-  },
-}));
-
 vi.mock('@/volt/Drawer.vue', () => ({
   default: {
     name: 'Drawer',

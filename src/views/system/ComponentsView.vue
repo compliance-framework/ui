@@ -23,8 +23,9 @@
       <Panel
         v-for="component in components"
         :key="component.uuid"
-        collapsed
         toggleable
+        :collapsed="componentPanelCollapsed(component.uuid)"
+        @update:collapsed="setComponentPanelCollapsed(component.uuid, $event)"
       >
         <template #header>
           <div class="flex items-center gap-2 py-2">
@@ -123,6 +124,7 @@
           </div>
 
           <ComponentRisksList
+            v-if="!componentPanelCollapsed(component.uuid)"
             :ssp-id="sspId"
             :component="component"
             :risks="risks || []"
@@ -306,6 +308,7 @@ watch(
 // Modal states
 const showCreateComponentModal = ref(false);
 const showEditComponentModal = ref(false);
+const componentPanelsCollapsed = ref<Record<string, boolean>>({});
 
 // Edit targets
 const editingComponent = ref<SystemComponent | null>(null);
@@ -336,6 +339,24 @@ const loadData = async () => {
 
 function normalizeId(value?: string): string {
   return (value || '').trim().toLowerCase();
+}
+
+function componentPanelCollapsed(componentId?: string): boolean {
+  if (!componentId) return true;
+  const normalized = normalizeId(componentId);
+  return componentPanelsCollapsed.value[normalized] ?? true;
+}
+
+function setComponentPanelCollapsed(
+  componentId: string | undefined,
+  collapsed: boolean,
+): void {
+  if (!componentId) return;
+  const normalized = normalizeId(componentId);
+  componentPanelsCollapsed.value = {
+    ...componentPanelsCollapsed.value,
+    [normalized]: collapsed,
+  };
 }
 
 function isOpenOrInvestigatingRisk(risk: Risk): boolean {

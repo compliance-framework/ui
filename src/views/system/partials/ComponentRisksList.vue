@@ -411,21 +411,7 @@ function severityLevel(risk: Risk): RiskSeverityLevel {
 }
 
 function severityScore(risk: Risk): number {
-  const score = getRiskSeverityScore(risk);
-  if (score > 0) return score;
-
-  switch (severityLevel(risk)) {
-    case 'critical':
-      return 4;
-    case 'high':
-      return 3;
-    case 'medium':
-      return 2;
-    case 'low':
-      return 1;
-    default:
-      return 0;
-  }
+  return getRiskSeverityScore(risk);
 }
 
 function severityLabel(risk: Risk): string {
