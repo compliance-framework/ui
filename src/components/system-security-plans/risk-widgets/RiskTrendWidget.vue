@@ -102,7 +102,6 @@ const chartOptions: ChartOptions<'line'> = {
 };
 
 function onRangeUpdate(next: 30 | 60 | 90) {
-  if (!next) return;
   emit('update:range-days', next);
 }
 

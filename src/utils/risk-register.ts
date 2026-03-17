@@ -353,10 +353,12 @@ export function readRiskFiltersFromQuery(
   query: Record<string, unknown>,
 ): Pick<
   RiskFilters,
+  | 'search'
   | 'status'
   | 'statusCategory'
   | 'likelihood'
   | 'impact'
+  | 'owner'
   | 'review'
   | 'controlId'
   | 'evidenceId'
@@ -376,10 +378,12 @@ export function readRiskFiltersFromQuery(
   const impact = formatRiskFilterLevel(queryString(query.impact));
 
   return {
+    search: queryString(query.search),
     status: status || 'all',
     statusCategory: statusCategory || 'all',
     likelihood: likelihood || 'all',
     impact: impact || 'all',
+    owner: queryString(query.owner),
     review,
     controlId: queryString(query.controlId),
     evidenceId: queryString(query.evidenceId),

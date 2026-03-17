@@ -530,6 +530,58 @@ let riskFallbackCounter = 0;
 const filters = reactive<RiskFilters>({ ...defaultRiskFilters });
 const sortBy = ref<RiskSortBy>('updated');
 const sortDirection = ref<SortDirection>('desc');
+const syncingFiltersFromRoute = ref(false);
+
+const queryManagedFilterKeys = [
+  'search',
+  'status',
+  'statusCategory',
+  'likelihood',
+  'impact',
+  'owner',
+  'review',
+  'controlId',
+  'evidenceId',
+  'riskId',
+  'createdFrom',
+  'createdTo',
+] as const;
+
+function queryValueList(
+  value: LocationQueryRaw[string],
+): Array<string | number | null | undefined> {
+  if (Array.isArray(value)) return value;
+  return [value];
+}
+
+function serializedQuery(query: LocationQueryRaw): string {
+  const normalizedEntries: Array<[string, string[]]> = Object.entries(
+    query,
+  ).map(([key, value]) => [
+    key,
+    queryValueList(value).map((item) => String(item ?? '')),
+  ]);
+  normalizedEntries.sort((left, right) => left[0].localeCompare(right[0]));
+  return JSON.stringify(normalizedEntries);
+}
+
+function buildRouteQueryFromFilters(): LocationQueryRaw {
+  const nextQuery: LocationQueryRaw = { ...route.query };
+
+  queryManagedFilterKeys.forEach((key) => {
+    delete nextQuery[key];
+  });
+
+  queryManagedFilterKeys.forEach((key) => {
+    const value = filters[key];
+    const defaultValue = defaultRiskFilters[key];
+    if (value && value !== defaultValue) {
+      nextQuery[key] = value;
+    }
+  });
+
+  return nextQuery;
+}
 
 watch(
   () => route.query,
@@ -537,9 +589,26 @@ watch(
     const queryFilters = readRiskFiltersFromQuery(
       query as Record<string, unknown>,
     );
+    syncingFiltersFromRoute.value = true;
     Object.assign(filters, defaultRiskFilters, queryFilters);
+    syncingFiltersFromRoute.value = false;
   },
   { immediate: true },
+);
+
+watch(
+  () => queryManagedFilterKeys.map((key) => filters[key]),
+  () => {
+    if (syncingFiltersFromRoute.value) return;
+
+    const nextQuery = buildRouteQueryFromFilters();
+    const currentQuery: LocationQueryRaw = { ...route.query };
+    if (serializedQuery(currentQuery) === serializedQuery(nextQuery)) {
+      return;
+    }
+
+    void router.replace({ query: nextQuery });
+  },
 );
 
 const riskSummary = computed(() => computeRiskSummary(risks.value || []));
@@ -674,24 +743,6 @@ function resetFilters() {
   Object.assign(filters, defaultRiskFilters);
   sortBy.value = 'updated';
   sortDirection.value = 'desc';
-
-  const managedFilterQueryKeys = [
-    'status',
-    'statusCategory',
-    'likelihood',
-    'impact',
-    'review',
-    'controlId',
-    'evidenceId',
-    'riskId',
-    'createdFrom',
-    'createdTo',
-  ] as const;
-  const nextQuery: LocationQueryRaw = { ...route.query };
-  managedFilterQueryKeys.forEach((key) => {
-    delete nextQuery[key];
-  });
-  void router.replace({ query: nextQuery });
 }
 
 function formatDateTime(value?: string): string {

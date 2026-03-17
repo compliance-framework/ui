@@ -209,10 +209,12 @@ describe('risk-register', () => {
 
   it('reads supported risk filters from query params', () => {
     const parsed = readRiskFiltersFromQuery({
+      search: 'db',
       status: 'open',
       statusCategory: 'accepted',
       likelihood: 'moderate',
       impact: 'high',
+      owner: 'alice',
       review: 'overdue',
       controlId: 'AC-2',
       evidenceId: 'ev-12',
@@ -222,10 +224,12 @@ describe('risk-register', () => {
     });
 
     expect(parsed).toEqual({
+      search: 'db',
       status: 'open',
       statusCategory: 'accepted',
       likelihood: 'moderate',
       impact: 'high',
+      owner: 'alice',
       review: 'overdue',
       controlId: 'AC-2',
       evidenceId: 'ev-12',
