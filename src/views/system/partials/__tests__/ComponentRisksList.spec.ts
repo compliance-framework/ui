@@ -350,4 +350,49 @@ describe('ComponentRisksList', () => {
     expect(wrapper.text()).not.toContain('user-1');
     expect(wrapper.text()).not.toContain('Unassigned');
   });
+
+  it('prefers primary user assignment when multiple owner assignments exist', async () => {
+    const wrapper = await mount(ComponentRisksList, {
+      props: {
+        sspId: 'ssp-1',
+        component,
+        risks: [
+          makeRisk(
+            {
+              componentIds: ['comp-1'],
+              title: 'Primary Owner Risk',
+              ownerAssignments: [
+                {
+                  ownerKind: 'user',
+                  ownerRef: 'user-2',
+                  isPrimary: false,
+                },
+                {
+                  ownerKind: 'user',
+                  ownerRef: 'user-1',
+                  isPrimary: true,
+                },
+              ],
+            },
+            'risk-primary-owner',
+          ),
+        ],
+        users: [
+          {
+            uuid: 'user-1',
+            title: 'Alice Owner',
+          } as SystemUser,
+          {
+            uuid: 'user-2',
+            title: 'Bob Secondary',
+          } as SystemUser,
+        ],
+      },
+    });
+
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('Alice Owner');
+    expect(wrapper.text()).not.toContain('Bob Secondary');
+  });
 });

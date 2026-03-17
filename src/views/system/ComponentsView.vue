@@ -324,7 +324,7 @@ const loadData = async () => {
     toast.add({
       severity: 'error',
       summary: 'Error',
-      detail: `Failed to load components. ${error}`,
+      detail: `Failed to load components. ${toErrorDetail(error)}`,
       life: 5000,
     });
   }
@@ -362,7 +362,18 @@ function openComponentRiskCount(component: SystemComponent): number {
 }
 
 function openComponentRiskLabel(component: SystemComponent): string {
-  return `${openComponentRiskCount(component)} risk`;
+  const count = openComponentRiskCount(component);
+  return `${count} ${count === 1 ? 'risk' : 'risks'}`;
+}
+
+function toErrorDetail(error: unknown): string {
+  if (error instanceof Error && error.message.trim()) {
+    return error.message.trim();
+  }
+  if (typeof error === 'string' && error.trim()) {
+    return error.trim();
+  }
+  return 'Please try again.';
 }
 
 async function refreshRisksAndUsers() {

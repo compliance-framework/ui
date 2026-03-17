@@ -446,6 +446,11 @@ function looksLikeUuid(value: string): boolean {
   );
 }
 
+function isPrimaryOwnerAssignment(assignment: Record<string, unknown>): boolean {
+  const flag = assignment.isPrimary;
+  return flag === true || flag === 'true' || flag === 1 || flag === '1';
+}
+
 function riskOwner(risk: Risk): string {
   const source = toRecord(risk);
 
@@ -460,12 +465,20 @@ function riskOwner(risk: Risk): string {
 
   const assignments = source?.ownerAssignments;
   if (Array.isArray(assignments)) {
-    const firstUserAssignment = assignments
+    const userAssignments = assignments
       .map((entry) => toRecord(entry))
-      .find((entry) => readString(entry || {}, ['ownerKind']) === 'user');
+      .filter(
+        (entry): entry is Record<string, unknown> =>
+          !!entry && readString(entry, ['ownerKind']) === 'user',
+      );
 
-    if (firstUserAssignment) {
-      const ownerRef = readString(firstUserAssignment, ['ownerRef']);
+    const chosenUserAssignment =
+      userAssignments.find((assignment) =>
+        isPrimaryOwnerAssignment(assignment),
+      ) || userAssignments[0];
+
+    if (chosenUserAssignment) {
+      const ownerRef = readString(chosenUserAssignment, ['ownerRef']);
       if (ownerRef) {
         const label = usersById.value.get(ownerRef);
         if (label) return label;
