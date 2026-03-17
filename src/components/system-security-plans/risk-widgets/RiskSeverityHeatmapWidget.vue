@@ -127,6 +127,7 @@ function cellTextColor(
 
 function navigate(likelihood: RiskSeverityLevel, impact: RiskSeverityLevel) {
   emit('navigate', {
+    status: 'all',
     likelihood,
     impact,
   });

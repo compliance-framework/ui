@@ -23,7 +23,7 @@ describe('RiskSeverityHeatmapWidget', () => {
     await wrapper.get('[data-testid="heatmap-critical-high"]').trigger('click');
 
     expect(wrapper.emitted('navigate')).toEqual([
-      [{ likelihood: 'critical', impact: 'high' }],
+      [{ status: 'all', likelihood: 'critical', impact: 'high' }],
     ]);
   });
 

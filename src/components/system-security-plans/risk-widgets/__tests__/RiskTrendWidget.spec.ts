@@ -45,6 +45,7 @@ describe('RiskTrendWidget', () => {
     expect(wrapper.emitted('navigate')).toEqual([
       [
         {
+          status: 'all',
           createdFrom: '2026-03-02T00:00:00.000Z',
           createdTo: '2026-03-02T23:59:59.999Z',
         },

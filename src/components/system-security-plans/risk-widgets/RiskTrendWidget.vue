@@ -109,6 +109,7 @@ function navigateFromPointIndex(index: number) {
   const point = props.points[index];
   if (!point) return;
   emit('navigate', {
+    status: 'all',
     createdFrom: point.createdFrom,
     createdTo: point.createdTo,
   });
