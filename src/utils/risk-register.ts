@@ -33,6 +33,12 @@ export type RiskSortBy =
   | 'impact';
 
 export type SortDirection = 'asc' | 'desc';
+export type RiskSeverityLevel =
+  | 'unknown'
+  | 'low'
+  | 'medium'
+  | 'high'
+  | 'critical';
 
 export const defaultRiskFilters: RiskFilters = {
   search: '',
@@ -72,6 +78,22 @@ function scalarFromObject(item: unknown, keys: string[]): string | undefined {
     }
   }
   return undefined;
+}
+
+function hintFromRemarks(
+  remarks: unknown,
+  label: 'likelihood' | 'impact',
+): string | undefined {
+  if (typeof remarks !== 'string' || !remarks.trim()) return undefined;
+
+  const matcher =
+    label === 'likelihood'
+      ? /likelihood\s*hint\s*:\s*([^\n\r]+)/i
+      : /impact\s*hint\s*:\s*([^\n\r]+)/i;
+
+  const match = remarks.match(matcher);
+  if (!match?.[1]) return undefined;
+  return match[1].trim();
 }
 
 function valuesFromUnknown(
@@ -188,15 +210,40 @@ export function getRiskReviewDeadline(risk: Risk): string | undefined {
 export function getRiskLikelihood(risk: Risk): string {
   const loose = risk as LooseRisk;
   const value =
-    scalarFromObject(loose, ['likelihood']) || facetValue(risk, 'likelihood');
+    scalarFromObject(loose, ['likelihood', 'likelihoodHint']) ||
+    facetValue(risk, 'likelihood') ||
+    hintFromRemarks(loose.remarks, 'likelihood');
   return toLower(value);
 }
 
 export function getRiskImpact(risk: Risk): string {
   const loose = risk as LooseRisk;
   const value =
-    scalarFromObject(loose, ['impact']) || facetValue(risk, 'impact');
+    scalarFromObject(loose, ['impact', 'impactHint']) ||
+    facetValue(risk, 'impact') ||
+    hintFromRemarks(loose.remarks, 'impact');
   return toLower(value);
+}
+
+export function getRiskSeverityScore(risk: Risk): number {
+  return (
+    normalizeLevel(getRiskLikelihood(risk)) *
+    normalizeLevel(getRiskImpact(risk))
+  );
+}
+
+export function getRiskSeverityLevelFromScore(
+  score: number,
+): RiskSeverityLevel {
+  if (score >= 12) return 'critical';
+  if (score >= 8) return 'high';
+  if (score >= 4) return 'medium';
+  if (score >= 1) return 'low';
+  return 'unknown';
+}
+
+export function getRiskSeverityLevel(risk: Risk): RiskSeverityLevel {
+  return getRiskSeverityLevelFromScore(getRiskSeverityScore(risk));
 }
 
 export function getRiskOwnerDisplay(risk: Risk): string {

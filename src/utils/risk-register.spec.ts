@@ -7,6 +7,9 @@ import {
   getRiskComponentIds,
   getRiskControlIds,
   getRiskEvidenceIds,
+  getRiskSeverityLevel,
+  getRiskSeverityLevelFromScore,
+  getRiskSeverityScore,
   isOpenStatus,
   readRiskFiltersFromQuery,
   sortRisks,
@@ -291,5 +294,46 @@ describe('risk-register', () => {
       createdFrom: '2026-03-01T00:00:00Z',
       createdTo: '2026-03-02T00:00:00Z',
     });
+  });
+
+  it('computes severity score from likelihood x impact', () => {
+    const risk = makeRisk({
+      likelihood: 'high',
+      impact: 'critical',
+    });
+
+    expect(getRiskSeverityScore(risk)).toBe(12);
+    expect(getRiskSeverityLevel(risk)).toBe('critical');
+  });
+
+  it('maps severity levels from score thresholds', () => {
+    expect(getRiskSeverityLevelFromScore(0)).toBe('unknown');
+    expect(getRiskSeverityLevelFromScore(1)).toBe('low');
+    expect(getRiskSeverityLevelFromScore(4)).toBe('medium');
+    expect(getRiskSeverityLevelFromScore(8)).toBe('high');
+    expect(getRiskSeverityLevelFromScore(12)).toBe('critical');
+  });
+
+  it('returns unknown severity when likelihood or impact is missing', () => {
+    const missingLikelihood = makeRisk({
+      impact: 'high',
+    });
+    const missingImpact = makeRisk({
+      likelihood: 'high',
+    });
+
+    expect(getRiskSeverityScore(missingLikelihood)).toBe(0);
+    expect(getRiskSeverityLevel(missingLikelihood)).toBe('unknown');
+    expect(getRiskSeverityScore(missingImpact)).toBe(0);
+    expect(getRiskSeverityLevel(missingImpact)).toBe('unknown');
+  });
+
+  it('reads likelihood and impact from remarks hints', () => {
+    const risk = makeRisk({
+      remarks: 'Likelihood hint: moderate\nImpact hint: high',
+    });
+
+    expect(getRiskSeverityScore(risk)).toBe(6);
+    expect(getRiskSeverityLevel(risk)).toBe('medium');
   });
 });
