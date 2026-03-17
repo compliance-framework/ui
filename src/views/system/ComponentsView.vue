@@ -400,10 +400,30 @@ async function refreshRisksAndUsers() {
     return;
   }
 
-  await Promise.allSettled([
+  const [risksResult, usersResult] = await Promise.allSettled([
     fetchRisks(risksEndpoint.value),
     fetchUsers(usersEndpoint.value),
   ]);
+
+  if (risksResult.status === 'rejected') {
+    risks.value = [];
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: `Failed to load risks. ${toErrorDetail(risksResult.reason)}`,
+      life: 5000,
+    });
+  }
+
+  if (usersResult.status === 'rejected') {
+    users.value = [];
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: `Failed to load users. ${toErrorDetail(usersResult.reason)}`,
+      life: 5000,
+    });
+  }
 }
 
 watch(

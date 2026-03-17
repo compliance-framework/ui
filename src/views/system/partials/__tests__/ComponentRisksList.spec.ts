@@ -51,6 +51,7 @@ vi.mock('@/composables/axios', async () => {
   const { ref } = await import('vue');
 
   return {
+    decamelizeKeys: (data: unknown) => data,
     useDataApi: (
       initialUrl?: unknown,
       config?: { method?: string },
@@ -329,7 +330,7 @@ describe('ComponentRisksList', () => {
 
     expect(linkCall).toBeDefined();
     expect(linkCall?.data).toEqual({
-      'component-id': 'comp-1',
+      componentId: 'comp-1',
     });
 
     const refreshEvents = wrapper.emitted('risks-updated');

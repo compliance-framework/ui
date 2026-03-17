@@ -177,7 +177,7 @@ import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
 import type { Risk, SystemComponent, SystemUser } from '@/oscal';
-import { useDataApi } from '@/composables/axios';
+import { decamelizeKeys, useDataApi } from '@/composables/axios';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
 import Drawer from '@/volt/Drawer.vue';
 import RiskCreateForm from '@/components/risk/RiskCreateForm.vue';
@@ -220,7 +220,7 @@ const sortDirection = ref<SortDirection>('desc');
 
 const { execute: linkRiskComponent } = useDataApi<void>(
   null,
-  { method: 'POST' },
+  { method: 'POST', transformRequest: [decamelizeKeys] },
   { immediate: false },
 );
 
@@ -306,10 +306,6 @@ function compareStringWithDirection(
     sensitivity: 'base',
   });
   return direction === 'asc' ? compared : -compared;
-}
-
-function normalizeText(value?: string): string {
-  return (value || '').trim().toLowerCase();
 }
 
 function deadlineTimestamp(value?: string): number {
@@ -402,24 +398,7 @@ function statusBadgeClass(status?: string): string {
 }
 
 function severityLevel(risk: Risk): RiskSeverityLevel {
-  const resolved = getRiskSeverityLevel(risk);
-  if (resolved !== 'unknown') return resolved;
-
-  const fallback = getRiskImpact(risk) || getRiskLikelihood(risk);
-  const normalized = normalizeText(fallback);
-  if (
-    normalized === 'critical' ||
-    normalized === 'high' ||
-    normalized === 'medium' ||
-    normalized === 'low'
-  ) {
-    return normalized;
-  }
-  if (normalized === 'moderate') {
-    return 'medium';
-  }
-
-  return 'unknown';
+  return getRiskSeverityLevel(risk);
 }
 
 function severityScore(risk: Risk): number {
@@ -554,7 +533,7 @@ async function handleRiskCreated(risk: Risk) {
   try {
     await linkRiskComponent(linkEndpoint, {
       data: {
-        'component-id': props.component.uuid,
+        componentId: props.component.uuid,
       },
     });
 
