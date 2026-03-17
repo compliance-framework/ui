@@ -117,8 +117,7 @@ vi.mock('@/volt/PrimaryButton.vue', () => ({
   default: {
     name: 'PrimaryButton',
     props: ['disabled'],
-    template:
-      '<button :disabled="disabled" type="button"><slot /></button>',
+    template: '<button :disabled="disabled" type="button"><slot /></button>',
   },
 }));
 
@@ -205,8 +204,14 @@ describe('ComponentRisksList', () => {
   it('shows only risks associated with the current component', async () => {
     const wrapper = await mountView([
       makeRisk({ componentIds: ['comp-1'], title: 'Linked A' }, 'risk-a'),
-      makeRisk({ componentIds: ['comp-2'], title: 'Other Component' }, 'risk-b'),
-      makeRisk({ relatedComponents: [{ componentUuid: 'comp-1' }], title: 'Linked B' }, 'risk-c'),
+      makeRisk(
+        { componentIds: ['comp-2'], title: 'Other Component' },
+        'risk-b',
+      ),
+      makeRisk(
+        { relatedComponents: [{ componentUuid: 'comp-1' }], title: 'Linked B' },
+        'risk-c',
+      ),
     ]);
 
     const rows = wrapper.findAll('[data-testid="risk-row"]');
@@ -218,8 +223,14 @@ describe('ComponentRisksList', () => {
 
   it('filters risks by selected status', async () => {
     const wrapper = await mountView([
-      makeRisk({ componentIds: ['comp-1'], status: 'open', title: 'Open Risk' }, 'risk-open'),
-      makeRisk({ componentIds: ['comp-1'], status: 'closed', title: 'Closed Risk' }, 'risk-closed'),
+      makeRisk(
+        { componentIds: ['comp-1'], status: 'open', title: 'Open Risk' },
+        'risk-open',
+      ),
+      makeRisk(
+        { componentIds: ['comp-1'], status: 'closed', title: 'Closed Risk' },
+        'risk-closed',
+      ),
     ]);
 
     await wrapper.get('[data-testid="status-filter"]').setValue('closed');
@@ -287,7 +298,10 @@ describe('ComponentRisksList', () => {
 
   it('navigates to risk detail when clicking a risk row', async () => {
     const wrapper = await mountView([
-      makeRisk({ componentIds: ['comp-1'], title: 'Clickable Risk' }, 'risk-click'),
+      makeRisk(
+        { componentIds: ['comp-1'], title: 'Clickable Risk' },
+        'risk-click',
+      ),
     ]);
 
     await wrapper.get('[data-testid="risk-row"]').trigger('click');
@@ -303,7 +317,10 @@ describe('ComponentRisksList', () => {
 
   it('creates and links a risk to the current component, then refreshes', async () => {
     const wrapper = await mountView([
-      makeRisk({ componentIds: ['comp-1'], title: 'Existing Risk' }, 'risk-existing'),
+      makeRisk(
+        { componentIds: ['comp-1'], title: 'Existing Risk' },
+        'risk-existing',
+      ),
     ]);
 
     await wrapper.get('[data-testid="create-risk"]').trigger('click');

@@ -1,7 +1,9 @@
 <template>
   <div class="mt-6 space-y-4">
     <div class="flex flex-wrap items-center justify-between gap-3">
-      <h4 class="text-sm font-semibold text-gray-700 dark:text-slate-200">Risks</h4>
+      <h4 class="text-sm font-semibold text-gray-700 dark:text-slate-200">
+        Risks
+      </h4>
       <PrimaryButton
         data-testid="create-risk"
         :disabled="!props.sspId || !props.component.uuid"
@@ -71,7 +73,8 @@
     </div>
 
     <p class="text-xs text-gray-500 dark:text-slate-400">
-      Showing {{ visibleRisks.length }} of {{ componentRisks.length }} risks for this component
+      Showing {{ visibleRisks.length }} of {{ componentRisks.length }} risks for
+      this component
     </p>
 
     <p
@@ -81,7 +84,10 @@
       Loading risks...
     </p>
 
-    <p v-else-if="!visibleRisks.length" class="text-sm text-gray-500 dark:text-slate-400">
+    <p
+      v-else-if="!visibleRisks.length"
+      class="text-sm text-gray-500 dark:text-slate-400"
+    >
       No risks associated with this component.
     </p>
 
@@ -133,7 +139,9 @@
           </div>
 
           <div>
-            <p class="text-xs text-gray-500 dark:text-slate-400">Review Deadline</p>
+            <p class="text-xs text-gray-500 dark:text-slate-400">
+              Review Deadline
+            </p>
             <p class="font-medium text-gray-700 dark:text-slate-200">
               {{ formatDateTime(riskReviewDeadline(risk)) }}
             </p>
@@ -168,11 +176,7 @@
 import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
-import type {
-  Risk,
-  SystemComponent,
-  SystemUser,
-} from '@/oscal';
+import type { Risk, SystemComponent, SystemUser } from '@/oscal';
 import { useDataApi } from '@/composables/axios';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
 import Drawer from '@/volt/Drawer.vue';
@@ -257,7 +261,10 @@ const componentRisks = computed(() => {
 
 const usersById = computed(() => {
   return new Map(
-    (props.users || []).map((user) => [user.uuid, user.title || user.shortName]),
+    (props.users || []).map((user) => [
+      user.uuid,
+      user.title || user.shortName,
+    ]),
   );
 });
 
@@ -446,7 +453,9 @@ function looksLikeUuid(value: string): boolean {
   );
 }
 
-function isPrimaryOwnerAssignment(assignment: Record<string, unknown>): boolean {
+function isPrimaryOwnerAssignment(
+  assignment: Record<string, unknown>,
+): boolean {
   const flag = assignment.isPrimary;
   return flag === true || flag === 'true' || flag === 1 || flag === '1';
 }
@@ -533,7 +542,8 @@ async function handleRiskCreated(risk: Risk) {
     toast.add({
       severity: 'warn',
       summary: 'Risk created',
-      detail: 'Risk was created, but component association could not be resolved.',
+      detail:
+        'Risk was created, but component association could not be resolved.',
       life: 4000,
     });
     showCreateRiskDrawer.value = false;

@@ -206,7 +206,10 @@ import type {
   SystemSecurityPlan,
   SystemUser,
 } from '@/oscal';
-import { getRiskComponentIds, normalizeRiskStatus } from '@/utils/risk-register';
+import {
+  getRiskComponentIds,
+  normalizeRiskStatus,
+} from '@/utils/risk-register';
 
 const route = useRoute();
 const router = useRouter();

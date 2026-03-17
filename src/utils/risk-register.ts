@@ -198,7 +198,10 @@ export function getRiskImpact(risk: Risk): string {
 }
 
 export function getRiskSeverityScore(risk: Risk): number {
-  return normalizeLevel(getRiskLikelihood(risk)) * normalizeLevel(getRiskImpact(risk));
+  return (
+    normalizeLevel(getRiskLikelihood(risk)) *
+    normalizeLevel(getRiskImpact(risk))
+  );
 }
 
 export function getRiskSeverityLevelFromScore(
