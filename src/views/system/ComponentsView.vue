@@ -14,7 +14,7 @@
 
     <div class="space-y-4">
       <div
-        v-if="components?.length === 0"
+        v-if="sspId && components?.length === 0"
         class="text-center py-8 text-gray-500 dark:text-slate-400"
       >
         No components defined. Create your first component to get started.
