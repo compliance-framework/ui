@@ -401,7 +401,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter, type LocationQueryRaw } from 'vue-router';
 import { type Risk } from '@/oscal';
 import Dialog from '@/volt/Dialog.vue';
 import Message from '@/volt/Message.vue';
@@ -435,6 +435,7 @@ import {
 import { getRiskIdentifier, sameRiskIdentifier } from '@/utils/risk-id';
 
 const route = useRoute();
+const router = useRouter();
 const toast = useToast();
 const { system } = useSystemStore();
 
@@ -632,6 +633,14 @@ function riskDetailRoute(riskId: string) {
     return { name: 'system-security-plans' };
   }
 
+  if (route.name === 'system:risks') {
+    return {
+      name: 'risks:detail',
+      params: { riskId },
+      query: { from: 'system' },
+    };
+  }
+
   if (route.name !== 'system-security-plan-risks') {
     return {
       name: 'risks:detail',
@@ -665,6 +674,24 @@ function resetFilters() {
   Object.assign(filters, defaultRiskFilters);
   sortBy.value = 'updated';
   sortDirection.value = 'desc';
+
+  const managedFilterQueryKeys = [
+    'status',
+    'statusCategory',
+    'likelihood',
+    'impact',
+    'review',
+    'controlId',
+    'evidenceId',
+    'riskId',
+    'createdFrom',
+    'createdTo',
+  ] as const;
+  const nextQuery: LocationQueryRaw = { ...route.query };
+  managedFilterQueryKeys.forEach((key) => {
+    delete nextQuery[key];
+  });
+  void router.replace({ query: nextQuery });
 }
 
 function formatDateTime(value?: string): string {

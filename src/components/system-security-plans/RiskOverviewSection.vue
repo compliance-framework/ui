@@ -123,7 +123,9 @@ const trendPoints = computed(() =>
 );
 
 function navigateToRiskList(query: Record<string, string> = {}) {
-  if (!props.sspId) return;
+  if (props.riskListRouteName === 'system-security-plan-risks' && !props.sspId) {
+    return;
+  }
 
   const routeTarget =
     props.riskListRouteName === 'system-security-plan-risks'

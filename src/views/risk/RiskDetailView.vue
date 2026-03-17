@@ -927,7 +927,19 @@ const pageTitle = computed(() =>
   risk.value?.title ? `Risk: ${risk.value.title}` : 'Risk Detail',
 );
 
+function openedFromSystemRisksRoute(): boolean {
+  const from = route.query.from;
+  if (Array.isArray(from)) {
+    return from.includes('system');
+  }
+  return from === 'system';
+}
+
 function riskListRouteByContext() {
+  if (openedFromSystemRisksRoute()) {
+    return { name: 'system:risks' };
+  }
+
   if (!context.value) {
     return { name: 'risks:index' };
   }

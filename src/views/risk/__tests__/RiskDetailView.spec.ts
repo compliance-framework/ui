@@ -9,6 +9,7 @@ const mockRoute = {
     id: 'ssp-1',
     riskId: 'risk-1',
   },
+  query: {} as Record<string, string | string[] | undefined>,
 };
 
 type MockRisk = {
@@ -559,6 +560,10 @@ async function clickButtonContainingText(
 
 describe('RiskDetailView', () => {
   beforeEach(() => {
+    mockRoute.name = 'system-security-plan-risk-detail';
+    mockRoute.params.id = 'ssp-1';
+    mockRoute.params.riskId = 'risk-1';
+    mockRoute.query = {};
     resetMockApiState();
     vi.clearAllMocks();
     vi.spyOn(window, 'confirm').mockReturnValue(true);
@@ -617,6 +622,20 @@ describe('RiskDetailView', () => {
       name: 'system-security-plan-risks',
       params: { id: 'ssp-1' },
     });
+  });
+
+  it('falls back to system risks route when opened from system risks list', async () => {
+    mockRoute.name = 'risks:detail';
+    mockRoute.params.id = '';
+    mockRoute.query = { from: 'system' };
+    mockRouterHistoryState.back = null;
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    await clickButtonByText(wrapper, 'Back');
+
+    expect(mockRouterBack).not.toHaveBeenCalled();
+    expect(mockRouterPush).toHaveBeenCalledWith({ name: 'system:risks' });
   });
 
   it('renders lifecycle and workflow content in the overview tab', async () => {
