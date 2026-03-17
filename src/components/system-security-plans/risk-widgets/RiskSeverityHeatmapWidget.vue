@@ -15,7 +15,9 @@
         :key="likelihood"
         class="grid grid-cols-[6rem_repeat(4,minmax(0,1fr))] gap-2"
       >
-        <div class="self-center text-xs font-medium uppercase text-gray-500 dark:text-slate-400">
+        <div
+          class="self-center text-xs font-medium uppercase text-gray-500 dark:text-slate-400"
+        >
           {{ formatLevel(likelihood) }}
         </div>
         <button
@@ -24,7 +26,10 @@
           type="button"
           :data-testid="`heatmap-${likelihood}-${impact}`"
           class="rounded-md border border-ccf-300 px-2 py-3 text-sm font-semibold transition hover:opacity-90 dark:border-slate-700"
-          :style="{ backgroundColor: cellColor(likelihood, impact), color: cellTextColor(likelihood, impact) }"
+          :style="{
+            backgroundColor: cellColor(likelihood, impact),
+            color: cellTextColor(likelihood, impact),
+          }"
           @click="navigate(likelihood, impact)"
         >
           {{ countFor(likelihood, impact) }}
@@ -32,7 +37,9 @@
       </div>
     </div>
 
-    <div class="mt-3 grid grid-cols-[6rem_repeat(4,minmax(0,1fr))] gap-2 text-xs">
+    <div
+      class="mt-3 grid grid-cols-[6rem_repeat(4,minmax(0,1fr))] gap-2 text-xs"
+    >
       <span></span>
       <span
         v-for="impact in levels"
@@ -76,23 +83,35 @@ function formatLevel(value: string): string {
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
-function countFor(likelihood: RiskSeverityLevel, impact: RiskSeverityLevel): number {
+function countFor(
+  likelihood: RiskSeverityLevel,
+  impact: RiskSeverityLevel,
+): number {
   return countMap.value.get(`${likelihood}:${impact}`) || 0;
 }
 
-function intensity(likelihood: RiskSeverityLevel, impact: RiskSeverityLevel): number {
+function intensity(
+  likelihood: RiskSeverityLevel,
+  impact: RiskSeverityLevel,
+): number {
   if (!props.maxCount) return 0;
   const count = countFor(likelihood, impact);
   return count / props.maxCount;
 }
 
-function cellColor(likelihood: RiskSeverityLevel, impact: RiskSeverityLevel): string {
+function cellColor(
+  likelihood: RiskSeverityLevel,
+  impact: RiskSeverityLevel,
+): string {
   const ratio = intensity(likelihood, impact);
   const alpha = 0.08 + ratio * 0.82;
   return `rgba(220, 38, 38, ${alpha.toFixed(3)})`;
 }
 
-function cellTextColor(likelihood: RiskSeverityLevel, impact: RiskSeverityLevel): string {
+function cellTextColor(
+  likelihood: RiskSeverityLevel,
+  impact: RiskSeverityLevel,
+): string {
   return intensity(likelihood, impact) > 0.45 ? '#ffffff' : '#7f1d1d';
 }
 

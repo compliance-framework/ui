@@ -111,8 +111,12 @@ watch(
 );
 
 const loadError = computed(() => !!error.value);
-const statusBreakdown = computed(() => buildRiskStatusBreakdown(risks.value || []));
-const severityHeatmap = computed(() => buildRiskSeverityHeatmap(risks.value || []));
+const statusBreakdown = computed(() =>
+  buildRiskStatusBreakdown(risks.value || []),
+);
+const severityHeatmap = computed(() =>
+  buildRiskSeverityHeatmap(risks.value || []),
+);
 const overdueRisks = computed(() => listOverdueRisks(risks.value || []));
 const topRisks = computed(() => listTopOpenRisks(risks.value || [], 5));
 const acceptanceMetrics = computed(() =>
@@ -123,7 +127,10 @@ const trendPoints = computed(() =>
 );
 
 function navigateToRiskList(query: Record<string, string> = {}) {
-  if (props.riskListRouteName === 'system-security-plan-risks' && !props.sspId) {
+  if (
+    props.riskListRouteName === 'system-security-plan-risks' &&
+    !props.sspId
+  ) {
     return;
   }
 

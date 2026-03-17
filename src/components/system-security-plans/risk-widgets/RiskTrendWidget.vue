@@ -20,7 +20,10 @@
       />
     </div>
 
-    <div v-if="!points.length" class="mt-4 text-sm text-gray-500 dark:text-slate-400">
+    <div
+      v-if="!points.length"
+      class="mt-4 text-sm text-gray-500 dark:text-slate-400"
+    >
       No risk trend data.
     </div>
 

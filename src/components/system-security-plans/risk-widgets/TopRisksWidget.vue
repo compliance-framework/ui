@@ -9,7 +9,10 @@
       Highest-impact open risks
     </p>
 
-    <div v-if="!items.length" class="mt-4 text-sm text-gray-500 dark:text-slate-400">
+    <div
+      v-if="!items.length"
+      class="mt-4 text-sm text-gray-500 dark:text-slate-400"
+    >
       No open risks available.
     </div>
 
@@ -22,11 +25,14 @@
         class="w-full rounded-md border border-ccf-300 px-3 py-2 text-left hover:bg-gray-50 dark:border-slate-700 dark:hover:bg-slate-800"
         @click="openRisk(item.id)"
       >
-        <p class="truncate text-sm font-medium text-gray-900 dark:text-slate-200">
+        <p
+          class="truncate text-sm font-medium text-gray-900 dark:text-slate-200"
+        >
           {{ item.title }}
         </p>
         <p class="mt-1 text-xs text-gray-600 dark:text-slate-400">
-          Impact {{ formatLevel(item.impact) }} | Likelihood {{ formatLevel(item.likelihood) }}
+          Impact {{ formatLevel(item.impact) }} | Likelihood
+          {{ formatLevel(item.likelihood) }}
         </p>
       </button>
     </div>

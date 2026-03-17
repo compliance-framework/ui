@@ -12,7 +12,9 @@
     </p>
 
     <div class="mt-4 flex items-end gap-2">
-      <span class="text-3xl font-semibold text-emerald-700 dark:text-emerald-300">
+      <span
+        class="text-3xl font-semibold text-emerald-700 dark:text-emerald-300"
+      >
         {{ metrics.percentage.toFixed(1) }}%
       </span>
       <span class="pb-1 text-sm text-gray-600 dark:text-slate-400">
@@ -20,7 +22,9 @@
       </span>
     </div>
 
-    <div class="mt-3 h-3 w-full overflow-hidden rounded-full bg-zinc-200 dark:bg-slate-700">
+    <div
+      class="mt-3 h-3 w-full overflow-hidden rounded-full bg-zinc-200 dark:bg-slate-700"
+    >
       <div
         class="h-full bg-emerald-600"
         :style="{ width: `${metrics.percentage}%` }"

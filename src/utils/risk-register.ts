@@ -512,11 +512,17 @@ export function filterRisks(
 
     const createdAt = toDateOrNull(getRiskCreatedAt(risk));
 
-    if (createdFrom && (!createdAt || createdAt.getTime() < createdFrom.getTime())) {
+    if (
+      createdFrom &&
+      (!createdAt || createdAt.getTime() < createdFrom.getTime())
+    ) {
       return false;
     }
 
-    if (createdTo && (!createdAt || createdAt.getTime() > createdTo.getTime())) {
+    if (
+      createdTo &&
+      (!createdAt || createdAt.getTime() > createdTo.getTime())
+    ) {
       return false;
     }
 

@@ -33,7 +33,11 @@ function riskWithLevels(
       {
         origin: { actors: [] },
         facets: [
-          { name: 'likelihood', system: 'http://fedramp.gov', value: likelihood },
+          {
+            name: 'likelihood',
+            system: 'http://fedramp.gov',
+            value: likelihood,
+          },
           { name: 'impact', system: 'http://fedramp.gov', value: impact },
         ],
       },

@@ -13,7 +13,12 @@ import {
   normalizeRiskStatus,
 } from '@/utils/risk-register';
 
-export const riskSeverityLevels = ['low', 'medium', 'high', 'critical'] as const;
+export const riskSeverityLevels = [
+  'low',
+  'medium',
+  'high',
+  'critical',
+] as const;
 
 export type RiskSeverityLevel = (typeof riskSeverityLevels)[number];
 
@@ -210,10 +215,7 @@ export function listOverdueRisks(
     });
 }
 
-export function listTopOpenRisks(
-  risks: Risk[] = [],
-  limit = 5,
-): TopRiskItem[] {
+export function listTopOpenRisks(risks: Risk[] = [], limit = 5): TopRiskItem[] {
   const topRiskCandidates: TopRiskItem[] = [];
 
   for (const risk of risks) {
@@ -251,7 +253,9 @@ export function listTopOpenRisks(
 export function computeRiskAcceptanceMetrics(
   risks: Risk[] = [],
 ): RiskAcceptanceMetrics {
-  const addressed = risks.filter((risk) => isAddressedStatus(risk.status)).length;
+  const addressed = risks.filter((risk) =>
+    isAddressedStatus(risk.status),
+  ).length;
   const totalInScope = risks.filter((risk) => {
     const normalized = normalizeRiskStatus(risk.status);
     return (
