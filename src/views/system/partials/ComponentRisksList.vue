@@ -196,6 +196,7 @@ import {
   getRiskSeverityLevel,
   getRiskSeverityScore,
   isClosedStatus,
+  normalizeRiskStatus,
   type RiskSeverityLevel,
   type SortDirection,
 } from '@/utils/risk-register';
@@ -279,11 +280,22 @@ const usersById = computed(() => {
   );
 });
 
+function normalizedStatusForList(status?: string): string {
+  const workflowStatus = normalizeRiskRegisterStatus(status);
+  if (workflowStatus) {
+    return workflowStatus;
+  }
+  if (isClosedStatus(status)) {
+    return 'closed';
+  }
+  return normalizeRiskStatus(status) || 'unknown';
+}
+
 const statusOptions = computed(() => {
   const statuses = new Set<string>();
 
   componentRisks.value.forEach((risk) => {
-    const normalized = normalizeRiskRegisterStatus(risk.status);
+    const normalized = normalizedStatusForList(risk.status);
     if (normalized) {
       statuses.add(normalized);
     }
@@ -300,7 +312,7 @@ const filteredRisks = computed(() => {
   }
 
   return componentRisks.value.filter(
-    (risk) => normalizeRiskRegisterStatus(risk.status) === statusFilter.value,
+    (risk) => normalizedStatusForList(risk.status) === statusFilter.value,
   );
 });
 
@@ -335,8 +347,8 @@ const visibleRisks = computed(() => {
     switch (sortBy.value) {
       case 'status':
         return compareStringWithDirection(
-          normalizeRiskRegisterStatus(left.status) || '',
-          normalizeRiskRegisterStatus(right.status) || '',
+          normalizedStatusForList(left.status),
+          normalizedStatusForList(right.status),
           sortDirection.value,
         );
       case 'deadline':
@@ -538,6 +550,7 @@ async function handleRiskCreated(risk: Risk) {
       life: 4000,
     });
     showCreateRiskDrawer.value = false;
+    refreshRisks();
     return;
   }
 

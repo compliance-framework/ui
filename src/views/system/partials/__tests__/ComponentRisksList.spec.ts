@@ -235,6 +235,40 @@ describe('ComponentRisksList', () => {
     expect(rows[0].text()).toContain('Closed Risk');
   });
 
+  it('treats resolved and complete statuses as closed in filtering', async () => {
+    const wrapper = await mountView([
+      makeRisk(
+        {
+          componentIds: ['comp-1'],
+          status: 'resolved',
+          title: 'Resolved Risk',
+        },
+        'risk-resolved',
+      ),
+      makeRisk(
+        {
+          componentIds: ['comp-1'],
+          status: 'complete',
+          title: 'Complete Risk',
+        },
+        'risk-complete',
+      ),
+      makeRisk(
+        { componentIds: ['comp-1'], status: 'open', title: 'Open Risk' },
+        'risk-open',
+      ),
+    ]);
+
+    await wrapper.get('[data-testid="status-filter"]').setValue('closed');
+    await flushPromises();
+
+    const rows = wrapper.findAll('[data-testid="risk-row"]');
+    expect(rows).toHaveLength(2);
+    expect(wrapper.text()).toContain('Resolved Risk');
+    expect(wrapper.text()).toContain('Complete Risk');
+    expect(wrapper.text()).not.toContain('Open Risk');
+  });
+
   it('sorts risks by severity, status, and deadline', async () => {
     const wrapper = await mountView([
       makeRisk(
@@ -332,6 +366,35 @@ describe('ComponentRisksList', () => {
     expect(linkCall?.data).toEqual({
       componentId: 'comp-1',
     });
+
+    const refreshEvents = wrapper.emitted('risks-updated');
+    expect(refreshEvents).toBeTruthy();
+    expect(refreshEvents?.length).toBe(1);
+  });
+
+  it('emits refresh when created risk cannot be linked due to missing identifier', async () => {
+    const wrapper = await mountView([
+      makeRisk(
+        { componentIds: ['comp-1'], title: 'Existing Risk' },
+        'risk-existing',
+      ),
+    ]);
+
+    await wrapper.get('[data-testid="create-risk"]').trigger('click');
+    wrapper
+      .findComponent({ name: 'RiskCreateForm' })
+      .vm.$emit('created', {} as Risk);
+    await flushPromises();
+
+    const linkCalls = mockApiState.apiCalls.filter(
+      (call) =>
+        call.endpoint.includes(
+          '/api/oscal/system-security-plans/ssp-1/risks/',
+        ) &&
+        call.endpoint.endsWith('/components') &&
+        call.method === 'POST',
+    );
+    expect(linkCalls).toHaveLength(0);
 
     const refreshEvents = wrapper.emitted('risks-updated');
     expect(refreshEvents).toBeTruthy();
