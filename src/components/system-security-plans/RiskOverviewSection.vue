@@ -97,6 +97,7 @@ watch(
   async (nextSspId) => {
     if (!nextSspId) {
       risks.value = [];
+      error.value = undefined;
       return;
     }
 
