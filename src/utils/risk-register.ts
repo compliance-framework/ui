@@ -30,7 +30,7 @@ export type SortDirection = 'asc' | 'desc';
 
 export const defaultRiskFilters: RiskFilters = {
   search: '',
-  status: 'all',
+  status: 'not-closed',
   likelihood: 'all',
   impact: 'all',
   owner: '',
@@ -313,11 +313,16 @@ export function computeRiskSummary(
   now: Date = new Date(),
 ): RiskSummary {
   const nowTs = now.getTime();
+  let total = 0;
   let open = 0;
   let accepted = 0;
   let overdueReviews = 0;
 
   risks.forEach((risk) => {
+    const status = normalizeRiskStatus(risk.status);
+    if (status !== 'closed') {
+      total += 1;
+    }
     if (isOpenStatus(risk.status)) open += 1;
     if (isAcceptedStatus(risk.status)) accepted += 1;
 
@@ -329,7 +334,7 @@ export function computeRiskSummary(
   });
 
   return {
-    total: risks.length,
+    total,
     open,
     accepted,
     overdueReviews,
@@ -355,8 +360,15 @@ export function filterRisks(
       return false;
     }
 
-    if (status !== 'all' && normalizeRiskStatus(risk.status) !== status) {
-      return false;
+    if (status !== 'all') {
+      const normalizedStatus = normalizeRiskStatus(risk.status);
+      if (status === 'not-closed') {
+        if (normalizedStatus === 'closed') {
+          return false;
+        }
+      } else if (normalizedStatus !== status) {
+        return false;
+      }
     }
 
     if (likelihood !== 'all' && getRiskLikelihood(risk) !== likelihood) {

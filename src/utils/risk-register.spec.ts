@@ -40,7 +40,7 @@ describe('risk-register', () => {
     const summary = computeRiskSummary(risks, now);
 
     expect(summary).toEqual({
-      total: 3,
+      total: 2, // Excludes closed risk
       open: 1,
       accepted: 1,
       overdueReviews: 1,
