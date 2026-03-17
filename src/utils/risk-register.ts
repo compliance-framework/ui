@@ -36,7 +36,7 @@ export type SortDirection = 'asc' | 'desc';
 
 export const defaultRiskFilters: RiskFilters = {
   search: '',
-  status: 'all',
+  status: 'not-closed',
   statusCategory: 'all',
   likelihood: 'all',
   impact: 'all',
@@ -384,10 +384,10 @@ export function readRiskFiltersFromQuery(
 
   return {
     search: queryString(query.search),
-    status: status || 'all',
-    statusCategory: statusCategory || 'all',
-    likelihood: likelihood || 'all',
-    impact: impact || 'all',
+    status: status || defaultRiskFilters.status,
+    statusCategory: statusCategory || defaultRiskFilters.statusCategory,
+    likelihood: likelihood || defaultRiskFilters.likelihood,
+    impact: impact || defaultRiskFilters.impact,
     owner: queryString(query.owner),
     review,
     controlId: queryString(query.controlId),
@@ -403,23 +403,31 @@ export function computeRiskSummary(
   now: Date = new Date(),
 ): RiskSummary {
   const nowTs = now.getTime();
+  let total = 0;
   let open = 0;
   let accepted = 0;
   let overdueReviews = 0;
 
   risks.forEach((risk) => {
+    const isClosed = isClosedStatus(risk.status);
+    if (!isClosed) {
+      total += 1;
+    }
     if (isOpenStatus(risk.status)) open += 1;
     if (isAcceptedStatus(risk.status)) accepted += 1;
 
-    const reviewDeadline = getRiskReviewDeadline(risk);
-    const reviewDate = toDateOrNull(reviewDeadline);
-    if (reviewDate && reviewDate.getTime() < nowTs) {
-      overdueReviews += 1;
+    // Only count overdue reviews for active (non-closed) risks
+    if (!isClosed) {
+      const reviewDeadline = getRiskReviewDeadline(risk);
+      const reviewDate = toDateOrNull(reviewDeadline);
+      if (reviewDate && reviewDate.getTime() < nowTs) {
+        overdueReviews += 1;
+      }
     }
   });
 
   return {
-    total: risks.length,
+    total,
     open,
     accepted,
     overdueReviews,
@@ -433,7 +441,6 @@ export function filterRisks(
 ): Risk[] {
   const search = toLower(filters.search);
   const status = toLower(filters.status);
-  const canonicalFilterStatus = canonicalRiskStatus(status);
   const statusCategory = toLower(filters.statusCategory);
   const likelihood = formatRiskFilterLevel(filters.likelihood);
   const impact = formatRiskFilterLevel(filters.impact);
@@ -450,11 +457,16 @@ export function filterRisks(
       return false;
     }
 
-    if (
-      status !== 'all' &&
-      canonicalRiskStatus(risk.status) !== canonicalFilterStatus
-    ) {
-      return false;
+    if (status !== 'all') {
+      if (status === 'not-closed') {
+        if (isClosedStatus(risk.status)) {
+          return false;
+        }
+      } else if (
+        canonicalRiskStatus(risk.status) !== canonicalRiskStatus(status)
+      ) {
+        return false;
+      }
     }
 
     if (statusCategory === 'accepted' && !isAcceptedStatus(risk.status)) {

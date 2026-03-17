@@ -7,61 +7,47 @@ on:
   pull_request: {}
 
 jobs:
-  docker-build:
-    uses: ./.github/workflows/docker.yml
-    with:
-      push: false
-      cache_key: docker-${{ github.sha }}
-
   test:
     runs-on: ubuntu-latest
-    needs: docker-build
     steps:
-      - name: Restore Docker Cache
-        uses: actions/cache@v3
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          path: /tmp/.buildx-cache
-          key: docker-${{ github.sha }}
-          restore-keys: |
-            docker-
+          node-version: '20'
+          cache: 'npm'
 
-      - name: Load the `build` image from cache
-        run: |
-          mkdir -p /tmp/.buildx-cache
-          docker load < /tmp/.buildx-cache/image.tar
+      - name: Install dependencies
+        run: npm ci
 
-      - name: Run tests using the `build` image
+      - name: Run reviewable checks
         run: |
-          docker run --rm ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:build npm run test:unit run
+          make reviewable
 
   type-check:
     runs-on: ubuntu-latest
-    needs: docker-build
     steps:
-      - name: Restore Docker Cache
-        uses: actions/cache@v3
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          path: /tmp/.buildx-cache
-          key: docker-${{ github.sha }}
-          restore-keys: |
-            docker-
+          node-version: '20'
+          cache: 'npm'
 
-      - name: Load the `build` image from cache
-        run: |
-          mkdir -p /tmp/.buildx-cache
-          docker load < /tmp/.buildx-cache/image.tar
+      - name: Install dependencies
+        run: npm ci
 
-      - name: Run formatting check using the `build` image
-        run: |
-          docker run --rm ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:build npm run format:check
+      - name: Run formatting check
+        run: npm run format:check
 
       - name: Run ESLint and count errors
         id: count-errors
         run: |
-          OUTPUT=$(docker run --rm \
-            -w /app \
-            ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:build \
-            sh -c "npx eslint 'src/**/*.{js,ts,vue}' -f json") || true
+          OUTPUT=$(npx eslint 'src/**/*.{js,ts,vue}' -f json) || true
 
           ERRORS=$(echo "$OUTPUT" | jq '[.[] | .messages[] | select(.severity == 2)] | length')
           WARNINGS=$(echo "$OUTPUT" | jq '[.[] | .messages[] | select(.severity == 1)] | length')
@@ -83,6 +69,5 @@ jobs:
             echo "✅ Linting completed automatically by CI."
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Run tests using the `build` image
-        run: |
-          docker run --rm ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:build npm run type-check
+      - name: Run type check
+        run: npm run type-check

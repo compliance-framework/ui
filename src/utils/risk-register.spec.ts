@@ -43,7 +43,7 @@ describe('risk-register', () => {
     const summary = computeRiskSummary(risks, now);
 
     expect(summary).toEqual({
-      total: 3,
+      total: 2, // Excludes closed risk
       open: 1,
       accepted: 1,
       overdueReviews: 1,
@@ -85,6 +85,35 @@ describe('risk-register', () => {
 
     expect(filtered).toHaveLength(1);
     expect(filtered[0].uuid).toBe('r1');
+  });
+
+  it('filters not-closed excludes all closed statuses', () => {
+    const risks = [
+      makeRisk({ uuid: 'r1', status: 'open' }),
+      makeRisk({ uuid: 'r2', status: 'investigating' }),
+      makeRisk({ uuid: 'r3', status: 'risk-accepted' }),
+      makeRisk({ uuid: 'r4', status: 'closed' }),
+      makeRisk({ uuid: 'r5', status: 'resolved' }),
+      makeRisk({ uuid: 'r6', status: 'complete' }),
+    ];
+
+    const filtered = filterRisks(risks, {
+      search: '',
+      status: 'not-closed',
+      statusCategory: 'all',
+      likelihood: 'all',
+      impact: 'all',
+      owner: '',
+      review: 'all',
+      controlId: '',
+      evidenceId: '',
+      riskId: '',
+      createdFrom: '',
+      createdTo: '',
+    });
+
+    expect(filtered).toHaveLength(3);
+    expect(filtered.map((r) => r.uuid)).toEqual(['r1', 'r2', 'r3']);
   });
 
   it('sorts risks by review deadline', () => {
