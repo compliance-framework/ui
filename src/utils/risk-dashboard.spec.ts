@@ -49,7 +49,7 @@ describe('risk-dashboard', () => {
   it('builds status breakdown and acceptance metrics', () => {
     const risks = [
       makeRisk({ uuid: 'r1', status: 'open' }),
-      makeRisk({ uuid: 'r2', status: 'risk-accepted' }),
+      makeRisk({ uuid: 'r2', status: 'accepted' }),
       makeRisk({ uuid: 'r3', status: 'risk-accepted' }),
       makeRisk({ uuid: 'r4', status: 'closed' }),
     ];

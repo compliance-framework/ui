@@ -12,6 +12,10 @@ import {
   isOpenStatus,
   normalizeRiskStatus,
 } from '@/utils/risk-register';
+import {
+  normalizeRiskRegisterStatus,
+  riskStatusLabel,
+} from '@/utils/risk-workflow';
 
 export const riskSeverityLevels = [
   'low',
@@ -60,15 +64,6 @@ export interface RiskTrendPoint {
   count: number;
   createdFrom: string;
   createdTo: string;
-}
-
-function titleize(value: string): string {
-  return value
-    .replace(/[-_]/g, ' ')
-    .split(' ')
-    .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(' ');
 }
 
 function parseDate(value?: string): Date | null {
@@ -125,8 +120,12 @@ function dayKey(dayStart: Date): string {
 }
 
 export function formatRiskStatusLabel(status?: string): string {
-  const normalized = normalizeRiskStatus(status) || 'unknown';
-  return titleize(normalized);
+  const normalized = canonicalRiskStatus(status);
+  return riskStatusLabel(normalized || status || 'unknown');
+}
+
+function canonicalRiskStatus(status?: string): string {
+  return normalizeRiskRegisterStatus(status) || normalizeRiskStatus(status);
 }
 
 export function buildRiskStatusBreakdown(
@@ -136,7 +135,7 @@ export function buildRiskStatusBreakdown(
 
   for (const risk of risks) {
     if (isClosedStatus(risk.status)) continue;
-    const status = normalizeRiskStatus(risk.status) || 'unknown';
+    const status = canonicalRiskStatus(risk.status) || 'unknown';
     counts.set(status, (counts.get(status) || 0) + 1);
   }
 
@@ -203,7 +202,7 @@ export function listOverdueRisks(
         id,
         title: risk.title || 'Untitled Risk',
         reviewDeadline,
-        status: normalizeRiskStatus(risk.status) || 'unknown',
+        status: canonicalRiskStatus(risk.status) || 'unknown',
       };
     })
     .filter((item): item is OverdueRiskItem => !!item)

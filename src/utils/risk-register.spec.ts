@@ -168,6 +168,31 @@ describe('risk-register', () => {
     expect(specificRisk.map((risk) => risk.uuid)).toEqual(['r1']);
   });
 
+  it('treats accepted and risk-accepted as equivalent in status filter', () => {
+    const risks = [
+      makeRisk({ uuid: 'r1', status: 'accepted' }),
+      makeRisk({ uuid: 'r2', status: 'risk-accepted' }),
+      makeRisk({ uuid: 'r3', status: 'open' }),
+    ];
+
+    const filtered = filterRisks(risks, {
+      search: '',
+      status: 'risk-accepted',
+      statusCategory: 'all',
+      likelihood: 'all',
+      impact: 'all',
+      owner: '',
+      review: 'all',
+      controlId: '',
+      evidenceId: '',
+      riskId: '',
+      createdFrom: '',
+      createdTo: '',
+    });
+
+    expect(filtered.map((risk) => risk.uuid)).toEqual(['r1', 'r2']);
+  });
+
   it('filters addressed status category to accepted and mitigation-complete', () => {
     const risks = [
       makeRisk({ uuid: 'r1', status: 'risk-accepted' }),

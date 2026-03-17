@@ -1,5 +1,6 @@
 import type { Risk } from '@/oscal';
 import { getRiskIdentifier } from '@/utils/risk-id';
+import { normalizeRiskRegisterStatus } from '@/utils/risk-workflow';
 
 export interface RiskSummary {
   total: number;
@@ -119,6 +120,10 @@ function facetValue(risk: Risk, facetName: string): string | undefined {
 
 export function normalizeRiskStatus(status?: string): string {
   return toLower(status);
+}
+
+function canonicalRiskStatus(status?: string): string {
+  return normalizeRiskRegisterStatus(status) || normalizeRiskStatus(status);
 }
 
 export function isAcceptedStatus(status?: string): boolean {
@@ -428,6 +433,7 @@ export function filterRisks(
 ): Risk[] {
   const search = toLower(filters.search);
   const status = toLower(filters.status);
+  const canonicalFilterStatus = canonicalRiskStatus(status);
   const statusCategory = toLower(filters.statusCategory);
   const likelihood = formatRiskFilterLevel(filters.likelihood);
   const impact = formatRiskFilterLevel(filters.impact);
@@ -444,7 +450,10 @@ export function filterRisks(
       return false;
     }
 
-    if (status !== 'all' && normalizeRiskStatus(risk.status) !== status) {
+    if (
+      status !== 'all' &&
+      canonicalRiskStatus(risk.status) !== canonicalFilterStatus
+    ) {
       return false;
     }
 
