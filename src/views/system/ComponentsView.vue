@@ -45,6 +45,13 @@
             >
               {{ component.status?.state || 'unknown' }}
             </span>
+            <span
+              v-if="openComponentRiskCount(component) > 0"
+              class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-rose-100 dark:bg-rose-900 text-rose-800 dark:text-rose-200"
+            >
+              {{ openComponentRiskCount(component) }}
+              {{ openComponentRiskCount(component) === 1 ? 'risk' : 'risks' }}
+            </span>
           </div>
         </template>
         <div class="py-3 px-4 flex justify-end items-center">
@@ -115,6 +122,8 @@
               </div>
             </div>
           </div>
+
+          <ComponentRisksList :ssp-id="sspId" :component="component" />
         </div>
       </Panel>
     </div>
@@ -178,13 +187,15 @@ import Drawer from '@/volt/Drawer.vue';
 import SystemImplementationComponentCreateForm from '@/components/system-security-plans/SystemImplementationComponentCreateForm.vue';
 import SystemImplementationComponentEditForm from '@/components/system-security-plans/SystemImplementationComponentEditForm.vue';
 import ComponentDashboardsView from '@/views/system/partials/ComponentDashboardsView.vue';
+import ComponentRisksList from '@/views/system/partials/ComponentRisksList.vue';
 
 // Types and stores;
 import { useSystemStore } from '@/stores/system.ts';
 import Panel from '@/volt/Panel.vue';
 import { useDataApi } from '@/composables/axios';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
-import type { SystemComponent, SystemSecurityPlan } from '@/oscal';
+import type { Risk, SystemComponent, SystemSecurityPlan } from '@/oscal';
+import { getRiskComponentIds, normalizeRiskStatus } from '@/utils/risk-register';
 
 const route = useRoute();
 const router = useRouter();
@@ -202,6 +213,12 @@ const { data: components, execute: fetchComponents } = useDataApi<
   SystemComponent[]
 >(
   `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/system-implementation/components`,
+  { method: 'GET' },
+  { immediate: false },
+);
+
+const { data: risks, execute: fetchRisks } = useDataApi<Risk[]>(
+  `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/risks`,
   { method: 'GET' },
   { immediate: false },
 );
@@ -267,8 +284,32 @@ const editingComponent = ref<SystemComponent | null>(null);
 const loadData = async () => {
   systemSecurityPlan.value = system.securityPlan as SystemSecurityPlan;
 
-  await fetchComponents();
+  await Promise.all([fetchComponents(), fetchRisks()]);
 };
+
+function normalizeId(value?: string): string {
+  return (value || '').trim().toLowerCase();
+}
+
+function isOpenOrInvestigatingRisk(risk: Risk): boolean {
+  const normalized = normalizeRiskStatus(risk.status);
+  return normalized === 'open' || normalized === 'investigating';
+}
+
+function openComponentRiskCount(component: SystemComponent): number {
+  if (!risks.value?.length || !component.uuid) return 0;
+
+  const componentId = normalizeId(component.uuid);
+  return risks.value.filter((risk) => {
+    if (!isOpenOrInvestigatingRisk(risk)) {
+      return false;
+    }
+
+    return getRiskComponentIds(risk)
+      .map((id) => normalizeId(id))
+      .includes(componentId);
+  }).length;
+}
 
 onMounted(async () => {
   await loadData();
