@@ -501,7 +501,9 @@
         <p class="text-sm text-gray-600 dark:text-slate-400">
           Choose the SSP this risk belongs to.
         </p>
+        <label for="ssp-select" class="sr-only">System Security Plan</label>
         <select
+          id="ssp-select"
           v-model="createSspId"
           class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md dark:bg-slate-800 dark:text-slate-200"
         >
@@ -551,7 +553,9 @@
         <p class="text-sm text-gray-600 dark:text-slate-400">
           Update status for {{ selectedRiskIds.size }} selected risk(s).
         </p>
+        <label for="bulk-status-select" class="sr-only">Status</label>
         <select
+          id="bulk-status-select"
           v-model="bulkStatusValue"
           class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md dark:bg-slate-800 dark:text-slate-200"
         >
@@ -584,7 +588,9 @@
         <p class="text-sm text-gray-600 dark:text-slate-400">
           Assign owner for {{ selectedRiskIds.size }} selected risk(s).
         </p>
+        <label for="bulk-owner-input" class="sr-only">Owner</label>
         <input
+          id="bulk-owner-input"
           v-model="bulkOwnerValue"
           type="text"
           placeholder="Owner name or email"
@@ -974,30 +980,22 @@ async function deleteRisk(risk: Risk) {
   }
 }
 
-async function applyBulkStatus() {
-  if (!bulkStatusValue.value) return;
-  bulkOperating.value = true;
-  const selected = props.risks.filter((risk) => {
-    const id = getRiskIdentifier(risk);
-    return id && selectedRiskIds.value.has(id);
-  });
+const BULK_CONCURRENCY_LIMIT = 5;
 
-  const CONCURRENCY_LIMIT = 5;
+async function executeBulkUpdate(
+  risks: Risk[],
+  updateFn: (risk: Risk) => Promise<void>,
+  successSummary: string,
+) {
   let successCount = 0;
   const failedRisks: string[] = [];
 
-  for (let i = 0; i < selected.length; i += CONCURRENCY_LIMIT) {
-    const batch = selected.slice(i, i + CONCURRENCY_LIMIT);
+  for (let i = 0; i < risks.length; i += BULK_CONCURRENCY_LIMIT) {
+    const batch = risks.slice(i, i + BULK_CONCURRENCY_LIMIT);
     const results = await Promise.allSettled(
       batch.map(async (risk) => {
-        const riskId = getRiskIdentifier(risk);
-        const sspId = getSspIdForRisk(risk);
-        if (!riskId || !sspId) throw new Error('Missing risk or SSP ID');
-        await executeUpdateRisk(
-          `/api/oscal/system-security-plans/${sspId}/risks/${riskId}`,
-          { data: { ...risk, status: bulkStatusValue.value } },
-        );
-        return riskId;
+        await updateFn(risk);
+        return getRiskIdentifier(risk);
       }),
     );
 
@@ -1014,21 +1012,44 @@ async function applyBulkStatus() {
   const severity =
     successCount === 0
       ? 'error'
-      : successCount < selected.length
+      : successCount < risks.length
         ? 'warn'
         : 'success';
   const summary =
     successCount === 0
       ? 'Bulk Update Failed'
-      : successCount < selected.length
+      : successCount < risks.length
         ? 'Partial Update'
-        : 'Bulk Status Updated';
+        : successSummary;
   toast.add({
     severity,
     summary,
-    detail: `Updated ${successCount} of ${selected.length} risk(s).${failedRisks.length > 0 ? ` Failed: ${failedRisks.length}` : ''}`,
+    detail: `Updated ${successCount} of ${risks.length} risk(s).${failedRisks.length > 0 ? ` Failed: ${failedRisks.length}` : ''}`,
     life: 4000,
   });
+}
+
+async function applyBulkStatus() {
+  if (!bulkStatusValue.value) return;
+  bulkOperating.value = true;
+  const selected = props.risks.filter((risk) => {
+    const id = getRiskIdentifier(risk);
+    return id && selectedRiskIds.value.has(id);
+  });
+
+  await executeBulkUpdate(
+    selected,
+    async (risk) => {
+      const riskId = getRiskIdentifier(risk);
+      const sspId = getSspIdForRisk(risk);
+      if (!riskId || !sspId) throw new Error('Missing risk or SSP ID');
+      await executeUpdateRisk(
+        `/api/oscal/system-security-plans/${sspId}/risks/${riskId}`,
+        { data: { ...risk, status: bulkStatusValue.value } },
+      );
+    },
+    'Bulk Status Updated',
+  );
 
   showBulkStatusModal.value = false;
   bulkStatusValue.value = '';
@@ -1046,55 +1067,21 @@ async function applyBulkOwner() {
     return id && selectedRiskIds.value.has(id);
   });
 
-  const CONCURRENCY_LIMIT = 5;
-  let successCount = 0;
-  const failedRisks: string[] = [];
-
-  for (let i = 0; i < selected.length; i += CONCURRENCY_LIMIT) {
-    const batch = selected.slice(i, i + CONCURRENCY_LIMIT);
-    const results = await Promise.allSettled(
-      batch.map(async (risk) => {
-        const riskId = getRiskIdentifier(risk);
-        const sspId = getSspIdForRisk(risk);
-        if (!riskId || !sspId) throw new Error('Missing risk or SSP ID');
-        const updatedRisk = { ...risk } as Risk & Record<string, unknown>;
-        updatedRisk['owner'] = bulkOwnerValue.value.trim();
-        await executeUpdateRisk(
-          `/api/oscal/system-security-plans/${sspId}/risks/${riskId}`,
-          { data: updatedRisk },
-        );
-        return riskId;
-      }),
-    );
-
-    results.forEach((result, idx) => {
-      if (result.status === 'fulfilled') {
-        successCount++;
-      } else {
-        const riskId = getRiskIdentifier(batch[idx]);
-        if (riskId) failedRisks.push(riskId);
-      }
-    });
-  }
-
-  const severity =
-    successCount === 0
-      ? 'error'
-      : successCount < selected.length
-        ? 'warn'
-        : 'success';
-  const summary =
-    successCount === 0
-      ? 'Bulk Update Failed'
-      : successCount < selected.length
-        ? 'Partial Update'
-        : 'Bulk Owner Updated';
-  toast.add({
-    severity,
-    summary,
-    detail: `Updated ${successCount} of ${selected.length} risk(s).${failedRisks.length > 0 ? ` Failed: ${failedRisks.length}` : ''}`,
-    life: 4000,
-  });
+  await executeBulkUpdate(
+    selected,
+    async (risk) => {
+      const riskId = getRiskIdentifier(risk);
+      const sspId = getSspIdForRisk(risk);
+      if (!riskId || !sspId) throw new Error('Missing risk or SSP ID');
+      const updatedRisk = { ...risk } as Risk & Record<string, unknown>;
+      updatedRisk['owner'] = bulkOwnerValue.value.trim();
+      await executeUpdateRisk(
+        `/api/oscal/system-security-plans/${sspId}/risks/${riskId}`,
+        { data: updatedRisk },
+      );
+    },
+    'Bulk Owner Updated',
+  );
 
   showBulkOwnerModal.value = false;
   bulkOwnerValue.value = '';
