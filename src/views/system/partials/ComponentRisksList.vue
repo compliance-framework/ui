@@ -74,11 +74,12 @@
       Showing {{ visibleRisks.length }} of {{ componentRisks.length }} risks for this component
     </p>
 
-    <p v-if="loading" class="text-sm text-gray-500 dark:text-slate-400">Loading risks...</p>
-
-    <Message v-else-if="errorMessage" severity="error" variant="outlined">
-      <p class="text-sm">{{ errorMessage }}</p>
-    </Message>
+    <p
+      v-if="props.loadingRisks"
+      class="text-sm text-gray-500 dark:text-slate-400"
+    >
+      Loading risks...
+    </p>
 
     <p v-else-if="!visibleRisks.length" class="text-sm text-gray-500 dark:text-slate-400">
       No risks associated with this component.
@@ -89,7 +90,7 @@
         v-for="risk in visibleRisks"
         :key="riskRenderKey(risk)"
         data-testid="risk-row"
-        class="w-full rounded-md border border-ccf-300 bg-white p-4 text-left transition hover:border-blue-300 hover:bg-blue-50/30 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-blue-700 dark:hover:bg-slate-800"
+        class="w-full rounded-md border border-gray-300 bg-white p-4 text-left transition hover:border-blue-300 hover:bg-blue-50/30 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-blue-700 dark:hover:bg-slate-800"
         type="button"
         @click="openRiskDetail(risk)"
       >
@@ -164,12 +165,15 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
-import type { Risk, SystemComponent, SystemUser } from '@/oscal';
+import type {
+  Risk,
+  SystemComponent,
+  SystemUser,
+} from '@/oscal';
 import { useDataApi } from '@/composables/axios';
-import Message from '@/volt/Message.vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
 import Drawer from '@/volt/Drawer.vue';
 import RiskCreateForm from '@/components/risk/RiskCreateForm.vue';
@@ -182,6 +186,7 @@ import {
   getRiskSeverityLevel,
   getRiskSeverityScore,
   normalizeRiskStatus,
+  type RiskSeverityLevel,
   type SortDirection,
 } from '@/utils/risk-register';
 import { getRiskIdentifier } from '@/utils/risk-id';
@@ -189,6 +194,13 @@ import { getRiskIdentifier } from '@/utils/risk-id';
 const props = defineProps<{
   sspId: string;
   component: SystemComponent;
+  risks: Risk[];
+  users: SystemUser[];
+  loadingRisks?: boolean;
+}>();
+
+const emit = defineEmits<{
+  'risks-updated': [];
 }>();
 
 type ComponentRiskSortBy = 'severity' | 'status' | 'deadline';
@@ -201,75 +213,11 @@ const statusFilter = ref('all');
 const sortBy = ref<ComponentRiskSortBy>('severity');
 const sortDirection = ref<SortDirection>('desc');
 
-const endpoint = computed(() => {
-  if (!props.sspId) return null;
-  return `/api/oscal/system-security-plans/${props.sspId}/risks`;
-});
-const usersEndpoint = computed(() => {
-  if (!props.sspId) return null;
-  return `/api/oscal/system-security-plans/${props.sspId}/system-implementation/users`;
-});
-
-const {
-  data: risks,
-  error,
-  isLoading: loading,
-  execute: loadRisks,
-} = useDataApi<Risk[]>(null, {}, { immediate: false });
-const { data: users, execute: loadUsers } = useDataApi<SystemUser[]>(
-  null,
-  {},
-  { immediate: false },
-);
-
 const { execute: linkRiskComponent } = useDataApi<void>(
   null,
   { method: 'POST' },
   { immediate: false },
 );
-
-watch(
-  endpoint,
-  async (value) => {
-    if (!value) {
-      risks.value = [];
-      return;
-    }
-
-    try {
-      await loadRisks(value);
-    } catch {
-      // useDataApi captures the error ref used by the template.
-    }
-  },
-  { immediate: true },
-);
-watch(
-  usersEndpoint,
-  async (value) => {
-    if (!value) {
-      users.value = [];
-      return;
-    }
-
-    try {
-      await loadUsers(value);
-    } catch {
-      // If user resolution fails we fallback to generic owner labeling.
-    }
-  },
-  { immediate: true },
-);
-
-const errorMessage = computed(() => {
-  if (!error.value) return '';
-
-  if (error.value instanceof Error && error.value.message) {
-    return error.value.message;
-  }
-
-  return 'Unable to load risks for this component.';
-});
 
 function normalizeId(value?: string): string {
   return (value || '').trim().toLowerCase();
@@ -294,16 +242,22 @@ function readString(
 }
 
 const componentRisks = computed(() => {
-  if (!risks.value?.length || !props.component.uuid) {
+  if (!props.risks?.length || !props.component.uuid) {
     return [];
   }
 
   const normalizedComponentId = normalizeId(props.component.uuid);
 
-  return risks.value.filter((risk) =>
+  return props.risks.filter((risk) =>
     getRiskComponentIds(risk)
       .map((id) => normalizeId(id))
       .includes(normalizedComponentId),
+  );
+});
+
+const usersById = computed(() => {
+  return new Map(
+    (props.users || []).map((user) => [user.uuid, user.title || user.shortName]),
   );
 });
 
@@ -364,8 +318,8 @@ const visibleRisks = computed(() => {
       case 'severity':
       default:
         return compareWithDirection(
-          getRiskSeverityScore(left),
-          getRiskSeverityScore(right),
+          severityScore(left),
+          severityScore(right),
           sortDirection.value,
         );
     }
@@ -428,18 +382,51 @@ function statusBadgeClass(status?: string): string {
   return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
 }
 
+function severityLevel(risk: Risk): RiskSeverityLevel {
+  const resolved = getRiskSeverityLevel(risk);
+  if (resolved !== 'unknown') return resolved;
+
+  const fallback = getRiskImpact(risk) || getRiskLikelihood(risk);
+  const normalized = normalizeRiskStatus(fallback);
+  if (
+    normalized === 'critical' ||
+    normalized === 'high' ||
+    normalized === 'medium' ||
+    normalized === 'low'
+  ) {
+    return normalized;
+  }
+  if (normalized === 'moderate') {
+    return 'medium';
+  }
+
+  return 'unknown';
+}
+
 function severityScore(risk: Risk): number {
-  return getRiskSeverityScore(risk);
+  const score = getRiskSeverityScore(risk);
+  if (score > 0) return score;
+
+  switch (severityLevel(risk)) {
+    case 'critical':
+      return 4;
+    case 'high':
+      return 3;
+    case 'medium':
+      return 2;
+    case 'low':
+      return 1;
+    default:
+      return 0;
+  }
 }
 
 function severityLabel(risk: Risk): string {
-  return formatLabel(getRiskSeverityLevel(risk));
+  return formatLabel(severityLevel(risk));
 }
 
 function severityBadgeClass(risk: Risk): string {
-  const severity = getRiskSeverityLevel(risk);
-
-  switch (severity) {
+  switch (severityLevel(risk)) {
     case 'critical':
       return 'bg-rose-100 text-rose-800 dark:bg-rose-900 dark:text-rose-200';
     case 'high':
@@ -453,17 +440,20 @@ function severityBadgeClass(risk: Risk): string {
   }
 }
 
+function looksLikeUuid(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    value,
+  );
+}
+
 function riskOwner(risk: Risk): string {
   const source = toRecord(risk);
-  const usersById = new Map(
-    (users.value || []).map((user) => [user.uuid, user.title || user.shortName]),
-  );
 
   const primaryOwnerUserId = source
     ? readString(source, ['primaryOwnerUserId'])
     : undefined;
   if (primaryOwnerUserId) {
-    const label = usersById.get(primaryOwnerUserId);
+    const label = usersById.value.get(primaryOwnerUserId);
     if (label) return label;
     return 'Assigned';
   }
@@ -477,7 +467,7 @@ function riskOwner(risk: Risk): string {
     if (firstUserAssignment) {
       const ownerRef = readString(firstUserAssignment, ['ownerRef']);
       if (ownerRef) {
-        const label = usersById.get(ownerRef);
+        const label = usersById.value.get(ownerRef);
         if (label) return label;
         return 'Assigned';
       }
@@ -485,7 +475,11 @@ function riskOwner(risk: Risk): string {
   }
 
   const fallback = getRiskOwnerDisplay(risk);
-  return fallback || '';
+  if (fallback && !looksLikeUuid(fallback)) {
+    return fallback;
+  }
+
+  return '';
 }
 
 function riskLikelihood(risk: Risk): string {
@@ -515,17 +509,8 @@ function openRiskDetail(risk: Risk) {
   });
 }
 
-async function refreshRisks() {
-  if (!endpoint.value) {
-    risks.value = [];
-    return;
-  }
-
-  try {
-    await loadRisks(endpoint.value);
-  } catch {
-    // Error ref is already updated by useDataApi.
-  }
+function refreshRisks() {
+  emit('risks-updated');
 }
 
 async function handleRiskCreated(risk: Risk) {
@@ -559,7 +544,7 @@ async function handleRiskCreated(risk: Risk) {
     });
 
     showCreateRiskDrawer.value = false;
-    await refreshRisks();
+    refreshRisks();
   } catch (err) {
     const detail =
       err instanceof Error && err.message
@@ -574,7 +559,7 @@ async function handleRiskCreated(risk: Risk) {
     });
 
     showCreateRiskDrawer.value = false;
-    await refreshRisks();
+    refreshRisks();
   }
 }
 </script>

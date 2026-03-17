@@ -12,8 +12,6 @@ interface ApiCall {
 const { mockApiState, resetMockApiState, pushMock, toastAddMock } = vi.hoisted(
   () => {
     const mockApiState = {
-      risks: [] as Risk[],
-      users: [] as SystemUser[],
       apiCalls: [] as ApiCall[],
       linkError: null as Error | null,
     };
@@ -22,8 +20,6 @@ const { mockApiState, resetMockApiState, pushMock, toastAddMock } = vi.hoisted(
     const toastAddMock = vi.fn();
 
     const resetMockApiState = () => {
-      mockApiState.risks = [];
-      mockApiState.users = [];
       mockApiState.apiCalls = [];
       mockApiState.linkError = null;
       pushMock.mockReset();
@@ -89,22 +85,6 @@ vi.mock('@/composables/axios', async () => {
           method,
           data: requestConfig.data,
         });
-
-        if (
-          endpoint === '/api/oscal/system-security-plans/ssp-1/risks' &&
-          method === 'GET'
-        ) {
-          data.value = mockApiState.risks;
-          return { data: { data: mockApiState.risks } };
-        }
-        if (
-          endpoint ===
-            '/api/oscal/system-security-plans/ssp-1/system-implementation/users' &&
-          method === 'GET'
-        ) {
-          data.value = mockApiState.users;
-          return { data: { data: mockApiState.users } };
-        }
 
         if (
           endpoint.includes('/api/oscal/system-security-plans/ssp-1/risks/') &&
@@ -199,18 +179,17 @@ function makeRisk(
 }
 
 async function mountView(risks: Risk[]) {
-  mockApiState.risks = risks;
-  mockApiState.users = [
-    {
-      uuid: 'user-1',
-      title: 'Alice Owner',
-    } as SystemUser,
-  ];
-
   const wrapper = mount(ComponentRisksList, {
     props: {
       sspId: 'ssp-1',
       component,
+      risks,
+      users: [
+        {
+          uuid: 'user-1',
+          title: 'Alice Owner',
+        } as SystemUser,
+      ],
     },
   });
 
@@ -343,12 +322,9 @@ describe('ComponentRisksList', () => {
       'component-id': 'comp-1',
     });
 
-    const refreshCalls = mockApiState.apiCalls.filter(
-      (call) =>
-        call.endpoint === '/api/oscal/system-security-plans/ssp-1/risks' &&
-        call.method === 'GET',
-    );
-    expect(refreshCalls.length).toBeGreaterThanOrEqual(2);
+    const refreshEvents = wrapper.emitted('risks-updated');
+    expect(refreshEvents).toBeTruthy();
+    expect(refreshEvents?.length).toBe(1);
   });
 
   it('shows owner display name from owner assignments and does not show UUID', async () => {
