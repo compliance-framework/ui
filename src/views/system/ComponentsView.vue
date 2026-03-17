@@ -14,7 +14,7 @@
 
     <div class="space-y-4">
       <div
-        v-if="components?.length === 0"
+        v-if="sspId && components?.length === 0"
         class="text-center py-8 text-gray-500 dark:text-slate-400"
       >
         No components defined. Create your first component to get started.
@@ -23,8 +23,9 @@
       <Panel
         v-for="component in components"
         :key="component.uuid"
-        collapsed
         toggleable
+        :collapsed="componentPanelCollapsed(component.uuid)"
+        @update:collapsed="setComponentPanelCollapsed(component.uuid, $event)"
       >
         <template #header>
           <div class="flex items-center gap-2 py-2">
@@ -44,6 +45,12 @@
               }"
             >
               {{ component.status?.state || 'unknown' }}
+            </span>
+            <span
+              v-if="openComponentRiskCount(component) > 0"
+              class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-rose-100 dark:bg-rose-900 text-rose-800 dark:text-rose-200"
+            >
+              {{ openComponentRiskLabel(component) }}
             </span>
           </div>
         </template>
@@ -115,6 +122,16 @@
               </div>
             </div>
           </div>
+
+          <ComponentRisksList
+            v-if="!componentPanelCollapsed(component.uuid)"
+            :ssp-id="sspId"
+            :component="component"
+            :risks="risks || []"
+            :users="users || []"
+            :loading-risks="loadingRisks"
+            @risks-updated="refreshRisksAndUsers"
+          />
         </div>
       </Panel>
     </div>
@@ -165,7 +182,7 @@
 
 <script setup lang="ts">
 import TooltipTitle from '@/components/TooltipTitle.vue';
-import { computed, onMounted, watch, ref } from 'vue';
+import { computed, watch, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
 import decamelizeKeys from 'decamelize-keys';
@@ -178,13 +195,18 @@ import Drawer from '@/volt/Drawer.vue';
 import SystemImplementationComponentCreateForm from '@/components/system-security-plans/SystemImplementationComponentCreateForm.vue';
 import SystemImplementationComponentEditForm from '@/components/system-security-plans/SystemImplementationComponentEditForm.vue';
 import ComponentDashboardsView from '@/views/system/partials/ComponentDashboardsView.vue';
+import ComponentRisksList from '@/views/system/partials/ComponentRisksList.vue';
 
 // Types and stores;
 import { useSystemStore } from '@/stores/system.ts';
 import Panel from '@/volt/Panel.vue';
 import { useDataApi } from '@/composables/axios';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
-import type { SystemComponent, SystemSecurityPlan } from '@/oscal';
+import type { Risk, SystemComponent, SystemUser } from '@/oscal';
+import {
+  getRiskComponentIds,
+  normalizeRiskStatus,
+} from '@/utils/risk-register';
 
 const route = useRoute();
 const router = useRouter();
@@ -195,13 +217,31 @@ const { confirmDeleteDialog } = useDeleteConfirmationDialog();
 
 const sspId = computed(() => system.securityPlan?.uuid ?? '');
 
-// Data
-const systemSecurityPlan = ref<SystemSecurityPlan | null>(null);
+const componentsEndpoint = computed(() => {
+  if (!sspId.value) return null;
+  return `/api/oscal/system-security-plans/${sspId.value}/system-implementation/components`;
+});
+const risksEndpoint = computed(() => {
+  if (!sspId.value) return null;
+  return `/api/oscal/system-security-plans/${sspId.value}/risks`;
+});
+const usersEndpoint = computed(() => {
+  if (!sspId.value) return null;
+  return `/api/oscal/system-security-plans/${sspId.value}/system-implementation/users`;
+});
 
 const { data: components, execute: fetchComponents } = useDataApi<
   SystemComponent[]
->(
-  `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/system-implementation/components`,
+>(null, { method: 'GET' }, { immediate: false });
+
+const {
+  data: risks,
+  isLoading: loadingRisks,
+  execute: fetchRisks,
+} = useDataApi<Risk[]>(null, { method: 'GET' }, { immediate: false });
+
+const { data: users, execute: fetchUsers } = useDataApi<SystemUser[]>(
+  null,
   { method: 'GET' },
   { immediate: false },
 );
@@ -222,7 +262,17 @@ const { execute: executeGetComponent } = useDataApi<SystemComponent>(
   { immediate: false },
 );
 
-const selectedComponent = ref<SystemComponent>();
+const selectedComponent = computed<SystemComponent | undefined>(() => {
+  const routeComponentId = Array.isArray(route.params.componentId)
+    ? route.params.componentId[0]
+    : route.params.componentId;
+
+  if (!routeComponentId || !components.value) {
+    return undefined;
+  }
+
+  return components.value.find((c) => c.uuid === routeComponentId);
+});
 
 const dashboardDrawerOpen = computed({
   get: () => !!route.params.componentId,
@@ -240,39 +290,139 @@ function openDashboardDrawer(component: SystemComponent) {
   });
 }
 
-watch(
-  () => route.params.componentId,
-  (componentId) => {
-    if (!componentId || !components.value) {
-      selectedComponent.value = undefined;
-      return;
-    }
-
-    const found = components.value.find((c) => c.uuid === componentId);
-
-    if (found) {
-      selectedComponent.value = found;
-    }
-  },
-  { immediate: true },
-);
-
 // Modal states
 const showCreateComponentModal = ref(false);
 const showEditComponentModal = ref(false);
+const componentPanelsCollapsed = ref<Record<string, boolean>>({});
 
 // Edit targets
 const editingComponent = ref<SystemComponent | null>(null);
 
 const loadData = async () => {
-  systemSecurityPlan.value = system.securityPlan as SystemSecurityPlan;
+  if (!componentsEndpoint.value) {
+    components.value = [];
+    risks.value = [];
+    users.value = [];
+    return;
+  }
 
-  await fetchComponents();
+  try {
+    await fetchComponents(componentsEndpoint.value);
+  } catch (error) {
+    components.value = [];
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: `Failed to load components. ${toErrorDetail(error)}`,
+      life: 5000,
+    });
+  }
+  await refreshRisksAndUsers();
 };
 
-onMounted(async () => {
-  await loadData();
+function normalizeId(value?: string): string {
+  return (value || '').trim().toLowerCase();
+}
+
+function componentPanelCollapsed(componentId?: string): boolean {
+  if (!componentId) return true;
+  const normalized = normalizeId(componentId);
+  return componentPanelsCollapsed.value[normalized] ?? true;
+}
+
+function setComponentPanelCollapsed(
+  componentId: string | undefined,
+  collapsed: boolean,
+): void {
+  if (!componentId) return;
+  const normalized = normalizeId(componentId);
+  componentPanelsCollapsed.value = {
+    ...componentPanelsCollapsed.value,
+    [normalized]: collapsed,
+  };
+}
+
+function isOpenOrInvestigatingRisk(risk: Risk): boolean {
+  const normalized = normalizeRiskStatus(risk.status);
+  return normalized === 'open' || normalized === 'investigating';
+}
+
+const openRiskCountByComponentId = computed(() => {
+  const counts: Record<string, number> = {};
+
+  (risks.value || []).forEach((risk) => {
+    if (!isOpenOrInvestigatingRisk(risk)) return;
+    getRiskComponentIds(risk)
+      .map((id) => normalizeId(id))
+      .forEach((componentId) => {
+        if (!componentId) return;
+        counts[componentId] = (counts[componentId] || 0) + 1;
+      });
+  });
+
+  return counts;
 });
+
+function openComponentRiskCount(component: SystemComponent): number {
+  if (!component.uuid) return 0;
+  return openRiskCountByComponentId.value[normalizeId(component.uuid)] || 0;
+}
+
+function openComponentRiskLabel(component: SystemComponent): string {
+  const count = openComponentRiskCount(component);
+  return `${count} ${count === 1 ? 'risk' : 'risks'}`;
+}
+
+function toErrorDetail(error: unknown): string {
+  if (error instanceof Error && error.message.trim()) {
+    return error.message.trim();
+  }
+  if (typeof error === 'string' && error.trim()) {
+    return error.trim();
+  }
+  return 'Please try again.';
+}
+
+async function refreshRisksAndUsers() {
+  if (!risksEndpoint.value || !usersEndpoint.value) {
+    risks.value = [];
+    users.value = [];
+    return;
+  }
+
+  const [risksResult, usersResult] = await Promise.allSettled([
+    fetchRisks(risksEndpoint.value),
+    fetchUsers(usersEndpoint.value),
+  ]);
+
+  if (risksResult.status === 'rejected') {
+    risks.value = [];
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: `Failed to load risks. ${toErrorDetail(risksResult.reason)}`,
+      life: 5000,
+    });
+  }
+
+  if (usersResult.status === 'rejected') {
+    users.value = [];
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: `Failed to load users. ${toErrorDetail(usersResult.reason)}`,
+      life: 5000,
+    });
+  }
+}
+
+watch(
+  sspId,
+  async () => {
+    await loadData();
+  },
+  { immediate: true },
+);
 
 // Component management
 const editComponent = async (component: SystemComponent) => {
