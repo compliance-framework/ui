@@ -100,9 +100,10 @@ onUnmounted(() => {
 
 function handleRiskCreated(newRisk: Risk) {
   if (!risks.value) {
-    risks.value = [];
+    risks.value = [newRisk];
+  } else {
+    risks.value = [...risks.value, newRisk];
   }
-  risks.value.push(newRisk);
 }
 
 function handleRiskSaved(updatedRisk: Risk) {
@@ -111,7 +112,11 @@ function handleRiskSaved(updatedRisk: Risk) {
     sameRiskIdentifier(risk, updatedRisk),
   );
   if (index !== -1) {
-    risks.value[index] = updatedRisk;
+    risks.value = [
+      ...risks.value.slice(0, index),
+      updatedRisk,
+      ...risks.value.slice(index + 1),
+    ];
   }
 }
 

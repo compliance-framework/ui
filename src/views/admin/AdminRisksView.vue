@@ -118,7 +118,11 @@ function handleRiskUpdated(updatedRisk: Risk) {
     sameRiskIdentifier(risk, updatedRisk),
   );
   if (index !== -1) {
-    risks.value[index] = updatedRisk;
+    risks.value = [
+      ...risks.value.slice(0, index),
+      updatedRisk,
+      ...risks.value.slice(index + 1),
+    ];
   }
 }
 

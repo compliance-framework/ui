@@ -114,7 +114,7 @@ describe('RiskRegisterPanel', () => {
       global: { stubs: globalStubs },
     });
 
-    expect(wrapper.text()).toContain('Total Risks');
+    expect(wrapper.text()).toContain('Active Risks');
     expect(wrapper.text()).toContain('3'); // Excludes closed risk
     expect(wrapper.text()).toContain('Open Risks');
     expect(wrapper.text()).toContain('2');

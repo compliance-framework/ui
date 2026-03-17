@@ -33,7 +33,7 @@
         <p
           class="text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400"
         >
-          Total Risks
+          Active Risks
         </p>
         <p
           class="mt-2 text-2xl font-semibold text-gray-900 dark:text-slate-100"
@@ -766,7 +766,7 @@ const { execute: executeDeleteRisk } = useDataApi<void>(
 const { execute: executeUpdateRisk } = useDataApi<Risk>(
   null,
   { method: 'PUT', transformRequest: [decamelizeKeys] },
-  { immediate: false },
+  { immediate: false, abortPrevious: false },
 );
 
 function getSspIdForRisk(risk: Risk): string | null {
@@ -1106,7 +1106,8 @@ async function applyBulkOwner() {
 
 function sanitizeCsvCell(value: string): string {
   // Prevent CSV injection by prefixing formula-triggering characters
-  if (value.match(/^[=+\-@]/)) {
+  // Also handle leading whitespace before these characters
+  if (value.match(/^\s*[=+\-@]/)) {
     return "'" + value;
   }
   return value;

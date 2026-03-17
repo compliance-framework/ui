@@ -319,16 +319,20 @@ export function computeRiskSummary(
   let overdueReviews = 0;
 
   risks.forEach((risk) => {
-    if (!isClosedStatus(risk.status)) {
+    const isClosed = isClosedStatus(risk.status);
+    if (!isClosed) {
       total += 1;
     }
     if (isOpenStatus(risk.status)) open += 1;
     if (isAcceptedStatus(risk.status)) accepted += 1;
 
-    const reviewDeadline = getRiskReviewDeadline(risk);
-    const reviewDate = toDateOrNull(reviewDeadline);
-    if (reviewDate && reviewDate.getTime() < nowTs) {
-      overdueReviews += 1;
+    // Only count overdue reviews for active (non-closed) risks
+    if (!isClosed) {
+      const reviewDeadline = getRiskReviewDeadline(risk);
+      const reviewDate = toDateOrNull(reviewDeadline);
+      if (reviewDate && reviewDate.getTime() < nowTs) {
+        overdueReviews += 1;
+      }
     }
   });
 
