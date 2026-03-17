@@ -9,7 +9,7 @@ describe('LeftSideNav', () => {
     setActivePinia(createPinia());
   });
 
-  it('renders Subject Templates between System Users and Risk Templates', () => {
+  it('renders admin links in correct order', () => {
     const sidebarStore = useSidebarStore();
     sidebarStore.open = true;
 
@@ -44,11 +44,13 @@ describe('LeftSideNav', () => {
       .filter((text) => text.length > 0);
 
     const systemUsersIndex = linkTexts.indexOf('System Users');
+    const risksIndex = linkTexts.indexOf('Risks');
     const subjectTemplatesIndex = linkTexts.indexOf('Subject Templates');
     const riskTemplatesIndex = linkTexts.indexOf('Risk Templates');
 
     expect(systemUsersIndex).toBeGreaterThanOrEqual(0);
-    expect(subjectTemplatesIndex).toBeGreaterThan(systemUsersIndex);
+    expect(risksIndex).toBeGreaterThan(systemUsersIndex);
+    expect(subjectTemplatesIndex).toBeGreaterThan(risksIndex);
     expect(riskTemplatesIndex).toBeGreaterThan(subjectTemplatesIndex);
   });
 });

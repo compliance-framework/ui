@@ -125,6 +125,10 @@ const links = ref<Array<NavigationItem>>([
         title: 'System Users',
       },
       {
+        name: 'admin-risks',
+        title: 'Risks',
+      },
+      {
         name: 'admin-subject-templates',
         title: 'Subject Templates',
       },

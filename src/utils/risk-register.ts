@@ -30,7 +30,7 @@ export type SortDirection = 'asc' | 'desc';
 
 export const defaultRiskFilters: RiskFilters = {
   search: '',
-  status: 'all',
+  status: 'not-closed',
   likelihood: 'all',
   impact: 'all',
   owner: '',
@@ -313,23 +313,31 @@ export function computeRiskSummary(
   now: Date = new Date(),
 ): RiskSummary {
   const nowTs = now.getTime();
+  let total = 0;
   let open = 0;
   let accepted = 0;
   let overdueReviews = 0;
 
   risks.forEach((risk) => {
+    const isClosed = isClosedStatus(risk.status);
+    if (!isClosed) {
+      total += 1;
+    }
     if (isOpenStatus(risk.status)) open += 1;
     if (isAcceptedStatus(risk.status)) accepted += 1;
 
-    const reviewDeadline = getRiskReviewDeadline(risk);
-    const reviewDate = toDateOrNull(reviewDeadline);
-    if (reviewDate && reviewDate.getTime() < nowTs) {
-      overdueReviews += 1;
+    // Only count overdue reviews for active (non-closed) risks
+    if (!isClosed) {
+      const reviewDeadline = getRiskReviewDeadline(risk);
+      const reviewDate = toDateOrNull(reviewDeadline);
+      if (reviewDate && reviewDate.getTime() < nowTs) {
+        overdueReviews += 1;
+      }
     }
   });
 
   return {
-    total: risks.length,
+    total,
     open,
     accepted,
     overdueReviews,
@@ -355,8 +363,14 @@ export function filterRisks(
       return false;
     }
 
-    if (status !== 'all' && normalizeRiskStatus(risk.status) !== status) {
-      return false;
+    if (status !== 'all') {
+      if (status === 'not-closed') {
+        if (isClosedStatus(risk.status)) {
+          return false;
+        }
+      } else if (normalizeRiskStatus(risk.status) !== status) {
+        return false;
+      }
     }
 
     if (likelihood !== 'all' && getRiskLikelihood(risk) !== likelihood) {
