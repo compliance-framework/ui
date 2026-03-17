@@ -96,7 +96,13 @@
         v-for="risk in visibleRisks"
         :key="riskRenderKey(risk)"
         data-testid="risk-row"
-        class="w-full rounded-md border border-gray-300 bg-white p-4 text-left transition hover:border-blue-300 hover:bg-blue-50/30 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-blue-700 dark:hover:bg-slate-800"
+        :disabled="!canOpenRiskDetail(risk)"
+        class="w-full rounded-md border border-gray-300 bg-white p-4 text-left transition dark:border-slate-700 dark:bg-slate-900"
+        :class="
+          canOpenRiskDetail(risk)
+            ? 'hover:border-blue-300 hover:bg-blue-50/30 dark:hover:border-blue-700 dark:hover:bg-slate-800'
+            : 'cursor-not-allowed opacity-70'
+        "
         type="button"
         @click="openRiskDetail(risk)"
       >
@@ -494,8 +500,12 @@ function riskReviewDeadline(risk: Risk): string | undefined {
 }
 
 function openRiskDetail(risk: Risk) {
+  if (!canOpenRiskDetail(risk)) {
+    return;
+  }
+
   const riskId = riskIdentifier(risk);
-  if (!riskId || !props.sspId) {
+  if (!riskId) {
     return;
   }
 
@@ -506,6 +516,10 @@ function openRiskDetail(risk: Risk) {
       riskId,
     },
   });
+}
+
+function canOpenRiskDetail(risk: Risk): boolean {
+  return !!riskIdentifier(risk) && !!props.sspId;
 }
 
 function refreshRisks() {

@@ -202,12 +202,7 @@ import { useSystemStore } from '@/stores/system.ts';
 import Panel from '@/volt/Panel.vue';
 import { useDataApi } from '@/composables/axios';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
-import type {
-  Risk,
-  SystemComponent,
-  SystemSecurityPlan,
-  SystemUser,
-} from '@/oscal';
+import type { Risk, SystemComponent, SystemUser } from '@/oscal';
 import {
   getRiskComponentIds,
   normalizeRiskStatus,
@@ -221,9 +216,6 @@ const { system } = useSystemStore();
 const { confirmDeleteDialog } = useDeleteConfirmationDialog();
 
 const sspId = computed(() => system.securityPlan?.uuid ?? '');
-
-// Data
-const systemSecurityPlan = ref<SystemSecurityPlan | null>(null);
 
 const componentsEndpoint = computed(() => {
   if (!sspId.value) return null;
@@ -307,8 +299,6 @@ const componentPanelsCollapsed = ref<Record<string, boolean>>({});
 const editingComponent = ref<SystemComponent | null>(null);
 
 const loadData = async () => {
-  systemSecurityPlan.value = system.securityPlan as SystemSecurityPlan;
-
   if (!componentsEndpoint.value) {
     components.value = [];
     risks.value = [];
