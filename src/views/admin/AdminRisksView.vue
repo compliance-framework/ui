@@ -118,9 +118,21 @@ function handleRiskUpdated(updatedRisk: Risk) {
     sameRiskIdentifier(risk, updatedRisk),
   );
   if (index !== -1) {
+    // Preserve SSP association fields from the original risk
+    const existingRisk = risks.value[index] as Risk & Record<string, unknown>;
+    const mergedRisk = { ...updatedRisk } as Risk & Record<string, unknown>;
+
+    // Preserve SSP ID fields if they exist in the original risk
+    if (existingRisk['ssp-id']) {
+      mergedRisk['ssp-id'] = existingRisk['ssp-id'];
+    }
+    if (existingRisk['sspId']) {
+      mergedRisk['sspId'] = existingRisk['sspId'];
+    }
+
     risks.value = [
       ...risks.value.slice(0, index),
-      updatedRisk,
+      mergedRisk as Risk,
       ...risks.value.slice(index + 1),
     ];
   }
