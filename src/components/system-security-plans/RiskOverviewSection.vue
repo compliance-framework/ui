@@ -56,7 +56,7 @@
 import { computed, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import type { Risk } from '@/oscal';
-import { useDataApi } from '@/composables/axios';
+import { useAuthenticatedInstance } from '@/composables/axios';
 import RiskStatusBreakdownWidget from '@/components/system-security-plans/risk-widgets/RiskStatusBreakdownWidget.vue';
 import RiskSeverityHeatmapWidget from '@/components/system-security-plans/risk-widgets/RiskSeverityHeatmapWidget.vue';
 import OverdueReviewsWidget from '@/components/system-security-plans/risk-widgets/OverdueReviewsWidget.vue';
@@ -71,6 +71,7 @@ import {
   listOverdueRisks,
   listTopOpenRisks,
 } from '@/utils/risk-dashboard';
+import type { DataResponse } from '@/stores/types';
 
 type RiskListRouteName =
   | 'system-security-plan-risks'
@@ -83,28 +84,48 @@ const props = defineProps<{
 }>();
 
 const router = useRouter();
+const authenticatedApi = useAuthenticatedInstance();
 const trendRangeDays = ref<30 | 60 | 90>(30);
-
-const {
-  data: risks,
-  execute: loadRisks,
-  error,
-  isLoading: loading,
-} = useDataApi<Risk[]>(null, null, { immediate: false, initialData: [] });
+const risks = ref<Risk[]>([]);
+const loading = ref(false);
+const error = ref<unknown>(undefined);
+let activeLoadToken = 0;
 
 watch(
   () => props.sspId,
   async (nextSspId) => {
+    const loadToken = ++activeLoadToken;
+
     if (!nextSspId) {
+      loading.value = false;
       risks.value = [];
       error.value = undefined;
       return;
     }
 
+    loading.value = true;
+    error.value = undefined;
+
     try {
-      await loadRisks(`/api/oscal/system-security-plans/${nextSspId}/risks`);
-    } catch {
-      // useDataApi stores the error state.
+      const response = await authenticatedApi.get<DataResponse<Risk[]>>(
+        `/api/oscal/system-security-plans/${nextSspId}/risks`,
+      );
+
+      if (loadToken !== activeLoadToken || nextSspId !== props.sspId) {
+        return;
+      }
+
+      risks.value = response.data?.data ?? [];
+    } catch (err) {
+      if (loadToken !== activeLoadToken || nextSspId !== props.sspId) {
+        return;
+      }
+      risks.value = [];
+      error.value = err;
+    } finally {
+      if (loadToken === activeLoadToken) {
+        loading.value = false;
+      }
     }
   },
   { immediate: true },

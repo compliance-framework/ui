@@ -66,7 +66,6 @@ const {
   resetMockApiState,
   mockRouterPush,
   mockRouterBack,
-  mockRouterHistoryState,
 } = vi.hoisted(() => {
   type ApiCall = {
     endpoint: string;
@@ -77,7 +76,6 @@ const {
   const apiCalls: ApiCall[] = [];
   const mockRouterPush = vi.fn();
   const mockRouterBack = vi.fn();
-  const mockRouterHistoryState: { back: string | null } = { back: null };
 
   const mockApiState = {
     evidenceLinks: [] as Array<string | { riskId: string; evidenceId: string }>,
@@ -137,7 +135,6 @@ const {
     apiCalls.length = 0;
     mockRouterPush.mockReset();
     mockRouterBack.mockReset();
-    mockRouterHistoryState.back = null;
     mockApiState.evidenceLinks = [];
     mockApiState.evidenceDetails = {};
     mockApiState.controlLinks = [];
@@ -188,7 +185,6 @@ const {
     resetMockApiState,
     mockRouterPush,
     mockRouterBack,
-    mockRouterHistoryState,
   };
 });
 
@@ -197,11 +193,6 @@ vi.mock('vue-router', () => ({
   useRouter: () => ({
     push: mockRouterPush,
     back: mockRouterBack,
-    options: {
-      history: {
-        state: mockRouterHistoryState,
-      },
-    },
   }),
 }));
 
@@ -564,6 +555,7 @@ describe('RiskDetailView', () => {
     mockRoute.params.id = 'ssp-1';
     mockRoute.params.riskId = 'risk-1';
     mockRoute.query = {};
+    window.history.replaceState({}, '', window.location.href);
     resetMockApiState();
     vi.clearAllMocks();
     vi.spyOn(window, 'confirm').mockReturnValue(true);
@@ -600,7 +592,11 @@ describe('RiskDetailView', () => {
   });
 
   it('uses router back when an in-app back target exists', async () => {
-    mockRouterHistoryState.back = '/system/risks';
+    window.history.replaceState(
+      { back: '/system/risks' },
+      '',
+      window.location.href,
+    );
     const wrapper = mountComponent();
     await flushPromises();
 
@@ -611,7 +607,7 @@ describe('RiskDetailView', () => {
   });
 
   it('falls back to list route when no in-app back target exists', async () => {
-    mockRouterHistoryState.back = null;
+    window.history.replaceState({}, '', window.location.href);
     const wrapper = mountComponent();
     await flushPromises();
 
@@ -628,7 +624,7 @@ describe('RiskDetailView', () => {
     mockRoute.name = 'risks:detail';
     mockRoute.params.id = '';
     mockRoute.query = { from: 'system' };
-    mockRouterHistoryState.back = null;
+    window.history.replaceState({}, '', window.location.href);
     const wrapper = mountComponent();
     await flushPromises();
 

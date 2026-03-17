@@ -961,14 +961,9 @@ function riskListRouteByContext() {
 }
 
 function hasInAppBackTarget(): boolean {
-  const routerBackState = (
-    router.options?.history as { state?: RouterHistoryStateLike } | undefined
-  )?.state?.back;
-  const browserBackState =
-    typeof window !== 'undefined'
-      ? (window.history.state as RouterHistoryStateLike | null)?.back
-      : undefined;
-  const backTarget = routerBackState ?? browserBackState;
+  if (typeof window === 'undefined') return false;
+  const backTarget = (window.history.state as RouterHistoryStateLike | null)
+    ?.back;
   return typeof backTarget === 'string' && backTarget.length > 0;
 }
 
