@@ -1,4 +1,6 @@
 import type { Risk } from '@/oscal';
+import { getRiskIdentifier } from '@/utils/risk-id';
+import { normalizeRiskRegisterStatus } from '@/utils/risk-workflow';
 
 export interface RiskSummary {
   total: number;
@@ -10,12 +12,16 @@ export interface RiskSummary {
 export interface RiskFilters {
   search: string;
   status: string;
+  statusCategory: string;
   likelihood: string;
   impact: string;
   owner: string;
   review: 'all' | 'overdue' | 'upcoming';
   controlId: string;
   evidenceId: string;
+  riskId: string;
+  createdFrom: string;
+  createdTo: string;
 }
 
 export type RiskSortBy =
@@ -37,12 +43,16 @@ export type RiskSeverityLevel =
 export const defaultRiskFilters: RiskFilters = {
   search: '',
   status: 'not-closed',
+  statusCategory: 'all',
   likelihood: 'all',
   impact: 'all',
   owner: '',
   review: 'all',
   controlId: '',
   evidenceId: '',
+  riskId: '',
+  createdFrom: '',
+  createdTo: '',
 };
 
 type LooseRisk = Risk & Record<string, unknown>;
@@ -134,6 +144,10 @@ export function normalizeRiskStatus(status?: string): string {
   return toLower(status);
 }
 
+export function canonicalRiskStatus(status?: string): string {
+  return normalizeRiskRegisterStatus(status) || normalizeRiskStatus(status);
+}
+
 export function isAcceptedStatus(status?: string): boolean {
   const normalized = normalizeRiskStatus(status);
   return normalized === 'accepted' || normalized === 'risk-accepted';
@@ -148,9 +162,23 @@ export function isClosedStatus(status?: string): boolean {
   );
 }
 
+export function isMitigationCompleteStatus(status?: string): boolean {
+  const normalized = normalizeRiskStatus(status);
+  return (
+    normalized === 'mitigation-complete' ||
+    normalized === 'mitigating-complete' ||
+    normalized === 'mitigation-implemented' ||
+    normalized === 'mitigating-implemented'
+  );
+}
+
+export function isAddressedStatus(status?: string): boolean {
+  return isAcceptedStatus(status) || isMitigationCompleteStatus(status);
+}
+
 export function isOpenStatus(status?: string): boolean {
   if (!status) return false;
-  return !isClosedStatus(status) && !isAcceptedStatus(status);
+  return !isClosedStatus(status) && !isAddressedStatus(status);
 }
 
 export function getRiskCreatedAt(risk: Risk): string | undefined {
@@ -355,6 +383,68 @@ function compareNumeric(
   return direction === 'asc' ? left - right : right - left;
 }
 
+function queryString(value: unknown): string {
+  if (typeof value === 'string') {
+    return value.trim();
+  }
+  if (Array.isArray(value) && typeof value[0] === 'string') {
+    return value[0].trim();
+  }
+  return '';
+}
+
+export function formatRiskFilterLevel(value?: string): string {
+  const normalized = toLower(value);
+  if (normalized === 'medium') {
+    return 'moderate';
+  }
+  return normalized;
+}
+
+export function readRiskFiltersFromQuery(
+  query: Record<string, unknown>,
+): Pick<
+  RiskFilters,
+  | 'search'
+  | 'status'
+  | 'statusCategory'
+  | 'likelihood'
+  | 'impact'
+  | 'owner'
+  | 'review'
+  | 'controlId'
+  | 'evidenceId'
+  | 'riskId'
+  | 'createdFrom'
+  | 'createdTo'
+> {
+  const reviewValue = toLower(queryString(query.review));
+  const review =
+    reviewValue === 'overdue' || reviewValue === 'upcoming'
+      ? reviewValue
+      : 'all';
+
+  const status = toLower(queryString(query.status));
+  const statusCategory = toLower(queryString(query.statusCategory));
+  const likelihood = formatRiskFilterLevel(queryString(query.likelihood));
+  const impact = formatRiskFilterLevel(queryString(query.impact));
+
+  return {
+    search: queryString(query.search),
+    status: status || defaultRiskFilters.status,
+    statusCategory: statusCategory || defaultRiskFilters.statusCategory,
+    likelihood: likelihood || defaultRiskFilters.likelihood,
+    impact: impact || defaultRiskFilters.impact,
+    owner: queryString(query.owner),
+    review,
+    controlId: queryString(query.controlId),
+    evidenceId: queryString(query.evidenceId),
+    riskId: queryString(query.riskId),
+    createdFrom: queryString(query.createdFrom),
+    createdTo: queryString(query.createdTo),
+  };
+}
+
 export function computeRiskSummary(
   risks: Risk[] = [],
   now: Date = new Date(),
@@ -398,12 +488,20 @@ export function filterRisks(
 ): Risk[] {
   const search = toLower(filters.search);
   const status = toLower(filters.status);
-  const likelihood = toLower(filters.likelihood);
-  const impact = toLower(filters.impact);
+  const statusCategory = toLower(filters.statusCategory);
+  const likelihood = formatRiskFilterLevel(filters.likelihood);
+  const impact = formatRiskFilterLevel(filters.impact);
   const owner = toLower(filters.owner);
   const controlId = toLower(filters.controlId);
   const evidenceId = toLower(filters.evidenceId);
+  const riskId = toLower(filters.riskId);
+  const createdFrom = toDateOrNull(filters.createdFrom);
+  const createdTo = toDateOrNull(filters.createdTo);
   const nowTs = now.getTime();
+  const canonicalFilterStatus =
+    status !== 'all' && status !== 'not-closed'
+      ? canonicalRiskStatus(status)
+      : '';
 
   return risks.filter((risk) => {
     if (search && !riskSearchText(risk).includes(search)) {
@@ -415,16 +513,45 @@ export function filterRisks(
         if (isClosedStatus(risk.status)) {
           return false;
         }
-      } else if (normalizeRiskStatus(risk.status) !== status) {
-        return false;
+      } else {
+        const riskCanonicalStatus = canonicalRiskStatus(risk.status);
+        if (status === 'unknown') {
+          if (riskCanonicalStatus && riskCanonicalStatus !== 'unknown') {
+            return false;
+          }
+        } else if (riskCanonicalStatus !== canonicalFilterStatus) {
+          return false;
+        }
       }
     }
 
-    if (likelihood !== 'all' && getRiskLikelihood(risk) !== likelihood) {
+    if (statusCategory === 'accepted' && !isAcceptedStatus(risk.status)) {
       return false;
     }
 
-    if (impact !== 'all' && getRiskImpact(risk) !== impact) {
+    if (statusCategory === 'addressed' && !isAddressedStatus(risk.status)) {
+      return false;
+    }
+
+    if (statusCategory === 'open' && !isOpenStatus(risk.status)) {
+      return false;
+    }
+
+    if (statusCategory === 'closed' && !isClosedStatus(risk.status)) {
+      return false;
+    }
+
+    if (
+      likelihood !== 'all' &&
+      formatRiskFilterLevel(getRiskLikelihood(risk)) !== likelihood
+    ) {
+      return false;
+    }
+
+    if (
+      impact !== 'all' &&
+      formatRiskFilterLevel(getRiskImpact(risk)) !== impact
+    ) {
       return false;
     }
 
@@ -456,6 +583,26 @@ export function filterRisks(
       !getRiskEvidenceIds(risk).some((id) =>
         id.toLowerCase().includes(evidenceId),
       )
+    ) {
+      return false;
+    }
+
+    if (riskId && getRiskIdentifier(risk).toLowerCase() !== riskId) {
+      return false;
+    }
+
+    const createdAt = toDateOrNull(getRiskCreatedAt(risk));
+
+    if (
+      createdFrom &&
+      (!createdAt || createdAt.getTime() < createdFrom.getTime())
+    ) {
+      return false;
+    }
+
+    if (
+      createdTo &&
+      (!createdAt || createdAt.getTime() > createdTo.getTime())
     ) {
       return false;
     }

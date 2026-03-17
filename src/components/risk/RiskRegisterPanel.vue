@@ -613,8 +613,16 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref, shallowRef, triggerRef, watch } from 'vue';
-import { useRoute } from 'vue-router';
+import {
+  computed,
+  nextTick,
+  reactive,
+  ref,
+  shallowRef,
+  triggerRef,
+  watch,
+} from 'vue';
+import { useRoute, useRouter, type LocationQueryRaw } from 'vue-router';
 import { type Risk } from '@/oscal';
 import Dialog from '@/volt/Dialog.vue';
 import Message from '@/volt/Message.vue';
@@ -639,6 +647,7 @@ import {
   getRiskOwnerDisplay,
   getRiskReviewDeadline,
   isClosedStatus,
+  readRiskFiltersFromQuery,
   sortRisks,
   type RiskFilters,
   type RiskSortBy,
@@ -687,6 +696,7 @@ const emit = defineEmits<{
 }>();
 
 const route = useRoute();
+const router = useRouter();
 const toast = useToast();
 const { confirmDeleteDialog } = useDeleteConfirmationDialog();
 
@@ -703,6 +713,8 @@ const filters = reactive<PanelRiskFilters>({ ...defaultPanelFilters });
 const sortBy = ref<RiskSortBy>('updated');
 const sortDirection = ref<SortDirection>('desc');
 const currentPage = ref(1);
+const syncingFiltersFromRoute = ref(false);
+let routeSyncToken = 0;
 
 const showCreateModal = ref(false);
 const showEditModal = ref(false);
@@ -719,20 +731,117 @@ const selectedRiskIds = shallowRef<Set<string>>(new Set());
 const riskFallbackKeys = new WeakMap<Risk, string>();
 let riskFallbackCounter = 0;
 
-watch(
-  () => route.query.controlId,
-  (value) => {
-    const next =
-      typeof value === 'string'
-        ? value
-        : Array.isArray(value) && typeof value[0] === 'string'
-          ? value[0]
-          : '';
-    if (filters.controlId !== next) {
-      filters.controlId = next;
+const hiddenDeepLinkFilterKeys = [
+  'statusCategory',
+  'riskId',
+  'createdFrom',
+  'createdTo',
+] as const;
+
+const queryManagedFilterKeys = [
+  'search',
+  'status',
+  'likelihood',
+  'impact',
+  'owner',
+  'review',
+  'controlId',
+  'evidenceId',
+  'sspId',
+] as const;
+
+function queryString(value: unknown): string {
+  if (typeof value === 'string') {
+    return value.trim();
+  }
+  if (Array.isArray(value) && typeof value[0] === 'string') {
+    return value[0].trim();
+  }
+  return '';
+}
+
+function queryValueList(
+  value: LocationQueryRaw[string],
+): Array<string | number | null | undefined> {
+  if (Array.isArray(value)) return value;
+  return [value];
+}
+
+function serializedQuery(query: LocationQueryRaw): string {
+  const normalizedEntries: Array<[string, string[]]> = Object.entries(
+    query,
+  ).map(([key, value]) => [
+    key,
+    queryValueList(value).map((item) => String(item ?? '')),
+  ]);
+  normalizedEntries.sort((left, right) => left[0].localeCompare(right[0]));
+  return JSON.stringify(normalizedEntries);
+}
+
+function buildRouteQueryFromFilters(): LocationQueryRaw {
+  const nextQuery: LocationQueryRaw = { ...route.query };
+
+  hiddenDeepLinkFilterKeys.forEach((key) => {
+    delete nextQuery[key];
+  });
+
+  queryManagedFilterKeys.forEach((key) => {
+    delete nextQuery[key];
+  });
+
+  queryManagedFilterKeys.forEach((key) => {
+    const value = filters[key];
+    const defaultValue = defaultPanelFilters[key];
+    if (value && value !== defaultValue) {
+      nextQuery[key] = value;
     }
+  });
+
+  return nextQuery;
+}
+
+function clearHiddenDeepLinkFilters() {
+  hiddenDeepLinkFilterKeys.forEach((key) => {
+    filters[key] = defaultPanelFilters[key];
+  });
+}
+
+watch(
+  () => route.query,
+  (query) => {
+    const queryFilters = readRiskFiltersFromQuery(
+      query as Record<string, unknown>,
+    );
+    const querySspId = queryString(query.sspId);
+    const currentRouteSyncToken = ++routeSyncToken;
+
+    syncingFiltersFromRoute.value = true;
+    Object.assign(filters, defaultPanelFilters, queryFilters, {
+      sspId: querySspId || defaultPanelFilters.sspId,
+    });
+    void nextTick(() => {
+      if (routeSyncToken === currentRouteSyncToken) {
+        syncingFiltersFromRoute.value = false;
+      }
+    });
   },
   { immediate: true },
+);
+
+watch(
+  () => queryManagedFilterKeys.map((key) => filters[key]),
+  () => {
+    if (syncingFiltersFromRoute.value) return;
+    clearHiddenDeepLinkFilters();
+
+    const nextQuery = buildRouteQueryFromFilters();
+    const currentQuery: LocationQueryRaw = { ...route.query };
+    if (serializedQuery(currentQuery) === serializedQuery(nextQuery)) {
+      return;
+    }
+
+    void router.replace({ query: nextQuery });
+  },
 );
 
 watch(
@@ -748,12 +857,16 @@ watch(
   () => [
     filters.search,
     filters.status,
+    filters.statusCategory,
     filters.likelihood,
     filters.impact,
     filters.owner,
     filters.review,
     filters.controlId,
     filters.evidenceId,
+    filters.riskId,
+    filters.createdFrom,
+    filters.createdTo,
     filters.sspId,
     sortBy.value,
     sortDirection.value,
@@ -1219,6 +1332,21 @@ function riskDetailRoute(risk: Risk) {
 
   if (!sspId) {
     return { name: 'system-security-plans' };
+  }
+
+  if (route.name === 'system:risks') {
+    return {
+      name: 'risks:detail',
+      params: { riskId },
+      query: { from: 'system' },
+    };
+  }
+
+  if (route.name === 'risks:index') {
+    return {
+      name: 'risks:detail',
+      params: { riskId },
+    };
   }
 
   return {

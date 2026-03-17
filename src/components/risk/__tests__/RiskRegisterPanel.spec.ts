@@ -31,6 +31,9 @@ vi.mock('vue-router', () => ({
     params: {},
     query: {},
   }),
+  useRouter: () => ({
+    replace: vi.fn(),
+  }),
   RouterLink: {
     name: 'RouterLink',
     template: '<a><slot /></a>',

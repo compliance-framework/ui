@@ -1,5 +1,6 @@
 import {
   Chart as ChartJS,
+  ArcElement,
   BarElement,
   CategoryScale,
   Filler,
@@ -21,6 +22,7 @@ export function useCharts() {
     Title,
     Tooltip,
     Legend,
+    ArcElement,
     BarElement,
     Filler,
     PointElement,

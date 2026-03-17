@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Line } from 'vue-chartjs';
+import { Doughnut } from 'vue-chartjs';
 import type { Chart } from 'chart.js';
 import { ref } from 'vue';
 import { useCharts } from './chart-defaults';
@@ -11,7 +11,7 @@ const emit = defineEmits<{
   (event: 'element-click', index: number): void;
 }>();
 
-const chartRef = ref<{ chart: Chart<'line'> } | null>(null);
+const chartRef = ref<{ chart: Chart<'doughnut'> } | null>(null);
 
 function onChartClick(event: MouseEvent) {
   const chart = chartRef.value?.chart;
@@ -30,7 +30,7 @@ function onChartClick(event: MouseEvent) {
 </script>
 
 <template>
-  <Line
+  <Doughnut
     ref="chartRef"
     :options="props.options"
     :data="props.data"

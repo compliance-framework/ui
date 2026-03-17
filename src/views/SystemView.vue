@@ -25,6 +25,7 @@
             v-for="tab in [
               { label: 'Overview', route: 'system:overview' },
               { label: 'System Users', route: 'system:users' },
+              { label: 'Risks', route: 'system:risks' },
               { label: 'System Components', route: 'system:components' },
               {
                 label: 'Leveraged Authorizations',

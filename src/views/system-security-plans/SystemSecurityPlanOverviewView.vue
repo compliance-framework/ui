@@ -196,6 +196,11 @@
         </div>
       </div>
 
+      <RiskOverviewSection
+        :ssp-id="String(route.params.id || '')"
+        risk-list-route-name="system-security-plan-risks"
+      />
+
       <!-- System Characteristics Summary -->
       <div
         v-if="systemCharacteristics"
@@ -280,6 +285,7 @@ import { useDataApi } from '@/composables/axios';
 import type { AxiosError } from 'axios';
 import type { ErrorResponse, ErrorBody } from '@/stores/types.ts';
 import decamelizeKeys from 'decamelize-keys';
+import RiskOverviewSection from '@/components/system-security-plans/RiskOverviewSection.vue';
 
 const route = useRoute();
 const router = useRouter();

@@ -172,6 +172,11 @@ const authenticatedRoutes = [
         component: () => import('../views/system/UsersView.vue'),
       },
       {
+        path: 'risks',
+        name: 'system:risks',
+        component: () => import('../views/RisksView.vue'),
+      },
+      {
         path: 'components',
         name: 'system:components',
         component: () => import('../views/system/ComponentsView.vue'),

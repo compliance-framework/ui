@@ -1,6 +1,9 @@
 <template>
   <div class="p-6 space-y-6">
-    <PageHeader>{{ pageTitle }}</PageHeader>
+    <div class="flex items-center justify-between gap-3">
+      <PageHeader>{{ pageTitle }}</PageHeader>
+      <TertiaryButton @click="goBackToPreviousPage">Back</TertiaryButton>
+    </div>
 
     <Message v-if="contextMissing" severity="error" variant="outlined">
       <h4 class="font-bold">{{ missingContextTitle }}</h4>
@@ -669,7 +672,7 @@
 <script setup lang="ts">
 import { cloneFnJSON as cloneDeep } from '@vueuse/core';
 import { computed, ref, watch } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import PageHeader from '@/components/PageHeader.vue';
 import Message from '@/volt/Message.vue';
 import Dialog from '@/volt/Dialog.vue';
@@ -761,6 +764,10 @@ interface RiskReviewSubmitPayload {
   nextReviewDeadline?: string;
 }
 
+interface RouterHistoryStateLike {
+  back?: unknown;
+}
+
 const tabs = [
   { id: 'overview', label: 'Overview' },
   { id: 'evidence', label: 'Evidence' },
@@ -773,6 +780,7 @@ const tabs = [
 type TabId = (typeof tabs)[number]['id'];
 
 const route = useRoute();
+const router = useRouter();
 const toast = useToast();
 const systemStore = useSystemStore();
 const authenticatedApi = useAuthenticatedInstance();
@@ -918,6 +926,54 @@ const detailEndpoint = computed(() => {
 const pageTitle = computed(() =>
   risk.value?.title ? `Risk: ${risk.value.title}` : 'Risk Detail',
 );
+
+function openedFromSystemRisksRoute(): boolean {
+  const from = route.query.from;
+  if (Array.isArray(from)) {
+    return from.includes('system');
+  }
+  return from === 'system';
+}
+
+function riskListRouteByContext() {
+  if (openedFromSystemRisksRoute()) {
+    return { name: 'system:risks' };
+  }
+
+  if (!context.value) {
+    return { name: 'risks:index' };
+  }
+
+  if (context.value.scope === 'ssp') {
+    if (context.value.listRouteName === 'system-security-plan-risks') {
+      return {
+        name: context.value.listRouteName,
+        params: { id: context.value.id },
+      };
+    }
+    return { name: 'risks:index' };
+  }
+
+  return {
+    name: context.value.listRouteName,
+    params: { id: context.value.id },
+  };
+}
+
+function hasInAppBackTarget(): boolean {
+  if (typeof window === 'undefined') return false;
+  const backTarget = (window.history.state as RouterHistoryStateLike | null)
+    ?.back;
+  return typeof backTarget === 'string' && backTarget.length > 0;
+}
+
+function goBackToPreviousPage() {
+  if (hasInAppBackTarget()) {
+    router.back();
+    return;
+  }
+  void router.push(riskListRouteByContext());
+}
 
 const loading = computed(() => loadingRisk.value || loadingRiskList.value);
 const saving = computed(() => savingAssociation.value || mutatingRisk.value);
