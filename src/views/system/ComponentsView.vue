@@ -270,7 +270,17 @@ const { execute: executeGetComponent } = useDataApi<SystemComponent>(
   { immediate: false },
 );
 
-const selectedComponent = ref<SystemComponent>();
+const selectedComponent = computed<SystemComponent | undefined>(() => {
+  const routeComponentId = Array.isArray(route.params.componentId)
+    ? route.params.componentId[0]
+    : route.params.componentId;
+
+  if (!routeComponentId || !components.value) {
+    return undefined;
+  }
+
+  return components.value.find((c) => c.uuid === routeComponentId);
+});
 
 const dashboardDrawerOpen = computed({
   get: () => !!route.params.componentId,
@@ -287,23 +297,6 @@ function openDashboardDrawer(component: SystemComponent) {
     params: { componentId: component.uuid },
   });
 }
-
-watch(
-  () => route.params.componentId,
-  (componentId) => {
-    if (!componentId || !components.value) {
-      selectedComponent.value = undefined;
-      return;
-    }
-
-    const found = components.value.find((c) => c.uuid === componentId);
-
-    if (found) {
-      selectedComponent.value = found;
-    }
-  },
-  { immediate: true },
-);
 
 // Modal states
 const showCreateComponentModal = ref(false);

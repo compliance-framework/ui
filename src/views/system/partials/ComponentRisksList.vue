@@ -296,6 +296,21 @@ function compareWithDirection(
   return direction === 'asc' ? left - right : right - left;
 }
 
+function compareStringWithDirection(
+  left: string,
+  right: string,
+  direction: SortDirection,
+): number {
+  const compared = left.localeCompare(right, undefined, {
+    sensitivity: 'base',
+  });
+  return direction === 'asc' ? compared : -compared;
+}
+
+function normalizeText(value?: string): string {
+  return (value || '').trim().toLowerCase();
+}
+
 function deadlineTimestamp(value?: string): number {
   if (!value) return 0;
   const parsed = new Date(value);
@@ -307,13 +322,9 @@ const visibleRisks = computed(() => {
   return [...filteredRisks.value].sort((left, right) => {
     switch (sortBy.value) {
       case 'status':
-        return compareWithDirection(
-          normalizeRiskStatus(left.status).localeCompare(
-            normalizeRiskStatus(right.status),
-            undefined,
-            { sensitivity: 'base' },
-          ),
-          0,
+        return compareStringWithDirection(
+          normalizeRiskStatus(left.status),
+          normalizeRiskStatus(right.status),
           sortDirection.value,
         );
       case 'deadline':
@@ -394,7 +405,7 @@ function severityLevel(risk: Risk): RiskSeverityLevel {
   if (resolved !== 'unknown') return resolved;
 
   const fallback = getRiskImpact(risk) || getRiskLikelihood(risk);
-  const normalized = normalizeRiskStatus(fallback);
+  const normalized = normalizeText(fallback);
   if (
     normalized === 'critical' ||
     normalized === 'high' ||
