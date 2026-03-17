@@ -393,4 +393,91 @@ describe('RiskRegisterPanel', () => {
 
     expect(wrapper.text()).toContain('Reset Filters');
   });
+
+  it('sanitizes CSV cells to prevent injection', () => {
+    const wrapper = mount(RiskRegisterPanel, {
+      props: {
+        risks: [],
+        loading: false,
+      },
+      global: { stubs: globalStubs },
+    });
+
+    // Access the sanitizeCsvCell function via component instance
+    const component = wrapper.vm as unknown as {
+      sanitizeCsvCell: (value: string) => string;
+    };
+
+    // Test formula-triggering characters
+    expect(component.sanitizeCsvCell('=SUM(A1:A10)')).toBe("'=SUM(A1:A10)");
+    expect(component.sanitizeCsvCell('+1234')).toBe("'+1234");
+    expect(component.sanitizeCsvCell('-1234')).toBe("'-1234");
+    expect(component.sanitizeCsvCell('@username')).toBe("'@username");
+
+    // Test with leading whitespace
+    expect(component.sanitizeCsvCell('  =SUM(A1:A10)')).toBe("'  =SUM(A1:A10)");
+    expect(component.sanitizeCsvCell('\t+1234')).toBe("'\t+1234");
+
+    // Test safe values (should not be modified)
+    expect(component.sanitizeCsvCell('Normal text')).toBe('Normal text');
+    expect(component.sanitizeCsvCell('123')).toBe('123');
+    expect(component.sanitizeCsvCell('')).toBe('');
+  });
+
+  it('exports CSV with selected risks', () => {
+    const risks: Risk[] = [
+      createMockRisk({
+        uuid: 'risk-1',
+        title: 'Test Risk 1',
+        description: 'Description 1',
+        status: 'open',
+      }),
+      createMockRisk({
+        uuid: 'risk-2',
+        title: '=MALICIOUS()',
+        description: 'Description 2',
+        status: 'closed',
+      }),
+    ];
+
+    const wrapper = mount(RiskRegisterPanel, {
+      props: {
+        risks,
+        loading: false,
+        enableBulkOps: true,
+      },
+      global: { stubs: globalStubs },
+    });
+
+    const component = wrapper.vm as unknown as {
+      selectedRiskIds: Set<string>;
+      exportCsv: () => void;
+    };
+
+    // Select the first risk
+    component.selectedRiskIds.add('risk-1');
+
+    // Mock URL.createObjectURL and document methods
+    global.URL.createObjectURL = vi.fn(() => 'blob:mock-url');
+    global.URL.revokeObjectURL = vi.fn();
+    const createElementSpy = vi.spyOn(document, 'createElement');
+    const appendChildSpy = vi
+      .spyOn(document.body, 'appendChild')
+      .mockImplementation(() => null as unknown as Node);
+    const removeChildSpy = vi
+      .spyOn(document.body, 'removeChild')
+      .mockImplementation(() => null as unknown as Node);
+
+    // Call exportCsv
+    component.exportCsv();
+
+    // Verify CSV was created
+    expect(global.URL.createObjectURL).toHaveBeenCalled();
+    expect(createElementSpy).toHaveBeenCalledWith('a');
+
+    // Cleanup
+    createElementSpy.mockRestore();
+    appendChildSpy.mockRestore();
+    removeChildSpy.mockRestore();
+  });
 });

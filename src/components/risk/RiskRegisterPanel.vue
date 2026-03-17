@@ -832,18 +832,23 @@ const statusOptions = computed(() => {
 });
 
 const allVisibleSelected = computed(() => {
-  if (!paginatedRisks.value.length) return false;
-  return paginatedRisks.value.every((risk) => {
+  const selectableRisks = paginatedRisks.value.filter(
+    (risk) => !!getRiskIdentifier(risk),
+  );
+  if (!selectableRisks.length) return false;
+  return selectableRisks.every((risk) => {
     const id = getRiskIdentifier(risk);
-    return id && selectedRiskIds.value.has(id);
+    return selectedRiskIds.value.has(id!);
   });
 });
 
 const someVisibleSelected = computed(() => {
-  return paginatedRisks.value.some((risk) => {
-    const id = getRiskIdentifier(risk);
-    return id && selectedRiskIds.value.has(id);
-  });
+  return (
+    paginatedRisks.value.some((risk) => {
+      const id = getRiskIdentifier(risk);
+      return id && selectedRiskIds.value.has(id);
+    }) && !allVisibleSelected.value
+  );
 });
 
 const effectiveCreateSspId = computed(() => {
@@ -1057,11 +1062,24 @@ async function executeBulkUpdate(
 
 async function applyBulkStatus() {
   if (!bulkStatusValue.value) return;
+
   bulkOperating.value = true;
   const selected = props.risks.filter((risk) => {
     const id = getRiskIdentifier(risk);
     return id && selectedRiskIds.value.has(id);
   });
+
+  if (selected.length === 0) {
+    toast.add({
+      severity: 'warn',
+      summary: 'No risks selected',
+      detail: 'Please select at least one risk to update.',
+      life: 4000,
+    });
+    bulkOperating.value = false;
+    showBulkStatusModal.value = false;
+    return;
+  }
 
   await executeBulkUpdate(
     selected,
@@ -1087,11 +1105,25 @@ async function applyBulkStatus() {
 
 async function applyBulkOwner() {
   if (!bulkOwnerValue.value.trim()) return;
+
   bulkOperating.value = true;
   const selected = props.risks.filter((risk) => {
     const id = getRiskIdentifier(risk);
     return id && selectedRiskIds.value.has(id);
   });
+
+  if (selected.length === 0) {
+    toast.add({
+      severity: 'warn',
+      summary: 'No risks selected',
+      detail: 'Please select at least one risk to update.',
+      life: 4000,
+    });
+    bulkOperating.value = false;
+    showBulkOwnerModal.value = false;
+    bulkOwnerValue.value = '';
+    return;
+  }
 
   await executeBulkUpdate(
     selected,
