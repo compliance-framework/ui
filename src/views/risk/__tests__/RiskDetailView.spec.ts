@@ -59,7 +59,8 @@ const mockRisk: MockRisk = {
 
 const mockToastAdd = vi.fn();
 
-const { apiCalls, mockApiState, resetMockApiState } = vi.hoisted(() => {
+const { apiCalls, mockApiState, resetMockApiState, mockRouterPush, mockRouterBack } =
+  vi.hoisted(() => {
   type ApiCall = {
     endpoint: string;
     method: string;
@@ -67,6 +68,8 @@ const { apiCalls, mockApiState, resetMockApiState } = vi.hoisted(() => {
   };
 
   const apiCalls: ApiCall[] = [];
+  const mockRouterPush = vi.fn();
+  const mockRouterBack = vi.fn();
 
   const mockApiState = {
     evidenceLinks: [] as Array<string | { riskId: string; evidenceId: string }>,
@@ -124,6 +127,8 @@ const { apiCalls, mockApiState, resetMockApiState } = vi.hoisted(() => {
 
   const resetMockApiState = () => {
     apiCalls.length = 0;
+    mockRouterPush.mockReset();
+    mockRouterBack.mockReset();
     mockApiState.evidenceLinks = [];
     mockApiState.evidenceDetails = {};
     mockApiState.controlLinks = [];
@@ -172,11 +177,17 @@ const { apiCalls, mockApiState, resetMockApiState } = vi.hoisted(() => {
     apiCalls,
     mockApiState,
     resetMockApiState,
+    mockRouterPush,
+    mockRouterBack,
   };
 });
 
 vi.mock('vue-router', () => ({
   useRoute: () => mockRoute,
+  useRouter: () => ({
+    push: mockRouterPush,
+    back: mockRouterBack,
+  }),
 }));
 
 vi.mock('@/stores/system', () => ({

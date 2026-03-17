@@ -426,6 +426,7 @@ import {
   getRiskLikelihood,
   getRiskOwnerDisplay,
   getRiskReviewDeadline,
+  readRiskFiltersFromQuery,
   sortRisks,
   type RiskFilters,
   type RiskSortBy,
@@ -529,23 +530,13 @@ const filters = reactive<RiskFilters>({ ...defaultRiskFilters });
 const sortBy = ref<RiskSortBy>('updated');
 const sortDirection = ref<SortDirection>('desc');
 
-function readQueryString(value: unknown): string {
-  if (typeof value === 'string') {
-    return value;
-  }
-  if (Array.isArray(value) && typeof value[0] === 'string') {
-    return value[0];
-  }
-  return '';
-}
-
 watch(
-  () => route.query.controlId,
-  (value) => {
-    const next = readQueryString(value);
-    if (filters.controlId !== next) {
-      filters.controlId = next;
-    }
+  () => route.query,
+  (query) => {
+    Object.assign(
+      filters,
+      readRiskFiltersFromQuery(query as Record<string, unknown>),
+    );
   },
   { immediate: true },
 );
@@ -639,6 +630,13 @@ const deleteRisk = async (riskId: string) => {
 function riskDetailRoute(riskId: string) {
   if (!sspId.value) {
     return { name: 'system-security-plans' };
+  }
+
+  if (route.name !== 'system-security-plan-risks') {
+    return {
+      name: 'risks:detail',
+      params: { riskId },
+    };
   }
 
   return {

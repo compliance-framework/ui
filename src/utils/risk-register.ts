@@ -1,4 +1,5 @@
 import type { Risk } from '@/oscal';
+import { getRiskIdentifier } from '@/utils/risk-id';
 
 export interface RiskSummary {
   total: number;
@@ -10,12 +11,16 @@ export interface RiskSummary {
 export interface RiskFilters {
   search: string;
   status: string;
+  statusCategory: string;
   likelihood: string;
   impact: string;
   owner: string;
   review: 'all' | 'overdue' | 'upcoming';
   controlId: string;
   evidenceId: string;
+  riskId: string;
+  createdFrom: string;
+  createdTo: string;
 }
 
 export type RiskSortBy =
@@ -31,12 +36,16 @@ export type SortDirection = 'asc' | 'desc';
 export const defaultRiskFilters: RiskFilters = {
   search: '',
   status: 'all',
+  statusCategory: 'all',
   likelihood: 'all',
   impact: 'all',
   owner: '',
   review: 'all',
   controlId: '',
   evidenceId: '',
+  riskId: '',
+  createdFrom: '',
+  createdTo: '',
 };
 
 type LooseRisk = Risk & Record<string, unknown>;
@@ -124,6 +133,20 @@ export function isClosedStatus(status?: string): boolean {
     normalized === 'resolved' ||
     normalized === 'complete'
   );
+}
+
+export function isMitigationCompleteStatus(status?: string): boolean {
+  const normalized = normalizeRiskStatus(status);
+  return (
+    normalized === 'mitigation-complete' ||
+    normalized === 'mitigating-complete' ||
+    normalized === 'mitigation-implemented' ||
+    normalized === 'mitigating-implemented'
+  );
+}
+
+export function isAddressedStatus(status?: string): boolean {
+  return isAcceptedStatus(status) || isMitigationCompleteStatus(status);
 }
 
 export function isOpenStatus(status?: string): boolean {
@@ -308,6 +331,64 @@ function compareNumeric(
   return direction === 'asc' ? left - right : right - left;
 }
 
+function queryString(value: unknown): string {
+  if (typeof value === 'string') {
+    return value.trim();
+  }
+  if (Array.isArray(value) && typeof value[0] === 'string') {
+    return value[0].trim();
+  }
+  return '';
+}
+
+export function formatRiskFilterLevel(value?: string): string {
+  const normalized = toLower(value);
+  if (normalized === 'medium') {
+    return 'moderate';
+  }
+  return normalized;
+}
+
+export function readRiskFiltersFromQuery(
+  query: Record<string, unknown>,
+): Pick<
+  RiskFilters,
+  | 'status'
+  | 'statusCategory'
+  | 'likelihood'
+  | 'impact'
+  | 'review'
+  | 'controlId'
+  | 'evidenceId'
+  | 'riskId'
+  | 'createdFrom'
+  | 'createdTo'
+> {
+  const reviewValue = toLower(queryString(query.review));
+  const review =
+    reviewValue === 'overdue' || reviewValue === 'upcoming'
+      ? reviewValue
+      : 'all';
+
+  const status = toLower(queryString(query.status));
+  const statusCategory = toLower(queryString(query.statusCategory));
+  const likelihood = formatRiskFilterLevel(queryString(query.likelihood));
+  const impact = formatRiskFilterLevel(queryString(query.impact));
+
+  return {
+    status: status || 'all',
+    statusCategory: statusCategory || 'all',
+    likelihood: likelihood || 'all',
+    impact: impact || 'all',
+    review,
+    controlId: queryString(query.controlId),
+    evidenceId: queryString(query.evidenceId),
+    riskId: queryString(query.riskId),
+    createdFrom: queryString(query.createdFrom),
+    createdTo: queryString(query.createdTo),
+  };
+}
+
 export function computeRiskSummary(
   risks: Risk[] = [],
   now: Date = new Date(),
@@ -343,11 +424,15 @@ export function filterRisks(
 ): Risk[] {
   const search = toLower(filters.search);
   const status = toLower(filters.status);
-  const likelihood = toLower(filters.likelihood);
-  const impact = toLower(filters.impact);
+  const statusCategory = toLower(filters.statusCategory);
+  const likelihood = formatRiskFilterLevel(filters.likelihood);
+  const impact = formatRiskFilterLevel(filters.impact);
   const owner = toLower(filters.owner);
   const controlId = toLower(filters.controlId);
   const evidenceId = toLower(filters.evidenceId);
+  const riskId = toLower(filters.riskId);
+  const createdFrom = toDateOrNull(filters.createdFrom);
+  const createdTo = toDateOrNull(filters.createdTo);
   const nowTs = now.getTime();
 
   return risks.filter((risk) => {
@@ -359,11 +444,33 @@ export function filterRisks(
       return false;
     }
 
-    if (likelihood !== 'all' && getRiskLikelihood(risk) !== likelihood) {
+    if (statusCategory === 'accepted' && !isAcceptedStatus(risk.status)) {
       return false;
     }
 
-    if (impact !== 'all' && getRiskImpact(risk) !== impact) {
+    if (statusCategory === 'addressed' && !isAddressedStatus(risk.status)) {
+      return false;
+    }
+
+    if (statusCategory === 'open' && !isOpenStatus(risk.status)) {
+      return false;
+    }
+
+    if (statusCategory === 'closed' && !isClosedStatus(risk.status)) {
+      return false;
+    }
+
+    if (
+      likelihood !== 'all' &&
+      formatRiskFilterLevel(getRiskLikelihood(risk)) !== likelihood
+    ) {
+      return false;
+    }
+
+    if (
+      impact !== 'all' &&
+      formatRiskFilterLevel(getRiskImpact(risk)) !== impact
+    ) {
       return false;
     }
 
@@ -396,6 +503,20 @@ export function filterRisks(
         id.toLowerCase().includes(evidenceId),
       )
     ) {
+      return false;
+    }
+
+    if (riskId && getRiskIdentifier(risk).toLowerCase() !== riskId) {
+      return false;
+    }
+
+    const createdAt = toDateOrNull(getRiskCreatedAt(risk));
+
+    if (createdFrom && (!createdAt || createdAt.getTime() < createdFrom.getTime())) {
+      return false;
+    }
+
+    if (createdTo && (!createdAt || createdAt.getTime() > createdTo.getTime())) {
       return false;
     }
 

@@ -220,6 +220,13 @@
       </div>
     </div>
 
+    <div class="mt-8">
+      <RiskOverviewSection
+        :ssp-id="systemSecurityPlan.uuid || system.securityPlan?.uuid || ''"
+        risk-list-route-name="risks:index"
+      />
+    </div>
+
     <!-- System Characteristics Summary -->
     <template v-if="systemCharacteristics">
       <!--      <h3 class="text-lg font-semibold mb-4 text-gray-900 dark:text-slate-300">-->
@@ -316,6 +323,7 @@ import type {
   ProfileComplianceSummary,
 } from '@/types/compliance';
 import { computeComplianceWidths } from '@/utils/compliance';
+import RiskOverviewSection from '@/components/system-security-plans/RiskOverviewSection.vue';
 
 const toast = useToast();
 const { system } = useSystemStore();

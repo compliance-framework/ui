@@ -3,9 +3,11 @@ import type { Risk } from '@/oscal';
 import {
   computeRiskSummary,
   filterRisks,
+  formatRiskFilterLevel,
   getRiskComponentIds,
   getRiskControlIds,
   getRiskEvidenceIds,
+  readRiskFiltersFromQuery,
   sortRisks,
 } from './risk-register';
 
@@ -68,12 +70,16 @@ describe('risk-register', () => {
     const filtered = filterRisks(risks, {
       search: 'database',
       status: 'open',
+      statusCategory: 'all',
       likelihood: 'all',
       impact: 'all',
       owner: '',
       review: 'all',
       controlId: 'AC-2',
       evidenceId: 'ev-1',
+      riskId: '',
+      createdFrom: '',
+      createdTo: '',
     });
 
     expect(filtered).toHaveLength(1);
@@ -105,5 +111,118 @@ describe('risk-register', () => {
     expect(getRiskControlIds(risk)).toEqual(['AC-1', 'CM-1', 'IA-5']);
     expect(getRiskEvidenceIds(risk)).toEqual(['ev-1', 'ev-2']);
     expect(getRiskComponentIds(risk)).toEqual(['comp-1', 'comp-2']);
+  });
+
+  it('filters by risk id, created range, and accepted status category', () => {
+    const risks = [
+      makeRisk({
+        uuid: 'r1',
+        status: 'open',
+        createdAt: '2026-03-01T10:00:00Z',
+      }),
+      makeRisk({
+        uuid: 'r2',
+        status: 'risk-accepted',
+        createdAt: '2026-03-05T10:00:00Z',
+      }),
+      makeRisk({
+        uuid: 'r3',
+        status: 'risk-accepted',
+        createdAt: '2026-01-05T10:00:00Z',
+      }),
+    ];
+
+    const acceptedInRange = filterRisks(risks, {
+      search: '',
+      status: 'all',
+      statusCategory: 'accepted',
+      likelihood: 'all',
+      impact: 'all',
+      owner: '',
+      review: 'all',
+      controlId: '',
+      evidenceId: '',
+      riskId: '',
+      createdFrom: '2026-03-01T00:00:00Z',
+      createdTo: '2026-03-31T23:59:59Z',
+    });
+
+    expect(acceptedInRange.map((risk) => risk.uuid)).toEqual(['r2']);
+
+    const specificRisk = filterRisks(risks, {
+      search: '',
+      status: 'all',
+      statusCategory: 'all',
+      likelihood: 'all',
+      impact: 'all',
+      owner: '',
+      review: 'all',
+      controlId: '',
+      evidenceId: '',
+      riskId: 'r1',
+      createdFrom: '',
+      createdTo: '',
+    });
+
+    expect(specificRisk.map((risk) => risk.uuid)).toEqual(['r1']);
+  });
+
+  it('filters addressed status category to accepted and mitigation-complete', () => {
+    const risks = [
+      makeRisk({ uuid: 'r1', status: 'risk-accepted' }),
+      makeRisk({ uuid: 'r2', status: 'mitigating-implemented' }),
+      makeRisk({ uuid: 'r3', status: 'closed' }),
+      makeRisk({ uuid: 'r4', status: 'open' }),
+    ];
+
+    const addressed = filterRisks(risks, {
+      search: '',
+      status: 'all',
+      statusCategory: 'addressed',
+      likelihood: 'all',
+      impact: 'all',
+      owner: '',
+      review: 'all',
+      controlId: '',
+      evidenceId: '',
+      riskId: '',
+      createdFrom: '',
+      createdTo: '',
+    });
+
+    expect(addressed.map((risk) => risk.uuid)).toEqual(['r1', 'r2']);
+  });
+
+  it('normalizes medium and moderate filter values', () => {
+    expect(formatRiskFilterLevel('medium')).toBe('moderate');
+    expect(formatRiskFilterLevel('moderate')).toBe('moderate');
+  });
+
+  it('reads supported risk filters from query params', () => {
+    const parsed = readRiskFiltersFromQuery({
+      status: 'open',
+      statusCategory: 'accepted',
+      likelihood: 'moderate',
+      impact: 'high',
+      review: 'overdue',
+      controlId: 'AC-2',
+      evidenceId: 'ev-12',
+      riskId: 'risk-9',
+      createdFrom: '2026-03-01T00:00:00Z',
+      createdTo: '2026-03-02T00:00:00Z',
+    });
+
+    expect(parsed).toEqual({
+      status: 'open',
+      statusCategory: 'accepted',
+      likelihood: 'moderate',
+      impact: 'high',
+      review: 'overdue',
+      controlId: 'AC-2',
+      evidenceId: 'ev-12',
+      riskId: 'risk-9',
+      createdFrom: '2026-03-01T00:00:00Z',
+      createdTo: '2026-03-02T00:00:00Z',
+    });
   });
 });
