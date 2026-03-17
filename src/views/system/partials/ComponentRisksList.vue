@@ -29,7 +29,7 @@
         >
           <option value="all">All</option>
           <option v-for="status in statusOptions" :key="status" :value="status">
-            {{ formatLabel(status) }}
+            {{ riskStatusLabel(status) }}
           </option>
         </select>
       </div>
@@ -115,7 +115,7 @@
               class="inline-flex items-center rounded-full px-2.5 py-0.5 font-medium"
               :class="statusBadgeClass(risk.status)"
             >
-              {{ formatLabel(risk.status || 'unknown') }}
+              {{ riskStatusLabel(risk.status) }}
             </span>
             <span
               class="inline-flex items-center rounded-full px-2.5 py-0.5 font-medium"
@@ -190,10 +190,14 @@ import {
   getRiskSeverityLevel,
   getRiskSeverityScore,
   isClosedStatus,
-  normalizeRiskStatus,
   type RiskSeverityLevel,
   type SortDirection,
 } from '@/utils/risk-register';
+import {
+  normalizeOwnerAssignments,
+  normalizeRiskRegisterStatus,
+  riskStatusLabel,
+} from '@/utils/risk-workflow';
 import { getRiskIdentifier } from '@/utils/risk-id';
 
 const props = defineProps<{
@@ -270,9 +274,14 @@ const usersById = computed(() => {
 });
 
 const statusOptions = computed(() => {
-  const statuses = new Set(
-    componentRisks.value.map((risk) => normalizeRiskStatus(risk.status)),
-  );
+  const statuses = new Set<string>();
+
+  componentRisks.value.forEach((risk) => {
+    const normalized = normalizeRiskRegisterStatus(risk.status);
+    if (normalized) {
+      statuses.add(normalized);
+    }
+  });
 
   return Array.from(statuses)
     .filter((status) => !!status)
@@ -285,7 +294,7 @@ const filteredRisks = computed(() => {
   }
 
   return componentRisks.value.filter(
-    (risk) => normalizeRiskStatus(risk.status) === statusFilter.value,
+    (risk) => normalizeRiskRegisterStatus(risk.status) === statusFilter.value,
   );
 });
 
@@ -320,8 +329,8 @@ const visibleRisks = computed(() => {
     switch (sortBy.value) {
       case 'status':
         return compareStringWithDirection(
-          normalizeRiskStatus(left.status),
-          normalizeRiskStatus(right.status),
+          normalizeRiskRegisterStatus(left.status) || '',
+          normalizeRiskRegisterStatus(right.status) || '',
           sortDirection.value,
         );
       case 'deadline':
@@ -380,17 +389,17 @@ function formatDateTime(value?: string): string {
 }
 
 function statusBadgeClass(status?: string): string {
-  const normalized = normalizeRiskStatus(status);
+  const normalized = normalizeRiskRegisterStatus(status);
 
   if (isClosedStatus(status)) {
     return 'bg-slate-200 text-slate-800 dark:bg-slate-700 dark:text-slate-200';
   }
 
-  if (normalized.includes('accepted')) {
+  if (normalized === 'risk-accepted') {
     return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200';
   }
 
-  if (normalized.includes('open') || normalized.includes('investigating')) {
+  if (normalized === 'open' || normalized === 'investigating') {
     return 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200';
   }
 
@@ -430,48 +439,38 @@ function looksLikeUuid(value: string): boolean {
   );
 }
 
-function isPrimaryOwnerAssignment(
-  assignment: Record<string, unknown>,
-): boolean {
-  const flag = assignment.isPrimary;
-  return flag === true || flag === 'true' || flag === 1 || flag === '1';
-}
-
 function riskOwner(risk: Risk): string {
   const source = toRecord(risk);
-  let hasAssignedOwner = false;
+  const normalizedOwners = normalizeOwnerAssignments({
+    primaryOwnerUserId: source
+      ? readString(source, ['primaryOwnerUserId'])
+      : undefined,
+    ownerAssignments: Array.isArray(source?.ownerAssignments)
+      ? source.ownerAssignments
+          .map((entry) => toRecord(entry))
+          .filter(
+            (entry): entry is Record<string, unknown> =>
+              !!entry && readString(entry, ['ownerKind']) === 'user',
+          )
+          .map((entry) => ({
+            ownerKind: 'user' as const,
+            ownerRef: readString(entry, ['ownerRef']) || '',
+            isPrimary: !!entry.isPrimary,
+          }))
+          .filter((entry) => !!entry.ownerRef)
+      : [],
+  });
 
-  const primaryOwnerUserId = source
-    ? readString(source, ['primaryOwnerUserId'])
-    : undefined;
-  if (primaryOwnerUserId) {
-    hasAssignedOwner = true;
-    const label = usersById.value.get(primaryOwnerUserId);
+  const orderedOwnerRefs = [
+    normalizedOwners.primaryOwnerUserId,
+    ...normalizedOwners.ownerAssignments.map((entry) => entry.ownerRef),
+  ].filter((value, index, sourceValues): value is string => {
+    return !!value && sourceValues.indexOf(value) === index;
+  });
+
+  for (const ownerRef of orderedOwnerRefs) {
+    const label = usersById.value.get(ownerRef);
     if (label) return label;
-  }
-
-  const assignments = source?.ownerAssignments;
-  if (Array.isArray(assignments)) {
-    const userAssignments = assignments
-      .map((entry) => toRecord(entry))
-      .filter(
-        (entry): entry is Record<string, unknown> =>
-          !!entry && readString(entry, ['ownerKind']) === 'user',
-      );
-
-    const chosenUserAssignment =
-      userAssignments.find((assignment) =>
-        isPrimaryOwnerAssignment(assignment),
-      ) || userAssignments[0];
-
-    if (chosenUserAssignment) {
-      const ownerRef = readString(chosenUserAssignment, ['ownerRef']);
-      if (ownerRef) {
-        hasAssignedOwner = true;
-        const label = usersById.value.get(ownerRef);
-        if (label) return label;
-      }
-    }
   }
 
   const fallback = getRiskOwnerDisplay(risk);
@@ -479,7 +478,7 @@ function riskOwner(risk: Risk): string {
     return fallback;
   }
 
-  return hasAssignedOwner ? 'Assigned' : '';
+  return orderedOwnerRefs.length ? 'Assigned' : '';
 }
 
 function riskLikelihood(risk: Risk): string {
