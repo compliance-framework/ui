@@ -343,6 +343,7 @@
             <input
               type="checkbox"
               :checked="selectedRiskIds.has(riskIdentifier(risk))"
+              :disabled="!riskIdentifier(risk)"
               :aria-label="`Select risk: ${risk.title || riskIdentifier(risk)}`"
               class="w-4 h-4"
               @change="toggleRiskSelection(risk)"
@@ -559,7 +560,6 @@
           <option value="investigating">Investigating</option>
           <option value="mitigating-planned">Mitigating Planned</option>
           <option value="mitigating-implemented">Mitigating Implemented</option>
-          <option value="risk-accepted">Risk Accepted</option>
           <option value="closed">Closed</option>
         </select>
         <div class="flex justify-end gap-2">
