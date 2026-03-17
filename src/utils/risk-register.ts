@@ -122,7 +122,7 @@ export function normalizeRiskStatus(status?: string): string {
   return toLower(status);
 }
 
-function canonicalRiskStatus(status?: string): string {
+export function canonicalRiskStatus(status?: string): string {
   return normalizeRiskRegisterStatus(status) || normalizeRiskStatus(status);
 }
 
@@ -451,6 +451,10 @@ export function filterRisks(
   const createdFrom = toDateOrNull(filters.createdFrom);
   const createdTo = toDateOrNull(filters.createdTo);
   const nowTs = now.getTime();
+  const canonicalFilterStatus =
+    status !== 'all' && status !== 'not-closed'
+      ? canonicalRiskStatus(status)
+      : '';
 
   return risks.filter((risk) => {
     if (search && !riskSearchText(risk).includes(search)) {
@@ -462,9 +466,7 @@ export function filterRisks(
         if (isClosedStatus(risk.status)) {
           return false;
         }
-      } else if (
-        canonicalRiskStatus(risk.status) !== canonicalRiskStatus(status)
-      ) {
+      } else if (canonicalRiskStatus(risk.status) !== canonicalFilterStatus) {
         return false;
       }
     }

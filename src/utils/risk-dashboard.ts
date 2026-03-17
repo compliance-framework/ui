@@ -1,6 +1,7 @@
 import type { Risk } from '@/oscal';
 import { getRiskIdentifier } from '@/utils/risk-id';
 import {
+  canonicalRiskStatus,
   formatRiskFilterLevel,
   isAddressedStatus,
   isClosedStatus,
@@ -12,10 +13,7 @@ import {
   isOpenStatus,
   normalizeRiskStatus,
 } from '@/utils/risk-register';
-import {
-  normalizeRiskRegisterStatus,
-  riskStatusLabel,
-} from '@/utils/risk-workflow';
+import { riskStatusLabel } from '@/utils/risk-workflow';
 
 export const riskSeverityLevels = [
   'low',
@@ -122,10 +120,6 @@ function dayKey(dayStart: Date): string {
 export function formatRiskStatusLabel(status?: string): string {
   const normalized = canonicalRiskStatus(status);
   return riskStatusLabel(normalized || status || 'unknown');
-}
-
-function canonicalRiskStatus(status?: string): string {
-  return normalizeRiskRegisterStatus(status) || normalizeRiskStatus(status);
 }
 
 export function buildRiskStatusBreakdown(
