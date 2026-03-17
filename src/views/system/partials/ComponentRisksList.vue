@@ -189,6 +189,7 @@ import {
   getRiskReviewDeadline,
   getRiskSeverityLevel,
   getRiskSeverityScore,
+  isClosedStatus,
   normalizeRiskStatus,
   type RiskSeverityLevel,
   type SortDirection,
@@ -385,7 +386,7 @@ function formatDateTime(value?: string): string {
 function statusBadgeClass(status?: string): string {
   const normalized = normalizeRiskStatus(status);
 
-  if (normalized.includes('closed') || normalized.includes('resolved')) {
+  if (isClosedStatus(status)) {
     return 'bg-slate-200 text-slate-800 dark:bg-slate-700 dark:text-slate-200';
   }
 
@@ -459,14 +460,15 @@ function isPrimaryOwnerAssignment(
 
 function riskOwner(risk: Risk): string {
   const source = toRecord(risk);
+  let hasAssignedOwner = false;
 
   const primaryOwnerUserId = source
     ? readString(source, ['primaryOwnerUserId'])
     : undefined;
   if (primaryOwnerUserId) {
+    hasAssignedOwner = true;
     const label = usersById.value.get(primaryOwnerUserId);
     if (label) return label;
-    return 'Assigned';
   }
 
   const assignments = source?.ownerAssignments;
@@ -486,9 +488,9 @@ function riskOwner(risk: Risk): string {
     if (chosenUserAssignment) {
       const ownerRef = readString(chosenUserAssignment, ['ownerRef']);
       if (ownerRef) {
+        hasAssignedOwner = true;
         const label = usersById.value.get(ownerRef);
         if (label) return label;
-        return 'Assigned';
       }
     }
   }
@@ -498,7 +500,7 @@ function riskOwner(risk: Risk): string {
     return fallback;
   }
 
-  return '';
+  return hasAssignedOwner ? 'Assigned' : '';
 }
 
 function riskLikelihood(risk: Risk): string {

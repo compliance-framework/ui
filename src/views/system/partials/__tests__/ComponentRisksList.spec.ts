@@ -405,4 +405,30 @@ describe('ComponentRisksList', () => {
     expect(wrapper.text()).toContain('Alice Owner');
     expect(wrapper.text()).not.toContain('Bob Secondary');
   });
+
+  it('falls back to owner display label before generic assigned placeholder', async () => {
+    const wrapper = await mount(ComponentRisksList, {
+      props: {
+        sspId: 'ssp-1',
+        component,
+        risks: [
+          makeRisk(
+            {
+              componentIds: ['comp-1'],
+              title: 'Fallback Owner Risk',
+              primaryOwnerUserId: 'missing-user',
+              ownerName: 'External Owner',
+            },
+            'risk-fallback-owner',
+          ),
+        ],
+        users: [],
+      },
+    });
+
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('External Owner');
+    expect(wrapper.text()).not.toContain('Assigned');
+  });
 });
