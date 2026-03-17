@@ -90,8 +90,8 @@
       class="bg-white dark:bg-slate-900 border border-ccf-300 dark:border-slate-700 rounded-lg p-4 space-y-4"
     >
       <div
-        v-if="availableSsps && availableSsps.length > 0"
-        class="grid grid-cols-1 gap-4"
+        v-if="availableSsps && riskSspIds"
+        class="flex items-center gap-4 mb-4 pb-4 border-b border-gray-200 dark:border-slate-700"
       >
         <div>
           <label
@@ -638,6 +638,7 @@ import {
   getRiskLikelihood,
   getRiskOwnerDisplay,
   getRiskReviewDeadline,
+  isClosedStatus,
   sortRisks,
   type RiskFilters,
   type RiskSortBy,
@@ -1220,10 +1221,10 @@ function formatLabel(value?: string): string {
 }
 
 function statusBadgeClass(status?: string): string {
-  const normalized = (status || '').toLowerCase();
-  if (normalized.includes('closed') || normalized.includes('resolved')) {
+  if (isClosedStatus(status)) {
     return 'bg-slate-200 text-slate-800 dark:bg-slate-700 dark:text-slate-200';
   }
+  const normalized = (status || '').toLowerCase();
   if (normalized.includes('accepted')) {
     return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200';
   }

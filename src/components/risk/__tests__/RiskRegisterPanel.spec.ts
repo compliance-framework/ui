@@ -174,6 +174,7 @@ describe('RiskRegisterPanel', () => {
         risks: [],
         loading: false,
         availableSsps: ssps,
+        riskSspIds: { 'risk-1': 'ssp-1' },
       },
       global: { stubs: globalStubs },
     });
