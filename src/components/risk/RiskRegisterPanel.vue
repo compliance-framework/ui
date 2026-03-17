@@ -887,6 +887,20 @@ function toggleRiskSelection(risk: Risk) {
 }
 
 function openCreate() {
+  // Validate that we have context to create a risk
+  if (
+    !props.sspId &&
+    (!props.availableSsps || props.availableSsps.length === 0)
+  ) {
+    toast.add({
+      severity: 'error',
+      summary: 'Missing context',
+      detail: 'Cannot create a risk without an SSP context.',
+      life: 4000,
+    });
+    return;
+  }
+
   if (!props.sspId && props.availableSsps && props.availableSsps.length > 0) {
     createSspId.value = '';
     showSspPickerModal.value = true;
