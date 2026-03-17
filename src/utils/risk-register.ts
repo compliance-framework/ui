@@ -513,8 +513,15 @@ export function filterRisks(
         if (isClosedStatus(risk.status)) {
           return false;
         }
-      } else if (canonicalRiskStatus(risk.status) !== canonicalFilterStatus) {
-        return false;
+      } else {
+        const riskCanonicalStatus = canonicalRiskStatus(risk.status);
+        if (status === 'unknown') {
+          if (riskCanonicalStatus && riskCanonicalStatus !== 'unknown') {
+            return false;
+          }
+        } else if (riskCanonicalStatus !== canonicalFilterStatus) {
+          return false;
+        }
       }
     }
 

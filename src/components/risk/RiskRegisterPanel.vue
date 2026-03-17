@@ -731,19 +731,22 @@ const selectedRiskIds = shallowRef<Set<string>>(new Set());
 const riskFallbackKeys = new WeakMap<Risk, string>();
 let riskFallbackCounter = 0;
 
+const hiddenDeepLinkFilterKeys = [
+  'statusCategory',
+  'riskId',
+  'createdFrom',
+  'createdTo',
+] as const;
+
 const queryManagedFilterKeys = [
   'search',
   'status',
-  'statusCategory',
   'likelihood',
   'impact',
   'owner',
   'review',
   'controlId',
   'evidenceId',
-  'riskId',
-  'createdFrom',
-  'createdTo',
   'sspId',
 ] as const;
 
@@ -778,6 +781,10 @@ function serializedQuery(query: LocationQueryRaw): string {
 function buildRouteQueryFromFilters(): LocationQueryRaw {
   const nextQuery: LocationQueryRaw = { ...route.query };
 
+  hiddenDeepLinkFilterKeys.forEach((key) => {
+    delete nextQuery[key];
+  });
+
   queryManagedFilterKeys.forEach((key) => {
     delete nextQuery[key];
   });
@@ -791,6 +798,12 @@ function buildRouteQueryFromFilters(): LocationQueryRaw {
   });
 
   return nextQuery;
+}
+
+function clearHiddenDeepLinkFilters() {
+  hiddenDeepLinkFilterKeys.forEach((key) => {
+    filters[key] = defaultPanelFilters[key];
+  });
 }
 
 watch(
@@ -819,6 +832,7 @@ watch(
   () => queryManagedFilterKeys.map((key) => filters[key]),
   () => {
     if (syncingFiltersFromRoute.value) return;
+    clearHiddenDeepLinkFilters();
 
     const nextQuery = buildRouteQueryFromFilters();
     const currentQuery: LocationQueryRaw = { ...route.query };

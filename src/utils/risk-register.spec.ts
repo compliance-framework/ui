@@ -225,6 +225,32 @@ describe('risk-register', () => {
     expect(filtered.map((risk) => risk.uuid)).toEqual(['r1', 'r2']);
   });
 
+  it('supports unknown status filter for risks without a canonical status', () => {
+    const risks = [
+      makeRisk({ uuid: 'r1', status: 'open' }),
+      makeRisk({ uuid: 'r2', status: '' as unknown as string }),
+      makeRisk({ uuid: 'r3', status: 'unknown' }),
+      makeRisk({ uuid: 'r4', status: undefined as unknown as string }),
+    ];
+
+    const filtered = filterRisks(risks, {
+      search: '',
+      status: 'unknown',
+      statusCategory: 'all',
+      likelihood: 'all',
+      impact: 'all',
+      owner: '',
+      review: 'all',
+      controlId: '',
+      evidenceId: '',
+      riskId: '',
+      createdFrom: '',
+      createdTo: '',
+    });
+
+    expect(filtered.map((risk) => risk.uuid)).toEqual(['r2', 'r3', 'r4']);
+  });
+
   it('filters addressed status category to accepted and mitigation-complete', () => {
     const risks = [
       makeRisk({ uuid: 'r1', status: 'risk-accepted' }),
