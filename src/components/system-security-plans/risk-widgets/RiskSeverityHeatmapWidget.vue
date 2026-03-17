@@ -25,6 +25,7 @@
           :key="`${likelihood}:${impact}`"
           type="button"
           :data-testid="`heatmap-${likelihood}-${impact}`"
+          :aria-label="cellAriaLabel(likelihood, impact)"
           class="rounded-md border border-ccf-300 px-2 py-3 text-sm font-semibold transition hover:opacity-90 dark:border-slate-700"
           :style="{
             backgroundColor: cellColor(likelihood, impact),
@@ -88,6 +89,15 @@ function countFor(
   impact: RiskSeverityLevel,
 ): number {
   return countMap.value.get(`${likelihood}:${impact}`) || 0;
+}
+
+function cellAriaLabel(
+  likelihood: RiskSeverityLevel,
+  impact: RiskSeverityLevel,
+): string {
+  const count = countFor(likelihood, impact);
+  const riskLabel = count === 1 ? 'risk' : 'risks';
+  return `${formatLevel(likelihood)} likelihood, ${formatLevel(impact)} impact: ${count} ${riskLabel}`;
 }
 
 function intensity(

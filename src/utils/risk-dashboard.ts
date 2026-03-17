@@ -193,6 +193,7 @@ export function listOverdueRisks(
 
   return risks
     .map((risk) => {
+      if (isClosedStatus(risk.status)) return null;
       const id = getRiskIdentifier(risk);
       const reviewDeadline = getRiskReviewDeadline(risk);
       const parsed = parseDate(reviewDeadline);

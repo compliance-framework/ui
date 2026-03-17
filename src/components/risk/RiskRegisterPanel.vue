@@ -613,7 +613,15 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref, shallowRef, triggerRef, watch } from 'vue';
+import {
+  computed,
+  nextTick,
+  reactive,
+  ref,
+  shallowRef,
+  triggerRef,
+  watch,
+} from 'vue';
 import { useRoute, useRouter, type LocationQueryRaw } from 'vue-router';
 import { type Risk } from '@/oscal';
 import Dialog from '@/volt/Dialog.vue';
@@ -706,6 +714,7 @@ const sortBy = ref<RiskSortBy>('updated');
 const sortDirection = ref<SortDirection>('desc');
 const currentPage = ref(1);
 const syncingFiltersFromRoute = ref(false);
+let routeSyncToken = 0;
 
 const showCreateModal = ref(false);
 const showEditModal = ref(false);
@@ -791,12 +800,17 @@ watch(
       query as Record<string, unknown>,
     );
     const querySspId = queryString(query.sspId);
+    const currentRouteSyncToken = ++routeSyncToken;
 
     syncingFiltersFromRoute.value = true;
     Object.assign(filters, defaultPanelFilters, queryFilters, {
       sspId: querySspId || defaultPanelFilters.sspId,
     });
-    syncingFiltersFromRoute.value = false;
+    void nextTick(() => {
+      if (routeSyncToken === currentRouteSyncToken) {
+        syncingFiltersFromRoute.value = false;
+      }
+    });
   },
   { immediate: true },
 );

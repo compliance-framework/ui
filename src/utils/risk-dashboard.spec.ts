@@ -111,6 +111,12 @@ describe('risk-dashboard', () => {
         title: 'Upcoming',
         reviewDeadline: '2026-03-20T00:00:00Z',
       }),
+      makeRisk({
+        uuid: 'r4',
+        title: 'Closed and overdue',
+        status: 'closed',
+        reviewDeadline: '2026-03-02T00:00:00Z',
+      }),
     ];
 
     const overdue = listOverdueRisks(risks, now);

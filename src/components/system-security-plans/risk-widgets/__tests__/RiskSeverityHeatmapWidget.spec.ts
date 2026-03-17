@@ -26,4 +26,27 @@ describe('RiskSeverityHeatmapWidget', () => {
       [{ likelihood: 'critical', impact: 'high' }],
     ]);
   });
+
+  it('renders descriptive aria labels for heatmap cells', () => {
+    const cells = riskSeverityLevels.flatMap((likelihood) =>
+      riskSeverityLevels.map((impact) => ({
+        likelihood,
+        impact,
+        count: likelihood === 'critical' && impact === 'high' ? 3 : 0,
+      })),
+    );
+
+    const wrapper = mount(RiskSeverityHeatmapWidget, {
+      props: {
+        cells,
+        maxCount: 3,
+      },
+    });
+
+    expect(
+      wrapper.get('[data-testid="heatmap-critical-high"]').attributes(),
+    ).toMatchObject({
+      'aria-label': 'Critical likelihood, High impact: 3 risks',
+    });
+  });
 });
