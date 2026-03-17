@@ -2,7 +2,6 @@
  * Composable for the CCF POAM Items REST API (/api/poam-items)
  * Follows the same useDataApi pattern as RisksView.vue and other views.
  */
-import { computed, ref } from 'vue';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import type {
   PoamItem,
@@ -163,7 +162,9 @@ export function useMilestoneDelete() {
 // ─── Risk link helpers ────────────────────────────────────────────────────────
 
 export function usePoamItemsByRisk(riskId: string) {
-  return useDataApi<PoamItem[]>(`/api/poam-items?riskId=${riskId}`);
+  return useDataApi<PoamItem[]>(
+    `/api/poam-items?riskId=${encodeURIComponent(riskId)}`,
+  );
 }
 
 // ─── Status badge helper ──────────────────────────────────────────────────────
@@ -212,6 +213,25 @@ export function milestoneStatusLabel(status: string): string {
       return 'Completed';
     case 'cancelled':
       return 'Cancelled';
+    default:
+      return status;
+  }
+}
+
+export function poamStatusLabel(status: string): string {
+  switch (status) {
+    case 'open':
+      return 'Open';
+    case 'in-progress':
+      return 'In Progress';
+    case 'completed':
+      return 'Completed';
+    case 'cancelled':
+      return 'Cancelled';
+    case 'overdue':
+      return 'Overdue';
+    case 'risk-accepted':
+      return 'Risk Accepted';
     default:
       return status;
   }

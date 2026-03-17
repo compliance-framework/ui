@@ -191,12 +191,14 @@ export function computeMilestoneProgress(
     (m) => m.status === 'in-progress',
   ).length;
   const open = milestones.filter((m) => m.status === 'open').length;
-  const now = new Date();
+  // Compare dates in local timezone: parse YYYY-MM-DD as local date to avoid
+  // UTC-vs-local skew that can mark items overdue a day early/late.
+  const todayStr = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD in local time
   const overdue = milestones.filter(
     (m) =>
       m.status !== 'completed' &&
       m.status !== 'cancelled' &&
-      new Date(m.plannedCompletionDate) < now,
+      m.plannedCompletionDate.substring(0, 10) < todayStr,
   ).length;
   return {
     total,

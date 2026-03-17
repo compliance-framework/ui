@@ -269,7 +269,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import Dialog from '@/volt/Dialog.vue';
 import PoamItemMilestones from '@/components/poam/PoamItemMilestones.vue';
@@ -277,7 +277,7 @@ import {
   usePoamItemsByRisk,
   usePoamItemCreate,
   poamStatusBadgeClass,
-  milestoneStatusLabel,
+  poamStatusLabel,
 } from '@/composables/usePoamItems';
 import {
   computeMilestoneProgress,
@@ -316,7 +316,7 @@ function statusBadgeClass(status: string): string {
 }
 
 function statusLabel(status: string): string {
-  return milestoneStatusLabel(status);
+  return poamStatusLabel(status);
 }
 
 function formatDate(iso: string): string {
@@ -374,7 +374,7 @@ async function submitCreate() {
 
   creating.value = true;
   try {
-    const result = await createPoamItem({
+    await createPoamItem({
       sspId,
       title: createForm.value.title.trim(),
       description: createForm.value.description.trim() || undefined,
@@ -407,8 +407,4 @@ async function submitCreate() {
     creating.value = false;
   }
 }
-
-onMounted(() => {
-  reload();
-});
 </script>

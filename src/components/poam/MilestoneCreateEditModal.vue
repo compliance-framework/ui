@@ -131,13 +131,22 @@
           a completion timestamp.
         </p>
       </div>
+
+      <!-- Save error banner -->
+      <div
+        v-if="saveError"
+        class="flex items-start gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md"
+      >
+        <p class="text-xs text-red-700 dark:text-red-300">{{ saveError }}</p>
+      </div>
     </div>
 
     <template #footer>
       <div class="flex justify-end gap-2 pt-2">
         <button
           @click="visible = false"
-          class="px-4 py-2 text-sm border border-ccf-300 dark:border-slate-600 rounded-md text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700"
+          :disabled="saving"
+          class="px-4 py-2 text-sm border border-ccf-300 dark:border-slate-600 rounded-md text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 disabled:opacity-50"
         >
           Cancel
         </button>
@@ -165,22 +174,28 @@ import type {
 
 interface Props {
   modelValue: boolean;
-  poamItemId: string;
   milestone?: PoamItemMilestone | null;
+  /** Pass true while the parent is executing the API call to keep the modal in saving state */
+  saving?: boolean;
+  /** Pass an error message from the parent if the API call fails */
+  saveError?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   milestone: null,
+  saving: false,
+  saveError: '',
 });
 
 const emit = defineEmits<{
   'update:modelValue': [value: boolean];
-  saved: [milestone: PoamItemMilestone];
+  saved: [payload: CreateMilestoneRequest | UpdateMilestoneRequest];
 }>();
 
 const visible = ref(props.modelValue);
 const saving = ref(false);
 const isEdit = ref(false);
+const saveError = ref('');
 
 interface FormState {
   title: string;
@@ -211,7 +226,26 @@ watch(
 
 watch(visible, (val) => {
   emit('update:modelValue', val);
+  if (!val) {
+    saveError.value = '';
+  }
 });
+
+// Sync external saving state from parent
+watch(
+  () => props.saving,
+  (val) => {
+    saving.value = val;
+  },
+);
+
+// Sync external save error from parent
+watch(
+  () => props.saveError,
+  (val) => {
+    saveError.value = val ?? '';
+  },
+);
 
 watch(
   () => props.milestone,
@@ -246,6 +280,7 @@ function resetForm() {
     remarks: '',
   };
   errors.value = {};
+  saveError.value = '';
 }
 
 function validate(): boolean {
@@ -259,24 +294,21 @@ function validate(): boolean {
   return Object.keys(errors.value).length === 0;
 }
 
-async function submit() {
+function submit() {
   if (!validate()) return;
 
-  saving.value = true;
-  try {
-    const payload: CreateMilestoneRequest | UpdateMilestoneRequest = {
-      title: form.value.title.trim(),
-      description: form.value.description.trim() || undefined,
-      status: form.value.status,
-      plannedCompletionDate: form.value.plannedCompletionDate,
-      responsibleParty: form.value.responsibleParty.trim() || undefined,
-      remarks: form.value.remarks.trim() || undefined,
-    };
+  const payload: CreateMilestoneRequest | UpdateMilestoneRequest = {
+    title: form.value.title.trim(),
+    description: form.value.description.trim() || undefined,
+    status: form.value.status,
+    plannedCompletionDate: form.value.plannedCompletionDate,
+    responsibleParty: form.value.responsibleParty.trim() || undefined,
+    remarks: form.value.remarks.trim() || undefined,
+  };
 
-    emit('saved', payload as PoamItemMilestone);
-    visible.value = false;
-  } finally {
-    saving.value = false;
-  }
+  // Emit the payload to the parent; the parent is responsible for calling the
+  // API and closing the modal (or passing back a saveError) so that the user
+  // does not lose their input if the API call fails.
+  emit('saved', payload);
 }
 </script>
