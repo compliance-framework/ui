@@ -45,5 +45,8 @@ typecheck: ## Run typecheck
 lint: ## Run lint
 	@npm run lint
 
-reviewable: typecheck lint unit-test
+formatcheck: ## Run format check
+	@npm run format:check
+
+reviewable: formatcheck typecheck lint unit-test
 	@echo "All checks passed, ready for review"

@@ -643,7 +643,7 @@ import {
   type RiskSortBy,
   type SortDirection,
 } from '@/utils/risk-register';
-import { getRiskIdentifier, sameRiskIdentifier } from '@/utils/risk-id';
+import { getRiskIdentifier } from '@/utils/risk-id';
 
 export interface SspOption {
   uuid: string;
@@ -901,11 +901,22 @@ function confirmSspPicker() {
 }
 
 function editRisk(risk: Risk) {
-  if (!riskIdentifier(risk)) {
+  const riskId = getRiskIdentifier(risk);
+  if (!riskId) {
     toast.add({
       severity: 'error',
       summary: 'Missing risk identifier',
       detail: 'This risk cannot be edited because it has no identifier.',
+      life: 4000,
+    });
+    return;
+  }
+  const sspId = getSspIdForRisk(risk);
+  if (!sspId) {
+    toast.add({
+      severity: 'error',
+      summary: 'Cannot Edit Risk',
+      detail: 'Cannot determine the SSP for this risk.',
       life: 4000,
     });
     return;
@@ -1257,6 +1268,4 @@ function riskControlCount(risk: Risk): number {
 function riskComponentCount(risk: Risk): number {
   return getRiskComponentIds(risk).length;
 }
-
-defineExpose({ sameRiskIdentifier });
 </script>
