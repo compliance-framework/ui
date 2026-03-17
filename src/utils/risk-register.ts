@@ -151,7 +151,7 @@ export function isAddressedStatus(status?: string): boolean {
 
 export function isOpenStatus(status?: string): boolean {
   if (!status) return false;
-  return !isClosedStatus(status) && !isAcceptedStatus(status);
+  return !isClosedStatus(status) && !isAddressedStatus(status);
 }
 
 export function getRiskCreatedAt(risk: Risk): string | undefined {

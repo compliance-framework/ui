@@ -223,7 +223,7 @@
     <div class="mt-8">
       <RiskOverviewSection
         :ssp-id="systemSecurityPlan.uuid || system.securityPlan?.uuid || ''"
-        risk-list-route-name="risks:index"
+        risk-list-route-name="system:risks"
       />
     </div>
 

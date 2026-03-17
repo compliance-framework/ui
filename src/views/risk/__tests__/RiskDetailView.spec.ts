@@ -59,8 +59,14 @@ const mockRisk: MockRisk = {
 
 const mockToastAdd = vi.fn();
 
-const { apiCalls, mockApiState, resetMockApiState, mockRouterPush, mockRouterBack } =
-  vi.hoisted(() => {
+const {
+  apiCalls,
+  mockApiState,
+  resetMockApiState,
+  mockRouterPush,
+  mockRouterBack,
+  mockRouterHistoryState,
+} = vi.hoisted(() => {
   type ApiCall = {
     endpoint: string;
     method: string;
@@ -70,6 +76,7 @@ const { apiCalls, mockApiState, resetMockApiState, mockRouterPush, mockRouterBac
   const apiCalls: ApiCall[] = [];
   const mockRouterPush = vi.fn();
   const mockRouterBack = vi.fn();
+  const mockRouterHistoryState: { back: string | null } = { back: null };
 
   const mockApiState = {
     evidenceLinks: [] as Array<string | { riskId: string; evidenceId: string }>,
@@ -129,6 +136,7 @@ const { apiCalls, mockApiState, resetMockApiState, mockRouterPush, mockRouterBac
     apiCalls.length = 0;
     mockRouterPush.mockReset();
     mockRouterBack.mockReset();
+    mockRouterHistoryState.back = null;
     mockApiState.evidenceLinks = [];
     mockApiState.evidenceDetails = {};
     mockApiState.controlLinks = [];
@@ -179,6 +187,7 @@ const { apiCalls, mockApiState, resetMockApiState, mockRouterPush, mockRouterBac
     resetMockApiState,
     mockRouterPush,
     mockRouterBack,
+    mockRouterHistoryState,
   };
 });
 
@@ -187,6 +196,11 @@ vi.mock('vue-router', () => ({
   useRouter: () => ({
     push: mockRouterPush,
     back: mockRouterBack,
+    options: {
+      history: {
+        state: mockRouterHistoryState,
+      },
+    },
   }),
 }));
 
@@ -578,6 +592,31 @@ describe('RiskDetailView', () => {
     await flushPromises();
 
     expect(wrapper.text()).toContain('Risk created');
+  });
+
+  it('uses router back when an in-app back target exists', async () => {
+    mockRouterHistoryState.back = '/system/risks';
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    await clickButtonByText(wrapper, 'Back');
+
+    expect(mockRouterBack).toHaveBeenCalledTimes(1);
+    expect(mockRouterPush).not.toHaveBeenCalled();
+  });
+
+  it('falls back to list route when no in-app back target exists', async () => {
+    mockRouterHistoryState.back = null;
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    await clickButtonByText(wrapper, 'Back');
+
+    expect(mockRouterBack).not.toHaveBeenCalled();
+    expect(mockRouterPush).toHaveBeenCalledWith({
+      name: 'system-security-plan-risks',
+      params: { id: 'ssp-1' },
+    });
   });
 
   it('renders lifecycle and workflow content in the overview tab', async () => {

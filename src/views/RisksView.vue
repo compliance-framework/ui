@@ -533,10 +533,10 @@ const sortDirection = ref<SortDirection>('desc');
 watch(
   () => route.query,
   (query) => {
-    Object.assign(
-      filters,
-      readRiskFiltersFromQuery(query as Record<string, unknown>),
+    const queryFilters = readRiskFiltersFromQuery(
+      query as Record<string, unknown>,
     );
+    Object.assign(filters, defaultRiskFilters, queryFilters);
   },
   { immediate: true },
 );

@@ -764,6 +764,10 @@ interface RiskReviewSubmitPayload {
   nextReviewDeadline?: string;
 }
 
+interface RouterHistoryStateLike {
+  back?: unknown;
+}
+
 const tabs = [
   { id: 'overview', label: 'Overview' },
   { id: 'evidence', label: 'Evidence' },
@@ -944,8 +948,20 @@ function riskListRouteByContext() {
   };
 }
 
+function hasInAppBackTarget(): boolean {
+  const routerBackState = (
+    router.options?.history as { state?: RouterHistoryStateLike } | undefined
+  )?.state?.back;
+  const browserBackState =
+    typeof window !== 'undefined'
+      ? (window.history.state as RouterHistoryStateLike | null)?.back
+      : undefined;
+  const backTarget = routerBackState ?? browserBackState;
+  return typeof backTarget === 'string' && backTarget.length > 0;
+}
+
 function goBackToPreviousPage() {
-  if (typeof window !== 'undefined' && window.history.length > 1) {
+  if (hasInAppBackTarget()) {
     router.back();
     return;
   }

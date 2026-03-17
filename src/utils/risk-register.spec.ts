@@ -7,6 +7,7 @@ import {
   getRiskComponentIds,
   getRiskControlIds,
   getRiskEvidenceIds,
+  isOpenStatus,
   readRiskFiltersFromQuery,
   sortRisks,
 } from './risk-register';
@@ -191,6 +192,14 @@ describe('risk-register', () => {
     });
 
     expect(addressed.map((risk) => risk.uuid)).toEqual(['r1', 'r2']);
+  });
+
+  it('does not classify addressed statuses as open', () => {
+    expect(isOpenStatus('open')).toBe(true);
+    expect(isOpenStatus('investigating')).toBe(true);
+    expect(isOpenStatus('risk-accepted')).toBe(false);
+    expect(isOpenStatus('mitigation-complete')).toBe(false);
+    expect(isOpenStatus('closed')).toBe(false);
   });
 
   it('normalizes medium and moderate filter values', () => {
