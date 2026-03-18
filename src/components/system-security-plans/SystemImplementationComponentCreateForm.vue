@@ -322,7 +322,6 @@ const decamelizeComponentRequest = (data: unknown, headers: AxiosHeaders) => {
     decamelizeObjectKeys(data as Record<string, unknown>, {
       separator: '-',
       deep: true,
-      exclude: ['definedComponentId'],
     }),
   );
 };
