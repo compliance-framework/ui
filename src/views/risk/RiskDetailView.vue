@@ -615,8 +615,11 @@
 
             <div v-else class="space-y-3">
               <div
-                v-for="threat in threatItems"
-                :key="`${threat.system}:${threat.id}`"
+                v-for="(threat, threatIndex) in threatItems"
+                :key="
+                  threat.threatRefId ||
+                  `${threat.system}:${threat.id}:${threatIndex}`
+                "
                 class="border border-ccf-300 dark:border-slate-700 rounded-lg p-4"
               >
                 <div class="flex justify-between items-start gap-4">
@@ -659,14 +662,24 @@
                   <div class="flex gap-2 self-start">
                     <button
                       class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-xs"
-                      :disabled="saving"
+                      :disabled="saving || !threat.threatRefId"
+                      :title="
+                        threat.threatRefId
+                          ? undefined
+                          : 'Legacy threats without a threat reference cannot be edited.'
+                      "
                       @click="openThreatEdit(threat)"
                     >
                       Edit
                     </button>
                     <button
                       class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md text-xs"
-                      :disabled="saving"
+                      :disabled="saving || !threat.threatRefId"
+                      :title="
+                        threat.threatRefId
+                          ? undefined
+                          : 'Legacy threats without a threat reference cannot be removed.'
+                      "
                       @click="removeThreat(threat)"
                     >
                       Remove
@@ -685,9 +698,13 @@
               <button
                 class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-md text-sm"
                 :disabled="saving"
-                @click="openRemediationCreate"
+                @click="openPrimaryRemediationEditor"
               >
-                Add Remediation
+                {{
+                  remediationItems.length
+                    ? 'Edit Remediation'
+                    : 'Add Remediation'
+                }}
               </button>
             </div>
 
@@ -2866,6 +2883,16 @@ function openThreatCreate() {
 }
 
 function openThreatEdit(threat: ThreatTabItem) {
+  if (!threat.threatRefId) {
+    toast.add({
+      severity: 'warn',
+      summary: 'Edit unavailable',
+      detail: 'Legacy threats without a threat reference cannot be edited.',
+      life: 3500,
+    });
+    return;
+  }
+
   threatEditingKey.value = threat.threatRefId || null;
   workingThreat.value = {
     id: threat.id,
@@ -2972,6 +2999,16 @@ async function saveThreat() {
 async function removeThreat(threat: ThreatTabItem) {
   if (!isSspContext.value) return;
 
+  if (!threat.threatRefId) {
+    toast.add({
+      severity: 'warn',
+      summary: 'Remove unavailable',
+      detail: 'Legacy threats without a threat reference cannot be removed.',
+      life: 3500,
+    });
+    return;
+  }
+
   const confirmed = window.confirm(
     `Remove threat "${threat.id}" from this risk?`,
   );
@@ -3022,6 +3059,15 @@ function resetRemediationEditor() {
 function openRemediationCreate() {
   resetRemediationEditor();
   showRemediationEditor.value = true;
+}
+
+function openPrimaryRemediationEditor() {
+  if (remediationItems.value.length) {
+    openRemediationEdit(remediationItems.value[0]);
+    return;
+  }
+
+  openRemediationCreate();
 }
 
 function openRemediationEdit(remediation: RemediationTabItem) {
@@ -3081,7 +3127,7 @@ function remediationItemEndpoint() {
 async function saveRemediation() {
   if (!isSspContext.value) return;
 
-  const isEditing = Boolean(remediationEditingId.value);
+  const hasExistingTemplate = remediationItems.value.length > 0;
   const payload = buildRemediationPayload();
   if (!payload) {
     toast.add({
@@ -3093,10 +3139,10 @@ async function saveRemediation() {
     return;
   }
 
-  const endpoint = isEditing
+  const endpoint = hasExistingTemplate
     ? remediationItemEndpoint()
     : remediationCollectionEndpoint.value;
-  const method = isEditing ? 'PUT' : 'POST';
+  const method = hasExistingTemplate ? 'PUT' : 'POST';
 
   if (!endpoint) {
     toast.add({
@@ -3118,7 +3164,7 @@ async function saveRemediation() {
     toast.add({
       severity: 'success',
       summary: 'Saved',
-      detail: isEditing ? 'Remediation updated' : 'Remediation added',
+      detail: hasExistingTemplate ? 'Remediation updated' : 'Remediation added',
       life: 3000,
     });
   } catch (err) {

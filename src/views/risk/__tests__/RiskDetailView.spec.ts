@@ -26,13 +26,16 @@ type MockRisk = {
   sourceType: string;
   firstSeenAt: string;
   lastSeenAt: string;
-  threatIds?: Array<{
-    threatRefId?: string;
-    refId: string;
-    system: string;
-    title?: string;
-    url?: string;
-  }>;
+  threatIds?: Array<
+    | string
+    | {
+        threatRefId?: string;
+        refId: string;
+        system: string;
+        title?: string;
+        url?: string;
+      }
+  >;
   remediationTemplate?: {
     id?: string;
     title?: string;
@@ -586,7 +589,7 @@ vi.mock('@/composables/axios', () => ({
             url?: string;
           };
           mockRisk.threatIds = (mockRisk.threatIds || []).map((threat) =>
-            threat.threatRefId === threatRefId
+            typeof threat !== 'string' && threat.threatRefId === threatRefId
               ? {
                   threatRefId: threat.threatRefId,
                   refId: payload.id || threat.refId,
@@ -600,7 +603,8 @@ vi.mock('@/composables/axios', () => ({
 
         if (method === 'DELETE') {
           mockRisk.threatIds = (mockRisk.threatIds || []).filter(
-            (threat) => threat.threatRefId !== threatRefId,
+            (threat) =>
+              typeof threat === 'string' || threat.threatRefId !== threatRefId,
           );
         }
 
@@ -1032,6 +1036,24 @@ describe('RiskDetailView', () => {
     expect(wrapper.find('a[href="javascript:alert(1)"]').exists()).toBe(false);
   });
 
+  it('disables edit and remove actions for legacy threats without a threat reference', async () => {
+    mockRisk.threatIds = ['legacy-threat-id'];
+
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    await clickButtonByText(wrapper, 'Threats');
+    await flushPromises();
+
+    const editButton = findButtonByText(wrapper, 'Edit');
+    const removeButton = findButtonByText(wrapper, 'Remove');
+
+    expect(editButton?.attributes('disabled')).toBeDefined();
+    expect(removeButton?.attributes('disabled')).toBeDefined();
+    expect(editButton?.attributes('title')).toContain('cannot be edited');
+    expect(removeButton?.attributes('title')).toContain('cannot be removed');
+  });
+
   it('creates threats through the threat-ids endpoint', async () => {
     const wrapper = mountComponent();
     await flushPromises();
@@ -1098,7 +1120,7 @@ describe('RiskDetailView', () => {
 
     await clickButtonByText(wrapper, 'Remediations');
     await flushPromises();
-    await clickButtonByText(wrapper, 'Edit');
+    await clickButtonByText(wrapper, 'Edit Remediation');
     await wrapper
       .get('[data-testid="remediation-title-input"]')
       .setValue('Updated remediation');
@@ -1128,6 +1150,41 @@ describe('RiskDetailView', () => {
             { title: 'Generate new key material', orderIndex: 0 },
             { title: 'Validate rollout', orderIndex: 1 },
           ],
+        },
+      }),
+    );
+  });
+
+  it('shows add remediation only when no remediation template exists', async () => {
+    mockRisk.remediationTemplate = undefined;
+
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    await clickButtonByText(wrapper, 'Remediations');
+    await flushPromises();
+
+    expect(findButtonByText(wrapper, 'Add Remediation')).toBeDefined();
+    expect(findButtonByText(wrapper, 'Edit Remediation')).toBeUndefined();
+
+    await clickButtonByText(wrapper, 'Add Remediation');
+    await wrapper
+      .get('[data-testid="remediation-title-input"]')
+      .setValue('New remediation');
+    await wrapper
+      .get('[data-testid="save-remediation-button"]')
+      .trigger('click');
+    await flushPromises();
+
+    expect(apiCalls).toContainEqual(
+      expect.objectContaining({
+        endpoint:
+          '/api/oscal/system-security-plans/ssp-1/risks/risk-1/remediation-template',
+        method: 'POST',
+        data: {
+          title: 'New remediation',
+          description: undefined,
+          tasks: undefined,
         },
       }),
     );
