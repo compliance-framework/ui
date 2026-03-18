@@ -306,10 +306,12 @@ vi.mock('@/composables/axios', () => ({
   }),
   useDataApi: (initialUrl?: string, config?: { method?: string }) => {
     const data = ref();
+    const response = ref<{ data: unknown } | null>(null);
     const isLoading = ref(false);
     const error = ref(null);
 
     const execute = vi.fn(async (arg1?: unknown, arg2?: unknown) => {
+      response.value = null;
       const endpoint =
         typeof arg1 === 'string'
           ? arg1
@@ -424,16 +426,28 @@ vi.mock('@/composables/axios', () => ({
         endpoint in mockApiState.eventResponses ||
         endpointWithoutQuery in mockApiState.eventResponses
       ) {
-        data.value =
+        const rawResponse =
           mockApiState.eventResponses[endpoint] ??
           mockApiState.eventResponses[endpointWithoutQuery];
+        response.value = { data: rawResponse };
+        const record =
+          rawResponse && typeof rawResponse === 'object'
+            ? (rawResponse as Record<string, unknown>)
+            : null;
+        data.value = record && 'data' in record ? record.data : rawResponse;
       } else if (
         endpoint in mockApiState.reviewResponses ||
         endpointWithoutQuery in mockApiState.reviewResponses
       ) {
-        data.value =
+        const rawResponse =
           mockApiState.reviewResponses[endpoint] ??
           mockApiState.reviewResponses[endpointWithoutQuery];
+        response.value = { data: rawResponse };
+        const record =
+          rawResponse && typeof rawResponse === 'object'
+            ? (rawResponse as Record<string, unknown>)
+            : null;
+        data.value = record && 'data' in record ? record.data : rawResponse;
       } else if (endpoint.includes('/events')) {
         data.value = [
           {
@@ -551,11 +565,16 @@ vi.mock('@/composables/axios', () => ({
         data.value = [];
       }
 
-      return { data };
+      if (!response.value) {
+        response.value = { data: data.value };
+      }
+
+      return { data: response.value.data };
     });
 
     return {
       data,
+      response,
       error,
       isLoading,
       execute,

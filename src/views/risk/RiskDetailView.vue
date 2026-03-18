@@ -1582,8 +1582,8 @@ async function loadRiskEvents(page = eventsPage.value) {
         timelinePageSize,
       ),
     );
-    const rawEventsPayload =
-      fetchedEvents.value ?? fetchedEventsResponse?.value?.data;
+    const eventsEnvelopePayload = fetchedEventsResponse?.value?.data;
+    const rawEventsPayload = eventsEnvelopePayload ?? fetchedEvents.value;
     const normalizedApiEvents = normalizeRiskEvents(rawEventsPayload, []);
     const pagination = resolveTimelinePagination(
       rawEventsPayload,
@@ -1665,8 +1665,8 @@ async function loadRiskReviews(page = reviewsPage.value) {
         timelinePageSize,
       ),
     );
-    const rawReviewsPayload =
-      fetchedReviews.value ?? fetchedReviewsResponse?.value?.data;
+    const reviewsEnvelopePayload = fetchedReviewsResponse?.value?.data;
+    const rawReviewsPayload = reviewsEnvelopePayload ?? fetchedReviews.value;
     const normalizedApiReviews = normalizeRiskReviews(rawReviewsPayload);
     const pagination = resolveTimelinePagination(
       rawReviewsPayload,
