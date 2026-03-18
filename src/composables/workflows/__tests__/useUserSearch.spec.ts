@@ -77,6 +77,23 @@ describe('useUserSearch', () => {
 
       expect(displayUser.displayName).toBe('John Doe');
     });
+
+    it('handles null-like name fields by falling back safely', () => {
+      const { toDisplayUser } = useUserSearch();
+      const user = {
+        id: '123',
+        email: 'test@example.com',
+        firstName: null,
+        lastName: undefined,
+        failedLogins: 0,
+      } as unknown as CCFUser;
+
+      const displayUser = toDisplayUser(user);
+
+      expect(displayUser.displayName).toBe('test@example.com');
+      expect(displayUser.firstName).toBe('');
+      expect(displayUser.lastName).toBe('');
+    });
   });
 
   describe('cacheUser', () => {

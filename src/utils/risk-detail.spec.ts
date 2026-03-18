@@ -3,6 +3,7 @@ import type { Risk, RiskLogEntry } from '@/oscal';
 import {
   getRiskAssociations,
   normalizeRiskEvents,
+  normalizeRiskReviews,
   withUpdatedRiskAssociations,
 } from './risk-detail';
 
@@ -167,6 +168,57 @@ describe('risk-detail', () => {
         id: 'log-1',
         type: 'Reviewed',
         details: 'Quarterly review completed',
+      }),
+    );
+  });
+
+  it('normalizes reviews from raw review payload', () => {
+    const reviews = normalizeRiskReviews([
+      {
+        uuid: 'review-3',
+        decision: 'reassess',
+        reviewedAt: '2026-03-11T10:00:00Z',
+        reviewerName: 'Charlie',
+        notes: 'Likelihood updated to high after new intel',
+      },
+      {
+        uuid: 'review-2',
+        decision: 'extend',
+        reviewedAt: '2026-03-10T10:00:00Z',
+        reviewer: { displayName: 'Alice' },
+        notes: 'Keep accepted status',
+        nextReviewDeadline: '2026-06-01T00:00:00Z',
+      },
+      {
+        uuid: 'review-1',
+        decision: 'reopen',
+        reviewedAt: '2026-03-09T10:00:00Z',
+        reviewerName: 'Bob',
+        reviewJustification: 'Risk is no longer acceptable.',
+      },
+    ]);
+
+    expect(reviews).toHaveLength(3);
+    expect(reviews[0]).toEqual(
+      expect.objectContaining({
+        id: 'review-3',
+        decision: 'reassess',
+        reviewer: 'Charlie',
+      }),
+    );
+    expect(reviews[1]).toEqual(
+      expect.objectContaining({
+        id: 'review-2',
+        decision: 'extend',
+        reviewer: 'Alice',
+      }),
+    );
+    expect(reviews[2]).toEqual(
+      expect.objectContaining({
+        id: 'review-1',
+        decision: 'reopen',
+        reviewer: 'Bob',
+        notes: 'Risk is no longer acceptable.',
       }),
     );
   });

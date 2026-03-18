@@ -30,12 +30,19 @@ export function useUserSearch() {
    * Convert a CCFUser to DisplayUser with formatted display name
    */
   function toDisplayUser(user: CCFUser): DisplayUser {
-    const displayName =
-      `${user.firstName.trim()} ${user.lastName.trim()}`.trim() ||
-      user.email ||
-      user.id;
+    const firstName =
+      typeof user.firstName === 'string' ? user.firstName.trim() : '';
+    const lastName =
+      typeof user.lastName === 'string' ? user.lastName.trim() : '';
+    const email = typeof user.email === 'string' ? user.email.trim() : '';
+    const id = typeof user.id === 'string' ? user.id.trim() : '';
+    const displayName = `${firstName} ${lastName}`.trim() || email || id;
     return {
       ...user,
+      id,
+      email,
+      firstName,
+      lastName,
       displayName,
     };
   }
@@ -44,7 +51,7 @@ export function useUserSearch() {
    * Cache a user in the local cache for quick lookup
    */
   function cacheUser(user: DisplayUser | undefined) {
-    if (!user) return;
+    if (!user?.id) return;
     userCache.value = {
       ...userCache.value,
       [user.id]: user,
@@ -94,19 +101,17 @@ export function useUserSearch() {
   async function loadUsersByIds(ids: string[]) {
     const missing = ids.filter((id) => !userCache.value[id]);
 
-    await Promise.all(
-      missing.map(async (id) => {
-        try {
-          await fetchUserById(`/api/admin/users/${id}`);
-          const payload = fetchedUser.value;
-          if (payload) {
-            cacheUser(toDisplayUser(payload));
-          }
-        } catch {
-          // Silently fail - user will show as ID only
+    for (const id of missing) {
+      try {
+        await fetchUserById(`/api/admin/users/${id}`);
+        const payload = fetchedUser.value;
+        if (payload) {
+          cacheUser(toDisplayUser(payload));
         }
-      }),
-    );
+      } catch {
+        // Silently fail - user will show as ID only
+      }
+    }
   }
 
   /**

@@ -28,9 +28,19 @@ const riskTemplates = shallowRef([
     impactHint: 'high',
     violationIds: ['V-1', 'V-2'],
     threatIds: [
-      { system: ' mitre ', id: ' TH-101 ', title: 'Threat 101' },
+      {
+        system: ' mitre ',
+        id: ' TH-101 ',
+        title: 'Threat 101',
+        url: ' https://threats.local/101 ',
+      },
       { system: ' mitre ', id: ' TH-202 ', title: 'Threat 202' },
     ],
+    remediationTemplate: {
+      title: 'Template remediation recommendation',
+      description: 'Template remediation description',
+      tasks: [{ title: 'Rotate keys', orderIndex: 0 }],
+    },
   },
 ]);
 const templatesLoading = ref(false);
@@ -106,9 +116,19 @@ describe('RiskCreateForm', () => {
         impactHint: 'high',
         violationIds: ['V-1', 'V-2'],
         threatIds: [
-          { system: ' mitre ', id: ' TH-101 ', title: 'Threat 101' },
+          {
+            system: ' mitre ',
+            id: ' TH-101 ',
+            title: 'Threat 101',
+            url: ' https://threats.local/101 ',
+          },
           { system: ' mitre ', id: ' TH-202 ', title: 'Threat 202' },
         ],
+        remediationTemplate: {
+          title: 'Template remediation recommendation',
+          description: 'Template remediation description',
+          tasks: [{ title: 'Rotate keys', orderIndex: 0 }],
+        },
       },
     ];
     createRiskLoading.value = false;
@@ -154,6 +174,15 @@ describe('RiskCreateForm', () => {
       'textarea[placeholder="Enter risk statement"]',
     );
     const statusSelect = wrapper.find('select');
+    const remediationTitleInput = wrapper.get(
+      '[data-testid="suggested-remediation-title"]',
+    );
+    const remediationDescriptionInput = wrapper.get(
+      '[data-testid="suggested-remediation-description"]',
+    );
+    const remediationTaskInput = wrapper.get(
+      '[data-testid="suggested-remediation-task-0"]',
+    );
 
     expect((titleInput.element as HTMLInputElement).value).toBe(
       'Template Risk',
@@ -165,6 +194,15 @@ describe('RiskCreateForm', () => {
       'Template statement from API',
     );
     expect((statusSelect.element as HTMLSelectElement).value).toBe('');
+    expect((remediationTitleInput.element as HTMLInputElement).value).toBe(
+      'Template remediation recommendation',
+    );
+    expect(
+      (remediationDescriptionInput.element as HTMLTextAreaElement).value,
+    ).toBe('Template remediation description');
+    expect((remediationTaskInput.element as HTMLInputElement).value).toBe(
+      'Rotate keys',
+    );
     expect(wrapper.text()).toContain('Using template: Template Risk');
   });
 
@@ -190,8 +228,25 @@ describe('RiskCreateForm', () => {
         statement: 'Template statement from API',
         status: 'open',
         threatIds: [
-          { id: 'TH-101', system: 'mitre' },
+          {
+            id: 'TH-101',
+            system: 'mitre',
+            href: 'https://threats.local/101',
+          },
           { id: 'TH-202', system: 'mitre' },
+        ],
+        remediations: [
+          expect.objectContaining({
+            lifecycle: 'recommendation',
+            title: 'Template remediation recommendation',
+            description: 'Template remediation description',
+            tasks: [
+              expect.objectContaining({
+                type: 'action',
+                title: 'Rotate keys',
+              }),
+            ],
+          }),
         ],
         deadline: undefined,
       }),

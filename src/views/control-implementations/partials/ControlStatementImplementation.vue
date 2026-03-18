@@ -162,11 +162,13 @@ const {
 );
 
 const suggestedComponents = ref<SuggestedComponent[]>([]);
+const pinnedAppliedSuggestions = ref<SuggestedComponent[]>([]);
 const suggestionsLoading = ref(false);
 const suggestionsError = ref('');
 const applyingSuggestedComponentUuids = ref<string[]>([]);
 const applyingAllSuggestions = ref(false);
 let latestSuggestionsRequestId = 0;
+const suggestionsDebugEnabled = import.meta.env.DEV;
 
 const { execute: createEvidenceDashboard } = useDataApi<Dashboard>(
   '/api/filters',
@@ -249,7 +251,17 @@ const componentMetadataByUuid = computed(() => {
   );
 });
 const displayedSuggestions = computed(() => {
-  return suggestedComponents.value.map((suggestion) => {
+  const mergedByUuid = new Map<string, SuggestedComponent>();
+  for (const suggestion of suggestedComponents.value) {
+    mergedByUuid.set(suggestion.componentUuid, suggestion);
+  }
+  for (const suggestion of pinnedAppliedSuggestions.value) {
+    if (!mergedByUuid.has(suggestion.componentUuid)) {
+      mergedByUuid.set(suggestion.componentUuid, suggestion);
+    }
+  }
+
+  return Array.from(mergedByUuid.values()).map((suggestion) => {
     const fallback = componentMetadataByUuid.value.get(
       suggestion.componentUuid,
     );
@@ -262,6 +274,10 @@ const displayedSuggestions = computed(() => {
 });
 const existingComponentUuidSet = computed(() =>
   getExistingComponentUuidSet(localStatement.value?.byComponents),
+);
+const pinnedAppliedSuggestionUuidSet = computed(
+  () =>
+    new Set(pinnedAppliedSuggestions.value.map((item) => item.componentUuid)),
 );
 const unappliedSuggestions = computed(() =>
   getUnappliedSuggestions(
@@ -277,7 +293,10 @@ const allSuggestionsApplied = computed(
 
 watch(
   () => statement,
-  (value) => {
+  (value, previousValue) => {
+    if (value?.uuid !== previousValue?.uuid) {
+      pinnedAppliedSuggestions.value = [];
+    }
     localStatement.value = value;
   },
   { immediate: true },
@@ -326,7 +345,10 @@ watch(
 );
 
 function isSuggestionApplied(componentUuid: string): boolean {
-  return existingComponentUuidSet.value.has(componentUuid);
+  return (
+    existingComponentUuidSet.value.has(componentUuid) ||
+    pinnedAppliedSuggestionUuidSet.value.has(componentUuid)
+  );
 }
 
 function isSuggestionApplying(componentUuid: string): boolean {
@@ -356,10 +378,55 @@ function setSuggestionApplying(componentUuid: string, applying: boolean) {
     );
 }
 
+function pinAppliedSuggestion(suggestion: SuggestedComponent) {
+  if (
+    pinnedAppliedSuggestions.value.some(
+      (item) => item.componentUuid === suggestion.componentUuid,
+    )
+  ) {
+    return;
+  }
+  pinnedAppliedSuggestions.value = [
+    ...pinnedAppliedSuggestions.value,
+    suggestion,
+  ];
+}
+
+function logSuggestionsDebug(
+  message: string,
+  context: Record<string, unknown> = {},
+) {
+  if (!suggestionsDebugEnabled) {
+    return;
+  }
+  console.info('[control-suggestions]', message, context);
+}
+
+function isCanceledRequestError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') {
+    return false;
+  }
+  if ('code' in error && error.code === 'ERR_CANCELED') {
+    return true;
+  }
+  if ('message' in error && typeof error.message === 'string') {
+    const message = error.message.toLowerCase();
+    return message.includes('canceled') || message.includes('aborted');
+  }
+  return false;
+}
+
 async function fetchSuggestedComponents() {
   const requestId = ++latestSuggestionsRequestId;
   const sspId = resolvedSspId.value;
   const statementUuid = localStatement.value?.uuid;
+  logSuggestionsDebug('fetch start', {
+    requestId,
+    latestSuggestionsRequestId,
+    sspId,
+    implementationUuid: implementation.uuid,
+    statementUuid,
+  });
   if (!sspId) {
     if (requestId === latestSuggestionsRequestId) {
       suggestedComponents.value = [];
@@ -391,13 +458,32 @@ async function fetchSuggestedComponents() {
       return;
     }
 
-    suggestedComponents.value = normalizeSuggestedComponentsResponse(
+    const normalizedSuggestions = normalizeSuggestedComponentsResponse(
       suggestedComponentsResponse.value,
     );
+    suggestedComponents.value = normalizedSuggestions;
+    logSuggestionsDebug('fetch success', {
+      requestId,
+      suggestionsCount: normalizedSuggestions.length,
+    });
   } catch (error) {
     if (requestId !== latestSuggestionsRequestId) {
       return;
     }
+    if (isCanceledRequestError(error)) {
+      logSuggestionsDebug('fetch canceled', {
+        requestId,
+        error,
+      });
+      return;
+    }
+    console.error('Failed to fetch suggested components:', {
+      requestId,
+      sspId,
+      implementationUuid: implementation.uuid,
+      statementUuid,
+      error,
+    });
     suggestedComponents.value = [];
     suggestionsError.value =
       error instanceof Error
@@ -469,11 +555,16 @@ async function createStatementByComponent(
   return created;
 }
 
-async function syncStatementAfterSuggestionApply() {
+async function syncStatementAfterSuggestionApply(options?: {
+  refreshSuggestions?: boolean;
+}) {
+  const shouldRefreshSuggestions = options?.refreshSuggestions ?? false;
   const sspId = resolvedSspId.value;
   const statementUuid = localStatement.value?.uuid;
   if (!sspId || !statementUuid) {
-    await fetchSuggestedComponents();
+    if (shouldRefreshSuggestions) {
+      await fetchSuggestedComponents();
+    }
     return;
   }
 
@@ -511,7 +602,9 @@ async function syncStatementAfterSuggestionApply() {
       life: 5000,
     });
   } finally {
-    await fetchSuggestedComponents();
+    if (shouldRefreshSuggestions) {
+      await fetchSuggestedComponents();
+    }
   }
 }
 
@@ -698,6 +791,7 @@ async function applySuggestedComponent(suggestion: SuggestedComponent) {
         definedComponentId: suggestion.definedComponentId,
       },
     );
+    pinAppliedSuggestion(suggestion);
     await syncStatementAfterSuggestionApply();
   } catch (error) {
     toast.add({
@@ -756,6 +850,9 @@ async function applyAllSuggestedComponents() {
         localStatement.value.uuid,
       ),
     );
+    for (const suggestion of suggestionsToApply) {
+      pinAppliedSuggestion(suggestion);
+    }
     await syncStatementAfterSuggestionApply();
     toast.add({
       severity: 'success',

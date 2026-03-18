@@ -21,14 +21,45 @@ export interface SuggestedComponent {
   relevanceScore?: number;
 }
 
-type SuggestionPayload = SystemComponentSuggestion[] | undefined | null;
+type SuggestionPayload =
+  | SystemComponentSuggestion[]
+  | { data?: SystemComponentSuggestion[] | null }
+  | undefined
+  | null;
+
+function toArrayPayload(
+  payload: SuggestionPayload,
+): SystemComponentSuggestion[] {
+  if (Array.isArray(payload)) {
+    return payload;
+  }
+
+  if (
+    payload &&
+    typeof payload === 'object' &&
+    'data' in payload &&
+    Array.isArray(payload.data)
+  ) {
+    return payload.data;
+  }
+
+  return [];
+}
 
 function getRelevanceScore(
   suggestion: SystemComponentSuggestion,
 ): number | undefined {
-  const { relevanceScore } = suggestion;
+  const { relevanceScore } = suggestion as {
+    relevanceScore?: number | string;
+  };
   if (typeof relevanceScore === 'number' && Number.isFinite(relevanceScore)) {
     return relevanceScore;
+  }
+  if (typeof relevanceScore === 'string') {
+    const parsed = Number.parseFloat(relevanceScore);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
   }
   return undefined;
 }
@@ -36,10 +67,13 @@ function getRelevanceScore(
 export function normalizeSuggestedComponentsResponse(
   payload: SuggestionPayload,
 ): SuggestedComponent[] {
-  const rawSuggestions = payload ?? [];
+  const rawSuggestions = toArrayPayload(payload);
   const deduped = new Map<string, SuggestedComponent>();
 
   for (const suggestion of rawSuggestions) {
+    if (!suggestion || typeof suggestion !== 'object') {
+      continue;
+    }
     if (!suggestion.definedComponentId) {
       continue;
     }

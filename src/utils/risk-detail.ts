@@ -23,6 +23,15 @@ export interface RiskEventItem {
   details?: string;
 }
 
+export interface RiskReviewItem {
+  id: string;
+  decision: string;
+  timestamp?: string;
+  reviewer?: string;
+  notes?: string;
+  nextReviewDeadline?: string;
+}
+
 type LooseRecord = Record<string, unknown>;
 type LooseRisk = Risk & LooseRecord;
 
@@ -317,6 +326,61 @@ function normalizeEvent(input: unknown): RiskEventItem | null {
   };
 }
 
+function normalizeReview(input: unknown): RiskReviewItem | null {
+  if (!input || typeof input !== 'object') return null;
+  const record = input as LooseRecord;
+
+  const id =
+    readString(record, ['uuid', 'id', 'reviewId']) || crypto.randomUUID();
+  const decision =
+    readString(record, [
+      'decision',
+      'outcome',
+      'result',
+      'status',
+      'title',
+      'type',
+    ]) || 'Review';
+  const timestamp = readString(record, [
+    'timestamp',
+    'reviewedAt',
+    'createdAt',
+    'created',
+    'date',
+    'time',
+  ]);
+  const reviewer =
+    stringifyActor(record.reviewer) ||
+    stringifyActor(record.reviewedBy) ||
+    stringifyActor(record.actor) ||
+    stringifyActor(record.user) ||
+    readString(record, ['reviewerName', 'reviewerId', 'reviewerUuid']);
+  const notes =
+    readString(record, [
+      'reviewJustification',
+      'justification',
+      'notes',
+      'details',
+      'description',
+      'remarks',
+    ]) || readString(record, ['title']);
+  const nextReviewDeadline = readString(record, [
+    'nextReviewDeadline',
+    'reviewDeadline',
+    'deadline',
+    'nextReviewAt',
+  ]);
+
+  return {
+    id,
+    decision,
+    timestamp,
+    reviewer,
+    notes,
+    nextReviewDeadline,
+  };
+}
+
 function normalizeFromRiskLogEntry(entry: RiskLogEntry): RiskEventItem {
   const actor = entry.loggedBy
     ?.map((actorItem) => actorItem.partyUuid)
@@ -362,4 +426,13 @@ export function normalizeRiskEvents(
   return normalized.sort((left, right) =>
     (right.timestamp || '').localeCompare(left.timestamp || ''),
   );
+}
+
+export function normalizeRiskReviews(rawReviews: unknown): RiskReviewItem[] {
+  return resolveRawEvents(rawReviews)
+    .map((review) => normalizeReview(review))
+    .filter((review): review is RiskReviewItem => !!review)
+    .sort((left, right) =>
+      (right.timestamp || '').localeCompare(left.timestamp || ''),
+    );
 }

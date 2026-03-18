@@ -18,12 +18,30 @@ type MockRisk = {
   description: string;
   statement: string;
   status: string;
+  likelihood?: string;
+  impact?: string;
   reviewDeadline?: string;
   lastReviewedAt?: string;
   acceptanceJustification?: string;
   sourceType: string;
   firstSeenAt: string;
   lastSeenAt: string;
+  threatIds?: Array<{
+    id: string;
+    system: string;
+    href?: string;
+  }>;
+  remediations?: Array<{
+    uuid?: string;
+    lifecycle?: string;
+    title?: string;
+    description?: string;
+    remarks?: string;
+    tasks?: Array<{
+      uuid?: string;
+      title?: string;
+    }>;
+  }>;
   primaryOwnerUserId?: string;
   ownerAssignments: Array<{
     ownerKind: string;
@@ -41,12 +59,45 @@ const mockRisk: MockRisk = {
   description: 'Encryption policy drift.',
   statement: 'Data at rest may not be encrypted.',
   status: 'open',
+  likelihood: 'moderate',
+  impact: 'high',
   reviewDeadline: '2026-04-01T12:00:00Z',
   lastReviewedAt: '2026-03-01T12:00:00Z',
   acceptanceJustification: 'Accepted pending migration.',
   sourceType: 'manual',
   firstSeenAt: '2026-01-01T00:00:00Z',
   lastSeenAt: '2026-03-10T00:00:00Z',
+  threatIds: [
+    {
+      id: 'T-001',
+      system: 'CAPEC',
+      href: 'https://capec.mitre.org/data/definitions/1.html',
+    },
+    {
+      id: 'T-002',
+      system: 'NVD',
+    },
+  ],
+  remediations: [
+    {
+      uuid: 'remediation-1',
+      lifecycle: 'recommendation',
+      title: 'Rotate DB encryption keys',
+      description: 'Rotate all stale encryption keys within 30 days.',
+      tasks: [
+        {
+          uuid: 'task-1',
+          title: 'Generate new key material',
+        },
+      ],
+    },
+    {
+      uuid: 'remediation-2',
+      lifecycle: 'planned',
+      title: 'HSM migration',
+      description: 'Move key custody to HSM-backed service.',
+    },
+  ],
   primaryOwnerUserId: '8d6d887f-2a45-4d8f-9cb0-6e8d3595d87f',
   ownerAssignments: [
     {
@@ -100,6 +151,7 @@ const {
       class: string;
     }>,
     eventResponses: {} as Record<string, unknown>,
+    reviewResponses: {} as Record<string, unknown>,
     acceptModalPayload: {
       justification: 'Business accepted for now',
       reviewDeadline: '2026-04-20T10:00:00.000Z',
@@ -118,6 +170,12 @@ const {
       decision: 'extend',
       notes: 'Continue accepted status',
       nextReviewDeadline: '2026-05-01T00:00:00.000Z',
+    } as Record<string, unknown>,
+    scoreReviewModalPayload: {
+      decision: 'reassess',
+      likelihood: 'high',
+      impact: 'critical',
+      notes: 'Updated after new threat intel',
     } as Record<string, unknown>,
     ownerAssignmentChangePayload: {
       primaryOwnerUserId: '8d6d887f-2a45-4d8f-9cb0-6e8d3595d87f',
@@ -148,6 +206,7 @@ const {
       },
     ];
     mockApiState.eventResponses = {};
+    mockApiState.reviewResponses = {};
     mockApiState.acceptModalPayload = {
       justification: 'Business accepted for now',
       reviewDeadline: '2026-04-20T10:00:00.000Z',
@@ -166,6 +225,12 @@ const {
       decision: 'extend',
       notes: 'Continue accepted status',
       nextReviewDeadline: '2026-05-01T00:00:00.000Z',
+    };
+    mockApiState.scoreReviewModalPayload = {
+      decision: 'reassess',
+      likelihood: 'high',
+      impact: 'critical',
+      notes: 'Updated after new threat intel',
     };
     mockApiState.ownerAssignmentChangePayload = {
       primaryOwnerUserId: '8d6d887f-2a45-4d8f-9cb0-6e8d3595d87f',
@@ -267,6 +332,8 @@ vi.mock('@/composables/axios', () => ({
         data: requestConfig.data,
       });
 
+      const endpointWithoutQuery = endpoint.split('?')[0];
+
       if (endpoint.endsWith('/risks/risk-1')) {
         if (method === 'PUT') {
           const payload = (requestConfig.data || {}) as Record<string, unknown>;
@@ -341,12 +408,32 @@ vi.mock('@/composables/axios', () => ({
           mockRisk.reviewDeadline = undefined;
           mockRisk.acceptanceJustification = undefined;
         }
+        if (payload.decision === 'reassess') {
+          if (typeof payload.likelihood === 'string') {
+            mockRisk.likelihood = payload.likelihood;
+          }
+          if (typeof payload.impact === 'string') {
+            mockRisk.impact = payload.impact;
+          }
+        }
         mockRisk.lastReviewedAt = '2026-03-16T12:30:00Z';
         data.value = { ...mockRisk };
       } else if (endpoint.endsWith('/system-security-plans/ssp-1/risks')) {
         data.value = [{ ...mockRisk }];
-      } else if (endpoint in mockApiState.eventResponses) {
-        data.value = mockApiState.eventResponses[endpoint];
+      } else if (
+        endpoint in mockApiState.eventResponses ||
+        endpointWithoutQuery in mockApiState.eventResponses
+      ) {
+        data.value =
+          mockApiState.eventResponses[endpoint] ??
+          mockApiState.eventResponses[endpointWithoutQuery];
+      } else if (
+        endpoint in mockApiState.reviewResponses ||
+        endpointWithoutQuery in mockApiState.reviewResponses
+      ) {
+        data.value =
+          mockApiState.reviewResponses[endpoint] ??
+          mockApiState.reviewResponses[endpointWithoutQuery];
       } else if (endpoint.includes('/events')) {
         data.value = [
           {
@@ -357,6 +444,8 @@ vi.mock('@/composables/axios', () => ({
             details: 'Risk created',
           },
         ];
+      } else if (endpoint.includes('/reviews')) {
+        data.value = [];
       } else if (endpoint === '/api/evidence/search') {
         data.value = [
           {
@@ -483,7 +572,6 @@ function mountComponent() {
         Dialog: { template: '<div><slot /></div>' },
         TertiaryButton: { template: '<button><slot /></button>' },
         RouterLinkButton: { template: '<button><slot /></button>' },
-        RiskLogTab: { template: '<div>Risk log tab</div>' },
         RiskAcceptModal: {
           props: ['visible'],
           emits: ['update:visible', 'submit'],
@@ -501,6 +589,15 @@ function mountComponent() {
           },
           template:
             '<div v-if="visible" data-testid="review-modal"><button data-testid="review-modal-submit" @click="$emit(\'submit\', mockApiState.reviewModalPayload)">Submit Review</button></div>',
+        },
+        RiskScoreReviewModal: {
+          props: ['visible'],
+          emits: ['update:visible', 'submit'],
+          setup() {
+            return { mockApiState };
+          },
+          template:
+            '<div v-if="visible" data-testid="score-review-modal"><button data-testid="score-review-modal-submit" @click="$emit(\'submit\', mockApiState.scoreReviewModalPayload)">Submit Score Review</button></div>',
         },
         RiskOwnerAssignment: {
           emits: ['change', 'save'],
@@ -560,9 +657,42 @@ describe('RiskDetailView', () => {
     vi.clearAllMocks();
     vi.spyOn(window, 'confirm').mockReturnValue(true);
     mockRisk.status = 'open';
+    mockRisk.likelihood = 'moderate';
+    mockRisk.impact = 'high';
     mockRisk.reviewDeadline = '2026-04-01T12:00:00Z';
     mockRisk.lastReviewedAt = '2026-03-01T12:00:00Z';
     mockRisk.acceptanceJustification = 'Accepted pending migration.';
+    mockRisk.threatIds = [
+      {
+        id: 'T-001',
+        system: 'CAPEC',
+        href: 'https://capec.mitre.org/data/definitions/1.html',
+      },
+      {
+        id: 'T-002',
+        system: 'NVD',
+      },
+    ];
+    mockRisk.remediations = [
+      {
+        uuid: 'remediation-1',
+        lifecycle: 'recommendation',
+        title: 'Rotate DB encryption keys',
+        description: 'Rotate all stale encryption keys within 30 days.',
+        tasks: [
+          {
+            uuid: 'task-1',
+            title: 'Generate new key material',
+          },
+        ],
+      },
+      {
+        uuid: 'remediation-2',
+        lifecycle: 'planned',
+        title: 'HSM migration',
+        description: 'Move key custody to HSM-backed service.',
+      },
+    ];
     mockRisk.primaryOwnerUserId = '8d6d887f-2a45-4d8f-9cb0-6e8d3595d87f';
     mockRisk.ownerAssignments = [
       {
@@ -573,7 +703,7 @@ describe('RiskDetailView', () => {
     ];
   });
 
-  it('renders the new risk detail tabs and history event entry', async () => {
+  it('renders the updated risk detail tabs in the expected order', async () => {
     const wrapper = mountComponent();
     await flushPromises();
 
@@ -582,13 +712,141 @@ describe('RiskDetailView', () => {
     expect(text).toContain('Evidence');
     expect(text).toContain('Controls');
     expect(text).toContain('Components');
+    expect(text).toContain('Threats');
+    expect(text).toContain('Remediations');
+    expect(text).toContain('Reviews');
     expect(text).toContain('History & Events');
-    expect(text).toContain('Log');
+    expect(text).not.toContain('Log');
+    expect(text.indexOf('Threats')).toBeLessThan(text.indexOf('Remediations'));
+    expect(text.indexOf('Remediations')).toBeLessThan(text.indexOf('Reviews'));
+    expect(text.indexOf('Reviews')).toBeLessThan(
+      text.indexOf('History & Events'),
+    );
 
     await clickButtonByText(wrapper, 'History & Events');
     await flushPromises();
 
     expect(wrapper.text()).toContain('Risk created');
+  });
+
+  it('loads reviews from the reviews endpoint', async () => {
+    mockApiState.reviewResponses[
+      '/api/oscal/system-security-plans/ssp-1/risks/risk-1/reviews'
+    ] = [
+      {
+        uuid: 'review-1',
+        decision: 'extend',
+        reviewedAt: '2026-03-16T12:30:00Z',
+        reviewer: { displayName: 'Security Lead' },
+        notes: 'Quarterly review completed.',
+        nextReviewDeadline: '2026-06-30T00:00:00Z',
+      },
+    ];
+
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    await clickButtonByText(wrapper, 'Reviews');
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('Quarterly review completed.');
+    expect(wrapper.text()).toContain('Security Lead');
+    expect(apiCalls).toContainEqual(
+      expect.objectContaining({
+        endpoint:
+          '/api/oscal/system-security-plans/ssp-1/risks/risk-1/reviews?page=1&limit=10&offset=0',
+        method: 'GET',
+      }),
+    );
+  });
+
+  it('supports pagination for reviews tab', async () => {
+    mockApiState.reviewResponses[
+      '/api/oscal/system-security-plans/ssp-1/risks/risk-1/reviews?page=1&limit=10&offset=0'
+    ] = {
+      data: [
+        {
+          uuid: 'review-page-1',
+          decision: 'extend',
+          reviewedAt: '2026-03-16T12:30:00Z',
+          reviewerName: 'Reviewer One',
+          notes: 'Review page 1 entry',
+        },
+      ],
+      total: 11,
+      limit: 10,
+      offset: 0,
+      hasMore: true,
+    };
+    mockApiState.reviewResponses[
+      '/api/oscal/system-security-plans/ssp-1/risks/risk-1/reviews?page=2&limit=10&offset=10'
+    ] = {
+      data: [
+        {
+          uuid: 'review-page-2',
+          decision: 'reassess',
+          reviewedAt: '2026-03-10T10:00:00Z',
+          reviewerName: 'Reviewer Two',
+          notes: 'Review page 2 entry',
+        },
+      ],
+      total: 11,
+      limit: 10,
+      offset: 10,
+      hasMore: false,
+    };
+
+    const wrapper = mountComponent();
+    await flushPromises();
+    await clickButtonByText(wrapper, 'Reviews');
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('Review page 1 entry');
+    expect(wrapper.text()).toContain('Page 1');
+    expect(wrapper.text()).toContain('of 2');
+    await wrapper
+      .get('[data-testid="reviews-pagination-next"]')
+      .trigger('click');
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('Review page 2 entry');
+    expect(wrapper.text()).toContain('Page 2');
+    expect(wrapper.text()).toContain('of 2');
+    expect(apiCalls).toContainEqual(
+      expect.objectContaining({
+        endpoint:
+          '/api/oscal/system-security-plans/ssp-1/risks/risk-1/reviews?page=2&limit=10&offset=10',
+        method: 'GET',
+      }),
+    );
+
+    await wrapper
+      .get('[data-testid="reviews-pagination-prev"]')
+      .trigger('click');
+    await flushPromises();
+    expect(wrapper.text()).toContain('Review page 1 entry');
+  });
+
+  it('renders threat and remediation tabs for SSP risk detail', async () => {
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    await clickButtonByText(wrapper, 'Threats');
+    await flushPromises();
+    expect(wrapper.text()).toContain('T-001');
+    expect(wrapper.text()).toContain('System: CAPEC');
+    expect(wrapper.text()).toContain(
+      'https://capec.mitre.org/data/definitions/1.html',
+    );
+
+    await clickButtonByText(wrapper, 'Remediations');
+    await flushPromises();
+    expect(wrapper.text()).toContain('Rotate DB encryption keys');
+    expect(wrapper.text()).toContain(
+      'Rotate all stale encryption keys within 30 days.',
+    );
+    expect(wrapper.text()).toContain('Generate new key material');
+    expect(wrapper.text()).toContain('HSM migration');
   });
 
   it('uses router back when an in-app back target exists', async () => {
@@ -645,7 +903,18 @@ describe('RiskDetailView', () => {
     expect(text).toContain('Transition Matrix');
     expect(text).toContain('Risk Accepted');
     expect(text).toContain('Acceptance Justification');
+    expect(text).toContain('Review Deadline');
+    expect(text).toContain('Last Reviewed At');
     expect(text).toContain('Source Type');
+  });
+
+  it('hides acceptance justification when risk is not accepted', async () => {
+    mockRisk.status = 'open';
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    expect(wrapper.text()).not.toContain('Acceptance Justification');
+    expect(wrapper.text()).not.toContain('Last Reviewed At');
   });
 
   it('shows Accept Risk button only for investigating status', async () => {
@@ -672,6 +941,59 @@ describe('RiskDetailView', () => {
     expect(
       findButtonByText(investigatingWrapper, 'Review Risk'),
     ).toBeUndefined();
+  });
+
+  it('shows Review Risk Score only for open and investigating statuses', async () => {
+    mockRisk.status = 'open';
+    const openWrapper = mountComponent();
+    await flushPromises();
+    expect(findButtonByText(openWrapper, 'Review Risk Score')).toBeDefined();
+
+    mockRisk.status = 'investigating';
+    const investigatingWrapper = mountComponent();
+    await flushPromises();
+    expect(
+      findButtonByText(investigatingWrapper, 'Review Risk Score'),
+    ).toBeDefined();
+
+    mockRisk.status = 'risk-accepted';
+    const acceptedWrapper = mountComponent();
+    await flushPromises();
+    expect(
+      findButtonByText(acceptedWrapper, 'Review Risk Score'),
+    ).toBeUndefined();
+  });
+
+  it('posts reassess decision when Review Risk Score is submitted', async () => {
+    mockRisk.status = 'open';
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    await clickButtonByText(wrapper, 'Review Risk Score');
+    await flushPromises();
+    expect(wrapper.find('[data-testid="score-review-modal"]').exists()).toBe(
+      true,
+    );
+
+    await wrapper
+      .get('[data-testid="score-review-modal-submit"]')
+      .trigger('click');
+    await flushPromises();
+
+    expect(apiCalls).toContainEqual(
+      expect.objectContaining({
+        endpoint: '/api/oscal/system-security-plans/ssp-1/risks/risk-1/review',
+        method: 'POST',
+        data: {
+          decision: 'reassess',
+          likelihood: 'high',
+          impact: 'critical',
+          notes: 'Updated after new threat intel',
+        },
+      }),
+    );
+    expect(wrapper.text()).toContain('High');
+    expect(wrapper.text()).toContain('Critical');
   });
 
   it('shows start/close lifecycle actions for the correct statuses', async () => {
@@ -903,7 +1225,7 @@ describe('RiskDetailView', () => {
     );
   });
 
-  it('continues loading events across endpoints when the first one is empty', async () => {
+  it('falls back to risk log entries when events endpoint returns empty', async () => {
     mockRisk.riskLog.entries = [
       {
         uuid: 'fallback-log-event',
@@ -915,17 +1237,6 @@ describe('RiskDetailView', () => {
     mockApiState.eventResponses[
       '/api/oscal/system-security-plans/ssp-1/risks/risk-1/events'
     ] = [];
-    mockApiState.eventResponses[
-      '/api/oscal/system-security-plans/ssp-1/risks/risk-1/history'
-    ] = [
-      {
-        uuid: 'evt-history-1',
-        eventType: 'status-change',
-        createdAt: '2026-03-12T11:00:00Z',
-        actorName: 'Auditor',
-        details: 'History endpoint event',
-      },
-    ];
 
     const wrapper = mountComponent();
     await flushPromises();
@@ -933,15 +1244,88 @@ describe('RiskDetailView', () => {
     await clickButtonByText(wrapper, 'History & Events');
     await flushPromises();
 
-    expect(wrapper.text()).toContain('History endpoint event');
+    expect(wrapper.text()).toContain('Fallback Log Event');
     expect(apiCalls).toContainEqual(
       expect.objectContaining({
-        endpoint: '/api/oscal/system-security-plans/ssp-1/risks/risk-1/history',
+        endpoint:
+          '/api/oscal/system-security-plans/ssp-1/risks/risk-1/events?page=1&limit=10&offset=0',
         method: 'GET',
+      }),
+    );
+    expect(apiCalls).not.toContainEqual(
+      expect.objectContaining({
+        endpoint: '/api/oscal/system-security-plans/ssp-1/risks/risk-1/history',
       }),
     );
 
     mockRisk.riskLog.entries = [];
+  });
+
+  it('supports pagination for history and events tab', async () => {
+    mockApiState.eventResponses[
+      '/api/oscal/system-security-plans/ssp-1/risks/risk-1/events?page=1&limit=10&offset=0'
+    ] = {
+      data: [
+        {
+          uuid: 'evt-page-1',
+          eventType: 'updated',
+          createdAt: '2026-03-18T10:00:00Z',
+          actorName: 'System',
+          details: 'Event page 1 entry',
+        },
+      ],
+      total: 11,
+      limit: 10,
+      offset: 0,
+      hasMore: true,
+    };
+    mockApiState.eventResponses[
+      '/api/oscal/system-security-plans/ssp-1/risks/risk-1/events?page=2&limit=10&offset=10'
+    ] = {
+      data: [
+        {
+          uuid: 'evt-page-2',
+          eventType: 'reviewed',
+          createdAt: '2026-03-10T10:00:00Z',
+          actorName: 'Security Lead',
+          details: 'Event page 2 entry',
+        },
+      ],
+      total: 11,
+      limit: 10,
+      offset: 10,
+      hasMore: false,
+    };
+
+    const wrapper = mountComponent();
+    await flushPromises();
+    await clickButtonByText(wrapper, 'History & Events');
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('Event page 1 entry');
+    expect(wrapper.text()).toContain('Page 1');
+    expect(wrapper.text()).toContain('of 2');
+    await wrapper
+      .get('[data-testid="events-pagination-next"]')
+      .trigger('click');
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('Event page 2 entry');
+    expect(wrapper.text()).toContain('Page 2');
+    expect(wrapper.text()).toContain('of 2');
+    expect(apiCalls).toContainEqual(
+      expect.objectContaining({
+        endpoint:
+          '/api/oscal/system-security-plans/ssp-1/risks/risk-1/events?page=2&limit=10&offset=10',
+        method: 'GET',
+      }),
+    );
+
+    await wrapper
+      .get('[data-testid="events-pagination-prev"]')
+      .trigger('click');
+    await flushPromises();
+    expect(wrapper.text()).toContain('Event page 1 entry');
   });
 
   it('hydrates linked evidence when risk evidence endpoint returns id array', async () => {
@@ -1058,6 +1442,28 @@ describe('RiskDetailView', () => {
           '/api/oscal/system-security-plans/ssp-1/risks/risk-1/controls',
         method: 'POST',
         data: { catalogId: 'catalog-1', controlId: 'AC-1' },
+      }),
+    );
+  });
+
+  it('loads resolved controls via /profiles/ endpoint only', async () => {
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    await clickButtonByText(wrapper, 'Controls');
+    await flushPromises();
+    await clickButtonByText(wrapper, 'Add Control');
+    await flushPromises();
+
+    expect(apiCalls).toContainEqual(
+      expect.objectContaining({
+        endpoint: '/api/oscal/profiles/profile-1/resolved-with-catalogs',
+        method: 'GET',
+      }),
+    );
+    expect(apiCalls).not.toContainEqual(
+      expect.objectContaining({
+        endpoint: '/api/oscal/profile/profile-1/resolved-with-catalogs',
       }),
     );
   });
