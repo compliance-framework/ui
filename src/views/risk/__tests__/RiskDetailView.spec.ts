@@ -1414,6 +1414,68 @@ describe('RiskDetailView', () => {
     expect(wrapper.text()).toContain('Event page 1 entry');
   });
 
+  it('does not fall back to risk log entries for empty events API responses on later pages', async () => {
+    mockRisk.riskLog.entries = [
+      {
+        uuid: 'fallback-log-event',
+        title: 'Fallback Log Event',
+        start: '2026-03-11T08:00:00Z',
+        loggedBy: [],
+      },
+    ];
+    mockApiState.eventResponses[
+      '/api/oscal/system-security-plans/ssp-1/risks/risk-1/events?page=1&limit=10&offset=0'
+    ] = {
+      data: [
+        {
+          uuid: 'evt-page-1',
+          eventType: 'updated',
+          createdAt: '2026-03-18T10:00:00Z',
+          actorName: 'System',
+          details: 'Event page 1 entry',
+        },
+      ],
+      total: 11,
+      limit: 10,
+      offset: 0,
+      hasMore: true,
+    };
+    mockApiState.eventResponses[
+      '/api/oscal/system-security-plans/ssp-1/risks/risk-1/events?page=2&limit=10&offset=10'
+    ] = {
+      data: [],
+      total: 11,
+      limit: 10,
+      offset: 10,
+      hasMore: false,
+    };
+
+    const wrapper = mountComponent();
+    await flushPromises();
+    await clickButtonByText(wrapper, 'History & Events');
+    await flushPromises();
+
+    await wrapper
+      .get('[data-testid="events-pagination-next"]')
+      .trigger('click');
+    await flushPromises();
+
+    expect(wrapper.text()).not.toContain('Fallback Log Event');
+    expect(wrapper.text()).toContain(
+      'No events have been recorded for this risk.',
+    );
+    expect(wrapper.text()).toContain('Page 2');
+    expect(apiCalls).toContainEqual(
+      expect.objectContaining({
+        endpoint:
+          '/api/oscal/system-security-plans/ssp-1/risks/risk-1/events?page=2&limit=10&offset=10',
+        method: 'GET',
+      }),
+    );
+
+    mockRisk.riskLog.entries = [];
+  });
+
   it('hydrates linked evidence when risk evidence endpoint returns id array', async () => {
     mockApiState.evidenceLinks = ['06d6174b-39be-443a-b282-0fb821e24a94'];
 

@@ -1553,6 +1553,22 @@ async function loadRiskEvents(page = eventsPage.value) {
       : null;
   };
 
+  const applyEmptyEventsPage = (
+    pagination?: ReturnType<typeof resolveTimelinePagination>,
+  ) => {
+    riskEvents.value = [];
+    eventsPage.value =
+      pagination?.explicitPagination && pagination.currentPage
+        ? pagination.currentPage
+        : safePage;
+    eventsHasMore.value = pagination?.explicitPagination
+      ? pagination.hasMore
+      : false;
+    eventsTotalPages.value = pagination?.explicitPagination
+      ? pagination.totalPages || null
+      : null;
+  };
+
   if (!riskEventsEndpoint.value) {
     applyFallbackEvents();
     return;
@@ -1569,13 +1585,13 @@ async function loadRiskEvents(page = eventsPage.value) {
     const rawEventsPayload =
       fetchedEvents.value ?? fetchedEventsResponse?.value?.data;
     const normalizedApiEvents = normalizeRiskEvents(rawEventsPayload, []);
+    const pagination = resolveTimelinePagination(
+      rawEventsPayload,
+      offset,
+      timelinePageSize,
+      normalizedApiEvents.length,
+    );
     if (normalizedApiEvents.length > 0) {
-      const pagination = resolveTimelinePagination(
-        rawEventsPayload,
-        offset,
-        timelinePageSize,
-        normalizedApiEvents.length,
-      );
       const likelyFullUnpagedList =
         !pagination.explicitPagination &&
         normalizedApiEvents.length > timelinePageSize;
@@ -1601,11 +1617,24 @@ async function loadRiskEvents(page = eventsPage.value) {
           : null;
       return;
     }
+
+    if (safePage === 1) {
+      applyFallbackEvents();
+      return;
+    }
+
+    applyEmptyEventsPage(pagination);
+    return;
   } catch (err) {
     if (isCanceledError(err)) return;
   }
 
-  applyFallbackEvents();
+  if (safePage === 1) {
+    applyFallbackEvents();
+    return;
+  }
+
+  applyEmptyEventsPage();
 }
 
 async function loadRiskReviews(page = reviewsPage.value) {
