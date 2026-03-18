@@ -687,8 +687,12 @@
                     class="list-disc list-inside text-sm text-gray-600 dark:text-slate-400"
                   >
                     <li
-                      v-for="task in remediation.tasks"
-                      :key="task.uuid || task.title"
+                      v-for="(task, taskIndex) in remediation.tasks"
+                      :key="
+                        task.uuid ||
+                        task.title ||
+                        `task-${remediationIndex}-${taskIndex}`
+                      "
                     >
                       {{ task.title }}
                     </li>
