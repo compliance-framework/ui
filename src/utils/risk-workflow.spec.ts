@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   canAcceptRisk,
+  canReassessRisk,
   canReviewRisk,
   getAllowedRiskTransitions,
   normalizeRiskRegisterStatus,
@@ -59,6 +60,9 @@ describe('risk-workflow', () => {
     expect(canAcceptRisk('open')).toBe(false);
     expect(canReviewRisk('risk-accepted')).toBe(true);
     expect(canReviewRisk('mitigating-planned')).toBe(false);
+    expect(canReassessRisk('open')).toBe(true);
+    expect(canReassessRisk('investigating')).toBe(true);
+    expect(canReassessRisk('risk-accepted')).toBe(false);
   });
 
   it('maps statuses into workflow stages with summaries', () => {
@@ -73,7 +77,11 @@ describe('risk-workflow', () => {
   });
 
   it('builds action hints for accept/review states', () => {
+    expect(riskWorkflowHints('open')[0]).toContain('Review Risk Score');
     expect(riskWorkflowHints('investigating')[0]).toContain('Accept Risk');
+    expect(riskWorkflowHints('investigating')[1]).toContain(
+      'Review Risk Score',
+    );
     expect(riskWorkflowHints('risk-accepted')[0]).toContain('Review Risk');
     expect(riskWorkflowHints('closed')[0]).toContain('No workflow actions');
   });

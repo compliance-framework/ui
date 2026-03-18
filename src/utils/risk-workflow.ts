@@ -6,7 +6,7 @@ export type RiskRegisterStatus =
   | 'risk-accepted'
   | 'closed';
 
-export type RiskReviewDecision = 'extend' | 'reopen';
+export type RiskReviewDecision = 'extend' | 'reopen' | 'reassess';
 
 export type RiskWorkflowStage =
   | 'intake'
@@ -178,6 +178,11 @@ export function canReviewRisk(status?: string): boolean {
   return normalizeRiskRegisterStatus(status) === 'risk-accepted';
 }
 
+export function canReassessRisk(status?: string): boolean {
+  const normalized = normalizeRiskRegisterStatus(status);
+  return normalized === 'open' || normalized === 'investigating';
+}
+
 export function riskWorkflowStage(status?: string): RiskWorkflowStage {
   const normalized = normalizeRiskRegisterStatus(status);
   switch (normalized) {
@@ -240,9 +245,13 @@ export function riskWorkflowStageSummary(stage: RiskWorkflowStage): {
 }
 
 export function riskWorkflowHints(status?: string): string[] {
+  if (canReassessRisk(status) && !canAcceptRisk(status)) {
+    return ['Use Review Risk Score to record likelihood and impact updates.'];
+  }
   if (canAcceptRisk(status)) {
     return [
       'Use Accept Risk to record justification and define review deadline.',
+      'Use Review Risk Score to record likelihood and impact updates.',
     ];
   }
   if (canReviewRisk(status)) {

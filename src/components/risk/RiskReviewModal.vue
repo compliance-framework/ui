@@ -103,7 +103,7 @@ import Message from '@/volt/Message.vue';
 import type { RiskReviewDecision } from '@/utils/risk-workflow';
 
 interface RiskReviewSubmitPayload {
-  decision: RiskReviewDecision;
+  decision: Extract<RiskReviewDecision, 'extend' | 'reopen'>;
   notes?: string;
   nextReviewDeadline?: string;
 }
@@ -127,7 +127,8 @@ const emit = defineEmits<{
   submit: [payload: RiskReviewSubmitPayload];
 }>();
 
-const decision = ref<RiskReviewDecision>('extend');
+const decision =
+  ref<Extract<RiskReviewDecision, 'extend' | 'reopen'>>('extend');
 const nextReviewDeadline = ref('');
 const notes = ref('');
 const validationError = ref('');

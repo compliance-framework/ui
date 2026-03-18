@@ -26,6 +26,25 @@ vi.mock('@/composables/axios', () => ({
   decamelizeKeys: (data: unknown) => data,
 }));
 
+vi.mock('@/composables/workflows/useUserSearch', () => ({
+  useUserSearch: () => ({
+    loadUsersByIds: vi.fn().mockResolvedValue(undefined),
+    getCachedUser: (id: string) => {
+      if (id === 'user-1') {
+        return {
+          id: 'user-1',
+          email: 'alice@example.com',
+          firstName: 'Alice',
+          lastName: 'Owner',
+          failedLogins: 0,
+          displayName: 'Alice Owner',
+        };
+      }
+      return undefined;
+    },
+  }),
+}));
+
 vi.mock('vue-router', () => ({
   useRoute: () => ({
     params: {},
@@ -48,14 +67,18 @@ const globalStubs = {
   RiskEditForm: true,
 };
 
-const createMockRisk = (overrides: Partial<Risk> = {}): Risk => ({
-  uuid: 'risk-1',
-  title: 'Test Risk',
-  description: 'Test description',
-  statement: 'Test statement',
-  status: 'open',
-  ...overrides,
-});
+const createMockRisk = (
+  overrides: Partial<Risk> & Record<string, unknown> = {},
+): Risk => {
+  const base: Risk = {
+    uuid: 'risk-1',
+    title: 'Test Risk',
+    description: 'Test description',
+    statement: 'Test statement',
+    status: 'open',
+  };
+  return { ...base, ...overrides } as Risk;
+};
 
 describe('RiskRegisterPanel', () => {
   beforeEach(() => {
@@ -146,6 +169,34 @@ describe('RiskRegisterPanel', () => {
     expect(wrapper.text()).toContain('Critical Security Risk');
     expect(wrapper.text()).toContain('This is a critical security issue');
     expect(wrapper.text()).toContain('Open');
+  });
+
+  it('displays owner name from primary owner user id when available', () => {
+    const risks: Risk[] = [
+      createMockRisk({
+        uuid: 'risk-1',
+        title: 'Owner-mapped risk',
+        primaryOwnerUserId: 'user-1',
+        ownerAssignments: [
+          {
+            ownerKind: 'user',
+            ownerRef: 'user-1',
+            isPrimary: true,
+          },
+        ],
+      }),
+    ];
+
+    const wrapper = mount(RiskRegisterPanel, {
+      props: {
+        risks,
+        loading: false,
+      },
+      global: { stubs: globalStubs },
+    });
+
+    expect(wrapper.text()).toContain('Alice Owner');
+    expect(wrapper.text()).not.toContain('Unassigned');
   });
 
   it('displays SSP column when sspMap is provided', () => {

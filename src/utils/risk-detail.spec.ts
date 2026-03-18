@@ -3,6 +3,7 @@ import type { Risk, RiskLogEntry } from '@/oscal';
 import {
   getRiskAssociations,
   normalizeRiskEvents,
+  normalizeRiskReviews,
   withUpdatedRiskAssociations,
 } from './risk-detail';
 
@@ -149,6 +150,28 @@ describe('risk-detail', () => {
     );
   });
 
+  it('normalizes events from nested data envelope payload', () => {
+    const events = normalizeRiskEvents({
+      data: {
+        data: [
+          {
+            id: 'evt-nested-1',
+            eventType: 'last_seen',
+            createdAt: '2026-03-12T10:00:00Z',
+          },
+        ],
+      },
+    });
+
+    expect(events).toHaveLength(1);
+    expect(events[0]).toEqual(
+      expect.objectContaining({
+        id: 'evt-nested-1',
+        type: 'last_seen',
+      }),
+    );
+  });
+
   it('falls back to risk log entries when event API returns empty', () => {
     const logEntries: RiskLogEntry[] = [
       {
@@ -169,5 +192,99 @@ describe('risk-detail', () => {
         details: 'Quarterly review completed',
       }),
     );
+  });
+
+  it('normalizes reviews from raw review payload', () => {
+    const reviews = normalizeRiskReviews([
+      {
+        uuid: 'review-3',
+        decision: 'reassess',
+        reviewedAt: '2026-03-11T10:00:00Z',
+        reviewerName: 'Charlie',
+        notes: 'Likelihood updated to high after new intel',
+      },
+      {
+        uuid: 'review-2',
+        decision: 'extend',
+        reviewedAt: '2026-03-10T10:00:00Z',
+        reviewer: { displayName: 'Alice' },
+        notes: 'Keep accepted status',
+        nextReviewDeadline: '2026-06-01T00:00:00Z',
+      },
+      {
+        uuid: 'review-1',
+        decision: 'reopen',
+        reviewedAt: '2026-03-09T10:00:00Z',
+        reviewerName: 'Bob',
+        reviewJustification: 'Risk is no longer acceptable.',
+      },
+    ]);
+
+    expect(reviews).toHaveLength(3);
+    expect(reviews[0]).toEqual(
+      expect.objectContaining({
+        id: 'review-3',
+        decision: 'reassess',
+        reviewer: 'Charlie',
+      }),
+    );
+    expect(reviews[1]).toEqual(
+      expect.objectContaining({
+        id: 'review-2',
+        decision: 'extend',
+        reviewer: 'Alice',
+      }),
+    );
+    expect(reviews[2]).toEqual(
+      expect.objectContaining({
+        id: 'review-1',
+        decision: 'reopen',
+        reviewer: 'Bob',
+        notes: 'Risk is no longer acceptable.',
+      }),
+    );
+  });
+
+  it('normalizes reviews from nested data envelope payload', () => {
+    const reviews = normalizeRiskReviews({
+      data: {
+        data: [
+          {
+            id: 'review-nested-1',
+            decision: 'reassess',
+            reviewedAt: '2026-03-11T10:00:00Z',
+            reviewerName: 'Nested Reviewer',
+          },
+        ],
+      },
+    });
+
+    expect(reviews).toHaveLength(1);
+    expect(reviews[0]).toEqual(
+      expect.objectContaining({
+        id: 'review-nested-1',
+        decision: 'reassess',
+        reviewer: 'Nested Reviewer',
+      }),
+    );
+  });
+
+  it('uses deterministic fallback review ids when API id is missing', () => {
+    const payload = [
+      {
+        decision: 'extend',
+        reviewedAt: '2026-03-20T10:00:00Z',
+        reviewerName: 'Deterministic Reviewer',
+        reviewJustification: 'Still accepted after controls review.',
+      },
+    ];
+
+    const first = normalizeRiskReviews(payload);
+    const second = normalizeRiskReviews(payload);
+
+    expect(first).toHaveLength(1);
+    expect(second).toHaveLength(1);
+    expect(first[0].id).toBe(second[0].id);
+    expect(first[0].id).toMatch(/^review-/);
   });
 });

@@ -160,6 +160,58 @@ describe('component-suggestions helpers', () => {
     ]);
   });
 
+  it('accepts payload wrapped in a data envelope', () => {
+    const result = normalizeSuggestedComponentsResponse({
+      data: [
+        {
+          name: 'Wrapped',
+          type: 'service',
+          definedComponentId: 'comp-wrapped',
+          componentDefinitionId: 'comp-def-wrapped',
+        },
+      ],
+    });
+
+    expect(result).toEqual([
+      {
+        componentUuid: 'comp-wrapped',
+        title: 'Wrapped',
+        type: 'service',
+        description: undefined,
+        purpose: undefined,
+        definedComponentId: 'comp-wrapped',
+        componentDefinitionId: 'comp-def-wrapped',
+        relevanceScore: undefined,
+      },
+    ]);
+  });
+
+  it('ignores malformed suggestion entries without throwing', () => {
+    const result = normalizeSuggestedComponentsResponse([
+      null as unknown as {
+        definedComponentId: string;
+      },
+      {
+        name: 'Still valid',
+        definedComponentId: 'comp-ok',
+        componentDefinitionId: 'comp-def-ok',
+      },
+    ]);
+
+    expect(result).toEqual([
+      {
+        componentUuid: 'comp-ok',
+        title: 'Still valid',
+        type: undefined,
+        description: undefined,
+        purpose: undefined,
+        definedComponentId: 'comp-ok',
+        componentDefinitionId: 'comp-def-ok',
+        relevanceScore: undefined,
+      },
+    ]);
+  });
+
   it('builds endpoint paths for by-components and suggestion actions', () => {
     expect(buildByComponentsEndpoint('ssp-1', 'req-1', 'stmt-1')).toBe(
       '/api/oscal/system-security-plans/ssp-1/control-implementation/implemented-requirements/req-1/statements/stmt-1/by-components',

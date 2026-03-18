@@ -23,6 +23,15 @@ export interface RiskEventItem {
   details?: string;
 }
 
+export interface RiskReviewItem {
+  id: string;
+  decision: string;
+  timestamp?: string;
+  reviewer?: string;
+  notes?: string;
+  nextReviewDeadline?: string;
+}
+
 type LooseRecord = Record<string, unknown>;
 type LooseRisk = Risk & LooseRecord;
 
@@ -317,6 +326,81 @@ function normalizeEvent(input: unknown): RiskEventItem | null {
   };
 }
 
+function normalizeReview(input: unknown): RiskReviewItem | null {
+  if (!input || typeof input !== 'object') return null;
+  const record = input as LooseRecord;
+
+  const decision =
+    readString(record, [
+      'decision',
+      'outcome',
+      'result',
+      'status',
+      'title',
+      'type',
+    ]) || 'Review';
+  const timestamp = readString(record, [
+    'timestamp',
+    'reviewedAt',
+    'createdAt',
+    'created',
+    'date',
+    'time',
+  ]);
+  const reviewer =
+    stringifyActor(record.reviewer) ||
+    stringifyActor(record.reviewedBy) ||
+    stringifyActor(record.actor) ||
+    stringifyActor(record.user) ||
+    readString(record, ['reviewerName', 'reviewerId', 'reviewerUuid']);
+  const notes =
+    readString(record, [
+      'reviewJustification',
+      'justification',
+      'notes',
+      'details',
+      'description',
+      'remarks',
+    ]) || readString(record, ['title']);
+  const nextReviewDeadline = readString(record, [
+    'nextReviewDeadline',
+    'reviewDeadline',
+    'deadline',
+    'nextReviewAt',
+  ]);
+  const explicitId = readString(record, ['uuid', 'id', 'reviewId']);
+  const fallbackIdentity = [
+    decision,
+    timestamp,
+    reviewer,
+    nextReviewDeadline,
+    notes,
+  ]
+    .filter((value): value is string => !!value)
+    .join('|');
+  const id = explicitId || `review-${hashStableToken(fallbackIdentity)}`;
+
+  return {
+    id,
+    decision,
+    timestamp,
+    reviewer,
+    notes,
+    nextReviewDeadline,
+  };
+}
+
+function hashStableToken(value: string): string {
+  if (!value) return 'unknown';
+  let hash = 2166136261;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash +=
+      (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24);
+  }
+  return (hash >>> 0).toString(36);
+}
+
 function normalizeFromRiskLogEntry(entry: RiskLogEntry): RiskEventItem {
   const actor = entry.loggedBy
     ?.map((actorItem) => actorItem.partyUuid)
@@ -332,14 +416,27 @@ function normalizeFromRiskLogEntry(entry: RiskLogEntry): RiskEventItem {
   };
 }
 
-function resolveRawEvents(input: unknown): unknown[] {
+function resolveRawEvents(input: unknown, depth = 0): unknown[] {
   if (Array.isArray(input)) return input;
+  if (depth > 4) return [];
   const record = toRecord(input);
   if (!record) return [];
 
   if (Array.isArray(record.events)) return record.events;
   if (Array.isArray(record.items)) return record.items;
   if (Array.isArray(record.data)) return record.data;
+  if (record.events !== undefined) {
+    const nestedEvents = resolveRawEvents(record.events, depth + 1);
+    if (nestedEvents.length) return nestedEvents;
+  }
+  if (record.items !== undefined) {
+    const nestedItems = resolveRawEvents(record.items, depth + 1);
+    if (nestedItems.length) return nestedItems;
+  }
+  if (record.data !== undefined) {
+    const nestedData = resolveRawEvents(record.data, depth + 1);
+    if (nestedData.length) return nestedData;
+  }
   return [];
 }
 
@@ -362,4 +459,13 @@ export function normalizeRiskEvents(
   return normalized.sort((left, right) =>
     (right.timestamp || '').localeCompare(left.timestamp || ''),
   );
+}
+
+export function normalizeRiskReviews(rawReviews: unknown): RiskReviewItem[] {
+  return resolveRawEvents(rawReviews)
+    .map((review) => normalizeReview(review))
+    .filter((review): review is RiskReviewItem => !!review)
+    .sort((left, right) =>
+      (right.timestamp || '').localeCompare(left.timestamp || ''),
+    );
 }

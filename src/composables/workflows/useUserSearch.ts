@@ -1,10 +1,12 @@
 import { ref } from 'vue';
-import { useDataApi } from '@/composables/axios';
+import { useDataApi, useAuthenticatedInstance } from '@/composables/axios';
 import type { CCFUser } from '@/stores/types';
 
 export interface DisplayUser extends CCFUser {
   displayName: string;
 }
+
+const USER_FETCH_BATCH_SIZE = 5;
 
 /**
  * Composable for managing user search, caching, and display in workflow role assignments.
@@ -13,15 +15,10 @@ export interface DisplayUser extends CCFUser {
 export function useUserSearch() {
   const userSuggestions = ref<DisplayUser[]>([]);
   const userCache = ref<Record<string, DisplayUser>>({});
+  const authenticatedApi = useAuthenticatedInstance();
 
   const { execute: fetchUsers, data: usersData } = useDataApi<CCFUser[]>(
     '/api/admin/users',
-    null,
-    { immediate: false },
-  );
-
-  const { execute: fetchUserById, data: fetchedUser } = useDataApi<CCFUser>(
-    null,
     null,
     { immediate: false },
   );
@@ -30,12 +27,19 @@ export function useUserSearch() {
    * Convert a CCFUser to DisplayUser with formatted display name
    */
   function toDisplayUser(user: CCFUser): DisplayUser {
-    const displayName =
-      `${user.firstName.trim()} ${user.lastName.trim()}`.trim() ||
-      user.email ||
-      user.id;
+    const firstName =
+      typeof user.firstName === 'string' ? user.firstName.trim() : '';
+    const lastName =
+      typeof user.lastName === 'string' ? user.lastName.trim() : '';
+    const email = typeof user.email === 'string' ? user.email.trim() : '';
+    const id = typeof user.id === 'string' ? user.id.trim() : '';
+    const displayName = `${firstName} ${lastName}`.trim() || email || id;
     return {
       ...user,
+      id,
+      email,
+      firstName,
+      lastName,
       displayName,
     };
   }
@@ -44,7 +48,7 @@ export function useUserSearch() {
    * Cache a user in the local cache for quick lookup
    */
   function cacheUser(user: DisplayUser | undefined) {
-    if (!user) return;
+    if (!user?.id) return;
     userCache.value = {
       ...userCache.value,
       [user.id]: user,
@@ -92,21 +96,35 @@ export function useUserSearch() {
    * Useful for loading users associated with existing assignments
    */
   async function loadUsersByIds(ids: string[]) {
-    const missing = ids.filter((id) => !userCache.value[id]);
-
-    await Promise.all(
-      missing.map(async (id) => {
-        try {
-          await fetchUserById(`/api/admin/users/${id}`);
-          const payload = fetchedUser.value;
-          if (payload) {
-            cacheUser(toDisplayUser(payload));
-          }
-        } catch {
-          // Silently fail - user will show as ID only
-        }
-      }),
+    const normalizedIds = ids
+      .map((id) => (typeof id === 'string' ? id.trim() : ''))
+      .filter((id) => !!id);
+    const missing = Array.from(
+      new Set(normalizedIds.filter((id) => !userCache.value[id])),
     );
+
+    for (
+      let index = 0;
+      index < missing.length;
+      index += USER_FETCH_BATCH_SIZE
+    ) {
+      const batch = missing.slice(index, index + USER_FETCH_BATCH_SIZE);
+      const results = await Promise.allSettled(
+        batch.map(async (id) => {
+          const response = await authenticatedApi.get<{ data?: CCFUser }>(
+            `/api/admin/users/${id}`,
+          );
+          return response.data?.data;
+        }),
+      );
+
+      results.forEach((result) => {
+        if (result.status !== 'fulfilled') return;
+        const payload = result.value;
+        if (!payload) return;
+        cacheUser(toDisplayUser(payload));
+      });
+    }
   }
 
   /**

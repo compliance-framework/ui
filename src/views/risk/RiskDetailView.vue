@@ -52,7 +52,7 @@
               <span class="font-semibold">Status:</span>
               <span class="ml-1">{{ riskStatusDisplay }}</span>
             </div>
-            <div>
+            <div v-if="showAcceptedReviewFields">
               <span class="font-semibold">Review Deadline:</span>
               <span class="ml-1">{{ formatDate(overviewReviewDeadline) }}</span>
             </div>
@@ -137,8 +137,34 @@
                   >
                     Review Risk
                   </button>
+                  <button
+                    v-if="canReviewScoreAction"
+                    class="px-3 py-1 rounded-md text-sm bg-indigo-600 hover:bg-indigo-700 text-white disabled:opacity-60"
+                    :disabled="workflowSubmitting"
+                    @click="showScoreReviewModal = true"
+                  >
+                    Review Risk Score
+                  </button>
                 </div>
               </div>
+
+              <RiskOwnerAssignment
+                v-if="isSspContext"
+                :initial-value="ownerAssignmentsDraft"
+                :reset-key="ownerAssignmentsResetKey"
+                :disabled="workflowSubmitting"
+                mode="overview"
+                @change="onOverviewOwnerAssignmentsChange"
+                @save="saveOverviewOwnerAssignments"
+              />
+
+              <Message
+                v-if="ownerSaveError"
+                severity="error"
+                variant="outlined"
+              >
+                {{ ownerSaveError }}
+              </Message>
 
               <div
                 class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 text-sm text-gray-700 dark:text-slate-300"
@@ -154,7 +180,7 @@
                   </p>
                 </div>
 
-                <div>
+                <div v-if="showAcceptedReviewFields">
                   <p
                     class="text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400"
                   >
@@ -165,7 +191,7 @@
                   </p>
                 </div>
 
-                <div>
+                <div v-if="showAcceptedReviewFields">
                   <p
                     class="text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400"
                   >
@@ -208,9 +234,42 @@
                     {{ formatDate(overviewLastSeenAt) }}
                   </p>
                 </div>
+
+                <div>
+                  <p
+                    class="text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400"
+                  >
+                    Likelihood
+                  </p>
+                  <p>
+                    <span
+                      class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold"
+                      :class="overviewLikelihoodClass"
+                    >
+                      {{ overviewLikelihood }}
+                    </span>
+                  </p>
+                </div>
+
+                <div>
+                  <p
+                    class="text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400"
+                  >
+                    Impact
+                  </p>
+                  <p>
+                    <span
+                      class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold"
+                      :class="overviewImpactClass"
+                    >
+                      {{ overviewImpact }}
+                    </span>
+                  </p>
+                </div>
               </div>
 
               <div
+                v-if="showAcceptanceJustificationBox"
                 class="rounded-md border border-ccf-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 p-3"
               >
                 <p
@@ -298,20 +357,6 @@
                 transitions the risk back to Investigating.
               </p>
             </div>
-
-            <RiskOwnerAssignment
-              v-if="isSspContext"
-              :initial-value="ownerAssignmentsDraft"
-              :reset-key="ownerAssignmentsResetKey"
-              :disabled="workflowSubmitting"
-              mode="overview"
-              @change="onOverviewOwnerAssignmentsChange"
-              @save="saveOverviewOwnerAssignments"
-            />
-
-            <Message v-if="ownerSaveError" severity="error" variant="outlined">
-              {{ ownerSaveError }}
-            </Message>
 
             <div
               v-if="risk.remarks"
@@ -547,6 +592,204 @@
             </div>
           </div>
 
+          <div v-else-if="activeTab === 'threats'" class="space-y-4">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-slate-200">
+              Threats
+            </h3>
+
+            <div
+              v-if="!threatItems.length"
+              class="text-sm text-gray-600 dark:text-slate-400"
+            >
+              No threat identifiers have been recorded for this risk.
+            </div>
+
+            <div v-else class="space-y-3">
+              <div
+                v-for="threat in threatItems"
+                :key="`${threat.system}:${threat.id}`"
+                class="border border-ccf-300 dark:border-slate-700 rounded-lg p-4"
+              >
+                <p
+                  class="text-sm font-semibold text-gray-800 dark:text-slate-200"
+                >
+                  {{ threat.id }}
+                </p>
+                <p class="text-sm text-gray-600 dark:text-slate-400 mt-1">
+                  System: {{ threat.system }}
+                </p>
+                <p
+                  v-if="threat.href"
+                  class="text-sm text-blue-700 dark:text-blue-300 mt-1 break-all"
+                >
+                  <a
+                    v-if="threat.safeHref"
+                    :href="threat.safeHref"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="underline"
+                  >
+                    {{ threat.href }}
+                  </a>
+                  <span
+                    v-else
+                    class="text-sm text-gray-700 dark:text-slate-300"
+                  >
+                    {{ threat.href }}
+                  </span>
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div v-else-if="activeTab === 'remediations'" class="space-y-4">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-slate-200">
+              Remediations
+            </h3>
+
+            <div
+              v-if="!remediationItems.length"
+              class="text-sm text-gray-600 dark:text-slate-400"
+            >
+              No remediations have been recorded for this risk.
+            </div>
+
+            <div v-else class="space-y-3">
+              <div
+                v-for="(remediation, remediationIndex) in remediationItems"
+                :key="remediation.uuid || `remediation-${remediationIndex}`"
+                class="border border-ccf-300 dark:border-slate-700 rounded-lg p-4 space-y-2"
+              >
+                <p
+                  class="text-sm font-semibold text-gray-800 dark:text-slate-200"
+                >
+                  {{ remediation.title }}
+                </p>
+                <p class="text-xs text-gray-500 dark:text-slate-400">
+                  Lifecycle: {{ remediation.lifecycle || 'N/A' }}
+                </p>
+                <p class="text-sm text-gray-600 dark:text-slate-400">
+                  {{ remediation.description || 'No description.' }}
+                </p>
+                <p
+                  v-if="remediation.remarks"
+                  class="text-xs text-gray-500 dark:text-slate-400"
+                >
+                  Remarks: {{ remediation.remarks }}
+                </p>
+                <div v-if="remediation.tasks?.length" class="space-y-1">
+                  <p
+                    class="text-xs font-semibold text-gray-600 dark:text-slate-300"
+                  >
+                    Tasks
+                  </p>
+                  <ul
+                    class="list-disc list-inside text-sm text-gray-600 dark:text-slate-400"
+                  >
+                    <li
+                      v-for="(task, taskIndex) in remediation.tasks"
+                      :key="
+                        task.uuid ||
+                        task.title ||
+                        `task-${remediationIndex}-${taskIndex}`
+                      "
+                    >
+                      {{ task.title }}
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div v-else-if="activeTab === 'reviews'" class="space-y-4">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-slate-200">
+              Reviews
+            </h3>
+
+            <div
+              v-if="loadingReviews"
+              class="text-sm text-gray-600 dark:text-slate-400"
+            >
+              Loading risk reviews...
+            </div>
+
+            <div
+              v-else-if="!riskReviews.length"
+              class="text-sm text-gray-600 dark:text-slate-400"
+            >
+              No reviews have been recorded for this risk.
+            </div>
+
+            <ol
+              v-else
+              class="relative border-s border-ccf-300 dark:border-slate-700 ps-5 space-y-6"
+            >
+              <li
+                v-for="review in riskReviews"
+                :key="review.id"
+                class="relative space-y-1"
+              >
+                <span
+                  class="absolute -left-[27px] top-1 inline-flex h-3 w-3 rounded-full bg-emerald-600"
+                ></span>
+                <p class="text-xs text-gray-500 dark:text-slate-400">
+                  {{ formatDate(review.timestamp) }}
+                  <template v-if="review.reviewer">
+                    • {{ review.reviewer }}
+                  </template>
+                </p>
+                <p
+                  class="text-sm font-semibold text-gray-800 dark:text-slate-200"
+                >
+                  {{ formatTokenLabel(review.decision) }}
+                </p>
+                <p class="text-sm text-gray-600 dark:text-slate-400">
+                  {{
+                    review.notes || 'No notes were provided for this review.'
+                  }}
+                </p>
+                <p
+                  v-if="review.nextReviewDeadline"
+                  class="text-xs text-gray-500 dark:text-slate-400"
+                >
+                  Next review deadline:
+                  {{ formatDate(review.nextReviewDeadline) }}
+                </p>
+              </li>
+            </ol>
+
+            <div
+              v-if="riskReviews.length || reviewsPage > 1 || reviewsHasMore"
+              class="flex items-center justify-between pt-2"
+            >
+              <p class="text-xs text-gray-500 dark:text-slate-400">
+                Page {{ reviewsPage }}
+                <template v-if="reviewsTotalPages">
+                  of {{ reviewsTotalPages }}
+                </template>
+              </p>
+              <div class="flex items-center gap-2">
+                <button
+                  data-testid="reviews-pagination-prev"
+                  class="px-3 py-1 rounded-md text-sm border border-ccf-300 dark:border-slate-700 text-gray-700 dark:text-slate-200 disabled:opacity-60"
+                  :disabled="loadingReviews || reviewsPage <= 1"
+                  @click="loadRiskReviews(reviewsPage - 1)"
+                >
+                  Previous
+                </button>
+                <button
+                  data-testid="reviews-pagination-next"
+                  class="px-3 py-1 rounded-md text-sm border border-ccf-300 dark:border-slate-700 text-gray-700 dark:text-slate-200 disabled:opacity-60"
+                  :disabled="loadingReviews || !reviewsHasMore"
+                  @click="loadRiskReviews(reviewsPage + 1)"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          </div>
+
           <div v-else-if="activeTab === 'history-events'" class="space-y-4">
             <h3 class="text-lg font-medium text-gray-900 dark:text-slate-200">
               History &amp; Events
@@ -588,12 +831,37 @@
                 </p>
               </li>
             </ol>
-          </div>
 
-          <RiskLogTab
-            v-else-if="activeTab === 'log'"
-            :entries="risk.riskLog?.entries"
-          />
+            <div
+              v-if="riskEvents.length || eventsPage > 1 || eventsHasMore"
+              class="flex items-center justify-between pt-2"
+            >
+              <p class="text-xs text-gray-500 dark:text-slate-400">
+                Page {{ eventsPage }}
+                <template v-if="eventsTotalPages">
+                  of {{ eventsTotalPages }}
+                </template>
+              </p>
+              <div class="flex items-center gap-2">
+                <button
+                  data-testid="events-pagination-prev"
+                  class="px-3 py-1 rounded-md text-sm border border-ccf-300 dark:border-slate-700 text-gray-700 dark:text-slate-200 disabled:opacity-60"
+                  :disabled="loadingEvents || eventsPage <= 1"
+                  @click="loadRiskEvents(eventsPage - 1)"
+                >
+                  Previous
+                </button>
+                <button
+                  data-testid="events-pagination-next"
+                  class="px-3 py-1 rounded-md text-sm border border-ccf-300 dark:border-slate-700 text-gray-700 dark:text-slate-200 disabled:opacity-60"
+                  :disabled="loadingEvents || !eventsHasMore"
+                  @click="loadRiskEvents(eventsPage + 1)"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -613,6 +881,15 @@
       :acceptance-justification="overviewAcceptanceJustification"
       :review-deadline="overviewReviewDeadline"
       @submit="submitReviewRisk"
+    />
+
+    <RiskScoreReviewModal
+      v-if="risk && isSspContext"
+      v-model:visible="showScoreReviewModal"
+      :submitting="workflowSubmitting"
+      :current-likelihood="riskLikelihoodValue"
+      :current-impact="riskImpactValue"
+      @submit="submitRiskScoreReview"
     />
 
     <Dialog
@@ -678,9 +955,9 @@ import Message from '@/volt/Message.vue';
 import Dialog from '@/volt/Dialog.vue';
 import TertiaryButton from '@/volt/TertiaryButton.vue';
 import RouterLinkButton from '@/components/RouterLinkButton.vue';
-import RiskLogTab from '@/components/risk/RiskLogTab.vue';
 import RiskAcceptModal from '@/components/risk/RiskAcceptModal.vue';
 import RiskReviewModal from '@/components/risk/RiskReviewModal.vue';
+import RiskScoreReviewModal from '@/components/risk/RiskScoreReviewModal.vue';
 import RiskOwnerAssignment from '@/components/risk/RiskOwnerAssignment.vue';
 import { useSystemStore } from '@/stores/system';
 import type { Profile, Risk, SystemComponent } from '@/oscal';
@@ -694,6 +971,7 @@ import {
 import {
   ALLOWED_RISK_TRANSITIONS,
   canAcceptRisk,
+  canReassessRisk,
   canReviewRisk,
   getAllowedRiskTransitions,
   normalizeRiskRegisterStatus,
@@ -706,7 +984,11 @@ import {
   type RiskOwnerAssignmentsPayload,
   type RiskReviewDecision,
 } from '@/utils/risk-workflow';
-import { getRiskReviewDeadline } from '@/utils/risk-register';
+import {
+  getRiskImpact,
+  getRiskLikelihood,
+  getRiskReviewDeadline,
+} from '@/utils/risk-register';
 import {
   buildRiskCollectionEndpoint,
   buildRiskItemEndpoint,
@@ -716,9 +998,11 @@ import {
 import {
   getRiskAssociations,
   normalizeRiskEvents,
+  normalizeRiskReviews,
   type RiskAssociationItem,
   type RiskAssociationKind,
   type RiskEventItem,
+  type RiskReviewItem,
 } from '@/utils/risk-detail';
 import { getRiskIdentifier } from '@/utils/risk-id';
 import type { DataResponse } from '@/stores/types';
@@ -759,25 +1043,33 @@ interface RiskAcceptSubmitPayload {
 }
 
 interface RiskReviewSubmitPayload {
-  decision: RiskReviewDecision;
+  decision: Extract<RiskReviewDecision, 'extend' | 'reopen'>;
   notes?: string;
   nextReviewDeadline?: string;
+}
+
+type RiskScoreLevel = 'low' | 'moderate' | 'high' | 'critical';
+
+interface RiskScoreReviewSubmitPayload {
+  decision: Extract<RiskReviewDecision, 'reassess'>;
+  likelihood: RiskScoreLevel;
+  impact: RiskScoreLevel;
+  notes?: string;
 }
 
 interface RouterHistoryStateLike {
   back?: unknown;
 }
 
-const tabs = [
-  { id: 'overview', label: 'Overview' },
-  { id: 'evidence', label: 'Evidence' },
-  { id: 'controls', label: 'Controls' },
-  { id: 'components', label: 'Components' },
-  { id: 'history-events', label: 'History & Events' },
-  { id: 'log', label: 'Log' },
-] as const;
-
-type TabId = (typeof tabs)[number]['id'];
+type TabId =
+  | 'overview'
+  | 'evidence'
+  | 'controls'
+  | 'components'
+  | 'threats'
+  | 'remediations'
+  | 'reviews'
+  | 'history-events';
 
 const route = useRoute();
 const router = useRouter();
@@ -805,6 +1097,29 @@ const isSspRoute = computed(
 );
 
 const isSspContext = computed(() => context.value?.scope === 'ssp');
+
+const tabs = computed<Array<{ id: TabId; label: string }>>(() => {
+  const baseTabs: Array<{ id: TabId; label: string }> = [
+    { id: 'overview', label: 'Overview' },
+    { id: 'evidence', label: 'Evidence' },
+    { id: 'controls', label: 'Controls' },
+    { id: 'components', label: 'Components' },
+  ];
+
+  if (isSspContext.value) {
+    baseTabs.push(
+      { id: 'threats', label: 'Threats' },
+      { id: 'remediations', label: 'Remediations' },
+    );
+  }
+
+  baseTabs.push(
+    { id: 'reviews', label: 'Reviews' },
+    { id: 'history-events', label: 'History & Events' },
+  );
+
+  return baseTabs;
+});
 
 const missingContextTitle = computed(() =>
   isSspRoute.value
@@ -861,8 +1176,16 @@ const {
 
 const {
   data: fetchedEvents,
+  response: fetchedEventsResponse,
   isLoading: loadingEvents,
   execute: executeFetchEvents,
+} = useDataApi<unknown>(null, {}, { immediate: false });
+
+const {
+  data: fetchedReviews,
+  response: fetchedReviewsResponse,
+  isLoading: loadingReviews,
+  execute: executeFetchReviews,
 } = useDataApi<unknown>(null, {}, { immediate: false });
 
 const {
@@ -895,6 +1218,7 @@ const {
 
 const risk = ref<Risk | null>(null);
 const riskEvents = ref<RiskEventItem[]>([]);
+const riskReviews = ref<RiskReviewItem[]>([]);
 const evidenceAssociations = ref<AssociationPickerOption[]>([]);
 const controlAssociations = ref<AssociationPickerOption[]>([]);
 const componentAssociations = ref<AssociationPickerOption[]>([]);
@@ -904,6 +1228,14 @@ const loadError = ref('');
 const activeTab = ref<TabId>('overview');
 const showAcceptModal = ref(false);
 const showReviewModal = ref(false);
+const showScoreReviewModal = ref(false);
+const timelinePageSize = 10;
+const eventsPage = ref(1);
+const eventsHasMore = ref(false);
+const eventsTotalPages = ref<number | null>(null);
+const reviewsPage = ref(1);
+const reviewsHasMore = ref(false);
+const reviewsTotalPages = ref<number | null>(null);
 const ownerAssignmentsDraft = ref<RiskOwnerAssignmentsPayload>({
   ownerAssignments: [],
 });
@@ -1001,38 +1333,376 @@ function extractErrorMessage(
   );
 }
 
-const riskEventEndpoints = computed(() => {
-  if (!context.value || !resolvedRiskId.value) return [];
-
+const riskEventsEndpoint = computed(() => {
+  if (!context.value || !resolvedRiskId.value) return null;
   const base = buildRiskItemEndpoint(context.value, resolvedRiskId.value);
-  return [
-    `${base}/events`,
-    `${base}/history`,
-    `/api/oscal/risks/${resolvedRiskId.value}/events`,
-    `/api/oscal/risk-register/risks/${resolvedRiskId.value}/events`,
-  ];
+  return `${base}/events`;
 });
 
-async function loadRiskEvents() {
-  if (!risk.value) {
-    riskEvents.value = [];
-    return;
+const riskReviewsEndpoint = computed(() => {
+  if (!context.value || !resolvedRiskId.value) return null;
+  const base = buildRiskItemEndpoint(context.value, resolvedRiskId.value);
+  return `${base}/reviews`;
+});
+
+function readNumber(
+  record: Record<string, unknown>,
+  keys: string[],
+): number | undefined {
+  for (const key of keys) {
+    const value = record[key];
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return value;
+    }
+    if (typeof value === 'string' && value.trim()) {
+      const parsed = Number(value);
+      if (Number.isFinite(parsed)) {
+        return parsed;
+      }
+    }
+  }
+  return undefined;
+}
+
+function readBoolean(
+  record: Record<string, unknown>,
+  keys: string[],
+): boolean | undefined {
+  for (const key of keys) {
+    const value = record[key];
+    if (typeof value === 'boolean') {
+      return value;
+    }
+    if (typeof value === 'number') {
+      return value > 0;
+    }
+    if (typeof value === 'string') {
+      const normalized = value.trim().toLowerCase();
+      if (normalized === 'true' || normalized === '1') {
+        return true;
+      }
+      if (normalized === 'false' || normalized === '0') {
+        return false;
+      }
+    }
+  }
+  return undefined;
+}
+
+interface TimelinePaginationMetadata {
+  explicitPagination: boolean;
+  hasMore: boolean;
+  totalPages?: number;
+  currentPage?: number;
+}
+
+function resolveTimelinePagination(
+  rawValue: unknown,
+  requestedOffset: number,
+  requestedLimit: number,
+  itemCount: number,
+): TimelinePaginationMetadata {
+  const candidates: Array<Record<string, unknown>> = [];
+  const root = toRecord(rawValue);
+  if (root) {
+    candidates.push(root);
+    ['data', 'meta', 'pagination'].forEach((key) => {
+      const nested = toRecord(root[key]);
+      if (nested) {
+        candidates.push(nested);
+        ['meta', 'pagination'].forEach((nestedKey) => {
+          const deepNested = toRecord(nested[nestedKey]);
+          if (deepNested) {
+            candidates.push(deepNested);
+          }
+        });
+      }
+    });
   }
 
-  for (const endpoint of riskEventEndpoints.value) {
-    try {
-      await executeFetchEvents(endpoint);
-      const normalizedApiEvents = normalizeRiskEvents(fetchedEvents.value, []);
-      if (normalizedApiEvents.length > 0) {
-        riskEvents.value = normalizedApiEvents;
-        return;
-      }
-    } catch (err) {
-      if (isCanceledError(err)) return;
+  let explicitPagination = false;
+  let total = 0;
+  let limit = requestedLimit;
+  let offset = requestedOffset;
+  let hasMore: boolean | undefined;
+  let pageNumber: number | undefined;
+  let totalPages: number | undefined;
+
+  for (const candidate of candidates) {
+    const candidateTotal = readNumber(candidate, [
+      'total',
+      'count',
+      'totalItems',
+    ]);
+    if (candidateTotal !== undefined) {
+      explicitPagination = true;
+      total = candidateTotal;
+    }
+
+    const candidateLimit = readNumber(candidate, [
+      'limit',
+      'size',
+      'pageSize',
+      'perPage',
+    ]);
+    if (candidateLimit !== undefined && candidateLimit > 0) {
+      explicitPagination = true;
+      limit = candidateLimit;
+    }
+
+    const candidateOffset = readNumber(candidate, ['offset']);
+    if (candidateOffset !== undefined && candidateOffset >= 0) {
+      explicitPagination = true;
+      offset = candidateOffset;
+    }
+
+    const candidatePage = readNumber(candidate, ['page', 'currentPage']);
+    if (candidatePage !== undefined && candidatePage > 0) {
+      explicitPagination = true;
+      pageNumber = candidatePage;
+    }
+
+    const candidateTotalPages = readNumber(candidate, ['totalPages', 'pages']);
+    if (candidateTotalPages !== undefined && candidateTotalPages >= 0) {
+      explicitPagination = true;
+      totalPages = candidateTotalPages;
+    }
+
+    const candidateHasMore = readBoolean(candidate, [
+      'hasMore',
+      'hasNext',
+      'nextPage',
+    ]);
+    if (candidateHasMore !== undefined) {
+      explicitPagination = true;
+      hasMore = candidateHasMore;
     }
   }
 
-  riskEvents.value = normalizeRiskEvents([], risk.value.riskLog?.entries);
+  if (pageNumber !== undefined && offset === requestedOffset) {
+    offset = (Math.max(1, pageNumber) - 1) * limit;
+  }
+
+  if (
+    hasMore === undefined &&
+    totalPages !== undefined &&
+    pageNumber !== undefined
+  ) {
+    hasMore = pageNumber < totalPages;
+  }
+
+  if (hasMore === undefined && total > 0) {
+    hasMore = offset + itemCount < total;
+  }
+
+  if (hasMore === undefined) {
+    hasMore = itemCount >= limit && itemCount > 0;
+  }
+
+  if (totalPages === undefined && total > 0 && limit > 0) {
+    totalPages = Math.max(1, Math.ceil(total / limit));
+  }
+
+  return {
+    explicitPagination,
+    hasMore,
+    totalPages,
+    currentPage: pageNumber,
+  };
+}
+
+function pagedTimelineEndpoint(
+  baseEndpoint: string,
+  page: number,
+  limit: number,
+): string {
+  const offset = (page - 1) * limit;
+  const query = new URLSearchParams({
+    page: String(page),
+    limit: String(limit),
+    offset: String(offset),
+  });
+  return `${baseEndpoint}?${query.toString()}`;
+}
+
+async function loadRiskEvents(page = eventsPage.value) {
+  const safePage = Math.max(1, page);
+  const offset = (safePage - 1) * timelinePageSize;
+
+  if (!risk.value) {
+    riskEvents.value = [];
+    eventsPage.value = 1;
+    eventsHasMore.value = false;
+    eventsTotalPages.value = null;
+    return;
+  }
+
+  const applyFallbackEvents = () => {
+    const normalizedFallback = normalizeRiskEvents(
+      [],
+      risk.value?.riskLog?.entries,
+    );
+    riskEvents.value = normalizedFallback.slice(
+      offset,
+      offset + timelinePageSize,
+    );
+    eventsPage.value = safePage;
+    eventsHasMore.value = offset + timelinePageSize < normalizedFallback.length;
+    eventsTotalPages.value = normalizedFallback.length
+      ? Math.max(1, Math.ceil(normalizedFallback.length / timelinePageSize))
+      : null;
+  };
+
+  const applyEmptyEventsPage = (
+    pagination?: ReturnType<typeof resolveTimelinePagination>,
+  ) => {
+    riskEvents.value = [];
+    eventsPage.value =
+      pagination?.explicitPagination && pagination.currentPage
+        ? pagination.currentPage
+        : safePage;
+    eventsHasMore.value = pagination?.explicitPagination
+      ? pagination.hasMore
+      : false;
+    eventsTotalPages.value = pagination?.explicitPagination
+      ? pagination.totalPages || null
+      : null;
+  };
+
+  if (!riskEventsEndpoint.value) {
+    applyFallbackEvents();
+    return;
+  }
+
+  try {
+    await executeFetchEvents(
+      pagedTimelineEndpoint(
+        riskEventsEndpoint.value,
+        safePage,
+        timelinePageSize,
+      ),
+    );
+    const eventsEnvelopePayload = fetchedEventsResponse?.value?.data;
+    const rawEventsPayload = eventsEnvelopePayload ?? fetchedEvents.value;
+    const normalizedApiEvents = normalizeRiskEvents(rawEventsPayload, []);
+    const pagination = resolveTimelinePagination(
+      rawEventsPayload,
+      offset,
+      timelinePageSize,
+      normalizedApiEvents.length,
+    );
+    if (normalizedApiEvents.length > 0) {
+      const likelyFullUnpagedList =
+        !pagination.explicitPagination &&
+        normalizedApiEvents.length > timelinePageSize;
+      riskEvents.value = likelyFullUnpagedList
+        ? normalizedApiEvents.slice(offset, offset + timelinePageSize)
+        : normalizedApiEvents;
+      eventsPage.value =
+        pagination.explicitPagination && pagination.currentPage
+          ? pagination.currentPage
+          : safePage;
+      eventsHasMore.value = pagination.explicitPagination
+        ? pagination.hasMore
+        : likelyFullUnpagedList
+          ? offset + timelinePageSize < normalizedApiEvents.length
+          : normalizedApiEvents.length >= timelinePageSize;
+      eventsTotalPages.value = pagination.explicitPagination
+        ? pagination.totalPages || null
+        : likelyFullUnpagedList
+          ? Math.max(
+              1,
+              Math.ceil(normalizedApiEvents.length / timelinePageSize),
+            )
+          : null;
+      return;
+    }
+
+    if (safePage === 1) {
+      applyFallbackEvents();
+      return;
+    }
+
+    applyEmptyEventsPage(pagination);
+    return;
+  } catch (err) {
+    if (isCanceledError(err)) return;
+  }
+
+  if (safePage === 1) {
+    applyFallbackEvents();
+    return;
+  }
+
+  applyEmptyEventsPage();
+}
+
+async function loadRiskReviews(page = reviewsPage.value) {
+  const safePage = Math.max(1, page);
+  const offset = (safePage - 1) * timelinePageSize;
+
+  if (!risk.value) {
+    riskReviews.value = [];
+    reviewsPage.value = 1;
+    reviewsHasMore.value = false;
+    reviewsTotalPages.value = null;
+    return;
+  }
+
+  if (!riskReviewsEndpoint.value) {
+    riskReviews.value = [];
+    reviewsPage.value = 1;
+    reviewsHasMore.value = false;
+    reviewsTotalPages.value = null;
+    return;
+  }
+
+  try {
+    await executeFetchReviews(
+      pagedTimelineEndpoint(
+        riskReviewsEndpoint.value,
+        safePage,
+        timelinePageSize,
+      ),
+    );
+    const reviewsEnvelopePayload = fetchedReviewsResponse?.value?.data;
+    const rawReviewsPayload = reviewsEnvelopePayload ?? fetchedReviews.value;
+    const normalizedApiReviews = normalizeRiskReviews(rawReviewsPayload);
+    const pagination = resolveTimelinePagination(
+      rawReviewsPayload,
+      offset,
+      timelinePageSize,
+      normalizedApiReviews.length,
+    );
+    const likelyFullUnpagedList =
+      !pagination.explicitPagination &&
+      normalizedApiReviews.length > timelinePageSize;
+    riskReviews.value = likelyFullUnpagedList
+      ? normalizedApiReviews.slice(offset, offset + timelinePageSize)
+      : normalizedApiReviews;
+    reviewsPage.value =
+      pagination.explicitPagination && pagination.currentPage
+        ? pagination.currentPage
+        : safePage;
+    reviewsHasMore.value = pagination.explicitPagination
+      ? pagination.hasMore
+      : likelyFullUnpagedList
+        ? offset + timelinePageSize < normalizedApiReviews.length
+        : normalizedApiReviews.length >= timelinePageSize;
+    reviewsTotalPages.value = pagination.explicitPagination
+      ? pagination.totalPages || null
+      : likelyFullUnpagedList
+        ? Math.max(1, Math.ceil(normalizedApiReviews.length / timelinePageSize))
+        : null;
+    return;
+  } catch (err) {
+    if (isCanceledError(err)) return;
+  }
+
+  riskReviews.value = [];
+  reviewsPage.value = safePage;
+  reviewsHasMore.value = false;
+  reviewsTotalPages.value = null;
 }
 
 async function loadRisk() {
@@ -1040,11 +1710,19 @@ async function loadRisk() {
   notFound.value = false;
   risk.value = null;
   riskEvents.value = [];
+  riskReviews.value = [];
   evidenceAssociations.value = [];
   controlAssociations.value = [];
   componentAssociations.value = [];
   showAcceptModal.value = false;
   showReviewModal.value = false;
+  showScoreReviewModal.value = false;
+  eventsPage.value = 1;
+  eventsHasMore.value = false;
+  eventsTotalPages.value = null;
+  reviewsPage.value = 1;
+  reviewsHasMore.value = false;
+  reviewsTotalPages.value = null;
   ownerSaveError.value = '';
   ownerAssignmentsDraft.value = { ownerAssignments: [] };
   ownerAssignmentsSnapshot.value = { ownerAssignments: [] };
@@ -1099,13 +1777,23 @@ async function loadRisk() {
   syncAssociationsFromRisk();
   syncOwnerAssignmentsFromRisk();
   await refreshAllAssociationLinks();
-  await loadRiskEvents();
+  await Promise.all([loadRiskEvents(1), loadRiskReviews(1)]);
 }
 
 watch(
   [detailEndpoint, listEndpoint, riskId],
   () => {
     void loadRisk();
+  },
+  { immediate: true },
+);
+
+watch(
+  tabs,
+  (nextTabs) => {
+    if (!nextTabs.some((tab) => tab.id === activeTab.value)) {
+      activeTab.value = 'overview';
+    }
   },
   { immediate: true },
 );
@@ -1170,6 +1858,72 @@ const sourceTypeDisplay = computed(() =>
   formatTokenLabel(readRiskString(['sourceType']) || 'manual'),
 );
 
+const riskLikelihoodValue = computed(() =>
+  risk.value ? getRiskLikelihood(risk.value) : '',
+);
+
+const riskImpactValue = computed(() =>
+  risk.value ? getRiskImpact(risk.value) : '',
+);
+
+const overviewLikelihood = computed(() =>
+  formatTokenLabel(riskLikelihoodValue.value || 'N/A'),
+);
+
+const overviewImpact = computed(() =>
+  formatTokenLabel(riskImpactValue.value || 'N/A'),
+);
+
+const overviewLikelihoodClass = computed(() =>
+  riskLevelPillClass(riskLikelihoodValue.value),
+);
+
+const overviewImpactClass = computed(() =>
+  riskLevelPillClass(riskImpactValue.value),
+);
+
+const threatItems = computed(() => {
+  if (!isSspContext.value) return [];
+  const rawThreats = Array.isArray(risk.value?.threatIds)
+    ? (risk.value?.threatIds as unknown[])
+    : [];
+  return rawThreats
+    .map((entry) => {
+      if (typeof entry === 'string') {
+        return {
+          id: entry.trim(),
+          system: 'N/A',
+          href: '',
+          safeHref: '',
+        };
+      }
+
+      const record = toRecord(entry);
+      if (!record) {
+        return {
+          id: '',
+          system: 'N/A',
+          href: '',
+          safeHref: '',
+        };
+      }
+
+      const href = readString(record, ['href']) || '';
+      return {
+        id: readString(record, ['id']) || '',
+        system: readString(record, ['system']) || 'N/A',
+        href,
+        safeHref: sanitizeExternalHref(href),
+      };
+    })
+    .filter((item) => !!item.id);
+});
+
+const remediationItems = computed(() => {
+  if (!isSspContext.value) return [];
+  return risk.value?.remediations || [];
+});
+
 const workflowStage = computed(() => riskWorkflowStage(risk.value?.status));
 
 const workflowStageSummary = computed(() =>
@@ -1207,6 +1961,18 @@ const canAcceptAction = computed(
 
 const canReviewAction = computed(
   () => isSspContext.value && canReviewRisk(risk.value?.status),
+);
+
+const showAcceptedReviewFields = computed(
+  () => normalizedRiskStatus.value === 'risk-accepted',
+);
+
+const showAcceptanceJustificationBox = computed(
+  () => showAcceptedReviewFields.value,
+);
+
+const canReviewScoreAction = computed(
+  () => isSspContext.value && canReassessRisk(risk.value?.status),
 );
 
 const canStartInvestigationAction = computed(
@@ -1312,6 +2078,38 @@ function formatTokenLabel(value?: string): string {
     .filter(Boolean)
     .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
     .join(' ');
+}
+
+function sanitizeExternalHref(value?: string): string {
+  const raw = (value || '').trim();
+  if (!raw) return '';
+  try {
+    const parsed = new URL(raw);
+    const protocol = parsed.protocol.toLowerCase();
+    if (protocol === 'http:' || protocol === 'https:') {
+      return parsed.toString();
+    }
+  } catch {
+    // Ignore invalid URLs and render as plain text.
+  }
+  return '';
+}
+
+function riskLevelPillClass(value?: string): string {
+  const normalized = (value || '').trim().toLowerCase();
+  if (normalized === 'low') {
+    return 'border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-200';
+  }
+  if (normalized === 'moderate' || normalized === 'medium') {
+    return 'border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-700 dark:bg-amber-900/30 dark:text-amber-200';
+  }
+  if (normalized === 'high') {
+    return 'border-orange-300 bg-orange-50 text-orange-800 dark:border-orange-700 dark:bg-orange-900/30 dark:text-orange-200';
+  }
+  if (normalized === 'critical') {
+    return 'border-rose-300 bg-rose-50 text-rose-800 dark:border-rose-700 dark:bg-rose-900/30 dark:text-rose-200';
+  }
+  return 'border-slate-300 bg-slate-50 text-slate-700 dark:border-slate-600 dark:bg-slate-800/50 dark:text-slate-200';
 }
 
 function ownerAssignmentsFromRisk(
@@ -1477,7 +2275,7 @@ async function updateRiskStatus(
     });
     const updatedRisk = mutatedRisk.value;
     applyRiskUpdate(updatedRisk);
-    await loadRiskEvents();
+    await Promise.all([loadRiskEvents(1), loadRiskReviews(1)]);
     toast.add({
       severity: 'success',
       summary,
@@ -1510,6 +2308,63 @@ async function closeRisk() {
   );
 }
 
+function isRiskScoreLevel(value: string): value is RiskScoreLevel {
+  return (
+    value === 'low' ||
+    value === 'moderate' ||
+    value === 'high' ||
+    value === 'critical'
+  );
+}
+
+async function submitRiskScoreReview(payload: RiskScoreReviewSubmitPayload) {
+  if (!isSspContext.value || !detailEndpoint.value) return;
+
+  const likelihood = payload.likelihood;
+  const impact = payload.impact;
+  const notes = payload.notes?.trim();
+
+  if (!isRiskScoreLevel(likelihood) || !isRiskScoreLevel(impact)) {
+    toast.add({
+      severity: 'error',
+      summary: 'Validation Error',
+      detail: 'Likelihood and impact are required.',
+      life: 3500,
+    });
+    return;
+  }
+
+  try {
+    await executeRiskMutation(`${detailEndpoint.value}/review`, {
+      method: 'POST',
+      data: {
+        decision: payload.decision,
+        likelihood,
+        impact,
+        notes: notes || undefined,
+      },
+    });
+    const updatedRisk = mutatedRisk.value;
+    applyRiskUpdate(updatedRisk);
+    showScoreReviewModal.value = false;
+    await Promise.all([loadRiskEvents(1), loadRiskReviews(1)]);
+
+    toast.add({
+      severity: 'success',
+      summary: 'Risk score reviewed',
+      detail: 'Likelihood and impact review has been recorded.',
+      life: 3000,
+    });
+  } catch (err) {
+    toast.add({
+      severity: 'error',
+      summary: 'Review failed',
+      detail: extractErrorMessage(err),
+      life: 4000,
+    });
+  }
+}
+
 async function submitAcceptRisk(payload: RiskAcceptSubmitPayload) {
   if (!isSspContext.value || !detailEndpoint.value) return;
 
@@ -1533,7 +2388,7 @@ async function submitAcceptRisk(payload: RiskAcceptSubmitPayload) {
     const updatedRisk = mutatedRisk.value;
     applyRiskUpdate(updatedRisk);
     showAcceptModal.value = false;
-    await loadRiskEvents();
+    await Promise.all([loadRiskEvents(1), loadRiskReviews(1)]);
 
     toast.add({
       severity: 'success',
@@ -1586,7 +2441,7 @@ async function submitReviewRisk(payload: RiskReviewSubmitPayload) {
     const updatedRisk = mutatedRisk.value;
     applyRiskUpdate(updatedRisk);
     showReviewModal.value = false;
-    await loadRiskEvents();
+    await Promise.all([loadRiskEvents(1), loadRiskReviews(1)]);
 
     toast.add({
       severity: 'success',
@@ -1662,21 +2517,16 @@ async function ensureControlOptions() {
 
   if (!profile.value?.uuid) return;
 
-  const endpoints = [
-    `/api/oscal/profile/${profile.value.uuid}/resolved-with-catalogs`,
-    `/api/oscal/profiles/${profile.value.uuid}/resolved-with-catalogs`,
-  ];
-
-  for (const endpoint of endpoints) {
-    try {
-      await executeLoadResolvedControls(endpoint);
-      if (availableControlsWithCatalog.value !== undefined) {
-        return;
-      }
-    } catch (err) {
-      if (isCanceledError(err)) {
-        throw err;
-      }
+  try {
+    await executeLoadResolvedControls(
+      `/api/oscal/profiles/${profile.value.uuid}/resolved-with-catalogs`,
+    );
+    if (availableControlsWithCatalog.value !== undefined) {
+      return;
+    }
+  } catch (err) {
+    if (isCanceledError(err)) {
+      throw err;
     }
   }
 
