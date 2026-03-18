@@ -178,6 +178,53 @@ describe('RiskEditForm', () => {
     });
   });
 
+  it('preserves existing recommendation task uuid when title is unchanged', async () => {
+    const wrapper = mountForm(
+      makeRisk({
+        remediations: [
+          {
+            uuid: 'rec-1',
+            lifecycle: 'recommendation',
+            title: 'Old recommendation',
+            description: 'Old recommendation details',
+            tasks: [
+              {
+                uuid: 'task-keep-1',
+                type: 'action',
+                title: 'Rotate credentials',
+              },
+            ],
+          },
+        ],
+      }),
+    );
+
+    await wrapper
+      .get('[data-testid="suggested-remediation-title"]')
+      .setValue('Updated recommendation');
+    await wrapper
+      .get('[data-testid="suggested-remediation-description"]')
+      .setValue('Updated recommendation details');
+    await wrapper.find('form').trigger('submit');
+
+    expect(mockUpdateRisk).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        remediations: [
+          expect.objectContaining({
+            uuid: 'rec-1',
+            tasks: [
+              expect.objectContaining({
+                uuid: 'task-keep-1',
+                type: 'action',
+                title: 'Rotate credentials',
+              }),
+            ],
+          }),
+        ],
+      }),
+    });
+  });
+
   it('removes recommendation entry when suggested remediation fields are cleared', async () => {
     const wrapper = mountForm(
       makeRisk({

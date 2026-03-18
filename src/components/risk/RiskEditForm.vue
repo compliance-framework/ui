@@ -533,10 +533,24 @@ async function submit() {
       }))
       .filter((item) => item.id);
 
+    const currentRemediations = [...(props.risk.remediations || [])];
+    const recommendationIndex = currentRemediations.findIndex(
+      (item) =>
+        (item.lifecycle || '').trim().toLowerCase() === 'recommendation',
+    );
+    const existingRecommendation =
+      recommendationIndex >= 0
+        ? currentRemediations[recommendationIndex]
+        : null;
+    const existingRecommendationTasks = existingRecommendation?.tasks || [];
+
     const suggestedRemediationTasks: RiskTask[] = remediationTasks.map(
-      (title) => ({
-        uuid: crypto.randomUUID(),
-        type: 'action',
+      (title, index) => ({
+        uuid:
+          existingRecommendationTasks[index]?.title?.trim() === title
+            ? existingRecommendationTasks[index]?.uuid || crypto.randomUUID()
+            : crypto.randomUUID(),
+        type: existingRecommendationTasks[index]?.type || 'action',
         title,
       }),
     );
@@ -554,17 +568,7 @@ async function submit() {
         }
       : null;
 
-    const currentRemediations = [...(props.risk.remediations || [])];
-    const recommendationIndex = currentRemediations.findIndex(
-      (item) =>
-        (item.lifecycle || '').trim().toLowerCase() === 'recommendation',
-    );
-
     if (recommendation) {
-      const existingRecommendation =
-        recommendationIndex >= 0
-          ? currentRemediations[recommendationIndex]
-          : null;
       const nextRecommendation: RiskResponse = {
         ...recommendation,
         uuid: existingRecommendation?.uuid || recommendation.uuid,
