@@ -701,7 +701,7 @@
                 @click="openPrimaryRemediationEditor"
               >
                 {{
-                  remediationItems.length
+                  hasRemediationTemplateResource
                     ? 'Edit Remediation'
                     : 'Add Remediation'
                 }}
@@ -1570,6 +1570,15 @@ const remediationCollectionEndpoint = computed(() => {
   );
 });
 
+const remediationTemplateResource = computed(() => {
+  const source = toRecord(risk.value);
+  return source ? toRecord(source.remediationTemplate) : null;
+});
+
+const hasRemediationTemplateResource = computed(
+  () => remediationTemplateResource.value !== null,
+);
+
 const threatEditorTitle = computed(() =>
   threatEditingKey.value ? 'Edit Threat' : 'Add Threat',
 );
@@ -2248,10 +2257,7 @@ const threatItems = computed<ThreatTabItem[]>(() => {
 
 const remediationItems = computed<RemediationTabItem[]>(() => {
   if (!isSspContext.value) return [];
-  const source = toRecord(risk.value);
-  const remediationTemplate = source
-    ? toRecord(source.remediationTemplate)
-    : null;
+  const remediationTemplate = remediationTemplateResource.value;
 
   if (remediationTemplate) {
     const normalized = normalizeRemediationItem(remediationTemplate);
@@ -3062,7 +3068,7 @@ function openRemediationCreate() {
 }
 
 function openPrimaryRemediationEditor() {
-  if (remediationItems.value.length) {
+  if (hasRemediationTemplateResource.value && remediationItems.value.length) {
     openRemediationEdit(remediationItems.value[0]);
     return;
   }
@@ -3127,7 +3133,7 @@ function remediationItemEndpoint() {
 async function saveRemediation() {
   if (!isSspContext.value) return;
 
-  const hasExistingTemplate = remediationItems.value.length > 0;
+  const hasExistingTemplate = hasRemediationTemplateResource.value;
   const payload = buildRemediationPayload();
   if (!payload) {
     toast.add({

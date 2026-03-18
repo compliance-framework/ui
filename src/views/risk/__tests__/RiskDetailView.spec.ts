@@ -46,6 +46,16 @@ type MockRisk = {
       orderIndex?: number;
     }>;
   };
+  remediations?: Array<{
+    id?: string;
+    title?: string;
+    description?: string;
+    tasks?: Array<{
+      id?: string;
+      title?: string;
+      orderIndex?: number;
+    }>;
+  }>;
   primaryOwnerUserId?: string;
   ownerAssignments: Array<{
     ownerKind: string;
@@ -792,6 +802,7 @@ describe('RiskDetailView', () => {
         },
       ],
     };
+    mockRisk.remediations = undefined;
     mockRisk.primaryOwnerUserId = '8d6d887f-2a45-4d8f-9cb0-6e8d3595d87f';
     mockRisk.ownerAssignments = [
       {
@@ -1157,6 +1168,13 @@ describe('RiskDetailView', () => {
 
   it('shows add remediation only when no remediation template exists', async () => {
     mockRisk.remediationTemplate = undefined;
+    mockRisk.remediations = [
+      {
+        id: 'legacy-remediation-1',
+        title: 'Legacy remediation',
+        description: 'Legacy remediation data from inline risk form.',
+      },
+    ];
 
     const wrapper = mountComponent();
     await flushPromises();
@@ -1164,6 +1182,7 @@ describe('RiskDetailView', () => {
     await clickButtonByText(wrapper, 'Remediations');
     await flushPromises();
 
+    expect(wrapper.text()).toContain('Legacy remediation');
     expect(findButtonByText(wrapper, 'Add Remediation')).toBeDefined();
     expect(findButtonByText(wrapper, 'Edit Remediation')).toBeUndefined();
 
