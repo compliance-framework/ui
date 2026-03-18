@@ -27,21 +27,22 @@ type MockRisk = {
   firstSeenAt: string;
   lastSeenAt: string;
   threatIds?: Array<{
-    id: string;
+    threatRefId?: string;
+    refId: string;
     system: string;
-    href?: string;
+    title?: string;
+    url?: string;
   }>;
-  remediations?: Array<{
-    uuid?: string;
-    lifecycle?: string;
+  remediationTemplate?: {
+    id?: string;
     title?: string;
     description?: string;
-    remarks?: string;
     tasks?: Array<{
-      uuid?: string;
+      id?: string;
       title?: string;
+      orderIndex?: number;
     }>;
-  }>;
+  };
   primaryOwnerUserId?: string;
   ownerAssignments: Array<{
     ownerKind: string;
@@ -69,35 +70,31 @@ const mockRisk: MockRisk = {
   lastSeenAt: '2026-03-10T00:00:00Z',
   threatIds: [
     {
-      id: 'T-001',
+      threatRefId: 'threat-ref-1',
+      refId: 'T-001',
       system: 'CAPEC',
-      href: 'https://capec.mitre.org/data/definitions/1.html',
+      title: 'CAPEC Threat',
+      url: 'https://capec.mitre.org/data/definitions/1.html',
     },
     {
-      id: 'T-002',
+      threatRefId: 'threat-ref-2',
+      refId: 'T-002',
       system: 'NVD',
+      title: 'NVD Threat',
     },
   ],
-  remediations: [
-    {
-      uuid: 'remediation-1',
-      lifecycle: 'recommendation',
-      title: 'Rotate DB encryption keys',
-      description: 'Rotate all stale encryption keys within 30 days.',
-      tasks: [
-        {
-          uuid: 'task-1',
-          title: 'Generate new key material',
-        },
-      ],
-    },
-    {
-      uuid: 'remediation-2',
-      lifecycle: 'planned',
-      title: 'HSM migration',
-      description: 'Move key custody to HSM-backed service.',
-    },
-  ],
+  remediationTemplate: {
+    id: 'remediation-template-1',
+    title: 'Rotate DB encryption keys',
+    description: 'Rotate all stale encryption keys within 30 days.',
+    tasks: [
+      {
+        id: 'task-1',
+        title: 'Generate new key material',
+        orderIndex: 0,
+      },
+    ],
+  },
   primaryOwnerUserId: '8d6d887f-2a45-4d8f-9cb0-6e8d3595d87f',
   ownerAssignments: [
     {
@@ -551,6 +548,89 @@ vi.mock('@/composables/axios', () => ({
         data.value = [...mockApiState.componentLinks];
       } else if (
         endpoint ===
+        '/api/oscal/system-security-plans/ssp-1/risks/risk-1/threat-ids'
+      ) {
+        if (method === 'POST') {
+          const payload = requestConfig.data as {
+            id?: string;
+            system?: string;
+            title?: string;
+            url?: string;
+          };
+          if (payload?.id && payload?.system && payload?.title) {
+            const nextThreat = {
+              threatRefId: `threat-ref-${(mockRisk.threatIds || []).length + 1}`,
+              refId: payload.id,
+              system: payload.system,
+              title: payload.title,
+              ...(payload.url ? { url: payload.url } : {}),
+            };
+            mockRisk.threatIds = [...(mockRisk.threatIds || []), nextThreat];
+          }
+        }
+        data.value = [...(mockRisk.threatIds || [])];
+      } else if (
+        endpointWithoutQuery.startsWith(
+          '/api/oscal/system-security-plans/ssp-1/risks/risk-1/threat-ids/',
+        )
+      ) {
+        const threatRefId = decodeURIComponent(
+          endpointWithoutQuery.split('/threat-ids/')[1] || '',
+        );
+
+        if (method === 'PUT') {
+          const payload = requestConfig.data as {
+            id?: string;
+            system?: string;
+            title?: string;
+            url?: string;
+          };
+          mockRisk.threatIds = (mockRisk.threatIds || []).map((threat) =>
+            threat.threatRefId === threatRefId
+              ? {
+                  threatRefId: threat.threatRefId,
+                  refId: payload.id || threat.refId,
+                  system: payload.system || threat.system,
+                  title: payload.title || threat.title,
+                  ...(payload.url ? { url: payload.url } : {}),
+                }
+              : threat,
+          );
+        }
+
+        if (method === 'DELETE') {
+          mockRisk.threatIds = (mockRisk.threatIds || []).filter(
+            (threat) => threat.threatRefId !== threatRefId,
+          );
+        }
+
+        data.value = [...(mockRisk.threatIds || [])];
+      } else if (
+        endpoint ===
+        '/api/oscal/system-security-plans/ssp-1/risks/risk-1/remediation-template'
+      ) {
+        if (method === 'POST') {
+          const payload = requestConfig.data as MockRisk['remediationTemplate'];
+          mockRisk.remediationTemplate = {
+            id: 'remediation-template-1',
+            ...payload,
+          };
+        }
+        if (method === 'PUT') {
+          const payload = requestConfig.data as MockRisk['remediationTemplate'];
+          mockRisk.remediationTemplate = {
+            id: mockRisk.remediationTemplate?.id || 'remediation-template-1',
+            ...payload,
+          };
+        }
+
+        if (method === 'DELETE') {
+          mockRisk.remediationTemplate = undefined;
+        }
+
+        data.value = mockRisk.remediationTemplate;
+      } else if (
+        endpoint ===
           '/api/oscal/system-security-plans/ssp-1/risks/risk-1/components/comp-1' &&
         method === 'DELETE'
       ) {
@@ -683,35 +763,31 @@ describe('RiskDetailView', () => {
     mockRisk.acceptanceJustification = 'Accepted pending migration.';
     mockRisk.threatIds = [
       {
-        id: 'T-001',
+        threatRefId: 'threat-ref-1',
+        refId: 'T-001',
         system: 'CAPEC',
-        href: 'https://capec.mitre.org/data/definitions/1.html',
+        title: 'CAPEC Threat',
+        url: 'https://capec.mitre.org/data/definitions/1.html',
       },
       {
-        id: 'T-002',
+        threatRefId: 'threat-ref-2',
+        refId: 'T-002',
         system: 'NVD',
+        title: 'NVD Threat',
       },
     ];
-    mockRisk.remediations = [
-      {
-        uuid: 'remediation-1',
-        lifecycle: 'recommendation',
-        title: 'Rotate DB encryption keys',
-        description: 'Rotate all stale encryption keys within 30 days.',
-        tasks: [
-          {
-            uuid: 'task-1',
-            title: 'Generate new key material',
-          },
-        ],
-      },
-      {
-        uuid: 'remediation-2',
-        lifecycle: 'planned',
-        title: 'HSM migration',
-        description: 'Move key custody to HSM-backed service.',
-      },
-    ];
+    mockRisk.remediationTemplate = {
+      id: 'remediation-template-1',
+      title: 'Rotate DB encryption keys',
+      description: 'Rotate all stale encryption keys within 30 days.',
+      tasks: [
+        {
+          id: 'task-1',
+          title: 'Generate new key material',
+          orderIndex: 0,
+        },
+      ],
+    };
     mockRisk.primaryOwnerUserId = '8d6d887f-2a45-4d8f-9cb0-6e8d3595d87f';
     mockRisk.ownerAssignments = [
       {
@@ -920,6 +996,7 @@ describe('RiskDetailView', () => {
     await clickButtonByText(wrapper, 'Threats');
     await flushPromises();
     expect(wrapper.text()).toContain('T-001');
+    expect(wrapper.text()).toContain('CAPEC Threat');
     expect(wrapper.text()).toContain('System: CAPEC');
     expect(wrapper.text()).toContain(
       'https://capec.mitre.org/data/definitions/1.html',
@@ -932,15 +1009,16 @@ describe('RiskDetailView', () => {
       'Rotate all stale encryption keys within 30 days.',
     );
     expect(wrapper.text()).toContain('Generate new key material');
-    expect(wrapper.text()).toContain('HSM migration');
   });
 
   it('renders non-http threat href values as plain text without clickable link', async () => {
     mockRisk.threatIds = [
       {
-        id: 'T-999',
+        threatRefId: 'threat-ref-9',
+        refId: 'T-999',
         system: 'Custom',
-        href: 'javascript:alert(1)',
+        title: 'Unsafe threat',
+        url: 'javascript:alert(1)',
       },
     ];
 
@@ -952,6 +1030,125 @@ describe('RiskDetailView', () => {
 
     expect(wrapper.text()).toContain('javascript:alert(1)');
     expect(wrapper.find('a[href="javascript:alert(1)"]').exists()).toBe(false);
+  });
+
+  it('creates threats through the threat-ids endpoint', async () => {
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    await clickButtonByText(wrapper, 'Threats');
+    await flushPromises();
+    await clickButtonByText(wrapper, 'Add Threat');
+    await wrapper.get('[data-testid="threat-id-input"]').setValue('T-003');
+    await wrapper.get('[data-testid="threat-system-input"]').setValue('MITRE');
+    await wrapper
+      .get('[data-testid="threat-title-input"]')
+      .setValue('New Threat');
+    await wrapper
+      .get('[data-testid="threat-href-input"]')
+      .setValue('https://threats.local/3');
+    await wrapper.get('[data-testid="save-threat-button"]').trigger('click');
+    await flushPromises();
+
+    expect(apiCalls).toContainEqual(
+      expect.objectContaining({
+        endpoint:
+          '/api/oscal/system-security-plans/ssp-1/risks/risk-1/threat-ids',
+        method: 'POST',
+        data: {
+          id: 'T-003',
+          system: 'MITRE',
+          title: 'New Threat',
+          url: 'https://threats.local/3',
+        },
+      }),
+    );
+  });
+
+  it('updates threats through the threat-ids item endpoint', async () => {
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    await clickButtonByText(wrapper, 'Threats');
+    await flushPromises();
+    await clickButtonByText(wrapper, 'Edit');
+    await wrapper
+      .get('[data-testid="threat-title-input"]')
+      .setValue('Updated Threat Title');
+    await wrapper.get('[data-testid="save-threat-button"]').trigger('click');
+    await flushPromises();
+
+    expect(apiCalls).toContainEqual(
+      expect.objectContaining({
+        endpoint:
+          '/api/oscal/system-security-plans/ssp-1/risks/risk-1/threat-ids/threat-ref-1',
+        method: 'PUT',
+        data: expect.objectContaining({
+          id: 'T-001',
+          system: 'CAPEC',
+          title: 'Updated Threat Title',
+        }),
+      }),
+    );
+  });
+
+  it('upserts remediation template through the remediation-template endpoint', async () => {
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    await clickButtonByText(wrapper, 'Remediations');
+    await flushPromises();
+    await clickButtonByText(wrapper, 'Edit');
+    await wrapper
+      .get('[data-testid="remediation-title-input"]')
+      .setValue('Updated remediation');
+    await wrapper
+      .get('[data-testid="remediation-description-input"]')
+      .setValue('Updated remediation details');
+    await wrapper
+      .get('[data-testid="add-remediation-task-button"]')
+      .trigger('click');
+    await wrapper
+      .get('[data-testid="remediation-task-input-1"]')
+      .setValue('Validate rollout');
+    await wrapper
+      .get('[data-testid="save-remediation-button"]')
+      .trigger('click');
+    await flushPromises();
+
+    expect(apiCalls).toContainEqual(
+      expect.objectContaining({
+        endpoint:
+          '/api/oscal/system-security-plans/ssp-1/risks/risk-1/remediation-template',
+        method: 'PUT',
+        data: {
+          title: 'Updated remediation',
+          description: 'Updated remediation details',
+          tasks: [
+            { title: 'Generate new key material', orderIndex: 0 },
+            { title: 'Validate rollout', orderIndex: 1 },
+          ],
+        },
+      }),
+    );
+  });
+
+  it('removes remediation template through the remediation-template endpoint', async () => {
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    await clickButtonByText(wrapper, 'Remediations');
+    await flushPromises();
+    await clickButtonByText(wrapper, 'Remove');
+    await flushPromises();
+
+    expect(apiCalls).toContainEqual(
+      expect.objectContaining({
+        endpoint:
+          '/api/oscal/system-security-plans/ssp-1/risks/risk-1/remediation-template',
+        method: 'DELETE',
+      }),
+    );
   });
 
   it('uses router back when an in-app back target exists', async () => {

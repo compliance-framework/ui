@@ -111,3 +111,32 @@ export function buildRiskItemEndpoint(
 ): string {
   return `${buildRiskCollectionEndpoint(context)}/${riskId}`;
 }
+
+export function buildRiskThreatCollectionEndpoint(
+  context: RiskContext,
+  riskId: string,
+): string {
+  return `${buildRiskItemEndpoint(context, riskId)}/threat-ids`;
+}
+
+export function buildRiskThreatItemEndpoint(
+  context: RiskContext,
+  riskId: string,
+  threatRefId: string,
+): string {
+  return `${buildRiskThreatCollectionEndpoint(context, riskId)}/${encodeURIComponent(threatRefId)}`;
+}
+
+export function buildRiskRemediationCollectionEndpoint(
+  context: RiskContext,
+  riskId: string,
+): string {
+  return `${buildRiskItemEndpoint(context, riskId)}/remediation-template`;
+}
+
+export function buildRiskRemediationItemEndpoint(
+  context: RiskContext,
+  riskId: string,
+): string {
+  return buildRiskRemediationCollectionEndpoint(context, riskId);
+}

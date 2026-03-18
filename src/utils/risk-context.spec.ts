@@ -2,6 +2,10 @@ import { describe, expect, it } from 'vitest';
 import {
   buildRiskCollectionEndpoint,
   buildRiskItemEndpoint,
+  buildRiskRemediationCollectionEndpoint,
+  buildRiskRemediationItemEndpoint,
+  buildRiskThreatCollectionEndpoint,
+  buildRiskThreatItemEndpoint,
   resolveRiskContext,
 } from './risk-context';
 
@@ -91,6 +95,21 @@ describe('risk-context', () => {
     );
     expect(buildRiskItemEndpoint(sspContext!, 'risk-2')).toBe(
       '/api/oscal/system-security-plans/ssp-44/risks/risk-2',
+    );
+
+    expect(buildRiskThreatCollectionEndpoint(sspContext!, 'risk-2')).toBe(
+      '/api/oscal/system-security-plans/ssp-44/risks/risk-2/threat-ids',
+    );
+    expect(
+      buildRiskThreatItemEndpoint(sspContext!, 'risk-2', 'threat-ref-1'),
+    ).toBe(
+      '/api/oscal/system-security-plans/ssp-44/risks/risk-2/threat-ids/threat-ref-1',
+    );
+    expect(buildRiskRemediationCollectionEndpoint(sspContext!, 'risk-2')).toBe(
+      '/api/oscal/system-security-plans/ssp-44/risks/risk-2/remediation-template',
+    );
+    expect(buildRiskRemediationItemEndpoint(sspContext!, 'risk-2')).toBe(
+      '/api/oscal/system-security-plans/ssp-44/risks/risk-2/remediation-template',
     );
   });
 });

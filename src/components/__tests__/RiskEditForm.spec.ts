@@ -71,66 +71,22 @@ describe('RiskEditForm', () => {
     });
   }
 
-  it('hydrates suggested remediation fields from recommendation lifecycle entry', async () => {
-    const wrapper = mountForm(
-      makeRisk({
-        remediations: [
-          {
-            uuid: 'rec-1',
-            lifecycle: 'recommendation',
-            title: 'Template recommendation',
-            description: 'Recommendation details',
-            tasks: [
-              {
-                uuid: 'task-1',
-                type: 'action',
-                title: 'Rotate credentials',
-              },
-            ],
-          },
-          {
-            uuid: 'plan-1',
-            lifecycle: 'planned',
-            title: 'Planned remediation',
-            description: 'Planned work',
-          },
-        ],
-      }),
-    );
+  it('shows guidance that threats and remediations moved to detail tabs', async () => {
+    const wrapper = mountForm(makeRisk());
     await flushPromises();
 
-    expect(
-      (
-        wrapper.get('[data-testid="suggested-remediation-title"]')
-          .element as HTMLInputElement
-      ).value,
-    ).toBe('Template recommendation');
-    expect(
-      (
-        wrapper.get('[data-testid="suggested-remediation-description"]')
-          .element as HTMLTextAreaElement
-      ).value,
-    ).toBe('Recommendation details');
-    expect(
-      (
-        wrapper.get('[data-testid="suggested-remediation-task-0"]')
-          .element as HTMLInputElement
-      ).value,
-    ).toBe('Rotate credentials');
+    expect(wrapper.text()).toContain(
+      'Threats and remediations are managed from the dedicated tabs on the risk detail view.',
+    );
   });
 
-  it('updates recommendation while preserving non-recommendation remediations', async () => {
+  it('submits core risk updates while preserving existing threats and remediations', async () => {
     const wrapper = mountForm(
       makeRisk({
+        threatIds: [{ id: 'T-001', system: 'CAPEC' }],
         remediations: [
           {
-            uuid: 'rec-1',
-            lifecycle: 'recommendation',
-            title: 'Old recommendation',
-            description: 'Old recommendation details',
-          },
-          {
-            uuid: 'plan-1',
+            uuid: 'remediation-1',
             lifecycle: 'planned',
             title: 'Planned remediation',
             description: 'Planned work',
@@ -140,124 +96,27 @@ describe('RiskEditForm', () => {
     );
 
     await wrapper
-      .get('[data-testid="suggested-remediation-title"]')
-      .setValue('Updated recommendation');
+      .find('input[placeholder="Enter risk title"]')
+      .setValue('Risk B');
     await wrapper
-      .get('[data-testid="suggested-remediation-description"]')
-      .setValue('Updated recommendation details');
+      .find('textarea[placeholder="Enter risk description"]')
+      .setValue('Updated description');
     await wrapper
-      .get('[data-testid="suggested-remediation-task-add"]')
-      .trigger('click');
-    await wrapper
-      .get('[data-testid="suggested-remediation-task-0"]')
-      .setValue('Re-key database');
+      .find('textarea[placeholder="Enter risk statement"]')
+      .setValue('Updated statement');
+    await wrapper.find('select').setValue('investigating');
     await wrapper.find('form').trigger('submit');
 
     expect(mockUpdateRisk).toHaveBeenCalledWith({
       data: expect.objectContaining({
+        title: 'Risk B',
+        description: 'Updated description',
+        statement: 'Updated statement',
+        status: 'investigating',
+        threatIds: [{ id: 'T-001', system: 'CAPEC' }],
         remediations: [
           expect.objectContaining({
-            uuid: 'rec-1',
-            lifecycle: 'recommendation',
-            title: 'Updated recommendation',
-            description: 'Updated recommendation details',
-            tasks: [
-              expect.objectContaining({
-                type: 'action',
-                title: 'Re-key database',
-              }),
-            ],
-          }),
-          expect.objectContaining({
-            uuid: 'plan-1',
-            lifecycle: 'planned',
-            title: 'Planned remediation',
-          }),
-        ],
-      }),
-    });
-  });
-
-  it('preserves existing recommendation task uuid when title is unchanged', async () => {
-    const wrapper = mountForm(
-      makeRisk({
-        remediations: [
-          {
-            uuid: 'rec-1',
-            lifecycle: 'recommendation',
-            title: 'Old recommendation',
-            description: 'Old recommendation details',
-            tasks: [
-              {
-                uuid: 'task-keep-1',
-                type: 'action',
-                title: 'Rotate credentials',
-              },
-            ],
-          },
-        ],
-      }),
-    );
-
-    await wrapper
-      .get('[data-testid="suggested-remediation-title"]')
-      .setValue('Updated recommendation');
-    await wrapper
-      .get('[data-testid="suggested-remediation-description"]')
-      .setValue('Updated recommendation details');
-    await wrapper.find('form').trigger('submit');
-
-    expect(mockUpdateRisk).toHaveBeenCalledWith({
-      data: expect.objectContaining({
-        remediations: [
-          expect.objectContaining({
-            uuid: 'rec-1',
-            tasks: [
-              expect.objectContaining({
-                uuid: 'task-keep-1',
-                type: 'action',
-                title: 'Rotate credentials',
-              }),
-            ],
-          }),
-        ],
-      }),
-    });
-  });
-
-  it('removes recommendation entry when suggested remediation fields are cleared', async () => {
-    const wrapper = mountForm(
-      makeRisk({
-        remediations: [
-          {
-            uuid: 'rec-1',
-            lifecycle: 'recommendation',
-            title: 'Old recommendation',
-            description: 'Old recommendation details',
-          },
-          {
-            uuid: 'plan-1',
-            lifecycle: 'planned',
-            title: 'Planned remediation',
-            description: 'Planned work',
-          },
-        ],
-      }),
-    );
-
-    await wrapper
-      .get('[data-testid="suggested-remediation-title"]')
-      .setValue('');
-    await wrapper
-      .get('[data-testid="suggested-remediation-description"]')
-      .setValue('');
-    await wrapper.find('form').trigger('submit');
-
-    expect(mockUpdateRisk).toHaveBeenCalledWith({
-      data: expect.objectContaining({
-        remediations: [
-          expect.objectContaining({
-            uuid: 'plan-1',
+            uuid: 'remediation-1',
             lifecycle: 'planned',
             title: 'Planned remediation',
           }),
