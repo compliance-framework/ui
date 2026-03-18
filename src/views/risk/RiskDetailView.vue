@@ -1131,9 +1131,9 @@
         </div>
 
         <div class="flex justify-end gap-3 pt-2">
-          <TertiaryButton @click="closeRemediationEditor"
-            >Cancel</TertiaryButton
-          >
+          <TertiaryButton @click="closeRemediationEditor">
+            Cancel
+          </TertiaryButton>
           <button
             data-testid="save-remediation-button"
             class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm disabled:opacity-60"
