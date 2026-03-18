@@ -396,14 +396,27 @@ function normalizeFromRiskLogEntry(entry: RiskLogEntry): RiskEventItem {
   };
 }
 
-function resolveRawEvents(input: unknown): unknown[] {
+function resolveRawEvents(input: unknown, depth = 0): unknown[] {
   if (Array.isArray(input)) return input;
+  if (depth > 4) return [];
   const record = toRecord(input);
   if (!record) return [];
 
   if (Array.isArray(record.events)) return record.events;
   if (Array.isArray(record.items)) return record.items;
   if (Array.isArray(record.data)) return record.data;
+  if (record.events !== undefined) {
+    const nestedEvents = resolveRawEvents(record.events, depth + 1);
+    if (nestedEvents.length) return nestedEvents;
+  }
+  if (record.items !== undefined) {
+    const nestedItems = resolveRawEvents(record.items, depth + 1);
+    if (nestedItems.length) return nestedItems;
+  }
+  if (record.data !== undefined) {
+    const nestedData = resolveRawEvents(record.data, depth + 1);
+    if (nestedData.length) return nestedData;
+  }
   return [];
 }
 

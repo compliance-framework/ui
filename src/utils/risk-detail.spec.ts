@@ -150,6 +150,28 @@ describe('risk-detail', () => {
     );
   });
 
+  it('normalizes events from nested data envelope payload', () => {
+    const events = normalizeRiskEvents({
+      data: {
+        data: [
+          {
+            id: 'evt-nested-1',
+            eventType: 'last_seen',
+            createdAt: '2026-03-12T10:00:00Z',
+          },
+        ],
+      },
+    });
+
+    expect(events).toHaveLength(1);
+    expect(events[0]).toEqual(
+      expect.objectContaining({
+        id: 'evt-nested-1',
+        type: 'last_seen',
+      }),
+    );
+  });
+
   it('falls back to risk log entries when event API returns empty', () => {
     const logEntries: RiskLogEntry[] = [
       {
@@ -219,6 +241,30 @@ describe('risk-detail', () => {
         decision: 'reopen',
         reviewer: 'Bob',
         notes: 'Risk is no longer acceptable.',
+      }),
+    );
+  });
+
+  it('normalizes reviews from nested data envelope payload', () => {
+    const reviews = normalizeRiskReviews({
+      data: {
+        data: [
+          {
+            id: 'review-nested-1',
+            decision: 'reassess',
+            reviewedAt: '2026-03-11T10:00:00Z',
+            reviewerName: 'Nested Reviewer',
+          },
+        ],
+      },
+    });
+
+    expect(reviews).toHaveLength(1);
+    expect(reviews[0]).toEqual(
+      expect.objectContaining({
+        id: 'review-nested-1',
+        decision: 'reassess',
+        reviewer: 'Nested Reviewer',
       }),
     );
   });
