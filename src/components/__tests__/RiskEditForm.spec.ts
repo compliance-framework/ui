@@ -225,6 +225,54 @@ describe('RiskEditForm', () => {
     });
   });
 
+  it('preserves remaining task uuids when a middle task is removed', async () => {
+    const wrapper = mountForm(
+      makeRisk({
+        remediations: [
+          {
+            uuid: 'rec-1',
+            lifecycle: 'recommendation',
+            title: 'Old recommendation',
+            description: 'Old recommendation details',
+            tasks: [
+              { uuid: 'task-1', type: 'action', title: 'Task 1' },
+              { uuid: 'task-2', type: 'action', title: 'Task 2' },
+              { uuid: 'task-3', type: 'action', title: 'Task 3' },
+            ],
+          },
+        ],
+      }),
+    );
+    await flushPromises();
+
+    await wrapper
+      .get('[data-testid="suggested-remediation-task-remove-1"]')
+      .trigger('click');
+    await wrapper.find('form').trigger('submit');
+
+    const payload = mockUpdateRisk.mock.calls[0]?.[0] as {
+      data?: {
+        remediations?: Array<{ lifecycle?: string; tasks?: unknown[] }>;
+      };
+    };
+    const recommendation = payload?.data?.remediations?.find(
+      (item) => item.lifecycle === 'recommendation',
+    );
+
+    expect(recommendation?.tasks).toEqual([
+      expect.objectContaining({
+        uuid: 'task-1',
+        type: 'action',
+        title: 'Task 1',
+      }),
+      expect.objectContaining({
+        uuid: 'task-3',
+        type: 'action',
+        title: 'Task 3',
+      }),
+    ]);
+  });
+
   it('removes recommendation entry when suggested remediation fields are cleared', async () => {
     const wrapper = mountForm(
       makeRisk({

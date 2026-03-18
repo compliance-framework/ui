@@ -178,12 +178,12 @@
               </button>
             </div>
             <div
-              v-for="(_, index) in formData.remediationTasks"
-              :key="`suggested-remediation-task-${index}`"
+              v-for="(task, index) in formData.remediationTasks"
+              :key="task.uuid || `suggested-remediation-task-${index}`"
               class="flex gap-2"
             >
               <input
-                v-model="formData.remediationTasks[index]"
+                v-model="task.title"
                 :data-testid="`suggested-remediation-task-${index}`"
                 type="text"
                 class="flex-1 px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-800 dark:text-slate-300"
@@ -191,6 +191,7 @@
               />
               <button
                 type="button"
+                :data-testid="`suggested-remediation-task-remove-${index}`"
                 class="px-3 py-2 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 text-xs"
                 @click="removeRemediationTask(index)"
               >
@@ -337,6 +338,12 @@ const {
   { immediate: false },
 );
 
+interface EditableRemediationTask {
+  uuid?: string;
+  type?: string;
+  title: string;
+}
+
 const formData = reactive({
   title: '',
   description: '',
@@ -345,7 +352,7 @@ const formData = reactive({
   threatIds: [] as ThreatID[],
   remediationTitle: '',
   remediationDescription: '',
-  remediationTasks: [] as string[],
+  remediationTasks: [] as EditableRemediationTask[],
   deadline: '',
   remarks: '',
 });
@@ -409,8 +416,12 @@ onMounted(() => {
     formData.remediationTitle = recommendation.title || '';
     formData.remediationDescription = recommendation.description || '';
     formData.remediationTasks = (recommendation.tasks || [])
-      .map((task) => task.title?.trim() || '')
-      .filter((task) => !!task);
+      .map((task) => ({
+        uuid: task.uuid,
+        type: task.type,
+        title: task.title?.trim() || '',
+      }))
+      .filter((task) => !!task.title);
   }
 });
 
@@ -427,7 +438,11 @@ function removeThreatId(index: number) {
 }
 
 function addRemediationTask() {
-  formData.remediationTasks.push('');
+  formData.remediationTasks.push({
+    uuid: crypto.randomUUID(),
+    type: 'action',
+    title: '',
+  });
 }
 
 function removeRemediationTask(index: number) {
@@ -489,8 +504,12 @@ async function submit() {
     const remediationTitle = formData.remediationTitle.trim();
     const remediationDescription = formData.remediationDescription.trim();
     const remediationTasks = formData.remediationTasks
-      .map((task) => task.trim())
-      .filter((task) => !!task);
+      .map((task) => ({
+        uuid: task.uuid,
+        type: task.type,
+        title: task.title.trim(),
+      }))
+      .filter((task) => !!task.title);
 
     const hasRemediationInput =
       !!remediationTitle ||
@@ -542,16 +561,11 @@ async function submit() {
       recommendationIndex >= 0
         ? currentRemediations[recommendationIndex]
         : null;
-    const existingRecommendationTasks = existingRecommendation?.tasks || [];
-
     const suggestedRemediationTasks: RiskTask[] = remediationTasks.map(
-      (title, index) => ({
-        uuid:
-          existingRecommendationTasks[index]?.title?.trim() === title
-            ? existingRecommendationTasks[index]?.uuid || crypto.randomUUID()
-            : crypto.randomUUID(),
-        type: existingRecommendationTasks[index]?.type || 'action',
-        title,
+      (task) => ({
+        uuid: task.uuid || crypto.randomUUID(),
+        type: task.type || 'action',
+        title: task.title,
       }),
     );
 
