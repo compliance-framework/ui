@@ -1,5 +1,5 @@
 import { ref } from 'vue';
-import { useDataApi } from '@/composables/axios';
+import { useDataApi, useAuthenticatedInstance } from '@/composables/axios';
 import type { CCFUser } from '@/stores/types';
 
 export interface DisplayUser extends CCFUser {
@@ -8,16 +8,6 @@ export interface DisplayUser extends CCFUser {
 
 const USER_FETCH_BATCH_SIZE = 5;
 
-function extractUserFromResponse(response: unknown): CCFUser | undefined {
-  if (!response || typeof response !== 'object') return undefined;
-  const envelope = response as {
-    data?: {
-      data?: CCFUser;
-    };
-  };
-  return envelope.data?.data;
-}
-
 /**
  * Composable for managing user search, caching, and display in workflow role assignments.
  * Reduces complexity in components that need to search and display users.
@@ -25,16 +15,13 @@ function extractUserFromResponse(response: unknown): CCFUser | undefined {
 export function useUserSearch() {
   const userSuggestions = ref<DisplayUser[]>([]);
   const userCache = ref<Record<string, DisplayUser>>({});
+  const authenticatedApi = useAuthenticatedInstance();
 
   const { execute: fetchUsers, data: usersData } = useDataApi<CCFUser[]>(
     '/api/admin/users',
     null,
     { immediate: false },
   );
-
-  const { execute: fetchUserById } = useDataApi<CCFUser>(null, null, {
-    immediate: false,
-  });
 
   /**
    * Convert a CCFUser to DisplayUser with formatted display name
@@ -123,12 +110,17 @@ export function useUserSearch() {
     ) {
       const batch = missing.slice(index, index + USER_FETCH_BATCH_SIZE);
       const results = await Promise.allSettled(
-        batch.map((id) => fetchUserById(`/api/admin/users/${id}`)),
+        batch.map(async (id) => {
+          const response = await authenticatedApi.get<{ data?: CCFUser }>(
+            `/api/admin/users/${id}`,
+          );
+          return response.data?.data;
+        }),
       );
 
       results.forEach((result) => {
         if (result.status !== 'fulfilled') return;
-        const payload = extractUserFromResponse(result.value);
+        const payload = result.value;
         if (!payload) return;
         cacheUser(toDisplayUser(payload));
       });

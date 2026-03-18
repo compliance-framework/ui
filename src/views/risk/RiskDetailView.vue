@@ -623,13 +623,20 @@
                   class="text-sm text-blue-700 dark:text-blue-300 mt-1 break-all"
                 >
                   <a
-                    :href="threat.href"
+                    v-if="threat.safeHref"
+                    :href="threat.safeHref"
                     target="_blank"
                     rel="noopener noreferrer"
                     class="underline"
                   >
                     {{ threat.href }}
                   </a>
+                  <span
+                    v-else
+                    class="text-sm text-gray-700 dark:text-slate-300"
+                  >
+                    {{ threat.href }}
+                  </span>
                 </p>
               </div>
             </div>
@@ -1854,6 +1861,7 @@ const threatItems = computed(() => {
           id: entry.trim(),
           system: 'N/A',
           href: '',
+          safeHref: '',
         };
       }
 
@@ -1863,13 +1871,16 @@ const threatItems = computed(() => {
           id: '',
           system: 'N/A',
           href: '',
+          safeHref: '',
         };
       }
 
+      const href = readString(record, ['href']) || '';
       return {
         id: readString(record, ['id']) || '',
         system: readString(record, ['system']) || 'N/A',
-        href: readString(record, ['href']) || '',
+        href,
+        safeHref: sanitizeExternalHref(href),
       };
     })
     .filter((item) => !!item.id);
@@ -2034,6 +2045,21 @@ function formatTokenLabel(value?: string): string {
     .filter(Boolean)
     .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
     .join(' ');
+}
+
+function sanitizeExternalHref(value?: string): string {
+  const raw = (value || '').trim();
+  if (!raw) return '';
+  try {
+    const parsed = new URL(raw);
+    const protocol = parsed.protocol.toLowerCase();
+    if (protocol === 'http:' || protocol === 'https:') {
+      return parsed.toString();
+    }
+  } catch {
+    // Ignore invalid URLs and render as plain text.
+  }
+  return '';
 }
 
 function riskLevelPillClass(value?: string): string {

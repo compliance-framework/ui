@@ -2,17 +2,26 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { useUserSearch } from '../useUserSearch';
 import type { CCFUser } from '@/stores/types';
 
-// Mock useDataApi
-vi.mock('@/composables/axios', () => ({
-  useDataApi: vi.fn(() => ({
+const mockAuthenticatedGet = vi.hoisted(() => vi.fn());
+const mockUseDataApi = vi.hoisted(() =>
+  vi.fn(() => ({
     execute: vi.fn(),
     data: { value: null },
+  })),
+);
+
+// Mock useDataApi
+vi.mock('@/composables/axios', () => ({
+  useDataApi: mockUseDataApi,
+  useAuthenticatedInstance: vi.fn(() => ({
+    get: mockAuthenticatedGet,
   })),
 }));
 
 describe('useUserSearch', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockAuthenticatedGet.mockReset();
   });
 
   describe('toDisplayUser', () => {
@@ -227,6 +236,50 @@ describe('useUserSearch', () => {
 
       expect(instance1.getCachedUser('123')).toBeDefined();
       expect(instance2.getCachedUser('123')).toBeUndefined();
+    });
+
+    it('hydrates missing users by id and skips already cached users', async () => {
+      mockAuthenticatedGet.mockImplementation(async (url: string) => {
+        const id = url.split('/').pop() || 'unknown';
+        return {
+          data: {
+            data: {
+              id,
+              email: `${id}@example.com`,
+              firstName: id.toUpperCase(),
+              lastName: 'User',
+              failedLogins: 0,
+            } as CCFUser,
+          },
+        };
+      });
+
+      const { cacheUser, toDisplayUser, loadUsersByIds, getCachedUser } =
+        useUserSearch();
+      cacheUser(
+        toDisplayUser({
+          id: 'already-cached',
+          email: 'cached@example.com',
+          firstName: 'Cached',
+          lastName: 'User',
+          failedLogins: 0,
+        }),
+      );
+
+      await loadUsersByIds([
+        'already-cached',
+        'user-1',
+        'user-2',
+        'user-3',
+        'user-4',
+        'user-5',
+        'user-6',
+      ]);
+
+      expect(mockAuthenticatedGet).toHaveBeenCalledTimes(6);
+      expect(getCachedUser('already-cached')?.email).toBe('cached@example.com');
+      expect(getCachedUser('user-1')?.displayName).toBe('USER-1 User');
+      expect(getCachedUser('user-6')?.email).toBe('user-6@example.com');
     });
   });
 });

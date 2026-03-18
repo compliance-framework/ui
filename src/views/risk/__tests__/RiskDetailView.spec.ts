@@ -849,6 +849,25 @@ describe('RiskDetailView', () => {
     expect(wrapper.text()).toContain('HSM migration');
   });
 
+  it('renders non-http threat href values as plain text without clickable link', async () => {
+    mockRisk.threatIds = [
+      {
+        id: 'T-999',
+        system: 'Custom',
+        href: 'javascript:alert(1)',
+      },
+    ];
+
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    await clickButtonByText(wrapper, 'Threats');
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('javascript:alert(1)');
+    expect(wrapper.find('a[href="javascript:alert(1)"]').exists()).toBe(false);
+  });
+
   it('uses router back when an in-app back target exists', async () => {
     window.history.replaceState(
       { back: '/system/risks' },
