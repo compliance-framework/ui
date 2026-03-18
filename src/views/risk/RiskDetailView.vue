@@ -1037,7 +1037,7 @@
           </label>
           <input
             v-model="workingThreat.url"
-            data-testid="threat-href-input"
+            data-testid="threat-url-input"
             type="text"
             class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md dark:bg-slate-800 dark:text-slate-200"
           />

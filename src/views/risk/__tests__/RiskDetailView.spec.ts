@@ -1078,7 +1078,7 @@ describe('RiskDetailView', () => {
       .get('[data-testid="threat-title-input"]')
       .setValue('New Threat');
     await wrapper
-      .get('[data-testid="threat-href-input"]')
+      .get('[data-testid="threat-url-input"]')
       .setValue('https://threats.local/3');
     await wrapper.get('[data-testid="save-threat-button"]').trigger('click');
     await flushPromises();
