@@ -330,8 +330,6 @@ function normalizeReview(input: unknown): RiskReviewItem | null {
   if (!input || typeof input !== 'object') return null;
   const record = input as LooseRecord;
 
-  const id =
-    readString(record, ['uuid', 'id', 'reviewId']) || crypto.randomUUID();
   const decision =
     readString(record, [
       'decision',
@@ -370,6 +368,17 @@ function normalizeReview(input: unknown): RiskReviewItem | null {
     'deadline',
     'nextReviewAt',
   ]);
+  const explicitId = readString(record, ['uuid', 'id', 'reviewId']);
+  const fallbackIdentity = [
+    decision,
+    timestamp,
+    reviewer,
+    nextReviewDeadline,
+    notes,
+  ]
+    .filter((value): value is string => !!value)
+    .join('|');
+  const id = explicitId || `review-${hashStableToken(fallbackIdentity)}`;
 
   return {
     id,
@@ -379,6 +388,17 @@ function normalizeReview(input: unknown): RiskReviewItem | null {
     notes,
     nextReviewDeadline,
   };
+}
+
+function hashStableToken(value: string): string {
+  if (!value) return 'unknown';
+  let hash = 2166136261;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash +=
+      (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24);
+  }
+  return (hash >>> 0).toString(36);
 }
 
 function normalizeFromRiskLogEntry(entry: RiskLogEntry): RiskEventItem {

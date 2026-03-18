@@ -760,6 +760,73 @@ describe('RiskDetailView', () => {
     );
   });
 
+  it('loads reviews and events with pagination params for POA&M risk detail', async () => {
+    mockRoute.name = 'plan-of-action-and-milestones-risk-detail';
+    mockRoute.params.id = 'poam-1';
+    mockApiState.reviewResponses[
+      '/api/oscal/plan-of-action-and-milestones/poam-1/risks/risk-1/reviews?page=1&limit=10&offset=0'
+    ] = {
+      data: [
+        {
+          uuid: 'poam-review-1',
+          decision: 'extend',
+          reviewedAt: '2026-03-16T12:30:00Z',
+          reviewerName: 'POAM Reviewer',
+          notes: 'POAM review entry',
+        },
+      ],
+      total: 1,
+      limit: 10,
+      offset: 0,
+      hasMore: false,
+    };
+    mockApiState.eventResponses[
+      '/api/oscal/plan-of-action-and-milestones/poam-1/risks/risk-1/events?page=1&limit=10&offset=0'
+    ] = {
+      data: [
+        {
+          uuid: 'poam-event-1',
+          eventType: 'updated',
+          createdAt: '2026-03-18T10:00:00Z',
+          actorName: 'POAM System',
+          details: 'POAM event entry',
+        },
+      ],
+      total: 1,
+      limit: 10,
+      offset: 0,
+      hasMore: false,
+    };
+
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    expect(findButtonByText(wrapper, 'Threats')).toBeUndefined();
+    expect(findButtonByText(wrapper, 'Remediations')).toBeUndefined();
+
+    await clickButtonByText(wrapper, 'Reviews');
+    await flushPromises();
+    expect(wrapper.text()).toContain('POAM review entry');
+    expect(apiCalls).toContainEqual(
+      expect.objectContaining({
+        endpoint:
+          '/api/oscal/plan-of-action-and-milestones/poam-1/risks/risk-1/reviews?page=1&limit=10&offset=0',
+        method: 'GET',
+      }),
+    );
+
+    await clickButtonByText(wrapper, 'History & Events');
+    await flushPromises();
+    expect(wrapper.text()).toContain('POAM event entry');
+    expect(apiCalls).toContainEqual(
+      expect.objectContaining({
+        endpoint:
+          '/api/oscal/plan-of-action-and-milestones/poam-1/risks/risk-1/events?page=1&limit=10&offset=0',
+        method: 'GET',
+      }),
+    );
+  });
+
   it('supports pagination for reviews tab', async () => {
     mockApiState.reviewResponses[
       '/api/oscal/system-security-plans/ssp-1/risks/risk-1/reviews?page=1&limit=10&offset=0'

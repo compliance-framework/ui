@@ -268,4 +268,23 @@ describe('risk-detail', () => {
       }),
     );
   });
+
+  it('uses deterministic fallback review ids when API id is missing', () => {
+    const payload = [
+      {
+        decision: 'extend',
+        reviewedAt: '2026-03-20T10:00:00Z',
+        reviewerName: 'Deterministic Reviewer',
+        reviewJustification: 'Still accepted after controls review.',
+      },
+    ];
+
+    const first = normalizeRiskReviews(payload);
+    const second = normalizeRiskReviews(payload);
+
+    expect(first).toHaveLength(1);
+    expect(second).toHaveLength(1);
+    expect(first[0].id).toBe(second[0].id);
+    expect(first[0].id).toMatch(/^review-/);
+  });
 });
