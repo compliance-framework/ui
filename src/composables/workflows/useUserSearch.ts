@@ -6,6 +6,18 @@ export interface DisplayUser extends CCFUser {
   displayName: string;
 }
 
+const USER_FETCH_BATCH_SIZE = 5;
+
+function extractUserFromResponse(response: unknown): CCFUser | undefined {
+  if (!response || typeof response !== 'object') return undefined;
+  const envelope = response as {
+    data?: {
+      data?: CCFUser;
+    };
+  };
+  return envelope.data?.data;
+}
+
 /**
  * Composable for managing user search, caching, and display in workflow role assignments.
  * Reduces complexity in components that need to search and display users.
@@ -20,11 +32,9 @@ export function useUserSearch() {
     { immediate: false },
   );
 
-  const { execute: fetchUserById, data: fetchedUser } = useDataApi<CCFUser>(
-    null,
-    null,
-    { immediate: false },
-  );
+  const { execute: fetchUserById } = useDataApi<CCFUser>(null, null, {
+    immediate: false,
+  });
 
   /**
    * Convert a CCFUser to DisplayUser with formatted display name
@@ -99,18 +109,29 @@ export function useUserSearch() {
    * Useful for loading users associated with existing assignments
    */
   async function loadUsersByIds(ids: string[]) {
-    const missing = ids.filter((id) => !userCache.value[id]);
+    const normalizedIds = ids
+      .map((id) => (typeof id === 'string' ? id.trim() : ''))
+      .filter((id) => !!id);
+    const missing = Array.from(
+      new Set(normalizedIds.filter((id) => !userCache.value[id])),
+    );
 
-    for (const id of missing) {
-      try {
-        await fetchUserById(`/api/admin/users/${id}`);
-        const payload = fetchedUser.value;
-        if (payload) {
-          cacheUser(toDisplayUser(payload));
-        }
-      } catch {
-        // Silently fail - user will show as ID only
-      }
+    for (
+      let index = 0;
+      index < missing.length;
+      index += USER_FETCH_BATCH_SIZE
+    ) {
+      const batch = missing.slice(index, index + USER_FETCH_BATCH_SIZE);
+      const results = await Promise.allSettled(
+        batch.map((id) => fetchUserById(`/api/admin/users/${id}`)),
+      );
+
+      results.forEach((result) => {
+        if (result.status !== 'fulfilled') return;
+        const payload = extractUserFromResponse(result.value);
+        if (!payload) return;
+        cacheUser(toDisplayUser(payload));
+      });
     }
   }
 

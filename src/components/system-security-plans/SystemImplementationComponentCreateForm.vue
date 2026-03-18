@@ -302,9 +302,8 @@ import type {
   Protocol,
   SystemComponent,
 } from '@/oscal';
-import { useDataApi } from '@/composables/axios';
-import decamelizeObjectKeys from 'decamelize-keys';
-import type { AxiosError, AxiosHeaders } from 'axios';
+import { useDataApi, decamelizeKeys } from '@/composables/axios';
+import type { AxiosError } from 'axios';
 import type { ErrorResponse, ErrorBody } from '@/stores/types';
 
 const props = defineProps<{
@@ -316,16 +315,6 @@ const emit = defineEmits<{
   created: [component: SystemComponent];
 }>();
 
-const decamelizeComponentRequest = (data: unknown, headers: AxiosHeaders) => {
-  headers.set('Content-Type', 'application/json');
-  return JSON.stringify(
-    decamelizeObjectKeys(data as Record<string, unknown>, {
-      separator: '-',
-      deep: true,
-    }),
-  );
-};
-
 const toast = useToast();
 const {
   data: newComponent,
@@ -335,7 +324,7 @@ const {
   `/api/oscal/system-security-plans/${props.sspId}/system-implementation/components`,
   {
     method: 'POST',
-    transformRequest: [decamelizeComponentRequest],
+    transformRequest: [decamelizeKeys],
   },
   { immediate: false },
 );
