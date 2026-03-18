@@ -398,6 +398,11 @@ const cloneProtocols = (protocols?: Protocol[]): Protocol[] =>
     })),
   }));
 
+const extractErrorBody = (error: unknown): string | undefined => {
+  const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
+  return errorResponse.response?.data?.errors?.body;
+};
+
 const applyTemplateToComponent = (template: DefinedComponent) => {
   componentData.type = template.type || '';
   componentData.title = template.title || '';
@@ -423,13 +428,11 @@ const loadComponentDefinitions = async () => {
   try {
     await executeFetchComponentDefinitions('/api/oscal/component-definitions');
   } catch (error) {
-    const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
     toast.add({
       severity: 'error',
       summary: 'Error',
       detail:
-        errorResponse.response?.data.errors.body ||
-        'Failed to load component definitions.',
+        extractErrorBody(error) || 'Failed to load component definitions.',
       life: 4000,
     });
   }
@@ -447,13 +450,10 @@ const loadDefinedComponents = async (componentDefinitionId: string) => {
     );
   } catch (error) {
     definedComponents.value = [];
-    const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
     toast.add({
       severity: 'error',
       summary: 'Error',
-      detail:
-        errorResponse.response?.data.errors.body ||
-        'Failed to load defined components.',
+      detail: extractErrorBody(error) || 'Failed to load defined components.',
       life: 4000,
     });
   }
@@ -575,13 +575,11 @@ const createComponent = async () => {
 
     emit('created', newComponent.value);
   } catch (error) {
-    const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
-
     toast.add({
       severity: 'error',
       summary: 'Error',
       detail:
-        errorResponse.response?.data.errors.body ||
+        extractErrorBody(error) ||
         'An error occurred while creating the component.',
       life: 5000,
     });
