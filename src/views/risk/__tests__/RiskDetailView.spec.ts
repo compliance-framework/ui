@@ -1126,12 +1126,25 @@ describe('RiskDetailView', () => {
   });
 
   it('upserts remediation template through the remediation-template endpoint', async () => {
+    mockRisk.remediationTemplate = {
+      title: 'Rotate DB encryption keys',
+      description: 'Rotate all stale encryption keys within 30 days.',
+      tasks: [
+        {
+          id: 'task-1',
+          title: 'Generate new key material',
+          orderIndex: 0,
+        },
+      ],
+    };
+
     const wrapper = mountComponent();
     await flushPromises();
 
     await clickButtonByText(wrapper, 'Remediations');
     await flushPromises();
     await clickButtonByText(wrapper, 'Edit Remediation');
+    expect(wrapper.text()).toContain('Edit Remediation');
     await wrapper
       .get('[data-testid="remediation-title-input"]')
       .setValue('Updated remediation');
@@ -1185,6 +1198,12 @@ describe('RiskDetailView', () => {
     expect(wrapper.text()).toContain('Legacy remediation');
     expect(findButtonByText(wrapper, 'Add Remediation')).toBeDefined();
     expect(findButtonByText(wrapper, 'Edit Remediation')).toBeUndefined();
+    const editButton = findButtonByText(wrapper, 'Edit');
+    const removeButton = findButtonByText(wrapper, 'Remove');
+    expect(editButton?.attributes('disabled')).toBeDefined();
+    expect(removeButton?.attributes('disabled')).toBeDefined();
+    expect(editButton?.attributes('title')).toContain('cannot be edited');
+    expect(removeButton?.attributes('title')).toContain('cannot be removed');
 
     await clickButtonByText(wrapper, 'Add Remediation');
     await wrapper

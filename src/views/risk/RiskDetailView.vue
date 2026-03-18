@@ -762,14 +762,24 @@
                   <div class="flex gap-2 self-start">
                     <button
                       class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-xs"
-                      :disabled="saving"
+                      :disabled="saving || !hasRemediationTemplateResource"
+                      :title="
+                        hasRemediationTemplateResource
+                          ? undefined
+                          : 'Legacy remediations cannot be edited until a remediation template exists.'
+                      "
                       @click="openRemediationEdit(remediation)"
                     >
                       Edit
                     </button>
                     <button
                       class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md text-xs"
-                      :disabled="saving"
+                      :disabled="saving || !hasRemediationTemplateResource"
+                      :title="
+                        hasRemediationTemplateResource
+                          ? undefined
+                          : 'Legacy remediations cannot be removed until a remediation template exists.'
+                      "
                       @click="removeRemediation(remediation)"
                     >
                       Remove
@@ -3077,7 +3087,18 @@ function openPrimaryRemediationEditor() {
 }
 
 function openRemediationEdit(remediation: RemediationTabItem) {
-  remediationEditingId.value = remediation.id || null;
+  if (!hasRemediationTemplateResource.value) {
+    toast.add({
+      severity: 'warn',
+      summary: 'Edit unavailable',
+      detail:
+        'Legacy remediations cannot be edited until a remediation template exists.',
+      life: 3500,
+    });
+    return;
+  }
+
+  remediationEditingId.value = remediation.id || 'existing-template';
   workingRemediation.value = {
     id: remediation.id,
     title: remediation.title || '',
@@ -3186,6 +3207,17 @@ async function saveRemediation() {
 
 async function removeRemediation(remediation: RemediationTabItem) {
   if (!isSspContext.value) return;
+
+  if (!hasRemediationTemplateResource.value) {
+    toast.add({
+      severity: 'warn',
+      summary: 'Remove unavailable',
+      detail:
+        'Legacy remediations cannot be removed until a remediation template exists.',
+      life: 3500,
+    });
+    return;
+  }
 
   const confirmed = window.confirm(
     `Remove remediation "${remediation.title}" from this risk?`,
