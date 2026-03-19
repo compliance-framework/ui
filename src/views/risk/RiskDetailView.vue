@@ -3142,7 +3142,7 @@ function buildRemediationPayload() {
     .filter(Boolean)
     .map((title, index) => ({
       title,
-      orderIndex: index,
+      orderIndex: index + 1,
     }));
 
   return {

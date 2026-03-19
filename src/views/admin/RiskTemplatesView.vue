@@ -697,14 +697,14 @@ function removeThreatId(index: number) {
 function addRemediationTask() {
   formData.value.remediationTasks.push({
     title: '',
-    orderIndex: formData.value.remediationTasks.length,
+    orderIndex: formData.value.remediationTasks.length + 1,
   });
 }
 
 function removeRemediationTask(index: number) {
   formData.value.remediationTasks.splice(index, 1);
   formData.value.remediationTasks.forEach((task, taskIndex) => {
-    task.orderIndex = taskIndex;
+    task.orderIndex = taskIndex + 1;
   });
 }
 
@@ -770,7 +770,7 @@ function buildTemplatePayload(): UpsertRiskTemplateRequest {
       .filter((task) => task.title.length > 0)
       .map((task, index) => ({
         ...task,
-        orderIndex: index,
+        orderIndex: index + 1,
       }));
 
     remediationTemplate = {
