@@ -61,6 +61,19 @@ describe('useUserSearch', () => {
     expect(userSuggestions.value[0].displayName).toBe('Alpha User');
   });
 
+  it('does not call the selectable-users API for queries shorter than 3 characters', async () => {
+    const { searchUsers, userSuggestions } = useUserSearch();
+    const execute = mockUseDataApi.mock.results.at(-1)?.value.execute as
+      | ReturnType<typeof vi.fn>
+      | undefined;
+
+    await searchUsers({ query: 'ab' });
+
+    expect(execute).toBeDefined();
+    expect(execute).not.toHaveBeenCalled();
+    expect(userSuggestions.value).toHaveLength(0);
+  });
+
   describe('toDisplayUser', () => {
     it('creates display name from first and last name', () => {
       const { toDisplayUser } = useUserSearch();

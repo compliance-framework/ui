@@ -78,12 +78,17 @@ export function useUserSearch() {
    * Filters by display name and ID, with fallback mock user on error
    */
   async function searchUsers(event: { query: string }) {
+    const normalized = event.query.trim().toLowerCase();
+    if (normalized.length < 3) {
+      userSuggestions.value = [];
+      return;
+    }
+
     try {
       await fetchSelectableUsers(
         `/api/users/select?search=${encodeURIComponent(event.query)}`,
       );
       const payload = selectableUsersData.value ?? [];
-      const normalized = event.query.trim().toLowerCase();
 
       const filtered = normalized
         ? payload.filter((user) => {
