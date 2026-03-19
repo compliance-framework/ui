@@ -787,8 +787,11 @@ async function applySuggestedComponent(suggestion: SuggestedComponent) {
         localStatement.value.uuid,
       ),
       {
-        'component-definition-id': suggestion.componentDefinitionId,
-        'defined-component-id': suggestion.definedComponentId,
+        componentDefinitionId: suggestion.componentDefinitionId,
+        definedComponentId: suggestion.definedComponentId,
+      },
+      {
+        transformRequest: [decamelizeKeys],
       },
     );
     pinAppliedSuggestion(suggestion);
