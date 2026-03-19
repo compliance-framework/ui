@@ -826,12 +826,15 @@ describe('RiskDetailView', () => {
     expect(text).toContain('Remediations');
     expect(text).toContain('Reviews');
     expect(text).toContain('History & Events');
-    expect(text).not.toContain('Log');
+    expect(text).toContain('Log');
+    expect(text).toContain('POAM Items');
     expect(text.indexOf('Threats')).toBeLessThan(text.indexOf('Remediations'));
     expect(text.indexOf('Remediations')).toBeLessThan(text.indexOf('Reviews'));
     expect(text.indexOf('Reviews')).toBeLessThan(
       text.indexOf('History & Events'),
     );
+    expect(text.indexOf('History & Events')).toBeLessThan(text.indexOf('Log'));
+    expect(text.indexOf('Log')).toBeLessThan(text.indexOf('POAM Items'));
 
     await clickButtonByText(wrapper, 'History & Events');
     await flushPromises();

@@ -1,6 +1,12 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ref } from 'vue';
 import { useDataApi } from '@/composables/axios';
+import type {
+  CreatePoamItemRequest,
+  UpdatePoamItemRequest,
+  CreateMilestoneRequest,
+  UpdateMilestoneRequest,
+} from '@/types/poam-items';
 import {
   usePoamItemsList,
   usePoamItemCreate,
@@ -36,7 +42,7 @@ vi.mock('@/composables/axios', () => ({
 // only providing the fields our composables actually use.
 function makeDataApiMock() {
   return {
-    data: mockData as any,
+    data: mockData as ReturnType<typeof useDataApi>['data'],
     isLoading: ref(false),
     error: ref(null),
     execute: mockExecute,
@@ -108,11 +114,12 @@ describe('usePoamItems', () => {
     it('POSTs to /api/poam-items', async () => {
       mockExecute.mockResolvedValue(undefined);
       const { createPoamItem } = usePoamItemCreate();
-      await createPoamItem({
+      const payload: CreatePoamItemRequest = {
         title: 'Test',
         status: 'open',
         sspId: 'ssp-1',
-      } as any);
+      };
+      await createPoamItem(payload);
       expect(mockExecute).toHaveBeenCalledWith(
         '/api/poam-items',
         expect.objectContaining({ method: 'POST' }),
@@ -132,7 +139,8 @@ describe('usePoamItems', () => {
     it('PUTs to /api/poam-items/:id', async () => {
       mockExecute.mockResolvedValue(undefined);
       const { updatePoamItem } = usePoamItemUpdate('item-123');
-      await updatePoamItem({ title: 'Updated' } as any);
+      const payload: UpdatePoamItemRequest = { title: 'Updated' };
+      await updatePoamItem(payload);
       expect(mockExecute).toHaveBeenCalledWith(
         '/api/poam-items/item-123',
         expect.objectContaining({ method: 'PUT' }),
@@ -170,7 +178,12 @@ describe('usePoamItems', () => {
     it('POSTs to /api/poam-items/:id/milestones', async () => {
       mockExecute.mockResolvedValue(undefined);
       const { createMilestone } = useMilestoneCreate('poam-item-789');
-      await createMilestone({ title: 'M1', status: 'open' } as any);
+      const payload: CreateMilestoneRequest = {
+        title: 'M1',
+        status: 'open',
+        plannedCompletionDate: '2026-12-31',
+      };
+      await createMilestone(payload);
       expect(mockExecute).toHaveBeenCalledWith(
         '/api/poam-items/poam-item-789/milestones',
         expect.objectContaining({ method: 'POST' }),
@@ -184,7 +197,8 @@ describe('usePoamItems', () => {
     it('PUTs to /api/poam-items/:poamItemId/milestones/:milestoneId', async () => {
       mockExecute.mockResolvedValue(undefined);
       const { updateMilestone } = useMilestoneUpdate('poam-item-789', 'ms-001');
-      await updateMilestone({ title: 'Updated M1' } as any);
+      const payload: UpdateMilestoneRequest = { title: 'Updated M1' };
+      await updateMilestone(payload);
       expect(mockExecute).toHaveBeenCalledWith(
         '/api/poam-items/poam-item-789/milestones/ms-001',
         expect.objectContaining({ method: 'PUT' }),
