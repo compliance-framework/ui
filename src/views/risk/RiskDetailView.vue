@@ -726,7 +726,7 @@
                     <p
                       class="text-sm font-semibold text-gray-800 dark:text-slate-200"
                     >
-                      {{ remediation.title }}
+                      {{ remediation.title || 'Untitled remediation' }}
                     </p>
                     <p class="text-sm text-gray-600 dark:text-slate-400">
                       {{ remediation.description || 'No description.' }}
@@ -2419,9 +2419,8 @@ function normalizeRemediationTasks(
 
 function normalizeRemediationItem(
   record: Record<string, unknown>,
-): RemediationTabItem | null {
+): RemediationTabItem {
   const title = readString(record, ['title']) || '';
-  if (!title) return null;
 
   return {
     id: readString(record, ['id', 'uuid']),

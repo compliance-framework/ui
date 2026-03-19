@@ -1026,6 +1026,37 @@ describe('RiskDetailView', () => {
     expect(wrapper.text()).toContain('Generate new key material');
   });
 
+  it('renders untitled remediation templates without dropping their details', async () => {
+    mockRisk.remediationTemplate = {
+      description: 'Remediation migrated without a title.',
+      tasks: [
+        {
+          id: 'task-untitled-1',
+          title: 'Recover missing remediation title',
+          orderIndex: 0,
+        },
+      ],
+    };
+
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    await clickButtonByText(wrapper, 'Remediations');
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('Untitled remediation');
+    expect(wrapper.text()).toContain('Remediation migrated without a title.');
+    expect(wrapper.text()).toContain('Recover missing remediation title');
+
+    await clickButtonByText(wrapper, 'Edit Remediation');
+    expect(
+      (
+        wrapper.get('[data-testid="remediation-title-input"]')
+          .element as HTMLInputElement
+      ).value,
+    ).toBe('');
+  });
+
   it('renders non-http threat href values as plain text without clickable link', async () => {
     mockRisk.threatIds = [
       {
