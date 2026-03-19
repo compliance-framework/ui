@@ -80,7 +80,7 @@ describe('RiskEditForm', () => {
     );
   });
 
-  it('submits core risk updates while preserving existing threats and remediations', async () => {
+  it('submits only the core risk fields managed by the edit form', async () => {
     const wrapper = mountForm(
       makeRisk({
         threatIds: [{ id: 'T-001', system: 'CAPEC' }],
@@ -108,20 +108,14 @@ describe('RiskEditForm', () => {
     await wrapper.find('form').trigger('submit');
 
     expect(mockUpdateRisk).toHaveBeenCalledWith({
-      data: expect.objectContaining({
+      data: {
         title: 'Risk B',
         description: 'Updated description',
         statement: 'Updated statement',
         status: 'investigating',
-        threatIds: [{ id: 'T-001', system: 'CAPEC' }],
-        remediations: [
-          expect.objectContaining({
-            uuid: 'remediation-1',
-            lifecycle: 'planned',
-            title: 'Planned remediation',
-          }),
-        ],
-      }),
+        deadline: undefined,
+        remarks: undefined,
+      },
     });
   });
 });

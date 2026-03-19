@@ -306,8 +306,7 @@ async function submit() {
       }
     }
 
-    const updatedRisk: Risk = {
-      ...props.risk,
+    const updatedRisk = {
       title: formData.title,
       description: formData.description,
       statement: formData.statement,
