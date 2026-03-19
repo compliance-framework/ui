@@ -54,6 +54,7 @@
                 v-model="evidence.start"
                 placeholder="Select start date"
                 required
+                date-format="yy-mm-dd"
                 :max-date="
                   evidence.end ? new Date(evidence.end) : new Date(Date.now())
                 "
@@ -67,6 +68,7 @@
                 v-model="evidence.end"
                 placeholder="Select end date"
                 required
+                date-format="yy-mm-dd"
                 :min-date="
                   evidence.start
                     ? new Date(evidence.start)
@@ -172,11 +174,19 @@ const props = defineProps<{
 const backmatterResources = ref<BackMatterResource[]>(
   props.backmatterResources || [],
 );
-const evidence = ref<Partial<Evidence>>(
-  props.evidence || {
-    uuid: uuidv4(),
-  },
-);
+// Interface for form data with Date objects for DatePicker compatibility
+interface EvidenceFormData extends Omit<Evidence, 'start' | 'end'> {
+  start?: Date;
+  end?: Date;
+}
+
+const evidence = ref<Partial<EvidenceFormData>>({
+  ...props.evidence,
+  // Convert ISO strings to Date objects for DatePicker
+  start: props.evidence?.start ? new Date(props.evidence.start) : undefined,
+  end: props.evidence?.end ? new Date(props.evidence.end) : undefined,
+  uuid: props.evidence?.uuid || uuidv4(),
+});
 const status = ref<EvidenceStatus>({
   state: props.evidence?.status?.state || '',
   reason: props.evidence?.status?.reason || '',
@@ -208,7 +218,15 @@ function handleSubmit() {
   if (!isFormValid.value) {
     return; // Prevent submission if validation fails
   }
-  emit('submit', evidence.value, labels.value, status.value);
+
+  // Convert Date objects back to ISO strings for API
+  const evidenceToSubmit: Partial<Evidence> = {
+    ...evidence.value,
+    start: evidence.value.start?.toISOString(),
+    end: evidence.value.end?.toISOString(),
+  };
+
+  emit('submit', evidenceToSubmit, labels.value, status.value);
 }
 
 function onUpload(file: File, base64: Base64) {

@@ -140,7 +140,7 @@ async function createCapability(): Promise<void> {
     };
 
     const response = await execute({
-      data: capabilityData,
+      data: [capabilityData], // Backend expects an array of capabilities
     });
 
     // Use response data directly to avoid race condition with data ref updates

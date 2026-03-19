@@ -31,6 +31,7 @@ const useAuthenticatedInstance = () => {
         cachedURL = await configStore.getConfig().then((c) => c.API_URL);
       }
       config.baseURL = cachedURL;
+
       return config;
     },
     (error) => {
@@ -39,9 +40,7 @@ const useAuthenticatedInstance = () => {
   );
 
   instance.interceptors.response.use(
-    (response) => {
-      return response;
-    },
+    (response) => response,
     (error) => {
       if (error.response && error.response.status === 401) {
         userStore.logout();

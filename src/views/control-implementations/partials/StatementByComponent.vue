@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, watchEffect } from 'vue';
+import { ref, watchEffect, computed } from 'vue';
+import { useRouter } from 'vue-router';
 import { useSystemStore } from '@/stores/system.ts';
 import BurgerMenu from '@/components/BurgerMenu.vue';
 import Textarea from '@/volt/Textarea.vue';
@@ -7,10 +8,19 @@ import { useToggle } from '@/composables/useToggle';
 import { useDataApi } from '@/composables/axios';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
 import VueMarkdown from 'vue-markdown-render';
-import type { ByComponent, SystemComponent } from '@/oscal';
+import type { ByComponent, Risk, SystemComponent } from '@/oscal';
+import {
+  getRiskComponentIds,
+  getRiskControlIds,
+  getRiskImpact,
+} from '@/utils/risk-register';
+import RiskIndicatorBadge from './RiskIndicatorBadge.vue';
 
-const { byComponent } = defineProps<{
+const { byComponent, controlId, sspRisks, riskFetchLimit } = defineProps<{
   byComponent: ByComponent;
+  controlId?: string;
+  sspRisks?: Risk[];
+  riskFetchLimit?: number;
 }>();
 const emit = defineEmits<{
   save: [byComponent: ByComponent];
@@ -18,6 +28,7 @@ const emit = defineEmits<{
 }>();
 
 const { system } = useSystemStore();
+const router = useRouter();
 
 const { confirmDeleteDialog } = useDeleteConfirmationDialog();
 
@@ -32,6 +43,63 @@ const { data: component } = useDataApi<SystemComponent>(
   `/api/oscal/system-security-plans/${system.securityPlan?.uuid as string}/system-implementation/components/${byComponent.componentUuid}`,
 );
 
+function normalizeId(value?: string): string {
+  return (value || '').trim().toLowerCase();
+}
+
+const relatedRisks = computed(() => {
+  if (!sspRisks?.length || !byComponent.componentUuid || !controlId) {
+    return [];
+  }
+
+  const normalizedComponentId = normalizeId(byComponent.componentUuid);
+  const normalizedControlId = normalizeId(controlId);
+
+  return sspRisks.filter((risk) => {
+    const componentIds = getRiskComponentIds(risk).map((id) => normalizeId(id));
+    if (!componentIds.includes(normalizedComponentId)) {
+      return false;
+    }
+    const controlIds = getRiskControlIds(risk).map((id) => normalizeId(id));
+    return controlIds.includes(normalizedControlId);
+  });
+});
+
+const riskCount = computed(() => relatedRisks.value.length);
+const isRiskCountCapped = computed(() => {
+  if (!riskFetchLimit || riskFetchLimit <= 0) {
+    return false;
+  }
+  return riskCount.value >= riskFetchLimit;
+});
+
+const highestSeverity = computed(() => {
+  if (!relatedRisks.value.length) return undefined;
+
+  const hasCritical = relatedRisks.value.some(
+    (risk) => getRiskImpact(risk) === 'critical',
+  );
+  if (hasCritical) return 'high';
+
+  const hasHigh = relatedRisks.value.some(
+    (risk) => getRiskImpact(risk) === 'high',
+  );
+  if (hasHigh) return 'high';
+
+  const hasMedium = relatedRisks.value.some((risk) => {
+    const impact = getRiskImpact(risk);
+    return impact === 'medium' || impact === 'moderate';
+  });
+  if (hasMedium) return 'medium';
+
+  const hasLow = relatedRisks.value.some(
+    (risk) => getRiskImpact(risk) === 'low' || getRiskImpact(risk) === '',
+  );
+  if (hasLow) return 'low';
+
+  return 'low';
+});
+
 function save() {
   emit('save', localComponent.value);
   setEditing(false);
@@ -44,11 +112,33 @@ async function deleteStatement() {
 function cancel() {
   setEditing(false);
 }
+
+function openRisksForControl() {
+  if (!controlId) {
+    return;
+  }
+  void router.push({
+    name: 'risks:index',
+    query: {
+      controlId,
+    },
+  });
+}
 </script>
 
 <template>
   <div class="flex justify-between items-center">
-    <h4 class="font-medium">{{ component?.title }}</h4>
+    <div class="flex items-center gap-2">
+      <h4 class="font-medium">{{ component?.title }}</h4>
+      <RiskIndicatorBadge
+        v-if="system.securityPlan?.uuid && byComponent.componentUuid"
+        :risk-count="riskCount"
+        :is-capped="isRiskCountCapped"
+        :highest-severity="highestSeverity"
+        clickable
+        @click="openRisksForControl"
+      />
+    </div>
     <BurgerMenu
       :items="[
         {

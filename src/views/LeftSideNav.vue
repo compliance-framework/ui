@@ -50,8 +50,13 @@ const links = ref<Array<NavigationItem>>([
   },
   {
     name: 'workflow:index',
-    title: 'Workflows',
-    abbr: 'WF',
+    title: 'Workflow Definitions',
+    abbr: 'WD',
+  },
+  {
+    name: 'workflow-instances:index',
+    title: 'Workflow Instances',
+    abbr: 'WI',
   },
   {
     name: 'risks:index',
@@ -118,6 +123,23 @@ const links = ref<Array<NavigationItem>>([
       {
         name: 'users-list',
         title: 'System Users',
+      },
+      {
+        name: 'admin-risks',
+        title: 'Risks',
+      },
+      {
+        name: 'admin-subject-templates',
+        title: 'Subject Templates',
+      },
+      {
+        name: 'admin-risk-templates',
+        title: 'Risk Templates',
+      },
+      {
+        name: 'admin-import',
+        title: 'Import',
+        abbr: 'IMP',
       },
     ],
   },

@@ -67,6 +67,7 @@ watch(error, () => {
 
 const routes = ref([
   { name: 'profile:view-controls', label: 'Controls' },
+  { name: 'profile:view-compliance', label: 'Compliance' },
   { name: 'profile:view-merge', label: 'Merge' },
   { name: 'profile:view-json', label: 'JSON' },
 ]);

@@ -65,6 +65,98 @@ const authenticatedRoutes = [
     },
   },
   {
+    path: 'workflow-definitions/:id',
+    name: 'workflow-definition-editor',
+    component: () =>
+      import('../views/workflows/WorkflowDefinitionEditorView.vue'),
+    meta: {
+      requiresAuth: true,
+    },
+    children: [
+      {
+        path: '',
+        name: 'workflow-definition-overview',
+        component: () =>
+          import('../views/workflows/WorkflowDefinitionOverviewView.vue'),
+      },
+      {
+        path: 'steps',
+        name: 'workflow-definition-steps',
+        component: () =>
+          import('../views/workflows/WorkflowDefinitionStepsView.vue'),
+      },
+      {
+        path: 'controls',
+        name: 'workflow-definition-controls',
+        component: () =>
+          import('../views/workflows/WorkflowDefinitionControlsView.vue'),
+      },
+      {
+        path: 'json',
+        name: 'workflow-definition-json',
+        component: () =>
+          import('../views/workflows/WorkflowDefinitionJSONView.vue'),
+      },
+    ],
+  },
+  {
+    path: 'workflow-instances',
+    name: 'workflow-instances:index',
+    component: () =>
+      import('../views/workflow-instances/WorkflowInstancesIndexView.vue'),
+    meta: {
+      requiresAuth: true,
+    },
+  },
+  {
+    path: 'workflow-instances/:id',
+    name: 'workflow-instance-editor',
+    component: () =>
+      import('../views/workflow-instances/WorkflowInstanceEditorView.vue'),
+    meta: {
+      requiresAuth: true,
+    },
+    children: [
+      {
+        path: '',
+        name: 'workflow-instance-overview',
+        component: () =>
+          import(
+            '../views/workflow-instances/WorkflowInstanceOverviewView.vue'
+          ),
+      },
+      {
+        path: 'roles',
+        name: 'workflow-instance-roles',
+        component: () =>
+          import('../views/workflow-instances/WorkflowInstanceRolesView.vue'),
+      },
+      {
+        path: 'executions',
+        name: 'workflow-instance-executions',
+        component: () =>
+          import(
+            '../views/workflow-instances/WorkflowInstanceExecutionsView.vue'
+          ),
+      },
+      {
+        path: 'json',
+        name: 'workflow-instance-json',
+        component: () =>
+          import('../views/workflow-instances/WorkflowInstanceJSONView.vue'),
+      },
+    ],
+  },
+  {
+    path: 'workflow-executions/:id',
+    name: 'workflow-execution-view',
+    component: () =>
+      import('../views/workflow-executions/WorkflowExecutionView.vue'),
+    meta: {
+      requiresAuth: true,
+    },
+  },
+  {
     path: 'system',
     name: 'system',
     component: () => import('../views/SystemView.vue'),
@@ -78,6 +170,11 @@ const authenticatedRoutes = [
         path: 'users',
         name: 'system:users',
         component: () => import('../views/system/UsersView.vue'),
+      },
+      {
+        path: 'risks',
+        name: 'system:risks',
+        component: () => import('../views/RisksView.vue'),
       },
       {
         path: 'components',
@@ -240,6 +337,14 @@ const authenticatedRoutes = [
         },
       },
       {
+        path: 'compliance',
+        name: 'profile:view-compliance',
+        component: () => import('../views/profile/ProfileComplianceView.vue'),
+        meta: {
+          requiresAuth: true,
+        },
+      },
+      {
         path: 'json',
         name: 'profile:view-json',
         component: () => import('../views/profile/ProfileJSONView.vue'),
@@ -261,6 +366,38 @@ const authenticatedRoutes = [
     path: '/roles',
     name: 'admin-roles',
     component: () => import('../views/RoleListView.vue'),
+    meta: {
+      requiresAuth: true,
+    },
+  },
+  {
+    path: '/admin/risks',
+    name: 'admin-risks',
+    component: () => import('../views/admin/AdminRisksView.vue'),
+    meta: {
+      requiresAuth: true,
+    },
+  },
+  {
+    path: '/admin/subject-templates',
+    name: 'admin-subject-templates',
+    component: () => import('../views/admin/SubjectTemplatesView.vue'),
+    meta: {
+      requiresAuth: true,
+    },
+  },
+  {
+    path: '/admin/subject-templates/:id',
+    name: 'admin-subject-template-detail',
+    component: () => import('../views/admin/SubjectTemplateDetailView.vue'),
+    meta: {
+      requiresAuth: true,
+    },
+  },
+  {
+    path: '/admin/risk-templates',
+    name: 'admin-risk-templates',
+    component: () => import('../views/admin/RiskTemplatesView.vue'),
     meta: {
       requiresAuth: true,
     },
@@ -539,6 +676,24 @@ const authenticatedRoutes = [
           ),
       },
       {
+        path: 'risks',
+        name: 'system-security-plan-risks',
+        component: () => import('../views/RisksView.vue'),
+      },
+      {
+        path: 'risks/:riskId',
+        name: 'system-security-plan-risk-detail',
+        component: () => import('../views/risk/RiskDetailView.vue'),
+      },
+      {
+        path: 'compliance',
+        name: 'system-security-plan-compliance',
+        component: () =>
+          import(
+            '../views/system-security-plans/SystemSecurityPlanComplianceView.vue'
+          ),
+      },
+      {
         path: 'json',
         name: 'system-security-plan-json',
         component: () =>
@@ -765,6 +920,14 @@ const authenticatedRoutes = [
     path: '/users/:id',
     name: 'user-view',
     component: () => import('../views/users/UserView.vue'),
+    meta: {
+      requiresAuth: true,
+    },
+  },
+  {
+    path: '/my-tasks',
+    name: 'my-tasks',
+    component: () => import('../views/MyTasksView.vue'),
     meta: {
       requiresAuth: true,
     },

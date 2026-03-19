@@ -3,7 +3,9 @@ import { v4 as uuidv4 } from 'uuid';
 import StatementByComponent from '@/views/control-implementations/partials/StatementByComponent.vue';
 import type {
   ByComponent,
+  ControlImplementation,
   ImplementedRequirement,
+  Risk,
   Statement,
   SystemComponent,
 } from '@/oscal';
@@ -19,7 +21,11 @@ import Textarea from '@/volt/Textarea.vue';
 import { useCloned } from '@vueuse/core';
 import BurgerMenu from '@/components/BurgerMenu.vue';
 import { useToggle } from '@/composables/useToggle';
-import { useDataApi, decamelizeKeys } from '@/composables/axios';
+import {
+  useAuthenticatedInstance,
+  useDataApi,
+  decamelizeKeys,
+} from '@/composables/axios';
 import { useToast } from 'primevue/usetoast';
 import Dialog from '@/volt/Dialog.vue';
 import Button from '@/volt/Button.vue';
@@ -28,10 +34,22 @@ import StatementEditForm from '@/components/system-security-plans/StatementEditF
 import SystemImplementationComponentCreateForm from '@/components/system-security-plans/SystemImplementationComponentCreateForm.vue';
 import DashboardEvidenceCounter from '@/views/control-implementations/partials/DashboardEvidenceCounter.vue';
 import TooltipTitle from '@/components/TooltipTitle.vue';
+import {
+  buildApplySuggestionEndpoint,
+  buildApplySuggestionsEndpoint,
+  buildByComponentsEndpoint,
+  buildSuggestComponentsEndpoint,
+  getExistingComponentUuidSet,
+  getUnappliedSuggestions,
+  normalizeSuggestedComponentsResponse,
+  type SuggestedComponent,
+  type SystemComponentSuggestion,
+} from '@/views/control-implementations/partials/component-suggestions';
 
 const { system } = useSystemStore();
 const toast = useToast();
 const router = useRouter();
+const axios = useAuthenticatedInstance();
 
 const showError = ref(false);
 
@@ -83,12 +101,15 @@ const {
   statement,
   implementation,
   sspId: providedSspId,
+  partid,
 } = defineProps<{
   statement?: Statement;
   implementation: ImplementedRequirement;
   sspId?: string;
   partid?: string;
 }>();
+
+const RISK_FETCH_LIMIT = 100;
 
 const localStatement = ref<Statement | undefined>(statement);
 
@@ -109,6 +130,11 @@ const {
   isLoading: componentsLoading,
   execute: fetchComponents,
 } = useDataApi<SystemComponent[]>(null, null, { immediate: false });
+const { data: sspRisks, execute: fetchSspRisks } = useDataApi<Risk[]>(
+  null,
+  {},
+  { immediate: false },
+);
 const { execute: executeUpdate } = useDataApi<Statement>(null, {
   transformRequest: [decamelizeKeys],
   method: 'PUT',
@@ -119,10 +145,30 @@ const { execute: executeDelete } = useDataApi<Statement>(null, {
   method: 'DELETE',
 });
 
-const { execute: executeCreate } = useDataApi<ByComponent>(null, {
-  transformRequest: [decamelizeKeys],
-  method: 'POST',
-});
+const { data: createdByComponentResponse, execute: executeCreate } =
+  useDataApi<ByComponent>(null, {
+    transformRequest: [decamelizeKeys],
+    method: 'POST',
+  });
+const {
+  data: suggestedComponentsResponse,
+  execute: fetchSuggestedComponentsApi,
+} = useDataApi<SystemComponentSuggestion[]>(
+  null,
+  {
+    method: 'POST',
+  },
+  { immediate: false },
+);
+
+const suggestedComponents = ref<SuggestedComponent[]>([]);
+const pinnedAppliedSuggestions = ref<SuggestedComponent[]>([]);
+const suggestionsLoading = ref(false);
+const suggestionsError = ref('');
+const applyingSuggestedComponentUuids = ref<string[]>([]);
+const applyingAllSuggestions = ref(false);
+let latestSuggestionsRequestId = 0;
+const suggestionsDebugEnabled = import.meta.env.DEV;
 
 const { execute: createEvidenceDashboard } = useDataApi<Dashboard>(
   '/api/filters',
@@ -171,10 +217,19 @@ const { execute: updateDashboard } = useDataApi<Dashboard>(
 watch(
   resolvedSspId,
   async (id) => {
-    if (!id) return;
-    await fetchComponents(
-      `/api/oscal/system-security-plans/${id}/system-implementation/components`,
-    );
+    if (!id) {
+      sspRisks.value = [];
+      return;
+    }
+    const query = new URLSearchParams({ limit: `${RISK_FETCH_LIMIT}` });
+    await Promise.allSettled([
+      fetchComponents(
+        `/api/oscal/system-security-plans/${id}/system-implementation/components`,
+      ),
+      fetchSspRisks(
+        `/api/oscal/system-security-plans/${id}/risks?${query.toString()}`,
+      ),
+    ]);
   },
   { immediate: true },
 );
@@ -187,6 +242,65 @@ const componentItems = computed(() => {
     };
   });
 });
+const componentMetadataByUuid = computed(() => {
+  return new Map(
+    (components.value ?? []).map((component) => [
+      component.uuid,
+      { title: component.title, type: component.type },
+    ]),
+  );
+});
+const displayedSuggestions = computed(() => {
+  const mergedByUuid = new Map<string, SuggestedComponent>();
+  for (const suggestion of suggestedComponents.value) {
+    mergedByUuid.set(suggestion.componentUuid, suggestion);
+  }
+  for (const suggestion of pinnedAppliedSuggestions.value) {
+    if (!mergedByUuid.has(suggestion.componentUuid)) {
+      mergedByUuid.set(suggestion.componentUuid, suggestion);
+    }
+  }
+
+  return Array.from(mergedByUuid.values()).map((suggestion) => {
+    const fallback = componentMetadataByUuid.value.get(
+      suggestion.componentUuid,
+    );
+    return {
+      ...suggestion,
+      title: suggestion.title || fallback?.title || suggestion.componentUuid,
+      type: suggestion.type || fallback?.type || 'unknown',
+    };
+  });
+});
+const existingComponentUuidSet = computed(() =>
+  getExistingComponentUuidSet(localStatement.value?.byComponents),
+);
+const pinnedAppliedSuggestionUuidSet = computed(
+  () =>
+    new Set(pinnedAppliedSuggestions.value.map((item) => item.componentUuid)),
+);
+const unappliedSuggestions = computed(() =>
+  getUnappliedSuggestions(
+    localStatement.value?.byComponents,
+    displayedSuggestions.value,
+  ),
+);
+const allSuggestionsApplied = computed(
+  () =>
+    displayedSuggestions.value.length > 0 &&
+    unappliedSuggestions.value.length === 0,
+);
+
+watch(
+  () => statement,
+  (value, previousValue) => {
+    if (value?.uuid !== previousValue?.uuid) {
+      pinnedAppliedSuggestions.value = [];
+    }
+    localStatement.value = value;
+  },
+  { immediate: true },
+);
 
 const newByComponent = ref<ByComponent>({
   uuid: uuidv4(),
@@ -197,7 +311,7 @@ const newByComponent = ref<ByComponent>({
 const selectedComponent = ref();
 watch(selectedComponent, () => {
   // When the selected component changes, update the model
-  newByComponent.value.componentUuid = selectedComponent.value.value;
+  newByComponent.value.componentUuid = selectedComponent.value?.value;
 });
 
 onMounted(() => {
@@ -207,6 +321,292 @@ onMounted(() => {
   // Load existing dashboards for this control
   loadDashboardsForControl();
 });
+
+watch(
+  () => [
+    resolvedSspId.value,
+    implementation.uuid,
+    implementation.controlId,
+    localStatement.value?.uuid,
+    localStatement.value?.statementId,
+    partid,
+  ],
+  async ([sspId]) => {
+    if (!sspId) {
+      latestSuggestionsRequestId += 1;
+      suggestedComponents.value = [];
+      suggestionsError.value = '';
+      suggestionsLoading.value = false;
+      return;
+    }
+    await fetchSuggestedComponents();
+  },
+  { immediate: true },
+);
+
+function isSuggestionApplied(componentUuid: string): boolean {
+  return (
+    existingComponentUuidSet.value.has(componentUuid) ||
+    pinnedAppliedSuggestionUuidSet.value.has(componentUuid)
+  );
+}
+
+function isSuggestionApplying(componentUuid: string): boolean {
+  return applyingSuggestedComponentUuids.value.includes(componentUuid);
+}
+
+function formatRelevanceScore(score: number | undefined): string {
+  if (typeof score !== 'number' || Number.isNaN(score)) {
+    return '';
+  }
+  return score.toFixed(2);
+}
+
+function setSuggestionApplying(componentUuid: string, applying: boolean) {
+  if (applying) {
+    if (!applyingSuggestedComponentUuids.value.includes(componentUuid)) {
+      applyingSuggestedComponentUuids.value = [
+        ...applyingSuggestedComponentUuids.value,
+        componentUuid,
+      ];
+    }
+    return;
+  }
+  applyingSuggestedComponentUuids.value =
+    applyingSuggestedComponentUuids.value.filter(
+      (uuid) => uuid !== componentUuid,
+    );
+}
+
+function pinAppliedSuggestion(suggestion: SuggestedComponent) {
+  if (
+    pinnedAppliedSuggestions.value.some(
+      (item) => item.componentUuid === suggestion.componentUuid,
+    )
+  ) {
+    return;
+  }
+  pinnedAppliedSuggestions.value = [
+    ...pinnedAppliedSuggestions.value,
+    suggestion,
+  ];
+}
+
+function logSuggestionsDebug(
+  message: string,
+  context: Record<string, unknown> = {},
+) {
+  if (!suggestionsDebugEnabled) {
+    return;
+  }
+  console.info('[control-suggestions]', message, context);
+}
+
+function isCanceledRequestError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') {
+    return false;
+  }
+  if ('code' in error && error.code === 'ERR_CANCELED') {
+    return true;
+  }
+  if ('message' in error && typeof error.message === 'string') {
+    const message = error.message.toLowerCase();
+    return message.includes('canceled') || message.includes('aborted');
+  }
+  return false;
+}
+
+async function fetchSuggestedComponents() {
+  const requestId = ++latestSuggestionsRequestId;
+  const sspId = resolvedSspId.value;
+  const statementUuid = localStatement.value?.uuid;
+  logSuggestionsDebug('fetch start', {
+    requestId,
+    latestSuggestionsRequestId,
+    sspId,
+    implementationUuid: implementation.uuid,
+    statementUuid,
+  });
+  if (!sspId) {
+    if (requestId === latestSuggestionsRequestId) {
+      suggestedComponents.value = [];
+      suggestionsError.value = '';
+      suggestionsLoading.value = false;
+    }
+    return;
+  }
+  if (!statementUuid) {
+    if (requestId === latestSuggestionsRequestId) {
+      suggestedComponents.value = [];
+      suggestionsError.value = '';
+      suggestionsLoading.value = false;
+    }
+    return;
+  }
+
+  if (requestId === latestSuggestionsRequestId) {
+    suggestionsLoading.value = true;
+    suggestionsError.value = '';
+  }
+
+  try {
+    await fetchSuggestedComponentsApi(
+      buildSuggestComponentsEndpoint(sspId, implementation.uuid, statementUuid),
+    );
+
+    if (requestId !== latestSuggestionsRequestId) {
+      return;
+    }
+
+    const normalizedSuggestions = normalizeSuggestedComponentsResponse(
+      suggestedComponentsResponse.value,
+    );
+    suggestedComponents.value = normalizedSuggestions;
+    logSuggestionsDebug('fetch success', {
+      requestId,
+      suggestionsCount: normalizedSuggestions.length,
+    });
+  } catch (error) {
+    if (requestId !== latestSuggestionsRequestId) {
+      return;
+    }
+    if (isCanceledRequestError(error)) {
+      logSuggestionsDebug('fetch canceled', {
+        requestId,
+        error,
+      });
+      return;
+    }
+    console.error('Failed to fetch suggested components:', {
+      requestId,
+      sspId,
+      implementationUuid: implementation.uuid,
+      statementUuid,
+      error,
+    });
+    suggestedComponents.value = [];
+    suggestionsError.value =
+      error instanceof Error
+        ? error.message
+        : 'Unable to load component suggestions.';
+  } finally {
+    if (requestId === latestSuggestionsRequestId) {
+      suggestionsLoading.value = false;
+    }
+  }
+}
+
+async function createStatementByComponent(
+  componentUuid: string,
+  description = '',
+): Promise<ByComponent | undefined> {
+  const sspId = resolvedSspId.value;
+  const statementUuid = localStatement.value?.uuid;
+  if (!sspId || !statementUuid) {
+    const missing =
+      !sspId && !statementUuid
+        ? 'system security plan and statement'
+        : !sspId
+          ? 'system security plan'
+          : 'statement';
+    console.error(
+      `Unable to create component implementation: missing ${missing}.`,
+    );
+    toast.add({
+      severity: 'error',
+      summary: 'Unable to Add Component Implementation',
+      detail:
+        'A system security plan and control statement must be selected before adding a component implementation.',
+      life: 5000,
+    });
+    return undefined;
+  }
+
+  const response = await executeCreate(
+    buildByComponentsEndpoint(sspId, implementation.uuid, statementUuid),
+    {
+      data: {
+        uuid: uuidv4(),
+        componentUuid,
+        description,
+        implementationStatus: {
+          state: '',
+        },
+      } as ByComponent,
+    },
+  );
+
+  const apiCreated = response.response.value?.data?.data;
+  const created = apiCreated ?? createdByComponentResponse.value;
+  if (!created?.uuid) {
+    console.error(
+      'Unexpected by-component create response payload:',
+      apiCreated,
+    );
+    toast.add({
+      severity: 'error',
+      summary: 'Error Creating By-Component',
+      detail: 'The server did not return a valid component implementation.',
+      life: 4000,
+    });
+    return undefined;
+  }
+
+  return created;
+}
+
+async function syncStatementAfterSuggestionApply(options?: {
+  refreshSuggestions?: boolean;
+}) {
+  const shouldRefreshSuggestions = options?.refreshSuggestions ?? false;
+  const sspId = resolvedSspId.value;
+  const statementUuid = localStatement.value?.uuid;
+  if (!sspId || !statementUuid) {
+    if (shouldRefreshSuggestions) {
+      await fetchSuggestedComponents();
+    }
+    return;
+  }
+
+  try {
+    const response = await axios.get<{ data?: ControlImplementation }>(
+      `/api/oscal/system-security-plans/${sspId}/control-implementation`,
+    );
+    const implementationResponse = response.data?.data;
+    if (!implementationResponse) {
+      throw new Error(
+        'The server did not return control implementation data for this statement.',
+      );
+    }
+
+    const refreshedRequirement =
+      implementationResponse.implementedRequirements?.find(
+        (item) => item.uuid === implementation.uuid,
+      );
+    const refreshedStatement = refreshedRequirement?.statements?.find(
+      (item) => item.uuid === statementUuid,
+    );
+    if (!refreshedStatement) {
+      throw new Error('Unable to locate the refreshed statement data.');
+    }
+
+    localStatement.value = refreshedStatement;
+    emit('updated', refreshedStatement);
+  } catch (error) {
+    console.error('Failed to sync statement after applying suggestion:', error);
+    toast.add({
+      severity: 'warn',
+      summary: 'Refresh Needed',
+      detail:
+        'Suggestion was applied, but the latest statement data could not be loaded automatically.',
+      life: 5000,
+    });
+  } finally {
+    if (shouldRefreshSuggestions) {
+      await fetchSuggestedComponents();
+    }
+  }
+}
 
 function resetCreateComponentForm() {
   setCreateComponentForm(false);
@@ -223,6 +623,7 @@ function resetCreateComponentForm() {
 
 async function deleteByComponent(byComp: ByComponent) {
   const sspId = resolvedSspId.value;
+  const statementUuid = localStatement.value?.uuid;
   if (!sspId) {
     toast.add({
       severity: 'error',
@@ -232,14 +633,13 @@ async function deleteByComponent(byComp: ByComponent) {
     });
     return;
   }
-  const updatedStatement = useCloned(localStatement).cloned;
-
-  if (!updatedStatement.value || !statement) {
-    console.error('No statement defined');
+  if (!statementUuid) {
     return;
   }
-  if (!statement.uuid) {
-    console.error('Statement UUID is missing');
+  const updatedStatement = useCloned(localStatement).cloned;
+
+  if (!updatedStatement.value) {
+    console.error('No statement defined');
     return;
   }
 
@@ -249,7 +649,7 @@ async function deleteByComponent(byComp: ByComponent) {
     );
   try {
     await executeDelete(
-      `/api/oscal/system-security-plans/${sspId}/control-implementation/implemented-requirements/${implementation.uuid}/statements/${statement.uuid}/by-components/${byComp.uuid}`,
+      `${buildByComponentsEndpoint(sspId, implementation.uuid, statementUuid)}/${byComp.uuid}`,
     );
     localStatement.value = updatedStatement.value;
     setCreateComponentForm(false);
@@ -264,6 +664,7 @@ async function deleteByComponent(byComp: ByComponent) {
 
 async function updateByComponent(byComp: ByComponent) {
   const sspId = resolvedSspId.value;
+  const statementUuid = localStatement.value?.uuid;
   if (!sspId) {
     toast.add({
       severity: 'error',
@@ -273,13 +674,13 @@ async function updateByComponent(byComp: ByComponent) {
     });
     return;
   }
-  if (!localStatement.value || !statement || !statement.uuid) {
+  if (!localStatement.value || !statementUuid) {
     console.error('No statement or statement UUID defined');
     return;
   }
   try {
     await executeUpdate(
-      `/api/oscal/system-security-plans/${sspId}/control-implementation/implemented-requirements/${implementation.uuid}/statements/${statement.uuid}/by-components/${byComp.uuid}`,
+      `${buildByComponentsEndpoint(sspId, implementation.uuid, statementUuid)}/${byComp.uuid}`,
       {
         data: byComp,
       },
@@ -295,40 +696,34 @@ async function updateByComponent(byComp: ByComponent) {
 }
 
 async function createByComponent() {
-  const sspId = resolvedSspId.value;
-  if (
-    !newByComponent.value.componentUuid ||
-    !localStatement.value ||
-    !statement ||
-    !statement.uuid
-  ) {
+  if (!newByComponent.value.componentUuid || !localStatement.value?.uuid) {
     showError.value = true;
     return;
   }
-  if (!sspId) {
+  if (isSuggestionApplied(newByComponent.value.componentUuid)) {
+    showError.value = false;
     toast.add({
-      severity: 'error',
-      summary: 'Missing System Plan',
-      detail: 'Unable to determine which system security plan to update.',
+      severity: 'warn',
+      summary: 'Component Already Linked',
+      detail:
+        'This component is already linked to the statement and cannot be reused.',
       life: 4000,
     });
     return;
   }
   try {
-    const res = await executeCreate(
-      `/api/oscal/system-security-plans/${sspId}/control-implementation/implemented-requirements/${implementation.uuid}/statements/${statement.uuid}/by-components`,
-      {
-        data: newByComponent.value,
-      },
+    const created = await createStatementByComponent(
+      newByComponent.value.componentUuid,
+      newByComponent.value.description ?? '',
     );
-    if (res.data.value && res.data.value.data) {
-      if (!localStatement.value.byComponents)
-        localStatement.value.byComponents = [];
-      localStatement.value.byComponents.push(res.data.value.data);
-    } else {
+    if (!created) {
       console.error('Failed to create: response data is missing');
       return;
     }
+    if (!localStatement.value.byComponents) {
+      localStatement.value.byComponents = [];
+    }
+    localStatement.value.byComponents.push(created);
     newByComponent.value = {
       uuid: uuidv4(),
     } as ByComponent;
@@ -348,11 +743,147 @@ async function createByComponent() {
   }
 }
 
+async function applySuggestedComponent(suggestion: SuggestedComponent) {
+  if (!localStatement.value?.uuid) {
+    toast.add({
+      severity: 'info',
+      summary: 'Create Statement First',
+      detail: 'Create the statement before applying component suggestions.',
+      life: 3000,
+    });
+    return;
+  }
+  const sspId = resolvedSspId.value;
+  if (!sspId) {
+    toast.add({
+      severity: 'error',
+      summary: 'Missing System Plan',
+      detail:
+        'Unable to apply suggestions until a system security plan is set.',
+      life: 4000,
+    });
+    return;
+  }
+  if (isSuggestionApplied(suggestion.componentUuid)) {
+    return;
+  }
+  if (!suggestion.componentDefinitionId || !suggestion.definedComponentId) {
+    toast.add({
+      severity: 'error',
+      summary: 'Invalid Suggestion Data',
+      detail:
+        'This suggestion is missing component identifiers and cannot be applied.',
+      life: 5000,
+    });
+    return;
+  }
+
+  setSuggestionApplying(suggestion.componentUuid, true);
+  try {
+    await axios.post(
+      buildApplySuggestionEndpoint(
+        sspId,
+        implementation.uuid,
+        localStatement.value.uuid,
+      ),
+      {
+        componentDefinitionId: suggestion.componentDefinitionId,
+        definedComponentId: suggestion.definedComponentId,
+      },
+      {
+        transformRequest: [decamelizeKeys],
+      },
+    );
+    pinAppliedSuggestion(suggestion);
+    await syncStatementAfterSuggestionApply();
+  } catch (error) {
+    toast.add({
+      severity: 'error',
+      summary: 'Error Applying Suggestion',
+      detail:
+        error instanceof Error
+          ? error.message
+          : 'Unexpected error applying suggested component.',
+      life: 3000,
+    });
+  } finally {
+    setSuggestionApplying(suggestion.componentUuid, false);
+  }
+}
+
+async function applyAllSuggestedComponents() {
+  if (!localStatement.value?.uuid) {
+    toast.add({
+      severity: 'info',
+      summary: 'Create Statement First',
+      detail: 'Create the statement before applying component suggestions.',
+      life: 3000,
+    });
+    return;
+  }
+  const sspId = resolvedSspId.value;
+  if (!sspId) {
+    toast.add({
+      severity: 'error',
+      summary: 'Missing System Plan',
+      detail:
+        'Unable to apply suggestions until a system security plan is set.',
+      life: 4000,
+    });
+    return;
+  }
+
+  const suggestionsToApply = [...unappliedSuggestions.value];
+  if (!suggestionsToApply.length) {
+    toast.add({
+      severity: 'info',
+      summary: 'All Suggestions Applied',
+      detail: 'There are no pending component suggestions for this statement.',
+      life: 3000,
+    });
+    return;
+  }
+
+  applyingAllSuggestions.value = true;
+  try {
+    await axios.post(
+      buildApplySuggestionsEndpoint(
+        sspId,
+        implementation.uuid,
+        localStatement.value.uuid,
+      ),
+    );
+    for (const suggestion of suggestionsToApply) {
+      pinAppliedSuggestion(suggestion);
+    }
+    await syncStatementAfterSuggestionApply();
+    toast.add({
+      severity: 'success',
+      summary: 'Suggestions Applied',
+      detail: `${suggestionsToApply.length} suggested component${suggestionsToApply.length === 1 ? '' : 's'} added.`,
+      life: 3000,
+    });
+  } catch (error) {
+    toast.add({
+      severity: 'error',
+      summary: 'Error Applying Suggestions',
+      detail:
+        error instanceof Error
+          ? error.message
+          : 'Unexpected error applying component suggestions.',
+      life: 3000,
+    });
+  } finally {
+    applyingAllSuggestions.value = false;
+  }
+}
+
 function updateStatement(updatedStatement: Statement) {
   localStatement.value = updatedStatement;
   showCreateStatementModal.value = false;
   showEditStatementModal.value = false;
   emit('updated', localStatement.value);
+  void fetchSuggestedComponents();
 }
 
 function handleComponentCreated(newComponent: SystemComponent) {
@@ -859,6 +1390,85 @@ async function submitEvidenceLinking() {
         </Button>
       </div>
 
+      <div class="mb-6">
+        <div class="flex items-center justify-between gap-4 mb-3">
+          <h4 class="m-0 font-medium text-base">Suggested Components</h4>
+          <Button
+            type="button"
+            severity="secondary"
+            :disabled="
+              !localStatement ||
+              !resolvedSspId ||
+              applyingAllSuggestions ||
+              suggestionsLoading ||
+              unappliedSuggestions.length === 0
+            "
+            :label="
+              applyingAllSuggestions ? 'Applying...' : 'Apply All Suggestions'
+            "
+            @click="applyAllSuggestedComponents"
+          />
+        </div>
+
+        <p v-if="suggestionsLoading" class="text-sm text-gray-500">
+          Loading suggested components...
+        </p>
+        <p v-else-if="suggestionsError" class="text-sm text-red-500">
+          Failed to load suggestions. You can still add components manually.
+        </p>
+        <p
+          v-else-if="displayedSuggestions.length === 0"
+          class="text-sm text-gray-500"
+        >
+          No suggestions available for this statement.
+        </p>
+        <div v-else class="space-y-3">
+          <div class="flex flex-wrap gap-2">
+            <Button
+              v-for="suggestion in displayedSuggestions"
+              :key="suggestion.componentUuid"
+              type="button"
+              size="small"
+              class="!text-left"
+              severity="secondary"
+              :outlined="!isSuggestionApplied(suggestion.componentUuid)"
+              :disabled="
+                !localStatement ||
+                !resolvedSspId ||
+                isSuggestionApplied(suggestion.componentUuid) ||
+                isSuggestionApplying(suggestion.componentUuid) ||
+                applyingAllSuggestions
+              "
+              @click="applySuggestedComponent(suggestion)"
+            >
+              <div class="flex flex-col items-start gap-1">
+                <span class="text-xs font-semibold">{{
+                  suggestion.title
+                }}</span>
+                <span class="text-xs text-gray-500">{{ suggestion.type }}</span>
+                <span
+                  v-if="formatRelevanceScore(suggestion.relevanceScore)"
+                  class="text-xs text-gray-500"
+                >
+                  Relevance:
+                  {{ formatRelevanceScore(suggestion.relevanceScore) }}
+                </span>
+                <span
+                  v-if="isSuggestionApplied(suggestion.componentUuid)"
+                  class="text-xs text-green-600"
+                >
+                  Added
+                </span>
+              </div>
+            </Button>
+          </div>
+
+          <p v-if="allSuggestionsApplied" class="text-sm text-green-600">
+            All suggestions applied.
+          </p>
+        </div>
+      </div>
+
       <div class="flex items-center mb-4 gap-x-4">
         <TooltipTitle
           text="Components"
@@ -896,6 +1506,9 @@ async function submitEvidenceLinking() {
             @save="updateByComponent"
             @delete="deleteByComponent"
             :by-component="byComponent"
+            :control-id="implementation.controlId"
+            :ssp-risks="sspRisks || []"
+            :risk-fetch-limit="RISK_FETCH_LIMIT"
           />
         </div>
       </template>
@@ -1211,6 +1824,13 @@ async function submitEvidenceLinking() {
         class="text-green-600 hover:text-green-800 dark:text-green-400 disabled:opacity-50 disabled:cursor-not-allowed"
       >
       </Button>
+      <div class="mt-6">
+        <h4 class="m-0 mb-2 font-medium text-base">Suggested Components</h4>
+        <p class="text-sm text-gray-500">
+          Suggested components will be available after you create this
+          statement.
+        </p>
+      </div>
     </div>
   </div>
 

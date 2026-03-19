@@ -311,7 +311,7 @@ const {
   isLoading: loading,
   execute: saveLD,
 } = useDataApi<POAMLocalDefinitions>(
-  `/api/oscal/plan-of-actions-and-milestones/${props.poamId}/local-definitions`,
+  `/api/oscal/plan-of-action-and-milestones/${props.poamId}/local-definitions`,
   null,
   { immediate: false },
 );
@@ -428,19 +428,11 @@ async function handleSubmit() {
         formData.value.assessmentAssets.components.filter((c) => c.title);
     }
 
-    if (props.localDefinitions) {
-      await saveLD({
-        data: formData.value,
-        method: 'PUT',
-        transformRequest: [decamelizeKeys],
-      });
-    } else {
-      await saveLD({
-        data: formData.value,
-        method: 'POST',
-        transformRequest: [decamelizeKeys],
-      });
-    }
+    await saveLD({
+      data: formData.value,
+      method: 'PUT',
+      transformRequest: [decamelizeKeys],
+    });
 
     emit('saved', newLD.value!);
   } catch (error) {

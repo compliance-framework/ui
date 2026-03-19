@@ -38,3 +38,15 @@ e2e-test: build    ## Run end-to-end tests
 dev: check-version install   ## Run development environment
 	@./hack/local-shared/do start_docker
 	@npm run dev
+
+typecheck: ## Run typecheck
+	@npm run type-check
+
+lint: ## Run lint
+	@npm run lint
+
+formatcheck: ## Run format check
+	@npm run format:check
+
+reviewable: formatcheck typecheck lint unit-test
+	@echo "All checks passed, ready for review"

@@ -1,4 +1,6 @@
 <template>
+  <CompliancePostureWidget />
+
   <div v-if="dashboards && dashboards.length > 0">
     <PageHeader>Dashboards</PageHeader>
     <PageSubHeader>Findings grouped by query</PageSubHeader>
@@ -57,6 +59,7 @@ import PageCard from '@/components/PageCard.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
 import type { Dashboard } from '@/stores/filters.ts';
 import DashboardChart from '@/views/dashboard/DashboardChart.vue';
+import CompliancePostureWidget from '@/views/dashboard/CompliancePostureWidget.vue';
 import { useConfirm } from 'primevue/useconfirm';
 import { useToast } from 'primevue/usetoast';
 import Button from '@/volt/Button.vue';
