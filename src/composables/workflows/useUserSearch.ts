@@ -1,5 +1,5 @@
 import { ref } from 'vue';
-import { useDataApi } from '@/composables/axios';
+import { useAuthenticatedInstance, useDataApi } from '@/composables/axios';
 import type { CCFUser } from '@/stores/types';
 
 export interface DisplayUser extends CCFUser {
@@ -18,6 +18,7 @@ interface SelectableUserResponse {
 export function useUserSearch() {
   const userSuggestions = ref<DisplayUser[]>([]);
   const userCache = ref<Record<string, DisplayUser>>({});
+  const authenticatedApi = useAuthenticatedInstance();
 
   const { execute: fetchSelectableUsers, data: selectableUsersData } =
     useDataApi<SelectableUserResponse[]>('/api/users/select', null, {
@@ -78,7 +79,8 @@ export function useUserSearch() {
    * Filters by display name and ID, with fallback mock user on error
    */
   async function searchUsers(event: { query: string }) {
-    const normalized = event.query.trim().toLowerCase();
+    const trimmedQuery = event.query.trim();
+    const normalized = trimmedQuery.toLowerCase();
     if (normalized.length < 3) {
       userSuggestions.value = [];
       return;
@@ -86,7 +88,7 @@ export function useUserSearch() {
 
     try {
       await fetchSelectableUsers(
-        `/api/users/select?search=${encodeURIComponent(event.query)}`,
+        `/api/users/select?search=${encodeURIComponent(trimmedQuery)}`,
       );
       const payload = selectableUsersData.value ?? [];
 
@@ -102,17 +104,7 @@ export function useUserSearch() {
       userSuggestions.value = displayUsers;
       displayUsers.forEach(cacheUser);
     } catch {
-      // Fallback: create a mock user from the query
-      userSuggestions.value = [
-        {
-          id: event.query,
-          email: '',
-          firstName: '',
-          lastName: '',
-          failedLogins: 0,
-          displayName: event.query,
-        } as DisplayUser,
-      ];
+      userSuggestions.value = [];
     }
   }
 
@@ -132,12 +124,18 @@ export function useUserSearch() {
       return;
     }
 
-    await fetchSelectableUsers('/api/users/select');
-    const selectableUsers = selectableUsersData.value ?? [];
-
-    selectableUsers
-      .filter((user) => missing.includes(user.id))
-      .forEach((user) => cacheUser(toSelectableDisplayUser(user)));
+    await Promise.all(
+      missing.map(async (id) => {
+        const response = await authenticatedApi.get<{
+          data?: SelectableUserResponse[];
+        }>(`/api/users/select?search=${encodeURIComponent(id)}`);
+        const selectableUsers = response.data?.data ?? [];
+        const matchingUser = selectableUsers.find((user) => user.id === id);
+        if (matchingUser) {
+          cacheUser(toSelectableDisplayUser(matchingUser));
+        }
+      }),
+    );
   }
 
   /**

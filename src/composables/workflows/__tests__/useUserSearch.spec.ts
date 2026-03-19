@@ -61,6 +61,17 @@ describe('useUserSearch', () => {
     expect(userSuggestions.value[0].displayName).toBe('Alpha User');
   });
 
+  it('uses the trimmed query when calling the selectable-users API', async () => {
+    const { searchUsers } = useUserSearch();
+    const execute = mockUseDataApi.mock.results.at(-1)?.value.execute as
+      | ReturnType<typeof vi.fn>
+      | undefined;
+
+    await searchUsers({ query: '  alpha  ' });
+
+    expect(execute).toHaveBeenCalledWith('/api/users/select?search=alpha');
+  });
+
   it('does not call the selectable-users API for queries shorter than 3 characters', async () => {
     const { searchUsers, userSuggestions } = useUserSearch();
     const execute = mockUseDataApi.mock.results.at(-1)?.value.execute as
@@ -289,6 +300,18 @@ describe('useUserSearch', () => {
     });
 
     it('hydrates missing users by id and skips already cached users', async () => {
+      mockAuthenticatedGet.mockImplementation(async (url: string) => {
+        const search = new URL(url, 'http://localhost').searchParams
+          .get('search')
+          ?.trim();
+
+        return {
+          data: {
+            data: mockSelectableUsers.filter((user) => user.id === search),
+          },
+        };
+      });
+
       const { cacheUser, toDisplayUser, loadUsersByIds, getCachedUser } =
         useUserSearch();
       cacheUser(
@@ -311,7 +334,7 @@ describe('useUserSearch', () => {
         'user-6',
       ]);
 
-      expect(mockAuthenticatedGet).not.toHaveBeenCalled();
+      expect(mockAuthenticatedGet).toHaveBeenCalledTimes(6);
       expect(getCachedUser('already-cached')?.email).toBe('cached@example.com');
       expect(getCachedUser('user-1')?.displayName).toBe('Alpha User');
       expect(getCachedUser('user-2')?.displayName).toBe('Beta User');

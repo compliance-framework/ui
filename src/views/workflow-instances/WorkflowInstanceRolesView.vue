@@ -60,7 +60,7 @@
               </Badge>
             </div>
             <div class="text-sm text-gray-500 dark:text-slate-400">
-              {{ assignment.displayName || assignment.userId || 'Unassigned' }}
+              {{ assignment.userId || assignment.assignedToId || 'Unassigned' }}
             </div>
           </div>
         </div>
