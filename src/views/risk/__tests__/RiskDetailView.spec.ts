@@ -104,7 +104,7 @@ const mockRisk: MockRisk = {
       {
         id: 'task-1',
         title: 'Generate new key material',
-        orderIndex: 0,
+        orderIndex: 1,
       },
     ],
   },
@@ -798,7 +798,7 @@ describe('RiskDetailView', () => {
         {
           id: 'task-1',
           title: 'Generate new key material',
-          orderIndex: 0,
+          orderIndex: 1,
         },
       ],
     };
@@ -1096,7 +1096,7 @@ describe('RiskDetailView', () => {
         {
           id: 'task-untitled-1',
           title: 'Recover missing remediation title',
-          orderIndex: 0,
+          orderIndex: 1,
         },
       ],
     };
@@ -1244,7 +1244,7 @@ describe('RiskDetailView', () => {
         {
           id: 'task-1',
           title: 'Generate new key material',
-          orderIndex: 0,
+          orderIndex: 1,
         },
       ],
     };
