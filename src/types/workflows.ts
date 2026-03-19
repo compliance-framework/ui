@@ -320,7 +320,7 @@ export interface StepExecutionFail {
 }
 
 export interface StepReassignmentRequest {
-  assignedToType: 'email';
+  assignedToType: 'user' | 'group' | 'email';
   assignedToId: string;
   reason?: string;
 }

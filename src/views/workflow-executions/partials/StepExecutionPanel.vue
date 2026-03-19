@@ -378,13 +378,14 @@
       </p>
 
       <div>
-        <Label for="reassign-user" required>Assignee (Email)</Label>
+        <Label for="reassign-user" required>Assignee</Label>
         <AutoComplete
           id="reassign-user"
           v-model="selectedReassignUser"
           :suggestions="userSuggestions"
           optionLabel="displayName"
-          placeholder="Search users by name or email..."
+          :filterBy="['displayName', 'id']"
+          placeholder="Search users by name or ID..."
           class="w-full"
           aria-required="true"
           :forceSelection="true"
@@ -397,7 +398,7 @@
                 {{ item.displayName }}
               </span>
               <span class="text-sm text-gray-500 dark:text-slate-400">
-                {{ item.email }}
+                {{ item.id }}
               </span>
             </div>
           </template>
@@ -407,7 +408,7 @@
                 {{ value?.displayName }}
               </span>
               <span class="text-sm text-gray-500 dark:text-slate-400">
-                {{ value?.email }}
+                {{ value?.id }}
               </span>
             </div>
           </template>
@@ -664,8 +665,8 @@ async function handleReassign() {
   if (!props.step) return;
 
   const selectedUser = selectedReassignUser.value;
-  if (!selectedUser?.email) {
-    reassignError.value = 'Please select a valid user with an email address.';
+  if (!selectedUser?.id) {
+    reassignError.value = 'Please select a valid user.';
     return;
   }
 
@@ -680,8 +681,8 @@ async function handleReassign() {
 
   try {
     await reassignStepExecution(props.step.id, {
-      assignedToType: 'email',
-      assignedToId: selectedUser.email,
+      assignedToType: 'user',
+      assignedToId: selectedUser.id,
       reason: reassignReason.value.trim() || undefined,
     });
     emit('step-updated');

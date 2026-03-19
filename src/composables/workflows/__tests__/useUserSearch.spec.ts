@@ -3,11 +3,38 @@ import { useUserSearch } from '../useUserSearch';
 import type { CCFUser } from '@/stores/types';
 
 const mockAuthenticatedGet = vi.hoisted(() => vi.fn());
+const mockSelectableUsers = vi.hoisted(() => [
+  { id: 'user-1', displayName: 'Alpha User' },
+  { id: 'user-2', displayName: 'Beta User' },
+  { id: 'already-cached', displayName: 'Cached User' },
+]);
 const mockUseDataApi = vi.hoisted(() =>
-  vi.fn(() => ({
-    execute: vi.fn(),
-    data: { value: null },
-  })),
+  vi.fn(() => {
+    const data = { value: mockSelectableUsers.slice() };
+    const execute = vi.fn(async (url?: string) => {
+      if (!url) {
+        return;
+      }
+
+      const search = new URL(url, 'http://localhost').searchParams
+        .get('search')
+        ?.trim()
+        .toLowerCase();
+
+      data.value = search
+        ? mockSelectableUsers.filter(
+            (user) =>
+              user.displayName.toLowerCase().includes(search) ||
+              user.id.toLowerCase().includes(search),
+          )
+        : mockSelectableUsers.slice();
+    });
+
+    return {
+      execute,
+      data,
+    };
+  }),
 );
 
 // Mock useDataApi
@@ -22,6 +49,16 @@ describe('useUserSearch', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockAuthenticatedGet.mockReset();
+  });
+
+  it('searches selectable users by name or ID', async () => {
+    const { searchUsers, userSuggestions } = useUserSearch();
+
+    await searchUsers({ query: 'alpha' });
+
+    expect(userSuggestions.value).toHaveLength(1);
+    expect(userSuggestions.value[0].id).toBe('user-1');
+    expect(userSuggestions.value[0].displayName).toBe('Alpha User');
   });
 
   describe('toDisplayUser', () => {
@@ -239,21 +276,6 @@ describe('useUserSearch', () => {
     });
 
     it('hydrates missing users by id and skips already cached users', async () => {
-      mockAuthenticatedGet.mockImplementation(async (url: string) => {
-        const id = url.split('/').pop() || 'unknown';
-        return {
-          data: {
-            data: {
-              id,
-              email: `${id}@example.com`,
-              firstName: id.toUpperCase(),
-              lastName: 'User',
-              failedLogins: 0,
-            } as CCFUser,
-          },
-        };
-      });
-
       const { cacheUser, toDisplayUser, loadUsersByIds, getCachedUser } =
         useUserSearch();
       cacheUser(
@@ -276,10 +298,10 @@ describe('useUserSearch', () => {
         'user-6',
       ]);
 
-      expect(mockAuthenticatedGet).toHaveBeenCalledTimes(6);
+      expect(mockAuthenticatedGet).not.toHaveBeenCalled();
       expect(getCachedUser('already-cached')?.email).toBe('cached@example.com');
-      expect(getCachedUser('user-1')?.displayName).toBe('USER-1 User');
-      expect(getCachedUser('user-6')?.email).toBe('user-6@example.com');
+      expect(getCachedUser('user-1')?.displayName).toBe('Alpha User');
+      expect(getCachedUser('user-2')?.displayName).toBe('Beta User');
     });
   });
 });
