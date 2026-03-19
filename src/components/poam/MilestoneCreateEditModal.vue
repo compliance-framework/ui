@@ -163,7 +163,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import Dialog from '@/volt/Dialog.vue';
 import type {
   PoamItemMilestone,
@@ -193,9 +193,11 @@ const emit = defineEmits<{
 }>();
 
 const visible = ref(props.modelValue);
-const saving = ref(false);
 const isEdit = ref(false);
-const saveError = ref('');
+
+// Derive saving and saveError from props so the parent controls modal state
+const saving = computed(() => props.saving);
+const saveError = computed(() => props.saveError ?? '');
 
 interface FormState {
   title: string;
@@ -226,26 +228,7 @@ watch(
 
 watch(visible, (val) => {
   emit('update:modelValue', val);
-  if (!val) {
-    saveError.value = '';
-  }
 });
-
-// Sync external saving state from parent
-watch(
-  () => props.saving,
-  (val) => {
-    saving.value = val;
-  },
-);
-
-// Sync external save error from parent
-watch(
-  () => props.saveError,
-  (val) => {
-    saveError.value = val ?? '';
-  },
-);
 
 watch(
   () => props.milestone,
@@ -280,7 +263,6 @@ function resetForm() {
     remarks: '',
   };
   errors.value = {};
-  saveError.value = '';
 }
 
 function validate(): boolean {
