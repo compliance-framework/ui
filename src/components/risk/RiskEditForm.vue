@@ -312,10 +312,22 @@ async function submit() {
       }
     }
 
-    await fetchRisk();
+    let riskSnapshot: Risk = props.risk;
+    try {
+      await fetchRisk();
+      riskSnapshot = latestRisk.value || props.risk;
+    } catch {
+      toast.add({
+        severity: 'warn',
+        summary: 'Refresh Failed',
+        detail:
+          'Latest risk details could not be reloaded. Saving with the current form data instead.',
+        life: 3000,
+      });
+    }
 
     const updatedRisk: Risk = {
-      ...(latestRisk.value || props.risk),
+      ...riskSnapshot,
       title: formData.title,
       description: formData.description,
       statement: formData.statement,

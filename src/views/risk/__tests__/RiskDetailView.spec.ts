@@ -911,8 +911,10 @@ describe('RiskDetailView', () => {
     const wrapper = mountComponent();
     await flushPromises();
 
-    expect(findButtonByText(wrapper, 'Threats')).toBeUndefined();
-    expect(findButtonByText(wrapper, 'Remediations')).toBeUndefined();
+    expect(findButtonByText(wrapper, 'Threats')).toBeDefined();
+    expect(findButtonByText(wrapper, 'Remediations')).toBeDefined();
+    expect(wrapper.text()).toContain('Threat IDs:');
+    expect(wrapper.text()).toContain('T-001, T-002');
 
     await clickButtonByText(wrapper, 'Reviews');
     await flushPromises();
@@ -933,6 +935,64 @@ describe('RiskDetailView', () => {
         endpoint:
           '/api/oscal/plan-of-action-and-milestones/poam-1/risks/risk-1/events?page=1&limit=10&offset=0',
         method: 'GET',
+      }),
+    );
+  });
+
+  it('creates threats and remediations through POA&M risk detail endpoints', async () => {
+    mockRoute.name = 'plan-of-action-and-milestones-risk-detail';
+    mockRoute.params.id = 'poam-1';
+    mockRisk.remediationTemplate = undefined;
+    mockRisk.remediations = undefined;
+
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    await clickButtonByText(wrapper, 'Threats');
+    await flushPromises();
+    await clickButtonByText(wrapper, 'Add Threat');
+    await wrapper.get('[data-testid="threat-id-input"]').setValue('T-900');
+    await wrapper.get('[data-testid="threat-system-input"]').setValue('MITRE');
+    await wrapper
+      .get('[data-testid="threat-title-input"]')
+      .setValue('POAM Threat');
+    await wrapper.get('[data-testid="save-threat-button"]').trigger('click');
+    await flushPromises();
+
+    expect(apiCalls).toContainEqual(
+      expect.objectContaining({
+        endpoint:
+          '/api/oscal/plan-of-action-and-milestones/poam-1/risks/risk-1/threat-ids',
+        method: 'POST',
+        data: {
+          id: 'T-900',
+          system: 'MITRE',
+          title: 'POAM Threat',
+        },
+      }),
+    );
+
+    await clickButtonByText(wrapper, 'Remediations');
+    await flushPromises();
+    await clickButtonByText(wrapper, 'Add Remediation');
+    await wrapper
+      .get('[data-testid="remediation-title-input"]')
+      .setValue('POAM remediation');
+    await wrapper
+      .get('[data-testid="save-remediation-button"]')
+      .trigger('click');
+    await flushPromises();
+
+    expect(apiCalls).toContainEqual(
+      expect.objectContaining({
+        endpoint:
+          '/api/oscal/plan-of-action-and-milestones/poam-1/risks/risk-1/remediation-template',
+        method: 'POST',
+        data: {
+          title: 'POAM remediation',
+          description: undefined,
+          tasks: undefined,
+        },
       }),
     );
   });

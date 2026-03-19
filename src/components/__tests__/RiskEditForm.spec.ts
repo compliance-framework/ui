@@ -158,4 +158,57 @@ describe('RiskEditForm', () => {
       }),
     });
   });
+
+  it('falls back to the passed risk when refresh fails before PUT', async () => {
+    mockFetchRisk.mockRejectedValueOnce(new Error('Refresh exploded'));
+
+    const wrapper = mountForm(
+      makeRisk({
+        threatIds: [{ id: 'T-001', system: 'CAPEC' }],
+        remediations: [
+          {
+            uuid: 'remediation-1',
+            lifecycle: 'planned',
+            title: 'Planned remediation',
+            description: 'Planned work',
+          },
+        ],
+      }),
+    );
+
+    await wrapper
+      .find('input[placeholder="Enter risk title"]')
+      .setValue('Risk C');
+    await wrapper
+      .find('textarea[placeholder="Enter risk description"]')
+      .setValue('Fallback description');
+    await wrapper
+      .find('textarea[placeholder="Enter risk statement"]')
+      .setValue('Fallback statement');
+    await wrapper.find('select').setValue('investigating');
+    await wrapper.find('form').trigger('submit');
+
+    expect(toastAdd).toHaveBeenCalledWith(
+      expect.objectContaining({
+        severity: 'warn',
+        summary: 'Refresh Failed',
+      }),
+    );
+    expect(mockUpdateRisk).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        threatIds: [{ id: 'T-001', system: 'CAPEC' }],
+        remediations: [
+          expect.objectContaining({
+            uuid: 'remediation-1',
+            lifecycle: 'planned',
+            title: 'Planned remediation',
+          }),
+        ],
+        title: 'Risk C',
+        description: 'Fallback description',
+        statement: 'Fallback statement',
+        status: 'investigating',
+      }),
+    });
+  });
 });

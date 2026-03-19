@@ -1397,14 +1397,9 @@ const tabs = computed<Array<{ id: TabId; label: string }>>(() => {
     { id: 'evidence', label: 'Evidence' },
     { id: 'controls', label: 'Controls' },
     { id: 'components', label: 'Components' },
+    { id: 'threats', label: 'Threats' },
+    { id: 'remediations', label: 'Remediations' },
   ];
-
-  if (isSspContext.value) {
-    baseTabs.push(
-      { id: 'threats', label: 'Threats' },
-      { id: 'remediations', label: 'Remediations' },
-    );
-  }
 
   baseTabs.push(
     { id: 'reviews', label: 'Reviews' },
@@ -1564,14 +1559,12 @@ const detailEndpoint = computed(() => {
 });
 
 const threatCollectionEndpoint = computed(() => {
-  if (!isSspContext.value || !context.value || !resolvedRiskId.value)
-    return null;
+  if (!context.value || !resolvedRiskId.value) return null;
   return buildRiskThreatCollectionEndpoint(context.value, resolvedRiskId.value);
 });
 
 const remediationCollectionEndpoint = computed(() => {
-  if (!isSspContext.value || !context.value || !resolvedRiskId.value)
-    return null;
+  if (!context.value || !resolvedRiskId.value) return null;
   return buildRiskRemediationCollectionEndpoint(
     context.value,
     resolvedRiskId.value,
@@ -2223,7 +2216,6 @@ const overviewImpactClass = computed(() =>
 );
 
 const threatItems = computed<ThreatTabItem[]>(() => {
-  if (!isSspContext.value) return [];
   const rawThreats = Array.isArray(risk.value?.threatIds)
     ? (risk.value?.threatIds as unknown[])
     : [];
@@ -2264,7 +2256,6 @@ const threatItems = computed<ThreatTabItem[]>(() => {
 });
 
 const remediationItems = computed<RemediationTabItem[]>(() => {
-  if (!isSspContext.value) return [];
   const remediationTemplate = remediationTemplateResource.value;
 
   if (remediationTemplate) {
@@ -2955,8 +2946,6 @@ function buildThreatItemEndpointForMutation(threatRefId?: string | null) {
 }
 
 async function saveThreat() {
-  if (!isSspContext.value) return;
-
   const isEditing = Boolean(threatEditingKey.value);
   const payload = buildThreatPayload();
   if (!payload) {
@@ -3019,8 +3008,6 @@ async function saveThreat() {
 }
 
 async function removeThreat(threat: ThreatTabItem) {
-  if (!isSspContext.value) return;
-
   if (!threat.threatRefId) {
     toast.add({
       severity: 'warn',
@@ -3158,8 +3145,6 @@ function remediationItemEndpoint() {
 }
 
 async function saveRemediation() {
-  if (!isSspContext.value) return;
-
   const hasExistingTemplate = hasRemediationTemplateResource.value;
   const payload = buildRemediationPayload();
   if (!payload) {
@@ -3222,8 +3207,6 @@ async function saveRemediation() {
 }
 
 async function removeRemediation(remediation: RemediationTabItem) {
-  if (!isSspContext.value) return;
-
   if (!hasRemediationTemplateResource.value) {
     toast.add({
       severity: 'warn',
