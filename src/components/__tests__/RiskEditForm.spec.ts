@@ -4,6 +4,7 @@ import { ref, shallowRef, toValue } from 'vue';
 import type { Risk } from '@/oscal';
 
 const mockUpdateRisk = vi.fn().mockResolvedValue({});
+const mockFetchRisk = vi.fn().mockResolvedValue({});
 const toastAdd = vi.fn();
 
 const returnedRisk = shallowRef<Risk>({
@@ -11,6 +12,13 @@ const returnedRisk = shallowRef<Risk>({
   title: 'Updated Risk',
   description: 'Updated description',
   statement: 'Updated statement',
+  status: 'open',
+});
+const latestRisk = shallowRef<Risk>({
+  uuid: 'risk-1',
+  title: 'Latest Risk',
+  description: 'Latest description',
+  statement: 'Latest statement',
   status: 'open',
 });
 const updateRiskLoading = ref(false);
@@ -27,6 +35,17 @@ vi.mock('@/composables/axios', () => ({
         data: returnedRisk,
         isLoading: updateRiskLoading,
         execute: mockUpdateRisk,
+      };
+    }
+
+    if (
+      resolvedUrl.includes('/api/oscal/plan-of-action-and-milestones/') &&
+      !config?.method
+    ) {
+      return {
+        data: latestRisk,
+        isLoading: ref(false),
+        execute: mockFetchRisk,
       };
     }
 
@@ -60,6 +79,7 @@ describe('RiskEditForm', () => {
     vi.clearAllMocks();
     updateRiskLoading.value = false;
     returnedRisk.value = makeRisk();
+    latestRisk.value = makeRisk();
   });
 
   function mountForm(risk: Risk) {
@@ -71,66 +91,33 @@ describe('RiskEditForm', () => {
     });
   }
 
-  it('hydrates suggested remediation fields from recommendation lifecycle entry', async () => {
-    const wrapper = mountForm(
-      makeRisk({
-        remediations: [
-          {
-            uuid: 'rec-1',
-            lifecycle: 'recommendation',
-            title: 'Template recommendation',
-            description: 'Recommendation details',
-            tasks: [
-              {
-                uuid: 'task-1',
-                type: 'action',
-                title: 'Rotate credentials',
-              },
-            ],
-          },
-          {
-            uuid: 'plan-1',
-            lifecycle: 'planned',
-            title: 'Planned remediation',
-            description: 'Planned work',
-          },
-        ],
-      }),
-    );
+  it('shows guidance that threats and remediations moved to detail tabs', async () => {
+    const wrapper = mountForm(makeRisk());
     await flushPromises();
 
-    expect(
-      (
-        wrapper.get('[data-testid="suggested-remediation-title"]')
-          .element as HTMLInputElement
-      ).value,
-    ).toBe('Template recommendation');
-    expect(
-      (
-        wrapper.get('[data-testid="suggested-remediation-description"]')
-          .element as HTMLTextAreaElement
-      ).value,
-    ).toBe('Recommendation details');
-    expect(
-      (
-        wrapper.get('[data-testid="suggested-remediation-task-0"]')
-          .element as HTMLInputElement
-      ).value,
-    ).toBe('Rotate credentials');
+    expect(wrapper.text()).toContain(
+      'Threats and remediations are managed from the dedicated tabs on the risk detail view.',
+    );
   });
 
-  it('updates recommendation while preserving non-recommendation remediations', async () => {
+  it('fetches the latest risk and merges core form updates before PUT', async () => {
+    latestRisk.value = makeRisk({
+      threatIds: [{ id: 'T-999', system: 'CAPEC' }],
+      remediations: [
+        {
+          uuid: 'remediation-9',
+          lifecycle: 'planned',
+          title: 'Latest remediation',
+          description: 'Latest remediation details',
+        },
+      ],
+    });
     const wrapper = mountForm(
       makeRisk({
+        threatIds: [{ id: 'T-001', system: 'CAPEC' }],
         remediations: [
           {
-            uuid: 'rec-1',
-            lifecycle: 'recommendation',
-            title: 'Old recommendation',
-            description: 'Old recommendation details',
-          },
-          {
-            uuid: 'plan-1',
+            uuid: 'remediation-1',
             lifecycle: 'planned',
             title: 'Planned remediation',
             description: 'Planned work',
@@ -140,151 +127,47 @@ describe('RiskEditForm', () => {
     );
 
     await wrapper
-      .get('[data-testid="suggested-remediation-title"]')
-      .setValue('Updated recommendation');
+      .find('input[placeholder="Enter risk title"]')
+      .setValue('Risk B');
     await wrapper
-      .get('[data-testid="suggested-remediation-description"]')
-      .setValue('Updated recommendation details');
+      .find('textarea[placeholder="Enter risk description"]')
+      .setValue('Updated description');
     await wrapper
-      .get('[data-testid="suggested-remediation-task-add"]')
-      .trigger('click');
-    await wrapper
-      .get('[data-testid="suggested-remediation-task-0"]')
-      .setValue('Re-key database');
+      .find('textarea[placeholder="Enter risk statement"]')
+      .setValue('Updated statement');
+    await wrapper.find('select').setValue('investigating');
     await wrapper.find('form').trigger('submit');
 
+    expect(mockFetchRisk).toHaveBeenCalled();
     expect(mockUpdateRisk).toHaveBeenCalledWith({
       data: expect.objectContaining({
+        threatIds: [{ id: 'T-999', system: 'CAPEC' }],
         remediations: [
           expect.objectContaining({
-            uuid: 'rec-1',
-            lifecycle: 'recommendation',
-            title: 'Updated recommendation',
-            description: 'Updated recommendation details',
-            tasks: [
-              expect.objectContaining({
-                type: 'action',
-                title: 'Re-key database',
-              }),
-            ],
-          }),
-          expect.objectContaining({
-            uuid: 'plan-1',
+            uuid: 'remediation-9',
             lifecycle: 'planned',
-            title: 'Planned remediation',
+            title: 'Latest remediation',
           }),
         ],
+        title: 'Risk B',
+        description: 'Updated description',
+        statement: 'Updated statement',
+        status: 'investigating',
+        deadline: undefined,
+        remarks: undefined,
       }),
     });
   });
 
-  it('preserves existing recommendation task uuid when title is unchanged', async () => {
+  it('falls back to the passed risk when refresh fails before PUT', async () => {
+    mockFetchRisk.mockRejectedValueOnce(new Error('Refresh exploded'));
+
     const wrapper = mountForm(
       makeRisk({
+        threatIds: [{ id: 'T-001', system: 'CAPEC' }],
         remediations: [
           {
-            uuid: 'rec-1',
-            lifecycle: 'recommendation',
-            title: 'Old recommendation',
-            description: 'Old recommendation details',
-            tasks: [
-              {
-                uuid: 'task-keep-1',
-                type: 'action',
-                title: 'Rotate credentials',
-              },
-            ],
-          },
-        ],
-      }),
-    );
-
-    await wrapper
-      .get('[data-testid="suggested-remediation-title"]')
-      .setValue('Updated recommendation');
-    await wrapper
-      .get('[data-testid="suggested-remediation-description"]')
-      .setValue('Updated recommendation details');
-    await wrapper.find('form').trigger('submit');
-
-    expect(mockUpdateRisk).toHaveBeenCalledWith({
-      data: expect.objectContaining({
-        remediations: [
-          expect.objectContaining({
-            uuid: 'rec-1',
-            tasks: [
-              expect.objectContaining({
-                uuid: 'task-keep-1',
-                type: 'action',
-                title: 'Rotate credentials',
-              }),
-            ],
-          }),
-        ],
-      }),
-    });
-  });
-
-  it('preserves remaining task uuids when a middle task is removed', async () => {
-    const wrapper = mountForm(
-      makeRisk({
-        remediations: [
-          {
-            uuid: 'rec-1',
-            lifecycle: 'recommendation',
-            title: 'Old recommendation',
-            description: 'Old recommendation details',
-            tasks: [
-              { uuid: 'task-1', type: 'action', title: 'Task 1' },
-              { uuid: 'task-2', type: 'action', title: 'Task 2' },
-              { uuid: 'task-3', type: 'action', title: 'Task 3' },
-            ],
-          },
-        ],
-      }),
-    );
-    await flushPromises();
-
-    await wrapper
-      .get('[data-testid="suggested-remediation-task-remove-1"]')
-      .trigger('click');
-    await wrapper.find('form').trigger('submit');
-
-    const payload = mockUpdateRisk.mock.calls[0]?.[0] as {
-      data?: {
-        remediations?: Array<{ lifecycle?: string; tasks?: unknown[] }>;
-      };
-    };
-    const recommendation = payload?.data?.remediations?.find(
-      (item) => item.lifecycle === 'recommendation',
-    );
-
-    expect(recommendation?.tasks).toEqual([
-      expect.objectContaining({
-        uuid: 'task-1',
-        type: 'action',
-        title: 'Task 1',
-      }),
-      expect.objectContaining({
-        uuid: 'task-3',
-        type: 'action',
-        title: 'Task 3',
-      }),
-    ]);
-  });
-
-  it('removes recommendation entry when suggested remediation fields are cleared', async () => {
-    const wrapper = mountForm(
-      makeRisk({
-        remediations: [
-          {
-            uuid: 'rec-1',
-            lifecycle: 'recommendation',
-            title: 'Old recommendation',
-            description: 'Old recommendation details',
-          },
-          {
-            uuid: 'plan-1',
+            uuid: 'remediation-1',
             lifecycle: 'planned',
             title: 'Planned remediation',
             description: 'Planned work',
@@ -294,22 +177,37 @@ describe('RiskEditForm', () => {
     );
 
     await wrapper
-      .get('[data-testid="suggested-remediation-title"]')
-      .setValue('');
+      .find('input[placeholder="Enter risk title"]')
+      .setValue('Risk C');
     await wrapper
-      .get('[data-testid="suggested-remediation-description"]')
-      .setValue('');
+      .find('textarea[placeholder="Enter risk description"]')
+      .setValue('Fallback description');
+    await wrapper
+      .find('textarea[placeholder="Enter risk statement"]')
+      .setValue('Fallback statement');
+    await wrapper.find('select').setValue('investigating');
     await wrapper.find('form').trigger('submit');
 
+    expect(toastAdd).toHaveBeenCalledWith(
+      expect.objectContaining({
+        severity: 'warn',
+        summary: 'Refresh Failed',
+      }),
+    );
     expect(mockUpdateRisk).toHaveBeenCalledWith({
       data: expect.objectContaining({
+        threatIds: [{ id: 'T-001', system: 'CAPEC' }],
         remediations: [
           expect.objectContaining({
-            uuid: 'plan-1',
+            uuid: 'remediation-1',
             lifecycle: 'planned',
             title: 'Planned remediation',
           }),
         ],
+        title: 'Risk C',
+        description: 'Fallback description',
+        statement: 'Fallback statement',
+        status: 'investigating',
       }),
     });
   });

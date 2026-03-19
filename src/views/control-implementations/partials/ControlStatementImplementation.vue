@@ -790,6 +790,9 @@ async function applySuggestedComponent(suggestion: SuggestedComponent) {
         componentDefinitionId: suggestion.componentDefinitionId,
         definedComponentId: suggestion.definedComponentId,
       },
+      {
+        transformRequest: [decamelizeKeys],
+      },
     );
     pinAppliedSuggestion(suggestion);
     await syncStatementAfterSuggestionApply();

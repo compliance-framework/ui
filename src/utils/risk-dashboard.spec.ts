@@ -73,6 +73,7 @@ describe('risk-dashboard', () => {
       riskWithLevels('r1', 'high', 'critical'),
       riskWithLevels('r2', 'critical', 'critical'),
       riskWithLevels('r3', 'moderate', 'low'),
+      riskWithLevels('r4', 'critical', 'critical', 'closed'),
     ];
 
     const heatmap = buildRiskSeverityHeatmap(risks);

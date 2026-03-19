@@ -158,6 +158,7 @@ export function buildRiskSeverityHeatmap(risks: Risk[] = []): {
   }
 
   for (const risk of risks) {
+    if (isClosedStatus(risk.status)) continue;
     const likelihood = riskLevel(getRiskLikelihood(risk));
     const impact = riskLevel(getRiskImpact(risk));
     if (!likelihood || !impact) continue;

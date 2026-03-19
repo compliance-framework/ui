@@ -402,7 +402,6 @@ const extractErrorBody = (error: unknown): string | undefined => {
   const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
   return errorResponse.response?.data?.errors?.body;
 };
-
 const applyTemplateToComponent = (template: DefinedComponent) => {
   componentData.type = template.type || '';
   componentData.title = template.title || '';

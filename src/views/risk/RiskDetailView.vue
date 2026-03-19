@@ -59,12 +59,10 @@
             <div>
               <span class="font-semibold">Threat IDs:</span>
               <span class="ml-1">
-                <template v-if="risk.threatIds?.length">
+                <template v-if="threatItems.length">
                   {{
-                    risk.threatIds
-                      .map((item) =>
-                        typeof item === 'string' ? item : item.id,
-                      )
+                    threatItems
+                      .map((item) => item.id)
                       .filter(Boolean)
                       .join(', ')
                   }}
@@ -593,9 +591,18 @@
           </div>
 
           <div v-else-if="activeTab === 'threats'" class="space-y-4">
-            <h3 class="text-lg font-medium text-gray-900 dark:text-slate-200">
-              Threats
-            </h3>
+            <div class="flex items-center justify-between">
+              <h3 class="text-lg font-medium text-gray-900 dark:text-slate-200">
+                Threats
+              </h3>
+              <button
+                class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-sm"
+                :disabled="saving"
+                @click="openThreatCreate"
+              >
+                Add Threat
+              </button>
+            </div>
 
             <div
               v-if="!threatItems.length"
@@ -606,46 +613,98 @@
 
             <div v-else class="space-y-3">
               <div
-                v-for="threat in threatItems"
-                :key="`${threat.system}:${threat.id}`"
+                v-for="(threat, threatIndex) in threatItems"
+                :key="
+                  threat.threatRefId ||
+                  `${threat.system}:${threat.id}:${threatIndex}`
+                "
                 class="border border-ccf-300 dark:border-slate-700 rounded-lg p-4"
               >
-                <p
-                  class="text-sm font-semibold text-gray-800 dark:text-slate-200"
-                >
-                  {{ threat.id }}
-                </p>
-                <p class="text-sm text-gray-600 dark:text-slate-400 mt-1">
-                  System: {{ threat.system }}
-                </p>
-                <p
-                  v-if="threat.href"
-                  class="text-sm text-blue-700 dark:text-blue-300 mt-1 break-all"
-                >
-                  <a
-                    v-if="threat.safeHref"
-                    :href="threat.safeHref"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="underline"
-                  >
-                    {{ threat.href }}
-                  </a>
-                  <span
-                    v-else
-                    class="text-sm text-gray-700 dark:text-slate-300"
-                  >
-                    {{ threat.href }}
-                  </span>
-                </p>
+                <div class="flex justify-between items-start gap-4">
+                  <div class="space-y-1">
+                    <p
+                      class="text-sm font-semibold text-gray-800 dark:text-slate-200"
+                    >
+                      {{ threat.id }}
+                    </p>
+                    <p
+                      v-if="threat.title"
+                      class="text-sm text-gray-600 dark:text-slate-400"
+                    >
+                      {{ threat.title }}
+                    </p>
+                    <p class="text-sm text-gray-600 dark:text-slate-400">
+                      System: {{ threat.system }}
+                    </p>
+                    <p
+                      v-if="threat.url"
+                      class="text-sm text-blue-700 dark:text-blue-300 break-all"
+                    >
+                      <a
+                        v-if="threat.safeUrl"
+                        :href="threat.safeUrl"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="underline"
+                      >
+                        {{ threat.url }}
+                      </a>
+                      <span
+                        v-else
+                        class="text-sm text-gray-700 dark:text-slate-300"
+                      >
+                        {{ threat.url }}
+                      </span>
+                    </p>
+                  </div>
+                  <div class="flex gap-2 self-start">
+                    <button
+                      class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-xs"
+                      :disabled="saving || !threat.threatRefId"
+                      :title="
+                        threat.threatRefId
+                          ? undefined
+                          : 'Legacy threats without a threat reference cannot be edited.'
+                      "
+                      @click="openThreatEdit(threat)"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md text-xs"
+                      :disabled="saving || !threat.threatRefId"
+                      :title="
+                        threat.threatRefId
+                          ? undefined
+                          : 'Legacy threats without a threat reference cannot be removed.'
+                      "
+                      @click="removeThreat(threat)"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
           <div v-else-if="activeTab === 'remediations'" class="space-y-4">
-            <h3 class="text-lg font-medium text-gray-900 dark:text-slate-200">
-              Remediations
-            </h3>
+            <div class="flex items-center justify-between">
+              <h3 class="text-lg font-medium text-gray-900 dark:text-slate-200">
+                Remediations
+              </h3>
+              <button
+                class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-md text-sm"
+                :disabled="saving"
+                @click="openPrimaryRemediationEditor"
+              >
+                {{
+                  hasRemediationTemplateResource
+                    ? 'Edit Remediation'
+                    : 'Add Remediation'
+                }}
+              </button>
+            </div>
 
             <div
               v-if="!remediationItems.length"
@@ -657,46 +716,73 @@
             <div v-else class="space-y-3">
               <div
                 v-for="(remediation, remediationIndex) in remediationItems"
-                :key="remediation.uuid || `remediation-${remediationIndex}`"
-                class="border border-ccf-300 dark:border-slate-700 rounded-lg p-4 space-y-2"
+                :key="remediation.id || `remediation-${remediationIndex}`"
+                class="border border-ccf-300 dark:border-slate-700 rounded-lg p-4"
               >
-                <p
-                  class="text-sm font-semibold text-gray-800 dark:text-slate-200"
-                >
-                  {{ remediation.title }}
-                </p>
-                <p class="text-xs text-gray-500 dark:text-slate-400">
-                  Lifecycle: {{ remediation.lifecycle || 'N/A' }}
-                </p>
-                <p class="text-sm text-gray-600 dark:text-slate-400">
-                  {{ remediation.description || 'No description.' }}
-                </p>
-                <p
-                  v-if="remediation.remarks"
-                  class="text-xs text-gray-500 dark:text-slate-400"
-                >
-                  Remarks: {{ remediation.remarks }}
-                </p>
-                <div v-if="remediation.tasks?.length" class="space-y-1">
-                  <p
-                    class="text-xs font-semibold text-gray-600 dark:text-slate-300"
-                  >
-                    Tasks
-                  </p>
-                  <ul
-                    class="list-disc list-inside text-sm text-gray-600 dark:text-slate-400"
-                  >
-                    <li
-                      v-for="(task, taskIndex) in remediation.tasks"
-                      :key="
-                        task.uuid ||
-                        task.title ||
-                        `task-${remediationIndex}-${taskIndex}`
-                      "
+                <div class="flex justify-between items-start gap-4">
+                  <div class="space-y-2">
+                    <p
+                      class="text-sm font-semibold text-gray-800 dark:text-slate-200"
                     >
-                      {{ task.title }}
-                    </li>
-                  </ul>
+                      {{ remediation.title || 'Untitled remediation' }}
+                    </p>
+                    <p class="text-sm text-gray-600 dark:text-slate-400">
+                      {{ remediation.description || 'No description.' }}
+                    </p>
+                    <p
+                      v-if="remediation.remarks"
+                      class="text-xs text-gray-500 dark:text-slate-400"
+                    >
+                      Remarks: {{ remediation.remarks }}
+                    </p>
+                    <div v-if="remediation.tasks?.length" class="space-y-1">
+                      <p
+                        class="text-xs font-semibold text-gray-600 dark:text-slate-300"
+                      >
+                        Tasks
+                      </p>
+                      <ul
+                        class="list-disc list-inside text-sm text-gray-600 dark:text-slate-400"
+                      >
+                        <li
+                          v-for="(task, taskIndex) in remediation.tasks"
+                          :key="
+                            task.id ||
+                            task.title ||
+                            `task-${remediationIndex}-${taskIndex}`
+                          "
+                        >
+                          {{ task.title }}
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                  <div class="flex gap-2 self-start">
+                    <button
+                      class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-xs"
+                      :disabled="saving || !hasRemediationTemplateResource"
+                      :title="
+                        hasRemediationTemplateResource
+                          ? undefined
+                          : 'Legacy remediations cannot be edited until a remediation template exists.'
+                      "
+                      @click="openRemediationEdit(remediation)"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md text-xs"
+                      :disabled="saving || !hasRemediationTemplateResource"
+                      :title="
+                        hasRemediationTemplateResource
+                          ? undefined
+                          : 'Legacy remediations cannot be removed until a remediation template exists.'
+                      "
+                      @click="removeRemediation(remediation)"
+                    >
+                      Remove
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -893,6 +979,172 @@
     />
 
     <Dialog
+      v-model:visible="showThreatEditor"
+      modal
+      size="lg"
+      :header="threatEditorTitle"
+    >
+      <div class="space-y-4">
+        <div>
+          <label
+            class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1"
+          >
+            Threat ID
+          </label>
+          <input
+            v-model="workingThreat.id"
+            data-testid="threat-id-input"
+            type="text"
+            class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md dark:bg-slate-800 dark:text-slate-200"
+          />
+        </div>
+
+        <div>
+          <label
+            class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1"
+          >
+            System
+          </label>
+          <input
+            v-model="workingThreat.system"
+            data-testid="threat-system-input"
+            type="text"
+            class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md dark:bg-slate-800 dark:text-slate-200"
+          />
+        </div>
+
+        <div>
+          <label
+            class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1"
+          >
+            Title
+          </label>
+          <input
+            v-model="workingThreat.title"
+            data-testid="threat-title-input"
+            type="text"
+            class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md dark:bg-slate-800 dark:text-slate-200"
+          />
+        </div>
+
+        <div>
+          <label
+            class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1"
+          >
+            Reference URL
+          </label>
+          <input
+            v-model="workingThreat.url"
+            data-testid="threat-url-input"
+            type="text"
+            class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md dark:bg-slate-800 dark:text-slate-200"
+          />
+        </div>
+
+        <div class="flex justify-end gap-3 pt-2">
+          <TertiaryButton @click="closeThreatEditor">Cancel</TertiaryButton>
+          <button
+            data-testid="save-threat-button"
+            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm disabled:opacity-60"
+            :disabled="saving"
+            @click="saveThreat"
+          >
+            Save Threat
+          </button>
+        </div>
+      </div>
+    </Dialog>
+
+    <Dialog
+      v-model:visible="showRemediationEditor"
+      modal
+      size="lg"
+      :header="remediationEditorTitle"
+    >
+      <div class="space-y-4">
+        <div>
+          <label
+            class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1"
+          >
+            Title
+          </label>
+          <input
+            v-model="workingRemediation.title"
+            data-testid="remediation-title-input"
+            type="text"
+            class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md dark:bg-slate-800 dark:text-slate-200"
+          />
+        </div>
+
+        <div>
+          <label
+            class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1"
+          >
+            Description
+          </label>
+          <textarea
+            v-model="workingRemediation.description"
+            data-testid="remediation-description-input"
+            rows="4"
+            class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md dark:bg-slate-800 dark:text-slate-200"
+          ></textarea>
+        </div>
+
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <label
+              class="block text-sm font-medium text-gray-700 dark:text-slate-300"
+            >
+              Tasks
+            </label>
+            <button
+              type="button"
+              data-testid="add-remediation-task-button"
+              class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm"
+              @click="addRemediationTaskField"
+            >
+              Add Task
+            </button>
+          </div>
+
+          <div
+            v-for="(_, index) in workingRemediation.tasks"
+            :key="`remediation-task-${index}`"
+            class="flex gap-2"
+          >
+            <input
+              v-model="workingRemediation.tasks[index]"
+              :data-testid="`remediation-task-input-${index}`"
+              type="text"
+              class="flex-1 px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md dark:bg-slate-800 dark:text-slate-200"
+            />
+            <button
+              type="button"
+              class="px-3 py-2 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 text-sm"
+              @click="removeRemediationTaskField(index)"
+            >
+              Remove Task
+            </button>
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-3 pt-2">
+          <TertiaryButton @click="closeRemediationEditor">
+            Cancel
+          </TertiaryButton>
+          <button
+            data-testid="save-remediation-button"
+            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm disabled:opacity-60"
+            :disabled="saving"
+            @click="saveRemediation"
+          >
+            Save Remediation
+          </button>
+        </div>
+      </div>
+    </Dialog>
+
+    <Dialog
       v-model:visible="showAssociationPicker"
       modal
       size="lg"
@@ -992,6 +1244,10 @@ import {
 import {
   buildRiskCollectionEndpoint,
   buildRiskItemEndpoint,
+  buildRiskRemediationCollectionEndpoint,
+  buildRiskRemediationItemEndpoint,
+  buildRiskThreatCollectionEndpoint,
+  buildRiskThreatItemEndpoint,
   resolveRiskContext,
   type RiskContext,
 } from '@/utils/risk-context';
@@ -1034,6 +1290,43 @@ interface ResolvedControlWithCatalog {
   catalogId: string;
   title?: string;
   class?: string;
+}
+
+interface ThreatTabItem {
+  threatRefId?: string;
+  id: string;
+  system: string;
+  title: string;
+  url: string;
+  safeUrl: string;
+}
+
+interface EditableThreat {
+  id: string;
+  system: string;
+  title: string;
+  url: string;
+  threatRefId?: string;
+}
+
+interface EditableRemediation {
+  id?: string;
+  title: string;
+  description: string;
+  tasks: string[];
+}
+
+interface RemediationTabItem {
+  id?: string;
+  title: string;
+  description: string;
+  tasks: Array<{
+    id?: string;
+    title: string;
+    orderIndex?: number;
+  }>;
+  lifecycle?: string;
+  remarks?: string;
 }
 
 interface RiskAcceptSubmitPayload {
@@ -1104,14 +1397,9 @@ const tabs = computed<Array<{ id: TabId; label: string }>>(() => {
     { id: 'evidence', label: 'Evidence' },
     { id: 'controls', label: 'Controls' },
     { id: 'components', label: 'Components' },
+    { id: 'threats', label: 'Threats' },
+    { id: 'remediations', label: 'Remediations' },
   ];
-
-  if (isSspContext.value) {
-    baseTabs.push(
-      { id: 'threats', label: 'Threats' },
-      { id: 'remediations', label: 'Remediations' },
-    );
-  }
 
   baseTabs.push(
     { id: 'reviews', label: 'Reviews' },
@@ -1245,6 +1533,21 @@ const ownerAssignmentsSnapshot = ref<RiskOwnerAssignmentsPayload>({
 const ownerAssignmentsSnapshotSignature = ref('');
 const ownerAssignmentsResetKey = ref(0);
 const ownerSaveError = ref('');
+const showThreatEditor = ref(false);
+const showRemediationEditor = ref(false);
+const threatEditingKey = ref<string | null>(null);
+const remediationEditingId = ref<string | null>(null);
+const workingThreat = ref<EditableThreat>({
+  id: '',
+  system: '',
+  title: '',
+  url: '',
+});
+const workingRemediation = ref<EditableRemediation>({
+  title: '',
+  description: '',
+  tasks: [],
+});
 
 const resolvedRiskId = computed(
   () => getRiskIdentifier(risk.value) || riskId.value || '',
@@ -1254,6 +1557,36 @@ const detailEndpoint = computed(() => {
   if (!context.value || !resolvedRiskId.value) return null;
   return buildRiskItemEndpoint(context.value, resolvedRiskId.value);
 });
+
+const threatCollectionEndpoint = computed(() => {
+  if (!context.value || !resolvedRiskId.value) return null;
+  return buildRiskThreatCollectionEndpoint(context.value, resolvedRiskId.value);
+});
+
+const remediationCollectionEndpoint = computed(() => {
+  if (!context.value || !resolvedRiskId.value) return null;
+  return buildRiskRemediationCollectionEndpoint(
+    context.value,
+    resolvedRiskId.value,
+  );
+});
+
+const remediationTemplateResource = computed(() => {
+  const source = toRecord(risk.value);
+  return source ? toRecord(source.remediationTemplate) : null;
+});
+
+const hasRemediationTemplateResource = computed(
+  () => remediationTemplateResource.value !== null,
+);
+
+const threatEditorTitle = computed(() =>
+  threatEditingKey.value ? 'Edit Threat' : 'Add Threat',
+);
+
+const remediationEditorTitle = computed(() =>
+  remediationEditingId.value ? 'Edit Remediation' : 'Add Remediation',
+);
 
 const pageTitle = computed(() =>
   risk.value?.title ? `Risk: ${risk.value.title}` : 'Risk Detail',
@@ -1882,8 +2215,7 @@ const overviewImpactClass = computed(() =>
   riskLevelPillClass(riskImpactValue.value),
 );
 
-const threatItems = computed(() => {
-  if (!isSspContext.value) return [];
+const threatItems = computed<ThreatTabItem[]>(() => {
   const rawThreats = Array.isArray(risk.value?.threatIds)
     ? (risk.value?.threatIds as unknown[])
     : [];
@@ -1893,8 +2225,9 @@ const threatItems = computed(() => {
         return {
           id: entry.trim(),
           system: 'N/A',
-          href: '',
-          safeHref: '',
+          title: '',
+          url: '',
+          safeUrl: '',
         };
       }
 
@@ -1903,25 +2236,43 @@ const threatItems = computed(() => {
         return {
           id: '',
           system: 'N/A',
-          href: '',
-          safeHref: '',
+          title: '',
+          url: '',
+          safeUrl: '',
         };
       }
 
-      const href = readString(record, ['href']) || '';
+      const url = readString(record, ['url', 'href']) || '';
       return {
-        id: readString(record, ['id']) || '',
+        threatRefId: readString(record, ['threatRefId']),
+        id: readString(record, ['refId', 'id']) || '',
         system: readString(record, ['system']) || 'N/A',
-        href,
-        safeHref: sanitizeExternalHref(href),
+        title: readString(record, ['title']) || '',
+        url,
+        safeUrl: sanitizeExternalHref(url),
       };
     })
     .filter((item) => !!item.id);
 });
 
-const remediationItems = computed(() => {
-  if (!isSspContext.value) return [];
-  return risk.value?.remediations || [];
+const remediationItems = computed<RemediationTabItem[]>(() => {
+  const remediationTemplate = remediationTemplateResource.value;
+
+  if (remediationTemplate) {
+    return [normalizeRemediationItem(remediationTemplate)];
+  }
+
+  const legacyRemediations = Array.isArray(
+    (risk.value as Risk | null)?.remediations,
+  )
+    ? ((risk.value as Risk & { remediations?: unknown[] }).remediations ?? [])
+    : [];
+  return legacyRemediations
+    .map((entry) => {
+      const record = toRecord(entry);
+      return record ? normalizeRemediationItem(record) : null;
+    })
+    .filter((item): item is RemediationTabItem => item !== null);
 });
 
 const workflowStage = computed(() => riskWorkflowStage(risk.value?.status));
@@ -2028,6 +2379,45 @@ function readString(
     }
   }
   return undefined;
+}
+
+function normalizeRemediationTasks(
+  rawTasks: unknown,
+): RemediationTabItem['tasks'] {
+  if (!Array.isArray(rawTasks)) return [];
+
+  const tasks: RemediationTabItem['tasks'] = [];
+
+  rawTasks.forEach((task) => {
+    const record = toRecord(task);
+    if (!record) return;
+    const title = readString(record, ['title']) || '';
+    if (!title) return;
+    tasks.push({
+      id: readString(record, ['id', 'uuid']),
+      title,
+      orderIndex: readNumber(record, ['orderIndex']),
+    });
+  });
+
+  return tasks.sort(
+    (left, right) => (left.orderIndex ?? 0) - (right.orderIndex ?? 0),
+  );
+}
+
+function normalizeRemediationItem(
+  record: Record<string, unknown>,
+): RemediationTabItem {
+  const title = readString(record, ['title']) || '';
+
+  return {
+    id: readString(record, ['id', 'uuid']),
+    title,
+    description: readString(record, ['description']) || '',
+    remarks: readString(record, ['remarks']),
+    lifecycle: readString(record, ['lifecycle']),
+    tasks: normalizeRemediationTasks(record.tasks),
+  };
 }
 
 function setAssociations(
@@ -2170,6 +2560,27 @@ function applyRiskUpdate(updated: Risk | undefined) {
   risk.value = cloneDeep(updated);
   syncOwnerAssignmentsFromRisk();
   notifyRiskUpdated(risk.value);
+}
+
+async function refreshRiskDetail(notifyError = true): Promise<boolean> {
+  if (!detailEndpoint.value) return false;
+
+  try {
+    await executeFetchRisk(detailEndpoint.value);
+    applyRiskUpdate(fetchedRisk.value);
+    return Boolean(fetchedRisk.value);
+  } catch (err) {
+    if (isCanceledError(err)) return false;
+    if (notifyError) {
+      toast.add({
+        severity: 'error',
+        summary: 'Refresh failed',
+        detail: extractErrorMessage(err),
+        life: 4000,
+      });
+    }
+    return false;
+  }
 }
 
 function buildRiskPutPayload(
@@ -2453,6 +2864,392 @@ async function submitReviewRisk(payload: RiskReviewSubmitPayload) {
     toast.add({
       severity: 'error',
       summary: 'Review failed',
+      detail: extractErrorMessage(err),
+      life: 4000,
+    });
+  }
+}
+
+function resetThreatEditor() {
+  threatEditingKey.value = null;
+  workingThreat.value = {
+    id: '',
+    system: '',
+    title: '',
+    url: '',
+  };
+}
+
+function openThreatCreate() {
+  resetThreatEditor();
+  showThreatEditor.value = true;
+}
+
+function openThreatEdit(threat: ThreatTabItem) {
+  if (!threat.threatRefId) {
+    toast.add({
+      severity: 'warn',
+      summary: 'Edit unavailable',
+      detail: 'Legacy threats without a threat reference cannot be edited.',
+      life: 3500,
+    });
+    return;
+  }
+
+  threatEditingKey.value = threat.threatRefId || null;
+  workingThreat.value = {
+    id: threat.id,
+    system: threat.system,
+    title: threat.title,
+    url: threat.url,
+    threatRefId: threat.threatRefId,
+  };
+  showThreatEditor.value = true;
+}
+
+function closeThreatEditor() {
+  showThreatEditor.value = false;
+  resetThreatEditor();
+}
+
+function buildThreatPayload() {
+  const id = workingThreat.value.id.trim();
+  const system = workingThreat.value.system.trim();
+  const title = workingThreat.value.title.trim();
+  const url = workingThreat.value.url.trim();
+
+  if (!id || !system || !title) {
+    return null;
+  }
+
+  return url
+    ? {
+        id,
+        system,
+        title,
+        url,
+      }
+    : {
+        id,
+        system,
+        title,
+      };
+}
+
+function buildThreatItemEndpointForMutation(threatRefId?: string | null) {
+  if (!context.value || !resolvedRiskId.value || !threatRefId) return null;
+  return buildRiskThreatItemEndpoint(
+    context.value,
+    resolvedRiskId.value,
+    threatRefId,
+  );
+}
+
+async function saveThreat() {
+  const isEditing = Boolean(threatEditingKey.value);
+  const payload = buildThreatPayload();
+  if (!payload) {
+    toast.add({
+      severity: 'error',
+      summary: 'Validation Error',
+      detail: 'Threat id, system, and title are required.',
+      life: 3000,
+    });
+    return;
+  }
+
+  const endpoint = isEditing
+    ? buildThreatItemEndpointForMutation(workingThreat.value.threatRefId)
+    : threatCollectionEndpoint.value;
+  const method = isEditing ? 'PUT' : 'POST';
+
+  if (!endpoint) {
+    toast.add({
+      severity: 'error',
+      summary: 'Save failed',
+      detail: 'Threat endpoint is unavailable.',
+      life: 4000,
+    });
+    return;
+  }
+
+  try {
+    await executeAssociationMutation(endpoint, {
+      method,
+      data: payload,
+    });
+    const refreshed = await refreshRiskDetail(false);
+    if (!refreshed) {
+      toast.add({
+        severity: 'warn',
+        summary: 'Saved, refresh failed',
+        detail:
+          'Threat was saved, but the latest risk details could not be reloaded.',
+        life: 4000,
+      });
+      return;
+    }
+    closeThreatEditor();
+    toast.add({
+      severity: 'success',
+      summary: 'Saved',
+      detail: isEditing ? 'Threat updated' : 'Threat added',
+      life: 3000,
+    });
+  } catch (err) {
+    if (isCanceledError(err)) return;
+    toast.add({
+      severity: 'error',
+      summary: 'Save failed',
+      detail: extractErrorMessage(err),
+      life: 4000,
+    });
+  }
+}
+
+async function removeThreat(threat: ThreatTabItem) {
+  if (!threat.threatRefId) {
+    toast.add({
+      severity: 'warn',
+      summary: 'Remove unavailable',
+      detail: 'Legacy threats without a threat reference cannot be removed.',
+      life: 3500,
+    });
+    return;
+  }
+
+  const confirmed = window.confirm(
+    `Remove threat "${threat.id}" from this risk?`,
+  );
+  if (!confirmed) return;
+
+  const endpoint = buildThreatItemEndpointForMutation(threat.threatRefId);
+  if (!endpoint) {
+    toast.add({
+      severity: 'error',
+      summary: 'Remove failed',
+      detail: 'Threat endpoint is unavailable.',
+      life: 4000,
+    });
+    return;
+  }
+
+  try {
+    await executeAssociationMutation(endpoint, {
+      method: 'DELETE',
+    });
+    await refreshRiskDetail();
+    toast.add({
+      severity: 'success',
+      summary: 'Saved',
+      detail: 'Threat removed',
+      life: 3000,
+    });
+  } catch (err) {
+    if (isCanceledError(err)) return;
+    toast.add({
+      severity: 'error',
+      summary: 'Remove failed',
+      detail: extractErrorMessage(err),
+      life: 4000,
+    });
+  }
+}
+
+function resetRemediationEditor() {
+  remediationEditingId.value = null;
+  workingRemediation.value = {
+    title: '',
+    description: '',
+    tasks: [],
+  };
+}
+
+function openRemediationCreate() {
+  resetRemediationEditor();
+  showRemediationEditor.value = true;
+}
+
+function openPrimaryRemediationEditor() {
+  if (hasRemediationTemplateResource.value && remediationItems.value.length) {
+    openRemediationEdit(remediationItems.value[0]);
+    return;
+  }
+
+  openRemediationCreate();
+}
+
+function openRemediationEdit(remediation: RemediationTabItem) {
+  if (!hasRemediationTemplateResource.value) {
+    toast.add({
+      severity: 'warn',
+      summary: 'Edit unavailable',
+      detail:
+        'Legacy remediations cannot be edited until a remediation template exists.',
+      life: 3500,
+    });
+    return;
+  }
+
+  remediationEditingId.value = remediation.id || 'existing-template';
+  workingRemediation.value = {
+    id: remediation.id,
+    title: remediation.title || '',
+    description: remediation.description || '',
+    tasks: (remediation.tasks || [])
+      .map((task) => task.title?.trim() || '')
+      .filter(Boolean),
+  };
+  showRemediationEditor.value = true;
+}
+
+function closeRemediationEditor() {
+  showRemediationEditor.value = false;
+  resetRemediationEditor();
+}
+
+function addRemediationTaskField() {
+  workingRemediation.value.tasks.push('');
+}
+
+function removeRemediationTaskField(index: number) {
+  workingRemediation.value.tasks.splice(index, 1);
+}
+
+function buildRemediationPayload() {
+  const title = workingRemediation.value.title.trim();
+  const description = workingRemediation.value.description.trim();
+
+  if (!title) {
+    return null;
+  }
+
+  const tasks = workingRemediation.value.tasks
+    .map((task) => task.trim())
+    .filter(Boolean)
+    .map((title, index) => ({
+      title,
+      orderIndex: index + 1,
+    }));
+
+  return {
+    title,
+    description: description || undefined,
+    tasks: tasks.length ? tasks : undefined,
+  };
+}
+
+function remediationItemEndpoint() {
+  if (!context.value || !resolvedRiskId.value) return null;
+  return buildRiskRemediationItemEndpoint(context.value, resolvedRiskId.value);
+}
+
+async function saveRemediation() {
+  const hasExistingTemplate = hasRemediationTemplateResource.value;
+  const payload = buildRemediationPayload();
+  if (!payload) {
+    toast.add({
+      severity: 'error',
+      summary: 'Validation Error',
+      detail: 'Title is required.',
+      life: 3000,
+    });
+    return;
+  }
+
+  const endpoint = hasExistingTemplate
+    ? remediationItemEndpoint()
+    : remediationCollectionEndpoint.value;
+  const method = hasExistingTemplate ? 'PUT' : 'POST';
+
+  if (!endpoint) {
+    toast.add({
+      severity: 'error',
+      summary: 'Save failed',
+      detail: 'Remediation endpoint is unavailable.',
+      life: 4000,
+    });
+    return;
+  }
+
+  try {
+    await executeAssociationMutation(endpoint, {
+      method,
+      data: payload,
+    });
+    const refreshed = await refreshRiskDetail(false);
+    if (!refreshed) {
+      toast.add({
+        severity: 'warn',
+        summary: 'Saved, refresh failed',
+        detail:
+          'Remediation was saved, but the latest risk details could not be reloaded.',
+        life: 4000,
+      });
+      return;
+    }
+    closeRemediationEditor();
+    toast.add({
+      severity: 'success',
+      summary: 'Saved',
+      detail: hasExistingTemplate ? 'Remediation updated' : 'Remediation added',
+      life: 3000,
+    });
+  } catch (err) {
+    if (isCanceledError(err)) return;
+    toast.add({
+      severity: 'error',
+      summary: 'Save failed',
+      detail: extractErrorMessage(err),
+      life: 4000,
+    });
+  }
+}
+
+async function removeRemediation(remediation: RemediationTabItem) {
+  if (!hasRemediationTemplateResource.value) {
+    toast.add({
+      severity: 'warn',
+      summary: 'Remove unavailable',
+      detail:
+        'Legacy remediations cannot be removed until a remediation template exists.',
+      life: 3500,
+    });
+    return;
+  }
+
+  const confirmed = window.confirm(
+    `Remove remediation "${remediation.title || 'Untitled remediation'}" from this risk?`,
+  );
+  if (!confirmed) return;
+
+  const endpoint = remediationItemEndpoint();
+  if (!endpoint) {
+    toast.add({
+      severity: 'error',
+      summary: 'Remove failed',
+      detail: 'Remediation endpoint is unavailable.',
+      life: 4000,
+    });
+    return;
+  }
+
+  try {
+    await executeAssociationMutation(endpoint, {
+      method: 'DELETE',
+    });
+    await refreshRiskDetail();
+    toast.add({
+      severity: 'success',
+      summary: 'Saved',
+      detail: 'Remediation removed',
+      life: 3000,
+    });
+  } catch (err) {
+    if (isCanceledError(err)) return;
+    toast.add({
+      severity: 'error',
+      summary: 'Remove failed',
       detail: extractErrorMessage(err),
       life: 4000,
     });

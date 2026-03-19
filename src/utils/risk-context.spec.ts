@@ -2,6 +2,10 @@ import { describe, expect, it } from 'vitest';
 import {
   buildRiskCollectionEndpoint,
   buildRiskItemEndpoint,
+  buildRiskRemediationCollectionEndpoint,
+  buildRiskRemediationItemEndpoint,
+  buildRiskThreatCollectionEndpoint,
+  buildRiskThreatItemEndpoint,
   resolveRiskContext,
 } from './risk-context';
 
@@ -75,9 +79,14 @@ describe('risk-context', () => {
       routeName: 'system-security-plan-risks',
       routeId: 'ssp-44',
     });
+    const poamContext = resolveRiskContext({
+      routeName: 'plan-of-action-and-milestones-risks',
+      routeId: 'poam-44',
+    });
 
     expect(rootContext).not.toBeNull();
     expect(sspContext).not.toBeNull();
+    expect(poamContext).not.toBeNull();
 
     expect(buildRiskCollectionEndpoint(rootContext!)).toBe(
       '/api/oscal/system-security-plans/ssp-44/risks',
@@ -91,6 +100,42 @@ describe('risk-context', () => {
     );
     expect(buildRiskItemEndpoint(sspContext!, 'risk-2')).toBe(
       '/api/oscal/system-security-plans/ssp-44/risks/risk-2',
+    );
+
+    expect(buildRiskThreatCollectionEndpoint(sspContext!, 'risk-2')).toBe(
+      '/api/oscal/system-security-plans/ssp-44/risks/risk-2/threat-ids',
+    );
+    expect(
+      buildRiskThreatItemEndpoint(sspContext!, 'risk-2', 'threat-ref-1'),
+    ).toBe(
+      '/api/oscal/system-security-plans/ssp-44/risks/risk-2/threat-ids/threat-ref-1',
+    );
+    expect(buildRiskRemediationCollectionEndpoint(sspContext!, 'risk-2')).toBe(
+      '/api/oscal/system-security-plans/ssp-44/risks/risk-2/remediation-template',
+    );
+    expect(buildRiskRemediationItemEndpoint(sspContext!, 'risk-2')).toBe(
+      '/api/oscal/system-security-plans/ssp-44/risks/risk-2/remediation-template',
+    );
+
+    expect(buildRiskCollectionEndpoint(poamContext!)).toBe(
+      '/api/oscal/plan-of-action-and-milestones/poam-44/risks',
+    );
+    expect(buildRiskItemEndpoint(poamContext!, 'risk-3')).toBe(
+      '/api/oscal/plan-of-action-and-milestones/poam-44/risks/risk-3',
+    );
+    expect(buildRiskThreatCollectionEndpoint(poamContext!, 'risk-3')).toBe(
+      '/api/oscal/plan-of-action-and-milestones/poam-44/risks/risk-3/threat-ids',
+    );
+    expect(
+      buildRiskThreatItemEndpoint(poamContext!, 'risk-3', 'threat-ref-9'),
+    ).toBe(
+      '/api/oscal/plan-of-action-and-milestones/poam-44/risks/risk-3/threat-ids/threat-ref-9',
+    );
+    expect(buildRiskRemediationCollectionEndpoint(poamContext!, 'risk-3')).toBe(
+      '/api/oscal/plan-of-action-and-milestones/poam-44/risks/risk-3/remediation-template',
+    );
+    expect(buildRiskRemediationItemEndpoint(poamContext!, 'risk-3')).toBe(
+      '/api/oscal/plan-of-action-and-milestones/poam-44/risks/risk-3/remediation-template',
     );
   });
 });
