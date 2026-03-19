@@ -27,7 +27,7 @@ module.exports = {
   custom_assertions_path: [],
 
   // See https://nightwatchjs.org/guide/extending-nightwatch/adding-plugins.html
-  plugins: ['@nightwatch/vue'],
+  plugins: ['vite-plugin-nightwatch'],
 
   // See https://nightwatchjs.org/guide/concepts/test-globals.html#external-test-globals
   globals_path: '',

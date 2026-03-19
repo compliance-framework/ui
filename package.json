@@ -13,6 +13,10 @@
     "type-check": "vue-tsc --build",
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",
+    "audit": "npm audit",
+    "audit:fix": "npm audit fix",
+    "audit:fix:dry-run": "npm audit fix --dry-run",
+    "audit:fix:force": "npm audit fix --force",
     "format:fix": "prettier --write src/",
     "format:staged": "lint-staged",
     "format:check": "prettier --check src/",
@@ -20,6 +24,11 @@
   },
   "lint-staged": {
     "*.{js,ts,tsx,vue,json,css,md}": "npm run format:fix"
+  },
+  "overrides": {
+    "esbuild": "0.25.10",
+    "minimatch": "10.2.4",
+    "serialize-javascript": "7.0.4"
   },
   "engines": {
     "npm": "^10.1",
@@ -52,7 +61,6 @@
     "vue-router": "^4.5.1"
   },
   "devDependencies": {
-    "@nightwatch/vue": "^3.1.2",
     "@tailwindcss/typography": "^0.5.19",
     "@tsconfig/node20": "^20.1.6",
     "@types/jsdom": "^21.1.7",
@@ -81,7 +89,7 @@
     "vite": "^6.3.6",
     "vite-plugin-nightwatch": "^0.4.6",
     "vite-plugin-vue-devtools": "^7.7.7",
-    "vitest": "^2.1.9",
+    "vitest": "^4.1.0",
     "vue-tsc": "^2.2.12"
   },
   "prettier": {
