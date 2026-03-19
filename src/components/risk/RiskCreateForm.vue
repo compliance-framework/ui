@@ -335,8 +335,16 @@ const formData = reactive({
   remarks: '',
 });
 const showTemplateSelector = ref(false);
+const selectedTemplate = ref<RiskTemplate | null>(null);
 const selectedTemplateName = ref('');
 const templatesAccessDenied = ref(false);
+
+function toOptionalString(
+  value: string | null | undefined,
+): string | undefined {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : undefined;
+}
 
 function getTemplateMetadataString(
   value: unknown,
@@ -356,6 +364,62 @@ function getStatementFromTemplate(template: RiskTemplate): string {
     return template.statement.trim();
   }
   return template.title;
+}
+
+function getThreatIdsFromTemplate(template: RiskTemplate) {
+  if (!Array.isArray(template.threatIds)) {
+    return undefined;
+  }
+
+  const threatIds = template.threatIds.reduce<
+    Array<{ system: string; id: string; title: string; url?: string }>
+  >((acc, threat) => {
+    const system = threat.system?.trim();
+    const id = threat.id?.trim();
+    const title = threat.title?.trim();
+
+    if (!system || !id || !title) {
+      return acc;
+    }
+
+    acc.push({
+      system,
+      id,
+      title,
+      url: toOptionalString(threat.url),
+    });
+    return acc;
+  }, []);
+
+  return threatIds.length ? threatIds : undefined;
+}
+
+function getRemediationTemplateFromTemplate(template: RiskTemplate) {
+  const title = template.remediationTemplate?.title?.trim();
+  if (!title) {
+    return undefined;
+  }
+
+  const tasks = (template.remediationTemplate?.tasks ?? []).reduce<
+    Array<{ title: string; orderIndex: number }>
+  >((acc, task) => {
+    const taskTitle = task.title?.trim();
+    if (!taskTitle) {
+      return acc;
+    }
+
+    acc.push({
+      title: taskTitle,
+      orderIndex: acc.length + 1,
+    });
+    return acc;
+  }, []);
+
+  return {
+    title,
+    description: toOptionalString(template.remediationTemplate?.description),
+    tasks: tasks.length ? tasks : undefined,
+  };
 }
 
 function buildTemplateRemarks(template: RiskTemplate): string {
@@ -423,6 +487,7 @@ function applyTemplate(template: RiskTemplate) {
   formData.title = template.title;
   formData.description = statement;
   formData.statement = statement;
+  selectedTemplate.value = template;
 
   const templateRemarks = buildTemplateRemarks(template);
   if (templateRemarks) {
@@ -493,12 +558,34 @@ async function submit() {
       }
     }
 
-    const newRisk: Partial<Risk> = {
+    const newRisk: Partial<Risk> & {
+      likelihood?: string;
+      impact?: string;
+      threatIds?: Array<{
+        system: string;
+        id: string;
+        title: string;
+        url?: string;
+      }>;
+      remediationTemplate?: {
+        title: string;
+        description?: string;
+        tasks?: Array<{ title: string; orderIndex: number }>;
+      };
+    } = {
       uuid: crypto.randomUUID(),
       title: formData.title,
       description: formData.description,
       statement: formData.statement,
       status: formData.status,
+      likelihood: toOptionalString(selectedTemplate.value?.likelihoodHint),
+      impact: toOptionalString(selectedTemplate.value?.impactHint),
+      threatIds: selectedTemplate.value
+        ? getThreatIdsFromTemplate(selectedTemplate.value)
+        : undefined,
+      remediationTemplate: selectedTemplate.value
+        ? getRemediationTemplateFromTemplate(selectedTemplate.value)
+        : undefined,
       deadline,
       remarks: formData.remarks || undefined,
     };

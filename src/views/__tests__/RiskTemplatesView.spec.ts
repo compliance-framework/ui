@@ -451,7 +451,7 @@ describe('RiskTemplatesView', () => {
           remediationTemplate: {
             title: 'Remediation title',
             description: undefined,
-            tasks: [{ title: 'Investigate control', orderIndex: 0 }],
+            tasks: [{ title: 'Investigate control', orderIndex: 1 }],
           },
         }),
       },

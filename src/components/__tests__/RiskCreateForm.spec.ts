@@ -212,12 +212,29 @@ describe('RiskCreateForm', () => {
         description: 'Template statement from API',
         statement: 'Template statement from API',
         status: 'open',
+        likelihood: 'moderate',
+        impact: 'high',
         deadline: undefined,
+        threatIds: [
+          {
+            system: 'mitre',
+            id: 'TH-101',
+            title: 'Threat 101',
+            url: 'https://threats.local/101',
+          },
+          {
+            system: 'mitre',
+            id: 'TH-202',
+            title: 'Threat 202',
+          },
+        ],
+        remediationTemplate: {
+          title: 'Template remediation recommendation',
+          description: 'Template remediation description',
+          tasks: [{ title: 'Rotate keys', orderIndex: 1 }],
+        },
       }),
     });
-    const submittedRisk = mockCreateRisk.mock.calls[0]?.[0]?.data;
-    expect(submittedRisk?.threatIds).toBeUndefined();
-    expect(submittedRisk?.remediations).toBeUndefined();
   });
 
   it('renders manual status options without risk-accepted workflow state', () => {

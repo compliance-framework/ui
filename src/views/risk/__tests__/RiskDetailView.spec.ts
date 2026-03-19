@@ -1222,8 +1222,8 @@ describe('RiskDetailView', () => {
           title: 'Updated remediation',
           description: 'Updated remediation details',
           tasks: [
-            { title: 'Generate new key material', orderIndex: 0 },
-            { title: 'Validate rollout', orderIndex: 1 },
+            { title: 'Generate new key material', orderIndex: 1 },
+            { title: 'Validate rollout', orderIndex: 2 },
           ],
         },
       }),
