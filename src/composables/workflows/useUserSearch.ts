@@ -1,12 +1,17 @@
 import { ref } from 'vue';
-import { useDataApi, useAuthenticatedInstance } from '@/composables/axios';
+import { useAuthenticatedInstance, useDataApi } from '@/composables/axios';
 import type { CCFUser } from '@/stores/types';
 
 export interface DisplayUser extends CCFUser {
   displayName: string;
 }
 
-const USER_FETCH_BATCH_SIZE = 5;
+interface SelectableUserResponse {
+  id: string;
+  displayName: string;
+}
+
+const USER_LOOKUP_BATCH_SIZE = 5;
 
 /**
  * Composable for managing user search, caching, and display in workflow role assignments.
@@ -17,11 +22,10 @@ export function useUserSearch() {
   const userCache = ref<Record<string, DisplayUser>>({});
   const authenticatedApi = useAuthenticatedInstance();
 
-  const { execute: fetchUsers, data: usersData } = useDataApi<CCFUser[]>(
-    '/api/admin/users',
-    null,
-    { immediate: false },
-  );
+  const { execute: fetchSelectableUsers, data: selectableUsersData } =
+    useDataApi<SelectableUserResponse[]>('/api/users/select', null, {
+      immediate: false,
+    });
 
   /**
    * Convert a CCFUser to DisplayUser with formatted display name
@@ -56,38 +60,53 @@ export function useUserSearch() {
   }
 
   /**
+   * Convert a selectable user response to a DisplayUser.
+   */
+  function toSelectableDisplayUser(user: SelectableUserResponse): DisplayUser {
+    const id = typeof user.id === 'string' ? user.id.trim() : '';
+    const displayName =
+      typeof user.displayName === 'string' ? user.displayName.trim() : '';
+    return {
+      id,
+      email: '',
+      firstName: '',
+      lastName: '',
+      failedLogins: 0,
+      displayName: displayName || id,
+    };
+  }
+
+  /**
    * Search for users based on query string
-   * Filters by name and email, with fallback mock user on error
+   * Filters by display name and ID, and clears suggestions on error
    */
   async function searchUsers(event: { query: string }) {
+    const trimmedQuery = event.query.trim();
+    const normalized = trimmedQuery.toLowerCase();
+    if (normalized.length < 3) {
+      userSuggestions.value = [];
+      return;
+    }
+
     try {
-      await fetchUsers(`/api/admin/users?search=${event.query}`);
-      const payload = usersData.value ?? [];
-      const normalized = event.query.trim().toLowerCase();
+      await fetchSelectableUsers(
+        `/api/users/select?search=${encodeURIComponent(trimmedQuery)}`,
+      );
+      const payload = selectableUsersData.value ?? [];
 
       const filtered = normalized
         ? payload.filter((user) => {
-            const name = `${user.firstName} ${user.lastName}`.toLowerCase();
-            const email = (user.email || '').toLowerCase();
-            return name.includes(normalized) || email.includes(normalized);
+            const displayName = (user.displayName || '').toLowerCase();
+            const id = (user.id || '').toLowerCase();
+            return displayName.includes(normalized) || id.includes(normalized);
           })
         : payload;
 
-      const displayUsers = filtered.map(toDisplayUser);
+      const displayUsers = filtered.map(toSelectableDisplayUser);
       userSuggestions.value = displayUsers;
       displayUsers.forEach(cacheUser);
     } catch {
-      // Fallback: create a mock user from the query
-      userSuggestions.value = [
-        {
-          id: event.query,
-          email: `${event.query.toLowerCase().replace(/\s+/g, '.')}@example.com`,
-          firstName: event.query,
-          lastName: '',
-          failedLogins: 0,
-          displayName: event.query,
-        } as DisplayUser,
-      ];
+      userSuggestions.value = [];
     }
   }
 
@@ -103,27 +122,28 @@ export function useUserSearch() {
       new Set(normalizedIds.filter((id) => !userCache.value[id])),
     );
 
+    if (!missing.length) {
+      return;
+    }
+
     for (
       let index = 0;
       index < missing.length;
-      index += USER_FETCH_BATCH_SIZE
+      index += USER_LOOKUP_BATCH_SIZE
     ) {
-      const batch = missing.slice(index, index + USER_FETCH_BATCH_SIZE);
-      const results = await Promise.allSettled(
-        batch.map(async (id) => {
-          const response = await authenticatedApi.get<{ data?: CCFUser }>(
-            `/api/admin/users/${id}`,
-          );
-          return response.data?.data;
-        }),
-      );
-
-      results.forEach((result) => {
-        if (result.status !== 'fulfilled') return;
-        const payload = result.value;
-        if (!payload) return;
-        cacheUser(toDisplayUser(payload));
+      const batch = missing.slice(index, index + USER_LOOKUP_BATCH_SIZE);
+      const batchRequests = batch.map(async (id) => {
+        const response = await authenticatedApi.get<{
+          data?: SelectableUserResponse[];
+        }>(`/api/users/select?search=${encodeURIComponent(id)}`);
+        const selectableUsers = response.data?.data ?? [];
+        const matchingUser = selectableUsers.find((user) => user.id === id);
+        if (matchingUser) {
+          cacheUser(toSelectableDisplayUser(matchingUser));
+        }
       });
+
+      await Promise.allSettled(batchRequests);
     }
   }
 
@@ -150,6 +170,7 @@ export function useUserSearch() {
     getCachedUser,
     cacheUser,
     toDisplayUser,
+    toSelectableDisplayUser,
     clearCache,
   };
 }

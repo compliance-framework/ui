@@ -1485,6 +1485,7 @@ function riskOwner(risk: Risk): string {
   for (const ownerRef of ownerRefs) {
     const user = getCachedUser(ownerRef);
     if (user?.displayName) return user.displayName;
+    if (user?.id) return user.id;
     if (user?.email) return user.email;
   }
 

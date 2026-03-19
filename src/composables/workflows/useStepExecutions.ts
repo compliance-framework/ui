@@ -473,7 +473,7 @@ export function useStepExecutions() {
   }
 
   /**
-   * Reassign a step execution to a new email assignee.
+   * Reassign a step execution to a new assignee.
    */
   async function reassignStepExecution(
     id: string,

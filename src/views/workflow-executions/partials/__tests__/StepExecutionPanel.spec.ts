@@ -126,13 +126,11 @@ describe('StepExecutionPanel reassignment', () => {
     await form.trigger('submit');
     await flushPromises();
 
-    expect(wrapper.text()).toContain(
-      'Please select a valid user with an email address.',
-    );
+    expect(wrapper.text()).toContain('Please select a valid user.');
     expect(mockReassignStepExecution).not.toHaveBeenCalled();
   });
 
-  it('submits reassignment with selected email and optional reason', async () => {
+  it('submits reassignment with selected user id and optional reason', async () => {
     const wrapper = mountComponent(createStep('blocked'));
     await flushPromises();
 
@@ -144,10 +142,10 @@ describe('StepExecutionPanel reassignment', () => {
 
     (wrapper.vm as unknown as Record<string, unknown>).selectedReassignUser = {
       id: 'user-2',
-      email: 'delegate@example.com',
       displayName: 'Delegate User',
-      firstName: 'Delegate',
-      lastName: 'User',
+      email: '',
+      firstName: '',
+      lastName: '',
       failedLogins: 0,
     };
     (wrapper.vm as unknown as Record<string, unknown>).reassignReason =
@@ -158,8 +156,8 @@ describe('StepExecutionPanel reassignment', () => {
     await flushPromises();
 
     expect(mockReassignStepExecution).toHaveBeenCalledWith('step-1', {
-      assignedToType: 'email',
-      assignedToId: 'delegate@example.com',
+      assignedToType: 'user',
+      assignedToId: 'user-2',
       reason: 'Out of office handoff',
     });
     expect(wrapper.emitted('step-updated')).toBeTruthy();

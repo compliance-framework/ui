@@ -3,11 +3,38 @@ import { useUserSearch } from '../useUserSearch';
 import type { CCFUser } from '@/stores/types';
 
 const mockAuthenticatedGet = vi.hoisted(() => vi.fn());
+const mockSelectableUsers = vi.hoisted(() => [
+  { id: 'user-1', displayName: 'Alpha User' },
+  { id: 'user-2', displayName: 'Beta User' },
+  { id: 'already-cached', displayName: 'Cached User' },
+]);
 const mockUseDataApi = vi.hoisted(() =>
-  vi.fn(() => ({
-    execute: vi.fn(),
-    data: { value: null },
-  })),
+  vi.fn(() => {
+    const data = { value: mockSelectableUsers.slice() };
+    const execute = vi.fn(async (url?: string) => {
+      if (!url) {
+        return;
+      }
+
+      const search = new URL(url, 'http://localhost').searchParams
+        .get('search')
+        ?.trim()
+        .toLowerCase();
+
+      data.value = search
+        ? mockSelectableUsers.filter(
+            (user) =>
+              user.displayName.toLowerCase().includes(search) ||
+              user.id.toLowerCase().includes(search),
+          )
+        : mockSelectableUsers.slice();
+    });
+
+    return {
+      execute,
+      data,
+    };
+  }),
 );
 
 // Mock useDataApi
@@ -22,6 +49,40 @@ describe('useUserSearch', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockAuthenticatedGet.mockReset();
+  });
+
+  it('searches selectable users by name or ID', async () => {
+    const { searchUsers, userSuggestions } = useUserSearch();
+
+    await searchUsers({ query: 'alpha' });
+
+    expect(userSuggestions.value).toHaveLength(1);
+    expect(userSuggestions.value[0].id).toBe('user-1');
+    expect(userSuggestions.value[0].displayName).toBe('Alpha User');
+  });
+
+  it('uses the trimmed query when calling the selectable-users API', async () => {
+    const { searchUsers } = useUserSearch();
+    const execute = mockUseDataApi.mock.results.at(-1)?.value.execute as
+      | ReturnType<typeof vi.fn>
+      | undefined;
+
+    await searchUsers({ query: '  alpha  ' });
+
+    expect(execute).toHaveBeenCalledWith('/api/users/select?search=alpha');
+  });
+
+  it('does not call the selectable-users API for queries shorter than 3 characters', async () => {
+    const { searchUsers, userSuggestions } = useUserSearch();
+    const execute = mockUseDataApi.mock.results.at(-1)?.value.execute as
+      | ReturnType<typeof vi.fn>
+      | undefined;
+
+    await searchUsers({ query: 'ab' });
+
+    expect(execute).toBeDefined();
+    expect(execute).not.toHaveBeenCalled();
+    expect(userSuggestions.value).toHaveLength(0);
   });
 
   describe('toDisplayUser', () => {
@@ -240,16 +301,13 @@ describe('useUserSearch', () => {
 
     it('hydrates missing users by id and skips already cached users', async () => {
       mockAuthenticatedGet.mockImplementation(async (url: string) => {
-        const id = url.split('/').pop() || 'unknown';
+        const search = new URL(url, 'http://localhost').searchParams
+          .get('search')
+          ?.trim();
+
         return {
           data: {
-            data: {
-              id,
-              email: `${id}@example.com`,
-              firstName: id.toUpperCase(),
-              lastName: 'User',
-              failedLogins: 0,
-            } as CCFUser,
+            data: mockSelectableUsers.filter((user) => user.id === search),
           },
         };
       });
@@ -278,8 +336,8 @@ describe('useUserSearch', () => {
 
       expect(mockAuthenticatedGet).toHaveBeenCalledTimes(6);
       expect(getCachedUser('already-cached')?.email).toBe('cached@example.com');
-      expect(getCachedUser('user-1')?.displayName).toBe('USER-1 User');
-      expect(getCachedUser('user-6')?.email).toBe('user-6@example.com');
+      expect(getCachedUser('user-1')?.displayName).toBe('Alpha User');
+      expect(getCachedUser('user-2')?.displayName).toBe('Beta User');
     });
   });
 });

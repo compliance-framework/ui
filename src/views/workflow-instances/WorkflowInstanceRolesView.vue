@@ -60,7 +60,7 @@
               </Badge>
             </div>
             <div class="text-sm text-gray-500 dark:text-slate-400">
-              {{ assignment.userEmail || 'No email' }}
+              {{ assignment.userId || assignment.assignedToId || 'Unassigned' }}
             </div>
           </div>
         </div>
@@ -136,30 +136,31 @@
             v-model="roleUserSelections[role]"
             :suggestions="userSuggestions"
             optionLabel="displayName"
-            :filterBy="['displayName', 'email']"
+            :filterBy="['displayName', 'id']"
             placeholder="Search users..."
             class="w-full"
-            :forceSelection="false"
+            :forceSelection="true"
             @complete="searchUsers"
+            :disabled="isAssigning"
           >
             <template #item="{ item }">
               <div class="flex flex-col">
-                <span class="font-medium text-gray-900 dark:text-slate-100">{{
-                  item.displayName
-                }}</span>
-                <span class="text-sm text-gray-500 dark:text-slate-400">{{
-                  item.email
-                }}</span>
+                <span class="font-medium text-gray-900 dark:text-slate-100">
+                  {{ item.displayName }}
+                </span>
+                <span class="text-sm text-gray-500 dark:text-slate-400">
+                  {{ item.id }}
+                </span>
               </div>
             </template>
             <template #selected="{ value }">
               <div class="flex flex-col">
-                <span class="font-medium text-gray-900 dark:text-slate-100">{{
-                  value?.displayName
-                }}</span>
-                <span class="text-sm text-gray-500 dark:text-slate-400">{{
-                  value?.email
-                }}</span>
+                <span class="font-medium text-gray-900 dark:text-slate-100">
+                  {{ value?.displayName }}
+                </span>
+                <span class="text-sm text-gray-500 dark:text-slate-400">
+                  {{ value?.id }}
+                </span>
               </div>
             </template>
           </AutoComplete>
@@ -255,7 +256,7 @@ const enrichedAssignments = computed(() =>
     return {
       ...assignment,
       displayName: user?.displayName,
-      userEmail: user?.email,
+      userId: user?.id ?? assignment.userId,
       role: effectiveRole,
     };
   }),

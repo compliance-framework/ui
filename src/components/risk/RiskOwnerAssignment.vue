@@ -68,7 +68,7 @@
           v-model="row.user"
           :suggestions="userSuggestions"
           optionLabel="displayName"
-          :filterBy="['displayName', 'email']"
+          :filterBy="['displayName', 'id']"
           placeholder="Search users..."
           class="w-full"
           :forceSelection="true"
@@ -82,7 +82,7 @@
                 {{ item.displayName }}
               </span>
               <span class="text-xs text-gray-500 dark:text-slate-400">
-                {{ item.email }}
+                {{ item.id }}
               </span>
             </div>
           </template>
@@ -92,7 +92,7 @@
                 {{ value?.displayName || row.ownerRef || 'Select user' }}
               </span>
               <span class="text-xs text-gray-500 dark:text-slate-400">
-                {{ value?.email || row.ownerRef || '' }}
+                {{ value?.id || row.ownerRef || '' }}
               </span>
             </div>
           </template>
