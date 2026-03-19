@@ -188,6 +188,12 @@ const endpoint = computed(() => {
   return buildRiskItemEndpoint(riskContext.value, riskId.value);
 });
 
+const { data: latestRisk, execute: fetchRisk } = useDataApi<Risk>(
+  endpoint,
+  {},
+  { immediate: false },
+);
+
 const {
   data: returnedRisk,
   isLoading: saving,
@@ -306,7 +312,10 @@ async function submit() {
       }
     }
 
-    const updatedRisk = {
+    await fetchRisk();
+
+    const updatedRisk: Risk = {
+      ...(latestRisk.value || props.risk),
       title: formData.title,
       description: formData.description,
       statement: formData.statement,

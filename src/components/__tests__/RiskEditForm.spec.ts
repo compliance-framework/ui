@@ -4,6 +4,7 @@ import { ref, shallowRef, toValue } from 'vue';
 import type { Risk } from '@/oscal';
 
 const mockUpdateRisk = vi.fn().mockResolvedValue({});
+const mockFetchRisk = vi.fn().mockResolvedValue({});
 const toastAdd = vi.fn();
 
 const returnedRisk = shallowRef<Risk>({
@@ -11,6 +12,13 @@ const returnedRisk = shallowRef<Risk>({
   title: 'Updated Risk',
   description: 'Updated description',
   statement: 'Updated statement',
+  status: 'open',
+});
+const latestRisk = shallowRef<Risk>({
+  uuid: 'risk-1',
+  title: 'Latest Risk',
+  description: 'Latest description',
+  statement: 'Latest statement',
   status: 'open',
 });
 const updateRiskLoading = ref(false);
@@ -27,6 +35,17 @@ vi.mock('@/composables/axios', () => ({
         data: returnedRisk,
         isLoading: updateRiskLoading,
         execute: mockUpdateRisk,
+      };
+    }
+
+    if (
+      resolvedUrl.includes('/api/oscal/plan-of-action-and-milestones/') &&
+      !config?.method
+    ) {
+      return {
+        data: latestRisk,
+        isLoading: ref(false),
+        execute: mockFetchRisk,
       };
     }
 
@@ -60,6 +79,7 @@ describe('RiskEditForm', () => {
     vi.clearAllMocks();
     updateRiskLoading.value = false;
     returnedRisk.value = makeRisk();
+    latestRisk.value = makeRisk();
   });
 
   function mountForm(risk: Risk) {
@@ -80,7 +100,18 @@ describe('RiskEditForm', () => {
     );
   });
 
-  it('submits only the core risk fields managed by the edit form', async () => {
+  it('fetches the latest risk and merges core form updates before PUT', async () => {
+    latestRisk.value = makeRisk({
+      threatIds: [{ id: 'T-999', system: 'CAPEC' }],
+      remediations: [
+        {
+          uuid: 'remediation-9',
+          lifecycle: 'planned',
+          title: 'Latest remediation',
+          description: 'Latest remediation details',
+        },
+      ],
+    });
     const wrapper = mountForm(
       makeRisk({
         threatIds: [{ id: 'T-001', system: 'CAPEC' }],
@@ -107,15 +138,24 @@ describe('RiskEditForm', () => {
     await wrapper.find('select').setValue('investigating');
     await wrapper.find('form').trigger('submit');
 
+    expect(mockFetchRisk).toHaveBeenCalled();
     expect(mockUpdateRisk).toHaveBeenCalledWith({
-      data: {
+      data: expect.objectContaining({
+        threatIds: [{ id: 'T-999', system: 'CAPEC' }],
+        remediations: [
+          expect.objectContaining({
+            uuid: 'remediation-9',
+            lifecycle: 'planned',
+            title: 'Latest remediation',
+          }),
+        ],
         title: 'Risk B',
         description: 'Updated description',
         statement: 'Updated statement',
         status: 'investigating',
         deadline: undefined,
         remarks: undefined,
-      },
+      }),
     });
   });
 });
