@@ -933,7 +933,7 @@ async function duplicateTemplate(template: RiskTemplate) {
 
                     acc.push({
                       title,
-                      orderIndex: acc.length,
+                      orderIndex: acc.length + 1,
                     });
                     return acc;
                   },
