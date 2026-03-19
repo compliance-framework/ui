@@ -131,6 +131,8 @@ export function buildRiskRemediationCollectionEndpoint(
   context: RiskContext,
   riskId: string,
 ): string {
+  // The remediation template is a singleton resource even though callers may
+  // create it with POST the first time.
   return `${buildRiskItemEndpoint(context, riskId)}/remediation-template`;
 }
 

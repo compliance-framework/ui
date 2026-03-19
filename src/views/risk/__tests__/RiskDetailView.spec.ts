@@ -1008,6 +1008,9 @@ describe('RiskDetailView', () => {
     const wrapper = mountComponent();
     await flushPromises();
 
+    expect(wrapper.text()).toContain('Threat IDs:');
+    expect(wrapper.text()).toContain('T-001, T-002');
+
     await clickButtonByText(wrapper, 'Threats');
     await flushPromises();
     expect(wrapper.text()).toContain('T-001');
@@ -1055,6 +1058,23 @@ describe('RiskDetailView', () => {
           .element as HTMLInputElement
       ).value,
     ).toBe('');
+  });
+
+  it('uses the untitled remediation fallback in the remove confirmation prompt', async () => {
+    mockRisk.remediationTemplate = {
+      description: 'Remediation migrated without a title.',
+    };
+
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    await clickButtonByText(wrapper, 'Remediations');
+    await flushPromises();
+    await clickButtonByText(wrapper, 'Remove');
+
+    expect(window.confirm).toHaveBeenCalledWith(
+      'Remove remediation "Untitled remediation" from this risk?',
+    );
   });
 
   it('renders non-http threat href values as plain text without clickable link', async () => {

@@ -59,12 +59,10 @@
             <div>
               <span class="font-semibold">Threat IDs:</span>
               <span class="ml-1">
-                <template v-if="risk.threatIds?.length">
+                <template v-if="threatItems.length">
                   {{
-                    risk.threatIds
-                      .map((item) =>
-                        typeof item === 'string' ? item : item.id,
-                      )
+                    threatItems
+                      .map((item) => item.id)
                       .filter(Boolean)
                       .join(', ')
                   }}
@@ -2270,8 +2268,7 @@ const remediationItems = computed<RemediationTabItem[]>(() => {
   const remediationTemplate = remediationTemplateResource.value;
 
   if (remediationTemplate) {
-    const normalized = normalizeRemediationItem(remediationTemplate);
-    return normalized ? [normalized] : [];
+    return [normalizeRemediationItem(remediationTemplate)];
   }
 
   const legacyRemediations = Array.isArray(
@@ -2992,7 +2989,17 @@ async function saveThreat() {
       method,
       data: payload,
     });
-    await refreshRiskDetail();
+    const refreshed = await refreshRiskDetail(false);
+    if (!refreshed) {
+      toast.add({
+        severity: 'warn',
+        summary: 'Saved, refresh failed',
+        detail:
+          'Threat was saved, but the latest risk details could not be reloaded.',
+        life: 4000,
+      });
+      return;
+    }
     closeThreatEditor();
     toast.add({
       severity: 'success',
@@ -3185,7 +3192,17 @@ async function saveRemediation() {
       method,
       data: payload,
     });
-    await refreshRiskDetail();
+    const refreshed = await refreshRiskDetail(false);
+    if (!refreshed) {
+      toast.add({
+        severity: 'warn',
+        summary: 'Saved, refresh failed',
+        detail:
+          'Remediation was saved, but the latest risk details could not be reloaded.',
+        life: 4000,
+      });
+      return;
+    }
     closeRemediationEditor();
     toast.add({
       severity: 'success',
@@ -3219,7 +3236,7 @@ async function removeRemediation(remediation: RemediationTabItem) {
   }
 
   const confirmed = window.confirm(
-    `Remove remediation "${remediation.title}" from this risk?`,
+    `Remove remediation "${remediation.title || 'Untitled remediation'}" from this risk?`,
   );
   if (!confirmed) return;
 
