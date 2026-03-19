@@ -139,7 +139,7 @@
             :filterBy="['displayName', 'id']"
             placeholder="Search users..."
             class="w-full"
-            :forceSelection="false"
+            :forceSelection="true"
             @complete="searchUsers"
             :disabled="isAssigning"
           >

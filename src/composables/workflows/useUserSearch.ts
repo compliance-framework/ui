@@ -11,6 +11,8 @@ interface SelectableUserResponse {
   displayName: string;
 }
 
+const USER_LOOKUP_BATCH_SIZE = 5;
+
 /**
  * Composable for managing user search, caching, and display in workflow role assignments.
  * Reduces complexity in components that need to search and display users.
@@ -76,7 +78,7 @@ export function useUserSearch() {
 
   /**
    * Search for users based on query string
-   * Filters by display name and ID, with fallback mock user on error
+   * Filters by display name and ID, and clears suggestions on error
    */
   async function searchUsers(event: { query: string }) {
     const trimmedQuery = event.query.trim();
@@ -124,8 +126,13 @@ export function useUserSearch() {
       return;
     }
 
-    await Promise.all(
-      missing.map(async (id) => {
+    for (
+      let index = 0;
+      index < missing.length;
+      index += USER_LOOKUP_BATCH_SIZE
+    ) {
+      const batch = missing.slice(index, index + USER_LOOKUP_BATCH_SIZE);
+      const batchRequests = batch.map(async (id) => {
         const response = await authenticatedApi.get<{
           data?: SelectableUserResponse[];
         }>(`/api/users/select?search=${encodeURIComponent(id)}`);
@@ -134,8 +141,10 @@ export function useUserSearch() {
         if (matchingUser) {
           cacheUser(toSelectableDisplayUser(matchingUser));
         }
-      }),
-    );
+      });
+
+      await Promise.allSettled(batchRequests);
+    }
   }
 
   /**
