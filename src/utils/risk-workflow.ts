@@ -4,6 +4,7 @@ export type RiskRegisterStatus =
   | 'mitigating-planned'
   | 'mitigating-implemented'
   | 'risk-accepted'
+  | 'remediated'
   | 'closed';
 
 export type RiskReviewDecision = 'extend' | 'reopen' | 'reassess';
@@ -37,6 +38,7 @@ const STATUS_LABELS: Record<RiskRegisterStatus, string> = {
   'mitigating-planned': 'Mitigating Planned',
   'mitigating-implemented': 'Mitigating Implemented',
   'risk-accepted': 'Risk Accepted',
+  remediated: 'Remediated',
   closed: 'Closed',
 };
 
@@ -50,6 +52,7 @@ export const ALLOWED_RISK_TRANSITIONS: Record<
   'mitigating-planned': ['mitigating-implemented'],
   'mitigating-implemented': ['closed'],
   'risk-accepted': ['investigating', 'closed'],
+  remediated: ['open', 'closed'],
   closed: [],
 };
 
@@ -195,6 +198,7 @@ export function riskWorkflowStage(status?: string): RiskWorkflowStage {
       return 'mitigation';
     case 'risk-accepted':
       return 'accepted';
+    case 'remediated':
     case 'closed':
       return 'closed';
     default:

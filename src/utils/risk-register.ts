@@ -158,7 +158,8 @@ export function isClosedStatus(status?: string): boolean {
   return (
     normalized === 'closed' ||
     normalized === 'resolved' ||
-    normalized === 'complete'
+    normalized === 'complete' ||
+    normalized === 'remediated'
   );
 }
 

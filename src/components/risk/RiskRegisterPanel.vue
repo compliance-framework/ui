@@ -1470,6 +1470,9 @@ function statusBadgeClass(status?: string): string {
     return 'bg-slate-200 text-slate-800 dark:bg-slate-700 dark:text-slate-200';
   }
   const normalized = (status || '').toLowerCase();
+  if (normalized.includes('remediated')) {
+    return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+  }
   if (normalized.includes('accepted')) {
     return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200';
   }

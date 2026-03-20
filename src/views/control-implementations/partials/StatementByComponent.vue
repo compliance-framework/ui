@@ -13,6 +13,7 @@ import {
   getRiskComponentIds,
   getRiskControlIds,
   getRiskImpact,
+  isClosedStatus,
 } from '@/utils/risk-register';
 import RiskIndicatorBadge from './RiskIndicatorBadge.vue';
 
@@ -56,6 +57,7 @@ const relatedRisks = computed(() => {
   const normalizedControlId = normalizeId(controlId);
 
   return sspRisks.filter((risk) => {
+    if (isClosedStatus(risk.status)) return false;
     const componentIds = getRiskComponentIds(risk).map((id) => normalizeId(id));
     if (!componentIds.includes(normalizedComponentId)) {
       return false;
