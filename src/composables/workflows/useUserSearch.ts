@@ -11,6 +11,11 @@ interface SelectableUserResponse {
   displayName: string;
 }
 
+interface PublicUserResponse {
+  id: string;
+  name: string;
+}
+
 const USER_LOOKUP_BATCH_SIZE = 5;
 
 /**
@@ -66,6 +71,22 @@ export function useUserSearch() {
     const id = typeof user.id === 'string' ? user.id.trim() : '';
     const displayName =
       typeof user.displayName === 'string' ? user.displayName.trim() : '';
+    return {
+      id,
+      email: '',
+      firstName: '',
+      lastName: '',
+      failedLogins: 0,
+      displayName: displayName || id,
+    };
+  }
+
+  /**
+   * Convert a minimal public user response to a DisplayUser.
+   */
+  function toPublicDisplayUser(user: PublicUserResponse): DisplayUser {
+    const id = typeof user.id === 'string' ? user.id.trim() : '';
+    const displayName = typeof user.name === 'string' ? user.name.trim() : '';
     return {
       id,
       email: '',
@@ -134,12 +155,11 @@ export function useUserSearch() {
       const batch = missing.slice(index, index + USER_LOOKUP_BATCH_SIZE);
       const batchRequests = batch.map(async (id) => {
         const response = await authenticatedApi.get<{
-          data?: SelectableUserResponse[];
-        }>(`/api/users/select?search=${encodeURIComponent(id)}`);
-        const selectableUsers = response.data?.data ?? [];
-        const matchingUser = selectableUsers.find((user) => user.id === id);
-        if (matchingUser) {
-          cacheUser(toSelectableDisplayUser(matchingUser));
+          data?: PublicUserResponse;
+        }>(`/api/users/${encodeURIComponent(id)}`);
+        const user = response.data?.data;
+        if (user) {
+          cacheUser(toPublicDisplayUser(user));
         }
       });
 
