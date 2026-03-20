@@ -192,7 +192,11 @@ import {
   type SuggestedComponent,
   type SystemComponentSuggestion,
 } from '@/views/control-implementations/partials/component-suggestions';
-import { getRiskControlIds, getRiskImpact } from '@/utils/risk-register';
+import {
+  getRiskControlIds,
+  getRiskImpact,
+  isClosedStatus,
+} from '@/utils/risk-register';
 
 const systemStore = useSystemStore();
 const uiStore = useUIStore();
@@ -314,6 +318,7 @@ const controlRiskStats = computed(() => {
   >();
 
   for (const risk of sspRisks.value || []) {
+    if (isClosedStatus(risk.status)) continue;
     const controlIds = Array.from(
       new Set(
         getRiskControlIds(risk)
