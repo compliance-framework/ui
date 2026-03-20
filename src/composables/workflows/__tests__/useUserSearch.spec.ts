@@ -301,13 +301,18 @@ describe('useUserSearch', () => {
 
     it('hydrates missing users by id and skips already cached users', async () => {
       mockAuthenticatedGet.mockImplementation(async (url: string) => {
-        const search = new URL(url, 'http://localhost').searchParams
-          .get('search')
-          ?.trim();
+        const pathname = new URL(url, 'http://localhost').pathname;
+        const id = pathname.split('/').pop() ?? '';
+        const match = mockSelectableUsers.find((user) => user.id === id);
 
         return {
           data: {
-            data: mockSelectableUsers.filter((user) => user.id === search),
+            data: match
+              ? {
+                  id: match.id,
+                  name: match.displayName,
+                }
+              : undefined,
           },
         };
       });
