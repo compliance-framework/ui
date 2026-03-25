@@ -73,10 +73,12 @@ export interface PoamItem {
   description?: string;
   status: PoamItemStatus;
   sourceType?: PoamSourceType;
+  primaryOwnerUserId?: string;
   plannedCompletionDate?: string;
   completedAt?: string;
   lastStatusChangeAt?: string;
   acceptanceRationale?: string;
+  resourceRequired?: string;
   createdFromRiskId?: string;
   remarks?: string;
   milestones?: PoamItemMilestone[];
@@ -94,8 +96,10 @@ export interface CreatePoamItemRequest {
   description?: string;
   status?: PoamItemStatus;
   sourceType?: PoamSourceType;
+  primaryOwnerUserId?: string;
   plannedCompletionDate?: string;
   acceptanceRationale?: string;
+  resourceRequired?: string;
   createdFromRiskId?: string;
   remarks?: string;
   milestones?: CreateMilestoneRequest[];
@@ -106,8 +110,10 @@ export interface UpdatePoamItemRequest {
   description?: string;
   status?: PoamItemStatus;
   sourceType?: PoamSourceType;
+  primaryOwnerUserId?: string;
   plannedCompletionDate?: string;
   acceptanceRationale?: string;
+  resourceRequired?: string;
   remarks?: string;
 }
 
