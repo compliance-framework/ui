@@ -17,6 +17,7 @@ import {
   useMilestoneUpdate,
   useMilestoneDelete,
   usePoamItemsByRisk,
+  usePromoteRiskToPoam,
   poamStatusBadgeClass,
   milestoneStatusDotClass,
   milestoneStatusLabel,
@@ -283,6 +284,47 @@ describe('usePoamItems', () => {
 
     it('returns default gray dot for unknown status', () => {
       expect(milestoneStatusDotClass('unknown')).toBe('bg-gray-400');
+    });
+  });
+
+  // ─── usePromoteRiskToPoam (BCH-1186) ─────────────────────────────────────
+
+  describe('usePromoteRiskToPoam', () => {
+    it('calls POST /api/risks/:id/promote-to-poam with the correct URL', async () => {
+      const { promoteRiskToPoam } = usePromoteRiskToPoam();
+      await promoteRiskToPoam('risk-abc-123', {});
+      expect(mockExecute).toHaveBeenCalledWith(
+        '/api/risks/risk-abc-123/promote-to-poam',
+        expect.objectContaining({ method: 'POST' }),
+      );
+    });
+
+    it('URL-encodes the riskId to handle special characters', async () => {
+      const { promoteRiskToPoam } = usePromoteRiskToPoam();
+      await promoteRiskToPoam('risk/with/slashes', {});
+      expect(mockExecute).toHaveBeenCalledWith(
+        '/api/risks/risk%2Fwith%2Fslashes/promote-to-poam',
+        expect.objectContaining({ method: 'POST' }),
+      );
+    });
+
+    it('passes the payload as the request body', async () => {
+      const { promoteRiskToPoam } = usePromoteRiskToPoam();
+      const payload = {
+        title: 'Custom POAM Title',
+        deadline: '2026-12-31T23:59:59.000Z',
+        resourceRequired: '3 engineer days',
+      };
+      await promoteRiskToPoam('risk-abc', payload);
+      expect(mockExecute).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({ data: payload }),
+      );
+    });
+
+    it('accepts an empty payload (all fields optional)', async () => {
+      const { promoteRiskToPoam } = usePromoteRiskToPoam();
+      await expect(promoteRiskToPoam('risk-abc', {})).resolves.not.toThrow();
     });
   });
 

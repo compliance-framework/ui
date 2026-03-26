@@ -11,6 +11,7 @@ import type {
   CreateMilestoneRequest,
   UpdateMilestoneRequest,
   PoamItemListFilters,
+  PromoteRiskToPoamRequest,
 } from '@/types/poam-items';
 
 // ─── POAM Items ───────────────────────────────────────────────────────────────
@@ -165,6 +166,40 @@ export function usePoamItemsByRisk(riskId: string) {
   return useDataApi<PoamItem[]>(
     `/api/poam-items?riskId=${encodeURIComponent(riskId)}`,
   );
+}
+
+// ─── Promote Risk to POAM (BCH-1186) ─────────────────────────────────────────
+
+/**
+ * Composable for POST /api/risks/:riskId/promote-to-poam.
+ *
+ * Promotes a risk in `investigating` status to a POAM item and transitions
+ * the risk status to `mitigating-planned`. The returned POAM item includes
+ * all milestones and risk links.
+ *
+ * Usage:
+ *   const { promoteRiskToPoam, isLoading, error } = usePromoteRiskToPoam();
+ *   const poamItem = await promoteRiskToPoam(riskId, { deadline: '...' });
+ */
+export function usePromoteRiskToPoam() {
+  const { execute, isLoading, error } = useDataApi<PoamItem>(
+    null,
+    {},
+    { immediate: false },
+  );
+
+  async function promoteRiskToPoam(
+    riskId: string,
+    payload: PromoteRiskToPoamRequest,
+  ) {
+    return execute(`/api/risks/${encodeURIComponent(riskId)}/promote-to-poam`, {
+      method: 'POST',
+      data: payload,
+      transformRequest: [decamelizeKeys],
+    });
+  }
+
+  return { promoteRiskToPoam, isLoading, error };
 }
 
 // ─── Status badge helper ──────────────────────────────────────────────────────

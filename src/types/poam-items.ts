@@ -24,7 +24,26 @@ export type PoamSourceType =
   | 'continuous-monitoring'
   | 'penetration-test'
   | 'self-assessment'
+  | 'risk-promotion'
   | 'other';
+
+// ─── Promote Risk to POAM ─────────────────────────────────────────────────────
+
+/** Request body for POST /api/risks/:id/promote-to-poam (BCH-1186). */
+export interface PromoteRiskToPoamRequest {
+  /** Override the POAM item title. Defaults to the risk title if omitted. */
+  title?: string;
+  /** Override the POAM item description. Defaults to the risk description if omitted. */
+  description?: string;
+  /** Planned completion date (ISO 8601). */
+  deadline?: string;
+  /** Free-text resource/effort estimate. */
+  resourceRequired?: string;
+  /** Override the primary owner UUID. Defaults to the risk's primaryOwnerUserId if omitted. */
+  primaryOwnerUserId?: string;
+  /** Extra milestones to append after any template-derived milestones. */
+  milestones?: CreateMilestoneRequest[];
+}
 
 // ─── Milestone ────────────────────────────────────────────────────────────────
 

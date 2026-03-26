@@ -143,6 +143,24 @@
                   >
                     Review Risk Score
                   </button>
+                  <!-- BCH-1186: Promote to POAM — only shown when status is `investigating` -->
+                  <button
+                    v-if="canPromoteToPoamAction"
+                    class="px-3 py-1 rounded-md text-sm bg-violet-600 hover:bg-violet-700 text-white disabled:opacity-60"
+                    :disabled="workflowSubmitting || promotingToPoam"
+                    @click="showPromoteToPoamModal = true"
+                  >
+                    Promote to POAM
+                  </button>
+                  <!-- BCH-1186: Mark Mitigating Implemented — only shown when status is `mitigating-planned` -->
+                  <button
+                    v-if="canMarkMitigatingImplementedAction"
+                    class="px-3 py-1 rounded-md text-sm bg-teal-600 hover:bg-teal-700 text-white disabled:opacity-60"
+                    :disabled="workflowSubmitting"
+                    @click="submitMarkMitigatingImplemented"
+                  >
+                    Mark Mitigating Implemented
+                  </button>
                 </div>
               </div>
 
@@ -987,6 +1005,16 @@
       @submit="submitRiskScoreReview"
     />
 
+    <!-- BCH-1186: Promote to POAM modal -->
+    <PromoteToPoamModal
+      v-if="risk && isSspContext"
+      v-model:visible="showPromoteToPoamModal"
+      :submitting="promotingToPoam"
+      :risk-title="risk?.title"
+      :template-milestone-titles="[]"
+      @submit="submitPromoteToPoam"
+    />
+
     <Dialog
       v-model:visible="showThreatEditor"
       modal
@@ -1219,6 +1247,7 @@ import RouterLinkButton from '@/components/RouterLinkButton.vue';
 import RiskAcceptModal from '@/components/risk/RiskAcceptModal.vue';
 import RiskReviewModal from '@/components/risk/RiskReviewModal.vue';
 import RiskScoreReviewModal from '@/components/risk/RiskScoreReviewModal.vue';
+import PromoteToPoamModal from '@/components/risk/PromoteToPoamModal.vue';
 import RiskOwnerAssignment from '@/components/risk/RiskOwnerAssignment.vue';
 import RiskLogTab from '@/components/risk/RiskLogTab.vue';
 import RiskPoamItemsTab from '@/components/risk/RiskPoamItemsTab.vue';
@@ -1234,6 +1263,8 @@ import {
 import {
   ALLOWED_RISK_TRANSITIONS,
   canAcceptRisk,
+  canMarkMitigatingImplemented,
+  canPromoteToPoam,
   canReassessRisk,
   canReviewRisk,
   getAllowedRiskTransitions,
@@ -1247,6 +1278,7 @@ import {
   type RiskOwnerAssignmentsPayload,
   type RiskReviewDecision,
 } from '@/utils/risk-workflow';
+import { usePromoteRiskToPoam } from '@/composables/usePoamItems';
 import {
   getRiskImpact,
   getRiskLikelihood,
@@ -1532,6 +1564,7 @@ const activeTab = ref<TabId>('overview');
 const showAcceptModal = ref(false);
 const showReviewModal = ref(false);
 const showScoreReviewModal = ref(false);
+const showPromoteToPoamModal = ref(false);
 const timelinePageSize = 10;
 const eventsPage = ref(1);
 const eventsHasMore = ref(false);
@@ -2065,6 +2098,7 @@ async function loadRisk() {
   showAcceptModal.value = false;
   showReviewModal.value = false;
   showScoreReviewModal.value = false;
+  showPromoteToPoamModal.value = false;
   eventsPage.value = 1;
   eventsHasMore.value = false;
   eventsTotalPages.value = null;
@@ -2349,9 +2383,16 @@ const canCloseAction = computed(
   () => isSspContext.value && workflowNextTransitions.value.includes('closed'),
 );
 
-// TODO(BCH-1206): add mitigation workflow actions once POA&M implementation lands.
-// Planned gaps: investigating -> mitigating-planned and
-// mitigating-planned -> mitigating-implemented.
+// BCH-1186: Promote to POAM — only available when status is `investigating`.
+const canPromoteToPoamAction = computed(
+  () => isSspContext.value && canPromoteToPoam(risk.value?.status),
+);
+
+// BCH-1186: Mark Mitigating Implemented — only available when status is `mitigating-planned`.
+const canMarkMitigatingImplementedAction = computed(
+  () => isSspContext.value && canMarkMitigatingImplemented(risk.value?.status),
+);
+
 const ownerAssignmentsDirty = computed(
   () =>
     ownerAssignmentsSignature(ownerAssignmentsDraft.value) !==
@@ -2879,6 +2920,72 @@ async function submitReviewRisk(payload: RiskReviewSubmitPayload) {
     toast.add({
       severity: 'error',
       summary: 'Review failed',
+      detail: extractErrorMessage(err),
+      life: 4000,
+    });
+  }
+}
+
+// ─── BCH-1186: Promote to POAM ───────────────────────────────────────────────
+
+const { promoteRiskToPoam, isLoading: promotingToPoam } =
+  usePromoteRiskToPoam();
+
+async function submitPromoteToPoam(payload: {
+  title?: string;
+  deadline?: string;
+  resourceRequired?: string;
+}) {
+  if (!isSspContext.value || !risk.value?.id) return;
+
+  try {
+    await promoteRiskToPoam(risk.value.id, {
+      title: payload.title || undefined,
+      description: undefined,
+      deadline: payload.deadline || undefined,
+      resourceRequired: payload.resourceRequired || undefined,
+    });
+    showPromoteToPoamModal.value = false;
+    // Reload the risk so the status badge updates to `mitigating-planned`.
+    await loadRisk();
+    toast.add({
+      severity: 'success',
+      summary: 'Promoted to POAM',
+      detail:
+        'Risk has been promoted to a POAM item and is now Mitigating Planned.',
+      life: 4000,
+    });
+  } catch (err) {
+    toast.add({
+      severity: 'error',
+      summary: 'Promotion failed',
+      detail: extractErrorMessage(err),
+      life: 4000,
+    });
+  }
+}
+
+async function submitMarkMitigatingImplemented() {
+  if (!isSspContext.value || !detailEndpoint.value) return;
+
+  try {
+    await executeRiskMutation(`${detailEndpoint.value}/transition`, {
+      method: 'POST',
+      data: { status: 'mitigating-implemented' },
+    });
+    const updatedRisk = mutatedRisk.value;
+    applyRiskUpdate(updatedRisk);
+    await Promise.all([loadRiskEvents(1), loadRiskReviews(1)]);
+    toast.add({
+      severity: 'success',
+      summary: 'Mitigation implemented',
+      detail: 'Risk has been marked as Mitigating Implemented.',
+      life: 3000,
+    });
+  } catch (err) {
+    toast.add({
+      severity: 'error',
+      summary: 'Transition failed',
       detail: extractErrorMessage(err),
       life: 4000,
     });
