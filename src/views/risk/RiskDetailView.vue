@@ -2936,10 +2936,10 @@ async function submitPromoteToPoam(payload: {
   deadline?: string;
   resourceRequired?: string;
 }) {
-  if (!isSspContext.value || !risk.value?.id) return;
-
+  const riskIdentifier = getRiskIdentifier(risk.value);
+  if (!isSspContext.value || !riskIdentifier) return;
   try {
-    await promoteRiskToPoam(risk.value.id, {
+    await promoteRiskToPoam(riskIdentifier, {
       title: payload.title || undefined,
       description: undefined,
       deadline: payload.deadline || undefined,

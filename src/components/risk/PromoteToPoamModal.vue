@@ -74,7 +74,7 @@
       </div>
 
       <!-- Milestones preview (template-derived) -->
-      <div v-if="templateMilestoneTitles.length > 0">
+      <div v-if="templateMilestoneTitles && templateMilestoneTitles.length > 0">
         <p class="text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
           Milestones from Remediation Template
         </p>
