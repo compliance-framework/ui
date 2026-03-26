@@ -50,7 +50,7 @@
           <th class="p-2 border">Title</th>
           <th class="p-2 border">Status</th>
           <th class="p-2 border">Deadline</th>
-          <th class="p-2 border">POC</th>
+          <th class="p-2 border">Owner</th>
           <th class="p-2 border">Updated</th>
         </tr>
       </thead>
@@ -60,8 +60,7 @@
           <td class="p-2 border">{{ item.status }}</td>
           <td class="p-2 border">{{ item.deadline ?? '-' }}</td>
           <td class="p-2 border">
-            {{ item.pocName ?? '-' }}
-            <span v-if="item.pocEmail">({{ item.pocEmail }})</span>
+            {{ item.primaryOwnerUserId ?? '-' }}
           </td>
           <td class="p-2 border">{{ item.updatedAt }}</td>
         </tr>
@@ -82,9 +81,7 @@ type PoamItem = {
   status: string;
   deadline?: string | null;
   resourceRequired?: string | null;
-  pocName?: string | null;
-  pocEmail?: string | null;
-  pocPhone?: string | null;
+  primaryOwnerUserId?: string | null;
   remarks?: string | null;
   createdAt: string;
   updatedAt: string;
