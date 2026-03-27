@@ -50,7 +50,7 @@
           <th class="p-2 border">Title</th>
           <th class="p-2 border">Status</th>
           <th class="p-2 border">Deadline</th>
-          <th class="p-2 border">Owner</th>
+          <th class="p-2 border">Owner ID</th>
           <th class="p-2 border">Updated</th>
         </tr>
       </thead>

@@ -1011,7 +1011,7 @@
       v-model:visible="showPromoteToPoamModal"
       :submitting="promotingToPoam"
       :risk-title="risk?.title"
-      :template-milestone-titles="[]"
+      :template-milestone-titles="undefined"
       @submit="submitPromoteToPoam"
     />
 

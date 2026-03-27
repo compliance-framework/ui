@@ -94,8 +94,8 @@
       </div>
       <div v-else>
         <p class="text-xs text-gray-400 dark:text-slate-500 italic">
-          No remediation template found for this risk. Milestones can be added
-          to the POAM item after promotion.
+          Remediation milestones are not currently available. Milestones can be
+          added to the POAM item after promotion.
         </p>
       </div>
 
@@ -214,10 +214,6 @@ function submit() {
     const parsed = new Date(`${form.value.deadline}T23:59:59Z`);
     if (Number.isNaN(parsed.getTime())) {
       validationError.value = 'Planned completion date is invalid.';
-      return;
-    }
-    if (parsed.getTime() <= Date.now()) {
-      validationError.value = 'Planned completion date must be in the future.';
       return;
     }
     payload.deadline = parsed.toISOString();
