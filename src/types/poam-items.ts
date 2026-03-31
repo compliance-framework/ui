@@ -53,8 +53,8 @@ export interface PoamItemMilestone {
   title: string;
   description?: string;
   status: MilestoneStatus;
-  plannedCompletionDate: string; // ISO 8601
-  completedAt?: string;
+  plannedCompletionDate?: string;
+  completionDate?: string;
   lastStatusChangeAt?: string;
   orderIndex: number;
   responsibleParty?: string;
@@ -67,7 +67,7 @@ export interface CreateMilestoneRequest {
   title: string;
   description?: string;
   status?: MilestoneStatus;
-  plannedCompletionDate: string;
+  plannedCompletionDate?: string;
   orderIndex?: number;
   responsibleParty?: string;
   remarks?: string;
@@ -219,10 +219,13 @@ export function computeMilestoneProgress(
   // Compare dates in local timezone: parse YYYY-MM-DD as local date to avoid
   // UTC-vs-local skew that can mark items overdue a day early/late.
   const todayStr = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD in local time
-  const overdue = milestones.filter(
+  const activeMilestones = milestones.filter(
+    (m) => m.status !== 'completed' && m.status !== 'cancelled',
+  );
+  const overdue = activeMilestones.filter(
     (m) =>
-      m.status !== 'completed' &&
-      m.status !== 'cancelled' &&
+      m.plannedCompletionDate &&
+      typeof m.plannedCompletionDate === 'string' &&
       m.plannedCompletionDate.substring(0, 10) < todayStr,
   ).length;
   return {

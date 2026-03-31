@@ -1,6 +1,6 @@
 <template>
   <Dialog
-    v-model:visible="visible"
+    v-model:visible="localVisible"
     :header="isEdit ? 'Edit Milestone' : 'Add Milestone'"
     modal
     :style="{ width: '560px' }"
@@ -63,7 +63,7 @@
           <label
             class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1"
           >
-            Planned Completion Date <span class="text-red-500">*</span>
+            Planned Completion Date
           </label>
           <input
             v-model="form.plannedCompletionDate"
@@ -87,12 +87,43 @@
         >
           Responsible Party
         </label>
-        <input
-          v-model="form.responsibleParty"
-          type="text"
-          placeholder="e.g. Security Team, John Smith"
-          class="w-full border border-ccf-300 dark:border-slate-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
+        <div class="relative">
+          <AutoComplete
+            v-model="selectedUser"
+            :suggestions="userSuggestions"
+            @complete="searchUsers"
+            @update:modelValue="onUserSelect"
+            optionLabel="displayName"
+            placeholder="Search for a user by name or email..."
+            class="w-full"
+            :forceSelection="true"
+          >
+            <template #item="slotProps">
+              <div class="flex items-center gap-2">
+                <UserAvatar
+                  :user="{
+                    displayName: slotProps.item.displayName,
+                    fallbackInitials: '?',
+                  }"
+                  size="sm"
+                />
+                <div class="flex flex-col">
+                  <span
+                    class="text-sm font-medium text-gray-900 dark:text-gray-100"
+                  >
+                    {{ slotProps.item.displayName }}
+                  </span>
+                  <span
+                    v-if="slotProps.item.email"
+                    class="text-xs text-gray-500 dark:text-gray-400"
+                  >
+                    {{ slotProps.item.email }}
+                  </span>
+                </div>
+              </div>
+            </template>
+          </AutoComplete>
+        </div>
       </div>
 
       <!-- Remarks -->
@@ -144,7 +175,7 @@
     <template #footer>
       <div class="flex justify-end gap-2 pt-2">
         <button
-          @click="visible = false"
+          @click="localVisible = false"
           :disabled="saving"
           class="px-4 py-2 text-sm border border-ccf-300 dark:border-slate-600 rounded-md text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 disabled:opacity-50"
         >
@@ -165,6 +196,12 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import Dialog from '@/volt/Dialog.vue';
+import AutoComplete from '@/volt/AutoComplete.vue';
+import UserAvatar from '@/components/workflows/UserAvatar.vue';
+import {
+  useUserSearch,
+  type DisplayUser,
+} from '@/composables/workflows/useUserSearch';
 import type {
   PoamItemMilestone,
   CreateMilestoneRequest,
@@ -192,18 +229,27 @@ const emit = defineEmits<{
   saved: [payload: CreateMilestoneRequest | UpdateMilestoneRequest];
 }>();
 
-const visible = ref(props.modelValue);
+const localVisible = ref(props.modelValue);
 const isEdit = ref(false);
 
 // Derive saving and saveError from props so the parent controls modal state
 const saving = computed(() => props.saving);
 const saveError = computed(() => props.saveError ?? '');
 
+const { searchUsers, userSuggestions, loadUsersByIds, getCachedUser } =
+  useUserSearch();
+const selectedUser = ref<DisplayUser | null>(null);
+
+function onUserSelect(user: DisplayUser | null) {
+  selectedUser.value = user;
+  form.value.responsibleParty = user ? user.id : '';
+}
+
 interface FormState {
   title: string;
   description: string;
   status: MilestoneStatus;
-  plannedCompletionDate: string;
+  plannedCompletionDate?: string;
   responsibleParty: string;
   remarks: string;
 }
@@ -222,11 +268,11 @@ const errors = ref<Partial<Record<keyof FormState, string>>>({});
 watch(
   () => props.modelValue,
   (val) => {
-    visible.value = val;
+    localVisible.value = val;
   },
 );
 
-watch(visible, (val) => {
+watch(localVisible, (val) => {
   emit('update:modelValue', val);
 });
 
@@ -245,6 +291,15 @@ watch(
         responsibleParty: m.responsibleParty ?? '',
         remarks: m.remarks ?? '',
       };
+      if (m.responsibleParty) {
+        // Pre-load user info if we have an ID
+        loadUsersByIds([m.responsibleParty]).then(() => {
+          const u = getCachedUser(m.responsibleParty!);
+          if (u) selectedUser.value = u;
+        });
+      } else {
+        selectedUser.value = null;
+      }
     } else {
       isEdit.value = false;
       resetForm();
@@ -254,6 +309,9 @@ watch(
 );
 
 function resetForm() {
+  isEdit.value = false;
+  errors.value = {};
+  selectedUser.value = null;
   form.value = {
     title: '',
     description: '',
@@ -262,16 +320,12 @@ function resetForm() {
     responsibleParty: '',
     remarks: '',
   };
-  errors.value = {};
 }
 
 function validate(): boolean {
   errors.value = {};
   if (!form.value.title.trim()) {
     errors.value.title = 'Title is required';
-  }
-  if (!form.value.plannedCompletionDate) {
-    errors.value.plannedCompletionDate = 'Planned completion date is required';
   }
   return Object.keys(errors.value).length === 0;
 }
@@ -283,7 +337,7 @@ function submit() {
     title: form.value.title.trim(),
     description: form.value.description.trim() || undefined,
     status: form.value.status,
-    plannedCompletionDate: form.value.plannedCompletionDate,
+    plannedCompletionDate: form.value.plannedCompletionDate || undefined,
     responsibleParty: form.value.responsibleParty.trim() || undefined,
     remarks: form.value.remarks.trim() || undefined,
   };

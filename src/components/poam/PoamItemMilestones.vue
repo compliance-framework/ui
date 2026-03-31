@@ -4,7 +4,7 @@
     <div class="flex items-center justify-between">
       <div class="flex items-center gap-3">
         <h4 class="text-sm font-medium text-gray-700 dark:text-slate-400">
-          Milestones
+          Tasks
         </h4>
         <!-- Progress pill -->
         <span
@@ -46,7 +46,7 @@
             d="M12 4v16m8-8H4"
           />
         </svg>
-        Add Milestone
+        Add Task
       </button>
     </div>
 
@@ -64,7 +64,7 @@
 
     <!-- Loading -->
     <div v-if="loading" class="text-sm text-gray-500 dark:text-slate-400 py-2">
-      Loading milestones...
+      Loading tasks...
     </div>
 
     <!-- Empty state -->
@@ -72,7 +72,7 @@
       v-else-if="milestones.length === 0"
       class="text-sm text-gray-500 dark:text-slate-400 py-3 text-center border border-dashed border-ccf-300 dark:border-slate-600 rounded-md"
     >
-      No milestones yet. Add one to track remediation progress.
+      No tasks found. Add one to track remediation progress.
     </div>
 
     <!-- Milestone list -->
@@ -80,7 +80,7 @@
       <div
         v-for="milestone in sortedMilestones"
         :key="milestone.id"
-        class="flex items-start gap-3 p-3 bg-gray-50 dark:bg-slate-800/50 rounded-md border border-ccf-200 dark:border-slate-700"
+        class="flex items-start gap-3 p-3 bg-gray-50 dark:bg-slate-800/50 rounded-md border border-ccf-200 dark:border-slate-700 group"
         :class="{
           'border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/10':
             isOverdue(milestone),
@@ -143,25 +143,24 @@
             </span>
             <span
               v-if="milestone.responsibleParty"
-              class="flex items-center gap-1"
+              class="flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium bg-ccf-100 text-ccf-700 dark:bg-slate-700 dark:text-slate-300"
             >
-              <svg
-                class="w-3 h-3"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                />
-              </svg>
-              {{ milestone.responsibleParty }}
+              <UserAvatar
+                :user="{
+                  displayName:
+                    getCachedUser(milestone.responsibleParty)?.displayName ||
+                    milestone.responsibleParty,
+                  fallbackInitials: '?',
+                }"
+                size="xs"
+              />
+              {{
+                getCachedUser(milestone.responsibleParty)?.displayName ||
+                milestone.responsibleParty
+              }}
             </span>
             <span
-              v-if="milestone.completedAt"
+              v-if="milestone.completionDate"
               class="flex items-center gap-1 text-green-600 dark:text-green-400"
             >
               <svg
@@ -177,17 +176,96 @@
                   d="M5 13l4 4L19 7"
                 />
               </svg>
-              Completed {{ formatDate(milestone.completedAt) }}
+              Completed {{ formatDate(milestone.completionDate) }}
             </span>
           </div>
         </div>
 
         <!-- Actions -->
-        <div class="flex items-center gap-1 flex-shrink-0">
+        <div
+          class="ml-auto flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
+        >
+          <!-- Mark in progress -->
+          <button
+            v-if="milestone.status === 'open'"
+            @click="quickUpdateStatus(milestone, 'in-progress')"
+            class="p-1.5 text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/30 rounded-md"
+            title="Mark as In Progress"
+          >
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
+              />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+          </button>
+
+          <!-- Mark complete -->
+          <button
+            v-if="milestone.status === 'in-progress'"
+            @click="quickUpdateStatus(milestone, 'completed')"
+            class="p-1.5 text-green-600 hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-900/30 rounded-md"
+            title="Mark as Completed"
+          >
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M5 13l4 4L19 7"
+              />
+            </svg>
+          </button>
+
+          <!-- Mark cancelled -->
+          <button
+            v-if="
+              milestone.status !== 'completed' &&
+              milestone.status !== 'cancelled'
+            "
+            @click="quickUpdateStatus(milestone, 'cancelled')"
+            class="p-1.5 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-slate-700 rounded-md"
+            title="Mark as Cancelled"
+          >
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"
+              />
+            </svg>
+          </button>
+
+          <div class="w-px h-4 bg-gray-300 dark:bg-slate-600 mx-1"></div>
+
           <button
             @click="openEditModal(milestone)"
-            class="p-1.5 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded"
-            title="Edit milestone"
+            class="p-1.5 text-gray-500 hover:text-gray-700 dark:text-slate-400 dark:hover:text-slate-200"
+            title="Edit Task"
           >
             <svg
               class="w-4 h-4"
@@ -238,7 +316,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import MilestoneCreateEditModal from './MilestoneCreateEditModal.vue';
 import {
@@ -255,8 +333,11 @@ import {
   type PoamItemMilestone,
   type CreateMilestoneRequest,
   type UpdateMilestoneRequest,
+  type MilestoneStatus,
 } from '@/types/poam-items';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
+import { useUserSearch } from '@/composables/workflows/useUserSearch';
+import UserAvatar from '@/components/workflows/UserAvatar.vue';
 
 interface Props {
   poamItemId: string;
@@ -271,6 +352,8 @@ const editingMilestone = ref<PoamItemMilestone | null>(null);
 const modalSaving = ref(false);
 const modalSaveError = ref('');
 
+const { loadUsersByIds, getCachedUser } = useUserSearch();
+
 const {
   data: milestonesData,
   isLoading: loading,
@@ -279,6 +362,19 @@ const {
 
 const milestones = computed<PoamItemMilestone[]>(
   () => milestonesData.value ?? [],
+);
+
+watch(
+  () => milestones.value,
+  (newMilestones) => {
+    const userIds = newMilestones
+      .map((m) => m.responsibleParty)
+      .filter((id): id is string => !!id);
+    if (userIds.length > 0) {
+      loadUsersByIds(userIds);
+    }
+  },
+  { immediate: true, deep: true },
 );
 
 const sortedMilestones = computed(() =>
@@ -296,7 +392,10 @@ const progressPillClass = computed(() => {
 });
 
 function isOverdue(m: PoamItemMilestone): boolean {
+  if (!m) return false;
   if (m.status === 'completed' || m.status === 'cancelled') return false;
+  if (!m.plannedCompletionDate || typeof m.plannedCompletionDate !== 'string')
+    return false;
   // Compare date strings in local timezone to avoid UTC-vs-local skew
   const todayStr = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD
   return m.plannedCompletionDate.substring(0, 10) < todayStr;
@@ -334,8 +433,42 @@ function openEditModal(m: PoamItemMilestone) {
   showModal.value = true;
 }
 
-const { createMilestone } = useMilestoneCreate(props.poamItemId);
-const { deleteMilestone } = useMilestoneDelete();
+const { createMilestone, error: createError } = useMilestoneCreate(
+  props.poamItemId,
+);
+const { updateMilestone, error: updateError } = useMilestoneUpdate(
+  props.poamItemId,
+);
+const { deleteMilestone, error: deleteError } = useMilestoneDelete();
+
+async function quickUpdateStatus(
+  m: PoamItemMilestone,
+  newStatus: MilestoneStatus,
+) {
+  try {
+    await updateMilestone(m.id, {
+      title: m.title,
+      description: m.description || undefined,
+      status: newStatus,
+      plannedCompletionDate: m.plannedCompletionDate,
+      responsibleParty: m.responsibleParty || undefined,
+      remarks: m.remarks || undefined,
+    });
+    if (updateError.value) throw updateError.value;
+    toast.add({
+      severity: 'success',
+      summary: 'Task updated',
+      life: 3000,
+    });
+    await reloadMilestones();
+  } catch {
+    toast.add({
+      severity: 'error',
+      summary: 'Failed to update task',
+      life: 4000,
+    });
+  }
+}
 
 async function onMilestoneSaved(
   payload: CreateMilestoneRequest | UpdateMilestoneRequest,
@@ -344,11 +477,11 @@ async function onMilestoneSaved(
   modalSaveError.value = '';
   try {
     if (editingMilestone.value) {
-      const { updateMilestone } = useMilestoneUpdate(
-        props.poamItemId,
+      await updateMilestone(
         editingMilestone.value.id,
+        payload as UpdateMilestoneRequest,
       );
-      await updateMilestone(payload as UpdateMilestoneRequest);
+      if (updateError.value) throw updateError.value;
       toast.add({
         severity: 'success',
         summary: 'Milestone updated',
@@ -356,6 +489,7 @@ async function onMilestoneSaved(
       });
     } else {
       await createMilestone(payload as CreateMilestoneRequest);
+      if (createError.value) throw createError.value;
       toast.add({
         severity: 'success',
         summary: 'Milestone added',
@@ -365,9 +499,14 @@ async function onMilestoneSaved(
     showModal.value = false;
     await reloadMilestones();
   } catch (err) {
-    const maybeError = err as { message?: string };
+    const maybeError = err as {
+      message?: string;
+      response?: { data?: { message?: string } };
+    };
     modalSaveError.value =
-      maybeError?.message || 'Failed to save milestone. Please try again.';
+      maybeError?.response?.data?.message ||
+      maybeError?.message ||
+      'Failed to save milestone. Please try again.';
     toast.add({
       severity: 'error',
       summary: 'Failed to save milestone',
@@ -383,6 +522,7 @@ function confirmDelete(m: PoamItemMilestone) {
   confirmDeleteDialog(
     async () => {
       await deleteMilestone(props.poamItemId, m.id);
+      if (deleteError.value) throw deleteError.value;
       await reloadMilestones();
       toast.add({
         severity: 'success',

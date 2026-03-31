@@ -143,14 +143,31 @@
                   >
                     Review Risk Score
                   </button>
-                  <!-- BCH-1186: Promote to POAM — only shown when status is `investigating` -->
+                  <!-- Reopen risk (BCH-XXXX) -->
                   <button
-                    v-if="canPromoteToPoamAction"
+                    v-if="canReopenRiskAction"
+                    class="px-3 py-1 rounded-md text-sm bg-orange-600 hover:bg-orange-700 text-white disabled:opacity-60"
+                    :disabled="workflowSubmitting"
+                    @click="reopenRisk"
+                  >
+                    Reopen
+                  </button>
+                  <!-- BCH-1186: Create mitigation only when no linked POAM items exist -->
+                  <button
+                    v-if="canCreateMitigationAction"
                     class="px-3 py-1 rounded-md text-sm bg-violet-600 hover:bg-violet-700 text-white disabled:opacity-60"
                     :disabled="workflowSubmitting || promotingToPoam"
                     @click="showPromoteToPoamModal = true"
                   >
-                    Promote to POAM
+                    Create Mitigation
+                  </button>
+                  <button
+                    v-if="canMitigateRiskAction"
+                    class="px-3 py-1 rounded-md text-sm bg-violet-600 hover:bg-violet-700 text-white disabled:opacity-60"
+                    :disabled="workflowSubmitting"
+                    @click="mitigateRisk"
+                  >
+                    Mitigate Risk
                   </button>
                   <!-- BCH-1186: Mark Mitigating Implemented — only shown when status is `mitigating-planned` -->
                   <button
@@ -709,7 +726,7 @@
           <div v-else-if="activeTab === 'remediations'" class="space-y-4">
             <div class="flex items-center justify-between">
               <h3 class="text-lg font-medium text-gray-900 dark:text-slate-200">
-                Remediations
+                Suggested Remediations
               </h3>
               <button
                 class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-md text-sm"
@@ -967,10 +984,6 @@
             </div>
           </div>
 
-          <RiskLogTab
-            v-else-if="activeTab === 'log'"
-            :entries="risk.riskLog?.entries"
-          />
           <RiskPoamItemsTab
             v-else-if="activeTab === 'poam-items'"
             :risk-id="riskId!"
@@ -1249,7 +1262,6 @@ import RiskReviewModal from '@/components/risk/RiskReviewModal.vue';
 import RiskScoreReviewModal from '@/components/risk/RiskScoreReviewModal.vue';
 import PromoteToPoamModal from '@/components/risk/PromoteToPoamModal.vue';
 import RiskOwnerAssignment from '@/components/risk/RiskOwnerAssignment.vue';
-import RiskLogTab from '@/components/risk/RiskLogTab.vue';
 import RiskPoamItemsTab from '@/components/risk/RiskPoamItemsTab.vue';
 import { useSystemStore } from '@/stores/system';
 import type { Profile, Risk, SystemComponent } from '@/oscal';
@@ -1266,6 +1278,7 @@ import {
   canMarkMitigatingImplemented,
   canPromoteToPoam,
   canReassessRisk,
+  canReopenRisk,
   canReviewRisk,
   getAllowedRiskTransitions,
   normalizeRiskRegisterStatus,
@@ -1304,6 +1317,7 @@ import {
   type RiskReviewItem,
 } from '@/utils/risk-detail';
 import { getRiskIdentifier } from '@/utils/risk-id';
+import type { PoamItem } from '@/types/poam-items';
 import type { DataResponse } from '@/stores/types';
 
 interface AssociationPickerOption extends RiskAssociationItem {
@@ -1406,7 +1420,6 @@ type TabId =
   | 'remediations'
   | 'reviews'
   | 'history-events'
-  | 'log'
   | 'poam-items';
 
 const route = useRoute();
@@ -1443,15 +1456,18 @@ const tabs = computed<Array<{ id: TabId; label: string }>>(() => {
     { id: 'controls', label: 'Controls' },
     { id: 'components', label: 'Components' },
     { id: 'threats', label: 'Threats' },
-    { id: 'remediations', label: 'Remediations' },
+    { id: 'remediations', label: 'Suggested Remediations' },
   ];
 
   baseTabs.push(
     { id: 'reviews', label: 'Reviews' },
     { id: 'history-events', label: 'History & Events' },
-    { id: 'log', label: 'Log' },
-    { id: 'poam-items', label: 'POAM Items' },
   );
+
+  const status = risk.value?.status;
+  if (status === 'mitigating-planned' || status === 'mitigating-implemented') {
+    baseTabs.push({ id: 'poam-items', label: 'Mitigation Plan' });
+  }
 
   return baseTabs;
 });
@@ -1459,12 +1475,12 @@ const tabs = computed<Array<{ id: TabId; label: string }>>(() => {
 const missingContextTitle = computed(() =>
   isSspRoute.value
     ? 'System Security Plan context missing'
-    : 'Plan of Action and Milestones context missing',
+    : 'Remediation Plan context missing',
 );
 const missingContextDetail = computed(() =>
   isSspRoute.value
     ? 'Unable to determine the System Security Plan that owns this risk.'
-    : 'Unable to determine the Plan of Action and Milestones that owns this risk.',
+    : 'Unable to determine the Remediation Plan that owns this risk.',
 );
 
 const contextMissing = computed(() => !context.value || !riskId.value);
@@ -1498,6 +1514,12 @@ const { isLoading: savingAssociation, execute: executeAssociationMutation } =
     { transformRequest: [decamelizeKeys] },
     { immediate: false },
   );
+
+const {
+  data: fetchedLinkedPoamItems,
+  isLoading: loadingLinkedPoamItems,
+  execute: executeFetchLinkedPoamItems,
+} = useDataApi<PoamItem[]>(null, {}, { immediate: false });
 
 const {
   data: mutatedRisk,
@@ -2156,6 +2178,17 @@ async function loadRisk() {
     return;
   }
 
+  const resolvedRiskIdentifier = getRiskIdentifier(risk.value);
+  if (resolvedRiskIdentifier) {
+    try {
+      await executeFetchLinkedPoamItems(
+        `/api/poam-items?riskId=${encodeURIComponent(resolvedRiskIdentifier)}`,
+      );
+    } catch (err) {
+      if (isCanceledError(err)) return;
+    }
+  }
+
   syncAssociationsFromRisk();
   syncOwnerAssignmentsFromRisk();
   await refreshAllAssociationLinks();
@@ -2391,6 +2424,30 @@ const canPromoteToPoamAction = computed(
 // BCH-1186: Mark Mitigating Implemented — only available when status is `mitigating-planned`.
 const canMarkMitigatingImplementedAction = computed(
   () => isSspContext.value && canMarkMitigatingImplemented(risk.value?.status),
+);
+
+const linkedPoamItems = computed<PoamItem[]>(() =>
+  normalizeLinkedPoamItems(fetchedLinkedPoamItems.value),
+);
+
+const hasLinkedPoamItems = computed(() => linkedPoamItems.value.length > 0);
+
+const canCreateMitigationAction = computed(
+  () =>
+    canPromoteToPoamAction.value &&
+    !loadingLinkedPoamItems.value &&
+    !hasLinkedPoamItems.value,
+);
+
+const canMitigateRiskAction = computed(
+  () =>
+    canPromoteToPoamAction.value &&
+    !loadingLinkedPoamItems.value &&
+    hasLinkedPoamItems.value,
+);
+
+const canReopenRiskAction = computed(
+  () => isSspContext.value && canReopenRisk(risk.value?.status),
 );
 
 const ownerAssignmentsDirty = computed(
@@ -2718,7 +2775,11 @@ async function saveOverviewOwnerAssignments() {
 }
 
 async function updateRiskStatus(
-  status: 'investigating' | 'closed',
+  status:
+    | 'investigating'
+    | 'mitigating-planned'
+    | 'mitigating-implemented'
+    | 'closed',
   summary: string,
   detail: string,
 ) {
@@ -2931,15 +2992,38 @@ async function submitReviewRisk(payload: RiskReviewSubmitPayload) {
 const { promoteRiskToPoam, isLoading: promotingToPoam } =
   usePromoteRiskToPoam();
 
+function normalizeLinkedPoamItems(payload: unknown): PoamItem[] {
+  if (Array.isArray(payload)) {
+    return payload as PoamItem[];
+  }
+
+  if (
+    payload &&
+    typeof payload === 'object' &&
+    'data' in payload &&
+    Array.isArray((payload as { data?: unknown }).data)
+  ) {
+    return (payload as { data: PoamItem[] }).data;
+  }
+
+  return [];
+}
+
+function resolveMitigationStatus(items: PoamItem[]) {
+  return items.every((item) => item.status === 'completed')
+    ? 'mitigating-implemented'
+    : 'mitigating-planned';
+}
+
 async function submitPromoteToPoam(payload: {
   title?: string;
   deadline?: string;
   resourceRequired?: string;
 }) {
   const riskIdentifier = getRiskIdentifier(risk.value);
-  if (!isSspContext.value || !riskIdentifier) return;
+  if (!isSspContext.value || !riskIdentifier || !context.value) return;
   try {
-    await promoteRiskToPoam(riskIdentifier, {
+    await promoteRiskToPoam(context.value.id, riskIdentifier, {
       title: payload.title || undefined,
       description: undefined,
       deadline: payload.deadline || undefined,
@@ -2950,28 +3034,47 @@ async function submitPromoteToPoam(payload: {
     await loadRisk();
     toast.add({
       severity: 'success',
-      summary: 'Promoted to POAM',
+      summary: 'Mitigation Created',
       detail:
-        'Risk has been promoted to a POAM item and is now Mitigating Planned.',
+        'Risk mitigation has been created and status is now Mitigating Planned.',
       life: 4000,
     });
   } catch (err) {
     toast.add({
       severity: 'error',
-      summary: 'Promotion failed',
+      summary: 'Mitigation action failed',
       detail: extractErrorMessage(err),
       life: 4000,
     });
   }
 }
 
+async function reopenRisk() {
+  await updateRiskStatus(
+    'investigating',
+    'Risk reopened',
+    'Risk status updated to Investigating.',
+  );
+}
+
+async function mitigateRisk() {
+  if (!hasLinkedPoamItems.value) return;
+
+  const nextStatus = resolveMitigationStatus(linkedPoamItems.value);
+  await updateRiskStatus(
+    nextStatus,
+    'Mitigation linked',
+    `Existing mitigation plan found. Risk status updated to ${riskStatusLabel(nextStatus)}.`,
+  );
+}
+
 async function submitMarkMitigatingImplemented() {
   if (!isSspContext.value || !detailEndpoint.value) return;
 
   try {
-    await executeRiskMutation(`${detailEndpoint.value}/transition`, {
+    await executeRiskMutation(`${detailEndpoint.value}/review`, {
       method: 'POST',
-      data: { status: 'mitigating-implemented' },
+      data: { decision: 'implement' },
     });
     const updatedRisk = mutatedRisk.value;
     applyRiskUpdate(updatedRisk);

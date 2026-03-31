@@ -3,7 +3,7 @@
     v-model:visible="localVisible"
     modal
     size="lg"
-    header="Promote Risk to POAM Item"
+    header="Create Mitigation"
   >
     <form class="space-y-4" @submit.prevent="submit">
       <!-- Status transition banner -->
@@ -27,13 +27,13 @@
         <label
           class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1"
         >
-          POAM Item Title
+          Mitigation Plan title
         </label>
         <input
           v-model="form.title"
           type="text"
           class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md dark:bg-slate-800 dark:text-slate-200 text-sm"
-          :placeholder="riskTitle || 'Defaults to risk title'"
+          :placeholder="riskTitle || 'e.g. Apply security patches...'"
           :disabled="submitting"
         />
         <p class="mt-1 text-xs text-gray-500 dark:text-slate-400">
@@ -119,8 +119,8 @@
           class="px-4 py-2 rounded-md text-sm bg-indigo-600 hover:bg-indigo-700 text-white disabled:opacity-60"
           :disabled="submitting"
         >
-          <span v-if="submitting">Promoting…</span>
-          <span v-else>Promote to POAM</span>
+          <span v-if="submitting">Creating…</span>
+          <span v-else>Create Mitigation</span>
         </button>
       </div>
     </form>
@@ -165,7 +165,7 @@ const emit = defineEmits<{
 const localVisible = ref(props.visible);
 
 const form = ref({
-  title: '',
+  title: 'Mitigation Plan to remediate risk',
   deadline: '',
   resourceRequired: '',
 });
@@ -189,7 +189,11 @@ watch(localVisible, (value) => {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function resetForm() {
-  form.value = { title: '', deadline: '', resourceRequired: '' };
+  form.value = {
+    title: 'Mitigation Plan to remediate risk',
+    deadline: '',
+    resourceRequired: '',
+  };
   validationError.value = '';
 }
 

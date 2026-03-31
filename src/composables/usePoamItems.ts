@@ -68,14 +68,14 @@ export function usePoamItemCreate() {
   return { createPoamItem, isLoading, error };
 }
 
-export function usePoamItemUpdate(id: string) {
+export function usePoamItemUpdate() {
   const { execute, isLoading, error } = useDataApi<PoamItem>(
     null,
     {},
     { immediate: false },
   );
 
-  async function updatePoamItem(payload: UpdatePoamItemRequest) {
+  async function updatePoamItem(id: string, payload: UpdatePoamItemRequest) {
     return execute(`/api/poam-items/${id}`, {
       method: 'PUT',
       data: payload,
@@ -119,25 +119,26 @@ export function useMilestoneCreate(poamItemId: string) {
     return execute(`/api/poam-items/${poamItemId}/milestones`, {
       method: 'POST',
       data: payload,
-      transformRequest: [decamelizeKeys],
     });
   }
 
   return { createMilestone, isLoading, error };
 }
 
-export function useMilestoneUpdate(poamItemId: string, milestoneId: string) {
+export function useMilestoneUpdate(poamItemId: string) {
   const { execute, isLoading, error } = useDataApi<PoamItemMilestone>(
     null,
     {},
     { immediate: false },
   );
 
-  async function updateMilestone(payload: UpdateMilestoneRequest) {
+  async function updateMilestone(
+    milestoneId: string,
+    payload: UpdateMilestoneRequest,
+  ) {
     return execute(`/api/poam-items/${poamItemId}/milestones/${milestoneId}`, {
       method: 'PUT',
       data: payload,
-      transformRequest: [decamelizeKeys],
     });
   }
 
@@ -189,14 +190,18 @@ export function usePromoteRiskToPoam() {
   );
 
   async function promoteRiskToPoam(
+    sspId: string,
     riskId: string,
     payload: PromoteRiskToPoamRequest,
   ) {
-    return execute(`/api/risks/${encodeURIComponent(riskId)}/promote-to-poam`, {
-      method: 'POST',
-      data: payload,
-      transformRequest: [decamelizeKeys],
-    });
+    return execute(
+      `/api/oscal/system-security-plans/${encodeURIComponent(sspId)}/risks/${encodeURIComponent(riskId)}/promote-to-poam`,
+      {
+        method: 'POST',
+        data: payload,
+        transformRequest: [decamelizeKeys],
+      },
+    );
   }
 
   return { promoteRiskToPoam, isLoading, error };

@@ -196,6 +196,14 @@ export function canMarkMitigatingImplemented(status?: string): boolean {
   return normalizeRiskRegisterStatus(status) === 'mitigating-planned';
 }
 
+export function canReopenRisk(status?: string): boolean {
+  const normalized = normalizeRiskRegisterStatus(status);
+  return (
+    normalized === 'mitigating-planned' ||
+    normalized === 'mitigating-implemented'
+  );
+}
+
 export function canReviewRisk(status?: string): boolean {
   return normalizeRiskRegisterStatus(status) === 'risk-accepted';
 }
