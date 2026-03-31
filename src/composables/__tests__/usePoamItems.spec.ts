@@ -17,6 +17,7 @@ import {
   useMilestoneUpdate,
   useMilestoneDelete,
   usePoamItemsByRisk,
+  usePromoteRiskToPoam,
   poamStatusBadgeClass,
   milestoneStatusDotClass,
   milestoneStatusLabel,
@@ -138,12 +139,14 @@ describe('usePoamItems', () => {
   describe('usePoamItemUpdate', () => {
     it('PUTs to /api/poam-items/:id', async () => {
       mockExecute.mockResolvedValue(undefined);
-      const { updatePoamItem } = usePoamItemUpdate('item-123');
-      const payload: UpdatePoamItemRequest = { title: 'Updated' };
-      await updatePoamItem(payload);
+      const { updatePoamItem } = usePoamItemUpdate();
+      const payload: UpdatePoamItemRequest = {
+        title: 'Updated Item',
+      };
+      await updatePoamItem('item-123', payload);
       expect(mockExecute).toHaveBeenCalledWith(
         '/api/poam-items/item-123',
-        expect.objectContaining({ method: 'PUT' }),
+        expect.objectContaining({ method: 'PUT', data: payload }),
       );
     });
   });
@@ -194,14 +197,17 @@ describe('usePoamItems', () => {
   // ─── useMilestoneUpdate ────────────────────────────────────────────────────
 
   describe('useMilestoneUpdate', () => {
-    it('PUTs to /api/poam-items/:poamItemId/milestones/:milestoneId', async () => {
+    it('PUTs to /api/poam-items/:id/milestones/:milestoneId', async () => {
       mockExecute.mockResolvedValue(undefined);
-      const { updateMilestone } = useMilestoneUpdate('poam-item-789', 'ms-001');
-      const payload: UpdateMilestoneRequest = { title: 'Updated M1' };
-      await updateMilestone(payload);
+      const { updateMilestone } = useMilestoneUpdate('poam-item-789');
+      const payload: UpdateMilestoneRequest = {
+        title: 'M1 Updated',
+        status: 'in-progress',
+      };
+      await updateMilestone('milestone-456', payload);
       expect(mockExecute).toHaveBeenCalledWith(
-        '/api/poam-items/poam-item-789/milestones/ms-001',
-        expect.objectContaining({ method: 'PUT' }),
+        '/api/poam-items/poam-item-789/milestones/milestone-456',
+        expect.objectContaining({ method: 'PUT', data: payload }),
       );
     });
   });
@@ -283,6 +289,53 @@ describe('usePoamItems', () => {
 
     it('returns default gray dot for unknown status', () => {
       expect(milestoneStatusDotClass('unknown')).toBe('bg-gray-400');
+    });
+  });
+
+  // ─── usePromoteRiskToPoam (BCH-1186) ─────────────────────────────────────
+
+  describe('usePromoteRiskToPoam', () => {
+    it('calls POST /api/oscal/system-security-plans/:sspId/risks/:id/promote-to-poam with the correct URL', async () => {
+      const { promoteRiskToPoam } = usePromoteRiskToPoam();
+      await promoteRiskToPoam('ssp-123', 'risk-abc-123', {});
+      expect(mockExecute).toHaveBeenCalledWith(
+        '/api/oscal/system-security-plans/ssp-123/risks/risk-abc-123/promote-to-poam',
+        expect.objectContaining({ method: 'POST' }),
+      );
+    });
+
+    it('URL-encodes the sspId and riskId to handle special characters', async () => {
+      const { promoteRiskToPoam } = usePromoteRiskToPoam();
+      await promoteRiskToPoam('ssp/id', 'risk/with/slashes', {});
+      expect(mockExecute).toHaveBeenCalledWith(
+        '/api/oscal/system-security-plans/ssp%2Fid/risks/risk%2Fwith%2Fslashes/promote-to-poam',
+        expect.objectContaining({ method: 'POST' }),
+      );
+    });
+
+    it('passes the payload as the request body', async () => {
+      const { promoteRiskToPoam } = usePromoteRiskToPoam();
+      const payload = {
+        title: 'Custom POAM Title',
+        deadline: '2026-12-31T23:59:59.000Z',
+        resourceRequired: '3 engineer days',
+      };
+      await promoteRiskToPoam('ssp-123', 'risk-abc', payload);
+      expect(mockExecute).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({
+          method: 'POST',
+          data: payload,
+          transformRequest: [expect.any(Function)],
+        }),
+      );
+    });
+
+    it('accepts an empty payload (all fields optional)', async () => {
+      const { promoteRiskToPoam } = usePromoteRiskToPoam();
+      await expect(
+        promoteRiskToPoam('ssp-123', 'risk-abc', {}),
+      ).resolves.not.toThrow();
     });
   });
 

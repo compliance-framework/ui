@@ -47,10 +47,13 @@ export const ALLOWED_RISK_TRANSITIONS: Record<
   RiskRegisterStatus[]
 > = {
   open: ['investigating', 'closed'],
-  // TODO(BCH-1206): UI actions for mitigation states are pending POA&M workflow support.
+  // BCH-1186: investigating can now promote to mitigating-planned via the POAM promotion flow.
   investigating: ['mitigating-planned', 'risk-accepted'],
-  'mitigating-planned': ['mitigating-implemented'],
-  'mitigating-implemented': ['closed'],
+  // A failed mitigation can return to investigating; otherwise it advances to implemented.
+  'mitigating-planned': ['mitigating-implemented', 'investigating'],
+  // Fully-evidenced risks can be marked remediated before close.
+  'mitigating-implemented': ['remediated', 'closed'],
+  // Accepted risks can be re-opened for investigation or closed.
   'risk-accepted': ['investigating', 'closed'],
   remediated: ['open', 'closed'],
   closed: [],
@@ -175,6 +178,30 @@ export function getAllowedRiskTransitions(
 
 export function canAcceptRisk(status?: string): boolean {
   return normalizeRiskRegisterStatus(status) === 'investigating';
+}
+
+/**
+ * Returns true when the risk can be promoted to a POAM item (BCH-1186).
+ * Promotion is only valid from `investigating` status.
+ */
+export function canPromoteToPoam(status?: string): boolean {
+  return normalizeRiskRegisterStatus(status) === 'investigating';
+}
+
+/**
+ * Returns true when the risk can be transitioned to `mitigating-implemented`.
+ * Valid only from `mitigating-planned` status.
+ */
+export function canMarkMitigatingImplemented(status?: string): boolean {
+  return normalizeRiskRegisterStatus(status) === 'mitigating-planned';
+}
+
+export function canReopenRisk(status?: string): boolean {
+  const normalized = normalizeRiskRegisterStatus(status);
+  return (
+    normalized === 'mitigating-planned' ||
+    normalized === 'mitigating-implemented'
+  );
 }
 
 export function canReviewRisk(status?: string): boolean {

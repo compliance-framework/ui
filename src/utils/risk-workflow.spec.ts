@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   canAcceptRisk,
+  canMarkMitigatingImplemented,
+  canPromoteToPoam,
   canReassessRisk,
   canReviewRisk,
   getAllowedRiskTransitions,
@@ -55,6 +57,19 @@ describe('risk-workflow', () => {
     expect(getAllowedRiskTransitions('closed')).toEqual([]);
   });
 
+  // BCH-1186: updated transitions
+  it('allows mitigating-planned to fall back to investigating (failed mitigation)', () => {
+    expect(getAllowedRiskTransitions('mitigating-planned')).toContain(
+      'investigating',
+    );
+  });
+
+  it('allows mitigating-implemented to transition to remediated', () => {
+    expect(getAllowedRiskTransitions('mitigating-implemented')).toContain(
+      'remediated',
+    );
+  });
+
   it('supports accept/review eligibility', () => {
     expect(canAcceptRisk('investigating')).toBe(true);
     expect(canAcceptRisk('open')).toBe(false);
@@ -63,6 +78,38 @@ describe('risk-workflow', () => {
     expect(canReassessRisk('open')).toBe(true);
     expect(canReassessRisk('investigating')).toBe(true);
     expect(canReassessRisk('risk-accepted')).toBe(false);
+  });
+
+  // BCH-1186: Promote to POAM helpers
+  describe('canPromoteToPoam', () => {
+    it('returns true only when status is investigating', () => {
+      expect(canPromoteToPoam('investigating')).toBe(true);
+    });
+
+    it('returns false for all other statuses', () => {
+      expect(canPromoteToPoam('open')).toBe(false);
+      expect(canPromoteToPoam('mitigating-planned')).toBe(false);
+      expect(canPromoteToPoam('mitigating-implemented')).toBe(false);
+      expect(canPromoteToPoam('risk-accepted')).toBe(false);
+      expect(canPromoteToPoam('remediated')).toBe(false);
+      expect(canPromoteToPoam('closed')).toBe(false);
+      expect(canPromoteToPoam(undefined)).toBe(false);
+    });
+  });
+
+  describe('canMarkMitigatingImplemented', () => {
+    it('returns true only when status is mitigating-planned', () => {
+      expect(canMarkMitigatingImplemented('mitigating-planned')).toBe(true);
+    });
+
+    it('returns false for all other statuses', () => {
+      expect(canMarkMitigatingImplemented('investigating')).toBe(false);
+      expect(canMarkMitigatingImplemented('mitigating-implemented')).toBe(
+        false,
+      );
+      expect(canMarkMitigatingImplemented('open')).toBe(false);
+      expect(canMarkMitigatingImplemented(undefined)).toBe(false);
+    });
   });
 
   it('maps statuses into workflow stages with summaries', () => {

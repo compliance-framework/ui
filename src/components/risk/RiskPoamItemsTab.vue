@@ -4,10 +4,10 @@
     <div class="flex items-center justify-between">
       <div>
         <h3 class="text-sm font-semibold text-gray-800 dark:text-slate-200">
-          Plan of Action &amp; Milestones
+          Mitigation Plan
         </h3>
         <p class="text-xs text-gray-500 dark:text-slate-400 mt-0.5">
-          POAM items tracking remediation of this risk
+          Mitigation items tracking this risk
         </p>
       </div>
       <button
@@ -27,7 +27,7 @@
             d="M12 4v16m8-8H4"
           />
         </svg>
-        Create POAM Item
+        Create a Mitigation Plan
       </button>
     </div>
 
@@ -36,7 +36,7 @@
       v-if="loading"
       class="text-sm text-gray-500 dark:text-slate-400 py-4 text-center"
     >
-      Loading POAM items...
+      Loading Mitigation Plans...
     </div>
 
     <!-- Empty state -->
@@ -58,19 +58,19 @@
         />
       </svg>
       <p class="text-sm text-gray-500 dark:text-slate-400">
-        No POAM items linked to this risk.
+        No Mitigation Plans linked to this risk.
       </p>
       <p class="text-xs text-gray-400 dark:text-slate-500 mt-1">
-        Create a POAM item to start tracking remediation milestones.
+        Create a mitigation plan to start tracking mitigation tasks.
       </p>
     </div>
 
-    <!-- POAM items list -->
+    <!-- Mitigation Plans list -->
     <div v-else class="space-y-3">
       <div
         v-for="item in poamItems"
         :key="item.id"
-        class="border border-ccf-200 dark:border-slate-700 rounded-md overflow-hidden"
+        class="border border-ccf-200 dark:border-slate-700 rounded-md overflow-hidden group/item"
       >
         <!-- Item header -->
         <div
@@ -124,27 +124,52 @@
             </div>
           </div>
 
-          <!-- Progress bar (compact) -->
-          <div
-            v-if="item.milestones && item.milestones.length > 0"
-            class="flex items-center gap-2 ml-4 flex-shrink-0"
-          >
-            <div class="w-24 bg-gray-200 dark:bg-slate-700 rounded-full h-1.5">
-              <div
-                class="h-1.5 rounded-full"
-                :class="
-                  milestoneProgress(item) === 100
-                    ? 'bg-green-500'
-                    : 'bg-blue-500'
-                "
-                :style="{ width: `${milestoneProgress(item)}%` }"
-              />
-            </div>
-            <span
-              class="text-xs text-gray-500 dark:text-slate-400 w-8 text-right"
+          <!-- Progress bar (compact) & Actions -->
+          <div class="flex items-center gap-4 flex-shrink-0 ml-4">
+            <!-- Edit Action -->
+            <button
+              @click.stop="openEditModal(item)"
+              class="p-1.5 text-gray-400 hover:text-gray-700 dark:hover:text-slate-200 opacity-0 group-hover/item:opacity-100 transition-opacity"
+              title="Edit Mitigation Plan"
             >
-              {{ milestoneProgress(item) }}%
-            </span>
+              <svg
+                class="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                />
+              </svg>
+            </button>
+
+            <div
+              v-if="item.milestones && item.milestones.length > 0"
+              class="flex items-center gap-2"
+            >
+              <div
+                class="w-24 bg-gray-200 dark:bg-slate-700 rounded-full h-1.5"
+              >
+                <div
+                  class="h-1.5 rounded-full"
+                  :class="
+                    milestoneProgress(item) === 100
+                      ? 'bg-green-500'
+                      : 'bg-blue-500'
+                  "
+                  :style="{ width: `${milestoneProgress(item)}%` }"
+                />
+              </div>
+              <span
+                class="text-xs text-gray-500 dark:text-slate-400 w-8 text-right"
+              >
+                {{ milestoneProgress(item) }}%
+              </span>
+            </div>
           </div>
         </div>
 
@@ -158,10 +183,10 @@
       </div>
     </div>
 
-    <!-- Create POAM Item modal (simplified — pre-fills riskId) -->
+    <!-- Create Mitigation Plan modal (simplified — pre-fills riskId) -->
     <Dialog
       v-model:visible="showCreateModal"
-      header="Create POAM Item from Risk"
+      header="Create a Mitigation Plan from Risk"
       modal
       :style="{ width: '560px' }"
     >
@@ -209,7 +234,10 @@
               class="w-full border border-ccf-300 dark:border-slate-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500"
             >
               <option value="open">Open</option>
-              <option value="in-progress">In Progress</option>
+              <option value="mitigating-planned">Mitigating Planned</option>
+              <option value="mitigating-implemented">
+                Mitigating Implemented
+              </option>
             </select>
           </div>
           <div>
@@ -242,7 +270,8 @@
             />
           </svg>
           <p class="text-xs text-purple-700 dark:text-purple-300">
-            This POAM item will be automatically linked to the current risk.
+            This Mitigation Plan will be automatically linked to the current
+            risk.
           </p>
         </div>
       </div>
@@ -260,7 +289,99 @@
             :disabled="creating"
             class="px-4 py-2 text-sm bg-purple-600 hover:bg-purple-700 text-white rounded-md disabled:opacity-50"
           >
-            {{ creating ? 'Creating...' : 'Create POAM Item' }}
+            {{ creating ? 'Creating...' : 'Create a Mitigation Plan' }}
+          </button>
+        </div>
+      </template>
+    </Dialog>
+
+    <!-- Edit Mitigation Plan modal -->
+    <Dialog
+      v-model:visible="showEditModal"
+      header="Edit Mitigation Plan"
+      modal
+      :style="{ width: '560px' }"
+    >
+      <div class="space-y-4 py-2">
+        <div>
+          <label
+            class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1"
+          >
+            Title <span class="text-red-500">*</span>
+          </label>
+          <input
+            v-model="editForm.title"
+            type="text"
+            placeholder="e.g. Remediate SQL injection vulnerability"
+            class="w-full border border-ccf-300 dark:border-slate-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500"
+            :class="{ 'border-red-500': editErrors.title }"
+          />
+          <p v-if="editErrors.title" class="text-xs text-red-500 mt-1">
+            {{ editErrors.title }}
+          </p>
+        </div>
+
+        <div>
+          <label
+            class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1"
+          >
+            Description
+          </label>
+          <textarea
+            v-model="editForm.description"
+            rows="3"
+            class="w-full border border-ccf-300 dark:border-slate-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500"
+          />
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label
+              class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1"
+            >
+              Status
+            </label>
+            <select
+              v-model="editForm.status"
+              class="w-full border border-ccf-300 dark:border-slate-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500"
+            >
+              <option value="open">Open</option>
+              <option value="mitigating-planned">Mitigating Planned</option>
+              <option value="mitigating-implemented">
+                Mitigating Implemented
+              </option>
+              <option value="completed">Completed</option>
+            </select>
+          </div>
+          <div>
+            <label
+              class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1"
+            >
+              Planned Completion
+            </label>
+            <input
+              v-model="editForm.plannedCompletionDate"
+              type="date"
+              class="w-full border border-ccf-300 dark:border-slate-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500"
+            />
+          </div>
+        </div>
+      </div>
+
+      <template #footer>
+        <div class="flex justify-end gap-2 pt-2">
+          <button
+            @click="showEditModal = false"
+            class="px-4 py-2 text-sm border border-ccf-300 dark:border-slate-600 rounded-md text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700"
+          >
+            Cancel
+          </button>
+          <button
+            @click="submitEdit"
+            :disabled="editing"
+            class="px-4 py-2 text-sm bg-purple-600 hover:bg-purple-700 text-white rounded-md disabled:opacity-50"
+          >
+            {{ editing ? 'Saving...' : 'Save Changes' }}
           </button>
         </div>
       </template>
@@ -276,6 +397,7 @@ import PoamItemMilestones from '@/components/poam/PoamItemMilestones.vue';
 import {
   usePoamItemsByRisk,
   usePoamItemCreate,
+  usePoamItemUpdate,
   poamStatusBadgeClass,
   poamStatusLabel,
 } from '@/composables/usePoamItems';
@@ -366,7 +488,7 @@ async function submitCreate() {
       severity: 'error',
       summary: 'No SSP selected',
       detail:
-        'Please select a System Security Plan before creating a POAM item.',
+        'Please select a System Security Plan before creating a Mitigation Plan.',
       life: 5000,
     });
     return;
@@ -386,7 +508,7 @@ async function submitCreate() {
 
     toast.add({
       severity: 'success',
-      summary: 'POAM item created',
+      summary: 'Mitigation Plan created',
       life: 3000,
     });
     showCreateModal.value = false;
@@ -400,11 +522,77 @@ async function submitCreate() {
   } catch {
     toast.add({
       severity: 'error',
-      summary: 'Failed to create POAM item',
+      summary: 'Failed to create Mitigation Plan',
       life: 4000,
     });
   } finally {
     creating.value = false;
+  }
+}
+// Edit form
+const showEditModal = ref(false);
+const editing = ref(false);
+const editItemId = ref<string>('');
+const editForm = ref<{
+  title: string;
+  description: string;
+  status: PoamItemStatus;
+  plannedCompletionDate: string;
+}>({
+  title: '',
+  description: '',
+  status: 'open',
+  plannedCompletionDate: '',
+});
+const editErrors = ref<{ title?: string }>({});
+
+const { updatePoamItem } = usePoamItemUpdate();
+
+function openEditModal(item: PoamItem) {
+  editItemId.value = item.id;
+  editForm.value = {
+    title: item.title,
+    description: item.description ?? '',
+    status: item.status,
+    plannedCompletionDate: item.plannedCompletionDate
+      ? item.plannedCompletionDate.substring(0, 10)
+      : '',
+  };
+  editErrors.value = {};
+  showEditModal.value = true;
+}
+
+async function submitEdit() {
+  editErrors.value = {};
+  if (!editForm.value.title.trim()) {
+    editErrors.value.title = 'Title is required';
+    return;
+  }
+
+  editing.value = true;
+  try {
+    await updatePoamItem(editItemId.value, {
+      title: editForm.value.title.trim(),
+      description: editForm.value.description.trim() || undefined,
+      status: editForm.value.status,
+      plannedCompletionDate: editForm.value.plannedCompletionDate || undefined,
+    });
+
+    toast.add({
+      severity: 'success',
+      summary: 'Mitigation Plan updated',
+      life: 3000,
+    });
+    showEditModal.value = false;
+    await reload();
+  } catch {
+    toast.add({
+      severity: 'error',
+      summary: 'Failed to update Mitigation Plan',
+      life: 4000,
+    });
+  } finally {
+    editing.value = false;
   }
 }
 </script>

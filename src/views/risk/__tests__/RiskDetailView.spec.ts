@@ -197,6 +197,12 @@ const {
         },
       ],
     } as Record<string, unknown>,
+    promoteToPoamPayload: {
+      title: 'Mitigation Plan to remediate risk',
+      deadline: '',
+      resourceRequired: '',
+    } as Record<string, unknown>,
+    poamItemsByRisk: [] as Array<Record<string, unknown>>,
   };
 
   const resetMockApiState = () => {
@@ -252,6 +258,12 @@ const {
         },
       ],
     };
+    mockApiState.promoteToPoamPayload = {
+      title: 'Mitigation Plan to remediate risk',
+      deadline: '',
+      resourceRequired: '',
+    };
+    mockApiState.poamItemsByRisk = [];
   };
 
   return {
@@ -428,6 +440,9 @@ vi.mock('@/composables/axios', () => ({
             mockRisk.impact = payload.impact;
           }
         }
+        if (payload.decision === 'implement') {
+          mockRisk.status = 'mitigating-implemented';
+        }
         mockRisk.lastReviewedAt = '2026-03-16T12:30:00Z';
         data.value = { ...mockRisk };
       } else if (endpoint.endsWith('/system-security-plans/ssp-1/risks')) {
@@ -470,6 +485,21 @@ vi.mock('@/composables/axios', () => ({
         ];
       } else if (endpoint.includes('/reviews')) {
         data.value = [];
+      } else if (endpoint === '/api/poam-items?riskId=risk-1') {
+        data.value = [...mockApiState.poamItemsByRisk];
+      } else if (
+        endpoint ===
+          '/api/oscal/system-security-plans/ssp-1/risks/risk-1/promote-to-poam' &&
+        method === 'POST'
+      ) {
+        mockRisk.status = 'mitigating-planned';
+        data.value = {
+          id: 'poam-1',
+          title:
+            ((requestConfig.data as Record<string, unknown> | undefined)
+              ?.title as string | undefined) || mockRisk.title,
+          status: 'open',
+        };
       } else if (endpoint === '/api/evidence/search') {
         data.value = [
           {
@@ -712,6 +742,15 @@ function mountComponent() {
           template:
             '<div v-if="visible" data-testid="score-review-modal"><button data-testid="score-review-modal-submit" @click="$emit(\'submit\', mockApiState.scoreReviewModalPayload)">Submit Score Review</button></div>',
         },
+        PromoteToPoamModal: {
+          props: ['visible'],
+          emits: ['update:visible', 'submit'],
+          setup() {
+            return { mockApiState };
+          },
+          template:
+            '<div v-if="visible" data-testid="promote-to-poam-modal"><button data-testid="promote-to-poam-modal-submit" @click="$emit(\'submit\', mockApiState.promoteToPoamPayload)">Submit Create Mitigation</button></div>',
+        },
         RiskOwnerAssignment: {
           emits: ['change', 'save'],
           setup() {
@@ -823,23 +862,42 @@ describe('RiskDetailView', () => {
     expect(text).toContain('Controls');
     expect(text).toContain('Components');
     expect(text).toContain('Threats');
-    expect(text).toContain('Remediations');
+    expect(text).toContain('Suggested Remediations');
     expect(text).toContain('Reviews');
     expect(text).toContain('History & Events');
-    expect(text).toContain('Log');
-    expect(text).toContain('POAM Items');
-    expect(text.indexOf('Threats')).toBeLessThan(text.indexOf('Remediations'));
-    expect(text.indexOf('Remediations')).toBeLessThan(text.indexOf('Reviews'));
+
+    // Test that the Mitigation Plan tab is not rendered
+    const tabsContainer = wrapper.find('.flex.flex-wrap.gap-2.pb-2');
+    const tabs = tabsContainer.findAll('button');
+    const tabTexts = tabs.map((t) => t.text());
+    expect(tabTexts).not.toContain('Mitigation Plan');
+    expect(tabTexts).not.toContain('Log');
+
+    expect(text.indexOf('Threats')).toBeLessThan(
+      text.indexOf('Suggested Remediations'),
+    );
+    expect(text.indexOf('Suggested Remediations')).toBeLessThan(
+      text.indexOf('Reviews'),
+    );
     expect(text.indexOf('Reviews')).toBeLessThan(
       text.indexOf('History & Events'),
     );
-    expect(text.indexOf('History & Events')).toBeLessThan(text.indexOf('Log'));
-    expect(text.indexOf('Log')).toBeLessThan(text.indexOf('POAM Items'));
 
     await clickButtonByText(wrapper, 'History & Events');
     await flushPromises();
 
     expect(wrapper.text()).toContain('Risk created');
+  });
+
+  it('shows Mitigation Plan tab when risk status is mitigating-planned', async () => {
+    mockRisk.status = 'mitigating-planned';
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    const tabsContainer = wrapper.find('.flex.flex-wrap.gap-2.pb-2');
+    const tabs = tabsContainer.findAll('button');
+    const tabTexts = tabs.map((t) => t.text());
+    expect(tabTexts).toContain('Mitigation Plan');
   });
 
   it('loads reviews from the reviews endpoint', async () => {
@@ -915,7 +973,7 @@ describe('RiskDetailView', () => {
     await flushPromises();
 
     expect(findButtonByText(wrapper, 'Threats')).toBeDefined();
-    expect(findButtonByText(wrapper, 'Remediations')).toBeDefined();
+    expect(findButtonByText(wrapper, 'Suggested Remediations')).toBeDefined();
     expect(wrapper.text()).toContain('Threat IDs:');
     expect(wrapper.text()).toContain('T-001, T-002');
 
@@ -975,7 +1033,7 @@ describe('RiskDetailView', () => {
       }),
     );
 
-    await clickButtonByText(wrapper, 'Remediations');
+    await clickButtonByText(wrapper, 'Suggested Remediations');
     await flushPromises();
     await clickButtonByText(wrapper, 'Add Remediation');
     await wrapper
@@ -1083,7 +1141,7 @@ describe('RiskDetailView', () => {
       'https://capec.mitre.org/data/definitions/1.html',
     );
 
-    await clickButtonByText(wrapper, 'Remediations');
+    await clickButtonByText(wrapper, 'Suggested Remediations');
     await flushPromises();
     expect(wrapper.text()).toContain('Rotate DB encryption keys');
     expect(wrapper.text()).toContain(
@@ -1107,7 +1165,7 @@ describe('RiskDetailView', () => {
     const wrapper = mountComponent();
     await flushPromises();
 
-    await clickButtonByText(wrapper, 'Remediations');
+    await clickButtonByText(wrapper, 'Suggested Remediations');
     await flushPromises();
 
     expect(wrapper.text()).toContain('Untitled remediation');
@@ -1131,7 +1189,7 @@ describe('RiskDetailView', () => {
     const wrapper = mountComponent();
     await flushPromises();
 
-    await clickButtonByText(wrapper, 'Remediations');
+    await clickButtonByText(wrapper, 'Suggested Remediations');
     await flushPromises();
     await clickButtonByText(wrapper, 'Remove');
 
@@ -1255,7 +1313,7 @@ describe('RiskDetailView', () => {
     const wrapper = mountComponent();
     await flushPromises();
 
-    await clickButtonByText(wrapper, 'Remediations');
+    await clickButtonByText(wrapper, 'Suggested Remediations');
     await flushPromises();
     await clickButtonByText(wrapper, 'Edit Remediation');
     expect(wrapper.text()).toContain('Edit Remediation');
@@ -1306,7 +1364,7 @@ describe('RiskDetailView', () => {
     const wrapper = mountComponent();
     await flushPromises();
 
-    await clickButtonByText(wrapper, 'Remediations');
+    await clickButtonByText(wrapper, 'Suggested Remediations');
     await flushPromises();
 
     expect(wrapper.text()).toContain('Legacy remediation');
@@ -1346,7 +1404,7 @@ describe('RiskDetailView', () => {
     const wrapper = mountComponent();
     await flushPromises();
 
-    await clickButtonByText(wrapper, 'Remediations');
+    await clickButtonByText(wrapper, 'Suggested Remediations');
     await flushPromises();
     await clickButtonByText(wrapper, 'Remove');
     await flushPromises();
@@ -1438,6 +1496,34 @@ describe('RiskDetailView', () => {
     const openWrapper = mountComponent();
     await flushPromises();
     expect(findButtonByText(openWrapper, 'Accept Risk')).toBeUndefined();
+  });
+
+  it('shows Create Mitigation only when no linked POAM items exist', async () => {
+    mockRisk.status = 'investigating';
+    mockApiState.poamItemsByRisk = [];
+
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    expect(findButtonByText(wrapper, 'Create Mitigation')).toBeDefined();
+    expect(findButtonByText(wrapper, 'Mitigate Risk')).toBeUndefined();
+  });
+
+  it('shows Mitigate Risk instead of Create Mitigation when linked POAM items exist', async () => {
+    mockRisk.status = 'investigating';
+    mockApiState.poamItemsByRisk = [
+      {
+        id: 'poam-1',
+        title: 'Existing mitigation plan',
+        status: 'open',
+      },
+    ];
+
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    expect(findButtonByText(wrapper, 'Create Mitigation')).toBeUndefined();
+    expect(findButtonByText(wrapper, 'Mitigate Risk')).toBeDefined();
   });
 
   it('shows Review Risk button only for risk-accepted status', async () => {
@@ -1654,6 +1740,121 @@ describe('RiskDetailView', () => {
       }),
     );
     expect(wrapper.text()).toContain('Closed');
+  });
+
+  it('updates risk status from Mitigate Risk when an active POAM item already exists', async () => {
+    mockRisk.status = 'investigating';
+    mockApiState.poamItemsByRisk = [
+      {
+        id: 'poam-1',
+        title: 'Existing mitigation plan',
+        status: 'open',
+      },
+    ];
+
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    await clickButtonByText(wrapper, 'Mitigate Risk');
+    await flushPromises();
+
+    expect(apiCalls).toContainEqual(
+      expect.objectContaining({
+        endpoint: '/api/poam-items?riskId=risk-1',
+        method: 'GET',
+      }),
+    );
+    expect(apiCalls).toContainEqual(
+      expect.objectContaining({
+        endpoint: '/api/oscal/system-security-plans/ssp-1/risks/risk-1',
+        method: 'PUT',
+        data: expect.objectContaining({
+          status: 'mitigating-planned',
+        }),
+      }),
+    );
+    expect(apiCalls).not.toContainEqual(
+      expect.objectContaining({
+        endpoint:
+          '/api/oscal/system-security-plans/ssp-1/risks/risk-1/promote-to-poam',
+        method: 'POST',
+      }),
+    );
+    expect(wrapper.find('[data-testid="promote-to-poam-modal"]').exists()).toBe(
+      false,
+    );
+    expect(wrapper.text()).toContain('Mitigating Planned');
+  });
+
+  it('marks the risk as mitigating-implemented from Mitigate Risk when all linked POAM items are completed', async () => {
+    mockRisk.status = 'investigating';
+    mockApiState.poamItemsByRisk = [
+      {
+        id: 'poam-1',
+        title: 'Completed mitigation plan',
+        status: 'completed',
+      },
+    ];
+
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    await clickButtonByText(wrapper, 'Mitigate Risk');
+    await flushPromises();
+
+    expect(apiCalls).toContainEqual(
+      expect.objectContaining({
+        endpoint: '/api/poam-items?riskId=risk-1',
+        method: 'GET',
+      }),
+    );
+    expect(apiCalls).toContainEqual(
+      expect.objectContaining({
+        endpoint: '/api/oscal/system-security-plans/ssp-1/risks/risk-1',
+        method: 'PUT',
+        data: expect.objectContaining({
+          status: 'mitigating-implemented',
+        }),
+      }),
+    );
+    expect(apiCalls).not.toContainEqual(
+      expect.objectContaining({
+        endpoint:
+          '/api/oscal/system-security-plans/ssp-1/risks/risk-1/promote-to-poam',
+        method: 'POST',
+      }),
+    );
+    expect(wrapper.find('[data-testid="promote-to-poam-modal"]').exists()).toBe(
+      false,
+    );
+    expect(wrapper.text()).toContain('Mitigating Implemented');
+  });
+
+  it('posts the implement review decision when Mark Mitigating Implemented is clicked', async () => {
+    mockRisk.status = 'mitigating-planned';
+
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    await clickButtonByText(wrapper, 'Mark Mitigating Implemented');
+    await flushPromises();
+
+    expect(apiCalls).toContainEqual(
+      expect.objectContaining({
+        endpoint: '/api/oscal/system-security-plans/ssp-1/risks/risk-1/review',
+        method: 'POST',
+        data: {
+          decision: 'implement',
+        },
+      }),
+    );
+    expect(apiCalls).not.toContainEqual(
+      expect.objectContaining({
+        endpoint:
+          '/api/oscal/system-security-plans/ssp-1/risks/risk-1/transition',
+      }),
+    );
+    expect(wrapper.text()).toContain('Mitigating Implemented');
   });
 
   it('submits owner PUT before accept POST when accept owner update is present', async () => {
