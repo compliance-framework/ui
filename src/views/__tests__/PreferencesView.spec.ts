@@ -29,6 +29,13 @@ vi.mock('@/components/PageCard.vue', () => ({
   },
 }));
 
+vi.mock('@/components/preferences/SlackAccountLinkSection.vue', () => ({
+  default: {
+    name: 'SlackAccountLinkSection',
+    template: '<div data-test="slack-account-link-section"></div>',
+  },
+}));
+
 describe('PreferencesView', () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let wrapper: any;

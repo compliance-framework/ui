@@ -216,6 +216,7 @@
                 user?.authMethod || 'Password'
               }}</span>
             </div>
+            <SlackAccountLinkSection />
           </div>
         </div>
       </PageCard>
@@ -230,6 +231,7 @@ import type { CCFUser } from '@/stores/types';
 import PageHeader from '@/components/PageHeader.vue';
 import PageCard from '@/components/PageCard.vue';
 import TooltipTitle from '@/components/TooltipTitle.vue';
+import SlackAccountLinkSection from '@/components/preferences/SlackAccountLinkSection.vue';
 
 interface SubscriptionsPreferences {
   subscribed: boolean;
