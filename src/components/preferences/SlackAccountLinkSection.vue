@@ -77,7 +77,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watchEffect } from 'vue';
 import type { AxiosError } from 'axios';
 import { useToast } from 'primevue/usetoast';
 import { useRoute, useRouter } from 'vue-router';
@@ -103,9 +103,19 @@ interface SlackLinkStatus {
   linkedAt?: string;
 }
 
+interface SlackAvailabilityState {
+  loading: boolean;
+  configured: boolean;
+  linked: boolean;
+}
+
 const SUCCESS_TOAST_DURATION = 3500;
 const INFO_TOAST_DURATION = 4000;
 const ERROR_TOAST_DURATION = 5000;
+
+const emit = defineEmits<{
+  'status-change': [state: SlackAvailabilityState];
+}>();
 
 const axios = useAuthenticatedInstance();
 const configStore = useConfigStore();
@@ -304,5 +314,13 @@ const initializeSlackLinkSection = async () => {
 
 onMounted(() => {
   void initializeSlackLinkSection();
+});
+
+watchEffect(() => {
+  emit('status-change', {
+    loading: slackStatusLoading.value,
+    configured: slackLinkConfigured.value,
+    linked: isSlackLinked.value,
+  });
 });
 </script>
