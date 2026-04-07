@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
-import { ref, shallowRef } from 'vue';
+import { h, inject, provide, ref, shallowRef, watch } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
 import type {
   Agent,
@@ -102,6 +102,7 @@ const mockLoadKeys = vi.fn().mockImplementation(async (url: string) => {
 const toastAdd = vi.fn();
 const confirmRequire = vi.fn();
 const clipboardWriteText = vi.fn().mockResolvedValue(undefined);
+const mockTabsContextKey = Symbol('mock-tabs-context');
 
 vi.mock('@/composables/axios', () => ({
   useDataApi: (
@@ -237,7 +238,37 @@ vi.mock('@/volt/TertiaryButton.vue', () => ({
 vi.mock('@/volt/Tabs.vue', () => ({
   default: {
     name: 'Tabs',
-    template: '<div><slot /></div>',
+    props: ['value'],
+    emits: ['update:value'],
+    setup(
+      props: any,
+      {
+        emit,
+        slots,
+      }: {
+        emit: (event: string, value: string) => void;
+        slots: { default?: () => unknown[] };
+      },
+    ) {
+      const activeValue = ref(props.value ?? '');
+
+      watch(
+        () => props.value,
+        (value) => {
+          activeValue.value = value ?? '';
+        },
+      );
+
+      provide(mockTabsContextKey, {
+        activeValue,
+        setValue: (value: string) => {
+          activeValue.value = value;
+          emit('update:value', value);
+        },
+      });
+
+      return () => h('div', slots.default ? (slots.default() as never[]) : []);
+    },
   },
 }));
 
@@ -251,7 +282,25 @@ vi.mock('@/volt/TabList.vue', () => ({
 vi.mock('@/volt/Tab.vue', () => ({
   default: {
     name: 'Tab',
-    template: '<button type="button"><slot /></button>',
+    props: ['value'],
+    setup(
+      props: { value?: string },
+      { slots }: { slots: { default?: () => unknown[] } },
+    ) {
+      const context = inject(mockTabsContextKey, null) as {
+        setValue: (value: string) => void;
+      } | null;
+
+      return () =>
+        h(
+          'button',
+          {
+            type: 'button',
+            onClick: () => context?.setValue(props.value ?? ''),
+          },
+          slots.default ? (slots.default() as never[]) : [],
+        );
+    },
   },
 }));
 
@@ -265,7 +314,20 @@ vi.mock('@/volt/TabPanels.vue', () => ({
 vi.mock('@/volt/TabPanel.vue', () => ({
   default: {
     name: 'TabPanel',
-    template: '<section><slot /></section>',
+    props: ['value'],
+    setup(
+      props: { value?: string },
+      { slots }: { slots: { default?: () => unknown[] } },
+    ) {
+      const context = inject(mockTabsContextKey, null) as {
+        activeValue: { value: string };
+      } | null;
+
+      return () =>
+        context?.activeValue.value === props.value
+          ? h('section', slots.default ? (slots.default() as never[]) : [])
+          : null;
+    },
   },
 }));
 
@@ -342,6 +404,11 @@ describe('AgentsView', () => {
 
     expect(wrapper.text()).toContain('agent-one');
     expect(mockLoadKeys).toHaveBeenCalledWith('/api/admin/agents/agent-1/keys');
+    expect(wrapper.text()).not.toContain('client-id-1');
+
+    await findButtonByText(wrapper, 'Manage Keys')!.trigger('click');
+    await flushPromises();
+
     expect(wrapper.text()).toContain('client-id-1');
   });
 
@@ -397,6 +464,9 @@ describe('AgentsView', () => {
     const wrapper = mountView();
     await flushPromises();
 
+    await findButtonByText(wrapper, 'Manage Keys')!.trigger('click');
+    await flushPromises();
+
     await findButtonByText(wrapper, 'Create Service Account Key')!.trigger(
       'click',
     );
@@ -423,6 +493,9 @@ describe('AgentsView', () => {
 
   it('creates an expiring service account key with a future expiry', async () => {
     const wrapper = mountView();
+    await flushPromises();
+
+    await findButtonByText(wrapper, 'Manage Keys')!.trigger('click');
     await flushPromises();
 
     await findButtonByText(wrapper, 'Create Service Account Key')!.trigger(
@@ -452,6 +525,9 @@ describe('AgentsView', () => {
 
   it('revokes a key and refreshes the data', async () => {
     const wrapper = mountView();
+    await flushPromises();
+
+    await findButtonByText(wrapper, 'Manage Keys')!.trigger('click');
     await flushPromises();
 
     await findButtonByText(wrapper, 'Revoke')!.trigger('click');
