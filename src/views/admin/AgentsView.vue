@@ -382,6 +382,8 @@
           id="agent-key-expires-at-input"
           v-model="keyForm.expiresAt"
           type="datetime-local"
+          :required="!keyForm.neverExpires"
+          :min="minExpiryInput"
           class="form-input"
         />
       </div>
@@ -617,6 +619,10 @@ const authCurlCommand = computed(() => {
   '${authUrl}'`;
 });
 
+const minExpiryInput = computed(() => {
+  return formatDateTimeLocalInput(new Date());
+});
+
 watch(
   () => agents.value,
   (items) => {
@@ -666,6 +672,15 @@ watch(
       error,
       "You don't have access to service account keys.",
     );
+  },
+);
+
+watch(
+  () => credentialsDialogVisible.value,
+  (visible) => {
+    if (!visible) {
+      createdCredentials.value = null;
+    }
   },
 );
 
@@ -1002,7 +1017,6 @@ async function copyText(value: string, successMessage: string) {
 
 function closeCredentialsDialog() {
   credentialsDialogVisible.value = false;
-  createdCredentials.value = null;
 }
 
 function getApiErrorMessage(error: unknown, fallbackMessage: string): string {
@@ -1045,6 +1059,11 @@ function formatDateTime(value?: string | null): string {
   }
 
   return date.toLocaleString();
+}
+
+function formatDateTimeLocalInput(value: Date): string {
+  const local = new Date(value.getTime() - value.getTimezoneOffset() * 60000);
+  return local.toISOString().slice(0, 16);
 }
 
 function getAgentStatusClass(agent: Agent): string {
