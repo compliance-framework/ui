@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import { ref, shallowRef } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
@@ -275,6 +275,8 @@ describe('AgentsView', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-04-06T00:00:00Z'));
 
     agents.value = [
       {
@@ -309,6 +311,10 @@ describe('AgentsView', () => {
     createAgentLoading.value = false;
     updateAgentLoading.value = false;
     createKeyLoading.value = false;
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   const findButtonByText = (
@@ -425,9 +431,10 @@ describe('AgentsView', () => {
 
     const checkbox = wrapper.findAll('input[type="checkbox"]')[0];
     await checkbox.setValue(false);
+    const expiryInputValue = '2026-04-07T09:30';
     await wrapper
       .find('input[type="datetime-local"]')
-      .setValue('2026-04-07T09:30');
+      .setValue(expiryInputValue);
 
     await wrapper.find('form').trigger('submit');
     await flushPromises();
@@ -437,7 +444,7 @@ describe('AgentsView', () => {
       {
         data: {
           neverExpires: false,
-          expiresAt: new Date('2026-04-07T09:30').toISOString(),
+          expiresAt: new Date(expiryInputValue).toISOString(),
         },
       },
     );

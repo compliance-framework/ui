@@ -50,7 +50,12 @@
                 'hover:bg-slate-50 dark:hover:bg-slate-800/40':
                   agent.id !== selectedAgentId,
               }"
-              @click="selectedAgentId = agent.id"
+              role="button"
+              tabindex="0"
+              :aria-pressed="agent.id === selectedAgentId"
+              @click="selectAgent(agent.id)"
+              @keydown.enter="selectAgent(agent.id)"
+              @keydown.space.prevent="selectAgent(agent.id)"
             >
               <td
                 class="table-cell font-medium text-gray-900 dark:text-slate-200"
@@ -292,10 +297,11 @@
   >
     <form class="space-y-4 p-1" @submit.prevent="submitAgent">
       <div>
-        <label class="form-label">
+        <label class="form-label" for="agent-name-input">
           Name <span class="text-red-500">*</span>
         </label>
         <input
+          id="agent-name-input"
           v-model="agentForm.name"
           type="text"
           required
@@ -305,8 +311,11 @@
       </div>
 
       <div>
-        <label class="form-label">Description</label>
+        <label class="form-label" for="agent-description-input">
+          Description
+        </label>
         <textarea
+          id="agent-description-input"
           v-model="agentForm.description"
           rows="3"
           placeholder="Optional description"
@@ -344,8 +353,9 @@
   >
     <form class="space-y-4 p-1" @submit.prevent="submitKey">
       <div>
-        <label class="form-label">Key Name</label>
+        <label class="form-label" for="agent-key-name-input">Key Name</label>
         <input
+          id="agent-key-name-input"
           v-model="keyForm.name"
           type="text"
           placeholder="e.g. primary"
@@ -365,10 +375,11 @@
       </label>
 
       <div v-if="!keyForm.neverExpires">
-        <label class="form-label">
+        <label class="form-label" for="agent-key-expires-at-input">
           Expires At <span class="text-red-500">*</span>
         </label>
         <input
+          id="agent-key-expires-at-input"
           v-model="keyForm.expiresAt"
           type="datetime-local"
           class="form-input"
@@ -710,8 +721,12 @@ function openCreateAgentDialog() {
   agentDialogVisible.value = true;
 }
 
+function selectAgent(agentId: string) {
+  selectedAgentId.value = agentId;
+}
+
 function openEditAgentDialog(agent: Agent) {
-  selectedAgentId.value = agent.id;
+  selectAgent(agent.id);
   agentDialogMode.value = 'edit';
   agentForm.value = {
     name: agent.name,
@@ -1139,7 +1154,9 @@ function getKeyStatusClass(key: AgentServiceAccountKey): string {
 .command-preview {
   @apply mt-2 overflow-x-auto rounded-md border border-slate-200 bg-slate-950 px-4 py-3 text-sm text-slate-100 dark:border-slate-700;
 }
+</style>
 
+<style>
 .custom-colors .p-dialog-content {
   background-color: white;
   color: #1f2937;
