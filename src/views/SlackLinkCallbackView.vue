@@ -27,7 +27,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { isNavigationFailure, useRoute, useRouter } from 'vue-router';
 import {
   CALLBACK_CODE_QUERY_KEY,
   CALLBACK_STATUS_QUERY_KEY,
@@ -76,10 +76,14 @@ const buildPreferencesQuery = () => {
 };
 
 const goToPreferences = async () => {
-  await router.replace({
+  const navigationResult = await router.replace({
     name: 'preferences',
     query: buildPreferencesQuery(),
   });
+
+  if (isNavigationFailure(navigationResult)) {
+    showReturnButton.value = true;
+  }
 };
 
 onMounted(() => {

@@ -7,13 +7,22 @@ import {
 } from '@/utils/slack-link-callback';
 import SlackLinkCallbackView from '../SlackLinkCallbackView.vue';
 
-const mockRoute = {
-  query: {} as Record<string, unknown>,
-};
-
-const mockReplace = vi.fn();
+const { mockRoute, mockReplace, mockIsNavigationFailure } = vi.hoisted(() => ({
+  mockRoute: {
+    query: {} as Record<string, unknown>,
+  },
+  mockReplace: vi.fn(),
+  mockIsNavigationFailure: vi.fn(
+    (value: unknown) =>
+      typeof value === 'object' &&
+      value !== null &&
+      '__navigationFailure' in value &&
+      value.__navigationFailure === true,
+  ),
+}));
 
 vi.mock('vue-router', () => ({
+  isNavigationFailure: mockIsNavigationFailure,
   useRoute: () => mockRoute,
   useRouter: () => ({
     replace: mockReplace,
@@ -82,5 +91,22 @@ describe('SlackLinkCallbackView', () => {
       'Slack linking failed. Click below to return to Preferences.',
     );
     expect(wrapper.find('button').text()).toContain('Return to Preferences');
+  });
+
+  it('falls back to manual return button when redirect resolves with a navigation failure', async () => {
+    mockRoute.query = {
+      status: 'error',
+    };
+    mockReplace.mockResolvedValueOnce({ __navigationFailure: true });
+
+    const wrapper = mount(SlackLinkCallbackView);
+    await vi.waitFor(() => {
+      expect(wrapper.find('button').exists()).toBe(true);
+    });
+
+    expect(wrapper.text()).toContain(
+      'Slack linking failed. Click below to return to Preferences.',
+    );
+    expect(mockIsNavigationFailure).toHaveBeenCalled();
   });
 });

@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { afterEach, describe, it, expect } from 'vitest';
 import { mount } from '@vue/test-utils';
 import MultiSelectDropdown from '../forms/MultiSelectDropdown.vue';
 
@@ -7,6 +7,12 @@ describe('MultiSelectDropdown', () => {
     { label: 'Email', value: 'email' },
     { label: 'Slack', value: 'slack' },
   ];
+  const cleanupElements: HTMLElement[] = [];
+
+  afterEach(() => {
+    cleanupElements.forEach((element) => element.remove());
+    cleanupElements.length = 0;
+  });
 
   it('applies aria-labelledby from an explicit prop', () => {
     const wrapper = mount(MultiSelectDropdown, {
@@ -44,5 +50,64 @@ describe('MultiSelectDropdown', () => {
 
     const trigger = wrapper.find('button');
     expect(trigger.attributes('aria-labelledby')).toBeUndefined();
+  });
+
+  it('closes the dropdown when Escape is pressed', async () => {
+    const wrapper = mount(MultiSelectDropdown, {
+      attachTo: document.body,
+      props: {
+        options,
+      },
+    });
+
+    const trigger = wrapper.find('button');
+    await trigger.trigger('click');
+
+    expect((wrapper.vm as unknown as { isOpen: boolean }).isOpen).toBe(true);
+
+    const checkbox = wrapper.find('input[type="checkbox"]');
+    (checkbox.element as HTMLInputElement).focus();
+    await checkbox.trigger('keydown', { key: 'Escape' });
+
+    expect((wrapper.vm as unknown as { isOpen: boolean }).isOpen).toBe(false);
+    expect(document.activeElement).toBe(trigger.element);
+  });
+
+  it('keeps the dropdown open when focus moves within the component', async () => {
+    const wrapper = mount(MultiSelectDropdown, {
+      attachTo: document.body,
+      props: {
+        options,
+      },
+    });
+
+    await wrapper.find('button').trigger('click');
+    const checkbox = wrapper.find('input[type="checkbox"]');
+
+    await wrapper.trigger('focusout', {
+      relatedTarget: checkbox.element,
+    });
+
+    expect((wrapper.vm as unknown as { isOpen: boolean }).isOpen).toBe(true);
+  });
+
+  it('closes the dropdown when focus leaves the component', async () => {
+    const wrapper = mount(MultiSelectDropdown, {
+      attachTo: document.body,
+      props: {
+        options,
+      },
+    });
+
+    const outsideButton = document.createElement('button');
+    document.body.appendChild(outsideButton);
+    cleanupElements.push(outsideButton);
+
+    await wrapper.find('button').trigger('click');
+    await wrapper.trigger('focusout', {
+      relatedTarget: outsideButton,
+    });
+
+    expect((wrapper.vm as unknown as { isOpen: boolean }).isOpen).toBe(false);
   });
 });

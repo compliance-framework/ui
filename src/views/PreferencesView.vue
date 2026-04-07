@@ -241,6 +241,10 @@ interface SubscriptionsPreferencesPayload {
   };
 }
 
+interface UpdateNotificationPreferencesOptions {
+  silent?: boolean;
+}
+
 interface SlackAvailabilityState {
   loading: boolean;
   configured: boolean;
@@ -248,9 +252,9 @@ interface SlackAvailabilityState {
 }
 
 const normalizeNotificationChannels = (
-  channels: NotificationAlertChannel[] | undefined,
+  channels: unknown,
 ): NotificationAlertChannel[] => {
-  if (!channels) {
+  if (!Array.isArray(channels)) {
     return [];
   }
 
@@ -323,7 +327,7 @@ const removeSlackChannels = (
 
 const removeUnavailableSlackSelections = () => {
   if (slackStatusLoading.value || canSelectSlackAlertChannel.value) {
-    return;
+    return false;
   }
 
   const sanitizedEvidenceDigestChannels = removeSlackChannels(
@@ -345,26 +349,99 @@ const removeUnavailableSlackSelections = () => {
       taskDailyDigestAlertChannels.value.length;
 
   if (!hadUnavailableSlackSelection) {
-    return;
+    return false;
   }
 
   evidenceDigestAlertChannels.value = sanitizedEvidenceDigestChannels;
   taskAvailableAlertChannels.value = sanitizedTaskAvailableChannels;
   taskDailyDigestAlertChannels.value = sanitizedTaskDailyDigestChannels;
 
-  lastSavedPreferences.value = {
-    notifications: {
-      evidence_digest: removeSlackChannels(
-        lastSavedPreferences.value.notifications.evidence_digest,
-      ),
-      task_available: removeSlackChannels(
-        lastSavedPreferences.value.notifications.task_available,
-      ),
-      task_daily_digest: removeSlackChannels(
-        lastSavedPreferences.value.notifications.task_daily_digest,
-      ),
-    },
+  return true;
+};
+
+const buildNotificationPreferencesPayload =
+  (): SubscriptionsPreferencesPayload => {
+    const persistedEvidenceDigestChannels = sanitizeNotificationChannels(
+      evidenceDigestAlertChannels.value,
+    );
+    const persistedTaskAvailableChannels = sanitizeNotificationChannels(
+      taskAvailableAlertChannels.value,
+    );
+    const persistedTaskDailyDigestChannels = sanitizeNotificationChannels(
+      taskDailyDigestAlertChannels.value,
+    );
+
+    return {
+      notifications: {
+        evidence_digest: persistedEvidenceDigestChannels,
+        task_available: persistedTaskAvailableChannels,
+        task_daily_digest: persistedTaskDailyDigestChannels,
+      },
+    };
   };
+
+const revertToLastSavedNotificationPreferences = () => {
+  evidenceDigestAlertChannels.value = sanitizeNotificationChannels([
+    ...lastSavedPreferences.value.notifications.evidence_digest,
+  ]);
+  taskAvailableAlertChannels.value = sanitizeNotificationChannels([
+    ...lastSavedPreferences.value.notifications.task_available,
+  ]);
+  taskDailyDigestAlertChannels.value = sanitizeNotificationChannels([
+    ...lastSavedPreferences.value.notifications.task_daily_digest,
+  ]);
+};
+
+const updateNotificationPreferences = async (
+  options: UpdateNotificationPreferencesOptions = {},
+) => {
+  const { silent = false } = options;
+
+  updating.value = true;
+  updateError.value = null;
+  updateSuccess.value = false;
+
+  if (successTimeoutId.value) {
+    clearTimeout(successTimeoutId.value);
+    successTimeoutId.value = null;
+  }
+
+  const payload = buildNotificationPreferencesPayload();
+
+  try {
+    await axios.put('/api/users/me/subscriptions', payload);
+
+    lastSavedPreferences.value = {
+      notifications: {
+        evidence_digest: [...payload.notifications.evidence_digest],
+        task_available: [...payload.notifications.task_available],
+        task_daily_digest: [...payload.notifications.task_daily_digest],
+      },
+    };
+
+    if (!silent) {
+      updateSuccess.value = true;
+      // Hide success message after 3 seconds
+      successTimeoutId.value = window.setTimeout(() => {
+        updateSuccess.value = false;
+      }, 3000);
+    }
+  } catch (error) {
+    console.error('Error updating notification preferences:', error);
+    updateError.value = 'Failed to update preferences. Please try again.';
+
+    revertToLastSavedNotificationPreferences();
+  } finally {
+    updating.value = false;
+  }
+};
+
+const syncUnavailableSlackSelections = async () => {
+  if (!removeUnavailableSlackSelections()) {
+    return;
+  }
+
+  await updateNotificationPreferences({ silent: true });
 };
 
 const notificationChannelOptions = computed<
@@ -461,7 +538,7 @@ const loadUserData = async () => {
       },
     };
 
-    removeUnavailableSlackSelections();
+    await syncUnavailableSlackSelections();
   } catch (error) {
     console.error('Error loading user data:', error);
     loadError.value =
@@ -475,21 +552,21 @@ const onEvidenceDigestChannelsChange = async (
   channels: NotificationAlertChannel[],
 ) => {
   evidenceDigestAlertChannels.value = sanitizeNotificationChannels(channels);
-  await updateEmailPreferences();
+  await updateNotificationPreferences();
 };
 
 const onTaskAvailableChannelsChange = async (
   channels: NotificationAlertChannel[],
 ) => {
   taskAvailableAlertChannels.value = sanitizeNotificationChannels(channels);
-  await updateEmailPreferences();
+  await updateNotificationPreferences();
 };
 
 const onTaskDailyDigestChannelsChange = async (
   channels: NotificationAlertChannel[],
 ) => {
   taskDailyDigestAlertChannels.value = sanitizeNotificationChannels(channels);
-  await updateEmailPreferences();
+  await updateNotificationPreferences();
 };
 
 const onSlackLinkStatusChange = (state: SlackAvailabilityState) => {
@@ -498,70 +575,9 @@ const onSlackLinkStatusChange = (state: SlackAvailabilityState) => {
   isSlackLinked.value = state.linked;
 };
 
-watch(
-  [slackStatusLoading, canSelectSlackAlertChannel],
-  removeUnavailableSlackSelections,
-);
-
-// Update email preferences
-const updateEmailPreferences = async () => {
-  updating.value = true;
-  updateError.value = null;
-  updateSuccess.value = false;
-
-  try {
-    const persistedEvidenceDigestChannels = sanitizeNotificationChannels(
-      evidenceDigestAlertChannels.value,
-    );
-    const persistedTaskAvailableChannels = sanitizeNotificationChannels(
-      taskAvailableAlertChannels.value,
-    );
-    const persistedTaskDailyDigestChannels = sanitizeNotificationChannels(
-      taskDailyDigestAlertChannels.value,
-    );
-    await axios.put('/api/users/me/subscriptions', {
-      notifications: {
-        evidence_digest: persistedEvidenceDigestChannels,
-        task_available: persistedTaskAvailableChannels,
-        task_daily_digest: persistedTaskDailyDigestChannels,
-      },
-    });
-
-    lastSavedPreferences.value = {
-      notifications: {
-        evidence_digest: persistedEvidenceDigestChannels,
-        task_available: persistedTaskAvailableChannels,
-        task_daily_digest: persistedTaskDailyDigestChannels,
-      },
-    };
-
-    if (successTimeoutId.value) {
-      clearTimeout(successTimeoutId.value);
-    }
-
-    updateSuccess.value = true;
-    // Hide success message after 3 seconds
-    successTimeoutId.value = window.setTimeout(() => {
-      updateSuccess.value = false;
-    }, 3000);
-  } catch (error) {
-    console.error('Error updating email preferences:', error);
-    updateError.value = 'Failed to update preferences. Please try again.';
-
-    // Revert to previous values on error
-    evidenceDigestAlertChannels.value = [
-      ...lastSavedPreferences.value.notifications.evidence_digest,
-    ];
-    taskAvailableAlertChannels.value = [
-      ...lastSavedPreferences.value.notifications.task_available,
-    ];
-    taskDailyDigestAlertChannels.value = [
-      ...lastSavedPreferences.value.notifications.task_daily_digest,
-    ];
-  } finally {
-    updating.value = false;
-  }
-};
+watch([slackStatusLoading, canSelectSlackAlertChannel], () => {
+  void syncUnavailableSlackSelections();
+});
 
 onMounted(() => {
   loadUserData();

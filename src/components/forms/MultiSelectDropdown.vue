@@ -1,6 +1,12 @@
 <template>
-  <div ref="dropdownRef" class="relative inline-block w-full">
+  <div
+    ref="dropdownRef"
+    class="relative inline-block w-full"
+    @focusout="handleFocusOut"
+    @keydown="handleKeydown"
+  >
     <button
+      ref="buttonRef"
       :id="id"
       type="button"
       @click="toggleDropdown"
@@ -101,6 +107,7 @@ const emit = defineEmits<{
 
 const isOpen = ref(false);
 const dropdownRef = ref<HTMLElement | null>(null);
+const buttonRef = ref<HTMLButtonElement | null>(null);
 const resolvedAriaLabelledby = computed(
   () => props.ariaLabelledby || undefined,
 );
@@ -123,6 +130,29 @@ const handleClickOutside = (event: MouseEvent) => {
   ) {
     closeDropdown();
   }
+};
+
+const handleFocusOut = (event: FocusEvent) => {
+  if (
+    dropdownRef.value &&
+    event.relatedTarget instanceof Node &&
+    dropdownRef.value.contains(event.relatedTarget)
+  ) {
+    return;
+  }
+
+  closeDropdown();
+};
+
+const handleKeydown = (event: KeyboardEvent) => {
+  if (!isOpen.value || event.key !== 'Escape') {
+    return;
+  }
+
+  event.preventDefault();
+  event.stopPropagation();
+  closeDropdown();
+  buttonRef.value?.focus();
 };
 
 const toggleOption = (value: T) => {

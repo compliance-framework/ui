@@ -47,11 +47,13 @@ const emitSlackStatus = async (
     .getComponent({ name: 'SlackAccountLinkSection' })
     .vm.$emit('status-change', state);
   await nextTick();
+  await flushPromises();
+  await nextTick();
 };
 
 interface PreferencesViewTestVm extends ComponentPublicInstance {
   [key: string]: unknown;
-  updateEmailPreferences: () => Promise<void>;
+  updateNotificationPreferences: () => Promise<void>;
   onTaskAvailableChannelsChange: (channels: string[]) => Promise<void>;
   onEvidenceDigestChannelsChange: (channels: string[]) => Promise<void>;
   onTaskDailyDigestChannelsChange: (channels: string[]) => Promise<void>;
@@ -172,10 +174,10 @@ describe('PreferencesView', () => {
       expect(typeof wrapper.vm.loadUserData).toBe('function');
     });
 
-    it('has updateEmailPreferences method', () => {
+    it('has updateNotificationPreferences method', () => {
       wrapper = mountPreferencesView();
 
-      expect(typeof wrapper.vm.updateEmailPreferences).toBe('function');
+      expect(typeof wrapper.vm.updateNotificationPreferences).toBe('function');
     });
   });
 
@@ -318,6 +320,51 @@ describe('PreferencesView', () => {
       expect(wrapper.vm.evidenceDigestAlertChannels).toEqual([]);
       expect(wrapper.vm.taskAvailableAlertChannels).toEqual(['email']);
     });
+
+    it('falls back to empty selections when notification channels are malformed', async () => {
+      mockAxios.get.mockImplementation((url: string) => {
+        if (url === '/api/users/me') {
+          return Promise.resolve({
+            data: {
+              data: {
+                id: 'user-1',
+                email: 'user@example.com',
+                firstName: 'User',
+                lastName: 'Example',
+                failedLogins: 0,
+              },
+            },
+          });
+        }
+
+        if (url === '/api/users/me/subscriptions') {
+          return Promise.resolve({
+            data: {
+              data: {
+                notifications: {
+                  evidenceDigest: 'email',
+                  taskAvailable: { channel: 'email' },
+                  taskDailyDigest: 123,
+                },
+              },
+            },
+          });
+        }
+
+        return Promise.reject(new Error(`Unexpected GET URL: ${url}`));
+      });
+
+      wrapper = mountPreferencesView();
+
+      await Promise.resolve();
+      await nextTick();
+
+      expect(wrapper.vm.evidenceDigestAlertChannels).toEqual([]);
+      expect(wrapper.vm.taskAvailableAlertChannels).toEqual([]);
+      expect(wrapper.vm.taskDailyDigestAlertChannels).toEqual([]);
+      expect(wrapper.vm.loadError).toBeNull();
+    });
+
     it('sends all email preference fields when updating', async () => {
       wrapper = mountPreferencesView();
 
@@ -333,7 +380,7 @@ describe('PreferencesView', () => {
       wrapper.vm.taskAvailableAlertChannels = ['email', 'slack'];
       wrapper.vm.taskDailyDigestAlertChannels = ['email'];
 
-      await wrapper.vm.updateEmailPreferences();
+      await wrapper.vm.updateNotificationPreferences();
 
       expect(mockAxios.put).toHaveBeenCalledWith(
         '/api/users/me/subscriptions',
@@ -517,6 +564,16 @@ describe('PreferencesView', () => {
             'Slack alerts are unavailable because Slack integration is not configured for this environment.',
         },
       ]);
+      expect(mockAxios.put).toHaveBeenLastCalledWith(
+        '/api/users/me/subscriptions',
+        {
+          notifications: {
+            evidence_digest: [],
+            task_available: ['email'],
+            task_daily_digest: [],
+          },
+        },
+      );
 
       await wrapper.vm.onTaskAvailableChannelsChange(['email', 'slack']);
 
@@ -570,6 +627,16 @@ describe('PreferencesView', () => {
           task_daily_digest: ['email'],
         },
       });
+      expect(mockAxios.put).toHaveBeenLastCalledWith(
+        '/api/users/me/subscriptions',
+        {
+          notifications: {
+            evidence_digest: ['email'],
+            task_available: [],
+            task_daily_digest: ['email'],
+          },
+        },
+      );
     });
 
     it('disables Slack task alerts when the Slack account is not linked', async () => {
