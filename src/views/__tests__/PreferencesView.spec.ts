@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { mount, type VueWrapper } from '@vue/test-utils';
+import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { nextTick, type ComponentPublicInstance } from 'vue';
 import PreferencesView from '../PreferencesView.vue';
@@ -41,8 +41,10 @@ const emitSlackStatus = async (
   wrapper: VueWrapper<ComponentPublicInstance>,
   state: { loading: boolean; configured: boolean; linked: boolean },
 ) => {
+  await flushPromises();
+  await nextTick();
   wrapper
-    .findComponent({ name: 'SlackAccountLinkSection' })
+    .getComponent({ name: 'SlackAccountLinkSection' })
     .vm.$emit('status-change', state);
   await nextTick();
 };
@@ -56,14 +58,7 @@ interface PreferencesViewTestVm extends ComponentPublicInstance {
 }
 
 const mountPreferencesView = () =>
-  mount(PreferencesView, {
-    global: {
-      stubs: {
-        PageHeader: true,
-        PageCard: true,
-      },
-    },
-  }) as unknown as VueWrapper<PreferencesViewTestVm>;
+  mount(PreferencesView) as unknown as VueWrapper<PreferencesViewTestVm>;
 
 describe('PreferencesView', () => {
   let wrapper: VueWrapper<PreferencesViewTestVm>;
