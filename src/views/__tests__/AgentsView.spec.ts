@@ -241,7 +241,7 @@ vi.mock('@/volt/Tabs.vue', () => ({
     props: ['value'],
     emits: ['update:value'],
     setup(
-      props: any,
+      props: Readonly<{ value?: string | null }>,
       {
         emit,
         slots,
