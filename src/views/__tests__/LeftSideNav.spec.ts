@@ -44,12 +44,14 @@ describe('LeftSideNav', () => {
       .filter((text) => text.length > 0);
 
     const systemUsersIndex = linkTexts.indexOf('System Users');
+    const agentsIndex = linkTexts.indexOf('Agents');
     const risksIndex = linkTexts.indexOf('Risks');
     const subjectTemplatesIndex = linkTexts.indexOf('Subject Templates');
     const riskTemplatesIndex = linkTexts.indexOf('Risk Templates');
 
     expect(systemUsersIndex).toBeGreaterThanOrEqual(0);
-    expect(risksIndex).toBeGreaterThan(systemUsersIndex);
+    expect(agentsIndex).toBeGreaterThan(systemUsersIndex);
+    expect(risksIndex).toBeGreaterThan(agentsIndex);
     expect(subjectTemplatesIndex).toBeGreaterThan(risksIndex);
     expect(riskTemplatesIndex).toBeGreaterThan(subjectTemplatesIndex);
   });
