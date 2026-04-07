@@ -54,8 +54,8 @@
               tabindex="0"
               :aria-pressed="agent.id === selectedAgentId"
               @click="selectAgent(agent.id)"
-              @keydown.enter="selectAgent(agent.id)"
-              @keydown.space.prevent="selectAgent(agent.id)"
+              @keydown.enter.self="selectAgent(agent.id)"
+              @keydown.space.self.prevent="selectAgent(agent.id)"
             >
               <td
                 class="table-cell font-medium text-gray-900 dark:text-slate-200"
@@ -620,7 +620,10 @@ const authCurlCommand = computed(() => {
 });
 
 const minExpiryInput = computed(() => {
-  return formatDateTimeLocalInput(new Date());
+  const nextMinute = new Date();
+  nextMinute.setSeconds(0, 0);
+  nextMinute.setMinutes(nextMinute.getMinutes() + 1);
+  return formatDateTimeLocalInput(nextMinute);
 });
 
 watch(
@@ -835,7 +838,12 @@ function confirmDeleteAgent(agent: Agent) {
 
 async function deleteAgent(agent: Agent) {
   try {
+    const deletedSelectedAgent = selectedAgentId.value === agent.id;
     await executeDeleteAgent(`/api/admin/agents/${agent.id}`);
+    if (deletedSelectedAgent) {
+      selectedAgentId.value = null;
+      agentKeys.value = [];
+    }
     await loadAgents();
     toast.add({
       severity: 'success',

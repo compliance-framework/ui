@@ -467,6 +467,20 @@ describe('AgentsView', () => {
     expect(mockLoadKeys).toHaveBeenCalledWith('/api/admin/agents/agent-1/keys');
   });
 
+  it('deletes an agent and refreshes the list', async () => {
+    const wrapper = mountView();
+    await flushPromises();
+
+    await findButtonByText(wrapper, 'Delete')!.trigger('click');
+    expect(confirmRequire).toHaveBeenCalledTimes(1);
+
+    await confirmRequire.mock.calls[0][0].accept();
+    await flushPromises();
+
+    expect(mockDeleteRequest).toHaveBeenCalledWith('/api/admin/agents/agent-1');
+    expect(mockLoadAgents).toHaveBeenCalled();
+  });
+
   it('shows the empty state when there are no agents', async () => {
     agents.value = [];
 
