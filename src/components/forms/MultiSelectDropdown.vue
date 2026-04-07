@@ -1,10 +1,13 @@
 <template>
   <div ref="dropdownRef" class="relative inline-block w-full">
     <button
+      :id="id"
+      type="button"
       @click="toggleDropdown"
       :disabled="disabled"
       class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:cursor-not-allowed disabled:opacity-60 text-left flex items-center justify-between"
-      :aria-labelledby="`${id}-label`"
+      :aria-labelledby="resolvedAriaLabelledby"
+      :aria-label="ariaLabel"
       aria-haspopup="true"
       :aria-expanded="isOpen"
     >
@@ -83,11 +86,12 @@ const props = withDefaults(
     disabled?: boolean;
     placeholder?: string;
     id?: string;
+    ariaLabelledby?: string;
+    ariaLabel?: string;
   }>(),
   {
     disabled: false,
     placeholder: 'Select options',
-    id: 'multi-select-dropdown',
   },
 );
 
@@ -97,6 +101,9 @@ const emit = defineEmits<{
 
 const isOpen = ref(false);
 const dropdownRef = ref<HTMLElement | null>(null);
+const resolvedAriaLabelledby = computed(
+  () => props.ariaLabelledby || undefined,
+);
 
 const toggleDropdown = () => {
   if (!props.disabled) {

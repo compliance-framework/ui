@@ -50,13 +50,17 @@ const callbackCode = computed(() => {
 });
 
 const statusMessage = computed(() => {
+  const redirectSuffix = showReturnButton.value
+    ? 'Click below to return to Preferences.'
+    : 'Returning to Preferences...';
+
   if (callbackStatus.value === 'success') {
-    return 'Slack linking completed. Returning to Preferences...';
+    return `Slack linking completed. ${redirectSuffix}`;
   }
   if (callbackCode.value) {
-    return `Slack linking failed (${callbackCode.value}). Returning to Preferences...`;
+    return `Slack linking failed (${callbackCode.value}). ${redirectSuffix}`;
   }
-  return 'Slack linking failed. Returning to Preferences...';
+  return `Slack linking failed. ${redirectSuffix}`;
 });
 
 const buildPreferencesQuery = () => {

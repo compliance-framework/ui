@@ -506,7 +506,7 @@ describe('PreferencesView', () => {
         linked: false,
       });
 
-      expect(wrapper.vm.taskAvailableAlertChannels).toEqual(['email', 'slack']);
+      expect(wrapper.vm.taskAvailableAlertChannels).toEqual(['email']);
       expect(wrapper.vm.notificationChannelOptions).toEqual([
         { label: 'Email', value: 'email' },
         {
@@ -530,6 +530,46 @@ describe('PreferencesView', () => {
           },
         },
       );
+    });
+
+    it('removes Slack from all selected notification channels when Slack becomes unavailable', async () => {
+      wrapper = mountPreferencesView();
+
+      await Promise.resolve();
+      await nextTick();
+      await emitSlackStatus(wrapper, {
+        loading: false,
+        configured: true,
+        linked: true,
+      });
+
+      wrapper.vm.evidenceDigestAlertChannels = ['email', 'slack'];
+      wrapper.vm.taskAvailableAlertChannels = ['slack'];
+      wrapper.vm.taskDailyDigestAlertChannels = ['email', 'slack'];
+      wrapper.vm.lastSavedPreferences = {
+        notifications: {
+          evidence_digest: ['email', 'slack'],
+          task_available: ['slack'],
+          task_daily_digest: ['email', 'slack'],
+        },
+      };
+
+      await emitSlackStatus(wrapper, {
+        loading: false,
+        configured: true,
+        linked: false,
+      });
+
+      expect(wrapper.vm.evidenceDigestAlertChannels).toEqual(['email']);
+      expect(wrapper.vm.taskAvailableAlertChannels).toEqual([]);
+      expect(wrapper.vm.taskDailyDigestAlertChannels).toEqual(['email']);
+      expect(wrapper.vm.lastSavedPreferences).toEqual({
+        notifications: {
+          evidence_digest: ['email'],
+          task_available: [],
+          task_daily_digest: ['email'],
+        },
+      });
     });
 
     it('disables Slack task alerts when the Slack account is not linked', async () => {

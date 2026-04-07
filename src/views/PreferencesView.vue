@@ -68,6 +68,7 @@
                     :disabled="updating"
                     placeholder="Select channels"
                     id="evidence-digest"
+                    aria-labelledby="evidence-digest-heading"
                     @update:model-value="onEvidenceDigestChannelsChange"
                   />
                 </div>
@@ -108,6 +109,7 @@
                     :disabled="updating"
                     placeholder="Select channels"
                     id="task-available"
+                    aria-labelledby="task-available-heading"
                     @update:model-value="onTaskAvailableChannelsChange"
                   />
                 </div>
@@ -138,6 +140,7 @@
                     :disabled="updating"
                     placeholder="Select channels"
                     id="task-digest"
+                    aria-labelledby="task-digest-heading"
                     @update:model-value="onTaskDailyDigestChannelsChange"
                   />
                 </div>
@@ -203,7 +206,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted, onUnmounted } from 'vue';
+import { computed, ref, onMounted, onUnmounted, watch } from 'vue';
 import { useAuthenticatedInstance } from '@/composables/axios';
 import type { CCFUser } from '@/stores/types';
 import PageHeader from '@/components/PageHeader.vue';
@@ -312,6 +315,58 @@ const sanitizeNotificationChannels = (
   );
 };
 
+const removeSlackChannels = (
+  channels: NotificationAlertChannel[],
+): NotificationAlertChannel[] => {
+  return channels.filter((channel) => channel !== 'slack');
+};
+
+const removeUnavailableSlackSelections = () => {
+  if (slackStatusLoading.value || canSelectSlackAlertChannel.value) {
+    return;
+  }
+
+  const sanitizedEvidenceDigestChannels = removeSlackChannels(
+    evidenceDigestAlertChannels.value,
+  );
+  const sanitizedTaskAvailableChannels = removeSlackChannels(
+    taskAvailableAlertChannels.value,
+  );
+  const sanitizedTaskDailyDigestChannels = removeSlackChannels(
+    taskDailyDigestAlertChannels.value,
+  );
+
+  const hadUnavailableSlackSelection =
+    sanitizedEvidenceDigestChannels.length !==
+      evidenceDigestAlertChannels.value.length ||
+    sanitizedTaskAvailableChannels.length !==
+      taskAvailableAlertChannels.value.length ||
+    sanitizedTaskDailyDigestChannels.length !==
+      taskDailyDigestAlertChannels.value.length;
+
+  if (!hadUnavailableSlackSelection) {
+    return;
+  }
+
+  evidenceDigestAlertChannels.value = sanitizedEvidenceDigestChannels;
+  taskAvailableAlertChannels.value = sanitizedTaskAvailableChannels;
+  taskDailyDigestAlertChannels.value = sanitizedTaskDailyDigestChannels;
+
+  lastSavedPreferences.value = {
+    notifications: {
+      evidence_digest: removeSlackChannels(
+        lastSavedPreferences.value.notifications.evidence_digest,
+      ),
+      task_available: removeSlackChannels(
+        lastSavedPreferences.value.notifications.task_available,
+      ),
+      task_daily_digest: removeSlackChannels(
+        lastSavedPreferences.value.notifications.task_daily_digest,
+      ),
+    },
+  };
+};
+
 const notificationChannelOptions = computed<
   Array<{
     label: string;
@@ -405,6 +460,8 @@ const loadUserData = async () => {
         task_daily_digest: [...taskDailyDigestAlertChannels.value],
       },
     };
+
+    removeUnavailableSlackSelections();
   } catch (error) {
     console.error('Error loading user data:', error);
     loadError.value =
@@ -440,6 +497,11 @@ const onSlackLinkStatusChange = (state: SlackAvailabilityState) => {
   slackLinkConfigured.value = state.configured;
   isSlackLinked.value = state.linked;
 };
+
+watch(
+  [slackStatusLoading, canSelectSlackAlertChannel],
+  removeUnavailableSlackSelections,
+);
 
 // Update email preferences
 const updateEmailPreferences = async () => {

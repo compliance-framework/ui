@@ -78,6 +78,9 @@ describe('SlackLinkCallbackView', () => {
       expect(wrapper.find('button').exists()).toBe(true);
     });
 
+    expect(wrapper.text()).toContain(
+      'Slack linking failed. Click below to return to Preferences.',
+    );
     expect(wrapper.find('button').text()).toContain('Return to Preferences');
   });
 });
