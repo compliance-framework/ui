@@ -40,9 +40,7 @@ const router = useRouter();
 const showReturnButton = ref(false);
 
 const callbackStatus = computed(() => {
-  return resolveSlackCallbackStatus(route.query.status) === 'success'
-    ? 'success'
-    : 'error';
+  return resolveSlackCallbackStatus(route.query.status);
 });
 
 const callbackCode = computed(() => {
@@ -57,29 +55,40 @@ const statusMessage = computed(() => {
   if (callbackStatus.value === 'success') {
     return `Slack linking completed. ${redirectSuffix}`;
   }
-  if (callbackCode.value) {
+  if (callbackStatus.value === 'error' && callbackCode.value) {
     return `Slack linking failed (${callbackCode.value}). ${redirectSuffix}`;
   }
-  return `Slack linking failed. ${redirectSuffix}`;
+  if (callbackStatus.value === 'error') {
+    return `Slack linking failed. ${redirectSuffix}`;
+  }
+  return `Slack link callback could not be validated. ${redirectSuffix}`;
 });
 
-const buildPreferencesQuery = () => {
-  const query: Record<string, string> = {
-    [CALLBACK_STATUS_QUERY_KEY]: callbackStatus.value,
-  };
+const buildPreferencesLocation = () => {
+  const query: Record<string, string> = {};
 
-  if (callbackCode.value) {
+  if (callbackStatus.value) {
+    query[CALLBACK_STATUS_QUERY_KEY] = callbackStatus.value;
+  }
+
+  if (callbackStatus.value && callbackCode.value) {
     query[CALLBACK_CODE_QUERY_KEY] = callbackCode.value;
   }
 
-  return query;
+  if (Object.keys(query).length === 0) {
+    return {
+      name: 'preferences' as const,
+    };
+  }
+
+  return {
+    name: 'preferences' as const,
+    query,
+  };
 };
 
 const goToPreferences = async () => {
-  const navigationResult = await router.replace({
-    name: 'preferences',
-    query: buildPreferencesQuery(),
-  });
+  const navigationResult = await router.replace(buildPreferencesLocation());
 
   if (isNavigationFailure(navigationResult)) {
     showReturnButton.value = true;

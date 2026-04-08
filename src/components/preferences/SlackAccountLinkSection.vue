@@ -306,8 +306,15 @@ const unlinkSlackAccount = async () => {
 };
 
 const initializeSlackLinkSection = async () => {
-  const callbackHandled = await handleSlackCallbackReturn();
-  if (!callbackHandled) {
+  try {
+    const callbackHandled = await handleSlackCallbackReturn();
+    if (!callbackHandled) {
+      await loadSlackLinkStatus();
+    }
+  } catch (error) {
+    setSlackError(
+      getErrorMessage(error, 'Failed to initialize Slack linking.'),
+    );
     await loadSlackLinkStatus();
   }
 };

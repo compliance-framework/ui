@@ -2,6 +2,7 @@
   <div
     ref="dropdownRef"
     class="relative inline-block w-full"
+    @mousedown.capture="handlePointerDownInside"
     @focusout="handleFocusOut"
     @keydown="handleKeydown"
   >
@@ -108,6 +109,8 @@ const emit = defineEmits<{
 const isOpen = ref(false);
 const dropdownRef = ref<HTMLElement | null>(null);
 const buttonRef = ref<HTMLButtonElement | null>(null);
+let internalPointerInteractionTimeoutId: number | null = null;
+const isHandlingInternalPointerInteraction = ref(false);
 const resolvedAriaLabelledby = computed(
   () => props.ariaLabelledby || undefined,
 );
@@ -133,15 +136,32 @@ const handleClickOutside = (event: MouseEvent) => {
 };
 
 const handleFocusOut = (event: FocusEvent) => {
-  if (
-    dropdownRef.value &&
-    event.relatedTarget instanceof Node &&
-    dropdownRef.value.contains(event.relatedTarget)
-  ) {
+  if (isHandlingInternalPointerInteraction.value) {
+    return;
+  }
+
+  if (!(event.relatedTarget instanceof Node)) {
+    return;
+  }
+
+  if (dropdownRef.value && dropdownRef.value.contains(event.relatedTarget)) {
     return;
   }
 
   closeDropdown();
+};
+
+const handlePointerDownInside = () => {
+  isHandlingInternalPointerInteraction.value = true;
+
+  if (internalPointerInteractionTimeoutId) {
+    clearTimeout(internalPointerInteractionTimeoutId);
+  }
+
+  internalPointerInteractionTimeoutId = window.setTimeout(() => {
+    isHandlingInternalPointerInteraction.value = false;
+    internalPointerInteractionTimeoutId = null;
+  }, 0);
 };
 
 const handleKeydown = (event: KeyboardEvent) => {
@@ -192,6 +212,9 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+  if (internalPointerInteractionTimeoutId) {
+    clearTimeout(internalPointerInteractionTimeoutId);
+  }
   document.removeEventListener('mousedown', handleClickOutside);
 });
 </script>

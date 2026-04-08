@@ -110,4 +110,42 @@ describe('MultiSelectDropdown', () => {
 
     expect((wrapper.vm as unknown as { isOpen: boolean }).isOpen).toBe(false);
   });
+
+  it('keeps the dropdown open when an option is selected with the mouse', async () => {
+    const wrapper = mount(MultiSelectDropdown, {
+      attachTo: document.body,
+      props: {
+        options,
+        modelValue: [],
+      },
+    });
+
+    await wrapper.find('button').trigger('click');
+    const checkbox = wrapper.find('input[type="checkbox"]');
+
+    await wrapper.trigger('mousedown');
+    await wrapper.trigger('focusout', {
+      relatedTarget: null,
+    });
+    await checkbox.setValue(true);
+
+    expect(wrapper.emitted('update:modelValue')).toEqual([[['email']]]);
+    expect((wrapper.vm as unknown as { isOpen: boolean }).isOpen).toBe(true);
+  });
+
+  it('keeps the dropdown open when focusout has no related target', async () => {
+    const wrapper = mount(MultiSelectDropdown, {
+      attachTo: document.body,
+      props: {
+        options,
+      },
+    });
+
+    await wrapper.find('button').trigger('click');
+    await wrapper.trigger('focusout', {
+      relatedTarget: null,
+    });
+
+    expect((wrapper.vm as unknown as { isOpen: boolean }).isOpen).toBe(true);
+  });
 });

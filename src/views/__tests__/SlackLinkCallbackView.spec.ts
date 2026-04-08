@@ -76,6 +76,35 @@ describe('SlackLinkCallbackView', () => {
     });
   });
 
+  it('redirects without Slack callback query params when status is missing', async () => {
+    const wrapper = mount(SlackLinkCallbackView);
+    await nextTick();
+
+    expect(wrapper.text()).toContain(
+      'Slack link callback could not be validated. Returning to Preferences...',
+    );
+    expect(mockReplace).toHaveBeenCalledWith({
+      name: 'preferences',
+    });
+  });
+
+  it('ignores callback code when status is invalid', async () => {
+    mockRoute.query = {
+      status: 'pending',
+      code: 'not_configured',
+    };
+
+    const wrapper = mount(SlackLinkCallbackView);
+    await nextTick();
+
+    expect(wrapper.text()).toContain(
+      'Slack link callback could not be validated. Returning to Preferences...',
+    );
+    expect(mockReplace).toHaveBeenCalledWith({
+      name: 'preferences',
+    });
+  });
+
   it('falls back to manual return button when redirect fails', async () => {
     mockRoute.query = {
       status: 'error',

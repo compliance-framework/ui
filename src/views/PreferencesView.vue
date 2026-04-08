@@ -303,6 +303,9 @@ const updateError = ref<string | null>(null);
 const updateSuccess = ref(false);
 const loadError = ref<string | null>(null);
 const successTimeoutId = ref<number | null>(null);
+let notificationUpdateQueue: Promise<void> = Promise.resolve();
+let pendingNotificationUpdateOptions: UpdateNotificationPreferencesOptions | null =
+  null;
 
 const canSelectSlackAlertChannel = computed(
   () =>
@@ -392,8 +395,25 @@ const revertToLastSavedNotificationPreferences = () => {
   ]);
 };
 
-const updateNotificationPreferences = async (
+const normalizeUpdateNotificationPreferencesOptions = (
   options: UpdateNotificationPreferencesOptions = {},
+): Required<UpdateNotificationPreferencesOptions> => {
+  return {
+    silent: options.silent ?? false,
+  };
+};
+
+const mergeUpdateNotificationPreferencesOptions = (
+  existingOptions: UpdateNotificationPreferencesOptions | null,
+  incomingOptions: Required<UpdateNotificationPreferencesOptions>,
+): Required<UpdateNotificationPreferencesOptions> => {
+  return {
+    silent: (existingOptions?.silent ?? true) && incomingOptions.silent,
+  };
+};
+
+const performNotificationPreferencesUpdate = async (
+  options: Required<UpdateNotificationPreferencesOptions>,
 ) => {
   const { silent = false } = options;
 
@@ -434,6 +454,35 @@ const updateNotificationPreferences = async (
   } finally {
     updating.value = false;
   }
+};
+
+const drainQueuedNotificationPreferencesUpdates = async () => {
+  while (pendingNotificationUpdateOptions) {
+    const nextUpdateOptions = normalizeUpdateNotificationPreferencesOptions(
+      pendingNotificationUpdateOptions,
+    );
+    pendingNotificationUpdateOptions = null;
+    await performNotificationPreferencesUpdate(nextUpdateOptions);
+  }
+};
+
+const updateNotificationPreferences = (
+  options: UpdateNotificationPreferencesOptions = {},
+) => {
+  const normalizedOptions =
+    normalizeUpdateNotificationPreferencesOptions(options);
+
+  pendingNotificationUpdateOptions = mergeUpdateNotificationPreferencesOptions(
+    pendingNotificationUpdateOptions,
+    normalizedOptions,
+  );
+
+  notificationUpdateQueue = notificationUpdateQueue.then(
+    drainQueuedNotificationPreferencesUpdates,
+    drainQueuedNotificationPreferencesUpdates,
+  );
+
+  return notificationUpdateQueue;
 };
 
 const syncUnavailableSlackSelections = async () => {

@@ -51,6 +51,21 @@ const emitSlackStatus = async (
   await nextTick();
 };
 
+const createDeferred = <T>() => {
+  let resolve!: (value: T | PromiseLike<T>) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+
+  return {
+    promise,
+    resolve,
+    reject,
+  };
+};
+
 interface PreferencesViewTestVm extends ComponentPublicInstance {
   [key: string]: unknown;
   updateNotificationPreferences: () => Promise<void>;
@@ -637,6 +652,96 @@ describe('PreferencesView', () => {
           },
         },
       );
+    });
+
+    it('serializes Slack sync saves behind an in-flight notification update', async () => {
+      const firstPut = createDeferred<{
+        data: { data: Record<string, never> };
+      }>();
+      const secondPut = createDeferred<{
+        data: { data: Record<string, never> };
+      }>();
+
+      mockAxios.put
+        .mockImplementationOnce(() => firstPut.promise)
+        .mockImplementationOnce(() => secondPut.promise);
+
+      wrapper = mountPreferencesView();
+
+      await Promise.resolve();
+      await nextTick();
+      await emitSlackStatus(wrapper, {
+        loading: false,
+        configured: true,
+        linked: true,
+      });
+
+      const firstUpdatePromise = wrapper.vm.onTaskAvailableChannelsChange([
+        'email',
+        'slack',
+      ]);
+
+      await Promise.resolve();
+      await nextTick();
+
+      expect(mockAxios.put).toHaveBeenCalledTimes(1);
+      expect(mockAxios.put).toHaveBeenNthCalledWith(
+        1,
+        '/api/users/me/subscriptions',
+        {
+          notifications: {
+            evidence_digest: [],
+            task_available: ['email', 'slack'],
+            task_daily_digest: [],
+          },
+        },
+      );
+
+      wrapper
+        .getComponent({ name: 'SlackAccountLinkSection' })
+        .vm.$emit('status-change', {
+          loading: false,
+          configured: true,
+          linked: false,
+        });
+      await nextTick();
+      await Promise.resolve();
+      await nextTick();
+
+      expect(wrapper.vm.taskAvailableAlertChannels).toEqual(['email']);
+      expect(mockAxios.put).toHaveBeenCalledTimes(1);
+
+      firstPut.resolve({ data: { data: {} } });
+      await Promise.resolve();
+      await nextTick();
+
+      expect(mockAxios.put).toHaveBeenCalledTimes(2);
+      expect(mockAxios.put).toHaveBeenNthCalledWith(
+        2,
+        '/api/users/me/subscriptions',
+        {
+          notifications: {
+            evidence_digest: [],
+            task_available: ['email'],
+            task_daily_digest: [],
+          },
+        },
+      );
+
+      await nextTick();
+
+      secondPut.resolve({ data: { data: {} } });
+      await firstUpdatePromise;
+      await flushPromises();
+      await nextTick();
+
+      expect(wrapper.vm.lastSavedPreferences).toEqual({
+        notifications: {
+          evidence_digest: [],
+          task_available: ['email'],
+          task_daily_digest: [],
+        },
+      });
     });
 
     it('disables Slack task alerts when the Slack account is not linked', async () => {
