@@ -699,6 +699,27 @@ describe('Evidence ViewView', () => {
     expect(wrapper.text()).toContain('Unsigned');
   });
 
+  it('clears stale verification errors when the route id changes', async () => {
+    const wrapper = mountView();
+    await flushPromises();
+
+    refs.verifyError.value = new Error('verify failed');
+
+    await clickButtonByText(wrapper, 'Signature');
+    expect(wrapper.text()).toContain(
+      'Verification failed to run for this evidence record.',
+    );
+
+    refs.route.params.id = 'evidence-2';
+    await flushPromises();
+    await flushPromises();
+
+    await clickButtonByText(wrapper, 'Signature');
+    expect(wrapper.text()).not.toContain(
+      'Verification failed to run for this evidence record.',
+    );
+  });
+
   it('clears stale detail state when a route change load fails', async () => {
     const wrapper = mountView();
     await flushPromises();

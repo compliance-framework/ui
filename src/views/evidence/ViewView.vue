@@ -1013,6 +1013,7 @@ watch(
   async (id) => {
     verificationAttempted.value = false;
     verificationResult.value = undefined;
+    verifyError.value = undefined;
     showActivitiesModal.value = false;
     evidence.value = undefined;
     signatureDetail.value = undefined;
