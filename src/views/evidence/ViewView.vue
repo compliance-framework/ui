@@ -262,7 +262,7 @@
           <div v-if="metadataProps.length" class="mt-4 space-y-3">
             <div
               v-for="(prop, index) in metadataProps"
-              :key="`${prop.name || 'prop'}-${prop.value || index}`"
+              :key="`${prop.name || 'prop'}-${prop.value || ''}-${prop.class || ''}-${prop.ns || ''}-${index}`"
               class="rounded-md border border-ccf-300 p-3 dark:border-slate-700"
             >
               <p class="text-sm text-gray-900 dark:text-slate-200">
