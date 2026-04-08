@@ -306,23 +306,31 @@
                 </span>
               </div>
               <div class="mt-2 text-sm text-gray-700 dark:text-slate-300">
-                <template v-if="link.href.startsWith('#')">
+                <template v-if="isInternalLink(link.href)">
                   Internal resource reference:
                   <code
                     class="rounded bg-slate-100 px-2 py-1 text-xs dark:bg-slate-800"
                   >
-                    {{ link.href }}
+                    {{ normalizeLinkHref(link.href) }}
                   </code>
                 </template>
                 <a
-                  v-else
-                  :href="link.href"
+                  v-else-if="getSafeExternalHref(link.href)"
+                  :href="getSafeExternalHref(link.href)"
                   target="_blank"
                   rel="noopener noreferrer"
                   class="underline text-blue-600 dark:text-blue-400"
                 >
-                  {{ link.href }}
+                  {{ normalizeLinkHref(link.href) }}
                 </a>
+                <template v-else>
+                  Unsupported or unsafe link:
+                  <code
+                    class="rounded bg-slate-100 px-2 py-1 text-xs dark:bg-slate-800"
+                  >
+                    {{ normalizeLinkHref(link.href) || 'N/A' }}
+                  </code>
+                </template>
               </div>
             </div>
           </div>
@@ -976,20 +984,46 @@ function formatDateTime(value?: string) {
   return new Date(value).toLocaleString();
 }
 
+function normalizeLinkHref(value?: string) {
+  return typeof value === 'string' ? value.trim() : '';
+}
+
+function isInternalLink(value?: string) {
+  return normalizeLinkHref(value).startsWith('#');
+}
+
+function getSafeExternalHref(value?: string) {
+  const href = normalizeLinkHref(value);
+
+  if (/^(https?:|mailto:)/i.test(href)) {
+    return href;
+  }
+
+  return '';
+}
+
 watch(
   evidenceId,
   async (id) => {
     verificationAttempted.value = false;
     verificationResult.value = undefined;
     showActivitiesModal.value = false;
-    await Promise.all([
+    evidence.value = undefined;
+    signatureDetail.value = undefined;
+    latestEvidence.value = undefined;
+
+    await Promise.allSettled([
       loadEvidence(`/api/evidence/${id}`),
       loadSignatureDetail(`/api/evidence/${id}/signature`),
     ]);
-    if (evidence.value?.uuid) {
-      await loadLatestEvidence(`/api/evidence/latest/${evidence.value.uuid}`);
-    } else {
-      latestEvidence.value = undefined;
+
+    const currentEvidence = evidence.value as Evidence | undefined;
+    const evidenceUuid = currentEvidence?.uuid;
+
+    if (evidenceUuid) {
+      await Promise.allSettled([
+        loadLatestEvidence(`/api/evidence/latest/${evidenceUuid}`),
+      ]);
     }
   },
   { immediate: true },

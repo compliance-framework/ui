@@ -264,6 +264,7 @@ function sortEvidence(items: Evidence[]) {
 
 async function search(page = currentPage.value) {
   const query = new FilterParser(filter.value).parse();
+  error.value = null;
 
   try {
     const [evidenceResponse] = await Promise.all([

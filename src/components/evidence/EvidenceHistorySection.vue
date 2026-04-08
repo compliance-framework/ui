@@ -191,7 +191,10 @@ watch(
   () => props.uuid,
   async (uuid) => {
     currentPage.value = 1;
-    await Promise.all([
+    evidence.value = undefined;
+    complianceOverTime.value = undefined;
+
+    await Promise.allSettled([
       loadEvidenceHistory(`/api/evidence/history/${uuid}`),
       loadComplianceHistory(`/api/evidence/status-over-time/${uuid}`),
     ]);

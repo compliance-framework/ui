@@ -15,8 +15,11 @@ type MockRouteState = {
 type ViewTestRefs = {
   nullGetCallIndex: number;
   evidence: MockRef<Record<string, unknown>>;
+  evidenceResponse: Record<string, unknown> | undefined;
   signature: MockRef<Record<string, unknown>>;
+  signatureResponse: Record<string, unknown> | undefined;
   latestEvidence: MockRef<Record<string, unknown> | undefined>;
+  latestEvidenceResponse: Record<string, unknown> | undefined;
   verification: MockRef<Record<string, unknown> | null>;
   history: MockRef<Array<Record<string, unknown>>>;
   compliance: MockRef<Array<Record<string, unknown>>>;
@@ -256,6 +259,16 @@ vi.mock('@/composables/axios', async () => {
             isLoading: refs.loading,
             error: refs.error,
             execute: vi.fn(async (nextUrl?: string) => {
+              if (refs.error.value) {
+                throw refs.error.value;
+              }
+
+              if (nextUrl === '/api/evidence/evidence-1') {
+                refs.evidence.value = structuredClone(
+                  refs.evidenceResponse,
+                ) as Record<string, unknown>;
+              }
+
               if (nextUrl === '/api/evidence/evidence-2') {
                 refs.evidence.value = {
                   ...structuredClone(baseEvidence),
@@ -274,6 +287,16 @@ vi.mock('@/composables/axios', async () => {
             data: refs.signature,
             error: refs.signatureError,
             execute: vi.fn(async (nextUrl?: string) => {
+              if (refs.signatureError.value) {
+                throw refs.signatureError.value;
+              }
+
+              if (nextUrl === '/api/evidence/evidence-1/signature') {
+                refs.signature.value = structuredClone(
+                  refs.signatureResponse,
+                ) as Record<string, unknown>;
+              }
+
               if (nextUrl === '/api/evidence/evidence-2/signature') {
                 refs.signature.value = {
                   status: 'unsigned',
@@ -288,6 +311,16 @@ vi.mock('@/composables/axios', async () => {
           data: refs.latestEvidence,
           error: refs.error,
           execute: vi.fn(async (nextUrl?: string) => {
+            if (refs.error.value) {
+              throw refs.error.value;
+            }
+
+            if (nextUrl === '/api/evidence/latest/evidence-uuid-1') {
+              refs.latestEvidence.value = structuredClone(
+                refs.latestEvidenceResponse,
+              );
+            }
+
             if (nextUrl === '/api/evidence/latest/evidence-uuid-2') {
               refs.latestEvidence.value = {
                 ...structuredClone(baseEvidence),
@@ -442,8 +475,11 @@ async function clickButtonByText(
 describe('Evidence ViewView', () => {
   beforeEach(() => {
     refs.nullGetCallIndex = 0;
+    refs.evidenceResponse = structuredClone(baseEvidence);
     refs.evidence.value = structuredClone(baseEvidence);
+    refs.signatureResponse = structuredClone(signedSignatureDetail);
     refs.signature.value = structuredClone(signedSignatureDetail);
+    refs.latestEvidenceResponse = structuredClone(baseEvidence);
     refs.latestEvidence.value = structuredClone(baseEvidence);
     refs.verification.value = null;
     refs.history.value = structuredClone(historyItems);
@@ -492,6 +528,28 @@ describe('Evidence ViewView', () => {
     expect(wrapper.text()).toContain('Internal resource reference:');
   });
 
+  it('renders unsafe metadata links as plain text instead of clickable anchors', async () => {
+    refs.evidenceResponse = {
+      ...structuredClone(baseEvidence),
+      links: [
+        {
+          href: 'javascript:alert(1)',
+          rel: 'external',
+          text: 'Unsafe link',
+        },
+      ],
+    };
+    refs.evidence.value = structuredClone(refs.evidenceResponse);
+
+    const wrapper = mountView();
+    await flushPromises();
+
+    await clickButtonByText(wrapper, 'Metadata');
+
+    expect(wrapper.text()).toContain('Unsupported or unsafe link:');
+    expect(wrapper.find('a[href="javascript:alert(1)"]').exists()).toBe(false);
+  });
+
   it('shows only referenced back matter resources in the media tab', async () => {
     const wrapper = mountView();
     await flushPromises();
@@ -528,9 +586,10 @@ describe('Evidence ViewView', () => {
   });
 
   it('shows unsigned state when there is no stored signature envelope', async () => {
-    refs.signature.value = {
+    refs.signatureResponse = {
       status: 'unsigned',
     };
+    refs.signature.value = structuredClone(refs.signatureResponse);
 
     const wrapper = mountView();
     await flushPromises();
@@ -544,6 +603,7 @@ describe('Evidence ViewView', () => {
   });
 
   it('shows loading and unavailable signature badge states accurately', async () => {
+    refs.signatureResponse = undefined;
     refs.signature.value = undefined as unknown as Record<string, unknown>;
 
     const loadingWrapper = mountView();
@@ -553,6 +613,7 @@ describe('Evidence ViewView', () => {
     expect(loadingWrapper.text()).not.toContain('Unsigned');
 
     refs.nullGetCallIndex = 0;
+    refs.signatureResponse = structuredClone(signedSignatureDetail);
     refs.signature.value = structuredClone(signedSignatureDetail);
     refs.signatureError.value = new Error('signature failed');
 
@@ -573,10 +634,11 @@ describe('Evidence ViewView', () => {
   });
 
   it('shows expired evidence in red expiration styling', async () => {
-    refs.evidence.value = {
+    refs.evidenceResponse = {
       ...structuredClone(baseEvidence),
       expires: '2000-01-01T00:00:00Z',
     };
+    refs.evidence.value = structuredClone(refs.evidenceResponse);
 
     const wrapper = mountView();
     await flushPromises();
@@ -588,14 +650,16 @@ describe('Evidence ViewView', () => {
   });
 
   it('replaces expiration with a latest-evidence link for stale evidence', async () => {
-    refs.evidence.value = {
+    refs.evidenceResponse = {
       ...structuredClone(baseEvidence),
       id: 'historic-1',
     };
-    refs.latestEvidence.value = {
+    refs.evidence.value = structuredClone(refs.evidenceResponse);
+    refs.latestEvidenceResponse = {
       ...structuredClone(baseEvidence),
       id: 'latest-1',
     };
+    refs.latestEvidence.value = structuredClone(refs.latestEvidenceResponse);
 
     const wrapper = mountView();
     await flushPromises();
@@ -619,5 +683,20 @@ describe('Evidence ViewView', () => {
 
     expect(wrapper.text()).toContain('Second evidence record');
     expect(wrapper.text()).toContain('Unsigned');
+  });
+
+  it('clears stale detail state when a route change load fails', async () => {
+    const wrapper = mountView();
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('Repository attestation evidence');
+
+    refs.error.value = new Error('load failed');
+    refs.route.params.id = 'evidence-2';
+    await flushPromises();
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('Error loading evidence');
+    expect(wrapper.text()).not.toContain('Repository attestation evidence');
   });
 });

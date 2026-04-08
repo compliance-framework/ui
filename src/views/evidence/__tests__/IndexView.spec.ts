@@ -38,6 +38,10 @@ const {
       const limit = Number(searchParams.get('limit') || '50');
       const filterText = routeState.query.filter ?? '';
 
+      if (filterText.includes('broken')) {
+        throw new Error('search failed');
+      }
+
       let data = baseEvidence;
       if (filterText.includes('recent')) {
         data = [
@@ -318,5 +322,24 @@ describe('Evidence IndexView', () => {
     expect(wrapper.text()).toContain('Recent Evidence');
     expect(wrapper.text()).toContain('Showing 1-1 of 1');
     expect(wrapper.text()).toContain('Page 1 of 1');
+  });
+
+  it('clears a stale error after a later successful search', async () => {
+    const wrapper = mountView();
+    await flushPromises();
+
+    const filterInput = wrapper.find('input[name="filter"]');
+    expect(filterInput.exists()).toBe(true);
+
+    await filterInput.setValue('category=broken');
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('search failed');
+
+    await filterInput.setValue('category=recent');
+    await flushPromises();
+
+    expect(wrapper.text()).not.toContain('search failed');
+    expect(wrapper.text()).toContain('Recent Evidence');
   });
 });

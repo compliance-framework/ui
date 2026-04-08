@@ -79,9 +79,32 @@ vi.mock('@/composables/axios', async () => {
             data: refs.history,
             isLoading: refs.loading,
             error: refs.error,
-            execute: vi.fn(async () => ({
-              data: { value: { data: refs.history.value } },
-            })),
+            execute: vi.fn(async () => {
+              if (refs.error.value) {
+                throw refs.error.value;
+              }
+
+              refs.history.value = [
+                ...Array.from({ length: 12 }, (_, index) => ({
+                  id: `historic-${index + 1}`,
+                  uuid: 'history-uuid-1',
+                  title: `Evidence ${String(index + 1).padStart(2, '0')}`,
+                  description: 'Previous run',
+                  labels: [],
+                  start: '2026-04-06T10:00:00Z',
+                  end: '2026-04-06T10:15:00Z',
+                  status: {
+                    state: 'satisfied',
+                    reason: 'ok',
+                  },
+                  activities: [],
+                })),
+              ];
+
+              return {
+                data: { value: { data: refs.history.value } },
+              };
+            }),
           };
         }
 
@@ -89,9 +112,17 @@ vi.mock('@/composables/axios', async () => {
           data: refs.compliance,
           isLoading: refs.loading,
           error: refs.error,
-          execute: vi.fn(async () => ({
-            data: { value: { data: refs.compliance.value } },
-          })),
+          execute: vi.fn(async () => {
+            if (refs.error.value) {
+              throw refs.error.value;
+            }
+
+            refs.compliance.value = [];
+
+            return {
+              data: { value: { data: refs.compliance.value } },
+            };
+          }),
         };
       }
 
