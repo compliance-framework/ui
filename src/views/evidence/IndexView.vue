@@ -37,7 +37,7 @@
 
   <div class="mt-4">
     <div class="flex gap-4">
-      <form @submit.prevent="search" class="grow">
+      <form @submit.prevent="submitSearch" class="grow">
         <div
           class="flex border rounded-md text-zinc-700 dark:text-slate-300 bg-white dark:bg-slate-900 border-ccf-300 dark:border-slate-700"
         >
@@ -79,6 +79,33 @@
   >
     <EvidenceList :evidence="evidence" />
   </div>
+
+  <div
+    v-if="totalEvidence > 0"
+    class="mt-4 flex flex-wrap items-center justify-between gap-3"
+  >
+    <p class="text-sm text-gray-500 dark:text-slate-400">
+      Showing {{ pageStart }}-{{ pageEnd }} of {{ totalEvidence }}
+    </p>
+
+    <div class="flex items-center gap-2">
+      <TertiaryButton
+        :disabled="currentPage <= 1"
+        @click="changePage(currentPage - 1)"
+      >
+        Previous
+      </TertiaryButton>
+      <span class="text-sm text-gray-600 dark:text-slate-300">
+        Page {{ currentPage }} of {{ totalPages }}
+      </span>
+      <TertiaryButton
+        :disabled="currentPage >= totalPages"
+        @click="changePage(currentPage + 1)"
+      >
+        Next
+      </TertiaryButton>
+    </div>
+  </div>
 </template>
 <script setup lang="ts">
 import { onMounted, ref, computed, watch } from 'vue';
@@ -103,18 +130,27 @@ import { useConfigStore } from '@/stores/config.ts';
 import { useToast } from 'primevue/usetoast';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
+import TertiaryButton from '@/volt/TertiaryButton.vue';
 import InfoCircleIcon from '@primevue/icons/infocircle';
 import type { ComplianceInterval, Evidence } from '@/stores/evidence.ts';
 import EvidenceList from '@/components/EvidenceList.vue';
 import BurgerMenu from '@/components/BurgerMenu.vue';
-import { useDataApi } from '@/composables/axios';
+import { useAuthenticatedInstance, useDataApi } from '@/composables/axios';
+import type { PaginatedListResponse } from '@/stores/types.ts';
 
 const configStore = useConfigStore();
 const route = useRoute();
 const router = useRouter();
 const uiStore = useUIStore();
 const toast = useToast();
+const authenticatedApi = useAuthenticatedInstance();
 const error = ref<AxiosError | null>(null);
+const evidence = ref<Evidence[]>([]);
+const totalEvidence = ref(0);
+const currentPage = ref(1);
+const totalPages = ref(1);
+
+const EVIDENCE_PAGE_SIZE = 50;
 
 const filter = computed({
   get: () => uiStore.evidenceFilter,
@@ -126,53 +162,33 @@ const filter = computed({
     uiStore.setEvidenceFilter(val);
     // Update URL query parameter without reloading page
     router.replace({
-      query: { ...route.query, filter: val || undefined },
+      query: {
+        ...route.query,
+        filter: val || undefined,
+        page: undefined,
+      },
     });
   },
 });
 
 watch(
-  () => route.query.filter,
-  (newFilter) => {
-    // Avoid redundant updates when the change originated from the filter setter
-    if (newFilter === uiStore.evidenceFilter) {
-      return;
-    }
-
+  [() => route.query.filter, () => route.query.page],
+  ([newFilter, newPage], [oldFilter, oldPage]) => {
     if (typeof newFilter === 'string') {
       uiStore.setEvidenceFilter(newFilter);
     } else {
       uiStore.setEvidenceFilter('');
     }
-    search();
+
+    currentPage.value = parsePageQuery(newPage);
+
+    if (newFilter === oldFilter && newPage === oldPage) {
+      return;
+    }
+
+    search(currentPage.value);
   },
 );
-
-const { data: evidenceData, execute: loadEvidence } = useDataApi<Evidence[]>(
-  '/api/evidence/search',
-  {
-    method: 'POST',
-  },
-  { immediate: false },
-);
-
-const evidence = computed(() => {
-  return evidenceData.value
-    ? [...evidenceData.value].sort((a, b) => {
-        // Order results by their end date for better UI consistency
-        const x = new Date(a.end);
-        const y = new Date(b.end);
-
-        if (x > y) {
-          return 1;
-        }
-        if (x < y) {
-          return -1;
-        }
-        return 0;
-      })
-    : [];
-});
 
 const { data: complianceOverTime, execute: loadComplianceOverTime } =
   useDataApi<ComplianceInterval[]>(
@@ -205,22 +221,98 @@ const heartbeatChartData = computed<ChartData<'line', DateDataPoint[]>>(() => {
   return calculateHeartbeatOverTimeData(heartbeats.value ?? []);
 });
 
-async function search() {
+const pageStart = computed(() => {
+  if (totalEvidence.value === 0) {
+    return 0;
+  }
+
+  return (currentPage.value - 1) * EVIDENCE_PAGE_SIZE + 1;
+});
+
+const pageEnd = computed(() => {
+  if (totalEvidence.value === 0) {
+    return 0;
+  }
+
+  return Math.min(currentPage.value * EVIDENCE_PAGE_SIZE, totalEvidence.value);
+});
+
+function parsePageQuery(value: unknown) {
+  const page = Number.parseInt(String(value ?? ''), 10);
+
+  if (Number.isNaN(page) || page < 1) {
+    return 1;
+  }
+
+  return page;
+}
+
+function sortEvidence(items: Evidence[]) {
+  return [...items].sort((a, b) => {
+    const x = new Date(a.end);
+    const y = new Date(b.end);
+
+    if (x > y) {
+      return 1;
+    }
+    if (x < y) {
+      return -1;
+    }
+    return 0;
+  });
+}
+
+async function search(page = currentPage.value) {
   const query = new FilterParser(filter.value).parse();
+  error.value = null;
 
   try {
-    await Promise.all([
-      loadEvidence({
-        data: { filter: query },
-      }),
+    const [evidenceResponse] = await Promise.all([
+      authenticatedApi.post<PaginatedListResponse<Evidence>>(
+        `/api/evidence/search?page=${page}&limit=${EVIDENCE_PAGE_SIZE}`,
+        {
+          filter: query,
+        },
+      ),
       loadComplianceOverTime({
         data: { filter: query },
       }),
       loadHeartbeats(),
     ]);
+
+    const paginatedEvidence = evidenceResponse.data;
+
+    evidence.value = sortEvidence(paginatedEvidence.data ?? []);
+    totalEvidence.value = paginatedEvidence.total ?? 0;
+    currentPage.value = paginatedEvidence.page ?? page;
+    totalPages.value = Math.max(paginatedEvidence.totalPages ?? 1, 1);
   } catch (err) {
     error.value = err as AxiosError;
   }
+}
+
+async function changePage(page: number) {
+  const nextPage = Math.min(Math.max(page, 1), totalPages.value);
+
+  if (nextPage === currentPage.value) {
+    return;
+  }
+
+  await router.replace({
+    query: {
+      ...route.query,
+      page: nextPage > 1 ? String(nextPage) : undefined,
+    },
+  });
+}
+
+async function submitSearch() {
+  if (currentPage.value > 1) {
+    await changePage(1);
+    return;
+  }
+
+  await search(1);
 }
 
 onMounted(() => {
@@ -229,7 +321,8 @@ onMounted(() => {
   } else {
     uiStore.setEvidenceFilter('');
   }
-  search();
+  currentPage.value = parsePageQuery(route.query.page);
+  search(currentPage.value);
 });
 
 async function save() {

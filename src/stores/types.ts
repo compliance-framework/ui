@@ -8,6 +8,14 @@ export interface DataResponse<T> {
   data: T;
 }
 
+export interface PaginatedListResponse<T> {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
 export interface ErrorResponse<T> {
   errors: T;
 }

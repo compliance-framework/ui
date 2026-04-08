@@ -3,7 +3,7 @@ import decamelizeKeys from 'decamelize-keys';
 import { defineStore } from 'pinia';
 import { useConfigStore } from '@/stores/config.ts';
 import { type Filter } from '@/parsers/labelfilter.ts';
-import type { Activity, Link, Property } from '@/oscal';
+import type { Activity, Hash, Link, Property } from '@/oscal';
 import type { DataResponse } from '@/stores/types.ts';
 import type { Control } from '@/oscal';
 import type { BackMatter } from '@/oscal';
@@ -26,11 +26,68 @@ export interface Evidence {
   labels: EvidenceLabel[];
   start: string; // ISO 8601
   end: string; // ISO 8601
+  expires?: string; // ISO 8601
   links?: Link[];
   props?: Property[];
   backMatter?: BackMatter;
   status: EvidenceStatus;
   activities: Activity[];
+}
+
+export interface EvidenceSignatureSigner {
+  type: string;
+  id?: string;
+  email?: string;
+  name?: string;
+  credentialId?: string;
+}
+
+export interface EvidenceSignatureClaims {
+  tokenKind?: string;
+  subject?: string;
+  issuer?: string;
+  issuedAt?: string;
+  expiresAt?: string;
+  notBefore?: string;
+  givenName?: string;
+  familyName?: string;
+  agentId?: string;
+  credentialId?: string;
+  authMethod?: string;
+}
+
+export interface EvidenceSignature {
+  version: string;
+  signatureAlgorithm: string;
+  signedAt: string;
+  contentHash: Hash;
+  signer: EvidenceSignatureSigner;
+  claims: EvidenceSignatureClaims;
+  jws: string;
+}
+
+export interface SignatureDetail {
+  status: string;
+  signature?: EvidenceSignature;
+}
+
+export interface VerificationChecks {
+  hashMatch: boolean;
+  signatureValid: boolean;
+  temporalValid: boolean;
+  signedContentMatches: boolean;
+}
+
+export interface VerificationResult {
+  status: string;
+  signature?: EvidenceSignature;
+  isValid: boolean;
+  checks: VerificationChecks;
+  errors?: string[];
+  contentHash?: Hash;
+  signer?: EvidenceSignatureSigner;
+  claims?: EvidenceSignatureClaims;
+  signedAt?: string;
 }
 
 export interface FlatLabelEvidence extends Omit<Evidence, 'labels'> {
