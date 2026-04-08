@@ -915,6 +915,11 @@
             <h3 class="text-lg font-medium text-gray-900 dark:text-slate-200">
               History &amp; Events
             </h3>
+            <!-- Score history chart -->
+            <RiskScoreHistoryChart
+              :scores="scoreHistory"
+              :is-loading="loadingScores"
+            />
 
             <div
               v-if="loadingEvents"
@@ -1258,6 +1263,7 @@ import Dialog from '@/volt/Dialog.vue';
 import TertiaryButton from '@/volt/TertiaryButton.vue';
 import RouterLinkButton from '@/components/RouterLinkButton.vue';
 import RiskAcceptModal from '@/components/risk/RiskAcceptModal.vue';
+import RiskScoreHistoryChart from '@/components/risk/RiskScoreHistoryChart.vue';
 import RiskReviewModal from '@/components/risk/RiskReviewModal.vue';
 import RiskScoreReviewModal from '@/components/risk/RiskScoreReviewModal.vue';
 import PromoteToPoamModal from '@/components/risk/PromoteToPoamModal.vue';
@@ -1265,6 +1271,7 @@ import RiskOwnerAssignment from '@/components/risk/RiskOwnerAssignment.vue';
 import RiskPoamItemsTab from '@/components/risk/RiskPoamItemsTab.vue';
 import { useSystemStore } from '@/stores/system';
 import type { Profile, Risk, SystemComponent } from '@/oscal';
+import type { RiskScore } from '@/types/risk-scores';
 import type { Evidence, EvidenceLabel } from '@/stores/evidence';
 import { useToast } from 'primevue/usetoast';
 import {
@@ -1544,6 +1551,14 @@ const {
   isLoading: loadingReviews,
   execute: executeFetchReviews,
 } = useDataApi<unknown>(null, {}, { immediate: false });
+const {
+  data: fetchedScores,
+  isLoading: loadingScores,
+  execute: executeFetchScores,
+} = useDataApi<{ data: RiskScore[] }>(null, {}, { immediate: false });
+const scoreHistory = computed<RiskScore[]>(
+  () => fetchedScores.value?.data ?? [],
+);
 
 const {
   data: availableEvidence,
@@ -1747,7 +1762,11 @@ const riskReviewsEndpoint = computed(() => {
   const base = buildRiskItemEndpoint(context.value, resolvedRiskId.value);
   return `${base}/reviews`;
 });
-
+const riskScoreHistoryEndpoint = computed(() => {
+  if (!context.value || !resolvedRiskId.value) return null;
+  const base = buildRiskItemEndpoint(context.value, resolvedRiskId.value);
+  return `${base}/score-history`;
+});
 function readNumber(
   record: Record<string, unknown>,
   keys: string[],
@@ -2108,6 +2127,10 @@ async function loadRiskReviews(page = reviewsPage.value) {
   reviewsTotalPages.value = null;
 }
 
+async function loadScoreHistory() {
+  if (!riskScoreHistoryEndpoint.value) return;
+  await executeFetchScores(riskScoreHistoryEndpoint.value);
+}
 async function loadRisk() {
   loadError.value = '';
   notFound.value = false;
@@ -2192,9 +2215,12 @@ async function loadRisk() {
   syncAssociationsFromRisk();
   syncOwnerAssignmentsFromRisk();
   await refreshAllAssociationLinks();
-  await Promise.all([loadRiskEvents(1), loadRiskReviews(1)]);
+  await Promise.all([
+    loadRiskEvents(1),
+    loadRiskReviews(1),
+    loadScoreHistory(),
+  ]);
 }
-
 watch(
   [detailEndpoint, listEndpoint, riskId],
   () => {
@@ -2803,7 +2829,11 @@ async function updateRiskStatus(
     });
     const updatedRisk = mutatedRisk.value;
     applyRiskUpdate(updatedRisk);
-    await Promise.all([loadRiskEvents(1), loadRiskReviews(1)]);
+    await Promise.all([
+      loadRiskEvents(1),
+      loadRiskReviews(1),
+      loadScoreHistory(),
+    ]);
     toast.add({
       severity: 'success',
       summary,
@@ -2875,7 +2905,11 @@ async function submitRiskScoreReview(payload: RiskScoreReviewSubmitPayload) {
     const updatedRisk = mutatedRisk.value;
     applyRiskUpdate(updatedRisk);
     showScoreReviewModal.value = false;
-    await Promise.all([loadRiskEvents(1), loadRiskReviews(1)]);
+    await Promise.all([
+      loadRiskEvents(1),
+      loadRiskReviews(1),
+      loadScoreHistory(),
+    ]);
 
     toast.add({
       severity: 'success',
@@ -2916,7 +2950,11 @@ async function submitAcceptRisk(payload: RiskAcceptSubmitPayload) {
     const updatedRisk = mutatedRisk.value;
     applyRiskUpdate(updatedRisk);
     showAcceptModal.value = false;
-    await Promise.all([loadRiskEvents(1), loadRiskReviews(1)]);
+    await Promise.all([
+      loadRiskEvents(1),
+      loadRiskReviews(1),
+      loadScoreHistory(),
+    ]);
 
     toast.add({
       severity: 'success',
@@ -2969,7 +3007,11 @@ async function submitReviewRisk(payload: RiskReviewSubmitPayload) {
     const updatedRisk = mutatedRisk.value;
     applyRiskUpdate(updatedRisk);
     showReviewModal.value = false;
-    await Promise.all([loadRiskEvents(1), loadRiskReviews(1)]);
+    await Promise.all([
+      loadRiskEvents(1),
+      loadRiskReviews(1),
+      loadScoreHistory(),
+    ]);
 
     toast.add({
       severity: 'success',
@@ -3078,7 +3120,11 @@ async function submitMarkMitigatingImplemented() {
     });
     const updatedRisk = mutatedRisk.value;
     applyRiskUpdate(updatedRisk);
-    await Promise.all([loadRiskEvents(1), loadRiskReviews(1)]);
+    await Promise.all([
+      loadRiskEvents(1),
+      loadRiskReviews(1),
+      loadScoreHistory(),
+    ]);
     toast.add({
       severity: 'success',
       summary: 'Mitigation implemented',
