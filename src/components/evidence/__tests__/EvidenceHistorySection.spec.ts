@@ -147,6 +147,7 @@ vi.mock('@/composables/axios', async () => {
 describe('EvidenceHistorySection', () => {
   beforeEach(() => {
     refs.nullGetCallIndex = 0;
+    refs.error.value = null;
     routerPush.mockClear();
   });
 
@@ -283,5 +284,57 @@ describe('EvidenceHistorySection', () => {
     expect(wrapper.text()).not.toContain(
       'No history is available for this evidence stream.',
     );
+  });
+
+  it('falls back to the raw timestamp when a history date is invalid', async () => {
+    const wrapper = mount(EvidenceHistorySection, {
+      props: {
+        uuid: 'history-uuid-1',
+      },
+      global: {
+        stubs: {
+          PageCard: {
+            template: '<section><slot /></section>',
+          },
+          Message: {
+            template: '<div><slot /></div>',
+          },
+          TertiaryButton: {
+            emits: ['click'],
+            template:
+              '<button type="button" @click="$emit(\'click\')" :disabled="$attrs.disabled"><slot /></button>',
+          },
+          ResultComplianceOverTimeChart: {
+            template: '<div>Chart</div>',
+          },
+          ResultStatusRing: {
+            template: '<div>StatusRing</div>',
+          },
+        },
+      },
+    });
+
+    await flushPromises();
+
+    refs.history.value = [
+      {
+        id: 'historic-invalid',
+        uuid: 'history-uuid-1',
+        title: 'Evidence Raw Timestamp',
+        description: 'Previous run',
+        labels: [],
+        start: '2026-04-06T10:00:00Z',
+        end: 'not-a-real-date',
+        status: {
+          state: 'satisfied',
+          reason: 'ok',
+        },
+        activities: [],
+      },
+    ];
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('not-a-real-date');
+    expect(wrapper.text()).not.toContain('Invalid Date');
   });
 });

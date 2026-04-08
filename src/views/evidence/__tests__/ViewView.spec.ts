@@ -649,6 +649,20 @@ describe('Evidence ViewView', () => {
     expect(text).not.toContain('Collection Window');
   });
 
+  it('falls back to the raw timestamp when an evidence date is invalid', async () => {
+    refs.evidenceResponse = {
+      ...structuredClone(baseEvidence),
+      expires: 'not-a-real-date',
+    };
+    refs.evidence.value = structuredClone(refs.evidenceResponse);
+
+    const wrapper = mountView();
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('not-a-real-date');
+    expect(wrapper.text()).not.toContain('Invalid Date');
+  });
+
   it('replaces expiration with a latest-evidence link for stale evidence', async () => {
     refs.evidenceResponse = {
       ...structuredClone(baseEvidence),

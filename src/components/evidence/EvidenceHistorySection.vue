@@ -212,7 +212,13 @@ function formatDateTime(value?: string) {
   if (!value) {
     return 'N/A';
   }
-  return new Date(value).toLocaleString();
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return value;
+  }
+
+  return parsed.toLocaleString();
 }
 
 function openEvidence(id: string) {
