@@ -778,33 +778,52 @@ const displayableMedia = computed<BackMatterResource[]>(() => {
     .filter((resource): resource is BackMatterResource => Boolean(resource));
 });
 
-const signatureSummary = computed(() => {
+const signatureBadgeState = computed(() => {
   if (signatureError.value) {
-    return 'Unavailable';
+    return {
+      text: 'Unavailable',
+      tooltip: 'Signature status is unavailable',
+      badgeClass:
+        'bg-slate-50 text-slate-700 border-slate-400 dark:bg-slate-900/30 dark:text-slate-300 dark:border-slate-600',
+      icon: BIconUnlockFill,
+    };
   }
 
   if (!signatureDetail.value) {
-    return 'Loading...';
+    return {
+      text: 'Loading...',
+      tooltip: 'Signature status is loading',
+      badgeClass:
+        'bg-slate-50 text-slate-700 border-slate-400 dark:bg-slate-900/30 dark:text-slate-300 dark:border-slate-600',
+      icon: BIconUnlockFill,
+    };
   }
 
-  return signatureDetail.value.status === 'signed' ? 'Signed' : 'Unsigned';
+  if (signatureDetail.value.status === 'signed') {
+    return {
+      text: 'Signed',
+      tooltip: 'Evidence is signed',
+      badgeClass:
+        'bg-green-50 text-green-800 border-green-800 dark:bg-green-950/30 dark:text-green-500 dark:border-green-600',
+      icon: BIconLockFill,
+    };
+  }
+
+  return {
+    text: 'Unsigned',
+    tooltip: 'Evidence is unsigned',
+    badgeClass:
+      'bg-amber-50 text-amber-800 border-amber-700 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-700',
+    icon: BIconUnlockFill,
+  };
 });
-const signatureBadgeText = computed(() =>
-  signatureDetail.value?.status === 'signed' ? 'Signed' : 'Unsigned',
+const signatureSummary = computed(() => signatureBadgeState.value.text);
+const signatureBadgeText = computed(() => signatureBadgeState.value.text);
+const signatureTooltip = computed(() => signatureBadgeState.value.tooltip);
+const signatureBadgeClass = computed(
+  () => signatureBadgeState.value.badgeClass,
 );
-const signatureTooltip = computed(() =>
-  signatureDetail.value?.status === 'signed'
-    ? 'Evidence is signed'
-    : 'Evidence is unsigned',
-);
-const signatureBadgeClass = computed(() =>
-  signatureDetail.value?.status === 'signed'
-    ? 'bg-green-50 text-green-800 border-green-800 dark:bg-green-950/30 dark:text-green-500 dark:border-green-600'
-    : 'bg-amber-50 text-amber-800 border-amber-700 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-700',
-);
-const signatureIcon = computed(() =>
-  signatureDetail.value?.status === 'signed' ? BIconLockFill : BIconUnlockFill,
-);
+const signatureIcon = computed(() => signatureBadgeState.value.icon);
 const isLatestEvidence = computed(() => {
   if (!evidence.value?.id || !latestEvidence.value?.id) {
     return true;

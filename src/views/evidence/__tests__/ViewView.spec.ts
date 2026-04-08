@@ -543,6 +543,26 @@ describe('Evidence ViewView', () => {
     );
   });
 
+  it('shows loading and unavailable signature badge states accurately', async () => {
+    refs.signature.value = undefined as unknown as Record<string, unknown>;
+
+    const loadingWrapper = mountView();
+    await flushPromises();
+
+    expect(loadingWrapper.text()).toContain('Loading...');
+    expect(loadingWrapper.text()).not.toContain('Unsigned');
+
+    refs.nullGetCallIndex = 0;
+    refs.signature.value = structuredClone(signedSignatureDetail);
+    refs.signatureError.value = new Error('signature failed');
+
+    const errorWrapper = mountView();
+    await flushPromises();
+
+    expect(errorWrapper.text()).toContain('Unavailable');
+    expect(errorWrapper.text()).not.toContain('Unsigned');
+  });
+
   it('renders the shared history section in the history tab', async () => {
     const wrapper = mountView();
     await flushPromises();

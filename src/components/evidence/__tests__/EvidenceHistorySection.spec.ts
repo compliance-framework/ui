@@ -129,6 +129,9 @@ describe('EvidenceHistorySection', () => {
           PageCard: {
             template: '<section><slot /></section>',
           },
+          Message: {
+            template: '<div><slot /></div>',
+          },
           TertiaryButton: {
             emits: ['click'],
             template:
@@ -172,6 +175,9 @@ describe('EvidenceHistorySection', () => {
           PageCard: {
             template: '<section><slot /></section>',
           },
+          Message: {
+            template: '<div><slot /></div>',
+          },
           TertiaryButton: {
             emits: ['click'],
             template:
@@ -206,5 +212,45 @@ describe('EvidenceHistorySection', () => {
     expect(wrapper.text()).toContain('Evidence 11');
     expect(wrapper.text()).toContain('Evidence 12');
     expect(wrapper.text()).not.toContain('Evidence 01');
+  });
+
+  it('shows an error state when loading history fails', async () => {
+    refs.error.value = new Error('history failed');
+
+    const wrapper = mount(EvidenceHistorySection, {
+      props: {
+        uuid: 'history-uuid-1',
+      },
+      global: {
+        stubs: {
+          PageCard: {
+            template: '<section><slot /></section>',
+          },
+          Message: {
+            template: '<div><slot /></div>',
+          },
+          TertiaryButton: {
+            emits: ['click'],
+            template:
+              '<button type="button" @click="$emit(\'click\')" :disabled="$attrs.disabled"><slot /></button>',
+          },
+          ResultComplianceOverTimeChart: {
+            template: '<div>Chart</div>',
+          },
+          ResultStatusRing: {
+            template: '<div>StatusRing</div>',
+          },
+        },
+      },
+    });
+
+    await flushPromises();
+
+    expect(wrapper.text()).toContain(
+      'Failed to load evidence history for this stream.',
+    );
+    expect(wrapper.text()).not.toContain(
+      'No history is available for this evidence stream.',
+    );
   });
 });

@@ -29,6 +29,15 @@
         </div>
       </template>
 
+      <Message
+        v-else-if="historyError"
+        severity="error"
+        variant="outlined"
+        class="m-4"
+      >
+        Failed to load evidence history for this stream.
+      </Message>
+
       <template v-else-if="!historyItems.length">
         <div class="p-4 text-sm text-gray-600 dark:text-slate-400">
           No history is available for this evidence stream.
@@ -101,6 +110,7 @@ import type { ChartData } from 'chart.js';
 import PageCard from '@/components/PageCard.vue';
 import ResultComplianceOverTimeChart from '@/components/ResultComplianceOverTimeChart.vue';
 import ResultStatusRing from '@/components/ResultStatusRing.vue';
+import Message from '@/volt/Message.vue';
 import TertiaryButton from '@/volt/TertiaryButton.vue';
 import { calculateHeartbeatOverTimeData } from '@/parsers/heartbeats.ts';
 import {
@@ -121,6 +131,7 @@ const currentPage = ref(1);
 const {
   data: evidence,
   isLoading: historyLoading,
+  error: historyError,
   execute: loadEvidenceHistory,
 } = useDataApi<Evidence[]>(null, null, { immediate: false });
 
