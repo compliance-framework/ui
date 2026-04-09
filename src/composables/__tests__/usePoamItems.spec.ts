@@ -119,11 +119,19 @@ describe('usePoamItems', () => {
         title: 'Test',
         status: 'open',
         sspId: 'ssp-1',
+        plannedCompletionDate: '2026-04-09',
       };
       await createPoamItem(payload);
       expect(mockExecute).toHaveBeenCalledWith(
         '/api/poam-items',
-        expect.objectContaining({ method: 'POST' }),
+        expect.objectContaining({
+          method: 'POST',
+          data: expect.objectContaining({
+            ...payload,
+            plannedCompletionDate: '2026-04-09T23:59:59.000Z',
+          }),
+          transformRequest: [expect.any(Function)],
+        }),
       );
     });
 
@@ -142,11 +150,19 @@ describe('usePoamItems', () => {
       const { updatePoamItem } = usePoamItemUpdate();
       const payload: UpdatePoamItemRequest = {
         title: 'Updated Item',
+        plannedCompletionDate: '2026-04-10',
       };
       await updatePoamItem('item-123', payload);
       expect(mockExecute).toHaveBeenCalledWith(
         '/api/poam-items/item-123',
-        expect.objectContaining({ method: 'PUT', data: payload }),
+        expect.objectContaining({
+          method: 'PUT',
+          data: {
+            ...payload,
+            plannedCompletionDate: '2026-04-10T23:59:59.000Z',
+          },
+          transformRequest: [expect.any(Function)],
+        }),
       );
     });
   });
@@ -185,11 +201,19 @@ describe('usePoamItems', () => {
         title: 'M1',
         status: 'open',
         plannedCompletionDate: '2026-12-31',
+        responsibleParty: 'user-123',
       };
       await createMilestone(payload);
       expect(mockExecute).toHaveBeenCalledWith(
         '/api/poam-items/poam-item-789/milestones',
-        expect.objectContaining({ method: 'POST' }),
+        expect.objectContaining({
+          method: 'POST',
+          data: {
+            ...payload,
+            plannedCompletionDate: '2026-12-31T23:59:59.000Z',
+          },
+          transformRequest: [expect.any(Function)],
+        }),
       );
     });
   });
@@ -203,11 +227,20 @@ describe('usePoamItems', () => {
       const payload: UpdateMilestoneRequest = {
         title: 'M1 Updated',
         status: 'in-progress',
+        plannedCompletionDate: '2026-05-01',
+        responsibleParty: 'user-456',
       };
       await updateMilestone('milestone-456', payload);
       expect(mockExecute).toHaveBeenCalledWith(
         '/api/poam-items/poam-item-789/milestones/milestone-456',
-        expect.objectContaining({ method: 'PUT', data: payload }),
+        expect.objectContaining({
+          method: 'PUT',
+          data: {
+            ...payload,
+            plannedCompletionDate: '2026-05-01T23:59:59.000Z',
+          },
+          transformRequest: [expect.any(Function)],
+        }),
       );
     });
   });
