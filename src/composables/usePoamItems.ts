@@ -14,6 +14,41 @@ import type {
   PromoteRiskToPoamRequest,
 } from '@/types/poam-items';
 
+function normalizeDateOnlyToIsoString(value?: string): string | undefined {
+  if (!value) return value;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+
+  const parsed = new Date(`${value}T23:59:59Z`);
+  if (Number.isNaN(parsed.getTime())) return value;
+
+  const isoString = parsed.toISOString();
+  if (isoString.substring(0, 10) !== value) return value;
+
+  return isoString;
+}
+
+function normalizePoamItemPayloadDates<
+  T extends CreatePoamItemRequest | UpdatePoamItemRequest,
+>(payload: T): T {
+  return {
+    ...payload,
+    plannedCompletionDate: normalizeDateOnlyToIsoString(
+      payload.plannedCompletionDate,
+    ),
+  };
+}
+
+function normalizeMilestonePayloadDates<
+  T extends CreateMilestoneRequest | UpdateMilestoneRequest,
+>(payload: T): T {
+  return {
+    ...payload,
+    plannedCompletionDate: normalizeDateOnlyToIsoString(
+      payload.plannedCompletionDate,
+    ),
+  };
+}
+
 // ─── POAM Items ───────────────────────────────────────────────────────────────
 
 export function usePoamItemsList(filters?: PoamItemListFilters) {
@@ -60,7 +95,7 @@ export function usePoamItemCreate() {
   async function createPoamItem(payload: CreatePoamItemRequest) {
     return execute(`/api/poam-items`, {
       method: 'POST',
-      data: payload,
+      data: normalizePoamItemPayloadDates(payload),
       transformRequest: [decamelizeKeys],
     });
   }
@@ -78,7 +113,7 @@ export function usePoamItemUpdate() {
   async function updatePoamItem(id: string, payload: UpdatePoamItemRequest) {
     return execute(`/api/poam-items/${id}`, {
       method: 'PUT',
-      data: payload,
+      data: normalizePoamItemPayloadDates(payload),
       transformRequest: [decamelizeKeys],
     });
   }
@@ -118,7 +153,8 @@ export function useMilestoneCreate(poamItemId: string) {
   async function createMilestone(payload: CreateMilestoneRequest) {
     return execute(`/api/poam-items/${poamItemId}/milestones`, {
       method: 'POST',
-      data: payload,
+      data: normalizeMilestonePayloadDates(payload),
+      transformRequest: [decamelizeKeys],
     });
   }
 
@@ -138,7 +174,8 @@ export function useMilestoneUpdate(poamItemId: string) {
   ) {
     return execute(`/api/poam-items/${poamItemId}/milestones/${milestoneId}`, {
       method: 'PUT',
-      data: payload,
+      data: normalizeMilestonePayloadDates(payload),
+      transformRequest: [decamelizeKeys],
     });
   }
 
