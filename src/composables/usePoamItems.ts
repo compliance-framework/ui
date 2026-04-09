@@ -21,7 +21,10 @@ function normalizeDateOnlyToIsoString(value?: string): string | undefined {
   const parsed = new Date(`${value}T23:59:59Z`);
   if (Number.isNaN(parsed.getTime())) return value;
 
-  return parsed.toISOString();
+  const isoString = parsed.toISOString();
+  if (isoString.substring(0, 10) !== value) return value;
+
+  return isoString;
 }
 
 function normalizePoamItemPayloadDates<

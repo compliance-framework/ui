@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ref } from 'vue';
-import { useDataApi } from '@/composables/axios';
+import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import type {
   CreatePoamItemRequest,
   UpdatePoamItemRequest,
@@ -130,7 +130,30 @@ describe('usePoamItems', () => {
             ...payload,
             plannedCompletionDate: '2026-04-09T23:59:59.000Z',
           }),
-          transformRequest: [expect.any(Function)],
+          transformRequest: [decamelizeKeys],
+        }),
+      );
+    });
+
+    it('leaves invalid date-only strings unchanged', async () => {
+      mockExecute.mockResolvedValue(undefined);
+      const { createPoamItem } = usePoamItemCreate();
+      const payload: CreatePoamItemRequest = {
+        title: 'Test',
+        status: 'open',
+        sspId: 'ssp-1',
+        plannedCompletionDate: '2026-02-30',
+      };
+      await createPoamItem(payload);
+      expect(mockExecute).toHaveBeenCalledWith(
+        '/api/poam-items',
+        expect.objectContaining({
+          method: 'POST',
+          data: expect.objectContaining({
+            ...payload,
+            plannedCompletionDate: '2026-02-30',
+          }),
+          transformRequest: [decamelizeKeys],
         }),
       );
     });
@@ -161,7 +184,7 @@ describe('usePoamItems', () => {
             ...payload,
             plannedCompletionDate: '2026-04-10T23:59:59.000Z',
           },
-          transformRequest: [expect.any(Function)],
+          transformRequest: [decamelizeKeys],
         }),
       );
     });
@@ -212,7 +235,7 @@ describe('usePoamItems', () => {
             ...payload,
             plannedCompletionDate: '2026-12-31T23:59:59.000Z',
           },
-          transformRequest: [expect.any(Function)],
+          transformRequest: [decamelizeKeys],
         }),
       );
     });
@@ -239,7 +262,7 @@ describe('usePoamItems', () => {
             ...payload,
             plannedCompletionDate: '2026-05-01T23:59:59.000Z',
           },
-          transformRequest: [expect.any(Function)],
+          transformRequest: [decamelizeKeys],
         }),
       );
     });
