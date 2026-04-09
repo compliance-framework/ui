@@ -57,27 +57,20 @@
                     />
                   </h4>
                   <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                    Receive periodic email summaries of evidence updates and
-                    activities
+                    Choose where evidence digest alerts are sent
                   </p>
                 </div>
 
-                <div class="ml-4">
-                  <label
-                    class="relative inline-flex items-center cursor-pointer"
-                  >
-                    <input
-                      type="checkbox"
-                      v-model="digestSubscribed"
-                      @change="updateEmailPreferences"
-                      :disabled="updating"
-                      class="sr-only peer"
-                      aria-labelledby="evidence-digest-heading"
-                    />
-                    <div
-                      class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"
-                    ></div>
-                  </label>
+                <div class="ml-4 w-48">
+                  <MultiSelectDropdown
+                    :options="notificationChannelOptions"
+                    :model-value="evidenceDigestAlertChannels"
+                    :disabled="updating"
+                    placeholder="Select channels"
+                    id="evidence-digest"
+                    aria-labelledby="evidence-digest-heading"
+                    @update:model-value="onEvidenceDigestChannelsChange"
+                  />
                 </div>
               </div>
             </div>
@@ -105,26 +98,20 @@
                     />
                   </h4>
                   <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                    Receive an email when new tasks become available for you
+                    Choose where task available alerts are sent
                   </p>
                 </div>
 
-                <div class="ml-4">
-                  <label
-                    class="relative inline-flex items-center cursor-pointer"
-                  >
-                    <input
-                      type="checkbox"
-                      v-model="taskAvailableEmailSubscribed"
-                      @change="updateEmailPreferences"
-                      :disabled="updating"
-                      class="sr-only peer"
-                      aria-labelledby="task-available-heading"
-                    />
-                    <div
-                      class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"
-                    ></div>
-                  </label>
+                <div class="ml-4 w-48">
+                  <MultiSelectDropdown
+                    :options="notificationChannelOptions"
+                    :model-value="taskAvailableAlertChannels"
+                    :disabled="updating"
+                    placeholder="Select channels"
+                    id="task-available"
+                    aria-labelledby="task-available-heading"
+                    @update:model-value="onTaskAvailableChannelsChange"
+                  />
                 </div>
               </div>
 
@@ -142,26 +129,20 @@
                     />
                   </h4>
                   <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                    Receive a daily summary email of your task activity
+                    Choose where daily task digest alerts are sent
                   </p>
                 </div>
 
-                <div class="ml-4">
-                  <label
-                    class="relative inline-flex items-center cursor-pointer"
-                  >
-                    <input
-                      type="checkbox"
-                      v-model="taskDailyDigestSubscribed"
-                      @change="updateEmailPreferences"
-                      :disabled="updating"
-                      class="sr-only peer"
-                      aria-labelledby="task-digest-heading"
-                    />
-                    <div
-                      class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"
-                    ></div>
-                  </label>
+                <div class="ml-4 w-48">
+                  <MultiSelectDropdown
+                    :options="notificationChannelOptions"
+                    :model-value="taskDailyDigestAlertChannels"
+                    :disabled="updating"
+                    placeholder="Select channels"
+                    id="task-digest"
+                    aria-labelledby="task-digest-heading"
+                    @update:model-value="onTaskDailyDigestChannelsChange"
+                  />
                 </div>
               </div>
             </div>
@@ -216,6 +197,7 @@
                 user?.authMethod || 'Password'
               }}</span>
             </div>
+            <SlackAccountLinkSection @status-change="onSlackLinkStatusChange" />
           </div>
         </div>
       </PageCard>
@@ -224,52 +206,344 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted, onUnmounted } from 'vue';
+import { computed, ref, onMounted, onUnmounted, watch } from 'vue';
 import { useAuthenticatedInstance } from '@/composables/axios';
 import type { CCFUser } from '@/stores/types';
 import PageHeader from '@/components/PageHeader.vue';
 import PageCard from '@/components/PageCard.vue';
 import TooltipTitle from '@/components/TooltipTitle.vue';
+import MultiSelectDropdown from '@/components/forms/MultiSelectDropdown.vue';
+import SlackAccountLinkSection from '@/components/preferences/SlackAccountLinkSection.vue';
 
-interface SubscriptionsPreferences {
-  subscribed: boolean;
-  taskAvailableEmailSubscribed: boolean;
-  taskDailyDigestSubscribed: boolean;
+type NotificationAlertChannel = 'email' | 'slack';
+
+const NOTIFICATION_ALERT_CHANNELS: NotificationAlertChannel[] = [
+  'email',
+  'slack',
+];
+
+interface NotificationSubscriptions {
+  taskAvailable?: NotificationAlertChannel[];
+  evidenceDigest?: NotificationAlertChannel[];
+  taskDailyDigest?: NotificationAlertChannel[];
 }
+
+interface SubscriptionsPreferencesResponse {
+  notifications?: NotificationSubscriptions;
+  taskAvailableEmailSubscribed?: boolean;
+}
+
+interface SubscriptionsPreferencesPayload {
+  notifications: {
+    evidence_digest: NotificationAlertChannel[];
+    task_available: NotificationAlertChannel[];
+    task_daily_digest: NotificationAlertChannel[];
+  };
+}
+
+interface UpdateNotificationPreferencesOptions {
+  silent?: boolean;
+}
+
+interface SlackAvailabilityState {
+  loading: boolean;
+  configured: boolean;
+  linked: boolean;
+}
+
+const normalizeNotificationChannels = (
+  channels: unknown,
+): NotificationAlertChannel[] => {
+  if (!Array.isArray(channels)) {
+    return [];
+  }
+
+  const normalized = channels.filter(
+    (channel): channel is NotificationAlertChannel =>
+      typeof channel === 'string' &&
+      NOTIFICATION_ALERT_CHANNELS.includes(channel as NotificationAlertChannel),
+  );
+
+  return normalized;
+};
+
+const resolveTaskAvailableChannels = (
+  taskAvailableChannels: NotificationAlertChannel[],
+  taskAvailableEmailSubscribed?: boolean,
+): NotificationAlertChannel[] => {
+  if (taskAvailableChannels.length > 0) {
+    return taskAvailableChannels;
+  }
+
+  if (taskAvailableEmailSubscribed) {
+    return ['email'];
+  }
+
+  return [];
+};
 
 const axios = useAuthenticatedInstance();
 const user = ref<CCFUser | null>(null);
 const loading = ref(true);
 const updating = ref(false);
-const digestSubscribed = ref(false);
-const taskAvailableEmailSubscribed = ref(false);
-const taskDailyDigestSubscribed = ref(false);
-const lastSavedPreferences = ref<SubscriptionsPreferences>({
-  subscribed: false,
-  taskAvailableEmailSubscribed: false,
-  taskDailyDigestSubscribed: false,
+const evidenceDigestAlertChannels = ref<NotificationAlertChannel[]>([]);
+const taskAvailableAlertChannels = ref<NotificationAlertChannel[]>([]);
+const taskDailyDigestAlertChannels = ref<NotificationAlertChannel[]>([]);
+const slackLinkConfigured = ref(false);
+const slackStatusLoading = ref(true);
+const isSlackLinked = ref(false);
+const lastSavedPreferences = ref<SubscriptionsPreferencesPayload>({
+  notifications: {
+    evidence_digest: [],
+    task_available: [],
+    task_daily_digest: [],
+  },
 });
 const updateError = ref<string | null>(null);
 const updateSuccess = ref(false);
 const loadError = ref<string | null>(null);
 const successTimeoutId = ref<number | null>(null);
+let notificationUpdateQueue: Promise<void> = Promise.resolve();
+let pendingNotificationUpdateOptions: UpdateNotificationPreferencesOptions | null =
+  null;
+
+const canSelectSlackAlertChannel = computed(
+  () =>
+    !slackStatusLoading.value &&
+    slackLinkConfigured.value &&
+    isSlackLinked.value,
+);
+
+const sanitizeNotificationChannels = (
+  channels: NotificationAlertChannel[],
+): NotificationAlertChannel[] => {
+  return channels.filter(
+    (channel) => channel !== 'slack' || canSelectSlackAlertChannel.value,
+  );
+};
+
+const removeSlackChannels = (
+  channels: NotificationAlertChannel[],
+): NotificationAlertChannel[] => {
+  return channels.filter((channel) => channel !== 'slack');
+};
+
+const removeUnavailableSlackSelections = () => {
+  if (slackStatusLoading.value || canSelectSlackAlertChannel.value) {
+    return false;
+  }
+
+  const sanitizedEvidenceDigestChannels = removeSlackChannels(
+    evidenceDigestAlertChannels.value,
+  );
+  const sanitizedTaskAvailableChannels = removeSlackChannels(
+    taskAvailableAlertChannels.value,
+  );
+  const sanitizedTaskDailyDigestChannels = removeSlackChannels(
+    taskDailyDigestAlertChannels.value,
+  );
+
+  const hadUnavailableSlackSelection =
+    sanitizedEvidenceDigestChannels.length !==
+      evidenceDigestAlertChannels.value.length ||
+    sanitizedTaskAvailableChannels.length !==
+      taskAvailableAlertChannels.value.length ||
+    sanitizedTaskDailyDigestChannels.length !==
+      taskDailyDigestAlertChannels.value.length;
+
+  if (!hadUnavailableSlackSelection) {
+    return false;
+  }
+
+  evidenceDigestAlertChannels.value = sanitizedEvidenceDigestChannels;
+  taskAvailableAlertChannels.value = sanitizedTaskAvailableChannels;
+  taskDailyDigestAlertChannels.value = sanitizedTaskDailyDigestChannels;
+
+  return true;
+};
+
+const buildNotificationPreferencesPayload =
+  (): SubscriptionsPreferencesPayload => {
+    const persistedEvidenceDigestChannels = sanitizeNotificationChannels(
+      evidenceDigestAlertChannels.value,
+    );
+    const persistedTaskAvailableChannels = sanitizeNotificationChannels(
+      taskAvailableAlertChannels.value,
+    );
+    const persistedTaskDailyDigestChannels = sanitizeNotificationChannels(
+      taskDailyDigestAlertChannels.value,
+    );
+
+    return {
+      notifications: {
+        evidence_digest: persistedEvidenceDigestChannels,
+        task_available: persistedTaskAvailableChannels,
+        task_daily_digest: persistedTaskDailyDigestChannels,
+      },
+    };
+  };
+
+const revertToLastSavedNotificationPreferences = () => {
+  evidenceDigestAlertChannels.value = sanitizeNotificationChannels([
+    ...lastSavedPreferences.value.notifications.evidence_digest,
+  ]);
+  taskAvailableAlertChannels.value = sanitizeNotificationChannels([
+    ...lastSavedPreferences.value.notifications.task_available,
+  ]);
+  taskDailyDigestAlertChannels.value = sanitizeNotificationChannels([
+    ...lastSavedPreferences.value.notifications.task_daily_digest,
+  ]);
+};
+
+const normalizeUpdateNotificationPreferencesOptions = (
+  options: UpdateNotificationPreferencesOptions = {},
+): Required<UpdateNotificationPreferencesOptions> => {
+  return {
+    silent: options.silent ?? false,
+  };
+};
+
+const mergeUpdateNotificationPreferencesOptions = (
+  existingOptions: UpdateNotificationPreferencesOptions | null,
+  incomingOptions: Required<UpdateNotificationPreferencesOptions>,
+): Required<UpdateNotificationPreferencesOptions> => {
+  return {
+    silent: (existingOptions?.silent ?? true) && incomingOptions.silent,
+  };
+};
+
+const performNotificationPreferencesUpdate = async (
+  options: Required<UpdateNotificationPreferencesOptions>,
+) => {
+  const { silent = false } = options;
+
+  updating.value = true;
+  updateError.value = null;
+  updateSuccess.value = false;
+
+  if (successTimeoutId.value) {
+    clearTimeout(successTimeoutId.value);
+    successTimeoutId.value = null;
+  }
+
+  const payload = buildNotificationPreferencesPayload();
+
+  try {
+    await axios.put('/api/users/me/subscriptions', payload);
+
+    lastSavedPreferences.value = {
+      notifications: {
+        evidence_digest: [...payload.notifications.evidence_digest],
+        task_available: [...payload.notifications.task_available],
+        task_daily_digest: [...payload.notifications.task_daily_digest],
+      },
+    };
+
+    if (!silent) {
+      updateSuccess.value = true;
+      // Hide success message after 3 seconds
+      successTimeoutId.value = window.setTimeout(() => {
+        updateSuccess.value = false;
+      }, 3000);
+    }
+  } catch (error) {
+    console.error('Error updating notification preferences:', error);
+    updateError.value = 'Failed to update preferences. Please try again.';
+
+    revertToLastSavedNotificationPreferences();
+  } finally {
+    updating.value = false;
+  }
+};
+
+const drainQueuedNotificationPreferencesUpdates = async () => {
+  while (pendingNotificationUpdateOptions) {
+    const nextUpdateOptions = normalizeUpdateNotificationPreferencesOptions(
+      pendingNotificationUpdateOptions,
+    );
+    pendingNotificationUpdateOptions = null;
+    await performNotificationPreferencesUpdate(nextUpdateOptions);
+  }
+};
+
+const updateNotificationPreferences = (
+  options: UpdateNotificationPreferencesOptions = {},
+) => {
+  const normalizedOptions =
+    normalizeUpdateNotificationPreferencesOptions(options);
+
+  pendingNotificationUpdateOptions = mergeUpdateNotificationPreferencesOptions(
+    pendingNotificationUpdateOptions,
+    normalizedOptions,
+  );
+
+  notificationUpdateQueue = notificationUpdateQueue.then(
+    drainQueuedNotificationPreferencesUpdates,
+    drainQueuedNotificationPreferencesUpdates,
+  );
+
+  return notificationUpdateQueue;
+};
+
+const syncUnavailableSlackSelections = async () => {
+  if (!removeUnavailableSlackSelections()) {
+    return;
+  }
+
+  await updateNotificationPreferences({ silent: true });
+};
+
+const notificationChannelOptions = computed<
+  Array<{
+    label: string;
+    value: NotificationAlertChannel;
+    disabled?: boolean;
+    disabledTooltip?: string;
+  }>
+>(() => [
+  { label: 'Email', value: 'email' },
+  {
+    label: 'Slack',
+    value: 'slack',
+    disabled: !canSelectSlackAlertChannel.value,
+    disabledTooltip: !canSelectSlackAlertChannel.value
+      ? (slackAlertUnavailableReason.value ?? undefined)
+      : undefined,
+  },
+]);
 
 const evidenceDigestTooltipText = computed(() =>
-  digestSubscribed.value
-    ? 'Active: You will receive digest emails according to the system schedule.'
-    : 'Inactive: You will not receive digest emails.',
+  evidenceDigestAlertChannels.value.length === 0
+    ? 'Evidence digest alerts are turned off.'
+    : 'Evidence digest alerts will be sent to your chosen channels.',
 );
 
-const taskAvailableTooltipText = computed(() =>
-  taskAvailableEmailSubscribed.value
-    ? 'Active: You will receive an email when new tasks become available for you.'
-    : 'Inactive: You will not receive task-available alert emails.',
-);
+const taskAvailableTooltipText = computed(() => {
+  return taskAvailableAlertChannels.value.length === 0
+    ? 'Task available alerts are turned off.'
+    : 'Task alerts will be sent to your chosen channels.';
+});
+
+const slackAlertUnavailableReason = computed(() => {
+  if (slackStatusLoading.value) {
+    return 'Slack alerts are unavailable until Slack link status finishes loading.';
+  }
+
+  if (!slackLinkConfigured.value) {
+    return 'Slack alerts are unavailable because Slack integration is not configured for this environment.';
+  }
+
+  if (!isSlackLinked.value) {
+    return 'Link your Slack account below to enable Slack alerts.';
+  }
+
+  return null;
+});
 
 const taskDailyDigestTooltipText = computed(() =>
-  taskDailyDigestSubscribed.value
-    ? 'Active: You will receive a daily summary email of your task activity.'
-    : 'Inactive: You will not receive daily task digest emails.',
+  taskDailyDigestAlertChannels.value.length === 0
+    ? 'Daily task digest alerts are turned off.'
+    : 'Daily task digest alerts will be sent to your chosen channels.',
 );
 
 // Load user data and subscriptions
@@ -281,22 +555,39 @@ const loadUserData = async () => {
 
     // Get subscriptions status
     const subscriptionResponse = await axios.get<{
-      data: SubscriptionsPreferences;
+      data: SubscriptionsPreferencesResponse;
     }>('/api/users/me/subscriptions');
 
-    digestSubscribed.value = subscriptionResponse.data.data.subscribed;
-    taskAvailableEmailSubscribed.value =
-      subscriptionResponse.data.data.taskAvailableEmailSubscribed;
-    taskDailyDigestSubscribed.value =
-      subscriptionResponse.data.data.taskDailyDigestSubscribed;
+    const evidenceDigestChannels = normalizeNotificationChannels(
+      subscriptionResponse.data.data.notifications?.evidenceDigest,
+    );
+
+    evidenceDigestAlertChannels.value = evidenceDigestChannels;
+
+    const taskAvailableChannels = normalizeNotificationChannels(
+      subscriptionResponse.data.data.notifications?.taskAvailable,
+    );
+
+    taskAvailableAlertChannels.value = resolveTaskAvailableChannels(
+      taskAvailableChannels,
+      subscriptionResponse.data.data.taskAvailableEmailSubscribed,
+    );
+
+    const taskDailyDigestChannels = normalizeNotificationChannels(
+      subscriptionResponse.data.data.notifications?.taskDailyDigest,
+    );
+
+    taskDailyDigestAlertChannels.value = taskDailyDigestChannels;
 
     lastSavedPreferences.value = {
-      subscribed: subscriptionResponse.data.data.subscribed,
-      taskAvailableEmailSubscribed:
-        subscriptionResponse.data.data.taskAvailableEmailSubscribed,
-      taskDailyDigestSubscribed:
-        subscriptionResponse.data.data.taskDailyDigestSubscribed,
+      notifications: {
+        evidence_digest: [...evidenceDigestAlertChannels.value],
+        task_available: [...taskAvailableAlertChannels.value],
+        task_daily_digest: [...taskDailyDigestAlertChannels.value],
+      },
     };
+
+    await syncUnavailableSlackSelections();
   } catch (error) {
     console.error('Error loading user data:', error);
     loadError.value =
@@ -306,48 +597,36 @@ const loadUserData = async () => {
   }
 };
 
-// Update email preferences
-const updateEmailPreferences = async () => {
-  updating.value = true;
-  updateError.value = null;
-  updateSuccess.value = false;
-
-  try {
-    await axios.put('/api/users/me/subscriptions', {
-      subscribed: digestSubscribed.value,
-      taskAvailableEmailSubscribed: taskAvailableEmailSubscribed.value,
-      taskDailyDigestSubscribed: taskDailyDigestSubscribed.value,
-    });
-
-    lastSavedPreferences.value = {
-      subscribed: digestSubscribed.value,
-      taskAvailableEmailSubscribed: taskAvailableEmailSubscribed.value,
-      taskDailyDigestSubscribed: taskDailyDigestSubscribed.value,
-    };
-
-    if (successTimeoutId.value) {
-      clearTimeout(successTimeoutId.value);
-    }
-
-    updateSuccess.value = true;
-    // Hide success message after 3 seconds
-    successTimeoutId.value = window.setTimeout(() => {
-      updateSuccess.value = false;
-    }, 3000);
-  } catch (error) {
-    console.error('Error updating email preferences:', error);
-    updateError.value = 'Failed to update preferences. Please try again.';
-
-    // Revert to previous values on error
-    digestSubscribed.value = lastSavedPreferences.value.subscribed;
-    taskAvailableEmailSubscribed.value =
-      lastSavedPreferences.value.taskAvailableEmailSubscribed;
-    taskDailyDigestSubscribed.value =
-      lastSavedPreferences.value.taskDailyDigestSubscribed;
-  } finally {
-    updating.value = false;
-  }
+const onEvidenceDigestChannelsChange = async (
+  channels: NotificationAlertChannel[],
+) => {
+  evidenceDigestAlertChannels.value = sanitizeNotificationChannels(channels);
+  await updateNotificationPreferences();
 };
+
+const onTaskAvailableChannelsChange = async (
+  channels: NotificationAlertChannel[],
+) => {
+  taskAvailableAlertChannels.value = sanitizeNotificationChannels(channels);
+  await updateNotificationPreferences();
+};
+
+const onTaskDailyDigestChannelsChange = async (
+  channels: NotificationAlertChannel[],
+) => {
+  taskDailyDigestAlertChannels.value = sanitizeNotificationChannels(channels);
+  await updateNotificationPreferences();
+};
+
+const onSlackLinkStatusChange = (state: SlackAvailabilityState) => {
+  slackStatusLoading.value = state.loading;
+  slackLinkConfigured.value = state.configured;
+  isSlackLinked.value = state.linked;
+};
+
+watch([slackStatusLoading, canSelectSlackAlertChannel], () => {
+  void syncUnavailableSlackSelections();
+});
 
 onMounted(() => {
   loadUserData();

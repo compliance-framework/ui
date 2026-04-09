@@ -977,6 +977,11 @@ const publicRoutes = [
     component: () => import('@/views/SSOCallbackView.vue'),
   },
   {
+    path: 'slack/callback',
+    name: 'slack-link-callback',
+    component: () => import('@/views/SlackLinkCallbackView.vue'),
+  },
+  {
     path: 'logout',
     name: 'logout',
     component: () => import('@/views/LogoutView.vue'),
