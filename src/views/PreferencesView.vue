@@ -146,6 +146,47 @@
                 </div>
               </div>
             </div>
+
+            <div
+              class="space-y-3 pt-2 border-t border-gray-200 dark:border-gray-700"
+            >
+              <h3
+                class="text-base font-semibold text-gray-900 dark:text-gray-100"
+              >
+                Risk Notifications
+              </h3>
+
+              <div
+                class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg"
+              >
+                <div class="flex-1">
+                  <h4
+                    id="risk-notifications-heading"
+                    class="text-lg font-medium text-gray-900 dark:text-gray-100"
+                  >
+                    <TooltipTitle
+                      text="Risk Notifications"
+                      :tooltip-text="riskNotificationsTooltipText"
+                    />
+                  </h4>
+                  <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    Choose where risk notifications are sent
+                  </p>
+                </div>
+
+                <div class="ml-4 w-48">
+                  <MultiSelectDropdown
+                    :options="notificationChannelOptions"
+                    :model-value="riskNotificationsAlertChannels"
+                    :disabled="updating"
+                    placeholder="Select channels"
+                    id="risk-notifications"
+                    aria-labelledby="risk-notifications-heading"
+                    @update:model-value="onRiskNotificationsChannelsChange"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
 
           <div
@@ -226,11 +267,11 @@ interface NotificationSubscriptions {
   taskAvailable?: NotificationAlertChannel[];
   evidenceDigest?: NotificationAlertChannel[];
   taskDailyDigest?: NotificationAlertChannel[];
+  riskNotifications?: NotificationAlertChannel[];
 }
 
 interface SubscriptionsPreferencesResponse {
   notifications?: NotificationSubscriptions;
-  taskAvailableEmailSubscribed?: boolean;
 }
 
 interface SubscriptionsPreferencesPayload {
@@ -238,6 +279,7 @@ interface SubscriptionsPreferencesPayload {
     evidence_digest: NotificationAlertChannel[];
     task_available: NotificationAlertChannel[];
     task_daily_digest: NotificationAlertChannel[];
+    risk_notifications: NotificationAlertChannel[];
   };
 }
 
@@ -267,21 +309,6 @@ const normalizeNotificationChannels = (
   return normalized;
 };
 
-const resolveTaskAvailableChannels = (
-  taskAvailableChannels: NotificationAlertChannel[],
-  taskAvailableEmailSubscribed?: boolean,
-): NotificationAlertChannel[] => {
-  if (taskAvailableChannels.length > 0) {
-    return taskAvailableChannels;
-  }
-
-  if (taskAvailableEmailSubscribed) {
-    return ['email'];
-  }
-
-  return [];
-};
-
 const axios = useAuthenticatedInstance();
 const user = ref<CCFUser | null>(null);
 const loading = ref(true);
@@ -289,6 +316,7 @@ const updating = ref(false);
 const evidenceDigestAlertChannels = ref<NotificationAlertChannel[]>([]);
 const taskAvailableAlertChannels = ref<NotificationAlertChannel[]>([]);
 const taskDailyDigestAlertChannels = ref<NotificationAlertChannel[]>([]);
+const riskNotificationsAlertChannels = ref<NotificationAlertChannel[]>([]);
 const slackLinkConfigured = ref(false);
 const slackStatusLoading = ref(true);
 const isSlackLinked = ref(false);
@@ -297,6 +325,7 @@ const lastSavedPreferences = ref<SubscriptionsPreferencesPayload>({
     evidence_digest: [],
     task_available: [],
     task_daily_digest: [],
+    risk_notifications: [],
   },
 });
 const updateError = ref<string | null>(null);
@@ -342,6 +371,9 @@ const removeUnavailableSlackSelections = () => {
   const sanitizedTaskDailyDigestChannels = removeSlackChannels(
     taskDailyDigestAlertChannels.value,
   );
+  const sanitizedRiskNotificationsChannels = removeSlackChannels(
+    riskNotificationsAlertChannels.value,
+  );
 
   const hadUnavailableSlackSelection =
     sanitizedEvidenceDigestChannels.length !==
@@ -349,7 +381,9 @@ const removeUnavailableSlackSelections = () => {
     sanitizedTaskAvailableChannels.length !==
       taskAvailableAlertChannels.value.length ||
     sanitizedTaskDailyDigestChannels.length !==
-      taskDailyDigestAlertChannels.value.length;
+      taskDailyDigestAlertChannels.value.length ||
+    sanitizedRiskNotificationsChannels.length !==
+      riskNotificationsAlertChannels.value.length;
 
   if (!hadUnavailableSlackSelection) {
     return false;
@@ -358,6 +392,7 @@ const removeUnavailableSlackSelections = () => {
   evidenceDigestAlertChannels.value = sanitizedEvidenceDigestChannels;
   taskAvailableAlertChannels.value = sanitizedTaskAvailableChannels;
   taskDailyDigestAlertChannels.value = sanitizedTaskDailyDigestChannels;
+  riskNotificationsAlertChannels.value = sanitizedRiskNotificationsChannels;
 
   return true;
 };
@@ -373,12 +408,16 @@ const buildNotificationPreferencesPayload =
     const persistedTaskDailyDigestChannels = sanitizeNotificationChannels(
       taskDailyDigestAlertChannels.value,
     );
+    const persistedRiskNotificationsChannels = sanitizeNotificationChannels(
+      riskNotificationsAlertChannels.value,
+    );
 
     return {
       notifications: {
         evidence_digest: persistedEvidenceDigestChannels,
         task_available: persistedTaskAvailableChannels,
         task_daily_digest: persistedTaskDailyDigestChannels,
+        risk_notifications: persistedRiskNotificationsChannels,
       },
     };
   };
@@ -392,6 +431,9 @@ const revertToLastSavedNotificationPreferences = () => {
   ]);
   taskDailyDigestAlertChannels.value = sanitizeNotificationChannels([
     ...lastSavedPreferences.value.notifications.task_daily_digest,
+  ]);
+  riskNotificationsAlertChannels.value = sanitizeNotificationChannels([
+    ...lastSavedPreferences.value.notifications.risk_notifications,
   ]);
 };
 
@@ -436,6 +478,7 @@ const performNotificationPreferencesUpdate = async (
         evidence_digest: [...payload.notifications.evidence_digest],
         task_available: [...payload.notifications.task_available],
         task_daily_digest: [...payload.notifications.task_daily_digest],
+        risk_notifications: [...payload.notifications.risk_notifications],
       },
     };
 
@@ -546,6 +589,12 @@ const taskDailyDigestTooltipText = computed(() =>
     : 'Daily task digest alerts will be sent to your chosen channels.',
 );
 
+const riskNotificationsTooltipText = computed(() =>
+  riskNotificationsAlertChannels.value.length === 0
+    ? 'Risk notifications are turned off.'
+    : 'Risk notifications will be sent to your chosen channels.',
+);
+
 // Load user data and subscriptions
 const loadUserData = async () => {
   try {
@@ -568,10 +617,7 @@ const loadUserData = async () => {
       subscriptionResponse.data.data.notifications?.taskAvailable,
     );
 
-    taskAvailableAlertChannels.value = resolveTaskAvailableChannels(
-      taskAvailableChannels,
-      subscriptionResponse.data.data.taskAvailableEmailSubscribed,
-    );
+    taskAvailableAlertChannels.value = taskAvailableChannels;
 
     const taskDailyDigestChannels = normalizeNotificationChannels(
       subscriptionResponse.data.data.notifications?.taskDailyDigest,
@@ -579,11 +625,18 @@ const loadUserData = async () => {
 
     taskDailyDigestAlertChannels.value = taskDailyDigestChannels;
 
+    const riskNotificationsChannels = normalizeNotificationChannels(
+      subscriptionResponse.data.data.notifications?.riskNotifications,
+    );
+
+    riskNotificationsAlertChannels.value = riskNotificationsChannels;
+
     lastSavedPreferences.value = {
       notifications: {
         evidence_digest: [...evidenceDigestAlertChannels.value],
         task_available: [...taskAvailableAlertChannels.value],
         task_daily_digest: [...taskDailyDigestAlertChannels.value],
+        risk_notifications: [...riskNotificationsAlertChannels.value],
       },
     };
 
@@ -615,6 +668,13 @@ const onTaskDailyDigestChannelsChange = async (
   channels: NotificationAlertChannel[],
 ) => {
   taskDailyDigestAlertChannels.value = sanitizeNotificationChannels(channels);
+  await updateNotificationPreferences();
+};
+
+const onRiskNotificationsChannelsChange = async (
+  channels: NotificationAlertChannel[],
+) => {
+  riskNotificationsAlertChannels.value = sanitizeNotificationChannels(channels);
   await updateNotificationPreferences();
 };
 
