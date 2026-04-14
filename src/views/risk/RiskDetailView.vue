@@ -1609,6 +1609,9 @@ const showReviewModal = ref(false);
 const showScoreReviewModal = ref(false);
 const showPromoteToPoamModal = ref(false);
 const timelinePageSize = 10;
+// Keep score history bounded so the Overview tab cannot issue unbounded requests.
+const scoreHistoryPageSize = 100;
+const scoreHistoryMaxSnapshots = 1000;
 const eventsPage = ref(1);
 const eventsHasMore = ref(false);
 const eventsTotalPages = ref<number | null>(null);
@@ -2154,15 +2157,21 @@ async function loadRiskScoreHistory() {
     return;
   }
 
-  const pageSize = 100;
-  const maxSnapshots = 1000;
   const snapshots: RiskScoreSnapshot[] = [];
 
   try {
-    for (let page = 1; page <= Math.ceil(maxSnapshots / pageSize); page += 1) {
+    for (
+      let page = 1;
+      page <= Math.ceil(scoreHistoryMaxSnapshots / scoreHistoryPageSize);
+      page += 1
+    ) {
       if (!isCurrentLoad()) return;
 
-      const pagedEndpoint = pagedTimelineEndpoint(endpoint, page, pageSize);
+      const pagedEndpoint = pagedTimelineEndpoint(
+        endpoint,
+        page,
+        scoreHistoryPageSize,
+      );
       await executeFetchScoreHistory(pagedEndpoint);
 
       if (!isCurrentLoad()) return;
@@ -2174,8 +2183,8 @@ async function loadRiskScoreHistory() {
 
       const pagination = resolveTimelinePagination(
         rawPayload,
-        (page - 1) * pageSize,
-        pageSize,
+        (page - 1) * scoreHistoryPageSize,
+        scoreHistoryPageSize,
         pageSnapshots.length,
       );
       const unpagedResponse = !pagination.explicitPagination;
@@ -2184,7 +2193,7 @@ async function loadRiskScoreHistory() {
         unpagedResponse ||
         !pagination.hasMore ||
         pageSnapshots.length === 0 ||
-        snapshots.length >= maxSnapshots
+        snapshots.length >= scoreHistoryMaxSnapshots
       ) {
         break;
       }
@@ -2192,7 +2201,7 @@ async function loadRiskScoreHistory() {
 
     if (!isCurrentLoad()) return;
 
-    riskScoreHistory.value = snapshots.slice(0, maxSnapshots);
+    riskScoreHistory.value = snapshots.slice(0, scoreHistoryMaxSnapshots);
   } catch (err) {
     if (isCanceledError(err)) return;
     if (!isCurrentLoad()) return;
