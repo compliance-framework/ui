@@ -318,6 +318,12 @@
               </div>
             </div>
 
+            <RiskScoreHistoryWidget
+              :snapshots="riskScoreHistory"
+              :loading="loadingScoreHistory"
+              :error="scoreHistoryLoadError"
+            />
+
             <div
               class="bg-white dark:bg-slate-900 border border-ccf-300 dark:border-slate-700 rounded-lg p-4 space-y-3"
             >
@@ -1260,6 +1266,7 @@ import RouterLinkButton from '@/components/RouterLinkButton.vue';
 import RiskAcceptModal from '@/components/risk/RiskAcceptModal.vue';
 import RiskReviewModal from '@/components/risk/RiskReviewModal.vue';
 import RiskScoreReviewModal from '@/components/risk/RiskScoreReviewModal.vue';
+import RiskScoreHistoryWidget from '@/components/risk/RiskScoreHistoryWidget.vue';
 import PromoteToPoamModal from '@/components/risk/PromoteToPoamModal.vue';
 import RiskOwnerAssignment from '@/components/risk/RiskOwnerAssignment.vue';
 import RiskPoamItemsTab from '@/components/risk/RiskPoamItemsTab.vue';
@@ -1317,6 +1324,10 @@ import {
   type RiskReviewItem,
 } from '@/utils/risk-detail';
 import { getRiskIdentifier } from '@/utils/risk-id';
+import {
+  normalizeRiskScoreSnapshots,
+  type RiskScoreSnapshot,
+} from '@/utils/risk-dashboard';
 import type { PoamItem } from '@/types/poam-items';
 import type { DataResponse } from '@/stores/types';
 
@@ -1546,6 +1557,13 @@ const {
 } = useDataApi<unknown>(null, {}, { immediate: false });
 
 const {
+  data: fetchedScoreHistory,
+  response: fetchedScoreHistoryResponse,
+  isLoading: loadingScoreHistory,
+  execute: executeFetchScoreHistory,
+} = useDataApi<unknown>(null, {}, { immediate: false });
+
+const {
   data: availableEvidence,
   isLoading: loadingEvidence,
   execute: executeLoadEvidence,
@@ -1576,11 +1594,13 @@ const {
 const risk = ref<Risk | null>(null);
 const riskEvents = ref<RiskEventItem[]>([]);
 const riskReviews = ref<RiskReviewItem[]>([]);
+const riskScoreHistory = ref<RiskScoreSnapshot[]>([]);
 const evidenceAssociations = ref<AssociationPickerOption[]>([]);
 const controlAssociations = ref<AssociationPickerOption[]>([]);
 const componentAssociations = ref<AssociationPickerOption[]>([]);
 const notFound = ref(false);
 const loadError = ref('');
+const scoreHistoryLoadError = ref(false);
 
 const activeTab = ref<TabId>('overview');
 const showAcceptModal = ref(false);
@@ -1746,6 +1766,15 @@ const riskReviewsEndpoint = computed(() => {
   if (!context.value || !resolvedRiskId.value) return null;
   const base = buildRiskItemEndpoint(context.value, resolvedRiskId.value);
   return `${base}/reviews`;
+});
+
+const riskScoreHistoryEndpoint = computed(() => {
+  if (!resolvedRiskId.value) return null;
+  if (context.value?.scope === 'ssp') {
+    const base = buildRiskItemEndpoint(context.value, resolvedRiskId.value);
+    return `${base}/score-history`;
+  }
+  return `/api/risks/${encodeURIComponent(resolvedRiskId.value)}/score-history`;
 });
 
 function readNumber(
@@ -2108,12 +2137,64 @@ async function loadRiskReviews(page = reviewsPage.value) {
   reviewsTotalPages.value = null;
 }
 
+async function loadRiskScoreHistory() {
+  riskScoreHistory.value = [];
+  scoreHistoryLoadError.value = false;
+
+  if (!risk.value || !riskScoreHistoryEndpoint.value) {
+    return;
+  }
+
+  const pageSize = 100;
+  const maxSnapshots = 1000;
+  const snapshots: RiskScoreSnapshot[] = [];
+
+  try {
+    for (let page = 1; page <= Math.ceil(maxSnapshots / pageSize); page += 1) {
+      const endpoint = pagedTimelineEndpoint(
+        riskScoreHistoryEndpoint.value,
+        page,
+        pageSize,
+      );
+      await executeFetchScoreHistory(endpoint);
+
+      const envelopePayload = fetchedScoreHistoryResponse?.value?.data;
+      const rawPayload = envelopePayload ?? fetchedScoreHistory.value;
+      const pageSnapshots = normalizeRiskScoreSnapshots(rawPayload);
+      snapshots.push(...pageSnapshots);
+
+      const pagination = resolveTimelinePagination(
+        rawPayload,
+        (page - 1) * pageSize,
+        pageSize,
+        pageSnapshots.length,
+      );
+
+      if (
+        !pagination.hasMore ||
+        pageSnapshots.length === 0 ||
+        snapshots.length >= maxSnapshots
+      ) {
+        break;
+      }
+    }
+
+    riskScoreHistory.value = snapshots.slice(0, maxSnapshots);
+  } catch (err) {
+    if (isCanceledError(err)) return;
+    scoreHistoryLoadError.value = true;
+    riskScoreHistory.value = [];
+  }
+}
+
 async function loadRisk() {
   loadError.value = '';
   notFound.value = false;
   risk.value = null;
   riskEvents.value = [];
   riskReviews.value = [];
+  riskScoreHistory.value = [];
+  scoreHistoryLoadError.value = false;
   evidenceAssociations.value = [];
   controlAssociations.value = [];
   componentAssociations.value = [];
@@ -2192,7 +2273,11 @@ async function loadRisk() {
   syncAssociationsFromRisk();
   syncOwnerAssignmentsFromRisk();
   await refreshAllAssociationLinks();
-  await Promise.all([loadRiskEvents(1), loadRiskReviews(1)]);
+  await Promise.all([
+    loadRiskEvents(1),
+    loadRiskReviews(1),
+    loadRiskScoreHistory(),
+  ]);
 }
 
 watch(
@@ -2803,7 +2888,11 @@ async function updateRiskStatus(
     });
     const updatedRisk = mutatedRisk.value;
     applyRiskUpdate(updatedRisk);
-    await Promise.all([loadRiskEvents(1), loadRiskReviews(1)]);
+    await Promise.all([
+      loadRiskEvents(1),
+      loadRiskReviews(1),
+      loadRiskScoreHistory(),
+    ]);
     toast.add({
       severity: 'success',
       summary,
@@ -2875,7 +2964,11 @@ async function submitRiskScoreReview(payload: RiskScoreReviewSubmitPayload) {
     const updatedRisk = mutatedRisk.value;
     applyRiskUpdate(updatedRisk);
     showScoreReviewModal.value = false;
-    await Promise.all([loadRiskEvents(1), loadRiskReviews(1)]);
+    await Promise.all([
+      loadRiskEvents(1),
+      loadRiskReviews(1),
+      loadRiskScoreHistory(),
+    ]);
 
     toast.add({
       severity: 'success',
@@ -2916,7 +3009,11 @@ async function submitAcceptRisk(payload: RiskAcceptSubmitPayload) {
     const updatedRisk = mutatedRisk.value;
     applyRiskUpdate(updatedRisk);
     showAcceptModal.value = false;
-    await Promise.all([loadRiskEvents(1), loadRiskReviews(1)]);
+    await Promise.all([
+      loadRiskEvents(1),
+      loadRiskReviews(1),
+      loadRiskScoreHistory(),
+    ]);
 
     toast.add({
       severity: 'success',
@@ -2969,7 +3066,11 @@ async function submitReviewRisk(payload: RiskReviewSubmitPayload) {
     const updatedRisk = mutatedRisk.value;
     applyRiskUpdate(updatedRisk);
     showReviewModal.value = false;
-    await Promise.all([loadRiskEvents(1), loadRiskReviews(1)]);
+    await Promise.all([
+      loadRiskEvents(1),
+      loadRiskReviews(1),
+      loadRiskScoreHistory(),
+    ]);
 
     toast.add({
       severity: 'success',
@@ -3078,7 +3179,11 @@ async function submitMarkMitigatingImplemented() {
     });
     const updatedRisk = mutatedRisk.value;
     applyRiskUpdate(updatedRisk);
-    await Promise.all([loadRiskEvents(1), loadRiskReviews(1)]);
+    await Promise.all([
+      loadRiskEvents(1),
+      loadRiskReviews(1),
+      loadRiskScoreHistory(),
+    ]);
     toast.add({
       severity: 'success',
       summary: 'Mitigation implemented',

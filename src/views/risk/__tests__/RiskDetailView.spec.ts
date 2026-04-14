@@ -162,6 +162,7 @@ const {
     }>,
     eventResponses: {} as Record<string, unknown>,
     reviewResponses: {} as Record<string, unknown>,
+    scoreHistoryResponses: {} as Record<string, unknown>,
     acceptModalPayload: {
       justification: 'Business accepted for now',
       reviewDeadline: '2026-04-20T10:00:00.000Z',
@@ -223,6 +224,7 @@ const {
     ];
     mockApiState.eventResponses = {};
     mockApiState.reviewResponses = {};
+    mockApiState.scoreHistoryResponses = {};
     mockApiState.acceptModalPayload = {
       justification: 'Business accepted for now',
       reviewDeadline: '2026-04-20T10:00:00.000Z',
@@ -473,6 +475,19 @@ vi.mock('@/composables/axios', () => ({
             ? (rawResponse as Record<string, unknown>)
             : null;
         data.value = record && 'data' in record ? record.data : rawResponse;
+      } else if (
+        endpoint in mockApiState.scoreHistoryResponses ||
+        endpointWithoutQuery in mockApiState.scoreHistoryResponses
+      ) {
+        const rawResponse =
+          mockApiState.scoreHistoryResponses[endpoint] ??
+          mockApiState.scoreHistoryResponses[endpointWithoutQuery];
+        response.value = { data: rawResponse };
+        const record =
+          rawResponse && typeof rawResponse === 'object'
+            ? (rawResponse as Record<string, unknown>)
+            : null;
+        data.value = record && 'data' in record ? record.data : rawResponse;
       } else if (endpoint.includes('/events')) {
         data.value = [
           {
@@ -484,6 +499,8 @@ vi.mock('@/composables/axios', () => ({
           },
         ];
       } else if (endpoint.includes('/reviews')) {
+        data.value = [];
+      } else if (endpoint.includes('/score-history')) {
         data.value = [];
       } else if (endpoint === '/api/poam-items?riskId=risk-1') {
         data.value = [...mockApiState.poamItemsByRisk];
@@ -759,6 +776,10 @@ function mountComponent() {
           template:
             '<div data-testid="owner-assignment"><button data-testid="owner-assignment-change" @click="$emit(\'change\', mockApiState.ownerAssignmentChangePayload)">Emit Owner Change</button><button data-testid="owner-assignment-save" @click="$emit(\'save\')">Save Owner</button></div>',
         },
+        LineChart: {
+          name: 'LineChart',
+          template: '<div data-testid="line-chart" />',
+        },
       },
     },
   });
@@ -898,6 +919,64 @@ describe('RiskDetailView', () => {
     const tabs = tabsContainer.findAll('button');
     const tabTexts = tabs.map((t) => t.text());
     expect(tabTexts).toContain('Mitigation Plan');
+  });
+
+  it('loads score history on the overview tab from the scoped SSP endpoint', async () => {
+    mockApiState.scoreHistoryResponses[
+      '/api/oscal/system-security-plans/ssp-1/risks/risk-1/score-history?page=1&limit=100&offset=0'
+    ] = {
+      data: [
+        {
+          id: 'score-1',
+          riskId: 'risk-1',
+          sspId: 'ssp-1',
+          occurredAt: '2026-03-01T00:00:00Z',
+          createdAt: '2026-03-01T00:01:00Z',
+          sourceEventType: 'created',
+          status: 'open',
+          likelihood: 'low',
+          impact: 'low',
+          baselineScore: 4,
+          residualScore: 4,
+          openBaselineScore: 4,
+          openResidualScore: 4,
+        },
+        {
+          id: 'score-2',
+          riskId: 'risk-1',
+          sspId: 'ssp-1',
+          occurredAt: '2026-03-02T00:00:00Z',
+          createdAt: '2026-03-02T00:01:00Z',
+          sourceEventType: 'score_reassessed',
+          status: 'open',
+          likelihood: 'moderate',
+          impact: 'critical',
+          baselineScore: 4,
+          residualScore: 15,
+          openBaselineScore: 4,
+          openResidualScore: 15,
+        },
+      ],
+      total: 2,
+      page: 1,
+      limit: 100,
+      totalPages: 1,
+    };
+
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('Risk Score History');
+    expect(wrapper.text()).toContain('Baseline 4');
+    expect(wrapper.text()).toContain('Residual 15');
+    expect(wrapper.text()).toContain('Score Reassessed');
+    expect(apiCalls).toContainEqual(
+      expect.objectContaining({
+        endpoint:
+          '/api/oscal/system-security-plans/ssp-1/risks/risk-1/score-history?page=1&limit=100&offset=0',
+        method: 'GET',
+      }),
+    );
   });
 
   it('loads reviews from the reviews endpoint', async () => {

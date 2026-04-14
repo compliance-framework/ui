@@ -3,10 +3,11 @@ import type { Risk } from '@/oscal';
 import {
   buildRiskSeverityHeatmap,
   buildRiskStatusBreakdown,
-  buildRiskTrend,
   computeRiskAcceptanceMetrics,
   listOverdueRisks,
   listTopOpenRisks,
+  normalizeRiskScoreSnapshots,
+  normalizeRiskScoreTimeseries,
 } from './risk-dashboard';
 
 function makeRisk(overrides: Partial<Risk> & Record<string, unknown>): Risk {
@@ -179,21 +180,96 @@ describe('risk-dashboard', () => {
     });
   });
 
-  it('builds trend points with per-day buckets and click range metadata', () => {
-    const now = new Date('2026-03-04T12:00:00.000Z');
-    const risks = [
-      makeRisk({ uuid: 'r1', createdAt: '2026-03-01T02:00:00.000Z' }),
-      makeRisk({ uuid: 'r2', createdAt: '2026-03-02T02:00:00.000Z' }),
-      makeRisk({ uuid: 'r3', createdAt: '2026-03-02T10:00:00.000Z' }),
-    ];
+  it('normalizes score timeseries points from the API shape', () => {
+    const points = normalizeRiskScoreTimeseries({
+      data: [
+        {
+          'bucket-start': '2026-01-01T00:00:00Z',
+          'open-baseline-score': 28,
+          'open-residual-score': 12,
+        },
+        {
+          bucketStart: '2026-01-02T00:00:00Z',
+          openBaselineScore: '30',
+          openResidualScore: '14',
+        },
+      ],
+    });
 
-    const trend = buildRiskTrend(risks, 30, now);
-    const marchSecond = trend.find((point) => point.date === '2026-03-02');
-    const marchFirst = trend.find((point) => point.date === '2026-03-01');
+    expect(points).toEqual([
+      {
+        bucketStart: '2026-01-01T00:00:00Z',
+        openBaselineScore: 28,
+        openResidualScore: 12,
+      },
+      {
+        bucketStart: '2026-01-02T00:00:00Z',
+        openBaselineScore: 30,
+        openResidualScore: 14,
+      },
+    ]);
+  });
 
-    expect(marchFirst?.count).toBe(1);
-    expect(marchSecond?.count).toBe(2);
-    expect(marchSecond?.createdFrom).toBe('2026-03-02T00:00:00.000Z');
-    expect(marchSecond?.createdTo).toBe('2026-03-02T23:59:59.999Z');
+  it('normalizes risk score history snapshots from the API shape', () => {
+    const snapshots = normalizeRiskScoreSnapshots({
+      data: [
+        {
+          id: 'score-1',
+          'risk-id': 'risk-1',
+          'ssp-id': 'ssp-1',
+          'occurred-at': '2026-01-01T00:00:00Z',
+          'created-at': '2026-01-01T00:01:00Z',
+          'source-event-type': 'created',
+          status: 'open',
+          likelihood: 'low',
+          impact: 'high',
+          'baseline-score': 8,
+          'residual-score': 8,
+          'open-baseline-score': 8,
+          'open-residual-score': 8,
+        },
+        {
+          id: 'score-2',
+          riskId: 'risk-1',
+          sspId: 'ssp-1',
+          occurredAt: '2026-01-02T00:00:00Z',
+          createdAt: '2026-01-02T00:01:00Z',
+          sourceEventType: 'score_reassessed',
+          status: 'open',
+          baselineScore: '8',
+          residualScore: '15',
+          openBaselineScore: '8',
+          openResidualScore: '15',
+        },
+      ],
+    });
+
+    expect(snapshots).toMatchObject([
+      {
+        id: 'score-1',
+        riskId: 'risk-1',
+        sspId: 'ssp-1',
+        occurredAt: '2026-01-01T00:00:00Z',
+        baselineScore: 8,
+        residualScore: 8,
+        openBaselineScore: 8,
+        openResidualScore: 8,
+      },
+      {
+        id: 'score-2',
+        riskId: 'risk-1',
+        sspId: 'ssp-1',
+        occurredAt: '2026-01-02T00:00:00Z',
+        baselineScore: 8,
+        residualScore: 15,
+        openBaselineScore: 8,
+        openResidualScore: 15,
+      },
+    ]);
+  });
+
+  it('returns empty score data for empty API responses', () => {
+    expect(normalizeRiskScoreTimeseries({ data: [] })).toEqual([]);
+    expect(normalizeRiskScoreSnapshots({ data: [] })).toEqual([]);
   });
 });

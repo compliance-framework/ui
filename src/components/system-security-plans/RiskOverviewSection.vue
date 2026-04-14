@@ -38,12 +38,7 @@
         @navigate="navigateToRiskList"
       />
       <TopRisksWidget :items="topRisks" @navigate="navigateToRiskList" />
-      <RiskTrendWidget
-        :range-days="trendRangeDays"
-        :points="trendPoints"
-        @update:range-days="trendRangeDays = $event"
-        @navigate="navigateToRiskList"
-      />
+      <RiskTrendWidget :endpoint="scoreTrendEndpoint" />
       <AcceptanceMetricsWidget
         :metrics="acceptanceMetrics"
         @navigate="navigateToRiskList"
@@ -66,7 +61,6 @@ import AcceptanceMetricsWidget from '@/components/system-security-plans/risk-wid
 import {
   buildRiskSeverityHeatmap,
   buildRiskStatusBreakdown,
-  buildRiskTrend,
   computeRiskAcceptanceMetrics,
   listOverdueRisks,
   listTopOpenRisks,
@@ -85,7 +79,6 @@ const props = defineProps<{
 
 const router = useRouter();
 const authenticatedApi = useAuthenticatedInstance();
-const trendRangeDays = ref<30 | 60 | 90>(30);
 const risks = ref<Risk[]>([]);
 const loading = ref(false);
 const error = ref<unknown>(undefined);
@@ -143,8 +136,10 @@ const topRisks = computed(() => listTopOpenRisks(risks.value || [], 5));
 const acceptanceMetrics = computed(() =>
   computeRiskAcceptanceMetrics(risks.value || []),
 );
-const trendPoints = computed(() =>
-  buildRiskTrend(risks.value || [], trendRangeDays.value),
+const scoreTrendEndpoint = computed(() =>
+  props.sspId
+    ? `/api/oscal/system-security-plans/${props.sspId}/risks/score-timeseries`
+    : null,
 );
 
 function navigateToRiskList(query: Record<string, string> = {}) {

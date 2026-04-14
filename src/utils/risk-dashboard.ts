@@ -64,6 +64,31 @@ export interface RiskTrendPoint {
   createdTo: string;
 }
 
+export interface RiskScoreTimeseriesPoint {
+  bucketStart: string;
+  openBaselineScore: number;
+  openResidualScore: number;
+}
+
+export interface RiskScoreSnapshot {
+  id: string;
+  riskId: string;
+  sspId: string;
+  occurredAt: string;
+  createdAt: string;
+  actorUserId?: string;
+  sourceEventType: string;
+  status: string;
+  likelihood?: string;
+  impact?: string;
+  baselineScore: number;
+  residualScore: number;
+  openBaselineScore: number;
+  openResidualScore: number;
+}
+
+type LooseRecord = Record<string, unknown>;
+
 function parseDate(value?: string): Date | null {
   if (!value) return null;
   const parsed = new Date(value);
@@ -115,6 +140,44 @@ function utcDayEnd(dayStart: Date): Date {
 
 function dayKey(dayStart: Date): string {
   return dayStart.toISOString().slice(0, 10);
+}
+
+function toRecord(value: unknown): LooseRecord | null {
+  if (!value || typeof value !== 'object') return null;
+  return value as LooseRecord;
+}
+
+function readString(source: LooseRecord, keys: string[]): string | undefined {
+  for (const key of keys) {
+    const value = source[key];
+    if (typeof value === 'string' && value.trim()) {
+      return value.trim();
+    }
+  }
+  return undefined;
+}
+
+function readNumber(source: LooseRecord, keys: string[]): number {
+  for (const key of keys) {
+    const value = source[key];
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return value;
+    }
+    if (typeof value === 'string' && value.trim()) {
+      const parsed = Number(value);
+      if (Number.isFinite(parsed)) {
+        return parsed;
+      }
+    }
+  }
+  return 0;
+}
+
+function readArrayPayload(value: unknown): unknown[] {
+  if (Array.isArray(value)) return value;
+  const root = toRecord(value);
+  if (Array.isArray(root?.data)) return root.data;
+  return [];
 }
 
 export function formatRiskStatusLabel(status?: string): string {
@@ -305,4 +368,77 @@ export function buildRiskTrend(
       createdTo: dayEnd.toISOString(),
     };
   });
+}
+
+export function normalizeRiskScoreTimeseries(
+  value: unknown,
+): RiskScoreTimeseriesPoint[] {
+  return readArrayPayload(value)
+    .map((entry) => {
+      const source = toRecord(entry);
+      if (!source) return null;
+      const bucketStart = readString(source, ['bucketStart', 'bucket-start']);
+      if (!bucketStart) return null;
+      return {
+        bucketStart,
+        openBaselineScore: readNumber(source, [
+          'openBaselineScore',
+          'open-baseline-score',
+        ]),
+        openResidualScore: readNumber(source, [
+          'openResidualScore',
+          'open-residual-score',
+        ]),
+      };
+    })
+    .filter((point): point is RiskScoreTimeseriesPoint => !!point);
+}
+
+export function normalizeRiskScoreSnapshots(
+  value: unknown,
+): RiskScoreSnapshot[] {
+  return readArrayPayload(value)
+    .map((entry): RiskScoreSnapshot | null => {
+      const source = toRecord(entry);
+      if (!source) return null;
+      const id = readString(source, ['id']);
+      const riskId = readString(source, ['riskId', 'risk-id']);
+      const sspId = readString(source, ['sspId', 'ssp-id']);
+      const occurredAt = readString(source, ['occurredAt', 'occurred-at']);
+      const createdAt = readString(source, ['createdAt', 'created-at']);
+      if (!id || !riskId || !sspId || !occurredAt || !createdAt) {
+        return null;
+      }
+
+      const snapshot: RiskScoreSnapshot = {
+        id,
+        riskId,
+        sspId,
+        occurredAt,
+        createdAt,
+        sourceEventType:
+          readString(source, ['sourceEventType', 'source-event-type']) || '',
+        status: readString(source, ['status']) || '',
+        baselineScore: readNumber(source, ['baselineScore', 'baseline-score']),
+        residualScore: readNumber(source, ['residualScore', 'residual-score']),
+        openBaselineScore: readNumber(source, [
+          'openBaselineScore',
+          'open-baseline-score',
+        ]),
+        openResidualScore: readNumber(source, [
+          'openResidualScore',
+          'open-residual-score',
+        ]),
+      };
+
+      const actorUserId = readString(source, ['actorUserId', 'actor-user-id']);
+      const likelihood = readString(source, ['likelihood']);
+      const impact = readString(source, ['impact']);
+      if (actorUserId) snapshot.actorUserId = actorUserId;
+      if (likelihood) snapshot.likelihood = likelihood;
+      if (impact) snapshot.impact = impact;
+
+      return snapshot;
+    })
+    .filter((snapshot): snapshot is RiskScoreSnapshot => !!snapshot);
 }

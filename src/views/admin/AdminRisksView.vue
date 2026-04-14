@@ -1,21 +1,27 @@
 <template>
-  <RiskRegisterPanel
-    :risks="allRisks"
-    :loading="loadingAnySsp"
-    :error="globalError"
-    :context-missing="false"
-    :ssp-id="null"
-    :ssp-map="sspTitleMap"
-    :risk-ssp-ids="riskSspIdMap"
-    :available-ssps="sspOptions"
-    :enable-bulk-ops="true"
-    :page-size="pageSize"
-    title="Admin Risk Register"
-    @risk-created="handleRiskCreated"
-    @risk-updated="handleRiskUpdated"
-    @risk-deleted="handleRiskDeleted"
-    @refresh-requested="handleRefreshRequested"
-  />
+  <div class="space-y-6">
+    <div class="px-6 pt-6">
+      <RiskTrendWidget endpoint="/api/risks/score-timeseries" />
+    </div>
+
+    <RiskRegisterPanel
+      :risks="allRisks"
+      :loading="loadingAnySsp"
+      :error="globalError"
+      :context-missing="false"
+      :ssp-id="null"
+      :ssp-map="sspTitleMap"
+      :risk-ssp-ids="riskSspIdMap"
+      :available-ssps="sspOptions"
+      :enable-bulk-ops="true"
+      :page-size="pageSize"
+      title="Admin Risk Register"
+      @risk-created="handleRiskCreated"
+      @risk-updated="handleRiskUpdated"
+      @risk-deleted="handleRiskDeleted"
+      @refresh-requested="handleRefreshRequested"
+    />
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -25,6 +31,7 @@ import { useDataApi } from '@/composables/axios';
 import RiskRegisterPanel, {
   type SspOption,
 } from '@/components/risk/RiskRegisterPanel.vue';
+import RiskTrendWidget from '@/components/system-security-plans/risk-widgets/RiskTrendWidget.vue';
 import { getRiskIdentifier, sameRiskIdentifier } from '@/utils/risk-id';
 
 const pageSize = 25;
