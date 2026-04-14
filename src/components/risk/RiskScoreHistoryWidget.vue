@@ -95,10 +95,6 @@ const props = defineProps<{
   error?: boolean;
 }>();
 
-const latestSnapshot = computed(
-  () => sortedSnapshots.value[sortedSnapshots.value.length - 1] || null,
-);
-
 const sortedSnapshots = computed(() =>
   [...props.snapshots].sort((left, right) => {
     const leftTime = Date.parse(left.occurredAt);
@@ -109,6 +105,10 @@ const sortedSnapshots = computed(() =>
     if (Number.isNaN(rightTime)) return -1;
     return leftTime - rightTime;
   }),
+);
+
+const latestSnapshot = computed(
+  () => sortedSnapshots.value[sortedSnapshots.value.length - 1] || null,
 );
 
 const chartData = computed<ChartData<'line'>>(() => ({
