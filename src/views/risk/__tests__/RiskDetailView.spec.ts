@@ -163,6 +163,10 @@ const {
     eventResponses: {} as Record<string, unknown>,
     reviewResponses: {} as Record<string, unknown>,
     scoreHistoryResponses: {} as Record<string, unknown>,
+    scoreHistoryResponseQueues: {} as Record<
+      string,
+      Array<unknown | Promise<unknown>>
+    >,
     acceptModalPayload: {
       justification: 'Business accepted for now',
       reviewDeadline: '2026-04-20T10:00:00.000Z',
@@ -225,6 +229,7 @@ const {
     mockApiState.eventResponses = {};
     mockApiState.reviewResponses = {};
     mockApiState.scoreHistoryResponses = {};
+    mockApiState.scoreHistoryResponseQueues = {};
     mockApiState.acceptModalPayload = {
       justification: 'Business accepted for now',
       reviewDeadline: '2026-04-20T10:00:00.000Z',
@@ -469,6 +474,20 @@ vi.mock('@/composables/axios', () => ({
         const rawResponse =
           mockApiState.reviewResponses[endpoint] ??
           mockApiState.reviewResponses[endpointWithoutQuery];
+        response.value = { data: rawResponse };
+        const record =
+          rawResponse && typeof rawResponse === 'object'
+            ? (rawResponse as Record<string, unknown>)
+            : null;
+        data.value = record && 'data' in record ? record.data : rawResponse;
+      } else if (
+        endpoint in mockApiState.scoreHistoryResponseQueues ||
+        endpointWithoutQuery in mockApiState.scoreHistoryResponseQueues
+      ) {
+        const queue =
+          mockApiState.scoreHistoryResponseQueues[endpoint] ??
+          mockApiState.scoreHistoryResponseQueues[endpointWithoutQuery];
+        const rawResponse = await queue.shift();
         response.value = { data: rawResponse };
         const record =
           rawResponse && typeof rawResponse === 'object'
@@ -1012,6 +1031,81 @@ describe('RiskDetailView', () => {
           '/api/oscal/system-security-plans/ssp-1/risks/risk-1/score-history?page=1&limit=100&offset=0',
       }),
     ]);
+  });
+
+  it('keeps the latest score history when overlapping refreshes finish out of order', async () => {
+    const scoreHistoryEndpoint =
+      '/api/oscal/system-security-plans/ssp-1/risks/risk-1/score-history?page=1&limit=100&offset=0';
+    let resolveFirstLoad!: (value: unknown) => void;
+    const firstLoadResponse = new Promise<unknown>((resolve) => {
+      resolveFirstLoad = resolve;
+    });
+
+    mockApiState.scoreHistoryResponseQueues[scoreHistoryEndpoint] = [
+      firstLoadResponse,
+      {
+        data: [
+          {
+            id: 'score-new',
+            riskId: 'risk-1',
+            sspId: 'ssp-1',
+            occurredAt: '2026-03-02T00:00:00Z',
+            createdAt: '2026-03-02T00:01:00Z',
+            sourceEventType: 'score_reassessed',
+            status: 'open',
+            likelihood: 'high',
+            impact: 'critical',
+            baselineScore: 12,
+            residualScore: 22,
+            openBaselineScore: 12,
+            openResidualScore: 22,
+          },
+        ],
+        total: 1,
+        page: 1,
+        limit: 100,
+        totalPages: 1,
+      },
+    ];
+
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    await clickButtonByText(wrapper, 'Review Risk Score');
+    await wrapper
+      .get('[data-testid="score-review-modal-submit"]')
+      .trigger('click');
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('Residual 22');
+
+    resolveFirstLoad({
+      data: [
+        {
+          id: 'score-old',
+          riskId: 'risk-1',
+          sspId: 'ssp-1',
+          occurredAt: '2026-03-01T00:00:00Z',
+          createdAt: '2026-03-01T00:01:00Z',
+          sourceEventType: 'created',
+          status: 'open',
+          likelihood: 'low',
+          impact: 'low',
+          baselineScore: 1,
+          residualScore: 1,
+          openBaselineScore: 1,
+          openResidualScore: 1,
+        },
+      ],
+      total: 1,
+      page: 1,
+      limit: 100,
+      totalPages: 1,
+    });
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('Residual 22');
+    expect(wrapper.text()).not.toContain('Residual 1');
   });
 
   it('loads reviews from the reviews endpoint', async () => {

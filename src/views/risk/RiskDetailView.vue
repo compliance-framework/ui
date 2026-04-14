@@ -1601,6 +1601,7 @@ const componentAssociations = ref<AssociationPickerOption[]>([]);
 const notFound = ref(false);
 const loadError = ref('');
 const scoreHistoryLoadError = ref(false);
+let scoreHistoryLoadToken = 0;
 
 const activeTab = ref<TabId>('overview');
 const showAcceptModal = ref(false);
@@ -2138,10 +2139,18 @@ async function loadRiskReviews(page = reviewsPage.value) {
 }
 
 async function loadRiskScoreHistory() {
+  const loadToken = (scoreHistoryLoadToken += 1);
+  const endpoint = riskScoreHistoryEndpoint.value;
+  const riskIdForLoad = resolvedRiskId.value;
+  const isCurrentLoad = () =>
+    loadToken === scoreHistoryLoadToken &&
+    endpoint === riskScoreHistoryEndpoint.value &&
+    riskIdForLoad === resolvedRiskId.value;
+
   riskScoreHistory.value = [];
   scoreHistoryLoadError.value = false;
 
-  if (!risk.value || !riskScoreHistoryEndpoint.value) {
+  if (!risk.value || !endpoint) {
     return;
   }
 
@@ -2151,12 +2160,12 @@ async function loadRiskScoreHistory() {
 
   try {
     for (let page = 1; page <= Math.ceil(maxSnapshots / pageSize); page += 1) {
-      const endpoint = pagedTimelineEndpoint(
-        riskScoreHistoryEndpoint.value,
-        page,
-        pageSize,
-      );
-      await executeFetchScoreHistory(endpoint);
+      if (!isCurrentLoad()) return;
+
+      const pagedEndpoint = pagedTimelineEndpoint(endpoint, page, pageSize);
+      await executeFetchScoreHistory(pagedEndpoint);
+
+      if (!isCurrentLoad()) return;
 
       const envelopePayload = fetchedScoreHistoryResponse?.value?.data;
       const rawPayload = envelopePayload ?? fetchedScoreHistory.value;
@@ -2182,9 +2191,12 @@ async function loadRiskScoreHistory() {
       }
     }
 
+    if (!isCurrentLoad()) return;
+
     riskScoreHistory.value = snapshots.slice(0, maxSnapshots);
   } catch (err) {
     if (isCanceledError(err)) return;
+    if (!isCurrentLoad()) return;
     scoreHistoryLoadError.value = true;
     riskScoreHistory.value = [];
   }
@@ -2196,6 +2208,7 @@ async function loadRisk() {
   risk.value = null;
   riskEvents.value = [];
   riskReviews.value = [];
+  scoreHistoryLoadToken += 1;
   riskScoreHistory.value = [];
   scoreHistoryLoadError.value = false;
   evidenceAssociations.value = [];
