@@ -979,6 +979,41 @@ describe('RiskDetailView', () => {
     );
   });
 
+  it('does not duplicate unpaged score history responses', async () => {
+    mockApiState.scoreHistoryResponses[
+      '/api/oscal/system-security-plans/ssp-1/risks/risk-1/score-history'
+    ] = {
+      data: Array.from({ length: 101 }, (_, index) => ({
+        id: `score-${index + 1}`,
+        riskId: 'risk-1',
+        sspId: 'ssp-1',
+        occurredAt: `2026-03-${String((index % 28) + 1).padStart(2, '0')}T00:00:00Z`,
+        createdAt: `2026-03-${String((index % 28) + 1).padStart(2, '0')}T00:01:00Z`,
+        sourceEventType: index === 0 ? 'created' : 'score_reassessed',
+        status: 'open',
+        likelihood: 'moderate',
+        impact: 'high',
+        baselineScore: 4,
+        residualScore: index + 1,
+        openBaselineScore: 4,
+        openResidualScore: index + 1,
+      })),
+    };
+
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('Residual 101');
+    expect(
+      apiCalls.filter((call) => call.endpoint.includes('/score-history')),
+    ).toEqual([
+      expect.objectContaining({
+        endpoint:
+          '/api/oscal/system-security-plans/ssp-1/risks/risk-1/score-history?page=1&limit=100&offset=0',
+      }),
+    ]);
+  });
+
   it('loads reviews from the reviews endpoint', async () => {
     mockApiState.reviewResponses[
       '/api/oscal/system-security-plans/ssp-1/risks/risk-1/reviews'

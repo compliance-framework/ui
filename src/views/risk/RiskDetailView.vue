@@ -2169,8 +2169,11 @@ async function loadRiskScoreHistory() {
         pageSize,
         pageSnapshots.length,
       );
+      const likelyFullUnpagedList =
+        !pagination.explicitPagination && pageSnapshots.length > pageSize;
 
       if (
+        likelyFullUnpagedList ||
         !pagination.hasMore ||
         pageSnapshots.length === 0 ||
         snapshots.length >= maxSnapshots

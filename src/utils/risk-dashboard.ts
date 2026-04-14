@@ -57,13 +57,6 @@ export interface RiskAcceptanceMetrics {
   percentage: number;
 }
 
-export interface RiskTrendPoint {
-  date: string;
-  count: number;
-  createdFrom: string;
-  createdTo: string;
-}
-
 export interface RiskScoreTimeseriesPoint {
   bucketStart: string;
   openBaselineScore: number;
@@ -126,20 +119,6 @@ function levelRank(level: RiskSeverityLevel | 'unknown' | null): number {
     default:
       return 0;
   }
-}
-
-function utcDayStart(date: Date): Date {
-  return new Date(
-    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
-  );
-}
-
-function utcDayEnd(dayStart: Date): Date {
-  return new Date(dayStart.getTime() + 24 * 60 * 60 * 1000 - 1);
-}
-
-function dayKey(dayStart: Date): string {
-  return dayStart.toISOString().slice(0, 10);
 }
 
 function toRecord(value: unknown): LooseRecord | null {
@@ -332,42 +311,6 @@ export function computeRiskAcceptanceMetrics(
     totalInScope,
     percentage,
   };
-}
-
-export function buildRiskTrend(
-  risks: Risk[] = [],
-  rangeDays: 30 | 60 | 90,
-  now: Date = new Date(),
-): RiskTrendPoint[] {
-  const dayCounts = new Map<string, number>();
-  const endDayStart = utcDayStart(now);
-  const rangeStart = new Date(endDayStart);
-  rangeStart.setUTCDate(rangeStart.getUTCDate() - rangeDays + 1);
-
-  for (let dayOffset = 0; dayOffset < rangeDays; dayOffset += 1) {
-    const dayStart = new Date(rangeStart);
-    dayStart.setUTCDate(rangeStart.getUTCDate() + dayOffset);
-    dayCounts.set(dayKey(dayStart), 0);
-  }
-
-  for (const risk of risks) {
-    const created = parseDate(getRiskCreatedAt(risk));
-    if (!created) continue;
-    const key = dayKey(utcDayStart(created));
-    if (!dayCounts.has(key)) continue;
-    dayCounts.set(key, (dayCounts.get(key) || 0) + 1);
-  }
-
-  return Array.from(dayCounts.entries()).map(([date, count]) => {
-    const dayStart = new Date(`${date}T00:00:00.000Z`);
-    const dayEnd = utcDayEnd(dayStart);
-    return {
-      date,
-      count,
-      createdFrom: dayStart.toISOString(),
-      createdTo: dayEnd.toISOString(),
-    };
-  });
 }
 
 export function normalizeRiskScoreTimeseries(
