@@ -57,12 +57,30 @@ export interface RiskAcceptanceMetrics {
   percentage: number;
 }
 
-export interface RiskTrendPoint {
-  date: string;
-  count: number;
-  createdFrom: string;
-  createdTo: string;
+export interface RiskScoreTimeseriesPoint {
+  bucketStart: string;
+  openBaselineScore: number;
+  openResidualScore: number;
 }
+
+export interface RiskScoreSnapshot {
+  id: string;
+  riskId: string;
+  sspId: string;
+  occurredAt: string;
+  createdAt: string;
+  actorUserId?: string;
+  sourceEventType: string;
+  status: string;
+  likelihood?: string;
+  impact?: string;
+  baselineScore: number;
+  residualScore: number;
+  openBaselineScore: number;
+  openResidualScore: number;
+}
+
+type LooseRecord = Record<string, unknown>;
 
 function parseDate(value?: string): Date | null {
   if (!value) return null;
@@ -103,18 +121,51 @@ function levelRank(level: RiskSeverityLevel | 'unknown' | null): number {
   }
 }
 
-function utcDayStart(date: Date): Date {
-  return new Date(
-    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
-  );
+function toRecord(value: unknown): LooseRecord | null {
+  if (!value || typeof value !== 'object') return null;
+  return value as LooseRecord;
 }
 
-function utcDayEnd(dayStart: Date): Date {
-  return new Date(dayStart.getTime() + 24 * 60 * 60 * 1000 - 1);
+function readString(source: LooseRecord, keys: string[]): string | undefined {
+  for (const key of keys) {
+    const value = source[key];
+    if (typeof value === 'string' && value.trim()) {
+      return value.trim();
+    }
+  }
+  return undefined;
 }
 
-function dayKey(dayStart: Date): string {
-  return dayStart.toISOString().slice(0, 10);
+function readNumber(source: LooseRecord, keys: string[]): number {
+  for (const key of keys) {
+    const value = source[key];
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return value;
+    }
+    if (typeof value === 'string' && value.trim()) {
+      const parsed = Number(value);
+      if (Number.isFinite(parsed)) {
+        return parsed;
+      }
+    }
+  }
+  return 0;
+}
+
+function readArrayPayload(value: unknown): unknown[] {
+  let current: unknown = value;
+  const maxDepth = 4;
+
+  for (let depth = 0; depth < maxDepth; depth += 1) {
+    if (Array.isArray(current)) return current;
+
+    const record = toRecord(current);
+    if (!record || !('data' in record)) return [];
+
+    current = record.data;
+  }
+
+  return Array.isArray(current) ? current : [];
 }
 
 export function formatRiskStatusLabel(status?: string): string {
@@ -271,38 +322,75 @@ export function computeRiskAcceptanceMetrics(
   };
 }
 
-export function buildRiskTrend(
-  risks: Risk[] = [],
-  rangeDays: 30 | 60 | 90,
-  now: Date = new Date(),
-): RiskTrendPoint[] {
-  const dayCounts = new Map<string, number>();
-  const endDayStart = utcDayStart(now);
-  const rangeStart = new Date(endDayStart);
-  rangeStart.setUTCDate(rangeStart.getUTCDate() - rangeDays + 1);
+export function normalizeRiskScoreTimeseries(
+  value: unknown,
+): RiskScoreTimeseriesPoint[] {
+  return readArrayPayload(value)
+    .map((entry) => {
+      const source = toRecord(entry);
+      if (!source) return null;
+      const bucketStart = readString(source, ['bucketStart', 'bucket-start']);
+      if (!bucketStart) return null;
+      return {
+        bucketStart,
+        openBaselineScore: readNumber(source, [
+          'openBaselineScore',
+          'open-baseline-score',
+        ]),
+        openResidualScore: readNumber(source, [
+          'openResidualScore',
+          'open-residual-score',
+        ]),
+      };
+    })
+    .filter((point): point is RiskScoreTimeseriesPoint => !!point);
+}
 
-  for (let dayOffset = 0; dayOffset < rangeDays; dayOffset += 1) {
-    const dayStart = new Date(rangeStart);
-    dayStart.setUTCDate(rangeStart.getUTCDate() + dayOffset);
-    dayCounts.set(dayKey(dayStart), 0);
-  }
+export function normalizeRiskScoreSnapshots(
+  value: unknown,
+): RiskScoreSnapshot[] {
+  return readArrayPayload(value)
+    .map((entry): RiskScoreSnapshot | null => {
+      const source = toRecord(entry);
+      if (!source) return null;
+      const id = readString(source, ['id']);
+      const riskId = readString(source, ['riskId', 'risk-id']);
+      const sspId = readString(source, ['sspId', 'ssp-id']);
+      const occurredAt = readString(source, ['occurredAt', 'occurred-at']);
+      const createdAt = readString(source, ['createdAt', 'created-at']);
+      if (!id || !riskId || !sspId || !occurredAt || !createdAt) {
+        return null;
+      }
 
-  for (const risk of risks) {
-    const created = parseDate(getRiskCreatedAt(risk));
-    if (!created) continue;
-    const key = dayKey(utcDayStart(created));
-    if (!dayCounts.has(key)) continue;
-    dayCounts.set(key, (dayCounts.get(key) || 0) + 1);
-  }
+      const snapshot: RiskScoreSnapshot = {
+        id,
+        riskId,
+        sspId,
+        occurredAt,
+        createdAt,
+        sourceEventType:
+          readString(source, ['sourceEventType', 'source-event-type']) || '',
+        status: readString(source, ['status']) || '',
+        baselineScore: readNumber(source, ['baselineScore', 'baseline-score']),
+        residualScore: readNumber(source, ['residualScore', 'residual-score']),
+        openBaselineScore: readNumber(source, [
+          'openBaselineScore',
+          'open-baseline-score',
+        ]),
+        openResidualScore: readNumber(source, [
+          'openResidualScore',
+          'open-residual-score',
+        ]),
+      };
 
-  return Array.from(dayCounts.entries()).map(([date, count]) => {
-    const dayStart = new Date(`${date}T00:00:00.000Z`);
-    const dayEnd = utcDayEnd(dayStart);
-    return {
-      date,
-      count,
-      createdFrom: dayStart.toISOString(),
-      createdTo: dayEnd.toISOString(),
-    };
-  });
+      const actorUserId = readString(source, ['actorUserId', 'actor-user-id']);
+      const likelihood = readString(source, ['likelihood']);
+      const impact = readString(source, ['impact']);
+      if (actorUserId) snapshot.actorUserId = actorUserId;
+      if (likelihood) snapshot.likelihood = likelihood;
+      if (impact) snapshot.impact = impact;
+
+      return snapshot;
+    })
+    .filter((snapshot): snapshot is RiskScoreSnapshot => !!snapshot);
 }

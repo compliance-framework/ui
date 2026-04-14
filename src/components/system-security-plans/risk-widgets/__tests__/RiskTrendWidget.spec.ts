@@ -1,29 +1,43 @@
 import { mount } from '@vue/test-utils';
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import RiskTrendWidget from '@/components/system-security-plans/risk-widgets/RiskTrendWidget.vue';
-import type { RiskTrendPoint } from '@/utils/risk-dashboard';
+
+const apiState = vi.hoisted(() => ({
+  data: { value: [] as unknown[] },
+  error: { value: null as unknown },
+  isLoading: { value: false },
+  execute: vi.fn(),
+}));
+
+vi.mock('@/composables/axios', () => ({
+  useDataApi: () => ({
+    data: apiState.data,
+    error: apiState.error,
+    isLoading: apiState.isLoading,
+    execute: apiState.execute,
+  }),
+}));
 
 describe('RiskTrendWidget', () => {
-  it('emits created range filters when a point is clicked', async () => {
-    const points: RiskTrendPoint[] = [
-      {
-        date: '2026-03-01',
-        count: 1,
-        createdFrom: '2026-03-01T00:00:00.000Z',
-        createdTo: '2026-03-01T23:59:59.999Z',
-      },
-      {
-        date: '2026-03-02',
-        count: 4,
-        createdFrom: '2026-03-02T00:00:00.000Z',
-        createdTo: '2026-03-02T23:59:59.999Z',
-      },
-    ];
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-03-04T12:00:00.000Z'));
+    apiState.data.value = [];
+    apiState.error.value = null;
+    apiState.isLoading.value = false;
+    apiState.execute.mockResolvedValue(undefined);
+  });
 
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.clearAllMocks();
+  });
+
+  it('loads score timeseries from the provided endpoint', () => {
     const wrapper = mount(RiskTrendWidget, {
       props: {
-        rangeDays: 30,
-        points,
+        endpoint:
+          '/api/oscal/system-security-plans/ssp-1/risks/score-timeseries',
       },
       global: {
         stubs: {
@@ -39,17 +53,112 @@ describe('RiskTrendWidget', () => {
       },
     });
 
-    wrapper.findComponent({ name: 'LineChart' }).vm.$emit('element-click', 1);
+    expect(wrapper.text()).toContain('Risk Score Trend');
+    expect(wrapper.text()).not.toContain('Risks created over time');
+    expect(apiState.execute).toHaveBeenCalledTimes(1);
+    const endpoint = String(apiState.execute.mock.calls[0][0]);
+    expect(endpoint).toContain(
+      '/api/oscal/system-security-plans/ssp-1/risks/score-timeseries?',
+    );
+    expect(endpoint).toContain('bucket=day');
+    expect(endpoint).toContain('from=2026-02-03T12%3A00%3A00.000Z');
+    expect(endpoint).toContain('to=2026-03-04T12%3A00%3A00.000Z');
+  });
+
+  it('reloads score timeseries when the range changes', async () => {
+    const wrapper = mount(RiskTrendWidget, {
+      props: {
+        endpoint: '/api/risks/score-timeseries',
+      },
+      global: {
+        stubs: {
+          LineChart: {
+            name: 'LineChart',
+            template: '<div />',
+          },
+          SelectButton: {
+            name: 'SelectButton',
+            template:
+              '<button data-testid="range" @click="$emit(\'update:model-value\', 60)">60D</button>',
+          },
+        },
+      },
+    });
+
+    await wrapper.get('[data-testid="range"]').trigger('click');
     await wrapper.vm.$nextTick();
 
-    expect(wrapper.emitted('navigate')).toEqual([
-      [
-        {
-          status: 'all',
-          createdFrom: '2026-03-02T00:00:00.000Z',
-          createdTo: '2026-03-02T23:59:59.999Z',
+    expect(apiState.execute).toHaveBeenCalledTimes(2);
+    const endpoint = String(apiState.execute.mock.calls[1][0]);
+    expect(endpoint).toContain('/api/risks/score-timeseries?');
+    expect(endpoint).toContain('from=2026-01-04T12%3A00%3A00.000Z');
+  });
+
+  it('clears stale errors when disabled by a null endpoint', () => {
+    apiState.error.value = new Error('previous request failed');
+    apiState.data.value = [
+      {
+        bucketStart: '2026-03-04T00:00:00Z',
+        openBaselineScore: 12,
+        openResidualScore: 8,
+      },
+    ];
+
+    const wrapper = mount(RiskTrendWidget, {
+      props: {
+        endpoint: null,
+      },
+      global: {
+        stubs: {
+          LineChart: {
+            name: 'LineChart',
+            template: '<div />',
+          },
+          SelectButton: {
+            name: 'SelectButton',
+            template: '<div />',
+          },
         },
-      ],
-    ]);
+      },
+    });
+
+    expect(apiState.error.value).toBeNull();
+    expect(wrapper.text()).not.toContain('Unable to load risk score trend.');
+    expect(wrapper.text()).not.toContain('Open Baseline Score');
+    expect(wrapper.text()).not.toContain('Open Residual Score');
+    expect(apiState.execute).not.toHaveBeenCalled();
+  });
+
+  it('hides latest score summaries while loading', () => {
+    apiState.data.value = [
+      {
+        bucketStart: '2026-03-04T00:00:00Z',
+        openBaselineScore: 12,
+        openResidualScore: 8,
+      },
+    ];
+    apiState.isLoading.value = true;
+
+    const wrapper = mount(RiskTrendWidget, {
+      props: {
+        endpoint: '/api/risks/score-timeseries',
+      },
+      global: {
+        stubs: {
+          LineChart: {
+            name: 'LineChart',
+            template: '<div />',
+          },
+          SelectButton: {
+            name: 'SelectButton',
+            template: '<div />',
+          },
+        },
+      },
+    });
+
+    expect(wrapper.text()).toContain('Loading risk score trend...');
+    expect(wrapper.text()).not.toContain('Open Baseline Score');
+    expect(wrapper.text()).not.toContain('Open Residual Score');
   });
 });
