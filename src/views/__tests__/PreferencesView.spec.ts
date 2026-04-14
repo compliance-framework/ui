@@ -72,6 +72,7 @@ interface PreferencesViewTestVm extends ComponentPublicInstance {
   onTaskAvailableChannelsChange: (channels: string[]) => Promise<void>;
   onEvidenceDigestChannelsChange: (channels: string[]) => Promise<void>;
   onTaskDailyDigestChannelsChange: (channels: string[]) => Promise<void>;
+  onRiskNotificationsChannelsChange: (channels: string[]) => Promise<void>;
 }
 
 const mountPreferencesView = () =>
@@ -107,6 +108,7 @@ describe('PreferencesView', () => {
               notifications: {
                 evidenceDigest: [],
                 taskAvailable: [],
+                riskNotifications: [],
               },
             },
           },
@@ -147,6 +149,7 @@ describe('PreferencesView', () => {
       expect(wrapper.vm.evidenceDigestAlertChannels).toEqual([]);
       expect(wrapper.vm.taskAvailableAlertChannels).toEqual([]);
       expect(wrapper.vm.taskDailyDigestAlertChannels).toEqual([]);
+      expect(wrapper.vm.riskNotificationsAlertChannels).toEqual([]);
       expect(wrapper.vm.updateError).toBeNull();
       expect(wrapper.vm.updateSuccess).toBe(false);
     });
@@ -220,6 +223,7 @@ describe('PreferencesView', () => {
                 notifications: {
                   evidenceDigest: ['email', 'slack'],
                   taskAvailable: ['email', 'slack'],
+                  riskNotifications: ['email', 'slack'],
                 },
               },
             },
@@ -245,6 +249,10 @@ describe('PreferencesView', () => {
       ]);
       expect(wrapper.vm.taskAvailableAlertChannels).toEqual(['email', 'slack']);
       expect(wrapper.vm.taskDailyDigestAlertChannels).toEqual([]);
+      expect(wrapper.vm.riskNotificationsAlertChannels).toEqual([
+        'email',
+        'slack',
+      ]);
     });
 
     it('loads notification channels from transformed response keys', async () => {
@@ -270,6 +278,7 @@ describe('PreferencesView', () => {
                 notifications: {
                   evidenceDigest: ['email'],
                   taskAvailable: ['email'],
+                  riskNotifications: ['email'],
                 },
               },
             },
@@ -286,6 +295,7 @@ describe('PreferencesView', () => {
 
       expect(wrapper.vm.evidenceDigestAlertChannels).toEqual(['email']);
       expect(wrapper.vm.taskAvailableAlertChannels).toEqual(['email']);
+      expect(wrapper.vm.riskNotificationsAlertChannels).toEqual(['email']);
     });
 
     it('initializes channel selection as empty array when notifications are empty', async () => {
@@ -296,9 +306,10 @@ describe('PreferencesView', () => {
 
       expect(wrapper.vm.evidenceDigestAlertChannels).toEqual([]);
       expect(wrapper.vm.taskAvailableAlertChannels).toEqual([]);
+      expect(wrapper.vm.riskNotificationsAlertChannels).toEqual([]);
     });
 
-    it('falls back to the legacy email flag when notifications are missing', async () => {
+    it('defaults to empty selections when notifications are missing', async () => {
       mockAxios.get.mockImplementation((url: string) => {
         if (url === '/api/users/me') {
           return Promise.resolve({
@@ -317,9 +328,7 @@ describe('PreferencesView', () => {
         if (url === '/api/users/me/subscriptions') {
           return Promise.resolve({
             data: {
-              data: {
-                taskAvailableEmailSubscribed: true,
-              },
+              data: {},
             },
           });
         }
@@ -333,7 +342,8 @@ describe('PreferencesView', () => {
       await nextTick();
 
       expect(wrapper.vm.evidenceDigestAlertChannels).toEqual([]);
-      expect(wrapper.vm.taskAvailableAlertChannels).toEqual(['email']);
+      expect(wrapper.vm.taskAvailableAlertChannels).toEqual([]);
+      expect(wrapper.vm.riskNotificationsAlertChannels).toEqual([]);
     });
 
     it('falls back to empty selections when notification channels are malformed', async () => {
@@ -360,6 +370,7 @@ describe('PreferencesView', () => {
                   evidenceDigest: 'email',
                   taskAvailable: { channel: 'email' },
                   taskDailyDigest: 123,
+                  riskNotifications: { channel: 'email' },
                 },
               },
             },
@@ -377,6 +388,7 @@ describe('PreferencesView', () => {
       expect(wrapper.vm.evidenceDigestAlertChannels).toEqual([]);
       expect(wrapper.vm.taskAvailableAlertChannels).toEqual([]);
       expect(wrapper.vm.taskDailyDigestAlertChannels).toEqual([]);
+      expect(wrapper.vm.riskNotificationsAlertChannels).toEqual([]);
       expect(wrapper.vm.loadError).toBeNull();
     });
 
@@ -394,6 +406,7 @@ describe('PreferencesView', () => {
       wrapper.vm.evidenceDigestAlertChannels = ['email', 'slack'];
       wrapper.vm.taskAvailableAlertChannels = ['email', 'slack'];
       wrapper.vm.taskDailyDigestAlertChannels = ['email'];
+      wrapper.vm.riskNotificationsAlertChannels = ['slack'];
 
       await wrapper.vm.updateNotificationPreferences();
 
@@ -404,6 +417,7 @@ describe('PreferencesView', () => {
             evidence_digest: ['email', 'slack'],
             task_available: ['email', 'slack'],
             task_daily_digest: ['email'],
+            risk_notifications: ['slack'],
           },
         },
       );
@@ -430,6 +444,7 @@ describe('PreferencesView', () => {
             evidence_digest: [],
             task_available: ['slack'],
             task_daily_digest: [],
+            risk_notifications: [],
           },
         },
       );
@@ -456,6 +471,7 @@ describe('PreferencesView', () => {
             evidence_digest: ['email', 'slack'],
             task_available: [],
             task_daily_digest: [],
+            risk_notifications: [],
           },
         },
       );
@@ -485,10 +501,41 @@ describe('PreferencesView', () => {
             evidence_digest: [],
             task_available: [],
             task_daily_digest: ['email', 'slack'],
+            risk_notifications: [],
           },
         },
       );
       expect(wrapper.vm.taskDailyDigestAlertChannels).toEqual([
+        'email',
+        'slack',
+      ]);
+    });
+
+    it('saves risk notification channel selection in notifications.risk_notifications', async () => {
+      wrapper = mountPreferencesView();
+
+      await Promise.resolve();
+      await nextTick();
+      await emitSlackStatus(wrapper, {
+        loading: false,
+        configured: true,
+        linked: true,
+      });
+
+      await wrapper.vm.onRiskNotificationsChannelsChange(['email', 'slack']);
+
+      expect(mockAxios.put).toHaveBeenCalledWith(
+        '/api/users/me/subscriptions',
+        {
+          notifications: {
+            evidence_digest: [],
+            task_available: [],
+            task_daily_digest: [],
+            risk_notifications: ['email', 'slack'],
+          },
+        },
+      );
+      expect(wrapper.vm.riskNotificationsAlertChannels).toEqual([
         'email',
         'slack',
       ]);
@@ -548,7 +595,8 @@ describe('PreferencesView', () => {
                 notifications: {
                   evidenceDigest: [],
                   taskAvailable: ['email', 'slack'],
-                  task_daily_digest: [],
+                  taskDailyDigest: [],
+                  riskNotifications: ['email', 'slack'],
                 },
               },
             },
@@ -586,6 +634,7 @@ describe('PreferencesView', () => {
             evidence_digest: [],
             task_available: ['email'],
             task_daily_digest: [],
+            risk_notifications: ['email'],
           },
         },
       );
@@ -599,6 +648,7 @@ describe('PreferencesView', () => {
             evidence_digest: [],
             task_available: ['email'],
             task_daily_digest: [],
+            risk_notifications: ['email'],
           },
         },
       );
@@ -618,11 +668,13 @@ describe('PreferencesView', () => {
       wrapper.vm.evidenceDigestAlertChannels = ['email', 'slack'];
       wrapper.vm.taskAvailableAlertChannels = ['slack'];
       wrapper.vm.taskDailyDigestAlertChannels = ['email', 'slack'];
+      wrapper.vm.riskNotificationsAlertChannels = ['slack'];
       wrapper.vm.lastSavedPreferences = {
         notifications: {
           evidence_digest: ['email', 'slack'],
           task_available: ['slack'],
           task_daily_digest: ['email', 'slack'],
+          risk_notifications: ['slack'],
         },
       };
 
@@ -635,11 +687,13 @@ describe('PreferencesView', () => {
       expect(wrapper.vm.evidenceDigestAlertChannels).toEqual(['email']);
       expect(wrapper.vm.taskAvailableAlertChannels).toEqual([]);
       expect(wrapper.vm.taskDailyDigestAlertChannels).toEqual(['email']);
+      expect(wrapper.vm.riskNotificationsAlertChannels).toEqual([]);
       expect(wrapper.vm.lastSavedPreferences).toEqual({
         notifications: {
           evidence_digest: ['email'],
           task_available: [],
           task_daily_digest: ['email'],
+          risk_notifications: [],
         },
       });
       expect(mockAxios.put).toHaveBeenLastCalledWith(
@@ -649,6 +703,7 @@ describe('PreferencesView', () => {
             evidence_digest: ['email'],
             task_available: [],
             task_daily_digest: ['email'],
+            risk_notifications: [],
           },
         },
       );
@@ -693,6 +748,7 @@ describe('PreferencesView', () => {
             evidence_digest: [],
             task_available: ['email', 'slack'],
             task_daily_digest: [],
+            risk_notifications: [],
           },
         },
       );
@@ -724,6 +780,7 @@ describe('PreferencesView', () => {
             evidence_digest: [],
             task_available: ['email'],
             task_daily_digest: [],
+            risk_notifications: [],
           },
         },
       );
@@ -740,6 +797,7 @@ describe('PreferencesView', () => {
           evidence_digest: [],
           task_available: ['email'],
           task_daily_digest: [],
+          risk_notifications: [],
         },
       });
     });
