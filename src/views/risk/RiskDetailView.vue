@@ -2276,11 +2276,8 @@ async function loadRisk() {
   syncAssociationsFromRisk();
   syncOwnerAssignmentsFromRisk();
   await refreshAllAssociationLinks();
-  await Promise.all([
-    loadRiskEvents(1),
-    loadRiskReviews(1),
-    loadRiskScoreHistory(),
-  ]);
+  await Promise.all([loadRiskEvents(1), loadRiskReviews(1)]);
+  void loadRiskScoreHistory();
 }
 
 watch(
@@ -2891,11 +2888,8 @@ async function updateRiskStatus(
     });
     const updatedRisk = mutatedRisk.value;
     applyRiskUpdate(updatedRisk);
-    await Promise.all([
-      loadRiskEvents(1),
-      loadRiskReviews(1),
-      loadRiskScoreHistory(),
-    ]);
+    await Promise.all([loadRiskEvents(1), loadRiskReviews(1)]);
+    void loadRiskScoreHistory();
     toast.add({
       severity: 'success',
       summary,
@@ -2967,11 +2961,8 @@ async function submitRiskScoreReview(payload: RiskScoreReviewSubmitPayload) {
     const updatedRisk = mutatedRisk.value;
     applyRiskUpdate(updatedRisk);
     showScoreReviewModal.value = false;
-    await Promise.all([
-      loadRiskEvents(1),
-      loadRiskReviews(1),
-      loadRiskScoreHistory(),
-    ]);
+    await Promise.all([loadRiskEvents(1), loadRiskReviews(1)]);
+    void loadRiskScoreHistory();
 
     toast.add({
       severity: 'success',
@@ -3012,11 +3003,8 @@ async function submitAcceptRisk(payload: RiskAcceptSubmitPayload) {
     const updatedRisk = mutatedRisk.value;
     applyRiskUpdate(updatedRisk);
     showAcceptModal.value = false;
-    await Promise.all([
-      loadRiskEvents(1),
-      loadRiskReviews(1),
-      loadRiskScoreHistory(),
-    ]);
+    await Promise.all([loadRiskEvents(1), loadRiskReviews(1)]);
+    void loadRiskScoreHistory();
 
     toast.add({
       severity: 'success',
@@ -3069,11 +3057,8 @@ async function submitReviewRisk(payload: RiskReviewSubmitPayload) {
     const updatedRisk = mutatedRisk.value;
     applyRiskUpdate(updatedRisk);
     showReviewModal.value = false;
-    await Promise.all([
-      loadRiskEvents(1),
-      loadRiskReviews(1),
-      loadRiskScoreHistory(),
-    ]);
+    await Promise.all([loadRiskEvents(1), loadRiskReviews(1)]);
+    void loadRiskScoreHistory();
 
     toast.add({
       severity: 'success',
@@ -3182,11 +3167,8 @@ async function submitMarkMitigatingImplemented() {
     });
     const updatedRisk = mutatedRisk.value;
     applyRiskUpdate(updatedRisk);
-    await Promise.all([
-      loadRiskEvents(1),
-      loadRiskReviews(1),
-      loadRiskScoreHistory(),
-    ]);
+    await Promise.all([loadRiskEvents(1), loadRiskReviews(1)]);
+    void loadRiskScoreHistory();
     toast.add({
       severity: 'success',
       summary: 'Mitigation implemented',

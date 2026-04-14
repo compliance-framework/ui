@@ -118,8 +118,10 @@ watch(
   async (endpoint) => {
     if (!endpoint) {
       scoreTrend.value = [];
+      error.value = undefined;
       return;
     }
+    error.value = undefined;
     try {
       await loadScoreTrend(endpoint);
     } catch {

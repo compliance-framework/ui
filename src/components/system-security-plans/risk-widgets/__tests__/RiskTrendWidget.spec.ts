@@ -4,7 +4,7 @@ import RiskTrendWidget from '@/components/system-security-plans/risk-widgets/Ris
 
 const apiState = vi.hoisted(() => ({
   data: { value: [] },
-  error: { value: null },
+  error: { value: null as unknown },
   isLoading: { value: false },
   execute: vi.fn(),
 }));
@@ -92,5 +92,31 @@ describe('RiskTrendWidget', () => {
     const endpoint = String(apiState.execute.mock.calls[1][0]);
     expect(endpoint).toContain('/api/risks/score-timeseries?');
     expect(endpoint).toContain('from=2026-01-04T12%3A00%3A00.000Z');
+  });
+
+  it('clears stale errors when disabled by a null endpoint', () => {
+    apiState.error.value = new Error('previous request failed');
+
+    const wrapper = mount(RiskTrendWidget, {
+      props: {
+        endpoint: null,
+      },
+      global: {
+        stubs: {
+          LineChart: {
+            name: 'LineChart',
+            template: '<div />',
+          },
+          SelectButton: {
+            name: 'SelectButton',
+            template: '<div />',
+          },
+        },
+      },
+    });
+
+    expect(apiState.error.value).toBeUndefined();
+    expect(wrapper.text()).not.toContain('Unable to load risk score trend.');
+    expect(apiState.execute).not.toHaveBeenCalled();
   });
 });
