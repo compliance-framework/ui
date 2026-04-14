@@ -182,18 +182,20 @@ describe('risk-dashboard', () => {
 
   it('normalizes score timeseries points from the API shape', () => {
     const points = normalizeRiskScoreTimeseries({
-      data: [
-        {
-          'bucket-start': '2026-01-01T00:00:00Z',
-          'open-baseline-score': 28,
-          'open-residual-score': 12,
-        },
-        {
-          bucketStart: '2026-01-02T00:00:00Z',
-          openBaselineScore: '30',
-          openResidualScore: '14',
-        },
-      ],
+      data: {
+        data: [
+          {
+            'bucket-start': '2026-01-01T00:00:00Z',
+            'open-baseline-score': 28,
+            'open-residual-score': 12,
+          },
+          {
+            bucketStart: '2026-01-02T00:00:00Z',
+            openBaselineScore: '30',
+            openResidualScore: '14',
+          },
+        ],
+      },
     });
 
     expect(points).toEqual([
@@ -212,36 +214,38 @@ describe('risk-dashboard', () => {
 
   it('normalizes risk score history snapshots from the API shape', () => {
     const snapshots = normalizeRiskScoreSnapshots({
-      data: [
-        {
-          id: 'score-1',
-          'risk-id': 'risk-1',
-          'ssp-id': 'ssp-1',
-          'occurred-at': '2026-01-01T00:00:00Z',
-          'created-at': '2026-01-01T00:01:00Z',
-          'source-event-type': 'created',
-          status: 'open',
-          likelihood: 'low',
-          impact: 'high',
-          'baseline-score': 8,
-          'residual-score': 8,
-          'open-baseline-score': 8,
-          'open-residual-score': 8,
-        },
-        {
-          id: 'score-2',
-          riskId: 'risk-1',
-          sspId: 'ssp-1',
-          occurredAt: '2026-01-02T00:00:00Z',
-          createdAt: '2026-01-02T00:01:00Z',
-          sourceEventType: 'score_reassessed',
-          status: 'open',
-          baselineScore: '8',
-          residualScore: '15',
-          openBaselineScore: '8',
-          openResidualScore: '15',
-        },
-      ],
+      data: {
+        data: [
+          {
+            id: 'score-1',
+            'risk-id': 'risk-1',
+            'ssp-id': 'ssp-1',
+            'occurred-at': '2026-01-01T00:00:00Z',
+            'created-at': '2026-01-01T00:01:00Z',
+            'source-event-type': 'created',
+            status: 'open',
+            likelihood: 'low',
+            impact: 'high',
+            'baseline-score': 8,
+            'residual-score': 8,
+            'open-baseline-score': 8,
+            'open-residual-score': 8,
+          },
+          {
+            id: 'score-2',
+            riskId: 'risk-1',
+            sspId: 'ssp-1',
+            occurredAt: '2026-01-02T00:00:00Z',
+            createdAt: '2026-01-02T00:01:00Z',
+            sourceEventType: 'score_reassessed',
+            status: 'open',
+            baselineScore: '8',
+            residualScore: '15',
+            openBaselineScore: '8',
+            openResidualScore: '15',
+          },
+        ],
+      },
     });
 
     expect(snapshots).toMatchObject([

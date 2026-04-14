@@ -96,15 +96,29 @@ const props = defineProps<{
 }>();
 
 const latestSnapshot = computed(
-  () => props.snapshots[props.snapshots.length - 1] || null,
+  () => sortedSnapshots.value[sortedSnapshots.value.length - 1] || null,
+);
+
+const sortedSnapshots = computed(() =>
+  [...props.snapshots].sort((left, right) => {
+    const leftTime = Date.parse(left.occurredAt);
+    const rightTime = Date.parse(right.occurredAt);
+
+    if (Number.isNaN(leftTime) && Number.isNaN(rightTime)) return 0;
+    if (Number.isNaN(leftTime)) return 1;
+    if (Number.isNaN(rightTime)) return -1;
+    return leftTime - rightTime;
+  }),
 );
 
 const chartData = computed<ChartData<'line'>>(() => ({
-  labels: props.snapshots.map((snapshot) => snapshot.occurredAt.slice(0, 10)),
+  labels: sortedSnapshots.value.map((snapshot) =>
+    snapshot.occurredAt.slice(0, 10),
+  ),
   datasets: [
     {
       label: 'Baseline Score',
-      data: props.snapshots.map((snapshot) => snapshot.baselineScore),
+      data: sortedSnapshots.value.map((snapshot) => snapshot.baselineScore),
       borderColor: '#2563eb',
       backgroundColor: 'rgba(37, 99, 235, 0.12)',
       pointRadius: 3,
@@ -114,7 +128,7 @@ const chartData = computed<ChartData<'line'>>(() => ({
     },
     {
       label: 'Residual Score',
-      data: props.snapshots.map((snapshot) => snapshot.residualScore),
+      data: sortedSnapshots.value.map((snapshot) => snapshot.residualScore),
       borderColor: '#dc2626',
       backgroundColor: 'rgba(220, 38, 38, 0.12)',
       pointRadius: 3,

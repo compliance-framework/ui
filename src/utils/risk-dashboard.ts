@@ -153,10 +153,19 @@ function readNumber(source: LooseRecord, keys: string[]): number {
 }
 
 function readArrayPayload(value: unknown): unknown[] {
-  if (Array.isArray(value)) return value;
-  const root = toRecord(value);
-  if (Array.isArray(root?.data)) return root.data;
-  return [];
+  let current: unknown = value;
+  const maxDepth = 4;
+
+  for (let depth = 0; depth < maxDepth; depth += 1) {
+    if (Array.isArray(current)) return current;
+
+    const record = toRecord(current);
+    if (!record || !('data' in record)) return [];
+
+    current = record.data;
+  }
+
+  return Array.isArray(current) ? current : [];
 }
 
 export function formatRiskStatusLabel(status?: string): string {

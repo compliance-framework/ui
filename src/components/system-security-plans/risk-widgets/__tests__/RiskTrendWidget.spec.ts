@@ -96,6 +96,13 @@ describe('RiskTrendWidget', () => {
 
   it('clears stale errors when disabled by a null endpoint', () => {
     apiState.error.value = new Error('previous request failed');
+    apiState.data.value = [
+      {
+        bucketStart: '2026-03-04T00:00:00Z',
+        openBaselineScore: 12,
+        openResidualScore: 8,
+      },
+    ];
 
     const wrapper = mount(RiskTrendWidget, {
       props: {
@@ -117,6 +124,8 @@ describe('RiskTrendWidget', () => {
 
     expect(apiState.error.value).toBeUndefined();
     expect(wrapper.text()).not.toContain('Unable to load risk score trend.');
+    expect(wrapper.text()).not.toContain('Open Baseline Score');
+    expect(wrapper.text()).not.toContain('Open Residual Score');
     expect(apiState.execute).not.toHaveBeenCalled();
   });
 

@@ -131,9 +131,10 @@ watch(
   { immediate: true },
 );
 
-const normalizedPoints = computed(() =>
-  normalizeRiskScoreTimeseries(scoreTrend.value || []),
-);
+const normalizedPoints = computed(() => {
+  if (!props.endpoint) return [];
+  return normalizeRiskScoreTimeseries(scoreTrend.value || []);
+});
 
 const latestPoint = computed(
   () => normalizedPoints.value[normalizedPoints.value.length - 1] || null,
