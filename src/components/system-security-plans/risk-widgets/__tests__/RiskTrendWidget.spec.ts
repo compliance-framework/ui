@@ -122,7 +122,7 @@ describe('RiskTrendWidget', () => {
       },
     });
 
-    expect(apiState.error.value).toBeUndefined();
+    expect(apiState.error.value).toBeNull();
     expect(wrapper.text()).not.toContain('Unable to load risk score trend.');
     expect(wrapper.text()).not.toContain('Open Baseline Score');
     expect(wrapper.text()).not.toContain('Open Residual Score');
