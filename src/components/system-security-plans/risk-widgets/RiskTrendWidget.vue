@@ -40,7 +40,7 @@
     </div>
 
     <div
-      v-if="latestPoint"
+      v-if="latestPoint && !loading && !error"
       class="mt-4 grid grid-cols-1 gap-3 text-sm sm:grid-cols-2"
     >
       <div class="rounded-md bg-slate-50 p-3 dark:bg-slate-800/60">
