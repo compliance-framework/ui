@@ -123,7 +123,7 @@ import ResultStatusRing from '@/components/ResultStatusRing.vue';
 import { useConfigStore } from '@/stores/config.ts';
 import Popover from '@/volt/Popover.vue';
 import { ref } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute, useRouter, type LocationQueryRaw } from 'vue-router';
 import type {
   Evidence,
   EvidenceLabel,
@@ -138,10 +138,12 @@ const props = withDefaults(
     evidence: Evidence[];
     sortBy?: EvidenceSortBy;
     sortDirection?: SortDirection;
+    navigationQuery?: LocationQueryRaw;
   }>(),
   {
     sortBy: 'lastSeenAt',
     sortDirection: 'desc',
+    navigationQuery: undefined,
   },
 );
 
@@ -196,7 +198,7 @@ function evidenceRoute(item: Evidence) {
   return {
     name: 'evidence:view',
     params: { id: item.id },
-    query: route.query,
+    query: props.navigationQuery ?? route.query,
   };
 }
 

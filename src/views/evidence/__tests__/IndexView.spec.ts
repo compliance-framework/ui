@@ -11,7 +11,7 @@ const {
   evidenceSearchPost,
   loadComplianceOverTime,
   loadHeartbeats,
-  uiStore,
+  uiStore: uiStoreState,
   configStore,
 } = vi.hoisted(() => {
   const baseEvidence = Array.from({ length: 55 }, (_, index) => ({
@@ -76,9 +76,7 @@ const {
     loadHeartbeats: vi.fn(async () => ({})),
     uiStore: {
       evidenceFilter: '',
-      setEvidenceFilter: vi.fn((value: string) => {
-        uiStore.evidenceFilter = value;
-      }),
+      setEvidenceFilter: vi.fn(),
     },
     configStore: {
       showLabels: true,
@@ -90,6 +88,10 @@ const {
 });
 
 const routeMock = reactive(routeState);
+const uiStore = reactive(uiStoreState);
+uiStore.setEvidenceFilter = vi.fn((value: string) => {
+  uiStore.evidenceFilter = value;
+});
 const complianceData = ref([]);
 const heartbeatData = ref([]);
 const mountedWrappers: Array<ReturnType<typeof mount>> = [];
@@ -239,10 +241,13 @@ describe('Evidence IndexView', () => {
             template: '<div>Menu</div>',
           },
           EvidenceList: {
-            props: ['evidence', 'sortBy', 'sortDirection'],
+            props: ['evidence', 'sortBy', 'sortDirection', 'navigationQuery'],
             emits: ['sort'],
             template: `
               <div>
+                <output data-testid="navigation-query">
+                  {{ JSON.stringify(navigationQuery) }}
+                </output>
                 <button
                   type="button"
                   data-testid="sort-status"
@@ -620,6 +625,50 @@ describe('Evidence IndexView', () => {
     expect(replaceMock).toHaveBeenCalledTimes(1);
     expect(evidenceSearchPost).toHaveBeenCalledTimes(initialSearchCalls + 1);
     expect(wrapper.text()).toContain('Evidence 01');
+  });
+
+  it('passes the latest valid filter to evidence navigation before the debounced route update runs', async () => {
+    vi.useFakeTimers();
+    routeMock.query = {
+      filter: 'abc',
+      page: '2',
+      sortBy: 'name',
+      sortDirection: 'asc',
+    };
+
+    const wrapper = mountView();
+    await flushPromises();
+    vi.clearAllMocks();
+
+    const filterInput = wrapper.find('input[name="filter"]');
+    await filterInput.setValue('recent');
+    await flushPromises();
+
+    expect(replaceMock).not.toHaveBeenCalled();
+    expect(wrapper.get('[data-testid="navigation-query"]').text()).toContain(
+      '"filter":"recent"',
+    );
+    expect(wrapper.get('[data-testid="navigation-query"]').text()).toContain(
+      '"page":"2"',
+    );
+    expect(wrapper.get('[data-testid="navigation-query"]').text()).toContain(
+      '"sortBy":"name"',
+    );
+    expect(wrapper.get('[data-testid="navigation-query"]').text()).toContain(
+      '"sortDirection":"asc"',
+    );
+
+    await vi.advanceTimersByTimeAsync(500);
+    await flushPromises();
+
+    expect(replaceMock).toHaveBeenCalledWith({
+      query: {
+        filter: 'recent',
+        page: undefined,
+        sortBy: 'name',
+        sortDirection: 'asc',
+      },
+    });
   });
 
   it('updates the route and request when sortable headers change', async () => {

@@ -79,6 +79,7 @@
   >
     <EvidenceList
       :evidence="evidence"
+      :navigation-query="navigationQuery"
       :sort-by="sortBy"
       :sort-direction="sortDirection"
       @sort="changeSort"
@@ -403,6 +404,20 @@ function buildEvidenceSearchRequest(page: number) {
     complianceParams,
   };
 }
+
+const navigationQuery = computed<Record<string, string | undefined>>(() => {
+  const nextFilter = canPersistFilterInRoute(uiStore.evidenceFilter)
+    ? uiStore.evidenceFilter || undefined
+    : undefined;
+
+  return {
+    filter: nextFilter,
+    sortBy: sortBy.value === 'lastSeenAt' ? undefined : sortBy.value,
+    sortDirection:
+      sortDirection.value === 'desc' ? undefined : sortDirection.value,
+    page: currentPage.value > 1 ? String(currentPage.value) : undefined,
+  };
+});
 
 async function search(page = currentPage.value) {
   error.value = null;
