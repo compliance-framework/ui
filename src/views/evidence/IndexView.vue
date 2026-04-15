@@ -314,11 +314,17 @@ function getRouteFilterValue(value: unknown) {
     return '';
   }
 
-  return canRunEvidenceSearch(value) ? value : '';
+  return canRunEvidenceSearch(value) ? value.trim() : '';
 }
 
 function canPersistFilterInRoute(value: string) {
   return value.length === 0 || canRunEvidenceSearch(value);
+}
+
+function normalizeFilterRouteValue(value: string) {
+  const normalizedValue = value.trim();
+
+  return normalizedValue.length > 0 ? normalizedValue : undefined;
 }
 
 function scheduleFilterRouteUpdate(value: string) {
@@ -345,7 +351,7 @@ async function replaceFilterRoute(value: string) {
   await router.replace({
     query: {
       ...route.query,
-      filter: value || undefined,
+      filter: normalizeFilterRouteValue(value),
       page: undefined,
     },
   });
@@ -358,7 +364,7 @@ async function flushFilterRouteUpdate() {
     return false;
   }
 
-  const nextFilter = uiStore.evidenceFilter || undefined;
+  const nextFilter = normalizeFilterRouteValue(uiStore.evidenceFilter);
   const currentFilter =
     typeof route.query.filter === 'string' ? route.query.filter : undefined;
 
@@ -407,7 +413,7 @@ function buildEvidenceSearchRequest(page: number) {
 
 const navigationQuery = computed<Record<string, string | undefined>>(() => {
   const nextFilter = canPersistFilterInRoute(uiStore.evidenceFilter)
-    ? uiStore.evidenceFilter || undefined
+    ? normalizeFilterRouteValue(uiStore.evidenceFilter)
     : undefined;
 
   return {

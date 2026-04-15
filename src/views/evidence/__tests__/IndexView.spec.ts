@@ -671,6 +671,56 @@ describe('Evidence IndexView', () => {
     });
   });
 
+  it('trims padded filters before persisting them to the route', async () => {
+    vi.useFakeTimers();
+    const wrapper = mountView();
+    await flushPromises();
+    await flushPromises();
+    vi.clearAllMocks();
+
+    const filterInput = wrapper.find('input[name="filter"]');
+    await filterInput.setValue('  recent  ');
+    await waitForSearchDebounce();
+
+    expect(replaceMock).toHaveBeenCalledWith({
+      query: {
+        filter: 'recent',
+        page: undefined,
+      },
+    });
+    expect(evidenceSearchPost).toHaveBeenLastCalledWith(
+      '/api/evidence/search?page=1&limit=50&sortBy=lastSeenAt&sortDirection=desc&name=recent',
+      expect.any(Object),
+    );
+  });
+
+  it('clears whitespace-only filters from the route', async () => {
+    vi.useFakeTimers();
+    routeMock.query = {
+      filter: 'abc',
+      page: '2',
+    };
+
+    const wrapper = mountView();
+    await flushPromises();
+    vi.clearAllMocks();
+
+    const filterInput = wrapper.find('input[name="filter"]');
+    await filterInput.setValue('   ');
+    await waitForSearchDebounce();
+
+    expect(replaceMock).toHaveBeenCalledWith({
+      query: {
+        filter: undefined,
+        page: undefined,
+      },
+    });
+    expect(evidenceSearchPost).toHaveBeenLastCalledWith(
+      '/api/evidence/search?page=1&limit=50&sortBy=lastSeenAt&sortDirection=desc',
+      expect.any(Object),
+    );
+  });
+
   it('updates the route and request when sortable headers change', async () => {
     routeMock.query = {
       filter: 'abc',
