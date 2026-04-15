@@ -352,6 +352,29 @@ describe('Evidence IndexView', () => {
     expect(wrapper.text()).toContain('Page 1 of 2');
   });
 
+  it('clears an invalid initial route filter and falls back to the unfiltered search', async () => {
+    routeMock.query = {
+      filter: 'ab',
+    };
+
+    const wrapper = mountView();
+
+    await flushPromises();
+
+    expect(replaceMock).toHaveBeenCalledWith({
+      query: {
+        filter: undefined,
+        page: undefined,
+      },
+    });
+    expect(evidenceSearchPost).toHaveBeenCalledWith(
+      '/api/evidence/search?page=1&limit=50&sortBy=lastSeenAt&sortDirection=desc',
+      expect.any(Object),
+    );
+    expect(wrapper.text()).toContain('Evidence 01');
+    expect(wrapper.text()).toContain('Showing 1-50 of 55');
+  });
+
   it('requests the next page when pagination advances', async () => {
     routeMock.query = {
       filter: 'abc',
@@ -567,6 +590,7 @@ describe('Evidence IndexView', () => {
     await filterInput.setValue('ab');
     await waitForSearchDebounce();
 
+    expect(replaceMock).not.toHaveBeenCalled();
     expect(evidenceSearchPost).toHaveBeenCalledTimes(initialSearchCalls);
     expect(loadComplianceOverTime).toHaveBeenCalledTimes(
       initialComplianceCalls,
@@ -593,6 +617,7 @@ describe('Evidence IndexView', () => {
     await filterInput.setValue('category=');
     await waitForSearchDebounce();
 
+    expect(replaceMock).toHaveBeenCalledTimes(1);
     expect(evidenceSearchPost).toHaveBeenCalledTimes(initialSearchCalls + 1);
     expect(wrapper.text()).toContain('Evidence 01');
   });

@@ -191,11 +191,9 @@ watch(
     [newFilter, newPage, newSortBy, newSortDirection],
     [oldFilter, oldPage, oldSortBy, oldSortDirection],
   ) => {
-    if (typeof newFilter === 'string') {
-      uiStore.setEvidenceFilter(newFilter);
-    } else {
-      uiStore.setEvidenceFilter('');
-    }
+    const nextFilter = getRouteFilterValue(newFilter);
+
+    uiStore.setEvidenceFilter(nextFilter);
 
     currentPage.value = parsePageQuery(newPage);
     sortBy.value = parseSortByQuery(newSortBy);
@@ -207,6 +205,11 @@ watch(
       newSortBy === oldSortBy &&
       newSortDirection === oldSortDirection
     ) {
+      return;
+    }
+
+    if (typeof newFilter === 'string' && nextFilter.length === 0) {
+      void replaceFilterRoute('');
       return;
     }
 
@@ -305,8 +308,24 @@ function canRunEvidenceSearch(value: string) {
   return searchText.length >= 3 && !hasIncompleteLabelSyntax(searchText);
 }
 
+function getRouteFilterValue(value: unknown) {
+  if (typeof value !== 'string') {
+    return '';
+  }
+
+  return canRunEvidenceSearch(value) ? value : '';
+}
+
+function canPersistFilterInRoute(value: string) {
+  return value.length === 0 || canRunEvidenceSearch(value);
+}
+
 function scheduleFilterRouteUpdate(value: string) {
   clearFilterRouteUpdateTimeout();
+
+  if (!canPersistFilterInRoute(value)) {
+    return;
+  }
 
   filterRouteUpdateTimeout = setTimeout(() => {
     filterRouteUpdateTimeout = undefined;
@@ -333,6 +352,10 @@ async function replaceFilterRoute(value: string) {
 
 async function flushFilterRouteUpdate() {
   clearFilterRouteUpdateTimeout();
+
+  if (!canPersistFilterInRoute(uiStore.evidenceFilter)) {
+    return false;
+  }
 
   const nextFilter = uiStore.evidenceFilter || undefined;
   const currentFilter =
@@ -465,14 +488,18 @@ async function submitSearch() {
 }
 
 onMounted(() => {
-  if (route.query.filter) {
-    uiStore.setEvidenceFilter(route.query.filter as string);
-  } else {
-    uiStore.setEvidenceFilter('');
-  }
+  const nextFilter = getRouteFilterValue(route.query.filter);
+
+  uiStore.setEvidenceFilter(nextFilter);
   currentPage.value = parsePageQuery(route.query.page);
   sortBy.value = parseSortByQuery(route.query.sortBy);
   sortDirection.value = parseSortDirectionQuery(route.query.sortDirection);
+
+  if (typeof route.query.filter === 'string' && nextFilter.length === 0) {
+    void replaceFilterRoute('');
+    return;
+  }
+
   search(currentPage.value);
 });
 
