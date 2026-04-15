@@ -34,6 +34,9 @@ export interface Evidence {
   activities: Activity[];
 }
 
+export type EvidenceSortBy = 'lastSeenAt' | 'name' | 'status';
+export type SortDirection = 'asc' | 'desc';
+
 export interface EvidenceSignatureSigner {
   type: string;
   id?: string;
@@ -220,7 +223,7 @@ export const useEvidenceStore = defineStore('evidence', () => {
     const response = await fetch(
       `${config.API_URL}/api/evidence/status-over-time?` +
         new URLSearchParams({
-          intervals: intervals ?? '',
+          interval: intervals ?? '',
         }),
       {
         method: 'POST',
@@ -249,7 +252,7 @@ export const useEvidenceStore = defineStore('evidence', () => {
     const response = await fetch(
       `${config.API_URL}/api/evidence/status-over-time/${uuid}?` +
         new URLSearchParams({
-          intervals: intervals ?? '',
+          interval: intervals ?? '',
         }),
       {
         method: 'GET',

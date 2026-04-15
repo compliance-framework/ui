@@ -63,14 +63,10 @@
     </thead>
     <tbody>
       <tr
-        class="cursor-pointer hover:bg-zinc-50 dark:hover:bg-slate-800 border-b border-ccf-300 dark:border-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-ccf-500 focus-visible:ring-inset"
+        class="cursor-pointer hover:bg-zinc-50 dark:hover:bg-slate-800 border-b border-ccf-300 dark:border-slate-800"
         v-for="item in evidence"
         :key="item.uuid"
-        tabindex="0"
-        role="link"
         @click="openEvidence(item)"
-        @keydown.enter="openEvidence(item)"
-        @keydown.space.prevent="openEvidence(item)"
       >
         <td class="py-2 pl-4 pr-2 w-[1%]">
           <ResultStatusRing
@@ -79,9 +75,13 @@
           ></ResultStatusRing>
         </td>
         <td class="py-3 px-2">
-          <div class="break-words max-w-2xl">
+          <RouterLink
+            class="block break-words max-w-2xl rounded-md text-gray-900 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-ccf-500 dark:text-slate-100"
+            :to="evidenceRoute(item)"
+            @click.stop
+          >
             {{ item.title }}
-          </div>
+          </RouterLink>
         </td>
         <td class="py-2 px-2 whitespace-nowrap">
           {{ formatDateTime(item.end) }}
@@ -93,8 +93,6 @@
               type="button"
               class="cursor-pointer mr-2"
               @click.stop="toggle($event, item.labels)"
-              @keydown.enter.stop
-              @keydown.space.stop
             >
               <BIconEye />
             </button>
@@ -125,12 +123,14 @@ import { useConfigStore } from '@/stores/config.ts';
 import Popover from '@/volt/Popover.vue';
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import type { Evidence, EvidenceLabel } from '@/stores/evidence.ts';
+import type {
+  Evidence,
+  EvidenceLabel,
+  EvidenceSortBy,
+  SortDirection,
+} from '@/stores/evidence.ts';
 import Chip from '@/volt/Chip.vue';
 import { BIconEye } from 'bootstrap-icons-vue';
-
-type EvidenceSortBy = 'lastSeenAt' | 'name' | 'status';
-type SortDirection = 'asc' | 'desc';
 
 const props = withDefaults(
   defineProps<{
@@ -187,10 +187,14 @@ function toggle(event: Event, labels: EvidenceLabel[]) {
 }
 
 async function openEvidence(item: Evidence) {
-  await router.push({
+  await router.push(evidenceRoute(item));
+}
+
+function evidenceRoute(item: Evidence) {
+  return {
     name: 'evidence:view',
     params: { id: item.id },
-  });
+  };
 }
 
 function formatDateTime(value?: string) {

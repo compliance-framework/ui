@@ -164,6 +164,10 @@ describe('EvidenceList', () => {
           },
         },
         stubs: {
+          RouterLink: {
+            props: ['to'],
+            template: '<a :data-to="JSON.stringify(to)"><slot /></a>',
+          },
           ResultStatusRing: {
             template: '<span />',
           },
@@ -189,5 +193,8 @@ describe('EvidenceList', () => {
       name: 'evidence:view',
       params: { id: 'evidence-1' },
     });
+    expect(wrapper.find('[data-to*="evidence-1"]').exists()).toBe(true);
+    expect(wrapper.find('tbody tr').attributes('role')).toBeUndefined();
+    expect(wrapper.find('tbody tr').attributes('tabindex')).toBeUndefined();
   });
 });

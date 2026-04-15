@@ -137,7 +137,12 @@ import PrimaryButton from '@/volt/PrimaryButton.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
 import TertiaryButton from '@/volt/TertiaryButton.vue';
 import InfoCircleIcon from '@primevue/icons/infocircle';
-import type { ComplianceInterval, Evidence } from '@/stores/evidence.ts';
+import type {
+  ComplianceInterval,
+  Evidence,
+  EvidenceSortBy,
+  SortDirection,
+} from '@/stores/evidence.ts';
 import EvidenceList from '@/components/EvidenceList.vue';
 import BurgerMenu from '@/components/BurgerMenu.vue';
 import { useAuthenticatedInstance, useDataApi } from '@/composables/axios';
@@ -159,8 +164,6 @@ const sortDirection = ref<SortDirection>('desc');
 
 const EVIDENCE_PAGE_SIZE = 50;
 const SEARCH_DEBOUNCE_MS = 500;
-type EvidenceSortBy = 'lastSeenAt' | 'name' | 'status';
-type SortDirection = 'asc' | 'desc';
 let filterRouteUpdateTimeout: ReturnType<typeof setTimeout> | undefined;
 
 const filter = computed({
@@ -214,7 +217,7 @@ const { data: complianceOverTime, execute: loadComplianceOverTime } =
     '/api/evidence/status-over-time',
     {
       params: {
-        intervals: '0m,2m,4m,6m,8m,12m,16m,20m,25m,30m,40m,50m,1h',
+        interval: '0m,2m,4m,6m,8m,12m,16m,20m,25m,30m,40m,50m,1h',
       },
       method: 'POST',
     },
