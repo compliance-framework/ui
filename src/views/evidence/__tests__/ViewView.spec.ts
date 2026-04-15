@@ -10,6 +10,7 @@ type MockRouteState = {
   params: {
     id: string;
   };
+  query: Record<string, string>;
 };
 
 type ViewTestRefs = {
@@ -46,6 +47,12 @@ const {
   mockRoute: {
     params: {
       id: 'evidence-1',
+    },
+    query: {
+      filter: 'recent',
+      page: '2',
+      sortBy: 'name',
+      sortDirection: 'asc',
     },
   },
   routerPush: vi.fn(),
@@ -490,6 +497,12 @@ describe('Evidence ViewView', () => {
     refs.signatureError.value = null;
     refs.verifyError.value = null;
     refs.route.params.id = 'evidence-1';
+    refs.route.query = {
+      filter: 'recent',
+      page: '2',
+      sortBy: 'name',
+      sortDirection: 'asc',
+    };
     executeVerify.mockClear();
     routerPush.mockClear();
   });
@@ -517,6 +530,10 @@ describe('Evidence ViewView', () => {
     expect(wrapper.text()).not.toContain('Open History Page');
     const backLink = wrapper.find('[data-to*="evidence:index"]');
     expect(backLink.exists()).toBe(true);
+    expect(backLink.attributes('data-to')).toContain('"filter":"recent"');
+    expect(backLink.attributes('data-to')).toContain('"page":"2"');
+    expect(backLink.attributes('data-to')).toContain('"sortBy":"name"');
+    expect(backLink.attributes('data-to')).toContain('"sortDirection":"asc"');
     expect(backLink.attributes('aria-label')).toBe('Back to Evidence');
     expect(backLink.text()).toBe('<');
   });

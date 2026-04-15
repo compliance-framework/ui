@@ -3,7 +3,7 @@
     <div class="flex items-center justify-between gap-3">
       <div class="flex items-start gap-3">
         <RouterLink
-          :to="{ name: 'evidence:index' }"
+          :to="backToEvidenceRoute"
           class="mt-1 inline-flex h-8 w-8 items-center justify-center rounded-md border border-ccf-300 text-lg leading-none hover:bg-zinc-50 dark:border-slate-700 dark:hover:bg-slate-800"
           aria-label="Back to Evidence"
         >
@@ -730,6 +730,10 @@ import type {
 const route = useRoute();
 const router = useRouter();
 const evidenceId = computed(() => route.params.id as string);
+const backToEvidenceRoute = computed(() => ({
+  name: 'evidence:index',
+  query: route.query,
+}));
 
 const tabs = [
   { id: 'overview', label: 'Overview' },

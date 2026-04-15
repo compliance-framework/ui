@@ -123,7 +123,7 @@ import ResultStatusRing from '@/components/ResultStatusRing.vue';
 import { useConfigStore } from '@/stores/config.ts';
 import Popover from '@/volt/Popover.vue';
 import { ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import type {
   Evidence,
   EvidenceLabel,
@@ -153,6 +153,7 @@ const popoverLabels = ref<string[]>([]);
 const op = ref();
 
 const configStore = useConfigStore();
+const route = useRoute();
 const router = useRouter();
 
 function getAriaSort(field: EvidenceSortBy) {
@@ -195,6 +196,7 @@ function evidenceRoute(item: Evidence) {
   return {
     name: 'evidence:view',
     params: { id: item.id },
+    query: route.query,
   };
 }
 

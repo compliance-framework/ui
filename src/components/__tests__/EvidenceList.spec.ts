@@ -2,8 +2,16 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import EvidenceList from '../EvidenceList.vue';
 
-const { pushMock } = vi.hoisted(() => ({
+const { pushMock, routeMock } = vi.hoisted(() => ({
   pushMock: vi.fn(),
+  routeMock: {
+    query: {
+      filter: 'recent',
+      page: '2',
+      sortBy: 'name',
+      sortDirection: 'asc',
+    },
+  },
 }));
 
 vi.mock('@/stores/config.ts', () => ({
@@ -14,6 +22,7 @@ vi.mock('@/stores/config.ts', () => ({
 }));
 
 vi.mock('vue-router', () => ({
+  useRoute: () => routeMock,
   useRouter: () => ({
     push: pushMock,
   }),
@@ -22,6 +31,12 @@ vi.mock('vue-router', () => ({
 describe('EvidenceList', () => {
   beforeEach(() => {
     pushMock.mockClear();
+    routeMock.query = {
+      filter: 'recent',
+      page: '2',
+      sortBy: 'name',
+      sortDirection: 'asc',
+    };
   });
 
   it('renders the Last Seen At column from evidence end', () => {
@@ -193,6 +208,12 @@ describe('EvidenceList', () => {
     expect(pushMock).toHaveBeenCalledWith({
       name: 'evidence:view',
       params: { id: 'evidence-1' },
+      query: {
+        filter: 'recent',
+        page: '2',
+        sortBy: 'name',
+        sortDirection: 'asc',
+      },
     });
     const evidenceLink = wrapper.find('[data-to*="evidence-1"]');
     expect(evidenceLink.exists()).toBe(true);
@@ -201,5 +222,7 @@ describe('EvidenceList', () => {
     expect(evidenceLink.attributes('aria-label')).toBe(
       'Open evidence Clickable Evidence',
     );
+    expect(evidenceLink.attributes('data-to')).toContain('"filter":"recent"');
+    expect(evidenceLink.attributes('data-to')).toContain('"page":"2"');
   });
 });
