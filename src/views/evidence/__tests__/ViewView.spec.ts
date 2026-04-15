@@ -514,6 +514,11 @@ describe('Evidence ViewView', () => {
     expect(wrapper.text()).not.toContain('Internal resource reference:');
     expect(wrapper.text()).toContain('Expiration Date');
     expect(wrapper.text()).toContain('Signed');
+    expect(wrapper.text()).not.toContain('Open History Page');
+    const backLink = wrapper.find('[data-to*="evidence:index"]');
+    expect(backLink.exists()).toBe(true);
+    expect(backLink.attributes('aria-label')).toBe('Back to Evidence');
+    expect(backLink.text()).toBe('<');
   });
 
   it('shows labels, props, and links in the metadata tab', async () => {

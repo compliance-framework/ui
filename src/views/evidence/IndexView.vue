@@ -77,7 +77,12 @@
   <div
     class="mt-4 rounded-md bg-white dark:bg-slate-900 border-collapse border border-ccf-300 dark:border-slate-700"
   >
-    <EvidenceList :evidence="evidence" />
+    <EvidenceList
+      :evidence="evidence"
+      :sort-by="sortBy"
+      :sort-direction="sortDirection"
+      @sort="changeSort"
+    />
   </div>
 
   <div
@@ -108,7 +113,7 @@
   </div>
 </template>
 <script setup lang="ts">
-import { onMounted, ref, computed, watch } from 'vue';
+import { onBeforeUnmount, onMounted, ref, computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import type { AxiosError } from 'axios';
 import { useUIStore } from '@/stores/ui.ts';
@@ -149,8 +154,14 @@ const evidence = ref<Evidence[]>([]);
 const totalEvidence = ref(0);
 const currentPage = ref(1);
 const totalPages = ref(1);
+const sortBy = ref<EvidenceSortBy>('lastSeenAt');
+const sortDirection = ref<SortDirection>('desc');
 
 const EVIDENCE_PAGE_SIZE = 50;
+const SEARCH_DEBOUNCE_MS = 500;
+type EvidenceSortBy = 'lastSeenAt' | 'name' | 'status';
+type SortDirection = 'asc' | 'desc';
+let filterRouteUpdateTimeout: ReturnType<typeof setTimeout> | undefined;
 
 const filter = computed({
   get: () => uiStore.evidenceFilter,
@@ -160,20 +171,21 @@ const filter = computed({
       return;
     }
     uiStore.setEvidenceFilter(val);
-    // Update URL query parameter without reloading page
-    router.replace({
-      query: {
-        ...route.query,
-        filter: val || undefined,
-        page: undefined,
-      },
-    });
+    scheduleFilterRouteUpdate(val);
   },
 });
 
 watch(
-  [() => route.query.filter, () => route.query.page],
-  ([newFilter, newPage], [oldFilter, oldPage]) => {
+  [
+    () => route.query.filter,
+    () => route.query.page,
+    () => route.query.sortBy,
+    () => route.query.sortDirection,
+  ],
+  (
+    [newFilter, newPage, newSortBy, newSortDirection],
+    [oldFilter, oldPage, oldSortBy, oldSortDirection],
+  ) => {
     if (typeof newFilter === 'string') {
       uiStore.setEvidenceFilter(newFilter);
     } else {
@@ -181,8 +193,15 @@ watch(
     }
 
     currentPage.value = parsePageQuery(newPage);
+    sortBy.value = parseSortByQuery(newSortBy);
+    sortDirection.value = parseSortDirectionQuery(newSortDirection);
 
-    if (newFilter === oldFilter && newPage === oldPage) {
+    if (
+      newFilter === oldFilter &&
+      newPage === oldPage &&
+      newSortBy === oldSortBy &&
+      newSortDirection === oldSortDirection
+    ) {
       return;
     }
 
@@ -195,7 +214,7 @@ const { data: complianceOverTime, execute: loadComplianceOverTime } =
     '/api/evidence/status-over-time',
     {
       params: {
-        interval: '0m,2m,4m,6m,8m,12m,16m,20m,25m,30m,40m,50m,1h',
+        intervals: '0m,2m,4m,6m,8m,12m,16m,20m,25m,30m,40m,50m,1h',
       },
       method: 'POST',
     },
@@ -247,48 +266,138 @@ function parsePageQuery(value: unknown) {
   return page;
 }
 
-function sortEvidence(items: Evidence[]) {
-  return [...items].sort((a, b) => {
-    const x = new Date(a.end);
-    const y = new Date(b.end);
+function parseSortByQuery(value: unknown): EvidenceSortBy {
+  if (value === 'name' || value === 'status' || value === 'lastSeenAt') {
+    return value;
+  }
 
-    if (x > y) {
-      return 1;
-    }
-    if (x < y) {
-      return -1;
-    }
-    return 0;
+  return 'lastSeenAt';
+}
+
+function parseSortDirectionQuery(value: unknown): SortDirection {
+  if (value === 'asc' || value === 'desc') {
+    return value;
+  }
+
+  return 'desc';
+}
+
+function isLabelFilterSearch(value: string) {
+  return /!?=/.test(value);
+}
+
+function hasIncompleteLabelSyntax(value: string) {
+  return /!?=\s*$/.test(value.trim());
+}
+
+function canRunEvidenceSearch(value: string) {
+  const searchText = value.trim();
+
+  if (searchText.length === 0) {
+    return true;
+  }
+
+  return searchText.length >= 3 && !hasIncompleteLabelSyntax(searchText);
+}
+
+function scheduleFilterRouteUpdate(value: string) {
+  if (filterRouteUpdateTimeout) {
+    clearTimeout(filterRouteUpdateTimeout);
+  }
+
+  filterRouteUpdateTimeout = setTimeout(() => {
+    filterRouteUpdateTimeout = undefined;
+    void router.replace({
+      query: {
+        ...route.query,
+        filter: value || undefined,
+        page: undefined,
+      },
+    });
+  }, SEARCH_DEBOUNCE_MS);
+}
+
+function buildEvidenceSearchRequest(page: number) {
+  const searchText = uiStore.evidenceFilter.trim();
+  const isLabelSearch = isLabelFilterSearch(searchText);
+  const query = isLabelSearch
+    ? new FilterParser(searchText).parse()
+    : new FilterParser('').parse();
+
+  const params = new URLSearchParams({
+    page: String(page),
+    limit: String(EVIDENCE_PAGE_SIZE),
+    sortBy: sortBy.value,
+    sortDirection: sortDirection.value,
   });
+
+  if (searchText && !isLabelSearch) {
+    params.set('name', searchText);
+  }
+
+  return {
+    url: `/api/evidence/search?${params.toString()}`,
+    body: {
+      filter: query,
+    },
+  };
 }
 
 async function search(page = currentPage.value) {
-  const query = new FilterParser(filter.value).parse();
   error.value = null;
 
+  if (!canRunEvidenceSearch(uiStore.evidenceFilter)) {
+    return;
+  }
+
   try {
+    const request = buildEvidenceSearchRequest(page);
     const [evidenceResponse] = await Promise.all([
       authenticatedApi.post<PaginatedListResponse<Evidence>>(
-        `/api/evidence/search?page=${page}&limit=${EVIDENCE_PAGE_SIZE}`,
-        {
-          filter: query,
-        },
+        request.url,
+        request.body,
       ),
       loadComplianceOverTime({
-        data: { filter: query },
+        data: request.body,
       }),
       loadHeartbeats(),
     ]);
 
     const paginatedEvidence = evidenceResponse.data;
 
-    evidence.value = sortEvidence(paginatedEvidence.data ?? []);
+    evidence.value = paginatedEvidence.data ?? [];
     totalEvidence.value = paginatedEvidence.total ?? 0;
     currentPage.value = paginatedEvidence.page ?? page;
     totalPages.value = Math.max(paginatedEvidence.totalPages ?? 1, 1);
   } catch (err) {
     error.value = err as AxiosError;
   }
+}
+
+function getDefaultSortDirection(nextSortBy: EvidenceSortBy): SortDirection {
+  if (nextSortBy === 'name' || nextSortBy === 'status') {
+    return 'asc';
+  }
+
+  return 'desc';
+}
+
+async function changeSort(nextSortBy: EvidenceSortBy) {
+  const nextSortDirection =
+    sortBy.value === nextSortBy
+      ? sortDirection.value === 'asc'
+        ? 'desc'
+        : 'asc'
+      : getDefaultSortDirection(nextSortBy);
+
+  await router.replace({
+    query: {
+      ...route.query,
+      sortBy: nextSortBy,
+      sortDirection: nextSortDirection,
+      page: undefined,
+    },
+  });
 }
 
 async function changePage(page: number) {
@@ -322,7 +431,15 @@ onMounted(() => {
     uiStore.setEvidenceFilter('');
   }
   currentPage.value = parsePageQuery(route.query.page);
+  sortBy.value = parseSortByQuery(route.query.sortBy);
+  sortDirection.value = parseSortDirectionQuery(route.query.sortDirection);
   search(currentPage.value);
+});
+
+onBeforeUnmount(() => {
+  if (filterRouteUpdateTimeout) {
+    clearTimeout(filterRouteUpdateTimeout);
+  }
 });
 
 async function save() {
