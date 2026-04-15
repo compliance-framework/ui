@@ -136,7 +136,7 @@ describe('EvidenceList', () => {
     ]);
   });
 
-  it('opens the evidence detail view when a row is clicked', async () => {
+  it('opens the evidence detail view when a row is clicked and exposes a detail link', async () => {
     const wrapper = mount(EvidenceList, {
       props: {
         evidence: [
@@ -166,7 +166,8 @@ describe('EvidenceList', () => {
         stubs: {
           RouterLink: {
             props: ['to'],
-            template: '<a :data-to="JSON.stringify(to)"><slot /></a>',
+            template:
+              '<a :data-to="JSON.stringify(to)" :aria-label="$attrs[\'aria-label\']"><slot /></a>',
           },
           ResultStatusRing: {
             template: '<span />',
@@ -193,8 +194,12 @@ describe('EvidenceList', () => {
       name: 'evidence:view',
       params: { id: 'evidence-1' },
     });
-    expect(wrapper.find('[data-to*="evidence-1"]').exists()).toBe(true);
-    expect(wrapper.find('tbody tr').attributes('role')).toBeUndefined();
-    expect(wrapper.find('tbody tr').attributes('tabindex')).toBeUndefined();
+    const evidenceLink = wrapper.find('[data-to*="evidence-1"]');
+    expect(evidenceLink.exists()).toBe(true);
+    expect(evidenceLink.element.tagName).toBe('A');
+    expect(evidenceLink.text()).toBe('Clickable Evidence');
+    expect(evidenceLink.attributes('aria-label')).toBe(
+      'Open evidence Clickable Evidence',
+    );
   });
 });

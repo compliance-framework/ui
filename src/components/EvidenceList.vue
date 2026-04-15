@@ -78,6 +78,7 @@
           <RouterLink
             class="block break-words max-w-2xl rounded-md text-gray-900 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-ccf-500 dark:text-slate-100"
             :to="evidenceRoute(item)"
+            :aria-label="`Open evidence ${item.title}`"
             @click.stop
           >
             {{ item.title }}

@@ -164,6 +164,8 @@ const sortDirection = ref<SortDirection>('desc');
 
 const EVIDENCE_PAGE_SIZE = 50;
 const SEARCH_DEBOUNCE_MS = 500;
+const EVIDENCE_STATUS_INTERVAL =
+  '0m,2m,4m,6m,8m,12m,16m,20m,25m,30m,40m,50m,1h';
 let filterRouteUpdateTimeout: ReturnType<typeof setTimeout> | undefined;
 
 const filter = computed({
@@ -217,7 +219,7 @@ const { data: complianceOverTime, execute: loadComplianceOverTime } =
     '/api/evidence/status-over-time',
     {
       params: {
-        interval: '0m,2m,4m,6m,8m,12m,16m,20m,25m,30m,40m,50m,1h',
+        interval: EVIDENCE_STATUS_INTERVAL,
       },
       method: 'POST',
     },
@@ -304,20 +306,44 @@ function canRunEvidenceSearch(value: string) {
 }
 
 function scheduleFilterRouteUpdate(value: string) {
-  if (filterRouteUpdateTimeout) {
-    clearTimeout(filterRouteUpdateTimeout);
-  }
+  clearFilterRouteUpdateTimeout();
 
   filterRouteUpdateTimeout = setTimeout(() => {
     filterRouteUpdateTimeout = undefined;
-    void router.replace({
-      query: {
-        ...route.query,
-        filter: value || undefined,
-        page: undefined,
-      },
-    });
+    void replaceFilterRoute(value);
   }, SEARCH_DEBOUNCE_MS);
+}
+
+function clearFilterRouteUpdateTimeout() {
+  if (filterRouteUpdateTimeout) {
+    clearTimeout(filterRouteUpdateTimeout);
+    filterRouteUpdateTimeout = undefined;
+  }
+}
+
+async function replaceFilterRoute(value: string) {
+  await router.replace({
+    query: {
+      ...route.query,
+      filter: value || undefined,
+      page: undefined,
+    },
+  });
+}
+
+async function flushFilterRouteUpdate() {
+  clearFilterRouteUpdateTimeout();
+
+  const nextFilter = uiStore.evidenceFilter || undefined;
+  const currentFilter =
+    typeof route.query.filter === 'string' ? route.query.filter : undefined;
+
+  if (currentFilter === nextFilter && route.query.page === undefined) {
+    return false;
+  }
+
+  await replaceFilterRoute(uiStore.evidenceFilter);
+  return true;
 }
 
 function buildEvidenceSearchRequest(page: number) {
@@ -338,11 +364,20 @@ function buildEvidenceSearchRequest(page: number) {
     params.set('name', searchText);
   }
 
+  const complianceParams: Record<string, string> = {
+    interval: EVIDENCE_STATUS_INTERVAL,
+  };
+
+  if (searchText && !isLabelSearch) {
+    complianceParams.name = searchText;
+  }
+
   return {
     url: `/api/evidence/search?${params.toString()}`,
     body: {
       filter: query,
     },
+    complianceParams,
   };
 }
 
@@ -362,6 +397,7 @@ async function search(page = currentPage.value) {
       ),
       loadComplianceOverTime({
         data: request.body,
+        params: request.complianceParams,
       }),
       loadHeartbeats(),
     ]);
@@ -419,8 +455,9 @@ async function changePage(page: number) {
 }
 
 async function submitSearch() {
-  if (currentPage.value > 1) {
-    await changePage(1);
+  const routeUpdated = await flushFilterRouteUpdate();
+
+  if (routeUpdated) {
     return;
   }
 
@@ -440,9 +477,7 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
-  if (filterRouteUpdateTimeout) {
-    clearTimeout(filterRouteUpdateTimeout);
-  }
+  clearFilterRouteUpdateTimeout();
 });
 
 async function save() {

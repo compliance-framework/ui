@@ -217,13 +217,13 @@ export const useEvidenceStore = defineStore('evidence', () => {
 
   async function getComplianceForSearch(
     filter: Filter,
-    intervals: string | null = null,
+    interval: string | null = null,
   ): Promise<DataResponse<ComplianceInterval[]>> {
     const config = await configStore.getConfig();
     const response = await fetch(
       `${config.API_URL}/api/evidence/status-over-time?` +
         new URLSearchParams({
-          interval: intervals ?? '',
+          interval: interval ?? '',
         }),
       {
         method: 'POST',
@@ -246,13 +246,13 @@ export const useEvidenceStore = defineStore('evidence', () => {
 
   async function getComplianceForUUID(
     uuid: string,
-    intervals: string | null = null,
+    interval: string | null = null,
   ): Promise<DataResponse<ComplianceInterval[]>> {
     const config = await configStore.getConfig();
     const response = await fetch(
       `${config.API_URL}/api/evidence/status-over-time/${uuid}?` +
         new URLSearchParams({
-          interval: intervals ?? '',
+          interval: interval ?? '',
         }),
       {
         method: 'GET',

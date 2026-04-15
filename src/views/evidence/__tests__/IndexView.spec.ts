@@ -93,6 +93,8 @@ const routeMock = reactive(routeState);
 const complianceData = ref([]);
 const heartbeatData = ref([]);
 const mountedWrappers: Array<ReturnType<typeof mount>> = [];
+const EVIDENCE_STATUS_INTERVAL =
+  '0m,2m,4m,6m,8m,12m,16m,20m,25m,30m,40m,50m,1h';
 
 replaceMock.mockImplementation(
   async ({ query }: { query: Record<string, string> }) => {
@@ -298,7 +300,16 @@ describe('Evidence IndexView', () => {
       '/api/evidence/search?page=1&limit=50&sortBy=lastSeenAt&sortDirection=desc',
       expect.any(Object),
     );
-    expect(loadComplianceOverTime).toHaveBeenCalled();
+    expect(loadComplianceOverTime).toHaveBeenCalledWith({
+      data: {
+        filter: {
+          scope: {},
+        },
+      },
+      params: {
+        interval: EVIDENCE_STATUS_INTERVAL,
+      },
+    });
     expect(loadHeartbeats).toHaveBeenCalled();
 
     expect(wrapper.text()).toContain('Evidence 01');
@@ -321,7 +332,17 @@ describe('Evidence IndexView', () => {
       '/api/evidence/search?page=1&limit=50&sortBy=lastSeenAt&sortDirection=desc&name=abc',
       expect.any(Object),
     );
-    expect(loadComplianceOverTime).toHaveBeenCalled();
+    expect(loadComplianceOverTime).toHaveBeenCalledWith({
+      data: {
+        filter: {
+          scope: {},
+        },
+      },
+      params: {
+        interval: EVIDENCE_STATUS_INTERVAL,
+        name: 'abc',
+      },
+    });
     expect(loadHeartbeats).toHaveBeenCalled();
 
     expect(wrapper.text()).toContain('Evidence 01');
@@ -436,6 +457,17 @@ describe('Evidence IndexView', () => {
         },
       },
     );
+    expect(loadComplianceOverTime).toHaveBeenLastCalledWith({
+      data: {
+        filter: {
+          scope: {},
+        },
+      },
+      params: {
+        interval: EVIDENCE_STATUS_INTERVAL,
+        name: 'recent',
+      },
+    });
     expect(wrapper.text()).toContain('Recent Evidence');
   });
 
@@ -462,7 +494,61 @@ describe('Evidence IndexView', () => {
         },
       },
     );
+    expect(loadComplianceOverTime).toHaveBeenLastCalledWith({
+      data: {
+        filter: {
+          scope: {
+            condition: {
+              label: 'category',
+              operator: '=',
+              value: 'recent',
+            },
+          },
+        },
+      },
+      params: {
+        interval: EVIDENCE_STATUS_INTERVAL,
+      },
+    });
     expect(wrapper.text()).toContain('Recent Evidence');
+  });
+
+  it('flushes a pending debounced route update when the search form is submitted', async () => {
+    vi.useFakeTimers();
+    const wrapper = mountView();
+    await flushPromises();
+    await flushPromises();
+    vi.clearAllMocks();
+
+    const filterInput = wrapper.find('input[name="filter"]');
+    await filterInput.setValue('recent');
+    await vi.advanceTimersByTimeAsync(100);
+    await flushPromises();
+
+    expect(replaceMock).not.toHaveBeenCalled();
+    expect(evidenceSearchPost).not.toHaveBeenCalled();
+
+    await wrapper.find('form').trigger('submit');
+    await flushPromises();
+
+    expect(replaceMock).toHaveBeenCalledTimes(1);
+    expect(replaceMock).toHaveBeenLastCalledWith({
+      query: {
+        filter: 'recent',
+        page: undefined,
+      },
+    });
+    expect(evidenceSearchPost).toHaveBeenCalledTimes(1);
+    expect(evidenceSearchPost).toHaveBeenLastCalledWith(
+      '/api/evidence/search?page=1&limit=50&sortBy=lastSeenAt&sortDirection=desc&name=recent',
+      expect.any(Object),
+    );
+
+    await vi.advanceTimersByTimeAsync(500);
+    await flushPromises();
+
+    expect(replaceMock).toHaveBeenCalledTimes(1);
+    expect(evidenceSearchPost).toHaveBeenCalledTimes(1);
   });
 
   it('debounces typed search and skips short or incomplete label queries', async () => {
