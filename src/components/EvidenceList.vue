@@ -1,10 +1,72 @@
 <template>
   <table class="table-auto w-full rounded-full dark:text-slate-300">
+    <thead>
+      <tr class="border-b border-ccf-300 dark:border-slate-800">
+        <th
+          class="py-2 pl-4 pr-2 text-left text-sm font-medium"
+          :aria-sort="getAriaSort('status')"
+        >
+          <button
+            type="button"
+            data-testid="sort-status"
+            class="inline-flex items-center gap-1 rounded-md text-left hover:text-ccf-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-ccf-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900"
+            @click="emit('sort', 'status')"
+          >
+            <span>Status</span>
+            <span class="text-xs" aria-hidden="true">
+              {{ getSortIndicator('status') }}
+            </span>
+            <span class="sr-only">{{ getSortLabel('status') }}</span>
+          </button>
+        </th>
+        <th
+          class="py-2 px-2 text-left text-sm font-medium"
+          :aria-sort="getAriaSort('name')"
+        >
+          <button
+            type="button"
+            data-testid="sort-evidence-name"
+            class="inline-flex items-center gap-1 rounded-md text-left hover:text-ccf-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-ccf-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900"
+            @click="emit('sort', 'name')"
+          >
+            <span>Evidence Name</span>
+            <span class="text-xs" aria-hidden="true">
+              {{ getSortIndicator('name') }}
+            </span>
+            <span class="sr-only">{{ getSortLabel('name') }}</span>
+          </button>
+        </th>
+        <th
+          class="py-2 px-2 text-left text-sm font-medium"
+          :aria-sort="getAriaSort('lastSeenAt')"
+        >
+          <button
+            type="button"
+            data-testid="sort-last-seen-at"
+            class="inline-flex items-center gap-1 rounded-md text-left hover:text-ccf-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-ccf-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900"
+            @click="emit('sort', 'lastSeenAt')"
+          >
+            <span>Last Seen At</span>
+            <span class="text-xs" aria-hidden="true">
+              {{ getSortIndicator('lastSeenAt') }}
+            </span>
+            <span class="sr-only">{{ getSortLabel('lastSeenAt') }}</span>
+          </button>
+        </th>
+        <th
+          v-if="configStore.showLabels"
+          class="py-2 px-2 text-left text-sm font-medium"
+        >
+          Labels
+        </th>
+      </tr>
+    </thead>
     <tbody>
       <tr
-        class="hover:bg-zinc-50 dark:hover:bg-slate-800 border-b border-ccf-300 dark:border-slate-800"
+        class="cursor-pointer hover:bg-zinc-50 dark:hover:bg-slate-800 border-b border-ccf-300 dark:border-slate-800"
         v-for="item in evidence"
         :key="item.uuid"
+        @click="openEvidence(item)"
       >
         <td class="py-2 pl-4 pr-2 w-[1%]">
           <ResultStatusRing
@@ -13,9 +75,17 @@
           ></ResultStatusRing>
         </td>
         <td class="py-3 px-2">
-          <div class="break-words max-w-2xl">
+          <RouterLink
+            class="block break-words max-w-2xl rounded-md text-gray-900 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-ccf-500 dark:text-slate-100"
+            :to="evidenceRoute(item)"
+            :aria-label="`Open evidence ${item.title}`"
+            @click.stop
+          >
             {{ item.title }}
-          </div>
+          </RouterLink>
+        </td>
+        <td class="py-2 px-2 whitespace-nowrap">
+          {{ formatDateTime(item.end) }}
         </td>
         <td class="px-2" v-if="configStore.showLabels">
           <div class="h-full flex items-center">
@@ -23,7 +93,7 @@
               v-tooltip.top="'Show hidden labels'"
               type="button"
               class="cursor-pointer mr-2"
-              @click="toggle($event, item.labels)"
+              @click.stop="toggle($event, item.labels)"
             >
               <BIconEye />
             </button>
@@ -32,18 +102,6 @@
               :labels="item.labels"
             />
           </div>
-        </td>
-        <td class="py-2 px-2 text-right whitespace-nowrap">
-          <RouterLink
-            class="mr-2 bg-white hover:bg-zinc-100 border px-4 py-1 rounded-md dark:bg-slate-800 dark:hover:bg-slate-700 border-ccf-300 dark:border-slate-700"
-            :to="{ name: 'evidence:history', params: { uuid: item.uuid } }"
-            >History
-          </RouterLink>
-          <RouterLink
-            class="bg-white hover:bg-zinc-100 border px-4 py-1 rounded-md dark:bg-slate-800 dark:hover:bg-slate-700 border-ccf-300 dark:border-slate-700"
-            :to="{ name: 'evidence:view', params: { id: item.id } }"
-            >View
-          </RouterLink>
         </td>
       </tr>
     </tbody>
@@ -65,20 +123,95 @@ import ResultStatusRing from '@/components/ResultStatusRing.vue';
 import { useConfigStore } from '@/stores/config.ts';
 import Popover from '@/volt/Popover.vue';
 import { ref } from 'vue';
-import type { EvidenceLabel } from '@/stores/evidence.ts';
+import { useRoute, useRouter, type LocationQueryRaw } from 'vue-router';
+import type {
+  Evidence,
+  EvidenceLabel,
+  EvidenceSortBy,
+  SortDirection,
+} from '@/stores/evidence.ts';
 import Chip from '@/volt/Chip.vue';
 import { BIconEye } from 'bootstrap-icons-vue';
 
-defineProps(['evidence']);
+const props = withDefaults(
+  defineProps<{
+    evidence: Evidence[];
+    sortBy?: EvidenceSortBy;
+    sortDirection?: SortDirection;
+    navigationQuery?: LocationQueryRaw;
+  }>(),
+  {
+    sortBy: 'lastSeenAt',
+    sortDirection: 'desc',
+    navigationQuery: undefined,
+  },
+);
+
+const emit = defineEmits<{
+  sort: [sortBy: EvidenceSortBy];
+}>();
+
 const popoverLabels = ref<string[]>([]);
 const op = ref();
 
 const configStore = useConfigStore();
+const route = useRoute();
+const router = useRouter();
+
+function getAriaSort(field: EvidenceSortBy) {
+  if (props.sortBy !== field) {
+    return 'none';
+  }
+
+  return props.sortDirection === 'asc' ? 'ascending' : 'descending';
+}
+
+function getSortIndicator(field: EvidenceSortBy) {
+  if (props.sortBy !== field) {
+    return '-';
+  }
+
+  return props.sortDirection === 'asc' ? '^' : 'v';
+}
+
+function getSortLabel(field: EvidenceSortBy) {
+  if (props.sortBy !== field) {
+    return 'Not sorted. Activate to sort this column.';
+  }
+
+  const direction = props.sortDirection === 'asc' ? 'ascending' : 'descending';
+  return `Sorted ${direction}. Activate to reverse sort direction.`;
+}
 
 function toggle(event: Event, labels: EvidenceLabel[]) {
   popoverLabels.value = labels.map(
     (label: EvidenceLabel) => `${label.name}=${label.value}`,
   );
   op.value.toggle(event);
+}
+
+async function openEvidence(item: Evidence) {
+  await router.push(evidenceRoute(item));
+}
+
+function evidenceRoute(item: Evidence) {
+  return {
+    name: 'evidence:view',
+    params: { id: item.id },
+    query: props.navigationQuery ?? route.query,
+  };
+}
+
+function formatDateTime(value?: string) {
+  if (!value) {
+    return '-';
+  }
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return value;
+  }
+
+  return parsed.toLocaleString();
 }
 </script>

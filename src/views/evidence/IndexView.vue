@@ -77,7 +77,13 @@
   <div
     class="mt-4 rounded-md bg-white dark:bg-slate-900 border-collapse border border-ccf-300 dark:border-slate-700"
   >
-    <EvidenceList :evidence="evidence" />
+    <EvidenceList
+      :evidence="evidence"
+      :navigation-query="navigationQuery"
+      :sort-by="sortBy"
+      :sort-direction="sortDirection"
+      @sort="changeSort"
+    />
   </div>
 
   <div
@@ -108,7 +114,7 @@
   </div>
 </template>
 <script setup lang="ts">
-import { onMounted, ref, computed, watch } from 'vue';
+import { onBeforeUnmount, onMounted, ref, computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import type { AxiosError } from 'axios';
 import { useUIStore } from '@/stores/ui.ts';
@@ -132,7 +138,12 @@ import PrimaryButton from '@/volt/PrimaryButton.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
 import TertiaryButton from '@/volt/TertiaryButton.vue';
 import InfoCircleIcon from '@primevue/icons/infocircle';
-import type { ComplianceInterval, Evidence } from '@/stores/evidence.ts';
+import type {
+  ComplianceInterval,
+  Evidence,
+  EvidenceSortBy,
+  SortDirection,
+} from '@/stores/evidence.ts';
 import EvidenceList from '@/components/EvidenceList.vue';
 import BurgerMenu from '@/components/BurgerMenu.vue';
 import { useAuthenticatedInstance, useDataApi } from '@/composables/axios';
@@ -149,8 +160,14 @@ const evidence = ref<Evidence[]>([]);
 const totalEvidence = ref(0);
 const currentPage = ref(1);
 const totalPages = ref(1);
+const sortBy = ref<EvidenceSortBy>('lastSeenAt');
+const sortDirection = ref<SortDirection>('desc');
 
 const EVIDENCE_PAGE_SIZE = 50;
+const SEARCH_DEBOUNCE_MS = 500;
+const EVIDENCE_STATUS_INTERVAL =
+  '0m,2m,4m,6m,8m,12m,16m,20m,25m,30m,40m,50m,1h';
+let filterRouteUpdateTimeout: ReturnType<typeof setTimeout> | undefined;
 
 const filter = computed({
   get: () => uiStore.evidenceFilter,
@@ -160,29 +177,40 @@ const filter = computed({
       return;
     }
     uiStore.setEvidenceFilter(val);
-    // Update URL query parameter without reloading page
-    router.replace({
-      query: {
-        ...route.query,
-        filter: val || undefined,
-        page: undefined,
-      },
-    });
+    scheduleFilterRouteUpdate(val);
   },
 });
 
 watch(
-  [() => route.query.filter, () => route.query.page],
-  ([newFilter, newPage], [oldFilter, oldPage]) => {
-    if (typeof newFilter === 'string') {
-      uiStore.setEvidenceFilter(newFilter);
-    } else {
-      uiStore.setEvidenceFilter('');
-    }
+  [
+    () => route.query.filter,
+    () => route.query.page,
+    () => route.query.sortBy,
+    () => route.query.sortDirection,
+  ],
+  (
+    [newFilter, newPage, newSortBy, newSortDirection],
+    [oldFilter, oldPage, oldSortBy, oldSortDirection],
+  ) => {
+    const nextFilter = getRouteFilterValue(newFilter);
+
+    uiStore.setEvidenceFilter(nextFilter);
 
     currentPage.value = parsePageQuery(newPage);
+    sortBy.value = parseSortByQuery(newSortBy);
+    sortDirection.value = parseSortDirectionQuery(newSortDirection);
 
-    if (newFilter === oldFilter && newPage === oldPage) {
+    if (
+      newFilter === oldFilter &&
+      newPage === oldPage &&
+      newSortBy === oldSortBy &&
+      newSortDirection === oldSortDirection
+    ) {
+      return;
+    }
+
+    if (typeof newFilter === 'string' && nextFilter.length === 0) {
+      void replaceFilterRoute('');
       return;
     }
 
@@ -195,7 +223,7 @@ const { data: complianceOverTime, execute: loadComplianceOverTime } =
     '/api/evidence/status-over-time',
     {
       params: {
-        interval: '0m,2m,4m,6m,8m,12m,16m,20m,25m,30m,40m,50m,1h',
+        interval: EVIDENCE_STATUS_INTERVAL,
       },
       method: 'POST',
     },
@@ -247,48 +275,212 @@ function parsePageQuery(value: unknown) {
   return page;
 }
 
-function sortEvidence(items: Evidence[]) {
-  return [...items].sort((a, b) => {
-    const x = new Date(a.end);
-    const y = new Date(b.end);
+function parseSortByQuery(value: unknown): EvidenceSortBy {
+  if (value === 'name' || value === 'status' || value === 'lastSeenAt') {
+    return value;
+  }
 
-    if (x > y) {
-      return 1;
-    }
-    if (x < y) {
-      return -1;
-    }
-    return 0;
+  return 'lastSeenAt';
+}
+
+function parseSortDirectionQuery(value: unknown): SortDirection {
+  if (value === 'asc' || value === 'desc') {
+    return value;
+  }
+
+  return 'desc';
+}
+
+function isLabelFilterSearch(value: string) {
+  return /!?=/.test(value);
+}
+
+function hasIncompleteLabelSyntax(value: string) {
+  return /!?=\s*$/.test(value.trim());
+}
+
+function canRunEvidenceSearch(value: string) {
+  const searchText = value.trim();
+
+  if (searchText.length === 0) {
+    return true;
+  }
+
+  return searchText.length >= 3 && !hasIncompleteLabelSyntax(searchText);
+}
+
+function getRouteFilterValue(value: unknown) {
+  if (typeof value !== 'string') {
+    return '';
+  }
+
+  return canRunEvidenceSearch(value) ? value.trim() : '';
+}
+
+function canPersistFilterInRoute(value: string) {
+  return value.length === 0 || canRunEvidenceSearch(value);
+}
+
+function normalizeFilterRouteValue(value: string) {
+  const normalizedValue = value.trim();
+
+  return normalizedValue.length > 0 ? normalizedValue : undefined;
+}
+
+function scheduleFilterRouteUpdate(value: string) {
+  clearFilterRouteUpdateTimeout();
+
+  if (!canPersistFilterInRoute(value)) {
+    return;
+  }
+
+  filterRouteUpdateTimeout = setTimeout(() => {
+    filterRouteUpdateTimeout = undefined;
+    void replaceFilterRoute(value);
+  }, SEARCH_DEBOUNCE_MS);
+}
+
+function clearFilterRouteUpdateTimeout() {
+  if (filterRouteUpdateTimeout) {
+    clearTimeout(filterRouteUpdateTimeout);
+    filterRouteUpdateTimeout = undefined;
+  }
+}
+
+async function replaceFilterRoute(value: string) {
+  await router.replace({
+    query: {
+      ...route.query,
+      filter: normalizeFilterRouteValue(value),
+      page: undefined,
+    },
   });
 }
 
+async function flushFilterRouteUpdate() {
+  clearFilterRouteUpdateTimeout();
+
+  if (!canPersistFilterInRoute(uiStore.evidenceFilter)) {
+    return false;
+  }
+
+  const nextFilter = normalizeFilterRouteValue(uiStore.evidenceFilter);
+  const currentFilter =
+    typeof route.query.filter === 'string' ? route.query.filter : undefined;
+
+  if (currentFilter === nextFilter && route.query.page === undefined) {
+    return false;
+  }
+
+  await replaceFilterRoute(uiStore.evidenceFilter);
+  return true;
+}
+
+function buildEvidenceSearchRequest(page: number) {
+  const searchText = uiStore.evidenceFilter.trim();
+  const isLabelSearch = isLabelFilterSearch(searchText);
+  const query = isLabelSearch
+    ? new FilterParser(searchText).parse()
+    : new FilterParser('').parse();
+
+  const params = new URLSearchParams({
+    page: String(page),
+    limit: String(EVIDENCE_PAGE_SIZE),
+    sortBy: sortBy.value,
+    sortDirection: sortDirection.value,
+  });
+
+  if (searchText && !isLabelSearch) {
+    params.set('name', searchText);
+  }
+
+  const complianceParams: Record<string, string> = {
+    interval: EVIDENCE_STATUS_INTERVAL,
+  };
+
+  if (searchText && !isLabelSearch) {
+    complianceParams.name = searchText;
+  }
+
+  return {
+    url: `/api/evidence/search?${params.toString()}`,
+    body: {
+      filter: query,
+    },
+    complianceParams,
+  };
+}
+
+const navigationQuery = computed<Record<string, string | undefined>>(() => {
+  const nextFilter = canPersistFilterInRoute(uiStore.evidenceFilter)
+    ? normalizeFilterRouteValue(uiStore.evidenceFilter)
+    : undefined;
+
+  return {
+    filter: nextFilter,
+    sortBy: sortBy.value === 'lastSeenAt' ? undefined : sortBy.value,
+    sortDirection:
+      sortDirection.value === 'desc' ? undefined : sortDirection.value,
+    page: currentPage.value > 1 ? String(currentPage.value) : undefined,
+  };
+});
+
 async function search(page = currentPage.value) {
-  const query = new FilterParser(filter.value).parse();
   error.value = null;
 
+  if (!canRunEvidenceSearch(uiStore.evidenceFilter)) {
+    return;
+  }
+
   try {
+    const request = buildEvidenceSearchRequest(page);
     const [evidenceResponse] = await Promise.all([
       authenticatedApi.post<PaginatedListResponse<Evidence>>(
-        `/api/evidence/search?page=${page}&limit=${EVIDENCE_PAGE_SIZE}`,
-        {
-          filter: query,
-        },
+        request.url,
+        request.body,
       ),
       loadComplianceOverTime({
-        data: { filter: query },
+        data: request.body,
+        params: request.complianceParams,
       }),
       loadHeartbeats(),
     ]);
 
     const paginatedEvidence = evidenceResponse.data;
 
-    evidence.value = sortEvidence(paginatedEvidence.data ?? []);
+    evidence.value = paginatedEvidence.data ?? [];
     totalEvidence.value = paginatedEvidence.total ?? 0;
     currentPage.value = paginatedEvidence.page ?? page;
     totalPages.value = Math.max(paginatedEvidence.totalPages ?? 1, 1);
   } catch (err) {
     error.value = err as AxiosError;
   }
+}
+
+function getDefaultSortDirection(nextSortBy: EvidenceSortBy): SortDirection {
+  if (nextSortBy === 'name' || nextSortBy === 'status') {
+    return 'asc';
+  }
+
+  return 'desc';
+}
+
+async function changeSort(nextSortBy: EvidenceSortBy) {
+  const nextSortDirection =
+    sortBy.value === nextSortBy
+      ? sortDirection.value === 'asc'
+        ? 'desc'
+        : 'asc'
+      : getDefaultSortDirection(nextSortBy);
+
+  await router.replace({
+    query: {
+      ...route.query,
+      sortBy: nextSortBy,
+      sortDirection: nextSortDirection,
+      page: undefined,
+    },
+  });
 }
 
 async function changePage(page: number) {
@@ -307,8 +499,9 @@ async function changePage(page: number) {
 }
 
 async function submitSearch() {
-  if (currentPage.value > 1) {
-    await changePage(1);
+  const routeUpdated = await flushFilterRouteUpdate();
+
+  if (routeUpdated) {
     return;
   }
 
@@ -316,13 +509,23 @@ async function submitSearch() {
 }
 
 onMounted(() => {
-  if (route.query.filter) {
-    uiStore.setEvidenceFilter(route.query.filter as string);
-  } else {
-    uiStore.setEvidenceFilter('');
-  }
+  const nextFilter = getRouteFilterValue(route.query.filter);
+
+  uiStore.setEvidenceFilter(nextFilter);
   currentPage.value = parsePageQuery(route.query.page);
+  sortBy.value = parseSortByQuery(route.query.sortBy);
+  sortDirection.value = parseSortDirectionQuery(route.query.sortDirection);
+
+  if (typeof route.query.filter === 'string' && nextFilter.length === 0) {
+    void replaceFilterRoute('');
+    return;
+  }
+
   search(currentPage.value);
+});
+
+onBeforeUnmount(() => {
+  clearFilterRouteUpdateTimeout();
 });
 
 async function save() {

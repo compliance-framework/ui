@@ -1,16 +1,27 @@
 <template>
   <div class="p-6 space-y-6">
     <div class="flex items-center justify-between gap-3">
-      <div>
-        <PageHeader>{{ evidence?.title || 'Evidence Detail' }}</PageHeader>
-        <PageSubHeader v-if="evidence">
-          {{ evidence.uuid }}
-        </PageSubHeader>
+      <div class="flex items-start gap-3">
+        <RouterLink
+          :to="backToEvidenceRoute"
+          class="mt-1 inline-flex h-8 w-8 items-center justify-center rounded-md border border-ccf-300 text-lg leading-none hover:bg-zinc-50 dark:border-slate-700 dark:hover:bg-slate-800"
+          aria-label="Back to Evidence"
+        >
+          &lt;
+        </RouterLink>
+        <div>
+          <PageHeader>{{ evidence?.title || 'Evidence Detail' }}</PageHeader>
+          <PageSubHeader v-if="evidence">
+            {{ evidence.uuid }}
+          </PageSubHeader>
+        </div>
       </div>
 
-      <SecondaryButton v-if="evidence" class="ml-4" @click="directToUpdate()">
-        Update Evidence
-      </SecondaryButton>
+      <div class="flex flex-wrap items-center gap-2">
+        <SecondaryButton v-if="evidence" @click="directToUpdate()">
+          Update Evidence
+        </SecondaryButton>
+      </div>
     </div>
 
     <div v-if="isLoading" class="text-sm text-gray-600 dark:text-slate-400">
@@ -146,15 +157,6 @@
               <SecondaryButton @click="showActivities(evidence)">
                 View Tasks
               </SecondaryButton>
-              <RouterLink
-                :to="{
-                  name: 'evidence:history',
-                  params: { uuid: evidence.uuid },
-                }"
-                class="block text-center rounded-md border border-ccf-300 px-3 py-2 text-sm hover:bg-zinc-50 dark:border-slate-700 dark:hover:bg-slate-800"
-              >
-                Open History Page
-              </RouterLink>
             </div>
           </div>
         </PageCard>
@@ -728,6 +730,10 @@ import type {
 const route = useRoute();
 const router = useRouter();
 const evidenceId = computed(() => route.params.id as string);
+const backToEvidenceRoute = computed(() => ({
+  name: 'evidence:index',
+  query: route.query,
+}));
 
 const tabs = [
   { id: 'overview', label: 'Overview' },
