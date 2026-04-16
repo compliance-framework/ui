@@ -97,6 +97,56 @@ export const useSystemSecurityPlanStore = defineStore(
       return response.json();
     }
 
+    async function listProfiles(
+      id: string,
+    ): Promise<{ data: Array<{ id: string; title: string }> }> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/system-security-plans/${id}/profiles`,
+        {
+          credentials: 'include',
+        },
+      );
+      if (!response.ok) {
+        throw response;
+      }
+      return response.json();
+    }
+
+    async function addProfile(id: string, profileId: string): Promise<void> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/system-security-plans/${id}/profiles`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            profileId: profileId,
+          }),
+          credentials: 'include',
+        },
+      );
+      if (!response.ok) {
+        throw response;
+      }
+    }
+
+    async function removeProfile(id: string, profileId: string): Promise<void> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/system-security-plans/${id}/profiles/${profileId}`,
+        {
+          method: 'DELETE',
+          credentials: 'include',
+        },
+      );
+      if (!response.ok) {
+        throw response;
+      }
+    }
+
     async function getCharacteristics(
       id: string,
     ): Promise<DataResponse<SystemCharacteristics>> {
@@ -910,6 +960,9 @@ export const useSystemSecurityPlanStore = defineStore(
       full,
       create,
       attachProfile,
+      listProfiles,
+      addProfile,
+      removeProfile,
 
       getCharacteristics,
       getCharacteristicsAuthorizationBoundary,
