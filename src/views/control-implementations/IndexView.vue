@@ -515,30 +515,31 @@ async function loadResolvedProfileCatalogs() {
     return;
   }
 
-  const profileNodes: Array<TreeNode> = [];
-  for (const profileBinding of profileBindings.value) {
-    const { data: resolvedCatalogResponse } = await fetchResolvedcatalog(
-      `/api/oscal/profiles/${profileBinding.uuid}/resolved`,
-    );
-    const resolvedCatalog = resolvedCatalogResponse?.value?.data;
-    if (!resolvedCatalog) {
-      continue;
-    }
-
-    profileNodes.push({
-      key: `profile:${profileBinding.uuid}`,
-      label: profileBinding.title,
-      type: 'group',
-      data: {
-        id: '',
-        title: profileBinding.title,
-      },
-      children: buildCatalogChildren(
-        resolvedCatalog,
-        `profile:${profileBinding.uuid}`,
-      ),
-    });
-  }
+  const results = await Promise.all(
+    profileBindings.value.map(async (profileBinding) => {
+      const { data: resolvedCatalogResponse } = await fetchResolvedcatalog(
+        `/api/oscal/profiles/${profileBinding.uuid}/resolved`,
+      );
+      const resolvedCatalog = resolvedCatalogResponse?.value?.data;
+      if (!resolvedCatalog) {
+        return null;
+      }
+      return {
+        key: `profile:${profileBinding.uuid}`,
+        label: profileBinding.title,
+        type: 'group',
+        data: {
+          id: '',
+          title: profileBinding.title,
+        },
+        children: buildCatalogChildren(
+          resolvedCatalog,
+          `profile:${profileBinding.uuid}`,
+        ),
+      } as TreeNode;
+    }),
+  );
+  const profileNodes = results.filter((n): n is TreeNode => n !== null);
 
   nodes.value = profileNodes;
   profilesResolved.value = profileNodes.length > 0;

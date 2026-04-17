@@ -119,10 +119,15 @@ export const useSystemSecurityPlanStore = defineStore(
         Array<{ id?: string; uuid?: string; title: string }>
       >;
       return {
-        data: result.data.map((profile) => ({
-          uuid: profile.uuid ?? profile.id ?? '',
-          title: profile.title,
-        })),
+        data: result.data.map((profile) => {
+          const uuid = profile.uuid ?? profile.id;
+          if (!uuid) {
+            throw new Error(
+              'Invalid profile response: profile is missing both uuid and id',
+            );
+          }
+          return { uuid, title: profile.title };
+        }),
       };
     }
 
