@@ -226,8 +226,33 @@ onMounted(() => {
   loadProviders();
 });
 
+function showLoginFailed(error: unknown) {
+  const response = error as AxiosError<DataResponse<AuthError>>;
+  if (response.status === 401) {
+    const errorResponse = response.response?.data;
+    errors.value = errorResponse?.data as AuthError;
+  }
+
+  toast.add({
+    severity: 'error',
+    summary: 'Login Failed',
+    life: 3000,
+  });
+}
+
+function showHydrationFailed() {
+  toast.add({
+    severity: 'error',
+    summary: 'Unable to Load Account',
+    detail:
+      'Your credentials were accepted, but we could not load your account details. Please try again.',
+    life: 3000,
+  });
+}
+
 async function onSubmit() {
   errors.value = {} as AuthError;
+
   try {
     await login({
       data: {
@@ -235,30 +260,27 @@ async function onSubmit() {
         password: password.value,
       },
     });
-    await hydrateCurrentUser();
-
-    toast.add({
-      severity: 'success',
-      summary: 'Login Successful',
-      detail: 'You have successfully logged in.',
-      life: 3000,
-    });
-    if (route.query.hasOwnProperty('next')) {
-      return router.push(route.query.next as string);
-    }
-    return router.push({ name: 'home' });
   } catch (error) {
-    const response = error as AxiosError<DataResponse<AuthError>>;
-    if (response.status === 401) {
-      const errorResponse = response.response?.data;
-      errors.value = errorResponse?.data as AuthError;
-    }
-
-    toast.add({
-      severity: 'error',
-      summary: 'Login Failed',
-      life: 3000,
-    });
+    showLoginFailed(error);
+    return;
   }
+
+  try {
+    await hydrateCurrentUser();
+  } catch {
+    showHydrationFailed();
+    return;
+  }
+
+  toast.add({
+    severity: 'success',
+    summary: 'Login Successful',
+    detail: 'You have successfully logged in.',
+    life: 3000,
+  });
+  if (route.query.hasOwnProperty('next')) {
+    return router.push(route.query.next as string);
+  }
+  return router.push({ name: 'home' });
 }
 </script>

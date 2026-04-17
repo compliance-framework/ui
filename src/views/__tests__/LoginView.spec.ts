@@ -17,7 +17,7 @@ vi.mock('@/composables/axios', () => ({
   useGuestApi: () => ({
     execute: mocks.login,
   }),
-  useGuestInstance: () => ({
+  useAuthenticatedInstance: () => ({
     get: mocks.get,
   }),
 }));
@@ -95,7 +95,7 @@ describe('LoginView', () => {
       .find('input[placeholder="Email"]')
       .setValue('user@example.com');
     await wrapper.find('input[placeholder="Password"]').setValue('password');
-    await wrapper.find('form').trigger('submit.prevent');
+    await wrapper.find('form').trigger('submit', { cancelable: true });
     await flushPromises();
 
     const userStore = useUserStore();
@@ -110,5 +110,36 @@ describe('LoginView', () => {
     expect(userStore.user?.id).toBe('user-1');
     expect(userStore.isAuthenticated).toBe(true);
     expect(mocks.push).toHaveBeenCalledWith({ name: 'home' });
+  });
+
+  it('shows account loading error when hydration fails after password login', async () => {
+    const wrapper = mountComponent();
+    mocks.get.mockRejectedValue(new Error('failed to load user'));
+
+    await wrapper
+      .find('input[placeholder="Email"]')
+      .setValue('user@example.com');
+    await wrapper.find('input[placeholder="Password"]').setValue('password');
+    await wrapper.find('form').trigger('submit', { cancelable: true });
+    await flushPromises();
+
+    const userStore = useUserStore();
+
+    expect(mocks.login).toHaveBeenCalled();
+    expect(mocks.get).toHaveBeenCalledWith('/api/users/me');
+    expect(userStore.user).toBeNull();
+    expect(userStore.isAuthenticated).toBe(false);
+    expect(mocks.toastAdd).toHaveBeenCalledWith(
+      expect.objectContaining({
+        severity: 'error',
+        summary: 'Unable to Load Account',
+      }),
+    );
+    expect(mocks.toastAdd).not.toHaveBeenCalledWith(
+      expect.objectContaining({
+        summary: 'Login Failed',
+      }),
+    );
+    expect(mocks.push).not.toHaveBeenCalled();
   });
 });
