@@ -128,7 +128,6 @@ import SideNavLogo from '@/components/navigation/SideNavLogo.vue';
 import { useToast } from 'primevue/usetoast';
 import { useGuestApi } from '@/composables/axios';
 import type { AxiosError } from 'axios';
-import type { DataResponse } from '@/stores/types';
 import { useOIDC, type OIDCProvider } from '@/composables/useOIDC';
 import { useAuthHydration } from '@/composables/useAuthHydration';
 
@@ -154,7 +153,7 @@ const loginNotice = ref<string | null>(null);
 // TODO: Once other areas need this, move the "no SSO providers" UX into useOIDC or a shared helper.
 const hasSSOProviders = computed(() => (ssoProviders.value?.length ?? 0) > 0);
 
-const { execute: login } = useGuestApi<DataResponse<AuthError>>(
+const { execute: login } = useGuestApi<AuthError>(
   '/api/auth/login',
   {
     method: 'POST',
@@ -226,11 +225,28 @@ onMounted(() => {
   loadProviders();
 });
 
+function isAuthError(value: unknown): value is AuthError {
+  return (
+    !!value &&
+    typeof value === 'object' &&
+    ('email' in value || 'password' in value)
+  );
+}
+
 function showLoginFailed(error: unknown) {
-  const response = error as AxiosError<DataResponse<AuthError>>;
-  if (response.status === 401) {
-    const errorResponse = response.response?.data;
-    errors.value = errorResponse?.data as AuthError;
+  const response = error as AxiosError<unknown>;
+  if (response.response?.status === 401) {
+    const responseData = response.response.data;
+    const authErrors =
+      responseData && typeof responseData === 'object' && 'data' in responseData
+        ? responseData.data
+        : responseData;
+
+    if (isAuthError(authErrors)) {
+      errors.value = authErrors;
+    } else {
+      errors.value = {} as AuthError;
+    }
   }
 
   toast.add({

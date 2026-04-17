@@ -17,7 +17,7 @@ vi.mock('@/composables/axios', () => ({
   useGuestApi: () => ({
     execute: mocks.login,
   }),
-  useAuthenticatedInstance: () => ({
+  useGuestInstance: () => ({
     get: mocks.get,
   }),
 }));

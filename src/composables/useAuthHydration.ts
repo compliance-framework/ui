@@ -1,9 +1,9 @@
-import { useAuthenticatedInstance } from '@/composables/axios';
+import { useGuestInstance } from '@/composables/axios';
 import { useUserStore } from '@/stores/auth';
 import type { CCFUser, DataResponse } from '@/stores/types';
 
 export function useAuthHydration() {
-  const axios = useAuthenticatedInstance();
+  const axios = useGuestInstance();
   const userStore = useUserStore();
 
   async function hydrateCurrentUser() {
