@@ -119,7 +119,6 @@
 import PageCard from '@/components/PageCard.vue';
 import { ref, onMounted, watch, computed } from 'vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
-import { useUserStore } from '@/stores/auth';
 import { useRoute, useRouter } from 'vue-router';
 // import type { DataResponse } from '@/stores/api.ts';
 import FormInput from '@/components/forms/FormInput.vue';
@@ -129,8 +128,9 @@ import SideNavLogo from '@/components/navigation/SideNavLogo.vue';
 import { useToast } from 'primevue/usetoast';
 import { useGuestApi } from '@/composables/axios';
 import type { AxiosError } from 'axios';
-import type { DataResponse } from '@/stores/types';
 import { useOIDC, type OIDCProvider } from '@/composables/useOIDC';
+import { useAuthHydration } from '@/composables/useAuthHydration';
+import { resolveAuthNextLocation } from '@/utils/auth-redirect';
 
 interface AuthError {
   email: string[];
@@ -139,9 +139,9 @@ interface AuthError {
 
 const email = ref('');
 const password = ref('');
-const errors = ref<AuthError>({} as AuthError);
+const errors = ref<AuthError>(createDefaultAuthErrors());
 
-const user = useUserStore();
+const { hydrateCurrentUser } = useAuthHydration();
 const {
   providers: ssoProviders,
   isLoading: isSSOLoading,
@@ -154,7 +154,7 @@ const loginNotice = ref<string | null>(null);
 // TODO: Once other areas need this, move the "no SSO providers" UX into useOIDC or a shared helper.
 const hasSSOProviders = computed(() => (ssoProviders.value?.length ?? 0) > 0);
 
-const { execute: login } = useGuestApi<DataResponse<AuthError>>(
+const { execute: login } = useGuestApi<AuthError>(
   '/api/auth/login',
   {
     method: 'POST',
@@ -165,6 +165,13 @@ const { execute: login } = useGuestApi<DataResponse<AuthError>>(
 const route = useRoute();
 const router = useRouter();
 const toast = useToast();
+
+function createDefaultAuthErrors(): AuthError {
+  return {
+    email: [],
+    password: [],
+  };
+}
 
 const loginWithSSO = async (providerName: string) => {
   try {
@@ -226,8 +233,59 @@ onMounted(() => {
   loadProviders();
 });
 
+function isAuthError(value: unknown): value is AuthError {
+  if (!value || typeof value !== 'object') return false;
+
+  const maybeAuthError = value as Partial<AuthError>;
+  return (
+    Array.isArray(maybeAuthError.email) &&
+    maybeAuthError.email.every((error) => typeof error === 'string') &&
+    Array.isArray(maybeAuthError.password) &&
+    maybeAuthError.password.every((error) => typeof error === 'string')
+  );
+}
+
+function normalizeAuthErrors(value: unknown): AuthError {
+  if (!isAuthError(value)) return createDefaultAuthErrors();
+
+  return {
+    email: Array.isArray(value.email) ? value.email : [],
+    password: Array.isArray(value.password) ? value.password : [],
+  };
+}
+
+function showLoginFailed(error: unknown) {
+  const response = error as AxiosError<unknown>;
+  if (response.response?.status === 401) {
+    const responseData = response.response.data;
+    const authErrors =
+      responseData && typeof responseData === 'object' && 'data' in responseData
+        ? responseData.data
+        : responseData;
+
+    errors.value = normalizeAuthErrors(authErrors);
+  }
+
+  toast.add({
+    severity: 'error',
+    summary: 'Login Failed',
+    life: 3000,
+  });
+}
+
+function showHydrationFailed() {
+  toast.add({
+    severity: 'error',
+    summary: 'Unable to Load Account',
+    detail:
+      'Your credentials were accepted, but we could not load your account details. Please try again.',
+    life: 3000,
+  });
+}
+
 async function onSubmit() {
-  errors.value = {} as AuthError;
+  errors.value = createDefaultAuthErrors();
+
   try {
     await login({
       data: {
@@ -235,30 +293,24 @@ async function onSubmit() {
         password: password.value,
       },
     });
-    user.isAuthenticated = true;
-
-    toast.add({
-      severity: 'success',
-      summary: 'Login Successful',
-      detail: 'You have successfully logged in.',
-      life: 3000,
-    });
-    if (route.query.hasOwnProperty('next')) {
-      return router.push(route.query.next as string);
-    }
-    return router.push({ name: 'home' });
   } catch (error) {
-    const response = error as AxiosError<DataResponse<AuthError>>;
-    if (response.status === 401) {
-      const errorResponse = response.response?.data;
-      errors.value = errorResponse?.data as AuthError;
-    }
-
-    toast.add({
-      severity: 'error',
-      summary: 'Login Failed',
-      life: 3000,
-    });
+    showLoginFailed(error);
+    return;
   }
+
+  try {
+    await hydrateCurrentUser();
+  } catch {
+    showHydrationFailed();
+    return;
+  }
+
+  toast.add({
+    severity: 'success',
+    summary: 'Login Successful',
+    detail: 'You have successfully logged in.',
+    life: 3000,
+  });
+  return router.push(resolveAuthNextLocation(route.query.next));
 }
 </script>
