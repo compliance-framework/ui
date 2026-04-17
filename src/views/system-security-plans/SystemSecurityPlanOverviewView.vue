@@ -73,6 +73,7 @@
             <MultiSelect
               placeholder="Select profiles"
               :loading="loadingProfiles"
+              :disabled="updatingProfiles"
               display="chip"
               class="w-full"
               v-model="selectedProfiles"
@@ -270,7 +271,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, watch, computed } from 'vue';
+import { nextTick, onMounted, ref, watch, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import type {
   SystemSecurityPlan,
@@ -371,63 +372,136 @@ watch(profiles, () => {
 });
 
 const selectedProfiles = ref<string[]>([]);
-let updatingProfiles = false;
+const updatingProfiles = ref(false);
+let suppressProfileWatch = false;
+
+function getErrorStatus(error: unknown): number | undefined {
+  if (error instanceof Response) {
+    return error.status;
+  }
+
+  const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
+  return errorResponse.response?.status ?? errorResponse.status;
+}
+
+async function getErrorDetail(
+  error: unknown,
+  fallbackMessage: string,
+): Promise<string> {
+  if (error instanceof Response) {
+    try {
+      const errorData = (await error.clone().json()) as
+        | ErrorResponse<ErrorBody>
+        | { message?: string; error?: string; detail?: string }
+        | null;
+
+      if (!errorData || typeof errorData !== 'object') {
+        return error.statusText || fallbackMessage;
+      }
+
+      if ('errors' in errorData) {
+        return errorData.errors?.body || fallbackMessage;
+      }
+
+      return (
+        errorData.message ||
+        errorData.error ||
+        errorData.detail ||
+        error.statusText ||
+        fallbackMessage
+      );
+    } catch {
+      return error.statusText || fallbackMessage;
+    }
+  }
+
+  const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
+  return (
+    errorResponse.response?.data?.errors?.body ||
+    errorResponse.message ||
+    fallbackMessage
+  );
+}
+
+async function setSelectedProfilesWithoutSaving(profileIds: string[]) {
+  suppressProfileWatch = true;
+  selectedProfiles.value = profileIds;
+  await nextTick();
+  suppressProfileWatch = false;
+}
+
+async function refreshSelectedProfiles(sspId: string) {
+  const result = await sspStore.listProfiles(sspId);
+  await setSelectedProfilesWithoutSaving(result.data?.map((p) => p.id) || []);
+}
 
 onMounted(async () => {
   try {
     // Load currently bound profiles from the M:M endpoint.
     try {
       const sspId = String(route.params.id);
-      const result = await sspStore.listProfiles(sspId);
-      if (result.data) {
-        selectedProfiles.value = result.data.map((p) => p.id);
-      }
+      await refreshSelectedProfiles(sspId);
     } catch (error) {
-      const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
-      if (errorResponse.response?.status !== 404) {
+      if (getErrorStatus(error) !== 404) {
         toast.add({
           severity: 'error',
           summary: 'Error Loading Profiles',
-          detail:
-            errorResponse.response?.data.errors.body ||
+          detail: await getErrorDetail(
+            error,
             'An error occurred while loading profiles.',
+          ),
           life: 3000,
         });
       }
     }
 
-    watch(selectedProfiles, async (newVal, oldVal) => {
-      if (updatingProfiles) return;
-      updatingProfiles = true;
-      try {
+    watch(
+      () => [...selectedProfiles.value],
+      async (newVal, oldVal) => {
+        if (suppressProfileWatch || updatingProfiles.value) return;
+        updatingProfiles.value = true;
         const sspId = String(route.params.id);
-        const added = newVal.filter((id) => !oldVal.includes(id));
-        const removed = oldVal.filter((id) => !newVal.includes(id));
 
-        for (const profileId of added) {
-          await sspStore.addProfile(sspId, profileId);
-        }
-        for (const profileId of removed) {
-          await sspStore.removeProfile(sspId, profileId);
-        }
+        try {
+          const added = newVal.filter((id) => !oldVal.includes(id));
+          const removed = oldVal.filter((id) => !newVal.includes(id));
 
-        toast.add({
-          severity: 'success',
-          summary: 'Profiles updated',
-          life: 3000,
-        });
-      } catch (error) {
-        const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
-        toast.add({
-          severity: 'error',
-          summary: 'Failed to update profiles',
-          detail: `Received error status from API. Status: ${errorResponse.status}`,
-          life: 3000,
-        });
-      } finally {
-        updatingProfiles = false;
-      }
-    });
+          for (const profileId of added) {
+            await sspStore.addProfile(sspId, profileId);
+          }
+          for (const profileId of removed) {
+            await sspStore.removeProfile(sspId, profileId);
+          }
+
+          toast.add({
+            severity: 'success',
+            summary: 'Profiles updated',
+            life: 3000,
+          });
+        } catch (error) {
+          const status = getErrorStatus(error);
+          const detail = await getErrorDetail(
+            error,
+            `Received error status from API. Status: ${status ?? 'unknown'}`,
+          );
+
+          try {
+            await refreshSelectedProfiles(sspId);
+          } catch {
+            await setSelectedProfilesWithoutSaving(oldVal);
+          }
+
+          toast.add({
+            severity: 'error',
+            summary: 'Failed to update profiles',
+            detail,
+            life: 3000,
+          });
+        } finally {
+          updatingProfiles.value = false;
+        }
+      },
+    );
 
     // Load system implementation statistics
     try {

@@ -42,6 +42,11 @@ export interface CreateStatementRequest {
   remarks?: string;
 }
 
+export interface SystemSecurityPlanProfileBinding {
+  id: string;
+  title: string;
+}
+
 export const useSystemSecurityPlanStore = defineStore(
   'system-security-plans',
   () => {
@@ -99,7 +104,7 @@ export const useSystemSecurityPlanStore = defineStore(
 
     async function listProfiles(
       id: string,
-    ): Promise<{ data: Array<{ id: string; title: string }> }> {
+    ): Promise<DataResponse<SystemSecurityPlanProfileBinding[]>> {
       const config = await configStore.getConfig();
       const response = await fetch(
         `${config.API_URL}/api/oscal/system-security-plans/${id}/profiles`,
@@ -110,7 +115,9 @@ export const useSystemSecurityPlanStore = defineStore(
       if (!response.ok) {
         throw response;
       }
-      return response.json();
+      return (await response.json()) as DataResponse<
+        SystemSecurityPlanProfileBinding[]
+      >;
     }
 
     async function addProfile(id: string, profileId: string): Promise<void> {
