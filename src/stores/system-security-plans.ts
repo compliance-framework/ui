@@ -43,7 +43,7 @@ export interface CreateStatementRequest {
 }
 
 export interface SystemSecurityPlanProfileBinding {
-  id: string;
+  uuid: string;
   title: string;
 }
 
@@ -115,9 +115,15 @@ export const useSystemSecurityPlanStore = defineStore(
       if (!response.ok) {
         throw response;
       }
-      return (await response.json()) as DataResponse<
-        SystemSecurityPlanProfileBinding[]
+      const result = (await response.json()) as DataResponse<
+        Array<{ id?: string; uuid?: string; title: string }>
       >;
+      return {
+        data: result.data.map((profile) => ({
+          uuid: profile.uuid ?? profile.id ?? '',
+          title: profile.title,
+        })),
+      };
     }
 
     async function addProfile(id: string, profileId: string): Promise<void> {

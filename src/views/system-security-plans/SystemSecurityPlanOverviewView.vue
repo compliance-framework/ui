@@ -73,7 +73,7 @@
             <MultiSelect
               placeholder="Select profiles"
               :loading="loadingProfiles"
-              :disabled="updatingProfiles"
+              :disabled="profileSaveInProgress"
               display="chip"
               class="w-full"
               v-model="selectedProfiles"
@@ -372,7 +372,8 @@ watch(profiles, () => {
 });
 
 const selectedProfiles = ref<string[]>([]);
-const updatingProfiles = ref(false);
+const profileSaveInProgress = ref(false);
+let updatingProfiles = false;
 let suppressProfileWatch = false;
 
 function getErrorStatus(error: unknown): number | undefined {
@@ -432,7 +433,7 @@ async function setSelectedProfilesWithoutSaving(profileIds: string[]) {
 
 async function refreshSelectedProfiles(sspId: string) {
   const result = await sspStore.listProfiles(sspId);
-  await setSelectedProfilesWithoutSaving(result.data?.map((p) => p.id) || []);
+  await setSelectedProfilesWithoutSaving(result.data?.map((p) => p.uuid) || []);
 }
 
 onMounted(async () => {
@@ -458,8 +459,9 @@ onMounted(async () => {
     watch(
       () => [...selectedProfiles.value],
       async (newVal, oldVal) => {
-        if (suppressProfileWatch || updatingProfiles.value) return;
-        updatingProfiles.value = true;
+        if (suppressProfileWatch || updatingProfiles) return;
+        updatingProfiles = true;
+        profileSaveInProgress.value = true;
         const sspId = String(route.params.id);
 
         try {
@@ -498,7 +500,8 @@ onMounted(async () => {
             life: 3000,
           });
         } finally {
-          updatingProfiles.value = false;
+          updatingProfiles = false;
+          profileSaveInProgress.value = false;
         }
       },
     );
