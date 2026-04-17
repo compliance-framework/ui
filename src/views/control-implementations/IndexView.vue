@@ -178,6 +178,7 @@ import Tree from '@/volt/Tree.vue';
 import IndexControlImplementation from '@/views/control-implementations/partials/IndexControlImplementation.vue';
 import type { AxiosError } from 'axios';
 import type { Catalog, Group } from '@/oscal';
+import type { DataResponse } from '@/stores/types.ts';
 import type {
   ControlImplementation,
   ImplementedRequirement,
@@ -227,8 +228,7 @@ const profileBindings = ref<SystemSecurityPlanProfileBinding[]>([]);
 const profileBindingsLoading = ref(false);
 const activeProfile = computed(() => profileBindings.value[0] ?? null);
 const profilesResolved = ref(false);
-const { isLoading: catalogLoading, execute: fetchResolvedCatalog } =
-  useDataApi<Catalog>();
+const catalogLoading = ref(false);
 const {
   isLoading: controlImplementationLoading,
   execute: fetchControlImplementations,
@@ -464,34 +464,44 @@ async function loadResolvedProfileCatalogs() {
     return;
   }
 
-  const profileNodes: Array<TreeNode> = [];
-
-  for (const profileBinding of profileBindings.value) {
-    const { data: resolvedCatalogResponse } = await fetchResolvedCatalog(
-      `/api/oscal/profiles/${profileBinding.uuid}/resolved`,
+  catalogLoading.value = true;
+  try {
+    const results = await Promise.allSettled(
+      profileBindings.value.map(async (profileBinding) => {
+        const response = await axios.get<DataResponse<Catalog>>(
+          `/api/oscal/profiles/${profileBinding.uuid}/resolved`,
+        );
+        return { profileBinding, resolvedCatalog: response.data?.data };
+      }),
     );
-    const resolvedCatalog = resolvedCatalogResponse?.value?.data;
-    if (!resolvedCatalog) {
-      continue;
-    }
 
-    profileNodes.push({
-      key: `profile:${profileBinding.uuid}`,
-      label: profileBinding.title,
-      type: 'group',
-      data: {
-        id: profileBinding.uuid,
-        title: profileBinding.title,
-      } as Group,
-      children: buildTreeNodesWithPrefix(
-        resolvedCatalog,
-        `profile:${profileBinding.uuid}`,
-      ),
+    const profileNodes = results.flatMap((result) => {
+      if (result.status !== 'fulfilled' || !result.value.resolvedCatalog) {
+        return [];
+      }
+      const { profileBinding, resolvedCatalog } = result.value;
+      return [
+        {
+          key: `profile:${profileBinding.uuid}`,
+          label: profileBinding.title,
+          type: 'group',
+          data: {
+            id: profileBinding.uuid,
+            title: profileBinding.title,
+          } as Group,
+          children: buildTreeNodesWithPrefix(
+            resolvedCatalog,
+            `profile:${profileBinding.uuid}`,
+          ),
+        },
+      ];
     });
-  }
 
-  nodes.value = profileNodes;
-  profilesResolved.value = profileNodes.length > 0;
+    nodes.value = profileNodes;
+    profilesResolved.value = profileNodes.length > 0;
+  } finally {
+    catalogLoading.value = false;
+  }
 }
 
 async function buildStatementSuggestionPlan(): Promise<StatementSuggestionPlan> {

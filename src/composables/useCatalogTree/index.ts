@@ -11,40 +11,50 @@ function sortNodes(nodes: Array<TreeNode>): Array<TreeNode> {
   );
 }
 
-export function buildTreeNodesWithPrefix(
-  node: Catalog | Group | { groups?: Group[]; controls?: Control[] },
+type TreeNodeSource =
+  | Catalog
+  | Group
+  | { groups?: Group[]; controls?: Control[] };
+
+function buildGroupNode(group: Group, keyPrefix: string): TreeNode {
+  const key = `${keyPrefix}:group:${group.id}`;
+  return {
+    key,
+    label: group.title,
+    type: 'group',
+    data: group,
+    children: buildTreeNodes(group, key),
+  };
+}
+
+function buildControlNode(control: Control, keyPrefix: string): TreeNode {
+  const key = `${keyPrefix}:control:${control.id}`;
+  return {
+    key,
+    label: control.title,
+    type: 'control',
+    data: control,
+    children: buildTreeNodes({ controls: control.controls }, key),
+  };
+}
+
+function buildTreeNodes(
+  node: TreeNodeSource,
   keyPrefix: string,
 ): Array<TreeNode> {
-  const groups = sortNodes(
-    (node.groups ?? []).map((group) => {
-      const groupKey = `${keyPrefix}:group:${group.id}`;
-      return {
-        key: groupKey,
-        label: group.title,
-        type: 'group',
-        data: group,
-        children: buildTreeNodesWithPrefix(group, groupKey),
-      };
-    }),
-  );
+  return [
+    ...sortNodes((node.groups ?? []).map((g) => buildGroupNode(g, keyPrefix))),
+    ...sortNodes(
+      (node.controls ?? []).map((c) => buildControlNode(c, keyPrefix)),
+    ),
+  ];
+}
 
-  const controls = sortNodes(
-    (node.controls ?? []).map((control) => {
-      const controlKey = `${keyPrefix}:control:${control.id}`;
-      return {
-        key: controlKey,
-        label: control.title,
-        type: 'control',
-        data: control,
-        children: buildTreeNodesWithPrefix(
-          { controls: control.controls },
-          controlKey,
-        ),
-      };
-    }),
-  );
-
-  return [...groups, ...controls];
+export function buildTreeNodesWithPrefix(
+  node: TreeNodeSource,
+  keyPrefix: string,
+): Array<TreeNode> {
+  return buildTreeNodes(node, keyPrefix);
 }
 
 export interface TreeNode {

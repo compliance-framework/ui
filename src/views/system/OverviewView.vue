@@ -303,7 +303,7 @@
 </template>
 
 <script setup lang="ts">
-import { nextTick, onMounted, ref, watch } from 'vue';
+import { onMounted, ref, watch } from 'vue';
 import type {
   SystemSecurityPlan,
   SystemCharacteristics,
@@ -315,23 +315,21 @@ import type {
 import type { Profile } from '@/oscal';
 import MultiSelect from '@/volt/MultiSelect.vue';
 import { useSystemStore } from '@/stores/system.ts';
-import { useSystemSecurityPlanStore } from '@/stores/system-security-plans';
 import Diagrams from './DiagramsView.vue';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi } from '@/composables/axios';
 import type { AxiosError } from 'axios';
 import type { ErrorResponse, ErrorBody } from '@/stores/types.ts';
-import { getErrorStatus, getErrorDetail } from '@/utils/httpErrors';
 import type {
   ProfileComplianceProgress,
   ProfileComplianceSummary,
 } from '@/types/compliance';
 import { computeComplianceWidths } from '@/utils/compliance';
 import RiskOverviewSection from '@/components/system-security-plans/RiskOverviewSection.vue';
+import { useSspProfileBindings } from '@/composables/useSspProfileBindings';
 
 const toast = useToast();
 const { system } = useSystemStore();
-const sspStore = useSystemSecurityPlanStore();
 const systemSecurityPlan = ref<SystemSecurityPlan>({} as SystemSecurityPlan);
 const systemImplementationStats = ref({
   users: 0,
@@ -390,10 +388,6 @@ const { execute: executeSILeveragedAuths } = useDataApi<
   { immediate: false },
 );
 
-const selectedProfiles = ref<string[]>([]);
-const profileSaveInProgress = ref(false);
-let updatingProfiles = false;
-let suppressProfileWatch = false;
 const compliancePreview = ref<ProfileComplianceProgress | null>(null);
 const loadingCompliancePreview = ref(false);
 
@@ -435,104 +429,21 @@ async function loadCompliancePreview(profileId?: string) {
   }
 }
 
-async function setSelectedProfilesWithoutSaving(profileIds: string[]) {
-  suppressProfileWatch = true;
-  selectedProfiles.value = profileIds;
-  await nextTick();
-  suppressProfileWatch = false;
-}
-
-async function refreshSelectedProfiles(sspId: string) {
-  const result = await sspStore.listProfiles(sspId);
-  await setSelectedProfilesWithoutSaving(result.data?.map((p) => p.uuid) || []);
-}
+const { selectedProfiles, profileSaveInProgress, loadInitialProfiles } =
+  useSspProfileBindings(
+    () => systemSecurityPlan.value?.uuid,
+    async (currentProfiles) => {
+      await loadCompliancePreview(currentProfiles[0]);
+    },
+  );
 
 onMounted(async () => {
   try {
     // Load basic SSP data
     systemSecurityPlan.value = system.securityPlan as SystemSecurityPlan;
 
-    try {
-      const sspId = systemSecurityPlan.value.uuid;
-      if (sspId) {
-        await refreshSelectedProfiles(sspId);
-      }
-    } catch (error) {
-      if (getErrorStatus(error) !== 404) {
-        toast.add({
-          severity: 'error',
-          summary: 'Error Loading Profiles',
-          detail: await getErrorDetail(
-            error,
-            'An error occurred while loading profiles.',
-          ),
-          life: 3000,
-        });
-      }
-    }
-
+    await loadInitialProfiles();
     await loadCompliancePreview(selectedProfiles.value[0]);
-
-    watch(
-      () => [...selectedProfiles.value],
-      async (newVal, oldVal) => {
-        if (suppressProfileWatch || updatingProfiles) return;
-        updatingProfiles = true;
-        profileSaveInProgress.value = true;
-        const sspId = systemSecurityPlan.value.uuid;
-
-        try {
-          if (!sspId) {
-            return;
-          }
-
-          const added = newVal.filter((id) => !oldVal.includes(id));
-          const removed = oldVal.filter((id) => !newVal.includes(id));
-
-          if (added.length === 0 && removed.length === 0) {
-            return;
-          }
-
-          for (const profileId of added) {
-            await sspStore.addProfile(sspId, profileId);
-          }
-          for (const profileId of removed) {
-            await sspStore.removeProfile(sspId, profileId);
-          }
-
-          toast.add({
-            severity: 'success',
-            summary: 'Profiles updated',
-            life: 3000,
-          });
-          await loadCompliancePreview(newVal[0]);
-        } catch (error) {
-          const status = getErrorStatus(error);
-          const detail = await getErrorDetail(
-            error,
-            `Received error status from API. Status: ${status ?? 'unknown'}`,
-          );
-
-          try {
-            await refreshSelectedProfiles(sspId);
-          } catch {
-            await setSelectedProfilesWithoutSaving(oldVal);
-          }
-
-          await loadCompliancePreview(selectedProfiles.value[0]);
-
-          toast.add({
-            severity: 'error',
-            summary: 'Failed to update profiles',
-            detail,
-            life: 3000,
-          });
-        } finally {
-          updatingProfiles = false;
-          profileSaveInProgress.value = false;
-        }
-      },
-    );
 
     // Load system implementation statistics
     try {
