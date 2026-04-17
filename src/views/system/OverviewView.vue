@@ -60,16 +60,18 @@
       <div>
         <label
           class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
-          >Profile</label
+          >Profiles</label
         >
-        <Select
-          placeholder="Profile"
+        <MultiSelect
+          placeholder="Select profiles"
           :loading="loadingProfiles"
-          checkmark
+          :disabled="profileSaveInProgress"
+          display="chip"
           class="w-full"
-          v-model="selectedProfile"
+          v-model="selectedProfiles"
           :options="profileItems"
           optionLabel="name"
+          optionValue="value"
         />
       </div>
     </div>
@@ -301,7 +303,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue';
+import { nextTick, onMounted, ref, watch } from 'vue';
 import type {
   SystemSecurityPlan,
   SystemCharacteristics,
@@ -311,8 +313,9 @@ import type {
   LeveragedAuthorization,
 } from '@/oscal';
 import type { Profile } from '@/oscal';
-import Select from '@/volt/Select.vue';
+import MultiSelect from '@/volt/MultiSelect.vue';
 import { useSystemStore } from '@/stores/system.ts';
+import { useSystemSecurityPlanStore } from '@/stores/system-security-plans';
 import Diagrams from './DiagramsView.vue';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi } from '@/composables/axios';
@@ -327,6 +330,7 @@ import RiskOverviewSection from '@/components/system-security-plans/RiskOverview
 
 const toast = useToast();
 const { system } = useSystemStore();
+const sspStore = useSystemSecurityPlanStore();
 const systemSecurityPlan = ref<SystemSecurityPlan>({} as SystemSecurityPlan);
 const systemImplementationStats = ref({
   users: 0,
@@ -352,22 +356,6 @@ watch(profiles, () => {
 
 const { data: systemCharacteristics } = useDataApi<SystemCharacteristics>(
   `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/system-characteristics`,
-);
-
-const { execute: executeAttachedProfile } = useDataApi<Profile>(
-  `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/profile`,
-  {
-    method: 'GET',
-  },
-  { immediate: false },
-);
-
-const { execute: attachProfile } = useDataApi<void>(
-  `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/profile`,
-  {
-    method: 'PUT',
-  },
-  { immediate: false },
 );
 
 const { execute: executeSIUsers } = useDataApi<SystemUser[]>(
@@ -401,7 +389,10 @@ const { execute: executeSILeveragedAuths } = useDataApi<
   { immediate: false },
 );
 
-const selectedProfile = ref<{ name: string; value: string } | null>(null);
+const selectedProfiles = ref<string[]>([]);
+const profileSaveInProgress = ref(false);
+let updatingProfiles = false;
+let suppressProfileWatch = false;
 const compliancePreview = ref<ProfileComplianceProgress | null>(null);
 const loadingCompliancePreview = ref(false);
 
@@ -443,59 +434,148 @@ async function loadCompliancePreview(profileId?: string) {
   }
 }
 
+function getErrorStatus(error: unknown): number | undefined {
+  if (error instanceof Response) {
+    return error.status;
+  }
+
+  const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
+  return errorResponse.response?.status ?? errorResponse.status;
+}
+
+async function getErrorDetail(
+  error: unknown,
+  fallbackMessage: string,
+): Promise<string> {
+  if (error instanceof Response) {
+    try {
+      const errorData = (await error.clone().json()) as
+        | ErrorResponse<ErrorBody>
+        | { message?: string; error?: string; detail?: string }
+        | null;
+
+      if (!errorData || typeof errorData !== 'object') {
+        return error.statusText || fallbackMessage;
+      }
+
+      if ('errors' in errorData) {
+        return errorData.errors?.body || fallbackMessage;
+      }
+
+      return (
+        errorData.message ||
+        errorData.error ||
+        errorData.detail ||
+        error.statusText ||
+        fallbackMessage
+      );
+    } catch {
+      return error.statusText || fallbackMessage;
+    }
+  }
+
+  const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
+  return (
+    errorResponse.response?.data?.errors?.body ||
+    errorResponse.message ||
+    fallbackMessage
+  );
+}
+
+async function setSelectedProfilesWithoutSaving(profileIds: string[]) {
+  suppressProfileWatch = true;
+  selectedProfiles.value = profileIds;
+  await nextTick();
+  suppressProfileWatch = false;
+}
+
+async function refreshSelectedProfiles(sspId: string) {
+  const result = await sspStore.listProfiles(sspId);
+  await setSelectedProfilesWithoutSaving(result.data?.map((p) => p.uuid) || []);
+}
+
 onMounted(async () => {
   try {
     // Load basic SSP data
     systemSecurityPlan.value = system.securityPlan as SystemSecurityPlan;
 
     try {
-      const { data } = await executeAttachedProfile();
-      if (data.value) {
-        selectedProfile.value = {
-          name: data.value.data.metadata.title,
-          value: data.value.data.uuid,
-        };
+      const sspId = systemSecurityPlan.value.uuid;
+      if (sspId) {
+        await refreshSelectedProfiles(sspId);
       }
     } catch (error) {
-      const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
-      if (errorResponse.response?.status !== 404) {
-        // 404s are fine, just means no profile is attached
+      if (getErrorStatus(error) !== 404) {
         toast.add({
           severity: 'error',
-          summary: 'Error Loading Profile',
-          detail:
-            errorResponse.response?.data.errors.body ||
-            'An error occurred while loading the profile.',
+          summary: 'Error Loading Profiles',
+          detail: await getErrorDetail(
+            error,
+            'An error occurred while loading profiles.',
+          ),
           life: 3000,
         });
       }
     }
 
-    await loadCompliancePreview(selectedProfile.value?.value);
+    await loadCompliancePreview(selectedProfiles.value[0]);
 
-    watch(selectedProfile, async () => {
-      try {
-        await attachProfile({
-          data: {
-            profileId: selectedProfile.value?.value,
-          },
-        });
-        toast.add({
-          severity: 'success',
-          summary: 'Profile updated',
-          life: 3000,
-        });
-        await loadCompliancePreview(selectedProfile.value?.value);
-      } catch (error) {
-        const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
-        toast.add({
-          severity: 'error',
-          summary: 'Failed to set profile',
-          detail: `Received error status from API. Status: ${errorResponse.status}`,
-          life: 3000,
-        });
-      }
-    });
+    watch(
+      () => [...selectedProfiles.value],
+      async (newVal, oldVal) => {
+        if (suppressProfileWatch || updatingProfiles) return;
+        updatingProfiles = true;
+        profileSaveInProgress.value = true;
+        const sspId = systemSecurityPlan.value.uuid;
+
+        try {
+          if (!sspId) {
+            return;
+          }
+
+          const added = newVal.filter((id) => !oldVal.includes(id));
+          const removed = oldVal.filter((id) => !newVal.includes(id));
+
+          for (const profileId of added) {
+            await sspStore.addProfile(sspId, profileId);
+          }
+          for (const profileId of removed) {
+            await sspStore.removeProfile(sspId, profileId);
+          }
+
+          toast.add({
+            severity: 'success',
+            summary: 'Profiles updated',
+            life: 3000,
+          });
+          await loadCompliancePreview(newVal[0]);
+        } catch (error) {
+          const status = getErrorStatus(error);
+          const detail = await getErrorDetail(
+            error,
+            `Received error status from API. Status: ${status ?? 'unknown'}`,
+          );
+
+          try {
+            await refreshSelectedProfiles(sspId);
+          } catch {
+            await setSelectedProfilesWithoutSaving(oldVal);
+          }
+
+          await loadCompliancePreview(selectedProfiles.value[0]);
+
+          toast.add({
+            severity: 'error',
+            summary: 'Failed to update profiles',
+            detail,
+            life: 3000,
+          });
+        } finally {
+          updatingProfiles = false;
+          profileSaveInProgress.value = false;
+        }
+      },
+    );
 
     // Load system implementation statistics
     try {

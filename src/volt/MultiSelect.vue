@@ -78,7 +78,9 @@ const theme = ref<MultiSelectPassThroughOptions>({
         shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1),0_2px_4px_-2px_rgba(0,0,0,0.1)]`,
   header: `flex items-center pt-2 pb-1 px-4 gap-2`,
   pcHeaderCheckbox: {
-    root: `relative inline-flex select-none w-5 h-5 align-bottom`,
+    root: `relative inline-flex select-none w-auto h-5 align-bottom items-center gap-2
+            after:content-['Select_all'] after:whitespace-nowrap after:text-sm
+            after:text-surface-700 dark:after:text-white`,
     input: `peer cursor-pointer disabled:cursor-default appearance-none
             absolute start-0 top-0 w-full h-full m-0 p-0 opacity-0 z-10
             border border-transparent rounded-xs`,
