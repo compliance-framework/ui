@@ -205,6 +205,7 @@ import {
   getRiskImpact,
   isClosedStatus,
 } from '@/utils/risk-register';
+import { getErrorDetail } from '@/utils/httpErrors';
 
 const systemStore = useSystemStore();
 const sspStore = useSystemSecurityPlanStore();
@@ -824,8 +825,10 @@ onMounted(async () => {
     toast.add({
       severity: 'error',
       summary: 'Error Loading Profile Bindings',
-      detail:
+      detail: await getErrorDetail(
+        err,
         'An error occurred while loading the profiles linked to this SSP.',
+      ),
       life: 3000,
     });
   }
