@@ -119,7 +119,6 @@
 import PageCard from '@/components/PageCard.vue';
 import { ref, onMounted, watch, computed } from 'vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
-import { useUserStore } from '@/stores/auth';
 import { useRoute, useRouter } from 'vue-router';
 // import type { DataResponse } from '@/stores/api.ts';
 import FormInput from '@/components/forms/FormInput.vue';
@@ -127,10 +126,11 @@ import lightLogo from '@/assets/logo-light.svg';
 import darkLogo from '@/assets/logo-dark.svg';
 import SideNavLogo from '@/components/navigation/SideNavLogo.vue';
 import { useToast } from 'primevue/usetoast';
-import { useGuestApi, useGuestInstance } from '@/composables/axios';
+import { useGuestApi } from '@/composables/axios';
 import type { AxiosError } from 'axios';
-import type { CCFUser, DataResponse } from '@/stores/types';
+import type { DataResponse } from '@/stores/types';
 import { useOIDC, type OIDCProvider } from '@/composables/useOIDC';
+import { useAuthHydration } from '@/composables/useAuthHydration';
 
 interface AuthError {
   email: string[];
@@ -141,8 +141,7 @@ const email = ref('');
 const password = ref('');
 const errors = ref<AuthError>({} as AuthError);
 
-const user = useUserStore();
-const axios = useGuestInstance();
+const { hydrateCurrentUser } = useAuthHydration();
 const {
   providers: ssoProviders,
   isLoading: isSSOLoading,
@@ -162,11 +161,6 @@ const { execute: login } = useGuestApi<DataResponse<AuthError>>(
   },
   { immediate: false },
 );
-
-const fetchCurrentUser = async () => {
-  const response = await axios.get<DataResponse<CCFUser>>('/api/users/me');
-  return response.data.data;
-};
 
 const route = useRoute();
 const router = useRouter();
@@ -241,8 +235,7 @@ async function onSubmit() {
         password: password.value,
       },
     });
-    user.user = await fetchCurrentUser();
-    user.isAuthenticated = true;
+    await hydrateCurrentUser();
 
     toast.add({
       severity: 'success',

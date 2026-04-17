@@ -26,16 +26,13 @@
 <script setup lang="ts">
 import { onMounted, ref, computed } from 'vue';
 import { useRouter, useRoute, type RouteLocationRaw } from 'vue-router';
-import { useUserStore } from '@/stores/auth';
-import { useGuestInstance } from '@/composables/axios';
 import { useToast } from 'primevue/usetoast';
-import type { DataResponse, CCFUser } from '@/stores/types';
+import { useAuthHydration } from '@/composables/useAuthHydration';
 
 const router = useRouter();
 const route = useRoute();
 const toast = useToast();
-const userStore = useUserStore();
-const axios = useGuestInstance();
+const { hydrateCurrentUser } = useAuthHydration();
 
 const status = ref<'loading' | 'success' | 'error'>('loading');
 
@@ -51,11 +48,6 @@ const statusMessage = computed(() => {
 
 const goToLogin = () => {
   router.replace({ name: 'login' });
-};
-
-const fetchCurrentUser = async () => {
-  const response = await axios.get<DataResponse<CCFUser>>('/api/users/me');
-  return response.data.data;
 };
 
 const isSafeRelativePath = (path: string) => {
@@ -80,9 +72,7 @@ const ERROR_TOAST_DURATION = 4000;
 
 onMounted(async () => {
   try {
-    const user = await fetchCurrentUser();
-    userStore.user = user;
-    userStore.isAuthenticated = true;
+    await hydrateCurrentUser();
     status.value = 'success';
 
     toast.add({
