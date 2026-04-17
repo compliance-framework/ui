@@ -119,7 +119,7 @@
 import PageCard from '@/components/PageCard.vue';
 import { ref, onMounted, watch, computed } from 'vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
-import { useRoute, useRouter, type RouteLocationRaw } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 // import type { DataResponse } from '@/stores/api.ts';
 import FormInput from '@/components/forms/FormInput.vue';
 import lightLogo from '@/assets/logo-light.svg';
@@ -130,6 +130,7 @@ import { useGuestApi } from '@/composables/axios';
 import type { AxiosError } from 'axios';
 import { useOIDC, type OIDCProvider } from '@/composables/useOIDC';
 import { useAuthHydration } from '@/composables/useAuthHydration';
+import { resolveAuthNextLocation } from '@/utils/auth-redirect';
 
 interface AuthError {
   email: string[];
@@ -249,23 +250,6 @@ function normalizeAuthErrors(value: unknown): AuthError {
   };
 }
 
-function isSafeRelativePath(path: string) {
-  if (!path.startsWith('/') || path.startsWith('//')) return false;
-  return !/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(path);
-}
-
-function resolveNextLocation(): RouteLocationRaw {
-  const nextParam = route.query.next;
-  if (
-    typeof nextParam === 'string' &&
-    nextParam.trim().length > 0 &&
-    isSafeRelativePath(nextParam)
-  ) {
-    return { path: nextParam };
-  }
-  return { name: 'home' };
-}
-
 function showLoginFailed(error: unknown) {
   const response = error as AxiosError<unknown>;
   if (response.response?.status === 401) {
@@ -323,6 +307,6 @@ async function onSubmit() {
     detail: 'You have successfully logged in.',
     life: 3000,
   });
-  return router.push(resolveNextLocation());
+  return router.push(resolveAuthNextLocation(route.query.next));
 }
 </script>

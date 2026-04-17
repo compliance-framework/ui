@@ -25,9 +25,10 @@
 
 <script setup lang="ts">
 import { onMounted, ref, computed } from 'vue';
-import { useRouter, useRoute, type RouteLocationRaw } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
 import { useAuthHydration } from '@/composables/useAuthHydration';
+import { resolveAuthNextLocation } from '@/utils/auth-redirect';
 
 const router = useRouter();
 const route = useRoute();
@@ -50,23 +51,6 @@ const goToLogin = () => {
   router.replace({ name: 'login' });
 };
 
-const isSafeRelativePath = (path: string) => {
-  if (!path.startsWith('/') || path.startsWith('//')) return false;
-  return !/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(path);
-};
-
-const resolveNextLocation = (): RouteLocationRaw => {
-  const nextParam = route.query.next;
-  if (
-    typeof nextParam === 'string' &&
-    nextParam.trim().length > 0 &&
-    isSafeRelativePath(nextParam)
-  ) {
-    return { path: nextParam };
-  }
-  return { name: 'home' };
-};
-
 const SUCCESS_TOAST_DURATION = 2500;
 const ERROR_TOAST_DURATION = 4000;
 
@@ -82,7 +66,7 @@ onMounted(async () => {
       life: SUCCESS_TOAST_DURATION,
     });
 
-    const nextLocation = resolveNextLocation();
+    const nextLocation = resolveAuthNextLocation(route.query.next);
     setTimeout(() => {
       router.replace(nextLocation);
     }, SUCCESS_TOAST_DURATION);
