@@ -476,6 +476,16 @@ async function loadResolvedProfileCatalogs() {
       }),
     );
 
+    const failedCount = results.filter((r) => r.status === 'rejected').length;
+    if (failedCount > 0) {
+      toast.add({
+        severity: 'error',
+        summary: 'Error Loading Catalogs',
+        detail: `Failed to load resolved catalog for ${failedCount} profile${failedCount > 1 ? 's' : ''}.`,
+        life: 3000,
+      });
+    }
+
     const profileNodes = results.flatMap((result) => {
       if (result.status !== 'fulfilled' || !result.value.resolvedCatalog) {
         return [];
@@ -820,6 +830,9 @@ watch(
 onMounted(async () => {
   try {
     await loadProfileBindings();
+    if (profileBindings.value.length > 0) {
+      catalogLoading.value = true;
+    }
   } catch (err) {
     error.value = err as AxiosError<unknown>;
     toast.add({
