@@ -127,9 +127,9 @@ import lightLogo from '@/assets/logo-light.svg';
 import darkLogo from '@/assets/logo-dark.svg';
 import SideNavLogo from '@/components/navigation/SideNavLogo.vue';
 import { useToast } from 'primevue/usetoast';
-import { useGuestApi } from '@/composables/axios';
+import { useGuestApi, useGuestInstance } from '@/composables/axios';
 import type { AxiosError } from 'axios';
-import type { DataResponse } from '@/stores/types';
+import type { CCFUser, DataResponse } from '@/stores/types';
 import { useOIDC, type OIDCProvider } from '@/composables/useOIDC';
 
 interface AuthError {
@@ -142,6 +142,7 @@ const password = ref('');
 const errors = ref<AuthError>({} as AuthError);
 
 const user = useUserStore();
+const axios = useGuestInstance();
 const {
   providers: ssoProviders,
   isLoading: isSSOLoading,
@@ -161,6 +162,11 @@ const { execute: login } = useGuestApi<DataResponse<AuthError>>(
   },
   { immediate: false },
 );
+
+const fetchCurrentUser = async () => {
+  const response = await axios.get<DataResponse<CCFUser>>('/api/users/me');
+  return response.data.data;
+};
 
 const route = useRoute();
 const router = useRouter();
@@ -235,6 +241,7 @@ async function onSubmit() {
         password: password.value,
       },
     });
+    user.user = await fetchCurrentUser();
     user.isAuthenticated = true;
 
     toast.add({

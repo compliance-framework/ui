@@ -73,11 +73,6 @@
       >
         <template #group="slotProps">
           <div class="flex items-center gap-x-3">
-            <div>
-              <Badge v-if="slotProps.node.data.id" class="text-base">{{
-                slotProps.node.data.id
-              }}</Badge>
-            </div>
             <h4>{{ slotProps.node.data.title }}</h4>
           </div>
         </template>
