@@ -68,16 +68,18 @@
           <div>
             <label
               class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
-              >Profile</label
+              >Profiles</label
             >
-            <Select
-              placeholder="Profile"
+            <MultiSelect
+              placeholder="Select profiles"
               :loading="loadingProfiles"
-              checkmark
+              :disabled="profileSaveInProgress"
+              display="chip"
               class="w-full"
-              v-model="selectedProfile"
+              v-model="selectedProfiles"
               :options="profileItems"
               optionLabel="name"
+              optionValue="value"
             />
           </div>
 
@@ -279,13 +281,14 @@ import type {
   LeveragedAuthorization,
 } from '@/oscal';
 import type { InventoryItem, Profile } from '@/oscal';
-import Select from '@/volt/Select.vue';
+import MultiSelect from '@/volt/MultiSelect.vue';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi } from '@/composables/axios';
 import type { AxiosError } from 'axios';
 import type { ErrorResponse, ErrorBody } from '@/stores/types.ts';
 import decamelizeKeys from 'decamelize-keys';
 import RiskOverviewSection from '@/components/system-security-plans/RiskOverviewSection.vue';
+import { useSspProfileBindings } from '@/composables/useSspProfileBindings';
 
 const route = useRoute();
 const router = useRouter();
@@ -314,20 +317,6 @@ const { data: systemCharacteristics } = useDataApi<SystemCharacteristics>(
   `/api/oscal/system-security-plans/${route.params.id}/system-characteristics`,
 );
 
-const { execute: executeAttachedProfile } = useDataApi<Profile>(
-  `/api/oscal/system-security-plans/${route.params.id}/profile`,
-  {
-    method: 'GET',
-  },
-  { immediate: false },
-);
-const { execute: attachProfile } = useDataApi<void>(
-  `/api/oscal/system-security-plans/${route.params.id}/profile`,
-  {
-    method: 'PUT',
-  },
-  { immediate: false },
-);
 const { execute: executeSIUsers } = useDataApi<SystemUser[]>(
   `/api/oscal/system-security-plans/${route.params.id}/system-implementation/users`,
   {
@@ -381,58 +370,12 @@ watch(profiles, () => {
     }) || [];
 });
 
-const selectedProfile = ref<{ name: string; value: string }>({
-  name: '',
-  value: '',
-});
+const { selectedProfiles, profileSaveInProgress, loadInitialProfiles } =
+  useSspProfileBindings(() => String(route.params.id));
 
 onMounted(async () => {
   try {
-    try {
-      const { data } = await executeAttachedProfile();
-      if (data.value) {
-        selectedProfile.value = {
-          name: data.value.data.metadata.title,
-          value: data.value.data.uuid,
-        };
-      }
-    } catch (error) {
-      const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
-      if (errorResponse.response?.status !== 404) {
-        // 404s are fine, just means no profile is attached
-        toast.add({
-          severity: 'error',
-          summary: 'Error Loading Profile',
-          detail:
-            errorResponse.response?.data.errors.body ||
-            'An error occurred while loading the profile.',
-          life: 3000,
-        });
-      }
-    }
-
-    watch(selectedProfile, async () => {
-      try {
-        await attachProfile({
-          data: {
-            profileId: selectedProfile.value?.value,
-          },
-        });
-        toast.add({
-          severity: 'success',
-          summary: 'Profile updated',
-          life: 3000,
-        });
-      } catch (error) {
-        const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
-        toast.add({
-          severity: 'error',
-          summary: 'Failed to set profile',
-          detail: `Received error status from API. Status: ${errorResponse.status}`,
-          life: 3000,
-        });
-      }
-    });
+    await loadInitialProfiles();
 
     // Load system implementation statistics
     try {

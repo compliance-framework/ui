@@ -21,14 +21,14 @@
     </div>
   </Message>
 
-  <Message v-else-if="!profile" severity="error" variant="outlined">
+  <Message v-else-if="!activeProfile" severity="error" variant="outlined">
     <div class="space-y-2 text-gray-700 dark:text-slate-200">
       <h4 class="text-base font-semibold">
         Your selected SSP does not have a linked profile
       </h4>
       <p>
-        The System Security Plan you have selected does not have an attached
-        profile.
+        The System Security Plan you have selected does not have any linked
+        profiles.
       </p>
       <p>
         Please return to the
@@ -63,7 +63,7 @@
     </div>
 
     <div v-if="catalogLoading">Loading Catalog ...</div>
-    <div v-else-if="!catalog">No Catalog</div>
+    <div v-else-if="!profilesResolved">No Catalog</div>
     <div v-else>
       <Tree
         v-model:expandedKeys="expandedKeys"
@@ -74,7 +74,9 @@
         <template #group="slotProps">
           <div class="flex items-center gap-x-3">
             <div>
-              <Badge class="text-base">{{ slotProps.node.data.id }}</Badge>
+              <Badge v-if="slotProps.node.data.id" class="text-base">{{
+                slotProps.node.data.id
+              }}</Badge>
             </div>
             <h4>{{ slotProps.node.data.title }}</h4>
           </div>
@@ -156,21 +158,26 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, watch, computed, type Ref } from 'vue';
+import { onMounted, ref, watch, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import Message from '@/volt/Message.vue';
 import Badge from '@/volt/Badge.vue';
 import { useSystemStore } from '@/stores/system.ts';
+import {
+  useSystemSecurityPlanStore,
+  type SystemSecurityPlanProfileBinding,
+} from '@/stores/system-security-plans';
 import { useUIStore } from '@/stores/ui.ts';
 import PageHeader from '@/components/PageHeader.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
 import ControlEvidenceCounter from './partials/ControlEvidenceCounter.vue';
-import { useCatalogTree } from '@/composables/useCatalogTree';
+import { buildTreeNodesWithPrefix } from '@/composables/useCatalogTree';
+import type { TreeNode } from '@/composables/useCatalogTree';
 import { useAuthenticatedInstance, useDataApi } from '@/composables/axios';
 import Tree from '@/volt/Tree.vue';
 import IndexControlImplementation from '@/views/control-implementations/partials/IndexControlImplementation.vue';
-import type { AxiosError } from 'axios';
-import type { Catalog, Profile } from '@/oscal';
+import type { Catalog, Group } from '@/oscal';
+import type { DataResponse } from '@/stores/types.ts';
 import type {
   ControlImplementation,
   ImplementedRequirement,
@@ -197,8 +204,10 @@ import {
   getRiskImpact,
   isClosedStatus,
 } from '@/utils/risk-register';
+import { getErrorDetail } from '@/utils/httpErrors';
 
 const systemStore = useSystemStore();
+const sspStore = useSystemSecurityPlanStore();
 const uiStore = useUIStore();
 const toast = useToast();
 const confirm = useConfirm();
@@ -215,20 +224,11 @@ const expandedKeys = computed({
   set: (val) => uiStore.setControlImplementationExpandedKeys(val),
 });
 
-const {
-  data: profile,
-  isLoading: baseLoading,
-  execute: fetchProfile,
-} = useDataApi<Profile>(
-  `/api/oscal/system-security-plans/${systemStore.system.securityPlan?.uuid}/profile`,
-  null,
-  { immediate: false },
-);
-const {
-  data: catalog,
-  isLoading: catalogLoading,
-  execute: fetchResolvedcatalog,
-} = useDataApi<Catalog>();
+const profileBindings = ref<SystemSecurityPlanProfileBinding[]>([]);
+const profileBindingsLoading = ref(false);
+const activeProfile = computed(() => profileBindings.value[0] ?? null);
+const profilesResolved = ref(false);
+const catalogLoading = ref(false);
 const {
   isLoading: controlImplementationLoading,
   execute: fetchControlImplementations,
@@ -239,7 +239,7 @@ const {
 );
 const loading = computed<boolean>(
   () =>
-    baseLoading.value ||
+    profileBindingsLoading.value ||
     catalogLoading.value ||
     controlImplementationLoading.value,
 );
@@ -255,14 +255,14 @@ const applyingBulkSuggestions = ref(false);
 const bulkSuggestionsConfirmOpen = ref(false);
 const BULK_SUGGESTIONS_CONCURRENCY_LIMIT = 5;
 
-const error = ref<AxiosError<unknown> | null>(null);
+const error = ref<unknown>(null);
 const { data: sspRisks, execute: loadSspRisks } = useDataApi<Risk[]>(
   null,
   {},
   { immediate: false },
 );
 
-const { nodes, build } = useCatalogTree();
+const nodes = ref<Array<TreeNode>>([]);
 
 interface StatementSuggestionWorkItem {
   requirement: ImplementedRequirement;
@@ -430,6 +430,88 @@ async function loadControlImplementations() {
     uiStore.controlImplementationDrawerOpen = false;
   }
   controlImplementations.value = nextMap;
+}
+
+async function loadProfileBindings() {
+  const sspId = systemStore.system.securityPlan?.uuid;
+  profileBindings.value = [];
+  profilesResolved.value = false;
+  nodes.value = [];
+
+  if (!sspId) {
+    return;
+  }
+
+  profileBindingsLoading.value = true;
+  try {
+    const result = await sspStore.listProfiles(sspId);
+    profileBindings.value = result.data || [];
+  } catch (err) {
+    if (err instanceof Response && err.status === 404) {
+      return;
+    }
+    throw err;
+  } finally {
+    profileBindingsLoading.value = false;
+  }
+}
+
+async function loadResolvedProfileCatalogs() {
+  profilesResolved.value = false;
+  nodes.value = [];
+
+  if (profileBindings.value.length === 0) {
+    return;
+  }
+
+  catalogLoading.value = true;
+  try {
+    const results = await Promise.allSettled(
+      profileBindings.value.map(async (profileBinding) => {
+        const response = await axios.get<DataResponse<Catalog>>(
+          `/api/oscal/profiles/${profileBinding.uuid}/resolved`,
+        );
+        return { profileBinding, resolvedCatalog: response.data?.data };
+      }),
+    );
+
+    const failedCount = results.filter((r) => r.status === 'rejected').length;
+    if (failedCount > 0) {
+      toast.add({
+        severity: 'error',
+        summary: 'Error Loading Catalogs',
+        detail: `Failed to load resolved catalog for ${failedCount} profile${failedCount > 1 ? 's' : ''}.`,
+        life: 3000,
+      });
+    }
+
+    const profileNodes = results.flatMap((result) => {
+      if (result.status !== 'fulfilled' || !result.value.resolvedCatalog) {
+        return [];
+      }
+      const { profileBinding, resolvedCatalog } = result.value;
+      return [
+        {
+          key: `profile:${profileBinding.uuid}`,
+          label: profileBinding.title,
+          type: 'group',
+          data: {
+            id: profileBinding.uuid,
+            title: profileBinding.title,
+          } as Group,
+          children: buildTreeNodesWithPrefix(
+            resolvedCatalog,
+            `profile:${profileBinding.uuid}`,
+          ),
+        },
+      ];
+    });
+
+    nodes.value = profileNodes;
+    profilesResolved.value = profileNodes.length > 0;
+  } finally {
+    catalogLoading.value = false;
+  }
 }
 
 async function buildStatementSuggestionPlan(): Promise<StatementSuggestionPlan> {
@@ -688,17 +770,26 @@ async function prepareApplyAllSuggestions() {
   }
 }
 
-watch(profile, async () => {
-  if (!profile.value) {
+watch(profileBindings, async () => {
+  if (profileBindings.value.length === 0) {
+    profilesResolved.value = false;
+    nodes.value = [];
     return;
   }
+
   try {
-    await fetchResolvedcatalog(
-      `/api/oscal/profiles/${profile.value.uuid}/resolved`,
-    );
-    build(catalog as Ref<Catalog>);
+    await loadResolvedProfileCatalogs();
   } catch (err) {
-    error.value = err as AxiosError<unknown>;
+    error.value = err;
+    toast.add({
+      severity: 'error',
+      summary: 'Error Loading Catalogs',
+      detail: await getErrorDetail(
+        err,
+        'An error occurred while loading profile catalogs.',
+      ),
+      life: 3000,
+    });
   }
 });
 
@@ -746,15 +837,27 @@ watch(
 
 onMounted(async () => {
   try {
-    await fetchProfile();
+    await loadProfileBindings();
+    if (profileBindings.value.length > 0) {
+      catalogLoading.value = true;
+    }
   } catch (err) {
-    error.value = err as AxiosError<unknown>;
+    error.value = err;
+    toast.add({
+      severity: 'error',
+      summary: 'Error Loading Profile Bindings',
+      detail: await getErrorDetail(
+        err,
+        'An error occurred while loading the profiles linked to this SSP.',
+      ),
+      life: 3000,
+    });
   }
 
   try {
     await loadControlImplementations();
   } catch (err) {
-    error.value = err as AxiosError<unknown>;
+    error.value = err;
   }
 });
 </script>
