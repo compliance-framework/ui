@@ -489,6 +489,10 @@ onMounted(async () => {
           const added = newVal.filter((id) => !oldVal.includes(id));
           const removed = oldVal.filter((id) => !newVal.includes(id));
 
+          if (added.length === 0 && removed.length === 0) {
+            return;
+          }
+
           for (const profileId of added) {
             await sspStore.addProfile(sspId, profileId);
           }

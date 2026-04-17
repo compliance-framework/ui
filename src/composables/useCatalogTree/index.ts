@@ -2,6 +2,51 @@ import { ref, toValue } from 'vue';
 import type { MaybeRefOrGetter } from '@vueuse/core';
 import type { Catalog, Control, Group } from '@/oscal';
 
+function sortNodes(nodes: Array<TreeNode>): Array<TreeNode> {
+  return nodes.sort((a, b) =>
+    a.key.localeCompare(b.key, undefined, {
+      numeric: true,
+      sensitivity: 'base',
+    }),
+  );
+}
+
+export function buildTreeNodesWithPrefix(
+  node: Catalog | Group | { groups?: Group[]; controls?: Control[] },
+  keyPrefix: string,
+): Array<TreeNode> {
+  const groups = sortNodes(
+    (node.groups ?? []).map((group) => {
+      const groupKey = `${keyPrefix}:group:${group.id}`;
+      return {
+        key: groupKey,
+        label: group.title,
+        type: 'group',
+        data: group,
+        children: buildTreeNodesWithPrefix(group, groupKey),
+      };
+    }),
+  );
+
+  const controls = sortNodes(
+    (node.controls ?? []).map((control) => {
+      const controlKey = `${keyPrefix}:control:${control.id}`;
+      return {
+        key: controlKey,
+        label: control.title,
+        type: 'control',
+        data: control,
+        children: buildTreeNodesWithPrefix(
+          { controls: control.controls },
+          controlKey,
+        ),
+      };
+    }),
+  );
+
+  return [...groups, ...controls];
+}
+
 export interface TreeNode {
   key: string;
   label: string;

@@ -171,12 +171,13 @@ import { useUIStore } from '@/stores/ui.ts';
 import PageHeader from '@/components/PageHeader.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
 import ControlEvidenceCounter from './partials/ControlEvidenceCounter.vue';
+import { buildTreeNodesWithPrefix } from '@/composables/useCatalogTree';
 import type { TreeNode } from '@/composables/useCatalogTree';
 import { useAuthenticatedInstance, useDataApi } from '@/composables/axios';
 import Tree from '@/volt/Tree.vue';
 import IndexControlImplementation from '@/views/control-implementations/partials/IndexControlImplementation.vue';
 import type { AxiosError } from 'axios';
-import type { Catalog, Control, Group } from '@/oscal';
+import type { Catalog, Group } from '@/oscal';
 import type {
   ControlImplementation,
   ImplementedRequirement,
@@ -455,58 +456,6 @@ async function loadProfileBindings() {
   }
 }
 
-function sortTreeNodes(treeNodes: Array<TreeNode>): Array<TreeNode> {
-  return treeNodes.sort((a, b) =>
-    a.key.localeCompare(b.key, undefined, {
-      numeric: true,
-      sensitivity: 'base',
-    }),
-  );
-}
-
-function buildCatalogChildren(
-  node: Catalog | Group,
-  keyPrefix: string,
-): Array<TreeNode> {
-  return [
-    ...buildCatalogGroups(keyPrefix, ...(node.groups ?? [])),
-    ...buildCatalogControls(keyPrefix, ...(node.controls ?? [])),
-  ];
-}
-
-function buildCatalogGroups(
-  keyPrefix: string,
-  ...groups: Array<Group>
-): Array<TreeNode> {
-  return sortTreeNodes(
-    groups.map((group) => ({
-      key: `${keyPrefix}:group:${group.id}`,
-      label: group.title,
-      type: 'group',
-      data: group,
-      children: buildCatalogChildren(group, `${keyPrefix}:group:${group.id}`),
-    })),
-  );
-}
-
-function buildCatalogControls(
-  keyPrefix: string,
-  ...controls: Array<Control>
-): Array<TreeNode> {
-  return sortTreeNodes(
-    controls.map((control) => ({
-      key: `${keyPrefix}:control:${control.id}`,
-      label: control.title,
-      type: 'control',
-      data: control,
-      children: buildCatalogControls(
-        `${keyPrefix}:control:${control.id}`,
-        ...(control.controls ?? []),
-      ),
-    })),
-  );
-}
-
 async function loadResolvedProfileCatalogs() {
   profilesResolved.value = false;
   nodes.value = [];
@@ -534,7 +483,7 @@ async function loadResolvedProfileCatalogs() {
         id: profileBinding.uuid,
         title: profileBinding.title,
       } as Group,
-      children: buildCatalogChildren(
+      children: buildTreeNodesWithPrefix(
         resolvedCatalog,
         `profile:${profileBinding.uuid}`,
       ),
