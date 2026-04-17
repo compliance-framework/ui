@@ -226,7 +226,7 @@ const profileBindings = ref<SystemSecurityPlanProfileBinding[]>([]);
 const profileBindingsLoading = ref(false);
 const activeProfile = computed(() => profileBindings.value[0] ?? null);
 const profilesResolved = ref(false);
-const { isLoading: catalogLoading, execute: fetchResolvedcatalog } =
+const { isLoading: catalogLoading, execute: fetchResolvedCatalog } =
   useDataApi<Catalog>();
 const {
   isLoading: controlImplementationLoading,
@@ -518,7 +518,7 @@ async function loadResolvedProfileCatalogs() {
   const profileNodes: Array<TreeNode> = [];
 
   for (const profileBinding of profileBindings.value) {
-    const { data: resolvedCatalogResponse } = await fetchResolvedcatalog(
+    const { data: resolvedCatalogResponse } = await fetchResolvedCatalog(
       `/api/oscal/profiles/${profileBinding.uuid}/resolved`,
     );
     const resolvedCatalog = resolvedCatalogResponse?.value?.data;
@@ -862,6 +862,13 @@ onMounted(async () => {
     await loadProfileBindings();
   } catch (err) {
     error.value = err as AxiosError<unknown>;
+    toast.add({
+      severity: 'error',
+      summary: 'Error Loading Profile Bindings',
+      detail:
+        'An error occurred while loading the profiles linked to this SSP.',
+      life: 3000,
+    });
   }
 
   try {
