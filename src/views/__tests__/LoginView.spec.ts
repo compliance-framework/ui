@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   toastAdd: vi.fn(),
   loadProviders: vi.fn(),
   initiateLogin: vi.fn(),
+  routeQuery: {} as Record<string, unknown>,
 }));
 
 vi.mock('@/composables/axios', () => ({
@@ -40,7 +41,7 @@ vi.mock('primevue/usetoast', () => ({
 
 vi.mock('vue-router', () => ({
   useRoute: () => ({
-    query: {},
+    query: mocks.routeQuery,
   }),
   useRouter: () => ({
     push: mocks.push,
@@ -73,6 +74,7 @@ describe('LoginView', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
+    mocks.routeQuery = {};
     mocks.login.mockResolvedValue({});
     mocks.get.mockResolvedValue({
       data: {
@@ -141,5 +143,59 @@ describe('LoginView', () => {
       }),
     );
     expect(mocks.push).not.toHaveBeenCalled();
+  });
+
+  it('keeps form errors safe when login returns a malformed 401 body', async () => {
+    const wrapper = mountComponent();
+    mocks.login.mockRejectedValue({
+      response: {
+        status: 401,
+        data: undefined,
+      },
+    });
+
+    await wrapper
+      .find('input[placeholder="Email"]')
+      .setValue('user@example.com');
+    await wrapper.find('input[placeholder="Password"]').setValue('password');
+    await wrapper.find('form').trigger('submit', { cancelable: true });
+    await flushPromises();
+
+    expect(mocks.get).not.toHaveBeenCalled();
+    expect(mocks.toastAdd).toHaveBeenCalledWith(
+      expect.objectContaining({
+        severity: 'error',
+        summary: 'Login Failed',
+      }),
+    );
+    expect(wrapper.text()).toContain('Login');
+  });
+
+  it('uses a safe relative next path after password login', async () => {
+    mocks.routeQuery = { next: '/workflow-instances' };
+    const wrapper = mountComponent();
+
+    await wrapper
+      .find('input[placeholder="Email"]')
+      .setValue('user@example.com');
+    await wrapper.find('input[placeholder="Password"]').setValue('password');
+    await wrapper.find('form').trigger('submit', { cancelable: true });
+    await flushPromises();
+
+    expect(mocks.push).toHaveBeenCalledWith({ path: '/workflow-instances' });
+  });
+
+  it('falls back home when next is not a safe string path', async () => {
+    mocks.routeQuery = { next: ['https://example.com'] };
+    const wrapper = mountComponent();
+
+    await wrapper
+      .find('input[placeholder="Email"]')
+      .setValue('user@example.com');
+    await wrapper.find('input[placeholder="Password"]').setValue('password');
+    await wrapper.find('form').trigger('submit', { cancelable: true });
+    await flushPromises();
+
+    expect(mocks.push).toHaveBeenCalledWith({ name: 'home' });
   });
 });

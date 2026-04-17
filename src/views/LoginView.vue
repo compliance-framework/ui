@@ -119,7 +119,7 @@
 import PageCard from '@/components/PageCard.vue';
 import { ref, onMounted, watch, computed } from 'vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute, useRouter, type RouteLocationRaw } from 'vue-router';
 // import type { DataResponse } from '@/stores/api.ts';
 import FormInput from '@/components/forms/FormInput.vue';
 import lightLogo from '@/assets/logo-light.svg';
@@ -138,7 +138,7 @@ interface AuthError {
 
 const email = ref('');
 const password = ref('');
-const errors = ref<AuthError>({} as AuthError);
+const errors = ref<AuthError>(createDefaultAuthErrors());
 
 const { hydrateCurrentUser } = useAuthHydration();
 const {
@@ -164,6 +164,13 @@ const { execute: login } = useGuestApi<AuthError>(
 const route = useRoute();
 const router = useRouter();
 const toast = useToast();
+
+function createDefaultAuthErrors(): AuthError {
+  return {
+    email: [],
+    password: [],
+  };
+}
 
 const loginWithSSO = async (providerName: string) => {
   try {
@@ -233,6 +240,32 @@ function isAuthError(value: unknown): value is AuthError {
   );
 }
 
+function normalizeAuthErrors(value: unknown): AuthError {
+  if (!isAuthError(value)) return createDefaultAuthErrors();
+
+  return {
+    email: Array.isArray(value.email) ? value.email : [],
+    password: Array.isArray(value.password) ? value.password : [],
+  };
+}
+
+function isSafeRelativePath(path: string) {
+  if (!path.startsWith('/') || path.startsWith('//')) return false;
+  return !/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(path);
+}
+
+function resolveNextLocation(): RouteLocationRaw {
+  const nextParam = route.query.next;
+  if (
+    typeof nextParam === 'string' &&
+    nextParam.trim().length > 0 &&
+    isSafeRelativePath(nextParam)
+  ) {
+    return { path: nextParam };
+  }
+  return { name: 'home' };
+}
+
 function showLoginFailed(error: unknown) {
   const response = error as AxiosError<unknown>;
   if (response.response?.status === 401) {
@@ -242,11 +275,7 @@ function showLoginFailed(error: unknown) {
         ? responseData.data
         : responseData;
 
-    if (isAuthError(authErrors)) {
-      errors.value = authErrors;
-    } else {
-      errors.value = {} as AuthError;
-    }
+    errors.value = normalizeAuthErrors(authErrors);
   }
 
   toast.add({
@@ -267,7 +296,7 @@ function showHydrationFailed() {
 }
 
 async function onSubmit() {
-  errors.value = {} as AuthError;
+  errors.value = createDefaultAuthErrors();
 
   try {
     await login({
@@ -294,9 +323,6 @@ async function onSubmit() {
     detail: 'You have successfully logged in.',
     life: 3000,
   });
-  if (route.query.hasOwnProperty('next')) {
-    return router.push(route.query.next as string);
-  }
-  return router.push({ name: 'home' });
+  return router.push(resolveNextLocation());
 }
 </script>
