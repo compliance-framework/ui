@@ -234,10 +234,14 @@ onMounted(() => {
 });
 
 function isAuthError(value: unknown): value is AuthError {
+  if (!value || typeof value !== 'object') return false;
+
+  const maybeAuthError = value as Partial<AuthError>;
   return (
-    !!value &&
-    typeof value === 'object' &&
-    ('email' in value || 'password' in value)
+    Array.isArray(maybeAuthError.email) &&
+    maybeAuthError.email.every((error) => typeof error === 'string') &&
+    Array.isArray(maybeAuthError.password) &&
+    maybeAuthError.password.every((error) => typeof error === 'string')
   );
 }
 

@@ -171,6 +171,37 @@ describe('LoginView', () => {
     expect(wrapper.text()).toContain('Login');
   });
 
+  it('ignores malformed auth error field values', async () => {
+    const wrapper = mountComponent();
+    mocks.login.mockRejectedValue({
+      response: {
+        status: 401,
+        data: {
+          data: {
+            email: 'not-an-array',
+            password: [123],
+          },
+        },
+      },
+    });
+
+    await wrapper
+      .find('input[placeholder="Email"]')
+      .setValue('user@example.com');
+    await wrapper.find('input[placeholder="Password"]').setValue('password');
+    await wrapper.find('form').trigger('submit', { cancelable: true });
+    await flushPromises();
+
+    expect(mocks.get).not.toHaveBeenCalled();
+    expect(wrapper.text()).not.toContain('not-an-array');
+    expect(wrapper.text()).not.toContain('123');
+    expect(mocks.toastAdd).toHaveBeenCalledWith(
+      expect.objectContaining({
+        summary: 'Login Failed',
+      }),
+    );
+  });
+
   it('uses a safe relative next path after password login', async () => {
     mocks.routeQuery = { next: '/workflow-instances' };
     const wrapper = mountComponent();
