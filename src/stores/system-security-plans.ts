@@ -107,7 +107,7 @@ export const useSystemSecurityPlanStore = defineStore(
     ): Promise<DataResponse<SystemSecurityPlanProfileBinding[]>> {
       const config = await configStore.getConfig();
       const response = await fetch(
-        `${config.API_URL}/api/oscal/system-security-plans/${id}/profiles`,
+        `${config.API_URL}/api/oscal/system-security-plans/${encodeURIComponent(id)}/profiles`,
         {
           credentials: 'include',
         },
@@ -134,7 +134,7 @@ export const useSystemSecurityPlanStore = defineStore(
     async function addProfile(id: string, profileId: string): Promise<void> {
       const config = await configStore.getConfig();
       const response = await fetch(
-        `${config.API_URL}/api/oscal/system-security-plans/${id}/profiles`,
+        `${config.API_URL}/api/oscal/system-security-plans/${encodeURIComponent(id)}/profiles`,
         {
           method: 'POST',
           headers: {
@@ -154,7 +154,7 @@ export const useSystemSecurityPlanStore = defineStore(
     async function removeProfile(id: string, profileId: string): Promise<void> {
       const config = await configStore.getConfig();
       const response = await fetch(
-        `${config.API_URL}/api/oscal/system-security-plans/${id}/profiles/${profileId}`,
+        `${config.API_URL}/api/oscal/system-security-plans/${encodeURIComponent(id)}/profiles/${encodeURIComponent(profileId)}`,
         {
           method: 'DELETE',
           credentials: 'include',

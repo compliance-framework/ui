@@ -176,7 +176,6 @@ import type { TreeNode } from '@/composables/useCatalogTree';
 import { useAuthenticatedInstance, useDataApi } from '@/composables/axios';
 import Tree from '@/volt/Tree.vue';
 import IndexControlImplementation from '@/views/control-implementations/partials/IndexControlImplementation.vue';
-import type { AxiosError } from 'axios';
 import type { Catalog, Group } from '@/oscal';
 import type { DataResponse } from '@/stores/types.ts';
 import type {
@@ -256,7 +255,7 @@ const applyingBulkSuggestions = ref(false);
 const bulkSuggestionsConfirmOpen = ref(false);
 const BULK_SUGGESTIONS_CONCURRENCY_LIMIT = 5;
 
-const error = ref<AxiosError<unknown> | null>(null);
+const error = ref<unknown>(null);
 const { data: sspRisks, execute: loadSspRisks } = useDataApi<Risk[]>(
   null,
   {},
@@ -781,7 +780,16 @@ watch(profileBindings, async () => {
   try {
     await loadResolvedProfileCatalogs();
   } catch (err) {
-    error.value = err as AxiosError<unknown>;
+    error.value = err;
+    toast.add({
+      severity: 'error',
+      summary: 'Error Loading Catalogs',
+      detail: await getErrorDetail(
+        err,
+        'An error occurred while loading profile catalogs.',
+      ),
+      life: 3000,
+    });
   }
 });
 
@@ -834,7 +842,7 @@ onMounted(async () => {
       catalogLoading.value = true;
     }
   } catch (err) {
-    error.value = err as AxiosError<unknown>;
+    error.value = err;
     toast.add({
       severity: 'error',
       summary: 'Error Loading Profile Bindings',
@@ -849,7 +857,7 @@ onMounted(async () => {
   try {
     await loadControlImplementations();
   } catch (err) {
-    error.value = err as AxiosError<unknown>;
+    error.value = err;
   }
 });
 </script>
