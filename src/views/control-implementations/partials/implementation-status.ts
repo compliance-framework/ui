@@ -56,9 +56,11 @@ export const implementationStatusCues: Record<
 
 export function implementationStatusLabel(state?: string): string | undefined {
   if (!state) return undefined;
+  const normalizedState = state.trim().toLowerCase();
   return (
-    implementationStatusOptions.find((option) => option.value === state)
-      ?.label ?? state
+    implementationStatusOptions.find(
+      (option) => option.value === normalizedState,
+    )?.label ?? state
   );
 }
 
@@ -85,7 +87,8 @@ export function uniformImplementationStatusCue(
 export function normalizeByComponentImplementationStatus<T extends ByComponent>(
   byComponent: T,
 ): T {
-  if (byComponent.implementationStatus?.state) {
+  const state = byComponent.implementationStatus?.state;
+  if (typeof state === 'string' && state.trim()) {
     return byComponent;
   }
 

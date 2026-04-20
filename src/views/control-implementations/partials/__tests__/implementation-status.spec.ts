@@ -9,8 +9,8 @@ import {
 
 function byComponent(state?: string): ByComponent {
   return {
-    uuid: crypto.randomUUID(),
-    componentUuid: crypto.randomUUID(),
+    uuid: '11111111-1111-4111-8111-111111111111',
+    componentUuid: '22222222-2222-4222-8222-222222222222',
     description: 'implementation',
     implementationStatus: state
       ? {
@@ -52,7 +52,7 @@ describe('implementation-status helpers', () => {
     expect(uniformImplementationStatusCue([byComponent('custom')])).toBeNull();
   });
 
-  it('removes empty implementation status before persistence', () => {
+  it('removes empty or whitespace-only implementation status before persistence', () => {
     const normalized = normalizeByComponentImplementationStatus({
       ...byComponent(),
       implementationStatus: {
@@ -62,6 +62,16 @@ describe('implementation-status helpers', () => {
     });
 
     expect(normalized.implementationStatus).toBeUndefined();
+
+    const whitespaceNormalized = normalizeByComponentImplementationStatus({
+      ...byComponent(),
+      implementationStatus: {
+        state: '   ',
+        remarks: 'will also be discarded',
+      },
+    });
+
+    expect(whitespaceNormalized.implementationStatus).toBeUndefined();
   });
 
   it('keeps valid implementation status before persistence', () => {
@@ -74,5 +84,6 @@ describe('implementation-status helpers', () => {
       remarks: 'not-applicable remarks',
     });
     expect(implementationStatusLabel('not-applicable')).toBe('Not Applicable');
+    expect(implementationStatusLabel(' Implemented ')).toBe('Implemented');
   });
 });
