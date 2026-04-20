@@ -82,16 +82,15 @@
               <Badge class="text-base">{{ slotProps.node.data.id }}</Badge>
               <h4>{{ slotProps.node.data.title }}</h4>
               <Badge class="text-base">{{
-                controlImplementations[slotProps.node.data.id]?.byComponents
-                  ?.length || 0
+                controlByComponentCount(slotProps.node.data.id)
               }}</Badge>
               <Button
+                as="RouterLink"
+                :to="{
+                  name: 'controls:detail',
+                  params: { controlId: slotProps.node.data.id },
+                }"
                 variant="text"
-                @click="
-                  openImplementationDrawer(
-                    controlImplementations[slotProps.node.data.id],
-                  )
-                "
                 ><BIconEye
               /></Button>
               <RiskIndicatorBadge
@@ -118,38 +117,6 @@
       </Tree>
     </div>
   </div>
-
-  <Drawer
-    v-model:visible="controlDrawerOpen"
-    header="Implementation"
-    position="right"
-    class="w-full! md:w-1/2! lg:w-3/5!"
-  >
-    <div class="flex items-center mb-4 gap-x-4">
-      <h4 class="font-medium text-xl">Components</h4>
-      <Badge
-        :value="selectedImplementedRequirement?.byComponents?.length"
-        severity="info"
-      />
-    </div>
-    <div
-      v-for="(
-        byComponent, index
-      ) in selectedImplementedRequirement?.byComponents || []"
-      :key="byComponent.uuid"
-    >
-      <div
-        class="h-0.5 w-full bg-gray-200 dark:bg-slate-700 my-4"
-        v-if="index !== 0"
-      ></div>
-      <StatementByComponent
-        :by-component="byComponent"
-        :control-id="selectedImplementedRequirement?.controlId"
-        :ssp-risks="sspRisks || []"
-        :risk-fetch-limit="RISK_FETCH_LIMIT"
-      />
-    </div>
-  </Drawer>
 </template>
 
 <script setup lang="ts">
@@ -181,8 +148,6 @@ import type {
 } from '@/oscal';
 import Button from '@/volt/Button.vue';
 import { BIconEye } from 'bootstrap-icons-vue';
-import Drawer from '@/volt/Drawer.vue';
-import StatementByComponent from './partials/StatementByComponent.vue';
 import RiskIndicatorBadge from './partials/RiskIndicatorBadge.vue';
 import { useToast } from 'primevue/usetoast';
 import { useConfirm } from 'primevue/useconfirm';
@@ -208,11 +173,6 @@ const toast = useToast();
 const confirm = useConfirm();
 const axios = useAuthenticatedInstance();
 const router = useRouter();
-
-const controlDrawerOpen = computed({
-  get: () => uiStore.controlImplementationDrawerOpen,
-  set: (val) => uiStore.setControlImplementationDrawerOpen(val),
-});
 
 const expandedKeys = computed({
   get: () => uiStore.controlImplementationExpandedKeys,
@@ -242,7 +202,6 @@ const loading = computed<boolean>(
 const controlImplementations = ref<{ [key: string]: ImplementedRequirement }>(
   {},
 );
-const selectedImplementedRequirement = ref<ImplementedRequirement>();
 const RISK_FETCH_LIMIT = 100;
 const loadedSspRisksFor = ref<string | null>(null);
 const preparingBulkSuggestions = ref(false);
@@ -373,6 +332,21 @@ function openControlRisks(controlId?: string) {
   });
 }
 
+function controlByComponentCount(controlId?: string): number {
+  if (!controlId) {
+    return 0;
+  }
+  const requirement = controlImplementations.value[controlId];
+  if (!requirement) {
+    return 0;
+  }
+
+  return (requirement.statements ?? []).reduce(
+    (count, statement) => count + (statement.byComponents?.length ?? 0),
+    requirement.byComponents?.length ?? 0,
+  );
+}
+
 function getStatementWorkItems(): Array<{
   requirement: ImplementedRequirement;
   statement: Statement;
@@ -397,32 +371,12 @@ async function loadControlImplementations() {
   const implementation = implementationResponse?.value?.data;
   if (!implementation) {
     controlImplementations.value = {};
-    selectedImplementedRequirement.value = undefined;
-    uiStore.controlImplementationSelectedRequirementId = null;
-    uiStore.controlImplementationDrawerOpen = false;
     return;
   }
 
   const nextMap: { [key: string]: ImplementedRequirement } = {};
-  let selectedRequirementFound = false;
   for (const impl of implementation.implementedRequirements) {
     nextMap[impl.controlId] = impl;
-    if (
-      uiStore.controlImplementationSelectedRequirementId === impl.uuid &&
-      uiStore.controlImplementationDrawerOpen
-    ) {
-      selectedImplementedRequirement.value = impl;
-      selectedRequirementFound = true;
-    }
-  }
-  if (
-    uiStore.controlImplementationDrawerOpen &&
-    uiStore.controlImplementationSelectedRequirementId &&
-    !selectedRequirementFound
-  ) {
-    selectedImplementedRequirement.value = undefined;
-    uiStore.controlImplementationSelectedRequirementId = null;
-    uiStore.controlImplementationDrawerOpen = false;
   }
   controlImplementations.value = nextMap;
 }
@@ -788,12 +742,6 @@ watch(profileBindings, async () => {
   }
 });
 
-function openImplementationDrawer(req: ImplementedRequirement) {
-  uiStore.setControlImplementationDrawerOpen(true);
-  uiStore.setControlImplementationSelectedRequirementId(req.uuid);
-  selectedImplementedRequirement.value = req;
-}
-
 watch(
   () => systemStore.system.securityPlan?.uuid,
   async (sspId) => {
@@ -818,16 +766,6 @@ watch(
     }
   },
   { immediate: true },
-);
-
-watch(
-  () => uiStore.controlImplementationDrawerOpen,
-  (isOpen) => {
-    if (!isOpen && uiStore.controlImplementationSelectedRequirementId) {
-      uiStore.setControlImplementationSelectedRequirementId(null);
-      selectedImplementedRequirement.value = undefined;
-    }
-  },
 );
 
 onMounted(async () => {

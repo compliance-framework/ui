@@ -19,16 +19,6 @@ export const useUIStore = defineStore(
     const controlImplementationExpandedKeys = ref<Record<string, boolean>>({});
 
     /**
-     * ID of the currently selected requirement in the Control Implementation view.
-     */
-    const controlImplementationSelectedRequirementId = ref<string | null>(null);
-
-    /**
-     * Controls the visibility of the detail drawer in the Control Implementation view.
-     */
-    const controlImplementationDrawerOpen = ref(false);
-
-    /**
      * The active filter string for the Evidence view.
      */
     const evidenceFilter = ref<string>('');
@@ -44,22 +34,6 @@ export const useUIStore = defineStore(
     }
 
     /**
-     * Sets the currently selected requirement ID.
-     * @param id - The UUID of the requirement or null to clear selection.
-     */
-    function setControlImplementationSelectedRequirementId(id: string | null) {
-      controlImplementationSelectedRequirementId.value = id;
-    }
-
-    /**
-     * Controls the open/closed state of the Control Implementation drawer.
-     * @param open - Whether the drawer should be open.
-     */
-    function setControlImplementationDrawerOpen(open: boolean) {
-      controlImplementationDrawerOpen.value = open;
-    }
-
-    /**
      * Updates the evidence search filter.
      * @param filter - The search query string.
      */
@@ -69,12 +43,8 @@ export const useUIStore = defineStore(
 
     return {
       controlImplementationExpandedKeys,
-      controlImplementationSelectedRequirementId,
-      controlImplementationDrawerOpen,
       evidenceFilter,
       setControlImplementationExpandedKeys,
-      setControlImplementationSelectedRequirementId,
-      setControlImplementationDrawerOpen,
       setEvidenceFilter,
     };
   },

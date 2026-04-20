@@ -53,6 +53,14 @@ const axios = useAuthenticatedInstance();
 
 const showError = ref(false);
 
+const implementationStatusOptions = [
+  { label: 'Implemented', value: 'implemented' },
+  { label: 'Partial', value: 'partial' },
+  { label: 'Planned', value: 'planned' },
+  { label: 'Alternative', value: 'alternative' },
+  { label: 'Not Applicable', value: 'not-applicable' },
+];
+
 const showCreateStatementModal = ref(false);
 const showEditStatementModal = ref(false);
 const showCreateComponentModal = ref(false);
@@ -102,16 +110,38 @@ const {
   implementation,
   sspId: providedSspId,
   partid,
+  displaySections,
 } = defineProps<{
   statement?: Statement;
   implementation: ImplementedRequirement;
   sspId?: string;
   partid?: string;
+  displaySections?: Array<'metadata' | 'components' | 'evidence' | 'create'>;
 }>();
 
 const RISK_FETCH_LIMIT = 100;
 
 const localStatement = ref<Statement | undefined>(statement);
+const activeDisplaySections = computed(
+  () => displaySections ?? ['metadata', 'components', 'evidence'],
+);
+const showMetadataSection = computed(() =>
+  activeDisplaySections.value.includes('metadata'),
+);
+const showComponentsSection = computed(() =>
+  activeDisplaySections.value.includes('components'),
+);
+const showEvidenceSection = computed(() =>
+  activeDisplaySections.value.includes('evidence'),
+);
+const showCreateStatementAction = computed(() =>
+  activeDisplaySections.value.includes('create'),
+);
+const createOnlySection = computed(
+  () =>
+    activeDisplaySections.value.length === 1 &&
+    activeDisplaySections.value[0] === 'create',
+);
 
 const resolvedSspId = computed(() => {
   if (providedSspId) return providedSspId;
@@ -302,12 +332,34 @@ watch(
   { immediate: true },
 );
 
-const newByComponent = ref<ByComponent>({
-  uuid: uuidv4(),
-  implementationStatus: {
-    state: '',
-  },
-} as ByComponent);
+function buildNewByComponent(): ByComponent {
+  return {
+    uuid: uuidv4(),
+    implementationStatus: {
+      state: '',
+    },
+  } as ByComponent;
+}
+
+function buildByComponentCreatePayload(byComponent: ByComponent): ByComponent {
+  const payload: ByComponent = {
+    ...byComponent,
+    uuid: uuidv4(),
+  };
+  return normalizeByComponentPayload(payload);
+}
+
+function normalizeByComponentPayload(byComponent: ByComponent): ByComponent {
+  const payload: ByComponent = {
+    ...byComponent,
+  };
+  if (!payload.implementationStatus?.state) {
+    delete payload.implementationStatus;
+  }
+  return payload;
+}
+
+const newByComponent = ref<ByComponent>(buildNewByComponent());
 const selectedComponent = ref();
 watch(selectedComponent, () => {
   // When the selected component changes, update the model
@@ -499,6 +551,7 @@ async function fetchSuggestedComponents() {
 async function createStatementByComponent(
   componentUuid: string,
   description = '',
+  implementationStatus = newByComponent.value.implementationStatus,
 ): Promise<ByComponent | undefined> {
   const sspId = resolvedSspId.value;
   const statementUuid = localStatement.value?.uuid;
@@ -526,13 +579,13 @@ async function createStatementByComponent(
     buildByComponentsEndpoint(sspId, implementation.uuid, statementUuid),
     {
       data: {
-        uuid: uuidv4(),
-        componentUuid,
-        description,
-        implementationStatus: {
-          state: '',
-        },
-      } as ByComponent,
+        ...buildByComponentCreatePayload({
+          ...newByComponent.value,
+          componentUuid,
+          description,
+          implementationStatus,
+        } as ByComponent),
+      },
     },
   );
 
@@ -614,11 +667,8 @@ function resetCreateComponentForm() {
   selectedComponent.value = null;
 
   newByComponent.value = {
-    uuid: uuidv4(),
-    implementationStatus: {
-      state: '',
-    },
-  } as ByComponent;
+    ...buildNewByComponent(),
+  };
 }
 
 async function deleteByComponent(byComp: ByComponent) {
@@ -655,7 +705,7 @@ async function deleteByComponent(byComp: ByComponent) {
     setCreateComponentForm(false);
     emit('updated', localStatement.value);
     newByComponent.value = {
-      uuid: uuidv4(),
+      ...buildNewByComponent(),
     } as ByComponent;
   } catch (err) {
     console.error(err);
@@ -682,13 +732,13 @@ async function updateByComponent(byComp: ByComponent) {
     await executeUpdate(
       `${buildByComponentsEndpoint(sspId, implementation.uuid, statementUuid)}/${byComp.uuid}`,
       {
-        data: byComp,
+        data: normalizeByComponentPayload(byComp),
       },
     );
     setCreateComponentForm(false);
     emit('updated', localStatement.value);
     newByComponent.value = {
-      uuid: uuidv4(),
+      ...buildNewByComponent(),
     } as ByComponent;
   } catch (err) {
     console.error(err);
@@ -715,6 +765,7 @@ async function createByComponent() {
     const created = await createStatementByComponent(
       newByComponent.value.componentUuid,
       newByComponent.value.description ?? '',
+      newByComponent.value.implementationStatus,
     );
     if (!created) {
       console.error('Failed to create: response data is missing');
@@ -724,9 +775,7 @@ async function createByComponent() {
       localStatement.value.byComponents = [];
     }
     localStatement.value.byComponents.push(created);
-    newByComponent.value = {
-      uuid: uuidv4(),
-    } as ByComponent;
+    newByComponent.value = buildNewByComponent();
     setCreateComponentForm(false);
     emit('updated', localStatement.value);
   } catch (error) {
@@ -1335,9 +1384,12 @@ async function submitEvidenceLinking() {
 </script>
 
 <template>
-  <div class="pb-24">
+  <div :class="createOnlySection ? '' : 'pb-24'">
     <div v-if="localStatement">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+      <div
+        v-if="showMetadataSection"
+        class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4"
+      >
         <div>
           <TooltipTitle
             text="Statement ID"
@@ -1380,7 +1432,7 @@ async function submitEvidenceLinking() {
         </div>
       </div>
 
-      <div class="flex items-center mb-4 gap-x-4">
+      <div v-if="showMetadataSection" class="flex items-center mb-4 gap-x-4">
         <Button
           label="Edit Statement"
           @click="showEditStatementModal = true"
@@ -1390,7 +1442,7 @@ async function submitEvidenceLinking() {
         </Button>
       </div>
 
-      <div class="mb-6">
+      <div v-if="showComponentsSection" class="mb-6">
         <div class="flex items-center justify-between gap-4 mb-3">
           <h4 class="m-0 font-medium text-base">Suggested Components</h4>
           <Button
@@ -1469,7 +1521,7 @@ async function submitEvidenceLinking() {
         </div>
       </div>
 
-      <div class="flex items-center mb-4 gap-x-4">
+      <div v-if="showComponentsSection" class="flex items-center mb-4 gap-x-4">
         <TooltipTitle
           text="Components"
           tooltip-key="control.implementation.components"
@@ -1493,7 +1545,7 @@ async function submitEvidenceLinking() {
           ]"
         />
       </div>
-      <template v-if="localStatement">
+      <template v-if="showComponentsSection && localStatement">
         <div
           v-for="(byComponent, index) in localStatement.byComponents || []"
           :key="byComponent.uuid"
@@ -1513,7 +1565,10 @@ async function submitEvidenceLinking() {
         </div>
       </template>
 
-      <form @submit.prevent="createByComponent" v-if="showCreateComponentForm">
+      <form
+        @submit.prevent="createByComponent"
+        v-if="showComponentsSection && showCreateComponentForm"
+      >
         <div class="h-0.5 dark:bg-slate-800 bg-gray-400 w-full my-4"></div>
         <div class="flex justify-between items-center mb-4">
           <h4 class="m-0">New Component Implementation</h4>
@@ -1551,6 +1606,39 @@ async function submitEvidenceLinking() {
             @keyup.ctrl.enter="createByComponent"
           />
         </div>
+        <div class="mb-2 grid grid-cols-1 gap-3 md:grid-cols-2">
+          <div>
+            <label
+              class="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-300"
+              >Implementation Status</label
+            >
+            <select
+              v-model="newByComponent.implementationStatus!.state"
+              class="w-full rounded-md border border-gray-300 bg-white p-2 text-sm text-gray-900 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200"
+            >
+              <option value="">No status</option>
+              <option
+                v-for="option in implementationStatusOptions"
+                :key="option.value"
+                :value="option.value"
+              >
+                {{ option.label }}
+              </option>
+            </select>
+          </div>
+          <div>
+            <label
+              class="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-300"
+              >Status Remarks</label
+            >
+            <Textarea
+              v-model="newByComponent.implementationStatus!.remarks"
+              rows="2"
+              class="resize-none w-full"
+              placeholder="Implementation status remarks"
+            />
+          </div>
+        </div>
         <div class="text-right">
           <secondary-button @click="resetCreateComponentForm"
             >Cancel</secondary-button
@@ -1564,7 +1652,7 @@ async function submitEvidenceLinking() {
       </form>
 
       <!-- Evidence Linking Section -->
-      <div class="mt-8">
+      <div v-if="showEvidenceSection" class="mt-8">
         <div class="flex items-center mb-4 gap-x-4">
           <TooltipTitle
             text="Evidence Linking"
@@ -1818,17 +1906,25 @@ async function submitEvidenceLinking() {
       </div>
     </div>
     <div v-else>
-      <Button
-        label="Create Statement"
-        @click="showCreateStatementModal = true"
-        class="text-green-600 hover:text-green-800 dark:text-green-400 disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-      </Button>
-      <div class="mt-6">
+      <template v-if="showCreateStatementAction">
+        <Button
+          label="Create Statement"
+          @click="showCreateStatementModal = true"
+          class="text-green-600 hover:text-green-800 dark:text-green-400 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+        </Button>
+      </template>
+      <div v-if="showComponentsSection" class="mt-6">
         <h4 class="m-0 mb-2 font-medium text-base">Suggested Components</h4>
         <p class="text-sm text-gray-500">
           Suggested components will be available after you create this
           statement.
+        </p>
+      </div>
+      <div v-if="showEvidenceSection" class="mt-6">
+        <h4 class="m-0 mb-2 font-medium text-base">Evidence Linking</h4>
+        <p class="text-sm text-gray-500">
+          Evidence dashboards can be linked after you create this statement.
         </p>
       </div>
     </div>

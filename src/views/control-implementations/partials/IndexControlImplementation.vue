@@ -1,43 +1,60 @@
 <script setup lang="ts">
-import { v4 as uuidv4 } from 'uuid';
-import Badge from '@/volt/Badge.vue';
-import Drawer from '@/volt/Drawer.vue';
 import type { ImplementedRequirement, Statement } from '@/oscal';
 import PartDisplay from '@/components/PartDisplay.vue';
 import type { Part } from '@/oscal';
-import { ref, watchEffect, watch } from 'vue';
-import { useToggle } from '@/composables/useToggle';
-import ControlStatementImplementation from '@/views/control-implementations/partials/ControlStatementImplementation.vue';
-import { useSystemStore } from '@/stores/system.ts';
-import { useDataApi, decamelizeKeys } from '@/composables/axios';
+import { ref, watchEffect } from 'vue';
+import { useRouter } from 'vue-router';
 import type { Control } from '@/oscal';
-import TooltipTitle from '@/components/TooltipTitle.vue';
 
 const { control, implementation } = defineProps<{
   control: Control;
   implementation: ImplementedRequirement | undefined | null;
 }>();
-const selectedPart = ref<Part>();
-const { value: statementDrawerOpen, set: setStatementDrawer } = useToggle();
-const drawerLoading = useToggle();
-const { system } = useSystemStore();
-const showCreateStatementModal = ref(false);
-
-const selectedImplementation = ref<ImplementedRequirement | undefined>();
+const router = useRouter();
 const statements = ref<{ [key: string]: Statement }>({});
+type ImplementationStatusCue = {
+  label: string;
+  countClass: string;
+  panelClass: string;
+};
 
-// Watch for changes in the implementation prop and update local ref
-watch(
-  () => implementation,
-  (newImplementation) => {
-    if (newImplementation) {
-      selectedImplementation.value = newImplementation;
-    } else {
-      selectedImplementation.value = undefined;
-    }
+const neutralCountClass =
+  'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200';
+const neutralPanelClass =
+  'border-transparent bg-transparent dark:border-transparent dark:bg-transparent';
+const implementationStatusCues: Record<string, ImplementationStatusCue> = {
+  implemented: {
+    label: 'Implemented',
+    countClass: 'bg-blue-600 text-white dark:bg-blue-400 dark:text-blue-950',
+    panelClass:
+      'border-blue-200 bg-blue-50/60 dark:border-blue-900 dark:bg-blue-950/20',
   },
-  { immediate: true },
-);
+  partial: {
+    label: 'Partial',
+    countClass: 'bg-amber-500 text-white dark:bg-amber-400 dark:text-amber-950',
+    panelClass:
+      'border-amber-200 bg-amber-50/60 dark:border-amber-900 dark:bg-amber-950/20',
+  },
+  planned: {
+    label: 'Planned',
+    countClass: 'bg-sky-600 text-white dark:bg-sky-400 dark:text-sky-950',
+    panelClass:
+      'border-sky-200 bg-sky-50/60 dark:border-sky-900 dark:bg-sky-950/20',
+  },
+  alternative: {
+    label: 'Alternative',
+    countClass:
+      'bg-violet-600 text-white dark:bg-violet-400 dark:text-violet-950',
+    panelClass:
+      'border-violet-200 bg-violet-50/60 dark:border-violet-900 dark:bg-violet-950/20',
+  },
+  'not-applicable': {
+    label: 'Not Applicable',
+    countClass: 'bg-gray-500 text-white dark:bg-gray-400 dark:text-gray-950',
+    panelClass:
+      'border-gray-300 bg-gray-50 dark:border-slate-600 dark:bg-slate-800/70',
+  },
+};
 
 watchEffect(() => {
   statements.value = {};
@@ -45,15 +62,6 @@ watchEffect(() => {
     statements.value[statement.statementId] = statement;
   }
 });
-
-const { execute: executeCreate } = useDataApi<ImplementedRequirement>(
-  `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/control-implementation/implemented-requirements`,
-  {
-    method: 'POST',
-    transformRequest: [decamelizeKeys],
-  },
-  { immediate: false },
-);
 
 function getLabel(part: Part): string {
   if (part.props) {
@@ -94,41 +102,30 @@ function onMouseLeave(e: MouseEvent) {
   }
 }
 
-function updateStatement(statement: Statement) {
-  statements.value[statement.statementId] = statement;
-  showCreateStatementModal.value = false;
+function onPartSelect(e: Event, part: Part) {
+  e.preventDefault();
+  void router.push({
+    name: 'controls:detail',
+    params: { controlId: control.id },
+    query: { statementId: part.id },
+  });
 }
 
-async function onPartSelect(e: Event, part: Part) {
-  e.preventDefault();
-  selectedPart.value = part;
-  drawerLoading.set(true);
-
-  if (!selectedImplementation.value) {
-    try {
-      const response = await executeCreate({
-        data: {
-          uuid: uuidv4(),
-          controlId: control.id,
-        } as ImplementedRequirement,
-      });
-      if (response.data.value && response.data.value.data) {
-        selectedImplementation.value = response.data.value.data;
-      } else {
-        throw new Error(
-          'Failed to create implemented requirement: response data is missing.',
-        );
-      }
-    } catch (error) {
-      console.error('Error creating implemented requirement:', error);
-      setStatementDrawer(false);
-      drawerLoading.set(false);
-      return;
-    }
+function statementStatusCue(part: Part): ImplementationStatusCue | null {
+  const byComponents = statements.value[part.id]?.byComponents ?? [];
+  if (byComponents.length === 0) {
+    return null;
   }
 
-  setStatementDrawer(true);
-  drawerLoading.set(false);
+  const states = byComponents.map((byComponent) =>
+    byComponent.implementationStatus?.state?.trim().toLowerCase(),
+  );
+  const firstState = states[0];
+  if (!firstState || !states.every((state) => state === firstState)) {
+    return null;
+  }
+
+  return implementationStatusCues[firstState] ?? null;
 }
 </script>
 
@@ -148,51 +145,38 @@ async function onPartSelect(e: Event, part: Part) {
         @selected="onPartSelect"
       >
         <template #default="{ part }">
-          <div class="p-0.5">
+          <div
+            class="rounded-md border p-2"
+            :class="statementStatusCue(part)?.panelClass ?? neutralPanelClass"
+          >
             <p v-if="getText(part)" class="prose prose-slate dark:prose-invert">
               {{ getText(part) ?? '' }}
             </p>
-            <template v-if="statements[part.id]">
-              <Badge
-                class="ml-2"
-                v-if="statements[part.id].byComponents"
-                :value="statements[part.id].byComponents?.length"
-                severity="info"
-              />
-            </template>
+            <div
+              v-if="statements[part.id]?.byComponents"
+              class="mt-2 flex flex-wrap items-center gap-2"
+            >
+              <span
+                class="rounded px-2 py-0.5 text-xs font-bold"
+                :class="
+                  statementStatusCue(part)?.countClass ?? neutralCountClass
+                "
+              >
+                {{ statements[part.id].byComponents?.length }}
+              </span>
+              <span
+                v-if="statementStatusCue(part)"
+                class="rounded px-2 py-0.5 text-xs font-medium"
+                :class="statementStatusCue(part)?.countClass"
+              >
+                {{ statementStatusCue(part)?.label }}
+              </span>
+            </div>
           </div>
         </template>
       </PartDisplay>
     </div>
   </div>
-
-  <Drawer
-    v-model:visible="statementDrawerOpen"
-    position="right"
-    class="w-full! md:w-1/2! lg:w-3/5!"
-  >
-    <template #header>
-      <TooltipTitle
-        text="Implementation Statement"
-        tooltip-key="system.implementation.statement.drawer"
-        position="bottom"
-      />
-    </template>
-    <ControlStatementImplementation
-      v-if="selectedPart && selectedImplementation"
-      @updated="updateStatement"
-      :implementation="selectedImplementation"
-      :ssp-id="system.securityPlan?.uuid"
-      :statement="statements[selectedPart.id]"
-      :partid="selectedPart.id"
-    />
-    <div v-else-if="selectedPart && !selectedImplementation" class="p-4">
-      <p class="text-gray-600">Loading implementation...</p>
-    </div>
-    <div v-else class="p-4">
-      <p class="text-gray-600">No part selected</p>
-    </div>
-  </Drawer>
 </template>
 
 <style>

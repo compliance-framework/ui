@@ -17,6 +17,14 @@ import {
 } from '@/utils/risk-register';
 import RiskIndicatorBadge from './RiskIndicatorBadge.vue';
 
+const implementationStatusOptions = [
+  { label: 'Implemented', value: 'implemented' },
+  { label: 'Partial', value: 'partial' },
+  { label: 'Planned', value: 'planned' },
+  { label: 'Alternative', value: 'alternative' },
+  { label: 'Not Applicable', value: 'not-applicable' },
+];
+
 const { byComponent, controlId, sspRisks, riskFetchLimit } = defineProps<{
   byComponent: ByComponent;
   controlId?: string;
@@ -43,6 +51,40 @@ const { value: editing, set: setEditing } = useToggle();
 const { data: component } = useDataApi<SystemComponent>(
   `/api/oscal/system-security-plans/${system.securityPlan?.uuid as string}/system-implementation/components/${byComponent.componentUuid}`,
 );
+
+const statusState = computed({
+  get: () => localComponent.value.implementationStatus?.state ?? '',
+  set: (state: string) => {
+    if (!state) {
+      localComponent.value.implementationStatus = undefined;
+      return;
+    }
+    localComponent.value.implementationStatus = {
+      ...(localComponent.value.implementationStatus ?? {}),
+      state,
+    };
+  },
+});
+
+const statusRemarks = computed({
+  get: () => localComponent.value.implementationStatus?.remarks ?? '',
+  set: (remarks: string) => {
+    if (!localComponent.value.implementationStatus) {
+      localComponent.value.implementationStatus = {
+        state: '',
+      };
+    }
+    localComponent.value.implementationStatus.remarks = remarks;
+  },
+});
+
+const implementationStatusLabel = computed(() => {
+  const state = byComponent.implementationStatus?.state;
+  return (
+    implementationStatusOptions.find((option) => option.value === state)
+      ?.label ?? state
+  );
+});
 
 function normalizeId(value?: string): string {
   return (value || '').trim().toLowerCase();
@@ -103,6 +145,9 @@ const highestSeverity = computed(() => {
 });
 
 function save() {
+  if (!localComponent.value.implementationStatus?.state) {
+    localComponent.value.implementationStatus = undefined;
+  }
   emit('save', localComponent.value);
   setEditing(false);
 }
@@ -174,6 +219,39 @@ function openRisksForControl() {
         placeholder="Description"
         @keyup.ctrl.enter="save"
       />
+      <div class="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
+        <div>
+          <label
+            class="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-300"
+            >Implementation Status</label
+          >
+          <select
+            v-model="statusState"
+            class="w-full rounded-md border border-gray-300 bg-white p-2 text-sm text-gray-900 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200"
+          >
+            <option value="">No status</option>
+            <option
+              v-for="option in implementationStatusOptions"
+              :key="option.value"
+              :value="option.value"
+            >
+              {{ option.label }}
+            </option>
+          </select>
+        </div>
+        <div>
+          <label
+            class="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-300"
+            >Status Remarks</label
+          >
+          <Textarea
+            v-model="statusRemarks"
+            autoResize
+            class="resize-none w-full"
+            placeholder="Implementation status remarks"
+          />
+        </div>
+      </div>
       <div class="flex gap-x-2">
         <secondary-button @click="cancel">Cancel</secondary-button>
         <primary-button @click="save" v-tooltip="'ctrl + enter to save'"
@@ -181,6 +259,21 @@ function openRisksForControl() {
         >
       </div>
     </template>
+  </div>
+
+  <div v-if="byComponent.implementationStatus?.state" class="mt-2 text-xs">
+    <span class="font-medium text-gray-700 dark:text-slate-300"
+      >Implementation Status:</span
+    >
+    <span class="ml-1 text-gray-600 dark:text-slate-400">
+      {{ implementationStatusLabel }}
+    </span>
+    <div
+      v-if="byComponent.implementationStatus.remarks"
+      class="mt-1 text-gray-600 dark:text-slate-400"
+    >
+      {{ byComponent.implementationStatus.remarks }}
+    </div>
   </div>
 
   <!-- Export Information -->
@@ -244,23 +337,4 @@ function openRisksForControl() {
       </div>
     </div>
   </div>
-
-  <!-- Implementation Status -->
-  <!-- <div v-if="byComponent.implementationStatus" class="mt-2 text-xs">
-    <span class="font-medium text-purple-700 dark:text-purple-400"
-      >Implementation Status:</span
-    >
-    <div class="ml-2">
-      <span class="font-medium text-purple-700 dark:text-purple-400"
-        >State: {{ byComponent.implementationStatus.state }}</span
-      >
-    </div>
-    <div v-if="byComponent.implementationStatus.remarks">
-      <div class="ml-2">
-        <span class="font-medium text-purple-700 dark:text-purple-400"
-          >Remarks: {{ byComponent.implementationStatus.remarks }}</span
-        >
-      </div>
-    </div>
-  </div> -->
 </template>
