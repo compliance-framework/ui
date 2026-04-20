@@ -56,11 +56,12 @@ export const implementationStatusCues: Record<
 
 export function implementationStatusLabel(state?: string): string | undefined {
   if (!state) return undefined;
-  const normalizedState = state.trim().toLowerCase();
+  const trimmedState = state.trim();
+  const normalizedState = trimmedState.toLowerCase();
   return (
     implementationStatusOptions.find(
       (option) => option.value === normalizedState,
-    )?.label ?? state
+    )?.label ?? trimmedState
   );
 }
 

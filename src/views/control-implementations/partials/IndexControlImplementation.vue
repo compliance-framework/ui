@@ -172,7 +172,10 @@ function statementStatusCue(part: Part): ImplementationStatusCue | null {
         <template #default="{ part }">
           <div
             class="rounded-md border p-2"
-            :class="statementStatusCue(part)?.panelClass ?? neutralPanelClass"
+            :class="
+              statementStatusCuesByPartId.get(part.id)?.panelClass ??
+              neutralPanelClass
+            "
           >
             <p v-if="getText(part)" class="prose prose-slate dark:prose-invert">
               {{ getText(part) ?? '' }}
@@ -184,17 +187,18 @@ function statementStatusCue(part: Part): ImplementationStatusCue | null {
               <span
                 class="rounded px-2 py-0.5 text-xs font-bold"
                 :class="
-                  statementStatusCue(part)?.countClass ?? neutralCountClass
+                  statementStatusCuesByPartId.get(part.id)?.countClass ??
+                  neutralCountClass
                 "
               >
                 {{ statements[part.id].byComponents?.length }}
               </span>
               <span
-                v-if="statementStatusCue(part)"
+                v-if="statementStatusCuesByPartId.get(part.id)"
                 class="rounded px-2 py-0.5 text-xs font-medium"
-                :class="statementStatusCue(part)?.countClass"
+                :class="statementStatusCuesByPartId.get(part.id)?.countClass"
               >
-                {{ statementStatusCue(part)?.label }}
+                {{ statementStatusCuesByPartId.get(part.id)?.label }}
               </span>
             </div>
           </div>

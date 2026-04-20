@@ -684,9 +684,7 @@ function resetCreateComponentForm() {
   showError.value = false;
   selectedComponent.value = null;
 
-  newByComponent.value = {
-    ...buildNewByComponent(),
-  };
+  newByComponent.value = buildNewByComponent();
 }
 
 async function deleteByComponent(byComp: ByComponent) {
@@ -722,9 +720,7 @@ async function deleteByComponent(byComp: ByComponent) {
     localStatement.value = updatedStatement.value;
     setCreateComponentForm(false);
     emit('updated', localStatement.value);
-    newByComponent.value = {
-      ...buildNewByComponent(),
-    } as ByComponent;
+    newByComponent.value = buildNewByComponent();
   } catch (err) {
     console.error(err);
   }
@@ -755,9 +751,7 @@ async function updateByComponent(byComp: ByComponent) {
     );
     setCreateComponentForm(false);
     emit('updated', localStatement.value);
-    newByComponent.value = {
-      ...buildNewByComponent(),
-    } as ByComponent;
+    newByComponent.value = buildNewByComponent();
   } catch (err) {
     console.error(err);
   }
