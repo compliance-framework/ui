@@ -1,16 +1,28 @@
 <script setup lang="ts">
+import { v4 as uuidv4 } from 'uuid';
+import Drawer from '@/volt/Drawer.vue';
 import type { ImplementedRequirement, Statement } from '@/oscal';
 import PartDisplay from '@/components/PartDisplay.vue';
 import type { Part } from '@/oscal';
-import { ref, watchEffect } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, watchEffect, watch } from 'vue';
+import { useToggle } from '@/composables/useToggle';
+import ControlStatementImplementation from '@/views/control-implementations/partials/ControlStatementImplementation.vue';
+import { useSystemStore } from '@/stores/system.ts';
+import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import type { Control } from '@/oscal';
+import TooltipTitle from '@/components/TooltipTitle.vue';
 
 const { control, implementation } = defineProps<{
   control: Control;
   implementation: ImplementedRequirement | undefined | null;
 }>();
-const router = useRouter();
+const selectedPart = ref<Part>();
+const { value: statementDrawerOpen, set: setStatementDrawer } = useToggle();
+const drawerLoading = useToggle();
+const { system } = useSystemStore();
+const showCreateStatementModal = ref(false);
+
+const selectedImplementation = ref<ImplementedRequirement | undefined>();
 const statements = ref<{ [key: string]: Statement }>({});
 type ImplementationStatusCue = {
   label: string;
@@ -63,6 +75,27 @@ watchEffect(() => {
   }
 });
 
+watch(
+  () => implementation,
+  (newImplementation) => {
+    if (newImplementation) {
+      selectedImplementation.value = newImplementation;
+    } else {
+      selectedImplementation.value = undefined;
+    }
+  },
+  { immediate: true },
+);
+
+const { execute: executeCreate } = useDataApi<ImplementedRequirement>(
+  `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/control-implementation/implemented-requirements`,
+  {
+    method: 'POST',
+    transformRequest: [decamelizeKeys],
+  },
+  { immediate: false },
+);
+
 function getLabel(part: Part): string {
   if (part.props) {
     for (const prop of part.props) {
@@ -102,13 +135,41 @@ function onMouseLeave(e: MouseEvent) {
   }
 }
 
-function onPartSelect(e: Event, part: Part) {
+function updateStatement(statement: Statement) {
+  statements.value[statement.statementId] = statement;
+  showCreateStatementModal.value = false;
+}
+
+async function onPartSelect(e: Event, part: Part) {
   e.preventDefault();
-  void router.push({
-    name: 'controls:detail',
-    params: { controlId: control.id },
-    query: { statementId: part.id },
-  });
+  selectedPart.value = part;
+  drawerLoading.set(true);
+
+  if (!selectedImplementation.value) {
+    try {
+      const response = await executeCreate({
+        data: {
+          uuid: uuidv4(),
+          controlId: control.id,
+        } as ImplementedRequirement,
+      });
+      if (response.data.value && response.data.value.data) {
+        selectedImplementation.value = response.data.value.data;
+      } else {
+        throw new Error(
+          'Failed to create implemented requirement: response data is missing.',
+        );
+      }
+    } catch (error) {
+      console.error('Error creating implemented requirement:', error);
+      setStatementDrawer(false);
+      drawerLoading.set(false);
+      return;
+    }
+  }
+
+  setStatementDrawer(true);
+  drawerLoading.set(false);
 }
 
 function statementStatusCue(part: Part): ImplementationStatusCue | null {
@@ -177,6 +238,43 @@ function statementStatusCue(part: Part): ImplementationStatusCue | null {
       </PartDisplay>
     </div>
   </div>
+
+  <Drawer
+    v-model:visible="statementDrawerOpen"
+    position="right"
+    class="w-full! md:w-1/2! lg:w-3/5!"
+  >
+    <template #header>
+      <div class="flex flex-wrap items-center gap-2">
+        <TooltipTitle
+          text="Implementation Statement"
+          tooltip-key="system.implementation.statement.drawer"
+          position="bottom"
+        />
+        <span
+          v-if="selectedPart && statementStatusCue(selectedPart)"
+          class="rounded px-2 py-0.5 text-xs font-medium"
+          :class="statementStatusCue(selectedPart)?.countClass"
+        >
+          {{ statementStatusCue(selectedPart)?.label }}
+        </span>
+      </div>
+    </template>
+    <ControlStatementImplementation
+      v-if="selectedPart && selectedImplementation"
+      @updated="updateStatement"
+      :implementation="selectedImplementation"
+      :ssp-id="system.securityPlan?.uuid"
+      :statement="statements[selectedPart.id]"
+      :partid="selectedPart.id"
+    />
+    <div v-else-if="selectedPart && !selectedImplementation" class="p-4">
+      <p class="text-gray-600">Loading implementation...</p>
+    </div>
+    <div v-else class="p-4">
+      <p class="text-gray-600">No part selected</p>
+    </div>
+  </Drawer>
 </template>
 
 <style>

@@ -57,14 +57,6 @@ const authenticatedRoutes = [
     },
   },
   {
-    path: 'controls/:controlId',
-    name: 'controls:detail',
-    component: () => import('../views/control-implementations/DetailView.vue'),
-    meta: {
-      requiresAuth: true,
-    },
-  },
-  {
     path: 'workflows',
     name: 'workflow:index',
     component: () => import('../views/workflows/WorkFlowIndexView.vue'),
