@@ -79,7 +79,7 @@ const statusRemarks = computed({
 });
 
 const implementationStatusDisplayLabel = computed(() => {
-  const state = byComponent.implementationStatus?.state;
+  const state = localComponent.value.implementationStatus?.state;
   return implementationStatusLabel(state);
 });
 
@@ -256,7 +256,10 @@ function openRisksForControl() {
     </template>
   </div>
 
-  <div v-if="byComponent.implementationStatus?.state" class="mt-2 text-xs">
+  <div
+    v-if="!editing && localComponent.implementationStatus?.state"
+    class="mt-2 text-xs"
+  >
     <span class="font-medium text-gray-700 dark:text-slate-300"
       >Implementation Status:</span
     >
@@ -264,10 +267,10 @@ function openRisksForControl() {
       {{ implementationStatusDisplayLabel }}
     </span>
     <div
-      v-if="byComponent.implementationStatus.remarks"
+      v-if="localComponent.implementationStatus.remarks"
       class="mt-1 text-gray-600 dark:text-slate-400"
     >
-      {{ byComponent.implementationStatus.remarks }}
+      {{ localComponent.implementationStatus.remarks }}
     </div>
   </div>
 

@@ -86,4 +86,18 @@ describe('implementation-status helpers', () => {
     expect(implementationStatusLabel('not-applicable')).toBe('Not Applicable');
     expect(implementationStatusLabel(' Implemented ')).toBe('Implemented');
   });
+
+  it('canonicalizes persisted status casing and trims whitespace', () => {
+    const normalized = normalizeByComponentImplementationStatus(
+      byComponent(' Implemented '),
+    );
+
+    expect(normalized.implementationStatus?.state).toBe('implemented');
+
+    const locallyDefined = normalizeByComponentImplementationStatus(
+      byComponent(' custom-status '),
+    );
+
+    expect(locallyDefined.implementationStatus?.state).toBe('custom-status');
+  });
 });

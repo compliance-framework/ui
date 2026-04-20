@@ -88,11 +88,33 @@ export function normalizeByComponentImplementationStatus<T extends ByComponent>(
   byComponent: T,
 ): T {
   const state = byComponent.implementationStatus?.state;
-  if (typeof state === 'string' && state.trim()) {
+  if (typeof state !== 'string') {
+    const normalized = { ...byComponent };
+    delete normalized.implementationStatus;
+    return normalized;
+  }
+
+  const trimmedState = state.trim();
+  if (!trimmedState) {
+    const normalized = { ...byComponent };
+    delete normalized.implementationStatus;
+    return normalized;
+  }
+
+  const canonicalState =
+    implementationStatusOptions.find(
+      (option) => option.value === trimmedState.toLowerCase(),
+    )?.value ?? trimmedState;
+
+  if (canonicalState === state) {
     return byComponent;
   }
 
-  const normalized = { ...byComponent };
-  delete normalized.implementationStatus;
-  return normalized;
+  return {
+    ...byComponent,
+    implementationStatus: {
+      ...byComponent.implementationStatus,
+      state: canonicalState,
+    },
+  };
 }
