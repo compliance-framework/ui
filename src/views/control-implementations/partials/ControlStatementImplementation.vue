@@ -45,6 +45,10 @@ import {
   type SuggestedComponent,
   type SystemComponentSuggestion,
 } from '@/views/control-implementations/partials/component-suggestions';
+import {
+  implementationStatusOptions,
+  normalizeByComponentImplementationStatus,
+} from './implementation-status';
 
 const { system } = useSystemStore();
 const toast = useToast();
@@ -52,14 +56,6 @@ const router = useRouter();
 const axios = useAuthenticatedInstance();
 
 const showError = ref(false);
-
-const implementationStatusOptions = [
-  { label: 'Implemented', value: 'implemented' },
-  { label: 'Partial', value: 'partial' },
-  { label: 'Planned', value: 'planned' },
-  { label: 'Alternative', value: 'alternative' },
-  { label: 'Not Applicable', value: 'not-applicable' },
-];
 
 const showCreateStatementModal = ref(false);
 const showEditStatementModal = ref(false);
@@ -123,7 +119,7 @@ const RISK_FETCH_LIMIT = 100;
 
 const localStatement = ref<Statement | undefined>(statement);
 const activeDisplaySections = computed(
-  () => displaySections ?? ['metadata', 'components', 'evidence'],
+  () => displaySections ?? ['metadata', 'components', 'evidence', 'create'],
 );
 const showMetadataSection = computed(() =>
   activeDisplaySections.value.includes('metadata'),
@@ -350,16 +346,38 @@ function buildByComponentCreatePayload(byComponent: ByComponent): ByComponent {
 }
 
 function normalizeByComponentPayload(byComponent: ByComponent): ByComponent {
-  const payload: ByComponent = {
-    ...byComponent,
-  };
-  if (!payload.implementationStatus?.state) {
-    delete payload.implementationStatus;
-  }
-  return payload;
+  return normalizeByComponentImplementationStatus(byComponent);
 }
 
 const newByComponent = ref<ByComponent>(buildNewByComponent());
+const newByComponentStatusState = computed({
+  get: () => newByComponent.value.implementationStatus?.state ?? '',
+  set: (state: string) => {
+    if (!state) {
+      newByComponent.value.implementationStatus = {
+        state: '',
+      };
+      return;
+    }
+    newByComponent.value.implementationStatus = {
+      ...(newByComponent.value.implementationStatus ?? {}),
+      state,
+    };
+  },
+});
+const newByComponentStatusRemarks = computed({
+  get: () => newByComponent.value.implementationStatus?.remarks ?? '',
+  set: (remarks: string) => {
+    if (!newByComponentStatusState.value) {
+      return;
+    }
+    newByComponent.value.implementationStatus = {
+      ...(newByComponent.value.implementationStatus ?? {}),
+      state: newByComponentStatusState.value,
+      remarks,
+    };
+  },
+});
 const selectedComponent = ref();
 watch(selectedComponent, () => {
   // When the selected component changes, update the model
@@ -1613,7 +1631,7 @@ async function submitEvidenceLinking() {
               >Implementation Status</label
             >
             <select
-              v-model="newByComponent.implementationStatus!.state"
+              v-model="newByComponentStatusState"
               class="w-full rounded-md border border-gray-300 bg-white p-2 text-sm text-gray-900 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200"
             >
               <option value="">No status</option>
@@ -1632,9 +1650,10 @@ async function submitEvidenceLinking() {
               >Status Remarks</label
             >
             <Textarea
-              v-model="newByComponent.implementationStatus!.remarks"
+              v-model="newByComponentStatusRemarks"
               rows="2"
               class="resize-none w-full"
+              :disabled="!newByComponentStatusState"
               placeholder="Implementation status remarks"
             />
           </div>

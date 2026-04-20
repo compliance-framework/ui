@@ -4,13 +4,17 @@ import Drawer from '@/volt/Drawer.vue';
 import type { ImplementedRequirement, Statement } from '@/oscal';
 import PartDisplay from '@/components/PartDisplay.vue';
 import type { Part } from '@/oscal';
-import { ref, watchEffect, watch } from 'vue';
+import { computed, ref, watchEffect, watch } from 'vue';
 import { useToggle } from '@/composables/useToggle';
 import ControlStatementImplementation from '@/views/control-implementations/partials/ControlStatementImplementation.vue';
 import { useSystemStore } from '@/stores/system.ts';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import type { Control } from '@/oscal';
 import TooltipTitle from '@/components/TooltipTitle.vue';
+import {
+  type ImplementationStatusCue,
+  uniformImplementationStatusCue,
+} from './implementation-status';
 
 const { control, implementation } = defineProps<{
   control: Control;
@@ -24,49 +28,22 @@ const showCreateStatementModal = ref(false);
 
 const selectedImplementation = ref<ImplementedRequirement | undefined>();
 const statements = ref<{ [key: string]: Statement }>({});
-type ImplementationStatusCue = {
-  label: string;
-  countClass: string;
-  panelClass: string;
-};
 
 const neutralCountClass =
   'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200';
 const neutralPanelClass =
   'border-transparent bg-transparent dark:border-transparent dark:bg-transparent';
-const implementationStatusCues: Record<string, ImplementationStatusCue> = {
-  implemented: {
-    label: 'Implemented',
-    countClass: 'bg-blue-600 text-white dark:bg-blue-400 dark:text-blue-950',
-    panelClass:
-      'border-blue-200 bg-blue-50/60 dark:border-blue-900 dark:bg-blue-950/20',
-  },
-  partial: {
-    label: 'Partial',
-    countClass: 'bg-amber-500 text-white dark:bg-amber-400 dark:text-amber-950',
-    panelClass:
-      'border-amber-200 bg-amber-50/60 dark:border-amber-900 dark:bg-amber-950/20',
-  },
-  planned: {
-    label: 'Planned',
-    countClass: 'bg-sky-600 text-white dark:bg-sky-400 dark:text-sky-950',
-    panelClass:
-      'border-sky-200 bg-sky-50/60 dark:border-sky-900 dark:bg-sky-950/20',
-  },
-  alternative: {
-    label: 'Alternative',
-    countClass:
-      'bg-violet-600 text-white dark:bg-violet-400 dark:text-violet-950',
-    panelClass:
-      'border-violet-200 bg-violet-50/60 dark:border-violet-900 dark:bg-violet-950/20',
-  },
-  'not-applicable': {
-    label: 'Not Applicable',
-    countClass: 'bg-gray-500 text-white dark:bg-gray-400 dark:text-gray-950',
-    panelClass:
-      'border-gray-300 bg-gray-50 dark:border-slate-600 dark:bg-slate-800/70',
-  },
-};
+
+const statementStatusCuesByPartId = computed(() => {
+  const cues = new Map<string, ImplementationStatusCue>();
+  for (const [statementId, statement] of Object.entries(statements.value)) {
+    const cue = uniformImplementationStatusCue(statement.byComponents);
+    if (cue) {
+      cues.set(statementId, cue);
+    }
+  }
+  return cues;
+});
 
 watchEffect(() => {
   statements.value = {};
@@ -173,20 +150,7 @@ async function onPartSelect(e: Event, part: Part) {
 }
 
 function statementStatusCue(part: Part): ImplementationStatusCue | null {
-  const byComponents = statements.value[part.id]?.byComponents ?? [];
-  if (byComponents.length === 0) {
-    return null;
-  }
-
-  const states = byComponents.map((byComponent) =>
-    byComponent.implementationStatus?.state?.trim().toLowerCase(),
-  );
-  const firstState = states[0];
-  if (!firstState || !states.every((state) => state === firstState)) {
-    return null;
-  }
-
-  return implementationStatusCues[firstState] ?? null;
+  return statementStatusCuesByPartId.value.get(part.id) ?? null;
 }
 </script>
 

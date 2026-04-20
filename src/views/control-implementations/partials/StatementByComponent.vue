@@ -16,14 +16,11 @@ import {
   isClosedStatus,
 } from '@/utils/risk-register';
 import RiskIndicatorBadge from './RiskIndicatorBadge.vue';
-
-const implementationStatusOptions = [
-  { label: 'Implemented', value: 'implemented' },
-  { label: 'Partial', value: 'partial' },
-  { label: 'Planned', value: 'planned' },
-  { label: 'Alternative', value: 'alternative' },
-  { label: 'Not Applicable', value: 'not-applicable' },
-];
+import {
+  implementationStatusLabel,
+  implementationStatusOptions,
+  normalizeByComponentImplementationStatus,
+} from './implementation-status';
 
 const { byComponent, controlId, sspRisks, riskFetchLimit } = defineProps<{
   byComponent: ByComponent;
@@ -69,21 +66,21 @@ const statusState = computed({
 const statusRemarks = computed({
   get: () => localComponent.value.implementationStatus?.remarks ?? '',
   set: (remarks: string) => {
+    if (!statusState.value) {
+      return;
+    }
     if (!localComponent.value.implementationStatus) {
       localComponent.value.implementationStatus = {
-        state: '',
+        state: statusState.value,
       };
     }
     localComponent.value.implementationStatus.remarks = remarks;
   },
 });
 
-const implementationStatusLabel = computed(() => {
+const implementationStatusDisplayLabel = computed(() => {
   const state = byComponent.implementationStatus?.state;
-  return (
-    implementationStatusOptions.find((option) => option.value === state)
-      ?.label ?? state
-  );
+  return implementationStatusLabel(state);
 });
 
 function normalizeId(value?: string): string {
@@ -145,10 +142,7 @@ const highestSeverity = computed(() => {
 });
 
 function save() {
-  if (!localComponent.value.implementationStatus?.state) {
-    localComponent.value.implementationStatus = undefined;
-  }
-  emit('save', localComponent.value);
+  emit('save', normalizeByComponentImplementationStatus(localComponent.value));
   setEditing(false);
 }
 
@@ -248,6 +242,7 @@ function openRisksForControl() {
             v-model="statusRemarks"
             autoResize
             class="resize-none w-full"
+            :disabled="!statusState"
             placeholder="Implementation status remarks"
           />
         </div>
@@ -266,7 +261,7 @@ function openRisksForControl() {
       >Implementation Status:</span
     >
     <span class="ml-1 text-gray-600 dark:text-slate-400">
-      {{ implementationStatusLabel }}
+      {{ implementationStatusDisplayLabel }}
     </span>
     <div
       v-if="byComponent.implementationStatus.remarks"
