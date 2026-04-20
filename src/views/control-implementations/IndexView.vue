@@ -82,8 +82,7 @@
               <Badge class="text-base">{{ slotProps.node.data.id }}</Badge>
               <h4>{{ slotProps.node.data.title }}</h4>
               <Badge class="text-base">{{
-                controlImplementations[slotProps.node.data.id]?.byComponents
-                  ?.length || 0
+                controlByComponentCount(slotProps.node.data.id)
               }}</Badge>
               <Button
                 variant="text"
@@ -371,6 +370,21 @@ function openControlRisks(controlId?: string) {
       controlId,
     },
   });
+}
+
+function controlByComponentCount(controlId?: string): number {
+  if (!controlId) {
+    return 0;
+  }
+  const requirement = controlImplementations.value[controlId];
+  if (!requirement) {
+    return 0;
+  }
+
+  return (requirement.statements ?? []).reduce(
+    (count, statement) => count + (statement.byComponents?.length ?? 0),
+    requirement.byComponents?.length ?? 0,
+  );
 }
 
 function getStatementWorkItems(): Array<{

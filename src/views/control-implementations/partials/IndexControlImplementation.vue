@@ -1,17 +1,20 @@
 <script setup lang="ts">
 import { v4 as uuidv4 } from 'uuid';
-import Badge from '@/volt/Badge.vue';
 import Drawer from '@/volt/Drawer.vue';
 import type { ImplementedRequirement, Statement } from '@/oscal';
 import PartDisplay from '@/components/PartDisplay.vue';
 import type { Part } from '@/oscal';
-import { ref, watchEffect, watch } from 'vue';
+import { computed, ref, watchEffect, watch } from 'vue';
 import { useToggle } from '@/composables/useToggle';
 import ControlStatementImplementation from '@/views/control-implementations/partials/ControlStatementImplementation.vue';
 import { useSystemStore } from '@/stores/system.ts';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import type { Control } from '@/oscal';
 import TooltipTitle from '@/components/TooltipTitle.vue';
+import {
+  type ImplementationStatusCue,
+  uniformImplementationStatusCue,
+} from './implementation-status';
 
 const { control, implementation } = defineProps<{
   control: Control;
@@ -26,7 +29,37 @@ const showCreateStatementModal = ref(false);
 const selectedImplementation = ref<ImplementedRequirement | undefined>();
 const statements = ref<{ [key: string]: Statement }>({});
 
-// Watch for changes in the implementation prop and update local ref
+const neutralCountClass =
+  'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200';
+const neutralPanelClass =
+  'border-transparent bg-transparent dark:border-transparent dark:bg-transparent';
+
+const statementStatusCuesByPartId = computed(() => {
+  const cues = new Map<string, ImplementationStatusCue>();
+  for (const [statementId, statement] of Object.entries(statements.value)) {
+    const cue = uniformImplementationStatusCue(statement.byComponents);
+    if (cue) {
+      cues.set(statementId, cue);
+    }
+  }
+  return cues;
+});
+
+const selectedStatementStatusCue = computed(() => {
+  if (!selectedPart.value) {
+    return null;
+  }
+
+  return statementStatusCuesByPartId.value.get(selectedPart.value.id) ?? null;
+});
+
+watchEffect(() => {
+  statements.value = {};
+  for (const statement of implementation?.statements || []) {
+    statements.value[statement.statementId] = statement;
+  }
+});
+
 watch(
   () => implementation,
   (newImplementation) => {
@@ -38,13 +71,6 @@ watch(
   },
   { immediate: true },
 );
-
-watchEffect(() => {
-  statements.value = {};
-  for (const statement of implementation?.statements || []) {
-    statements.value[statement.statementId] = statement;
-  }
-});
 
 const { execute: executeCreate } = useDataApi<ImplementedRequirement>(
   `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/control-implementation/implemented-requirements`,
@@ -148,19 +174,40 @@ async function onPartSelect(e: Event, part: Part) {
         @selected="onPartSelect"
       >
         <template #default="{ part }">
-          <div class="p-0.5">
-            <p v-if="getText(part)" class="prose prose-slate dark:prose-invert">
-              {{ getText(part) ?? '' }}
-            </p>
-            <template v-if="statements[part.id]">
-              <Badge
-                class="ml-2"
-                v-if="statements[part.id].byComponents"
-                :value="statements[part.id].byComponents?.length"
-                severity="info"
-              />
-            </template>
-          </div>
+          <template
+            v-for="statusCue in [statementStatusCuesByPartId.get(part.id)]"
+            :key="`${part.id}-${statusCue?.label ?? 'none'}`"
+          >
+            <div
+              class="rounded-md border p-2"
+              :class="statusCue?.panelClass ?? neutralPanelClass"
+            >
+              <p
+                v-if="getText(part)"
+                class="prose prose-slate dark:prose-invert"
+              >
+                {{ getText(part) ?? '' }}
+              </p>
+              <div
+                v-if="statements[part.id]?.byComponents"
+                class="mt-2 flex flex-wrap items-center gap-2"
+              >
+                <span
+                  class="rounded px-2 py-0.5 text-xs font-bold"
+                  :class="statusCue?.countClass ?? neutralCountClass"
+                >
+                  {{ statements[part.id].byComponents?.length }}
+                </span>
+                <span
+                  v-if="statusCue"
+                  class="rounded px-2 py-0.5 text-xs font-medium"
+                  :class="statusCue.countClass"
+                >
+                  {{ statusCue.label }}
+                </span>
+              </div>
+            </div>
+          </template>
         </template>
       </PartDisplay>
     </div>
@@ -172,11 +219,20 @@ async function onPartSelect(e: Event, part: Part) {
     class="w-full! md:w-1/2! lg:w-3/5!"
   >
     <template #header>
-      <TooltipTitle
-        text="Implementation Statement"
-        tooltip-key="system.implementation.statement.drawer"
-        position="bottom"
-      />
+      <div class="flex flex-wrap items-center gap-2">
+        <TooltipTitle
+          text="Implementation Statement"
+          tooltip-key="system.implementation.statement.drawer"
+          position="bottom"
+        />
+        <span
+          v-if="selectedStatementStatusCue"
+          class="rounded px-2 py-0.5 text-xs font-medium"
+          :class="selectedStatementStatusCue.countClass"
+        >
+          {{ selectedStatementStatusCue.label }}
+        </span>
+      </div>
     </template>
     <ControlStatementImplementation
       v-if="selectedPart && selectedImplementation"
