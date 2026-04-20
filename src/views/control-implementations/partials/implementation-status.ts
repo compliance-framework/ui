@@ -73,7 +73,7 @@ export function uniformImplementationStatusCue(
   }
 
   const states = byComponents.map((byComponent) =>
-    byComponent.implementationStatus?.state?.trim().toLowerCase(),
+    byComponent.implementationStatus?.state?.trim()?.toLowerCase(),
   );
   const firstState = states[0];
   if (!firstState || !states.every((state) => state === firstState)) {

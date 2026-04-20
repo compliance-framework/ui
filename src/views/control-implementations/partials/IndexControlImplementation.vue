@@ -45,6 +45,14 @@ const statementStatusCuesByPartId = computed(() => {
   return cues;
 });
 
+const selectedStatementStatusCue = computed(() => {
+  if (!selectedPart.value) {
+    return null;
+  }
+
+  return statementStatusCuesByPartId.value.get(selectedPart.value.id) ?? null;
+});
+
 watchEffect(() => {
   statements.value = {};
   for (const statement of implementation?.statements || []) {
@@ -148,10 +156,6 @@ async function onPartSelect(e: Event, part: Part) {
   setStatementDrawer(true);
   drawerLoading.set(false);
 }
-
-function statementStatusCue(part: Part): ImplementationStatusCue | null {
-  return statementStatusCuesByPartId.value.get(part.id) ?? null;
-}
 </script>
 
 <template>
@@ -170,38 +174,40 @@ function statementStatusCue(part: Part): ImplementationStatusCue | null {
         @selected="onPartSelect"
       >
         <template #default="{ part }">
-          <div
-            class="rounded-md border p-2"
-            :class="
-              statementStatusCuesByPartId.get(part.id)?.panelClass ??
-              neutralPanelClass
-            "
+          <template
+            v-for="statusCue in [statementStatusCuesByPartId.get(part.id)]"
+            :key="`${part.id}-${statusCue?.label ?? 'none'}`"
           >
-            <p v-if="getText(part)" class="prose prose-slate dark:prose-invert">
-              {{ getText(part) ?? '' }}
-            </p>
             <div
-              v-if="statements[part.id]?.byComponents"
-              class="mt-2 flex flex-wrap items-center gap-2"
+              class="rounded-md border p-2"
+              :class="statusCue?.panelClass ?? neutralPanelClass"
             >
-              <span
-                class="rounded px-2 py-0.5 text-xs font-bold"
-                :class="
-                  statementStatusCuesByPartId.get(part.id)?.countClass ??
-                  neutralCountClass
-                "
+              <p
+                v-if="getText(part)"
+                class="prose prose-slate dark:prose-invert"
               >
-                {{ statements[part.id].byComponents?.length }}
-              </span>
-              <span
-                v-if="statementStatusCuesByPartId.get(part.id)"
-                class="rounded px-2 py-0.5 text-xs font-medium"
-                :class="statementStatusCuesByPartId.get(part.id)?.countClass"
+                {{ getText(part) ?? '' }}
+              </p>
+              <div
+                v-if="statements[part.id]?.byComponents"
+                class="mt-2 flex flex-wrap items-center gap-2"
               >
-                {{ statementStatusCuesByPartId.get(part.id)?.label }}
-              </span>
+                <span
+                  class="rounded px-2 py-0.5 text-xs font-bold"
+                  :class="statusCue?.countClass ?? neutralCountClass"
+                >
+                  {{ statements[part.id].byComponents?.length }}
+                </span>
+                <span
+                  v-if="statusCue"
+                  class="rounded px-2 py-0.5 text-xs font-medium"
+                  :class="statusCue.countClass"
+                >
+                  {{ statusCue.label }}
+                </span>
+              </div>
             </div>
-          </div>
+          </template>
         </template>
       </PartDisplay>
     </div>
@@ -220,11 +226,11 @@ function statementStatusCue(part: Part): ImplementationStatusCue | null {
           position="bottom"
         />
         <span
-          v-if="selectedPart && statementStatusCue(selectedPart)"
+          v-if="selectedStatementStatusCue"
           class="rounded px-2 py-0.5 text-xs font-medium"
-          :class="statementStatusCue(selectedPart)?.countClass"
+          :class="selectedStatementStatusCue.countClass"
         >
-          {{ statementStatusCue(selectedPart)?.label }}
+          {{ selectedStatementStatusCue.label }}
         </span>
       </div>
     </template>

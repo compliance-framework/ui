@@ -49,6 +49,12 @@ describe('implementation-status helpers', () => {
       ]),
     ).toBeNull();
     expect(uniformImplementationStatusCue([byComponent(undefined)])).toBeNull();
+    expect(
+      uniformImplementationStatusCue([
+        byComponent('implemented'),
+        byComponent(undefined),
+      ]),
+    ).toBeNull();
     expect(uniformImplementationStatusCue([byComponent('custom')])).toBeNull();
   });
 
@@ -85,6 +91,7 @@ describe('implementation-status helpers', () => {
     });
     expect(implementationStatusLabel('not-applicable')).toBe('Not Applicable');
     expect(implementationStatusLabel(' Implemented ')).toBe('Implemented');
+    expect(implementationStatusLabel(' custom-status ')).toBe('custom-status');
   });
 
   it('canonicalizes persisted status casing and trims whitespace', () => {
