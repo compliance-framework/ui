@@ -34,6 +34,21 @@ interface NotificationConfigurationResponse {
   configuredDestinations: NotificationDestinationResponse[];
 }
 
+type NotificationProviderMetadataValue = string | number | boolean;
+
+type NotificationProviderMetadata = Record<
+  string,
+  NotificationProviderMetadataValue
+>;
+
+interface NotificationProviderInfo {
+  providerType: string;
+  displayName: string;
+  description: string;
+  enabled: boolean;
+  metadata?: NotificationProviderMetadata;
+}
+
 interface NotificationDestinationPayload {
   providerType: NotificationDestinationProvider;
   destinationTarget: string;
@@ -82,6 +97,17 @@ const {
   { immediate: true, initialData: [] },
 );
 
+const {
+  data: notificationProviders,
+  isLoading: isLoadingProviders,
+  error: providersError,
+  execute: loadProviders,
+} = useDataApi<NotificationProviderInfo[]>(
+  '/api/admin/notifications/providers',
+  {},
+  { immediate: true, initialData: [] },
+);
+
 const { execute: executeCreateDestination, isLoading: isCreatingDestination } =
   useDataApi<NotificationDestinationResponse>(
     null,
@@ -122,6 +148,10 @@ const predeterminedNotifications = computed<PredeterminedNotification[]>(() => {
         })) ?? [],
     };
   });
+});
+
+const providerList = computed<NotificationProviderInfo[]>(() => {
+  return notificationProviders.value ?? [];
 });
 
 const activeNotification = computed(() => {
@@ -182,9 +212,7 @@ function getProviderLabel(provider: NotificationDestinationProvider): string {
   );
 }
 
-function destinationProviderClasses(
-  provider: NotificationDestinationProvider,
-): string {
+function destinationProviderClasses(provider: string): string {
   switch (provider) {
     case 'slack':
       return 'bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-200';
@@ -193,6 +221,31 @@ function destinationProviderClasses(
     default:
       return 'bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300';
   }
+}
+
+function formatMetadataLabel(key: string): string {
+  return key
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .replace(/[-_]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function getProviderMetadataEntries(provider: NotificationProviderInfo): Array<{
+  key: string;
+  label: string;
+  value: string;
+}> {
+  const metadata = provider.metadata ?? {};
+
+  return Object.entries(metadata)
+    .filter(([, value]) => String(value).trim() !== '')
+    .map(([key, value]) => ({
+      key,
+      label: formatMetadataLabel(key),
+      value: String(value),
+    }));
 }
 
 function getDefaultDestinationProvider(): NotificationDestinationProvider {
@@ -487,6 +540,109 @@ onMounted(() => {
   <PageHeader> Notifications </PageHeader>
 
   <div class="mt-8 space-y-6">
+    <section aria-labelledby="providers-heading" class="space-y-4">
+      <div>
+        <h2
+          id="providers-heading"
+          class="text-2xl font-semibold text-gray-900 dark:text-white"
+        >
+          Providers
+        </h2>
+        <p class="mt-2 max-w-3xl text-gray-600 dark:text-gray-400">
+          Review configured notification providers.
+        </p>
+      </div>
+
+      <div
+        v-if="providersError"
+        class="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-900/20 dark:text-red-200"
+      >
+        <div
+          class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+        >
+          <span>
+            {{
+              getApiErrorMessage(
+                providersError,
+                'Failed to load notification providers.',
+              )
+            }}
+          </span>
+          <SecondaryButton type="button" @click="loadProviders">
+            Retry
+          </SecondaryButton>
+        </div>
+      </div>
+
+      <div
+        v-if="isLoadingProviders"
+        class="rounded-lg border border-ccf-300 bg-white p-4 text-sm text-gray-600 dark:border-slate-700 dark:bg-slate-900 dark:text-gray-400"
+      >
+        Loading provider configuration...
+      </div>
+
+      <div v-if="!isLoadingProviders && !providersError" class="space-y-3">
+        <div
+          v-if="providerList.length === 0"
+          class="rounded-lg border border-dashed border-ccf-300 bg-ccf-100 p-4 text-sm text-gray-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+        >
+          No providers configured yet.
+        </div>
+
+        <div
+          v-if="providerList.length > 0"
+          class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3"
+        >
+          <PageCard
+            v-for="provider in providerList"
+            :key="provider.providerType"
+            :class="
+              provider.enabled
+                ? 'h-full'
+                : 'h-full opacity-70 saturate-50 brightness-95'
+            "
+          >
+            <div class="flex h-full min-h-44 flex-col gap-3">
+              <div class="flex items-start justify-between gap-2">
+                <h3
+                  class="text-base font-semibold text-gray-900 dark:text-white"
+                >
+                  <span
+                    class="inline-flex w-fit min-h-7 items-center rounded-md border px-2.5 text-xs font-semibold uppercase tracking-[0.08em]"
+                    :class="destinationProviderClasses(provider.providerType)"
+                  >
+                    {{ provider.providerType }}
+                  </span>
+                </h3>
+                <span
+                  class="inline-flex min-h-7 items-center rounded-md border px-2.5 text-xs font-semibold"
+                  :class="
+                    provider.enabled
+                      ? 'border-emerald-200 bg-emerald-100 text-emerald-800 dark:border-emerald-900/40 dark:bg-emerald-900/40 dark:text-emerald-200'
+                      : 'border-gray-300 bg-gray-100 text-gray-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'
+                  "
+                >
+                  {{ provider.enabled ? 'Enabled' : 'Disabled' }}
+                </span>
+              </div>
+
+              <p class="text-xs text-gray-500 dark:text-gray-400">
+                {{ provider.description }}
+              </p>
+
+              <span
+                v-for="meta in getProviderMetadataEntries(provider)"
+                :key="meta.key"
+                class="inline-flex w-fit min-h-2 text-xs"
+              >
+                {{ meta.label }}: {{ meta.value }}
+              </span>
+            </div>
+          </PageCard>
+        </div>
+      </div>
+    </section>
+
     <section aria-labelledby="notifications-heading" class="space-y-4">
       <div>
         <h2

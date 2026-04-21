@@ -22,9 +22,36 @@ const notificationConfigurations = shallowRef([
     ],
   },
 ]);
+const notificationProviders = shallowRef([
+  {
+    providerType: 'email',
+    displayName: 'Email',
+    description: 'Configured SMTP provider for email service',
+    enabled: true,
+    metadata: {
+      serviceProviderName: 'SMTP',
+      serviceProviderType: 'smtp',
+    },
+  },
+  {
+    providerType: 'slack',
+    displayName: 'Slack',
+    description: 'Configured Slack workspace',
+    enabled: true,
+    metadata: {
+      botId: 'B0ANWHKQMCP',
+      teamId: 'T0AP4C0TA7M',
+      workspaceName: 'reece-sandbox',
+      workspaceUrl: 'https://reece-sandbox.slack.com/',
+    },
+  },
+]);
 const isLoadingNotifications = ref(false);
 const notificationsError = ref<unknown>(null);
+const isLoadingProviders = ref(false);
+const providersError = ref<unknown>(null);
 const mockLoadNotifications = vi.fn().mockResolvedValue({});
+const mockLoadProviders = vi.fn().mockResolvedValue({});
 const mockCreateDestination = vi.fn().mockResolvedValue(
   createDestinationExecuteResult({
     providerType: 'email',
@@ -59,6 +86,15 @@ vi.mock('@/composables/axios', () => ({
         isLoading: isLoadingNotifications,
         error: notificationsError,
         execute: mockLoadNotifications,
+      };
+    }
+
+    if (url === '/api/admin/notifications/providers') {
+      return {
+        data: notificationProviders,
+        isLoading: isLoadingProviders,
+        error: providersError,
+        execute: mockLoadProviders,
       };
     }
 
@@ -141,10 +177,55 @@ describe('NotificationsView', () => {
         ],
       },
     ];
+    notificationProviders.value = [
+      {
+        providerType: 'email',
+        displayName: 'Email',
+        description: 'Configured SMTP provider for email service',
+        enabled: true,
+        metadata: {
+          serviceProviderName: 'SMTP',
+          serviceProviderType: 'smtp',
+        },
+      },
+      {
+        providerType: 'slack',
+        displayName: 'Slack',
+        description: 'Configured Slack workspace',
+        enabled: true,
+        metadata: {
+          botId: 'B0ANWHKQMCP',
+          teamId: 'T0AP4C0TA7M',
+          workspaceName: 'reece-sandbox',
+          workspaceUrl: 'https://reece-sandbox.slack.com/',
+        },
+      },
+    ];
     isLoadingNotifications.value = false;
     notificationsError.value = null;
+    isLoadingProviders.value = false;
+    providersError.value = null;
     isCreatingDestination.value = false;
     isDeletingDestination.value = false;
+  });
+
+  it('loads provider information from the backend response', () => {
+    const wrapper = mount(NotificationsView);
+
+    expect(wrapper.text()).toContain('Providers');
+    expect(wrapper.text()).toContain('Email');
+    expect(wrapper.text()).toContain(
+      'Configured SMTP provider for email service',
+    );
+    expect(wrapper.text()).toContain('Service Provider Name: SMTP');
+    expect(wrapper.text()).toContain('Service Provider Type: smtp');
+    expect(wrapper.text()).toContain('Bot Id: B0ANWHKQMCP');
+    expect(wrapper.text()).toContain('Team Id: T0AP4C0TA7M');
+    expect(wrapper.text()).toContain('Workspace Name: reece-sandbox');
+    expect(wrapper.text()).toContain(
+      'Workspace Url: https://reece-sandbox.slack.com/',
+    );
+    expect(wrapper.text()).toContain('Enabled');
   });
 
   it('loads configured destinations from the backend response', () => {
