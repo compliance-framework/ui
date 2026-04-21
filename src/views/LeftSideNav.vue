@@ -141,6 +141,11 @@ const links = ref<Array<NavigationItem>>([
         title: 'Risk Templates',
       },
       {
+        name: 'admin-notifications',
+        title: 'Notifications',
+        abbr: 'NTF',
+      },
+      {
         name: 'admin-import',
         title: 'Import',
         abbr: 'IMP',
