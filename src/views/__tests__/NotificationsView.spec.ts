@@ -31,6 +31,7 @@ const mockCreateDestination = vi.fn().mockResolvedValue(
     destinationTarget: 'alerts@example.com',
   }),
 );
+const mockDeleteDestination = vi.fn().mockResolvedValue({});
 const mockAuthenticatedGet = vi.fn().mockResolvedValue({
   data: {
     data: {
@@ -39,6 +40,7 @@ const mockAuthenticatedGet = vi.fn().mockResolvedValue({
   },
 });
 const isCreatingDestination = ref(false);
+const isDeletingDestination = ref(false);
 const toastAdd = vi.fn();
 
 vi.mock('@/composables/axios', () => ({
@@ -64,6 +66,13 @@ vi.mock('@/composables/axios', () => ({
       return {
         execute: mockCreateDestination,
         isLoading: isCreatingDestination,
+      };
+    }
+
+    if (url === null && config?.method === 'DELETE') {
+      return {
+        execute: mockDeleteDestination,
+        isLoading: isDeletingDestination,
       };
     }
 
@@ -113,6 +122,7 @@ describe('NotificationsView', () => {
         destinationTarget: 'alerts@example.com',
       }),
     );
+    mockDeleteDestination.mockResolvedValue({});
     mockAuthenticatedGet.mockResolvedValue({
       data: {
         data: {
@@ -134,6 +144,7 @@ describe('NotificationsView', () => {
     isLoadingNotifications.value = false;
     notificationsError.value = null;
     isCreatingDestination.value = false;
+    isDeletingDestination.value = false;
   });
 
   it('loads configured destinations from the backend response', () => {
@@ -245,6 +256,86 @@ describe('NotificationsView', () => {
       }),
     );
     expect(wrapper.text()).not.toContain('alerts@example.com');
+  });
+
+  it('deletes a configured destination via the notification destinations endpoint', async () => {
+    const wrapper = mount(NotificationsView);
+
+    const removeButton = wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Remove');
+
+    expect(removeButton).toBeDefined();
+    await removeButton!.trigger('click');
+    await flushPromises();
+
+    expect(mockDeleteDestination).toHaveBeenCalledWith(
+      '/api/admin/notifications/EVIDENCE_DIGEST/destinations',
+      {
+        data: {
+          providerType: 'slack',
+          destinationTarget: 'ccf-slack-int',
+        },
+      },
+    );
+    expect(notificationConfigurations.value[0].configuredDestinations).toEqual(
+      [],
+    );
+    expect(wrapper.text()).toContain('No destinations configured yet.');
+    expect(wrapper.text()).not.toContain('ccf-slack-int');
+    expect(toastAdd).toHaveBeenCalledWith(
+      expect.objectContaining({
+        severity: 'success',
+        summary: 'Destination Removed',
+      }),
+    );
+  });
+
+  it('shows the backend not-found message when destination removal returns 404', async () => {
+    mockDeleteDestination.mockRejectedValueOnce({
+      response: {
+        status: 404,
+        data: {
+          errors: {
+            body: 'configured notification destination not found',
+          },
+        },
+      },
+    });
+
+    const wrapper = mount(NotificationsView);
+
+    const removeButton = wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Remove');
+
+    expect(removeButton).toBeDefined();
+    await removeButton!.trigger('click');
+    await flushPromises();
+
+    expect(mockDeleteDestination).toHaveBeenCalledWith(
+      '/api/admin/notifications/EVIDENCE_DIGEST/destinations',
+      {
+        data: {
+          providerType: 'slack',
+          destinationTarget: 'ccf-slack-int',
+        },
+      },
+    );
+    expect(notificationConfigurations.value[0].configuredDestinations).toEqual([
+      {
+        providerType: 'slack',
+        destinationTarget: 'ccf-slack-int',
+      },
+    ]);
+    expect(wrapper.text()).toContain('ccf-slack-int');
+    expect(toastAdd).toHaveBeenCalledWith(
+      expect.objectContaining({
+        severity: 'error',
+        summary: 'Remove Destination Failed',
+        detail: 'configured notification destination not found',
+      }),
+    );
   });
 
   it('blocks the request when email validation fails', async () => {

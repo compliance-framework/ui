@@ -34,7 +34,7 @@ interface NotificationConfigurationResponse {
   configuredDestinations: NotificationDestinationResponse[];
 }
 
-interface CreateNotificationDestinationPayload {
+interface NotificationDestinationPayload {
   providerType: NotificationDestinationProvider;
   destinationTarget: string;
 }
@@ -87,6 +87,16 @@ const { execute: executeCreateDestination, isLoading: isCreatingDestination } =
     null,
     {
       method: 'POST',
+      transformRequest: [decamelizeKeys],
+    },
+    { immediate: false },
+  );
+
+const { execute: executeDeleteDestination, isLoading: isDeletingDestination } =
+  useDataApi<void>(
+    null,
+    {
+      method: 'DELETE',
       transformRequest: [decamelizeKeys],
     },
     { immediate: false },
@@ -195,18 +205,26 @@ function isProviderDisabled(
   return provider === 'slack' && !canSelectSlackDestination.value;
 }
 
-function buildCreateDestinationUrl(notificationName: string): string {
+function buildDestinationMutationUrl(notificationName: string): string {
   return `/api/admin/notifications/${encodeURIComponent(notificationName)}/destinations`;
 }
 
-function buildCreateDestinationPayload(
+function buildDestinationPayload(
   provider: NotificationDestinationProvider,
   target: string,
-): CreateNotificationDestinationPayload {
+): NotificationDestinationPayload {
   return {
     providerType: provider,
     destinationTarget: target,
   };
+}
+
+function buildDestinationKey(
+  notificationName: string,
+  provider: NotificationDestinationProvider,
+  target: string,
+): string {
+  return `${notificationName}:${provider}:${target.toLowerCase()}`;
 }
 
 function getApiErrorMessage(error: unknown, fallbackMessage: string): string {
@@ -270,6 +288,44 @@ function appendDestinationToNotificationConfiguration(
   });
 }
 
+function removeDestinationFromNotificationConfiguration(
+  notificationName: string,
+  provider: NotificationDestinationProvider,
+  target: string,
+) {
+  notificationConfigurations.value = (
+    notificationConfigurations.value ?? []
+  ).map((configuration) => {
+    if (configuration.name !== notificationName) {
+      return configuration;
+    }
+
+    return {
+      ...configuration,
+      configuredDestinations: configuration.configuredDestinations.filter(
+        (destination) =>
+          !(
+            destination.providerType.toLowerCase() === provider.toLowerCase() &&
+            destination.destinationTarget.toLowerCase() === target.toLowerCase()
+          ),
+      ),
+    };
+  });
+}
+
+const deletingDestinationKey = ref<string | null>(null);
+
+function isDestinationBeingDeleted(
+  notificationName: string,
+  provider: NotificationDestinationProvider,
+  target: string,
+): boolean {
+  return (
+    deletingDestinationKey.value ===
+    buildDestinationKey(notificationName, provider, target)
+  );
+}
+
 function openAddDestinationsDialog(notificationName: string) {
   activeNotificationName.value = notificationName;
   selectedProvider.value = getDefaultDestinationProvider();
@@ -326,7 +382,7 @@ async function addDestination() {
     return;
   }
 
-  const payload = buildCreateDestinationPayload(
+  const payload = buildDestinationPayload(
     selectedProvider.value,
     trimmedTarget,
   );
@@ -335,7 +391,7 @@ async function addDestination() {
 
   try {
     const response = await executeCreateDestination(
-      buildCreateDestinationUrl(notificationName),
+      buildDestinationMutationUrl(notificationName),
       {
         data: payload,
       },
@@ -370,29 +426,48 @@ async function addDestination() {
   }
 }
 
-function removeDestination(
+async function removeDestination(
   notificationName: string,
   provider: NotificationDestinationProvider,
   target: string,
 ) {
-  notificationConfigurations.value = (
-    notificationConfigurations.value ?? []
-  ).map((configuration) => {
-    if (configuration.name !== notificationName) {
-      return configuration;
-    }
+  const payload = buildDestinationPayload(provider, target);
+  deletingDestinationKey.value = buildDestinationKey(
+    notificationName,
+    provider,
+    target,
+  );
 
-    return {
-      ...configuration,
-      configuredDestinations: configuration.configuredDestinations.filter(
-        (destination) =>
-          !(
-            destination.providerType === provider &&
-            destination.destinationTarget === target
-          ),
-      ),
-    };
-  });
+  try {
+    await executeDeleteDestination(
+      buildDestinationMutationUrl(notificationName),
+      {
+        data: payload,
+      },
+    );
+
+    removeDestinationFromNotificationConfiguration(
+      notificationName,
+      provider,
+      target,
+    );
+
+    toast.add({
+      severity: 'success',
+      summary: 'Destination Removed',
+      detail: `${getProviderLabel(provider)} destination removed successfully.`,
+      life: 3000,
+    });
+  } catch (error) {
+    toast.add({
+      severity: 'error',
+      summary: 'Remove Destination Failed',
+      detail: getApiErrorMessage(error, 'Failed to remove destination.'),
+      life: 4000,
+    });
+  } finally {
+    deletingDestinationKey.value = null;
+  }
 }
 
 watch(canSelectSlackDestination, (canSelectSlack) => {
@@ -515,6 +590,14 @@ onMounted(() => {
 
                   <button
                     type="button"
+                    :disabled="
+                      isDeletingDestination ||
+                      isDestinationBeingDeleted(
+                        notification.name,
+                        destination.provider,
+                        destination.target,
+                      )
+                    "
                     class="text-sm font-medium text-red-600 hover:text-red-700 dark:text-red-300 dark:hover:text-red-200"
                     @click="
                       removeDestination(
@@ -524,7 +607,15 @@ onMounted(() => {
                       )
                     "
                   >
-                    Remove
+                    {{
+                      isDestinationBeingDeleted(
+                        notification.name,
+                        destination.provider,
+                        destination.target,
+                      )
+                        ? 'Removing...'
+                        : 'Remove'
+                    }}
                   </button>
                 </div>
               </div>
