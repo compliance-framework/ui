@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import { reactive, ref } from 'vue';
 import IndexView from '../IndexView.vue';
+import type { Evidence } from '@/stores/evidence.ts';
 
 const {
   routeState,
@@ -14,15 +15,119 @@ const {
   uiStore: uiStoreState,
   configStore,
 } = vi.hoisted(() => {
-  const baseEvidence = Array.from({ length: 55 }, (_, index) => ({
+  const baseEvidence: Evidence[] = Array.from({ length: 55 }, (_, index) => ({
     id: `evidence-${index + 1}`,
     uuid: `uuid-${index + 1}`,
     title: `Evidence ${String(index + 1).padStart(2, '0')}`,
+    description: `Description ${index + 1}`,
+    start: `2026-04-${String((index % 28) + 1).padStart(2, '0')}T00:00:00Z`,
     end: `2026-04-${String((index % 28) + 1).padStart(2, '0')}T12:00:00Z`,
     status: {
+      reason: 'ok',
       state: 'satisfied',
     },
     labels: [],
+    activities: [],
+  }));
+  const exportableEvidence: Evidence[] = [
+    {
+      id: 'export-1',
+      uuid: 'export-uuid-1',
+      title: 'Export Evidence 1',
+      description: 'Primary export row',
+      start: '2026-04-01T00:00:00Z',
+      end: '2026-04-01T12:00:00Z',
+      expires: '2026-05-01T00:00:00Z',
+      status: {
+        reason: 'fresh',
+        state: 'satisfied',
+      },
+      labels: [
+        { name: 'resource_id', value: 'arn:aws:iam::123456789012:role/Export' },
+        {
+          name: 'resource_id',
+          value: 'arn:aws:iam::123456789012:role/ExportDuplicate',
+        },
+        { name: 'account_id', value: '123456789012' },
+      ],
+      activities: [],
+    },
+    {
+      id: 'export-2',
+      uuid: 'export-uuid-2',
+      title: '=CSV Injection',
+      description: 'Secondary export row',
+      start: '2026-04-02T00:00:00Z',
+      end: '2026-04-02T12:00:00Z',
+      status: {
+        reason: 'stale',
+        state: 'not-satisfied',
+      },
+      labels: [{ name: 'owner', value: 'security' }],
+      activities: [],
+    },
+    ...Array.from({ length: 133 }, (_, index) => ({
+      id: `export-${index + 3}`,
+      uuid: `export-uuid-${index + 3}`,
+      title: `Export Evidence ${index + 3}`,
+      description: `Generated export row ${index + 3}`,
+      start: '2026-04-03T00:00:00Z',
+      end: '2026-04-03T12:00:00Z',
+      status: {
+        reason: 'generated',
+        state: 'satisfied',
+      },
+      labels: [{ name: 'batch', value: `batch-${index + 1}` }],
+      activities: [],
+    })),
+  ];
+  const largeExportableEvidence: Evidence[] = Array.from(
+    { length: 1001 },
+    (_, index) => ({
+      id: `large-export-${index + 1}`,
+      uuid: `large-export-uuid-${index + 1}`,
+      title: `Large Export Evidence ${index + 1}`,
+      description: `Large export row ${index + 1}`,
+      start: '2026-04-04T00:00:00Z',
+      end: '2026-04-04T12:00:00Z',
+      status: {
+        reason: 'bulk',
+        state: 'satisfied',
+      },
+      labels: [{ name: 'batch', value: `large-${index + 1}` }],
+      activities: [],
+    }),
+  );
+  const hugeExportableEvidence: Evidence[] = Array.from(
+    { length: 5001 },
+    (_, index) => ({
+      id: `huge-export-${index + 1}`,
+      uuid: `huge-export-uuid-${index + 1}`,
+      title: `Huge Export Evidence ${index + 1}`,
+      description: `Huge export row ${index + 1}`,
+      start: '2026-04-05T00:00:00Z',
+      end: '2026-04-05T12:00:00Z',
+      status: {
+        reason: 'bulk',
+        state: 'satisfied',
+      },
+      labels: [{ name: 'batch', value: `huge-${index + 1}` }],
+      activities: [],
+    }),
+  );
+  const growingExportableEvidence = Array.from({ length: 180 }, (_, index) => ({
+    id: `growing-export-${index + 1}`,
+    uuid: `growing-export-uuid-${index + 1}`,
+    title: `Growing Export Evidence ${index + 1}`,
+    description: `Growing export row ${index + 1}`,
+    start: '2026-04-06T00:00:00Z',
+    end: '2026-04-06T12:00:00Z',
+    status: {
+      reason: 'growing',
+      state: 'satisfied',
+    },
+    labels: [{ name: 'batch', value: `growing-${index + 1}` }],
+    activities: [],
   }));
 
   return {
@@ -50,13 +155,36 @@ const {
             id: 'filtered-evidence',
             uuid: 'filtered-uuid',
             title: 'Recent Evidence',
+            description: 'Recent evidence row',
+            start: '2026-05-01T00:00:00Z',
             end: '2026-05-01T12:00:00Z',
             status: {
+              reason: 'fresh',
               state: 'satisfied',
             },
             labels: [],
+            activities: [],
           },
         ];
+      }
+      if (filterText.includes('exportable') || name.includes('exportable')) {
+        data = exportableEvidence;
+      }
+      if (filterText.includes('huge-export') || name.includes('huge-export')) {
+        data = hugeExportableEvidence;
+      }
+      if (
+        filterText.includes('growing-export') ||
+        name.includes('growing-export')
+      ) {
+        data =
+          limit === 100 ? hugeExportableEvidence : growingExportableEvidence;
+      }
+      if (
+        filterText.includes('large-export') ||
+        name.includes('large-export')
+      ) {
+        data = largeExportableEvidence;
       }
 
       const start = (page - 1) * limit;
@@ -222,19 +350,19 @@ describe('Evidence IndexView', () => {
             props: ['type', 'disabled'],
             emits: ['click'],
             template:
-              '<button :type="type || \'button\'" :disabled="disabled" @click="$emit(\'click\')"><slot /></button>',
+              '<button :type="type || \'button\'" :disabled="disabled" @click="$emit(\'click\', $event)"><slot /></button>',
           },
           PrimaryButton: {
             props: ['type', 'disabled'],
             emits: ['click'],
             template:
-              '<button :type="type || \'button\'" :disabled="disabled" @click="$emit(\'click\')"><slot /></button>',
+              '<button :type="type || \'button\'" :disabled="disabled" @click="$emit(\'click\', $event)"><slot /></button>',
           },
           TertiaryButton: {
             props: ['disabled'],
             emits: ['click'],
             template:
-              '<button type="button" :disabled="disabled" @click="$emit(\'click\')"><slot /></button>',
+              '<button type="button" :disabled="disabled" @click="$emit(\'click\', $event)"><slot /></button>',
           },
           BurgerMenu: {
             props: ['items'],
@@ -283,6 +411,9 @@ describe('Evidence IndexView', () => {
           },
           BIconShare: {
             template: '<span>share</span>',
+          },
+          BIconDownload: {
+            template: '<span>download</span>',
           },
         },
       },
@@ -775,6 +906,283 @@ describe('Evidence IndexView', () => {
     expect(evidenceSearchPost).toHaveBeenLastCalledWith(
       '/api/evidence/search?page=1&limit=50&sortBy=status&sortDirection=asc&name=abc',
       expect.any(Object),
+    );
+  });
+
+  it('exports all evidence rows for the last executed search as CSV with flattened fields and label columns', async () => {
+    routeMock.query = {
+      filter: 'exportable',
+    };
+    const originalBlob = global.Blob;
+    const createObjectURLSpy = vi.spyOn(URL, 'createObjectURL');
+    const revokeObjectURLSpy = vi
+      .spyOn(URL, 'revokeObjectURL')
+      .mockImplementation(() => {});
+    const clickSpy = vi
+      .spyOn(HTMLAnchorElement.prototype, 'click')
+      .mockImplementation(() => {});
+    const appendChildSpy = vi
+      .spyOn(document.body, 'appendChild')
+      .mockImplementation((node) => node);
+    const removeChildSpy = vi
+      .spyOn(document.body, 'removeChild')
+      .mockImplementation((node) => node);
+    let exportedBlob:
+      | {
+          parts: unknown[];
+          type: string;
+        }
+      | undefined;
+
+    class MockBlob {
+      parts: unknown[];
+      type: string;
+
+      constructor(parts: unknown[], options?: { type?: string }) {
+        this.parts = parts;
+        this.type = options?.type ?? '';
+      }
+    }
+
+    global.Blob = MockBlob as unknown as typeof Blob;
+
+    createObjectURLSpy.mockImplementation((blob: Blob | MediaSource) => {
+      exportedBlob = blob as unknown as { parts: unknown[]; type: string };
+      return 'blob:mock-url';
+    });
+
+    try {
+      const wrapper = mountView();
+      await flushPromises();
+
+      const exportButton = wrapper
+        .findAll('button')
+        .find((button) => button.text().includes('Export to CSV'));
+
+      expect(exportButton).toBeDefined();
+
+      await exportButton!.trigger('click');
+      await flushPromises();
+
+      const exportCalls = evidenceSearchPost.mock.calls.slice(-2);
+
+      expect(exportCalls).toEqual([
+        [
+          '/api/evidence/search?page=1&limit=100&sortBy=lastSeenAt&sortDirection=desc&name=exportable',
+          {
+            filter: {
+              scope: {},
+            },
+          },
+        ],
+        [
+          '/api/evidence/search?page=2&limit=100&sortBy=lastSeenAt&sortDirection=desc&name=exportable',
+          {
+            filter: {
+              scope: {},
+            },
+          },
+        ],
+      ]);
+      expect(exportedBlob).toBeDefined();
+
+      const csvContent = exportedBlob!.parts.join('');
+      const [headerRow] = csvContent.split('\n');
+
+      expect(csvContent).toContain('"description"');
+      expect(csvContent).toContain('"status.state"');
+      expect(csvContent).toContain('"status.reason"');
+      expect(csvContent).toContain('"label.account_id"');
+      expect(csvContent).toContain('"label.owner"');
+      expect(csvContent).toContain('"label.resource_id"');
+      expect(csvContent).not.toContain('"id"');
+      expect(csvContent).not.toContain('"uuid"');
+      expect(csvContent).not.toContain('"labels"');
+      expect(csvContent).not.toContain('"origins"');
+      expect(csvContent).not.toContain('"backMatter"');
+      expect(csvContent).toContain(
+        '"arn:aws:iam::123456789012:role/Export; arn:aws:iam::123456789012:role/ExportDuplicate"',
+      );
+      expect(csvContent).toContain('"Generated export row 135"');
+      expect(csvContent).toContain("'=CSV Injection");
+      expect(headerRow.indexOf('"description"')).toBeLessThan(
+        headerRow.indexOf('"status.reason"'),
+      );
+      expect(headerRow.indexOf('"status.reason"')).toBeLessThan(
+        headerRow.indexOf('"status.state"'),
+      );
+      expect(headerRow.indexOf('"status.state"')).toBeLessThan(
+        headerRow.indexOf('"label.account_id"'),
+      );
+      expect(toastAdd).toHaveBeenCalledWith(
+        expect.objectContaining({
+          severity: 'success',
+          summary: 'CSV Exported',
+        }),
+      );
+    } finally {
+      createObjectURLSpy.mockRestore();
+      revokeObjectURLSpy.mockRestore();
+      clickSpy.mockRestore();
+      appendChildSpy.mockRestore();
+      removeChildSpy.mockRestore();
+      global.Blob = originalBlob;
+    }
+  });
+
+  it('confirms before exporting very large evidence result sets', async () => {
+    routeMock.query = {
+      filter: 'large-export',
+    };
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
+
+    const wrapper = mountView();
+    await flushPromises();
+    vi.clearAllMocks();
+
+    const exportButton = wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('Export to CSV'));
+
+    expect(exportButton).toBeDefined();
+
+    await exportButton!.trigger('click');
+    await flushPromises();
+
+    expect(confirmSpy).toHaveBeenCalledWith(
+      'Export 1001 evidence records to CSV? This may take a while.',
+    );
+    expect(evidenceSearchPost).not.toHaveBeenCalled();
+
+    confirmSpy.mockRestore();
+  });
+
+  it('disables CSV export when the current filter differs from the last executed search', async () => {
+    routeMock.query = {
+      filter: 'exportable',
+    };
+
+    const wrapper = mountView();
+    await flushPromises();
+    vi.clearAllMocks();
+
+    const filterInput = wrapper.find('input[name="filter"]');
+    await filterInput.setValue('recent');
+    await flushPromises();
+
+    const exportButton = wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('Export to CSV'));
+
+    expect(exportButton).toBeDefined();
+    expect(exportButton!.attributes('disabled')).toBeDefined();
+
+    await exportButton!.trigger('click');
+    await flushPromises();
+
+    expect(evidenceSearchPost).not.toHaveBeenCalled();
+  });
+
+  it('blocks exports above the hard max size', async () => {
+    routeMock.query = {
+      filter: 'huge-export',
+    };
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+
+    const wrapper = mountView();
+    await flushPromises();
+    vi.clearAllMocks();
+
+    const exportButton = wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('Export to CSV'));
+
+    expect(exportButton).toBeDefined();
+
+    await exportButton!.trigger('click');
+    await flushPromises();
+
+    expect(confirmSpy).not.toHaveBeenCalled();
+    expect(evidenceSearchPost).not.toHaveBeenCalled();
+    expect(toastAdd).toHaveBeenCalledWith(
+      expect.objectContaining({
+        severity: 'error',
+        summary: 'Export Too Large',
+      }),
+    );
+
+    confirmSpy.mockRestore();
+  });
+
+  it('blocks CSV export when the export dataset grows beyond the hard max', async () => {
+    routeMock.query = {
+      filter: 'growing-export',
+    };
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    const createObjectURLSpy = vi.spyOn(URL, 'createObjectURL');
+
+    const wrapper = mountView();
+    await flushPromises();
+    vi.clearAllMocks();
+
+    const exportButton = wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('Export to CSV'));
+
+    expect(exportButton).toBeDefined();
+
+    await exportButton!.trigger('click');
+    await flushPromises();
+
+    expect(confirmSpy).not.toHaveBeenCalled();
+    expect(createObjectURLSpy).not.toHaveBeenCalled();
+    expect(toastAdd).toHaveBeenCalledWith(
+      expect.objectContaining({
+        severity: 'error',
+        summary: 'Export Too Large',
+      }),
+    );
+
+    confirmSpy.mockRestore();
+    createObjectURLSpy.mockRestore();
+  });
+
+  it('shows normalized API error details when CSV export fails', async () => {
+    routeMock.query = {
+      filter: 'exportable',
+    };
+
+    const wrapper = mountView();
+    await flushPromises();
+    vi.clearAllMocks();
+
+    evidenceSearchPost.mockRejectedValueOnce({
+      response: {
+        status: 502,
+        data: {
+          errors: {
+            body: 'Upstream export search failed',
+          },
+        },
+      },
+      message: 'Request failed',
+    });
+
+    const exportButton = wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('Export to CSV'));
+
+    expect(exportButton).toBeDefined();
+
+    await exportButton!.trigger('click');
+    await flushPromises();
+
+    expect(toastAdd).toHaveBeenCalledWith(
+      expect.objectContaining({
+        severity: 'error',
+        summary: 'Export Failed',
+        detail: '502: Upstream export search failed',
+      }),
     );
   });
 });

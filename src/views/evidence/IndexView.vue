@@ -65,6 +65,14 @@
         <BIconShare class="mr-2" />
         Share
       </SecondaryButton>
+      <SecondaryButton
+        :disabled="!canExportCsv"
+        @click.prevent="exportToCsv"
+        class="text-sm"
+      >
+        <BIconDownload class="mr-2" />
+        {{ exportingCsv ? 'Exporting...' : 'Export to CSV' }}
+      </SecondaryButton>
       <PrimaryButton @click.prevent="save" class="text-sm">
         Save
       </PrimaryButton>
@@ -123,7 +131,7 @@ import PageCard from '@/components/PageCard.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
 import Message from '@/volt/Message.vue';
 import { FilterParser } from '@/parsers/labelfilter.ts';
-import { BIconSearch, BIconShare } from 'bootstrap-icons-vue';
+import { BIconDownload, BIconSearch, BIconShare } from 'bootstrap-icons-vue';
 import type { ChartData } from 'chart.js';
 import {
   calculateComplianceOverTimeData,
@@ -148,6 +156,7 @@ import EvidenceList from '@/components/EvidenceList.vue';
 import BurgerMenu from '@/components/BurgerMenu.vue';
 import { useAuthenticatedInstance, useDataApi } from '@/composables/axios';
 import type { PaginatedListResponse } from '@/stores/types.ts';
+import { getErrorDetail, getErrorStatus } from '@/utils/httpErrors';
 
 const configStore = useConfigStore();
 const route = useRoute();
@@ -162,12 +171,42 @@ const currentPage = ref(1);
 const totalPages = ref(1);
 const sortBy = ref<EvidenceSortBy>('lastSeenAt');
 const sortDirection = ref<SortDirection>('desc');
+const exportingCsv = ref(false);
+const lastExecutedFilter = ref('');
+const lastExecutedSortBy = ref<EvidenceSortBy>('lastSeenAt');
+const lastExecutedSortDirection = ref<SortDirection>('desc');
 
 const EVIDENCE_PAGE_SIZE = 50;
+const EVIDENCE_EXPORT_PAGE_SIZE = 100;
+const EVIDENCE_EXPORT_CONFIRM_THRESHOLD = 1000;
+const EVIDENCE_EXPORT_MAX_ROWS = 5000;
 const SEARCH_DEBOUNCE_MS = 500;
 const EVIDENCE_STATUS_INTERVAL =
   '0m,2m,4m,6m,8m,12m,16m,20m,25m,30m,40m,50m,1h';
+const CSV_EXCLUDED_HEADERS = new Set([
+  'id',
+  'uuid',
+  'labels',
+  'origins',
+  'backMatter',
+]);
 let filterRouteUpdateTimeout: ReturnType<typeof setTimeout> | undefined;
+
+const hasPendingSearchChanges = computed(() => {
+  return (
+    uiStore.evidenceFilter.trim() !== lastExecutedFilter.value ||
+    sortBy.value !== lastExecutedSortBy.value ||
+    sortDirection.value !== lastExecutedSortDirection.value
+  );
+});
+
+const canExportCsv = computed(() => {
+  return (
+    totalEvidence.value > 0 &&
+    !exportingCsv.value &&
+    !hasPendingSearchChanges.value
+  );
+});
 
 const filter = computed({
   get: () => uiStore.evidenceFilter,
@@ -376,8 +415,16 @@ async function flushFilterRouteUpdate() {
   return true;
 }
 
-function buildEvidenceSearchRequest(page: number) {
-  const searchText = uiStore.evidenceFilter.trim();
+function buildEvidenceSearchRequest(
+  page: number,
+  options?: {
+    filterText?: string;
+    limit?: number;
+    sortBy?: EvidenceSortBy;
+    sortDirection?: SortDirection;
+  },
+) {
+  const searchText = (options?.filterText ?? uiStore.evidenceFilter).trim();
   const isLabelSearch = isLabelFilterSearch(searchText);
   const query = isLabelSearch
     ? new FilterParser(searchText).parse()
@@ -385,9 +432,9 @@ function buildEvidenceSearchRequest(page: number) {
 
   const params = new URLSearchParams({
     page: String(page),
-    limit: String(EVIDENCE_PAGE_SIZE),
-    sortBy: sortBy.value,
-    sortDirection: sortDirection.value,
+    limit: String(options?.limit ?? EVIDENCE_PAGE_SIZE),
+    sortBy: options?.sortBy ?? sortBy.value,
+    sortDirection: options?.sortDirection ?? sortDirection.value,
   });
 
   if (searchText && !isLabelSearch) {
@@ -408,6 +455,9 @@ function buildEvidenceSearchRequest(page: number) {
       filter: query,
     },
     complianceParams,
+    searchText,
+    sortBy: options?.sortBy ?? sortBy.value,
+    sortDirection: options?.sortDirection ?? sortDirection.value,
   };
 }
 
@@ -452,8 +502,235 @@ async function search(page = currentPage.value) {
     totalEvidence.value = paginatedEvidence.total ?? 0;
     currentPage.value = paginatedEvidence.page ?? page;
     totalPages.value = Math.max(paginatedEvidence.totalPages ?? 1, 1);
+    lastExecutedFilter.value = request.searchText;
+    lastExecutedSortBy.value = request.sortBy;
+    lastExecutedSortDirection.value = request.sortDirection;
   } catch (err) {
     error.value = err as AxiosError;
+  }
+}
+
+function sanitizeCsvCell(value: string) {
+  if (value.match(/^\s*[=+\-@]/)) {
+    return "'" + value;
+  }
+
+  return value;
+}
+
+function flattenCsvRecord(
+  value: unknown,
+  prefix = '',
+  output: Record<string, string> = {},
+) {
+  if (value === null || value === undefined) {
+    if (prefix) {
+      output[prefix] = '';
+    }
+
+    return output;
+  }
+
+  if (Array.isArray(value)) {
+    if (prefix) {
+      output[prefix] = JSON.stringify(value);
+    }
+
+    return output;
+  }
+
+  if (typeof value === 'object') {
+    const entries = Object.entries(value as Record<string, unknown>);
+
+    if (entries.length === 0) {
+      if (prefix) {
+        output[prefix] = '{}';
+      }
+
+      return output;
+    }
+
+    for (const [key, nestedValue] of entries) {
+      const nextPrefix = prefix ? `${prefix}.${key}` : key;
+      flattenCsvRecord(nestedValue, nextPrefix, output);
+    }
+
+    return output;
+  }
+
+  if (prefix) {
+    output[prefix] = String(value);
+  }
+
+  return output;
+}
+
+function isExcludedCsvHeader(header: string) {
+  for (const excludedHeader of CSV_EXCLUDED_HEADERS) {
+    if (header === excludedHeader || header.startsWith(`${excludedHeader}.`)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function buildEvidenceCsv(evidenceItems: Evidence[]) {
+  const payloadHeaders = new Set<string>();
+  const labelHeaders = new Set<string>();
+  const rows = evidenceItems.map((item) => {
+    const row = flattenCsvRecord(item);
+
+    for (const header of Object.keys(row)) {
+      if (!header.startsWith('label.') && !isExcludedCsvHeader(header)) {
+        payloadHeaders.add(header);
+      }
+    }
+
+    for (const label of item.labels ?? []) {
+      const labelHeader = `label.${label.name}`;
+      const existingValue = row[labelHeader];
+      row[labelHeader] =
+        existingValue == null || existingValue === ''
+          ? label.value
+          : `${existingValue}; ${label.value}`;
+      labelHeaders.add(labelHeader);
+    }
+
+    return row;
+  });
+
+  const headers = [
+    ...Array.from(payloadHeaders).sort(),
+    ...Array.from(labelHeaders).sort(),
+  ];
+
+  return [
+    headers,
+    ...rows.map((row) => headers.map((header) => row[header] ?? '')),
+  ]
+    .map((row) =>
+      row
+        .map((cell) => `"${sanitizeCsvCell(cell).replace(/"/g, '""')}"`)
+        .join(','),
+    )
+    .join('\n');
+}
+
+function downloadCsv(csvContent: string) {
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `evidence-export-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+function showExportTooLargeToast() {
+  toast.add({
+    severity: 'error',
+    summary: 'Export Too Large',
+    detail: `CSV export is limited to ${EVIDENCE_EXPORT_MAX_ROWS} evidence records. Narrow your search and try again.`,
+    life: 5000,
+  });
+}
+
+function confirmCsvExport(total: number) {
+  if (total <= EVIDENCE_EXPORT_CONFIRM_THRESHOLD) {
+    return true;
+  }
+
+  return window.confirm(
+    `Export ${total} evidence records to CSV? This may take a while.`,
+  );
+}
+
+async function exportToCsv() {
+  if (!canExportCsv.value) {
+    return;
+  }
+
+  if (totalEvidence.value > EVIDENCE_EXPORT_MAX_ROWS) {
+    showExportTooLargeToast();
+    return;
+  }
+
+  if (!confirmCsvExport(totalEvidence.value)) {
+    return;
+  }
+
+  exportingCsv.value = true;
+
+  try {
+    const allEvidence: Evidence[] = [];
+    let page = 1;
+    let totalExportPages = 1;
+    let confirmedExportTotal =
+      totalEvidence.value > EVIDENCE_EXPORT_CONFIRM_THRESHOLD
+        ? totalEvidence.value
+        : 0;
+
+    do {
+      const request = buildEvidenceSearchRequest(page, {
+        filterText: lastExecutedFilter.value,
+        limit: EVIDENCE_EXPORT_PAGE_SIZE,
+        sortBy: lastExecutedSortBy.value,
+        sortDirection: lastExecutedSortDirection.value,
+      });
+      const response = await authenticatedApi.post<
+        PaginatedListResponse<Evidence>
+      >(request.url, request.body);
+      const paginatedEvidence = response.data;
+      const exportTotal = paginatedEvidence.total ?? allEvidence.length;
+
+      if (exportTotal > EVIDENCE_EXPORT_MAX_ROWS) {
+        showExportTooLargeToast();
+        return;
+      }
+
+      if (
+        exportTotal > EVIDENCE_EXPORT_CONFIRM_THRESHOLD &&
+        exportTotal > confirmedExportTotal
+      ) {
+        if (!confirmCsvExport(exportTotal)) {
+          return;
+        }
+
+        confirmedExportTotal = exportTotal;
+      }
+
+      allEvidence.push(...(paginatedEvidence.data ?? []));
+      totalExportPages = Math.max(paginatedEvidence.totalPages ?? 1, 1);
+      page += 1;
+    } while (page <= totalExportPages);
+
+    const csvContent = buildEvidenceCsv(allEvidence);
+
+    downloadCsv(csvContent);
+    toast.add({
+      severity: 'success',
+      summary: 'CSV Exported',
+      detail: `Downloaded ${allEvidence.length} evidence records.`,
+      life: 3000,
+    });
+  } catch (err) {
+    console.error('Failed to export evidence CSV:', err);
+    const errorStatus = getErrorStatus(err);
+    const errorDetail = await getErrorDetail(
+      err,
+      'Unable to export evidence as CSV. Please try again.',
+    );
+    toast.add({
+      severity: 'error',
+      summary: 'Export Failed',
+      detail: errorStatus ? `${errorStatus}: ${errorDetail}` : errorDetail,
+      life: 4000,
+    });
+  } finally {
+    exportingCsv.value = false;
   }
 }
 

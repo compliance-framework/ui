@@ -1,9 +1,10 @@
 <template>
-  <div class="flex items-center flex-wrap">
+  <div class="flex min-w-0 max-w-full items-center flex-wrap">
     <div
-      v-for="label of sortedLabels"
-      :key="label.name"
-      class="bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 m-1 text-gray-800 dark:text-slate-300 rounded-md text-sm px-2 py-1"
+      v-for="(label, index) of sortedLabels"
+      :key="`${label.name}:${label.value}:${index}`"
+      class="m-1 max-w-full min-w-0 break-words rounded-md border border-slate-200 bg-slate-100 px-2 py-1 text-sm text-gray-800 [overflow-wrap:anywhere] dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300"
+      :title="label.label"
     >
       {{ label.label }}
     </div>
