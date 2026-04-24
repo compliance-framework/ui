@@ -257,6 +257,10 @@ function remainingLabelsTooltip(labels: EvidenceLabel[]) {
   return labels.slice(LABEL_PREVIEW_LIMIT).map(formatLabel).join('\n');
 }
 
+function remainingLabelsAriaText(labels: EvidenceLabel[]) {
+  return labels.slice(LABEL_PREVIEW_LIMIT).map(formatLabel).join('; ');
+}
+
 function remainingLabelsAriaLabel(labels: EvidenceLabel[]) {
   const hiddenCount = hiddenLabelCount(labels);
 
@@ -266,7 +270,7 @@ function remainingLabelsAriaLabel(labels: EvidenceLabel[]) {
 
   return `View all labels. +${hiddenCount} more ${
     hiddenCount === 1 ? 'label' : 'labels'
-  }: ${remainingLabelsTooltip(labels)}`;
+  }: ${remainingLabelsAriaText(labels)}`;
 }
 
 function labelPreviewText(labels: EvidenceLabel[]) {

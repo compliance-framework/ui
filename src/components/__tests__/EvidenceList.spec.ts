@@ -315,7 +315,7 @@ describe('EvidenceList', () => {
     expect(preview.text()).not.toContain('owner=security');
     expect(moreLabels?.attributes('title')).toBeUndefined();
     expect(moreLabels?.attributes('aria-label')).toBe(
-      'View all labels. +2 more labels: environment=production\nowner=security',
+      'View all labels. +2 more labels: environment=production; owner=security',
     );
     await moreLabels?.trigger('click');
     expect(wrapper.text()).toContain('environment=production');
