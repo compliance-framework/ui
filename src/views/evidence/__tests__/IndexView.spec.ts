@@ -1037,7 +1037,6 @@ describe('Evidence IndexView', () => {
   });
 
   it('disables CSV export when the current filter differs from the last executed search', async () => {
-    vi.useFakeTimers();
     routeMock.query = {
       filter: 'exportable',
     };
