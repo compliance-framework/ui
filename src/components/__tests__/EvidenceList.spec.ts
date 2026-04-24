@@ -294,8 +294,8 @@ describe('EvidenceList', () => {
 
     const preview = wrapper.find('[data-testid="label-preview"]');
     const previewLabels = preview.findAll('span[title]');
-    const moreLabels = preview.findAll('span').find((span) => {
-      return span.text().includes('+2 more labels');
+    const moreLabels = preview.findAll('button').find((button) => {
+      return button.text().includes('+2 more labels');
     });
 
     expect(wrapper.find('table').classes()).toContain('table-fixed');
@@ -309,7 +309,7 @@ describe('EvidenceList', () => {
     expect(preview.text()).not.toContain('owner=security');
     expect(moreLabels?.attributes('title')).toBeUndefined();
     expect(moreLabels?.attributes('aria-label')).toBe(
-      'environment=production\nowner=security',
+      '+2 more labels: environment=production\nowner=security',
     );
     expect(previewLabels[0].classes()).toEqual(
       expect.arrayContaining([

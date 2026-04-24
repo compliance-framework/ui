@@ -94,56 +94,55 @@
           {{ formatDateTime(item.end) }}
         </td>
         <td class="px-2 py-2 min-w-0" v-if="configStore.showLabels">
-          <div class="h-full flex min-w-0 max-w-full items-center gap-2">
-            <button
-              v-tooltip.top="'View All Labels'"
-              type="button"
-              class="inline-flex shrink-0 cursor-pointer items-center rounded-md text-gray-600 hover:text-ccf-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-ccf-500 focus-visible:ring-offset-2 dark:text-slate-300 dark:hover:text-ccf-300 dark:focus-visible:ring-offset-slate-900"
-              aria-label="View All Labels"
-              @click.stop="toggle($event, item.labels)"
-            >
-              <BIconEye />
-            </button>
-            <div
-              data-testid="label-preview"
-              class="flex min-w-0 flex-1 flex-wrap items-start gap-1 py-1"
-              :title="labelPreviewTooltip(visibleLabels(item.labels))"
-            >
-              <template v-if="previewLabels(visibleLabels(item.labels)).length">
-                <span
-                  v-for="label in previewLabels(visibleLabels(item.labels))"
-                  :key="label"
-                  class="inline-block max-w-full min-w-0 whitespace-normal break-words rounded-md border border-slate-200 bg-slate-100 px-2 py-1 text-sm leading-snug text-gray-700 [overflow-wrap:anywhere] dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300"
-                  :title="label"
-                >
-                  {{ label }}
-                </span>
-                <span
-                  v-if="hiddenLabelCount(visibleLabels(item.labels)) > 0"
-                  v-tooltip.top="
-                    remainingLabelsTooltip(visibleLabels(item.labels))
-                  "
-                  class="inline-block shrink-0 rounded-md border border-slate-200 bg-white px-2 py-1 text-sm text-gray-600 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-400"
-                  :aria-label="
-                    remainingLabelsTooltip(visibleLabels(item.labels))
-                  "
-                >
-                  +{{ hiddenLabelCount(visibleLabels(item.labels)) }} more
-                  {{
-                    hiddenLabelCount(visibleLabels(item.labels)) === 1
-                      ? 'label'
-                      : 'labels'
-                  }}
-                </span>
-              </template>
-              <span
-                v-else
-                class="inline-block shrink-0 rounded-md border border-slate-200 bg-slate-100 px-2 py-1 text-sm text-gray-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300"
+          <template
+            v-for="preview in [buildLabelPreview(item)]"
+            :key="preview.key"
+          >
+            <div class="h-full flex min-w-0 max-w-full items-center gap-2">
+              <button
+                v-tooltip.top="'View All Labels'"
+                type="button"
+                class="inline-flex shrink-0 cursor-pointer items-center rounded-md text-gray-600 hover:text-ccf-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-ccf-500 focus-visible:ring-offset-2 dark:text-slate-300 dark:hover:text-ccf-300 dark:focus-visible:ring-offset-slate-900"
+                aria-label="View All Labels"
+                @click.stop="toggle($event, item.labels)"
               >
-                No labels
-              </span>
+                <BIconEye />
+              </button>
+              <div
+                data-testid="label-preview"
+                class="flex min-w-0 flex-1 flex-wrap items-start gap-1 py-1"
+                :title="preview.previewTooltip"
+              >
+                <template v-if="preview.preview.length">
+                  <span
+                    v-for="(label, index) in preview.preview"
+                    :key="`${item.uuid}-preview-${index}-${label}`"
+                    class="inline-block max-w-full min-w-0 whitespace-normal break-words rounded-md border border-slate-200 bg-slate-100 px-2 py-1 text-sm leading-snug text-gray-700 [overflow-wrap:anywhere] dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300"
+                    :title="label"
+                  >
+                    {{ label }}
+                  </span>
+                  <button
+                    v-if="preview.hiddenCount > 0"
+                    v-tooltip.top="preview.remainingTooltip"
+                    type="button"
+                    class="inline-block shrink-0 rounded-md border border-slate-200 bg-white px-2 py-1 text-sm text-gray-600 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-400"
+                    :aria-label="preview.remainingAriaLabel"
+                    @click.stop
+                  >
+                    +{{ preview.hiddenCount }} more
+                    {{ preview.hiddenCount === 1 ? 'label' : 'labels' }}
+                  </button>
+                </template>
+                <span
+                  v-else
+                  class="inline-block shrink-0 rounded-md border border-slate-200 bg-slate-100 px-2 py-1 text-sm text-gray-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300"
+                >
+                  No labels
+                </span>
+              </div>
             </div>
-          </div>
+          </template>
         </td>
       </tr>
     </tbody>
@@ -152,8 +151,8 @@
     <div class="flex gap-2 items-center flex-wrap">
       <Chip
         class="mx-0.5 max-w-full whitespace-normal text-sm [overflow-wrap:anywhere]"
-        v-for="label in popoverLabels"
-        :key="label"
+        v-for="(label, index) in popoverLabels"
+        :key="`popover-${index}-${label}`"
         :label="label"
       />
     </div>
@@ -226,9 +225,7 @@ function getSortLabel(field: EvidenceSortBy) {
 }
 
 function toggle(event: Event, labels: EvidenceLabel[]) {
-  popoverLabels.value = labels.map(
-    (label: EvidenceLabel) => `${label.name}=${label.value}`,
-  );
+  popoverLabels.value = labels.map(formatLabel);
   op.value.toggle(event);
 }
 
@@ -260,6 +257,18 @@ function remainingLabelsTooltip(labels: EvidenceLabel[]) {
   return labels.slice(LABEL_PREVIEW_LIMIT).map(formatLabel).join('\n');
 }
 
+function remainingLabelsAriaLabel(labels: EvidenceLabel[]) {
+  const hiddenCount = hiddenLabelCount(labels);
+
+  if (hiddenCount === 0) {
+    return '';
+  }
+
+  return `+${hiddenCount} more ${
+    hiddenCount === 1 ? 'label' : 'labels'
+  }: ${remainingLabelsTooltip(labels)}`;
+}
+
 function labelPreviewText(labels: EvidenceLabel[]) {
   if (labels.length === 0) {
     return 'No labels';
@@ -275,6 +284,19 @@ function labelPreviewTooltip(labels: EvidenceLabel[]) {
   }
 
   return `View ${labelPreviewText(labels)}`;
+}
+
+function buildLabelPreview(item: Evidence) {
+  const visible = visibleLabels(item.labels);
+
+  return {
+    key: `preview-${item.uuid}`,
+    preview: previewLabels(visible),
+    hiddenCount: hiddenLabelCount(visible),
+    remainingTooltip: remainingLabelsTooltip(visible),
+    remainingAriaLabel: remainingLabelsAriaLabel(visible),
+    previewTooltip: labelPreviewTooltip(visible),
+  };
 }
 
 async function openEvidence(item: Evidence) {
