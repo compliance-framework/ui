@@ -94,55 +94,54 @@
           {{ formatDateTime(item.end) }}
         </td>
         <td class="px-2 py-2 min-w-0" v-if="configStore.showLabels">
-          <template
-            v-for="preview in [buildLabelPreview(item)]"
-            :key="preview.key"
-          >
-            <div class="h-full flex min-w-0 max-w-full items-center gap-2">
-              <button
-                v-tooltip.top="'View All Labels'"
-                type="button"
-                class="inline-flex shrink-0 cursor-pointer items-center rounded-md text-gray-600 hover:text-ccf-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-ccf-500 focus-visible:ring-offset-2 dark:text-slate-300 dark:hover:text-ccf-300 dark:focus-visible:ring-offset-slate-900"
-                aria-label="View All Labels"
-                @click.stop="toggle($event, item.labels)"
-              >
-                <BIconEye />
-              </button>
-              <div
-                data-testid="label-preview"
-                class="flex min-w-0 flex-1 flex-wrap items-start gap-1 py-1"
-                :title="preview.previewTooltip"
-              >
-                <template v-if="preview.preview.length">
-                  <span
-                    v-for="(label, index) in preview.preview"
-                    :key="`${item.uuid}-preview-${index}-${label}`"
-                    class="inline-block max-w-full min-w-0 whitespace-normal break-words rounded-md border border-slate-200 bg-slate-100 px-2 py-1 text-sm leading-snug text-gray-700 [overflow-wrap:anywhere] dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300"
-                    :title="label"
-                  >
-                    {{ label }}
-                  </span>
-                  <button
-                    v-if="preview.hiddenCount > 0"
-                    v-tooltip.top="preview.remainingTooltip"
-                    type="button"
-                    class="inline-block shrink-0 rounded-md border border-slate-200 bg-white px-2 py-1 text-sm text-gray-600 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-400"
-                    :aria-label="preview.remainingAriaLabel"
-                    @click.stop="toggle($event, item.labels)"
-                  >
-                    +{{ preview.hiddenCount }} more
-                    {{ preview.hiddenCount === 1 ? 'label' : 'labels' }}
-                  </button>
-                </template>
+          <div class="h-full flex min-w-0 max-w-full items-center gap-2">
+            <button
+              v-tooltip.top="'View All Labels'"
+              type="button"
+              class="inline-flex shrink-0 cursor-pointer items-center rounded-md text-gray-600 hover:text-ccf-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-ccf-500 focus-visible:ring-offset-2 dark:text-slate-300 dark:hover:text-ccf-300 dark:focus-visible:ring-offset-slate-900"
+              aria-label="View All Labels"
+              @click.stop="toggle($event, item.labels)"
+            >
+              <BIconEye />
+            </button>
+            <div
+              data-testid="label-preview"
+              class="flex min-w-0 flex-1 flex-wrap items-start gap-1 py-1"
+              :title="labelPreviews[item.id]?.previewTooltip"
+            >
+              <template v-if="labelPreviews[item.id]?.preview.length">
                 <span
-                  v-else
-                  class="inline-block shrink-0 rounded-md border border-slate-200 bg-slate-100 px-2 py-1 text-sm text-gray-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300"
+                  v-for="(label, index) in labelPreviews[item.id]?.preview"
+                  :key="`${item.uuid}-preview-${index}-${label}`"
+                  class="inline-block max-w-full min-w-0 whitespace-normal break-words rounded-md border border-slate-200 bg-slate-100 px-2 py-1 text-sm leading-snug text-gray-700 [overflow-wrap:anywhere] dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300"
+                  :title="label"
                 >
-                  No labels
+                  {{ label }}
                 </span>
-              </div>
+                <button
+                  v-if="labelPreviews[item.id]?.hiddenCount"
+                  v-tooltip.top="labelPreviews[item.id]?.remainingTooltip"
+                  type="button"
+                  class="inline-block shrink-0 rounded-md border border-slate-200 bg-white px-2 py-1 text-sm text-gray-600 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-400"
+                  :aria-label="labelPreviews[item.id]?.remainingAriaLabel"
+                  @click.stop="toggle($event, item.labels)"
+                >
+                  +{{ labelPreviews[item.id]?.hiddenCount }} more
+                  {{
+                    labelPreviews[item.id]?.hiddenCount === 1
+                      ? 'label'
+                      : 'labels'
+                  }}
+                </button>
+              </template>
+              <span
+                v-else
+                class="inline-block shrink-0 rounded-md border border-slate-200 bg-slate-100 px-2 py-1 text-sm text-gray-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300"
+              >
+                No labels
+              </span>
             </div>
-          </template>
+          </div>
         </td>
       </tr>
     </tbody>
@@ -162,7 +161,7 @@
 import ResultStatusRing from '@/components/ResultStatusRing.vue';
 import { useConfigStore } from '@/stores/config.ts';
 import Popover from '@/volt/Popover.vue';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useRoute, useRouter, type LocationQueryRaw } from 'vue-router';
 import type {
   Evidence,
@@ -198,6 +197,14 @@ const configStore = useConfigStore();
 const route = useRoute();
 const router = useRouter();
 const LABEL_PREVIEW_LIMIT = 5;
+
+interface LabelPreview {
+  preview: string[];
+  hiddenCount: number;
+  remainingTooltip: string;
+  remainingAriaLabel: string;
+  previewTooltip: string;
+}
 
 function getAriaSort(field: EvidenceSortBy) {
   if (props.sortBy !== field) {
@@ -290,11 +297,10 @@ function labelPreviewTooltip(labels: EvidenceLabel[]) {
   return `View ${labelPreviewText(labels)}`;
 }
 
-function buildLabelPreview(item: Evidence) {
+function buildLabelPreview(item: Evidence): LabelPreview {
   const visible = visibleLabels(item.labels);
 
   return {
-    key: `preview-${item.uuid}`,
     preview: previewLabels(visible),
     hiddenCount: hiddenLabelCount(visible),
     remainingTooltip: remainingLabelsTooltip(visible),
@@ -302,6 +308,12 @@ function buildLabelPreview(item: Evidence) {
     previewTooltip: labelPreviewTooltip(visible),
   };
 }
+
+const labelPreviews = computed<Record<string, LabelPreview>>(() => {
+  return Object.fromEntries(
+    props.evidence.map((item) => [item.id, buildLabelPreview(item)]),
+  );
+});
 
 async function openEvidence(item: Evidence) {
   await router.push(evidenceRoute(item));

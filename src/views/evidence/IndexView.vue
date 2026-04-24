@@ -629,27 +629,36 @@ function downloadCsv(csvContent: string) {
   URL.revokeObjectURL(url);
 }
 
+function showExportTooLargeToast() {
+  toast.add({
+    severity: 'error',
+    summary: 'Export Too Large',
+    detail: `CSV export is limited to ${EVIDENCE_EXPORT_MAX_ROWS} evidence records. Narrow your search and try again.`,
+    life: 5000,
+  });
+}
+
+function confirmCsvExport(total: number) {
+  if (total <= EVIDENCE_EXPORT_CONFIRM_THRESHOLD) {
+    return true;
+  }
+
+  return window.confirm(
+    `Export ${total} evidence records to CSV? This may take a while.`,
+  );
+}
+
 async function exportToCsv() {
   if (!canExportCsv.value) {
     return;
   }
 
   if (totalEvidence.value > EVIDENCE_EXPORT_MAX_ROWS) {
-    toast.add({
-      severity: 'error',
-      summary: 'Export Too Large',
-      detail: `CSV export is limited to ${EVIDENCE_EXPORT_MAX_ROWS} evidence records. Narrow your search and try again.`,
-      life: 5000,
-    });
+    showExportTooLargeToast();
     return;
   }
 
-  if (
-    totalEvidence.value > EVIDENCE_EXPORT_CONFIRM_THRESHOLD &&
-    !window.confirm(
-      `Export ${totalEvidence.value} evidence records to CSV? This may take a while.`,
-    )
-  ) {
+  if (!confirmCsvExport(totalEvidence.value)) {
     return;
   }
 
@@ -659,6 +668,10 @@ async function exportToCsv() {
     const allEvidence: Evidence[] = [];
     let page = 1;
     let totalExportPages = 1;
+    let confirmedExportTotal =
+      totalEvidence.value > EVIDENCE_EXPORT_CONFIRM_THRESHOLD
+        ? totalEvidence.value
+        : 0;
 
     do {
       const request = buildEvidenceSearchRequest(page, {
@@ -671,6 +684,23 @@ async function exportToCsv() {
         PaginatedListResponse<Evidence>
       >(request.url, request.body);
       const paginatedEvidence = response.data;
+      const exportTotal = paginatedEvidence.total ?? allEvidence.length;
+
+      if (exportTotal > EVIDENCE_EXPORT_MAX_ROWS) {
+        showExportTooLargeToast();
+        return;
+      }
+
+      if (
+        exportTotal > EVIDENCE_EXPORT_CONFIRM_THRESHOLD &&
+        exportTotal > confirmedExportTotal
+      ) {
+        if (!confirmCsvExport(exportTotal)) {
+          return;
+        }
+
+        confirmedExportTotal = exportTotal;
+      }
 
       allEvidence.push(...(paginatedEvidence.data ?? []));
       totalExportPages = Math.max(paginatedEvidence.totalPages ?? 1, 1);

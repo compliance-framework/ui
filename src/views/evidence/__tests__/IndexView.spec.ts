@@ -115,6 +115,20 @@ const {
       activities: [],
     }),
   );
+  const growingExportableEvidence = Array.from({ length: 180 }, (_, index) => ({
+    id: `growing-export-${index + 1}`,
+    uuid: `growing-export-uuid-${index + 1}`,
+    title: `Growing Export Evidence ${index + 1}`,
+    description: `Growing export row ${index + 1}`,
+    start: '2026-04-06T00:00:00Z',
+    end: '2026-04-06T12:00:00Z',
+    status: {
+      reason: 'growing',
+      state: 'satisfied',
+    },
+    labels: [{ name: 'batch', value: `growing-${index + 1}` }],
+    activities: [],
+  }));
 
   return {
     routeState: {
@@ -158,6 +172,13 @@ const {
       }
       if (filterText.includes('huge-export') || name.includes('huge-export')) {
         data = hugeExportableEvidence;
+      }
+      if (
+        filterText.includes('growing-export') ||
+        name.includes('growing-export')
+      ) {
+        data =
+          limit === 100 ? hugeExportableEvidence : growingExportableEvidence;
       }
       if (
         filterText.includes('large-export') ||
@@ -1091,6 +1112,39 @@ describe('Evidence IndexView', () => {
     );
 
     confirmSpy.mockRestore();
+  });
+
+  it('blocks CSV export when the export dataset grows beyond the hard max', async () => {
+    routeMock.query = {
+      filter: 'growing-export',
+    };
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    const createObjectURLSpy = vi.spyOn(URL, 'createObjectURL');
+
+    const wrapper = mountView();
+    await flushPromises();
+    vi.clearAllMocks();
+
+    const exportButton = wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('Export to CSV'));
+
+    expect(exportButton).toBeDefined();
+
+    await exportButton!.trigger('click');
+    await flushPromises();
+
+    expect(confirmSpy).not.toHaveBeenCalled();
+    expect(createObjectURLSpy).not.toHaveBeenCalled();
+    expect(toastAdd).toHaveBeenCalledWith(
+      expect.objectContaining({
+        severity: 'error',
+        summary: 'Export Too Large',
+      }),
+    );
+
+    confirmSpy.mockRestore();
+    createObjectURLSpy.mockRestore();
   });
 
   it('shows normalized API error details when CSV export fails', async () => {
