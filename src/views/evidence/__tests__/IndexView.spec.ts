@@ -1036,6 +1036,33 @@ describe('Evidence IndexView', () => {
     confirmSpy.mockRestore();
   });
 
+  it('disables CSV export when the current filter differs from the last executed search', async () => {
+    vi.useFakeTimers();
+    routeMock.query = {
+      filter: 'exportable',
+    };
+
+    const wrapper = mountView();
+    await flushPromises();
+    vi.clearAllMocks();
+
+    const filterInput = wrapper.find('input[name="filter"]');
+    await filterInput.setValue('recent');
+    await flushPromises();
+
+    const exportButton = wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('Export to CSV'));
+
+    expect(exportButton).toBeDefined();
+    expect(exportButton!.attributes('disabled')).toBeDefined();
+
+    await exportButton!.trigger('click');
+    await flushPromises();
+
+    expect(evidenceSearchPost).not.toHaveBeenCalled();
+  });
+
   it('blocks exports above the hard max size', async () => {
     routeMock.query = {
       filter: 'huge-export',

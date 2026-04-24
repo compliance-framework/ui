@@ -66,7 +66,7 @@
         Share
       </SecondaryButton>
       <SecondaryButton
-        :disabled="totalEvidence === 0 || exportingCsv"
+        :disabled="!canExportCsv"
         @click.prevent="exportToCsv"
         class="text-sm"
       >
@@ -191,6 +191,22 @@ const CSV_EXCLUDED_HEADERS = new Set([
   'backMatter',
 ]);
 let filterRouteUpdateTimeout: ReturnType<typeof setTimeout> | undefined;
+
+const hasPendingSearchChanges = computed(() => {
+  return (
+    uiStore.evidenceFilter.trim() !== lastExecutedFilter.value ||
+    sortBy.value !== lastExecutedSortBy.value ||
+    sortDirection.value !== lastExecutedSortDirection.value
+  );
+});
+
+const canExportCsv = computed(() => {
+  return (
+    totalEvidence.value > 0 &&
+    !exportingCsv.value &&
+    !hasPendingSearchChanges.value
+  );
+});
 
 const filter = computed({
   get: () => uiStore.evidenceFilter,
@@ -614,7 +630,7 @@ function downloadCsv(csvContent: string) {
 }
 
 async function exportToCsv() {
-  if (totalEvidence.value === 0 || exportingCsv.value) {
+  if (!canExportCsv.value) {
     return;
   }
 
