@@ -229,7 +229,7 @@ describe('EvidenceList', () => {
     expect(evidenceLink.attributes('data-to')).toContain('"page":"2"');
   });
 
-  it('shows the first five labels and a compact remaining-label hint', () => {
+  it('shows the first five labels and a compact remaining-label hint', async () => {
     configStore.showLabels = true;
     const longLabelValue =
       'arn:aws:iam::448923944987:role/aws-service-role/resource-explorer-2.amazonaws.com/AWSServiceRoleForResourceExplorer';
@@ -281,9 +281,15 @@ describe('EvidenceList', () => {
           },
           Popover: {
             template: '<div><slot /></div>',
+            methods: {
+              toggle() {
+                return;
+              },
+            },
           },
           Chip: {
-            template: '<span />',
+            template: '<span>{{ label }}</span>',
+            props: ['label'],
           },
           BIconEye: {
             template: '<span />',
@@ -309,8 +315,11 @@ describe('EvidenceList', () => {
     expect(preview.text()).not.toContain('owner=security');
     expect(moreLabels?.attributes('title')).toBeUndefined();
     expect(moreLabels?.attributes('aria-label')).toBe(
-      '+2 more labels: environment=production\nowner=security',
+      'View all labels. +2 more labels: environment=production\nowner=security',
     );
+    await moreLabels?.trigger('click');
+    expect(wrapper.text()).toContain('environment=production');
+    expect(wrapper.text()).toContain('owner=security');
     expect(previewLabels[0].classes()).toEqual(
       expect.arrayContaining([
         'max-w-full',

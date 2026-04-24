@@ -128,7 +128,7 @@
                     type="button"
                     class="inline-block shrink-0 rounded-md border border-slate-200 bg-white px-2 py-1 text-sm text-gray-600 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-400"
                     :aria-label="preview.remainingAriaLabel"
-                    @click.stop
+                    @click.stop="toggle($event, item.labels)"
                   >
                     +{{ preview.hiddenCount }} more
                     {{ preview.hiddenCount === 1 ? 'label' : 'labels' }}
@@ -226,7 +226,7 @@ function getSortLabel(field: EvidenceSortBy) {
 
 function toggle(event: Event, labels: EvidenceLabel[]) {
   popoverLabels.value = labels.map(formatLabel);
-  op.value.toggle(event);
+  op.value?.toggle?.(event);
 }
 
 function isHiddenLabel(label: EvidenceLabel) {
@@ -264,7 +264,7 @@ function remainingLabelsAriaLabel(labels: EvidenceLabel[]) {
     return '';
   }
 
-  return `+${hiddenCount} more ${
+  return `View all labels. +${hiddenCount} more ${
     hiddenCount === 1 ? 'label' : 'labels'
   }: ${remainingLabelsTooltip(labels)}`;
 }
