@@ -156,6 +156,7 @@ import EvidenceList from '@/components/EvidenceList.vue';
 import BurgerMenu from '@/components/BurgerMenu.vue';
 import { useAuthenticatedInstance, useDataApi } from '@/composables/axios';
 import type { PaginatedListResponse } from '@/stores/types.ts';
+import { getErrorDetail, getErrorStatus } from '@/utils/httpErrors';
 
 const configStore = useConfigStore();
 const route = useRoute();
@@ -178,6 +179,7 @@ const lastExecutedSortDirection = ref<SortDirection>('desc');
 const EVIDENCE_PAGE_SIZE = 50;
 const EVIDENCE_EXPORT_PAGE_SIZE = 100;
 const EVIDENCE_EXPORT_CONFIRM_THRESHOLD = 1000;
+const EVIDENCE_EXPORT_MAX_ROWS = 5000;
 const SEARCH_DEBOUNCE_MS = 500;
 const EVIDENCE_STATUS_INTERVAL =
   '0m,2m,4m,6m,8m,12m,16m,20m,25m,30m,40m,50m,1h';
@@ -571,7 +573,11 @@ function buildEvidenceCsv(evidenceItems: Evidence[]) {
 
     for (const label of item.labels ?? []) {
       const labelHeader = `label.${label.name}`;
-      row[labelHeader] = label.value;
+      const existingValue = row[labelHeader];
+      row[labelHeader] =
+        existingValue == null || existingValue === ''
+          ? label.value
+          : `${existingValue}; ${label.value}`;
       labelHeaders.add(labelHeader);
     }
 
@@ -609,6 +615,16 @@ function downloadCsv(csvContent: string) {
 
 async function exportToCsv() {
   if (totalEvidence.value === 0 || exportingCsv.value) {
+    return;
+  }
+
+  if (totalEvidence.value > EVIDENCE_EXPORT_MAX_ROWS) {
+    toast.add({
+      severity: 'error',
+      summary: 'Export Too Large',
+      detail: `CSV export is limited to ${EVIDENCE_EXPORT_MAX_ROWS} evidence records. Narrow your search and try again.`,
+      life: 5000,
+    });
     return;
   }
 
@@ -656,10 +672,15 @@ async function exportToCsv() {
     });
   } catch (err) {
     console.error('Failed to export evidence CSV:', err);
+    const errorStatus = getErrorStatus(err);
+    const errorDetail = await getErrorDetail(
+      err,
+      'Unable to export evidence as CSV. Please try again.',
+    );
     toast.add({
       severity: 'error',
       summary: 'Export Failed',
-      detail: 'Unable to export evidence as CSV. Please try again.',
+      detail: errorStatus ? `${errorStatus}: ${errorDetail}` : errorDetail,
       life: 4000,
     });
   } finally {

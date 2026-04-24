@@ -44,6 +44,10 @@ const {
       },
       labels: [
         { name: 'resource_id', value: 'arn:aws:iam::123456789012:role/Export' },
+        {
+          name: 'resource_id',
+          value: 'arn:aws:iam::123456789012:role/ExportDuplicate',
+        },
         { name: 'account_id', value: '123456789012' },
       ],
       activities: [],
@@ -77,15 +81,32 @@ const {
       activities: [],
     })),
   ];
-  const hugeExportableEvidence: Evidence[] = Array.from(
+  const largeExportableEvidence: Evidence[] = Array.from(
     { length: 1001 },
+    (_, index) => ({
+      id: `large-export-${index + 1}`,
+      uuid: `large-export-uuid-${index + 1}`,
+      title: `Large Export Evidence ${index + 1}`,
+      description: `Large export row ${index + 1}`,
+      start: '2026-04-04T00:00:00Z',
+      end: '2026-04-04T12:00:00Z',
+      status: {
+        reason: 'bulk',
+        state: 'satisfied',
+      },
+      labels: [{ name: 'batch', value: `large-${index + 1}` }],
+      activities: [],
+    }),
+  );
+  const hugeExportableEvidence: Evidence[] = Array.from(
+    { length: 5001 },
     (_, index) => ({
       id: `huge-export-${index + 1}`,
       uuid: `huge-export-uuid-${index + 1}`,
       title: `Huge Export Evidence ${index + 1}`,
       description: `Huge export row ${index + 1}`,
-      start: '2026-04-04T00:00:00Z',
-      end: '2026-04-04T12:00:00Z',
+      start: '2026-04-05T00:00:00Z',
+      end: '2026-04-05T12:00:00Z',
       status: {
         reason: 'bulk',
         state: 'satisfied',
@@ -137,6 +158,12 @@ const {
       }
       if (filterText.includes('huge-export') || name.includes('huge-export')) {
         data = hugeExportableEvidence;
+      }
+      if (
+        filterText.includes('large-export') ||
+        name.includes('large-export')
+      ) {
+        data = largeExportableEvidence;
       }
 
       const start = (page - 1) * limit;
@@ -952,7 +979,9 @@ describe('Evidence IndexView', () => {
       expect(csvContent).not.toContain('"labels"');
       expect(csvContent).not.toContain('"origins"');
       expect(csvContent).not.toContain('"backMatter"');
-      expect(csvContent).toContain('"arn:aws:iam::123456789012:role/Export"');
+      expect(csvContent).toContain(
+        '"arn:aws:iam::123456789012:role/Export; arn:aws:iam::123456789012:role/ExportDuplicate"',
+      );
       expect(csvContent).toContain('"Generated export row 135"');
       expect(csvContent).toContain("'=CSV Injection");
       expect(headerRow.indexOf('"description"')).toBeLessThan(
@@ -982,7 +1011,7 @@ describe('Evidence IndexView', () => {
 
   it('confirms before exporting very large evidence result sets', async () => {
     routeMock.query = {
-      filter: 'huge-export',
+      filter: 'large-export',
     };
     const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
 
@@ -1005,5 +1034,75 @@ describe('Evidence IndexView', () => {
     expect(evidenceSearchPost).not.toHaveBeenCalled();
 
     confirmSpy.mockRestore();
+  });
+
+  it('blocks exports above the hard max size', async () => {
+    routeMock.query = {
+      filter: 'huge-export',
+    };
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+
+    const wrapper = mountView();
+    await flushPromises();
+    vi.clearAllMocks();
+
+    const exportButton = wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('Export to CSV'));
+
+    expect(exportButton).toBeDefined();
+
+    await exportButton!.trigger('click');
+    await flushPromises();
+
+    expect(confirmSpy).not.toHaveBeenCalled();
+    expect(evidenceSearchPost).not.toHaveBeenCalled();
+    expect(toastAdd).toHaveBeenCalledWith(
+      expect.objectContaining({
+        severity: 'error',
+        summary: 'Export Too Large',
+      }),
+    );
+
+    confirmSpy.mockRestore();
+  });
+
+  it('shows normalized API error details when CSV export fails', async () => {
+    routeMock.query = {
+      filter: 'exportable',
+    };
+
+    const wrapper = mountView();
+    await flushPromises();
+    vi.clearAllMocks();
+
+    evidenceSearchPost.mockRejectedValueOnce({
+      response: {
+        status: 502,
+        data: {
+          errors: {
+            body: 'Upstream export search failed',
+          },
+        },
+      },
+      message: 'Request failed',
+    });
+
+    const exportButton = wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('Export to CSV'));
+
+    expect(exportButton).toBeDefined();
+
+    await exportButton!.trigger('click');
+    await flushPromises();
+
+    expect(toastAdd).toHaveBeenCalledWith(
+      expect.objectContaining({
+        severity: 'error',
+        summary: 'Export Failed',
+        detail: '502: Upstream export search failed',
+      }),
+    );
   });
 });
