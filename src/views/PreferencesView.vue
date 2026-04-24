@@ -287,6 +287,11 @@ interface UpdateNotificationPreferencesOptions {
   silent?: boolean;
 }
 
+type NotificationProviderAvailability = Record<
+  NotificationAlertChannel,
+  boolean
+>;
+
 interface SlackAvailabilityState {
   loading: boolean;
   configured: boolean;
@@ -309,6 +314,37 @@ const normalizeNotificationChannels = (
   return normalized;
 };
 
+const normalizeNotificationProviderAvailability = (
+  providers: unknown,
+): NotificationProviderAvailability => {
+  const availability: NotificationProviderAvailability = {
+    email: false,
+    slack: false,
+  };
+
+  if (!Array.isArray(providers)) {
+    return availability;
+  }
+
+  for (const provider of providers) {
+    if (!provider || typeof provider !== 'object') {
+      continue;
+    }
+
+    const providerType = (provider as { providerType?: unknown }).providerType;
+    const enabled = (provider as { enabled?: unknown }).enabled;
+
+    if (
+      (providerType === 'email' || providerType === 'slack') &&
+      typeof enabled === 'boolean'
+    ) {
+      availability[providerType] = enabled;
+    }
+  }
+
+  return availability;
+};
+
 const axios = useAuthenticatedInstance();
 const user = ref<CCFUser | null>(null);
 const loading = ref(true);
@@ -320,6 +356,11 @@ const riskNotificationsAlertChannels = ref<NotificationAlertChannel[]>([]);
 const slackLinkConfigured = ref(false);
 const slackStatusLoading = ref(true);
 const isSlackLinked = ref(false);
+const notificationProvidersLoading = ref(true);
+const notificationProviderAvailability = ref<NotificationProviderAvailability>({
+  email: false,
+  slack: false,
+});
 const lastSavedPreferences = ref<SubscriptionsPreferencesPayload>({
   notifications: {
     evidence_digest: [],
@@ -336,42 +377,64 @@ let notificationUpdateQueue: Promise<void> = Promise.resolve();
 let pendingNotificationUpdateOptions: UpdateNotificationPreferencesOptions | null =
   null;
 
+const canSelectEmailAlertChannel = computed(
+  () =>
+    !notificationProvidersLoading.value &&
+    notificationProviderAvailability.value.email,
+);
+
 const canSelectSlackAlertChannel = computed(
   () =>
+    !notificationProvidersLoading.value &&
+    notificationProviderAvailability.value.slack &&
     !slackStatusLoading.value &&
     slackLinkConfigured.value &&
     isSlackLinked.value,
 );
 
+const canSelectNotificationAlertChannel = (
+  channel: NotificationAlertChannel,
+): boolean => {
+  if (channel === 'email') {
+    return canSelectEmailAlertChannel.value;
+  }
+
+  return canSelectSlackAlertChannel.value;
+};
+
 const sanitizeNotificationChannels = (
   channels: NotificationAlertChannel[],
 ): NotificationAlertChannel[] => {
-  return channels.filter(
-    (channel) => channel !== 'slack' || canSelectSlackAlertChannel.value,
-  );
+  return channels.filter((channel) => {
+    if (channel === 'slack') {
+      // Keep slack selections while Slack status is still loading to avoid
+      // dropping a valid selection before we know whether it is linked.
+      if (notificationProvidersLoading.value || slackStatusLoading.value) {
+        return true;
+      }
+
+      return canSelectNotificationAlertChannel(channel);
+    }
+
+    return canSelectNotificationAlertChannel(channel);
+  });
 };
 
-const removeSlackChannels = (
-  channels: NotificationAlertChannel[],
-): NotificationAlertChannel[] => {
-  return channels.filter((channel) => channel !== 'slack');
-};
-
-const removeUnavailableSlackSelections = () => {
-  if (slackStatusLoading.value || canSelectSlackAlertChannel.value) {
+const removeUnavailableNotificationSelections = () => {
+  if (notificationProvidersLoading.value) {
     return false;
   }
 
-  const sanitizedEvidenceDigestChannels = removeSlackChannels(
+  const sanitizedEvidenceDigestChannels = sanitizeNotificationChannels(
     evidenceDigestAlertChannels.value,
   );
-  const sanitizedTaskAvailableChannels = removeSlackChannels(
+  const sanitizedTaskAvailableChannels = sanitizeNotificationChannels(
     taskAvailableAlertChannels.value,
   );
-  const sanitizedTaskDailyDigestChannels = removeSlackChannels(
+  const sanitizedTaskDailyDigestChannels = sanitizeNotificationChannels(
     taskDailyDigestAlertChannels.value,
   );
-  const sanitizedRiskNotificationsChannels = removeSlackChannels(
+  const sanitizedRiskNotificationsChannels = sanitizeNotificationChannels(
     riskNotificationsAlertChannels.value,
   );
 
@@ -529,7 +592,7 @@ const updateNotificationPreferences = (
 };
 
 const syncUnavailableSlackSelections = async () => {
-  if (!removeUnavailableSlackSelections()) {
+  if (!removeUnavailableNotificationSelections()) {
     return;
   }
 
@@ -544,7 +607,14 @@ const notificationChannelOptions = computed<
     disabledTooltip?: string;
   }>
 >(() => [
-  { label: 'Email', value: 'email' },
+  {
+    label: 'Email',
+    value: 'email',
+    disabled: !canSelectEmailAlertChannel.value,
+    disabledTooltip: !canSelectEmailAlertChannel.value
+      ? (emailAlertUnavailableReason.value ?? undefined)
+      : undefined,
+  },
   {
     label: 'Slack',
     value: 'slack',
@@ -567,7 +637,27 @@ const taskAvailableTooltipText = computed(() => {
     : 'Task alerts will be sent to your chosen channels.';
 });
 
+const emailAlertUnavailableReason = computed(() => {
+  if (notificationProvidersLoading.value) {
+    return 'Email alerts are unavailable until notification providers finish loading.';
+  }
+
+  if (!notificationProviderAvailability.value.email) {
+    return 'Email alerts are unavailable because email notifications are disabled for this environment.';
+  }
+
+  return null;
+});
+
 const slackAlertUnavailableReason = computed(() => {
+  if (notificationProvidersLoading.value) {
+    return 'Slack alerts are unavailable until notification providers finish loading.';
+  }
+
+  if (!notificationProviderAvailability.value.slack) {
+    return 'Slack alerts are unavailable because Slack notifications are disabled for this environment.';
+  }
+
   if (slackStatusLoading.value) {
     return 'Slack alerts are unavailable until Slack link status finishes loading.';
   }
@@ -598,14 +688,28 @@ const riskNotificationsTooltipText = computed(() =>
 // Load user data and subscriptions
 const loadUserData = async () => {
   try {
+    const [userResponse, subscriptionResponse, notificationProvidersResponse] =
+      await Promise.all([
+        axios.get<{ data: CCFUser }>('/api/users/me'),
+        axios.get<{ data: SubscriptionsPreferencesResponse }>(
+          '/api/users/me/subscriptions',
+        ),
+        axios.get<{
+          data: Array<{
+            providerType?: string;
+            enabled?: boolean;
+          }>;
+        }>('/api/notifications/providers'),
+      ]);
+
     // Get current user info
-    const userResponse = await axios.get<{ data: CCFUser }>('/api/users/me');
     user.value = userResponse.data.data;
 
-    // Get subscriptions status
-    const subscriptionResponse = await axios.get<{
-      data: SubscriptionsPreferencesResponse;
-    }>('/api/users/me/subscriptions');
+    notificationProviderAvailability.value =
+      normalizeNotificationProviderAvailability(
+        notificationProvidersResponse.data.data,
+      );
+    notificationProvidersLoading.value = false;
 
     const evidenceDigestChannels = normalizeNotificationChannels(
       subscriptionResponse.data.data.notifications?.evidenceDigest,
@@ -646,6 +750,7 @@ const loadUserData = async () => {
     loadError.value =
       'Failed to load preferences. Please refresh the page to try again.';
   } finally {
+    notificationProvidersLoading.value = false;
     loading.value = false;
   }
 };
