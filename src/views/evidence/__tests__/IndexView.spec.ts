@@ -903,79 +903,81 @@ describe('Evidence IndexView', () => {
       return 'blob:mock-url';
     });
 
-    const wrapper = mountView();
-    await flushPromises();
+    try {
+      const wrapper = mountView();
+      await flushPromises();
 
-    const exportButton = wrapper
-      .findAll('button')
-      .find((button) => button.text().includes('Export to CSV'));
+      const exportButton = wrapper
+        .findAll('button')
+        .find((button) => button.text().includes('Export to CSV'));
 
-    expect(exportButton).toBeDefined();
+      expect(exportButton).toBeDefined();
 
-    await exportButton!.trigger('click');
-    await flushPromises();
+      await exportButton!.trigger('click');
+      await flushPromises();
 
-    const exportCalls = evidenceSearchPost.mock.calls.slice(-2);
+      const exportCalls = evidenceSearchPost.mock.calls.slice(-2);
 
-    expect(exportCalls).toEqual([
-      [
-        '/api/evidence/search?page=1&limit=100&sortBy=lastSeenAt&sortDirection=desc&name=exportable',
-        {
-          filter: {
-            scope: {},
+      expect(exportCalls).toEqual([
+        [
+          '/api/evidence/search?page=1&limit=100&sortBy=lastSeenAt&sortDirection=desc&name=exportable',
+          {
+            filter: {
+              scope: {},
+            },
           },
-        },
-      ],
-      [
-        '/api/evidence/search?page=2&limit=100&sortBy=lastSeenAt&sortDirection=desc&name=exportable',
-        {
-          filter: {
-            scope: {},
+        ],
+        [
+          '/api/evidence/search?page=2&limit=100&sortBy=lastSeenAt&sortDirection=desc&name=exportable',
+          {
+            filter: {
+              scope: {},
+            },
           },
-        },
-      ],
-    ]);
-    expect(exportedBlob).toBeDefined();
+        ],
+      ]);
+      expect(exportedBlob).toBeDefined();
 
-    const csvContent = exportedBlob!.parts.join('');
-    const [headerRow] = csvContent.split('\n');
+      const csvContent = exportedBlob!.parts.join('');
+      const [headerRow] = csvContent.split('\n');
 
-    expect(csvContent).toContain('"description"');
-    expect(csvContent).toContain('"status.state"');
-    expect(csvContent).toContain('"status.reason"');
-    expect(csvContent).toContain('"label.account_id"');
-    expect(csvContent).toContain('"label.owner"');
-    expect(csvContent).toContain('"label.resource_id"');
-    expect(csvContent).not.toContain('"id"');
-    expect(csvContent).not.toContain('"uuid"');
-    expect(csvContent).not.toContain('"labels"');
-    expect(csvContent).not.toContain('"origins"');
-    expect(csvContent).not.toContain('"backMatter"');
-    expect(csvContent).toContain('"arn:aws:iam::123456789012:role/Export"');
-    expect(csvContent).toContain('"Generated export row 135"');
-    expect(csvContent).toContain("'=CSV Injection");
-    expect(headerRow.indexOf('"description"')).toBeLessThan(
-      headerRow.indexOf('"status.reason"'),
-    );
-    expect(headerRow.indexOf('"status.reason"')).toBeLessThan(
-      headerRow.indexOf('"status.state"'),
-    );
-    expect(headerRow.indexOf('"status.state"')).toBeLessThan(
-      headerRow.indexOf('"label.account_id"'),
-    );
-    expect(toastAdd).toHaveBeenCalledWith(
-      expect.objectContaining({
-        severity: 'success',
-        summary: 'CSV Exported',
-      }),
-    );
-
-    createObjectURLSpy.mockRestore();
-    revokeObjectURLSpy.mockRestore();
-    clickSpy.mockRestore();
-    appendChildSpy.mockRestore();
-    removeChildSpy.mockRestore();
-    global.Blob = originalBlob;
+      expect(csvContent).toContain('"description"');
+      expect(csvContent).toContain('"status.state"');
+      expect(csvContent).toContain('"status.reason"');
+      expect(csvContent).toContain('"label.account_id"');
+      expect(csvContent).toContain('"label.owner"');
+      expect(csvContent).toContain('"label.resource_id"');
+      expect(csvContent).not.toContain('"id"');
+      expect(csvContent).not.toContain('"uuid"');
+      expect(csvContent).not.toContain('"labels"');
+      expect(csvContent).not.toContain('"origins"');
+      expect(csvContent).not.toContain('"backMatter"');
+      expect(csvContent).toContain('"arn:aws:iam::123456789012:role/Export"');
+      expect(csvContent).toContain('"Generated export row 135"');
+      expect(csvContent).toContain("'=CSV Injection");
+      expect(headerRow.indexOf('"description"')).toBeLessThan(
+        headerRow.indexOf('"status.reason"'),
+      );
+      expect(headerRow.indexOf('"status.reason"')).toBeLessThan(
+        headerRow.indexOf('"status.state"'),
+      );
+      expect(headerRow.indexOf('"status.state"')).toBeLessThan(
+        headerRow.indexOf('"label.account_id"'),
+      );
+      expect(toastAdd).toHaveBeenCalledWith(
+        expect.objectContaining({
+          severity: 'success',
+          summary: 'CSV Exported',
+        }),
+      );
+    } finally {
+      createObjectURLSpy.mockRestore();
+      revokeObjectURLSpy.mockRestore();
+      clickSpy.mockRestore();
+      appendChildSpy.mockRestore();
+      removeChildSpy.mockRestore();
+      global.Blob = originalBlob;
+    }
   });
 
   it('confirms before exporting very large evidence result sets', async () => {

@@ -547,22 +547,24 @@ function flattenCsvRecord(
   return output;
 }
 
+function isExcludedCsvHeader(header: string) {
+  for (const excludedHeader of CSV_EXCLUDED_HEADERS) {
+    if (header === excludedHeader || header.startsWith(`${excludedHeader}.`)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 function buildEvidenceCsv(evidenceItems: Evidence[]) {
   const payloadHeaders = new Set<string>();
   const labelHeaders = new Set<string>();
   const rows = evidenceItems.map((item) => {
     const row = flattenCsvRecord(item);
-    row.labels = JSON.stringify(item.labels ?? []);
 
     for (const header of Object.keys(row)) {
-      if (
-        !header.startsWith('label.') &&
-        !Array.from(CSV_EXCLUDED_HEADERS).some(
-          (excludedHeader) =>
-            header === excludedHeader ||
-            header.startsWith(`${excludedHeader}.`),
-        )
-      ) {
+      if (!header.startsWith('label.') && !isExcludedCsvHeader(header)) {
         payloadHeaders.add(header);
       }
     }
