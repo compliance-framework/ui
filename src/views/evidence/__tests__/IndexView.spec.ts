@@ -77,6 +77,23 @@ const {
       activities: [],
     })),
   ];
+  const hugeExportableEvidence: Evidence[] = Array.from(
+    { length: 1001 },
+    (_, index) => ({
+      id: `huge-export-${index + 1}`,
+      uuid: `huge-export-uuid-${index + 1}`,
+      title: `Huge Export Evidence ${index + 1}`,
+      description: `Huge export row ${index + 1}`,
+      start: '2026-04-04T00:00:00Z',
+      end: '2026-04-04T12:00:00Z',
+      status: {
+        reason: 'bulk',
+        state: 'satisfied',
+      },
+      labels: [{ name: 'batch', value: `huge-${index + 1}` }],
+      activities: [],
+    }),
+  );
 
   return {
     routeState: {
@@ -117,6 +134,9 @@ const {
       }
       if (filterText.includes('exportable') || name.includes('exportable')) {
         data = exportableEvidence;
+      }
+      if (filterText.includes('huge-export') || name.includes('huge-export')) {
+        data = hugeExportableEvidence;
       }
 
       const start = (page - 1) * limit;
@@ -918,6 +938,7 @@ describe('Evidence IndexView', () => {
     expect(exportedBlob).toBeDefined();
 
     const csvContent = exportedBlob!.parts.join('');
+    const [headerRow] = csvContent.split('\n');
 
     expect(csvContent).toContain('"description"');
     expect(csvContent).toContain('"status.state"');
@@ -933,6 +954,15 @@ describe('Evidence IndexView', () => {
     expect(csvContent).toContain('"arn:aws:iam::123456789012:role/Export"');
     expect(csvContent).toContain('"Generated export row 135"');
     expect(csvContent).toContain("'=CSV Injection");
+    expect(headerRow.indexOf('"description"')).toBeLessThan(
+      headerRow.indexOf('"status.reason"'),
+    );
+    expect(headerRow.indexOf('"status.reason"')).toBeLessThan(
+      headerRow.indexOf('"status.state"'),
+    );
+    expect(headerRow.indexOf('"status.state"')).toBeLessThan(
+      headerRow.indexOf('"label.account_id"'),
+    );
     expect(toastAdd).toHaveBeenCalledWith(
       expect.objectContaining({
         severity: 'success',
@@ -946,5 +976,32 @@ describe('Evidence IndexView', () => {
     appendChildSpy.mockRestore();
     removeChildSpy.mockRestore();
     global.Blob = originalBlob;
+  });
+
+  it('confirms before exporting very large evidence result sets', async () => {
+    routeMock.query = {
+      filter: 'huge-export',
+    };
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
+
+    const wrapper = mountView();
+    await flushPromises();
+    vi.clearAllMocks();
+
+    const exportButton = wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('Export to CSV'));
+
+    expect(exportButton).toBeDefined();
+
+    await exportButton!.trigger('click');
+    await flushPromises();
+
+    expect(confirmSpy).toHaveBeenCalledWith(
+      'Export 1001 evidence records to CSV? This may take a while.',
+    );
+    expect(evidenceSearchPost).not.toHaveBeenCalled();
+
+    confirmSpy.mockRestore();
   });
 });

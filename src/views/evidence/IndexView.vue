@@ -177,6 +177,7 @@ const lastExecutedSortDirection = ref<SortDirection>('desc');
 
 const EVIDENCE_PAGE_SIZE = 50;
 const EVIDENCE_EXPORT_PAGE_SIZE = 100;
+const EVIDENCE_EXPORT_CONFIRM_THRESHOLD = 1000;
 const SEARCH_DEBOUNCE_MS = 500;
 const EVIDENCE_STATUS_INTERVAL =
   '0m,2m,4m,6m,8m,12m,16m,20m,25m,30m,40m,50m,1h';
@@ -575,7 +576,10 @@ function buildEvidenceCsv(evidenceItems: Evidence[]) {
     return row;
   });
 
-  const headers = [...payloadHeaders, ...Array.from(labelHeaders).sort()];
+  const headers = [
+    ...Array.from(payloadHeaders).sort(),
+    ...Array.from(labelHeaders).sort(),
+  ];
 
   return [
     headers,
@@ -603,6 +607,15 @@ function downloadCsv(csvContent: string) {
 
 async function exportToCsv() {
   if (totalEvidence.value === 0 || exportingCsv.value) {
+    return;
+  }
+
+  if (
+    totalEvidence.value > EVIDENCE_EXPORT_CONFIRM_THRESHOLD &&
+    !window.confirm(
+      `Export ${totalEvidence.value} evidence records to CSV? This may take a while.`,
+    )
+  ) {
     return;
   }
 
