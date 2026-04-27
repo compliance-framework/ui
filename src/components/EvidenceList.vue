@@ -1,7 +1,7 @@
 <template>
   <table class="table-fixed w-full rounded-full dark:text-slate-300">
     <colgroup>
-      <col class="w-14" />
+      <col class="w-24" />
       <col class="w-[30%]" />
       <col class="w-48" />
       <col v-if="configStore.showLabels" />
@@ -9,7 +9,7 @@
     <thead>
       <tr class="border-b border-ccf-300 dark:border-slate-800">
         <th
-          class="py-2 pl-4 pr-2 text-left text-sm font-medium"
+          class="py-2 pl-4 pr-2 text-left text-sm font-medium whitespace-nowrap"
           :aria-sort="getAriaSort('status')"
         >
           <button
