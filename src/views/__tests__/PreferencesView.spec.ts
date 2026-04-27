@@ -66,6 +66,16 @@ const createDeferred = <T>() => {
   };
 };
 
+const notificationProvidersResponse = () =>
+  Promise.resolve({
+    data: {
+      data: [
+        { providerType: 'email', enabled: true },
+        { providerType: 'slack', enabled: true },
+      ],
+    },
+  });
+
 interface PreferencesViewTestVm extends ComponentPublicInstance {
   [key: string]: unknown;
   updateNotificationPreferences: () => Promise<void>;
@@ -113,6 +123,10 @@ describe('PreferencesView', () => {
             },
           },
         });
+      }
+
+      if (url === '/api/notifications/providers') {
+        return notificationProvidersResponse();
       }
 
       return Promise.reject(new Error(`Unexpected GET URL: ${url}`));
@@ -230,6 +244,10 @@ describe('PreferencesView', () => {
           });
         }
 
+        if (url === '/api/notifications/providers') {
+          return notificationProvidersResponse();
+        }
+
         return Promise.reject(new Error(`Unexpected GET URL: ${url}`));
       });
 
@@ -285,6 +303,10 @@ describe('PreferencesView', () => {
           });
         }
 
+        if (url === '/api/notifications/providers') {
+          return notificationProvidersResponse();
+        }
+
         return Promise.reject(new Error(`Unexpected GET URL: ${url}`));
       });
 
@@ -333,6 +355,10 @@ describe('PreferencesView', () => {
           });
         }
 
+        if (url === '/api/notifications/providers') {
+          return notificationProvidersResponse();
+        }
+
         return Promise.reject(new Error(`Unexpected GET URL: ${url}`));
       });
 
@@ -375,6 +401,10 @@ describe('PreferencesView', () => {
               },
             },
           });
+        }
+
+        if (url === '/api/notifications/providers') {
+          return notificationProvidersResponse();
         }
 
         return Promise.reject(new Error(`Unexpected GET URL: ${url}`));
@@ -603,6 +633,10 @@ describe('PreferencesView', () => {
           });
         }
 
+        if (url === '/api/notifications/providers') {
+          return notificationProvidersResponse();
+        }
+
         return Promise.reject(new Error(`Unexpected GET URL: ${url}`));
       });
 
@@ -618,7 +652,12 @@ describe('PreferencesView', () => {
 
       expect(wrapper.vm.taskAvailableAlertChannels).toEqual(['email']);
       expect(wrapper.vm.notificationChannelOptions).toEqual([
-        { label: 'Email', value: 'email' },
+        {
+          label: 'Email',
+          value: 'email',
+          disabled: false,
+          disabledTooltip: undefined,
+        },
         {
           label: 'Slack',
           value: 'slack',
@@ -814,7 +853,12 @@ describe('PreferencesView', () => {
       });
 
       expect(wrapper.vm.notificationChannelOptions).toEqual([
-        { label: 'Email', value: 'email' },
+        {
+          label: 'Email',
+          value: 'email',
+          disabled: false,
+          disabledTooltip: undefined,
+        },
         {
           label: 'Slack',
           value: 'slack',

@@ -213,7 +213,7 @@ describe('NotificationsView', () => {
     const wrapper = mount(NotificationsView);
 
     expect(wrapper.text()).toContain('Providers');
-    expect(wrapper.text()).toContain('Email');
+    expect(wrapper.text()).toContain('email');
     expect(wrapper.text()).toContain(
       'Configured SMTP provider for email service',
     );
