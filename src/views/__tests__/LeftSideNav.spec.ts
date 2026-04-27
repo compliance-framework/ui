@@ -51,8 +51,20 @@ describe('LeftSideNav', () => {
     const riskTemplatesIndex = linkTexts.indexOf('Risk Templates');
     const importIndex = linkTexts.indexOf('Import');
 
-    expect(systemUsersIndex).toBeGreaterThanOrEqual(0);
+    for (const index of [
+      systemUsersIndex,
+      agentsIndex,
+      notificationsIndex,
+      risksIndex,
+      subjectTemplatesIndex,
+      riskTemplatesIndex,
+      importIndex,
+    ]) {
+      expect(index).toBeGreaterThanOrEqual(0);
+    }
+
     expect(agentsIndex).toBeGreaterThan(systemUsersIndex);
+    expect(risksIndex).toBeGreaterThan(agentsIndex);
     expect(subjectTemplatesIndex).toBeGreaterThan(risksIndex);
     expect(riskTemplatesIndex).toBeGreaterThan(subjectTemplatesIndex);
     expect(notificationsIndex).toBeGreaterThan(riskTemplatesIndex);

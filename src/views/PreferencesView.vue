@@ -345,6 +345,12 @@ const normalizeNotificationProviderAvailability = (
   return availability;
 };
 
+const fallbackNotificationProviderAvailability =
+  (): NotificationProviderAvailability => ({
+    email: true,
+    slack: true,
+  });
+
 const axios = useAuthenticatedInstance();
 const user = ref<CCFUser | null>(null);
 const loading = ref(true);
@@ -688,27 +694,36 @@ const riskNotificationsTooltipText = computed(() =>
 // Load user data and subscriptions
 const loadUserData = async () => {
   try {
+    const notificationProvidersRequest = axios
+      .get<{
+        data: Array<{
+          providerType?: string;
+          enabled?: boolean;
+        }>;
+      }>('/api/notifications/providers')
+      .catch((error) => {
+        console.error('Error loading notification providers:', error);
+        return null;
+      });
+
     const [userResponse, subscriptionResponse, notificationProvidersResponse] =
       await Promise.all([
         axios.get<{ data: CCFUser }>('/api/users/me'),
         axios.get<{ data: SubscriptionsPreferencesResponse }>(
           '/api/users/me/subscriptions',
         ),
-        axios.get<{
-          data: Array<{
-            providerType?: string;
-            enabled?: boolean;
-          }>;
-        }>('/api/notifications/providers'),
+        notificationProvidersRequest,
       ]);
 
     // Get current user info
     user.value = userResponse.data.data;
 
     notificationProviderAvailability.value =
-      normalizeNotificationProviderAvailability(
-        notificationProvidersResponse.data.data,
-      );
+      notificationProvidersResponse === null
+        ? fallbackNotificationProviderAvailability()
+        : normalizeNotificationProviderAvailability(
+            notificationProvidersResponse.data.data,
+          );
     notificationProvidersLoading.value = false;
 
     const evidenceDigestChannels = normalizeNotificationChannels(
