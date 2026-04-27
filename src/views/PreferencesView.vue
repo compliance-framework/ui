@@ -444,7 +444,7 @@ const removeUnavailableNotificationSelections = () => {
     riskNotificationsAlertChannels.value,
   );
 
-  const hadUnavailableSlackSelection =
+  const hadUnavailableNotificationSelection =
     sanitizedEvidenceDigestChannels.length !==
       evidenceDigestAlertChannels.value.length ||
     sanitizedTaskAvailableChannels.length !==
@@ -454,7 +454,7 @@ const removeUnavailableNotificationSelections = () => {
     sanitizedRiskNotificationsChannels.length !==
       riskNotificationsAlertChannels.value.length;
 
-  if (!hadUnavailableSlackSelection) {
+  if (!hadUnavailableNotificationSelection) {
     return false;
   }
 
@@ -597,7 +597,7 @@ const updateNotificationPreferences = (
   return notificationUpdateQueue;
 };
 
-const syncUnavailableSlackSelections = async () => {
+const syncUnavailableNotificationSelections = async () => {
   if (!removeUnavailableNotificationSelections()) {
     return;
   }
@@ -759,7 +759,7 @@ const loadUserData = async () => {
       },
     };
 
-    await syncUnavailableSlackSelections();
+    await syncUnavailableNotificationSelections();
   } catch (error) {
     console.error('Error loading user data:', error);
     loadError.value =
@@ -805,7 +805,7 @@ const onSlackLinkStatusChange = (state: SlackAvailabilityState) => {
 };
 
 watch([slackStatusLoading, canSelectSlackAlertChannel], () => {
-  void syncUnavailableSlackSelections();
+  void syncUnavailableNotificationSelections();
 });
 
 onMounted(() => {

@@ -85,6 +85,7 @@ const destinationTarget = ref('');
 const destinationFormError = ref('');
 const slackDestinationStatusLoading = ref(true);
 const slackDestinationConfigured = ref(false);
+const slackDestinationStatusError = ref<string | null>(null);
 
 const {
   data: notificationConfigurations,
@@ -204,6 +205,10 @@ const destinationTargetPlaceholder = computed(() => {
 const slackDestinationUnavailableReason = computed(() => {
   if (slackDestinationStatusLoading.value) {
     return 'Slack destinations are unavailable until Slack configuration finishes loading.';
+  }
+
+  if (slackDestinationStatusError.value) {
+    return `Slack destinations are unavailable because Slack status could not be loaded: ${slackDestinationStatusError.value}`;
   }
 
   if (!slackDestinationConfigured.value) {
@@ -380,19 +385,30 @@ function getApiErrorMessage(error: unknown, fallbackMessage: string): string {
 
 async function loadSlackDestinationStatus() {
   slackDestinationStatusLoading.value = true;
+  slackDestinationStatusError.value = null;
 
   try {
     await axios.get('/api/auth/slack/link/status');
     slackDestinationConfigured.value = true;
   } catch (error) {
-    const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
-
-    if (errorResponse.response?.status === 404) {
+    if (isAxiosError(error) && error.response?.status === 404) {
       slackDestinationConfigured.value = false;
       return;
     }
 
-    slackDestinationConfigured.value = true;
+    const errorMessage = getApiErrorMessage(
+      error,
+      'Failed to load Slack link status.',
+    );
+
+    slackDestinationConfigured.value = false;
+    slackDestinationStatusError.value = errorMessage;
+    toast.add({
+      severity: 'error',
+      summary: 'Slack Status Unavailable',
+      detail: errorMessage,
+      life: 4000,
+    });
   } finally {
     slackDestinationStatusLoading.value = false;
   }

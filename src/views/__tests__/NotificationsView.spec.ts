@@ -484,6 +484,7 @@ describe('NotificationsView', () => {
 
   it('disables Slack destination option when Slack integration is not configured', async () => {
     mockAuthenticatedGet.mockRejectedValueOnce({
+      isAxiosError: true,
       response: {
         status: 404,
       },
@@ -508,6 +509,48 @@ describe('NotificationsView', () => {
     expect((providerSelect.element as HTMLSelectElement).value).toBe('email');
     expect(wrapper.text()).toContain(
       'Slack destinations are unavailable because Slack integration is not configured for this environment.',
+    );
+  });
+
+  it('disables Slack destination option and shows feedback when Slack status loading fails', async () => {
+    mockAuthenticatedGet.mockRejectedValueOnce({
+      isAxiosError: true,
+      response: {
+        status: 500,
+        data: {
+          errors: {
+            body: 'Slack status service is unavailable.',
+          },
+        },
+      },
+    });
+
+    const wrapper = mount(NotificationsView);
+    await flushPromises();
+
+    const openDialogButton = wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Add Destination');
+
+    expect(openDialogButton).toBeDefined();
+    await openDialogButton!.trigger('click');
+
+    const providerSelect = wrapper.get('#destination-provider');
+    const slackOption = providerSelect.find('option[value="slack"]');
+    const emailOption = providerSelect.find('option[value="email"]');
+
+    expect(slackOption.attributes('disabled')).toBeDefined();
+    expect(emailOption.attributes('disabled')).toBeUndefined();
+    expect((providerSelect.element as HTMLSelectElement).value).toBe('email');
+    expect(wrapper.text()).toContain(
+      'Slack destinations are unavailable because Slack status could not be loaded: Slack status service is unavailable.',
+    );
+    expect(toastAdd).toHaveBeenCalledWith(
+      expect.objectContaining({
+        severity: 'error',
+        summary: 'Slack Status Unavailable',
+        detail: 'Slack status service is unavailable.',
+      }),
     );
   });
 
