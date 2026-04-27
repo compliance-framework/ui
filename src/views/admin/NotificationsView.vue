@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
-import type { AxiosError } from 'axios';
+import { isAxiosError, type AxiosError } from 'axios';
 import { useToast } from 'primevue/usetoast';
 import {
   decamelizeKeys,
@@ -154,6 +154,23 @@ const providerList = computed<NotificationProviderInfo[]>(() => {
   return notificationProviders.value ?? [];
 });
 
+const providerInfoByType = computed(() => {
+  const providersByType = new Map<
+    NotificationDestinationProvider,
+    NotificationProviderInfo
+  >();
+
+  for (const provider of providerList.value) {
+    const providerType = normalizeDestinationProvider(provider.providerType);
+
+    if (providerType) {
+      providersByType.set(providerType, provider);
+    }
+  }
+
+  return providersByType;
+});
+
 const activeNotification = computed(() => {
   if (!activeNotificationName.value) {
     return null;
@@ -184,11 +201,6 @@ const destinationTargetPlaceholder = computed(() => {
     : 'my-slack-channel';
 });
 
-const canSelectSlackDestination = computed(
-  () =>
-    !slackDestinationStatusLoading.value && slackDestinationConfigured.value,
-);
-
 const slackDestinationUnavailableReason = computed(() => {
   if (slackDestinationStatusLoading.value) {
     return 'Slack destinations are unavailable until Slack configuration finishes loading.';
@@ -201,8 +213,46 @@ const slackDestinationUnavailableReason = computed(() => {
   return null;
 });
 
+const selectableDestinationProviders = computed(() =>
+  supportedProviders.filter(
+    (provider) =>
+      getDestinationProviderUnavailableReason(provider.value) === null,
+  ),
+);
+
+const destinationProviderUnavailableReasons = computed(() => {
+  const reasons: string[] = [];
+
+  for (const provider of supportedProviders) {
+    const unavailableReason = getDestinationProviderUnavailableReason(
+      provider.value,
+    );
+
+    if (unavailableReason) {
+      reasons.push(unavailableReason);
+    }
+  }
+
+  return reasons;
+});
+
 function isValidEmail(value: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
+function normalizeDestinationProvider(
+  providerType: string,
+): NotificationDestinationProvider | null {
+  const normalizedProviderType = providerType.toLowerCase();
+
+  if (
+    normalizedProviderType === 'email' ||
+    normalizedProviderType === 'slack'
+  ) {
+    return normalizedProviderType;
+  }
+
+  return null;
 }
 
 function getProviderLabel(provider: NotificationDestinationProvider): string {
@@ -249,13 +299,45 @@ function getProviderMetadataEntries(provider: NotificationProviderInfo): Array<{
 }
 
 function getDefaultDestinationProvider(): NotificationDestinationProvider {
-  return canSelectSlackDestination.value ? 'slack' : 'email';
+  return selectableDestinationProviders.value[0]?.value ?? 'email';
+}
+
+function getProviderDisabledReason(
+  provider: NotificationDestinationProvider,
+): string | null {
+  const providerInfo = providerInfoByType.value.get(provider);
+
+  if (providerInfo?.enabled === false) {
+    const providerLabel = getProviderLabel(provider);
+    const providerDescription =
+      provider === 'email' ? providerLabel.toLowerCase() : providerLabel;
+
+    return `${providerLabel} destinations are unavailable because ${providerDescription} notifications are disabled for this environment.`;
+  }
+
+  return null;
+}
+
+function getDestinationProviderUnavailableReason(
+  provider: NotificationDestinationProvider,
+): string | null {
+  const providerDisabledReason = getProviderDisabledReason(provider);
+
+  if (providerDisabledReason) {
+    return providerDisabledReason;
+  }
+
+  if (provider === 'slack') {
+    return slackDestinationUnavailableReason.value;
+  }
+
+  return null;
 }
 
 function isProviderDisabled(
   provider: NotificationDestinationProvider,
 ): boolean {
-  return provider === 'slack' && !canSelectSlackDestination.value;
+  return getDestinationProviderUnavailableReason(provider) !== null;
 }
 
 function buildDestinationMutationUrl(notificationName: string): string {
@@ -281,8 +363,19 @@ function buildDestinationKey(
 }
 
 function getApiErrorMessage(error: unknown, fallbackMessage: string): string {
-  const axiosError = error as AxiosError<ErrorResponse<ErrorBody>>;
-  return axiosError.response?.data?.errors?.body || fallbackMessage;
+  if (isAxiosError(error)) {
+    const axiosError = error as AxiosError<ErrorResponse<ErrorBody>>;
+    const responseBody = axiosError.response?.data?.errors?.body;
+    if (responseBody) {
+      return responseBody;
+    }
+  }
+
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  return fallbackMessage;
 }
 
 async function loadSlackDestinationStatus() {
@@ -410,15 +503,17 @@ async function addDestination() {
     return;
   }
 
-  if (selectedProvider.value === 'email' && !isValidEmail(trimmedTarget)) {
-    destinationFormError.value = 'Enter a valid email address.';
+  const providerUnavailableReason = getDestinationProviderUnavailableReason(
+    selectedProvider.value,
+  );
+
+  if (providerUnavailableReason) {
+    destinationFormError.value = providerUnavailableReason;
     return;
   }
 
-  if (selectedProvider.value === 'slack' && !canSelectSlackDestination.value) {
-    destinationFormError.value =
-      slackDestinationUnavailableReason.value ||
-      'Slack destinations are currently unavailable.';
+  if (selectedProvider.value === 'email' && !isValidEmail(trimmedTarget)) {
+    destinationFormError.value = 'Enter a valid email address.';
     return;
   }
 
@@ -523,12 +618,12 @@ async function removeDestination(
   }
 }
 
-watch(canSelectSlackDestination, (canSelectSlack) => {
-  if (canSelectSlack || selectedProvider.value !== 'slack') {
+watch(selectableDestinationProviders, () => {
+  if (!isProviderDisabled(selectedProvider.value)) {
     return;
   }
 
-  selectedProvider.value = 'email';
+  selectedProvider.value = getDefaultDestinationProvider();
 });
 
 onMounted(() => {
@@ -830,10 +925,11 @@ onMounted(() => {
           </option>
         </select>
         <p
-          v-if="!canSelectSlackDestination"
+          v-for="reason in destinationProviderUnavailableReasons"
+          :key="reason"
           class="text-xs text-gray-500 dark:text-gray-400"
         >
-          {{ slackDestinationUnavailableReason }}
+          {{ reason }}
         </p>
       </div>
 

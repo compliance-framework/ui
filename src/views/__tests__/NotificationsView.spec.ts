@@ -288,6 +288,7 @@ describe('NotificationsView', () => {
 
   it('shows the backend duplicate message when destination creation returns 409', async () => {
     mockCreateDestination.mockRejectedValueOnce({
+      isAxiosError: true,
       response: {
         status: 409,
         data: {
@@ -339,6 +340,42 @@ describe('NotificationsView', () => {
     expect(wrapper.text()).not.toContain('alerts@example.com');
   });
 
+  it('shows non-Axios error messages when destination creation fails', async () => {
+    mockCreateDestination.mockRejectedValueOnce(
+      new Error('Network connection lost.'),
+    );
+
+    const wrapper = mount(NotificationsView);
+
+    const openDialogButton = wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Add Destination');
+
+    expect(openDialogButton).toBeDefined();
+    await openDialogButton!.trigger('click');
+
+    await wrapper.get('#destination-provider').setValue('email');
+    await wrapper.get('#destination-target').setValue('alerts@example.com');
+
+    const addButtons = wrapper
+      .findAll('button')
+      .filter((button) => button.text() === 'Add Destination');
+
+    expect(addButtons).toHaveLength(2);
+    await addButtons[1].trigger('click');
+    await flushPromises();
+
+    expect(mockCreateDestination).toHaveBeenCalled();
+    expect(wrapper.text()).toContain('Network connection lost.');
+    expect(toastAdd).toHaveBeenCalledWith(
+      expect.objectContaining({
+        severity: 'error',
+        summary: 'Add Destination Failed',
+        detail: 'Network connection lost.',
+      }),
+    );
+  });
+
   it('deletes a configured destination via the notification destinations endpoint', async () => {
     const wrapper = mount(NotificationsView);
 
@@ -374,6 +411,7 @@ describe('NotificationsView', () => {
 
   it('shows the backend not-found message when destination removal returns 404', async () => {
     mockDeleteDestination.mockRejectedValueOnce({
+      isAxiosError: true,
       response: {
         status: 404,
         data: {
@@ -470,6 +508,83 @@ describe('NotificationsView', () => {
     expect((providerSelect.element as HTMLSelectElement).value).toBe('email');
     expect(wrapper.text()).toContain(
       'Slack destinations are unavailable because Slack integration is not configured for this environment.',
+    );
+  });
+
+  it('disables Slack destination option when the backend reports Slack disabled', async () => {
+    notificationProviders.value = notificationProviders.value.map((provider) =>
+      provider.providerType === 'slack'
+        ? {
+            ...provider,
+            enabled: false,
+          }
+        : provider,
+    );
+
+    const wrapper = mount(NotificationsView);
+    await flushPromises();
+
+    const openDialogButton = wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Add Destination');
+
+    expect(openDialogButton).toBeDefined();
+    await openDialogButton!.trigger('click');
+
+    const providerSelect = wrapper.get('#destination-provider');
+    const slackOption = providerSelect.find('option[value="slack"]');
+    const emailOption = providerSelect.find('option[value="email"]');
+
+    expect(slackOption.attributes('disabled')).toBeDefined();
+    expect(emailOption.attributes('disabled')).toBeUndefined();
+    expect((providerSelect.element as HTMLSelectElement).value).toBe('email');
+    expect(wrapper.text()).toContain(
+      'Slack destinations are unavailable because Slack notifications are disabled for this environment.',
+    );
+  });
+
+  it('blocks creating a destination when the backend reports the selected provider disabled', async () => {
+    notificationProviders.value = notificationProviders.value.map((provider) =>
+      provider.providerType === 'email'
+        ? {
+            ...provider,
+            enabled: false,
+          }
+        : provider,
+    );
+
+    const wrapper = mount(NotificationsView);
+    await flushPromises();
+
+    const openDialogButton = wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Add Destination');
+
+    expect(openDialogButton).toBeDefined();
+    await openDialogButton!.trigger('click');
+
+    const providerSelect = wrapper.get('#destination-provider');
+    const slackOption = providerSelect.find('option[value="slack"]');
+    const emailOption = providerSelect.find('option[value="email"]');
+
+    expect(slackOption.attributes('disabled')).toBeUndefined();
+    expect(emailOption.attributes('disabled')).toBeDefined();
+    expect((providerSelect.element as HTMLSelectElement).value).toBe('slack');
+
+    await providerSelect.setValue('email');
+    await wrapper.get('#destination-target').setValue('alerts@example.com');
+
+    const addButtons = wrapper
+      .findAll('button')
+      .filter((button) => button.text() === 'Add Destination');
+
+    expect(addButtons).toHaveLength(2);
+    await addButtons[1].trigger('click');
+    await flushPromises();
+
+    expect(mockCreateDestination).not.toHaveBeenCalled();
+    expect(wrapper.text()).toContain(
+      'Email destinations are unavailable because email notifications are disabled for this environment.',
     );
   });
 });
