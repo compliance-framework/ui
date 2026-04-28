@@ -67,6 +67,11 @@ const notificationDefinitions: Array<
     displayName: 'Evidence Digest',
     description: 'A digest of all evidence submitted to the CCF platform',
   },
+  {
+    name: 'WORKFLOW_EXECUTION_FAILED',
+    displayName: 'Workflow Instance Failure',
+    description: 'Notification for failed workflow instances',
+  },
 ];
 
 const toast = useToast();

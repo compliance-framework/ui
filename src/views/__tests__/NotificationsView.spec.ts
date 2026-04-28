@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { flushPromises, mount } from '@vue/test-utils';
+import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { ref, shallowRef } from 'vue';
 
 const createDestinationExecuteResult = (destination: {
@@ -69,6 +69,17 @@ const mockAuthenticatedGet = vi.fn().mockResolvedValue({
 const isCreatingDestination = ref(false);
 const isDeletingDestination = ref(false);
 const toastAdd = vi.fn();
+
+function getLastButtonByText(wrapper: VueWrapper, text: string) {
+  const buttons = wrapper
+    .findAll('button')
+    .filter((button) => button.text() === text);
+  const button = buttons[buttons.length - 1];
+
+  expect(button).toBeDefined();
+
+  return button!;
+}
 
 vi.mock('@/composables/axios', () => ({
   useAuthenticatedInstance: () => ({
@@ -235,6 +246,34 @@ describe('NotificationsView', () => {
     expect(wrapper.text()).toContain('ccf-slack-int');
   });
 
+  it('loads workflow execution failure destinations from the backend response', () => {
+    notificationConfigurations.value = [
+      {
+        name: 'EVIDENCE_DIGEST',
+        configuredDestinations: [],
+      },
+      {
+        name: 'WORKFLOW_EXECUTION_FAILED',
+        configuredDestinations: [
+          {
+            providerType: 'slack',
+            destinationTarget: 'ccf-slack-int',
+          },
+          {
+            providerType: 'slack',
+            destinationTarget: 'ccf-slack-int-pub',
+          },
+        ],
+      },
+    ];
+
+    const wrapper = mount(NotificationsView);
+
+    expect(wrapper.text()).toContain('Workflow Instance Failure');
+    expect(wrapper.text()).toContain('ccf-slack-int');
+    expect(wrapper.text()).toContain('ccf-slack-int-pub');
+  });
+
   it('posts a new email destination to the notification destinations endpoint', async () => {
     const wrapper = mount(NotificationsView);
 
@@ -248,12 +287,7 @@ describe('NotificationsView', () => {
     await wrapper.get('#destination-provider').setValue('email');
     await wrapper.get('#destination-target').setValue('alerts@example.com');
 
-    const addButtons = wrapper
-      .findAll('button')
-      .filter((button) => button.text() === 'Add Destination');
-
-    expect(addButtons).toHaveLength(2);
-    await addButtons[1].trigger('click');
+    await getLastButtonByText(wrapper, 'Add Destination').trigger('click');
     await flushPromises();
 
     expect(mockCreateDestination).toHaveBeenCalledWith(
@@ -311,12 +345,7 @@ describe('NotificationsView', () => {
     await wrapper.get('#destination-provider').setValue('email');
     await wrapper.get('#destination-target').setValue('alerts@example.com');
 
-    const addButtons = wrapper
-      .findAll('button')
-      .filter((button) => button.text() === 'Add Destination');
-
-    expect(addButtons).toHaveLength(2);
-    await addButtons[1].trigger('click');
+    await getLastButtonByText(wrapper, 'Add Destination').trigger('click');
     await flushPromises();
 
     expect(mockCreateDestination).toHaveBeenCalledWith(
@@ -357,12 +386,7 @@ describe('NotificationsView', () => {
     await wrapper.get('#destination-provider').setValue('email');
     await wrapper.get('#destination-target').setValue('alerts@example.com');
 
-    const addButtons = wrapper
-      .findAll('button')
-      .filter((button) => button.text() === 'Add Destination');
-
-    expect(addButtons).toHaveLength(2);
-    await addButtons[1].trigger('click');
+    await getLastButtonByText(wrapper, 'Add Destination').trigger('click');
     await flushPromises();
 
     expect(mockCreateDestination).toHaveBeenCalled();
@@ -470,12 +494,7 @@ describe('NotificationsView', () => {
     await wrapper.get('#destination-provider').setValue('email');
     await wrapper.get('#destination-target').setValue('not-an-email');
 
-    const addButtons = wrapper
-      .findAll('button')
-      .filter((button) => button.text() === 'Add Destination');
-
-    expect(addButtons).toHaveLength(2);
-    await addButtons[1].trigger('click');
+    await getLastButtonByText(wrapper, 'Add Destination').trigger('click');
     await flushPromises();
 
     expect(mockCreateDestination).not.toHaveBeenCalled();
@@ -617,12 +636,7 @@ describe('NotificationsView', () => {
     await providerSelect.setValue('email');
     await wrapper.get('#destination-target').setValue('alerts@example.com');
 
-    const addButtons = wrapper
-      .findAll('button')
-      .filter((button) => button.text() === 'Add Destination');
-
-    expect(addButtons).toHaveLength(2);
-    await addButtons[1].trigger('click');
+    await getLastButtonByText(wrapper, 'Add Destination').trigger('click');
     await flushPromises();
 
     expect(mockCreateDestination).not.toHaveBeenCalled();
