@@ -379,6 +379,14 @@ const authenticatedRoutes = [
     },
   },
   {
+    path: '/admin/notifications',
+    name: 'admin-notifications',
+    component: () => import('../views/admin/NotificationsView.vue'),
+    meta: {
+      requiresAuth: true,
+    },
+  },
+  {
     path: '/admin/risks',
     name: 'admin-risks',
     component: () => import('../views/admin/AdminRisksView.vue'),

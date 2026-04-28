@@ -66,6 +66,16 @@ const createDeferred = <T>() => {
   };
 };
 
+const notificationProvidersResponse = () =>
+  Promise.resolve({
+    data: {
+      data: [
+        { providerType: 'email', enabled: true },
+        { providerType: 'slack', enabled: true },
+      ],
+    },
+  });
+
 interface PreferencesViewTestVm extends ComponentPublicInstance {
   [key: string]: unknown;
   updateNotificationPreferences: () => Promise<void>;
@@ -113,6 +123,10 @@ describe('PreferencesView', () => {
             },
           },
         });
+      }
+
+      if (url === '/api/notifications/providers') {
+        return notificationProvidersResponse();
       }
 
       return Promise.reject(new Error(`Unexpected GET URL: ${url}`));
@@ -230,6 +244,10 @@ describe('PreferencesView', () => {
           });
         }
 
+        if (url === '/api/notifications/providers') {
+          return notificationProvidersResponse();
+        }
+
         return Promise.reject(new Error(`Unexpected GET URL: ${url}`));
       });
 
@@ -285,6 +303,62 @@ describe('PreferencesView', () => {
           });
         }
 
+        if (url === '/api/notifications/providers') {
+          return notificationProvidersResponse();
+        }
+
+        return Promise.reject(new Error(`Unexpected GET URL: ${url}`));
+      });
+
+      wrapper = mountPreferencesView();
+
+      await flushPromises();
+      await nextTick();
+
+      expect(wrapper.vm.evidenceDigestAlertChannels).toEqual(['email']);
+      expect(wrapper.vm.taskAvailableAlertChannels).toEqual(['email']);
+      expect(wrapper.vm.riskNotificationsAlertChannels).toEqual(['email']);
+    });
+
+    it('keeps preferences available when notification providers fail to load', async () => {
+      const consoleError = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => undefined);
+
+      mockAxios.get.mockImplementation((url: string) => {
+        if (url === '/api/users/me') {
+          return Promise.resolve({
+            data: {
+              data: {
+                id: 'user-1',
+                email: 'user@example.com',
+                firstName: 'User',
+                lastName: 'Example',
+                failedLogins: 0,
+              },
+            },
+          });
+        }
+
+        if (url === '/api/users/me/subscriptions') {
+          return Promise.resolve({
+            data: {
+              data: {
+                notifications: {
+                  evidenceDigest: ['email', 'slack'],
+                  taskAvailable: ['email', 'slack'],
+                  taskDailyDigest: ['email'],
+                  riskNotifications: ['slack'],
+                },
+              },
+            },
+          });
+        }
+
+        if (url === '/api/notifications/providers') {
+          return Promise.reject(new Error('Providers unavailable'));
+        }
+
         return Promise.reject(new Error(`Unexpected GET URL: ${url}`));
       });
 
@@ -292,10 +366,40 @@ describe('PreferencesView', () => {
 
       await Promise.resolve();
       await nextTick();
+      await emitSlackStatus(wrapper, {
+        loading: false,
+        configured: true,
+        linked: true,
+      });
 
-      expect(wrapper.vm.evidenceDigestAlertChannels).toEqual(['email']);
-      expect(wrapper.vm.taskAvailableAlertChannels).toEqual(['email']);
-      expect(wrapper.vm.riskNotificationsAlertChannels).toEqual(['email']);
+      expect(wrapper.vm.loadError).toBeNull();
+      expect(wrapper.vm.evidenceDigestAlertChannels).toEqual([
+        'email',
+        'slack',
+      ]);
+      expect(wrapper.vm.taskAvailableAlertChannels).toEqual(['email', 'slack']);
+      expect(wrapper.vm.taskDailyDigestAlertChannels).toEqual(['email']);
+      expect(wrapper.vm.riskNotificationsAlertChannels).toEqual(['slack']);
+      expect(wrapper.vm.notificationChannelOptions).toEqual([
+        {
+          label: 'Email',
+          value: 'email',
+          disabled: false,
+          disabledTooltip: undefined,
+        },
+        {
+          label: 'Slack',
+          value: 'slack',
+          disabled: false,
+          disabledTooltip: undefined,
+        },
+      ]);
+      expect(consoleError).toHaveBeenCalledWith(
+        'Error loading notification providers:',
+        expect.any(Error),
+      );
+
+      consoleError.mockRestore();
     });
 
     it('initializes channel selection as empty array when notifications are empty', async () => {
@@ -331,6 +435,10 @@ describe('PreferencesView', () => {
               data: {},
             },
           });
+        }
+
+        if (url === '/api/notifications/providers') {
+          return notificationProvidersResponse();
         }
 
         return Promise.reject(new Error(`Unexpected GET URL: ${url}`));
@@ -375,6 +483,10 @@ describe('PreferencesView', () => {
               },
             },
           });
+        }
+
+        if (url === '/api/notifications/providers') {
+          return notificationProvidersResponse();
         }
 
         return Promise.reject(new Error(`Unexpected GET URL: ${url}`));
@@ -603,6 +715,10 @@ describe('PreferencesView', () => {
           });
         }
 
+        if (url === '/api/notifications/providers') {
+          return notificationProvidersResponse();
+        }
+
         return Promise.reject(new Error(`Unexpected GET URL: ${url}`));
       });
 
@@ -618,7 +734,12 @@ describe('PreferencesView', () => {
 
       expect(wrapper.vm.taskAvailableAlertChannels).toEqual(['email']);
       expect(wrapper.vm.notificationChannelOptions).toEqual([
-        { label: 'Email', value: 'email' },
+        {
+          label: 'Email',
+          value: 'email',
+          disabled: false,
+          disabledTooltip: undefined,
+        },
         {
           label: 'Slack',
           value: 'slack',
@@ -814,7 +935,12 @@ describe('PreferencesView', () => {
       });
 
       expect(wrapper.vm.notificationChannelOptions).toEqual([
-        { label: 'Email', value: 'email' },
+        {
+          label: 'Email',
+          value: 'email',
+          disabled: false,
+          disabledTooltip: undefined,
+        },
         {
           label: 'Slack',
           value: 'slack',
