@@ -48,7 +48,7 @@
     "sortablejs": "^1.15.6",
     "tailwind-merge": "^3.3.1",
     "tailwindcss-primeui": "^0.6.1",
-    "uuid": "^11.1.0",
+    "uuid": "^14.0.0",
     "vue": "^3.5.13",
     "vue-chartjs": "^5.3.2",
     "vue-markdown-render": "^2.3.0",
