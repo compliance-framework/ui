@@ -358,20 +358,35 @@
               class="border border-ccf-300 rounded-md overflow-hidden"
             >
               <div v-if="isRenderableTextMedia(media)">
-                <button
-                  type="button"
-                  class="flex w-full items-center justify-between gap-4 bg-white px-4 py-3 text-left text-sm font-medium text-gray-900 hover:bg-zinc-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-ccf-500 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-900"
-                  :aria-expanded="isTextMediaExpanded(media.uuid)"
-                  :data-testid="`media-toggle-${media.uuid}`"
-                  @click="toggleTextMedia(media.uuid)"
-                >
-                  <span>{{ media.title || media.uuid }}</span>
-                  <span class="shrink-0 text-xs" aria-hidden="true">
-                    {{ isTextMediaExpanded(media.uuid) ? '-' : '+' }}
-                  </span>
-                </button>
+                <div class="flex items-stretch bg-white dark:bg-slate-950">
+                  <button
+                    type="button"
+                    class="flex min-w-0 flex-1 items-center justify-between gap-4 px-4 py-3 text-left text-sm font-medium text-gray-900 hover:bg-zinc-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-ccf-500 dark:text-slate-100 dark:hover:bg-slate-900"
+                    :aria-expanded="isTextMediaExpanded(media.uuid)"
+                    :aria-controls="textMediaContentId(media.uuid)"
+                    :data-testid="`media-toggle-${media.uuid}`"
+                    @click="toggleTextMedia(media.uuid)"
+                  >
+                    <span class="min-w-0 break-words">
+                      {{ media.title || media.uuid }}
+                    </span>
+                    <span class="shrink-0 text-xs" aria-hidden="true">
+                      {{ isTextMediaExpanded(media.uuid) ? '-' : '+' }}
+                    </span>
+                  </button>
+                  <a
+                    v-if="hasBase64MediaPayload(media)"
+                    :download="media.title || media.uuid"
+                    :href="mediaDataHref(media)"
+                    :aria-label="`Download ${media.title || media.uuid}`"
+                    class="flex shrink-0 items-center px-4 text-gray-700 hover:bg-zinc-50 hover:text-ccf-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-ccf-500 dark:text-slate-200 dark:hover:bg-slate-900"
+                  >
+                    <BIconDownload />
+                  </a>
+                </div>
                 <pre
                   v-if="isTextMediaExpanded(media.uuid)"
+                  :id="textMediaContentId(media.uuid)"
                   class="max-h-[32rem] overflow-auto p-4 text-sm leading-6 text-gray-900 whitespace-pre-wrap break-words dark:text-slate-100"
                   >{{ renderMediaText(media) }}</pre
                 >
@@ -383,8 +398,10 @@
               >
                 <span>{{ media.title || media.uuid }}</span>
                 <a
+                  v-if="hasBase64MediaPayload(media)"
                   :download="media.title || media.uuid"
-                  :href="`data:${media.base64?.mediaType};base64,${media.base64?.value}`"
+                  :href="mediaDataHref(media)"
+                  :aria-label="`Download ${media.title || media.uuid}`"
                 >
                   <BIconDownload />
                 </a>
@@ -1039,6 +1056,14 @@ function getMediaType(resource: BackMatterResource): string {
   return resource.base64?.mediaType?.split(';')[0]?.trim().toLowerCase() ?? '';
 }
 
+function hasBase64MediaPayload(resource: BackMatterResource): boolean {
+  return Boolean(resource.base64?.mediaType && resource.base64?.value);
+}
+
+function mediaDataHref(resource: BackMatterResource): string {
+  return `data:${resource.base64?.mediaType};base64,${resource.base64?.value}`;
+}
+
 function isRenderableTextMedia(resource: BackMatterResource): boolean {
   if (!resource.base64?.value) {
     return false;
@@ -1058,6 +1083,10 @@ function isRenderableTextMedia(resource: BackMatterResource): boolean {
 
 function isTextMediaExpanded(uuid: string): boolean {
   return expandedTextMedia.value.has(uuid);
+}
+
+function textMediaContentId(uuid: string): string {
+  return `evidence-media-content-${uuid}`;
 }
 
 function toggleTextMedia(uuid: string) {

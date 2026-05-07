@@ -611,7 +611,7 @@ describe('Evidence ViewView', () => {
     expect(wrapper.text()).not.toContain('foo');
     expect(wrapper.text()).not.toContain('"status": "pass"');
     expect(wrapper.text()).not.toContain('status: pass');
-    expect(wrapper.findAll('a[download]')).toHaveLength(0);
+    expect(wrapper.findAll('a[download]')).toHaveLength(3);
 
     await wrapper
       .find('[data-testid="media-toggle-resource-1"]')
@@ -636,10 +636,16 @@ describe('Evidence ViewView', () => {
 
     const toggle = wrapper.find('[data-testid="media-toggle-resource-1"]');
     expect(toggle.attributes('aria-expanded')).toBe('false');
+    expect(toggle.attributes('aria-controls')).toBe(
+      'evidence-media-content-resource-1',
+    );
 
     await toggle.trigger('click');
 
     expect(toggle.attributes('aria-expanded')).toBe('true');
+    expect(wrapper.find('#evidence-media-content-resource-1').exists()).toBe(
+      true,
+    );
     expect(wrapper.text()).toContain('foo');
 
     await toggle.trigger('click');
