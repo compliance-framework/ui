@@ -1,7 +1,7 @@
 <template>
   <table class="table-fixed w-full rounded-full dark:text-slate-300">
     <colgroup>
-      <col class="w-14" />
+      <col class="w-20" />
       <col class="w-[30%]" />
       <col class="w-48" />
       <col v-if="configStore.showLabels" />
@@ -74,7 +74,7 @@
         :key="item.uuid"
         @click="openEvidence(item)"
       >
-        <td class="py-2 pl-4 pr-2 w-[1%]">
+        <td class="py-2 pl-4 pr-6 w-[1%]">
           <ResultStatusRing
             class="p-0 m-0 whitespace-normal"
             :state="item.status.state?.toLowerCase()"

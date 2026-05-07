@@ -74,6 +74,8 @@ const {
     expires: '2099-04-10T10:15:00Z',
     links: [
       { href: '#resource-1', rel: 'reference', text: 'Attestation bundle' },
+      { href: '#resource-3', rel: 'reference', text: 'JSON evidence' },
+      { href: '#resource-4', rel: 'reference', text: 'YAML evidence' },
       {
         href: 'https://example.com/evidence',
         rel: 'external',
@@ -100,6 +102,22 @@ const {
           uuid: 'resource-2',
           title: 'Unlinked resource',
           base64: { mediaType: 'text/plain', value: 'YmFy' },
+        },
+        {
+          uuid: 'resource-3',
+          title: 'JSON resource',
+          base64: {
+            mediaType: 'application/json',
+            value: 'eyJzdGF0dXMiOiJwYXNzIn0=',
+          },
+        },
+        {
+          uuid: 'resource-4',
+          title: 'YAML resource',
+          base64: {
+            mediaType: 'application/yaml',
+            value: 'c3RhdHVzOiBwYXNzCg==',
+          },
         },
       ],
     },
@@ -579,7 +597,61 @@ describe('Evidence ViewView', () => {
     await clickButtonByText(wrapper, 'Media');
 
     expect(wrapper.text()).toContain('Attestation bundle');
+    expect(wrapper.text()).toContain('JSON resource');
+    expect(wrapper.text()).toContain('YAML resource');
     expect(wrapper.text()).not.toContain('Unlinked resource');
+  });
+
+  it('renders text, JSON, and YAML media after the user expands each resource', async () => {
+    const wrapper = mountView();
+    await flushPromises();
+
+    await clickButtonByText(wrapper, 'Media');
+
+    expect(wrapper.text()).not.toContain('foo');
+    expect(wrapper.text()).not.toContain('"status": "pass"');
+    expect(wrapper.text()).not.toContain('status: pass');
+    expect(wrapper.findAll('a[download]')).toHaveLength(3);
+
+    await wrapper
+      .find('[data-testid="media-toggle-resource-1"]')
+      .trigger('click');
+    await wrapper
+      .find('[data-testid="media-toggle-resource-3"]')
+      .trigger('click');
+    await wrapper
+      .find('[data-testid="media-toggle-resource-4"]')
+      .trigger('click');
+
+    expect(wrapper.text()).toContain('foo');
+    expect(wrapper.text()).toContain('"status": "pass"');
+    expect(wrapper.text()).toContain('status: pass');
+  });
+
+  it('collapses rendered text media after a second title click', async () => {
+    const wrapper = mountView();
+    await flushPromises();
+
+    await clickButtonByText(wrapper, 'Media');
+
+    const toggle = wrapper.find('[data-testid="media-toggle-resource-1"]');
+    expect(toggle.attributes('aria-expanded')).toBe('false');
+    expect(toggle.attributes('aria-controls')).toBe(
+      'evidence-media-content-resource-1',
+    );
+
+    await toggle.trigger('click');
+
+    expect(toggle.attributes('aria-expanded')).toBe('true');
+    expect(wrapper.find('#evidence-media-content-resource-1').exists()).toBe(
+      true,
+    );
+    expect(wrapper.text()).toContain('foo');
+
+    await toggle.trigger('click');
+
+    expect(toggle.attributes('aria-expanded')).toBe('false');
+    expect(wrapper.text()).not.toContain('foo');
   });
 
   it('shows signed metadata and only verifies on manual action', async () => {
