@@ -357,8 +357,28 @@
               :key="media.uuid"
               class="border border-ccf-300 rounded-md overflow-hidden"
             >
-              <BackMatterDisplay :resource="media" />
+              <div v-if="isRenderableTextMedia(media)">
+                <button
+                  type="button"
+                  class="flex w-full items-center justify-between gap-4 bg-white px-4 py-3 text-left text-sm font-medium text-gray-900 hover:bg-zinc-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-ccf-500 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-900"
+                  :aria-expanded="isTextMediaExpanded(media.uuid)"
+                  :data-testid="`media-toggle-${media.uuid}`"
+                  @click="toggleTextMedia(media.uuid)"
+                >
+                  <span>{{ media.title || media.uuid }}</span>
+                  <span class="shrink-0 text-xs" aria-hidden="true">
+                    {{ isTextMediaExpanded(media.uuid) ? '-' : '+' }}
+                  </span>
+                </button>
+                <pre
+                  v-if="isTextMediaExpanded(media.uuid)"
+                  class="max-h-[32rem] overflow-auto p-4 text-sm leading-6 text-gray-900 whitespace-pre-wrap break-words dark:text-slate-100"
+                  >{{ renderMediaText(media) }}</pre
+                >
+              </div>
+              <BackMatterDisplay v-else :resource="media" />
               <div
+                v-if="!isRenderableTextMedia(media)"
                 class="border-t border-ccf-300 py-2 px-4 flex justify-between items-center"
               >
                 <span>{{ media.title || media.uuid }}</span>
@@ -747,6 +767,7 @@ const activeTab = ref<(typeof tabs)[number]['id']>('overview');
 const activities = ref<Activity[]>([] as Activity[]);
 const showActivitiesModal = ref(false);
 const verificationAttempted = ref(false);
+const expandedTextMedia = ref<Set<string>>(new Set());
 
 const {
   data: evidence,
@@ -1014,6 +1035,70 @@ function getSafeExternalHref(value?: string) {
   return '';
 }
 
+function getMediaType(resource: BackMatterResource): string {
+  return resource.base64?.mediaType?.split(';')[0]?.trim().toLowerCase() ?? '';
+}
+
+function isRenderableTextMedia(resource: BackMatterResource): boolean {
+  if (!resource.base64?.value) {
+    return false;
+  }
+
+  const mediaType = getMediaType(resource);
+
+  return (
+    mediaType.startsWith('text/') ||
+    mediaType === 'application/json' ||
+    mediaType.endsWith('+json') ||
+    mediaType === 'application/yaml' ||
+    mediaType === 'application/x-yaml' ||
+    mediaType.endsWith('+yaml')
+  );
+}
+
+function isTextMediaExpanded(uuid: string): boolean {
+  return expandedTextMedia.value.has(uuid);
+}
+
+function toggleTextMedia(uuid: string) {
+  const nextExpandedTextMedia = new Set(expandedTextMedia.value);
+
+  if (nextExpandedTextMedia.has(uuid)) {
+    nextExpandedTextMedia.delete(uuid);
+  } else {
+    nextExpandedTextMedia.add(uuid);
+  }
+
+  expandedTextMedia.value = nextExpandedTextMedia;
+}
+
+function decodeBase64Text(value: string): string {
+  try {
+    const bytes = Uint8Array.from(atob(value), (character) =>
+      character.charCodeAt(0),
+    );
+
+    return new TextDecoder().decode(bytes);
+  } catch {
+    return value;
+  }
+}
+
+function renderMediaText(resource: BackMatterResource): string {
+  const text = decodeBase64Text(resource.base64?.value ?? '');
+  const mediaType = getMediaType(resource);
+
+  if (mediaType === 'application/json' || mediaType.endsWith('+json')) {
+    try {
+      return JSON.stringify(JSON.parse(text), null, 2);
+    } catch {
+      return text;
+    }
+  }
+
+  return text;
+}
+
 watch(
   evidenceId,
   async (id) => {
@@ -1021,6 +1106,7 @@ watch(
     verificationResult.value = undefined;
     verifyError.value = undefined;
     showActivitiesModal.value = false;
+    expandedTextMedia.value = new Set();
     evidence.value = undefined;
     signatureDetail.value = undefined;
     latestEvidence.value = undefined;
