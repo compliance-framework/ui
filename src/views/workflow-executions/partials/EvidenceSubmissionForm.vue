@@ -30,12 +30,11 @@
           type="file"
           multiple
           @change="handleFileChange"
-          accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif"
+          :accept="fileAccept"
           class="w-full px-3 py-2 border border-ccf-300 dark:border-slate-700 rounded-md bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-200"
         />
         <small class="text-gray-500 dark:text-slate-400">
-          Supported: PDF, Word, Images (max 10MB per file, multiple files
-          allowed)
+          {{ fileHelpText }}
         </small>
         <div v-if="selectedFiles.length > 0" class="mt-2 space-y-1">
           <div class="text-sm text-green-600 dark:text-green-400">
@@ -102,7 +101,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import type {
   StepExecution,
   EvidenceType,
@@ -140,6 +139,21 @@ const selectedFiles = ref<File[]>([]);
 const isSubmitting = ref(false);
 const submitError = ref('');
 
+const fileTypesByEvidenceType: Partial<
+  Record<EvidenceType, { accept: string; label: string; extensions: string[] }>
+> = {
+  document: {
+    accept: '.pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp',
+    label: 'PDF, Word, Images',
+    extensions: ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png', 'gif', 'webp'],
+  },
+  screenshot: {
+    accept: '.png,.jpg,.jpeg,.gif,.webp',
+    label: 'PNG, JPG, JPEG, GIF, WebP',
+    extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp'],
+  },
+};
+
 // Get evidence types from requirements, or allow all common types
 const availableEvidenceTypes = computed(() => {
   const allTypes: EvidenceType[] = [
@@ -164,6 +178,18 @@ const isFileEvidenceType = computed(() => {
   );
 });
 
+const fileTypeConfig = computed(() => {
+  if (!evidenceForm.value.type) return undefined;
+  return fileTypesByEvidenceType[evidenceForm.value.type];
+});
+
+const fileAccept = computed(() => fileTypeConfig.value?.accept ?? '');
+
+const fileHelpText = computed(() => {
+  const label = fileTypeConfig.value?.label ?? 'Files';
+  return `Supported: ${label} (max 10MB per file, multiple files allowed)`;
+});
+
 const isAttestationEvidenceType = computed(() => {
   return (
     evidenceForm.value.type === 'attestation' ||
@@ -178,7 +204,11 @@ const isLinkEvidenceType = computed(() => {
 const canSubmit = computed(() => {
   if (!evidenceForm.value.type) return false;
 
-  if (isFileEvidenceType.value && selectedFiles.value.length === 0)
+  if (
+    isFileEvidenceType.value &&
+    (selectedFiles.value.length === 0 ||
+      selectedFiles.value.some((file) => !isAllowedFileType(file)))
+  )
     return false;
   if (
     isAttestationEvidenceType.value &&
@@ -190,6 +220,16 @@ const canSubmit = computed(() => {
 
   return true;
 });
+
+watch(
+  () => evidenceForm.value.type,
+  () => {
+    selectedFiles.value = [];
+    submitError.value = '';
+    const fileInput = document.getElementById('file') as HTMLInputElement;
+    if (fileInput) fileInput.value = '';
+  },
+);
 
 function handleFileChange(event: Event) {
   const target = event.target as HTMLInputElement;
@@ -204,9 +244,25 @@ function handleFileChange(event: Event) {
       return;
     }
 
+    const invalidFiles = files.filter((file) => !isAllowedFileType(file));
+    if (invalidFiles.length > 0) {
+      submitError.value = `The following files are not supported for ${evidenceForm.value.type} evidence: ${invalidFiles.map((f) => f.name).join(', ')}`;
+      selectedFiles.value = [];
+      target.value = '';
+      return;
+    }
+
     selectedFiles.value = files;
     submitError.value = '';
   }
+}
+
+function isAllowedFileType(file: File): boolean {
+  const config = fileTypeConfig.value;
+  if (!config) return false;
+
+  const ext = file.name.split('.').pop()?.toLowerCase();
+  return !!ext && config.extensions.includes(ext);
 }
 
 function formatFileSize(bytes: number): string {

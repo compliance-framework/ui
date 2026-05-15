@@ -147,10 +147,10 @@ export function useStepExecutions() {
       const apiEvidence = evidence?.map((ev) => {
         // Determine media type based on evidence type or file
         let mediaType = 'application/octet-stream';
-        if (ev.evidenceType === 'screenshot') {
-          mediaType = 'image/png';
-        } else if (ev.file?.type) {
+        if (ev.file?.type) {
           mediaType = ev.file.type;
+        } else if (ev.evidenceType === 'screenshot') {
+          mediaType = 'image/png';
         } else if (ev.fileName) {
           // Guess from extension
           const ext = ev.fileName.split('.').pop()?.toLowerCase();
@@ -160,6 +160,7 @@ export function useStepExecutions() {
             jpg: 'image/jpeg',
             jpeg: 'image/jpeg',
             gif: 'image/gif',
+            webp: 'image/webp',
             txt: 'text/plain',
             json: 'application/json',
             xml: 'application/xml',
