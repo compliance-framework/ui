@@ -158,6 +158,10 @@ const fileMimeTypesByEvidenceType: Partial<Record<EvidenceType, string[]>> = {
   ],
   screenshot: ['image/png', 'image/jpeg', 'image/gif', 'image/webp'],
 };
+const genericMimeTypes = ['application/octet-stream', 'binary/octet-stream'];
+const knownMimeTypes = new Set(
+  Object.values(fileMimeTypesByEvidenceType).flat(),
+);
 
 // Get evidence types from requirements, or allow all common types
 const availableEvidenceTypes = computed(() => {
@@ -270,7 +274,13 @@ function isAllowedFileType(file: File): boolean {
     fileMimeTypesByEvidenceType[evidenceForm.value.type as EvidenceType] || [];
 
   if (file.type) {
-    return mimeTypes.includes(file.type);
+    if (mimeTypes.includes(file.type)) return true;
+    if (
+      !genericMimeTypes.includes(file.type) &&
+      knownMimeTypes.has(file.type)
+    ) {
+      return false;
+    }
   }
 
   return extensions.some((extension) => fileName.endsWith(extension));

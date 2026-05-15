@@ -203,8 +203,7 @@ describe('useStepExecutions evidence media types', () => {
 
   it('uses the actual screenshot file MIME type when transitioning a step', async () => {
     const composable = useStepExecutions();
-    const transitionApi = apiMocks[2];
-    transitionApi.execute.mockResolvedValue(undefined);
+    const transitionUrl = '/api/workflows/step-executions/step-1/transition';
 
     await composable.transitionStep('step-1', 'completed', [
       {
@@ -216,8 +215,13 @@ describe('useStepExecutions evidence media types', () => {
       },
     ]);
 
-    expect(transitionApi.execute).toHaveBeenCalledWith(
-      '/api/workflows/step-executions/step-1/transition',
+    const transitionApi = apiMocks.find((apiMock) =>
+      apiMock.execute.mock.calls.some(([url]) => url === transitionUrl),
+    );
+
+    expect(transitionApi).toBeDefined();
+    expect(transitionApi!.execute).toHaveBeenCalledWith(
+      transitionUrl,
       expect.objectContaining({
         data: expect.objectContaining({
           evidence: [

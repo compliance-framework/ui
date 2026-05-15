@@ -93,7 +93,11 @@ describe('EvidenceSubmissionForm file type validation', () => {
       'The following files are not supported for screenshot evidence: renamed.png',
     );
 
-    await chooseFiles(wrapper, [new File(['image'], 'fallback.webp')]);
+    await chooseFiles(wrapper, [
+      new File(['image'], 'fallback.webp', {
+        type: 'application/octet-stream',
+      }),
+    ]);
 
     expect(wrapper.text()).toContain('1 file(s) selected');
     expect(wrapper.text()).not.toContain('not supported');
