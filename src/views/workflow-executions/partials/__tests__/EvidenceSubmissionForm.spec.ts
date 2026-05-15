@@ -81,6 +81,24 @@ describe('EvidenceSubmissionForm file type validation', () => {
     expect(wrapper.emitted('evidence-submitted')).toBeUndefined();
   });
 
+  it('validates screenshot uploads by MIME type before falling back to extension', async () => {
+    const wrapper = mountComponent(['screenshot']);
+
+    await selectEvidenceType(wrapper, 'screenshot');
+    await chooseFiles(wrapper, [
+      new File(['document'], 'renamed.png', { type: 'application/pdf' }),
+    ]);
+
+    expect(wrapper.text()).toContain(
+      'The following files are not supported for screenshot evidence: renamed.png',
+    );
+
+    await chooseFiles(wrapper, [new File(['image'], 'fallback.webp')]);
+
+    expect(wrapper.text()).toContain('1 file(s) selected');
+    expect(wrapper.text()).not.toContain('not supported');
+  });
+
   it('keeps document evidence support for document and image extensions', async () => {
     const wrapper = mountComponent(['document']);
 

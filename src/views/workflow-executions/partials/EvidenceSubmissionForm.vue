@@ -27,6 +27,7 @@
         <Label for="file" required>Upload File</Label>
         <input
           id="file"
+          ref="fileInput"
           type="file"
           multiple
           @change="handleFileChange"
@@ -138,10 +139,24 @@ const evidenceForm = ref<{
 const selectedFiles = ref<File[]>([]);
 const isSubmitting = ref(false);
 const submitError = ref('');
+const fileInput = ref<HTMLInputElement | null>(null);
 
 const fileExtensionsByEvidenceType: Partial<Record<EvidenceType, string[]>> = {
   document: ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png', '.gif', '.webp'],
   screenshot: ['.png', '.jpg', '.jpeg', '.gif', '.webp'],
+};
+
+const fileMimeTypesByEvidenceType: Partial<Record<EvidenceType, string[]>> = {
+  document: [
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'image/png',
+    'image/jpeg',
+    'image/gif',
+    'image/webp',
+  ],
+  screenshot: ['image/png', 'image/jpeg', 'image/gif', 'image/webp'],
 };
 
 // Get evidence types from requirements, or allow all common types
@@ -200,9 +215,7 @@ watch(
   () => {
     selectedFiles.value = [];
     submitError.value = '';
-
-    const fileInput = document.getElementById('file') as HTMLInputElement;
-    if (fileInput) fileInput.value = '';
+    clearFileInput();
   },
 );
 
@@ -253,8 +266,18 @@ function isAllowedFileType(file: File): boolean {
   const fileName = file.name.toLowerCase();
   const extensions =
     fileExtensionsByEvidenceType[evidenceForm.value.type as EvidenceType] || [];
+  const mimeTypes =
+    fileMimeTypesByEvidenceType[evidenceForm.value.type as EvidenceType] || [];
+
+  if (file.type) {
+    return mimeTypes.includes(file.type);
+  }
 
   return extensions.some((extension) => fileName.endsWith(extension));
+}
+
+function clearFileInput() {
+  if (fileInput.value) fileInput.value.value = '';
 }
 
 function formatFileSize(bytes: number): string {
@@ -315,8 +338,7 @@ async function handleSubmit() {
     selectedFiles.value = [];
 
     // Clear file input
-    const fileInput = document.getElementById('file') as HTMLInputElement;
-    if (fileInput) fileInput.value = '';
+    clearFileInput();
   } catch (error) {
     submitError.value =
       error instanceof Error ? error.message : 'Failed to collect evidence';
