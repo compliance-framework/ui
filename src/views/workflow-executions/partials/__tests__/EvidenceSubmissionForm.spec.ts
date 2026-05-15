@@ -89,6 +89,9 @@ describe('EvidenceSubmissionForm file type validation', () => {
     expect(wrapper.find('#file').attributes('accept')).toBe(
       '.pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp',
     );
+    expect(wrapper.text()).toContain(
+      'Supported: PDF, DOC, DOCX, JPG, JPEG, PNG, GIF, WEBP',
+    );
 
     await chooseFiles(wrapper, [
       new File(['document'], 'valid.pdf', { type: 'application/pdf' }),
@@ -96,5 +99,21 @@ describe('EvidenceSubmissionForm file type validation', () => {
 
     expect(wrapper.text()).toContain('1 file(s) selected');
     expect(wrapper.text()).not.toContain('not supported');
+  });
+
+  it('clears selected files when the evidence type changes', async () => {
+    const wrapper = mountComponent(['document', 'screenshot']);
+
+    await selectEvidenceType(wrapper, 'document');
+    await chooseFiles(wrapper, [
+      new File(['document'], 'valid.pdf', { type: 'application/pdf' }),
+    ]);
+    expect(wrapper.text()).toContain('1 file(s) selected');
+
+    await selectEvidenceType(wrapper, 'screenshot');
+
+    expect(wrapper.text()).not.toContain('1 file(s) selected');
+    expect(wrapper.text()).not.toContain('not supported');
+    expect(wrapper.find<HTMLInputElement>('#file').element.value).toBe('');
   });
 });

@@ -101,7 +101,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import type {
   StepExecution,
   EvidenceType,
@@ -186,12 +186,25 @@ const acceptedFileExtensions = computed(() => {
 });
 
 const supportedFileTypesMessage = computed(() => {
-  if (evidenceForm.value.type === 'screenshot') {
-    return 'Supported: PNG, JPG, JPEG, GIF, WEBP (max 10MB per file, multiple files allowed)';
-  }
+  const extensions =
+    fileExtensionsByEvidenceType[evidenceForm.value.type as EvidenceType] || [];
+  const labels = extensions.map((extension) =>
+    extension.replace('.', '').toUpperCase(),
+  );
 
-  return 'Supported: PDF, Word, Images (max 10MB per file, multiple files allowed)';
+  return `Supported: ${labels.join(', ')} (max 10MB per file, multiple files allowed)`;
 });
+
+watch(
+  () => evidenceForm.value.type,
+  () => {
+    selectedFiles.value = [];
+    submitError.value = '';
+
+    const fileInput = document.getElementById('file') as HTMLInputElement;
+    if (fileInput) fileInput.value = '';
+  },
+);
 
 const canSubmit = computed(() => {
   if (!evidenceForm.value.type) return false;
