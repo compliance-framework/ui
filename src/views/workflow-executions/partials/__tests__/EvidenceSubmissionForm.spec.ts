@@ -103,6 +103,19 @@ describe('EvidenceSubmissionForm file type validation', () => {
     expect(wrapper.text()).not.toContain('not supported');
   });
 
+  it('rejects non-allowed MIME types even when the extension is allowed', async () => {
+    const wrapper = mountComponent(['screenshot']);
+
+    await selectEvidenceType(wrapper, 'screenshot');
+    await chooseFiles(wrapper, [
+      new File(['svg'], 'renamed.png', { type: 'image/svg+xml' }),
+    ]);
+
+    expect(wrapper.text()).toContain(
+      'The following files are not supported for screenshot evidence: renamed.png',
+    );
+  });
+
   it('keeps document evidence support for document and image extensions', async () => {
     const wrapper = mountComponent(['document']);
 
