@@ -30,12 +30,11 @@
           type="file"
           multiple
           @change="handleFileChange"
-          accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif"
+          :accept="acceptedFileExtensions"
           class="w-full px-3 py-2 border border-ccf-300 dark:border-slate-700 rounded-md bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-200"
         />
         <small class="text-gray-500 dark:text-slate-400">
-          Supported: PDF, Word, Images (max 10MB per file, multiple files
-          allowed)
+          {{ supportedFileTypesMessage }}
         </small>
         <div v-if="selectedFiles.length > 0" class="mt-2 space-y-1">
           <div class="text-sm text-green-600 dark:text-green-400">
@@ -140,6 +139,11 @@ const selectedFiles = ref<File[]>([]);
 const isSubmitting = ref(false);
 const submitError = ref('');
 
+const fileExtensionsByEvidenceType: Partial<Record<EvidenceType, string[]>> = {
+  document: ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png', '.gif', '.webp'],
+  screenshot: ['.png', '.jpg', '.jpeg', '.gif', '.webp'],
+};
+
 // Get evidence types from requirements, or allow all common types
 const availableEvidenceTypes = computed(() => {
   const allTypes: EvidenceType[] = [
@@ -175,6 +179,20 @@ const isLinkEvidenceType = computed(() => {
   return evidenceForm.value.type === 'link';
 });
 
+const acceptedFileExtensions = computed(() => {
+  const extensions =
+    fileExtensionsByEvidenceType[evidenceForm.value.type as EvidenceType] || [];
+  return extensions.join(',');
+});
+
+const supportedFileTypesMessage = computed(() => {
+  if (evidenceForm.value.type === 'screenshot') {
+    return 'Supported: PNG, JPG, JPEG, GIF, WEBP (max 10MB per file, multiple files allowed)';
+  }
+
+  return 'Supported: PDF, Word, Images (max 10MB per file, multiple files allowed)';
+});
+
 const canSubmit = computed(() => {
   if (!evidenceForm.value.type) return false;
 
@@ -196,17 +214,34 @@ function handleFileChange(event: Event) {
   if (target.files && target.files.length > 0) {
     const files = Array.from(target.files);
 
+    const invalidFiles = files.filter((file) => !isAllowedFileType(file));
+    if (invalidFiles.length > 0) {
+      submitError.value = `The following files are not supported for ${evidenceForm.value.type} evidence: ${invalidFiles.map((f) => f.name).join(', ')}`;
+      selectedFiles.value = [];
+      target.value = '';
+      return;
+    }
+
     // Validate each file size (10MB max)
     const oversizedFiles = files.filter((file) => file.size > 10 * 1024 * 1024);
     if (oversizedFiles.length > 0) {
       submitError.value = `The following files exceed 10MB limit: ${oversizedFiles.map((f) => f.name).join(', ')}`;
       selectedFiles.value = [];
+      target.value = '';
       return;
     }
 
     selectedFiles.value = files;
     submitError.value = '';
   }
+}
+
+function isAllowedFileType(file: File): boolean {
+  const fileName = file.name.toLowerCase();
+  const extensions =
+    fileExtensionsByEvidenceType[evidenceForm.value.type as EvidenceType] || [];
+
+  return extensions.some((extension) => fileName.endsWith(extension));
 }
 
 function formatFileSize(bytes: number): string {
@@ -224,6 +259,14 @@ async function handleSubmit() {
   try {
     // Handle file uploads - create separate evidence for each file
     if (selectedFiles.value.length > 0) {
+      const invalidFiles = selectedFiles.value.filter(
+        (file) => !isAllowedFileType(file),
+      );
+      if (invalidFiles.length > 0) {
+        submitError.value = `The following files are not supported for ${evidenceForm.value.type} evidence: ${invalidFiles.map((f) => f.name).join(', ')}`;
+        return;
+      }
+
       for (const file of selectedFiles.value) {
         const fileData = await fileToBase64(file);
 
