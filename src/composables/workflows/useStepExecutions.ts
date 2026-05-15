@@ -15,6 +15,10 @@ import type {
 } from '@/types/workflows';
 
 const BASE_URL = '/api/workflows/step-executions';
+const GENERIC_FILE_MIME_TYPES = [
+  'application/octet-stream',
+  'binary/octet-stream',
+];
 
 /**
  * Composable for managing step executions.
@@ -147,7 +151,7 @@ export function useStepExecutions() {
       const apiEvidence = evidence?.map((ev) => {
         // Determine media type based on evidence type or file
         let mediaType = 'application/octet-stream';
-        if (ev.file?.type) {
+        if (ev.file?.type && !GENERIC_FILE_MIME_TYPES.includes(ev.file.type)) {
           mediaType = ev.file.type;
         } else if (ev.fileName) {
           // Guess from extension
