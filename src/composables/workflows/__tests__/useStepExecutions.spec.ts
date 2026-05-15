@@ -186,3 +186,86 @@ describe('useStepExecutions reassignment', () => {
     );
   });
 });
+
+describe('useStepExecutions evidence media types', () => {
+  let apiMocks: ApiMock[];
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    apiMocks = [];
+
+    mockUseDataApi.mockImplementation(() => {
+      const next = createApiMock();
+      apiMocks.push(next);
+      return next;
+    });
+  });
+
+  it('uses the actual screenshot file MIME type when transitioning a step', async () => {
+    const composable = useStepExecutions();
+    const transitionUrl = '/api/workflows/step-executions/step-1/transition';
+
+    await composable.transitionStep('step-1', 'completed', [
+      {
+        evidenceType: 'screenshot',
+        file: new File(['image'], 'shot.webp', { type: 'image/webp' }),
+        fileName: 'shot.webp',
+        fileData: 'aW1hZ2U=',
+        fileSize: 5,
+      },
+    ]);
+
+    const transitionApi = apiMocks.find((apiMock) =>
+      apiMock.execute.mock.calls.some(([url]) => url === transitionUrl),
+    );
+
+    expect(transitionApi).toBeDefined();
+    expect(transitionApi!.execute).toHaveBeenCalledWith(
+      transitionUrl,
+      expect.objectContaining({
+        data: expect.objectContaining({
+          evidence: [
+            expect.objectContaining({
+              mediaType: 'image/webp',
+            }),
+          ],
+        }),
+      }),
+    );
+  });
+
+  it('falls back to screenshot file extension for generic MIME types', async () => {
+    const composable = useStepExecutions();
+    const transitionUrl = '/api/workflows/step-executions/step-2/transition';
+
+    await composable.transitionStep('step-2', 'completed', [
+      {
+        evidenceType: 'screenshot',
+        file: new File(['image'], 'shot.webp', {
+          type: 'application/octet-stream',
+        }),
+        fileName: 'shot.webp',
+        fileData: 'aW1hZ2U=',
+        fileSize: 5,
+      },
+    ]);
+
+    const transitionApi = apiMocks.find((apiMock) =>
+      apiMock.execute.mock.calls.some(([url]) => url === transitionUrl),
+    );
+
+    expect(transitionApi).toBeDefined();
+    expect(transitionApi!.execute).toHaveBeenCalledWith(
+      transitionUrl,
+      expect.objectContaining({
+        data: expect.objectContaining({
+          evidence: [
+            expect.objectContaining({
+              mediaType: 'image/webp',
+            }),
+          ],
+        }),
+      }),
+    );
+  });
+});
