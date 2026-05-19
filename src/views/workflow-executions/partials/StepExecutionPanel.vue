@@ -233,7 +233,7 @@
         <EvidenceSubmissionForm
           v-if="canSubmitEvidence"
           :step="step"
-          :evidence-requirements="requiredEvidenceTypes"
+          :evidence-requirements="evidenceRequirements"
           @evidence-submitted="handleEvidenceSubmitted"
         />
 

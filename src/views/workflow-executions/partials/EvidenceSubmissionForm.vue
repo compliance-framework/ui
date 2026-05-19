@@ -17,6 +17,8 @@
           id="evidenceType"
           v-model="evidenceForm.type"
           :options="availableEvidenceTypes"
+          optionLabel="label"
+          optionValue="value"
           placeholder="Select evidence type"
           class="w-full"
         />
@@ -106,6 +108,7 @@ import { ref, computed } from 'vue';
 import type {
   StepExecution,
   EvidenceType,
+  EvidenceRequirement,
   StepExecutionEvidenceSubmit,
 } from '@/types/workflows';
 import Label from '@/volt/Label.vue';
@@ -117,7 +120,7 @@ import Message from '@/volt/Message.vue';
 
 const props = defineProps<{
   step: StepExecution;
-  evidenceRequirements: string[];
+  evidenceRequirements: EvidenceRequirement[];
 }>();
 
 const emit = defineEmits<{
@@ -140,8 +143,18 @@ const selectedFiles = ref<File[]>([]);
 const isSubmitting = ref(false);
 const submitError = ref('');
 
-// Get evidence types from requirements, or allow all common types
 const availableEvidenceTypes = computed(() => {
+  const toOption = (type: EvidenceType, description?: string) => ({
+    value: type,
+    label: description || type,
+  });
+
+  if (props.evidenceRequirements.length > 0) {
+    return props.evidenceRequirements.map((req) =>
+      toOption(req.type, req.description),
+    );
+  }
+
   const allTypes: EvidenceType[] = [
     'document',
     'attestation',
@@ -149,12 +162,7 @@ const availableEvidenceTypes = computed(() => {
     'link',
     'text',
   ];
-
-  if (props.evidenceRequirements.length > 0) {
-    return props.evidenceRequirements;
-  }
-
-  return allTypes;
+  return allTypes.map((type) => toOption(type));
 });
 
 const isFileEvidenceType = computed(() => {
