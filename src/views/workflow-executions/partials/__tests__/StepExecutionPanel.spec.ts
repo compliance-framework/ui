@@ -188,3 +188,27 @@ describe('StepExecutionPanel overdue behavior', () => {
     expect(hasButton(wrapper, 'Mark Failed')).toBe(true);
   });
 });
+
+describe('StepExecutionPanel evidence display', () => {
+  it('displays evidence items with type and description', async () => {
+    const wrapper = mountComponent(
+      createStep('completed', {
+        evidence: [
+          {
+            id: 'evidence-1',
+            stepExecutionId: 'step-1',
+            evidenceType: 'attestation',
+            description: 'User provided attestation',
+            submittedAt: '2026-01-10T12:00:00.000Z',
+            submittedBy: 'Jeff Smith',
+          },
+        ],
+      }),
+    );
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('Evidence');
+    expect(wrapper.text()).toContain('attestation');
+    expect(wrapper.text()).toContain('User provided attestation');
+  });
+});

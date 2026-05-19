@@ -300,6 +300,7 @@ export interface StepExecutionEvidence {
   fileUrl?: string;
   attestationText?: string;
   linkUrl?: string;
+  description?: string;
   submittedBy: string;
   submittedAt: string;
 }
@@ -310,6 +311,7 @@ export interface StepExecutionEvidenceSubmit {
   fileName?: string;
   fileData?: string; // base64 encoded file data
   fileSize?: number;
+  description?: string;
   attestationText?: string;
   linkUrl?: string;
   metadata?: string; // Additional metadata for the evidence

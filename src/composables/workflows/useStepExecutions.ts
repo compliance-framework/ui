@@ -172,7 +172,7 @@ export function useStepExecutions() {
         return {
           evidenceType: ev.evidenceType,
           name: ev.fileName || ev.evidenceType,
-          description: ev.attestationText || ev.linkUrl || '',
+          description: ev.description || ev.attestationText || ev.linkUrl || '',
           // Use the new file-content field for base64 data
           fileContent: ev.fileData,
           mediaType: mediaType,

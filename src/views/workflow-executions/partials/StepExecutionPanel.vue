@@ -168,6 +168,12 @@
                 </SecondaryButton>
               </div>
               <div
+                v-if="evidence.description"
+                class="mt-2 text-sm text-gray-600 dark:text-slate-400"
+              >
+                {{ evidence.description }}
+              </div>
+              <div
                 v-if="evidence.attestationText"
                 class="mt-2 text-sm text-gray-600 dark:text-slate-400"
               >
@@ -212,6 +218,12 @@
                 >
                   <i class="pi pi-times"></i>
                 </SecondaryButton>
+              </div>
+              <div
+                v-if="evidence.description"
+                class="mt-2 text-sm text-gray-600 dark:text-slate-400"
+              >
+                {{ evidence.description }}
               </div>
               <div
                 v-if="evidence.attestationText"
@@ -696,7 +708,19 @@ async function handleReassign() {
   }
 }
 
+function getEvidenceDescription(
+  evidence: StepExecutionEvidenceSubmit,
+): string | undefined {
+  return evidence.description || evidence.attestationText || evidence.linkUrl;
+}
+
 function handleEvidenceSubmitted(evidence: StepExecutionEvidenceSubmit) {
+  const evidenceDescription = getEvidenceDescription(evidence);
+  if (evidenceDescription) {
+    completionNotes.value = completionNotes.value
+      ? `${completionNotes.value.trim()}\n\n${evidenceDescription.trim()}`
+      : evidenceDescription.trim();
+  }
   // Collect evidence locally instead of submitting immediately
   collectedEvidence.value.push(evidence);
 }
