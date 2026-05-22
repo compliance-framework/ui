@@ -233,23 +233,44 @@ const notificationFilterOptions: NotificationOption[] = [
   { label: 'Workflow Task Due Soon', value: 'workflow_task_due_soon' },
   { label: 'Workflow Task Digest', value: 'workflow_task_digest' },
   { label: 'Workflow Execution Failed', value: 'workflow_execution_failed' },
-  { label: 'Workflow Task Digest Checker', value: 'workflow_task_digest_checker' },
+  {
+    label: 'Workflow Task Digest Checker',
+    value: 'workflow_task_digest_checker',
+  },
   { label: 'Schedule Workflows', value: 'schedule_workflows' },
-  { label: 'Risk Review Deadline Scanner', value: 'risk_review_deadline_reminder_scanner' },
-  { label: 'Risk Overdue Escalation Scanner', value: 'risk_review_overdue_escalation_scanner' },
+  {
+    label: 'Risk Review Deadline Scanner',
+    value: 'risk_review_deadline_reminder_scanner',
+  },
+  {
+    label: 'Risk Overdue Escalation Scanner',
+    value: 'risk_review_overdue_escalation_scanner',
+  },
   { label: 'Risk Stale Risk Scanner', value: 'risk_stale_risk_scanner' },
   { label: 'Risk Open Digest Scheduler', value: 'risk_open_digest_scheduler' },
   { label: 'Risk Review Due Reminder', value: 'risk_review_due_reminder' },
-  { label: 'Risk Review Overdue Escalation', value: 'risk_review_overdue_escalation' },
+  {
+    label: 'Risk Review Overdue Escalation',
+    value: 'risk_review_overdue_escalation',
+  },
   { label: 'Risk Stale Open Reminder', value: 'risk_stale_open_reminder' },
   { label: 'Risk Open Digest', value: 'risk_open_digest' },
   { label: 'POAM Deadline Scanner', value: 'poam_deadline_reminder_scanner' },
-  { label: 'POAM Overdue Transition Scanner', value: 'poam_overdue_transition_scanner' },
-  { label: 'POAM Milestone Overdue Scanner', value: 'poam_milestone_overdue_scanner' },
+  {
+    label: 'POAM Overdue Transition Scanner',
+    value: 'poam_overdue_transition_scanner',
+  },
+  {
+    label: 'POAM Milestone Overdue Scanner',
+    value: 'poam_milestone_overdue_scanner',
+  },
   { label: 'POAM Open Digest Scheduler', value: 'poam_open_digest_scheduler' },
   { label: 'POAM Deadline Reminder', value: 'poam_deadline_reminder' },
   { label: 'POAM Overdue Notification', value: 'poam_overdue_notification' },
-  { label: 'POAM Milestone Overdue Reminder', value: 'poam_milestone_overdue_reminder' },
+  {
+    label: 'POAM Milestone Overdue Reminder',
+    value: 'poam_milestone_overdue_reminder',
+  },
   { label: 'POAM Open Digest', value: 'poam_open_digest' },
 ];
 const diagnosticsNotificationOptions: NotificationOption[] = [
@@ -317,7 +338,7 @@ const diagnosticsLoading = ref(false);
 const diagnosticsError = ref<string | null>(null);
 const testSendLoadingKey = ref<string | null>(null);
 const testSendMessage = ref<string | null>(null);
-let autoRefreshTimer: ReturnType<typeof window.setInterval> | undefined;
+let autoRefreshTimer: number | undefined;
 
 const {
   data: notificationConfigurations,
@@ -504,7 +525,9 @@ const healthQueues = computed(() => {
 const healthNotifications = computed(() => health.value?.notifications ?? []);
 const healthSchedules = computed(() => health.value?.schedules ?? []);
 const healthWarnings = computed(() => {
-  const warnings: NotificationHealthWarning[] = [...(health.value?.warnings ?? [])];
+  const warnings: NotificationHealthWarning[] = [
+    ...(health.value?.warnings ?? []),
+  ];
 
   for (const provider of providerList.value) {
     if (!provider.enabled) {
@@ -599,7 +622,11 @@ const selectedJobDetailArgs = computed(() => {
 });
 
 const diagnosticsDestinations = computed(() => {
-  return diagnostics.value?.systemDestinations ?? diagnostics.value?.destinations ?? [];
+  return (
+    diagnostics.value?.systemDestinations ??
+    diagnostics.value?.destinations ??
+    []
+  );
 });
 const diagnosticJobGroups = computed(() => [
   {
@@ -690,6 +717,7 @@ function formatMetadataLabel(key: string): string {
     .replace(/[-_]+/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
+    .toLowerCase()
     .replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
@@ -702,7 +730,7 @@ function formatLabel(value?: string | null): string {
 }
 
 function formatNotificationName(value?: string | null): string {
-  return formatLabel(value ?? '');
+  return formatLabel(value ?? '').replace(/\bPoam\b/g, 'POAM');
 }
 
 function formatDate(value?: string | null): string {
@@ -851,7 +879,9 @@ function buildJobsParams(cursor?: string) {
 
 function isSensitiveKey(key: string): boolean {
   const normalized = key.toLowerCase().replace(/[^a-z0-9]/g, '');
-  return sensitiveFieldNames.some((fieldName) => normalized.includes(fieldName));
+  return sensitiveFieldNames.some((fieldName) =>
+    normalized.includes(fieldName),
+  );
 }
 
 function sanitizePayload(value: unknown): unknown {
@@ -1549,11 +1579,15 @@ onUnmounted(() => {
                     <div class="flex flex-wrap items-center gap-2">
                       <span
                         class="inline-flex rounded-full px-2.5 py-1 text-xs font-medium"
-                        :class="destinationProviderClasses(destination.provider)"
+                        :class="
+                          destinationProviderClasses(destination.provider)
+                        "
                       >
                         {{ getProviderLabel(destination.provider) }}
                       </span>
-                      <span class="break-all text-sm text-gray-600 dark:text-gray-400">
+                      <span
+                        class="break-all text-sm text-gray-600 dark:text-gray-400"
+                      >
                         {{ destination.target }}
                       </span>
                     </div>
@@ -1562,7 +1596,12 @@ onUnmounted(() => {
                       <button
                         type="button"
                         class="text-sm font-medium text-ccf-700 hover:text-ccf-900 dark:text-slate-200 dark:hover:text-white"
-                        :disabled="isTestSendLoading(destination.provider, destination.target)"
+                        :disabled="
+                          isTestSendLoading(
+                            destination.provider,
+                            destination.target,
+                          )
+                        "
                         @click="
                           sendTestNotification(
                             destination.provider,
@@ -1571,7 +1610,10 @@ onUnmounted(() => {
                         "
                       >
                         {{
-                          isTestSendLoading(destination.provider, destination.target)
+                          isTestSendLoading(
+                            destination.provider,
+                            destination.target,
+                          )
                             ? 'Sending...'
                             : 'Send test notification'
                         }}
@@ -1638,10 +1680,15 @@ onUnmounted(() => {
             Health
           </h2>
           <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
-            Readiness, queue state, subscribers, destinations, and scheduled runs.
+            Readiness, queue state, subscribers, destinations, and scheduled
+            runs.
           </p>
         </div>
-        <SecondaryButton type="button" :disabled="healthLoading" @click="loadHealth">
+        <SecondaryButton
+          type="button"
+          :disabled="healthLoading"
+          @click="loadHealth"
+        >
           Refresh
         </SecondaryButton>
       </div>
@@ -1670,33 +1717,49 @@ onUnmounted(() => {
             :key="`${warning.code}-${warning.target ?? ''}`"
             class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-900/40 dark:bg-amber-900/20 dark:text-amber-100"
           >
-            <span class="font-semibold">{{ formatLabel(warning.severity) }}:</span>
+            <span class="font-semibold"
+              >{{ formatLabel(warning.severity) }}:</span
+            >
             {{ warning.message }}
-            <span v-if="warning.target" class="text-xs">({{ warning.target }})</span>
+            <span v-if="warning.target" class="text-xs"
+              >({{ warning.target }})</span
+            >
           </div>
         </div>
 
         <div class="grid gap-3 lg:grid-cols-3">
           <PageCard>
             <div class="space-y-2">
-              <p class="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-slate-400">
+              <p
+                class="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-slate-400"
+              >
                 Worker Mode
               </p>
               <p class="text-2xl font-semibold text-gray-900 dark:text-white">
                 {{ workerModeLabel }}
               </p>
               <p class="text-sm text-gray-600 dark:text-gray-400">
-                Worker {{ health?.worker?.enabled ? 'enabled' : 'disabled or unknown' }}
+                Worker
+                {{
+                  health?.worker?.enabled ? 'enabled' : 'disabled or unknown'
+                }}
               </p>
             </div>
           </PageCard>
           <PageCard>
             <div class="space-y-2">
-              <p class="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-slate-400">
+              <p
+                class="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-slate-400"
+              >
                 Stale Jobs
               </p>
               <p class="text-2xl font-semibold text-gray-900 dark:text-white">
-                {{ healthQueues.reduce((total, queue) => total + (queue.staleCount ?? 0), 0) }}
+                {{
+                  healthQueues.reduce(
+                    (total, queue) => total + (queue.staleCount ?? 0),
+                    0,
+                  )
+                }}
               </p>
               <p class="text-sm text-gray-600 dark:text-gray-400">
                 Oldest waiting:
@@ -1713,11 +1776,17 @@ onUnmounted(() => {
           </PageCard>
           <PageCard>
             <div class="space-y-2">
-              <p class="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-slate-400">
+              <p
+                class="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-slate-400"
+              >
                 Upcoming Runs
               </p>
               <p class="text-2xl font-semibold text-gray-900 dark:text-white">
-                {{ healthSchedules.filter((schedule) => schedule.enabled && schedule.nextRunAt).length }}
+                {{
+                  healthSchedules.filter(
+                    (schedule) => schedule.enabled && schedule.nextRunAt,
+                  ).length
+                }}
               </p>
               <p class="text-sm text-gray-600 dark:text-gray-400">
                 Enabled schedules with a next run.
@@ -1739,7 +1808,10 @@ onUnmounted(() => {
               >
                 <div class="flex flex-wrap items-center justify-between gap-2">
                   <span class="font-medium text-gray-900 dark:text-white">
-                    {{ provider.displayName || getProviderLabel(provider.providerType) }}
+                    {{
+                      provider.displayName ||
+                      getProviderLabel(provider.providerType)
+                    }}
                   </span>
                   <span
                     class="inline-flex rounded-md border px-2 py-1 text-xs font-semibold"
@@ -1773,7 +1845,9 @@ onUnmounted(() => {
             </h3>
             <div class="overflow-x-auto">
               <table class="min-w-full text-left text-sm">
-                <thead class="text-xs uppercase text-gray-500 dark:text-slate-400">
+                <thead
+                  class="text-xs uppercase text-gray-500 dark:text-slate-400"
+                >
                   <tr>
                     <th class="px-3 py-2">Queue</th>
                     <th class="px-3 py-2">Workers</th>
@@ -1798,10 +1872,15 @@ onUnmounted(() => {
                     <td class="px-3 py-2">{{ queue.completed24h ?? 0 }}</td>
                     <td class="px-3 py-2">{{ queue.discarded24h ?? 0 }}</td>
                     <td class="px-3 py-2">{{ queue.staleCount ?? 0 }}</td>
-                    <td class="px-3 py-2">{{ formatDate(queue.oldestAvailableAt) }}</td>
+                    <td class="px-3 py-2">
+                      {{ formatDate(queue.oldestAvailableAt) }}
+                    </td>
                   </tr>
                   <tr v-if="healthQueues.length === 0">
-                    <td colspan="10" class="px-3 py-4 text-gray-600 dark:text-gray-400">
+                    <td
+                      colspan="10"
+                      class="px-3 py-4 text-gray-600 dark:text-gray-400"
+                    >
                       No queue health returned.
                     </td>
                   </tr>
@@ -1819,7 +1898,9 @@ onUnmounted(() => {
               </h3>
               <div class="overflow-x-auto">
                 <table class="min-w-full text-left text-sm">
-                  <thead class="text-xs uppercase text-gray-500 dark:text-slate-400">
+                  <thead
+                    class="text-xs uppercase text-gray-500 dark:text-slate-400"
+                  >
                     <tr>
                       <th class="px-3 py-2">Notification</th>
                       <th class="px-3 py-2">Email</th>
@@ -1836,15 +1917,24 @@ onUnmounted(() => {
                       <td class="px-3 py-2 font-medium">
                         {{ formatNotificationName(notification.name) }}
                       </td>
-                      <td class="px-3 py-2">{{ notification.subscriberCounts?.email ?? 0 }}</td>
-                      <td class="px-3 py-2">{{ notification.subscriberCounts?.slack ?? 0 }}</td>
-                      <td class="px-3 py-2">{{ notification.subscriberCounts?.totalUsers ?? 0 }}</td>
+                      <td class="px-3 py-2">
+                        {{ notification.subscriberCounts?.email ?? 0 }}
+                      </td>
+                      <td class="px-3 py-2">
+                        {{ notification.subscriberCounts?.slack ?? 0 }}
+                      </td>
+                      <td class="px-3 py-2">
+                        {{ notification.subscriberCounts?.totalUsers ?? 0 }}
+                      </td>
                       <td class="px-3 py-2">
                         {{ notification.configuredDestinations?.length ?? 0 }}
                       </td>
                     </tr>
                     <tr v-if="healthNotifications.length === 0">
-                      <td colspan="5" class="px-3 py-4 text-gray-600 dark:text-gray-400">
+                      <td
+                        colspan="5"
+                        class="px-3 py-4 text-gray-600 dark:text-gray-400"
+                      >
                         No notification health returned.
                       </td>
                     </tr>
@@ -1861,7 +1951,9 @@ onUnmounted(() => {
               </h3>
               <div class="overflow-x-auto">
                 <table class="min-w-full text-left text-sm">
-                  <thead class="text-xs uppercase text-gray-500 dark:text-slate-400">
+                  <thead
+                    class="text-xs uppercase text-gray-500 dark:text-slate-400"
+                  >
                     <tr>
                       <th class="px-3 py-2">Notification</th>
                       <th class="px-3 py-2">Kind</th>
@@ -1871,13 +1963,18 @@ onUnmounted(() => {
                     </tr>
                   </thead>
                   <tbody class="divide-y divide-ccf-200 dark:divide-slate-800">
-                    <tr v-for="schedule in healthSchedules" :key="`${schedule.name}-${schedule.jobKind}`">
+                    <tr
+                      v-for="schedule in healthSchedules"
+                      :key="`${schedule.name}-${schedule.jobKind}`"
+                    >
                       <td class="px-3 py-2 font-medium">
                         {{ formatNotificationName(schedule.name) }}
                       </td>
                       <td class="px-3 py-2">{{ schedule.jobKind }}</td>
                       <td class="px-3 py-2">{{ schedule.queue }}</td>
-                      <td class="px-3 py-2">{{ formatDate(schedule.nextRunAt) }}</td>
+                      <td class="px-3 py-2">
+                        {{ formatDate(schedule.nextRunAt) }}
+                      </td>
                       <td class="px-3 py-2">
                         <button
                           v-if="schedule.lastJob?.id"
@@ -1885,13 +1982,17 @@ onUnmounted(() => {
                           class="font-medium text-primary hover:underline"
                           @click="linkToDeliveries(String(schedule.lastJob.id))"
                         >
-                          {{ schedule.lastJob.id }} · {{ schedule.lastJob.state }}
+                          {{ schedule.lastJob.id }} ·
+                          {{ schedule.lastJob.state }}
                         </button>
                         <span v-else>None</span>
                       </td>
                     </tr>
                     <tr v-if="healthSchedules.length === 0">
-                      <td colspan="5" class="px-3 py-4 text-gray-600 dark:text-gray-400">
+                      <td
+                        colspan="5"
+                        class="px-3 py-4 text-gray-600 dark:text-gray-400"
+                      >
                         No scheduled notification runs returned.
                       </td>
                     </tr>
@@ -1920,15 +2021,22 @@ onUnmounted(() => {
             Deliveries
           </h2>
           <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
-            River notification jobs are read-only here. No retry, discard, cancel, or edit actions are available.
+            River notification jobs are read-only here. No retry, discard,
+            cancel, or edit actions are available.
           </p>
         </div>
         <div class="flex flex-wrap items-center gap-3">
-          <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-slate-300">
+          <label
+            class="flex items-center gap-2 text-sm text-gray-700 dark:text-slate-300"
+          >
             <input v-model="autoRefreshJobs" type="checkbox" class="h-4 w-4" />
             Auto-refresh 30s
           </label>
-          <SecondaryButton type="button" :disabled="jobsLoading" @click="loadJobs()">
+          <SecondaryButton
+            type="button"
+            :disabled="jobsLoading"
+            @click="loadJobs()"
+          >
             Refresh
           </SecondaryButton>
         </div>
@@ -1937,7 +2045,9 @@ onUnmounted(() => {
       <PageCard>
         <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
           <label class="space-y-1 text-sm">
-            <span class="font-medium text-gray-700 dark:text-slate-300">Notification</span>
+            <span class="font-medium text-gray-700 dark:text-slate-300"
+              >Notification</span
+            >
             <select
               v-model="selectedNotificationFilter"
               class="w-full rounded-md border border-ccf-300 bg-white px-3 py-2 text-gray-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
@@ -1954,20 +2064,28 @@ onUnmounted(() => {
             </select>
           </label>
           <label class="space-y-1 text-sm">
-            <span class="font-medium text-gray-700 dark:text-slate-300">Provider</span>
+            <span class="font-medium text-gray-700 dark:text-slate-300"
+              >Provider</span
+            >
             <select
               v-model="selectedProviderFilter"
               class="w-full rounded-md border border-ccf-300 bg-white px-3 py-2 text-gray-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
               @change="applyJobFilters"
             >
               <option value="">All providers</option>
-              <option v-for="provider in providerFilterOptions" :key="provider" :value="provider">
+              <option
+                v-for="provider in providerFilterOptions"
+                :key="provider"
+                :value="provider"
+              >
                 {{ getProviderLabel(provider) }}
               </option>
             </select>
           </label>
           <label class="space-y-1 text-sm">
-            <span class="font-medium text-gray-700 dark:text-slate-300">Queue</span>
+            <span class="font-medium text-gray-700 dark:text-slate-300"
+              >Queue</span
+            >
             <select
               v-model="selectedQueueFilter"
               class="w-full rounded-md border border-ccf-300 bg-white px-3 py-2 text-gray-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
@@ -1980,7 +2098,9 @@ onUnmounted(() => {
             </select>
           </label>
           <label class="space-y-1 text-sm">
-            <span class="font-medium text-gray-700 dark:text-slate-300">State</span>
+            <span class="font-medium text-gray-700 dark:text-slate-300"
+              >State</span
+            >
             <select
               v-model="selectedStateFilter"
               class="w-full rounded-md border border-ccf-300 bg-white px-3 py-2 text-gray-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
@@ -1993,7 +2113,9 @@ onUnmounted(() => {
             </select>
           </label>
           <label class="space-y-1 text-sm">
-            <span class="font-medium text-gray-700 dark:text-slate-300">Time range</span>
+            <span class="font-medium text-gray-700 dark:text-slate-300"
+              >Time range</span
+            >
             <select
               v-model="selectedTimeRange"
               class="w-full rounded-md border border-ccf-300 bg-white px-3 py-2 text-gray-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
@@ -2009,7 +2131,9 @@ onUnmounted(() => {
             </select>
           </label>
           <label class="space-y-1 text-sm">
-            <span class="font-medium text-gray-700 dark:text-slate-300">Job or correlation</span>
+            <span class="font-medium text-gray-700 dark:text-slate-300"
+              >Job or correlation</span
+            >
             <input
               v-model="jobIdOrCorrelationFilter"
               type="search"
@@ -2066,8 +2190,12 @@ onUnmounted(() => {
                     {{ job.id }}
                   </button>
                 </td>
-                <td class="px-3 py-2">{{ formatNotificationName(job.notificationKind) }}</td>
-                <td class="px-3 py-2">{{ getProviderLabel(job.provider ?? '') }}</td>
+                <td class="px-3 py-2">
+                  {{ formatNotificationName(job.notificationKind) }}
+                </td>
+                <td class="px-3 py-2">
+                  {{ getProviderLabel(job.provider ?? '') }}
+                </td>
                 <td class="px-3 py-2">{{ job.queue }}</td>
                 <td class="px-3 py-2">{{ job.kind }}</td>
                 <td class="px-3 py-2">
@@ -2078,14 +2206,19 @@ onUnmounted(() => {
                     {{ job.stale ? 'Stale ' : '' }}{{ formatLabel(job.state) }}
                   </span>
                 </td>
-                <td class="px-3 py-2">{{ job.attempt ?? 0 }}/{{ job.maxAttempts ?? 0 }}</td>
+                <td class="px-3 py-2">
+                  {{ job.attempt ?? 0 }}/{{ job.maxAttempts ?? 0 }}
+                </td>
                 <td class="px-3 py-2 break-all">{{ job.target ?? 'None' }}</td>
                 <td class="max-w-sm px-3 py-2 text-red-700 dark:text-red-300">
                   {{ job.lastError ?? 'None' }}
                 </td>
               </tr>
               <tr v-if="filteredJobs.length === 0">
-                <td colspan="10" class="px-3 py-4 text-gray-600 dark:text-gray-400">
+                <td
+                  colspan="10"
+                  class="px-3 py-4 text-gray-600 dark:text-gray-400"
+                >
                   No notification delivery jobs match the current filters.
                 </td>
               </tr>
@@ -2120,7 +2253,8 @@ onUnmounted(() => {
             Diagnostics
           </h2>
           <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
-            Read-only checks for evidence digest, workflow, risk, and POAM notifications.
+            Read-only checks for evidence digest, workflow, risk, and POAM
+            notifications.
           </p>
         </div>
         <div class="flex flex-col gap-2 sm:flex-row sm:items-end">
@@ -2166,7 +2300,9 @@ onUnmounted(() => {
 
       <template v-if="diagnostics && !diagnosticsLoading">
         <PageCard>
-          <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div
+            class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+          >
             <div>
               <h3 class="text-base font-semibold text-gray-900 dark:text-white">
                 {{ formatNotificationName(diagnostics.notificationName) }}
@@ -2249,7 +2385,9 @@ onUnmounted(() => {
                   {{ formatLabel(String(channel)) }}: {{ count }}
                 </span>
                 <span
-                  v-if="Object.keys(diagnostics.subscriberCounts ?? {}).length === 0"
+                  v-if="
+                    Object.keys(diagnostics.subscriberCounts ?? {}).length === 0
+                  "
                   class="text-gray-600 dark:text-gray-400"
                 >
                   No subscriber counts returned.
@@ -2263,11 +2401,15 @@ onUnmounted(() => {
                 >
                   <span
                     class="rounded-full px-2.5 py-1 text-xs font-medium"
-                    :class="destinationProviderClasses(destination.providerType)"
+                    :class="
+                      destinationProviderClasses(destination.providerType)
+                    "
                   >
                     {{ getProviderLabel(destination.providerType) }}
                   </span>
-                  <span class="break-all">{{ destination.destinationTarget }}</span>
+                  <span class="break-all">{{
+                    destination.destinationTarget
+                  }}</span>
                 </div>
                 <p
                   v-if="diagnosticsDestinations.length === 0"
@@ -2285,11 +2427,24 @@ onUnmounted(() => {
                 Recent Job Signals
               </h3>
               <div class="grid gap-2 text-sm sm:grid-cols-2">
-                <span>Source jobs: {{ diagnostics.recentJobs?.length ?? 0 }}</span>
-                <span>Downstream jobs: {{ diagnostics.downstreamJobs?.length ?? 0 }}</span>
-                <span>Stale jobs: {{ diagnostics.staleJobs?.length ?? 0 }}</span>
-                <span>Discarded jobs: {{ diagnostics.discardedJobs?.length ?? 0 }}</span>
-                <span>Retryable errors: {{ diagnostics.retryableErrors?.length ?? 0 }}</span>
+                <span
+                  >Source jobs: {{ diagnostics.recentJobs?.length ?? 0 }}</span
+                >
+                <span
+                  >Downstream jobs:
+                  {{ diagnostics.downstreamJobs?.length ?? 0 }}</span
+                >
+                <span
+                  >Stale jobs: {{ diagnostics.staleJobs?.length ?? 0 }}</span
+                >
+                <span
+                  >Discarded jobs:
+                  {{ diagnostics.discardedJobs?.length ?? 0 }}</span
+                >
+                <span
+                  >Retryable errors:
+                  {{ diagnostics.retryableErrors?.length ?? 0 }}</span
+                >
                 <span>
                   Next run:
                   {{ formatDate(diagnostics.nextScheduledRun?.nextRunAt) }}
@@ -2315,7 +2470,9 @@ onUnmounted(() => {
                       class="font-medium text-primary hover:underline"
                       @click="
                         linkToDeliveries(
-                          String(job.correlationId ?? job.sourceJobId ?? job.id),
+                          String(
+                            job.correlationId ?? job.sourceJobId ?? job.id,
+                          ),
                         )
                       "
                     >
@@ -2481,34 +2638,62 @@ onUnmounted(() => {
             </span>
           </div>
           <p class="text-sm text-gray-600 dark:text-gray-400">
-            Read-only delivery details. Queue mutation controls are intentionally unavailable.
+            Read-only delivery details. Queue mutation controls are
+            intentionally unavailable.
           </p>
         </div>
 
         <dl class="grid gap-3 text-sm sm:grid-cols-2">
           <div>
-            <dt class="font-medium text-gray-700 dark:text-slate-300">Created</dt>
+            <dt class="font-medium text-gray-700 dark:text-slate-300">
+              Created
+            </dt>
             <dd>{{ formatDate(jobDetail.createdAt) }}</dd>
           </div>
           <div>
-            <dt class="font-medium text-gray-700 dark:text-slate-300">Scheduled</dt>
+            <dt class="font-medium text-gray-700 dark:text-slate-300">
+              Scheduled
+            </dt>
             <dd>{{ formatDate(jobDetail.scheduledAt) }}</dd>
           </div>
           <div>
-            <dt class="font-medium text-gray-700 dark:text-slate-300">Attempted</dt>
+            <dt class="font-medium text-gray-700 dark:text-slate-300">
+              Attempted
+            </dt>
             <dd>{{ formatDate(jobDetail.attemptedAt) }}</dd>
           </div>
           <div>
-            <dt class="font-medium text-gray-700 dark:text-slate-300">Finalized</dt>
+            <dt class="font-medium text-gray-700 dark:text-slate-300">
+              Finalized
+            </dt>
             <dd>{{ formatDate(jobDetail.finalizedAt) }}</dd>
           </div>
           <div>
-            <dt class="font-medium text-gray-700 dark:text-slate-300">Source Job</dt>
-            <dd>{{ jobDetail.sourceJobKind ?? jobDetail.metadata?.sourceJobKind ?? 'None' }} {{ jobDetail.sourceJobId ?? jobDetail.metadata?.sourceJobId ?? '' }}</dd>
+            <dt class="font-medium text-gray-700 dark:text-slate-300">
+              Source Job
+            </dt>
+            <dd>
+              {{
+                jobDetail.sourceJobKind ??
+                jobDetail.metadata?.sourceJobKind ??
+                'None'
+              }}
+              {{
+                jobDetail.sourceJobId ?? jobDetail.metadata?.sourceJobId ?? ''
+              }}
+            </dd>
           </div>
           <div>
-            <dt class="font-medium text-gray-700 dark:text-slate-300">Correlation</dt>
-            <dd class="break-all">{{ jobDetail.correlationId ?? jobDetail.metadata?.correlationId ?? 'None' }}</dd>
+            <dt class="font-medium text-gray-700 dark:text-slate-300">
+              Correlation
+            </dt>
+            <dd class="break-all">
+              {{
+                jobDetail.correlationId ??
+                jobDetail.metadata?.correlationId ??
+                'None'
+              }}
+            </dd>
           </div>
         </dl>
 
@@ -2516,14 +2701,20 @@ onUnmounted(() => {
           <h4 class="text-sm font-semibold text-gray-900 dark:text-white">
             Sanitized Args
           </h4>
-          <pre class="max-h-64 overflow-auto rounded-md bg-slate-950 p-3 text-xs text-slate-100">{{ stringifyPayload(selectedJobDetailArgs) }}</pre>
+          <pre
+            class="max-h-64 overflow-auto rounded-md bg-slate-950 p-3 text-xs text-slate-100"
+            >{{ stringifyPayload(selectedJobDetailArgs) }}</pre
+          >
         </div>
 
         <div class="space-y-2">
           <h4 class="text-sm font-semibold text-gray-900 dark:text-white">
             Sanitized Metadata
           </h4>
-          <pre class="max-h-64 overflow-auto rounded-md bg-slate-950 p-3 text-xs text-slate-100">{{ stringifyPayload(selectedJobDetailMetadata) }}</pre>
+          <pre
+            class="max-h-64 overflow-auto rounded-md bg-slate-950 p-3 text-xs text-slate-100"
+            >{{ stringifyPayload(selectedJobDetailMetadata) }}</pre
+          >
         </div>
 
         <div class="space-y-2">
@@ -2541,7 +2732,10 @@ onUnmounted(() => {
             :key="`${error.at}-${error.attempt}`"
             class="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800 dark:border-red-900/40 dark:bg-red-900/20 dark:text-red-200"
           >
-            <p class="font-semibold">Attempt {{ error.attempt ?? 'unknown' }} · {{ formatDate(error.at) }}</p>
+            <p class="font-semibold">
+              Attempt {{ error.attempt ?? 'unknown' }} ·
+              {{ formatDate(error.at) }}
+            </p>
             <p>{{ error.error }}</p>
           </div>
         </div>

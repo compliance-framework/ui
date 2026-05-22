@@ -1189,7 +1189,9 @@ describe('NotificationsView', () => {
     expect(
       wrapper
         .findAll('button')
-        .some((button) => ['Retry', 'Discard', 'Cancel'].includes(button.text())),
+        .some((button) =>
+          ['Retry', 'Discard', 'Cancel'].includes(button.text()),
+        ),
     ).toBe(false);
   });
 });
