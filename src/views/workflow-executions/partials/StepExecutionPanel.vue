@@ -46,14 +46,6 @@
               {{ stepDefinition?.responsibleRole || 'Not assigned' }}
             </div>
           </div>
-          <div>
-            <div class="text-xs text-gray-500 dark:text-slate-400">
-              Estimated Duration
-            </div>
-            <div class="text-sm font-medium text-gray-900 dark:text-slate-200">
-              {{ formatDuration(stepDefinition?.estimatedDurationMinutes) }}
-            </div>
-          </div>
         </div>
 
         <!-- Timestamps -->
@@ -586,14 +578,6 @@ function formatStatus(status: string): string {
 
 function formatDate(dateString: string): string {
   return new Date(dateString).toLocaleString();
-}
-
-function formatDuration(minutes?: number): string {
-  if (!minutes) return 'Not specified';
-  if (minutes < 60) return `${minutes} minutes`;
-  const hours = Math.floor(minutes / 60);
-  const mins = minutes % 60;
-  return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
 }
 
 async function handleStart() {
