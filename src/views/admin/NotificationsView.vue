@@ -367,6 +367,7 @@ const testSendLoadingKeys = ref<Set<string>>(new Set());
 const hasLoadedHealth = ref(false);
 const hasLoadedJobs = ref(false);
 let autoRefreshTimer: number | undefined;
+let jobsSearchDebounceTimer: number | undefined;
 let healthRequestSequence = 0;
 let jobsRequestSequence = 0;
 let jobDetailRequestSequence = 0;
@@ -1418,6 +1419,17 @@ function applyJobFilters() {
   void loadJobs();
 }
 
+function queueJobSearchReload() {
+  if (jobsSearchDebounceTimer) {
+    window.clearTimeout(jobsSearchDebounceTimer);
+  }
+
+  jobsSearchDebounceTimer = window.setTimeout(() => {
+    jobsSearchDebounceTimer = undefined;
+    void loadJobs();
+  }, 300);
+}
+
 function linkToDeliveries(filter: string) {
   jobIdOrCorrelationFilter.value = filter;
   activeTab.value = 'deliveries';
@@ -1546,6 +1558,9 @@ onMounted(() => {
 
 onUnmounted(() => {
   stopAutoRefreshJobsTimer();
+  if (jobsSearchDebounceTimer) {
+    window.clearTimeout(jobsSearchDebounceTimer);
+  }
 });
 </script>
 
@@ -2350,6 +2365,7 @@ onUnmounted(() => {
               data-testid="deliveries-search"
               class="w-full rounded-md border border-ccf-300 bg-white px-3 py-2 text-gray-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
               placeholder="Filter loaded jobs"
+              @input="queueJobSearchReload"
             />
           </label>
         </div>
