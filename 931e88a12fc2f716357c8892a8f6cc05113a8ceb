@@ -1,0 +1,105 @@
+lisa-addressed:
+---
+Comment (src/views/__tests__/NotificationsView.spec.ts:1242):
+_🧹 Nitpick_ | _🔵 Trivial_ | _⚡ Quick win_
+
+**Consider a more specific selector for the search input.**
+
+The selector `wrapper.find('input[type="search"]')` assumes only one search input exists on the page. If another search field is added elsewhere, this test could match the wrong element.
+
+Consider scoping to the Deliveries tab content or using a test-specific attribute for more robust selection.
+
+<details>
+<summary>🤖 Prompt for AI Agents</summary>
+
+```
+Verify each finding against current code. Fix only still-valid issues, skip the
+rest with a brief reason, keep changes minimal, and validate.
+
+In `@src/views/__tests__/NotificationsView.spec.ts` around lines 1239 - 1242, The
+test uses wrapper.find('input[type="search"]') which is ambiguous; update the
+selector to target the Deliveries tab or a test-specific attribute so it can't
+match other search fields. Locate the assertion in NotificationsView.spec.ts
+that calls wrapper.find(...) (the expect(...).toHaveProperty check) and replace
+the selector with a scoped query — e.g. find the Deliveries tab container (the
+component or element that renders the deliveries search) and call wrapper.find
+on that container for either a more specific CSS selector or a
+data-testid/data-test attribute like data-testid="deliveries-search"; ensure the
+new selector is used in the same expect(...) assertion.
+```
+
+</details>
+
+<!-- fingerprinting:phantom:poseidon:puma -->
+
+<!-- This is an auto-generated comment by CodeRabbit -->
+---
+Comment (src/views/admin/NotificationsView.vue:1415):
+_🧹 Nitpick_ | _🔵 Trivial_ | _💤 Low value_
+
+**Auto-refresh may trigger concurrent API requests.**
+
+The interval callback calls `loadJobs()` without checking if a load is already in progress. While the 30-second interval makes collision unlikely, a user clicking "Load More" near the refresh boundary could trigger duplicate requests.
+
+<details>
+<summary>🔧 Add guard to skip if already loading</summary>
+
+```diff
+   autoRefreshTimer = window.setInterval(() => {
+-    if (activeTab.value !== 'deliveries') {
++    if (activeTab.value !== 'deliveries' || jobsLoading.value) {
+       return;
+     }
+
+     void loadJobs();
+   }, 30000);
+```
+</details>
+
+<!-- suggestion_start -->
+
+<details>
+<summary>📝 Committable suggestion</summary>
+
+> ‼️ **IMPORTANT**
+> Carefully review the code before committing. Ensure that it accurately replaces the highlighted code, contains no missing lines, and has no issues with indentation. Thoroughly test & benchmark the code to ensure it meets the requirements.
+
+```suggestion
+  autoRefreshTimer = window.setInterval(() => {
+    if (activeTab.value !== 'deliveries' || jobsLoading.value) {
+      return;
+    }
+
+    void loadJobs();
+  }, 30000);
+```
+
+</details>
+
+<!-- suggestion_end -->
+
+<details>
+<summary>🤖 Prompt for AI Agents</summary>
+
+```
+Verify each finding against current code. Fix only still-valid issues, skip the
+rest with a brief reason, keep changes minimal, and validate.
+
+In `@src/views/admin/NotificationsView.vue` around lines 1328 - 1334, The interval
+callback can trigger concurrent requests because it calls loadJobs()
+unconditionally; update the auto-refresh handler (where autoRefreshTimer and
+activeTab.value are used) to skip invoking loadJobs() if a load is already in
+progress by checking an existing loading flag (e.g., isLoading or jobsLoading)
+or add a new boolean ref (e.g., isLoadingJobs) around the loadJobs call; ensure
+you set the flag before starting the request and clear it when the request
+completes or fails so the interval and user "Load More" actions never start
+overlapping requests.
+```
+
+</details>
+
+<!-- fingerprinting:phantom:medusa:ocelot -->
+
+<!-- This is an auto-generated comment by CodeRabbit -->
+Implementation guidance: In src/views/__tests__/NotificationsView.spec.ts, update the 'links diagnostics results to filtered deliveries' test so it does not use the ambiguous wrapper.find('input[type="search"]') selector. Prefer adding or using a stable selector for the Deliveries search input, such as data-testid="deliveries-search" on the search field in src/views/admin/NotificationsView.vue, then assert with wrapper.find('[data-testid="deliveries-search"]').element. Keep the test focused on verifying that linkToDeliveries sets the Deliveries search value to '241582'; do not broaden the assertion to unrelated text content.
+Implementation guidance: In src/views/admin/NotificationsView.vue, update startAutoRefreshJobsTimer() so the setInterval callback skips auto-refresh while a job request is already in progress: if (activeTab.value !== 'deliveries' || jobsLoading.value) return; then call void loadJobs(). Do not add an early-return guard inside loadJobs() itself and do not remove the existing jobsRequestSequence stale-response protection, because explicit refreshes, filter changes, and pagination still need the latest request to win rather than being globally blocked.
