@@ -363,12 +363,15 @@ const diagnosticsNotificationName = ref('EVIDENCE_DIGEST');
 const diagnostics = ref<NotificationDiagnosticsResponse | null>(null);
 const diagnosticsLoading = ref(false);
 const diagnosticsError = ref<string | null>(null);
-const testSendLoadingKey = ref<string | null>(null);
+const testSendLoadingKeys = ref<Set<string>>(new Set());
 const testSendMessage = ref<string | null>(null);
 const hasLoadedHealth = ref(false);
 const hasLoadedJobs = ref(false);
 let autoRefreshTimer: number | undefined;
 let jobsRequestSequence = 0;
+let jobDetailRequestSequence = 0;
+let diagnosticsRequestSequence = 0;
+const testSendRequestSequences = new Map<string, number>();
 
 const {
   data: notificationConfigurations,
@@ -1029,6 +1032,8 @@ async function loadJobs(cursor?: string) {
 
 async function openJobDetail(job: NotificationJob) {
   selectedJobId.value = job.id;
+  const requestedJobId = job.id;
+  const requestSequence = ++jobDetailRequestSequence;
   showJobDetailDrawer.value = true;
   jobDetailLoading.value = true;
   jobDetailError.value = null;
@@ -1038,34 +1043,74 @@ async function openJobDetail(job: NotificationJob) {
     const response = await axios.get<{ data: NotificationJobDetail }>(
       `/api/admin/notifications/jobs/${encodeURIComponent(String(job.id))}`,
     );
+    if (
+      requestSequence !== jobDetailRequestSequence ||
+      selectedJobId.value !== requestedJobId
+    ) {
+      return;
+    }
+
     jobDetail.value = response.data.data;
   } catch (error) {
+    if (
+      requestSequence !== jobDetailRequestSequence ||
+      selectedJobId.value !== requestedJobId
+    ) {
+      return;
+    }
+
     jobDetailError.value = getApiErrorMessage(
       error,
       'Notification job details are unavailable.',
     );
   } finally {
-    jobDetailLoading.value = false;
+    if (
+      requestSequence === jobDetailRequestSequence &&
+      selectedJobId.value === requestedJobId
+    ) {
+      jobDetailLoading.value = false;
+    }
   }
 }
 
 async function loadDiagnostics() {
+  const requestSequence = ++diagnosticsRequestSequence;
+  const notificationName = diagnosticsNotificationName.value;
   diagnosticsLoading.value = true;
   diagnosticsError.value = null;
   diagnostics.value = null;
 
   try {
     const response = await axios.get<{ data: NotificationDiagnosticsResponse }>(
-      `/api/admin/notifications/${encodeURIComponent(diagnosticsNotificationName.value)}/diagnostics`,
+      `/api/admin/notifications/${encodeURIComponent(notificationName)}/diagnostics`,
     );
+    if (
+      requestSequence !== diagnosticsRequestSequence ||
+      diagnosticsNotificationName.value !== notificationName
+    ) {
+      return;
+    }
+
     diagnostics.value = response.data.data;
   } catch (error) {
+    if (
+      requestSequence !== diagnosticsRequestSequence ||
+      diagnosticsNotificationName.value !== notificationName
+    ) {
+      return;
+    }
+
     diagnosticsError.value = getApiErrorMessage(
       error,
       'Notification diagnostics are unavailable.',
     );
   } finally {
-    diagnosticsLoading.value = false;
+    if (
+      requestSequence === diagnosticsRequestSequence &&
+      diagnosticsNotificationName.value === notificationName
+    ) {
+      diagnosticsLoading.value = false;
+    }
   }
 }
 
@@ -1074,7 +1119,9 @@ async function sendTestNotification(
   destinationTarget: string,
 ) {
   const key = `${providerType}:${destinationTarget}`;
-  testSendLoadingKey.value = key;
+  const requestSequence = (testSendRequestSequences.get(key) ?? 0) + 1;
+  testSendRequestSequences.set(key, requestSequence);
+  testSendLoadingKeys.value = new Set(testSendLoadingKeys.value).add(key);
   testSendMessage.value = null;
 
   try {
@@ -1086,27 +1133,41 @@ async function sendTestNotification(
         mode: 'enqueue',
       },
     );
-    testSendMessage.value =
+    if (testSendRequestSequences.get(key) !== requestSequence) {
+      return;
+    }
+
+    const message =
       response.data.data.message ?? 'Test notification accepted.';
+    testSendMessage.value = message;
     toast.add({
       severity: 'success',
       summary: 'Test Notification',
-      detail: testSendMessage.value,
+      detail: message,
       life: 3000,
     });
   } catch (error) {
-    testSendMessage.value = getApiErrorMessage(
+    if (testSendRequestSequences.get(key) !== requestSequence) {
+      return;
+    }
+
+    const message = getApiErrorMessage(
       error,
       'Test notification endpoint is unavailable.',
     );
+    testSendMessage.value = message;
     toast.add({
       severity: 'error',
       summary: 'Test Notification Failed',
-      detail: testSendMessage.value,
+      detail: message,
       life: 4000,
     });
   } finally {
-    testSendLoadingKey.value = null;
+    if (testSendRequestSequences.get(key) === requestSequence) {
+      const nextLoadingKeys = new Set(testSendLoadingKeys.value);
+      nextLoadingKeys.delete(key);
+      testSendLoadingKeys.value = nextLoadingKeys;
+    }
   }
 }
 
@@ -1188,7 +1249,7 @@ function isTestSendLoading(
   provider: NotificationDestinationProvider,
   target: string,
 ): boolean {
-  return testSendLoadingKey.value === `${provider}:${target}`;
+  return testSendLoadingKeys.value.has(`${provider}:${target}`);
 }
 
 function openAddDestinationsDialog(notificationName: string) {
