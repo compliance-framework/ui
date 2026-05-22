@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { ref, shallowRef } from 'vue';
 
@@ -381,6 +381,10 @@ vi.mock('@/volt/Drawer.vue', () => ({
 import NotificationsView from '../admin/NotificationsView.vue';
 
 describe('NotificationsView', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
     mockCreateDestination.mockResolvedValue(
@@ -1039,6 +1043,7 @@ describe('NotificationsView', () => {
       .findAll('button')
       .find((button) => button.text() === 'Health')!
       .trigger('click');
+    await flushPromises();
 
     expect(wrapper.text()).toContain('Notify');
     expect(wrapper.text()).toContain(
@@ -1074,6 +1079,7 @@ describe('NotificationsView', () => {
       .findAll('button')
       .find((button) => button.text() === 'Health')!
       .trigger('click');
+    await flushPromises();
 
     expect(wrapper.text()).toContain('Polling');
   });
@@ -1086,6 +1092,7 @@ describe('NotificationsView', () => {
       .findAll('button')
       .find((button) => button.text() === 'Deliveries')!
       .trigger('click');
+    await flushPromises();
 
     await wrapper.find('select').setValue('evidence_digest');
     await flushPromises();
@@ -1101,6 +1108,64 @@ describe('NotificationsView', () => {
     expect(lastParams.params?.since).toEqual(expect.any(String));
   });
 
+  it('lazy-loads operational tabs and pauses job auto-refresh outside deliveries', async () => {
+    const wrapper = mount(NotificationsView);
+    await flushPromises();
+
+    expect(mockAuthenticatedGet).not.toHaveBeenCalledWith(
+      '/api/admin/notifications/health',
+    );
+    expect(mockJobsGet).not.toHaveBeenCalled();
+
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Health')!
+      .trigger('click');
+    await flushPromises();
+
+    expect(mockAuthenticatedGet).toHaveBeenCalledWith(
+      '/api/admin/notifications/health',
+    );
+    expect(mockJobsGet).not.toHaveBeenCalled();
+
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Deliveries')!
+      .trigger('click');
+    await flushPromises();
+
+    expect(mockJobsGet).toHaveBeenCalledTimes(1);
+
+    vi.useFakeTimers();
+
+    await wrapper.find('input[type="checkbox"]').setValue(true);
+    vi.advanceTimersByTime(30000);
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(mockJobsGet).toHaveBeenCalledTimes(2);
+
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Configuration')!
+      .trigger('click');
+    vi.advanceTimersByTime(30000);
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(mockJobsGet).toHaveBeenCalledTimes(2);
+
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Deliveries')!
+      .trigger('click');
+    vi.advanceTimersByTime(30000);
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(mockJobsGet).toHaveBeenCalledTimes(3);
+  });
+
   it('renders sanitized job detail data without sensitive payload fields', async () => {
     const wrapper = mount(NotificationsView);
     await flushPromises();
@@ -1109,6 +1174,7 @@ describe('NotificationsView', () => {
       .findAll('button')
       .find((button) => button.text() === 'Deliveries')!
       .trigger('click');
+    await flushPromises();
     await wrapper
       .findAll('button')
       .find((button) => button.text() === '241583')!

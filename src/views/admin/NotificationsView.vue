@@ -338,6 +338,8 @@ const diagnosticsLoading = ref(false);
 const diagnosticsError = ref<string | null>(null);
 const testSendLoadingKey = ref<string | null>(null);
 const testSendMessage = ref<string | null>(null);
+const hasLoadedHealth = ref(false);
+const hasLoadedJobs = ref(false);
 let autoRefreshTimer: number | undefined;
 
 const {
@@ -951,6 +953,7 @@ async function loadHealth() {
       'Notification health is unavailable.',
     );
   } finally {
+    hasLoadedHealth.value = true;
     healthLoading.value = false;
   }
 }
@@ -978,6 +981,7 @@ async function loadJobs(cursor?: string) {
       'Notification delivery jobs are unavailable.',
     );
   } finally {
+    hasLoadedJobs.value = true;
     jobsLoading.value = false;
   }
 }
@@ -1297,8 +1301,48 @@ function applyJobFilters() {
 }
 
 function linkToDeliveries(filter: string) {
-  activeTab.value = 'deliveries';
   jobIdOrCorrelationFilter.value = filter;
+  activeTab.value = 'deliveries';
+
+  if (hasLoadedJobs.value) {
+    void loadJobs();
+  }
+}
+
+function stopAutoRefreshJobsTimer() {
+  if (!autoRefreshTimer) {
+    return;
+  }
+
+  window.clearInterval(autoRefreshTimer);
+  autoRefreshTimer = undefined;
+}
+
+function startAutoRefreshJobsTimer() {
+  stopAutoRefreshJobsTimer();
+
+  if (!autoRefreshJobs.value || activeTab.value !== 'deliveries') {
+    return;
+  }
+
+  autoRefreshTimer = window.setInterval(() => {
+    if (activeTab.value !== 'deliveries') {
+      return;
+    }
+
+    void loadJobs();
+  }, 30000);
+}
+
+function ensureActiveTabDataLoaded(tab: string) {
+  if (tab === 'health' && !hasLoadedHealth.value) {
+    void loadHealth();
+    return;
+  }
+
+  if (tab === 'deliveries' && !hasLoadedJobs.value) {
+    void loadJobs();
+  }
 }
 
 watch(selectableDestinationProviders, () => {
@@ -1315,29 +1359,26 @@ watch(diagnosticsNotificationName, () => {
   }
 });
 
-watch(autoRefreshJobs, (enabled) => {
-  if (autoRefreshTimer) {
-    window.clearInterval(autoRefreshTimer);
-    autoRefreshTimer = undefined;
-  }
+watch(activeTab, (tab) => {
+  ensureActiveTabDataLoaded(tab);
 
-  if (enabled) {
-    autoRefreshTimer = window.setInterval(() => {
-      void loadJobs();
-    }, 30000);
+  if (tab === 'deliveries') {
+    startAutoRefreshJobsTimer();
+  } else {
+    stopAutoRefreshJobsTimer();
   }
+});
+
+watch(autoRefreshJobs, () => {
+  startAutoRefreshJobsTimer();
 });
 
 onMounted(() => {
   void loadSlackDestinationStatus();
-  void loadHealth();
-  void loadJobs();
 });
 
 onUnmounted(() => {
-  if (autoRefreshTimer) {
-    window.clearInterval(autoRefreshTimer);
-  }
+  stopAutoRefreshJobsTimer();
 });
 </script>
 
