@@ -18,6 +18,12 @@
       </div>
 
       <div class="flex flex-wrap items-center gap-2">
+        <RouterLinkButton
+          v-if="workflowExecutionRoute"
+          :to="workflowExecutionRoute"
+        >
+          Back to Execution
+        </RouterLinkButton>
         <SecondaryButton v-if="evidence" @click="directToUpdate()">
           Update Evidence
         </SecondaryButton>
@@ -752,6 +758,7 @@ import type { Activity, BackMatterResource, Link, Property } from '@/oscal';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
 import Dialog from '@/volt/Dialog.vue';
 import Message from '@/volt/Message.vue';
+import RouterLinkButton from '@/components/RouterLinkButton.vue';
 import {
   BIconDownload,
   BIconLockFill,
@@ -808,6 +815,20 @@ const {
   null,
   { method: 'POST' },
   { immediate: false },
+);
+
+const workflowExecutionId = computed(
+  () =>
+    evidence.value?.labels.find((l) => l.name === 'workflow.execution.id')
+      ?.value,
+);
+const workflowExecutionRoute = computed(() =>
+  workflowExecutionId.value
+    ? {
+        name: 'workflow-execution-view',
+        params: { id: workflowExecutionId.value },
+      }
+    : null,
 );
 
 const metadataProps = computed<Property[]>(() => evidence.value?.props ?? []);
