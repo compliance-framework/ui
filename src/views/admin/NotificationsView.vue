@@ -995,6 +995,9 @@ async function loadJobs(cursor?: string) {
   const requestSequence = ++jobsRequestSequence;
   jobsLoading.value = true;
   jobsError.value = null;
+  if (!cursor) {
+    jobsNextCursor.value = null;
+  }
 
   try {
     const response = await axios.get<NotificationJobsResponse>(
@@ -1017,6 +1020,7 @@ async function loadJobs(cursor?: string) {
 
     if (!cursor) {
       jobs.value = [];
+      jobsNextCursor.value = null;
     }
     jobsError.value = getApiErrorMessage(
       error,

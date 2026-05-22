@@ -1164,6 +1164,7 @@ describe('NotificationsView', () => {
     await Promise.resolve();
 
     expect(mockJobsGet).toHaveBeenCalledTimes(3);
+    wrapper.unmount();
   });
 
   it('renders sanitized job detail data without sensitive payload fields', async () => {
