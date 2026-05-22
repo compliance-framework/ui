@@ -198,6 +198,7 @@ export interface WorkflowExecution {
   overdueAt?: string;
   failureReason?: string;
   parentExecutionId?: string;
+  executionStreamUuid?: string;
   createdAt: string;
   updatedAt: string;
 }
