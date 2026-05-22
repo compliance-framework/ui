@@ -1419,13 +1419,23 @@ function applyJobFilters() {
   void loadJobs();
 }
 
-function queueJobSearchReload() {
+function clearJobsSearchDebounceTimer() {
   if (jobsSearchDebounceTimer) {
     window.clearTimeout(jobsSearchDebounceTimer);
+    jobsSearchDebounceTimer = undefined;
   }
+}
+
+function queueJobSearchReload() {
+  clearJobsSearchDebounceTimer();
 
   jobsSearchDebounceTimer = window.setTimeout(() => {
     jobsSearchDebounceTimer = undefined;
+
+    if (activeTab.value !== 'deliveries') {
+      return;
+    }
+
     void loadJobs();
   }, 300);
 }
@@ -1545,6 +1555,7 @@ watch(activeTab, (tab) => {
     startAutoRefreshJobsTimer();
   } else {
     stopAutoRefreshJobsTimer();
+    clearJobsSearchDebounceTimer();
   }
 });
 
@@ -1558,9 +1569,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   stopAutoRefreshJobsTimer();
-  if (jobsSearchDebounceTimer) {
-    window.clearTimeout(jobsSearchDebounceTimer);
-  }
+  clearJobsSearchDebounceTimer();
 });
 </script>
 
