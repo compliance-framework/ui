@@ -1,0 +1,164 @@
+lisa-addressed:
+---
+Comment (src/views/admin/NotificationsView.vue:1509):
+ensureActiveTabDataLoaded() can enqueue duplicate requests for Deliveries and Diagnostics if the user switches tabs while the initial request is still in-flight (hasLoadedJobs is still false; diagnostics.value is still null). Even though request-sequence guards prevent stale state writes, this still creates unnecessary extra network traffic. Consider adding cheap guards similar to the Health branch (e.g., only call loadJobs() when !hasLoadedJobs && !jobsLoading, and only call loadDiagnostics() when !diagnostics.value && !diagnosticsLoading).
+
+---
+Comment (src/views/admin/NotificationsView.vue:367):
+`testSendMessage` is updated in sendTestNotification() but never read in the component (no template/script usage). This is dead state and is likely to be flagged by TS/ESLint no-unused-vars rules. Either remove it entirely or surface it in the UI (e.g., as inline feedback near the "Send test notification" action) if it’s meant to be shown.
+
+Implementation guidance: In src/views/admin/NotificationsView.vue, update ensureActiveTabDataLoaded(tab) so it does not start duplicate in-flight requests. Change the Deliveries branch to call loadJobs() only when tab === 'deliveries' && !hasLoadedJobs.value && !jobsLoading.value. Change the Diagnostics branch to call loadDiagnostics() only when tab === 'diagnostics' && !diagnostics.value && !diagnosticsLoading.value. Keep the existing request-sequence guards in loadJobs() and loadDiagnostics(); this is just the cheap tab-toggle guard to avoid unnecessary network calls.
+Implementation guidance: In src/views/admin/NotificationsView.vue, remove the dead testSendMessage state instead of adding new UI. Delete the const testSendMessage = ref<string | null>(null) declaration and the three assignments to testSendMessage.value inside sendTestNotification(). Keep the existing toast success/error messages, per-destination testSendLoadingKeys Set, and testSendRequestSequences logic unchanged.
+---
+Review by coderabbitai:
+**Actionable comments posted: 1**
+
+> [!CAUTION]
+> Some comments are outside the diff and can’t be posted inline due to platform limitations.
+>
+>
+>
+> <details>
+> <summary>⚠️ Outside diff range comments (1)</summary><blockquote>
+>
+> <details>
+> <summary>src/views/admin/NotificationsView.vue (1)</summary><blockquote>
+>
+> `635-649`: _⚠️ Potential issue_ | _🟠 Major_ | _🏗️ Heavy lift_
+>
+> **Cross-tab job links only search the current loaded slice.**
+>
+> `jobIdOrCorrelationFilter` is only applied in `filteredJobs()`, while `buildJobsParams()` never sends that identifier upstream and `linkToDeliveries()` preserves the existing queue/provider/state/time filters. A Health/Diagnostics link can therefore open Deliveries with “no matches” even when the referenced job exists outside the first page or current time window.
+>
+> <details>
+> <summary>🩹 Minimum mitigation</summary>
+>
+> ```diff
+>  function linkToDeliveries(filter: string) {
+> +  selectedQueueFilter.value = '';
+> +  selectedProviderFilter.value = '';
+> +  selectedNotificationFilter.value = '';
+> +  selectedStateFilter.value = '';
+> +  selectedTimeRange.value = 'all';
+>    jobIdOrCorrelationFilter.value = filter;
+>    activeTab.value = 'deliveries';
+> ```
+>
+> </details>
+>
+> A complete fix should make the linked identifier part of the server-backed query rather than relying on client-side filtering alone.
+>
+>
+>
+> Also applies to: 904-913, 1424-1430
+>
+> <details>
+> <summary>🤖 Prompt for AI Agents</summary>
+>
+> ```
+> Verify each finding against current code. Fix only still-valid issues, skip the
+> rest with a brief reason, keep changes minimal, and validate.
+>
+> In `@src/views/admin/NotificationsView.vue` around lines 635 - 649, The
+> client-only filter (jobIdOrCorrelationFilter used by filteredJobs) must be sent
+> to the server so cross-tab links find jobs outside the current slice: update
+> buildJobsParams to accept and include the identifier (e.g.,
+> jobIdOrCorrelationFilter.value trimmed) as a query param (name it clearly like
+> jobIdentifier/jobIdOrCorrelation) and update linkToDeliveries to add that same
+> param when constructing links while still preserving existing
+> queue/provider/state/time filters; also adjust any other places building server
+> queries (the other buildJobsParams uses at lines referenced and the link
+> construction at 904-913 and 1424-1430) to pass through the identifier so
+> server-side paging/time window will include the target job. Ensure filteredJobs
+> still works client-side but no longer sole source of truth for cross-tab links.
+> ```
+>
+> </details>
+>
+> </blockquote></details>
+>
+> </blockquote></details>
+
+<details>
+<summary>🤖 Prompt for all review comments with AI agents</summary>
+
+```
+Verify each finding against current code. Fix only still-valid issues, skip the
+rest with a brief reason, keep changes minimal, and validate.
+
+Inline comments:
+In `@src/views/admin/NotificationsView.vue`:
+- Around line 999-1005: Remove the early `return` inside the finally block of
+loadHealth() (the `requestSequence !== healthRequestSequence` check should
+short-circuit before finally or use a guard that doesn't return from finally) so
+finally does not override try/catch flow; then update linkToDeliveries() and the
+jobs request building so the server query includes jobIdOrCorrelationFilter
+(either pass that filter into buildJobsParams() or add it to the request
+payload) and ensure the jobs fetch uses the correct pagination/limit to include
+the matched job (jobs.value) instead of relying on client-side-only filtering.
+
+---
+
+Outside diff comments:
+In `@src/views/admin/NotificationsView.vue`:
+- Around line 635-649: The client-only filter (jobIdOrCorrelationFilter used by
+filteredJobs) must be sent to the server so cross-tab links find jobs outside
+the current slice: update buildJobsParams to accept and include the identifier
+(e.g., jobIdOrCorrelationFilter.value trimmed) as a query param (name it clearly
+like jobIdentifier/jobIdOrCorrelation) and update linkToDeliveries to add that
+same param when constructing links while still preserving existing
+queue/provider/state/time filters; also adjust any other places building server
+queries (the other buildJobsParams uses at lines referenced and the link
+construction at 904-913 and 1424-1430) to pass through the identifier so
+server-side paging/time window will include the target job. Ensure filteredJobs
+still works client-side but no longer sole source of truth for cross-tab links.
+```
+
+</details>
+
+<details>
+<summary>🪄 Autofix (Beta)</summary>
+
+Fix all unresolved CodeRabbit comments on this PR:
+
+- [ ] <!-- {"checkboxId": "4b0d0e0a-96d7-4f10-b296-3a18ea78f0b9"} --> Push a commit to this branch (recommended)
+- [ ] <!-- {"checkboxId": "ff5b1114-7d8c-49e6-8ac1-43f82af23a33"} --> Create a new PR with the fixes
+
+</details>
+
+---
+
+<details>
+<summary>ℹ️ Review info</summary>
+
+<details>
+<summary>⚙️ Run configuration</summary>
+
+**Configuration used**: Organization UI
+
+**Review profile**: ASSERTIVE
+
+**Plan**: Pro Plus
+
+**Run ID**: `47f6e694-bf21-4fdc-b68c-4acbd6832e73`
+
+</details>
+
+<details>
+<summary>📥 Commits</summary>
+
+Reviewing files that changed from the base of the PR and between 53b889e37c36bc89a7c74ab7e1aab5c5c06b5961 and 1c59223a6ff7efc4cf44d06628c34cc3e0cd9feb.
+
+</details>
+
+<details>
+<summary>📒 Files selected for processing (1)</summary>
+
+* `src/views/admin/NotificationsView.vue`
+
+</details>
+
+</details>
+
+<!-- This is an auto-generated comment by CodeRabbit for review status -->
+Implementation guidance: In src/views/admin/NotificationsView.vue, address the still-valid CodeRabbit body findings. First, avoid returning from loadHealth()'s finally block: replace the stale-request `return` in finally with an if guard that only sets hasLoadedHealth.value = true and healthLoading.value = false when requestSequence === healthRequestSequence, preserving the stale response protection. Second, make the Deliveries job/correlation filter part of the jobs API request instead of only filtering the current client slice: in buildJobsParams(cursor?), trim jobIdOrCorrelationFilter.value and include it as a clearly named query param such as jobIdOrCorrelation when non-empty, while keeping queue/provider/notification/state/since/limit/cursor behavior. Ensure loadJobs() continues to call buildJobsParams(cursor). In linkToDeliveries(filter), set jobIdOrCorrelationFilter.value, switch activeTab to 'deliveries', and trigger loadJobs() when jobs are already loaded so the server-backed results refresh for the linked identifier. Do not remove filteredJobs; keep it as client-side narrowing for already returned rows.
