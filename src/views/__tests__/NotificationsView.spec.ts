@@ -1235,11 +1235,17 @@ describe('NotificationsView', () => {
       .findAll('button')
       .find((button) => button.text() === 'Job 241582')!
       .trigger('click');
+    await flushPromises();
 
     expect(wrapper.text()).toContain('Deliveries');
     expect(
       wrapper.find('[data-testid="deliveries-search"]').element,
     ).toHaveProperty('value', '241582');
+    expect(mockJobsGet.mock.calls.at(-1)?.[0]).toMatchObject({
+      params: {
+        jobIdOrCorrelation: '241582',
+      },
+    });
   });
 
   it('marks delivery jobs read-only and omits queue mutation controls', async () => {

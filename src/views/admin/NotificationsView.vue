@@ -364,7 +364,6 @@ const diagnostics = ref<NotificationDiagnosticsResponse | null>(null);
 const diagnosticsLoading = ref(false);
 const diagnosticsError = ref<string | null>(null);
 const testSendLoadingKeys = ref<Set<string>>(new Set());
-const testSendMessage = ref<string | null>(null);
 const hasLoadedHealth = ref(false);
 const hasLoadedJobs = ref(false);
 let autoRefreshTimer: number | undefined;
@@ -902,11 +901,14 @@ function sinceForRange(range: string): string | undefined {
 }
 
 function buildJobsParams(cursor?: string) {
+  const jobIdOrCorrelation = jobIdOrCorrelationFilter.value.trim();
+
   return {
     queue: selectedQueueFilter.value || undefined,
     provider: selectedProviderFilter.value || undefined,
     notificationKind: selectedNotificationFilter.value || undefined,
     state: selectedStateFilter.value || undefined,
+    jobIdOrCorrelation: jobIdOrCorrelation || undefined,
     since: sinceForRange(selectedTimeRange.value),
     limit: 50,
     cursor,
@@ -997,12 +999,10 @@ async function loadHealth() {
       'Notification health is unavailable.',
     );
   } finally {
-    if (requestSequence !== healthRequestSequence) {
-      return;
+    if (requestSequence === healthRequestSequence) {
+      hasLoadedHealth.value = true;
+      healthLoading.value = false;
     }
-
-    hasLoadedHealth.value = true;
-    healthLoading.value = false;
   }
 }
 
@@ -1142,7 +1142,6 @@ async function sendTestNotification(
   const requestSequence = (testSendRequestSequences.get(key) ?? 0) + 1;
   testSendRequestSequences.set(key, requestSequence);
   testSendLoadingKeys.value = new Set(testSendLoadingKeys.value).add(key);
-  testSendMessage.value = null;
 
   try {
     const response = await axios.post<{ data: NotificationTestResponse }>(
@@ -1158,7 +1157,6 @@ async function sendTestNotification(
     }
 
     const message = response.data.data.message ?? 'Test notification accepted.';
-    testSendMessage.value = message;
     toast.add({
       severity: 'success',
       summary: 'Test Notification',
@@ -1174,7 +1172,6 @@ async function sendTestNotification(
       error,
       'Test notification endpoint is unavailable.',
     );
-    testSendMessage.value = message;
     toast.add({
       severity: 'error',
       summary: 'Test Notification Failed',
@@ -1501,12 +1498,16 @@ function ensureActiveTabDataLoaded(tab: NotificationTab) {
     return;
   }
 
-  if (tab === 'deliveries' && !hasLoadedJobs.value) {
+  if (tab === 'deliveries' && !hasLoadedJobs.value && !jobsLoading.value) {
     void loadJobs();
     return;
   }
 
-  if (tab === 'diagnostics' && !diagnostics.value) {
+  if (
+    tab === 'diagnostics' &&
+    !diagnostics.value &&
+    !diagnosticsLoading.value
+  ) {
     void loadDiagnostics();
   }
 }
