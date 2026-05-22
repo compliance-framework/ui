@@ -1094,7 +1094,10 @@ describe('NotificationsView', () => {
       .trigger('click');
     await flushPromises();
 
-    await wrapper.find('select').setValue('evidence_digest');
+    await wrapper
+      .find('#notifications-deliveries-panel')
+      .find('select')
+      .setValue('evidence_digest');
     await flushPromises();
 
     const lastParams = mockJobsGet.mock.calls.at(-1)?.[0] as {
@@ -1207,7 +1210,9 @@ describe('NotificationsView', () => {
     expect(wrapper.text()).toContain('Pass');
     expect(wrapper.text()).toContain('Fail');
 
-    const diagnosticsSelect = wrapper.find('select');
+    const diagnosticsSelect = wrapper
+      .find('#notifications-diagnostics-panel')
+      .find('select');
     await diagnosticsSelect.setValue('WORKFLOW_EXECUTION_FAILED');
     await flushPromises();
     expect(wrapper.text()).toContain('Workflow task assigned');

@@ -1606,7 +1606,8 @@ onUnmounted(() => {
 
     <section
       id="notifications-configuration-panel"
-      v-if="activeTab === 'configuration'"
+      v-show="activeTab === 'configuration'"
+      :hidden="activeTab !== 'configuration'"
       role="tabpanel"
       aria-labelledby="notifications-configuration-tab"
       class="space-y-6"
@@ -1896,7 +1897,8 @@ onUnmounted(() => {
 
     <section
       id="notifications-health-panel"
-      v-if="activeTab === 'health'"
+      v-show="activeTab === 'health'"
+      :hidden="activeTab !== 'health'"
       role="tabpanel"
       aria-labelledby="notifications-health-tab"
       class="space-y-5"
@@ -2239,7 +2241,8 @@ onUnmounted(() => {
 
     <section
       id="notifications-deliveries-panel"
-      v-if="activeTab === 'deliveries'"
+      v-show="activeTab === 'deliveries'"
+      :hidden="activeTab !== 'deliveries'"
       role="tabpanel"
       aria-labelledby="notifications-deliveries-tab"
       class="space-y-5"
@@ -2475,7 +2478,8 @@ onUnmounted(() => {
 
     <section
       id="notifications-diagnostics-panel"
-      v-if="activeTab === 'diagnostics'"
+      v-show="activeTab === 'diagnostics'"
+      :hidden="activeTab !== 'diagnostics'"
       role="tabpanel"
       aria-labelledby="notifications-diagnostics-tab"
       class="space-y-5"
