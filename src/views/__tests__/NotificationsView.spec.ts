@@ -65,8 +65,8 @@ const notificationHealth = shallowRef({
         retryable: 1,
         running: 0,
         scheduled: 0,
-        completed24h: 14,
-        discarded24h: 1,
+        completed24H: 14,
+        discarded24H: 1,
         oldestAvailableAt: '2026-05-21T00:01:00Z',
         staleCount: 1,
         staleThresholdSeconds: 600,
@@ -78,8 +78,8 @@ const notificationHealth = shallowRef({
         retryable: 0,
         running: 0,
         scheduled: 0,
-        completed24h: 3,
-        discarded24h: 0,
+        completed24H: 3,
+        discarded24H: 0,
         oldestAvailableAt: null,
         staleCount: 0,
         staleThresholdSeconds: 600,
@@ -511,8 +511,8 @@ describe('NotificationsView', () => {
             retryable: 1,
             running: 0,
             scheduled: 0,
-            completed24h: 14,
-            discarded24h: 1,
+            completed24H: 14,
+            discarded24H: 1,
             oldestAvailableAt: '2026-05-21T00:01:00Z',
             staleCount: 1,
             staleThresholdSeconds: 600,
@@ -1050,9 +1050,6 @@ describe('NotificationsView', () => {
       'Slack queue has jobs available for more than 10 minutes.',
     );
     expect(wrapper.text()).toContain('Email provider is disabled.');
-    expect(wrapper.text()).toContain(
-      'Evidence Digest has no configured system destination.',
-    );
     expect(wrapper.text()).toContain('slack queue has 1 stale job.');
     expect(wrapper.text()).toContain(
       'slack queue has 1 discarded job in the last 24 hours.',

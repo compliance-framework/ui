@@ -68,8 +68,8 @@ interface NotificationHealthQueue {
   retryable?: number;
   running?: number;
   scheduled?: number;
-  completed24h?: number;
-  discarded24h?: number;
+  completed24H?: number;
+  discarded24H?: number;
   oldestAvailableAt?: string | null;
   staleCount?: number;
   staleThresholdSeconds?: number;
@@ -576,19 +576,6 @@ const healthWarnings = computed(() => {
     }
   }
 
-  for (const notification of healthNotifications.value) {
-    if ((notification.configuredDestinations ?? []).length === 0) {
-      warnings.push({
-        code: `missing_destination_${notification.name}`,
-        severity: 'warning',
-        message: `${formatNotificationName(notification.name)} has no configured system destination.`,
-        target: notification.name,
-      });
-    }
-
-    warnings.push(...(notification.warnings ?? []));
-  }
-
   for (const queue of healthQueues.value) {
     if ((queue.staleCount ?? 0) > 0) {
       warnings.push({
@@ -599,11 +586,11 @@ const healthWarnings = computed(() => {
       });
     }
 
-    if ((queue.discarded24h ?? 0) > 0) {
+    if ((queue.discarded24H ?? 0) > 0) {
       warnings.push({
         code: `discarded_${queue.name}`,
         severity: 'warning',
-        message: `${queue.name} queue has ${queue.discarded24h} discarded job${queue.discarded24h === 1 ? '' : 's'} in the last 24 hours.`,
+        message: `${queue.name} queue has ${queue.discarded24H} discarded job${queue.discarded24H === 1 ? '' : 's'} in the last 24 hours.`,
         target: queue.name,
       });
     }
@@ -657,10 +644,29 @@ const selectedJobDetailArgs = computed(() => {
   return sanitizePayload(jobDetail.value?.args ?? {});
 });
 
+const diagnosticsHealthNotification = computed(() => {
+  const notificationName = diagnostics.value?.notificationName;
+
+  if (!notificationName) {
+    return undefined;
+  }
+
+  return healthNotifications.value.find(
+    (notification) => notification.name === notificationName,
+  );
+});
+const diagnosticsSubscriberCounts = computed(() => {
+  return (
+    diagnostics.value?.subscriberCounts ??
+    diagnosticsHealthNotification.value?.subscriberCounts ??
+    {}
+  );
+});
 const diagnosticsDestinations = computed(() => {
   return (
     diagnostics.value?.systemDestinations ??
     diagnostics.value?.destinations ??
+    diagnosticsHealthNotification.value?.configuredDestinations ??
     []
   );
 });
@@ -2103,8 +2109,8 @@ onUnmounted(() => {
                     <td class="px-3 py-2">{{ queue.retryable ?? 0 }}</td>
                     <td class="px-3 py-2">{{ queue.running ?? 0 }}</td>
                     <td class="px-3 py-2">{{ queue.scheduled ?? 0 }}</td>
-                    <td class="px-3 py-2">{{ queue.completed24h ?? 0 }}</td>
-                    <td class="px-3 py-2">{{ queue.discarded24h ?? 0 }}</td>
+                    <td class="px-3 py-2">{{ queue.completed24H ?? 0 }}</td>
+                    <td class="px-3 py-2">{{ queue.discarded24H ?? 0 }}</td>
                     <td class="px-3 py-2">{{ queue.staleCount ?? 0 }}</td>
                     <td class="px-3 py-2">
                       {{ formatDate(queue.oldestAvailableAt) }}
@@ -2620,16 +2626,14 @@ onUnmounted(() => {
               </h3>
               <div class="flex flex-wrap gap-2 text-sm">
                 <span
-                  v-for="(count, channel) in diagnostics.subscriberCounts ?? {}"
+                  v-for="(count, channel) in diagnosticsSubscriberCounts"
                   :key="channel"
                   class="rounded-md border border-ccf-300 px-2.5 py-1 dark:border-slate-700"
                 >
                   {{ formatLabel(String(channel)) }}: {{ count }}
                 </span>
                 <span
-                  v-if="
-                    Object.keys(diagnostics.subscriberCounts ?? {}).length === 0
-                  "
+                  v-if="Object.keys(diagnosticsSubscriberCounts).length === 0"
                   class="text-gray-600 dark:text-gray-400"
                 >
                   No subscriber counts returned.
