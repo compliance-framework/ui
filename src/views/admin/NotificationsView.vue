@@ -995,6 +995,7 @@ async function loadJobs(cursor?: string) {
   const requestSequence = ++jobsRequestSequence;
   jobsLoading.value = true;
   jobsError.value = null;
+
   if (!cursor) {
     jobsNextCursor.value = null;
   }
@@ -1141,8 +1142,7 @@ async function sendTestNotification(
       return;
     }
 
-    const message =
-      response.data.data.message ?? 'Test notification accepted.';
+    const message = response.data.data.message ?? 'Test notification accepted.';
     testSendMessage.value = message;
     toast.add({
       severity: 'success',
