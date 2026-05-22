@@ -164,6 +164,34 @@ describe('StepExecutionPanel reassignment', () => {
   });
 });
 
+// BCH-1149: estimatedDuration is not used operationally and should not be shown
+describe('StepExecutionPanel estimated duration', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockCanTransition.mockResolvedValue(false);
+  });
+
+  it('does not render Estimated Duration metadata', async () => {
+    const wrapper = mountComponent(
+      createStep('pending', {
+        workflowStepDefinition: {
+          id: 'def-1',
+          workflowDefinitionId: 'wf-1',
+          name: 'Step A',
+          order: 1,
+          evidenceRequired: [],
+          estimatedDurationMinutes: 45,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+      }),
+    );
+    await flushPromises();
+
+    expect(wrapper.text()).not.toContain('Estimated Duration');
+  });
+});
+
 describe('StepExecutionPanel overdue behavior', () => {
   beforeEach(() => {
     vi.clearAllMocks();
