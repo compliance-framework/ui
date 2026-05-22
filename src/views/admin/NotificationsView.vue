@@ -368,6 +368,7 @@ const testSendMessage = ref<string | null>(null);
 const hasLoadedHealth = ref(false);
 const hasLoadedJobs = ref(false);
 let autoRefreshTimer: number | undefined;
+let healthRequestSequence = 0;
 let jobsRequestSequence = 0;
 let jobDetailRequestSequence = 0;
 let diagnosticsRequestSequence = 0;
@@ -971,6 +972,7 @@ async function loadSlackDestinationStatus() {
 }
 
 async function loadHealth() {
+  const requestSequence = ++healthRequestSequence;
   healthLoading.value = true;
   healthError.value = null;
 
@@ -978,14 +980,27 @@ async function loadHealth() {
     const response = await axios.get<{ data: NotificationHealthResponse }>(
       '/api/admin/notifications/health',
     );
+
+    if (requestSequence !== healthRequestSequence) {
+      return;
+    }
+
     health.value = response.data.data;
   } catch (error) {
+    if (requestSequence !== healthRequestSequence) {
+      return;
+    }
+
     health.value = null;
     healthError.value = getApiErrorMessage(
       error,
       'Notification health is unavailable.',
     );
   } finally {
+    if (requestSequence !== healthRequestSequence) {
+      return;
+    }
+
     hasLoadedHealth.value = true;
     healthLoading.value = false;
   }
@@ -1481,7 +1496,7 @@ function startAutoRefreshJobsTimer() {
 }
 
 function ensureActiveTabDataLoaded(tab: NotificationTab) {
-  if (tab === 'health' && !hasLoadedHealth.value) {
+  if (tab === 'health' && !hasLoadedHealth.value && !healthLoading.value) {
     void loadHealth();
     return;
   }
