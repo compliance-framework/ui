@@ -437,7 +437,7 @@ const predeterminedNotifications = computed<PredeterminedNotification[]>(() => {
 const providerList = computed<NotificationProviderInfo[]>(() => {
   const providers = notificationProviders.value ?? [];
 
-  return providers.length > 0 ? providers : health.value?.providers ?? [];
+  return providers.length > 0 ? providers : (health.value?.providers ?? []);
 });
 
 const providerInfoByType = computed(() => {
