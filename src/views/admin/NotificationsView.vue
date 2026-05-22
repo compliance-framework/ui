@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { isAxiosError, type AxiosError } from 'axios';
 import { useToast } from 'primevue/usetoast';
 import {
@@ -285,6 +285,32 @@ const timeRangeOptions: NotificationOption[] = [
   { label: 'Last 30 days', value: '30d' },
   { label: 'All available', value: 'all' },
 ];
+const notificationTabs = [
+  {
+    value: 'configuration',
+    label: 'Configuration',
+    tabId: 'notifications-configuration-tab',
+    panelId: 'notifications-configuration-panel',
+  },
+  {
+    value: 'health',
+    label: 'Health',
+    tabId: 'notifications-health-tab',
+    panelId: 'notifications-health-panel',
+  },
+  {
+    value: 'deliveries',
+    label: 'Deliveries',
+    tabId: 'notifications-deliveries-tab',
+    panelId: 'notifications-deliveries-panel',
+  },
+  {
+    value: 'diagnostics',
+    label: 'Diagnostics',
+    tabId: 'notifications-diagnostics-tab',
+    panelId: 'notifications-diagnostics-panel',
+  },
+] as const;
 const sensitiveFieldNames = [
   'token',
   'secret',
@@ -297,6 +323,7 @@ const sensitiveFieldNames = [
 
 const toast = useToast();
 const axios = useAuthenticatedInstance();
+type NotificationTab = (typeof notificationTabs)[number]['value'];
 const supportedProviders: Array<{
   label: string;
   value: NotificationDestinationProvider;
@@ -304,7 +331,7 @@ const supportedProviders: Array<{
   { label: 'Slack', value: 'slack' },
   { label: 'Email', value: 'email' },
 ];
-const activeTab = ref('configuration');
+const activeTab = ref<NotificationTab>('configuration');
 const showAddDestinationsDialog = ref(false);
 const activeNotificationName = ref<string | null>(null);
 const selectedProvider = ref<NotificationDestinationProvider>('slack');
@@ -341,6 +368,7 @@ const testSendMessage = ref<string | null>(null);
 const hasLoadedHealth = ref(false);
 const hasLoadedJobs = ref(false);
 let autoRefreshTimer: number | undefined;
+let jobsRequestSequence = 0;
 
 const {
   data: notificationConfigurations,
@@ -407,7 +435,9 @@ const predeterminedNotifications = computed<PredeterminedNotification[]>(() => {
 });
 
 const providerList = computed<NotificationProviderInfo[]>(() => {
-  return notificationProviders.value ?? health.value?.providers ?? [];
+  const providers = notificationProviders.value ?? [];
+
+  return providers.length > 0 ? providers : health.value?.providers ?? [];
 });
 
 const providerInfoByType = computed(() => {
@@ -959,6 +989,7 @@ async function loadHealth() {
 }
 
 async function loadJobs(cursor?: string) {
+  const requestSequence = ++jobsRequestSequence;
   jobsLoading.value = true;
   jobsError.value = null;
 
@@ -969,10 +1000,18 @@ async function loadJobs(cursor?: string) {
         params: buildJobsParams(cursor),
       },
     );
+    if (requestSequence !== jobsRequestSequence) {
+      return;
+    }
+
     const nextJobs = response.data.data ?? [];
     jobs.value = cursor ? [...jobs.value, ...nextJobs] : nextJobs;
     jobsNextCursor.value = response.data.pagination?.nextCursor ?? null;
   } catch (error) {
+    if (requestSequence !== jobsRequestSequence) {
+      return;
+    }
+
     if (!cursor) {
       jobs.value = [];
     }
@@ -981,8 +1020,10 @@ async function loadJobs(cursor?: string) {
       'Notification delivery jobs are unavailable.',
     );
   } finally {
-    hasLoadedJobs.value = true;
-    jobsLoading.value = false;
+    if (requestSequence === jobsRequestSequence) {
+      hasLoadedJobs.value = true;
+      jobsLoading.value = false;
+    }
   }
 }
 
@@ -1309,6 +1350,46 @@ function linkToDeliveries(filter: string) {
   }
 }
 
+function selectNotificationTab(tab: NotificationTab) {
+  activeTab.value = tab;
+}
+
+function focusNotificationTab(tab: NotificationTab) {
+  const tabConfig = notificationTabs.find((item) => item.value === tab);
+
+  if (!tabConfig) {
+    return;
+  }
+
+  void nextTick(() => {
+    document.getElementById(tabConfig.tabId)?.focus();
+  });
+}
+
+function handleTabKeydown(event: KeyboardEvent, tab: NotificationTab) {
+  const currentIndex = notificationTabs.findIndex((item) => item.value === tab);
+  let nextIndex = currentIndex;
+
+  if (event.key === 'ArrowRight') {
+    nextIndex = (currentIndex + 1) % notificationTabs.length;
+  } else if (event.key === 'ArrowLeft') {
+    nextIndex =
+      (currentIndex - 1 + notificationTabs.length) % notificationTabs.length;
+  } else if (event.key === 'Home') {
+    nextIndex = 0;
+  } else if (event.key === 'End') {
+    nextIndex = notificationTabs.length - 1;
+  } else {
+    return;
+  }
+
+  event.preventDefault();
+
+  const nextTab = notificationTabs[nextIndex].value;
+  selectNotificationTab(nextTab);
+  focusNotificationTab(nextTab);
+}
+
 function stopAutoRefreshJobsTimer() {
   if (!autoRefreshTimer) {
     return;
@@ -1334,7 +1415,7 @@ function startAutoRefreshJobsTimer() {
   }, 30000);
 }
 
-function ensureActiveTabDataLoaded(tab: string) {
+function ensureActiveTabDataLoaded(tab: NotificationTab) {
   if (tab === 'health' && !hasLoadedHealth.value) {
     void loadHealth();
     return;
@@ -1342,6 +1423,11 @@ function ensureActiveTabDataLoaded(tab: string) {
 
   if (tab === 'deliveries' && !hasLoadedJobs.value) {
     void loadJobs();
+    return;
+  }
+
+  if (tab === 'diagnostics' && !diagnostics.value) {
+    void loadDiagnostics();
   }
 }
 
@@ -1392,34 +1478,32 @@ onUnmounted(() => {
       aria-label="Notification administration tabs"
     >
       <button
-        v-for="tab in [
-          ['configuration', 'Configuration'],
-          ['health', 'Health'],
-          ['deliveries', 'Deliveries'],
-          ['diagnostics', 'Diagnostics'],
-        ]"
-        :key="tab[0]"
+        v-for="tab in notificationTabs"
+        :id="tab.tabId"
+        :key="tab.value"
         type="button"
         role="tab"
-        :aria-selected="activeTab === tab[0]"
+        :aria-controls="tab.panelId"
+        :aria-selected="activeTab === tab.value"
+        :tabindex="activeTab === tab.value ? 0 : -1"
         class="min-h-10 border-b-2 px-3 text-sm font-semibold"
         :class="
-          activeTab === tab[0]
+          activeTab === tab.value
             ? 'border-primary text-primary'
             : 'border-transparent text-gray-600 hover:text-gray-900 dark:text-slate-400 dark:hover:text-slate-100'
         "
-        @click="
-          activeTab = tab[0];
-          if (tab[0] === 'diagnostics' && !diagnostics) loadDiagnostics();
-        "
+        @click="selectNotificationTab(tab.value)"
+        @keydown="handleTabKeydown($event, tab.value)"
       >
-        {{ tab[1] }}
+        {{ tab.label }}
       </button>
     </div>
 
     <section
+      id="notifications-configuration-panel"
       v-if="activeTab === 'configuration'"
-      aria-labelledby="configuration-heading"
+      role="tabpanel"
+      aria-labelledby="notifications-configuration-tab"
       class="space-y-6"
     >
       <div>
@@ -1706,8 +1790,10 @@ onUnmounted(() => {
     </section>
 
     <section
+      id="notifications-health-panel"
       v-if="activeTab === 'health'"
-      aria-labelledby="health-heading"
+      role="tabpanel"
+      aria-labelledby="notifications-health-tab"
       class="space-y-5"
     >
       <div
@@ -2047,8 +2133,10 @@ onUnmounted(() => {
     </section>
 
     <section
+      id="notifications-deliveries-panel"
       v-if="activeTab === 'deliveries'"
-      aria-labelledby="deliveries-heading"
+      role="tabpanel"
+      aria-labelledby="notifications-deliveries-tab"
       class="space-y-5"
     >
       <div
@@ -2279,8 +2367,10 @@ onUnmounted(() => {
     </section>
 
     <section
+      id="notifications-diagnostics-panel"
       v-if="activeTab === 'diagnostics'"
-      aria-labelledby="diagnostics-heading"
+      role="tabpanel"
+      aria-labelledby="notifications-diagnostics-tab"
       class="space-y-5"
     >
       <div
