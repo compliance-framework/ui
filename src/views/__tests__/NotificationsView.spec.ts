@@ -1236,10 +1236,9 @@ describe('NotificationsView', () => {
       .trigger('click');
 
     expect(wrapper.text()).toContain('Deliveries');
-    expect(wrapper.find('input[type="search"]').element).toHaveProperty(
-      'value',
-      '241582',
-    );
+    expect(
+      wrapper.find('[data-testid="deliveries-search"]').element,
+    ).toHaveProperty('value', '241582');
   });
 
   it('marks delivery jobs read-only and omits queue mutation controls', async () => {

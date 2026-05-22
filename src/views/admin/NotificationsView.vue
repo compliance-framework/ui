@@ -1407,7 +1407,7 @@ function startAutoRefreshJobsTimer() {
   }
 
   autoRefreshTimer = window.setInterval(() => {
-    if (activeTab.value !== 'deliveries') {
+    if (activeTab.value !== 'deliveries' || jobsLoading.value) {
       return;
     }
 
@@ -2266,6 +2266,7 @@ onUnmounted(() => {
             <input
               v-model="jobIdOrCorrelationFilter"
               type="search"
+              data-testid="deliveries-search"
               class="w-full rounded-md border border-ccf-300 bg-white px-3 py-2 text-gray-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
               placeholder="Filter loaded jobs"
             />
