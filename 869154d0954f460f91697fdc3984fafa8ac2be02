@@ -1,0 +1,73 @@
+lisa-addressed:
+---
+Comment (src/views/admin/NotificationsView.vue:72):
+**🔴 BUG-UI-1: `completed24h` / `discarded24h` will always render as `0` at runtime.**
+
+The global axios interceptor in `src/composables/axios/index.ts` runs `camelcaseKeys(response.data, { deep: true })` on every response. The `camelcase-keys` library (npm) treats a letter immediately following a digit as the start of a new word, so:
+
+- `completed24h` → `completed24H` (capital H)
+- `discarded24h` → `discarded24H` (capital H)
+
+You can verify this with:
+```js
+import camelcaseKeys from 'camelcase-keys';
+camelcaseKeys({ completed24h: 13, discarded24h: 2 }, { deep: true });
+// → { completed24H: 13, discarded24H: 2 }
+```
+
+The TypeScript type here uses lowercase `h`, which no longer matches the key that arrives in the component. Every `queue.completed24h` access returns `undefined`, and `undefined ?? 0` renders as `0`.
+
+**Fix:** rename both fields here and everywhere they are referenced (template bindings on lines 2106–2107, the `discarded24h` guard in `healthWarnings` around line 602) to use a capital `H`: `completed24H` and `discarded24H`. The unit-test fixtures in `NotificationsView.spec.ts` (lines 68–69, 81–82, 514–515) also need to be updated to match, since they supply mock data that bypasses the interceptor.
+---
+Comment (src/views/admin/NotificationsView.vue:2107):
+**🔴 BUG-UI-1 (continued):** These two template bindings reference `queue.completed24h` and `queue.discarded24h` (lowercase `h`). After the axios camelcase interceptor runs, those keys are `completed24H` / `discarded24H` — so both cells always show `0`.
+
+Change to `queue.completed24H ?? 0` and `queue.discarded24H ?? 0` once the type interface above is also corrected.
+---
+Comment (src/views/admin/NotificationsView.vue:589):
+**🟡 BUG-UI-2: `healthWarnings` produces duplicate warnings.**
+
+This computed currently aggregates three sources:
+1. `health.value?.warnings` — the top-level warnings array returned by the API (line 565)
+2. UI-generated `missing_destination_*` warnings for any notification with an empty `configuredDestinations` (lines 580–588)
+3. `notification.warnings` from each notification item (line 589)
+
+The problem: the API already aggregates per-notification warnings into the top-level `health.warnings` array (see `healthWarnings()` in `internal/service/notificationtroubleshooting/service.go`, which appends `item.Warnings...` to the top-level slice). So sources 2 and 3 here are duplicates of source 1 — every per-notification warning appears twice.
+
+During e2e testing this produced a wall of repeated warnings in the Health tab (e.g. `missing_destination` for TASK_AVAILABLE shown twice, `missing_destination` for EVIDENCE_DIGEST shown twice).
+
+**Fix:** remove sources 2 and 3 entirely. Rely solely on `health.value?.warnings` for all warning content:
+
+```ts
+const healthWarnings = computed(() => {
+  const warnings: NotificationHealthWarning[] = [
+    ...(health.value?.warnings ?? []),
+  ];
+  // stale / discarded / schedule checks remain here (they are UI-side enrichments)
+  ...
+  return warnings;
+});
+```
+---
+Comment (src/views/admin/NotificationsView.vue:2631):
+**🟡 BUG-UI-3: `diagnostics.subscriberCounts` is always `undefined` — the field is not in the diagnostics API response.**
+
+The UI reads `diagnostics.subscriberCounts` here to populate the subscriber counts panel. However, the API's `DiagnosticsResponse` struct (in `internal/service/notificationtroubleshooting/service.go`) only contains:
+```go
+type DiagnosticsResponse struct {
+    NotificationName   string
+    Status             string
+    Checks             []DiagnosticCheck
+    RecommendedActions []string
+}
+```
+
+`subscriberCounts` and `configuredDestinations` live on `NotificationHealth` (the health endpoint's per-notification object), not on `DiagnosticsResponse`. As a result, the subscriber counts chip-row and destination list in the Diagnostics tab are always empty.
+
+**Fix options:**
+- (Preferred) Extend `DiagnosticsResponse` in the API to include `subscriberCounts` and `configuredDestinations` — this is filed as a companion bug on the API PR.
+- Alternatively, derive subscriber/destination context from the `checks` array (e.g. look for `subscribers_*` and `configured_destination_*` check codes) so no API change is needed.
+Implementation guidance: In src/views/admin/NotificationsView.vue, update NotificationHealthQueue to use completed24H?: number and discarded24H?: number because axios camelcaseKeys converts completed24h/discarded24h to capital-H keys. Rename every component reference from queue.completed24h to queue.completed24H and from queue.discarded24h to queue.discarded24H, including the healthWarnings discarded guard/message and the Health queue table bindings. Update the corresponding mock health queue fixtures in src/views/__tests__/NotificationsView.spec.ts from completed24h/discarded24h to completed24H/discarded24H because those tests bypass the axios interceptor. Do not add fallback duplicate fields; use the actual post-interceptor shape consistently.
+Implementation guidance: In src/views/admin/NotificationsView.vue, change the Health queue table cells to bind to queue.completed24H ?? 0 and queue.discarded24H ?? 0. This must be paired with renaming NotificationHealthQueue fields and all script references, including healthWarnings, plus updating src/views/__tests__/NotificationsView.spec.ts fixtures to use completed24H/discarded24H. Avoid leaving lowercase-h aliases in the type or template because the axios interceptor returns capital-H keys.
+Implementation guidance: In src/views/admin/NotificationsView.vue, update the healthWarnings computed so it relies on health.value?.warnings for API-provided warning content and no longer adds duplicate notification-level warnings. Remove the loop over healthNotifications.value that pushes missing_destination_* warnings and notification.warnings. Keep the UI-side enrichment loops for disabled providers, stale queues, discarded queues, and missing schedule runs. When adjusting the discarded queue branch, use queue.discarded24H if the camelcase key fix is applied in the same change.
+Implementation guidance: In src/views/admin/NotificationsView.vue, stop rendering the Diagnostics subscribers/destinations panel directly from diagnostics.subscriberCounts because the current diagnostics API does not return that field. Add a computed helper near diagnosticsDestinations, for example diagnosticsHealthNotification, that finds the matching entry in healthNotifications.value by diagnostics.value?.notificationName. Add diagnosticsSubscriberCounts that returns diagnostics.value?.subscriberCounts if present, otherwise diagnosticsHealthNotification.value?.subscriberCounts ?? {}. Update diagnosticsDestinations to return diagnostics.value?.systemDestinations ?? diagnostics.value?.destinations ?? diagnosticsHealthNotification.value?.configuredDestinations ?? []. In the template, replace diagnostics.subscriberCounts usages with diagnosticsSubscriberCounts. Do not remove support for future diagnostics subscriberCounts/systemDestinations fields; just add the health-endpoint fallback so the panel is populated with data the frontend already has.
