@@ -72,11 +72,11 @@
             <td
               class="px-6 py-4 text-sm text-gray-500 dark:text-slate-400 whitespace-nowrap"
             >
-              {{ formatDate(execution.triggeredAt) }}
+              {{ execution.startedAt ? formatDate(execution.startedAt) : '-' }}
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
               <Badge :severity="getStatusSeverity(execution.status)">
-                {{ execution.status.replace('_', ' ') }}
+                {{ execution.status.replace(/_/g, ' ') }}
               </Badge>
             </td>
             <td class="px-6 py-4 text-sm text-gray-500 dark:text-slate-400">
@@ -91,7 +91,9 @@
               <span v-else-if="execution.cancelledAt" class="text-red-500">
                 Cancelled: {{ formatDate(execution.cancelledAt) }}
               </span>
-              <span v-else class="text-gray-400">-</span>
+              <span v-else class="text-gray-400">{{
+                execution.status.replace(/_/g, ' ')
+              }}</span>
             </td>
             <td class="px-6 py-4 text-right">
               <RouterLinkButton
