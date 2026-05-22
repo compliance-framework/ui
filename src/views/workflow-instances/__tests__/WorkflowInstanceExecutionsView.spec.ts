@@ -2,10 +2,18 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { mount, flushPromises } from '@vue/test-utils';
 import { reactive } from 'vue';
 import WorkflowInstanceExecutionsView from '../WorkflowInstanceExecutionsView.vue';
-import type { WorkflowExecution } from '@/types/workflows';
+import type { WorkflowExecution, WorkflowInstance } from '@/types/workflows';
 
 const mockStore = reactive({
-  instance: { id: 'instance-1', name: 'Test Instance' } as object | null,
+  instance: {
+    id: 'instance-1',
+    name: 'Test Instance',
+    workflowDefinitionId: 'def-1',
+    cadence: 'monthly',
+    status: 'active',
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+  } as WorkflowInstance | null,
   executions: [] as WorkflowExecution[],
   isActive: true,
   addExecutionLocally: vi.fn(),
@@ -59,7 +67,15 @@ describe('WorkflowInstanceExecutionsView', () => {
     vi.clearAllMocks();
     mockStore.executions = [];
     mockStore.isActive = true;
-    mockStore.instance = { id: 'instance-1', name: 'Test Instance' };
+    mockStore.instance = {
+      id: 'instance-1',
+      name: 'Test Instance',
+      workflowDefinitionId: 'def-1',
+      cadence: 'monthly',
+      status: 'active',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-01T00:00:00.000Z',
+    };
   });
 
   it('renders startedAt in the Started column, not triggeredAt', async () => {
