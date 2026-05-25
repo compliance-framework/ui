@@ -1242,6 +1242,39 @@ describe('NotificationsView', () => {
     expect(wrapper.text()).not.toContain('secret block');
   });
 
+  it('renders job detail payload data with bigint values', async () => {
+    const originalJobDetail = notificationJobDetail.value;
+    notificationJobDetail.value = {
+      ...originalJobDetail,
+      args: {
+        ...(originalJobDetail.args as Record<string, unknown>),
+        deliverySequence: BigInt('9007199254740993'),
+      },
+    };
+
+    try {
+      const wrapper = mount(NotificationsView);
+      await flushPromises();
+
+      await wrapper
+        .findAll('button')
+        .find((button) => button.text() === 'Deliveries')!
+        .trigger('click');
+      await flushPromises();
+      await wrapper
+        .findAll('button')
+        .find((button) => button.text() === '241583')!
+        .trigger('click');
+      await flushPromises();
+
+      expect(wrapper.text()).toContain('Job 241583');
+      expect(wrapper.text()).toContain('deliverySequence');
+      expect(wrapper.text()).toContain('9007199254740993');
+    } finally {
+      notificationJobDetail.value = originalJobDetail;
+    }
+  });
+
   it('opens delivery job details from a non-link row cell', async () => {
     const wrapper = mount(NotificationsView);
     await flushPromises();
@@ -1276,7 +1309,7 @@ describe('NotificationsView', () => {
     expect(wrapper.text()).toContain('Fail');
     expect(wrapper.text()).toMatch(/Source jobs:\s*1/);
     expect(wrapper.text()).toMatch(/Downstream jobs:\s*1/);
-    expect(wrapper.text()).toContain('May 22, 2026');
+    expect(wrapper.text()).toMatch(/Next run:\s*(?!Never).*2026/s);
 
     const diagnosticsSelect = wrapper
       .find('#notifications-diagnostics-panel')

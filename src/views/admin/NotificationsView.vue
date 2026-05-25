@@ -1008,7 +1008,31 @@ function sanitizePayload(value: unknown): unknown {
 }
 
 function stringifyPayload(value: unknown): string {
-  return JSON.stringify(value, null, 2);
+  const seen = new WeakSet<object>();
+
+  try {
+    return JSON.stringify(
+      value,
+      (_key, entry: unknown) => {
+        if (typeof entry === 'bigint') {
+          return entry.toString();
+        }
+
+        if (entry && typeof entry === 'object') {
+          if (seen.has(entry)) {
+            return '[Circular]';
+          }
+
+          seen.add(entry);
+        }
+
+        return entry;
+      },
+      2,
+    );
+  } catch {
+    return 'Unable to display payload.';
+  }
 }
 
 async function loadSlackDestinationStatus() {
