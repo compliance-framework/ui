@@ -203,9 +203,21 @@ const diagnosticsByNotification = new Map([
           code: 'recent_digest_job',
           label: 'Recent digest job',
           status: 'pass',
-          message: 'Latest digest job completed.',
+          message: 'Latest source job completed at 2026-05-22T17:14:48Z.',
           jobId: 241582,
           correlationId: 'evidence-digest:2026-05-21T00:00:01Z',
+        },
+        {
+          code: 'downstream_provider_jobs',
+          label: 'Downstream provider jobs',
+          status: 'pass',
+          message: '1 downstream provider jobs found.',
+        },
+        {
+          code: 'next_scheduled_run',
+          label: 'Next scheduled run',
+          status: 'pass',
+          message: 'Next scheduled run is 2026-05-22T17:20:18Z.',
         },
       ],
       subscriberCounts: {
@@ -1192,6 +1204,24 @@ describe('NotificationsView', () => {
     expect(wrapper.text()).not.toContain('secret block');
   });
 
+  it('opens delivery job details from a non-link row cell', async () => {
+    const wrapper = mount(NotificationsView);
+    await flushPromises();
+
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Deliveries')!
+      .trigger('click');
+    await flushPromises();
+    await wrapper
+      .find('#notifications-deliveries-panel tbody tr td:nth-child(3)')
+      .trigger('click');
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('Job 241583');
+    expect(wrapper.text()).toContain('ccf-alerts');
+  });
+
   it('renders diagnostics checks for digest, workflow, risk, and POAM notifications', async () => {
     const wrapper = mount(NotificationsView);
     await flushPromises();
@@ -1206,6 +1236,9 @@ describe('NotificationsView', () => {
     expect(wrapper.text()).toContain('Slack destination configured');
     expect(wrapper.text()).toContain('Pass');
     expect(wrapper.text()).toContain('Fail');
+    expect(wrapper.text()).toMatch(/Source jobs:\s*1/);
+    expect(wrapper.text()).toMatch(/Downstream jobs:\s*1/);
+    expect(wrapper.text()).toContain('May 22, 2026');
 
     const diagnosticsSelect = wrapper
       .find('#notifications-diagnostics-panel')

@@ -670,6 +670,68 @@ const diagnosticsDestinations = computed(() => {
     []
   );
 });
+const diagnosticsCheckText = computed(() =>
+  (diagnostics.value?.checks ?? [])
+    .map((check) => `${check.code} ${check.label} ${check.message}`)
+    .join(' '),
+);
+const diagnosticsSourceJobCount = computed(() => {
+  const recentJobs = diagnostics.value?.recentJobs;
+
+  if (recentJobs && recentJobs.length > 0) {
+    return recentJobs.length;
+  }
+
+  return (diagnostics.value?.checks ?? []).filter((check) => {
+    const checkText = `${check.code} ${check.label} ${check.message}`;
+
+    return (
+      Boolean(check.jobId) &&
+      /\b(source|scanner|recent|latest|digest)\b/i.test(checkText)
+    );
+  }).length;
+});
+const diagnosticsDownstreamJobCount = computed(() => {
+  const downstreamJobs = diagnostics.value?.downstreamJobs;
+
+  if (downstreamJobs && downstreamJobs.length > 0) {
+    return downstreamJobs.length;
+  }
+
+  const downstreamMatch = diagnosticsCheckText.value.match(
+    /(\d+)\s+downstream\s+provider\s+jobs?\s+found/i,
+  );
+
+  if (downstreamMatch) {
+    return Number(downstreamMatch[1]);
+  }
+
+  return (diagnostics.value?.checks ?? []).filter((check) =>
+    /\bdownstream\b/i.test(`${check.code} ${check.label} ${check.message}`),
+  ).length;
+});
+const diagnosticsNextRunAt = computed(() => {
+  const explicitNextRunAt = diagnostics.value?.nextScheduledRun?.nextRunAt;
+
+  if (explicitNextRunAt) {
+    return explicitNextRunAt;
+  }
+
+  const nextRunMatch = diagnosticsCheckText.value.match(
+    /next\s+scheduled\s+run\s+is\s+([0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9:.+-]+Z?)/i,
+  );
+
+  if (nextRunMatch) {
+    return nextRunMatch[1];
+  }
+
+  return diagnosticsHealthNotification.value
+    ? healthSchedules.value.find(
+        (schedule) =>
+          schedule.name === diagnosticsHealthNotification.value?.name,
+      )?.nextRunAt
+    : null;
+});
 const diagnosticJobGroups = computed(() => [
   {
     label: 'Recent source/scanner jobs',
@@ -765,7 +827,7 @@ function formatMetadataLabel(key: string): string {
 
 function formatLabel(value?: string | null): string {
   if (!value) {
-    return 'Unknown';
+    return 'Not Applicable';
   }
 
   return formatMetadataLabel(value);
@@ -2423,14 +2485,19 @@ onUnmounted(() => {
               <tr
                 v-for="job in filteredJobs"
                 :key="job.id"
-                class="align-top hover:bg-ccf-100 dark:hover:bg-slate-800"
+                class="cursor-pointer align-top hover:bg-ccf-100 dark:hover:bg-slate-800"
+                role="button"
+                tabindex="0"
+                @click="openJobDetail(job)"
+                @keydown.enter="openJobDetail(job)"
+                @keydown.space.prevent="openJobDetail(job)"
               >
                 <td class="px-3 py-2">{{ formatDate(job.createdAt) }}</td>
                 <td class="px-3 py-2">
                   <button
                     type="button"
                     class="font-medium text-primary hover:underline"
-                    @click="openJobDetail(job)"
+                    @click.stop="openJobDetail(job)"
                   >
                     {{ job.id }}
                   </button>
@@ -2673,12 +2740,9 @@ onUnmounted(() => {
                 Recent Job Signals
               </h3>
               <div class="grid gap-2 text-sm sm:grid-cols-2">
+                <span>Source jobs: {{ diagnosticsSourceJobCount }}</span>
                 <span
-                  >Source jobs: {{ diagnostics.recentJobs?.length ?? 0 }}</span
-                >
-                <span
-                  >Downstream jobs:
-                  {{ diagnostics.downstreamJobs?.length ?? 0 }}</span
+                  >Downstream jobs: {{ diagnosticsDownstreamJobCount }}</span
                 >
                 <span
                   >Stale jobs: {{ diagnostics.staleJobs?.length ?? 0 }}</span
@@ -2693,7 +2757,7 @@ onUnmounted(() => {
                 >
                 <span>
                   Next run:
-                  {{ formatDate(diagnostics.nextScheduledRun?.nextRunAt) }}
+                  {{ formatDate(diagnosticsNextRunAt) }}
                 </span>
               </div>
               <div class="space-y-2 text-sm">
