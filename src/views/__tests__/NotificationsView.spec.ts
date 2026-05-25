@@ -1249,7 +1249,7 @@ describe('NotificationsView', () => {
       args: {
         ...(originalJobDetail.args as Record<string, unknown>),
         deliverySequence: BigInt('9007199254740993'),
-      },
+      } as unknown as typeof originalJobDetail.args,
     };
 
     try {
