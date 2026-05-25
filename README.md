@@ -1,8 +1,5 @@
 # Continuous Compliance UI project
 
-> [!WARNING]
-> This repository is still very much in development, and not ready for use yet.
-
 ## Project Setup
 
 Install and use NVM:
