@@ -1,0 +1,23 @@
+lisa-addressed:
+---
+Comment (src/views/admin/NotificationsView.vue:2697):
+1. Diagnostics → "Recent Job Signals" panel shows zeros while the Checks above prove non-zero activity (new finding, Evidence Digest family)
+
+UI shows: The Recent Job Signals summary reads Source jobs: 0, Downstream jobs: 0, Stale: 0, Discarded: 0, Retryable: 0, Next run: Never.
+Contradiction in the same view: The Checks list (driven by the same diagnostics payload) reports "1 downstream provider jobs found", "Latest source job completed at 2026-05-22T17:14:48Z", "Next scheduled run is 2026-05-22T17:20:18Z", and "1 of 1 provider jobs include correlation ID…". So the signals panel is showing 0/Never for data that demonstrably exists.
+Evidence: diag-01-evidence-digest.png
+Status:
+Strong UI-level signal of a field-mapping bug in the signals summary. I captured the raw API for all four families to diag-api-all.json but was stopped before parsing it to pin the exact field/line — this one needs the API cross-check to confirm root cause.
+---
+Comment (src/views/admin/NotificationsView.vue:2435):
+2. Deliveries → row click does nothing; only the Job ID link opens the drawer
+
+Clicking a non-link cell in a row had no effect. Clicking the Job ID link opens the detail drawer correctly
+
+I was expecting this to be clickable anywhere from the row.
+---
+Comment (src/views/admin/NotificationsView.vue:769):
+A better text than Unknown here is either a `--` or a `Not Applicable`. Unknown confuses the users to think this is a bug when it isn't
+Implementation guidance: In src/views/admin/NotificationsView.vue, fix the Diagnostics Recent Job Signals panel so it does not show zero/Never when the diagnostics checks already contain job activity. Add computed helpers near diagnosticJobGroups that preserve future explicit diagnostics fields when present, but derive fallback signal values from diagnostics.value?.checks when those arrays/nextScheduledRun are missing or empty. For source jobs, count checks that indicate source/recent/latest job activity and/or include a jobId with a source/recent job code/message; for downstream jobs, parse check messages like "1 downstream provider jobs found" and fall back to downstream/provider check codes/messages; for next run, parse messages like "Next scheduled run is 2026-05-22T17:20:18Z" into an ISO string, and fall back to the matching healthSchedules entry for diagnostics.notificationName if available. Use those computed summary values in the six Recent Job Signals summary spans instead of directly reading diagnostics.recentJobs?.length, diagnostics.downstreamJobs?.length, and diagnostics.nextScheduledRun?.nextRunAt. Keep diagnosticJobGroups using explicit job arrays when the API returns them, and do not fabricate clickable job rows from parsed check text unless you have an actual job id. Add or update NotificationsView.spec.ts coverage with a diagnostics fixture that has checks proving source/downstream/next-run activity but no recentJobs/downstreamJobs/nextScheduledRun fields, and assert the summary renders non-zero counts and the parsed next run.
+Implementation guidance: In src/views/admin/NotificationsView.vue, make each delivery jobs table row open the job detail drawer when any non-link cell is clicked. Add @click="openJobDetail(job)" to the <tr v-for="job in filteredJobs">, add cursor-pointer to its class list, and add keyboard support with tabindex="0", role="button", @keydown.enter="openJobDetail(job)", and @keydown.space.prevent="openJobDetail(job)". Add @click.stop to the existing Job ID button so clicking it still opens the drawer once and does not bubble through the row handler. Do not make the empty-state row clickable. Add/update a NotificationsView.spec.ts test that switches to Deliveries, clicks a non-Job-ID cell such as the notification/provider cell, waits for promises, and asserts the job detail drawer for that job is shown.
+Implementation guidance: In src/views/admin/NotificationsView.vue, update formatLabel(value?: string | null) so missing/null/empty values render as a non-alarming placeholder instead of "Unknown". Use "Not Applicable" as the fallback return value for !value at line 767, because this function is used for user-facing labels where an absent provider/state/value can be expected. Do not change workerModeLabel's explicit "Unknown" fallback unless tests reveal that specific worker status also needs the same copy. Run the NotificationsView tests and update snapshots/assertions only if they currently expect the old "Unknown" text.
