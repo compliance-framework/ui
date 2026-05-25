@@ -1153,9 +1153,9 @@ describe('NotificationsView', () => {
     expect(wrapper.text()).not.toContain(
       'No notification delivery jobs match the current filters.',
     );
-    expect(
-      wrapper.find('#notifications-deliveries-panel table').exists(),
-    ).toBe(false);
+    expect(wrapper.find('#notifications-deliveries-panel table').exists()).toBe(
+      false,
+    );
   });
 
   it('lazy-loads operational tabs and pauses job auto-refresh outside deliveries', async () => {
