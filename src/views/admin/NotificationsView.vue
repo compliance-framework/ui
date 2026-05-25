@@ -2464,7 +2464,7 @@ onUnmounted(() => {
         Loading delivery jobs...
       </div>
 
-      <PageCard v-if="!jobsLoading || jobs.length > 0">
+      <PageCard v-if="!jobsError && (!jobsLoading || jobs.length > 0)">
         <div class="overflow-x-auto">
           <table class="min-w-full text-left text-sm">
             <thead class="text-xs uppercase text-gray-500 dark:text-slate-400">

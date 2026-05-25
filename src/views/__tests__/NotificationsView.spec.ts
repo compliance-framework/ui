@@ -1120,6 +1120,44 @@ describe('NotificationsView', () => {
     expect(lastParams.params?.since).toEqual(expect.any(String));
   });
 
+  it('hides the delivery jobs table empty state when jobs fail to load', async () => {
+    mockAuthenticatedGet.mockImplementation((url: string, config?: unknown) => {
+      if (url === '/api/auth/slack/link/status') {
+        return Promise.resolve({
+          data: {
+            data: {
+              linked: false,
+            },
+          },
+        });
+      }
+
+      if (url === '/api/admin/notifications/jobs') {
+        mockJobsGet(config);
+        return Promise.reject(new Error('Delivery jobs failed to load.'));
+      }
+
+      throw new Error(`Unexpected authenticated get: ${url}`);
+    });
+
+    const wrapper = mount(NotificationsView);
+    await flushPromises();
+
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Deliveries')!
+      .trigger('click');
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('Delivery jobs failed to load.');
+    expect(wrapper.text()).not.toContain(
+      'No notification delivery jobs match the current filters.',
+    );
+    expect(
+      wrapper.find('#notifications-deliveries-panel table').exists(),
+    ).toBe(false);
+  });
+
   it('lazy-loads operational tabs and pauses job auto-refresh outside deliveries', async () => {
     const wrapper = mount(NotificationsView);
     await flushPromises();
