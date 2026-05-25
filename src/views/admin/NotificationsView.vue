@@ -172,12 +172,7 @@ interface NotificationDiagnosticsResponse {
   subscriberCounts?: Record<string, number>;
   systemDestinations?: NotificationDestinationResponse[];
   destinations?: NotificationDestinationResponse[];
-  recentJobs?: NotificationJob[];
-  downstreamJobs?: NotificationJob[];
-  staleJobs?: NotificationJob[];
-  discardedJobs?: NotificationJob[];
-  retryableErrors?: NotificationJob[];
-  nextScheduledRun?: NotificationHealthSchedule | null;
+  configuredDestinations?: NotificationDestinationResponse[];
 }
 
 interface NotificationTestResponse {
@@ -227,27 +222,15 @@ const stateOptions = [
   'completed',
   'discarded',
 ];
+// Only true notification kinds are listed here. The jobs endpoint filters on
+// the `notification_kind` metadata, which scheduler/scanner/checker jobs do not
+// carry, so including those kinds would yield filter options that never match.
 const notificationFilterOptions: NotificationOption[] = [
   { label: 'Evidence Digest', value: 'evidence_digest' },
   { label: 'Workflow Task Assigned', value: 'workflow_task_assigned' },
   { label: 'Workflow Task Due Soon', value: 'workflow_task_due_soon' },
   { label: 'Workflow Task Digest', value: 'workflow_task_digest' },
   { label: 'Workflow Execution Failed', value: 'workflow_execution_failed' },
-  {
-    label: 'Workflow Task Digest Checker',
-    value: 'workflow_task_digest_checker',
-  },
-  { label: 'Schedule Workflows', value: 'schedule_workflows' },
-  {
-    label: 'Risk Review Deadline Scanner',
-    value: 'risk_review_deadline_reminder_scanner',
-  },
-  {
-    label: 'Risk Overdue Escalation Scanner',
-    value: 'risk_review_overdue_escalation_scanner',
-  },
-  { label: 'Risk Stale Risk Scanner', value: 'risk_stale_risk_scanner' },
-  { label: 'Risk Open Digest Scheduler', value: 'risk_open_digest_scheduler' },
   { label: 'Risk Review Due Reminder', value: 'risk_review_due_reminder' },
   {
     label: 'Risk Review Overdue Escalation',
@@ -255,16 +238,6 @@ const notificationFilterOptions: NotificationOption[] = [
   },
   { label: 'Risk Stale Open Reminder', value: 'risk_stale_open_reminder' },
   { label: 'Risk Open Digest', value: 'risk_open_digest' },
-  { label: 'POAM Deadline Scanner', value: 'poam_deadline_reminder_scanner' },
-  {
-    label: 'POAM Overdue Transition Scanner',
-    value: 'poam_overdue_transition_scanner',
-  },
-  {
-    label: 'POAM Milestone Overdue Scanner',
-    value: 'poam_milestone_overdue_scanner',
-  },
-  { label: 'POAM Open Digest Scheduler', value: 'poam_open_digest_scheduler' },
   { label: 'POAM Deadline Reminder', value: 'poam_deadline_reminder' },
   { label: 'POAM Overdue Notification', value: 'poam_overdue_notification' },
   {
@@ -666,94 +639,11 @@ const diagnosticsDestinations = computed(() => {
   return (
     diagnostics.value?.systemDestinations ??
     diagnostics.value?.destinations ??
+    diagnostics.value?.configuredDestinations ??
     diagnosticsHealthNotification.value?.configuredDestinations ??
     []
   );
 });
-const diagnosticsCheckText = computed(() =>
-  (diagnostics.value?.checks ?? [])
-    .map((check) => `${check.code} ${check.label} ${check.message}`)
-    .join(' '),
-);
-const diagnosticsSourceJobCount = computed(() => {
-  const recentJobs = diagnostics.value?.recentJobs;
-
-  if (recentJobs && recentJobs.length > 0) {
-    return recentJobs.length;
-  }
-
-  return (diagnostics.value?.checks ?? []).filter((check) => {
-    const checkText = `${check.code} ${check.label} ${check.message}`;
-
-    return (
-      Boolean(check.jobId) &&
-      /\b(source|scanner|recent|latest|digest)\b/i.test(checkText)
-    );
-  }).length;
-});
-const diagnosticsDownstreamJobCount = computed(() => {
-  const downstreamJobs = diagnostics.value?.downstreamJobs;
-
-  if (downstreamJobs && downstreamJobs.length > 0) {
-    return downstreamJobs.length;
-  }
-
-  const downstreamMatch = diagnosticsCheckText.value.match(
-    /(\d+)\s+downstream\s+provider\s+jobs?\s+found/i,
-  );
-
-  if (downstreamMatch) {
-    return Number(downstreamMatch[1]);
-  }
-
-  return (diagnostics.value?.checks ?? []).filter((check) =>
-    /\bdownstream\b/i.test(`${check.code} ${check.label} ${check.message}`),
-  ).length;
-});
-const diagnosticsNextRunAt = computed(() => {
-  const explicitNextRunAt = diagnostics.value?.nextScheduledRun?.nextRunAt;
-
-  if (explicitNextRunAt) {
-    return explicitNextRunAt;
-  }
-
-  const nextRunMatch = diagnosticsCheckText.value.match(
-    /next\s+scheduled\s+run\s+is\s+([0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9:.+-]+Z?)/i,
-  );
-
-  if (nextRunMatch) {
-    return nextRunMatch[1];
-  }
-
-  return diagnosticsHealthNotification.value
-    ? healthSchedules.value.find(
-        (schedule) =>
-          schedule.name === diagnosticsHealthNotification.value?.name,
-      )?.nextRunAt
-    : null;
-});
-const diagnosticJobGroups = computed(() => [
-  {
-    label: 'Recent source/scanner jobs',
-    jobs: diagnostics.value?.recentJobs ?? [],
-  },
-  {
-    label: 'Downstream provider jobs',
-    jobs: diagnostics.value?.downstreamJobs ?? [],
-  },
-  {
-    label: 'Stale jobs',
-    jobs: diagnostics.value?.staleJobs ?? [],
-  },
-  {
-    label: 'Discarded jobs',
-    jobs: diagnostics.value?.discardedJobs ?? [],
-  },
-  {
-    label: 'Retryable errors',
-    jobs: diagnostics.value?.retryableErrors ?? [],
-  },
-]);
 
 function isValidEmail(value: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
@@ -2761,69 +2651,13 @@ onUnmounted(() => {
           <PageCard>
             <div class="space-y-3">
               <h3 class="text-base font-semibold text-gray-900 dark:text-white">
-                Recent Job Signals
+                Recommended Actions
               </h3>
-              <div class="grid gap-2 text-sm sm:grid-cols-2">
-                <span>Source jobs: {{ diagnosticsSourceJobCount }}</span>
-                <span
-                  >Downstream jobs: {{ diagnosticsDownstreamJobCount }}</span
-                >
-                <span
-                  >Stale jobs: {{ diagnostics.staleJobs?.length ?? 0 }}</span
-                >
-                <span
-                  >Discarded jobs:
-                  {{ diagnostics.discardedJobs?.length ?? 0 }}</span
-                >
-                <span
-                  >Retryable errors:
-                  {{ diagnostics.retryableErrors?.length ?? 0 }}</span
-                >
-                <span>
-                  Next run:
-                  {{ formatDate(diagnosticsNextRunAt) }}
-                </span>
-              </div>
-              <div class="space-y-2 text-sm">
-                <div
-                  v-for="group in diagnosticJobGroups"
-                  :key="group.label"
-                  class="space-y-1"
-                >
-                  <p class="font-medium text-gray-700 dark:text-slate-300">
-                    {{ group.label }}
-                  </p>
-                  <div
-                    v-if="group.jobs.length > 0"
-                    class="flex flex-wrap gap-2"
-                  >
-                    <button
-                      v-for="job in group.jobs"
-                      :key="`${group.label}-${job.id}`"
-                      type="button"
-                      class="font-medium text-primary hover:underline"
-                      @click="
-                        linkToDeliveries(
-                          String(
-                            job.correlationId ?? job.sourceJobId ?? job.id,
-                          ),
-                        )
-                      "
-                    >
-                      {{ job.kind }} #{{ job.id }}
-                    </button>
-                  </div>
-                  <p v-else class="text-gray-600 dark:text-gray-400">
-                    None returned.
-                  </p>
-                </div>
-              </div>
               <div
                 v-if="diagnostics.recommendedActions?.length"
                 class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-900/40 dark:bg-amber-900/20 dark:text-amber-100"
               >
-                <p class="font-semibold">Recommended actions</p>
-                <ul class="mt-2 list-disc space-y-1 pl-5">
+                <ul class="list-disc space-y-1 pl-5">
                   <li
                     v-for="action in diagnostics.recommendedActions"
                     :key="action"
@@ -2832,6 +2666,9 @@ onUnmounted(() => {
                   </li>
                 </ul>
               </div>
+              <p v-else class="text-sm text-gray-600 dark:text-gray-400">
+                No recommended actions. Review the checks above for details.
+              </p>
             </div>
           </PageCard>
         </div>

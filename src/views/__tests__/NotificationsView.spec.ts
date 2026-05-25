@@ -226,9 +226,6 @@ const diagnosticsByNotification = new Map([
         totalUsers: 14,
       },
       systemDestinations: [],
-      staleJobs: [],
-      discardedJobs: [],
-      retryableErrors: [],
       recommendedActions: ['Add a Slack destination for Evidence Digest.'],
     },
   ],
@@ -1307,9 +1304,11 @@ describe('NotificationsView', () => {
     expect(wrapper.text()).toContain('Slack destination configured');
     expect(wrapper.text()).toContain('Pass');
     expect(wrapper.text()).toContain('Fail');
-    expect(wrapper.text()).toMatch(/Source jobs:\s*1/);
-    expect(wrapper.text()).toMatch(/Downstream jobs:\s*1/);
-    expect(wrapper.text()).toMatch(/Next run:\s*(?!Never).*2026/s);
+    expect(wrapper.text()).toContain('1 downstream provider jobs found.');
+    expect(wrapper.text()).toContain('Recommended Actions');
+    expect(wrapper.text()).toContain(
+      'Add a Slack destination for Evidence Digest.',
+    );
 
     const diagnosticsSelect = wrapper
       .find('#notifications-diagnostics-panel')
