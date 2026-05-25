@@ -320,6 +320,7 @@ const jobs = ref<NotificationJob[]>([]);
 const jobsNextCursor = ref<string | null>(null);
 const jobsLoading = ref(false);
 const jobsError = ref<string | null>(null);
+const jobsPaginationError = ref<string | null>(null);
 const jobDetail = ref<NotificationJobDetail | null>(null);
 const jobDetailLoading = ref(false);
 const jobDetailError = ref<string | null>(null);
@@ -992,9 +993,12 @@ async function loadHealth() {
 async function loadJobs(cursor?: string) {
   const requestSequence = ++jobsRequestSequence;
   jobsLoading.value = true;
-  jobsError.value = null;
 
-  if (!cursor) {
+  if (cursor) {
+    jobsPaginationError.value = null;
+  } else {
+    jobsError.value = null;
+    jobsPaginationError.value = null;
     jobsNextCursor.value = null;
   }
 
@@ -1017,14 +1021,19 @@ async function loadJobs(cursor?: string) {
       return;
     }
 
-    if (!cursor) {
+    if (cursor) {
+      jobsPaginationError.value = getApiErrorMessage(
+        error,
+        'More notification delivery jobs are unavailable.',
+      );
+    } else {
       jobs.value = [];
       jobsNextCursor.value = null;
+      jobsError.value = getApiErrorMessage(
+        error,
+        'Notification delivery jobs are unavailable.',
+      );
     }
-    jobsError.value = getApiErrorMessage(
-      error,
-      'Notification delivery jobs are unavailable.',
-    );
   } finally {
     if (requestSequence === jobsRequestSequence) {
       hasLoadedJobs.value = true;
@@ -2459,6 +2468,12 @@ onUnmounted(() => {
           >
             Load More
           </SecondaryButton>
+        </div>
+        <div
+          v-if="jobsPaginationError"
+          class="mt-3 text-sm text-red-700 dark:text-red-300"
+        >
+          {{ jobsPaginationError }}
         </div>
       </PageCard>
     </section>

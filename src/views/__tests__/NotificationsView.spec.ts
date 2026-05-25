@@ -1155,6 +1155,63 @@ describe('NotificationsView', () => {
     );
   });
 
+  it('keeps loaded delivery jobs visible when loading more jobs fails', async () => {
+    mockAuthenticatedGet.mockImplementation((url: string, config?: unknown) => {
+      if (url === '/api/auth/slack/link/status') {
+        return Promise.resolve({
+          data: {
+            data: {
+              linked: false,
+            },
+          },
+        });
+      }
+
+      if (url === '/api/admin/notifications/jobs') {
+        mockJobsGet(config);
+
+        if (
+          (config as { params?: { cursor?: string } } | undefined)?.params
+            ?.cursor === 'next-page'
+        ) {
+          return Promise.reject(new Error('More jobs failed to load.'));
+        }
+
+        return Promise.resolve({
+          data: {
+            data: notificationJobs.value,
+            pagination: {
+              nextCursor: 'next-page',
+            },
+          },
+        });
+      }
+
+      throw new Error(`Unexpected authenticated get: ${url}`);
+    });
+
+    const wrapper = mount(NotificationsView);
+    await flushPromises();
+
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Deliveries')!
+      .trigger('click');
+    await flushPromises();
+
+    await getLastButtonByText(wrapper, 'Load More').trigger('click');
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('241583');
+    expect(wrapper.text()).toContain('More jobs failed to load.');
+    expect(wrapper.find('#notifications-deliveries-panel table').exists()).toBe(
+      true,
+    );
+    expect(wrapper.text()).not.toContain(
+      'No notification delivery jobs match the current filters.',
+    );
+  });
+
   it('lazy-loads operational tabs and pauses job auto-refresh outside deliveries', async () => {
     const wrapper = mount(NotificationsView);
     await flushPromises();
