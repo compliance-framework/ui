@@ -1,6 +1,7 @@
 import type { EvidenceRequirement, EvidenceType } from '@/types/workflows';
 
 export const DEFAULT_GRACE_PERIOD_DAYS = 7;
+export const DEFAULT_STEP_GRACE_PERIOD_DAYS = 1;
 
 export function toGracePeriodInputValue(
   gracePeriodDays?: number | null,

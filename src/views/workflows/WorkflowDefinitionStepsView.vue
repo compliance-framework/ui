@@ -108,7 +108,6 @@
       <StepDefinitionForm
         :step="editingStep ?? undefined"
         :workflow-definition-id="store.definition.id"
-        :default-grace-period-days="store.definition.gracePeriodDays"
         :available-steps="store.steps"
         @saved="handleStepSaved"
         @cancel="closeForm"

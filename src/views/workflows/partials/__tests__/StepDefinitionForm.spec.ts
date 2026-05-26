@@ -11,9 +11,10 @@ vi.mock('@/composables/workflows', () => ({
 
 vi.mock('@/utils/workflows', () => ({
   DEFAULT_GRACE_PERIOD_DAYS: 7,
-  parseGracePeriodInput: vi.fn().mockReturnValue({ value: 7 }),
+  DEFAULT_STEP_GRACE_PERIOD_DAYS: 1,
+  parseGracePeriodInput: vi.fn().mockReturnValue({ value: 1 }),
   parseEvidenceRequired: vi.fn().mockReturnValue([]),
-  toGracePeriodInputValue: vi.fn().mockReturnValue('7'),
+  toGracePeriodInputValue: vi.fn().mockReturnValue('1'),
 }));
 
 function mountForm() {
