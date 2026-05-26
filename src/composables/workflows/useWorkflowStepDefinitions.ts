@@ -1,5 +1,5 @@
-import { isAxiosError } from 'axios';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
+import { getErrorDetail } from '@/utils/httpErrors';
 import { useToast } from 'primevue/usetoast';
 import { useConfirm } from 'primevue/useconfirm';
 import type {
@@ -117,15 +117,10 @@ export function useWorkflowStepDefinitions() {
       }
       return createdStep.value;
     } catch (error) {
-      const detail =
-        (isAxiosError(error) && error.response?.data?.errors?.body) ||
-        (error instanceof Error
-          ? error.message
-          : 'Failed to create step definition');
       toast.add({
         severity: 'error',
         summary: 'Error Creating Step',
-        detail,
+        detail: await getErrorDetail(error, 'Failed to create step definition'),
         life: 3000,
       });
       throw error;
@@ -153,15 +148,10 @@ export function useWorkflowStepDefinitions() {
       }
       return updatedStep.value;
     } catch (error) {
-      const detail =
-        (isAxiosError(error) && error.response?.data?.errors?.body) ||
-        (error instanceof Error
-          ? error.message
-          : 'Failed to update step definition');
       toast.add({
         severity: 'error',
         summary: 'Error Updating Step',
-        detail,
+        detail: await getErrorDetail(error, 'Failed to update step definition'),
         life: 3000,
       });
       throw error;
@@ -190,15 +180,13 @@ export function useWorkflowStepDefinitions() {
             onSuccess?.();
             resolve();
           } catch (error) {
-            const detail =
-              (isAxiosError(error) && error.response?.data?.errors?.body) ||
-              (error instanceof Error
-                ? error.message
-                : 'Failed to delete step definition');
             toast.add({
               severity: 'error',
               summary: 'Error Deleting Step',
-              detail,
+              detail: await getErrorDetail(
+                error,
+                'Failed to delete step definition',
+              ),
               life: 3000,
             });
             reject(error);
