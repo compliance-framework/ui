@@ -57,8 +57,9 @@ describe('WorkflowDefinitionStepsView step order marker', () => {
   it('does not render the #<order> prefix in step card headers', () => {
     const wrapper = mountComponent();
 
-    // The step name should appear without the order marker
-    expect(wrapper.text()).toContain('Review Access');
-    expect(wrapper.text()).not.toContain('#3');
+    // The step header should contain the name and no order marker
+    const header = wrapper.find('h4');
+    expect(header.text()).toContain('Review Access');
+    expect(header.text()).not.toContain('#3');
   });
 });
