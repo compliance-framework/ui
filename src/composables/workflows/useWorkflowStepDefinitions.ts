@@ -1,3 +1,4 @@
+import { isAxiosError } from 'axios';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import { useToast } from 'primevue/usetoast';
 import { useConfirm } from 'primevue/useconfirm';
@@ -116,13 +117,15 @@ export function useWorkflowStepDefinitions() {
       }
       return createdStep.value;
     } catch (error) {
+      const detail =
+        (isAxiosError(error) && error.response?.data?.errors?.body) ||
+        (error instanceof Error
+          ? error.message
+          : 'Failed to create step definition');
       toast.add({
         severity: 'error',
         summary: 'Error Creating Step',
-        detail:
-          error instanceof Error
-            ? error.message
-            : 'Failed to create step definition',
+        detail,
         life: 3000,
       });
       throw error;
@@ -150,13 +153,15 @@ export function useWorkflowStepDefinitions() {
       }
       return updatedStep.value;
     } catch (error) {
+      const detail =
+        (isAxiosError(error) && error.response?.data?.errors?.body) ||
+        (error instanceof Error
+          ? error.message
+          : 'Failed to update step definition');
       toast.add({
         severity: 'error',
         summary: 'Error Updating Step',
-        detail:
-          error instanceof Error
-            ? error.message
-            : 'Failed to update step definition',
+        detail,
         life: 3000,
       });
       throw error;
