@@ -1,4 +1,5 @@
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
+import { getErrorDetail } from '@/utils/httpErrors';
 import { useToast } from 'primevue/usetoast';
 import { useConfirm } from 'primevue/useconfirm';
 import type {
@@ -119,10 +120,7 @@ export function useWorkflowStepDefinitions() {
       toast.add({
         severity: 'error',
         summary: 'Error Creating Step',
-        detail:
-          error instanceof Error
-            ? error.message
-            : 'Failed to create step definition',
+        detail: await getErrorDetail(error, 'Failed to create step definition'),
         life: 3000,
       });
       throw error;
@@ -153,10 +151,7 @@ export function useWorkflowStepDefinitions() {
       toast.add({
         severity: 'error',
         summary: 'Error Updating Step',
-        detail:
-          error instanceof Error
-            ? error.message
-            : 'Failed to update step definition',
+        detail: await getErrorDetail(error, 'Failed to update step definition'),
         life: 3000,
       });
       throw error;
@@ -188,10 +183,10 @@ export function useWorkflowStepDefinitions() {
             toast.add({
               severity: 'error',
               summary: 'Error Deleting Step',
-              detail:
-                error instanceof Error
-                  ? error.message
-                  : 'Failed to delete step definition',
+              detail: await getErrorDetail(
+                error,
+                'Failed to delete step definition',
+              ),
               life: 3000,
             });
             reject(error);

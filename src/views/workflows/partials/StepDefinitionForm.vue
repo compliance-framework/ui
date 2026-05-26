@@ -197,7 +197,7 @@ import type {
   EvidenceType,
 } from '@/types/workflows';
 import {
-  DEFAULT_GRACE_PERIOD_DAYS,
+  DEFAULT_STEP_GRACE_PERIOD_DAYS,
   parseGracePeriodInput,
   parseEvidenceRequired,
   toGracePeriodInputValue,
@@ -248,7 +248,7 @@ const defaultEvidenceItems: EvidenceItem[] = [
 ];
 // Step-level default comes from the parent workflow model when provided.
 const effectiveDefaultGracePeriodDays =
-  props.defaultGracePeriodDays ?? DEFAULT_GRACE_PERIOD_DAYS;
+  props.defaultGracePeriodDays ?? DEFAULT_STEP_GRACE_PERIOD_DAYS;
 
 const form = reactive<StepFormState>({
   workflowDefinitionId: props.workflowDefinitionId,
