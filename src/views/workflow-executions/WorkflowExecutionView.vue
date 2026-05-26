@@ -81,6 +81,19 @@
         >
           Retry Execution
         </SecondaryButton>
+        <RouterLinkButton
+          v-if="
+            (execution.status === 'completed' ||
+              execution.status === 'failed') &&
+            execution.executionStreamUuid
+          "
+          :to="{
+            name: 'evidence:history',
+            params: { uuid: execution.executionStreamUuid },
+          }"
+        >
+          View Evidence Stream
+        </RouterLinkButton>
       </div>
 
       <!-- Execution Metrics -->

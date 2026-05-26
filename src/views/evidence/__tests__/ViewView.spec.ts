@@ -457,6 +457,10 @@ function mountView() {
           props: ['to'],
           template: '<a :data-to="JSON.stringify(to)"><slot /></a>',
         },
+        RouterLinkButton: {
+          props: ['to'],
+          template: '<a :data-to="JSON.stringify(to)"><slot /></a>',
+        },
         BackMatterDisplay: {
           props: ['resource'],
           template: '<div>BackMatterDisplay {{ resource.title }}</div>',
@@ -827,5 +831,70 @@ describe('Evidence ViewView', () => {
 
     expect(wrapper.text()).toContain('Error loading evidence');
     expect(wrapper.text()).not.toContain('Repository attestation evidence');
+  });
+});
+
+describe('Evidence ViewView workflow execution back-link', () => {
+  // BCH-1155: evidence records from workflow executions must provide a link back to the execution view
+  beforeEach(() => {
+    refs.nullGetCallIndex = 0;
+    refs.verification.value = null;
+    refs.loading.value = false;
+    refs.error.value = null;
+    refs.signatureError.value = null;
+    refs.verifyError.value = null;
+    refs.history.value = structuredClone(historyItems);
+    refs.compliance.value = structuredClone(complianceHistory);
+    refs.heartbeat.value = structuredClone(heartbeatHistory);
+    refs.route.params.id = 'evidence-1';
+    refs.route.query = {};
+  });
+
+  it('shows Back to Execution link when evidence has workflow.execution.id label', async () => {
+    const workflowEvidence = {
+      ...structuredClone(baseEvidence),
+      labels: [{ name: 'workflow.execution.id', value: 'exec-abc-123' }],
+    };
+    refs.evidenceResponse = workflowEvidence;
+    refs.evidence.value = workflowEvidence;
+
+    const wrapper = mountView();
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('Back to Execution');
+  });
+
+  it('links to the workflow execution view using the execution id from labels', async () => {
+    const workflowEvidence = {
+      ...structuredClone(baseEvidence),
+      labels: [{ name: 'workflow.execution.id', value: 'exec-abc-123' }],
+    };
+    refs.evidenceResponse = workflowEvidence;
+    refs.evidence.value = workflowEvidence;
+
+    const wrapper = mountView();
+    await flushPromises();
+
+    const link = wrapper.find('a[data-to*="exec-abc-123"]');
+    expect(link.exists()).toBe(true);
+    const to = JSON.parse(link.attributes('data-to') ?? '{}');
+    expect(to).toMatchObject({
+      name: 'workflow-execution-view',
+      params: { id: 'exec-abc-123' },
+    });
+  });
+
+  it('does not show Back to Execution link when evidence has no workflow.execution.id label', async () => {
+    const plainEvidence = {
+      ...structuredClone(baseEvidence),
+      labels: [{ name: 'env', value: 'prod' }],
+    };
+    refs.evidenceResponse = plainEvidence;
+    refs.evidence.value = plainEvidence;
+
+    const wrapper = mountView();
+    await flushPromises();
+
+    expect(wrapper.text()).not.toContain('Back to Execution');
   });
 });
