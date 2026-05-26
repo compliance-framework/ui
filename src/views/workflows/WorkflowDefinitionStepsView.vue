@@ -40,9 +40,6 @@
         <div class="flex justify-between items-start">
           <div class="flex-1">
             <div class="flex items-center gap-2">
-              <span class="text-sm text-gray-400 dark:text-slate-500">
-                #{{ step.order }}
-              </span>
               <h4 class="font-medium text-gray-900 dark:text-slate-200">
                 {{ step.name }}
               </h4>
