@@ -190,13 +190,15 @@ export function useWorkflowStepDefinitions() {
             onSuccess?.();
             resolve();
           } catch (error) {
+            const detail =
+              (isAxiosError(error) && error.response?.data?.errors?.body) ||
+              (error instanceof Error
+                ? error.message
+                : 'Failed to delete step definition');
             toast.add({
               severity: 'error',
               summary: 'Error Deleting Step',
-              detail:
-                error instanceof Error
-                  ? error.message
-                  : 'Failed to delete step definition',
+              detail,
               life: 3000,
             });
             reject(error);
