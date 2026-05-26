@@ -103,6 +103,15 @@ describe('WorkflowExecutionView evidence stream link', () => {
     await flushPromises();
 
     expect(wrapper.text()).toContain('View Evidence Stream');
+    const link = wrapper.find(
+      'a[href*="aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"]',
+    );
+    expect(link.exists()).toBe(true);
+    const to = JSON.parse(link.attributes('href') ?? '{}');
+    expect(to).toMatchObject({
+      name: 'evidence:history',
+      params: { uuid: 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee' },
+    });
   });
 
   // BCH-1155: failed executions must also expose a link to the evidence stream
@@ -116,6 +125,15 @@ describe('WorkflowExecutionView evidence stream link', () => {
     await flushPromises();
 
     expect(wrapper.text()).toContain('View Evidence Stream');
+    const link = wrapper.find(
+      'a[href*="aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"]',
+    );
+    expect(link.exists()).toBe(true);
+    const to = JSON.parse(link.attributes('href') ?? '{}');
+    expect(to).toMatchObject({
+      name: 'evidence:history',
+      params: { uuid: 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee' },
+    });
   });
 
   // BCH-1155: in-progress executions have no terminal evidence yet — no link expected

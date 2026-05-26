@@ -877,6 +877,11 @@ describe('Evidence ViewView workflow execution back-link', () => {
 
     const link = wrapper.find('a[data-to*="exec-abc-123"]');
     expect(link.exists()).toBe(true);
+    const to = JSON.parse(link.attributes('data-to') ?? '{}');
+    expect(to).toMatchObject({
+      name: 'workflow-execution-view',
+      params: { id: 'exec-abc-123' },
+    });
   });
 
   it('does not show Back to Execution link when evidence has no workflow.execution.id label', async () => {
