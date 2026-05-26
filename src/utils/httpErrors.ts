@@ -26,7 +26,7 @@ export async function getErrorDetail(
       }
 
       if ('errors' in errorData) {
-        return errorData.errors?.body || fallbackMessage;
+        return errorData.errors?.body ?? fallbackMessage;
       }
 
       return (

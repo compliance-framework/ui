@@ -2,6 +2,77 @@ import { describe, it, expect } from 'vitest';
 import { getErrorDetail } from './httpErrors';
 
 describe('getErrorDetail', () => {
+  describe('Response errors', () => {
+    it('returns errors.body when present', async () => {
+      const response = new Response(
+        JSON.stringify({ errors: { body: 'validation failed' } }),
+        { status: 400, statusText: 'Bad Request' },
+      );
+      expect(await getErrorDetail(response, 'fallback')).toBe(
+        'validation failed',
+      );
+    });
+
+    it('preserves empty string errors.body instead of falling back', async () => {
+      const response = new Response(JSON.stringify({ errors: { body: '' } }), {
+        status: 400,
+        statusText: 'Bad Request',
+      });
+      expect(await getErrorDetail(response, 'fallback')).toBe('');
+    });
+
+    it('returns message when errors.body is absent', async () => {
+      const response = new Response(
+        JSON.stringify({ message: 'something went wrong' }),
+        { status: 400, statusText: 'Bad Request' },
+      );
+      expect(await getErrorDetail(response, 'fallback')).toBe(
+        'something went wrong',
+      );
+    });
+
+    it('returns error field when message is absent', async () => {
+      const response = new Response(JSON.stringify({ error: 'unauthorized' }), {
+        status: 401,
+        statusText: 'Unauthorized',
+      });
+      expect(await getErrorDetail(response, 'fallback')).toBe('unauthorized');
+    });
+
+    it('returns detail field when message and error are absent', async () => {
+      const response = new Response(JSON.stringify({ detail: 'not found' }), {
+        status: 404,
+        statusText: 'Not Found',
+      });
+      expect(await getErrorDetail(response, 'fallback')).toBe('not found');
+    });
+
+    it('falls back to statusText when JSON is unparseable', async () => {
+      const response = new Response('not-json', {
+        status: 500,
+        statusText: 'Internal Server Error',
+      });
+      expect(await getErrorDetail(response, 'fallback')).toBe(
+        'Internal Server Error',
+      );
+    });
+
+    it('falls back to statusText when JSON body is null', async () => {
+      const response = new Response('null', {
+        status: 500,
+        statusText: 'Internal Server Error',
+      });
+      expect(await getErrorDetail(response, 'fallback')).toBe(
+        'Internal Server Error',
+      );
+    });
+
+    it('falls back to fallback when statusText is also empty', async () => {
+      const response = new Response('null', { status: 500, statusText: '' });
+      expect(await getErrorDetail(response, 'fallback')).toBe('fallback');
+    });
+  });
+
   describe('Axios errors', () => {
     it('returns errors.body when present', async () => {
       const error = {
