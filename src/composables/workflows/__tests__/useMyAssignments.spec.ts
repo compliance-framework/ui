@@ -484,7 +484,7 @@ describe('useMyAssignments', () => {
       const { fetchMyAssignments } = useMyAssignments();
       await expect(
         fetchMyAssignments({ dueBefore: 'not-a-date', dueAfter: 'also-bad' }),
-      ).resolves.not.toThrow();
+      ).resolves.toBeDefined();
 
       const calledUrl = mockExecute.mock.calls[0][0] as string;
       expect(calledUrl).not.toContain('due_before');
