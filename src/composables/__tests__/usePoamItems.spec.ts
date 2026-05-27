@@ -391,7 +391,7 @@ describe('usePoamItems', () => {
       const { promoteRiskToPoam } = usePromoteRiskToPoam();
       await expect(
         promoteRiskToPoam('ssp-123', 'risk-abc', {}),
-      ).resolves.not.toThrow();
+      ).resolves.toBeUndefined();
     });
   });
 

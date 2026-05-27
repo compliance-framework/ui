@@ -189,6 +189,27 @@ describe('MyTasksView', () => {
     ]);
   });
 
+  // BCH-1156: simulate a real user typing into the date inputs (setValue dispatches
+  // the DOM input event that v-model listens to) and verify the filter params reach
+  // fetchMyAssignments — this mirrors actual browser behaviour unlike setting vm refs directly.
+  it('passes due-date filter params to fetchMyAssignments when date inputs are changed by the user', async () => {
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    mockFetchMyAssignments.mockClear();
+
+    await wrapper.find('#dueAfterFilter').setValue('2026-05-26');
+    await wrapper.find('#dueBeforeFilter').setValue('2026-05-28');
+    await flushPromises();
+
+    const calls = mockFetchMyAssignments.mock.calls;
+    expect(calls.length).toBeGreaterThan(0);
+    const lastCall = calls[calls.length - 1][0];
+
+    expect(lastCall.dueAfter).toBe('2026-05-26');
+    expect(lastCall.dueBefore).toBe('2026-05-28');
+  });
+
   it('applies due-date filters when loading assignments', async () => {
     const wrapper = mountComponent();
     await flushPromises();
