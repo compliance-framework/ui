@@ -469,6 +469,28 @@ describe('useMyAssignments', () => {
   });
 
   describe('edge cases', () => {
+    // new Date('not-a-date').toISOString() throws RangeError; invalid strings must
+    // be silently dropped so the API call still proceeds without the bad param.
+    it('silently omits due date params when the date string is invalid', async () => {
+      const emptyResponse: MyAssignmentsResponse = {
+        data: [],
+        total: 0,
+        limit: 10,
+        offset: 0,
+        hasMore: false,
+      };
+      setMockResponse(emptyResponse);
+
+      const { fetchMyAssignments } = useMyAssignments();
+      await expect(
+        fetchMyAssignments({ dueBefore: 'not-a-date', dueAfter: 'also-bad' }),
+      ).resolves.not.toThrow();
+
+      const calledUrl = mockExecute.mock.calls[0][0] as string;
+      expect(calledUrl).not.toContain('due_before');
+      expect(calledUrl).not.toContain('due_after');
+    });
+
     it('handles empty results', async () => {
       const mockResponse: MyAssignmentsResponse = {
         data: [],

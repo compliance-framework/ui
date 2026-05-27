@@ -42,14 +42,16 @@ export function useMyAssignments() {
       if (filter.status) params.append('status', filter.status);
       if (filter.dueBefore) {
         const d = new Date(filter.dueBefore);
-        d.setUTCHours(23, 59, 59, 0);
-        params.append('due_before', d.toISOString().slice(0, 19) + 'Z');
+        if (!isNaN(d.getTime())) {
+          d.setUTCHours(23, 59, 59, 0);
+          params.append('due_before', d.toISOString().slice(0, 19) + 'Z');
+        }
       }
       if (filter.dueAfter) {
-        params.append(
-          'due_after',
-          new Date(filter.dueAfter).toISOString().slice(0, 19) + 'Z',
-        );
+        const d = new Date(filter.dueAfter);
+        if (!isNaN(d.getTime())) {
+          params.append('due_after', d.toISOString().slice(0, 19) + 'Z');
+        }
       }
       if (filter.workflowDefinitionId)
         params.append('workflow_definition_id', filter.workflowDefinitionId);
