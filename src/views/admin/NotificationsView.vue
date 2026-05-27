@@ -48,6 +48,7 @@ interface NotificationProviderInfo {
   displayName: string;
   description: string;
   enabled: boolean;
+  error?: string;
   metadata?: NotificationProviderMetadata;
 }
 
@@ -1640,7 +1641,14 @@ onUnmounted(() => {
                   {{ provider.description }}
                 </p>
 
+                <p
+                  v-if="provider.error"
+                  class="text-xs font-medium text-red-700 dark:text-red-300"
+                >
+                  Error: {{ provider.error }}
+                </p>
                 <span
+                  v-else
                   v-for="meta in getProviderMetadataEntries(provider)"
                   :key="meta.key"
                   class="inline-flex w-fit min-h-2 text-xs"

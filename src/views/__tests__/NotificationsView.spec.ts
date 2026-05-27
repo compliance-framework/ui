@@ -22,7 +22,16 @@ const notificationConfigurations = shallowRef([
     ],
   },
 ]);
-const notificationProviders = shallowRef([
+const notificationProviders = shallowRef<
+  Array<{
+    providerType: string;
+    displayName: string;
+    description: string;
+    enabled: boolean;
+    error?: string;
+    metadata?: Record<string, string>;
+  }>
+>([
   {
     providerType: 'email',
     displayName: 'Email',
@@ -607,6 +616,38 @@ describe('NotificationsView', () => {
       'Workspace Url: https://reece-sandbox.slack.com/',
     );
     expect(wrapper.text()).toContain('Enabled');
+  });
+
+  it('renders provider error instead of metadata when the provider is misconfigured', () => {
+    notificationProviders.value = [
+      {
+        providerType: 'email',
+        displayName: 'Email',
+        description: 'Configured SMTP provider for email service',
+        enabled: true,
+        metadata: {
+          serviceProviderName: 'SMTP',
+          serviceProviderType: 'smtp',
+        },
+      },
+      {
+        providerType: 'slack',
+        displayName: 'Slack',
+        description: 'Configured Slack workspace',
+        enabled: true,
+        error: 'invalid_auth',
+      },
+    ];
+
+    const wrapper = mount(NotificationsView);
+
+    expect(wrapper.text()).toContain('Error: invalid_auth');
+    expect(wrapper.text()).not.toContain('Bot Id: B0ANWHKQMCP');
+    expect(wrapper.text()).not.toContain('Team Id: T0AP4C0TA7M');
+    expect(wrapper.text()).not.toContain('Workspace Name: reece-sandbox');
+    expect(wrapper.text()).not.toContain(
+      'Workspace Url: https://reece-sandbox.slack.com/',
+    );
   });
 
   it('loads configured destinations from the backend response', () => {
