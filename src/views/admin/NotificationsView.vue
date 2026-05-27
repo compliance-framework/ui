@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
+import { computed, nextTick, onUnmounted, ref, watch } from 'vue';
 import { isAxiosError, type AxiosError } from 'axios';
 import { useToast } from 'primevue/usetoast';
 import {
@@ -310,9 +310,6 @@ const activeNotificationName = ref<string | null>(null);
 const selectedProvider = ref<NotificationDestinationProvider>('slack');
 const destinationTarget = ref('');
 const destinationFormError = ref('');
-const slackDestinationStatusLoading = ref(true);
-const slackDestinationConfigured = ref(false);
-const slackDestinationStatusError = ref<string | null>(null);
 const health = ref<NotificationHealthResponse | null>(null);
 const healthLoading = ref(false);
 const healthError = ref<string | null>(null);
@@ -463,22 +460,6 @@ const destinationTargetPlaceholder = computed(() => {
   return activeProviderOption.value.value === 'email'
     ? 'team@example.com'
     : 'my-slack-channel';
-});
-
-const slackDestinationUnavailableReason = computed(() => {
-  if (slackDestinationStatusLoading.value) {
-    return 'Slack destinations are unavailable until Slack configuration finishes loading.';
-  }
-
-  if (slackDestinationStatusError.value) {
-    return `Slack destinations are unavailable because Slack status could not be loaded: ${slackDestinationStatusError.value}`;
-  }
-
-  if (!slackDestinationConfigured.value) {
-    return 'Slack destinations are unavailable because Slack integration is not configured for this environment.';
-  }
-
-  return null;
 });
 
 const selectableDestinationProviders = computed(() =>
@@ -790,10 +771,6 @@ function getDestinationProviderUnavailableReason(
     return providerDisabledReason;
   }
 
-  if (provider === 'slack') {
-    return slackDestinationUnavailableReason.value;
-  }
-
   return null;
 }
 
@@ -923,37 +900,6 @@ function stringifyPayload(value: unknown): string {
     );
   } catch {
     return 'Unable to display payload.';
-  }
-}
-
-async function loadSlackDestinationStatus() {
-  slackDestinationStatusLoading.value = true;
-  slackDestinationStatusError.value = null;
-
-  try {
-    await axios.get('/api/auth/slack/link/status');
-    slackDestinationConfigured.value = true;
-  } catch (error) {
-    if (isAxiosError(error) && error.response?.status === 404) {
-      slackDestinationConfigured.value = false;
-      return;
-    }
-
-    const errorMessage = getApiErrorMessage(
-      error,
-      'Failed to load Slack link status.',
-    );
-
-    slackDestinationConfigured.value = false;
-    slackDestinationStatusError.value = errorMessage;
-    toast.add({
-      severity: 'error',
-      summary: 'Slack Status Unavailable',
-      detail: errorMessage,
-      life: 4000,
-    });
-  } finally {
-    slackDestinationStatusLoading.value = false;
   }
 }
 
@@ -1552,10 +1498,6 @@ watch(activeTab, (tab) => {
 
 watch(autoRefreshJobs, () => {
   startAutoRefreshJobsTimer();
-});
-
-onMounted(() => {
-  void loadSlackDestinationStatus();
 });
 
 onUnmounted(() => {
