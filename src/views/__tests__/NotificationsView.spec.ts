@@ -22,7 +22,16 @@ const notificationConfigurations = shallowRef([
     ],
   },
 ]);
-const notificationProviders = shallowRef([
+const notificationProviders = shallowRef<
+  Array<{
+    providerType: string;
+    displayName: string;
+    description: string;
+    enabled: boolean;
+    error?: string;
+    metadata?: Record<string, string>;
+  }>
+>([
   {
     providerType: 'email',
     displayName: 'Email',
@@ -405,16 +414,6 @@ describe('NotificationsView', () => {
     mockDeleteDestination.mockResolvedValue({});
     mockJobsGet.mockClear();
     mockAuthenticatedGet.mockImplementation((url: string, config?: unknown) => {
-      if (url === '/api/auth/slack/link/status') {
-        return Promise.resolve({
-          data: {
-            data: {
-              linked: false,
-            },
-          },
-        });
-      }
-
       if (url === '/api/admin/notifications/health') {
         return Promise.resolve({
           data: {
@@ -617,6 +616,38 @@ describe('NotificationsView', () => {
       'Workspace Url: https://reece-sandbox.slack.com/',
     );
     expect(wrapper.text()).toContain('Enabled');
+  });
+
+  it('renders provider error instead of metadata when the provider is misconfigured', () => {
+    notificationProviders.value = [
+      {
+        providerType: 'email',
+        displayName: 'Email',
+        description: 'Configured SMTP provider for email service',
+        enabled: true,
+        metadata: {
+          serviceProviderName: 'SMTP',
+          serviceProviderType: 'smtp',
+        },
+      },
+      {
+        providerType: 'slack',
+        displayName: 'Slack',
+        description: 'Configured Slack workspace',
+        enabled: true,
+        error: 'invalid_auth',
+      },
+    ];
+
+    const wrapper = mount(NotificationsView);
+
+    expect(wrapper.text()).toContain('Error: invalid_auth');
+    expect(wrapper.text()).not.toContain('Bot Id: B0ANWHKQMCP');
+    expect(wrapper.text()).not.toContain('Team Id: T0AP4C0TA7M');
+    expect(wrapper.text()).not.toContain('Workspace Name: reece-sandbox');
+    expect(wrapper.text()).not.toContain(
+      'Workspace Url: https://reece-sandbox.slack.com/',
+    );
   });
 
   it('loads configured destinations from the backend response', () => {
@@ -881,78 +912,6 @@ describe('NotificationsView', () => {
     expect(wrapper.text()).toContain('Enter a valid email address.');
   });
 
-  it('disables Slack destination option when Slack integration is not configured', async () => {
-    mockAuthenticatedGet.mockRejectedValueOnce({
-      isAxiosError: true,
-      response: {
-        status: 404,
-      },
-    });
-
-    const wrapper = mount(NotificationsView);
-    await flushPromises();
-
-    const openDialogButton = wrapper
-      .findAll('button')
-      .find((button) => button.text() === 'Add Destination');
-
-    expect(openDialogButton).toBeDefined();
-    await openDialogButton!.trigger('click');
-
-    const providerSelect = wrapper.get('#destination-provider');
-    const slackOption = providerSelect.find('option[value="slack"]');
-    const emailOption = providerSelect.find('option[value="email"]');
-
-    expect(slackOption.attributes('disabled')).toBeDefined();
-    expect(emailOption.attributes('disabled')).toBeUndefined();
-    expect((providerSelect.element as HTMLSelectElement).value).toBe('email');
-    expect(wrapper.text()).toContain(
-      'Slack destinations are unavailable because Slack integration is not configured for this environment.',
-    );
-  });
-
-  it('disables Slack destination option and shows feedback when Slack status loading fails', async () => {
-    mockAuthenticatedGet.mockRejectedValueOnce({
-      isAxiosError: true,
-      response: {
-        status: 500,
-        data: {
-          errors: {
-            body: 'Slack status service is unavailable.',
-          },
-        },
-      },
-    });
-
-    const wrapper = mount(NotificationsView);
-    await flushPromises();
-
-    const openDialogButton = wrapper
-      .findAll('button')
-      .find((button) => button.text() === 'Add Destination');
-
-    expect(openDialogButton).toBeDefined();
-    await openDialogButton!.trigger('click');
-
-    const providerSelect = wrapper.get('#destination-provider');
-    const slackOption = providerSelect.find('option[value="slack"]');
-    const emailOption = providerSelect.find('option[value="email"]');
-
-    expect(slackOption.attributes('disabled')).toBeDefined();
-    expect(emailOption.attributes('disabled')).toBeUndefined();
-    expect((providerSelect.element as HTMLSelectElement).value).toBe('email');
-    expect(wrapper.text()).toContain(
-      'Slack destinations are unavailable because Slack status could not be loaded: Slack status service is unavailable.',
-    );
-    expect(toastAdd).toHaveBeenCalledWith(
-      expect.objectContaining({
-        severity: 'error',
-        summary: 'Slack Status Unavailable',
-        detail: 'Slack status service is unavailable.',
-      }),
-    );
-  });
-
   it('disables Slack destination option when the backend reports Slack disabled', async () => {
     notificationProviders.value = notificationProviders.value.map((provider) =>
       provider.providerType === 'slack'
@@ -1119,16 +1078,6 @@ describe('NotificationsView', () => {
 
   it('hides the delivery jobs table empty state when jobs fail to load', async () => {
     mockAuthenticatedGet.mockImplementation((url: string, config?: unknown) => {
-      if (url === '/api/auth/slack/link/status') {
-        return Promise.resolve({
-          data: {
-            data: {
-              linked: false,
-            },
-          },
-        });
-      }
-
       if (url === '/api/admin/notifications/jobs') {
         mockJobsGet(config);
         return Promise.reject(new Error('Delivery jobs failed to load.'));
@@ -1157,16 +1106,6 @@ describe('NotificationsView', () => {
 
   it('keeps loaded delivery jobs visible when loading more jobs fails', async () => {
     mockAuthenticatedGet.mockImplementation((url: string, config?: unknown) => {
-      if (url === '/api/auth/slack/link/status') {
-        return Promise.resolve({
-          data: {
-            data: {
-              linked: false,
-            },
-          },
-        });
-      }
-
       if (url === '/api/admin/notifications/jobs') {
         mockJobsGet(config);
 
