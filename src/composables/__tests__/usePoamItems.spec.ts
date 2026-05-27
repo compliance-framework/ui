@@ -389,7 +389,9 @@ describe('usePoamItems', () => {
 
     it('accepts an empty payload (all fields optional)', async () => {
       const { promoteRiskToPoam } = usePromoteRiskToPoam();
-      await promoteRiskToPoam('ssp-123', 'risk-abc', {});
+      await expect(
+        promoteRiskToPoam('ssp-123', 'risk-abc', {}),
+      ).resolves.toBeUndefined();
     });
   });
 
