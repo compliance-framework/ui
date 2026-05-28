@@ -32,12 +32,18 @@
           type="file"
           multiple
           @change="handleFileChange"
-          accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif"
+          :accept="fileAcceptTypes"
           class="w-full px-3 py-2 border border-ccf-300 dark:border-slate-700 rounded-md bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-200"
         />
         <small class="text-gray-500 dark:text-slate-400">
-          Supported: PDF, Word, Images (max 10MB per file, multiple files
-          allowed)
+          <template v-if="evidenceForm.type === 'screenshot'">
+            Supported: PNG, JPG, GIF, WebP (max 10MB per file, multiple files
+            allowed)
+          </template>
+          <template v-else>
+            Supported: PDF, Word, Images (max 10MB per file, multiple files
+            allowed)
+          </template>
         </small>
         <div v-if="selectedFiles.length > 0" class="mt-2 space-y-1">
           <div class="text-sm text-green-600 dark:text-green-400">
@@ -183,6 +189,22 @@ const isLinkEvidenceType = computed(() => {
   return evidenceForm.value.type === 'link';
 });
 
+const screenshotAcceptTypes = '.png,.jpg,.jpeg,.gif,.webp';
+const documentAcceptTypes = '.pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp';
+
+const fileAcceptTypes = computed(() => {
+  return evidenceForm.value.type === 'screenshot'
+    ? screenshotAcceptTypes
+    : documentAcceptTypes;
+});
+
+const screenshotAllowedMimeTypes = new Set([
+  'image/png',
+  'image/jpeg',
+  'image/gif',
+  'image/webp',
+]);
+
 const canSubmit = computed(() => {
   if (!evidenceForm.value.type) return false;
 
@@ -210,6 +232,18 @@ function handleFileChange(event: Event) {
       submitError.value = `The following files exceed 10MB limit: ${oversizedFiles.map((f) => f.name).join(', ')}`;
       selectedFiles.value = [];
       return;
+    }
+
+    // Validate file type compatibility with evidence type
+    if (evidenceForm.value.type === 'screenshot') {
+      const invalidFiles = files.filter(
+        (file) => !screenshotAllowedMimeTypes.has(file.type),
+      );
+      if (invalidFiles.length > 0) {
+        submitError.value = `screenshot evidence only accepts image files (PNG, JPG, GIF, WebP): ${invalidFiles.map((f) => f.name).join(', ')}`;
+        selectedFiles.value = [];
+        return;
+      }
     }
 
     selectedFiles.value = files;
