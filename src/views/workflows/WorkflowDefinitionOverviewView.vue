@@ -73,26 +73,6 @@
             {{ errors.gracePeriodDays }}
           </small>
         </div>
-
-        <!-- Evidence Required Types -->
-        <div>
-          <Label for="definition-evidence-required"
-            >Required Evidence Types</Label
-          >
-          <MultiSelect
-            id="definition-evidence-required"
-            v-model="selectedEvidenceTypes"
-            :options="evidenceOptions"
-            optionLabel="label"
-            optionValue="value"
-            placeholder="Select evidence types"
-            class="w-full"
-          />
-          <small class="text-gray-500 dark:text-slate-400">
-            Selected types will be required for steps in this workflow
-            definition
-          </small>
-        </div>
       </div>
 
       <!-- Error Message -->
@@ -155,7 +135,7 @@
 import { ref, reactive, computed, watch } from 'vue';
 import { useWorkflowDefinitionStore } from '@/stores/workflows/definitions';
 import { useToast } from 'primevue/usetoast';
-import type { WorkflowDefinitionUpdate, EvidenceType } from '@/types/workflows';
+import type { WorkflowDefinitionUpdate } from '@/types/workflows';
 import Label from '@/volt/Label.vue';
 import InputText from '@/volt/InputText.vue';
 import Textarea from '@/volt/Textarea.vue';
@@ -163,13 +143,10 @@ import Select from '@/volt/Select.vue';
 import Message from '@/volt/Message.vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
-import MultiSelect from '@/volt/MultiSelect.vue';
 import {
   DEFAULT_GRACE_PERIOD_DAYS,
   parseGracePeriodInput,
   toGracePeriodInputValue,
-  stringifyEvidenceRequired,
-  parseEvidenceRequired,
 } from '@/utils/workflows';
 
 const store = useWorkflowDefinitionStore();
@@ -181,14 +158,12 @@ const form = reactive<WorkflowDefinitionUpdate>({
   version: '',
   status: 'draft',
   suggestedCadence: undefined,
-  evidenceRequired: stringifyEvidenceRequired([]),
 });
 
 const originalForm = ref<WorkflowDefinitionUpdate>({});
 const errors = reactive<Record<string, string>>({});
 const errorMessage = ref('');
 const isSubmitting = ref(false);
-const selectedEvidenceTypes = ref<EvidenceType[]>([]);
 const gracePeriodDaysInput = ref(
   toGracePeriodInputValue(DEFAULT_GRACE_PERIOD_DAYS),
 );
@@ -202,13 +177,6 @@ const cadenceOptions: Array<{ label: string; value: string }> = [
   { label: 'On Demand', value: 'on_demand' },
 ];
 
-const evidenceOptions: Array<{ label: string; value: EvidenceType }> = [
-  { label: 'Document', value: 'document' },
-  { label: 'Text', value: 'text' },
-  { label: 'Screenshot', value: 'screenshot' },
-  { label: 'Automatic Evidence', value: 'automatic' },
-];
-
 const hasChanges = computed(() => {
   return JSON.stringify(form) !== JSON.stringify(originalForm.value);
 });
@@ -220,7 +188,6 @@ function initForm() {
     form.version = store.definition.version || '1.0.0';
     form.status = store.definition.status;
     form.suggestedCadence = store.definition.suggestedCadence;
-    form.evidenceRequired = store.definition.evidenceRequired;
     // Definitions are always persisted with a concrete grace period value.
     // If the backend record has no explicit value yet, fall back to the
     // platform default so unrelated edits don't leave this undefined.
@@ -229,9 +196,6 @@ function initForm() {
     gracePeriodDaysInput.value = toGracePeriodInputValue(
       store.definition.gracePeriodDays,
     );
-    selectedEvidenceTypes.value = parseEvidenceRequired(
-      store.definition.evidenceRequired,
-    ).map((req) => req.type);
 
     originalForm.value = { ...form };
   }
@@ -295,14 +259,6 @@ function formatDate(dateString: string): string {
   if (!dateString) return '-';
   return new Date(dateString).toLocaleString();
 }
-
-watch(
-  selectedEvidenceTypes,
-  (values) => {
-    form.evidenceRequired = stringifyEvidenceRequired(values);
-  },
-  { deep: true },
-);
 
 watch(gracePeriodDaysInput, (value) => {
   // Keep hasChanges reactive for grace-period-only edits by mirroring valid

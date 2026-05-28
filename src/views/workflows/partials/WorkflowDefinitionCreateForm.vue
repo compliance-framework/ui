@@ -78,23 +78,6 @@
       </small>
     </div>
 
-    <!-- Evidence Required Types -->
-    <div>
-      <Label for="definition-create-evidence">Required Evidence Types</Label>
-      <MultiSelect
-        id="definition-create-evidence"
-        v-model="selectedEvidenceTypes"
-        :options="evidenceOptions"
-        optionLabel="label"
-        optionValue="value"
-        placeholder="Select evidence types"
-        class="w-full"
-      />
-      <small class="text-gray-500 dark:text-slate-400">
-        Selected types will be required for steps in this workflow definition
-      </small>
-    </div>
-
     <!-- Error Message -->
     <Message v-if="errorMessage" severity="error">
       {{ errorMessage }}
@@ -116,12 +99,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, watch } from 'vue';
+import { ref, reactive } from 'vue';
 import { useWorkflowDefinitions } from '@/composables/workflows';
 import type {
   WorkflowDefinition,
   WorkflowDefinitionCreate,
-  EvidenceType,
 } from '@/types/workflows';
 import Label from '@/volt/Label.vue';
 import InputText from '@/volt/InputText.vue';
@@ -130,11 +112,9 @@ import Select from '@/volt/Select.vue';
 import Message from '@/volt/Message.vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
-import MultiSelect from '@/volt/MultiSelect.vue';
 import {
   DEFAULT_GRACE_PERIOD_DAYS,
   parseGracePeriodInput,
-  stringifyEvidenceRequired,
   toGracePeriodInputValue,
 } from '@/utils/workflows';
 
@@ -150,14 +130,12 @@ const form = reactive<WorkflowDefinitionCreate>({
   description: '',
   version: '1.0.0',
   suggestedCadence: undefined,
-  evidenceRequired: stringifyEvidenceRequired([]),
   gracePeriodDays: DEFAULT_GRACE_PERIOD_DAYS,
 });
 
 const errors = reactive<Record<string, string>>({});
 const errorMessage = ref('');
 const isSubmitting = ref(false);
-const selectedEvidenceTypes = ref<EvidenceType[]>([]);
 const gracePeriodDaysInput = ref(
   toGracePeriodInputValue(DEFAULT_GRACE_PERIOD_DAYS),
 );
@@ -170,17 +148,6 @@ const cadenceOptions: Array<{ label: string; value: string }> = [
   { label: 'Annually', value: 'annually' },
   { label: 'On Demand', value: 'on_demand' },
 ];
-
-const evidenceOptions: Array<{ label: string; value: EvidenceType }> = [
-  { label: 'Document', value: 'document' },
-  { label: 'Text', value: 'text' },
-  { label: 'Screenshot', value: 'screenshot' },
-  { label: 'Automatic Evidence', value: 'automatic' },
-];
-
-watch(selectedEvidenceTypes, (newTypes) => {
-  form.evidenceRequired = stringifyEvidenceRequired(newTypes);
-});
 
 function validate(): boolean {
   // Clear previous errors

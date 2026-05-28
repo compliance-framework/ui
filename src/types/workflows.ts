@@ -64,7 +64,6 @@ export interface WorkflowDefinition {
   version: string;
   status: WorkflowDefinitionStatus;
   suggestedCadence?: CadenceType;
-  evidenceRequired: string;
   gracePeriodDays?: number;
   createdAt: string;
   updatedAt: string;
@@ -77,7 +76,6 @@ export interface WorkflowDefinitionCreate {
   description?: string;
   version?: string;
   suggestedCadence?: CadenceType;
-  evidenceRequired?: string;
   gracePeriodDays?: number;
 }
 
@@ -87,7 +85,6 @@ export interface WorkflowDefinitionUpdate {
   version?: string;
   status?: WorkflowDefinitionStatus;
   suggestedCadence?: CadenceType;
-  evidenceRequired?: string;
   gracePeriodDays?: number;
 }
 
