@@ -50,6 +50,7 @@ export function useMyAssignments() {
       if (filter.dueAfter) {
         const d = new Date(filter.dueAfter);
         if (!isNaN(d.getTime())) {
+          d.setUTCHours(0, 0, 0, 0);
           params.append('due_after', d.toISOString().slice(0, 19) + 'Z');
         }
       }

@@ -155,6 +155,26 @@ describe('useMyAssignments', () => {
       expect(calledUrl).toContain('due_before=2026-05-28T23');
     });
 
+    // BCH-1156-3: dueAfter must be normalized to UTC start-of-day even when the
+    // input string contains a time component, so the lower-bound filter is consistent.
+    it('normalizes dueAfter to UTC start-of-day regardless of input time component', async () => {
+      const emptyResponse: MyAssignmentsResponse = {
+        data: [],
+        total: 0,
+        limit: 10,
+        offset: 0,
+        hasMore: false,
+      };
+
+      setMockResponse(emptyResponse);
+
+      const { fetchMyAssignments } = useMyAssignments();
+      await fetchMyAssignments({ dueAfter: '2024-06-15T15:30:00Z' });
+
+      const calledUrl = mockExecute.mock.calls[0][0] as string;
+      expect(calledUrl).toContain('due_after=2024-06-15T00%3A00%3A00Z');
+    });
+
     // BCH-1156: Go's time.Parse(time.RFC3339, ...) does not accept fractional seconds.
     // toISOString() always produces milliseconds (e.g. T23:59:59.999Z) which causes
     // a persistent 400 even after the YYYY-MM-DD → RFC3339 conversion is applied.
