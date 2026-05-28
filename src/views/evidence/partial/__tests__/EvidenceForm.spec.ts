@@ -87,10 +87,13 @@ describe('EvidenceForm', () => {
   // Observed: form is submittable with a future end date, resulting in a 400 from the API.
   // Expected: form is blocked and shows an inline error when the end date is in the future.
   it('disables the submit button and shows an inline error when the end date is in the future', async () => {
+    const futureEnd = new Date(
+      Date.now() + 365 * 24 * 60 * 60 * 1000,
+    ).toISOString();
     const wrapper = mountForm({
       evidence: {
         start: '2024-01-01T00:00:00Z',
-        end: '2027-01-01T00:00:00Z',
+        end: futureEnd,
       },
     });
 

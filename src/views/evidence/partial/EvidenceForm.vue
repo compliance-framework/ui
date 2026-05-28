@@ -198,8 +198,8 @@ const labels = ref<EvidenceLabel[]>(props.evidence?.labels || []);
 const dateValidationError = computed(() => {
   if (!evidence.value.start || !evidence.value.end) return null;
 
-  const startDate = new Date(evidence.value.start);
-  const endDate = new Date(evidence.value.end);
+  const startDate = evidence.value.start;
+  const endDate = evidence.value.end;
   const today = new Date();
   today.setHours(23, 59, 59, 999);
 
