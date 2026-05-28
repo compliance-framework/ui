@@ -1765,9 +1765,9 @@ onUnmounted(() => {
                     </div>
 
                     <div class="flex flex-wrap items-center gap-3">
-                      <button
+                      <SecondaryButton
                         type="button"
-                        class="text-sm font-medium text-ccf-700 hover:text-ccf-900 dark:text-slate-200 dark:hover:text-white"
+                        class="text-sm disabled:cursor-not-allowed disabled:opacity-60"
                         :disabled="
                           isTestSendLoading(
                             destination.provider,
@@ -1789,7 +1789,7 @@ onUnmounted(() => {
                             ? 'Sending...'
                             : 'Send test notification'
                         }}
-                      </button>
+                      </SecondaryButton>
                       <button
                         type="button"
                         :disabled="
