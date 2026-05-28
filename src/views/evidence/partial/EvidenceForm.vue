@@ -74,6 +74,7 @@
                     ? new Date(evidence.start)
                     : new Date(Date.now())
                 "
+                :max-date="new Date(Date.now())"
               />
               <div v-if="dateValidationError" class="text-red-500 text-sm mt-1">
                 {{ dateValidationError }}
@@ -199,7 +200,12 @@ const dateValidationError = computed(() => {
 
   const startDate = new Date(evidence.value.start);
   const endDate = new Date(evidence.value.end);
+  const today = new Date();
+  today.setHours(23, 59, 59, 999);
 
+  if (endDate > today) {
+    return 'End date cannot be in the future';
+  }
   if (startDate > endDate) {
     return 'End date must be after start date';
   }
