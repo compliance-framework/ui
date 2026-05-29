@@ -127,6 +127,7 @@ describe('SystemSecurityPlanCreateView', () => {
         uuid: 'generated-uuid-1',
         metadata: {
           title: 'New SSP',
+          version: '1.0.0',
         },
       },
     });
