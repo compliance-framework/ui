@@ -1,0 +1,25 @@
+lisa-addressed:
+---
+Comment (src/views/system-security-plans/SystemSecurityPlanCreateView.vue:10):
+**Medium — UUID input missing `required`**
+
+The UUID `<FormInput>` has no `required` attribute. A user who manually clears the auto-generated value can submit an empty UUID, which will fail at the API. The error surfaces only as a generic toast with no field-level indicator.
+
+```html
+<FormInput
+  v-model="systemSecurityPlan.uuid"
+  class="rounded-r-none border-r-0"
+  required
+/>
+```
+
+The title field correctly has `required`; the UUID field should match.
+---
+Comment (src/router/__tests__/index.spec.ts:20):
+**Low — `.__name` is a Vue internal**
+
+`__name` is set by the SFC compiler from the filename at build time. It works in Vitest today but it is not part of any public Vue API — it can be `undefined` under some bundler configurations (e.g. when `__name` is stripped by a minifier).
+
+The preceding assertions (line 12: `route?.path`, line 13: `typeof component === 'function'`) already verify the route wires up the right file. Dropping the `__name` check removes fragility without losing coverage.
+Implementation guidance: Update src/views/system-security-plans/SystemSecurityPlanCreateView.vue so the UUID field participates in native required validation. In the template, add required to the FormInput bound to systemSecurityPlan.uuid, alongside the existing v-model, class, and :disabled="isSubmitting" props. Do not change the payload shape or replace the generated UUID behavior; the field should still default to uuidv4() and remain editable/regeneratable when not submitting.
+Implementation guidance: Update src/router/__tests__/index.spec.ts to stop asserting loadedComponent.default.__name. Keep the route lookup by name and the assertions that route?.path is '/system-security-plans/create' and route?.components?.default is a function. Remove the async component invocation, the loadedComponent variable, and the inline type that references __name; the test can be synchronous unless another public assertion is needed.
