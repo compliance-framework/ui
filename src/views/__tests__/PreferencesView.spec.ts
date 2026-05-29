@@ -89,6 +89,7 @@ const mountPreferencesView = () =>
   mount(PreferencesView, {
     global: {
       directives: {
+        // Stub PrimeVue tooltip to avoid DOM side effects in unit tests.
         tooltip: () => undefined,
       },
     },
