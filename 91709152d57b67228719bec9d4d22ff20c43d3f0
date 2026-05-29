@@ -1,0 +1,5 @@
+lisa-design:
+- The SSP create view posts directly with `useDataApi` and `decamelizeKeys`, matching `ComponentDefinitionCreateView`, instead of using the store `create()` helper so request behavior and error handling stay consistent with existing create screens.
+- The SSP create payload is intentionally minimal: `uuid` and `metadata.title` only, leaving the API to apply any OSCAL defaults required for a new plan.
+- The create route redirect uses the existing `system-security-plan-editor` route and the UUID returned by the API response, not the locally generated UUID, so callers follow the persisted resource identity.
+- The list create action targets the named route `{ name: 'system-security-plans-create' }` to avoid coupling the button to a hard-coded path.
