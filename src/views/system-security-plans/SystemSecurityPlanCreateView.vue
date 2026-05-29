@@ -10,21 +10,27 @@
           <FormInput
             v-model="systemSecurityPlan.uuid"
             class="rounded-r-none border-r-0"
+            :disabled="isSubmitting"
           />
           <TertiaryButton
             type="button"
             @click="generateUuid"
             class="py-3 rounded-l-none"
+            :disabled="isSubmitting"
             ><BIconArrowRepeat
           /></TertiaryButton>
         </div>
       </div>
       <div class="mb-4">
         <label class="inline-block pb-2">Title</label>
-        <FormInput v-model="systemSecurityPlan.metadata.title" required />
+        <FormInput
+          v-model="systemSecurityPlan.metadata.title"
+          required
+          :disabled="isSubmitting"
+        />
       </div>
       <div class="text-right">
-        <PrimaryButton type="submit">
+        <PrimaryButton type="submit" :disabled="isSubmitting">
           Create System Security Plan
         </PrimaryButton>
       </div>
@@ -64,15 +70,28 @@ const { data, execute: createSystemSecurityPlan } =
 
 const router = useRouter();
 const toast = useToast();
+const isSubmitting = ref(false);
 
 async function submit() {
+  if (isSubmitting.value) return;
+  isSubmitting.value = true;
   try {
     await createSystemSecurityPlan({
       data: systemSecurityPlan.value,
     });
+    const createdUuid = data.value?.uuid;
+    if (!createdUuid) {
+      toast.add({
+        severity: 'error',
+        summary: 'Error creating system security plan',
+        detail: 'Creation succeeded but no plan ID was returned.',
+        life: 3000,
+      });
+      return;
+    }
     await router.push({
       name: 'system-security-plan-editor',
-      params: { id: data.value?.uuid },
+      params: { id: createdUuid },
     });
   } catch (error) {
     const responseError = error as AxiosError<ErrorResponse<ErrorBody>>;
@@ -82,6 +101,8 @@ async function submit() {
       detail: `Failed to create system security plan: ${responseError.response?.data.errors.body || 'Unknown error'}. Please check your input and try again.`,
       life: 3000,
     });
+  } finally {
+    isSubmitting.value = false;
   }
 }
 
