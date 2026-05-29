@@ -1,0 +1,129 @@
+lisa-addressed:
+---
+Comment (src/views/system-security-plans/SystemSecurityPlanCreateView.vue:7):
+_⚠️ Potential issue_ | _🟠 Major_ | _⚡ Quick win_
+
+**Prevent duplicate POSTs during create submission.**
+
+The submit path has no in-flight guard, so rapid repeat submits can create duplicate SSP records.
+
+<details>
+<summary>Suggested fix</summary>
+
+```diff
+-        <PrimaryButton type="submit">
++        <PrimaryButton type="submit" :disabled="isSubmitting">
+           Create System Security Plan
+         </PrimaryButton>
+@@
+ const router = useRouter();
+ const toast = useToast();
++const isSubmitting = ref(false);
+
+ async function submit() {
++  if (isSubmitting.value) return;
++  isSubmitting.value = true;
+   try {
+     await createSystemSecurityPlan({
+       data: systemSecurityPlan.value,
+     });
+@@
+   } catch (error) {
+@@
+       life: 3000,
+     });
++  } finally {
++    isSubmitting.value = false;
+   }
+ }
+```
+</details>
+
+Also applies to: 27-29, 68-77
+
+<details>
+<summary>🤖 Prompt for AI Agents</summary>
+
+```
+Verify each finding against current code. Fix only still-valid issues, skip the
+rest with a brief reason, keep changes minimal, and validate.
+
+In `@src/views/system-security-plans/SystemSecurityPlanCreateView.vue` around
+lines 6 - 7, The submit handler in SystemSecurityPlanCreateView.vue lacks an
+in-flight guard causing duplicate POSTs; add a reactive flag (e.g., data
+property or ref named isSubmitting) and update the submit method to return early
+if isSubmitting is true, set isSubmitting = true before the async create call
+and reset it in a finally block (try { await ... } finally { isSubmitting =
+false }); also bind this flag to the form controls (disable the submit button
+and any inputs, e.g., :disabled="isSubmitting") so rapid repeats are
+prevented—apply the same pattern to the other submit paths referenced (the other
+submit handlers around the component).
+```
+
+</details>
+
+<!-- fingerprinting:phantom:poseidon:hawk -->
+
+<!-- This is an auto-generated comment by CodeRabbit -->
+---
+Comment (src/views/system-security-plans/SystemSecurityPlanCreateView.vue:76):
+_⚠️ Potential issue_ | _🟠 Major_ | _⚡ Quick win_
+
+**Guard redirect against missing created UUID.**
+
+Navigation currently depends on `data.value?.uuid`; if that value is empty, this pushes an invalid editor route.
+
+<details>
+<summary>Suggested fix</summary>
+
+```diff
+ async function submit() {
+   try {
+     await createSystemSecurityPlan({
+       data: systemSecurityPlan.value,
+     });
++    const createdUuid = data.value?.uuid;
++    if (!createdUuid) {
++      toast.add({
++        severity: 'error',
++        summary: 'Error creating system security plan',
++        detail: 'Creation succeeded but no plan ID was returned.',
++        life: 3000,
++      });
++      return;
++    }
+     await router.push({
+       name: 'system-security-plan-editor',
+-      params: { id: data.value?.uuid },
++      params: { id: createdUuid },
+     });
+   } catch (error) {
+```
+</details>
+
+<details>
+<summary>🤖 Prompt for AI Agents</summary>
+
+```
+Verify each finding against current code. Fix only still-valid issues, skip the
+rest with a brief reason, keep changes minimal, and validate.
+
+In `@src/views/system-security-plans/SystemSecurityPlanCreateView.vue` around
+lines 73 - 76, The redirect after creation uses data.value?.uuid directly when
+calling router.push (name: 'system-security-plan-editor') which can push an
+invalid route if the UUID is missing; update the create/submit handler in
+SystemSecurityPlanCreateView.vue to check that data.value and data.value.uuid
+are present before calling router.push, and if missing avoid the navigation and
+instead handle the failure (e.g., show a user-facing error/toast or navigate to
+a safe fallback like the list view); ensure you reference the same router.push
+call and data.value?.uuid symbols so the guard is applied at the exact
+redirection site.
+```
+
+</details>
+
+<!-- fingerprinting:phantom:poseidon:hawk -->
+
+<!-- This is an auto-generated comment by CodeRabbit -->
+Implementation guidance: Update src/views/system-security-plans/SystemSecurityPlanCreateView.vue to prevent duplicate create requests. In <script setup>, add const isSubmitting = ref(false). At the start of submit(), return immediately if isSubmitting.value is true, then set it true before awaiting createSystemSecurityPlan and reset it in a finally block so it is cleared on both success and failure. In the template, bind :disabled="isSubmitting" on the ID FormInput, the UUID regenerate TertiaryButton, the title FormInput, and the PrimaryButton submit control. Keep the existing direct useDataApi/decamelizeKeys create path and do not switch to the store create helper.
+Implementation guidance: Update submit() in src/views/system-security-plans/SystemSecurityPlanCreateView.vue so the redirect only runs when the API response includes a UUID. After await createSystemSecurityPlan(...), assign const createdUuid = data.value?.uuid; if createdUuid is missing, show a user-facing error toast such as severity 'error', summary 'Error creating system security plan', detail 'Creation succeeded but no plan ID was returned.', life 3000, then return without router.push. Use createdUuid in params: { id: createdUuid } for the existing system-security-plan-editor route. Preserve the design decision to use the UUID returned by the API response, not the locally generated UUID.
