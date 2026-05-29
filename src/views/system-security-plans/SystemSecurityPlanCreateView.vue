@@ -30,6 +30,14 @@
           :disabled="isSubmitting"
         />
       </div>
+      <div class="mb-4">
+        <label class="inline-block pb-2">Version</label>
+        <FormInput
+          v-model="systemSecurityPlan.metadata.version"
+          required
+          :disabled="isSubmitting"
+        />
+      </div>
       <div class="text-right">
         <PrimaryButton type="submit" :disabled="isSubmitting">
           Create System Security Plan
@@ -59,6 +67,7 @@ const systemSecurityPlan = ref<SystemSecurityPlan>({
   uuid: uuidv4(),
   metadata: {
     title: '',
+    version: '1.0.0',
   },
 } as SystemSecurityPlan);
 
