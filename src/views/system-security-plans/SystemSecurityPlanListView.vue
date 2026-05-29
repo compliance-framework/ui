@@ -113,6 +113,13 @@
         </table>
       </div>
     </div>
+
+    <!-- Create Button -->
+    <div class="mt-4">
+      <RouterLinkButton :to="{ name: 'system-security-plans-create' }">
+        New System Security Plan
+      </RouterLinkButton>
+    </div>
   </div>
 </template>
 <script setup lang="ts">

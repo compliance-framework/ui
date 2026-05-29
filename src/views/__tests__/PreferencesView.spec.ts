@@ -86,7 +86,14 @@ interface PreferencesViewTestVm extends ComponentPublicInstance {
 }
 
 const mountPreferencesView = () =>
-  mount(PreferencesView) as unknown as VueWrapper<PreferencesViewTestVm>;
+  mount(PreferencesView, {
+    global: {
+      directives: {
+        // Stub PrimeVue tooltip to avoid DOM side effects in unit tests.
+        tooltip: () => undefined,
+      },
+    },
+  }) as unknown as VueWrapper<PreferencesViewTestVm>;
 
 describe('PreferencesView', () => {
   let wrapper: VueWrapper<PreferencesViewTestVm>;

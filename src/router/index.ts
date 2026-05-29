@@ -835,7 +835,7 @@ const authenticatedRoutes = [
     // this generates a separate chunk (About.[hash].js) for this route
     // which is lazy-loaded when the route is visited.
     component: () =>
-      import('../views/system-security-plans/SystemSecurityPlanListView.vue'),
+      import('../views/system-security-plans/SystemSecurityPlanCreateView.vue'),
     meta: {
       requiresAuth: true,
     },
