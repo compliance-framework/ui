@@ -1,0 +1,49 @@
+lisa-addressed:
+---
+Comment (src/views/__tests__/PreferencesView.spec.ts:95):
+_🧹 Nitpick_ | _🔵 Trivial_ | _💤 Low value_
+
+**Consider adding a comment explaining the tooltip directive stub.**
+
+For consistency with other mocks in this file (lines 7, 17) and to aid future maintainers, consider adding a brief comment explaining why the tooltip directive stub is needed.
+
+<details>
+<summary>📝 Suggested addition</summary>
+
+```diff
++// Mock tooltip directive used by child components
+ const mountPreferencesView = () =>
+   mount(PreferencesView, {
+     global: {
+       directives: {
+         tooltip: () => undefined,
+       },
+     },
+   }) as unknown as VueWrapper<PreferencesViewTestVm>;
+```
+
+</details>
+
+<details>
+<summary>🤖 Prompt for AI Agents</summary>
+
+```
+Verify each finding against current code. Fix only still-valid issues, skip the
+rest with a brief reason, keep changes minimal, and validate.
+
+In `@src/views/__tests__/PreferencesView.spec.ts` around lines 88 - 95, Add a
+brief inline comment next to the tooltip directive stub in the
+mountPreferencesView test helper explaining why it's stubbed (e.g., to avoid
+mounting the real tooltip directive and its DOM side-effects in unit tests), so
+future maintainers understand the intent; update the block where
+mountPreferencesView is defined (the tooltip: () => undefined entry for
+PreferencesView) with that short explanatory comment consistent with other mocks
+in the file.
+```
+
+</details>
+
+<!-- fingerprinting:phantom:poseidon:puma -->
+
+<!-- This is an auto-generated comment by CodeRabbit -->
+Implementation guidance: Update src/views/__tests__/PreferencesView.spec.ts in the mountPreferencesView helper. Add a brief comment immediately above or next to the global.directives.tooltip stub explaining that the tooltip directive is stubbed to avoid mounting the real directive and its DOM side effects during unit tests. Keep the existing stub behavior exactly as-is: tooltip: () => undefined. Do not refactor the helper or change test assertions.
