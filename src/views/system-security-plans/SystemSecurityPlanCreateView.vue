@@ -10,6 +10,7 @@
           <FormInput
             v-model="systemSecurityPlan.uuid"
             class="rounded-r-none border-r-0"
+            required
             :disabled="isSubmitting"
           />
           <TertiaryButton
