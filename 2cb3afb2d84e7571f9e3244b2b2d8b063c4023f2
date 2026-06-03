@@ -1,0 +1,62 @@
+lisa-addressed:
+---
+Comment (src/utils/httpErrors.spec.ts:125):
+_🧹 Nitpick_ | _🔵 Trivial_ | _💤 Low value_
+
+**Minor: Consider "message is empty" for precision.**
+
+The test name says "message is absent" but the test uses `message: ''` (empty string). Technically, the message property is present—just empty. Consider "message is empty" for semantic precision, though the test logic is correct as-is.
+
+<details>
+<summary>📝 Suggested naming refinement</summary>
+
+```diff
+-    it('falls back to fallback when response data is primitive and message is absent', async () => {
++    it('falls back to fallback when response data is primitive and message is empty', async () => {
+```
+</details>
+
+<!-- suggestion_start -->
+
+<details>
+<summary>📝 Committable suggestion</summary>
+
+> ‼️ **IMPORTANT**
+> Carefully review the code before committing. Ensure that it accurately replaces the highlighted code, contains no missing lines, and has no issues with indentation. Thoroughly test & benchmark the code to ensure it meets the requirements.
+
+```suggestion
+    it('falls back to fallback when response data is primitive and message is empty', async () => {
+      const error = {
+        response: { data: 'bad request' },
+        message: '',
+      };
+      expect(await getErrorDetail(error, 'fallback')).toBe('fallback');
+    });
+```
+
+</details>
+
+<!-- suggestion_end -->
+
+<details>
+<summary>🤖 Prompt for AI Agents</summary>
+
+```
+Verify each finding against current code. Fix only still-valid issues, skip the
+rest with a brief reason, keep changes minimal, and validate.
+
+In `@src/utils/httpErrors.spec.ts` at line 125, Rename the test description string
+in the it(...) call currently titled "falls back to fallback when response data
+is primitive and message is absent" to something precise like "falls back to
+fallback when response data is primitive and message is empty"; update the
+it(...) title in src/utils/httpErrors.spec.ts (the failing test case using
+message: '') to reflect "message is empty" and adjust any other similar test
+descriptions for semantic accuracy.
+```
+
+</details>
+
+<!-- fingerprinting:phantom:poseidon:puma -->
+
+<!-- This is an auto-generated comment by CodeRabbit -->
+Implementation guidance: In src/utils/httpErrors.spec.ts, rename only the test description for the primitive response.data case that uses message: ''. Change the it(...) title from 'falls back to fallback when response data is primitive and message is absent' to 'falls back to fallback when response data is primitive and message is empty'. Do not change the test body, assertions, getErrorDetail behavior, or any other test names unless they also specifically use an empty string while saying absent.
