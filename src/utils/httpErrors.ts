@@ -42,8 +42,30 @@ export async function getErrorDetail(
   }
 
   const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
-  return (
-    errorResponse.response?.data?.errors?.body ??
-    (errorResponse.message || fallbackMessage)
-  );
+  const responseData = errorResponse.response?.data as
+    | ErrorResponse<ErrorBody>
+    | { message?: string; error?: string; detail?: string }
+    | undefined;
+
+  if (
+    responseData &&
+    'errors' in responseData &&
+    responseData.errors?.body !== undefined
+  ) {
+    return responseData.errors.body;
+  }
+
+  if (responseData && 'message' in responseData && responseData.message) {
+    return responseData.message;
+  }
+
+  if (responseData && 'error' in responseData && responseData.error) {
+    return responseData.error;
+  }
+
+  if (responseData && 'detail' in responseData && responseData.detail) {
+    return responseData.detail;
+  }
+
+  return errorResponse.message || fallbackMessage;
 }

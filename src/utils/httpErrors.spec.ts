@@ -98,6 +98,14 @@ describe('getErrorDetail', () => {
       expect(await getErrorDetail(error, 'fallback')).toBe('Request failed');
     });
 
+    it('returns response message when present', async () => {
+      const error = {
+        response: { data: { message: 'no files provided' } },
+        message: 'Request failed',
+      };
+      expect(await getErrorDetail(error, 'fallback')).toBe('no files provided');
+    });
+
     it('falls back to message when no response data', async () => {
       const error = { response: null, message: 'Network error' };
       expect(await getErrorDetail(error, 'fallback')).toBe('Network error');

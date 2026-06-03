@@ -424,6 +424,7 @@ const authenticatedRoutes = [
     component: () => import('../views/admin/ImportView.vue'),
     meta: {
       requiresAuth: true,
+      requiresAdmin: true,
     },
   },
   {
