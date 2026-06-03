@@ -1,0 +1,236 @@
+lisa-addressed:
+---
+Comment (src/utils/httpErrors.spec.ts:115):
+_🛠️ Refactor suggestion_ | _🟠 Major_ | _⚡ Quick win_
+
+**Add a regression test for primitive Axios `response.data`.**
+
+Please add a case like `response: { data: 'bad request' }` and assert fallback to `error.message`/`fallback` so this path can’t regress into a TypeError.
+
+<details>
+<summary>🤖 Prompt for AI Agents</summary>
+
+```
+Verify each finding against current code. Fix only still-valid issues, skip the
+rest with a brief reason, keep changes minimal, and validate.
+
+In `@src/utils/httpErrors.spec.ts` around lines 101 - 107, Add a regression test
+for getErrorDetail that covers the case where axios response.data is a
+primitive: create an error object like { response: { data: 'bad request' },
+message: 'Request failed' } (and also test when message is absent) and assert
+that getErrorDetail returns the fallback string (or error.message) rather than
+attempting to access data.message; place the test near the existing 'returns
+response message when present' test to ensure the primitive-data path doesn't
+cause a TypeError.
+```
+
+</details>
+
+<!-- fingerprinting:phantom:poseidon:hawk -->
+
+<!-- This is an auto-generated reply by CodeRabbit -->
+Replies:
+**lisa implementation guidance:** In src/utils/httpErrors.spec.ts, add regression tests in the getErrorDetail Axios branch near the existing 'returns response message when present' and fallback tests. Add one case with const error = { response: { data: 'bad request' }, message: 'Request failed' } and assert await getErrorDetail(error, 'fallback') is 'Request failed'. Add a second case with const error = { response: { data: 'bad request' }, message: '' } and assert it returns 'fallback'. These tests should prove primitive response.data does not throw and falls back to error.message/fallback. Do not change the expected behavior for object response.data containing message/error/detail/errors.body.
+
+<!-- lisa-guidance-posted -->
+> Skipped: comment is from another GitHub bot.
+
+<!-- This is an auto-generated reply by CodeRabbit -->
+---
+Comment (src/utils/httpErrors.ts:67):
+_⚠️ Potential issue_ | _🟠 Major_ | _⚡ Quick win_
+
+<details>
+<summary>🧩 Analysis chain</summary>
+
+🏁 Script executed:
+
+```shell
+#!/bin/bash
+set -euo pipefail
+
+# Inspect the target file around the reported lines
+FILE="src/utils/httpErrors.ts"
+echo "=== $FILE ==="
+wc -l "$FILE"
+sed -n '1,120p' "$FILE"
+sed -n '120,240p' "$FILE"
+
+# Find the getErrorDetail function definition and any nearby types/guards
+rg -n "function getErrorDetail|getErrorDetail" "$FILE"
+
+# Search for other references to getErrorDetail to understand expected responseData shapes
+rg -n "getErrorDetail\(" -S src || true
+```
+
+Repository: compliance-framework/ui
+
+Length of output: 4524
+
+---
+
+🏁 Script executed:
+
+```shell
+#!/bin/bash
+set -euo pipefail
+
+FILE="src/utils/httpErrors.spec.ts"
+echo "=== $FILE ==="
+wc -l "$FILE"
+sed -n '1,220p' "$FILE"
+
+TYPES_FILE="src/stores/types.ts"
+if [ -f "$TYPES_FILE" ]; then
+  echo "=== $TYPES_FILE ==="
+  wc -l "$TYPES_FILE"
+  sed -n '1,220p' "$TYPES_FILE"
+fi
+
+# If types.ts lives elsewhere (path alias), locate ErrorResponse definition
+rg -n "export type ErrorResponse|interface ErrorResponse|ErrorResponse<" src/stores src -S || true
+```
+
+Repository: compliance-framework/ui
+
+Length of output: 14876
+
+---
+
+</details>
+
+**Guard `responseData` before using the `in` operator in `getErrorDetail`.**
+
+In `src/utils/httpErrors.ts`, the Axios branch uses `'errors' in responseData` / `'message' in responseData` etc. Even though `responseData` is typed-cast, its runtime shape comes from `errorResponse.response?.data`, which can be a primitive; `in` will throw a TypeError for non-objects and break error handling. Add an object-type guard before these `in` checks.
+
+<details>
+<summary>Proposed fix</summary>
+
+```diff
+-  if (
+-    responseData &&
+-    'errors' in responseData &&
+-    responseData.errors?.body !== undefined
+-  ) {
++  if (
++    responseData &&
++    typeof responseData === 'object' &&
++    'errors' in responseData &&
++    responseData.errors?.body !== undefined
++  ) {
+     return responseData.errors.body;
+   }
+
+-  if (responseData && 'message' in responseData && responseData.message) {
++  if (
++    responseData &&
++    typeof responseData === 'object' &&
++    'message' in responseData &&
++    responseData.message
++  ) {
+     return responseData.message;
+   }
+
+-  if (responseData && 'error' in responseData && responseData.error) {
++  if (
++    responseData &&
++    typeof responseData === 'object' &&
++    'error' in responseData &&
++    responseData.error
++  ) {
+     return responseData.error;
+   }
+
+-  if (responseData && 'detail' in responseData && responseData.detail) {
++  if (
++    responseData &&
++    typeof responseData === 'object' &&
++    'detail' in responseData &&
++    responseData.detail
++  ) {
+     return responseData.detail;
+   }
+```
+</details>
+
+<!-- suggestion_start -->
+
+<details>
+<summary>📝 Committable suggestion</summary>
+
+> ‼️ **IMPORTANT**
+> Carefully review the code before committing. Ensure that it accurately replaces the highlighted code, contains no missing lines, and has no issues with indentation. Thoroughly test & benchmark the code to ensure it meets the requirements.
+
+```suggestion
+  if (
+    responseData &&
+    typeof responseData === 'object' &&
+    'errors' in responseData &&
+    responseData.errors?.body !== undefined
+  ) {
+    return responseData.errors.body;
+  }
+
+  if (
+    responseData &&
+    typeof responseData === 'object' &&
+    'message' in responseData &&
+    responseData.message
+  ) {
+    return responseData.message;
+  }
+
+  if (
+    responseData &&
+    typeof responseData === 'object' &&
+    'error' in responseData &&
+    responseData.error
+  ) {
+    return responseData.error;
+  }
+
+  if (
+    responseData &&
+    typeof responseData === 'object' &&
+    'detail' in responseData &&
+    responseData.detail
+  ) {
+    return responseData.detail;
+```
+
+</details>
+
+<!-- suggestion_end -->
+
+<details>
+<summary>🤖 Prompt for AI Agents</summary>
+
+```
+Verify each finding against current code. Fix only still-valid issues, skip the
+rest with a brief reason, keep changes minimal, and validate.
+
+In `@src/utils/httpErrors.ts` around lines 50 - 67, In getErrorDetail, guard
+responseData before using the `in` operator by ensuring it's a non-null object
+(e.g., `typeof responseData === 'object' && responseData !== null'` or by
+normalizing with an isObject helper) before running checks like `'errors' in
+responseData`, `'message' in responseData`, `'error' in responseData`, and
+`'detail' in responseData`; update the logic in getErrorDetail to early-skip
+these `in` checks for primitives (or cast to an object safely) so the function
+never uses `in` on non-objects and retains the existing order of checks for
+responseData.errors.body, message, error, and detail.
+```
+
+</details>
+
+<!-- fingerprinting:phantom:poseidon:hawk -->
+
+<!-- This is an auto-generated reply by CodeRabbit -->
+Replies:
+**lisa implementation guidance:** In src/utils/httpErrors.ts, in getErrorDetail's Axios/non-Response branch, guard responseData before any use of the 'in' operator. After responseData is assigned, add an early check like: if (!responseData || typeof responseData !== 'object') { return errorResponse.message || fallbackMessage; }. Then keep the existing object-field checks for errors.body, message, error, and detail. Preserve the current null-body fix: the errors.body check must stay truthy, e.g. responseData.errors?.body, and must not go back to !== undefined. This prevents TypeError for primitive response.data while preserving fallback behavior for null, undefined, and empty errors.body.
+
+<!-- lisa-guidance-posted -->
+> Skipped: comment is from another GitHub bot.
+
+<!-- This is an auto-generated reply by CodeRabbit -->
+Implementation guidance: In src/utils/httpErrors.spec.ts, add regression tests in the getErrorDetail Axios branch near the existing 'returns response message when present' and fallback tests. Add one case with const error = { response: { data: 'bad request' }, message: 'Request failed' } and assert await getErrorDetail(error, 'fallback') is 'Request failed'. Add a second case with const error = { response: { data: 'bad request' }, message: '' } and assert it returns 'fallback'. These tests should prove primitive response.data does not throw and falls back to error.message/fallback. Do not change the expected behavior for object response.data containing message/error/detail/errors.body.
+Implementation guidance: In src/utils/httpErrors.ts, in getErrorDetail's Axios/non-Response branch, guard responseData before any use of the 'in' operator. After responseData is assigned, add an early check like: if (!responseData || typeof responseData !== 'object') { return errorResponse.message || fallbackMessage; }. Then keep the existing object-field checks for errors.body, message, error, and detail. Preserve the current null-body fix: the errors.body check must stay truthy, e.g. responseData.errors?.body, and must not go back to !== undefined. This prevents TypeError for primitive response.data while preserving fallback behavior for null, undefined, and empty errors.body.
