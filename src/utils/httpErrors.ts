@@ -50,7 +50,7 @@ export async function getErrorDetail(
   if (
     responseData &&
     'errors' in responseData &&
-    responseData.errors?.body !== undefined
+    responseData.errors?.body
   ) {
     return responseData.errors.body;
   }

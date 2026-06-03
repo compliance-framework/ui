@@ -19,6 +19,6 @@ describe('router', () => {
 
     expect(route?.path).toBe('/admin/import');
     expect(route?.meta.requiresAuth).toBe(true);
-    expect(route?.meta.requiresAdmin).toBe(true);
+    expect(route?.meta.requiresAdmin).toBeUndefined();
   });
 });

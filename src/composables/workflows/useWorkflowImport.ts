@@ -1,5 +1,9 @@
 import { useAuthenticatedInstance } from '@/composables/axios';
 import { getErrorDetail, getErrorStatus } from '@/utils/httpErrors';
+import {
+  WORKFLOW_IMPORT_MAX_FILES,
+  WORKFLOW_IMPORT_MAX_FILE_SIZE_MB,
+} from '@/composables/workflows/workflowImportLimits';
 
 const WORKFLOW_IMPORT_URL = '/api/workflows/import';
 
@@ -131,7 +135,7 @@ export function useWorkflowImport() {
 
       if (status === 413) {
         throw new Error(
-          'The selected workflow files are too large or too many files were selected. Upload at most 10 files, 5 MB each.',
+          `The selected workflow files are too large or too many files were selected. Upload at most ${WORKFLOW_IMPORT_MAX_FILES} files, ${WORKFLOW_IMPORT_MAX_FILE_SIZE_MB} MB each.`,
         );
       }
 

@@ -12,9 +12,11 @@ import {
   type WorkflowImportFileResult,
   type WorkflowImportSummary,
 } from '@/composables/workflows/useWorkflowImport';
-
-const MAX_FILES = 10;
-const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
+import {
+  WORKFLOW_IMPORT_MAX_FILES,
+  WORKFLOW_IMPORT_MAX_FILE_SIZE_BYTES,
+  WORKFLOW_IMPORT_MAX_FILE_SIZE_MB,
+} from '@/composables/workflows/workflowImportLimits';
 
 const fileInput = ref<HTMLInputElement>();
 const selectedFiles = ref<File[]>([]);
@@ -42,16 +44,18 @@ const summaryFields: Array<{
 const validationMessages = computed(() => {
   const messages: string[] = [];
 
-  if (selectedFiles.value.length > MAX_FILES) {
-    messages.push(`Select at most ${MAX_FILES} files per import.`);
+  if (selectedFiles.value.length > WORKFLOW_IMPORT_MAX_FILES) {
+    messages.push(
+      `Select at most ${WORKFLOW_IMPORT_MAX_FILES} files per import.`,
+    );
   }
 
   const oversizedFiles = selectedFiles.value.filter(
-    (file) => file.size > MAX_FILE_SIZE_BYTES,
+    (file) => file.size > WORKFLOW_IMPORT_MAX_FILE_SIZE_BYTES,
   );
   if (oversizedFiles.length) {
     messages.push(
-      `Each file must be 5 MB or smaller. Remove: ${oversizedFiles
+      `Each file must be ${WORKFLOW_IMPORT_MAX_FILE_SIZE_MB} MB or smaller. Remove: ${oversizedFiles
         .map((file) => file.name)
         .join(', ')}.`,
     );
@@ -179,7 +183,8 @@ async function submitImport() {
         <div class="flex flex-col items-center justify-center gap-2">
           <i class="pi pi-upload text-2xl text-gray-400"></i>
           <p class="text-sm text-gray-600 dark:text-slate-400">
-            Select up to 10 workflow JSON files, 5 MB each.
+            Select up to {{ WORKFLOW_IMPORT_MAX_FILES }} workflow JSON files,
+            {{ WORKFLOW_IMPORT_MAX_FILE_SIZE_MB }} MB each.
           </p>
           <button
             type="button"
@@ -312,8 +317,8 @@ async function submitImport() {
             </thead>
             <tbody>
               <tr
-                v-for="result in results.results"
-                :key="result.filename"
+                v-for="(result, index) in results.results"
+                :key="`${result.filename}-${index}`"
                 class="border-t border-gray-200 dark:border-slate-700"
                 :class="{
                   'bg-red-50/60 dark:bg-red-950/20': !result.success,

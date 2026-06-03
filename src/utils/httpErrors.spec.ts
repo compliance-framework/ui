@@ -82,12 +82,20 @@ describe('getErrorDetail', () => {
       expect(await getErrorDetail(error, 'fallback')).toBe('validation failed');
     });
 
-    it('preserves empty string errors.body instead of falling back', async () => {
+    it('falls back when errors.body is empty', async () => {
       const error = {
         response: { data: { errors: { body: '' } } },
         message: 'Request failed',
       };
-      expect(await getErrorDetail(error, 'fallback')).toBe('');
+      expect(await getErrorDetail(error, 'fallback')).toBe('Request failed');
+    });
+
+    it('falls back when errors.body is null', async () => {
+      const error = {
+        response: { data: { errors: { body: null } } },
+        message: 'Request failed',
+      };
+      expect(await getErrorDetail(error, 'fallback')).toBe('Request failed');
     });
 
     it('falls back to message when errors.body is undefined', async () => {
