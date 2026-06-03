@@ -5,3 +5,6 @@ lisa-design:
 - A 400 response with per-file import data is treated as renderable import results, while a 400 api.Error body is treated as a page-level error because no file was processed.
 - Client-side file guards match the server limits of 10 files per request and 5 MB per file; the UI does not parse or validate workflow seed JSON contents.
 - A successful file with `summary.failed > 0` remains counted as processed and is labeled "Processed with failures" so idempotent or partially problematic imports reflect the API's counts instead of being reclassified as file failures.
+
+lisa-selfreview: pass 1 (verdict=request_changes)
+- [medium] src/router/index.ts:427 (security): The new admin import route sets meta.requiresAdmin, and the added router test asserts that flag, but router.beforeEach only checks meta.requiresAuth and there is no user/admin predicate in this client. As a result, /admin/import remains reachable by any authenticated user, including the new workflow importer, while the test gives false confidence that an admin restriction exists.
