@@ -1,0 +1,7 @@
+lisa-design:
+- The workflow importer is mounted inside the existing `/admin/import` surface instead of adding a new public workflow route, because the current client has no admin group model and the existing filter importer/admin navigation is the closest privileged UI precedent.
+- The workflow import API uses the shared authenticated Axios instance so base URL, credentials, 401 redirect behavior, and response normalization stay centralized.
+- The import composable normalizes both camelCase and snake_case response bodies because successful responses pass through the Axios camelcase interceptor, while rejected 400 all-failed import responses keep the backend's snake_case shape.
+- A 400 response with per-file import data is treated as renderable import results, while a 400 api.Error body is treated as a page-level error because no file was processed.
+- Client-side file guards match the server limits of 10 files per request and 5 MB per file; the UI does not parse or validate workflow seed JSON contents.
+- A successful file with `summary.failed > 0` remains counted as processed and is labeled "Processed with failures" so idempotent or partially problematic imports reflect the API's counts instead of being reclassified as file failures.
