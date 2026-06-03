@@ -42,14 +42,17 @@ export async function getErrorDetail(
   }
 
   const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
-  const responseData = errorResponse.response?.data as
-    | ErrorResponse<ErrorBody>
-    | { message?: string; error?: string; detail?: string }
-    | undefined;
+  const responseData =
+    errorResponse.response?.data &&
+    typeof errorResponse.response.data === 'object'
+      ? (errorResponse.response.data as
+          | ErrorResponse<ErrorBody>
+          | { message?: string; error?: string; detail?: string })
+      : undefined;
 
   if (
     responseData &&
-    'errors' in responseData &&
+
     responseData.errors?.body
   ) {
     return responseData.errors.body;
