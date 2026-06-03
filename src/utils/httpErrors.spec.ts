@@ -122,7 +122,7 @@ describe('getErrorDetail', () => {
       expect(await getErrorDetail(error, 'fallback')).toBe('Request failed');
     });
 
-    it('falls back to fallback when response data is primitive and message is absent', async () => {
+    it('falls back to fallback when response data is primitive and message is empty', async () => {
       const error = {
         response: { data: 'bad request' },
         message: '',
