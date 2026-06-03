@@ -47,23 +47,23 @@ export async function getErrorDetail(
     | { message?: string; error?: string; detail?: string }
     | undefined;
 
-  if (
-    responseData &&
-    'errors' in responseData &&
-    responseData.errors?.body
-  ) {
+  if (!responseData || typeof responseData !== 'object') {
+    return errorResponse.message || fallbackMessage;
+  }
+
+  if ('errors' in responseData && responseData.errors?.body) {
     return responseData.errors.body;
   }
 
-  if (responseData && 'message' in responseData && responseData.message) {
+  if ('message' in responseData && responseData.message) {
     return responseData.message;
   }
 
-  if (responseData && 'error' in responseData && responseData.error) {
+  if ('error' in responseData && responseData.error) {
     return responseData.error;
   }
 
-  if (responseData && 'detail' in responseData && responseData.detail) {
+  if ('detail' in responseData && responseData.detail) {
     return responseData.detail;
   }
 

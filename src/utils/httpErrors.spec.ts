@@ -114,6 +114,22 @@ describe('getErrorDetail', () => {
       expect(await getErrorDetail(error, 'fallback')).toBe('no files provided');
     });
 
+    it('falls back to error message when response data is primitive', async () => {
+      const error = {
+        response: { data: 'bad request' },
+        message: 'Request failed',
+      };
+      expect(await getErrorDetail(error, 'fallback')).toBe('Request failed');
+    });
+
+    it('falls back to fallback when response data is primitive and message is absent', async () => {
+      const error = {
+        response: { data: 'bad request' },
+        message: '',
+      };
+      expect(await getErrorDetail(error, 'fallback')).toBe('fallback');
+    });
+
     it('falls back to message when no response data', async () => {
       const error = { response: null, message: 'Network error' };
       expect(await getErrorDetail(error, 'fallback')).toBe('Network error');
