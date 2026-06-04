@@ -80,6 +80,17 @@ const resultSeverity = computed(() => {
   return 'success';
 });
 
+const resultHeadline = computed(() => {
+  if (!results.value) return '';
+  if (results.value.successfulFiles === 0) {
+    return `${results.value.successfulFiles} of ${results.value.totalFiles} file(s) processed`;
+  }
+  if (resultSeverity.value === 'warn') {
+    return `${results.value.successfulFiles} of ${results.value.totalFiles} file(s) processed with failures`;
+  }
+  return `${results.value.successfulFiles} of ${results.value.totalFiles} file(s) processed successfully`;
+});
+
 function onFileSelect(event: Event) {
   const target = event.target as HTMLInputElement;
   selectedFiles.value = target.files ? Array.from(target.files) : [];
@@ -270,8 +281,7 @@ async function submitImport() {
         <Message :severity="resultSeverity">
           <div class="text-sm">
             <p class="font-semibold">
-              {{ results.successfulFiles }} of {{ results.totalFiles }} file(s)
-              processed successfully
+              {{ resultHeadline }}
             </p>
             <p v-if="results.failedFiles" class="mt-1">
               {{ results.failedFiles }} file(s) failed. Review the rows below.

@@ -230,7 +230,7 @@ describe('WorkflowImportPanel', () => {
       .trigger('click');
     await flushPromises();
 
-    expect(wrapper.text()).toContain('1 of 2 file(s) processed successfully');
+    expect(wrapper.text()).toContain('1 of 2 file(s) processed with failures');
     expect(wrapper.text()).toContain('Failed');
     expect(wrapper.text()).toContain('broken.json');
     expect(wrapper.text()).toContain('Failed to parse JSON: invalid character');
@@ -263,6 +263,10 @@ describe('WorkflowImportPanel', () => {
       .trigger('click');
     await flushPromises();
 
+    expect(wrapper.text()).toContain('1 of 1 file(s) processed with failures');
+    expect(wrapper.text()).not.toContain(
+      '1 of 1 file(s) processed successfully',
+    );
     expect(wrapper.text()).toContain('Processed with failures');
     expect(wrapper.text()).toContain('imported 2 definition(s), 1 failed');
   });
