@@ -73,7 +73,13 @@ const canSubmit = computed(
 
 const resultSeverity = computed(() => {
   if (!results.value) return 'info';
-  if (results.value.successfulFiles === 0) return 'error';
+  if (
+    results.value.successfulFiles === 0 ||
+    (results.value.summary.failed > 0 &&
+      !hasImportedRecords(results.value.summary))
+  ) {
+    return 'error';
+  }
   if (results.value.failedFiles > 0 || results.value.summary.failed > 0) {
     return 'warn';
   }
@@ -82,14 +88,25 @@ const resultSeverity = computed(() => {
 
 const resultHeadline = computed(() => {
   if (!results.value) return '';
-  if (results.value.successfulFiles === 0) {
-    return `${results.value.successfulFiles} of ${results.value.totalFiles} file(s) processed`;
-  }
+  if (resultSeverity.value === 'error')
+    return 'Import failed; no workflow records were imported';
   if (resultSeverity.value === 'warn') {
     return `${results.value.successfulFiles} of ${results.value.totalFiles} file(s) processed with failures`;
   }
   return `${results.value.successfulFiles} of ${results.value.totalFiles} file(s) processed successfully`;
 });
+
+function hasImportedRecords(summary: WorkflowImportSummary): boolean {
+  return (
+    summary.definitionsCreated > 0 ||
+    summary.definitionsUpdated > 0 ||
+    summary.steps > 0 ||
+    summary.dependencies > 0 ||
+    summary.controlRelationships > 0 ||
+    summary.instances > 0 ||
+    summary.roleAssignments > 0
+  );
+}
 
 function onFileSelect(event: Event) {
   const target = event.target as HTMLInputElement;
@@ -124,7 +141,11 @@ function formatFileSize(size: number): string {
 
 function fileStatusLabel(result: WorkflowImportFileResult): string {
   if (!result.success) return 'Failed';
-  if (result.summary.failed > 0) return 'Processed with failures';
+  if (result.summary.failed > 0) {
+    return hasImportedRecords(result.summary)
+      ? 'Processed with failures'
+      : 'Failed';
+  }
   return 'Succeeded';
 }
 
@@ -132,7 +153,9 @@ function fileStatusSeverity(
   result: WorkflowImportFileResult,
 ): 'success' | 'warn' | 'danger' {
   if (!result.success) return 'danger';
-  if (result.summary.failed > 0) return 'warn';
+  if (result.summary.failed > 0) {
+    return hasImportedRecords(result.summary) ? 'warn' : 'danger';
+  }
   return 'success';
 }
 

@@ -242,7 +242,7 @@ describe('WorkflowImportPanel', () => {
         totalFiles: 1,
         successfulFiles: 1,
         failedFiles: 0,
-        summary: makeSummary({ failed: 1 }),
+        summary: makeSummary({ definitionsCreated: 2, failed: 1 }),
         results: [
           {
             filename: 'mixed.json',
@@ -269,6 +269,52 @@ describe('WorkflowImportPanel', () => {
     );
     expect(wrapper.text()).toContain('Processed with failures');
     expect(wrapper.text()).toContain('imported 2 definition(s), 1 failed');
+  });
+
+  it('renders a parsed file with only failed definitions as failed', async () => {
+    mockImportWorkflows.mockResolvedValue(
+      makeResponse({
+        totalFiles: 1,
+        successfulFiles: 1,
+        failedFiles: 0,
+        summary: makeSummary({ failed: 1 }),
+        results: [
+          {
+            filename: 'deleted-definition.json',
+            success: true,
+            message:
+              'Workflow definition was previously deleted and cannot be re-imported.',
+            summary: makeSummary({ failed: 1 }),
+          },
+        ],
+      }),
+    );
+    const wrapper = mountPanel();
+
+    await selectFiles(wrapper, [
+      new File(['[]'], 'deleted-definition.json', {
+        type: 'application/json',
+      }),
+    ]);
+    await wrapper
+      .find('[data-testid="workflow-import-submit"]')
+      .trigger('click');
+    await flushPromises();
+
+    expect(wrapper.text()).toContain(
+      'Import failed; no workflow records were imported',
+    );
+    expect(wrapper.text()).not.toContain(
+      '1 of 1 file(s) processed successfully',
+    );
+    expect(wrapper.text()).not.toContain(
+      '1 of 1 file(s) processed with failures',
+    );
+    expect(wrapper.text()).toContain('Failed');
+    expect(wrapper.text()).toContain('deleted-definition.json');
+    expect(wrapper.text()).toContain(
+      'Workflow definition was previously deleted and cannot be re-imported.',
+    );
   });
 
   it('renders page-level api errors and 413 limit messages', async () => {
