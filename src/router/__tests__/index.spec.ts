@@ -11,4 +11,14 @@ describe('router', () => {
     expect(route?.path).toBe('/system-security-plans/create');
     expect(typeof component).toBe('function');
   });
+
+  it('keeps the import surface under the admin authenticated route pattern', () => {
+    const route = router
+      .getRoutes()
+      .find((route) => route.name === 'admin-import');
+
+    expect(route?.path).toBe('/admin/import');
+    expect(route?.meta.requiresAuth).toBe(true);
+    expect(route?.meta.requiresAdmin).toBeUndefined();
+  });
 });

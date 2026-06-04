@@ -70,4 +70,48 @@ describe('LeftSideNav', () => {
     expect(notificationsIndex).toBeGreaterThan(riskTemplatesIndex);
     expect(importIndex).toBeGreaterThan(notificationsIndex);
   });
+
+  it('exposes import only from the admin navigation category', () => {
+    const sidebarStore = useSidebarStore();
+    sidebarStore.open = true;
+
+    const wrapper = mount(LeftSideNav, {
+      global: {
+        directives: {
+          tooltip: {
+            mounted: () => undefined,
+          },
+        },
+        stubs: {
+          SideNav: {
+            template: '<div><slot name="logo" /><slot /></div>',
+          },
+          SideNavCategory: {
+            template:
+              '<section><div class="category-title"><slot name="title" /></div><div><slot /></div></section>',
+          },
+          SideNavLink: {
+            template: '<a class="sidenav-link"><slot /></a>',
+          },
+          SideNavLogo: {
+            template: '<img alt="logo" />',
+          },
+        },
+      },
+    });
+
+    const categories = wrapper.findAll('section');
+    const adminCategory = categories.find(
+      (category) => category.find('.category-title').text() === 'Admin',
+    );
+
+    expect(adminCategory?.text()).toContain('Import');
+    expect(
+      categories
+        .filter(
+          (category) => category.find('.category-title').text() !== 'Admin',
+        )
+        .some((category) => category.text().includes('Import')),
+    ).toBe(false);
+  });
 });

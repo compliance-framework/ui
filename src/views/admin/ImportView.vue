@@ -8,6 +8,7 @@ import PageCard from '@/components/PageCard.vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
 import Message from '@/volt/Message.vue';
+import WorkflowImportPanel from './partials/WorkflowImportPanel.vue';
 
 const configStore = useConfigStore();
 const toast = useToast();
@@ -218,6 +219,8 @@ const clearDashboardFiles = () => {
     </p>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <WorkflowImportPanel class="lg:col-span-2" />
+
       <!-- OSCAL Import Section -->
       <PageCard>
         <template #header>
