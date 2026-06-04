@@ -1,0 +1,9 @@
+lisa-addressed:
+---
+Comment (src/views/admin/partials/WorkflowImportPanel.vue:273):
+**Banner reports success for a file whose entire content failed.**
+
+A file counts toward "processed successfully" as long as it *parsed* (`result.success === true`), even when every definition inside it failed. After deleting a definition and re-importing, the API returns the file with `success:true` but `summary.failed > 0` and 0 created/updated for that def — yet this still renders **"1 of 1 file(s) processed successfully"**, which reads as a clean import.
+
+Please base the headline on actual imported counts (e.g. treat `failedFiles > 0 || summary.failed > 0` as not-fully-successful) so a file with failures isn't announced as success.
+Implementation guidance: In src/views/admin/partials/WorkflowImportPanel.vue, adjust only the aggregate result banner so it no longer says every successfulFiles count was processed successfully when results.summary.failed > 0 or results.failedFiles > 0. Preserve the API counts and the existing fileStatusLabel/fileStatusSeverity behavior: a result with success: true and summary.failed > 0 must still be counted as processed and shown as "Processed with failures", not reclassified as a failed file. A good approach is to add a computed banner headline/message that uses the existing resultSeverity inputs: all clean success keeps "{successfulFiles} of {totalFiles} file(s) processed successfully"; any file-level or item-level failures uses wording such as "{successfulFiles} of {totalFiles} file(s) processed with failures" or "Import completed with failures"; zero successfulFiles remains an error-oriented message. Also add/update WorkflowImportPanel.spec.ts coverage for the summary.failed case so it asserts the banner does not contain the clean "processed successfully" text and still shows the row badge/message.
