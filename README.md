@@ -20,9 +20,18 @@ This file will also be used when running in Docker.
 
 ```json
 {
-  "API_URL": "http://localhost:9000"
+  "API_URL": "http://localhost:9000",
+  "LOGIN_BANNER": "",
+  "LOGIN_BANNER_SEVERITY": "info"
 }
 ```
+
+`LOGIN_BANNER` displays a dismissible notice on the login page when set to a non-empty string.
+`LOGIN_BANNER_SEVERITY` controls its styling and can be `info`, `warn`, `error`, or `success`.
+
+Developers can override these values at build time with `VITE_LOGIN_BANNER` and
+`VITE_LOGIN_BANNER_SEVERITY`. `VITE_LOGIN_BANNER` takes precedence over `config.json`; setting it to
+an explicit empty string disables the banner for that build without editing `config.json`.
 
 #### In Production
 

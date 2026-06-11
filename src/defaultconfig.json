@@ -1,3 +1,5 @@
 {
-  "API_URL": ""
+  "API_URL": "",
+  "LOGIN_BANNER": "",
+  "LOGIN_BANNER_SEVERITY": "info"
 }

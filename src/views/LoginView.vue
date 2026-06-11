@@ -8,34 +8,47 @@
         class="w-full hidden dark:block"
       />
     </div>
+    <Message
+      v-if="showLoginBanner"
+      :severity="loginBannerSeverity"
+      closable
+      class="mx-8 mb-4"
+      @close="dismissLoginBanner"
+    >
+      {{ loginBanner }}
+    </Message>
     <form @submit.prevent="onSubmit" class="space-y-4">
       <div>
         <label
           for="email"
           class="block text-sm font-medium text-gray-700 dark:text-slate-300"
-          >Email</label
         >
+          Email
+        </label>
         <FormInput v-model="email" placeholder="Email" />
         <span
           class="text-sm text-red-500 dark:text-red-500"
           v-for="error in errors.email"
           :key="error"
-          >{{ error }}</span
         >
+          {{ error }}
+        </span>
       </div>
       <div>
         <label
           for="password"
           class="block text-sm font-medium text-gray-700 dark:text-slate-300"
-          >Password</label
         >
+          Password
+        </label>
         <FormInput v-model="password" placeholder="Password" type="password" />
         <span
           class="dark:text-red-500"
           v-for="error in errors.password"
           :key="error"
-          >{{ error }}</span
         >
+          {{ error }}
+        </span>
       </div>
       <div>
         <PrimaryButton type="submit" class="w-full"> Login </PrimaryButton>
@@ -122,6 +135,7 @@ import PrimaryButton from '@/volt/PrimaryButton.vue';
 import { useRoute, useRouter } from 'vue-router';
 // import type { DataResponse } from '@/stores/api.ts';
 import FormInput from '@/components/forms/FormInput.vue';
+import Message from '@/volt/Message.vue';
 import lightLogo from '@/assets/logo-light.svg';
 import darkLogo from '@/assets/logo-dark.svg';
 import SideNavLogo from '@/components/navigation/SideNavLogo.vue';
@@ -131,6 +145,7 @@ import type { AxiosError } from 'axios';
 import { useOIDC, type OIDCProvider } from '@/composables/useOIDC';
 import { useAuthHydration } from '@/composables/useAuthHydration';
 import { resolveAuthNextLocation } from '@/utils/auth-redirect';
+import { useConfigStore, type LoginBannerSeverity } from '@/stores/config';
 
 interface AuthError {
   email: string[];
@@ -151,6 +166,9 @@ const {
 } = useOIDC();
 
 const loginNotice = ref<string | null>(null);
+const loginBanner = ref('');
+const loginBannerSeverity = ref<LoginBannerSeverity>('info');
+const showLoginBanner = ref(false);
 // TODO: Once other areas need this, move the "no SSO providers" UX into useOIDC or a shared helper.
 const hasSSOProviders = computed(() => (ssoProviders.value?.length ?? 0) > 0);
 
@@ -165,6 +183,7 @@ const { execute: login } = useGuestApi<AuthError>(
 const route = useRoute();
 const router = useRouter();
 const toast = useToast();
+const configStore = useConfigStore();
 
 function createDefaultAuthErrors(): AuthError {
   return {
@@ -223,6 +242,47 @@ const resolveLoginNotice = () => {
   }
 };
 
+const loginBannerDismissalKeyPrefix = 'login-banner-dismissed:';
+const getLoginBannerDismissalKey = (message: string) =>
+  `${loginBannerDismissalKeyPrefix}${encodeURIComponent(message)}`;
+
+function clearLoginBannerDismissals() {
+  const keys: string[] = [];
+  for (let index = 0; index < localStorage.length; index += 1) {
+    const key = localStorage.key(index);
+    if (key?.startsWith(loginBannerDismissalKeyPrefix)) {
+      keys.push(key);
+    }
+  }
+
+  keys.forEach((key) => localStorage.removeItem(key));
+}
+
+async function loadLoginBanner() {
+  try {
+    const config = await configStore.getConfig();
+    const message = config.LOGIN_BANNER ?? '';
+
+    loginBanner.value = message;
+    loginBannerSeverity.value = config.LOGIN_BANNER_SEVERITY ?? 'info';
+    showLoginBanner.value =
+      message.length > 0 &&
+      localStorage.getItem(getLoginBannerDismissalKey(message)) !== 'true';
+  } catch {
+    loginBanner.value = '';
+    loginBannerSeverity.value = 'info';
+    showLoginBanner.value = false;
+  }
+}
+
+function dismissLoginBanner() {
+  if (loginBanner.value.length > 0) {
+    clearLoginBannerDismissals();
+    localStorage.setItem(getLoginBannerDismissalKey(loginBanner.value), 'true');
+  }
+  showLoginBanner.value = false;
+}
+
 watch(
   () => route.query.error,
   () => resolveLoginNotice(),
@@ -231,6 +291,7 @@ watch(
 
 onMounted(() => {
   loadProviders();
+  void loadLoginBanner();
 });
 
 function isAuthError(value: unknown): value is AuthError {
