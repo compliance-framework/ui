@@ -193,6 +193,7 @@
                         class="text-xs bg-white dark:bg-slate-900 p-2 rounded border"
                       >
                         <StatementByComponent
+                          :ssp="ssp"
                           :by-component="byComponent"
                           :control-id="requirement.controlId"
                           :ssp-risks="sspRisks || []"
@@ -402,7 +403,7 @@ import ImplementedRequirementEditForm from '@/components/system-security-plans/I
 import ControlImplementationEditForm from '@/components/system-security-plans/ControlImplementationEditForm.vue';
 import StatementEditForm from '@/components/system-security-plans/StatementEditForm.vue';
 import StatementCreateForm from '@/components/system-security-plans/StatementCreateForm.vue';
-import StatementByComponent from '@/views/control-implementations/partials/StatementByComponent.vue';
+import StatementByComponent from '@/views/system-security-plans/partials/StatementByComponent.vue';
 import ByComponentEditForm from '@/components/system-security-plans/ByComponentEditForm.vue';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import { getIdFromRoute } from '@/utils/get-poam-id-from-route';
