@@ -1,0 +1,2 @@
+lisa-design:
+- Authorization-boundary diagram state starts empty like the other optional diagram groups. The UI must not seed a client-only placeholder diagram; diagrams are shown only when returned by the API or created through the Add Diagram flow.
