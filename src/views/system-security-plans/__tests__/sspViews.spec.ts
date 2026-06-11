@@ -74,7 +74,11 @@ const stubs = {
   PageCard: { template: '<section><slot /></section>' },
   RouterLinkButton: { props: ['to'], template: '<a><slot /></a>' },
   RouterLink: { props: ['to'], template: '<a><slot /></a>' },
-  Badge: { props: ['value'], template: '<span>{{ value }}<slot /></span>' },
+  Badge: {
+    props: ['value'],
+    template:
+      "<span :data-testid=\"value === 'Active' ? 'active-badge' : 'badge'\">{{ value }}<slot /></span>",
+  },
   Label: {
     props: ['for', 'required'],
     template: '<label :for="$props.for"><slot /></label>',
@@ -118,9 +122,11 @@ describe('System Security Plan views', () => {
     await wrapper.find('form').trigger('submit.prevent');
 
     expect(wrapper.text()).toContain('Title is required');
-    expect(
-      apiCalls.every((apiCall) => apiCall.execute.mock.calls.length === 0),
-    ).toBe(true);
+    const createCall = apiCalls.find(
+      (apiCall) => apiCall.url === '/api/oscal/system-security-plans',
+    );
+    expect(createCall).toBeDefined();
+    expect(createCall?.execute).not.toHaveBeenCalled();
   });
 
   it('creates an SSP through the existing endpoint when required fields are valid', async () => {
@@ -152,7 +158,7 @@ describe('System Security Plan views', () => {
 
     expect(wrapper.text()).toContain('Manage OSCAL System Security Plans');
     expect(wrapper.text()).toContain('New System Security Plan');
-    expect(wrapper.text()).toContain('Active');
+    expect(wrapper.findAll('[data-testid="active-badge"]')).toHaveLength(1);
     expect(
       wrapper
         .findAll('button')

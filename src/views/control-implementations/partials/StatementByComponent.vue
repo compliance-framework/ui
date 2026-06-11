@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watchEffect, computed } from 'vue';
+import { ref, watch, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useSystemStore } from '@/stores/system.ts';
 import BurgerMenu from '@/components/BurgerMenu.vue';
@@ -38,15 +38,43 @@ const router = useRouter();
 
 const { confirmDeleteDialog } = useDeleteConfirmationDialog();
 
-const localComponent = ref<ByComponent>(byComponent);
-watchEffect(() => {
-  localComponent.value = byComponent;
-});
+function cloneByComponent(value: ByComponent): ByComponent {
+  return JSON.parse(JSON.stringify(value)) as ByComponent;
+}
+
+const localComponent = ref<ByComponent>(cloneByComponent(byComponent));
+watch(
+  () => byComponent,
+  (updatedByComponent) => {
+    localComponent.value = cloneByComponent(updatedByComponent);
+  },
+);
 
 const { value: editing, set: setEditing } = useToggle();
 
-const { data: component } = useDataApi<SystemComponent>(
-  `/api/oscal/system-security-plans/${system.securityPlan?.uuid as string}/system-implementation/components/${byComponent.componentUuid}`,
+const componentUrl = computed(() => {
+  if (!system.securityPlan?.uuid || !byComponent.componentUuid) return null;
+  return `/api/oscal/system-security-plans/${system.securityPlan.uuid}/system-implementation/components/${byComponent.componentUuid}`;
+});
+
+const { data: component, execute: fetchComponent } =
+  useDataApi<SystemComponent>(
+    null,
+    {
+      method: 'GET',
+    },
+    { immediate: false },
+  );
+
+watch(
+  componentUrl,
+  async (url) => {
+    if (!url) return;
+    await fetchComponent(url);
+  },
+  {
+    immediate: true,
+  },
 );
 
 const statusState = computed({
@@ -78,8 +106,8 @@ const statusRemarks = computed({
   },
 });
 
-const implementationStatusDisplayLabel = computed(() => {
-  const state = localComponent.value.implementationStatus?.state;
+const persistedImplementationStatusDisplayLabel = computed(() => {
+  const state = byComponent.implementationStatus?.state;
   return implementationStatusLabel(state);
 });
 
@@ -142,16 +170,28 @@ const highestSeverity = computed(() => {
 });
 
 function save() {
-  emit('save', normalizeByComponentImplementationStatus(localComponent.value));
+  emit(
+    'save',
+    normalizeByComponentImplementationStatus(
+      cloneByComponent(localComponent.value),
+    ),
+  );
+  localComponent.value = cloneByComponent(byComponent);
   setEditing(false);
 }
 
 async function deleteStatement() {
-  emit('delete', localComponent.value);
+  emit('delete', byComponent);
 }
 
 function cancel() {
+  localComponent.value = cloneByComponent(byComponent);
   setEditing(false);
+}
+
+function edit() {
+  localComponent.value = cloneByComponent(byComponent);
+  setEditing(true);
 }
 
 function openRisksForControl() {
@@ -185,7 +225,7 @@ function openRisksForControl() {
         {
           label: 'Edit',
           command() {
-            setEditing(true);
+            edit();
           },
         },
         {
@@ -202,7 +242,7 @@ function openRisksForControl() {
   <div class="text-gray-600 dark:text-slate-400">
     <template v-if="!editing">
       <p class="prose prose-slate dark:prose-invert max-w-full">
-        <VueMarkdown :source="localComponent.description" />
+        <VueMarkdown :source="byComponent.description" />
       </p>
     </template>
     <template v-else>
@@ -257,20 +297,20 @@ function openRisksForControl() {
   </div>
 
   <div
-    v-if="!editing && localComponent.implementationStatus?.state"
+    v-if="!editing && byComponent.implementationStatus?.state"
     class="mt-2 text-xs"
   >
     <span class="font-medium text-gray-700 dark:text-slate-300"
       >Implementation Status:</span
     >
     <span class="ml-1 text-gray-600 dark:text-slate-400">
-      {{ implementationStatusDisplayLabel }}
+      {{ persistedImplementationStatusDisplayLabel }}
     </span>
     <div
-      v-if="localComponent.implementationStatus.remarks"
+      v-if="byComponent.implementationStatus.remarks"
       class="mt-1 text-gray-600 dark:text-slate-400"
     >
-      {{ localComponent.implementationStatus.remarks }}
+      {{ byComponent.implementationStatus.remarks }}
     </div>
   </div>
 
