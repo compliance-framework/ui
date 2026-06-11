@@ -1,0 +1,46 @@
+lisa-addressed:
+---
+Comment (src/views/LoginView.vue:144):
+**Blocker (CI): Prettier check fails — both CI jobs gate on `format:check` and die here before ever running tests.**
+
+This import block should be a single line, and `src/views/__tests__/LoginView.spec.ts:265` has the same issue (a needlessly wrapped `toContain` call). Mechanical fix:
+
+```bash
+npm run format:fix
+```
+---
+Comment (src/views/__tests__/LoginView.spec.ts:68):
+**High: the test "dismisses the login banner and persists the dismissal" fails — array-syntax props get no Boolean casting.**
+
+`LoginView.vue` passes `closable` as a bare attribute. With `props: ['severity', 'closable']`, Vue binds it as the empty string `""` (Boolean casting only applies to props declared with type `Boolean`), so `v-if="closable"` is falsy, the close button never renders, and `wrapper.get('[data-testid="login-banner-close"]')` throws.
+
+The production component is unaffected (PrimeVue's `Message` declares `closable: Boolean`, so `""` casts to `true`) — only this stub is wrong. CI hasn't surfaced it yet because `format:check` fails first; it will become the next red once formatting is fixed. Fix:
+
+```js
+props: { severity: String, closable: Boolean },
+```
+---
+Comment (src/views/LoginView.vue:273):
+**Low: unhandled rejection path.** `void loadLoginBanner()` discards the promise, and `loadLoginBanner` has no error handling. `getConfig()` handles a non-OK response, but a rejected `fetch` (network error) propagates out and surfaces as an unhandled promise rejection on the login page.
+
+The banner is decorative — a `try/catch` inside `loadLoginBanner` that simply leaves the banner hidden on failure would be more robust.
+---
+Comment (src/views/LoginView.vue:260):
+**Low: retired dismissal keys accumulate forever.** Keying dismissal by banner text is sound per the design note (changed text should re-appear), but every retired banner text leaves a permanent `login-banner-dismissed:*` entry in localStorage.
+
+Cheap cleanup: on dismiss, remove existing keys with the `login-banner-dismissed:` prefix before writing the new one — at most one banner is active at a time, so only the current key needs to persist.
+---
+Comment (src/stores/config.ts:15):
+**Low: the four severity literals are written out three times** — the `LoginBannerSeverity` union, this array, and `env.d.ts`. Within this file you can derive one from the other:
+
+```ts
+const loginBannerSeverities = ['info', 'warn', 'error', 'success'] as const;
+export type LoginBannerSeverity = (typeof loginBannerSeverities)[number];
+```
+
+(The `env.d.ts` copy is acceptable — importing there would turn it into a module and break the global `ImportMetaEnv` augmentation.)
+Implementation guidance: Run the repository formatter with `npm run format:fix` from the project root, then verify with `npm run format:check`. The expected mechanical changes include keeping the import block in `src/views/LoginView.vue` on the Prettier-preferred single line and unwrapping the needlessly wrapped `toContain` call around `src/views/__tests__/LoginView.spec.ts:265`. Do not make semantic changes for this thread.
+Implementation guidance: In `src/views/__tests__/LoginView.spec.ts`, update the PrimeVue `Message` stub props declaration from array syntax to typed object syntax: `props: { severity: String, closable: Boolean }`. This is needed because the production `Message` component Boolean-casts the bare `closable` attribute, but the test stub currently receives `closable` as an empty string and treats it as falsy. Keep the stub behavior otherwise unchanged, and rerun the LoginView test that dismisses and persists the banner.
+Implementation guidance: In `src/views/LoginView.vue`, add error handling inside `loadLoginBanner`, not at the `void loadLoginBanner()` call site. Wrap the `getConfig()` call and subsequent banner setup in a `try/catch`; on catch, leave `loginBannerMessage` empty and `loginBannerDismissed` false/default so the decorative banner stays hidden. Avoid rethrowing or logging noisy errors from this path, since failed config fetches should not create an unhandled promise rejection on the login page.
+Implementation guidance: In `src/views/LoginView.vue`, keep the existing dismissal key design based on `encodeURIComponent` of the exact banner text. In the dismiss handler, before writing the current `login-banner-dismissed:<encoded text>` key, iterate over `localStorage` keys and remove any existing keys that start with the `login-banner-dismissed:` prefix. Then write the current key as dismissed. Be careful not to remove unrelated localStorage entries, and avoid changing the key format or adding a banner ID.
+Implementation guidance: In `src/stores/config.ts`, define `const loginBannerSeverities = ['info', 'warn', 'error', 'success'] as const;` before the exported type, then derive `export type LoginBannerSeverity = (typeof loginBannerSeverities)[number];` from that tuple. Reuse the same `loginBannerSeverities` constant in the severity validation helper. Do not import this type or constant into `env.d.ts`; keep the `env.d.ts` literal copy because importing there would turn it into a module and break global `ImportMetaEnv` augmentation.
