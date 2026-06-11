@@ -164,8 +164,14 @@ const {
   { immediate: false },
 );
 
+const usersLoadFailed = ref(false);
+
 const showEmptyUsers = computed(() => {
-  return !usersLoading.value && (users.value?.length ?? 0) === 0;
+  return (
+    !usersLoadFailed.value &&
+    !usersLoading.value &&
+    (users.value?.length ?? 0) === 0
+  );
 });
 
 const { execute: executeDelete } = useDataApi<void>(
@@ -182,7 +188,19 @@ const editingUser = ref<SystemUser | null>(null);
 const loadData = async () => {
   systemSecurityPlan.value = system.securityPlan as SystemSecurityPlan;
 
-  await fetchUsers();
+  usersLoadFailed.value = false;
+  try {
+    await fetchUsers();
+  } catch (error) {
+    usersLoadFailed.value = true;
+    users.value = [];
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: `Failed to load users. ${toErrorDetail(error)}`,
+      life: 5000,
+    });
+  }
 };
 
 onMounted(async () => {
@@ -221,6 +239,16 @@ const downloadUserJSON = (user: SystemUser) => {
   link.click();
   URL.revokeObjectURL(url);
 };
+
+function toErrorDetail(error: unknown): string {
+  if (error instanceof Error && error.message.trim()) {
+    return error.message.trim();
+  }
+  if (typeof error === 'string' && error.trim()) {
+    return error.trim();
+  }
+  return 'Please try again.';
+}
 
 const deleteUser = async (user: SystemUser) => {
   try {

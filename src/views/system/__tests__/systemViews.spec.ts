@@ -4,7 +4,6 @@ import { ref, type Ref } from 'vue';
 import UsersView from '@/views/system/UsersView.vue';
 import ComponentsView from '@/views/system/ComponentsView.vue';
 import AuthorizationsView from '@/views/system/AuthorizationsView.vue';
-import OverviewView from '@/views/system/OverviewView.vue';
 
 const {
   activePlan,
@@ -215,39 +214,4 @@ describe('System area views', () => {
     },
   );
 
-  it('loads overview implementation statistics from null lists without warning', async () => {
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
-    apiPayloads.set(endpoint.profiles, []);
-    apiPayloads.set(endpoint.characteristics, {});
-    apiPayloads.set(endpoint.users, null);
-    apiPayloads.set(endpoint.components, null);
-    apiPayloads.set(endpoint.inventory, null);
-    apiPayloads.set(endpoint.authorizations, null);
-    apiPayloads.set(
-      '/api/oscal/profiles/profile-1/compliance-progress?includeControls=false&sspId=ssp-1',
-      null,
-    );
-
-    mount(OverviewView, {
-      global: { stubs },
-    });
-    await flushPromises();
-
-    expect(warn).not.toHaveBeenCalledWith(
-      expect.stringContaining(
-        'Could not load some system implementation statistics:',
-      ),
-      expect.anything(),
-    );
-    expect(executeCalls).toEqual(
-      expect.arrayContaining([
-        endpoint.users,
-        endpoint.components,
-        endpoint.inventory,
-        endpoint.authorizations,
-      ]),
-    );
-
-    warn.mockRestore();
-  });
 });

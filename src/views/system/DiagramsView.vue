@@ -208,7 +208,7 @@ const {
   `/api/oscal/system-security-plans/${systemSecurityPlan.value?.uuid}/system-characteristics/authorization-boundary`,
   { method: 'GET' },
   {
-    initialData: { diagrams: [{ uuid: v4() }] } as Diagrammable,
+    initialData: {} as Diagrammable,
     immediate: false,
   },
 );

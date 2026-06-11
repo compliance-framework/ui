@@ -3,6 +3,7 @@
     <div class="flex justify-between items-center mb-6">
       <TooltipTitle
         text="Leveraged Authorizations"
+        tooltip-key="system.authorizations"
         position="bottom"
         underline-class="text-lg font-semibold dark:text-slate-300 underline decoration-dotted cursor-help"
       />
@@ -185,8 +186,11 @@ const {
   { immediate: false },
 );
 
+const leveragedAuthorizationsLoadFailed = ref(false);
+
 const showEmptyAuthorizations = computed(() => {
   return (
+    !leveragedAuthorizationsLoadFailed.value &&
     !leveragedAuthorizationsLoading.value &&
     (leveragedAuthorizations.value?.length ?? 0) === 0
   );
@@ -205,7 +209,19 @@ const editingLeveragedAuth = ref<LeveragedAuthorization | null>(null);
 
 const loadData = async () => {
   systemSecurityPlan.value = system.securityPlan as SystemSecurityPlan;
-  await fetchLeveragedAuthorizations();
+  leveragedAuthorizationsLoadFailed.value = false;
+  try {
+    await fetchLeveragedAuthorizations();
+  } catch (error) {
+    leveragedAuthorizationsLoadFailed.value = true;
+    leveragedAuthorizations.value = [];
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: `Failed to load leveraged authorizations. ${toErrorDetail(error)}`,
+      life: 5000,
+    });
+  }
 };
 
 onMounted(async () => {
@@ -249,6 +265,16 @@ const downloadLeveragedAuthJSON = (auth: LeveragedAuthorization) => {
   link.click();
   URL.revokeObjectURL(url);
 };
+
+function toErrorDetail(error: unknown): string {
+  if (error instanceof Error && error.message.trim()) {
+    return error.message.trim();
+  }
+  if (typeof error === 'string' && error.trim()) {
+    return error.trim();
+  }
+  return 'Please try again.';
+}
 
 const deleteLeveragedAuth = async (auth: LeveragedAuthorization) => {
   try {

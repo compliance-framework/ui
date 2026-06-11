@@ -51,6 +51,7 @@
       <div class="mb-4 flex items-center justify-between gap-3">
         <TooltipTitle
           text="Compliance"
+          tooltip-key="system.compliance"
           underline-class="text-lg font-semibold text-gray-900 dark:text-slate-300 underline decoration-dotted cursor-help"
         />
         <RouterLinkButton
@@ -181,10 +182,6 @@ import { computed, onMounted, ref, watch } from 'vue';
 import type {
   SystemSecurityPlan,
   SystemCharacteristics,
-  SystemUser,
-  SystemComponent,
-  InventoryItem,
-  LeveragedAuthorization,
 } from '@/oscal';
 import type { Profile } from '@/oscal';
 import MultiSelect from '@/volt/MultiSelect.vue';
@@ -203,12 +200,6 @@ import TooltipTitle from '@/components/TooltipTitle.vue';
 const toast = useToast();
 const { system } = useSystemStore();
 const systemSecurityPlan = ref<SystemSecurityPlan>({} as SystemSecurityPlan);
-const systemImplementationStats = ref({
-  users: 0,
-  components: 0,
-  inventoryItems: 0,
-  leveragedAuthorizations: 0,
-});
 
 const profileItems = ref<Array<{ name: string; value: string }>>([]);
 const { data: profiles, isLoading: loadingProfiles } = useDataApi<Profile[]>(
@@ -227,37 +218,6 @@ watch(profiles, () => {
 
 const { data: systemCharacteristics } = useDataApi<SystemCharacteristics>(
   `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/system-characteristics`,
-);
-
-const { execute: executeSIUsers } = useDataApi<SystemUser[]>(
-  `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/system-implementation/users`,
-  {
-    method: 'GET',
-  },
-  { immediate: false },
-);
-const { execute: executeSIComponents } = useDataApi<SystemComponent[]>(
-  `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/system-implementation/components`,
-  {
-    method: 'GET',
-  },
-  { immediate: false },
-);
-const { execute: executeSIInventory } = useDataApi<InventoryItem[]>(
-  `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/system-implementation/inventory-items`,
-  {
-    method: 'GET',
-  },
-  { immediate: false },
-);
-const { execute: executeSILeveragedAuths } = useDataApi<
-  LeveragedAuthorization[]
->(
-  `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/system-implementation/leveraged-authorizations`,
-  {
-    method: 'GET',
-  },
-  { immediate: false },
 );
 
 const compliancePreview = ref<ProfileComplianceProgress | null>(null);
@@ -411,45 +371,6 @@ onMounted(async () => {
 
     await loadInitialProfiles();
     await loadCompliancePreview(selectedProfiles.value[0]);
-
-    // Load system implementation statistics
-    try {
-      const [
-        usersResponse,
-        componentsResponse,
-        inventoryResponse,
-        leveragedAuthsResponse,
-      ] = await Promise.allSettled([
-        executeSIUsers(),
-        executeSIComponents(),
-        executeSIInventory(),
-        executeSILeveragedAuths(),
-      ]);
-
-      systemImplementationStats.value = {
-        users:
-          usersResponse.status === 'fulfilled'
-            ? (usersResponse.value.data.value?.data?.length ?? 0)
-            : 0,
-        components:
-          componentsResponse.status === 'fulfilled'
-            ? (componentsResponse.value.data.value?.data?.length ?? 0)
-            : 0,
-        inventoryItems:
-          inventoryResponse.status === 'fulfilled'
-            ? (inventoryResponse.value.data.value?.data?.length ?? 0)
-            : 0,
-        leveragedAuthorizations:
-          leveragedAuthsResponse.status === 'fulfilled'
-            ? (leveragedAuthsResponse.value.data.value?.data?.length ?? 0)
-            : 0,
-      };
-    } catch (error) {
-      console.warn(
-        'Could not load some system implementation statistics:',
-        error,
-      );
-    }
   } catch (error) {
     console.error('Error loading System Security Plan overview:', error);
   }

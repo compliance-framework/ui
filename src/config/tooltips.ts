@@ -30,6 +30,10 @@ export const TOOLTIPS = {
   // System
   'system.users': 'Users who have access to or operate this system',
   'system.components': '', // TODO: Add tooltip
+  'system.authorizations':
+    'External systems or services this system relies on for authorization',
+  'system.compliance':
+    'Current compliance progress for the selected system profile',
   'system.implementation.statement.drawer':
     'Define how this control is implemented in your system',
 
