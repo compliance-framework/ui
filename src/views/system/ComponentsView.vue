@@ -14,7 +14,7 @@
 
     <div class="space-y-4">
       <div
-        v-if="sspId && components?.length === 0"
+        v-if="showEmptyComponents"
         class="text-center py-8 text-gray-500 dark:text-slate-400"
       >
         No components defined. Create your first component to get started.
@@ -230,9 +230,15 @@ const usersEndpoint = computed(() => {
   return `/api/oscal/system-security-plans/${sspId.value}/system-implementation/users`;
 });
 
-const { data: components, execute: fetchComponents } = useDataApi<
-  SystemComponent[]
->(null, { method: 'GET' }, { immediate: false });
+const {
+  data: components,
+  isLoading: loadingComponents,
+  execute: fetchComponents,
+} = useDataApi<SystemComponent[]>(
+  null,
+  { method: 'GET' },
+  { immediate: false },
+);
 
 const {
   data: risks,
@@ -272,6 +278,14 @@ const selectedComponent = computed<SystemComponent | undefined>(() => {
   }
 
   return components.value.find((c) => c.uuid === routeComponentId);
+});
+
+const showEmptyComponents = computed(() => {
+  return (
+    !!sspId.value &&
+    !loadingComponents.value &&
+    (components.value?.length ?? 0) === 0
+  );
 });
 
 const dashboardDrawerOpen = computed({
@@ -426,10 +440,12 @@ watch(
 
 // Component management
 const editComponent = async (component: SystemComponent) => {
+  if (!sspId.value) return;
+
   // Verify the component still exists before editing
   try {
     const response = await executeGetComponent(
-      `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/system-implementation/components/${component.uuid}`,
+      `/api/oscal/system-security-plans/${sspId.value}/system-implementation/components/${component.uuid}`,
     );
     if (!response.data || !response.data.value) {
       throw new Error('Component not found');
@@ -450,7 +466,7 @@ const editComponent = async (component: SystemComponent) => {
 
 const handleComponentCreated = async (newComponent: SystemComponent) => {
   // Add the component to the local array
-  components.value?.push(newComponent);
+  components.value = [...(components.value ?? []), newComponent];
   showCreateComponentModal.value = false;
 
   await loadData();
@@ -481,9 +497,11 @@ const downloadComponentJSON = (component: SystemComponent) => {
 };
 
 const deleteComponent = async (component: SystemComponent) => {
+  if (!sspId.value) return;
+
   try {
     await executeDeleteComponent(
-      `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/system-implementation/components/${component.uuid}`,
+      `/api/oscal/system-security-plans/${sspId.value}/system-implementation/components/${component.uuid}`,
     );
     if (components.value) {
       components.value = components.value.filter(

@@ -14,7 +14,7 @@
 
     <div class="space-y-4">
       <div
-        v-if="users?.length === 0"
+        v-if="showEmptyUsers"
         class="text-center py-8 text-gray-500 dark:text-slate-400"
       >
         No users defined. Create your first user to get started.
@@ -101,12 +101,7 @@
   </div>
 
   <!-- User Create Modal -->
-  <Dialog
-    v-model:visible="showCreateUserModal"
-    modal
-    header="Create User"
-    class="custom-colors"
-  >
+  <Dialog v-model:visible="showCreateUserModal" modal header="Create User">
     <SystemImplementationUserCreateForm
       :ssp-id="sspId"
       @cancel="showCreateUserModal = false"
@@ -115,12 +110,7 @@
   </Dialog>
 
   <!-- User Edit Modal -->
-  <Dialog
-    v-model:visible="showEditUserModal"
-    modal
-    header="Edit User"
-    class="custom-colors"
-  >
+  <Dialog v-model:visible="showEditUserModal" modal header="Edit User">
     <SystemImplementationUserEditForm
       v-if="editingUser"
       :ssp-id="sspId"
@@ -164,11 +154,19 @@ const sspId = computed(() => systemSecurityPlan.value?.uuid ?? '');
 const showCreateUserModal = ref(false);
 const showEditUserModal = ref(false);
 
-const { data: users, execute: fetchUsers } = useDataApi<SystemUser[]>(
+const {
+  data: users,
+  isLoading: usersLoading,
+  execute: fetchUsers,
+} = useDataApi<SystemUser[]>(
   `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/system-implementation/users`,
   { method: 'GET' },
   { immediate: false },
 );
+
+const showEmptyUsers = computed(() => {
+  return !usersLoading.value && (users.value?.length ?? 0) === 0;
+});
 
 const { execute: executeDelete } = useDataApi<void>(
   null,
@@ -198,7 +196,7 @@ const editUser = (user: SystemUser) => {
 };
 
 const handleUserCreated = (newUser: SystemUser) => {
-  users.value?.push(newUser);
+  users.value = [...(users.value ?? []), newUser];
   showCreateUserModal.value = false;
 };
 
@@ -249,34 +247,3 @@ const deleteUser = async (user: SystemUser) => {
   }
 };
 </script>
-
-<style>
-.custom-colors .p-dialog-content {
-  background-color: white; /* light mode */
-  color: #1f2937; /* slate-800 text */
-}
-
-.custom-colors .p-dialog-header {
-  background-color: #f3f4f6; /* light gray header */
-  color: #111827; /* dark header text */
-}
-
-.custom-colors .p-dialog-mask {
-  background-color: rgba(0, 85, 255, 0.7); /* semi-transparent gray */
-}
-
-/* Dark mode */
-.dark .custom-colors .p-dialog-content {
-  background-color: #1f2937; /* slate-900 */
-  color: #e5e7eb; /* slate-200 text */
-}
-
-.dark .custom-colors .p-dialog-header {
-  background-color: #111827;
-  color: #e5e7eb;
-}
-
-.dark .custom-colors .p-dialog-mask {
-  background-color: rgba(30, 41, 59, 0.95);
-}
-</style>

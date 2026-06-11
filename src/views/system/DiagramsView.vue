@@ -25,8 +25,8 @@
             <div
               class="flex justify-end items-center gap-2 px-3 py-2 bg-ccf-50 dark:bg-slate-800 border-b border-ccf-300 dark:border-slate-700"
             >
-              <button
-                class="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition-colors"
+              <TertiaryButton
+                class="p-small border-red-200 text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-950/40"
                 @click.stop.prevent="
                   confirmDeleteDialog(
                     () => deleteDiagram('authorization-boundary', diagram),
@@ -38,7 +38,7 @@
                 "
               >
                 Delete Diagram
-              </button>
+              </TertiaryButton>
             </div>
             <DrawIODiagramEditor
               class="h-184"
@@ -82,8 +82,8 @@
             <div
               class="flex justify-end items-center gap-2 px-3 py-2 bg-ccf-50 dark:bg-slate-800 border-b border-ccf-300 dark:border-slate-700"
             >
-              <button
-                class="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition-colors"
+              <TertiaryButton
+                class="p-small border-red-200 text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-950/40"
                 @click.stop.prevent="
                   confirmDeleteDialog(
                     () => deleteDiagram('network-architecture', diagram),
@@ -95,7 +95,7 @@
                 "
               >
                 Delete Diagram
-              </button>
+              </TertiaryButton>
             </div>
             <DrawIODiagramEditor
               class="h-168"
@@ -139,8 +139,8 @@
             <div
               class="flex justify-end items-center gap-2 px-3 py-2 bg-ccf-50 dark:bg-slate-800 border-b border-ccf-300 dark:border-slate-700"
             >
-              <button
-                class="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition-colors"
+              <TertiaryButton
+                class="p-small border-red-200 text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-950/40"
                 @click.stop.prevent="
                   confirmDeleteDialog(
                     () => deleteDiagram('data-flow', diagram),
@@ -152,7 +152,7 @@
                 "
               >
                 Delete Diagram
-              </button>
+              </TertiaryButton>
             </div>
             <DrawIODiagramEditor
               class="h-168"
@@ -186,6 +186,7 @@ import { useToast } from 'primevue/usetoast';
 import { useSystemStore } from '@/stores/system.ts';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
+import TertiaryButton from '@/volt/TertiaryButton.vue';
 import type { AxiosError } from 'axios';
 import type { ErrorBody, ErrorResponse } from '@/stores/types';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
@@ -274,10 +275,23 @@ const { execute: deleteDiagramRequest } = useDataApi<unknown>(
 );
 
 onMounted(async () => {
-  await fetchAuthorizationBoundaryDiagram();
-  await fetchNetworkArchitectureDiagram();
-  await fetchDataFlowDiagram();
+  await Promise.all([
+    fetchOptionalDiagram(fetchAuthorizationBoundaryDiagram),
+    fetchOptionalDiagram(fetchNetworkArchitectureDiagram),
+    fetchOptionalDiagram(fetchDataFlowDiagram),
+  ]);
 });
+
+async function fetchOptionalDiagram(fetchDiagram: () => Promise<unknown>) {
+  try {
+    await fetchDiagram();
+  } catch (error) {
+    const err = error as AxiosError;
+    if (err.response?.status !== 404) {
+      throw error;
+    }
+  }
+}
 
 async function saveAuthorizationBoundaryDiagram(diagram: Diagram) {
   if (systemSecurityPlan.value != null) {

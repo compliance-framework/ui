@@ -21,4 +21,19 @@ describe('router', () => {
     expect(route?.meta.requiresAuth).toBe(true);
     expect(route?.meta.requiresAdmin).toBeUndefined();
   });
+
+  it('registers one dashboards drawer route for system components', () => {
+    const routes = router
+      .getRoutes()
+      .filter((route) => route.name === 'system-component-dashboards');
+
+    expect(routes).toHaveLength(1);
+    expect(routes[0].path).toBe('/system/components/dashboards/:componentId');
+    expect(
+      router.resolve({
+        name: 'system-component-dashboards',
+        params: { componentId: 'component-1' },
+      }).path,
+    ).toBe('/system/components/dashboards/component-1');
+  });
 });

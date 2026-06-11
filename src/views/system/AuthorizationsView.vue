@@ -1,9 +1,11 @@
 <template>
   <div class="p-4">
     <div class="flex justify-between items-center mb-6">
-      <h3 class="text-lg font-semibold dark:text-slate-300">
-        Leveraged Authorizations
-      </h3>
+      <TooltipTitle
+        text="Leveraged Authorizations"
+        position="bottom"
+        underline-class="text-lg font-semibold dark:text-slate-300 underline decoration-dotted cursor-help"
+      />
       <PrimaryButton @click="showCreateLeveragedAuthModal = true">
         Create Authorization
       </PrimaryButton>
@@ -11,7 +13,7 @@
 
     <div class="space-y-4">
       <div
-        v-if="leveragedAuthorizations?.length === 0"
+        v-if="showEmptyAuthorizations"
         class="text-center py-8 text-gray-500 dark:text-slate-400"
       >
         No leveraged authorizations defined. Create your first authorization to
@@ -120,7 +122,7 @@
     header="Create Leveraged Authorization"
   >
     <SystemImplementationLeveragedAuthorizationCreateForm
-      :ssp-id="id"
+      :ssp-id="sspId"
       @cancel="showCreateLeveragedAuthModal = false"
       @created="handleLeveragedAuthCreated"
     />
@@ -134,7 +136,7 @@
   >
     <SystemImplementationLeveragedAuthorizationEditForm
       v-if="editingLeveragedAuth"
-      :ssp-id="id"
+      :ssp-id="sspId"
       :auth="editingLeveragedAuth!"
       @cancel="showEditLeveragedAuthModal = false"
       @saved="handleLeveragedAuthSaved"
@@ -142,8 +144,7 @@
   </Dialog>
 </template>
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
-import { useRoute } from 'vue-router';
+import { computed, onMounted, ref } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import decamelizeKeys from 'decamelize-keys';
 
@@ -151,6 +152,7 @@ import decamelizeKeys from 'decamelize-keys';
 import Dialog from '@/volt/Dialog.vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
 import TertiaryButton from '@/volt/TertiaryButton.vue';
+import TooltipTitle from '@/components/TooltipTitle.vue';
 import SystemImplementationLeveragedAuthorizationCreateForm from '@/components/system-security-plans/SystemImplementationLeveragedAuthorizationCreateForm.vue';
 import SystemImplementationLeveragedAuthorizationEditForm from '@/components/system-security-plans/SystemImplementationLeveragedAuthorizationEditForm.vue';
 
@@ -161,26 +163,34 @@ import { useSystemStore } from '@/stores/system.ts';
 import { useDataApi } from '@/composables/axios';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
 
-const route = useRoute();
 const toast = useToast();
 const { system } = useSystemStore();
 
 const { confirmDeleteDialog } = useDeleteConfirmationDialog();
 
-const id = route.params.id as string;
-
 // Data
 const systemSecurityPlan = ref<SystemSecurityPlan | null>(null);
+const sspId = computed(() => systemSecurityPlan.value?.uuid ?? '');
 
 const showCreateLeveragedAuthModal = ref(false);
 const showEditLeveragedAuthModal = ref(false);
 
-const { data: leveragedAuthorizations, execute: fetchLeveragedAuthorizations } =
-  useDataApi<LeveragedAuthorization[]>(
-    `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/system-implementation/leveraged-authorizations`,
-    { method: 'GET' },
-    { immediate: false },
+const {
+  data: leveragedAuthorizations,
+  isLoading: leveragedAuthorizationsLoading,
+  execute: fetchLeveragedAuthorizations,
+} = useDataApi<LeveragedAuthorization[]>(
+  `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/system-implementation/leveraged-authorizations`,
+  { method: 'GET' },
+  { immediate: false },
+);
+
+const showEmptyAuthorizations = computed(() => {
+  return (
+    !leveragedAuthorizationsLoading.value &&
+    (leveragedAuthorizations.value?.length ?? 0) === 0
   );
+});
 
 const { execute: executeDelete } = useDataApi<void>(
   null,
@@ -209,7 +219,10 @@ const editLeveragedAuth = (auth: LeveragedAuthorization) => {
 };
 
 const handleLeveragedAuthCreated = (newAuth: LeveragedAuthorization) => {
-  leveragedAuthorizations.value?.push(newAuth);
+  leveragedAuthorizations.value = [
+    ...(leveragedAuthorizations.value ?? []),
+    newAuth,
+  ];
   showCreateLeveragedAuthModal.value = false;
 };
 

@@ -122,6 +122,37 @@ vi.mock('@/volt/PrimaryButton.vue', () => ({
   },
 }));
 
+vi.mock('@/volt/Label.vue', () => ({
+  default: {
+    name: 'Label',
+    props: ['for'],
+    template: '<label :for="$props.for"><slot /></label>',
+  },
+}));
+
+vi.mock('@/volt/Select.vue', () => ({
+  default: {
+    name: 'Select',
+    props: ['id', 'modelValue', 'options', 'optionLabel', 'optionValue'],
+    emits: ['update:modelValue'],
+    template: `
+      <select
+        :id="id"
+        :value="modelValue"
+        @change="$emit('update:modelValue', $event.target.value)"
+      >
+        <option
+          v-for="option in options"
+          :key="option[optionValue]"
+          :value="option[optionValue]"
+        >
+          {{ option[optionLabel] }}
+        </option>
+      </select>
+    `,
+  },
+}));
+
 vi.mock('@/volt/Drawer.vue', () => ({
   default: {
     name: 'Drawer',

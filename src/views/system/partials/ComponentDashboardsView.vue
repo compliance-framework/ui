@@ -7,6 +7,8 @@ import type { Dashboard } from '@/stores/filters.ts';
 import FormInput from '@/components/forms/FormInput.vue';
 import type { Evidence, EvidenceLabel } from '@/stores/evidence.ts';
 import Select from '@/volt/Select.vue';
+import PrimaryButton from '@/volt/PrimaryButton.vue';
+import SecondaryButton from '@/volt/SecondaryButton.vue';
 import BurgerMenu from '@/components/BurgerMenu.vue';
 import { useToggle } from '@/composables/useToggle';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
@@ -592,15 +594,15 @@ async function submitEvidenceLinking() {
         />
       </div>
       <div class="text-right">
-        <secondary-button
+        <SecondaryButton
           @click="
             setLinkExistingForm(false);
             selectedDashboardToLink = null;
           "
-          >Cancel</secondary-button
+          >Cancel</SecondaryButton
         >
-        <primary-button type="submit" :disabled="!selectedDashboardToLink"
-          >Link Dashboard</primary-button
+        <PrimaryButton type="submit" :disabled="!selectedDashboardToLink"
+          >Link Dashboard</PrimaryButton
         >
       </div>
     </form>
@@ -732,11 +734,11 @@ async function submitEvidenceLinking() {
       </div>
 
       <div class="text-right">
-        <secondary-button @click="resetEvidenceLinkingForm"
-          >Cancel</secondary-button
+        <SecondaryButton @click="resetEvidenceLinkingForm"
+          >Cancel</SecondaryButton
         >
-        <primary-button type="submit" :disabled="!computedFilter"
-          >Create Dashboard</primary-button
+        <PrimaryButton type="submit" :disabled="!computedFilter"
+          >Create Dashboard</PrimaryButton
         >
       </div>
     </form>
