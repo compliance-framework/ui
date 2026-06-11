@@ -6,9 +6,10 @@ import InputText from '@/volt/InputText.vue';
 import Message from '@/volt/Message.vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
-import { reactive, ref, watchEffect } from 'vue';
+import { reactive, watch, watchEffect } from 'vue';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import { useToast } from 'primevue/usetoast';
+import { useFormSubmit } from '@/composables/useFormSubmit';
 
 const show = defineModel<boolean>();
 
@@ -25,13 +26,31 @@ const props = defineProps<{
 
 const toast = useToast();
 const form = reactive({ title: '', class: '' });
-const errors = reactive<Record<string, string>>({});
-const errorMessage = ref('');
-const isSubmitting = ref(false);
+const {
+  errors,
+  errorMessage,
+  isSubmitting,
+  resetFormState,
+  validate,
+  getErrorMessage,
+} = useFormSubmit(
+  [
+    {
+      key: 'title',
+      message: 'Title is required',
+      isMissing: () => !form.title.trim(),
+    },
+  ],
+  'Failed to update control.',
+);
 
 watchEffect(() => {
   form.title = props.control?.title || '';
   form.class = props.control?.class || '';
+});
+
+watch(show, (open) => {
+  if (open) resetFormState();
 });
 
 const { execute: update } = useDataApi<Control>(
@@ -46,17 +65,6 @@ const { execute: update } = useDataApi<Control>(
   },
   { immediate: false },
 );
-
-function validate(): boolean {
-  Object.keys(errors).forEach((key) => delete errors[key]);
-  errorMessage.value = '';
-
-  if (!form.title.trim()) {
-    errors.title = 'Title is required';
-  }
-
-  return Object.keys(errors).length === 0;
-}
 
 async function submit() {
   if (!validate()) return;
@@ -81,8 +89,7 @@ async function submit() {
       show.value = false;
     }
   } catch (e) {
-    errorMessage.value =
-      e instanceof Error ? e.message : 'Failed to update control.';
+    errorMessage.value = getErrorMessage(e);
     toast.add({
       severity: 'error',
       summary: 'Update failed',

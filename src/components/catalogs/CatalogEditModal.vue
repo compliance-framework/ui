@@ -6,11 +6,10 @@ import InputText from '@/volt/InputText.vue';
 import Message from '@/volt/Message.vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
-import { reactive, ref, watchEffect } from 'vue';
+import { reactive, watch, watchEffect } from 'vue';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import { useToast } from 'primevue/usetoast';
-import type { AxiosError } from 'axios';
-import type { ErrorResponse, ErrorBody } from '@/stores/types.ts';
+import { useFormSubmit } from '@/composables/useFormSubmit';
 
 const show = defineModel<boolean>();
 
@@ -26,13 +25,31 @@ const props = defineProps<{
 
 const toast = useToast();
 const form = reactive({ title: '', version: '' });
-const errors = reactive<Record<string, string>>({});
-const errorMessage = ref('');
-const isSubmitting = ref(false);
+const {
+  errors,
+  errorMessage,
+  isSubmitting,
+  resetFormState,
+  validate,
+  getErrorMessage,
+} = useFormSubmit(
+  [
+    {
+      key: 'title',
+      message: 'Title is required',
+      isMissing: () => !form.title.trim(),
+    },
+  ],
+  'Failed to update catalog.',
+);
 
 watchEffect(() => {
   form.title = props.catalog?.metadata?.title || '';
   form.version = props.catalog?.metadata?.version || '';
+});
+
+watch(show, (open) => {
+  if (open) resetFormState();
 });
 
 const { execute: update } = useDataApi<Catalog>(
@@ -47,25 +64,6 @@ const { execute: update } = useDataApi<Catalog>(
   },
   { immediate: false },
 );
-
-function validate(): boolean {
-  Object.keys(errors).forEach((key) => delete errors[key]);
-  errorMessage.value = '';
-
-  if (!form.title.trim()) {
-    errors.title = 'Title is required';
-  }
-
-  return Object.keys(errors).length === 0;
-}
-
-function getErrorMessage(error: unknown): string {
-  const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
-  return (
-    errorResponse.response?.data.errors?.body ||
-    (error instanceof Error ? error.message : 'Failed to update catalog.')
-  );
-}
 
 async function submit() {
   if (!validate()) return;

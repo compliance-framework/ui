@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import type { Catalog, Control, Group } from '@/oscal';
-import { reactive, ref } from 'vue';
+import { reactive } from 'vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
 import Label from '@/volt/Label.vue';
 import InputText from '@/volt/InputText.vue';
 import Message from '@/volt/Message.vue';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
+import { useFormSubmit } from '@/composables/useFormSubmit';
 
 const props = defineProps<{
   catalog: Catalog;
@@ -27,9 +28,22 @@ const control = reactive<Partial<Control>>({
   id: '',
   title: '',
 });
-const errors = reactive<Record<string, string>>({});
-const errorMessage = ref('');
-const isSubmitting = ref(false);
+const { errors, errorMessage, isSubmitting, validate, getErrorMessage } =
+  useFormSubmit(
+    [
+      {
+        key: 'id',
+        message: 'Control ID is required',
+        isMissing: () => !control.id?.trim(),
+      },
+      {
+        key: 'title',
+        message: 'Title is required',
+        isMissing: () => !control.title?.trim(),
+      },
+    ],
+    'Failed to create control.',
+  );
 
 const { execute: executeCreateControl } = useDataApi<Control>(
   `/api/oscal/catalogs/${props.catalog.uuid}/controls`,
@@ -69,24 +83,6 @@ const { execute: executeCreateGroupControl } = useDataApi<Control>(
   },
   { immediate: false },
 );
-
-function validate(): boolean {
-  Object.keys(errors).forEach((key) => delete errors[key]);
-  errorMessage.value = '';
-
-  if (!control.id?.trim()) {
-    errors.id = 'Control ID is required';
-  }
-  if (!control.title?.trim()) {
-    errors.title = 'Title is required';
-  }
-
-  return Object.keys(errors).length === 0;
-}
-
-function getErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : 'Failed to create control.';
-}
 
 async function createControl(): Promise<void> {
   if (!validate()) return;

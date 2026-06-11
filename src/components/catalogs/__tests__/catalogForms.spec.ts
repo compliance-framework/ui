@@ -134,6 +134,7 @@ describe('catalog forms', () => {
 
     expect(wrapper.text()).toContain('Control ID is required');
     expect(wrapper.text()).toContain('Title is required');
+    expect(apiCalls.length).toBeGreaterThan(0);
     expect(
       apiCalls.every((apiCall) => apiCall.execute.mock.calls.length === 0),
     ).toBe(true);
@@ -218,6 +219,7 @@ describe('catalog forms', () => {
     await cancelButton?.trigger('click');
 
     expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([false]);
+    expect(apiCalls.length).toBeGreaterThan(0);
     expect(
       apiCalls.every((apiCall) => apiCall.execute.mock.calls.length === 0),
     ).toBe(true);
@@ -230,6 +232,7 @@ describe('catalog forms', () => {
 
     expect(wrapper.text()).toContain('Group ID is required');
     expect(wrapper.text()).toContain('Title is required');
+    expect(apiCalls.length).toBeGreaterThan(0);
     expect(
       apiCalls.every((apiCall) => apiCall.execute.mock.calls.length === 0),
     ).toBe(true);

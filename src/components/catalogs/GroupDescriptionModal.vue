@@ -6,10 +6,11 @@ import Textarea from '@/volt/Textarea.vue';
 import Message from '@/volt/Message.vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
-import { reactive, ref, watchEffect } from 'vue';
+import { ref, watch, watchEffect } from 'vue';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import { v4 as uuidv4 } from 'uuid';
 import { useToast } from 'primevue/usetoast';
+import { useFormSubmit } from '@/composables/useFormSubmit';
 
 const show = defineModel<boolean>();
 
@@ -26,13 +27,21 @@ const props = defineProps<{
 
 const toast = useToast();
 const description = ref<string>('');
-const errors = reactive<Record<string, string>>({});
-const errorMessage = ref('');
-const isSubmitting = ref(false);
+const {
+  errorMessage,
+  isSubmitting,
+  resetFormState,
+  validate,
+  getErrorMessage,
+} = useFormSubmit([], 'Failed to update description.');
 
 watchEffect(() => {
   const d = props.group.parts?.find((p) => p.name === 'description');
   description.value = d?.prose || '';
+});
+
+watch(show, (open) => {
+  if (open) resetFormState();
 });
 
 const { execute: update } = useDataApi<Group>(
@@ -50,12 +59,6 @@ const { execute: update } = useDataApi<Group>(
 
 function newPartId() {
   return `description-${uuidv4()}`;
-}
-
-function validate(): boolean {
-  Object.keys(errors).forEach((key) => delete errors[key]);
-  errorMessage.value = '';
-  return true;
 }
 
 async function submit() {
@@ -88,8 +91,7 @@ async function submit() {
       show.value = false;
     }
   } catch (e) {
-    errorMessage.value =
-      e instanceof Error ? e.message : 'Failed to update description.';
+    errorMessage.value = getErrorMessage(e);
     toast.add({
       severity: 'error',
       summary: 'Update failed',

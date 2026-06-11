@@ -6,10 +6,11 @@ import Textarea from '@/volt/Textarea.vue';
 import Message from '@/volt/Message.vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
-import { computed, reactive, ref, watchEffect } from 'vue';
+import { computed, ref, watch, watchEffect } from 'vue';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import { v4 as uuidv4 } from 'uuid';
 import { useToast } from 'primevue/usetoast';
+import { useFormSubmit } from '@/composables/useFormSubmit';
 
 const show = defineModel<boolean>();
 
@@ -27,9 +28,13 @@ const props = defineProps<{
 
 const toast = useToast();
 const prose = ref<string>('');
-const errors = reactive<Record<string, string>>({});
-const errorMessage = ref('');
-const isSubmitting = ref(false);
+const {
+  errorMessage,
+  isSubmitting,
+  resetFormState,
+  validate,
+  getErrorMessage,
+} = useFormSubmit([], 'Failed to update control.');
 const partLabel = computed(() =>
   props.type
     .split('-')
@@ -40,6 +45,10 @@ const partLabel = computed(() =>
 watchEffect(() => {
   const p = props.control.parts?.find((pp) => pp.name === props.type);
   prose.value = p?.prose || '';
+});
+
+watch(show, (open) => {
+  if (open) resetFormState();
 });
 
 const { execute: update } = useDataApi<Control>(
@@ -57,12 +66,6 @@ const { execute: update } = useDataApi<Control>(
 
 function newPartId() {
   return `${props.type}-${uuidv4()}`;
-}
-
-function validate(): boolean {
-  Object.keys(errors).forEach((key) => delete errors[key]);
-  errorMessage.value = '';
-  return true;
 }
 
 async function submit() {
@@ -95,8 +98,7 @@ async function submit() {
       show.value = false;
     }
   } catch (e) {
-    errorMessage.value =
-      e instanceof Error ? e.message : 'Failed to update control.';
+    errorMessage.value = getErrorMessage(e);
     toast.add({
       severity: 'error',
       summary: 'Update failed',

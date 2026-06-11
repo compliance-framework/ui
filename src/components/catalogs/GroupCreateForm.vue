@@ -1,14 +1,13 @@
 <script setup lang="ts">
 import type { Catalog, Group } from '@/oscal';
-import { reactive, ref } from 'vue';
+import { reactive } from 'vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
 import Label from '@/volt/Label.vue';
 import InputText from '@/volt/InputText.vue';
 import Message from '@/volt/Message.vue';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
-import type { AxiosError } from 'axios';
-import type { ErrorResponse, ErrorBody } from '@/stores/types.ts';
+import { useFormSubmit } from '@/composables/useFormSubmit';
 
 const props = defineProps<{
   catalog: Catalog;
@@ -46,33 +45,22 @@ const group = reactive<Partial<Group>>({
   id: '',
   title: '',
 });
-const errors = reactive<Record<string, string>>({});
-const errorMessage = ref('');
-const isSubmitting = ref(false);
-
-function validate(): boolean {
-  Object.keys(errors).forEach((key) => delete errors[key]);
-  errorMessage.value = '';
-
-  if (!group.id?.trim()) {
-    errors.id = 'Group ID is required';
-  }
-  if (!group.title?.trim()) {
-    errors.title = 'Title is required';
-  }
-
-  return Object.keys(errors).length === 0;
-}
-
-function getErrorMessage(error: unknown): string {
-  const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
-  return (
-    errorResponse.response?.data.errors?.body ||
-    (error instanceof Error
-      ? error.message
-      : 'An error occurred while creating the group.')
+const { errors, errorMessage, isSubmitting, validate, getErrorMessage } =
+  useFormSubmit(
+    [
+      {
+        key: 'id',
+        message: 'Group ID is required',
+        isMissing: () => !group.id?.trim(),
+      },
+      {
+        key: 'title',
+        message: 'Title is required',
+        isMissing: () => !group.title?.trim(),
+      },
+    ],
+    'An error occurred while creating the group.',
   );
-}
 
 async function createGroup(): Promise<void> {
   if (!validate()) return;
