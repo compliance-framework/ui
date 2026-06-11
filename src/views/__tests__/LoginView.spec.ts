@@ -65,7 +65,10 @@ function mountComponent() {
             '<input :value="modelValue" :placeholder="placeholder" :type="type || \'text\'" @input="$emit(\'update:modelValue\', $event.target.value)" />',
         },
         Message: {
-          props: ['severity', 'closable'],
+          props: {
+            severity: String,
+            closable: Boolean,
+          },
           emits: ['close'],
           template:
             '<div data-testid="login-banner" :data-severity="severity"><slot /><button v-if="closable" data-testid="login-banner-close" @click="$emit(\'close\')">Close</button></div>',
