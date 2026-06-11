@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, watchEffect, computed } from 'vue';
+import { ref, watch, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import BurgerMenu from '@/components/BurgerMenu.vue';
 import Textarea from '@/volt/Textarea.vue';
@@ -42,10 +42,17 @@ const router = useRouter();
 
 const { confirmDeleteDialog } = useDeleteConfirmationDialog();
 
-const localComponent = ref<ByComponent>(props.byComponent);
-watchEffect(() => {
-  localComponent.value = props.byComponent;
-});
+function cloneByComponent(value: ByComponent): ByComponent {
+  return JSON.parse(JSON.stringify(value)) as ByComponent;
+}
+
+const localComponent = ref<ByComponent>(cloneByComponent(props.byComponent));
+watch(
+  () => props.byComponent,
+  (byComponent) => {
+    localComponent.value = cloneByComponent(byComponent);
+  },
+);
 
 const { value: editing, set: setEditing } = useToggle();
 
@@ -171,16 +178,27 @@ const highestSeverity = computed(() => {
 });
 
 function save() {
-  emit('save', normalizeByComponentImplementationStatus(localComponent.value));
+  emit(
+    'save',
+    normalizeByComponentImplementationStatus(
+      cloneByComponent(localComponent.value),
+    ),
+  );
   setEditing(false);
 }
 
 async function deleteStatement() {
-  emit('delete', localComponent.value);
+  emit('delete', props.byComponent);
 }
 
 function cancel() {
+  localComponent.value = cloneByComponent(props.byComponent);
   setEditing(false);
+}
+
+function edit() {
+  localComponent.value = cloneByComponent(props.byComponent);
+  setEditing(true);
 }
 
 function openRisksForControl() {
@@ -214,7 +232,7 @@ function openRisksForControl() {
         {
           label: 'Edit',
           command() {
-            setEditing(true);
+            edit();
           },
         },
         {

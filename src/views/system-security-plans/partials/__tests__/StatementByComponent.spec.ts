@@ -30,11 +30,14 @@ vi.mock('@/utils/delete-dialog', () => ({
 const stubs = {
   BurgerMenu: {
     props: ['items'],
-    template: '<button />',
+    template:
+      '<div><button v-for="item in items" :key="item.label" @click="item.command()">{{ item.label }}</button></div>',
   },
   Textarea: {
     props: ['modelValue'],
-    template: '<textarea />',
+    emits: ['update:modelValue'],
+    template:
+      '<textarea :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />',
   },
   RiskIndicatorBadge: {
     template: '<span />',
@@ -98,5 +101,46 @@ describe('StatementByComponent', () => {
     expect(execute).not.toHaveBeenCalledWith(
       expect.stringContaining('undefined'),
     );
+  });
+
+  it('discards inline edit changes on cancel without mutating the byComponent prop', async () => {
+    const editableByComponent = {
+      uuid: 'by-component-1',
+      componentUuid: 'component-1',
+      description: 'Original description',
+      implementationStatus: {
+        state: 'implemented',
+        remarks: 'Original remarks',
+      },
+    } as ByComponent;
+
+    const wrapper = mount(StatementByComponent, {
+      props: {
+        ssp: { uuid: 'ssp-1' } as SystemSecurityPlan,
+        byComponent: editableByComponent,
+      },
+      global: { stubs },
+    });
+
+    await wrapper.find('button').trigger('click');
+    await wrapper.find('textarea').setValue('Unsaved description');
+    await wrapper.find('select').setValue('planned');
+    await wrapper.findAll('textarea')[1].setValue('Unsaved remarks');
+    const cancelButton = wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Cancel');
+    expect(cancelButton).toBeDefined();
+    await cancelButton?.trigger('click');
+
+    expect(editableByComponent).toEqual({
+      uuid: 'by-component-1',
+      componentUuid: 'component-1',
+      description: 'Original description',
+      implementationStatus: {
+        state: 'implemented',
+        remarks: 'Original remarks',
+      },
+    });
+    expect(wrapper.emitted('save')).toBeUndefined();
   });
 });
