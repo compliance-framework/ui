@@ -2,7 +2,11 @@
   <PageCard class="mx-auto mt-12 max-w-96 py-8">
     <div class="px-8 pb-8">
       <SideNavLogo alt="Vue logo" :src="lightLogo" class="w-full dark:hidden" />
-      <SideNavLogo alt="Vue logo" :src="darkLogo" class="w-full hidden dark:block" />
+      <SideNavLogo
+        alt="Vue logo"
+        :src="darkLogo"
+        class="w-full hidden dark:block"
+      />
     </div>
     <Message
       v-if="showLoginBanner"
@@ -66,7 +70,9 @@
         <div class="w-full border-t border-gray-300 dark:border-gray-600"></div>
       </div>
       <div class="relative flex justify-center text-sm">
-        <span class="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">
+        <span
+          class="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400"
+        >
           Or continue with
         </span>
       </div>
