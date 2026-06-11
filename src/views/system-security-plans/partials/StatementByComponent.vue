@@ -110,8 +110,8 @@ const statusRemarks = computed({
   },
 });
 
-const implementationStatusDisplayLabel = computed(() => {
-  const state = localComponent.value.implementationStatus?.state;
+const persistedImplementationStatusDisplayLabel = computed(() => {
+  const state = props.byComponent.implementationStatus?.state;
   return implementationStatusLabel(state);
 });
 
@@ -184,6 +184,7 @@ function save() {
       cloneByComponent(localComponent.value),
     ),
   );
+  localComponent.value = cloneByComponent(props.byComponent);
   setEditing(false);
 }
 
@@ -249,7 +250,7 @@ function openRisksForControl() {
   <div class="text-gray-600 dark:text-slate-400">
     <template v-if="!editing">
       <p class="prose prose-slate dark:prose-invert max-w-full">
-        <VueMarkdown :source="localComponent.description" />
+        <VueMarkdown :source="byComponent.description" />
       </p>
     </template>
     <template v-else>
@@ -304,20 +305,20 @@ function openRisksForControl() {
   </div>
 
   <div
-    v-if="!editing && localComponent.implementationStatus?.state"
+    v-if="!editing && byComponent.implementationStatus?.state"
     class="mt-2 text-xs"
   >
     <span class="font-medium text-gray-700 dark:text-slate-300"
       >Implementation Status:</span
     >
     <span class="ml-1 text-gray-600 dark:text-slate-400">
-      {{ implementationStatusDisplayLabel }}
+      {{ persistedImplementationStatusDisplayLabel }}
     </span>
     <div
-      v-if="localComponent.implementationStatus.remarks"
+      v-if="byComponent.implementationStatus.remarks"
       class="mt-1 text-gray-600 dark:text-slate-400"
     >
-      {{ localComponent.implementationStatus.remarks }}
+      {{ byComponent.implementationStatus.remarks }}
     </div>
   </div>
 

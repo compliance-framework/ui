@@ -143,4 +143,33 @@ describe('StatementByComponent', () => {
     });
     expect(wrapper.emitted('save')).toBeUndefined();
   });
+
+  it('shows persisted prop data after save when the parent does not update the prop', async () => {
+    const editableByComponent = {
+      uuid: 'by-component-1',
+      componentUuid: 'component-1',
+      description: 'Persisted description',
+    } as ByComponent;
+
+    const wrapper = mount(StatementByComponent, {
+      props: {
+        ssp: { uuid: 'ssp-1' } as SystemSecurityPlan,
+        byComponent: editableByComponent,
+      },
+      global: { stubs },
+    });
+
+    await wrapper.find('button').trigger('click');
+    await wrapper.find('textarea').setValue('Draft description');
+    const saveButton = wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Save');
+    expect(saveButton).toBeDefined();
+    await saveButton?.trigger('click');
+
+    expect(wrapper.emitted('save')).toHaveLength(1);
+    expect(wrapper.text()).toContain('Persisted description');
+    expect(wrapper.text()).not.toContain('Draft description');
+    expect(editableByComponent.description).toBe('Persisted description');
+  });
 });
