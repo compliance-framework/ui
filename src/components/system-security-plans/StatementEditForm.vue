@@ -16,7 +16,7 @@
         <label class="inline-block pb-2 dark:text-slate-300"
           >Statement ID <span class="text-red-500">*</span></label
         >
-        <FormInput
+        <InputText
           v-model="statementData.statementId"
           placeholder="e.g., au-1_smt"
           required
@@ -25,7 +25,7 @@
 
       <div class="mb-4">
         <label class="inline-block pb-2 dark:text-slate-300">Remarks</label>
-        <FormTextarea v-model="statementData.remarks" rows="3" />
+        <Textarea v-model="statementData.remarks" rows="3" />
       </div>
 
       <!-- Properties -->
@@ -55,13 +55,13 @@
                 <label class="inline-block pb-1 text-sm dark:text-slate-300"
                   >Name</label
                 >
-                <FormInput v-model="prop.name" placeholder="Property name" />
+                <InputText v-model="prop.name" placeholder="Property name" />
               </div>
               <div>
                 <label class="inline-block pb-1 text-sm dark:text-slate-300"
                   >Value</label
                 >
-                <FormInput v-model="prop.value" placeholder="Property value" />
+                <InputText v-model="prop.value" placeholder="Property value" />
               </div>
             </div>
           </div>
@@ -103,20 +103,20 @@
                 <label class="inline-block pb-1 text-sm dark:text-slate-300"
                   >Href</label
                 >
-                <FormInput v-model="link.href" placeholder="URL or reference" />
+                <InputText v-model="link.href" placeholder="URL or reference" />
               </div>
               <div>
                 <label class="inline-block pb-1 text-sm dark:text-slate-300"
                   >Rel</label
                 >
-                <FormInput v-model="link.rel" placeholder="Relationship" />
+                <InputText v-model="link.rel" placeholder="Relationship" />
               </div>
             </div>
             <div class="mt-2">
               <label class="inline-block pb-1 text-sm dark:text-slate-300"
                 >Text</label
               >
-              <FormInput v-model="link.text" placeholder="Link text" />
+              <InputText v-model="link.text" placeholder="Link text" />
             </div>
           </div>
 
@@ -153,8 +153,8 @@
 <script setup lang="ts">
 import { reactive, onMounted } from 'vue';
 import { useToast } from 'primevue/usetoast';
-import FormInput from '@/components/forms/FormInput.vue';
-import FormTextarea from '@/components/forms/FormTextarea.vue';
+import InputText from '@/volt/InputText.vue';
+import Textarea from '@/volt/Textarea.vue';
 import type { Statement } from '@/oscal';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import type { AxiosError } from 'axios';

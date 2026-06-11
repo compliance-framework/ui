@@ -3,7 +3,7 @@
     <form @submit.prevent="saveLeveragedAuthorization()">
       <div class="mb-4">
         <label class="inline-block pb-2 dark:text-slate-300">UUID</label>
-        <FormInput
+        <InputText
           v-model="authData.uuid"
           placeholder="Authorization UUID"
           readonly
@@ -14,7 +14,7 @@
         <label class="inline-block pb-2 dark:text-slate-300"
           >Title <span class="text-red-500">*</span></label
         >
-        <FormInput
+        <InputText
           v-model="authData.title"
           placeholder="Authorization title (e.g., GovCloud, FedRAMP)"
           required
@@ -25,7 +25,7 @@
         <label class="inline-block pb-2 dark:text-slate-300"
           >Party UUID <span class="text-red-500">*</span></label
         >
-        <FormInput
+        <InputText
           v-model="authData.partyUuid"
           placeholder="UUID of the party providing the authorization"
           required
@@ -36,7 +36,7 @@
         <label class="inline-block pb-2 dark:text-slate-300"
           >Date Authorized <span class="text-red-500">*</span></label
         >
-        <FormInput
+        <InputText
           v-model="authData.dateAuthorized"
           type="date"
           placeholder="Date when authorization was granted"
@@ -46,7 +46,7 @@
 
       <div class="mb-4">
         <label class="inline-block pb-2 dark:text-slate-300">Remarks</label>
-        <FormTextarea
+        <Textarea
           v-model="authData.remarks"
           placeholder="Additional remarks about this authorization"
         />
@@ -61,12 +61,12 @@
             :key="index"
             class="flex gap-2"
           >
-            <FormInput
+            <InputText
               v-model="prop.name"
               placeholder="Property name"
               class="flex-1"
             />
-            <FormInput
+            <InputText
               v-model="prop.value"
               placeholder="Property value"
               class="flex-1"
@@ -98,17 +98,17 @@
             :key="index"
             class="flex gap-2"
           >
-            <FormInput
+            <InputText
               v-model="link.href"
               placeholder="Link URL"
               class="flex-1"
             />
-            <FormInput
+            <InputText
               v-model="link.text"
               placeholder="Link text"
               class="flex-1"
             />
-            <FormInput
+            <InputText
               v-model="link.rel"
               placeholder="Relationship"
               class="flex-1"
@@ -154,8 +154,8 @@
 <script setup lang="ts">
 import { reactive, onMounted } from 'vue';
 import { useToast } from 'primevue/usetoast';
-import FormInput from '@/components/forms/FormInput.vue';
-import FormTextarea from '@/components/forms/FormTextarea.vue';
+import InputText from '@/volt/InputText.vue';
+import Textarea from '@/volt/Textarea.vue';
 import type { LeveragedAuthorization } from '@/oscal';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import type { AxiosError } from 'axios';

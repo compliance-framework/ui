@@ -16,7 +16,7 @@
         <label class="inline-block pb-2 dark:text-slate-300"
           >Type <span class="text-red-500">*</span></label
         >
-        <FormInput
+        <InputText
           v-model="componentData.type"
           placeholder="e.g., service, software, hardware"
           required
@@ -27,26 +27,26 @@
         <label class="inline-block pb-2 dark:text-slate-300"
           >Title <span class="text-red-500">*</span></label
         >
-        <FormInput v-model="componentData.title" required />
+        <InputText v-model="componentData.title" required />
       </div>
 
       <div class="mb-4">
         <label class="inline-block pb-2 dark:text-slate-300"
           >Description <span class="text-red-500">*</span></label
         >
-        <FormTextarea v-model="componentData.description" required />
+        <Textarea v-model="componentData.description" required />
       </div>
 
       <div class="mb-4">
         <label class="inline-block pb-2 dark:text-slate-300"
           >Purpose <span class="text-red-500">*</span></label
         >
-        <FormTextarea v-model="componentData.purpose" required />
+        <Textarea v-model="componentData.purpose" required />
       </div>
 
       <div class="mb-4">
         <label class="inline-block pb-2 dark:text-slate-300">Remarks</label>
-        <FormTextarea v-model="componentData.remarks" />
+        <Textarea v-model="componentData.remarks" />
       </div>
 
       <!-- Status -->
@@ -79,7 +79,7 @@
             <label class="inline-block pb-1 text-sm dark:text-slate-300"
               >Remarks</label
             >
-            <FormTextarea v-model="componentData.status.remarks" rows="2" />
+            <Textarea v-model="componentData.status.remarks" rows="2" />
           </div>
         </div>
       </div>
@@ -111,7 +111,7 @@
                 <label class="inline-block pb-1 text-sm dark:text-slate-300"
                   >Title</label
                 >
-                <FormInput
+                <InputText
                   v-model="protocol.title"
                   placeholder="Protocol title"
                 />
@@ -120,7 +120,7 @@
                 <label class="inline-block pb-1 text-sm dark:text-slate-300"
                   >Name</label
                 >
-                <FormInput
+                <InputText
                   v-model="protocol.name"
                   placeholder="Protocol name"
                 />
@@ -138,7 +138,7 @@
                   :key="rangeIndex"
                   class="flex gap-2"
                 >
-                  <FormInput
+                  <InputText
                     v-model="range.transport"
                     placeholder="Transport (TCP/UDP)"
                     class="flex-1"
@@ -207,8 +207,9 @@
 <script setup lang="ts">
 import { reactive, onMounted } from 'vue';
 import { useToast } from 'primevue/usetoast';
+import InputText from '@/volt/InputText.vue';
+import Textarea from '@/volt/Textarea.vue';
 import FormInput from '@/components/forms/FormInput.vue';
-import FormTextarea from '@/components/forms/FormTextarea.vue';
 import type { SystemComponent } from '@/oscal';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import type { AxiosError } from 'axios';

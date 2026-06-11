@@ -36,7 +36,7 @@
     <form @submit.prevent="saveOverview()">
       <div class="mb-4">
         <label class="inline-block pb-2 dark:text-slate-300">Remarks</label>
-        <FormTextarea
+        <Textarea
           v-model="overviewData.remarks"
           :disabled="!isEditing"
           placeholder="Describe the system implementation and any additional remarks"
@@ -53,14 +53,14 @@
             :key="index"
             class="flex gap-2"
           >
-            <FormInput
+            <InputText
               v-model="prop.name"
               :disabled="!isEditing"
               placeholder="Property name"
               class="flex-1"
               :class="{ 'bg-gray-100 dark:bg-gray-800': !isEditing }"
             />
-            <FormInput
+            <InputText
               v-model="prop.value"
               :disabled="!isEditing"
               placeholder="Property value"
@@ -96,21 +96,21 @@
             :key="index"
             class="flex gap-2"
           >
-            <FormInput
+            <InputText
               v-model="link.href"
               :disabled="!isEditing"
               placeholder="Link URL"
               class="flex-1"
               :class="{ 'bg-gray-100 dark:bg-gray-800': !isEditing }"
             />
-            <FormInput
+            <InputText
               v-model="link.text"
               :disabled="!isEditing"
               placeholder="Link text"
               class="flex-1"
               :class="{ 'bg-gray-100 dark:bg-gray-800': !isEditing }"
             />
-            <FormInput
+            <InputText
               v-model="link.rel"
               :disabled="!isEditing"
               placeholder="Relationship"
@@ -143,8 +143,8 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, watch } from 'vue';
 import { useToast } from 'primevue/usetoast';
-import FormInput from '@/components/forms/FormInput.vue';
-import FormTextarea from '@/components/forms/FormTextarea.vue';
+import InputText from '@/volt/InputText.vue';
+import Textarea from '@/volt/Textarea.vue';
 import type { SystemImplementation } from '@/oscal';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import type { AxiosError } from 'axios';

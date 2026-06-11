@@ -5,11 +5,21 @@
       <div
         class="bg-white dark:bg-slate-900 border border-ccf-300 dark:border-slate-700 rounded-lg p-6"
       >
-        <h3
-          class="text-lg font-semibold mb-4 text-gray-900 dark:text-slate-300"
+        <div
+          class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
         >
-          System Security Plan Metadata
-        </h3>
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-slate-300">
+            System Security Plan Metadata
+          </h3>
+          <div class="flex flex-wrap gap-2">
+            <SecondaryButton @click="editMetadata">
+              Edit Metadata
+            </SecondaryButton>
+            <SecondaryButton @click="downloadJson">
+              Download JSON
+            </SecondaryButton>
+          </div>
+        </div>
 
         <div
           v-if="systemSecurityPlan.metadata"
@@ -96,61 +106,6 @@
 
         <div v-else class="text-center py-4">
           <p class="text-gray-500 dark:text-slate-400">Loading metadata...</p>
-        </div>
-      </div>
-
-      <!-- Actions Section -->
-      <div
-        class="bg-white dark:bg-slate-900 border border-ccf-300 dark:border-slate-700 rounded-lg p-6"
-      >
-        <h3
-          class="text-lg font-semibold mb-4 text-gray-900 dark:text-slate-300"
-        >
-          Actions
-        </h3>
-
-        <div class="flex flex-wrap gap-3">
-          <button
-            @click="editMetadata"
-            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Edit Metadata
-          </button>
-          <button
-            @click="editSystemCharacteristics"
-            class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Edit System Characteristics
-          </button>
-          <button
-            @click="editImplementation"
-            class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Edit Implementation
-          </button>
-          <button
-            @click="editControls"
-            class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Edit Controls
-          </button>
-          <button
-            @click="downloadJson"
-            class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md"
-          >
-            Download JSON
-          </button>
-        </div>
-
-        <!-- Feature Notice -->
-        <div
-          class="mt-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md"
-        >
-          <p class="text-sm text-green-800 dark:text-green-200">
-            <strong>Edit Mode:</strong> Edit buttons are now enabled. Some
-            editing functionality is still in development. You can view all SSP
-            data and download the full JSON representation.
-          </p>
         </div>
       </div>
 
@@ -282,6 +237,7 @@ import type {
 } from '@/oscal';
 import type { InventoryItem, Profile } from '@/oscal';
 import MultiSelect from '@/volt/MultiSelect.vue';
+import SecondaryButton from '@/volt/SecondaryButton.vue';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi } from '@/composables/axios';
 import type { AxiosError } from 'axios';
@@ -457,27 +413,7 @@ async function downloadJson(): Promise<void> {
   }
 }
 
-// Placeholder functions for editing functionality
 const editMetadata = () => {
-  // Navigate to the SSP editor view
   router.push(`/system-security-plans/${systemSecurityPlan.value!.uuid}`);
-};
-
-const editSystemCharacteristics = () => {
-  router.push(
-    `/system-security-plans/${systemSecurityPlan.value!.uuid}/system-characteristics`,
-  );
-};
-
-const editImplementation = () => {
-  router.push(
-    `/system-security-plans/${systemSecurityPlan.value!.uuid}/system-implementation`,
-  );
-};
-
-const editControls = () => {
-  router.push(
-    `/system-security-plans/${systemSecurityPlan.value!.uuid}/control-implementation`,
-  );
 };
 </script>

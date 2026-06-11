@@ -5,8 +5,9 @@ import type {
   SystemComponent,
   SystemSecurityPlan,
 } from '@/oscal';
-import { onMounted } from 'vue';
+import { computed, watch } from 'vue';
 import { useDataApi } from '@/composables/axios';
+import SecondaryButton from '@/volt/SecondaryButton.vue';
 
 const props = defineProps<{
   ssp: SystemSecurityPlan;
@@ -18,18 +19,30 @@ const emit = defineEmits<{
   edit: [byComponent: ByComponent];
 }>();
 
-const { data: component } = useDataApi<SystemComponent>(
-  `/api/oscal/system-security-plans/${props.ssp.uuid}/system-implementation/components/${props.byComponent.componentUuid}`,
+const componentUrl = computed(() => {
+  if (!props.ssp?.uuid || !props.byComponent.componentUuid) return null;
+  return `/api/oscal/system-security-plans/${props.ssp.uuid}/system-implementation/components/${props.byComponent.componentUuid}`;
+});
+
+const { data: component, execute: fetchComponent } =
+  useDataApi<SystemComponent>(
+    null,
+    {
+      method: 'GET',
+    },
+    { immediate: false },
+  );
+
+watch(
+  componentUrl,
+  async (url) => {
+    if (!url) return;
+    await fetchComponent(url);
+  },
   {
-    method: 'GET',
+    immediate: false,
   },
 );
-
-onMounted(() => {
-  // sspStore.getSystemImplementationComponent(props.ssp.uuid, props.byComponent.componentUuid).then((response) => {
-  //   component.value = response.data
-  // })
-});
 
 function edit() {
   emit('edit', props.byComponent);
@@ -40,12 +53,7 @@ function edit() {
   <template v-if="component">
     <div class="flex justify-between items-start">
       <span class="font-medium">{{ component.title }}</span>
-      <button
-        @click="edit"
-        class="text-blue-600 hover:text-blue-800 dark:text-blue-400 disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        Edit
-      </button>
+      <SecondaryButton @click="edit"> Edit </SecondaryButton>
     </div>
     <p class="text-gray-600 dark:text-slate-400 mt-1">
       {{ props.byComponent.description }}

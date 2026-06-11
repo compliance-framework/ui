@@ -32,7 +32,7 @@
         <label class="inline-block pb-2 dark:text-slate-300"
           >Description <span class="text-red-500">*</span></label
         >
-        <FormTextarea v-model="byComponentData.description" required rows="4" />
+        <Textarea v-model="byComponentData.description" required rows="4" />
       </div>
 
       <!-- Implementation Status -->
@@ -64,7 +64,7 @@
             <label class="inline-block pb-1 text-sm dark:text-slate-300"
               >Remarks</label
             >
-            <FormTextarea
+            <Textarea
               v-model="byComponentData.implementationStatus!.remarks"
               rows="2"
             />
@@ -102,7 +102,7 @@
                     Remove
                   </button>
                 </div>
-                <FormTextarea
+                <Textarea
                   v-model="provided.description"
                   placeholder="Description of what is provided"
                   rows="2"
@@ -142,7 +142,7 @@
                     Remove
                   </button>
                 </div>
-                <FormTextarea
+                <Textarea
                   v-model="responsibility.description"
                   placeholder="Description of responsibility"
                   rows="2"
@@ -181,7 +181,7 @@
                 Remove
               </button>
             </div>
-            <FormTextarea
+            <Textarea
               v-model="inherited.description"
               placeholder="Description of inherited control"
               rows="2"
@@ -218,7 +218,7 @@
                 Remove
               </button>
             </div>
-            <FormTextarea
+            <Textarea
               v-model="satisfied.description"
               placeholder="Description of satisfied requirement"
               rows="2"
@@ -262,7 +262,7 @@
                 <label class="inline-block pb-1 text-sm dark:text-slate-300"
                   >Parameter ID</label
                 >
-                <FormInput
+                <InputText
                   v-model="param.paramId"
                   placeholder="e.g., ac-1_prm_1"
                 />
@@ -271,7 +271,7 @@
                 <label class="inline-block pb-1 text-sm dark:text-slate-300"
                   >Value</label
                 >
-                <FormInput
+                <InputText
                   v-model="param.values[0]"
                   placeholder="Parameter value"
                 />
@@ -315,7 +315,7 @@
               <label class="inline-block pb-1 text-sm dark:text-slate-300"
                 >Role ID</label
               >
-              <FormInput
+              <InputText
                 v-model="role.roleId"
                 placeholder="e.g., system-owner, maintainer"
               />
@@ -324,7 +324,7 @@
               <label class="inline-block pb-1 text-sm dark:text-slate-300"
                 >Party UUIDs (comma-separated)</label
               >
-              <FormInput
+              <InputText
                 :model-value="role.partyUuids?.join(', ')"
                 @update:model-value="updateRolePartyUuids(index, $event)"
                 placeholder="Enter UUIDs separated by commas"
@@ -344,7 +344,7 @@
       <!-- Remarks -->
       <div class="mb-6">
         <label class="inline-block pb-2 dark:text-slate-300">Remarks</label>
-        <FormTextarea v-model="byComponentData.remarks" rows="3" />
+        <Textarea v-model="byComponentData.remarks" rows="3" />
       </div>
 
       <!-- Form Actions -->
@@ -371,8 +371,8 @@
 <script setup lang="ts">
 import { reactive, onMounted } from 'vue';
 import { useToast } from 'primevue/usetoast';
-import FormInput from '@/components/forms/FormInput.vue';
-import FormTextarea from '@/components/forms/FormTextarea.vue';
+import InputText from '@/volt/InputText.vue';
+import Textarea from '@/volt/Textarea.vue';
 import type { ByComponent, Statement, ImplementedRequirement } from '@/oscal';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import type { AxiosError } from 'axios';

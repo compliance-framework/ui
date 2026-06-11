@@ -4,7 +4,7 @@
       <div class="mb-4">
         <label class="inline-block pb-2 dark:text-slate-300">UUID</label>
         <div class="flex gap-2">
-          <FormInput
+          <InputText
             v-model="userData.uuid"
             placeholder="User UUID"
             class="flex-1"
@@ -24,7 +24,7 @@
         <label class="inline-block pb-2 dark:text-slate-300"
           >Title <span class="text-red-500">*</span></label
         >
-        <FormInput
+        <InputText
           v-model="userData.title"
           placeholder="User title or role name"
           required
@@ -33,7 +33,7 @@
 
       <div class="mb-4">
         <label class="inline-block pb-2 dark:text-slate-300">Short Name</label>
-        <FormInput
+        <InputText
           v-model="userData.shortName"
           placeholder="Short name or abbreviation"
         />
@@ -43,7 +43,7 @@
         <label class="inline-block pb-2 dark:text-slate-300"
           >Description <span class="text-red-500">*</span></label
         >
-        <FormTextarea v-model="userData.description" required />
+        <Textarea v-model="userData.description" required />
       </div>
 
       <div class="mb-4">
@@ -54,7 +54,7 @@
             :key="index"
             class="flex gap-2"
           >
-            <FormInput
+            <InputText
               v-model="userData.uuid"
               placeholder="User UUID"
               class="flex-1"
@@ -74,7 +74,7 @@
           <label class="inline-block pb-2 dark:text-slate-300"
             >Title <span class="text-red-500">*</span></label
           >
-          <FormInput
+          <InputText
             v-model="userData.title"
             placeholder="User title or role name"
             required
@@ -85,7 +85,7 @@
           <label class="inline-block pb-2 dark:text-slate-300"
             >Short Name</label
           >
-          <FormInput
+          <InputText
             v-model="userData.shortName"
             placeholder="Short name or abbreviation"
           />
@@ -95,7 +95,7 @@
           <label class="inline-block pb-2 dark:text-slate-300"
             >Description <span class="text-red-500">*</span></label
           >
-          <FormTextarea v-model="userData.description" required />
+          <Textarea v-model="userData.description" required />
         </div>
 
         <div class="mb-4">
@@ -106,7 +106,7 @@
               :key="index"
               class="flex gap-2"
             >
-              <FormInput
+              <InputText
                 v-model="userData.roleIds![index]"
                 placeholder="Role ID"
                 class="flex-1"
@@ -157,7 +157,7 @@
                 <label class="inline-block pb-1 text-sm dark:text-slate-300"
                   >Title</label
                 >
-                <FormInput
+                <InputText
                   v-model="privilege.title"
                   placeholder="Privilege title"
                 />
@@ -167,7 +167,7 @@
                 <label class="inline-block pb-1 text-sm dark:text-slate-300"
                   >Description</label
                 >
-                <FormTextarea v-model="privilege.description" rows="2" />
+                <Textarea v-model="privilege.description" rows="2" />
               </div>
 
               <div class="mb-3">
@@ -181,7 +181,7 @@
                     :key="funcIndex"
                     class="flex gap-2"
                   >
-                    <FormInput
+                    <InputText
                       v-model="privilege.functionsPerformed![funcIndex]"
                       placeholder="Function description"
                       class="flex-1"
@@ -239,8 +239,8 @@
 <script setup lang="ts">
 import { reactive, onMounted } from 'vue';
 import { useToast } from 'primevue/usetoast';
-import FormInput from '@/components/forms/FormInput.vue';
-import FormTextarea from '@/components/forms/FormTextarea.vue';
+import InputText from '@/volt/InputText.vue';
+import Textarea from '@/volt/Textarea.vue';
 import type { SystemUser } from '@/oscal';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import type { AxiosError } from 'axios';

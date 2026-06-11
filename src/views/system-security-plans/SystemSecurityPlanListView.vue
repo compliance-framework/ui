@@ -1,9 +1,20 @@
 <template>
   <div>
-    <PageHeader>System Security Plans</PageHeader>
+    <div
+      class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
+    >
+      <div>
+        <PageHeader>System Security Plans</PageHeader>
+        <PageSubHeader>Manage OSCAL System Security Plans</PageSubHeader>
+      </div>
+      <RouterLinkButton :to="{ name: 'system-security-plans-create' }">
+        <i class="pi pi-plus mr-2"></i>
+        New System Security Plan
+      </RouterLinkButton>
+    </div>
 
     <div
-      class="my-4 overflow-hidden rounded-lg border border-ccf-300 bg-white shadow dark:border-slate-700 dark:bg-slate-900"
+      class="mt-6 overflow-hidden rounded-lg border border-ccf-300 bg-white shadow dark:border-slate-700 dark:bg-slate-900"
     >
       <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-ccf-300 dark:divide-slate-700">
@@ -96,15 +107,18 @@
                     >
                       View
                     </RouterLinkButton>
-                    <PrimaryButton
+                    <SecondaryButton
                       @click="downloadJson(ssp.uuid, ssp.metadata.title)"
                       title="Download Full JSON"
                     >
                       JSON
-                    </PrimaryButton>
-                    <PrimaryButton @click="systemStore.setSecurityPlan(ssp)">
-                      Set
-                    </PrimaryButton>
+                    </SecondaryButton>
+                    <SecondaryButton
+                      v-if="systemStore.system.securityPlan?.uuid !== ssp.uuid"
+                      @click="systemStore.setSecurityPlan(ssp)"
+                    >
+                      Set Active
+                    </SecondaryButton>
                   </div>
                 </td>
               </tr>
@@ -113,18 +127,12 @@
         </table>
       </div>
     </div>
-
-    <!-- Create Button -->
-    <div class="mt-4">
-      <RouterLinkButton :to="{ name: 'system-security-plans-create' }">
-        New System Security Plan
-      </RouterLinkButton>
-    </div>
   </div>
 </template>
 <script setup lang="ts">
 import PageHeader from '@/components/PageHeader.vue';
-import PrimaryButton from '@/volt/PrimaryButton.vue';
+import PageSubHeader from '@/components/PageSubHeader.vue';
+import SecondaryButton from '@/volt/SecondaryButton.vue';
 import type { SystemSecurityPlan } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { useSystemStore } from '@/stores/system.ts';
