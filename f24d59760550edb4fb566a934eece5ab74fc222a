@@ -1,0 +1,7 @@
+lisa-design:
+- Kept SSP API endpoints, route names, store semantics, emitted event names, and JSON download payload handling unchanged; the refactor is presentation-focused.
+- Preserved the existing disabled System Characteristics Edit behavior instead of inventing a new metadata/characteristics update endpoint that is not present in this UI.
+- Used volt `InputText`/`Textarea` across SSP forms, but retained the legacy numeric `FormInput` only for component protocol port range fields because volt `InputText` is string-model typed and OSCAL ports are numeric.
+- Removed the System Implementation dashboard metrics and component distribution chart rather than restyling them, prioritizing the list workflows that users act on.
+- Guarded `StatementByComponent` component fetches behind an SSP UUID watch so no `/system-security-plans/undefined/...` request is constructed before parent data is ready.
+- Left risk widgets and Compliance/Risks routes untouched as separately owned surfaces.
