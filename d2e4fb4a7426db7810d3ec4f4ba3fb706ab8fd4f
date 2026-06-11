@@ -1,0 +1,5 @@
+lisa-design:
+- Build-time banner overrides are applied after both config resolution paths, including the `VITE_API_URL` early return, so local builds that skip `/config.json` still honor `VITE_LOGIN_BANNER` and `VITE_LOGIN_BANNER_SEVERITY`.
+- `VITE_LOGIN_BANNER !== undefined` is the override check so an explicit empty string is a supported force-disable value rather than falling through to `config.json`.
+- Login banner dismissal is keyed by `encodeURIComponent` of the exact banner text, which keeps the storage key stable and makes changed banner text reappear without needing a separate banner ID.
+- Invalid or missing `LOGIN_BANNER_SEVERITY` values resolve to `info` in the config store before the login page renders the message.
