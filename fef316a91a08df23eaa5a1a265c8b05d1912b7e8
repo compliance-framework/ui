@@ -1,0 +1,90 @@
+lisa-addressed:
+---
+Comment (src/views/catalog/CatalogCreateView.vue:30):
+**[Medium] This icon (and every `pi pi-*` icon added in this PR) does not render — `primeicons` is not installed.**
+
+The `primeicons` package is absent from `package.json`/the lockfile, and nothing loads the icon font (no `@font-face`, no CDN link in `index.html`). PrimeVue's own components use inline SVGs internally, but manual `<i class="pi pi-...">` elements need the primeicons CSS — so this renders as an empty element.
+
+Concretely in this PR:
+- This line **replaces a working SVG icon** (`BIconArrowRepeat` from `bootstrap-icons-vue`, which *is* installed) with a non-rendering one, leaving the Generate-UUID button visually empty (only the `title` tooltip survives).
+- The `pi pi-spin pi-spinner` busy indicators added to every submit button will never be visible.
+- The header `pi pi-plus` buttons in `CatalogGroup.vue`/`CatalogControl.vue` read as bare "Group" / "Control" labels, which is ambiguous next to Edit/Delete.
+
+38 pre-existing files share this problem, so this follows existing (broken) precedent — but the clean fix is cheap: add `primeicons` as a dependency and `import 'primeicons/primeicons.css'` once in `src/main.ts`, which heals the whole app. Alternatively keep using `bootstrap-icons-vue`/heroicons SVG components here.
+Replies:
+**lisa implementation guidance:** Add PrimeIcons globally rather than replacing individual icons. Install the `primeicons` dependency so `package.json` and `package-lock.json` are updated, then import `primeicons/primeicons.css` once in `src/main.ts` near the existing global CSS import. Do not change the existing `pi pi-*` markup in catalog components; the global CSS should make the Generate UUID icon, submit spinners, and add buttons render across the app.
+
+<!-- lisa-guidance-posted -->
+---
+Comment (src/components/catalogs/ControlCreateForm.vue:87):
+**[Medium] Server error detail is dropped here — inconsistent with the sibling forms.**
+
+This `getErrorMessage` only reads `error.message`, so when the API rejects a control (e.g. duplicate ID, validation failure) the user sees axios's generic `Request failed with status code 4xx` instead of the server's message. `GroupCreateForm.vue` and `CatalogEditModal.vue` in this same PR correctly extract `errorResponse.response?.data.errors?.body` first.
+
+Suggest mirroring the group form:
+
+```ts
+function getErrorMessage(error: unknown): string {
+  const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
+  return (
+    errorResponse.response?.data?.errors?.body ||
+    (error instanceof Error ? error.message : 'Failed to create control.')
+  );
+}
+```
+Replies:
+**lisa implementation guidance:** In `src/components/catalogs/ControlCreateForm.vue`, update `getErrorMessage` to match the sibling create/edit forms by extracting `errorResponse.response?.data?.errors?.body` before falling back to `error.message` or `Failed to create control.`. Add the needed type imports for `AxiosError`, `ErrorResponse`, and `ErrorBody`. Keep the three existing submit paths in `createControl` unchanged and do not add payload trimming, ID normalization, or endpoint changes.
+
+<!-- lisa-guidance-posted -->
+---
+Comment (src/components/catalogs/CatalogEditModal.vue:30):
+**[Medium] Stale error/validation state survives closing and reopening the dialog.**
+
+`errors` and `errorMessage` live in this component, which stays mounted in the parent view — only the Dialog's *content* is unmounted on hide. So: submit with an empty title (or hit a server error), Cancel, reopen → the old error banner and field errors are still displayed, since they're only cleared on the next `validate()` call.
+
+This applies to all five edit modals in this PR (`CatalogEditModal`, `ControlEditModal`, `GroupEditModal`, `ControlPartEditModal`, `GroupDescriptionModal`). The create forms are fine because they live inside the Dialog slot and remount fresh.
+
+Suggest resetting on open, e.g.:
+
+```ts
+watch(show, (open) => {
+  if (open) {
+    Object.keys(errors).forEach((key) => delete errors[key]);
+    errorMessage.value = '';
+  }
+});
+```
+Replies:
+**lisa implementation guidance:** Reset transient form state whenever an edit dialog opens. In `CatalogEditModal.vue`, `ControlEditModal.vue`, `GroupEditModal.vue`, `ControlPartEditModal.vue`, and `GroupDescriptionModal.vue`, add a small local helper that deletes all keys from the component's `errors` object and clears `errorMessage.value`, then `watch(show, (open) => { if (open) resetFormState(); })`. Import `watch` where needed without removing the existing `watchEffect` form population. Do not reset or reshape the OSCAL payload objects; this is only for stale validation/server-error UI state.
+
+<!-- lisa-guidance-posted -->
+---
+Comment (src/components/catalogs/CatalogEditModal.vue:51):
+**[Medium] The same ~30 lines of form boilerplate are pasted across 7 components — and the copies have already drifted.**
+
+`errors` / `errorMessage` / `isSubmitting` / `validate()` / `getErrorMessage()` are repeated near-identically in `CatalogEditModal`, `ControlEditModal`, `GroupEditModal`, `ControlPartEditModal`, `GroupDescriptionModal`, `ControlCreateForm`, and `GroupCreateForm`. The drift is already visible within this PR: `ControlCreateForm` lost the server-error extraction, and two modals carry a vacuous `validate()` (flagged separately).
+
+Suggest a small composable, e.g. `useFormSubmit(requiredFields, fallbackMessage)` returning `{ errors, errorMessage, isSubmitting, validate, getErrorMessage }`. That's also the natural single home for hardening the extraction to `response?.data?.errors?.body` — `data` is currently unguarded and would throw inside the `catch` if a response ever arrives with a null body.
+
+Not blocking the refactor's shape, but worth doing while all 7 call sites are fresh in this PR.
+Replies:
+**lisa implementation guidance:** Extract only the repeated form lifecycle boilerplate, without changing payload semantics. Add a composable such as `src/composables/useFormSubmit.ts` that owns `errors`, `errorMessage`, `isSubmitting`, required-field validation, error-state reset, and Axios server-error extraction from `response?.data?.errors?.body` with a fallback message. Migrate the seven catalog form/modal components to use it, preserving each component's existing submit endpoint, payload construction, required-field rules, and optional-field behavior. Do not introduce trimming, ID/class normalization, a payload sanitizer, or changes to the three control-create submit paths.
+
+<!-- lisa-guidance-posted -->
+---
+Comment (src/components/catalogs/__tests__/catalogForms.spec.ts:138):
+**[Low] Negative assertion is vacuously true if `apiCalls` is empty.**
+
+`apiCalls.every((c) => c.execute.mock.calls.length === 0)` passes trivially on an empty array. Today the mounts do register entries, but if the mock wiring or component setup ever breaks (e.g. a future change makes `useDataApi` lazy), these three assertions (here, line 222, line 234) would keep passing while testing nothing.
+
+Suggest an existence precondition before each:
+
+```ts
+expect(apiCalls.length).toBeGreaterThan(0);
+```
+
+Otherwise: nice coverage in this file — all three control-creation endpoints, validation gating, server-error rendering, and cancel behavior are genuinely exercised.
+Replies:
+**lisa implementation guidance:** In `src/components/catalogs/__tests__/catalogForms.spec.ts`, harden each negative API assertion that uses `apiCalls.every(...)` by first asserting that at least one API mock was registered. Add `expect(apiCalls.length).toBeGreaterThan(0);` immediately before the existing `every` assertion in the three tests for blocked control creation, control create modal cancel, and blocked group creation. Keep the existing `every` assertion so the tests still verify no registered endpoint was called.
+
+<!-- lisa-guidance-posted -->
