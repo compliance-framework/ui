@@ -276,13 +276,25 @@ const { execute: deleteDiagramRequest } = useDataApi<unknown>(
 
 onMounted(async () => {
   await Promise.all([
-    fetchOptionalDiagram(fetchAuthorizationBoundaryDiagram),
-    fetchOptionalDiagram(fetchNetworkArchitectureDiagram),
-    fetchOptionalDiagram(fetchDataFlowDiagram),
+    fetchOptionalDiagram(
+      fetchAuthorizationBoundaryDiagram,
+      authorizationBoundary as unknown as Ref<Diagrammable | undefined>,
+    ),
+    fetchOptionalDiagram(
+      fetchNetworkArchitectureDiagram,
+      networkArchitecture as unknown as Ref<Diagrammable | undefined>,
+    ),
+    fetchOptionalDiagram(
+      fetchDataFlowDiagram,
+      dataFlow as unknown as Ref<Diagrammable | undefined>,
+    ),
   ]);
 });
 
-async function fetchOptionalDiagram(fetchDiagram: () => Promise<unknown>) {
+async function fetchOptionalDiagram(
+  fetchDiagram: () => Promise<unknown>,
+  grouping: Ref<Diagrammable | undefined>,
+) {
   try {
     await fetchDiagram();
   } catch (error) {
@@ -290,6 +302,7 @@ async function fetchOptionalDiagram(fetchDiagram: () => Promise<unknown>) {
     if (err.response?.status !== 404) {
       throw error;
     }
+    grouping.value = { diagrams: [] } as unknown as Diagrammable;
   }
 }
 
