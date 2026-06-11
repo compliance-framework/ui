@@ -1,0 +1,24 @@
+lisa-addressed:
+---
+Comment (src/views/system-security-plans/SystemSecurityPlanCharacteristicsView.vue:797):
+**[Medium] A failed characteristics load inside the dialog wipes the page's displayed data.**
+
+`SystemCharacteristicsForm` has a quirky emit contract: in its `onMounted` **GET `.catch`**, it emits `updated` with `{} as SystemCharacteristics` (src/components/SystemCharacteristicsForm.vue:38). This handler assigns that payload unconditionally — so when a user clicks Edit on an SSP whose characteristics fail to load (a freshly created SSP with no characteristics object yet, a 404, an expired session), the view overwrites `characteristics.value` with `{}`, blanking the System Information card and metrics, and closes the dialog with zero feedback. The view-level handler this PR deleted (`SystemSecurityPlanCharacteristicsEditorView.vue`) explicitly guarded this exact case: `if (!characteristics) → error toast, else → success toast`.
+
+Suggested fix in this handler: treat the empty-object emit as the failure signal it is —
+```ts
+const handleCharacteristicsUpdated = (updated: SystemCharacteristics) => {
+  showEditCharacteristicsModal.value = false;
+  if (!updated || Object.keys(updated).length === 0) {
+    toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to load or save system characteristics.', life: 3000 });
+    return;
+  }
+  characteristics.value = updated;
+};
+```
+(or better, fix the form to emit a distinct `error` event instead of overloading `updated` — your call which side to clean up). Worth covering with a test case alongside the happy-path one in sspCharacteristicsView.spec.ts.
+
+Two nits while here, same dialog: it's missing `:draggable="false"` that every other dialog in this PR sets, and note the form's own PUT failure path has no `.catch` at all (pre-existing; silent unhandled rejection with the dialog left open) — fine to leave, just flagging it's not covered by the fix above.
+
+Honesty note on verification: the local docker image is still built from 863099c, so this round was code-review only; the emit contract above is verifiable directly in the form source. Everything else in 70f47b2 checks out — Edit Metadata removed (with test), Create Component stub removed cleanly, and the happy-path characteristics edit is wired correctly with a test. CI green, 660/660 tests pass locally.
+Implementation guidance: Valid regression in the newly restored System Characteristics edit dialog. In src/views/system-security-plans/SystemSecurityPlanCharacteristicsView.vue, update handleCharacteristicsUpdated(updated: SystemCharacteristics) so it does not blindly assign an empty object emitted by SystemCharacteristicsForm's mount-load failure path. Treat !updated or Object.keys(updated).length === 0 as an error: close the dialog, show an error toast such as severity 'error', summary 'Error', detail 'Failed to load or save system characteristics.', life 3000, and return without changing characteristics.value. For a non-empty updated payload, assign characteristics.value = updated and close the dialog as today. Add/use the existing toast composable pattern in this view if it is not already imported. Also add :draggable="false" to the System Characteristics Dialog for consistency with the other dialogs in this refactor. Do not change the existing SystemCharacteristicsForm updateCharacteristics endpoint or payload contract in this pass, and do not rewrite the form's pre-existing PUT failure behavior unless needed for the handler test. Add a test in src/views/system-security-plans/__tests__/sspCharacteristicsView.spec.ts next to the happy-path dialog test: open the dialog, emit updated with {}, assert the original displayed characteristics remain visible/unchanged, assert the dialog closes, and assert an error toast was requested. Keep the existing happy-path test proving a real updated characteristics payload replaces the displayed data.
