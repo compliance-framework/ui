@@ -12,9 +12,6 @@
             System Security Plan Metadata
           </h3>
           <div class="flex flex-wrap gap-2">
-            <SecondaryButton @click="editMetadata">
-              Edit Metadata
-            </SecondaryButton>
             <SecondaryButton @click="downloadJson">
               Download JSON
             </SecondaryButton>
@@ -227,7 +224,7 @@
 
 <script setup lang="ts">
 import { onMounted, ref, watch, computed } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute } from 'vue-router';
 import type {
   SystemSecurityPlan,
   SystemCharacteristics,
@@ -247,7 +244,6 @@ import RiskOverviewSection from '@/components/system-security-plans/RiskOverview
 import { useSspProfileBindings } from '@/composables/useSspProfileBindings';
 
 const route = useRoute();
-const router = useRouter();
 const toast = useToast();
 
 const systemImplementationStats = ref({
@@ -412,8 +408,4 @@ async function downloadJson(): Promise<void> {
     });
   }
 }
-
-const editMetadata = () => {
-  router.push(`/system-security-plans/${systemSecurityPlan.value!.uuid}`);
-};
 </script>

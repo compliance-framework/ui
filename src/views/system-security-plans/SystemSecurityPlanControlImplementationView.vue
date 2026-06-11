@@ -163,12 +163,6 @@
                       >{{ statement.statementId }}</span
                     >
                     <div class="flex gap-2">
-                      <TertiaryButton
-                        @click="createComponent(statement)"
-                        disabled
-                      >
-                        Create Component
-                      </TertiaryButton>
                       <SecondaryButton
                         @click="editStatement(requirement, statement)"
                       >
@@ -624,11 +618,6 @@ const editStatement = (
 const createStatement = (requirement: ImplementedRequirement) => {
   editingRequirement.value = requirement;
   showCreateStatementModal.value = true;
-};
-
-const createComponent = (statement: Statement) => {
-  console.log('Create Component for Statement:', statement);
-  alert('Create Component functionality is in development');
 };
 
 const handleStatementByComponentSaved = (updatedByComponent: ByComponent) => {

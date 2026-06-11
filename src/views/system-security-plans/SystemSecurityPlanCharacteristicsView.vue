@@ -164,7 +164,7 @@
               {{ characteristics.systemNameShort }}
             </p>
           </div>
-          <SecondaryButton @click="() => {}" disabled>
+          <SecondaryButton @click="showEditCharacteristicsModal = true">
             <i class="pi pi-pencil mr-2"></i>
             Edit
           </SecondaryButton>
@@ -681,19 +681,34 @@
         </div>
       </div>
     </div>
+
+    <Dialog
+      v-model:visible="showEditCharacteristicsModal"
+      modal
+      header="Edit System Characteristics"
+      class="w-full max-w-4xl"
+    >
+      <SystemCharacteristicsForm
+        :system-security-plan-id="String(route.params.id)"
+        @updated="handleCharacteristicsUpdated"
+      />
+    </Dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import TooltipTitle from '@/components/TooltipTitle.vue';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import type { SystemCharacteristics } from '@/oscal';
 import { useDataApi } from '@/composables/axios';
 import type { Diagrammable } from '@/stores/system-security-plans';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
+import Dialog from '@/volt/Dialog.vue';
+import SystemCharacteristicsForm from '@/components/SystemCharacteristicsForm.vue';
 
 const route = useRoute();
+const showEditCharacteristicsModal = ref(false);
 
 const {
   data: characteristics,
@@ -778,4 +793,9 @@ const totalFields = 9; // Total possible fields to complete
 const completenessPercentage = computed(() => {
   return Math.round((fieldsCompleted.value / totalFields) * 100);
 });
+
+const handleCharacteristicsUpdated = (updated: SystemCharacteristics) => {
+  characteristics.value = updated;
+  showEditCharacteristicsModal.value = false;
+};
 </script>
