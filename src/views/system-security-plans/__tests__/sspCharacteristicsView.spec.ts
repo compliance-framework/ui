@@ -8,6 +8,7 @@ const characteristics = ref<SystemCharacteristics>({
   systemName: 'Original System',
   description: 'Original description',
 } as SystemCharacteristics);
+const toastAdd = vi.fn();
 
 vi.mock('vue-router', () => ({
   useRoute: () => ({
@@ -38,6 +39,12 @@ vi.mock('@/composables/axios', () => ({
   },
 }));
 
+vi.mock('primevue/usetoast', () => ({
+  useToast: () => ({
+    add: toastAdd,
+  }),
+}));
+
 const stubs = {
   TooltipTitle: {
     props: ['text'],
@@ -60,6 +67,7 @@ const stubs = {
 
 describe('SystemSecurityPlanCharacteristicsView', () => {
   beforeEach(() => {
+    vi.clearAllMocks();
     characteristics.value = {
       systemName: 'Original System',
       description: 'Original description',
@@ -91,5 +99,32 @@ describe('SystemSecurityPlanCharacteristicsView', () => {
     expect(
       wrapper.findComponent({ name: 'SystemCharacteristicsForm' }).exists(),
     ).toBe(false);
+  });
+
+  it('keeps displayed characteristics when the dialog form emits an empty failure payload', async () => {
+    const wrapper = mount(SystemSecurityPlanCharacteristicsView, {
+      global: { stubs },
+    });
+
+    await wrapper.get('button').trigger('click');
+
+    const form = wrapper.findComponent({ name: 'SystemCharacteristicsForm' });
+    expect(form.exists()).toBe(true);
+
+    form.vm.$emit('updated', {});
+
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.text()).toContain('Original System');
+    expect(wrapper.text()).toContain('Original description');
+    expect(
+      wrapper.findComponent({ name: 'SystemCharacteristicsForm' }).exists(),
+    ).toBe(false);
+    expect(toastAdd).toHaveBeenCalledWith({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'Failed to load or save system characteristics.',
+      life: 3000,
+    });
   });
 });

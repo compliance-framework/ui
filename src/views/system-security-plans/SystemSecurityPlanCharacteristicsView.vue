@@ -686,6 +686,7 @@
       v-model:visible="showEditCharacteristicsModal"
       modal
       header="Edit System Characteristics"
+      :draggable="false"
       class="w-full max-w-4xl"
     >
       <SystemCharacteristicsForm
@@ -706,8 +707,10 @@ import type { Diagrammable } from '@/stores/system-security-plans';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
 import Dialog from '@/volt/Dialog.vue';
 import SystemCharacteristicsForm from '@/components/SystemCharacteristicsForm.vue';
+import { useToast } from 'primevue/usetoast';
 
 const route = useRoute();
+const toast = useToast();
 const showEditCharacteristicsModal = ref(false);
 
 const {
@@ -795,7 +798,18 @@ const completenessPercentage = computed(() => {
 });
 
 const handleCharacteristicsUpdated = (updated: SystemCharacteristics) => {
-  characteristics.value = updated;
   showEditCharacteristicsModal.value = false;
+
+  if (!updated || Object.keys(updated).length === 0) {
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'Failed to load or save system characteristics.',
+      life: 3000,
+    });
+    return;
+  }
+
+  characteristics.value = updated;
 };
 </script>
