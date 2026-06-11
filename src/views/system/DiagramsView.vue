@@ -23,25 +23,95 @@
             :key="diagram.uuid"
           >
             <div
-              class="flex justify-end items-center gap-2 px-3 py-2 bg-ccf-50 dark:bg-slate-800 border-b border-ccf-300 dark:border-slate-700"
+              class="flex items-center justify-between gap-3 px-3 py-2 bg-ccf-50 dark:bg-slate-800 border-b border-ccf-300 dark:border-slate-700 cursor-pointer"
+              @click="toggleDiagram(diagram.uuid)"
             >
-              <button
-                class="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition-colors"
-                @click.stop.prevent="
-                  confirmDeleteDialog(
-                    () => deleteDiagram('authorization-boundary', diagram),
-                    {
-                      itemType: 'diagram',
-                      itemName: diagram.caption || diagram.uuid,
-                    },
-                  )
-                "
-              >
-                Delete Diagram
-              </button>
+              <div class="min-w-0 flex-1">
+                <div
+                  v-if="editingCaption[diagram.uuid]"
+                  class="flex items-center gap-2"
+                  @click.stop
+                >
+                  <InputText
+                    v-model="captionDrafts[diagram.uuid]"
+                    class="p-small w-full max-w-md"
+                    aria-label="Diagram title"
+                    @keydown.enter.prevent="
+                      saveDiagramCaption('authorization-boundary', diagram)
+                    "
+                    @keydown.esc.prevent="cancelCaptionEdit(diagram.uuid)"
+                  />
+                  <TertiaryButton
+                    class="p-small"
+                    @click.stop.prevent="
+                      saveDiagramCaption('authorization-boundary', diagram)
+                    "
+                  >
+                    Save
+                  </TertiaryButton>
+                  <TertiaryButton
+                    class="p-small"
+                    @click.stop.prevent="cancelCaptionEdit(diagram.uuid)"
+                  >
+                    Cancel
+                  </TertiaryButton>
+                </div>
+                <template v-else>
+                  <div class="flex items-center gap-2">
+                    <i
+                      class="pi text-xs text-slate-500 dark:text-slate-400"
+                      :class="
+                        isDiagramCollapsed(diagram.uuid)
+                          ? 'pi-chevron-right'
+                          : 'pi-chevron-down'
+                      "
+                      aria-hidden="true"
+                    ></i>
+                    <span
+                      class="font-medium text-slate-800 dark:text-slate-100 truncate"
+                      :class="{
+                        'italic text-slate-500 dark:text-slate-400':
+                          !diagram.caption,
+                      }"
+                    >
+                      {{ diagram.caption || 'Untitled diagram' }}
+                    </span>
+                  </div>
+                  <div
+                    v-if="diagram.description"
+                    class="mt-1 text-xs text-slate-500 dark:text-slate-400 truncate"
+                  >
+                    {{ diagram.description }}
+                  </div>
+                </template>
+              </div>
+              <div class="flex items-center gap-2 shrink-0">
+                <TertiaryButton
+                  class="p-small"
+                  aria-label="Edit diagram title"
+                  @click.stop.prevent="startCaptionEdit(diagram)"
+                >
+                  <i class="pi pi-pencil" aria-hidden="true"></i>
+                </TertiaryButton>
+                <TertiaryButton
+                  class="p-small border-red-200 text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-950/40"
+                  @click.stop.prevent="
+                    confirmDeleteDialog(
+                      () => deleteDiagram('authorization-boundary', diagram),
+                      {
+                        itemType: 'diagram',
+                        itemName: diagram.caption || diagram.uuid,
+                      },
+                    )
+                  "
+                >
+                  Delete Diagram
+                </TertiaryButton>
+              </div>
             </div>
             <DrawIODiagramEditor
               class="h-184"
+              v-show="!isDiagramCollapsed(diagram.uuid)"
               :diagram="diagram"
               @saved="saveAuthorizationBoundaryDiagram"
             />
@@ -80,25 +150,95 @@
             :key="diagram.uuid"
           >
             <div
-              class="flex justify-end items-center gap-2 px-3 py-2 bg-ccf-50 dark:bg-slate-800 border-b border-ccf-300 dark:border-slate-700"
+              class="flex items-center justify-between gap-3 px-3 py-2 bg-ccf-50 dark:bg-slate-800 border-b border-ccf-300 dark:border-slate-700 cursor-pointer"
+              @click="toggleDiagram(diagram.uuid)"
             >
-              <button
-                class="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition-colors"
-                @click.stop.prevent="
-                  confirmDeleteDialog(
-                    () => deleteDiagram('network-architecture', diagram),
-                    {
-                      itemType: 'diagram',
-                      itemName: diagram.caption || diagram.uuid,
-                    },
-                  )
-                "
-              >
-                Delete Diagram
-              </button>
+              <div class="min-w-0 flex-1">
+                <div
+                  v-if="editingCaption[diagram.uuid]"
+                  class="flex items-center gap-2"
+                  @click.stop
+                >
+                  <InputText
+                    v-model="captionDrafts[diagram.uuid]"
+                    class="p-small w-full max-w-md"
+                    aria-label="Diagram title"
+                    @keydown.enter.prevent="
+                      saveDiagramCaption('network-architecture', diagram)
+                    "
+                    @keydown.esc.prevent="cancelCaptionEdit(diagram.uuid)"
+                  />
+                  <TertiaryButton
+                    class="p-small"
+                    @click.stop.prevent="
+                      saveDiagramCaption('network-architecture', diagram)
+                    "
+                  >
+                    Save
+                  </TertiaryButton>
+                  <TertiaryButton
+                    class="p-small"
+                    @click.stop.prevent="cancelCaptionEdit(diagram.uuid)"
+                  >
+                    Cancel
+                  </TertiaryButton>
+                </div>
+                <template v-else>
+                  <div class="flex items-center gap-2">
+                    <i
+                      class="pi text-xs text-slate-500 dark:text-slate-400"
+                      :class="
+                        isDiagramCollapsed(diagram.uuid)
+                          ? 'pi-chevron-right'
+                          : 'pi-chevron-down'
+                      "
+                      aria-hidden="true"
+                    ></i>
+                    <span
+                      class="font-medium text-slate-800 dark:text-slate-100 truncate"
+                      :class="{
+                        'italic text-slate-500 dark:text-slate-400':
+                          !diagram.caption,
+                      }"
+                    >
+                      {{ diagram.caption || 'Untitled diagram' }}
+                    </span>
+                  </div>
+                  <div
+                    v-if="diagram.description"
+                    class="mt-1 text-xs text-slate-500 dark:text-slate-400 truncate"
+                  >
+                    {{ diagram.description }}
+                  </div>
+                </template>
+              </div>
+              <div class="flex items-center gap-2 shrink-0">
+                <TertiaryButton
+                  class="p-small"
+                  aria-label="Edit diagram title"
+                  @click.stop.prevent="startCaptionEdit(diagram)"
+                >
+                  <i class="pi pi-pencil" aria-hidden="true"></i>
+                </TertiaryButton>
+                <TertiaryButton
+                  class="p-small border-red-200 text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-950/40"
+                  @click.stop.prevent="
+                    confirmDeleteDialog(
+                      () => deleteDiagram('network-architecture', diagram),
+                      {
+                        itemType: 'diagram',
+                        itemName: diagram.caption || diagram.uuid,
+                      },
+                    )
+                  "
+                >
+                  Delete Diagram
+                </TertiaryButton>
+              </div>
             </div>
             <DrawIODiagramEditor
               class="h-168"
+              v-show="!isDiagramCollapsed(diagram.uuid)"
               :diagram="diagram"
               @saved="saveNetworkArchitectureDiagram"
             />
@@ -137,25 +277,95 @@
             :key="diagram.uuid"
           >
             <div
-              class="flex justify-end items-center gap-2 px-3 py-2 bg-ccf-50 dark:bg-slate-800 border-b border-ccf-300 dark:border-slate-700"
+              class="flex items-center justify-between gap-3 px-3 py-2 bg-ccf-50 dark:bg-slate-800 border-b border-ccf-300 dark:border-slate-700 cursor-pointer"
+              @click="toggleDiagram(diagram.uuid)"
             >
-              <button
-                class="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition-colors"
-                @click.stop.prevent="
-                  confirmDeleteDialog(
-                    () => deleteDiagram('data-flow', diagram),
-                    {
-                      itemType: 'diagram',
-                      itemName: diagram.caption || diagram.uuid,
-                    },
-                  )
-                "
-              >
-                Delete Diagram
-              </button>
+              <div class="min-w-0 flex-1">
+                <div
+                  v-if="editingCaption[diagram.uuid]"
+                  class="flex items-center gap-2"
+                  @click.stop
+                >
+                  <InputText
+                    v-model="captionDrafts[diagram.uuid]"
+                    class="p-small w-full max-w-md"
+                    aria-label="Diagram title"
+                    @keydown.enter.prevent="
+                      saveDiagramCaption('data-flow', diagram)
+                    "
+                    @keydown.esc.prevent="cancelCaptionEdit(diagram.uuid)"
+                  />
+                  <TertiaryButton
+                    class="p-small"
+                    @click.stop.prevent="
+                      saveDiagramCaption('data-flow', diagram)
+                    "
+                  >
+                    Save
+                  </TertiaryButton>
+                  <TertiaryButton
+                    class="p-small"
+                    @click.stop.prevent="cancelCaptionEdit(diagram.uuid)"
+                  >
+                    Cancel
+                  </TertiaryButton>
+                </div>
+                <template v-else>
+                  <div class="flex items-center gap-2">
+                    <i
+                      class="pi text-xs text-slate-500 dark:text-slate-400"
+                      :class="
+                        isDiagramCollapsed(diagram.uuid)
+                          ? 'pi-chevron-right'
+                          : 'pi-chevron-down'
+                      "
+                      aria-hidden="true"
+                    ></i>
+                    <span
+                      class="font-medium text-slate-800 dark:text-slate-100 truncate"
+                      :class="{
+                        'italic text-slate-500 dark:text-slate-400':
+                          !diagram.caption,
+                      }"
+                    >
+                      {{ diagram.caption || 'Untitled diagram' }}
+                    </span>
+                  </div>
+                  <div
+                    v-if="diagram.description"
+                    class="mt-1 text-xs text-slate-500 dark:text-slate-400 truncate"
+                  >
+                    {{ diagram.description }}
+                  </div>
+                </template>
+              </div>
+              <div class="flex items-center gap-2 shrink-0">
+                <TertiaryButton
+                  class="p-small"
+                  aria-label="Edit diagram title"
+                  @click.stop.prevent="startCaptionEdit(diagram)"
+                >
+                  <i class="pi pi-pencil" aria-hidden="true"></i>
+                </TertiaryButton>
+                <TertiaryButton
+                  class="p-small border-red-200 text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-950/40"
+                  @click.stop.prevent="
+                    confirmDeleteDialog(
+                      () => deleteDiagram('data-flow', diagram),
+                      {
+                        itemType: 'diagram',
+                        itemName: diagram.caption || diagram.uuid,
+                      },
+                    )
+                  "
+                >
+                  Delete Diagram
+                </TertiaryButton>
+              </div>
             </div>
             <DrawIODiagramEditor
               class="h-168"
+              v-show="!isDiagramCollapsed(diagram.uuid)"
               :diagram="diagram"
               @saved="saveDataFlowDiagram"
             />
@@ -186,6 +396,8 @@ import { useToast } from 'primevue/usetoast';
 import { useSystemStore } from '@/stores/system.ts';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
+import TertiaryButton from '@/volt/TertiaryButton.vue';
+import InputText from '@/volt/InputText.vue';
 import type { AxiosError } from 'axios';
 import type { ErrorBody, ErrorResponse } from '@/stores/types';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
@@ -195,6 +407,9 @@ import type { Diagrammable } from '@/stores/system-security-plans';
 const { system } = useSystemStore();
 const toast = useToast();
 const { confirmDeleteDialog } = useDeleteConfirmationDialog();
+const collapsedDiagrams = ref<Record<string, boolean>>({});
+const editingCaption = ref<Record<string, boolean>>({});
+const captionDrafts = ref<Record<string, string>>({});
 
 const systemSecurityPlan = ref<SystemSecurityPlan | null>(
   (system.securityPlan as SystemSecurityPlan) || null,
@@ -207,7 +422,7 @@ const {
   `/api/oscal/system-security-plans/${systemSecurityPlan.value?.uuid}/system-characteristics/authorization-boundary`,
   { method: 'GET' },
   {
-    initialData: { diagrams: [{ uuid: v4() }] } as Diagrammable,
+    initialData: {} as Diagrammable,
     immediate: false,
   },
 );
@@ -274,10 +489,36 @@ const { execute: deleteDiagramRequest } = useDataApi<unknown>(
 );
 
 onMounted(async () => {
-  await fetchAuthorizationBoundaryDiagram();
-  await fetchNetworkArchitectureDiagram();
-  await fetchDataFlowDiagram();
+  await Promise.all([
+    fetchOptionalDiagram(
+      fetchAuthorizationBoundaryDiagram,
+      authorizationBoundary as unknown as Ref<Diagrammable | undefined>,
+    ),
+    fetchOptionalDiagram(
+      fetchNetworkArchitectureDiagram,
+      networkArchitecture as unknown as Ref<Diagrammable | undefined>,
+    ),
+    fetchOptionalDiagram(
+      fetchDataFlowDiagram,
+      dataFlow as unknown as Ref<Diagrammable | undefined>,
+    ),
+  ]);
 });
+
+async function fetchOptionalDiagram(
+  fetchDiagram: () => Promise<unknown>,
+  grouping: Ref<Diagrammable | undefined>,
+) {
+  try {
+    await fetchDiagram();
+  } catch (error) {
+    const err = error as AxiosError;
+    if (err.response?.status !== 404) {
+      throw error;
+    }
+    grouping.value = { diagrams: [] } as unknown as Diagrammable;
+  }
+}
 
 async function saveAuthorizationBoundaryDiagram(diagram: Diagram) {
   if (systemSecurityPlan.value != null) {
@@ -330,6 +571,35 @@ async function saveDataFlowDiagram(diagram: Diagram) {
   }
 }
 
+function isDiagramCollapsed(uuid: string): boolean {
+  return collapsedDiagrams.value[uuid] === true;
+}
+
+function toggleDiagram(uuid: string) {
+  collapsedDiagrams.value = {
+    ...collapsedDiagrams.value,
+    [uuid]: !isDiagramCollapsed(uuid),
+  };
+}
+
+function startCaptionEdit(diagram: Diagram) {
+  editingCaption.value = {
+    ...editingCaption.value,
+    [diagram.uuid]: true,
+  };
+  captionDrafts.value = {
+    ...captionDrafts.value,
+    [diagram.uuid]: diagram.caption ?? '',
+  };
+}
+
+function cancelCaptionEdit(uuid: string) {
+  editingCaption.value = {
+    ...editingCaption.value,
+    [uuid]: false,
+  };
+}
+
 type DiagramKind =
   | 'authorization-boundary'
   | 'network-architecture'
@@ -362,6 +632,41 @@ function resolveGrouping(kind: DiagramKind): {
   return { grouping, label };
 }
 
+function updateDiagramInGrouping(
+  grouping: Ref<Diagrammable | undefined>,
+  diagram: Diagram,
+) {
+  grouping.value = {
+    ...(grouping.value ?? {}),
+    diagrams: (grouping.value?.diagrams ?? []).map((item) =>
+      item.uuid === diagram.uuid ? diagram : item,
+    ),
+  } as Diagrammable;
+}
+
+async function saveDiagramCaption(kind: DiagramKind, diagram: Diagram) {
+  const { grouping } = resolveGrouping(kind);
+  const updatedDiagram = {
+    ...diagram,
+    caption: captionDrafts.value[diagram.uuid] ?? '',
+  };
+
+  switch (kind) {
+    case 'authorization-boundary':
+      await saveAuthorizationBoundaryDiagram(updatedDiagram);
+      break;
+    case 'network-architecture':
+      await saveNetworkArchitectureDiagram(updatedDiagram);
+      break;
+    case 'data-flow':
+      await saveDataFlowDiagram(updatedDiagram);
+      break;
+  }
+
+  updateDiagramInGrouping(grouping, updatedDiagram);
+  cancelCaptionEdit(diagram.uuid);
+}
+
 async function addDiagram(kind: DiagramKind) {
   if (!systemSecurityPlan.value) return;
 
@@ -385,13 +690,10 @@ async function addDiagram(kind: DiagramKind) {
     const created = createdDiagram.value;
     if (!created) return;
 
-    if (!grouping.value) {
-      grouping.value = { diagrams: [] } as unknown as Diagrammable;
-    }
-    if (!grouping.value.diagrams) {
-      grouping.value.diagrams = [] as Diagram[];
-    }
-    grouping.value.diagrams.push(created);
+    grouping.value = {
+      ...(grouping.value ?? {}),
+      diagrams: [...(grouping.value?.diagrams ?? []), created],
+    } as Diagrammable;
 
     toast.add({
       severity: 'success',
@@ -436,10 +738,12 @@ async function deleteDiagram(
       `/api/oscal/system-security-plans/${systemSecurityPlan.value.uuid}/system-characteristics/${kind}/diagrams/${diagram.uuid}`,
     );
 
-    if (!grouping?.value?.diagrams) return;
-    grouping.value.diagrams = grouping.value.diagrams.filter(
-      (d) => d.uuid !== diagram.uuid,
-    ) as Diagram[];
+    grouping.value = {
+      ...(grouping.value ?? {}),
+      diagrams: (grouping.value?.diagrams ?? []).filter(
+        (d) => d.uuid !== diagram.uuid,
+      ),
+    } as Diagrammable;
 
     toast.add({
       severity: 'success',

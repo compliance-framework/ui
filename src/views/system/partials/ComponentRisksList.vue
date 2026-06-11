@@ -15,60 +15,57 @@
 
     <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
       <div>
-        <label
+        <Label
           for="component-risk-status-filter"
           class="mb-1 block text-xs font-medium text-gray-600 dark:text-slate-300"
         >
           Status
-        </label>
-        <select
+        </Label>
+        <Select
           id="component-risk-status-filter"
           v-model="statusFilter"
+          :options="statusFilterOptions"
+          optionLabel="label"
+          optionValue="value"
           data-testid="status-filter"
-          class="w-full rounded-md border border-gray-300 px-3 py-2 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200"
-        >
-          <option value="all">All</option>
-          <option v-for="status in statusOptions" :key="status" :value="status">
-            {{ riskStatusLabel(status) }}
-          </option>
-        </select>
+          class="w-full"
+        />
       </div>
 
       <div>
-        <label
+        <Label
           for="component-risk-sort-by"
           class="mb-1 block text-xs font-medium text-gray-600 dark:text-slate-300"
         >
           Sort By
-        </label>
-        <select
+        </Label>
+        <Select
           id="component-risk-sort-by"
           v-model="sortBy"
+          :options="sortByOptions"
+          optionLabel="label"
+          optionValue="value"
           data-testid="sort-by"
-          class="w-full rounded-md border border-gray-300 px-3 py-2 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200"
-        >
-          <option value="severity">Severity</option>
-          <option value="status">Status</option>
-          <option value="deadline">Deadline</option>
-        </select>
+          class="w-full"
+        />
       </div>
 
       <div>
-        <label
+        <Label
           for="component-risk-sort-direction"
           class="mb-1 block text-xs font-medium text-gray-600 dark:text-slate-300"
         >
           Direction
-        </label>
-        <select
+        </Label>
+        <Select
           id="component-risk-sort-direction"
           v-model="sortDirection"
+          :options="sortDirectionOptions"
+          optionLabel="label"
+          optionValue="value"
           data-testid="sort-direction"
-          class="w-full rounded-md border border-gray-300 px-3 py-2 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200"
-        >
-          <option value="desc">Descending</option>
-          <option value="asc">Ascending</option>
-        </select>
+          class="w-full"
+        />
       </div>
     </div>
 
@@ -186,6 +183,8 @@ import type { Risk, SystemComponent, SystemUser } from '@/oscal';
 import { decamelizeKeys, useDataApi } from '@/composables/axios';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
 import Drawer from '@/volt/Drawer.vue';
+import Label from '@/volt/Label.vue';
+import Select from '@/volt/Select.vue';
 import RiskCreateForm from '@/components/risk/RiskCreateForm.vue';
 import {
   getRiskComponentIds,
@@ -220,6 +219,10 @@ const emit = defineEmits<{
 }>();
 
 type ComponentRiskSortBy = 'severity' | 'status' | 'deadline';
+type SelectOption<T extends string> = {
+  label: string;
+  value: T;
+};
 
 const router = useRouter();
 const toast = useToast();
@@ -228,6 +231,17 @@ const showCreateRiskDrawer = ref(false);
 const statusFilter = ref('all');
 const sortBy = ref<ComponentRiskSortBy>('severity');
 const sortDirection = ref<SortDirection>('desc');
+
+const sortByOptions: SelectOption<ComponentRiskSortBy>[] = [
+  { label: 'Severity', value: 'severity' },
+  { label: 'Status', value: 'status' },
+  { label: 'Deadline', value: 'deadline' },
+];
+
+const sortDirectionOptions: SelectOption<SortDirection>[] = [
+  { label: 'Descending', value: 'desc' },
+  { label: 'Ascending', value: 'asc' },
+];
 
 const { execute: linkRiskComponent } = useDataApi<void>(
   null,
@@ -305,6 +319,14 @@ const statusOptions = computed(() => {
     .filter((status) => !!status)
     .sort((left, right) => left.localeCompare(right));
 });
+
+const statusFilterOptions = computed(() => [
+  { label: 'All', value: 'all' },
+  ...statusOptions.value.map((status) => ({
+    label: riskStatusLabel(status),
+    value: status,
+  })),
+]);
 
 const filteredRisks = computed(() => {
   if (statusFilter.value === 'all') {

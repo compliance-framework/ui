@@ -1,59 +1,24 @@
 <template>
-  <!--    <h3 class="text-lg font-semibold mb-4 text-gray-900 dark:text-slate-300">-->
-  <!--      System Security Plan-->
-  <!--    </h3>-->
   <div class="p-4">
     <div
       v-if="systemSecurityPlan.metadata"
       class="grid grid-cols-1 md:grid-cols-2 gap-6"
     >
-      <div>
-        <label
-          class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
-          >Title</label
+      <div
+        v-for="field in metadataFields"
+        :key="field.label"
+        :class="field.class"
+      >
+        <p
+          class="text-xs font-medium uppercase text-gray-500 dark:text-slate-400"
         >
-        <p class="text-gray-900 dark:text-slate-300">
-          {{ systemSecurityPlan.metadata.title }}
+          {{ field.label }}
         </p>
-      </div>
-
-      <div>
-        <label
-          class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
-          >UUID</label
+        <p
+          class="mt-1 text-sm text-gray-900 dark:text-slate-200"
+          :class="{ 'font-mono text-gray-600 dark:text-slate-400': field.mono }"
         >
-        <p class="text-sm text-gray-600 dark:text-slate-400 font-mono">
-          {{ systemSecurityPlan.uuid }}
-        </p>
-      </div>
-
-      <div>
-        <label
-          class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
-          >Version</label
-        >
-        <p class="text-gray-900 dark:text-slate-300">
-          {{ systemSecurityPlan.metadata.version || 'N/A' }}
-        </p>
-      </div>
-
-      <div>
-        <label
-          class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
-          >Last Modified</label
-        >
-        <p class="text-gray-900 dark:text-slate-300">
-          {{ formatDate(systemSecurityPlan.metadata.lastModified) }}
-        </p>
-      </div>
-
-      <div v-if="systemSecurityPlan.metadata.published">
-        <label
-          class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
-          >Published</label
-        >
-        <p class="text-gray-900 dark:text-slate-300">
-          {{ formatDate(systemSecurityPlan.metadata.published) }}
+          {{ field.value }}
         </p>
       </div>
 
@@ -84,19 +49,21 @@
       class="mt-8 rounded-lg border border-ccf-300 bg-white p-6 dark:border-slate-700 dark:bg-slate-900"
     >
       <div class="mb-4 flex items-center justify-between gap-3">
-        <h3 class="text-lg font-semibold text-gray-900 dark:text-slate-300">
-          Compliance
-        </h3>
-        <RouterLink
+        <TooltipTitle
+          text="Compliance"
+          tooltip-key="system.compliance"
+          underline-class="text-lg font-semibold text-gray-900 dark:text-slate-300 underline decoration-dotted cursor-help"
+        />
+        <RouterLinkButton
           v-if="systemSecurityPlan.uuid"
           :to="{
             name: 'system-security-plan-compliance',
             params: { id: systemSecurityPlan.uuid },
           }"
-          class="text-sm font-medium text-blue-600 underline dark:text-blue-300"
+          variant="outlined"
         >
           Open full compliance view
-        </RouterLink>
+        </RouterLinkButton>
       </div>
 
       <div
@@ -108,111 +75,64 @@
 
       <template v-else-if="compliancePreview?.summary">
         <div class="grid grid-cols-1 gap-4 md:grid-cols-5">
-          <div class="rounded-lg border border-emerald-200 bg-emerald-50 p-4">
-            <p class="text-xs uppercase tracking-wide text-emerald-700">
-              Satisfied
-            </p>
-            <p class="mt-2 text-3xl font-semibold text-emerald-800">
-              {{ compliancePreview.summary.satisfied }}
-            </p>
-          </div>
-          <div class="rounded-lg border border-red-200 bg-red-50 p-4">
-            <p class="text-xs uppercase tracking-wide text-red-700">
-              Not Satisfied
-            </p>
-            <p class="mt-2 text-3xl font-semibold text-red-800">
-              {{ compliancePreview.summary.notSatisfied }}
-            </p>
-          </div>
-          <div class="rounded-lg border border-slate-300 bg-slate-100 p-4">
-            <p class="text-xs uppercase tracking-wide text-slate-700">
-              Unknown
-            </p>
-            <p class="mt-2 text-3xl font-semibold text-slate-800">
-              {{ compliancePreview.summary.unknown }}
-            </p>
-          </div>
-          <div class="rounded-lg border border-blue-200 bg-blue-50 p-4">
-            <p class="text-xs uppercase tracking-wide text-blue-700">
-              Compliance
-            </p>
-            <p class="mt-2 text-3xl font-semibold text-blue-800">
-              {{ compliancePreview.summary.compliancePercent }}%
-            </p>
-          </div>
-          <div class="rounded-lg border border-indigo-200 bg-indigo-50 p-4">
-            <p class="text-xs uppercase tracking-wide text-indigo-700">
-              Assessed
-            </p>
-            <p class="mt-2 text-3xl font-semibold text-indigo-800">
-              {{ compliancePreview.summary.assessedPercent }}%
-            </p>
-          </div>
-        </div>
-
-        <div class="mt-5">
-          <div class="mb-2 flex items-center justify-between text-sm">
-            <span class="text-gray-600 dark:text-slate-400">
-              {{ compliancePreview.summary.satisfied }}/{{
-                compliancePreview.summary.totalControls
-              }}
-              controls satisfied
-            </span>
-            <span class="font-semibold text-gray-900 dark:text-slate-200">
-              {{ compliancePreview.summary.compliancePercent }}%
-            </span>
-          </div>
           <div
-            class="flex h-3 w-full overflow-hidden rounded-full bg-zinc-200 dark:bg-slate-700"
+            v-for="stat in complianceStats"
+            :key="stat.label"
+            class="rounded-md border border-ccf-300 bg-white p-4 dark:border-slate-700 dark:bg-slate-900"
           >
-            <div
-              class="bg-emerald-600"
-              :style="{
-                width: `${complianceWidths(compliancePreview.summary).satisfied}%`,
-              }"
-            ></div>
-            <div
-              class="bg-red-500"
-              :style="{
-                width: `${complianceWidths(compliancePreview.summary).notSatisfied}%`,
-              }"
-            ></div>
-            <div
-              class="bg-slate-400"
-              :style="{
-                width: `${complianceWidths(compliancePreview.summary).unknown}%`,
-              }"
-            ></div>
+            <div class="flex items-center justify-between gap-3">
+              <p
+                class="text-xs font-medium uppercase text-gray-500 dark:text-slate-400"
+              >
+                {{ stat.label }}
+              </p>
+              <i
+                v-if="stat.icon"
+                :class="stat.icon"
+                class="text-sm text-gray-400 dark:text-slate-500"
+              ></i>
+            </div>
+            <p
+              class="mt-2 text-2xl font-semibold text-gray-900 dark:text-slate-100"
+            >
+              {{ stat.value }}
+            </p>
           </div>
         </div>
 
         <div
-          v-if="compliancePreview.implementation"
-          class="mt-4 rounded-lg border border-ccf-300 bg-white p-4 dark:border-slate-700 dark:bg-slate-900"
+          class="mt-5 rounded-md border border-ccf-300 bg-white p-4 dark:border-slate-700 dark:bg-slate-900"
         >
-          <div class="mb-2 flex items-center justify-between text-sm">
-            <span class="text-gray-600 dark:text-slate-400">
-              Implementation Coverage
-            </span>
-            <span class="font-semibold text-gray-900 dark:text-slate-200">
-              {{ compliancePreview.implementation.implementationPercent }}%
-            </span>
-          </div>
-          <div
-            class="flex h-3 w-full overflow-hidden rounded-full bg-zinc-200 dark:bg-slate-700"
-          >
-            <div
-              class="bg-blue-600"
-              :style="{
-                width: `${compliancePreview.implementation.implementationPercent}%`,
-              }"
-            ></div>
-          </div>
-          <div class="mt-2 text-xs text-gray-600 dark:text-slate-400">
-            {{ compliancePreview.implementation.implementedControls }}
-            implemented,
-            {{ compliancePreview.implementation.unimplementedControls }} not
-            implemented
+          <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div>
+              <p
+                class="text-xs font-medium uppercase text-gray-500 dark:text-slate-400"
+              >
+                Controls Satisfied
+              </p>
+              <p class="mt-1 text-sm text-gray-900 dark:text-slate-200">
+                {{ compliancePreview.summary.satisfied }}/{{
+                  compliancePreview.summary.totalControls
+                }}
+                controls satisfied ({{
+                  compliancePreview.summary.compliancePercent
+                }}%)
+              </p>
+            </div>
+            <div v-if="compliancePreview.implementation">
+              <p
+                class="text-xs font-medium uppercase text-gray-500 dark:text-slate-400"
+              >
+                Implementation Coverage
+              </p>
+              <p class="mt-1 text-sm text-gray-900 dark:text-slate-200">
+                {{ compliancePreview.implementation.implementationPercent }}%
+                ({{ compliancePreview.implementation.implementedControls }}
+                implemented,
+                {{ compliancePreview.implementation.unimplementedControls }}
+                not implemented)
+              </p>
+            </div>
           </div>
         </div>
       </template>
@@ -236,63 +156,18 @@
       <!--      </h3>-->
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
-        <div v-if="systemCharacteristics.systemName">
-          <label
-            class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
-            >System Name</label
+        <div
+          v-for="field in systemCharacteristicFields"
+          :key="field.label"
+          :class="field.class"
+        >
+          <p
+            class="text-xs font-medium uppercase text-gray-500 dark:text-slate-400"
           >
-          <p class="text-gray-900 dark:text-slate-300">
-            {{ systemCharacteristics.systemName }}
+            {{ field.label }}
           </p>
-        </div>
-
-        <div v-if="systemCharacteristics.systemNameShort">
-          <label
-            class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
-            >System Name (Short)</label
-          >
-          <p class="text-gray-900 dark:text-slate-300">
-            {{ systemCharacteristics.systemNameShort }}
-          </p>
-        </div>
-
-        <div v-if="systemCharacteristics.securitySensitivityLevel">
-          <label
-            class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
-            >Security Sensitivity Level</label
-          >
-          <p class="text-gray-900 dark:text-slate-300">
-            {{ systemCharacteristics.securitySensitivityLevel }}
-          </p>
-        </div>
-
-        <div v-if="systemCharacteristics.dateAuthorized">
-          <label
-            class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
-            >Date Authorized</label
-          >
-          <p class="text-gray-900 dark:text-slate-300">
-            {{ formatDate(systemCharacteristics.dateAuthorized.toString()) }}
-          </p>
-        </div>
-
-        <div v-if="systemSecurityPlan.metadata.remarks" class="md:col-span-2">
-          <label
-            class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
-            >Remarks</label
-          >
-          <p class="text-gray-900 dark:text-slate-300">
-            {{ systemSecurityPlan.metadata.remarks }}
-          </p>
-        </div>
-
-        <div v-if="systemCharacteristics.description" class="md:col-span-2">
-          <label
-            class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
-            >Description</label
-          >
-          <p class="text-gray-900 dark:text-slate-300">
-            {{ systemCharacteristics.description }}
+          <p class="mt-1 text-sm text-gray-900 dark:text-slate-200">
+            {{ field.value }}
           </p>
         </div>
       </div>
@@ -303,15 +178,8 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue';
-import type {
-  SystemSecurityPlan,
-  SystemCharacteristics,
-  SystemUser,
-  SystemComponent,
-  InventoryItem,
-  LeveragedAuthorization,
-} from '@/oscal';
+import { computed, onMounted, ref, watch } from 'vue';
+import type { SystemSecurityPlan, SystemCharacteristics } from '@/oscal';
 import type { Profile } from '@/oscal';
 import MultiSelect from '@/volt/MultiSelect.vue';
 import { useSystemStore } from '@/stores/system.ts';
@@ -320,23 +188,15 @@ import { useToast } from 'primevue/usetoast';
 import { useDataApi } from '@/composables/axios';
 import type { AxiosError } from 'axios';
 import type { ErrorResponse, ErrorBody } from '@/stores/types.ts';
-import type {
-  ProfileComplianceProgress,
-  ProfileComplianceSummary,
-} from '@/types/compliance';
-import { computeComplianceWidths } from '@/utils/compliance';
+import type { ProfileComplianceProgress } from '@/types/compliance';
 import RiskOverviewSection from '@/components/system-security-plans/RiskOverviewSection.vue';
 import { useSspProfileBindings } from '@/composables/useSspProfileBindings';
+import RouterLinkButton from '@/components/RouterLinkButton.vue';
+import TooltipTitle from '@/components/TooltipTitle.vue';
 
 const toast = useToast();
 const { system } = useSystemStore();
 const systemSecurityPlan = ref<SystemSecurityPlan>({} as SystemSecurityPlan);
-const systemImplementationStats = ref({
-  users: 0,
-  components: 0,
-  inventoryItems: 0,
-  leveragedAuthorizations: 0,
-});
 
 const profileItems = ref<Array<{ name: string; value: string }>>([]);
 const { data: profiles, isLoading: loadingProfiles } = useDataApi<Profile[]>(
@@ -357,39 +217,103 @@ const { data: systemCharacteristics } = useDataApi<SystemCharacteristics>(
   `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/system-characteristics`,
 );
 
-const { execute: executeSIUsers } = useDataApi<SystemUser[]>(
-  `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/system-implementation/users`,
-  {
-    method: 'GET',
-  },
-  { immediate: false },
-);
-const { execute: executeSIComponents } = useDataApi<SystemComponent[]>(
-  `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/system-implementation/components`,
-  {
-    method: 'GET',
-  },
-  { immediate: false },
-);
-const { execute: executeSIInventory } = useDataApi<InventoryItem[]>(
-  `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/system-implementation/inventory-items`,
-  {
-    method: 'GET',
-  },
-  { immediate: false },
-);
-const { execute: executeSILeveragedAuths } = useDataApi<
-  LeveragedAuthorization[]
->(
-  `/api/oscal/system-security-plans/${system.securityPlan?.uuid}/system-implementation/leveraged-authorizations`,
-  {
-    method: 'GET',
-  },
-  { immediate: false },
-);
-
 const compliancePreview = ref<ProfileComplianceProgress | null>(null);
 const loadingCompliancePreview = ref(false);
+
+type DisplayField = {
+  label: string;
+  value: string;
+  class?: string;
+  mono?: boolean;
+};
+
+const metadataFields = computed(() => {
+  const metadata = systemSecurityPlan.value.metadata;
+  if (!metadata) return [];
+
+  const fields: DisplayField[] = [
+    { label: 'Title', value: metadata.title || 'N/A' },
+    {
+      label: 'UUID',
+      value: systemSecurityPlan.value.uuid || 'N/A',
+      mono: true,
+    },
+    { label: 'Version', value: metadata.version || 'N/A' },
+    {
+      label: 'Last Modified',
+      value: formatDate(metadata.lastModified),
+    },
+    ...(metadata.published
+      ? [{ label: 'Published', value: formatDate(metadata.published) }]
+      : []),
+  ];
+
+  return fields;
+});
+
+const complianceStats = computed(() => {
+  const summary = compliancePreview.value?.summary;
+  if (!summary) return [];
+
+  return [
+    {
+      label: 'Satisfied',
+      value: summary.satisfied,
+      icon: 'pi pi-check-circle',
+    },
+    {
+      label: 'Not Satisfied',
+      value: summary.notSatisfied,
+      icon: 'pi pi-times-circle',
+    },
+    { label: 'Unknown', value: summary.unknown, icon: 'pi pi-question-circle' },
+    {
+      label: 'Compliance',
+      value: `${summary.compliancePercent}%`,
+      icon: 'pi pi-chart-line',
+    },
+    {
+      label: 'Assessed',
+      value: `${summary.assessedPercent}%`,
+      icon: 'pi pi-verified',
+    },
+  ];
+});
+
+const systemCharacteristicFields = computed(() => {
+  if (!systemCharacteristics.value) return [];
+
+  return [
+    {
+      label: 'System Name',
+      value: systemCharacteristics.value.systemName,
+    },
+    {
+      label: 'System Name (Short)',
+      value: systemCharacteristics.value.systemNameShort,
+    },
+    {
+      label: 'Security Sensitivity Level',
+      value: systemCharacteristics.value.securitySensitivityLevel,
+    },
+    {
+      label: 'Date Authorized',
+      value: systemCharacteristics.value.dateAuthorized
+        ? formatDate(systemCharacteristics.value.dateAuthorized.toString())
+        : undefined,
+    },
+    {
+      label: 'Remarks',
+      value: systemSecurityPlan.value.metadata?.remarks,
+      class: 'md:col-span-2',
+    },
+    {
+      label: 'Description',
+      value: systemCharacteristics.value.description,
+      class: 'md:col-span-2',
+    },
+  ].filter((field) => !!field.value);
+});
 
 const { execute: executeCompliance } = useDataApi<ProfileComplianceProgress>(
   null,
@@ -444,53 +368,10 @@ onMounted(async () => {
 
     await loadInitialProfiles();
     await loadCompliancePreview(selectedProfiles.value[0]);
-
-    // Load system implementation statistics
-    try {
-      const [
-        usersResponse,
-        componentsResponse,
-        inventoryResponse,
-        leveragedAuthsResponse,
-      ] = await Promise.allSettled([
-        executeSIUsers(),
-        executeSIComponents(),
-        executeSIInventory(),
-        executeSILeveragedAuths(),
-      ]);
-
-      systemImplementationStats.value = {
-        users:
-          usersResponse.status === 'fulfilled'
-            ? (usersResponse.value.data.value?.data.length ?? 0)
-            : 0,
-        components:
-          componentsResponse.status === 'fulfilled'
-            ? (componentsResponse.value.data.value?.data.length ?? 0)
-            : 0,
-        inventoryItems:
-          inventoryResponse.status === 'fulfilled'
-            ? (inventoryResponse.value.data.value?.data.length ?? 0)
-            : 0,
-        leveragedAuthorizations:
-          leveragedAuthsResponse.status === 'fulfilled'
-            ? (leveragedAuthsResponse.value.data.value?.data.length ?? 0)
-            : 0,
-      };
-    } catch (error) {
-      console.warn(
-        'Could not load some system implementation statistics:',
-        error,
-      );
-    }
   } catch (error) {
     console.error('Error loading System Security Plan overview:', error);
   }
 });
-
-function complianceWidths(summary: ProfileComplianceSummary) {
-  return computeComplianceWidths(summary);
-}
 
 function formatDate(dateString?: string): string {
   if (!dateString) return 'N/A';
