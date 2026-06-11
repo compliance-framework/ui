@@ -4,10 +4,10 @@
       <div class="mb-4">
         <label class="inline-block pb-2 dark:text-slate-300">UUID</label>
         <div class="flex gap-2">
-          <FormInput
+          <InputText
             v-model="componentData.uuid"
             placeholder="Component UUID"
-            class="flex-1"
+            class="flex-1 w-full"
             readonly
           />
           <button
@@ -78,11 +78,12 @@
         <label class="inline-block pb-2 dark:text-slate-300"
           >Type <span class="text-red-500">*</span></label
         >
-        <FormInput
+        <InputText
           v-model="componentData.type"
           placeholder="e.g., service, software, hardware"
           :readonly="inheritedFieldLocks.type"
           required
+          class="w-full"
         />
       </div>
 
@@ -90,10 +91,11 @@
         <label class="inline-block pb-2 dark:text-slate-300"
           >Title <span class="text-red-500">*</span></label
         >
-        <FormInput
+        <InputText
           v-model="componentData.title"
           :readonly="inheritedFieldLocks.title"
           required
+          class="w-full"
         />
       </div>
 
@@ -101,10 +103,11 @@
         <label class="inline-block pb-2 dark:text-slate-300"
           >Description <span class="text-red-500">*</span></label
         >
-        <FormTextarea
+        <Textarea
           v-model="componentData.description"
           :readonly="inheritedFieldLocks.description"
           required
+          class="w-full"
         />
       </div>
 
@@ -112,18 +115,20 @@
         <label class="inline-block pb-2 dark:text-slate-300"
           >Purpose <span class="text-red-500">*</span></label
         >
-        <FormTextarea
+        <Textarea
           v-model="componentData.purpose"
           :readonly="inheritedFieldLocks.purpose"
           required
+          class="w-full"
         />
       </div>
 
       <div class="mb-4">
         <label class="inline-block pb-2 dark:text-slate-300">Remarks</label>
-        <FormTextarea
+        <Textarea
           v-model="componentData.remarks"
           :readonly="inheritedFieldLocks.remarks"
+          class="w-full"
         />
       </div>
 
@@ -157,7 +162,11 @@
             <label class="inline-block pb-1 text-sm dark:text-slate-300"
               >Remarks</label
             >
-            <FormTextarea v-model="componentData.status!.remarks" rows="2" />
+            <Textarea
+              v-model="componentData.status!.remarks"
+              rows="2"
+              class="w-full"
+            />
           </div>
         </div>
       </div>
@@ -190,20 +199,22 @@
                 <label class="inline-block pb-1 text-sm dark:text-slate-300"
                   >Title</label
                 >
-                <FormInput
+                <InputText
                   v-model="protocol.title"
                   placeholder="Protocol title"
                   :readonly="inheritedFieldLocks.protocols"
+                  class="w-full"
                 />
               </div>
               <div>
                 <label class="inline-block pb-1 text-sm dark:text-slate-300"
                   >Name</label
                 >
-                <FormInput
+                <InputText
                   v-model="protocol.name"
                   placeholder="Protocol name"
                   :readonly="inheritedFieldLocks.protocols"
+                  class="w-full"
                 />
               </div>
             </div>
@@ -219,10 +230,10 @@
                   :key="rangeIndex"
                   class="flex gap-2"
                 >
-                  <FormInput
+                  <InputText
                     v-model="range.transport"
                     placeholder="Transport (TCP/UDP)"
-                    class="flex-1"
+                    class="flex-1 w-full"
                     :readonly="inheritedFieldLocks.protocols"
                   />
                   <FormInput
@@ -294,8 +305,9 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { useToast } from 'primevue/usetoast';
+import InputText from '@/volt/InputText.vue';
+import Textarea from '@/volt/Textarea.vue';
 import FormInput from '@/components/forms/FormInput.vue';
-import FormTextarea from '@/components/forms/FormTextarea.vue';
 import type {
   ComponentDefinition,
   DefinedComponent,

@@ -179,6 +179,12 @@ describe('SystemSecurityPlanOverviewView profile bindings', () => {
     ).toEqual(['profile-a']);
   });
 
+  it('does not render a dead metadata edit action', async () => {
+    const wrapper = await mountView();
+
+    expect(wrapper.text()).not.toContain('Edit Metadata');
+  });
+
   it('adds selected profiles and removes deselected profiles', async () => {
     mockListProfiles.mockResolvedValueOnce({
       data: [

@@ -19,13 +19,13 @@
       class="mt-4 border-b border-ccf-300 dark:border-slate-800 overflow-x-auto whitespace-nowrap"
     >
       <RouterLink
-        class="px-4 py-2 inline-block text-lg border-ccf-300 dark:border-slate-700 dark:hover:bg-slate-900"
+        class="tab-link px-4 py-2 inline-block text-lg border-ccf-300 dark:border-slate-700 dark:hover:bg-slate-900"
         :to="{ name: 'system-security-plan-overview', params: { id: sspId } }"
       >
         Overview
       </RouterLink>
       <RouterLink
-        class="px-4 py-2 inline-block text-lg border-ccf-300 dark:border-slate-700 dark:hover:bg-slate-900"
+        class="tab-link px-4 py-2 inline-block text-lg border-ccf-300 dark:border-slate-700 dark:hover:bg-slate-900"
         :to="{
           name: 'system-security-plan-characteristics',
           params: { id: sspId },
@@ -34,7 +34,7 @@
         System Characteristics
       </RouterLink>
       <RouterLink
-        class="px-4 py-2 inline-block text-lg border-ccf-300 dark:border-slate-700 dark:hover:bg-slate-900"
+        class="tab-link px-4 py-2 inline-block text-lg border-ccf-300 dark:border-slate-700 dark:hover:bg-slate-900"
         :to="{
           name: 'system-security-plan-system-implementation',
           params: { id: sspId },
@@ -43,7 +43,7 @@
         System Implementation
       </RouterLink>
       <RouterLink
-        class="px-4 py-2 inline-block text-lg border-ccf-300 dark:border-slate-700 dark:hover:bg-slate-900"
+        class="tab-link px-4 py-2 inline-block text-lg border-ccf-300 dark:border-slate-700 dark:hover:bg-slate-900"
         :to="{
           name: 'system-security-plan-control-implementation',
           params: { id: sspId },
@@ -52,13 +52,13 @@
         Control Implementation
       </RouterLink>
       <RouterLink
-        class="px-4 py-2 inline-block text-lg border-ccf-300 dark:border-slate-700 dark:hover:bg-slate-900"
+        class="tab-link px-4 py-2 inline-block text-lg border-ccf-300 dark:border-slate-700 dark:hover:bg-slate-900"
         :to="{ name: 'system-security-plan-risks', params: { id: sspId } }"
       >
         Risks
       </RouterLink>
       <RouterLink
-        class="px-4 py-2 inline-block text-lg border-ccf-300 dark:border-slate-700 dark:hover:bg-slate-900"
+        class="tab-link px-4 py-2 inline-block text-lg border-ccf-300 dark:border-slate-700 dark:hover:bg-slate-900"
         :to="{
           name: 'system-security-plan-compliance',
           params: { id: sspId },
@@ -67,7 +67,7 @@
         Compliance
       </RouterLink>
       <RouterLink
-        class="px-4 py-2 inline-block text-lg border-ccf-300 dark:border-slate-700 dark:hover:bg-slate-900"
+        class="tab-link px-4 py-2 inline-block text-lg border-ccf-300 dark:border-slate-700 dark:hover:bg-slate-900"
         :to="{ name: 'system-security-plan-json', params: { id: sspId } }"
       >
         JSON
@@ -138,12 +138,12 @@ watch(error, () => {
 </script>
 
 <style scoped>
-.router-link-exact-active {
+.tab-link.router-link-exact-active {
   background: none;
   border-bottom: 2px solid;
 }
 
-.dark .router-link-exact-active {
+.dark .tab-link.router-link-exact-active {
   background-color: rgb(15 23 42); /* slate-900 */
 }
 </style>

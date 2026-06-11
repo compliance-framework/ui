@@ -16,16 +16,17 @@
         <label class="inline-block pb-2 dark:text-slate-300"
           >Control ID <span class="text-red-500">*</span></label
         >
-        <FormInput
+        <InputText
           v-model="requirementData.controlId"
           placeholder="e.g., AC-1, AU-2"
           required
+          class="w-full"
         />
       </div>
 
       <div class="mb-4">
         <label class="inline-block pb-2 dark:text-slate-300">Remarks</label>
-        <FormTextarea v-model="requirementData.remarks" rows="3" />
+        <Textarea v-model="requirementData.remarks" rows="3" class="w-full" />
       </div>
 
       <!-- Properties -->
@@ -55,13 +56,21 @@
                 <label class="inline-block pb-1 text-sm dark:text-slate-300"
                   >Name</label
                 >
-                <FormInput v-model="prop.name" placeholder="Property name" />
+                <InputText
+                  v-model="prop.name"
+                  placeholder="Property name"
+                  class="w-full"
+                />
               </div>
               <div>
                 <label class="inline-block pb-1 text-sm dark:text-slate-300"
                   >Value</label
                 >
-                <FormInput v-model="prop.value" placeholder="Property value" />
+                <InputText
+                  v-model="prop.value"
+                  placeholder="Property value"
+                  class="w-full"
+                />
               </div>
             </div>
           </div>
@@ -103,20 +112,32 @@
                 <label class="inline-block pb-1 text-sm dark:text-slate-300"
                   >Href</label
                 >
-                <FormInput v-model="link.href" placeholder="URL or reference" />
+                <InputText
+                  v-model="link.href"
+                  placeholder="URL or reference"
+                  class="w-full"
+                />
               </div>
               <div>
                 <label class="inline-block pb-1 text-sm dark:text-slate-300"
                   >Rel</label
                 >
-                <FormInput v-model="link.rel" placeholder="Relationship" />
+                <InputText
+                  v-model="link.rel"
+                  placeholder="Relationship"
+                  class="w-full"
+                />
               </div>
             </div>
             <div class="mt-2">
               <label class="inline-block pb-1 text-sm dark:text-slate-300"
                 >Text</label
               >
-              <FormInput v-model="link.text" placeholder="Link text" />
+              <InputText
+                v-model="link.text"
+                placeholder="Link text"
+                class="w-full"
+              />
             </div>
           </div>
 
@@ -153,8 +174,8 @@
 <script setup lang="ts">
 import { reactive, onMounted } from 'vue';
 import { useToast } from 'primevue/usetoast';
-import FormInput from '@/components/forms/FormInput.vue';
-import FormTextarea from '@/components/forms/FormTextarea.vue';
+import InputText from '@/volt/InputText.vue';
+import Textarea from '@/volt/Textarea.vue';
 import type { ImplementedRequirement } from '@/oscal';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import type { AxiosError } from 'axios';

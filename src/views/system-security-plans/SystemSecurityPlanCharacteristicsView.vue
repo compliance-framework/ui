@@ -19,21 +19,19 @@
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       <!-- Security Level Metric -->
       <div
-        class="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-lg border border-indigo-200 dark:border-indigo-800"
+        class="bg-white dark:bg-slate-900 p-4 rounded-lg border border-ccf-300 dark:border-slate-700 shadow"
       >
         <div class="flex items-center justify-between">
           <div>
-            <div
-              class="text-2xl font-bold text-indigo-600 dark:text-indigo-400"
-            >
+            <div class="text-2xl font-bold text-gray-900 dark:text-slate-200">
               {{ characteristics?.securitySensitivityLevel || 'N/A' }}
             </div>
-            <div class="text-sm text-indigo-600 dark:text-indigo-400">
+            <div class="text-sm text-gray-900 dark:text-slate-200">
               Security Level
             </div>
           </div>
           <svg
-            class="w-8 h-8 text-indigo-300 dark:text-indigo-600"
+            class="w-8 h-8 text-gray-400 dark:text-slate-500"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -50,25 +48,25 @@
 
       <!-- Authorization Status Metric -->
       <div
-        class="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-200 dark:border-green-800"
+        class="bg-white dark:bg-slate-900 p-4 rounded-lg border border-ccf-300 dark:border-slate-700 shadow"
       >
         <div class="flex items-center justify-between">
           <div>
-            <div class="text-2xl font-bold text-green-600 dark:text-green-400">
+            <div class="text-2xl font-bold text-gray-900 dark:text-slate-200">
               {{ authorizationStatus }}
             </div>
-            <div class="text-sm text-green-600 dark:text-green-400">
+            <div class="text-sm text-gray-900 dark:text-slate-200">
               Authorization Status
             </div>
             <div
               v-if="daysSinceAuthorization !== null"
-              class="text-xs text-green-500 dark:text-green-300 mt-1"
+              class="text-xs text-gray-500 dark:text-slate-400 mt-1"
             >
               {{ daysSinceAuthorization }} days ago
             </div>
           </div>
           <svg
-            class="w-8 h-8 text-green-300 dark:text-green-600"
+            class="w-8 h-8 text-gray-400 dark:text-slate-500"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -85,22 +83,22 @@
 
       <!-- Total Diagrams Metric -->
       <div
-        class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800"
+        class="bg-white dark:bg-slate-900 p-4 rounded-lg border border-ccf-300 dark:border-slate-700 shadow"
       >
         <div class="flex items-center justify-between">
           <div>
-            <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">
+            <div class="text-2xl font-bold text-gray-900 dark:text-slate-200">
               {{ totalDiagrams }}
             </div>
-            <div class="text-sm text-blue-600 dark:text-blue-400">
+            <div class="text-sm text-gray-900 dark:text-slate-200">
               Architecture Diagrams
             </div>
-            <div class="text-xs text-blue-500 dark:text-blue-300 mt-1">
+            <div class="text-xs text-gray-500 dark:text-slate-400 mt-1">
               Across {{ diagramCategories }} categories
             </div>
           </div>
           <svg
-            class="w-8 h-8 text-blue-300 dark:text-blue-600"
+            class="w-8 h-8 text-gray-400 dark:text-slate-500"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -117,24 +115,22 @@
 
       <!-- Completeness Metric -->
       <div
-        class="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg border border-purple-200 dark:border-purple-800"
+        class="bg-white dark:bg-slate-900 p-4 rounded-lg border border-ccf-300 dark:border-slate-700 shadow"
       >
         <div class="flex items-center justify-between">
           <div>
-            <div
-              class="text-2xl font-bold text-purple-600 dark:text-purple-400"
-            >
+            <div class="text-2xl font-bold text-gray-900 dark:text-slate-200">
               {{ completenessPercentage }}%
             </div>
-            <div class="text-sm text-purple-600 dark:text-purple-400">
+            <div class="text-sm text-gray-900 dark:text-slate-200">
               Profile Completeness
             </div>
-            <div class="text-xs text-purple-500 dark:text-purple-300 mt-1">
+            <div class="text-xs text-gray-500 dark:text-slate-400 mt-1">
               {{ fieldsCompleted }} of {{ totalFields }} fields
             </div>
           </div>
           <svg
-            class="w-8 h-8 text-purple-300 dark:text-purple-600"
+            class="w-8 h-8 text-gray-400 dark:text-slate-500"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -153,36 +149,25 @@
     <div
       class="bg-white dark:bg-slate-900 border border-ccf-300 dark:border-slate-700 rounded-lg overflow-hidden"
     >
-      <div class="bg-gradient-to-r from-blue-500 to-indigo-600 p-6">
+      <div class="p-6 border-b border-ccf-300 dark:border-slate-700">
         <div class="flex justify-between items-start">
           <div>
-            <h3 class="text-2xl font-bold text-white mb-2">
+            <h3
+              class="text-2xl font-bold text-gray-900 dark:text-slate-300 mb-2"
+            >
               {{ characteristics?.systemName || 'System Information' }}
             </h3>
-            <p v-if="characteristics?.systemNameShort" class="text-blue-100">
+            <p
+              v-if="characteristics?.systemNameShort"
+              class="text-gray-600 dark:text-slate-400"
+            >
               {{ characteristics.systemNameShort }}
             </p>
           </div>
-          <button
-            @click="() => {}"
-            class="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-md backdrop-blur-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled
-          >
-            <svg
-              class="w-5 h-5 inline-block mr-1"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-              ></path>
-            </svg>
+          <SecondaryButton @click="showEditCharacteristicsModal = true">
+            <i class="pi pi-pencil mr-2"></i>
             Edit
-          </button>
+          </SecondaryButton>
         </div>
       </div>
 
@@ -248,7 +233,7 @@
         <div v-else-if="loading" class="text-center py-8">
           <div class="inline-flex items-center">
             <svg
-              class="animate-spin -ml-1 mr-3 h-5 w-5 text-blue-500"
+              class="animate-spin -ml-1 mr-3 h-5 w-5 text-gray-500"
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
               viewBox="0 0 24 24"
@@ -322,13 +307,13 @@
       <div
         class="bg-white dark:bg-slate-900 border border-ccf-300 dark:border-slate-700 rounded-lg overflow-hidden"
       >
-        <div class="bg-gradient-to-r from-green-500 to-teal-600 p-4">
+        <div class="p-4 border-b border-ccf-300 dark:border-slate-700">
           <div class="flex items-center justify-between">
-            <h3 class="text-lg font-semibold text-white">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-slate-300">
               Network Architecture
             </h3>
             <svg
-              class="w-6 h-6 text-white/80"
+              class="w-6 h-6 text-gray-400 dark:text-slate-500"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -375,7 +360,7 @@
               <div
                 v-for="(diagram, index) in networkArchitecture.diagrams"
                 :key="diagram.uuid"
-                class="border-l-4 border-green-500 pl-3 py-2 hover:bg-gray-50 dark:hover:bg-slate-800 rounded-r transition-colors"
+                class="border-l border-ccf-300 dark:border-slate-700 pl-3 py-2 hover:bg-gray-50 dark:hover:bg-slate-800 rounded-r transition-colors"
               >
                 <div
                   class="font-medium text-sm text-gray-900 dark:text-slate-300"
@@ -401,7 +386,7 @@
             class="flex items-center justify-center py-4"
           >
             <svg
-              class="animate-spin h-5 w-5 text-green-500"
+              class="animate-spin h-5 w-5 text-gray-500"
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
               viewBox="0 0 24 24"
@@ -447,11 +432,13 @@
       <div
         class="bg-white dark:bg-slate-900 border border-ccf-300 dark:border-slate-700 rounded-lg overflow-hidden"
       >
-        <div class="bg-gradient-to-r from-blue-500 to-cyan-600 p-4">
+        <div class="p-4 border-b border-ccf-300 dark:border-slate-700">
           <div class="flex items-center justify-between">
-            <h3 class="text-lg font-semibold text-white">Data Flow</h3>
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-slate-300">
+              Data Flow
+            </h3>
             <svg
-              class="w-6 h-6 text-white/80"
+              class="w-6 h-6 text-gray-400 dark:text-slate-500"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -498,7 +485,7 @@
               <div
                 v-for="(diagram, index) in dataFlow.diagrams"
                 :key="diagram.uuid"
-                class="border-l-4 border-blue-500 pl-3 py-2 hover:bg-gray-50 dark:hover:bg-slate-800 rounded-r transition-colors"
+                class="border-l border-ccf-300 dark:border-slate-700 pl-3 py-2 hover:bg-gray-50 dark:hover:bg-slate-800 rounded-r transition-colors"
               >
                 <div
                   class="font-medium text-sm text-gray-900 dark:text-slate-300"
@@ -524,7 +511,7 @@
             class="flex items-center justify-center py-4"
           >
             <svg
-              class="animate-spin h-5 w-5 text-blue-500"
+              class="animate-spin h-5 w-5 text-gray-500"
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
               viewBox="0 0 24 24"
@@ -570,13 +557,13 @@
       <div
         class="bg-white dark:bg-slate-900 border border-ccf-300 dark:border-slate-700 rounded-lg overflow-hidden"
       >
-        <div class="bg-gradient-to-r from-purple-500 to-pink-600 p-4">
+        <div class="p-4 border-b border-ccf-300 dark:border-slate-700">
           <div class="flex items-center justify-between">
-            <h3 class="text-lg font-semibold text-white">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-slate-300">
               Authorization Boundary
             </h3>
             <svg
-              class="w-6 h-6 text-white/80"
+              class="w-6 h-6 text-gray-400 dark:text-slate-500"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -626,7 +613,7 @@
               <div
                 v-for="(diagram, index) in authorizationBoundary.diagrams"
                 :key="diagram.uuid"
-                class="border-l-4 border-purple-500 pl-3 py-2 hover:bg-gray-50 dark:hover:bg-slate-800 rounded-r transition-colors"
+                class="border-l border-ccf-300 dark:border-slate-700 pl-3 py-2 hover:bg-gray-50 dark:hover:bg-slate-800 rounded-r transition-colors"
               >
                 <div
                   class="font-medium text-sm text-gray-900 dark:text-slate-300"
@@ -652,7 +639,7 @@
             class="flex items-center justify-center py-4"
           >
             <svg
-              class="animate-spin h-5 w-5 text-purple-500"
+              class="animate-spin h-5 w-5 text-gray-500"
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
               viewBox="0 0 24 24"
@@ -694,18 +681,37 @@
         </div>
       </div>
     </div>
+
+    <Dialog
+      v-model:visible="showEditCharacteristicsModal"
+      modal
+      header="Edit System Characteristics"
+      :draggable="false"
+      class="w-full max-w-4xl"
+    >
+      <SystemCharacteristicsForm
+        :system-security-plan-id="String(route.params.id)"
+        @updated="handleCharacteristicsUpdated"
+      />
+    </Dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import TooltipTitle from '@/components/TooltipTitle.vue';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import type { SystemCharacteristics } from '@/oscal';
 import { useDataApi } from '@/composables/axios';
 import type { Diagrammable } from '@/stores/system-security-plans';
+import SecondaryButton from '@/volt/SecondaryButton.vue';
+import Dialog from '@/volt/Dialog.vue';
+import SystemCharacteristicsForm from '@/components/SystemCharacteristicsForm.vue';
+import { useToast } from 'primevue/usetoast';
 
 const route = useRoute();
+const toast = useToast();
+const showEditCharacteristicsModal = ref(false);
 
 const {
   data: characteristics,
@@ -790,4 +796,20 @@ const totalFields = 9; // Total possible fields to complete
 const completenessPercentage = computed(() => {
   return Math.round((fieldsCompleted.value / totalFields) * 100);
 });
+
+const handleCharacteristicsUpdated = (updated: SystemCharacteristics) => {
+  showEditCharacteristicsModal.value = false;
+
+  if (!updated || Object.keys(updated).length === 0) {
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'Failed to load or save system characteristics.',
+      life: 3000,
+    });
+    return;
+  }
+
+  characteristics.value = updated;
+};
 </script>

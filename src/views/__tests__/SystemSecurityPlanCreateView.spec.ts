@@ -48,10 +48,10 @@ const buttonStub = {
 };
 
 const formInputStub = {
-  props: ['modelValue', 'required', 'disabled'],
+  props: ['id', 'modelValue', 'required', 'disabled', 'invalid'],
   emits: ['update:modelValue'],
   template:
-    '<input :required="required" :disabled="disabled" :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />',
+    '<input :id="id" :required="required" :disabled="disabled" :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />',
 };
 
 function mountView() {
@@ -61,10 +61,12 @@ function mountView() {
         PageHeader: { template: '<h1><slot /></h1>' },
         PageSubHeader: { template: '<h2><slot /></h2>' },
         PageCard: { template: '<div><slot /></div>' },
-        FormInput: formInputStub,
+        Label: { template: '<label><slot /></label>' },
+        InputText: formInputStub,
+        Message: { template: '<div role="alert"><slot /></div>' },
         PrimaryButton: buttonStub,
+        SecondaryButton: buttonStub,
         TertiaryButton: buttonStub,
-        BIconArrowRepeat: { template: '<span />' },
       },
     },
   });

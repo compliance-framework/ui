@@ -5,7 +5,12 @@
         <label class="inline-block pb-2 dark:text-slate-300"
           >Description <span class="text-red-500">*</span></label
         >
-        <FormTextarea v-model="controlImplData.description" rows="4" required />
+        <Textarea
+          v-model="controlImplData.description"
+          rows="4"
+          required
+          class="w-full"
+        />
       </div>
 
       <!-- Set Parameters -->
@@ -36,9 +41,10 @@
               <label class="inline-block pb-1 text-sm dark:text-slate-300"
                 >Parameter ID</label
               >
-              <FormInput
+              <InputText
                 v-model="param.paramId"
                 placeholder="Parameter identifier"
+                class="w-full"
               />
             </div>
 
@@ -52,10 +58,10 @@
                   :key="valueIndex"
                   class="flex gap-2"
                 >
-                  <FormInput
+                  <InputText
                     v-model="param.values[valueIndex]"
                     placeholder="Parameter value"
-                    class="flex-1"
+                    class="flex-1 w-full"
                   />
                   <button
                     type="button"
@@ -79,7 +85,7 @@
               <label class="inline-block pb-1 text-sm dark:text-slate-300"
                 >Remarks</label
               >
-              <FormTextarea v-model="param.remarks" rows="2" />
+              <Textarea v-model="param.remarks" rows="2" class="w-full" />
             </div>
           </div>
 
@@ -116,8 +122,8 @@
 <script setup lang="ts">
 import { reactive, onMounted } from 'vue';
 import { useToast } from 'primevue/usetoast';
-import FormInput from '@/components/forms/FormInput.vue';
-import FormTextarea from '@/components/forms/FormTextarea.vue';
+import InputText from '@/volt/InputText.vue';
+import Textarea from '@/volt/Textarea.vue';
 import type { ControlImplementation } from '@/oscal';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import type { AxiosError } from 'axios';

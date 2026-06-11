@@ -1,216 +1,5 @@
 <template>
   <div class="space-y-6">
-    <!-- Page Header -->
-    <div
-      class="bg-white dark:bg-slate-900 border border-ccf-300 dark:border-slate-700 rounded-lg p-6"
-    >
-      <h2 class="text-2xl font-bold text-gray-900 dark:text-slate-300">
-        System Implementation Editor
-      </h2>
-      <p class="text-gray-600 dark:text-slate-400 mt-1">
-        Configure users, components, and authorizations for your system
-        implementation
-      </p>
-    </div>
-
-    <!-- Metrics Dashboard -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-      <!-- Total Users Metric -->
-      <div
-        class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800"
-      >
-        <div class="flex items-center justify-between">
-          <div>
-            <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">
-              {{ users?.length || 0 }}
-            </div>
-            <div class="text-sm text-blue-600 dark:text-blue-400">
-              System Users
-            </div>
-            <div
-              v-if="userRoleCount > 0"
-              class="text-xs text-blue-500 dark:text-blue-300 mt-1"
-            >
-              {{ userRoleCount }} role{{ userRoleCount !== 1 ? 's' : '' }}
-              assigned
-            </div>
-          </div>
-          <svg
-            class="w-8 h-8 text-blue-300 dark:text-blue-600"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
-            ></path>
-          </svg>
-        </div>
-      </div>
-
-      <!-- Total Components Metric -->
-      <div
-        class="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-200 dark:border-green-800"
-      >
-        <div class="flex items-center justify-between">
-          <div>
-            <div class="text-2xl font-bold text-green-600 dark:text-green-400">
-              {{ components?.length || 0 }}
-            </div>
-            <div class="text-sm text-green-600 dark:text-green-400">
-              Components
-            </div>
-            <div
-              v-if="activeComponentCount > 0"
-              class="text-xs text-green-500 dark:text-green-300 mt-1"
-            >
-              {{ activeComponentCount }} active
-            </div>
-          </div>
-          <svg
-            class="w-8 h-8 text-green-300 dark:text-green-600"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"
-            ></path>
-          </svg>
-        </div>
-      </div>
-
-      <!-- Leveraged Authorizations Metric -->
-      <div
-        class="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-lg border border-orange-200 dark:border-orange-800"
-      >
-        <div class="flex items-center justify-between">
-          <div>
-            <div
-              class="text-2xl font-bold text-orange-600 dark:text-orange-400"
-            >
-              {{ leveragedAuthorizations?.length || 0 }}
-            </div>
-            <div class="text-sm text-orange-600 dark:text-orange-400">
-              Leveraged Auth
-            </div>
-            <div
-              v-if="leveragedAuthorizations?.length"
-              class="text-xs text-orange-500 dark:text-orange-300 mt-1"
-            >
-              {{ uniquePartyCount }} unique part{{
-                uniquePartyCount !== 1 ? 'ies' : 'y'
-              }}
-            </div>
-          </div>
-          <svg
-            class="w-8 h-8 text-orange-300 dark:text-orange-600"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
-            ></path>
-          </svg>
-        </div>
-      </div>
-    </div>
-
-    <!-- Component Type Distribution -->
-    <div
-      v-if="componentTypeDistribution.length > 0"
-      class="bg-white dark:bg-slate-900 border border-ccf-300 dark:border-slate-700 rounded-lg p-6"
-    >
-      <div class="flex items-center justify-between mb-6">
-        <h3 class="text-lg font-semibold text-gray-900 dark:text-slate-300">
-          Component Type Distribution
-        </h3>
-        <span class="text-sm text-gray-500 dark:text-slate-400"
-          >{{ components?.length || 0 }} total components</span
-        >
-      </div>
-
-      <div class="space-y-4">
-        <div
-          v-for="(type, index) in componentTypeDistribution"
-          :key="type.type"
-          class="relative"
-        >
-          <div class="flex items-center justify-between mb-2">
-            <div class="flex items-center gap-2">
-              <div
-                :class="getTypeColorClass(index)"
-                class="w-3 h-3 rounded-full"
-              ></div>
-              <span
-                class="text-sm font-medium text-gray-700 dark:text-slate-300 capitalize"
-                >{{ formatComponentType(type.type) }}</span
-              >
-            </div>
-            <div class="flex items-center gap-2">
-              <span
-                class="text-sm font-semibold text-gray-900 dark:text-slate-200"
-                >{{ type.count }}</span
-              >
-              <span class="text-xs text-gray-500 dark:text-slate-400"
-                >({{ getPercentage(type.count) }}%)</span
-              >
-            </div>
-          </div>
-          <div class="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-2">
-            <div
-              :class="getTypeColorClass(index)"
-              class="h-2 rounded-full transition-all duration-300"
-              :style="{ width: getPercentage(type.count) + '%' }"
-            ></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Legend for common component types -->
-      <div class="mt-6 pt-4 border-t border-gray-200 dark:border-slate-700">
-        <p class="text-xs text-gray-600 dark:text-slate-400 mb-2">
-          Common OSCAL component types:
-        </p>
-        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
-          <div class="flex items-center gap-1">
-            <div class="w-2 h-2 bg-blue-500 rounded-full"></div>
-            <span class="text-gray-600 dark:text-slate-400">Software</span>
-          </div>
-          <div class="flex items-center gap-1">
-            <div class="w-2 h-2 bg-green-500 rounded-full"></div>
-            <span class="text-gray-600 dark:text-slate-400">Hardware</span>
-          </div>
-          <div class="flex items-center gap-1">
-            <div class="w-2 h-2 bg-purple-500 rounded-full"></div>
-            <span class="text-gray-600 dark:text-slate-400">Service</span>
-          </div>
-          <div class="flex items-center gap-1">
-            <div class="w-2 h-2 bg-orange-500 rounded-full"></div>
-            <span class="text-gray-600 dark:text-slate-400">Policy</span>
-          </div>
-          <div class="flex items-center gap-1">
-            <div class="w-2 h-2 bg-pink-500 rounded-full"></div>
-            <span class="text-gray-600 dark:text-slate-400">Process</span>
-          </div>
-          <div class="flex items-center gap-1">
-            <div class="w-2 h-2 bg-indigo-500 rounded-full"></div>
-            <span class="text-gray-600 dark:text-slate-400">Other</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- Tabbed Interface -->
     <div
       class="bg-white dark:bg-slate-900 border border-ccf-300 dark:border-slate-700 rounded-lg overflow-hidden"
@@ -244,12 +33,10 @@
                 <h3 class="text-lg font-semibold dark:text-slate-300">
                   System Users
                 </h3>
-                <button
-                  @click="showCreateUserModal = true"
-                  class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
-                >
+                <PrimaryButton @click="showCreateUserModal = true">
+                  <i class="pi pi-plus mr-2"></i>
                   Create User
-                </button>
+                </PrimaryButton>
               </div>
 
               <div class="space-y-4">
@@ -280,29 +67,23 @@
                           >
                         </div>
                         <div class="flex gap-2">
-                          <button
-                            @click.stop="editUser(user)"
-                            class="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 transition-colors"
-                          >
+                          <SecondaryButton @click.stop="editUser(user)">
                             Edit
-                          </button>
-                          <button
-                            @click.stop="downloadUserJSON(user)"
-                            class="px-3 py-1 bg-gray-500 text-white text-sm rounded hover:bg-gray-600 transition-colors"
-                          >
+                          </SecondaryButton>
+                          <SecondaryButton @click.stop="downloadUserJSON(user)">
                             JSON
-                          </button>
-                          <button
+                          </SecondaryButton>
+                          <TertiaryButton
                             @click.stop="
                               confirmDeleteDialog(() => deleteUser(user), {
                                 itemName: user.title,
                                 itemType: 'user',
                               })
                             "
-                            class="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition-colors"
+                            class="border-red-200 text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-950/40"
                           >
                             Delete
-                          </button>
+                          </TertiaryButton>
                         </div>
                       </div>
                     </template>
@@ -374,12 +155,10 @@
                 <h3 class="text-lg font-semibold dark:text-slate-300">
                   System Components
                 </h3>
-                <button
-                  @click="showCreateComponentModal = true"
-                  class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
-                >
+                <PrimaryButton @click="showCreateComponentModal = true">
+                  <i class="pi pi-plus mr-2"></i>
                   Create Component
-                </button>
+                </PrimaryButton>
               </div>
 
               <div class="space-y-4">
@@ -422,19 +201,17 @@
                           </span>
                         </div>
                         <div class="flex gap-2">
-                          <button
+                          <SecondaryButton
                             @click.stop="editComponent(component)"
-                            class="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 transition-colors"
                           >
                             Edit
-                          </button>
-                          <button
+                          </SecondaryButton>
+                          <SecondaryButton
                             @click.stop="downloadComponentJSON(component)"
-                            class="px-3 py-1 bg-gray-500 text-white text-sm rounded hover:bg-gray-600 transition-colors"
                           >
                             JSON
-                          </button>
-                          <button
+                          </SecondaryButton>
+                          <TertiaryButton
                             @click.stop="
                               confirmDeleteDialog(
                                 () => deleteComponent(component),
@@ -444,10 +221,10 @@
                                 },
                               )
                             "
-                            class="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition-colors"
+                            class="border-red-200 text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-950/40"
                           >
                             Delete
-                          </button>
+                          </TertiaryButton>
                         </div>
                       </div>
                     </template>
@@ -517,12 +294,10 @@
                 <h3 class="text-lg font-semibold dark:text-slate-300">
                   Leveraged Authorizations
                 </h3>
-                <button
-                  @click="showCreateLeveragedAuthModal = true"
-                  class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
-                >
+                <PrimaryButton @click="showCreateLeveragedAuthModal = true">
+                  <i class="pi pi-plus mr-2"></i>
                   Create Authorization
-                </button>
+                </PrimaryButton>
               </div>
 
               <div class="space-y-4">
@@ -556,19 +331,17 @@
                           </span>
                         </div>
                         <div class="flex gap-2">
-                          <button
+                          <SecondaryButton
                             @click.stop="editLeveragedAuth(auth)"
-                            class="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 transition-colors"
                           >
                             Edit
-                          </button>
-                          <button
+                          </SecondaryButton>
+                          <SecondaryButton
                             @click.stop="downloadLeveragedAuthJSON(auth)"
-                            class="px-3 py-1 bg-gray-500 text-white text-sm rounded hover:bg-gray-600 transition-colors"
                           >
                             JSON
-                          </button>
-                          <button
+                          </SecondaryButton>
+                          <TertiaryButton
                             @click.stop="
                               confirmDeleteDialog(
                                 () => deleteLeveragedAuth(auth),
@@ -578,10 +351,10 @@
                                 },
                               )
                             "
-                            class="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition-colors"
+                            class="border-red-200 text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-950/40"
                           >
                             Delete
-                          </button>
+                          </TertiaryButton>
                         </div>
                       </div>
                     </template>
@@ -655,7 +428,13 @@
   </div>
 
   <!-- User Create Modal -->
-  <Dialog v-model:visible="showCreateUserModal" modal header="Create User">
+  <Dialog
+    v-model:visible="showCreateUserModal"
+    modal
+    header="Create User"
+    :draggable="false"
+    class="w-full max-w-2xl"
+  >
     <SystemImplementationUserCreateForm
       :ssp-id="sspId"
       @cancel="showCreateUserModal = false"
@@ -664,7 +443,13 @@
   </Dialog>
 
   <!-- User Edit Modal -->
-  <Dialog v-model:visible="showEditUserModal" modal header="Edit User">
+  <Dialog
+    v-model:visible="showEditUserModal"
+    modal
+    header="Edit User"
+    :draggable="false"
+    class="w-full max-w-2xl"
+  >
     <SystemImplementationUserEditForm
       v-if="editingUser"
       :ssp-id="sspId"
@@ -679,6 +464,8 @@
     v-model:visible="showCreateComponentModal"
     modal
     header="Create Component"
+    :draggable="false"
+    class="w-full max-w-2xl"
   >
     <SystemImplementationComponentCreateForm
       :ssp-id="sspId"
@@ -692,6 +479,8 @@
     v-model:visible="showEditComponentModal"
     modal
     header="Edit Component"
+    :draggable="false"
+    class="w-full max-w-2xl"
   >
     <SystemImplementationComponentEditForm
       v-if="editingComponent"
@@ -707,6 +496,8 @@
     v-model:visible="showCreateLeveragedAuthModal"
     modal
     header="Create Leveraged Authorization"
+    :draggable="false"
+    class="w-full max-w-2xl"
   >
     <SystemImplementationLeveragedAuthorizationCreateForm
       :ssp-id="sspId"
@@ -720,6 +511,8 @@
     v-model:visible="showEditLeveragedAuthModal"
     modal
     header="Edit Leveraged Authorization"
+    :draggable="false"
+    class="w-full max-w-2xl"
   >
     <SystemImplementationLeveragedAuthorizationEditForm
       v-if="editingLeveragedAuth"
@@ -731,7 +524,7 @@
   </Dialog>
 </template>
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
 import decamelizeKeys from 'decamelize-keys';
@@ -745,6 +538,9 @@ import TabPanel from '@/volt/TabPanel.vue';
 
 // Form components
 import Dialog from '@/volt/Dialog.vue';
+import PrimaryButton from '@/volt/PrimaryButton.vue';
+import SecondaryButton from '@/volt/SecondaryButton.vue';
+import TertiaryButton from '@/volt/TertiaryButton.vue';
 import CollapsableGroup from '@/components/CollapsableGroup.vue';
 import SystemImplementationOverviewForm from '@/components/system-security-plans/SystemImplementationOverviewForm.vue';
 import SystemImplementationUserCreateForm from '@/components/system-security-plans/SystemImplementationUserCreateForm.vue';
@@ -812,47 +608,6 @@ const editingUser = ref<SystemUser | null>(null);
 const editingComponent = ref<SystemComponent | null>(null);
 const editingLeveragedAuth = ref<LeveragedAuthorization | null>(null);
 
-// Computed metrics
-const userRoleCount = computed(() => {
-  if (!users.value) return 0;
-  return users.value.reduce(
-    (sum, user) => sum + (user.roleIds?.length || 0),
-    0,
-  );
-});
-
-const activeComponentCount = computed(() => {
-  if (!components.value) return 0;
-  return components.value.filter(
-    (c) => c.status?.state === 'operational' || c.status?.state === 'active',
-  ).length;
-});
-
-const uniquePartyCount = computed(() => {
-  if (!leveragedAuthorizations.value) return 0;
-  const uniqueParties = new Set<string>();
-  leveragedAuthorizations.value.forEach((auth) => {
-    if (auth.partyUuid) {
-      uniqueParties.add(auth.partyUuid);
-    }
-  });
-  return uniqueParties.size;
-});
-
-const componentTypeDistribution = computed(() => {
-  if (!components.value || components.value.length === 0) return [];
-
-  const typeCount: Record<string, number> = {};
-  components.value.forEach((component) => {
-    const type = component.type || 'unspecified';
-    typeCount[type] = (typeCount[type] || 0) + 1;
-  });
-
-  return Object.entries(typeCount)
-    .map(([type, count]) => ({ type, count }))
-    .sort((a, b) => b.count - a.count);
-});
-
 // Overview handlers
 const handleOverviewSaved = (
   updatedSystemImplementation: SystemImplementation,
@@ -867,16 +622,15 @@ const editUser = (user: SystemUser) => {
 };
 
 const handleUserCreated = (newUser: SystemUser) => {
-  users.value?.push(newUser);
+  users.value = [...(users.value ?? []), newUser];
   showCreateUserModal.value = false;
 };
 
 const handleUserSaved = (updatedUser: SystemUser) => {
   if (users.value) {
-    const index = users.value.findIndex((u) => u.uuid === updatedUser.uuid);
-    if (index !== -1) {
-      users.value[index] = updatedUser;
-    }
+    users.value = users.value.map((user) =>
+      user.uuid === updatedUser.uuid ? updatedUser : user,
+    );
   }
   showEditUserModal.value = false;
   editingUser.value = null;
@@ -929,19 +683,15 @@ const editComponent = async (component: SystemComponent) => {
 };
 
 const handleComponentCreated = async (newComponent: SystemComponent) => {
-  // Add the component to the local array
-  components.value?.push(newComponent);
+  components.value = [...(components.value ?? []), newComponent];
   showCreateComponentModal.value = false;
 };
 
 const handleComponentSaved = (updatedComponent: SystemComponent) => {
   if (components.value) {
-    const index = components.value.findIndex(
-      (c) => c.uuid === updatedComponent.uuid,
+    components.value = components.value.map((component) =>
+      component.uuid === updatedComponent.uuid ? updatedComponent : component,
     );
-    if (index !== -1) {
-      components.value[index] = updatedComponent;
-    }
   }
   showEditComponentModal.value = false;
   editingComponent.value = null;
@@ -1005,18 +755,18 @@ const editLeveragedAuth = (auth: LeveragedAuthorization) => {
 };
 
 const handleLeveragedAuthCreated = (newAuth: LeveragedAuthorization) => {
-  leveragedAuthorizations.value?.push(newAuth);
+  leveragedAuthorizations.value = [
+    ...(leveragedAuthorizations.value ?? []),
+    newAuth,
+  ];
   showCreateLeveragedAuthModal.value = false;
 };
 
 const handleLeveragedAuthSaved = (updatedAuth: LeveragedAuthorization) => {
   if (leveragedAuthorizations.value) {
-    const index = leveragedAuthorizations.value.findIndex(
-      (a) => a.uuid === updatedAuth.uuid,
+    leveragedAuthorizations.value = leveragedAuthorizations.value.map((auth) =>
+      auth.uuid === updatedAuth.uuid ? updatedAuth : auth,
     );
-    if (index !== -1) {
-      leveragedAuthorizations.value[index] = updatedAuth;
-    }
   }
   showEditLeveragedAuthModal.value = false;
   editingLeveragedAuth.value = null;
@@ -1062,55 +812,5 @@ const deleteLeveragedAuth = async (auth: LeveragedAuthorization) => {
       life: 5000,
     });
   }
-};
-
-// Helper functions for component type distribution
-const getPercentage = (count: number): number => {
-  const total = components.value?.length || 0;
-  if (total === 0) return 0;
-  return Math.round((count / total) * 100);
-};
-
-const getTypeColorClass = (index: number): string => {
-  const colors = [
-    'bg-blue-500',
-    'bg-green-500',
-    'bg-purple-500',
-    'bg-orange-500',
-    'bg-pink-500',
-    'bg-indigo-500',
-    'bg-yellow-500',
-    'bg-red-500',
-    'bg-teal-500',
-    'bg-cyan-500',
-  ];
-  return colors[index % colors.length];
-};
-
-const formatComponentType = (type: string): string => {
-  // Format common OSCAL component types
-  const typeMap: Record<string, string> = {
-    software: 'Software',
-    hardware: 'Hardware',
-    service: 'Service',
-    policy: 'Policy',
-    physical: 'Physical',
-    'org-defined': 'Organization Defined',
-    process: 'Process',
-    procedure: 'Procedure',
-    plan: 'Plan',
-    guidance: 'Guidance',
-    standard: 'Standard',
-    validation: 'Validation',
-    unspecified: 'Unspecified',
-  };
-
-  return (
-    typeMap[type.toLowerCase()] ||
-    type
-      .split('-')
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ')
-  );
 };
 </script>

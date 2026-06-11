@@ -11,12 +11,9 @@
             tooltip-key="ssp.control.implementation"
             underline-class="text-lg font-semibold text-gray-900 dark:text-slate-300 underline decoration-dotted cursor-help"
           />
-          <button
-            @click="editControlImplementation"
-            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
-          >
+          <SecondaryButton @click="editControlImplementation">
             Edit
-          </button>
+          </SecondaryButton>
         </div>
 
         <div v-if="controlImplementation" class="grid grid-cols-1 gap-6">
@@ -33,36 +30,32 @@
           <!-- Summary Statistics -->
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
             <div
-              class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800"
+              class="bg-white dark:bg-slate-900 p-4 rounded-lg border border-ccf-300 dark:border-slate-700 shadow"
             >
-              <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">
+              <div class="text-2xl font-bold text-gray-900 dark:text-slate-200">
                 {{ controlImplementation.implementedRequirements?.length || 0 }}
               </div>
-              <div class="text-sm text-blue-600 dark:text-blue-400">
+              <div class="text-sm text-gray-600 dark:text-slate-400">
                 Implemented Requirements
               </div>
             </div>
             <div
-              class="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-200 dark:border-green-800"
+              class="bg-white dark:bg-slate-900 p-4 rounded-lg border border-ccf-300 dark:border-slate-700 shadow"
             >
-              <div
-                class="text-2xl font-bold text-green-600 dark:text-green-400"
-              >
+              <div class="text-2xl font-bold text-gray-900 dark:text-slate-200">
                 {{ totalStatements }}
               </div>
-              <div class="text-sm text-green-600 dark:text-green-400">
+              <div class="text-sm text-gray-600 dark:text-slate-400">
                 Total Statements
               </div>
             </div>
             <div
-              class="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg border border-purple-200 dark:border-purple-800"
+              class="bg-white dark:bg-slate-900 p-4 rounded-lg border border-ccf-300 dark:border-slate-700 shadow"
             >
-              <div
-                class="text-2xl font-bold text-purple-600 dark:text-purple-400"
-              >
+              <div class="text-2xl font-bold text-gray-900 dark:text-slate-200">
                 {{ totalByComponents }}
               </div>
-              <div class="text-sm text-purple-600 dark:text-purple-400">
+              <div class="text-sm text-gray-600 dark:text-slate-400">
                 Component Implementations
               </div>
             </div>
@@ -106,12 +99,10 @@
               }})</span
             >
           </div>
-          <button
-            @click="addRequirement"
-            class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
-          >
+          <PrimaryButton @click="addRequirement">
+            <i class="pi pi-plus mr-2"></i>
             Add Requirement
-          </button>
+          </PrimaryButton>
         </div>
 
         <div
@@ -133,29 +124,23 @@
                 </p>
               </div>
               <div class="flex gap-2">
-                <button
-                  @click="createStatement(requirement)"
-                  class="text-green-600 hover:text-green-800 dark:text-green-400 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
+                <SecondaryButton @click="createStatement(requirement)">
                   Create Statement
-                </button>
-                <button
-                  @click="editRequirement(requirement)"
-                  class="text-blue-600 hover:text-blue-800 dark:text-blue-400 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
+                </SecondaryButton>
+                <SecondaryButton @click="editRequirement(requirement)">
                   Edit
-                </button>
-                <button
+                </SecondaryButton>
+                <TertiaryButton
                   @click="
                     confirmDeleteDialog(() => deleteRequirement(requirement), {
                       itemName: requirement.controlId,
                       itemType: 'requirement',
                     })
                   "
-                  class="text-red-600 hover:text-red-800 dark:text-red-400 disabled:opacity-50 disabled:cursor-not-allowed"
+                  class="border-red-200 text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-950/40"
                 >
                   Delete
-                </button>
+                </TertiaryButton>
               </div>
             </div>
 
@@ -178,19 +163,11 @@
                       >{{ statement.statementId }}</span
                     >
                     <div class="flex gap-2">
-                      <button
-                        @click="createComponent(statement)"
-                        class="text-green-600 hover:text-green-800 dark:text-green-400 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
-                        disabled
-                      >
-                        Create Component
-                      </button>
-                      <button
+                      <SecondaryButton
                         @click="editStatement(requirement, statement)"
-                        class="text-blue-600 hover:text-blue-800 dark:text-blue-400 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         Edit
-                      </button>
+                      </SecondaryButton>
                     </div>
                   </div>
                   <p class="text-sm text-gray-600 dark:text-slate-400">
@@ -210,6 +187,7 @@
                         class="text-xs bg-white dark:bg-slate-900 p-2 rounded border"
                       >
                         <StatementByComponent
+                          :ssp="ssp"
                           :by-component="byComponent"
                           :control-id="requirement.controlId"
                           :ssp-risks="sspRisks || []"
@@ -256,14 +234,13 @@
                       class="text-sm font-medium text-gray-900 dark:text-slate-300"
                       >{{ byComponent.componentUuid }}</span
                     >
-                    <button
+                    <SecondaryButton
                       @click="
                         editRequirementByComponent(requirement, byComponent)
                       "
-                      class="text-blue-600 hover:text-blue-800 dark:text-blue-400 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Edit
-                    </button>
+                    </SecondaryButton>
                   </div>
                   <p class="text-sm text-gray-600 dark:text-slate-400">
                     {{ byComponent.description }}
@@ -412,12 +389,15 @@ import type {
   ByComponent,
 } from '@/oscal';
 import Dialog from '@/volt/Dialog.vue';
+import PrimaryButton from '@/volt/PrimaryButton.vue';
+import SecondaryButton from '@/volt/SecondaryButton.vue';
+import TertiaryButton from '@/volt/TertiaryButton.vue';
 import ImplementedRequirementCreateForm from '@/components/system-security-plans/ImplementedRequirementCreateForm.vue';
 import ImplementedRequirementEditForm from '@/components/system-security-plans/ImplementedRequirementEditForm.vue';
 import ControlImplementationEditForm from '@/components/system-security-plans/ControlImplementationEditForm.vue';
 import StatementEditForm from '@/components/system-security-plans/StatementEditForm.vue';
 import StatementCreateForm from '@/components/system-security-plans/StatementCreateForm.vue';
-import StatementByComponent from '@/views/control-implementations/partials/StatementByComponent.vue';
+import StatementByComponent from '@/views/system-security-plans/partials/StatementByComponent.vue';
 import ByComponentEditForm from '@/components/system-security-plans/ByComponentEditForm.vue';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import { getIdFromRoute } from '@/utils/get-poam-id-from-route';
@@ -638,11 +618,6 @@ const editStatement = (
 const createStatement = (requirement: ImplementedRequirement) => {
   editingRequirement.value = requirement;
   showCreateStatementModal.value = true;
-};
-
-const createComponent = (statement: Statement) => {
-  console.log('Create Component for Statement:', statement);
-  alert('Create Component functionality is in development');
 };
 
 const handleStatementByComponentSaved = (updatedByComponent: ByComponent) => {
