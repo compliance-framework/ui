@@ -64,16 +64,37 @@ function mountComponent() {
           template:
             '<input :value="modelValue" :placeholder="placeholder" :type="type || \'text\'" @input="$emit(\'update:modelValue\', $event.target.value)" />',
         },
+        Message: {
+          props: ['severity', 'closable'],
+          emits: ['close'],
+          template:
+            '<div data-testid="login-banner" :data-severity="severity"><slot /><button v-if="closable" data-testid="login-banner-close" @click="$emit(\'close\')">Close</button></div>',
+        },
         'router-link': { template: '<a><slot /></a>' },
       },
     },
   });
 }
 
+function mockConfig(config: Record<string, unknown>) {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue(config),
+    }),
+  );
+}
+
+const loginBannerDismissalKey = (message: string) =>
+  `login-banner-dismissed:${encodeURIComponent(message)}`;
+
 describe('LoginView', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
+    vi.unstubAllGlobals();
+    localStorage.clear();
     mocks.routeQuery = {};
     mocks.login.mockResolvedValue({});
     mocks.get.mockResolvedValue({
@@ -88,6 +109,7 @@ describe('LoginView', () => {
         },
       },
     });
+    mockConfig({});
   });
 
   it('hydrates the auth store user after password login', async () => {
@@ -228,5 +250,64 @@ describe('LoginView', () => {
     await flushPromises();
 
     expect(mocks.push).toHaveBeenCalledWith({ name: 'home' });
+  });
+
+  it('renders a configured login banner with severity', async () => {
+    mockConfig({
+      LOGIN_BANNER: 'Scheduled maintenance Saturday 02:00 UTC',
+      LOGIN_BANNER_SEVERITY: 'warn',
+    });
+
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    const banner = wrapper.get('[data-testid="login-banner"]');
+    expect(banner.text()).toContain(
+      'Scheduled maintenance Saturday 02:00 UTC',
+    );
+    expect(banner.attributes('data-severity')).toBe('warn');
+  });
+
+  it('does not render the login banner when unconfigured', async () => {
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="login-banner"]').exists()).toBe(false);
+  });
+
+  it('dismisses the login banner and persists the dismissal', async () => {
+    const bannerText = 'Authorized use only';
+    mockConfig({
+      LOGIN_BANNER: bannerText,
+      LOGIN_BANNER_SEVERITY: 'info',
+    });
+
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    await wrapper.get('[data-testid="login-banner-close"]').trigger('click');
+
+    expect(localStorage.getItem(loginBannerDismissalKey(bannerText))).toBe(
+      'true',
+    );
+    expect(wrapper.find('[data-testid="login-banner"]').exists()).toBe(false);
+  });
+
+  it('shows a different banner text after a previous dismissal', async () => {
+    localStorage.setItem(
+      loginBannerDismissalKey('Scheduled maintenance Saturday'),
+      'true',
+    );
+    mockConfig({
+      LOGIN_BANNER: 'Scheduled maintenance Sunday',
+      LOGIN_BANNER_SEVERITY: 'success',
+    });
+
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    const banner = wrapper.get('[data-testid="login-banner"]');
+    expect(banner.text()).toContain('Scheduled maintenance Sunday');
+    expect(banner.attributes('data-severity')).toBe('success');
   });
 });

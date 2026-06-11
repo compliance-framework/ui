@@ -4,6 +4,43 @@ import builtInConfig from '../defaultconfig.json';
 
 export interface Config {
   API_URL: string;
+  LOGIN_BANNER?: string;
+  LOGIN_BANNER_SEVERITY?: LoginBannerSeverity;
+}
+
+export type LoginBannerSeverity = 'info' | 'warn' | 'error' | 'success';
+
+const defaultConfig = builtInConfig as Config;
+
+const loginBannerSeverities: LoginBannerSeverity[] = [
+  'info',
+  'warn',
+  'error',
+  'success',
+];
+
+function isLoginBannerSeverity(value: unknown): value is LoginBannerSeverity {
+  return (
+    typeof value === 'string' &&
+    loginBannerSeverities.includes(value as LoginBannerSeverity)
+  );
+}
+
+function applyBannerOverrides(cfg: Config): Config {
+  return {
+    ...cfg,
+    LOGIN_BANNER:
+      import.meta.env.VITE_LOGIN_BANNER !== undefined
+        ? import.meta.env.VITE_LOGIN_BANNER
+        : cfg.LOGIN_BANNER,
+    LOGIN_BANNER_SEVERITY: isLoginBannerSeverity(
+      import.meta.env.VITE_LOGIN_BANNER_SEVERITY,
+    )
+      ? import.meta.env.VITE_LOGIN_BANNER_SEVERITY
+      : isLoginBannerSeverity(cfg.LOGIN_BANNER_SEVERITY)
+        ? cfg.LOGIN_BANNER_SEVERITY
+        : 'info',
+  };
 }
 
 export const useConfigStore = defineStore('config', () => {
@@ -17,10 +54,10 @@ export const useConfigStore = defineStore('config', () => {
     }
 
     if (import.meta.env.VITE_API_URL) {
-      config.value = {
-        ...builtInConfig,
+      config.value = applyBannerOverrides({
+        ...defaultConfig,
         API_URL: import.meta.env.VITE_API_URL,
-      };
+      });
       return config.value;
     }
 
@@ -41,10 +78,10 @@ export const useConfigStore = defineStore('config', () => {
         }
       }
     }
-    config.value = {
-      ...builtInConfig,
+    config.value = applyBannerOverrides({
+      ...defaultConfig,
       ...returnedConfig,
-    };
+    });
     return config.value;
   }
 

@@ -8,6 +8,15 @@
         class="w-full hidden dark:block"
       />
     </div>
+    <Message
+      v-if="showLoginBanner"
+      :severity="loginBannerSeverity"
+      closable
+      class="mx-8 mb-4"
+      @close="dismissLoginBanner"
+    >
+      {{ loginBanner }}
+    </Message>
     <form @submit.prevent="onSubmit" class="space-y-4">
       <div>
         <label
@@ -122,6 +131,7 @@ import PrimaryButton from '@/volt/PrimaryButton.vue';
 import { useRoute, useRouter } from 'vue-router';
 // import type { DataResponse } from '@/stores/api.ts';
 import FormInput from '@/components/forms/FormInput.vue';
+import Message from '@/volt/Message.vue';
 import lightLogo from '@/assets/logo-light.svg';
 import darkLogo from '@/assets/logo-dark.svg';
 import SideNavLogo from '@/components/navigation/SideNavLogo.vue';
@@ -131,6 +141,10 @@ import type { AxiosError } from 'axios';
 import { useOIDC, type OIDCProvider } from '@/composables/useOIDC';
 import { useAuthHydration } from '@/composables/useAuthHydration';
 import { resolveAuthNextLocation } from '@/utils/auth-redirect';
+import {
+  useConfigStore,
+  type LoginBannerSeverity,
+} from '@/stores/config';
 
 interface AuthError {
   email: string[];
@@ -151,6 +165,9 @@ const {
 } = useOIDC();
 
 const loginNotice = ref<string | null>(null);
+const loginBanner = ref('');
+const loginBannerSeverity = ref<LoginBannerSeverity>('info');
+const showLoginBanner = ref(false);
 // TODO: Once other areas need this, move the "no SSO providers" UX into useOIDC or a shared helper.
 const hasSSOProviders = computed(() => (ssoProviders.value?.length ?? 0) > 0);
 
@@ -165,6 +182,7 @@ const { execute: login } = useGuestApi<AuthError>(
 const route = useRoute();
 const router = useRouter();
 const toast = useToast();
+const configStore = useConfigStore();
 
 function createDefaultAuthErrors(): AuthError {
   return {
@@ -223,6 +241,27 @@ const resolveLoginNotice = () => {
   }
 };
 
+const getLoginBannerDismissalKey = (message: string) =>
+  `login-banner-dismissed:${encodeURIComponent(message)}`;
+
+async function loadLoginBanner() {
+  const config = await configStore.getConfig();
+  const message = config.LOGIN_BANNER ?? '';
+
+  loginBanner.value = message;
+  loginBannerSeverity.value = config.LOGIN_BANNER_SEVERITY ?? 'info';
+  showLoginBanner.value =
+    message.length > 0 &&
+    localStorage.getItem(getLoginBannerDismissalKey(message)) !== 'true';
+}
+
+function dismissLoginBanner() {
+  if (loginBanner.value.length > 0) {
+    localStorage.setItem(getLoginBannerDismissalKey(loginBanner.value), 'true');
+  }
+  showLoginBanner.value = false;
+}
+
 watch(
   () => route.query.error,
   () => resolveLoginNotice(),
@@ -231,6 +270,7 @@ watch(
 
 onMounted(() => {
   loadProviders();
+  void loadLoginBanner();
 });
 
 function isAuthError(value: unknown): value is AuthError {
