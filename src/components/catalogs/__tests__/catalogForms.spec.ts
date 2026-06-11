@@ -65,7 +65,7 @@ const stubs = {
   Label: {
     props: ['for', 'required'],
     template:
-      '<label :for="for"><slot /><span v-if="required">*</span></label>',
+      '<label :for="$props.for"><slot /><span v-if="required">*</span></label>',
   },
   InputText: {
     props: ['id', 'modelValue', 'invalid', 'disabled', 'placeholder'],
