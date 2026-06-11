@@ -1,0 +1,13 @@
+lisa-addressed:
+---
+Comment (src/views/system/__tests__/systemViews.spec.ts:250):
+**[medium] This regression test is vacuous — it passes against the buggy `push` code it's meant to pin.**
+
+I verified empirically: reverting `addDiagram` to the old `grouping.value.diagrams.push(created)` mutation, this test still **passes**. Root cause: the `useDataApi` mock declares `const data = ref(...)` (line 92) — a **deep** ref, so the `{ diagrams: [] }` assigned by the 404 reset becomes a reactive proxy and the old `push` triggers re-renders under the mock. The real `useDataApi` returns a **`shallowRef`**, where that push is invisible — which is the whole bug.
+
+One-line fix that makes the mock faithful and the test bite: change line 92 to `const data = shallowRef(...)` (and add `shallowRef` to the vue import). Verified both directions on this branch:
+- shallowRef mock + old push code → this test **fails** (as it should);
+- shallowRef mock + the committed fix → all 10 tests in this file **pass**, including the empty-state and caption/collapse tests (the mock's `execute` assigns `data.value = payload`, which triggers shallowRef subscribers, so nothing else is affected).
+
+The product code in this commit is correct — this is only about the test actually guarding it against regression.
+Implementation guidance: In src/views/system/__tests__/systemViews.spec.ts, make the useDataApi mock match the production composable's shallowRef behavior so the Add Diagram regression test actually fails against the old in-place push implementation. Update the vue import to include shallowRef, then change the mock's data declaration around line 92 from const data = ref(...) to const data = shallowRef(...). Keep the mock execute implementation assigning data.value = payload; that assignment is what should notify shallowRef subscribers. Do not change the product code in DiagramsView.vue for this thread, because the committed immutable reassignment fix is already the intended behavior. Run the systemViews spec and verify the Add Diagram regression still passes with the current code.
