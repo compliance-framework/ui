@@ -179,10 +179,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
-import type {
-  SystemSecurityPlan,
-  SystemCharacteristics,
-} from '@/oscal';
+import type { SystemSecurityPlan, SystemCharacteristics } from '@/oscal';
 import type { Profile } from '@/oscal';
 import MultiSelect from '@/volt/MultiSelect.vue';
 import { useSystemStore } from '@/stores/system.ts';

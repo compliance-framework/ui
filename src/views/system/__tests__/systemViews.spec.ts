@@ -213,5 +213,4 @@ describe('System area views', () => {
       );
     },
   );
-
 });
