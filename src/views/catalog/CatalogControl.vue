@@ -1,16 +1,18 @@
 <template>
   <CollapsableGroup>
     <template #header>
-      <div class="py-2 px-4 flex items-center gap-4">
+      <div class="py-3 px-4 flex flex-wrap items-center gap-3">
         <span
-          class="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-800 text-gray-800 dark:text-slate-300 rounded-md text-sm whitespace-nowrap px-4 py-1"
+          class="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-800 text-gray-800 dark:text-slate-300 rounded-md text-sm whitespace-nowrap px-2 py-1"
           >{{ control.id }}</span
         >
-        <div class="grow">
-          {{ control.title }}
-          <span class="text-gray-400 dark:text-slate-300 text-sm px-2 py-1"
-            >Control</span
-          >
+        <div class="min-w-0 grow">
+          <span class="font-medium text-gray-900 dark:text-slate-100">
+            {{ control.title }}
+          </span>
+          <span class="text-gray-400 dark:text-slate-300 text-sm px-2 py-1">
+            Control
+          </span>
         </div>
         <ResultStatusBadge
           v-if="complianceCounts.total"
@@ -18,50 +20,64 @@
           :red="complianceCounts.red"
           :green="complianceCounts.green"
         ></ResultStatusBadge>
-        <TertiaryButton
-          v-if="control.class"
-          class="bg-white hover:bg-zinc-100 dark:bg-slate-800 dark:hover:bg-slate-600"
-          @click.stop="gotoFindings"
-          >Findings</TertiaryButton
-        >
-        <TertiaryButton
-          class="bg-white hover:bg-zinc-100 dark:bg-slate-800 dark:hover:bg-slate-600"
-          @click.stop="showEdit = true"
-          >Edit</TertiaryButton
-        >
-        <TertiaryButton
-          class="bg-white hover:bg-zinc-100 dark:bg-slate-800 dark:hover:bg-slate-600"
-          @click.stop="deleteControl()"
-          >Delete</TertiaryButton
-        >
+        <div class="flex flex-wrap items-center gap-2">
+          <TertiaryButton
+            v-if="control.class"
+            size="small"
+            @click.stop="gotoFindings"
+          >
+            Findings
+          </TertiaryButton>
+          <TertiaryButton size="small" @click.stop="showControlForm = true">
+            <i class="pi pi-plus mr-1"></i>
+            Control
+          </TertiaryButton>
+          <SecondaryButton size="small" @click.stop="showEdit = true">
+            Edit
+          </SecondaryButton>
+          <TertiaryButton
+            size="small"
+            class="border-red-200 text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-950/40"
+            @click.stop="deleteControl()"
+          >
+            Delete
+          </TertiaryButton>
+        </div>
       </div>
     </template>
     <div
       class="px-4 py-4 dark:bg-slate-950 border-b border-ccf-300 dark:border-slate-700"
     >
-      <div class="flex items-start justify-between gap-4">
-        <div>
-          <TertiaryButton v-if="!statement" @click="showEditStatement = true"
-            >Add Statement</TertiaryButton
-          >
-          <TertiaryButton
-            v-if="statement"
-            class="ml-2"
-            @click="showEditStatement = true"
-            >Edit Statement</TertiaryButton
-          >
-          <TertiaryButton
-            v-if="!objective"
-            class="ml-2"
-            @click="showEditObjective = true"
-            >Add Objective</TertiaryButton
-          >
-          <TertiaryButton
-            v-if="!guidance"
-            class="ml-2"
-            @click="showEditGuidance = true"
-            >Add Guidance</TertiaryButton
-          >
+      <div
+        class="flex flex-col items-stretch gap-4 lg:flex-row lg:items-start lg:justify-between"
+      >
+        <div class="min-w-0 grow">
+          <div class="mb-4 flex flex-wrap gap-2">
+            <TertiaryButton
+              v-if="!statement"
+              size="small"
+              @click="showEditStatement = true"
+              >Add Statement</TertiaryButton
+            >
+            <TertiaryButton
+              v-if="statement"
+              size="small"
+              @click="showEditStatement = true"
+              >Edit Statement</TertiaryButton
+            >
+            <TertiaryButton
+              v-if="!objective"
+              size="small"
+              @click="showEditObjective = true"
+              >Add Objective</TertiaryButton
+            >
+            <TertiaryButton
+              v-if="!guidance"
+              size="small"
+              @click="showEditGuidance = true"
+              >Add Guidance</TertiaryButton
+            >
+          </div>
 
           <PartDisplayEditor
             v-for="part in control.parts"
@@ -105,9 +121,6 @@
         />
       </div>
       <div class="mt-4">
-        <!--        <TertiaryButton @click="showControlForm = true" class="ml-2"-->
-        <!--          >Add Control</TertiaryButton-->
-        <!--        >-->
         <ControlCreateModal
           @created="controlCreated"
           :catalog="catalog"
@@ -150,6 +163,7 @@ import { computed, ref } from 'vue';
 import CollapsableGroup from '@/components/CollapsableGroup.vue';
 import ResultStatusBadge from '@/components/ResultStatusBadge.vue';
 import { type Catalog, type Control } from '@/oscal';
+import SecondaryButton from '@/volt/SecondaryButton.vue';
 import TertiaryButton from '@/volt/TertiaryButton.vue';
 import ControlCreateModal from '@/components/catalogs/ControlCreateModal.vue';
 import ControlEditModal from '@/components/catalogs/ControlEditModal.vue';

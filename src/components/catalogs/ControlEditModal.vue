@@ -1,11 +1,15 @@
 <script setup lang="ts">
 import type { Catalog, Control } from '@/oscal';
 import Dialog from '@/volt/Dialog.vue';
-import FormInput from '@/components/forms/FormInput.vue';
+import Label from '@/volt/Label.vue';
+import InputText from '@/volt/InputText.vue';
+import Message from '@/volt/Message.vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
-import { ref, watchEffect } from 'vue';
+import SecondaryButton from '@/volt/SecondaryButton.vue';
+import { reactive, watch, watchEffect } from 'vue';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import { useToast } from 'primevue/usetoast';
+import { useFormSubmit } from '@/composables/useFormSubmit';
 
 const show = defineModel<boolean>();
 
@@ -21,11 +25,32 @@ const props = defineProps<{
 }>();
 
 const toast = useToast();
-const form = ref({ title: '', class: '' });
+const form = reactive({ title: '', class: '' });
+const {
+  errors,
+  errorMessage,
+  isSubmitting,
+  resetFormState,
+  validate,
+  getErrorMessage,
+} = useFormSubmit(
+  [
+    {
+      key: 'title',
+      message: 'Title is required',
+      isMissing: () => !form.title.trim(),
+    },
+  ],
+  'Failed to update control.',
+);
 
 watchEffect(() => {
-  form.value.title = props.control?.title || '';
-  form.value.class = props.control?.class || '';
+  form.title = props.control?.title || '';
+  form.class = props.control?.class || '';
+});
+
+watch(show, (open) => {
+  if (open) resetFormState();
 });
 
 const { execute: update } = useDataApi<Control>(
@@ -42,11 +67,14 @@ const { execute: update } = useDataApi<Control>(
 );
 
 async function submit() {
+  if (!validate()) return;
+
   const payload: Control = {
     ...props.control,
-    title: form.value.title,
-    class: form.value.class || undefined,
+    title: form.title,
+    class: form.class || undefined,
   } as Control;
+  isSubmitting.value = true;
   try {
     const resp = await update({ data: payload });
     const updated = resp.data.value?.data;
@@ -61,30 +89,75 @@ async function submit() {
       show.value = false;
     }
   } catch (e) {
+    errorMessage.value = getErrorMessage(e);
     toast.add({
       severity: 'error',
       summary: 'Update failed',
-      detail: e instanceof Error ? e.message : 'Failed to update control.',
+      detail: errorMessage.value,
       life: 3000,
     });
+  } finally {
+    isSubmitting.value = false;
   }
 }
 </script>
 
 <template>
-  <Dialog v-model:visible="show" modal header="Edit Control">
-    <div class="px-12 py-4">
-      <form @submit.prevent="submit">
-        <div class="mb-4">
-          <label class="inline-block pb-2">Title</label>
-          <FormInput v-model="form.title" />
-        </div>
-        <div class="mb-4">
-          <label class="inline-block pb-2">Class</label>
-          <FormInput v-model="form.class" />
-        </div>
-        <PrimaryButton type="submit">Save</PrimaryButton>
-      </form>
-    </div>
+  <Dialog
+    v-model:visible="show"
+    modal
+    header="Edit Control"
+    :draggable="false"
+    class="w-full max-w-2xl"
+  >
+    <form @submit.prevent="submit" class="space-y-6">
+      <div>
+        <Label for="control-edit-id">ID</Label>
+        <InputText
+          id="control-edit-id"
+          :model-value="props.control.id"
+          class="w-full"
+          disabled
+        />
+      </div>
+      <div>
+        <Label for="control-edit-title" required>Title</Label>
+        <InputText
+          id="control-edit-title"
+          v-model="form.title"
+          placeholder="Enter control title"
+          class="w-full"
+          :invalid="!!errors.title"
+        />
+        <small v-if="errors.title" class="text-red-500">
+          {{ errors.title }}
+        </small>
+      </div>
+      <div>
+        <Label for="control-edit-class">Class</Label>
+        <InputText
+          id="control-edit-class"
+          v-model="form.class"
+          placeholder="Optional class"
+          class="w-full"
+        />
+      </div>
+
+      <Message v-if="errorMessage" severity="error">
+        {{ errorMessage }}
+      </Message>
+
+      <div
+        class="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-slate-700"
+      >
+        <SecondaryButton type="button" @click="show = false">
+          Cancel
+        </SecondaryButton>
+        <PrimaryButton type="submit" :disabled="isSubmitting">
+          <i v-if="isSubmitting" class="pi pi-spin pi-spinner mr-2"></i>
+          Save Control
+        </PrimaryButton>
+      </div>
+    </form>
   </Dialog>
 </template>
