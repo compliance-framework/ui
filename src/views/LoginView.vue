@@ -2,11 +2,7 @@
   <PageCard class="mx-auto mt-12 max-w-96 py-8">
     <div class="px-8 pb-8">
       <SideNavLogo alt="Vue logo" :src="lightLogo" class="w-full dark:hidden" />
-      <SideNavLogo
-        alt="Vue logo"
-        :src="darkLogo"
-        class="w-full hidden dark:block"
-      />
+      <SideNavLogo alt="Vue logo" :src="darkLogo" class="w-full hidden dark:block" />
     </div>
     <Message
       v-if="showLoginBanner"
@@ -22,29 +18,33 @@
         <label
           for="email"
           class="block text-sm font-medium text-gray-700 dark:text-slate-300"
-          >Email</label
         >
+          Email
+        </label>
         <FormInput v-model="email" placeholder="Email" />
         <span
           class="text-sm text-red-500 dark:text-red-500"
           v-for="error in errors.email"
           :key="error"
-          >{{ error }}</span
         >
+          {{ error }}
+        </span>
       </div>
       <div>
         <label
           for="password"
           class="block text-sm font-medium text-gray-700 dark:text-slate-300"
-          >Password</label
         >
+          Password
+        </label>
         <FormInput v-model="password" placeholder="Password" type="password" />
         <span
           class="dark:text-red-500"
           v-for="error in errors.password"
           :key="error"
-          >{{ error }}</span
         >
+          {{ error }}
+        </span>
       </div>
       <div>
         <PrimaryButton type="submit" class="w-full"> Login </PrimaryButton>
@@ -66,9 +66,7 @@
         <div class="w-full border-t border-gray-300 dark:border-gray-600"></div>
       </div>
       <div class="relative flex justify-center text-sm">
-        <span
-          class="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400"
-        >
+        <span class="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">
           Or continue with
         </span>
       </div>
@@ -141,10 +139,7 @@ import type { AxiosError } from 'axios';
 import { useOIDC, type OIDCProvider } from '@/composables/useOIDC';
 import { useAuthHydration } from '@/composables/useAuthHydration';
 import { resolveAuthNextLocation } from '@/utils/auth-redirect';
-import {
-  useConfigStore,
-  type LoginBannerSeverity,
-} from '@/stores/config';
+import { useConfigStore, type LoginBannerSeverity } from '@/stores/config';
 
 interface AuthError {
   email: string[];

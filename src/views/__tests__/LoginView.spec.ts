@@ -262,9 +262,7 @@ describe('LoginView', () => {
     await flushPromises();
 
     const banner = wrapper.get('[data-testid="login-banner"]');
-    expect(banner.text()).toContain(
-      'Scheduled maintenance Saturday 02:00 UTC',
-    );
+    expect(banner.text()).toContain('Scheduled maintenance Saturday 02:00 UTC');
     expect(banner.attributes('data-severity')).toBe('warn');
   });
 
