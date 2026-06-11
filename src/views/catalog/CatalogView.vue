@@ -1,9 +1,32 @@
 <template>
-  <PageHeader>Catalog</PageHeader>
-  <PageSubHeader>{{ catalog?.metadata?.title }}</PageSubHeader>
+  <div
+    class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between"
+  >
+    <div>
+      <PageHeader>Catalog</PageHeader>
+      <PageSubHeader>{{ catalog?.metadata?.title }}</PageSubHeader>
+    </div>
+    <div
+      v-if="catalog"
+      class="flex flex-wrap items-center gap-2 lg:justify-end"
+    >
+      <PrimaryButton @click="showControlForm = true">
+        <i class="pi pi-plus mr-2"></i>
+        Add Control
+      </PrimaryButton>
+      <SecondaryButton @click="showGroupForm = true">Add Group</SecondaryButton>
+      <SecondaryButton @click="showEdit = true">Edit</SecondaryButton>
+      <TertiaryButton
+        @click="deleteCurrentCatalog"
+        class="border-red-200 text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-950/40"
+      >
+        Delete
+      </TertiaryButton>
+    </div>
+  </div>
 
   <div
-    class="mt-4 rounded-md bg-white dark:bg-slate-900 border-collapse border border-ccf-300 dark:border-slate-700"
+    class="mt-6 rounded-md bg-white dark:bg-slate-900 border-collapse border border-ccf-300 dark:border-slate-700"
     v-if="catalog"
   >
     <CatalogGroup
@@ -23,15 +46,7 @@
       @updated="reloadLists"
     />
   </div>
-  <div class="mt-4" v-if="catalog">
-    <PrimaryButton @click="deleteCurrentCatalog" class="mr-2"
-      >Delete</PrimaryButton
-    >
-    <PrimaryButton @click="showEdit = true" class="mr-2">Edit</PrimaryButton>
-    <TertiaryButton @click="showGroupForm = true">Add Group</TertiaryButton>
-    <TertiaryButton @click="showControlForm = true" class="ml-2"
-      >Add Control</TertiaryButton
-    >
+  <div v-if="catalog">
     <GroupCreateModal
       @created="groupCreated"
       :catalog="catalog"
@@ -64,6 +79,8 @@ import GroupCreateModal from '@/components/catalogs/GroupCreateModal.vue';
 import ControlCreateModal from '@/components/catalogs/ControlCreateModal.vue';
 import CatalogEditModal from '@/components/catalogs/CatalogEditModal.vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
+import SecondaryButton from '@/volt/SecondaryButton.vue';
+import TertiaryButton from '@/volt/TertiaryButton.vue';
 import { useToast } from 'primevue/usetoast';
 import type { ErrorResponse, ErrorBody } from '@/stores/types.ts';
 import { useDataApi } from '@/composables/axios';

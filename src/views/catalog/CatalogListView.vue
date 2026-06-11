@@ -1,13 +1,19 @@
 <template>
-  <PageHeader>Catalogs</PageHeader>
-  <div class="mt-2 flex justify-end">
-    <RouterLinkButton :to="{ name: 'catalog-create' }"
-      >Create Catalog</RouterLinkButton
-    >
+  <div
+    class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
+  >
+    <div>
+      <PageHeader>Catalogs</PageHeader>
+      <PageSubHeader>Manage OSCAL control catalogs</PageSubHeader>
+    </div>
+    <RouterLinkButton :to="{ name: 'catalog-create' }">
+      <i class="pi pi-plus mr-2"></i>
+      Create Catalog
+    </RouterLinkButton>
   </div>
 
   <div
-    class="mt-4 overflow-hidden rounded-lg border border-ccf-300 bg-white shadow dark:border-slate-700 dark:bg-slate-900"
+    class="mt-6 overflow-hidden rounded-lg border border-ccf-300 bg-white shadow dark:border-slate-700 dark:bg-slate-900"
   >
     <table class="table-auto w-full dark:text-slate-300" v-if="!loading">
       <thead class="bg-gray-50 dark:bg-slate-800">
@@ -41,20 +47,21 @@
                 :to="{ name: 'catalog-view', params: { id: catalog.uuid } }"
                 >View
               </RouterLinkButton>
-              <PrimaryButton
-                @click="deleteCatalog(catalog.uuid, catalog.metadata.title)"
-                title="Delete Catalog"
-              >
-                Delete
-              </PrimaryButton>
-              <PrimaryButton
+              <SecondaryButton
                 @click="
                   downloadCatalogJSON(catalog.uuid, catalog.metadata.title)
                 "
                 title="Download Full Catalog JSON"
               >
                 JSON
-              </PrimaryButton>
+              </SecondaryButton>
+              <TertiaryButton
+                @click="deleteCatalog(catalog.uuid, catalog.metadata.title)"
+                title="Delete Catalog"
+                class="border-red-200 text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-950/40"
+              >
+                Delete
+              </TertiaryButton>
             </div>
           </td>
         </tr>
@@ -65,7 +72,9 @@
 <script setup lang="ts">
 import { type Catalog } from '@/oscal';
 import PageHeader from '@/components/PageHeader.vue';
-import PrimaryButton from '@/volt/PrimaryButton.vue';
+import PageSubHeader from '@/components/PageSubHeader.vue';
+import SecondaryButton from '@/volt/SecondaryButton.vue';
+import TertiaryButton from '@/volt/TertiaryButton.vue';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi } from '@/composables/axios';
 import RouterLinkButton from '@/components/RouterLinkButton.vue';

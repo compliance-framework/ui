@@ -24,14 +24,19 @@ function done(control: Control) {
 </script>
 
 <template>
-  <Dialog v-model:visible="show" modal header="Create a new control">
-    <div class="px-12 py-4">
-      <ControlCreateForm
-        @created="done"
-        :catalog="catalog"
-        :parent-group="props.parentGroup"
-        :parent-control="props.parentControl"
-      />
-    </div>
+  <Dialog
+    v-model:visible="show"
+    modal
+    header="Create Control"
+    :draggable="false"
+    class="w-full max-w-2xl"
+  >
+    <ControlCreateForm
+      @created="done"
+      @cancel="show = false"
+      :catalog="catalog"
+      :parent-group="props.parentGroup"
+      :parent-control="props.parentControl"
+    />
   </Dialog>
 </template>

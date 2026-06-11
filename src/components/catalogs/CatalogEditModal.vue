@@ -1,11 +1,16 @@
 <script setup lang="ts">
 import type { Catalog } from '@/oscal';
 import Dialog from '@/volt/Dialog.vue';
-import FormInput from '@/components/forms/FormInput.vue';
+import Label from '@/volt/Label.vue';
+import InputText from '@/volt/InputText.vue';
+import Message from '@/volt/Message.vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
-import { ref, watchEffect } from 'vue';
+import SecondaryButton from '@/volt/SecondaryButton.vue';
+import { reactive, ref, watchEffect } from 'vue';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import { useToast } from 'primevue/usetoast';
+import type { AxiosError } from 'axios';
+import type { ErrorResponse, ErrorBody } from '@/stores/types.ts';
 
 const show = defineModel<boolean>();
 
@@ -20,11 +25,14 @@ const props = defineProps<{
 }>();
 
 const toast = useToast();
-const form = ref({ title: '', version: '' });
+const form = reactive({ title: '', version: '' });
+const errors = reactive<Record<string, string>>({});
+const errorMessage = ref('');
+const isSubmitting = ref(false);
 
 watchEffect(() => {
-  form.value.title = props.catalog?.metadata?.title || '';
-  form.value.version = props.catalog?.metadata?.version || '';
+  form.title = props.catalog?.metadata?.title || '';
+  form.version = props.catalog?.metadata?.version || '';
 });
 
 const { execute: update } = useDataApi<Catalog>(
@@ -40,15 +48,37 @@ const { execute: update } = useDataApi<Catalog>(
   { immediate: false },
 );
 
+function validate(): boolean {
+  Object.keys(errors).forEach((key) => delete errors[key]);
+  errorMessage.value = '';
+
+  if (!form.title.trim()) {
+    errors.title = 'Title is required';
+  }
+
+  return Object.keys(errors).length === 0;
+}
+
+function getErrorMessage(error: unknown): string {
+  const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
+  return (
+    errorResponse.response?.data.errors?.body ||
+    (error instanceof Error ? error.message : 'Failed to update catalog.')
+  );
+}
+
 async function submit() {
+  if (!validate()) return;
+
   const payload: Catalog = {
     ...props.catalog,
     metadata: {
       ...(props.catalog.metadata || {}),
-      title: form.value.title,
-      version: form.value.version,
+      title: form.title,
+      version: form.version,
     },
   } as Catalog;
+  isSubmitting.value = true;
   try {
     const resp = await update({ data: payload });
     const updated = resp.data.value?.data;
@@ -63,30 +93,75 @@ async function submit() {
       show.value = false;
     }
   } catch (e) {
+    errorMessage.value = getErrorMessage(e);
     toast.add({
       severity: 'error',
       summary: 'Update failed',
-      detail: e instanceof Error ? e.message : 'Failed to update catalog.',
+      detail: errorMessage.value,
       life: 3000,
     });
+  } finally {
+    isSubmitting.value = false;
   }
 }
 </script>
 
 <template>
-  <Dialog v-model:visible="show" modal header="Edit Catalog">
-    <div class="px-12 py-4">
-      <form @submit.prevent="submit">
-        <div class="mb-4">
-          <label class="inline-block pb-2">Title</label>
-          <FormInput v-model="form.title" />
-        </div>
-        <div class="mb-4">
-          <label class="inline-block pb-2">Version</label>
-          <FormInput v-model="form.version" />
-        </div>
-        <PrimaryButton type="submit">Save</PrimaryButton>
-      </form>
-    </div>
+  <Dialog
+    v-model:visible="show"
+    modal
+    header="Edit Catalog"
+    :draggable="false"
+    class="w-full max-w-2xl"
+  >
+    <form @submit.prevent="submit" class="space-y-6">
+      <div>
+        <Label for="catalog-edit-id">ID</Label>
+        <InputText
+          id="catalog-edit-id"
+          :model-value="props.catalog.uuid"
+          class="w-full"
+          disabled
+        />
+      </div>
+      <div>
+        <Label for="catalog-edit-title" required>Title</Label>
+        <InputText
+          id="catalog-edit-title"
+          v-model="form.title"
+          placeholder="Enter catalog title"
+          class="w-full"
+          :invalid="!!errors.title"
+        />
+        <small v-if="errors.title" class="text-red-500">
+          {{ errors.title }}
+        </small>
+      </div>
+      <div>
+        <Label for="catalog-edit-version">Version</Label>
+        <InputText
+          id="catalog-edit-version"
+          v-model="form.version"
+          placeholder="e.g. 1.0.0"
+          class="w-full"
+        />
+      </div>
+
+      <Message v-if="errorMessage" severity="error">
+        {{ errorMessage }}
+      </Message>
+
+      <div
+        class="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-slate-700"
+      >
+        <SecondaryButton type="button" @click="show = false">
+          Cancel
+        </SecondaryButton>
+        <PrimaryButton type="submit" :disabled="isSubmitting">
+          <i v-if="isSubmitting" class="pi pi-spin pi-spinner mr-2"></i>
+          Save Catalog
+        </PrimaryButton>
+      </div>
+    </form>
   </Dialog>
 </template>

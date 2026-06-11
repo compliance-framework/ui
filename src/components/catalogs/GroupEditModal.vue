@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import type { Catalog, Group } from '@/oscal';
 import Dialog from '@/volt/Dialog.vue';
-import FormInput from '@/components/forms/FormInput.vue';
+import Label from '@/volt/Label.vue';
+import InputText from '@/volt/InputText.vue';
+import Message from '@/volt/Message.vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
-import { ref, watchEffect } from 'vue';
+import SecondaryButton from '@/volt/SecondaryButton.vue';
+import { reactive, ref, watchEffect } from 'vue';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import { useToast } from 'primevue/usetoast';
 
@@ -21,11 +24,14 @@ const props = defineProps<{
 }>();
 
 const toast = useToast();
-const form = ref({ title: '', class: '' });
+const form = reactive({ title: '', class: '' });
+const errors = reactive<Record<string, string>>({});
+const errorMessage = ref('');
+const isSubmitting = ref(false);
 
 watchEffect(() => {
-  form.value.title = props.group?.title || '';
-  form.value.class = props.group?.class || '';
+  form.title = props.group?.title || '';
+  form.class = props.group?.class || '';
 });
 
 const { execute: update } = useDataApi<Group>(
@@ -41,12 +47,26 @@ const { execute: update } = useDataApi<Group>(
   { immediate: false },
 );
 
+function validate(): boolean {
+  Object.keys(errors).forEach((key) => delete errors[key]);
+  errorMessage.value = '';
+
+  if (!form.title.trim()) {
+    errors.title = 'Title is required';
+  }
+
+  return Object.keys(errors).length === 0;
+}
+
 async function submit() {
+  if (!validate()) return;
+
   const payload: Group = {
     ...props.group,
-    title: form.value.title,
-    class: form.value.class,
+    title: form.title,
+    class: form.class,
   } as Group;
+  isSubmitting.value = true;
   try {
     const resp = await update({ data: payload });
     const updated = resp.data.value?.data;
@@ -61,30 +81,76 @@ async function submit() {
       show.value = false;
     }
   } catch (e) {
+    errorMessage.value =
+      e instanceof Error ? e.message : 'Failed to update group.';
     toast.add({
       severity: 'error',
       summary: 'Update failed',
-      detail: e instanceof Error ? e.message : 'Failed to update group.',
+      detail: errorMessage.value,
       life: 3000,
     });
+  } finally {
+    isSubmitting.value = false;
   }
 }
 </script>
 
 <template>
-  <Dialog v-model:visible="show" modal header="Edit Group">
-    <div class="px-12 py-4">
-      <form @submit.prevent="submit">
-        <div class="mb-4">
-          <label class="inline-block pb-2">Title</label>
-          <FormInput v-model="form.title" />
-        </div>
-        <div class="mb-4">
-          <label class="inline-block pb-2">Class</label>
-          <FormInput v-model="form.class" />
-        </div>
-        <PrimaryButton type="submit">Save</PrimaryButton>
-      </form>
-    </div>
+  <Dialog
+    v-model:visible="show"
+    modal
+    header="Edit Group"
+    :draggable="false"
+    class="w-full max-w-2xl"
+  >
+    <form @submit.prevent="submit" class="space-y-6">
+      <div>
+        <Label for="group-edit-id">ID</Label>
+        <InputText
+          id="group-edit-id"
+          :model-value="props.group.id"
+          class="w-full"
+          disabled
+        />
+      </div>
+      <div>
+        <Label for="group-edit-title" required>Title</Label>
+        <InputText
+          id="group-edit-title"
+          v-model="form.title"
+          placeholder="Enter group title"
+          class="w-full"
+          :invalid="!!errors.title"
+        />
+        <small v-if="errors.title" class="text-red-500">
+          {{ errors.title }}
+        </small>
+      </div>
+      <div>
+        <Label for="group-edit-class">Class</Label>
+        <InputText
+          id="group-edit-class"
+          v-model="form.class"
+          placeholder="Optional class"
+          class="w-full"
+        />
+      </div>
+
+      <Message v-if="errorMessage" severity="error">
+        {{ errorMessage }}
+      </Message>
+
+      <div
+        class="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-slate-700"
+      >
+        <SecondaryButton type="button" @click="show = false">
+          Cancel
+        </SecondaryButton>
+        <PrimaryButton type="submit" :disabled="isSubmitting">
+          <i v-if="isSubmitting" class="pi pi-spin pi-spinner mr-2"></i>
+          Save Group
+        </PrimaryButton>
+      </div>
+    </form>
   </Dialog>
 </template>
