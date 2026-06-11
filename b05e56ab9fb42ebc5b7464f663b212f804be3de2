@@ -1,0 +1,7 @@
+lisa-design:
+- Catalog create/edit forms preserve the existing OSCAL payload objects and endpoint matrix; validation is local UI blocking only and does not normalize or reshape IDs, titles, classes, metadata, or parts.
+- Control creation keeps three distinct submit paths: top-level catalog controls, group controls, and nested child controls. The visible nested “Add Control” action in control rows exists to preserve access to the already-wired nested-control modal.
+- Catalog creation still requires a UUID because the current success path routes to `catalog-view` using `catalog.value.uuid`; removing that requirement would change the page contract even though title is the primary required metadata field.
+- Group description and control part editors intentionally allow empty prose. They validate through the shared form lifecycle only, because empty prose currently means saving an empty OSCAL part rather than blocking submission.
+- Destructive catalog/group/control actions keep the existing delete-confirmation composable and toast flow; the refactor changes only button placement/styling.
+- Row action groups use compact secondary/tertiary text buttons instead of icon-only tooltip buttons to stay consistent with existing workflow/risk row actions and avoid introducing a new tooltip interaction contract.
