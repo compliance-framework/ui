@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
-import { ref, type Ref } from 'vue';
+import { ref, shallowRef, type Ref } from 'vue';
 import UsersView from '@/views/system/UsersView.vue';
 import ComponentsView from '@/views/system/ComponentsView.vue';
 import AuthorizationsView from '@/views/system/AuthorizationsView.vue';
@@ -89,7 +89,7 @@ vi.mock('@/composables/axios', () => {
     ) => {
       const initialEndpoint =
         typeof initialUrl === 'string' ? initialUrl : undefined;
-      const data = ref(
+      const data = shallowRef(
         initialEndpoint && apiPayloads.has(initialEndpoint)
           ? apiPayloads.get(initialEndpoint)
           : options?.initialData,
