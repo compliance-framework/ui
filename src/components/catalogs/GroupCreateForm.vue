@@ -44,7 +44,6 @@ const { execute: executeCreateGroupGroup } = useDataApi<Group>(
 
 const group = reactive<Partial<Group>>({
   id: '',
-  class: '',
   title: '',
 });
 const errors = reactive<Record<string, string>>({});

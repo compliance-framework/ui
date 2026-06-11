@@ -25,7 +25,6 @@ const emit = defineEmits({
 
 const control = reactive<Partial<Control>>({
   id: '',
-  class: '',
   title: '',
 });
 const errors = reactive<Record<string, string>>({});
