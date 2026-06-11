@@ -276,8 +276,20 @@ describe('LoginView', () => {
     expect(wrapper.find('[data-testid="login-banner"]').exists()).toBe(false);
   });
 
+  it('does not render the login banner when config loading fails', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')));
+
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="login-banner"]').exists()).toBe(false);
+  });
+
   it('dismisses the login banner and persists the dismissal', async () => {
     const bannerText = 'Authorized use only';
+    const oldBannerKey = loginBannerDismissalKey('Previous banner');
+    localStorage.setItem(oldBannerKey, 'true');
+    localStorage.setItem('unrelated', 'keep');
     mockConfig({
       LOGIN_BANNER: bannerText,
       LOGIN_BANNER_SEVERITY: 'info',
@@ -291,6 +303,8 @@ describe('LoginView', () => {
     expect(localStorage.getItem(loginBannerDismissalKey(bannerText))).toBe(
       'true',
     );
+    expect(localStorage.getItem(oldBannerKey)).toBeNull();
+    expect(localStorage.getItem('unrelated')).toBe('keep');
     expect(wrapper.find('[data-testid="login-banner"]').exists()).toBe(false);
   });
 

@@ -8,16 +8,10 @@ export interface Config {
   LOGIN_BANNER_SEVERITY?: LoginBannerSeverity;
 }
 
-export type LoginBannerSeverity = 'info' | 'warn' | 'error' | 'success';
+const loginBannerSeverities = ['info', 'warn', 'error', 'success'] as const;
+export type LoginBannerSeverity = (typeof loginBannerSeverities)[number];
 
 const defaultConfig = builtInConfig as Config;
-
-const loginBannerSeverities: LoginBannerSeverity[] = [
-  'info',
-  'warn',
-  'error',
-  'success',
-];
 
 function isLoginBannerSeverity(value: unknown): value is LoginBannerSeverity {
   return (

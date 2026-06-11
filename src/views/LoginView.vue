@@ -242,22 +242,42 @@ const resolveLoginNotice = () => {
   }
 };
 
+const loginBannerDismissalKeyPrefix = 'login-banner-dismissed:';
 const getLoginBannerDismissalKey = (message: string) =>
-  `login-banner-dismissed:${encodeURIComponent(message)}`;
+  `${loginBannerDismissalKeyPrefix}${encodeURIComponent(message)}`;
+
+function clearLoginBannerDismissals() {
+  const keys: string[] = [];
+  for (let index = 0; index < localStorage.length; index += 1) {
+    const key = localStorage.key(index);
+    if (key?.startsWith(loginBannerDismissalKeyPrefix)) {
+      keys.push(key);
+    }
+  }
+
+  keys.forEach((key) => localStorage.removeItem(key));
+}
 
 async function loadLoginBanner() {
-  const config = await configStore.getConfig();
-  const message = config.LOGIN_BANNER ?? '';
+  try {
+    const config = await configStore.getConfig();
+    const message = config.LOGIN_BANNER ?? '';
 
-  loginBanner.value = message;
-  loginBannerSeverity.value = config.LOGIN_BANNER_SEVERITY ?? 'info';
-  showLoginBanner.value =
-    message.length > 0 &&
-    localStorage.getItem(getLoginBannerDismissalKey(message)) !== 'true';
+    loginBanner.value = message;
+    loginBannerSeverity.value = config.LOGIN_BANNER_SEVERITY ?? 'info';
+    showLoginBanner.value =
+      message.length > 0 &&
+      localStorage.getItem(getLoginBannerDismissalKey(message)) !== 'true';
+  } catch {
+    loginBanner.value = '';
+    loginBannerSeverity.value = 'info';
+    showLoginBanner.value = false;
+  }
 }
 
 function dismissLoginBanner() {
   if (loginBanner.value.length > 0) {
+    clearLoginBannerDismissals();
     localStorage.setItem(getLoginBannerDismissalKey(loginBanner.value), 'true');
   }
   showLoginBanner.value = false;
