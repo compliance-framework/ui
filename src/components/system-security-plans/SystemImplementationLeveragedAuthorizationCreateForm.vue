@@ -7,7 +7,7 @@
           <InputText
             v-model="authData.uuid"
             placeholder="Authorization UUID"
-            class="flex-1"
+            class="flex-1 w-full"
             readonly
           />
           <button
@@ -28,6 +28,7 @@
           v-model="authData.title"
           placeholder="Authorization title (e.g., GovCloud, FedRAMP)"
           required
+          class="w-full"
         />
       </div>
 
@@ -39,6 +40,7 @@
           v-model="authData.partyUuid"
           placeholder="UUID of the party providing the authorization"
           required
+          class="w-full"
         />
       </div>
 
@@ -51,6 +53,7 @@
           type="date"
           placeholder="Date when authorization was granted"
           required
+          class="w-full"
         />
       </div>
 
@@ -59,6 +62,7 @@
         <Textarea
           v-model="authData.remarks"
           placeholder="Additional remarks about this authorization"
+          class="w-full"
         />
       </div>
 
@@ -74,12 +78,12 @@
             <InputText
               v-model="prop.name"
               placeholder="Property name"
-              class="flex-1"
+              class="flex-1 w-full"
             />
             <InputText
               v-model="prop.value"
               placeholder="Property value"
-              class="flex-1"
+              class="flex-1 w-full"
             />
             <button
               type="button"
@@ -111,17 +115,17 @@
             <InputText
               v-model="link.href"
               placeholder="Link URL"
-              class="flex-1"
+              class="flex-1 w-full"
             />
             <InputText
               v-model="link.text"
               placeholder="Link text"
-              class="flex-1"
+              class="flex-1 w-full"
             />
             <InputText
               v-model="link.rel"
               placeholder="Relationship"
-              class="flex-1"
+              class="flex-1 w-full"
             />
             <button
               type="button"

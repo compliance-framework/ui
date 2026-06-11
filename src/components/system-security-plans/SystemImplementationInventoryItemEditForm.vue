@@ -11,6 +11,7 @@
           v-model="inventoryItemData.uuid"
           placeholder="Inventory Item UUID"
           readonly
+          class="w-full"
         />
       </div>
 
@@ -18,12 +19,16 @@
         <label class="inline-block pb-2 dark:text-slate-300"
           >Description <span class="text-red-500">*</span></label
         >
-        <Textarea v-model="inventoryItemData.description" required />
+        <Textarea
+          v-model="inventoryItemData.description"
+          required
+          class="w-full"
+        />
       </div>
 
       <div class="mb-4">
         <label class="inline-block pb-2 dark:text-slate-300">Remarks</label>
-        <Textarea v-model="inventoryItemData.remarks" />
+        <Textarea v-model="inventoryItemData.remarks" class="w-full" />
       </div>
 
       <div class="flex justify-end gap-4">

@@ -20,6 +20,7 @@
           v-model="componentData.type"
           placeholder="e.g., service, software, hardware"
           required
+          class="w-full"
         />
       </div>
 
@@ -27,26 +28,26 @@
         <label class="inline-block pb-2 dark:text-slate-300"
           >Title <span class="text-red-500">*</span></label
         >
-        <InputText v-model="componentData.title" required />
+        <InputText v-model="componentData.title" required class="w-full" />
       </div>
 
       <div class="mb-4">
         <label class="inline-block pb-2 dark:text-slate-300"
           >Description <span class="text-red-500">*</span></label
         >
-        <Textarea v-model="componentData.description" required />
+        <Textarea v-model="componentData.description" required class="w-full" />
       </div>
 
       <div class="mb-4">
         <label class="inline-block pb-2 dark:text-slate-300"
           >Purpose <span class="text-red-500">*</span></label
         >
-        <Textarea v-model="componentData.purpose" required />
+        <Textarea v-model="componentData.purpose" required class="w-full" />
       </div>
 
       <div class="mb-4">
         <label class="inline-block pb-2 dark:text-slate-300">Remarks</label>
-        <Textarea v-model="componentData.remarks" />
+        <Textarea v-model="componentData.remarks" class="w-full" />
       </div>
 
       <!-- Status -->
@@ -79,7 +80,11 @@
             <label class="inline-block pb-1 text-sm dark:text-slate-300"
               >Remarks</label
             >
-            <Textarea v-model="componentData.status.remarks" rows="2" />
+            <Textarea
+              v-model="componentData.status.remarks"
+              rows="2"
+              class="w-full"
+            />
           </div>
         </div>
       </div>
@@ -114,6 +119,7 @@
                 <InputText
                   v-model="protocol.title"
                   placeholder="Protocol title"
+                  class="w-full"
                 />
               </div>
               <div>
@@ -123,6 +129,7 @@
                 <InputText
                   v-model="protocol.name"
                   placeholder="Protocol name"
+                  class="w-full"
                 />
               </div>
             </div>
@@ -141,7 +148,7 @@
                   <InputText
                     v-model="range.transport"
                     placeholder="Transport (TCP/UDP)"
-                    class="flex-1"
+                    class="flex-1 w-full"
                   />
                   <FormInput
                     v-model="range.start"

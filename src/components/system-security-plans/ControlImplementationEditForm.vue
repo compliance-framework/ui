@@ -5,7 +5,12 @@
         <label class="inline-block pb-2 dark:text-slate-300"
           >Description <span class="text-red-500">*</span></label
         >
-        <Textarea v-model="controlImplData.description" rows="4" required />
+        <Textarea
+          v-model="controlImplData.description"
+          rows="4"
+          required
+          class="w-full"
+        />
       </div>
 
       <!-- Set Parameters -->
@@ -39,6 +44,7 @@
               <InputText
                 v-model="param.paramId"
                 placeholder="Parameter identifier"
+                class="w-full"
               />
             </div>
 
@@ -55,7 +61,7 @@
                   <InputText
                     v-model="param.values[valueIndex]"
                     placeholder="Parameter value"
-                    class="flex-1"
+                    class="flex-1 w-full"
                   />
                   <button
                     type="button"
@@ -79,7 +85,7 @@
               <label class="inline-block pb-1 text-sm dark:text-slate-300"
                 >Remarks</label
               >
-              <Textarea v-model="param.remarks" rows="2" />
+              <Textarea v-model="param.remarks" rows="2" class="w-full" />
             </div>
           </div>
 

@@ -20,12 +20,13 @@
           v-model="statementData.statementId"
           placeholder="e.g., au-1_smt"
           required
+          class="w-full"
         />
       </div>
 
       <div class="mb-4">
         <label class="inline-block pb-2 dark:text-slate-300">Remarks</label>
-        <Textarea v-model="statementData.remarks" rows="3" />
+        <Textarea v-model="statementData.remarks" rows="3" class="w-full" />
       </div>
 
       <!-- Properties -->
@@ -55,13 +56,21 @@
                 <label class="inline-block pb-1 text-sm dark:text-slate-300"
                   >Name</label
                 >
-                <InputText v-model="prop.name" placeholder="Property name" />
+                <InputText
+                  v-model="prop.name"
+                  placeholder="Property name"
+                  class="w-full"
+                />
               </div>
               <div>
                 <label class="inline-block pb-1 text-sm dark:text-slate-300"
                   >Value</label
                 >
-                <InputText v-model="prop.value" placeholder="Property value" />
+                <InputText
+                  v-model="prop.value"
+                  placeholder="Property value"
+                  class="w-full"
+                />
               </div>
             </div>
           </div>
@@ -103,20 +112,32 @@
                 <label class="inline-block pb-1 text-sm dark:text-slate-300"
                   >Href</label
                 >
-                <InputText v-model="link.href" placeholder="URL or reference" />
+                <InputText
+                  v-model="link.href"
+                  placeholder="URL or reference"
+                  class="w-full"
+                />
               </div>
               <div>
                 <label class="inline-block pb-1 text-sm dark:text-slate-300"
                   >Rel</label
                 >
-                <InputText v-model="link.rel" placeholder="Relationship" />
+                <InputText
+                  v-model="link.rel"
+                  placeholder="Relationship"
+                  class="w-full"
+                />
               </div>
             </div>
             <div class="mt-2">
               <label class="inline-block pb-1 text-sm dark:text-slate-300"
                 >Text</label
               >
-              <InputText v-model="link.text" placeholder="Link text" />
+              <InputText
+                v-model="link.text"
+                placeholder="Link text"
+                class="w-full"
+              />
             </div>
           </div>
 

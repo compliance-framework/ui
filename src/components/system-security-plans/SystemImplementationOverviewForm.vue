@@ -37,11 +37,20 @@
       <div class="mb-4">
         <label class="inline-block pb-2 dark:text-slate-300">Remarks</label>
         <Textarea
+          v-if="isEditing"
           v-model="overviewData.remarks"
-          :disabled="!isEditing"
           placeholder="Describe the system implementation and any additional remarks"
-          :class="{ 'bg-gray-100 dark:bg-gray-800': !isEditing }"
+          class="w-full"
         />
+        <p
+          v-else-if="overviewData.remarks"
+          class="whitespace-pre-wrap text-sm text-gray-700 dark:text-slate-300"
+        >
+          {{ overviewData.remarks }}
+        </p>
+        <p v-else class="text-sm text-gray-500 dark:text-slate-400">
+          No remarks provided.
+        </p>
       </div>
 
       <!-- Properties Section -->
@@ -57,14 +66,14 @@
               v-model="prop.name"
               :disabled="!isEditing"
               placeholder="Property name"
-              class="flex-1"
+              class="flex-1 w-full"
               :class="{ 'bg-gray-100 dark:bg-gray-800': !isEditing }"
             />
             <InputText
               v-model="prop.value"
               :disabled="!isEditing"
               placeholder="Property value"
-              class="flex-1"
+              class="flex-1 w-full"
               :class="{ 'bg-gray-100 dark:bg-gray-800': !isEditing }"
             />
             <button
@@ -100,21 +109,21 @@
               v-model="link.href"
               :disabled="!isEditing"
               placeholder="Link URL"
-              class="flex-1"
+              class="flex-1 w-full"
               :class="{ 'bg-gray-100 dark:bg-gray-800': !isEditing }"
             />
             <InputText
               v-model="link.text"
               :disabled="!isEditing"
               placeholder="Link text"
-              class="flex-1"
+              class="flex-1 w-full"
               :class="{ 'bg-gray-100 dark:bg-gray-800': !isEditing }"
             />
             <InputText
               v-model="link.rel"
               :disabled="!isEditing"
               placeholder="Relationship"
-              class="flex-1"
+              class="flex-1 w-full"
               :class="{ 'bg-gray-100 dark:bg-gray-800': !isEditing }"
             />
             <button

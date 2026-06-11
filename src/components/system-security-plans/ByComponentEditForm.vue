@@ -32,7 +32,12 @@
         <label class="inline-block pb-2 dark:text-slate-300"
           >Description <span class="text-red-500">*</span></label
         >
-        <Textarea v-model="byComponentData.description" required rows="4" />
+        <Textarea
+          v-model="byComponentData.description"
+          required
+          rows="4"
+          class="w-full"
+        />
       </div>
 
       <!-- Implementation Status -->
@@ -67,6 +72,7 @@
             <Textarea
               v-model="byComponentData.implementationStatus!.remarks"
               rows="2"
+              class="w-full"
             />
           </div>
         </div>
@@ -106,6 +112,7 @@
                   v-model="provided.description"
                   placeholder="Description of what is provided"
                   rows="2"
+                  class="w-full"
                 />
               </div>
               <button
@@ -146,6 +153,7 @@
                   v-model="responsibility.description"
                   placeholder="Description of responsibility"
                   rows="2"
+                  class="w-full"
                 />
               </div>
               <button
@@ -185,6 +193,7 @@
               v-model="inherited.description"
               placeholder="Description of inherited control"
               rows="2"
+              class="w-full"
             />
           </div>
           <button
@@ -222,6 +231,7 @@
               v-model="satisfied.description"
               placeholder="Description of satisfied requirement"
               rows="2"
+              class="w-full"
             />
           </div>
           <button
@@ -265,6 +275,7 @@
                 <InputText
                   v-model="param.paramId"
                   placeholder="e.g., ac-1_prm_1"
+                  class="w-full"
                 />
               </div>
               <div>
@@ -274,6 +285,7 @@
                 <InputText
                   v-model="param.values[0]"
                   placeholder="Parameter value"
+                  class="w-full"
                 />
               </div>
             </div>
@@ -318,6 +330,7 @@
               <InputText
                 v-model="role.roleId"
                 placeholder="e.g., system-owner, maintainer"
+                class="w-full"
               />
             </div>
             <div>
@@ -328,6 +341,7 @@
                 :model-value="role.partyUuids?.join(', ')"
                 @update:model-value="updateRolePartyUuids(index, $event)"
                 placeholder="Enter UUIDs separated by commas"
+                class="w-full"
               />
             </div>
           </div>
@@ -344,7 +358,7 @@
       <!-- Remarks -->
       <div class="mb-6">
         <label class="inline-block pb-2 dark:text-slate-300">Remarks</label>
-        <Textarea v-model="byComponentData.remarks" rows="3" />
+        <Textarea v-model="byComponentData.remarks" rows="3" class="w-full" />
       </div>
 
       <!-- Form Actions -->

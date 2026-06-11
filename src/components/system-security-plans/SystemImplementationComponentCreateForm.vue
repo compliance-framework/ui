@@ -7,7 +7,7 @@
           <InputText
             v-model="componentData.uuid"
             placeholder="Component UUID"
-            class="flex-1"
+            class="flex-1 w-full"
             readonly
           />
           <button
@@ -83,6 +83,7 @@
           placeholder="e.g., service, software, hardware"
           :readonly="inheritedFieldLocks.type"
           required
+          class="w-full"
         />
       </div>
 
@@ -94,6 +95,7 @@
           v-model="componentData.title"
           :readonly="inheritedFieldLocks.title"
           required
+          class="w-full"
         />
       </div>
 
@@ -105,6 +107,7 @@
           v-model="componentData.description"
           :readonly="inheritedFieldLocks.description"
           required
+          class="w-full"
         />
       </div>
 
@@ -116,6 +119,7 @@
           v-model="componentData.purpose"
           :readonly="inheritedFieldLocks.purpose"
           required
+          class="w-full"
         />
       </div>
 
@@ -124,6 +128,7 @@
         <Textarea
           v-model="componentData.remarks"
           :readonly="inheritedFieldLocks.remarks"
+          class="w-full"
         />
       </div>
 
@@ -157,7 +162,11 @@
             <label class="inline-block pb-1 text-sm dark:text-slate-300"
               >Remarks</label
             >
-            <Textarea v-model="componentData.status!.remarks" rows="2" />
+            <Textarea
+              v-model="componentData.status!.remarks"
+              rows="2"
+              class="w-full"
+            />
           </div>
         </div>
       </div>
@@ -194,6 +203,7 @@
                   v-model="protocol.title"
                   placeholder="Protocol title"
                   :readonly="inheritedFieldLocks.protocols"
+                  class="w-full"
                 />
               </div>
               <div>
@@ -204,6 +214,7 @@
                   v-model="protocol.name"
                   placeholder="Protocol name"
                   :readonly="inheritedFieldLocks.protocols"
+                  class="w-full"
                 />
               </div>
             </div>
@@ -222,7 +233,7 @@
                   <InputText
                     v-model="range.transport"
                     placeholder="Transport (TCP/UDP)"
-                    class="flex-1"
+                    class="flex-1 w-full"
                     :readonly="inheritedFieldLocks.protocols"
                   />
                   <FormInput

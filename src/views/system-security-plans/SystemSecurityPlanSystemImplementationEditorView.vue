@@ -622,16 +622,15 @@ const editUser = (user: SystemUser) => {
 };
 
 const handleUserCreated = (newUser: SystemUser) => {
-  users.value?.push(newUser);
+  users.value = [...(users.value ?? []), newUser];
   showCreateUserModal.value = false;
 };
 
 const handleUserSaved = (updatedUser: SystemUser) => {
   if (users.value) {
-    const index = users.value.findIndex((u) => u.uuid === updatedUser.uuid);
-    if (index !== -1) {
-      users.value[index] = updatedUser;
-    }
+    users.value = users.value.map((user) =>
+      user.uuid === updatedUser.uuid ? updatedUser : user,
+    );
   }
   showEditUserModal.value = false;
   editingUser.value = null;
@@ -684,19 +683,15 @@ const editComponent = async (component: SystemComponent) => {
 };
 
 const handleComponentCreated = async (newComponent: SystemComponent) => {
-  // Add the component to the local array
-  components.value?.push(newComponent);
+  components.value = [...(components.value ?? []), newComponent];
   showCreateComponentModal.value = false;
 };
 
 const handleComponentSaved = (updatedComponent: SystemComponent) => {
   if (components.value) {
-    const index = components.value.findIndex(
-      (c) => c.uuid === updatedComponent.uuid,
+    components.value = components.value.map((component) =>
+      component.uuid === updatedComponent.uuid ? updatedComponent : component,
     );
-    if (index !== -1) {
-      components.value[index] = updatedComponent;
-    }
   }
   showEditComponentModal.value = false;
   editingComponent.value = null;
@@ -760,18 +755,18 @@ const editLeveragedAuth = (auth: LeveragedAuthorization) => {
 };
 
 const handleLeveragedAuthCreated = (newAuth: LeveragedAuthorization) => {
-  leveragedAuthorizations.value?.push(newAuth);
+  leveragedAuthorizations.value = [
+    ...(leveragedAuthorizations.value ?? []),
+    newAuth,
+  ];
   showCreateLeveragedAuthModal.value = false;
 };
 
 const handleLeveragedAuthSaved = (updatedAuth: LeveragedAuthorization) => {
   if (leveragedAuthorizations.value) {
-    const index = leveragedAuthorizations.value.findIndex(
-      (a) => a.uuid === updatedAuth.uuid,
+    leveragedAuthorizations.value = leveragedAuthorizations.value.map((auth) =>
+      auth.uuid === updatedAuth.uuid ? updatedAuth : auth,
     );
-    if (index !== -1) {
-      leveragedAuthorizations.value[index] = updatedAuth;
-    }
   }
   showEditLeveragedAuthModal.value = false;
   editingLeveragedAuth.value = null;

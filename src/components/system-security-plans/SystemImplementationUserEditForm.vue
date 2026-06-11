@@ -20,6 +20,7 @@
           v-model="userData.title"
           placeholder="User title or role name"
           required
+          class="w-full"
         />
       </div>
 
@@ -28,6 +29,7 @@
         <InputText
           v-model="userData.shortName"
           placeholder="Short name or abbreviation"
+          class="w-full"
         />
       </div>
 
@@ -35,7 +37,7 @@
         <label class="inline-block pb-2 dark:text-slate-300"
           >Description <span class="text-red-500">*</span></label
         >
-        <Textarea v-model="userData.description" required />
+        <Textarea v-model="userData.description" required class="w-full" />
       </div>
 
       <div class="mb-4">
@@ -49,7 +51,7 @@
             <InputText
               v-model="userData.roleIds![index]"
               placeholder="Role ID"
-              class="flex-1"
+              class="flex-1 w-full"
             />
             <button
               type="button"
@@ -100,6 +102,7 @@
               <InputText
                 v-model="privilege.title"
                 placeholder="Privilege title"
+                class="w-full"
               />
             </div>
 
@@ -107,7 +110,11 @@
               <label class="inline-block pb-1 text-sm dark:text-slate-300"
                 >Description</label
               >
-              <Textarea v-model="privilege.description" rows="2" />
+              <Textarea
+                v-model="privilege.description"
+                rows="2"
+                class="w-full"
+              />
             </div>
 
             <div class="mb-3">
@@ -124,7 +131,7 @@
                   <InputText
                     v-model="privilege.functionsPerformed![funcIndex]"
                     placeholder="Function description"
-                    class="flex-1"
+                    class="flex-1 w-full"
                   />
                   <button
                     type="button"
