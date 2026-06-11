@@ -4,3 +4,6 @@ lisa-design:
 - Left the shared `src/components/system-security-plans/` create/edit forms untouched; only their dialog call sites and list append behavior were adjusted so the SSP-area refactor can own form validation and markup.
 - Replaced Overview progress bars with neutral bordered stat cards plus text summaries instead of introducing a shared stat component, keeping the cleanup local to the System overview and preserving all displayed compliance values.
 - Swallowed 404s only for optional diagram group fetches, while leaving non-404 diagram fetch failures to reject as before.
+
+lisa-selfreview: pass 1 (verdict=request_changes)
+- [medium] src/views/system/DiagramsView.vue:285 (correctness vs. the actual SDK/library): When the authorization-boundary diagram group fetch returns 404, fetchOptionalDiagram now swallows the error but leaves authorizationBoundary at its initialData value of { diagrams: [{ uuid: v4() }] }. That makes a missing optional group render a blank, never-created diagram with Save/Delete controls instead of the empty state, and subsequent PUT/DELETE calls target a diagram UUID the API never returned.
