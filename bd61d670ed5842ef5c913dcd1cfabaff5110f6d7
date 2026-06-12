@@ -1,0 +1,29 @@
+lisa-addressed:
+---
+Comment (src/views/control-implementations/partials/EvidenceDashboardForm.vue:12):
+**Low — duplicated interfaces.** `SearchableEvidence` and `LabelCondition` are redefined here and in `ControlStatementImplementation.vue` (lines 73 and 81). Structural typing makes this compile, but the two copies can silently drift apart — e.g. if a field is added to the parent's `SearchableEvidence`, this form would still accept the old shape. `form-options.ts` was created in this PR exactly for shared form types; suggest exporting both interfaces from there and importing them in both places.
+Replies:
+**lisa implementation guidance:** In src/views/control-implementations/partials/form-options.ts, export shared interfaces for the evidence dashboard form state: SearchableEvidence extends Evidence with searchText: string, and LabelCondition with name and value strings. Import type Evidence from '@/stores/evidence' there if needed. In src/views/control-implementations/partials/EvidenceDashboardForm.vue, remove the local SearchableEvidence and LabelCondition interface declarations and import them as types from './form-options'. In src/views/control-implementations/partials/ControlStatementImplementation.vue, remove the duplicated local interface declarations and import the same shared types. Keep all existing refs, computed values, props, emits, and evidence filter construction in ControlStatementImplementation.vue unchanged.
+
+<!-- lisa-guidance-posted -->
+---
+Comment (src/views/control-implementations/partials/StatementByComponent.vue:99):
+**Low — duplicated option construction.** This `statusOptions` computed and `componentStatusOptions` in `ControlStatementImplementation.vue` both build `[{ label: 'No status', value: '' }, ...implementationStatusOptions]`. If the empty-status label or semantics ever change, one copy will be missed. Suggest exporting a shared constant (e.g. `implementationStatusOptionsWithNone`) next to `implementationStatusOptions` and using it in both places — it's static, so it doesn't even need to be a `computed`.
+Replies:
+**lisa implementation guidance:** In src/views/control-implementations/partials/implementation-status.ts, export a shared static option array such as implementationStatusOptionsWithNone = [{ label: 'No status', value: '' }, ...implementationStatusOptions] as const. In src/views/control-implementations/partials/StatementByComponent.vue, remove the local statusOptions computed and import/use implementationStatusOptionsWithNone for the Select options. In src/views/control-implementations/partials/ControlStatementImplementation.vue, remove componentStatusOptions computed and pass implementationStatusOptionsWithNone to CreateByComponentForm. Preserve the existing empty-string semantics for clearing implementationStatus and do not rename existing implementationStatusOptions consumers that need the list without 'No status'.
+
+<!-- lisa-guidance-posted -->
+---
+Comment (src/views/control-implementations/partials/StatementByComponent.vue:270):
+**Low (a11y) — duplicate DOM ids.** `id="by-component-status"` (and `by-component-status-remarks` below) are static, but this component is rendered once per by-component inside `ControlStatementByComponents`' `v-for`. With two components in edit mode at the same time, the page has duplicate ids and the `<Label for>` association targets only the first one. Suggest deriving the ids from the component, e.g. `:id=\`by-component-status-${byComponent.uuid}\``, with the matching `for` on the labels.
+Replies:
+**lisa implementation guidance:** In src/views/control-implementations/partials/StatementByComponent.vue, replace the static edit-mode ids by deriving stable unique ids from byComponent.uuid. Add constants/computed values near the other edit-state helpers, for example statusInputId = computed(() => `by-component-status-${byComponent.uuid}`) and statusRemarksInputId = computed(() => `by-component-status-remarks-${byComponent.uuid}`). Bind the Label and control pairs with :for/:id for both the status Select and remarks Textarea. Do not use the v-for index, because the component only receives the byComponent and the uuid is the stable identifier.
+
+<!-- lisa-guidance-posted -->
+---
+Comment (src/views/control-implementations/partials/ControlStatementMetadata.vue:47):
+**Low — raw array rendering.** `{{ statement.props || 'None' }}` (and `statement.links` below) interpolates the raw array, so a populated statement renders a JSON dump like `[ { "name": "...", "value": "..." } ]`. This behavior was moved verbatim from the old inline template, but since this is a brand-new component it's a good moment to format it — e.g. a `name=value` list for props and the count or hrefs for links, falling back to 'None' when empty (note `[] || 'None'` is also truthy, so an empty array renders as `[]`, not 'None').
+Replies:
+**lisa implementation guidance:** In src/views/control-implementations/partials/ControlStatementMetadata.vue, stop interpolating statement.props and statement.links directly. Add small helper functions in the script: formatProps(props) should return 'None' for missing or empty arrays, otherwise join each prop as name=value when both exist, name when only name exists, value when only value exists, and fall back to 'Property' only if neither exists. formatLinks(links) should return 'None' for missing or empty arrays, otherwise join each link using text if present, else href if present, else rel if present, and fall back to 'Link' only if none exist. Update the template to render {{ formatProps(statement.props) }} and {{ formatLinks(statement.links) }}. Keep the rest of the metadata component layout and the existing Edit button behavior unchanged.
+
+<!-- lisa-guidance-posted -->
