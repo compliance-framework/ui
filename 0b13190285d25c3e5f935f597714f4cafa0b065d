@@ -1,0 +1,6 @@
+lisa-design:
+- Kept ControlStatementImplementation.vue as the owner of API calls, endpoint construction, toast behavior, and drawer state; extracted child components are controlled UI/forms that validate before emitting submit so existing payloads and refresh flows stay unchanged.
+- Disabled the control-tree eye action when no implemented requirement exists and kept a defensive undefined guard in openImplementationDrawer; no create-implementation flow was added because creation remains driven by statement-part selection.
+- Deferred deduplicating the controls StatementByComponent.vue with the SSP-side duplicate because the SSP-area refactor is not present in this worktree; only the controls copy was aligned to volt components.
+- Preserved the existing system-security-plan shared create/edit forms and SystemImplementationComponentCreateForm call sites; this task only updates how the controls drawer invokes and surrounds them.
+- Left evidence dashboard filter construction in the parent drawer because the computed filter, label-condition derivation, and dashboard create payload are existing contracts shared by the linking flow.
