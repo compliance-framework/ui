@@ -1,0 +1,149 @@
+lisa-addressed:
+---
+Comment (src/views/control-implementations/IndexView.vue:70):
+**Medium — inner catalog-loading `<Message>` is unreachable.**
+
+`loading` is computed as `profileBindingsLoading || catalogLoading || controlImplementationLoading` (line 257–262). When `catalogLoading` is true, the outer `v-if="loading"` fires and the entire `v-else` block is hidden — so this inner `v-if="catalogLoading"` can never render. This was pre-existing, but the PR converted it from a plain `<div>` so it's worth fixing here.
+
+**Fix option A** — Remove `catalogLoading` from the `loading` computed so the outer spinner only covers the profile/requirement fetch phase. The inner catalog message then renders correctly for the catalog phase.
+
+**Fix option B** — Drop the inner catalog message and rely on the outer spinner for all loading phases, updating its text to something like "Loading..." that covers all three stages.
+---
+Comment (src/views/control-implementations/partials/ControlStatementImplementation.vue:40):
+**Medium — `useCloned` called inside an event handler (pre-existing, surfaced by PR touching the file).**
+
+At line 703, `deleteByComponent` does:
+```ts
+const updatedStatement = useCloned(localStatement).cloned;
+```
+`useCloned` is a VueUse composable that internally creates a `watch`. Composables that create watchers must be called during `setup()`, not inside event handlers. Calling it here will produce a Vue warning (`inject() can only be used inside setup()`) and the internal watcher is never cleaned up, leaking memory.
+
+**Fix:**
+```ts
+const updatedStatement = ref(JSON.parse(JSON.stringify(localStatement.value)) as Statement);
+```
+Or simpler — since only `byComponents` is mutated:
+```ts
+const cloned = { ...localStatement.value, byComponents: [...(localStatement.value?.byComponents ?? [])] };
+```
+---
+Comment (src/views/control-implementations/partials/ControlStatementImplementation.vue:784):
+**Medium (e2e confirmed) — `components.value.push()` in `handleComponentCreated` doesn't trigger reactivity.**
+
+`handleComponentCreated` (line 954) does `components.value.push(newComponent)` to add the new component to the local list. But `useDataApi` stores its `data` as a `shallowRef` — which only tracks reference reassignment, not in-place array mutations. So `componentItems` never recomputes, and the newly created component doesn't appear in the dropdown without a full page reload.
+
+**Fix in `handleComponentCreated`:**
+```ts
+// replace:
+if (components.value) {
+  components.value.push(newComponent);
+}
+// with:
+components.value = [...(components.value ?? []), newComponent];
+```
+Assigning a new array reference is tracked by `shallowRef` and will cause `componentItems` to recompute correctly.
+---
+Comment (src/views/control-implementations/partials/IndexControlImplementation.vue:165):
+**Medium (e2e confirmed) — dark mode hover colour uses `@media (prefers-color-scheme: dark)` but the app uses class-based dark mode.**
+
+Tailwind is configured with `darkMode: 'class'` (the `.dark` class on the root). The `<style>` block at lines 260–270 uses `@media (prefers-color-scheme: dark)` for the hover highlight, which only fires when the *OS* is in dark mode. When a user manually enables the app's dark theme without the OS matching, the hover falls back to the light-mode colour `rgb(243 244 246)` (gray-100) — a very bright white on the new `dark:bg-slate-900` background, which was made darker by this PR.
+
+**Fix:** Replace the media-query rule with a class selector, e.g.:
+```css
+/* remove: */
+@media (prefers-color-scheme: dark) {
+  .part-display .hover { background-color: rgb(71 85 105); }
+}
+
+/* add: */
+:global(.dark) .part-display .hover {
+  background-color: rgb(71 85 105);
+}
+```
+Or use a Tailwind `dark:` utility class on the part element directly and drop the `<style>` block.
+---
+Comment (src/views/control-implementations/partials/implementation-status.ts:13):
+**Low (e2e confirmed) — `partial` dark-mode colours skew red rather than orange.**
+
+The spread here pulls in the `partial` entry from `implementationStatusOptions`:
+```ts
+partial: {
+  countClass: 'bg-amber-500 text-white dark:bg-amber-400 dark:text-amber-950',
+  panelClass:  '... dark:border-amber-900 dark:bg-amber-950/20',
+}
+```
+In dark mode:
+- `dark:bg-amber-950/20` — Tailwind's `amber-950` is `#431407`, a very dark brownish-red. At 20% opacity over a `slate-900` background it appears reddish, not orange.
+- `dark:border-amber-900` — `#78350f`, similarly reddish-brown.
+- `dark:bg-amber-400` on the badge — bright yellow, not the warm orange of the light-mode `amber-500`.
+
+**Suggested fix:** use the `orange` scale for dark mode to preserve the orange intent:
+```ts
+countClass: 'bg-amber-500 text-white dark:bg-orange-500 dark:text-white',
+panelClass:  'border-amber-200 bg-amber-50/60 dark:border-orange-800 dark:bg-orange-950/20',
+```
+---
+Comment (src/views/control-implementations/partials/ControlStatementMetadata.vue:85):
+**Low — `label` prop is ignored because the default slot overrides it.**
+
+```html
+<Button label="Edit Statement">Edit</Button>
+```
+In Volt/PrimeVue, when both the `label` prop and a default slot are provided, the slot content wins. The rendered button says "Edit"; `label="Edit Statement"` is silently discarded.
+
+Pick one: remove the `label` prop and keep the slot, or remove the slot and use `label="Edit Statement"` only.
+---
+Comment (src/views/control-implementations/partials/ControlStatementSuggestions.vue:88):
+**Low — `formatRelevanceScore` called twice per suggestion per render.**
+
+```html
+<span v-if="formatRelevanceScore(suggestion.relevanceScore)">
+  Relevance: {{ formatRelevanceScore(suggestion.relevanceScore) }}
+</span>
+```
+Two identical calls for the same argument. Extract to a local variable in the render or use a template `v-memo`:
+```html
+<template v-for="suggestion in displayedSuggestions" :key="suggestion.componentUuid">
+  <!-- ... -->
+  <template v-if="formatRelevanceScore(suggestion.relevanceScore) as score">
+    <span class="text-xs text-gray-500">Relevance: {{ score }}</span>
+  </template>
+</template>
+```
+Or just inline the check: `v-if="typeof suggestion.relevanceScore === 'number' && !isNaN(suggestion.relevanceScore)"`.
+---
+Comment (src/views/control-implementations/partials/__tests__/ControlStatementSuggestions.spec.ts:97):
+**Low — button-index assumption is brittle.**
+
+`buttons[0]` is assumed to be "Apply All Suggestions" and `buttons[1]` the first suggestion chip. If the DOM order of buttons in the template ever changes, these assertions will silently test the wrong behaviour.
+
+Prefer finding by accessible text or role:
+```ts
+const applyAllButton = wrapper.findAll('button').find(b => b.text().includes('Apply All Suggestions'));
+const firstSuggestionButton = wrapper.findAll('button').find(b => b.text().includes('Component One'));
+await applyAllButton?.trigger('click');
+await firstSuggestionButton?.trigger('click');
+```
+---
+Comment (src/views/control-implementations/partials/EvidenceDashboardForm.vue:186):
+**Low — submit button is disabled with no hint when the filter hasn't been built yet.**
+
+`:disabled="isSubmitting || !computedFilter"` silently greys out "Create Dashboard" when there's no filter. A user who fills in a name and then looks at the disabled button gets no feedback about what's missing.
+
+Consider adding a tooltip or an inline message when `!computedFilter`:
+```html
+<PrimaryButton
+  type="submit"
+  :disabled="isSubmitting || !computedFilter"
+  v-tooltip.top="!computedFilter ? 'Add at least one label condition to create a filter' : undefined"
+>
+```
+Implementation guidance: In src/views/control-implementations/IndexView.vue, keep the current loading computed covering profileBindingsLoading, catalogLoading, and controlImplementationLoading. Remove the unreachable inner catalog-loading Message from the v-else body and change the following catalog availability branch from v-else-if="!profilesResolved" to v-if="!profilesResolved". Update the outer loading Message text from 'Loading controls...' to a generic label such as 'Loading control data...' so it accurately covers the catalog phase too. Do not change the fetch sequencing, bulk suggestions button locking, or profilesResolved semantics.
+Implementation guidance: In src/views/control-implementations/partials/ControlStatementImplementation.vue, remove useCloned from the VueUse import if it is no longer used, and replace the useCloned(localStatement).cloned call inside deleteByComponent with a plain clone created inside the handler. After the existing sspId and statementUuid guards, also guard localStatement.value before cloning. Build a Statement object such as { ...localStatement.value, byComponents: [...(localStatement.value.byComponents ?? [])].filter((comp) => byComp.uuid !== comp.uuid) }, call executeDelete as before, then assign localStatement.value to that cloned object and emit it. Do not call composables inside deleteByComponent, and do not change the API endpoint or delete success/reset behavior.
+Implementation guidance: In src/views/control-implementations/partials/ControlStatementImplementation.vue, update handleComponentCreated so it reassigns components.value instead of mutating it in place. Replace the conditional push with components.value = [...(components.value ?? []), newComponent]; then keep showCreateComponentModal.value = false and the nextTick selection/opening logic unchanged. This is needed because useDataApi data is a shallowRef, so componentItems only recomputes on reference reassignment.
+Implementation guidance: In src/views/control-implementations/partials/IndexControlImplementation.vue, replace the dark-mode hover CSS media query with the app's class-based dark selector. Keep the base .part-display .hover rule for light mode, remove @media (prefers-color-scheme: dark), and add :global(.dark) .part-display .hover { background-color: rgb(71 85 105); }. Do not change the PartDisplay template, mouse handlers, or status cue classes.
+Implementation guidance: In src/views/control-implementations/partials/implementation-status.ts, adjust only the partial entry in implementationStatusCues to use orange dark-mode classes while preserving the light-mode amber classes. Use countClass 'bg-amber-500 text-white dark:bg-orange-500 dark:text-white' and panelClass 'border-amber-200 bg-amber-50/60 dark:border-orange-800 dark:bg-orange-950/20'. Do not change the partial value, label, normalization behavior, or other status cue colors.
+Implementation guidance: In src/views/control-implementations/partials/ControlStatementMetadata.vue, remove the ignored label="Edit Statement" prop from the Button and keep the default slot text 'Edit' so the visible text remains the pre-refactor value. Do not remove the slot, do not change the click emit, and do not change the button classes or metadata layout.
+Implementation guidance: In src/views/control-implementations/partials/ControlStatementSuggestions.vue, avoid calling formatRelevanceScore twice for the same suggestion. Change the span's v-if to a direct validity check such as typeof suggestion.relevanceScore === 'number' && !Number.isNaN(suggestion.relevanceScore), and keep a single formatRelevanceScore(suggestion.relevanceScore) call in the interpolation. Preserve the displayed text format, including rounding to two decimals.
+Implementation guidance: In src/views/control-implementations/partials/__tests__/ControlStatementSuggestions.spec.ts, replace button index assumptions with lookups by rendered text. In the disabled-state test, find the Component One and Component Two buttons by wrapper.findAll('button').find((button) => button.text().includes('Component One')) and similarly for Component Two, assert they exist, then assert disabled and trigger them. In the emit test, find the Apply All Suggestions button by text and the Component One button by text before triggering. Avoid optional chaining that would let a missing button silently pass; assert each lookup is truthy before use.
+Implementation guidance: In src/views/control-implementations/partials/EvidenceDashboardForm.vue, add user-visible guidance for the disabled Create Dashboard action when computedFilter is missing. The lowest-risk fix is to add v-tooltip.top="!computedFilter ? 'Add at least one label condition to create a filter' : undefined" to the PrimaryButton while keeping :disabled="isSubmitting || !computedFilter" unchanged. Do not move filter construction into this component, do not change the submit emit, and do not alter existing serverError or generated-filter rendering.
