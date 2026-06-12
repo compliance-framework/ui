@@ -1,0 +1,36 @@
+lisa-addressed:
+---
+Comment (src/views/control-implementations/partials/ControlStatementImplementation.vue:817):
+**[Medium] Double error reporting on API failure**
+
+Three operations — `createByComponent` (here), `linkExistingDashboard`, and `submitEvidenceLinking` — now set both `createByComponentError`/`linkDashboardError`/`createEvidenceDashboardError` (displayed inline via the child's `serverError` prop) **and** fire a `toast.add` with the same message. The user sees the error twice: once persistently inline in the form, and once as a transient toast.
+
+Before this PR there was only the toast. The inline error is generally better UX for forms (it stays visible), but having both is noisy.
+
+Suggestion: pick one. The inline error message is the more discoverable and accessible choice for form-level failures. Drop the `toast.add` in the `catch` blocks for these three operations and rely on the `serverError` prop instead. The toast can stay on success.
+Replies:
+**lisa implementation guidance:** In src/views/control-implementations/partials/ControlStatementImplementation.vue, remove the error toast.add calls from the catch blocks of createByComponent, linkExistingDashboard, and submitEvidenceLinking only. Keep setting createByComponentError, linkDashboardError, and createEvidenceDashboardError with the existing messages so the child forms receive serverError and display the failure inline. Do not remove success toasts, validation toasts, missing-SSP toasts, unlink/load error toasts, console.error calls, loading state cleanup, or any API/refresh/reset behavior.
+
+<!-- lisa-guidance-posted -->
+---
+Comment (src/views/control-implementations/partials/ControlStatementMetadata.vue:66):
+**[Low] Button text changed from "Edit" to "Edit Statement"**
+
+The original code in `ControlStatementImplementation.vue` had both `label="Edit Statement"` (prop) and slot content `Edit`. PrimeVue's Button renders slot content in preference to the `label` prop, so the old button read **"Edit"**.
+
+This new component has no slot, so the button now reads **"Edit Statement"** — a user-visible string change. If intentional (the longer label is more descriptive), fine — just worth noting for QA. If not, add a slot: `<Button ...>Edit</Button>`.
+Replies:
+**lisa implementation guidance:** In src/views/control-implementations/partials/ControlStatementMetadata.vue, preserve the previous visible button text by adding slot content to the volt Button: keep label="Edit Statement" if desired for compatibility, but render <Button ...>Edit</Button> so PrimeVue/volt displays 'Edit' as before. Do not change the edit emit, styling classes, TooltipTitle fields, or metadata layout.
+
+<!-- lisa-guidance-posted -->
+---
+Comment (src/views/control-implementations/partials/ControlStatementImplementation.vue:773):
+**[Low] Silent failure path when `localStatement.value?.uuid` is falsy**
+
+Old code at this guard called `showError.value = true` to give user feedback. New code silently returns with no toast and no inline error.
+
+In practice the path is unreachable (the `CreateByComponentForm` is nested inside `v-if="localStatement"` and a truthy-but-uuid-less statement would be invalid data), but the removal of the feedback signal is a regression in defensive coverage. Consider adding a fallback toast here so that if this edge case ever fires the user isn't left staring at a spinner.
+Replies:
+**lisa implementation guidance:** In src/views/control-implementations/partials/ControlStatementImplementation.vue inside createByComponent, split the initial guard so a missing newByComponent.value.componentUuid still returns quietly, but a missing localStatement.value?.uuid reports a defensive user-visible error before returning. Add a toast.add error for the missing statement UUID path with a clear summary/detail such as 'Missing Statement' and 'Create or reload the statement before adding a component.' Do not set creatingByComponent to true before this guard, do not change the duplicate-component warning, and do not alter createStatementByComponent payloads or success handling.
+
+<!-- lisa-guidance-posted -->
