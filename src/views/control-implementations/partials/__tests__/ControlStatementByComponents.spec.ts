@@ -50,17 +50,21 @@ describe('ControlStatementByComponents', () => {
   it('renders one StatementByComponent per item with dividers only between items', () => {
     const wrapper = mountComponent();
 
-    expect(wrapper.findAll('[data-test="statement-by-component"]')).toHaveLength(
-      2,
-    );
+    expect(
+      wrapper.findAll('[data-test="statement-by-component"]'),
+    ).toHaveLength(2);
     expect(wrapper.findAll('.h-0\\.5')).toHaveLength(1);
   });
 
   it('emits addComponent and createComponent from burger menu commands', async () => {
     const wrapper = mountComponent();
 
-    await wrapper.findAll('[data-test="burger-menu"] button')[0].trigger('click');
-    await wrapper.findAll('[data-test="burger-menu"] button')[1].trigger('click');
+    await wrapper
+      .findAll('[data-test="burger-menu"] button')[0]
+      .trigger('click');
+    await wrapper
+      .findAll('[data-test="burger-menu"] button')[1]
+      .trigger('click');
 
     expect(wrapper.emitted('addComponent')).toHaveLength(1);
     expect(wrapper.emitted('createComponent')).toHaveLength(1);

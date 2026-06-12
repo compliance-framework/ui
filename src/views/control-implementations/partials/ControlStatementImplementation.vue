@@ -769,7 +769,16 @@ async function updateByComponent(byComp: ByComponent) {
 
 async function createByComponent() {
   createByComponentError.value = '';
-  if (!newByComponent.value.componentUuid || !localStatement.value?.uuid) {
+  if (!newByComponent.value.componentUuid) {
+    return;
+  }
+  if (!localStatement.value?.uuid) {
+    toast.add({
+      severity: 'error',
+      summary: 'Missing Statement',
+      detail: 'Create or reload the statement before adding a component.',
+      life: 4000,
+    });
     return;
   }
   if (isSuggestionApplied(newByComponent.value.componentUuid)) {
@@ -806,15 +815,6 @@ async function createByComponent() {
       error instanceof Error
         ? error.message
         : 'Unexpected error creating a by-component.';
-    toast.add({
-      severity: 'error',
-      summary: 'Error Creating By-Component',
-      detail:
-        error instanceof Error
-          ? error.message
-          : 'Unexpected error creating a by-component.',
-      life: 3000,
-    });
   } finally {
     creatingByComponent.value = false;
   }
@@ -1101,15 +1101,6 @@ async function linkExistingDashboard() {
       error instanceof Error
         ? error.message
         : 'Unexpected error linking dashboard.';
-    toast.add({
-      severity: 'error',
-      summary: 'Error Linking Dashboard',
-      detail:
-        error instanceof Error
-          ? error.message
-          : 'Unexpected error linking dashboard.',
-      life: 3000,
-    });
   } finally {
     linkingDashboard.value = false;
   }
@@ -1413,15 +1404,6 @@ async function submitEvidenceLinking() {
       error instanceof Error
         ? error.message
         : 'Unexpected error creating evidence dashboard.';
-    toast.add({
-      severity: 'error',
-      summary: 'Error Creating Evidence Dashboard',
-      detail:
-        error instanceof Error
-          ? error.message
-          : 'Unexpected error creating evidence dashboard.',
-      life: 3000,
-    });
   } finally {
     creatingEvidenceDashboard.value = false;
   }

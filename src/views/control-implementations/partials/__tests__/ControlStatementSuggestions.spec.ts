@@ -31,7 +31,9 @@ const stubs = {
 
 describe('ControlStatementSuggestions', () => {
   function mountComponent(
-    props: Partial<InstanceType<typeof ControlStatementSuggestions>['$props']> = {},
+    props: Partial<
+      InstanceType<typeof ControlStatementSuggestions>['$props']
+    > = {},
   ) {
     return mount(ControlStatementSuggestions, {
       props: {
@@ -52,9 +54,9 @@ describe('ControlStatementSuggestions', () => {
   }
 
   it('renders loading, error, empty, and all-applied states', () => {
-    expect(
-      mountComponent({ suggestionsLoading: true }).text(),
-    ).toContain('Loading suggested components...');
+    expect(mountComponent({ suggestionsLoading: true }).text()).toContain(
+      'Loading suggested components...',
+    );
     expect(mountComponent({ suggestionsError: 'Failed' }).text()).toContain(
       'Failed to load suggestions.',
     );

@@ -61,6 +61,8 @@ const emit = defineEmits<{
       label="Edit Statement"
       class="text-blue-600 hover:text-blue-800 dark:text-blue-400 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
       @click="emit('edit')"
-    />
+    >
+      Edit
+    </Button>
   </div>
 </template>
