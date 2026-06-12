@@ -1,0 +1,44 @@
+lisa-addressed:
+---
+Comment (src/views/control-implementations/partials/ControlStatementSuggestions.vue:15):
+**Low: functions passed as props bypass Vue reactivity**
+
+`isSuggestionApplied`, `isSuggestionApplying`, and `formatRelevanceScore` are passed in as callable props. Vue doesn't track when these closures capture stale state, so a reactive change in the parent that affects these functions won't automatically re-render this component unless the functions themselves are recreated.
+
+More idiomatic fix:
+- Replace the two predicate props with derived data: `appliedUuids: Set<string>` and `applyingUuids: Set<string>` — the template can do `appliedUuids.has(suggestion.componentUuid)` directly.
+- Import `formatRelevanceScore` as a standalone util inside this file so it's not in the prop contract at all.
+
+This also makes the component easier to test in isolation (no need to pass mock functions).
+---
+Comment (src/views/control-implementations/__tests__/IndexView.spec.ts:184):
+**Low: Button stub fires click when disabled, testing the JS guard not the UI contract**
+
+The current stub emits `click` regardless of the `disabled` prop:
+```ts
+'<button :disabled="disabled" ... @click="$emit(\'click\', $event)">'
+```
+
+The real PrimeVue `Button` swallows click events when `disabled`. Because of this, the test at line 253–255 (`noImplementationButton?.trigger('click')`) is actually verifying that the JS guard in `openImplementationDrawer` (`if (!req) return`) prevents the drawer from opening — not that the disabled UI state does.
+
+To make the test accurately reflect browser behaviour, add a disabled check:
+```ts
+Button: {
+  props: ['disabled', 'ariaLabel', 'title', 'label'],
+  template: '<button :disabled="disabled" :aria-label="ariaLabel" :title="title" @click="!disabled && $emit(\'click\', $event)"><slot />{{ label }}</button>',
+},
+```
+
+With this change the test would still pass (because the button *is* disabled), and you'd be testing the right thing.
+---
+Comment (src/views/control-implementations/partials/ControlStatementByComponents.vue:27):
+**Low: no unit tests for this component or ControlStatementSuggestions.vue**
+
+Both are small presentational components with well-defined prop/event contracts — the cheapest kind to test. Worth adding at minimum:
+- `ControlStatementByComponents`: render with N items → N `StatementByComponent` rendered, dividers only between items; burger-menu emits `addComponent`/`createComponent`; save/delete events propagate up.
+- `ControlStatementSuggestions`: verify that a suggestion with `isSuggestionApplied = () => true` renders the button disabled; verify `applyAll` is emitted; verify error/loading/empty message states.
+
+These would also anchor the interface so regressions become visible when the props change.
+Implementation guidance: In src/views/control-implementations/partials/ControlStatementSuggestions.vue, remove the callable props isSuggestionApplied, isSuggestionApplying, and formatRelevanceScore from the prop contract. Replace them with appliedUuids and applyingUuids props typed as ReadonlySet<string> (or Set<string> if the test tooling rejects ReadonlySet) and update the template to use appliedUuids.has(suggestion.componentUuid) and applyingUuids.has(suggestion.componentUuid). Move the relevance formatter into this component as a local function with the same behavior currently in ControlStatementImplementation.vue: return an empty string unless the score is a valid number, otherwise score.toFixed(2). In src/views/control-implementations/partials/ControlStatementImplementation.vue, add computed Set values for applied suggestion UUIDs and applying suggestion UUIDs using the same sources as isSuggestionApplied/isSuggestionApplying, pass those sets to ControlStatementSuggestions, and keep the existing isSuggestionApplied function for parent-owned submit/apply logic that still needs it. Do not change API calls, payloads, toast behavior, drawer state, or the suggestion apply flow.
+Implementation guidance: In src/views/control-implementations/__tests__/IndexView.spec.ts, update the local Button stub so its click handler only emits when the disabled prop is falsy: @click="!disabled && $emit('click', $event)". Preserve the existing props ['disabled', 'ariaLabel', 'title', 'label'] and the existing slot/label rendering. This makes the 'disables the implementation eye button when a control has no implementation' test validate the disabled UI contract instead of relying only on the defensive openImplementationDrawer guard.
+Implementation guidance: Add focused unit tests under src/views/control-implementations/partials/__tests__/ for the two extracted presentational components. For ControlStatementByComponents.vue, mount it with stubs for TooltipTitle, BurgerMenu, and StatementByComponent; assert N byComponents render N StatementByComponent instances, divider elements appear only between items, invoking the BurgerMenu item commands emits addComponent and createComponent, and save/delete emitted by a StatementByComponent stub are re-emitted with the same ByComponent payload. For ControlStatementSuggestions.vue, mount it with volt Button and Message stubs that honor disabled click behavior; cover loading, error, empty, and all-suggestions-applied messages; verify applied/applying sets disable an individual suggestion button and show Added for applied suggestions; verify applyAll and applySuggestion emissions. Keep the tests aligned with the final prop API after addressing PRRT_kwDONe0Wms6JEr6_ if that fix is done first.
