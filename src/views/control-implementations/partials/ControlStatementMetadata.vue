@@ -10,6 +10,31 @@ defineProps<{
 const emit = defineEmits<{
   edit: [];
 }>();
+
+function formatProps(props: Statement['props']): string {
+  if (!props?.length) {
+    return 'None';
+  }
+
+  return props
+    .map((prop) => {
+      if (prop.name && prop.value) {
+        return `${prop.name}=${prop.value}`;
+      }
+      return prop.name || prop.value || 'Property';
+    })
+    .join(', ');
+}
+
+function formatLinks(links: Statement['links']): string {
+  if (!links?.length) {
+    return 'None';
+  }
+
+  return links
+    .map((link) => link.text || link.href || link.rel || 'Link')
+    .join(', ');
+}
 </script>
 
 <template>
@@ -44,7 +69,7 @@ const emit = defineEmits<{
         tooltip-key="statement.props"
         underline-class="text-sm font-medium text-gray-500 underline decoration-dotted cursor-help"
       />
-      <p class="text-sm">{{ statement.props || 'None' }}</p>
+      <p class="text-sm">{{ formatProps(statement.props) }}</p>
     </div>
     <div>
       <TooltipTitle
@@ -52,7 +77,7 @@ const emit = defineEmits<{
         tooltip-key="statement.links"
         underline-class="text-sm font-medium text-gray-500 underline decoration-dotted cursor-help"
       />
-      <p class="text-sm">{{ statement.links || 'None' }}</p>
+      <p class="text-sm">{{ formatLinks(statement.links) }}</p>
     </div>
   </div>
 

@@ -8,6 +8,11 @@ export const implementationStatusOptions = [
   { label: 'Not Applicable', value: 'not-applicable' },
 ] as const;
 
+export const implementationStatusOptionsWithNone = [
+  { label: 'No status', value: '' },
+  ...implementationStatusOptions,
+];
+
 export type ImplementationStatusState =
   (typeof implementationStatusOptions)[number]['value'];
 

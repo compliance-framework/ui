@@ -37,6 +37,7 @@ import ControlStatementByComponents from './ControlStatementByComponents.vue';
 import CreateByComponentForm from './CreateByComponentForm.vue';
 import DashboardLinkForm from './DashboardLinkForm.vue';
 import EvidenceDashboardForm from './EvidenceDashboardForm.vue';
+import type { LabelCondition, SearchableEvidence } from './form-options';
 import {
   buildApplySuggestionEndpoint,
   buildApplySuggestionsEndpoint,
@@ -49,7 +50,7 @@ import {
   type SystemComponentSuggestion,
 } from '@/views/control-implementations/partials/component-suggestions';
 import {
-  implementationStatusOptions,
+  implementationStatusOptionsWithNone,
   normalizeByComponentImplementationStatus,
 } from './implementation-status';
 
@@ -69,19 +70,10 @@ const evidenceDashboard = ref<{ name: string; filter: string }>({
   filter: '',
 });
 
-// Evidence selection state with searchText for filtering
-interface SearchableEvidence extends Evidence {
-  searchText: string;
-}
 const availableEvidence = ref<SearchableEvidence[]>([]);
 const selectedBaselineEvidence = ref<SearchableEvidence | null>(null);
 const evidenceLoading = ref(false);
 
-// Label query builder state
-interface LabelCondition {
-  name: string;
-  value: string;
-}
 const labelConditions = ref<LabelCondition[]>([]);
 const newLabelName = ref('');
 const newLabelValue = ref('');
@@ -275,10 +267,6 @@ const componentItems = computed(() => {
     };
   });
 });
-const componentStatusOptions = computed(() => [
-  { label: 'No status', value: '' },
-  ...implementationStatusOptions,
-]);
 const componentMetadataByUuid = computed(() => {
   return new Map(
     (components.value ?? []).map((component) => [
@@ -1454,7 +1442,7 @@ async function submitEvidenceLinking() {
         v-model:status-state="newByComponentStatusState"
         v-model:status-remarks="newByComponentStatusRemarks"
         :component-items="componentItems"
-        :status-options="componentStatusOptions"
+        :status-options="implementationStatusOptionsWithNone"
         :components-loading="componentsLoading"
         :is-submitting="creatingByComponent"
         :server-error="createByComponentError"

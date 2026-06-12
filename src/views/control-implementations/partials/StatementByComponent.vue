@@ -23,7 +23,7 @@ import {
 import RiskIndicatorBadge from './RiskIndicatorBadge.vue';
 import {
   implementationStatusLabel,
-  implementationStatusOptions,
+  implementationStatusOptionsWithNone,
   normalizeByComponentImplementationStatus,
 } from './implementation-status';
 
@@ -96,10 +96,10 @@ const statusState = computed({
   },
 });
 
-const statusOptions = computed(() => [
-  { label: 'No status', value: '' },
-  ...implementationStatusOptions,
-]);
+const statusInputId = computed(() => `by-component-status-${byComponent.uuid}`);
+const statusRemarksInputId = computed(
+  () => `by-component-status-remarks-${byComponent.uuid}`,
+);
 
 const statusRemarks = computed({
   get: () => localComponent.value.implementationStatus?.remarks ?? '',
@@ -265,20 +265,20 @@ function openRisksForControl() {
       />
       <div class="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
         <div>
-          <Label for="by-component-status">Implementation Status</Label>
+          <Label :for="statusInputId">Implementation Status</Label>
           <Select
-            id="by-component-status"
+            :id="statusInputId"
             v-model="statusState"
-            :options="statusOptions"
+            :options="implementationStatusOptionsWithNone"
             optionLabel="label"
             optionValue="value"
             class="w-full"
           />
         </div>
         <div>
-          <Label for="by-component-status-remarks">Status Remarks</Label>
+          <Label :for="statusRemarksInputId">Status Remarks</Label>
           <Textarea
-            id="by-component-status-remarks"
+            :id="statusRemarksInputId"
             v-model="statusRemarks"
             autoResize
             class="resize-none w-full"

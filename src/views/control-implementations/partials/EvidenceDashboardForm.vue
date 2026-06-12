@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { reactive, watch } from 'vue';
-import type { Evidence, EvidenceLabel } from '@/stores/evidence';
+import type { EvidenceLabel } from '@/stores/evidence';
 import Label from '@/volt/Label.vue';
 import InputText from '@/volt/InputText.vue';
 import Select from '@/volt/Select.vue';
@@ -8,15 +8,7 @@ import Message from '@/volt/Message.vue';
 import Button from '@/volt/Button.vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
-
-interface SearchableEvidence extends Evidence {
-  searchText: string;
-}
-
-interface LabelCondition {
-  name: string;
-  value: string;
-}
+import type { LabelCondition, SearchableEvidence } from './form-options';
 
 defineProps<{
   uniqueEvidenceTitles: SearchableEvidence[];
