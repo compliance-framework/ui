@@ -1,5 +1,10 @@
 <template>
-  <h4 v-if="loading" class="text-gray-600">Loading ...</h4>
+  <Message v-if="loading" severity="info" variant="simple">
+    <span class="flex items-center gap-2">
+      <i class="pi pi-spin pi-spinner"></i>
+      Loading controls...
+    </span>
+  </Message>
 
   <Message
     v-else-if="!systemStore.system.securityPlan"
@@ -62,8 +67,15 @@
       />
     </div>
 
-    <div v-if="catalogLoading">Loading Catalog ...</div>
-    <div v-else-if="!profilesResolved">No Catalog</div>
+    <Message v-if="catalogLoading" severity="info" variant="simple">
+      <span class="flex items-center gap-2">
+        <i class="pi pi-spin pi-spinner"></i>
+        Loading catalog...
+      </span>
+    </Message>
+    <Message v-else-if="!profilesResolved" severity="secondary">
+      No catalog is available for the linked profile.
+    </Message>
     <div v-else>
       <Tree
         v-model:expandedKeys="expandedKeys"
@@ -86,6 +98,17 @@
               }}</Badge>
               <Button
                 variant="text"
+                :disabled="!hasControlImplementation(slotProps.node.data.id)"
+                :aria-label="
+                  hasControlImplementation(slotProps.node.data.id)
+                    ? 'View implementation'
+                    : 'No implementation yet'
+                "
+                :title="
+                  hasControlImplementation(slotProps.node.data.id)
+                    ? 'View implementation'
+                    : 'No implementation yet'
+                "
                 @click="
                   openImplementationDrawer(
                     controlImplementations[slotProps.node.data.id],
@@ -802,7 +825,14 @@ watch(profileBindings, async () => {
   }
 });
 
-function openImplementationDrawer(req: ImplementedRequirement) {
+function hasControlImplementation(controlId?: string): boolean {
+  return !!(controlId && controlImplementations.value[controlId]);
+}
+
+function openImplementationDrawer(req: ImplementedRequirement | undefined) {
+  if (!req) {
+    return;
+  }
   uiStore.setControlImplementationDrawerOpen(true);
   uiStore.setControlImplementationSelectedRequirementId(req.uuid);
   selectedImplementedRequirement.value = req;

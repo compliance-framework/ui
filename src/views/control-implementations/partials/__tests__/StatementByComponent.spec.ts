@@ -46,18 +46,30 @@ const stubs = {
     template:
       '<textarea :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />',
   },
+  Select: {
+    props: ['modelValue', 'options', 'optionValue', 'optionLabel'],
+    emits: ['update:modelValue'],
+    template:
+      '<select :value="modelValue" @change="$emit(\'update:modelValue\', $event.target.value)"><option v-for="option in options" :key="option.value" :value="option.value">{{ option.label }}</option></select>',
+  },
+  Label: {
+    template: '<label><slot /></label>',
+  },
+  Badge: {
+    template: '<span><slot /></span>',
+  },
+  SecondaryButton: {
+    template: '<button type="button"><slot /></button>',
+  },
+  PrimaryButton: {
+    template: '<button type="button"><slot /></button>',
+  },
   RiskIndicatorBadge: {
     template: '<span />',
   },
   VueMarkdown: {
     props: ['source'],
     template: '<span>{{ source }}</span>',
-  },
-  'secondary-button': {
-    template: '<button><slot /></button>',
-  },
-  'primary-button': {
-    template: '<button><slot /></button>',
   },
 };
 
@@ -126,5 +138,40 @@ describe('control implementation StatementByComponent', () => {
       },
     });
     expect(wrapper.emitted('save')).toBeUndefined();
+  });
+
+  it('saves implementation status and remarks with the same payload shape', async () => {
+    activePlan.value = { uuid: 'ssp-1' };
+    const editableByComponent = {
+      uuid: 'by-component-1',
+      componentUuid: 'component-1',
+      description: 'Original description',
+    } as ByComponent;
+
+    const wrapper = mount(StatementByComponent, {
+      props: {
+        byComponent: editableByComponent,
+      },
+      global: { stubs },
+    });
+
+    await wrapper.find('button').trigger('click');
+    await wrapper.find('select').setValue('planned');
+    await wrapper.findAll('textarea')[1].setValue('Status remarks');
+    const saveButton = wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Save');
+    expect(saveButton).toBeDefined();
+    await saveButton?.trigger('click');
+
+    expect(wrapper.emitted('save')?.[0]?.[0]).toEqual({
+      uuid: 'by-component-1',
+      componentUuid: 'component-1',
+      description: 'Original description',
+      implementationStatus: {
+        state: 'planned',
+        remarks: 'Status remarks',
+      },
+    });
   });
 });
