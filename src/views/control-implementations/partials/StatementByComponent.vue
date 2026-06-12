@@ -4,6 +4,11 @@ import { useRouter } from 'vue-router';
 import { useSystemStore } from '@/stores/system.ts';
 import BurgerMenu from '@/components/BurgerMenu.vue';
 import Textarea from '@/volt/Textarea.vue';
+import Label from '@/volt/Label.vue';
+import Select from '@/volt/Select.vue';
+import Badge from '@/volt/Badge.vue';
+import PrimaryButton from '@/volt/PrimaryButton.vue';
+import SecondaryButton from '@/volt/SecondaryButton.vue';
 import { useToggle } from '@/composables/useToggle';
 import { useDataApi } from '@/composables/axios';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
@@ -18,7 +23,7 @@ import {
 import RiskIndicatorBadge from './RiskIndicatorBadge.vue';
 import {
   implementationStatusLabel,
-  implementationStatusOptions,
+  implementationStatusOptionsWithNone,
   normalizeByComponentImplementationStatus,
 } from './implementation-status';
 
@@ -90,6 +95,11 @@ const statusState = computed({
     };
   },
 });
+
+const statusInputId = computed(() => `by-component-status-${byComponent.uuid}`);
+const statusRemarksInputId = computed(
+  () => `by-component-status-remarks-${byComponent.uuid}`,
+);
 
 const statusRemarks = computed({
   get: () => localComponent.value.implementationStatus?.remarks ?? '',
@@ -255,30 +265,20 @@ function openRisksForControl() {
       />
       <div class="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
         <div>
-          <label
-            class="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-300"
-            >Implementation Status</label
-          >
-          <select
+          <Label :for="statusInputId">Implementation Status</Label>
+          <Select
+            :id="statusInputId"
             v-model="statusState"
-            class="w-full rounded-md border border-gray-300 bg-white p-2 text-sm text-gray-900 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200"
-          >
-            <option value="">No status</option>
-            <option
-              v-for="option in implementationStatusOptions"
-              :key="option.value"
-              :value="option.value"
-            >
-              {{ option.label }}
-            </option>
-          </select>
+            :options="implementationStatusOptionsWithNone"
+            optionLabel="label"
+            optionValue="value"
+            class="w-full"
+          />
         </div>
         <div>
-          <label
-            class="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-300"
-            >Status Remarks</label
-          >
+          <Label :for="statusRemarksInputId">Status Remarks</Label>
           <Textarea
+            :id="statusRemarksInputId"
             v-model="statusRemarks"
             autoResize
             class="resize-none w-full"
@@ -288,10 +288,14 @@ function openRisksForControl() {
         </div>
       </div>
       <div class="flex gap-x-2">
-        <secondary-button @click="cancel">Cancel</secondary-button>
-        <primary-button @click="save" v-tooltip="'ctrl + enter to save'"
-          >Save</primary-button
+        <SecondaryButton type="button" @click="cancel">Cancel</SecondaryButton>
+        <PrimaryButton
+          type="button"
+          @click="save"
+          v-tooltip="'ctrl + enter to save'"
         >
+          Save
+        </PrimaryButton>
       </div>
     </template>
   </div>
@@ -317,9 +321,7 @@ function openRisksForControl() {
   <!-- Export Information -->
   <div v-if="byComponent.export" class="mt-2 text-xs">
     <div v-if="byComponent.export.provided?.length" class="mb-1">
-      <span class="font-medium text-green-700 dark:text-green-400"
-        >Provided:</span
-      >
+      <Badge severity="success">Provided</Badge>
       <div class="ml-2">
         <div
           v-for="provided in byComponent.export.provided"
@@ -331,9 +333,7 @@ function openRisksForControl() {
       </div>
     </div>
     <div v-if="byComponent.export.responsibilities?.length" class="mb-1">
-      <span class="font-medium text-orange-700 dark:text-orange-400"
-        >Responsibilities:</span
-      >
+      <Badge severity="warn">Responsibilities</Badge>
       <div class="ml-2">
         <div
           v-for="responsibility in byComponent.export.responsibilities"
@@ -348,7 +348,7 @@ function openRisksForControl() {
 
   <!-- Satisfied Requirements -->
   <div v-if="byComponent.satisfied?.length" class="mt-2 text-xs">
-    <span class="font-medium text-blue-700 dark:text-blue-400">Satisfied:</span>
+    <Badge severity="info">Satisfied</Badge>
     <div class="ml-2">
       <div
         v-for="satisfied in byComponent.satisfied"
@@ -362,9 +362,7 @@ function openRisksForControl() {
 
   <!-- Inherited Requirements -->
   <div v-if="byComponent.inherited?.length" class="mt-2 text-xs">
-    <span class="font-medium text-purple-700 dark:text-purple-400"
-      >Inherited:</span
-    >
+    <Badge severity="contrast">Inherited</Badge>
     <div class="ml-2">
       <div
         v-for="inherited in byComponent.inherited"

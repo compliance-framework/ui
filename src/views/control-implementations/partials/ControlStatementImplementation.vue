@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { v4 as uuidv4 } from 'uuid';
-import StatementByComponent from '@/views/control-implementations/partials/StatementByComponent.vue';
 import type {
   ByComponent,
   ControlImplementation,
@@ -13,12 +12,8 @@ import { computed, nextTick, onMounted, ref, toValue, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { FilterParser } from '@/parsers/labelfilter.ts';
 import type { Dashboard } from '@/stores/filters.ts';
-import FormInput from '@/components/forms/FormInput.vue';
-import type { Evidence, EvidenceLabel } from '@/stores/evidence.ts';
+import type { Evidence } from '@/stores/evidence.ts';
 import { useSystemStore } from '@/stores/system.ts';
-import Select from '@/volt/Select.vue';
-import Textarea from '@/volt/Textarea.vue';
-import { useCloned } from '@vueuse/core';
 import BurgerMenu from '@/components/BurgerMenu.vue';
 import { useToggle } from '@/composables/useToggle';
 import {
@@ -34,6 +29,14 @@ import StatementEditForm from '@/components/system-security-plans/StatementEditF
 import SystemImplementationComponentCreateForm from '@/components/system-security-plans/SystemImplementationComponentCreateForm.vue';
 import DashboardEvidenceCounter from '@/views/control-implementations/partials/DashboardEvidenceCounter.vue';
 import TooltipTitle from '@/components/TooltipTitle.vue';
+import Message from '@/volt/Message.vue';
+import ControlStatementMetadata from './ControlStatementMetadata.vue';
+import ControlStatementSuggestions from './ControlStatementSuggestions.vue';
+import ControlStatementByComponents from './ControlStatementByComponents.vue';
+import CreateByComponentForm from './CreateByComponentForm.vue';
+import DashboardLinkForm from './DashboardLinkForm.vue';
+import EvidenceDashboardForm from './EvidenceDashboardForm.vue';
+import type { LabelCondition, SearchableEvidence } from './form-options';
 import {
   buildApplySuggestionEndpoint,
   buildApplySuggestionsEndpoint,
@@ -46,7 +49,7 @@ import {
   type SystemComponentSuggestion,
 } from '@/views/control-implementations/partials/component-suggestions';
 import {
-  implementationStatusOptions,
+  implementationStatusOptionsWithNone,
   normalizeByComponentImplementationStatus,
 } from './implementation-status';
 
@@ -54,8 +57,6 @@ const { system } = useSystemStore();
 const toast = useToast();
 const router = useRouter();
 const axios = useAuthenticatedInstance();
-
-const showError = ref(false);
 
 const showCreateStatementModal = ref(false);
 const showEditStatementModal = ref(false);
@@ -68,19 +69,10 @@ const evidenceDashboard = ref<{ name: string; filter: string }>({
   filter: '',
 });
 
-// Evidence selection state with searchText for filtering
-interface SearchableEvidence extends Evidence {
-  searchText: string;
-}
 const availableEvidence = ref<SearchableEvidence[]>([]);
 const selectedBaselineEvidence = ref<SearchableEvidence | null>(null);
 const evidenceLoading = ref(false);
 
-// Label query builder state
-interface LabelCondition {
-  name: string;
-  value: string;
-}
 const labelConditions = ref<LabelCondition[]>([]);
 const newLabelName = ref('');
 const newLabelValue = ref('');
@@ -98,6 +90,12 @@ const selectedDashboardToLink = ref<DashboardWithControls | null>(null);
 
 const { value: showCreateComponentForm, set: setCreateComponentForm } =
   useToggle(false);
+const createByComponentError = ref('');
+const creatingByComponent = ref(false);
+const linkDashboardError = ref('');
+const linkingDashboard = ref(false);
+const createEvidenceDashboardError = ref('');
+const creatingEvidenceDashboard = ref(false);
 
 const route = useRoute();
 
@@ -305,6 +303,16 @@ const pinnedAppliedSuggestionUuidSet = computed(
   () =>
     new Set(pinnedAppliedSuggestions.value.map((item) => item.componentUuid)),
 );
+const appliedSuggestionUuids = computed(
+  () =>
+    new Set([
+      ...existingComponentUuidSet.value,
+      ...pinnedAppliedSuggestionUuidSet.value,
+    ]),
+);
+const applyingSuggestionUuids = computed(
+  () => new Set(applyingSuggestedComponentUuids.value),
+);
 const unappliedSuggestions = computed(() =>
   getUnappliedSuggestions(
     localStatement.value?.byComponents,
@@ -378,10 +386,10 @@ const newByComponentStatusRemarks = computed({
     };
   },
 });
-const selectedComponent = ref();
+const selectedComponent = ref<{ name?: string; value: string } | null>(null);
 watch(selectedComponent, () => {
   // When the selected component changes, update the model
-  newByComponent.value.componentUuid = selectedComponent.value?.value;
+  newByComponent.value.componentUuid = selectedComponent.value?.value ?? '';
 });
 
 onMounted(() => {
@@ -419,17 +427,6 @@ function isSuggestionApplied(componentUuid: string): boolean {
     existingComponentUuidSet.value.has(componentUuid) ||
     pinnedAppliedSuggestionUuidSet.value.has(componentUuid)
   );
-}
-
-function isSuggestionApplying(componentUuid: string): boolean {
-  return applyingSuggestedComponentUuids.value.includes(componentUuid);
-}
-
-function formatRelevanceScore(score: number | undefined): string {
-  if (typeof score !== 'number' || Number.isNaN(score)) {
-    return '';
-  }
-  return score.toFixed(2);
 }
 
 function setSuggestionApplying(componentUuid: string, applying: boolean) {
@@ -681,7 +678,7 @@ async function syncStatementAfterSuggestionApply(options?: {
 
 function resetCreateComponentForm() {
   setCreateComponentForm(false);
-  showError.value = false;
+  createByComponentError.value = '';
   selectedComponent.value = null;
 
   newByComponent.value = buildNewByComponent();
@@ -702,22 +699,22 @@ async function deleteByComponent(byComp: ByComponent) {
   if (!statementUuid) {
     return;
   }
-  const updatedStatement = useCloned(localStatement).cloned;
-
-  if (!updatedStatement.value) {
+  if (!localStatement.value) {
     console.error('No statement defined');
     return;
   }
 
-  updatedStatement.value.byComponents =
-    updatedStatement.value.byComponents?.filter(
+  const updatedStatement: Statement = {
+    ...localStatement.value,
+    byComponents: [...(localStatement.value.byComponents ?? [])].filter(
       (comp: ByComponent) => byComp.uuid !== comp.uuid,
-    );
+    ),
+  };
   try {
     await executeDelete(
       `${buildByComponentsEndpoint(sspId, implementation.uuid, statementUuid)}/${byComp.uuid}`,
     );
-    localStatement.value = updatedStatement.value;
+    localStatement.value = updatedStatement;
     setCreateComponentForm(false);
     emit('updated', localStatement.value);
     newByComponent.value = buildNewByComponent();
@@ -758,12 +755,20 @@ async function updateByComponent(byComp: ByComponent) {
 }
 
 async function createByComponent() {
-  if (!newByComponent.value.componentUuid || !localStatement.value?.uuid) {
-    showError.value = true;
+  createByComponentError.value = '';
+  if (!newByComponent.value.componentUuid) {
+    return;
+  }
+  if (!localStatement.value?.uuid) {
+    toast.add({
+      severity: 'error',
+      summary: 'Missing Statement',
+      detail: 'Create or reload the statement before adding a component.',
+      life: 4000,
+    });
     return;
   }
   if (isSuggestionApplied(newByComponent.value.componentUuid)) {
-    showError.value = false;
     toast.add({
       severity: 'warn',
       summary: 'Component Already Linked',
@@ -773,6 +778,7 @@ async function createByComponent() {
     });
     return;
   }
+  creatingByComponent.value = true;
   try {
     const created = await createStatementByComponent(
       newByComponent.value.componentUuid,
@@ -792,15 +798,12 @@ async function createByComponent() {
     emit('updated', localStatement.value);
   } catch (error) {
     console.error(error);
-    toast.add({
-      severity: 'error',
-      summary: 'Error Creating By-Component',
-      detail:
-        error instanceof Error
-          ? error.message
-          : 'Unexpected error creating a by-component.',
-      life: 3000,
-    });
+    createByComponentError.value =
+      error instanceof Error
+        ? error.message
+        : 'Unexpected error creating a by-component.';
+  } finally {
+    creatingByComponent.value = false;
   }
 }
 
@@ -948,9 +951,7 @@ function updateStatement(updatedStatement: Statement) {
 }
 
 function handleComponentCreated(newComponent: SystemComponent) {
-  if (components.value) {
-    components.value.push(newComponent);
-  }
+  components.value = [...(components.value ?? []), newComponent];
   showCreateComponentModal.value = false;
   nextTick(() => {
     const found = componentItems.value.find(
@@ -965,6 +966,7 @@ function handleComponentCreated(newComponent: SystemComponent) {
 
 function resetEvidenceLinkingForm() {
   setEvidenceLinkingForm(false);
+  createEvidenceDashboardError.value = '';
   evidenceDashboard.value = { name: '', filter: '' };
   selectedBaselineEvidence.value = null;
   labelConditions.value = [];
@@ -1048,6 +1050,7 @@ const availableDashboardsToLink = computed(() => {
 });
 
 async function linkExistingDashboard() {
+  linkDashboardError.value = '';
   if (!selectedDashboardToLink.value) return;
 
   const dashboard = selectedDashboardToLink.value;
@@ -1057,6 +1060,7 @@ async function linkExistingDashboard() {
   const existingControlIds = dashboard.controls?.map((c) => c.id) || [];
   const newControlIds = [...existingControlIds, controlId];
 
+  linkingDashboard.value = true;
   try {
     await updateDashboard(`/api/filters/${dashboard.id}`, {
       data: {
@@ -1078,15 +1082,12 @@ async function linkExistingDashboard() {
     setLinkExistingForm(false);
   } catch (error) {
     console.error(error);
-    toast.add({
-      severity: 'error',
-      summary: 'Error Linking Dashboard',
-      detail:
-        error instanceof Error
-          ? error.message
-          : 'Unexpected error linking dashboard.',
-      life: 3000,
-    });
+    linkDashboardError.value =
+      error instanceof Error
+        ? error.message
+        : 'Unexpected error linking dashboard.';
+  } finally {
+    linkingDashboard.value = false;
   }
 }
 
@@ -1325,6 +1326,7 @@ watch(showLinkExistingForm, async (show) => {
 });
 
 async function submitEvidenceLinking() {
+  createEvidenceDashboardError.value = '';
   if (!evidenceDashboard.value.name || !localStatement.value) {
     toast.add({
       severity: 'error',
@@ -1363,6 +1365,7 @@ async function submitEvidenceLinking() {
     });
     return;
   }
+  creatingEvidenceDashboard.value = true;
   try {
     await createEvidenceDashboard({
       data: {
@@ -1382,15 +1385,12 @@ async function submitEvidenceLinking() {
     resetEvidenceLinkingForm();
   } catch (error) {
     console.error(error);
-    toast.add({
-      severity: 'error',
-      summary: 'Error Creating Evidence Dashboard',
-      detail:
-        error instanceof Error
-          ? error.message
-          : 'Unexpected error creating evidence dashboard.',
-      life: 3000,
-    });
+    createEvidenceDashboardError.value =
+      error instanceof Error
+        ? error.message
+        : 'Unexpected error creating evidence dashboard.';
+  } finally {
+    creatingEvidenceDashboard.value = false;
   }
 }
 </script>
@@ -1398,271 +1398,55 @@ async function submitEvidenceLinking() {
 <template>
   <div :class="createOnlySection ? '' : 'pb-24'">
     <div v-if="localStatement">
-      <div
+      <ControlStatementMetadata
         v-if="showMetadataSection"
-        class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4"
-      >
-        <div>
-          <TooltipTitle
-            text="Statement ID"
-            tooltip-key="statement.id"
-            underline-class="text-sm font-medium text-gray-500 underline decoration-dotted cursor-help"
-          />
-          <p class="text-sm">{{ localStatement?.statementId }}</p>
-        </div>
-        <div>
-          <TooltipTitle
-            text="Remarks"
-            tooltip-key="statement.remarks"
-            underline-class="text-sm font-medium text-gray-500 underline decoration-dotted cursor-help"
-          />
-          <p class="text-sm">{{ localStatement?.remarks || 'None' }}</p>
-        </div>
-        <div>
-          <TooltipTitle
-            text="Description"
-            tooltip-key="statement.description"
-            underline-class="text-sm font-medium text-gray-500 underline decoration-dotted cursor-help"
-          />
-          <p class="text-sm">{{ localStatement?.description || 'None' }}</p>
-        </div>
-        <div>
-          <TooltipTitle
-            text="Props"
-            tooltip-key="statement.props"
-            underline-class="text-sm font-medium text-gray-500 underline decoration-dotted cursor-help"
-          />
-          <p class="text-sm">{{ localStatement?.props || 'None' }}</p>
-        </div>
-        <div>
-          <TooltipTitle
-            text="Links"
-            tooltip-key="statement.links"
-            underline-class="text-sm font-medium text-gray-500 underline decoration-dotted cursor-help"
-          />
-          <p class="text-sm">{{ localStatement?.links || 'None' }}</p>
-        </div>
-      </div>
+        :statement="localStatement"
+        @edit="showEditStatementModal = true"
+      />
 
-      <div v-if="showMetadataSection" class="flex items-center mb-4 gap-x-4">
-        <Button
-          label="Edit Statement"
-          @click="showEditStatementModal = true"
-          class="text-blue-600 hover:text-blue-800 dark:text-blue-400 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          Edit
-        </Button>
-      </div>
+      <ControlStatementSuggestions
+        v-if="showComponentsSection"
+        :statement-ready="!!localStatement"
+        :ssp-ready="!!resolvedSspId"
+        :suggestions-loading="suggestionsLoading"
+        :suggestions-error="suggestionsError"
+        :displayed-suggestions="displayedSuggestions"
+        :unapplied-suggestions="unappliedSuggestions"
+        :all-suggestions-applied="allSuggestionsApplied"
+        :applying-all-suggestions="applyingAllSuggestions"
+        :applied-uuids="appliedSuggestionUuids"
+        :applying-uuids="applyingSuggestionUuids"
+        @apply-all="applyAllSuggestedComponents"
+        @apply-suggestion="applySuggestedComponent"
+      />
 
-      <div v-if="showComponentsSection" class="mb-6">
-        <div class="flex items-center justify-between gap-4 mb-3">
-          <h4 class="m-0 font-medium text-base">Suggested Components</h4>
-          <Button
-            type="button"
-            severity="secondary"
-            :disabled="
-              !localStatement ||
-              !resolvedSspId ||
-              applyingAllSuggestions ||
-              suggestionsLoading ||
-              unappliedSuggestions.length === 0
-            "
-            :label="
-              applyingAllSuggestions ? 'Applying...' : 'Apply All Suggestions'
-            "
-            @click="applyAllSuggestedComponents"
-          />
-        </div>
+      <ControlStatementByComponents
+        v-if="showComponentsSection && localStatement"
+        :by-components="localStatement.byComponents || []"
+        :control-id="implementation.controlId"
+        :ssp-risks="sspRisks || []"
+        :risk-fetch-limit="RISK_FETCH_LIMIT"
+        @add-component="setCreateComponentForm(true)"
+        @create-component="showCreateComponentModal = true"
+        @save="updateByComponent"
+        @delete="deleteByComponent"
+      />
 
-        <p v-if="suggestionsLoading" class="text-sm text-gray-500">
-          Loading suggested components...
-        </p>
-        <p v-else-if="suggestionsError" class="text-sm text-red-500">
-          Failed to load suggestions. You can still add components manually.
-        </p>
-        <p
-          v-else-if="displayedSuggestions.length === 0"
-          class="text-sm text-gray-500"
-        >
-          No suggestions available for this statement.
-        </p>
-        <div v-else class="space-y-3">
-          <div class="flex flex-wrap gap-2">
-            <Button
-              v-for="suggestion in displayedSuggestions"
-              :key="suggestion.componentUuid"
-              type="button"
-              size="small"
-              class="!text-left"
-              severity="secondary"
-              :outlined="!isSuggestionApplied(suggestion.componentUuid)"
-              :disabled="
-                !localStatement ||
-                !resolvedSspId ||
-                isSuggestionApplied(suggestion.componentUuid) ||
-                isSuggestionApplying(suggestion.componentUuid) ||
-                applyingAllSuggestions
-              "
-              @click="applySuggestedComponent(suggestion)"
-            >
-              <div class="flex flex-col items-start gap-1">
-                <span class="text-xs font-semibold">{{
-                  suggestion.title
-                }}</span>
-                <span class="text-xs text-gray-500">{{ suggestion.type }}</span>
-                <span
-                  v-if="formatRelevanceScore(suggestion.relevanceScore)"
-                  class="text-xs text-gray-500"
-                >
-                  Relevance:
-                  {{ formatRelevanceScore(suggestion.relevanceScore) }}
-                </span>
-                <span
-                  v-if="isSuggestionApplied(suggestion.componentUuid)"
-                  class="text-xs text-green-600"
-                >
-                  Added
-                </span>
-              </div>
-            </Button>
-          </div>
-
-          <p v-if="allSuggestionsApplied" class="text-sm text-green-600">
-            All suggestions applied.
-          </p>
-        </div>
-      </div>
-
-      <div v-if="showComponentsSection" class="flex items-center mb-4 gap-x-4">
-        <TooltipTitle
-          text="Components"
-          tooltip-key="control.implementation.components"
-          position="bottom"
-          underline-class="font-medium text-xl underline decoration-dotted cursor-help"
-        />
-        <BurgerMenu
-          :items="[
-            {
-              label: 'Add Component',
-              command: () => {
-                setCreateComponentForm(true);
-              },
-            },
-            {
-              label: 'Create New Component',
-              command: () => {
-                showCreateComponentModal = true;
-              },
-            },
-          ]"
-        />
-      </div>
-      <template v-if="showComponentsSection && localStatement">
-        <div
-          v-for="(byComponent, index) in localStatement.byComponents || []"
-          :key="byComponent.uuid"
-        >
-          <div
-            class="h-0.5 w-full bg-gray-200 dark:bg-slate-700 my-4"
-            v-if="index !== 0"
-          ></div>
-          <StatementByComponent
-            @save="updateByComponent"
-            @delete="deleteByComponent"
-            :by-component="byComponent"
-            :control-id="implementation.controlId"
-            :ssp-risks="sspRisks || []"
-            :risk-fetch-limit="RISK_FETCH_LIMIT"
-          />
-        </div>
-      </template>
-
-      <form
-        @submit.prevent="createByComponent"
+      <CreateByComponentForm
         v-if="showComponentsSection && showCreateComponentForm"
-      >
-        <div class="h-0.5 dark:bg-slate-800 bg-gray-400 w-full my-4"></div>
-        <div class="flex justify-between items-center mb-4">
-          <h4 class="m-0">New Component Implementation</h4>
-          <Button
-            label="Create New"
-            class="!text-xs !py-1 !px-2 !text-blue-600 hover:!text-blue-800 dark:!text-blue-400"
-            severity="secondary"
-            text
-            @click="showCreateComponentModal = true"
-          />
-        </div>
-        <div class="mb-2">
-          <Select
-            placeholder="Select a component"
-            :loading="componentsLoading"
-            checkmark
-            class="w-full"
-            v-model="selectedComponent"
-            :options="componentItems"
-            optionLabel="name"
-            v-on:update:model-value="showError = false"
-          />
-          <small v-if="showError" class="p-error" style="color: red">
-            Please select a valid component.
-          </small>
-        </div>
-
-        <div class="mb-2">
-          <Textarea
-            v-model="newByComponent.description"
-            rows="5"
-            cols="30"
-            class="resize-none w-full"
-            placeholder="Description"
-            @keyup.ctrl.enter="createByComponent"
-          />
-        </div>
-        <div class="mb-2 grid grid-cols-1 gap-3 md:grid-cols-2">
-          <div>
-            <label
-              class="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-300"
-              >Implementation Status</label
-            >
-            <select
-              v-model="newByComponentStatusState"
-              class="w-full rounded-md border border-gray-300 bg-white p-2 text-sm text-gray-900 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200"
-            >
-              <option value="">No status</option>
-              <option
-                v-for="option in implementationStatusOptions"
-                :key="option.value"
-                :value="option.value"
-              >
-                {{ option.label }}
-              </option>
-            </select>
-          </div>
-          <div>
-            <label
-              class="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-300"
-              >Status Remarks</label
-            >
-            <Textarea
-              v-model="newByComponentStatusRemarks"
-              rows="2"
-              class="resize-none w-full"
-              :disabled="!newByComponentStatusState"
-              placeholder="Implementation status remarks"
-            />
-          </div>
-        </div>
-        <div class="text-right">
-          <secondary-button @click="resetCreateComponentForm"
-            >Cancel</secondary-button
-          >
-          <primary-button
-            type="submit"
-            v-tooltip.bottom="'ctrl + enter to create'"
-            >Create</primary-button
-          >
-        </div>
-      </form>
+        v-model:selected-component="selectedComponent"
+        v-model:description="newByComponent.description"
+        v-model:status-state="newByComponentStatusState"
+        v-model:status-remarks="newByComponentStatusRemarks"
+        :component-items="componentItems"
+        :status-options="implementationStatusOptionsWithNone"
+        :components-loading="componentsLoading"
+        :is-submitting="creatingByComponent"
+        :server-error="createByComponentError"
+        @submit="createByComponent"
+        @cancel="resetCreateComponentForm"
+        @create-component="showCreateComponentModal = true"
+      />
 
       <!-- Evidence Linking Section -->
       <div v-if="showEvidenceSection" class="mt-8">
@@ -1731,191 +1515,56 @@ async function submitEvidenceLinking() {
             </div>
           </div>
         </div>
-        <div v-else-if="dashboardsLoading" class="mb-6 text-sm text-gray-500">
-          Loading dashboards...
-        </div>
+        <Message v-else-if="dashboardsLoading" severity="info" variant="simple">
+          <span class="flex items-center gap-2">
+            <i class="pi pi-spin pi-spinner"></i>
+            Loading dashboards...
+          </span>
+        </Message>
         <div
           v-else-if="
             showEvidenceLinkingForm === false && showLinkExistingForm === false
           "
-          class="mb-6 text-sm text-gray-500"
+          class="mb-6"
         >
-          No dashboards linked to this control yet.
+          <Message severity="secondary">
+            No dashboards linked to this control yet.
+          </Message>
         </div>
 
-        <!-- Link Existing Dashboard Form -->
-        <form
-          @submit.prevent="linkExistingDashboard"
+        <DashboardLinkForm
           v-if="showLinkExistingForm"
-        >
-          <div class="h-0.5 dark:bg-slate-800 bg-gray-400 w-full my-4"></div>
-          <div class="flex justify-between items-center mb-4">
-            <h4 class="m-0">Link Existing Dashboard</h4>
-          </div>
-          <div class="mb-4">
-            <label class="inline-block pb-2 text-sm font-medium"
-              >Select Dashboard</label
-            >
-            <Select
-              v-model="selectedDashboardToLink"
-              :options="availableDashboardsToLink"
-              optionLabel="name"
-              filter
-              placeholder="Select a dashboard to link..."
-              class="w-full"
-            />
-          </div>
-          <div class="text-right">
-            <secondary-button
-              @click="
-                setLinkExistingForm(false);
-                selectedDashboardToLink = null;
-              "
-              >Cancel</secondary-button
-            >
-            <primary-button type="submit" :disabled="!selectedDashboardToLink"
-              >Link Dashboard</primary-button
-            >
-          </div>
-        </form>
+          v-model:selected-dashboard="selectedDashboardToLink"
+          :dashboards="availableDashboardsToLink"
+          :is-submitting="linkingDashboard"
+          :server-error="linkDashboardError"
+          @submit="linkExistingDashboard"
+          @cancel="
+            setLinkExistingForm(false);
+            selectedDashboardToLink = null;
+            linkDashboardError = '';
+          "
+        />
 
-        <!-- New Dashboard Form -->
-        <form
-          @submit.prevent="submitEvidenceLinking"
+        <EvidenceDashboardForm
           v-if="showEvidenceLinkingForm"
-        >
-          <div class="h-0.5 dark:bg-slate-800 bg-gray-400 w-full my-4"></div>
-          <div class="flex justify-between items-center mb-4">
-            <h4 class="m-0">New Evidence Dashboard</h4>
-          </div>
-          <div class="mb-4">
-            <label class="inline-block pb-2 text-sm font-medium">Name</label>
-            <FormInput
-              v-model="evidenceDashboard.name"
-              placeholder="Dashboard name"
-            />
-          </div>
-
-          <!-- Baseline Evidence Selection (single select) -->
-          <div class="mb-4">
-            <label class="inline-block pb-2 text-sm font-medium"
-              >Select Baseline Evidence</label
-            >
-            <div class="flex flex-col gap-2">
-              <Select
-                v-model="selectedBaselineEvidence"
-                :options="uniqueEvidenceTitles"
-                optionLabel="title"
-                filter
-                :filterFields="['title', 'searchText']"
-                placeholder="Select an evidence as baseline..."
-                :loading="evidenceLoading"
-                class="w-full"
-              >
-                <template #option="slotProps">
-                  <div class="flex flex-col">
-                    <span class="font-medium">{{
-                      slotProps.option.title
-                    }}</span>
-                    <span class="text-xs text-gray-500 dark:text-slate-400">
-                      {{
-                        slotProps.option.labels
-                          ?.map((l: EvidenceLabel) => `${l.name}=${l.value}`)
-                          .join(', ')
-                      }}
-                    </span>
-                  </div>
-                </template>
-              </Select>
-            </div>
-          </div>
-
-          <!-- Label Query Builder -->
-          <div class="mb-4" v-if="selectedBaselineEvidence">
-            <label class="inline-block pb-2 text-sm font-medium"
-              >Label Conditions</label
-            >
-
-            <!-- Current conditions -->
-            <div v-if="labelConditions.length > 0" class="mb-3 space-y-2">
-              <div
-                v-for="(condition, index) in labelConditions"
-                :key="index"
-                class="flex items-center gap-2 p-2 bg-gray-50 dark:bg-slate-800 rounded-md"
-              >
-                <span class="text-sm font-mono flex-1"
-                  >{{ condition.name }}={{ condition.value }}</span
-                >
-                <Button
-                  type="button"
-                  severity="danger"
-                  text
-                  size="small"
-                  @click="removeLabelCondition(index)"
-                  class="text-red-500 hover:text-red-700"
-                >
-                  Remove
-                </Button>
-              </div>
-            </div>
-
-            <!-- Add new condition -->
-            <div class="flex gap-2 items-end">
-              <div class="flex-1">
-                <label class="text-xs text-gray-500 dark:text-slate-400"
-                  >Label Name</label
-                >
-                <Select
-                  v-model="newLabelName"
-                  :options="availableLabelNames"
-                  placeholder="Select label..."
-                  class="w-full"
-                />
-              </div>
-              <div class="flex-1">
-                <label class="text-xs text-gray-500 dark:text-slate-400"
-                  >Value</label
-                >
-                <Select
-                  v-model="newLabelValue"
-                  :options="availableLabelValues"
-                  placeholder="Select value..."
-                  :disabled="!newLabelName"
-                  class="w-full"
-                />
-              </div>
-              <Button
-                type="button"
-                severity="secondary"
-                @click="addLabelCondition"
-                :disabled="!newLabelName || !newLabelValue"
-              >
-                Add
-              </Button>
-            </div>
-          </div>
-
-          <!-- Generated Filter Preview -->
-          <div class="mb-4" v-if="computedFilter">
-            <label class="inline-block pb-2 text-sm font-medium"
-              >Generated Filter</label
-            >
-            <div
-              class="p-3 bg-gray-100 dark:bg-slate-800 rounded-md text-sm font-mono break-all"
-            >
-              {{ computedFilter }}
-            </div>
-          </div>
-
-          <div class="text-right">
-            <secondary-button @click="resetEvidenceLinkingForm"
-              >Cancel</secondary-button
-            >
-            <primary-button type="submit" :disabled="!computedFilter"
-              >Create Dashboard</primary-button
-            >
-          </div>
-        </form>
+          v-model:name="evidenceDashboard.name"
+          v-model:selected-baseline-evidence="selectedBaselineEvidence"
+          v-model:new-label-name="newLabelName"
+          v-model:new-label-value="newLabelValue"
+          :unique-evidence-titles="uniqueEvidenceTitles"
+          :evidence-loading="evidenceLoading"
+          :label-conditions="labelConditions"
+          :available-label-names="availableLabelNames"
+          :available-label-values="availableLabelValues"
+          :computed-filter="computedFilter"
+          :is-submitting="creatingEvidenceDashboard"
+          :server-error="createEvidenceDashboardError"
+          @submit="submitEvidenceLinking"
+          @cancel="resetEvidenceLinkingForm"
+          @add-condition="addLabelCondition"
+          @remove-condition="removeLabelCondition"
+        />
       </div>
     </div>
     <div v-else>
@@ -1929,16 +1578,16 @@ async function submitEvidenceLinking() {
       </template>
       <div v-if="showComponentsSection" class="mt-6">
         <h4 class="m-0 mb-2 font-medium text-base">Suggested Components</h4>
-        <p class="text-sm text-gray-500">
+        <Message severity="secondary">
           Suggested components will be available after you create this
           statement.
-        </p>
+        </Message>
       </div>
       <div v-if="showEvidenceSection" class="mt-6">
         <h4 class="m-0 mb-2 font-medium text-base">Evidence Linking</h4>
-        <p class="text-sm text-gray-500">
+        <Message severity="secondary">
           Evidence dashboards can be linked after you create this statement.
-        </p>
+        </Message>
       </div>
     </div>
   </div>

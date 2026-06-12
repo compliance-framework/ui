@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { v4 as uuidv4 } from 'uuid';
 import Drawer from '@/volt/Drawer.vue';
+import Message from '@/volt/Message.vue';
 import type { ImplementedRequirement, Statement } from '@/oscal';
 import PartDisplay from '@/components/PartDisplay.vue';
 import type { Part } from '@/oscal';
@@ -161,7 +162,7 @@ async function onPartSelect(e: Event, part: Part) {
 <template>
   <div class="part-display">
     <div
-      class="px-4 py-2 border-l-8 border-l-ccf-300 dark:border-l-slate-700 bg-ccf-200 dark:bg-slate-800 rounded-xl"
+      class="rounded-lg border border-ccf-300 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-900"
     >
       <PartDisplay
         v-for="part in control.parts?.filter(
@@ -243,10 +244,15 @@ async function onPartSelect(e: Event, part: Part) {
       :partid="selectedPart.id"
     />
     <div v-else-if="selectedPart && !selectedImplementation" class="p-4">
-      <p class="text-gray-600">Loading implementation...</p>
+      <Message severity="info" variant="simple">
+        <span class="flex items-center gap-2">
+          <i class="pi pi-spin pi-spinner"></i>
+          Loading implementation...
+        </span>
+      </Message>
     </div>
     <div v-else class="p-4">
-      <p class="text-gray-600">No part selected</p>
+      <Message severity="secondary">No part selected.</Message>
     </div>
   </Drawer>
 </template>
@@ -257,9 +263,7 @@ async function onPartSelect(e: Event, part: Part) {
   cursor: pointer;
 }
 
-@media (prefers-color-scheme: dark) {
-  .part-display .hover {
-    background-color: rgb(71 85 105);
-  }
+.dark .part-display .hover {
+  background-color: rgb(44 57 74);
 }
 </style>
