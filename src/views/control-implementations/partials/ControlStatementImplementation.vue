@@ -316,6 +316,16 @@ const pinnedAppliedSuggestionUuidSet = computed(
   () =>
     new Set(pinnedAppliedSuggestions.value.map((item) => item.componentUuid)),
 );
+const appliedSuggestionUuids = computed(
+  () =>
+    new Set([
+      ...existingComponentUuidSet.value,
+      ...pinnedAppliedSuggestionUuidSet.value,
+    ]),
+);
+const applyingSuggestionUuids = computed(
+  () => new Set(applyingSuggestedComponentUuids.value),
+);
 const unappliedSuggestions = computed(() =>
   getUnappliedSuggestions(
     localStatement.value?.byComponents,
@@ -430,17 +440,6 @@ function isSuggestionApplied(componentUuid: string): boolean {
     existingComponentUuidSet.value.has(componentUuid) ||
     pinnedAppliedSuggestionUuidSet.value.has(componentUuid)
   );
-}
-
-function isSuggestionApplying(componentUuid: string): boolean {
-  return applyingSuggestedComponentUuids.value.includes(componentUuid);
-}
-
-function formatRelevanceScore(score: number | undefined): string {
-  if (typeof score !== 'number' || Number.isNaN(score)) {
-    return '';
-  }
-  return score.toFixed(2);
 }
 
 function setSuggestionApplying(componentUuid: string, applying: boolean) {
@@ -1448,9 +1447,8 @@ async function submitEvidenceLinking() {
         :unapplied-suggestions="unappliedSuggestions"
         :all-suggestions-applied="allSuggestionsApplied"
         :applying-all-suggestions="applyingAllSuggestions"
-        :is-suggestion-applied="isSuggestionApplied"
-        :is-suggestion-applying="isSuggestionApplying"
-        :format-relevance-score="formatRelevanceScore"
+        :applied-uuids="appliedSuggestionUuids"
+        :applying-uuids="applyingSuggestionUuids"
         @apply-all="applyAllSuggestedComponents"
         @apply-suggestion="applySuggestedComponent"
       />

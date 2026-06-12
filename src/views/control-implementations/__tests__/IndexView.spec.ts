@@ -106,8 +106,9 @@ const stubs = {
   Badge: { template: '<span><slot />{{ value }}</span>', props: ['value'] },
   Button: {
     props: ['disabled', 'ariaLabel', 'title', 'label'],
+    emits: ['click'],
     template:
-      '<button :disabled="disabled" :aria-label="ariaLabel" :title="title" @click="$emit(\'click\', $event)"><slot />{{ label }}</button>',
+      '<button :disabled="disabled" :aria-label="ariaLabel" :title="title" @click="!disabled && $emit(\'click\', $event)"><slot />{{ label }}</button>',
   },
   Tree: defineComponent({
     props: ['value'],

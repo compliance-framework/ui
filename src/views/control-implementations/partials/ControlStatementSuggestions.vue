@@ -12,15 +12,21 @@ defineProps<{
   unappliedSuggestions: SuggestedComponent[];
   allSuggestionsApplied: boolean;
   applyingAllSuggestions: boolean;
-  isSuggestionApplied: (componentUuid: string) => boolean;
-  isSuggestionApplying: (componentUuid: string) => boolean;
-  formatRelevanceScore: (score: number | undefined) => string;
+  appliedUuids: ReadonlySet<string>;
+  applyingUuids: ReadonlySet<string>;
 }>();
 
 const emit = defineEmits<{
   applyAll: [];
   applySuggestion: [suggestion: SuggestedComponent];
 }>();
+
+function formatRelevanceScore(score: number | undefined): string {
+  if (typeof score !== 'number' || Number.isNaN(score)) {
+    return '';
+  }
+  return score.toFixed(2);
+}
 </script>
 
 <template>
@@ -65,12 +71,12 @@ const emit = defineEmits<{
           size="small"
           class="!text-left"
           severity="secondary"
-          :outlined="!isSuggestionApplied(suggestion.componentUuid)"
+          :outlined="!appliedUuids.has(suggestion.componentUuid)"
           :disabled="
             !statementReady ||
             !sspReady ||
-            isSuggestionApplied(suggestion.componentUuid) ||
-            isSuggestionApplying(suggestion.componentUuid) ||
+            appliedUuids.has(suggestion.componentUuid) ||
+            applyingUuids.has(suggestion.componentUuid) ||
             applyingAllSuggestions
           "
           @click="emit('applySuggestion', suggestion)"
@@ -85,7 +91,7 @@ const emit = defineEmits<{
               Relevance: {{ formatRelevanceScore(suggestion.relevanceScore) }}
             </span>
             <span
-              v-if="isSuggestionApplied(suggestion.componentUuid)"
+              v-if="appliedUuids.has(suggestion.componentUuid)"
               class="text-xs text-green-600"
             >
               Added
