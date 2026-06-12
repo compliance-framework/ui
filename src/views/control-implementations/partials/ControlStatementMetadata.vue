@@ -83,7 +83,6 @@ function formatLinks(links: Statement['links']): string {
 
   <div class="flex items-center mb-4 gap-x-4">
     <Button
-      label="Edit Statement"
       class="text-blue-600 hover:text-blue-800 dark:text-blue-400 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
       @click="emit('edit')"
     >

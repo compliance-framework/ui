@@ -183,7 +183,15 @@ function submit() {
       <SecondaryButton type="button" @click="emit('cancel')">
         Cancel
       </SecondaryButton>
-      <PrimaryButton type="submit" :disabled="isSubmitting || !computedFilter">
+      <PrimaryButton
+        type="submit"
+        :disabled="isSubmitting || !computedFilter"
+        v-tooltip.top="
+          !computedFilter
+            ? 'Add at least one label condition to create a filter'
+            : undefined
+        "
+      >
         <i v-if="isSubmitting" class="pi pi-spin pi-spinner mr-2"></i>
         Create Dashboard
       </PrimaryButton>

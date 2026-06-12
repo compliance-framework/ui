@@ -2,7 +2,7 @@
   <Message v-if="loading" severity="info" variant="simple">
     <span class="flex items-center gap-2">
       <i class="pi pi-spin pi-spinner"></i>
-      Loading controls...
+      Loading control data...
     </span>
   </Message>
 
@@ -67,13 +67,7 @@
       />
     </div>
 
-    <Message v-if="catalogLoading" severity="info" variant="simple">
-      <span class="flex items-center gap-2">
-        <i class="pi pi-spin pi-spinner"></i>
-        Loading catalog...
-      </span>
-    </Message>
-    <Message v-else-if="!profilesResolved" severity="secondary">
+    <Message v-if="!profilesResolved" severity="secondary">
       No catalog is available for the linked profile.
     </Message>
     <div v-else>

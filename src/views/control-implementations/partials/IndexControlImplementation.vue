@@ -263,9 +263,7 @@ async function onPartSelect(e: Event, part: Part) {
   cursor: pointer;
 }
 
-@media (prefers-color-scheme: dark) {
-  .part-display .hover {
-    background-color: rgb(71 85 105);
-  }
+:global(.dark) .part-display .hover {
+  background-color: rgb(71 85 105);
 }
 </style>

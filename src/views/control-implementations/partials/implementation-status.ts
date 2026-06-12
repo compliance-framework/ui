@@ -34,9 +34,9 @@ export const implementationStatusCues: Record<
   },
   partial: {
     label: 'Partial',
-    countClass: 'bg-amber-500 text-white dark:bg-amber-400 dark:text-amber-950',
+    countClass: 'bg-amber-500 text-white dark:bg-orange-500 dark:text-white',
     panelClass:
-      'border-amber-200 bg-amber-50/60 dark:border-amber-900 dark:bg-amber-950/20',
+      'border-amber-200 bg-amber-50/60 dark:border-orange-800 dark:bg-orange-950/20',
   },
   planned: {
     label: 'Planned',

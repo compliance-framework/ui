@@ -14,7 +14,6 @@ import { FilterParser } from '@/parsers/labelfilter.ts';
 import type { Dashboard } from '@/stores/filters.ts';
 import type { Evidence } from '@/stores/evidence.ts';
 import { useSystemStore } from '@/stores/system.ts';
-import { useCloned } from '@vueuse/core';
 import BurgerMenu from '@/components/BurgerMenu.vue';
 import { useToggle } from '@/composables/useToggle';
 import {
@@ -700,22 +699,22 @@ async function deleteByComponent(byComp: ByComponent) {
   if (!statementUuid) {
     return;
   }
-  const updatedStatement = useCloned(localStatement).cloned;
-
-  if (!updatedStatement.value) {
+  if (!localStatement.value) {
     console.error('No statement defined');
     return;
   }
 
-  updatedStatement.value.byComponents =
-    updatedStatement.value.byComponents?.filter(
+  const updatedStatement: Statement = {
+    ...localStatement.value,
+    byComponents: [...(localStatement.value.byComponents ?? [])].filter(
       (comp: ByComponent) => byComp.uuid !== comp.uuid,
-    );
+    ),
+  };
   try {
     await executeDelete(
       `${buildByComponentsEndpoint(sspId, implementation.uuid, statementUuid)}/${byComp.uuid}`,
     );
-    localStatement.value = updatedStatement.value;
+    localStatement.value = updatedStatement;
     setCreateComponentForm(false);
     emit('updated', localStatement.value);
     newByComponent.value = buildNewByComponent();
@@ -952,9 +951,7 @@ function updateStatement(updatedStatement: Statement) {
 }
 
 function handleComponentCreated(newComponent: SystemComponent) {
-  if (components.value) {
-    components.value.push(newComponent);
-  }
+  components.value = [...(components.value ?? []), newComponent];
   showCreateComponentModal.value = false;
   nextTick(() => {
     const found = componentItems.value.find(

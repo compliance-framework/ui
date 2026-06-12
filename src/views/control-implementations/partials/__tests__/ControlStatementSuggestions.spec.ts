@@ -76,25 +76,40 @@ describe('ControlStatementSuggestions', () => {
       appliedUuids: new Set(['component-1']),
       applyingUuids: new Set(['component-2']),
     });
-    const buttons = wrapper.findAll('button');
+    const componentOneButton = wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('Component One'));
+    const componentTwoButton = wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('Component Two'));
 
     expect(wrapper.text()).toContain('Added');
     expect(wrapper.text()).toContain('Relevance: 0.99');
-    expect(buttons[1].attributes('disabled')).toBeDefined();
-    expect(buttons[2].attributes('disabled')).toBeDefined();
+    expect(componentOneButton).toBeTruthy();
+    expect(componentTwoButton).toBeTruthy();
+    expect(componentOneButton!.attributes('disabled')).toBeDefined();
+    expect(componentTwoButton!.attributes('disabled')).toBeDefined();
 
-    await buttons[1].trigger('click');
-    await buttons[2].trigger('click');
+    await componentOneButton!.trigger('click');
+    await componentTwoButton!.trigger('click');
 
     expect(wrapper.emitted('applySuggestion')).toBeUndefined();
   });
 
   it('emits applyAll and applySuggestion when enabled suggestion buttons are clicked', async () => {
     const wrapper = mountComponent();
-    const buttons = wrapper.findAll('button');
+    const applyAllButton = wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('Apply All Suggestions'));
+    const componentOneButton = wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('Component One'));
 
-    await buttons[0].trigger('click');
-    await buttons[1].trigger('click');
+    expect(applyAllButton).toBeTruthy();
+    expect(componentOneButton).toBeTruthy();
+
+    await applyAllButton!.trigger('click');
+    await componentOneButton!.trigger('click');
 
     expect(wrapper.emitted('applyAll')).toHaveLength(1);
     expect(wrapper.emitted('applySuggestion')?.[0]).toEqual([suggestions[0]]);

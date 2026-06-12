@@ -85,7 +85,10 @@ function formatRelevanceScore(score: number | undefined): string {
             <span class="text-xs font-semibold">{{ suggestion.title }}</span>
             <span class="text-xs text-gray-500">{{ suggestion.type }}</span>
             <span
-              v-if="formatRelevanceScore(suggestion.relevanceScore)"
+              v-if="
+                typeof suggestion.relevanceScore === 'number' &&
+                !Number.isNaN(suggestion.relevanceScore)
+              "
               class="text-xs text-gray-500"
             >
               Relevance: {{ formatRelevanceScore(suggestion.relevanceScore) }}
