@@ -330,6 +330,22 @@ vi.mock('@/composables/axios', () => ({
         };
       }
 
+      if (endpoint === '/api/oscal/system-security-plans/ssp-1/profiles') {
+        return {
+          data: {
+            data: [{ id: 'profile-1', title: 'Profile One' }],
+          },
+        };
+      }
+
+      if (endpoint === '/api/oscal/profiles/profile-1/resolved-with-catalogs') {
+        return {
+          data: {
+            data: [...mockApiState.resolvedControls],
+          },
+        };
+      }
+
       return { data: { data: undefined } };
     }),
   }),

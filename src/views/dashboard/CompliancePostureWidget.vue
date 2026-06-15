@@ -8,7 +8,7 @@
     <div :class="gridClass">
       <PageCard
         v-for="item in complianceItems"
-        :key="item.sspId"
+        :key="`${item.sspId}:${item.profileId}`"
         class="cursor-pointer transition-shadow hover:shadow-md"
         role="button"
         tabindex="0"
@@ -135,12 +135,13 @@ import PageHeader from '@/components/PageHeader.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
 import PageCard from '@/components/PageCard.vue';
 import { useDataApi } from '@/composables/axios';
-import type { SystemSecurityPlan, Profile } from '@/oscal';
+import type { SystemSecurityPlan } from '@/oscal';
 import type { ProfileComplianceSummary } from '@/types/compliance';
 import { computeComplianceWidths } from '@/utils/compliance';
 
 interface ComplianceItem {
   sspId: string;
+  profileId: string;
   sspTitle: string;
   profileTitle: string;
   summary: ProfileComplianceSummary;
@@ -162,9 +163,9 @@ const { execute: fetchSSPs } = useDataApi<SystemSecurityPlan[]>(null, null, {
   immediate: false,
 });
 
-const { execute: fetchProfile } = useDataApi<Profile>(null, null, {
-  immediate: false,
-});
+const { execute: fetchProfileBindings } = useDataApi<
+  Array<{ id?: string; uuid?: string; title?: string }>
+>(null, null, { immediate: false });
 
 interface ComplianceProgressResponse {
   summary: ProfileComplianceSummary;
@@ -191,28 +192,37 @@ onMounted(async () => {
 
     for (const ssp of ssps) {
       try {
-        const { data: profileData } = await fetchProfile(
-          `/api/oscal/system-security-plans/${ssp.uuid}/profile`,
+        const { data: bindingsData } = await fetchProfileBindings(
+          `/api/oscal/system-security-plans/${ssp.uuid}/profiles`,
         );
-        const profile = profileData.value?.data;
-        if (!profile) {
-          continue;
-        }
+        const bindings = bindingsData.value?.data || [];
 
-        const { data: complianceData } = await fetchCompliance(
-          `/api/oscal/profiles/${profile.uuid}/compliance-progress?includeControls=false`,
-        );
-        const progress = complianceData.value?.data;
-        if (!progress?.summary) {
-          continue;
-        }
+        for (const binding of bindings) {
+          const profileUuid = binding.uuid || binding.id;
+          if (!profileUuid) {
+            continue;
+          }
 
-        results.push({
-          sspId: ssp.uuid,
-          sspTitle: ssp.metadata?.title || 'Untitled SSP',
-          profileTitle: profile.metadata?.title || 'Untitled Profile',
-          summary: progress.summary,
-        });
+          try {
+            const { data: complianceData } = await fetchCompliance(
+              `/api/oscal/profiles/${profileUuid}/compliance-progress?includeControls=false`,
+            );
+            const progress = complianceData.value?.data;
+            if (!progress?.summary) {
+              continue;
+            }
+
+            results.push({
+              sspId: ssp.uuid,
+              profileId: profileUuid,
+              sspTitle: ssp.metadata?.title || 'Untitled SSP',
+              profileTitle: binding.title || 'Untitled Profile',
+              summary: progress.summary,
+            });
+          } catch {
+            // Skip profiles with errors
+          }
+        }
       } catch {
         // Skip SSPs without profiles or with errors
       }

@@ -1271,7 +1271,7 @@ import PromoteToPoamModal from '@/components/risk/PromoteToPoamModal.vue';
 import RiskOwnerAssignment from '@/components/risk/RiskOwnerAssignment.vue';
 import RiskPoamItemsTab from '@/components/risk/RiskPoamItemsTab.vue';
 import { useSystemStore } from '@/stores/system';
-import type { Profile, Risk, SystemComponent } from '@/oscal';
+import type { Risk, SystemComponent } from '@/oscal';
 import type { Evidence, EvidenceLabel } from '@/stores/evidence';
 import { useToast } from 'primevue/usetoast';
 import {
@@ -1579,17 +1579,11 @@ const {
   execute: executeLoadComponents,
 } = useDataApi<SystemComponent[]>(null, {}, { immediate: false });
 
-const {
-  data: profile,
-  isLoading: loadingProfile,
-  execute: executeLoadProfile,
-} = useDataApi<Profile>(null, {}, { immediate: false });
+const loadingProfileBindings = ref(false);
 
-const {
-  data: availableControlsWithCatalog,
-  isLoading: loadingResolvedControls,
-  execute: executeLoadResolvedControls,
-} = useDataApi<ResolvedControlWithCatalog[]>(null, {}, { immediate: false });
+const availableControlsWithCatalog = ref<
+  ResolvedControlWithCatalog[] | undefined
+>(undefined);
 
 const risk = ref<Risk | null>(null);
 const riskEvents = ref<RiskEventItem[]>([]);
@@ -2576,7 +2570,6 @@ watch(associationsSspId, (next, prev) => {
   evidenceOptionsLoaded.value = false;
   availableComponents.value = undefined;
   availableEvidence.value = undefined;
-  profile.value = undefined;
   availableControlsWithCatalog.value = undefined;
   evidenceDetailCache.clear();
   componentDetailCache.clear();
@@ -3636,31 +3629,52 @@ async function ensureControlOptions() {
 
   if (loadedControlsSspId.value !== sspId) {
     loadedControlsSspId.value = sspId;
-    profile.value = undefined;
     availableControlsWithCatalog.value = undefined;
   }
 
   if (availableControlsWithCatalog.value !== undefined) return;
 
-  if (!profile.value) {
-    await executeLoadProfile(
-      `/api/oscal/system-security-plans/${sspId}/profile`,
-    );
-  }
-
-  if (!profile.value?.uuid) return;
-
+  loadingProfileBindings.value = true;
   try {
-    await executeLoadResolvedControls(
-      `/api/oscal/profiles/${profile.value.uuid}/resolved-with-catalogs`,
+    const bindingsResponse = await authenticatedApi.get<
+      DataResponse<Array<{ id?: string; uuid?: string }>>
+    >(`/api/oscal/system-security-plans/${sspId}/profiles`);
+    const profileIds = (bindingsResponse?.data?.data || [])
+      .map((binding) => binding.uuid || binding.id)
+      .filter((id): id is string => !!id);
+
+    // An SSP can have several profiles attached; aggregate the resolved
+    // controls of all of them so links against any attached profile resolve.
+    const results = await Promise.allSettled(
+      profileIds.map((bindingProfileId) =>
+        authenticatedApi.get<DataResponse<ResolvedControlWithCatalog[]>>(
+          `/api/oscal/profiles/${bindingProfileId}/resolved-with-catalogs`,
+        ),
+      ),
     );
-    if (availableControlsWithCatalog.value !== undefined) {
-      return;
-    }
+
+    const merged: ResolvedControlWithCatalog[] = [];
+    const seen = new Set<string>();
+    results.forEach((result) => {
+      if (result.status !== 'fulfilled') return;
+      (result.value?.data?.data || []).forEach((item) => {
+        if (!item?.controlId) return;
+        const key =
+          controlCompositeKey(item.catalogId, item.controlId) || item.controlId;
+        if (seen.has(key)) return;
+        seen.add(key);
+        merged.push(item);
+      });
+    });
+
+    availableControlsWithCatalog.value = merged;
+    return;
   } catch (err) {
     if (isCanceledError(err)) {
       throw err;
     }
+  } finally {
+    loadingProfileBindings.value = false;
   }
 
   availableControlsWithCatalog.value = [];
@@ -4132,7 +4146,7 @@ const pickerLoading = computed(() => {
     case 'evidence':
       return loadingEvidence.value;
     case 'controls':
-      return loadingProfile.value || loadingResolvedControls.value;
+      return loadingProfileBindings.value;
     case 'components':
       return loadingComponents.value;
     default:
