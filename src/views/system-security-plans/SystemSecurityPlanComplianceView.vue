@@ -1,10 +1,31 @@
 <template>
   <div class="mt-6 space-y-6">
+    <div
+      v-if="!profileLoading && profileBindings.length > 1"
+      class="flex flex-wrap items-center gap-2"
+    >
+      <span class="text-sm text-zinc-600 dark:text-slate-400">Profile:</span>
+      <button
+        v-for="binding in profileBindings"
+        :key="binding.uuid"
+        type="button"
+        class="rounded-full border px-3 py-1 text-sm transition-colors"
+        :class="
+          binding.uuid === profileId
+            ? 'border-blue-600 bg-blue-600 text-white'
+            : 'border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700'
+        "
+        @click="selectProfile(binding.uuid)"
+      >
+        {{ binding.title }}
+      </button>
+    </div>
+
     <template v-if="profileLoading || (profileId && isLoading)">
       <PageHeader>Loading compliance progress...</PageHeader>
     </template>
 
-    <template v-else-if="profileResolved && !profileId">
+    <template v-else-if="profileResolved && !profileBindings.length">
       <div
         class="rounded border border-dashed border-zinc-300 bg-zinc-50 dark:bg-slate-800 dark:border-slate-700 p-6 text-sm text-zinc-600 dark:text-slate-400"
       >
@@ -52,22 +73,23 @@ import type { AxiosError } from 'axios';
 import PageHeader from '@/components/PageHeader.vue';
 import ComplianceProgressPanel from '@/components/ComplianceProgressPanel.vue';
 import { useProfileCompliance } from '@/composables/useProfileCompliance';
-import { useDataApi } from '@/composables/axios';
 import type { ErrorBody, ErrorResponse } from '@/stores/types';
-import type { Profile } from '@/oscal';
+import {
+  useSystemSecurityPlanStore,
+  type SystemSecurityPlanProfileBinding,
+} from '@/stores/system-security-plans';
+import { getErrorStatus } from '@/utils/httpErrors';
 
 const route = useRoute();
 const toast = useToast();
+const sspStore = useSystemSecurityPlanStore();
 
 const sspId = computed(() => String(route.params.id || ''));
 const profileId = ref<string>('');
 const profileResolved = ref(false);
 const profileLoading = ref(false);
 
-// Load the SSP's attached profile
-const { execute: fetchProfile } = useDataApi<Profile>(null, null, {
-  immediate: false,
-});
+const profileBindings = ref<SystemSecurityPlanProfileBinding[]>([]);
 
 // Once we have a profileId, load compliance data scoped to this SSP
 const {
@@ -89,26 +111,28 @@ async function loadProfileAndCompliance(currentSspId: string) {
   profileLoading.value = true;
   profileResolved.value = false;
   profileId.value = '';
+  profileBindings.value = [];
 
   try {
-    const { data } = await fetchProfile(
-      `/api/oscal/system-security-plans/${currentSspId}/profile`,
-    );
-    const attachedProfile = data.value?.data;
-    if (!attachedProfile) {
+    const { data: bindings } = await sspStore.listProfiles(currentSspId);
+
+    profileBindings.value = bindings.map((binding) => ({
+      uuid: binding.uuid,
+      title: binding.title || 'Untitled Profile',
+    }));
+    if (!profileBindings.value.length) {
       return;
     }
 
-    profileId.value = attachedProfile.uuid;
+    profileId.value = profileBindings.value[0].uuid;
     await loadCompliance({ includeControls: true, sspId: currentSspId });
   } catch (err) {
-    const axiosErr = err as AxiosError;
     // 404 just means no profile attached — not an error
-    if (axiosErr.response?.status !== 404) {
+    if (getErrorStatus(err) !== 404) {
       toast.add({
         severity: 'error',
         summary: 'Error loading profile',
-        detail: 'Unable to load the attached profile for this SSP.',
+        detail: 'Unable to load the attached profiles for this SSP.',
         life: 4000,
       });
     }
@@ -116,6 +140,15 @@ async function loadProfileAndCompliance(currentSspId: string) {
     profileResolved.value = true;
     profileLoading.value = false;
   }
+}
+
+async function selectProfile(nextProfileId: string) {
+  if (!nextProfileId || nextProfileId === profileId.value) {
+    return;
+  }
+
+  profileId.value = nextProfileId;
+  await loadCompliance({ includeControls: true, sspId: sspId.value });
 }
 
 watch(
