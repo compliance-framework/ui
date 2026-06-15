@@ -43,11 +43,7 @@ export function useDashboardSuggestions(
     data: labelSets,
     execute: fetchLabelSets,
     isLoading: labelSetsLoading,
-  } = useDataApi<DashboardSuggestionLabelSet[]>(
-    null,
-    {},
-    { immediate: false },
-  );
+  } = useDataApi<DashboardSuggestionLabelSet[]>(null, {}, { immediate: false });
 
   const { execute: generateRequest, isLoading: generating } =
     useDataApi<SuggestionRun>(null, {}, { immediate: false });
@@ -84,7 +80,9 @@ export function useDashboardSuggestions(
       return;
     }
 
-    return fetchLabelSets(buildDashboardSuggestionLabelSetsEndpoint(sspId.value));
+    return fetchLabelSets(
+      buildDashboardSuggestionLabelSetsEndpoint(sspId.value),
+    );
   }
 
   async function generateSuggestions(
