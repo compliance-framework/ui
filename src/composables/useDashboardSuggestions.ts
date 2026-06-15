@@ -95,16 +95,16 @@ export function useDashboardSuggestions(sspId: Ref<string>) {
     }
 
     const statuses = ['accepted', 'rejected', 'superseded'];
-    const responses = await Promise.all(
-      statuses.map((status) =>
-        fetchHistoryRequest(
-          buildDashboardSuggestionsEndpoint(sspId.value, status),
-        ),
-      ),
-    );
-    historySuggestions.value = responses.flatMap(
-      (response) => response?.data.value?.data ?? [],
-    );
+    const collected: DashboardSuggestion[] = [];
+
+    for (const status of statuses) {
+      const response = await fetchHistoryRequest(
+        buildDashboardSuggestionsEndpoint(sspId.value, status),
+      );
+      collected.push(...(response?.data.value?.data ?? []));
+    }
+
+    historySuggestions.value = collected;
   }
 
   async function rejectSuggestions(ids: string[], reason?: string) {
