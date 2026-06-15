@@ -1,0 +1,6 @@
+lisa-addressed:
+---
+[low] src/composables/useDashboardSuggestions.ts:46 (maintainability)
+npm run format:check fails on this new composable. Prettier wants the labelSets useDataApi call on one line and the refreshLabelSets endpoint call wrapped across lines, so the branch would fail the formatter gate.
+Suggested fix: Run Prettier on src/composables/useDashboardSuggestions.ts, or apply the exact formatting changes reported by npx prettier src/composables/useDashboardSuggestions.ts.
+Guidance: In src/composables/useDashboardSuggestions.ts, fix the Prettier formatting failure before handing off. The safest exact command is `npx prettier --write src/composables/useDashboardSuggestions.ts`, then verify with `npx prettier --check src/composables/useDashboardSuggestions.ts`. Do not make behavioral changes for this finding. If applying manually, Prettier currently wants the `useDataApi<DashboardSuggestionLabelSet[]>(null, {}, { immediate: false })` assignment formatted consistently and the `return fetchLabelSets(buildDashboardSuggestionLabelSetsEndpoint(sspId.value));` call wrapped across lines; running Prettier is less error-prone than guessing all required line breaks.
