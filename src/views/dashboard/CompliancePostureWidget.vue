@@ -135,6 +135,7 @@ import PageHeader from '@/components/PageHeader.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
 import PageCard from '@/components/PageCard.vue';
 import { useDataApi } from '@/composables/axios';
+import { useSystemSecurityPlanStore } from '@/stores/system-security-plans';
 import type { SystemSecurityPlan } from '@/oscal';
 import type { ProfileComplianceSummary } from '@/types/compliance';
 import { computeComplianceWidths } from '@/utils/compliance';
@@ -148,6 +149,7 @@ interface ComplianceItem {
 }
 
 const router = useRouter();
+const sspStore = useSystemSecurityPlanStore();
 const complianceItems = ref<ComplianceItem[]>([]);
 const isLoading = ref(true);
 
@@ -162,10 +164,6 @@ const gridClass = computed(() => {
 const { execute: fetchSSPs } = useDataApi<SystemSecurityPlan[]>(null, null, {
   immediate: false,
 });
-
-const { execute: fetchProfileBindings } = useDataApi<
-  Array<{ id?: string; uuid?: string; title?: string }>
->(null, null, { immediate: false });
 
 interface ComplianceProgressResponse {
   summary: ProfileComplianceSummary;
@@ -192,16 +190,10 @@ onMounted(async () => {
 
     for (const ssp of ssps) {
       try {
-        const { data: bindingsData } = await fetchProfileBindings(
-          `/api/oscal/system-security-plans/${ssp.uuid}/profiles`,
-        );
-        const bindings = bindingsData.value?.data || [];
+        const { data: bindings } = await sspStore.listProfiles(ssp.uuid);
 
         for (const binding of bindings) {
-          const profileUuid = binding.uuid || binding.id;
-          if (!profileUuid) {
-            continue;
-          }
+          const profileUuid = binding.uuid;
 
           try {
             const { data: complianceData } = await fetchCompliance(

@@ -1271,6 +1271,7 @@ import PromoteToPoamModal from '@/components/risk/PromoteToPoamModal.vue';
 import RiskOwnerAssignment from '@/components/risk/RiskOwnerAssignment.vue';
 import RiskPoamItemsTab from '@/components/risk/RiskPoamItemsTab.vue';
 import { useSystemStore } from '@/stores/system';
+import { useSystemSecurityPlanStore } from '@/stores/system-security-plans';
 import type { Risk, SystemComponent } from '@/oscal';
 import type { Evidence, EvidenceLabel } from '@/stores/evidence';
 import { useToast } from 'primevue/usetoast';
@@ -1437,6 +1438,7 @@ const route = useRoute();
 const router = useRouter();
 const toast = useToast();
 const systemStore = useSystemStore();
+const sspStore = useSystemSecurityPlanStore();
 const authenticatedApi = useAuthenticatedInstance();
 
 const riskId = computed(() => route.params.riskId as string | undefined);
@@ -3636,12 +3638,8 @@ async function ensureControlOptions() {
 
   loadingProfileBindings.value = true;
   try {
-    const bindingsResponse = await authenticatedApi.get<
-      DataResponse<Array<{ id?: string; uuid?: string }>>
-    >(`/api/oscal/system-security-plans/${sspId}/profiles`);
-    const profileIds = (bindingsResponse?.data?.data || [])
-      .map((binding) => binding.uuid || binding.id)
-      .filter((id): id is string => !!id);
+    const { data: bindings } = await sspStore.listProfiles(sspId);
+    const profileIds = bindings.map((binding) => binding.uuid);
 
     // An SSP can have several profiles attached; aggregate the resolved
     // controls of all of them so links against any attached profile resolve.

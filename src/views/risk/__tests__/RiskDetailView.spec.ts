@@ -299,6 +299,14 @@ vi.mock('@/stores/system', () => ({
   }),
 }));
 
+vi.mock('@/stores/system-security-plans', () => ({
+  useSystemSecurityPlanStore: () => ({
+    listProfiles: vi.fn(async () => ({
+      data: [{ uuid: 'profile-1', title: 'Profile One' }],
+    })),
+  }),
+}));
+
 vi.mock('primevue/usetoast', () => ({
   useToast: () => ({
     add: mockToastAdd,
@@ -326,14 +334,6 @@ vi.mock('@/composables/axios', () => ({
               start: '2026-03-03T10:00:00Z',
               end: '2026-03-04T10:00:00Z',
             },
-          },
-        };
-      }
-
-      if (endpoint === '/api/oscal/system-security-plans/ssp-1/profiles') {
-        return {
-          data: {
-            data: [{ id: 'profile-1', title: 'Profile One' }],
           },
         };
       }

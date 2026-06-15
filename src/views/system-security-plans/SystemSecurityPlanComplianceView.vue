@@ -73,28 +73,23 @@ import type { AxiosError } from 'axios';
 import PageHeader from '@/components/PageHeader.vue';
 import ComplianceProgressPanel from '@/components/ComplianceProgressPanel.vue';
 import { useProfileCompliance } from '@/composables/useProfileCompliance';
-import { useDataApi } from '@/composables/axios';
 import type { ErrorBody, ErrorResponse } from '@/stores/types';
+import {
+  useSystemSecurityPlanStore,
+  type SystemSecurityPlanProfileBinding,
+} from '@/stores/system-security-plans';
+import { getErrorStatus } from '@/utils/httpErrors';
 
 const route = useRoute();
 const toast = useToast();
+const sspStore = useSystemSecurityPlanStore();
 
 const sspId = computed(() => String(route.params.id || ''));
 const profileId = ref<string>('');
 const profileResolved = ref(false);
 const profileLoading = ref(false);
 
-interface ProfileBinding {
-  uuid: string;
-  title: string;
-}
-
-const profileBindings = ref<ProfileBinding[]>([]);
-
-// Load the SSP's attached profiles (an SSP can have several)
-const { execute: fetchProfileBindings } = useDataApi<
-  Array<{ id?: string; uuid?: string; title?: string }>
->(null, null, { immediate: false });
+const profileBindings = ref<SystemSecurityPlanProfileBinding[]>([]);
 
 // Once we have a profileId, load compliance data scoped to this SSP
 const {
@@ -119,27 +114,21 @@ async function loadProfileAndCompliance(currentSspId: string) {
   profileBindings.value = [];
 
   try {
-    const { data } = await fetchProfileBindings(
-      `/api/oscal/system-security-plans/${currentSspId}/profiles`,
-    );
-    const bindings = (data.value?.data || [])
-      .map((binding) => ({
-        uuid: binding.uuid || binding.id || '',
-        title: binding.title || 'Untitled Profile',
-      }))
-      .filter((binding) => binding.uuid);
+    const { data: bindings } = await sspStore.listProfiles(currentSspId);
 
-    profileBindings.value = bindings;
-    if (!bindings.length) {
+    profileBindings.value = bindings.map((binding) => ({
+      uuid: binding.uuid,
+      title: binding.title || 'Untitled Profile',
+    }));
+    if (!profileBindings.value.length) {
       return;
     }
 
-    profileId.value = bindings[0].uuid;
+    profileId.value = profileBindings.value[0].uuid;
     await loadCompliance({ includeControls: true, sspId: currentSspId });
   } catch (err) {
-    const axiosErr = err as AxiosError;
     // 404 just means no profile attached — not an error
-    if (axiosErr.response?.status !== 404) {
+    if (getErrorStatus(err) !== 404) {
       toast.add({
         severity: 'error',
         summary: 'Error loading profile',
