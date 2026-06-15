@@ -191,6 +191,22 @@ describe('SuggestionsView', () => {
     );
   });
 
+  it('refreshes and polls suggestions when the config is enabled', async () => {
+    state.aiEnabled = true;
+    state.aiFetched = false;
+    state.fetchConfig.mockImplementation(async () => {
+      state.aiFetched = true;
+      return true;
+    });
+
+    mountView();
+    await flushPromises();
+
+    expect(state.refreshLabelSets).toHaveBeenCalled();
+    expect(state.refreshHistorySuggestions).toHaveBeenCalled();
+    expect(state.pollLatest).toHaveBeenCalled();
+  });
+
   it('does not poll or refresh suggestions when the config is disabled', async () => {
     state.aiEnabled = false;
     state.aiFetched = false;

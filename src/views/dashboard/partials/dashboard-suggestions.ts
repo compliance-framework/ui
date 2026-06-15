@@ -106,13 +106,6 @@ export function buildLatestDashboardSuggestionRunEndpoint(
   return `${dashboardSuggestionsBaseEndpoint(sspId)}/dashboard-suggestion-runs/latest`;
 }
 
-export function buildDashboardSuggestionRunEndpoint(
-  sspId: string,
-  runId: string,
-): string {
-  return `${dashboardSuggestionsBaseEndpoint(sspId)}/dashboard-suggestion-runs/${encodeURIComponent(runId)}`;
-}
-
 export function buildDashboardSuggestionsEndpoint(
   sspId: string,
   status?: string,
@@ -134,10 +127,6 @@ export function buildDashboardSuggestionEventsEndpoint(
   suggestionId: string,
 ): string {
   return `${dashboardSuggestionsBaseEndpoint(sspId)}/dashboard-suggestions/${encodeURIComponent(suggestionId)}/events`;
-}
-
-export function getSuggestionId(suggestion: DashboardSuggestion): string {
-  return suggestion.uuid ?? suggestion.id;
 }
 
 export function formatLabelSet(labels: Record<string, string>): string[] {

@@ -75,4 +75,21 @@ describe('useSuggestionRunPoller', () => {
 
     scope.stop();
   });
+
+  it('keeps polling after a transient poll error', async () => {
+    mocks.execute
+      .mockRejectedValueOnce(new Error('temporary outage'))
+      .mockResolvedValueOnce(response('completed', 2, 'run-1'));
+
+    const scope = effectScope();
+    const poller = scope.run(() => useSuggestionRunPoller(ref('ssp-1')));
+
+    poller?.start();
+    await vi.advanceTimersByTimeAsync(3000);
+    await vi.advanceTimersByTimeAsync(3000);
+
+    expect(mocks.execute).toHaveBeenCalledTimes(2);
+
+    scope.stop();
+  });
 });

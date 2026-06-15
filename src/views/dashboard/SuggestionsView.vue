@@ -398,7 +398,7 @@ const { run, progressPercent, pollLatest, start } = useSuggestionRunPoller(
 );
 
 const sspTitle = computed(
-  () => systemSecurityPlan.value?.metadata.title ?? 'Selected SSP',
+  () => systemSecurityPlan.value?.metadata?.title ?? 'Selected SSP',
 );
 const runStatus = computed(() => run.value?.status ?? 'idle');
 const runStatusLabel = computed(() => {
@@ -413,7 +413,7 @@ const runStatusLabel = computed(() => {
 
 const controlOptions = computed(() =>
   (
-    systemSecurityPlan.value?.controlImplementation.implementedRequirements ??
+    systemSecurityPlan.value?.controlImplementation?.implementedRequirements ??
     []
   )
     .map((requirement: ImplementedRequirement) => ({

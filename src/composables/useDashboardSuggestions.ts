@@ -187,9 +187,14 @@ export function useDashboardSuggestions(
   };
 }
 
+interface SuggestionRunPollerOptions {
+  stopOnPollError?: boolean;
+}
+
 export function useSuggestionRunPoller(
   sspId: Ref<string>,
   onPoll?: () => Promise<void> | void,
+  options: SuggestionRunPollerOptions = {},
 ) {
   const toast = useToast();
   const run = ref<SuggestionRun>();
@@ -263,7 +268,9 @@ export function useSuggestionRunPoller(
         });
       }
     } catch {
-      stop();
+      if (options.stopOnPollError) {
+        stop();
+      }
     }
   }
 
