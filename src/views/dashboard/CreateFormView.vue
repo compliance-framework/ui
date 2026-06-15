@@ -11,6 +11,16 @@
         <FormInput v-model="filter" />
       </div>
       <div class="mb-4">
+        <label class="inline-block pb-2">Scope</label>
+        <Select
+          v-model="selectedSspId"
+          :options="sspScopeOptions"
+          optionLabel="label"
+          optionValue="value"
+          class="w-full"
+        />
+      </div>
+      <div class="mb-4">
         <label class="inline-block pb-2">Controls</label>
         <MultiSelect
           v-model="selectedControls"
@@ -94,6 +104,7 @@ import type { Dashboard } from '@/stores/filters.ts';
 import FormInput from '@/components/forms/FormInput.vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
 import MultiSelect from '@/volt/MultiSelect.vue';
+import Select from '@/volt/Select.vue';
 import type {
   Catalog,
   SystemSecurityPlan,
@@ -137,6 +148,7 @@ interface SelectComponent {
 
 const selectedControls = ref<ControlOption[]>([]);
 const selectedComponents = ref<ComponentOption[]>([]);
+const selectedSspId = ref<string | null>(null);
 const controls = ref<SelectControl[]>([]);
 const components = ref<SelectComponent[]>([]);
 const loadingControls = ref<boolean>(true);
@@ -152,6 +164,13 @@ const { data: catalogs } = useDataApi<Catalog[]>('/api/oscal/catalogs');
 const { data: systemSecurityPlans } = useDataApi<SystemSecurityPlan[]>(
   '/api/oscal/system-security-plans',
 );
+const sspScopeOptions = computed(() => [
+  { label: 'Global', value: null },
+  ...(systemSecurityPlans.value ?? []).map((ssp) => ({
+    label: ssp.metadata.title,
+    value: ssp.uuid,
+  })),
+]);
 const { execute: fetchFullCatalog } = useDataApi<Catalog>(null, null, {
   abortPrevious: false,
 });
@@ -339,6 +358,7 @@ async function submit() {
     await createDashboard({
       data: {
         ...dashboard.value,
+        sspId: selectedSspId.value,
         filter: parsedFilter,
         controls: controlIds,
         components: componentIds,

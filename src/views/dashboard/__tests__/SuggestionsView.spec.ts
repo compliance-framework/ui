@@ -1,0 +1,177 @@
+import { mount } from '@vue/test-utils';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { nextTick } from 'vue';
+import type { SystemSecurityPlan } from '@/oscal';
+
+const state = vi.hoisted(() => ({
+  pendingSuggestions: { value: [] as unknown[] },
+  historySuggestions: { value: [] as unknown[] },
+  labelSets: { value: [] as unknown[] },
+  ssp: { value: undefined as unknown },
+  acceptSuggestions: vi.fn(),
+  rejectSuggestions: vi.fn(),
+  generateSuggestions: vi.fn(),
+  fetchSuggestionEvents: vi.fn(),
+  refreshPendingSuggestions: vi.fn(),
+  pollLatest: vi.fn(),
+  start: vi.fn(),
+  fetchConfig: vi.fn(),
+}));
+
+vi.mock('vue-router', () => ({
+  useRoute: () => ({ params: { sspId: 'ssp-1' } }),
+}));
+
+vi.mock('@/stores/ai-config', () => ({
+  useAiConfigStore: () => ({
+    dashboardSuggestionsEnabled: true,
+    dashboardSuggestionsConfigFetched: true,
+    fetchDashboardSuggestionsConfig: state.fetchConfig,
+  }),
+}));
+
+vi.mock('@/composables/axios', () => ({
+  useDataApi: () => ({ data: state.ssp }),
+}));
+
+vi.mock('@/composables/useDashboardSuggestions', () => ({
+  useDashboardSuggestions: () => ({
+    pendingSuggestions: state.pendingSuggestions,
+    historySuggestions: state.historySuggestions,
+    labelSets: state.labelSets,
+    pendingSuggestionsLoading: { value: false },
+    historySuggestionsLoading: { value: false },
+    generating: { value: false },
+    refreshPendingSuggestions: state.refreshPendingSuggestions,
+    generateSuggestions: state.generateSuggestions,
+    acceptSuggestions: state.acceptSuggestions,
+    rejectSuggestions: state.rejectSuggestions,
+    fetchSuggestionEvents: state.fetchSuggestionEvents,
+  }),
+  useSuggestionRunPoller: () => ({
+    run: { value: undefined },
+    progressPercent: { value: 0 },
+    pollLatest: state.pollLatest,
+    start: state.start,
+  }),
+}));
+
+import SuggestionsView from '../SuggestionsView.vue';
+
+function mountView() {
+  return mount(SuggestionsView, {
+    global: {
+      stubs: {
+        PageHeader: { template: '<h1><slot /></h1>' },
+        PageSubHeader: { template: '<p><slot /></p>' },
+        PageCard: { template: '<section><slot /></section>' },
+        Chip: { props: ['label'], template: '<span>{{ label }}</span>' },
+        Message: { template: '<div><slot /></div>' },
+        SuggestionScopeDialog: { template: '<div />' },
+        Dialog: { template: '<div><slot /><slot name="footer" /></div>' },
+        Textarea: {
+          props: ['modelValue'],
+          emits: ['update:modelValue'],
+          template:
+            '<textarea :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />',
+        },
+        PrimaryButton: {
+          emits: ['click'],
+          template: '<button @click="$emit(\'click\')"><slot /></button>',
+        },
+        SecondaryButton: {
+          emits: ['click'],
+          template: '<button @click="$emit(\'click\')"><slot /></button>',
+        },
+      },
+    },
+  });
+}
+
+describe('SuggestionsView', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    state.ssp.value = {
+      uuid: 'ssp-1',
+      metadata: { title: 'Payments SSP' },
+      controlImplementation: { implementedRequirements: [] },
+    } as unknown as SystemSecurityPlan;
+    state.pendingSuggestions.value = [
+      {
+        id: 'sug-1',
+        status: 'pending',
+        controlId: 'AC-1',
+        controlTitle: 'Access control policy',
+        labelSetHash: 'hash-1',
+        labels: { env: 'prod' },
+        confidence: 0.91,
+        controlFitReasoning: 'Fits AC-1',
+        systemRelevanceReasoning: 'Relevant to payments',
+        action: 'create',
+        proposedFilterName: 'Production access',
+        evidenceCount: 3,
+      },
+      {
+        id: 'sug-2',
+        status: 'pending',
+        controlId: 'AC-2',
+        controlTitle: 'Account management',
+        labelSetHash: 'hash-1',
+        labels: { env: 'prod' },
+        confidence: 0.8,
+        controlFitReasoning: 'Fits AC-2',
+        systemRelevanceReasoning: 'Relevant to accounts',
+        action: 'create',
+        proposedFilterName: 'Production access',
+        evidenceCount: 3,
+      },
+    ];
+    state.historySuggestions.value = [];
+    state.fetchSuggestionEvents.mockResolvedValue([]);
+  });
+
+  it('groups pending suggestions by labelSetHash and expands reasoning', async () => {
+    const wrapper = mountView();
+
+    expect(wrapper.findAll('[data-testid^="suggestion-group-"]')).toHaveLength(
+      1,
+    );
+    expect(wrapper.text()).toContain('Production access');
+    expect(wrapper.text()).toContain('AC-1');
+
+    const reasoningButton = wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('Reasoning'));
+    await reasoningButton?.trigger('click');
+    await nextTick();
+
+    expect(wrapper.text()).toContain('Fits AC-1');
+    expect(wrapper.text()).toContain('Relevant to payments');
+  });
+
+  it('wires group accept and reject reason payloads', async () => {
+    const wrapper = mountView();
+
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Accept group')
+      ?.trigger('click');
+    expect(state.acceptSuggestions).toHaveBeenCalledWith(['sug-1', 'sug-2']);
+
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Reject group')
+      ?.trigger('click');
+    await wrapper.find('textarea').setValue('Not useful');
+    await wrapper
+      .findAll('button')
+      .filter((button) => button.text() === 'Reject')
+      .at(-1)
+      ?.trigger('click');
+
+    expect(state.rejectSuggestions).toHaveBeenCalledWith(
+      ['sug-1', 'sug-2'],
+      'Not useful',
+    );
+  });
+});
