@@ -103,4 +103,14 @@ describe('SuggestionScopeDialog', () => {
     await wrapper.find('[data-testid="scope-generate"]').trigger('click');
     expect(wrapper.emitted('generate')).toBeUndefined();
   });
+
+  it('emits scope-change when the selected scope changes', async () => {
+    const wrapper = mountDialog({ ceilingError: 'Maximum is 10 calls' });
+
+    await wrapper
+      .findAllComponents({ name: 'MultiSelect' })[0]
+      .vm.$emit('update:modelValue', ['AC-1']);
+
+    expect(wrapper.emitted('scope-change')).toBeTruthy();
+  });
 });

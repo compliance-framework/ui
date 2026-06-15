@@ -1,4 +1,4 @@
-import { mount } from '@vue/test-utils';
+import { flushPromises, mount } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { nextTick } from 'vue';
 import type { SystemSecurityPlan } from '@/oscal';
@@ -13,9 +13,13 @@ const state = vi.hoisted(() => ({
   generateSuggestions: vi.fn(),
   fetchSuggestionEvents: vi.fn(),
   refreshPendingSuggestions: vi.fn(),
+  refreshHistorySuggestions: vi.fn(),
+  refreshLabelSets: vi.fn(),
   pollLatest: vi.fn(),
   start: vi.fn(),
   fetchConfig: vi.fn(),
+  aiEnabled: true,
+  aiFetched: true,
 }));
 
 vi.mock('vue-router', () => ({
@@ -24,8 +28,12 @@ vi.mock('vue-router', () => ({
 
 vi.mock('@/stores/ai-config', () => ({
   useAiConfigStore: () => ({
-    dashboardSuggestionsEnabled: true,
-    dashboardSuggestionsConfigFetched: true,
+    get dashboardSuggestionsEnabled() {
+      return state.aiEnabled;
+    },
+    get dashboardSuggestionsConfigFetched() {
+      return state.aiFetched;
+    },
     fetchDashboardSuggestionsConfig: state.fetchConfig,
   }),
 }));
@@ -43,6 +51,8 @@ vi.mock('@/composables/useDashboardSuggestions', () => ({
     historySuggestionsLoading: { value: false },
     generating: { value: false },
     refreshPendingSuggestions: state.refreshPendingSuggestions,
+    refreshHistorySuggestions: state.refreshHistorySuggestions,
+    refreshLabelSets: state.refreshLabelSets,
     generateSuggestions: state.generateSuggestions,
     acceptSuggestions: state.acceptSuggestions,
     rejectSuggestions: state.rejectSuggestions,
@@ -91,6 +101,12 @@ function mountView() {
 describe('SuggestionsView', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    state.aiEnabled = true;
+    state.aiFetched = true;
+    state.fetchConfig.mockImplementation(async () => {
+      state.aiFetched = true;
+      return state.aiEnabled;
+    });
     state.ssp.value = {
       uuid: 'ssp-1',
       metadata: { title: 'Payments SSP' },
@@ -173,5 +189,25 @@ describe('SuggestionsView', () => {
       ['sug-1', 'sug-2'],
       'Not useful',
     );
+  });
+
+  it('does not poll or refresh suggestions when the config is disabled', async () => {
+    state.aiEnabled = false;
+    state.aiFetched = false;
+    state.fetchConfig.mockImplementation(async () => {
+      state.aiFetched = true;
+      return false;
+    });
+
+    const wrapper = mountView();
+    await flushPromises();
+    await wrapper.vm.$forceUpdate();
+    await nextTick();
+
+    expect(wrapper.text()).toContain('Dashboard suggestions are disabled.');
+    expect(state.refreshLabelSets).not.toHaveBeenCalled();
+    expect(state.refreshHistorySuggestions).not.toHaveBeenCalled();
+    expect(state.pollLatest).not.toHaveBeenCalled();
+    expect(state.start).not.toHaveBeenCalled();
   });
 });

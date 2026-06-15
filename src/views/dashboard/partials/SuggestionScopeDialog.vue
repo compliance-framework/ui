@@ -128,6 +128,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'update:visible': [visible: boolean];
+  'scope-change': [];
   generate: [payload: GenerateDashboardSuggestionsPayload];
 }>();
 
@@ -169,6 +170,15 @@ watch(
     selectedLabelSetHashes.value = labelSets.map((labelSet) => labelSet.hash);
   },
   { immediate: true },
+);
+
+watch(
+  [selectedControls, selectedLabelSetHashes],
+  () => {
+    largeRunConfirmed.value = false;
+    emit('scope-change');
+  },
+  { deep: true },
 );
 
 watch([plannedCalls, modelVisible], () => {

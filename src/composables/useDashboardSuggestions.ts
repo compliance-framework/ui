@@ -4,7 +4,9 @@ import {
   onUnmounted,
   ref,
   shallowRef,
+  toValue,
   watch,
+  type MaybeRef,
   type Ref,
 } from 'vue';
 import { useToast } from 'primevue/usetoast';
@@ -25,29 +27,27 @@ import {
   isRunActive,
 } from '@/views/dashboard/partials/dashboard-suggestions';
 
-export function useDashboardSuggestions(sspId: Ref<string>) {
-  const pendingEndpoint = computed(() =>
-    sspId.value
-      ? buildDashboardSuggestionsEndpoint(sspId.value, 'pending')
-      : '',
-  );
-  const labelSetsEndpoint = computed(() =>
-    sspId.value ? buildDashboardSuggestionLabelSetsEndpoint(sspId.value) : '',
-  );
-
+export function useDashboardSuggestions(
+  sspId: Ref<string>,
+  enabled: MaybeRef<boolean> = true,
+) {
   const {
     data: pendingSuggestions,
-    execute: refreshPendingSuggestions,
+    execute: fetchPendingSuggestions,
     isLoading: pendingSuggestionsLoading,
-  } = useDataApi<DashboardSuggestion[]>(pendingEndpoint);
+  } = useDataApi<DashboardSuggestion[]>(null, {}, { immediate: false });
   const historySuggestions = shallowRef<DashboardSuggestion[]>([]);
   const { execute: fetchHistoryRequest, isLoading: historySuggestionsLoading } =
     useDataApi<DashboardSuggestion[]>(null, {}, { immediate: false });
   const {
     data: labelSets,
-    execute: refreshLabelSets,
+    execute: fetchLabelSets,
     isLoading: labelSetsLoading,
-  } = useDataApi<DashboardSuggestionLabelSet[]>(labelSetsEndpoint);
+  } = useDataApi<DashboardSuggestionLabelSet[]>(
+    null,
+    {},
+    { immediate: false },
+  );
 
   const { execute: generateRequest, isLoading: generating } =
     useDataApi<SuggestionRun>(null, {}, { immediate: false });
@@ -65,9 +65,35 @@ export function useDashboardSuggestions(sspId: Ref<string>) {
     DashboardSuggestionEvent[]
   >(null, {}, { immediate: false });
 
+  function canFetchSuggestions() {
+    return Boolean(toValue(enabled) && sspId.value);
+  }
+
+  async function refreshPendingSuggestions() {
+    if (!canFetchSuggestions()) {
+      return;
+    }
+
+    return fetchPendingSuggestions(
+      buildDashboardSuggestionsEndpoint(sspId.value, 'pending'),
+    );
+  }
+
+  async function refreshLabelSets() {
+    if (!canFetchSuggestions()) {
+      return;
+    }
+
+    return fetchLabelSets(buildDashboardSuggestionLabelSetsEndpoint(sspId.value));
+  }
+
   async function generateSuggestions(
     payload: GenerateDashboardSuggestionsPayload,
   ) {
+    if (!canFetchSuggestions()) {
+      return;
+    }
+
     return generateRequest(
       buildGenerateDashboardSuggestionsEndpoint(sspId.value),
       {
@@ -79,6 +105,10 @@ export function useDashboardSuggestions(sspId: Ref<string>) {
   }
 
   async function acceptSuggestions(ids: string[]) {
+    if (!canFetchSuggestions()) {
+      return;
+    }
+
     await acceptRequest(buildAcceptDashboardSuggestionsEndpoint(sspId.value), {
       method: 'POST',
       data: { ids },
@@ -89,7 +119,7 @@ export function useDashboardSuggestions(sspId: Ref<string>) {
   }
 
   async function refreshHistorySuggestions() {
-    if (!sspId.value) {
+    if (!canFetchSuggestions()) {
       historySuggestions.value = [];
       return;
     }
@@ -108,6 +138,10 @@ export function useDashboardSuggestions(sspId: Ref<string>) {
   }
 
   async function rejectSuggestions(ids: string[], reason?: string) {
+    if (!canFetchSuggestions()) {
+      return;
+    }
+
     await rejectRequest(buildRejectDashboardSuggestionsEndpoint(sspId.value), {
       method: 'POST',
       data: { ids, reason },
@@ -118,6 +152,10 @@ export function useDashboardSuggestions(sspId: Ref<string>) {
   }
 
   async function fetchSuggestionEvents(suggestionId: string) {
+    if (!canFetchSuggestions()) {
+      return [];
+    }
+
     const response = await eventsRequest(
       buildDashboardSuggestionEventsEndpoint(sspId.value, suggestionId),
     );
@@ -125,7 +163,9 @@ export function useDashboardSuggestions(sspId: Ref<string>) {
   }
 
   onMounted(() => {
-    void refreshHistorySuggestions();
+    if (canFetchSuggestions()) {
+      void refreshHistorySuggestions();
+    }
   });
 
   return {

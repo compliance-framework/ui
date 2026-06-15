@@ -5,7 +5,10 @@
       <PageSubHeader>{{ sspTitle }}</PageSubHeader>
     </div>
     <PrimaryButton
-      v-if="aiConfig.dashboardSuggestionsEnabled"
+      v-if="
+        aiConfig.dashboardSuggestionsConfigFetched &&
+        aiConfig.dashboardSuggestionsEnabled
+      "
       @click="showScopeDialog = true"
     >
       Generate suggestions
@@ -24,7 +27,16 @@
     Dashboard suggestions are disabled.
   </Message>
 
-  <div v-else class="mt-4 space-y-4">
+  <Message
+    v-else-if="!aiConfig.dashboardSuggestionsConfigFetched"
+    severity="info"
+    variant="outlined"
+    class="mt-4"
+  >
+    Loading dashboard suggestions configuration.
+  </Message>
+
+  <div v-else-if="aiConfig.dashboardSuggestionsEnabled" class="mt-4 space-y-4">
     <div class="flex flex-wrap items-center gap-3">
       <span
         class="inline-flex items-center gap-2 rounded-md border px-3 py-1 text-sm"
@@ -246,15 +258,18 @@
   </div>
 
   <SuggestionScopeDialog
+    v-if="aiConfig.dashboardSuggestionsEnabled"
     v-model:visible="showScopeDialog"
     :controls="controlOptions"
     :labelSets="labelSets ?? []"
     :generating="generating"
     :ceilingError="scopeCeilingError"
+    @scope-change="scopeCeilingError = ''"
     @generate="generate"
   />
 
   <Dialog
+    v-if="aiConfig.dashboardSuggestionsEnabled"
     v-model:visible="showRejectDialog"
     modal
     header="Reject suggestions"
@@ -276,6 +291,7 @@
   </Dialog>
 
   <Dialog
+    v-if="aiConfig.dashboardSuggestionsEnabled"
     v-model:visible="showAuditDialog"
     modal
     header="Audit events"
@@ -359,11 +375,20 @@ const {
   historySuggestionsLoading,
   generating,
   refreshPendingSuggestions,
+  refreshHistorySuggestions,
+  refreshLabelSets,
   generateSuggestions,
   acceptSuggestions,
   rejectSuggestions,
   fetchSuggestionEvents,
-} = useDashboardSuggestions(sspId);
+} = useDashboardSuggestions(
+  sspId,
+  computed(
+    () =>
+      aiConfig.dashboardSuggestionsConfigFetched &&
+      aiConfig.dashboardSuggestionsEnabled,
+  ),
+);
 
 const { run, progressPercent, pollLatest, start } = useSuggestionRunPoller(
   sspId,
@@ -429,6 +454,11 @@ const pendingGroups = computed(() => {
 
 onMounted(async () => {
   await aiConfig.fetchDashboardSuggestionsConfig();
+  if (!aiConfig.dashboardSuggestionsEnabled) {
+    return;
+  }
+  await refreshLabelSets();
+  await refreshHistorySuggestions();
   await pollLatest();
   if (run.value?.status === 'pending' || run.value?.status === 'running') {
     start();
