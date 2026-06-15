@@ -8,3 +8,6 @@ lisa-design:
 - History suggestions are fetched as three separate `status=` requests (`accepted`, `rejected`, `superseded`) instead of a comma-separated filter, matching the documented single-status query shape.
 - The run poller owns only latest-run polling and terminal toasts; callers pass an `onPoll` refresh callback so pending suggestions can appear incrementally without coupling the poller to a specific list endpoint.
 - Accept/reject helpers refresh pending and history suggestions after mutation; accepted dashboard visibility is left to the existing `/api/filters` refresh path rather than special-casing accepted suggestions in the review UI.
+
+lisa-selfreview: pass 1 (verdict=request_changes)
+- [medium] src/composables/useDashboardSuggestions.ts:98 (concurrency/races): refreshHistorySuggestions fans out accepted/rejected/superseded requests through the same useDataApi/useAxios execute instance. VueUse useAxios defaults abortPrevious to true and execute returns a shared thenable, so starting the second and third calls aborts/replaces the earlier calls; the history tab can end up missing accepted/rejected rows or duplicating whichever request finishes last.
