@@ -1,0 +1,10 @@
+lisa-design:
+- The AI feature probe is cached in a small Pinia setup store and defaults to disabled on fetch failure, so entry points fail closed and are not repeatedly probed from each component.
+- Dashboard scope is represented as `sspId?: string | null` on the existing Dashboard type; `null`/missing remains global and no separate dashboard model was introduced.
+- The dashboard list groups only records returned by `/api/filters`; SSP section names are resolved from `/api/oscal/system-security-plans`, with unknown SSP IDs shown by ID instead of hiding dashboards.
+- The scope dialog keeps "All" as the default by selecting every available control and label set, then omits scope arrays from the generate payload unless the user narrows a dimension.
+- Large run confirmation is a UI threshold at more than 25 planned calls; server-enforced ceilings are surfaced from the generate `422` response and block retry until the operator changes scope.
+- The suggestions review page groups pending rows by `labelSetHash`, using `proposedFilterName` for create cases and `targetFilterName` for extend cases, because the Phase 5 contract makes hash the stable grid cell key.
+- History suggestions are fetched as three separate `status=` requests (`accepted`, `rejected`, `superseded`) instead of a comma-separated filter, matching the documented single-status query shape.
+- The run poller owns only latest-run polling and terminal toasts; callers pass an `onPoll` refresh callback so pending suggestions can appear incrementally without coupling the poller to a specific list endpoint.
+- Accept/reject helpers refresh pending and history suggestions after mutation; accepted dashboard visibility is left to the existing `/api/filters` refresh path rather than special-casing accepted suggestions in the review UI.
