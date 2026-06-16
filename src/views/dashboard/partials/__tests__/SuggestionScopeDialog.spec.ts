@@ -29,9 +29,10 @@ function mountDialog(props = {}) {
         Message: { template: '<div><slot /></div>' },
         MultiSelect: {
           name: 'MultiSelect',
-          props: ['modelValue'],
+          props: ['modelValue', 'options', 'optionLabel', 'optionValue'],
           emits: ['update:modelValue'],
-          template: '<div />',
+          template:
+            '<div><span v-for="option in options" :key="option[optionValue]">{{ option[optionLabel] }}</span></div>',
         },
         Checkbox: {
           name: 'Checkbox',
@@ -112,5 +113,31 @@ describe('SuggestionScopeDialog', () => {
       .vm.$emit('update:modelValue', ['AC-1']);
 
     expect(wrapper.emitted('scope-change')).toBeTruthy();
+  });
+
+  it('shows human label-set titles instead of selected hash labels', () => {
+    const wrapper = mountDialog({
+      labelSets: [
+        {
+          hash: 'opaque-hash',
+          labels: { env: 'prod', service: 'payments' },
+          evidenceCount: 2,
+          sampleTitles: ['Payment evidence'],
+        },
+        {
+          hash: 'fallback-hash',
+          labels: { env: 'stage' },
+          evidenceCount: 1,
+        },
+      ],
+    });
+
+    const labelSetSelector = wrapper.findAllComponents({
+      name: 'MultiSelect',
+    })[1];
+
+    expect(labelSetSelector.text()).toContain('Payment evidence');
+    expect(labelSetSelector.text()).toContain('env=stage');
+    expect(labelSetSelector.text()).not.toContain('opaque-hash');
   });
 });

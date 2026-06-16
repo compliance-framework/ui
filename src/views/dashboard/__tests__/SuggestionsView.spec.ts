@@ -2,6 +2,7 @@ import { flushPromises, mount } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { nextTick } from 'vue';
 import type { SystemSecurityPlan } from '@/oscal';
+import SuggestionScopeDialog from '../partials/SuggestionScopeDialog.vue';
 
 const state = vi.hoisted(() => ({
   pendingSuggestions: { value: [] as unknown[] },
@@ -17,6 +18,7 @@ const state = vi.hoisted(() => ({
   refreshLabelSets: vi.fn(),
   pollLatest: vi.fn(),
   start: vi.fn(),
+  axiosGet: vi.fn(),
   fetchConfig: vi.fn(),
   aiEnabled: true,
   aiFetched: true,
@@ -39,6 +41,7 @@ vi.mock('@/stores/ai-config', () => ({
 }));
 
 vi.mock('@/composables/axios', () => ({
+  useAuthenticatedInstance: () => ({ get: state.axiosGet }),
   useDataApi: () => ({ data: state.ssp }),
 }));
 
@@ -77,7 +80,12 @@ function mountView() {
         PageCard: { template: '<section><slot /></section>' },
         Chip: { props: ['label'], template: '<span>{{ label }}</span>' },
         Message: { template: '<div><slot /></div>' },
-        SuggestionScopeDialog: { template: '<div />' },
+        SuggestionScopeDialog: {
+          name: 'SuggestionScopeDialog',
+          props: ['controls'],
+          template:
+            '<div><span v-for="control in controls" :key="control.value">{{ control.label }}</span></div>',
+        },
         Dialog: { template: '<div><slot /><slot name="footer" /></div>' },
         Textarea: {
           props: ['modelValue'],
@@ -110,7 +118,9 @@ describe('SuggestionsView', () => {
     state.ssp.value = {
       uuid: 'ssp-1',
       metadata: { title: 'Payments SSP' },
-      controlImplementation: { implementedRequirements: [] },
+      controlImplementation: {
+        implementedRequirements: [{ controlId: 'AC-1' }, { controlId: 'AC-2' }],
+      },
     } as unknown as SystemSecurityPlan;
     state.pendingSuggestions.value = [
       {
@@ -144,6 +154,53 @@ describe('SuggestionsView', () => {
     ];
     state.historySuggestions.value = [];
     state.fetchSuggestionEvents.mockResolvedValue([]);
+    state.axiosGet.mockImplementation(async (url: string) => {
+      if (url === '/api/oscal/catalogs') {
+        return {
+          data: {
+            data: [{ uuid: 'catalog-1', metadata: { title: 'Catalog' } }],
+          },
+        };
+      }
+      if (url === '/api/oscal/catalogs/catalog-1/full') {
+        return {
+          data: {
+            data: {
+              uuid: 'catalog-1',
+              metadata: { title: 'Catalog' },
+              groups: [
+                {
+                  id: 'ac',
+                  title: 'Access Control',
+                  controls: [
+                    { id: 'AC-1', title: 'Access control policy' },
+                    { id: 'AC-2', title: 'Account management' },
+                  ],
+                },
+              ],
+            },
+          },
+        };
+      }
+      if (url === '/api/oscal/system-security-plans/ssp-1/profiles') {
+        return {
+          data: {
+            data: [{ uuid: 'profile-1', title: 'Moderate Baseline' }],
+          },
+        };
+      }
+      if (url === '/api/oscal/profiles/profile-1/resolved-with-catalogs') {
+        return {
+          data: {
+            data: [
+              { controlId: 'AC-1', title: 'Access control policy' },
+              { controlId: 'AC-2', title: 'Account management' },
+            ],
+          },
+        };
+      }
+      throw new Error(`Unexpected axios get: ${url}`);
+    });
   });
 
   it('groups pending suggestions by labelSetHash and expands reasoning', async () => {
@@ -205,6 +262,24 @@ describe('SuggestionsView', () => {
     expect(state.refreshLabelSets).toHaveBeenCalled();
     expect(state.refreshHistorySuggestions).toHaveBeenCalled();
     expect(state.pollLatest).toHaveBeenCalled();
+  });
+
+  it('enriches scope control options with catalog titles and profile membership', async () => {
+    const wrapper = mountView();
+    await flushPromises();
+
+    const controls = wrapper
+      .findComponent(SuggestionScopeDialog)
+      .props('controls') as Array<{ label: string; value: string }>;
+
+    expect(controls).toContainEqual({
+      label: 'AC-1 - Access control policy (Moderate Baseline)',
+      value: 'AC-1',
+    });
+    expect(controls).toContainEqual({
+      label: 'AC-2 - Account management (Moderate Baseline)',
+      value: 'AC-2',
+    });
   });
 
   it('does not poll or refresh suggestions when the config is disabled', async () => {

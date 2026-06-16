@@ -322,18 +322,24 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import PageCard from '@/components/PageCard.vue';
 import PageHeader from '@/components/PageHeader.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
-import type { ImplementedRequirement, SystemSecurityPlan } from '@/oscal';
-import { useDataApi } from '@/composables/axios';
+import type {
+  Catalog,
+  Control,
+  ImplementedRequirement,
+  SystemSecurityPlan,
+} from '@/oscal';
+import { useAuthenticatedInstance, useDataApi } from '@/composables/axios';
 import {
   useDashboardSuggestions,
   useSuggestionRunPoller,
 } from '@/composables/useDashboardSuggestions';
 import { useAiConfigStore } from '@/stores/ai-config';
+import type { DataResponse } from '@/stores/types';
 import Chip from '@/volt/Chip.vue';
 import Dialog from '@/volt/Dialog.vue';
 import Message from '@/volt/Message.vue';
@@ -352,6 +358,7 @@ import {
 const route = useRoute();
 const sspId = computed(() => String(route.params.sspId));
 const aiConfig = useAiConfigStore();
+const axios = useAuthenticatedInstance();
 const activeTab = ref<'pending' | 'history'>('pending');
 const showScopeDialog = ref(false);
 const showRejectDialog = ref(false);
@@ -362,6 +369,19 @@ const selectedSuggestionIds = ref<string[]>([]);
 const expandedReasoning = ref(new Set<string>());
 const auditEvents = ref<DashboardSuggestionEvent[]>([]);
 const scopeCeilingError = ref('');
+const controlTitleById = ref(new Map<string, string>());
+const controlProfileTitlesById = ref(new Map<string, string[]>());
+
+interface SspProfileBinding {
+  id?: string;
+  uuid?: string;
+  title: string;
+}
+
+interface ResolvedControlWithCatalog {
+  controlId: string;
+  title?: string;
+}
 
 const { data: systemSecurityPlan } = useDataApi<SystemSecurityPlan>(
   computed(() => `/api/oscal/system-security-plans/${sspId.value}/full`),
@@ -416,10 +436,21 @@ const controlOptions = computed(() =>
     systemSecurityPlan.value?.controlImplementation?.implementedRequirements ??
     []
   )
-    .map((requirement: ImplementedRequirement) => ({
-      label: requirement.controlId,
-      value: requirement.controlId,
-    }))
+    .map((requirement: ImplementedRequirement) => {
+      const title = controlTitleById.value.get(requirement.controlId);
+      const profileTitles =
+        controlProfileTitlesById.value.get(requirement.controlId) ?? [];
+      const titleLabel = title
+        ? `${requirement.controlId} - ${title}`
+        : requirement.controlId;
+      const profileLabel = profileTitles.length
+        ? ` (${profileTitles.join(', ')})`
+        : '';
+      return {
+        label: `${titleLabel}${profileLabel}`,
+        value: requirement.controlId,
+      };
+    })
     .sort((left, right) => left.label.localeCompare(right.label)),
 );
 
@@ -465,6 +496,23 @@ onMounted(async () => {
   }
 });
 
+watch(
+  () => [
+    sspId.value,
+    aiConfig.dashboardSuggestionsConfigFetched,
+    aiConfig.dashboardSuggestionsEnabled,
+  ],
+  ([, configFetched, enabled]) => {
+    if (!configFetched || !enabled) {
+      controlTitleById.value = new Map();
+      controlProfileTitlesById.value = new Map();
+      return;
+    }
+    void loadControlMetadata();
+  },
+  { immediate: true },
+);
+
 function groupTitle(suggestion: DashboardSuggestion | undefined) {
   if (!suggestion) {
     return 'Proposed dashboard';
@@ -474,6 +522,131 @@ function groupTitle(suggestion: DashboardSuggestion | undefined) {
     suggestion.targetFilterName ??
     'Proposed dashboard'
   );
+}
+
+async function loadControlMetadata() {
+  controlTitleById.value = new Map();
+  controlProfileTitlesById.value = new Map();
+
+  if (!sspId.value) {
+    return;
+  }
+
+  controlTitleById.value = await loadCatalogControlTitles();
+
+  try {
+    const profilesResponse = await axios.get<DataResponse<SspProfileBinding[]>>(
+      `/api/oscal/system-security-plans/${encodeURIComponent(sspId.value)}/profiles`,
+    );
+    const profileBindings = profilesResponse.data?.data ?? [];
+    const resolvedProfileResults = await Promise.allSettled(
+      profileBindings
+        .map((profileBinding) => ({
+          uuid: profileBinding.uuid ?? profileBinding.id,
+          title: profileBinding.title,
+        }))
+        .filter(
+          (profileBinding): profileBinding is { uuid: string; title: string } =>
+            Boolean(profileBinding.uuid),
+        )
+        .map(async (profileBinding) => {
+          const response = await axios.get<
+            DataResponse<ResolvedControlWithCatalog[]>
+          >(
+            `/api/oscal/profiles/${encodeURIComponent(profileBinding.uuid)}/resolved-with-catalogs`,
+          );
+          return {
+            title: profileBinding.title,
+            controls: response.data?.data ?? [],
+          };
+        }),
+    );
+
+    const titles = new Map(controlTitleById.value);
+    const profileTitles = new Map<string, Set<string>>();
+
+    for (const result of resolvedProfileResults) {
+      if (result.status !== 'fulfilled') {
+        continue;
+      }
+
+      for (const control of result.value.controls) {
+        if (!control.controlId) {
+          continue;
+        }
+        if (control.title && !titles.has(control.controlId)) {
+          titles.set(control.controlId, control.title);
+        }
+        const profiles = profileTitles.get(control.controlId) ?? new Set();
+        profiles.add(result.value.title);
+        profileTitles.set(control.controlId, profiles);
+      }
+    }
+
+    controlTitleById.value = titles;
+    controlProfileTitlesById.value = new Map(
+      Array.from(profileTitles.entries()).map(([controlId, profiles]) => [
+        controlId,
+        Array.from(profiles).sort((left, right) => left.localeCompare(right)),
+      ]),
+    );
+  } catch {
+    controlProfileTitlesById.value = new Map();
+  }
+}
+
+async function loadCatalogControlTitles() {
+  const titles = new Map<string, string>();
+
+  try {
+    const catalogsResponse = await axios.get<DataResponse<Catalog[]>>(
+      '/api/oscal/catalogs',
+    );
+    const catalogIds = (catalogsResponse.data?.data ?? [])
+      .map((catalog) => catalog.uuid)
+      .filter(Boolean);
+    const catalogResults = await Promise.allSettled(
+      catalogIds.map((catalogId) =>
+        axios.get<DataResponse<Catalog>>(
+          `/api/oscal/catalogs/${encodeURIComponent(catalogId)}/full`,
+        ),
+      ),
+    );
+
+    for (const result of catalogResults) {
+      if (result.status !== 'fulfilled') {
+        continue;
+      }
+      collectControlTitles(result.value.data?.data, titles);
+    }
+  } catch {
+    return titles;
+  }
+
+  return titles;
+}
+
+function collectControlTitles(
+  catalog: Catalog | undefined,
+  titles: Map<string, string>,
+) {
+  for (const group of catalog?.groups ?? []) {
+    for (const control of group.controls ?? []) {
+      collectControlTitle(control, titles);
+    }
+  }
+  for (const control of catalog?.controls ?? []) {
+    collectControlTitle(control, titles);
+  }
+}
+
+function collectControlTitle(control: Control, titles: Map<string, string>) {
+  if (control.id && control.title && !titles.has(control.id)) {
+    titles.set(control.id, control.title);
+  }
+  for (const childControl of control.controls ?? []) {
+    collectControlTitle(childControl, titles);
+  }
 }
 
 function groupIds(group: { suggestions: DashboardSuggestion[] }) {

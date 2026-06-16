@@ -24,8 +24,8 @@
         <label class="inline-block pb-2">Evidence label sets</label>
         <MultiSelect
           v-model="selectedLabelSetHashes"
-          :options="labelSets"
-          optionLabel="hash"
+          :options="labelSetOptions"
+          optionLabel="title"
           optionValue="hash"
           display="chip"
           filter
@@ -118,6 +118,10 @@ interface ControlOption {
   value: string;
 }
 
+type LabelSetOption = DashboardSuggestionLabelSet & {
+  title: string;
+};
+
 const props = defineProps<{
   visible: boolean;
   controls: ControlOption[];
@@ -154,6 +158,12 @@ const canGenerate = computed(
     plannedCalls.value > 0 &&
     !props.ceilingError &&
     (!requiresLargeRunConfirm.value || largeRunConfirmed.value),
+);
+const labelSetOptions = computed<LabelSetOption[]>(() =>
+  props.labelSets.map((labelSet) => ({
+    ...labelSet,
+    title: getLabelSetTitle(labelSet),
+  })),
 );
 
 watch(
@@ -204,5 +214,17 @@ function submit() {
     supersedePending: supersedePending.value,
     scope: selectedScope(),
   });
+}
+
+function getLabelSetTitle(labelSet: DashboardSuggestionLabelSet) {
+  const sampleTitle = labelSet.sampleTitles?.find(
+    (title) => title.trim().length > 0,
+  );
+  if (sampleTitle) {
+    return sampleTitle;
+  }
+
+  const labelSummary = formatLabelSet(labelSet.labels ?? {}).join(', ');
+  return labelSummary || labelSet.hash;
 }
 </script>
