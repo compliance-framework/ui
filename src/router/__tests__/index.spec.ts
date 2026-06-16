@@ -36,4 +36,19 @@ describe('router', () => {
       }).path,
     ).toBe('/system/components/dashboards/component-1');
   });
+
+  it('registers the dashboard suggestions review route behind auth meta', () => {
+    const route = router
+      .getRoutes()
+      .find((route) => route.name === 'dashboards.suggestions');
+
+    expect(route?.path).toBe('/dashboards/suggestions/:sspId');
+    expect(route?.meta.requiresAuth).toBe(true);
+    expect(
+      router.resolve({
+        name: 'dashboards.suggestions',
+        params: { sspId: 'ssp-1' },
+      }).path,
+    ).toBe('/dashboards/suggestions/ssp-1');
+  });
 });

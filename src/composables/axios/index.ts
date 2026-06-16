@@ -14,6 +14,15 @@ import { useAxios } from '@vueuse/integrations/useAxios';
 import camelcaseKeys from 'camelcase-keys';
 import { default as _decamelizeKeys } from 'decamelize-keys';
 
+declare module 'axios' {
+  interface AxiosRequestConfig {
+    // Object paths whose child keys should be left untouched by the response
+    // camelcase conversion (e.g. arbitrary label maps that may use snake_case
+    // or `_`-prefixed keys we need to preserve verbatim).
+    camelcaseStopPaths?: readonly string[];
+  }
+}
+
 const useAuthenticatedInstance = () => {
   const userStore = useUserStore();
   const configStore = useConfigStore();
@@ -62,7 +71,11 @@ const useAuthenticatedInstance = () => {
       // Brute force camelcase conversion. OSCAL apis are all kebab-case so should be converted to
       // camel case, but any manually written APIs will be camel case and therefore won't change
       if (response.data) {
-        response.data = camelcaseKeys(response.data, { deep: true });
+        const stopPaths = response.config?.camelcaseStopPaths;
+        response.data = camelcaseKeys(response.data, {
+          deep: true,
+          ...(stopPaths ? { stopPaths: [...stopPaths] } : {}),
+        });
       }
       return response;
     },

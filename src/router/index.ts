@@ -38,6 +38,14 @@ const authenticatedRoutes = [
     },
   },
   {
+    path: '/dashboards/suggestions/:sspId',
+    name: 'dashboards.suggestions',
+    component: () => import('../views/dashboard/SuggestionsView.vue'),
+    meta: {
+      requiresAuth: true,
+    },
+  },
+  {
     path: '/dashboards/:id',
     name: 'dashboards.view',
     // route level code-splitting
