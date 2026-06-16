@@ -280,6 +280,7 @@ describe('SuggestionScopeDialog', () => {
     ]);
     expect(labelSetSelector.text()).toContain('Payment evidence');
     expect(labelSetSelector.text()).toContain('env=prod');
-    expect(labelSetSelector.text()).toContain('2 evidence');
+    // Evidence counts are no longer rendered (label sets are 1-for-1 with evidence).
+    expect(labelSetSelector.text()).not.toContain('2 evidence');
   });
 });
