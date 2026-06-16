@@ -1,0 +1,76 @@
+lisa-addressed:
+---
+Comment (src/views/dashboard/SuggestionsView.vue:478):
+**Bug: `matched evidence` is always 0, and group label chips are empty.**
+
+`evidenceCount` is read from `suggestion.evidenceCount`, but the API suggestion payload (`dashboardSuggestionResponse`) never includes that field — it only carries `labelSet` / `labelSetHash` (see `internal/service/relational/suggestions/models.go` `DashboardSuggestion` and `loadSuggestionResponses`, which joins only `controls.title` and `filters.name`). So `suggestion.evidenceCount ?? 0` is always `0`.
+
+The real per-label-set count already exists on the `labelSets` array this component fetches via `refreshLabelSets()` (`LabelSetInput{ hash, labels, evidenceCount, sampleTitles }`). The hashes match: both the suggestion `labelSetHash` and the label-set `hash` come from the same `CanonicalLabelSetHash`, and `NormalizeLabelSet` only lowercases keys (it does NOT strip `_`-prefixed labels). So join by hash.
+
+Also fix the empty label chips: the API field is `labelSet` (a map), but this code reads `suggestion.labels`, which is always `undefined` — so `formatLabelSet(suggestion.labels ?? {})` yields `[]`. Source the labels from the matched label-set instead.
+
+Suggested implementation:
+
+```ts
+const labelSetByHash = computed(
+  () => new Map((labelSets.value ?? []).map((ls) => [ls.hash, ls])),
+);
+
+const pendingGroups = computed(() => {
+  const groups = new Map<string, { hash: string; labels: string[]; evidenceCount: number; sampleTitles: string[]; suggestions: DashboardSuggestion[] }>();
+  for (const suggestion of pendingSuggestions.value ?? []) {
+    const matched = labelSetByHash.value.get(suggestion.labelSetHash);
+    const group = groups.get(suggestion.labelSetHash) ?? {
+      hash: suggestion.labelSetHash,
+      labels: formatLabelSet(matched?.labels ?? suggestion.labelSet ?? {}),
+      evidenceCount: matched?.evidenceCount ?? 0,
+      sampleTitles: matched?.sampleTitles ?? [],
+      suggestions: [],
+    };
+    group.suggestions.push(suggestion);
+    groups.set(suggestion.labelSetHash, group);
+  }
+  return Array.from(groups.values());
+});
+```
+
+Note `matched?.labels` is preserved with underscores because `refreshLabelSets()` already passes `camelcaseStopPaths: ['data.labels']`. The `suggestion.labelSet` fallback (for when a stale suggestion's hash is no longer in the current `labelSets`) requires the companion change on the fetch in `useDashboardSuggestions.ts` — see that thread.
+---
+Comment (src/views/dashboard/SuggestionsView.vue:137):
+**Feature (B): make the matched-evidence count a link to the actual evidence.**
+
+Once the count is correct (see the `pendingGroups` thread), users should be able to click through to see the matching evidence streams. The suggestion's `labelSet` IS a label filter, and the evidence index already filters by a `key=value and …` query string via `route.query.filter` (see `src/views/evidence/IndexView.vue`); there is also a `POST /evidence/search` endpoint that accepts a `labelfilter.Filter`.
+
+Turn this span into a router-link to the evidence index pre-filtered by the group's labels. `group.labels` is already the array of `key=value` tokens produced by `formatLabelSet`, so the filter string is just `group.labels.join(' and ')`. For the GD.Conf.C02 example this becomes `_agent=… and _plugin=… and organization=compliance-framework and …`, which resolves to exactly the matching evidence stream(s).
+
+Suggested change:
+
+```vue
+<router-link
+  :to="{ name: 'evidence:index', query: { filter: group.labels.join(' and ') } }"
+  class="text-sm text-zinc-500 hover:underline"
+>
+  {{ group.evidenceCount }} matched evidence
+</router-link>
+```
+
+(Confirm the evidence route name — it is `evidence:index` in `src/router/index.ts`.) Optionally, render `group.sampleTitles` (up to 3, now available on the group) as a tooltip/preview so users get a glimpse without navigating away.
+---
+Comment (src/composables/useDashboardSuggestions.ts:73):
+**Companion change for the `labelSet` fallback: preserve underscore-prefixed label keys on the suggestion fetch.**
+
+The pending/history suggestion fetches do not pass `camelcaseStopPaths`, so the global axios response interceptor deep-camelCases the `labelSet` map keys and strips the leading `_` (e.g. `_agent` → `agent`). That breaks any code that reads `suggestion.labelSet` directly — including the `suggestion.labelSet` fallback proposed in the `pendingGroups` thread (used when a stale suggestion's hash is no longer present in the current `labelSets`).
+
+Add the stop path here, mirroring `refreshLabelSets()`:
+
+```ts
+return fetchPendingSuggestions(
+  buildDashboardSuggestionsEndpoint(sspId.value, 'pending'),
+  { camelcaseStopPaths: ['data.labelSet'] },
+);
+```
+
+Apply the same `{ camelcaseStopPaths: ['data.labelSet'] }` option to the history fetch in `refreshHistorySuggestions` (the `fetchHistoryRequest(buildDashboardSuggestionsEndpoint(sspId.value, status))` call below). If you decide the count/labels join against `labelSets` is sufficient and drop the `suggestion.labelSet` fallback entirely, this change is not needed — but then a suggestion whose evidence has since changed will render 0 with no labels, so the fallback is recommended.
+Implementation guidance: In src/views/dashboard/SuggestionsView.vue, fix pendingGroups so group metadata comes from the fetched labelSets list instead of non-existent suggestion.evidenceCount/suggestion.labels fields. Add a computed labelSetByHash map near pendingGroups: new Map((labelSets.value ?? []).map((labelSet) => [labelSet.hash, labelSet])). Update the pendingGroups group shape to include sampleTitles: string[]. For each pending suggestion, look up matched = labelSetByHash.value.get(suggestion.labelSetHash), initialize labels with formatLabelSet(matched?.labels ?? suggestion.labelSet ?? suggestion.labels ?? {}), evidenceCount with matched?.evidenceCount ?? 0, and sampleTitles with matched?.sampleTitles ?? []. Keep grouping by suggestion.labelSetHash and keep suggestions pushed into the group. Do not use Math.max over suggestion.evidenceCount anymore; the API does not return that field. Preserve the labelSetHash grouping design and keep stale-suggestion fallback labels from suggestion.labelSet when the current labelSets response no longer contains the hash. Update the DashboardSuggestion type in src/views/dashboard/partials/dashboard-suggestions.ts if needed so the suggestion payload exposes labelSet?: Record<string, string> while leaving labels optional/backward-compatible only if tests still need it.
+Implementation guidance: In src/views/dashboard/SuggestionsView.vue, replace the plain matched-evidence span in the pending group header with a RouterLink to the evidence index route. Use :to="{ name: 'evidence:index', query: { filter: group.labels.join(' and ') } }" and keep the text as "{{ group.evidenceCount }} matched evidence". Preserve the existing muted text styling and add hover underline/focus-safe link styling consistent with nearby links. Because group.labels is produced by formatLabelSet, do not rebuild labels from raw maps in the template. If sampleTitles was added to pendingGroups for the companion thread, optionally expose up to three sample titles via a title attribute or lightweight tooltip, but do not block the link on sampleTitles being present. Confirm no route path strings are hardcoded; use the route name evidence:index.
+Implementation guidance: In src/composables/useDashboardSuggestions.ts, preserve raw underscore-prefixed label keys when fetching dashboard suggestions. In refreshPendingSuggestions, pass { camelcaseStopPaths: ['data.labelSet'] } as the second execute argument to fetchPendingSuggestions(buildDashboardSuggestionsEndpoint(sspId.value, 'pending'), ...). In refreshHistorySuggestions, pass the same options object to each fetchHistoryRequest(buildDashboardSuggestionsEndpoint(sspId.value, status), ...). Keep the existing sequential status loop, because it avoids the previously identified shared-useAxios race. Do not change the documented three separate status requests into a comma-separated status filter. This stop path is needed for the suggestion.labelSet fallback used by pendingGroups when a suggestion hash is no longer present in the current labelSets response.
