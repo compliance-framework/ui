@@ -718,7 +718,11 @@ function collectControlTitle(
     titles.set(control.id, control.title);
     missingControlIds.delete(control.id);
   }
-  if (control.id && catalog?.metadata?.title && !catalogTitles.has(control.id)) {
+  if (
+    control.id &&
+    catalog?.metadata?.title &&
+    !catalogTitles.has(control.id)
+  ) {
     catalogTitles.set(control.id, catalog.metadata.title);
   }
   for (const childControl of control.controls ?? []) {
