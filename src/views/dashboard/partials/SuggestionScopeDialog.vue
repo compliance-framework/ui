@@ -53,12 +53,19 @@
       </label>
 
       <Message
-        v-if="ceilingError"
+        v-if="scopeError"
         severity="error"
         variant="outlined"
         data-testid="scope-ceiling"
       >
-        {{ ceilingError }}
+        {{ scopeError }}
+      </Message>
+      <Message
+        v-else-if="previewLoading || !preview"
+        severity="info"
+        variant="outlined"
+      >
+        Loading suggestion estimate.
       </Message>
       <Message
         v-else-if="requiresLargeRunConfirm"
@@ -66,15 +73,15 @@
         variant="outlined"
         data-testid="scope-warning"
       >
-        This will make {{ plannedCalls }} AI calls covering
-        {{ selectedControls.length }} controls x
-        {{ selectedLabelSetHashes.length }} label-sets. These run as queued
-        background jobs and may take a while and incur API costs.
+        This will make {{ preview.plannedCalls }} AI calls covering
+        {{ preview.controlCount }} controls x {{ preview.labelSetCount }}
+        label-sets. These run as queued background jobs and may take a while and
+        incur API costs.
       </Message>
       <Message v-else severity="info" variant="outlined">
-        {{ plannedCalls }} AI calls covering
-        {{ selectedControls.length }} controls x
-        {{ selectedLabelSetHashes.length }} label-sets.
+        {{ preview.plannedCalls }} AI calls covering
+        {{ preview.controlCount }} controls x {{ preview.labelSetCount }}
+        label-sets.
       </Message>
 
       <label
@@ -107,11 +114,17 @@ import Chip from '@/volt/Chip.vue';
 import Dialog from '@/volt/Dialog.vue';
 import Message from '@/volt/Message.vue';
 import MultiSelect from '@/volt/MultiSelect.vue';
+import { useAuthenticatedInstance } from '@/composables/axios';
 import type {
+  DashboardSuggestionsPreview,
   DashboardSuggestionLabelSet,
   GenerateDashboardSuggestionsPayload,
 } from './dashboard-suggestions';
-import { formatLabelSet } from './dashboard-suggestions';
+import {
+  buildPreviewDashboardSuggestionsEndpoint,
+  formatLabelSet,
+} from './dashboard-suggestions';
+import type { DataResponse } from '@/stores/types';
 
 interface ControlOption {
   label: string;
@@ -124,6 +137,7 @@ type LabelSetOption = DashboardSuggestionLabelSet & {
 
 const props = defineProps<{
   visible: boolean;
+  sspId: string;
   controls: ControlOption[];
   labelSets: DashboardSuggestionLabelSet[];
   generating?: boolean;
@@ -140,23 +154,29 @@ const selectedControls = ref<string[]>([]);
 const selectedLabelSetHashes = ref<string[]>([]);
 const supersedePending = ref(true);
 const largeRunConfirmed = ref(false);
+const preview = ref<DashboardSuggestionsPreview | null>(null);
+const previewLoading = ref(false);
+const previewError = ref('');
 const warningThreshold = 25;
+const axios = useAuthenticatedInstance();
+let previewTimer: ReturnType<typeof setTimeout> | undefined;
+let latestPreviewRequestId = 0;
 
 const modelVisible = computed({
   get: () => props.visible,
   set: (visible: boolean) => emit('update:visible', visible),
 });
 
-const plannedCalls = computed(
-  () => selectedControls.value.length * selectedLabelSetHashes.value.length,
-);
 const requiresLargeRunConfirm = computed(
-  () => plannedCalls.value > warningThreshold,
+  () => (preview.value?.plannedCalls ?? 0) > warningThreshold,
 );
+const scopeError = computed(() => props.ceilingError || previewError.value);
 const canGenerate = computed(
   () =>
-    plannedCalls.value > 0 &&
-    !props.ceilingError &&
+    !!preview.value &&
+    preview.value.plannedCalls > 0 &&
+    !previewLoading.value &&
+    !scopeError.value &&
     (!requiresLargeRunConfirm.value || largeRunConfirmed.value),
 );
 const labelSetOptions = computed<LabelSetOption[]>(() =>
@@ -186,13 +206,31 @@ watch(
   [selectedControls, selectedLabelSetHashes],
   () => {
     largeRunConfirmed.value = false;
+    previewError.value = '';
     emit('scope-change');
+    schedulePreview();
   },
   { deep: true },
 );
 
-watch([plannedCalls, modelVisible], () => {
-  largeRunConfirmed.value = false;
+watch(
+  [modelVisible],
+  () => {
+    largeRunConfirmed.value = false;
+    schedulePreview();
+  },
+  { immediate: true },
+);
+
+watch(
+  () => props.sspId,
+  () => {
+    schedulePreview();
+  },
+);
+
+watch([() => props.controls, () => props.labelSets], () => {
+  schedulePreview();
 });
 
 function selectedScope(): GenerateDashboardSuggestionsPayload['scope'] {
@@ -214,6 +252,59 @@ function submit() {
     supersedePending: supersedePending.value,
     scope: selectedScope(),
   });
+}
+
+function schedulePreview() {
+  const requestId = latestPreviewRequestId + 1;
+  latestPreviewRequestId = requestId;
+
+  if (previewTimer) {
+    clearTimeout(previewTimer);
+  }
+  preview.value = null;
+  previewError.value = '';
+
+  if (!modelVisible.value || !props.sspId) {
+    previewLoading.value = false;
+    return;
+  }
+
+  previewLoading.value = true;
+  previewTimer = setTimeout(() => {
+    void fetchPreview(requestId);
+  }, 250);
+}
+
+async function fetchPreview(requestId: number) {
+  try {
+    const scope = selectedScope();
+    const response = await axios.post<
+      DataResponse<DashboardSuggestionsPreview>
+    >(
+      buildPreviewDashboardSuggestionsEndpoint(props.sspId),
+      scope ? { scope } : {},
+    );
+    if (requestId !== latestPreviewRequestId) {
+      return;
+    }
+    preview.value = response.data.data;
+    previewError.value = '';
+  } catch (error) {
+    if (requestId !== latestPreviewRequestId) {
+      return;
+    }
+    const status = (error as { response?: { status?: number } }).response
+      ?.status;
+    preview.value = null;
+    previewError.value =
+      status === 422
+        ? 'The selected scope does not include any controls or label sets.'
+        : 'Unable to preview the selected suggestion scope.';
+  } finally {
+    if (requestId === latestPreviewRequestId) {
+      previewLoading.value = false;
+    }
+  }
 }
 
 function getLabelSetTitle(labelSet: DashboardSuggestionLabelSet) {

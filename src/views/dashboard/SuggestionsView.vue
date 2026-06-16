@@ -260,6 +260,7 @@
   <SuggestionScopeDialog
     v-if="aiConfig.dashboardSuggestionsEnabled"
     v-model:visible="showScopeDialog"
+    :ssp-id="sspId"
     :controls="controlOptions"
     :labelSets="labelSets ?? []"
     :generating="generating"

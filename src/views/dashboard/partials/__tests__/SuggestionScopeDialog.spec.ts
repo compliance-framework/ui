@@ -1,7 +1,20 @@
-import { mount } from '@vue/test-utils';
-import { describe, expect, it } from 'vitest';
+import { flushPromises, mount } from '@vue/test-utils';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import SuggestionScopeDialog from '../SuggestionScopeDialog.vue';
 import type { DashboardSuggestionLabelSet } from '../dashboard-suggestions';
+
+const state = vi.hoisted(() => ({
+  axiosPost: vi.fn(),
+  preview: {
+    plannedCalls: undefined as number | undefined,
+    controlCount: undefined as number | undefined,
+    labelSetCount: undefined as number | undefined,
+  },
+}));
+
+vi.mock('@/composables/axios', () => ({
+  useAuthenticatedInstance: () => ({ post: state.axiosPost }),
+}));
 
 function makeLabelSet(hash: string): DashboardSuggestionLabelSet {
   return {
@@ -15,6 +28,7 @@ function mountDialog(props = {}) {
   return mount(SuggestionScopeDialog, {
     props: {
       visible: true,
+      sspId: 'ssp-1',
       controls: [
         { label: 'AC-1', value: 'AC-1' },
         { label: 'AC-2', value: 'AC-2' },
@@ -54,19 +68,67 @@ function mountDialog(props = {}) {
   });
 }
 
+async function flushPreview() {
+  await flushPromises();
+  await vi.runOnlyPendingTimersAsync();
+  await flushPromises();
+}
+
 describe('SuggestionScopeDialog', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.clearAllMocks();
+    state.preview = {
+      plannedCalls: undefined,
+      controlCount: undefined,
+      labelSetCount: undefined,
+    };
+    state.axiosPost.mockImplementation(async (_url: string, body: unknown) => {
+      const scope = (
+        body as {
+          scope?: { controlKeys?: string[]; labelSetHashes?: string[] };
+        }
+      )?.scope;
+      const controlCount =
+        state.preview.controlCount ?? scope?.controlKeys?.length ?? 2;
+      const labelSetCount =
+        state.preview.labelSetCount ?? scope?.labelSetHashes?.length ?? 2;
+      return {
+        data: {
+          data: {
+            plannedCalls:
+              state.preview.plannedCalls ?? controlCount * labelSetCount,
+            controlCount,
+            labelSetCount,
+          },
+        },
+      };
+    });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('updates the live cost preview when scope selections change', async () => {
     const wrapper = mountDialog();
+    await flushPreview();
     expect(wrapper.text()).toContain('4 AI calls covering 2 controls x 2');
 
     await wrapper
       .findAllComponents({ name: 'MultiSelect' })[0]
       .vm.$emit('update:modelValue', ['AC-1']);
+    await flushPreview();
 
     expect(wrapper.text()).toContain('2 AI calls covering 1 controls x 2');
   });
 
   it('requires explicit confirmation for larger grids', async () => {
+    state.preview = {
+      plannedCalls: 30,
+      controlCount: 6,
+      labelSetCount: 5,
+    };
     const wrapper = mountDialog({
       controls: Array.from({ length: 6 }, (_, index) => ({
         label: `AC-${index}`,
@@ -76,6 +138,7 @@ describe('SuggestionScopeDialog', () => {
         makeLabelSet(`hash-${index}`),
       ),
     });
+    await flushPreview();
 
     expect(wrapper.text()).toContain('This will make 30 AI calls');
     expect(
@@ -97,6 +160,7 @@ describe('SuggestionScopeDialog', () => {
 
   it('surfaces the configured ceiling inline and blocks submission', async () => {
     const wrapper = mountDialog({ ceilingError: 'Maximum is 10 calls' });
+    await flushPreview();
 
     expect(wrapper.find('[data-testid="scope-ceiling"]').text()).toContain(
       'Maximum is 10 calls',
@@ -107,12 +171,56 @@ describe('SuggestionScopeDialog', () => {
 
   it('emits scope-change when the selected scope changes', async () => {
     const wrapper = mountDialog({ ceilingError: 'Maximum is 10 calls' });
+    await flushPreview();
 
     await wrapper
       .findAllComponents({ name: 'MultiSelect' })[0]
       .vm.$emit('update:modelValue', ['AC-1']);
 
     expect(wrapper.emitted('scope-change')).toBeTruthy();
+  });
+
+  it('uses preview planned calls for large-run confirmation instead of local cartesian size', async () => {
+    state.preview = {
+      plannedCalls: 1,
+      controlCount: 16,
+      labelSetCount: 89,
+    };
+    const wrapper = mountDialog({
+      controls: Array.from({ length: 16 }, (_, index) => ({
+        label: `AC-${index}`,
+        value: `AC-${index}`,
+      })),
+      labelSets: Array.from({ length: 89 }, (_, index) =>
+        makeLabelSet(`hash-${index}`),
+      ),
+    });
+    await flushPreview();
+
+    expect(wrapper.text()).toContain('1 AI calls covering 16 controls x 89');
+    expect(wrapper.find('[data-testid="scope-confirm-large"]').exists()).toBe(
+      false,
+    );
+
+    await wrapper.find('[data-testid="scope-generate"]').trigger('click');
+    expect(wrapper.emitted('generate')?.at(-1)).toEqual([
+      {
+        supersedePending: true,
+        scope: undefined,
+      },
+    ]);
+  });
+
+  it('blocks generation when preview returns an empty resolved scope', async () => {
+    state.axiosPost.mockRejectedValueOnce({ response: { status: 422 } });
+    const wrapper = mountDialog();
+    await flushPreview();
+
+    expect(wrapper.find('[data-testid="scope-ceiling"]').text()).toContain(
+      'The selected scope does not include any controls or label sets.',
+    );
+    await wrapper.find('[data-testid="scope-generate"]').trigger('click');
+    expect(wrapper.emitted('generate')).toBeUndefined();
   });
 
   it('shows human label-set titles instead of selected hash labels', () => {

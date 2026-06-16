@@ -28,6 +28,12 @@ export interface GenerateDashboardSuggestionsPayload {
   scope?: DashboardSuggestionScope;
 }
 
+export interface DashboardSuggestionsPreview {
+  plannedCalls: number;
+  controlCount: number;
+  labelSetCount: number;
+}
+
 export interface SuggestionRunFailure {
   controlKey?: string;
   labelSetHash?: string;
@@ -92,6 +98,12 @@ export function buildGenerateDashboardSuggestionsEndpoint(
   sspId: string,
 ): string {
   return `${dashboardSuggestionsBaseEndpoint(sspId)}/dashboard-suggestions/generate`;
+}
+
+export function buildPreviewDashboardSuggestionsEndpoint(
+  sspId: string,
+): string {
+  return `${dashboardSuggestionsBaseEndpoint(sspId)}/dashboard-suggestions/preview`;
 }
 
 export function buildDashboardSuggestionLabelSetsEndpoint(
