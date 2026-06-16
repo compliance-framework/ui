@@ -278,5 +278,8 @@ describe('SuggestionScopeDialog', () => {
       'Payment evidence',
       'env=stage',
     ]);
+    expect(labelSetSelector.text()).toContain('Payment evidence');
+    expect(labelSetSelector.text()).toContain('env=prod');
+    expect(labelSetSelector.text()).toContain('2 evidence');
   });
 });

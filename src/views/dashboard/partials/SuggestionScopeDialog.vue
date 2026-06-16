@@ -58,15 +58,20 @@
           placeholder="All label sets"
         >
           <template #option="{ option }">
-            <div class="flex flex-wrap items-center gap-2">
-              <Chip
-                v-for="label in formatLabelSet(option.labels)"
-                :key="label"
-                :label="label"
-              />
-              <span class="text-sm text-zinc-500">
-                {{ option.evidenceCount }} evidence
+            <div class="flex flex-col gap-1">
+              <span class="font-medium">
+                {{ option.title || getLabelSetTitle(option) }}
               </span>
+              <div
+                class="flex flex-wrap items-center gap-2 text-xs text-gray-500 dark:text-slate-400"
+              >
+                <Chip
+                  v-for="label in formatLabelSet(option.labels)"
+                  :key="label"
+                  :label="label"
+                />
+                <span>{{ option.evidenceCount }} evidence</span>
+              </div>
             </div>
           </template>
         </MultiSelect>

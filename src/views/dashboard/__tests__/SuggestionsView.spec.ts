@@ -119,7 +119,7 @@ describe('SuggestionsView', () => {
       uuid: 'ssp-1',
       metadata: { title: 'Payments SSP' },
       controlImplementation: {
-        implementedRequirements: [{ controlId: 'AC-1' }, { controlId: 'AC-2' }],
+        implementedRequirements: [{ controlId: 'ac-1' }, { controlId: 'AC-2' }],
       },
     } as unknown as SystemSecurityPlan;
     state.pendingSuggestions.value = [
@@ -288,9 +288,9 @@ describe('SuggestionsView', () => {
     }>;
 
     expect(controls).toContainEqual({
-      label: 'AC-1 - Access control policy',
-      value: 'AC-1',
-      controlId: 'AC-1',
+      label: 'ac-1 - Access control policy',
+      value: 'ac-1',
+      controlId: 'ac-1',
       title: 'Access control policy',
       catalogTitle: 'Catalog',
       profileTitles: ['Moderate Baseline'],

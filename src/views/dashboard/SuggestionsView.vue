@@ -440,10 +440,11 @@ const controlOptions = computed(() =>
     []
   )
     .map((requirement: ImplementedRequirement) => {
-      const title = controlTitleById.value.get(requirement.controlId);
-      const catalogTitle = controlCatalogById.value.get(requirement.controlId);
+      const controlKey = normalizeControlId(requirement.controlId);
+      const title = controlTitleById.value.get(controlKey);
+      const catalogTitle = controlCatalogById.value.get(controlKey);
       const profileTitles =
-        controlProfileTitlesById.value.get(requirement.controlId) ?? [];
+        controlProfileTitlesById.value.get(controlKey) ?? [];
       const titleLabel = title
         ? `${requirement.controlId} - ${title}`
         : requirement.controlId;
@@ -530,6 +531,10 @@ function groupTitle(suggestion: DashboardSuggestion | undefined) {
   );
 }
 
+function normalizeControlId(controlId?: string) {
+  return (controlId ?? '').toLowerCase();
+}
+
 async function loadControlMetadata() {
   controlTitleById.value = new Map();
   controlCatalogById.value = new Map();
@@ -577,18 +582,19 @@ async function loadControlMetadata() {
       }
 
       for (const control of result.value.controls) {
-        if (!control.controlId) {
+        const controlKey = normalizeControlId(control.controlId);
+        if (!controlKey) {
           continue;
         }
-        if (control.title && !titles.has(control.controlId)) {
-          titles.set(control.controlId, control.title);
+        if (control.title && !titles.has(controlKey)) {
+          titles.set(controlKey, control.title);
         }
-        if (control.catalogId && !controlCatalogIds.has(control.controlId)) {
-          controlCatalogIds.set(control.controlId, control.catalogId);
+        if (control.catalogId && !controlCatalogIds.has(controlKey)) {
+          controlCatalogIds.set(controlKey, control.catalogId);
         }
-        const profiles = profileTitles.get(control.controlId) ?? new Set();
+        const profiles = profileTitles.get(controlKey) ?? new Set();
         profiles.add(result.value.title);
-        profileTitles.set(control.controlId, profiles);
+        profileTitles.set(controlKey, profiles);
       }
     }
 
@@ -620,7 +626,7 @@ async function loadCatalogControlTitles(
   const catalogTitles = new Map<string, string>();
   const implementedControlIds = new Set(
     systemSecurityPlan.value?.controlImplementation?.implementedRequirements
-      ?.map((requirement) => requirement.controlId)
+      ?.map((requirement) => normalizeControlId(requirement.controlId))
       .filter(Boolean) ?? [],
   );
   const missingControlIds = new Set(
@@ -714,16 +720,17 @@ function collectControlTitle(
   missingControlIds: Set<string>,
   catalog: Catalog | undefined,
 ) {
-  if (control.id && control.title && !titles.has(control.id)) {
-    titles.set(control.id, control.title);
-    missingControlIds.delete(control.id);
+  const controlKey = normalizeControlId(control.id);
+  if (controlKey && control.title && !titles.has(controlKey)) {
+    titles.set(controlKey, control.title);
+    missingControlIds.delete(controlKey);
   }
   if (
-    control.id &&
+    controlKey &&
     catalog?.metadata?.title &&
-    !catalogTitles.has(control.id)
+    !catalogTitles.has(controlKey)
   ) {
-    catalogTitles.set(control.id, catalog.metadata.title);
+    catalogTitles.set(controlKey, catalog.metadata.title);
   }
   for (const childControl of control.controls ?? []) {
     collectControlTitle(
