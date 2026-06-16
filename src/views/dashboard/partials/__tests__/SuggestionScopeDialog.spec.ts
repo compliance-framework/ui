@@ -30,7 +30,14 @@ function mountDialog(props = {}) {
       visible: true,
       sspId: 'ssp-1',
       controls: [
-        { label: 'AC-1', value: 'AC-1' },
+        {
+          label: 'AC-1 - Access control policy',
+          value: 'AC-1',
+          controlId: 'AC-1',
+          title: 'Access control policy',
+          catalogTitle: 'NIST SP 800-53 Rev 5',
+          profileTitles: ['Moderate Baseline'],
+        },
         { label: 'AC-2', value: 'AC-2' },
       ],
       labelSets: [makeLabelSet('hash-1'), makeLabelSet('hash-2')],
@@ -46,7 +53,7 @@ function mountDialog(props = {}) {
           props: ['modelValue', 'options', 'optionLabel', 'optionValue'],
           emits: ['update:modelValue'],
           template:
-            '<div><span v-for="option in options" :key="option[optionValue]">{{ option[optionLabel] }}</span></div>',
+            '<div><div v-for="option in options" :key="option[optionValue]"><slot name="option" :option="option">{{ option[optionLabel] }}</slot></div></div>',
         },
         Checkbox: {
           name: 'Checkbox',
@@ -180,6 +187,26 @@ describe('SuggestionScopeDialog', () => {
     expect(wrapper.emitted('scope-change')).toBeTruthy();
   });
 
+  it('renders controls with catalog and profile metadata in dropdown options', () => {
+    const wrapper = mountDialog();
+    const controlSelector = wrapper.findAllComponents({
+      name: 'MultiSelect',
+    })[0];
+
+    expect(controlSelector.text()).toContain('AC-1 - Access control policy');
+    expect(controlSelector.text()).toContain('NIST SP 800-53 Rev 5');
+    expect(controlSelector.text()).toContain('Moderate Baseline');
+  });
+
+  it('clears the pending preview timer on unmount', async () => {
+    const wrapper = mountDialog();
+
+    wrapper.unmount();
+    await vi.runOnlyPendingTimersAsync();
+
+    expect(state.axiosPost).not.toHaveBeenCalled();
+  });
+
   it('uses preview planned calls for large-run confirmation instead of local cartesian size', async () => {
     state.preview = {
       plannedCalls: 1,
@@ -243,9 +270,13 @@ describe('SuggestionScopeDialog', () => {
     const labelSetSelector = wrapper.findAllComponents({
       name: 'MultiSelect',
     })[1];
+    const labelSetOptions = labelSetSelector.props('options') as Array<{
+      title: string;
+    }>;
 
-    expect(labelSetSelector.text()).toContain('Payment evidence');
-    expect(labelSetSelector.text()).toContain('env=stage');
-    expect(labelSetSelector.text()).not.toContain('opaque-hash');
+    expect(labelSetOptions.map((option) => option.title)).toEqual([
+      'Payment evidence',
+      'env=stage',
+    ]);
   });
 });

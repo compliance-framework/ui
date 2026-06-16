@@ -193,8 +193,16 @@ describe('SuggestionsView', () => {
         return {
           data: {
             data: [
-              { controlId: 'AC-1', title: 'Access control policy' },
-              { controlId: 'AC-2', title: 'Account management' },
+              {
+                controlId: 'AC-1',
+                title: 'Access control policy',
+                catalogId: 'catalog-1',
+              },
+              {
+                controlId: 'AC-2',
+                title: 'Account management',
+                catalogId: 'catalog-1',
+              },
             ],
           },
         };
@@ -270,16 +278,34 @@ describe('SuggestionsView', () => {
 
     const controls = wrapper
       .findComponent(SuggestionScopeDialog)
-      .props('controls') as Array<{ label: string; value: string }>;
+      .props('controls') as Array<{
+      label: string;
+      value: string;
+      controlId: string;
+      title: string;
+      catalogTitle: string;
+      profileTitles: string[];
+    }>;
 
     expect(controls).toContainEqual({
-      label: 'AC-1 - Access control policy (Moderate Baseline)',
+      label: 'AC-1 - Access control policy',
       value: 'AC-1',
+      controlId: 'AC-1',
+      title: 'Access control policy',
+      catalogTitle: 'Catalog',
+      profileTitles: ['Moderate Baseline'],
     });
     expect(controls).toContainEqual({
-      label: 'AC-2 - Account management (Moderate Baseline)',
+      label: 'AC-2 - Account management',
       value: 'AC-2',
+      controlId: 'AC-2',
+      title: 'Account management',
+      catalogTitle: 'Catalog',
+      profileTitles: ['Moderate Baseline'],
     });
+    expect(state.axiosGet).not.toHaveBeenCalledWith(
+      '/api/oscal/catalogs/catalog-1/full',
+    );
   });
 
   it('does not poll or refresh suggestions when the config is disabled', async () => {

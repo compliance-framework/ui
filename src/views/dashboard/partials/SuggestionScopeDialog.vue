@@ -17,7 +17,32 @@
           filter
           class="w-full"
           placeholder="All controls"
-        />
+        >
+          <template #option="{ option }">
+            <div class="flex flex-col gap-1">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="font-medium">
+                  {{
+                    option.controlId && option.title
+                      ? `${option.controlId} - ${option.title}`
+                      : option.label
+                  }}
+                </span>
+                <Chip
+                  v-for="profileTitle in option.profileTitles ?? []"
+                  :key="profileTitle"
+                  :label="profileTitle"
+                />
+              </div>
+              <span
+                v-if="option.catalogTitle"
+                class="text-xs text-gray-500 dark:text-slate-400"
+              >
+                {{ option.catalogTitle }}
+              </span>
+            </div>
+          </template>
+        </MultiSelect>
       </div>
 
       <div>
@@ -108,7 +133,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, onUnmounted, ref, watch } from 'vue';
 import Checkbox from 'primevue/checkbox';
 import Chip from '@/volt/Chip.vue';
 import Dialog from '@/volt/Dialog.vue';
@@ -129,6 +154,10 @@ import type { DataResponse } from '@/stores/types';
 interface ControlOption {
   label: string;
   value: string;
+  controlId?: string;
+  title?: string;
+  catalogTitle?: string;
+  profileTitles?: string[];
 }
 
 type LabelSetOption = DashboardSuggestionLabelSet & {
@@ -274,6 +303,12 @@ function schedulePreview() {
     void fetchPreview(requestId);
   }, 250);
 }
+
+onUnmounted(() => {
+  if (previewTimer) {
+    clearTimeout(previewTimer);
+  }
+});
 
 async function fetchPreview(requestId: number) {
   try {

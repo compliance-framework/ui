@@ -371,6 +371,7 @@ const expandedReasoning = ref(new Set<string>());
 const auditEvents = ref<DashboardSuggestionEvent[]>([]);
 const scopeCeilingError = ref('');
 const controlTitleById = ref(new Map<string, string>());
+const controlCatalogById = ref(new Map<string, string>());
 const controlProfileTitlesById = ref(new Map<string, string[]>());
 
 interface SspProfileBinding {
@@ -382,6 +383,7 @@ interface SspProfileBinding {
 interface ResolvedControlWithCatalog {
   controlId: string;
   title?: string;
+  catalogId?: string;
 }
 
 const { data: systemSecurityPlan } = useDataApi<SystemSecurityPlan>(
@@ -439,17 +441,19 @@ const controlOptions = computed(() =>
   )
     .map((requirement: ImplementedRequirement) => {
       const title = controlTitleById.value.get(requirement.controlId);
+      const catalogTitle = controlCatalogById.value.get(requirement.controlId);
       const profileTitles =
         controlProfileTitlesById.value.get(requirement.controlId) ?? [];
       const titleLabel = title
         ? `${requirement.controlId} - ${title}`
         : requirement.controlId;
-      const profileLabel = profileTitles.length
-        ? ` (${profileTitles.join(', ')})`
-        : '';
       return {
-        label: `${titleLabel}${profileLabel}`,
+        label: titleLabel,
         value: requirement.controlId,
+        controlId: requirement.controlId,
+        title,
+        catalogTitle,
+        profileTitles,
       };
     })
     .sort((left, right) => left.label.localeCompare(right.label)),
@@ -506,6 +510,7 @@ watch(
   ([, configFetched, enabled]) => {
     if (!configFetched || !enabled) {
       controlTitleById.value = new Map();
+      controlCatalogById.value = new Map();
       controlProfileTitlesById.value = new Map();
       return;
     }
@@ -527,13 +532,12 @@ function groupTitle(suggestion: DashboardSuggestion | undefined) {
 
 async function loadControlMetadata() {
   controlTitleById.value = new Map();
+  controlCatalogById.value = new Map();
   controlProfileTitlesById.value = new Map();
 
   if (!sspId.value) {
     return;
   }
-
-  controlTitleById.value = await loadCatalogControlTitles();
 
   try {
     const profilesResponse = await axios.get<DataResponse<SspProfileBinding[]>>(
@@ -564,6 +568,7 @@ async function loadControlMetadata() {
     );
 
     const titles = new Map(controlTitleById.value);
+    const controlCatalogIds = new Map<string, string>();
     const profileTitles = new Map<string, Set<string>>();
 
     for (const result of resolvedProfileResults) {
@@ -578,13 +583,21 @@ async function loadControlMetadata() {
         if (control.title && !titles.has(control.controlId)) {
           titles.set(control.controlId, control.title);
         }
+        if (control.catalogId && !controlCatalogIds.has(control.controlId)) {
+          controlCatalogIds.set(control.controlId, control.catalogId);
+        }
         const profiles = profileTitles.get(control.controlId) ?? new Set();
         profiles.add(result.value.title);
         profileTitles.set(control.controlId, profiles);
       }
     }
 
+    const catalogTitles = await loadCatalogControlTitles(
+      titles,
+      controlCatalogIds,
+    );
     controlTitleById.value = titles;
+    controlCatalogById.value = catalogTitles;
     controlProfileTitlesById.value = new Map(
       Array.from(profileTitles.entries()).map(([controlId, profiles]) => [
         controlId,
@@ -592,61 +605,130 @@ async function loadControlMetadata() {
       ]),
     );
   } catch {
+    const titles = new Map<string, string>();
+    const catalogTitles = await loadCatalogControlTitles(titles, new Map());
+    controlTitleById.value = titles;
+    controlCatalogById.value = catalogTitles;
     controlProfileTitlesById.value = new Map();
   }
 }
 
-async function loadCatalogControlTitles() {
-  const titles = new Map<string, string>();
+async function loadCatalogControlTitles(
+  titles: Map<string, string>,
+  controlCatalogIds: Map<string, string>,
+) {
+  const catalogTitles = new Map<string, string>();
+  const implementedControlIds = new Set(
+    systemSecurityPlan.value?.controlImplementation?.implementedRequirements
+      ?.map((requirement) => requirement.controlId)
+      .filter(Boolean) ?? [],
+  );
+  const missingControlIds = new Set(
+    Array.from(implementedControlIds).filter(
+      (controlId) => !titles.has(controlId),
+    ),
+  );
 
   try {
     const catalogsResponse = await axios.get<DataResponse<Catalog[]>>(
       '/api/oscal/catalogs',
     );
-    const catalogIds = (catalogsResponse.data?.data ?? [])
-      .map((catalog) => catalog.uuid)
-      .filter(Boolean);
-    const catalogResults = await Promise.allSettled(
-      catalogIds.map((catalogId) =>
-        axios.get<DataResponse<Catalog>>(
-          `/api/oscal/catalogs/${encodeURIComponent(catalogId)}/full`,
-        ),
-      ),
+    const catalogs = catalogsResponse.data?.data ?? [];
+    const catalogTitleByUuid = new Map(
+      catalogs
+        .filter((catalog) => catalog.uuid)
+        .map((catalog) => [catalog.uuid, catalog.metadata?.title ?? '']),
     );
 
-    for (const result of catalogResults) {
-      if (result.status !== 'fulfilled') {
-        continue;
+    for (const [controlId, catalogId] of controlCatalogIds) {
+      const catalogTitle = catalogTitleByUuid.get(catalogId);
+      if (catalogTitle) {
+        catalogTitles.set(controlId, catalogTitle);
       }
-      collectControlTitles(result.value.data?.data, titles);
+    }
+
+    const referencedCatalogIds = new Set(controlCatalogIds.values());
+    const catalogIds = catalogs
+      .map((catalog) => catalog.uuid)
+      .filter(
+        (catalogId) =>
+          catalogId &&
+          missingControlIds.size > 0 &&
+          (referencedCatalogIds.size === 0 ||
+            referencedCatalogIds.has(catalogId)),
+      );
+
+    for (const catalogId of catalogIds) {
+      const response = await axios.get<DataResponse<Catalog>>(
+        `/api/oscal/catalogs/${encodeURIComponent(catalogId)}/full`,
+      );
+      collectControlTitles(
+        response.data?.data,
+        titles,
+        catalogTitles,
+        missingControlIds,
+      );
+      if (missingControlIds.size === 0) {
+        break;
+      }
     }
   } catch {
-    return titles;
+    return catalogTitles;
   }
 
-  return titles;
+  return catalogTitles;
 }
 
 function collectControlTitles(
   catalog: Catalog | undefined,
   titles: Map<string, string>,
+  catalogTitles: Map<string, string>,
+  missingControlIds: Set<string>,
 ) {
   for (const group of catalog?.groups ?? []) {
     for (const control of group.controls ?? []) {
-      collectControlTitle(control, titles);
+      collectControlTitle(
+        control,
+        titles,
+        catalogTitles,
+        missingControlIds,
+        catalog,
+      );
     }
   }
   for (const control of catalog?.controls ?? []) {
-    collectControlTitle(control, titles);
+    collectControlTitle(
+      control,
+      titles,
+      catalogTitles,
+      missingControlIds,
+      catalog,
+    );
   }
 }
 
-function collectControlTitle(control: Control, titles: Map<string, string>) {
+function collectControlTitle(
+  control: Control,
+  titles: Map<string, string>,
+  catalogTitles: Map<string, string>,
+  missingControlIds: Set<string>,
+  catalog: Catalog | undefined,
+) {
   if (control.id && control.title && !titles.has(control.id)) {
     titles.set(control.id, control.title);
+    missingControlIds.delete(control.id);
+  }
+  if (control.id && catalog?.metadata?.title && !catalogTitles.has(control.id)) {
+    catalogTitles.set(control.id, catalog.metadata.title);
   }
   for (const childControl of control.controls ?? []) {
-    collectControlTitle(childControl, titles);
+    collectControlTitle(
+      childControl,
+      titles,
+      catalogTitles,
+      missingControlIds,
+      catalog,
+    );
   }
 }
 
