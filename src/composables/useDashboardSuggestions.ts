@@ -82,6 +82,9 @@ export function useDashboardSuggestions(
 
     return fetchLabelSets(
       buildDashboardSuggestionLabelSetsEndpoint(sspId.value),
+      // Preserve raw label keys (e.g. `_agent`, `_plugin`) so the UI can filter
+      // out internal labels; otherwise camelcase conversion strips the `_`.
+      { camelcaseStopPaths: ['data.labels'] },
     );
   }
 

@@ -145,6 +145,15 @@ export function formatLabelSet(labels: Record<string, string>): string[] {
   return Object.entries(labels).map(([key, value]) => `${key}=${value}`);
 }
 
+// Labels whose key starts with `_` are internal and hidden from the UI.
+export function formatVisibleLabelSet(
+  labels: Record<string, string>,
+): string[] {
+  return Object.entries(labels)
+    .filter(([key]) => !key.startsWith('_'))
+    .map(([key, value]) => `${key}=${value}`);
+}
+
 export function isRunActive(run: SuggestionRun | undefined): boolean {
   return run?.status === 'pending' || run?.status === 'running';
 }

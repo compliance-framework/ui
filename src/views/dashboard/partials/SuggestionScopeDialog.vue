@@ -66,11 +66,14 @@
                 class="flex flex-wrap items-center gap-2 text-xs text-gray-500 dark:text-slate-400"
               >
                 <Chip
-                  v-for="label in formatLabelSet(option.labels)"
+                  v-for="label in option.displayLabels"
                   :key="label"
                   :label="label"
                 />
-                <span>{{ option.evidenceCount }} evidence</span>
+                <span v-if="option.hiddenLabelCount > 0">
+                  {{ option.hiddenLabelCount }} more
+                  {{ option.hiddenLabelCount === 1 ? 'label' : 'labels' }}
+                </span>
               </div>
             </div>
           </template>
@@ -152,7 +155,7 @@ import type {
 } from './dashboard-suggestions';
 import {
   buildPreviewDashboardSuggestionsEndpoint,
-  formatLabelSet,
+  formatVisibleLabelSet,
 } from './dashboard-suggestions';
 import type { DataResponse } from '@/stores/types';
 
@@ -167,7 +170,12 @@ interface ControlOption {
 
 type LabelSetOption = DashboardSuggestionLabelSet & {
   title: string;
+  displayLabels: string[];
+  hiddenLabelCount: number;
 };
+
+// Max non-internal labels shown per label set before collapsing into a count.
+const MAX_VISIBLE_LABELS = 5;
 
 const props = defineProps<{
   visible: boolean;
@@ -214,10 +222,15 @@ const canGenerate = computed(
     (!requiresLargeRunConfirm.value || largeRunConfirmed.value),
 );
 const labelSetOptions = computed<LabelSetOption[]>(() =>
-  props.labelSets.map((labelSet) => ({
-    ...labelSet,
-    title: getLabelSetTitle(labelSet),
-  })),
+  props.labelSets.map((labelSet) => {
+    const visibleLabels = formatVisibleLabelSet(labelSet.labels ?? {});
+    return {
+      ...labelSet,
+      title: getLabelSetTitle(labelSet),
+      displayLabels: visibleLabels.slice(0, MAX_VISIBLE_LABELS),
+      hiddenLabelCount: Math.max(0, visibleLabels.length - MAX_VISIBLE_LABELS),
+    };
+  }),
 );
 
 watch(
@@ -355,7 +368,7 @@ function getLabelSetTitle(labelSet: DashboardSuggestionLabelSet) {
     return sampleTitle;
   }
 
-  const labelSummary = formatLabelSet(labelSet.labels ?? {}).join(', ');
+  const labelSummary = formatVisibleLabelSet(labelSet.labels ?? {}).join(', ');
   return labelSummary || labelSet.hash;
 }
 </script>
