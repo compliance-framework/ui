@@ -61,7 +61,8 @@ export interface DashboardSuggestion {
   controlId: string;
   controlTitle?: string;
   labelSetHash: string;
-  labels: Record<string, string>;
+  labelSet?: Record<string, string>;
+  labels?: Record<string, string>;
   confidence?: number;
   reasoning?: string;
   controlFitReasoning?: string;

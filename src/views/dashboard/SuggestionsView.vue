@@ -133,9 +133,16 @@
                 v-if="group.suggestions[0]?.action === 'extend'"
                 :label="`Extends: ${group.suggestions[0].targetFilterName ?? 'dashboard'}`"
               />
-              <span class="text-sm text-zinc-500">
+              <RouterLink
+                :to="{
+                  name: 'evidence:index',
+                  query: { filter: group.labels.join(' and ') },
+                }"
+                class="text-sm text-zinc-500 hover:underline focus-visible:underline"
+                :title="group.sampleTitles.slice(0, 3).join('\n')"
+              >
                 {{ group.evidenceCount }} matched evidence
-              </span>
+              </RouterLink>
             </div>
             <div class="mt-2 flex flex-wrap gap-2">
               <Chip v-for="label in group.labels" :key="label" :label="label" />
@@ -324,7 +331,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
-import { useRoute } from 'vue-router';
+import { RouterLink, useRoute } from 'vue-router';
 import PageCard from '@/components/PageCard.vue';
 import PageHeader from '@/components/PageHeader.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
@@ -460,6 +467,13 @@ const controlOptions = computed(() =>
     .sort((left, right) => left.label.localeCompare(right.label)),
 );
 
+const labelSetByHash = computed(
+  () =>
+    new Map(
+      (labelSets.value ?? []).map((labelSet) => [labelSet.hash, labelSet]),
+    ),
+);
+
 const pendingGroups = computed(() => {
   const groups = new Map<
     string,
@@ -467,21 +481,22 @@ const pendingGroups = computed(() => {
       hash: string;
       labels: string[];
       evidenceCount: number;
+      sampleTitles: string[];
       suggestions: DashboardSuggestion[];
     }
   >();
 
   for (const suggestion of pendingSuggestions.value ?? []) {
+    const matched = labelSetByHash.value.get(suggestion.labelSetHash);
     const group = groups.get(suggestion.labelSetHash) ?? {
       hash: suggestion.labelSetHash,
-      labels: formatLabelSet(suggestion.labels ?? {}),
-      evidenceCount: suggestion.evidenceCount ?? 0,
+      labels: formatLabelSet(
+        matched?.labels ?? suggestion.labelSet ?? suggestion.labels ?? {},
+      ),
+      evidenceCount: matched?.evidenceCount ?? 0,
+      sampleTitles: matched?.sampleTitles ?? [],
       suggestions: [],
     };
-    group.evidenceCount = Math.max(
-      group.evidenceCount,
-      suggestion.evidenceCount ?? 0,
-    );
     group.suggestions.push(suggestion);
     groups.set(suggestion.labelSetHash, group);
   }

@@ -25,6 +25,10 @@ const state = vi.hoisted(() => ({
 }));
 
 vi.mock('vue-router', () => ({
+  RouterLink: {
+    props: ['to'],
+    template: '<a :data-to="JSON.stringify(to)"><slot /></a>',
+  },
   useRoute: () => ({ params: { sspId: 'ssp-1' } }),
 }));
 
@@ -129,13 +133,11 @@ describe('SuggestionsView', () => {
         controlId: 'AC-1',
         controlTitle: 'Access control policy',
         labelSetHash: 'hash-1',
-        labels: { env: 'prod' },
         confidence: 0.91,
         controlFitReasoning: 'Fits AC-1',
         systemRelevanceReasoning: 'Relevant to payments',
         action: 'create',
         proposedFilterName: 'Production access',
-        evidenceCount: 3,
       },
       {
         id: 'sug-2',
@@ -143,13 +145,19 @@ describe('SuggestionsView', () => {
         controlId: 'AC-2',
         controlTitle: 'Account management',
         labelSetHash: 'hash-1',
-        labels: { env: 'prod' },
         confidence: 0.8,
         controlFitReasoning: 'Fits AC-2',
         systemRelevanceReasoning: 'Relevant to accounts',
         action: 'create',
         proposedFilterName: 'Production access',
-        evidenceCount: 3,
+      },
+    ];
+    state.labelSets.value = [
+      {
+        hash: 'hash-1',
+        labels: { _agent: 'scanner', env: 'prod' },
+        evidenceCount: 7,
+        sampleTitles: ['Scanner evidence'],
       },
     ];
     state.historySuggestions.value = [];
@@ -219,6 +227,15 @@ describe('SuggestionsView', () => {
     );
     expect(wrapper.text()).toContain('Production access');
     expect(wrapper.text()).toContain('AC-1');
+    expect(wrapper.text()).toContain('_agent=scanner');
+    expect(wrapper.text()).toContain('env=prod');
+
+    const evidenceLink = wrapper.find('a[data-to]');
+    expect(evidenceLink.text()).toContain('7 matched evidence');
+    expect(JSON.parse(evidenceLink.attributes('data-to') ?? '{}')).toEqual({
+      name: 'evidence:index',
+      query: { filter: '_agent=scanner and env=prod' },
+    });
 
     const reasoningButton = wrapper
       .findAll('button')

@@ -72,6 +72,7 @@ export function useDashboardSuggestions(
 
     return fetchPendingSuggestions(
       buildDashboardSuggestionsEndpoint(sspId.value, 'pending'),
+      { camelcaseStopPaths: ['data.labelSet'] },
     );
   }
 
@@ -131,6 +132,7 @@ export function useDashboardSuggestions(
     for (const status of statuses) {
       const response = await fetchHistoryRequest(
         buildDashboardSuggestionsEndpoint(sspId.value, status),
+        { camelcaseStopPaths: ['data.labelSet'] },
       );
       collected.push(...(response?.data.value?.data ?? []));
     }
