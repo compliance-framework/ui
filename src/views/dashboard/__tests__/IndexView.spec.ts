@@ -8,24 +8,10 @@ const dashboards = shallowRef<Dashboard[]>([]);
 const systemSecurityPlans = shallowRef<SystemSecurityPlan[]>([]);
 
 const mocks = vi.hoisted(() => ({
-  aiEnabled: false,
-  fetchConfig: vi.fn(),
-  routerPush: vi.fn(),
   confirmRequire: vi.fn(),
   toastAdd: vi.fn(),
   refreshDashboards: vi.fn(),
   deleteDashboard: vi.fn(),
-}));
-
-vi.mock('@/stores/ai-config', () => ({
-  useAiConfigStore: () => ({
-    dashboardSuggestionsEnabled: mocks.aiEnabled,
-    fetchDashboardSuggestionsConfig: mocks.fetchConfig,
-  }),
-}));
-
-vi.mock('vue-router', () => ({
-  useRouter: () => ({ push: mocks.routerPush }),
 }));
 
 vi.mock('primevue/useconfirm', () => ({
@@ -88,15 +74,10 @@ function mountView() {
         PageSubHeader: { template: '<p><slot /></p>' },
         PageCard: { template: '<section><slot /></section>' },
         Chip: { props: ['label'], template: '<span>{{ label }}</span>' },
-        Dialog: { template: '<div><slot /><slot name="footer" /></div>' },
         Message: { template: '<div><slot /></div>' },
         PrimaryButton: {
           template: '<button @click="$emit(\'click\')"><slot /></button>',
         },
-        SecondaryButton: {
-          template: '<button @click="$emit(\'click\')"><slot /></button>',
-        },
-        Select: { template: '<select />' },
         RouterLink: { props: ['to'], template: '<a><slot /></a>' },
       },
     },
@@ -106,12 +87,11 @@ function mountView() {
 describe('Dashboard IndexView', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.aiEnabled = false;
     dashboards.value = [];
     systemSecurityPlans.value = [];
   });
 
-  it('hides the AI suggestions entry point when the config probe is disabled', () => {
+  it('does not render the AI suggestions launcher on the global dashboard index', () => {
     dashboards.value = [makeDashboard('Global dashboard')];
     const wrapper = mountView();
 
@@ -120,7 +100,6 @@ describe('Dashboard IndexView', () => {
   });
 
   it('groups dashboards by global and owning SSP scopes', () => {
-    mocks.aiEnabled = true;
     dashboards.value = [
       makeDashboard('Global dashboard'),
       makeDashboard('Scoped dashboard', 'ssp-1'),
@@ -135,6 +114,5 @@ describe('Dashboard IndexView', () => {
     expect(
       wrapper.find('[data-testid="dashboard-group-ssp-1"]').text(),
     ).toContain('Payments SSP');
-    expect(wrapper.text()).toContain('AI suggestions');
   });
 });

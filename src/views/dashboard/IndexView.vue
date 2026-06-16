@@ -6,16 +6,10 @@
       <PageHeader>Dashboards</PageHeader>
       <PageSubHeader>Findings grouped by query</PageSubHeader>
     </div>
-    <div class="flex gap-2">
+    <div>
       <RouterLink :to="{ name: 'dashboards.create' }">
         <PrimaryButton>Create</PrimaryButton>
       </RouterLink>
-      <SecondaryButton
-        v-if="aiConfig.dashboardSuggestionsEnabled"
-        @click="showSspPicker = true"
-      >
-        AI suggestions
-      </SecondaryButton>
     </div>
   </div>
 
@@ -77,32 +71,10 @@
       page
     </p>
   </Message>
-
-  <Dialog v-model:visible="showSspPicker" modal header="Select SSP" size="sm">
-    <div class="flex flex-col gap-2">
-      <label for="dashboard-suggestions-ssp">System Security Plan</label>
-      <Select
-        id="dashboard-suggestions-ssp"
-        v-model="selectedSspId"
-        :options="sspOptions"
-        optionLabel="label"
-        optionValue="value"
-        placeholder="Select an SSP"
-        class="w-full"
-      />
-    </div>
-    <template #footer>
-      <SecondaryButton @click="showSspPicker = false">Cancel</SecondaryButton>
-      <PrimaryButton :disabled="!selectedSspId" @click="openSuggestions">
-        Open suggestions
-      </PrimaryButton>
-    </template>
-  </Dialog>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { computed } from 'vue';
 import PageHeader from '@/components/PageHeader.vue';
 import PageCard from '@/components/PageCard.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
@@ -114,18 +86,11 @@ import { useConfirm } from 'primevue/useconfirm';
 import { useToast } from 'primevue/usetoast';
 import Button from '@/volt/Button.vue';
 import Chip from '@/volt/Chip.vue';
-import Dialog from '@/volt/Dialog.vue';
 import Message from '@/volt/Message.vue';
-import Select from '@/volt/Select.vue';
 import { useDataApi } from '@/composables/axios';
-import { useAiConfigStore } from '@/stores/ai-config';
 
-const router = useRouter();
 const confirm = useConfirm();
 const toast = useToast();
-const aiConfig = useAiConfigStore();
-const showSspPicker = ref(false);
-const selectedSspId = ref<string | null>(null);
 
 const { data: dashboards, execute: refreshDashboards } =
   useDataApi<Dashboard[]>('/api/filters');
@@ -139,13 +104,6 @@ const { execute: executeDelete } = useDataApi<void>(
     method: 'DELETE',
   },
   { immediate: false },
-);
-
-const sspOptions = computed(() =>
-  (systemSecurityPlans.value ?? []).map((ssp) => ({
-    label: ssp.metadata.title,
-    value: ssp.uuid,
-  })),
 );
 
 const sspTitleById = computed(
@@ -190,21 +148,6 @@ const dashboardGroups = computed(() => {
 
   return sections.filter((section) => section.dashboards.length > 0);
 });
-
-onMounted(() => {
-  void aiConfig.fetchDashboardSuggestionsConfig();
-});
-
-function openSuggestions() {
-  if (!selectedSspId.value) {
-    return;
-  }
-  showSspPicker.value = false;
-  router.push({
-    name: 'dashboards.suggestions',
-    params: { sspId: selectedSspId.value },
-  });
-}
 
 function deleteDashboard(dashboard: Dashboard) {
   confirm.require({

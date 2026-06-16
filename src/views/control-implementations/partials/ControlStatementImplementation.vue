@@ -30,6 +30,7 @@ import SystemImplementationComponentCreateForm from '@/components/system-securit
 import DashboardEvidenceCounter from '@/views/control-implementations/partials/DashboardEvidenceCounter.vue';
 import TooltipTitle from '@/components/TooltipTitle.vue';
 import Message from '@/volt/Message.vue';
+import { useAiConfigStore } from '@/stores/ai-config';
 import ControlStatementMetadata from './ControlStatementMetadata.vue';
 import ControlStatementSuggestions from './ControlStatementSuggestions.vue';
 import ControlStatementByComponents from './ControlStatementByComponents.vue';
@@ -57,6 +58,7 @@ const { system } = useSystemStore();
 const toast = useToast();
 const router = useRouter();
 const axios = useAuthenticatedInstance();
+const aiConfig = useAiConfigStore();
 
 const showCreateStatementModal = ref(false);
 const showEditStatementModal = ref(false);
@@ -393,6 +395,8 @@ watch(selectedComponent, () => {
 });
 
 onMounted(() => {
+  void aiConfig.fetchDashboardSuggestionsConfig();
+
   if (!system.securityPlan?.uuid) {
     return;
   }
@@ -1199,6 +1203,17 @@ function viewDashboardEvidence(dashboard: DashboardWithControls) {
   }
 }
 
+function openDashboardSuggestions() {
+  if (!resolvedSspId.value || !aiConfig.dashboardSuggestionsEnabled) {
+    return;
+  }
+
+  router.push({
+    name: 'dashboards.suggestions',
+    params: { sspId: resolvedSspId.value },
+  });
+}
+
 // Get unique titles for the dropdown (only show each title once)
 const uniqueEvidenceTitles = computed(() => {
   const titleMap = new Map<string, SearchableEvidence>();
@@ -1419,6 +1434,31 @@ async function submitEvidenceLinking() {
         @apply-all="applyAllSuggestedComponents"
         @apply-suggestion="applySuggestedComponent"
       />
+
+      <div
+        v-if="showComponentsSection && aiConfig.dashboardSuggestionsEnabled"
+        class="mt-6"
+      >
+        <PrimaryButton
+          :disabled="!resolvedSspId"
+          @click="openDashboardSuggestions"
+        >
+          AI dashboard suggestions
+        </PrimaryButton>
+      </div>
+
+      <Message
+        v-if="
+          showComponentsSection &&
+          aiConfig.dashboardSuggestionsConfigFetched &&
+          !aiConfig.dashboardSuggestionsEnabled
+        "
+        severity="warn"
+        variant="outlined"
+        class="mt-6"
+      >
+        AI is not configured, so dashboard suggestions cannot be generated.
+      </Message>
 
       <ControlStatementByComponents
         v-if="showComponentsSection && localStatement"

@@ -220,7 +220,9 @@ describe('SuggestionsView', () => {
     await wrapper.vm.$forceUpdate();
     await nextTick();
 
-    expect(wrapper.text()).toContain('Dashboard suggestions are disabled.');
+    expect(wrapper.text()).toContain(
+      'AI is not configured, so dashboard suggestions cannot be generated.',
+    );
     expect(state.refreshLabelSets).not.toHaveBeenCalled();
     expect(state.refreshHistorySuggestions).not.toHaveBeenCalled();
     expect(state.pollLatest).not.toHaveBeenCalled();

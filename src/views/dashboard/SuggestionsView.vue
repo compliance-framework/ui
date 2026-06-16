@@ -24,7 +24,7 @@
     variant="outlined"
     class="mt-4"
   >
-    Dashboard suggestions are disabled.
+    AI is not configured, so dashboard suggestions cannot be generated.
   </Message>
 
   <Message
