@@ -1,0 +1,7 @@
+lisa-design:
+- The diagnostics consolidation uses a thin `/admin/diagnostics` parent shell with child routes for Notifications and AI Suggestions; `NotificationsView.vue` stays internally unchanged, and `/admin/notifications` is only a redirect for compatibility.
+- The sidebar links to the Diagnostics parent as a single Admin entry, leaving child selection to the parent shell so the existing one-level `LeftSideNav` data model does not need a nested group refactor.
+- The AI Suggestions tab is hidden only in the parent shell when `dashboardSuggestionsEnabled` is false; the direct `/admin/diagnostics/ai-suggestions` route still renders its own disabled message so deep links fail closed.
+- AI diagnostics data access is isolated in `useAiDiagnostics`; endpoint failures clear or preserve local state and surface unavailable messages instead of throwing, because the admin AI endpoints may not exist when AI is disabled.
+- Chart series are derived client-side from the loaded runs list and bucketed by `startedAt` day; token series sum per bucket, while cache-hit trend averages run-level ratios and outputs percentages.
+- `camelcaseStopPaths` is applied to AI diagnostics scope/label-set metadata paths so raw label keys such as `_policy` remain intact in drawer scope and event metadata displays.
