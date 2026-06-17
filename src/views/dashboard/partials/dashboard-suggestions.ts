@@ -34,10 +34,23 @@ export interface DashboardSuggestionsPreview {
   labelSetCount: number;
 }
 
-export interface SuggestionRunFailure {
-  controlKey?: string;
-  labelSetHash?: string;
-  message?: string;
+// A single failed cell, as reported in `run.stats.failedCells`. The API stores
+// these under `stats.failed_cells` (camelCased on the way in). Note it carries
+// only the cell index and error message — control/label-set detail is not
+// included in the run summary response.
+export interface SuggestionRunCellFailure {
+  cellIndex?: number;
+  error?: string;
+}
+
+// Free-form run statistics (`stats` jsonb). Only the fields the UI reads are
+// typed here; the backend may include additional keys.
+export interface SuggestionRunStats {
+  cellsCompleted?: number;
+  cellsFailed?: number;
+  failedCells?: SuggestionRunCellFailure[];
+  mappingsReturned?: number;
+  mappingsRejected?: number;
 }
 
 export interface SuggestionRun {
@@ -49,9 +62,15 @@ export interface SuggestionRun {
   failedCells: number;
   scope?: DashboardSuggestionScope;
   error?: string;
-  failures?: SuggestionRunFailure[];
+  stats?: SuggestionRunStats;
   createdAt?: string;
   updatedAt?: string;
+}
+
+export function runCellFailures(
+  run: SuggestionRun | undefined,
+): SuggestionRunCellFailure[] {
+  return run?.stats?.failedCells ?? [];
 }
 
 export interface DashboardSuggestion {
@@ -63,10 +82,12 @@ export interface DashboardSuggestion {
   labelSetHash: string;
   labelSet?: Record<string, string>;
   labels?: Record<string, string>;
+  // Subset of labels that defines the proposed dashboard filter. This is what
+  // the suggested dashboard actually filters on, and is usually a small subset
+  // of the originating evidence's full `labelSet`.
+  proposedFilterLabelSet?: Record<string, string>;
   confidence?: number;
   reasoning?: string;
-  controlFitReasoning?: string;
-  systemRelevanceReasoning?: string;
   action?: 'create' | 'extend';
   proposedFilterName?: string;
   targetFilterId?: string;

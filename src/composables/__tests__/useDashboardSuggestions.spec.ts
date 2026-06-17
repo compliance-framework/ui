@@ -76,6 +76,43 @@ describe('useSuggestionRunPoller', () => {
     scope.stop();
   });
 
+  it('surfaces failure details when a completed run reports failed cells', async () => {
+    mocks.execute.mockResolvedValueOnce({
+      data: {
+        value: {
+          data: {
+            id: 'run-1',
+            status: 'completed',
+            plannedCalls: 2,
+            completedCells: 1,
+            failedCells: 1,
+            stats: {
+              failedCells: [{ cellIndex: 2, error: 'model timed out' }],
+            },
+          },
+        },
+      },
+    });
+
+    const scope = effectScope();
+    const poller = scope.run(() => useSuggestionRunPoller(ref('ssp-1')));
+
+    await poller?.pollLatest();
+
+    expect(mocks.toastAdd).toHaveBeenCalledWith(
+      expect.objectContaining({
+        severity: 'warn',
+        summary: '1 suggestion failed',
+        detail: 'Cell 2: model timed out',
+      }),
+    );
+    expect(mocks.toastAdd).not.toHaveBeenCalledWith(
+      expect.objectContaining({ summary: 'Suggestions ready' }),
+    );
+
+    scope.stop();
+  });
+
   it('keeps polling after a transient poll error', async () => {
     mocks.execute
       .mockRejectedValueOnce(new Error('temporary outage'))

@@ -14,6 +14,7 @@ const state = vi.hoisted(() => ({
 
 vi.mock('@/composables/axios', () => ({
   useAuthenticatedInstance: () => ({ post: state.axiosPost }),
+  decamelizeKeys: (data: unknown) => data,
 }));
 
 function makeLabelSet(hash: string): DashboardSuggestionLabelSet {
@@ -128,6 +129,22 @@ describe('SuggestionScopeDialog', () => {
     await flushPreview();
 
     expect(wrapper.text()).toContain('2 AI calls covering 1 controls x 2');
+  });
+
+  it('sends the preview scope through decamelizeKeys so backend keys are kebab-case', async () => {
+    const wrapper = mountDialog();
+    await flushPreview();
+
+    // Deselect a control so a non-empty scope is sent.
+    await wrapper
+      .findAllComponents({ name: 'MultiSelect' })[0]
+      .vm.$emit('update:modelValue', ['AC-1']);
+    await flushPreview();
+
+    const lastCall = state.axiosPost.mock.calls.at(-1);
+    expect(lastCall?.[1]).toMatchObject({ scope: { controlKeys: ['AC-1'] } });
+    // Without this transform the keys go out camelCase and the API 422s.
+    expect(lastCall?.[2]?.transformRequest).toBeDefined();
   });
 
   it('requires explicit confirmation for larger grids', async () => {
