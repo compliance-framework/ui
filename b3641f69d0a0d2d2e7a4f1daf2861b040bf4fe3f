@@ -5,3 +5,7 @@ lisa-design:
 - AI diagnostics data access is isolated in `useAiDiagnostics`; endpoint failures clear or preserve local state and surface unavailable messages instead of throwing, because the admin AI endpoints may not exist when AI is disabled.
 - Chart series are derived client-side from the loaded runs list and bucketed by `startedAt` day; token series sum per bucket, while cache-hit trend averages run-level ratios and outputs percentages.
 - `camelcaseStopPaths` is applied to AI diagnostics scope/label-set metadata paths so raw label keys such as `_policy` remain intact in drawer scope and event metadata displays.
+
+lisa-selfreview: pass 1 (verdict=request_changes)
+- [medium] src/composables/useAiDiagnostics.ts:104 (correctness): loadMoreRuns reuses the same runsRequest/runsRequestError state as refreshRuns. When a pagination request fails, useAxios sets runsRequestError; the returned runsError computed then becomes non-null, and AiDiagnosticsView hides the already-loaded runs table behind v-if="!runsError" instead of preserving the list and showing only paginationError. This turns a load-more failure into a full runs failure.
+- [medium] src/views/__tests__/DiagnosticsRouting.spec.ts:11 (test quality): The new routing spec imports the app singleton router, drives createWebHistory with router.push(), and waits on router.isReady(). It passes in isolation, but the documented full command npm run test:unit fails: this test times out after 5000 ms with jsdom reporting navigation is not implemented, so the suite is now order/global-history dependent.
