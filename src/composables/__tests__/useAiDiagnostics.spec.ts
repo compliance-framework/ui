@@ -7,6 +7,18 @@ vi.mock('@/composables/axios', () => ({
   useDataApi: vi.fn(),
 }));
 
+function mockDataApi(partial: {
+  execute: ReturnType<typeof vi.fn>;
+  isLoading?: ReturnType<typeof ref<boolean>>;
+  error?: ReturnType<typeof ref<unknown>>;
+}) {
+  return {
+    execute: partial.execute,
+    isLoading: partial.isLoading ?? ref(false),
+    error: partial.error ?? ref<unknown>(null),
+  } as unknown as ReturnType<typeof useDataApi>;
+}
+
 describe('useAiDiagnostics', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -33,26 +45,34 @@ describe('useAiDiagnostics', () => {
     const runDetailRequest = vi.fn();
 
     vi.mocked(useDataApi)
-      .mockReturnValueOnce({
-        execute: summaryRequest,
-        isLoading: ref(false),
-        error: ref(null),
-      } as ReturnType<typeof useDataApi>)
-      .mockReturnValueOnce({
-        execute: runsRequest,
-        isLoading: ref(false),
-        error: ref(null),
-      } as ReturnType<typeof useDataApi>)
-      .mockReturnValueOnce({
-        execute: runsPageRequest,
-        isLoading: ref(true),
-        error: ref(null),
-      } as ReturnType<typeof useDataApi>)
-      .mockReturnValueOnce({
-        execute: runDetailRequest,
-        isLoading: ref(false),
-        error: ref(null),
-      } as ReturnType<typeof useDataApi>);
+      .mockReturnValueOnce(
+        mockDataApi({
+          execute: summaryRequest,
+          isLoading: ref(false),
+          error: ref<unknown>(null),
+        }),
+      )
+      .mockReturnValueOnce(
+        mockDataApi({
+          execute: runsRequest,
+          isLoading: ref(false),
+          error: ref<unknown>(null),
+        }),
+      )
+      .mockReturnValueOnce(
+        mockDataApi({
+          execute: runsPageRequest,
+          isLoading: ref(true),
+          error: ref<unknown>(null),
+        }),
+      )
+      .mockReturnValueOnce(
+        mockDataApi({
+          execute: runDetailRequest,
+          isLoading: ref(false),
+          error: ref<unknown>(null),
+        }),
+      );
 
     const diagnostics = useAiDiagnostics();
     await diagnostics.refreshRuns();
@@ -61,9 +81,7 @@ describe('useAiDiagnostics', () => {
     await diagnostics.loadMoreRuns();
 
     expect(runsPageRequest).not.toHaveBeenCalled();
-    expect(diagnostics.paginationError.value).toBe(
-      'previous pagination error',
-    );
+    expect(diagnostics.paginationError.value).toBe('previous pagination error');
     expect(diagnostics.runs.value).toHaveLength(1);
     expect(diagnostics.nextCursor.value).toBe('cursor-2');
   });

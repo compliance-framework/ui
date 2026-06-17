@@ -48,8 +48,9 @@ export function useAiDiagnostics() {
     error: runsRequestError,
   } = useDataApi<AiDiagnosticsRun[]>(null, {}, { immediate: false });
 
-  const { execute: runsPageRequest, isLoading: paginationLoading } =
-    useDataApi<AiDiagnosticsRun[]>(null, {}, { immediate: false });
+  const { execute: runsPageRequest, isLoading: paginationLoading } = useDataApi<
+    AiDiagnosticsRun[]
+  >(null, {}, { immediate: false });
 
   const { execute: runDetailRequest, isLoading: runDetailLoading } =
     useDataApi<AiDiagnosticsRunDetail>(null, {}, { immediate: false });
