@@ -48,11 +48,8 @@ export function useAiDiagnostics() {
     error: runsRequestError,
   } = useDataApi<AiDiagnosticsRun[]>(null, {}, { immediate: false });
 
-  const { execute: runsPageRequest } = useDataApi<AiDiagnosticsRun[]>(
-    null,
-    {},
-    { immediate: false },
-  );
+  const { execute: runsPageRequest, isLoading: paginationLoading } =
+    useDataApi<AiDiagnosticsRun[]>(null, {}, { immediate: false });
 
   const { execute: runDetailRequest, isLoading: runDetailLoading } =
     useDataApi<AiDiagnosticsRunDetail>(null, {}, { immediate: false });
@@ -100,7 +97,7 @@ export function useAiDiagnostics() {
   }
 
   async function loadMoreRuns(filters: AiDiagnosticsRunsFilters = {}) {
-    if (!nextCursor.value) {
+    if (!nextCursor.value || paginationLoading.value) {
       return;
     }
 
@@ -176,6 +173,7 @@ export function useAiDiagnostics() {
     selectedRunDetail,
     summaryLoading,
     runsLoading,
+    paginationLoading,
     runDetailLoading,
     summaryError: computed(
       () =>

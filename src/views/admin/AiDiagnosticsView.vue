@@ -39,6 +39,7 @@ const {
   selectedRunDetail,
   summaryLoading,
   runsLoading,
+  paginationLoading,
   runDetailLoading,
   summaryError,
   runsError,
@@ -727,7 +728,7 @@ function formatLabelSet(labels: Record<string, string>): string {
               <div v-if="nextCursor" class="mt-4">
                 <SecondaryButton
                   type="button"
-                  :disabled="runsLoading"
+                  :disabled="runsLoading || paginationLoading"
                   @click="loadMore"
                 >
                   Load More

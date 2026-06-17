@@ -24,6 +24,7 @@ const state = vi.hoisted(() => {
     nextCursor: testRef<string | null>(null),
     summaryLoading: testRef(false),
     runsLoading: testRef(false),
+    paginationLoading: testRef(false),
     detailLoading: testRef(false),
     summaryError: testRef<string | null>(null),
     runsError: testRef<string | null>(null),
@@ -58,6 +59,7 @@ vi.mock('@/composables/useAiDiagnostics', () => ({
     selectedRunDetail: state.detail,
     summaryLoading: state.summaryLoading,
     runsLoading: state.runsLoading,
+    paginationLoading: state.paginationLoading,
     runDetailLoading: state.detailLoading,
     summaryError: state.summaryError,
     runsError: state.runsError,
@@ -209,6 +211,7 @@ describe('AiDiagnosticsView', () => {
     state.nextCursor.value = 'next-1';
     state.summaryLoading.value = false;
     state.runsLoading.value = false;
+    state.paginationLoading.value = false;
     state.detailLoading.value = false;
     state.summaryError.value = null;
     state.runsError.value = null;
@@ -327,6 +330,19 @@ describe('AiDiagnosticsView', () => {
       sspId: 'ssp-1',
       limit: 25,
     });
+  });
+
+  it('disables Load More while a pagination request is running', async () => {
+    state.paginationLoading.value = true;
+
+    const wrapper = mountView();
+    await flushPromises();
+
+    const loadMoreButton = wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Load More');
+
+    expect(loadMoreButton?.attributes('disabled')).toBeDefined();
   });
 
   it('opens the run drawer with cells, failed errors, scope, and events', async () => {
