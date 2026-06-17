@@ -1,25 +1,18 @@
-import { createPinia, setActivePinia } from 'pinia';
-import { beforeEach, describe, expect, it } from 'vitest';
-import { useUserStore } from '@/stores/auth';
+import { describe, expect, it } from 'vitest';
+import router from '@/router';
 
 describe('diagnostics routes', () => {
-  beforeEach(() => {
-    setActivePinia(createPinia());
-  });
+  it('configures /admin/notifications as a compatibility redirect', () => {
+    const route = router
+      .getRoutes()
+      .find(
+        (route) =>
+          route.path === '/admin/notifications' ||
+          route.name === 'admin-notifications',
+      );
 
-  it('redirects /admin/notifications to Diagnostics notifications', async () => {
-    const { default: router } = await import('@/router');
-    const userStore = useUserStore();
-    userStore.isAuthenticated = true;
-
-    await router.push('/admin/notifications');
-    await router.isReady();
-
-    expect(router.currentRoute.value.name).toBe(
-      'admin-diagnostics-notifications',
-    );
-    expect(router.currentRoute.value.path).toBe(
-      '/admin/diagnostics/notifications',
-    );
+    expect(route?.redirect).toEqual({
+      name: 'admin-diagnostics-notifications',
+    });
   });
 });

@@ -48,6 +48,12 @@ export function useAiDiagnostics() {
     error: runsRequestError,
   } = useDataApi<AiDiagnosticsRun[]>(null, {}, { immediate: false });
 
+  const { execute: runsPageRequest } = useDataApi<AiDiagnosticsRun[]>(
+    null,
+    {},
+    { immediate: false },
+  );
+
   const { execute: runDetailRequest, isLoading: runDetailLoading } =
     useDataApi<AiDiagnosticsRunDetail>(null, {}, { immediate: false });
 
@@ -101,7 +107,7 @@ export function useAiDiagnostics() {
     paginationError.value = null;
 
     try {
-      const response = await runsRequest(
+      const response = await runsPageRequest(
         buildAiDiagnosticsRunsEndpoint({
           ...filters,
           cursor: nextCursor.value,
