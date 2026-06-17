@@ -25,6 +25,7 @@ import {
   type GenerateDashboardSuggestionsPayload,
   type SuggestionRun,
   isRunActive,
+  runCellFailures,
 } from '@/views/dashboard/partials/dashboard-suggestions';
 
 export function useDashboardSuggestions(
@@ -72,7 +73,11 @@ export function useDashboardSuggestions(
 
     return fetchPendingSuggestions(
       buildDashboardSuggestionsEndpoint(sspId.value, 'pending'),
-      { camelcaseStopPaths: ['data.labelSet'] },
+      // Preserve raw label keys (e.g. `_policy`) on both the originating label
+      // set and the proposed filter; otherwise camelcase conversion strips `_`.
+      {
+        camelcaseStopPaths: ['data.labelSet', 'data.proposedFilterLabelSet'],
+      },
     );
   }
 
@@ -132,7 +137,9 @@ export function useDashboardSuggestions(
     for (const status of statuses) {
       const response = await fetchHistoryRequest(
         buildDashboardSuggestionsEndpoint(sspId.value, status),
-        { camelcaseStopPaths: ['data.labelSet'] },
+        {
+          camelcaseStopPaths: ['data.labelSet', 'data.proposedFilterLabelSet'],
+        },
       );
       collected.push(...(response?.data.value?.data ?? []));
     }
@@ -190,6 +197,28 @@ export function useDashboardSuggestions(
     rejectSuggestions,
     fetchSuggestionEvents,
   };
+}
+
+// Builds a human-readable detail string for a run that reported failures,
+// preferring per-cell error messages (from `stats.failedCells`) over the
+// generic top-level error.
+function formatRunFailureDetail(run: SuggestionRun): string {
+  const failures = runCellFailures(run);
+  if (failures.length === 0) {
+    return run.error ?? 'Dashboard suggestion generation failed.';
+  }
+
+  const shown = failures.slice(0, 3).map((failure) => {
+    const label =
+      failure.cellIndex === undefined ? 'Cell' : `Cell ${failure.cellIndex}`;
+    return `${label}: ${failure.error ?? 'Failed'}`;
+  });
+
+  const remaining = failures.length - shown.length;
+  if (remaining > 0) {
+    shown.push(`and ${remaining} more`);
+  }
+  return shown.join('; ');
 }
 
 interface SuggestionRunPollerOptions {
@@ -257,19 +286,25 @@ export function useSuggestionRunPoller(
       }
       terminalToastShownFor.value = runKey;
 
-      if (latestRun.status === 'completed') {
+      const hasFailures =
+        latestRun.status === 'failed' || (latestRun.failedCells ?? 0) > 0;
+
+      if (hasFailures) {
+        toast.add({
+          severity: latestRun.status === 'failed' ? 'error' : 'warn',
+          summary:
+            latestRun.status === 'failed'
+              ? 'Generation failed'
+              : `${latestRun.failedCells} suggestion${latestRun.failedCells === 1 ? '' : 's'} failed`,
+          detail: formatRunFailureDetail(latestRun),
+          life: 8000,
+        });
+      } else if (latestRun.status === 'completed') {
         toast.add({
           severity: 'success',
           summary: 'Suggestions ready',
           detail: `${latestRun.completedCells} cells completed`,
           life: 3000,
-        });
-      } else if (latestRun.status === 'failed') {
-        toast.add({
-          severity: 'error',
-          summary: 'Generation failed',
-          detail: latestRun.error ?? 'Dashboard suggestion generation failed.',
-          life: 5000,
         });
       }
     } catch {

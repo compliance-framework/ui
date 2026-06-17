@@ -134,8 +134,7 @@ describe('SuggestionsView', () => {
         controlTitle: 'Access control policy',
         labelSetHash: 'hash-1',
         confidence: 0.91,
-        controlFitReasoning: 'Fits AC-1',
-        systemRelevanceReasoning: 'Relevant to payments',
+        reasoning: 'Fits AC-1 and is relevant to payments',
         action: 'create',
         proposedFilterName: 'Production access',
       },
@@ -146,8 +145,7 @@ describe('SuggestionsView', () => {
         controlTitle: 'Account management',
         labelSetHash: 'hash-1',
         confidence: 0.8,
-        controlFitReasoning: 'Fits AC-2',
-        systemRelevanceReasoning: 'Relevant to accounts',
+        reasoning: 'Fits AC-2 and is relevant to accounts',
         action: 'create',
         proposedFilterName: 'Production access',
       },
@@ -243,8 +241,63 @@ describe('SuggestionsView', () => {
     await reasoningButton?.trigger('click');
     await nextTick();
 
-    expect(wrapper.text()).toContain('Fits AC-1');
-    expect(wrapper.text()).toContain('Relevant to payments');
+    expect(wrapper.text()).toContain('Fits AC-1 and is relevant to payments');
+  });
+
+  it('labels, links and counts groups by the proposed filter label set', async () => {
+    const policy =
+      'compliance_framework.secret_scanning_push_protection_enabled';
+    state.pendingSuggestions.value = [
+      {
+        id: 'sug-1',
+        status: 'pending',
+        controlId: 'GD.Conf.C05',
+        controlTitle: 'Detect and Block Secret Leakage',
+        labelSetHash: 'full-hash-1',
+        labelSet: { _policy: policy, repository: 'todo-app', team: 'ccf' },
+        proposedFilterLabelSet: { _policy: policy },
+        confidence: 0.95,
+        action: 'create',
+        proposedFilterName: 'Secret scanning push protection enabled',
+      },
+    ];
+    state.labelSets.value = [
+      {
+        hash: 'full-hash-1',
+        labels: { _policy: policy, repository: 'todo-app' },
+        evidenceCount: 3,
+        sampleTitles: ['todo-app evidence'],
+      },
+      {
+        hash: 'full-hash-2',
+        labels: { _policy: policy, repository: 'api' },
+        evidenceCount: 4,
+        sampleTitles: ['api evidence'],
+      },
+      {
+        hash: 'full-hash-3',
+        labels: { _policy: 'other.policy', repository: 'api' },
+        evidenceCount: 9,
+        sampleTitles: ['unrelated evidence'],
+      },
+    ];
+
+    const wrapper = mountView();
+
+    expect(wrapper.findAll('[data-testid^="suggestion-group-"]')).toHaveLength(
+      1,
+    );
+    // Chips and link use the proposed filter, not the full originating label set.
+    expect(wrapper.text()).toContain(`_policy=${policy}`);
+    expect(wrapper.text()).not.toContain('repository=todo-app');
+
+    const evidenceLink = wrapper.find('a[data-to]');
+    // Sums evidence across every label set that is a superset of the filter.
+    expect(evidenceLink.text()).toContain('7 matched evidence');
+    expect(JSON.parse(evidenceLink.attributes('data-to') ?? '{}')).toEqual({
+      name: 'evidence:index',
+      query: { filter: `_policy=${policy}` },
+    });
   });
 
   it('wires group accept and reject reason payloads', async () => {

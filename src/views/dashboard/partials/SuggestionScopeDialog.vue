@@ -147,7 +147,7 @@ import Chip from '@/volt/Chip.vue';
 import Dialog from '@/volt/Dialog.vue';
 import Message from '@/volt/Message.vue';
 import MultiSelect from '@/volt/MultiSelect.vue';
-import { useAuthenticatedInstance } from '@/composables/axios';
+import { decamelizeKeys, useAuthenticatedInstance } from '@/composables/axios';
 import type {
   DashboardSuggestionsPreview,
   DashboardSuggestionLabelSet,
@@ -336,6 +336,9 @@ async function fetchPreview(requestId: number) {
     >(
       buildPreviewDashboardSuggestionsEndpoint(props.sspId),
       scope ? { scope } : {},
+      // Backend expects kebab-case keys (e.g. `control-keys`); without this the
+      // scope keys go out as camelCase and the API reads an empty scope (422).
+      { transformRequest: [decamelizeKeys] },
     );
     if (requestId !== latestPreviewRequestId) {
       return;

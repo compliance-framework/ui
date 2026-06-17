@@ -61,16 +61,24 @@
     </div>
 
     <Message
-      v-if="run?.status === 'failed'"
-      severity="error"
+      v-if="run && (run.status === 'failed' || (run.failedCells ?? 0) > 0)"
+      :severity="run.status === 'failed' ? 'error' : 'warn'"
       variant="outlined"
     >
-      <p>{{ run.error ?? 'Suggestion generation failed.' }}</p>
-      <ul v-if="run.failures?.length" class="mt-2 list-disc pl-5">
-        <li v-for="failure in run.failures" :key="failureKey(failure)">
-          {{ failure.controlKey ?? 'Unknown control' }} /
-          {{ failure.labelSetHash ?? 'Unknown label set' }}:
-          {{ failure.message ?? 'Failed' }}
+      <p>
+        {{
+          run.status === 'failed'
+            ? (run.error ?? 'Suggestion generation failed.')
+            : `${run.failedCells} of ${run.plannedCalls} cells failed to generate.`
+        }}
+      </p>
+      <ul v-if="runCellFailures(run).length" class="mt-2 list-disc pl-5">
+        <li
+          v-for="(failure, index) in runCellFailures(run)"
+          :key="failure.cellIndex ?? index"
+        >
+          Cell {{ failure.cellIndex ?? index }}:
+          {{ failure.error ?? 'Failed' }}
         </li>
       </ul>
     </Message>
@@ -199,20 +207,8 @@
               class="mt-3 rounded-md bg-zinc-50 p-3 text-sm dark:bg-slate-800"
             >
               <p>
-                <span class="font-semibold">Control fit:</span>
-                {{
-                  suggestion.controlFitReasoning ??
-                  suggestion.reasoning ??
-                  'No control-fit reasoning provided.'
-                }}
-              </p>
-              <p class="mt-2">
-                <span class="font-semibold">System relevance:</span>
-                {{
-                  suggestion.systemRelevanceReasoning ??
-                  suggestion.reasoning ??
-                  'No system-relevance reasoning provided.'
-                }}
+                <span class="font-semibold">Reasoning:</span>
+                {{ suggestion.reasoning ?? 'No reasoning provided.' }}
               </p>
             </div>
           </div>
@@ -357,10 +353,10 @@ import Textarea from '@/volt/Textarea.vue';
 import SuggestionScopeDialog from './partials/SuggestionScopeDialog.vue';
 import {
   formatLabelSet,
+  runCellFailures,
   type DashboardSuggestion,
   type DashboardSuggestionEvent,
   type GenerateDashboardSuggestionsPayload,
-  type SuggestionRunFailure,
 } from './partials/dashboard-suggestions';
 
 const route = useRoute();
@@ -487,22 +483,73 @@ const pendingGroups = computed(() => {
   >();
 
   for (const suggestion of pendingSuggestions.value ?? []) {
-    const matched = labelSetByHash.value.get(suggestion.labelSetHash);
-    const group = groups.get(suggestion.labelSetHash) ?? {
-      hash: suggestion.labelSetHash,
-      labels: formatLabelSet(
-        matched?.labels ?? suggestion.labelSet ?? suggestion.labels ?? {},
-      ),
-      evidenceCount: matched?.evidenceCount ?? 0,
-      sampleTitles: matched?.sampleTitles ?? [],
-      suggestions: [],
-    };
+    const proposedFilter = suggestion.proposedFilterLabelSet;
+    const hasProposedFilter =
+      !!proposedFilter && Object.keys(proposedFilter).length > 0;
+
+    // The proposed dashboard is defined by `proposedFilterLabelSet` (a subset of
+    // the originating evidence's labels), so group/label/link by that filter.
+    // Fall back to the full label set only when no proposed filter is present.
+    const key = hasProposedFilter
+      ? `filter:${proposedFilterKey(proposedFilter)}`
+      : suggestion.labelSetHash;
+
+    let group = groups.get(key);
+    if (!group) {
+      const matched = labelSetByHash.value.get(suggestion.labelSetHash);
+      const evidence = hasProposedFilter
+        ? evidenceMatchingFilter(proposedFilter)
+        : {
+            count: matched?.evidenceCount ?? 0,
+            sampleTitles: matched?.sampleTitles ?? [],
+          };
+
+      group = {
+        hash: key,
+        labels: formatLabelSet(
+          hasProposedFilter
+            ? proposedFilter
+            : (matched?.labels ??
+                suggestion.labelSet ??
+                suggestion.labels ??
+                {}),
+        ),
+        evidenceCount: evidence.count,
+        sampleTitles: evidence.sampleTitles,
+        suggestions: [],
+      };
+      groups.set(key, group);
+    }
     group.suggestions.push(suggestion);
-    groups.set(suggestion.labelSetHash, group);
   }
 
   return Array.from(groups.values());
 });
+
+// Stable identity for a proposed filter, independent of key insertion order.
+function proposedFilterKey(filter: Record<string, string>): string {
+  return Object.entries(filter)
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([key, value]) => `${key}=${value}`)
+    .join('&');
+}
+
+// Evidence matching a proposed filter is every full label set that is a superset
+// of the filter, since the dashboard filters on that subset of labels.
+function evidenceMatchingFilter(filter: Record<string, string>) {
+  const matching = (labelSets.value ?? []).filter((labelSet) =>
+    Object.entries(filter).every(
+      ([key, value]) => labelSet.labels?.[key] === value,
+    ),
+  );
+  return {
+    count: matching.reduce(
+      (total, labelSet) => total + (labelSet.evidenceCount ?? 0),
+      0,
+    ),
+    sampleTitles: matching.flatMap((labelSet) => labelSet.sampleTitles ?? []),
+  };
+}
 
 onMounted(async () => {
   await aiConfig.fetchDashboardSuggestionsConfig();
@@ -767,10 +814,6 @@ function confidenceLabel(confidence: number | undefined) {
     return 'Confidence unavailable';
   }
   return `${Math.round(confidence * 100)}% confidence`;
-}
-
-function failureKey(failure: SuggestionRunFailure) {
-  return `${failure.controlKey ?? 'control'}-${failure.labelSetHash ?? 'label'}-${failure.message ?? 'failed'}`;
 }
 
 function toggleReasoning(id: string) {
