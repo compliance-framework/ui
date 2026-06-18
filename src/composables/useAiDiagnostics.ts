@@ -11,10 +11,7 @@ import {
   type AiDiagnosticsSummary,
 } from '@/views/admin/partials/ai-diagnostics';
 
-const labelKeyStopPaths = [
-  'data.scope.labelSets',
-  'data.events.metadata',
-];
+const labelKeyStopPaths = ['data.scope.labelSets', 'data.events.metadata'];
 
 function unavailableMessage(fallback: string, error: unknown): string {
   if (error instanceof Error && error.message) {
