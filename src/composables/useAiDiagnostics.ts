@@ -13,7 +13,6 @@ import {
 
 const labelKeyStopPaths = [
   'data.scope.labelSets',
-  'data.cells.labelSets',
   'data.events.metadata',
 ];
 

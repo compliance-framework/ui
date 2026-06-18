@@ -29,6 +29,7 @@ const statusFilter = ref('');
 const sspFilter = ref('');
 const limitFilter = ref(50);
 const autoRefresh = ref(false);
+const hasCompletedInitialConfigLoad = ref(false);
 const showRunDrawer = ref(false);
 const activeTab = ref<'overview' | 'runs'>('overview');
 
@@ -177,6 +178,8 @@ function toggleAutoRefresh() {
 
 onMounted(async () => {
   await aiConfig.fetchDashboardSuggestionsConfig();
+  hasCompletedInitialConfigLoad.value = true;
+
   if (!aiConfig.dashboardSuggestionsEnabled) {
     return;
   }
@@ -188,6 +191,10 @@ watch(
   () => aiConfig.dashboardSuggestionsEnabled,
   async (enabled) => {
     if (enabled) {
+      if (!hasCompletedInitialConfigLoad.value) {
+        return;
+      }
+
       await refreshAll();
       return;
     }
@@ -520,11 +527,10 @@ function formatLabelSet(labels: Record<string, string>): string {
                   <RouterLink
                     :to="{
                       name: 'admin-diagnostics-notifications',
-                      hash: '#notifications-health-panel',
                     }"
                     class="text-sm font-medium text-primary hover:underline"
                   >
-                    Open Notifications health
+                    Open Notifications
                   </RouterLink>
                 </div>
                 <div class="mt-3 grid gap-3 text-sm sm:grid-cols-4">
