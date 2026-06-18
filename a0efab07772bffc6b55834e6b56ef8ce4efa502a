@@ -1,0 +1,6 @@
+lisa-design:
+- Matched state is driven only by pending dashboard-suggestions rows, not by control-results outcome, so generalized pending suggestions still surface even without a control-result row.
+- Control ids are normalized only for map lookup keys with trim/lowercase; displayed control ids and API payload values keep their original casing.
+- The drawer fetches pending suggestions and latest control-results once per SSP behind the existing AI config store flag, and treats either request failing as unavailable data while preserving the other request's successful state.
+- The drawer review link targets the existing `dashboards.suggestions` route with `sspId` only because `SuggestionsView` does not currently implement a control-specific query/deep link.
+- State 3 intentionally distinguishes `matched` with no pending rows from an absent control-result row in copy: matched rows show no pending suggestions, absent rows show not yet evaluated.
