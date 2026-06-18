@@ -1,0 +1,18 @@
+lisa-addressed:
+---
+Comment (src/views/admin/AiDiagnosticsView.vue:759):
+**Blocker (UX):** the run-detail drawer renders far too narrow (~320px), so the wide 9-column Cells table is squeezed off-screen and effectively shows nothing. Verified against the volt Drawer: `src/volt/Drawer.vue` hard-codes the right-position width in its pass-through theme (`p-right:w-80`). That `p-right:` variant compiles to an attribute selector (`[data-p~='right']:w-80`, specificity 0,2,0), which out-specifies the plain `w-full max-w-5xl` on this instance (0,1,0) — so the instance class loses and the drawer stays at `w-80`. (tailwind-merge can't help either: the two have different variant prefixes, so it doesn't dedupe them.)
+
+Fix — give the instance an `!important` width so it beats the attribute-selector specificity. This is Tailwind v4, so use the trailing-`!` syntax:
+
+```vue
+<Drawer
+  v-model:visible="showRunDrawer"
+  position="right"
+  header="AI Suggestion Run"
+  class="w-screen! max-w-6xl!"
+>
+```
+
+That yields `min(100vw, 72rem)` — full width on small screens, capped at 72rem on large ones — and the table's existing `overflow-x-auto` wrapper handles any residual horizontal scroll. (Avoid widening `p-right:w-80` in volt/Drawer.vue itself — that's the shared default for every drawer in the app.)
+Implementation guidance: In src/views/admin/AiDiagnosticsView.vue, update only the run-detail Drawer instance near the selectedRunDetail template. Change its class from "w-full max-w-5xl" to Tailwind v4 important width utilities, for example class="w-screen! max-w-6xl!". This is needed because src/volt/Drawer.vue applies p-right:w-80 in the shared Drawer pass-through theme, whose generated attribute-selector specificity beats the plain instance width classes. Do not widen or remove p-right:w-80 in src/volt/Drawer.vue because that is the shared default for all right-position drawers. Keep the existing table overflow wrappers unchanged.
