@@ -346,6 +346,7 @@
     :control-options="controlOptions"
     :resolve-catalog-id="resolveControlCatalogId"
     :saving="editingGroup"
+    :error="editError"
     @save="saveGroupEdit"
   />
 
@@ -459,6 +460,7 @@ const auditEvents = ref<DashboardSuggestionEvent[]>([]);
 const scopeCeilingError = ref('');
 const showEditDialog = ref(false);
 const editGroup = ref<PendingGroup | null>(null);
+const editError = ref('');
 const controlTitleById = ref(new Map<string, string>());
 const controlCatalogById = ref(new Map<string, string>());
 const controlCatalogIdById = ref(new Map<string, string>());
@@ -986,8 +988,8 @@ async function suggestFilterMerges() {
   }
 }
 
-// Builds the chip label for a generalization group from its source filter count
-// and the dropped label key (parsed from the deterministic reasoning string).
+// Builds the chip label for a generalization group from the number of source
+// filters it merges.
 function generalizationLabel(group: PendingGroup) {
   const count = group.suggestions[0]?.sourceFilterIds?.length ?? 0;
   return `Merges ${count} filter${count === 1 ? '' : 's'}`;
@@ -1034,16 +1036,19 @@ function resolveControlCatalogId(controlId: string) {
 
 function openEditDialog(group: PendingGroup) {
   editGroup.value = group;
+  editError.value = '';
   showEditDialog.value = true;
 }
 
 async function saveGroupEdit(payload: EditDashboardSuggestionGroupPayload) {
   try {
+    editError.value = '';
     await editSuggestionGroup(payload);
     selectedSuggestionIds.value = [];
     showEditDialog.value = false;
   } catch (error) {
-    scopeCeilingError.value = extractErrorMessage(error);
+    // Keep the dialog open and surface the failure inline so the user can retry.
+    editError.value = extractErrorMessage(error);
   }
 }
 

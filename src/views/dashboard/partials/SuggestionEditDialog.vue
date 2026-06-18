@@ -88,8 +88,8 @@
         </div>
       </div>
 
-      <Message v-if="errorMessage" severity="error" variant="outlined">
-        {{ errorMessage }}
+      <Message v-if="error" severity="error" variant="outlined">
+        {{ error }}
       </Message>
     </div>
 
@@ -141,6 +141,8 @@ const props = defineProps<{
   // Resolves a control's catalog UUID; falls back to the group's catalog id.
   resolveCatalogId?: (controlId: string) => string | undefined;
   saving?: boolean;
+  // Server-side save error, surfaced inline so the dialog stays open on failure.
+  error?: string;
 }>();
 
 const emit = defineEmits<{
@@ -152,7 +154,6 @@ const title = ref('');
 const labelRows = ref<LabelRow[]>([]);
 const removeIds = ref<string[]>([]);
 const addControlIds = ref<string[]>([]);
-const errorMessage = ref('');
 
 const modelVisible = computed({
   get: () => props.visible,
@@ -214,7 +215,6 @@ watch(
     }
     removeIds.value = [];
     addControlIds.value = [];
-    errorMessage.value = '';
   },
   { immediate: true },
 );

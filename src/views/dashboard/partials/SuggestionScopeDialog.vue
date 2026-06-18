@@ -404,7 +404,7 @@ async function fetchPreview(requestId: number) {
     >(
       buildPreviewDashboardSuggestionsEndpoint(props.sspId),
       body,
-      // Backend expects snake_case keys (e.g. `control_keys`); without this the
+      // Backend expects kebab-case keys (e.g. `control-keys`); without this the
       // scope keys go out as camelCase and the API reads an empty scope (422).
       { transformRequest: [decamelizeKeys] },
     );
