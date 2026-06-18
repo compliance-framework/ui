@@ -45,7 +45,7 @@ describe('LeftSideNav', () => {
 
     const systemUsersIndex = linkTexts.indexOf('System Users');
     const agentsIndex = linkTexts.indexOf('Agents');
-    const notificationsIndex = linkTexts.indexOf('Notifications');
+    const diagnosticsIndex = linkTexts.indexOf('Diagnostics');
     const risksIndex = linkTexts.indexOf('Risks');
     const subjectTemplatesIndex = linkTexts.indexOf('Subject Templates');
     const riskTemplatesIndex = linkTexts.indexOf('Risk Templates');
@@ -54,7 +54,7 @@ describe('LeftSideNav', () => {
     for (const index of [
       systemUsersIndex,
       agentsIndex,
-      notificationsIndex,
+      diagnosticsIndex,
       risksIndex,
       subjectTemplatesIndex,
       riskTemplatesIndex,
@@ -67,8 +67,8 @@ describe('LeftSideNav', () => {
     expect(risksIndex).toBeGreaterThan(agentsIndex);
     expect(subjectTemplatesIndex).toBeGreaterThan(risksIndex);
     expect(riskTemplatesIndex).toBeGreaterThan(subjectTemplatesIndex);
-    expect(notificationsIndex).toBeGreaterThan(riskTemplatesIndex);
-    expect(importIndex).toBeGreaterThan(notificationsIndex);
+    expect(diagnosticsIndex).toBeGreaterThan(riskTemplatesIndex);
+    expect(importIndex).toBeGreaterThan(diagnosticsIndex);
   });
 
   it('exposes import only from the admin navigation category', () => {

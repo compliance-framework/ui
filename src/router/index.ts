@@ -381,10 +381,37 @@ const authenticatedRoutes = [
   {
     path: '/admin/notifications',
     name: 'admin-notifications',
-    component: () => import('../views/admin/NotificationsView.vue'),
+    redirect: { name: 'admin-diagnostics-notifications' },
     meta: {
       requiresAuth: true,
     },
+  },
+  {
+    path: '/admin/diagnostics',
+    name: 'admin-diagnostics',
+    component: () => import('../views/admin/DiagnosticsView.vue'),
+    redirect: { name: 'admin-diagnostics-notifications' },
+    meta: {
+      requiresAuth: true,
+    },
+    children: [
+      {
+        path: 'notifications',
+        name: 'admin-diagnostics-notifications',
+        component: () => import('../views/admin/NotificationsView.vue'),
+        meta: {
+          requiresAuth: true,
+        },
+      },
+      {
+        path: 'ai-suggestions',
+        name: 'admin-diagnostics-ai-suggestions',
+        component: () => import('../views/admin/AiDiagnosticsView.vue'),
+        meta: {
+          requiresAuth: true,
+        },
+      },
+    ],
   },
   {
     path: '/admin/risks',
