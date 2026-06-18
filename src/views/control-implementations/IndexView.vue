@@ -437,7 +437,7 @@ function controlHighestSeverity(
   return stats.highestSeverity ?? 'high';
 }
 
-async function loadDashboardSuggestionState(force = false) {
+async function loadDashboardSuggestionState() {
   const sspId = systemStore.system.securityPlan?.uuid;
   if (!sspId || !aiConfigStore.dashboardSuggestionsEnabled) {
     pendingDashboardSuggestions.value = [];
@@ -450,12 +450,11 @@ async function loadDashboardSuggestionState(force = false) {
     return;
   }
 
-  if (!force && loadedDashboardSuggestionStateFor.value === sspId) {
+  if (loadedDashboardSuggestionStateFor.value === sspId) {
     return;
   }
 
   if (
-    !force &&
     loadingDashboardSuggestionStateFor.value === sspId &&
     dashboardSuggestionStateLoadPromise
   ) {

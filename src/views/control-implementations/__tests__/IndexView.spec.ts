@@ -9,8 +9,6 @@ const listProfiles = vi.fn();
 const axiosGet = vi.fn();
 const loadRisks = vi.fn(async () => ({ data: { value: { data: [] } } }));
 const fetchControlImplementations = vi.fn();
-const fetchPendingDashboardSuggestions = vi.fn();
-const fetchDashboardSuggestionControlResults = vi.fn();
 const aiConfigState = reactive({
   dashboardSuggestionsEnabled: false,
   dashboardSuggestionsConfigFetched: false,
@@ -26,7 +24,6 @@ let pendingDashboardSuggestionsFixture: unknown[] = [];
 let controlResultsFixture: unknown[] = [];
 let pendingDashboardSuggestionsReject = false;
 let controlResultsReject = false;
-let useDataApiNullCallIndex = 0;
 const uiStore = {
   controlImplementationDrawerOpen: false,
   controlImplementationSelectedRequirementId: null as string | null,
@@ -105,36 +102,12 @@ vi.mock('@/composables/axios', () => ({
       };
     }
     if (url === null) {
-      const callIndex = useDataApiNullCallIndex;
-      useDataApiNullCallIndex += 1;
-      if (callIndex % 3 === 1) {
-        const data = ref([]);
-        return {
-          data,
-          isLoading: ref(false),
-          error: ref(null),
-          execute: async (...args: unknown[]) => {
-            const response = await fetchPendingDashboardSuggestions(...args);
-            data.value = response.data.value.data;
-            return response;
-          },
-        };
-      }
-      if (callIndex % 3 === 2) {
-        const data = ref([]);
-        return {
-          data,
-          isLoading: ref(false),
-          error: ref(null),
-          execute: async (...args: unknown[]) => {
-            const response = await fetchDashboardSuggestionControlResults(
-              ...args,
-            );
-            data.value = response.data.value.data;
-            return response;
-          },
-        };
-      }
+      return {
+        data: ref([]),
+        isLoading: ref(false),
+        error: ref(null),
+        execute: loadRisks,
+      };
     }
     return {
       data: ref([]),
@@ -223,7 +196,6 @@ const stubs = {
 describe('control implementations IndexView', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    useDataApiNullCallIndex = 0;
     aiConfigState.dashboardSuggestionsEnabled = false;
     aiConfigState.dashboardSuggestionsConfigFetched = false;
     systemStoreState.system.securityPlan = { uuid: 'ssp-1' };
@@ -266,30 +238,6 @@ describe('control implementations IndexView', () => {
           },
         },
       },
-    });
-    fetchPendingDashboardSuggestions.mockImplementation(async () => {
-      if (pendingDashboardSuggestionsReject) {
-        throw new Error('pending failed');
-      }
-      return {
-        data: {
-          value: {
-            data: pendingDashboardSuggestionsFixture,
-          },
-        },
-      };
-    });
-    fetchDashboardSuggestionControlResults.mockImplementation(async () => {
-      if (controlResultsReject) {
-        throw new Error('results failed');
-      }
-      return {
-        data: {
-          value: {
-            data: controlResultsFixture,
-          },
-        },
-      };
     });
   });
 
