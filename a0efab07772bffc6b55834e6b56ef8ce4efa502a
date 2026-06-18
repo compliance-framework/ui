@@ -4,3 +4,6 @@ lisa-design:
 - The drawer fetches pending suggestions and latest control-results once per SSP behind the existing AI config store flag, and treats either request failing as unavailable data while preserving the other request's successful state.
 - The drawer review link targets the existing `dashboards.suggestions` route with `sspId` only because `SuggestionsView` does not currently implement a control-specific query/deep link.
 - State 3 intentionally distinguishes `matched` with no pending rows from an absent control-result row in copy: matched rows show no pending suggestions, absent rows show not yet evaluated.
+
+lisa-selfreview: pass 1 (verdict=request_changes)
+- [medium] src/views/control-implementations/IndexView.vue:1003 (concurrency/races): On first mount when dashboard-suggestions config has not been fetched yet and resolves enabled, fetchDashboardSuggestionsConfig mutates dashboardSuggestionsConfigFetched/dashboardSuggestionsEnabled, which triggers the watcher above to call loadDashboardSuggestionState(). The onMounted continuation then immediately calls loadDashboardSuggestionState() again before the first in-flight call has set loadedDashboardSuggestionStateFor, so both dashboard-suggestions endpoints can be requested twice for the same SSP. This violates the intended once-per-SSP fetch behavior and adds avoidable duplicate API load/state churn.
