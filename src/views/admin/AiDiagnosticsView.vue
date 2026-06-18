@@ -756,7 +756,7 @@ function formatLabelSet(labels: Record<string, string>): string {
       v-model:visible="showRunDrawer"
       position="right"
       header="AI Suggestion Run"
-      class="w-full max-w-5xl"
+      class="w-screen! max-w-6xl!"
     >
       <div class="space-y-5">
         <div
