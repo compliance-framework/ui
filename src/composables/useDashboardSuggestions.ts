@@ -16,13 +16,19 @@ import {
   buildDashboardSuggestionEventsEndpoint,
   buildDashboardSuggestionLabelSetsEndpoint,
   buildDashboardSuggestionsEndpoint,
+  buildDashboardSuggestionLabelKeysEndpoint,
+  buildEditDashboardSuggestionGroupEndpoint,
   buildGenerateDashboardSuggestionsEndpoint,
+  buildGeneralizeDashboardSuggestionsEndpoint,
   buildLatestDashboardSuggestionRunEndpoint,
   buildRejectDashboardSuggestionsEndpoint,
   type DashboardSuggestion,
   type DashboardSuggestionEvent,
+  type DashboardSuggestionLabelKey,
   type DashboardSuggestionLabelSet,
+  type EditDashboardSuggestionGroupPayload,
   type GenerateDashboardSuggestionsPayload,
+  type GeneralizeDashboardSuggestionsResult,
   type SuggestionRun,
   isRunActive,
   runCellFailures,
@@ -45,9 +51,17 @@ export function useDashboardSuggestions(
     execute: fetchLabelSets,
     isLoading: labelSetsLoading,
   } = useDataApi<DashboardSuggestionLabelSet[]>(null, {}, { immediate: false });
+  const {
+    data: labelKeys,
+    execute: fetchLabelKeys,
+    isLoading: labelKeysLoading,
+  } = useDataApi<DashboardSuggestionLabelKey[]>(null, {}, { immediate: false });
 
   const { execute: generateRequest, isLoading: generating } =
     useDataApi<SuggestionRun>(null, {}, { immediate: false });
+  const { execute: generalizeRequest, isLoading: generalizing } = useDataApi<
+    SuggestionRun & GeneralizeDashboardSuggestionsResult
+  >(null, {}, { immediate: false });
   const { execute: acceptRequest, isLoading: accepting } = useDataApi<void>(
     null,
     {},
@@ -58,6 +72,9 @@ export function useDashboardSuggestions(
     {},
     { immediate: false },
   );
+  const { execute: editGroupRequest, isLoading: editingGroup } = useDataApi<
+    DashboardSuggestion[]
+  >(null, {}, { immediate: false });
   const { execute: eventsRequest, isLoading: loadingEvents } = useDataApi<
     DashboardSuggestionEvent[]
   >(null, {}, { immediate: false });
@@ -73,10 +90,16 @@ export function useDashboardSuggestions(
 
     return fetchPendingSuggestions(
       buildDashboardSuggestionsEndpoint(sspId.value, 'pending'),
-      // Preserve raw label keys (e.g. `_policy`) on both the originating label
-      // set and the proposed filter; otherwise camelcase conversion strips `_`.
+      // Preserve raw label keys (e.g. `_policy`) on the originating label set,
+      // the proposed filter, and the AI baseline used for the edit diff;
+      // otherwise camelcase conversion strips `_` and the diff shows phantom
+      // changes.
       {
-        camelcaseStopPaths: ['data.labelSet', 'data.proposedFilterLabelSet'],
+        camelcaseStopPaths: [
+          'data.labelSet',
+          'data.proposedFilterLabelSet',
+          'data.originalProposedFilterLabelSet',
+        ],
       },
     );
   }
@@ -91,6 +114,18 @@ export function useDashboardSuggestions(
       // Preserve raw label keys (e.g. `_agent`, `_plugin`) so the UI can filter
       // out internal labels; otherwise camelcase conversion strips the `_`.
       { camelcaseStopPaths: ['data.labels'] },
+    );
+  }
+
+  async function refreshLabelKeys() {
+    if (!canFetchSuggestions()) {
+      return;
+    }
+
+    // `key`/`values` are plain string fields; their values (label names like
+    // `_policy`) are not object keys, so camelize leaves them intact.
+    return fetchLabelKeys(
+      buildDashboardSuggestionLabelKeysEndpoint(sspId.value),
     );
   }
 
@@ -109,6 +144,27 @@ export function useDashboardSuggestions(
         transformRequest: [decamelizeKeys],
       },
     );
+  }
+
+  // Triggers the deterministic filter-merge detector, which inserts pending
+  // generalization suggestions for near-duplicate filters. Returns the result
+  // counts so the caller can toast how many merges were found.
+  async function generalizeSuggestions(): Promise<
+    GeneralizeDashboardSuggestionsResult | undefined
+  > {
+    if (!canFetchSuggestions()) {
+      return;
+    }
+
+    const response = await generalizeRequest(
+      buildGeneralizeDashboardSuggestionsEndpoint(sspId.value),
+      { method: 'POST' },
+    );
+    await refreshPendingSuggestions();
+    const data = response?.data.value?.data;
+    return data
+      ? { candidates: data.candidates, inserted: data.inserted }
+      : undefined;
   }
 
   async function acceptSuggestions(ids: string[]) {
@@ -138,7 +194,11 @@ export function useDashboardSuggestions(
       const response = await fetchHistoryRequest(
         buildDashboardSuggestionsEndpoint(sspId.value, status),
         {
-          camelcaseStopPaths: ['data.labelSet', 'data.proposedFilterLabelSet'],
+          camelcaseStopPaths: [
+            'data.labelSet',
+            'data.proposedFilterLabelSet',
+            'data.originalProposedFilterLabelSet',
+          ],
         },
       );
       collected.push(...(response?.data.value?.data ?? []));
@@ -159,6 +219,30 @@ export function useDashboardSuggestions(
     });
     await refreshPendingSuggestions();
     await refreshHistorySuggestions();
+  }
+
+  async function editSuggestionGroup(
+    payload: EditDashboardSuggestionGroupPayload,
+  ) {
+    if (!canFetchSuggestions()) {
+      return;
+    }
+
+    await editGroupRequest(
+      buildEditDashboardSuggestionGroupEndpoint(sspId.value),
+      {
+        method: 'POST',
+        data: payload,
+        transformRequest: [decamelizeKeys],
+        // Preserve raw label keys (e.g. `_policy`) the user kept in the filter.
+        camelcaseStopPaths: [
+          'data.labelSet',
+          'data.proposedFilterLabelSet',
+          'data.originalProposedFilterLabelSet',
+        ],
+      },
+    );
+    await refreshPendingSuggestions();
   }
 
   async function fetchSuggestionEvents(suggestionId: string) {
@@ -182,19 +266,26 @@ export function useDashboardSuggestions(
     pendingSuggestions,
     historySuggestions,
     labelSets,
+    labelKeys,
     pendingSuggestionsLoading,
     historySuggestionsLoading,
     labelSetsLoading,
+    labelKeysLoading,
     generating,
+    generalizing,
     accepting,
     rejecting,
+    editingGroup,
     loadingEvents,
     refreshPendingSuggestions,
     refreshHistorySuggestions,
     refreshLabelSets,
+    refreshLabelKeys,
     generateSuggestions,
+    generalizeSuggestions,
     acceptSuggestions,
     rejectSuggestions,
+    editSuggestionGroup,
     fetchSuggestionEvents,
   };
 }

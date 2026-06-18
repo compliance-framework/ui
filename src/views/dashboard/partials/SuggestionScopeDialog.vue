@@ -46,44 +46,75 @@
       </div>
 
       <div>
-        <label class="inline-block pb-2">Evidence label sets</label>
-        <MultiSelect
-          v-model="selectedLabelSetHashes"
-          :options="labelSetOptions"
-          optionLabel="title"
-          optionValue="hash"
-          display="chip"
-          filter
-          class="w-full"
-          placeholder="All label sets"
-        >
-          <template #option="{ option }">
-            <div class="flex flex-col gap-1">
-              <span class="font-medium">
-                {{ option.title || getLabelSetTitle(option) }}
-              </span>
-              <div
-                class="flex flex-wrap items-center gap-2 text-xs text-gray-500 dark:text-slate-400"
-              >
-                <Chip
-                  v-for="label in option.displayLabels"
-                  :key="label"
-                  :label="label"
-                />
-                <span v-if="option.hiddenLabelCount > 0">
-                  {{ option.hiddenLabelCount }} more
-                  {{ option.hiddenLabelCount === 1 ? 'label' : 'labels' }}
-                </span>
-              </div>
-            </div>
-          </template>
-        </MultiSelect>
+        <label class="inline-block pb-2">Evidence to analyze</label>
+        <p class="pb-2 text-sm text-gray-500 dark:text-slate-400">
+          Restrict which evidence feeds the suggestions with label conditions
+          (all conditions must match). Leave empty to consider all evidence.
+        </p>
+        <LabelConditionBuilder
+          v-model="conditions"
+          :ssp-id="sspId"
+          :keys="keyNames"
+          add-label="Add condition"
+          testid="evidence-condition"
+        />
       </div>
 
       <label class="flex items-center gap-2">
         <Checkbox v-model="supersedePending" binary />
         <span>Replace pending suggestions in this scope</span>
       </label>
+
+      <div
+        class="flex flex-col gap-4 border-t border-gray-200 pt-4 dark:border-slate-700"
+      >
+        <h3 class="text-sm font-semibold text-gray-700 dark:text-slate-200">
+          Suggestion constraints
+        </h3>
+        <div>
+          <label class="inline-block pb-2">Scope preset</label>
+          <Select
+            v-model="scopePreset"
+            :options="scopePresetOptions"
+            optionLabel="label"
+            optionValue="value"
+            class="w-full"
+            data-testid="scope-preset"
+          />
+        </div>
+
+        <div>
+          <label class="inline-block pb-2">Required labels</label>
+          <p class="pb-2 text-sm text-gray-500 dark:text-slate-400">
+            Only suggest filters that include these labels. Leave the value
+            blank to require the key with any value.
+          </p>
+          <LabelConditionBuilder
+            v-model="mandatoryRows"
+            :ssp-id="sspId"
+            :keys="keyNames"
+            add-label="Add required label"
+            value-placeholder="value (any if blank)"
+            testid="required-label"
+          />
+        </div>
+
+        <div>
+          <label class="inline-block pb-2">Excluded labels</label>
+          <p class="pb-2 text-sm text-gray-500 dark:text-slate-400">
+            Never include these labels in suggested filters. Leave the value
+            blank to exclude the key with any value.
+          </p>
+          <LabelConditionBuilder
+            v-model="excludedRows"
+            :ssp-id="sspId"
+            :keys="keyNames"
+            add-label="Add excluded label"
+            value-placeholder="value (any if blank)"
+            testid="excluded-label"
+          />
+        </div>
+      </div>
 
       <Message
         v-if="scopeError"
@@ -147,16 +178,21 @@ import Chip from '@/volt/Chip.vue';
 import Dialog from '@/volt/Dialog.vue';
 import Message from '@/volt/Message.vue';
 import MultiSelect from '@/volt/MultiSelect.vue';
+import Select from '@/volt/Select.vue';
 import { decamelizeKeys, useAuthenticatedInstance } from '@/composables/axios';
 import type {
+  DashboardSuggestionConstraints,
   DashboardSuggestionsPreview,
-  DashboardSuggestionLabelSet,
+  DashboardSuggestionLabelKey,
   GenerateDashboardSuggestionsPayload,
+  LabelSelector,
 } from './dashboard-suggestions';
 import {
+  buildLabelFilter,
   buildPreviewDashboardSuggestionsEndpoint,
-  formatVisibleLabelSet,
+  type LabelConditionRow,
 } from './dashboard-suggestions';
+import LabelConditionBuilder from './LabelConditionBuilder.vue';
 import type { DataResponse } from '@/stores/types';
 
 interface ControlOption {
@@ -168,20 +204,20 @@ interface ControlOption {
   profileTitles?: string[];
 }
 
-type LabelSetOption = DashboardSuggestionLabelSet & {
-  title: string;
-  displayLabels: string[];
-  hiddenLabelCount: number;
-};
+type ScopePreset = 'all' | 'new_filter' | 'extend_filter' | 'no_filters';
 
-// Max non-internal labels shown per label set before collapsing into a count.
-const MAX_VISIBLE_LABELS = 5;
+const scopePresetOptions: { label: string; value: ScopePreset }[] = [
+  { label: 'All suggestions', value: 'all' },
+  { label: 'Only create new filters', value: 'new_filter' },
+  { label: 'Only change existing filters', value: 'extend_filter' },
+  { label: 'Only controls without filters', value: 'no_filters' },
+];
 
 const props = defineProps<{
   visible: boolean;
   sspId: string;
   controls: ControlOption[];
-  labelSets: DashboardSuggestionLabelSet[];
+  labelKeys: DashboardSuggestionLabelKey[];
   generating?: boolean;
   ceilingError?: string;
 }>();
@@ -193,8 +229,11 @@ const emit = defineEmits<{
 }>();
 
 const selectedControls = ref<string[]>([]);
-const selectedLabelSetHashes = ref<string[]>([]);
+const conditions = ref<LabelConditionRow[]>([]);
 const supersedePending = ref(true);
+const scopePreset = ref<ScopePreset>('all');
+const mandatoryRows = ref<LabelConditionRow[]>([]);
+const excludedRows = ref<LabelConditionRow[]>([]);
 const largeRunConfirmed = ref(false);
 const preview = ref<DashboardSuggestionsPreview | null>(null);
 const previewLoading = ref(false);
@@ -221,17 +260,9 @@ const canGenerate = computed(
     !scopeError.value &&
     (!requiresLargeRunConfirm.value || largeRunConfirmed.value),
 );
-const labelSetOptions = computed<LabelSetOption[]>(() =>
-  props.labelSets.map((labelSet) => {
-    const visibleLabels = formatVisibleLabelSet(labelSet.labels ?? {});
-    return {
-      ...labelSet,
-      title: getLabelSetTitle(labelSet),
-      displayLabels: visibleLabels.slice(0, MAX_VISIBLE_LABELS),
-      hiddenLabelCount: Math.max(0, visibleLabels.length - MAX_VISIBLE_LABELS),
-    };
-  }),
-);
+// Label keys for the condition builders' key autocomplete (low cardinality, so
+// loaded up front; values are searched server-side inside the builder).
+const keyNames = computed(() => props.labelKeys.map((entry) => entry.key));
 
 watch(
   () => props.controls,
@@ -242,15 +273,7 @@ watch(
 );
 
 watch(
-  () => props.labelSets,
-  (labelSets) => {
-    selectedLabelSetHashes.value = labelSets.map((labelSet) => labelSet.hash);
-  },
-  { immediate: true },
-);
-
-watch(
-  [selectedControls, selectedLabelSetHashes],
+  [selectedControls, conditions, scopePreset, mandatoryRows, excludedRows],
   () => {
     largeRunConfirmed.value = false;
     previewError.value = '';
@@ -276,19 +299,55 @@ watch(
   },
 );
 
-watch([() => props.controls, () => props.labelSets], () => {
-  schedulePreview();
-});
+watch(
+  () => props.controls,
+  () => {
+    schedulePreview();
+  },
+);
 
 function selectedScope(): GenerateDashboardSuggestionsPayload['scope'] {
   const scope: GenerateDashboardSuggestionsPayload['scope'] = {};
   if (selectedControls.value.length !== props.controls.length) {
     scope.controlKeys = selectedControls.value;
   }
-  if (selectedLabelSetHashes.value.length !== props.labelSets.length) {
-    scope.labelSetHashes = selectedLabelSetHashes.value;
+  const labelFilter = buildLabelFilter(conditions.value);
+  if (labelFilter) {
+    scope.labelFilter = labelFilter;
   }
   return Object.keys(scope).length > 0 ? scope : undefined;
+}
+
+// Maps condition rows to label selectors: a blank value means "any value"
+// (key-only selector, sent as value: null).
+function rowsToSelectors(rows: LabelConditionRow[]): LabelSelector[] {
+  return rows
+    .filter((row) => row.key.trim())
+    .map((row) => ({
+      key: row.key.trim(),
+      value: row.value.trim() ? row.value.trim() : null,
+    }));
+}
+
+function selectedConstraints(): DashboardSuggestionConstraints | undefined {
+  const constraints: DashboardSuggestionConstraints = {};
+  const mandatory = rowsToSelectors(mandatoryRows.value);
+  const excluded = rowsToSelectors(excludedRows.value);
+  if (mandatory.length > 0) {
+    constraints.mandatoryLabels = mandatory;
+  }
+  if (excluded.length > 0) {
+    constraints.excludedLabels = excluded;
+  }
+  if (
+    scopePreset.value === 'new_filter' ||
+    scopePreset.value === 'extend_filter'
+  ) {
+    constraints.onlyAction = scopePreset.value;
+  } else if (scopePreset.value === 'no_filters') {
+    constraints.onlyControlsWithoutFilters = true;
+  }
+  return Object.keys(constraints).length > 0 ? constraints : undefined;
 }
 
 function submit() {
@@ -298,6 +357,7 @@ function submit() {
   emit('generate', {
     supersedePending: supersedePending.value,
     scope: selectedScope(),
+    constraints: selectedConstraints(),
   });
 }
 
@@ -331,12 +391,20 @@ onUnmounted(() => {
 async function fetchPreview(requestId: number) {
   try {
     const scope = selectedScope();
+    const constraints = selectedConstraints();
+    const body: GenerateDashboardSuggestionsPayload = {};
+    if (scope) {
+      body.scope = scope;
+    }
+    if (constraints) {
+      body.constraints = constraints;
+    }
     const response = await axios.post<
       DataResponse<DashboardSuggestionsPreview>
     >(
       buildPreviewDashboardSuggestionsEndpoint(props.sspId),
-      scope ? { scope } : {},
-      // Backend expects kebab-case keys (e.g. `control-keys`); without this the
+      body,
+      // Backend expects snake_case keys (e.g. `control_keys`); without this the
       // scope keys go out as camelCase and the API reads an empty scope (422).
       { transformRequest: [decamelizeKeys] },
     );
@@ -361,17 +429,5 @@ async function fetchPreview(requestId: number) {
       previewLoading.value = false;
     }
   }
-}
-
-function getLabelSetTitle(labelSet: DashboardSuggestionLabelSet) {
-  const sampleTitle = labelSet.sampleTitles?.find(
-    (title) => title.trim().length > 0,
-  );
-  if (sampleTitle) {
-    return sampleTitle;
-  }
-
-  const labelSummary = formatVisibleLabelSet(labelSet.labels ?? {}).join(', ');
-  return labelSummary || labelSet.hash;
 }
 </script>

@@ -12,10 +12,13 @@ const state = vi.hoisted(() => ({
   acceptSuggestions: vi.fn(),
   rejectSuggestions: vi.fn(),
   generateSuggestions: vi.fn(),
+  generalizeSuggestions: vi.fn(),
+  toastAdd: vi.fn(),
   fetchSuggestionEvents: vi.fn(),
   refreshPendingSuggestions: vi.fn(),
   refreshHistorySuggestions: vi.fn(),
   refreshLabelSets: vi.fn(),
+  refreshLabelKeys: vi.fn(),
   pollLatest: vi.fn(),
   start: vi.fn(),
   axiosGet: vi.fn(),
@@ -49,18 +52,26 @@ vi.mock('@/composables/axios', () => ({
   useDataApi: () => ({ data: state.ssp }),
 }));
 
+vi.mock('primevue/usetoast', () => ({
+  useToast: () => ({ add: state.toastAdd }),
+}));
+
 vi.mock('@/composables/useDashboardSuggestions', () => ({
   useDashboardSuggestions: () => ({
     pendingSuggestions: state.pendingSuggestions,
     historySuggestions: state.historySuggestions,
     labelSets: state.labelSets,
+    labelKeys: { value: [] },
     pendingSuggestionsLoading: { value: false },
     historySuggestionsLoading: { value: false },
     generating: { value: false },
+    generalizing: { value: false },
     refreshPendingSuggestions: state.refreshPendingSuggestions,
     refreshHistorySuggestions: state.refreshHistorySuggestions,
     refreshLabelSets: state.refreshLabelSets,
+    refreshLabelKeys: state.refreshLabelKeys,
     generateSuggestions: state.generateSuggestions,
+    generalizeSuggestions: state.generalizeSuggestions,
     acceptSuggestions: state.acceptSuggestions,
     rejectSuggestions: state.rejectSuggestions,
     fetchSuggestionEvents: state.fetchSuggestionEvents,
@@ -89,6 +100,11 @@ function mountView() {
           props: ['controls'],
           template:
             '<div><span v-for="control in controls" :key="control.value">{{ control.label }}</span></div>',
+        },
+        SuggestionEditDialog: {
+          name: 'SuggestionEditDialog',
+          props: ['group', 'controlOptions'],
+          template: '<div />',
         },
         Dialog: { template: '<div><slot /><slot name="footer" /></div>' },
         Textarea: {
@@ -357,9 +373,10 @@ describe('SuggestionsView', () => {
       profileTitles: string[];
     }>;
 
+    // The option value is the catalog-qualified control key the scope API expects.
     expect(controls).toContainEqual({
       label: 'ac-1 - Access control policy',
-      value: 'ac-1',
+      value: 'catalog-1:ac-1',
       controlId: 'ac-1',
       title: 'Access control policy',
       catalogTitle: 'Catalog',
@@ -367,7 +384,7 @@ describe('SuggestionsView', () => {
     });
     expect(controls).toContainEqual({
       label: 'AC-2 - Account management',
-      value: 'AC-2',
+      value: 'catalog-1:AC-2',
       controlId: 'AC-2',
       title: 'Account management',
       catalogTitle: 'Catalog',
