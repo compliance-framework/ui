@@ -103,11 +103,7 @@
                     ? 'View implementation'
                     : 'No implementation yet'
                 "
-                @click="
-                  openImplementationDrawer(
-                    controlImplementations[slotProps.node.data.id],
-                  )
-                "
+                @click="openControlDrawer(slotProps.node.data.id)"
                 ><BIconEye
               /></Button>
               <RiskIndicatorBadge
@@ -120,6 +116,11 @@
                 "
                 clickable
                 @click.stop="openControlRisks(slotProps.node.data.id)"
+              />
+              <SuggestionIndicatorBadge
+                v-if="aiConfigStore.dashboardSuggestionsEnabled"
+                :count="controlSuggestionCount(slotProps.node.data.id)"
+                @click.stop="openControlDrawer(slotProps.node.data.id)"
               />
               <ControlEvidenceCounter :control="slotProps.node.data" />
             </div>
@@ -141,6 +142,15 @@
     position="right"
     class="w-full! md:w-1/2! lg:w-3/5!"
   >
+    <ControlImplementationSuggestions
+      v-if="aiConfigStore.dashboardSuggestionsEnabled"
+      :control-id="selectedDrawerControlId"
+      :ssp-id="systemStore.system.securityPlan?.uuid"
+      :suggestions="selectedControlDashboardSuggestions"
+      :result="selectedControlSuggestionResult"
+      :loading="dashboardSuggestionStateLoading"
+    />
+
     <div class="flex items-center mb-4 gap-x-4">
       <h4 class="font-medium text-xl">Components</h4>
       <Badge
@@ -187,6 +197,7 @@ import type { TreeNode } from '@/composables/useCatalogTree';
 import { useAuthenticatedInstance, useDataApi } from '@/composables/axios';
 import Tree from '@/volt/Tree.vue';
 import IndexControlImplementation from '@/views/control-implementations/partials/IndexControlImplementation.vue';
+import ControlImplementationSuggestions from '@/views/control-implementations/partials/ControlImplementationSuggestions.vue';
 import type { Catalog, Group } from '@/oscal';
 import type { DataResponse } from '@/stores/types.ts';
 import type {
@@ -200,6 +211,7 @@ import { BIconEye } from 'bootstrap-icons-vue';
 import Drawer from '@/volt/Drawer.vue';
 import StatementByComponent from './partials/StatementByComponent.vue';
 import RiskIndicatorBadge from './partials/RiskIndicatorBadge.vue';
+import SuggestionIndicatorBadge from './partials/SuggestionIndicatorBadge.vue';
 import { useToast } from 'primevue/usetoast';
 import { useConfirm } from 'primevue/useconfirm';
 import {
@@ -216,6 +228,14 @@ import {
   isClosedStatus,
 } from '@/utils/risk-register';
 import { getErrorDetail } from '@/utils/httpErrors';
+import { useAiConfigStore } from '@/stores/ai-config';
+import {
+  buildDashboardSuggestionControlResultsEndpoint,
+  buildDashboardSuggestionsEndpoint,
+  DASHBOARD_SUGGESTION_LABEL_STOP_PATHS,
+  type ControlSuggestionResult,
+  type DashboardSuggestion,
+} from '@/views/dashboard/partials/dashboard-suggestions';
 
 const systemStore = useSystemStore();
 const sspStore = useSystemSecurityPlanStore();
@@ -224,6 +244,7 @@ const toast = useToast();
 const confirm = useConfirm();
 const axios = useAuthenticatedInstance();
 const router = useRouter();
+const aiConfigStore = useAiConfigStore();
 
 const controlDrawerOpen = computed({
   get: () => uiStore.controlImplementationDrawerOpen,
@@ -259,6 +280,10 @@ const controlImplementations = ref<{ [key: string]: ImplementedRequirement }>(
   {},
 );
 const selectedImplementedRequirement = ref<ImplementedRequirement>();
+// The control whose drawer is open. Tracked separately from the implemented
+// requirement so the drawer (and its AI suggestions panel) can open for a
+// control that has pending suggestions but no implementation yet.
+const selectedControlId = ref<string>();
 const RISK_FETCH_LIMIT = 100;
 const loadedSspRisksFor = ref<string | null>(null);
 const preparingBulkSuggestions = ref(false);
@@ -272,8 +297,15 @@ const { data: sspRisks, execute: loadSspRisks } = useDataApi<Risk[]>(
   {},
   { immediate: false },
 );
+const pendingDashboardSuggestions = ref<DashboardSuggestion[]>([]);
+const dashboardSuggestionControlResults = ref<ControlSuggestionResult[]>([]);
+const dashboardSuggestionStateLoading = ref(false);
 
 const nodes = ref<Array<TreeNode>>([]);
+const loadedDashboardSuggestionStateFor = ref<string | null>(null);
+const loadingDashboardSuggestionStateFor = ref<string | null>(null);
+let dashboardSuggestionStateLoadPromise: Promise<void> | null = null;
+const dashboardSuggestionStateRequestId = ref(0);
 
 interface StatementSuggestionWorkItem {
   requirement: ImplementedRequirement;
@@ -302,6 +334,53 @@ const bulkSuggestionsButtonLabel = computed(() => {
   }
   return 'Apply All Suggestions';
 });
+
+const pendingDashboardSuggestionsByControl = computed(() => {
+  const grouped: Record<string, DashboardSuggestion[]> = {};
+  for (const suggestion of pendingDashboardSuggestions.value ?? []) {
+    const key = normalizeId(suggestion.controlId);
+    if (!key) {
+      continue;
+    }
+    grouped[key] = grouped[key] ?? [];
+    grouped[key].push(suggestion);
+  }
+  return grouped;
+});
+
+const dashboardSuggestionResultsByControl = computed(() => {
+  const results: Record<string, ControlSuggestionResult> = {};
+  for (const result of dashboardSuggestionControlResults.value ?? []) {
+    const key = normalizeId(result.controlId);
+    if (!key) {
+      continue;
+    }
+    results[key] = result;
+  }
+  return results;
+});
+
+const selectedDrawerControlId = computed(
+  () =>
+    selectedControlId.value ?? selectedImplementedRequirement.value?.controlId,
+);
+
+const selectedControlDashboardSuggestions = computed(() => {
+  const key = normalizeId(selectedDrawerControlId.value);
+  return key ? (pendingDashboardSuggestionsByControl.value[key] ?? []) : [];
+});
+
+const selectedControlSuggestionResult = computed(() => {
+  const key = normalizeId(selectedDrawerControlId.value);
+  return key ? dashboardSuggestionResultsByControl.value[key] : undefined;
+});
+
+function controlSuggestionCount(controlId?: string): number {
+  const key = normalizeId(controlId);
+  return key
+    ? (pendingDashboardSuggestionsByControl.value[key]?.length ?? 0)
+    : 0;
+}
 
 function normalizeId(value?: string): string {
   return (value || '').trim().toLowerCase();
@@ -377,6 +456,89 @@ function controlHighestSeverity(
   return stats.highestSeverity ?? 'high';
 }
 
+async function loadDashboardSuggestionState() {
+  const sspId = systemStore.system.securityPlan?.uuid;
+  if (!sspId || !aiConfigStore.dashboardSuggestionsEnabled) {
+    pendingDashboardSuggestions.value = [];
+    dashboardSuggestionControlResults.value = [];
+    loadedDashboardSuggestionStateFor.value = null;
+    loadingDashboardSuggestionStateFor.value = null;
+    dashboardSuggestionStateLoadPromise = null;
+    dashboardSuggestionStateRequestId.value += 1;
+    dashboardSuggestionStateLoading.value = false;
+    return;
+  }
+
+  if (loadedDashboardSuggestionStateFor.value === sspId) {
+    return;
+  }
+
+  if (
+    loadingDashboardSuggestionStateFor.value === sspId &&
+    dashboardSuggestionStateLoadPromise
+  ) {
+    await dashboardSuggestionStateLoadPromise;
+    return;
+  }
+
+  loadingDashboardSuggestionStateFor.value = sspId;
+  dashboardSuggestionStateLoading.value = true;
+  const requestId = (dashboardSuggestionStateRequestId.value += 1);
+  const loadPromise = (async () => {
+    const [pendingResult, controlResultsResult] = await Promise.allSettled([
+      axios.get<DataResponse<DashboardSuggestion[]>>(
+        buildDashboardSuggestionsEndpoint(sspId, 'pending'),
+        {
+          camelcaseStopPaths: DASHBOARD_SUGGESTION_LABEL_STOP_PATHS,
+        },
+      ),
+      axios.get<DataResponse<ControlSuggestionResult[]>>(
+        buildDashboardSuggestionControlResultsEndpoint(sspId),
+      ),
+    ]);
+
+    if (
+      dashboardSuggestionStateRequestId.value !== requestId ||
+      systemStore.system.securityPlan?.uuid !== sspId
+    ) {
+      return;
+    }
+
+    pendingDashboardSuggestions.value =
+      pendingResult.status === 'fulfilled' ? pendingResult.value.data.data : [];
+    dashboardSuggestionControlResults.value =
+      controlResultsResult.status === 'fulfilled'
+        ? controlResultsResult.value.data.data
+        : [];
+    loadedDashboardSuggestionStateFor.value = sspId;
+  })();
+  dashboardSuggestionStateLoadPromise = loadPromise;
+
+  try {
+    await loadPromise;
+  } finally {
+    if (
+      loadingDashboardSuggestionStateFor.value === sspId &&
+      dashboardSuggestionStateLoadPromise === loadPromise
+    ) {
+      loadingDashboardSuggestionStateFor.value = null;
+      dashboardSuggestionStateLoadPromise = null;
+      dashboardSuggestionStateLoading.value = false;
+    }
+  }
+}
+
+async function initializeDashboardSuggestionState() {
+  try {
+    await aiConfigStore.fetchDashboardSuggestionsConfig();
+    if (aiConfigStore.dashboardSuggestionsEnabled) {
+      await loadDashboardSuggestionState();
+    }
+  } catch {
+    // Dashboard suggestions are optional; do not block the core controls view.
+  }
+}
+
 function openControlRisks(controlId?: string) {
   if (!controlId) {
     return;
@@ -443,6 +605,7 @@ async function loadControlImplementations() {
       uiStore.controlImplementationDrawerOpen
     ) {
       selectedImplementedRequirement.value = impl;
+      selectedControlId.value = impl.controlId;
       selectedRequirementFound = true;
     }
   }
@@ -823,13 +986,21 @@ function hasControlImplementation(controlId?: string): boolean {
   return !!(controlId && controlImplementations.value[controlId]);
 }
 
-function openImplementationDrawer(req: ImplementedRequirement | undefined) {
-  if (!req) {
+// Opens the implementation drawer for a control. The control need not have an
+// implementation: when it only has pending AI suggestions, the drawer still
+// opens (with an empty Components section) so the suggestions panel is reachable.
+function openControlDrawer(controlId?: string) {
+  if (!controlId) {
     return;
   }
+  const requirement = controlImplementations.value[controlId];
   uiStore.setControlImplementationDrawerOpen(true);
-  uiStore.setControlImplementationSelectedRequirementId(req.uuid);
-  selectedImplementedRequirement.value = req;
+  uiStore.setControlImplementationSelectedRequirementId(
+    requirement?.uuid ?? null,
+  );
+  selectedControlId.value = controlId;
+  selectedImplementedRequirement.value = requirement;
+  void loadDashboardSuggestionState();
 }
 
 watch(
@@ -838,6 +1009,13 @@ watch(
     if (!sspId) {
       sspRisks.value = [];
       loadedSspRisksFor.value = null;
+      pendingDashboardSuggestions.value = [];
+      dashboardSuggestionControlResults.value = [];
+      loadedDashboardSuggestionStateFor.value = null;
+      loadingDashboardSuggestionStateFor.value = null;
+      dashboardSuggestionStateLoadPromise = null;
+      dashboardSuggestionStateRequestId.value += 1;
+      dashboardSuggestionStateLoading.value = false;
       return;
     }
 
@@ -859,16 +1037,42 @@ watch(
 );
 
 watch(
+  () => [
+    systemStore.system.securityPlan?.uuid,
+    aiConfigStore.dashboardSuggestionsConfigFetched,
+    aiConfigStore.dashboardSuggestionsEnabled,
+  ],
+  ([sspId, configFetched, enabled]) => {
+    if (!sspId || !configFetched || !enabled) {
+      pendingDashboardSuggestions.value = [];
+      dashboardSuggestionControlResults.value = [];
+      loadedDashboardSuggestionStateFor.value = null;
+      loadingDashboardSuggestionStateFor.value = null;
+      dashboardSuggestionStateLoadPromise = null;
+      dashboardSuggestionStateRequestId.value += 1;
+      dashboardSuggestionStateLoading.value = false;
+      return;
+    }
+    void loadDashboardSuggestionState();
+  },
+);
+
+watch(
   () => uiStore.controlImplementationDrawerOpen,
   (isOpen) => {
-    if (!isOpen && uiStore.controlImplementationSelectedRequirementId) {
-      uiStore.setControlImplementationSelectedRequirementId(null);
+    if (!isOpen) {
+      if (uiStore.controlImplementationSelectedRequirementId) {
+        uiStore.setControlImplementationSelectedRequirementId(null);
+      }
       selectedImplementedRequirement.value = undefined;
+      selectedControlId.value = undefined;
     }
   },
 );
 
 onMounted(async () => {
+  void initializeDashboardSuggestionState();
+
   try {
     await loadProfileBindings();
     if (profileBindings.value.length > 0) {

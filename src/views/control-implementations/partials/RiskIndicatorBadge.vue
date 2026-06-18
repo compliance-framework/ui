@@ -7,8 +7,10 @@ const props = defineProps<{
   highestSeverity?: 'high' | 'medium' | 'low';
   clickable?: boolean;
 }>();
+// Forward the native event so callers can use the `.stop` modifier without
+// `.stopPropagation()` being called on `undefined`.
 const emit = defineEmits<{
-  click: [];
+  click: [event: MouseEvent];
 }>();
 
 const displayCount = computed(() =>
@@ -36,11 +38,11 @@ const tooltipText = computed(() => {
   return `${displayCount.value} risks associated`;
 });
 
-function onClick() {
+function onClick(event: MouseEvent) {
   if (!props.clickable) {
     return;
   }
-  emit('click');
+  emit('click', event);
 }
 </script>
 

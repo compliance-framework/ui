@@ -1,9 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import {
+  buildDashboardSuggestionControlResultsEndpoint,
   buildLabelFilter,
   computeGroupEditDiff,
   type DashboardSuggestion,
 } from '../dashboard-suggestions';
+
+describe('buildDashboardSuggestionControlResultsEndpoint', () => {
+  it('builds the latest control-result endpoint for an SSP', () => {
+    expect(buildDashboardSuggestionControlResultsEndpoint('ssp 1')).toBe(
+      '/api/oscal/system-security-plans/ssp%201/dashboard-suggestions/control-results',
+    );
+  });
+});
 
 describe('buildLabelFilter', () => {
   it('returns undefined when there are no valid conditions', () => {

@@ -22,6 +22,7 @@ import {
   buildGeneralizeDashboardSuggestionsEndpoint,
   buildLatestDashboardSuggestionRunEndpoint,
   buildRejectDashboardSuggestionsEndpoint,
+  DASHBOARD_SUGGESTION_LABEL_STOP_PATHS,
   type DashboardSuggestion,
   type DashboardSuggestionEvent,
   type DashboardSuggestionLabelKey,
@@ -93,13 +94,9 @@ export function useDashboardSuggestions(
       // Preserve raw label keys (e.g. `_policy`) on the originating label set,
       // the proposed filter, and the AI baseline used for the edit diff;
       // otherwise camelcase conversion strips `_` and the diff shows phantom
-      // changes.
+      // changes. See DASHBOARD_SUGGESTION_LABEL_STOP_PATHS for why these are camelCase.
       {
-        camelcaseStopPaths: [
-          'data.labelSet',
-          'data.proposedFilterLabelSet',
-          'data.originalProposedFilterLabelSet',
-        ],
+        camelcaseStopPaths: DASHBOARD_SUGGESTION_LABEL_STOP_PATHS,
       },
     );
   }
@@ -194,11 +191,7 @@ export function useDashboardSuggestions(
       const response = await fetchHistoryRequest(
         buildDashboardSuggestionsEndpoint(sspId.value, status),
         {
-          camelcaseStopPaths: [
-            'data.labelSet',
-            'data.proposedFilterLabelSet',
-            'data.originalProposedFilterLabelSet',
-          ],
+          camelcaseStopPaths: DASHBOARD_SUGGESTION_LABEL_STOP_PATHS,
         },
       );
       collected.push(...(response?.data.value?.data ?? []));
@@ -235,11 +228,7 @@ export function useDashboardSuggestions(
         data: payload,
         transformRequest: [decamelizeKeys],
         // Preserve raw label keys (e.g. `_policy`) the user kept in the filter.
-        camelcaseStopPaths: [
-          'data.labelSet',
-          'data.proposedFilterLabelSet',
-          'data.originalProposedFilterLabelSet',
-        ],
+        camelcaseStopPaths: DASHBOARD_SUGGESTION_LABEL_STOP_PATHS,
       },
     );
     await refreshPendingSuggestions();
