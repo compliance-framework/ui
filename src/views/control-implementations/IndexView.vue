@@ -514,6 +514,17 @@ async function loadDashboardSuggestionState(force = false) {
   }
 }
 
+async function initializeDashboardSuggestionState() {
+  try {
+    await aiConfigStore.fetchDashboardSuggestionsConfig();
+    if (aiConfigStore.dashboardSuggestionsEnabled) {
+      await loadDashboardSuggestionState();
+    }
+  } catch {
+    // Dashboard suggestions are optional; do not block the core controls view.
+  }
+}
+
 function openControlRisks(controlId?: string) {
   if (!controlId) {
     return;
@@ -1035,8 +1046,7 @@ watch(
 );
 
 onMounted(async () => {
-  await aiConfigStore.fetchDashboardSuggestionsConfig();
-  await loadDashboardSuggestionState();
+  void initializeDashboardSuggestionState();
 
   try {
     await loadProfileBindings();

@@ -346,6 +346,24 @@ describe('control implementations IndexView', () => {
     );
   });
 
+  it('loads core controls data before dashboard suggestions config resolves', async () => {
+    const configDeferred = createDeferred<boolean>();
+    fetchDashboardSuggestionsConfig.mockImplementationOnce(
+      () => configDeferred.promise,
+    );
+
+    mount(IndexView, { global: { stubs } });
+    await waitForMountedControls();
+
+    expect(fetchDashboardSuggestionsConfig).toHaveBeenCalled();
+    expect(listProfiles).toHaveBeenCalled();
+    expect(fetchControlImplementations).toHaveBeenCalled();
+    expect(axiosGet).not.toHaveBeenCalledWith(
+      expect.stringContaining('/dashboard-suggestions?status=pending'),
+      expect.anything(),
+    );
+  });
+
   it('matches pending suggestions to the selected control case-insensitively', async () => {
     aiConfigState.dashboardSuggestionsEnabled = true;
     pendingDashboardSuggestionsFixture = [
