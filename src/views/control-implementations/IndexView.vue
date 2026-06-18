@@ -303,6 +303,8 @@ const {
 
 const nodes = ref<Array<TreeNode>>([]);
 const loadedDashboardSuggestionStateFor = ref<string | null>(null);
+const loadingDashboardSuggestionStateFor = ref<string | null>(null);
+let dashboardSuggestionStateLoadPromise: Promise<void> | null = null;
 
 interface StatementSuggestionWorkItem {
   requirement: ImplementedRequirement;
@@ -453,6 +455,8 @@ async function loadDashboardSuggestionState(force = false) {
     pendingDashboardSuggestions.value = [];
     dashboardSuggestionControlResults.value = [];
     loadedDashboardSuggestionStateFor.value = null;
+    loadingDashboardSuggestionStateFor.value = null;
+    dashboardSuggestionStateLoadPromise = null;
     return;
   }
 
@@ -460,30 +464,55 @@ async function loadDashboardSuggestionState(force = false) {
     return;
   }
 
-  const [pendingResult, controlResultsResult] = await Promise.allSettled([
-    fetchPendingDashboardSuggestions(
-      buildDashboardSuggestionsEndpoint(sspId, 'pending'),
-      {
-        camelcaseStopPaths: [
-          'data.labelSet',
-          'data.proposedFilterLabelSet',
-          'data.originalProposedFilterLabelSet',
-        ],
-      },
-    ),
-    fetchDashboardSuggestionControlResults(
-      buildDashboardSuggestionControlResultsEndpoint(sspId),
-    ),
-  ]);
-
-  if (pendingResult.status === 'rejected') {
-    pendingDashboardSuggestions.value = [];
-  }
-  if (controlResultsResult.status === 'rejected') {
-    dashboardSuggestionControlResults.value = [];
+  if (
+    !force &&
+    loadingDashboardSuggestionStateFor.value === sspId &&
+    dashboardSuggestionStateLoadPromise
+  ) {
+    await dashboardSuggestionStateLoadPromise;
+    return;
   }
 
-  loadedDashboardSuggestionStateFor.value = sspId;
+  loadingDashboardSuggestionStateFor.value = sspId;
+  const loadPromise = (async () => {
+    const [pendingResult, controlResultsResult] = await Promise.allSettled([
+      fetchPendingDashboardSuggestions(
+        buildDashboardSuggestionsEndpoint(sspId, 'pending'),
+        {
+          camelcaseStopPaths: [
+            'data.labelSet',
+            'data.proposedFilterLabelSet',
+            'data.originalProposedFilterLabelSet',
+          ],
+        },
+      ),
+      fetchDashboardSuggestionControlResults(
+        buildDashboardSuggestionControlResultsEndpoint(sspId),
+      ),
+    ]);
+
+    if (pendingResult.status === 'rejected') {
+      pendingDashboardSuggestions.value = [];
+    }
+    if (controlResultsResult.status === 'rejected') {
+      dashboardSuggestionControlResults.value = [];
+    }
+
+    loadedDashboardSuggestionStateFor.value = sspId;
+  })();
+  dashboardSuggestionStateLoadPromise = loadPromise;
+
+  try {
+    await loadPromise;
+  } finally {
+    if (
+      loadingDashboardSuggestionStateFor.value === sspId &&
+      dashboardSuggestionStateLoadPromise === loadPromise
+    ) {
+      loadingDashboardSuggestionStateFor.value = null;
+      dashboardSuggestionStateLoadPromise = null;
+    }
+  }
 }
 
 function openControlRisks(controlId?: string) {

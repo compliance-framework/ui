@@ -1,7 +1,9 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { mount } from '@vue/test-utils';
-import { defineComponent, h, ref } from 'vue';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { enableAutoUnmount, mount } from '@vue/test-utils';
+import { defineComponent, h, reactive, ref } from 'vue';
 import IndexView from '../IndexView.vue';
+
+enableAutoUnmount(afterEach);
 
 const listProfiles = vi.fn();
 const axiosGet = vi.fn();
@@ -9,11 +11,13 @@ const loadRisks = vi.fn(async () => ({ data: { value: { data: [] } } }));
 const fetchControlImplementations = vi.fn();
 const fetchPendingDashboardSuggestions = vi.fn();
 const fetchDashboardSuggestionControlResults = vi.fn();
-let dashboardSuggestionsEnabled = false;
-let dashboardSuggestionsConfigFetched = false;
+const aiConfigState = reactive({
+  dashboardSuggestionsEnabled: false,
+  dashboardSuggestionsConfigFetched: false,
+});
 const fetchDashboardSuggestionsConfig = vi.fn(async () => {
-  dashboardSuggestionsConfigFetched = true;
-  return dashboardSuggestionsEnabled;
+  aiConfigState.dashboardSuggestionsConfigFetched = true;
+  return aiConfigState.dashboardSuggestionsEnabled;
 });
 let pendingDashboardSuggestionsFixture: unknown[] = [];
 let controlResultsFixture: unknown[] = [];
@@ -56,10 +60,10 @@ vi.mock('@/stores/ui.ts', () => ({
 vi.mock('@/stores/ai-config', () => ({
   useAiConfigStore: () => ({
     get dashboardSuggestionsEnabled() {
-      return dashboardSuggestionsEnabled;
+      return aiConfigState.dashboardSuggestionsEnabled;
     },
     get dashboardSuggestionsConfigFetched() {
-      return dashboardSuggestionsConfigFetched;
+      return aiConfigState.dashboardSuggestionsConfigFetched;
     },
     fetchDashboardSuggestionsConfig,
   }),
@@ -156,6 +160,16 @@ function flushPromises() {
   return new Promise((resolve) => setTimeout(resolve, 0));
 }
 
+function createDeferred<T>() {
+  let resolve!: (value: T | PromiseLike<T>) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((promiseResolve, promiseReject) => {
+    resolve = promiseResolve;
+    reject = promiseReject;
+  });
+  return { promise, resolve, reject };
+}
+
 async function waitForMountedControls() {
   for (let index = 0; index < 5; index += 1) {
     await flushPromises();
@@ -209,8 +223,8 @@ describe('control implementations IndexView', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     useDataApiNullCallIndex = 0;
-    dashboardSuggestionsEnabled = false;
-    dashboardSuggestionsConfigFetched = false;
+    aiConfigState.dashboardSuggestionsEnabled = false;
+    aiConfigState.dashboardSuggestionsConfigFetched = false;
     pendingDashboardSuggestionsFixture = [];
     controlResultsFixture = [];
     pendingDashboardSuggestionsReject = false;
@@ -312,7 +326,7 @@ describe('control implementations IndexView', () => {
   });
 
   it('matches pending suggestions to the selected control case-insensitively', async () => {
-    dashboardSuggestionsEnabled = true;
+    aiConfigState.dashboardSuggestionsEnabled = true;
     pendingDashboardSuggestionsFixture = [
       {
         id: 'suggestion-1',
@@ -351,8 +365,53 @@ describe('control implementations IndexView', () => {
     );
   });
 
+  it('loads dashboard suggestion state once when config resolution enables suggestions on mount', async () => {
+    aiConfigState.dashboardSuggestionsEnabled = true;
+    const configDeferred = createDeferred<void>();
+    const pendingDeferred = createDeferred<{
+      data: { value: { data: unknown[] } };
+    }>();
+    const controlResultsDeferred = createDeferred<{
+      data: { value: { data: unknown[] } };
+    }>();
+
+    fetchDashboardSuggestionsConfig.mockImplementationOnce(async () => {
+      await configDeferred.promise;
+      aiConfigState.dashboardSuggestionsConfigFetched = true;
+      return aiConfigState.dashboardSuggestionsEnabled;
+    });
+    fetchPendingDashboardSuggestions.mockReturnValueOnce(
+      pendingDeferred.promise,
+    );
+    fetchDashboardSuggestionControlResults.mockReturnValueOnce(
+      controlResultsDeferred.promise,
+    );
+
+    mount(IndexView, { global: { stubs } });
+    configDeferred.resolve();
+    await flushPromises();
+
+    expect(fetchPendingDashboardSuggestions).toHaveBeenCalledTimes(1);
+    expect(fetchPendingDashboardSuggestions).toHaveBeenCalledWith(
+      expect.stringContaining(
+        '/api/oscal/system-security-plans/ssp-1/dashboard-suggestions?status=pending',
+      ),
+      expect.any(Object),
+    );
+    expect(fetchDashboardSuggestionControlResults).toHaveBeenCalledTimes(1);
+    expect(fetchDashboardSuggestionControlResults).toHaveBeenCalledWith(
+      expect.stringContaining(
+        '/api/oscal/system-security-plans/ssp-1/dashboard-suggestions/control-results',
+      ),
+    );
+
+    pendingDeferred.resolve({ data: { value: { data: [] } } });
+    controlResultsDeferred.resolve({ data: { value: { data: [] } } });
+    await waitForMountedControls();
+  });
+
   it('keeps pending suggestions visible when control-results cannot be fetched', async () => {
-    dashboardSuggestionsEnabled = true;
+    aiConfigState.dashboardSuggestionsEnabled = true;
     controlResultsReject = true;
     pendingDashboardSuggestionsFixture = [
       {
@@ -377,7 +436,7 @@ describe('control implementations IndexView', () => {
   });
 
   it('keeps no-match state visible when pending suggestions cannot be fetched', async () => {
-    dashboardSuggestionsEnabled = true;
+    aiConfigState.dashboardSuggestionsEnabled = true;
     pendingDashboardSuggestionsReject = true;
     controlResultsFixture = [
       {
