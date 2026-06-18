@@ -103,11 +103,7 @@
                     ? 'View implementation'
                     : 'No implementation yet'
                 "
-                @click="
-                  openImplementationDrawer(
-                    controlImplementations[slotProps.node.data.id],
-                  )
-                "
+                @click="openControlDrawer(slotProps.node.data.id)"
                 ><BIconEye
               /></Button>
               <RiskIndicatorBadge
@@ -120,6 +116,11 @@
                 "
                 clickable
                 @click.stop="openControlRisks(slotProps.node.data.id)"
+              />
+              <SuggestionIndicatorBadge
+                v-if="aiConfigStore.dashboardSuggestionsEnabled"
+                :count="controlSuggestionCount(slotProps.node.data.id)"
+                @click.stop="openControlDrawer(slotProps.node.data.id)"
               />
               <ControlEvidenceCounter :control="slotProps.node.data" />
             </div>
@@ -143,7 +144,7 @@
   >
     <ControlImplementationSuggestions
       v-if="aiConfigStore.dashboardSuggestionsEnabled"
-      :control-id="selectedImplementedRequirement?.controlId"
+      :control-id="selectedDrawerControlId"
       :ssp-id="systemStore.system.securityPlan?.uuid"
       :suggestions="selectedControlDashboardSuggestions"
       :result="selectedControlSuggestionResult"
@@ -210,6 +211,7 @@ import { BIconEye } from 'bootstrap-icons-vue';
 import Drawer from '@/volt/Drawer.vue';
 import StatementByComponent from './partials/StatementByComponent.vue';
 import RiskIndicatorBadge from './partials/RiskIndicatorBadge.vue';
+import SuggestionIndicatorBadge from './partials/SuggestionIndicatorBadge.vue';
 import { useToast } from 'primevue/usetoast';
 import { useConfirm } from 'primevue/useconfirm';
 import {
@@ -230,6 +232,7 @@ import { useAiConfigStore } from '@/stores/ai-config';
 import {
   buildDashboardSuggestionControlResultsEndpoint,
   buildDashboardSuggestionsEndpoint,
+  DASHBOARD_SUGGESTION_LABEL_STOP_PATHS,
   type ControlSuggestionResult,
   type DashboardSuggestion,
 } from '@/views/dashboard/partials/dashboard-suggestions';
@@ -277,6 +280,10 @@ const controlImplementations = ref<{ [key: string]: ImplementedRequirement }>(
   {},
 );
 const selectedImplementedRequirement = ref<ImplementedRequirement>();
+// The control whose drawer is open. Tracked separately from the implemented
+// requirement so the drawer (and its AI suggestions panel) can open for a
+// control that has pending suggestions but no implementation yet.
+const selectedControlId = ref<string>();
 const RISK_FETCH_LIMIT = 100;
 const loadedSspRisksFor = ref<string | null>(null);
 const preparingBulkSuggestions = ref(false);
@@ -353,15 +360,27 @@ const dashboardSuggestionResultsByControl = computed(() => {
   return results;
 });
 
+const selectedDrawerControlId = computed(
+  () =>
+    selectedControlId.value ?? selectedImplementedRequirement.value?.controlId,
+);
+
 const selectedControlDashboardSuggestions = computed(() => {
-  const key = normalizeId(selectedImplementedRequirement.value?.controlId);
+  const key = normalizeId(selectedDrawerControlId.value);
   return key ? (pendingDashboardSuggestionsByControl.value[key] ?? []) : [];
 });
 
 const selectedControlSuggestionResult = computed(() => {
-  const key = normalizeId(selectedImplementedRequirement.value?.controlId);
+  const key = normalizeId(selectedDrawerControlId.value);
   return key ? dashboardSuggestionResultsByControl.value[key] : undefined;
 });
+
+function controlSuggestionCount(controlId?: string): number {
+  const key = normalizeId(controlId);
+  return key
+    ? (pendingDashboardSuggestionsByControl.value[key]?.length ?? 0)
+    : 0;
+}
 
 function normalizeId(value?: string): string {
   return (value || '').trim().toLowerCase();
@@ -470,11 +489,7 @@ async function loadDashboardSuggestionState() {
       axios.get<DataResponse<DashboardSuggestion[]>>(
         buildDashboardSuggestionsEndpoint(sspId, 'pending'),
         {
-          camelcaseStopPaths: [
-            'data.label_set',
-            'data.proposed_filter_label_set',
-            'data.original_proposed_filter_label_set',
-          ],
+          camelcaseStopPaths: DASHBOARD_SUGGESTION_LABEL_STOP_PATHS,
         },
       ),
       axios.get<DataResponse<ControlSuggestionResult[]>>(
@@ -590,6 +605,7 @@ async function loadControlImplementations() {
       uiStore.controlImplementationDrawerOpen
     ) {
       selectedImplementedRequirement.value = impl;
+      selectedControlId.value = impl.controlId;
       selectedRequirementFound = true;
     }
   }
@@ -970,13 +986,20 @@ function hasControlImplementation(controlId?: string): boolean {
   return !!(controlId && controlImplementations.value[controlId]);
 }
 
-function openImplementationDrawer(req: ImplementedRequirement | undefined) {
-  if (!req) {
+// Opens the implementation drawer for a control. The control need not have an
+// implementation: when it only has pending AI suggestions, the drawer still
+// opens (with an empty Components section) so the suggestions panel is reachable.
+function openControlDrawer(controlId?: string) {
+  if (!controlId) {
     return;
   }
+  const requirement = controlImplementations.value[controlId];
   uiStore.setControlImplementationDrawerOpen(true);
-  uiStore.setControlImplementationSelectedRequirementId(req.uuid);
-  selectedImplementedRequirement.value = req;
+  uiStore.setControlImplementationSelectedRequirementId(
+    requirement?.uuid ?? null,
+  );
+  selectedControlId.value = controlId;
+  selectedImplementedRequirement.value = requirement;
   void loadDashboardSuggestionState();
 }
 
@@ -1037,9 +1060,12 @@ watch(
 watch(
   () => uiStore.controlImplementationDrawerOpen,
   (isOpen) => {
-    if (!isOpen && uiStore.controlImplementationSelectedRequirementId) {
-      uiStore.setControlImplementationSelectedRequirementId(null);
+    if (!isOpen) {
+      if (uiStore.controlImplementationSelectedRequirementId) {
+        uiStore.setControlImplementationSelectedRequirementId(null);
+      }
       selectedImplementedRequirement.value = undefined;
+      selectedControlId.value = undefined;
     }
   },
 );

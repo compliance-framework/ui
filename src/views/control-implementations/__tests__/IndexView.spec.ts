@@ -343,7 +343,7 @@ describe('control implementations IndexView', () => {
       expect.stringContaining('/dashboard-suggestions?status=pending'),
       expect.objectContaining({
         camelcaseStopPaths: expect.arrayContaining([
-          'data.proposed_filter_label_set',
+          'data.proposedFilterLabelSet',
         ]),
       }),
     );
@@ -528,5 +528,55 @@ describe('control implementations IndexView', () => {
     expect(wrapper.text()).toContain(
       'AI reviewed this control and found no matching dashboard filter',
     );
+  });
+
+  it('surfaces a clickable suggestions badge that opens the drawer for a control with no implementation', async () => {
+    // ac-2 has no implemented requirement (only ac-1 does), so its eye button is
+    // disabled. A pending suggestion for ac-2 must still be reachable via a badge.
+    aiConfigState.dashboardSuggestionsEnabled = true;
+    pendingDashboardSuggestionsFixture = [
+      {
+        id: 'suggestion-2',
+        status: 'pending',
+        controlId: 'AC-2',
+        labelSetHash: 'hash-2',
+        proposedFilterName: 'Unimplemented control suggestion',
+      },
+    ];
+
+    const wrapper = mount(IndexView, { global: { stubs } });
+    await waitForMountedControls();
+
+    // The ac-2 eye button is disabled (no implementation to view).
+    const eyeButtons = wrapper
+      .findAll('button')
+      .filter((button) => button.attributes('title') !== undefined);
+    expect(
+      eyeButtons.some((button) => button.attributes('disabled') !== undefined),
+    ).toBe(true);
+
+    const badge = wrapper
+      .findAll('button')
+      .find((button) =>
+        button
+          .attributes('aria-label')
+          ?.includes('pending AI dashboard suggestion'),
+      );
+    expect(badge).toBeTruthy();
+    expect(badge?.text()).toContain('1');
+
+    // Before opening, the drawer's suggestions panel is not scoped to ac-2.
+    expect(wrapper.text()).not.toContain('Unimplemented control suggestion');
+
+    await badge?.trigger('click');
+    await flushPromises();
+
+    expect(uiStore.setControlImplementationDrawerOpen).toHaveBeenCalledWith(
+      true,
+    );
+    expect(
+      uiStore.setControlImplementationSelectedRequirementId,
+    ).toHaveBeenCalledWith(null);
+    expect(wrapper.text()).toContain('Unimplemented control suggestion');
   });
 });

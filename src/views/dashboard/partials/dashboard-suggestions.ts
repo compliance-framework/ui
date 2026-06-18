@@ -376,6 +376,18 @@ export function buildControlKey(catalogId: string, controlId: string): string {
   return `${catalogId}:${controlId}`;
 }
 
+// Response paths whose nested objects are user-defined label maps (keys like
+// `_policy` or `service_name`). The dashboard-suggestion endpoints return these
+// field names already camelCased, and `camelcase-keys` matches stopPaths against
+// the response's own keys — so these must stay camelCase, and the leading `_`
+// and snake_case label keys inside the maps are preserved rather than mangled.
+// Defined once so the request sites that read suggestion label maps can't drift.
+export const DASHBOARD_SUGGESTION_LABEL_STOP_PATHS: readonly string[] = [
+  'data.labelSet',
+  'data.proposedFilterLabelSet',
+  'data.originalProposedFilterLabelSet',
+];
+
 export function formatLabelSet(labels: Record<string, string>): string[] {
   return Object.entries(labels).map(([key, value]) => `${key}=${value}`);
 }

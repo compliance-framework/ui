@@ -30,13 +30,15 @@ describe('axios response conversion', () => {
     const instance = useAuthenticatedInstance();
 
     const response = await instance.get('/dashboard-suggestions', {
-      camelcaseStopPaths: ['data.proposed_filter_label_set'],
+      // This endpoint returns camelCase field names; camelcase-keys matches
+      // stopPaths against the original keys, so the stop path is camelCase too.
+      camelcaseStopPaths: ['data.proposedFilterLabelSet'],
       adapter: async (config) => ({
         data: {
           data: [
             {
               id: 'suggestion-1',
-              proposed_filter_label_set: {
+              proposedFilterLabelSet: {
                 _policy: 'x',
                 service_name: 'api',
               },
