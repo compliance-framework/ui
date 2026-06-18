@@ -96,9 +96,9 @@ export function useDashboardSuggestions(
       // changes.
       {
         camelcaseStopPaths: [
-          'data.labelSet',
-          'data.proposedFilterLabelSet',
-          'data.originalProposedFilterLabelSet',
+          'data.label_set',
+          'data.proposed_filter_label_set',
+          'data.original_proposed_filter_label_set',
         ],
       },
     );
@@ -195,9 +195,9 @@ export function useDashboardSuggestions(
         buildDashboardSuggestionsEndpoint(sspId.value, status),
         {
           camelcaseStopPaths: [
-            'data.labelSet',
-            'data.proposedFilterLabelSet',
-            'data.originalProposedFilterLabelSet',
+            'data.label_set',
+            'data.proposed_filter_label_set',
+            'data.original_proposed_filter_label_set',
           ],
         },
       );
@@ -236,9 +236,9 @@ export function useDashboardSuggestions(
         transformRequest: [decamelizeKeys],
         // Preserve raw label keys (e.g. `_policy`) the user kept in the filter.
         camelcaseStopPaths: [
-          'data.labelSet',
-          'data.proposedFilterLabelSet',
-          'data.originalProposedFilterLabelSet',
+          'data.label_set',
+          'data.proposed_filter_label_set',
+          'data.original_proposed_filter_label_set',
         ],
       },
     );

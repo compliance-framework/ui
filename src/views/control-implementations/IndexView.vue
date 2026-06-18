@@ -290,21 +290,15 @@ const { data: sspRisks, execute: loadSspRisks } = useDataApi<Risk[]>(
   {},
   { immediate: false },
 );
-const {
-  data: pendingDashboardSuggestions,
-  execute: fetchPendingDashboardSuggestions,
-  isLoading: pendingDashboardSuggestionsLoading,
-} = useDataApi<DashboardSuggestion[]>(null, {}, { immediate: false });
-const {
-  data: dashboardSuggestionControlResults,
-  execute: fetchDashboardSuggestionControlResults,
-  isLoading: dashboardSuggestionControlResultsLoading,
-} = useDataApi<ControlSuggestionResult[]>(null, {}, { immediate: false });
+const pendingDashboardSuggestions = ref<DashboardSuggestion[]>([]);
+const dashboardSuggestionControlResults = ref<ControlSuggestionResult[]>([]);
+const dashboardSuggestionStateLoading = ref(false);
 
 const nodes = ref<Array<TreeNode>>([]);
 const loadedDashboardSuggestionStateFor = ref<string | null>(null);
 const loadingDashboardSuggestionStateFor = ref<string | null>(null);
 let dashboardSuggestionStateLoadPromise: Promise<void> | null = null;
+const dashboardSuggestionStateRequestId = ref(0);
 
 interface StatementSuggestionWorkItem {
   requirement: ImplementedRequirement;
@@ -368,12 +362,6 @@ const selectedControlSuggestionResult = computed(() => {
   const key = normalizeId(selectedImplementedRequirement.value?.controlId);
   return key ? dashboardSuggestionResultsByControl.value[key] : undefined;
 });
-
-const dashboardSuggestionStateLoading = computed(
-  () =>
-    pendingDashboardSuggestionsLoading.value ||
-    dashboardSuggestionControlResultsLoading.value,
-);
 
 function normalizeId(value?: string): string {
   return (value || '').trim().toLowerCase();
@@ -457,6 +445,8 @@ async function loadDashboardSuggestionState(force = false) {
     loadedDashboardSuggestionStateFor.value = null;
     loadingDashboardSuggestionStateFor.value = null;
     dashboardSuggestionStateLoadPromise = null;
+    dashboardSuggestionStateRequestId.value += 1;
+    dashboardSuggestionStateLoading.value = false;
     return;
   }
 
@@ -474,30 +464,38 @@ async function loadDashboardSuggestionState(force = false) {
   }
 
   loadingDashboardSuggestionStateFor.value = sspId;
+  dashboardSuggestionStateLoading.value = true;
+  const requestId = (dashboardSuggestionStateRequestId.value += 1);
   const loadPromise = (async () => {
     const [pendingResult, controlResultsResult] = await Promise.allSettled([
-      fetchPendingDashboardSuggestions(
+      axios.get<DataResponse<DashboardSuggestion[]>>(
         buildDashboardSuggestionsEndpoint(sspId, 'pending'),
         {
           camelcaseStopPaths: [
-            'data.labelSet',
-            'data.proposedFilterLabelSet',
-            'data.originalProposedFilterLabelSet',
+            'data.label_set',
+            'data.proposed_filter_label_set',
+            'data.original_proposed_filter_label_set',
           ],
         },
       ),
-      fetchDashboardSuggestionControlResults(
+      axios.get<DataResponse<ControlSuggestionResult[]>>(
         buildDashboardSuggestionControlResultsEndpoint(sspId),
       ),
     ]);
 
-    if (pendingResult.status === 'rejected') {
-      pendingDashboardSuggestions.value = [];
-    }
-    if (controlResultsResult.status === 'rejected') {
-      dashboardSuggestionControlResults.value = [];
+    if (
+      dashboardSuggestionStateRequestId.value !== requestId ||
+      systemStore.system.securityPlan?.uuid !== sspId
+    ) {
+      return;
     }
 
+    pendingDashboardSuggestions.value =
+      pendingResult.status === 'fulfilled' ? pendingResult.value.data.data : [];
+    dashboardSuggestionControlResults.value =
+      controlResultsResult.status === 'fulfilled'
+        ? controlResultsResult.value.data.data
+        : [];
     loadedDashboardSuggestionStateFor.value = sspId;
   })();
   dashboardSuggestionStateLoadPromise = loadPromise;
@@ -511,6 +509,7 @@ async function loadDashboardSuggestionState(force = false) {
     ) {
       loadingDashboardSuggestionStateFor.value = null;
       dashboardSuggestionStateLoadPromise = null;
+      dashboardSuggestionStateLoading.value = false;
     }
   }
 }
@@ -980,6 +979,10 @@ watch(
       pendingDashboardSuggestions.value = [];
       dashboardSuggestionControlResults.value = [];
       loadedDashboardSuggestionStateFor.value = null;
+      loadingDashboardSuggestionStateFor.value = null;
+      dashboardSuggestionStateLoadPromise = null;
+      dashboardSuggestionStateRequestId.value += 1;
+      dashboardSuggestionStateLoading.value = false;
       return;
     }
 
@@ -1011,6 +1014,10 @@ watch(
       pendingDashboardSuggestions.value = [];
       dashboardSuggestionControlResults.value = [];
       loadedDashboardSuggestionStateFor.value = null;
+      loadingDashboardSuggestionStateFor.value = null;
+      dashboardSuggestionStateLoadPromise = null;
+      dashboardSuggestionStateRequestId.value += 1;
+      dashboardSuggestionStateLoading.value = false;
       return;
     }
     void loadDashboardSuggestionState();

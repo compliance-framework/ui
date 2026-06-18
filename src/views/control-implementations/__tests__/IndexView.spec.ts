@@ -15,6 +15,9 @@ const aiConfigState = reactive({
   dashboardSuggestionsEnabled: false,
   dashboardSuggestionsConfigFetched: false,
 });
+const systemStoreState = reactive({
+  system: { securityPlan: { uuid: 'ssp-1' } as { uuid: string } | null },
+});
 const fetchDashboardSuggestionsConfig = vi.fn(async () => {
   aiConfigState.dashboardSuggestionsConfigFetched = true;
   return aiConfigState.dashboardSuggestionsEnabled;
@@ -42,9 +45,7 @@ const uiStore = {
 };
 
 vi.mock('@/stores/system.ts', () => ({
-  useSystemStore: () => ({
-    system: { securityPlan: { uuid: 'ssp-1' } },
-  }),
+  useSystemStore: () => systemStoreState,
 }));
 
 vi.mock('@/stores/system-security-plans', () => ({
@@ -225,6 +226,7 @@ describe('control implementations IndexView', () => {
     useDataApiNullCallIndex = 0;
     aiConfigState.dashboardSuggestionsEnabled = false;
     aiConfigState.dashboardSuggestionsConfigFetched = false;
+    systemStoreState.system.securityPlan = { uuid: 'ssp-1' };
     pendingDashboardSuggestionsFixture = [];
     controlResultsFixture = [];
     pendingDashboardSuggestionsReject = false;
@@ -235,7 +237,21 @@ describe('control implementations IndexView', () => {
     listProfiles.mockResolvedValue({
       data: [{ uuid: 'profile-1', title: 'Profile One' }],
     });
-    axiosGet.mockResolvedValue({ data: { data: { uuid: 'catalog-1' } } });
+    axiosGet.mockImplementation(async (url: string) => {
+      if (url.includes('/dashboard-suggestions?status=pending')) {
+        if (pendingDashboardSuggestionsReject) {
+          throw new Error('pending failed');
+        }
+        return { data: { data: pendingDashboardSuggestionsFixture } };
+      }
+      if (url.includes('/dashboard-suggestions/control-results')) {
+        if (controlResultsReject) {
+          throw new Error('results failed');
+        }
+        return { data: { data: controlResultsFixture } };
+      }
+      return { data: { data: { uuid: 'catalog-1' } } };
+    });
     fetchControlImplementations.mockResolvedValue({
       data: {
         value: {
@@ -321,8 +337,13 @@ describe('control implementations IndexView', () => {
     await flushPromises();
 
     expect(wrapper.text()).not.toContain('AI dashboard suggestions');
-    expect(fetchPendingDashboardSuggestions).not.toHaveBeenCalled();
-    expect(fetchDashboardSuggestionControlResults).not.toHaveBeenCalled();
+    expect(axiosGet).not.toHaveBeenCalledWith(
+      expect.stringContaining('/dashboard-suggestions?status=pending'),
+      expect.anything(),
+    );
+    expect(axiosGet).not.toHaveBeenCalledWith(
+      expect.stringContaining('/dashboard-suggestions/control-results'),
+    );
   });
 
   it('matches pending suggestions to the selected control case-insensitively', async () => {
@@ -352,15 +373,15 @@ describe('control implementations IndexView', () => {
     expect(wrapper.text()).toContain('AI dashboard suggestions');
     expect(wrapper.text()).toContain('Production evidence');
     expect(wrapper.text()).toContain('80% confidence');
-    expect(fetchPendingDashboardSuggestions).toHaveBeenCalledWith(
+    expect(axiosGet).toHaveBeenCalledWith(
       expect.stringContaining('/dashboard-suggestions?status=pending'),
       expect.objectContaining({
         camelcaseStopPaths: expect.arrayContaining([
-          'data.proposedFilterLabelSet',
+          'data.proposed_filter_label_set',
         ]),
       }),
     );
-    expect(fetchDashboardSuggestionControlResults).toHaveBeenCalledWith(
+    expect(axiosGet).toHaveBeenCalledWith(
       expect.stringContaining('/dashboard-suggestions/control-results'),
     );
   });
@@ -369,10 +390,10 @@ describe('control implementations IndexView', () => {
     aiConfigState.dashboardSuggestionsEnabled = true;
     const configDeferred = createDeferred<void>();
     const pendingDeferred = createDeferred<{
-      data: { value: { data: unknown[] } };
+      data: { data: unknown[] };
     }>();
     const controlResultsDeferred = createDeferred<{
-      data: { value: { data: unknown[] } };
+      data: { data: unknown[] };
     }>();
 
     fetchDashboardSuggestionsConfig.mockImplementationOnce(async () => {
@@ -380,34 +401,117 @@ describe('control implementations IndexView', () => {
       aiConfigState.dashboardSuggestionsConfigFetched = true;
       return aiConfigState.dashboardSuggestionsEnabled;
     });
-    fetchPendingDashboardSuggestions.mockReturnValueOnce(
-      pendingDeferred.promise,
-    );
-    fetchDashboardSuggestionControlResults.mockReturnValueOnce(
-      controlResultsDeferred.promise,
-    );
+    axiosGet.mockImplementation((url: string) => {
+      if (url.includes('/dashboard-suggestions?status=pending')) {
+        return pendingDeferred.promise;
+      }
+      if (url.includes('/dashboard-suggestions/control-results')) {
+        return controlResultsDeferred.promise;
+      }
+      return Promise.resolve({ data: { data: { uuid: 'catalog-1' } } });
+    });
 
     mount(IndexView, { global: { stubs } });
     configDeferred.resolve();
     await flushPromises();
 
-    expect(fetchPendingDashboardSuggestions).toHaveBeenCalledTimes(1);
-    expect(fetchPendingDashboardSuggestions).toHaveBeenCalledWith(
+    const pendingCalls = axiosGet.mock.calls.filter(([url]) =>
+      String(url).includes('/dashboard-suggestions?status=pending'),
+    );
+    const controlResultsCalls = axiosGet.mock.calls.filter(([url]) =>
+      String(url).includes('/dashboard-suggestions/control-results'),
+    );
+    expect(pendingCalls).toHaveLength(1);
+    expect(axiosGet).toHaveBeenCalledWith(
       expect.stringContaining(
         '/api/oscal/system-security-plans/ssp-1/dashboard-suggestions?status=pending',
       ),
       expect.any(Object),
     );
-    expect(fetchDashboardSuggestionControlResults).toHaveBeenCalledTimes(1);
-    expect(fetchDashboardSuggestionControlResults).toHaveBeenCalledWith(
+    expect(controlResultsCalls).toHaveLength(1);
+    expect(axiosGet).toHaveBeenCalledWith(
       expect.stringContaining(
         '/api/oscal/system-security-plans/ssp-1/dashboard-suggestions/control-results',
       ),
     );
 
-    pendingDeferred.resolve({ data: { value: { data: [] } } });
-    controlResultsDeferred.resolve({ data: { value: { data: [] } } });
+    pendingDeferred.resolve({ data: { data: [] } });
+    controlResultsDeferred.resolve({ data: { data: [] } });
     await waitForMountedControls();
+  });
+
+  it('ignores stale dashboard suggestion responses after switching SSPs', async () => {
+    aiConfigState.dashboardSuggestionsEnabled = true;
+    aiConfigState.dashboardSuggestionsConfigFetched = true;
+    const ssp1Pending = createDeferred<{ data: { data: unknown[] } }>();
+    const ssp1ControlResults = createDeferred<{ data: { data: unknown[] } }>();
+    const ssp2Pending = createDeferred<{ data: { data: unknown[] } }>();
+    const ssp2ControlResults = createDeferred<{ data: { data: unknown[] } }>();
+
+    axiosGet.mockImplementation((url: string) => {
+      if (url.includes('/ssp-1/dashboard-suggestions?status=pending')) {
+        return ssp1Pending.promise;
+      }
+      if (url.includes('/ssp-1/dashboard-suggestions/control-results')) {
+        return ssp1ControlResults.promise;
+      }
+      if (url.includes('/ssp-2/dashboard-suggestions?status=pending')) {
+        return ssp2Pending.promise;
+      }
+      if (url.includes('/ssp-2/dashboard-suggestions/control-results')) {
+        return ssp2ControlResults.promise;
+      }
+      return Promise.resolve({ data: { data: { uuid: 'catalog-1' } } });
+    });
+
+    const wrapper = mount(IndexView, { global: { stubs } });
+    await flushPromises();
+
+    systemStoreState.system.securityPlan = { uuid: 'ssp-2' };
+    await flushPromises();
+
+    ssp2Pending.resolve({
+      data: {
+        data: [
+          {
+            id: 'suggestion-2',
+            status: 'pending',
+            controlId: 'AC-1',
+            labelSetHash: 'hash-2',
+            proposedFilterName: 'Second SSP suggestion',
+          },
+        ],
+      },
+    });
+    ssp2ControlResults.resolve({ data: { data: [] } });
+    await flushPromises();
+
+    ssp1Pending.resolve({
+      data: {
+        data: [
+          {
+            id: 'suggestion-1',
+            status: 'pending',
+            controlId: 'AC-1',
+            labelSetHash: 'hash-1',
+            proposedFilterName: 'First SSP stale suggestion',
+          },
+        ],
+      },
+    });
+    ssp1ControlResults.resolve({ data: { data: [] } });
+    await waitForMountedControls();
+
+    const callsBeforeDrawerOpen = axiosGet.mock.calls.length;
+    const implementationButton = wrapper
+      .findAll('button')
+      .find((button) => button.attributes('title') === 'View implementation');
+    await implementationButton?.trigger('click');
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('Second SSP suggestion');
+    expect(wrapper.text()).not.toContain('First SSP stale suggestion');
+    expect(axiosGet.mock.calls).toHaveLength(callsBeforeDrawerOpen);
   });
 
   it('keeps pending suggestions visible when control-results cannot be fetched', async () => {
