@@ -157,6 +157,17 @@ export interface DashboardSuggestion {
   updatedAt?: string;
 }
 
+export type ControlSuggestionOutcome = 'matched' | 'no_match';
+
+export interface ControlSuggestionResult {
+  controlId: string;
+  controlCatalogId?: string;
+  outcome: ControlSuggestionOutcome;
+  suggestionCount?: number;
+  runId?: string;
+  evaluatedAt?: string;
+}
+
 export type LabelChipKind = 'unchanged' | 'added' | 'removed';
 
 export interface LabelChip {
@@ -331,6 +342,12 @@ export function buildDashboardSuggestionsEndpoint(
 ): string {
   const query = status ? `?status=${encodeURIComponent(status)}` : '';
   return `${dashboardSuggestionsBaseEndpoint(sspId)}/dashboard-suggestions${query}`;
+}
+
+export function buildDashboardSuggestionControlResultsEndpoint(
+  sspId: string,
+): string {
+  return `${dashboardSuggestionsBaseEndpoint(sspId)}/dashboard-suggestions/control-results`;
 }
 
 export function buildAcceptDashboardSuggestionsEndpoint(sspId: string): string {

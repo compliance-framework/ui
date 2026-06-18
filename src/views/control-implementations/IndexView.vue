@@ -141,6 +141,15 @@
     position="right"
     class="w-full! md:w-1/2! lg:w-3/5!"
   >
+    <ControlImplementationSuggestions
+      v-if="aiConfigStore.dashboardSuggestionsEnabled"
+      :control-id="selectedImplementedRequirement?.controlId"
+      :ssp-id="systemStore.system.securityPlan?.uuid"
+      :suggestions="selectedControlDashboardSuggestions"
+      :result="selectedControlSuggestionResult"
+      :loading="dashboardSuggestionStateLoading"
+    />
+
     <div class="flex items-center mb-4 gap-x-4">
       <h4 class="font-medium text-xl">Components</h4>
       <Badge
@@ -187,6 +196,7 @@ import type { TreeNode } from '@/composables/useCatalogTree';
 import { useAuthenticatedInstance, useDataApi } from '@/composables/axios';
 import Tree from '@/volt/Tree.vue';
 import IndexControlImplementation from '@/views/control-implementations/partials/IndexControlImplementation.vue';
+import ControlImplementationSuggestions from '@/views/control-implementations/partials/ControlImplementationSuggestions.vue';
 import type { Catalog, Group } from '@/oscal';
 import type { DataResponse } from '@/stores/types.ts';
 import type {
@@ -216,6 +226,13 @@ import {
   isClosedStatus,
 } from '@/utils/risk-register';
 import { getErrorDetail } from '@/utils/httpErrors';
+import { useAiConfigStore } from '@/stores/ai-config';
+import {
+  buildDashboardSuggestionControlResultsEndpoint,
+  buildDashboardSuggestionsEndpoint,
+  type ControlSuggestionResult,
+  type DashboardSuggestion,
+} from '@/views/dashboard/partials/dashboard-suggestions';
 
 const systemStore = useSystemStore();
 const sspStore = useSystemSecurityPlanStore();
@@ -224,6 +241,7 @@ const toast = useToast();
 const confirm = useConfirm();
 const axios = useAuthenticatedInstance();
 const router = useRouter();
+const aiConfigStore = useAiConfigStore();
 
 const controlDrawerOpen = computed({
   get: () => uiStore.controlImplementationDrawerOpen,
@@ -272,8 +290,19 @@ const { data: sspRisks, execute: loadSspRisks } = useDataApi<Risk[]>(
   {},
   { immediate: false },
 );
+const {
+  data: pendingDashboardSuggestions,
+  execute: fetchPendingDashboardSuggestions,
+  isLoading: pendingDashboardSuggestionsLoading,
+} = useDataApi<DashboardSuggestion[]>(null, {}, { immediate: false });
+const {
+  data: dashboardSuggestionControlResults,
+  execute: fetchDashboardSuggestionControlResults,
+  isLoading: dashboardSuggestionControlResultsLoading,
+} = useDataApi<ControlSuggestionResult[]>(null, {}, { immediate: false });
 
 const nodes = ref<Array<TreeNode>>([]);
+const loadedDashboardSuggestionStateFor = ref<string | null>(null);
 
 interface StatementSuggestionWorkItem {
   requirement: ImplementedRequirement;
@@ -302,6 +331,47 @@ const bulkSuggestionsButtonLabel = computed(() => {
   }
   return 'Apply All Suggestions';
 });
+
+const pendingDashboardSuggestionsByControl = computed(() => {
+  const grouped: Record<string, DashboardSuggestion[]> = {};
+  for (const suggestion of pendingDashboardSuggestions.value ?? []) {
+    const key = normalizeId(suggestion.controlId);
+    if (!key) {
+      continue;
+    }
+    grouped[key] = grouped[key] ?? [];
+    grouped[key].push(suggestion);
+  }
+  return grouped;
+});
+
+const dashboardSuggestionResultsByControl = computed(() => {
+  const results: Record<string, ControlSuggestionResult> = {};
+  for (const result of dashboardSuggestionControlResults.value ?? []) {
+    const key = normalizeId(result.controlId);
+    if (!key) {
+      continue;
+    }
+    results[key] = result;
+  }
+  return results;
+});
+
+const selectedControlDashboardSuggestions = computed(() => {
+  const key = normalizeId(selectedImplementedRequirement.value?.controlId);
+  return key ? (pendingDashboardSuggestionsByControl.value[key] ?? []) : [];
+});
+
+const selectedControlSuggestionResult = computed(() => {
+  const key = normalizeId(selectedImplementedRequirement.value?.controlId);
+  return key ? dashboardSuggestionResultsByControl.value[key] : undefined;
+});
+
+const dashboardSuggestionStateLoading = computed(
+  () =>
+    pendingDashboardSuggestionsLoading.value ||
+    dashboardSuggestionControlResultsLoading.value,
+);
 
 function normalizeId(value?: string): string {
   return (value || '').trim().toLowerCase();
@@ -375,6 +445,45 @@ function controlHighestSeverity(
   }
   // If impact metadata is missing, still render as alerting instead of neutral.
   return stats.highestSeverity ?? 'high';
+}
+
+async function loadDashboardSuggestionState(force = false) {
+  const sspId = systemStore.system.securityPlan?.uuid;
+  if (!sspId || !aiConfigStore.dashboardSuggestionsEnabled) {
+    pendingDashboardSuggestions.value = [];
+    dashboardSuggestionControlResults.value = [];
+    loadedDashboardSuggestionStateFor.value = null;
+    return;
+  }
+
+  if (!force && loadedDashboardSuggestionStateFor.value === sspId) {
+    return;
+  }
+
+  const [pendingResult, controlResultsResult] = await Promise.allSettled([
+    fetchPendingDashboardSuggestions(
+      buildDashboardSuggestionsEndpoint(sspId, 'pending'),
+      {
+        camelcaseStopPaths: [
+          'data.labelSet',
+          'data.proposedFilterLabelSet',
+          'data.originalProposedFilterLabelSet',
+        ],
+      },
+    ),
+    fetchDashboardSuggestionControlResults(
+      buildDashboardSuggestionControlResultsEndpoint(sspId),
+    ),
+  ]);
+
+  if (pendingResult.status === 'rejected') {
+    pendingDashboardSuggestions.value = [];
+  }
+  if (controlResultsResult.status === 'rejected') {
+    dashboardSuggestionControlResults.value = [];
+  }
+
+  loadedDashboardSuggestionStateFor.value = sspId;
 }
 
 function openControlRisks(controlId?: string) {
@@ -830,6 +939,7 @@ function openImplementationDrawer(req: ImplementedRequirement | undefined) {
   uiStore.setControlImplementationDrawerOpen(true);
   uiStore.setControlImplementationSelectedRequirementId(req.uuid);
   selectedImplementedRequirement.value = req;
+  void loadDashboardSuggestionState();
 }
 
 watch(
@@ -838,6 +948,9 @@ watch(
     if (!sspId) {
       sspRisks.value = [];
       loadedSspRisksFor.value = null;
+      pendingDashboardSuggestions.value = [];
+      dashboardSuggestionControlResults.value = [];
+      loadedDashboardSuggestionStateFor.value = null;
       return;
     }
 
@@ -859,6 +972,23 @@ watch(
 );
 
 watch(
+  () => [
+    systemStore.system.securityPlan?.uuid,
+    aiConfigStore.dashboardSuggestionsConfigFetched,
+    aiConfigStore.dashboardSuggestionsEnabled,
+  ],
+  ([sspId, configFetched, enabled]) => {
+    if (!sspId || !configFetched || !enabled) {
+      pendingDashboardSuggestions.value = [];
+      dashboardSuggestionControlResults.value = [];
+      loadedDashboardSuggestionStateFor.value = null;
+      return;
+    }
+    void loadDashboardSuggestionState();
+  },
+);
+
+watch(
   () => uiStore.controlImplementationDrawerOpen,
   (isOpen) => {
     if (!isOpen && uiStore.controlImplementationSelectedRequirementId) {
@@ -869,6 +999,9 @@ watch(
 );
 
 onMounted(async () => {
+  await aiConfigStore.fetchDashboardSuggestionsConfig();
+  await loadDashboardSuggestionState();
+
   try {
     await loadProfileBindings();
     if (profileBindings.value.length > 0) {

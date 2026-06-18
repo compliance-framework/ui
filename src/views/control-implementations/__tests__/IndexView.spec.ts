@@ -7,6 +7,19 @@ const listProfiles = vi.fn();
 const axiosGet = vi.fn();
 const loadRisks = vi.fn(async () => ({ data: { value: { data: [] } } }));
 const fetchControlImplementations = vi.fn();
+const fetchPendingDashboardSuggestions = vi.fn();
+const fetchDashboardSuggestionControlResults = vi.fn();
+let dashboardSuggestionsEnabled = false;
+let dashboardSuggestionsConfigFetched = false;
+const fetchDashboardSuggestionsConfig = vi.fn(async () => {
+  dashboardSuggestionsConfigFetched = true;
+  return dashboardSuggestionsEnabled;
+});
+let pendingDashboardSuggestionsFixture: unknown[] = [];
+let controlResultsFixture: unknown[] = [];
+let pendingDashboardSuggestionsReject = false;
+let controlResultsReject = false;
+let useDataApiNullCallIndex = 0;
 const uiStore = {
   controlImplementationDrawerOpen: false,
   controlImplementationSelectedRequirementId: null as string | null,
@@ -40,7 +53,24 @@ vi.mock('@/stores/ui.ts', () => ({
   useUIStore: () => uiStore,
 }));
 
+vi.mock('@/stores/ai-config', () => ({
+  useAiConfigStore: () => ({
+    get dashboardSuggestionsEnabled() {
+      return dashboardSuggestionsEnabled;
+    },
+    get dashboardSuggestionsConfigFetched() {
+      return dashboardSuggestionsConfigFetched;
+    },
+    fetchDashboardSuggestionsConfig,
+  }),
+}));
+
 vi.mock('vue-router', () => ({
+  RouterLink: {
+    name: 'RouterLink',
+    props: ['to'],
+    template: '<a><slot /></a>',
+  },
   useRouter: () => ({ push: vi.fn() }),
 }));
 
@@ -68,6 +98,38 @@ vi.mock('@/composables/axios', () => ({
         isLoading: ref(false),
         execute: fetchControlImplementations,
       };
+    }
+    if (url === null) {
+      const callIndex = useDataApiNullCallIndex;
+      useDataApiNullCallIndex += 1;
+      if (callIndex % 3 === 1) {
+        const data = ref([]);
+        return {
+          data,
+          isLoading: ref(false),
+          error: ref(null),
+          execute: async (...args: unknown[]) => {
+            const response = await fetchPendingDashboardSuggestions(...args);
+            data.value = response.data.value.data;
+            return response;
+          },
+        };
+      }
+      if (callIndex % 3 === 2) {
+        const data = ref([]);
+        return {
+          data,
+          isLoading: ref(false),
+          error: ref(null),
+          execute: async (...args: unknown[]) => {
+            const response = await fetchDashboardSuggestionControlResults(
+              ...args,
+            );
+            data.value = response.data.value.data;
+            return response;
+          },
+        };
+      }
     }
     return {
       data: ref([]),
@@ -104,6 +166,7 @@ const stubs = {
   RouterLink: { template: '<a><slot /></a>' },
   Message: { template: '<div><slot /></div>' },
   Badge: { template: '<span><slot />{{ value }}</span>', props: ['value'] },
+  Chip: { template: '<span>{{ label }}</span>', props: ['label'] },
   Button: {
     props: ['disabled', 'ariaLabel', 'title', 'label'],
     emits: ['click'],
@@ -145,6 +208,13 @@ const stubs = {
 describe('control implementations IndexView', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    useDataApiNullCallIndex = 0;
+    dashboardSuggestionsEnabled = false;
+    dashboardSuggestionsConfigFetched = false;
+    pendingDashboardSuggestionsFixture = [];
+    controlResultsFixture = [];
+    pendingDashboardSuggestionsReject = false;
+    controlResultsReject = false;
     uiStore.controlImplementationDrawerOpen = false;
     uiStore.controlImplementationSelectedRequirementId = null;
     uiStore.controlImplementationExpandedKeys = {};
@@ -166,6 +236,30 @@ describe('control implementations IndexView', () => {
           },
         },
       },
+    });
+    fetchPendingDashboardSuggestions.mockImplementation(async () => {
+      if (pendingDashboardSuggestionsReject) {
+        throw new Error('pending failed');
+      }
+      return {
+        data: {
+          value: {
+            data: pendingDashboardSuggestionsFixture,
+          },
+        },
+      };
+    });
+    fetchDashboardSuggestionControlResults.mockImplementation(async () => {
+      if (controlResultsReject) {
+        throw new Error('results failed');
+      }
+      return {
+        data: {
+          value: {
+            data: controlResultsFixture,
+          },
+        },
+      };
     });
   });
 
@@ -200,5 +294,110 @@ describe('control implementations IndexView', () => {
     expect(
       uiStore.setControlImplementationSelectedRequirementId,
     ).toHaveBeenCalledWith('req-1');
+  });
+
+  it('does not render the AI dashboard suggestions panel when the feature flag is disabled', async () => {
+    const wrapper = mount(IndexView, { global: { stubs } });
+    await waitForMountedControls();
+
+    const implementationButton = wrapper
+      .findAll('button')
+      .find((button) => button.attributes('title') === 'View implementation');
+    await implementationButton?.trigger('click');
+    await flushPromises();
+
+    expect(wrapper.text()).not.toContain('AI dashboard suggestions');
+    expect(fetchPendingDashboardSuggestions).not.toHaveBeenCalled();
+    expect(fetchDashboardSuggestionControlResults).not.toHaveBeenCalled();
+  });
+
+  it('matches pending suggestions to the selected control case-insensitively', async () => {
+    dashboardSuggestionsEnabled = true;
+    pendingDashboardSuggestionsFixture = [
+      {
+        id: 'suggestion-1',
+        status: 'pending',
+        controlId: 'AC-1',
+        labelSetHash: 'hash-1',
+        proposedFilterName: 'Production evidence',
+        proposedFilterLabelSet: { env: 'prod' },
+        confidence: 0.8,
+        reasoning: 'Uppercase control id still matches.',
+      },
+    ];
+
+    const wrapper = mount(IndexView, { global: { stubs } });
+    await waitForMountedControls();
+
+    const implementationButton = wrapper
+      .findAll('button')
+      .find((button) => button.attributes('title') === 'View implementation');
+    await implementationButton?.trigger('click');
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('AI dashboard suggestions');
+    expect(wrapper.text()).toContain('Production evidence');
+    expect(wrapper.text()).toContain('80% confidence');
+    expect(fetchPendingDashboardSuggestions).toHaveBeenCalledWith(
+      expect.stringContaining('/dashboard-suggestions?status=pending'),
+      expect.objectContaining({
+        camelcaseStopPaths: expect.arrayContaining([
+          'data.proposedFilterLabelSet',
+        ]),
+      }),
+    );
+    expect(fetchDashboardSuggestionControlResults).toHaveBeenCalledWith(
+      expect.stringContaining('/dashboard-suggestions/control-results'),
+    );
+  });
+
+  it('keeps pending suggestions visible when control-results cannot be fetched', async () => {
+    dashboardSuggestionsEnabled = true;
+    controlResultsReject = true;
+    pendingDashboardSuggestionsFixture = [
+      {
+        id: 'suggestion-1',
+        status: 'pending',
+        controlId: 'AC-1',
+        labelSetHash: 'hash-1',
+        proposedFilterName: 'Resilient suggestion',
+      },
+    ];
+
+    const wrapper = mount(IndexView, { global: { stubs } });
+    await waitForMountedControls();
+
+    const implementationButton = wrapper
+      .findAll('button')
+      .find((button) => button.attributes('title') === 'View implementation');
+    await implementationButton?.trigger('click');
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('Resilient suggestion');
+  });
+
+  it('keeps no-match state visible when pending suggestions cannot be fetched', async () => {
+    dashboardSuggestionsEnabled = true;
+    pendingDashboardSuggestionsReject = true;
+    controlResultsFixture = [
+      {
+        controlId: 'AC-1',
+        outcome: 'no_match',
+        evaluatedAt: '2026-06-18T10:30:00Z',
+      },
+    ];
+
+    const wrapper = mount(IndexView, { global: { stubs } });
+    await waitForMountedControls();
+
+    const implementationButton = wrapper
+      .findAll('button')
+      .find((button) => button.attributes('title') === 'View implementation');
+    await implementationButton?.trigger('click');
+    await flushPromises();
+
+    expect(wrapper.text()).toContain(
+      'AI reviewed this control and found no matching dashboard filter',
+    );
   });
 });
