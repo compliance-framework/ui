@@ -1,7 +1,7 @@
 import { flushPromises, mount } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import SuggestionScopeDialog from '../SuggestionScopeDialog.vue';
-import type { DashboardSuggestionLabelSet } from '../dashboard-suggestions';
+import type { DashboardSuggestionLabelKey } from '../dashboard-suggestions';
 
 const state = vi.hoisted(() => ({
   axiosPost: vi.fn(),
@@ -13,17 +13,17 @@ const state = vi.hoisted(() => ({
 }));
 
 vi.mock('@/composables/axios', () => ({
-  useAuthenticatedInstance: () => ({ post: state.axiosPost }),
+  useAuthenticatedInstance: () => ({
+    post: state.axiosPost,
+    get: vi.fn(async () => ({ data: { data: [] } })),
+  }),
   decamelizeKeys: (data: unknown) => data,
 }));
 
-function makeLabelSet(hash: string): DashboardSuggestionLabelSet {
-  return {
-    hash,
-    labels: { env: hash },
-    evidenceCount: 2,
-  };
-}
+const labelKeys: DashboardSuggestionLabelKey[] = [
+  { key: 'env', values: ['prod', 'stage'] },
+  { key: 'provider', values: ['aws'] },
+];
 
 function mountDialog(props = {}) {
   return mount(SuggestionScopeDialog, {
@@ -41,7 +41,7 @@ function mountDialog(props = {}) {
         },
         { label: 'AC-2', value: 'AC-2' },
       ],
-      labelSets: [makeLabelSet('hash-1'), makeLabelSet('hash-2')],
+      labelKeys,
       ...props,
     },
     global: {
@@ -55,6 +55,21 @@ function mountDialog(props = {}) {
           emits: ['update:modelValue'],
           template:
             '<div><div v-for="option in options" :key="option[optionValue]"><slot name="option" :option="option">{{ option[optionLabel] }}</slot></div></div>',
+        },
+        // Free-text input stub: covers both the scope-preset Select and the
+        // editable condition key/value Selects.
+        Select: {
+          name: 'Select',
+          props: ['modelValue', 'options'],
+          emits: ['update:modelValue'],
+          template:
+            '<input :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />',
+        },
+        LabelConditionBuilder: {
+          name: 'LabelConditionBuilder',
+          props: ['modelValue', 'sspId', 'keys'],
+          emits: ['update:modelValue'],
+          template: '<div />',
         },
         Checkbox: {
           name: 'Checkbox',
@@ -92,15 +107,10 @@ describe('SuggestionScopeDialog', () => {
       labelSetCount: undefined,
     };
     state.axiosPost.mockImplementation(async (_url: string, body: unknown) => {
-      const scope = (
-        body as {
-          scope?: { controlKeys?: string[]; labelSetHashes?: string[] };
-        }
-      )?.scope;
+      const scope = (body as { scope?: { controlKeys?: string[] } })?.scope;
       const controlCount =
         state.preview.controlCount ?? scope?.controlKeys?.length ?? 2;
-      const labelSetCount =
-        state.preview.labelSetCount ?? scope?.labelSetHashes?.length ?? 2;
+      const labelSetCount = state.preview.labelSetCount ?? 2;
       return {
         data: {
           data: {
@@ -135,7 +145,6 @@ describe('SuggestionScopeDialog', () => {
     const wrapper = mountDialog();
     await flushPreview();
 
-    // Deselect a control so a non-empty scope is sent.
     await wrapper
       .findAllComponents({ name: 'MultiSelect' })[0]
       .vm.$emit('update:modelValue', ['AC-1']);
@@ -143,24 +152,49 @@ describe('SuggestionScopeDialog', () => {
 
     const lastCall = state.axiosPost.mock.calls.at(-1);
     expect(lastCall?.[1]).toMatchObject({ scope: { controlKeys: ['AC-1'] } });
-    // Without this transform the keys go out camelCase and the API 422s.
     expect(lastCall?.[2]?.transformRequest).toBeDefined();
   });
 
+  it('builds an evidence label filter from conditions in the generate payload', async () => {
+    const wrapper = mountDialog();
+    await flushPreview();
+
+    // The first LabelConditionBuilder is the "Evidence to analyze" filter.
+    wrapper
+      .findAllComponents({ name: 'LabelConditionBuilder' })[0]
+      .vm.$emit('update:modelValue', [
+        { key: 'repository', value: 'todo-app' },
+      ]);
+    await flushPreview();
+
+    await wrapper.find('[data-testid="scope-generate"]').trigger('click');
+
+    expect(wrapper.emitted('generate')?.at(-1)).toEqual([
+      {
+        supersedePending: true,
+        scope: {
+          labelFilter: {
+            scope: {
+              condition: {
+                label: 'repository',
+                operator: '=',
+                value: 'todo-app',
+              },
+            },
+          },
+        },
+        constraints: undefined,
+      },
+    ]);
+  });
+
   it('requires explicit confirmation for larger grids', async () => {
-    state.preview = {
-      plannedCalls: 30,
-      controlCount: 6,
-      labelSetCount: 5,
-    };
+    state.preview = { plannedCalls: 30, controlCount: 6, labelSetCount: 5 };
     const wrapper = mountDialog({
       controls: Array.from({ length: 6 }, (_, index) => ({
         label: `AC-${index}`,
         value: `AC-${index}`,
       })),
-      labelSets: Array.from({ length: 5 }, (_, index) =>
-        makeLabelSet(`hash-${index}`),
-      ),
     });
     await flushPreview();
 
@@ -175,9 +209,55 @@ describe('SuggestionScopeDialog', () => {
     await wrapper.find('[data-testid="scope-generate"]').trigger('click');
 
     expect(wrapper.emitted('generate')?.at(-1)).toEqual([
+      { supersedePending: true, scope: undefined, constraints: undefined },
+    ]);
+  });
+
+  it('includes label constraints and a scope preset in the generate payload', async () => {
+    const wrapper = mountDialog();
+    await flushPreview();
+
+    // Pick the "only new filters" preset.
+    await wrapper.find('[data-testid="scope-preset"]').setValue('new_filter');
+    // Required labels is the 2nd LabelConditionBuilder (evidence is the 1st).
+    wrapper
+      .findAllComponents({ name: 'LabelConditionBuilder' })[1]
+      .vm.$emit('update:modelValue', [{ key: 'env', value: 'prod' }]);
+    await flushPreview();
+
+    await wrapper.find('[data-testid="scope-generate"]').trigger('click');
+
+    expect(wrapper.emitted('generate')?.at(-1)).toEqual([
       {
         supersedePending: true,
         scope: undefined,
+        constraints: {
+          onlyAction: 'new_filter',
+          mandatoryLabels: [{ key: 'env', value: 'prod' }],
+        },
+      },
+    ]);
+  });
+
+  it('treats a blank condition value as a key-only (any value) selector', async () => {
+    const wrapper = mountDialog();
+    await flushPreview();
+
+    // Excluded labels is the 3rd LabelConditionBuilder.
+    wrapper
+      .findAllComponents({ name: 'LabelConditionBuilder' })[2]
+      .vm.$emit('update:modelValue', [{ key: 'repository', value: '' }]);
+    await flushPreview();
+
+    await wrapper.find('[data-testid="scope-generate"]').trigger('click');
+
+    expect(wrapper.emitted('generate')?.at(-1)).toEqual([
+      {
+        supersedePending: true,
+        scope: undefined,
+        constraints: {
+          excludedLabels: [{ key: 'repository', value: null }],
+        },
       },
     ]);
   });
@@ -225,19 +305,12 @@ describe('SuggestionScopeDialog', () => {
   });
 
   it('uses preview planned calls for large-run confirmation instead of local cartesian size', async () => {
-    state.preview = {
-      plannedCalls: 1,
-      controlCount: 16,
-      labelSetCount: 89,
-    };
+    state.preview = { plannedCalls: 1, controlCount: 16, labelSetCount: 89 };
     const wrapper = mountDialog({
       controls: Array.from({ length: 16 }, (_, index) => ({
         label: `AC-${index}`,
         value: `AC-${index}`,
       })),
-      labelSets: Array.from({ length: 89 }, (_, index) =>
-        makeLabelSet(`hash-${index}`),
-      ),
     });
     await flushPreview();
 
@@ -248,10 +321,7 @@ describe('SuggestionScopeDialog', () => {
 
     await wrapper.find('[data-testid="scope-generate"]').trigger('click');
     expect(wrapper.emitted('generate')?.at(-1)).toEqual([
-      {
-        supersedePending: true,
-        scope: undefined,
-      },
+      { supersedePending: true, scope: undefined, constraints: undefined },
     ]);
   });
 
@@ -265,39 +335,5 @@ describe('SuggestionScopeDialog', () => {
     );
     await wrapper.find('[data-testid="scope-generate"]').trigger('click');
     expect(wrapper.emitted('generate')).toBeUndefined();
-  });
-
-  it('shows human label-set titles instead of selected hash labels', () => {
-    const wrapper = mountDialog({
-      labelSets: [
-        {
-          hash: 'opaque-hash',
-          labels: { env: 'prod', service: 'payments' },
-          evidenceCount: 2,
-          sampleTitles: ['Payment evidence'],
-        },
-        {
-          hash: 'fallback-hash',
-          labels: { env: 'stage' },
-          evidenceCount: 1,
-        },
-      ],
-    });
-
-    const labelSetSelector = wrapper.findAllComponents({
-      name: 'MultiSelect',
-    })[1];
-    const labelSetOptions = labelSetSelector.props('options') as Array<{
-      title: string;
-    }>;
-
-    expect(labelSetOptions.map((option) => option.title)).toEqual([
-      'Payment evidence',
-      'env=stage',
-    ]);
-    expect(labelSetSelector.text()).toContain('Payment evidence');
-    expect(labelSetSelector.text()).toContain('env=prod');
-    // Evidence counts are no longer rendered (label sets are 1-for-1 with evidence).
-    expect(labelSetSelector.text()).not.toContain('2 evidence');
   });
 });

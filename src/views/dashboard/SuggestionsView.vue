@@ -4,15 +4,24 @@
       <PageHeader>Dashboard suggestions</PageHeader>
       <PageSubHeader>{{ sspTitle }}</PageSubHeader>
     </div>
-    <PrimaryButton
+    <div
       v-if="
         aiConfig.dashboardSuggestionsConfigFetched &&
         aiConfig.dashboardSuggestionsEnabled
       "
-      @click="showScopeDialog = true"
+      class="flex items-center gap-2"
     >
-      Generate suggestions
-    </PrimaryButton>
+      <SecondaryButton
+        :disabled="generalizing"
+        title="Find near-duplicate filters that differ by one label and propose merging them"
+        @click="suggestFilterMerges"
+      >
+        {{ generalizing ? 'Finding merges…' : 'Suggest filter merges' }}
+      </SecondaryButton>
+      <PrimaryButton @click="showScopeDialog = true">
+        Generate suggestions
+      </PrimaryButton>
+    </div>
   </div>
 
   <Message
@@ -133,14 +142,34 @@
           <div>
             <div class="flex flex-wrap items-center gap-2">
               <h2
-                class="text-lg font-semibold text-zinc-700 dark:text-slate-200"
+                class="text-lg font-semibold"
+                :class="
+                  diffFor(group).titleTo
+                    ? 'text-blue-700 dark:text-blue-300'
+                    : 'text-zinc-700 dark:text-slate-200'
+                "
               >
                 {{ groupTitle(group.suggestions[0]) }}
               </h2>
+              <span
+                v-if="diffFor(group).titleFrom"
+                class="text-sm text-blue-700 line-through dark:text-blue-300"
+              >
+                {{ diffFor(group).titleFrom }}
+              </span>
               <Chip
-                v-if="group.suggestions[0]?.action === 'extend'"
+                v-if="
+                  group.suggestions[0]?.targetFilterId &&
+                  !group.suggestions[0]?.isGeneralization
+                "
                 :label="`Extends: ${group.suggestions[0].targetFilterName ?? 'dashboard'}`"
               />
+              <Chip
+                v-if="group.suggestions[0]?.isGeneralization"
+                :label="generalizationLabel(group)"
+                class="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
+              />
+              <Chip v-if="diffFor(group).edited" label="Edited" />
               <RouterLink
                 :to="{
                   name: 'evidence:index',
@@ -152,11 +181,29 @@
                 {{ group.evidenceCount }} matched evidence
               </RouterLink>
             </div>
-            <div class="mt-2 flex flex-wrap gap-2">
-              <Chip v-for="label in group.labels" :key="label" :label="label" />
+            <div class="mt-2 flex flex-wrap items-center gap-2">
+              <span
+                v-for="(chip, index) in diffFor(group).labelChips"
+                :key="`${chip.kind}-${chip.text}-${index}`"
+                class="rounded px-2 py-0.5 text-sm"
+                :class="labelChipClass(chip.kind)"
+              >
+                {{ chip.text }}
+              </span>
             </div>
+            <p
+              v-if="group.suggestions[0]?.isGeneralization"
+              class="mt-2 text-sm text-purple-700 dark:text-purple-300"
+            >
+              {{ group.suggestions[0]?.reasoning }}
+              Accepting moves these controls onto the generalized filter and off
+              the source filters.
+            </p>
           </div>
           <div class="flex gap-2">
+            <SecondaryButton @click="openEditDialog(group)">
+              Edit
+            </SecondaryButton>
             <SecondaryButton @click="acceptGroup(group)">
               Accept group
             </SecondaryButton>
@@ -185,6 +232,12 @@
                     {{ suggestion.controlId }}
                   </span>
                   <span>{{ suggestion.controlTitle }}</span>
+                  <span
+                    v-if="suggestion.addedByUser"
+                    class="ml-2 rounded bg-green-100 px-2 py-0.5 text-xs text-green-800 dark:bg-green-900 dark:text-green-200"
+                  >
+                    Added
+                  </span>
                   <span class="ml-2 text-sm text-zinc-500">
                     {{ confidenceLabel(suggestion.confidence) }}
                   </span>
@@ -212,6 +265,20 @@
               </p>
             </div>
           </div>
+        </div>
+
+        <div
+          v-if="diffFor(group).removedControlIds.length"
+          class="mt-3 flex flex-wrap items-center gap-2 text-sm"
+        >
+          <span class="text-zinc-500">Removed controls:</span>
+          <span
+            v-for="controlId in diffFor(group).removedControlIds"
+            :key="controlId"
+            class="rounded bg-red-100 px-2 py-0.5 text-red-800 line-through dark:bg-red-900 dark:text-red-200"
+          >
+            {{ controlId }}
+          </span>
         </div>
       </PageCard>
     </div>
@@ -265,11 +332,22 @@
     v-model:visible="showScopeDialog"
     :ssp-id="sspId"
     :controls="controlOptions"
-    :labelSets="labelSets ?? []"
+    :label-keys="labelKeys ?? []"
     :generating="generating"
     :ceilingError="scopeCeilingError"
     @scope-change="scopeCeilingError = ''"
     @generate="generate"
+  />
+
+  <SuggestionEditDialog
+    v-if="aiConfig.dashboardSuggestionsEnabled"
+    v-model:visible="showEditDialog"
+    :group="editGroup"
+    :control-options="controlOptions"
+    :resolve-catalog-id="resolveControlCatalogId"
+    :saving="editingGroup"
+    :error="editError"
+    @save="saveGroupEdit"
   />
 
   <Dialog
@@ -328,6 +406,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
 import { RouterLink, useRoute } from 'vue-router';
+import { useToast } from 'primevue/usetoast';
 import PageCard from '@/components/PageCard.vue';
 import PageHeader from '@/components/PageHeader.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
@@ -351,15 +430,21 @@ import PrimaryButton from '@/volt/PrimaryButton.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
 import Textarea from '@/volt/Textarea.vue';
 import SuggestionScopeDialog from './partials/SuggestionScopeDialog.vue';
+import SuggestionEditDialog from './partials/SuggestionEditDialog.vue';
 import {
+  buildControlKey,
+  computeGroupEditDiff,
   formatLabelSet,
   runCellFailures,
   type DashboardSuggestion,
   type DashboardSuggestionEvent,
+  type EditDashboardSuggestionGroupPayload,
   type GenerateDashboardSuggestionsPayload,
+  type LabelChipKind,
 } from './partials/dashboard-suggestions';
 
 const route = useRoute();
+const toast = useToast();
 const sspId = computed(() => String(route.params.sspId));
 const aiConfig = useAiConfigStore();
 const axios = useAuthenticatedInstance();
@@ -373,8 +458,12 @@ const selectedSuggestionIds = ref<string[]>([]);
 const expandedReasoning = ref(new Set<string>());
 const auditEvents = ref<DashboardSuggestionEvent[]>([]);
 const scopeCeilingError = ref('');
+const showEditDialog = ref(false);
+const editGroup = ref<PendingGroup | null>(null);
+const editError = ref('');
 const controlTitleById = ref(new Map<string, string>());
 const controlCatalogById = ref(new Map<string, string>());
+const controlCatalogIdById = ref(new Map<string, string>());
 const controlProfileTitlesById = ref(new Map<string, string[]>());
 
 interface SspProfileBinding {
@@ -389,6 +478,15 @@ interface ResolvedControlWithCatalog {
   catalogId?: string;
 }
 
+interface PendingGroup {
+  hash: string;
+  labels: string[];
+  filterLabelsObject: Record<string, string>;
+  evidenceCount: number;
+  sampleTitles: string[];
+  suggestions: DashboardSuggestion[];
+}
+
 const { data: systemSecurityPlan } = useDataApi<SystemSecurityPlan>(
   computed(() => `/api/oscal/system-security-plans/${sspId.value}/full`),
 );
@@ -397,15 +495,21 @@ const {
   pendingSuggestions,
   historySuggestions,
   labelSets,
+  labelKeys,
   pendingSuggestionsLoading,
   historySuggestionsLoading,
   generating,
+  generalizing,
   refreshPendingSuggestions,
   refreshHistorySuggestions,
   refreshLabelSets,
+  refreshLabelKeys,
   generateSuggestions,
+  generalizeSuggestions,
   acceptSuggestions,
   rejectSuggestions,
+  editSuggestionGroup,
+  editingGroup,
   fetchSuggestionEvents,
 } = useDashboardSuggestions(
   sspId,
@@ -446,6 +550,7 @@ const controlOptions = computed(() =>
       const controlKey = normalizeControlId(requirement.controlId);
       const title = controlTitleById.value.get(controlKey);
       const catalogTitle = controlCatalogById.value.get(controlKey);
+      const catalogId = controlCatalogIdById.value.get(controlKey);
       const profileTitles =
         controlProfileTitlesById.value.get(controlKey) ?? [];
       const titleLabel = title
@@ -453,7 +558,11 @@ const controlOptions = computed(() =>
         : requirement.controlId;
       return {
         label: titleLabel,
-        value: requirement.controlId,
+        // The scope API resolves controls by catalog-qualified key
+        // (`<catalogId>:<controlId>`); send that, not the bare control id.
+        value: catalogId
+          ? buildControlKey(catalogId, requirement.controlId)
+          : requirement.controlId,
         controlId: requirement.controlId,
         title,
         catalogTitle,
@@ -471,16 +580,7 @@ const labelSetByHash = computed(
 );
 
 const pendingGroups = computed(() => {
-  const groups = new Map<
-    string,
-    {
-      hash: string;
-      labels: string[];
-      evidenceCount: number;
-      sampleTitles: string[];
-      suggestions: DashboardSuggestion[];
-    }
-  >();
+  const groups = new Map<string, PendingGroup>();
 
   for (const suggestion of pendingSuggestions.value ?? []) {
     const proposedFilter = suggestion.proposedFilterLabelSet;
@@ -504,16 +604,14 @@ const pendingGroups = computed(() => {
             sampleTitles: matched?.sampleTitles ?? [],
           };
 
+      const filterLabelsObject = hasProposedFilter
+        ? proposedFilter
+        : (matched?.labels ?? suggestion.labelSet ?? suggestion.labels ?? {});
+
       group = {
         hash: key,
-        labels: formatLabelSet(
-          hasProposedFilter
-            ? proposedFilter
-            : (matched?.labels ??
-                suggestion.labelSet ??
-                suggestion.labels ??
-                {}),
-        ),
+        labels: formatLabelSet(filterLabelsObject),
+        filterLabelsObject,
         evidenceCount: evidence.count,
         sampleTitles: evidence.sampleTitles,
         suggestions: [],
@@ -557,6 +655,7 @@ onMounted(async () => {
     return;
   }
   await refreshLabelSets();
+  await refreshLabelKeys();
   await refreshHistorySuggestions();
   await pollLatest();
   if (run.value?.status === 'pending' || run.value?.status === 'running') {
@@ -600,6 +699,7 @@ function normalizeControlId(controlId?: string) {
 async function loadControlMetadata() {
   controlTitleById.value = new Map();
   controlCatalogById.value = new Map();
+  controlCatalogIdById.value = new Map();
   controlProfileTitlesById.value = new Map();
 
   if (!sspId.value) {
@@ -666,6 +766,7 @@ async function loadControlMetadata() {
     );
     controlTitleById.value = titles;
     controlCatalogById.value = catalogTitles;
+    controlCatalogIdById.value = controlCatalogIds;
     controlProfileTitlesById.value = new Map(
       Array.from(profileTitles.entries()).map(([controlId, profiles]) => [
         controlId,
@@ -809,6 +910,21 @@ function groupIds(group: { suggestions: DashboardSuggestion[] }) {
   return group.suggestions.map((suggestion) => suggestion.id);
 }
 
+function diffFor(group: PendingGroup) {
+  return computeGroupEditDiff(group.suggestions, group.filterLabelsObject);
+}
+
+function labelChipClass(kind: LabelChipKind) {
+  switch (kind) {
+    case 'added':
+      return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+    case 'removed':
+      return 'bg-red-100 text-red-800 line-through dark:bg-red-900 dark:text-red-200';
+    default:
+      return 'bg-zinc-100 text-zinc-700 dark:bg-slate-700 dark:text-slate-200';
+  }
+}
+
 function confidenceLabel(confidence: number | undefined) {
   if (confidence === undefined || confidence === null) {
     return 'Confidence unavailable';
@@ -840,6 +956,43 @@ async function generate(payload: GenerateDashboardSuggestionsPayload) {
   } catch (error) {
     scopeCeilingError.value = extractErrorMessage(error);
   }
+}
+
+async function suggestFilterMerges() {
+  try {
+    const result = await generalizeSuggestions();
+    activeTab.value = 'pending';
+    if (!result || result.inserted === 0) {
+      toast.add({
+        severity: 'info',
+        summary: 'No filter merges found',
+        detail:
+          'No near-duplicate filters differ by a single generalizable label.',
+        life: 4000,
+      });
+      return;
+    }
+    toast.add({
+      severity: 'success',
+      summary: `${result.candidates} filter merge${result.candidates === 1 ? '' : 's'} proposed`,
+      detail: `${result.inserted} suggestion${result.inserted === 1 ? '' : 's'} added to the pending list.`,
+      life: 4000,
+    });
+  } catch (error) {
+    toast.add({
+      severity: 'error',
+      summary: 'Could not suggest filter merges',
+      detail: extractErrorMessage(error),
+      life: 6000,
+    });
+  }
+}
+
+// Builds the chip label for a generalization group from the number of source
+// filters it merges.
+function generalizationLabel(group: PendingGroup) {
+  const count = group.suggestions[0]?.sourceFilterIds?.length ?? 0;
+  return `Merges ${count} filter${count === 1 ? '' : 's'}`;
 }
 
 async function acceptOne(id: string) {
@@ -875,6 +1028,28 @@ async function rejectPending() {
     (id) => !ids.includes(id),
   );
   showRejectDialog.value = false;
+}
+
+function resolveControlCatalogId(controlId: string) {
+  return controlCatalogIdById.value.get(normalizeControlId(controlId));
+}
+
+function openEditDialog(group: PendingGroup) {
+  editGroup.value = group;
+  editError.value = '';
+  showEditDialog.value = true;
+}
+
+async function saveGroupEdit(payload: EditDashboardSuggestionGroupPayload) {
+  try {
+    editError.value = '';
+    await editSuggestionGroup(payload);
+    selectedSuggestionIds.value = [];
+    showEditDialog.value = false;
+  } catch (error) {
+    // Keep the dialog open and surface the failure inline so the user can retry.
+    editError.value = extractErrorMessage(error);
+  }
 }
 
 async function openAuditDialog(id: string) {
