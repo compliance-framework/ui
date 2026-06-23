@@ -473,6 +473,24 @@ const authenticatedRoutes = [
     },
   },
   {
+    path: '/admin/groups',
+    name: 'admin-groups',
+    component: () => import('../views/groups/GroupsListView.vue'),
+    meta: {
+      requiresAuth: true,
+      permission: ADMIN_MANAGE,
+    },
+  },
+  {
+    path: '/admin/groups/:id',
+    name: 'admin-group-view',
+    component: () => import('../views/groups/GroupView.vue'),
+    meta: {
+      requiresAuth: true,
+      permission: ADMIN_MANAGE,
+    },
+  },
+  {
     path: '/component-definitions',
     name: 'component-definitions',
     component: () =>

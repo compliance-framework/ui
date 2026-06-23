@@ -48,3 +48,31 @@ export interface CCFUserCreate {
   lastName: string;
   password: string;
 }
+
+export interface CCFGroup {
+  id: string;
+  name: string;
+  description?: string;
+  memberCount?: number;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface CCFGroupCreate {
+  name: string;
+  description?: string;
+}
+
+export interface CCFGroupMember {
+  userId: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  inherited: boolean;
+}
+
+export interface CCFUserGroup {
+  groupId: string;
+  groupName: string;
+  inherited: boolean;
+}
