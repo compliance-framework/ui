@@ -83,8 +83,10 @@ import GroupCreateForm from '@/components/groups/GroupCreateForm.vue';
 import Dialog from '@/volt/Dialog.vue';
 import { useDataApi } from '@/composables/axios';
 import RouterLinkButton from '@/components/RouterLinkButton.vue';
+import { useToast } from 'primevue/usetoast';
 
 const showDialog = ref(false);
+const toast = useToast();
 
 const {
   data: groups,
@@ -103,6 +105,12 @@ function onCreated(newGroup: CCFGroup) {
   // shallowRef tracks reference changes only — mutating in place with push() would not
   // trigger reactivity, so we reassign the array.
   groups.value = [...(groups.value ?? []), newGroup];
+  toast.add({
+    severity: 'success',
+    summary: 'Group created',
+    detail: `Group "${newGroup.name}" has been created.`,
+    life: 3000,
+  });
 }
 
 onMounted(() => {

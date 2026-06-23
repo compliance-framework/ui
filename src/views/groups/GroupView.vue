@@ -35,10 +35,14 @@
     </div>
 
     <div class="mt-4">
-      <SecondaryButton class="mr-2" @click="editVisible = true"
-        >Edit Group</SecondaryButton
+      <PrimaryButton class="mr-2" @click="editVisible = true"
+        >Edit Group</PrimaryButton
       >
-      <PrimaryButton @click="deleteGroup">Delete Group</PrimaryButton>
+      <SecondaryButton
+        class="text-red-600 enabled:hover:text-red-700 dark:text-red-400 dark:enabled:hover:text-red-300"
+        @click="deleteGroup"
+        >Delete Group</SecondaryButton
+      >
     </div>
 
     <Dialog modal header="Edit Group" v-model:visible="editVisible">
