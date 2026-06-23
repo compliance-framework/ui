@@ -14,6 +14,10 @@ const mocks = vi.hoisted(() => ({
   deleteDashboard: vi.fn(),
 }));
 
+vi.mock('@/composables/usePermissions', () => ({
+  usePermissions: () => ({ can: () => true, permissionTooltip: () => '' }),
+}));
+
 vi.mock('primevue/useconfirm', () => ({
   useConfirm: () => ({ require: mocks.confirmRequire }),
 }));

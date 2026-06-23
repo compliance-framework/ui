@@ -37,7 +37,14 @@
           <span class="grow font-medium">
             {{ findResourceByHref(imp.href)?.title || 'No Title' }}</span
           >
-          <PrimaryButton class="flex gap-2" @click="removeImport(imp)"
+          <PrimaryButton
+            class="flex gap-2"
+            @click="removeImport(imp)"
+            :disabled="!can(RESOURCES.PROFILE, ACTIONS.UPDATE)"
+            v-tooltip.top="{
+              value: permissionTooltip(RESOURCES.PROFILE, ACTIONS.UPDATE),
+              disabled: can(RESOURCES.PROFILE, ACTIONS.UPDATE),
+            }"
             >Remove</PrimaryButton
           >
         </div>
@@ -56,12 +63,26 @@
           :groups="imp.excludeControls as ProfileSelectControlByID[]"
           :catalog="importedCatalogsByHref[imp.href]"
         />
-        <PrimaryButton class="mt-2" @click="save(toValue(imp))"
+        <PrimaryButton
+          class="mt-2"
+          @click="save(toValue(imp))"
+          :disabled="!can(RESOURCES.PROFILE, ACTIONS.UPDATE)"
+          v-tooltip.top="{
+            value: permissionTooltip(RESOURCES.PROFILE, ACTIONS.UPDATE),
+            disabled: can(RESOURCES.PROFILE, ACTIONS.UPDATE),
+          }"
           >Save</PrimaryButton
         >
       </div>
     </CollapsableGroup>
-    <PrimaryButton class="mt-4" @click="openCatalogDialog()"
+    <PrimaryButton
+      class="mt-4"
+      @click="openCatalogDialog()"
+      :disabled="!can(RESOURCES.PROFILE, ACTIONS.UPDATE)"
+      v-tooltip.top="{
+        value: permissionTooltip(RESOURCES.PROFILE, ACTIONS.UPDATE),
+        disabled: can(RESOURCES.PROFILE, ACTIONS.UPDATE),
+      }"
       >Add Catalog Import</PrimaryButton
     >
     <CatalogImportDialog
@@ -93,7 +114,10 @@ import { type Catalog } from '@/oscal';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import type { ErrorResponse, ErrorBody } from '@/stores/types';
 import { type AxiosError } from 'axios';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
 
+const { can, permissionTooltip } = usePermissions();
 const route = useRoute();
 const toast = useToast();
 const confirm = useConfirm();

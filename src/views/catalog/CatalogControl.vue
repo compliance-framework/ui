@@ -28,17 +28,38 @@
           >
             Findings
           </TertiaryButton>
-          <TertiaryButton size="small" @click.stop="showControlForm = true">
+          <TertiaryButton
+            size="small"
+            @click.stop="showControlForm = true"
+            :disabled="!can(RESOURCES.CATALOG, ACTIONS.CREATE)"
+            v-tooltip.top="{
+              value: permissionTooltip(RESOURCES.CATALOG, ACTIONS.CREATE),
+              disabled: can(RESOURCES.CATALOG, ACTIONS.CREATE),
+            }"
+          >
             <i class="pi pi-plus mr-1"></i>
             Control
           </TertiaryButton>
-          <SecondaryButton size="small" @click.stop="showEdit = true">
+          <SecondaryButton
+            size="small"
+            @click.stop="showEdit = true"
+            :disabled="!can(RESOURCES.CATALOG, ACTIONS.UPDATE)"
+            v-tooltip.top="{
+              value: permissionTooltip(RESOURCES.CATALOG, ACTIONS.UPDATE),
+              disabled: can(RESOURCES.CATALOG, ACTIONS.UPDATE),
+            }"
+          >
             Edit
           </SecondaryButton>
           <TertiaryButton
             size="small"
             class="border-red-200 text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-950/40"
             @click.stop="deleteControl()"
+            :disabled="!can(RESOURCES.CATALOG, ACTIONS.DELETE)"
+            v-tooltip.top="{
+              value: permissionTooltip(RESOURCES.CATALOG, ACTIONS.DELETE),
+              disabled: can(RESOURCES.CATALOG, ACTIONS.DELETE),
+            }"
           >
             Delete
           </TertiaryButton>
@@ -57,24 +78,44 @@
               v-if="!statement"
               size="small"
               @click="showEditStatement = true"
+              :disabled="!can(RESOURCES.CATALOG, ACTIONS.UPDATE)"
+              v-tooltip.top="{
+                value: permissionTooltip(RESOURCES.CATALOG, ACTIONS.UPDATE),
+                disabled: can(RESOURCES.CATALOG, ACTIONS.UPDATE),
+              }"
               >Add Statement</TertiaryButton
             >
             <TertiaryButton
               v-if="statement"
               size="small"
               @click="showEditStatement = true"
+              :disabled="!can(RESOURCES.CATALOG, ACTIONS.UPDATE)"
+              v-tooltip.top="{
+                value: permissionTooltip(RESOURCES.CATALOG, ACTIONS.UPDATE),
+                disabled: can(RESOURCES.CATALOG, ACTIONS.UPDATE),
+              }"
               >Edit Statement</TertiaryButton
             >
             <TertiaryButton
               v-if="!objective"
               size="small"
               @click="showEditObjective = true"
+              :disabled="!can(RESOURCES.CATALOG, ACTIONS.UPDATE)"
+              v-tooltip.top="{
+                value: permissionTooltip(RESOURCES.CATALOG, ACTIONS.UPDATE),
+                disabled: can(RESOURCES.CATALOG, ACTIONS.UPDATE),
+              }"
               >Add Objective</TertiaryButton
             >
             <TertiaryButton
               v-if="!guidance"
               size="small"
               @click="showEditGuidance = true"
+              :disabled="!can(RESOURCES.CATALOG, ACTIONS.UPDATE)"
+              v-tooltip.top="{
+                value: permissionTooltip(RESOURCES.CATALOG, ACTIONS.UPDATE),
+                disabled: can(RESOURCES.CATALOG, ACTIONS.UPDATE),
+              }"
               >Add Guidance</TertiaryButton
             >
           </div>
@@ -176,6 +217,10 @@ import type { ComplianceIntervalStatus } from '@/stores/evidence';
 import { computeEvidenceStatusCounts } from '@/composables/useEvidenceStatusCounts';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
 import { useToast } from 'primevue/usetoast';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
+
+const { can, permissionTooltip } = usePermissions();
 
 const props = defineProps<{
   catalog: Catalog;

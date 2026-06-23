@@ -154,8 +154,15 @@
         <button
           type="submit"
           :disabled="
-            !formData.description || !formData.methods.length || saving
+            !formData.description ||
+            !formData.methods.length ||
+            saving ||
+            !can(RESOURCES.POAM_OSCAL, ACTIONS.UPDATE)
           "
+          v-tooltip.top="{
+            value: permissionTooltip(RESOURCES.POAM_OSCAL, ACTIONS.UPDATE),
+            disabled: can(RESOURCES.POAM_OSCAL, ACTIONS.UPDATE),
+          }"
           class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {{ saving ? 'Saving...' : 'Save' }}
@@ -170,6 +177,10 @@ import { reactive, onMounted } from 'vue';
 import type { Observation } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
+
+const { can, permissionTooltip } = usePermissions();
 
 const props = defineProps<{
   poamId: string;

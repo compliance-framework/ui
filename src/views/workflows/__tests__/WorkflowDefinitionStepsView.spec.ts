@@ -3,6 +3,10 @@ import { mount } from '@vue/test-utils';
 import WorkflowDefinitionStepsView from '../WorkflowDefinitionStepsView.vue';
 import type { StepDefinition, WorkflowDefinition } from '@/types/workflows';
 
+vi.mock('@/composables/usePermissions', () => ({
+  usePermissions: () => ({ can: () => true, permissionTooltip: () => '' }),
+}));
+
 vi.mock('@/stores/workflows/definitions', () => ({
   useWorkflowDefinitionStore: () => ({
     definition: {

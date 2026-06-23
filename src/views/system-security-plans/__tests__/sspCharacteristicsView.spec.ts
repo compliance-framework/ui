@@ -45,6 +45,10 @@ vi.mock('primevue/usetoast', () => ({
   }),
 }));
 
+vi.mock('@/composables/usePermissions', () => ({
+  usePermissions: () => ({ can: () => true, permissionTooltip: () => '' }),
+}));
+
 const stubs = {
   TooltipTitle: {
     props: ['text'],

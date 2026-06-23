@@ -12,6 +12,10 @@ const state = vi.hoisted(() => ({
   },
 }));
 
+vi.mock('@/composables/usePermissions', () => ({
+  usePermissions: () => ({ can: () => true, permissionTooltip: () => '' }),
+}));
+
 vi.mock('@/composables/axios', () => ({
   useAuthenticatedInstance: () => ({
     post: state.axiosPost,

@@ -62,7 +62,18 @@
     </div>
 
     <div class="flex gap-2">
-      <PrimaryButton type="submit">Create Capability</PrimaryButton>
+      <PrimaryButton
+        type="submit"
+        :disabled="!can(RESOURCES.COMPONENT_DEFINITION, ACTIONS.CREATE)"
+        v-tooltip.top="{
+          value: permissionTooltip(
+            RESOURCES.COMPONENT_DEFINITION,
+            ACTIONS.CREATE,
+          ),
+          disabled: can(RESOURCES.COMPONENT_DEFINITION, ACTIONS.CREATE),
+        }"
+        >Create Capability</PrimaryButton
+      >
       <SecondaryButton type="button" @click="$emit('cancel')"
         >Cancel</SecondaryButton
       >
@@ -82,6 +93,10 @@ import TertiaryButton from '@/volt/TertiaryButton.vue';
 import { BIconArrowRepeat } from 'bootstrap-icons-vue';
 import { v4 as uuidv4 } from 'uuid';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
+
+const { can, permissionTooltip } = usePermissions();
 
 const toast = useToast();
 

@@ -6,6 +6,10 @@ vi.mock('uuid', () => ({
   v4: () => 'test-uuid',
 }));
 
+vi.mock('@/composables/usePermissions', () => ({
+  usePermissions: () => ({ can: () => true, permissionTooltip: () => '' }),
+}));
+
 const mountedWrappers: Array<ReturnType<typeof mount>> = [];
 
 function mountForm(props: Record<string, unknown> = {}) {

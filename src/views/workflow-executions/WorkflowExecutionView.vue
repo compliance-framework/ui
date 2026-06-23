@@ -78,6 +78,14 @@
         <SecondaryButton
           v-if="execution.status === 'failed' || execution.status === 'overdue'"
           @click="handleRetry"
+          :disabled="!can(RESOURCES.WORKFLOW_EXECUTION, ACTIONS.UPDATE)"
+          v-tooltip.top="{
+            value: permissionTooltip(
+              RESOURCES.WORKFLOW_EXECUTION,
+              ACTIONS.UPDATE,
+            ),
+            disabled: can(RESOURCES.WORKFLOW_EXECUTION, ACTIONS.UPDATE),
+          }"
         >
           Retry Execution
         </SecondaryButton>
@@ -236,6 +244,10 @@ import ExecutionMetrics from './partials/ExecutionMetrics.vue';
 import ExecutionDAGView from './partials/ExecutionDAGView.vue';
 import StepExecutionList from './partials/StepExecutionList.vue';
 import StepExecutionPanel from './partials/StepExecutionPanel.vue';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
+
+const { can, permissionTooltip } = usePermissions();
 
 const route = useRoute();
 const router = useRouter();

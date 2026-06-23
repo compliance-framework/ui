@@ -98,7 +98,15 @@
       <!-- Add Evidence Button -->
       <PrimaryButton
         @click="handleSubmit"
-        :disabled="isSubmitting || !canSubmit"
+        :disabled="
+          isSubmitting ||
+          !canSubmit ||
+          !can(RESOURCES.STEP_EXECUTION, ACTIONS.UPDATE)
+        "
+        v-tooltip.top="{
+          value: permissionTooltip(RESOURCES.STEP_EXECUTION, ACTIONS.UPDATE),
+          disabled: can(RESOURCES.STEP_EXECUTION, ACTIONS.UPDATE),
+        }"
         class="w-full"
       >
         <i v-if="isSubmitting" class="pi pi-spin pi-spinner mr-2"></i>
@@ -123,6 +131,10 @@ import InputText from '@/volt/InputText.vue';
 import Textarea from '@/volt/Textarea.vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
 import Message from '@/volt/Message.vue';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
+
+const { can, permissionTooltip } = usePermissions();
 
 const props = defineProps<{
   step: StepExecution;

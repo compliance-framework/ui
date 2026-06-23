@@ -107,7 +107,12 @@
         <div class="flex flex-wrap gap-3">
           <button
             @click="showEditModal = true"
-            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
+            :disabled="!can(RESOURCES.POAM_OSCAL, ACTIONS.UPDATE)"
+            v-tooltip.top="{
+              value: permissionTooltip(RESOURCES.POAM_OSCAL, ACTIONS.UPDATE),
+              disabled: can(RESOURCES.POAM_OSCAL, ACTIONS.UPDATE),
+            }"
+            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Edit POAM
           </button>
@@ -251,9 +256,12 @@ import type { ErrorResponse, ErrorBody } from '@/stores/types';
 import decamelizeKeys from 'decamelize-keys';
 import { getIdFromRoute } from '../../utils/get-poam-id-from-route';
 import type { Metadata } from '@/oscal';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
 
 const route = useRoute();
 const toast = useToast();
+const { can, permissionTooltip } = usePermissions();
 
 const showEditModal = ref(false);
 

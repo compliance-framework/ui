@@ -16,14 +16,32 @@
         <p class="text-gray-500 dark:text-slate-400 mb-4">
           No capabilities defined yet.
         </p>
-        <TertiaryButton @click="showCreateForm = true"
+        <TertiaryButton
+          @click="showCreateForm = true"
+          :disabled="!can(RESOURCES.COMPONENT_DEFINITION, ACTIONS.CREATE)"
+          v-tooltip.top="{
+            value: permissionTooltip(
+              RESOURCES.COMPONENT_DEFINITION,
+              ACTIONS.CREATE,
+            ),
+            disabled: can(RESOURCES.COMPONENT_DEFINITION, ACTIONS.CREATE),
+          }"
           >Add Capability</TertiaryButton
         >
       </div>
     </div>
 
     <div class="mt-4" v-if="capabilities.length > 0">
-      <TertiaryButton @click="showCreateForm = true"
+      <TertiaryButton
+        @click="showCreateForm = true"
+        :disabled="!can(RESOURCES.COMPONENT_DEFINITION, ACTIONS.CREATE)"
+        v-tooltip.top="{
+          value: permissionTooltip(
+            RESOURCES.COMPONENT_DEFINITION,
+            ACTIONS.CREATE,
+          ),
+          disabled: can(RESOURCES.COMPONENT_DEFINITION, ACTIONS.CREATE),
+        }"
         >Add Capability</TertiaryButton
       >
     </div>
@@ -53,6 +71,10 @@ import ComponentDefinitionCapability from '@/components/component-definitions/Co
 import CapabilityCreateModal from '@/components/component-definitions/CapabilityCreateModal.vue';
 import CapabilityEditModal from '@/components/component-definitions/CapabilityEditModal.vue';
 import { useDataApi } from '@/composables/axios';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
+
+const { can, permissionTooltip } = usePermissions();
 
 const route = useRoute();
 const componentDefinitionId = computed(() => route.params.id as string);

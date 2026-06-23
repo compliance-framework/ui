@@ -183,7 +183,11 @@
         </button>
         <button
           @click="submit"
-          :disabled="saving"
+          :disabled="saving || !can(RESOURCES.POAM_ITEM, milestoneAction)"
+          v-tooltip.top="{
+            value: permissionTooltip(RESOURCES.POAM_ITEM, milestoneAction),
+            disabled: can(RESOURCES.POAM_ITEM, milestoneAction),
+          }"
           class="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-md disabled:opacity-50"
         >
           {{ saving ? 'Saving...' : isEdit ? 'Save Changes' : 'Add Milestone' }}
@@ -208,6 +212,10 @@ import type {
   UpdateMilestoneRequest,
   MilestoneStatus,
 } from '@/types/poam-items';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
+
+const { can, permissionTooltip } = usePermissions();
 
 interface Props {
   modelValue: boolean;
@@ -231,6 +239,10 @@ const emit = defineEmits<{
 
 const localVisible = ref(props.modelValue);
 const isEdit = ref(false);
+
+const milestoneAction = computed(() =>
+  isEdit.value ? ACTIONS.UPDATE : ACTIONS.CREATE,
+);
 
 // Derive saving and saveError from props so the parent controls modal state
 const saving = computed(() => props.saving);

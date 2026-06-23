@@ -10,6 +10,10 @@ import { reactive, watch, watchEffect } from 'vue';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import { useToast } from 'primevue/usetoast';
 import { useFormSubmit } from '@/composables/useFormSubmit';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
+
+const { can, permissionTooltip } = usePermissions();
 
 const show = defineModel<boolean>();
 
@@ -155,7 +159,14 @@ async function submit() {
         <SecondaryButton type="button" @click="show = false">
           Cancel
         </SecondaryButton>
-        <PrimaryButton type="submit" :disabled="isSubmitting">
+        <PrimaryButton
+          type="submit"
+          :disabled="isSubmitting || !can(RESOURCES.CATALOG, ACTIONS.UPDATE)"
+          v-tooltip.top="{
+            value: permissionTooltip(RESOURCES.CATALOG, ACTIONS.UPDATE),
+            disabled: can(RESOURCES.CATALOG, ACTIONS.UPDATE),
+          }"
+        >
           <i v-if="isSubmitting" class="pi pi-spin pi-spinner mr-2"></i>
           Save Catalog
         </PrimaryButton>

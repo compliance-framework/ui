@@ -161,7 +161,18 @@
     <template #footer>
       <SecondaryButton @click="modelVisible = false">Cancel</SecondaryButton>
       <PrimaryButton
-        :disabled="!canGenerate || generating"
+        :disabled="
+          !canGenerate ||
+          generating ||
+          !can(RESOURCES.DASHBOARD_SUGGESTION, ACTIONS.CREATE)
+        "
+        v-tooltip.top="{
+          value: permissionTooltip(
+            RESOURCES.DASHBOARD_SUGGESTION,
+            ACTIONS.CREATE,
+          ),
+          disabled: can(RESOURCES.DASHBOARD_SUGGESTION, ACTIONS.CREATE),
+        }"
         @click="submit"
         data-testid="scope-generate"
       >
@@ -194,6 +205,10 @@ import {
 } from './dashboard-suggestions';
 import LabelConditionBuilder from './LabelConditionBuilder.vue';
 import type { DataResponse } from '@/stores/types';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
+
+const { can, permissionTooltip } = usePermissions();
 
 interface ControlOption {
   label: string;

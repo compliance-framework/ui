@@ -284,7 +284,15 @@
 
     <div class="flex justify-between items-center flex-wrap gap-2">
       <div class="flex gap-2 flex-wrap">
-        <PrimaryButton @click="openCreate">Create Risk</PrimaryButton>
+        <PrimaryButton
+          @click="openCreate"
+          :disabled="!can(RESOURCES.RISK, ACTIONS.CREATE)"
+          v-tooltip.top="{
+            value: permissionTooltip(RESOURCES.RISK, ACTIONS.CREATE),
+            disabled: can(RESOURCES.RISK, ACTIONS.CREATE),
+          }"
+          >Create Risk</PrimaryButton
+        >
         <template v-if="enableBulkOps && selectedRiskIds.size > 0">
           <TertiaryButton @click="showBulkStatusModal = true">
             Bulk Status ({{ selectedRiskIds.size }})
@@ -456,9 +464,22 @@
             >
               Open
             </RouterLinkButton>
-            <TertiaryButton @click="editRisk(risk)">Edit</TertiaryButton>
+            <TertiaryButton
+              @click="editRisk(risk)"
+              :disabled="!can(RESOURCES.RISK, ACTIONS.UPDATE)"
+              v-tooltip.top="{
+                value: permissionTooltip(RESOURCES.RISK, ACTIONS.UPDATE),
+                disabled: can(RESOURCES.RISK, ACTIONS.UPDATE),
+              }"
+              >Edit</TertiaryButton
+            >
             <TertiaryButton
               v-if="riskIdentifier(risk)"
+              :disabled="!can(RESOURCES.RISK, ACTIONS.DELETE)"
+              v-tooltip.top="{
+                value: permissionTooltip(RESOURCES.RISK, ACTIONS.DELETE),
+                disabled: can(RESOURCES.RISK, ACTIONS.DELETE),
+              }"
               @click="
                 confirmDeleteDialog(() => deleteRisk(risk), {
                   itemType: 'risk',
@@ -636,6 +657,8 @@ import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
 import RouterLinkButton from '@/components/RouterLinkButton.vue';
 import { useUserSearch } from '@/composables/workflows/useUserSearch';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
 import {
   computeRiskSummary,
   defaultRiskFilters,
@@ -702,6 +725,7 @@ const router = useRouter();
 const toast = useToast();
 const { confirmDeleteDialog } = useDeleteConfirmationDialog();
 const { loadUsersByIds, getCachedUser } = useUserSearch();
+const { can, permissionTooltip } = usePermissions();
 
 interface PanelRiskFilters extends RiskFilters {
   sspId: string;

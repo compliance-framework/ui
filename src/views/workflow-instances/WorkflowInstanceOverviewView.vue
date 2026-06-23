@@ -90,7 +90,21 @@
 
       <!-- Actions -->
       <div class="flex gap-3 mt-6">
-        <PrimaryButton type="submit" :disabled="isSubmitting || !hasChanges">
+        <PrimaryButton
+          type="submit"
+          :disabled="
+            isSubmitting ||
+            !hasChanges ||
+            !can(RESOURCES.WORKFLOW_INSTANCE, ACTIONS.UPDATE)
+          "
+          v-tooltip.top="{
+            value: permissionTooltip(
+              RESOURCES.WORKFLOW_INSTANCE,
+              ACTIONS.UPDATE,
+            ),
+            disabled: can(RESOURCES.WORKFLOW_INSTANCE, ACTIONS.UPDATE),
+          }"
+        >
           <i v-if="isSubmitting" class="pi pi-spin pi-spinner mr-2"></i>
           Save Changes
         </PrimaryButton>
@@ -219,6 +233,10 @@ import {
   parseGracePeriodInput,
   toGracePeriodInputValue,
 } from '@/utils/workflows';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
+
+const { can, permissionTooltip } = usePermissions();
 
 const store = useWorkflowInstanceStore();
 const toast = useToast();

@@ -298,7 +298,11 @@
         </button>
         <button
           type="submit"
-          :disabled="loading"
+          :disabled="loading || !can(RESOURCES.POAM_OSCAL, resourceAction)"
+          v-tooltip.top="{
+            value: permissionTooltip(RESOURCES.POAM_OSCAL, resourceAction),
+            disabled: can(RESOURCES.POAM_OSCAL, resourceAction),
+          }"
           class="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-md"
         >
           {{ loading ? 'Saving...' : isEdit ? 'Update' : 'Create' }}
@@ -309,12 +313,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import type { BackMatterResource } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import type { AxiosError } from 'axios';
 import type { ErrorResponse, ErrorBody } from '@/stores/types';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
 
 interface Props {
   poamId: string;
@@ -329,6 +335,12 @@ interface Emits {
 
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
+
+const { can, permissionTooltip } = usePermissions();
+
+const resourceAction = computed(() =>
+  props.isEdit ? ACTIONS.UPDATE : ACTIONS.CREATE,
+);
 
 const {
   data: returnedResource,

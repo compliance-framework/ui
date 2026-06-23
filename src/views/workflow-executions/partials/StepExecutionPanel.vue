@@ -261,7 +261,13 @@
         <PrimaryButton
           v-if="canStart"
           @click="handleStart"
-          :disabled="isProcessing"
+          :disabled="
+            isProcessing || !can(RESOURCES.STEP_EXECUTION, ACTIONS.UPDATE)
+          "
+          v-tooltip.top="{
+            value: permissionTooltip(RESOURCES.STEP_EXECUTION, ACTIONS.UPDATE),
+            disabled: can(RESOURCES.STEP_EXECUTION, ACTIONS.UPDATE),
+          }"
           class="flex-1"
         >
           <i v-if="isProcessing" class="pi pi-spin pi-spinner mr-2"></i>
@@ -272,7 +278,15 @@
         <PrimaryButton
           v-if="canComplete"
           @click="handleComplete"
-          :disabled="isProcessing || !hasRequiredEvidence"
+          :disabled="
+            isProcessing ||
+            !hasRequiredEvidence ||
+            !can(RESOURCES.STEP_EXECUTION, ACTIONS.UPDATE)
+          "
+          v-tooltip.top="{
+            value: permissionTooltip(RESOURCES.STEP_EXECUTION, ACTIONS.UPDATE),
+            disabled: can(RESOURCES.STEP_EXECUTION, ACTIONS.UPDATE),
+          }"
           class="flex-1"
         >
           <i v-if="isProcessing" class="pi pi-spin pi-spinner mr-2"></i>
@@ -284,7 +298,13 @@
           v-if="canFail"
           severity="danger"
           @click="openFailDialog"
-          :disabled="isProcessing"
+          :disabled="
+            isProcessing || !can(RESOURCES.STEP_EXECUTION, ACTIONS.UPDATE)
+          "
+          v-tooltip.top="{
+            value: permissionTooltip(RESOURCES.STEP_EXECUTION, ACTIONS.UPDATE),
+            disabled: can(RESOURCES.STEP_EXECUTION, ACTIONS.UPDATE),
+          }"
         >
           <i class="pi pi-times mr-2"></i>
           Mark Failed
@@ -293,7 +313,13 @@
         <SecondaryButton
           v-if="canReassign"
           @click="openReassignDialog"
-          :disabled="isProcessing"
+          :disabled="
+            isProcessing || !can(RESOURCES.STEP_EXECUTION, ACTIONS.UPDATE)
+          "
+          v-tooltip.top="{
+            value: permissionTooltip(RESOURCES.STEP_EXECUTION, ACTIONS.UPDATE),
+            disabled: can(RESOURCES.STEP_EXECUTION, ACTIONS.UPDATE),
+          }"
         >
           <i class="pi pi-send mr-2"></i>
           Reassign Task
@@ -346,7 +372,15 @@
         <SecondaryButton
           severity="danger"
           @click="handleFail"
-          :disabled="!failureReason.trim() || isProcessing"
+          :disabled="
+            !failureReason.trim() ||
+            isProcessing ||
+            !can(RESOURCES.STEP_EXECUTION, ACTIONS.UPDATE)
+          "
+          v-tooltip.top="{
+            value: permissionTooltip(RESOURCES.STEP_EXECUTION, ACTIONS.UPDATE),
+            disabled: can(RESOURCES.STEP_EXECUTION, ACTIONS.UPDATE),
+          }"
         >
           <i v-if="isProcessing" class="pi pi-spin pi-spinner mr-2"></i>
           <i v-else class="pi pi-times mr-2"></i>
@@ -431,7 +465,13 @@
         <PrimaryButton
           form="reassign-form"
           type="submit"
-          :disabled="isProcessing"
+          :disabled="
+            isProcessing || !can(RESOURCES.STEP_EXECUTION, ACTIONS.UPDATE)
+          "
+          v-tooltip.top="{
+            value: permissionTooltip(RESOURCES.STEP_EXECUTION, ACTIONS.UPDATE),
+            disabled: can(RESOURCES.STEP_EXECUTION, ACTIONS.UPDATE),
+          }"
         >
           <i v-if="isProcessing" class="pi pi-spin pi-spinner mr-2"></i>
           <i v-else class="pi pi-send mr-2"></i>
@@ -465,6 +505,10 @@ import SecondaryButton from '@/volt/SecondaryButton.vue';
 import Message from '@/volt/Message.vue';
 import AutoComplete from '@/volt/AutoComplete.vue';
 import EvidenceSubmissionForm from './EvidenceSubmissionForm.vue';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
+
+const { can, permissionTooltip } = usePermissions();
 
 const props = defineProps<{
   step: StepExecution | null;

@@ -19,6 +19,10 @@ const mockStore = reactive({
   addExecutionLocally: vi.fn(),
 });
 
+vi.mock('@/composables/usePermissions', () => ({
+  usePermissions: () => ({ can: () => true, permissionTooltip: () => '' }),
+}));
+
 vi.mock('@/stores/workflows/instances', () => ({
   useWorkflowInstanceStore: () => mockStore,
 }));

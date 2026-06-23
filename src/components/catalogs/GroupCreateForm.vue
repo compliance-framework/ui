@@ -8,6 +8,10 @@ import InputText from '@/volt/InputText.vue';
 import Message from '@/volt/Message.vue';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import { useFormSubmit } from '@/composables/useFormSubmit';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
+
+const { can, permissionTooltip } = usePermissions();
 
 const props = defineProps<{
   catalog: Catalog;
@@ -152,7 +156,14 @@ async function createGroup(): Promise<void> {
       <SecondaryButton type="button" @click="emit('cancel')">
         Cancel
       </SecondaryButton>
-      <PrimaryButton type="submit" :disabled="isSubmitting">
+      <PrimaryButton
+        type="submit"
+        :disabled="isSubmitting || !can(RESOURCES.CATALOG, ACTIONS.CREATE)"
+        v-tooltip.top="{
+          value: permissionTooltip(RESOURCES.CATALOG, ACTIONS.CREATE),
+          disabled: can(RESOURCES.CATALOG, ACTIONS.CREATE),
+        }"
+      >
         <i v-if="isSubmitting" class="pi pi-spin pi-spinner mr-2"></i>
         Create Group
       </PrimaryButton>

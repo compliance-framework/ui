@@ -1,8 +1,12 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { nextTick } from 'vue';
 import EvidenceSubmissionForm from '../EvidenceSubmissionForm.vue';
 import type { EvidenceRequirement, StepExecution } from '@/types/workflows';
+
+vi.mock('@/composables/usePermissions', () => ({
+  usePermissions: () => ({ can: () => true, permissionTooltip: () => '' }),
+}));
 
 const step = {
   id: 'step-1',

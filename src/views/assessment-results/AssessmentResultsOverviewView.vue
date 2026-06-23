@@ -135,12 +135,22 @@
       class="flex justify-between items-center pt-6 border-t border-gray-200 dark:border-slate-700"
     >
       <div>
-        <RouterLink
-          :to="`/assessment-results/${assessmentResults.uuid}/edit`"
-          class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 inline-block"
+        <button
+          @click="
+            $router.push(`/assessment-results/${assessmentResults.uuid}/edit`)
+          "
+          :disabled="!can(RESOURCES.ASSESSMENT_RESULTS, ACTIONS.UPDATE)"
+          v-tooltip.top="{
+            value: permissionTooltip(
+              RESOURCES.ASSESSMENT_RESULTS,
+              ACTIONS.UPDATE,
+            ),
+            disabled: can(RESOURCES.ASSESSMENT_RESULTS, ACTIONS.UPDATE),
+          }"
+          class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 inline-block disabled:opacity-60 disabled:cursor-not-allowed"
         >
           Edit Metadata
-        </RouterLink>
+        </button>
       </div>
 
       <div class="flex gap-2">
@@ -158,7 +168,15 @@
               itemType: 'assessment results',
             })
           "
-          class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700"
+          :disabled="!can(RESOURCES.ASSESSMENT_RESULTS, ACTIONS.DELETE)"
+          v-tooltip.top="{
+            value: permissionTooltip(
+              RESOURCES.ASSESSMENT_RESULTS,
+              ACTIONS.DELETE,
+            ),
+            disabled: can(RESOURCES.ASSESSMENT_RESULTS, ACTIONS.DELETE),
+          }"
+          class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed"
         >
           Delete
         </button>
@@ -175,6 +193,10 @@ import { useToast } from 'primevue/usetoast';
 import type { AssessmentResult } from '@/oscal';
 import { useDataApi } from '@/composables/axios';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
+
+const { can, permissionTooltip } = usePermissions();
 
 const props = defineProps({
   assessmentResults: {

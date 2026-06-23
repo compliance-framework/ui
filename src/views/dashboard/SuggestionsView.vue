@@ -12,13 +12,32 @@
       class="flex items-center gap-2"
     >
       <SecondaryButton
-        :disabled="generalizing"
+        :disabled="
+          generalizing || !can(RESOURCES.DASHBOARD_SUGGESTION, ACTIONS.CREATE)
+        "
+        v-tooltip.top="{
+          value: permissionTooltip(
+            RESOURCES.DASHBOARD_SUGGESTION,
+            ACTIONS.CREATE,
+          ),
+          disabled: can(RESOURCES.DASHBOARD_SUGGESTION, ACTIONS.CREATE),
+        }"
         title="Find near-duplicate filters that differ by one label and propose merging them"
         @click="suggestFilterMerges"
       >
         {{ generalizing ? 'Finding merges…' : 'Suggest filter merges' }}
       </SecondaryButton>
-      <PrimaryButton @click="showScopeDialog = true">
+      <PrimaryButton
+        @click="showScopeDialog = true"
+        :disabled="!can(RESOURCES.DASHBOARD_SUGGESTION, ACTIONS.CREATE)"
+        v-tooltip.top="{
+          value: permissionTooltip(
+            RESOURCES.DASHBOARD_SUGGESTION,
+            ACTIONS.CREATE,
+          ),
+          disabled: can(RESOURCES.DASHBOARD_SUGGESTION, ACTIONS.CREATE),
+        }"
+      >
         Generate suggestions
       </PrimaryButton>
     </div>
@@ -117,10 +136,29 @@
         <span class="text-sm text-zinc-600 dark:text-slate-300">
           {{ selectedSuggestionIds.length }} selected
         </span>
-        <SecondaryButton @click="acceptSelected"
+        <SecondaryButton
+          @click="acceptSelected"
+          :disabled="!can(RESOURCES.DASHBOARD_SUGGESTION, ACTIONS.UPDATE)"
+          v-tooltip.top="{
+            value: permissionTooltip(
+              RESOURCES.DASHBOARD_SUGGESTION,
+              ACTIONS.UPDATE,
+            ),
+            disabled: can(RESOURCES.DASHBOARD_SUGGESTION, ACTIONS.UPDATE),
+          }"
           >Accept selected</SecondaryButton
         >
-        <SecondaryButton @click="openRejectDialog(selectedSuggestionIds)">
+        <SecondaryButton
+          @click="openRejectDialog(selectedSuggestionIds)"
+          :disabled="!can(RESOURCES.DASHBOARD_SUGGESTION, ACTIONS.UPDATE)"
+          v-tooltip.top="{
+            value: permissionTooltip(
+              RESOURCES.DASHBOARD_SUGGESTION,
+              ACTIONS.UPDATE,
+            ),
+            disabled: can(RESOURCES.DASHBOARD_SUGGESTION, ACTIONS.UPDATE),
+          }"
+        >
           Reject selected
         </SecondaryButton>
       </div>
@@ -201,13 +239,43 @@
             </p>
           </div>
           <div class="flex gap-2">
-            <SecondaryButton @click="openEditDialog(group)">
+            <SecondaryButton
+              @click="openEditDialog(group)"
+              :disabled="!can(RESOURCES.DASHBOARD_SUGGESTION, ACTIONS.UPDATE)"
+              v-tooltip.top="{
+                value: permissionTooltip(
+                  RESOURCES.DASHBOARD_SUGGESTION,
+                  ACTIONS.UPDATE,
+                ),
+                disabled: can(RESOURCES.DASHBOARD_SUGGESTION, ACTIONS.UPDATE),
+              }"
+            >
               Edit
             </SecondaryButton>
-            <SecondaryButton @click="acceptGroup(group)">
+            <SecondaryButton
+              @click="acceptGroup(group)"
+              :disabled="!can(RESOURCES.DASHBOARD_SUGGESTION, ACTIONS.UPDATE)"
+              v-tooltip.top="{
+                value: permissionTooltip(
+                  RESOURCES.DASHBOARD_SUGGESTION,
+                  ACTIONS.UPDATE,
+                ),
+                disabled: can(RESOURCES.DASHBOARD_SUGGESTION, ACTIONS.UPDATE),
+              }"
+            >
               Accept group
             </SecondaryButton>
-            <SecondaryButton @click="openRejectDialog(groupIds(group))">
+            <SecondaryButton
+              @click="openRejectDialog(groupIds(group))"
+              :disabled="!can(RESOURCES.DASHBOARD_SUGGESTION, ACTIONS.UPDATE)"
+              v-tooltip.top="{
+                value: permissionTooltip(
+                  RESOURCES.DASHBOARD_SUGGESTION,
+                  ACTIONS.UPDATE,
+                ),
+                disabled: can(RESOURCES.DASHBOARD_SUGGESTION, ACTIONS.UPDATE),
+              }"
+            >
               Reject group
             </SecondaryButton>
           </div>
@@ -247,10 +315,40 @@
                 <SecondaryButton @click="toggleReasoning(suggestion.id)">
                   Reasoning
                 </SecondaryButton>
-                <SecondaryButton @click="acceptOne(suggestion.id)">
+                <SecondaryButton
+                  @click="acceptOne(suggestion.id)"
+                  :disabled="
+                    !can(RESOURCES.DASHBOARD_SUGGESTION, ACTIONS.UPDATE)
+                  "
+                  v-tooltip.top="{
+                    value: permissionTooltip(
+                      RESOURCES.DASHBOARD_SUGGESTION,
+                      ACTIONS.UPDATE,
+                    ),
+                    disabled: can(
+                      RESOURCES.DASHBOARD_SUGGESTION,
+                      ACTIONS.UPDATE,
+                    ),
+                  }"
+                >
                   Accept
                 </SecondaryButton>
-                <SecondaryButton @click="openRejectDialog([suggestion.id])">
+                <SecondaryButton
+                  @click="openRejectDialog([suggestion.id])"
+                  :disabled="
+                    !can(RESOURCES.DASHBOARD_SUGGESTION, ACTIONS.UPDATE)
+                  "
+                  v-tooltip.top="{
+                    value: permissionTooltip(
+                      RESOURCES.DASHBOARD_SUGGESTION,
+                      ACTIONS.UPDATE,
+                    ),
+                    disabled: can(
+                      RESOURCES.DASHBOARD_SUGGESTION,
+                      ACTIONS.UPDATE,
+                    ),
+                  }"
+                >
                   Reject
                 </SecondaryButton>
               </div>
@@ -368,7 +466,18 @@
       <SecondaryButton @click="showRejectDialog = false"
         >Cancel</SecondaryButton
       >
-      <PrimaryButton @click="rejectPending">Reject</PrimaryButton>
+      <PrimaryButton
+        @click="rejectPending"
+        :disabled="!can(RESOURCES.DASHBOARD_SUGGESTION, ACTIONS.UPDATE)"
+        v-tooltip.top="{
+          value: permissionTooltip(
+            RESOURCES.DASHBOARD_SUGGESTION,
+            ACTIONS.UPDATE,
+          ),
+          disabled: can(RESOURCES.DASHBOARD_SUGGESTION, ACTIONS.UPDATE),
+        }"
+        >Reject</PrimaryButton
+      >
     </template>
   </Dialog>
 
@@ -442,6 +551,10 @@ import {
   type GenerateDashboardSuggestionsPayload,
   type LabelChipKind,
 } from './partials/dashboard-suggestions';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
+
+const { can, permissionTooltip } = usePermissions();
 
 const route = useRoute();
 const toast = useToast();

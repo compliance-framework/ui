@@ -16,6 +16,10 @@ const executionStatus = ref(null);
 const executionMetrics = ref(null);
 const stepExecutions = ref([]);
 
+vi.mock('@/composables/usePermissions', () => ({
+  usePermissions: () => ({ can: () => true, permissionTooltip: () => '' }),
+}));
+
 vi.mock('@/composables/workflows', () => ({
   useWorkflowExecutions: () => ({
     execution,

@@ -10,7 +10,14 @@
           Assign users to workflow roles for notifications and task ownership
         </p>
       </div>
-      <PrimaryButton @click="openAssignDialog">
+      <PrimaryButton
+        @click="openAssignDialog"
+        :disabled="!can(RESOURCES.ROLE_ASSIGNMENT, ACTIONS.CREATE)"
+        v-tooltip.top="{
+          value: permissionTooltip(RESOURCES.ROLE_ASSIGNMENT, ACTIONS.CREATE),
+          disabled: can(RESOURCES.ROLE_ASSIGNMENT, ACTIONS.CREATE),
+        }"
+      >
         <i class="pi pi-user-plus mr-2"></i>
         Assign Role
       </PrimaryButton>
@@ -75,6 +82,14 @@
             size="small"
             severity="danger"
             @click="handleDelete(assignment)"
+            :disabled="!can(RESOURCES.ROLE_ASSIGNMENT, ACTIONS.DELETE)"
+            v-tooltip.top="{
+              value: permissionTooltip(
+                RESOURCES.ROLE_ASSIGNMENT,
+                ACTIONS.DELETE,
+              ),
+              disabled: can(RESOURCES.ROLE_ASSIGNMENT, ACTIONS.DELETE),
+            }"
           >
             Remove
           </SecondaryButton>
@@ -176,7 +191,19 @@
           <SecondaryButton type="button" @click="closeAssignDialog"
             >Cancel</SecondaryButton
           >
-          <PrimaryButton type="submit" :disabled="isAssigning">
+          <PrimaryButton
+            type="submit"
+            :disabled="
+              isAssigning || !can(RESOURCES.ROLE_ASSIGNMENT, ACTIONS.CREATE)
+            "
+            v-tooltip.top="{
+              value: permissionTooltip(
+                RESOURCES.ROLE_ASSIGNMENT,
+                ACTIONS.CREATE,
+              ),
+              disabled: can(RESOURCES.ROLE_ASSIGNMENT, ACTIONS.CREATE),
+            }"
+          >
             <i v-if="isAssigning" class="pi pi-spin pi-spinner mr-2"></i>
             Assign Selected Roles
           </PrimaryButton>
@@ -201,6 +228,10 @@ import Badge from '@/volt/Badge.vue';
 import Dialog from '@/volt/Dialog.vue';
 import AutoComplete from '@/volt/AutoComplete.vue';
 import Message from '@/volt/Message.vue';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
+
+const { can, permissionTooltip } = usePermissions();
 
 const store = useWorkflowInstanceStore();
 const { createRoleAssignment, deleteRoleAssignment } = useWorkflowInstances();

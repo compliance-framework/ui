@@ -13,6 +13,12 @@ vi.mock('@/stores/auth', () => ({
   }),
 }));
 
+vi.mock('@/stores/permissions', () => ({
+  usePermissionsStore: () => ({
+    hydrate: vi.fn(),
+  }),
+}));
+
 vi.mock('vue-router', () => ({
   useRouter: () => ({
     push: vi.fn(),

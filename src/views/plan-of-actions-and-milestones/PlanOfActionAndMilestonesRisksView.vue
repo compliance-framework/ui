@@ -6,7 +6,12 @@
       </h2>
       <button
         @click="showCreateModal = true"
-        class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md"
+        :disabled="!can(RESOURCES.RISK, ACTIONS.CREATE)"
+        v-tooltip.top="{
+          value: permissionTooltip(RESOURCES.RISK, ACTIONS.CREATE),
+          disabled: can(RESOURCES.RISK, ACTIONS.CREATE),
+        }"
+        class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
       >
         Add Risk
       </button>
@@ -114,7 +119,12 @@
             </RouterLink>
             <button
               @click="editRisk(risk)"
-              class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-sm"
+              :disabled="!can(RESOURCES.RISK, ACTIONS.UPDATE)"
+              v-tooltip.top="{
+                value: permissionTooltip(RESOURCES.RISK, ACTIONS.UPDATE),
+                disabled: can(RESOURCES.RISK, ACTIONS.UPDATE),
+              }"
+              class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Edit
             </button>
@@ -124,7 +134,12 @@
                   itemType: 'risk',
                 })
               "
-              class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md text-sm"
+              :disabled="!can(RESOURCES.RISK, ACTIONS.DELETE)"
+              v-tooltip.top="{
+                value: permissionTooltip(RESOURCES.RISK, ACTIONS.DELETE),
+                disabled: can(RESOURCES.RISK, ACTIONS.DELETE),
+              }"
+              class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Delete
             </button>
@@ -171,6 +186,8 @@ import { useToast } from 'primevue/usetoast';
 import { useDataApi } from '@/composables/axios';
 import { getIdFromRoute } from '../../utils/get-poam-id-from-route';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
 
 const route = useRoute();
 const toast = useToast();
@@ -178,6 +195,7 @@ const toast = useToast();
 const poamId = computed(() => getIdFromRoute(route));
 
 const { confirmDeleteDialog } = useDeleteConfirmationDialog();
+const { can, permissionTooltip } = usePermissions();
 
 const {
   data: risks,

@@ -1,7 +1,15 @@
 <template>
   <PageHeader>Profiles</PageHeader>
   <div class="mt-2">
-    <PrimaryButton class="mr-2" @click="showBuildPropsDialog = true">
+    <PrimaryButton
+      class="mr-2"
+      @click="showBuildPropsDialog = true"
+      :disabled="!can(RESOURCES.PROFILE, ACTIONS.CREATE)"
+      v-tooltip.top="{
+        value: permissionTooltip(RESOURCES.PROFILE, ACTIONS.CREATE),
+        disabled: can(RESOURCES.PROFILE, ACTIONS.CREATE),
+      }"
+    >
       Build Profile by Props
     </PrimaryButton>
   </div>
@@ -69,7 +77,15 @@
     <RouterLinkButton :to="{ name: 'profile:create' }">
       Create New Profile
     </RouterLinkButton>
-    <PrimaryButton class="ml-2" @click="showBuildPropsDialog = true">
+    <PrimaryButton
+      class="ml-2"
+      @click="showBuildPropsDialog = true"
+      :disabled="!can(RESOURCES.PROFILE, ACTIONS.CREATE)"
+      v-tooltip.top="{
+        value: permissionTooltip(RESOURCES.PROFILE, ACTIONS.CREATE),
+        disabled: can(RESOURCES.PROFILE, ACTIONS.CREATE),
+      }"
+    >
       Build Profile by Props
     </PrimaryButton>
   </div>
@@ -94,7 +110,10 @@ import RouterLinkButton from '@/components/RouterLinkButton.vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
 import Dialog from '@/volt/Dialog.vue';
 import ProfileBuildPropsView from '@/views/profile/ProfileBuildPropsView.vue';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
 
+const { can, permissionTooltip } = usePermissions();
 const toast = useToast();
 const showBuildPropsDialog = ref<boolean>(false);
 

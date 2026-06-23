@@ -1,11 +1,25 @@
 <script setup lang="ts">
+import { onMounted } from 'vue';
 import { RouterView } from 'vue-router';
 import LeftSideNav from '@/views/LeftSideNav.vue';
 import SidebarToggle from '@/components/navigation/SidebarToggle.vue';
 import ProfileDropdown from '@/components/ProfileDropdown.vue';
 import { useSidebarStore } from '@/stores/sidebar';
+import { useUserStore } from '@/stores/auth';
+import { usePermissionsStore } from '@/stores/permissions';
 
 const sidebarStore = useSidebarStore();
+const userStore = useUserStore();
+const permissionsStore = usePermissionsStore();
+
+// Auth is persisted, so on a hard refresh the user stays authenticated without re-running
+// the login hydration. Refresh the permission hints here so gating reflects current policy
+// (BCH-1318). Non-blocking — hydrate() swallows its own errors and can() stays optimistic.
+onMounted(() => {
+  if (userStore.isAuthenticated) {
+    permissionsStore.hydrate();
+  }
+});
 </script>
 
 <template>

@@ -56,7 +56,14 @@
         class="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-slate-700"
       >
         <SecondaryButton type="button" @click="cancel">Cancel</SecondaryButton>
-        <PrimaryButton type="submit" :disabled="isSubmitting">
+        <PrimaryButton
+          type="submit"
+          :disabled="isSubmitting || !can(RESOURCES.CATALOG, ACTIONS.CREATE)"
+          v-tooltip.top="{
+            value: permissionTooltip(RESOURCES.CATALOG, ACTIONS.CREATE),
+            disabled: can(RESOURCES.CATALOG, ACTIONS.CREATE),
+          }"
+        >
           <i v-if="isSubmitting" class="pi pi-spin pi-spinner mr-2"></i>
           Create Catalog
         </PrimaryButton>
@@ -80,8 +87,12 @@ import PrimaryButton from '@/volt/PrimaryButton.vue';
 import { v4 as uuidv4 } from 'uuid';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
 import type { ErrorResponse, ErrorBody } from '@/stores/types.ts';
 import type { AxiosError } from 'axios';
+
+const { can, permissionTooltip } = usePermissions();
 
 const catalog = ref<Catalog>({
   metadata: {},

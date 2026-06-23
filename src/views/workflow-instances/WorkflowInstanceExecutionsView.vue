@@ -10,7 +10,19 @@
           View past and current workflow executions
         </p>
       </div>
-      <PrimaryButton @click="handleExecute" :disabled="!store.isActive">
+      <PrimaryButton
+        @click="handleExecute"
+        :disabled="
+          !store.isActive || !can(RESOURCES.WORKFLOW_EXECUTION, ACTIONS.CREATE)
+        "
+        v-tooltip.top="{
+          value: permissionTooltip(
+            RESOURCES.WORKFLOW_EXECUTION,
+            ACTIONS.CREATE,
+          ),
+          disabled: can(RESOURCES.WORKFLOW_EXECUTION, ACTIONS.CREATE),
+        }"
+      >
         <i class="pi pi-play mr-2"></i>
         Execute Now
       </PrimaryButton>
@@ -129,7 +141,19 @@
           <SecondaryButton @click="showExecuteDialog = false">
             Cancel
           </SecondaryButton>
-          <PrimaryButton @click="confirmExecute" :disabled="isExecuting">
+          <PrimaryButton
+            @click="confirmExecute"
+            :disabled="
+              isExecuting || !can(RESOURCES.WORKFLOW_EXECUTION, ACTIONS.CREATE)
+            "
+            v-tooltip.top="{
+              value: permissionTooltip(
+                RESOURCES.WORKFLOW_EXECUTION,
+                ACTIONS.CREATE,
+              ),
+              disabled: can(RESOURCES.WORKFLOW_EXECUTION, ACTIONS.CREATE),
+            }"
+          >
             <i v-if="isExecuting" class="pi pi-spin pi-spinner mr-2"></i>
             Start Execution
           </PrimaryButton>
@@ -150,6 +174,10 @@ import SecondaryButton from '@/volt/SecondaryButton.vue';
 import RouterLinkButton from '@/components/RouterLinkButton.vue';
 import Badge from '@/volt/Badge.vue';
 import Dialog from '@/volt/Dialog.vue';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
+
+const { can, permissionTooltip } = usePermissions();
 
 const router = useRouter();
 const store = useWorkflowInstanceStore();

@@ -157,6 +157,8 @@ import BurgerMenu from '@/components/BurgerMenu.vue';
 import { useAuthenticatedInstance, useDataApi } from '@/composables/axios';
 import type { PaginatedListResponse } from '@/stores/types.ts';
 import { getErrorDetail, getErrorStatus } from '@/utils/httpErrors';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
 
 const configStore = useConfigStore();
 const route = useRoute();
@@ -164,6 +166,7 @@ const router = useRouter();
 const uiStore = useUIStore();
 const toast = useToast();
 const authenticatedApi = useAuthenticatedInstance();
+const { can } = usePermissions();
 const error = ref<AxiosError | null>(null);
 const evidence = ref<Evidence[]>([]);
 const totalEvidence = ref(0);
@@ -863,6 +866,7 @@ const menuItems = ref([
       {
         label: 'Create New',
         icon: 'pi pi-plus',
+        disabled: !can(RESOURCES.EVIDENCE, ACTIONS.CREATE),
         command: async () => {
           await router.push({
             name: 'evidence:create',

@@ -11,7 +11,14 @@
             tooltip-key="ssp.control.implementation"
             underline-class="text-lg font-semibold text-gray-900 dark:text-slate-300 underline decoration-dotted cursor-help"
           />
-          <SecondaryButton @click="editControlImplementation">
+          <SecondaryButton
+            @click="editControlImplementation"
+            :disabled="!can(RESOURCES.SSP, ACTIONS.UPDATE)"
+            v-tooltip.top="{
+              value: permissionTooltip(RESOURCES.SSP, ACTIONS.UPDATE),
+              disabled: can(RESOURCES.SSP, ACTIONS.UPDATE),
+            }"
+          >
             Edit
           </SecondaryButton>
         </div>
@@ -99,7 +106,14 @@
               }})</span
             >
           </div>
-          <PrimaryButton @click="addRequirement">
+          <PrimaryButton
+            @click="addRequirement"
+            :disabled="!can(RESOURCES.SSP, ACTIONS.CREATE)"
+            v-tooltip.top="{
+              value: permissionTooltip(RESOURCES.SSP, ACTIONS.CREATE),
+              disabled: can(RESOURCES.SSP, ACTIONS.CREATE),
+            }"
+          >
             <i class="pi pi-plus mr-2"></i>
             Add Requirement
           </PrimaryButton>
@@ -124,13 +138,32 @@
                 </p>
               </div>
               <div class="flex gap-2">
-                <SecondaryButton @click="createStatement(requirement)">
+                <SecondaryButton
+                  @click="createStatement(requirement)"
+                  :disabled="!can(RESOURCES.SSP, ACTIONS.CREATE)"
+                  v-tooltip.top="{
+                    value: permissionTooltip(RESOURCES.SSP, ACTIONS.CREATE),
+                    disabled: can(RESOURCES.SSP, ACTIONS.CREATE),
+                  }"
+                >
                   Create Statement
                 </SecondaryButton>
-                <SecondaryButton @click="editRequirement(requirement)">
+                <SecondaryButton
+                  @click="editRequirement(requirement)"
+                  :disabled="!can(RESOURCES.SSP, ACTIONS.UPDATE)"
+                  v-tooltip.top="{
+                    value: permissionTooltip(RESOURCES.SSP, ACTIONS.UPDATE),
+                    disabled: can(RESOURCES.SSP, ACTIONS.UPDATE),
+                  }"
+                >
                   Edit
                 </SecondaryButton>
                 <TertiaryButton
+                  :disabled="!can(RESOURCES.SSP, ACTIONS.DELETE)"
+                  v-tooltip.top="{
+                    value: permissionTooltip(RESOURCES.SSP, ACTIONS.DELETE),
+                    disabled: can(RESOURCES.SSP, ACTIONS.DELETE),
+                  }"
                   @click="
                     confirmDeleteDialog(() => deleteRequirement(requirement), {
                       itemName: requirement.controlId,
@@ -165,6 +198,14 @@
                     <div class="flex gap-2">
                       <SecondaryButton
                         @click="editStatement(requirement, statement)"
+                        :disabled="!can(RESOURCES.SSP, ACTIONS.UPDATE)"
+                        v-tooltip.top="{
+                          value: permissionTooltip(
+                            RESOURCES.SSP,
+                            ACTIONS.UPDATE,
+                          ),
+                          disabled: can(RESOURCES.SSP, ACTIONS.UPDATE),
+                        }"
                       >
                         Edit
                       </SecondaryButton>
@@ -235,6 +276,11 @@
                       >{{ byComponent.componentUuid }}</span
                     >
                     <SecondaryButton
+                      :disabled="!can(RESOURCES.SSP, ACTIONS.UPDATE)"
+                      v-tooltip.top="{
+                        value: permissionTooltip(RESOURCES.SSP, ACTIONS.UPDATE),
+                        disabled: can(RESOURCES.SSP, ACTIONS.UPDATE),
+                      }"
                       @click="
                         editRequirementByComponent(requirement, byComponent)
                       "
@@ -402,6 +448,10 @@ import ByComponentEditForm from '@/components/system-security-plans/ByComponentE
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import { getIdFromRoute } from '@/utils/get-poam-id-from-route';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
+
+const { can, permissionTooltip } = usePermissions();
 
 const route = useRoute();
 const toast = useToast();

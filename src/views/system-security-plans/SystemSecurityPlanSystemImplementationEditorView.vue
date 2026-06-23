@@ -33,7 +33,14 @@
                 <h3 class="text-lg font-semibold dark:text-slate-300">
                   System Users
                 </h3>
-                <PrimaryButton @click="showCreateUserModal = true">
+                <PrimaryButton
+                  @click="showCreateUserModal = true"
+                  :disabled="!can(RESOURCES.SSP, ACTIONS.CREATE)"
+                  v-tooltip.top="{
+                    value: permissionTooltip(RESOURCES.SSP, ACTIONS.CREATE),
+                    disabled: can(RESOURCES.SSP, ACTIONS.CREATE),
+                  }"
+                >
                   <i class="pi pi-plus mr-2"></i>
                   Create User
                 </PrimaryButton>
@@ -67,13 +74,31 @@
                           >
                         </div>
                         <div class="flex gap-2">
-                          <SecondaryButton @click.stop="editUser(user)">
+                          <SecondaryButton
+                            @click.stop="editUser(user)"
+                            :disabled="!can(RESOURCES.SSP, ACTIONS.UPDATE)"
+                            v-tooltip.top="{
+                              value: permissionTooltip(
+                                RESOURCES.SSP,
+                                ACTIONS.UPDATE,
+                              ),
+                              disabled: can(RESOURCES.SSP, ACTIONS.UPDATE),
+                            }"
+                          >
                             Edit
                           </SecondaryButton>
                           <SecondaryButton @click.stop="downloadUserJSON(user)">
                             JSON
                           </SecondaryButton>
                           <TertiaryButton
+                            :disabled="!can(RESOURCES.SSP, ACTIONS.DELETE)"
+                            v-tooltip.top="{
+                              value: permissionTooltip(
+                                RESOURCES.SSP,
+                                ACTIONS.DELETE,
+                              ),
+                              disabled: can(RESOURCES.SSP, ACTIONS.DELETE),
+                            }"
                             @click.stop="
                               confirmDeleteDialog(() => deleteUser(user), {
                                 itemName: user.title,
@@ -155,7 +180,14 @@
                 <h3 class="text-lg font-semibold dark:text-slate-300">
                   System Components
                 </h3>
-                <PrimaryButton @click="showCreateComponentModal = true">
+                <PrimaryButton
+                  @click="showCreateComponentModal = true"
+                  :disabled="!can(RESOURCES.SSP, ACTIONS.CREATE)"
+                  v-tooltip.top="{
+                    value: permissionTooltip(RESOURCES.SSP, ACTIONS.CREATE),
+                    disabled: can(RESOURCES.SSP, ACTIONS.CREATE),
+                  }"
+                >
                   <i class="pi pi-plus mr-2"></i>
                   Create Component
                 </PrimaryButton>
@@ -203,6 +235,14 @@
                         <div class="flex gap-2">
                           <SecondaryButton
                             @click.stop="editComponent(component)"
+                            :disabled="!can(RESOURCES.SSP, ACTIONS.UPDATE)"
+                            v-tooltip.top="{
+                              value: permissionTooltip(
+                                RESOURCES.SSP,
+                                ACTIONS.UPDATE,
+                              ),
+                              disabled: can(RESOURCES.SSP, ACTIONS.UPDATE),
+                            }"
                           >
                             Edit
                           </SecondaryButton>
@@ -212,6 +252,14 @@
                             JSON
                           </SecondaryButton>
                           <TertiaryButton
+                            :disabled="!can(RESOURCES.SSP, ACTIONS.DELETE)"
+                            v-tooltip.top="{
+                              value: permissionTooltip(
+                                RESOURCES.SSP,
+                                ACTIONS.DELETE,
+                              ),
+                              disabled: can(RESOURCES.SSP, ACTIONS.DELETE),
+                            }"
                             @click.stop="
                               confirmDeleteDialog(
                                 () => deleteComponent(component),
@@ -294,7 +342,14 @@
                 <h3 class="text-lg font-semibold dark:text-slate-300">
                   Leveraged Authorizations
                 </h3>
-                <PrimaryButton @click="showCreateLeveragedAuthModal = true">
+                <PrimaryButton
+                  @click="showCreateLeveragedAuthModal = true"
+                  :disabled="!can(RESOURCES.SSP, ACTIONS.CREATE)"
+                  v-tooltip.top="{
+                    value: permissionTooltip(RESOURCES.SSP, ACTIONS.CREATE),
+                    disabled: can(RESOURCES.SSP, ACTIONS.CREATE),
+                  }"
+                >
                   <i class="pi pi-plus mr-2"></i>
                   Create Authorization
                 </PrimaryButton>
@@ -333,6 +388,14 @@
                         <div class="flex gap-2">
                           <SecondaryButton
                             @click.stop="editLeveragedAuth(auth)"
+                            :disabled="!can(RESOURCES.SSP, ACTIONS.UPDATE)"
+                            v-tooltip.top="{
+                              value: permissionTooltip(
+                                RESOURCES.SSP,
+                                ACTIONS.UPDATE,
+                              ),
+                              disabled: can(RESOURCES.SSP, ACTIONS.UPDATE),
+                            }"
                           >
                             Edit
                           </SecondaryButton>
@@ -342,6 +405,14 @@
                             JSON
                           </SecondaryButton>
                           <TertiaryButton
+                            :disabled="!can(RESOURCES.SSP, ACTIONS.DELETE)"
+                            v-tooltip.top="{
+                              value: permissionTooltip(
+                                RESOURCES.SSP,
+                                ACTIONS.DELETE,
+                              ),
+                              disabled: can(RESOURCES.SSP, ACTIONS.DELETE),
+                            }"
                             @click.stop="
                               confirmDeleteDialog(
                                 () => deleteLeveragedAuth(auth),
@@ -559,6 +630,10 @@ import type {
 } from '@/oscal';
 import { useDataApi } from '@/composables/axios';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
+
+const { can, permissionTooltip } = usePermissions();
 
 const route = useRoute();
 const toast = useToast();
