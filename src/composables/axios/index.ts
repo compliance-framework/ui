@@ -24,6 +24,12 @@ declare module 'axios' {
   }
 }
 
+// Throttle the global 403 toast so a single user action that fans out into N requests
+// surfaces one "Permission denied" message instead of N. Module-level = shared across every
+// authenticated instance created by useDataApi.
+let last403ToastAt = 0;
+const PERMISSION_TOAST_INTERVAL_MS = 3000;
+
 const useAuthenticatedInstance = () => {
   const userStore = useUserStore();
   const permissionsStore = usePermissionsStore();
@@ -68,12 +74,20 @@ const useAuthenticatedInstance = () => {
         // of truth, so a 403 can still occur where a cosmetic hint allowed the action
         // (e.g. a stale permission cache, or an instance-level deny the type-level hint
         // can't express). Surface it kindly and resync the permission map.
-        toast.add({
-          severity: 'warn',
-          summary: 'Permission denied',
-          detail: "You don't have permission to perform this action.",
-          life: 4000,
-        });
+        //
+        // Both are de-duplicated so a fanned-out batch of denials doesn't spam the user:
+        // the toast is throttled here, and hydrate() collapses concurrent calls into one
+        // GET /api/me/permissions.
+        const now = Date.now();
+        if (now - last403ToastAt > PERMISSION_TOAST_INTERVAL_MS) {
+          last403ToastAt = now;
+          toast.add({
+            severity: 'warn',
+            summary: 'Permission denied',
+            detail: "You don't have permission to perform this action.",
+            life: 4000,
+          });
+        }
         permissionsStore.hydrate();
       }
       return Promise.reject(error);

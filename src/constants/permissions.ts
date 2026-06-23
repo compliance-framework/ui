@@ -105,6 +105,9 @@ const RESOURCE_LABELS: Partial<Record<string, string>> = {
   [RESOURCES.NOTIFICATION]: 'notifications',
   [RESOURCES.RISK_TEMPLATE]: 'risk templates',
   [RESOURCES.SUBJECT_TEMPLATE]: 'subject templates',
+  [RESOURCES.AI_DIAGNOSTICS]: 'AI diagnostics',
+  [RESOURCES.IMPORT]: 'imports',
+  [RESOURCES.DIGEST]: 'digests',
 };
 
 const ACTION_VERBS: Partial<Record<string, string>> = {
@@ -113,9 +116,13 @@ const ACTION_VERBS: Partial<Record<string, string>> = {
   [ACTIONS.DELETE]: 'delete',
   [ACTIONS.PROMOTE]: 'promote',
   [ACTIONS.REGISTER]: 'register',
+  [ACTIONS.INGEST]: 'ingest',
   [ACTIONS.EXECUTE]: 'import',
   [ACTIONS.TRIGGER]: 'trigger',
   [ACTIONS.MANAGE]: 'manage',
+  [ACTIONS.USERS_MANAGE]: 'manage',
+  [ACTIONS.SSO_MANAGE]: 'manage',
+  [ACTIONS.SETTINGS_MANAGE]: 'manage',
 };
 
 // Tooltip shown on a disabled action the user lacks permission for.
