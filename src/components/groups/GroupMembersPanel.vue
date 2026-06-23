@@ -86,8 +86,14 @@
             placeholder="Filter by email or name"
           />
         </div>
+        <p
+          v-if="usersLoading"
+          class="text-sm text-gray-500 dark:text-slate-400"
+        >
+          Loading users...
+        </p>
         <div
-          v-if="availableUsers?.length"
+          v-else
           class="max-h-64 overflow-y-auto rounded border border-ccf-300 dark:border-slate-700"
         >
           <div
@@ -119,12 +125,6 @@
             No matching users.
           </p>
         </div>
-        <p
-          v-else-if="usersLoading"
-          class="text-sm text-gray-500 dark:text-slate-400"
-        >
-          Loading users...
-        </p>
         <PrimaryButton class="mt-4" @click="showAddMember = false"
           >Done</PrimaryButton
         >
