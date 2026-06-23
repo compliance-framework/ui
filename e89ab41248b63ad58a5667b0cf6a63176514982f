@@ -1,0 +1,32 @@
+lisa-addressed:
+---
+Comment (src/composables/axios/index.ts:91):
+**Low (polish): 403 handler has no dedup — bulk actions can spam toasts + stampede `/api/me/permissions`.**
+
+Every 403 fires its own toast *and* a `permissionsStore.hydrate()`. Because the permission model is optimistic-by-default, a single user action that fans out into N requests can produce N "Permission denied" toasts and N concurrent `GET /api/me/permissions` calls. The most reachable case is the bulk operations in `SuggestionsView` ("Accept selected" / "Reject selected" iterate over `selectedSuggestionIds`), and instance-level denies where the type-level hint allowed the click.
+
+Suggestion: keep a single in-flight hydrate (dedupe/await a shared promise, or guard with a `hydrating` flag) and throttle the toast so one denied batch surfaces one message. The resync intent is good — it's just the per-response multiplication that bites.
+Replies:
+**lisa implementation guidance:** Agreed — will dedupe. Plan: (1) in src/stores/permissions.ts, guard hydrate() with a module-level in-flight Promise so N concurrent 403s collapse into a single GET /api/me/permissions (await/return the shared promise, cleared in finally); (2) in src/composables/axios/index.ts, throttle the 403 toast to one per short window (module-level timestamp, ~3s) so a fanned-out batch surfaces one "Permission denied" message. Resync + warn behaviour is unchanged.
+
+<!-- lisa-guidance-posted -->
+---
+Comment (src/stores/permissions.ts:null):
+**Low: `persist: true` rehydrates `loaded: true` with the *previous* permission map, so the first paint after a hard refresh uses stale hints.**
+
+On a hard refresh the persisted state restores `loaded: true` plus the last-known `permissions` map *before* `App.vue`'s `onMounted` async `hydrate()` resolves. During that window `can()` reflects stale policy (not the optimistic `true`), and the synchronous `router.beforeEach` guard runs against it. Net effect: a user who was *newly granted* access to an `admin:manage` route and deep-links/bookmarks it gets bounced to `home` until they navigate again. It self-heals and the PDP still enforces, so this is a UX wrinkle rather than a hole.
+
+Options: persist the map as a cache but require a fresh `hydrate()` to flip `loaded` (e.g. don't persist `loaded`, or reset it to `false` on rehydrate), or await `hydrate()` before resolving the first guarded navigation.
+Replies:
+**lisa implementation guidance:** Agreed. Will stop persisting loaded: change `persist: true` to `persist: { paths: ['subject', 'permissions'] }` (pinia-plugin-persistedstate v3). On a hard refresh loaded then restores to false, so can() is optimistic until App.vue's onMounted hydrate() resolves and the synchronous router guard never bounces a newly-granted user. The persisted map remains a harmless cache (unused while loaded=false).
+
+<!-- lisa-guidance-posted -->
+---
+Comment (src/constants/permissions.ts:131):
+**Nit: `permissionTooltip` falls back to raw keys for resources/actions missing from the label/verb maps.**
+
+`RESOURCE_LABELS` omits `ai-diagnostics`, `import`, `digest` (and `ACTION_VERBS` omits `ingest`, `register`, `users.manage`/`sso.manage`/`settings.manage`). For those the tooltip renders the raw key, e.g. *"You don't have permission to ai-diagnostics ai-diagnostics."* Low impact since those are predominantly route-/`PermissionGate`-gated (no visible-but-disabled tooltip), but worth filling in the maps (or asserting completeness) so a future visible-but-disabled gate on one of them doesn't read oddly.
+Replies:
+**lisa implementation guidance:** Agreed (nit). Will fill the maps in src/constants/permissions.ts: add RESOURCE_LABELS for ai-diagnostics, import, digest; add ACTION_VERBS for ingest, register, and users.manage/sso.manage/settings.manage, so permissionTooltip never renders a raw key if one of those ever gets a visible-but-disabled gate.
+
+<!-- lisa-guidance-posted -->
