@@ -8,6 +8,9 @@
     <template v-if="isLoading">
       <p class="text-gray-500 dark:text-slate-400">Loading members...</p>
     </template>
+    <template v-else-if="membersError">
+      <p class="text-red-500">Error loading members.</p>
+    </template>
     <template v-else-if="!members?.length">
       <p class="text-gray-500 dark:text-slate-400">No members yet.</p>
     </template>
@@ -92,6 +95,9 @@
         >
           Loading users...
         </p>
+        <p v-else-if="usersError" class="text-sm text-red-500">
+          Error loading users.
+        </p>
         <div
           v-else
           class="max-h-64 overflow-y-auto rounded border border-ccf-300 dark:border-slate-700"
@@ -111,8 +117,10 @@
             </div>
             <button
               class="text-sm font-medium text-ccf-600 hover:text-ccf-800 dark:text-blue-400 dark:hover:text-blue-300"
-              :disabled="isMember(user.id)"
-              :class="{ 'opacity-40 cursor-not-allowed': isMember(user.id) }"
+              :disabled="isMember(user.id) || adding"
+              :class="{
+                'opacity-40 cursor-not-allowed': isMember(user.id) || adding,
+              }"
               @click="addMember(user.id)"
             >
               {{ isMember(user.id) ? 'Already added' : 'Add' }}
@@ -134,7 +142,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, watch } from 'vue';
 import type {
   CCFUser,
   CCFGroupMember,
@@ -156,10 +164,12 @@ const props = defineProps<{ groupId: string }>();
 const toast = useToast();
 const showAddMember = ref(false);
 const userSearch = ref('');
+const adding = ref(false);
 
 const {
   data: members,
   isLoading,
+  error: membersError,
   execute: fetchMembers,
 } = useDataApi<CCFGroupMember[]>(
   `/api/admin/groups/${props.groupId}/members`,
@@ -170,6 +180,7 @@ const {
 const {
   data: availableUsers,
   isLoading: usersLoading,
+  error: usersError,
   execute: fetchUsers,
 } = useDataApi<CCFUser[]>('/api/admin/users', {}, { immediate: false });
 
@@ -180,6 +191,11 @@ const { execute: addExecute } = useDataApi<void>(
   { method: 'POST', headers: { 'Content-Type': 'application/json' } },
   { immediate: false },
 );
+
+// Lazy: only load the full user list when the dialog first opens.
+watch(showAddMember, (open) => {
+  if (open && !availableUsers.value) fetchUsers();
+});
 
 const filteredUsers = computed(() => {
   const q = userSearch.value.toLowerCase();
@@ -196,6 +212,8 @@ function isMember(userId: string): boolean {
 }
 
 async function addMember(userId: string) {
+  if (adding.value) return;
+  adding.value = true;
   try {
     await addExecute({ data: { userId } });
     await fetchMembers();
@@ -209,6 +227,8 @@ async function addMember(userId: string) {
         errorResponse.response?.data.errors.body ?? 'Unknown error occurred',
       life: 3000,
     });
+  } finally {
+    adding.value = false;
   }
 }
 
@@ -233,10 +253,7 @@ async function removeMember(member: CCFGroupMember) {
   }
 }
 
-onMounted(() => {
-  fetchMembers();
-  fetchUsers();
-});
+fetchMembers();
 </script>
 
 <style scoped>

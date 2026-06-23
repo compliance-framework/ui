@@ -15,8 +15,8 @@
       <PrimaryButton class="mt-4" @click.prevent="saveGroup"
         >Save</PrimaryButton
       >
-      <PrimaryButton class="mt-4 ml-2" @click.prevent="emit('cancel')"
-        >Cancel</PrimaryButton
+      <SecondaryButton class="mt-4 ml-2" @click.prevent="emit('cancel')"
+        >Cancel</SecondaryButton
       >
     </div>
   </div>
@@ -27,6 +27,7 @@ import { reactive } from 'vue';
 import type { CCFGroup, ErrorBody, ErrorResponse } from '@/stores/types';
 import FormInput from '../forms/FormInput.vue';
 import PrimaryButton from '../PrimaryButton.vue';
+import SecondaryButton from '@/volt/SecondaryButton.vue';
 import { useDataApi } from '@/composables/axios';
 import type { AxiosError } from 'axios';
 import { useToast } from 'primevue/usetoast';

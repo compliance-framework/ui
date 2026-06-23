@@ -59,6 +59,11 @@
         <template v-if="groupsLoading">
           <p class="text-gray-500 dark:text-slate-400">Loading groups...</p>
         </template>
+        <template v-else-if="groupsError">
+          <p class="text-red-600 dark:text-red-400">
+            Failed to load group memberships.
+          </p>
+        </template>
         <template v-else-if="!userGroups?.length">
           <p class="text-gray-500 dark:text-slate-400">
             Not a member of any groups.
@@ -145,9 +150,11 @@ const {
   error,
 } = useDataApi<CCFUser>(`/api/admin/users/${route.params.id}`);
 
-const { data: userGroups, isLoading: groupsLoading } = useDataApi<
-  CCFUserGroup[]
->(`/api/admin/users/${route.params.id}/groups`);
+const {
+  data: userGroups,
+  isLoading: groupsLoading,
+  error: groupsError,
+} = useDataApi<CCFUserGroup[]>(`/api/admin/users/${route.params.id}/groups`);
 const { execute: deleteExecute } = useDataApi<void>(
   `/api/admin/users/${route.params.id}`,
   { method: 'DELETE' },

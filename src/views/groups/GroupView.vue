@@ -35,8 +35,8 @@
     </div>
 
     <div class="mt-4">
-      <PrimaryButton class="mr-2" @click="editVisible = true"
-        >Edit Group</PrimaryButton
+      <SecondaryButton class="mr-2" @click="editVisible = true"
+        >Edit Group</SecondaryButton
       >
       <PrimaryButton @click="deleteGroup">Delete Group</PrimaryButton>
     </div>
@@ -56,6 +56,7 @@ import { ref, watch } from 'vue';
 import PageHeader from '@/components/PageHeader.vue';
 import PageCard from '@/components/PageCard.vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
+import SecondaryButton from '@/volt/SecondaryButton.vue';
 import Dialog from '@/volt/Dialog.vue';
 import GroupMembersPanel from '@/components/groups/GroupMembersPanel.vue';
 import GroupEditForm from '@/components/groups/GroupEditForm.vue';

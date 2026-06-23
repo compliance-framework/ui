@@ -75,19 +75,16 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted } from 'vue';
 import PageHeader from '@/components/PageHeader.vue';
 import type { CCFGroup } from '@/stores/types';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
 import GroupCreateForm from '@/components/groups/GroupCreateForm.vue';
 import Dialog from '@/volt/Dialog.vue';
-import { useToast } from 'primevue/usetoast';
 import { useDataApi } from '@/composables/axios';
 import RouterLinkButton from '@/components/RouterLinkButton.vue';
-import type { AxiosError } from 'axios';
 
 const showDialog = ref(false);
-const toast = useToast();
 
 const {
   data: groups,
@@ -96,31 +93,16 @@ const {
   execute,
 } = useDataApi<CCFGroup[]>('/api/admin/groups', {}, { immediate: false });
 
-watch(
-  () => error.value,
-  (err) => {
-    if (!err) return;
-    const status = (err as AxiosError).response?.status;
-    if (status === 403) {
-      toast.add({
-        severity: 'warn',
-        summary: 'Insufficient permissions',
-        detail: "You don't have access to manage groups.",
-        life: 4000,
-      });
-    }
-  },
-);
+// No local error watcher needed: the global axios interceptor (composables/axios/index.ts)
+// already fires a throttled "Permission denied" toast on 403 and an auth error on 401.
+// Stacking a second local toast would show two overlapping warnings for the same request.
+// Non-403/non-401 errors surface via the "Error loading groups" table cell above.
 
 function onCreated(newGroup: CCFGroup) {
   showDialog.value = false;
-  groups.value?.push(newGroup);
-  toast.add({
-    severity: 'success',
-    summary: 'Group created',
-    detail: `Group "${newGroup.name}" has been created.`,
-    life: 3000,
-  });
+  // shallowRef tracks reference changes only — mutating in place with push() would not
+  // trigger reactivity, so we reassign the array.
+  groups.value = [...(groups.value ?? []), newGroup];
 }
 
 onMounted(() => {
