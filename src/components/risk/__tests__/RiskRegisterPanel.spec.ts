@@ -26,6 +26,13 @@ vi.mock('@/composables/axios', () => ({
   decamelizeKeys: (data: unknown) => data,
 }));
 
+vi.mock('@/composables/usePermissions', () => ({
+  usePermissions: () => ({
+    can: () => true,
+    permissionTooltip: () => '',
+  }),
+}));
+
 vi.mock('@/composables/workflows/useUserSearch', () => ({
   useUserSearch: () => ({
     loadUsersByIds: vi.fn().mockResolvedValue(undefined),

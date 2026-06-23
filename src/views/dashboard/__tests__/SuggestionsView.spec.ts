@@ -27,6 +27,10 @@ const state = vi.hoisted(() => ({
   aiFetched: true,
 }));
 
+vi.mock('@/composables/usePermissions', () => ({
+  usePermissions: () => ({ can: () => true, permissionTooltip: () => '' }),
+}));
+
 vi.mock('vue-router', () => ({
   RouterLink: {
     props: ['to'],

@@ -40,7 +40,15 @@
     </div>
 
     <div class="flex gap-2">
-      <PrimaryButton type="submit">Update Activity</PrimaryButton>
+      <PrimaryButton
+        type="submit"
+        :disabled="!can(RESOURCES.ACTIVITY, ACTIONS.UPDATE)"
+        v-tooltip.top="{
+          value: permissionTooltip(RESOURCES.ACTIVITY, ACTIONS.UPDATE),
+          disabled: can(RESOURCES.ACTIVITY, ACTIONS.UPDATE),
+        }"
+        >Update Activity</PrimaryButton
+      >
       <SecondaryButton type="button" @click="$emit('cancel')"
         >Cancel</SecondaryButton
       >
@@ -57,9 +65,12 @@ import PrimaryButton from '@/volt/PrimaryButton.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
 import { useActivityStore } from '@/stores/activities.ts';
 import { type Activity } from '@/oscal';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
 
 const activityStore = useActivityStore();
 const toast = useToast();
+const { can, permissionTooltip } = usePermissions();
 
 const props = defineProps<{
   assessmentPlanId: string;

@@ -135,7 +135,16 @@
             </RouterLink>
             <button
               type="submit"
-              :disabled="updating"
+              :disabled="
+                updating || !can(RESOURCES.ASSESSMENT_RESULTS, ACTIONS.UPDATE)
+              "
+              v-tooltip.top="{
+                value: permissionTooltip(
+                  RESOURCES.ASSESSMENT_RESULTS,
+                  ACTIONS.UPDATE,
+                ),
+                disabled: can(RESOURCES.ASSESSMENT_RESULTS, ACTIONS.UPDATE),
+              }"
               class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {{ updating ? 'Updating...' : 'Update Assessment Results' }}
@@ -154,10 +163,13 @@ import PageHeader from '@/components/PageHeader.vue';
 import type { AssessmentResult } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
 
 const router = useRouter();
 const route = useRoute();
 const toast = useToast();
+const { can, permissionTooltip } = usePermissions();
 
 const assessmentResultsId = route.params.id as string;
 const error = ref<string | null>(null);

@@ -79,6 +79,10 @@ vi.mock('@/composables/axios', () => ({
   },
 }));
 
+vi.mock('@/composables/usePermissions', () => ({
+  usePermissions: () => ({ can: () => true, permissionTooltip: () => '' }),
+}));
+
 const stubs = {
   PageHeader: { template: '<h1><slot /></h1>' },
   PageSubHeader: { template: '<p><slot /></p>' },

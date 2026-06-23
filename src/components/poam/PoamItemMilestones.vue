@@ -31,7 +31,12 @@
       </div>
       <button
         @click="openCreateModal"
-        class="inline-flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-md text-xs font-medium"
+        :disabled="!can(RESOURCES.POAM_ITEM, ACTIONS.CREATE)"
+        v-tooltip.top="{
+          value: permissionTooltip(RESOURCES.POAM_ITEM, ACTIONS.CREATE),
+          disabled: can(RESOURCES.POAM_ITEM, ACTIONS.CREATE),
+        }"
+        class="inline-flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-md text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <svg
           class="w-3.5 h-3.5"
@@ -189,7 +194,12 @@
           <button
             v-if="milestone.status === 'open'"
             @click="quickUpdateStatus(milestone, 'in-progress')"
-            class="p-1.5 text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/30 rounded-md"
+            :disabled="!can(RESOURCES.POAM_ITEM, ACTIONS.UPDATE)"
+            v-tooltip.top="{
+              value: permissionTooltip(RESOURCES.POAM_ITEM, ACTIONS.UPDATE),
+              disabled: can(RESOURCES.POAM_ITEM, ACTIONS.UPDATE),
+            }"
+            class="p-1.5 text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/30 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
             title="Mark as In Progress"
           >
             <svg
@@ -217,7 +227,12 @@
           <button
             v-if="milestone.status === 'in-progress'"
             @click="quickUpdateStatus(milestone, 'completed')"
-            class="p-1.5 text-green-600 hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-900/30 rounded-md"
+            :disabled="!can(RESOURCES.POAM_ITEM, ACTIONS.UPDATE)"
+            v-tooltip.top="{
+              value: permissionTooltip(RESOURCES.POAM_ITEM, ACTIONS.UPDATE),
+              disabled: can(RESOURCES.POAM_ITEM, ACTIONS.UPDATE),
+            }"
+            class="p-1.5 text-green-600 hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-900/30 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
             title="Mark as Completed"
           >
             <svg
@@ -242,7 +257,12 @@
               milestone.status !== 'cancelled'
             "
             @click="quickUpdateStatus(milestone, 'cancelled')"
-            class="p-1.5 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-slate-700 rounded-md"
+            :disabled="!can(RESOURCES.POAM_ITEM, ACTIONS.UPDATE)"
+            v-tooltip.top="{
+              value: permissionTooltip(RESOURCES.POAM_ITEM, ACTIONS.UPDATE),
+              disabled: can(RESOURCES.POAM_ITEM, ACTIONS.UPDATE),
+            }"
+            class="p-1.5 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-slate-700 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
             title="Mark as Cancelled"
           >
             <svg
@@ -264,7 +284,12 @@
 
           <button
             @click="openEditModal(milestone)"
-            class="p-1.5 text-gray-500 hover:text-gray-700 dark:text-slate-400 dark:hover:text-slate-200"
+            :disabled="!can(RESOURCES.POAM_ITEM, ACTIONS.UPDATE)"
+            v-tooltip.top="{
+              value: permissionTooltip(RESOURCES.POAM_ITEM, ACTIONS.UPDATE),
+              disabled: can(RESOURCES.POAM_ITEM, ACTIONS.UPDATE),
+            }"
+            class="p-1.5 text-gray-500 hover:text-gray-700 dark:text-slate-400 dark:hover:text-slate-200 disabled:opacity-50 disabled:cursor-not-allowed"
             title="Edit Task"
           >
             <svg
@@ -283,7 +308,12 @@
           </button>
           <button
             @click="confirmDelete(milestone)"
-            class="p-1.5 text-gray-400 hover:text-red-600 dark:hover:text-red-400 rounded"
+            :disabled="!can(RESOURCES.POAM_ITEM, ACTIONS.DELETE)"
+            v-tooltip.top="{
+              value: permissionTooltip(RESOURCES.POAM_ITEM, ACTIONS.DELETE),
+              disabled: can(RESOURCES.POAM_ITEM, ACTIONS.DELETE),
+            }"
+            class="p-1.5 text-gray-400 hover:text-red-600 dark:hover:text-red-400 rounded disabled:opacity-50 disabled:cursor-not-allowed"
             title="Delete milestone"
           >
             <svg
@@ -338,6 +368,8 @@ import {
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
 import { useUserSearch } from '@/composables/workflows/useUserSearch';
 import UserAvatar from '@/components/workflows/UserAvatar.vue';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
 
 interface Props {
   poamItemId: string;
@@ -345,6 +377,7 @@ interface Props {
 
 const props = defineProps<Props>();
 const toast = useToast();
+const { can, permissionTooltip } = usePermissions();
 const { confirmDeleteDialog } = useDeleteConfirmationDialog();
 
 const showModal = ref(false);

@@ -20,7 +20,14 @@
           Manage workflow instances for your systems
         </PageSubHeader>
       </div>
-      <PrimaryButton @click="toggleCreating">
+      <PrimaryButton
+        @click="toggleCreating"
+        :disabled="!can(RESOURCES.WORKFLOW_INSTANCE, ACTIONS.CREATE)"
+        v-tooltip.top="{
+          value: permissionTooltip(RESOURCES.WORKFLOW_INSTANCE, ACTIONS.CREATE),
+          disabled: can(RESOURCES.WORKFLOW_INSTANCE, ACTIONS.CREATE),
+        }"
+      >
         <i class="pi pi-plus mr-2"></i>
         New Instance
       </PrimaryButton>
@@ -174,7 +181,17 @@
                 <PrimaryButton
                   size="small"
                   @click="handleExecute(instance)"
-                  :disabled="instance.status !== 'active'"
+                  :disabled="
+                    instance.status !== 'active' ||
+                    !can(RESOURCES.WORKFLOW_EXECUTION, ACTIONS.CREATE)
+                  "
+                  v-tooltip.top="{
+                    value: permissionTooltip(
+                      RESOURCES.WORKFLOW_EXECUTION,
+                      ACTIONS.CREATE,
+                    ),
+                    disabled: can(RESOURCES.WORKFLOW_EXECUTION, ACTIONS.CREATE),
+                  }"
                   title="Execute workflow"
                 >
                   Execute
@@ -191,6 +208,14 @@
                   size="small"
                   severity="danger"
                   @click="handleDelete(instance)"
+                  :disabled="!can(RESOURCES.WORKFLOW_INSTANCE, ACTIONS.DELETE)"
+                  v-tooltip.top="{
+                    value: permissionTooltip(
+                      RESOURCES.WORKFLOW_INSTANCE,
+                      ACTIONS.DELETE,
+                    ),
+                    disabled: can(RESOURCES.WORKFLOW_INSTANCE, ACTIONS.DELETE),
+                  }"
                 >
                   Delete
                 </SecondaryButton>
@@ -239,7 +264,19 @@
           <SecondaryButton @click="showExecuteDialog = false">
             Cancel
           </SecondaryButton>
-          <PrimaryButton @click="confirmExecute" :disabled="isExecuting">
+          <PrimaryButton
+            @click="confirmExecute"
+            :disabled="
+              isExecuting || !can(RESOURCES.WORKFLOW_EXECUTION, ACTIONS.CREATE)
+            "
+            v-tooltip.top="{
+              value: permissionTooltip(
+                RESOURCES.WORKFLOW_EXECUTION,
+                ACTIONS.CREATE,
+              ),
+              disabled: can(RESOURCES.WORKFLOW_EXECUTION, ACTIONS.CREATE),
+            }"
+          >
             <i v-if="isExecuting" class="pi pi-spin pi-spinner mr-2"></i>
             Start Execution
           </PrimaryButton>
@@ -275,6 +312,10 @@ import WorkflowInstanceCreateForm from './partials/WorkflowInstanceCreateForm.vu
 import { useToggle } from '@/composables/useToggle';
 import { useToast } from 'primevue/usetoast';
 import { useSystemStore } from '@/stores/system';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
+
+const { can, permissionTooltip } = usePermissions();
 
 const router = useRouter();
 const toast = useToast();

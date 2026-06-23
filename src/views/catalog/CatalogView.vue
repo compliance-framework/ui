@@ -10,14 +10,42 @@
       v-if="catalog"
       class="flex flex-wrap items-center gap-2 lg:justify-end"
     >
-      <PrimaryButton @click="showControlForm = true">
+      <PrimaryButton
+        @click="showControlForm = true"
+        :disabled="!can(RESOURCES.CATALOG, ACTIONS.CREATE)"
+        v-tooltip.top="{
+          value: permissionTooltip(RESOURCES.CATALOG, ACTIONS.CREATE),
+          disabled: can(RESOURCES.CATALOG, ACTIONS.CREATE),
+        }"
+      >
         <i class="pi pi-plus mr-2"></i>
         Add Control
       </PrimaryButton>
-      <SecondaryButton @click="showGroupForm = true">Add Group</SecondaryButton>
-      <SecondaryButton @click="showEdit = true">Edit</SecondaryButton>
+      <SecondaryButton
+        @click="showGroupForm = true"
+        :disabled="!can(RESOURCES.CATALOG, ACTIONS.CREATE)"
+        v-tooltip.top="{
+          value: permissionTooltip(RESOURCES.CATALOG, ACTIONS.CREATE),
+          disabled: can(RESOURCES.CATALOG, ACTIONS.CREATE),
+        }"
+        >Add Group</SecondaryButton
+      >
+      <SecondaryButton
+        @click="showEdit = true"
+        :disabled="!can(RESOURCES.CATALOG, ACTIONS.UPDATE)"
+        v-tooltip.top="{
+          value: permissionTooltip(RESOURCES.CATALOG, ACTIONS.UPDATE),
+          disabled: can(RESOURCES.CATALOG, ACTIONS.UPDATE),
+        }"
+        >Edit</SecondaryButton
+      >
       <TertiaryButton
         @click="deleteCurrentCatalog"
+        :disabled="!can(RESOURCES.CATALOG, ACTIONS.DELETE)"
+        v-tooltip.top="{
+          value: permissionTooltip(RESOURCES.CATALOG, ACTIONS.DELETE),
+          disabled: can(RESOURCES.CATALOG, ACTIONS.DELETE),
+        }"
         class="border-red-200 text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-950/40"
       >
         Delete
@@ -86,7 +114,10 @@ import type { ErrorResponse, ErrorBody } from '@/stores/types.ts';
 import { useDataApi } from '@/composables/axios';
 import type { AxiosError } from 'axios';
 import { useCatalogDelete } from '@/composables/catalog';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
 
+const { can, permissionTooltip } = usePermissions();
 const toast = useToast();
 const { deleteCatalog: deleteCatalogAction } = useCatalogDelete();
 const route = useRoute();

@@ -142,7 +142,13 @@
           <Base64FileUpload @uploaded="onUpload" />
         </div>
       </div>
-      <primary-button type="submit" :disabled="!isFormValid"
+      <primary-button
+        type="submit"
+        :disabled="!isFormValid || !can(RESOURCES.EVIDENCE, submitAction)"
+        v-tooltip.top="{
+          value: permissionTooltip(RESOURCES.EVIDENCE, submitAction),
+          disabled: can(RESOURCES.EVIDENCE, submitAction),
+        }"
         >{{ props.updating ? 'Update' : 'Create' }} Evidence</primary-button
       >
     </form>
@@ -165,12 +171,19 @@ import SelectButton from '@/volt/SelectButton.vue';
 import TertiaryButton from '@/volt/TertiaryButton.vue';
 import { BIconArrowRepeat, BIconX } from 'bootstrap-icons-vue';
 import Base64FileUpload from '@/components/Base64FileUpload.vue';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
 
 const props = defineProps<{
   backmatterResources: BackMatterResource[];
   evidence?: Partial<Evidence>;
   updating?: boolean;
 }>();
+
+const { can, permissionTooltip } = usePermissions();
+const submitAction = computed(() =>
+  props.updating ? ACTIONS.UPDATE : ACTIONS.CREATE,
+);
 
 const backmatterResources = ref<BackMatterResource[]>(
   props.backmatterResources || [],

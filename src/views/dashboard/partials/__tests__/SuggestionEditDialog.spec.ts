@@ -1,7 +1,11 @@
 import { mount } from '@vue/test-utils';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import SuggestionEditDialog from '../SuggestionEditDialog.vue';
 import type { DashboardSuggestion } from '../dashboard-suggestions';
+
+vi.mock('@/composables/usePermissions', () => ({
+  usePermissions: () => ({ can: () => true, permissionTooltip: () => '' }),
+}));
 
 function makeSuggestion(
   id: string,

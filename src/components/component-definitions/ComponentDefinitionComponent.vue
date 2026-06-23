@@ -15,6 +15,14 @@
         <div class="flex gap-2">
           <TertiaryButton
             class="bg-blue-100 hover:bg-blue-200 dark:bg-blue-900 dark:hover:bg-blue-800 text-blue-800 dark:text-blue-200"
+            :disabled="!can(RESOURCES.COMPONENT_DEFINITION, ACTIONS.UPDATE)"
+            v-tooltip.top="{
+              value: permissionTooltip(
+                RESOURCES.COMPONENT_DEFINITION,
+                ACTIONS.UPDATE,
+              ),
+              disabled: can(RESOURCES.COMPONENT_DEFINITION, ACTIONS.UPDATE),
+            }"
             @click.stop="editComponent"
           >
             Edit
@@ -133,6 +141,10 @@ import type {
   DefinedComponent,
   ResponsibleRole,
 } from '@/oscal';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
+
+const { can, permissionTooltip } = usePermissions();
 
 const props = defineProps<{
   component: DefinedComponent;

@@ -49,7 +49,16 @@
           <SecondaryButton type="button" @click="cancel">
             Cancel
           </SecondaryButton>
-          <PrimaryButton type="submit"> Save Changes </PrimaryButton>
+          <PrimaryButton
+            type="submit"
+            :disabled="!can(RESOURCES.POAM_OSCAL, ACTIONS.UPDATE)"
+            v-tooltip.top="{
+              value: permissionTooltip(RESOURCES.POAM_OSCAL, ACTIONS.UPDATE),
+              disabled: can(RESOURCES.POAM_OSCAL, ACTIONS.UPDATE),
+            }"
+          >
+            Save Changes
+          </PrimaryButton>
         </div>
       </form>
     </PageCard>
@@ -70,10 +79,13 @@ import { useToast } from 'primevue/usetoast';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import type { AxiosError } from 'axios';
 import type { ErrorResponse, ErrorBody } from '@/stores/types';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
 
 const router = useRouter();
 const route = useRoute();
 const toast = useToast();
+const { can, permissionTooltip } = usePermissions();
 
 const { data: planOfActionAndMilestones } = useDataApi<POAM>(
   `/api/oscal/plan-of-action-and-milestones/${route.params.id}`,

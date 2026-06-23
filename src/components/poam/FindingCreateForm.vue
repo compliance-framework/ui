@@ -194,8 +194,13 @@
             !formData.description ||
             !formData.target ||
             !formData.status ||
-            saving
+            saving ||
+            !can(RESOURCES.POAM_OSCAL, ACTIONS.CREATE)
           "
+          v-tooltip.top="{
+            value: permissionTooltip(RESOURCES.POAM_OSCAL, ACTIONS.CREATE),
+            disabled: can(RESOURCES.POAM_OSCAL, ACTIONS.CREATE),
+          }"
           class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {{ saving ? 'Creating...' : 'Create' }}
@@ -211,6 +216,10 @@ import type { Finding } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import type { FindingTarget } from '@/oscal';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
+
+const { can, permissionTooltip } = usePermissions();
 
 const props = defineProps<{
   poamId: string;

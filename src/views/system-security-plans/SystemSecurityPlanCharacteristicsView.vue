@@ -164,7 +164,14 @@
               {{ characteristics.systemNameShort }}
             </p>
           </div>
-          <SecondaryButton @click="showEditCharacteristicsModal = true">
+          <SecondaryButton
+            @click="showEditCharacteristicsModal = true"
+            :disabled="!can(RESOURCES.SSP, ACTIONS.UPDATE)"
+            v-tooltip.top="{
+              value: permissionTooltip(RESOURCES.SSP, ACTIONS.UPDATE),
+              disabled: can(RESOURCES.SSP, ACTIONS.UPDATE),
+            }"
+          >
             <i class="pi pi-pencil mr-2"></i>
             Edit
           </SecondaryButton>
@@ -708,6 +715,10 @@ import SecondaryButton from '@/volt/SecondaryButton.vue';
 import Dialog from '@/volt/Dialog.vue';
 import SystemCharacteristicsForm from '@/components/SystemCharacteristicsForm.vue';
 import { useToast } from 'primevue/usetoast';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
+
+const { can, permissionTooltip } = usePermissions();
 
 const route = useRoute();
 const toast = useToast();

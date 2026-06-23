@@ -45,16 +45,44 @@
       <SecondaryButton
         v-if="store.isActive"
         @click="handleDeactivate"
-        :disabled="isToggling"
+        :disabled="
+          isToggling || !can(RESOURCES.WORKFLOW_INSTANCE, ACTIONS.UPDATE)
+        "
+        v-tooltip.top="{
+          value: permissionTooltip(RESOURCES.WORKFLOW_INSTANCE, ACTIONS.UPDATE),
+          disabled: can(RESOURCES.WORKFLOW_INSTANCE, ACTIONS.UPDATE),
+        }"
       >
         <i v-if="isToggling" class="pi pi-spin pi-spinner mr-2"></i>
         Deactivate
       </SecondaryButton>
-      <PrimaryButton v-else @click="handleActivate" :disabled="isToggling">
+      <PrimaryButton
+        v-else
+        @click="handleActivate"
+        :disabled="
+          isToggling || !can(RESOURCES.WORKFLOW_INSTANCE, ACTIONS.UPDATE)
+        "
+        v-tooltip.top="{
+          value: permissionTooltip(RESOURCES.WORKFLOW_INSTANCE, ACTIONS.UPDATE),
+          disabled: can(RESOURCES.WORKFLOW_INSTANCE, ACTIONS.UPDATE),
+        }"
+      >
         <i v-if="isToggling" class="pi pi-spin pi-spinner mr-2"></i>
         Activate
       </PrimaryButton>
-      <PrimaryButton @click="handleExecute" :disabled="!store.isActive">
+      <PrimaryButton
+        @click="handleExecute"
+        :disabled="
+          !store.isActive || !can(RESOURCES.WORKFLOW_EXECUTION, ACTIONS.CREATE)
+        "
+        v-tooltip.top="{
+          value: permissionTooltip(
+            RESOURCES.WORKFLOW_EXECUTION,
+            ACTIONS.CREATE,
+          ),
+          disabled: can(RESOURCES.WORKFLOW_EXECUTION, ACTIONS.CREATE),
+        }"
+      >
         <i class="pi pi-play mr-2"></i>
         Execute Now
       </PrimaryButton>
@@ -143,7 +171,19 @@
         <SecondaryButton @click="showExecuteDialog = false">
           Cancel
         </SecondaryButton>
-        <PrimaryButton @click="confirmExecute" :disabled="isExecuting">
+        <PrimaryButton
+          @click="confirmExecute"
+          :disabled="
+            isExecuting || !can(RESOURCES.WORKFLOW_EXECUTION, ACTIONS.CREATE)
+          "
+          v-tooltip.top="{
+            value: permissionTooltip(
+              RESOURCES.WORKFLOW_EXECUTION,
+              ACTIONS.CREATE,
+            ),
+            disabled: can(RESOURCES.WORKFLOW_EXECUTION, ACTIONS.CREATE),
+          }"
+        >
           <i v-if="isExecuting" class="pi pi-spin pi-spinner mr-2"></i>
           Start Execution
         </PrimaryButton>
@@ -167,6 +207,10 @@ import Dialog from '@/volt/Dialog.vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
 import RouterLinkButton from '@/components/RouterLinkButton.vue';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
+
+const { can, permissionTooltip } = usePermissions();
 
 const route = useRoute();
 const router = useRouter();

@@ -37,6 +37,21 @@ describe('router', () => {
     ).toBe('/system/components/dashboards/component-1');
   });
 
+  it('gates admin routes on admin:manage so direct-URL access is blocked (BCH-1318)', () => {
+    const agents = router.getRoutes().find((r) => r.name === 'admin-agents');
+    expect(agents?.meta.permission).toEqual({
+      resource: 'admin',
+      action: 'manage',
+    });
+
+    // Non-admin OSCAL authoring routes are NOT route-gated (they rely on the
+    // resource's own read/write hints, not admin:manage).
+    const catalogCreate = router
+      .getRoutes()
+      .find((r) => r.name === 'catalog-create');
+    expect(catalogCreate?.meta.permission).toBeUndefined();
+  });
+
   it('registers the dashboard suggestions review route behind auth meta', () => {
     const route = router
       .getRoutes()

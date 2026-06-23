@@ -11,7 +11,12 @@
         />
         <button
           @click="showCreateModal = true"
-          class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
+          :disabled="!can(RESOURCES.ASSESSMENT_PLAN, ACTIONS.CREATE)"
+          v-tooltip.top="{
+            value: permissionTooltip(RESOURCES.ASSESSMENT_PLAN, ACTIONS.CREATE),
+            disabled: can(RESOURCES.ASSESSMENT_PLAN, ACTIONS.CREATE),
+          }"
+          class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md disabled:opacity-60 disabled:cursor-not-allowed"
         >
           Add Task
         </button>
@@ -55,8 +60,12 @@ import { useRoute } from 'vue-router';
 import TaskCreateModal from '@/components/assessment-plans/TaskCreateModal.vue';
 import TaskDetail from '@/views/assessment-plans/partials/TaskDetail.vue';
 import { useDataApi } from '@/composables/axios';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
 
 const route = useRoute();
+
+const { can, permissionTooltip } = usePermissions();
 
 const showCreateModal = ref(false);
 

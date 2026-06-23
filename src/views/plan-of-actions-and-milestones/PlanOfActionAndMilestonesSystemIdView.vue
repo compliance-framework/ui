@@ -8,7 +8,12 @@
         <button
           v-if="systemId"
           @click="showEditModal = true"
-          class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
+          :disabled="!can(RESOURCES.POAM_OSCAL, ACTIONS.UPDATE)"
+          v-tooltip.top="{
+            value: permissionTooltip(RESOURCES.POAM_OSCAL, ACTIONS.UPDATE),
+            disabled: can(RESOURCES.POAM_OSCAL, ACTIONS.UPDATE),
+          }"
+          class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Edit System ID
         </button>
@@ -58,7 +63,12 @@
       </p>
       <button
         @click="showCreateModal = true"
-        class="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
+        :disabled="!can(RESOURCES.POAM_OSCAL, ACTIONS.CREATE)"
+        v-tooltip.top="{
+          value: permissionTooltip(RESOURCES.POAM_OSCAL, ACTIONS.CREATE),
+          disabled: can(RESOURCES.POAM_OSCAL, ACTIONS.CREATE),
+        }"
+        class="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
       >
         Create System ID
       </button>
@@ -104,8 +114,11 @@ import Dialog from '@/volt/Dialog.vue';
 import SystemIdForm from '@/components/poam/SystemIdForm.vue';
 import { useDataApi } from '@/composables/axios';
 import { getIdFromRoute } from '../../utils/get-poam-id-from-route';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
 
 const route = useRoute();
+const { can, permissionTooltip } = usePermissions();
 
 const showCreateModal = ref(false);
 const showEditModal = ref(false);

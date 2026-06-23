@@ -177,8 +177,13 @@
             !formData.title ||
             !formData.description ||
             !formData.target ||
-            saving
+            saving ||
+            !can(RESOURCES.POAM_OSCAL, ACTIONS.UPDATE)
           "
+          v-tooltip.top="{
+            value: permissionTooltip(RESOURCES.POAM_OSCAL, ACTIONS.UPDATE),
+            disabled: can(RESOURCES.POAM_OSCAL, ACTIONS.UPDATE),
+          }"
           class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {{ saving ? 'Saving...' : 'Save' }}
@@ -198,6 +203,10 @@ import type {
   RelatedObservation,
   RelatedRisk,
 } from '@/oscal';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
+
+const { can, permissionTooltip } = usePermissions();
 
 const props = defineProps<{
   poamId: string;

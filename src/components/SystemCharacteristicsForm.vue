@@ -5,6 +5,10 @@ import { type SystemCharacteristics } from '@/oscal';
 import { useSystemSecurityPlanStore } from '@/stores/system-security-plans.ts';
 import FormTextarea from '@/components/forms/FormTextarea.vue';
 import { onMounted, ref } from 'vue';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
+
+const { can, permissionTooltip } = usePermissions();
 
 const sspStore = useSystemSecurityPlanStore();
 
@@ -84,6 +88,14 @@ onMounted(() => {
       </div>
     </div>
 
-    <PrimaryButton type="submit">Submit</PrimaryButton>
+    <PrimaryButton
+      type="submit"
+      :disabled="!can(RESOURCES.SSP, ACTIONS.UPDATE)"
+      v-tooltip.top="{
+        value: permissionTooltip(RESOURCES.SSP, ACTIONS.UPDATE),
+        disabled: can(RESOURCES.SSP, ACTIONS.UPDATE),
+      }"
+      >Submit</PrimaryButton
+    >
   </form>
 </template>

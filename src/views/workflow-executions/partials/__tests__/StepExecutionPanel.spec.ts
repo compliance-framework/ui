@@ -12,6 +12,10 @@ const mockReassignStepExecution = vi.fn();
 const mockSearchUsers = vi.fn();
 const mockUserSuggestions = ref([]);
 
+vi.mock('@/composables/usePermissions', () => ({
+  usePermissions: () => ({ can: () => true, permissionTooltip: () => '' }),
+}));
+
 vi.mock('@/composables/workflows', () => ({
   useStepExecutions: () => ({
     startStep: mockStartStep,

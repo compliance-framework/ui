@@ -102,7 +102,11 @@
         </button>
         <button
           type="submit"
-          :disabled="loading"
+          :disabled="loading || !can(RESOURCES.POAM_OSCAL, ACTIONS.UPDATE)"
+          v-tooltip.top="{
+            value: permissionTooltip(RESOURCES.POAM_OSCAL, ACTIONS.UPDATE),
+            disabled: can(RESOURCES.POAM_OSCAL, ACTIONS.UPDATE),
+          }"
           class="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-md"
         >
           {{ loading ? 'Saving...' : 'Save Changes' }}
@@ -119,6 +123,8 @@ import { useToast } from 'primevue/usetoast';
 import { useDataApi } from '@/composables/axios';
 import type { AxiosError } from 'axios';
 import type { ErrorResponse, ErrorBody } from '@/stores/types';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
 
 interface Props {
   poamId: string;
@@ -132,6 +138,8 @@ interface Emits {
 
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
+
+const { can, permissionTooltip } = usePermissions();
 
 const toast = useToast();
 

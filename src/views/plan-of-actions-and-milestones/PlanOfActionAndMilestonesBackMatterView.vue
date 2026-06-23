@@ -10,7 +10,12 @@
         </div>
         <button
           @click="showCreateModal = true"
-          class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md"
+          :disabled="!can(RESOURCES.POAM_OSCAL, ACTIONS.CREATE)"
+          v-tooltip.top="{
+            value: permissionTooltip(RESOURCES.POAM_OSCAL, ACTIONS.CREATE),
+            disabled: can(RESOURCES.POAM_OSCAL, ACTIONS.CREATE),
+          }"
+          class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Add Resource
         </button>
@@ -31,7 +36,12 @@
       </p>
       <button
         @click="showCreateModal = true"
-        class="mt-4 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md"
+        :disabled="!can(RESOURCES.POAM_OSCAL, ACTIONS.CREATE)"
+        v-tooltip.top="{
+          value: permissionTooltip(RESOURCES.POAM_OSCAL, ACTIONS.CREATE),
+          disabled: can(RESOURCES.POAM_OSCAL, ACTIONS.CREATE),
+        }"
+        class="mt-4 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
       >
         Add First Resource
       </button>
@@ -112,7 +122,15 @@
               <div class="ml-4 flex gap-2">
                 <button
                   @click.stop="editResource(resource)"
-                  class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-sm"
+                  :disabled="!can(RESOURCES.POAM_OSCAL, ACTIONS.UPDATE)"
+                  v-tooltip.top="{
+                    value: permissionTooltip(
+                      RESOURCES.POAM_OSCAL,
+                      ACTIONS.UPDATE,
+                    ),
+                    disabled: can(RESOURCES.POAM_OSCAL, ACTIONS.UPDATE),
+                  }"
+                  class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Edit
                 </button>
@@ -120,7 +138,15 @@
                   @click.stop="
                     confirmDeleteDialog(() => deleteResource(resource.uuid))
                   "
-                  class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md text-sm"
+                  :disabled="!can(RESOURCES.POAM_OSCAL, ACTIONS.DELETE)"
+                  v-tooltip.top="{
+                    value: permissionTooltip(
+                      RESOURCES.POAM_OSCAL,
+                      ACTIONS.DELETE,
+                    ),
+                    disabled: can(RESOURCES.POAM_OSCAL, ACTIONS.DELETE),
+                  }"
+                  class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Delete
                 </button>
@@ -163,11 +189,14 @@ import type { AxiosError } from 'axios';
 import type { ErrorResponse, ErrorBody } from '@/stores/types';
 import { getIdFromRoute } from '../../utils/get-poam-id-from-route';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
 
 const route = useRoute();
 const toast = useToast();
 
 const { confirmDeleteDialog } = useDeleteConfirmationDialog();
+const { can, permissionTooltip } = usePermissions();
 
 const {
   data: backMatter,

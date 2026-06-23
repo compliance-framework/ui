@@ -69,7 +69,14 @@
         >
           Cancel
         </SecondaryButton>
-        <PrimaryButton type="submit" :disabled="isSubmitting">
+        <PrimaryButton
+          type="submit"
+          :disabled="isSubmitting || !can(RESOURCES.SSP, ACTIONS.CREATE)"
+          v-tooltip.top="{
+            value: permissionTooltip(RESOURCES.SSP, ACTIONS.CREATE),
+            disabled: can(RESOURCES.SSP, ACTIONS.CREATE),
+          }"
+        >
           <i v-if="isSubmitting" class="pi pi-spin pi-spinner mr-2"></i>
           Create System Security Plan
         </PrimaryButton>
@@ -95,6 +102,10 @@ import { useToast } from 'primevue/usetoast';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import type { AxiosError } from 'axios';
 import type { ErrorResponse, ErrorBody } from '@/stores/types';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
+
+const { can, permissionTooltip } = usePermissions();
 
 const systemSecurityPlan = ref<SystemSecurityPlan>({
   uuid: uuidv4(),

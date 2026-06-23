@@ -58,6 +58,11 @@
               <TertiaryButton
                 @click="deleteCatalog(catalog.uuid, catalog.metadata.title)"
                 title="Delete Catalog"
+                :disabled="!can(RESOURCES.CATALOG, ACTIONS.DELETE)"
+                v-tooltip.top="{
+                  value: permissionTooltip(RESOURCES.CATALOG, ACTIONS.DELETE),
+                  disabled: can(RESOURCES.CATALOG, ACTIONS.DELETE),
+                }"
                 class="border-red-200 text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-950/40"
               >
                 Delete
@@ -79,7 +84,10 @@ import { useToast } from 'primevue/usetoast';
 import { useDataApi } from '@/composables/axios';
 import RouterLinkButton from '@/components/RouterLinkButton.vue';
 import { useCatalogDelete } from '@/composables/catalog';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
 
+const { can, permissionTooltip } = usePermissions();
 const toast = useToast();
 const { deleteCatalog: deleteCatalogAction } = useCatalogDelete();
 

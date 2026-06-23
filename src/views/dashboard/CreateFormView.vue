@@ -89,7 +89,16 @@
       </div>
 
       <div class="text-right">
-        <PrimaryButton type="submit"> Submit </PrimaryButton>
+        <PrimaryButton
+          type="submit"
+          :disabled="!can(RESOURCES.FILTER, ACTIONS.CREATE)"
+          v-tooltip.top="{
+            value: permissionTooltip(RESOURCES.FILTER, ACTIONS.CREATE),
+            disabled: can(RESOURCES.FILTER, ACTIONS.CREATE),
+          }"
+        >
+          Submit
+        </PrimaryButton>
       </div>
     </form>
   </PageCard>
@@ -112,6 +121,10 @@ import type {
   SystemComponent,
 } from '@/oscal';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
+
+const { can, permissionTooltip } = usePermissions();
 
 const router = useRouter();
 const route = useRoute();

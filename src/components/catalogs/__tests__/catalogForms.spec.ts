@@ -45,6 +45,10 @@ vi.mock('primevue/usetoast', () => ({
   }),
 }));
 
+vi.mock('@/composables/usePermissions', () => ({
+  usePermissions: () => ({ can: () => true, permissionTooltip: () => '' }),
+}));
+
 const catalog: Catalog = {
   uuid: 'catalog-1',
   metadata: { title: 'Catalog One' },

@@ -7,8 +7,22 @@
       <PageSubHeader>Findings grouped by query</PageSubHeader>
     </div>
     <div>
-      <RouterLink :to="{ name: 'dashboards.create' }">
-        <PrimaryButton>Create</PrimaryButton>
+      <RouterLink
+        :to="{ name: 'dashboards.create' }"
+        :class="{
+          'pointer-events-none': !can(RESOURCES.FILTER, ACTIONS.CREATE),
+        }"
+        :tabindex="can(RESOURCES.FILTER, ACTIONS.CREATE) ? undefined : -1"
+        :aria-disabled="!can(RESOURCES.FILTER, ACTIONS.CREATE)"
+      >
+        <PrimaryButton
+          :disabled="!can(RESOURCES.FILTER, ACTIONS.CREATE)"
+          v-tooltip.top="{
+            value: permissionTooltip(RESOURCES.FILTER, ACTIONS.CREATE),
+            disabled: can(RESOURCES.FILTER, ACTIONS.CREATE),
+          }"
+          >Create</PrimaryButton
+        >
       </RouterLink>
     </div>
   </div>
@@ -52,6 +66,11 @@
           <Button
             label="Delete Dashboard"
             @click.prevent="deleteDashboard(dashboard)"
+            :disabled="!can(RESOURCES.FILTER, ACTIONS.DELETE)"
+            v-tooltip.top="{
+              value: permissionTooltip(RESOURCES.FILTER, ACTIONS.DELETE),
+              disabled: can(RESOURCES.FILTER, ACTIONS.DELETE),
+            }"
             class="bg-red-500 border-red-600 hover:bg-red-600 text-white dark:bg-red-700 dark:hover:bg-red-600 dark:border-red-700 mr-4"
           >
             Delete
@@ -88,6 +107,10 @@ import Button from '@/volt/Button.vue';
 import Chip from '@/volt/Chip.vue';
 import Message from '@/volt/Message.vue';
 import { useDataApi } from '@/composables/axios';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
+
+const { can, permissionTooltip } = usePermissions();
 
 const confirm = useConfirm();
 const toast = useToast();

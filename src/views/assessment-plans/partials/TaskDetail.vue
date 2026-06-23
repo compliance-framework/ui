@@ -5,6 +5,8 @@ import { useToast } from 'primevue/usetoast';
 import { useConfirm } from 'primevue/useconfirm';
 
 import { useDataApi } from '@/composables/axios';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
 
 import type {
   AssessmentPlan,
@@ -23,6 +25,7 @@ interface FullAssociatedActivity extends AssociatedActivity {
 
 const toast = useToast();
 const confirm = useConfirm();
+const { can, permissionTooltip } = usePermissions();
 
 const props = defineProps<{
   assessmentPlan: AssessmentPlan;
@@ -111,13 +114,23 @@ async function removeTask() {
     <div class="flex gap-2">
       <button
         @click="editTask"
-        class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+        :disabled="!can(RESOURCES.ASSESSMENT_PLAN, ACTIONS.UPDATE)"
+        v-tooltip.top="{
+          value: permissionTooltip(RESOURCES.ASSESSMENT_PLAN, ACTIONS.UPDATE),
+          disabled: can(RESOURCES.ASSESSMENT_PLAN, ACTIONS.UPDATE),
+        }"
+        class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 disabled:opacity-60 disabled:cursor-not-allowed"
       >
         Edit
       </button>
       <button
         @click="removeTask"
-        class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
+        :disabled="!can(RESOURCES.ASSESSMENT_PLAN, ACTIONS.DELETE)"
+        v-tooltip.top="{
+          value: permissionTooltip(RESOURCES.ASSESSMENT_PLAN, ACTIONS.DELETE),
+          disabled: can(RESOURCES.ASSESSMENT_PLAN, ACTIONS.DELETE),
+        }"
+        class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 disabled:opacity-60 disabled:cursor-not-allowed"
       >
         Remove
       </button>

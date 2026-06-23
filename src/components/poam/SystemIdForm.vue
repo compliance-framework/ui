@@ -45,7 +45,11 @@
         </button>
         <button
           type="submit"
-          :disabled="saving"
+          :disabled="saving || !can(RESOURCES.POAM_OSCAL, systemIdAction)"
+          v-tooltip.top="{
+            value: permissionTooltip(RESOURCES.POAM_OSCAL, systemIdAction),
+            disabled: can(RESOURCES.POAM_OSCAL, systemIdAction),
+          }"
           class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {{ saving ? 'Saving...' : isEditing ? 'Update' : 'Create' }}
@@ -60,6 +64,8 @@ import { reactive, computed, onMounted } from 'vue';
 import type { SystemID } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
 
 const props = defineProps<{
   poamId: string;
@@ -72,7 +78,11 @@ const emit = defineEmits<{
 }>();
 
 const toast = useToast();
+const { can, permissionTooltip } = usePermissions();
 const isEditing = computed(() => !!props.systemId);
+const systemIdAction = computed(() =>
+  isEditing.value ? ACTIONS.UPDATE : ACTIONS.CREATE,
+);
 
 const {
   data: systemId,

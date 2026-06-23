@@ -37,6 +37,10 @@ vi.mock('uuid', () => ({
   v4: mocks.uuidv4,
 }));
 
+vi.mock('@/composables/usePermissions', () => ({
+  usePermissions: () => ({ can: () => true, permissionTooltip: () => '' }),
+}));
+
 import { useDataApi } from '@/composables/axios';
 import SystemSecurityPlanCreateView from '../system-security-plans/SystemSecurityPlanCreateView.vue';
 

@@ -309,6 +309,10 @@ vi.mock('@/composables/axios', async () => {
   };
 });
 
+vi.mock('@/composables/usePermissions', () => ({
+  usePermissions: () => ({ can: () => true, permissionTooltip: () => '' }),
+}));
+
 describe('Evidence IndexView', () => {
   beforeEach(async () => {
     routeMock.query = {};

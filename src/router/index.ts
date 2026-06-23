@@ -2,6 +2,15 @@ import { createRouter, createWebHistory } from 'vue-router';
 import AppLayout from '@/views/layouts/App.vue';
 import GuestLayout from '@/views/layouts/GuestLayout.vue';
 import { useUserStore } from '@/stores/auth';
+import { usePermissionsStore } from '@/stores/permissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
+
+// Routes carrying this meta are only reachable when the subject may admin:manage. The nav
+// hides their entries; this guard blocks direct-URL access too (BCH-1318).
+const ADMIN_MANAGE = {
+  resource: RESOURCES.ADMIN,
+  action: ACTIONS.MANAGE,
+} as const;
 
 const authenticatedRoutes = [
   {
@@ -376,6 +385,7 @@ const authenticatedRoutes = [
     component: () => import('../views/admin/AgentsView.vue'),
     meta: {
       requiresAuth: true,
+      permission: ADMIN_MANAGE,
     },
   },
   {
@@ -384,6 +394,7 @@ const authenticatedRoutes = [
     redirect: { name: 'admin-diagnostics-notifications' },
     meta: {
       requiresAuth: true,
+      permission: ADMIN_MANAGE,
     },
   },
   {
@@ -393,6 +404,7 @@ const authenticatedRoutes = [
     redirect: { name: 'admin-diagnostics-notifications' },
     meta: {
       requiresAuth: true,
+      permission: ADMIN_MANAGE,
     },
     children: [
       {
@@ -401,6 +413,7 @@ const authenticatedRoutes = [
         component: () => import('../views/admin/NotificationsView.vue'),
         meta: {
           requiresAuth: true,
+          permission: ADMIN_MANAGE,
         },
       },
       {
@@ -409,6 +422,7 @@ const authenticatedRoutes = [
         component: () => import('../views/admin/AiDiagnosticsView.vue'),
         meta: {
           requiresAuth: true,
+          permission: ADMIN_MANAGE,
         },
       },
     ],
@@ -419,6 +433,7 @@ const authenticatedRoutes = [
     component: () => import('../views/admin/AdminRisksView.vue'),
     meta: {
       requiresAuth: true,
+      permission: ADMIN_MANAGE,
     },
   },
   {
@@ -427,6 +442,7 @@ const authenticatedRoutes = [
     component: () => import('../views/admin/SubjectTemplatesView.vue'),
     meta: {
       requiresAuth: true,
+      permission: ADMIN_MANAGE,
     },
   },
   {
@@ -435,6 +451,7 @@ const authenticatedRoutes = [
     component: () => import('../views/admin/SubjectTemplateDetailView.vue'),
     meta: {
       requiresAuth: true,
+      permission: ADMIN_MANAGE,
     },
   },
   {
@@ -443,6 +460,7 @@ const authenticatedRoutes = [
     component: () => import('../views/admin/RiskTemplatesView.vue'),
     meta: {
       requiresAuth: true,
+      permission: ADMIN_MANAGE,
     },
   },
   {
@@ -451,6 +469,7 @@ const authenticatedRoutes = [
     component: () => import('../views/admin/ImportView.vue'),
     meta: {
       requiresAuth: true,
+      permission: ADMIN_MANAGE,
     },
   },
   {
@@ -957,6 +976,10 @@ const authenticatedRoutes = [
     component: () => import('../views/users/UsersListView.vue'),
     meta: {
       requiresAuth: true,
+      // Admin-managed directory (matches the nav gate). Individual /users/:id profiles are
+      // left ungated so deep links from non-admin contexts still resolve; a denied load
+      // falls back to the global 403 handler.
+      permission: ADMIN_MANAGE,
     },
   },
   {
@@ -1062,6 +1085,26 @@ router.beforeEach((to, from, next) => {
   if (requiresAuth && !isAuthenticated) {
     // Redirect to the login page if the user is not authenticated
     return next({ name: 'login', query: { next: to.fullPath } });
+  }
+
+  // Permission gate (BCH-1318): block direct-URL access to routes the subject can't reach.
+  // The nav already hides these entries; this covers typed URLs and bookmarks. can() is
+  // optimistic until permissions load, so this never traps a user mid-hydration; the PDP
+  // and the global 403 handler remain the real enforcement.
+  if (isAuthenticated) {
+    const permissionsStore = usePermissionsStore();
+    const denied = to.matched.some((record) => {
+      const permission = record.meta.permission as
+        | { resource: string; action: string }
+        | undefined;
+      return (
+        permission &&
+        !permissionsStore.can(permission.resource, permission.action)
+      );
+    });
+    if (denied) {
+      return next({ name: 'home' });
+    }
   }
 
   // Proceed to the requested route

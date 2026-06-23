@@ -46,7 +46,16 @@
         <FormTextarea v-model="assessmentPlan.importSsp.remarks" />
       </div>
       <div class="text-right">
-        <PrimaryButton type="submit"> Create Assessment Plan </PrimaryButton>
+        <PrimaryButton
+          type="submit"
+          :disabled="!can(RESOURCES.ASSESSMENT_PLAN, ACTIONS.CREATE)"
+          v-tooltip.top="{
+            value: permissionTooltip(RESOURCES.ASSESSMENT_PLAN, ACTIONS.CREATE),
+            disabled: can(RESOURCES.ASSESSMENT_PLAN, ACTIONS.CREATE),
+          }"
+        >
+          Create Assessment Plan
+        </PrimaryButton>
       </div>
     </form>
   </PageCard>
@@ -69,6 +78,10 @@ import { useToast } from 'primevue/usetoast';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import type { AxiosError } from 'axios';
 import type { ErrorResponse, ErrorBody } from '@/stores/types.ts';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
+
+const { can, permissionTooltip } = usePermissions();
 
 const assessmentPlan = ref<AssessmentPlan>({
   metadata: {

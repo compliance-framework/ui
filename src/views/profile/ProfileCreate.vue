@@ -23,7 +23,16 @@
         <FormTextarea v-model="profile.metadata.remarks" />
       </div>
       <div class="text-right">
-        <PrimaryButton type="submit"> Create Profile </PrimaryButton>
+        <PrimaryButton
+          type="submit"
+          :disabled="!can(RESOURCES.PROFILE, ACTIONS.CREATE)"
+          v-tooltip.top="{
+            value: permissionTooltip(RESOURCES.PROFILE, ACTIONS.CREATE),
+            disabled: can(RESOURCES.PROFILE, ACTIONS.CREATE),
+          }"
+        >
+          Create Profile
+        </PrimaryButton>
       </div>
     </form>
   </PageCard>
@@ -47,7 +56,10 @@ import FormTextarea from '@/components/forms/FormTextarea.vue';
 import { BIconArrowRepeat } from 'bootstrap-icons-vue';
 import type { AxiosError } from 'axios';
 import type { ErrorBody, ErrorResponse } from '@/stores/types';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
 
+const { can, permissionTooltip } = usePermissions();
 const router = useRouter();
 const toast = useToast();
 const profile = ref<Profile>({

@@ -95,7 +95,21 @@
 
     <template #footer>
       <SecondaryButton @click="modelVisible = false">Cancel</SecondaryButton>
-      <PrimaryButton :disabled="!canSave || saving" @click="submit">
+      <PrimaryButton
+        :disabled="
+          !canSave ||
+          saving ||
+          !can(RESOURCES.DASHBOARD_SUGGESTION, ACTIONS.UPDATE)
+        "
+        v-tooltip.top="{
+          value: permissionTooltip(
+            RESOURCES.DASHBOARD_SUGGESTION,
+            ACTIONS.UPDATE,
+          ),
+          disabled: can(RESOURCES.DASHBOARD_SUGGESTION, ACTIONS.UPDATE),
+        }"
+        @click="submit"
+      >
         Save changes
       </PrimaryButton>
     </template>
@@ -116,6 +130,10 @@ import {
   type DashboardSuggestion,
   type EditDashboardSuggestionGroupPayload,
 } from './dashboard-suggestions';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
+
+const { can, permissionTooltip } = usePermissions();
 
 interface ControlOption {
   label: string;
