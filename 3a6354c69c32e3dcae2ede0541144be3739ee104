@@ -1,0 +1,30 @@
+lisa-addressed:
+---
+Comment (src/components/users/UserRolesPanel.vue:259):
+**Low / nit — error extraction can throw on a non-standard error body.**
+
+`errorResponse.response?.data.errors.body` only optional-chains `response`. If `response` is present but `response.data` is absent or not the `{errors:{body}}` shape (e.g. an empty/HTML 5xx body, where axios sets `data` to `''`), then `.errors.body` throws a `TypeError` *inside* the catch block. The function's promise then rejects un-awaited (called from `@submit.prevent`), so the dialog stays open with no `assignError` shown — a silent failure.
+
+This matches the existing codebase convention (UserView/GroupView/GroupMembersPanel use the same shape) and the API reliably returns `{errors:{body}}`, so risk is low. Hardening suggestion: `errorResponse.response?.data?.errors?.body`. Same applies to `removeRole` (~line 278) here and to both handlers in `GroupRolesPanel.vue` (~lines 236, 253).
+Replies:
+**lisa implementation guidance:** Agreed — hardening the error extraction to fully optional-chain. Will change `errorResponse.response?.data.errors.body` → `errorResponse.response?.data?.errors?.body` in all four handlers: UserRolesPanel.vue assignRole + removeRole, and GroupRolesPanel.vue assignRole + removeRole. Prevents a TypeError inside the catch (which would otherwise reject the @submit.prevent handler un-awaited and leave the dialog open with no assignError shown).
+
+<!-- lisa-guidance-posted -->
+---
+Comment (src/components/users/UserRolesPanel.vue:16):
+**Nit — Assign button is silently disabled when all roles are held.**
+
+When `availableRoles` is empty (the subject already holds every manifest role directly) the button is `:disabled` with no explanation, which can read as "broken". Consider a tooltip such as "All roles already assigned" on the disabled state. Same in `GroupRolesPanel.vue:16`.
+Replies:
+**lisa implementation guidance:** Good catch — adding a tooltip on the disabled Assign button so the all-roles-assigned state is self-explanatory. Will add v-tooltip.top="availableRoles.length ? '' : 'All roles already assigned'" to the PrimaryButton in both UserRolesPanel.vue and GroupRolesPanel.vue (the tooltip directive is already registered in both).
+
+<!-- lisa-guidance-posted -->
+---
+Comment (src/components/users/__tests__/UserRolesPanel.spec.ts:135):
+**Nit — negative-only assertion can pass vacuously.**
+
+`expect(buttonTexts(wrapper)).not.toContain('Remove')` also passes if the row failed to render at all (no rows → no Remove button → assertion green). It's bracketed by the sibling "renders … distinctly" test so real risk is low, but adding a positive anchor in this test — assert the role name renders, or assert the exact rendered row/button count — would close the vacuous-pass gap. Same shape at line 151 here and `GroupRolesPanel.spec.ts:135`.
+Replies:
+**lisa implementation guidance:** Will add positive anchors so the negative assertions can't pass vacuously. In UserRolesPanel.spec.ts: the inherited-rows test (~151) will also assert the row renders (role name 'auditor' + 'Inherited via security-team'); the config test (135) already anchors on 'Config-locked' but I'll add the role name too. In GroupRolesPanel.spec.ts (135) I'll add 'Config-locked' + the role name. Each closes the no-rows-rendered escape hatch.
+
+<!-- lisa-guidance-posted -->
