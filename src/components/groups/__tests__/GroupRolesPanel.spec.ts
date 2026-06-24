@@ -132,6 +132,10 @@ describe('GroupRolesPanel', () => {
     const wrapper = mountPanel();
     await flushPromises();
 
+    // Positive anchors so the negative assertion can't pass on a missing row.
+    expect(wrapper.findAll('tbody tr')).toHaveLength(1);
+    expect(wrapper.text()).toContain('viewer');
+    expect(wrapper.text()).toContain('Config-locked');
     expect(buttonTexts(wrapper)).not.toContain('Remove');
   });
 

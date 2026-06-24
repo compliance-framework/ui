@@ -14,6 +14,10 @@
         <PrimaryButton
           size="small"
           :disabled="!availableRoles.length"
+          v-tooltip.top="{
+            value: 'All roles already assigned',
+            disabled: availableRoles.length > 0,
+          }"
           @click="openAssignDialog"
         >
           <i class="pi pi-plus mr-2"></i>
@@ -233,7 +237,7 @@ async function assignRole() {
   } catch (error) {
     const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
     assignError.value =
-      errorResponse.response?.data.errors.body ?? 'Failed to assign role.';
+      errorResponse.response?.data?.errors?.body ?? 'Failed to assign role.';
   } finally {
     assigning.value = false;
   }
@@ -250,7 +254,7 @@ async function removeRole(role: CCFRoleAssignment) {
       severity: 'error',
       summary: 'Error removing role',
       detail:
-        errorResponse.response?.data.errors.body ?? 'Unknown error occurred',
+        errorResponse.response?.data?.errors?.body ?? 'Unknown error occurred',
       life: 3000,
     });
   }

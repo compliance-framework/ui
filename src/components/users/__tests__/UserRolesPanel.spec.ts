@@ -131,6 +131,10 @@ describe('UserRolesPanel', () => {
     const wrapper = mountPanel();
     await flushPromises();
 
+    // Positive anchors: the row actually rendered, so the negative assertion below
+    // can't pass vacuously on a missing row.
+    expect(wrapper.findAll('tbody tr')).toHaveLength(1);
+    expect(wrapper.text()).toContain('viewer');
     expect(wrapper.text()).toContain('Config-locked');
     expect(buttonTexts(wrapper)).not.toContain('Remove');
   });
@@ -148,6 +152,10 @@ describe('UserRolesPanel', () => {
     const wrapper = mountPanel();
     await flushPromises();
 
+    // Positive anchors so the negative assertion can't pass on a missing row.
+    expect(wrapper.findAll('tbody tr')).toHaveLength(1);
+    expect(wrapper.text()).toContain('auditor');
+    expect(wrapper.text()).toContain('Inherited via security-team');
     expect(buttonTexts(wrapper)).not.toContain('Remove');
   });
 
