@@ -75,6 +75,34 @@ export const ACTIONS = {
 export type ResourceName = (typeof RESOURCES)[keyof typeof RESOURCES];
 export type ActionName = (typeof ACTIONS)[keyof typeof ACTIONS];
 
+// Assignable system roles, mirrored from the authz manifest's `roles:` block
+// (compliance-framework/api: internal/authz/manifest.yaml). The API has no "list roles"
+// endpoint, and these change rarely, so the role-assignment UI sources the picker options
+// from this list. `roleName` is still validated server-side against the manifest on every
+// grant (POST /admin/role-assignments → 400 on an unknown role), so this list is only a
+// convenience for the dropdown — keep it in sync with the manifest.
+export const MANIFEST_ROLES = [
+  { name: 'admin', description: 'Full access to everything.' },
+  { name: 'viewer', description: 'Read everything; cannot write.' },
+  {
+    name: 'auditor',
+    description:
+      'Read everything; record evidence and maintain the risk/POA&M register.',
+  },
+  {
+    name: 'contributor',
+    description:
+      'Author content (OSCAL docs, register items, workflows, dashboards); no admin.',
+  },
+  {
+    name: 'agent',
+    description:
+      'Service accounts: ingest telemetry and reconcile plugin templates.',
+  },
+] as const;
+
+export type ManifestRoleName = (typeof MANIFEST_ROLES)[number]['name'];
+
 // Human-readable labels for the resources users actually act on, for tooltips/messages.
 const RESOURCE_LABELS: Partial<Record<string, string>> = {
   [RESOURCES.EVIDENCE]: 'evidence',
