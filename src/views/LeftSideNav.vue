@@ -160,6 +160,11 @@ const links = ref<Array<NavigationItem>>([
         permission: ADMIN_MANAGE,
       },
       {
+        name: 'admin-groups',
+        title: 'Groups',
+        permission: ADMIN_MANAGE,
+      },
+      {
         name: 'admin-agents',
         title: 'Agents',
         permission: ADMIN_MANAGE,

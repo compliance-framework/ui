@@ -53,6 +53,50 @@
         </div>
       </PageCard>
     </div>
+    <PageCard class="mt-4">
+      <div class="p-4">
+        <h2 class="text-lg font-semibold mb-4">Group Memberships</h2>
+        <template v-if="groupsLoading">
+          <p class="text-gray-500 dark:text-slate-400">Loading groups...</p>
+        </template>
+        <template v-else-if="groupsError">
+          <p class="text-red-600 dark:text-red-400">
+            Failed to load group memberships.
+          </p>
+        </template>
+        <template v-else-if="!userGroups?.length">
+          <p class="text-gray-500 dark:text-slate-400">
+            Not a member of any groups.
+          </p>
+        </template>
+        <template v-else>
+          <div class="flex flex-wrap gap-2">
+            <span
+              v-for="g in userGroups"
+              :key="g.groupId"
+              class="inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm font-medium"
+              :class="
+                g.inherited
+                  ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                  : 'bg-gray-100 text-gray-700 dark:bg-slate-700 dark:text-slate-300'
+              "
+            >
+              {{ g.groupName }}
+              <span
+                v-if="g.inherited"
+                class="ml-1 text-xs opacity-70"
+                v-tooltip.top="'Synced from IdP — cannot be removed here'"
+                >SSO</span
+              >
+            </span>
+          </div>
+          <p class="mt-2 text-xs text-gray-500 dark:text-slate-500">
+            Blue = inherited from SSO IdP (read-only). Gray = native CCF group.
+          </p>
+        </template>
+      </div>
+    </PageCard>
+
     <div class="mt-4">
       <PrimaryButton @click="editUserVisible = true" class="mr-2"
         >Update User</PrimaryButton
@@ -78,7 +122,12 @@ import { ref, watch, computed } from 'vue';
 import PageHeader from '@/components/PageHeader.vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
-import type { ErrorBody, ErrorResponse, CCFUser } from '@/stores/types';
+import type {
+  ErrorBody,
+  ErrorResponse,
+  CCFUser,
+  CCFUserGroup,
+} from '@/stores/types';
 import PageCard from '@/components/PageCard.vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
 import Dialog from '@/volt/Dialog.vue';
@@ -86,6 +135,9 @@ import UserEditForm from '@/components/users/UserEditForm.vue';
 import { useConfirm } from 'primevue/useconfirm';
 import { useDataApi } from '@/composables/axios';
 import type { AxiosError } from 'axios';
+import Tooltip from 'primevue/tooltip';
+
+defineOptions({ directives: { tooltip: Tooltip } });
 
 const route = useRoute();
 const router = useRouter();
@@ -97,6 +149,12 @@ const {
   isLoading: loading,
   error,
 } = useDataApi<CCFUser>(`/api/admin/users/${route.params.id}`);
+
+const {
+  data: userGroups,
+  isLoading: groupsLoading,
+  error: groupsError,
+} = useDataApi<CCFUserGroup[]>(`/api/admin/users/${route.params.id}/groups`);
 const { execute: deleteExecute } = useDataApi<void>(
   `/api/admin/users/${route.params.id}`,
   { method: 'DELETE' },
