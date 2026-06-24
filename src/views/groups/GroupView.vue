@@ -63,6 +63,10 @@
       </PageCard>
     </div>
 
+    <PageCard class="mt-4">
+      <GroupRolesPanel :groupId="group.id" :groupName="group.name" />
+    </PageCard>
+
     <Dialog
       modal
       header="Edit Group"
@@ -86,6 +90,7 @@ import PageCard from '@/components/PageCard.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
 import Dialog from '@/volt/Dialog.vue';
 import GroupMembersPanel from '@/components/groups/GroupMembersPanel.vue';
+import GroupRolesPanel from '@/components/groups/GroupRolesPanel.vue';
 import GroupEditForm from '@/components/groups/GroupEditForm.vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useToast } from 'primevue/usetoast';

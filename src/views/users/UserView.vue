@@ -97,6 +97,12 @@
       </div>
     </PageCard>
 
+    <PageCard class="mt-4">
+      <div class="p-4">
+        <UserRolesPanel :userId="user.id" :userEmail="user.email" />
+      </div>
+    </PageCard>
+
     <div class="mt-4">
       <PrimaryButton @click="editUserVisible = true" class="mr-2"
         >Update User</PrimaryButton
@@ -132,6 +138,7 @@ import PageCard from '@/components/PageCard.vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
 import Dialog from '@/volt/Dialog.vue';
 import UserEditForm from '@/components/users/UserEditForm.vue';
+import UserRolesPanel from '@/components/users/UserRolesPanel.vue';
 import { useConfirm } from 'primevue/useconfirm';
 import { useDataApi } from '@/composables/axios';
 import type { AxiosError } from 'axios';
