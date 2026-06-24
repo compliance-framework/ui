@@ -65,10 +65,10 @@ export interface CCFGroupCreate {
 
 export interface CCFGroupMember {
   userId: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  inherited: boolean;
+  displayName: string;
+  // The members endpoint does not currently return these; they are enriched
+  // client-side (email) or reserved for when the API provides them (inherited).
+  inherited?: boolean;
 }
 
 export interface CCFUserGroup {

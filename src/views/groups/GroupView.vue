@@ -1,65 +1,88 @@
 <template>
-  <template v-if="isLoading">
-    <div class="px-6 py-4 text-center text-gray-500 dark:text-slate-400">
-      Loading...
+  <div v-if="isLoading" class="text-center py-12">
+    <i class="pi pi-spin pi-spinner text-4xl text-gray-400"></i>
+    <p class="mt-4 text-gray-500 dark:text-slate-400">Loading...</p>
+  </div>
+  <div v-else-if="group">
+    <div class="flex justify-between items-center mb-6">
+      <div>
+        <PageHeader>{{ group.name }}</PageHeader>
+        <PageSubHeader>Group details and members</PageSubHeader>
+      </div>
+      <div class="flex gap-2">
+        <SecondaryButton @click="editVisible = true">
+          <i class="pi pi-pencil mr-2"></i>
+          Edit
+        </SecondaryButton>
+        <SecondaryButton severity="danger" @click="deleteGroup">
+          <i class="pi pi-trash mr-2"></i>
+          Delete
+        </SecondaryButton>
+      </div>
     </div>
-  </template>
-  <template v-else-if="group">
-    <PageHeader>Group: {{ group.name }}</PageHeader>
-    <div class="flex flex-col md:flex-row gap-4 pt-10">
+
+    <div class="flex flex-col md:flex-row gap-4 items-start">
       <PageCard class="md:w-1/3">
-        <div class="p-4">
-          <h2 class="text-lg font-semibold mb-4 dark:text-slate-200">
-            Group Details
-          </h2>
-          <p><strong>ID:</strong> {{ group.id }}</p>
-          <p><strong>Name:</strong> {{ group.name }}</p>
-          <p>
-            <strong>Description:</strong>
-            {{ group.description ?? '—' }}
-          </p>
-          <p v-if="group.createdAt">
-            <strong>Created:</strong> {{ formatDate(group.createdAt) }}
-          </p>
-          <p v-if="group.updatedAt">
-            <strong>Updated:</strong> {{ formatDate(group.updatedAt) }}
-          </p>
-        </div>
+        <h2 class="text-lg font-semibold mb-4 dark:text-slate-200">
+          Group Details
+        </h2>
+        <dl class="space-y-3 text-sm">
+          <div>
+            <dt class="text-gray-500 dark:text-slate-400">ID</dt>
+            <dd class="font-medium dark:text-slate-200 break-all">
+              {{ group.id }}
+            </dd>
+          </div>
+          <div>
+            <dt class="text-gray-500 dark:text-slate-400">Name</dt>
+            <dd class="font-medium dark:text-slate-200">{{ group.name }}</dd>
+          </div>
+          <div>
+            <dt class="text-gray-500 dark:text-slate-400">Description</dt>
+            <dd class="font-medium dark:text-slate-200">
+              {{ group.description ?? '—' }}
+            </dd>
+          </div>
+          <div v-if="group.createdAt">
+            <dt class="text-gray-500 dark:text-slate-400">Created</dt>
+            <dd class="font-medium dark:text-slate-200">
+              {{ formatDate(group.createdAt) }}
+            </dd>
+          </div>
+          <div v-if="group.updatedAt">
+            <dt class="text-gray-500 dark:text-slate-400">Updated</dt>
+            <dd class="font-medium dark:text-slate-200">
+              {{ formatDate(group.updatedAt) }}
+            </dd>
+          </div>
+        </dl>
       </PageCard>
 
       <PageCard class="flex-grow">
-        <div class="p-4">
-          <GroupMembersPanel :groupId="group.id" />
-        </div>
+        <GroupMembersPanel :groupId="group.id" />
       </PageCard>
     </div>
 
-    <div class="mt-4">
-      <PrimaryButton class="mr-2" @click="editVisible = true"
-        >Edit Group</PrimaryButton
-      >
-      <SecondaryButton
-        class="text-red-600 enabled:hover:text-red-700 dark:text-red-400 dark:enabled:hover:text-red-300"
-        @click="deleteGroup"
-        >Delete Group</SecondaryButton
-      >
-    </div>
-
-    <Dialog modal header="Edit Group" v-model:visible="editVisible">
+    <Dialog
+      modal
+      header="Edit Group"
+      :draggable="false"
+      v-model:visible="editVisible"
+    >
       <GroupEditForm
         :group="group"
         @saved="onSaved"
         @cancel="editVisible = false"
       />
     </Dialog>
-  </template>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 import PageHeader from '@/components/PageHeader.vue';
+import PageSubHeader from '@/components/PageSubHeader.vue';
 import PageCard from '@/components/PageCard.vue';
-import PrimaryButton from '@/volt/PrimaryButton.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
 import Dialog from '@/volt/Dialog.vue';
 import GroupMembersPanel from '@/components/groups/GroupMembersPanel.vue';

@@ -2,140 +2,137 @@
   <div>
     <div class="flex items-center justify-between mb-4">
       <h2 class="text-lg font-semibold dark:text-slate-200">Members</h2>
-      <PrimaryButton @click="showAddMember = true">Add Member</PrimaryButton>
+      <PrimaryButton size="small" @click="showAddMember = true">
+        <i class="pi pi-plus mr-2"></i>
+        Add Member
+      </PrimaryButton>
     </div>
 
-    <template v-if="isLoading">
-      <p class="text-gray-500 dark:text-slate-400">Loading members...</p>
-    </template>
-    <template v-else-if="membersError">
-      <p class="text-red-500">Error loading members.</p>
-    </template>
-    <template v-else-if="!members?.length">
-      <p class="text-gray-500 dark:text-slate-400">No members yet.</p>
-    </template>
-    <template v-else>
-      <div
-        class="overflow-x-auto rounded-lg border border-ccf-300 dark:border-slate-700"
-      >
-        <table class="min-w-full divide-y divide-ccf-300 dark:divide-slate-700">
-          <thead class="bg-gray-50 dark:bg-slate-800">
-            <tr>
-              <th class="table-header">Email</th>
-              <th class="table-header">Name</th>
-              <th class="table-header">Source</th>
-              <th class="table-header">Actions</th>
-            </tr>
-          </thead>
-          <tbody
-            class="divide-y bg-white dark:divide-slate-700 dark:bg-slate-900"
-          >
-            <tr
-              v-for="member in members"
-              :key="member.userId"
-              class="hover:bg-zinc-50 dark:hover:bg-slate-800"
-            >
-              <td class="py-2 px-6">{{ member.email }}</td>
-              <td class="py-2 px-6">
-                {{ member.firstName }} {{ member.lastName }}
-              </td>
-              <td class="py-2 px-6">
-                <span
-                  v-if="member.inherited"
-                  class="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900 dark:text-blue-200"
-                  v-tooltip.top="'Synced from IdP — cannot be removed here'"
-                >
-                  Inherited (SSO)
-                </span>
-                <span
-                  v-else
-                  class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-700 dark:bg-slate-700 dark:text-slate-300"
-                >
-                  Native
-                </span>
-              </td>
-              <td class="py-2 px-6">
-                <button
-                  v-if="!member.inherited"
-                  class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 text-sm font-medium"
-                  @click="removeMember(member)"
-                >
-                  Remove
-                </button>
-                <span
-                  v-else
-                  class="text-gray-400 dark:text-slate-600 text-sm"
-                  v-tooltip.top="
-                    'Inherited group memberships cannot be removed here'
-                  "
-                >
-                  —
-                </span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </template>
+    <!-- Loading State -->
+    <div v-if="isLoading" class="text-center py-10">
+      <i class="pi pi-spin pi-spinner text-3xl text-gray-400"></i>
+      <p class="mt-3 text-gray-500 dark:text-slate-400">Loading members...</p>
+    </div>
 
-    <Dialog modal header="Add Member" v-model:visible="showAddMember">
-      <div class="px-8 py-6 min-w-80">
-        <div class="mb-4">
-          <label class="inline-block pb-2 dark:text-slate-300"
-            >Search Users</label
+    <!-- Error State -->
+    <div v-else-if="membersError" class="text-center py-10">
+      <i class="pi pi-exclamation-triangle text-4xl text-red-400"></i>
+      <p class="mt-3 text-red-500">Error loading members.</p>
+    </div>
+
+    <!-- Empty State -->
+    <div v-else-if="!members?.length" class="text-center py-10">
+      <i class="pi pi-user-plus text-5xl text-gray-300 dark:text-slate-600"></i>
+      <p class="mt-3 text-gray-500 dark:text-slate-400">No members yet.</p>
+      <p class="text-sm text-gray-400 dark:text-slate-500 mt-1">
+        Click "Add Member" to add users to this group.
+      </p>
+    </div>
+
+    <!-- Members Table -->
+    <div
+      v-else
+      class="overflow-hidden rounded-lg border border-ccf-300 bg-white shadow dark:border-slate-700 dark:bg-slate-900"
+    >
+      <table class="table-auto w-full dark:text-slate-300">
+        <thead class="bg-gray-50 dark:bg-slate-800">
+          <tr class="border-b border-ccf-300 dark:border-slate-700">
+            <th class="table-header">Name</th>
+            <th class="table-header">Email</th>
+            <th class="table-header">Source</th>
+            <th class="table-header text-right!">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            v-for="member in members"
+            :key="member.userId"
+            class="hover:bg-zinc-50 dark:hover:bg-slate-800 border-b border-ccf-300 dark:border-slate-800 last:border-b-0"
           >
-          <FormInput
-            v-model="userSearch"
-            placeholder="Filter by email or name"
-          />
-        </div>
-        <p
-          v-if="usersLoading"
-          class="text-sm text-gray-500 dark:text-slate-400"
-        >
-          Loading users...
-        </p>
-        <p v-else-if="usersError" class="text-sm text-red-500">
-          Error loading users.
-        </p>
-        <div
-          v-else
-          class="max-h-64 overflow-y-auto rounded border border-ccf-300 dark:border-slate-700"
-        >
-          <div
-            v-for="user in filteredUsers"
-            :key="user.id"
-            class="flex items-center justify-between px-4 py-2 hover:bg-zinc-50 dark:hover:bg-slate-800 border-b border-ccf-300 dark:border-slate-700 last:border-b-0"
-          >
-            <div>
-              <p class="text-sm font-medium dark:text-slate-200">
-                {{ user.firstName }} {{ user.lastName }}
-              </p>
-              <p class="text-xs text-gray-500 dark:text-slate-400">
-                {{ user.email }}
-              </p>
-            </div>
-            <button
-              class="text-sm font-medium text-ccf-600 hover:text-ccf-800 dark:text-blue-400 dark:hover:text-blue-300"
-              :disabled="isMember(user.id) || adding"
-              :class="{
-                'opacity-40 cursor-not-allowed': isMember(user.id) || adding,
-              }"
-              @click="addMember(user.id)"
+            <td
+              class="px-6 py-4 text-sm font-medium text-gray-900 dark:text-slate-300"
             >
-              {{ isMember(user.id) ? 'Already added' : 'Add' }}
-            </button>
+              {{ member.displayName || '—' }}
+            </td>
+            <td class="px-6 py-4 text-sm text-gray-500 dark:text-slate-400">
+              {{ emailByUserId[member.userId] ?? '—' }}
+            </td>
+            <td class="px-6 py-4">
+              <Badge
+                v-if="member.inherited"
+                severity="info"
+                v-tooltip.top="'Synced from IdP — cannot be removed here'"
+              >
+                Inherited (SSO)
+              </Badge>
+              <Badge v-else severity="secondary">Native</Badge>
+            </td>
+            <td class="px-6 py-4 text-right">
+              <SecondaryButton
+                v-if="!member.inherited"
+                size="small"
+                severity="danger"
+                @click="removeMember(member)"
+              >
+                Remove
+              </SecondaryButton>
+              <span
+                v-else
+                class="text-gray-400 dark:text-slate-600 text-sm"
+                v-tooltip.top="
+                  'Inherited group memberships cannot be removed here'
+                "
+              >
+                —
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <Dialog
+      modal
+      header="Add Member"
+      :draggable="false"
+      v-model:visible="showAddMember"
+    >
+      <div class="pt-1">
+        <label class="inline-block pb-2 dark:text-slate-300">
+          Search users
+        </label>
+        <div class="flex items-start gap-2">
+          <div class="flex-grow">
+            <AutoComplete
+              v-model="selectedUser"
+              :suggestions="userSuggestions"
+              optionLabel="displayName"
+              :forceSelection="true"
+              placeholder="Type at least 3 characters to search…"
+              fluid
+              @complete="searchUsers"
+            >
+              <template #option="{ option }">
+                <span class="font-medium text-gray-900 dark:text-slate-100">
+                  {{ option.displayName }}
+                </span>
+              </template>
+            </AutoComplete>
+            <p
+              v-if="selectedUserIsMember"
+              class="mt-1 text-sm text-amber-600 dark:text-amber-400"
+            >
+              {{ selectedUser?.displayName }} is already a member.
+            </p>
           </div>
-          <p
-            v-if="!filteredUsers.length"
-            class="px-4 py-3 text-sm text-gray-500 dark:text-slate-400"
-          >
-            No matching users.
-          </p>
+          <PrimaryButton :disabled="!canAdd" @click="addSelectedMember">
+            {{ adding ? 'Adding…' : 'Add' }}
+          </PrimaryButton>
         </div>
-        <PrimaryButton class="mt-4" @click="showAddMember = false"
-          >Done</PrimaryButton
-        >
+
+        <div class="mt-6 flex justify-end">
+          <SecondaryButton @click="showAddMember = false">Done</SecondaryButton>
+        </div>
       </div>
     </Dialog>
   </div>
@@ -149,10 +146,16 @@ import type {
   ErrorBody,
   ErrorResponse,
 } from '@/stores/types';
-import PrimaryButton from '@/components/PrimaryButton.vue';
+import PrimaryButton from '@/volt/PrimaryButton.vue';
+import SecondaryButton from '@/volt/SecondaryButton.vue';
+import Badge from '@/volt/Badge.vue';
 import Dialog from '@/volt/Dialog.vue';
-import FormInput from '@/components/forms/FormInput.vue';
+import AutoComplete from '@/volt/AutoComplete.vue';
 import { useDataApi, useAuthenticatedInstance } from '@/composables/axios';
+import {
+  useUserSearch,
+  type DisplayUser,
+} from '@/composables/workflows/useUserSearch';
 import { useToast } from 'primevue/usetoast';
 import type { AxiosError } from 'axios';
 import Tooltip from 'primevue/tooltip';
@@ -163,8 +166,21 @@ const props = defineProps<{ groupId: string }>();
 
 const toast = useToast();
 const showAddMember = ref(false);
-const userSearch = ref('');
 const adding = ref(false);
+const selectedUser = ref<DisplayUser | null>(null);
+
+// Server-side user typeahead (mirrors Risk owner / Workflow role assignment).
+// Scales to large user bases — no need to download every user up front.
+const { userSuggestions, searchUsers } = useUserSearch();
+
+// Reset the picker every time the dialog opens so a previous selection or
+// stale suggestions never carry over.
+watch(showAddMember, (open) => {
+  if (open) {
+    selectedUser.value = null;
+    userSuggestions.value = [];
+  }
+});
 
 const {
   data: members,
@@ -177,12 +193,14 @@ const {
   { immediate: false },
 );
 
-const {
-  data: availableUsers,
-  isLoading: usersLoading,
-  error: usersError,
-  execute: fetchUsers,
-} = useDataApi<CCFUser[]>('/api/admin/users', {}, { immediate: false });
+// The members endpoint returns only { userId, displayName }, so email is not
+// available there. Fetch the user directory once to enrich the table with email
+// addresses; if it fails (e.g. permissions) the table still renders names.
+const { data: allUsers, execute: fetchAllUsers } = useDataApi<CCFUser[]>(
+  '/api/admin/users',
+  {},
+  { immediate: false },
+);
 
 const axiosInstance = useAuthenticatedInstance();
 
@@ -192,31 +210,35 @@ const { execute: addExecute } = useDataApi<void>(
   { immediate: false },
 );
 
-// Lazy: only load the full user list when the dialog first opens.
-watch(showAddMember, (open) => {
-  if (open && !availableUsers.value) fetchUsers();
+const emailByUserId = computed<Record<string, string>>(() => {
+  const map: Record<string, string> = {};
+  for (const user of allUsers.value ?? []) {
+    if (user.id) map[user.id] = user.email;
+  }
+  return map;
 });
 
-const filteredUsers = computed(() => {
-  const q = userSearch.value.toLowerCase();
-  return (availableUsers.value ?? []).filter(
-    (u) =>
-      u.email.toLowerCase().includes(q) ||
-      u.firstName.toLowerCase().includes(q) ||
-      u.lastName.toLowerCase().includes(q),
-  );
-});
-
-function isMember(userId: string): boolean {
+function isMember(userId: string | undefined): boolean {
+  if (!userId) return false;
   return (members.value ?? []).some((m) => m.userId === userId);
 }
 
-async function addMember(userId: string) {
-  if (adding.value) return;
+const selectedUserIsMember = computed(() => isMember(selectedUser.value?.id));
+
+const canAdd = computed(
+  () =>
+    !!selectedUser.value?.id && !adding.value && !selectedUserIsMember.value,
+);
+
+async function addSelectedMember() {
+  const user = selectedUser.value;
+  if (!user?.id || !canAdd.value) return;
   adding.value = true;
   try {
-    await addExecute({ data: { userId } });
+    await addExecute({ data: { userId: user.id } });
     await fetchMembers();
+    selectedUser.value = null;
+    userSuggestions.value = [];
     toast.add({ severity: 'success', summary: 'Member added', life: 2000 });
   } catch (error) {
     const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
@@ -254,6 +276,7 @@ async function removeMember(member: CCFGroupMember) {
 }
 
 fetchMembers();
+fetchAllUsers();
 </script>
 
 <style scoped>
