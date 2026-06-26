@@ -212,6 +212,7 @@
 
 <script setup lang="ts">
 import { reactive } from 'vue';
+import { uuid } from '@/utils/uuid';
 import type { Finding } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
@@ -315,7 +316,7 @@ async function submit() {
 
   try {
     const newFinding: Partial<Finding> = {
-      uuid: crypto.randomUUID(),
+      uuid: uuid(),
       title: formData.title,
       description: formData.description,
       target: formData.target,

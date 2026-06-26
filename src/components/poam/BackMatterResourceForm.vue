@@ -314,6 +314,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
+import { uuid } from '@/utils/uuid';
 import type { BackMatterResource } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
@@ -396,7 +397,7 @@ onMounted(() => {
 });
 
 function generateUUID(): string {
-  return crypto.randomUUID();
+  return uuid();
 }
 
 function addDocumentId() {

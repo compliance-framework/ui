@@ -243,6 +243,7 @@
 
 <script setup lang="ts">
 import { computed, reactive, ref } from 'vue';
+import { uuid } from '@/utils/uuid';
 import { type Risk } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
@@ -573,7 +574,7 @@ async function submit() {
         tasks?: Array<{ title: string; orderIndex: number }>;
       };
     } = {
-      uuid: crypto.randomUUID(),
+      uuid: uuid(),
       title: formData.title,
       description: formData.description,
       statement: formData.statement,

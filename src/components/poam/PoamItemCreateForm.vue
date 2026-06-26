@@ -76,6 +76,7 @@
 
 <script setup lang="ts">
 import { reactive } from 'vue';
+import { uuid } from '@/utils/uuid';
 import type { POAMItem } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
@@ -126,7 +127,7 @@ async function submit() {
 
   try {
     const newItem: Partial<POAMItem> = {
-      uuid: crypto.randomUUID(),
+      uuid: uuid(),
       title: formData.title,
       description: formData.description,
       remarks: formData.remarks || undefined,

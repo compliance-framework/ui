@@ -308,6 +308,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue';
+import { uuid } from '@/utils/uuid';
 import { useToast } from 'primevue/usetoast';
 import InputText from '@/volt/InputText.vue';
 import Textarea from '@/volt/Textarea.vue';
@@ -502,12 +503,12 @@ onMounted(async () => {
 });
 
 const generateUUID = () => {
-  componentData.uuid = crypto.randomUUID();
+  componentData.uuid = uuid();
 };
 
 const addProtocol = () => {
   componentData.protocols!.push({
-    uuid: crypto.randomUUID(),
+    uuid: uuid(),
     title: '',
     name: '',
     portRanges: [],

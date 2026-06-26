@@ -174,6 +174,7 @@
 
 <script setup lang="ts">
 import { reactive } from 'vue';
+import { uuid } from '@/utils/uuid';
 import type { Observation } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
@@ -251,7 +252,7 @@ async function submit() {
 
   try {
     const newObservation: Partial<Observation> = {
-      uuid: crypto.randomUUID(),
+      uuid: uuid(),
       title: formData.title || undefined,
       description: formData.description,
       methods: formData.methods.filter((m) => m.trim()),
