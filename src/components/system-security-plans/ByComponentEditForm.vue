@@ -388,6 +388,7 @@
 
 <script setup lang="ts">
 import { reactive, onMounted } from 'vue';
+import { uuid } from '@/utils/uuid';
 import { useToast } from 'primevue/usetoast';
 import InputText from '@/volt/InputText.vue';
 import Textarea from '@/volt/Textarea.vue';
@@ -476,7 +477,7 @@ onMounted(() => {
 const addProvided = () => {
   if (!byComponentData.export) {
     byComponentData.export = {
-      uuid: crypto.randomUUID(),
+      uuid: uuid(),
       description: '',
       props: [],
       links: [],
@@ -488,7 +489,7 @@ const addProvided = () => {
     byComponentData.export.provided = [];
   }
   byComponentData.export.provided.push({
-    uuid: crypto.randomUUID(),
+    uuid: uuid(),
     description: '',
     props: [],
     links: [],
@@ -502,7 +503,7 @@ const removeProvided = (index: number) => {
 const addResponsibility = () => {
   if (!byComponentData.export) {
     byComponentData.export = {
-      uuid: crypto.randomUUID(),
+      uuid: uuid(),
       description: '',
       props: [],
       links: [],
@@ -514,7 +515,7 @@ const addResponsibility = () => {
     byComponentData.export.responsibilities = [];
   }
   byComponentData.export.responsibilities.push({
-    uuid: crypto.randomUUID(),
+    uuid: uuid(),
     description: '',
     props: [],
     links: [],
@@ -531,7 +532,7 @@ const addInherited = () => {
     byComponentData.inherited = [];
   }
   byComponentData.inherited.push({
-    uuid: crypto.randomUUID(),
+    uuid: uuid(),
     providedUuid: '',
     description: '',
     props: [],
@@ -549,7 +550,7 @@ const addSatisfied = () => {
     byComponentData.satisfied = [];
   }
   byComponentData.satisfied.push({
-    uuid: crypto.randomUUID(),
+    uuid: uuid(),
     responsibilityUuid: '',
     description: '',
     props: [],

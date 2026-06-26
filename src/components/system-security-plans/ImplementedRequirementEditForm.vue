@@ -177,6 +177,7 @@
 
 <script setup lang="ts">
 import { reactive, onMounted } from 'vue';
+import { uuid } from '@/utils/uuid';
 import { useToast } from 'primevue/usetoast';
 import InputText from '@/volt/InputText.vue';
 import Textarea from '@/volt/Textarea.vue';
@@ -236,7 +237,7 @@ const addProperty = () => {
     value: '',
     class: '',
     ns: '',
-    uuid: crypto.randomUUID(),
+    uuid: uuid(),
   });
 };
 

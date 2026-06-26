@@ -1,4 +1,5 @@
 import type { Risk, RiskLogEntry } from '@/oscal';
+import { uuid } from '@/utils/uuid';
 
 export type RiskAssociationKind = 'evidence' | 'controls' | 'components';
 
@@ -290,8 +291,7 @@ function normalizeEvent(input: unknown): RiskEventItem | null {
   if (!input || typeof input !== 'object') return null;
   const record = input as LooseRecord;
 
-  const id =
-    readString(record, ['uuid', 'id', 'eventId']) || crypto.randomUUID();
+  const id = readString(record, ['uuid', 'id', 'eventId']) || uuid();
   const type =
     readString(record, [
       'type',
@@ -408,7 +408,7 @@ function normalizeFromRiskLogEntry(entry: RiskLogEntry): RiskEventItem {
     .join(', ');
 
   return {
-    id: entry.uuid || crypto.randomUUID(),
+    id: entry.uuid || uuid(),
     type: entry.statusChange || entry.title || 'Log Event',
     timestamp: entry.start || entry.end,
     actor: actor || undefined,
