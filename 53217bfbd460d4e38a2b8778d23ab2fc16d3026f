@@ -5,3 +5,7 @@ Pass 1 (strict) findings:
 Considered and dismissed (not bugs):
 - Vue Flow store binding without explicit id: verified in @vue-flow/core 1.48 that the view's useVueFlow() provide()s the store and the child <VueFlow> inject()s it, so setNodes/setEdges drive the rendered flow. No id needed.
 - Module cache serving fixtures after API recovers within a scope: acceptable/desirable for a stable PoC demo; clears on scope change.
+
+lisa-addressed:
+- useLineage: track fixture provenance via module-level fixtureCacheKeys Set; on a cache hit whose key is fixture-sourced, set usingFixtures=true so later consumers (graph) show the demo banner. clearCache() clears the set. Added regression test.
+- LineageGraphNode: added `relative` to the card so the +N children badge anchors deterministically.
