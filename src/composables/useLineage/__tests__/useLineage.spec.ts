@@ -130,4 +130,21 @@ describe('useLineage fetching + caching', () => {
     expect(usingFixtures.value).toBe(true);
     expect(roots.length).toBeGreaterThan(0);
   });
+
+  it('flags usingFixtures on a later cache hit populated by an earlier fixture fallback', async () => {
+    mockGet.mockRejectedValueOnce(new Error('network down'));
+    const first = useLineage();
+    first.clearCache();
+    const scope = { sspId: 'prov-1' };
+    await first.fetchRoots(scope); // API fails → fixtures cached
+
+    // A fresh consumer (e.g. the graph view) that only hits the cache should
+    // still know it is showing demo data.
+    const second = useLineage();
+    expect(second.usingFixtures.value).toBe(false);
+    await second.fetchRoots(scope);
+
+    expect(second.usingFixtures.value).toBe(true);
+    expect(mockGet).toHaveBeenCalledTimes(1); // served from cache, no refetch
+  });
 });

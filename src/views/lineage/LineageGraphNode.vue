@@ -19,7 +19,7 @@ const canExpand = computed(
 
 <template>
   <div
-    class="rounded-lg border-l-4 border border-surface-200 shadow-sm dark:border-surface-700"
+    class="relative rounded-lg border-l-4 border border-surface-200 shadow-sm dark:border-surface-700"
     :class="heat.nodeClass"
     :style="{ width: NODE_WIDTH + 'px' }"
   >

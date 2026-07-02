@@ -17,6 +17,11 @@ export type { LineageNode, LineageScope, LineageTreeNode } from './types';
 // dashboard widget) so navigating between views doesn't refetch.
 const cache = new Map<string, LineageNode[]>();
 
+// Cache keys whose value came from fixtures (not the API). Lets a later consumer
+// that only hits the cache (e.g. the graph after the tree already populated it)
+// still know it's showing demo data and surface the banner.
+const fixtureCacheKeys = new Set<string>();
+
 function scopeKey(scope: LineageScope): string {
   const types = (scope.types ?? []).slice().sort().join(',');
   return `${scope.sspId ?? ''}|${scope.componentId ?? ''}|${types}`;
@@ -72,11 +77,15 @@ export function useLineage() {
   async function getRoots(scope: LineageScope): Promise<LineageNode[]> {
     const ck = rootsCacheKey(scope);
     const cached = cache.get(ck);
-    if (cached) return cached;
+    if (cached) {
+      if (fixtureCacheKeys.has(ck)) usingFixtures.value = true;
+      return cached;
+    }
 
     let nodes: LineageNode[];
     if (fixturesForced()) {
       usingFixtures.value = true;
+      fixtureCacheKeys.add(ck);
       nodes = fixtureRoots(scope);
     } else {
       try {
@@ -91,6 +100,7 @@ export function useLineage() {
         // API unavailable → keep the demo alive with fixtures.
         console.warn('[useLineage] roots fetch failed, using fixtures', err);
         usingFixtures.value = true;
+        fixtureCacheKeys.add(ck);
         nodes = fixtureRoots(scope);
       }
     }
@@ -104,11 +114,15 @@ export function useLineage() {
   ): Promise<LineageNode[]> {
     const ck = childrenCacheKey(key, scope);
     const cached = cache.get(ck);
-    if (cached) return cached;
+    if (cached) {
+      if (fixtureCacheKeys.has(ck)) usingFixtures.value = true;
+      return cached;
+    }
 
     let nodes: LineageNode[];
     if (fixturesForced() || usingFixtures.value) {
       usingFixtures.value = true;
+      fixtureCacheKeys.add(ck);
       nodes = fixtureChildren(key, scope);
     } else {
       try {
@@ -120,6 +134,7 @@ export function useLineage() {
       } catch (err) {
         console.warn('[useLineage] children fetch failed, using fixtures', err);
         usingFixtures.value = true;
+        fixtureCacheKeys.add(ck);
         nodes = fixtureChildren(key, scope);
       }
     }
@@ -143,6 +158,7 @@ export function useLineage() {
   /** Drop all cached nodes — call when scope changes so views refetch. */
   function clearCache() {
     cache.clear();
+    fixtureCacheKeys.clear();
   }
 
   return {
