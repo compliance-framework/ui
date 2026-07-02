@@ -1,0 +1,7 @@
+lisa-selfreview:
+Pass 1 (strict) findings:
+- [medium] Graph "demo data" banner could silently not show: getRoots/getChildren returned early on a module-cache hit before setting usingFixtures, so a consumer (graph) reading fixtures cached by an earlier consumer (tree) wouldn't surface the banner. FIXED.
+- [low] LineageGraphNode card lacked `relative`, making the +N badge's absolute positioning non-deterministic. FIXED.
+Considered and dismissed (not bugs):
+- Vue Flow store binding without explicit id: verified in @vue-flow/core 1.48 that the view's useVueFlow() provide()s the store and the child <VueFlow> inject()s it, so setNodes/setEdges drive the rendered flow. No id needed.
+- Module cache serving fixtures after API recovers within a scope: acceptable/desirable for a stable PoC demo; clears on scope change.
