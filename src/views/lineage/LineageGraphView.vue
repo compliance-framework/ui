@@ -70,7 +70,7 @@ function rebuild() {
   const layouted = layoutGraph(rawNodes, rawEdges);
   setNodes(layouted);
   setEdges(rawEdges);
-  nextTick(() => fitView({ padding: 0.2 }));
+  nextTick(() => fitView({ padding: 0.2, minZoom: 0.5, maxZoom: 1 }));
 }
 
 function reset() {
@@ -120,7 +120,7 @@ onNodeClick(({ node }) => {
 });
 
 // Fit once nodes have real measured dimensions.
-onNodesInitialized(() => fitView({ padding: 0.2 }));
+onNodesInitialized(() => fitView({ padding: 0.2, minZoom: 0.5, maxZoom: 1 }));
 
 onMounted(loadRoots);
 
