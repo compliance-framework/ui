@@ -1029,6 +1029,22 @@ const authenticatedRoutes = [
     name: 'about',
     component: () => import('../views/AboutView.vue'),
   },
+  {
+    path: '/lineage',
+    name: 'lineage',
+    component: () => import('../views/lineage/LineageTreeView.vue'),
+    meta: {
+      requiresAuth: true,
+    },
+  },
+  {
+    path: '/lineage/graph',
+    name: 'lineage-graph',
+    component: () => import('../views/lineage/LineageGraphView.vue'),
+    meta: {
+      requiresAuth: true,
+    },
+  },
 ];
 
 const publicRoutes = [
@@ -1056,22 +1072,6 @@ const publicRoutes = [
     path: 'slack/callback',
     name: 'slack-link-callback',
     component: () => import('@/views/SlackLinkCallbackView.vue'),
-  },
-  {
-    path: '/lineage',
-    name: 'lineage',
-    component: () => import('../views/lineage/LineageTreeView.vue'),
-    meta: {
-      requiresAuth: true,
-    },
-  },
-  {
-    path: '/lineage/graph',
-    name: 'lineage-graph',
-    component: () => import('../views/lineage/LineageGraphView.vue'),
-    meta: {
-      requiresAuth: true,
-    },
   },
   {
     path: 'logout',

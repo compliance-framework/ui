@@ -147,4 +147,21 @@ describe('useLineage fetching + caching', () => {
     expect(second.usingFixtures.value).toBe(true);
     expect(mockGet).toHaveBeenCalledTimes(1); // served from cache, no refetch
   });
+
+  it('clears the demo-data flag once a live fetch succeeds after a fallback', async () => {
+    const api = useLineage();
+    api.clearCache();
+
+    // First scope: API down → fixtures, banner on.
+    mockGet.mockRejectedValueOnce(new Error('down'));
+    await api.fetchRoots({ sspId: 'recover-a' });
+    expect(api.usingFixtures.value).toBe(true);
+
+    // Scope change (clears cache + flag) then the API is back → banner off.
+    api.clearCache();
+    expect(api.usingFixtures.value).toBe(false);
+    mockGet.mockResolvedValueOnce({ data: { data: [apiNode()] } });
+    await api.fetchRoots({ sspId: 'recover-b' });
+    expect(api.usingFixtures.value).toBe(false);
+  });
 });

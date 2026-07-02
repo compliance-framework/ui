@@ -72,7 +72,13 @@ const compliancePercent = computed(() =>
   Math.round(props.node?.compliance.compliancePercent ?? 0),
 );
 
+// Monotonic token: two rapid node switches race, so we ignore any response whose
+// node key is no longer the selected one by the time it resolves (last-writer-wins
+// would otherwise show node A's evidence under node B).
+let evidenceRequestKey: string | null = null;
+
 async function loadEvidence(node: LineageNode) {
+  evidenceRequestKey = node.key;
   evidence.value = [];
   // [PoC corner] evidence list only in API-connected mode with a control id.
   if (props.usingFixtures || !node.controlId) {
@@ -86,6 +92,8 @@ async function loadEvidence(node: LineageNode) {
       `/api/evidence/for-control/${encodeURIComponent(node.controlId)}`,
       { params },
     );
+    // A newer node was selected while this was in flight — drop the stale result.
+    if (evidenceRequestKey !== node.key) return;
     const rows = res.data?.data ?? res.data ?? [];
     evidence.value = (Array.isArray(rows) ? rows : []).map(
       (r: Record<string, unknown>, i: number) => ({
@@ -96,6 +104,7 @@ async function loadEvidence(node: LineageNode) {
     );
     evidenceState.value = 'loaded';
   } catch (err) {
+    if (evidenceRequestKey !== node.key) return;
     console.warn('[LineageNodeDrawer] evidence fetch failed', err);
     evidenceState.value = 'error';
   }

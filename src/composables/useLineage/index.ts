@@ -96,6 +96,8 @@ export function useLineage() {
           },
         );
         nodes = res.data?.data ?? [];
+        // Live fetch succeeded → we're not on demo data anymore.
+        usingFixtures.value = false;
       } catch (err) {
         // API unavailable → keep the demo alive with fixtures.
         console.warn('[useLineage] roots fetch failed, using fixtures', err);
@@ -131,6 +133,7 @@ export function useLineage() {
           { params: scopeParams(scope) },
         );
         nodes = res.data?.data ?? [];
+        usingFixtures.value = false;
       } catch (err) {
         console.warn('[useLineage] children fetch failed, using fixtures', err);
         usingFixtures.value = true;
@@ -159,6 +162,8 @@ export function useLineage() {
   function clearCache() {
     cache.clear();
     fixtureCacheKeys.clear();
+    // Let the next fetch re-decide; the banner shouldn't stick if the API recovers.
+    usingFixtures.value = false;
   }
 
   return {
