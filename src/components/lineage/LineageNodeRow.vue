@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { BIconExclamationTriangleFill } from 'bootstrap-icons-vue';
+import {
+  BIconExclamationTriangleFill,
+  BIconCheckCircleFill,
+} from 'bootstrap-icons-vue';
 import { heatStyle } from './heatScale';
 import RiskHeatBadge from './RiskHeatBadge.vue';
 import type { LineageNode } from '@/composables/useLineage/types';
@@ -61,6 +64,13 @@ const compliancePercent = computed(() =>
   Math.round(props.node.compliance.compliancePercent),
 );
 
+// "Everything correct": there are controls, none are not-satisfied, and none are
+// unknown — i.e. all evidence is satisfied. These nodes get a green pill.
+const fullyCompliant = computed(() => {
+  const c = props.node.compliance;
+  return c.totalControls > 0 && c.notSatisfied === 0 && c.unknown === 0;
+});
+
 const warning = computed(() => {
   const l = props.node.linkage;
   if (l.unanchored) return 'Unanchored — not linked to any standard';
@@ -104,14 +114,30 @@ const warning = computed(() => {
 
     <!-- Scores pushed to the right -->
     <div class="ml-auto flex flex-shrink-0 items-center gap-2">
-      <!-- Compliance pill: percent + satisfied/notSatisfied/unknown -->
+      <!-- Compliance pill: percent + satisfied/notSatisfied/unknown.
+           Turns green when everything is satisfied. -->
       <span
-        class="inline-flex items-center gap-1.5 rounded-full bg-surface-100 px-2 py-0.5 text-xs whitespace-nowrap dark:bg-surface-800"
+        class="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs whitespace-nowrap"
+        :class="
+          fullyCompliant
+            ? 'bg-emerald-100 dark:bg-emerald-500/25'
+            : 'bg-surface-100 dark:bg-surface-800'
+        "
         v-tooltip.top="
           `${node.compliance.satisfied} satisfied · ${node.compliance.notSatisfied} not satisfied · ${node.compliance.unknown} unknown of ${node.compliance.totalControls}`
         "
       >
-        <span class="font-semibold text-surface-700 dark:text-surface-0"
+        <BIconCheckCircleFill
+          v-if="fullyCompliant"
+          class="h-3 w-3 text-emerald-600 dark:text-emerald-400"
+        />
+        <span
+          class="font-semibold"
+          :class="
+            fullyCompliant
+              ? 'text-emerald-700 dark:text-emerald-300'
+              : 'text-surface-700 dark:text-surface-0'
+          "
           >{{ compliancePercent }}%</span
         >
         <span class="text-surface-400">·</span>

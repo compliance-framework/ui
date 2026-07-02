@@ -158,8 +158,12 @@ watch(
       Showing demo fixture data — the lineage API isn't connected.
     </p>
 
+    <!-- Vue Flow needs an explicitly-sized parent: its canvas is absolutely
+         positioned (zero intrinsic height), and the app layout mounts router-view
+         in a content-height wrapper, so `flex-1`/`h-full` would collapse to 0 and
+         fitView would clamp to minZoom. Pin a viewport-relative height instead. -->
     <div
-      class="min-h-0 flex-1 overflow-hidden rounded-lg border border-surface-200 dark:border-surface-700"
+      class="h-[70vh] min-h-[500px] overflow-hidden rounded-lg border border-surface-200 dark:border-surface-700"
     >
       <VueFlow
         class="h-full w-full"
