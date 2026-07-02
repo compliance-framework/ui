@@ -1,0 +1,134 @@
+<script setup lang="ts">
+import { computed } from 'vue';
+import { BIconExclamationTriangleFill } from 'bootstrap-icons-vue';
+import { heatStyle } from './heatScale';
+import RiskHeatBadge from './RiskHeatBadge.vue';
+import type { LineageNode } from '@/composables/useLineage/types';
+
+const props = defineProps<{
+  node: LineageNode;
+  /** Slightly denser layout for graph cards. */
+  compact?: boolean;
+}>();
+
+const heat = computed(() => heatStyle(props.node.risk.openScoreSum));
+
+// Map the node type to a short human tag + a subtle, dark-safe colour.
+const TYPE_TAGS: Record<string, { label: string; class: string }> = {
+  'standard-catalog': {
+    label: 'Standard',
+    class:
+      'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300',
+  },
+  'policy-catalog': {
+    label: 'Policy Catalog',
+    class:
+      'bg-violet-100 text-violet-700 dark:bg-violet-500/20 dark:text-violet-300',
+  },
+  'procedure-catalog': {
+    label: 'Procedure Catalog',
+    class: 'bg-sky-100 text-sky-700 dark:bg-sky-500/20 dark:text-sky-300',
+  },
+  group: {
+    label: 'Group',
+    class: 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300',
+  },
+  control: {
+    label: 'Control',
+    class: 'bg-zinc-100 text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300',
+  },
+  'policy-control': {
+    label: 'Policy',
+    class:
+      'bg-violet-100 text-violet-700 dark:bg-violet-500/20 dark:text-violet-300',
+  },
+  'procedure-control': {
+    label: 'Procedure',
+    class: 'bg-sky-100 text-sky-700 dark:bg-sky-500/20 dark:text-sky-300',
+  },
+};
+
+const typeTag = computed(
+  () =>
+    TYPE_TAGS[props.node.nodeType] ?? {
+      label: props.node.nodeType,
+      class:
+        'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300',
+    },
+);
+
+const compliancePercent = computed(() =>
+  Math.round(props.node.compliance.compliancePercent),
+);
+
+const warning = computed(() => {
+  const l = props.node.linkage;
+  if (l.unanchored) return 'Unanchored — not linked to any standard';
+  if (l.unmapped) return 'Unmapped — no linked controls';
+  return null;
+});
+</script>
+
+<template>
+  <div
+    class="flex min-w-0 flex-1 items-center gap-2"
+    :class="compact ? 'py-0.5' : 'py-1'"
+  >
+    <!-- Flame heat swatch (sum of open risk scores) -->
+    <span
+      class="h-3 w-3 flex-shrink-0 rounded-sm ring-1 ring-black/5"
+      :class="heat.swatchClass"
+      v-tooltip.top="`${heat.label} — open risk ${node.risk.openScoreSum}`"
+    ></span>
+
+    <!-- Title + type tag -->
+    <span
+      class="min-w-0 truncate font-medium text-surface-700 dark:text-surface-0"
+      :title="node.title"
+    >
+      {{ node.title }}
+    </span>
+    <span
+      class="flex-shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
+      :class="typeTag.class"
+    >
+      {{ typeTag.label }}
+    </span>
+
+    <!-- Unanchored / unmapped indicator -->
+    <BIconExclamationTriangleFill
+      v-if="warning"
+      class="h-4 w-4 flex-shrink-0 text-amber-500"
+      v-tooltip.top="warning"
+    />
+
+    <!-- Scores pushed to the right -->
+    <div class="ml-auto flex flex-shrink-0 items-center gap-2">
+      <!-- Compliance pill: percent + satisfied/notSatisfied/unknown -->
+      <span
+        class="inline-flex items-center gap-1.5 rounded-full bg-surface-100 px-2 py-0.5 text-xs whitespace-nowrap dark:bg-surface-800"
+        v-tooltip.top="
+          `${node.compliance.satisfied} satisfied · ${node.compliance.notSatisfied} not satisfied · ${node.compliance.unknown} unknown of ${node.compliance.totalControls}`
+        "
+      >
+        <span class="font-semibold text-surface-700 dark:text-surface-0"
+          >{{ compliancePercent }}%</span
+        >
+        <span class="text-surface-400">·</span>
+        <span class="font-medium text-emerald-600 dark:text-emerald-400">{{
+          node.compliance.satisfied
+        }}</span>
+        <span class="text-surface-300">/</span>
+        <span class="font-medium text-red-600 dark:text-red-400">{{
+          node.compliance.notSatisfied
+        }}</span>
+        <span class="text-surface-300">/</span>
+        <span class="font-medium text-slate-500 dark:text-slate-400">{{
+          node.compliance.unknown
+        }}</span>
+      </span>
+
+      <RiskHeatBadge :risk="node.risk" />
+    </div>
+  </div>
+</template>

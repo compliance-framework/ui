@@ -90,6 +90,11 @@ const links = ref<Array<NavigationItem>>([
     permission: { resource: RESOURCES.EVIDENCE, action: ACTIONS.READ },
   },
   {
+    name: 'lineage',
+    title: 'Lineage',
+    abbr: 'LIN',
+  },
+  {
     title: 'Implementation',
     children: [
       {

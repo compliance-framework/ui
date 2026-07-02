@@ -1058,6 +1058,22 @@ const publicRoutes = [
     component: () => import('@/views/SlackLinkCallbackView.vue'),
   },
   {
+    path: '/lineage',
+    name: 'lineage',
+    component: () => import('../views/lineage/LineageTreeView.vue'),
+    meta: {
+      requiresAuth: true,
+    },
+  },
+  {
+    path: '/lineage/graph',
+    name: 'lineage-graph',
+    component: () => import('../views/lineage/LineageGraphView.vue'),
+    meta: {
+      requiresAuth: true,
+    },
+  },
+  {
     path: 'logout',
     name: 'logout',
     component: () => import('@/views/LogoutView.vue'),
