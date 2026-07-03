@@ -57,19 +57,28 @@ const links = ref<Array<NavigationItem>>([
     abbr: 'CON',
   },
   {
-    name: 'workflow:index',
-    title: 'Workflow Definitions',
-    abbr: 'WD',
-    permission: {
-      resource: RESOURCES.WORKFLOW_DEFINITION,
-      action: ACTIONS.READ,
-    },
-  },
-  {
-    name: 'workflow-instances:index',
-    title: 'Workflow Instances',
-    abbr: 'WI',
-    permission: { resource: RESOURCES.WORKFLOW_INSTANCE, action: ACTIONS.READ },
+    title: 'Workflows',
+    abbr: 'WF',
+    children: [
+      {
+        name: 'workflow:index',
+        title: 'Workflow Definitions',
+        abbr: 'WD',
+        permission: {
+          resource: RESOURCES.WORKFLOW_DEFINITION,
+          action: ACTIONS.READ,
+        },
+      },
+      {
+        name: 'workflow-instances:index',
+        title: 'Workflow Instances',
+        abbr: 'WI',
+        permission: {
+          resource: RESOURCES.WORKFLOW_INSTANCE,
+          action: ACTIONS.READ,
+        },
+      },
+    ],
   },
   {
     name: 'risks:index',
