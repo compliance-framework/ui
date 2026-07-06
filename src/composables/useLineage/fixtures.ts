@@ -158,7 +158,7 @@ const cc61 = node({
     unanchored: false,
   },
   hasChildren: true,
-  childrenCount: 2,
+  childrenCount: 4,
 });
 
 // Shared policy node — appears under cc6.1 AND under the Acme policy catalog root.
@@ -412,6 +412,86 @@ const acmeProcedures = node({
   childrenCount: 1,
 });
 
+// --- risk + evidence leaves -------------------------------------------------
+// A control expands to its linked risks; a risk expands to its evidence.
+
+const riskCredLeak = node({
+  key: 'risk:demo-cred-leak',
+  nodeType: 'risk',
+  riskId: 'demo-cred-leak',
+  title: 'Credentials can be pushed to a repository without being blocked',
+  status: 'open',
+  score: 16,
+  severity: 'moderate',
+  likelihood: 'likely',
+  impact: 'high',
+  linkedEvidenceCount: 2,
+  reviewDeadline: '2026-08-15T00:00:00Z',
+  firstSeenAt: '2026-05-02T00:00:00Z',
+  lastSeenAt: '2026-07-01T00:00:00Z',
+  risk: {
+    openScoreSum: 16,
+    mutedScoreSum: 0,
+    counts: {
+      open: 1,
+      investigating: 0,
+      mitigatingPlanned: 0,
+      riskAccepted: 0,
+      mitigatingImplemented: 0,
+    },
+  },
+  hasChildren: true,
+  childrenCount: 2,
+});
+
+const riskStaleAccess = node({
+  key: 'risk:demo-stale-access',
+  nodeType: 'risk',
+  riskId: 'demo-stale-access',
+  title: 'Stale privileged access not reviewed within the policy window',
+  status: 'investigating',
+  score: 42,
+  severity: 'high',
+  likelihood: 'possible',
+  impact: 'critical',
+  linkedEvidenceCount: 0,
+  risk: {
+    openScoreSum: 42,
+    mutedScoreSum: 0,
+    counts: {
+      open: 0,
+      investigating: 1,
+      mitigatingPlanned: 0,
+      riskAccepted: 0,
+      mitigatingImplemented: 0,
+    },
+  },
+  hasChildren: false,
+  childrenCount: 0,
+});
+
+const evPushProtection = node({
+  key: 'evidence:demo-push-protection',
+  nodeType: 'evidence',
+  evidenceId: 'demo-push-protection',
+  title: 'Repository has secret-scanning push protection enabled',
+  status: 'not-satisfied',
+  reason: 'Push protection is disabled on 2 of 7 in-scope repositories.',
+  collectedAt: '2026-06-30T12:00:00Z',
+  expires: '2026-07-30T12:00:00Z',
+});
+
+const evMfaCheck = node({
+  key: 'evidence:demo-mfa-check',
+  nodeType: 'evidence',
+  evidenceId: 'demo-mfa-check',
+  title: 'MFA is enforced for all privileged accounts',
+  status: 'satisfied',
+  reason: 'All 12 privileged accounts have hardware MFA registered.',
+  collectedAt: '2026-07-01T09:00:00Z',
+  expires: '2026-08-01T09:00:00Z',
+});
+
 // --- graph wiring -----------------------------------------------------------
 
 const ALL_ROOTS: LineageNode[] = [
@@ -424,11 +504,19 @@ const ALL_ROOTS: LineageNode[] = [
 const CHILDREN: Record<string, LineageNode[]> = {
   'standard-catalog:soc2': [ccGroup],
   'group:soc2/cc': [cc61],
-  'control:soc2/cc6.1': [accessPolicy, accessReview],
+  // A control expands to its policies/procedures AND its linked risks.
+  'control:soc2/cc6.1': [
+    riskStaleAccess,
+    riskCredLeak,
+    accessPolicy,
+    accessReview,
+  ],
   'policy:acme/access-control': [mfaControl],
   'policy-catalog:acme': [accessPolicy, changeMgmt],
   'policy-catalog:vendor': [],
   'procedure-catalog:acme': [accessReview],
+  // A risk expands to its latest evidence per linked stream.
+  'risk:demo-cred-leak': [evPushProtection, evMfaCheck],
 };
 
 /** Which root type bucket a node belongs to, for the `types` scope filter. */

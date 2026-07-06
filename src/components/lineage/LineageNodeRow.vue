@@ -6,19 +6,28 @@ import {
 } from 'bootstrap-icons-vue';
 import { heatStyle } from './heatScale';
 import RiskHeatBadge from './RiskHeatBadge.vue';
+import {
+  nodeKind,
+  nodeSwatchClass,
+  nodeHeatScore,
+  riskStatusBadge,
+  severityBadge,
+  evidenceStateBadge,
+  formatDate,
+} from './nodeMeta';
 import type { LineageNode } from '@/composables/useLineage/types';
 
 const props = defineProps<{
   node: LineageNode;
   /**
    * Card layout: the title reads like a heading (larger, wraps to several lines)
-   * with type/compliance/risk on a row beneath. Default is the compact
-   * single-line row used by the tree.
+   * with the metadata on a row beneath. Default is the compact single-line row
+   * used by the tree.
    */
   card?: boolean;
 }>();
 
-const heat = computed(() => heatStyle(props.node.risk.openScoreSum));
+const kind = computed(() => nodeKind(props.node));
 
 // Map the node type to a short human tag + a subtle, dark-safe colour.
 const TYPE_TAGS: Record<string, { label: string; class: string }> = {
@@ -53,6 +62,14 @@ const TYPE_TAGS: Record<string, { label: string; class: string }> = {
     label: 'Procedure',
     class: 'bg-sky-100 text-sky-700 dark:bg-sky-500/20 dark:text-sky-300',
   },
+  risk: {
+    label: 'Risk',
+    class: 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300',
+  },
+  evidence: {
+    label: 'Evidence',
+    class: 'bg-teal-100 text-teal-700 dark:bg-teal-500/20 dark:text-teal-300',
+  },
 };
 
 const typeTag = computed(
@@ -64,23 +81,48 @@ const typeTag = computed(
     },
 );
 
+// --- structural ---
 const compliancePercent = computed(() =>
   Math.round(props.node.compliance.compliancePercent),
 );
-
-// "Everything correct": there are controls, none are not-satisfied, and none are
-// unknown — i.e. all evidence is satisfied. These nodes get a green pill.
 const fullyCompliant = computed(() => {
   const c = props.node.compliance;
   return c.totalControls > 0 && c.notSatisfied === 0 && c.unknown === 0;
 });
-
 const warning = computed(() => {
   const l = props.node.linkage;
   if (l.unanchored) return 'Unanchored — not linked to any standard';
   if (l.unmapped) return 'Unmapped — no linked controls';
   return null;
 });
+
+// --- risk ---
+const riskStatus = computed(() => riskStatusBadge(props.node.status));
+const severity = computed(() => severityBadge(props.node));
+const riskScore = computed(
+  () => props.node.score ?? props.node.risk?.openScoreSum ?? 0,
+);
+const scoreBadgeClass = computed(() => heatStyle(riskScore.value).badgeClass);
+const linkedEvidence = computed(
+  () => props.node.linkedEvidenceCount ?? props.node.childrenCount,
+);
+
+// --- evidence ---
+const evidenceState = computed(() => evidenceStateBadge(props.node.status));
+const collectedAt = computed(() => formatDate(props.node.collectedAt));
+const expires = computed(() => formatDate(props.node.expires));
+
+const swatchTooltip = computed(() =>
+  kind.value === 'evidence'
+    ? `Evidence state: ${props.node.status ?? 'unknown'}`
+    : `Open risk ${nodeHeatScore(props.node)}`,
+);
+
+// Shared badge base — colour comes from the per-kind class.
+const badgeBase =
+  'rounded-full px-2 py-0.5 text-xs font-semibold whitespace-nowrap';
+const chipBase =
+  'rounded-full bg-surface-100 px-2 py-0.5 text-xs text-surface-600 whitespace-nowrap dark:bg-surface-800 dark:text-surface-300';
 </script>
 
 <template>
@@ -96,11 +138,11 @@ const warning = computed(() => {
       class="flex min-w-0 gap-2"
       :class="card ? 'items-start' : 'flex-1 items-center'"
     >
-      <!-- Flame heat swatch (sum of open risk scores) -->
+      <!-- Heat / state swatch -->
       <span
         class="h-3 w-3 flex-shrink-0 rounded-sm ring-1 ring-black/5"
-        :class="[heat.swatchClass, card ? 'mt-1' : '']"
-        v-tooltip.top="`${heat.label} — open risk ${node.risk.openScoreSum}`"
+        :class="[nodeSwatchClass(node), card ? 'mt-1' : '']"
+        v-tooltip.top="swatchTooltip"
       ></span>
 
       <!-- Title: heading in card mode, single truncated line in row mode -->
@@ -134,7 +176,7 @@ const warning = computed(() => {
       />
     </div>
 
-    <!-- Metadata line: type (card) + compliance pill + risk badge -->
+    <!-- Metadata line -->
     <div
       :class="
         card
@@ -150,47 +192,88 @@ const warning = computed(() => {
         {{ typeTag.label }}
       </span>
 
-      <!-- Compliance pill: percent + satisfied/notSatisfied/unknown.
-           Turns green when everything is satisfied. -->
-      <span
-        class="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs whitespace-nowrap"
-        :class="
-          fullyCompliant
-            ? 'bg-emerald-100 dark:bg-emerald-500/25'
-            : 'bg-surface-100 dark:bg-surface-800'
-        "
-        v-tooltip.top="
-          `${node.compliance.satisfied} satisfied · ${node.compliance.notSatisfied} not satisfied · ${node.compliance.unknown} unknown of ${node.compliance.totalControls}`
-        "
-      >
-        <BIconCheckCircleFill
-          v-if="fullyCompliant"
-          class="h-3 w-3 text-emerald-600 dark:text-emerald-400"
-        />
+      <!-- STRUCTURAL: compliance pill + aggregate risk -->
+      <template v-if="kind === 'structural'">
+        <!-- Compliance pill: percent + satisfied/notSatisfied/unknown.
+             Turns green when everything is satisfied. -->
         <span
-          class="font-semibold"
+          class="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs whitespace-nowrap"
           :class="
             fullyCompliant
-              ? 'text-emerald-700 dark:text-emerald-300'
-              : 'text-surface-700 dark:text-surface-0'
+              ? 'bg-emerald-100 dark:bg-emerald-500/25'
+              : 'bg-surface-100 dark:bg-surface-800'
           "
-          >{{ compliancePercent }}%</span
+          v-tooltip.top="
+            `${node.compliance.satisfied} satisfied · ${node.compliance.notSatisfied} not satisfied · ${node.compliance.unknown} unknown of ${node.compliance.totalControls}`
+          "
         >
-        <span class="text-surface-400">·</span>
-        <span class="font-medium text-emerald-600 dark:text-emerald-400">{{
-          node.compliance.satisfied
-        }}</span>
-        <span class="text-surface-300">/</span>
-        <span class="font-medium text-red-600 dark:text-red-400">{{
-          node.compliance.notSatisfied
-        }}</span>
-        <span class="text-surface-300">/</span>
-        <span class="font-medium text-slate-500 dark:text-slate-400">{{
-          node.compliance.unknown
-        }}</span>
-      </span>
+          <BIconCheckCircleFill
+            v-if="fullyCompliant"
+            class="h-3 w-3 text-emerald-600 dark:text-emerald-400"
+          />
+          <span
+            class="font-semibold"
+            :class="
+              fullyCompliant
+                ? 'text-emerald-700 dark:text-emerald-300'
+                : 'text-surface-700 dark:text-surface-0'
+            "
+            >{{ compliancePercent }}%</span
+          >
+          <span class="text-surface-400">·</span>
+          <span class="font-medium text-emerald-600 dark:text-emerald-400">{{
+            node.compliance.satisfied
+          }}</span>
+          <span class="text-surface-300">/</span>
+          <span class="font-medium text-red-600 dark:text-red-400">{{
+            node.compliance.notSatisfied
+          }}</span>
+          <span class="text-surface-300">/</span>
+          <span class="font-medium text-slate-500 dark:text-slate-400">{{
+            node.compliance.unknown
+          }}</span>
+        </span>
 
-      <RiskHeatBadge :risk="node.risk" />
+        <RiskHeatBadge :risk="node.risk" />
+      </template>
+
+      <!-- RISK: status + severity + score + linked evidence -->
+      <template v-else-if="kind === 'risk'">
+        <span :class="[badgeBase, riskStatus.class]">{{
+          riskStatus.label
+        }}</span>
+        <span v-if="severity" :class="[badgeBase, severity.class]">{{
+          severity.label
+        }}</span>
+        <span :class="[badgeBase, scoreBadgeClass]" v-tooltip.top="'Risk score'"
+          >score {{ riskScore }}</span
+        >
+        <span v-if="linkedEvidence" :class="chipBase"
+          >{{ linkedEvidence }} evidence</span
+        >
+      </template>
+
+      <!-- EVIDENCE: state + collected/expires + reason -->
+      <template v-else>
+        <span :class="[badgeBase, evidenceState.class]">{{
+          evidenceState.label
+        }}</span>
+        <span v-if="collectedAt" :class="chipBase"
+          >collected {{ collectedAt }}</span
+        >
+        <span
+          v-if="expires"
+          :class="chipBase"
+          v-tooltip.top="'Evidence expires'"
+          >expires {{ expires }}</span
+        >
+        <span
+          v-if="node.reason"
+          class="max-w-[200px] truncate text-xs text-surface-500 italic dark:text-surface-400"
+          :title="node.reason"
+          >{{ node.reason }}</span
+        >
+      </template>
     </div>
   </div>
 </template>

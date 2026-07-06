@@ -9,7 +9,9 @@ export type LineageNodeType =
   | 'group'
   | 'control'
   | 'policy-control'
-  | 'procedure-control';
+  | 'procedure-control'
+  | 'risk'
+  | 'evidence';
 
 export interface LineageCompliance {
   totalControls: number;
@@ -47,12 +49,40 @@ export interface LineageNode {
   nodeType: LineageNodeType | string;
   catalogId?: string;
   controlId?: string;
+  groupId?: string;
   title: string;
   compliance: LineageCompliance;
   risk: LineageRisk;
   linkage: LineageLinkage;
   hasChildren: boolean;
   childrenCount: number;
+
+  // How this node links to its parent, e.g. 'has-risk' | 'has-evidence'.
+  relationship?: string;
+
+  // --- risk nodes (nodeType === 'risk') ---
+  riskId?: string;
+  /** Risk score (also mirrored in `risk.openScoreSum` while the risk is open). */
+  score?: number;
+  /** Severity label, e.g. 'low' | 'moderate' | 'high' | 'critical'. */
+  severity?: string;
+  likelihood?: string;
+  impact?: string;
+  linkedEvidenceCount?: number;
+  reviewDeadline?: string;
+  lastReviewedAt?: string;
+  firstSeenAt?: string;
+  lastSeenAt?: string;
+
+  // --- evidence nodes (nodeType === 'evidence') ---
+  evidenceId?: string;
+  /** Reason / rationale for the evidence state. */
+  reason?: string;
+  collectedAt?: string;
+  expires?: string;
+
+  // `status` is shared: risk status ('open', …) OR evidence state ('not-satisfied', …).
+  status?: string;
 }
 
 /** Scope filters shared by tree, graph and dashboard widget. */

@@ -4,7 +4,7 @@ import LineageScopeBar from '@/components/lineage/LineageScopeBar.vue';
 import LineageViewSwitch from '@/components/lineage/LineageViewSwitch.vue';
 import LineageNodeRow from '@/components/lineage/LineageNodeRow.vue';
 import LineageNodeDrawer from '@/components/lineage/LineageNodeDrawer.vue';
-import { heatStyle } from '@/components/lineage/heatScale';
+import { nodeCardClass } from '@/components/lineage/nodeMeta';
 import { useLineage } from '@/composables/useLineage';
 import type { LineageNode } from '@/composables/useLineage/types';
 import { useLineageScopeStore } from '@/stores/lineageScope';
@@ -276,7 +276,7 @@ watch(
             :ref="(el) => setBoxRef(i, node.key, el)"
             class="cursor-pointer rounded-lg border border-l-4 border-surface-200 p-3 transition hover:shadow-md dark:border-surface-700"
             :class="[
-              heatStyle(node.risk.openScoreSum).nodeClass,
+              nodeCardClass(node),
               col.selectedKey === node.key
                 ? 'ring-2 ring-primary ring-offset-1 dark:ring-offset-surface-900'
                 : '',

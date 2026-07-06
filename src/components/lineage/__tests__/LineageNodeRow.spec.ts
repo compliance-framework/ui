@@ -106,3 +106,48 @@ describe('LineageNodeRow — fully-compliant green pill', () => {
     expect(wrapper.html()).not.toContain('bg-emerald-100');
   });
 });
+
+describe('LineageNodeRow — risk & evidence nodes', () => {
+  it('renders a risk node with status, severity and score (no compliance pill)', () => {
+    const riskNode: LineageNode = {
+      ...node({}),
+      nodeType: 'risk',
+      title: 'A risk',
+      status: 'open',
+      score: 42,
+      severity: 'high',
+      linkedEvidenceCount: 3,
+      hasChildren: true,
+      childrenCount: 3,
+    };
+    const html = mount(LineageNodeRow, {
+      props: { node: riskNode, card: true },
+      global,
+    }).html();
+    expect(html).toContain('Risk'); // type tag
+    expect(html).toContain('open'); // status badge
+    expect(html).toContain('high'); // severity badge
+    expect(html).toContain('score 42');
+    expect(html).toContain('3 evidence');
+    expect(html).not.toContain('bg-emerald-100'); // no structural green pill
+  });
+
+  it('renders an evidence node with its state and reason', () => {
+    const evidenceNode: LineageNode = {
+      ...node({}),
+      nodeType: 'evidence',
+      title: 'Some evidence',
+      status: 'not-satisfied',
+      reason: 'push protection disabled',
+      collectedAt: '2026-07-01T00:00:00Z',
+    };
+    const html = mount(LineageNodeRow, {
+      props: { node: evidenceNode, card: true },
+      global,
+    }).html();
+    expect(html).toContain('Evidence'); // type tag
+    expect(html).toContain('not-satisfied'); // state badge
+    expect(html).toContain('push protection disabled'); // reason
+    expect(html).toContain('collected');
+  });
+});
