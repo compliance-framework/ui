@@ -245,7 +245,7 @@ watch(
           v-for="(col, i) in columns"
           :key="i"
           :ref="(el) => setContainerRef(i, el)"
-          class="relative z-10 flex w-[344px] flex-shrink-0 flex-col gap-2 rounded-xl border border-surface-200 bg-surface-0/70 p-3 shadow-sm dark:border-surface-700 dark:bg-surface-900/60"
+          class="relative z-10 flex w-[380px] flex-shrink-0 flex-col gap-2 rounded-xl border border-surface-200 bg-surface-0/70 p-3 shadow-sm dark:border-surface-700 dark:bg-surface-900/60"
         >
           <div
             class="truncate text-xs font-semibold tracking-wide text-surface-500 uppercase dark:text-surface-400"
@@ -274,7 +274,7 @@ watch(
             v-for="node in shownNodes(col)"
             :key="node.key"
             :ref="(el) => setBoxRef(i, node.key, el)"
-            class="cursor-pointer rounded-lg border border-l-4 border-surface-200 p-2 transition hover:shadow-md dark:border-surface-700"
+            class="cursor-pointer rounded-lg border border-l-4 border-surface-200 p-3 transition hover:shadow-md dark:border-surface-700"
             :class="[
               heatStyle(node.risk.openScoreSum).nodeClass,
               col.selectedKey === node.key
@@ -283,7 +283,7 @@ watch(
             ]"
             @click="onBoxClick(i, node)"
           >
-            <LineageNodeRow :node="node" compact />
+            <LineageNodeRow :node="node" card />
             <div
               class="mt-1 flex items-center justify-between pl-5 text-xs text-surface-500 dark:text-surface-400"
             >

@@ -10,8 +10,12 @@ import type { LineageNode } from '@/composables/useLineage/types';
 
 const props = defineProps<{
   node: LineageNode;
-  /** Slightly denser layout for graph cards. */
-  compact?: boolean;
+  /**
+   * Card layout: the title reads like a heading (larger, wraps to several lines)
+   * with type/compliance/risk on a row beneath. Default is the compact
+   * single-line row used by the tree.
+   */
+  card?: boolean;
 }>();
 
 const heat = computed(() => heatStyle(props.node.risk.openScoreSum));
@@ -81,39 +85,71 @@ const warning = computed(() => {
 
 <template>
   <div
-    class="flex min-w-0 flex-1 items-center gap-2"
-    :class="compact ? 'py-0.5' : 'py-1'"
+    :class="
+      card
+        ? 'flex flex-col gap-2'
+        : 'flex min-w-0 flex-1 items-center gap-2 py-1'
+    "
   >
-    <!-- Flame heat swatch (sum of open risk scores) -->
-    <span
-      class="h-3 w-3 flex-shrink-0 rounded-sm ring-1 ring-black/5"
-      :class="heat.swatchClass"
-      v-tooltip.top="`${heat.label} — open risk ${node.risk.openScoreSum}`"
-    ></span>
-
-    <!-- Title + type tag -->
-    <span
-      class="min-w-0 truncate font-medium text-surface-700 dark:text-surface-0"
-      :title="node.title"
+    <!-- Title line -->
+    <div
+      class="flex min-w-0 gap-2"
+      :class="card ? 'items-start' : 'flex-1 items-center'"
     >
-      {{ node.title }}
-    </span>
-    <span
-      class="flex-shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
-      :class="typeTag.class"
+      <!-- Flame heat swatch (sum of open risk scores) -->
+      <span
+        class="h-3 w-3 flex-shrink-0 rounded-sm ring-1 ring-black/5"
+        :class="[heat.swatchClass, card ? 'mt-1' : '']"
+        v-tooltip.top="`${heat.label} — open risk ${node.risk.openScoreSum}`"
+      ></span>
+
+      <!-- Title: heading in card mode, single truncated line in row mode -->
+      <span
+        class="min-w-0"
+        :class="
+          card
+            ? 'line-clamp-4 text-sm leading-snug font-semibold text-surface-800 dark:text-surface-0'
+            : 'truncate font-medium text-surface-700 dark:text-surface-0'
+        "
+        :title="node.title"
+      >
+        {{ node.title }}
+      </span>
+
+      <!-- Row mode keeps the type tag inline; card mode moves it below. -->
+      <span
+        v-if="!card"
+        class="flex-shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold tracking-wide uppercase"
+        :class="typeTag.class"
+      >
+        {{ typeTag.label }}
+      </span>
+
+      <!-- Unanchored / unmapped indicator -->
+      <BIconExclamationTriangleFill
+        v-if="warning"
+        class="h-4 w-4 flex-shrink-0 text-amber-500"
+        :class="card ? 'mt-0.5' : ''"
+        v-tooltip.top="warning"
+      />
+    </div>
+
+    <!-- Metadata line: type (card) + compliance pill + risk badge -->
+    <div
+      :class="
+        card
+          ? 'flex flex-wrap items-center gap-2 pl-5'
+          : 'ml-auto flex flex-shrink-0 items-center gap-2'
+      "
     >
-      {{ typeTag.label }}
-    </span>
+      <span
+        v-if="card"
+        class="rounded px-1.5 py-0.5 text-[10px] font-semibold tracking-wide uppercase"
+        :class="typeTag.class"
+      >
+        {{ typeTag.label }}
+      </span>
 
-    <!-- Unanchored / unmapped indicator -->
-    <BIconExclamationTriangleFill
-      v-if="warning"
-      class="h-4 w-4 flex-shrink-0 text-amber-500"
-      v-tooltip.top="warning"
-    />
-
-    <!-- Scores pushed to the right -->
-    <div class="ml-auto flex flex-shrink-0 items-center gap-2">
       <!-- Compliance pill: percent + satisfied/notSatisfied/unknown.
            Turns green when everything is satisfied. -->
       <span
