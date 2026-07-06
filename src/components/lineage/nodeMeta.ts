@@ -148,6 +148,30 @@ export function nodeCardClass(node: LineageNode): string {
   return heatStyle(nodeHeatScore(node)).nodeClass;
 }
 
+/** The id encoded in a composite key, e.g. "risk:<uuid>" -> "<uuid>". */
+function idFromKey(key: string): string {
+  const i = key.indexOf(':');
+  return i >= 0 ? key.slice(i + 1) : key;
+}
+
+/**
+ * Router target for a node's own detail page — risk and evidence nodes link to
+ * their existing DetailViews; structural nodes have none (open the drawer instead).
+ */
+export function nodeDetailRoute(
+  node: LineageNode,
+): { name: string; params: Record<string, string> } | null {
+  if (node.nodeType === 'risk') {
+    const riskId = node.riskId || idFromKey(node.key);
+    return riskId ? { name: 'risks:detail', params: { riskId } } : null;
+  }
+  if (node.nodeType === 'evidence') {
+    const id = node.evidenceId || idFromKey(node.key);
+    return id ? { name: 'evidence:view', params: { id } } : null;
+  }
+  return null;
+}
+
 /** Short, safe date formatting (returns null for missing/invalid input). */
 export function formatDate(iso?: string): string | null {
   if (!iso) return null;

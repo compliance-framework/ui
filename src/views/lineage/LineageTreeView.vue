@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { onMounted, ref, watch } from 'vue';
+import { useRouter } from 'vue-router';
 import Tree from '@/volt/Tree.vue';
 import LineageScopeBar from '@/components/lineage/LineageScopeBar.vue';
 import LineageViewSwitch from '@/components/lineage/LineageViewSwitch.vue';
 import LineageNodeRow from '@/components/lineage/LineageNodeRow.vue';
 import LineageNodeDrawer from '@/components/lineage/LineageNodeDrawer.vue';
+import { nodeDetailRoute } from '@/components/lineage/nodeMeta';
 import { useLineage } from '@/composables/useLineage';
 import type {
   LineageNode,
@@ -12,6 +14,7 @@ import type {
 } from '@/composables/useLineage/types';
 import { useLineageScopeStore } from '@/stores/lineageScope';
 
+const router = useRouter();
 const scopeStore = useLineageScopeStore();
 const { fetchRoots, fetchChildren, clearCache, usingFixtures } = useLineage();
 
@@ -59,6 +62,12 @@ async function onNodeExpand(node: LineageTreeNode) {
 }
 
 function onNodeSelect(node: LineageTreeNode) {
+  // Risk / evidence nodes open their own DetailView; structural nodes use the drawer.
+  const route = nodeDetailRoute(node.data);
+  if (route) {
+    router.push(route);
+    return;
+  }
   selectedNode.value = node.data;
   drawerVisible.value = true;
 }

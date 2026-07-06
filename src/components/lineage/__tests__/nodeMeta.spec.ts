@@ -9,6 +9,7 @@ import {
   severityBadge,
   nodeSwatchClass,
   nodeCardClass,
+  nodeDetailRoute,
   formatDate,
 } from '../nodeMeta';
 import type { LineageNode } from '@/composables/useLineage/types';
@@ -138,6 +139,31 @@ describe('swatch / card classes', () => {
     expect(nodeCardClass(base({ nodeType: 'risk', score: 55 }))).toContain(
       'red',
     );
+  });
+});
+
+describe('nodeDetailRoute', () => {
+  it('routes risk nodes to risks:detail with riskId', () => {
+    expect(nodeDetailRoute(base({ nodeType: 'risk', riskId: 'r-1' }))).toEqual({
+      name: 'risks:detail',
+      params: { riskId: 'r-1' },
+    });
+  });
+
+  it('falls back to the id encoded in the key', () => {
+    expect(
+      nodeDetailRoute(base({ nodeType: 'risk', key: 'risk:r-2', riskId: '' })),
+    ).toEqual({ name: 'risks:detail', params: { riskId: 'r-2' } });
+  });
+
+  it('routes evidence nodes to evidence:view with id', () => {
+    expect(
+      nodeDetailRoute(base({ nodeType: 'evidence', evidenceId: 'e-1' })),
+    ).toEqual({ name: 'evidence:view', params: { id: 'e-1' } });
+  });
+
+  it('returns null for structural nodes', () => {
+    expect(nodeDetailRoute(base({ nodeType: 'control' }))).toBeNull();
   });
 });
 
