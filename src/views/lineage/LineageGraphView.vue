@@ -1,128 +1,156 @@
 <script setup lang="ts">
-import { nextTick, onMounted, ref, watch } from 'vue';
-import { VueFlow, useVueFlow } from '@vue-flow/core';
-import type { Edge, Node } from '@vue-flow/core';
-import '@vue-flow/core/dist/style.css';
-import '@vue-flow/core/dist/theme-default.css';
+import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import LineageScopeBar from '@/components/lineage/LineageScopeBar.vue';
 import LineageViewSwitch from '@/components/lineage/LineageViewSwitch.vue';
+import LineageNodeRow from '@/components/lineage/LineageNodeRow.vue';
 import LineageNodeDrawer from '@/components/lineage/LineageNodeDrawer.vue';
-import LineageGraphNode from './LineageGraphNode.vue';
-import { layoutGraph } from './layout';
+import { heatStyle } from '@/components/lineage/heatScale';
 import { useLineage } from '@/composables/useLineage';
-import type {
-  LineageEdgeKind,
-  LineageNode,
-} from '@/composables/useLineage/types';
+import type { LineageNode } from '@/composables/useLineage/types';
 import { useLineageScopeStore } from '@/stores/lineageScope';
+import { COLUMN_PAGE_SIZE, worstFirst } from './ranking';
+
+// One column = the (worst-first) children of a selected node, revealed 5 at a
+// time. columns[0] holds the roots. Selecting a box in column i drops everything
+// to its right and opens column i+1 with that node's children.
+interface Column {
+  parentKey: string | null;
+  parentTitle: string;
+  nodes: LineageNode[];
+  revealed: number;
+  selectedKey: string | null;
+}
 
 const scopeStore = useLineageScopeStore();
 const { fetchRootNodes, fetchChildNodes, clearCache, usingFixtures } =
   useLineage();
-const { setNodes, setEdges, fitView, onNodeClick, onNodesInitialized } =
-  useVueFlow();
 
-// Source of truth for the DAG (deduped by key so a shared node renders ONCE).
-const graphNodes = new Map<string, LineageNode>();
-const graphEdges = new Map<
-  string,
-  { id: string; source: string; target: string; kind: LineageEdgeKind }
->();
-const expanded = new Set<string>();
-
+const columns = ref<Column[]>([]);
 const loading = ref(false);
 const selectedNode = ref<LineageNode | null>(null);
 const drawerVisible = ref(false);
 
-// Procedures are documented, not implemented → dashed, de-emphasised edge.
-function edgeKind(child: LineageNode): LineageEdgeKind {
-  return String(child.nodeType).startsWith('procedure')
-    ? 'documents'
-    : 'implements';
+// Refs used to draw the single connector arrow between a selected box and the
+// container it opened. Kept in plain Maps (not reactive) — we read them on demand.
+const rowEl = ref<HTMLElement>();
+const boxEls = new Map<string, HTMLElement>();
+const containerEls = new Map<number, HTMLElement>();
+const arrows = ref<string[]>([]);
+
+function setBoxRef(colIndex: number, key: string, el: unknown) {
+  const k = `${colIndex}:${key}`;
+  if (el) boxEls.set(k, el as HTMLElement);
+  else boxEls.delete(k);
 }
-
-function rebuild() {
-  const rawNodes: Node[] = [...graphNodes.values()].map((n) => ({
-    id: n.key,
-    type: 'lineage',
-    position: { x: 0, y: 0 },
-    data: { node: n, expanded: expanded.has(n.key) },
-  }));
-
-  const rawEdges: Edge[] = [...graphEdges.values()].map((e) => {
-    const documents = e.kind === 'documents';
-    return {
-      id: e.id,
-      source: e.source,
-      target: e.target,
-      class: documents ? 'lineage-edge-documents' : 'lineage-edge-implements',
-      style: documents
-        ? {
-            strokeDasharray: '6 4',
-            stroke: '#94a3b8',
-            strokeWidth: 1.5,
-            opacity: 0.7,
-          }
-        : { stroke: '#64748b', strokeWidth: 1.5 },
-    };
-  });
-
-  const layouted = layoutGraph(rawNodes, rawEdges);
-  setNodes(layouted);
-  setEdges(rawEdges);
-  nextTick(() => fitView({ padding: 0.2, minZoom: 0.5, maxZoom: 1 }));
-}
-
-function reset() {
-  graphNodes.clear();
-  graphEdges.clear();
-  expanded.clear();
+function setContainerRef(colIndex: number, el: unknown) {
+  if (el) containerEls.set(colIndex, el as HTMLElement);
+  else containerEls.delete(colIndex);
 }
 
 async function loadRoots() {
   loading.value = true;
-  reset();
+  boxEls.clear();
+  containerEls.clear();
   try {
     const roots = await fetchRootNodes(scopeStore.scope);
-    for (const r of roots) graphNodes.set(r.key, r);
-    rebuild();
+    columns.value = [
+      {
+        parentKey: null,
+        parentTitle: 'Top level',
+        nodes: worstFirst(roots),
+        revealed: COLUMN_PAGE_SIZE,
+        selectedKey: null,
+      },
+    ];
   } finally {
     loading.value = false;
   }
+  await nextTick();
+  computeArrows();
 }
 
-async function expandNode(key: string) {
-  if (expanded.has(key)) return;
-  const children = await fetchChildNodes(key, scopeStore.scope);
-  for (const c of children) {
-    if (!graphNodes.has(c.key)) graphNodes.set(c.key, c);
-    const edgeId = `${key}->${c.key}`;
-    if (!graphEdges.has(edgeId)) {
-      graphEdges.set(edgeId, {
-        id: edgeId,
-        source: key,
-        target: c.key,
-        kind: edgeKind(c),
-      });
-    }
+async function selectNode(colIndex: number, node: LineageNode) {
+  columns.value[colIndex].selectedKey = node.key;
+  // Drop deeper columns (re-selecting replaces what was to the right).
+  columns.value = columns.value.slice(0, colIndex + 1);
+  if (node.hasChildren) {
+    const children = await fetchChildNodes(node.key, scopeStore.scope);
+    columns.value.push({
+      parentKey: node.key,
+      parentTitle: node.title,
+      nodes: worstFirst(children),
+      revealed: COLUMN_PAGE_SIZE,
+      selectedKey: null,
+    });
   }
-  expanded.add(key);
-  rebuild();
+  await nextTick();
+  computeArrows();
+  // Reveal the freshly-opened column.
+  containerEls
+    .get(columns.value.length - 1)
+    ?.scrollIntoView({ inline: 'end', block: 'nearest', behavior: 'smooth' });
 }
 
-onNodeClick(({ node }) => {
-  const data = graphNodes.get(node.id);
-  if (data) {
-    selectedNode.value = data;
-    drawerVisible.value = true;
+function onBoxClick(colIndex: number, node: LineageNode) {
+  if (node.hasChildren) {
+    selectNode(colIndex, node);
+  } else {
+    // Leaf: just highlight + show details.
+    columns.value[colIndex].selectedKey = node.key;
+    columns.value = columns.value.slice(0, colIndex + 1);
+    openDetails(node);
+    nextTick().then(computeArrows);
   }
-  expandNode(node.id);
+}
+
+function showMore(colIndex: number) {
+  columns.value[colIndex].revealed += COLUMN_PAGE_SIZE;
+  nextTick().then(computeArrows);
+}
+
+function openDetails(node: LineageNode) {
+  selectedNode.value = node;
+  drawerVisible.value = true;
+}
+
+// One arrow per adjacent (selected-box → next-container) pair. Coordinates are
+// relative to rowEl, and the SVG lives inside rowEl, so they stay correct while
+// the area scrolls.
+function computeArrows() {
+  const row = rowEl.value;
+  if (!row) {
+    arrows.value = [];
+    return;
+  }
+  const base = row.getBoundingClientRect();
+  const out: string[] = [];
+  for (let i = 0; i < columns.value.length - 1; i++) {
+    const sel = columns.value[i].selectedKey;
+    if (!sel) continue;
+    const b = boxEls.get(`${i}:${sel}`);
+    const c = containerEls.get(i + 1);
+    if (!b || !c) continue;
+    const br = b.getBoundingClientRect();
+    const cr = c.getBoundingClientRect();
+    const x1 = br.right - base.left;
+    const y1 = br.top - base.top + br.height / 2;
+    const x2 = cr.left - base.left;
+    // Enter the container near the selected box's height, clamped inside it.
+    const y2 = Math.min(
+      Math.max(y1, cr.top - base.top + 14),
+      cr.bottom - base.top - 14,
+    );
+    const dx = Math.max((x2 - x1) / 2, 24);
+    out.push(`M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`);
+  }
+  arrows.value = out;
+}
+
+onMounted(() => {
+  loadRoots();
+  window.addEventListener('resize', computeArrows);
 });
-
-// Fit once nodes have real measured dimensions.
-onNodesInitialized(() => fitView({ padding: 0.2, minZoom: 0.5, maxZoom: 1 }));
-
-onMounted(loadRoots);
+onUnmounted(() => window.removeEventListener('resize', computeArrows));
 
 watch(
   () => scopeStore.scope,
@@ -142,8 +170,9 @@ watch(
           Compliance Lineage — Graph
         </h1>
         <p class="text-sm text-surface-500 dark:text-surface-400">
-          The same DAG as a node-link graph. Click a node to expand its children
-          and open details. Solid = implements, dashed = documents.
+          The worst {{ COLUMN_PAGE_SIZE }} nodes at each level, worst first by
+          open risk. Click a box to drill into its children; use “…more” to
+          reveal more.
         </p>
       </div>
       <LineageViewSwitch active="graph" />
@@ -158,23 +187,100 @@ watch(
       Showing demo fixture data — the lineage API isn't connected.
     </p>
 
-    <!-- Vue Flow needs an explicitly-sized parent: its canvas is absolutely
-         positioned (zero intrinsic height), and the app layout mounts router-view
-         in a content-height wrapper, so `flex-1`/`h-full` would collapse to 0 and
-         fitView would clamp to minZoom. Pin a viewport-relative height instead. -->
     <div
-      class="h-[70vh] min-h-[500px] overflow-hidden rounded-lg border border-surface-200 dark:border-surface-700"
+      class="min-h-[500px] flex-1 overflow-auto rounded-lg border border-surface-200 bg-surface-50/40 dark:border-surface-700 dark:bg-surface-950/40"
     >
-      <VueFlow
-        class="h-full w-full"
-        :min-zoom="0.2"
-        :max-zoom="2"
-        fit-view-on-init
-      >
-        <template #node-lineage="props">
-          <LineageGraphNode :data="props.data" />
-        </template>
-      </VueFlow>
+      <div ref="rowEl" class="relative flex min-w-max items-start gap-16 p-6">
+        <!-- Connector arrows (behind the columns; they live in the gaps) -->
+        <svg
+          class="pointer-events-none absolute inset-0 h-full w-full overflow-visible"
+        >
+          <defs>
+            <marker
+              id="lineage-arrowhead"
+              markerWidth="9"
+              markerHeight="9"
+              refX="7"
+              refY="4.5"
+              orient="auto"
+            >
+              <path d="M0,0 L9,4.5 L0,9 Z" fill="#94a3b8" />
+            </marker>
+          </defs>
+          <path
+            v-for="(d, idx) in arrows"
+            :key="idx"
+            :d="d"
+            fill="none"
+            stroke="#94a3b8"
+            stroke-width="2"
+            marker-end="url(#lineage-arrowhead)"
+          />
+        </svg>
+
+        <!-- Columns -->
+        <div
+          v-for="(col, i) in columns"
+          :key="i"
+          :ref="(el) => setContainerRef(i, el)"
+          class="relative z-10 flex w-[344px] flex-shrink-0 flex-col gap-2 rounded-xl border border-surface-200 bg-surface-0/70 p-3 shadow-sm dark:border-surface-700 dark:bg-surface-900/60"
+        >
+          <div
+            class="truncate text-xs font-semibold tracking-wide text-surface-500 uppercase dark:text-surface-400"
+          >
+            {{ i === 0 ? 'Top level' : col.parentTitle }}
+          </div>
+
+          <div
+            v-for="node in col.nodes.slice(0, col.revealed)"
+            :key="node.key"
+            :ref="(el) => setBoxRef(i, node.key, el)"
+            class="cursor-pointer rounded-lg border border-l-4 border-surface-200 p-2 transition hover:shadow-md dark:border-surface-700"
+            :class="[
+              heatStyle(node.risk.openScoreSum).nodeClass,
+              col.selectedKey === node.key
+                ? 'ring-2 ring-primary ring-offset-1 dark:ring-offset-surface-900'
+                : '',
+            ]"
+            @click="onBoxClick(i, node)"
+          >
+            <LineageNodeRow :node="node" compact />
+            <div
+              class="mt-1 flex items-center justify-between pl-5 text-xs text-surface-500 dark:text-surface-400"
+            >
+              <span v-if="node.hasChildren"
+                >{{ node.childrenCount }} children ›</span
+              >
+              <span v-else class="italic">leaf</span>
+              <button
+                class="rounded px-1.5 py-0.5 hover:bg-surface-200 dark:hover:bg-surface-700"
+                @click.stop="openDetails(node)"
+              >
+                details
+              </button>
+            </div>
+          </div>
+
+          <button
+            v-if="col.nodes.length > col.revealed"
+            class="mt-1 rounded-md border border-dashed border-surface-300 px-2 py-1.5 text-xs font-medium text-surface-600 hover:bg-surface-100 dark:border-surface-600 dark:text-surface-300 dark:hover:bg-surface-800"
+            @click="showMore(i)"
+          >
+            …{{
+              Math.min(COLUMN_PAGE_SIZE, col.nodes.length - col.revealed)
+            }}
+            more (showing {{ Math.min(col.revealed, col.nodes.length) }} of
+            {{ col.nodes.length }})
+          </button>
+
+          <p
+            v-if="!col.nodes.length"
+            class="text-sm text-surface-400 italic dark:text-surface-500"
+          >
+            {{ loading && i === 0 ? 'Loading…' : 'No children.' }}
+          </p>
+        </div>
+      </div>
     </div>
 
     <LineageNodeDrawer
@@ -185,10 +291,3 @@ watch(
     />
   </div>
 </template>
-
-<style>
-/* Vue Flow renders on a light canvas; give it a surface that works in dark mode. */
-.vue-flow__pane {
-  background-color: transparent;
-}
-</style>
