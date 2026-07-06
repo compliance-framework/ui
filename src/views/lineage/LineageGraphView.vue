@@ -19,6 +19,7 @@ interface Column {
   nodes: LineageNode[];
   revealed: number;
   selectedKey: string | null;
+  query: string;
 }
 
 const scopeStore = useLineageScopeStore();
@@ -60,6 +61,7 @@ async function loadRoots() {
         nodes: worstFirst(roots),
         revealed: COLUMN_PAGE_SIZE,
         selectedKey: null,
+        query: '',
       },
     ];
   } finally {
@@ -81,6 +83,7 @@ async function selectNode(colIndex: number, node: LineageNode) {
       nodes: worstFirst(children),
       revealed: COLUMN_PAGE_SIZE,
       selectedKey: null,
+      query: '',
     });
   }
   await nextTick();
@@ -111,6 +114,25 @@ function showMore(colIndex: number) {
 function openDetails(node: LineageNode) {
   selectedNode.value = node;
   drawerVisible.value = true;
+}
+
+// Boxes to render in a column: while a search is active, show every match (so the
+// user can reach nodes beyond the worst-N page); otherwise the worst-N page.
+function shownNodes(col: Column): LineageNode[] {
+  const q = col.query.trim().toLowerCase();
+  if (q) {
+    return col.nodes.filter(
+      (n) =>
+        n.title.toLowerCase().includes(q) ||
+        (n.controlId ?? '').toLowerCase().includes(q),
+    );
+  }
+  return col.nodes.slice(0, col.revealed);
+}
+
+// Filtering changes column height → the connector arrows may need to move.
+function onSearch() {
+  nextTick().then(computeArrows);
 }
 
 // One arrow per adjacent (selected-box → next-container) pair. Coordinates are
@@ -231,8 +253,25 @@ watch(
             {{ i === 0 ? 'Top level' : col.parentTitle }}
           </div>
 
+          <input
+            v-model="col.query"
+            type="search"
+            :placeholder="`Search ${col.nodes.length} node${col.nodes.length === 1 ? '' : 's'}…`"
+            class="w-full rounded-md border border-surface-300 bg-surface-0 px-2 py-1 text-xs text-surface-700 placeholder:text-surface-400 focus:border-primary focus:outline-none dark:border-surface-600 dark:bg-surface-950 dark:text-surface-0 dark:placeholder:text-surface-500"
+            @input="onSearch"
+          />
+
+          <p
+            v-if="col.query.trim()"
+            class="text-[11px] text-surface-400 dark:text-surface-500"
+          >
+            {{ shownNodes(col).length }} match{{
+              shownNodes(col).length === 1 ? '' : 'es'
+            }}
+          </p>
+
           <div
-            v-for="node in col.nodes.slice(0, col.revealed)"
+            v-for="node in shownNodes(col)"
             :key="node.key"
             :ref="(el) => setBoxRef(i, node.key, el)"
             class="cursor-pointer rounded-lg border border-l-4 border-surface-200 p-2 transition hover:shadow-md dark:border-surface-700"
@@ -262,7 +301,7 @@ watch(
           </div>
 
           <button
-            v-if="col.nodes.length > col.revealed"
+            v-if="!col.query.trim() && col.nodes.length > col.revealed"
             class="mt-1 rounded-md border border-dashed border-surface-300 px-2 py-1.5 text-xs font-medium text-surface-600 hover:bg-surface-100 dark:border-surface-600 dark:text-surface-300 dark:hover:bg-surface-800"
             @click="showMore(i)"
           >
@@ -278,6 +317,12 @@ watch(
             class="text-sm text-surface-400 italic dark:text-surface-500"
           >
             {{ loading && i === 0 ? 'Loading…' : 'No children.' }}
+          </p>
+          <p
+            v-else-if="col.query.trim() && !shownNodes(col).length"
+            class="text-sm text-surface-400 italic dark:text-surface-500"
+          >
+            No matches for “{{ col.query }}”.
           </p>
         </div>
       </div>
