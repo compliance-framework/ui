@@ -156,10 +156,22 @@ describe('nodeDetailRoute', () => {
     ).toEqual({ name: 'risks:detail', params: { riskId: 'r-2' } });
   });
 
-  it('routes evidence nodes to evidence:view with id', () => {
+  it('routes evidence nodes to evidence:view with the evidenceId', () => {
     expect(
       nodeDetailRoute(base({ nodeType: 'evidence', evidenceId: 'e-1' })),
     ).toEqual({ name: 'evidence:view', params: { id: 'e-1' } });
+  });
+
+  it('never uses the (stream) key as the evidence id — returns null without evidenceId', () => {
+    expect(
+      nodeDetailRoute(
+        base({
+          nodeType: 'evidence',
+          key: 'evidence:stream-uuid',
+          evidenceId: '',
+        }),
+      ),
+    ).toBeNull();
   });
 
   it('returns null for structural nodes', () => {

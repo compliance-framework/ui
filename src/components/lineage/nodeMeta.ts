@@ -166,8 +166,11 @@ export function nodeDetailRoute(
     return riskId ? { name: 'risks:detail', params: { riskId } } : null;
   }
   if (node.nodeType === 'evidence') {
-    const id = node.evidenceId || idFromKey(node.key);
-    return id ? { name: 'evidence:view', params: { id } } : null;
+    // The evidence key holds the *stream* uuid, not the record id — only
+    // evidenceId links to GET /evidence/{id}, so never fall back to the key.
+    return node.evidenceId
+      ? { name: 'evidence:view', params: { id: node.evidenceId } }
+      : null;
   }
   return null;
 }
