@@ -1029,6 +1029,38 @@ const authenticatedRoutes = [
     name: 'about',
     component: () => import('../views/AboutView.vue'),
   },
+  {
+    path: '/control-links',
+    name: 'control-links-list',
+    component: () => import('../views/control-links/ControlLinkListView.vue'),
+    meta: {
+      requiresAuth: true,
+    },
+  },
+  {
+    path: '/control-links/new',
+    name: 'control-links-create',
+    component: () => import('../views/control-links/ControlLinkCreateView.vue'),
+    meta: {
+      requiresAuth: true,
+    },
+  },
+  {
+    path: '/lineage',
+    name: 'lineage',
+    component: () => import('../views/lineage/LineageTreeView.vue'),
+    meta: {
+      requiresAuth: true,
+    },
+  },
+  {
+    path: '/lineage/graph',
+    name: 'lineage-graph',
+    component: () => import('../views/lineage/LineageGraphView.vue'),
+    meta: {
+      requiresAuth: true,
+    },
+  },
 ];
 
 const publicRoutes = [

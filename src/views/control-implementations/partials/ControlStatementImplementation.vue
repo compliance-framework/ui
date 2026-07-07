@@ -200,7 +200,11 @@ const { execute: createEvidenceDashboard } = useDataApi<Dashboard>(
   '/api/filters',
   {
     method: 'POST',
-    transformRequest: [decamelizeKeys],
+    // /api/filters is a camelCase ("manually written") API — bind reads json:"sspId".
+    // Do NOT decamelize the body to kebab-case here, or multi-word keys like sspId
+    // arrive as "ssp-id" and never bind, silently making every dashboard global.
+    // The label-filter object only has single-word keys, so sending it as-is is
+    // otherwise a no-op (see the sibling /api/evidence/search POST).
   },
   { immediate: false },
 );
@@ -235,7 +239,10 @@ const { execute: updateDashboard } = useDataApi<Dashboard>(
   null,
   {
     method: 'PUT',
-    transformRequest: [decamelizeKeys],
+    // /api/filters is a camelCase API (binds json:"sspId"). Do NOT decamelize to
+    // kebab, or sspId arrives as "ssp-id", never binds, and — since PUT is a full
+    // replacement that clears the SSP binding when sspId is absent — the filter is
+    // silently reset to global. Send the body as-is (its keys are already correct).
   },
   { immediate: false },
 );
@@ -255,6 +262,10 @@ watch(
       fetchSspRisks(
         `/api/oscal/system-security-plans/${id}/risks?${query.toString()}`,
       ),
+      // Dashboards are SSP-scoped, so re-fetch them when the plan changes —
+      // otherwise the list keeps showing the previously selected SSP's dashboards.
+      loadDashboardsForControl(),
+      loadAllDashboards(),
     ]);
   },
   { immediate: true },
@@ -396,12 +407,8 @@ watch(selectedComponent, () => {
 
 onMounted(() => {
   void aiConfig.fetchDashboardSuggestionsConfig();
-
-  if (!system.securityPlan?.uuid) {
-    return;
-  }
-  // Load existing dashboards for this control
-  loadDashboardsForControl();
+  // Dashboards load via the resolvedSspId watch (immediate), which keeps them in
+  // sync with the selected plan.
 });
 
 watch(
@@ -1014,7 +1021,15 @@ async function loadAvailableEvidence(forceReload = false) {
 async function loadDashboardsForControl() {
   dashboardsLoading.value = true;
   try {
-    const res = await fetchDashboardsByControl();
+    // Scope to this SSP: the backend returns global + same-SSP filters, so a
+    // dashboard created for another plan doesn't leak into this one. Without sspId
+    // the List endpoint returns filters from EVERY SSP.
+    const res = await fetchDashboardsByControl({
+      params: {
+        controlId: implementation.controlId,
+        sspId: resolvedSspId.value,
+      },
+    });
     const dashboardList = res.data.value?.data || res.data.value || [];
     existingDashboards.value = dashboardList as DashboardWithControls[];
   } catch (error) {
@@ -1026,7 +1041,10 @@ async function loadDashboardsForControl() {
 
 async function loadAllDashboards() {
   try {
-    const res = await fetchAllDashboards();
+    // Same SSP scoping: only global + same-SSP dashboards are available to link.
+    const res = await fetchAllDashboards({
+      params: { sspId: resolvedSspId.value },
+    });
     const dashboardList = res.data.value?.data || res.data.value || [];
     allDashboards.value = dashboardList as DashboardWithControls[];
   } catch (error) {
@@ -1071,6 +1089,8 @@ async function linkExistingDashboard() {
         name: dashboard.name,
         filter: dashboard.filter,
         controls: newControlIds,
+        // Preserve the dashboard's scope — PUT clears it to global if omitted.
+        sspId: dashboard.sspId ?? null,
       },
     });
     toast.add({
@@ -1109,6 +1129,8 @@ async function unlinkDashboard(dashboard: DashboardWithControls) {
         name: dashboard.name,
         filter: dashboard.filter,
         controls: newControlIds,
+        // Preserve the dashboard's scope — PUT clears it to global if omitted.
+        sspId: dashboard.sspId ?? null,
       },
     });
     toast.add({
@@ -1387,6 +1409,9 @@ async function submitEvidenceLinking() {
         name: evidenceDashboard.value.name,
         filter: parsedFilter,
         controls: controlIds,
+        // Scope the dashboard's filter to this SSP rather than creating a global
+        // filter that would apply across every plan.
+        sspId: resolvedSspId.value,
       },
     });
     toast.add({

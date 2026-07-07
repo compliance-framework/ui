@@ -99,6 +99,11 @@ const links = ref<Array<NavigationItem>>([
     permission: { resource: RESOURCES.EVIDENCE, action: ACTIONS.READ },
   },
   {
+    name: 'lineage',
+    title: 'Lineage',
+    abbr: 'LIN',
+  },
+  {
     title: 'Implementation',
     children: [
       {
@@ -138,6 +143,12 @@ const links = ref<Array<NavigationItem>>([
         title: 'Catalogs',
         abbr: 'CAT',
         permission: { resource: RESOURCES.CATALOG, action: ACTIONS.READ },
+      },
+      {
+        name: 'control-links-list',
+        title: 'Control Links',
+        abbr: 'CL',
+        permission: { resource: RESOURCES.CONTROL_LINK, action: ACTIONS.READ },
       },
       {
         name: 'profile-list',

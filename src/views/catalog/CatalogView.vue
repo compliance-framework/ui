@@ -3,13 +3,31 @@
     class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between"
   >
     <div>
-      <PageHeader>Catalog</PageHeader>
+      <PageHeader>
+        Catalog
+        <span
+          v-if="catalog && !isCatalogActive(catalog)"
+          class="ml-2 inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 align-middle text-xs font-semibold text-amber-800 dark:bg-amber-900/40 dark:text-amber-300"
+        >
+          Inactive
+        </span>
+      </PageHeader>
       <PageSubHeader>{{ catalog?.metadata?.title }}</PageSubHeader>
     </div>
     <div
       v-if="catalog"
       class="flex flex-wrap items-center gap-2 lg:justify-end"
     >
+      <SecondaryButton
+        @click="toggleActive"
+        :disabled="!can(RESOURCES.CATALOG, ACTIONS.UPDATE)"
+        v-tooltip.top="{
+          value: permissionTooltip(RESOURCES.CATALOG, ACTIONS.UPDATE),
+          disabled: can(RESOURCES.CATALOG, ACTIONS.UPDATE),
+        }"
+      >
+        {{ isCatalogActive(catalog) ? 'Deactivate' : 'Activate' }}
+      </SecondaryButton>
       <PrimaryButton
         @click="showControlForm = true"
         :disabled="!can(RESOURCES.CATALOG, ACTIONS.CREATE)"
@@ -113,13 +131,19 @@ import { useToast } from 'primevue/usetoast';
 import type { ErrorResponse, ErrorBody } from '@/stores/types.ts';
 import { useDataApi } from '@/composables/axios';
 import type { AxiosError } from 'axios';
-import { useCatalogDelete } from '@/composables/catalog';
+import {
+  useCatalogDelete,
+  useCatalogActiveToggle,
+  isCatalogActive,
+  withCatalogActive,
+} from '@/composables/catalog';
 import { usePermissions } from '@/composables/usePermissions';
 import { RESOURCES, ACTIONS } from '@/constants/permissions';
 
 const { can, permissionTooltip } = usePermissions();
 const toast = useToast();
 const { deleteCatalog: deleteCatalogAction } = useCatalogDelete();
+const { setCatalogActive } = useCatalogActiveToggle();
 const route = useRoute();
 const router = useRouter();
 const catalogId = ref<string>(route.params.id as string);
@@ -185,6 +209,20 @@ async function deleteCatalog(uuid: string, title: string) {
 
 function deleteCurrentCatalog() {
   deleteCatalog(catalogId.value, catalog.value?.metadata?.title || '');
+}
+
+async function toggleActive() {
+  if (!catalog.value) return;
+  const current = catalog.value;
+  const next = !isCatalogActive(current);
+  await setCatalogActive(
+    catalogId.value,
+    current.metadata?.title ?? '',
+    next,
+    () => {
+      catalog.value = withCatalogActive(current, next);
+    },
+  );
 }
 function reloadLists() {
   groupExecute(`/api/oscal/catalogs/${catalogId.value}/groups`);
