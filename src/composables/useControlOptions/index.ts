@@ -24,15 +24,23 @@ export function useControlOptions(
   const options = ref<ControlOption[]>([]);
   const loading = ref(false);
 
+  // Monotonic token guards against out-of-order responses when the catalog is
+  // switched faster than a request resolves (abortPrevious is false). A stale
+  // load must not overwrite a newer selection's options — mirrors the
+  // evidenceRequestKey/sspRequestKey pattern in LineageNodeDrawer.
+  let requestToken = 0;
+
   watch(() => toValue(catalogId), load, { immediate: true });
 
   async function load() {
     const id = toValue(catalogId);
+    const token = ++requestToken;
     options.value = [];
     if (!id) return;
     loading.value = true;
     try {
       const res = await execute(`/api/oscal/catalogs/${id}/full`);
+      if (token !== requestToken) return; // superseded by a newer load
       const catalog = res.data.value?.data;
       if (catalog) {
         options.value = flattenCatalog(catalog);
@@ -40,7 +48,8 @@ export function useControlOptions(
     } catch (error) {
       console.error('[useControlOptions] failed to load catalog', id, error);
     } finally {
-      loading.value = false;
+      // Only the latest load owns the loading flag.
+      if (token === requestToken) loading.value = false;
     }
   }
 

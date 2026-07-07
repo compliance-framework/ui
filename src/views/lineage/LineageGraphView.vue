@@ -78,7 +78,11 @@ async function selectNode(colIndex: number, node: LineageNode) {
   // Drop deeper columns (re-selecting replaces what was to the right).
   columns.value = columns.value.slice(0, colIndex + 1);
   if (node.hasChildren) {
+    const token = node.key;
     const children = await fetchChildNodes(node.key, scopeStore.scope);
+    // Bail if a newer click in this column superseded us while awaiting —
+    // otherwise this stale response appends a column for the wrong selection.
+    if (columns.value[colIndex]?.selectedKey !== token) return;
     columns.value.push({
       parentKey: node.key,
       parentTitle: node.title,
