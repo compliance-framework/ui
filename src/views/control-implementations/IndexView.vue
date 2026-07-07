@@ -122,7 +122,10 @@
                 :count="controlSuggestionCount(slotProps.node.data.id)"
                 @click.stop="openControlDrawer(slotProps.node.data.id)"
               />
-              <ControlEvidenceCounter :control="slotProps.node.data" />
+              <ControlEvidenceCounter
+                :control="slotProps.node.data"
+                :ssp-id="systemStore.system.securityPlan?.uuid"
+              />
             </div>
             <div class="py-4">
               <IndexControlImplementation
