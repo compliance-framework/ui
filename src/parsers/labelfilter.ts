@@ -18,6 +18,31 @@ export type Filter = {
   scope: Scope;
 };
 
+// Serialize a parsed Filter back into its string form, e.g. `a=b AND (c=d OR e!=f)`.
+// Inverse of FilterParser.parse(); used to prefill the "Result Filter" input when editing.
+function serializeScope(scope: Scope): string {
+  if (scope.condition) {
+    const { label, operator, value } = scope.condition;
+    return `${label}${operator}${value}`;
+  }
+  if (scope.query) {
+    const op = scope.query.operator.toUpperCase();
+    return scope.query.scopes
+      .map((child) =>
+        child.query ? `(${serializeScope(child)})` : serializeScope(child),
+      )
+      .join(` ${op} `);
+  }
+  return '';
+}
+
+export function serializeFilter(filter: Filter | undefined | null): string {
+  if (!filter?.scope) {
+    return '';
+  }
+  return serializeScope(filter.scope);
+}
+
 export class FilterParser {
   private tokens: string[];
   private position: number = 0;

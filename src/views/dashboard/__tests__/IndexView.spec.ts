@@ -42,11 +42,19 @@ vi.mock('@/composables/axios', () => ({
 }));
 
 vi.mock('@/views/dashboard/DashboardChart.vue', () => ({
-  default: { name: 'DashboardChart', template: '<div />' },
+  default: {
+    name: 'DashboardChart',
+    template: '<div class="dashboard-chart" />',
+  },
 }));
 
-vi.mock('@/views/dashboard/CompliancePostureWidget.vue', () => ({
-  default: { name: 'CompliancePostureWidget', template: '<div />' },
+vi.mock('@/views/dashboard/partials/FilterEditModal.vue', () => ({
+  default: {
+    name: 'FilterEditModal',
+    props: ['visible', 'dashboard'],
+    template:
+      '<div v-if="visible" class="edit-modal">{{ dashboard?.name }}</div>',
+  },
 }));
 
 import IndexView from '../IndexView.vue';
@@ -76,10 +84,14 @@ function mountView() {
       stubs: {
         PageHeader: { template: '<h1><slot /></h1>' },
         PageSubHeader: { template: '<p><slot /></p>' },
-        PageCard: { template: '<section><slot /></section>' },
         Chip: { props: ['label'], template: '<span>{{ label }}</span>' },
         Message: { template: '<div><slot /></div>' },
         PrimaryButton: {
+          emits: ['click'],
+          template: '<button @click="$emit(\'click\')"><slot /></button>',
+        },
+        SecondaryButton: {
+          emits: ['click'],
           template: '<button @click="$emit(\'click\')"><slot /></button>',
         },
         RouterLink: { props: ['to'], template: '<a><slot /></a>' },
@@ -88,35 +100,76 @@ function mountView() {
   });
 }
 
-describe('Dashboard IndexView', () => {
+describe('Dashboard IndexView (Filters table)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     dashboards.value = [];
     systemSecurityPlans.value = [];
   });
 
-  it('does not render the AI suggestions launcher on the global dashboard index', () => {
-    dashboards.value = [makeDashboard('Global dashboard')];
-    const wrapper = mountView();
-
-    expect(wrapper.text()).not.toContain('AI suggestions');
-    expect(wrapper.text()).toContain('Global dashboard');
-  });
-
-  it('groups dashboards by global and owning SSP scopes', () => {
+  it('renders a row per filter with its scope label', () => {
     dashboards.value = [
-      makeDashboard('Global dashboard'),
-      makeDashboard('Scoped dashboard', 'ssp-1'),
+      makeDashboard('Global filter'),
+      makeDashboard('Scoped filter', 'ssp-1'),
     ];
     systemSecurityPlans.value = [makeSsp('ssp-1', 'Payments SSP')];
 
     const wrapper = mountView();
 
+    const globalRow = wrapper.find('[data-testid="filter-row-Global filter"]');
+    const scopedRow = wrapper.find('[data-testid="filter-row-Scoped filter"]');
+    expect(globalRow.text()).toContain('Global filter');
+    expect(globalRow.text()).toContain('Global');
+    expect(scopedRow.text()).toContain('Payments SSP');
+  });
+
+  it('shows the empty-state message when there are no filters', () => {
+    const wrapper = mountView();
+    expect(wrapper.text()).toContain('No Filters Found');
+  });
+
+  it('loads the dashboard chart only when a row is expanded', async () => {
+    dashboards.value = [makeDashboard('Global filter')];
+    const wrapper = mountView();
+
+    expect(wrapper.find('.dashboard-chart').exists()).toBe(false);
+
+    await wrapper
+      .find('[data-testid="filter-row-Global filter"]')
+      .trigger('click');
+
     expect(
-      wrapper.find('[data-testid="dashboard-group-global"]').text(),
-    ).toContain('Global');
-    expect(
-      wrapper.find('[data-testid="dashboard-group-ssp-1"]').text(),
-    ).toContain('Payments SSP');
+      wrapper.find('[data-testid="filter-chart-Global filter"]').exists(),
+    ).toBe(true);
+    expect(wrapper.find('.dashboard-chart').exists()).toBe(true);
+  });
+
+  it('opens the edit modal for the clicked filter', async () => {
+    dashboards.value = [makeDashboard('Global filter')];
+    const wrapper = mountView();
+
+    expect(wrapper.find('.edit-modal').exists()).toBe(false);
+
+    const editButton = wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'Edit');
+    await editButton!.trigger('click');
+
+    const modal = wrapper.find('.edit-modal');
+    expect(modal.exists()).toBe(true);
+    expect(modal.text()).toContain('Global filter');
+  });
+
+  it('asks for confirmation before deleting a filter', async () => {
+    dashboards.value = [makeDashboard('Global filter')];
+    const wrapper = mountView();
+
+    const deleteButton = wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'Delete');
+    await deleteButton!.trigger('click');
+
+    expect(mocks.confirmRequire).toHaveBeenCalledOnce();
+    expect(mocks.confirmRequire.mock.calls[0][0].header).toBe('Delete Filter');
   });
 });

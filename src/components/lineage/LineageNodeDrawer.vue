@@ -235,7 +235,8 @@ function close() {
   <Drawer
     :visible="visible"
     position="right"
-    :header="node?.title ?? 'Lineage node'"
+    class="w-full! md:w-1/2! lg:w-3/5!"
+    :header="node?.title ?? 'Node details'"
     @update:visible="emit('update:visible', $event)"
   >
     <div v-if="node" class="flex flex-col gap-6">

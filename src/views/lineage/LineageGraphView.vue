@@ -201,7 +201,7 @@ watch(
     <header class="flex flex-wrap items-start justify-between gap-4">
       <div>
         <h1 class="text-2xl font-semibold text-surface-800 dark:text-surface-0">
-          Compliance Lineage — Graph
+          Compliance Map — Graph
         </h1>
         <p class="text-sm text-surface-500 dark:text-surface-400">
           The worst {{ COLUMN_PAGE_SIZE }} nodes at each level, worst first by

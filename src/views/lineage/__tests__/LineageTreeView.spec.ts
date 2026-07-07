@@ -83,7 +83,7 @@ describe('LineageTreeView (smoke)', () => {
 
     await flushPromises();
 
-    expect(wrapper.text()).toContain('Compliance Lineage');
+    expect(wrapper.text()).toContain('Compliance Map');
     expect(fetchRootsMock).toHaveBeenCalledTimes(1);
   });
 });
