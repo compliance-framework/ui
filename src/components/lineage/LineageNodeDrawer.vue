@@ -8,9 +8,15 @@ import {
   riskStatusBadge,
   severityBadge,
   evidenceStateBadge,
+  isRiskMuted,
   formatDate,
+  postureBadge,
+  implStatusLabel,
 } from './nodeMeta';
-import type { LineageNode } from '@/composables/useLineage/types';
+import type {
+  LineageNode,
+  LineageSSPRow,
+} from '@/composables/useLineage/types';
 
 const props = defineProps<{
   node: LineageNode | null;
@@ -36,15 +42,33 @@ const evidenceState = ref<'idle' | 'loading' | 'loaded' | 'error' | 'skipped'>(
   'idle',
 );
 
+// Per-SSP table: how the control stands (evidence + implementation status) in each
+// plan, so one SSP's status doesn't hide another's.
+const sspRows = ref<LineageSSPRow[]>([]);
+const sspState = ref<'idle' | 'loading' | 'loaded' | 'error' | 'skipped'>(
+  'idle',
+);
+
 const kind = computed(() => (props.node ? nodeKind(props.node) : 'structural'));
 
 // Risk / evidence node detail (only the fields the API actually sent).
 const riskStatus = computed(() =>
   props.node ? riskStatusBadge(props.node.status) : null,
 );
-const severity = computed(() =>
-  props.node ? severityBadge(props.node) : null,
-);
+// A remediated/accepted risk is grayed out — keep the severity label, drop the
+// alarming green/orange/red colour.
+const severity = computed(() => {
+  if (!props.node) return null;
+  const b = severityBadge(props.node);
+  if (!b) return null;
+  return isRiskMuted(props.node.status)
+    ? {
+        ...b,
+        class:
+          'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300',
+      }
+    : b;
+});
 const evidenceStateVal = computed(() =>
   props.node ? evidenceStateBadge(props.node.status) : null,
 );
@@ -164,10 +188,40 @@ async function loadEvidence(node: LineageNode) {
   }
 }
 
+let sspRequestKey: string | null = null;
+
+async function loadSSPRows(node: LineageNode) {
+  sspRequestKey = node.key;
+  sspRows.value = [];
+  // Per-SSP status is control-scoped and API-only (a fixture build has no plans).
+  if (props.usingFixtures || !node.controlId) {
+    sspState.value = 'skipped';
+    return;
+  }
+  sspState.value = 'loading';
+  try {
+    // The table is inherently multi-SSP, so it is NOT scoped to the selected SSP.
+    const res = await instance.get(
+      `/api/lineage/nodes/${encodeURIComponent(node.key)}/ssps`,
+    );
+    if (sspRequestKey !== node.key) return;
+    const rows = res.data?.data ?? res.data ?? [];
+    sspRows.value = Array.isArray(rows) ? (rows as LineageSSPRow[]) : [];
+    sspState.value = 'loaded';
+  } catch (err) {
+    if (sspRequestKey !== node.key) return;
+    console.warn('[LineageNodeDrawer] per-SSP fetch failed', err);
+    sspState.value = 'error';
+  }
+}
+
 watch(
   () => [props.visible, props.node?.key] as const,
   ([visible]) => {
-    if (visible && props.node) loadEvidence(props.node);
+    if (visible && props.node) {
+      loadEvidence(props.node);
+      loadSSPRows(props.node);
+    }
   },
   { immediate: true },
 );
@@ -237,6 +291,93 @@ function close() {
             </p>
           </div>
         </div>
+
+        <!-- Per-SSP status (control nodes): how the control stands in each plan —
+             its posture, evidence status and declared implementation status — so
+             one plan's status doesn't hide another's. -->
+        <section v-if="node.controlId">
+          <h3
+            class="mb-2 text-sm font-semibold text-surface-700 dark:text-surface-100"
+          >
+            Per-SSP status
+          </h3>
+          <p v-if="sspState === 'loading'" class="text-sm text-surface-500">
+            Loading per-SSP status…
+          </p>
+          <p
+            v-else-if="sspState === 'skipped'"
+            class="text-sm text-surface-500 dark:text-surface-400"
+          >
+            Per-SSP status is available when connected to the API.
+          </p>
+          <p
+            v-else-if="sspState === 'error'"
+            class="text-sm text-surface-500 dark:text-surface-400"
+          >
+            Could not load per-SSP status.
+          </p>
+          <p
+            v-else-if="sspRows.length === 0"
+            class="text-sm text-surface-500 dark:text-surface-400"
+          >
+            No system security plans.
+          </p>
+          <div v-else class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead>
+                <tr
+                  class="border-b border-surface-200 text-left text-xs uppercase tracking-wide text-surface-500 dark:border-surface-700 dark:text-surface-400"
+                >
+                  <th class="py-1 pr-2 font-medium">SSP</th>
+                  <th class="px-2 py-1 font-medium">Status</th>
+                  <th class="px-2 py-1 font-medium">Evidence</th>
+                  <th class="py-1 pl-2 font-medium">Implementation</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="row in sspRows"
+                  :key="row.sspId"
+                  class="border-b border-surface-100 dark:border-surface-800"
+                  :class="!row.inProfile ? 'opacity-60' : ''"
+                >
+                  <td
+                    class="py-1.5 pr-2 font-medium text-surface-700 dark:text-surface-100"
+                  >
+                    {{ row.sspTitle || 'Untitled SSP' }}
+                  </td>
+                  <td class="px-2 py-1.5">
+                    <span
+                      class="rounded-full px-2 py-0.5 text-xs font-semibold whitespace-nowrap"
+                      :class="postureBadge(row.posture).class"
+                      >{{ postureBadge(row.posture).label }}</span
+                    >
+                  </td>
+                  <td class="px-2 py-1.5">
+                    <span
+                      v-if="row.inProfile"
+                      class="rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap"
+                      :class="evidenceStateBadge(row.evidenceStatus).class"
+                      >{{ evidenceStateBadge(row.evidenceStatus).label }}</span
+                    >
+                    <span v-else class="text-surface-400">—</span>
+                  </td>
+                  <td class="py-1.5 pl-2">
+                    <span
+                      v-if="
+                        row.inProfile &&
+                        implStatusLabel(row.implementationStatus)
+                      "
+                      class="text-surface-700 dark:text-surface-200"
+                      >{{ implStatusLabel(row.implementationStatus) }}</span
+                    >
+                    <span v-else class="text-surface-400">—</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
 
         <!-- Linkage summary -->
         <section>

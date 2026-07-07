@@ -48,6 +48,18 @@
         </small>
       </div>
 
+      <div>
+        <Label for="catalog-type" required>Type</Label>
+        <Select
+          id="catalog-type"
+          v-model="selectedType"
+          :options="CATALOG_TYPE_OPTIONS"
+          optionLabel="label"
+          optionValue="value"
+          class="w-full"
+        />
+      </div>
+
       <Message v-if="errorMessage" severity="error">
         {{ errorMessage }}
       </Message>
@@ -82,6 +94,7 @@ import SecondaryButton from '@/volt/SecondaryButton.vue';
 import PageCard from '@/components/PageCard.vue';
 import Label from '@/volt/Label.vue';
 import InputText from '@/volt/InputText.vue';
+import Select from '@/volt/Select.vue';
 import Message from '@/volt/Message.vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
 import { v4 as uuidv4 } from 'uuid';
@@ -89,14 +102,24 @@ import { useToast } from 'primevue/usetoast';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import { usePermissions } from '@/composables/usePermissions';
 import { RESOURCES, ACTIONS } from '@/constants/permissions';
+import { CATALOG_TYPE_NS, type CatalogType } from '@/composables/catalog';
 import type { ErrorResponse, ErrorBody } from '@/stores/types.ts';
 import type { AxiosError } from 'axios';
 
 const { can, permissionTooltip } = usePermissions();
 
+const CATALOG_TYPE_OPTIONS: { value: CatalogType; label: string }[] = [
+  { value: 'standard', label: 'Standard' },
+  { value: 'policy', label: 'Policy' },
+  { value: 'procedure', label: 'Procedure' },
+  { value: 'internal', label: 'Internal Catalog' },
+  { value: 'other', label: 'Other' },
+];
+
 const catalog = ref<Catalog>({
   metadata: {},
 } as Catalog);
+const selectedType = ref<CatalogType>('standard');
 const toast = useToast();
 const errors = reactive<Record<string, string>>({});
 const errorMessage = ref('');
@@ -131,9 +154,29 @@ async function submit() {
 
   isSubmitting.value = true;
   try {
+    // The backend derives a catalog's type from a `catalog-type` metadata prop;
+    // an absent prop means `standard`, so we only stamp it for other types.
+    const props = (catalog.value.metadata.props ?? []).filter(
+      (p) => !(p.name === 'catalog-type' && p.ns === CATALOG_TYPE_NS),
+    );
+    if (selectedType.value !== 'standard') {
+      props.push({
+        name: 'catalog-type',
+        ns: CATALOG_TYPE_NS,
+        value: selectedType.value,
+      });
+    }
+    const payload: Catalog = {
+      ...catalog.value,
+      metadata: {
+        ...catalog.value.metadata,
+        ...(props.length ? { props } : {}),
+      },
+    };
+
     await execute({
       method: 'POST',
-      data: catalog.value,
+      data: payload,
     });
     router.push({ name: 'catalog-view', params: { id: catalog.value.uuid } });
   } catch (error) {

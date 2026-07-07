@@ -41,6 +41,8 @@ export const RESOURCES = {
   STEP_EXECUTION: 'step-execution',
   ROLE_ASSIGNMENT: 'role-assignment',
   CONTROL_RELATIONSHIP: 'control-relationship',
+  // Typed edges between controls (Policies & Procedures + Compliance Lineage).
+  CONTROL_LINK: 'control-link',
 
   // Platform / admin
   ADMIN: 'admin',
@@ -128,6 +130,7 @@ const RESOURCE_LABELS: Partial<Record<string, string>> = {
   [RESOURCES.STEP_EXECUTION]: 'workflow steps',
   [RESOURCES.ROLE_ASSIGNMENT]: 'role assignments',
   [RESOURCES.CONTROL_RELATIONSHIP]: 'control relationships',
+  [RESOURCES.CONTROL_LINK]: 'control links',
   [RESOURCES.AGENT]: 'agents',
   [RESOURCES.USER]: 'users',
   [RESOURCES.NOTIFICATION]: 'notifications',

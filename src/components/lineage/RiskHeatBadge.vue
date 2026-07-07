@@ -1,12 +1,18 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { heatStyle } from './heatScale';
+import { heatStyle, ACCEPTED_STYLE } from './heatScale';
 import type { LineageRisk } from '@/composables/useLineage/types';
 
 const props = defineProps<{ risk: LineageRisk }>();
 
-const style = computed(() => heatStyle(props.risk.openScoreSum));
 const muted = computed(() => props.risk.mutedScoreSum > 0);
+// Open risk drives the heat; when there's none but accepted/mitigated risk
+// remains, show the blue "accepted" tint rather than a neutral zero.
+const style = computed(() =>
+  props.risk.openScoreSum <= 0 && muted.value
+    ? ACCEPTED_STYLE
+    : heatStyle(props.risk.openScoreSum),
+);
 </script>
 
 <template>

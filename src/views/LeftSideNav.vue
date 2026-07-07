@@ -136,6 +136,12 @@ const links = ref<Array<NavigationItem>>([
         permission: { resource: RESOURCES.CATALOG, action: ACTIONS.READ },
       },
       {
+        name: 'control-links-list',
+        title: 'Control Links',
+        abbr: 'CL',
+        permission: { resource: RESOURCES.CONTROL_LINK, action: ACTIONS.READ },
+      },
+      {
         name: 'profile-list',
         title: 'Profiles',
         abbr: 'PR',

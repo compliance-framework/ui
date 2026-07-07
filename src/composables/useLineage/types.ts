@@ -44,6 +44,61 @@ export interface LineageLinkage {
   unanchored: boolean;
 }
 
+/**
+ * How a single operational control is handled within the selected SSP. `posture`
+ * is the derived verdict the UI switches on; the raw inputs are carried alongside
+ * so the row can explain itself in a tooltip.
+ */
+export type LineagePosture =
+  | 'out-of-scope'
+  | 'satisfied'
+  | 'not-satisfied'
+  | 'not-applicable'
+  | 'planned'
+  | 'attention';
+
+export interface LineageSSPStatus {
+  posture: LineagePosture | string;
+  inProfile: boolean;
+  /** 'satisfied' | 'not-satisfied' | 'unknown'. */
+  evidenceStatus: string;
+  /** Uniform implementation status, or '' when undeclared/mixed. */
+  implementationStatus?: string;
+}
+
+/** Tally of a structural node's own controls' postures in the selected SSP. */
+export interface LineagePostureCounts {
+  satisfied: number;
+  notSatisfied: number;
+  notApplicable: number;
+  planned: number;
+  attention: number;
+  outOfScope: number;
+}
+
+/** One row of the drawer's per-SSP table for a control (GET /nodes/:key/ssps). */
+export interface LineageSSPRow {
+  sspId: string;
+  sspTitle: string;
+  inProfile: boolean;
+  posture: LineagePosture | string;
+  /** 'satisfied' | 'not-satisfied' | 'unknown'. */
+  evidenceStatus: string;
+  /** Declared implementation status, or '' when undeclared/mixed. */
+  implementationStatus?: string;
+}
+
+/** Cross-SSP posture breakdown for a control in the global (no-SSP) view. */
+export interface LineageSSPBreakdown {
+  totalSsps: number;
+  outOfScope: number;
+  satisfied: number;
+  notSatisfied: number;
+  notApplicable: number;
+  planned: number;
+  attention: number;
+}
+
 export interface LineageNode {
   key: string;
   nodeType: LineageNodeType | string;
@@ -51,9 +106,19 @@ export interface LineageNode {
   controlId?: string;
   groupId?: string;
   title: string;
+  /** OSCAL control statement prose (control nodes only); shown on hover. */
+  statement?: string;
   compliance: LineageCompliance;
   risk: LineageRisk;
   linkage: LineageLinkage;
+
+  /** SSP-scoped posture overlay on operational control nodes (sspId set). */
+  ssp?: LineageSSPStatus;
+  /** Posture tally on structural nodes (sspId set). */
+  postureCounts?: LineagePostureCounts;
+  /** Cross-SSP breakdown on operational control nodes (no sspId). */
+  sspBreakdown?: LineageSSPBreakdown;
+
   hasChildren: boolean;
   childrenCount: number;
 

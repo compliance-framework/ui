@@ -11,7 +11,15 @@
 // up — do NOT build these by concatenation. Heat classes carry `dark:` variants so
 // the colours survive dark mode (acceptance criterion 6).
 
-export type HeatBucket = 'neutral' | 'yellow' | 'amber' | 'orange' | 'red';
+export type HeatBucket =
+  | 'neutral'
+  | 'yellow'
+  | 'amber'
+  | 'orange'
+  | 'red'
+  // State-driven buckets (not score-derived, so never returned by `heatBucket`):
+  | 'accepted' // no open risk, but accepted/mitigated risk remains — see ACCEPTED_STYLE
+  | 'clear'; // implemented + zero open/accepted risk — see CLEAR_STYLE
 
 export interface HeatStyle {
   bucket: HeatBucket;
@@ -65,6 +73,34 @@ const STYLES: Record<HeatBucket, Omit<HeatStyle, 'bucket'>> = {
     nodeClass:
       'bg-red-50 border-red-600 dark:bg-red-950/40 dark:border-red-600',
   },
+  // Compliant/implemented with zero open AND zero accepted risk — the "all clear"
+  // green, mirroring passing evidence.
+  clear: {
+    label: 'Implemented — no open risk',
+    swatchClass: 'bg-emerald-500 dark:bg-emerald-500',
+    badgeClass:
+      'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/25 dark:text-emerald-200',
+    nodeClass:
+      'bg-emerald-50 border-emerald-500 dark:bg-emerald-950/40 dark:border-emerald-500',
+  },
+  // No open risk contributing to heat, but accepted/mitigated risk remains — not
+  // "all clear", so a distinct blue rather than green.
+  accepted: {
+    label: 'No open risk — accepted / mitigated risk remains',
+    swatchClass: 'bg-blue-500 dark:bg-blue-500',
+    badgeClass:
+      'bg-blue-100 text-blue-700 dark:bg-blue-500/25 dark:text-blue-200',
+    nodeClass:
+      'bg-blue-50 border-blue-400 dark:bg-blue-950/40 dark:border-blue-500',
+  },
+};
+
+/** Style for a structural node that is implemented with no open/accepted risk. */
+export const CLEAR_STYLE: HeatStyle = { bucket: 'clear', ...STYLES.clear };
+/** Style for a node whose only remaining risk is accepted/mitigated (muted). */
+export const ACCEPTED_STYLE: HeatStyle = {
+  bucket: 'accepted',
+  ...STYLES.accepted,
 };
 
 /**

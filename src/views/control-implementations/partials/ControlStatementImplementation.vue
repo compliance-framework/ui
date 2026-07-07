@@ -200,7 +200,11 @@ const { execute: createEvidenceDashboard } = useDataApi<Dashboard>(
   '/api/filters',
   {
     method: 'POST',
-    transformRequest: [decamelizeKeys],
+    // /api/filters is a camelCase ("manually written") API — bind reads json:"sspId".
+    // Do NOT decamelize the body to kebab-case here, or multi-word keys like sspId
+    // arrive as "ssp-id" and never bind, silently making every dashboard global.
+    // The label-filter object only has single-word keys, so sending it as-is is
+    // otherwise a no-op (see the sibling /api/evidence/search POST).
   },
   { immediate: false },
 );
@@ -1387,6 +1391,9 @@ async function submitEvidenceLinking() {
         name: evidenceDashboard.value.name,
         filter: parsedFilter,
         controls: controlIds,
+        // Scope the dashboard's filter to this SSP rather than creating a global
+        // filter that would apply across every plan.
+        sspId: resolvedSspId.value,
       },
     });
     toast.add({
