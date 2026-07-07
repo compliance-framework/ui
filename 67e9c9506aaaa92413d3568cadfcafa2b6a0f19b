@@ -1,0 +1,19 @@
+lisa-addressed:
+---
+Comment (src/composables/useControlOptions/index.ts:22):
+**Low — unguarded request race on rapid catalog switches.** `abortPrevious: false` plus no per-request token in `load()` means two loads can be in flight when the source/target catalog is switched quickly. `load()` sets `options.value = []` then `await execute(...)`; if the earlier catalog's response resolves last, its controls overwrite the newer selection — so the Select can show controls that don't belong to `catalogId`.
+
+Same race class the drawer already guards with a monotonic token (`evidenceRequestKey`/`sspRequestKey` in LineageNodeDrawer). Suggest the same here: capture `id` at call time and bail if `toValue(catalogId) !== id` before assigning `options.value`. Low for a PoC / single select, but noting it for consistency.
+Replies:
+**lisa implementation guidance:** Fix in src/composables/useControlOptions/index.ts load(). Add a module- or closure-scoped monotonic token: `let requestToken = 0;`. In load(): `const token = ++requestToken;` right after capturing `id`. After `await execute(...)` resolves, before assigning options.value, bail if superseded: `if (token !== requestToken) return;` — guard both the success assignment and the finally's `loading.value = false` so a stale load doesn't clear the loading flag of a newer one (only reset loading when `token === requestToken`). Mirror LineageNodeDrawer's evidenceRequestKey pattern. Keep options.value = [] reset at the top (that's the in-flight-newer path).
+
+<!-- lisa-guidance-posted -->
+---
+Comment (src/views/lineage/LineageGraphView.vue:81):
+**Low — `selectNode` can interleave under rapid clicks.** It sets `selectedKey`/slices columns synchronously, then `await`s `fetchChildNodes`. Two quick box-clicks (A then B in the same column) can resolve out of order: A's children get pushed after B's `selectedKey` is set, leaving a stale extra column and connector arrows pointing at the wrong box.
+
+A per-invocation token (capture the selected key/column and ignore the push if the selection changed by the time children resolve) would harden it. Cosmetic and PoC-only — non-blocking.
+Replies:
+**lisa implementation guidance:** Fix in src/views/lineage/LineageGraphView.vue selectNode(). Guard the async children push against out-of-order resolution. Before the await, capture the selection identity: `const token = node.key;` (and colIndex). After `await fetchChildNodes(...)`, bail if the selection changed while awaiting: `if (columns.value[colIndex]?.selectedKey !== token) return;` before columns.value.push(...). This prevents A's children being appended after B was selected. Leave the synchronous selectedKey/slice as-is. Also apply the same guard nothing-after-return for computeArrows so a stale invocation doesn't recompute arrows for a superseded tree.
+
+<!-- lisa-guidance-posted -->
