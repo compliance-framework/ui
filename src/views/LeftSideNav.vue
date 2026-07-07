@@ -43,10 +43,6 @@ function abbreviated(link: NavigationItem): string {
 
 const links = ref<Array<NavigationItem>>([
   {
-    name: 'dashboards',
-    title: 'Dashboards',
-  },
-  {
     name: 'system:overview',
     title: 'System',
     abbr: 'SYS',
@@ -99,9 +95,38 @@ const links = ref<Array<NavigationItem>>([
     permission: { resource: RESOURCES.EVIDENCE, action: ACTIONS.READ },
   },
   {
-    name: 'lineage',
-    title: 'Lineage',
-    abbr: 'LIN',
+    title: 'Governance',
+    abbr: 'GOV',
+    children: [
+      {
+        name: 'admin-risks',
+        title: 'Risks',
+        permission: ADMIN_MANAGE,
+      },
+      {
+        name: 'catalog-list',
+        title: 'Catalogs',
+        abbr: 'CAT',
+        permission: { resource: RESOURCES.CATALOG, action: ACTIONS.READ },
+      },
+      {
+        name: 'control-links-list',
+        title: 'Control Links',
+        abbr: 'CL',
+        permission: { resource: RESOURCES.CONTROL_LINK, action: ACTIONS.READ },
+      },
+      {
+        name: 'profile-list',
+        title: 'Profiles',
+        abbr: 'PR',
+        permission: { resource: RESOURCES.PROFILE, action: ACTIONS.READ },
+      },
+      {
+        name: 'lineage',
+        title: 'Compliance Map',
+        abbr: 'CM',
+      },
+    ],
   },
   {
     title: 'Implementation',
@@ -139,22 +164,10 @@ const links = ref<Array<NavigationItem>>([
     title: 'Admin',
     children: [
       {
-        name: 'catalog-list',
-        title: 'Catalogs',
-        abbr: 'CAT',
-        permission: { resource: RESOURCES.CATALOG, action: ACTIONS.READ },
-      },
-      {
-        name: 'control-links-list',
-        title: 'Control Links',
-        abbr: 'CL',
-        permission: { resource: RESOURCES.CONTROL_LINK, action: ACTIONS.READ },
-      },
-      {
-        name: 'profile-list',
-        title: 'Profiles',
-        abbr: 'PR',
-        permission: { resource: RESOURCES.PROFILE, action: ACTIONS.READ },
+        name: 'dashboards',
+        title: 'Filters',
+        abbr: 'FIL',
+        permission: { resource: RESOURCES.FILTER, action: ACTIONS.READ },
       },
       {
         name: 'component-definitions',
@@ -187,11 +200,6 @@ const links = ref<Array<NavigationItem>>([
       {
         name: 'admin-agents',
         title: 'Agents',
-        permission: ADMIN_MANAGE,
-      },
-      {
-        name: 'admin-risks',
-        title: 'Risks',
         permission: ADMIN_MANAGE,
       },
       {

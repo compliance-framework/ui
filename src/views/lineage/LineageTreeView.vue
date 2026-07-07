@@ -90,7 +90,7 @@ watch(
     <header class="flex flex-wrap items-start justify-between gap-4">
       <div>
         <h1 class="text-2xl font-semibold text-surface-800 dark:text-surface-0">
-          Compliance Lineage
+          Compliance Map
         </h1>
         <p class="text-sm text-surface-500 dark:text-surface-400">
           Standard → Policy → Controls → Evidence, with per-node compliance and

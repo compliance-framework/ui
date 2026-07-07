@@ -27,12 +27,10 @@ const authenticatedRoutes = [
   {
     path: '/dashboards',
     name: 'dashboards',
-    // route level code-splitting
-    // this generates a separate chunk (About.[hash].js) for this route
-    // which is lazy-loaded when the route is visited.
     component: () => import('../views/dashboard/IndexView.vue'),
     meta: {
       requiresAuth: true,
+      permission: { resource: RESOURCES.FILTER, action: ACTIONS.READ },
     },
   },
   {
