@@ -84,87 +84,13 @@
         <div
           class="p-4 border border-ccf-300 dark:border-slate-700 rounded-md bg-gray-50 dark:bg-slate-800"
         >
-          <!-- Provided -->
-          <div class="mb-4">
-            <h4 class="text-sm font-medium dark:text-slate-300 mb-2">
-              Provided
-            </h4>
-            <div class="space-y-2">
-              <div
-                v-for="(provided, index) in byComponentData.export?.provided ||
-                []"
-                :key="provided.uuid"
-                class="p-3 border border-ccf-200 dark:border-slate-600 rounded bg-white dark:bg-slate-900"
-              >
-                <div class="flex justify-between items-start mb-2">
-                  <span class="text-xs text-gray-500 dark:text-slate-400"
-                    >UUID: {{ provided.uuid }}</span
-                  >
-                  <button
-                    type="button"
-                    @click="removeProvided(index)"
-                    class="text-red-500 hover:text-red-700 text-sm"
-                  >
-                    Remove
-                  </button>
-                </div>
-                <Textarea
-                  v-model="provided.description"
-                  placeholder="Description of what is provided"
-                  rows="2"
-                  class="w-full"
-                />
-              </div>
-              <button
-                type="button"
-                @click="addProvided"
-                class="text-sm px-3 py-1 bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded hover:bg-green-200 dark:hover:bg-green-900/30 transition-colors"
-              >
-                Add Provided
-              </button>
-            </div>
-          </div>
-
-          <!-- Responsibilities -->
-          <div>
-            <h4 class="text-sm font-medium dark:text-slate-300 mb-2">
-              Responsibilities
-            </h4>
-            <div class="space-y-2">
-              <div
-                v-for="(responsibility, index) in byComponentData.export
-                  ?.responsibilities || []"
-                :key="responsibility.uuid"
-                class="p-3 border border-ccf-200 dark:border-slate-600 rounded bg-white dark:bg-slate-900"
-              >
-                <div class="flex justify-between items-start mb-2">
-                  <span class="text-xs text-gray-500 dark:text-slate-400"
-                    >UUID: {{ responsibility.uuid }}</span
-                  >
-                  <button
-                    type="button"
-                    @click="removeResponsibility(index)"
-                    class="text-red-500 hover:text-red-700 text-sm"
-                  >
-                    Remove
-                  </button>
-                </div>
-                <Textarea
-                  v-model="responsibility.description"
-                  placeholder="Description of responsibility"
-                  rows="2"
-                  class="w-full"
-                />
-              </div>
-              <button
-                type="button"
-                @click="addResponsibility"
-                class="text-sm px-3 py-1 bg-orange-100 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400 rounded hover:bg-orange-200 dark:hover:bg-orange-900/30 transition-colors"
-              >
-                Add Responsibility
-              </button>
-            </div>
-          </div>
+          <ByComponentExportEditor
+            :ssp-id="props.sspId"
+            :req-id="props.requirement.uuid"
+            :stmt-id="props.statement?.uuid"
+            :by-component-id="props.byComponent.uuid"
+            v-model="byComponentData.export"
+          />
         </div>
       </div>
 
@@ -392,6 +318,7 @@ import { uuid } from '@/utils/uuid';
 import { useToast } from 'primevue/usetoast';
 import InputText from '@/volt/InputText.vue';
 import Textarea from '@/volt/Textarea.vue';
+import ByComponentExportEditor from './ByComponentExportEditor.vue';
 import type { ByComponent, Statement, ImplementedRequirement } from '@/oscal';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import type { AxiosError } from 'axios';
@@ -472,59 +399,6 @@ onMounted(() => {
     responsibleRoles: [...(props.byComponent.responsibleRoles || [])],
   });
 });
-
-// Export functions
-const addProvided = () => {
-  if (!byComponentData.export) {
-    byComponentData.export = {
-      uuid: uuid(),
-      description: '',
-      props: [],
-      links: [],
-      provided: [],
-      responsibilities: [],
-    };
-  }
-  if (!byComponentData.export.provided) {
-    byComponentData.export.provided = [];
-  }
-  byComponentData.export.provided.push({
-    uuid: uuid(),
-    description: '',
-    props: [],
-    links: [],
-  });
-};
-
-const removeProvided = (index: number) => {
-  byComponentData.export?.provided?.splice(index, 1);
-};
-
-const addResponsibility = () => {
-  if (!byComponentData.export) {
-    byComponentData.export = {
-      uuid: uuid(),
-      description: '',
-      props: [],
-      links: [],
-      provided: [],
-      responsibilities: [],
-    };
-  }
-  if (!byComponentData.export.responsibilities) {
-    byComponentData.export.responsibilities = [];
-  }
-  byComponentData.export.responsibilities.push({
-    uuid: uuid(),
-    description: '',
-    props: [],
-    links: [],
-  });
-};
-
-const removeResponsibility = (index: number) => {
-  byComponentData.export?.responsibilities?.splice(index, 1);
-};
 
 // Inherited functions
 const addInherited = () => {
@@ -618,8 +492,12 @@ const updateByComponent = async () => {
   }
 
   try {
+    // Export/Provided/Responsibilities are persisted independently by
+    // ByComponentExportEditor via BCH-1336's dedicated endpoints, so they're
+    // omitted here to avoid the two save paths racing or clobbering each
+    // other's writes.
     await updateByComponentApi({
-      data: byComponentData,
+      data: { ...byComponentData, export: undefined },
     });
 
     toast.add({
@@ -629,7 +507,13 @@ const updateByComponent = async () => {
       life: 3000,
     });
 
-    emit('saved', updatedByComponent.value!);
+    // The PUT response reflects the request body, which omitted `export`, so
+    // restore it from the locally-maintained copy (kept live by
+    // ByComponentExportEditor's v-model) rather than the response.
+    emit('saved', {
+      ...updatedByComponent.value!,
+      export: byComponentData.export,
+    });
   } catch (error) {
     const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
     const errorMessage =
