@@ -56,7 +56,10 @@ const stubs = {
     props: ['description', 'responsibleRoles'],
     emits: ['update:description', 'update:responsibleRoles'],
     template:
-      '<textarea :value="description" @input="$emit(\'update:description\', $event.target.value)" />',
+      '<div>' +
+      '<textarea :value="description" @input="$emit(\'update:description\', $event.target.value)" />' +
+      '<button type="button" @click="$emit(\'update:responsibleRoles\', [...responsibleRoles, { roleId: \'owner\', partyUuids: [] }])">Add Role</button>' +
+      '</div>',
   },
 };
 
@@ -73,6 +76,12 @@ function mountEditor(props: {
     },
     global: { stubs },
   });
+}
+
+function findButton(wrapper: ReturnType<typeof mountEditor>, text: string) {
+  const button = wrapper.findAll('button').find((b) => b.text() === text);
+  if (!button) throw new Error(`Button with text "${text}" not found`);
+  return button;
 }
 
 describe('ByComponentExportEditor', () => {
@@ -106,12 +115,9 @@ describe('ByComponentExportEditor', () => {
       });
 
     const wrapper = mountEditor({ modelValue: undefined });
-    await wrapper.find('button').trigger('click'); // Add Provided
+    await findButton(wrapper, 'Add Provided').trigger('click');
     await wrapper.find('textarea').setValue('We provide X');
-    const saveButton = wrapper
-      .findAll('button')
-      .find((b) => b.text() === 'Save')!;
-    await saveButton.trigger('click');
+    await findButton(wrapper, 'Save').trigger('click');
     await flushPromises();
 
     expect(postMock).toHaveBeenNthCalledWith(
@@ -126,7 +132,45 @@ describe('ByComponentExportEditor', () => {
       expect.objectContaining({ description: 'We provide X' }),
       expect.anything(),
     );
-    expect(wrapper.emitted('update:modelValue')).toBeTruthy();
+
+    const emitted = wrapper.emitted('update:modelValue');
+    expect(emitted).toBeTruthy();
+    const lastPayload = emitted![emitted!.length - 1][0] as ByComponentExport;
+    expect(lastPayload.provided).toContainEqual(
+      expect.objectContaining({ uuid: 'p-1', description: 'We provide X' }),
+    );
+  });
+
+  it('includes responsible roles when creating a provided entry', async () => {
+    postMock
+      .mockResolvedValueOnce({
+        data: { data: { description: '', remarks: '' } },
+      })
+      .mockResolvedValueOnce({
+        data: {
+          data: {
+            uuid: 'p-1',
+            description: 'We provide X',
+            responsibleRoles: [{ roleId: 'owner', partyUuids: [] }],
+          },
+        },
+      });
+
+    const wrapper = mountEditor({ modelValue: undefined });
+    await findButton(wrapper, 'Add Provided').trigger('click');
+    await wrapper.find('textarea').setValue('We provide X');
+    await findButton(wrapper, 'Add Role').trigger('click');
+    await findButton(wrapper, 'Save').trigger('click');
+    await flushPromises();
+
+    expect(postMock).toHaveBeenNthCalledWith(
+      2,
+      '/api/oscal/system-security-plans/ssp-1/control-implementation/implemented-requirements/req-1/by-components/bc-1/export/provided',
+      expect.objectContaining({
+        responsibleRoles: [{ roleId: 'owner', partyUuids: [] }],
+      }),
+      expect.anything(),
+    );
   });
 
   it('uses the statement-level route when stmtId is set', async () => {
@@ -137,12 +181,9 @@ describe('ByComponentExportEditor', () => {
       });
 
     const wrapper = mountEditor({ modelValue: undefined, stmtId: 'stmt-1' });
-    await wrapper.find('button').trigger('click');
+    await findButton(wrapper, 'Add Provided').trigger('click');
     await wrapper.find('textarea').setValue('x');
-    const saveButton = wrapper
-      .findAll('button')
-      .find((b) => b.text() === 'Save')!;
-    await saveButton.trigger('click');
+    await findButton(wrapper, 'Save').trigger('click');
     await flushPromises();
 
     expect(postMock.mock.calls[0][0]).toBe(
@@ -166,15 +207,9 @@ describe('ByComponentExportEditor', () => {
     });
 
     const wrapper = mountEditor({ modelValue });
-    const editButton = wrapper
-      .findAll('button')
-      .find((b) => b.text() === 'Edit')!;
-    await editButton.trigger('click');
+    await findButton(wrapper, 'Edit').trigger('click');
     await wrapper.find('textarea').setValue('Updated');
-    const saveButton = wrapper
-      .findAll('button')
-      .find((b) => b.text() === 'Save')!;
-    await saveButton.trigger('click');
+    await findButton(wrapper, 'Save').trigger('click');
     await flushPromises();
 
     expect(putMock).toHaveBeenCalledWith(
@@ -194,14 +229,80 @@ describe('ByComponentExportEditor', () => {
       responsibilities: [],
     };
     const wrapper = mountEditor({ modelValue });
-    const removeButton = wrapper
-      .findAll('button')
-      .find((b) => b.text() === 'Remove')!;
-    await removeButton.trigger('click');
+    await findButton(wrapper, 'Remove').trigger('click');
     await flushPromises();
 
     expect(deleteMock).toHaveBeenCalledWith(
       '/api/oscal/system-security-plans/ssp-1/control-implementation/implemented-requirements/req-1/by-components/bc-1/export/provided/p-1',
+    );
+  });
+
+  it('discards draft changes and issues no request when adding a provided entry is cancelled', async () => {
+    const wrapper = mountEditor({ modelValue: undefined });
+    await findButton(wrapper, 'Add Provided').trigger('click');
+    await wrapper.find('textarea').setValue('Discarded description');
+    await findButton(wrapper, 'Cancel').trigger('click');
+    await flushPromises();
+
+    expect(postMock).not.toHaveBeenCalled();
+    expect(wrapper.find('textarea').exists()).toBe(false);
+    expect(
+      wrapper.findAll('button').some((b) => b.text() === 'Add Provided'),
+    ).toBe(true);
+  });
+
+  it('discards edits to an existing provided entry when Cancel is clicked', async () => {
+    const modelValue: ByComponentExport = {
+      uuid: 'exp-1',
+      description: '',
+      provided: [
+        { uuid: 'p-1', description: 'Original', responsibleRoles: [] },
+      ],
+      responsibilities: [],
+    };
+    const wrapper = mountEditor({ modelValue });
+    await findButton(wrapper, 'Edit').trigger('click');
+    await wrapper.find('textarea').setValue('Changed but discarded');
+    await findButton(wrapper, 'Cancel').trigger('click');
+    await flushPromises();
+
+    expect(putMock).not.toHaveBeenCalled();
+    expect(wrapper.text()).toContain('Original');
+    expect(wrapper.text()).not.toContain('Changed but discarded');
+  });
+
+  it('shows an error toast when creating a provided entry fails', async () => {
+    postMock
+      .mockResolvedValueOnce({ data: { data: { description: '' } } })
+      .mockRejectedValueOnce(new Error('network down'));
+
+    const wrapper = mountEditor({ modelValue: undefined });
+    await findButton(wrapper, 'Add Provided').trigger('click');
+    await wrapper.find('textarea').setValue('We provide X');
+    await findButton(wrapper, 'Save').trigger('click');
+    await flushPromises();
+
+    expect(toastAddMock).toHaveBeenCalledWith(
+      expect.objectContaining({ severity: 'error' }),
+    );
+  });
+
+  it('shows an error toast when removing a provided entry fails', async () => {
+    deleteMock.mockRejectedValueOnce(new Error('network down'));
+    const modelValue: ByComponentExport = {
+      uuid: 'exp-1',
+      description: '',
+      provided: [
+        { uuid: 'p-1', description: 'Original', responsibleRoles: [] },
+      ],
+      responsibilities: [],
+    };
+    const wrapper = mountEditor({ modelValue });
+    await findButton(wrapper, 'Remove').trigger('click');
+    await flushPromises();
+
+    expect(toastAddMock).toHaveBeenCalledWith(
+      expect.objectContaining({ severity: 'error' }),
     );
   });
 
@@ -215,14 +316,8 @@ describe('ByComponentExportEditor', () => {
       responsibilities: [],
     };
     const wrapper = mountEditor({ modelValue });
-    const addResponsibilityButton = wrapper
-      .findAll('button')
-      .find((b) => b.text() === 'Add Responsibility')!;
-    await addResponsibilityButton.trigger('click');
-    const saveButton = wrapper
-      .findAll('button')
-      .find((b) => b.text() === 'Save')!;
-    await saveButton.trigger('click');
+    await findButton(wrapper, 'Add Responsibility').trigger('click');
+    await findButton(wrapper, 'Save').trigger('click');
     await flushPromises();
 
     expect(postMock).not.toHaveBeenCalled();
@@ -252,22 +347,115 @@ describe('ByComponentExportEditor', () => {
     });
 
     const wrapper = mountEditor({ modelValue });
-    const addResponsibilityButton = wrapper
-      .findAll('button')
-      .find((b) => b.text() === 'Add Responsibility')!;
-    await addResponsibilityButton.trigger('click');
+    await findButton(wrapper, 'Add Responsibility').trigger('click');
     await wrapper.find('select').setValue('p-1');
     await wrapper.find('textarea').setValue('My responsibility');
-    const saveButton = wrapper
-      .findAll('button')
-      .find((b) => b.text() === 'Save')!;
-    await saveButton.trigger('click');
+    await findButton(wrapper, 'Save').trigger('click');
     await flushPromises();
 
     expect(postMock).toHaveBeenCalledWith(
       '/api/oscal/system-security-plans/ssp-1/control-implementation/implemented-requirements/req-1/by-components/bc-1/export/responsibilities',
       expect.objectContaining({ providedUuid: 'p-1' }),
       expect.anything(),
+    );
+  });
+
+  it('includes responsible roles when creating a responsibility entry', async () => {
+    const modelValue: ByComponentExport = {
+      uuid: 'exp-1',
+      description: '',
+      provided: [
+        { uuid: 'p-1', description: 'Provided A', responsibleRoles: [] },
+      ],
+      responsibilities: [],
+    };
+    postMock.mockResolvedValueOnce({
+      data: {
+        data: {
+          uuid: 'r-1',
+          description: 'My responsibility',
+          providedUuid: 'p-1',
+          responsibleRoles: [{ roleId: 'owner', partyUuids: [] }],
+        },
+      },
+    });
+
+    const wrapper = mountEditor({ modelValue });
+    await findButton(wrapper, 'Add Responsibility').trigger('click');
+    await wrapper.find('select').setValue('p-1');
+    await wrapper.find('textarea').setValue('My responsibility');
+    await findButton(wrapper, 'Add Role').trigger('click');
+    await findButton(wrapper, 'Save').trigger('click');
+    await flushPromises();
+
+    expect(postMock).toHaveBeenCalledWith(
+      '/api/oscal/system-security-plans/ssp-1/control-implementation/implemented-requirements/req-1/by-components/bc-1/export/responsibilities',
+      expect.objectContaining({
+        providedUuid: 'p-1',
+        responsibleRoles: [{ roleId: 'owner', partyUuids: [] }],
+      }),
+      expect.anything(),
+    );
+  });
+
+  it('edits an existing responsibility entry via PUT', async () => {
+    const modelValue: ByComponentExport = {
+      uuid: 'exp-1',
+      description: '',
+      provided: [],
+      responsibilities: [
+        {
+          uuid: 'r-1',
+          description: 'Original',
+          providedUuid: 'p-1',
+          responsibleRoles: [],
+        },
+      ],
+    };
+    putMock.mockResolvedValueOnce({
+      data: {
+        data: {
+          uuid: 'r-1',
+          description: 'Updated',
+          providedUuid: 'p-1',
+          responsibleRoles: [],
+        },
+      },
+    });
+
+    const wrapper = mountEditor({ modelValue });
+    await findButton(wrapper, 'Edit').trigger('click');
+    await wrapper.find('textarea').setValue('Updated');
+    await findButton(wrapper, 'Save').trigger('click');
+    await flushPromises();
+
+    expect(putMock).toHaveBeenCalledWith(
+      '/api/oscal/system-security-plans/ssp-1/control-implementation/implemented-requirements/req-1/by-components/bc-1/export/responsibilities/r-1',
+      expect.objectContaining({ description: 'Updated' }),
+      expect.anything(),
+    );
+  });
+
+  it('removes a responsibility entry via DELETE', async () => {
+    const modelValue: ByComponentExport = {
+      uuid: 'exp-1',
+      description: '',
+      provided: [],
+      responsibilities: [
+        {
+          uuid: 'r-1',
+          description: 'Original',
+          providedUuid: 'p-1',
+          responsibleRoles: [],
+        },
+      ],
+    };
+    const wrapper = mountEditor({ modelValue });
+    await findButton(wrapper, 'Remove').trigger('click');
+    await flushPromises();
+
+    expect(deleteMock).toHaveBeenCalledWith(
+      '/api/oscal/system-security-plans/ssp-1/control-implementation/implemented-requirements/req-1/by-components/bc-1/export/responsibilities/r-1',
     );
   });
 
