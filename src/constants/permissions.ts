@@ -64,6 +64,7 @@ export const ACTIONS = {
   DELETE: 'delete',
   PROMOTE: 'promote',
   EXPORT: 'export',
+  SUBSCRIBE: 'subscribe',
   INGEST: 'ingest',
   REGISTER: 'register',
   // admin actions
@@ -150,6 +151,7 @@ const ACTION_VERBS: Partial<Record<string, string>> = {
   [ACTIONS.DELETE]: 'delete',
   [ACTIONS.PROMOTE]: 'promote',
   [ACTIONS.EXPORT]: 'publish',
+  [ACTIONS.SUBSCRIBE]: 'subscribe to',
   [ACTIONS.REGISTER]: 'register',
   [ACTIONS.INGEST]: 'ingest',
   [ACTIONS.EXECUTE]: 'import',

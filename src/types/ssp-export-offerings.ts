@@ -31,3 +31,20 @@ export interface SSPExportOffering {
   updatedAt: string;
   items?: SSPExportOfferingItem[];
 }
+
+// The flat, cross-SSP catalog (GET /oscal/ssp-export-offerings) resolves each item's
+// upstream responsibilities server-side, but deliberately omits any upstream SSP
+// title/metadata — only a bare sspId. Never resolve that into a friendly name (would
+// require ssp:read on the upstream SSP, the exact trust boundary BCH-1345 must not cross).
+export interface UpstreamResponsibility {
+  responsibilityUuid: string;
+  description: string;
+}
+
+export interface CatalogOfferingItem extends SSPExportOfferingItem {
+  responsibilities: UpstreamResponsibility[];
+}
+
+export interface CatalogOffering extends Omit<SSPExportOffering, 'items'> {
+  items?: CatalogOfferingItem[];
+}
