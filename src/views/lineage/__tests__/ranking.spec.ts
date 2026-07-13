@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { worstFirst, COLUMN_PAGE_SIZE } from '../ranking';
+import {
+  worstFirst,
+  COLUMN_PAGE_SIZE,
+  structuralNodes,
+  riskGroups,
+} from '../ranking';
 import type { LineageNode } from '@/composables/useLineage/types';
 
 function node(
@@ -42,6 +47,22 @@ function node(
   };
 }
 
+function riskNode(
+  title: string,
+  score: number,
+  sspId?: string,
+  sspTitle?: string,
+): LineageNode {
+  return {
+    ...node(title, 0),
+    key: `risk:${title}`,
+    nodeType: 'risk',
+    score,
+    sspId,
+    sspTitle,
+  };
+}
+
 describe('worstFirst', () => {
   it('orders by highest open-risk score first', () => {
     const out = worstFirst([node('a', 5), node('b', 50), node('c', 20)]);
@@ -66,5 +87,46 @@ describe('worstFirst', () => {
 
   it('exposes a page size of 5', () => {
     expect(COLUMN_PAGE_SIZE).toBe(5);
+  });
+});
+
+describe('structuralNodes', () => {
+  it('excludes risk nodes, keeping everything else', () => {
+    const out = structuralNodes([
+      node('control-a', 5),
+      riskNode('risk-a', 10, 'ssp-1', 'SSP One'),
+      node('control-b', 5),
+    ]);
+    expect(out.map((n) => n.title)).toEqual(['control-a', 'control-b']);
+  });
+});
+
+describe('riskGroups', () => {
+  it('buckets risk nodes by sspId, ignoring non-risk nodes', () => {
+    const groups = riskGroups([
+      node('control-a', 5),
+      riskNode('risk-a', 10, 'ssp-1', 'SSP One'),
+      riskNode('risk-b', 20, 'ssp-2', 'SSP Two'),
+      riskNode('risk-c', 5, 'ssp-1', 'SSP One'),
+    ]);
+    expect(groups.map((g) => g.sspId)).toEqual(['ssp-2', 'ssp-1']);
+    expect(groups[1].nodes.map((n) => n.title)).toEqual(['risk-a', 'risk-c']);
+  });
+
+  it('orders groups worst-first by their worst member', () => {
+    const groups = riskGroups([
+      riskNode('low', 5, 'ssp-low', 'Low'),
+      riskNode('high', 50, 'ssp-high', 'High'),
+    ]);
+    expect(groups.map((g) => g.sspId)).toEqual(['ssp-high', 'ssp-low']);
+  });
+
+  it('falls back to "Unknown SSP" when a risk has no sspTitle', () => {
+    const groups = riskGroups([riskNode('risk-a', 10, 'ssp-1')]);
+    expect(groups[0].sspTitle).toBe('Unknown SSP');
+  });
+
+  it('returns an empty array when there are no risk nodes', () => {
+    expect(riskGroups([node('control-a', 5)])).toEqual([]);
   });
 });

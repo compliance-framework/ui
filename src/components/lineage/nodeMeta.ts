@@ -429,10 +429,22 @@ function idFromKey(key: string): string {
  */
 export function nodeDetailRoute(
   node: LineageNode,
+  sspId?: string | null,
 ): { name: string; params: Record<string, string> } | null {
   if (node.nodeType === 'risk') {
     const riskId = node.riskId || idFromKey(node.key);
-    return riskId ? { name: 'risks:detail', params: { riskId } } : null;
+    if (!riskId) return null;
+    // Prefer the risk's own SSP: a lineage view scoped to one SSP can still
+    // render cross-SSP risks, so routing by the active scope would open the
+    // wrong SSP's context. Fall back to the active scope, then to the unscoped
+    // detail route when neither is known.
+    const targetSspId = node.sspId || sspId;
+    return targetSspId
+      ? {
+          name: 'system-security-plan-risk-detail',
+          params: { id: targetSspId, riskId },
+        }
+      : { name: 'risks:detail', params: { riskId } };
   }
   if (node.nodeType === 'evidence') {
     // The evidence key holds the *stream* uuid, not the record id — only

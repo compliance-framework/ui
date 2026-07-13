@@ -19,7 +19,6 @@ import type {
   EvidenceStatus,
 } from '@/stores/evidence.ts';
 import router from '@/router';
-import { v4 as uuidv4 } from 'uuid';
 import EvidenceForm from './partial/EvidenceForm.vue';
 
 import type { BackMatterResource } from '@/oscal';
@@ -35,9 +34,7 @@ const { data: createdEvidence, execute: createEvidence } = useDataApi<Evidence>(
 );
 
 const backmatterResources = ref<BackMatterResource[]>([]);
-const evidence = ref<Partial<Evidence>>({
-  uuid: uuidv4(),
-});
+const evidence = ref<Partial<Evidence>>({});
 
 async function submit(
   updatedEvidence: Partial<Evidence>,

@@ -426,6 +426,8 @@ const riskCredLeak = node({
   likelihood: 'likely',
   impact: 'high',
   linkedEvidenceCount: 2,
+  sspId: 'demo-ssp-acme',
+  sspTitle: 'Acme Production',
   reviewDeadline: '2026-08-15T00:00:00Z',
   firstSeenAt: '2026-05-02T00:00:00Z',
   lastSeenAt: '2026-07-01T00:00:00Z',
@@ -455,6 +457,8 @@ const riskStaleAccess = node({
   likelihood: 'possible',
   impact: 'critical',
   linkedEvidenceCount: 0,
+  sspId: 'demo-ssp-globex',
+  sspTitle: 'Globex Staging',
   risk: {
     openScoreSum: 42,
     mutedScoreSum: 0,

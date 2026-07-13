@@ -25,7 +25,7 @@
           Back to Execution
         </RouterLinkButton>
         <SecondaryButton v-if="evidence" @click="directToUpdate()">
-          Update Evidence
+          Re-submit
         </SecondaryButton>
       </div>
     </div>
@@ -344,6 +344,153 @@
           </div>
           <p v-else class="mt-4 text-sm text-gray-600 dark:text-slate-400">
             No links are available for this evidence record.
+          </p>
+        </PageCard>
+      </div>
+
+      <div v-else-if="activeTab === 'risks'" class="space-y-4">
+        <PageCard>
+          <div class="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <h3
+                class="text-lg font-semibold text-zinc-700 dark:text-slate-200"
+              >
+                Associated Risks
+              </h3>
+              <p class="mt-2 text-sm text-gray-700 dark:text-slate-300">
+                Risks linked to this evidence stream, across all system security
+                plans.
+              </p>
+            </div>
+            <SecondaryButton
+              :disabled="!hasStreamUuid || !can(RESOURCES.RISK, ACTIONS.CREATE)"
+              v-tooltip.top="{
+                value: permissionTooltip(RESOURCES.RISK, ACTIONS.CREATE),
+                disabled: can(RESOURCES.RISK, ACTIONS.CREATE),
+              }"
+              @click="openCreateRiskDialog"
+            >
+              Create Risk
+            </SecondaryButton>
+          </div>
+
+          <Message
+            v-if="!hasStreamUuid"
+            severity="warn"
+            variant="outlined"
+            class="mt-4"
+          >
+            This evidence record has no stream identifier, so risks cannot be
+            associated with it.
+          </Message>
+
+          <div
+            v-else-if="risksLoading"
+            class="mt-4 text-sm text-gray-600 dark:text-slate-400"
+          >
+            Loading associated risks...
+          </div>
+
+          <Message
+            v-else-if="risksError"
+            severity="error"
+            variant="outlined"
+            class="mt-4"
+          >
+            Failed to load risks for this evidence record.
+          </Message>
+
+          <div v-else-if="evidenceRisks.length" class="mt-4 space-y-3">
+            <div
+              v-for="risk in evidenceRisks"
+              :key="risk.id"
+              class="rounded-md border border-ccf-300 p-4 dark:border-slate-700"
+            >
+              <div class="flex flex-wrap items-center gap-3">
+                <RouterLink
+                  :to="{
+                    name: 'system-security-plan-risk-detail',
+                    params: { id: risk.sspId, riskId: risk.id },
+                  }"
+                  class="font-medium text-blue-600 underline dark:text-blue-400"
+                >
+                  {{ risk.title || 'Untitled Risk' }}
+                </RouterLink>
+                <span
+                  :class="[
+                    'inline-flex rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wide',
+                    getRiskStatusColor(risk.status),
+                  ]"
+                >
+                  {{ riskStatusLabel(risk.status) }}
+                </span>
+                <span
+                  v-if="risk.sourceType === 'evidence-auto'"
+                  class="inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-xs dark:bg-slate-800"
+                >
+                  Auto-generated
+                </span>
+              </div>
+              <p
+                v-if="risk.description"
+                class="mt-2 text-sm text-gray-700 dark:text-slate-300"
+              >
+                {{ risk.description }}
+              </p>
+              <div class="mt-3 flex flex-wrap items-center gap-2">
+                <span
+                  :class="[
+                    'inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs',
+                    neutralPillColor,
+                  ]"
+                >
+                  <span
+                    class="text-[10px] font-medium uppercase tracking-wide opacity-60"
+                  >
+                    SSP
+                  </span>
+                  <span class="font-semibold">
+                    {{ risk.sspTitle || risk.sspId }}
+                  </span>
+                </span>
+                <span
+                  v-if="risk.likelihood"
+                  :class="[
+                    'inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs',
+                    getRiskLevelColor(risk.likelihood),
+                  ]"
+                >
+                  <span
+                    class="text-[10px] font-medium uppercase tracking-wide opacity-60"
+                  >
+                    Likelihood
+                  </span>
+                  <span class="font-semibold uppercase tracking-wide">
+                    {{ risk.likelihood }}
+                  </span>
+                </span>
+                <span
+                  v-if="risk.impact"
+                  :class="[
+                    'inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs',
+                    getRiskLevelColor(risk.impact),
+                  ]"
+                >
+                  <span
+                    class="text-[10px] font-medium uppercase tracking-wide opacity-60"
+                  >
+                    Impact
+                  </span>
+                  <span class="font-semibold uppercase tracking-wide">
+                    {{ risk.impact }}
+                  </span>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <p v-else class="mt-4 text-sm text-gray-600 dark:text-slate-400">
+            No risks are associated with this evidence record.
           </p>
         </PageCard>
       </div>
@@ -703,6 +850,42 @@
       </div>
 
       <Dialog
+        v-model:visible="showCreateRiskDialog"
+        modal
+        header="Create Risk from Evidence"
+      >
+        <div class="w-[48rem] max-w-full space-y-4 px-4 pt-2">
+          <div>
+            <label
+              class="text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400"
+            >
+              System Security Plan
+            </label>
+            <Select
+              v-model="createRiskSspId"
+              :options="sspOptions"
+              option-label="title"
+              option-value="uuid"
+              placeholder="Select the SSP this risk belongs to"
+              class="mt-1 w-full"
+            />
+            <p class="mt-1 text-xs text-gray-500 dark:text-slate-400">
+              Risks live in a system security plan's risk register. The new risk
+              will be linked to this evidence stream.
+            </p>
+          </div>
+
+          <RiskCreateForm
+            v-if="createRiskSspId"
+            :key="createRiskSspId"
+            :ssp-id="createRiskSspId"
+            @cancel="showCreateRiskDialog = false"
+            @created="onRiskCreated"
+          />
+        </div>
+      </Dialog>
+
+      <Dialog
         v-model:visible="showActivitiesModal"
         maximizable
         modal
@@ -759,17 +942,36 @@ import SecondaryButton from '@/volt/SecondaryButton.vue';
 import Dialog from '@/volt/Dialog.vue';
 import Message from '@/volt/Message.vue';
 import RouterLinkButton from '@/components/RouterLinkButton.vue';
+import RiskCreateForm from '@/components/risk/RiskCreateForm.vue';
+import Select from '@/volt/Select.vue';
 import {
   BIconDownload,
   BIconLockFill,
   BIconUnlockFill,
 } from 'bootstrap-icons-vue';
-import { useDataApi } from '@/composables/axios';
+import { useDataApi, decamelizeKeys } from '@/composables/axios';
+import { useToast } from 'primevue/usetoast';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
+import { riskStatusLabel } from '@/utils/risk-workflow';
+import type { Risk as OscalRisk, SystemSecurityPlan } from '@/oscal';
 import type {
   Evidence,
   SignatureDetail,
   VerificationResult,
 } from '@/stores/evidence.ts';
+
+interface EvidenceRisk {
+  id: string;
+  title: string;
+  description?: string;
+  status: string;
+  likelihood?: string;
+  impact?: string;
+  sspId: string;
+  sspTitle?: string;
+  sourceType?: string;
+}
 
 const route = useRoute();
 const router = useRouter();
@@ -782,6 +984,7 @@ const backToEvidenceRoute = computed(() => ({
 const tabs = [
   { id: 'overview', label: 'Overview' },
   { id: 'metadata', label: 'Metadata' },
+  { id: 'risks', label: 'Risks' },
   { id: 'media', label: 'Media' },
   { id: 'signature', label: 'Signature' },
   { id: 'history', label: 'History' },
@@ -792,6 +995,12 @@ const activities = ref<Activity[]>([] as Activity[]);
 const showActivitiesModal = ref(false);
 const verificationAttempted = ref(false);
 const expandedTextMedia = ref<Set<string>>(new Set());
+const showCreateRiskDialog = ref(false);
+const createRiskSspId = ref<string | null>(null);
+const risksLoadedForUuid = ref<string | null>(null);
+
+const toast = useToast();
+const { can, permissionTooltip } = usePermissions();
 
 const {
   data: evidence,
@@ -816,6 +1025,22 @@ const {
   { method: 'POST' },
   { immediate: false },
 );
+const {
+  data: evidenceRisksData,
+  isLoading: risksLoading,
+  error: risksError,
+  execute: loadEvidenceRisks,
+} = useDataApi<EvidenceRisk[]>(null, null, { immediate: false });
+const { data: ssps, execute: loadSsps } = useDataApi<SystemSecurityPlan[]>(
+  null,
+  null,
+  { immediate: false },
+);
+const { execute: executeLinkEvidence } = useDataApi(
+  null,
+  { method: 'POST', transformRequest: [decamelizeKeys] },
+  { immediate: false },
+);
 
 const workflowExecutionId = computed(
   () =>
@@ -829,6 +1054,20 @@ const workflowExecutionRoute = computed(() =>
         params: { id: workflowExecutionId.value },
       }
     : null,
+);
+
+const ZERO_UUID = '00000000-0000-0000-0000-000000000000';
+const hasStreamUuid = computed(() =>
+  Boolean(evidence.value?.uuid && evidence.value.uuid !== ZERO_UUID),
+);
+const evidenceRisks = computed<EvidenceRisk[]>(
+  () => evidenceRisksData.value ?? [],
+);
+const sspOptions = computed(() =>
+  (ssps.value ?? []).map((ssp) => ({
+    uuid: ssp.uuid,
+    title: ssp.metadata?.title || ssp.uuid,
+  })),
 );
 
 const metadataProps = computed<Property[]>(() => evidence.value?.props ?? []);
@@ -1030,6 +1269,102 @@ function getEvidenceStatusColor(status?: string): string {
   );
 }
 
+const RISK_STATUS_COLORS: Record<string, string> = {
+  open: FindingStatusColor['NOT-SATISFIED'],
+  investigating: FindingStatusColor['IN-PROGRESS'],
+  'mitigating-planned': FindingStatusColor['IN-PROGRESS'],
+  'mitigating-implemented': FindingStatusColor['IN-PROGRESS'],
+  remediated: FindingStatusColor.SATISFIED,
+  closed: FindingStatusColor.SATISFIED,
+  'risk-accepted': FindingStatusColor.UNKNOWN,
+  accepted: FindingStatusColor.UNKNOWN,
+};
+
+function getRiskStatusColor(status?: string): string {
+  return (
+    RISK_STATUS_COLORS[status?.toLowerCase() ?? ''] ||
+    FindingStatusColor.UNKNOWN
+  );
+}
+
+const neutralPillColor = FindingStatusColor.UNKNOWN;
+
+const RISK_LEVEL_COLORS: Record<string, string> = {
+  critical: FindingStatusColor['NOT-SATISFIED'],
+  high: FindingStatusColor['NOT-SATISFIED'],
+  moderate: FindingStatusColor['IN-PROGRESS'],
+  medium: FindingStatusColor['IN-PROGRESS'],
+  low: FindingStatusColor.SATISFIED,
+  negligible: FindingStatusColor.UNKNOWN,
+};
+
+function getRiskLevelColor(level?: string): string {
+  return RISK_LEVEL_COLORS[level?.toLowerCase() ?? ''] || neutralPillColor;
+}
+
+async function refreshEvidenceRisks() {
+  const streamUuid = evidence.value?.uuid;
+  if (!streamUuid || streamUuid === ZERO_UUID) {
+    return;
+  }
+  try {
+    await loadEvidenceRisks(`/api/evidence/${evidenceId.value}/risks`);
+    // Mark loaded only after the fetch succeeds so a failed request retries on
+    // the next Risks-tab visit instead of staying stuck on the error state.
+    risksLoadedForUuid.value = streamUuid;
+  } catch {
+    // The failure is surfaced through risksError; leave risksLoadedForUuid unset.
+  }
+}
+
+async function ensureEvidenceRisksLoaded() {
+  if (
+    !evidence.value?.uuid ||
+    risksLoadedForUuid.value === evidence.value.uuid
+  ) {
+    return;
+  }
+  await refreshEvidenceRisks();
+}
+
+function openCreateRiskDialog() {
+  createRiskSspId.value = null;
+  showCreateRiskDialog.value = true;
+  if (!ssps.value?.length) {
+    loadSsps('/api/oscal/system-security-plans');
+  }
+}
+
+async function onRiskCreated(risk: OscalRisk & { id?: string }) {
+  showCreateRiskDialog.value = false;
+
+  // The SSP-scoped register create responds with a register risk carrying an
+  // `id`; a plain OSCAL risk has none, so it's optional on the payload.
+  const riskId = risk.id;
+  const sspId = createRiskSspId.value;
+  const streamUuid = evidence.value?.uuid;
+  if (!riskId || !sspId || !streamUuid) {
+    return;
+  }
+
+  try {
+    await executeLinkEvidence(
+      `/api/oscal/system-security-plans/${sspId}/risks/${riskId}/evidence`,
+      { data: { evidenceId: streamUuid } },
+    );
+  } catch {
+    toast.add({
+      severity: 'warn',
+      summary: 'Evidence link failed',
+      detail:
+        'The risk was created, but it could not be linked to this evidence.',
+      life: 5000,
+    });
+  }
+
+  await refreshEvidenceRisks();
+}
+
 function directToUpdate() {
   return router.push({
     name: 'evidence:update',
@@ -1156,10 +1491,13 @@ watch(
     verificationResult.value = undefined;
     verifyError.value = undefined;
     showActivitiesModal.value = false;
+    showCreateRiskDialog.value = false;
     expandedTextMedia.value = new Set();
     evidence.value = undefined;
     signatureDetail.value = undefined;
     latestEvidence.value = undefined;
+    evidenceRisksData.value = undefined;
+    risksLoadedForUuid.value = null;
 
     await Promise.allSettled([
       loadEvidence(`/api/evidence/${id}`),
@@ -1174,7 +1512,17 @@ watch(
         loadLatestEvidence(`/api/evidence/latest/${evidenceUuid}`),
       ]);
     }
+
+    if (activeTab.value === 'risks') {
+      await ensureEvidenceRisksLoaded();
+    }
   },
   { immediate: true },
 );
+
+watch(activeTab, async (tab) => {
+  if (tab === 'risks') {
+    await ensureEvidenceRisksLoaded();
+  }
+});
 </script>
