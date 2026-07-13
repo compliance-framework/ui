@@ -7,7 +7,7 @@
     "dev": "vite --host",
     "build": "run-p type-check \"build-only {@}\" --",
     "preview": "vite preview",
-    "test:unit": "vitest --watch=false",
+    "test:unit": "NODE_OPTIONS=--localstorage-file=.vitest-localstorage.json vitest --watch=false",
     "build-only": "vite build",
     "type-check": "vue-tsc --build",
     "lint": "eslint src/",
