@@ -762,6 +762,14 @@ const authenticatedRoutes = [
           ),
       },
       {
+        path: 'leverage',
+        name: 'system-security-plan-leverage',
+        component: () =>
+          import(
+            '../views/system-security-plans/SystemSecurityPlanLeverageView.vue'
+          ),
+      },
+      {
         path: 'risks',
         name: 'system-security-plan-risks',
         component: () => import('../views/RisksView.vue'),
