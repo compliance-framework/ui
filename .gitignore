@@ -37,6 +37,3 @@ eslint-report.json
 
 # Husky test files
 test-husky.js
-
-# Node's --localstorage-file backing store for vitest (see package.json test:unit)
-.vitest-localstorage.json
