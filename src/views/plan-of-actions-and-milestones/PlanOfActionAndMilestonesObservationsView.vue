@@ -153,7 +153,7 @@ import ObservationCreateForm from '@/components/poam/ObservationCreateForm.vue';
 import ObservationEditForm from '@/components/poam/ObservationEditForm.vue';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi } from '@/composables/axios';
-import { getIdFromRoute } from '../../utils/get-poam-id-from-route';
+import { getIdFromRoute } from '../../utils/get-id-from-route';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
 import { usePermissions } from '@/composables/usePermissions';
 import { RESOURCES, ACTIONS } from '@/constants/permissions';

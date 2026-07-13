@@ -181,7 +181,7 @@ import ExportOfferingEditForm from '@/components/system-security-plans/ExportOff
 import ExportOfferingItemsDialog from '@/components/system-security-plans/ExportOfferingItemsDialog.vue';
 import { RESOURCES, ACTIONS } from '@/constants/permissions';
 import { useDataApi, useAuthenticatedInstance } from '@/composables/axios';
-import { getIdFromRoute } from '@/utils/get-poam-id-from-route';
+import { getIdFromRoute } from '@/utils/get-id-from-route';
 import type { ControlImplementation, SystemImplementation } from '@/oscal';
 import type { DataResponse, ErrorBody, ErrorResponse } from '@/stores/types';
 import type {

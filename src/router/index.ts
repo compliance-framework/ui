@@ -770,6 +770,14 @@ const authenticatedRoutes = [
           ),
       },
       {
+        path: 'inherited-capabilities',
+        name: 'system-security-plan-inherited-capabilities',
+        component: () =>
+          import(
+            '../views/system-security-plans/SystemSecurityPlanInheritedCapabilitiesView.vue'
+          ),
+      },
+      {
         path: 'risks',
         name: 'system-security-plan-risks',
         component: () => import('../views/RisksView.vue'),
