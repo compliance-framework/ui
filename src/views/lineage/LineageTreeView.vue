@@ -63,7 +63,7 @@ async function onNodeExpand(node: LineageTreeNode) {
 
 function onNodeSelect(node: LineageTreeNode) {
   // Risk / evidence nodes open their own DetailView; structural nodes use the drawer.
-  const route = nodeDetailRoute(node.data);
+  const route = nodeDetailRoute(node.data, scopeStore.scope.sspId);
   if (route) {
     router.push(route);
     return;

@@ -102,6 +102,49 @@
         </select>
       </div>
 
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label
+            class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
+          >
+            Likelihood
+          </label>
+          <select
+            v-model="formData.likelihood"
+            class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-800 dark:text-slate-300"
+          >
+            <option value="">Not set</option>
+            <option
+              v-for="level in riskLevelOptions"
+              :key="`likelihood-${level.value}`"
+              :value="level.value"
+            >
+              {{ level.label }}
+            </option>
+          </select>
+        </div>
+        <div>
+          <label
+            class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
+          >
+            Impact
+          </label>
+          <select
+            v-model="formData.impact"
+            class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-800 dark:text-slate-300"
+          >
+            <option value="">Not set</option>
+            <option
+              v-for="level in riskLevelOptions"
+              :key="`impact-${level.value}`"
+              :value="level.value"
+            >
+              {{ level.label }}
+            </option>
+          </select>
+        </div>
+      </div>
+
       <div
         class="rounded-md border border-ccf-300 dark:border-slate-700 bg-gray-50 dark:bg-slate-900 p-4"
       >
@@ -276,6 +319,14 @@ const riskStatusOptions = [
   { value: 'closed', label: 'Closed' },
 ];
 
+const riskLevelOptions = [
+  { value: 'negligible', label: 'Negligible' },
+  { value: 'low', label: 'Low' },
+  { value: 'moderate', label: 'Moderate' },
+  { value: 'high', label: 'High' },
+  { value: 'critical', label: 'Critical' },
+];
+
 const riskContext = computed<RiskContext | null>(() => {
   if (props.sspId) {
     return {
@@ -332,9 +383,20 @@ const formData = reactive({
   description: '',
   statement: '',
   status: '',
+  likelihood: '',
+  impact: '',
   deadline: '',
   remarks: '',
 });
+
+function normalizeRiskLevel(value?: string | null): string {
+  const normalized = value?.trim().toLowerCase();
+  if (!normalized) return '';
+  const canonical = normalized === 'medium' ? 'moderate' : normalized;
+  return riskLevelOptions.some((level) => level.value === canonical)
+    ? canonical
+    : '';
+}
 const showTemplateSelector = ref(false);
 const selectedTemplate = ref<RiskTemplate | null>(null);
 const selectedTemplateName = ref('');
@@ -488,6 +550,8 @@ function applyTemplate(template: RiskTemplate) {
   formData.title = template.title;
   formData.description = statement;
   formData.statement = statement;
+  formData.likelihood = normalizeRiskLevel(template.likelihoodHint);
+  formData.impact = normalizeRiskLevel(template.impactHint);
   selectedTemplate.value = template;
 
   const templateRemarks = buildTemplateRemarks(template);
@@ -579,8 +643,8 @@ async function submit() {
       description: formData.description,
       statement: formData.statement,
       status: formData.status,
-      likelihood: toOptionalString(selectedTemplate.value?.likelihoodHint),
-      impact: toOptionalString(selectedTemplate.value?.impactHint),
+      likelihood: toOptionalString(formData.likelihood),
+      impact: toOptionalString(formData.impact),
       threatIds: selectedTemplate.value
         ? getThreatIdsFromTemplate(selectedTemplate.value)
         : undefined,

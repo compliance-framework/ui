@@ -9,7 +9,12 @@ import { nodeCardClass, nodeDetailRoute } from '@/components/lineage/nodeMeta';
 import { useLineage } from '@/composables/useLineage';
 import type { LineageNode } from '@/composables/useLineage/types';
 import { useLineageScopeStore } from '@/stores/lineageScope';
-import { COLUMN_PAGE_SIZE, worstFirst } from './ranking';
+import {
+  COLUMN_PAGE_SIZE,
+  worstFirst,
+  structuralNodes as structuralNodesOf,
+  riskGroups as riskGroupsOf,
+} from './ranking';
 
 // One column = the (worst-first) children of a selected node, revealed 5 at a
 // time. columns[0] holds the roots. Selecting a box in column i drops everything
@@ -119,7 +124,7 @@ function showMore(colIndex: number) {
 
 function openDetails(node: LineageNode) {
   // Risk / evidence nodes have their own DetailViews; structural nodes use the drawer.
-  const route = nodeDetailRoute(node);
+  const route = nodeDetailRoute(node, scopeStore.scope.sspId);
   if (route) {
     router.push(route);
     return;
@@ -140,6 +145,16 @@ function shownNodes(col: Column): LineageNode[] {
     );
   }
   return col.nodes.slice(0, col.revealed);
+}
+
+// Non-risk boxes in a column, rendered individually as before.
+function structuralNodes(col: Column): LineageNode[] {
+  return structuralNodesOf(shownNodes(col));
+}
+
+// Risk boxes in a column, bucketed into one container per owning SSP.
+function riskGroups(col: Column) {
+  return riskGroupsOf(shownNodes(col));
 }
 
 // Filtering changes column height → the connector arrows may need to move.
@@ -283,7 +298,7 @@ watch(
           </p>
 
           <div
-            v-for="node in shownNodes(col)"
+            v-for="node in structuralNodes(col)"
             :key="node.key"
             :ref="(el) => setBoxRef(i, node.key, el)"
             class="cursor-pointer rounded-lg border border-l-4 border-surface-200 p-3 transition hover:shadow-md dark:border-surface-700"
@@ -309,6 +324,52 @@ watch(
               >
                 details
               </button>
+            </div>
+          </div>
+
+          <!-- Risk boxes, bucketed by owning SSP so cross-SSP risks under the
+               same control don't look like they belong to one plan. -->
+          <div
+            v-for="group in riskGroups(col)"
+            :key="`ssp:${group.sspId}`"
+            class="rounded-lg border border-dashed border-surface-300 p-2 dark:border-surface-600"
+          >
+            <div
+              class="mb-1.5 truncate text-[11px] font-semibold tracking-wide text-surface-500 uppercase dark:text-surface-400"
+              v-tooltip.top="group.sspTitle"
+            >
+              SSP: {{ group.sspTitle }}
+            </div>
+            <div class="flex flex-col gap-2">
+              <div
+                v-for="node in group.nodes"
+                :key="node.key"
+                :ref="(el) => setBoxRef(i, node.key, el)"
+                class="cursor-pointer rounded-lg border border-l-4 border-surface-200 p-3 transition hover:shadow-md dark:border-surface-700"
+                :class="[
+                  nodeCardClass(node),
+                  col.selectedKey === node.key
+                    ? 'ring-2 ring-primary ring-offset-1 dark:ring-offset-surface-900'
+                    : '',
+                ]"
+                @click="onBoxClick(i, node)"
+              >
+                <LineageNodeRow :node="node" card />
+                <div
+                  class="mt-1 flex items-center justify-between pl-5 text-xs text-surface-500 dark:text-surface-400"
+                >
+                  <span v-if="node.hasChildren"
+                    >{{ node.childrenCount }} children ›</span
+                  >
+                  <span v-else class="italic">leaf</span>
+                  <button
+                    class="rounded px-1.5 py-0.5 hover:bg-surface-200 dark:hover:bg-surface-700"
+                    @click.stop="openDetails(node)"
+                  >
+                    details
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 

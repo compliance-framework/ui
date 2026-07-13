@@ -23,3 +23,49 @@ export function worstFirst(nodes: LineageNode[]): LineageNode[] {
     return a.title.localeCompare(b.title);
   });
 }
+
+/** Non-risk nodes, rendered individually (unchanged from pre-grouping behavior). */
+export function structuralNodes(nodes: LineageNode[]): LineageNode[] {
+  return nodes.filter((n) => n.nodeType !== 'risk');
+}
+
+// A column of a control's children mixes structural/evidence nodes with risk
+// nodes (a control can be linked to risks across several SSPs). Risk nodes are
+// bucketed into one container per owning SSP so cross-SSP risks under the same
+// control don't read as belonging to one plan.
+export interface RiskGroup {
+  sspId: string;
+  sspTitle: string;
+  nodes: LineageNode[];
+}
+
+/**
+ * Group a column's risk nodes by their owning SSP (risk.sspId — a risk always
+ * has exactly one). Groups are worst-first by their worst member, matching the
+ * column's own ordering; nodes within a group keep the order they arrived in.
+ */
+export function riskGroups(nodes: LineageNode[]): RiskGroup[] {
+  const risks = nodes.filter((n) => n.nodeType === 'risk');
+  if (!risks.length) return [];
+  const order: string[] = [];
+  const groups = new Map<string, RiskGroup>();
+  for (const n of risks) {
+    const sspId = n.sspId ?? '';
+    if (!groups.has(sspId)) {
+      groups.set(sspId, {
+        sspId,
+        sspTitle: n.sspTitle || 'Unknown SSP',
+        nodes: [],
+      });
+      order.push(sspId);
+    }
+    groups.get(sspId)!.nodes.push(n);
+  }
+  return order
+    .map((id) => groups.get(id)!)
+    .sort(
+      (a, b) =>
+        Math.max(...b.nodes.map(nodeRankScore)) -
+        Math.max(...a.nodes.map(nodeRankScore)),
+    );
+}

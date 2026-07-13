@@ -138,6 +138,9 @@ export interface LineageNode {
   lastReviewedAt?: string;
   firstSeenAt?: string;
   lastSeenAt?: string;
+  /** The single SSP this risk belongs to (risks always have exactly one). */
+  sspId?: string;
+  sspTitle?: string;
 
   // --- evidence nodes (nodeType === 'evidence') ---
   evidenceId?: string;

@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
+import PrimeVue from 'primevue/config';
+import ToastService from 'primevue/toastservice';
 import ViewView from '../ViewView.vue';
 
 type MockRef<T> = {
@@ -25,10 +27,15 @@ type ViewTestRefs = {
   history: MockRef<Array<Record<string, unknown>>>;
   compliance: MockRef<Array<Record<string, unknown>>>;
   heartbeat: MockRef<Array<Record<string, unknown>>>;
+  risks: MockRef<Array<Record<string, unknown>> | undefined>;
+  risksResponse: Array<Record<string, unknown>>;
+  ssps: MockRef<Array<Record<string, unknown>> | undefined>;
+  sspsResponse: Array<Record<string, unknown>>;
   loading: MockRef<boolean>;
   error: MockRef<unknown>;
   signatureError: MockRef<unknown>;
   verifyError: MockRef<unknown>;
+  risksError: MockRef<unknown>;
   route: MockRouteState;
 };
 
@@ -36,12 +43,16 @@ const {
   mockRoute,
   routerPush,
   executeVerify,
+  loadEvidenceRisks,
+  loadSsps,
   baseEvidence,
   signedSignatureDetail,
   invalidVerificationResult,
   historyItems,
   complianceHistory,
   heartbeatHistory,
+  evidenceRisks,
+  sspList,
   refs,
 } = vi.hoisted(() => ({
   mockRoute: {
@@ -59,6 +70,17 @@ const {
   executeVerify: vi.fn(async (url?: string) => {
     refs.verification.value = invalidVerificationResult;
     return { data: { value: { data: invalidVerificationResult } }, url };
+  }),
+  loadEvidenceRisks: vi.fn(async (url?: string) => {
+    if (refs.risksError.value) {
+      throw refs.risksError.value;
+    }
+    refs.risks.value = structuredClone(refs.risksResponse);
+    return { data: { value: { data: refs.risks.value } }, url };
+  }),
+  loadSsps: vi.fn(async (url?: string) => {
+    refs.ssps.value = structuredClone(refs.sspsResponse);
+    return { data: { value: { data: refs.ssps.value } }, url };
   }),
   baseEvidence: {
     id: 'evidence-1',
@@ -220,6 +242,31 @@ const {
       statuses: [{ status: 'healthy', count: 1 }],
     },
   ],
+  evidenceRisks: [
+    {
+      id: 'risk-1',
+      title: 'Unencrypted storage bucket',
+      description: 'Bucket allows public reads.',
+      status: 'open',
+      likelihood: 'high',
+      impact: 'high',
+      sspId: 'ssp-1',
+      sspTitle: 'Production SSP',
+      sourceType: 'evidence-auto',
+    },
+    {
+      id: 'risk-2',
+      title: 'Manual review overdue',
+      status: 'investigating',
+      sspId: 'ssp-2',
+      sspTitle: 'Staging SSP',
+      sourceType: 'manual',
+    },
+  ],
+  sspList: [
+    { uuid: 'ssp-1', metadata: { title: 'Production SSP' } },
+    { uuid: 'ssp-2', metadata: { title: 'Staging SSP' } },
+  ],
   refs: {
     nullGetCallIndex: 0,
   } as ViewTestRefs,
@@ -229,6 +276,13 @@ vi.mock('vue-router', () => ({
   useRoute: () => refs.route,
   useRouter: () => ({
     push: routerPush,
+  }),
+}));
+
+vi.mock('@/composables/usePermissions', () => ({
+  usePermissions: () => ({
+    can: () => true,
+    permissionTooltip: () => '',
   }),
 }));
 
@@ -257,13 +311,17 @@ vi.mock('@/composables/axios', async () => {
   refs.history = ref(historyItems);
   refs.compliance = ref(complianceHistory);
   refs.heartbeat = ref(heartbeatHistory);
+  refs.risks = ref(evidenceRisks);
+  refs.ssps = ref(sspList);
   refs.loading = ref(false);
   refs.error = ref(null);
   refs.signatureError = ref(null);
   refs.verifyError = ref(null);
+  refs.risksError = ref(null);
   refs.route = reactive(structuredClone(mockRoute));
 
   return {
+    decamelizeKeys: (data: unknown) => data,
     useDataApi: (
       url: string | { value?: string } | null,
       config?: { method?: string },
@@ -332,30 +390,48 @@ vi.mock('@/composables/axios', async () => {
           };
         }
 
+        if (refs.nullGetCallIndex === 3) {
+          return {
+            data: refs.latestEvidence,
+            error: refs.error,
+            execute: vi.fn(async (nextUrl?: string) => {
+              if (refs.error.value) {
+                throw refs.error.value;
+              }
+
+              if (nextUrl === '/api/evidence/latest/evidence-uuid-1') {
+                refs.latestEvidence.value = structuredClone(
+                  refs.latestEvidenceResponse,
+                );
+              }
+
+              if (nextUrl === '/api/evidence/latest/evidence-uuid-2') {
+                refs.latestEvidence.value = {
+                  ...structuredClone(baseEvidence),
+                  id: 'evidence-2',
+                  uuid: 'evidence-uuid-2',
+                  title: 'Second evidence record',
+                };
+              }
+              return { data: { value: { data: refs.latestEvidence.value } } };
+            }),
+          };
+        }
+
+        if (refs.nullGetCallIndex === 4) {
+          return {
+            data: refs.risks,
+            isLoading: refs.loading,
+            error: refs.risksError,
+            execute: loadEvidenceRisks,
+          };
+        }
+
         return {
-          data: refs.latestEvidence,
+          data: refs.ssps,
+          isLoading: refs.loading,
           error: refs.error,
-          execute: vi.fn(async (nextUrl?: string) => {
-            if (refs.error.value) {
-              throw refs.error.value;
-            }
-
-            if (nextUrl === '/api/evidence/latest/evidence-uuid-1') {
-              refs.latestEvidence.value = structuredClone(
-                refs.latestEvidenceResponse,
-              );
-            }
-
-            if (nextUrl === '/api/evidence/latest/evidence-uuid-2') {
-              refs.latestEvidence.value = {
-                ...structuredClone(baseEvidence),
-                id: 'evidence-2',
-                uuid: 'evidence-uuid-2',
-                title: 'Second evidence record',
-              };
-            }
-            return { data: { value: { data: refs.latestEvidence.value } } };
-          }),
+          execute: loadSsps,
         };
       }
 
@@ -426,6 +502,7 @@ vi.mock('@/composables/axios', async () => {
 function mountView() {
   return mount(ViewView, {
     global: {
+      plugins: [PrimeVue, ToastService],
       stubs: {
         PageHeader: {
           template: '<h1><slot /></h1>',
@@ -443,6 +520,12 @@ function mountView() {
         },
         Dialog: {
           template: '<div><slot /></div>',
+        },
+        Select: {
+          template: '<select />',
+        },
+        RiskCreateForm: {
+          template: '<div>RiskCreateForm</div>',
         },
         Message: {
           template: '<div><slot /></div>',
@@ -514,10 +597,15 @@ describe('Evidence ViewView', () => {
     refs.history.value = structuredClone(historyItems);
     refs.compliance.value = structuredClone(complianceHistory);
     refs.heartbeat.value = structuredClone(heartbeatHistory);
+    refs.risksResponse = structuredClone(evidenceRisks);
+    refs.risks.value = structuredClone(evidenceRisks);
+    refs.sspsResponse = structuredClone(sspList);
+    refs.ssps.value = structuredClone(sspList);
     refs.loading.value = false;
     refs.error.value = null;
     refs.signatureError.value = null;
     refs.verifyError.value = null;
+    refs.risksError.value = null;
     refs.route.params.id = 'evidence-1';
     refs.route.query = {
       filter: 'recent',
@@ -527,6 +615,8 @@ describe('Evidence ViewView', () => {
     };
     executeVerify.mockClear();
     routerPush.mockClear();
+    loadEvidenceRisks.mockClear();
+    loadSsps.mockClear();
   });
 
   it('renders the evidence detail tabs with overview as the default tab', async () => {
@@ -541,6 +631,7 @@ describe('Evidence ViewView', () => {
     expect(tabTexts).toEqual([
       'Overview',
       'Metadata',
+      'Risks',
       'Media',
       'Signature',
       'History',
@@ -570,6 +661,69 @@ describe('Evidence ViewView', () => {
     expect(wrapper.text()).toContain('check: baseline');
     expect(wrapper.text()).toContain('https://example.com/evidence');
     expect(wrapper.text()).toContain('Internal resource reference:');
+  });
+
+  it('lists associated risks with their SSP names in the risks tab', async () => {
+    const wrapper = mountView();
+    await flushPromises();
+
+    await clickButtonByText(wrapper, 'Risks');
+
+    expect(loadEvidenceRisks).toHaveBeenCalledWith(
+      '/api/evidence/evidence-1/risks',
+    );
+    expect(wrapper.text()).toContain('Unencrypted storage bucket');
+    expect(wrapper.text()).toContain('Production SSP');
+    expect(wrapper.text()).toContain('Manual review overdue');
+    expect(wrapper.text()).toContain('Staging SSP');
+    expect(wrapper.text()).toContain('Auto-generated');
+
+    const riskLink = wrapper.find(
+      '[data-to*="system-security-plan-risk-detail"]',
+    );
+    expect(riskLink.exists()).toBe(true);
+    expect(riskLink.attributes('data-to')).toContain('"riskId":"risk-1"');
+    // Scoped to the risk's own SSP, not the active one, so cross-SSP risks resolve.
+    expect(riskLink.attributes('data-to')).toContain('"id":"ssp-1"');
+  });
+
+  it('does not fetch risks until the risks tab is opened', async () => {
+    mountView();
+    await flushPromises();
+
+    expect(loadEvidenceRisks).not.toHaveBeenCalled();
+  });
+
+  it('shows an empty state when no risks are associated', async () => {
+    refs.risksResponse = [];
+
+    const wrapper = mountView();
+    await flushPromises();
+    await clickButtonByText(wrapper, 'Risks');
+
+    expect(wrapper.text()).toContain(
+      'No risks are associated with this evidence record.',
+    );
+  });
+
+  it('blocks risk association when the evidence has no stream uuid', async () => {
+    refs.evidenceResponse = {
+      ...structuredClone(baseEvidence),
+      uuid: '00000000-0000-0000-0000-000000000000',
+    };
+    refs.evidence.value = structuredClone(refs.evidenceResponse);
+
+    const wrapper = mountView();
+    await flushPromises();
+    await clickButtonByText(wrapper, 'Risks');
+
+    expect(wrapper.text()).toContain('has no stream identifier');
+    expect(loadEvidenceRisks).not.toHaveBeenCalled();
+
+    const createButton = wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Create Risk');
+    expect(createButton?.attributes('disabled')).toBeDefined();
   });
 
   it('renders unsafe metadata links as plain text instead of clickable anchors', async () => {

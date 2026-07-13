@@ -429,10 +429,19 @@ function idFromKey(key: string): string {
  */
 export function nodeDetailRoute(
   node: LineageNode,
+  sspId?: string | null,
 ): { name: string; params: Record<string, string> } | null {
   if (node.nodeType === 'risk') {
     const riskId = node.riskId || idFromKey(node.key);
-    return riskId ? { name: 'risks:detail', params: { riskId } } : null;
+    if (!riskId) return null;
+    // Scoped to an SSP: route through it so the risk opens in the right SSP's
+    // context instead of the (possibly wrong) SSP its RiskDetailView guesses.
+    return sspId
+      ? {
+          name: 'system-security-plan-risk-detail',
+          params: { id: sspId, riskId },
+        }
+      : { name: 'risks:detail', params: { riskId } };
   }
   if (node.nodeType === 'evidence') {
     // The evidence key holds the *stream* uuid, not the record id — only

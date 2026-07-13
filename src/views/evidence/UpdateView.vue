@@ -1,7 +1,8 @@
 <template>
-  <PageHeader> Update Evidence </PageHeader>
+  <PageHeader> Re-submit Evidence </PageHeader>
   <PageSubHeader>
-    Update the details of an existing piece of evidence.
+    Submit a new revision of this evidence. The revision joins the same evidence
+    stream and becomes the latest record.
   </PageSubHeader>
   <template v-if="isLoading">
     <div class="text-center">
