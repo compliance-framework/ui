@@ -49,7 +49,7 @@
         </div>
         <TertiaryButton
           type="button"
-          class="!px-1"
+          class="px-1!"
           :aria-label="`Remove link ${index + 1}`"
           @click="remove(index)"
         >

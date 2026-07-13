@@ -434,12 +434,15 @@ export function nodeDetailRoute(
   if (node.nodeType === 'risk') {
     const riskId = node.riskId || idFromKey(node.key);
     if (!riskId) return null;
-    // Scoped to an SSP: route through it so the risk opens in the right SSP's
-    // context instead of the (possibly wrong) SSP its RiskDetailView guesses.
-    return sspId
+    // Prefer the risk's own SSP: a lineage view scoped to one SSP can still
+    // render cross-SSP risks, so routing by the active scope would open the
+    // wrong SSP's context. Fall back to the active scope, then to the unscoped
+    // detail route when neither is known.
+    const targetSspId = node.sspId || sspId;
+    return targetSspId
       ? {
           name: 'system-security-plan-risk-detail',
-          params: { id: sspId, riskId },
+          params: { id: targetSspId, riskId },
         }
       : { name: 'risks:detail', params: { riskId } };
   }

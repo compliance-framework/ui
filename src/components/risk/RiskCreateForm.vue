@@ -306,7 +306,9 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   cancel: [];
-  created: [risk: Risk];
+  // The SSP-scoped register create responds with a register risk carrying an
+  // `id`; the plain OSCAL create does not, hence the optional field.
+  created: [risk: Risk & { id?: string }];
 }>();
 
 const toast = useToast();

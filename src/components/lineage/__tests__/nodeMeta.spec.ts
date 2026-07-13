@@ -251,6 +251,18 @@ describe('nodeDetailRoute', () => {
     });
   });
 
+  it("prefers the risk node's own sspId over the active scope sspId", () => {
+    expect(
+      nodeDetailRoute(
+        base({ nodeType: 'risk', riskId: 'r-1', sspId: 'ssp-own' }),
+        'ssp-scope',
+      ),
+    ).toEqual({
+      name: 'system-security-plan-risk-detail',
+      params: { id: 'ssp-own', riskId: 'r-1' },
+    });
+  });
+
   it('routes evidence nodes to evidence:view with the evidenceId', () => {
     expect(
       nodeDetailRoute(base({ nodeType: 'evidence', evidenceId: 'e-1' })),

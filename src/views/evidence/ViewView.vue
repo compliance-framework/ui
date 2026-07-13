@@ -1307,8 +1307,14 @@ async function refreshEvidenceRisks() {
   if (!streamUuid || streamUuid === ZERO_UUID) {
     return;
   }
-  risksLoadedForUuid.value = streamUuid;
-  await loadEvidenceRisks(`/api/evidence/${evidenceId.value}/risks`);
+  try {
+    await loadEvidenceRisks(`/api/evidence/${evidenceId.value}/risks`);
+    // Mark loaded only after the fetch succeeds so a failed request retries on
+    // the next Risks-tab visit instead of staying stuck on the error state.
+    risksLoadedForUuid.value = streamUuid;
+  } catch {
+    // The failure is surfaced through risksError; leave risksLoadedForUuid unset.
+  }
 }
 
 async function ensureEvidenceRisksLoaded() {
@@ -1329,12 +1335,12 @@ function openCreateRiskDialog() {
   }
 }
 
-async function onRiskCreated(risk: OscalRisk) {
+async function onRiskCreated(risk: OscalRisk & { id?: string }) {
   showCreateRiskDialog.value = false;
 
-  // The SSP-scoped register create responds with a register risk (which has
-  // an `id`), even though the form's emit is typed as an OSCAL Risk.
-  const riskId = (risk as unknown as { id?: string })?.id;
+  // The SSP-scoped register create responds with a register risk carrying an
+  // `id`; a plain OSCAL risk has none, so it's optional on the payload.
+  const riskId = risk.id;
   const sspId = createRiskSspId.value;
   const streamUuid = evidence.value?.uuid;
   if (!riskId || !sspId || !streamUuid) {

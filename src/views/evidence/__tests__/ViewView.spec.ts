@@ -694,6 +694,28 @@ describe('Evidence ViewView', () => {
     expect(loadEvidenceRisks).not.toHaveBeenCalled();
   });
 
+  it('shows an error and retries the fetch after a failed risks load', async () => {
+    refs.risksError.value = new Error('boom');
+
+    const wrapper = mountView();
+    await flushPromises();
+    await clickButtonByText(wrapper, 'Risks');
+
+    expect(loadEvidenceRisks).toHaveBeenCalledTimes(1);
+    expect(wrapper.text()).toContain(
+      'Failed to load risks for this evidence record.',
+    );
+
+    // Recover: a failed load must not mark the UUID as loaded, so leaving and
+    // returning to the Risks tab retries the fetch.
+    refs.risksError.value = null;
+    await clickButtonByText(wrapper, 'Overview');
+    await clickButtonByText(wrapper, 'Risks');
+
+    expect(loadEvidenceRisks).toHaveBeenCalledTimes(2);
+    expect(wrapper.text()).toContain('Unencrypted storage bucket');
+  });
+
   it('shows an empty state when no risks are associated', async () => {
     refs.risksResponse = [];
 

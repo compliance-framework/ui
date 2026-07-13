@@ -325,8 +325,15 @@ const status = ref<EvidenceStatus>({
   reason: props.evidence?.status?.reason || '',
 });
 const labels = ref<EvidenceLabel[]>(props.evidence?.labels || []);
-const propsList = ref<Property[]>([...(props.evidence?.props ?? [])]);
-const linksList = ref<Link[]>([...(props.evidence?.links ?? [])]);
+// Clone each element (not just the outer array): PropsEditor/LinksEditor bind
+// v-model onto these objects, so aliasing props.evidence.props/links would mutate
+// the fetched source data before the user submits or cancels.
+const propsList = ref<Property[]>(
+  (props.evidence?.props ?? []).map((prop) => ({ ...prop })),
+);
+const linksList = ref<Link[]>(
+  (props.evidence?.links ?? []).map((link) => ({ ...link })),
+);
 
 // Date validation
 const dateValidationError = computed(() => {
