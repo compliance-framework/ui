@@ -446,7 +446,7 @@ import StatementCreateForm from '@/components/system-security-plans/StatementCre
 import StatementByComponent from '@/views/system-security-plans/partials/StatementByComponent.vue';
 import ByComponentEditForm from '@/components/system-security-plans/ByComponentEditForm.vue';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
-import { getIdFromRoute } from '@/utils/get-poam-id-from-route';
+import { getIdFromRoute } from '@/utils/get-id-from-route';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
 import { usePermissions } from '@/composables/usePermissions';
 import { RESOURCES, ACTIONS } from '@/constants/permissions';

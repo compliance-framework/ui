@@ -115,7 +115,7 @@ import type { ImportSSP } from '@/oscal';
 import ImportSspForm from '@/components/poam/ImportSspForm.vue';
 import Dialog from '@/volt/Dialog.vue';
 import { useDataApi } from '@/composables/axios';
-import { getIdFromRoute } from '../../utils/get-poam-id-from-route';
+import { getIdFromRoute } from '../../utils/get-id-from-route';
 import { usePermissions } from '@/composables/usePermissions';
 import { RESOURCES, ACTIONS } from '@/constants/permissions';
 

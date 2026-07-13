@@ -197,6 +197,23 @@ describe('SystemSecurityPlanInheritedCapabilitiesView', () => {
     );
   });
 
+  it('shows an error toast when re-attest fails', async () => {
+    postMock.mockRejectedValueOnce(new Error('network down'));
+    controlsData.current = [
+      makeControl({ status: 'drifted', driftRiskId: 'risk-1' }),
+    ];
+    const wrapper = mountView();
+
+    await findButton(wrapper, 'Re-attest').trigger('click');
+    const { accept } = confirmRequireMock.mock.calls[0][0];
+    await accept();
+    await flushPromises();
+
+    expect(toastAddMock).toHaveBeenCalledWith(
+      expect.objectContaining({ severity: 'error' }),
+    );
+  });
+
   it('hides Re-attest without ssp:update', () => {
     permState.canUpdateSsp = false;
     controlsData.current = [

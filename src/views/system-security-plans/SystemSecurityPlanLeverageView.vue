@@ -93,7 +93,7 @@ import PermissionGate from '@/components/auth/PermissionGate.vue';
 import SubscribeOfferingWizard from '@/components/system-security-plans/SubscribeOfferingWizard.vue';
 import { RESOURCES, ACTIONS } from '@/constants/permissions';
 import { useDataApi } from '@/composables/axios';
-import { getIdFromRoute } from '@/utils/get-poam-id-from-route';
+import { getIdFromRoute } from '@/utils/get-id-from-route';
 import type { CatalogOffering } from '@/types/ssp-export-offerings';
 import type { SSPLeverageLink } from '@/types/ssp-leverage';
 

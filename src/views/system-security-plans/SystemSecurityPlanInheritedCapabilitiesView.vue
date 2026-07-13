@@ -120,7 +120,7 @@ import SecondaryButton from '@/volt/SecondaryButton.vue';
 import PermissionGate from '@/components/auth/PermissionGate.vue';
 import { RESOURCES, ACTIONS } from '@/constants/permissions';
 import { useDataApi, useAuthenticatedInstance } from '@/composables/axios';
-import { getIdFromRoute } from '@/utils/get-poam-id-from-route';
+import { getIdFromRoute } from '@/utils/get-id-from-route';
 import type { DataResponse, ErrorBody, ErrorResponse } from '@/stores/types';
 import type {
   LeveragedControl,
