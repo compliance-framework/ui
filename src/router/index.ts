@@ -754,6 +754,14 @@ const authenticatedRoutes = [
           ),
       },
       {
+        path: 'export-offerings',
+        name: 'system-security-plan-export-offerings',
+        component: () =>
+          import(
+            '../views/system-security-plans/SystemSecurityPlanExportOfferingsView.vue'
+          ),
+      },
+      {
         path: 'risks',
         name: 'system-security-plan-risks',
         component: () => import('../views/RisksView.vue'),

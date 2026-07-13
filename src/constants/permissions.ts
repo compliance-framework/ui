@@ -24,6 +24,7 @@ export const RESOURCES = {
   PARTY: 'party',
   ROLE: 'role',
   ACTIVITY: 'activity',
+  SSP_EXPORT_OFFERING: 'ssp-export-offering',
 
   // SSP-scoped register items
   RISK: 'risk',
@@ -62,6 +63,7 @@ export const ACTIONS = {
   UPDATE: 'update',
   DELETE: 'delete',
   PROMOTE: 'promote',
+  EXPORT: 'export',
   INGEST: 'ingest',
   REGISTER: 'register',
   // admin actions
@@ -120,6 +122,7 @@ const RESOURCE_LABELS: Partial<Record<string, string>> = {
   [RESOURCES.PARTY]: 'parties',
   [RESOURCES.ROLE]: 'roles',
   [RESOURCES.ACTIVITY]: 'activities',
+  [RESOURCES.SSP_EXPORT_OFFERING]: 'export offerings',
   [RESOURCES.RISK]: 'risks',
   [RESOURCES.FILTER]: 'dashboards',
   [RESOURCES.DASHBOARD_SUGGESTION]: 'dashboard suggestions',
@@ -146,6 +149,7 @@ const ACTION_VERBS: Partial<Record<string, string>> = {
   [ACTIONS.UPDATE]: 'edit',
   [ACTIONS.DELETE]: 'delete',
   [ACTIONS.PROMOTE]: 'promote',
+  [ACTIONS.EXPORT]: 'publish',
   [ACTIONS.REGISTER]: 'register',
   [ACTIONS.INGEST]: 'ingest',
   [ACTIONS.EXECUTE]: 'import',
