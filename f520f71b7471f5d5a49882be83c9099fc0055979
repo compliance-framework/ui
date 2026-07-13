@@ -1,0 +1,520 @@
+lisa-addressed:
+---
+Comment (src/views/lineage/LineageGraphView.vue:128):
+`nodeDetailRoute` is currently being passed the active scope SSP id, but risk nodes can belong to a different SSP (this view explicitly renders cross-SSP risk groups). That means clicking a risk may still open the risk detail under the wrong SSP context (or fall back to the unscoped route when `scopeStore.scope.sspId` is null). Prefer the node's own `sspId` when available.
+Replies:
+**lisa implementation guidance:** FIX handled centrally in nodeDetailRoute (nodeMeta.ts): it now prefers `node.sspId` over the passed scope sspId, so this `openDetails()` call site needs no change. Leaving the call as-is; routing correctness is fixed in nodeMeta.ts.
+
+<!-- lisa-guidance-posted -->
+---
+Comment (src/views/lineage/LineageTreeView.vue:67):
+Same issue as the graph view: risk nodes can be owned by an SSP different from the active scope. Passing only `scopeStore.scope.sspId` can route cross-SSP risks to the wrong SSP-scoped detail page (or fall back to the unscoped route). Prefer `node.data.sspId` when present.
+Replies:
+**lisa implementation guidance:** FIX handled centrally in nodeDetailRoute (nodeMeta.ts): it now prefers `node.data.sspId` (via `node.sspId`) over the passed scope sspId, so this `onNodeSelect()` call site needs no change. Leaving the call as-is; routing correctness is fixed in nodeMeta.ts.
+
+<!-- lisa-guidance-posted -->
+---
+Comment (src/views/evidence/ViewView.vue:1342):
+`onRiskCreated` relies on an `unknown` cast to read `id` from the emitted risk. Since the created payload may include an `id` (register risk) but isn’t guaranteed, it’s clearer and safer to model that as an optional property on the handler parameter and avoid the double cast.
+Replies:
+**lisa implementation guidance:** FIX: drop the `as unknown as { id?: string }` double-cast by modeling the id on the type. In src/components/risk/RiskCreateForm.vue change the emit to `created: [risk: Risk & { id?: string }]`. In src/views/evidence/ViewView.vue change the handler to `async function onRiskCreated(risk: OscalRisk & { id?: string })` and read `const riskId = risk.id;` directly. Keep the existing comment noting the SSP-scoped register create returns a register risk carrying an id.
+
+<!-- lisa-guidance-posted -->
+---
+Comment (src/components/forms/LinksEditor.vue:57):
+_📐 Maintainability & Code Quality_ | _🟡 Minor_ | _⚡ Quick win_
+
+<details>
+<summary>🧩 Analysis chain</summary>
+
+🏁 Script executed:
+
+```shell
+#!/bin/bash
+set -euo pipefail
+
+printf 'Files:\n'
+git ls-files | rg '(^|/)(package\.json|tailwind.*|postcss.*|vite.*|nuxt\.config.*|src/components/forms/(LinksEditor|PropsEditor)\.vue)$'
+
+printf '\npackage.json excerpts:\n'
+sed -n '1,220p' package.json
+
+printf '\nTailwind/config files:\n'
+for f in $(git ls-files | rg '(^|/)(tailwind.*|postcss.*|vite.*|nuxt\.config.*)$'); do
+  printf '\n### %s ###\n' "$f"
+  sed -n '1,220p' "$f"
+done
+
+printf '\nRelevant class usages:\n'
+rg -n --no-heading '(!px-1|px-1!|important modifier|tailwind)' src/components/forms
+```
+
+Repository: compliance-framework/ui
+
+Length of output: 4759
+
+---
+
+🌐 Web query:
+
+`Tailwind CSS v4 important modifier syntax leading ! trailing ! docs`
+
+💡 Result:
+
+In Tailwind CSS v4, the important modifier syntax has changed from a leading bang (!) to a trailing bang [1][2][3]. To apply the!important declaration to a utility class in v4, you must place the exclamation mark at the end of the class name [1][4]. Example: Instead of!flex, use flex! [2][3] Instead of!bg-red-500, use bg-red-500! [1] This change aligns the syntax more closely with native CSS, where the!important keyword follows the declaration [4]. While some early v4 versions maintained limited support for the v3 leading-bang syntax for migration purposes [5], the recommended and official standard for v4 is the trailing-bang syntax [1][3].
+
+Citations:
+
+- 1: https://tailwindcss.com/docs/upgrade-guide
+- 2: https://github.com/dxos/dxos/blob/e4919fd46f87a8107cac7af0def56ea6136edc1f/TAILWIND_V4_UTILITY_CHANGES.md
+- 3: https://skillsmp.com/skills/agents-inc-skills-dist-plugins-web-styling-tailwind-skills-web-styling-tailwind-skill-md
+- 4: https://stackoverflow.com/questions/75664539/tailwind-css-class-precedence-is-not-respected
+- 5: https://github.com/tailwindlabs/tailwindcss/pull/14737
+
+---
+
+</details>
+
+**Use Tailwind v4 trailing important syntax**
+- `!px-1` should be `px-1!` in `src/components/forms/LinksEditor.vue`; the same fix is needed in `src/components/forms/PropsEditor.vue`.
+
+<details>
+<summary>🤖 Prompt for AI Agents</summary>
+
+```
+Verify each finding against current code. Fix only still-valid issues, skip the
+rest with a brief reason, keep changes minimal, and validate.
+
+In `@src/components/forms/LinksEditor.vue` around lines 50 - 57, Update the
+TertiaryButton class in LinksEditor.vue and the corresponding button class in
+PropsEditor.vue to use Tailwind v4 trailing important syntax, changing !px-1 to
+px-1! while preserving the existing padding utility.
+```
+
+</details>
+
+<!-- fingerprinting:phantom:medusa:beignet -->
+
+<!-- cr-indicator-types:potential_issue -->
+
+<!-- cr-comment:v1:73a16a8e370951782e604977 -->
+
+<!-- This is an auto-generated reply by CodeRabbit -->
+Replies:
+**lisa implementation guidance:** FIX: this project is Tailwind v4, whose important modifier is a trailing `!`. Change `class="!px-1"` to `class="px-1!"` on the TertiaryButton in src/components/forms/LinksEditor.vue, and the identical class on the remove button in src/components/forms/PropsEditor.vue.
+
+<!-- lisa-guidance-posted -->
+> Skipped: comment is from another GitHub bot.
+
+<!-- This is an auto-generated reply by CodeRabbit -->
+---
+Comment (src/components/lineage/nodeMeta.ts:444):
+_🎯 Functional Correctness_ | _🟠 Major_ | _⚡ Quick win_
+
+<details>
+<summary>🧩 Analysis chain</summary>
+
+🏁 Script executed:
+
+```shell
+rg -n "riskGroups|scopeStore\.scope\.sspId|nodeDetailRoute|sspId" src/components src/stores src -g '!**/*.map'
+```
+
+Repository: compliance-framework/ui
+
+Length of output: 50379
+
+---
+
+🏁 Script executed:
+
+```shell
+ast-grep outline src/views/lineage/ranking.ts --view expanded
+ast-grep outline src/views/lineage/LineageGraphView.vue --view expanded
+ast-grep outline src/views/lineage/LineageTreeView.vue --view expanded
+ast-grep outline src/stores/lineageScope.ts --view expanded
+```
+
+Repository: compliance-framework/ui
+
+Length of output: 808
+
+---
+
+🏁 Script executed:
+
+```shell
+git ls-files 'src/views/lineage/*' 'src/components/lineage/*' 'src/stores/lineageScope.ts' | sort
+```
+
+Repository: compliance-framework/ui
+
+Length of output: 925
+
+---
+
+🏁 Script executed:
+
+```shell
+cat -n src/stores/lineageScope.ts
+printf '\n--- ranking.ts ---\n'
+cat -n src/views/lineage/ranking.ts
+printf '\n--- LineageGraphView.vue (selected ranges) ---\n'
+sed -n '1,220p' src/views/lineage/LineageGraphView.vue
+printf '\n--- LineageTreeView.vue (selected ranges) ---\n'
+sed -n '1,220p' src/views/lineage/LineageTreeView.vue
+```
+
+Repository: compliance-framework/ui
+
+Length of output: 16322
+
+---
+
+🏁 Script executed:
+
+```shell
+ast-grep outline src/composables/useLineage/index.ts --view expanded
+ast-grep outline src/composables/useLineage.ts --view expanded
+ast-grep outline src/composables/useLineage/types.ts --view expanded
+rg -n "fetchRootNodes|fetchRoots|fetchChildNodes|lineage" src/composables src/api src -g '!**/*.map'
+```
+
+Repository: compliance-framework/ui
+
+Length of output: 14283
+
+---
+
+🏁 Script executed:
+
+```shell
+cat -n src/composables/useLineage/index.ts | sed -n '1,240p'
+printf '\n--- useLineage tests ---\n'
+cat -n src/composables/useLineage/__tests__/useLineage.spec.ts | sed -n '1,220p'
+```
+
+Repository: compliance-framework/ui
+
+Length of output: 13909
+
+---
+
+🏁 Script executed:
+
+```shell
+cat -n src/composables/useLineage/fixtures.ts | sed -n '1,260p'
+printf '\n--- nodeMeta tests ---\n'
+cat -n src/components/lineage/__tests__/nodeMeta.spec.ts | sed -n '220,290p'
+```
+
+Repository: compliance-framework/ui
+
+Length of output: 10600
+
+---
+
+🏁 Script executed:
+
+```shell
+rg -n "node\\({|sspId:" src/composables/useLineage/fixtures.ts
+```
+
+Repository: compliance-framework/ui
+
+Length of output: 265
+
+---
+
+🏁 Script executed:
+
+```shell
+rg -n "sspId:" src/composables/useLineage/fixtures.ts
+```
+
+Repository: compliance-framework/ui
+
+Length of output: 223
+
+---
+
+🏁 Script executed:
+
+```shell
+cat -n src/composables/useLineage/fixtures.ts | sed -n '360,520p'
+printf '\n--- scope filtering in fixtures ---\n'
+rg -n "function .*scope|scope\\.sspId|filter\\(" src/composables/useLineage/fixtures.ts
+```
+
+Repository: compliance-framework/ui
+
+Length of output: 5466
+
+---
+
+🏁 Script executed:
+
+```shell
+cat -n src/composables/useLineage/fixtures.ts | sed -n '540,640p'
+```
+
+Repository: compliance-framework/ui
+
+Length of output: 1884
+
+---
+
+</details>
+
+**Use the risk node’s SSP when building lineage risk routes**
+
+`nodeDetailRoute` should prefer `node.sspId` and only fall back to the selected scope’s SSP for older nodes without it. The lineage request is scoped by `scope.sspId`, but the returned graph can still include risks from different SSPs, so routing by the active scope can open the wrong detail view.
+
+<details>
+<summary>🤖 Prompt for AI Agents</summary>
+
+```
+Verify each finding against current code. Fix only still-valid issues, skip the
+rest with a brief reason, keep changes minimal, and validate.
+
+In `@src/components/lineage/nodeMeta.ts` around lines 432 - 444, Update
+nodeDetailRoute’s risk branch to prefer node.sspId when selecting the SSP route
+parameter, falling back to the provided sspId only when the node has no SSP
+identifier. Preserve the existing unscoped risks:detail route when neither value
+is available.
+```
+
+</details>
+
+<!-- cr-indicator-types:potential_issue -->
+
+<!-- cr-comment:v1:b4a21734ef9ddb18314cd896 -->
+
+<!-- This is an auto-generated reply by CodeRabbit -->
+Replies:
+**lisa implementation guidance:** FIX centrally in nodeDetailRoute (src/components/lineage/nodeMeta.ts). In the `node.nodeType === 'risk'` branch, prefer the risk's own SSP: `const targetSspId = node.sspId || sspId;` then use `targetSspId` for both the null-check and the `system-security-plan-risk-detail` route's `params.id`; keep the unscoped `risks:detail` fallback for when neither is set. LineageNode already declares an optional `sspId`. Extend nodeMeta.spec.ts: a risk node whose own sspId differs from the passed scope sspId routes to the node's sspId.
+
+<!-- lisa-guidance-posted -->
+> Skipped: comment is from another GitHub bot.
+
+<!-- This is an auto-generated reply by CodeRabbit -->
+---
+Comment (src/views/evidence/__tests__/ViewView.spec.ts:727):
+_🎯 Functional Correctness_ | _🔵 Trivial_ | _⚡ Quick win_
+
+**Missing coverage for the risks-error / retry path.**
+
+No test sets `refs.risksError` to exercise the "Failed to load risks" message, or verifies that switching away from and back to the Risks tab retries the fetch after a failure. This is the exact path implicated in the `risksLoadedForUuid` premature-flag bug flagged in `src/views/evidence/ViewView.vue` — a test here would have caught it.
+
+<details>
+<summary>🤖 Prompt for AI Agents</summary>
+
+```
+Verify each finding against current code. Fix only still-valid issues, skip the
+rest with a brief reason, keep changes minimal, and validate.
+
+In `@src/views/evidence/__tests__/ViewView.spec.ts` around lines 666 - 727, Extend
+the risks-tab tests around mountView and clickButtonByText to set
+refs.risksError, assert the “Failed to load risks” message, and verify
+loadEvidenceRisks is retried after switching away from and back to the Risks tab
+following the failure. Ensure the test covers the failed request without marking
+the current evidence UUID as successfully loaded.
+```
+
+</details>
+
+<!-- fingerprinting:phantom:medusa:beignet -->
+
+<!-- cr-indicator-types:nitpick -->
+
+<!-- cr-comment:v1:c471dd4ac549abc106184ac7 -->
+
+<!-- This is an auto-generated reply by CodeRabbit -->
+Replies:
+**lisa implementation guidance:** FIX: add a regression test for the risks-error/retry path (guards the ViewView.vue:1322 fix). In src/views/evidence/__tests__/ViewView.spec.ts, using the existing mountView/clickButtonByText helpers and the risks-tab tests around lines 666-727, add a case that: makes the risks fetch reject (so risksError is set), opens the Risks tab, asserts the "Failed to load risks" message renders, then switches away and back to the Risks tab and asserts loadEvidenceRisks is called again (retry) — i.e. a failed request must NOT mark the current evidence UUID as loaded.
+
+<!-- lisa-guidance-posted -->
+> Skipped: comment is from another GitHub bot.
+
+<!-- This is an auto-generated reply by CodeRabbit -->
+---
+Comment (src/views/evidence/partial/EvidenceForm.vue:329):
+_🗄️ Data Integrity & Integration_ | _🟠 Major_ | _⚡ Quick win_
+
+**`propsList`/`linksList` alias the original evidence objects — editing mutates the fetched source data.**
+
+Only the outer arrays are copied; each `Property`/`Link` element is still the same object reference as `props.evidence.props[i]`/`.links[i]`. Since `PropsEditor`/`LinksEditor` bind `v-model` straight onto those objects, editing a field mutates `evidenceData.value` in `UpdateView.vue` directly and immediately — before the user submits or cancels.
+
+<details>
+<summary>🔧 Proposed fix</summary>
+
+```diff
+-const propsList = ref<Property[]>([...(props.evidence?.props ?? [])]);
+-const linksList = ref<Link[]>([...(props.evidence?.links ?? [])]);
++const propsList = ref<Property[]>(
++  (props.evidence?.props ?? []).map((prop) => ({ ...prop })),
++);
++const linksList = ref<Link[]>(
++  (props.evidence?.links ?? []).map((link) => ({ ...link })),
++);
+```
+</details>
+
+<!-- suggestion_start -->
+
+<details>
+<summary>📝 Committable suggestion</summary>
+
+> ‼️ **IMPORTANT**
+> Carefully review the code before committing. Ensure that it accurately replaces the highlighted code, contains no missing lines, and has no issues with indentation. Thoroughly test & benchmark the code to ensure it meets the requirements.
+
+```suggestion
+interface EvidenceFormData extends Omit<Evidence, 'start' | 'end' | 'expires'> {
+  start?: Date;
+  end?: Date;
+  expires?: Date;
+}
+
+const evidence = ref<Partial<EvidenceFormData>>({
+  ...props.evidence,
+  // Convert ISO strings to Date objects for DatePicker
+  start: props.evidence?.start ? new Date(props.evidence.start) : undefined,
+  end: props.evidence?.end ? new Date(props.evidence.end) : undefined,
+  expires: props.evidence?.expires
+    ? new Date(props.evidence.expires)
+    : undefined,
+  // The stream UUID stays hidden: generated once on create, preserved on
+  // re-submission so revisions accumulate in the same evidence stream.
+  uuid: props.evidence?.uuid || uuid(),
+});
+const status = ref<EvidenceStatus>({
+  state: props.evidence?.status?.state || '',
+  reason: props.evidence?.status?.reason || '',
+});
+const labels = ref<EvidenceLabel[]>(props.evidence?.labels || []);
+const propsList = ref<Property[]>(
+  (props.evidence?.props ?? []).map((prop) => ({ ...prop })),
+);
+const linksList = ref<Link[]>(
+  (props.evidence?.links ?? []).map((link) => ({ ...link })),
+);
+```
+
+</details>
+
+<!-- suggestion_end -->
+
+<details>
+<summary>🤖 Prompt for AI Agents</summary>
+
+```
+Verify each finding against current code. Fix only still-valid issues, skip the
+rest with a brief reason, keep changes minimal, and validate.
+
+In `@src/views/evidence/partial/EvidenceForm.vue` around lines 305 - 329, Update
+the propsList and linksList initialization in the evidence form to deep-clone
+each Property and Link element rather than only copying the outer arrays. Ensure
+PropsEditor and LinksEditor mutate form-local objects, leaving props.evidence
+and the fetched source data unchanged until submission.
+```
+
+</details>
+
+<!-- fingerprinting:phantom:medusa:beignet -->
+
+<!-- cr-indicator-types:potential_issue -->
+
+<!-- cr-comment:v1:1e804e350394a203575aa4fc -->
+
+<!-- This is an auto-generated reply by CodeRabbit -->
+Replies:
+**lisa implementation guidance:** FIX confirmed: LinksEditor/PropsEditor bind `v-model` straight onto each element (e.g. `v-model="link.href"`), so editing mutates the fetched source objects in UpdateView before submit/cancel. Deep-clone each element in src/views/evidence/partial/EvidenceForm.vue:
+  const propsList = ref<Property[]>((props.evidence?.props ?? []).map((p) => ({ ...p })));
+  const linksList = ref<Link[]>((props.evidence?.links ?? []).map((l) => ({ ...l })));
+A shallow per-element spread is enough (Property/Link are flat).
+
+<!-- lisa-guidance-posted -->
+> Skipped: comment is from another GitHub bot.
+
+<!-- This is an auto-generated reply by CodeRabbit -->
+---
+Comment (src/views/evidence/ViewView.vue:1322):
+_🩺 Stability & Availability_ | _🟠 Major_ | _⚡ Quick win_
+
+<details>
+<summary>🧩 Analysis chain</summary>
+
+🏁 Script executed:
+
+```shell
+#!/bin/bash
+set -euo pipefail
+
+# Map the file and locate relevant symbols.
+ast-grep outline src/views/evidence/ViewView.vue --view expanded || true
+printf '\n--- SEARCH ---\n'
+rg -n "risksLoadedForUuid|loadEvidenceRisks|refreshEvidenceRisks|ensureEvidenceRisksLoaded|risksError" src/views/evidence/ViewView.vue
+
+printf '\n--- CONTEXT 1 ---\n'
+sed -n '1260,1345p' src/views/evidence/ViewView.vue
+
+printf '\n--- CONTEXT 2 ---\n'
+sed -n '1460,1535p' src/views/evidence/ViewView.vue
+```
+
+Repository: compliance-framework/ui
+
+Length of output: 4940
+
+---
+
+🏁 Script executed:
+
+```shell
+#!/bin/bash
+set -euo pipefail
+
+# Find all references to the risks loader state across the repo.
+rg -n "risksLoadedForUuid|loadEvidenceRisks\\(|ensureEvidenceRisksLoaded\\(|refreshEvidenceRisks\\(" src
+```
+
+Repository: compliance-framework/ui
+
+Length of output: 1051
+
+---
+
+</details>
+
+**Set `risksLoadedForUuid` only after `loadEvidenceRisks()` succeeds.** If the request fails, the flag still matches the current evidence UUID, so the risks tab won’t retry on later visits and stays stuck on the error state.
+
+<details>
+<summary>🤖 Prompt for AI Agents</summary>
+
+```
+Verify each finding against current code. Fix only still-valid issues, skip the
+rest with a brief reason, keep changes minimal, and validate.
+
+In `@src/views/evidence/ViewView.vue` around lines 1305 - 1322, Update
+refreshEvidenceRisks so risksLoadedForUuid is assigned the current streamUuid
+only after loadEvidenceRisks completes successfully. Keep the existing UUID
+validation and ensureEvidenceRisksLoaded retry behavior unchanged, allowing
+failed requests to be attempted again.
+```
+
+</details>
+
+<!-- fingerprinting:phantom:medusa:beignet -->
+
+<!-- cr-indicator-types:potential_issue -->
+
+<!-- cr-comment:v1:e68c09bea1b62f1da54812a4 -->
+
+<!-- This is an auto-generated reply by CodeRabbit -->
+Replies:
+**lisa implementation guidance:** FIX in refreshEvidenceRisks (src/views/evidence/ViewView.vue): move `risksLoadedForUuid.value = streamUuid;` to AFTER `await loadEvidenceRisks(...)`. VueUse `useAxios` execute() rejects on failure (waitUntilFinished rejects when error.value is set), so on error the await throws before the assignment and the flag stays unset, letting ensureEvidenceRisksLoaded retry on the next Risks-tab visit. On success the flag is set exactly as before. Keep the early-return guards unchanged.
+
+<!-- lisa-guidance-posted -->
+> Skipped: comment is from another GitHub bot.
+
+<!-- This is an auto-generated reply by CodeRabbit -->
