@@ -201,6 +201,65 @@ describe('ExportOfferingItemsDialog', () => {
     expect(emitted![emitted!.length - 1][0]).toEqual([]);
   });
 
+  it('shows an error toast when adding an item fails', async () => {
+    postMock.mockRejectedValueOnce(new Error('network down'));
+
+    const wrapper = mount(ExportOfferingItemsDialog, {
+      props: {
+        sspId: 'ssp-1',
+        offering: makeOffering(),
+        controlImplementation,
+        systemImplementation,
+      },
+      global: { stubs },
+    });
+
+    await wrapper.find('select').setValue('ac-1::::comp-1::p-1');
+    await findButton(wrapper, 'Add Item').trigger('click');
+    await flushPromises();
+
+    expect(toastAddMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        severity: 'error',
+        detail: 'Failed to add item.',
+      }),
+    );
+  });
+
+  it('shows an error toast when removing an item fails', async () => {
+    deleteMock.mockRejectedValueOnce(new Error('network down'));
+
+    const wrapper = mount(ExportOfferingItemsDialog, {
+      props: {
+        sspId: 'ssp-1',
+        offering: makeOffering({
+          items: [
+            {
+              id: 'item-1',
+              offeringId: 'offering-1',
+              controlId: 'ac-1',
+              componentUuid: 'comp-1',
+              providedUuid: 'p-1',
+            },
+          ],
+        }),
+        controlImplementation,
+        systemImplementation,
+      },
+      global: { stubs },
+    });
+
+    await findButton(wrapper, 'Remove').trigger('click');
+    await flushPromises();
+
+    expect(toastAddMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        severity: 'error',
+        detail: 'Failed to remove item.',
+      }),
+    );
+  });
+
   it('hides Add/Remove controls without the corresponding permission', () => {
     permState.can = false;
     const wrapper = mount(ExportOfferingItemsDialog, {

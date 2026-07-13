@@ -54,6 +54,7 @@ const saving = ref(false);
 
 async function createOffering() {
   if (!title.value.trim()) return;
+  if (saving.value) return;
   saving.value = true;
   try {
     const response = await axiosInstance.post<DataResponse<SSPExportOffering>>(

@@ -189,9 +189,9 @@ describe('SystemSecurityPlanExportOfferingsView', () => {
     const wrapper = mountView();
     await findButton(wrapper, 'Edit').trigger('click');
     const inputs = wrapper.findAll('input');
-    await inputs[inputs.length - 1].setValue('Renamed Offering');
+    await inputs.at(-1)!.setValue('Renamed Offering');
     const forms = wrapper.findAll('form');
-    await forms[forms.length - 1].trigger('submit');
+    await forms.at(-1)!.trigger('submit');
     await flushPromises();
 
     expect(putMock).toHaveBeenCalledWith(

@@ -93,6 +93,7 @@
                   "
                   type="button"
                   class="text-green-600 hover:text-green-800 dark:text-green-400 text-sm"
+                  :disabled="publishingIds.has(offering.id)"
                   @click="publish(offering)"
                 >
                   {{ offering.status === 'draft' ? 'Publish' : 'Republish' }}
@@ -167,7 +168,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, reactive, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
 import { useConfirm } from 'primevue/useconfirm';
@@ -213,6 +214,7 @@ const showEditModal = ref(false);
 const showItemsModal = ref(false);
 const editingOffering = ref<SSPExportOffering | null>(null);
 const itemsOffering = ref<SSPExportOffering | null>(null);
+const publishingIds = reactive(new Set<string>());
 
 function statusSeverity(status: SSPExportOfferingStatus) {
   switch (status) {
@@ -274,6 +276,8 @@ function handleItemsUpdated(items: SSPExportOfferingItem[]) {
 }
 
 async function publish(offering: SSPExportOffering) {
+  if (publishingIds.has(offering.id)) return;
+  publishingIds.add(offering.id);
   try {
     const response = await axiosInstance.post<DataResponse<SSPExportOffering>>(
       `/api/oscal/system-security-plans/${sspId.value}/export-offerings/${offering.id}/publish`,
@@ -294,6 +298,8 @@ async function publish(offering: SSPExportOffering) {
         'Failed to publish export offering.',
       life: 5000,
     });
+  } finally {
+    publishingIds.delete(offering.id);
   }
 }
 

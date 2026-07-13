@@ -57,11 +57,12 @@ const saving = ref(false);
 
 async function saveOffering() {
   if (!title.value.trim()) return;
+  if (saving.value) return;
   saving.value = true;
   try {
     const response = await axiosInstance.put<DataResponse<SSPExportOffering>>(
       `/api/oscal/system-security-plans/${props.sspId}/export-offerings/${props.offering.id}`,
-      { title: title.value, description: description.value },
+      { title: title.value.trim(), description: description.value },
     );
     toast.add({
       severity: 'success',

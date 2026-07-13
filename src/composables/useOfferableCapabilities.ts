@@ -1,5 +1,9 @@
 import { computed, type Ref } from 'vue';
-import type { ControlImplementation, SystemImplementation } from '@/oscal';
+import type {
+  ByComponent,
+  ControlImplementation,
+  SystemImplementation,
+} from '@/oscal';
 
 export interface OfferableCapability {
   controlId: string;
@@ -8,6 +12,32 @@ export interface OfferableCapability {
   componentTitle: string;
   providedUuid: string;
   providedDescription: string;
+}
+
+// Appends one OfferableCapability per provided entry across a set of by-components — shared
+// by the control-level and statement-level walks below, which differ only in whether a
+// statementId is set.
+function appendCapabilities(
+  byComponents: ByComponent[] | undefined,
+  controlId: string,
+  statementId: string | undefined,
+  componentTitleByUuid: Map<string, string>,
+  result: OfferableCapability[],
+) {
+  for (const byComponent of byComponents ?? []) {
+    for (const provided of byComponent.export?.provided ?? []) {
+      result.push({
+        controlId,
+        statementId,
+        componentUuid: byComponent.componentUuid,
+        componentTitle:
+          componentTitleByUuid.get(byComponent.componentUuid) ??
+          byComponent.componentUuid,
+        providedUuid: provided.uuid,
+        providedDescription: provided.description || provided.uuid,
+      });
+    }
+  }
 }
 
 // Flattens an SSP's authored control-implementation tree (BCH-1343) into the set of
@@ -33,35 +63,22 @@ export function useOfferableCapabilities(
       controlImplementation.value?.implementedRequirements ?? [];
 
     for (const requirement of requirements) {
-      for (const byComponent of requirement.byComponents ?? []) {
-        for (const provided of byComponent.export?.provided ?? []) {
-          result.push({
-            controlId: requirement.controlId,
-            componentUuid: byComponent.componentUuid,
-            componentTitle:
-              componentTitleByUuid.value.get(byComponent.componentUuid) ??
-              byComponent.componentUuid,
-            providedUuid: provided.uuid,
-            providedDescription: provided.description || provided.uuid,
-          });
-        }
-      }
+      appendCapabilities(
+        requirement.byComponents,
+        requirement.controlId,
+        undefined,
+        componentTitleByUuid.value,
+        result,
+      );
 
       for (const statement of requirement.statements ?? []) {
-        for (const byComponent of statement.byComponents ?? []) {
-          for (const provided of byComponent.export?.provided ?? []) {
-            result.push({
-              controlId: requirement.controlId,
-              statementId: statement.statementId,
-              componentUuid: byComponent.componentUuid,
-              componentTitle:
-                componentTitleByUuid.value.get(byComponent.componentUuid) ??
-                byComponent.componentUuid,
-              providedUuid: provided.uuid,
-              providedDescription: provided.description || provided.uuid,
-            });
-          }
-        }
+        appendCapabilities(
+          statement.byComponents,
+          requirement.controlId,
+          statement.statementId,
+          componentTitleByUuid.value,
+          result,
+        );
       }
     }
 
