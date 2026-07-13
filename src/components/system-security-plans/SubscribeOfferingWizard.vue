@@ -173,6 +173,7 @@ function toRfc3339(dateOnly: string): string {
 }
 
 async function submit() {
+  if (submitting.value) return;
   validationError.value = '';
   if (selectedItemIds.value.size === 0) {
     validationError.value = 'Select at least one item to inherit.';

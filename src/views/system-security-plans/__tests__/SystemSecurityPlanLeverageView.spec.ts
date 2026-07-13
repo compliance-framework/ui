@@ -4,6 +4,8 @@ import SystemSecurityPlanLeverageView from '../SystemSecurityPlanLeverageView.vu
 import { RESOURCES, ACTIONS } from '@/constants/permissions';
 import type { CatalogOffering } from '@/types/ssp-export-offerings';
 
+const UPSTREAM_SCOPED_SSP_PATH = /system-security-plans\/(?!undefined)/;
+
 const { postMock, toastAddMock, permState, offeringsData } = vi.hoisted(() => ({
   postMock: vi.fn(),
   toastAddMock: vi.fn(),
@@ -144,7 +146,7 @@ describe('SystemSecurityPlanLeverageView', () => {
     expect(fetchedUrls).toEqual(['/api/oscal/ssp-export-offerings']);
     for (const url of fetchedUrls) {
       expect(url).not.toContain('ssp-upstream-1');
-      expect(url).not.toMatch(/system-security-plans\/(?!undefined)/);
+      expect(url).not.toMatch(UPSTREAM_SCOPED_SSP_PATH);
     }
   });
 
