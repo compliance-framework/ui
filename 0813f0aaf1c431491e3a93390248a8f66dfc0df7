@@ -1,0 +1,44 @@
+lisa-design:
+- BLOCKERS (API prompt not yet shipped; probed live against the local stack with an admin token):
+  404 GET /oscal/system-security-plans/:id/shared-responsibility
+  404 GET /oscal/ssp-export-offerings/by-control/:controlId
+  404 {GET,POST,PUT,DELETE} .../statements/:stmtId/by-components/:bcId/inherited
+  404 {GET,POST,PUT,DELETE} .../statements/:stmtId/by-components/:bcId/satisfied
+  404 DELETE .../implemented-requirements/:reqId/by-components/:bcId
+  no meta.created on POST .../subscribe
+  Already live (verified 400 = route exists): statement-level .../export{,/provided,/responsibilities},
+  and .../export-offerings/:offeringId/allowed-downstreams.
+  Per the prompt these are implemented against the contract and unit-tested with mocked axios;
+  they are NOT worked around in the UI. Every consumer degrades to an empty state rather than
+  crashing (verified in-browser: the Controls panel renders its empty states under a 404).
+- The allow-list path is /system-security-plans/:id/export-offerings/:offeringId/allowed-downstreams
+  (what the API actually exposes), not the /ssp-export-offerings/:id/... form the prompt sketched.
+- Statement presence is the single switch for authoring. ByComponentEditForm renders the full
+  editors when `statement` is passed and a read-only view when it isn't; the requirement-level
+  path therefore cannot create or edit export/inherited/satisfied by construction, not by a flag.
+- The by-component PUT now strips inherited and satisfied as well as export. All three subtrees
+  have dedicated endpoints and their own editors; sending them here would race those writes.
+- Inherited/Satisfied are separate components rather than one generic editor: their create-time
+  anchors differ (providedUuid is free-text from the upstream export; responsibilityUuid must be
+  picked from what the statement actually inherits, or the API 400s), and both are immutable
+  after create, so the edit forms are genuinely different shapes.
+- The satisfied picker's options come from the shared-responsibility rollup's inherits[], filtered
+  to this statement. That required adding `responsibilities` to SharedResponsibilityInherited.
+- A 409 on deleting an inherited entry means a subscription owns it. It is caught and toasted as
+  "unsubscribe from the offering", and the row survives. The UI never touches the leverage link.
+- useOfferableCapabilities now returns capabilities (statement-anchored, offerable) and
+  legacyCapabilities (requirement-anchored, listed disabled). The composite de-dupe key is
+  unchanged. ExportOfferingItemsDialog also refuses a legacy tuple client-side even if the
+  disabled option were bypassed, and renders the API's 400 inline next to the picker.
+- ExportOfferingsPanel is the extraction: both the SSP-editor route and the new system:export-offerings
+  tab render it. It fetches through execute() against COMPUTED urls, which is also the <KeepAlive>
+  stale-fetch fix (useDataApi resolves toValue(url) once). Same fix applied to
+  SystemSecurityPlanInheritedCapabilitiesView. Their specs now assert the URL per execute() call.
+- SharedResponsibilityBlocks is the consolidation of the two divergent StatementByComponent
+  copies' four export blocks. The Badge-based (control-implementations) styling won.
+- Cross-linking a LeveragedAuthorization to the offering that created it is NOT possible: the
+  leveraged-controls projection carries no leveragedAuthUuid, so there is no id to join on. Added a
+  navigational link to Inherited Capabilities instead, and noted the missing field.
+- SubscribeOfferingWizard was parameterized (scopedItemIds/preselectedItemIds), not forked, and now
+  emits {links, meta} so the Controls view can expand+highlight the requirements meta.created names.
+  Rows with created:false are deliberately not announced.
