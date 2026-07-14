@@ -48,3 +48,33 @@ export interface CatalogOfferingItem extends SSPExportOfferingItem {
 export interface CatalogOffering extends Omit<SSPExportOffering, 'items'> {
   items?: CatalogOfferingItem[];
 }
+
+// One entry of an offering's downstream allow-list
+// (GET/POST/DELETE .../export-offerings/:offeringId/allowed-downstreams). An empty list
+// means "any downstream may subscribe" — the API only enforces the list when it is
+// non-empty.
+export interface AllowedDownstream {
+  id: string;
+  offeringId: string;
+  downstreamSspId: string;
+  createdAt?: string;
+}
+
+// GET /oscal/ssp-export-offerings/by-control/:controlId?downstreamSspId= — what upstream
+// SSPs export for one control. Same trust boundary as the flat catalog: the upstream SSP is
+// identified only by the id/title the offering itself carries, and nothing here is joined
+// against an upstream-scoped endpoint.
+export interface ControlExportOffer {
+  offeringId: string;
+  offeringTitle: string;
+  offeringVersion: number;
+  upstreamSspId: string;
+  upstreamSspTitle?: string;
+  itemId: string;
+  controlId: string;
+  statementId: string;
+  componentUuid: string;
+  providedUuid: string;
+  providedDescription: string;
+  responsibilities: UpstreamResponsibility[];
+}

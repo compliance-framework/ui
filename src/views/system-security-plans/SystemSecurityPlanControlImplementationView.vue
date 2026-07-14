@@ -247,6 +247,13 @@
                               $event,
                             )
                           "
+                          @edit-shared-responsibility="
+                            editStatementByComponent(
+                              requirement,
+                              statement,
+                              $event,
+                            )
+                          "
                         />
                       </div>
                     </div>
@@ -255,7 +262,9 @@
               </div>
             </div>
 
-            <!-- Requirement By Components (at requirement level) -->
+            <!-- Requirement By Components (at requirement level) — legacy. These still
+                 exist in the wild, so they render, but shared responsibility is anchored on
+                 statements now: no Edit, no create, only read and Delete. -->
             <div v-if="requirement.byComponents?.length" class="mt-4">
               <h5
                 class="text-sm font-medium text-gray-700 dark:text-slate-400 mb-2"
@@ -264,6 +273,11 @@
                   requirement.byComponents.length
                 }})
               </h5>
+              <p class="text-xs text-gray-500 dark:text-slate-400 mb-2">
+                Legacy — shared responsibility is tracked per statement. These
+                requirement-level implementations are read-only; move their
+                exports to a statement's by-component.
+              </p>
               <div class="space-y-2">
                 <div
                   v-for="byComponent in requirement.byComponents"
@@ -275,18 +289,41 @@
                       class="text-sm font-medium text-gray-900 dark:text-slate-300"
                       >{{ byComponent.componentUuid }}</span
                     >
-                    <SecondaryButton
-                      :disabled="!can(RESOURCES.SSP, ACTIONS.UPDATE)"
-                      v-tooltip.top="{
-                        value: permissionTooltip(RESOURCES.SSP, ACTIONS.UPDATE),
-                        disabled: can(RESOURCES.SSP, ACTIONS.UPDATE),
-                      }"
-                      @click="
-                        editRequirementByComponent(requirement, byComponent)
-                      "
-                    >
-                      Edit
-                    </SecondaryButton>
+                    <div class="flex gap-2">
+                      <SecondaryButton
+                        @click="
+                          viewRequirementByComponent(requirement, byComponent)
+                        "
+                      >
+                        View
+                      </SecondaryButton>
+                      <TertiaryButton
+                        :disabled="!can(RESOURCES.SSP, ACTIONS.DELETE)"
+                        v-tooltip.top="{
+                          value: permissionTooltip(
+                            RESOURCES.SSP,
+                            ACTIONS.DELETE,
+                          ),
+                          disabled: can(RESOURCES.SSP, ACTIONS.DELETE),
+                        }"
+                        @click="
+                          confirmDeleteDialog(
+                            () =>
+                              deleteRequirementByComponent(
+                                requirement,
+                                byComponent,
+                              ),
+                            {
+                              itemName: byComponent.componentUuid,
+                              itemType: 'legacy component implementation',
+                            },
+                          )
+                        "
+                        class="border-red-200 text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-950/40"
+                      >
+                        Delete
+                      </TertiaryButton>
+                    </div>
                   </div>
                   <p class="text-sm text-gray-600 dark:text-slate-400">
                     {{ byComponent.description }}
@@ -402,12 +439,12 @@
       />
     </Dialog>
 
-    <!-- Requirement By Component Edit Modal -->
+    <!-- Requirement By Component Modal — read-only: this path is legacy. -->
     <Dialog
       v-model:visible="showEditRequirementByComponentModal"
       size="xl"
       modal
-      header="Edit Component Implementation"
+      header="Legacy Component Implementation"
     >
       <ByComponentEditForm
         v-if="editingByComponent && editingRequirement && !editingStatement"
@@ -415,7 +452,6 @@
         :requirement="editingRequirement"
         :by-component="editingByComponent"
         @cancel="showEditRequirementByComponentModal = false"
-        @saved="handleRequirementByComponentSaved"
       />
     </Dialog>
   </template>
@@ -707,32 +743,10 @@ const handleStatementByComponentSaved = (updatedByComponent: ByComponent) => {
   editingRequirement.value = null;
 };
 
-const handleRequirementByComponentSaved = (updatedByComponent: ByComponent) => {
-  if (controlImplementation.value && editingRequirement.value) {
-    const reqIndex =
-      controlImplementation.value.implementedRequirements.findIndex(
-        (r) => r.uuid === editingRequirement.value?.uuid,
-      );
-    if (reqIndex !== -1) {
-      const requirement =
-        controlImplementation.value.implementedRequirements[reqIndex];
-      if (requirement.byComponents) {
-        const byCompIndex = requirement.byComponents.findIndex(
-          (bc) => bc.uuid === updatedByComponent.uuid,
-        );
-        if (byCompIndex !== -1) {
-          requirement.byComponents[byCompIndex] = updatedByComponent;
-        }
-      }
-    }
-  }
-  showEditRequirementByComponentModal.value = false;
-  editingByComponent.value = null;
-  editingRequirement.value = null;
-  editingStatement.value = null;
-};
-
-const editRequirementByComponent = (
+// Opens the read-only view of a legacy, requirement-anchored by-component. There is no edit
+// path here by design: ByComponentEditForm renders this row read-only when no statement is
+// passed.
+const viewRequirementByComponent = (
   requirement: ImplementedRequirement,
   byComponent: ByComponent,
 ) => {
@@ -740,6 +754,50 @@ const editRequirementByComponent = (
   editingByComponent.value = byComponent;
   editingStatement.value = null;
   showEditRequirementByComponentModal.value = true;
+};
+
+const deleteRequirementByComponent = async (
+  requirement: ImplementedRequirement,
+  byComponent: ByComponent,
+) => {
+  try {
+    await executeDelete(
+      `/api/oscal/system-security-plans/${route.params.id}/control-implementation/implemented-requirements/${requirement.uuid}/by-components/${byComponent.uuid}`,
+    );
+    requirement.byComponents = (requirement.byComponents ?? []).filter(
+      (bc) => bc.uuid !== byComponent.uuid,
+    );
+    toast.add({
+      severity: 'success',
+      summary: 'Success',
+      detail: 'Legacy component implementation deleted.',
+      life: 3000,
+    });
+  } catch (error) {
+    console.error('Failed to delete legacy by-component:', error);
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail:
+        'Failed to delete the component implementation. Please try again.',
+      life: 5000,
+    });
+  }
+};
+
+// The statement-level counterpart of viewRequirementByComponent, and the trigger the
+// statement-level ByComponentEditForm modal has always been waiting for: without it, the
+// export/inherited/satisfied editors were unreachable in the running app, because every
+// seeded SSP is 100% statement-level.
+const editStatementByComponent = (
+  requirement: ImplementedRequirement,
+  statement: Statement,
+  byComponent: ByComponent,
+) => {
+  editingRequirement.value = requirement;
+  editingStatement.value = statement;
+  editingByComponent.value = byComponent;
+  showEditStatementByComponentModal.value = true;
 };
 
 const handleSaveStatementByComponent = async (

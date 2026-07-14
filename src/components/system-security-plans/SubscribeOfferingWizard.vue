@@ -6,7 +6,7 @@
       </h4>
       <div class="space-y-3">
         <div
-          v-for="item in offering.items ?? []"
+          v-for="item in visibleItems"
           :key="item.id"
           class="p-3 border border-ccf-200 dark:border-slate-600 rounded"
         >
@@ -106,7 +106,7 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from 'vue';
+import { computed, reactive, ref } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import InputText from '@/volt/InputText.vue';
 import Label from '@/volt/Label.vue';
@@ -114,25 +114,45 @@ import Message from '@/volt/Message.vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
 import { useAuthenticatedInstance } from '@/composables/axios';
-import type { DataResponse, ErrorBody, ErrorResponse } from '@/stores/types';
+import type { ErrorBody, ErrorResponse } from '@/stores/types';
 import type { CatalogOffering } from '@/types/ssp-export-offerings';
-import type { SSPLeverageLink, SubscribeRequest } from '@/types/ssp-leverage';
+import type {
+  SSPLeverageLink,
+  SubscribeRequest,
+  SubscribeResponse,
+  SubscribeResponseMeta,
+} from '@/types/ssp-leverage';
 import type { AxiosError } from 'axios';
 
 const props = defineProps<{
   sspId: string;
   offering: CatalogOffering;
+  // Narrow the wizard to a subset of the offering's items — the Controls view imports one
+  // control's item, not the whole offering. Omit for the full-offering flow (the Leverage
+  // catalog).
+  scopedItemIds?: string[];
+  // Items ticked when the wizard opens.
+  preselectedItemIds?: string[];
 }>();
 
 const emit = defineEmits<{
   cancel: [];
-  subscribed: [links: SSPLeverageLink[]];
+  subscribed: [
+    payload: { links: SSPLeverageLink[]; meta?: SubscribeResponseMeta },
+  ];
 }>();
 
 const toast = useToast();
 const axiosInstance = useAuthenticatedInstance();
 
-const selectedItemIds = ref(new Set<string>());
+const visibleItems = computed(() => {
+  const items = props.offering.items ?? [];
+  if (!props.scopedItemIds?.length) return items;
+  const scoped = new Set(props.scopedItemIds);
+  return items.filter((item) => scoped.has(item.id));
+});
+
+const selectedItemIds = ref(new Set<string>(props.preselectedItemIds ?? []));
 const satisfiedByItem = ref(new Map<string, Set<string>>());
 const leveragedAuth = reactive({
   title: '',
@@ -204,16 +224,20 @@ async function submit() {
 
   submitting.value = true;
   try {
-    const response = await axiosInstance.post<DataResponse<SSPLeverageLink[]>>(
+    // The response carries `meta.created` alongside the links: which implemented
+    // requirements / statements / by-components the subscribe had to create. Pass it up
+    // untouched — the Controls view uses it to reveal the newly created requirement.
+    const response = await axiosInstance.post<SubscribeResponse>(
       `/api/oscal/ssp-export-offerings/${props.offering.id}/subscribe`,
       body,
     );
+    const links = response.data.data ?? [];
     toast.add({
       severity: 'success',
-      summary: `Subscribed to ${response.data.data.length} item${response.data.data.length === 1 ? '' : 's'}.`,
+      summary: `Subscribed to ${links.length} item${links.length === 1 ? '' : 's'}.`,
       life: 3000,
     });
-    emit('subscribed', response.data.data);
+    emit('subscribed', { links, meta: response.data.meta });
   } catch (error) {
     const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
     toast.add({

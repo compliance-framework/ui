@@ -126,8 +126,8 @@ function openSubscribeModal(offering: CatalogOffering) {
   showSubscribeModal.value = true;
 }
 
-function handleSubscribed(links: SSPLeverageLink[]) {
-  void links;
+function handleSubscribed(payload: { links: SSPLeverageLink[] }) {
+  void payload;
   showSubscribeModal.value = false;
   subscribingOffering.value = null;
 }

@@ -111,7 +111,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
 import { useConfirm } from 'primevue/useconfirm';
@@ -138,13 +138,42 @@ const sspId = computed(() => getIdFromRoute(route) ?? '');
 // This projection endpoint is the only fetch this view makes — no catalog/profile lookup,
 // per AC2 ("no catalog controls are synthesized in the UI; data comes only from the
 // projection endpoint").
+//
+// The URL is watched rather than interpolated once: useDataApi resolves toValue(url) a single
+// time, and the tab host keeps this view alive across SSP switches, so a plain string would
+// pin the first sspId and render another SSP's data.
+const controlsUrl = computed(() =>
+  sspId.value
+    ? `/api/oscal/system-security-plans/${sspId.value}/leveraged-controls`
+    : null,
+);
+
 const {
   data: controls,
   isLoading: loading,
-  execute: refetchControls,
-} = useDataApi<LeveragedControl[]>(
-  `/api/oscal/system-security-plans/${sspId.value}/leveraged-controls`,
+  execute: fetchControls,
+} = useDataApi<LeveragedControl[]>(null, {}, { immediate: false });
+
+watch(
+  controlsUrl,
+  async (url) => {
+    if (!url) {
+      controls.value = undefined;
+      return;
+    }
+    try {
+      await fetchControls(url);
+    } catch {
+      // Error state is already handled by useDataApi.
+    }
+  },
+  { immediate: true },
 );
+
+async function refetchControls() {
+  if (!controlsUrl.value) return;
+  await fetchControls(controlsUrl.value);
+}
 
 function posture(
   control: LeveragedControl,

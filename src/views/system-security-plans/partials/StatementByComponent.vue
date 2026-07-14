@@ -3,6 +3,10 @@ import { ref, watch, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import BurgerMenu from '@/components/BurgerMenu.vue';
 import Textarea from '@/volt/Textarea.vue';
+import SecondaryButton from '@/volt/SecondaryButton.vue';
+import PermissionGate from '@/components/auth/PermissionGate.vue';
+import SharedResponsibilityBlocks from '@/components/system-security-plans/SharedResponsibilityBlocks.vue';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
 import { useToggle } from '@/composables/useToggle';
 import { useDataApi } from '@/composables/axios';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
@@ -36,6 +40,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   save: [byComponent: ByComponent];
   delete: [byComponent: ByComponent];
+  editSharedResponsibility: [byComponent: ByComponent];
 }>();
 
 const router = useRouter();
@@ -228,24 +233,38 @@ function openRisksForControl() {
         @click="openRisksForControl"
       />
     </div>
-    <BurgerMenu
-      :items="[
-        {
-          label: 'Edit',
-          command() {
-            edit();
+    <div class="flex items-center gap-2">
+      <!-- The only reachable entry point into the statement-level export / inherited /
+           satisfied editors: the four blocks below are read-only, and the requirement-level
+           path no longer offers an edit at all. -->
+      <PermissionGate :resource="RESOURCES.SSP" :action="ACTIONS.UPDATE">
+        <SecondaryButton
+          type="button"
+          size="small"
+          @click="emit('editSharedResponsibility', byComponent)"
+        >
+          Edit Shared Responsibility
+        </SecondaryButton>
+      </PermissionGate>
+      <BurgerMenu
+        :items="[
+          {
+            label: 'Edit',
+            command() {
+              edit();
+            },
           },
-        },
-        {
-          label: 'Delete',
-          command() {
-            confirmDeleteDialog(() => deleteStatement(), {
-              itemType: 'implementation statement',
-            });
+          {
+            label: 'Delete',
+            command() {
+              confirmDeleteDialog(() => deleteStatement(), {
+                itemType: 'implementation statement',
+              });
+            },
           },
-        },
-      ]"
-    />
+        ]"
+      />
+    </div>
   </div>
   <div class="text-gray-600 dark:text-slate-400">
     <template v-if="!editing">
@@ -322,65 +341,5 @@ function openRisksForControl() {
     </div>
   </div>
 
-  <!-- Export Information -->
-  <div v-if="byComponent.export" class="mt-2 text-xs">
-    <div v-if="byComponent.export.provided?.length" class="mb-1">
-      <span class="font-medium text-green-700 dark:text-green-400"
-        >Provided:</span
-      >
-      <div class="ml-2">
-        <div
-          v-for="provided in byComponent.export.provided"
-          :key="provided.uuid"
-          class="text-green-600 dark:text-green-400"
-        >
-          {{ provided.description }}
-        </div>
-      </div>
-    </div>
-    <div v-if="byComponent.export.responsibilities?.length" class="mb-1">
-      <span class="font-medium text-orange-700 dark:text-orange-400"
-        >Responsibilities:</span
-      >
-      <div class="ml-2">
-        <div
-          v-for="responsibility in byComponent.export.responsibilities"
-          :key="responsibility.uuid"
-          class="text-orange-600 dark:text-orange-400"
-        >
-          {{ responsibility.description }}
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Satisfied Requirements -->
-  <div v-if="byComponent.satisfied?.length" class="mt-2 text-xs">
-    <span class="font-medium text-blue-700 dark:text-blue-400">Satisfied:</span>
-    <div class="ml-2">
-      <div
-        v-for="satisfied in byComponent.satisfied"
-        :key="satisfied.uuid"
-        class="text-blue-600 dark:text-blue-400"
-      >
-        {{ satisfied.description }}
-      </div>
-    </div>
-  </div>
-
-  <!-- Inherited Requirements -->
-  <div v-if="byComponent.inherited?.length" class="mt-2 text-xs">
-    <span class="font-medium text-purple-700 dark:text-purple-400"
-      >Inherited:</span
-    >
-    <div class="ml-2">
-      <div
-        v-for="inherited in byComponent.inherited"
-        :key="inherited.uuid"
-        class="text-purple-600 dark:text-purple-400"
-      >
-        {{ inherited.description }}
-      </div>
-    </div>
-  </div>
+  <SharedResponsibilityBlocks :by-component="byComponent" />
 </template>

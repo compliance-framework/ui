@@ -83,7 +83,13 @@
           </div>
         </template>
         <template #control="slotProps">
-          <div>
+          <div
+            :class="
+              isHighlightedControl(slotProps.node.data.id)
+                ? 'rounded ring-2 ring-blue-400 dark:ring-blue-500 bg-blue-50 dark:bg-blue-900/20 p-2'
+                : ''
+            "
+          >
             <div class="flex items-center gap-x-3">
               <Badge class="text-base">{{ slotProps.node.data.id }}</Badge>
               <h4>{{ slotProps.node.data.title }}</h4>
@@ -178,6 +184,39 @@
         :risk-fetch-limit="RISK_FETCH_LIMIT"
       />
     </div>
+
+    <div class="h-0.5 w-full bg-gray-200 dark:bg-slate-700 my-6"></div>
+
+    <SharedResponsibilityPanel
+      v-if="selectedSspId && selectedDrawerControlId"
+      :key="`${selectedSspId}:${selectedDrawerControlId}`"
+      :ssp-id="selectedSspId"
+      :control-id="selectedDrawerControlId"
+      @edit-provides="openProvidesEditor"
+      @imported="handleImported"
+    />
+
+    <Dialog
+      v-model:visible="showByComponentModal"
+      size="xl"
+      modal
+      header="Edit By-Component Implementation"
+    >
+      <ByComponentEditForm
+        v-if="
+          selectedSspId &&
+          editingRequirement &&
+          editingStatement &&
+          editingByComponent
+        "
+        :ssp-id="selectedSspId"
+        :requirement="editingRequirement"
+        :statement="editingStatement"
+        :by-component="editingByComponent"
+        @cancel="showByComponentModal = false"
+        @saved="handleByComponentSaved"
+      />
+    </Dialog>
   </Drawer>
 </template>
 
@@ -204,14 +243,22 @@ import ControlImplementationSuggestions from '@/views/control-implementations/pa
 import type { Catalog, Group } from '@/oscal';
 import type { DataResponse } from '@/stores/types.ts';
 import type {
+  ByComponent,
   ControlImplementation,
   ImplementedRequirement,
   Risk,
   Statement,
 } from '@/oscal';
+import type {
+  SharedResponsibilityProvided,
+  SubscribeResponseMeta,
+} from '@/types/ssp-leverage';
 import Button from '@/volt/Button.vue';
 import { BIconEye } from 'bootstrap-icons-vue';
 import Drawer from '@/volt/Drawer.vue';
+import Dialog from '@/volt/Dialog.vue';
+import ByComponentEditForm from '@/components/system-security-plans/ByComponentEditForm.vue';
+import SharedResponsibilityPanel from './partials/SharedResponsibilityPanel.vue';
 import StatementByComponent from './partials/StatementByComponent.vue';
 import RiskIndicatorBadge from './partials/RiskIndicatorBadge.vue';
 import SuggestionIndicatorBadge from './partials/SuggestionIndicatorBadge.vue';
@@ -987,6 +1034,129 @@ watch(profileBindings, async () => {
 
 function hasControlImplementation(controlId?: string): boolean {
   return !!(controlId && controlImplementations.value[controlId]);
+}
+
+const selectedSspId = computed(
+  () => systemStore.system.securityPlan?.uuid ?? '',
+);
+
+// ---- Shared responsibility: editing what this SSP provides ----
+
+const showByComponentModal = ref(false);
+const editingRequirement = ref<ImplementedRequirement | null>(null);
+const editingStatement = ref<Statement | null>(null);
+const editingByComponent = ref<ByComponent | null>(null);
+
+// The rollup identifies the by-component by uuid; the editor needs the live OSCAL objects,
+// which the control-implementation fetch already holds.
+function openProvidesEditor(row: SharedResponsibilityProvided) {
+  const requirement = controlImplementations.value[row.controlId];
+  const statement = requirement?.statements?.find(
+    (s) => s.uuid === row.statementUuid,
+  );
+  const byComponent = statement?.byComponents?.find(
+    (bc) => bc.uuid === row.byComponentUuid,
+  );
+  if (!requirement || !statement || !byComponent) {
+    toast.add({
+      severity: 'error',
+      summary: 'Unable to open the editor',
+      detail:
+        'The statement this export belongs to is no longer loaded. Refresh and try again.',
+      life: 5000,
+    });
+    return;
+  }
+  editingRequirement.value = requirement;
+  editingStatement.value = statement;
+  editingByComponent.value = byComponent;
+  showByComponentModal.value = true;
+}
+
+async function handleByComponentSaved() {
+  showByComponentModal.value = false;
+  editingRequirement.value = null;
+  editingStatement.value = null;
+  editingByComponent.value = null;
+  await loadControlImplementations();
+}
+
+// ---- Shared responsibility: importing an upstream implementation ----
+
+const highlightedControlIds = ref(new Set<string>());
+
+function isHighlightedControl(controlId?: string): boolean {
+  return !!controlId && highlightedControlIds.value.has(normalizeId(controlId));
+}
+
+// Tree keys are hierarchical paths (profile:<id>:group:<id>:control:<id>), so revealing a
+// control means expanding every ancestor on the way down to it.
+function expandPathToControl(controlId: string) {
+  const target = normalizeId(controlId);
+  const nextExpanded = { ...expandedKeys.value };
+
+  const walk = (node: TreeNode, ancestors: string[]): boolean => {
+    const path = [...ancestors, node.key];
+    if (node.type === 'control' && normalizeId(node.data.id) === target) {
+      for (const key of path) {
+        nextExpanded[key] = true;
+      }
+      return true;
+    }
+    return (node.children ?? []).some((child) => walk(child, path));
+  };
+
+  const found = nodes.value.some((node) => walk(node, []));
+  if (found) {
+    expandedKeys.value = nextExpanded;
+  }
+}
+
+async function handleImported(payload: { meta?: SubscribeResponseMeta }) {
+  // `created: false` rows were reused, not created — announcing them would claim work the
+  // subscribe didn't do.
+  const created = payload.meta?.created;
+  const newRequirements = (created?.implementedRequirements ?? []).filter(
+    (r) => r.created,
+  );
+  const newStatements = (created?.statements ?? []).filter((s) => s.created);
+
+  await loadControlImplementations();
+
+  const revealed = [
+    ...newRequirements.map((r) => r.controlId),
+    ...newStatements.map((s) => s.controlId),
+  ];
+  for (const controlId of revealed) {
+    expandPathToControl(controlId);
+  }
+  highlightedControlIds.value = new Set(revealed.map((id) => normalizeId(id)));
+
+  const parts: string[] = [];
+  for (const requirement of newRequirements) {
+    parts.push(`implemented requirement ${requirement.controlId}`);
+  }
+  for (const statement of newStatements) {
+    parts.push(`statement ${statement.statementId}`);
+  }
+
+  if (!parts.length) {
+    toast.add({
+      severity: 'success',
+      summary: 'Implementation imported',
+      detail:
+        'The upstream capability was inherited into existing requirements — nothing new was created.',
+      life: 4000,
+    });
+    return;
+  }
+
+  toast.add({
+    severity: 'success',
+    summary: 'Implementation imported',
+    detail: `Created ${parts.join(' and ')}.`,
+    life: 6000,
+  });
 }
 
 // Opens the implementation drawer for a control. The control need not have an

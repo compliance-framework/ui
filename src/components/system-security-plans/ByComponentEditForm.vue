@@ -1,6 +1,56 @@
 <template>
   <div class="px-12 py-8">
-    <form @submit.prevent="updateByComponent()">
+    <!-- Legacy, requirement-anchored by-component: read-only. Shared responsibility is
+         authored per statement, so there is nothing to edit here — only something to read
+         and, from the caller, delete. -->
+    <div v-if="!statementId" class="space-y-6">
+      <Message severity="warn">
+        This is a legacy, requirement-level component implementation. Shared
+        responsibility is tracked per statement, so this row is read-only — move
+        its export to a statement's by-component to keep authoring it.
+      </Message>
+
+      <div>
+        <label class="inline-block pb-2 dark:text-slate-300">
+          Component UUID
+        </label>
+        <div
+          class="p-3 bg-gray-50 dark:bg-slate-800 border border-ccf-300 dark:border-slate-700 rounded-md"
+        >
+          <span class="text-gray-600 dark:text-slate-400 font-mono">
+            {{ props.byComponent.componentUuid }}
+          </span>
+        </div>
+      </div>
+
+      <div>
+        <label class="inline-block pb-2 dark:text-slate-300">Description</label>
+        <p
+          class="text-sm text-gray-700 dark:text-slate-300 whitespace-pre-wrap"
+        >
+          {{ props.byComponent.description || '(no description)' }}
+        </p>
+      </div>
+
+      <div v-if="props.byComponent.implementationStatus?.state">
+        <label class="inline-block pb-2 dark:text-slate-300">
+          Implementation Status
+        </label>
+        <p class="text-sm text-gray-700 dark:text-slate-300">
+          {{ props.byComponent.implementationStatus.state }}
+        </p>
+      </div>
+
+      <SharedResponsibilityBlocks :by-component="props.byComponent" />
+
+      <div class="flex justify-end">
+        <SecondaryButton type="button" @click="$emit('cancel')">
+          Close
+        </SecondaryButton>
+      </div>
+    </div>
+
+    <form v-else @submit.prevent="updateByComponent()">
       <!-- Component UUID (Read-only) -->
       <div class="mb-4">
         <label class="inline-block pb-2 dark:text-slate-300"
@@ -87,7 +137,7 @@
           <ByComponentExportEditor
             :ssp-id="props.sspId"
             :req-id="props.requirement.uuid"
-            :stmt-id="props.statement?.uuid"
+            :stmt-id="statementId"
             :by-component-id="props.byComponent.uuid"
             v-model="byComponentData.export"
           />
@@ -96,77 +146,33 @@
 
       <!-- Inherited -->
       <div class="mb-6">
-        <label class="inline-block pb-2 dark:text-slate-300">Inherited</label>
-        <div class="space-y-2">
-          <div
-            v-for="(inherited, index) in byComponentData.inherited"
-            :key="inherited.uuid"
-            class="p-3 border border-ccf-300 dark:border-slate-700 rounded-md bg-gray-50 dark:bg-slate-800"
-          >
-            <div class="flex justify-between items-start mb-2">
-              <span class="text-xs text-gray-500 dark:text-slate-400"
-                >UUID: {{ inherited.uuid }}</span
-              >
-              <button
-                type="button"
-                @click="removeInherited(index)"
-                class="text-red-500 hover:text-red-700 text-sm"
-              >
-                Remove
-              </button>
-            </div>
-            <Textarea
-              v-model="inherited.description"
-              placeholder="Description of inherited control"
-              rows="2"
-              class="w-full"
-            />
-          </div>
-          <button
-            type="button"
-            @click="addInherited"
-            class="text-sm px-3 py-1 bg-purple-100 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 rounded hover:bg-purple-200 dark:hover:bg-purple-900/30 transition-colors"
-          >
-            Add Inherited
-          </button>
+        <div
+          class="p-4 border border-ccf-300 dark:border-slate-700 rounded-md bg-gray-50 dark:bg-slate-800"
+        >
+          <ByComponentInheritedEditor
+            :ssp-id="props.sspId"
+            :req-id="props.requirement.uuid"
+            :stmt-id="statementId"
+            :by-component-id="props.byComponent.uuid"
+            v-model="byComponentData.inherited"
+            @removed="loadSatisfiableResponsibilities"
+          />
         </div>
       </div>
 
       <!-- Satisfied -->
       <div class="mb-6">
-        <label class="inline-block pb-2 dark:text-slate-300">Satisfied</label>
-        <div class="space-y-2">
-          <div
-            v-for="(satisfied, index) in byComponentData.satisfied"
-            :key="satisfied.uuid"
-            class="p-3 border border-ccf-300 dark:border-slate-700 rounded-md bg-gray-50 dark:bg-slate-800"
-          >
-            <div class="flex justify-between items-start mb-2">
-              <span class="text-xs text-gray-500 dark:text-slate-400"
-                >UUID: {{ satisfied.uuid }}</span
-              >
-              <button
-                type="button"
-                @click="removeSatisfied(index)"
-                class="text-red-500 hover:text-red-700 text-sm"
-              >
-                Remove
-              </button>
-            </div>
-            <Textarea
-              v-model="satisfied.description"
-              placeholder="Description of satisfied requirement"
-              rows="2"
-              class="w-full"
-            />
-          </div>
-          <button
-            type="button"
-            @click="addSatisfied"
-            class="text-sm px-3 py-1 bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 rounded hover:bg-blue-200 dark:hover:bg-blue-900/30 transition-colors"
-          >
-            Add Satisfied
-          </button>
+        <div
+          class="p-4 border border-ccf-300 dark:border-slate-700 rounded-md bg-gray-50 dark:bg-slate-800"
+        >
+          <ByComponentSatisfiedEditor
+            :ssp-id="props.sspId"
+            :req-id="props.requirement.uuid"
+            :stmt-id="statementId"
+            :by-component-id="props.byComponent.uuid"
+            :responsibility-options="satisfiableResponsibilities"
+            v-model="byComponentData.satisfied"
+          />
         </div>
       </div>
 
@@ -313,16 +319,27 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, onMounted } from 'vue';
-import { uuid } from '@/utils/uuid';
+import { reactive, onMounted, ref } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import InputText from '@/volt/InputText.vue';
 import Textarea from '@/volt/Textarea.vue';
+import Message from '@/volt/Message.vue';
+import SecondaryButton from '@/volt/SecondaryButton.vue';
+import SharedResponsibilityBlocks from './SharedResponsibilityBlocks.vue';
 import ByComponentExportEditor from './ByComponentExportEditor.vue';
+import ByComponentInheritedEditor from './ByComponentInheritedEditor.vue';
+import ByComponentSatisfiedEditor from './ByComponentSatisfiedEditor.vue';
 import type { ByComponent, Statement, ImplementedRequirement } from '@/oscal';
-import { useDataApi, decamelizeKeys } from '@/composables/axios';
+import {
+  useDataApi,
+  useAuthenticatedInstance,
+  decamelizeKeys,
+} from '@/composables/axios';
+import { buildSharedResponsibilityUrl } from '@/composables/useSharedResponsibility';
 import type { AxiosError } from 'axios';
-import type { ErrorBody, ErrorResponse } from '@/stores/types';
+import type { DataResponse, ErrorBody, ErrorResponse } from '@/stores/types';
+import type { UpstreamResponsibility } from '@/types/ssp-export-offerings';
+import type { SharedResponsibilityRollup } from '@/types/ssp-leverage';
 import { usePermissions } from '@/composables/usePermissions';
 import { RESOURCES, ACTIONS } from '@/constants/permissions';
 
@@ -341,8 +358,15 @@ const emit = defineEmits<{
 }>();
 
 const toast = useToast();
-const endpoint = props.statement
-  ? `/api/oscal/system-security-plans/${props.sspId}/control-implementation/implemented-requirements/${props.requirement.uuid}/statements/${props.statement.uuid}/by-components/${props.byComponent.uuid}`
+const axiosInstance = useAuthenticatedInstance();
+
+// The presence of a statement is what makes this by-component authorable: export, inherited
+// and satisfied are all statement-anchored. Without one, this form is the read-only view of a
+// legacy requirement-level row.
+const statementId = props.statement?.uuid ?? '';
+
+const endpoint = statementId
+  ? `/api/oscal/system-security-plans/${props.sspId}/control-implementation/implemented-requirements/${props.requirement.uuid}/statements/${statementId}/by-components/${props.byComponent.uuid}`
   : `/api/oscal/system-security-plans/${props.sspId}/control-implementation/implemented-requirements/${props.requirement.uuid}/by-components/${props.byComponent.uuid}`;
 
 const {
@@ -376,7 +400,37 @@ const byComponentData = reactive<ByComponent>({
   satisfied: [],
 });
 
+// A `satisfied` entry may only reference a responsibility carried by an export this
+// statement already inherits — anything else is a 400 — so the picker's options come from the
+// shared-responsibility rollup's `inherits[]`, narrowed to this statement.
+const satisfiableResponsibilities = ref<UpstreamResponsibility[]>([]);
+
+async function loadSatisfiableResponsibilities() {
+  if (!statementId || !props.statement) {
+    satisfiableResponsibilities.value = [];
+    return;
+  }
+  try {
+    const response = await axiosInstance.get<
+      DataResponse<SharedResponsibilityRollup>
+    >(buildSharedResponsibilityUrl(props.sspId, props.requirement.controlId));
+    const byUuid = new Map<string, UpstreamResponsibility>();
+    for (const inherited of response.data.data?.inherits ?? []) {
+      if (inherited.statementId !== props.statement.statementId) continue;
+      for (const responsibility of inherited.responsibilities ?? []) {
+        byUuid.set(responsibility.responsibilityUuid, responsibility);
+      }
+    }
+    satisfiableResponsibilities.value = [...byUuid.values()];
+  } catch {
+    // The picker degrades to "nothing available to satisfy" rather than blocking the rest of
+    // the form; the API is the authority and will reject a bad uuid anyway.
+    satisfiableResponsibilities.value = [];
+  }
+}
+
 onMounted(() => {
+  void loadSatisfiableResponsibilities();
   // Deep copy the by-component data
   Object.assign(byComponentData, {
     ...props.byComponent,
@@ -399,42 +453,6 @@ onMounted(() => {
     responsibleRoles: [...(props.byComponent.responsibleRoles || [])],
   });
 });
-
-// Inherited functions
-const addInherited = () => {
-  if (!byComponentData.inherited) {
-    byComponentData.inherited = [];
-  }
-  byComponentData.inherited.push({
-    uuid: uuid(),
-    providedUuid: '',
-    description: '',
-    props: [],
-    links: [],
-  });
-};
-
-const removeInherited = (index: number) => {
-  byComponentData.inherited?.splice(index, 1);
-};
-
-// Satisfied functions
-const addSatisfied = () => {
-  if (!byComponentData.satisfied) {
-    byComponentData.satisfied = [];
-  }
-  byComponentData.satisfied.push({
-    uuid: uuid(),
-    responsibilityUuid: '',
-    description: '',
-    props: [],
-    links: [],
-  });
-};
-
-const removeSatisfied = (index: number) => {
-  byComponentData.satisfied?.splice(index, 1);
-};
 
 // Parameter functions
 const addParameter = () => {
@@ -492,12 +510,17 @@ const updateByComponent = async () => {
   }
 
   try {
-    // Export/Provided/Responsibilities are persisted independently by
-    // ByComponentExportEditor via BCH-1336's dedicated endpoints, so they're
-    // omitted here to avoid the two save paths racing or clobbering each
-    // other's writes.
+    // Export/Provided/Responsibilities, Inherited and Satisfied are each persisted
+    // independently by their own editor against dedicated endpoints, so all three subtrees
+    // are omitted here to avoid the save paths racing or clobbering each other's writes. The
+    // API contract matches: the by-component PUT ignores these subtrees.
     await updateByComponentApi({
-      data: { ...byComponentData, export: undefined },
+      data: {
+        ...byComponentData,
+        export: undefined,
+        inherited: undefined,
+        satisfied: undefined,
+      },
     });
 
     toast.add({
@@ -507,12 +530,14 @@ const updateByComponent = async () => {
       life: 3000,
     });
 
-    // The PUT response reflects the request body, which omitted `export`, so
-    // restore it from the locally-maintained copy (kept live by
-    // ByComponentExportEditor's v-model) rather than the response.
+    // The PUT response reflects the request body, which omitted these subtrees, so restore
+    // them from the locally-maintained copies (kept live by each editor's v-model) rather
+    // than the response.
     emit('saved', {
       ...updatedByComponent.value!,
       export: byComponentData.export,
+      inherited: byComponentData.inherited,
+      satisfied: byComponentData.satisfied,
     });
   } catch (error) {
     const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;

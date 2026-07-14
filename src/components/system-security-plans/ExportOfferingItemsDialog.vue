@@ -60,15 +60,22 @@
         class="pt-3 border-t border-gray-200 dark:border-slate-700"
       >
         <Label for="capability-picker">Add item</Label>
+        <!-- Legacy (requirement-anchored) capabilities are listed but not selectable: the
+             API rejects an item without a statementId. Hiding them would leave an author
+             wondering where their export went. -->
         <Select
           id="capability-picker"
           v-model="selectedCapabilityKey"
-          :options="availableCapabilities"
+          :options="pickerOptions"
           option-label="label"
           option-value="key"
+          option-disabled="disabled"
           placeholder="Select a capability to offer"
           class="w-full"
         />
+        <Message v-if="addError" severity="error" class="mt-2">
+          {{ addError }}
+        </Message>
         <div class="flex justify-end mt-2">
           <PrimaryButton
             type="button"
@@ -88,6 +95,7 @@ import { computed, ref } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import Select from '@/volt/Select.vue';
 import Label from '@/volt/Label.vue';
+import Message from '@/volt/Message.vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
 import PermissionGate from '@/components/auth/PermissionGate.vue';
 import { RESOURCES, ACTIONS } from '@/constants/permissions';
@@ -122,10 +130,8 @@ const items = ref<SSPExportOfferingItem[]>([...(props.offering.items ?? [])]);
 
 const controlImplementationRef = computed(() => props.controlImplementation);
 const systemImplementationRef = computed(() => props.systemImplementation);
-const { capabilities } = useOfferableCapabilities(
-  controlImplementationRef,
-  systemImplementationRef,
-);
+const { capabilities, legacyCapabilities, allCapabilities } =
+  useOfferableCapabilities(controlImplementationRef, systemImplementationRef);
 
 function capabilityKey(c: {
   controlId: string;
@@ -143,7 +149,7 @@ function capabilityKey(c: {
 
 const componentTitleByUuid = computed(() => {
   const map = new Map<string, string>();
-  for (const c of capabilities.value) {
+  for (const c of allCapabilities.value) {
     map.set(c.componentUuid, c.componentTitle);
   }
   return map;
@@ -151,7 +157,7 @@ const componentTitleByUuid = computed(() => {
 
 const providedDescriptionByUuid = computed(() => {
   const map = new Map<string, string>();
-  for (const c of capabilities.value) {
+  for (const c of allCapabilities.value) {
     map.set(c.providedUuid, c.providedDescription);
   }
   return map;
@@ -161,18 +167,34 @@ const existingItemKeys = computed(
   () => new Set(items.value.map((item) => capabilityKey(item))),
 );
 
+function capabilityLabel(c: OfferableCapability): string {
+  return `${c.controlId}${c.statementId ? ` · Statement ${c.statementId}` : ''} · ${c.componentTitle} · ${c.providedDescription}`;
+}
+
 const availableCapabilities = computed(() =>
   capabilities.value
     .filter((c) => !existingItemKeys.value.has(capabilityKey(c)))
     .map((c) => ({
       key: capabilityKey(c),
-      label: `${c.controlId}${c.statementId ? ` · Statement ${c.statementId}` : ''} · ${c.componentTitle} · ${c.providedDescription}`,
+      label: capabilityLabel(c),
+      disabled: false,
       capability: c,
     })),
 );
 
+const pickerOptions = computed(() => [
+  ...availableCapabilities.value,
+  ...legacyCapabilities.value.map((c) => ({
+    key: capabilityKey(c),
+    label: `${capabilityLabel(c)} — legacy: move this export to a statement to offer it`,
+    disabled: true,
+    capability: c,
+  })),
+]);
+
 const selectedCapabilityKey = ref<string | null>(null);
 const adding = ref(false);
+const addError = ref('');
 
 function findCapability(key: string): OfferableCapability | undefined {
   return availableCapabilities.value.find((c) => c.key === key)?.capability;
@@ -181,7 +203,16 @@ function findCapability(key: string): OfferableCapability | undefined {
 async function addItem() {
   if (!selectedCapabilityKey.value) return;
   const capability = findCapability(selectedCapabilityKey.value);
+  addError.value = '';
   if (!capability) return;
+  // Defence in depth against a legacy tuple slipping through the disabled option: an item
+  // without a statementId is a 400, and the picker is the only thing standing between the
+  // author and that error.
+  if (!capability.statementId) {
+    addError.value =
+      'This export is authored on the requirement, not a statement, so it cannot be offered. Move it to a statement first.';
+    return;
+  }
 
   adding.value = true;
   try {
@@ -202,11 +233,17 @@ async function addItem() {
     toast.add({ severity: 'success', summary: 'Item added.', life: 3000 });
   } catch (error) {
     const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
+    const detail =
+      errorResponse.response?.data?.errors?.body || 'Failed to add item.';
+    // A 400 here is the API refusing an incoherent (control, statement, component, provided)
+    // tuple — show it inline next to the picker that produced it, not just as a toast.
+    if (errorResponse.response?.status === 400) {
+      addError.value = detail;
+    }
     toast.add({
       severity: 'error',
       summary: 'Error',
-      detail:
-        errorResponse.response?.data?.errors?.body || 'Failed to add item.',
+      detail,
       life: 5000,
     });
   } finally {

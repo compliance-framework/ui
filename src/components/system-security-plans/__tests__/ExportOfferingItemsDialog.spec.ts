@@ -34,9 +34,10 @@ const stubs = {
     props: ['modelValue', 'options'],
     emits: ['update:modelValue'],
     template:
-      '<select :value="modelValue" @change="$emit(\'update:modelValue\', $event.target.value)"><option v-for="o in options" :key="o.key" :value="o.key">{{ o.label }}</option></select>',
+      '<select :value="modelValue" @change="$emit(\'update:modelValue\', $event.target.value)"><option v-for="o in options" :key="o.key" :value="o.key" :disabled="o.disabled">{{ o.label }}</option></select>',
   },
   Label: { template: '<label><slot /></label>' },
+  Message: { template: '<div class="message"><slot /></div>' },
   PrimaryButton: {
     props: ['disabled'],
     emits: ['click'],
@@ -55,9 +56,18 @@ const systemImplementation: SystemImplementation = {
       description: '',
       status: { state: 'operational' },
     },
+    {
+      uuid: 'comp-2',
+      type: 'software',
+      title: 'Legacy Box',
+      description: '',
+      status: { state: 'operational' },
+    },
   ],
 };
 
+// One statement-anchored export (offerable) and one requirement-anchored export (legacy —
+// listed but not offerable, because the API rejects an item without a statementId).
 const controlImplementation: ControlImplementation = {
   description: '',
   implementedRequirements: [
@@ -66,21 +76,42 @@ const controlImplementation: ControlImplementation = {
       controlId: 'ac-1',
       byComponents: [
         {
-          uuid: 'bc-1',
-          componentUuid: 'comp-1',
+          uuid: 'bc-legacy',
+          componentUuid: 'comp-2',
           description: '',
           export: {
-            uuid: 'exp-1',
+            uuid: 'exp-legacy',
             description: '',
-            provided: [
-              { uuid: 'p-1', description: 'We provide access control' },
-            ],
+            provided: [{ uuid: 'p-legacy', description: 'Legacy capability' }],
           },
+        },
+      ],
+      statements: [
+        {
+          uuid: 'stmt-1',
+          statementId: 'ac-1_smt.a',
+          byComponents: [
+            {
+              uuid: 'bc-1',
+              componentUuid: 'comp-1',
+              description: '',
+              export: {
+                uuid: 'exp-1',
+                description: '',
+                provided: [
+                  { uuid: 'p-1', description: 'We provide access control' },
+                ],
+              },
+            },
+          ],
         },
       ],
     },
   ],
 };
+
+const STATEMENT_CAPABILITY_KEY = 'ac-1::ac-1_smt.a::comp-1::p-1';
+const LEGACY_CAPABILITY_KEY = 'ac-1::::comp-2::p-legacy';
 
 function makeOffering(
   overrides: Partial<SSPExportOffering> = {},
@@ -129,13 +160,14 @@ describe('ExportOfferingItemsDialog', () => {
     );
   });
 
-  it('adds an item for the selected capability', async () => {
+  it('adds an item for the selected capability, sending its statementId', async () => {
     postMock.mockResolvedValueOnce({
       data: {
         data: {
           id: 'item-1',
           offeringId: 'offering-1',
           controlId: 'ac-1',
+          statementId: 'ac-1_smt.a',
           componentUuid: 'comp-1',
           providedUuid: 'p-1',
         },
@@ -152,7 +184,7 @@ describe('ExportOfferingItemsDialog', () => {
       global: { stubs },
     });
 
-    await wrapper.find('select').setValue('ac-1::::comp-1::p-1');
+    await wrapper.find('select').setValue(STATEMENT_CAPABILITY_KEY);
     await findButton(wrapper, 'Add Item').trigger('click');
     await flushPromises();
 
@@ -160,13 +192,66 @@ describe('ExportOfferingItemsDialog', () => {
       '/api/oscal/system-security-plans/ssp-1/export-offerings/offering-1/items',
       {
         controlId: 'ac-1',
-        statementId: undefined,
+        statementId: 'ac-1_smt.a',
         componentUuid: 'comp-1',
         providedUuid: 'p-1',
       },
     );
     expect(wrapper.emitted('updated')).toBeTruthy();
     expect(wrapper.text()).toContain('ac-1');
+  });
+
+  it('offers only statement-level capabilities and disables legacy ones with a hint', () => {
+    const wrapper = mount(ExportOfferingItemsDialog, {
+      props: {
+        sspId: 'ssp-1',
+        offering: makeOffering(),
+        controlImplementation,
+        systemImplementation,
+      },
+      global: { stubs },
+    });
+
+    const options = wrapper.findAll('option');
+    const statementOption = options.find(
+      (o) => o.attributes('value') === STATEMENT_CAPABILITY_KEY,
+    );
+    const legacyOption = options.find(
+      (o) => o.attributes('value') === LEGACY_CAPABILITY_KEY,
+    );
+
+    expect(statementOption?.attributes('disabled')).toBeUndefined();
+    expect(legacyOption?.attributes('disabled')).toBeDefined();
+    expect(legacyOption?.text()).toContain(
+      'legacy: move this export to a statement to offer it',
+    );
+  });
+
+  it('renders the API 400 for an incoherent tuple as a readable message', async () => {
+    postMock.mockRejectedValueOnce({
+      response: {
+        status: 400,
+        data: { errors: { body: 'statement_id is required' } },
+      },
+    });
+
+    const wrapper = mount(ExportOfferingItemsDialog, {
+      props: {
+        sspId: 'ssp-1',
+        offering: makeOffering(),
+        controlImplementation,
+        systemImplementation,
+      },
+      global: { stubs },
+    });
+
+    await wrapper.find('select').setValue(STATEMENT_CAPABILITY_KEY);
+    await findButton(wrapper, 'Add Item').trigger('click');
+    await flushPromises();
+
+    expect(wrapper.find('.message').text()).toContain(
+      'statement_id is required',
+    );
   });
 
   it('removes an existing item', async () => {
@@ -214,7 +299,7 @@ describe('ExportOfferingItemsDialog', () => {
       global: { stubs },
     });
 
-    await wrapper.find('select').setValue('ac-1::::comp-1::p-1');
+    await wrapper.find('select').setValue(STATEMENT_CAPABILITY_KEY);
     await findButton(wrapper, 'Add Item').trigger('click');
     await flushPromises();
 

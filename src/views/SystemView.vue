@@ -31,6 +31,10 @@
                 label: 'Leveraged Authorizations',
                 route: 'system:authorizations',
               },
+              {
+                label: 'Export Offerings',
+                route: 'system:export-offerings',
+              },
             ]"
             :key="tab.label"
             :value="tab.route"
