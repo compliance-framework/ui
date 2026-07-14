@@ -1,0 +1,4 @@
+lisa-addressed:
+Self-review pass 1: fixed per-component Provides edit, case-insensitive controlId join in
+openProvidesEditor, and satisfied-picker refresh on inherited change. make reviewable green
+(123 files, 965 tests).
