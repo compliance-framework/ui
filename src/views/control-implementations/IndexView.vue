@@ -1047,10 +1047,21 @@ const editingRequirement = ref<ImplementedRequirement | null>(null);
 const editingStatement = ref<Statement | null>(null);
 const editingByComponent = ref<ByComponent | null>(null);
 
+// Control ids are not reliably cased the same in an SSP as in the catalog/profile, so the
+// requirement is matched case-insensitively rather than by exact key.
+function findRequirementByControlId(
+  controlId: string,
+): ImplementedRequirement | undefined {
+  const target = normalizeId(controlId);
+  return Object.values(controlImplementations.value).find(
+    (requirement) => normalizeId(requirement.controlId) === target,
+  );
+}
+
 // The rollup identifies the by-component by uuid; the editor needs the live OSCAL objects,
 // which the control-implementation fetch already holds.
 function openProvidesEditor(row: SharedResponsibilityProvided) {
-  const requirement = controlImplementations.value[row.controlId];
+  const requirement = findRequirementByControlId(row.controlId);
   const statement = requirement?.statements?.find(
     (s) => s.uuid === row.statementUuid,
   );

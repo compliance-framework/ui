@@ -260,7 +260,19 @@ describe('control implementations IndexView', () => {
               {
                 uuid: 'req-1',
                 controlId: 'ac-1',
-                statements: [],
+                statements: [
+                  {
+                    uuid: 'stmt-1',
+                    statementId: 'ac-1_smt.a',
+                    byComponents: [
+                      {
+                        uuid: 'bc-1',
+                        componentUuid: 'comp-1',
+                        description: 'Statement-level implementation',
+                      },
+                    ],
+                  },
+                ],
               },
             ],
           },
@@ -618,6 +630,34 @@ describe('control implementations IndexView', () => {
         .find('[data-testid="shared-responsibility"]')
         .attributes('data-control-id'),
     ).toBe('ac-1');
+  });
+
+  it('opens the provides editor even when the rollup cases the control id differently', async () => {
+    const wrapper = mount(IndexView, { global: { stubs } });
+    await waitForMountedControls();
+    await openDrawerForControl(wrapper, 'ac-1');
+
+    // An SSP's control-ids are not reliably cased the same as the catalog's, so the rollup
+    // row may say "AC-1" where the implemented requirement says "ac-1".
+    wrapper
+      .getComponent<typeof IndexView>('[data-testid="shared-responsibility"]')
+      .vm.$emit('editProvides', {
+        controlId: 'AC-1',
+        statementId: 'ac-1_smt.a',
+        requirementUuid: 'req-1',
+        statementUuid: 'stmt-1',
+        byComponentUuid: 'bc-1',
+        componentUuid: 'comp-1',
+        providedUuid: 'p-1',
+        description: 'x',
+        responsibilities: [],
+      });
+    await waitForMountedControls();
+
+    // It resolves the requirement rather than toasting "no longer loaded".
+    expect(toastAdd).not.toHaveBeenCalledWith(
+      expect.objectContaining({ summary: 'Unable to open the editor' }),
+    );
   });
 
   it('expands, highlights and announces a requirement created by an import', async () => {

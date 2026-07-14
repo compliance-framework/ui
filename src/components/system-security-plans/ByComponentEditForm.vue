@@ -155,7 +155,6 @@
             :stmt-id="statementId"
             :by-component-id="props.byComponent.uuid"
             v-model="byComponentData.inherited"
-            @removed="loadSatisfiableResponsibilities"
           />
         </div>
       </div>
@@ -319,7 +318,7 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, onMounted, ref } from 'vue';
+import { reactive, onMounted, ref, watch } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import InputText from '@/volt/InputText.vue';
 import Textarea from '@/volt/Textarea.vue';
@@ -428,6 +427,16 @@ async function loadSatisfiableResponsibilities() {
     satisfiableResponsibilities.value = [];
   }
 }
+
+// What may be satisfied is a function of what is inherited, so the picker's options are
+// refreshed whenever the inherited list changes — adding an inherited capability is precisely
+// what makes its responsibilities satisfiable.
+watch(
+  () => byComponentData.inherited,
+  () => {
+    void loadSatisfiableResponsibilities();
+  },
+);
 
 onMounted(() => {
   void loadSatisfiableResponsibilities();

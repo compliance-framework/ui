@@ -21,38 +21,50 @@
         :key="group.statementId"
         class="mb-3 p-3 border border-ccf-200 dark:border-slate-600 rounded"
       >
-        <div class="flex justify-between items-start">
-          <div class="text-sm font-medium dark:text-slate-300">
-            Statement {{ group.statementId }}
-          </div>
-          <!-- Authoring is reachable from here too, not only from the SSP editor: this is
-               the day-to-day surface, and the export editor was previously reachable from
-               exactly one place. -->
-          <PermissionGate :resource="RESOURCES.SSP" :action="ACTIONS.UPDATE">
-            <SecondaryButton
-              type="button"
-              size="small"
-              @click="emit('editProvides', group.rows[0])"
-            >
-              Edit
-            </SecondaryButton>
-          </PermissionGate>
+        <div class="text-sm font-medium dark:text-slate-300">
+          Statement {{ group.statementId }}
         </div>
+        <!-- Grouped by by-component, not just by statement: one statement can export from
+             several components, and each Edit has to open the by-component its rows actually
+             belong to. -->
         <div
-          v-for="row in group.rows"
-          :key="row.providedUuid"
-          class="mt-2 text-xs"
+          v-for="component in group.components"
+          :key="component.byComponentUuid"
+          class="mt-2"
         >
-          <Badge severity="success">Provided</Badge>
-          <div class="ml-2 text-green-600 dark:text-green-400">
-            {{ row.description }}
+          <div class="flex justify-between items-start">
+            <div class="text-xs text-gray-500 dark:text-slate-400">
+              {{ component.componentTitle ?? component.componentUuid }}
+            </div>
+            <!-- Authoring is reachable from here too, not only from the SSP editor: this is
+                 the day-to-day surface, and the export editor was previously reachable from
+                 exactly one place. -->
+            <PermissionGate :resource="RESOURCES.SSP" :action="ACTIONS.UPDATE">
+              <SecondaryButton
+                type="button"
+                size="small"
+                @click="emit('editProvides', component.rows[0])"
+              >
+                Edit
+              </SecondaryButton>
+            </PermissionGate>
           </div>
           <div
-            v-for="responsibility in row.responsibilities ?? []"
-            :key="responsibility.responsibilityUuid"
-            class="ml-2 text-orange-600 dark:text-orange-400"
+            v-for="row in component.rows"
+            :key="row.providedUuid"
+            class="mt-1 text-xs"
           >
-            Consumer responsibility: {{ responsibility.description }}
+            <Badge severity="success">Provided</Badge>
+            <div class="ml-2 text-green-600 dark:text-green-400">
+              {{ row.description }}
+            </div>
+            <div
+              v-for="responsibility in row.responsibilities ?? []"
+              :key="responsibility.responsibilityUuid"
+              class="ml-2 text-orange-600 dark:text-orange-400"
+            >
+              Consumer responsibility: {{ responsibility.description }}
+            </div>
           </div>
         </div>
       </div>
@@ -327,19 +339,34 @@ const inherits = computed(() => forThisControl(rollup.value?.inherits ?? []));
 const satisfies = computed(() => forThisControl(rollup.value?.satisfies ?? []));
 const legacy = computed(() => forThisControl(rollup.value?.legacy ?? []));
 
+// Statement -> by-component -> its provided rows. The by-component level matters: it is the
+// unit the editor opens, and one statement may export from several components.
 const providesByStatement = computed(() => {
-  const groups = new Map<string, SharedResponsibilityProvided[]>();
+  const byStatement = new Map<
+    string,
+    Map<string, SharedResponsibilityProvided[]>
+  >();
   for (const row of provides.value) {
-    const existing = groups.get(row.statementId);
-    if (existing) {
-      existing.push(row);
+    let components = byStatement.get(row.statementId);
+    if (!components) {
+      components = new Map();
+      byStatement.set(row.statementId, components);
+    }
+    const rows = components.get(row.byComponentUuid);
+    if (rows) {
+      rows.push(row);
     } else {
-      groups.set(row.statementId, [row]);
+      components.set(row.byComponentUuid, [row]);
     }
   }
-  return [...groups.entries()].map(([statementId, rows]) => ({
+  return [...byStatement.entries()].map(([statementId, components]) => ({
     statementId,
-    rows,
+    components: [...components.entries()].map(([byComponentUuid, rows]) => ({
+      byComponentUuid,
+      componentUuid: rows[0].componentUuid,
+      componentTitle: rows[0].componentTitle,
+      rows,
+    })),
   }));
 });
 

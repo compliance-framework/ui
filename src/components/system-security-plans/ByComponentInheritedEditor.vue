@@ -157,7 +157,6 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'update:modelValue': [value: ByComponentInherit[]];
-  removed: [];
 }>();
 
 const toast = useToast();
@@ -317,7 +316,6 @@ async function remove(entry: ByComponentInherit) {
       (e) => e.uuid !== entry.uuid,
     );
     commit();
-    emit('removed');
     toast.add({
       severity: 'success',
       summary: 'Inherited entry removed.',

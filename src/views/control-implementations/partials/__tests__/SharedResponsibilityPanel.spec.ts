@@ -46,6 +46,20 @@ const rollupFixture: SharedResponsibilityRollup = {
         { responsibilityUuid: 'resp-1', description: 'You approve requests' },
       ],
     },
+    // Same statement, a DIFFERENT component: each needs its own Edit, or the button would
+    // open the wrong by-component.
+    {
+      controlId: 'ac-2',
+      statementId: 'ac-2_smt.a',
+      requirementUuid: 'req-1',
+      statementUuid: 'stmt-1',
+      byComponentUuid: 'bc-9',
+      componentUuid: 'comp-9',
+      componentTitle: 'Directory',
+      providedUuid: 'p-9',
+      description: 'We hold the directory of record',
+      responsibilities: [],
+    },
   ],
   inherits: [
     {
@@ -199,15 +213,27 @@ describe('SharedResponsibilityPanel', () => {
     expect(text).toContain('shared responsibility is tracked per statement');
   });
 
-  it('emits editProvides with the statement row behind the Edit affordance', async () => {
+  it('gives each by-component in a statement its own Edit, scoped to that by-component', async () => {
     const wrapper = mountPanel();
-    await findButton(wrapper, 'Edit').trigger('click');
+
+    const editButtons = wrapper
+      .findAll('button')
+      .filter((b) => b.text() === 'Edit');
+    expect(editButtons).toHaveLength(2);
+
+    await editButtons[0].trigger('click');
+    await editButtons[1].trigger('click');
 
     const emitted = wrapper.emitted('editProvides');
-    expect(emitted).toBeTruthy();
+    expect(emitted).toHaveLength(2);
     expect(emitted![0][0]).toMatchObject({
       statementUuid: 'stmt-1',
       byComponentUuid: 'bc-1',
+    });
+    // The second component's Edit must not open the first component's by-component.
+    expect(emitted![1][0]).toMatchObject({
+      statementUuid: 'stmt-1',
+      byComponentUuid: 'bc-9',
     });
   });
 
