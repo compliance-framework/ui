@@ -24,6 +24,14 @@ vi.mock('@/composables/usePermissions', () => ({
   }),
 }));
 
+// The two editors now confirm before deleting (every other delete in this feature does);
+// auto-confirm so the specs still exercise the DELETE itself.
+vi.mock('@/utils/delete-dialog', () => ({
+  useDeleteConfirmationDialog: () => ({
+    confirmDeleteDialog: (onConfirm: () => void) => onConfirm(),
+  }),
+}));
+
 vi.mock('@/composables/axios', () => ({
   decamelizeKeys: (data: unknown) => data,
   useAuthenticatedInstance: () => ({
@@ -186,6 +194,33 @@ describe('ByComponentInheritedEditor', () => {
     expect(deleteMock).toHaveBeenCalledWith(`${INHERITED_URL}/i-1`);
     const emitted = wrapper.emitted('update:modelValue');
     expect(emitted![emitted!.length - 1][0]).toEqual([]);
+  });
+
+  it('fires only one DELETE when Remove is double-clicked', async () => {
+    // Without an in-flight guard the second DELETE 404s, toasting an error over a delete that
+    // actually succeeded.
+    let resolveDelete!: () => void;
+    deleteMock.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveDelete = resolve;
+        }),
+    );
+
+    const wrapper = mountEditor([
+      { uuid: 'i-1', providedUuid: 'p-1', description: 'Original' },
+    ]);
+    const remove = findButton(wrapper, 'Remove');
+    await remove.trigger('click');
+    await remove.trigger('click');
+
+    expect(deleteMock).toHaveBeenCalledTimes(1);
+
+    resolveDelete();
+    await flushPromises();
+    expect(toastAddMock).not.toHaveBeenCalledWith(
+      expect.objectContaining({ severity: 'error' }),
+    );
   });
 
   it('tells the user to unsubscribe when the entry is owned by a subscription (409)', async () => {

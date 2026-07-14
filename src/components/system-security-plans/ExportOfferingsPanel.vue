@@ -303,17 +303,20 @@ function formatDate(iso: string): string {
 }
 
 function replaceOffering(updated: SSPExportOffering) {
-  if (!offerings.value) return;
-  const index = offerings.value.findIndex((o) => o.id === updated.id);
-  if (index !== -1) {
-    offerings.value[index] = updated;
-  }
+  const current = offerings.value ?? [];
+  const index = current.findIndex((o) => o.id === updated.id);
+  offerings.value =
+    index === -1
+      ? [...current, updated]
+      : current.map((o) => (o.id === updated.id ? updated : o));
 }
 
+// Seeds the list rather than skipping when it is undefined. `offerings` is undefined (not [])
+// whenever the initial fetch failed, and dropping a successfully-created offering on that path
+// leaves the panel insisting "No export offerings yet" over a row that exists server-side —
+// inviting the author to create it a second time.
 function handleCreated(offering: SSPExportOffering) {
-  if (offerings.value) {
-    offerings.value.push(offering);
-  }
+  offerings.value = [...(offerings.value ?? []), offering];
   showCreateModal.value = false;
 }
 

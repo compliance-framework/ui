@@ -5,207 +5,235 @@
       <Badge v-if="rollupLoading" severity="secondary">Loading…</Badge>
     </div>
 
-    <!-- Provides -->
-    <section>
-      <h5 class="text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
-        Provides
-      </h5>
-      <div
-        v-if="!providesByStatement.length"
-        class="text-sm text-gray-500 dark:text-slate-400"
-      >
-        This system exports nothing for this control.
+    <!-- A failed fetch must never render as "this system exports nothing": in a compliance
+         tool a reassuring negative that is really a broken request is the wrong way to fail.
+         Only a successful, empty response reaches the empty copy below. -->
+    <Message v-if="rollupError" severity="error" variant="outlined">
+      <div class="flex items-center justify-between gap-3">
+        <span>Could not load shared responsibility for this control.</span>
+        <SecondaryButton type="button" size="small" @click="refresh">
+          Retry
+        </SecondaryButton>
       </div>
-      <div
-        v-for="group in providesByStatement"
-        :key="group.statementId"
-        class="mb-3 p-3 border border-ccf-200 dark:border-slate-600 rounded"
-      >
-        <div class="text-sm font-medium dark:text-slate-300">
-          Statement {{ group.statementId }}
+    </Message>
+
+    <template v-else>
+      <!-- Provides -->
+      <section>
+        <h5 class="text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+          Provides
+        </h5>
+        <div
+          v-if="!providesByStatement.length"
+          class="text-sm text-gray-500 dark:text-slate-400"
+        >
+          This system exports nothing for this control.
         </div>
-        <!-- Grouped by by-component, not just by statement: one statement can export from
+        <div
+          v-for="group in providesByStatement"
+          :key="group.statementId"
+          class="mb-3 p-3 border border-ccf-200 dark:border-slate-600 rounded"
+        >
+          <div class="text-sm font-medium dark:text-slate-300">
+            Statement {{ group.statementId }}
+          </div>
+          <!-- Grouped by by-component, not just by statement: one statement can export from
              several components, and each Edit has to open the by-component its rows actually
              belong to. -->
-        <div
-          v-for="component in group.components"
-          :key="component.byComponentUuid"
-          class="mt-2"
-        >
-          <div class="flex justify-between items-start">
-            <div class="text-xs text-gray-500 dark:text-slate-400">
-              {{ component.componentTitle ?? component.componentUuid }}
-            </div>
-            <!-- Authoring is reachable from here too, not only from the SSP editor: this is
+          <div
+            v-for="component in group.components"
+            :key="component.byComponentUuid"
+            class="mt-2"
+          >
+            <div class="flex justify-between items-start">
+              <div class="text-xs text-gray-500 dark:text-slate-400">
+                {{ component.componentTitle ?? component.componentUuid }}
+              </div>
+              <!-- Authoring is reachable from here too, not only from the SSP editor: this is
                  the day-to-day surface, and the export editor was previously reachable from
                  exactly one place. -->
-            <PermissionGate :resource="RESOURCES.SSP" :action="ACTIONS.UPDATE">
-              <SecondaryButton
-                type="button"
-                size="small"
-                @click="emit('editProvides', component.rows[0])"
+              <PermissionGate
+                :resource="RESOURCES.SSP"
+                :action="ACTIONS.UPDATE"
               >
-                Edit
-              </SecondaryButton>
-            </PermissionGate>
-          </div>
-          <div
-            v-for="row in component.rows"
-            :key="row.providedUuid"
-            class="mt-1 text-xs"
-          >
-            <Badge severity="success">Provided</Badge>
-            <div class="ml-2 text-green-600 dark:text-green-400">
-              {{ row.description }}
+                <SecondaryButton
+                  type="button"
+                  size="small"
+                  @click="emit('editProvides', component.rows[0])"
+                >
+                  Edit
+                </SecondaryButton>
+              </PermissionGate>
             </div>
             <div
-              v-for="responsibility in row.responsibilities ?? []"
-              :key="responsibility.responsibilityUuid"
-              class="ml-2 text-orange-600 dark:text-orange-400"
+              v-for="row in component.rows"
+              :key="row.providedUuid"
+              class="mt-1 text-xs"
             >
-              Consumer responsibility: {{ responsibility.description }}
+              <Badge severity="success">Provided</Badge>
+              <div class="ml-2 text-green-600 dark:text-green-400">
+                {{ row.description }}
+              </div>
+              <div
+                v-for="responsibility in row.responsibilities ?? []"
+                :key="responsibility.responsibilityUuid"
+                class="ml-2 text-orange-600 dark:text-orange-400"
+              >
+                Consumer responsibility: {{ responsibility.description }}
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <!-- Inherits -->
-    <section>
-      <h5 class="text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
-        Inherits
-      </h5>
-      <div
-        v-if="!inherits.length"
-        class="text-sm text-gray-500 dark:text-slate-400"
-      >
-        Nothing inherited for this control.
-      </div>
-      <div
-        v-for="row in inherits"
-        :key="row.inheritedUuid"
-        class="mb-2 p-3 border border-ccf-200 dark:border-slate-600 rounded"
-      >
-        <div class="flex items-center gap-2 flex-wrap">
-          <span class="text-sm dark:text-slate-300">
-            Statement {{ row.statementId }}
-          </span>
-          <Badge v-if="row.satisfaction" :severity="satisfactionSeverity(row)">
-            {{ row.satisfaction }}
-          </Badge>
-          <Badge v-if="row.status" :severity="statusSeverity(row.status)">
-            {{ row.status }}
-          </Badge>
-          <RouterLink
-            v-if="row.driftRiskId"
-            :to="{
-              name: 'system-security-plan-risk-detail',
-              params: { id: sspId, riskId: row.driftRiskId },
-            }"
-            class="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400"
-          >
-            View drift risk
-          </RouterLink>
-        </div>
-        <div class="text-xs text-purple-600 dark:text-purple-400 mt-1">
-          {{ row.description }}
+      <!-- Inherits -->
+      <section>
+        <h5 class="text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+          Inherits
+        </h5>
+        <div
+          v-if="!inherits.length"
+          class="text-sm text-gray-500 dark:text-slate-400"
+        >
+          Nothing inherited for this control.
         </div>
         <div
-          v-if="row.leverageLinkId"
-          class="text-xs text-gray-500 dark:text-slate-400 mt-1"
+          v-for="row in inherits"
+          :key="row.inheritedUuid"
+          class="mb-2 p-3 border border-ccf-200 dark:border-slate-600 rounded"
         >
-          Leverage link: {{ row.leverageLinkId }}
-        </div>
-      </div>
-    </section>
-
-    <!-- Satisfies -->
-    <section>
-      <h5 class="text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
-        Satisfies
-      </h5>
-      <div
-        v-if="!satisfies.length"
-        class="text-sm text-gray-500 dark:text-slate-400"
-      >
-        No upstream responsibilities discharged for this control.
-      </div>
-      <div
-        v-for="row in satisfies"
-        :key="row.satisfiedUuid"
-        class="mb-2 p-3 border border-ccf-200 dark:border-slate-600 rounded"
-      >
-        <div class="flex items-center gap-2 flex-wrap">
-          <span class="text-sm dark:text-slate-300">
-            Statement {{ row.statementId }}
-          </span>
-          <Badge v-if="row.status" :severity="statusSeverity(row.status)">
-            {{ row.status }}
-          </Badge>
-          <RouterLink
-            v-if="row.driftRiskId"
-            :to="{
-              name: 'system-security-plan-risk-detail',
-              params: { id: sspId, riskId: row.driftRiskId },
-            }"
-            class="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400"
-          >
-            View drift risk
-          </RouterLink>
-        </div>
-        <div class="text-xs text-blue-600 dark:text-blue-400 mt-1">
-          {{ row.description }}
-        </div>
-      </div>
-    </section>
-
-    <!-- Legacy -->
-    <section v-if="legacy.length">
-      <h5 class="text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
-        Legacy
-      </h5>
-      <p class="text-xs text-gray-500 dark:text-slate-400 mb-2">
-        Legacy — shared responsibility is tracked per statement. These
-        requirement-level rows are read-only; delete them once their exports
-        live on a statement.
-      </p>
-      <div
-        v-for="row in legacy"
-        :key="row.byComponentUuid"
-        class="mb-2 p-3 border border-ccf-200 dark:border-slate-600 rounded flex justify-between items-start"
-      >
-        <div class="text-xs dark:text-slate-300">
-          <div class="font-medium">
-            {{ row.componentTitle ?? row.componentUuid }}
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="text-sm dark:text-slate-300">
+              Statement {{ row.statementId }}
+            </span>
+            <Badge
+              v-if="row.satisfaction"
+              :severity="satisfactionSeverity(row)"
+            >
+              {{ row.satisfaction }}
+            </Badge>
+            <Badge v-if="row.status" :severity="statusSeverity(row.status)">
+              {{ row.status }}
+            </Badge>
+            <RouterLink
+              v-if="row.driftRiskId"
+              :to="{
+                name: 'system-security-plan-risk-detail',
+                params: { id: sspId, riskId: row.driftRiskId },
+              }"
+              class="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400"
+            >
+              View drift risk
+            </RouterLink>
           </div>
-          <div class="text-gray-500 dark:text-slate-400">
+          <div class="text-xs text-purple-600 dark:text-purple-400 mt-1">
+            {{ row.description }}
+          </div>
+          <div
+            v-if="row.leverageLinkId"
+            class="text-xs text-gray-500 dark:text-slate-400 mt-1"
+          >
+            Leverage link: {{ row.leverageLinkId }}
+          </div>
+        </div>
+      </section>
+
+      <!-- Satisfies -->
+      <section>
+        <h5 class="text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+          Satisfies
+        </h5>
+        <div
+          v-if="!satisfies.length"
+          class="text-sm text-gray-500 dark:text-slate-400"
+        >
+          No upstream responsibilities discharged for this control.
+        </div>
+        <div
+          v-for="row in satisfies"
+          :key="row.satisfiedUuid"
+          class="mb-2 p-3 border border-ccf-200 dark:border-slate-600 rounded"
+        >
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="text-sm dark:text-slate-300">
+              Statement {{ row.statementId }}
+            </span>
+            <Badge v-if="row.status" :severity="statusSeverity(row.status)">
+              {{ row.status }}
+            </Badge>
+            <RouterLink
+              v-if="row.driftRiskId"
+              :to="{
+                name: 'system-security-plan-risk-detail',
+                params: { id: sspId, riskId: row.driftRiskId },
+              }"
+              class="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400"
+            >
+              View drift risk
+            </RouterLink>
+          </div>
+          <div class="text-xs text-blue-600 dark:text-blue-400 mt-1">
             {{ row.description }}
           </div>
         </div>
-        <PermissionGate :resource="RESOURCES.SSP" :action="ACTIONS.DELETE">
-          <button
-            type="button"
-            class="text-red-500 hover:text-red-700 text-sm shrink-0 ml-2"
-            @click="
-              confirmDeleteDialog(() => deleteLegacy(row), {
-                itemName: row.componentTitle ?? row.componentUuid,
-                itemType: 'legacy component implementation',
-              })
-            "
-          >
-            Delete
-          </button>
-        </PermissionGate>
-      </div>
-    </section>
+      </section>
 
-    <!-- Available to import -->
+      <!-- Legacy -->
+      <section v-if="legacy.length">
+        <h5 class="text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+          Legacy
+        </h5>
+        <p class="text-xs text-gray-500 dark:text-slate-400 mb-2">
+          Legacy — shared responsibility is tracked per statement. These
+          requirement-level rows are read-only; delete them once their exports
+          live on a statement.
+        </p>
+        <div
+          v-for="row in legacy"
+          :key="row.byComponentUuid"
+          class="mb-2 p-3 border border-ccf-200 dark:border-slate-600 rounded flex justify-between items-start"
+        >
+          <div class="text-xs dark:text-slate-300">
+            <div class="font-medium">
+              {{ row.componentTitle ?? row.componentUuid }}
+            </div>
+            <div class="text-gray-500 dark:text-slate-400">
+              {{ row.description }}
+            </div>
+          </div>
+          <PermissionGate :resource="RESOURCES.SSP" :action="ACTIONS.DELETE">
+            <button
+              type="button"
+              class="text-red-500 hover:text-red-700 text-sm shrink-0 ml-2"
+              @click="
+                confirmDeleteDialog(() => deleteLegacy(row), {
+                  itemName: row.componentTitle ?? row.componentUuid,
+                  itemType: 'legacy component implementation',
+                })
+              "
+            >
+              Delete
+            </button>
+          </PermissionGate>
+        </div>
+      </section>
+    </template>
+
+    <!-- Available to import — its own fetch, so its own failure state. -->
     <section>
       <h5 class="text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
         Available to import
       </h5>
+      <Message v-if="offersError" severity="error" variant="outlined">
+        <div class="flex items-center justify-between gap-3">
+          <span>Could not load the offerings available to import.</span>
+          <SecondaryButton type="button" size="small" @click="refresh">
+            Retry
+          </SecondaryButton>
+        </div>
+      </Message>
       <div
-        v-if="!offers?.length"
+        v-else-if="!offers?.length"
         class="text-sm text-gray-500 dark:text-slate-400"
       >
         No upstream system exports this control.
@@ -286,6 +314,7 @@ import { useToast } from 'primevue/usetoast';
 import type { AxiosError } from 'axios';
 import Badge from '@/volt/Badge.vue';
 import Dialog from '@/volt/Dialog.vue';
+import Message from '@/volt/Message.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
 import PermissionGate from '@/components/auth/PermissionGate.vue';
 import SubscribeOfferingWizard from '@/components/system-security-plans/SubscribeOfferingWizard.vue';
@@ -322,10 +351,8 @@ const toast = useToast();
 const axiosInstance = useAuthenticatedInstance();
 const { confirmDeleteDialog } = useDeleteConfirmationDialog();
 
-const { rollup, rollupLoading, offers, refresh } = useSharedResponsibility(
-  toRef(props, 'sspId'),
-  toRef(props, 'controlId'),
-);
+const { rollup, rollupLoading, rollupError, offers, offersError, refresh } =
+  useSharedResponsibility(toRef(props, 'sspId'), toRef(props, 'controlId'));
 
 // The rollup is already control-scoped by the query param, but filter anyway: the panel is
 // keyed on one control and must never render another's rows if the API widens.

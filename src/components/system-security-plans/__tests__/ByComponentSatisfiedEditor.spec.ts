@@ -25,6 +25,14 @@ vi.mock('@/composables/usePermissions', () => ({
   }),
 }));
 
+// The two editors now confirm before deleting (every other delete in this feature does);
+// auto-confirm so the specs still exercise the DELETE itself.
+vi.mock('@/utils/delete-dialog', () => ({
+  useDeleteConfirmationDialog: () => ({
+    confirmDeleteDialog: (onConfirm: () => void) => onConfirm(),
+  }),
+}));
+
 vi.mock('@/composables/axios', () => ({
   decamelizeKeys: (data: unknown) => data,
   useAuthenticatedInstance: () => ({

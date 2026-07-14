@@ -196,18 +196,25 @@ const selectedCapabilityKey = ref<string | null>(null);
 const adding = ref(false);
 const addError = ref('');
 
+// Resolved against the FULL picker set, not just the offerable subset: a legacy key must
+// resolve so the statement check below can actually explain itself. Resolving against
+// `availableCapabilities` made a legacy selection fall out of `addItem` as a silent no-op —
+// no POST, no error, nothing — which is the one outcome the check exists to prevent.
 function findCapability(key: string): OfferableCapability | undefined {
-  return availableCapabilities.value.find((c) => c.key === key)?.capability;
+  return pickerOptions.value.find((c) => c.key === key)?.capability;
 }
 
 async function addItem() {
   if (!selectedCapabilityKey.value) return;
   const capability = findCapability(selectedCapabilityKey.value);
   addError.value = '';
-  if (!capability) return;
-  // Defence in depth against a legacy tuple slipping through the disabled option: an item
-  // without a statementId is a 400, and the picker is the only thing standing between the
-  // author and that error.
+  if (!capability) {
+    addError.value =
+      'That capability is no longer available. Reopen this dialog and pick another.';
+    return;
+  }
+  // An item without a statementId is a 400: the picker is the only thing standing between the
+  // author and that error, so refuse a legacy tuple here rather than letting the API do it.
   if (!capability.statementId) {
     addError.value =
       'This export is authored on the requirement, not a statement, so it cannot be offered. Move it to a statement first.';

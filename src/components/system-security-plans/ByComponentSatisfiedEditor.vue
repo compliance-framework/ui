@@ -75,7 +75,12 @@
                 <button
                   type="button"
                   class="text-red-500 hover:text-red-700 text-sm"
-                  @click="remove(entry)"
+                  :disabled="removingUuid === entry.uuid"
+                  @click="
+                    confirmDeleteDialog(() => remove(entry), {
+                      itemType: 'satisfied entry',
+                    })
+                  "
                 >
                   Remove
                 </button>
@@ -111,8 +116,17 @@
             class="w-full"
             @update:model-value="newError = ''"
           />
+          <!-- A failed lookup is not the same as an empty one: telling the author to "inherit a
+               capability first" when the request merely errored sends them off to fix nothing. -->
           <div
-            v-if="!responsibilityOptions.length"
+            v-if="responsibilityOptionsFailed"
+            class="text-xs text-red-600 dark:text-red-400 mt-1"
+          >
+            Could not load the responsibilities available to satisfy. Close and
+            reopen this editor to try again.
+          </div>
+          <div
+            v-else-if="!responsibilityOptions.length"
             class="text-xs text-gray-500 dark:text-slate-400 mt-1"
           >
             No inherited responsibilities are available on this statement yet.
@@ -158,6 +172,7 @@ import PermissionGate from '@/components/auth/PermissionGate.vue';
 import ByComponentExportEntryFields from './ByComponentExportEntryFields.vue';
 import { RESOURCES, ACTIONS } from '@/constants/permissions';
 import { useAuthenticatedInstance, decamelizeKeys } from '@/composables/axios';
+import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
 import { uuid } from '@/utils/uuid';
 import type { ByComponentSatisfy, ResponsibleRole } from '@/oscal';
 import type { UpstreamResponsibility } from '@/types/ssp-export-offerings';
@@ -170,6 +185,8 @@ const props = defineProps<{
   byComponentId: string;
   modelValue: ByComponentSatisfy[] | undefined;
   responsibilityOptions: UpstreamResponsibility[];
+  // True when the options could not be fetched — distinct from "there are none".
+  responsibilityOptionsFailed?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -178,6 +195,7 @@ const emit = defineEmits<{
 
 const toast = useToast();
 const axiosInstance = useAuthenticatedInstance();
+const { confirmDeleteDialog } = useDeleteConfirmationDialog();
 const requestConfig = { transformRequest: [decamelizeKeys] };
 
 type WithRoles = ByComponentSatisfy & { responsibleRoles: ResponsibleRole[] };
@@ -232,6 +250,7 @@ const savingNew = ref(false);
 const editingUuid = ref<string | null>(null);
 const editBuffer = ref<WithRoles | null>(null);
 const savingUuid = ref<string | null>(null);
+const removingUuid = ref<string | null>(null);
 
 function startAdd() {
   draft.value = {
@@ -326,6 +345,10 @@ async function saveEdit(entry: ByComponentSatisfy) {
 }
 
 async function remove(entry: ByComponentSatisfy) {
+  // Without an in-flight guard a double-click fires two DELETEs, and the second 404s — toasting
+  // an error over a delete that actually succeeded.
+  if (removingUuid.value === entry.uuid) return;
+  removingUuid.value = entry.uuid;
   try {
     await axiosInstance.delete(`${baseUrl.value}/${entry.uuid}`);
     localEntries.value = localEntries.value.filter(
@@ -344,6 +367,8 @@ async function remove(entry: ByComponentSatisfy) {
       detail: errorMessage(error, 'Failed to remove satisfied entry.'),
       life: 5000,
     });
+  } finally {
+    removingUuid.value = null;
   }
 }
 </script>

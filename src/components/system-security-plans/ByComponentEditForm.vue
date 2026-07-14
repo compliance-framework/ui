@@ -170,6 +170,7 @@
             :stmt-id="statementId"
             :by-component-id="props.byComponent.uuid"
             :responsibility-options="satisfiableResponsibilities"
+            :responsibility-options-failed="satisfiableLoadFailed"
             v-model="byComponentData.satisfied"
           />
         </div>
@@ -403,34 +404,49 @@ const byComponentData = reactive<ByComponent>({
 // statement already inherits — anything else is a 400 — so the picker's options come from the
 // shared-responsibility rollup's `inherits[]`, narrowed to this statement.
 const satisfiableResponsibilities = ref<UpstreamResponsibility[]>([]);
+// A failed rollup fetch must not read as "nothing to satisfy": that is a reassuring negative
+// the author would act on. Track it so the picker can say it couldn't load instead.
+const satisfiableLoadFailed = ref(false);
+
+function normalizeId(value: string | undefined): string {
+  return (value ?? '').trim().toLowerCase();
+}
 
 async function loadSatisfiableResponsibilities() {
   if (!statementId || !props.statement) {
     satisfiableResponsibilities.value = [];
+    satisfiableLoadFailed.value = false;
     return;
   }
+  // Statement ids, like control ids, are not reliably cased the same in an SSP as in the
+  // catalog/profile the rollup echoes — join case-insensitively, as everything else here does.
+  const targetStatementId = normalizeId(props.statement.statementId);
   try {
     const response = await axiosInstance.get<
       DataResponse<SharedResponsibilityRollup>
     >(buildSharedResponsibilityUrl(props.sspId, props.requirement.controlId));
     const byUuid = new Map<string, UpstreamResponsibility>();
     for (const inherited of response.data.data?.inherits ?? []) {
-      if (inherited.statementId !== props.statement.statementId) continue;
+      if (normalizeId(inherited.statementId) !== targetStatementId) continue;
       for (const responsibility of inherited.responsibilities ?? []) {
         byUuid.set(responsibility.responsibilityUuid, responsibility);
       }
     }
     satisfiableResponsibilities.value = [...byUuid.values()];
+    satisfiableLoadFailed.value = false;
   } catch {
-    // The picker degrades to "nothing available to satisfy" rather than blocking the rest of
-    // the form; the API is the authority and will reject a bad uuid anyway.
+    // Don't block the rest of the form — the API is the authority and will reject a bad uuid
+    // anyway — but say the options couldn't be loaded rather than claiming there are none.
     satisfiableResponsibilities.value = [];
+    satisfiableLoadFailed.value = true;
   }
 }
 
 // What may be satisfied is a function of what is inherited, so the picker's options are
 // refreshed whenever the inherited list changes — adding an inherited capability is precisely
-// what makes its responsibilities satisfiable.
+// what makes its responsibilities satisfiable. This watcher is the ONLY driver: onMounted's
+// Object.assign below swaps the `inherited` reference, which trips it, so an explicit call
+// there would just fetch the same rollup twice on every open.
 watch(
   () => byComponentData.inherited,
   () => {
@@ -439,7 +455,6 @@ watch(
 );
 
 onMounted(() => {
-  void loadSatisfiableResponsibilities();
   // Deep copy the by-component data
   Object.assign(byComponentData, {
     ...props.byComponent,

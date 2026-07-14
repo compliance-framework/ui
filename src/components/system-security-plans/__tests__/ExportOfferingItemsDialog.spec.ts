@@ -227,6 +227,29 @@ describe('ExportOfferingItemsDialog', () => {
     );
   });
 
+  it('explains itself instead of silently no-opping when a legacy capability is selected', async () => {
+    const wrapper = mount(ExportOfferingItemsDialog, {
+      props: {
+        sspId: 'ssp-1',
+        offering: makeOffering(),
+        controlImplementation,
+        systemImplementation,
+      },
+      global: { stubs },
+    });
+
+    // The option is disabled in a real browser, but the handler must still refuse it rather
+    // than falling out of addItem with no POST, no error and no toast.
+    await wrapper.find('select').setValue(LEGACY_CAPABILITY_KEY);
+    await findButton(wrapper, 'Add Item').trigger('click');
+    await flushPromises();
+
+    expect(postMock).not.toHaveBeenCalled();
+    expect(wrapper.find('.message').text()).toContain(
+      'authored on the requirement, not a statement',
+    );
+  });
+
   it('renders the API 400 for an incoherent tuple as a readable message', async () => {
     postMock.mockRejectedValueOnce({
       response: {

@@ -59,6 +59,11 @@ export function useSharedResponsibility(
     execute: fetchOffers,
   } = useDataApi<ControlExportOffer[]>(null, {}, { immediate: false });
 
+  // The `.catch`es below only stop a rejected fetch becoming an unhandled rejection — they are
+  // NOT the error handling. `rollupError` / `offersError` are the signal, and callers MUST
+  // render a failure state from them: `data` is left untouched on the error path, so a failed
+  // fetch is otherwise indistinguishable from an empty result, and "this system exports
+  // nothing for this control" is a dangerous thing to say when the request simply broke.
   async function refresh(): Promise<void> {
     await Promise.all([
       rollupUrl.value

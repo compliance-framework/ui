@@ -68,8 +68,10 @@ const stubs = {
       'byComponentId',
       'modelValue',
       'responsibilityOptions',
+      'responsibilityOptionsFailed',
     ],
-    template: '<div data-testid="satisfied-editor" :data-stmt-id="stmtId" />',
+    template:
+      '<div data-testid="satisfied-editor" :data-stmt-id="stmtId" :data-options="responsibilityOptions.map((o) => o.responsibilityUuid).join(\',\')" :data-failed="String(!!responsibilityOptionsFailed)" />',
   },
   SharedResponsibilityBlocks: {
     props: ['byComponent'],
@@ -145,6 +147,56 @@ describe('ByComponentEditForm', () => {
         satisfied: undefined,
       }),
     });
+  });
+
+  it('offers the inherited responsibility even when the rollup cases the statement id differently', async () => {
+    // Statement ids, like control ids, are not reliably cased the same in an SSP as in the
+    // catalog the rollup echoes. An exact-match join silently told the author to "inherit a
+    // capability first" while they were looking at the entry they had just added.
+    getMock.mockResolvedValue({
+      data: {
+        data: {
+          inherits: [
+            {
+              statementId: 'AC-1_SMT.A',
+              responsibilities: [
+                {
+                  responsibilityUuid: 'resp-1',
+                  description: 'Rotate your own keys',
+                },
+              ],
+            },
+          ],
+        },
+      },
+    });
+
+    const wrapper = mountForm(true);
+    await flushPromises();
+
+    const satisfied = wrapper.find('[data-testid="satisfied-editor"]');
+    expect(satisfied.attributes('data-options')).toBe('resp-1');
+    expect(satisfied.attributes('data-failed')).toBe('false');
+  });
+
+  it('fetches the rollup exactly once per open', async () => {
+    mountForm(true);
+    await flushPromises();
+
+    // onMounted's Object.assign swaps the `inherited` reference, which trips the watcher — so
+    // an explicit call there too would fetch the same rollup twice on every open.
+    expect(getMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('flags a failed rollup rather than reporting no responsibilities to satisfy', async () => {
+    getMock.mockRejectedValueOnce(new Error('boom'));
+
+    const wrapper = mountForm(true);
+    await flushPromises();
+
+    const satisfied = wrapper.find('[data-testid="satisfied-editor"]');
+    expect(satisfied.attributes('data-failed')).toBe('true');
+    expect(satisfied.attributes('data-options')).toBe('');
   });
 
   it('is read-only for a legacy requirement-level by-component', () => {

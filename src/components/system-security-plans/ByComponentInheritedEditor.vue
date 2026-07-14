@@ -74,7 +74,12 @@
                 <button
                   type="button"
                   class="text-red-500 hover:text-red-700 text-sm"
-                  @click="remove(entry)"
+                  :disabled="removingUuid === entry.uuid"
+                  @click="
+                    confirmDeleteDialog(() => remove(entry), {
+                      itemType: 'inherited entry',
+                    })
+                  "
                 >
                   Remove
                 </button>
@@ -143,6 +148,7 @@ import PermissionGate from '@/components/auth/PermissionGate.vue';
 import ByComponentExportEntryFields from './ByComponentExportEntryFields.vue';
 import { RESOURCES, ACTIONS } from '@/constants/permissions';
 import { useAuthenticatedInstance, decamelizeKeys } from '@/composables/axios';
+import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
 import { uuid } from '@/utils/uuid';
 import type { ByComponentInherit, ResponsibleRole } from '@/oscal';
 import type { DataResponse, ErrorBody, ErrorResponse } from '@/stores/types';
@@ -161,6 +167,7 @@ const emit = defineEmits<{
 
 const toast = useToast();
 const axiosInstance = useAuthenticatedInstance();
+const { confirmDeleteDialog } = useDeleteConfirmationDialog();
 const requestConfig = { transformRequest: [decamelizeKeys] };
 
 type WithRoles = ByComponentInherit & { responsibleRoles: ResponsibleRole[] };
@@ -213,6 +220,7 @@ const savingNew = ref(false);
 const editingUuid = ref<string | null>(null);
 const editBuffer = ref<WithRoles | null>(null);
 const savingUuid = ref<string | null>(null);
+const removingUuid = ref<string | null>(null);
 
 function startAdd() {
   draft.value = {
@@ -310,6 +318,10 @@ async function saveEdit(entry: ByComponentInherit) {
 }
 
 async function remove(entry: ByComponentInherit) {
+  // Without an in-flight guard a double-click fires two DELETEs, and the second 404s — toasting
+  // an error over a delete that actually succeeded.
+  if (removingUuid.value === entry.uuid) return;
+  removingUuid.value = entry.uuid;
   try {
     await axiosInstance.delete(`${baseUrl.value}/${entry.uuid}`);
     localEntries.value = localEntries.value.filter(
@@ -344,6 +356,9 @@ async function remove(entry: ByComponentInherit) {
       detail: errorMessage(error, 'Failed to remove inherited entry.'),
       life: 5000,
     });
+  } finally {
+    // `finally`, not a tail assignment: the 409 branch above returns early.
+    removingUuid.value = null;
   }
 }
 </script>

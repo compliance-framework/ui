@@ -1250,6 +1250,9 @@ watch(
       }
       selectedImplementedRequirement.value = undefined;
       selectedControlId.value = undefined;
+      // The import highlight is meant to be transient — "here is the requirement that just
+      // appeared" — not a permanent badge the user meets again in a later session.
+      highlightedControlIds.value = new Set();
     }
   },
 );

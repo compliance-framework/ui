@@ -13,6 +13,9 @@ const { getMock, deleteMock, toastAddMock, permState, fetchedUrls } =
     fetchedUrls: [] as string[],
   }));
 
+let failRollup = false;
+let failOffers = false;
+
 vi.mock('primevue/usetoast', () => ({
   useToast: () => ({ add: toastAddMock }),
 }));
@@ -123,22 +126,28 @@ const offersFixture: ControlExportOffer[] = [
   },
 ];
 
+// Mirrors useDataApi's real error path: on failure the error ref is set and `data` is left
+// untouched — which is exactly why the panel must not treat an absent payload as "empty".
 vi.mock('@/composables/axios', async () => {
   const { ref } = await import('vue');
   return {
     useDataApi: () => {
       const data = ref<unknown>(undefined);
+      const error = ref<unknown>(null);
       const execute = (url: string) => {
         fetchedUrls.push(url);
-        if (url.includes('/shared-responsibility')) {
-          data.value = rollupFixture;
+        const isRollup = url.includes('/shared-responsibility');
+        const isOffers = url.includes('/by-control/');
+        if ((isRollup && failRollup) || (isOffers && failOffers)) {
+          error.value = new Error('boom');
+          return Promise.reject(error.value);
         }
-        if (url.includes('/by-control/')) {
-          data.value = offersFixture;
-        }
+        error.value = null;
+        if (isRollup) data.value = rollupFixture;
+        if (isOffers) data.value = offersFixture;
         return Promise.resolve({ data: ref({ data: data.value }) });
       };
-      return { data, isLoading: ref(false), error: ref(null), execute };
+      return { data, isLoading: ref(false), error, execute };
     },
     useAuthenticatedInstance: () => ({
       get: getMock,
@@ -187,6 +196,8 @@ describe('SharedResponsibilityPanel', () => {
     vi.clearAllMocks();
     fetchedUrls.length = 0;
     permState.can = true;
+    failRollup = false;
+    failOffers = false;
     getMock.mockResolvedValue({ data: { data: [] } });
     deleteMock.mockResolvedValue({});
   });
@@ -303,9 +314,53 @@ describe('SharedResponsibilityPanel', () => {
   it('hides Import and Delete without the corresponding permissions', () => {
     permState.can = false;
     const wrapper = mountPanel();
+
+    // Positive assertions first: without them every expectation below holds vacuously if the
+    // panel renders nothing at all, and the test could not tell "permissions hid the
+    // affordances" from "the fixtures never loaded".
+    expect(wrapper.text()).toContain('We manage the account lifecycle');
+    expect(wrapper.text()).toContain('Requirement-anchored export');
+    expect(wrapper.text()).toContain('Meridian Platform Baseline');
+
     const buttonTexts = wrapper.findAll('button').map((b) => b.text());
     expect(buttonTexts).not.toContain('Import implementation');
     expect(buttonTexts).not.toContain('Delete');
     expect(buttonTexts).not.toContain('Edit');
+  });
+
+  it('renders a failure state, not "exports nothing", when the rollup fetch fails', async () => {
+    failRollup = true;
+    const wrapper = mountPanel();
+    await flushPromises();
+
+    // A reassuring negative that is really a broken request is the wrong way to fail here.
+    expect(wrapper.text()).toContain(
+      'Could not load shared responsibility for this control.',
+    );
+    expect(wrapper.text()).not.toContain(
+      'This system exports nothing for this control.',
+    );
+    expect(wrapper.text()).not.toContain('Nothing inherited for this control.');
+
+    // Retry re-runs the fetch.
+    fetchedUrls.length = 0;
+    await findButton(wrapper, 'Retry').trigger('click');
+    await flushPromises();
+    expect(fetchedUrls).toContain(
+      '/api/oscal/system-security-plans/ssp-1/shared-responsibility?controlId=ac-2',
+    );
+  });
+
+  it('renders a failure state, not "no upstream exports", when the offers fetch fails', async () => {
+    failOffers = true;
+    const wrapper = mountPanel();
+    await flushPromises();
+
+    expect(wrapper.text()).toContain(
+      'Could not load the offerings available to import.',
+    );
+    expect(wrapper.text()).not.toContain(
+      'No upstream system exports this control.',
+    );
   });
 });
