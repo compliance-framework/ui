@@ -1,0 +1,14 @@
+lisa-selfreview:
+Pass 1 (reviewer -> thinker -> fixer). 3 findings, all fixed in the follow-up commit:
+- [high] SharedResponsibilityPanel: the Provides "Edit" emitted group.rows[0], but a statement can
+  export from several components, so it opened the WRONG by-component whenever a statement had
+  more than one. Regrouped statement -> by-component; each by-component now has its own Edit.
+  Test added (two components on one statement, two Edits, each scoped correctly).
+- [high] IndexView.openProvidesEditor looked the requirement up with an exact-key map lookup on
+  controlId. SSP control-ids are not reliably cased the same as catalog/profile ids, so a rollup
+  row saying "AC-1" against a requirement saying "ac-1" would silently fail into the "no longer
+  loaded" toast. Now matched case-insensitively; test added.
+- [medium] ByComponentEditForm refreshed the satisfied picker's options only when an inherited
+  entry was REMOVED, which is backwards: adding an inherited capability is what makes its
+  responsibilities satisfiable. Replaced the @removed hook with a watch on the inherited list
+  (and dropped the now-unused `removed` emit from ByComponentInheritedEditor).
