@@ -2,3 +2,24 @@ lisa-addressed:
 Self-review pass 1: fixed per-component Provides edit, case-insensitive controlId join in
 openProvidesEditor, and satisfied-picker refresh on inherited change. make reviewable green
 (123 files, 965 tests).
+
+lisa-addressed:
+Review pass 1 (gusfcarvalho, 8 inline threads) — all 8 fixed:
+- [Medium] statement-id join was case-sensitive: normalized both sides in
+  ByComponentEditForm.loadSatisfiableResponsibilities; test with AC-1_SMT.A vs ac-1_smt.a.
+- [Medium] a failed rollup/offers fetch rendered as an authoritative "exports nothing":
+  SharedResponsibilityPanel now destructures rollupError/offersError and renders a
+  "Could not load…" state with a Retry; only a successful empty response yields empty copy.
+  Same for the satisfied picker (responsibilityOptionsFailed). Documented in
+  useSharedResponsibility that the .catch()es are NOT error handling. NOTE: pre-API 404s now
+  surface as an error state rather than "exports nothing" — the honest rendering.
+- [Low] ExportOfferingItemsDialog legacy guard was dead code (silent no-op): findCapability now
+  resolves against pickerOptions so the !statementId branch fires; unresolvable key gets a message.
+- [Low] rollup was fetched twice per open: dropped the onMounted call, watcher is the only driver.
+- [Low] import highlight never cleared: cleared on drawer close.
+- [Low] inherited/satisfied deletes: added confirmDeleteDialog + removingUuid in-flight guard
+  (double-click fired two DELETEs, second 404d over a successful delete).
+- [Low] ExportOfferingsPanel.handleCreated dropped a created offering when the initial fetch had
+  failed: seeds the array now; replaceOffering tolerates undefined.
+- [Low] vacuous permission test in SharedResponsibilityPanel.spec: added positive assertions.
+make reviewable green (123 files, 972 tests).
