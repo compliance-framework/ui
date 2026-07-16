@@ -1,0 +1,51 @@
+lisa-addressed:
+Review pass 3 (gusfcarvalho SUBMITTED the review mid-pass: the 7 Highs I had already fixed from
+the pending draft, PLUS 11 new Medium/Low). All 18 threads replied to and resolved. 86d47aa.
+- [Medium] ImportFromSspDialog: Enter in the search box implicitly submitted the form, running
+  importSelected() and bypassing the PermissionGate (which only wraps the button); the 403 copy
+  then blamed the provider's allow-list for an RBAC denial. Added @keydown.enter.prevent AND a
+  real mayImport check in the handler. NOTE: the obvious test ("no POST on Enter") is VACUOUS —
+  jsdom does not implement implicit form submission, it passed pre-fix. Test asserts
+  defaultPrevented instead; a second test covers the handler refusing without permission.
+- [Medium x3] Stale-request races. Took the reviewer's shared-helper suggestion instead of
+  fixing site by site: NEW src/utils/latest-request.ts (begin()/isStale()) + latest-request.spec.ts.
+  Applied to useStatementExport.load() (guards resolved/state/catch/finally),
+  SharedResponsibilityPanel.openImport, ByComponentEditForm.loadSatisfiableResponsibilities
+  (both try AND catch). Guarding only the success path is the half-fix — a superseded rejection
+  still reports failure over a newer success. Documented in the helper's docblock.
+- [Medium] SharedResponsibilityPanel: offersLoading was never destructured, so "No upstream system
+  exports this control" rendered for the whole cross-SSP fetch. Added the loading branch ahead of
+  the empty copy. The spec's useDataApi mock hard-coded isLoading: ref(false) (reviewer called
+  this out) — it now tracks loading and can hold the offers fetch in flight.
+- [Medium] Retry had no :disabled and vueuse's abortPrevious defaults true. VERIFIED IN THE
+  INSTALLED SOURCE: useAxios.mjs guards the success path on isAborted (:87) but NOT the error
+  path (:91), so an aborted request's CanceledError lands in `error` after the newer execute()
+  cleared it — a successful load renders as an error. Fixed with abortPrevious: false on both
+  useDataApi calls + :disabled on both Retrys.
+- [Medium] InheritedResponsibilitiesSection: "No dashboards linked" rendered on a FAILED filters
+  fetch, telling a responsibility that has dashboards that it has none. Gated on
+  responsibilityFiltersError.
+- [Medium] StatementByComponent (control-implementations copy): statementId + editSharedResponsibility
+  were dead — no caller passes the prop, nothing listens for the emit. DELETED prop/emit/button
+  (+ now-unused PermissionGate/RESOURCES/ACTIONS imports) rather than wiring it: the design note
+  has SharedResponsibilityPanel owning the affordance on the Controls surface, so wiring would
+  give one statement two export entry points. The SSP-editor copy keeps its wiring.
+  DELIBERATELY LEFT OPEN: the mixed-status export gap the reviewer noted as a corollary. Whether
+  a mixed-status statement should be exportable is a product decision about isExportableStatement,
+  not a review fix. Flagged in-thread as still open.
+- [Medium] SystemSecurityPlanControlImplementationView: pinned sspUrl/ciUrl at setup under the same
+  unkeyed KeepAlive the sibling was fixed for, and the new by-component DELETE fired against the
+  mismatch. Applied the sibling's exact treatment (computeds + immediate:false + watch). Switched
+  deleteRequirementByComponent AND deleteRequirement from route.params.id to sspId.value with the
+  same empty-guard the statement-level handlers use. Its spec's useDataApi mock routed on the
+  CONSTRUCTION-time url and had to be reworked to route on the execute url (same shape as the
+  sibling view's spec) — without that it silently rendered nothing.
+- [Medium] ByComponentSatisfiedEditor.remove had no 409 branch (satisfied entries are
+  subscription-owned too), so errors.body — a bare offering name — was the whole text of a red
+  toast. Mirrored the inherited editor's branch with satisfied-appropriate copy. Did NOT lift the
+  two into a shared helper: copy differs, gain is small; offered in-thread.
+- [Low] WorkflowInstancesIndexView scope creep (dropped the Status column, swapped Last->Next
+  Execution) REVERTED to main. Unintentional; belongs in its own PR.
+make reviewable green: 133 files, 1055 tests (was 132/1045). Regression tests verified to FAIL
+against pre-fix code for: removeProvided, nil-slice deref, satisfied labelling, offerings staleness,
+offersLoading, Enter default-prevention, and the permission guard.
