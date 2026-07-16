@@ -1,0 +1,35 @@
+lisa-addressed:
+Review pass 2 (gusfcarvalho, 7 inline High findings on the pending review of 58f04d0d) — all 7 fixed.
+Read via the reviewer's own token: the comments were an UNSUBMITTED (PENDING) review, so
+`lisa threads` saw nothing and no thread ids exist to reply to / resolve.
+- ExportStatementDialog.removeProvided re-linked responsibilities to the wrong capability:
+  the clamp only caught out-of-range indices, never decremented shifted ones. Now decrements
+  >index, re-points ==index to 0, keeps the clamp as a backstop. Test [A,B,C] + R->B, remove A,
+  assert providedIndex 0 (was silently C); verified it fails without the fix.
+- item.responsibilities nil-slice deref in ImportFromSspDialog:113 and SubscribeOfferingWizard:28
+  (reachable on first render via preselection). Guarded both v-if/v-for, and made
+  CatalogOfferingItem.responsibilities OPTIONAL so the compiler demands the guard. Added
+  `responsibilities: null` fixtures (new SubscribeOfferingWizard.spec.ts + an ImportFromSspDialog
+  override) — reproduced the exact TypeError before fixing.
+- InheritedResponsibilitiesSection rendered a failed leveraged-controls fetch as "nothing
+  inherited": now destructures controlsError and renders the error + Retry (leveraged.refresh)
+  ahead of the links.length branch, mirroring rollupError. InheritedResponsibilityRows gets a
+  muted "Could not load..." marker, gated on a provider that actually failed (not on absence).
+- ByComponentEditForm labelled satisfied rows from outstandingResponsibilities, which by
+  definition excludes already-satisfied ones -> raw uuid. Split into two lists: new
+  knownResponsibilities (control.responsibilities ?? outstanding) passed as
+  :responsibility-labels for LABELLING; outstanding stays the CREATE picker's options only.
+  ByComponentSatisfiedEditor.responsibilityLabel prefers labels, falls back to options.
+- ExportOfferingAllowlistDialog asserted "Any downstream may subscribe" (a SECURITY claim) off
+  an empty list that a failed fetch also produces: added loadError, gated the claim AND the Add
+  affordance, error + Retry, and clear the stale list on failure.
+- ExportOfferingsPanel left the previous SSP's offerings on screen after a failed refetch under
+  the unkeyed KeepAlive (useAxios resetOnExecute:false), wired to the NEW sspId's mutation URLs.
+  The three refs are now cleared at the top of the watcher before dispatching. The spec's
+  useDataApi mock now models resetOnExecute:false so the bug is actually expressible.
+UNPROMPTED (found while grepping, not a listed finding): useLeveragedControls.ts carried a RAW
+NUL byte as the linkKey separator, so git classified the whole file as BINARY — it never appeared
+in any diff or review (this is why the reviewer needed `grep -a`). Rewritten as a unicode escape
+sequence: identical runtime key, the file is text again and now diffs.
+make reviewable green: 132 files, 1045 tests (was 131/1033). Every regression test was verified
+to FAIL against the pre-fix code.
