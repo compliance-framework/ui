@@ -8,9 +8,7 @@ import Label from '@/volt/Label.vue';
 import Select from '@/volt/Select.vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
-import PermissionGate from '@/components/auth/PermissionGate.vue';
 import SharedResponsibilityBlocks from '@/components/system-security-plans/SharedResponsibilityBlocks.vue';
-import { RESOURCES, ACTIONS } from '@/constants/permissions';
 import { useToggle } from '@/composables/useToggle';
 import { useDataApi } from '@/composables/axios';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
@@ -29,20 +27,20 @@ import {
   normalizeByComponentImplementationStatus,
 } from './implementation-status';
 
-const { byComponent, controlId, statementId, sspRisks, riskFetchLimit } =
-  defineProps<{
-    byComponent: ByComponent;
-    controlId?: string;
-    // Set only for a statement's by-component. Its absence marks a legacy,
-    // requirement-anchored row, which offers no shared-responsibility authoring.
-    statementId?: string;
-    sspRisks?: Risk[];
-    riskFetchLimit?: number;
-  }>();
+// No statementId / editSharedResponsibility here, unlike the SSP-editor copy of this
+// component: on the Controls surface, SharedResponsibilityPanel owns the export-authoring
+// affordance. Both callers (IndexView, ControlStatementByComponents) render this without a
+// statement id and neither listens for the event, so the button this pair fed was
+// unreachable — it read as if it worked.
+const { byComponent, controlId, sspRisks, riskFetchLimit } = defineProps<{
+  byComponent: ByComponent;
+  controlId?: string;
+  sspRisks?: Risk[];
+  riskFetchLimit?: number;
+}>();
 const emit = defineEmits<{
   save: [byComponent: ByComponent];
   delete: [byComponent: ByComponent];
-  editSharedResponsibility: [byComponent: ByComponent];
 }>();
 
 const { system } = useSystemStore();
@@ -238,19 +236,6 @@ function openRisksForControl() {
       />
     </div>
     <div class="flex items-center gap-2">
-      <PermissionGate
-        v-if="statementId"
-        :resource="RESOURCES.SSP"
-        :action="ACTIONS.UPDATE"
-      >
-        <SecondaryButton
-          type="button"
-          size="small"
-          @click="emit('editSharedResponsibility', byComponent)"
-        >
-          Edit Shared Responsibility
-        </SecondaryButton>
-      </PermissionGate>
       <BurgerMenu
         :items="[
           {

@@ -45,19 +45,33 @@ export function useSharedResponsibility(
       : null,
   );
 
+  // abortPrevious: false — these are two independent GETs, not a typeahead. Under vueuse's
+  // default (`true`) an overlapping execute() aborts the in-flight one, and useAxios guards
+  // its SUCCESS path on isAborted but NOT its error path: the aborted request's
+  // CanceledError lands in `error` after the newer execute() already cleared it, so a fetch
+  // that actually succeeded renders as a failure. Two refresh()es in quick succession — a
+  // Retry pressed during the initial load, two deletes in a row — are enough to trip it.
   const {
     data: rollup,
     isLoading: rollupLoading,
     error: rollupError,
     execute: fetchRollup,
-  } = useDataApi<SharedResponsibilityRollup>(null, {}, { immediate: false });
+  } = useDataApi<SharedResponsibilityRollup>(
+    null,
+    {},
+    { immediate: false, abortPrevious: false },
+  );
 
   const {
     data: offers,
     isLoading: offersLoading,
     error: offersError,
     execute: fetchOffers,
-  } = useDataApi<ControlExportOffer[]>(null, {}, { immediate: false });
+  } = useDataApi<ControlExportOffer[]>(
+    null,
+    {},
+    { immediate: false, abortPrevious: false },
+  );
 
   // The `.catch`es below only stop a rejected fetch becoming an unhandled rejection — they are
   // NOT the error handling. `rollupError` / `offersError` are the signal, and callers MUST

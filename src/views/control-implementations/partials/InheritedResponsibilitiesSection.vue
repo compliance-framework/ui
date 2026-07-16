@@ -169,8 +169,18 @@
               </button>
             </PermissionGate>
           </div>
+          <!-- `filtersByResponsibility` is built from `responsibilityFilters ?? []`, so a
+               failed filters fetch is empty exactly as "genuinely none" is. Telling a
+               responsibility that DOES have dashboards that it has none contradicts reality
+               rather than merely under-reporting it, so the error case is checked first. -->
           <div
-            v-if="!filtersFor(row.responsibilityUuid).length"
+            v-if="responsibilityFiltersError"
+            class="mt-1 text-xs text-gray-500 italic dark:text-slate-400"
+          >
+            Could not load linked dashboards for this responsibility.
+          </div>
+          <div
+            v-else-if="!filtersFor(row.responsibilityUuid).length"
             class="mt-1 text-xs text-gray-500 dark:text-slate-400"
           >
             No dashboards linked — link one and this responsibility's coverage
@@ -321,7 +331,7 @@ const leveraged =
   inject(LeveragedControlsKey, null) ??
   useLeveragedControls(computed(() => props.sspId));
 
-const { controlsError } = leveraged;
+const { controlsError, responsibilityFiltersError } = leveraged;
 
 const links = computed<LeveragedControl[]>(
   () =>

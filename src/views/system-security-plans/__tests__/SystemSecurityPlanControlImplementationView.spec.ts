@@ -63,26 +63,34 @@ const controlImplementation: ControlImplementation = {
   ],
 };
 
+// The SSP and control-implementation reads now go through `execute(url)` against a computed
+// URL (the <KeepAlive> stale-fetch fix), so the URL arrives per call rather than at
+// construction — this routing has to key on the execute url, not the ctor arg.
 vi.mock('@/composables/axios', async () => {
   const { ref } = await import('vue');
   return {
     decamelizeKeys: (data: unknown) => data,
-    useDataApi: (url?: string | null) => {
-      if (typeof url === 'string' && url.endsWith('/control-implementation')) {
-        return { data: ref(controlImplementation), isLoading: ref(false) };
-      }
-      if (
-        typeof url === 'string' &&
-        url.startsWith('/api/oscal/system-security-plans/') &&
-        !url.includes('/control-implementation')
-      ) {
-        return { data: ref({ uuid: 'ssp-1' }), isLoading: ref(false) };
-      }
-      return {
-        data: ref(undefined),
-        isLoading: ref(false),
-        execute: deleteMock,
+    useDataApi: () => {
+      const data = ref<unknown>(undefined);
+      const execute = (executeUrl: string) => {
+        if (typeof executeUrl === 'string') {
+          if (executeUrl.endsWith('/control-implementation')) {
+            data.value = controlImplementation;
+            return Promise.resolve({ data: ref({ data: data.value }) });
+          }
+          if (
+            executeUrl.startsWith('/api/oscal/system-security-plans/') &&
+            !executeUrl.includes('/control-implementation') &&
+            !executeUrl.includes('/risks')
+          ) {
+            data.value = { uuid: 'ssp-1' };
+            return Promise.resolve({ data: ref({ data: data.value }) });
+          }
+        }
+        // Mutations (DELETE/PUT) and the risks read land here.
+        return deleteMock(executeUrl);
       };
+      return { data, isLoading: ref(false), execute };
     },
     useAuthenticatedInstance: () => ({
       get: vi.fn(async () => ({ data: { data: { inherits: [] } } })),

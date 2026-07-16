@@ -16,6 +16,15 @@ vi.mock('@/composables/axios', () => ({
   }),
 }));
 
+// importSelected() enforces the permission itself (the gate around the button governs only
+// what renders), so the composable is mocked off the same permState as the gate stub.
+vi.mock('@/composables/usePermissions', () => ({
+  usePermissions: () => ({
+    can: () => permState.can,
+    permissionTooltip: () => '',
+  }),
+}));
+
 const DOWNSTREAM = 'ssp-down';
 
 function makeCatalog(): CatalogOffering[] {
@@ -234,6 +243,37 @@ describe('ImportFromSspDialog', () => {
     expect(wrapper.text()).toContain('AC-2 · Statement AC-2_smt.a');
     // The row is there; it just has no responsibilities to tick.
     expect(wrapper.text()).not.toContain('You take these on');
+  });
+
+  // The search box is this form's only text input, so in a real browser Enter implicitly
+  // submits it and runs importSelected() — a path that never touches the Import button or
+  // the PermissionGate around it. jsdom does not implement implicit submission, so asserting
+  // "no POST fired" here would pass with or without the fix; what IS meaningful is that the
+  // keydown is default-prevented, since that is precisely what suppresses the submit.
+  it('default-prevents Enter in the search box so it cannot submit the form', async () => {
+    const wrapper = await mountDialog('ac-2');
+
+    const event = new KeyboardEvent('keydown', {
+      key: 'Enter',
+      bubbles: true,
+      cancelable: true,
+    });
+    wrapper.find('input').element.dispatchEvent(event);
+
+    expect(event.defaultPrevented).toBe(true);
+  });
+
+  // A gate that only hides a button is not an authorization check while another path can
+  // reach the handler. Without the check in importSelected() the POST fires and 403s, and
+  // the 403 copy blames the provider's allow-list for what is really an RBAC denial.
+  it('does not subscribe when the subject lacks permission, even if the handler is reached', async () => {
+    permState.can = false;
+    const wrapper = await mountDialog('ac-2');
+
+    await wrapper.find('form').trigger('submit');
+    await flushPromises();
+
+    expect(postMock).not.toHaveBeenCalled();
   });
 
   it('falls back to an id-derived group name when the SSP list cannot be read', async () => {

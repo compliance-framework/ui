@@ -117,6 +117,39 @@ describe('ByComponentSatisfiedEditor', () => {
     expect(wrapper.text()).toContain('No satisfied entries yet.');
   });
 
+  // Satisfied entries are subscription-owned too (subscribing creates them from
+  // items[].satisfiedResponsibilityUuids), so this endpoint 409s on the same condition as
+  // the inherited one. Without the branch, errors.body — a bare offering name — becomes the
+  // entire text of a red toast.
+  it('tells the user to unsubscribe when the entry is owned by a subscription (409)', async () => {
+    deleteMock.mockRejectedValueOnce({
+      response: {
+        status: 409,
+        data: { errors: { body: 'the Meridian Platform Baseline offering' } },
+      },
+    });
+
+    const wrapper = mountEditor([
+      {
+        uuid: 's-1',
+        responsibilityUuid: 'resp-1',
+        description: 'We rotate keys quarterly',
+      } as ByComponentSatisfy,
+    ]);
+    await findButton(wrapper, 'Remove').trigger('click');
+    await flushPromises();
+
+    expect(toastAddMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        severity: 'warn',
+        detail:
+          'This satisfied entry came from your subscription to the Meridian Platform Baseline offering. Unsubscribe from the offering to remove it.',
+      }),
+    );
+    // The row survives: only unsubscribing may remove it.
+    expect(wrapper.text()).toContain('We rotate keys quarterly');
+  });
+
   // An already-satisfied responsibility is by definition NOT outstanding, so it is absent
   // from the picker's options. Labelling from those options alone therefore always misses
   // for existing rows and falls through to the bare uuid.

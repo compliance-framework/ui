@@ -174,6 +174,7 @@ function makeContext(
   links: LeveragedControl[],
   filters: ResponsibilityFilter[] = [],
   controlsError: unknown = null,
+  responsibilityFiltersError: unknown = null,
 ): LeveragedControlsContext {
   const map = new Map<string, LeveragedControl[]>();
   for (const link of links) {
@@ -192,7 +193,7 @@ function makeContext(
     controlsLoading: ref(false),
     controlsError: ref(controlsError),
     responsibilityFilters: ref(filters),
-    responsibilityFiltersError: ref(null),
+    responsibilityFiltersError: ref(responsibilityFiltersError),
     linksByStatement: computed(() => map),
     filtersByResponsibility: computed(() => filterMap),
     refresh: refreshMock,
@@ -205,6 +206,7 @@ function mountSection(
     statement?: Statement;
     filters?: ResponsibilityFilter[];
     controlsError?: unknown;
+    responsibilityFiltersError?: unknown;
   } = {},
 ) {
   const implementation = {
@@ -225,6 +227,7 @@ function mountSection(
           links,
           options.filters ?? [],
           options.controlsError ?? null,
+          options.responsibilityFiltersError ?? null,
         ),
       },
     },
@@ -270,6 +273,19 @@ describe('InheritedResponsibilitiesSection', () => {
     expect(wrapper.text()).toContain(
       'Could not load inherited responsibilities',
     );
+  });
+
+  // filtersByResponsibility is built from `responsibilityFilters ?? []`, so a failed filters
+  // fetch is empty exactly as "genuinely none" is — and a responsibility that DOES have
+  // dashboards would then be told it has none, contradicting reality rather than merely
+  // under-reporting it.
+  it('does not claim "no dashboards linked" when the filters fetch failed', () => {
+    const wrapper = mountSection([makeLink()], {
+      responsibilityFiltersError: new Error('boom'),
+    });
+
+    expect(wrapper.text()).not.toContain('No dashboards linked');
+    expect(wrapper.text()).toContain('Could not load linked dashboards');
   });
 
   it('renders nothing when the statement has no leverage links', () => {

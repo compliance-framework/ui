@@ -40,10 +40,15 @@
         listed first and preselected.
       </Message>
 
+      <!-- This form's only text input, so HTML implicit submission means Enter here would
+           run importSelected() and fire the subscribe POSTs — a path that never touches the
+           Import button or the gate around it. Enter in a search box should filter, not
+           import. -->
       <InputText
         v-model="search"
         class="w-full"
         placeholder="Search by control, statement, or system…"
+        @keydown.enter.prevent
       />
 
       <div v-for="group in filteredGroups" :key="group.sspId" class="space-y-3">
@@ -187,6 +192,7 @@ import PrimaryButton from '@/volt/PrimaryButton.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
 import PermissionGate from '@/components/auth/PermissionGate.vue';
 import { RESOURCES, ACTIONS } from '@/constants/permissions';
+import { usePermissions } from '@/composables/usePermissions';
 import { useAuthenticatedInstance } from '@/composables/axios';
 import {
   buildControlOffersUrl,
@@ -239,6 +245,15 @@ const search = ref('');
 const selectedItemIds = ref(new Set<string>());
 const satisfiedByItem = ref(new Map<string, Set<string>>());
 const importing = ref(false);
+
+// Mirrors the two nested <PermissionGate>s around the Import button — importSelected()
+// enforces this itself, since the gates only govern what renders.
+const { can } = usePermissions();
+const mayImport = computed(
+  () =>
+    can(RESOURCES.SSP_EXPORT_OFFERING, ACTIONS.SUBSCRIBE) &&
+    can(RESOURCES.SSP, ACTIONS.UPDATE),
+);
 const offeringErrors = ref(new Map<string, string>());
 const importedAnything = ref(false);
 
@@ -474,6 +489,11 @@ function subscribeErrorMessage(error: unknown): string {
 // Controls page can reveal everything that was created at once.
 async function importSelected() {
   if (importing.value || !selectedItemIds.value.size) return;
+  // Checked here, not only via the <PermissionGate> around the button: a gate that hides a
+  // button is not an authorization check while another path can reach the handler. Without
+  // this a denied POST 403s, and subscribeErrorMessage maps 403 to "this provider hasn't
+  // allowed your system to import this" — blaming the provider for an RBAC denial.
+  if (!mayImport.value) return;
   importing.value = true;
   offeringErrors.value = new Map();
 

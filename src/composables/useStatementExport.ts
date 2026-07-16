@@ -2,6 +2,7 @@ import { ref } from 'vue';
 import type { AxiosError } from 'axios';
 import { useAuthenticatedInstance, decamelizeKeys } from '@/composables/axios';
 import { uuid as newUuid } from '@/utils/uuid';
+import { latestRequest } from '@/utils/latest-request';
 import type {
   ByComponent,
   ByComponentExport,
@@ -144,6 +145,11 @@ export function useStatementExport(target: () => StatementExportTarget) {
 
   // Load-resolved context the save chain builds on. Never exposed to the caller.
   let resolved: ResolvedTarget | null = null;
+  // IndexView keeps ONE dialog mounted across targets, so load() can be re-issued for a
+  // different statement while an earlier chain is still in flight. `resolved` is what every
+  // mutation URL is built from — an older load landing last would silently repoint save at
+  // the statement the user already navigated away from.
+  const loadGate = latestRequest();
 
   function oscalBase(sspId: string): string {
     return `/api/oscal/system-security-plans/${sspId}`;
@@ -166,6 +172,7 @@ export function useStatementExport(target: () => StatementExportTarget) {
 
   async function load(): Promise<boolean> {
     const t = target();
+    const token = loadGate.begin();
     loading.value = true;
     stepError.value = null;
     state.value = null;
@@ -273,6 +280,10 @@ export function useStatementExport(target: () => StatementExportTarget) {
         sspOptions = [];
       }
 
+      // A newer load() has taken over: drop this answer rather than repointing `resolved`
+      // (and every save URL built from it) back at a stale target.
+      if (loadGate.isStale(token)) return false;
+
       resolved = {
         requirement,
         statement,
@@ -306,6 +317,9 @@ export function useStatementExport(target: () => StatementExportTarget) {
       };
       return true;
     } catch (error) {
+      // Also guarded: a superseded load failing must not report an error over the newer
+      // load that succeeded.
+      if (loadGate.isStale(token)) return false;
       stepError.value = {
         step: 'load',
         message: errorDetail(
@@ -315,7 +329,11 @@ export function useStatementExport(target: () => StatementExportTarget) {
       };
       return false;
     } finally {
-      loading.value = false;
+      // Only the newest load owns the spinner; an older one finishing must not clear it
+      // while the current chain is still running.
+      if (!loadGate.isStale(token)) {
+        loading.value = false;
+      }
     }
   }
 

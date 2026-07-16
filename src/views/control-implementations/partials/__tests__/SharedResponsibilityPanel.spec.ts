@@ -15,6 +15,8 @@ const { getMock, deleteMock, toastAddMock, permState, fetchedUrls } =
 
 let failRollup = false;
 let failOffers = false;
+// Holds the offers fetch in flight so the loading window is observable.
+let holdOffers = false;
 
 vi.mock('primevue/usetoast', () => ({
   useToast: () => ({ add: toastAddMock }),
@@ -145,20 +147,30 @@ vi.mock('@/composables/axios', async () => {
     useDataApi: () => {
       const data = ref<unknown>(undefined);
       const error = ref<unknown>(null);
+      // isLoading tracks the real thing rather than a hard-coded false. The window between
+      // dispatch and response is exactly where "No upstream system exports this control"
+      // used to be asserted, so a mock that is never loading cannot express that bug.
+      const isLoading = ref(false);
       const execute = (url: string) => {
         fetchedUrls.push(url);
         const isRollup = url.includes('/shared-responsibility');
         const isOffers = url.includes('/by-control/');
+        isLoading.value = true;
         if ((isRollup && failRollup) || (isOffers && failOffers)) {
           error.value = new Error('boom');
+          isLoading.value = false;
           return Promise.reject(error.value);
         }
         error.value = null;
+        // Never resolves: leaves the panel in its in-flight state so the loading copy can
+        // be asserted.
+        if (isOffers && holdOffers) return new Promise(() => {});
         if (isRollup) data.value = rollupFixture;
         if (isOffers) data.value = offersFixture;
+        isLoading.value = false;
         return Promise.resolve({ data: ref({ data: data.value }) });
       };
-      return { data, isLoading: ref(false), error, execute };
+      return { data, isLoading, error, execute };
     },
     useAuthenticatedInstance: () => ({
       get: getMock,
@@ -209,8 +221,22 @@ describe('SharedResponsibilityPanel', () => {
     permState.can = true;
     failRollup = false;
     failOffers = false;
+    holdOffers = false;
     getMock.mockResolvedValue({ data: { data: [] } });
     deleteMock.mockResolvedValue({});
+  });
+
+  // The by-control offers query is a cross-SSP read; until it lands we do not know whether
+  // anything exports this control. Asserting "no upstream system" for the duration of the
+  // fetch is the same reassuring negative the rollup was fixed for, produced by latency
+  // rather than failure.
+  it('does not claim "no upstream system exports this control" while the offers fetch is in flight', async () => {
+    holdOffers = true;
+    const wrapper = mountPanel();
+    await flushPromises();
+
+    expect(wrapper.text()).not.toContain('No upstream system exports');
+    expect(wrapper.text()).toContain('Looking for upstream systems');
   });
 
   it('fetches the rollup and the by-control offers for the selected SSP and control', () => {

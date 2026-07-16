@@ -11,7 +11,12 @@
     <Message v-if="rollupError" severity="error" variant="outlined">
       <div class="flex items-center justify-between gap-3">
         <span>Could not load shared responsibility for this control.</span>
-        <SecondaryButton type="button" size="small" @click="refresh">
+        <SecondaryButton
+          type="button"
+          size="small"
+          :disabled="rollupLoading"
+          @click="refresh"
+        >
           Retry
         </SecondaryButton>
       </div>
@@ -210,11 +215,25 @@
       <Message v-if="offersError" severity="error" variant="outlined">
         <div class="flex items-center justify-between gap-3">
           <span>Could not load the offerings available to import.</span>
-          <SecondaryButton type="button" size="small" @click="refresh">
+          <SecondaryButton
+            type="button"
+            size="small"
+            :disabled="offersLoading"
+            @click="refresh"
+          >
             Retry
           </SecondaryButton>
         </div>
       </Message>
+      <!-- Ahead of the empty copy: this is a cross-SSP read, and until it lands we do not
+           know whether anything exports this control. Claiming "no upstream system" for the
+           duration of the fetch is a reassuring negative produced by latency. -->
+      <div
+        v-else-if="offersLoading"
+        class="text-sm text-gray-500 dark:text-slate-400"
+      >
+        Looking for upstream systems that export this control…
+      </div>
       <div
         v-else-if="!offers?.length"
         class="text-sm text-gray-500 dark:text-slate-400"
@@ -307,6 +326,7 @@ import { RESOURCES, ACTIONS } from '@/constants/permissions';
 import { useAuthenticatedInstance } from '@/composables/axios';
 import { useSharedResponsibility } from '@/composables/useSharedResponsibility';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
+import { latestRequest } from '@/utils/latest-request';
 import type { ControlImplementation } from '@/oscal';
 import type { DataResponse, ErrorBody, ErrorResponse } from '@/stores/types';
 import type {
@@ -337,8 +357,15 @@ const toast = useToast();
 const axiosInstance = useAuthenticatedInstance();
 const { confirmDeleteDialog } = useDeleteConfirmationDialog();
 
-const { rollup, rollupLoading, rollupError, offers, offersError, refresh } =
-  useSharedResponsibility(toRef(props, 'sspId'), toRef(props, 'controlId'));
+const {
+  rollup,
+  rollupLoading,
+  rollupError,
+  offers,
+  offersLoading,
+  offersError,
+  refresh,
+} = useSharedResponsibility(toRef(props, 'sspId'), toRef(props, 'controlId'));
 
 // The rollup is already control-scoped by the query param, but filter anyway: the panel is
 // keyed on one control and must never render another's rows if the API widens.
@@ -448,7 +475,14 @@ const importingOffering = ref<CatalogOffering | null>(null);
 // flat catalog is the only cross-SSP read that respects the leverage trust boundary — the
 // same single fetch the Leverage view makes — so resolve the offering from it rather than
 // reaching for an upstream-scoped endpoint.
+// Two Imports in flight (open A, close, open B — or A then B while A is still loading) and
+// the slower one landing last would leave `importingOffering` on A while `importingOffer` is
+// B: the wizard then mounts A's offering scoped to B's item id, so it either shows no items
+// or subscribes against the wrong offering.
+const importGate = latestRequest();
+
 async function openImport(offer: ControlExportOffer) {
+  const token = importGate.begin();
   importingOffer.value = offer;
   importingOffering.value = null;
   showImportModal.value = true;
@@ -456,12 +490,16 @@ async function openImport(offer: ControlExportOffer) {
     const response = await axiosInstance.get<DataResponse<CatalogOffering[]>>(
       '/api/oscal/ssp-export-offerings',
     );
-    importingOffering.value =
-      response.data.data?.find((o) => o.id === offer.offeringId) ?? null;
+    const found = response.data.data?.find((o) => o.id === offer.offeringId);
+    if (importGate.isStale(token)) return;
+    importingOffering.value = found ?? null;
     if (!importingOffering.value) {
       throw new Error('The offering is no longer published.');
     }
   } catch (error) {
+    // Guarded too: a superseded openImport must not close the dialog the newer one just
+    // opened, nor toast over it.
+    if (importGate.isStale(token)) return;
     showImportModal.value = false;
     importingOffer.value = null;
     toast.add({

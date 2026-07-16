@@ -513,13 +513,46 @@ const editingRequirement = ref<ImplementedRequirement | null>(null);
 const editingStatement = ref<Statement | null>(null);
 const editingByComponent = ref<ByComponent | null>(null);
 
-const { data: ssp, isLoading: sspLoading } = useDataApi<SystemSecurityPlan>(
-  `/api/oscal/system-security-plans/${route.params.id}`,
+// Watched, not interpolated once: useDataApi resolves toValue(url) a single time, and this
+// view's host (<KeepAlive> in SystemSecurityPlanEditorView) keeps the instance alive across
+// SSP switches — so a plain string pins the FIRST sspId and renders A's requirements while
+// every write path resolves the id at call time. That gap is what deleteRequirementByComponent
+// hangs a destructive action on. Same treatment as the sibling Inherited Capabilities view.
+const sspUrl = computed(() =>
+  sspId.value ? `/api/oscal/system-security-plans/${sspId.value}` : null,
 );
-const { data: controlImplementation, isLoading: ciLoading } =
-  useDataApi<ControlImplementation>(
-    `/api/oscal/system-security-plans/${route.params.id}/control-implementation`,
-  );
+const ciUrl = computed(() =>
+  sspId.value
+    ? `/api/oscal/system-security-plans/${sspId.value}/control-implementation`
+    : null,
+);
+
+const {
+  data: ssp,
+  isLoading: sspLoading,
+  execute: fetchSsp,
+} = useDataApi<SystemSecurityPlan>(null, {}, { immediate: false });
+const {
+  data: controlImplementation,
+  isLoading: ciLoading,
+  execute: fetchControlImplementation,
+} = useDataApi<ControlImplementation>(null, {}, { immediate: false });
+
+watch(
+  [sspUrl, ciUrl],
+  async () => {
+    if (!sspUrl.value || !ciUrl.value) {
+      ssp.value = undefined;
+      controlImplementation.value = undefined;
+      return;
+    }
+    await Promise.all([
+      fetchSsp(sspUrl.value).catch(() => undefined),
+      fetchControlImplementation(ciUrl.value).catch(() => undefined),
+    ]);
+  },
+  { immediate: true },
+);
 const { data: sspRisks, execute: loadSspRisks } = useDataApi<Risk[]>(
   null,
   {},
@@ -601,8 +634,17 @@ const editRequirement = (requirement: ImplementedRequirement) => {
 
 const deleteRequirement = async (requirement: ImplementedRequirement) => {
   try {
+    if (!sspId.value) {
+      toast.add({
+        severity: 'error',
+        summary: 'Missing System Plan',
+        detail: 'Unable to determine which system security plan to update.',
+        life: 4000,
+      });
+      return;
+    }
     await executeDelete(
-      `/api/oscal/system-security-plans/${route.params.id}/control-implementation/implemented-requirements/${requirement.uuid}`,
+      `/api/oscal/system-security-plans/${sspId.value}/control-implementation/implemented-requirements/${requirement.uuid}`,
     );
     if (controlImplementation.value) {
       controlImplementation.value.implementedRequirements =
@@ -761,8 +803,17 @@ const deleteRequirementByComponent = async (
   byComponent: ByComponent,
 ) => {
   try {
+    if (!sspId.value) {
+      toast.add({
+        severity: 'error',
+        summary: 'Missing System Plan',
+        detail: 'Unable to determine which system security plan to update.',
+        life: 4000,
+      });
+      return;
+    }
     await executeDelete(
-      `/api/oscal/system-security-plans/${route.params.id}/control-implementation/implemented-requirements/${requirement.uuid}/by-components/${byComponent.uuid}`,
+      `/api/oscal/system-security-plans/${sspId.value}/control-implementation/implemented-requirements/${requirement.uuid}/by-components/${byComponent.uuid}`,
     );
     requirement.byComponents = (requirement.byComponents ?? []).filter(
       (bc) => bc.uuid !== byComponent.uuid,

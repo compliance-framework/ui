@@ -373,6 +373,24 @@ async function remove(entry: ByComponentSatisfy) {
       life: 3000,
     });
   } catch (error) {
+    // Satisfied entries are subscription-owned too — subscribing creates them from
+    // `items[].satisfiedResponsibilityUuids` — so this endpoint 409s on the same condition
+    // as the inherited one. Without this branch the generic handler toasts `errors.body`,
+    // which for a 409 is a bare offering name: a red toast reading only "the Meridian
+    // Platform Baseline offering", and the row survives with no stated reason.
+    const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
+    if (errorResponse.response?.status === 409) {
+      const offering =
+        errorResponse.response.data?.errors?.body ||
+        'an upstream export offering';
+      toast.add({
+        severity: 'warn',
+        summary: 'Owned by a subscription',
+        detail: `This satisfied entry came from your subscription to ${offering}. Unsubscribe from the offering to remove it.`,
+        life: 8000,
+      });
+      return;
+    }
     toast.add({
       severity: 'error',
       summary: 'Error',
@@ -380,6 +398,7 @@ async function remove(entry: ByComponentSatisfy) {
       life: 5000,
     });
   } finally {
+    // `finally`, not a tail assignment: the 409 branch above returns early.
     removingUuid.value = null;
   }
 }

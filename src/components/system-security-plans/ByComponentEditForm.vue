@@ -341,6 +341,7 @@ import type { DataResponse, ErrorBody, ErrorResponse } from '@/stores/types';
 import type { UpstreamResponsibility } from '@/types/ssp-export-offerings';
 import type { LeveragedControl } from '@/types/ssp-leverage';
 import { usePermissions } from '@/composables/usePermissions';
+import { latestRequest } from '@/utils/latest-request';
 import { RESOURCES, ACTIONS } from '@/constants/permissions';
 
 const { can, permissionTooltip } = usePermissions();
@@ -401,22 +402,29 @@ const byComponentData = reactive<ByComponent>({
 });
 
 // A `satisfied` entry may only reference a responsibility carried by an export this
-// statement already inherits — anything else is a 400 — so the picker's options come from the
-// shared-responsibility rollup's `inherits[]`, narrowed to this statement.
+// statement already inherits — anything else is a 400 — so the picker's options come from
+// the leveraged-controls projection's `outstandingResponsibilities`, narrowed to this
+// statement.
 const satisfiableResponsibilities = ref<UpstreamResponsibility[]>([]);
 // The FULL upstream set under this statement's links, satisfied ones included. Kept apart
 // from the picker's options above: `outstandingResponsibilities` excludes anything already
 // satisfied, so labelling from it renders every existing row as a raw uuid.
 const knownResponsibilities = ref<UpstreamResponsibility[]>([]);
-// A failed rollup fetch must not read as "nothing to satisfy": that is a reassuring negative
-// the author would act on. Track it so the picker can say it couldn't load instead.
+// A failed fetch must not read as "nothing to satisfy": that is a reassuring negative the
+// author would act on. Track it so the picker can say it couldn't load instead.
 const satisfiableLoadFailed = ref(false);
+// The watcher below fires and forgets, and every inherited commit swaps the array it keys
+// on — so two fetches can overlap. Without this the one that LANDS last wins whichever was
+// issued last, and a rejected older request can flip satisfiableLoadFailed on over a newer
+// success (the picker then claims it couldn't load options it had just loaded).
+const satisfiableGate = latestRequest();
 
 function normalizeId(value: string | undefined): string {
   return (value ?? '').trim().toLowerCase();
 }
 
 async function loadSatisfiableResponsibilities() {
+  const token = satisfiableGate.begin();
   if (!statementId || !props.statement) {
     satisfiableResponsibilities.value = [];
     knownResponsibilities.value = [];
@@ -449,10 +457,14 @@ async function loadSatisfiableResponsibilities() {
         knownByUuid.set(responsibility.responsibilityUuid, responsibility);
       }
     }
+    if (satisfiableGate.isStale(token)) return;
     satisfiableResponsibilities.value = [...byUuid.values()];
     knownResponsibilities.value = [...knownByUuid.values()];
     satisfiableLoadFailed.value = false;
   } catch {
+    // Guarded too: a superseded request failing must not report failure over the newer one
+    // that succeeded.
+    if (satisfiableGate.isStale(token)) return;
     // Don't block the rest of the form — the API is the authority and will reject a bad uuid
     // anyway — but say the options couldn't be loaded rather than claiming there are none.
     satisfiableResponsibilities.value = [];
