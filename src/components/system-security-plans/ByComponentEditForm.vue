@@ -170,6 +170,7 @@
             :stmt-id="statementId"
             :by-component-id="props.byComponent.uuid"
             :responsibility-options="satisfiableResponsibilities"
+            :responsibility-labels="knownResponsibilities"
             :responsibility-options-failed="satisfiableLoadFailed"
             v-model="byComponentData.satisfied"
           />
@@ -403,6 +404,10 @@ const byComponentData = reactive<ByComponent>({
 // statement already inherits — anything else is a 400 — so the picker's options come from the
 // shared-responsibility rollup's `inherits[]`, narrowed to this statement.
 const satisfiableResponsibilities = ref<UpstreamResponsibility[]>([]);
+// The FULL upstream set under this statement's links, satisfied ones included. Kept apart
+// from the picker's options above: `outstandingResponsibilities` excludes anything already
+// satisfied, so labelling from it renders every existing row as a raw uuid.
+const knownResponsibilities = ref<UpstreamResponsibility[]>([]);
 // A failed rollup fetch must not read as "nothing to satisfy": that is a reassuring negative
 // the author would act on. Track it so the picker can say it couldn't load instead.
 const satisfiableLoadFailed = ref(false);
@@ -414,6 +419,7 @@ function normalizeId(value: string | undefined): string {
 async function loadSatisfiableResponsibilities() {
   if (!statementId || !props.statement) {
     satisfiableResponsibilities.value = [];
+    knownResponsibilities.value = [];
     satisfiableLoadFailed.value = false;
     return;
   }
@@ -428,19 +434,29 @@ async function loadSatisfiableResponsibilities() {
       `/api/oscal/system-security-plans/${props.sspId}/leveraged-controls`,
     );
     const byUuid = new Map<string, UpstreamResponsibility>();
+    const knownByUuid = new Map<string, UpstreamResponsibility>();
     for (const control of response.data.data ?? []) {
       if (normalizeId(control.controlId) !== targetControlId) continue;
       if (normalizeId(control.statementId) !== targetStatementId) continue;
       for (const responsibility of control.outstandingResponsibilities ?? []) {
         byUuid.set(responsibility.responsibilityUuid, responsibility);
       }
+      // `responsibilities` is absent on payloads from before the field shipped; the
+      // outstanding subset is then the best text available.
+      for (const responsibility of control.responsibilities ??
+        control.outstandingResponsibilities ??
+        []) {
+        knownByUuid.set(responsibility.responsibilityUuid, responsibility);
+      }
     }
     satisfiableResponsibilities.value = [...byUuid.values()];
+    knownResponsibilities.value = [...knownByUuid.values()];
     satisfiableLoadFailed.value = false;
   } catch {
     // Don't block the rest of the form — the API is the authority and will reject a bad uuid
     // anyway — but say the options couldn't be loaded rather than claiming there are none.
     satisfiableResponsibilities.value = [];
+    knownResponsibilities.value = [];
     satisfiableLoadFailed.value = true;
   }
 }

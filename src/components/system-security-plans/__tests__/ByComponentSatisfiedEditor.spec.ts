@@ -81,6 +81,7 @@ const responsibilityOptions: UpstreamResponsibility[] = [
 function mountEditor(
   modelValue: ByComponentSatisfy[] | undefined,
   options: UpstreamResponsibility[] = responsibilityOptions,
+  labels?: UpstreamResponsibility[],
 ) {
   return mount(ByComponentSatisfiedEditor, {
     props: {
@@ -90,6 +91,7 @@ function mountEditor(
       byComponentId: 'bc-1',
       modelValue,
       responsibilityOptions: options,
+      responsibilityLabels: labels,
     },
     global: { stubs },
   });
@@ -113,6 +115,43 @@ describe('ByComponentSatisfiedEditor', () => {
   it('renders an empty state when nothing is satisfied', () => {
     const wrapper = mountEditor([]);
     expect(wrapper.text()).toContain('No satisfied entries yet.');
+  });
+
+  // An already-satisfied responsibility is by definition NOT outstanding, so it is absent
+  // from the picker's options. Labelling from those options alone therefore always misses
+  // for existing rows and falls through to the bare uuid.
+  it('labels an existing entry from the full set, not the picker options', () => {
+    const wrapper = mountEditor(
+      [
+        {
+          uuid: 's-1',
+          responsibilityUuid: 'resp-1',
+          description: 'We rotate keys quarterly',
+        } as ByComponentSatisfy,
+      ],
+      // Nothing outstanding: resp-1 is already satisfied.
+      [],
+      [{ responsibilityUuid: 'resp-1', description: 'Rotate your own keys' }],
+    );
+
+    expect(wrapper.text()).toContain('Rotate your own keys');
+    expect(wrapper.text()).not.toContain('resp-1');
+  });
+
+  it('falls back to the uuid when the full set does not carry the responsibility', () => {
+    const wrapper = mountEditor(
+      [
+        {
+          uuid: 's-1',
+          responsibilityUuid: 'resp-unknown',
+          description: 'We rotate keys quarterly',
+        } as ByComponentSatisfy,
+      ],
+      [],
+      [],
+    );
+
+    expect(wrapper.text()).toContain('resp-unknown');
   });
 
   it('offers only the inherited responsibilities and creates against the statement URL', async () => {

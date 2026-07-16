@@ -253,10 +253,16 @@ const { data: systemImplementation, execute: fetchSystemImplementation } =
 watch(
   [offeringsUrl, controlImplementationUrl, systemImplementationUrl],
   async () => {
+    // Cleared up front, not just on the null branch: `useAxios` defaults
+    // `resetOnExecute: false`, so `data` holds the previous response until a *successful*
+    // one replaces it. Under an unkeyed <KeepAlive> an SSP switch reuses this instance, so
+    // a failed refetch would otherwise leave the previous SSP's offerings on screen while
+    // publish()/updateStatus() interpolate the NEW sspId — mutations aimed at the wrong
+    // system. Empty is the honest render; the URL half of this trap is the computed above.
+    offerings.value = undefined;
+    controlImplementation.value = undefined;
+    systemImplementation.value = undefined;
     if (!offeringsUrl.value) {
-      offerings.value = undefined;
-      controlImplementation.value = undefined;
-      systemImplementation.value = undefined;
       return;
     }
     await Promise.all([

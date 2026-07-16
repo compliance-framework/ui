@@ -308,8 +308,15 @@ function addProvided() {
 
 function removeProvided(index: number) {
   providedDrafts.value.splice(index, 1);
-  // Re-point responsibilities that referenced the removed block.
+  // Responsibilities link to provided blocks positionally, so every index above the
+  // removed one shifts left. Decrementing is not cosmetic: without it a surviving link
+  // keeps its old index and silently resolves to the *next* capability.
   for (const entry of responsibilityDrafts.value) {
+    if (entry.providedIndex > index) {
+      entry.providedIndex--;
+    } else if (entry.providedIndex === index) {
+      entry.providedIndex = 0;
+    }
     if (entry.providedIndex >= providedDrafts.value.length) {
       entry.providedIndex = Math.max(providedDrafts.value.length - 1, 0);
     }

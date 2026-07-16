@@ -1,5 +1,20 @@
 <template>
-  <div v-if="links.length" class="mt-8">
+  <!-- A failed leveraged-controls fetch must not render as "nothing inherited": `links` is
+       `?? []`, so a broken request and a genuinely empty result are indistinguishable by the
+       time they get here. The error state is checked first and carries the Retry — the same
+       rule the rollup follows in SharedResponsibilityPanel. -->
+  <div v-if="controlsError" class="mt-8">
+    <Message severity="error" variant="outlined">
+      <div class="flex items-center justify-between gap-3">
+        <span>Could not load inherited responsibilities for this control.</span>
+        <SecondaryButton type="button" size="small" @click="leveraged.refresh">
+          Retry
+        </SecondaryButton>
+      </div>
+    </Message>
+  </div>
+
+  <div v-else-if="links.length" class="mt-8">
     <div class="flex items-center mb-4 gap-x-4">
       <TooltipTitle
         text="Inherited responsibilities"
@@ -305,6 +320,8 @@ const { confirmDeleteDialog } = useDeleteConfirmationDialog();
 const leveraged =
   inject(LeveragedControlsKey, null) ??
   useLeveragedControls(computed(() => props.sspId));
+
+const { controlsError } = leveraged;
 
 const links = computed<LeveragedControl[]>(
   () =>

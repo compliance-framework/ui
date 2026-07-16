@@ -173,6 +173,7 @@ function makeStatement(withSatisfied = false): Statement {
 function makeContext(
   links: LeveragedControl[],
   filters: ResponsibilityFilter[] = [],
+  controlsError: unknown = null,
 ): LeveragedControlsContext {
   const map = new Map<string, LeveragedControl[]>();
   for (const link of links) {
@@ -189,7 +190,7 @@ function makeContext(
   return {
     controls: ref(links),
     controlsLoading: ref(false),
-    controlsError: ref(null),
+    controlsError: ref(controlsError),
     responsibilityFilters: ref(filters),
     responsibilityFiltersError: ref(null),
     linksByStatement: computed(() => map),
@@ -203,6 +204,7 @@ function mountSection(
   options: {
     statement?: Statement;
     filters?: ResponsibilityFilter[];
+    controlsError?: unknown;
   } = {},
 ) {
   const implementation = {
@@ -222,6 +224,7 @@ function mountSection(
         [LeveragedControlsKey as symbol]: makeContext(
           links,
           options.filters ?? [],
+          options.controlsError ?? null,
         ),
       },
     },
@@ -242,6 +245,31 @@ describe('InheritedResponsibilitiesSection', () => {
     putMock.mockResolvedValue({ data: { data: {} } });
     deleteMock.mockResolvedValue({});
     refreshMock.mockResolvedValue(undefined);
+  });
+
+  // `links` is `linksByStatement.get(...) ?? []`, so a failed fetch is indistinguishable
+  // from an empty one by the time it reaches the template — the whole section would
+  // silently vanish. The composable's own contract says to treat an error as "unknown",
+  // never as "nothing inherited".
+  it('shows an error with a Retry when the leveraged-controls fetch failed', async () => {
+    const wrapper = mountSection([], { controlsError: new Error('boom') });
+
+    expect(wrapper.text()).toContain(
+      'Could not load inherited responsibilities',
+    );
+
+    await findButton(wrapper, 'Retry').trigger('click');
+    expect(refreshMock).toHaveBeenCalled();
+  });
+
+  it('renders the error instead of the rows when the fetch failed but links are cached', () => {
+    const wrapper = mountSection([makeLink()], {
+      controlsError: new Error('boom'),
+    });
+
+    expect(wrapper.text()).toContain(
+      'Could not load inherited responsibilities',
+    );
   });
 
   it('renders nothing when the statement has no leverage links', () => {

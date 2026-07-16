@@ -25,14 +25,14 @@
           </label>
 
           <div
-            v-if="selectedItemIds.has(item.id) && item.responsibilities.length"
+            v-if="selectedItemIds.has(item.id) && item.responsibilities?.length"
             class="mt-2 ml-6 space-y-1"
           >
             <div class="text-xs text-gray-500 dark:text-slate-400">
               We already handle this:
             </div>
             <label
-              v-for="responsibility in item.responsibilities"
+              v-for="responsibility in item.responsibilities ?? []"
               :key="responsibility.responsibilityUuid"
               class="flex items-center gap-2"
             >

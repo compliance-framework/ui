@@ -110,7 +110,7 @@
 
             <div
               v-if="
-                selectedItemIds.has(item.id) && item.responsibilities.length
+                selectedItemIds.has(item.id) && item.responsibilities?.length
               "
               class="mt-1 ml-6 space-y-1"
             >
@@ -118,7 +118,7 @@
                 You take these on — tick anything you already handle:
               </div>
               <label
-                v-for="responsibility in item.responsibilities"
+                v-for="responsibility in item.responsibilities ?? []"
                 :key="responsibility.responsibilityUuid"
                 class="flex items-center gap-2"
               >

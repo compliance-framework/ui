@@ -135,6 +135,68 @@ describe('ExportStatementDialog', () => {
     saveMock.mockResolvedValue(true);
   });
 
+  // Responsibilities link to provided blocks by array index, so removing a block shifts
+  // every index above it. Without a decrement the surviving link keeps its old index and
+  // silently resolves to the NEXT capability — the wrong providedUuid is then PUT, with no
+  // warning and no visible change in the form.
+  it('keeps a responsibility on its own capability after an earlier one is removed', async () => {
+    composableState.current = {
+      ...baseState(),
+      provided: [
+        { uuid: 'p-a', description: 'Capability A' },
+        { uuid: 'p-b', description: 'Capability B' },
+        { uuid: 'p-c', description: 'Capability C' },
+      ],
+      // Linked to B.
+      responsibilities: [
+        { uuid: 'r-1', description: 'Rotate your own keys', providedIndex: 1 },
+      ],
+    };
+    const wrapper = await mountDialog();
+
+    // The provided section renders first, so its Remove buttons lead. Remove A.
+    const removeButtons = wrapper
+      .findAll('button')
+      .filter((b) => b.text() === 'Remove');
+    await removeButtons[0].trigger('click');
+
+    await wrapper.find('form').trigger('submit');
+    await flushPromises();
+
+    const payload = saveMock.mock.calls[0][0];
+    expect(
+      payload.provided.map((p: { description: string }) => p.description),
+    ).toEqual(['Capability B', 'Capability C']);
+    // Still B — now index 0. A stale 1 would resolve to C.
+    expect(payload.responsibilities[0].providedIndex).toBe(0);
+  });
+
+  it('re-points a responsibility whose own capability is removed to the first survivor', async () => {
+    composableState.current = {
+      ...baseState(),
+      provided: [
+        { uuid: 'p-a', description: 'Capability A' },
+        { uuid: 'p-b', description: 'Capability B' },
+      ],
+      responsibilities: [
+        { uuid: 'r-1', description: 'Rotate your own keys', providedIndex: 1 },
+      ],
+    };
+    const wrapper = await mountDialog();
+
+    const removeButtons = wrapper
+      .findAll('button')
+      .filter((b) => b.text() === 'Remove');
+    // Remove B — the very block this responsibility points at.
+    await removeButtons[1].trigger('click');
+
+    await wrapper.find('form').trigger('submit');
+    await flushPromises();
+
+    const payload = saveMock.mock.calls[0][0];
+    expect(payload.responsibilities[0].providedIndex).toBe(0);
+  });
+
   it('loads on open and shows plain-language copy with no OSCAL jargon', async () => {
     const wrapper = await mountDialog();
     expect(loadMock).toHaveBeenCalled();

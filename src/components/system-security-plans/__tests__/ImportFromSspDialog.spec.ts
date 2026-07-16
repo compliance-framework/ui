@@ -103,10 +103,23 @@ function makeCatalog(): CatalogOffering[] {
   ];
 }
 
-function installGetMock(overrides?: { failSsps?: boolean }) {
+function installGetMock(overrides?: {
+  failSsps?: boolean;
+  nullResponsibilities?: boolean;
+}) {
   getMock.mockImplementation((url: string) => {
     if (url === '/api/oscal/ssp-export-offerings') {
-      return Promise.resolve({ data: { data: makeCatalog() } });
+      const catalog = makeCatalog();
+      if (overrides?.nullResponsibilities) {
+        // A Go nil slice marshals to `null`, not `[]`. Every other fixture in this file
+        // uses `[]`, which is why the unguarded `.length` deref shipped twice.
+        for (const offering of catalog) {
+          for (const item of offering.items ?? []) {
+            item.responsibilities = null as unknown as undefined;
+          }
+        }
+      }
+      return Promise.resolve({ data: { data: catalog } });
     }
     if (url === '/api/oscal/system-security-plans') {
       if (overrides?.failSsps) return Promise.reject(new Error('boom'));
@@ -209,6 +222,18 @@ describe('ImportFromSspDialog', () => {
     expect(text).toContain('Meridian Platform');
     expect(text).toContain('Other System');
     expect(text).not.toContain('Own Offering');
+  });
+
+  it('renders a preselected item whose responsibilities came back as null', async () => {
+    installGetMock({ nullResponsibilities: true });
+    // Preselection is what makes this reachable: `selectedItemIds.has(item.id)` is true on
+    // the FIRST render, so `&&` no longer short-circuits the `.length` deref away.
+    const wrapper = await mountDialog('ac-2');
+
+    expect(wrapper.text()).toContain('Meridian Platform');
+    expect(wrapper.text()).toContain('AC-2 · Statement AC-2_smt.a');
+    // The row is there; it just has no responsibilities to tick.
+    expect(wrapper.text()).not.toContain('You take these on');
   });
 
   it('falls back to an id-derived group name when the SSP list cannot be read', async () => {

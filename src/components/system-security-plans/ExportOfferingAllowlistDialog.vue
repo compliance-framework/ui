@@ -1,8 +1,23 @@
 <template>
   <div class="space-y-4">
+    <!-- "Anybody may subscribe" is a security claim, so it may only be made from a list we
+         actually loaded. A failed fetch also leaves `allowed` empty, and stating the claim
+         off the back of that would assert a fact the app does not know. -->
+    <Message v-if="loadError" severity="error" variant="outlined">
+      <div class="flex items-center justify-between gap-3">
+        <span>
+          Could not load the allow-list — who may subscribe to this offering is
+          unknown.
+        </span>
+        <SecondaryButton type="button" size="small" @click="load">
+          Retry
+        </SecondaryButton>
+      </div>
+    </Message>
+
     <!-- The allow-list is opt-in: the API only enforces it when it is non-empty, so an empty
          list is not "nobody" but "anybody". Say so, or publishing reads as a no-op. -->
-    <Message v-if="!allowed.length" severity="info" variant="simple">
+    <Message v-else-if="!allowed.length" severity="info" variant="simple">
       Any downstream may subscribe to this offering. Add a system security plan
       to restrict it to an allow-list.
     </Message>
@@ -29,7 +44,13 @@
       </div>
     </div>
 
-    <PermissionGate :resource="RESOURCES.SSP" :action="ACTIONS.EXPORT">
+    <!-- Adding against an unknown allow-list would be guesswork: `selectableSsps` subtracts
+         `allowed`, so a failed load re-offers downstreams that are already on the list. -->
+    <PermissionGate
+      v-if="!loadError"
+      :resource="RESOURCES.SSP"
+      :action="ACTIONS.EXPORT"
+    >
       <div class="pt-3 border-t border-gray-200 dark:border-slate-700">
         <Label for="allowlist-downstream-picker">Allow a downstream</Label>
         <Select
@@ -63,6 +84,7 @@ import Select from '@/volt/Select.vue';
 import Label from '@/volt/Label.vue';
 import Message from '@/volt/Message.vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
+import SecondaryButton from '@/volt/SecondaryButton.vue';
 import PermissionGate from '@/components/auth/PermissionGate.vue';
 import { RESOURCES, ACTIONS } from '@/constants/permissions';
 import { useAuthenticatedInstance, useDataApi } from '@/composables/axios';
@@ -85,6 +107,9 @@ const baseUrl = computed(
 );
 
 const allowed = ref<AllowedDownstream[]>([]);
+// Distinguishes "the list is empty" (anybody may subscribe) from "we don't know what the
+// list is". The toast alone can't: it expires while the claim stays on screen.
+const loadError = ref(false);
 const selectedSspId = ref<string | null>(null);
 const adding = ref(false);
 const removingIds = reactive(new Set<string>());
@@ -129,7 +154,12 @@ async function load() {
       baseUrl.value,
     );
     allowed.value = response.data.data ?? [];
+    loadError.value = false;
   } catch (error) {
+    // Drop the stale list too: a half-known allow-list rendered as complete is the same
+    // wrong claim in a quieter form.
+    allowed.value = [];
+    loadError.value = true;
     toast.add({
       severity: 'error',
       summary: 'Error',

@@ -60,6 +60,11 @@ const stubs = {
     template:
       '<button :disabled="disabled" @click="$emit(\'click\', $event)"><slot /></button>',
   },
+  SecondaryButton: {
+    emits: ['click'],
+    template:
+      '<button type="button" @click="$emit(\'click\', $event)"><slot /></button>',
+  },
 };
 
 const ALLOWLIST_URL =
@@ -99,6 +104,35 @@ describe('ExportOfferingAllowlistDialog', () => {
 
     expect(getMock).toHaveBeenCalledWith(ALLOWLIST_URL);
     expect(wrapper.text()).toContain('Any downstream may subscribe');
+  });
+
+  // An empty `allowed` means "anybody may subscribe" — a security claim. A failed fetch
+  // leaves it empty too, so without a load-error flag the dialog asserts a fact it does
+  // not know, and the toast that said otherwise expires after 5s.
+  it('never claims "any downstream may subscribe" when the allow-list failed to load', async () => {
+    getMock.mockRejectedValueOnce(new Error('boom'));
+    const wrapper = mountDialog();
+    await flushPromises();
+
+    expect(wrapper.text()).not.toContain('Any downstream may subscribe');
+    expect(wrapper.text()).toContain('Could not load the allow-list');
+    // Adding against an unknown list would re-offer already-allowed downstreams.
+    expect(
+      wrapper.findAll('button').some((b) => b.text() === 'Add Downstream'),
+    ).toBe(false);
+  });
+
+  it('recovers the allow-list view on Retry', async () => {
+    getMock.mockRejectedValueOnce(new Error('boom'));
+    const wrapper = mountDialog();
+    await flushPromises();
+
+    getMock.mockResolvedValueOnce({ data: { data: [entry] } });
+    await findButton(wrapper, 'Retry').trigger('click');
+    await flushPromises();
+
+    expect(wrapper.text()).not.toContain('Could not load the allow-list');
+    expect(wrapper.text()).toContain('Downstream One');
   });
 
   it('lists allowed downstreams by SSP title', async () => {

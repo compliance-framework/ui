@@ -44,7 +44,9 @@ export interface UpstreamResponsibility {
 }
 
 export interface CatalogOfferingItem extends SSPExportOfferingItem {
-  responsibilities: UpstreamResponsibility[];
+  // Optional because the API sends `null` for a nil slice, not `[]`. Keeping it optional
+  // makes the compiler demand a guard at every read instead of letting `.length` through.
+  responsibilities?: UpstreamResponsibility[];
 }
 
 export interface CatalogOffering extends Omit<SSPExportOffering, 'items'> {

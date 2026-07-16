@@ -184,7 +184,12 @@ const props = defineProps<{
   stmtId: string;
   byComponentId: string;
   modelValue: ByComponentSatisfy[] | undefined;
+  // The CREATE picker's options: only what is still outstanding. An already-satisfied
+  // responsibility is deliberately absent, so this must not be used for labelling.
   responsibilityOptions: UpstreamResponsibility[];
+  // The FULL upstream set (uuid + description), including already-satisfied ones — the
+  // authoritative text every existing row is labelled from.
+  responsibilityLabels?: UpstreamResponsibility[];
   // True when the options could not be fetched — distinct from "there are none".
   responsibilityOptionsFailed?: boolean;
 }>();
@@ -220,11 +225,18 @@ const baseUrl = computed(
     `/api/oscal/system-security-plans/${props.sspId}/control-implementation/implemented-requirements/${props.reqId}/statements/${props.stmtId}/by-components/${props.byComponentId}/satisfied`,
 );
 
+// Label from the full set first: an existing satisfied entry's responsibility is by
+// definition no longer outstanding, so resolving it against the picker's options alone
+// would always miss and fall through to the bare uuid.
 function responsibilityLabel(responsibilityUuid: string | undefined): string {
   if (!responsibilityUuid) return '(none)';
-  const match = props.responsibilityOptions.find(
-    (option) => option.responsibilityUuid === responsibilityUuid,
-  );
+  const match =
+    (props.responsibilityLabels ?? []).find(
+      (option) => option.responsibilityUuid === responsibilityUuid,
+    ) ??
+    props.responsibilityOptions.find(
+      (option) => option.responsibilityUuid === responsibilityUuid,
+    );
   return match?.description || responsibilityUuid;
 }
 
