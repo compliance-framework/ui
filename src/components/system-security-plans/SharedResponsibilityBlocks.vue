@@ -28,23 +28,15 @@
       </div>
     </div>
 
-    <!-- Satisfied -->
-    <div v-if="byComponent.satisfied?.length" class="mt-2 text-xs">
-      <Badge severity="info">Satisfied</Badge>
-      <div class="ml-2">
-        <div
-          v-for="satisfied in byComponent.satisfied"
-          :key="satisfied.uuid"
-          class="text-blue-600 dark:text-blue-400"
-        >
-          {{ satisfied.description }}
-        </div>
-      </div>
-    </div>
-
-    <!-- Inherited -->
+    <!-- Inherited. Satisfied entries are deliberately NOT shown here: they're the
+         downstream's "how we handle this" notes, authored and displayed in the dedicated
+         Inherited responsibilities section, so repeating them here just confused readers. -->
     <div v-if="byComponent.inherited?.length" class="mt-2 text-xs">
-      <Badge severity="contrast">Inherited</Badge>
+      <span
+        class="inline-flex h-6 items-center rounded-md bg-purple-100 px-2 text-xs font-bold text-purple-700 dark:bg-purple-900 dark:text-purple-200"
+      >
+        Inherited
+      </span>
       <div class="ml-2">
         <div
           v-for="inherited in byComponent.inherited"
@@ -63,9 +55,10 @@ import { computed } from 'vue';
 import Badge from '@/volt/Badge.vue';
 import type { ByComponent } from '@/oscal';
 
-// The read-only Provided / Responsibilities / Satisfied / Inherited display for one
-// by-component. Both StatementByComponent partials (the SSP editor's and the Controls view's)
-// render this, so the four blocks can't drift apart again.
+// The read-only Provided / Responsibilities / Inherited display for one by-component. Both
+// StatementByComponent partials (the SSP editor's and the Controls view's) render this, so
+// the blocks can't drift apart again. Satisfied entries are intentionally omitted — they're
+// surfaced in the dedicated Inherited responsibilities section instead.
 const props = defineProps<{
   byComponent: ByComponent;
 }>();
@@ -75,7 +68,6 @@ const hasAny = computed(
     !!(
       props.byComponent.export?.provided?.length ||
       props.byComponent.export?.responsibilities?.length ||
-      props.byComponent.satisfied?.length ||
       props.byComponent.inherited?.length
     ),
 );

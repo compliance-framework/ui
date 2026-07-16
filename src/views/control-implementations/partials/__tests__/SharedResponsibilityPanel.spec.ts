@@ -33,35 +33,45 @@ vi.mock('@/utils/delete-dialog', () => ({
   }),
 }));
 
+// Fixtures mirror the API's actual shapes (ssp_shared_responsibility.go /
+// ssp_export_offerings.go): provides rows are by-component-level with nested provided[],
+// inherits carry the upstream/offering identity, legacy rows are (controlId,
+// byComponentUuid, reason) only.
 const rollupFixture: SharedResponsibilityRollup = {
   provides: [
     {
       controlId: 'ac-2',
       statementId: 'ac-2_smt.a',
-      requirementUuid: 'req-1',
-      statementUuid: 'stmt-1',
       byComponentUuid: 'bc-1',
       componentUuid: 'comp-1',
       componentTitle: 'API',
-      providedUuid: 'p-1',
-      description: 'We manage the account lifecycle',
-      responsibilities: [
-        { responsibilityUuid: 'resp-1', description: 'You approve requests' },
+      exportUuid: 'exp-1',
+      provided: [
+        { uuid: 'p-1', description: 'We manage the account lifecycle' },
       ],
+      responsibilities: [
+        {
+          uuid: 'resp-1',
+          description: 'You approve requests',
+          providedUuid: 'p-1',
+        },
+      ],
+      offered: true,
     },
     // Same statement, a DIFFERENT component: each needs its own Edit, or the button would
     // open the wrong by-component.
     {
       controlId: 'ac-2',
       statementId: 'ac-2_smt.a',
-      requirementUuid: 'req-1',
-      statementUuid: 'stmt-1',
       byComponentUuid: 'bc-9',
       componentUuid: 'comp-9',
       componentTitle: 'Directory',
-      providedUuid: 'p-9',
-      description: 'We hold the directory of record',
+      exportUuid: 'exp-9',
+      provided: [
+        { uuid: 'p-9', description: 'We hold the directory of record' },
+      ],
       responsibilities: [],
+      offered: false,
     },
   ],
   inherits: [
@@ -69,15 +79,16 @@ const rollupFixture: SharedResponsibilityRollup = {
       controlId: 'ac-2',
       statementId: 'ac-2_smt.b',
       byComponentUuid: 'bc-2',
-      componentUuid: 'comp-2',
       inheritedUuid: 'i-1',
       providedUuid: 'up-p-1',
-      description: 'Platform provides IdP',
-      responsibilities: [],
+      upstreamSspId: 'ssp-upstream',
+      upstreamSspTitle: 'Meridian Platform',
+      offeringId: 'offering-1',
+      offeringVersion: 2,
       leverageLinkId: 'link-1',
       satisfaction: 'partial',
       status: 'drifted',
-      driftRiskId: 'risk-1',
+      description: 'Platform provides IdP',
     },
   ],
   satisfies: [
@@ -85,24 +96,16 @@ const rollupFixture: SharedResponsibilityRollup = {
       controlId: 'ac-2',
       statementId: 'ac-2_smt.b',
       byComponentUuid: 'bc-2',
-      componentUuid: 'comp-2',
       satisfiedUuid: 's-1',
       responsibilityUuid: 'up-resp-1',
       description: 'We review IdP access quarterly',
-      leverageLinkId: 'link-1',
-      status: 'active',
     },
   ],
   legacy: [
     {
       controlId: 'ac-2',
-      requirementUuid: 'req-1',
       byComponentUuid: 'bc-legacy',
-      componentUuid: 'comp-3',
-      componentTitle: 'Legacy Box',
-      description: 'Requirement-anchored export',
-      providedCount: 1,
-      responsibilityCount: 0,
+      reason: 'requirement-anchored export',
     },
   ],
 };
@@ -112,16 +115,24 @@ const offersFixture: ControlExportOffer[] = [
     offeringId: 'offering-1',
     offeringTitle: 'Meridian Platform Baseline',
     offeringVersion: 2,
+    offeringStatus: 'published',
     upstreamSspId: 'ssp-upstream',
     upstreamSspTitle: 'Meridian Platform',
     itemId: 'item-1',
     controlId: 'ac-2',
     statementId: 'ac-2_smt.c',
     componentUuid: 'comp-9',
-    providedUuid: 'up-p-9',
-    providedDescription: 'Platform manages privileged accounts',
+    componentTitle: 'Platform',
+    provided: {
+      uuid: 'up-p-9',
+      description: 'Platform manages privileged accounts',
+    },
     responsibilities: [
-      { responsibilityUuid: 'up-resp-9', description: 'You review the log' },
+      {
+        uuid: 'up-resp-9',
+        description: 'You review the log',
+        providedUuid: 'up-p-9',
+      },
     ],
   },
 ];
@@ -217,11 +228,13 @@ describe('SharedResponsibilityPanel', () => {
     expect(text).toContain('We manage the account lifecycle');
     expect(text).toContain('You approve requests');
     expect(text).toContain('Platform provides IdP');
+    expect(text).toContain('From Meridian Platform · v2');
     expect(text).toContain('drifted');
-    expect(text).toContain('link-1');
     expect(text).toContain('We review IdP access quarterly');
-    expect(text).toContain('Requirement-anchored export');
+    expect(text).toContain('requirement-anchored export');
     expect(text).toContain('shared responsibility is tracked per statement');
+    // The un-offered component is flagged; the offered one is not.
+    expect(text).toContain('Not yet importable');
   });
 
   it('gives each by-component in a statement its own Edit, scoped to that by-component', async () => {
@@ -238,17 +251,32 @@ describe('SharedResponsibilityPanel', () => {
     const emitted = wrapper.emitted('editProvides');
     expect(emitted).toHaveLength(2);
     expect(emitted![0][0]).toMatchObject({
-      statementUuid: 'stmt-1',
+      statementId: 'ac-2_smt.a',
       byComponentUuid: 'bc-1',
     });
     // The second component's Edit must not open the first component's by-component.
     expect(emitted![1][0]).toMatchObject({
-      statementUuid: 'stmt-1',
+      statementId: 'ac-2_smt.a',
       byComponentUuid: 'bc-9',
     });
   });
 
-  it('deletes a legacy row against the requirement-level by-component route', async () => {
+  it('deletes a legacy row against the requirement-level by-component route, resolving the requirement case-insensitively', async () => {
+    // The rollup's legacy rows carry no requirement uuid — the panel resolves it from the
+    // control-implementation tree (note the SSP-cased control id).
+    getMock.mockImplementation((url: string) => {
+      if (url.endsWith('/control-implementation')) {
+        return Promise.resolve({
+          data: {
+            data: {
+              implementedRequirements: [{ uuid: 'req-1', controlId: 'AC-2' }],
+            },
+          },
+        });
+      }
+      return Promise.resolve({ data: { data: [] } });
+    });
+
     const wrapper = mountPanel();
     await findButton(wrapper, 'Delete').trigger('click');
     await flushPromises();
@@ -319,7 +347,7 @@ describe('SharedResponsibilityPanel', () => {
     // panel renders nothing at all, and the test could not tell "permissions hid the
     // affordances" from "the fixtures never loaded".
     expect(wrapper.text()).toContain('We manage the account lifecycle');
-    expect(wrapper.text()).toContain('Requirement-anchored export');
+    expect(wrapper.text()).toContain('requirement-anchored export');
     expect(wrapper.text()).toContain('Meridian Platform Baseline');
 
     const buttonTexts = wrapper.findAll('button').map((b) => b.text());

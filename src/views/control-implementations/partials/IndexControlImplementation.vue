@@ -8,18 +8,35 @@ import type { Part } from '@/oscal';
 import { computed, ref, watchEffect, watch } from 'vue';
 import { useToggle } from '@/composables/useToggle';
 import ControlStatementImplementation from '@/views/control-implementations/partials/ControlStatementImplementation.vue';
+import InheritedResponsibilityRows from './InheritedResponsibilityRows.vue';
 import { useSystemStore } from '@/stores/system.ts';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import type { Control } from '@/oscal';
 import TooltipTitle from '@/components/TooltipTitle.vue';
+import SecondaryButton from '@/volt/SecondaryButton.vue';
+import PermissionGate from '@/components/auth/PermissionGate.vue';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
+import ExportStatementDialog from '@/components/system-security-plans/ExportStatementDialog.vue';
+import type {
+  SSPLeverageLink,
+  SubscribeResponseMeta,
+} from '@/types/ssp-leverage';
 import {
   type ImplementationStatusCue,
+  statementInheritedCount,
   uniformImplementationStatusCue,
 } from './implementation-status';
 
 const { control, implementation } = defineProps<{
   control: Control;
   implementation: ImplementedRequirement | undefined | null;
+}>();
+
+const emit = defineEmits<{
+  exported: [];
+  imported: [
+    payload: { links: SSPLeverageLink[]; meta?: SubscribeResponseMeta },
+  ];
 }>();
 const selectedPart = ref<Part>();
 const { value: statementDrawerOpen, set: setStatementDrawer } = useToggle();
@@ -53,6 +70,18 @@ const selectedStatementStatusCue = computed(() => {
 
   return statementStatusCuesByPartId.value.get(selectedPart.value.id) ?? null;
 });
+
+// Purple to match the Inherited convention in SharedResponsibilityBlocks.
+const inheritedChipClass =
+  'rounded px-2 py-0.5 text-xs font-medium bg-purple-600 text-white dark:bg-purple-400 dark:text-purple-950';
+
+const selectedStatementInherited = computed(
+  () =>
+    !!selectedPart.value &&
+    statementInheritedCount(
+      statements.value[selectedPart.value.id]?.byComponents,
+    ) > 0,
+);
 
 watchEffect(() => {
   statements.value = {};
@@ -124,6 +153,34 @@ function onMouseLeave(e: MouseEvent) {
 function updateStatement(statement: Statement) {
   statements.value[statement.statementId] = statement;
   showCreateStatementModal.value = false;
+}
+
+// The Export button appears on statements whose implementation is uniformly implemented or
+// alternative — the states where there is a working implementation worth sharing. An
+// INHERITED statement never gets one: re-exporting a capability the SSP merely consumes
+// would rebroadcast the upstream provider's implementation as this system's own.
+function isExportableStatement(
+  cue: ImplementationStatusCue | undefined,
+  statement: Statement | undefined,
+): boolean {
+  if (cue?.state !== 'implemented' && cue?.state !== 'alternative') {
+    return false;
+  }
+  return statementInheritedCount(statement?.byComponents) === 0;
+}
+
+const showExportDialog = ref(false);
+const exportTarget = ref<{
+  statementId: string;
+  statementText: string;
+} | null>(null);
+
+function openExportDialog(part: Part) {
+  exportTarget.value = {
+    statementId: part.id,
+    statementText: getText(part) ?? '',
+  };
+  showExportDialog.value = true;
 }
 
 async function onPartSelect(e: Event, part: Part) {
@@ -206,7 +263,44 @@ async function onPartSelect(e: Event, part: Part) {
                 >
                   {{ statusCue.label }}
                 </span>
+                <span
+                  v-if="
+                    statementInheritedCount(statements[part.id]?.byComponents) >
+                    0
+                  "
+                  :class="inheritedChipClass"
+                >
+                  Inherited
+                </span>
+                <PermissionGate
+                  :resource="RESOURCES.SSP"
+                  :action="ACTIONS.UPDATE"
+                >
+                  <PermissionGate
+                    :resource="RESOURCES.SSP"
+                    :action="ACTIONS.EXPORT"
+                  >
+                    <SecondaryButton
+                      v-if="
+                        isExportableStatement(statusCue, statements[part.id])
+                      "
+                      type="button"
+                      size="small"
+                      class="ml-auto"
+                      title="Share this implementation with other systems"
+                      @click.stop="openExportDialog(part)"
+                    >
+                      Export
+                    </SecondaryButton>
+                  </PermissionGate>
+                </PermissionGate>
               </div>
+              <InheritedResponsibilityRows
+                :control-id="control.id"
+                :statement-id="part.id"
+                :statement="statements[part.id]"
+                @select="onPartSelect($event, part)"
+              />
             </div>
           </template>
         </template>
@@ -233,11 +327,15 @@ async function onPartSelect(e: Event, part: Part) {
         >
           {{ selectedStatementStatusCue.label }}
         </span>
+        <span v-if="selectedStatementInherited" :class="inheritedChipClass">
+          Inherited
+        </span>
       </div>
     </template>
     <ControlStatementImplementation
       v-if="selectedPart && selectedImplementation"
       @updated="updateStatement"
+      @imported="emit('imported', $event)"
       :implementation="selectedImplementation"
       :ssp-id="system.securityPlan?.uuid"
       :statement="statements[selectedPart.id]"
@@ -255,6 +353,17 @@ async function onPartSelect(e: Event, part: Part) {
       <Message severity="secondary">No part selected.</Message>
     </div>
   </Drawer>
+
+  <ExportStatementDialog
+    v-if="exportTarget && system.securityPlan"
+    v-model:visible="showExportDialog"
+    :ssp-id="system.securityPlan.uuid"
+    :ssp-title="system.securityPlan.metadata?.title ?? 'This system'"
+    :control-id="control.id"
+    :statement-id="exportTarget.statementId"
+    :statement-text="exportTarget.statementText"
+    @saved="emit('exported')"
+  />
 </template>
 
 <style>

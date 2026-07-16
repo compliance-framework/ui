@@ -117,7 +117,7 @@ describe('ByComponentEditForm', () => {
     vi.clearAllMocks();
     permState.can = true;
     updateMock.mockResolvedValue(undefined);
-    getMock.mockResolvedValue({ data: { data: { inherits: [] } } });
+    getMock.mockResolvedValue({ data: { data: [] } });
   });
 
   it('renders the export, inherited and satisfied editors at statement level', () => {
@@ -149,25 +149,24 @@ describe('ByComponentEditForm', () => {
     });
   });
 
-  it('offers the inherited responsibility even when the rollup cases the statement id differently', async () => {
+  it('offers the inherited responsibility even when the projection cases the statement id differently', async () => {
     // Statement ids, like control ids, are not reliably cased the same in an SSP as in the
-    // catalog the rollup echoes. An exact-match join silently told the author to "inherit a
-    // capability first" while they were looking at the entry they had just added.
+    // catalog the leveraged-controls projection echoes. An exact-match join silently told the
+    // author to "inherit a capability first" while looking at the entry they had just added.
     getMock.mockResolvedValue({
       data: {
-        data: {
-          inherits: [
-            {
-              statementId: 'AC-1_SMT.A',
-              responsibilities: [
-                {
-                  responsibilityUuid: 'resp-1',
-                  description: 'Rotate your own keys',
-                },
-              ],
-            },
-          ],
-        },
+        data: [
+          {
+            controlId: 'AC-1',
+            statementId: 'AC-1_SMT.A',
+            outstandingResponsibilities: [
+              {
+                responsibilityUuid: 'resp-1',
+                description: 'Rotate your own keys',
+              },
+            ],
+          },
+        ],
       },
     });
 
@@ -179,16 +178,19 @@ describe('ByComponentEditForm', () => {
     expect(satisfied.attributes('data-failed')).toBe('false');
   });
 
-  it('fetches the rollup exactly once per open', async () => {
+  it('fetches the leveraged-controls projection exactly once per open', async () => {
     mountForm(true);
     await flushPromises();
 
     // onMounted's Object.assign swaps the `inherited` reference, which trips the watcher — so
-    // an explicit call there too would fetch the same rollup twice on every open.
+    // an explicit call there too would fetch the same projection twice on every open.
     expect(getMock).toHaveBeenCalledTimes(1);
+    expect(getMock).toHaveBeenCalledWith(
+      '/api/oscal/system-security-plans/ssp-1/leveraged-controls',
+    );
   });
 
-  it('flags a failed rollup rather than reporting no responsibilities to satisfy', async () => {
+  it('flags a failed projection fetch rather than reporting no responsibilities to satisfy', async () => {
     getMock.mockRejectedValueOnce(new Error('boom'));
 
     const wrapper = mountForm(true);

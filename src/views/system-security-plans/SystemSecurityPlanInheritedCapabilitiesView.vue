@@ -120,6 +120,7 @@ import SecondaryButton from '@/volt/SecondaryButton.vue';
 import PermissionGate from '@/components/auth/PermissionGate.vue';
 import { RESOURCES, ACTIONS } from '@/constants/permissions';
 import { useDataApi, useAuthenticatedInstance } from '@/composables/axios';
+import { LEVERAGED_CONTROLS_STOP_PATHS } from '@/composables/useLeveragedControls';
 import { getIdFromRoute } from '@/utils/get-id-from-route';
 import type { DataResponse, ErrorBody, ErrorResponse } from '@/stores/types';
 import type {
@@ -152,7 +153,13 @@ const {
   data: controls,
   isLoading: loading,
   execute: fetchControls,
-} = useDataApi<LeveragedControl[]>(null, {}, { immediate: false });
+} = useDataApi<LeveragedControl[]>(
+  null,
+  // Without the stop paths the interceptor camelCases the posture map's UUID KEYS
+  // (stripping their dashes), so posture lookups silently miss forever.
+  { camelcaseStopPaths: LEVERAGED_CONTROLS_STOP_PATHS },
+  { immediate: false },
+);
 
 watch(
   controlsUrl,

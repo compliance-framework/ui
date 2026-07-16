@@ -335,11 +335,10 @@ import {
   useAuthenticatedInstance,
   decamelizeKeys,
 } from '@/composables/axios';
-import { buildSharedResponsibilityUrl } from '@/composables/useSharedResponsibility';
 import type { AxiosError } from 'axios';
 import type { DataResponse, ErrorBody, ErrorResponse } from '@/stores/types';
 import type { UpstreamResponsibility } from '@/types/ssp-export-offerings';
-import type { SharedResponsibilityRollup } from '@/types/ssp-leverage';
+import type { LeveragedControl } from '@/types/ssp-leverage';
 import { usePermissions } from '@/composables/usePermissions';
 import { RESOURCES, ACTIONS } from '@/constants/permissions';
 
@@ -419,16 +418,20 @@ async function loadSatisfiableResponsibilities() {
     return;
   }
   // Statement ids, like control ids, are not reliably cased the same in an SSP as in the
-  // catalog/profile the rollup echoes — join case-insensitively, as everything else here does.
+  // catalog/profile the projection echoes — join case-insensitively, as everything else
+  // here does. The leveraged-controls projection is the source: unlike the rollup's
+  // inherits[] it carries each link's upstream responsibility uuids WITH descriptions.
+  const targetControlId = normalizeId(props.requirement.controlId);
   const targetStatementId = normalizeId(props.statement.statementId);
   try {
-    const response = await axiosInstance.get<
-      DataResponse<SharedResponsibilityRollup>
-    >(buildSharedResponsibilityUrl(props.sspId, props.requirement.controlId));
+    const response = await axiosInstance.get<DataResponse<LeveragedControl[]>>(
+      `/api/oscal/system-security-plans/${props.sspId}/leveraged-controls`,
+    );
     const byUuid = new Map<string, UpstreamResponsibility>();
-    for (const inherited of response.data.data?.inherits ?? []) {
-      if (normalizeId(inherited.statementId) !== targetStatementId) continue;
-      for (const responsibility of inherited.responsibilities ?? []) {
+    for (const control of response.data.data ?? []) {
+      if (normalizeId(control.controlId) !== targetControlId) continue;
+      if (normalizeId(control.statementId) !== targetStatementId) continue;
+      for (const responsibility of control.outstandingResponsibilities ?? []) {
         byUuid.set(responsibility.responsibilityUuid, responsibility);
       }
     }

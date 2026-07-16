@@ -37,9 +37,8 @@
           <div class="text-sm font-medium dark:text-slate-300">
             Statement {{ group.statementId }}
           </div>
-          <!-- Grouped by by-component, not just by statement: one statement can export from
-             several components, and each Edit has to open the by-component its rows actually
-             belong to. -->
+          <!-- One entry per by-component: a statement can export from several components,
+             and each Edit has to open the by-component its rows actually belong to. -->
           <div
             v-for="component in group.components"
             :key="component.byComponentUuid"
@@ -47,7 +46,14 @@
           >
             <div class="flex justify-between items-start">
               <div class="text-xs text-gray-500 dark:text-slate-400">
-                {{ component.componentTitle ?? component.componentUuid }}
+                {{ component.componentTitle || component.componentUuid }}
+                <Badge
+                  v-if="!component.offered"
+                  severity="secondary"
+                  class="ml-1"
+                >
+                  Not yet importable
+                </Badge>
               </div>
               <!-- Authoring is reachable from here too, not only from the SSP editor: this is
                  the day-to-day surface, and the export editor was previously reachable from
@@ -59,24 +65,27 @@
                 <SecondaryButton
                   type="button"
                   size="small"
-                  @click="emit('editProvides', component.rows[0])"
+                  @click="emit('editProvides', component)"
                 >
                   Edit
                 </SecondaryButton>
               </PermissionGate>
             </div>
             <div
-              v-for="row in component.rows"
-              :key="row.providedUuid"
+              v-for="capability in component.provided"
+              :key="capability.uuid"
               class="mt-1 text-xs"
             >
               <Badge severity="success">Provided</Badge>
               <div class="ml-2 text-green-600 dark:text-green-400">
-                {{ row.description }}
+                {{ capability.description }}
               </div>
               <div
-                v-for="responsibility in row.responsibilities ?? []"
-                :key="responsibility.responsibilityUuid"
+                v-for="responsibility in responsibilitiesFor(
+                  component,
+                  capability.uuid,
+                )"
+                :key="responsibility.uuid"
                 class="ml-2 text-orange-600 dark:text-orange-400"
               >
                 Consumer responsibility: {{ responsibility.description }}
@@ -115,25 +124,14 @@
             <Badge v-if="row.status" :severity="statusSeverity(row.status)">
               {{ row.status }}
             </Badge>
-            <RouterLink
-              v-if="row.driftRiskId"
-              :to="{
-                name: 'system-security-plan-risk-detail',
-                params: { id: sspId, riskId: row.driftRiskId },
-              }"
-              class="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400"
-            >
-              View drift risk
-            </RouterLink>
+          </div>
+          <div class="text-xs text-gray-500 dark:text-slate-400 mt-1">
+            From {{ row.upstreamSspTitle || row.upstreamSspId }} · v{{
+              row.offeringVersion
+            }}
           </div>
           <div class="text-xs text-purple-600 dark:text-purple-400 mt-1">
             {{ row.description }}
-          </div>
-          <div
-            v-if="row.leverageLinkId"
-            class="text-xs text-gray-500 dark:text-slate-400 mt-1"
-          >
-            Leverage link: {{ row.leverageLinkId }}
           </div>
         </div>
       </section>
@@ -158,19 +156,6 @@
             <span class="text-sm dark:text-slate-300">
               Statement {{ row.statementId }}
             </span>
-            <Badge v-if="row.status" :severity="statusSeverity(row.status)">
-              {{ row.status }}
-            </Badge>
-            <RouterLink
-              v-if="row.driftRiskId"
-              :to="{
-                name: 'system-security-plan-risk-detail',
-                params: { id: sspId, riskId: row.driftRiskId },
-              }"
-              class="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400"
-            >
-              View drift risk
-            </RouterLink>
           </div>
           <div class="text-xs text-blue-600 dark:text-blue-400 mt-1">
             {{ row.description }}
@@ -194,11 +179,9 @@
           class="mb-2 p-3 border border-ccf-200 dark:border-slate-600 rounded flex justify-between items-start"
         >
           <div class="text-xs dark:text-slate-300">
-            <div class="font-medium">
-              {{ row.componentTitle ?? row.componentUuid }}
-            </div>
+            <div class="font-medium">{{ row.controlId }}</div>
             <div class="text-gray-500 dark:text-slate-400">
-              {{ row.description }}
+              {{ row.reason }}
             </div>
           </div>
           <PermissionGate :resource="RESOURCES.SSP" :action="ACTIONS.DELETE">
@@ -207,7 +190,7 @@
               class="text-red-500 hover:text-red-700 text-sm shrink-0 ml-2"
               @click="
                 confirmDeleteDialog(() => deleteLegacy(row), {
-                  itemName: row.componentTitle ?? row.componentUuid,
+                  itemName: `${row.controlId} legacy row`,
                   itemType: 'legacy component implementation',
                 })
               "
@@ -249,15 +232,18 @@
               {{ offer.offeringTitle }} v{{ offer.offeringVersion }}
             </div>
             <div class="text-xs text-gray-500 dark:text-slate-400">
-              {{ offer.upstreamSspTitle ?? offer.upstreamSspId }} · Statement
+              {{ offer.upstreamSspTitle || offer.upstreamSspId }} · Statement
               {{ offer.statementId }}
             </div>
-            <div class="text-xs text-green-600 dark:text-green-400 mt-1">
-              {{ offer.providedDescription }}
+            <div
+              v-if="offer.provided"
+              class="text-xs text-green-600 dark:text-green-400 mt-1"
+            >
+              {{ offer.provided.description }}
             </div>
             <div
               v-for="responsibility in offer.responsibilities ?? []"
-              :key="responsibility.responsibilityUuid"
+              :key="responsibility.uuid"
               class="text-xs text-orange-600 dark:text-orange-400"
             >
               You would take on: {{ responsibility.description }}
@@ -309,7 +295,6 @@
 
 <script setup lang="ts">
 import { computed, ref, toRef } from 'vue';
-import { RouterLink } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
 import type { AxiosError } from 'axios';
 import Badge from '@/volt/Badge.vue';
@@ -322,6 +307,7 @@ import { RESOURCES, ACTIONS } from '@/constants/permissions';
 import { useAuthenticatedInstance } from '@/composables/axios';
 import { useSharedResponsibility } from '@/composables/useSharedResponsibility';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
+import type { ControlImplementation } from '@/oscal';
 import type { DataResponse, ErrorBody, ErrorResponse } from '@/stores/types';
 import type {
   CatalogOffering,
@@ -366,36 +352,33 @@ const inherits = computed(() => forThisControl(rollup.value?.inherits ?? []));
 const satisfies = computed(() => forThisControl(rollup.value?.satisfies ?? []));
 const legacy = computed(() => forThisControl(rollup.value?.legacy ?? []));
 
-// Statement -> by-component -> its provided rows. The by-component level matters: it is the
-// unit the editor opens, and one statement may export from several components.
+// Statement -> by-component rows. Each rollup row already is one by-component with its
+// provided/responsibilities nested; the by-component level matters because it is the unit
+// the editor opens, and one statement may export from several components.
 const providesByStatement = computed(() => {
-  const byStatement = new Map<
-    string,
-    Map<string, SharedResponsibilityProvided[]>
-  >();
+  const byStatement = new Map<string, SharedResponsibilityProvided[]>();
   for (const row of provides.value) {
-    let components = byStatement.get(row.statementId);
-    if (!components) {
-      components = new Map();
-      byStatement.set(row.statementId, components);
-    }
-    const rows = components.get(row.byComponentUuid);
-    if (rows) {
-      rows.push(row);
+    const components = byStatement.get(row.statementId);
+    if (components) {
+      components.push(row);
     } else {
-      components.set(row.byComponentUuid, [row]);
+      byStatement.set(row.statementId, [row]);
     }
   }
   return [...byStatement.entries()].map(([statementId, components]) => ({
     statementId,
-    components: [...components.entries()].map(([byComponentUuid, rows]) => ({
-      byComponentUuid,
-      componentUuid: rows[0].componentUuid,
-      componentTitle: rows[0].componentTitle,
-      rows,
-    })),
+    components,
   }));
 });
+
+function responsibilitiesFor(
+  component: SharedResponsibilityProvided,
+  providedUuid: string,
+) {
+  return (component.responsibilities ?? []).filter(
+    (responsibility) => responsibility.providedUuid === providedUuid,
+  );
+}
 
 function satisfactionSeverity(row: { satisfaction?: string }) {
   return row.satisfaction === 'full' ? 'success' : 'warn';
@@ -421,8 +404,22 @@ function errorDetail(error: unknown, fallback: string): string {
 
 async function deleteLegacy(row: SharedResponsibilityLegacy) {
   try {
+    // The rollup's legacy rows carry no requirement uuid — resolve it from the
+    // control-implementation tree (control ids matched case-insensitively, as everywhere).
+    const implementationResponse = await axiosInstance.get<
+      DataResponse<ControlImplementation | null>
+    >(`/api/oscal/system-security-plans/${props.sspId}/control-implementation`);
+    const target = row.controlId.trim().toLowerCase();
+    const requirement = (
+      implementationResponse.data.data?.implementedRequirements ?? []
+    ).find((r) => r.controlId.trim().toLowerCase() === target);
+    if (!requirement) {
+      throw new Error(
+        'The implemented requirement this legacy row belongs to could not be found.',
+      );
+    }
     await axiosInstance.delete(
-      `/api/oscal/system-security-plans/${props.sspId}/control-implementation/implemented-requirements/${row.requirementUuid}/by-components/${row.byComponentUuid}`,
+      `/api/oscal/system-security-plans/${props.sspId}/control-implementation/implemented-requirements/${requirement.uuid}/by-components/${row.byComponentUuid}`,
     );
     await refresh();
     toast.add({

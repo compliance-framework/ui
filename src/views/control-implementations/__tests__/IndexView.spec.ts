@@ -206,11 +206,19 @@ const stubs = {
   RiskIndicatorBadge: { template: '<span />' },
   ControlEvidenceCounter: { template: '<span />' },
   StatementByComponent: { template: '<div />' },
-  Dialog: {
-    props: ['visible'],
-    template: '<div v-if="visible"><slot /></div>',
+  ExportStatementDialog: {
+    props: [
+      'visible',
+      'sspId',
+      'sspTitle',
+      'controlId',
+      'statementId',
+      'byComponentUuid',
+    ],
+    emits: ['update:visible', 'saved'],
+    template:
+      '<div v-if="visible" data-testid="export-dialog" :data-control-id="controlId" :data-statement-id="statementId" :data-by-component-uuid="byComponentUuid" />',
   },
-  ByComponentEditForm: { template: '<div />' },
   SharedResponsibilityPanel: {
     props: ['sspId', 'controlId'],
     emits: ['editProvides', 'imported'],
@@ -632,29 +640,33 @@ describe('control implementations IndexView', () => {
     ).toBe('ac-1');
   });
 
-  it('opens the provides editor even when the rollup cases the control id differently', async () => {
+  it('opens the export dialog straight from the rollup row — no lookup, no "no longer loaded" toast', async () => {
     const wrapper = mount(IndexView, { global: { stubs } });
     await waitForMountedControls();
     await openDrawerForControl(wrapper, 'ac-1');
 
-    // An SSP's control-ids are not reliably cased the same as the catalog's, so the rollup
-    // row may say "AC-1" where the implemented requirement says "ac-1".
+    // A rollup provides row (API shape): no requirement/statement uuids — the dialog
+    // resolves those itself, so opening it can't depend on what happens to be loaded.
     wrapper
       .getComponent<typeof IndexView>('[data-testid="shared-responsibility"]')
       .vm.$emit('editProvides', {
         controlId: 'AC-1',
         statementId: 'ac-1_smt.a',
-        requirementUuid: 'req-1',
-        statementUuid: 'stmt-1',
         byComponentUuid: 'bc-1',
         componentUuid: 'comp-1',
-        providedUuid: 'p-1',
-        description: 'x',
+        componentTitle: 'API',
+        exportUuid: 'exp-1',
+        provided: [{ uuid: 'p-1', description: 'x' }],
         responsibilities: [],
+        offered: true,
       });
     await waitForMountedControls();
 
-    // It resolves the requirement rather than toasting "no longer loaded".
+    const dialog = wrapper.find('[data-testid="export-dialog"]');
+    expect(dialog.exists()).toBe(true);
+    expect(dialog.attributes('data-control-id')).toBe('AC-1');
+    expect(dialog.attributes('data-statement-id')).toBe('ac-1_smt.a');
+    expect(dialog.attributes('data-by-component-uuid')).toBe('bc-1');
     expect(toastAdd).not.toHaveBeenCalledWith(
       expect.objectContaining({ summary: 'Unable to open the editor' }),
     );
@@ -678,12 +690,13 @@ describe('control implementations IndexView', () => {
               // Reused, not created — must not be announced.
               { uuid: 'req-1', controlId: 'ac-1', created: false },
             ],
+            // Statements carry no controlId of their own (API shape) — the join runs
+            // through implementedRequirementUuid.
             statements: [
               {
                 uuid: 'stmt-2',
-                controlId: 'ac-2',
                 statementId: 'ac-2_smt.a',
-                requirementUuid: 'req-2',
+                implementedRequirementUuid: 'req-2',
                 created: true,
               },
             ],

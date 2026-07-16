@@ -106,12 +106,7 @@
             <th
               class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-slate-400"
             >
-              Status
-            </th>
-            <th
-              class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-slate-400"
-            >
-              Last Execution
+              Next Execution
             </th>
             <th
               class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-slate-400"
@@ -159,22 +154,13 @@
                 {{ formatCadence(instance.cadence) }}
               </span>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap">
-              <Badge
-                :severity="
-                  instance.status === 'active' ? 'success' : 'secondary'
-                "
-              >
-                {{ instance.status }}
-              </Badge>
-            </td>
             <td
               class="px-6 py-4 text-sm text-gray-500 dark:text-slate-400 whitespace-nowrap"
             >
-              <span v-if="instance.lastExecutionAt">
-                {{ formatDate(instance.lastExecutionAt) }}
+              <span v-if="instance.nextScheduledAt">
+                {{ formatDate(instance.nextScheduledAt) }}
               </span>
-              <span v-else class="text-gray-400">Never</span>
+              <span v-else class="text-gray-400">Not scheduled</span>
             </td>
             <td class="px-6 py-4 text-right">
               <div class="flex gap-2 justify-end">
@@ -305,7 +291,6 @@ import PrimaryButton from '@/volt/PrimaryButton.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
 import RouterLinkButton from '@/components/RouterLinkButton.vue';
 import Select from '@/volt/Select.vue';
-import Badge from '@/volt/Badge.vue';
 import Dialog from '@/volt/Dialog.vue';
 import Message from '@/volt/Message.vue';
 import WorkflowInstanceCreateForm from './partials/WorkflowInstanceCreateForm.vue';

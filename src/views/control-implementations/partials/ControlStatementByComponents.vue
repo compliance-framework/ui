@@ -1,8 +1,11 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import type { ByComponent, Risk } from '@/oscal';
 import BurgerMenu from '@/components/BurgerMenu.vue';
 import TooltipTitle from '@/components/TooltipTitle.vue';
 import StatementByComponent from './StatementByComponent.vue';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
 
 defineProps<{
   byComponents: ByComponent[];
@@ -14,9 +17,32 @@ defineProps<{
 const emit = defineEmits<{
   addComponent: [];
   createComponent: [];
+  inheritFromSsp: [];
   save: [byComponent: ByComponent];
   delete: [byComponent: ByComponent];
 }>();
+
+const { can } = usePermissions();
+
+// PermissionGate can't wrap a MenuItem, so the same double gate the import surfaces use
+// (subscribing writes to this SSP) is expressed via the item's `visible` flag.
+const menuItems = computed(() => [
+  {
+    label: 'Add Component',
+    command: () => emit('addComponent'),
+  },
+  {
+    label: 'Create New Component',
+    command: () => emit('createComponent'),
+  },
+  {
+    label: 'Inherit from SSP',
+    visible:
+      can(RESOURCES.SSP_EXPORT_OFFERING, ACTIONS.SUBSCRIBE) &&
+      can(RESOURCES.SSP, ACTIONS.UPDATE),
+    command: () => emit('inheritFromSsp'),
+  },
+]);
 </script>
 
 <template>
@@ -27,18 +53,7 @@ const emit = defineEmits<{
       position="bottom"
       underline-class="font-medium text-xl underline decoration-dotted cursor-help"
     />
-    <BurgerMenu
-      :items="[
-        {
-          label: 'Add Component',
-          command: () => emit('addComponent'),
-        },
-        {
-          label: 'Create New Component',
-          command: () => emit('createComponent'),
-        },
-      ]"
-    />
+    <BurgerMenu :items="menuItems" />
   </div>
 
   <div v-for="(byComponent, index) in byComponents" :key="byComponent.uuid">

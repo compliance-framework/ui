@@ -17,6 +17,7 @@ export type ImplementationStatusState =
   (typeof implementationStatusOptions)[number]['value'];
 
 export interface ImplementationStatusCue {
+  state: ImplementationStatusState;
   label: string;
   countClass: string;
   panelClass: string;
@@ -27,24 +28,28 @@ export const implementationStatusCues: Record<
   ImplementationStatusCue
 > = {
   implemented: {
+    state: 'implemented',
     label: 'Implemented',
     countClass: 'bg-blue-600 text-white dark:bg-blue-400 dark:text-blue-950',
     panelClass:
       'border-blue-200 bg-blue-50/60 dark:border-blue-900 dark:bg-blue-950/20',
   },
   partial: {
+    state: 'partial',
     label: 'Partial',
     countClass: 'bg-amber-500 text-white dark:bg-orange-500 dark:text-white',
     panelClass:
       'border-amber-200 bg-amber-50/60 dark:border-orange-800 dark:bg-orange-950/20',
   },
   planned: {
+    state: 'planned',
     label: 'Planned',
     countClass: 'bg-sky-600 text-white dark:bg-sky-400 dark:text-sky-950',
     panelClass:
       'border-sky-200 bg-sky-50/60 dark:border-sky-900 dark:bg-sky-950/20',
   },
   alternative: {
+    state: 'alternative',
     label: 'Alternative',
     countClass:
       'bg-violet-600 text-white dark:bg-violet-400 dark:text-violet-950',
@@ -52,6 +57,7 @@ export const implementationStatusCues: Record<
       'border-violet-200 bg-violet-50/60 dark:border-violet-900 dark:bg-violet-950/20',
   },
   'not-applicable': {
+    state: 'not-applicable',
     label: 'Not Applicable',
     countClass: 'bg-gray-500 text-white dark:bg-gray-400 dark:text-gray-950',
     panelClass:
@@ -87,6 +93,19 @@ export function uniformImplementationStatusCue(
 
   return (
     implementationStatusCues[firstState as ImplementationStatusState] ?? null
+  );
+}
+
+// Count of inherited[] entries across a statement's by-components. Deliberately
+// independent of uniformImplementationStatusCue: subscribing materializes downstream
+// by-components with NO implementationStatus, so an inherited statement often has no
+// status chip at all — the Inherited tag must render on its own.
+export function statementInheritedCount(
+  byComponents: ByComponent[] | undefined,
+): number {
+  return (byComponents ?? []).reduce(
+    (count, byComponent) => count + (byComponent.inherited?.length ?? 0),
+    0,
   );
 }
 

@@ -79,6 +79,8 @@ function makeControl(
       offeringTitle: 'FedRAMP AC-2 Baseline',
       offeringVersion: 1,
     },
+    providedUuid: 'up-p-1',
+    byComponentId: 'bc-1',
     satisfaction: 'full',
     status: 'active',
     outstandingResponsibilities: [],
