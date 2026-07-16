@@ -49,3 +49,21 @@ the pending draft, PLUS 11 new Medium/Low). All 18 threads replied to and resolv
 make reviewable green: 133 files, 1055 tests (was 132/1045). Regression tests verified to FAIL
 against pre-fix code for: removeProvided, nil-slice deref, satisfied labelling, offerings staleness,
 offersLoading, Enter default-prevention, and the permission guard.
+
+lisa-design:
+- Stale-request races are fixed with the shared helper src/utils/latest-request.ts
+  (begin()/isStale()), NOT site-by-site ad-hoc counters. Take the token before the first await
+  and check it before EVERY write, in the success AND the failure path — guarding only the
+  success path still lets a superseded rejection report failure over a newer success.
+- useSharedResponsibility's two GETs pass abortPrevious: false deliberately. vueuse's useAxios
+  guards its success path on isAborted but NOT its error path, so with the default (true) an
+  overlapping execute() lands the aborted request's CanceledError in `error` after the newer one
+  cleared it — a load that succeeded then renders as a failure. These are independent GETs, not
+  a typeahead; there is nothing to abort.
+- On the Controls surface SharedResponsibilityPanel owns the export-authoring affordance. The
+  control-implementations copy of StatementByComponent deliberately has NO statementId prop and
+  no editSharedResponsibility emit; only the SSP-editor copy is wired. Do not re-add them — that
+  would give one statement two export entry points.
+- Source files must stay text: never embed a raw NUL byte (or other control character) in a
+  string literal — git classifies the file as binary and it silently drops out of every diff and
+  review. Use an escape sequence.
