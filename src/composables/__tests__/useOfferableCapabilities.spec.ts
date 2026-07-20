@@ -27,7 +27,7 @@ describe('useOfferableCapabilities', () => {
     expect(capabilities.value).toEqual([]);
   });
 
-  it('flattens a control-level by-component provided entry', () => {
+  it('treats a requirement-level provided entry as legacy, not offerable', () => {
     const controlImplementation: ControlImplementation = {
       description: '',
       implementedRequirements: [
@@ -55,12 +55,15 @@ describe('useOfferableCapabilities', () => {
       ],
     };
 
-    const { capabilities } = useOfferableCapabilities(
+    const { capabilities, legacyCapabilities } = useOfferableCapabilities(
       ref(controlImplementation),
       ref(makeSystemImplementation()),
     );
 
-    expect(capabilities.value).toEqual([
+    // The API rejects an offering item without a statementId, so a requirement-anchored
+    // export can never be offered — it is only listed so an author can see why.
+    expect(capabilities.value).toEqual([]);
+    expect(legacyCapabilities.value).toEqual([
       {
         controlId: 'ac-1',
         statementId: undefined,
@@ -68,6 +71,7 @@ describe('useOfferableCapabilities', () => {
         componentTitle: 'API',
         providedUuid: 'p-1',
         providedDescription: 'We provide access control',
+        legacy: true,
       },
     ]);
   });
@@ -119,6 +123,7 @@ describe('useOfferableCapabilities', () => {
         componentTitle: 'API',
         providedUuid: 'p-1',
         providedDescription: 'Statement-level capability',
+        legacy: false,
       },
     ]);
   });
@@ -130,16 +135,22 @@ describe('useOfferableCapabilities', () => {
         {
           uuid: 'req-1',
           controlId: 'ac-1',
-          byComponents: [
+          statements: [
             {
-              uuid: 'bc-1',
-              componentUuid: 'unknown-comp',
-              description: '',
-              export: {
-                uuid: 'exp-1',
-                description: '',
-                provided: [{ uuid: 'p-1', description: '' }],
-              },
+              uuid: 'stmt-1',
+              statementId: 'ac-1_smt.a',
+              byComponents: [
+                {
+                  uuid: 'bc-1',
+                  componentUuid: 'unknown-comp',
+                  description: '',
+                  export: {
+                    uuid: 'exp-1',
+                    description: '',
+                    provided: [{ uuid: 'p-1', description: '' }],
+                  },
+                },
+              ],
             },
           ],
         },

@@ -27,7 +27,20 @@ vi.mock('@/utils/delete-dialog', () => ({
   }),
 }));
 
+// PermissionGate (behind the new "Edit Shared Responsibility" affordance) reads the
+// permissions store; stubbing the composable keeps this partial's tests Pinia-free.
+vi.mock('@/composables/usePermissions', () => ({
+  usePermissions: () => ({
+    can: () => true,
+    permissionTooltip: () => '',
+  }),
+}));
+
 const stubs = {
+  SecondaryButton: {
+    emits: ['click'],
+    template: '<button @click="$emit(\'click\', $event)"><slot /></button>',
+  },
   BurgerMenu: {
     props: ['items'],
     template:
@@ -53,6 +66,14 @@ const stubs = {
     template: '<button><slot /></button>',
   },
 };
+
+// The inline description/status edit lives in the burger menu; the first button on the row is
+// now "Edit Shared Responsibility", which opens the statement-level editors instead.
+async function clickInlineEdit(wrapper: ReturnType<typeof mount>) {
+  const button = wrapper.findAll('button').find((b) => b.text() === 'Edit');
+  if (!button) throw new Error('Inline "Edit" button not found');
+  await button.trigger('click');
+}
 
 const byComponent = {
   uuid: 'by-component-1',
@@ -122,7 +143,7 @@ describe('StatementByComponent', () => {
       global: { stubs },
     });
 
-    await wrapper.find('button').trigger('click');
+    await clickInlineEdit(wrapper);
     await wrapper.find('textarea').setValue('Unsaved description');
     await wrapper.find('select').setValue('planned');
     await wrapper.findAll('textarea')[1].setValue('Unsaved remarks');
@@ -159,7 +180,7 @@ describe('StatementByComponent', () => {
       global: { stubs },
     });
 
-    await wrapper.find('button').trigger('click');
+    await clickInlineEdit(wrapper);
     await wrapper.find('textarea').setValue('Draft description');
     const saveButton = wrapper
       .findAll('button')

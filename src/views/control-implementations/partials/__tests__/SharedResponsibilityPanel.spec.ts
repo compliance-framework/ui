@@ -1,0 +1,420 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { flushPromises, mount } from '@vue/test-utils';
+import SharedResponsibilityPanel from '../SharedResponsibilityPanel.vue';
+import type { ControlExportOffer } from '@/types/ssp-export-offerings';
+import type { SharedResponsibilityRollup } from '@/types/ssp-leverage';
+
+const { getMock, deleteMock, toastAddMock, permState, fetchedUrls } =
+  vi.hoisted(() => ({
+    getMock: vi.fn(),
+    deleteMock: vi.fn(),
+    toastAddMock: vi.fn(),
+    permState: { can: true },
+    fetchedUrls: [] as string[],
+  }));
+
+let failRollup = false;
+let failOffers = false;
+// Holds the offers fetch in flight so the loading window is observable.
+let holdOffers = false;
+
+vi.mock('primevue/usetoast', () => ({
+  useToast: () => ({ add: toastAddMock }),
+}));
+
+vi.mock('@/composables/usePermissions', () => ({
+  usePermissions: () => ({
+    can: () => permState.can,
+    permissionTooltip: () => '',
+  }),
+}));
+
+vi.mock('@/utils/delete-dialog', () => ({
+  useDeleteConfirmationDialog: () => ({
+    confirmDeleteDialog: (onConfirm: () => void) => onConfirm(),
+  }),
+}));
+
+// Fixtures mirror the API's actual shapes (ssp_shared_responsibility.go /
+// ssp_export_offerings.go): provides rows are by-component-level with nested provided[],
+// inherits carry the upstream/offering identity, legacy rows are (controlId,
+// byComponentUuid, reason) only.
+const rollupFixture: SharedResponsibilityRollup = {
+  provides: [
+    {
+      controlId: 'ac-2',
+      statementId: 'ac-2_smt.a',
+      byComponentUuid: 'bc-1',
+      componentUuid: 'comp-1',
+      componentTitle: 'API',
+      exportUuid: 'exp-1',
+      provided: [
+        { uuid: 'p-1', description: 'We manage the account lifecycle' },
+      ],
+      responsibilities: [
+        {
+          uuid: 'resp-1',
+          description: 'You approve requests',
+          providedUuid: 'p-1',
+        },
+      ],
+      offered: true,
+    },
+    // Same statement, a DIFFERENT component: each needs its own Edit, or the button would
+    // open the wrong by-component.
+    {
+      controlId: 'ac-2',
+      statementId: 'ac-2_smt.a',
+      byComponentUuid: 'bc-9',
+      componentUuid: 'comp-9',
+      componentTitle: 'Directory',
+      exportUuid: 'exp-9',
+      provided: [
+        { uuid: 'p-9', description: 'We hold the directory of record' },
+      ],
+      responsibilities: [],
+      offered: false,
+    },
+  ],
+  inherits: [
+    {
+      controlId: 'ac-2',
+      statementId: 'ac-2_smt.b',
+      byComponentUuid: 'bc-2',
+      inheritedUuid: 'i-1',
+      providedUuid: 'up-p-1',
+      upstreamSspId: 'ssp-upstream',
+      upstreamSspTitle: 'Meridian Platform',
+      offeringId: 'offering-1',
+      offeringVersion: 2,
+      leverageLinkId: 'link-1',
+      satisfaction: 'partial',
+      status: 'drifted',
+      description: 'Platform provides IdP',
+    },
+  ],
+  satisfies: [
+    {
+      controlId: 'ac-2',
+      statementId: 'ac-2_smt.b',
+      byComponentUuid: 'bc-2',
+      satisfiedUuid: 's-1',
+      responsibilityUuid: 'up-resp-1',
+      description: 'We review IdP access quarterly',
+    },
+  ],
+  legacy: [
+    {
+      controlId: 'ac-2',
+      byComponentUuid: 'bc-legacy',
+      reason: 'requirement-anchored export',
+    },
+  ],
+};
+
+const offersFixture: ControlExportOffer[] = [
+  {
+    offeringId: 'offering-1',
+    offeringTitle: 'Meridian Platform Baseline',
+    offeringVersion: 2,
+    offeringStatus: 'published',
+    upstreamSspId: 'ssp-upstream',
+    upstreamSspTitle: 'Meridian Platform',
+    itemId: 'item-1',
+    controlId: 'ac-2',
+    statementId: 'ac-2_smt.c',
+    componentUuid: 'comp-9',
+    componentTitle: 'Platform',
+    provided: {
+      uuid: 'up-p-9',
+      description: 'Platform manages privileged accounts',
+    },
+    responsibilities: [
+      {
+        uuid: 'up-resp-9',
+        description: 'You review the log',
+        providedUuid: 'up-p-9',
+      },
+    ],
+  },
+];
+
+// Mirrors useDataApi's real error path: on failure the error ref is set and `data` is left
+// untouched — which is exactly why the panel must not treat an absent payload as "empty".
+vi.mock('@/composables/axios', async () => {
+  const { ref } = await import('vue');
+  return {
+    useDataApi: () => {
+      const data = ref<unknown>(undefined);
+      const error = ref<unknown>(null);
+      // isLoading tracks the real thing rather than a hard-coded false. The window between
+      // dispatch and response is exactly where "No upstream system exports this control"
+      // used to be asserted, so a mock that is never loading cannot express that bug.
+      const isLoading = ref(false);
+      const execute = (url: string) => {
+        fetchedUrls.push(url);
+        const isRollup = url.includes('/shared-responsibility');
+        const isOffers = url.includes('/by-control/');
+        isLoading.value = true;
+        if ((isRollup && failRollup) || (isOffers && failOffers)) {
+          error.value = new Error('boom');
+          isLoading.value = false;
+          return Promise.reject(error.value);
+        }
+        error.value = null;
+        // Never resolves: leaves the panel in its in-flight state so the loading copy can
+        // be asserted.
+        if (isOffers && holdOffers) return new Promise(() => {});
+        if (isRollup) data.value = rollupFixture;
+        if (isOffers) data.value = offersFixture;
+        isLoading.value = false;
+        return Promise.resolve({ data: ref({ data: data.value }) });
+      };
+      return { data, isLoading, error, execute };
+    },
+    useAuthenticatedInstance: () => ({
+      get: getMock,
+      delete: deleteMock,
+    }),
+  };
+});
+
+const stubs = {
+  RouterLink: { props: ['to'], template: '<a><slot /></a>' },
+  Badge: {
+    props: ['severity'],
+    template: '<span :data-severity="severity"><slot /></span>',
+  },
+  Dialog: {
+    props: ['visible'],
+    template: '<div v-if="visible"><slot /></div>',
+  },
+  SecondaryButton: {
+    emits: ['click'],
+    template: '<button @click="$emit(\'click\', $event)"><slot /></button>',
+  },
+  SubscribeOfferingWizard: {
+    props: ['sspId', 'offering', 'scopedItemIds', 'preselectedItemIds'],
+    emits: ['cancel', 'subscribed'],
+    template:
+      '<div data-testid="wizard" :data-offering-id="offering.id" :data-scoped="scopedItemIds.join(\',\')" :data-preselected="preselectedItemIds.join(\',\')" />',
+  },
+};
+
+function mountPanel() {
+  return mount(SharedResponsibilityPanel, {
+    props: { sspId: 'ssp-1', controlId: 'ac-2' },
+    global: { stubs },
+  });
+}
+
+function findButton(wrapper: ReturnType<typeof mountPanel>, text: string) {
+  const button = wrapper.findAll('button').find((b) => b.text() === text);
+  if (!button) throw new Error(`Button with text "${text}" not found`);
+  return button;
+}
+
+describe('SharedResponsibilityPanel', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    fetchedUrls.length = 0;
+    permState.can = true;
+    failRollup = false;
+    failOffers = false;
+    holdOffers = false;
+    getMock.mockResolvedValue({ data: { data: [] } });
+    deleteMock.mockResolvedValue({});
+  });
+
+  // The by-control offers query is a cross-SSP read; until it lands we do not know whether
+  // anything exports this control. Asserting "no upstream system" for the duration of the
+  // fetch is the same reassuring negative the rollup was fixed for, produced by latency
+  // rather than failure.
+  it('does not claim "no upstream system exports this control" while the offers fetch is in flight', async () => {
+    holdOffers = true;
+    const wrapper = mountPanel();
+    await flushPromises();
+
+    expect(wrapper.text()).not.toContain('No upstream system exports');
+    expect(wrapper.text()).toContain('Looking for upstream systems');
+  });
+
+  it('fetches the rollup and the by-control offers for the selected SSP and control', () => {
+    mountPanel();
+    expect(fetchedUrls).toEqual([
+      '/api/oscal/system-security-plans/ssp-1/shared-responsibility?controlId=ac-2',
+      '/api/oscal/ssp-export-offerings/by-control/ac-2?downstreamSspId=ssp-1',
+    ]);
+  });
+
+  it('renders provides, inherits, satisfies and legacy from the rollup', () => {
+    const wrapper = mountPanel();
+    const text = wrapper.text();
+
+    expect(text).toContain('We manage the account lifecycle');
+    expect(text).toContain('You approve requests');
+    expect(text).toContain('Platform provides IdP');
+    expect(text).toContain('From Meridian Platform · v2');
+    expect(text).toContain('drifted');
+    expect(text).toContain('We review IdP access quarterly');
+    expect(text).toContain('requirement-anchored export');
+    expect(text).toContain('shared responsibility is tracked per statement');
+    // The un-offered component is flagged; the offered one is not.
+    expect(text).toContain('Not yet importable');
+  });
+
+  it('gives each by-component in a statement its own Edit, scoped to that by-component', async () => {
+    const wrapper = mountPanel();
+
+    const editButtons = wrapper
+      .findAll('button')
+      .filter((b) => b.text() === 'Edit');
+    expect(editButtons).toHaveLength(2);
+
+    await editButtons[0].trigger('click');
+    await editButtons[1].trigger('click');
+
+    const emitted = wrapper.emitted('editProvides');
+    expect(emitted).toHaveLength(2);
+    expect(emitted![0][0]).toMatchObject({
+      statementId: 'ac-2_smt.a',
+      byComponentUuid: 'bc-1',
+    });
+    // The second component's Edit must not open the first component's by-component.
+    expect(emitted![1][0]).toMatchObject({
+      statementId: 'ac-2_smt.a',
+      byComponentUuid: 'bc-9',
+    });
+  });
+
+  it('deletes a legacy row against the requirement-level by-component route, resolving the requirement case-insensitively', async () => {
+    // The rollup's legacy rows carry no requirement uuid — the panel resolves it from the
+    // control-implementation tree (note the SSP-cased control id).
+    getMock.mockImplementation((url: string) => {
+      if (url.endsWith('/control-implementation')) {
+        return Promise.resolve({
+          data: {
+            data: {
+              implementedRequirements: [{ uuid: 'req-1', controlId: 'AC-2' }],
+            },
+          },
+        });
+      }
+      return Promise.resolve({ data: { data: [] } });
+    });
+
+    const wrapper = mountPanel();
+    await findButton(wrapper, 'Delete').trigger('click');
+    await flushPromises();
+
+    expect(deleteMock).toHaveBeenCalledWith(
+      '/api/oscal/system-security-plans/ssp-1/control-implementation/implemented-requirements/req-1/by-components/bc-legacy',
+    );
+  });
+
+  it('renders the available-to-import offers and opens the wizard pre-scoped to the item', async () => {
+    getMock.mockResolvedValueOnce({
+      data: {
+        data: [{ id: 'offering-1', title: 'Meridian Platform Baseline' }],
+      },
+    });
+
+    const wrapper = mountPanel();
+    expect(wrapper.text()).toContain('Meridian Platform Baseline');
+    expect(wrapper.text()).toContain('Platform manages privileged accounts');
+    expect(wrapper.text()).toContain('You would take on: You review the log');
+
+    await findButton(wrapper, 'Import implementation').trigger('click');
+    await flushPromises();
+
+    // The offering is resolved from the flat catalog — the only cross-SSP read that stays
+    // inside the leverage trust boundary.
+    expect(getMock).toHaveBeenCalledWith('/api/oscal/ssp-export-offerings');
+
+    const wizard = wrapper.find('[data-testid="wizard"]');
+    expect(wizard.attributes('data-offering-id')).toBe('offering-1');
+    expect(wizard.attributes('data-scoped')).toBe('item-1');
+    expect(wizard.attributes('data-preselected')).toBe('item-1');
+  });
+
+  it('re-emits the subscribe payload (with meta.created) after importing', async () => {
+    getMock.mockResolvedValueOnce({
+      data: {
+        data: [{ id: 'offering-1', title: 'Meridian Platform Baseline' }],
+      },
+    });
+
+    const wrapper = mountPanel();
+    await findButton(wrapper, 'Import implementation').trigger('click');
+    await flushPromises();
+
+    const meta = {
+      created: {
+        implementedRequirements: [
+          { uuid: 'req-9', controlId: 'ac-2', created: true },
+        ],
+      },
+    };
+    wrapper
+      .getComponent<typeof SharedResponsibilityPanel>('[data-testid="wizard"]')
+      .vm.$emit('subscribed', { links: [], meta });
+    await flushPromises();
+
+    const emitted = wrapper.emitted('imported');
+    expect(emitted).toBeTruthy();
+    expect(emitted![0][0]).toMatchObject({ meta });
+  });
+
+  it('hides Import and Delete without the corresponding permissions', () => {
+    permState.can = false;
+    const wrapper = mountPanel();
+
+    // Positive assertions first: without them every expectation below holds vacuously if the
+    // panel renders nothing at all, and the test could not tell "permissions hid the
+    // affordances" from "the fixtures never loaded".
+    expect(wrapper.text()).toContain('We manage the account lifecycle');
+    expect(wrapper.text()).toContain('requirement-anchored export');
+    expect(wrapper.text()).toContain('Meridian Platform Baseline');
+
+    const buttonTexts = wrapper.findAll('button').map((b) => b.text());
+    expect(buttonTexts).not.toContain('Import implementation');
+    expect(buttonTexts).not.toContain('Delete');
+    expect(buttonTexts).not.toContain('Edit');
+  });
+
+  it('renders a failure state, not "exports nothing", when the rollup fetch fails', async () => {
+    failRollup = true;
+    const wrapper = mountPanel();
+    await flushPromises();
+
+    // A reassuring negative that is really a broken request is the wrong way to fail here.
+    expect(wrapper.text()).toContain(
+      'Could not load shared responsibility for this control.',
+    );
+    expect(wrapper.text()).not.toContain(
+      'This system exports nothing for this control.',
+    );
+    expect(wrapper.text()).not.toContain('Nothing inherited for this control.');
+
+    // Retry re-runs the fetch.
+    fetchedUrls.length = 0;
+    await findButton(wrapper, 'Retry').trigger('click');
+    await flushPromises();
+    expect(fetchedUrls).toContain(
+      '/api/oscal/system-security-plans/ssp-1/shared-responsibility?controlId=ac-2',
+    );
+  });
+
+  it('renders a failure state, not "no upstream exports", when the offers fetch fails', async () => {
+    failOffers = true;
+    const wrapper = mountPanel();
+    await flushPromises();
+
+    expect(wrapper.text()).toContain(
+      'Could not load the offerings available to import.',
+    );
+    expect(wrapper.text()).not.toContain(
+      'No upstream system exports this control.',
+    );
+  });
+});

@@ -31,18 +31,21 @@ vi.mock('@/composables/usePermissions', () => ({
   }),
 }));
 
+// The view now fetches through `execute(url)` against a computed URL (the <KeepAlive>
+// stale-fetch fix), so the URL arrives per call rather than at construction — which is where
+// the "only the projection endpoint is ever fetched" assertion has to look.
 const fetchedUrls: string[] = [];
-const executeMock = vi.fn();
 vi.mock('@/composables/axios', async () => {
   const { ref } = await import('vue');
   return {
-    useDataApi: (url: string) => {
-      fetchedUrls.push(url);
-      return {
-        data: ref(controlsData.current),
-        isLoading: ref(false),
-        execute: executeMock,
+    useDataApi: () => {
+      const data = ref<unknown>(undefined);
+      const execute = (url: string) => {
+        fetchedUrls.push(url);
+        data.value = controlsData.current;
+        return Promise.resolve({ data: ref({ data: data.value }) });
       };
+      return { data, isLoading: ref(false), execute };
     },
     useAuthenticatedInstance: () => ({ post: postMock }),
   };
@@ -76,6 +79,8 @@ function makeControl(
       offeringTitle: 'FedRAMP AC-2 Baseline',
       offeringVersion: 1,
     },
+    providedUuid: 'up-p-1',
+    byComponentId: 'bc-1',
     satisfaction: 'full',
     status: 'active',
     outstandingResponsibilities: [],
@@ -103,7 +108,6 @@ describe('SystemSecurityPlanInheritedCapabilitiesView', () => {
     controlsData.current = [];
     fetchedUrls.length = 0;
     postMock.mockResolvedValue({ data: { data: {} } });
-    executeMock.mockResolvedValue(undefined);
   });
 
   it('renders an empty state when there are no inherited capabilities', () => {
@@ -191,7 +195,11 @@ describe('SystemSecurityPlanInheritedCapabilitiesView', () => {
     expect(postMock).toHaveBeenCalledWith(
       '/api/oscal/system-security-plans/ssp-downstream-1/leveraged-controls/link-1/attest',
     );
-    expect(executeMock).toHaveBeenCalled();
+    // Re-attest refetches the projection rather than merging the link response in place.
+    expect(fetchedUrls).toEqual([
+      '/api/oscal/system-security-plans/ssp-downstream-1/leveraged-controls',
+      '/api/oscal/system-security-plans/ssp-downstream-1/leveraged-controls',
+    ]);
     expect(toastAddMock).toHaveBeenCalledWith(
       expect.objectContaining({ severity: 'success' }),
     );

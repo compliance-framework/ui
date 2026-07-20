@@ -6,9 +6,9 @@ import BurgerMenu from '@/components/BurgerMenu.vue';
 import Textarea from '@/volt/Textarea.vue';
 import Label from '@/volt/Label.vue';
 import Select from '@/volt/Select.vue';
-import Badge from '@/volt/Badge.vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
+import SharedResponsibilityBlocks from '@/components/system-security-plans/SharedResponsibilityBlocks.vue';
 import { useToggle } from '@/composables/useToggle';
 import { useDataApi } from '@/composables/axios';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
@@ -27,6 +27,11 @@ import {
   normalizeByComponentImplementationStatus,
 } from './implementation-status';
 
+// No statementId / editSharedResponsibility here, unlike the SSP-editor copy of this
+// component: on the Controls surface, SharedResponsibilityPanel owns the export-authoring
+// affordance. Both callers (IndexView, ControlStatementByComponents) render this without a
+// statement id and neither listens for the event, so the button this pair fed was
+// unreachable — it read as if it worked.
 const { byComponent, controlId, sspRisks, riskFetchLimit } = defineProps<{
   byComponent: ByComponent;
   controlId?: string;
@@ -230,24 +235,26 @@ function openRisksForControl() {
         @click="openRisksForControl"
       />
     </div>
-    <BurgerMenu
-      :items="[
-        {
-          label: 'Edit',
-          command() {
-            edit();
+    <div class="flex items-center gap-2">
+      <BurgerMenu
+        :items="[
+          {
+            label: 'Edit',
+            command() {
+              edit();
+            },
           },
-        },
-        {
-          label: 'Delete',
-          command() {
-            confirmDeleteDialog(() => deleteStatement(), {
-              itemType: 'implementation statement',
-            });
+          {
+            label: 'Delete',
+            command() {
+              confirmDeleteDialog(() => deleteStatement(), {
+                itemType: 'implementation statement',
+              });
+            },
           },
-        },
-      ]"
-    />
+        ]"
+      />
+    </div>
   </div>
   <div class="text-gray-600 dark:text-slate-400">
     <template v-if="!editing">
@@ -318,59 +325,5 @@ function openRisksForControl() {
     </div>
   </div>
 
-  <!-- Export Information -->
-  <div v-if="byComponent.export" class="mt-2 text-xs">
-    <div v-if="byComponent.export.provided?.length" class="mb-1">
-      <Badge severity="success">Provided</Badge>
-      <div class="ml-2">
-        <div
-          v-for="provided in byComponent.export.provided"
-          :key="provided.uuid"
-          class="text-green-600 dark:text-green-400"
-        >
-          {{ provided.description }}
-        </div>
-      </div>
-    </div>
-    <div v-if="byComponent.export.responsibilities?.length" class="mb-1">
-      <Badge severity="warn">Responsibilities</Badge>
-      <div class="ml-2">
-        <div
-          v-for="responsibility in byComponent.export.responsibilities"
-          :key="responsibility.uuid"
-          class="text-orange-600 dark:text-orange-400"
-        >
-          {{ responsibility.description }}
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Satisfied Requirements -->
-  <div v-if="byComponent.satisfied?.length" class="mt-2 text-xs">
-    <Badge severity="info">Satisfied</Badge>
-    <div class="ml-2">
-      <div
-        v-for="satisfied in byComponent.satisfied"
-        :key="satisfied.uuid"
-        class="text-blue-600 dark:text-blue-400"
-      >
-        {{ satisfied.description }}
-      </div>
-    </div>
-  </div>
-
-  <!-- Inherited Requirements -->
-  <div v-if="byComponent.inherited?.length" class="mt-2 text-xs">
-    <Badge severity="contrast">Inherited</Badge>
-    <div class="ml-2">
-      <div
-        v-for="inherited in byComponent.inherited"
-        :key="inherited.uuid"
-        class="text-purple-600 dark:text-purple-400"
-      >
-        {{ inherited.description }}
-      </div>
-    </div>
-  </div>
+  <SharedResponsibilityBlocks :by-component="byComponent" />
 </template>

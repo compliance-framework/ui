@@ -40,19 +40,27 @@ vi.mock('@/composables/usePermissions', () => ({
   }),
 }));
 
+// The panel now fetches through `execute(url)` against a computed URL (the <KeepAlive>
+// stale-fetch fix), so the mock resolves the URL per call rather than at construction.
 vi.mock('@/composables/axios', async () => {
   const { ref } = await import('vue');
   return {
-    useDataApi: (url: string) => {
-      if (url.endsWith('/export-offerings')) {
-        return { data: ref(offeringsData.current), isLoading: ref(false) };
-      }
-      return { data: ref(undefined), isLoading: ref(false) };
+    useDataApi: () => {
+      const data = ref<unknown>(undefined);
+      const execute = (url: string) => {
+        if (url.endsWith('/export-offerings')) {
+          data.value = offeringsData.current;
+        }
+        return Promise.resolve({ data: ref({ data: data.value }) });
+      };
+      return { data, isLoading: ref(false), execute };
     },
     useAuthenticatedInstance: () => ({
+      get: vi.fn(async () => ({ data: { data: [] } })),
       post: postMock,
       put: putMock,
       patch: patchMock,
+      delete: vi.fn(async () => ({})),
     }),
   };
 });

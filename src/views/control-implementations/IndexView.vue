@@ -83,7 +83,13 @@
           </div>
         </template>
         <template #control="slotProps">
-          <div>
+          <div
+            :class="
+              isHighlightedControl(slotProps.node.data.id)
+                ? 'rounded ring-2 ring-blue-400 dark:ring-blue-500 bg-blue-50 dark:bg-blue-900/20 p-2'
+                : ''
+            "
+          >
             <div class="flex items-center gap-x-3">
               <Badge class="text-base">{{ slotProps.node.data.id }}</Badge>
               <h4>{{ slotProps.node.data.title }}</h4>
@@ -131,6 +137,8 @@
               <IndexControlImplementation
                 :control="slotProps.node.data"
                 :implementation="controlImplementations[slotProps.node.data.id]"
+                @exported="handleExported"
+                @imported="handleImported"
               />
             </div>
           </div>
@@ -178,11 +186,33 @@
         :risk-fetch-limit="RISK_FETCH_LIMIT"
       />
     </div>
+
+    <div class="h-0.5 w-full bg-gray-200 dark:bg-slate-700 my-6"></div>
+
+    <SharedResponsibilityPanel
+      v-if="selectedSspId && selectedDrawerControlId"
+      :key="`${selectedSspId}:${selectedDrawerControlId}:${sharedResponsibilityRefreshKey}`"
+      :ssp-id="selectedSspId"
+      :control-id="selectedDrawerControlId"
+      @edit-provides="openProvidesEditor"
+      @imported="handleImported"
+    />
+
+    <ExportStatementDialog
+      v-if="selectedSspId && providesEditTarget"
+      v-model:visible="showProvidesEditDialog"
+      :ssp-id="selectedSspId"
+      :ssp-title="selectedSspTitle"
+      :control-id="providesEditTarget.controlId"
+      :statement-id="providesEditTarget.statementId"
+      :by-component-uuid="providesEditTarget.byComponentUuid"
+      @saved="handleProvidesSaved"
+    />
   </Drawer>
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, watch, computed } from 'vue';
+import { onMounted, provide, ref, watch, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import Message from '@/volt/Message.vue';
 import Badge from '@/volt/Badge.vue';
@@ -198,6 +228,10 @@ import ControlEvidenceCounter from './partials/ControlEvidenceCounter.vue';
 import { buildTreeNodesWithPrefix } from '@/composables/useCatalogTree';
 import type { TreeNode } from '@/composables/useCatalogTree';
 import { useAuthenticatedInstance, useDataApi } from '@/composables/axios';
+import {
+  LeveragedControlsKey,
+  useLeveragedControls,
+} from '@/composables/useLeveragedControls';
 import Tree from '@/volt/Tree.vue';
 import IndexControlImplementation from '@/views/control-implementations/partials/IndexControlImplementation.vue';
 import ControlImplementationSuggestions from '@/views/control-implementations/partials/ControlImplementationSuggestions.vue';
@@ -209,9 +243,15 @@ import type {
   Risk,
   Statement,
 } from '@/oscal';
+import type {
+  SharedResponsibilityProvided,
+  SubscribeResponseMeta,
+} from '@/types/ssp-leverage';
 import Button from '@/volt/Button.vue';
 import { BIconEye } from 'bootstrap-icons-vue';
 import Drawer from '@/volt/Drawer.vue';
+import ExportStatementDialog from '@/components/system-security-plans/ExportStatementDialog.vue';
+import SharedResponsibilityPanel from './partials/SharedResponsibilityPanel.vue';
 import StatementByComponent from './partials/StatementByComponent.vue';
 import RiskIndicatorBadge from './partials/RiskIndicatorBadge.vue';
 import SuggestionIndicatorBadge from './partials/SuggestionIndicatorBadge.vue';
@@ -989,6 +1029,143 @@ function hasControlImplementation(controlId?: string): boolean {
   return !!(controlId && controlImplementations.value[controlId]);
 }
 
+const selectedSspId = computed(
+  () => systemStore.system.securityPlan?.uuid ?? '',
+);
+
+// One leveraged-controls fetch for the whole page — every statement card (and the
+// statement drawer) injects this instead of refetching per control.
+const leveragedControls = useLeveragedControls(
+  computed(() => systemStore.system.securityPlan?.uuid),
+);
+provide(LeveragedControlsKey, leveragedControls);
+
+// ---- Shared responsibility: editing what this SSP provides ----
+
+const selectedSspTitle = computed(
+  () => systemStore.system.securityPlan?.metadata?.title ?? 'This system',
+);
+
+const showProvidesEditDialog = ref(false);
+const providesEditTarget = ref<{
+  controlId: string;
+  statementId: string;
+  byComponentUuid: string;
+} | null>(null);
+// Bumped to re-key (and so re-fetch) the SharedResponsibilityPanel after a save.
+const sharedResponsibilityRefreshKey = ref(0);
+
+// The rollup row carries the controlId/statementId/byComponentUuid the export dialog needs;
+// it resolves the live OSCAL uuids itself, so nothing here depends on what happens to be
+// loaded in the tree.
+function openProvidesEditor(row: SharedResponsibilityProvided) {
+  providesEditTarget.value = {
+    controlId: row.controlId,
+    statementId: row.statementId,
+    byComponentUuid: row.byComponentUuid,
+  };
+  showProvidesEditDialog.value = true;
+}
+
+async function handleProvidesSaved() {
+  sharedResponsibilityRefreshKey.value += 1;
+  await loadControlImplementations();
+}
+
+async function handleExported() {
+  sharedResponsibilityRefreshKey.value += 1;
+  await loadControlImplementations();
+}
+
+// ---- Shared responsibility: importing an upstream implementation ----
+
+const highlightedControlIds = ref(new Set<string>());
+
+function isHighlightedControl(controlId?: string): boolean {
+  return !!controlId && highlightedControlIds.value.has(normalizeId(controlId));
+}
+
+// Tree keys are hierarchical paths (profile:<id>:group:<id>:control:<id>), so revealing a
+// control means expanding every ancestor on the way down to it.
+function expandPathToControl(controlId: string) {
+  const target = normalizeId(controlId);
+  const nextExpanded = { ...expandedKeys.value };
+
+  const walk = (node: TreeNode, ancestors: string[]): boolean => {
+    const path = [...ancestors, node.key];
+    if (node.type === 'control' && normalizeId(node.data.id) === target) {
+      for (const key of path) {
+        nextExpanded[key] = true;
+      }
+      return true;
+    }
+    return (node.children ?? []).some((child) => walk(child, path));
+  };
+
+  const found = nodes.value.some((node) => walk(node, []));
+  if (found) {
+    expandedKeys.value = nextExpanded;
+  }
+}
+
+async function handleImported(payload: { meta?: SubscribeResponseMeta }) {
+  // `created: false` rows were reused, not created — announcing them would claim work the
+  // subscribe didn't do.
+  const created = payload.meta?.created;
+  const newRequirements = (created?.implementedRequirements ?? []).filter(
+    (r) => r.created,
+  );
+  const newStatements = (created?.statements ?? []).filter((s) => s.created);
+
+  await loadControlImplementations();
+  sharedResponsibilityRefreshKey.value += 1;
+  await leveragedControls.refresh();
+
+  // Statements don't carry a controlId of their own — the requirements list does (it
+  // includes reused rows precisely so this join always resolves).
+  const controlIdByRequirementUuid = new Map(
+    (created?.implementedRequirements ?? []).map((r) => [r.uuid, r.controlId]),
+  );
+  const revealed = [
+    ...newRequirements.map((r) => r.controlId),
+    ...newStatements
+      .map((s) => controlIdByRequirementUuid.get(s.implementedRequirementUuid))
+      .filter((id): id is string => !!id),
+  ];
+  for (const controlId of revealed) {
+    expandPathToControl(controlId);
+  }
+  highlightedControlIds.value = new Set(revealed.map((id) => normalizeId(id)));
+
+  // A merged payload (importing from several offerings at once) can repeat rows — a Set
+  // keeps the toast from stuttering.
+  const parts = new Set<string>();
+  for (const requirement of newRequirements) {
+    parts.add(`implemented requirement ${requirement.controlId}`);
+  }
+  for (const statement of newStatements) {
+    parts.add(`statement ${statement.statementId}`);
+  }
+
+  if (!parts.size) {
+    toast.add({
+      severity: 'success',
+      summary: 'Implementation imported',
+      detail:
+        'The upstream capability was inherited into existing requirements — nothing new was created.',
+      life: 4000,
+    });
+    return;
+  }
+
+  toast.add({
+    severity: 'success',
+    summary: 'Implementation imported',
+    detail: `Created ${[...parts].join(' and ')}.`,
+    life: 6000,
+  });
+}
+
 // Opens the implementation drawer for a control. The control need not have an
 // implementation: when it only has pending AI suggestions, the drawer still
 // opens (with an empty Components section) so the suggestions panel is reachable.
@@ -1069,6 +1246,9 @@ watch(
       }
       selectedImplementedRequirement.value = undefined;
       selectedControlId.value = undefined;
+      // The import highlight is meant to be transient — "here is the requirement that just
+      // appeared" — not a permanent badge the user meets again in a later session.
+      highlightedControlIds.value = new Set();
     }
   },
 );

@@ -118,8 +118,9 @@ vi.mock('@/composables/axios', () => ({
   },
 }));
 
+const toastAdd = vi.fn();
 vi.mock('primevue/usetoast', () => ({
-  useToast: () => ({ add: vi.fn() }),
+  useToast: () => ({ add: toastAdd }),
 }));
 
 vi.mock('primevue/useconfirm', () => ({
@@ -148,6 +149,22 @@ async function waitForMountedControls() {
   for (let index = 0; index < 5; index += 1) {
     await flushPromises();
   }
+}
+
+// The eye button on a control row opens its implementation drawer.
+async function openDrawerForControl(
+  wrapper: ReturnType<typeof mount>,
+  controlId: string,
+) {
+  const row = wrapper
+    .findAll('div')
+    .find((div) => div.attributes('key') === `control:${controlId}`);
+  const eye = (row ?? wrapper)
+    .findAll('button')
+    .find((button) => button.attributes('title') === 'View implementation');
+  if (!eye) throw new Error(`No enabled eye button for ${controlId}`);
+  await eye.trigger('click');
+  await waitForMountedControls();
 }
 
 const stubs = {
@@ -189,6 +206,25 @@ const stubs = {
   RiskIndicatorBadge: { template: '<span />' },
   ControlEvidenceCounter: { template: '<span />' },
   StatementByComponent: { template: '<div />' },
+  ExportStatementDialog: {
+    props: [
+      'visible',
+      'sspId',
+      'sspTitle',
+      'controlId',
+      'statementId',
+      'byComponentUuid',
+    ],
+    emits: ['update:visible', 'saved'],
+    template:
+      '<div v-if="visible" data-testid="export-dialog" :data-control-id="controlId" :data-statement-id="statementId" :data-by-component-uuid="byComponentUuid" />',
+  },
+  SharedResponsibilityPanel: {
+    props: ['sspId', 'controlId'],
+    emits: ['editProvides', 'imported'],
+    template:
+      '<div data-testid="shared-responsibility" :data-control-id="controlId" />',
+  },
   PageHeader: { template: '<h1><slot /></h1>' },
   PageSubHeader: { template: '<p><slot /></p>' },
 };
@@ -232,7 +268,19 @@ describe('control implementations IndexView', () => {
               {
                 uuid: 'req-1',
                 controlId: 'ac-1',
-                statements: [],
+                statements: [
+                  {
+                    uuid: 'stmt-1',
+                    statementId: 'ac-1_smt.a',
+                    byComponents: [
+                      {
+                        uuid: 'bc-1',
+                        componentUuid: 'comp-1',
+                        description: 'Statement-level implementation',
+                      },
+                    ],
+                  },
+                ],
               },
             ],
           },
@@ -578,5 +626,93 @@ describe('control implementations IndexView', () => {
       uiStore.setControlImplementationSelectedRequirementId,
     ).toHaveBeenCalledWith(null);
     expect(wrapper.text()).toContain('Unimplemented control suggestion');
+  });
+
+  it('scopes the Shared Responsibility panel to the control whose drawer is open', async () => {
+    const wrapper = mount(IndexView, { global: { stubs } });
+    await waitForMountedControls();
+    await openDrawerForControl(wrapper, 'ac-1');
+
+    expect(
+      wrapper
+        .find('[data-testid="shared-responsibility"]')
+        .attributes('data-control-id'),
+    ).toBe('ac-1');
+  });
+
+  it('opens the export dialog straight from the rollup row — no lookup, no "no longer loaded" toast', async () => {
+    const wrapper = mount(IndexView, { global: { stubs } });
+    await waitForMountedControls();
+    await openDrawerForControl(wrapper, 'ac-1');
+
+    // A rollup provides row (API shape): no requirement/statement uuids — the dialog
+    // resolves those itself, so opening it can't depend on what happens to be loaded.
+    wrapper
+      .getComponent<typeof IndexView>('[data-testid="shared-responsibility"]')
+      .vm.$emit('editProvides', {
+        controlId: 'AC-1',
+        statementId: 'ac-1_smt.a',
+        byComponentUuid: 'bc-1',
+        componentUuid: 'comp-1',
+        componentTitle: 'API',
+        exportUuid: 'exp-1',
+        provided: [{ uuid: 'p-1', description: 'x' }],
+        responsibilities: [],
+        offered: true,
+      });
+    await waitForMountedControls();
+
+    const dialog = wrapper.find('[data-testid="export-dialog"]');
+    expect(dialog.exists()).toBe(true);
+    expect(dialog.attributes('data-control-id')).toBe('AC-1');
+    expect(dialog.attributes('data-statement-id')).toBe('ac-1_smt.a');
+    expect(dialog.attributes('data-by-component-uuid')).toBe('bc-1');
+    expect(toastAdd).not.toHaveBeenCalledWith(
+      expect.objectContaining({ summary: 'Unable to open the editor' }),
+    );
+  });
+
+  it('expands, highlights and announces a requirement created by an import', async () => {
+    const wrapper = mount(IndexView, { global: { stubs } });
+    await waitForMountedControls();
+    await openDrawerForControl(wrapper, 'ac-1');
+
+    // ac-2 has no implementation of its own: importing an upstream offering for it is what
+    // makes the requirement appear — the visible payoff of the import flow.
+    wrapper
+      .getComponent<typeof IndexView>('[data-testid="shared-responsibility"]')
+      .vm.$emit('imported', {
+        links: [],
+        meta: {
+          created: {
+            implementedRequirements: [
+              { uuid: 'req-2', controlId: 'ac-2', created: true },
+              // Reused, not created — must not be announced.
+              { uuid: 'req-1', controlId: 'ac-1', created: false },
+            ],
+            // Statements carry no controlId of their own (API shape) — the join runs
+            // through implementedRequirementUuid.
+            statements: [
+              {
+                uuid: 'stmt-2',
+                statementId: 'ac-2_smt.a',
+                implementedRequirementUuid: 'req-2',
+                created: true,
+              },
+            ],
+          },
+        },
+      });
+    await waitForMountedControls();
+
+    expect(uiStore.controlImplementationExpandedKeys).toMatchObject({
+      'control:ac-2': true,
+    });
+    expect(wrapper.find('.ring-2').exists()).toBe(true);
+
+    const detail = toastAdd.mock.calls.at(-1)?.[0]?.detail as string;
+    expect(detail).toContain('implemented requirement ac-2');
+    expect(detail).toContain('statement ac-2_smt.a');
+    expect(detail).not.toContain('ac-1');
   });
 });

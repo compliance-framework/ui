@@ -12,7 +12,6 @@ import { computed, nextTick, onMounted, ref, toValue, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { FilterParser } from '@/parsers/labelfilter.ts';
 import type { Dashboard } from '@/stores/filters.ts';
-import type { Evidence } from '@/stores/evidence.ts';
 import { useSystemStore } from '@/stores/system.ts';
 import BurgerMenu from '@/components/BurgerMenu.vue';
 import { useToggle } from '@/composables/useToggle';
@@ -27,6 +26,11 @@ import Button from '@/volt/Button.vue';
 import StatementCreateForm from '@/components/system-security-plans/StatementCreateForm.vue';
 import StatementEditForm from '@/components/system-security-plans/StatementEditForm.vue';
 import SystemImplementationComponentCreateForm from '@/components/system-security-plans/SystemImplementationComponentCreateForm.vue';
+import ImportFromSspDialog from '@/components/system-security-plans/ImportFromSspDialog.vue';
+import type {
+  SSPLeverageLink,
+  SubscribeResponseMeta,
+} from '@/types/ssp-leverage';
 import DashboardEvidenceCounter from '@/views/control-implementations/partials/DashboardEvidenceCounter.vue';
 import TooltipTitle from '@/components/TooltipTitle.vue';
 import Message from '@/volt/Message.vue';
@@ -35,9 +39,10 @@ import ControlStatementMetadata from './ControlStatementMetadata.vue';
 import ControlStatementSuggestions from './ControlStatementSuggestions.vue';
 import ControlStatementByComponents from './ControlStatementByComponents.vue';
 import CreateByComponentForm from './CreateByComponentForm.vue';
+import InheritedResponsibilitiesSection from './InheritedResponsibilitiesSection.vue';
 import DashboardLinkForm from './DashboardLinkForm.vue';
 import EvidenceDashboardForm from './EvidenceDashboardForm.vue';
-import type { LabelCondition, SearchableEvidence } from './form-options';
+import { useEvidenceDashboardForm } from '@/composables/useEvidenceDashboardForm';
 import {
   buildApplySuggestionEndpoint,
   buildApplySuggestionsEndpoint,
@@ -66,18 +71,24 @@ const showCreateComponentModal = ref(false);
 
 const { value: showEvidenceLinkingForm, set: setEvidenceLinkingForm } =
   useToggle(false);
-const evidenceDashboard = ref<{ name: string; filter: string }>({
-  name: '',
-  filter: '',
-});
-
-const availableEvidence = ref<SearchableEvidence[]>([]);
-const selectedBaselineEvidence = ref<SearchableEvidence | null>(null);
-const evidenceLoading = ref(false);
-
-const labelConditions = ref<LabelCondition[]>([]);
-const newLabelName = ref('');
-const newLabelValue = ref('');
+// The "New Evidence Dashboard" label-condition builder — shared with the inherited
+// responsibilities drawer via one composable instead of two copies of the logic.
+const {
+  name: evidenceDashboardName,
+  selectedBaselineEvidence,
+  evidenceLoading,
+  labelConditions,
+  newLabelName,
+  newLabelValue,
+  uniqueEvidenceTitles,
+  availableLabelNames,
+  availableLabelValues,
+  computedFilter,
+  loadAvailableEvidence,
+  addLabelCondition,
+  removeLabelCondition,
+  reset: resetEvidenceDashboardForm,
+} = useEvidenceDashboardForm();
 
 // Existing dashboards for this control
 type DashboardWithControls = Dashboard;
@@ -112,14 +123,23 @@ const {
   implementation: ImplementedRequirement;
   sspId?: string;
   partid?: string;
-  displaySections?: Array<'metadata' | 'components' | 'evidence' | 'create'>;
+  displaySections?: Array<
+    'metadata' | 'components' | 'inherited' | 'evidence' | 'create'
+  >;
 }>();
 
 const RISK_FETCH_LIMIT = 100;
 
 const localStatement = ref<Statement | undefined>(statement);
 const activeDisplaySections = computed(
-  () => displaySections ?? ['metadata', 'components', 'evidence', 'create'],
+  () =>
+    displaySections ?? [
+      'metadata',
+      'components',
+      'inherited',
+      'evidence',
+      'create',
+    ],
 );
 const showMetadataSection = computed(() =>
   activeDisplaySections.value.includes('metadata'),
@@ -129,6 +149,9 @@ const showComponentsSection = computed(() =>
 );
 const showEvidenceSection = computed(() =>
   activeDisplaySections.value.includes('evidence'),
+);
+const showInheritedSection = computed(() =>
+  activeDisplaySections.value.includes('inherited'),
 );
 const showCreateStatementAction = computed(() =>
   activeDisplaySections.value.includes('create'),
@@ -149,7 +172,22 @@ const resolvedSspId = computed(() => {
 
 const emit = defineEmits<{
   updated: [statement: Statement];
+  imported: [
+    payload: { links: SSPLeverageLink[]; meta?: SubscribeResponseMeta },
+  ];
 }>();
+
+// "Inherit from SSP" (Components burger) — import published capabilities from other SSPs.
+const showImportFromSspDialog = ref(false);
+
+async function handleImportedFromSsp(payload: {
+  links: SSPLeverageLink[];
+  meta?: SubscribeResponseMeta;
+}) {
+  // The subscribe may have attached new by-components to this very statement.
+  await syncStatementAfterSuggestionApply();
+  emit('imported', payload);
+}
 
 const {
   data: components,
@@ -205,14 +243,6 @@ const { execute: createEvidenceDashboard } = useDataApi<Dashboard>(
     // arrive as "ssp-id" and never bind, silently making every dashboard global.
     // The label-filter object only has single-word keys, so sending it as-is is
     // otherwise a no-op (see the sibling /api/evidence/search POST).
-  },
-  { immediate: false },
-);
-
-const { execute: fetchEvidenceForLabels } = useDataApi<Evidence[]>(
-  '/api/evidence/search',
-  {
-    method: 'POST',
   },
   { immediate: false },
 );
@@ -978,41 +1008,7 @@ function handleComponentCreated(newComponent: SystemComponent) {
 function resetEvidenceLinkingForm() {
   setEvidenceLinkingForm(false);
   createEvidenceDashboardError.value = '';
-  evidenceDashboard.value = { name: '', filter: '' };
-  selectedBaselineEvidence.value = null;
-  labelConditions.value = [];
-  newLabelName.value = '';
-  newLabelValue.value = '';
-}
-
-async function loadAvailableEvidence(forceReload = false) {
-  if (!forceReload && availableEvidence.value.length > 0) return; // Already loaded
-  evidenceLoading.value = true;
-  try {
-    const res = await fetchEvidenceForLabels({
-      data: { filter: {} },
-    });
-    const evidenceList = res.data.value?.data || res.data.value || [];
-    availableEvidence.value = (evidenceList as Evidence[])
-      .filter((ev) => ev.labels && ev.labels.length > 0)
-      .map((ev) => ({
-        ...ev,
-        searchText: [
-          ev.title,
-          ...(ev.labels?.map((l) => `${l.name} ${l.value}`) || []),
-        ].join(' '),
-      }));
-  } catch (error) {
-    console.error('Failed to load evidence:', error);
-    toast.add({
-      severity: 'error',
-      summary: 'Failed to load evidence',
-      detail: 'Evidence could not be loaded. Please try again later.',
-      life: 3000,
-    });
-  } finally {
-    evidenceLoading.value = false;
-  }
+  resetEvidenceDashboardForm();
 }
 
 /**
@@ -1236,116 +1232,6 @@ function openDashboardSuggestions() {
   });
 }
 
-// Get unique titles for the dropdown (only show each title once)
-const uniqueEvidenceTitles = computed(() => {
-  const titleMap = new Map<string, SearchableEvidence>();
-  for (const ev of availableEvidence.value) {
-    if (!titleMap.has(ev.title)) {
-      titleMap.set(ev.title, ev);
-    }
-  }
-  return Array.from(titleMap.values());
-});
-
-// Get all evidence entries that match the selected title
-const evidenceEntriesForSelectedTitle = computed(() => {
-  if (!selectedBaselineEvidence.value) return [];
-  return availableEvidence.value.filter(
-    (ev) => ev.title === selectedBaselineEvidence.value!.title,
-  );
-});
-
-// Available label names from ALL evidence entries with the selected title
-const availableLabelNames = computed(() => {
-  if (evidenceEntriesForSelectedTitle.value.length === 0) return [];
-  const names = new Set<string>();
-  for (const ev of evidenceEntriesForSelectedTitle.value) {
-    if (ev.labels) {
-      for (const label of ev.labels) {
-        names.add(label.name);
-      }
-    }
-  }
-  return Array.from(names).sort();
-});
-
-// Available values for the selected label name (from evidence entries with the selected title that match current conditions)
-const availableLabelValues = computed(() => {
-  if (!newLabelName.value) return [];
-  const values = new Set<string>();
-  // Filter evidence entries with the selected title that match current conditions
-  const relevantEvidence = evidenceEntriesForSelectedTitle.value.filter(
-    (ev) => {
-      if (!ev.labels) return false;
-      // Must match all current label conditions
-      return labelConditions.value.every((condition) =>
-        ev.labels?.some(
-          (l) => l.name === condition.name && l.value === condition.value,
-        ),
-      );
-    },
-  );
-  for (const ev of relevantEvidence) {
-    if (ev.labels) {
-      for (const label of ev.labels) {
-        if (label.name === newLabelName.value) {
-          values.add(label.value);
-        }
-      }
-    }
-  }
-  return Array.from(values).sort();
-});
-
-// Build filter string from label conditions
-const computedFilter = computed(() => {
-  if (labelConditions.value.length === 0) return '';
-  return labelConditions.value.map((c) => `${c.name}=${c.value}`).join(' and ');
-});
-
-// When baseline evidence is selected, auto-populate _policy label
-watch(selectedBaselineEvidence, (ev) => {
-  if (!ev) {
-    labelConditions.value = [];
-    return;
-  }
-  // Find _policy label and auto-add it
-  const policyLabel = ev.labels?.find((l) => l.name === '_policy');
-  if (policyLabel) {
-    labelConditions.value = [{ name: '_policy', value: policyLabel.value }];
-  } else {
-    labelConditions.value = [];
-  }
-  // Reset new label inputs
-  newLabelName.value = '';
-  newLabelValue.value = '';
-});
-
-// Sync computed filter to evidenceDashboard
-watch(computedFilter, (filter) => {
-  evidenceDashboard.value.filter = filter;
-});
-
-function addLabelCondition() {
-  if (!newLabelName.value || !newLabelValue.value) return;
-  // Avoid duplicates
-  const exists = labelConditions.value.some(
-    (c) => c.name === newLabelName.value && c.value === newLabelValue.value,
-  );
-  if (!exists) {
-    labelConditions.value.push({
-      name: newLabelName.value,
-      value: newLabelValue.value,
-    });
-  }
-  newLabelName.value = '';
-  newLabelValue.value = '';
-}
-
-function removeLabelCondition(index: number) {
-  labelConditions.value.splice(index, 1);
-}
-
 watch(showEvidenceLinkingForm, async (show) => {
   if (show) {
     await Promise.all([
@@ -1364,7 +1250,7 @@ watch(showLinkExistingForm, async (show) => {
 
 async function submitEvidenceLinking() {
   createEvidenceDashboardError.value = '';
-  if (!evidenceDashboard.value.name || !localStatement.value) {
+  if (!evidenceDashboardName.value || !localStatement.value) {
     toast.add({
       severity: 'error',
       summary: 'Validation Error',
@@ -1373,7 +1259,7 @@ async function submitEvidenceLinking() {
     });
     return;
   }
-  if (!evidenceDashboard.value.filter?.trim()) {
+  if (!computedFilter.value.trim()) {
     toast.add({
       severity: 'error',
       summary: 'Validation Error',
@@ -1385,9 +1271,7 @@ async function submitEvidenceLinking() {
   const controlIds = [implementation.controlId];
   let parsedFilter;
   try {
-    parsedFilter = new FilterParser(
-      evidenceDashboard.value.filter.trim(),
-    ).parse();
+    parsedFilter = new FilterParser(computedFilter.value.trim()).parse();
   } catch (parseError) {
     console.error(
       'Failed to parse label filter for evidence dashboard:',
@@ -1406,7 +1290,7 @@ async function submitEvidenceLinking() {
   try {
     await createEvidenceDashboard({
       data: {
-        name: evidenceDashboard.value.name,
+        name: evidenceDashboardName.value,
         filter: parsedFilter,
         controls: controlIds,
         // Scope the dashboard's filter to this SSP rather than creating a global
@@ -1493,6 +1377,7 @@ async function submitEvidenceLinking() {
         :risk-fetch-limit="RISK_FETCH_LIMIT"
         @add-component="setCreateComponentForm(true)"
         @create-component="showCreateComponentModal = true"
+        @inherit-from-ssp="showImportFromSspDialog = true"
         @save="updateByComponent"
         @delete="deleteByComponent"
       />
@@ -1511,6 +1396,15 @@ async function submitEvidenceLinking() {
         @submit="createByComponent"
         @cancel="resetCreateComponentForm"
         @create-component="showCreateComponentModal = true"
+      />
+
+      <!-- Inherited responsibilities: what this statement takes on from upstream SSPs -->
+      <InheritedResponsibilitiesSection
+        v-if="showInheritedSection && localStatement && resolvedSspId"
+        :statement="localStatement"
+        :implementation="implementation"
+        :ssp-id="resolvedSspId"
+        @changed="syncStatementAfterSuggestionApply()"
       />
 
       <!-- Evidence Linking Section -->
@@ -1613,7 +1507,7 @@ async function submitEvidenceLinking() {
 
         <EvidenceDashboardForm
           v-if="showEvidenceLinkingForm"
-          v-model:name="evidenceDashboard.name"
+          v-model:name="evidenceDashboardName"
           v-model:selected-baseline-evidence="selectedBaselineEvidence"
           v-model:new-label-name="newLabelName"
           v-model:new-label-value="newLabelValue"
@@ -1701,6 +1595,13 @@ async function submitEvidenceLinking() {
       @created="handleComponentCreated"
     />
   </Dialog>
+  <ImportFromSspDialog
+    v-if="resolvedSspId"
+    v-model:visible="showImportFromSspDialog"
+    :ssp-id="resolvedSspId"
+    :current-control-id="implementation.controlId"
+    @imported="handleImportedFromSsp"
+  />
 </template>
 
 <style scoped></style>

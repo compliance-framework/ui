@@ -1,7 +1,18 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import ControlStatementByComponents from '../ControlStatementByComponents.vue';
 import type { ByComponent } from '@/oscal';
+
+const { permState } = vi.hoisted(() => ({
+  permState: { can: true },
+}));
+
+vi.mock('@/composables/usePermissions', () => ({
+  usePermissions: () => ({
+    can: () => permState.can,
+    permissionTooltip: () => '',
+  }),
+}));
 
 const byComponents = [
   {
@@ -24,7 +35,7 @@ const stubs = {
   BurgerMenu: {
     props: ['items'],
     template:
-      '<div data-test="burger-menu"><button v-for="item in items" :key="item.label" type="button" @click="item.command()">{{ item.label }}</button></div>',
+      '<div data-test="burger-menu"><template v-for="item in items" :key="item.label"><button v-if="item.visible !== false" type="button" @click="item.command()">{{ item.label }}</button></template></div>',
   },
   StatementByComponent: {
     props: ['byComponent'],
@@ -35,6 +46,10 @@ const stubs = {
 };
 
 describe('ControlStatementByComponents', () => {
+  beforeEach(() => {
+    permState.can = true;
+  });
+
   function mountComponent(items = byComponents) {
     return mount(ControlStatementByComponents, {
       props: {
@@ -47,6 +62,12 @@ describe('ControlStatementByComponents', () => {
     });
   }
 
+  function menuLabels(wrapper: ReturnType<typeof mountComponent>) {
+    return wrapper
+      .findAll('[data-test="burger-menu"] button')
+      .map((b) => b.text());
+  }
+
   it('renders one StatementByComponent per item with dividers only between items', () => {
     const wrapper = mountComponent();
 
@@ -56,18 +77,33 @@ describe('ControlStatementByComponents', () => {
     expect(wrapper.findAll('.h-0\\.5')).toHaveLength(1);
   });
 
-  it('emits addComponent and createComponent from burger menu commands', async () => {
+  it('emits addComponent, createComponent and inheritFromSsp from burger menu commands', async () => {
     const wrapper = mountComponent();
 
-    await wrapper
-      .findAll('[data-test="burger-menu"] button')[0]
-      .trigger('click');
-    await wrapper
-      .findAll('[data-test="burger-menu"] button')[1]
-      .trigger('click');
+    expect(menuLabels(wrapper)).toEqual([
+      'Add Component',
+      'Create New Component',
+      'Inherit from SSP',
+    ]);
+
+    const buttons = wrapper.findAll('[data-test="burger-menu"] button');
+    await buttons[0].trigger('click');
+    await buttons[1].trigger('click');
+    await buttons[2].trigger('click');
 
     expect(wrapper.emitted('addComponent')).toHaveLength(1);
     expect(wrapper.emitted('createComponent')).toHaveLength(1);
+    expect(wrapper.emitted('inheritFromSsp')).toHaveLength(1);
+  });
+
+  it('hides Inherit from SSP without the subscribe/update permissions', () => {
+    permState.can = false;
+    const wrapper = mountComponent();
+
+    expect(menuLabels(wrapper)).toEqual([
+      'Add Component',
+      'Create New Component',
+    ]);
   });
 
   it('re-emits save and delete events with the same ByComponent payload', async () => {

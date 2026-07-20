@@ -12,11 +12,15 @@ export interface OfferableCapability {
   componentTitle: string;
   providedUuid: string;
   providedDescription: string;
+  // A capability authored on a requirement rather than a statement. The API rejects an
+  // offering item without a statementId, so these can never be offered — they are still
+  // listed, disabled, so an author can see *why* and move the export to a statement.
+  legacy: boolean;
 }
 
 // Appends one OfferableCapability per provided entry across a set of by-components — shared
-// by the control-level and statement-level walks below, which differ only in whether a
-// statementId is set.
+// by the requirement-level and statement-level walks below, which differ only in whether a
+// statementId is set (and therefore whether the capability is offerable at all).
 function appendCapabilities(
   byComponents: ByComponent[] | undefined,
   controlId: string,
@@ -35,16 +39,20 @@ function appendCapabilities(
           byComponent.componentUuid,
         providedUuid: provided.uuid,
         providedDescription: provided.description || provided.uuid,
+        legacy: !statementId,
       });
     }
   }
 }
 
 // Flattens an SSP's authored control-implementation tree (BCH-1343) into the set of
-// (control, optional statement, component, provided) tuples an export offering can pick
-// from. There's no dedicated "what can I offer" endpoint — this is exactly the
-// Export/Provided data the by-component editor authors, read back and joined against
-// component titles.
+// (control, statement, component, provided) tuples an export offering can pick from. There's
+// no dedicated "what can I offer" endpoint — this is exactly the Export/Provided data the
+// by-component editor authors, read back and joined against component titles.
+//
+// A statement is the anchor: `capabilities` is what may actually be offered, and
+// `legacyCapabilities` is the requirement-anchored remainder, surfaced only so it can be
+// shown disabled.
 export function useOfferableCapabilities(
   controlImplementation: Ref<ControlImplementation | undefined>,
   systemImplementation: Ref<SystemImplementation | undefined>,
@@ -57,7 +65,7 @@ export function useOfferableCapabilities(
     return map;
   });
 
-  const capabilities = computed<OfferableCapability[]>(() => {
+  const allCapabilities = computed<OfferableCapability[]>(() => {
     const result: OfferableCapability[] = [];
     const requirements =
       controlImplementation.value?.implementedRequirements ?? [];
@@ -85,5 +93,13 @@ export function useOfferableCapabilities(
     return result;
   });
 
-  return { capabilities };
+  const capabilities = computed(() =>
+    allCapabilities.value.filter((capability) => !capability.legacy),
+  );
+
+  const legacyCapabilities = computed(() =>
+    allCapabilities.value.filter((capability) => capability.legacy),
+  );
+
+  return { capabilities, legacyCapabilities, allCapabilities };
 }

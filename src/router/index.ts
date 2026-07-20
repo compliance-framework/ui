@@ -206,6 +206,11 @@ const authenticatedRoutes = [
         name: 'system:authorizations',
         component: () => import('../views/system/AuthorizationsView.vue'),
       },
+      {
+        path: 'export-offerings',
+        name: 'system:export-offerings',
+        component: () => import('../views/system/ExportOfferingsView.vue'),
+      },
     ],
     meta: {
       requiresAuth: true,

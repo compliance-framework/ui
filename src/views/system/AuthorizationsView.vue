@@ -7,9 +7,25 @@
         position="bottom"
         underline-class="text-lg font-semibold dark:text-slate-300 underline decoration-dotted cursor-help"
       />
-      <PrimaryButton @click="showCreateLeveragedAuthModal = true">
-        Create Authorization
-      </PrimaryButton>
+      <div class="flex items-center gap-4">
+        <!-- Subscribing to an export offering is what creates most of these records, so give
+             the reader the way back to what was inherited. A per-authorization link to its
+             offering isn't possible yet: the leveraged-controls projection doesn't carry
+             leveragedAuthUuid, so there is no id to join on. -->
+        <RouterLink
+          v-if="sspId"
+          :to="{
+            name: 'system-security-plan-inherited-capabilities',
+            params: { id: sspId },
+          }"
+          class="text-sm font-medium underline text-blue-600 dark:text-blue-300"
+        >
+          Inherited capabilities
+        </RouterLink>
+        <PrimaryButton @click="showCreateLeveragedAuthModal = true">
+          Create Authorization
+        </PrimaryButton>
+      </div>
     </div>
 
     <div class="space-y-4">
@@ -146,6 +162,7 @@
 </template>
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
+import { RouterLink } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
 import decamelizeKeys from 'decamelize-keys';
 

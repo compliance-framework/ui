@@ -4,6 +4,7 @@ import {
   implementationStatusLabel,
   implementationStatusOptions,
   normalizeByComponentImplementationStatus,
+  statementInheritedCount,
   uniformImplementationStatusCue,
 } from '@/views/control-implementations/partials/implementation-status';
 
@@ -106,5 +107,26 @@ describe('implementation-status helpers', () => {
     );
 
     expect(locallyDefined.implementationStatus?.state).toBe('custom-status');
+  });
+
+  it('counts inherited entries across by-components, independent of any status', () => {
+    expect(statementInheritedCount(undefined)).toBe(0);
+    expect(statementInheritedCount([])).toBe(0);
+    expect(statementInheritedCount([byComponent('implemented')])).toBe(0);
+
+    // Subscribe materializes by-components with NO implementationStatus — the count
+    // must still see their inherited entries.
+    const inheritedOnly: ByComponent = {
+      ...byComponent(undefined),
+      inherited: [
+        { uuid: 'i-1', description: 'Inherited from offering' },
+        { uuid: 'i-2', description: 'Another' },
+      ],
+    };
+    const withStatus: ByComponent = {
+      ...byComponent('implemented'),
+      inherited: [{ uuid: 'i-3', description: 'Third' }],
+    };
+    expect(statementInheritedCount([inheritedOnly, withStatus])).toBe(3);
   });
 });

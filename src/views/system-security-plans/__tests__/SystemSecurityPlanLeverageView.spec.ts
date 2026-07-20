@@ -183,23 +183,18 @@ describe('SystemSecurityPlanLeverageView', () => {
     const responsibilityCheckboxes = wrapper.findAll('input[type="checkbox"]');
     await responsibilityCheckboxes[1].setValue(true);
 
-    const inputs = wrapper.findAll(
-      'input:not([type="checkbox"]):not([type="date"])',
-    );
-    await inputs[0].setValue('My Leveraged Auth');
-    await inputs[1].setValue('11111111-1111-1111-1111-111111111111');
+    // No leveraged-authorization inputs anywhere: sharing is decoupled from an ATO.
+    expect(wrapper.findAll('input:not([type="checkbox"])')).toHaveLength(0);
+    expect(wrapper.text()).not.toContain('Party UUID');
 
     await wrapper.find('form').trigger('submit');
     await flushPromises();
 
+    // The subscribe body carries no leveragedAuthorization — just the downstream and items.
     expect(postMock).toHaveBeenCalledWith(
       '/api/oscal/ssp-export-offerings/offering-1/subscribe',
       {
         downstreamSspId: 'ssp-downstream-1',
-        leveragedAuthorization: {
-          title: 'My Leveraged Auth',
-          partyUuid: '11111111-1111-1111-1111-111111111111',
-        },
         items: [{ itemId: 'item-1', satisfiedResponsibilityUuids: ['r-1'] }],
       },
     );
@@ -212,12 +207,6 @@ describe('SystemSecurityPlanLeverageView', () => {
     offeringsData.current = [makeOffering()];
     const wrapper = mountView();
     await findButton(wrapper, 'Subscribe').trigger('click');
-
-    const inputs = wrapper.findAll(
-      'input:not([type="checkbox"]):not([type="date"])',
-    );
-    await inputs[0].setValue('My Leveraged Auth');
-    await inputs[1].setValue('11111111-1111-1111-1111-111111111111');
 
     await wrapper.find('form').trigger('submit');
     await flushPromises();
