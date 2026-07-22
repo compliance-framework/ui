@@ -107,9 +107,29 @@ describe('ComplianceProgressPanel — inherited', () => {
     ]) {
       expect(wrapper.text()).toContain(label);
     }
-    // The Inherited tile is purple and shows the value.
-    expect(html).toContain('bg-purple-50');
+    // The Inherited tile is purple and shows the value. (`border-purple-200` is
+    // unique to the tile; `bg-purple-50` would false-match the bar's `bg-purple-500`.)
+    expect(html).toContain('border-purple-200');
     expect(wrapper.text()).toContain('3');
+  });
+
+  it('hides the permanently-zero Inherited tile in profile scope (no sspId, count 0)', () => {
+    const wrapper = mountPanel({ summary: summary({ inherited: 0 }) });
+    const html = wrapper.html();
+    expect(html).toContain('md:grid-cols-5');
+    expect(html).not.toContain('md:grid-cols-6');
+    // The tile-unique class; the overall bar's `bg-purple-500` still renders.
+    expect(html).not.toContain('border-purple-200');
+  });
+
+  it('keeps the Inherited tile in SSP scope even when the count is zero', () => {
+    const wrapper = mountPanel({
+      sspId: 'ssp-1',
+      summary: summary({ inherited: 0 }),
+    });
+    const html = wrapper.html();
+    expect(html).toContain('md:grid-cols-6');
+    expect(html).toContain('border-purple-200');
   });
 
   it('renders the Inherited status pill for a computedStatus="inherited" control', () => {

@@ -1,6 +1,9 @@
 <template>
   <div class="space-y-6">
-    <div class="grid grid-cols-1 gap-4 md:grid-cols-6">
+    <div
+      class="grid grid-cols-1 gap-4"
+      :class="showInheritedTile ? 'md:grid-cols-6' : 'md:grid-cols-5'"
+    >
       <div class="rounded-lg border border-emerald-200 bg-emerald-50 p-4">
         <p class="text-xs uppercase tracking-wide text-emerald-700">
           Satisfied
@@ -9,7 +12,10 @@
           {{ summary.satisfied }}
         </p>
       </div>
-      <div class="rounded-lg border border-purple-200 bg-purple-50 p-4">
+      <div
+        v-if="showInheritedTile"
+        class="rounded-lg border border-purple-200 bg-purple-50 p-4"
+      >
         <p class="text-xs uppercase tracking-wide text-purple-700">Inherited</p>
         <p class="mt-2 text-3xl font-semibold text-purple-800">
           {{ summary.inherited ?? 0 }}
@@ -302,6 +308,13 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const summaryWidths = computed(() => computeComplianceWidths(props.summary));
+
+// The Inherited tile only carries meaning when the compliance query is SSP-scoped
+// (Contract A populates `inherited` only when sspId is set) or when the count is
+// non-zero. In profile scope it would read a permanent "Inherited: 0", so hide it.
+const showInheritedTile = computed(
+  () => !!props.sspId || (props.summary.inherited ?? 0) > 0,
+);
 
 function groupWidths(group: ProfileComplianceGroup) {
   return computeComplianceWidths(group);
