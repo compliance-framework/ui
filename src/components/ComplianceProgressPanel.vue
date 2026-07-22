@@ -1,12 +1,18 @@
 <template>
   <div class="space-y-6">
-    <div class="grid grid-cols-1 gap-4 md:grid-cols-5">
+    <div class="grid grid-cols-1 gap-4 md:grid-cols-6">
       <div class="rounded-lg border border-emerald-200 bg-emerald-50 p-4">
         <p class="text-xs uppercase tracking-wide text-emerald-700">
           Satisfied
         </p>
         <p class="mt-2 text-3xl font-semibold text-emerald-800">
           {{ summary.satisfied }}
+        </p>
+      </div>
+      <div class="rounded-lg border border-purple-200 bg-purple-50 p-4">
+        <p class="text-xs uppercase tracking-wide text-purple-700">Inherited</p>
+        <p class="mt-2 text-3xl font-semibold text-purple-800">
+          {{ summary.inherited ?? 0 }}
         </p>
       </div>
       <div class="rounded-lg border border-red-200 bg-red-50 p-4">
@@ -50,6 +56,10 @@
           :style="{ width: `${summaryWidths.satisfied}%` }"
         ></div>
         <div
+          class="bg-purple-500"
+          :style="{ width: `${summaryWidths.inherited}%` }"
+        ></div>
+        <div
           class="bg-red-500"
           :style="{ width: `${summaryWidths.notSatisfied}%` }"
         ></div>
@@ -62,6 +72,10 @@
         <span class="inline-flex items-center gap-2">
           <span class="h-2.5 w-2.5 rounded-full bg-emerald-600"></span>
           Satisfied
+        </span>
+        <span class="inline-flex items-center gap-2">
+          <span class="h-2.5 w-2.5 rounded-full bg-purple-500"></span>
+          Inherited
         </span>
         <span class="inline-flex items-center gap-2">
           <span class="h-2.5 w-2.5 rounded-full bg-red-500"></span>
@@ -118,6 +132,10 @@
                 :style="{ width: `${groupWidths(group).satisfied}%` }"
               ></div>
               <div
+                class="h-full bg-purple-500"
+                :style="{ width: `${groupWidths(group).inherited}%` }"
+              ></div>
+              <div
                 class="h-full bg-red-500"
                 :style="{ width: `${groupWidths(group).notSatisfied}%` }"
               ></div>
@@ -130,6 +148,9 @@
               class="mt-2 flex flex-wrap items-center gap-4 text-xs text-zinc-600"
             >
               <span>{{ group.satisfied }} satisfied</span>
+              <span v-if="(group.inherited ?? 0) > 0"
+                >{{ group.inherited ?? 0 }} inherited</span
+              >
               <span>{{ group.notSatisfied }} not satisfied</span>
               <span>{{ group.unknown }} unknown</span>
               <span v-if="implementation && groupNotImplementedCount">
@@ -186,8 +207,32 @@
           <tbody class="divide-y divide-zinc-100">
             <tr v-for="control in controls" :key="controlKey(control)">
               <td class="px-3 py-2">
-                <div class="font-medium text-zinc-900">
-                  {{ control.controlId }}
+                <div class="flex flex-wrap items-center gap-2">
+                  <span class="font-medium text-zinc-900">
+                    {{ control.controlId }}
+                  </span>
+                  <!-- Inherited badge → links to the Inherited Capabilities tab
+                       when SSP-scoped; a plain badge otherwise (profile scope). -->
+                  <template v-if="control.leverage">
+                    <RouterLink
+                      v-if="sspId"
+                      :to="{
+                        name: 'system-security-plan-inherited-capabilities',
+                        params: { id: sspId },
+                      }"
+                      class="inline-flex rounded-full px-2 py-0.5 text-xs font-medium"
+                      :class="leverageBadge(control.leverage).class"
+                      v-tooltip.top="leverageTooltip(control.leverage)"
+                      >{{ leverageBadge(control.leverage).label }}</RouterLink
+                    >
+                    <span
+                      v-else
+                      class="inline-flex rounded-full px-2 py-0.5 text-xs font-medium"
+                      :class="leverageBadge(control.leverage).class"
+                      v-tooltip.top="leverageTooltip(control.leverage)"
+                      >{{ leverageBadge(control.leverage).label }}</span
+                    >
+                  </template>
                 </div>
                 <div class="text-zinc-600">{{ control.title }}</div>
               </td>
@@ -232,6 +277,8 @@ import type {
 import {
   computeComplianceWidths,
   controlKey,
+  leverageBadge,
+  leverageTooltip,
   statusClass,
   statusCount,
   statusLabel,
@@ -245,6 +292,9 @@ interface Props {
   implementation?: ProfileComplianceImplementation;
   showDetailedGroupBreakdown?: boolean;
   groupNotImplementedCount?: (groupId: string) => number;
+  /** When set (SSP-scoped compliance), inherited badges link to that SSP's
+   *  Inherited Capabilities tab. Absent in profile scope. */
+  sspId?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
