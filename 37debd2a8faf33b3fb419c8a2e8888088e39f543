@@ -1,0 +1,2 @@
+lisa-selfreview:
+Pass 1/4 — approve, no findings. Gates green: type-check (vue-tsc --build), lint (eslint), test:unit (135 files / 1082 tests). Highest-risk item verified empirically: camelcaseStopPaths ['data.links.responsibilityPosture'] fences the UUID-keyed responsibilityPosture map through TWO array hops (data[]→links[]) while still camelCasing sibling keys — so the drawer's per-responsibility posture lookups resolve at runtime. Accepted (plan-sanctioned) trade-off left in place: ProfileComplianceView (profile scope, no sspId) shows an Inherited tile pinned at 0.
