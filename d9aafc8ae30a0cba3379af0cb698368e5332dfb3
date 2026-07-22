@@ -1,3 +1,31 @@
 lisa-design:
 - SUPERSEDES the earlier "ProfileComplianceView shows an Inherited tile pinned at 0 — accepted trade-off" decision (human-directed in PR #285 review by gusfcarvalho): ComplianceProgressPanel now HIDES the Inherited summary tile in profile scope, via `showInheritedTile = !!sspId || (summary.inherited ?? 0) > 0`, and switches the tiles grid md:grid-cols-6 ↔ md:grid-cols-5 to match. The tile still shows in SSP scope even at 0 (there "Inherited: 0" is real information). The overall-bar purple segment + legend are unchanged (zero-width in profile scope, harmless).
 - CompliancePostureWidget (dashboard) now renders the purple `inherited` bar segment too (was only 3 of 4 buckets). It is fed by the PROFILE endpoint so inherited is always 0 today (segment zero-width); rendered defensively so the bar stays gap-free if ever repointed at SSP-scoped data. Deliberately NO numeric Inherited tile added there — that would reintroduce the permanently-zero-tile problem just removed from the panel.
+
+lisa-addressed:
+---
+Comment (src/components/ComplianceProgressPanel.vue:13):
+**Low — permanently-zero "Inherited" tile in profile scope.**
+
+Because `ProfileComplianceView` shares this panel without an `sspId` (and Contract A only populates `inherited` when `sspId` is present), this 6th tile reads "Inherited: 0" for every profile-scoped view, forever. The plan explicitly flagged this "for reviewer", so raising it for a decision rather than as a defect.
+
+A one-liner hides it when it can't carry meaning:
+```html
+<div v-if="sspId || (summary.inherited ?? 0) > 0" class="rounded-lg border border-purple-200 bg-purple-50 p-4">
+```
+(and drop `md:grid-cols-6` back to `md:grid-cols-5` when the tile is absent, or keep 6 — cosmetic). Fine to leave as the accepted trade-off if you prefer; just calling the reviewer decision.
+Replies:
+**lisa implementation guidance:** Good call — taking the hide. The Inherited tile will render only when SSP-scoped (`sspId` set, where "Inherited: 0" is genuine information) or the count is > 0; the summary grid switches `md:grid-cols-6` ↔ `md:grid-cols-5` to match so there's no gap in profile scope. Recording this as the superseding decision over the earlier "accepted trade-off" note.
+
+<!-- lisa-guidance-posted -->
+---
+Comment (src/utils/compliance.ts:45):
+**Low — shared helper's semantics changed; a second consumer only renders 3 of the 4 buckets.**
+
+`computeComplianceWidths` now carves an `inherited` slice out of the remainder here (`used`/`unknown`). That's correct for `ComplianceProgressPanel`, which renders all four segments. But `CompliancePostureWidget.vue` (dashboard, lines ~87–108) also calls this helper and renders only `satisfied` / `notSatisfied` / `unknown` — 3 of 4.
+
+Safe **today**: that widget is fed by the profile endpoint (`/profiles/:id/compliance-progress`, no `sspId`), which per Contract A emits `inherited: 0`, so `inherited` contributes nothing and the bar still sums to ~100. But it's a latent coupling — if that summary ever carries `inherited > 0` (e.g. the widget is later pointed at SSP-scoped data), its bar renders short with a transparent gap and the numeric tiles wouldn't account for it either. Worth either a comment pinning the "profile scope ⇒ inherited 0" assumption, or adding the purple segment to that widget too.
+Replies:
+**lisa implementation guidance:** Fixing by adding the purple `inherited` segment to CompliancePostureWidget's bar (zero-width today — it's fed by the profile endpoint, where Contract A emits `inherited: 0`), so the bar stays correct and gap-free if the widget is ever repointed at SSP-scoped data. Also pinning the "profile scope ⇒ inherited 0" assumption with a comment. Deliberately NOT adding a numeric Inherited tile there, to avoid the same permanently-zero-tile issue raised in the panel thread.
+
+<!-- lisa-guidance-posted -->
