@@ -10,7 +10,10 @@ import {
   ACCEPTED_STYLE,
   type HeatStyle,
 } from './heatScale';
-import type { LineageNode } from '@/composables/useLineage/types';
+import type {
+  LineageNode,
+  LineageLeverageSummary,
+} from '@/composables/useLineage/types';
 
 export type LineageKind = 'structural' | 'risk' | 'evidence';
 
@@ -114,6 +117,8 @@ const EMERALD =
 const SLATE =
   'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300';
 const SKY = 'bg-sky-100 text-sky-700 dark:bg-sky-500/25 dark:text-sky-200';
+const PURPLE =
+  'bg-purple-100 text-purple-700 dark:bg-purple-500/25 dark:text-purple-200';
 
 /** Coloured badge for an evidence state. */
 export function evidenceStateBadge(status?: string): Badge {
@@ -205,6 +210,7 @@ export function implStatusLabel(state?: string): string | undefined {
 const POSTURE_BADGES: Record<string, Badge> = {
   satisfied: { label: 'Satisfied', class: EMERALD },
   'not-satisfied': { label: 'Not satisfied', class: RED },
+  inherited: { label: 'Inherited', class: PURPLE },
   attention: { label: 'Needs evidence', class: AMBER },
   'not-applicable': { label: 'Not applicable', class: GRAY_BADGE },
   planned: { label: 'Planned', class: SKY },
@@ -216,6 +222,23 @@ export function postureBadge(posture?: string): Badge {
   return (
     POSTURE_BADGES[posture ?? ''] ?? { label: posture ?? '—', class: SLATE }
   );
+}
+
+/**
+ * Non-credit leverage badge for a control's single-SSP overlay. Rendered when the
+ * control has ≥1 leverage link but its posture is NOT `inherited` — drifted/partial
+ * links get no posture credit yet still deserve an "Inherited · drifted" marker.
+ * Returns null when there is no leverage to surface.
+ */
+export function leverageBadge(lev?: LineageLeverageSummary): Badge | null {
+  if (!lev || lev.links === 0) return null;
+  if (lev.status === 'drifted')
+    return { label: 'Inherited · drifted', class: AMBER };
+  if (lev.status === 'revoked')
+    return { label: 'Inherited · revoked', class: SLATE };
+  if (lev.status === 'superseded')
+    return { label: 'Inherited · superseded', class: SLATE };
+  return { label: 'Inherited', class: PURPLE };
 }
 
 export interface PostureDisplay {
@@ -262,6 +285,18 @@ export function postureDisplay(node: LineageNode): PostureDisplay | null {
         dim: false,
         tooltip: 'Planned in this SSP — no evidence expected yet',
       };
+    case 'inherited': {
+      const lev = ssp.leverage;
+      return {
+        label: 'Inherited',
+        badgeClass: PURPLE,
+        showWarning: false,
+        dim: false,
+        tooltip: lev
+          ? `Inherited from upstream — ${lev.links} link(s), ${lev.outstandingCount}/${lev.totalResponsibilities} responsibilities outstanding`
+          : 'Fully inherited from an upstream SSP',
+      };
+    }
     case 'attention': {
       const declared = ssp.implementationStatus
         ? `declared “${POSTURE_LABELS[ssp.implementationStatus] ?? ssp.implementationStatus}”`
@@ -295,6 +330,7 @@ export interface PostureSegment {
 
 const POSTURE_SEGMENT_DEFS: { key: string; label: string; class: string }[] = [
   { key: 'satisfied', label: 'satisfied', class: 'bg-emerald-500' },
+  { key: 'inherited', label: 'inherited', class: 'bg-purple-500' },
   { key: 'attention', label: 'need evidence', class: 'bg-amber-500' },
   { key: 'notSatisfied', label: 'not satisfied', class: 'bg-red-500' },
   {
@@ -345,6 +381,7 @@ export function postureDistribution(
     // total = controls × ssps.
     const total =
       b.satisfied +
+      (b.inherited ?? 0) +
       b.notSatisfied +
       b.notApplicable +
       b.planned +
@@ -367,6 +404,7 @@ export function postureDistribution(
     const c = node.postureCounts;
     const total =
       c.satisfied +
+      (c.inherited ?? 0) +
       c.notSatisfied +
       c.notApplicable +
       c.planned +

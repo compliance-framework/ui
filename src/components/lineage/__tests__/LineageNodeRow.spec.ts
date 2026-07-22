@@ -151,3 +151,84 @@ describe('LineageNodeRow — risk & evidence nodes', () => {
     expect(html).toContain('collected');
   });
 });
+
+describe('LineageNodeRow — inherited leverage', () => {
+  it('paints a purple Inherited posture chip with no warning icon', () => {
+    const wrapper = mount(LineageNodeRow, {
+      props: {
+        node: {
+          ...node({ totalControls: 1, satisfied: 0, inherited: 1 }),
+          ssp: {
+            posture: 'inherited',
+            inProfile: true,
+            evidenceStatus: 'unknown',
+            leverage: {
+              links: 1,
+              status: 'active',
+              satisfaction: 'full',
+              outstandingCount: 0,
+              totalResponsibilities: 2,
+            },
+          },
+        },
+      },
+      global,
+    });
+    const html = wrapper.html();
+    expect(html).toContain('bg-purple-100'); // purple posture chip
+    expect(html).toContain('Inherited');
+    // No amber exclamation-triangle warning for a fully-inherited control.
+    expect(html).not.toContain('text-amber-500');
+    // The posture chip already conveys inheritance — no duplicate leverage badge.
+    expect(html).not.toContain('Inherited · drifted');
+  });
+
+  it('flags a drifted-leverage control (attention) AND badges it "Inherited · drifted"', () => {
+    const wrapper = mount(LineageNodeRow, {
+      props: {
+        node: {
+          ...node({
+            totalControls: 1,
+            satisfied: 0,
+            notSatisfied: 0,
+            unknown: 1,
+          }),
+          ssp: {
+            posture: 'attention',
+            inProfile: true,
+            evidenceStatus: 'unknown',
+            implementationStatus: 'implemented',
+            leverage: {
+              links: 1,
+              status: 'drifted',
+              satisfaction: 'partial',
+              outstandingCount: 1,
+              totalResponsibilities: 2,
+            },
+          },
+        },
+      },
+      global,
+    });
+    const html = wrapper.html();
+    // Attention treatment: amber warning still fires.
+    expect(html).toContain('text-amber-500');
+    expect(html).toContain('Needs evidence');
+    // Plus the non-credit drifted leverage badge.
+    expect(html).toContain('Inherited · drifted');
+  });
+
+  it('shows a purple inherited count in the compliance pill only when > 0', () => {
+    const withInherited = mount(LineageNodeRow, {
+      props: { node: node({ totalControls: 5, satisfied: 3, inherited: 2 }) },
+      global,
+    });
+    expect(withInherited.html()).toContain('text-purple-600');
+
+    const withoutInherited = mount(LineageNodeRow, {
+      props: { node: node({ totalControls: 5, satisfied: 5 }) },
+      global,
+    });
+    expect(withoutInherited.html()).not.toContain('text-purple-600');
+  });
+});

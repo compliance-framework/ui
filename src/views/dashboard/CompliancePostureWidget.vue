@@ -94,6 +94,12 @@
             }"
           ></div>
           <div
+            class="bg-purple-500"
+            :style="{
+              width: `${inheritedWidth(item.summary)}%`,
+            }"
+          ></div>
+          <div
             class="bg-red-500"
             :style="{
               width: `${notSatisfiedWidth(item.summary)}%`,
@@ -228,6 +234,14 @@ onMounted(async () => {
 
 function satisfiedWidth(summary: ProfileComplianceSummary): number {
   return computeComplianceWidths(summary).satisfied;
+}
+
+// This widget is fed by the PROFILE compliance endpoint (no sspId), so Contract A
+// always emits `inherited: 0` and this segment is zero-width today. It is rendered
+// anyway so the bar stays correct (sums to ~100, no transparent gap) if the widget
+// is ever repointed at SSP-scoped data where inherited > 0.
+function inheritedWidth(summary: ProfileComplianceSummary): number {
+  return computeComplianceWidths(summary).inherited;
 }
 
 function notSatisfiedWidth(summary: ProfileComplianceSummary): number {

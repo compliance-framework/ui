@@ -2,11 +2,37 @@ import { describe, expect, it } from 'vitest';
 import {
   computeComplianceWidths,
   controlKey,
+  leverageBadge,
+  leverageTooltip,
   percent,
   statusClass,
   statusCount,
   statusLabel,
 } from './compliance';
+import type { ProfileComplianceControlLeverage } from '@/types/compliance';
+
+function leverage(
+  over: Partial<ProfileComplianceControlLeverage> = {},
+): ProfileComplianceControlLeverage {
+  return {
+    inherited: true,
+    satisfaction: 'full',
+    status: 'active',
+    links: 1,
+    outstandingCount: 0,
+    totalResponsibilities: 3,
+    inheritedFrom: [
+      {
+        upstreamSspId: 'ssp-up',
+        upstreamSspTitle: 'Platform SSP',
+        offeringId: 'off-1',
+        offeringTitle: 'Managed Postgres',
+        offeringVersion: 2,
+      },
+    ],
+    ...over,
+  };
+}
 
 describe('compliance utils', () => {
   it('computes widths from summary values', () => {
@@ -18,6 +44,7 @@ describe('compliance utils', () => {
       }),
     ).toEqual({
       satisfied: 33,
+      inherited: 0,
       notSatisfied: 33,
       unknown: 34,
     });
@@ -26,6 +53,7 @@ describe('compliance utils', () => {
   it('returns zero widths when summary is missing', () => {
     expect(computeComplianceWidths()).toEqual({
       satisfied: 0,
+      inherited: 0,
       notSatisfied: 0,
       unknown: 0,
     });
@@ -40,8 +68,25 @@ describe('compliance utils', () => {
       }),
     ).toEqual({
       satisfied: 100,
+      inherited: 0,
       notSatisfied: 0,
       unknown: 0,
+    });
+  });
+
+  it('inserts an inherited segment between satisfied and not-satisfied', () => {
+    expect(
+      computeComplianceWidths({
+        totalControls: 10,
+        satisfied: 4,
+        inherited: 2,
+        notSatisfied: 2,
+      }),
+    ).toEqual({
+      satisfied: 40,
+      inherited: 20,
+      notSatisfied: 20,
+      unknown: 20,
     });
   });
 
@@ -80,10 +125,64 @@ describe('compliance utils', () => {
   it('maps status display classes and labels', () => {
     expect(statusClass('satisfied')).toBe('bg-emerald-100 text-emerald-800');
     expect(statusClass('not-satisfied')).toBe('bg-red-100 text-red-800');
+    expect(statusClass('inherited')).toBe('bg-purple-100 text-purple-800');
     expect(statusClass('anything-else')).toBe('bg-slate-100 text-slate-800');
 
     expect(statusLabel('satisfied')).toBe('Satisfied');
     expect(statusLabel('not-satisfied')).toBe('Not Satisfied');
+    expect(statusLabel('inherited')).toBe('Inherited');
     expect(statusLabel('anything-else')).toBe('Unknown');
+  });
+
+  it('badges leverage by status (purple active, amber drift, slate revoked)', () => {
+    expect(leverageBadge(leverage({ status: 'active' }))).toEqual({
+      label: 'Inherited',
+      class: expect.stringContaining('purple'),
+    });
+    expect(leverageBadge(leverage({ status: 'drifted' }))).toEqual({
+      label: 'Inherited · drifted',
+      class: expect.stringContaining('amber'),
+    });
+    expect(leverageBadge(leverage({ status: 'revoked' }))).toEqual({
+      label: 'Inherited · revoked',
+      class: expect.stringContaining('slate'),
+    });
+    expect(leverageBadge(leverage({ status: 'superseded' })).label).toBe(
+      'Inherited · superseded',
+    );
+  });
+
+  it('builds a leverage tooltip naming the upstream SSP, offering and outstanding count', () => {
+    expect(leverageTooltip(leverage({ outstandingCount: 1 }))).toBe(
+      'From Platform SSP — Managed Postgres v2 · 1/3 responsibilities outstanding',
+    );
+  });
+
+  it('joins multiple leverage origins and appends a drift hint', () => {
+    const tip = leverageTooltip(
+      leverage({
+        status: 'drifted',
+        inheritedFrom: [
+          {
+            upstreamSspId: 'a',
+            upstreamSspTitle: 'Platform SSP',
+            offeringId: 'o1',
+            offeringTitle: 'Managed Postgres',
+            offeringVersion: 2,
+          },
+          {
+            upstreamSspId: 'b',
+            upstreamSspTitle: 'Network SSP',
+            offeringId: 'o2',
+            offeringTitle: 'Managed VPC',
+            offeringVersion: 5,
+          },
+        ],
+      }),
+    );
+    expect(tip).toContain(
+      'From Platform SSP — Managed Postgres v2; From Network SSP — Managed VPC v5',
+    );
+    expect(tip).toContain('· drifted — re-attest needed');
   });
 });

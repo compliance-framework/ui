@@ -18,6 +18,9 @@ export interface LineageCompliance {
   satisfied: number;
   notSatisfied: number;
   unknown: number;
+  // Controls fully guaranteed by an upstream SSP. `compliancePercent` counts these
+  // as compliant, `assessedPercent` as assessed. Optional: older builds omit it.
+  inherited?: number;
   compliancePercent: number;
   assessedPercent: number;
 }
@@ -53,9 +56,24 @@ export type LineagePosture =
   | 'out-of-scope'
   | 'satisfied'
   | 'not-satisfied'
+  | 'inherited'
   | 'not-applicable'
   | 'planned'
   | 'attention';
+
+/**
+ * Compact leverage summary carried on a control's single-SSP overlay (present
+ * whenever ≥1 leverage link exists, whether or not it earns the `inherited`
+ * posture). Drives the "Inherited"/"Inherited · drifted" badge. Values are
+ * strings to tolerate future statuses without a type bump.
+ */
+export interface LineageLeverageSummary {
+  links: number;
+  status: string;
+  satisfaction: string;
+  outstandingCount: number;
+  totalResponsibilities: number;
+}
 
 export interface LineageSSPStatus {
   posture: LineagePosture | string;
@@ -64,6 +82,8 @@ export interface LineageSSPStatus {
   evidenceStatus: string;
   /** Uniform implementation status, or '' when undeclared/mixed. */
   implementationStatus?: string;
+  /** Present whenever ≥1 leverage link exists (credit or not). */
+  leverage?: LineageLeverageSummary;
 }
 
 /** Tally of a structural node's own controls' postures in the selected SSP. */
@@ -74,6 +94,8 @@ export interface LineagePostureCounts {
   planned: number;
   attention: number;
   outOfScope: number;
+  /** Controls fully inherited from upstream. Optional: older builds omit it. */
+  inherited?: number;
 }
 
 /** One row of the drawer's per-SSP table for a control (GET /nodes/:key/ssps). */
@@ -86,6 +108,8 @@ export interface LineageSSPRow {
   evidenceStatus: string;
   /** Declared implementation status, or '' when undeclared/mixed. */
   implementationStatus?: string;
+  /** Present whenever ≥1 leverage link exists (credit or not). */
+  leverage?: LineageLeverageSummary;
 }
 
 /** Cross-SSP posture breakdown for a control in the global (no-SSP) view. */
@@ -97,6 +121,51 @@ export interface LineageSSPBreakdown {
   notApplicable: number;
   planned: number;
   attention: number;
+  /** Controls fully inherited from upstream. Optional: older builds omit it. */
+  inherited?: number;
+}
+
+// --- Contract C: GET /api/lineage/nodes/:key/leverage (drawer detail) ---------
+
+export interface LineageLeverageInheritedFrom {
+  upstreamSspId: string;
+  upstreamSspTitle: string;
+  offeringId: string;
+  offeringTitle: string;
+  offeringVersion: number;
+}
+
+/**
+ * One leverage link, byte-for-byte the `leveragedControlResponse` projection plus
+ * `upstreamSspTitle` inside `inheritedFrom`. `responsibilityPosture` is UUID-keyed —
+ * it MUST be fenced from the axios camelCase interceptor.
+ */
+export interface LineageLeverageLink {
+  id: string;
+  controlId: string;
+  statementId?: string;
+  inheritedFrom: LineageLeverageInheritedFrom;
+  providedUuid: string;
+  byComponentId?: string;
+  satisfaction: 'full' | 'partial';
+  status: 'active' | 'drifted' | 'revoked' | 'superseded';
+  responsibilities: { responsibilityUuid: string; description: string }[];
+  outstandingResponsibilities: {
+    responsibilityUuid: string;
+    description: string;
+  }[];
+  responsibilityPosture: Record<
+    string,
+    'satisfied' | 'not-satisfied' | 'unknown'
+  >;
+  driftRiskId?: string;
+}
+
+/** One downstream SSP's leverage links for a control (drawer detail rows). */
+export interface LineageLeverageRow {
+  sspId: string;
+  sspTitle: string;
+  links: LineageLeverageLink[];
 }
 
 export interface LineageNode {

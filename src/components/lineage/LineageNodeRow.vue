@@ -17,6 +17,7 @@ import {
   formatDate,
   postureDisplay,
   postureDistribution,
+  leverageBadge,
 } from './nodeMeta';
 import PostureBar from './PostureBar.vue';
 import type { LineageNode } from '@/composables/useLineage/types';
@@ -121,6 +122,22 @@ const posture = computed(() => postureDisplay(props.node));
 // A structural node's control tally or a control's cross-SSP breakdown, rendered
 // as one stacked posture bar (compact in the row, full-width on the card).
 const distribution = computed(() => postureDistribution(props.node));
+// Non-credit leverage badge (drifted/partial links). Suppressed when the posture is
+// already `inherited` so the purple posture chip isn't doubled by an Inherited badge.
+const leverageBadgeVal = computed(() =>
+  props.node.ssp?.posture === 'inherited'
+    ? null
+    : leverageBadge(props.node.ssp?.leverage),
+);
+const leverageTip = computed(() => {
+  const lev = props.node.ssp?.leverage;
+  if (!lev) return '';
+  const base = `Inherited from upstream — ${lev.links} link(s), ${lev.outstandingCount}/${lev.totalResponsibilities} responsibilities outstanding`;
+  if (lev.status === 'drifted') return `${base} · drifted — re-attest needed`;
+  if (lev.status === 'revoked') return `${base} · access revoked`;
+  if (lev.status === 'superseded') return `${base} · offering superseded`;
+  return base;
+});
 
 const warning = computed(() => {
   // In SSP scope the posture decides whether to flag the node at all.
@@ -275,7 +292,7 @@ const chipBase =
               : 'bg-surface-100 dark:bg-surface-800'
           "
           v-tooltip.top="
-            `${node.compliance.satisfied} satisfied · ${node.compliance.notSatisfied} not satisfied · ${node.compliance.unknown} unknown of ${node.compliance.totalControls}`
+            `${node.compliance.satisfied} satisfied · ${node.compliance.inherited ?? 0} inherited · ${node.compliance.notSatisfied} not satisfied · ${node.compliance.unknown} unknown of ${node.compliance.totalControls}`
           "
         >
           <BIconCheckCircleFill
@@ -295,6 +312,12 @@ const chipBase =
           <span class="font-medium text-emerald-600 dark:text-emerald-400">{{
             node.compliance.satisfied
           }}</span>
+          <template v-if="(node.compliance.inherited ?? 0) > 0">
+            <span class="text-surface-300">/</span>
+            <span class="font-medium text-purple-600 dark:text-purple-400">{{
+              node.compliance.inherited ?? 0
+            }}</span>
+          </template>
           <span class="text-surface-300">/</span>
           <span class="font-medium text-red-600 dark:text-red-400">{{
             node.compliance.notSatisfied
@@ -313,6 +336,15 @@ const chipBase =
           :class="[badgeBase, posture.badgeClass]"
           v-tooltip.top="posture.tooltip"
           >{{ posture.label }}</span
+        >
+
+        <!-- Non-credit leverage badge (drifted/partial links): the posture chip
+             already covers the fully-inherited case, so this only fires otherwise. -->
+        <span
+          v-if="leverageBadgeVal"
+          :class="[badgeBase, leverageBadgeVal.class]"
+          v-tooltip.top="leverageTip"
+          >{{ leverageBadgeVal.label }}</span
         >
 
         <!-- Posture distribution (structural tally, or a control's cross-SSP
