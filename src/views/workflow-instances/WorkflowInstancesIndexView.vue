@@ -47,7 +47,7 @@
         />
       </div>
       <Select
-        v-model="statusFilter"
+        v-model="activeFilter"
         :options="statusOptions"
         optionLabel="label"
         optionValue="value"
@@ -160,12 +160,8 @@
               </span>
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
-              <Badge
-                :severity="
-                  instance.status === 'active' ? 'success' : 'secondary'
-                "
-              >
-                {{ instance.status }}
+              <Badge :severity="instance.isActive ? 'success' : 'secondary'">
+                {{ instance.isActive ? 'active' : 'inactive' }}
               </Badge>
             </td>
             <td
@@ -182,7 +178,8 @@
                   size="small"
                   @click="handleExecute(instance)"
                   :disabled="
-                    instance.status !== 'active' ||
+                    isExecuting ||
+                    !instance.isActive ||
                     !can(RESOURCES.WORKFLOW_EXECUTION, ACTIONS.CREATE)
                   "
                   v-tooltip.top="{
@@ -241,48 +238,6 @@
         @cancel="setCreating(false)"
       />
     </Dialog>
-    <!-- Execute Confirmation Dialog -->
-    <Dialog
-      header="Execute Workflow"
-      :draggable="false"
-      v-model:visible="showExecuteDialog"
-      modal
-      class="w-full max-w-md"
-    >
-      <div class="space-y-4">
-        <p>
-          Are you sure you want to start a new execution of
-          <strong>{{ executingInstance?.name }}</strong
-          >?
-        </p>
-        <p class="text-sm text-gray-500 dark:text-slate-400">
-          This will create tasks for all defined steps in the workflow.
-        </p>
-        <div
-          class="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-slate-700"
-        >
-          <SecondaryButton @click="showExecuteDialog = false">
-            Cancel
-          </SecondaryButton>
-          <PrimaryButton
-            @click="confirmExecute"
-            :disabled="
-              isExecuting || !can(RESOURCES.WORKFLOW_EXECUTION, ACTIONS.CREATE)
-            "
-            v-tooltip.top="{
-              value: permissionTooltip(
-                RESOURCES.WORKFLOW_EXECUTION,
-                ACTIONS.CREATE,
-              ),
-              disabled: can(RESOURCES.WORKFLOW_EXECUTION, ACTIONS.CREATE),
-            }"
-          >
-            <i v-if="isExecuting" class="pi pi-spin pi-spinner mr-2"></i>
-            Start Execution
-          </PrimaryButton>
-        </div>
-      </div>
-    </Dialog>
   </div>
 </template>
 
@@ -294,11 +249,7 @@ import {
   useWorkflowDefinitions,
   useWorkflowExecutions,
 } from '@/composables/workflows';
-import type {
-  WorkflowInstance,
-  WorkflowInstanceStatus,
-  CadenceType,
-} from '@/types/workflows';
+import type { WorkflowInstance, CadenceType } from '@/types/workflows';
 import PageHeader from '@/components/PageHeader.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
@@ -310,7 +261,6 @@ import Dialog from '@/volt/Dialog.vue';
 import Message from '@/volt/Message.vue';
 import WorkflowInstanceCreateForm from './partials/WorkflowInstanceCreateForm.vue';
 import { useToggle } from '@/composables/useToggle';
-import { useToast } from 'primevue/usetoast';
 import { useSystemStore } from '@/stores/system';
 import { usePermissions } from '@/composables/usePermissions';
 import { RESOURCES, ACTIONS } from '@/constants/permissions';
@@ -318,7 +268,6 @@ import { RESOURCES, ACTIONS } from '@/constants/permissions';
 const { can, permissionTooltip } = usePermissions();
 
 const router = useRouter();
-const toast = useToast();
 
 const { instances, instancesLoaded, listInstances, deleteInstance } =
   useWorkflowInstances();
@@ -339,15 +288,13 @@ const sspId = computed(() => systemStore.system?.securityPlan?.uuid || '');
 const hasSSP = computed(() => !!sspId.value);
 
 const definitionFilter = ref<string | null>(null);
-const statusFilter = ref<WorkflowInstanceStatus | null>(null);
+const activeFilter = ref<boolean | null>(null);
 
-const showExecuteDialog = ref(false);
-const executingInstance = ref<WorkflowInstance | null>(null);
 const isExecuting = ref(false);
 
 const statusOptions = [
-  { label: 'Active', value: 'active' },
-  { label: 'Inactive', value: 'inactive' },
+  { label: 'Active', value: true },
+  { label: 'Inactive', value: false },
 ];
 
 function formatCadence(cadence: CadenceType): string {
@@ -375,7 +322,7 @@ async function loadInstances() {
 
   await listInstances({
     workflowDefinitionId: definitionFilter.value || undefined,
-    status: statusFilter.value || undefined,
+    isActive: activeFilter.value ?? undefined,
     systemId: sspId.value,
   });
 }
@@ -397,33 +344,20 @@ async function handleDelete(instance: WorkflowInstance) {
   });
 }
 
-function handleExecute(instance: WorkflowInstance) {
-  executingInstance.value = instance;
-  showExecuteDialog.value = true;
-}
-
-async function confirmExecute() {
-  if (!executingInstance.value) return;
-
+async function handleExecute(instance: WorkflowInstance) {
   isExecuting.value = true;
   try {
     await startExecution(
-      { workflowInstanceId: executingInstance.value.id },
+      { workflowInstanceId: instance.id },
       (exec) => {
-        toast.add({
-          severity: 'success',
-          summary: 'Execution Started',
-          detail: 'Workflow execution has been started',
-          life: 3000,
-        });
         // Navigate to execution view
         router.push({
           name: 'workflow-execution-view',
           params: { id: exec.id },
         });
       },
+      `Are you sure you want to start a new execution of "${instance.name}"? This will create tasks for all defined steps.`,
     );
-    showExecuteDialog.value = false;
   } catch {
     // Error handled by composable
   } finally {

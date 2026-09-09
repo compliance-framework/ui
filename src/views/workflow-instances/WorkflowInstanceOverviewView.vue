@@ -165,8 +165,8 @@
         </div>
         <div>
           <dt class="text-gray-500 dark:text-slate-400">Status</dt>
-          <dd class="text-gray-900 dark:text-slate-200 capitalize">
-            {{ store.instance.status }}
+          <dd class="text-gray-900 dark:text-slate-200">
+            {{ store.isActive ? 'Active' : 'Inactive' }}
           </dd>
         </div>
         <div v-if="store.instance.systemId">

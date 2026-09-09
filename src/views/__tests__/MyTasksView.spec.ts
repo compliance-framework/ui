@@ -53,7 +53,7 @@ function createStep(
         workflowDefinitionId: 'wf-1',
         name: 'Monthly Access Review',
         cadence: 'monthly',
-        status: 'active',
+        isActive: true,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       },
