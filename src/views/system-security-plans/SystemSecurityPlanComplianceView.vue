@@ -49,6 +49,7 @@
       :summary="summary"
       :controls="controls"
       :groups="groups"
+      :ssp-id="sspId"
       :implementation="progress?.implementation"
       progress-title="Overall Compliance Progress"
       :show-detailed-group-breakdown="true"

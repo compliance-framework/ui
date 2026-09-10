@@ -19,6 +19,7 @@ import {
   postureDistribution,
   postureBadge,
   implStatusLabel,
+  leverageBadge,
 } from '../nodeMeta';
 import type { LineageNode } from '@/composables/useLineage/types';
 
@@ -497,5 +498,157 @@ describe('implStatusLabel', () => {
     expect(implStatusLabel('')).toBeUndefined();
     expect(implStatusLabel('   ')).toBeUndefined();
     expect(implStatusLabel(undefined)).toBeUndefined();
+  });
+});
+
+describe('postureBadge / postureDisplay — inherited', () => {
+  it('badges the inherited posture purple', () => {
+    expect(postureBadge('inherited')).toEqual(
+      expect.objectContaining({ label: 'Inherited' }),
+    );
+    expect(postureBadge('inherited').class).toContain('purple');
+  });
+
+  it('displays an inherited overlay with no warning and no dim', () => {
+    const d = postureDisplay(
+      base({
+        ssp: {
+          posture: 'inherited',
+          inProfile: true,
+          evidenceStatus: 'unknown',
+          leverage: {
+            links: 1,
+            status: 'active',
+            satisfaction: 'full',
+            outstandingCount: 1,
+            totalResponsibilities: 3,
+          },
+        },
+      }),
+    );
+    expect(d?.label).toBe('Inherited');
+    expect(d?.showWarning).toBe(false);
+    expect(d?.dim).toBe(false);
+    expect(d?.badgeClass).toContain('purple');
+    expect(d?.tooltip).toContain('1/3 responsibilities outstanding');
+  });
+
+  it('falls back to a generic tooltip when the leverage summary is absent', () => {
+    const d = postureDisplay(
+      base({
+        ssp: {
+          posture: 'inherited',
+          inProfile: true,
+          evidenceStatus: 'unknown',
+        },
+      }),
+    );
+    expect(d?.tooltip).toBe('Fully inherited from an upstream SSP');
+  });
+});
+
+describe('leverageBadge (lineage)', () => {
+  it('is null with no leverage or zero links', () => {
+    expect(leverageBadge(undefined)).toBeNull();
+    expect(
+      leverageBadge({
+        links: 0,
+        status: 'active',
+        satisfaction: 'full',
+        outstandingCount: 0,
+        totalResponsibilities: 0,
+      }),
+    ).toBeNull();
+  });
+
+  it('is plain purple Inherited for an active link', () => {
+    const b = leverageBadge({
+      links: 1,
+      status: 'active',
+      satisfaction: 'full',
+      outstandingCount: 0,
+      totalResponsibilities: 2,
+    });
+    expect(b?.label).toBe('Inherited');
+    expect(b?.class).toContain('purple');
+  });
+
+  it('is amber for drifted and slate for revoked', () => {
+    expect(
+      leverageBadge({
+        links: 1,
+        status: 'drifted',
+        satisfaction: 'partial',
+        outstandingCount: 1,
+        totalResponsibilities: 2,
+      }),
+    ).toEqual({
+      label: 'Inherited · drifted',
+      class: expect.stringContaining('amber'),
+    });
+    expect(
+      leverageBadge({
+        links: 1,
+        status: 'revoked',
+        satisfaction: 'full',
+        outstandingCount: 0,
+        totalResponsibilities: 2,
+      }),
+    ).toEqual({
+      label: 'Inherited · revoked',
+      class: expect.stringContaining('slate'),
+    });
+  });
+});
+
+describe('posture distribution — inherited bucket', () => {
+  it('includes an inherited segment in fixed order (after satisfied)', () => {
+    const segs = postureSegments({
+      satisfied: 2,
+      inherited: 3,
+      attention: 0,
+      notSatisfied: 0,
+      notApplicable: 0,
+      planned: 0,
+      outOfScope: 0,
+    });
+    expect(segs.map((s) => s.key)).toEqual(['satisfied', 'inherited']);
+    expect(segs.find((s) => s.key === 'inherited')?.class).toContain('purple');
+  });
+
+  it('counts inherited cells into the breakdown total', () => {
+    const d = postureDistribution(
+      base({
+        sspBreakdown: {
+          totalSsps: 4,
+          outOfScope: 0,
+          satisfied: 1,
+          inherited: 2,
+          notSatisfied: 0,
+          notApplicable: 1,
+          planned: 0,
+          attention: 0,
+        },
+      }),
+    );
+    expect(d?.total).toBe(4);
+    expect(d?.segments.find((s) => s.key === 'inherited')?.count).toBe(2);
+  });
+
+  it('tolerates a breakdown with no inherited field', () => {
+    const d = postureDistribution(
+      base({
+        postureCounts: {
+          satisfied: 2,
+          notSatisfied: 1,
+          notApplicable: 0,
+          planned: 0,
+          attention: 0,
+          outOfScope: 0,
+        },
+      }),
+    );
+    expect(d?.total).toBe(3);
+    expect(d?.segments.some((s) => s.key === 'inherited')).toBe(false);
   });
 });
