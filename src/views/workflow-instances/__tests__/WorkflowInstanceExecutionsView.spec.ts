@@ -10,7 +10,7 @@ const mockStore = reactive({
     name: 'Test Instance',
     workflowDefinitionId: 'def-1',
     cadence: 'monthly',
-    status: 'active',
+    isActive: true,
     createdAt: '2026-01-01T00:00:00.000Z',
     updatedAt: '2026-01-01T00:00:00.000Z',
   } as WorkflowInstance | null,
@@ -76,7 +76,7 @@ describe('WorkflowInstanceExecutionsView', () => {
       name: 'Test Instance',
       workflowDefinitionId: 'def-1',
       cadence: 'monthly',
-      status: 'active',
+      isActive: true,
       createdAt: '2026-01-01T00:00:00.000Z',
       updatedAt: '2026-01-01T00:00:00.000Z',
     };

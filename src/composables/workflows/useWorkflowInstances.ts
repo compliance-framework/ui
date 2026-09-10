@@ -128,7 +128,8 @@ export function useWorkflowInstances() {
       queryParams.append('workflow_definition_id', params.workflowDefinitionId);
     if (params?.systemId) queryParams.append('system_id', params.systemId);
     if (params?.controlId) queryParams.append('control_id', params.controlId);
-    if (params?.status) queryParams.append('status', params.status);
+    if (params?.isActive !== undefined)
+      queryParams.append('is_active', String(params.isActive));
 
     const url = queryParams.toString()
       ? `${BASE_URL}?${queryParams}`

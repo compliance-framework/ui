@@ -1,31 +1,13 @@
 <template>
   <div v-if="store.instance" class="space-y-6">
     <!-- Header -->
-    <div class="flex justify-between items-center">
-      <div>
-        <h3 class="text-lg font-medium text-gray-900 dark:text-slate-200">
-          Execution History
-        </h3>
-        <p class="text-sm text-gray-500 dark:text-slate-400">
-          View past and current workflow executions
-        </p>
-      </div>
-      <PrimaryButton
-        @click="handleExecute"
-        :disabled="
-          !store.isActive || !can(RESOURCES.WORKFLOW_EXECUTION, ACTIONS.CREATE)
-        "
-        v-tooltip.top="{
-          value: permissionTooltip(
-            RESOURCES.WORKFLOW_EXECUTION,
-            ACTIONS.CREATE,
-          ),
-          disabled: can(RESOURCES.WORKFLOW_EXECUTION, ACTIONS.CREATE),
-        }"
-      >
-        <i class="pi pi-play mr-2"></i>
-        Execute Now
-      </PrimaryButton>
+    <div>
+      <h3 class="text-lg font-medium text-gray-900 dark:text-slate-200">
+        Execution History
+      </h3>
+      <p class="text-sm text-gray-500 dark:text-slate-400">
+        View past and current workflow executions
+      </p>
     </div>
 
     <!-- Empty State -->
@@ -121,70 +103,17 @@
         </tbody>
       </table>
     </div>
-
-    <!-- Execute Confirmation Dialog -->
-    <Dialog
-      header="Execute Workflow"
-      :draggable="false"
-      v-model:visible="showExecuteDialog"
-      modal
-      class="w-full max-w-md"
-    >
-      <div class="space-y-4">
-        <p>Are you sure you want to start a new execution of this workflow?</p>
-        <p class="text-sm text-gray-500 dark:text-slate-400">
-          This will create tasks for all defined steps in the workflow.
-        </p>
-        <div
-          class="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-slate-700"
-        >
-          <SecondaryButton @click="showExecuteDialog = false">
-            Cancel
-          </SecondaryButton>
-          <PrimaryButton
-            @click="confirmExecute"
-            :disabled="
-              isExecuting || !can(RESOURCES.WORKFLOW_EXECUTION, ACTIONS.CREATE)
-            "
-            v-tooltip.top="{
-              value: permissionTooltip(
-                RESOURCES.WORKFLOW_EXECUTION,
-                ACTIONS.CREATE,
-              ),
-              disabled: can(RESOURCES.WORKFLOW_EXECUTION, ACTIONS.CREATE),
-            }"
-          >
-            <i v-if="isExecuting" class="pi pi-spin pi-spinner mr-2"></i>
-            Start Execution
-          </PrimaryButton>
-        </div>
-      </div>
-    </Dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import { useRouter } from 'vue-router';
+import { computed } from 'vue';
 import { useWorkflowInstanceStore } from '@/stores/workflows/instances';
-import { useWorkflowExecutions } from '@/composables/workflows';
 import type { WorkflowExecutionStatus } from '@/types/workflows';
-import PrimaryButton from '@/volt/PrimaryButton.vue';
-import SecondaryButton from '@/volt/SecondaryButton.vue';
 import RouterLinkButton from '@/components/RouterLinkButton.vue';
 import Badge from '@/volt/Badge.vue';
-import Dialog from '@/volt/Dialog.vue';
-import { usePermissions } from '@/composables/usePermissions';
-import { RESOURCES, ACTIONS } from '@/constants/permissions';
 
-const { can, permissionTooltip } = usePermissions();
-
-const router = useRouter();
 const store = useWorkflowInstanceStore();
-const { startExecution } = useWorkflowExecutions();
-
-const showExecuteDialog = ref(false);
-const isExecuting = ref(false);
 
 const sortedExecutions = computed(() => {
   return [...store.executions].sort((a, b) => {
@@ -214,32 +143,5 @@ function getStatusSeverity(
     cancelled: 'warn',
   };
   return severities[status] || 'secondary';
-}
-
-function handleExecute() {
-  showExecuteDialog.value = true;
-}
-
-async function confirmExecute() {
-  if (!store.instance) return;
-
-  isExecuting.value = true;
-  try {
-    await startExecution(
-      { workflowInstanceId: store.instance.id },
-      (execution) => {
-        store.addExecutionLocally(execution);
-        showExecuteDialog.value = false;
-        router.push({
-          name: 'workflow-execution-view',
-          params: { id: execution.id },
-        });
-      },
-    );
-  } catch {
-    // Error handled by composable
-  } finally {
-    isExecuting.value = false;
-  }
 }
 </script>

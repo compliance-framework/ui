@@ -125,16 +125,21 @@ export function useWorkflowExecutions() {
   }
 
   /**
-   * Start a new workflow execution (manual trigger)
+   * Start a new workflow execution (manual trigger). Confirms with the user
+   * before doing anything - callers should not wrap this in their own
+   * confirmation dialog. Pass confirmMessage to customize the prompt (e.g. to
+   * name the instance being executed).
    */
   async function startExecution(
     data: WorkflowExecutionCreate,
     onSuccess?: (execution: WorkflowExecution) => void,
+    confirmMessage?: string,
   ) {
     return new Promise<WorkflowExecution | undefined>((resolve, reject) => {
       confirm.require({
         message:
-          'Are you sure you want to start this workflow execution? This will create tasks for all defined steps.',
+          confirmMessage ||
+          'Are you sure you want to start this workflow execution?',
         header: 'Start Workflow Execution',
         rejectProps: { label: 'Cancel', severity: 'secondary' },
         acceptProps: { label: 'Start Execution', severity: 'primary' },

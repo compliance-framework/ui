@@ -10,8 +10,6 @@
 
 export type WorkflowDefinitionStatus = 'draft' | 'published' | 'deprecated';
 
-export type WorkflowInstanceStatus = 'active' | 'inactive';
-
 export type WorkflowExecutionStatus =
   | 'pending'
   | 'in_progress'
@@ -153,8 +151,7 @@ export interface WorkflowInstance {
   controlId?: string;
   cadence: CadenceType;
   gracePeriodDays?: number;
-  status: WorkflowInstanceStatus;
-  isActive?: boolean; // Backend field for active status (camelCase)
+  isActive: boolean;
   lastExecutionId?: string;
   lastExecutionAt?: string;
   nextScheduledAt?: string;
@@ -404,7 +401,7 @@ export interface WorkflowInstanceListParams {
   workflowDefinitionId?: string;
   systemId?: string;
   controlId?: string;
-  status?: WorkflowInstanceStatus;
+  isActive?: boolean;
 }
 
 export interface WorkflowExecutionListParams {
