@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import Tree from '@/volt/Tree.vue';
 import LineageScopeBar from '@/components/lineage/LineageScopeBar.vue';
@@ -13,17 +13,26 @@ import type {
   LineageTreeNode,
 } from '@/composables/useLineage/types';
 import { useLineageScopeStore } from '@/stores/lineageScope';
+import { useUIStore } from '@/stores/ui';
 
 const router = useRouter();
 const scopeStore = useLineageScopeStore();
+const uiStore = useUIStore();
 const { fetchRoots, fetchChildren, clearCache, usingFixtures } = useLineage();
 
 const nodes = ref<LineageTreeNode[]>([]);
-const expandedKeys = ref<Record<string, boolean>>({});
 const loading = ref(false);
 
+const expandedKeys = computed({
+  get: () => uiStore.lineageExpandedKeys,
+  set: (val) => uiStore.setLineageExpandedKeys(val),
+});
+
 const selectedNode = ref<LineageNode | null>(null);
-const drawerVisible = ref(false);
+const drawerVisible = computed({
+  get: () => uiStore.lineageDrawerOpen,
+  set: (val) => uiStore.setLineageDrawerOpen(val),
+});
 
 function findNode(
   key: string,
@@ -41,11 +50,48 @@ function findNode(
 
 async function loadRoots() {
   loading.value = true;
-  expandedKeys.value = {};
   try {
     nodes.value = await fetchRoots(scopeStore.scope);
   } finally {
     loading.value = false;
+  }
+  // Children are fetched lazily on user expand, so a restored expandedKeys
+  // map (from a prior visit) refers to nodes with no children loaded yet —
+  // walk it down and fetch each expanded branch before restoring selection.
+  await hydrateExpandedNodes(nodes.value);
+  restoreSelection();
+}
+
+async function hydrateExpandedNodes(list: LineageTreeNode[]) {
+  for (const node of list) {
+    if (!expandedKeys.value[node.key]) continue;
+    if (!node.children) {
+      node.loading = true;
+      try {
+        node.children = await fetchChildren(node.key, scopeStore.scope);
+      } finally {
+        node.loading = false;
+      }
+    }
+    if (node.children?.length) {
+      await hydrateExpandedNodes(node.children);
+    }
+  }
+}
+
+// Reconcile the persisted selection/drawer state against freshly-fetched
+// data (e.g. after a remount or a scope change).
+function restoreSelection() {
+  const key = uiStore.lineageSelectedNodeKey;
+  if (!key || !uiStore.lineageDrawerOpen) return;
+  const found = findNode(key, nodes.value);
+  if (found) {
+    selectedNode.value = found.data;
+  } else {
+    // Stale selection (e.g. node no longer in scope) — clear it.
+    selectedNode.value = null;
+    uiStore.setLineageSelectedNodeKey(null);
+    uiStore.setLineageDrawerOpen(false);
   }
 }
 
@@ -69,8 +115,18 @@ function onNodeSelect(node: LineageTreeNode) {
     return;
   }
   selectedNode.value = node.data;
+  uiStore.setLineageSelectedNodeKey(node.key);
   drawerVisible.value = true;
 }
+
+// Clear the persisted selection whenever the drawer closes, whether via the
+// drawer's own close button or the reconciliation above.
+watch(drawerVisible, (isOpen) => {
+  if (!isOpen) {
+    selectedNode.value = null;
+    uiStore.setLineageSelectedNodeKey(null);
+  }
+});
 
 onMounted(loadRoots);
 
