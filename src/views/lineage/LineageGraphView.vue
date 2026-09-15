@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import LineageScopeBar from '@/components/lineage/LineageScopeBar.vue';
 import LineageViewSwitch from '@/components/lineage/LineageViewSwitch.vue';
@@ -9,6 +9,7 @@ import { nodeCardClass, nodeDetailRoute } from '@/components/lineage/nodeMeta';
 import { useLineage } from '@/composables/useLineage';
 import type { LineageNode } from '@/composables/useLineage/types';
 import { useLineageScopeStore } from '@/stores/lineageScope';
+import { useUIStore } from '@/stores/ui';
 import {
   COLUMN_PAGE_SIZE,
   worstFirst,
@@ -30,13 +31,17 @@ interface Column {
 
 const router = useRouter();
 const scopeStore = useLineageScopeStore();
+const uiStore = useUIStore();
 const { fetchRootNodes, fetchChildNodes, clearCache, usingFixtures } =
   useLineage();
 
 const columns = ref<Column[]>([]);
 const loading = ref(false);
 const selectedNode = ref<LineageNode | null>(null);
-const drawerVisible = ref(false);
+const drawerVisible = computed({
+  get: () => uiStore.lineageGraphDrawerOpen,
+  set: (val) => uiStore.setLineageGraphDrawerOpen(val),
+});
 
 // Refs used to draw the single connector arrow between a selected box and the
 // container it opened. Kept in plain Maps (not reactive) — we read them on demand.
@@ -74,8 +79,69 @@ async function loadRoots() {
   } finally {
     loading.value = false;
   }
+  // Columns are rebuilt from scratch on every load, so replay the persisted
+  // drill-down path (and reopen the drawer) before drawing the connectors.
+  await restoreGraphPath();
+  restoreGraphSelection();
   await nextTick();
   computeArrows();
+}
+
+// Persists the ordered selected keys (one per column) so the drill-down can
+// be replayed after a remount.
+function syncGraphPath() {
+  const path = columns.value
+    .map((c) => c.selectedKey)
+    .filter((k): k is string => k !== null);
+  uiStore.setLineageGraphPath(path);
+}
+
+// Replays a persisted drill-down path against the freshly-fetched roots,
+// fetching each column's children just like a real click would.
+async function restoreGraphPath() {
+  for (const key of uiStore.lineageGraphPath) {
+    const colIndex = columns.value.length - 1;
+    const col = columns.value[colIndex];
+    const node = col.nodes.find((n) => n.key === key);
+    if (!node) {
+      // Stale path (e.g. node no longer in scope) — trim it to what restored.
+      syncGraphPath();
+      return;
+    }
+    col.selectedKey = key;
+    if (!node.hasChildren) {
+      // Leaf: nothing more to drill into, so trim any stale trailing entries.
+      syncGraphPath();
+      return;
+    }
+    const children = await fetchChildNodes(node.key, scopeStore.scope);
+    columns.value.push({
+      parentKey: node.key,
+      parentTitle: node.title,
+      nodes: worstFirst(children),
+      revealed: COLUMN_PAGE_SIZE,
+      selectedKey: null,
+      query: '',
+    });
+  }
+}
+
+// Reconciles the persisted selection/drawer state against the rebuilt
+// columns (the selected-for-details node need not be on the drill path).
+function restoreGraphSelection() {
+  const key = uiStore.lineageGraphSelectedNodeKey;
+  if (!key || !uiStore.lineageGraphDrawerOpen) return;
+  for (const col of columns.value) {
+    const found = col.nodes.find((n) => n.key === key);
+    if (found) {
+      selectedNode.value = found;
+      return;
+    }
+  }
+  // Stale selection — clear it.
+  selectedNode.value = null;
+  uiStore.setLineageGraphSelectedNodeKey(null);
+  uiStore.setLineageGraphDrawerOpen(false);
 }
 
 async function selectNode(colIndex: number, node: LineageNode) {
@@ -97,6 +163,7 @@ async function selectNode(colIndex: number, node: LineageNode) {
       query: '',
     });
   }
+  syncGraphPath();
   await nextTick();
   computeArrows();
   // Reveal the freshly-opened column.
@@ -112,6 +179,7 @@ function onBoxClick(colIndex: number, node: LineageNode) {
     // Leaf: just highlight + show details.
     columns.value[colIndex].selectedKey = node.key;
     columns.value = columns.value.slice(0, colIndex + 1);
+    syncGraphPath();
     openDetails(node);
     nextTick().then(computeArrows);
   }
@@ -130,8 +198,17 @@ function openDetails(node: LineageNode) {
     return;
   }
   selectedNode.value = node;
+  uiStore.setLineageGraphSelectedNodeKey(node.key);
   drawerVisible.value = true;
 }
+
+// Clear the persisted selection whenever the drawer closes.
+watch(drawerVisible, (isOpen) => {
+  if (!isOpen) {
+    selectedNode.value = null;
+    uiStore.setLineageGraphSelectedNodeKey(null);
+  }
+});
 
 // Boxes to render in a column: while a search is active, show every match (so the
 // user can reach nodes beyond the worst-N page); otherwise the worst-N page.
