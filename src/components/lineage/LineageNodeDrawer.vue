@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import Drawer from '@/volt/Drawer.vue';
+import Badge from '@/volt/Badge.vue';
 import { useAuthenticatedInstance } from '@/composables/axios';
 import RiskHeatBadge from './RiskHeatBadge.vue';
 import {
@@ -12,10 +13,20 @@ import {
   formatDate,
   postureBadge,
   implStatusLabel,
+  leverageBadge,
+  type Badge as LeverageBadge,
 } from './nodeMeta';
+import {
+  postureLabel,
+  postureSeverity,
+  satisfactionLabel,
+  satisfactionSeverity,
+} from '@/views/control-implementations/partials/responsibility-posture';
 import type {
   LineageNode,
   LineageSSPRow,
+  LineageLeverageRow,
+  LineageLeverageLink,
 } from '@/composables/useLineage/types';
 
 const props = defineProps<{
@@ -48,6 +59,50 @@ const sspRows = ref<LineageSSPRow[]>([]);
 const sspState = ref<'idle' | 'loading' | 'loaded' | 'error' | 'skipped'>(
   'idle',
 );
+
+// Inherited-capabilities detail: which downstream SSPs inherit this control from an
+// upstream offering, with per-responsibility posture (GET /nodes/:key/leverage).
+const leverageRows = ref<LineageLeverageRow[]>([]);
+const leverageState = ref<'idle' | 'loading' | 'loaded' | 'error' | 'skipped'>(
+  'idle',
+);
+
+// A single link's badge (drifted/revoked/superseded vs plain Inherited). leverageBadge
+// keys off `.links`/`.status`, so we hand it a one-link summary synthesised from the
+// link. Never null here (links: 1), but keep a fallback for the type.
+function linkLeverageBadge(link: LineageLeverageLink): LeverageBadge {
+  return (
+    leverageBadge({
+      links: 1,
+      status: link.status,
+      satisfaction: link.satisfaction,
+      outstandingCount: link.outstandingResponsibilities?.length ?? 0,
+      totalResponsibilities: link.responsibilities?.length ?? 0,
+    }) ?? { label: 'Inherited', class: '' }
+  );
+}
+
+// The union of a link's full + outstanding responsibilities (deduped by uuid), each
+// carrying its live evidence posture from the UUID-keyed responsibilityPosture map.
+function responsibilityRows(link: LineageLeverageLink) {
+  const descriptions = new Map<string, string>();
+  for (const responsibility of link.responsibilities ?? []) {
+    descriptions.set(
+      responsibility.responsibilityUuid,
+      responsibility.description,
+    );
+  }
+  for (const outstanding of link.outstandingResponsibilities ?? []) {
+    if (!descriptions.has(outstanding.responsibilityUuid)) {
+      descriptions.set(outstanding.responsibilityUuid, outstanding.description);
+    }
+  }
+  return [...descriptions].map(([responsibilityUuid, description]) => ({
+    responsibilityUuid,
+    description,
+    posture: link.responsibilityPosture?.[responsibilityUuid],
+  }));
+}
 
 const kind = computed(() => (props.node ? nodeKind(props.node) : 'structural'));
 
@@ -215,12 +270,42 @@ async function loadSSPRows(node: LineageNode) {
   }
 }
 
+let leverageRequestKey: string | null = null;
+
+async function loadLeverage(node: LineageNode) {
+  leverageRequestKey = node.key;
+  leverageRows.value = [];
+  // Control-scoped and API-only — a fixture build has no downstream SSPs to inherit.
+  if (props.usingFixtures || !node.controlId) {
+    leverageState.value = 'skipped';
+    return;
+  }
+  leverageState.value = 'loading';
+  try {
+    // The fetch shows ALL downstream SSPs (mirrors /ssps); it is not scoped to the
+    // lineage view's sspId. responsibilityPosture is UUID-keyed — fencing it from the
+    // camelCase interceptor is REQUIRED or its keys stop matching any responsibility.
+    const res = await instance.get(
+      `/api/lineage/nodes/${encodeURIComponent(node.key)}/leverage`,
+      { camelcaseStopPaths: ['data.links.responsibilityPosture'] },
+    );
+    if (leverageRequestKey !== node.key) return;
+    leverageRows.value = Array.isArray(res.data?.data) ? res.data.data : [];
+    leverageState.value = 'loaded';
+  } catch (err) {
+    if (leverageRequestKey !== node.key) return;
+    console.warn('[LineageNodeDrawer] leverage fetch failed', err);
+    leverageState.value = 'error';
+  }
+}
+
 watch(
   () => [props.visible, props.node?.key] as const,
   ([visible]) => {
     if (visible && props.node) {
       loadEvidence(props.node);
       loadSSPRows(props.node);
+      loadLeverage(props.node);
     }
   },
   { immediate: true },
@@ -353,6 +438,15 @@ function close() {
                       :class="postureBadge(row.posture).class"
                       >{{ postureBadge(row.posture).label }}</span
                     >
+                    <span
+                      v-if="
+                        row.posture !== 'inherited' &&
+                        leverageBadge(row.leverage)
+                      "
+                      class="ml-1 rounded-full px-2 py-0.5 text-xs font-semibold whitespace-nowrap"
+                      :class="leverageBadge(row.leverage)?.class"
+                      >{{ leverageBadge(row.leverage)?.label }}</span
+                    >
                   </td>
                   <td class="px-2 py-1.5">
                     <span
@@ -377,6 +471,90 @@ function close() {
                 </tr>
               </tbody>
             </table>
+          </div>
+        </section>
+
+        <!-- Inherited capabilities (control nodes): which downstream SSPs inherit
+             this control from an upstream offering, and the per-responsibility
+             posture under each link. Fetched from /nodes/:key/leverage. -->
+        <section v-if="node.controlId">
+          <h3
+            class="mb-2 text-sm font-semibold text-surface-700 dark:text-surface-100"
+          >
+            Inherited capabilities
+          </h3>
+          <p
+            v-if="leverageState === 'loading'"
+            class="text-sm text-surface-500"
+          >
+            Loading inherited capabilities…
+          </p>
+          <p
+            v-else-if="leverageState === 'skipped'"
+            class="text-sm text-surface-500 dark:text-surface-400"
+          >
+            Inherited capabilities are available when connected to the API.
+          </p>
+          <p
+            v-else-if="leverageState === 'error'"
+            class="text-sm text-surface-500 dark:text-surface-400"
+          >
+            Could not load inherited capabilities.
+          </p>
+          <p
+            v-else-if="leverageRows.length === 0"
+            class="text-sm text-surface-500 dark:text-surface-400"
+          >
+            No inherited capabilities for this control.
+          </p>
+          <div v-else class="flex flex-col gap-4">
+            <div v-for="row in leverageRows" :key="row.sspId">
+              <h4
+                class="text-sm font-semibold text-surface-700 dark:text-surface-100"
+              >
+                {{ row.sspTitle || 'Untitled SSP' }}
+              </h4>
+              <div
+                v-for="link in row.links"
+                :key="link.id"
+                class="mt-2 rounded border border-purple-200 bg-purple-50/40 p-2 dark:border-purple-900 dark:bg-purple-950/20"
+              >
+                <div class="flex flex-wrap items-center gap-2 text-xs">
+                  <span
+                    class="font-medium text-purple-700 dark:text-purple-300"
+                  >
+                    {{ link.inheritedFrom.offeringTitle }} · v{{
+                      link.inheritedFrom.offeringVersion
+                    }}
+                  </span>
+                  <span
+                    class="rounded-full px-2 py-0.5 font-semibold whitespace-nowrap"
+                    :class="linkLeverageBadge(link).class"
+                    >{{ linkLeverageBadge(link).label }}</span
+                  >
+                  <Badge :severity="satisfactionSeverity(link.satisfaction)">
+                    {{ satisfactionLabel(link.satisfaction) }}
+                  </Badge>
+                  <span class="text-surface-500 dark:text-surface-400">
+                    From {{ link.inheritedFrom.upstreamSspTitle }}
+                  </span>
+                </div>
+                <ul class="mt-2 flex flex-col gap-1">
+                  <li
+                    v-for="resp in responsibilityRows(link)"
+                    :key="resp.responsibilityUuid"
+                    class="flex flex-wrap items-center gap-2 text-xs"
+                  >
+                    <Badge :severity="postureSeverity(resp.posture)">
+                      {{ postureLabel(resp.posture) }}
+                    </Badge>
+                    <span class="text-surface-700 dark:text-surface-200">
+                      {{ resp.description }}
+                    </span>
+                  </li>
+                </ul>
+              </div>
+            </div>
           </div>
         </section>
 
