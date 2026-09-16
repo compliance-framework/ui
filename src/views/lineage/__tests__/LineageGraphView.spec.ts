@@ -3,8 +3,9 @@ import { mount, flushPromises } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import type { LineageNode } from '@/composables/useLineage/types';
 
-const { fetchRootNodesMock } = vi.hoisted(() => ({
+const { fetchRootNodesMock, fetchChildNodesMock } = vi.hoisted(() => ({
   fetchRootNodesMock: vi.fn(),
+  fetchChildNodesMock: vi.fn(),
 }));
 
 vi.mock('@/composables/useLineage', async () => {
@@ -14,7 +15,7 @@ vi.mock('@/composables/useLineage', async () => {
       fetchRoots: vi.fn(),
       fetchChildren: vi.fn(),
       fetchRootNodes: fetchRootNodesMock,
-      fetchChildNodes: vi.fn(),
+      fetchChildNodes: fetchChildNodesMock,
       clearCache: vi.fn(),
       usingFixtures: ref(false),
     }),
@@ -22,6 +23,8 @@ vi.mock('@/composables/useLineage', async () => {
 });
 
 import LineageGraphView from '../LineageGraphView.vue';
+import LineageNodeDrawer from '@/components/lineage/LineageNodeDrawer.vue';
+import { useUIStore } from '@/stores/ui';
 
 function baseFields() {
   return {
@@ -65,6 +68,17 @@ function controlNode(title: string): LineageNode {
   };
 }
 
+function groupNode(title: string, childrenCount: number): LineageNode {
+  return {
+    ...baseFields(),
+    key: `group:${title}`,
+    nodeType: 'group',
+    title,
+    hasChildren: true,
+    childrenCount,
+  };
+}
+
 function riskNode(
   title: string,
   score: number,
@@ -86,6 +100,7 @@ describe('LineageGraphView risk grouping (smoke)', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     fetchRootNodesMock.mockReset();
+    fetchChildNodesMock.mockReset();
   });
 
   it('buckets risk nodes under an SSP container, leaving structural nodes ungrouped', async () => {
@@ -118,5 +133,94 @@ describe('LineageGraphView risk grouping (smoke)', () => {
     expect(text.indexOf('SSP: Globex Staging')).toBeLessThan(
       text.indexOf('SSP: Acme Production'),
     );
+  });
+});
+
+describe('LineageGraphView persisted state', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia());
+    fetchRootNodesMock.mockReset();
+    fetchChildNodesMock.mockReset();
+  });
+
+  it('replays a persisted drill-down path into a fresh column', async () => {
+    const root = groupNode('Standards', 1);
+    const child = controlNode('Access Control');
+    fetchRootNodesMock.mockResolvedValue([root]);
+    fetchChildNodesMock.mockResolvedValue([child]);
+
+    const uiStore = useUIStore();
+    uiStore.setLineageGraphPath([root.key]);
+
+    const wrapper = mount(LineageGraphView, {
+      global: {
+        stubs: {
+          LineageScopeBar: true,
+          LineageViewSwitch: true,
+          LineageNodeDrawer: true,
+        },
+      },
+    });
+
+    await flushPromises();
+
+    expect(fetchChildNodesMock).toHaveBeenCalledWith(
+      root.key,
+      expect.anything(),
+    );
+    expect(wrapper.text()).toContain('Access Control');
+  });
+
+  it('restores the selected node into the drawer from persisted UI state', async () => {
+    const node = controlNode('Access Control');
+    fetchRootNodesMock.mockResolvedValue([node]);
+
+    const uiStore = useUIStore();
+    uiStore.setLineageGraphSelectedNodeKey(node.key);
+    uiStore.setLineageGraphDrawerOpen(true);
+
+    const wrapper = mount(LineageGraphView, {
+      global: {
+        stubs: {
+          LineageScopeBar: true,
+          LineageViewSwitch: true,
+          LineageNodeDrawer: true,
+        },
+      },
+    });
+
+    await flushPromises();
+
+    const drawer = wrapper.findComponent(LineageNodeDrawer);
+    expect(drawer.props('visible')).toBe(true);
+    expect(drawer.props('node')).toMatchObject({ key: node.key });
+  });
+
+  it('clears the persisted selection when the drawer is closed', async () => {
+    const node = controlNode('Access Control');
+    fetchRootNodesMock.mockResolvedValue([node]);
+
+    const uiStore = useUIStore();
+    uiStore.setLineageGraphSelectedNodeKey(node.key);
+    uiStore.setLineageGraphDrawerOpen(true);
+
+    const wrapper = mount(LineageGraphView, {
+      global: {
+        stubs: {
+          LineageScopeBar: true,
+          LineageViewSwitch: true,
+          LineageNodeDrawer: true,
+        },
+      },
+    });
+
+    await flushPromises();
+
+    await wrapper
+      .findComponent(LineageNodeDrawer)
+      .vm.$emit('update:visible', false);
+
+    expect(uiStore.lineageGraphDrawerOpen).toBe(false);
+    expect(uiStore.lineageGraphSelectedNodeKey).toBeNull();
   });
 });

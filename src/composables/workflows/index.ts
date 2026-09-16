@@ -38,7 +38,6 @@ export type {
   WorkflowInstance,
   WorkflowInstanceCreate,
   WorkflowInstanceUpdate,
-  WorkflowInstanceStatus,
   WorkflowInstanceListParams,
 
   // Workflow Execution types

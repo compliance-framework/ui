@@ -23,12 +23,7 @@ export const useWorkflowInstanceStore = defineStore('workflow-instance', () => {
   // Computed
   const hasInstance = computed(() => instance.value !== null);
   const instanceId = computed(() => instance.value?.id);
-  const isActive = computed(() => {
-    // Check both the isActive field from backend and status field
-    return (
-      instance.value?.isActive === true || instance.value?.status === 'active'
-    );
-  });
+  const isActive = computed(() => instance.value?.isActive === true);
 
   // API helpers
   const { execute: fetchInstanceApi } = useDataApi<WorkflowInstance>(
