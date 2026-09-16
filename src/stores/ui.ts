@@ -64,6 +64,7 @@ export const useUIStore = defineStore(
      * Controls the visibility of the detail drawer in the Compliance Map graph view.
      */
     const lineageGraphDrawerOpen = ref(false);
+    /**
      * The active sort column for the Evidence view.
      */
     const evidenceSortBy = ref<'lastSeenAt' | 'name' | 'status'>('lastSeenAt');
@@ -153,6 +154,9 @@ export const useUIStore = defineStore(
      */
     function setLineageGraphDrawerOpen(open: boolean) {
       lineageGraphDrawerOpen.value = open;
+    }
+
+    /**
      * Updates the evidence sort column.
      * @param sortBy - The column to sort by.
      */
