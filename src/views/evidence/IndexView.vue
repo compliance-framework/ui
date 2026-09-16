@@ -239,8 +239,10 @@ watch(
     uiStore.setEvidenceFilter(nextFilter);
 
     currentPage.value = parsePageQuery(newPage);
-    sortBy.value = parseSortByQuery(newSortBy);
-    sortDirection.value = parseSortDirectionQuery(newSortDirection);
+    applySort(
+      parseSortByQuery(newSortBy, uiStore.evidenceSortBy),
+      parseSortDirectionQuery(newSortDirection, uiStore.evidenceSortDirection),
+    );
 
     if (
       newFilter === oldFilter &&
@@ -317,20 +319,36 @@ function parsePageQuery(value: unknown) {
   return page;
 }
 
-function parseSortByQuery(value: unknown): EvidenceSortBy {
+function parseSortByQuery(
+  value: unknown,
+  fallback: EvidenceSortBy = 'lastSeenAt',
+): EvidenceSortBy {
   if (value === 'name' || value === 'status' || value === 'lastSeenAt') {
     return value;
   }
 
-  return 'lastSeenAt';
+  return fallback;
 }
 
-function parseSortDirectionQuery(value: unknown): SortDirection {
+function parseSortDirectionQuery(
+  value: unknown,
+  fallback: SortDirection = 'desc',
+): SortDirection {
   if (value === 'asc' || value === 'desc') {
     return value;
   }
 
-  return 'desc';
+  return fallback;
+}
+
+function applySort(
+  nextSortBy: EvidenceSortBy,
+  nextSortDirection: SortDirection,
+) {
+  sortBy.value = nextSortBy;
+  sortDirection.value = nextSortDirection;
+  uiStore.setEvidenceSortBy(nextSortBy);
+  uiStore.setEvidenceSortDirection(nextSortDirection);
 }
 
 function isLabelFilterSearch(value: string) {
@@ -793,8 +811,13 @@ onMounted(() => {
 
   uiStore.setEvidenceFilter(nextFilter);
   currentPage.value = parsePageQuery(route.query.page);
-  sortBy.value = parseSortByQuery(route.query.sortBy);
-  sortDirection.value = parseSortDirectionQuery(route.query.sortDirection);
+  applySort(
+    parseSortByQuery(route.query.sortBy, uiStore.evidenceSortBy),
+    parseSortDirectionQuery(
+      route.query.sortDirection,
+      uiStore.evidenceSortDirection,
+    ),
+  );
 
   if (typeof route.query.filter === 'string' && nextFilter.length === 0) {
     void replaceFilterRoute('');

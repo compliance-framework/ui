@@ -205,6 +205,10 @@ const {
     uiStore: {
       evidenceFilter: '',
       setEvidenceFilter: vi.fn(),
+      evidenceSortBy: 'lastSeenAt',
+      setEvidenceSortBy: vi.fn(),
+      evidenceSortDirection: 'desc',
+      setEvidenceSortDirection: vi.fn(),
     },
     configStore: {
       showLabels: true,
@@ -219,6 +223,12 @@ const routeMock = reactive(routeState);
 const uiStore = reactive(uiStoreState);
 uiStore.setEvidenceFilter = vi.fn((value: string) => {
   uiStore.evidenceFilter = value;
+});
+uiStore.setEvidenceSortBy = vi.fn((value: string) => {
+  uiStore.evidenceSortBy = value;
+});
+uiStore.setEvidenceSortDirection = vi.fn((value: string) => {
+  uiStore.evidenceSortDirection = value;
 });
 const complianceData = ref([]);
 const heartbeatData = ref([]);
@@ -317,6 +327,8 @@ describe('Evidence IndexView', () => {
   beforeEach(async () => {
     routeMock.query = {};
     uiStore.evidenceFilter = '';
+    uiStore.evidenceSortBy = 'lastSeenAt';
+    uiStore.evidenceSortDirection = 'desc';
     await flushPromises();
     vi.clearAllMocks();
   });

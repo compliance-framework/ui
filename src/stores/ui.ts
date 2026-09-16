@@ -64,6 +64,14 @@ export const useUIStore = defineStore(
      * Controls the visibility of the detail drawer in the Compliance Map graph view.
      */
     const lineageGraphDrawerOpen = ref(false);
+     * The active sort column for the Evidence view.
+     */
+    const evidenceSortBy = ref<'lastSeenAt' | 'name' | 'status'>('lastSeenAt');
+
+    /**
+     * The active sort direction for the Evidence view.
+     */
+    const evidenceSortDirection = ref<'asc' | 'desc'>('desc');
 
     /**
      * Updates the expanded keys for the Control Implementation tree.
@@ -145,6 +153,19 @@ export const useUIStore = defineStore(
      */
     function setLineageGraphDrawerOpen(open: boolean) {
       lineageGraphDrawerOpen.value = open;
+     * Updates the evidence sort column.
+     * @param sortBy - The column to sort by.
+     */
+    function setEvidenceSortBy(sortBy: 'lastSeenAt' | 'name' | 'status') {
+      evidenceSortBy.value = sortBy;
+    }
+
+    /**
+     * Updates the evidence sort direction.
+     * @param sortDirection - The direction to sort in.
+     */
+    function setEvidenceSortDirection(sortDirection: 'asc' | 'desc') {
+      evidenceSortDirection.value = sortDirection;
     }
 
     return {
@@ -158,6 +179,8 @@ export const useUIStore = defineStore(
       lineageGraphPath,
       lineageGraphSelectedNodeKey,
       lineageGraphDrawerOpen,
+      evidenceSortBy,
+      evidenceSortDirection,
       setControlImplementationExpandedKeys,
       setControlImplementationSelectedRequirementId,
       setControlImplementationDrawerOpen,
@@ -168,6 +191,8 @@ export const useUIStore = defineStore(
       setLineageGraphPath,
       setLineageGraphSelectedNodeKey,
       setLineageGraphDrawerOpen,
+      setEvidenceSortBy,
+      setEvidenceSortDirection,
     };
   },
   {
