@@ -34,6 +34,16 @@ export const useUIStore = defineStore(
     const evidenceFilter = ref<string>('');
 
     /**
+     * The active sort column for the Evidence view.
+     */
+    const evidenceSortBy = ref<'lastSeenAt' | 'name' | 'status'>('lastSeenAt');
+
+    /**
+     * The active sort direction for the Evidence view.
+     */
+    const evidenceSortDirection = ref<'asc' | 'desc'>('desc');
+
+    /**
      * Updates the expanded keys for the Control Implementation tree.
      * @param keys - Object mapping node keys to their expansion state (boolean).
      */
@@ -67,15 +77,35 @@ export const useUIStore = defineStore(
       evidenceFilter.value = filter;
     }
 
+    /**
+     * Updates the evidence sort column.
+     * @param sortBy - The column to sort by.
+     */
+    function setEvidenceSortBy(sortBy: 'lastSeenAt' | 'name' | 'status') {
+      evidenceSortBy.value = sortBy;
+    }
+
+    /**
+     * Updates the evidence sort direction.
+     * @param sortDirection - The direction to sort in.
+     */
+    function setEvidenceSortDirection(sortDirection: 'asc' | 'desc') {
+      evidenceSortDirection.value = sortDirection;
+    }
+
     return {
       controlImplementationExpandedKeys,
       controlImplementationSelectedRequirementId,
       controlImplementationDrawerOpen,
       evidenceFilter,
+      evidenceSortBy,
+      evidenceSortDirection,
       setControlImplementationExpandedKeys,
       setControlImplementationSelectedRequirementId,
       setControlImplementationDrawerOpen,
       setEvidenceFilter,
+      setEvidenceSortBy,
+      setEvidenceSortDirection,
     };
   },
   {
