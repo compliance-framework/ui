@@ -9,13 +9,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
 import Message from '@/volt/Message.vue';
 import ExportOfferingsPanel from '@/components/system-security-plans/ExportOfferingsPanel.vue';
-import { useSystemStore } from '@/stores/system.ts';
+import { useActiveSspId } from '@/composables/useActiveSspId';
 
 // The System tab's host: same panel as the SSP-editor route, but scoped to the *selected*
 // SSP rather than a route param.
-const systemStore = useSystemStore();
-const sspId = computed(() => systemStore.system.securityPlan?.uuid ?? '');
+const sspId = useActiveSspId();
 </script>

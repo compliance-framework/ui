@@ -15,6 +15,10 @@ const apiCalls: Array<{ url: string; execute: ReturnType<typeof vi.fn> }> = [];
 const apiData = new Map<string, ReturnType<typeof ref<unknown>>>();
 
 vi.mock('vue-router', () => ({
+  RouterLink: {
+    props: ['to'],
+    template: '<a><slot /></a>',
+  },
   useRoute: () => ({ params: { id: 'ssp-active' } }),
   useRouter: () => ({ push }),
 }));
@@ -129,7 +133,12 @@ const stubs = {
   CollapsableGroup: {
     template: '<div><slot name="header" /><slot /></div>',
   },
-  SystemImplementationOverviewForm: { template: '<div />' },
+  SystemImplementationOverviewForm: {
+    name: 'SystemImplementationOverviewForm',
+    props: ['sspId', 'systemImplementation'],
+    emits: ['saved'],
+    template: '<div />',
+  },
   SystemImplementationUserCreateForm: {
     name: 'SystemImplementationUserCreateForm',
     emits: ['created', 'cancel'],
@@ -225,68 +234,28 @@ describe('System Security Plan views', () => {
     ).toHaveLength(1);
   });
 
-  it('updates system implementation editor lists reactively from empty data', async () => {
-    const users = ref<unknown>(undefined);
-    const components = ref<unknown>(undefined);
-    const leveragedAuthorizations = ref<unknown>(undefined);
+  it('passes fetched system implementation data through to the overview form and updates it on save', async () => {
+    const systemImplementation = ref<unknown>({ remarks: 'Original remarks' });
     apiData.set(
       '/api/oscal/system-security-plans/ssp-active/system-implementation',
-      ref({
-        users: [],
-        components: [],
-        leveragedAuthorizations: [],
-      }),
-    );
-    apiData.set(
-      '/api/oscal/system-security-plans/ssp-active/system-implementation/users',
-      users,
-    );
-    apiData.set(
-      '/api/oscal/system-security-plans/ssp-active/system-implementation/components',
-      components,
-    );
-    apiData.set(
-      '/api/oscal/system-security-plans/ssp-active/system-implementation/leveraged-authorizations',
-      leveragedAuthorizations,
+      systemImplementation,
     );
 
     const wrapper = mount(SystemSecurityPlanSystemImplementationEditorView, {
       global: { stubs },
     });
 
+    expect(
+      wrapper
+        .findComponent({ name: 'SystemImplementationOverviewForm' })
+        .props('systemImplementation'),
+    ).toEqual({ remarks: 'Original remarks' });
+
     wrapper
-      .findComponent({ name: 'SystemImplementationUserCreateForm' })
-      .vm.$emit('created', { uuid: 'user-1', title: 'User 1' });
-    wrapper
-      .findComponent({ name: 'SystemImplementationComponentCreateForm' })
-      .vm.$emit('created', { uuid: 'component-1', title: 'Component 1' });
-    wrapper
-      .findComponent({
-        name: 'SystemImplementationLeveragedAuthorizationCreateForm',
-      })
-      .vm.$emit('created', { uuid: 'auth-1', title: 'Authorization 1' });
+      .findComponent({ name: 'SystemImplementationOverviewForm' })
+      .vm.$emit('saved', { remarks: 'Updated remarks' });
     await nextTick();
 
-    expect(users.value).toEqual([{ uuid: 'user-1', title: 'User 1' }]);
-    expect(components.value).toEqual([
-      { uuid: 'component-1', title: 'Component 1' },
-    ]);
-    expect(leveragedAuthorizations.value).toEqual([
-      { uuid: 'auth-1', title: 'Authorization 1' },
-    ]);
-    expect(wrapper.text()).toContain('Users (1)');
-    expect(wrapper.text()).toContain('Components (1)');
-    expect(wrapper.text()).toContain('Authorizations (1)');
-
-    await wrapper
-      .findAll('button')
-      .find((button) => button.text() === 'Edit')
-      ?.trigger('click');
-    wrapper
-      .findComponent({ name: 'SystemImplementationUserEditForm' })
-      .vm.$emit('saved', { uuid: 'user-1', title: 'Updated User' });
-    await nextTick();
-
-    expect(users.value).toEqual([{ uuid: 'user-1', title: 'Updated User' }]);
+    expect(systemImplementation.value).toEqual({ remarks: 'Updated remarks' });
   });
 });

@@ -129,12 +129,13 @@ import type {
 } from '@/types/ssp-leverage';
 import type { AxiosError } from 'axios';
 
+const props = defineProps<{ sspId?: string }>();
 const route = useRoute();
 const toast = useToast();
 const confirm = useConfirm();
 const axiosInstance = useAuthenticatedInstance();
 
-const sspId = computed(() => getIdFromRoute(route) ?? '');
+const sspId = computed(() => props.sspId || getIdFromRoute(route) || '');
 
 // This projection endpoint is the only fetch this view makes — no catalog/profile lookup,
 // per AC2 ("no catalog controls are synthesized in the UI; data comes only from the

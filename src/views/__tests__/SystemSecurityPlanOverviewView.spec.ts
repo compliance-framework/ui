@@ -50,6 +50,7 @@ const mockExecuteSIComponents = vi.fn();
 const mockExecuteSIInventory = vi.fn();
 const mockExecuteSILeveragedAuths = vi.fn();
 const mockExecuteDownloadJSON = vi.fn();
+const mockExecuteCompliance = vi.fn();
 const toastAdd = vi.fn();
 const routerPush = vi.fn();
 
@@ -107,6 +108,12 @@ vi.mock('@/composables/axios', () => ({
       };
     }
 
+    if (url === null) {
+      return {
+        execute: mockExecuteCompliance,
+      };
+    }
+
     throw new Error(`Unexpected useDataApi call: ${url}`);
   },
 }));
@@ -130,6 +137,28 @@ vi.mock('@/components/system-security-plans/RiskOverviewSection.vue', () => ({
   default: {
     name: 'RiskOverviewSection',
     template: '<div data-testid="risk-overview-section" />',
+  },
+}));
+
+vi.mock('@/views/system/DiagramsView.vue', () => ({
+  default: {
+    name: 'Diagrams',
+    template: '<div data-testid="diagrams" />',
+  },
+}));
+
+vi.mock('@/components/RouterLinkButton.vue', () => ({
+  default: {
+    name: 'RouterLinkButton',
+    template: '<a><slot /></a>',
+  },
+}));
+
+vi.mock('@/components/TooltipTitle.vue', () => ({
+  default: {
+    name: 'TooltipTitle',
+    props: ['text', 'tooltipKey', 'underlineClass'],
+    template: '<span>{{ text }}</span>',
   },
 }));
 
@@ -162,6 +191,7 @@ describe('SystemSecurityPlanOverviewView profile bindings', () => {
     mockExecuteSIInventory.mockResolvedValue({ data: ref({ data: [] }) });
     mockExecuteSILeveragedAuths.mockResolvedValue({ data: ref({ data: [] }) });
     mockExecuteDownloadJSON.mockResolvedValue({ data: ref({}) });
+    mockExecuteCompliance.mockResolvedValue({ data: ref({ data: null }) });
   });
 
   async function mountView() {

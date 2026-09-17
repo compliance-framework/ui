@@ -106,6 +106,103 @@
         </div>
       </div>
 
+      <!-- Compliance Section -->
+      <div
+        class="bg-white dark:bg-slate-900 border border-ccf-300 dark:border-slate-700 rounded-lg p-6"
+      >
+        <div class="mb-4 flex items-center justify-between gap-3">
+          <TooltipTitle
+            text="Compliance"
+            tooltip-key="system.compliance"
+            underline-class="text-lg font-semibold text-gray-900 dark:text-slate-300 underline decoration-dotted cursor-help"
+          />
+          <RouterLinkButton
+            :to="{
+              name: complianceRouteName,
+              params: { id: sspId },
+            }"
+            variant="outlined"
+          >
+            Open full compliance view
+          </RouterLinkButton>
+        </div>
+
+        <div
+          v-if="loadingCompliancePreview"
+          class="text-sm text-gray-500 dark:text-slate-400"
+        >
+          Loading compliance progress...
+        </div>
+
+        <template v-else-if="compliancePreview?.summary">
+          <div class="grid grid-cols-1 gap-4 md:grid-cols-5">
+            <div
+              v-for="stat in complianceStats"
+              :key="stat.label"
+              class="rounded-md border border-ccf-300 bg-white p-4 dark:border-slate-700 dark:bg-slate-900"
+            >
+              <div class="flex items-center justify-between gap-3">
+                <p
+                  class="text-xs font-medium uppercase text-gray-500 dark:text-slate-400"
+                >
+                  {{ stat.label }}
+                </p>
+                <i
+                  v-if="stat.icon"
+                  :class="stat.icon"
+                  class="text-sm text-gray-400 dark:text-slate-500"
+                ></i>
+              </div>
+              <p
+                class="mt-2 text-2xl font-semibold text-gray-900 dark:text-slate-100"
+              >
+                {{ stat.value }}
+              </p>
+            </div>
+          </div>
+
+          <div
+            class="mt-5 rounded-md border border-ccf-300 bg-white p-4 dark:border-slate-700 dark:bg-slate-900"
+          >
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div>
+                <p
+                  class="text-xs font-medium uppercase text-gray-500 dark:text-slate-400"
+                >
+                  Controls Satisfied
+                </p>
+                <p class="mt-1 text-sm text-gray-900 dark:text-slate-200">
+                  {{ compliancePreview.summary.satisfied }}/{{
+                    compliancePreview.summary.totalControls
+                  }}
+                  controls satisfied ({{
+                    compliancePreview.summary.compliancePercent
+                  }}%)
+                </p>
+              </div>
+              <div v-if="compliancePreview.implementation">
+                <p
+                  class="text-xs font-medium uppercase text-gray-500 dark:text-slate-400"
+                >
+                  Implementation Coverage
+                </p>
+                <p class="mt-1 text-sm text-gray-900 dark:text-slate-200">
+                  {{ compliancePreview.implementation.implementationPercent }}%
+                  ({{ compliancePreview.implementation.implementedControls }}
+                  implemented,
+                  {{ compliancePreview.implementation.unimplementedControls }}
+                  not implemented)
+                </p>
+              </div>
+            </div>
+          </div>
+        </template>
+
+        <div v-else class="text-sm text-gray-500 dark:text-slate-400">
+          Select a profile to view compliance posture.
+        </div>
+      </div>
+
       <!-- Summary Statistics -->
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div
@@ -151,8 +248,8 @@
       </div>
 
       <RiskOverviewSection
-        :ssp-id="String(route.params.id || '')"
-        risk-list-route-name="system-security-plan-risks"
+        :ssp-id="sspId"
+        :risk-list-route-name="riskListRouteName"
       />
 
       <!-- System Characteristics Summary -->
@@ -218,6 +315,8 @@
           </div>
         </div>
       </div>
+
+      <Diagrams :ssp-id="sspId" />
     </div>
   </template>
 </template>
@@ -240,11 +339,33 @@ import { useDataApi } from '@/composables/axios';
 import type { AxiosError } from 'axios';
 import type { ErrorResponse, ErrorBody } from '@/stores/types.ts';
 import decamelizeKeys from 'decamelize-keys';
-import RiskOverviewSection from '@/components/system-security-plans/RiskOverviewSection.vue';
+import RiskOverviewSection, {
+  type RiskListRouteName,
+} from '@/components/system-security-plans/RiskOverviewSection.vue';
 import { useSspProfileBindings } from '@/composables/useSspProfileBindings';
+import type { ProfileComplianceProgress } from '@/types/compliance';
+import RouterLinkButton from '@/components/RouterLinkButton.vue';
+import TooltipTitle from '@/components/TooltipTitle.vue';
+import Diagrams from '@/views/system/DiagramsView.vue';
+
+const props = withDefaults(
+  defineProps<{
+    // Overrides the id taken from the route param, e.g. when embedded on a
+    // page that already knows which SSP is active (see src/views/system/OverviewView.vue).
+    sspId?: string;
+    riskListRouteName?: RiskListRouteName;
+    complianceRouteName?: string;
+  }>(),
+  {
+    riskListRouteName: 'system-security-plan-risks',
+    complianceRouteName: 'system-security-plan-compliance',
+  },
+);
 
 const route = useRoute();
 const toast = useToast();
+
+const sspId = computed(() => props.sspId || String(route.params.id || ''));
 
 const systemImplementationStats = ref({
   users: 0,
@@ -262,29 +383,29 @@ const statistics = computed(() => ({
 }));
 
 const { data: systemSecurityPlan } = useDataApi<SystemSecurityPlan>(
-  `/api/oscal/system-security-plans/${route.params.id}`,
+  `/api/oscal/system-security-plans/${sspId.value}`,
 );
 
 const { data: systemCharacteristics } = useDataApi<SystemCharacteristics>(
-  `/api/oscal/system-security-plans/${route.params.id}/system-characteristics`,
+  `/api/oscal/system-security-plans/${sspId.value}/system-characteristics`,
 );
 
 const { execute: executeSIUsers } = useDataApi<SystemUser[]>(
-  `/api/oscal/system-security-plans/${route.params.id}/system-implementation/users`,
+  `/api/oscal/system-security-plans/${sspId.value}/system-implementation/users`,
   {
     method: 'GET',
   },
   { immediate: false },
 );
 const { execute: executeSIComponents } = useDataApi<SystemComponent[]>(
-  `/api/oscal/system-security-plans/${route.params.id}/system-implementation/components`,
+  `/api/oscal/system-security-plans/${sspId.value}/system-implementation/components`,
   {
     method: 'GET',
   },
   { immediate: false },
 );
 const { execute: executeSIInventory } = useDataApi<InventoryItem[]>(
-  `/api/oscal/system-security-plans/${route.params.id}/system-implementation/inventory-items`,
+  `/api/oscal/system-security-plans/${sspId.value}/system-implementation/inventory-items`,
   {
     method: 'GET',
   },
@@ -293,14 +414,14 @@ const { execute: executeSIInventory } = useDataApi<InventoryItem[]>(
 const { execute: executeSILeveragedAuths } = useDataApi<
   LeveragedAuthorization[]
 >(
-  `/api/oscal/system-security-plans/${route.params.id}/system-implementation/leveraged-authorizations`,
+  `/api/oscal/system-security-plans/${sspId.value}/system-implementation/leveraged-authorizations`,
   {
     method: 'GET',
   },
   { immediate: false },
 );
 const { execute: executeDownloadJSON } = useDataApi(
-  `/api/oscal/system-security-plans/${route.params.id}/full`,
+  `/api/oscal/system-security-plans/${sspId.value}/full`,
   {
     method: 'GET',
   },
@@ -322,12 +443,87 @@ watch(profiles, () => {
     }) || [];
 });
 
+const compliancePreview = ref<ProfileComplianceProgress | null>(null);
+const loadingCompliancePreview = ref(false);
+
+const complianceStats = computed(() => {
+  const summary = compliancePreview.value?.summary;
+  if (!summary) return [];
+
+  return [
+    {
+      label: 'Satisfied',
+      value: summary.satisfied,
+      icon: 'pi pi-check-circle',
+    },
+    {
+      label: 'Not Satisfied',
+      value: summary.notSatisfied,
+      icon: 'pi pi-times-circle',
+    },
+    { label: 'Unknown', value: summary.unknown, icon: 'pi pi-question-circle' },
+    {
+      label: 'Compliance',
+      value: `${summary.compliancePercent}%`,
+      icon: 'pi pi-chart-line',
+    },
+    {
+      label: 'Assessed',
+      value: `${summary.assessedPercent}%`,
+      icon: 'pi pi-verified',
+    },
+  ];
+});
+
+const { execute: executeCompliance } = useDataApi<ProfileComplianceProgress>(
+  null,
+  null,
+  { immediate: false },
+);
+
+async function loadCompliancePreview(profileId?: string) {
+  if (!profileId || !sspId.value) {
+    compliancePreview.value = null;
+    return;
+  }
+
+  loadingCompliancePreview.value = true;
+  try {
+    const { data } = await executeCompliance(
+      `/api/oscal/profiles/${profileId}/compliance-progress?includeControls=false&sspId=${sspId.value}`,
+    );
+    compliancePreview.value = data.value?.data || null;
+  } catch (error) {
+    compliancePreview.value = null;
+
+    const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
+    if (errorResponse.response?.status !== 404) {
+      toast.add({
+        severity: 'error',
+        summary: 'Error loading compliance progress',
+        detail:
+          errorResponse.response?.data.errors.body ||
+          'Unable to load compliance progress.',
+        life: 3000,
+      });
+    }
+  } finally {
+    loadingCompliancePreview.value = false;
+  }
+}
+
 const { selectedProfiles, profileSaveInProgress, loadInitialProfiles } =
-  useSspProfileBindings(() => String(route.params.id));
+  useSspProfileBindings(
+    () => sspId.value,
+    async (currentProfiles) => {
+      await loadCompliancePreview(currentProfiles[0]);
+    },
+  );
 
 onMounted(async () => {
   try {
     await loadInitialProfiles();
+    await loadCompliancePreview(selectedProfiles.value[0]);
 
     // Load system implementation statistics
     try {
