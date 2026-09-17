@@ -44,7 +44,7 @@ function abbreviated(link: NavigationItem): string {
 const links = ref<Array<NavigationItem>>([
   {
     name: 'system:overview',
-    title: 'System',
+    title: 'Active System',
     abbr: 'SYS',
   },
   {

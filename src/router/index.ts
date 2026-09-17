@@ -182,14 +182,20 @@ const authenticatedRoutes = [
         component: () => import('../views/system/OverviewView.vue'),
       },
       {
+        path: 'characteristics',
+        name: 'system:characteristics',
+        component: () => import('../views/system/CharacteristicsView.vue'),
+      },
+      {
+        path: 'implementation',
+        name: 'system:implementation',
+        component: () =>
+          import('../views/system/ImplementationOverviewView.vue'),
+      },
+      {
         path: 'users',
         name: 'system:users',
         component: () => import('../views/system/UsersView.vue'),
-      },
-      {
-        path: 'risks',
-        name: 'system:risks',
-        component: () => import('../views/RisksView.vue'),
       },
       {
         path: 'components',
@@ -207,9 +213,41 @@ const authenticatedRoutes = [
         component: () => import('../views/system/AuthorizationsView.vue'),
       },
       {
+        path: 'control-implementation',
+        name: 'system:control-implementation',
+        component: () =>
+          import('../views/system/ControlImplementationView.vue'),
+      },
+      {
         path: 'export-offerings',
         name: 'system:export-offerings',
         component: () => import('../views/system/ExportOfferingsView.vue'),
+      },
+      {
+        path: 'leverage',
+        name: 'system:leverage',
+        component: () => import('../views/system/LeverageView.vue'),
+      },
+      {
+        path: 'inherited-capabilities',
+        name: 'system:inherited-capabilities',
+        component: () =>
+          import('../views/system/InheritedCapabilitiesView.vue'),
+      },
+      {
+        path: 'risks',
+        name: 'system:risks',
+        component: () => import('../views/RisksView.vue'),
+      },
+      {
+        path: 'compliance',
+        name: 'system:compliance',
+        component: () => import('../views/system/ComplianceView.vue'),
+      },
+      {
+        path: 'json',
+        name: 'system:json',
+        component: () => import('../views/system/JsonView.vue'),
       },
     ],
     meta: {
@@ -744,10 +782,34 @@ const authenticatedRoutes = [
       },
       {
         path: 'system-implementation',
-        name: 'system-security-plan-system-implementation',
+        name: 'system-security-plan-implementation',
         component: () =>
           import(
             '../views/system-security-plans/SystemSecurityPlanSystemImplementationEditorView.vue'
+          ),
+      },
+      {
+        path: 'users',
+        name: 'system-security-plan-users',
+        component: () =>
+          import(
+            '../views/system-security-plans/SystemSecurityPlanUsersView.vue'
+          ),
+      },
+      {
+        path: 'components',
+        name: 'system-security-plan-components',
+        component: () =>
+          import(
+            '../views/system-security-plans/SystemSecurityPlanComponentsView.vue'
+          ),
+      },
+      {
+        path: 'authorizations',
+        name: 'system-security-plan-authorizations',
+        component: () =>
+          import(
+            '../views/system-security-plans/SystemSecurityPlanAuthorizationsView.vue'
           ),
       },
       {

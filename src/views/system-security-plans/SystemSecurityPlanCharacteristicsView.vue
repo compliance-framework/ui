@@ -697,7 +697,7 @@
       class="w-full max-w-4xl"
     >
       <SystemCharacteristicsForm
-        :system-security-plan-id="String(route.params.id)"
+        :system-security-plan-id="sspId"
         @updated="handleCharacteristicsUpdated"
       />
     </Dialog>
@@ -720,28 +720,31 @@ import { RESOURCES, ACTIONS } from '@/constants/permissions';
 
 const { can, permissionTooltip } = usePermissions();
 
+const props = defineProps<{ sspId?: string }>();
 const route = useRoute();
 const toast = useToast();
 const showEditCharacteristicsModal = ref(false);
+
+const sspId = computed(() => props.sspId || String(route.params.id || ''));
 
 const {
   data: characteristics,
   isLoading: loading,
   error,
 } = useDataApi<SystemCharacteristics>(
-  `/api/oscal/system-security-plans/${route.params.id}/system-characteristics`,
+  `/api/oscal/system-security-plans/${sspId.value}/system-characteristics`,
 );
 const { data: networkArchitecture, isLoading: networkArchitectureLoading } =
   useDataApi<Diagrammable | null>(
-    `/api/oscal/system-security-plans/${route.params.id}/system-characteristics/network-architecture`,
+    `/api/oscal/system-security-plans/${sspId.value}/system-characteristics/network-architecture`,
   );
 const { data: authorizationBoundary, isLoading: authorizationBoundaryLoading } =
   useDataApi<Diagrammable | null>(
-    `/api/oscal/system-security-plans/${route.params.id}/system-characteristics/authorization-boundary`,
+    `/api/oscal/system-security-plans/${sspId.value}/system-characteristics/authorization-boundary`,
   );
 const { data: dataFlow, isLoading: dataFlowLoading } =
   useDataApi<Diagrammable | null>(
-    `/api/oscal/system-security-plans/${route.params.id}/system-characteristics/data-flow`,
+    `/api/oscal/system-security-plans/${sspId.value}/system-characteristics/data-flow`,
   );
 
 function formatDate(dateString?: string): string {

@@ -97,8 +97,9 @@ import { getIdFromRoute } from '@/utils/get-id-from-route';
 import type { CatalogOffering } from '@/types/ssp-export-offerings';
 import type { SSPLeverageLink } from '@/types/ssp-leverage';
 
+const props = defineProps<{ sspId?: string }>();
 const route = useRoute();
-const sspId = computed(() => getIdFromRoute(route) ?? '');
+const sspId = computed(() => props.sspId || getIdFromRoute(route) || '');
 
 // The catalog is the only fetch this view makes — deliberately: it already omits any
 // upstream SSP title/metadata, so there is nothing here to join against an

@@ -22,20 +22,7 @@
       <Tabs :value="activeRoute">
         <TabList>
           <Tab
-            v-for="tab in [
-              { label: 'Overview', route: 'system:overview' },
-              { label: 'System Users', route: 'system:users' },
-              { label: 'Risks', route: 'system:risks' },
-              { label: 'System Components', route: 'system:components' },
-              {
-                label: 'Leveraged Authorizations',
-                route: 'system:authorizations',
-              },
-              {
-                label: 'Export Offerings',
-                route: 'system:export-offerings',
-              },
-            ]"
+            v-for="tab in tabs"
             :key="tab.label"
             :value="tab.route"
             as="div"
@@ -68,6 +55,7 @@ import Tabs from '@/volt/Tabs.vue';
 import Tab from '@/volt/Tab.vue';
 import TabList from '@/volt/TabList.vue';
 import Message from '@/volt/Message.vue';
+import { sspSectionTabRoutes } from '@/constants/ssp-section-tabs';
 
 const { system } = useSystemStore();
 const systemSecurityPlan = ref<SystemSecurityPlan>(
@@ -76,4 +64,5 @@ const systemSecurityPlan = ref<SystemSecurityPlan>(
 
 const route = useRoute();
 const activeRoute = ref(route.name as string);
+const tabs = sspSectionTabRoutes('system:');
 </script>

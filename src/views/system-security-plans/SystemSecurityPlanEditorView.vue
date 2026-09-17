@@ -1,9 +1,10 @@
 <template>
-  <PageHeader>System Security Plan</PageHeader>
   <template v-if="isLoading">
+    <PageHeader>System Security Plan</PageHeader>
     <PageSubHeader>Loading...</PageSubHeader>
   </template>
   <template v-else-if="error">
+    <PageHeader>System Security Plan</PageHeader>
     <PageSubHeader class="text-red-500"
       >Error loading System Security Plan: {{ error }}</PageSubHeader
     >
@@ -11,108 +12,35 @@
   <template v-if="systemSecurityPlan">
     <PageSubHeader>{{ systemSecurityPlan.metadata?.title }}</PageSubHeader>
 
-    <p class="mt-4" v-if="systemSecurityPlan.metadata?.remarks">
-      {{ systemSecurityPlan.metadata.remarks }}
-    </p>
-
-    <div
-      class="mt-4 border-b border-ccf-300 dark:border-slate-800 overflow-x-auto whitespace-nowrap"
-    >
-      <RouterLink
-        class="tab-link px-4 py-2 inline-block text-lg border-ccf-300 dark:border-slate-700 dark:hover:bg-slate-900"
-        :to="{ name: 'system-security-plan-overview', params: { id: sspId } }"
-      >
-        Overview
-      </RouterLink>
-      <RouterLink
-        class="tab-link px-4 py-2 inline-block text-lg border-ccf-300 dark:border-slate-700 dark:hover:bg-slate-900"
-        :to="{
-          name: 'system-security-plan-characteristics',
-          params: { id: sspId },
-        }"
-      >
-        System Characteristics
-      </RouterLink>
-      <RouterLink
-        class="tab-link px-4 py-2 inline-block text-lg border-ccf-300 dark:border-slate-700 dark:hover:bg-slate-900"
-        :to="{
-          name: 'system-security-plan-system-implementation',
-          params: { id: sspId },
-        }"
-      >
-        System Implementation
-      </RouterLink>
-      <RouterLink
-        class="tab-link px-4 py-2 inline-block text-lg border-ccf-300 dark:border-slate-700 dark:hover:bg-slate-900"
-        :to="{
-          name: 'system-security-plan-control-implementation',
-          params: { id: sspId },
-        }"
-      >
-        Control Implementation
-      </RouterLink>
-      <RouterLink
-        class="tab-link px-4 py-2 inline-block text-lg border-ccf-300 dark:border-slate-700 dark:hover:bg-slate-900"
-        :to="{
-          name: 'system-security-plan-export-offerings',
-          params: { id: sspId },
-        }"
-      >
-        Export Offerings
-      </RouterLink>
-      <RouterLink
-        class="tab-link px-4 py-2 inline-block text-lg border-ccf-300 dark:border-slate-700 dark:hover:bg-slate-900"
-        :to="{
-          name: 'system-security-plan-leverage',
-          params: { id: sspId },
-        }"
-      >
-        Leverage
-      </RouterLink>
-      <RouterLink
-        class="tab-link px-4 py-2 inline-block text-lg border-ccf-300 dark:border-slate-700 dark:hover:bg-slate-900"
-        :to="{
-          name: 'system-security-plan-inherited-capabilities',
-          params: { id: sspId },
-        }"
-      >
-        Inherited Capabilities
-      </RouterLink>
-      <RouterLink
-        class="tab-link px-4 py-2 inline-block text-lg border-ccf-300 dark:border-slate-700 dark:hover:bg-slate-900"
-        :to="{ name: 'system-security-plan-risks', params: { id: sspId } }"
-      >
-        Risks
-      </RouterLink>
-      <RouterLink
-        class="tab-link px-4 py-2 inline-block text-lg border-ccf-300 dark:border-slate-700 dark:hover:bg-slate-900"
-        :to="{
-          name: 'system-security-plan-compliance',
-          params: { id: sspId },
-        }"
-      >
-        Compliance
-      </RouterLink>
-      <RouterLink
-        class="tab-link px-4 py-2 inline-block text-lg border-ccf-300 dark:border-slate-700 dark:hover:bg-slate-900"
-        :to="{ name: 'system-security-plan-json', params: { id: sspId } }"
-      >
-        JSON
-      </RouterLink>
+    <div>
+      <PageHeader>System Security Plan</PageHeader>
+      <Tabs :value="activeRoute">
+        <TabList>
+          <Tab
+            v-for="tab in tabs"
+            :key="tab.label"
+            :value="tab.route"
+            as="div"
+            class="flex items-center gap-2"
+          >
+            <RouterLink :to="{ name: tab.route, params: { id: sspId } }">
+              {{ tab.label }}
+            </RouterLink>
+          </Tab>
+        </TabList>
+      </Tabs>
     </div>
 
-    <div class="my-4">
-      <RouterView v-slot="{ Component }">
-        <KeepAlive>
-          <component :is="Component" />
-        </KeepAlive>
-      </RouterView>
-    </div>
+    <RouterView v-slot="{ Component }">
+      <KeepAlive>
+        <component :is="Component" />
+      </KeepAlive>
+    </RouterView>
   </template>
 </template>
 
 <script setup lang="ts">
-import { computed, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import PageHeader from '@/components/PageHeader.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
 import type { SystemSecurityPlan } from '@/oscal';
@@ -121,11 +49,17 @@ import { useDataApi } from '@/composables/axios';
 import { useToast } from 'primevue/usetoast';
 import type { AxiosError } from 'axios';
 import type { ErrorResponse, ErrorBody } from '@/stores/types.ts';
+import Tabs from '@/volt/Tabs.vue';
+import Tab from '@/volt/Tab.vue';
+import TabList from '@/volt/TabList.vue';
+import { sspSectionTabRoutes } from '@/constants/ssp-section-tabs';
 
 const route = useRoute();
 const router = useRouter();
 const toast = useToast();
 const sspId = computed(() => String(route.params.id || ''));
+const activeRoute = ref(route.name as string);
+const tabs = sspSectionTabRoutes('system-security-plan-');
 
 const {
   data: systemSecurityPlan,
@@ -163,14 +97,3 @@ watch(error, () => {
   }
 });
 </script>
-
-<style scoped>
-.tab-link.router-link-exact-active {
-  background: none;
-  border-bottom: 2px solid;
-}
-
-.dark .tab-link.router-link-exact-active {
-  background-color: rgb(15 23 42); /* slate-900 */
-}
-</style>

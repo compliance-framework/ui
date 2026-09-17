@@ -81,11 +81,12 @@ import {
 } from '@/stores/system-security-plans';
 import { getErrorStatus } from '@/utils/httpErrors';
 
+const props = defineProps<{ sspId?: string }>();
 const route = useRoute();
 const toast = useToast();
 const sspStore = useSystemSecurityPlanStore();
 
-const sspId = computed(() => String(route.params.id || ''));
+const sspId = computed(() => props.sspId || String(route.params.id || ''));
 const profileId = ref<string>('');
 const profileResolved = ref(false);
 const profileLoading = ref(false);

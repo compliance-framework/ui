@@ -393,7 +393,6 @@ import DrawIODiagramEditor from '@/components/DrawIODiagramEditor.vue';
 import CollapsableGroup from '@/components/CollapsableGroup.vue';
 import { v4 } from 'uuid';
 import { useToast } from 'primevue/usetoast';
-import { useSystemStore } from '@/stores/system.ts';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
 import TertiaryButton from '@/volt/TertiaryButton.vue';
@@ -404,7 +403,10 @@ import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
 import PlusIcon from '@primevue/icons/plus';
 import type { Diagrammable } from '@/stores/system-security-plans';
 
-const { system } = useSystemStore();
+const props = defineProps<{
+  sspId: string;
+}>();
+
 const toast = useToast();
 const { confirmDeleteDialog } = useDeleteConfirmationDialog();
 const collapsedDiagrams = ref<Record<string, boolean>>({});
@@ -412,7 +414,7 @@ const editingCaption = ref<Record<string, boolean>>({});
 const captionDrafts = ref<Record<string, string>>({});
 
 const systemSecurityPlan = ref<SystemSecurityPlan | null>(
-  (system.securityPlan as SystemSecurityPlan) || null,
+  props.sspId ? ({ uuid: props.sspId } as SystemSecurityPlan) : null,
 );
 
 const {

@@ -63,6 +63,10 @@ vi.mock('@/utils/delete-dialog', () => ({
   }),
 }));
 
+vi.mock('@/composables/usePermissions', () => ({
+  usePermissions: () => ({ can: () => true, permissionTooltip: () => '' }),
+}));
+
 vi.mock('@/composables/useSspProfileBindings', () => ({
   useSspProfileBindings: () => ({
     selectedProfiles: ref(['profile-1']),
@@ -260,6 +264,7 @@ describe('System area views', () => {
     });
 
     const wrapper = mount(DiagramsView, {
+      props: { sspId: activePlan.uuid },
       global: { stubs },
     });
     await flushPromises();
@@ -299,6 +304,7 @@ describe('System area views', () => {
     apiPayloads.set(endpoint.dataFlow, { diagrams: [] });
 
     const wrapper = mount(DiagramsView, {
+      props: { sspId: activePlan.uuid },
       global: { stubs },
     });
     await flushPromises();
@@ -328,6 +334,7 @@ describe('System area views', () => {
     apiPayloads.set(endpoint.dataFlow, { diagrams: [] });
 
     const wrapper = mount(DiagramsView, {
+      props: { sspId: activePlan.uuid },
       global: { stubs },
     });
     await flushPromises();
@@ -369,6 +376,7 @@ describe('System area views', () => {
     apiPayloads.set(endpoint.dataFlow, { diagrams: [] });
 
     const wrapper = mount(DiagramsView, {
+      props: { sspId: activePlan.uuid },
       global: { stubs },
     });
     await flushPromises();

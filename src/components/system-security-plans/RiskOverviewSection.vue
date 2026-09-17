@@ -67,7 +67,7 @@ import {
 } from '@/utils/risk-dashboard';
 import type { DataResponse } from '@/stores/types';
 
-type RiskListRouteName =
+export type RiskListRouteName =
   | 'system-security-plan-risks'
   | 'risks:index'
   | 'system:risks';

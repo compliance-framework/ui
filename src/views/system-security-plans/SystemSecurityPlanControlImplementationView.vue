@@ -489,6 +489,7 @@ import { RESOURCES, ACTIONS } from '@/constants/permissions';
 
 const { can, permissionTooltip } = usePermissions();
 
+const props = defineProps<{ sspId?: string }>();
 const route = useRoute();
 const toast = useToast();
 
@@ -496,7 +497,7 @@ const { confirmDeleteDialog } = useDeleteConfirmationDialog();
 
 const error = ref<string | null>(null);
 
-const sspId = computed(() => getIdFromRoute(route));
+const sspId = computed(() => props.sspId || getIdFromRoute(route) || '');
 const RISK_FETCH_LIMIT = 100;
 
 // Modal states
