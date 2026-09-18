@@ -224,3 +224,48 @@ describe('LineageGraphView persisted state', () => {
     expect(uiStore.lineageGraphSelectedNodeKey).toBeNull();
   });
 });
+
+describe('LineageGraphView column collapse', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia());
+    fetchRootNodesMock.mockReset();
+    fetchChildNodesMock.mockReset();
+    // jsdom doesn't implement scrollIntoView; selectNode calls it after opening a column.
+    Element.prototype.scrollIntoView = vi.fn();
+  });
+
+  it('re-clicking an open box collapses its child column instead of reopening it', async () => {
+    const root = groupNode('Standards', 1);
+    const child = controlNode('Access Control');
+    fetchRootNodesMock.mockResolvedValue([root]);
+    fetchChildNodesMock.mockResolvedValue([child]);
+
+    const wrapper = mount(LineageGraphView, {
+      global: {
+        stubs: {
+          LineageScopeBar: true,
+          LineageViewSwitch: true,
+          LineageNodeDrawer: true,
+        },
+      },
+    });
+    await flushPromises();
+
+    const findBox = (title: string) =>
+      wrapper
+        .findAll('div.cursor-pointer')
+        .find((el) => el.text().includes(title));
+
+    await findBox('Standards')!.trigger('click');
+    await flushPromises();
+    expect(wrapper.text()).toContain('Access Control');
+    expect(fetchChildNodesMock).toHaveBeenCalledTimes(1);
+
+    // Clicking the same (already open) box again should close the child
+    // column it opened, not immediately re-fetch and re-open it.
+    await findBox('Standards')!.trigger('click');
+    await flushPromises();
+    expect(wrapper.text()).not.toContain('Access Control');
+    expect(fetchChildNodesMock).toHaveBeenCalledTimes(1);
+  });
+});

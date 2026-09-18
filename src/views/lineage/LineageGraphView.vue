@@ -145,10 +145,15 @@ function restoreGraphSelection() {
 }
 
 async function selectNode(colIndex: number, node: LineageNode) {
-  columns.value[colIndex].selectedKey = node.key;
+  // Clicking a box that's already selected with its child column open
+  // toggles it closed instead of re-opening the same column.
+  const alreadyOpen =
+    columns.value[colIndex].selectedKey === node.key &&
+    columns.value[colIndex + 1]?.parentKey === node.key;
+  columns.value[colIndex].selectedKey = alreadyOpen ? null : node.key;
   // Drop deeper columns (re-selecting replaces what was to the right).
   columns.value = columns.value.slice(0, colIndex + 1);
-  if (node.hasChildren) {
+  if (node.hasChildren && !alreadyOpen) {
     const token = node.key;
     const children = await fetchChildNodes(node.key, scopeStore.scope);
     // Bail if a newer click in this column superseded us while awaiting —
