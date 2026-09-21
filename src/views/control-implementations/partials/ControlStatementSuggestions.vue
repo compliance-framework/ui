@@ -107,5 +107,6 @@ function formatRelevanceScore(score: number | undefined): string {
         All suggestions applied.
       </Message>
     </div>
+    <div class="h-0.5 w-full bg-gray-200 dark:bg-slate-700 mt-4"></div>
   </div>
 </template>

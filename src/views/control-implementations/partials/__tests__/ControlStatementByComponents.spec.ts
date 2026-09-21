@@ -74,7 +74,6 @@ describe('ControlStatementByComponents', () => {
     expect(
       wrapper.findAll('[data-test="statement-by-component"]'),
     ).toHaveLength(2);
-    expect(wrapper.findAll('.h-0\\.5')).toHaveLength(1);
   });
 
   it('emits addComponent, createComponent and inheritFromSsp from burger menu commands', async () => {

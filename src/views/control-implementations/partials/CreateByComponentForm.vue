@@ -152,4 +152,5 @@ function submit() {
       </PrimaryButton>
     </div>
   </form>
+  <div class="h-0.5 w-full bg-gray-200 dark:bg-slate-700 mt-4"></div>
 </template>
