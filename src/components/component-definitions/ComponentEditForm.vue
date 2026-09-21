@@ -1,7 +1,7 @@
 <template>
   <form @submit.prevent="updateComponent()">
     <h1 class="text-xl font-semibold mb-6 dark:text-slate-300">
-      Edit component
+      Edit Component Template
     </h1>
 
     <div class="mb-4">
