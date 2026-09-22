@@ -149,10 +149,27 @@
 
   <Drawer
     v-model:visible="controlDrawerOpen"
-    header="Implementation"
     position="right"
     class="w-full! md:w-1/2! lg:w-3/5!"
   >
+    <template #header>
+      <div v-if="selectedControl" class="min-w-0">
+        <div class="flex items-center gap-x-3">
+          <Badge class="text-base">{{ selectedControl.id }}</Badge>
+          <h4 class="font-semibold text-2xl truncate">
+            {{ selectedControl.title }}
+          </h4>
+        </div>
+        <p
+          v-if="selectedControlDescription"
+          class="mt-1 text-sm text-gray-500 dark:text-slate-400"
+        >
+          {{ selectedControlDescription }}
+        </p>
+      </div>
+      <h4 v-else class="font-semibold text-2xl">Implementation</h4>
+    </template>
+
     <ControlImplementationSuggestions
       v-if="aiConfigStore.dashboardSuggestionsEnabled"
       :control-id="selectedDrawerControlId"
@@ -238,6 +255,7 @@ import ControlImplementationSuggestions from '@/views/control-implementations/pa
 import type { Catalog, Group } from '@/oscal';
 import type { DataResponse } from '@/stores/types.ts';
 import type {
+  Control,
   ControlImplementation,
   ImplementedRequirement,
   Risk,
@@ -407,6 +425,38 @@ const selectedDrawerControlId = computed(
   () =>
     selectedControlId.value ?? selectedImplementedRequirement.value?.controlId,
 );
+
+// Flattens the catalog tree once per rebuild so the drawer can look up a
+// control's title/description by id, regardless of whether it was opened by
+// clicking a row or restored from persisted drawer state on page load.
+const controlsById = computed(() => {
+  const map: Record<string, Control> = {};
+  const walk = (node: TreeNode) => {
+    if (node.type === 'control') {
+      const control = node.data as Control;
+      map[normalizeId(control.id)] = control;
+    }
+    for (const child of node.children ?? []) {
+      walk(child);
+    }
+  };
+  for (const node of nodes.value) {
+    walk(node);
+  }
+  return map;
+});
+
+const selectedControl = computed<Control | undefined>(() => {
+  const key = normalizeId(selectedDrawerControlId.value);
+  return key ? controlsById.value[key] : undefined;
+});
+
+const selectedControlDescription = computed(() => {
+  const statementPart = selectedControl.value?.parts?.find(
+    (part) => part.name === 'statement',
+  );
+  return statementPart?.prose ?? '';
+});
 
 const selectedControlDashboardSuggestions = computed(() => {
   const key = normalizeId(selectedDrawerControlId.value);

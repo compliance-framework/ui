@@ -1368,6 +1368,7 @@ async function submitEvidenceLinking() {
       >
         AI is not configured, so dashboard suggestions cannot be generated.
       </Message>
+      <div class="h-0.5 w-full bg-gray-200 dark:bg-slate-700 mt-4"></div>
 
       <ControlStatementByComponents
         v-if="showComponentsSection && localStatement"
@@ -1524,6 +1525,7 @@ async function submitEvidenceLinking() {
           @add-condition="addLabelCondition"
           @remove-condition="removeLabelCondition"
         />
+        <div class="h-0.5 w-full bg-gray-200 dark:bg-slate-700 mt-4"></div>
       </div>
     </div>
     <div v-else>

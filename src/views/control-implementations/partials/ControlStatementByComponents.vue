@@ -56,11 +56,11 @@ const menuItems = computed(() => [
     <BurgerMenu :items="menuItems" />
   </div>
 
-  <div v-for="(byComponent, index) in byComponents" :key="byComponent.uuid">
-    <div
-      v-if="index !== 0"
-      class="h-0.5 w-full bg-gray-200 dark:bg-slate-700 my-4"
-    ></div>
+  <div
+    v-if="byComponents.length === 0"
+    class="h-0.5 w-full bg-gray-200 dark:bg-slate-700 mt-4"
+  ></div>
+  <div v-for="byComponent in byComponents" :key="byComponent.uuid">
     <StatementByComponent
       :by-component="byComponent"
       :control-id="controlId"
@@ -69,5 +69,6 @@ const menuItems = computed(() => [
       @save="emit('save', $event)"
       @delete="emit('delete', $event)"
     />
+    <div class="h-0.5 w-full bg-gray-200 dark:bg-slate-700 my-4"></div>
   </div>
 </template>

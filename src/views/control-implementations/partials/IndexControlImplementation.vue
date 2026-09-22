@@ -2,6 +2,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import Drawer from '@/volt/Drawer.vue';
 import Message from '@/volt/Message.vue';
+import Badge from '@/volt/Badge.vue';
 import type { ImplementedRequirement, Statement } from '@/oscal';
 import PartDisplay from '@/components/PartDisplay.vue';
 import type { Part } from '@/oscal';
@@ -74,6 +75,13 @@ const selectedStatementStatusCue = computed(() => {
 // Purple to match the Inherited convention in SharedResponsibilityBlocks.
 const inheritedChipClass =
   'rounded px-2 py-0.5 text-xs font-medium bg-purple-600 text-white dark:bg-purple-400 dark:text-purple-950';
+
+const controlDescription = computed(() => {
+  const statementPart = control.parts?.find(
+    (part) => part.name === 'statement',
+  );
+  return statementPart?.prose ?? '';
+});
 
 const selectedStatementInherited = computed(
   () =>
@@ -314,22 +322,36 @@ async function onPartSelect(e: Event, part: Part) {
     class="w-full! md:w-1/2! lg:w-3/5!"
   >
     <template #header>
-      <div class="flex flex-wrap items-center gap-2">
-        <TooltipTitle
-          text="Implementation Statement"
-          tooltip-key="system.implementation.statement.drawer"
-          position="bottom"
-        />
-        <span
-          v-if="selectedStatementStatusCue"
-          class="rounded px-2 py-0.5 text-xs font-medium"
-          :class="selectedStatementStatusCue.countClass"
+      <div class="min-w-0">
+        <div class="flex flex-wrap items-center gap-2">
+          <TooltipTitle
+            text="Implementation Statement"
+            tooltip-key="system.implementation.statement.drawer"
+            position="bottom"
+          />
+          <span
+            v-if="selectedStatementStatusCue"
+            class="rounded px-2 py-0.5 text-xs font-medium"
+            :class="selectedStatementStatusCue.countClass"
+          >
+            {{ selectedStatementStatusCue.label }}
+          </span>
+          <span v-if="selectedStatementInherited" :class="inheritedChipClass">
+            Inherited
+          </span>
+        </div>
+        <div class="h-0.5 w-full bg-gray-200 dark:bg-slate-700 mt-4"></div>
+        <div class="mt-2 flex items-center gap-x-3">
+          <Badge class="text-base">{{ control.id }}</Badge>
+          <h4 class="font-medium truncate">{{ control.title }}</h4>
+        </div>
+        <p
+          v-if="controlDescription"
+          class="mt-1 text-sm text-gray-500 dark:text-slate-400"
         >
-          {{ selectedStatementStatusCue.label }}
-        </span>
-        <span v-if="selectedStatementInherited" :class="inheritedChipClass">
-          Inherited
-        </span>
+          {{ controlDescription }}
+        </p>
+        <div class="h-0.5 w-full bg-gray-200 dark:bg-slate-700 mt-4"></div>
       </div>
     </template>
     <ControlStatementImplementation
@@ -374,5 +396,18 @@ async function onPartSelect(e: Event, part: Part) {
 
 .dark .part-display .hover {
   background-color: rgb(44 57 74);
+}
+
+/* Separates sibling statement parts (top-level items and nested a./b./c.
+   sub-items alike) so it's clear where one part's badges/rows end and the
+   next part begins. */
+.part-display [data-type='part'] + [data-type='part'] {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgb(226 232 240);
+}
+
+.dark .part-display [data-type='part'] + [data-type='part'] {
+  border-top-color: rgb(51 65 85);
 }
 </style>
