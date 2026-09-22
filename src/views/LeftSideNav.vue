@@ -43,15 +43,81 @@ function abbreviated(link: NavigationItem): string {
 
 const links = ref<Array<NavigationItem>>([
   {
-    name: 'system:overview',
-    title: 'Active System',
-    abbr: 'SYS',
+    title: 'Systems',
+    children: [
+      {
+        name: 'system:overview',
+        title: 'Active System',
+        abbr: 'SYS',
+      },
+      {
+        name: 'system-security-plans',
+        title: 'Manage Systems',
+        permission: { resource: RESOURCES.SSP, action: ACTIONS.READ },
+      },
+    ],
+  },
+  {
+    name: 'evidence:index',
+    title: 'Evidence',
+    abbr: 'EV',
+    permission: { resource: RESOURCES.EVIDENCE, action: ACTIONS.READ },
   },
   {
     name: 'controls:index',
     title: 'Controls',
     abbr: 'CON',
   },
+  {
+    name: 'lineage',
+    title: 'Compliance Map',
+    abbr: 'CM',
+  },
+  {
+    name: 'risks:index',
+    title: 'Risk Register',
+    abbr: 'RIS',
+    permission: { resource: RESOURCES.RISK, action: ACTIONS.READ },
+  },
+  {
+    name: 'dashboards',
+    title: 'Evidence Filters',
+    abbr: 'FIL',
+    permission: { resource: RESOURCES.FILTER, action: ACTIONS.READ },
+  },
+  // {
+  //   name: 'inventory:index',
+  //   title: 'Inventory',
+  //   abbr: 'INV',
+  //   permission: { resource: RESOURCES.INVENTORY, action: ACTIONS.READ },
+  // },
+  // {
+  //   title: 'Implementation',
+  //   children: [
+  //     {
+  //       name: 'assessment-plans',
+  //       title: 'Assessment Plans',
+  //       permission: {
+  //         resource: RESOURCES.ASSESSMENT_PLAN,
+  //         action: ACTIONS.READ,
+  //       },
+  //     },
+  //     {
+  //       name: 'assessment-results',
+  //       title: 'Assessment Results',
+  //       permission: {
+  //         resource: RESOURCES.ASSESSMENT_RESULTS,
+  //         action: ACTIONS.READ,
+  //       },
+  //     },
+  //     {
+  //       name: 'plan-of-action-and-milestones',
+  //       title: 'POA&M',
+  //       abbr: 'PM',
+  //       permission: { resource: RESOURCES.POAM_OSCAL, action: ACTIONS.READ },
+  //     },
+  //   ],
+  // },
   {
     title: 'Workflows',
     abbr: 'WF',
@@ -77,32 +143,9 @@ const links = ref<Array<NavigationItem>>([
     ],
   },
   {
-    name: 'risks:index',
-    title: 'Risk Register',
-    abbr: 'RIS',
-    permission: { resource: RESOURCES.RISK, action: ACTIONS.READ },
-  },
-  {
-    name: 'inventory:index',
-    title: 'Inventory',
-    abbr: 'INV',
-    permission: { resource: RESOURCES.INVENTORY, action: ACTIONS.READ },
-  },
-  {
-    name: 'evidence:index',
-    title: 'Evidence',
-    abbr: 'EV',
-    permission: { resource: RESOURCES.EVIDENCE, action: ACTIONS.READ },
-  },
-  {
-    title: 'Governance',
-    abbr: 'GOV',
+    title: 'Control Definitions',
+    abbr: 'CD',
     children: [
-      {
-        name: 'admin-risks',
-        title: 'Risks',
-        permission: ADMIN_MANAGE,
-      },
       {
         name: 'catalog-list',
         title: 'Catalogs',
@@ -121,72 +164,34 @@ const links = ref<Array<NavigationItem>>([
         abbr: 'PR',
         permission: { resource: RESOURCES.PROFILE, action: ACTIONS.READ },
       },
-      {
-        name: 'lineage',
-        title: 'Compliance Map',
-        abbr: 'CM',
-      },
-    ],
-  },
-  {
-    title: 'Implementation',
-    children: [
-      {
-        name: 'system-security-plans',
-        title: 'System Security Plans',
-        permission: { resource: RESOURCES.SSP, action: ACTIONS.READ },
-      },
-      {
-        name: 'assessment-plans',
-        title: 'Assessment Plans',
-        permission: {
-          resource: RESOURCES.ASSESSMENT_PLAN,
-          action: ACTIONS.READ,
-        },
-      },
-      {
-        name: 'assessment-results',
-        title: 'Assessment Results',
-        permission: {
-          resource: RESOURCES.ASSESSMENT_RESULTS,
-          action: ACTIONS.READ,
-        },
-      },
-      {
-        name: 'plan-of-action-and-milestones',
-        title: 'POA&M',
-        abbr: 'PM',
-        permission: { resource: RESOURCES.POAM_OSCAL, action: ACTIONS.READ },
-      },
     ],
   },
   {
     title: 'Admin',
     children: [
       {
-        name: 'dashboards',
-        title: 'Filters',
-        abbr: 'FIL',
-        permission: { resource: RESOURCES.FILTER, action: ACTIONS.READ },
+        name: 'admin-risks',
+        title: 'Risks',
+        permission: ADMIN_MANAGE,
       },
-      {
-        name: 'component-definitions',
-        title: 'Component Definitions',
-        permission: {
-          resource: RESOURCES.COMPONENT_DEFINITION,
-          action: ACTIONS.READ,
-        },
-      },
-      {
-        name: 'admin-parties',
-        title: 'Parties',
-        permission: { resource: RESOURCES.PARTY, action: ACTIONS.READ },
-      },
-      {
-        name: 'admin-roles',
-        title: 'Roles',
-        permission: { resource: RESOURCES.ROLE, action: ACTIONS.READ },
-      },
+      // {
+      //   name: 'component-definitions',
+      //   title: 'Component Definitions',
+      //   permission: {
+      //     resource: RESOURCES.COMPONENT_DEFINITION,
+      //     action: ACTIONS.READ,
+      //   },
+      // },
+      // {
+      //   name: 'admin-parties',
+      //   title: 'Parties',
+      //   permission: { resource: RESOURCES.PARTY, action: ACTIONS.READ },
+      // },
+      // {
+      //   name: 'admin-roles',
+      //   title: 'Roles',
+      //   permission: { resource: RESOURCES.ROLE, action: ACTIONS.READ },
+      // },
       {
         name: 'users-list',
         title: 'System Users',
@@ -202,16 +207,16 @@ const links = ref<Array<NavigationItem>>([
         title: 'Agents',
         permission: ADMIN_MANAGE,
       },
-      {
-        name: 'admin-subject-templates',
-        title: 'Subject Templates',
-        permission: ADMIN_MANAGE,
-      },
-      {
-        name: 'admin-risk-templates',
-        title: 'Risk Templates',
-        permission: ADMIN_MANAGE,
-      },
+      // {
+      //   name: 'admin-subject-templates',
+      //   title: 'Subject Templates',
+      //   permission: ADMIN_MANAGE,
+      // },
+      // {
+      //   name: 'admin-risk-templates',
+      //   title: 'Risk Templates',
+      //   permission: ADMIN_MANAGE,
+      // },
       {
         name: 'admin-diagnostics',
         title: 'Diagnostics',

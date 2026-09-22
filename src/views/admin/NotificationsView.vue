@@ -251,7 +251,7 @@ const diagnosticsNotificationOptions: NotificationOption[] = [
   { label: 'Evidence Digest', value: 'EVIDENCE_DIGEST' },
   { label: 'Workflow Notifications', value: 'WORKFLOW_EXECUTION_FAILED' },
   { label: 'Risk Notifications', value: 'RISK_NOTIFICATIONS' },
-  { label: 'POAM Notifications', value: 'POAM_NOTIFICATIONS' },
+  // { label: 'POAM Notifications', value: 'POAM_NOTIFICATIONS' },
 ];
 const timeRangeOptions: NotificationOption[] = [
   { label: 'Last 24 hours', value: '24h' },

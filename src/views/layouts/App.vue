@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted } from 'vue';
+import { computed, onMounted } from 'vue';
 import { RouterView } from 'vue-router';
 import LeftSideNav from '@/views/LeftSideNav.vue';
 import SidebarToggle from '@/components/navigation/SidebarToggle.vue';
@@ -7,10 +7,16 @@ import ProfileDropdown from '@/components/ProfileDropdown.vue';
 import { useSidebarStore } from '@/stores/sidebar';
 import { useUserStore } from '@/stores/auth';
 import { usePermissionsStore } from '@/stores/permissions';
+import { useSystemStore } from '@/stores/system';
 
 const sidebarStore = useSidebarStore();
 const userStore = useUserStore();
 const permissionsStore = usePermissionsStore();
+const systemStore = useSystemStore();
+
+const activeSystemName = computed(
+  () => systemStore.system.securityPlan?.metadata?.title,
+);
 
 // Auth is persisted, so on a hard refresh the user stays authenticated without re-running
 // the login hydration. Refresh the permission hints here so gating reflects current policy
@@ -54,7 +60,12 @@ onMounted(() => {
       >
         <div class="flex items-center justify-between">
           <div class="flex-1">
-            <!-- Breadcrumb or page title can go here -->
+            <span
+              v-if="activeSystemName"
+              class="text-sm font-medium text-gray-700 dark:text-slate-200"
+            >
+              Active System: {{ activeSystemName }}
+            </span>
           </div>
 
           <!-- Profile Dropdown -->
