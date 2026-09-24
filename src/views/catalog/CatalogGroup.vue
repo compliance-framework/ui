@@ -112,34 +112,35 @@
           @deleted="onChildGroupDeleted"
         />
       </div>
-      <div class="mt-4">
-        <GroupCreateModal
-          @created="groupCreated"
-          :catalog="catalog"
-          :parent="props.group"
-          v-model="showGroupForm"
-        />
-        <GroupDescriptionModal
-          v-model="showEditDescription"
-          :catalog="catalog"
-          :group="props.group"
-          @updated="onUpdated"
-        />
-        <GroupEditModal
-          v-model="showEdit"
-          :catalog="catalog"
-          :group="props.group"
-          @updated="onUpdated"
-        />
-        <ControlCreateModal
-          @created="controlCreated"
-          :catalog="catalog"
-          :parent-group="props.group"
-          v-model="showControlForm"
-        />
-      </div>
     </div>
   </CollapsableGroup>
+  <!-- Outside CollapsableGroup's body, which unmounts (v-if) while collapsed: these modals
+       must stay mounted regardless of expand state, since a header button can open one
+       (e.g. Edit) before the group has ever been expanded. -->
+  <GroupCreateModal
+    @created="groupCreated"
+    :catalog="catalog"
+    :parent="props.group"
+    v-model="showGroupForm"
+  />
+  <GroupDescriptionModal
+    v-model="showEditDescription"
+    :catalog="catalog"
+    :group="props.group"
+    @updated="onUpdated"
+  />
+  <GroupEditModal
+    v-model="showEdit"
+    :catalog="catalog"
+    :group="props.group"
+    @updated="onUpdated"
+  />
+  <ControlCreateModal
+    @created="controlCreated"
+    :catalog="catalog"
+    :parent-group="props.group"
+    v-model="showControlForm"
+  />
 </template>
 <script setup lang="ts">
 import { ref } from 'vue';

@@ -161,43 +161,44 @@
           @deleted="onChildDeleted"
         />
       </div>
-      <div class="mt-4">
-        <ControlCreateModal
-          @created="controlCreated"
-          :catalog="catalog"
-          :parent-control="props.control"
-          v-model="showControlForm"
-        />
-        <ControlPartEditModal
-          v-model="showEditStatement"
-          :catalog="catalog"
-          :control="props.control"
-          type="statement"
-          @updated="onUpdated"
-        />
-        <ControlPartEditModal
-          v-model="showEditObjective"
-          :catalog="catalog"
-          :control="props.control"
-          type="assessment-objective"
-          @updated="onUpdated"
-        />
-        <ControlPartEditModal
-          v-model="showEditGuidance"
-          :catalog="catalog"
-          :control="props.control"
-          type="guidance"
-          @updated="onUpdated"
-        />
-        <ControlEditModal
-          v-model="showEdit"
-          :catalog="catalog"
-          :control="props.control"
-          @updated="onUpdated"
-        />
-      </div>
     </div>
   </CollapsableGroup>
+  <!-- Outside CollapsableGroup's body, which unmounts (v-if) while collapsed: these modals
+       must stay mounted regardless of expand state, since a header button can open one
+       (e.g. Edit) before the control has ever been expanded. -->
+  <ControlCreateModal
+    @created="controlCreated"
+    :catalog="catalog"
+    :parent-control="props.control"
+    v-model="showControlForm"
+  />
+  <ControlPartEditModal
+    v-model="showEditStatement"
+    :catalog="catalog"
+    :control="props.control"
+    type="statement"
+    @updated="onUpdated"
+  />
+  <ControlPartEditModal
+    v-model="showEditObjective"
+    :catalog="catalog"
+    :control="props.control"
+    type="assessment-objective"
+    @updated="onUpdated"
+  />
+  <ControlPartEditModal
+    v-model="showEditGuidance"
+    :catalog="catalog"
+    :control="props.control"
+    type="guidance"
+    @updated="onUpdated"
+  />
+  <ControlEditModal
+    v-model="showEdit"
+    :catalog="catalog"
+    :control="props.control"
+    @updated="onUpdated"
+  />
 </template>
 <script setup lang="ts">
 import { computed, ref } from 'vue';
