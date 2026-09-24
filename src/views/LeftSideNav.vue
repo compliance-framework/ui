@@ -9,13 +9,14 @@ import lightMiniLogo from '@/assets/logo-light-mini.svg';
 import darkMiniLogo from '@/assets/logo-dark-mini.svg';
 import { useSidebarStore } from '@/stores/sidebar';
 import { computed, ref, watch } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { usePermissions } from '@/composables/usePermissions';
 import { RESOURCES, ACTIONS } from '@/constants/permissions';
 
 const sidebarStore = useSidebarStore();
 const { can } = usePermissions();
 const route = useRoute();
+const router = useRouter();
 
 interface NavigationItem {
   title: string;
@@ -261,7 +262,23 @@ function linkKey(item: NavigationItem): string | undefined {
 }
 
 function routeIsUnder(name?: string): boolean {
-  return !!name && route.matched.some((matched) => matched.name === name);
+  if (!name) {
+    return false;
+  }
+  if (route.matched.some((matched) => matched.name === name)) {
+    return true;
+  }
+  // Many sections (e.g. catalogs) are flat sibling routes — /catalogs, /catalogs/:id,
+  // /catalogs/new — rather than nested child routes, so a detail/create page reached
+  // directly (deep link, hard refresh) never shows up in route.matched under the list
+  // route's name. Falling back to a path-prefix check lets a fresh load on such a page
+  // still resolve to the right nav item without depending on any in-session state.
+  try {
+    const basePath = router.resolve({ name }).path;
+    return route.path === basePath || route.path.startsWith(`${basePath}/`);
+  } catch {
+    return false;
+  }
 }
 
 interface ActiveSection {

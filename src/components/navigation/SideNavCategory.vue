@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { watch } from 'vue';
+import { computed, watch } from 'vue';
 import ChevronRightIcon from '@primevue/icons/chevronright';
 import ChevronDownIcon from '@primevue/icons/chevrondown';
-import { useToggle } from '@/composables/useToggle';
+import { useLeftNavCategoriesStore } from '@/stores/leftNavCategories';
 
 const props = defineProps<{
   title: string;
@@ -12,7 +12,11 @@ const props = defineProps<{
   active?: boolean;
 }>();
 
-const { value: isOpen, toggle, set } = useToggle(props.open ?? false);
+// Open/closed state lives in this store (persisted to localStorage, keyed by title) rather
+// than local component state, so a submenu the user expands — even with nothing under it
+// selected — stays open across a hard refresh or a new session.
+const categoriesStore = useLeftNavCategoriesStore();
+const isOpen = computed(() => categoriesStore.isOpen(props.title));
 
 // Force the category open when it becomes the one containing the active route, so the
 // highlighted child link is actually visible. Never auto-collapses it back — a user who
@@ -20,9 +24,14 @@ const { value: isOpen, toggle, set } = useToggle(props.open ?? false);
 watch(
   () => props.open,
   (open) => {
-    if (open) set(true);
+    if (open) categoriesStore.setOpen(props.title, true);
   },
+  { immediate: true },
 );
+
+function toggle() {
+  categoriesStore.setOpen(props.title, !isOpen.value);
+}
 </script>
 <template>
   <div
