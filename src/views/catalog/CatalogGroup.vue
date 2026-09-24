@@ -1,5 +1,5 @@
 <template>
-  <CollapsableGroup>
+  <CollapsableGroup :persist-key="`catalog:${catalog.uuid}:group:${group.id}`">
     <template #header>
       <div class="py-4 px-4 flex flex-wrap items-center gap-3">
         <span
