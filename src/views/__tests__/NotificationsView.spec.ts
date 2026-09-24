@@ -1286,7 +1286,7 @@ describe('NotificationsView', () => {
     expect(wrapper.text()).toContain('ccf-alerts');
   });
 
-  it('renders diagnostics checks for digest, workflow, risk, and POAM notifications', async () => {
+  it('renders diagnostics checks for digest, workflow, and risk notifications', async () => {
     const wrapper = mount(NotificationsView);
     await flushPromises();
 
@@ -1317,10 +1317,25 @@ describe('NotificationsView', () => {
     await flushPromises();
     expect(wrapper.text()).toContain('Risk review due reminder');
     expect(wrapper.text()).toContain('Warn');
+  });
 
-    await diagnosticsSelect.setValue('POAM_NOTIFICATIONS');
+  it('does not offer POAM Notifications as a diagnostics option', async () => {
+    const wrapper = mount(NotificationsView);
     await flushPromises();
-    expect(wrapper.text()).toContain('POAM deadline reminder');
+
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Diagnostics')!
+      .trigger('click');
+    await flushPromises();
+
+    const diagnosticsSelect = wrapper
+      .find('#notifications-diagnostics-panel')
+      .find('select');
+    const optionLabels = diagnosticsSelect
+      .findAll('option')
+      .map((option) => option.text());
+    expect(optionLabels).not.toContain('POAM Notifications');
   });
 
   it('links diagnostics results to filtered deliveries', async () => {

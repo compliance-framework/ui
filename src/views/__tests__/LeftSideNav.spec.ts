@@ -9,7 +9,7 @@ describe('LeftSideNav', () => {
     setActivePinia(createPinia());
   });
 
-  it('renders admin links in correct order', () => {
+  it('no longer renders the retired admin links', () => {
     const sidebarStore = useSidebarStore();
     sidebarStore.open = true;
 
@@ -43,32 +43,57 @@ describe('LeftSideNav', () => {
       .map((link) => link.text().trim())
       .filter((text) => text.length > 0);
 
-    const systemUsersIndex = linkTexts.indexOf('System Users');
-    const agentsIndex = linkTexts.indexOf('Agents');
-    const diagnosticsIndex = linkTexts.indexOf('Diagnostics');
-    const subjectTemplatesIndex = linkTexts.indexOf('Subject Templates');
-    const riskTemplatesIndex = linkTexts.indexOf('Risk Templates');
-    const importIndex = linkTexts.indexOf('Import');
-
-    for (const index of [
-      systemUsersIndex,
-      agentsIndex,
-      diagnosticsIndex,
-      subjectTemplatesIndex,
-      riskTemplatesIndex,
-      importIndex,
+    for (const label of [
+      'Subject Templates',
+      'Risk Templates',
+      'Component Definitions',
+      'Parties',
+      'Roles',
     ]) {
-      expect(index).toBeGreaterThanOrEqual(0);
+      expect(linkTexts).not.toContain(label);
     }
-
-    expect(agentsIndex).toBeGreaterThan(systemUsersIndex);
-    expect(subjectTemplatesIndex).toBeGreaterThan(agentsIndex);
-    expect(riskTemplatesIndex).toBeGreaterThan(subjectTemplatesIndex);
-    expect(diagnosticsIndex).toBeGreaterThan(riskTemplatesIndex);
-    expect(importIndex).toBeGreaterThan(diagnosticsIndex);
   });
 
-  it('groups Risks, Catalogs, Control Links, Profiles and Compliance Map under Governance, with Filters under Admin', () => {
+  it('reinstates Groups, Agents, Diagnostics and Import in the navigation', () => {
+    const sidebarStore = useSidebarStore();
+    sidebarStore.open = true;
+
+    const wrapper = mount(LeftSideNav, {
+      global: {
+        directives: {
+          tooltip: {
+            mounted: () => undefined,
+          },
+        },
+        stubs: {
+          SideNav: {
+            template: '<div><slot name="logo" /><slot /></div>',
+          },
+          SideNavCategory: {
+            template:
+              '<section><div class="category-title"><slot name="title" /></div><div><slot /></div></section>',
+          },
+          SideNavLink: {
+            template: '<a class="sidenav-link"><slot /></a>',
+          },
+          SideNavLogo: {
+            template: '<img alt="logo" />',
+          },
+        },
+      },
+    });
+
+    const linkTexts = wrapper
+      .findAll('.sidenav-link')
+      .map((link) => link.text().trim())
+      .filter((text) => text.length > 0);
+
+    for (const label of ['Groups', 'Agents', 'Diagnostics', 'Import']) {
+      expect(linkTexts).toContain(label);
+    }
+  });
+
+  it('groups Risks, Groups, Agents, Diagnostics and Import under a separate Admin category', () => {
     const sidebarStore = useSidebarStore();
     sidebarStore.open = true;
 
@@ -98,38 +123,85 @@ describe('LeftSideNav', () => {
     });
 
     const categories = wrapper.findAll('section');
-    const governanceCategory = categories.find(
-      (category) => category.find('.category-title').text() === 'Governance',
-    );
     const adminCategory = categories.find(
       (category) => category.find('.category-title').text() === 'Admin',
     );
 
-    expect(governanceCategory).toBeTruthy();
+    expect(adminCategory).toBeTruthy();
     for (const label of [
       'Risks',
-      'Catalogs',
-      'Control Links',
-      'Profiles',
-      'Compliance Map',
+      'Groups',
+      'Agents',
+      'Diagnostics',
+      'Import',
     ]) {
-      expect(governanceCategory?.text()).toContain(label);
-      expect(adminCategory?.text()).not.toContain(label);
+      expect(adminCategory?.text()).toContain(label);
     }
 
-    // Filters live under Admin, not Governance.
-    expect(adminCategory?.text()).toContain('Filters');
-    expect(governanceCategory?.text()).not.toContain('Filters');
+    // Not nested under Admin — Control Definitions still owns these.
+    expect(adminCategory?.text()).not.toContain('Catalogs');
+    expect(adminCategory?.text()).not.toContain('Control Links');
+  });
 
-    // Dashboards and Lineage are no longer standalone top-level links.
+  it('groups Catalogs, Control Links and Profiles under Control Definitions, with Evidence Filters and Compliance Map as top-level links', () => {
+    const sidebarStore = useSidebarStore();
+    sidebarStore.open = true;
+
+    const wrapper = mount(LeftSideNav, {
+      global: {
+        directives: {
+          tooltip: {
+            mounted: () => undefined,
+          },
+        },
+        stubs: {
+          SideNav: {
+            template: '<div><slot name="logo" /><slot /></div>',
+          },
+          SideNavCategory: {
+            template:
+              '<section><div class="category-title"><slot name="title" /></div><div><slot /></div></section>',
+          },
+          SideNavLink: {
+            template: '<a class="sidenav-link"><slot /></a>',
+          },
+          SideNavLogo: {
+            template: '<img alt="logo" />',
+          },
+        },
+      },
+    });
+
+    const categories = wrapper.findAll('section');
+    const controlDefinitionsCategory = categories.find(
+      (category) =>
+        category.find('.category-title').text() === 'Control Definitions',
+    );
+
+    expect(controlDefinitionsCategory).toBeTruthy();
+
+    for (const label of ['Catalogs', 'Control Links', 'Profiles']) {
+      expect(controlDefinitionsCategory?.text()).toContain(label);
+    }
+    expect(controlDefinitionsCategory?.text()).not.toContain('Risks');
+    expect(controlDefinitionsCategory?.text()).not.toContain(
+      'Evidence Filters',
+    );
+    expect(controlDefinitionsCategory?.text()).not.toContain('Compliance Map');
+
+    // Evidence Filters and Compliance Map are now standalone top-level links,
+    // not nested under any category.
     const topLevelLinks = wrapper
       .findAll('.sidenav-link')
       .map((link) => link.text().trim());
+    expect(topLevelLinks).toContain('Evidence Filters');
+    expect(topLevelLinks).toContain('Compliance Map');
+
+    // Dashboards is still not a standalone top-level link.
     expect(topLevelLinks).not.toContain('Dashboards');
-    expect(topLevelLinks).not.toContain('Lineage');
   });
 
-  it('exposes import only from the admin navigation category', () => {
+  it('groups Active System and Manage Systems under a Systems category', () => {
     const sidebarStore = useSidebarStore();
     sidebarStore.open = true;
 
@@ -159,17 +231,71 @@ describe('LeftSideNav', () => {
     });
 
     const categories = wrapper.findAll('section');
-    const adminCategory = categories.find(
-      (category) => category.find('.category-title').text() === 'Admin',
+    const systemsCategory = categories.find(
+      (category) => category.find('.category-title').text() === 'Systems',
     );
 
-    expect(adminCategory?.text()).toContain('Import');
-    expect(
-      categories
-        .filter(
-          (category) => category.find('.category-title').text() !== 'Admin',
-        )
-        .some((category) => category.text().includes('Import')),
-    ).toBe(false);
+    expect(systemsCategory).toBeTruthy();
+    expect(systemsCategory?.text()).toContain('Active System');
+    expect(systemsCategory?.text()).toContain('Manage Systems');
+    expect(systemsCategory?.text()).not.toContain('System Security Plans');
+  });
+
+  it('puts Systems at the top, followed by Evidence, Controls, Compliance Map, Risk Register and Evidence Filters', () => {
+    const sidebarStore = useSidebarStore();
+    sidebarStore.open = true;
+
+    const wrapper = mount(LeftSideNav, {
+      global: {
+        directives: {
+          tooltip: {
+            mounted: () => undefined,
+          },
+        },
+        stubs: {
+          SideNav: {
+            template: '<div><slot name="logo" /><slot /></div>',
+          },
+          SideNavCategory: {
+            template:
+              '<section><div class="category-title"><slot name="title" /></div><div><slot /></div></section>',
+          },
+          SideNavLink: {
+            template: '<a class="sidenav-link"><slot /></a>',
+          },
+          SideNavLogo: {
+            template: '<img alt="logo" />',
+          },
+        },
+      },
+    });
+
+    const orderedLabels = wrapper
+      .findAll('.category-title, .sidenav-link')
+      .map((el) => el.text().trim());
+    const categoryTitles = wrapper
+      .findAll('.category-title')
+      .map((el) => el.text().trim());
+
+    const indexOf = (label: string) => orderedLabels.indexOf(label);
+
+    // Systems is the first top-level category, with its children rendered
+    // immediately after it, followed by Evidence, Controls, Compliance Map,
+    // Risk Register and Evidence Filters, in that order.
+    expect(categoryTitles.at(0)).toBe('Systems');
+    expect(orderedLabels.slice(0, 8)).toEqual([
+      'Systems',
+      'Active System',
+      'Manage Systems',
+      'Evidence',
+      'Controls',
+      'Compliance Map',
+      'Risk Register',
+      'Evidence Filters',
+    ]);
+
+    for (const label of ['Workflows', 'Control Definitions']) {
+      expect(indexOf('Systems')).toBeLessThan(indexOf(label));
+    }
   });
 });

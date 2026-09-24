@@ -1,7 +1,7 @@
 <template>
   <div class="flex items-start justify-between gap-4">
     <div>
-      <PageHeader>Filters</PageHeader>
+      <PageHeader>Evidence Filters</PageHeader>
       <PageSubHeader>Findings grouped by query</PageSubHeader>
     </div>
     <div>
