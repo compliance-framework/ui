@@ -285,7 +285,7 @@ export function useDashboardSuggestions(
 function formatRunFailureDetail(run: SuggestionRun): string {
   const failures = runCellFailures(run);
   if (failures.length === 0) {
-    return run.error ?? 'Dashboard suggestion generation failed.';
+    return run.error ?? 'Evidence filter suggestion generation failed.';
   }
 
   const shown = failures.slice(0, 3).map((failure) => {

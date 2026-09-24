@@ -145,7 +145,7 @@
         <!-- Evidence dashboards attached to this responsibility -->
         <div class="mt-3">
           <div class="text-xs font-medium text-gray-700 dark:text-slate-300">
-            Evidence dashboards
+            Evidence filters
           </div>
           <div
             v-for="filter in filtersFor(row.responsibilityUuid)"
@@ -177,14 +177,14 @@
             v-if="responsibilityFiltersError"
             class="mt-1 text-xs text-gray-500 italic dark:text-slate-400"
           >
-            Could not load linked dashboards for this responsibility.
+            Could not load linked evidence filters for this responsibility.
           </div>
           <div
             v-else-if="!filtersFor(row.responsibilityUuid).length"
             class="mt-1 text-xs text-gray-500 dark:text-slate-400"
           >
-            No dashboards linked — link one and this responsibility's coverage
-            follows its evidence.
+            No evidence filters linked — link one and this responsibility's
+            coverage follows its evidence.
           </div>
 
           <PermissionGate :resource="RESOURCES.SSP" :action="ACTIONS.UPDATE">
@@ -198,7 +198,7 @@
                 :options="linkableDashboards(row.responsibilityUuid)"
                 option-label="name"
                 filter
-                placeholder="Select a dashboard…"
+                placeholder="Select an evidence filter…"
                 class="w-64"
               />
               <SecondaryButton
@@ -246,14 +246,14 @@
                 size="small"
                 @click="openLinkPicker(row.responsibilityUuid)"
               >
-                Link dashboard
+                Link evidence filter
               </SecondaryButton>
               <SecondaryButton
                 type="button"
                 size="small"
                 @click="openCreatePicker(row.responsibilityUuid)"
               >
-                Create dashboard
+                Create evidence filter
               </SecondaryButton>
             </div>
           </PermissionGate>
@@ -524,7 +524,7 @@ async function attachFilter(responsibilityUuid: string) {
     );
     toast.add({
       severity: 'success',
-      summary: 'Dashboard linked — coverage now follows its evidence.',
+      summary: 'Evidence filter linked — coverage now follows its evidence.',
       life: 3000,
     });
     closeLinkPicker();
@@ -533,7 +533,7 @@ async function attachFilter(responsibilityUuid: string) {
     toast.add({
       severity: 'error',
       summary: 'Error',
-      detail: errorDetail(error, 'Failed to link the dashboard.'),
+      detail: errorDetail(error, 'Failed to link the evidence filter.'),
       life: 5000,
     });
   } finally {
@@ -552,7 +552,7 @@ async function detachFilter(
     );
     toast.add({
       severity: 'success',
-      summary: 'Dashboard unlinked.',
+      summary: 'Evidence filter unlinked.',
       life: 3000,
     });
     await leveraged.refresh();
@@ -560,7 +560,7 @@ async function detachFilter(
     toast.add({
       severity: 'error',
       summary: 'Error',
-      detail: errorDetail(error, 'Failed to unlink the dashboard.'),
+      detail: errorDetail(error, 'Failed to unlink the evidence filter.'),
       life: 5000,
     });
   }
@@ -610,14 +610,14 @@ async function createDashboard(responsibilityUuid: string) {
   if (!dashboardName.value.trim()) {
     toast.add({
       severity: 'warn',
-      summary: 'Give the dashboard a name first.',
+      summary: 'Give the evidence filter a name first.',
       life: 3000,
     });
     return;
   }
   if (!computedFilter.value.trim()) {
     createDashboardError.value =
-      'Add at least one label condition before creating the dashboard.';
+      'Add at least one label condition before creating the evidence filter.';
     return;
   }
   let parsedFilter;
@@ -640,7 +640,7 @@ async function createDashboard(responsibilityUuid: string) {
     });
     const created = (res.data?.data ?? res.data) as Dashboard | undefined;
     if (!created?.id) {
-      throw new Error('The created dashboard did not return an id.');
+      throw new Error('The created evidence filter did not return an id.');
     }
     const body: AttachFilterResponsibilityRequest = {
       responsibilityUuid,
@@ -654,7 +654,7 @@ async function createDashboard(responsibilityUuid: string) {
     toast.add({
       severity: 'success',
       summary:
-        'Dashboard created and linked — coverage now follows its evidence.',
+        'Evidence filter created and linked — coverage now follows its evidence.',
       life: 3000,
     });
     closeCreatePicker();
@@ -664,7 +664,7 @@ async function createDashboard(responsibilityUuid: string) {
   } catch (error) {
     createDashboardError.value = errorDetail(
       error,
-      'Failed to create the dashboard.',
+      'Failed to create the evidence filter.',
     );
   } finally {
     creatingDashboard.value = false;

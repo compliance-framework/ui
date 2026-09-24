@@ -284,8 +284,8 @@ describe('InheritedResponsibilitiesSection', () => {
       responsibilityFiltersError: new Error('boom'),
     });
 
-    expect(wrapper.text()).not.toContain('No dashboards linked');
-    expect(wrapper.text()).toContain('Could not load linked dashboards');
+    expect(wrapper.text()).not.toContain('No evidence filters linked');
+    expect(wrapper.text()).toContain('Could not load linked evidence filters');
   });
 
   it('renders nothing when the statement has no leverage links', () => {
@@ -345,7 +345,7 @@ describe('InheritedResponsibilitiesSection', () => {
 
   it('attaches a dashboard with a camelCase body carrying the control id', async () => {
     const wrapper = mountSection([makeLink()]);
-    await findButton(wrapper, 'Link dashboard').trigger('click');
+    await findButton(wrapper, 'Link evidence filter').trigger('click');
     await flushPromises();
 
     // Pick the first linkable option (component-scoped ones are excluded).
@@ -374,7 +374,7 @@ describe('InheritedResponsibilitiesSection', () => {
         },
       ],
     });
-    await findButton(wrapper, 'Link dashboard').trigger('click');
+    await findButton(wrapper, 'Link evidence filter').trigger('click');
     await flushPromises();
 
     const options = wrapper
@@ -387,8 +387,8 @@ describe('InheritedResponsibilitiesSection', () => {
   it('offers a Create dashboard option alongside Link dashboard', () => {
     const wrapper = mountSection([makeLink()]);
     const texts = wrapper.findAll('button').map((b) => b.text());
-    expect(texts).toContain('Link dashboard');
-    expect(texts).toContain('Create dashboard');
+    expect(texts).toContain('Link evidence filter');
+    expect(texts).toContain('Create evidence filter');
   });
 
   it('creates a dashboard scoped to the SSP and links it to the responsibility', async () => {
@@ -401,7 +401,7 @@ describe('InheritedResponsibilitiesSection', () => {
     });
 
     const wrapper = mountSection([makeLink()]);
-    await findButton(wrapper, 'Create dashboard').trigger('click');
+    await findButton(wrapper, 'Create evidence filter').trigger('click');
     await flushPromises();
 
     // Selecting a baseline auto-seeds a _policy condition → a valid filter.
@@ -483,8 +483,8 @@ describe('InheritedResponsibilitiesSection', () => {
 
     const texts = wrapper.findAll('button').map((b) => b.text());
     expect(texts).not.toContain('Save');
-    expect(texts).not.toContain('Link dashboard');
-    expect(texts).not.toContain('Create dashboard');
+    expect(texts).not.toContain('Link evidence filter');
+    expect(texts).not.toContain('Create evidence filter');
     expect(texts).not.toContain('Unlink');
     expect(texts).not.toContain('Re-attest');
     // The read side still renders.

@@ -61,14 +61,14 @@ function mountComponent(props: {
 describe('ControlImplementationSuggestions', () => {
   it('renders a loading state while AI state is loading', () => {
     expect(mountComponent({ suggestions: [], loading: true }).text()).toContain(
-      'Loading AI dashboard suggestions...',
+      'Loading AI evidence filter suggestions...',
     );
   });
 
   it('lists pending suggestions with labels, confidence, reasoning, and review link', () => {
     const wrapper = mountComponent({ suggestions: [suggestion()] });
 
-    expect(wrapper.text()).toContain('AI dashboard suggestions');
+    expect(wrapper.text()).toContain('AI evidence filter suggestions');
     expect(wrapper.text()).toContain('Production evidence');
     expect(wrapper.text()).toContain('env=prod');
     expect(wrapper.text()).toContain('service=api');
@@ -95,7 +95,7 @@ describe('ControlImplementationSuggestions', () => {
     });
 
     expect(wrapper.text()).toContain(
-      'AI reviewed this control and found no matching dashboard filter',
+      'AI reviewed this control and found no matching evidence filter',
     );
     expect(wrapper.text()).toContain(new Date(evaluatedAt).toLocaleString());
   });
@@ -111,6 +111,6 @@ describe('ControlImplementationSuggestions', () => {
           outcome: 'matched',
         },
       }).text(),
-    ).toContain('No pending AI dashboard suggestions for this control.');
+    ).toContain('No pending AI evidence filter suggestions for this control.');
   });
 });

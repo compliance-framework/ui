@@ -47,7 +47,7 @@ function filterName(suggestion: DashboardSuggestion): string {
   return (
     suggestion.proposedFilterName ??
     suggestion.targetFilterName ??
-    'Proposed dashboard filter'
+    'Proposed evidence filter'
   );
 }
 
@@ -81,20 +81,20 @@ function toggleReasoning(key: string) {
 <template>
   <section class="mb-6" data-testid="control-implementation-suggestions">
     <div class="mb-3 flex items-center justify-between gap-4">
-      <h4 class="m-0 text-base font-medium">AI dashboard suggestions</h4>
+      <h4 class="m-0 text-base font-medium">AI evidence filter suggestions</h4>
       <RouterLink
         v-if="hasSuggestions && sspId"
         :to="reviewRoute"
         class="text-sm font-medium text-blue-600 underline dark:text-blue-300"
       >
-        Review in dashboard suggestions
+        Review in evidence filter suggestions
       </RouterLink>
     </div>
 
     <Message v-if="loading" severity="info" variant="simple">
       <span class="flex items-center gap-2">
         <i class="pi pi-spin pi-spinner"></i>
-        Loading AI dashboard suggestions...
+        Loading AI evidence filter suggestions...
       </span>
     </Message>
 
@@ -153,7 +153,7 @@ function toggleReasoning(key: string) {
     </div>
 
     <Message v-else-if="noMatch" severity="info" variant="outlined">
-      AI reviewed this control and found no matching dashboard filter<span
+      AI reviewed this control and found no matching evidence filter<span
         v-if="formatEvaluatedAt(result?.evaluatedAt)"
       >
         on {{ formatEvaluatedAt(result?.evaluatedAt) }}</span
@@ -163,7 +163,7 @@ function toggleReasoning(key: string) {
     <p v-else class="text-sm text-zinc-500 dark:text-slate-400">
       {{
         matchedWithoutPending
-          ? 'No pending AI dashboard suggestions for this control.'
+          ? 'No pending AI evidence filter suggestions for this control.'
           : "AI hasn't evaluated this control yet."
       }}
     </p>

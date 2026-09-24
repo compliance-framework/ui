@@ -159,7 +159,7 @@
     <!-- Component Dashboard Drawer -->
     <Drawer
       v-model:visible="dashboardDrawerOpen"
-      header="Dashboards"
+      header="Evidence Filters"
       position="right"
       class="w-full! md:w-1/2! lg:w-3/5!"
     >

@@ -332,7 +332,7 @@ describe('control implementations IndexView', () => {
     await implementationButton?.trigger('click');
     await flushPromises();
 
-    expect(wrapper.text()).not.toContain('AI dashboard suggestions');
+    expect(wrapper.text()).not.toContain('AI evidence filter suggestions');
     expect(axiosGet).not.toHaveBeenCalledWith(
       expect.stringContaining('/dashboard-suggestions?status=pending'),
       expect.anything(),
@@ -384,7 +384,7 @@ describe('control implementations IndexView', () => {
     await implementationButton?.trigger('click');
     await flushPromises();
 
-    expect(wrapper.text()).toContain('AI dashboard suggestions');
+    expect(wrapper.text()).toContain('AI evidence filter suggestions');
     expect(wrapper.text()).toContain('Production evidence');
     expect(wrapper.text()).toContain('80% confidence');
     expect(axiosGet).toHaveBeenCalledWith(
@@ -574,7 +574,7 @@ describe('control implementations IndexView', () => {
     await flushPromises();
 
     expect(wrapper.text()).toContain(
-      'AI reviewed this control and found no matching dashboard filter',
+      'AI reviewed this control and found no matching evidence filter',
     );
   });
 
@@ -608,7 +608,7 @@ describe('control implementations IndexView', () => {
       .find((button) =>
         button
           .attributes('aria-label')
-          ?.includes('pending AI dashboard suggestion'),
+          ?.includes('pending AI evidence filter suggestion'),
       );
     expect(badge).toBeTruthy();
     expect(badge?.text()).toContain('1');

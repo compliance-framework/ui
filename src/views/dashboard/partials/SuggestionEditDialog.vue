@@ -14,7 +14,7 @@
       <div>
         <label class="inline-block pb-2">Filter labels</label>
         <p class="pb-2 text-sm text-zinc-500 dark:text-slate-400">
-          These key=value labels define the dashboard filter. You can add labels
+          These key=value labels define the evidence filter. You can add labels
           that are not present in the evidence.
         </p>
         <div class="flex flex-col gap-2">
