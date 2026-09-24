@@ -57,14 +57,6 @@ function formatLinks(links: Statement['links']): string {
     </div>
     <div>
       <TooltipTitle
-        text="Description"
-        tooltip-key="statement.description"
-        underline-class="text-sm font-medium text-gray-500 underline decoration-dotted cursor-help"
-      />
-      <p class="text-sm">{{ statement.description || 'None' }}</p>
-    </div>
-    <div>
-      <TooltipTitle
         text="Props"
         tooltip-key="statement.props"
         underline-class="text-sm font-medium text-gray-500 underline decoration-dotted cursor-help"

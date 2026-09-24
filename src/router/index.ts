@@ -16,10 +16,12 @@ const authenticatedRoutes = [
   {
     path: '/',
     name: 'home',
-    // route level code-splitting
-    // this generates a separate chunk (About.[hash].js) for this route
-    // which is lazy-loaded when the route is visited.
-    component: () => import('../views/evidence/IndexView.vue'),
+    // Redirects to the canonical evidence route (rather than duplicating its component
+    // under a second route name) so the initial landing page resolves as 'evidence:index'
+    // — the same name LeftSideNav's active-section tracking matches on — and the "Evidence"
+    // nav item is correctly highlighted from the very first render, not just after the user
+    // clicks it.
+    redirect: { name: 'evidence:index' },
     meta: {
       requiresAuth: true,
     },

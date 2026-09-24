@@ -1,12 +1,30 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { useSidebarStore } from '@/stores/sidebar';
 import LeftSideNav from '../LeftSideNav.vue';
+import SideNavCategory from '@/components/navigation/SideNavCategory.vue';
+
+// A simple, non-reactive stand-in: fine for the initial-render check below, which mounts
+// fresh per test. The sticky persistence-across-navigation behavior (LeftSideNav watching
+// route.fullPath) needs a genuinely reactive route and is covered separately in
+// LeftSideNavActiveSection.spec.ts using a real router.
+const { mockRoute } = vi.hoisted(() => ({
+  mockRoute: { matched: [] as Array<{ name?: string }> },
+}));
+
+vi.mock('vue-router', () => ({
+  useRoute: () => mockRoute,
+  RouterLink: {
+    name: 'RouterLink',
+    template: '<a><slot /></a>',
+  },
+}));
 
 describe('LeftSideNav', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
+    mockRoute.matched = [];
   });
 
   it('no longer renders the retired admin links', () => {
@@ -297,5 +315,47 @@ describe('LeftSideNav', () => {
     for (const label of ['Workflows', 'Control Definitions']) {
       expect(indexOf('Systems')).toBeLessThan(indexOf(label));
     }
+  });
+
+  it('highlights and opens the category containing the active route', () => {
+    const sidebarStore = useSidebarStore();
+    sidebarStore.open = true;
+    // 'catalog-list' is a child of Control Definitions.
+    mockRoute.matched = [{ name: 'catalog-list' }];
+
+    const wrapper = mount(LeftSideNav, {
+      global: {
+        directives: {
+          tooltip: {
+            mounted: () => undefined,
+          },
+        },
+        stubs: {
+          SideNav: {
+            template: '<div><slot name="logo" /><slot /></div>',
+          },
+          SideNavLink: {
+            template: '<a class="sidenav-link"><slot /></a>',
+          },
+          SideNavLogo: {
+            template: '<img alt="logo" />',
+          },
+        },
+      },
+    });
+
+    const governanceCategory = wrapper
+      .findAllComponents(SideNavCategory)
+      .find((category) => category.props('title') === 'Control Definitions');
+    const workflowsCategory = wrapper
+      .findAllComponents(SideNavCategory)
+      .find((category) => category.props('title') === 'Workflows');
+
+    expect(governanceCategory?.props('active')).toBe(true);
+    expect(governanceCategory?.props('open')).toBe(true);
+
+    // A category that doesn't contain the active route is neither highlighted nor forced open.
+    expect(workflowsCategory?.props('active')).toBe(false);
+    expect(workflowsCategory?.props('open')).toBe(false);
   });
 });
