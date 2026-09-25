@@ -16,8 +16,8 @@ const displayCount = computed(() =>
 
 const tooltipText = computed(() =>
   props.count === 1
-    ? '1 pending AI dashboard suggestion'
-    : `${props.count} pending AI dashboard suggestions`,
+    ? '1 pending AI evidence filter suggestion'
+    : `${props.count} pending AI evidence filter suggestions`,
 );
 
 function onClick(event: MouseEvent) {

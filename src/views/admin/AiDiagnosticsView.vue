@@ -289,7 +289,7 @@ function formatLabelSet(labels: Record<string, string>): string {
     severity="info"
     variant="outlined"
   >
-    Loading dashboard suggestions configuration.
+    Loading evidence filter suggestions configuration.
   </Message>
 
   <Message

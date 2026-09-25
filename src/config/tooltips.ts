@@ -17,7 +17,7 @@ export const TOOLTIPS = {
   'control.implementation.components':
     'System components that implement this control statement',
   'control.implementation.evidence':
-    'Link evidence dashboards to automatically track compliance for this control',
+    'Link evidence filters to automatically track compliance for this control',
   'control.implementation.title': '', // TODO: Add tooltip
   'control.implementation.requirements': '', // TODO: Add tooltip
 

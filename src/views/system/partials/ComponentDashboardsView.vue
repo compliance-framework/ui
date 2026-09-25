@@ -171,11 +171,11 @@ async function loadAllDashboards() {
     console.error('Failed to load all dashboards:', error);
     toast.add({
       severity: 'error',
-      summary: 'Error Loading Dashboards',
+      summary: 'Error Loading Evidence Filters',
       detail:
         error instanceof Error
           ? error.message
-          : 'Failed to load dashboards. Please try again later.',
+          : 'Failed to load evidence filters. Please try again later.',
       life: 3000,
     });
   }
@@ -212,8 +212,8 @@ async function linkExistingDashboard() {
     });
     toast.add({
       severity: 'success',
-      summary: 'Dashboard Linked',
-      detail: `Dashboard "${dashboard.name}" linked to this component.`,
+      summary: 'Evidence Filter Linked',
+      detail: `Evidence filter "${dashboard.name}" linked to this component.`,
       life: 3000,
     });
     // Refresh and reset
@@ -225,11 +225,11 @@ async function linkExistingDashboard() {
     console.error(error);
     toast.add({
       severity: 'error',
-      summary: 'Error Linking Dashboard',
+      summary: 'Error Linking Evidence Filter',
       detail:
         error instanceof Error
           ? error.message
-          : 'Unexpected error linking dashboard.',
+          : 'Unexpected error linking evidence filter.',
       life: 3000,
     });
   }
@@ -254,8 +254,8 @@ async function unlinkDashboard(dashboard: DashboardWithComponents) {
     });
     toast.add({
       severity: 'success',
-      summary: 'Dashboard Unlinked',
-      detail: `Dashboard "${dashboard.name}" removed from this component.`,
+      summary: 'Evidence Filter Unlinked',
+      detail: `Evidence filter "${dashboard.name}" removed from this component.`,
       life: 3000,
     });
     await loadDashboardsForComponent();
@@ -264,11 +264,11 @@ async function unlinkDashboard(dashboard: DashboardWithComponents) {
     console.error(error);
     toast.add({
       severity: 'error',
-      summary: 'Error Unlinking Dashboard',
+      summary: 'Error Unlinking Evidence Filter',
       detail:
         error instanceof Error
           ? error.message
-          : 'Unexpected error unlinking dashboard.',
+          : 'Unexpected error unlinking evidence filter.',
       life: 3000,
     });
   }
@@ -334,7 +334,7 @@ function viewDashboardEvidence(dashboard: DashboardWithComponents) {
     console.error('Unable to build dashboard filter string.', error);
     toast.add({
       severity: 'error',
-      summary: 'Invalid Dashboard Filter',
+      summary: 'Invalid Evidence Filter',
       detail:
         error instanceof Error
           ? error.message
@@ -435,7 +435,7 @@ async function submitEvidenceLinking() {
     toast.add({
       severity: 'error',
       summary: 'Validation Error',
-      detail: 'Please provide a name for the evidence dashboard.',
+      detail: 'Please provide a name for the evidence filter.',
       life: 3000,
     });
     return;
@@ -444,7 +444,8 @@ async function submitEvidenceLinking() {
     toast.add({
       severity: 'error',
       summary: 'Validation Error',
-      detail: 'Please build a label filter before creating the dashboard.',
+      detail:
+        'Please build a label filter before creating the evidence filter.',
       life: 3000,
     });
     return;
@@ -480,7 +481,7 @@ async function submitEvidenceLinking() {
     toast.add({
       severity: 'success',
       summary: 'Evidence Linked',
-      detail: 'Evidence dashboard created successfully.',
+      detail: 'Evidence filter created successfully.',
       life: 3000,
     });
     // Refresh dashboards list and reset form for next entry
@@ -490,11 +491,11 @@ async function submitEvidenceLinking() {
     console.error(error);
     toast.add({
       severity: 'error',
-      summary: 'Error Creating Evidence Dashboard',
+      summary: 'Error Creating Evidence Filter',
       detail:
         error instanceof Error
           ? error.message
-          : 'Unexpected error creating evidence dashboard.',
+          : 'Unexpected error creating evidence filter.',
       life: 3000,
     });
   }
@@ -509,14 +510,14 @@ async function submitEvidenceLinking() {
       <BurgerMenu
         :items="[
           {
-            label: 'Create New Dashboard',
+            label: 'Create New Evidence Filter',
             command: () => {
               setLinkExistingForm(false);
               setEvidenceLinkingForm(true);
             },
           },
           {
-            label: 'Link Existing Dashboard',
+            label: 'Link Existing Evidence Filter',
             command: () => {
               setEvidenceLinkingForm(false);
               setLinkExistingForm(true);
@@ -528,7 +529,9 @@ async function submitEvidenceLinking() {
 
     <!-- Existing Dashboards List -->
     <div v-if="existingDashboards.length > 0" class="mb-6">
-      <h6 class="text-sm font-medium text-gray-500 mb-2">Linked Dashboards</h6>
+      <h6 class="text-sm font-medium text-gray-500 mb-2">
+        Linked Evidence Filters
+      </h6>
       <div class="space-y-2">
         <div
           v-for="dashboard in existingDashboards"
@@ -563,7 +566,7 @@ async function submitEvidenceLinking() {
       </div>
     </div>
     <div v-else-if="dashboardsLoading" class="mb-6 text-sm text-gray-500">
-      Loading dashboards...
+      Loading evidence filters...
     </div>
     <div
       v-else-if="
@@ -571,25 +574,25 @@ async function submitEvidenceLinking() {
       "
       class="mb-6 text-sm text-gray-500"
     >
-      No dashboards linked to this component yet.
+      No evidence filters linked to this component yet.
     </div>
 
     <!-- Link Existing Dashboard Form -->
     <form @submit.prevent="linkExistingDashboard" v-if="showLinkExistingForm">
       <div class="h-0.5 dark:bg-slate-800 bg-gray-400 w-full my-4"></div>
       <div class="flex justify-between items-center mb-4">
-        <h4 class="m-0">Link Existing Dashboard</h4>
+        <h4 class="m-0">Link Existing Evidence Filter</h4>
       </div>
       <div class="mb-4">
         <label class="inline-block pb-2 text-sm font-medium"
-          >Select Dashboard</label
+          >Select Evidence Filter</label
         >
         <Select
           v-model="selectedDashboardToLink"
           :options="availableDashboardsToLink"
           optionLabel="name"
           filter
-          placeholder="Select a dashboard to link..."
+          placeholder="Select an evidence filter to link..."
           class="w-full"
         />
       </div>
@@ -602,7 +605,7 @@ async function submitEvidenceLinking() {
           >Cancel</SecondaryButton
         >
         <PrimaryButton type="submit" :disabled="!selectedDashboardToLink"
-          >Link Dashboard</PrimaryButton
+          >Link Evidence Filter</PrimaryButton
         >
       </div>
     </form>
@@ -614,13 +617,13 @@ async function submitEvidenceLinking() {
     >
       <div class="h-0.5 dark:bg-slate-800 bg-gray-400 w-full my-4"></div>
       <div class="flex justify-between items-center mb-4">
-        <h4 class="m-0">New Evidence Dashboard</h4>
+        <h4 class="m-0">New Evidence Filter</h4>
       </div>
       <div class="mb-4">
         <label class="inline-block pb-2 text-sm font-medium">Name</label>
         <FormInput
           v-model="evidenceDashboard.name"
-          placeholder="Dashboard name"
+          placeholder="Evidence filter name"
         />
       </div>
 
@@ -738,7 +741,7 @@ async function submitEvidenceLinking() {
           >Cancel</SecondaryButton
         >
         <PrimaryButton type="submit" :disabled="!computedFilter"
-          >Create Dashboard</PrimaryButton
+          >Create Evidence Filter</PrimaryButton
         >
       </div>
     </form>

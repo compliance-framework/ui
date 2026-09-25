@@ -132,7 +132,7 @@ const uploadDashboardFiles = async () => {
     toast.add({
       severity: 'warn',
       summary: 'No Files',
-      detail: 'Please select at least one dashboard file to import',
+      detail: 'Please select at least one evidence filter file to import',
       life: 3000,
     });
     return;
@@ -164,7 +164,7 @@ const uploadDashboardFiles = async () => {
       toast.add({
         severity: 'success',
         summary: 'Import Successful',
-        detail: `Successfully imported ${response.data.data.total_dashboards} dashboard(s) from ${response.data.data.successful_count} file(s)`,
+        detail: `Successfully imported ${response.data.data.total_dashboards} evidence filter(s) from ${response.data.data.successful_count} file(s)`,
         life: 5000,
       });
     }
@@ -186,7 +186,7 @@ const uploadDashboardFiles = async () => {
     toast.add({
       severity: 'error',
       summary: 'Import Failed',
-      detail: errorMessage || 'Failed to import dashboard files',
+      detail: errorMessage || 'Failed to import evidence filter files',
       life: 5000,
     });
   } finally {
@@ -215,7 +215,7 @@ const clearDashboardFiles = () => {
   <PageHeader>Import Data</PageHeader>
   <div class="mt-8">
     <p class="text-gray-600 dark:text-gray-400 mb-6">
-      Import OSCAL content and dashboards from JSON files
+      Import OSCAL content and evidence filters from JSON files
     </p>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -317,12 +317,12 @@ const clearDashboardFiles = () => {
         <template #header>
           <h3 class="text-lg font-semibold flex items-center gap-2">
             <span>📊</span>
-            <span>Import Dashboards</span>
+            <span>Import Evidence Filters</span>
           </h3>
         </template>
         <div class="space-y-4">
           <p class="text-sm text-gray-600 dark:text-gray-400">
-            Import dashboard configurations with filters and control
+            Import evidence filter configurations with filters and control
             associations.
           </p>
 
@@ -340,7 +340,7 @@ const clearDashboardFiles = () => {
             <div class="flex flex-col items-center justify-center">
               <span class="text-4xl mb-3">☁️</span>
               <p class="text-gray-600 dark:text-gray-400 mb-2">
-                Drag and drop dashboard JSON files here or
+                Drag and drop evidence filter JSON files here or
               </p>
               <button
                 type="button"

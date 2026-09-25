@@ -97,7 +97,7 @@ export const MANIFEST_ROLES = [
   {
     name: 'contributor',
     description:
-      'Author content (OSCAL docs, register items, workflows, dashboards); no admin.',
+      'Author content (OSCAL docs, register items, workflows, evidence filters); no admin.',
   },
   {
     name: 'agent',
@@ -125,8 +125,8 @@ const RESOURCE_LABELS: Partial<Record<string, string>> = {
   [RESOURCES.ACTIVITY]: 'activities',
   [RESOURCES.SSP_EXPORT_OFFERING]: 'export offerings',
   [RESOURCES.RISK]: 'risks',
-  [RESOURCES.FILTER]: 'dashboards',
-  [RESOURCES.DASHBOARD_SUGGESTION]: 'dashboard suggestions',
+  [RESOURCES.FILTER]: 'evidence filters',
+  [RESOURCES.DASHBOARD_SUGGESTION]: 'evidence filter suggestions',
   [RESOURCES.WORKFLOW_DEFINITION]: 'workflow definitions',
   [RESOURCES.WORKFLOW_STEP_DEFINITION]: 'workflow steps',
   [RESOURCES.WORKFLOW_INSTANCE]: 'workflow instances',

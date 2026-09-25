@@ -31,7 +31,7 @@ watch(selectedDashboard, () => {
 function validate(): boolean {
   Object.keys(errors).forEach((key) => delete errors[key]);
   if (!selectedDashboard.value) {
-    errors.dashboard = 'Please select a dashboard.';
+    errors.dashboard = 'Please select an evidence filter.';
   }
   return Object.keys(errors).length === 0;
 }
@@ -46,17 +46,17 @@ function submit() {
   <form class="space-y-4" @submit.prevent="submit">
     <div class="h-0.5 dark:bg-slate-800 bg-gray-400 w-full my-4"></div>
     <div class="flex justify-between items-center">
-      <h4 class="m-0">Link Existing Dashboard</h4>
+      <h4 class="m-0">Link Existing Evidence Filter</h4>
     </div>
     <div>
-      <Label for="existing-dashboard" required>Select Dashboard</Label>
+      <Label for="existing-dashboard" required>Select Evidence Filter</Label>
       <Select
         id="existing-dashboard"
         v-model="selectedDashboard"
         :options="dashboards"
         optionLabel="name"
         filter
-        placeholder="Select a dashboard to link..."
+        placeholder="Select an evidence filter to link..."
         class="w-full"
         :invalid="!!errors.dashboard"
       />
@@ -77,7 +77,7 @@ function submit() {
       </SecondaryButton>
       <PrimaryButton type="submit" :disabled="isSubmitting">
         <i v-if="isSubmitting" class="pi pi-spin pi-spinner mr-2"></i>
-        Link Dashboard
+        Link Evidence Filter
       </PrimaryButton>
     </div>
   </form>

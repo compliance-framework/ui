@@ -413,7 +413,7 @@ describe('SuggestionsView', () => {
     await nextTick();
 
     expect(wrapper.text()).toContain(
-      'AI is not configured, so dashboard suggestions cannot be generated.',
+      'AI is not configured, so evidence filter suggestions cannot be generated.',
     );
     expect(state.refreshLabelSets).not.toHaveBeenCalled();
     expect(state.refreshHistorySuggestions).not.toHaveBeenCalled();

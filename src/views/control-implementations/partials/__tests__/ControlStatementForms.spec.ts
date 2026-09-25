@@ -106,7 +106,7 @@ describe('control statement extracted forms', () => {
     await wrapper.find('form').trigger('submit');
 
     expect(wrapper.emitted('submit')).toBeUndefined();
-    expect(wrapper.text()).toContain('Please select a dashboard.');
+    expect(wrapper.text()).toContain('Please select an evidence filter.');
   });
 
   it('emits dashboard link submit when valid and displays server errors', async () => {
@@ -150,7 +150,7 @@ describe('control statement extracted forms', () => {
     await wrapper.find('form').trigger('submit');
 
     expect(wrapper.emitted('submit')).toBeUndefined();
-    expect(wrapper.text()).toContain('Dashboard name is required.');
+    expect(wrapper.text()).toContain('Evidence filter name is required.');
   });
 
   it('emits evidence dashboard submit when valid and renders server errors', async () => {

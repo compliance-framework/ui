@@ -1047,11 +1047,11 @@ async function loadAllDashboards() {
     console.error('Failed to load all dashboards:', error);
     toast.add({
       severity: 'error',
-      summary: 'Error Loading Dashboards',
+      summary: 'Error Loading Evidence Filters',
       detail:
         error instanceof Error
           ? error.message
-          : 'Failed to load dashboards. Please try again later.',
+          : 'Failed to load evidence filters. Please try again later.',
       life: 3000,
     });
   }
@@ -1091,8 +1091,8 @@ async function linkExistingDashboard() {
     });
     toast.add({
       severity: 'success',
-      summary: 'Dashboard Linked',
-      detail: `Dashboard "${dashboard.name}" linked to this control.`,
+      summary: 'Evidence Filter Linked',
+      detail: `Evidence filter "${dashboard.name}" linked to this control.`,
       life: 3000,
     });
     // Refresh and reset
@@ -1105,7 +1105,7 @@ async function linkExistingDashboard() {
     linkDashboardError.value =
       error instanceof Error
         ? error.message
-        : 'Unexpected error linking dashboard.';
+        : 'Unexpected error linking evidence filter.';
   } finally {
     linkingDashboard.value = false;
   }
@@ -1131,8 +1131,8 @@ async function unlinkDashboard(dashboard: DashboardWithControls) {
     });
     toast.add({
       severity: 'success',
-      summary: 'Dashboard Unlinked',
-      detail: `Dashboard "${dashboard.name}" removed from this control.`,
+      summary: 'Evidence Filter Unlinked',
+      detail: `Evidence filter "${dashboard.name}" removed from this control.`,
       life: 3000,
     });
     await loadDashboardsForControl();
@@ -1141,11 +1141,11 @@ async function unlinkDashboard(dashboard: DashboardWithControls) {
     console.error(error);
     toast.add({
       severity: 'error',
-      summary: 'Error Unlinking Dashboard',
+      summary: 'Error Unlinking Evidence Filter',
       detail:
         error instanceof Error
           ? error.message
-          : 'Unexpected error unlinking dashboard.',
+          : 'Unexpected error unlinking evidence filter.',
       life: 3000,
     });
   }
@@ -1211,7 +1211,7 @@ function viewDashboardEvidence(dashboard: DashboardWithControls) {
     console.error('Unable to build dashboard filter string.', error);
     toast.add({
       severity: 'error',
-      summary: 'Invalid Dashboard Filter',
+      summary: 'Invalid Evidence Filter',
       detail:
         error instanceof Error
           ? error.message
@@ -1254,7 +1254,7 @@ async function submitEvidenceLinking() {
     toast.add({
       severity: 'error',
       summary: 'Validation Error',
-      detail: 'Please provide a name for the evidence dashboard.',
+      detail: 'Please provide a name for the evidence filter.',
       life: 3000,
     });
     return;
@@ -1263,7 +1263,8 @@ async function submitEvidenceLinking() {
     toast.add({
       severity: 'error',
       summary: 'Validation Error',
-      detail: 'Please build a label filter before creating the dashboard.',
+      detail:
+        'Please build a label filter before creating the evidence filter.',
       life: 3000,
     });
     return;
@@ -1301,7 +1302,7 @@ async function submitEvidenceLinking() {
     toast.add({
       severity: 'success',
       summary: 'Evidence Linked',
-      detail: 'Evidence dashboard created successfully.',
+      detail: 'Evidence filter created successfully.',
       life: 3000,
     });
     // Refresh dashboards list and reset form for next entry
@@ -1312,7 +1313,7 @@ async function submitEvidenceLinking() {
     createEvidenceDashboardError.value =
       error instanceof Error
         ? error.message
-        : 'Unexpected error creating evidence dashboard.';
+        : 'Unexpected error creating evidence filter.';
   } finally {
     creatingEvidenceDashboard.value = false;
   }
@@ -1352,7 +1353,7 @@ async function submitEvidenceLinking() {
           :disabled="!resolvedSspId"
           @click="openDashboardSuggestions"
         >
-          AI dashboard suggestions
+          AI evidence filter suggestions
         </PrimaryButton>
       </div>
 
@@ -1366,7 +1367,8 @@ async function submitEvidenceLinking() {
         variant="outlined"
         class="mt-6"
       >
-        AI is not configured, so dashboard suggestions cannot be generated.
+        AI is not configured, so evidence filter suggestions cannot be
+        generated.
       </Message>
       <div class="h-0.5 w-full bg-gray-200 dark:bg-slate-700 mt-4"></div>
 
@@ -1420,14 +1422,14 @@ async function submitEvidenceLinking() {
           <BurgerMenu
             :items="[
               {
-                label: 'Create New Dashboard',
+                label: 'Create New Evidence Filter',
                 command: () => {
                   setLinkExistingForm(false);
                   setEvidenceLinkingForm(true);
                 },
               },
               {
-                label: 'Link Existing Dashboard',
+                label: 'Link Existing Evidence Filter',
                 command: () => {
                   setEvidenceLinkingForm(false);
                   setLinkExistingForm(true);
@@ -1440,7 +1442,7 @@ async function submitEvidenceLinking() {
         <!-- Existing Dashboards List -->
         <div v-if="existingDashboards.length > 0" class="mb-6">
           <h6 class="text-sm font-medium text-gray-500 mb-2">
-            Linked Dashboards
+            Linked Evidence Filters
           </h6>
           <div class="space-y-2">
             <div
@@ -1478,7 +1480,7 @@ async function submitEvidenceLinking() {
         <Message v-else-if="dashboardsLoading" severity="info" variant="simple">
           <span class="flex items-center gap-2">
             <i class="pi pi-spin pi-spinner"></i>
-            Loading dashboards...
+            Loading evidence filters...
           </span>
         </Message>
         <div
@@ -1488,7 +1490,7 @@ async function submitEvidenceLinking() {
           class="mb-6"
         >
           <Message severity="secondary">
-            No dashboards linked to this control yet.
+            No evidence filters linked to this control yet.
           </Message>
         </div>
 
@@ -1547,7 +1549,7 @@ async function submitEvidenceLinking() {
       <div v-if="showEvidenceSection" class="mt-6">
         <h4 class="m-0 mb-2 font-medium text-base">Evidence Linking</h4>
         <Message severity="secondary">
-          Evidence dashboards can be linked after you create this statement.
+          Evidence filters can be linked after you create this statement.
         </Message>
       </div>
     </div>

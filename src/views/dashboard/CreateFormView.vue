@@ -1,5 +1,5 @@
 <template>
-  <PageHeader> New Dashboard </PageHeader>
+  <PageHeader> New Evidence Filter </PageHeader>
   <PageCard class="mt-8 w-1/2">
     <FilterForm :initial-filter="initialFilter" @submit="submit" />
   </PageCard>

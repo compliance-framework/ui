@@ -1,7 +1,7 @@
 <template>
   <div class="flex items-start justify-between gap-4">
     <div>
-      <PageHeader>Dashboard suggestions</PageHeader>
+      <PageHeader>Evidence filter suggestions</PageHeader>
       <PageSubHeader>{{ sspTitle }}</PageSubHeader>
     </div>
     <div
@@ -52,7 +52,7 @@
     variant="outlined"
     class="mt-4"
   >
-    AI is not configured, so dashboard suggestions cannot be generated.
+    AI is not configured, so evidence filter suggestions cannot be generated.
   </Message>
 
   <Message
@@ -61,7 +61,7 @@
     variant="outlined"
     class="mt-4"
   >
-    Loading dashboard suggestions configuration.
+    Loading evidence filter suggestions configuration.
   </Message>
 
   <div v-else-if="aiConfig.dashboardSuggestionsEnabled" class="mt-4 space-y-4">
@@ -168,7 +168,7 @@
         severity="info"
         variant="outlined"
       >
-        No pending dashboard suggestions.
+        No pending evidence filter suggestions.
       </Message>
 
       <PageCard
@@ -200,7 +200,7 @@
                   group.suggestions[0]?.targetFilterId &&
                   !group.suggestions[0]?.isGeneralization
                 "
-                :label="`Extends: ${group.suggestions[0].targetFilterName ?? 'dashboard'}`"
+                :label="`Extends: ${group.suggestions[0].targetFilterName ?? 'evidence filter'}`"
               />
               <Chip
                 v-if="group.suggestions[0]?.isGeneralization"
@@ -796,12 +796,12 @@ watch(
 
 function groupTitle(suggestion: DashboardSuggestion | undefined) {
   if (!suggestion) {
-    return 'Proposed dashboard';
+    return 'Proposed evidence filter';
   }
   return (
     suggestion.proposedFilterName ??
     suggestion.targetFilterName ??
-    'Proposed dashboard'
+    'Proposed evidence filter'
   );
 }
 
