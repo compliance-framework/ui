@@ -1,9 +1,22 @@
 import { mount } from '@vue/test-utils';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ref } from 'vue';
 import type { Dashboard } from '@/stores/filters';
 import type { Control, SystemComponent } from '@/oscal';
 import { FilterParser } from '@/parsers/labelfilter';
+
+const configState = vi.hoisted(() => ({
+  filterComponentLinkingEnabled: true,
+}));
+
+vi.mock('@/stores/config', () => ({
+  useConfigStore: () => ({
+    get filterComponentLinkingEnabled() {
+      return configState.filterComponentLinkingEnabled;
+    },
+    getConfig: async () => ({}),
+  }),
+}));
 
 vi.mock('@/composables/usePermissions', () => ({
   usePermissions: () => ({ can: () => true, permissionTooltip: () => '' }),
@@ -47,7 +60,10 @@ function mountForm(dashboard: Dashboard) {
           template: '<input :value="modelValue" />',
         },
         Select: { props: ['modelValue'], template: '<div />' },
-        MultiSelect: { props: ['modelValue'], template: '<div />' },
+        MultiSelect: {
+          props: ['modelValue', 'placeholder'],
+          template: '<div class="multiselect">{{ placeholder }}</div>',
+        },
         PrimaryButton: {
           template: '<button type="submit"><slot /></button>',
         },
@@ -60,6 +76,10 @@ function mountForm(dashboard: Dashboard) {
 }
 
 describe('FilterForm (edit prefill)', () => {
+  beforeEach(() => {
+    configState.filterComponentLinkingEnabled = true;
+  });
+
   it('prefills name and the serialized filter string', () => {
     const wrapper = mountForm(makeDashboard());
     const inputs = wrapper.findAll('input');
@@ -89,5 +109,23 @@ describe('FilterForm (edit prefill)', () => {
     expect(payload.filter).toEqual(
       new FilterParser('team=payments AND env!=dev').parse(),
     );
+  });
+
+  it('shows the Components selector when filter component linking is enabled', () => {
+    const wrapper = mountForm(makeDashboard());
+    expect(wrapper.text()).toContain('Select Components');
+  });
+
+  it('hides the Components selector but keeps existing links when the flag is disabled', async () => {
+    configState.filterComponentLinkingEnabled = false;
+    const wrapper = mountForm(makeDashboard());
+    expect(wrapper.text()).not.toContain('Select Components');
+    expect(wrapper.text()).toContain('Select Controls');
+
+    await wrapper.find('form').trigger('submit');
+    const payload = wrapper.emitted('submit')?.[0]?.[0] as {
+      components: string[];
+    };
+    expect(payload.components).toEqual(['comp-1']);
   });
 });

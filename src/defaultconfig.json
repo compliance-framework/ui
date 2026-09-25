@@ -1,5 +1,6 @@
 {
   "API_URL": "",
   "LOGIN_BANNER": "",
-  "LOGIN_BANNER_SEVERITY": "info"
+  "LOGIN_BANNER_SEVERITY": "info",
+  "FILTER_COMPONENT_LINKING_ENABLED": false
 }

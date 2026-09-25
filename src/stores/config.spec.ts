@@ -17,6 +17,7 @@ describe('config store', () => {
     vi.stubEnv('VITE_API_URL', '');
     vi.stubEnv('VITE_LOGIN_BANNER', undefined);
     vi.stubEnv('VITE_LOGIN_BANNER_SEVERITY', undefined);
+    vi.stubEnv('VITE_FILTER_COMPONENT_LINKING_ENABLED', undefined);
   });
 
   afterEach(() => {
@@ -103,5 +104,35 @@ describe('config store', () => {
     expect(config.API_URL).toBe('https://api.example.test');
     expect(config.LOGIN_BANNER).toBe('Local build notice');
     expect(config.LOGIN_BANNER_SEVERITY).toBe('success');
+  });
+
+  it('disables filter component linking by default', async () => {
+    mockConfigResponse({ API_URL: 'https://api.example.test' });
+
+    const store = useConfigStore();
+    expect(store.filterComponentLinkingEnabled).toBe(false);
+    const config = await store.getConfig();
+
+    expect(config.FILTER_COMPONENT_LINKING_ENABLED).toBe(false);
+    expect(store.filterComponentLinkingEnabled).toBe(false);
+  });
+
+  it('enables filter component linking from config.json', async () => {
+    mockConfigResponse({ FILTER_COMPONENT_LINKING_ENABLED: true });
+
+    const store = useConfigStore();
+    await store.getConfig();
+
+    expect(store.filterComponentLinkingEnabled).toBe(true);
+  });
+
+  it('lets VITE_FILTER_COMPONENT_LINKING_ENABLED override config.json', async () => {
+    vi.stubEnv('VITE_FILTER_COMPONENT_LINKING_ENABLED', 'false');
+    mockConfigResponse({ FILTER_COMPONENT_LINKING_ENABLED: true });
+
+    const store = useConfigStore();
+    await store.getConfig();
+
+    expect(store.filterComponentLinkingEnabled).toBe(false);
   });
 });
