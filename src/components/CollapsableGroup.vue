@@ -1,13 +1,29 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
+import { useCollapsibleGroupsStore } from '@/stores/collapsibleGroups';
 
 const props = defineProps({
   open: Boolean,
+  // Opt-in: when set, expand/collapse state is persisted (keyed by this string) instead
+  // of being purely local to this component instance, so it survives a hard refresh.
+  persistKey: String,
 });
 
-const isOpen = ref<boolean>(props.open);
+const collapsibleGroupsStore = useCollapsibleGroupsStore();
+const localOpen = ref<boolean>(props.open);
+
+const isOpen = computed<boolean>(() =>
+  props.persistKey
+    ? collapsibleGroupsStore.isOpen(props.persistKey)
+    : localOpen.value,
+);
+
 function toggleOpen() {
-  isOpen.value = !isOpen.value;
+  if (props.persistKey) {
+    collapsibleGroupsStore.setOpen(props.persistKey, !isOpen.value);
+  } else {
+    localOpen.value = !localOpen.value;
+  }
 }
 </script>
 

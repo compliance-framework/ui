@@ -1,12 +1,40 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { useSidebarStore } from '@/stores/sidebar';
 import LeftSideNav from '../LeftSideNav.vue';
+import SideNavCategory from '@/components/navigation/SideNavCategory.vue';
+
+// A simple, non-reactive stand-in: fine for the initial-render check below, which mounts
+// fresh per test. The sticky/path-prefix persistence-across-navigation behavior
+// (LeftSideNav watching route.fullPath and resolving nav item paths) needs a genuinely
+// reactive route and router, and is covered separately in LeftSideNavActiveSection.spec.ts
+// using a real router.
+const { mockRoute } = vi.hoisted(() => ({
+  mockRoute: { matched: [] as Array<{ name?: string }>, path: '/' },
+}));
+
+vi.mock('vue-router', () => ({
+  useRoute: () => mockRoute,
+  useRouter: () => ({
+    resolve: () => {
+      throw new Error('not registered');
+    },
+  }),
+  RouterLink: {
+    name: 'RouterLink',
+    template: '<a><slot /></a>',
+  },
+}));
 
 describe('LeftSideNav', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
+    mockRoute.matched = [];
+    mockRoute.path = '/';
+    // Category open/closed state now persists to real localStorage (leftNavCategories
+    // store), which outlives a fresh Pinia instance — clear it so tests stay isolated.
+    localStorage.clear();
   });
 
   it('no longer renders the retired admin links', () => {
@@ -297,5 +325,101 @@ describe('LeftSideNav', () => {
     for (const label of ['Workflows', 'Control Definitions']) {
       expect(indexOf('Systems')).toBeLessThan(indexOf(label));
     }
+  });
+
+  it('highlights and opens the category containing the active route', () => {
+    const sidebarStore = useSidebarStore();
+    sidebarStore.open = true;
+    // 'catalog-list' is a child of Control Definitions.
+    mockRoute.matched = [{ name: 'catalog-list' }];
+
+    const wrapper = mount(LeftSideNav, {
+      global: {
+        directives: {
+          tooltip: {
+            mounted: () => undefined,
+          },
+        },
+        stubs: {
+          SideNav: {
+            template: '<div><slot name="logo" /><slot /></div>',
+          },
+          SideNavLink: {
+            template: '<a class="sidenav-link"><slot /></a>',
+          },
+          SideNavLogo: {
+            template: '<img alt="logo" />',
+          },
+        },
+      },
+    });
+
+    const governanceCategory = wrapper
+      .findAllComponents(SideNavCategory)
+      .find((category) => category.props('title') === 'Control Definitions');
+    const workflowsCategory = wrapper
+      .findAllComponents(SideNavCategory)
+      .find((category) => category.props('title') === 'Workflows');
+
+    expect(governanceCategory?.props('active')).toBe(true);
+    expect(governanceCategory?.props('open')).toBe(true);
+
+    // A category that doesn't contain the active route is neither highlighted nor forced open.
+    expect(workflowsCategory?.props('active')).toBe(false);
+    expect(workflowsCategory?.props('open')).toBe(false);
+  });
+
+  it('keeps a manually opened category open across a hard refresh, even with nothing under it selected', async () => {
+    mockRoute.matched = []; // nothing active anywhere
+    const sidebarStore = useSidebarStore();
+    sidebarStore.open = true;
+
+    const mountFresh = () =>
+      mount(LeftSideNav, {
+        global: {
+          directives: {
+            tooltip: {
+              mounted: () => undefined,
+            },
+          },
+          stubs: {
+            SideNav: {
+              template: '<div><slot name="logo" /><slot /></div>',
+            },
+            SideNavLink: {
+              template: '<a class="sidenav-link"><slot /></a>',
+            },
+            SideNavLogo: {
+              template: '<img alt="logo" />',
+            },
+          },
+        },
+      });
+
+    const findWorkflowsChildren = (wrapper: ReturnType<typeof mountFresh>) =>
+      wrapper
+        .findAllComponents(SideNavCategory)
+        .find((category) => category.props('title') === 'Workflows')!
+        .find('div.mb-2');
+
+    const wrapper = mountFresh();
+    expect(findWorkflowsChildren(wrapper).classes()).toContain('hidden');
+
+    const workflowsHeader = wrapper
+      .findAllComponents(SideNavCategory)
+      .find((category) => category.props('title') === 'Workflows')!
+      .find('div');
+    await workflowsHeader.trigger('click');
+
+    expect(findWorkflowsChildren(wrapper).classes()).not.toContain('hidden');
+
+    // Simulate a hard refresh: a brand-new Pinia instance (so the store itself is rebuilt
+    // from scratch, not just re-read from memory) backed by the same localStorage, exactly
+    // as a real browser reload would leave it.
+    setActivePinia(createPinia());
+    const wrapperAfterRefresh = mountFresh();
+    expect(findWorkflowsChildren(wrapperAfterRefresh).classes()).not.toContain(
+      'hidden',
+    );
   });
 });

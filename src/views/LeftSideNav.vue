@@ -8,12 +8,15 @@ import darkLogo from '@/assets/logo-dark.svg';
 import lightMiniLogo from '@/assets/logo-light-mini.svg';
 import darkMiniLogo from '@/assets/logo-dark-mini.svg';
 import { useSidebarStore } from '@/stores/sidebar';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { usePermissions } from '@/composables/usePermissions';
 import { RESOURCES, ACTIONS } from '@/constants/permissions';
 
 const sidebarStore = useSidebarStore();
 const { can } = usePermissions();
+const route = useRoute();
+const router = useRouter();
 
 interface NavigationItem {
   title: string;
@@ -252,6 +255,74 @@ const visibleLinks = computed<Array<NavigationItem>>(() =>
     ),
 );
 
+// Identifies a top-level nav entry for the sticky-active tracking below: a category by its
+// (unique) title, a standalone link by its route name.
+function linkKey(item: NavigationItem): string | undefined {
+  return item.children ? item.title : item.name;
+}
+
+function routeIsUnder(name?: string): boolean {
+  if (!name) {
+    return false;
+  }
+  if (route.matched.some((matched) => matched.name === name)) {
+    return true;
+  }
+  // Many sections (e.g. catalogs) are flat sibling routes — /catalogs, /catalogs/:id,
+  // /catalogs/new — rather than nested child routes, so a detail/create page reached
+  // directly (deep link, hard refresh) never shows up in route.matched under the list
+  // route's name. Falling back to a path-prefix check lets a fresh load on such a page
+  // still resolve to the right nav item without depending on any in-session state.
+  try {
+    const basePath = router.resolve({ name }).path;
+    return route.path === basePath || route.path.startsWith(`${basePath}/`);
+  } catch {
+    return false;
+  }
+}
+
+interface ActiveSection {
+  // A category's title, or a standalone top-level link's route name.
+  topLevel?: string;
+  // Set only when `topLevel` is a category: the specific child route name active within
+  // it, so "Governance > Catalogs" stays distinguishable from "Governance > Profiles".
+  child?: string;
+}
+
+// Which nav entry, at both levels, the CURRENT route belongs to (a category whose
+// children include the route anywhere in its matched chain, or a standalone link whose
+// own route matches) — or undefined when the route matches nothing in the nav at all.
+function matchingSection(): ActiveSection | undefined {
+  for (const link of links.value) {
+    if (link.children) {
+      const child = link.children.find((c) => routeIsUnder(c.name));
+      if (child) {
+        return { topLevel: link.title, child: child.name };
+      }
+    } else if (routeIsUnder(link.name)) {
+      return { topLevel: link.name };
+    }
+  }
+  return undefined;
+}
+
+// The section (and, within it, the specific item) the user is "in", kept sticky at both
+// levels: it only moves when navigation lands on a route that genuinely belongs to a
+// different nav entry. A button inside a page pushing to some unlisted detail route (e.g.
+// "New Catalog", never registered as a nav child) would otherwise match nothing and blank
+// the highlight out from under the user — at either level — even though they haven't left
+// that item.
+const activeSection = ref<ActiveSection>(matchingSection() ?? {});
+watch(
+  () => route.fullPath,
+  () => {
+    const matched = matchingSection();
+    if (matched !== undefined) {
+      activeSection.value = matched;
+    }
+  },
+);
+
 const footLinks = ref<Array<NavigationItem>>([
   {
     name: 'logout',
@@ -296,7 +367,12 @@ const footLinks = ref<Array<NavigationItem>>([
       <div>
         <!-- Main Navigation Items -->
         <template v-for="link in visibleLinks" :key="link.name">
-          <SideNavCategory :title="link.title" v-if="link.children">
+          <SideNavCategory
+            :title="link.title"
+            :open="linkKey(link) === activeSection.topLevel"
+            :active="linkKey(link) === activeSection.topLevel"
+            v-if="link.children"
+          >
             <template #title>
               <span>{{
                 sidebarStore.open ? link.title : abbreviated(link)
@@ -305,6 +381,7 @@ const footLinks = ref<Array<NavigationItem>>([
             <template v-for="child in link.children" :key="child.name">
               <SideNavLink
                 :to="{ name: child.name }"
+                :active="child.name === activeSection.child"
                 v-tooltip.right="{
                   value: `${link.title} | ${child.title}`,
                   disabled: sidebarStore.open,
@@ -317,6 +394,7 @@ const footLinks = ref<Array<NavigationItem>>([
           <SideNavLink
             v-else
             :to="{ name: link.name }"
+            :active="link.name === activeSection.topLevel"
             v-tooltip.hover.right="{
               value: link.title,
               disabled: sidebarStore.open,

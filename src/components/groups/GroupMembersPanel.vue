@@ -129,10 +129,6 @@
             {{ adding ? 'Adding…' : 'Add' }}
           </PrimaryButton>
         </div>
-
-        <div class="mt-6 flex justify-end">
-          <SecondaryButton @click="showAddMember = false">Done</SecondaryButton>
-        </div>
       </div>
     </Dialog>
   </div>

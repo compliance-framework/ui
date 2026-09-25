@@ -2,6 +2,14 @@ import { describe, expect, it } from 'vitest';
 import router from '@/router';
 
 describe('router', () => {
+  it('redirects the root route to the canonical evidence route', () => {
+    // So the initial landing page resolves as 'evidence:index' — the name LeftSideNav's
+    // active-section tracking matches on — and "Evidence" is highlighted immediately,
+    // rather than under a separate 'home' route name nothing in the nav matches.
+    const home = router.getRoutes().find((route) => route.name === 'home');
+    expect(home?.redirect).toEqual({ name: 'evidence:index' });
+  });
+
   it('routes SSP creation to the create view', () => {
     const route = router
       .getRoutes()

@@ -2,7 +2,7 @@ import { mount } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { shallowRef } from 'vue';
 import type { Dashboard } from '@/stores/filters';
-import type { SystemSecurityPlan } from '@/oscal';
+import type { Control, SystemComponent, SystemSecurityPlan } from '@/oscal';
 
 const dashboards = shallowRef<Dashboard[]>([]);
 const systemSecurityPlans = shallowRef<SystemSecurityPlan[]>([]);
@@ -59,7 +59,11 @@ vi.mock('@/views/dashboard/partials/FilterEditModal.vue', () => ({
 
 import IndexView from '../IndexView.vue';
 
-function makeDashboard(name: string, sspId: string | null = null): Dashboard {
+function makeDashboard(
+  name: string,
+  sspId: string | null = null,
+  overrides: Partial<Pick<Dashboard, 'controls' | 'components'>> = {},
+): Dashboard {
   return {
     id: name,
     uuid: name,
@@ -68,6 +72,7 @@ function makeDashboard(name: string, sspId: string | null = null): Dashboard {
     filter: {} as Dashboard['filter'],
     controls: [],
     components: [],
+    ...overrides,
   };
 }
 
@@ -76,6 +81,14 @@ function makeSsp(uuid: string, title: string): SystemSecurityPlan {
     uuid,
     metadata: { title } as SystemSecurityPlan['metadata'],
   } as SystemSecurityPlan;
+}
+
+function makeControl(id: string, title: string): Control {
+  return { id, title } as Control;
+}
+
+function makeComponent(uuid: string, title: string): SystemComponent {
+  return { uuid, title } as SystemComponent;
 }
 
 function mountView() {
@@ -95,6 +108,22 @@ function mountView() {
           template: '<button @click="$emit(\'click\')"><slot /></button>',
         },
         RouterLink: { props: ['to'], template: '<a><slot /></a>' },
+        // A native <select> would coerce the `null` (Global) option's value to the
+        // string "null" on round-trip; emit the real option value instead via buttons.
+        // There are three Select instances on the page (scope/control/component), so
+        // options are keyed by the select's own id to keep them distinguishable.
+        Select: {
+          props: ['id', 'modelValue', 'options'],
+          emits: ['update:modelValue'],
+          template: `<div>
+            <button
+              v-for="option in options"
+              :key="String(option.value)"
+              :data-testid="id + '-option-' + String(option.value)"
+              @click="$emit('update:modelValue', option.value)"
+            >{{ option.label }}</button>
+          </div>`,
+        },
       },
     },
   });
@@ -126,6 +155,205 @@ describe('Dashboard IndexView (Filters table)', () => {
   it('shows the empty-state message when there are no filters', () => {
     const wrapper = mountView();
     expect(wrapper.text()).toContain('No Filters Found');
+  });
+
+  it('filters the filter list by scope', async () => {
+    dashboards.value = [
+      makeDashboard('Global filter'),
+      makeDashboard('Payments filter', 'ssp-1'),
+      makeDashboard('Billing filter', 'ssp-2'),
+    ];
+    systemSecurityPlans.value = [
+      makeSsp('ssp-1', 'Payments SSP'),
+      makeSsp('ssp-2', 'Billing SSP'),
+    ];
+
+    const wrapper = mountView();
+
+    // Defaults to showing every filter, regardless of scope.
+    expect(
+      wrapper.find('[data-testid="filter-row-Global filter"]').exists(),
+    ).toBe(true);
+    expect(
+      wrapper.find('[data-testid="filter-row-Payments filter"]').exists(),
+    ).toBe(true);
+    expect(
+      wrapper.find('[data-testid="filter-row-Billing filter"]').exists(),
+    ).toBe(true);
+
+    // Selecting "Global" shows only unscoped filters.
+    await wrapper
+      .find('[data-testid="scope-filter-option-null"]')
+      .trigger('click');
+    expect(
+      wrapper.find('[data-testid="filter-row-Global filter"]').exists(),
+    ).toBe(true);
+    expect(
+      wrapper.find('[data-testid="filter-row-Payments filter"]').exists(),
+    ).toBe(false);
+    expect(
+      wrapper.find('[data-testid="filter-row-Billing filter"]').exists(),
+    ).toBe(false);
+
+    // Selecting a specific SSP shows only that SSP's filters.
+    await wrapper
+      .find('[data-testid="scope-filter-option-ssp-1"]')
+      .trigger('click');
+    expect(
+      wrapper.find('[data-testid="filter-row-Global filter"]').exists(),
+    ).toBe(false);
+    expect(
+      wrapper.find('[data-testid="filter-row-Payments filter"]').exists(),
+    ).toBe(true);
+    expect(
+      wrapper.find('[data-testid="filter-row-Billing filter"]').exists(),
+    ).toBe(false);
+
+    // Selecting "All Scopes" again restores every filter.
+    await wrapper
+      .find('[data-testid="scope-filter-option-all"]')
+      .trigger('click');
+    expect(
+      wrapper.find('[data-testid="filter-row-Global filter"]').exists(),
+    ).toBe(true);
+    expect(
+      wrapper.find('[data-testid="filter-row-Payments filter"]').exists(),
+    ).toBe(true);
+    expect(
+      wrapper.find('[data-testid="filter-row-Billing filter"]').exists(),
+    ).toBe(true);
+  });
+
+  it('shows a distinct message when filters exist but none match the selected scope', async () => {
+    dashboards.value = [makeDashboard('Global filter')];
+    systemSecurityPlans.value = [makeSsp('ssp-1', 'Payments SSP')];
+
+    const wrapper = mountView();
+    await wrapper
+      .find('[data-testid="scope-filter-option-ssp-1"]')
+      .trigger('click');
+
+    expect(wrapper.text()).toContain('No Filters Match These Filters');
+    expect(wrapper.text()).not.toContain('No Filters Found');
+    expect(
+      wrapper.find('[data-testid="filter-row-Global filter"]').exists(),
+    ).toBe(false);
+  });
+
+  it('filters the filter list by control', async () => {
+    dashboards.value = [
+      makeDashboard('AC filter', null, {
+        controls: [makeControl('AC-1', 'Access Control Policy')],
+      }),
+      makeDashboard('AU filter', null, {
+        controls: [makeControl('AU-1', 'Audit Policy')],
+      }),
+      makeDashboard('No controls filter'),
+    ];
+
+    const wrapper = mountView();
+
+    expect(
+      wrapper.find('[data-testid="control-filter-option-AC-1"]').exists(),
+    ).toBe(true);
+    expect(
+      wrapper.find('[data-testid="control-filter-option-AU-1"]').exists(),
+    ).toBe(true);
+
+    await wrapper
+      .find('[data-testid="control-filter-option-AC-1"]')
+      .trigger('click');
+
+    expect(wrapper.find('[data-testid="filter-row-AC filter"]').exists()).toBe(
+      true,
+    );
+    expect(wrapper.find('[data-testid="filter-row-AU filter"]').exists()).toBe(
+      false,
+    );
+    expect(
+      wrapper.find('[data-testid="filter-row-No controls filter"]').exists(),
+    ).toBe(false);
+
+    await wrapper
+      .find('[data-testid="control-filter-option-all"]')
+      .trigger('click');
+
+    expect(wrapper.find('[data-testid="filter-row-AC filter"]').exists()).toBe(
+      true,
+    );
+    expect(wrapper.find('[data-testid="filter-row-AU filter"]').exists()).toBe(
+      true,
+    );
+    expect(
+      wrapper.find('[data-testid="filter-row-No controls filter"]').exists(),
+    ).toBe(true);
+  });
+
+  it('filters the filter list by component', async () => {
+    dashboards.value = [
+      makeDashboard('API filter', null, {
+        components: [makeComponent('comp-api', 'API Gateway')],
+      }),
+      makeDashboard('DB filter', null, {
+        components: [makeComponent('comp-db', 'Database')],
+      }),
+    ];
+
+    const wrapper = mountView();
+
+    await wrapper
+      .find('[data-testid="component-filter-option-comp-db"]')
+      .trigger('click');
+
+    expect(wrapper.find('[data-testid="filter-row-API filter"]').exists()).toBe(
+      false,
+    );
+    expect(wrapper.find('[data-testid="filter-row-DB filter"]').exists()).toBe(
+      true,
+    );
+  });
+
+  it('combines scope, control, and component filters', async () => {
+    dashboards.value = [
+      makeDashboard('Match', 'ssp-1', {
+        controls: [makeControl('AC-1', 'Access Control Policy')],
+        components: [makeComponent('comp-api', 'API Gateway')],
+      }),
+      makeDashboard('Wrong scope', 'ssp-2', {
+        controls: [makeControl('AC-1', 'Access Control Policy')],
+        components: [makeComponent('comp-api', 'API Gateway')],
+      }),
+      makeDashboard('Wrong control', 'ssp-1', {
+        controls: [makeControl('AU-1', 'Audit Policy')],
+        components: [makeComponent('comp-api', 'API Gateway')],
+      }),
+    ];
+    systemSecurityPlans.value = [
+      makeSsp('ssp-1', 'Payments SSP'),
+      makeSsp('ssp-2', 'Billing SSP'),
+    ];
+
+    const wrapper = mountView();
+
+    await wrapper
+      .find('[data-testid="scope-filter-option-ssp-1"]')
+      .trigger('click');
+    await wrapper
+      .find('[data-testid="control-filter-option-AC-1"]')
+      .trigger('click');
+    await wrapper
+      .find('[data-testid="component-filter-option-comp-api"]')
+      .trigger('click');
+
+    expect(wrapper.find('[data-testid="filter-row-Match"]').exists()).toBe(
+      true,
+    );
+    expect(
+      wrapper.find('[data-testid="filter-row-Wrong scope"]').exists(),
+    ).toBe(false);
+    expect(
+      wrapper.find('[data-testid="filter-row-Wrong control"]').exists(),
+    ).toBe(false);
   });
 
   it('loads the dashboard chart only when a row is expanded', async () => {

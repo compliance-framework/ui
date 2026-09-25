@@ -27,7 +27,66 @@
 
   <div
     v-if="dashboards && dashboards.length > 0"
-    class="mt-6 overflow-hidden rounded-lg border border-ccf-300 bg-white shadow dark:border-slate-700 dark:bg-slate-900"
+    class="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3"
+  >
+    <div class="flex items-center gap-3">
+      <label
+        for="scope-filter"
+        class="text-sm font-medium text-gray-700 dark:text-slate-300"
+      >
+        Scope
+      </label>
+      <Select
+        id="scope-filter"
+        v-model="selectedScope"
+        :options="scopeFilterOptions"
+        optionLabel="label"
+        optionValue="value"
+        class="w-64"
+        data-testid="scope-filter"
+      />
+    </div>
+    <div class="flex items-center gap-3">
+      <label
+        for="control-filter"
+        class="text-sm font-medium text-gray-700 dark:text-slate-300"
+      >
+        Control
+      </label>
+      <Select
+        id="control-filter"
+        v-model="selectedControl"
+        :options="controlFilterOptions"
+        optionLabel="label"
+        optionValue="value"
+        filter
+        class="w-64"
+        data-testid="control-filter"
+      />
+    </div>
+    <div class="flex items-center gap-3">
+      <label
+        for="component-filter"
+        class="text-sm font-medium text-gray-700 dark:text-slate-300"
+      >
+        Component
+      </label>
+      <Select
+        id="component-filter"
+        v-model="selectedComponent"
+        :options="componentFilterOptions"
+        optionLabel="label"
+        optionValue="value"
+        filter
+        class="w-64"
+        data-testid="component-filter"
+      />
+    </div>
+  </div>
+
+  <div
+    v-if="filteredDashboards.length > 0"
+    class="mt-4 overflow-hidden rounded-lg border border-ccf-300 bg-white shadow dark:border-slate-700 dark:bg-slate-900"
   >
     <table class="table-auto w-full dark:text-slate-300">
       <thead class="bg-gray-50 dark:bg-slate-800">
@@ -62,7 +121,7 @@
       </thead>
       <tbody>
         <template
-          v-for="dashboard in dashboards"
+          v-for="dashboard in filteredDashboards"
           :key="dashboardKey(dashboard)"
         >
           <tr
@@ -160,6 +219,19 @@
     </table>
   </div>
 
+  <Message
+    v-else-if="dashboards && dashboards.length > 0"
+    severity="warn"
+    variant="outlined"
+    class="mt-4"
+  >
+    <h4 class="font-bold">No Filters Match These Filters</h4>
+    <p>
+      Try a different scope, control, or component, or reset them all to "All"
+      to see every filter.
+    </p>
+  </Message>
+
   <Message v-else severity="warn" variant="outlined" class="mt-6">
     <h4 class="font-bold">No Filters Found</h4>
     <p>
@@ -192,6 +264,7 @@ import PrimaryButton from '@/volt/PrimaryButton.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
 import Chip from '@/volt/Chip.vue';
 import Message from '@/volt/Message.vue';
+import Select from '@/volt/Select.vue';
 import { useDataApi } from '@/composables/axios';
 import { usePermissions } from '@/composables/usePermissions';
 import { RESOURCES, ACTIONS } from '@/constants/permissions';
@@ -224,6 +297,83 @@ const sspTitleById = computed(
       ]),
     ),
 );
+
+// 'all' shows every filter regardless of scope; null matches only unscoped (Global)
+// filters; any other value matches filters scoped to that SSP.
+const selectedScope = ref<string | null>('all');
+
+const scopeFilterOptions = computed(() => [
+  { label: 'All Scopes', value: 'all' },
+  { label: 'Global', value: null },
+  ...(systemSecurityPlans.value ?? []).map((ssp) => ({
+    label: ssp.metadata.title,
+    value: ssp.uuid,
+  })),
+]);
+
+// 'all' shows filters with any (or no) controls/components; any other value matches
+// filters that include that specific control/component.
+const selectedControl = ref<string>('all');
+const selectedComponent = ref<string>('all');
+
+const controlFilterOptions = computed(() => {
+  const controlsById = new Map<string, string>();
+  for (const dashboard of dashboards.value ?? []) {
+    for (const control of dashboard.controls ?? []) {
+      controlsById.set(control.id, control.title ?? control.id);
+    }
+  }
+  return [
+    { label: 'All Controls', value: 'all' },
+    ...Array.from(controlsById, ([id, title]) => ({
+      label: `${id} — ${title}`,
+      value: id,
+    })).sort((a, b) => a.label.localeCompare(b.label)),
+  ];
+});
+
+const componentFilterOptions = computed(() => {
+  const componentsByUuid = new Map<string, string>();
+  for (const dashboard of dashboards.value ?? []) {
+    for (const component of dashboard.components ?? []) {
+      componentsByUuid.set(component.uuid, component.title ?? component.uuid);
+    }
+  }
+  return [
+    { label: 'All Components', value: 'all' },
+    ...Array.from(componentsByUuid, ([uuid, title]) => ({
+      label: title,
+      value: uuid,
+    })).sort((a, b) => a.label.localeCompare(b.label)),
+  ];
+});
+
+const filteredDashboards = computed(() => {
+  return (dashboards.value ?? [])
+    .filter((dashboard) => {
+      if (selectedScope.value === 'all') {
+        return true;
+      }
+      if (selectedScope.value === null) {
+        return !dashboard.sspId;
+      }
+      return dashboard.sspId === selectedScope.value;
+    })
+    .filter(
+      (dashboard) =>
+        selectedControl.value === 'all' ||
+        (dashboard.controls ?? []).some(
+          (control) => control.id === selectedControl.value,
+        ),
+    )
+    .filter(
+      (dashboard) =>
+        selectedComponent.value === 'all' ||
+        (dashboard.components ?? []).some(
+          (component) => component.uuid === selectedComponent.value,
+        ),
+    );
+});
 
 function dashboardKey(dashboard: Dashboard): string {
   return dashboard.id ?? dashboard.uuid ?? dashboard.name;
