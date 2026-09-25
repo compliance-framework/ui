@@ -14,8 +14,10 @@ const {
   routerPush,
   toastAdd,
   loadInitialProfiles,
+  configState,
 } = vi.hoisted(() => {
   return {
+    configState: { filterComponentLinkingEnabled: false },
     activePlan: {
       uuid: 'ssp-1',
       metadata: {
@@ -54,6 +56,15 @@ vi.mock('@/stores/system.ts', () => ({
     system: {
       securityPlan: activePlan,
     },
+  }),
+}));
+
+vi.mock('@/stores/config', () => ({
+  useConfigStore: () => ({
+    get filterComponentLinkingEnabled() {
+      return configState.filterComponentLinkingEnabled;
+    },
+    getConfig: vi.fn(async () => ({})),
   }),
 }));
 
@@ -199,6 +210,7 @@ describe('System area views', () => {
     routerPush.mockReset();
     toastAdd.mockReset();
     loadInitialProfiles.mockClear();
+    configState.filterComponentLinkingEnabled = false;
   });
 
   it.each([null, []])(
@@ -232,6 +244,31 @@ describe('System area views', () => {
       expect(wrapper.text()).toContain(
         'No components defined. Create your first component to get started.',
       );
+    },
+  );
+
+  it.each([
+    [false, false],
+    [true, true],
+  ])(
+    'shows the component Dashboards button only when filter component linking is enabled (%s)',
+    async (enabled, expected) => {
+      configState.filterComponentLinkingEnabled = enabled;
+      apiPayloads.set(endpoint.components, [
+        { uuid: 'comp-1', title: 'API Gateway', type: 'software' },
+      ]);
+      apiPayloads.set('/api/oscal/system-security-plans/ssp-1/risks', []);
+      apiPayloads.set(endpoint.users, []);
+
+      const wrapper = mount(ComponentsView, {
+        global: { stubs },
+      });
+      await flushPromises();
+
+      expect(wrapper.text()).toContain('API Gateway');
+      expect(
+        wrapper.findAll('button').some((b) => b.text() === 'Dashboards'),
+      ).toBe(expected);
     },
   );
 

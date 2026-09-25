@@ -53,7 +53,7 @@
       </MultiSelect>
     </div>
 
-    <div class="mb-4">
+    <div v-if="filterComponentLinkingEnabled" class="mb-4">
       <label class="inline-block pb-2">Components</label>
       <MultiSelect
         v-model="selectedComponents"
@@ -107,7 +107,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { FilterParser, serializeFilter } from '@/parsers/labelfilter.ts';
 import type { Dashboard, DashboardCreate } from '@/stores/filters.ts';
 import FormInput from '@/components/forms/FormInput.vue';
@@ -124,6 +124,7 @@ import type {
 import { useDataApi } from '@/composables/axios';
 import { usePermissions } from '@/composables/usePermissions';
 import { RESOURCES, ACTIONS } from '@/constants/permissions';
+import { useConfigStore } from '@/stores/config';
 
 const props = withDefaults(
   defineProps<{
@@ -148,6 +149,12 @@ const emit = defineEmits<{
 }>();
 
 const { can, permissionTooltip } = usePermissions();
+
+const configStore = useConfigStore();
+const filterComponentLinkingEnabled = computed(
+  () => configStore.filterComponentLinkingEnabled,
+);
+onMounted(() => configStore.getConfig());
 
 // Editing requires update, creating requires create.
 const permissionAction = computed(() =>

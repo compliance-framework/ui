@@ -63,7 +63,10 @@
         </template>
         <div class="py-3 px-4 flex justify-end items-center">
           <div class="flex gap-2">
-            <TertiaryButton @click.stop="openDashboardDrawer(component)">
+            <TertiaryButton
+              v-if="filterComponentLinkingEnabled"
+              @click.stop="openDashboardDrawer(component)"
+            >
               Dashboards
             </TertiaryButton>
             <TertiaryButton
@@ -158,6 +161,7 @@
 
     <!-- Component Dashboard Drawer -->
     <Drawer
+      v-if="filterComponentLinkingEnabled"
       v-model:visible="dashboardDrawerOpen"
       header="Evidence Filters"
       position="right"
@@ -206,7 +210,7 @@
 
 <script setup lang="ts">
 import TooltipTitle from '@/components/TooltipTitle.vue';
-import { computed, watch, ref } from 'vue';
+import { computed, onMounted, watch, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
 import { downloadJson } from '@/utils/download-json';
@@ -225,6 +229,7 @@ import { useDataApi } from '@/composables/axios';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
 import { usePermissions } from '@/composables/usePermissions';
 import { RESOURCES, ACTIONS } from '@/constants/permissions';
+import { useConfigStore } from '@/stores/config';
 import type { Risk, SystemComponent, SystemUser } from '@/oscal';
 import {
   getRiskComponentIds,
@@ -245,6 +250,11 @@ const router = useRouter();
 const toast = useToast();
 const { can, permissionTooltip } = usePermissions();
 const { confirmDeleteDialog } = useDeleteConfirmationDialog();
+const configStore = useConfigStore();
+const filterComponentLinkingEnabled = computed(
+  () => configStore.filterComponentLinkingEnabled,
+);
+onMounted(() => configStore.getConfig());
 
 const componentsEndpoint = computed(() => {
   if (!props.sspId) return null;
