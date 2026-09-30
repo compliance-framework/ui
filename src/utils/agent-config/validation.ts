@@ -517,12 +517,11 @@ function effectiveIssues(
   const add = (ptr: string, message: string, blocking: boolean) =>
     out.push({ ptr, message, blocking });
 
-  // Plugins the overlay touches must end up with a source. With no known base the API runs
+  // Every effective plugin needs a source. File plugins that already lack one show up in the
+  // merge(base, {}) baseline and so stay non-blocking (R59). With no known base the API runs
   // overlay-only checks (standalone), so this is only a hint then.
-  const ovPlugins = isPlainObject(overlay.plugins) ? overlay.plugins : {};
-  for (const [pname, ov] of Object.entries(ovPlugins)) {
-    const plugin = eff.plugins?.[pname];
-    if (ov === null || !isPlainObject(plugin)) continue;
+  for (const [pname, plugin] of Object.entries(eff.plugins ?? {})) {
+    if (!isPlainObject(plugin)) continue;
     if (typeof plugin.source !== 'string' || plugin.source.trim() === '') {
       add(
         pointer('plugins', pname, 'source'),

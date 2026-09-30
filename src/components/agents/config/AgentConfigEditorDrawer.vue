@@ -263,6 +263,7 @@ import {
   vendorFilesFor,
 } from '@/utils/agent-config/policy-files';
 import { isPlainObject } from '@/utils/agent-config/merge-patch';
+import { validationInstanceIds } from '@/utils/agent-config/instance-status';
 import { formatRelative } from '@/utils/agent-config/display';
 import { toYaml } from '@/utils/agent-config/yaml';
 import EditorBanner from './editor/EditorBanner.vue';
@@ -349,8 +350,15 @@ const validationContext = computed<ValidationContext>(() => ({
   },
 }));
 
+// The API validates a save against these instances only (R48); mirror it client-side.
+const validationBases = computed<ConfigDoc[]>(() =>
+  validationInstanceIds(props.instances)
+    .map((id) => props.instanceDetails.get(id)?.base)
+    .filter((b): b is ConfigDoc => !!b),
+);
 const draft = useOverlayDraft(props.config, placeholderBase, {
   bases,
+  validationBases,
   validationContext,
 });
 provide(OVERLAY_DRAFT_KEY, draft);
@@ -443,14 +451,7 @@ const policyBases = computed<ConfigDoc[]>(() => {
       p.instances.filter((i) => i.validated).map((i) => i.instanceId),
     );
   }
-  const fresh = pick(
-    props.instances
-      .filter(
-        (i) => !i.stale && (i.mode === 'apply_safe' || i.mode === 'apply_all'),
-      )
-      .map((i) => i.instanceId),
-  );
-  return fresh.length ? fresh : bases.value;
+  return validationBases.value;
 });
 const saveDisabledReason = computed(() => {
   if (conflict.value) return 'Resolve the conflict first';

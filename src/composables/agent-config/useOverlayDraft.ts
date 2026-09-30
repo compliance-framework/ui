@@ -25,8 +25,13 @@ import {
 export const YAML_DEBOUNCE_MS = 300;
 
 export interface OverlayDraftOptions {
-  /** Every known instance base, for validation (new plugins, new ${env:} refs, bundles). */
+  /** Every known instance base (removals null a key any of them defines). */
   bases?: Ref<ConfigDoc[]>;
+  /**
+   * The bases a save is validated against (API ValidationBases); defaults to `bases`. Empty
+   * means standalone (overlay-only checks), as on the API.
+   */
+  validationBases?: Ref<ConfigDoc[]>;
   validationContext?: Ref<ValidationContext>;
 }
 
@@ -64,7 +69,9 @@ export function useOverlayDraft(
   const clientIssues = computed(() =>
     validateOverlayClientSide(
       overlay.value,
-      options.bases?.value ?? (base.value ? [base.value] : []),
+      options.validationBases?.value ??
+        options.bases?.value ??
+        (base.value ? [base.value] : []),
       options.validationContext?.value ?? {},
     ),
   );

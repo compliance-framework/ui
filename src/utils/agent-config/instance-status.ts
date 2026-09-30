@@ -211,3 +211,24 @@ export function summarizeSync(
   });
   return summary;
 }
+
+/**
+ * The instances a save validates against, mirroring the API's ValidationBases (R14, R48):
+ * fresh (non-stale) apply-mode instances with a report; if none, the most recently reported
+ * apply-mode instance, even if stale; otherwise none (standalone: overlay-only checks).
+ */
+export function validationInstanceIds(
+  instances: AgentInstanceSummary[],
+): string[] {
+  const apply = instances.filter(
+    (i) =>
+      (i.mode === 'apply_safe' || i.mode === 'apply_all') &&
+      i.reportedAt != null,
+  );
+  const fresh = apply.filter((i) => !i.stale);
+  if (fresh.length) return fresh.map((i) => i.instanceId);
+  const latest = [...apply].sort((a, b) =>
+    (b.reportedAt ?? '').localeCompare(a.reportedAt ?? ''),
+  )[0];
+  return latest ? [latest.instanceId] : [];
+}

@@ -408,4 +408,16 @@ describe('validateOverlayClientSide mirrors the API rules (self-review)', () => 
         .map((i) => i.ptr),
     ).toEqual(['/plugins/ssh/config/v', '/plugins/ssh/config/big']);
   });
+  it('a file plugin that already lacks a source does not block when the overlay touches it', () => {
+    const noSource: ConfigDoc = {
+      plugins: { legacy: { schedule: '@hourly' } },
+    };
+    const issues = validateOverlayClientSide(
+      { plugins: { legacy: { schedule: '@daily' } } },
+      [noSource],
+    );
+    expect(
+      issues.find((x) => x.ptr === '/plugins/legacy/source'),
+    ).toMatchObject({ blocking: false });
+  });
 });
