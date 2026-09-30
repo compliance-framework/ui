@@ -1,2 +1,8 @@
 lisa-addressed:
 pass 3 fixes: review-before-bases (canReview waits for detailsLoading), r58-hint-bases (usedSourcesEverywhere uses ctx.validationBases).
+
+lisa-selfreview:
+pass 4 (final, lenient) verdict: approve — no blocker/high remaining. Deferred (low):
+- [low] per-keystroke-overlay-work (editor/useBundleOps.setModule, CodeEditor → draft.set): every keystroke in a Rego/data editor clones the whole overlay and re-runs client validation / merge / isDirty; large bundles (MiB) may lag. Follow-up: debounce module/data writes (flush on blur and before Review) or copy-on-write setAt.
+- [low] history-cache-test-indirect (AgentConfigHistory.spec): caching is exercised through the injected getRevision stub; useAgentConfig.getRevisionCached caching is only covered indirectly (useAgentConfig.spec covers hydration/stale-response guards).
+- [low] undelete / placeholders still use the placeholder instance for display values when instance files differ (by design: an explicit instance switcher + "differs across instances" hints).
