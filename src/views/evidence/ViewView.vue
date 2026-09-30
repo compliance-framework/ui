@@ -845,6 +845,9 @@
         </PageCard>
       </div>
 
+      <div v-else-if="activeTab === 'playback'" class="space-y-4">
+        <EvidencePlaybackTab :evidence-id="evidence.id" />
+      </div>
       <div v-else class="space-y-4">
         <EvidenceHistorySection :uuid="evidence.uuid" />
       </div>
@@ -937,6 +940,12 @@ import PageSubHeader from '@/components/PageSubHeader.vue';
 import BackMatterDisplay from '@/components/BackMatterDisplay.vue';
 import LabelList from '@/components/LabelList.vue';
 import EvidenceHistorySection from '@/components/evidence/EvidenceHistorySection.vue';
+import EvidencePlaybackTab from '@/components/evidence/EvidencePlaybackTab.vue';
+import {
+  FindingStatusColor,
+  getEvidenceStatusColor,
+} from '@/utils/evidence-status';
+import { POLICY_BUNDLE_DIGEST_PROP } from '@/types/evidence-playback';
 import type { Activity, BackMatterResource, Link, Property } from '@/oscal';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
 import Dialog from '@/volt/Dialog.vue';
@@ -981,16 +990,17 @@ const backToEvidenceRoute = computed(() => ({
   query: route.query,
 }));
 
-const tabs = [
+const allTabs = [
   { id: 'overview', label: 'Overview' },
   { id: 'metadata', label: 'Metadata' },
   { id: 'risks', label: 'Risks' },
   { id: 'media', label: 'Media' },
   { id: 'signature', label: 'Signature' },
+  { id: 'playback', label: 'Playback' },
   { id: 'history', label: 'History' },
 ] as const;
 
-const activeTab = ref<(typeof tabs)[number]['id']>('overview');
+const activeTab = ref<(typeof allTabs)[number]['id']>('overview');
 const activities = ref<Activity[]>([] as Activity[]);
 const showActivitiesModal = ref(false);
 const verificationAttempted = ref(false);
@@ -1071,6 +1081,20 @@ const sspOptions = computed(() =>
 );
 
 const metadataProps = computed<Property[]>(() => evidence.value?.props ?? []);
+
+// Evidence can be played back when the agent stored the artifacts its evaluation used.
+const canPlayBack = computed(() =>
+  metadataProps.value.some((prop) => prop.name === POLICY_BUNDLE_DIGEST_PROP),
+);
+const tabs = computed(() =>
+  allTabs.filter((tab) => tab.id !== 'playback' || canPlayBack.value),
+);
+
+watch(canPlayBack, (available) => {
+  if (!available && activeTab.value === 'playback') {
+    activeTab.value = 'overview';
+  }
+});
 const metadataLinks = computed<Link[]>(() => evidence.value?.links ?? []);
 const backMatterResources = computed<BackMatterResource[]>(
   () => evidence.value?.backMatter?.resources ?? [],
@@ -1245,13 +1269,6 @@ const validBadgeClass =
 const invalidBadgeClass =
   'bg-red-50 text-red-800 border-red-800 dark:bg-red-950/30 dark:text-red-500 dark:border-red-600';
 
-enum FindingStatusColor {
-  UNKNOWN = 'bg-slate-50 text-slate-700 border-slate-300 dark:bg-slate-900 dark:text-slate-300 dark:border-slate-700',
-  SATISFIED = 'bg-green-50 text-green-800 border-green-800 dark:bg-green-950/30 dark:text-green-500 dark:border-green-600',
-  'NOT-SATISFIED' = 'bg-red-50 text-red-800 border-red-800 dark:bg-red-950/30 dark:text-red-500 dark:border-red-600',
-  'IN-PROGRESS' = 'bg-amber-50 text-amber-800 border-amber-700 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-700',
-}
-
 function showActivities(selectedEvidence: Evidence) {
   activities.value = selectedEvidence.activities || [];
   toggleActivitiesModal(true);
@@ -1259,14 +1276,6 @@ function showActivities(selectedEvidence: Evidence) {
 
 function toggleActivitiesModal(open: boolean) {
   showActivitiesModal.value = open;
-}
-
-function getEvidenceStatusColor(status?: string): string {
-  return (
-    FindingStatusColor[
-      status?.toUpperCase() as keyof typeof FindingStatusColor
-    ] || FindingStatusColor.UNKNOWN
-  );
 }
 
 const RISK_STATUS_COLORS: Record<string, string> = {

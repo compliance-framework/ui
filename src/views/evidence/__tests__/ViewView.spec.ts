@@ -557,6 +557,10 @@ function mountView() {
           props: ['uuid'],
           template: '<div>EvidenceHistorySection {{ uuid }}</div>',
         },
+        EvidencePlaybackTab: {
+          props: ['evidenceId'],
+          template: '<div>EvidencePlaybackTab {{ evidenceId }}</div>',
+        },
         ResultComplianceOverTimeChart: {
           template: '<div>Chart</div>',
         },
@@ -649,6 +653,43 @@ describe('Evidence ViewView', () => {
     expect(backLink.attributes('data-to')).toContain('"sortDirection":"asc"');
     expect(backLink.attributes('aria-label')).toBe('Back to Evidence');
     expect(backLink.text()).toBe('<');
+  });
+
+  it('offers the playback tab only for evidence with stored policy artifacts', async () => {
+    const withArtifacts = structuredClone(baseEvidence);
+    withArtifacts.props = [
+      ...(withArtifacts.props ?? []),
+      {
+        name: '_policy_bundle_digest',
+        value: 'sha256:abc',
+        class: '',
+        ns: '',
+        remarks: '',
+      },
+    ];
+    refs.evidenceResponse = structuredClone(withArtifacts);
+    refs.evidence.value = structuredClone(withArtifacts);
+
+    const wrapper = mountView();
+    await flushPromises();
+
+    const tabTexts = wrapper
+      .find('.border-b')
+      .findAll('button')
+      .map((button) => button.text());
+    expect(tabTexts).toEqual([
+      'Overview',
+      'Metadata',
+      'Risks',
+      'Media',
+      'Signature',
+      'Playback',
+      'History',
+    ]);
+
+    await clickButtonByText(wrapper, 'Playback');
+    expect(wrapper.text()).toContain(`EvidencePlaybackTab ${withArtifacts.id}`);
+    expect(wrapper.text()).not.toContain('EvidenceHistorySection');
   });
 
   it('shows labels, props, and links in the metadata tab', async () => {
