@@ -33,12 +33,10 @@ function makeApi(over: Partial<AgentConfigApi> = {}): AgentConfigApi {
     preview: vi.fn(),
     listRevisions: vi.fn().mockResolvedValue(revisionsPage1),
     getRevision: vi.fn(),
-    revert: vi
-      .fn()
-      .mockResolvedValue({
-        revision: { ...configRev7, revision: 8 },
-        created: true,
-      }),
+    revert: vi.fn().mockResolvedValue({
+      revision: { ...configRev7, revision: 8 },
+      created: true,
+    }),
     listInstances: vi.fn(),
     getInstance: vi.fn(),
     ...over,
@@ -182,15 +180,13 @@ describe('AgentConfigHistory (U3)', () => {
 
   it('handles 409 (refresh + retry) and 422 (error dialog)', async () => {
     const conflictApi = makeApi({
-      revert: vi
-        .fn()
-        .mockRejectedValue(
-          new AgentConfigApiError({
-            kind: 'conflict',
-            status: 409,
-            message: 'c',
-          }),
-        ),
+      revert: vi.fn().mockRejectedValue(
+        new AgentConfigApiError({
+          kind: 'conflict',
+          status: 409,
+          message: 'c',
+        }),
+      ),
     });
     const c = mountHistory(conflictApi);
     await flushPromises();
@@ -205,16 +201,14 @@ describe('AgentConfigHistory (U3)', () => {
     expect(c.wrapper.emitted('changed')).toHaveLength(1);
 
     const invalidApi = makeApi({
-      revert: vi
-        .fn()
-        .mockRejectedValue(
-          new AgentConfigApiError({
-            kind: 'invalid',
-            status: 422,
-            message: 'invalid',
-            body: error422.errors,
-          }),
-        ),
+      revert: vi.fn().mockRejectedValue(
+        new AgentConfigApiError({
+          kind: 'invalid',
+          status: 422,
+          message: 'invalid',
+          body: error422.errors,
+        }),
+      ),
     });
     const i = mountHistory(invalidApi);
     await flushPromises();
