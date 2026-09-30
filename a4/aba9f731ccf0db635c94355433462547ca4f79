@@ -1,0 +1,12 @@
+lisa-addressed:
+pass 1 fixes (commit a4aba9f):
+- mask-copied-into-overlay: replacingPatch omits masked leaves; bundle data uses replacingPatch(fileBundle.data, target).
+- client-sends-mask: useAgentConfigApi refuses PUT/preview containing "••••" (kind invalid, masked-value pointers).
+- makeabsent-placeholder-only / removed-card / undelete-placeholder-only: decisions consider every known base.
+- conflict-keep-stale-preview: goReview(force) after "Keep my draft"; Reload latest; Save disabled while conflicted; comment lifted into the drawer; ctx.config follows the rebase.
+- r58-no-hint: NewBundleDialog hint for policy-only users (sources used by every known base).
+- keys-request-races-hydration: AgentsView waits for hydrate (usePermissions.loaded), admin UI gated on settled permissions, optimistic fallback if hydration fails.
+- select-instance-mixes-data: detail + applied overlay published together; pending placeholder; stale loads ignored; provenance fallback labelled.
+- file-view-not-sanitized, history-view-error, history reload/pagination (seq guard, dedupe, inline page error).
+- r59-file-origin-blocks, new-plugin-source-standalone, forbidden env case, cron5 robfig parity, interval, empty extends, data parse, lossless coercion, __proto__ guards.
+- codemirror-undo-crosses-docs (addToHistory false + :key), dirty-guard-unparsed-yaml (hasUnsavedChanges), kv overlay-only clear, JSON watcher clobbering, customize reopen, policy-only reset gating, stale 422 errors cleared, live-check status reset, a11y (role/tabindex, aria-live, aria-pressed), non-admin copy.
