@@ -75,6 +75,12 @@ export const ACTIONS = {
   // action-only resources
   TRIGGER: 'trigger',
   EXECUTE: 'execute',
+  // agent remote configuration (design §7, R39/R40)
+  CONFIGURE: 'configure',
+  CONFIGURE_POLICY: 'configure-policy',
+  // The agent service account fetching its overlay / reporting. Mirrored from the manifest;
+  // the UI never checks it.
+  SYNC: 'sync',
 } as const;
 
 export type ResourceName = (typeof RESOURCES)[keyof typeof RESOURCES];
@@ -98,6 +104,12 @@ export const MANIFEST_ROLES = [
     name: 'contributor',
     description:
       'Author content (OSCAL docs, register items, workflows, evidence filters); no admin.',
+  },
+  {
+    // R40/R53: {"*": [read], agent: [read, configure-policy]} (plus playback execute).
+    name: 'policy-author',
+    description:
+      "Read everything; edit agents' inline policy bundles and inline references. No other agent changes.",
   },
   {
     name: 'agent',
@@ -160,6 +172,8 @@ const ACTION_VERBS: Partial<Record<string, string>> = {
   [ACTIONS.USERS_MANAGE]: 'manage',
   [ACTIONS.SSO_MANAGE]: 'manage',
   [ACTIONS.SETTINGS_MANAGE]: 'manage',
+  [ACTIONS.CONFIGURE]: 'configure',
+  [ACTIONS.CONFIGURE_POLICY]: 'edit policies of',
 };
 
 // Tooltip shown on a disabled action the user lacks permission for.
