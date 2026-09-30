@@ -12,7 +12,7 @@ import {
   instancesMixed,
 } from '@/composables/agent-config/fixtures';
 import type { Agent } from '@/types/agents';
-import { ADMIN, READER, globalWith, piniaWith } from './helpers';
+import { ADMIN, POLICY_AUTHOR, READER, globalWith, piniaWith } from './helpers';
 
 const api = vi.hoisted(() => ({ current: null as unknown as AgentConfigApi }));
 vi.mock('@/composables/agent-config/useAgentConfigApi', async () => {
@@ -23,6 +23,7 @@ vi.mock('@/composables/agent-config/useAgentConfigApi', async () => {
 });
 
 import AgentConfigTab from '../AgentConfigTab.vue';
+import AgentConfigHistory from '../AgentConfigHistory.vue';
 
 const agent: Agent = {
   id: 'agent-1',
@@ -245,6 +246,34 @@ describe('AgentConfigTab', () => {
     expect(api.current.getInstance).toHaveBeenCalledTimes(5);
     expect(wrapper.find('[data-test="drawer-stub"]').text()).toBe('6');
   });
+  it('R61: History gets the revert access and the desired overlay for the policy-only gate', async () => {
+    const cases: [Record<string, string[]>, string][] = [
+      [ADMIN, 'full'],
+      [POLICY_AUTHOR, 'policy-only'],
+      [READER, 'none'],
+    ];
+    for (const [perms, access] of cases) {
+      const wrapper = mount(AgentConfigTab, {
+        props: { agent },
+        global: globalWith(piniaWith(perms)),
+      });
+      await flushPromises();
+      wrapper
+        .findComponent({ name: 'SelectButton' })
+        .vm.$emit('update:modelValue', 'history');
+      await flushPromises();
+      const history = wrapper.findComponent(AgentConfigHistory);
+      expect(history.props('revertAccess')).toBe(access);
+      expect(history.props('currentOverlay')).toEqual(configRev7.overlay);
+      if (access === 'policy-only') {
+        const bases = await history.props('loadBases')();
+        // The validation set (fresh apply-mode instances), as the API's ValidationBases.
+        expect(bases.length).toBeGreaterThan(0);
+      }
+      wrapper.unmount();
+    }
+  });
+
   it('never renders client_secret in the File view', async () => {
     api.current = makeApi({
       getInstance: vi

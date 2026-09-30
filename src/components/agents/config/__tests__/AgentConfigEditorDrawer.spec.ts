@@ -2,13 +2,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import type { AgentConfigApi } from '@/composables/agent-config/useAgentConfigApi';
 import { AgentConfigApiError } from '@/composables/agent-config/api-types';
-import type { ConfigPreview } from '@/types/agent-config';
+import type { AgentConfigRevision, ConfigPreview } from '@/types/agent-config';
 import {
   configRev7,
   detailFor,
   error422,
   instanceIds,
   instancesMixed,
+  overlayRev7,
 } from '@/composables/agent-config/fixtures';
 import type { Agent } from '@/types/agents';
 import { ADMIN, POLICY_AUTHOR, globalWith, piniaWith } from './helpers';
@@ -92,21 +93,42 @@ const DrawerStub = {
     '<div v-if="visible" data-test="drawer"><slot name="header" /><slot /><slot name="footer" /><button data-test="drawer-x" @click="$emit(\'update:visible\', false)">x</button></div>',
 };
 
-function mountDrawer(perms: Record<string, string[]> = ADMIN) {
+function mountDrawer(
+  perms: Record<string, string[]> = ADMIN,
+  config: AgentConfigRevision = configRev7,
+) {
+  const global = globalWith(piniaWith(perms), {
+    Drawer: DrawerStub,
+    Dialog: true,
+  });
   return mount(AgentConfigEditorDrawer, {
     props: {
       visible: true,
       agent,
-      config: configRev7,
+      config,
       instances: [a],
-      instanceDetails: new Map([
-        [a.instanceId, detailFor(a, configRev7.overlay!)],
-      ]),
+      instanceDetails: new Map([[a.instanceId, detailFor(a, config.overlay!)]]),
       initialInstanceId: a.instanceId,
     },
-    global: globalWith(piniaWith(perms), { Drawer: DrawerStub, Dialog: true }),
+    global: {
+      ...global,
+      // Record the tooltip on the element so specs can read it.
+      directives: { tooltip: { mounted: setTip, updated: setTip } },
+    },
   });
 }
+
+function setTip(
+  el: HTMLElement,
+  binding: { value: string | { value: string; disabled?: boolean } },
+) {
+  const v = binding.value;
+  el.dataset.tip = typeof v === 'string' ? v : v.disabled ? '' : v.value;
+}
+
+const clearTip = (w: ReturnType<typeof mount>) =>
+  (w.find('[data-test="clear-overlay"]').element.parentElement as HTMLElement)
+    .dataset.tip;
 
 type Exposed = {
   draft: {
@@ -283,13 +305,50 @@ describe('AgentConfigEditorDrawer (U2)', () => {
     expect(wrapper.find('[data-test="policy-only-banner"]').exists()).toBe(
       true,
     );
+    // R61: clearing r7 would also drop non-policy fields.
     expect(
       wrapper.find('[data-test="clear-overlay"]').attributes('disabled'),
     ).toBeDefined();
+    expect(clearTip(wrapper)).toBe(
+      'Needs agent:configure: this changes /plugins/local-ssh/config/port',
+    );
+    await wrapper.find('[data-test="clear-overlay"]').trigger('click');
+    expect(confirmRequire).not.toHaveBeenCalled();
     await toReview(wrapper);
     expect(
       wrapper.find('[data-test="save-config"]').attributes('disabled'),
     ).toBeDefined();
+  });
+
+  it('R61: policy-only users may Clear an overlay that only holds policies', async () => {
+    const policyOnly: AgentConfigRevision = {
+      ...configRev7,
+      overlay: {
+        plugins: {
+          'local-ssh': {
+            policies: overlayRev7.plugins!['local-ssh']!.policies,
+          },
+        },
+        policy_bundles: overlayRev7.policy_bundles,
+      },
+    };
+    const wrapper = mountDrawer(POLICY_AUTHOR, policyOnly);
+    expect(
+      wrapper.find('[data-test="clear-overlay"]').attributes('disabled'),
+    ).toBeUndefined();
+    expect(clearTip(wrapper)).toBe('');
+    await wrapper.find('[data-test="clear-overlay"]').trigger('click');
+    expect(confirmRequire).toHaveBeenCalledWith(
+      expect.objectContaining({ header: 'Clear overlay' }),
+    );
+  });
+
+  it('R61: agent:configure users may always Clear', () => {
+    const wrapper = mountDrawer(ADMIN);
+    expect(
+      wrapper.find('[data-test="clear-overlay"]').attributes('disabled'),
+    ).toBeUndefined();
+    expect(clearTip(wrapper)).toBe('');
   });
 
   it('shows the R57 secrets notice', () => {

@@ -164,14 +164,14 @@
         <span
           v-if="step === 'edit' && originalNonEmpty"
           v-tooltip.top="{
-            value: permissionTooltip(RESOURCES.AGENT, ACTIONS.CONFIGURE),
-            disabled: canConfigure,
+            value: clearGate.reason,
+            disabled: clearGate.allowed,
           }"
         >
           <Button
             severity="danger"
             size="small"
-            :disabled="!canConfigure"
+            :disabled="!clearGate.allowed"
             data-test="clear-overlay"
             @click="confirmClear"
           >
@@ -260,7 +260,9 @@ import {
 } from '@/utils/agent-config/validation';
 import {
   isPolicyOnlyChange,
+  policyOnlyGate,
   vendorFilesFor,
+  type PolicyOnlyGate,
 } from '@/utils/agent-config/policy-files';
 import { isPlainObject } from '@/utils/agent-config/merge-patch';
 import { validationInstanceIds } from '@/utils/agent-config/instance-status';
@@ -291,7 +293,7 @@ const emit = defineEmits<{
 const api = useAgentConfigApi();
 const toast = useToast();
 const confirm = useConfirm();
-const { can, permissionTooltip, RESOURCES, ACTIONS } = usePermissions();
+const { can, RESOURCES, ACTIONS } = usePermissions();
 
 // ---- Permissions (U2.7) ----
 const canConfigure = computed(() => can(RESOURCES.AGENT, ACTIONS.CONFIGURE));
@@ -587,7 +589,20 @@ async function resolveConflict(keep: boolean) {
   }
 }
 
+/**
+ * R61: Clear overlay is a change to {} — configure always, configure-policy when that is a
+ * policy-only change against the validation bases (the API decides; 403 still handled).
+ */
+const clearGate = computed<PolicyOnlyGate>(() => {
+  if (canConfigure.value) return { allowed: true, reason: '' };
+  if (props.detailsLoading) {
+    return { allowed: false, reason: 'Loading the instance configuration…' };
+  }
+  return policyOnlyGate(validationBases.value, draft.original.value, {});
+});
+
 function confirmClear() {
+  if (!clearGate.value.allowed) return;
   confirm.require({
     header: 'Clear overlay',
     message:

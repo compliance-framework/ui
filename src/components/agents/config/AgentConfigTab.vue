@@ -125,8 +125,10 @@
         :agent-id="agent.id"
         :file-base="safeName"
         :desired-revision="state.desiredRevision.value"
-        :can-revert="canConfigure"
+        :revert-access="revertAccess"
         :revert-tooltip="permissionTooltip(RESOURCES.AGENT, ACTIONS.CONFIGURE)"
+        :current-overlay="currentOverlay"
+        :load-bases="state.loadValidationBases"
         :get-revision="state.getRevisionCached"
         @changed="refresh"
       />
@@ -159,7 +161,7 @@ import Message from '@/volt/Message.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
 import SelectButton from '@/volt/SelectButton.vue';
 import type { Agent } from '@/types/agents';
-import type { AgentInstanceDetail } from '@/types/agent-config';
+import type { AgentInstanceDetail, OverlayDoc } from '@/types/agent-config';
 import { usePermissions } from '@/composables/usePermissions';
 import { useAgentConfigApi } from '@/composables/agent-config/useAgentConfigApi';
 import { useAgentConfig } from '@/composables/agent-config/useAgentConfig';
@@ -206,9 +208,17 @@ const canEdit = computed(
     can(RESOURCES.AGENT, ACTIONS.CONFIGURE) ||
     can(RESOURCES.AGENT, ACTIONS.CONFIGURE_POLICY),
 );
-// Revert can touch anything: the UI requires configure (the API also accepts
-// configure-policy for policy-only reverts; U2.7).
-const canConfigure = computed(() => can(RESOURCES.AGENT, ACTIONS.CONFIGURE));
+// R61: configure may revert to anything; configure-policy only when the revert is a
+// policy-only change (decided per revision in the history panel, as the API does).
+const revertAccess = computed<'full' | 'policy-only' | 'none'>(() => {
+  if (can(RESOURCES.AGENT, ACTIONS.CONFIGURE)) return 'full';
+  if (can(RESOURCES.AGENT, ACTIONS.CONFIGURE_POLICY)) return 'policy-only';
+  return 'none';
+});
+const EMPTY_OVERLAY: OverlayDoc = {};
+const currentOverlay = computed<OverlayDoc>(
+  () => state.config.value?.overlay ?? EMPTY_OVERLAY,
+);
 const editTooltip = computed(() =>
   canEdit.value ? '' : permissionTooltip(RESOURCES.AGENT, ACTIONS.CONFIGURE),
 );

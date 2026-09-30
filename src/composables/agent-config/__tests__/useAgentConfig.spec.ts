@@ -12,6 +12,7 @@ import {
   instancesMixed,
 } from '../fixtures';
 import { useAgentConfig } from '../useAgentConfig';
+import { validationInstanceIds } from '@/utils/agent-config/instance-status';
 
 function deferred<T>() {
   let resolve!: (v: T) => void;
@@ -131,5 +132,42 @@ describe('useAgentConfig', () => {
     first.reject(new Error('late failure'));
     await a;
     expect(state.status.value).toBe('ready');
+  });
+
+  it("loadValidationBases: the validation instances' bases, memoised, failing closed (R61)", async () => {
+    store.permissions = { agent: ['read'] };
+    store.loaded = true;
+    let fail = true;
+    const api = makeApi();
+    const state = useAgentConfig(ref('agent-1'), api);
+    await state.load();
+    const ids = validationInstanceIds(instancesMixed.items);
+    // The selected instance's detail is already cached: fail another one.
+    const failing = ids.find((id) => id !== state.selectedInstanceId.value)!;
+    expect(failing).toBeDefined();
+    (api.getInstance as ReturnType<typeof vi.fn>).mockClear();
+    (api.getInstance as ReturnType<typeof vi.fn>).mockImplementation(
+      async (_a: string, id: string) => {
+        if (fail && id === failing) throw new Error('boom');
+        return detailFor(
+          instancesMixed.items.find((i) => i.instanceId === id)!,
+          {},
+        );
+      },
+    );
+    await expect(state.loadValidationBases()).rejects.toThrow('boom');
+    fail = false;
+    const bases = await state.loadValidationBases();
+    expect(bases).toHaveLength(ids.length);
+    const calls = (api.getInstance as ReturnType<typeof vi.fn>).mock.calls
+      .length;
+    await state.loadValidationBases();
+    expect(
+      (api.getInstance as ReturnType<typeof vi.fn>).mock.calls.length,
+    ).toBe(calls);
+    const requested = new Set(
+      (api.getInstance as ReturnType<typeof vi.fn>).mock.calls.map((c) => c[1]),
+    );
+    expect([...requested].every((id) => ids.includes(id as string))).toBe(true);
   });
 });

@@ -397,3 +397,36 @@ export function isPolicyOnlyChange(
   }
   return true;
 }
+
+/** Whether a configure-policy-only user may make a change, and why not (R61). */
+export interface PolicyOnlyGate {
+  allowed: boolean;
+  /** Tooltip for a disabled control; '' when allowed. */
+  reason: string;
+}
+
+/** R22/R58 refusals (policy lists, extends) have no single non-policy path to name. */
+export const POLICY_ONLY_GENERIC_REASON =
+  'Needs agent:configure: this changes plugin policy lists or extends beyond what your role allows';
+
+/**
+ * R61: the gate for a configure-policy-only user moving the overlay from `current` to
+ * `target` (Revert, Clear overlay). Same rule as the API (isPolicyOnlyChange over the
+ * validation bases); advisory, the API decides.
+ */
+export function policyOnlyGate(
+  bases: ConfigDoc[],
+  current: OverlayDoc,
+  target: OverlayDoc,
+): PolicyOnlyGate {
+  if (isPolicyOnlyChange(bases, current, target)) {
+    return { allowed: true, reason: '' };
+  }
+  const path = firstNonPolicyPath(current, target);
+  return {
+    allowed: false,
+    reason: path
+      ? `Needs agent:configure: this changes ${path}`
+      : POLICY_ONLY_GENERIC_REASON,
+  };
+}

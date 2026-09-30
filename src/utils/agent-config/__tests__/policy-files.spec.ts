@@ -8,6 +8,8 @@ import {
   bundleFileStates,
   firstNonPolicyPath,
   isPolicyOnlyChange,
+  POLICY_ONLY_GENERIC_REASON,
+  policyOnlyGate,
   vendorFilesFor,
 } from '../policy-files';
 
@@ -249,5 +251,36 @@ describe('isPolicyOnlyChange (API PolicyOnlyChange + R22 + R58)', () => {
         },
       ),
     ).toBe(false);
+  });
+});
+
+describe('policyOnlyGate (R61: Revert / Clear overlay)', () => {
+  const base: ConfigDoc = {
+    plugins: { ssh: { source: 'ghcr.io/x/ssh:v1', policies: ['S'] } },
+  };
+  const bundle = (ext?: string) => ({
+    ...(ext ? { extends: ext } : {}),
+    modules: { 'a.rego': 'package a' },
+  });
+
+  it('allows a policy-only change', () => {
+    expect(
+      policyOnlyGate([base], { policy_bundles: { b: bundle() } }, {}),
+    ).toEqual({ allowed: true, reason: '' });
+  });
+
+  it('names the first non-policy path', () => {
+    expect(
+      policyOnlyGate([base], { plugins: { ssh: { schedule: '@hourly' } } }, {}),
+    ).toEqual({
+      allowed: false,
+      reason: 'Needs agent:configure: this changes /plugins/ssh/schedule',
+    });
+  });
+
+  it('falls back to a generic reason for R22/R58 refusals', () => {
+    expect(
+      policyOnlyGate([base], {}, { policy_bundles: { b: bundle('new:v1') } }),
+    ).toEqual({ allowed: false, reason: POLICY_ONLY_GENERIC_REASON });
   });
 });
