@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { useSidebarStore } from '@/stores/sidebar';
+import { usePermissionsStore } from '@/stores/permissions';
 import LeftSideNav from '../LeftSideNav.vue';
 import SideNavCategory from '@/components/navigation/SideNavCategory.vue';
 
@@ -421,5 +422,43 @@ describe('LeftSideNav', () => {
     expect(findWorkflowsChildren(wrapperAfterRefresh).classes()).not.toContain(
       'hidden',
     );
+  });
+  it('shows Agents (but not Groups) to a non-admin with agent:read (R40)', () => {
+    const sidebarStore = useSidebarStore();
+    sidebarStore.open = true;
+    const permissions = usePermissionsStore();
+    permissions.permissions = { agent: ['read'], admin: [] };
+    permissions.loaded = true;
+
+    const wrapper = mount(LeftSideNav, {
+      global: {
+        directives: {
+          tooltip: {
+            mounted: () => undefined,
+          },
+        },
+        stubs: {
+          SideNav: {
+            template: '<div><slot name="logo" /><slot /></div>',
+          },
+          SideNavCategory: {
+            template:
+              '<section><div class="category-title"><slot name="title" /></div><div><slot /></div></section>',
+          },
+          SideNavLink: {
+            template: '<a class="sidenav-link"><slot /></a>',
+          },
+          SideNavLogo: {
+            template: '<img alt="logo" />',
+          },
+        },
+      },
+    });
+
+    const linkTexts = wrapper
+      .findAll('.sidenav-link')
+      .map((link) => link.text().trim());
+    expect(linkTexts).toContain('Agents');
+    expect(linkTexts).not.toContain('Groups');
   });
 });

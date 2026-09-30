@@ -99,6 +99,51 @@ const mockLoadKeys = vi.fn().mockImplementation(async (url: string) => {
   return {};
 });
 
+// Mutable permission map. The existing cases run as an admin (admin:manage + agent:*).
+const perms = vi.hoisted(() => ({
+  map: {} as Record<string, string[]>,
+}));
+const ADMIN_PERMS = {
+  admin: ['manage'],
+  agent: [
+    'read',
+    'create',
+    'update',
+    'delete',
+    'configure',
+    'configure-policy',
+  ],
+};
+
+vi.mock('@/composables/usePermissions', async () => {
+  const { computed } = await import('vue');
+  const constants = await vi.importActual<
+    typeof import('@/constants/permissions')
+  >('@/constants/permissions');
+  return {
+    usePermissions: () => {
+      const can = (resource: string, action: string) =>
+        perms.map[resource]?.includes(action) ?? false;
+      return {
+        can,
+        canManageAdmin: computed(() => can('admin', 'manage')),
+        hydrate: vi.fn(),
+        permissionTooltip: constants.permissionTooltip,
+        RESOURCES: constants.RESOURCES,
+        ACTIONS: constants.ACTIONS,
+      };
+    },
+  };
+});
+
+vi.mock('@/components/agents/config/AgentConfigTab.vue', () => ({
+  default: {
+    name: 'AgentConfigTab',
+    props: ['agent'],
+    template: '<div data-test="config-tab">{{ agent?.id }}</div>',
+  },
+}));
+
 const toastAdd = vi.fn();
 const confirmRequire = vi.fn();
 const clipboardWriteText = vi.fn().mockResolvedValue(undefined);
@@ -337,6 +382,7 @@ describe('AgentsView', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
+    perms.map = ADMIN_PERMS;
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-04-06T00:00:00Z'));
 
@@ -567,5 +613,60 @@ describe('AgentsView', () => {
     expect(wrapper.text()).toContain(
       'Select or register an agent to manage service account keys.',
     );
+  });
+  it('shows the Configuration tab with agent:read and hides it otherwise', async () => {
+    const wrapper = mountView();
+    await flushPromises();
+    expect(findButtonByText(wrapper, 'Configuration')).toBeTruthy();
+    expect(wrapper.find('[data-test="config-tab"]').exists()).toBe(false);
+
+    await findButtonByText(wrapper, 'Configuration')!.trigger('click');
+    await flushPromises();
+    expect(wrapper.find('[data-test="config-tab"]').text()).toBe('agent-1');
+
+    perms.map = { admin: ['manage'], agent: [] };
+    const denied = mountView();
+    await flushPromises();
+    expect(findButtonByText(denied, 'Configuration')).toBeUndefined();
+  });
+
+  it('gives a non-admin with agent:read the list and the Configuration tab only', async () => {
+    perms.map = { agent: ['read'] };
+    const wrapper = mountView();
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('agent-one');
+    expect(wrapper.text()).toContain('Review and configure agents');
+    // Configuration is the default tab for non-admins.
+    expect(wrapper.find('[data-test="config-tab"]').text()).toBe('agent-1');
+    for (const label of [
+      'Register Agent',
+      'Edit',
+      'Delete',
+      'Manage Keys',
+      'Service Account Keys',
+      'Edit Agent',
+      'Delete Agent',
+    ]) {
+      expect(findButtonByText(wrapper, label)).toBeUndefined();
+    }
+    expect(wrapper.text()).not.toContain('Actions');
+    expect(mockLoadKeys).not.toHaveBeenCalled();
+
+    // Details stay visible to everyone, without the admin buttons.
+    await findButtonByText(wrapper, 'Details')!.trigger('click');
+    expect(wrapper.text()).toContain('Active Keys');
+    expect(findButtonByText(wrapper, 'Edit Agent')).toBeUndefined();
+  });
+
+  it('re-keys the config tab when switching agents', async () => {
+    perms.map = { agent: ['read'] };
+    const wrapper = mountView();
+    await flushPromises();
+    expect(wrapper.find('[data-test="config-tab"]').text()).toBe('agent-1');
+
+    await wrapper.findAll('tbody tr')[1].trigger('click');
+    await flushPromises();
+    expect(wrapper.find('[data-test="config-tab"]').text()).toBe('agent-2');
   });
 });

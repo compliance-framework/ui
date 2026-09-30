@@ -1,11 +1,15 @@
 <template>
   <PageHeader>Agents</PageHeader>
   <PageSubHeader>
-    Register agents and manage their service account keys
+    {{
+      canManageAdmin
+        ? 'Register agents, manage their service account keys and configuration'
+        : 'Review and configure agents'
+    }}
   </PageSubHeader>
 
   <div class="mt-6 space-y-6">
-    <div class="flex justify-end">
+    <div v-if="canManageAdmin" class="flex justify-end">
       <PrimaryButton @click="openCreateAgentDialog"
         >Register Agent</PrimaryButton
       >
@@ -36,7 +40,7 @@
               <th class="table-header">Active Key Count</th>
               <th class="table-header">Last Authenticated</th>
               <th class="table-header">Created</th>
-              <th class="table-header">Actions</th>
+              <th v-if="canManageAdmin" class="table-header">Actions</th>
             </tr>
           </thead>
           <tbody class="table-body">
@@ -79,7 +83,7 @@
               <td class="table-cell text-gray-600 dark:text-slate-400">
                 {{ formatDate(agent.createdAt) }}
               </td>
-              <td class="table-cell">
+              <td v-if="canManageAdmin" class="table-cell">
                 <div class="flex flex-wrap gap-2">
                   <TertiaryButton @click.stop="openEditAgentDialog(agent)">
                     Edit
@@ -113,7 +117,11 @@
             }}
           </p>
         </div>
-        <PrimaryButton :disabled="!selectedAgent" @click="activeTab = 'keys'">
+        <PrimaryButton
+          v-if="canManageAdmin"
+          :disabled="!selectedAgent"
+          @click="activeTab = 'keys'"
+        >
           Manage Keys
         </PrimaryButton>
       </div>
@@ -123,7 +131,8 @@
           <Tabs v-model:value="activeTab">
             <TabList>
               <Tab value="details">Details</Tab>
-              <Tab value="keys">Service Account Keys</Tab>
+              <Tab v-if="canManageAdmin" value="keys">Service Account Keys</Tab>
+              <Tab v-if="canReadConfig" value="config">Configuration</Tab>
             </TabList>
             <TabPanels>
               <TabPanel value="details">
@@ -172,7 +181,7 @@
                   </div>
                 </div>
 
-                <div class="mt-6 flex flex-wrap gap-3">
+                <div v-if="canManageAdmin" class="mt-6 flex flex-wrap gap-3">
                   <PrimaryButton @click="openEditAgentDialog(selectedAgent)">
                     Edit Agent
                   </PrimaryButton>
@@ -182,7 +191,7 @@
                 </div>
               </TabPanel>
 
-              <TabPanel value="keys">
+              <TabPanel v-if="canManageAdmin" value="keys">
                 <div class="pt-4 space-y-4">
                   <div class="flex justify-end">
                     <PrimaryButton @click="openCreateKeyDialog">
@@ -276,6 +285,16 @@
                     </div>
                   </template>
                 </div>
+              </TabPanel>
+
+              <!-- TabPanel is not lazy (PrimeVue 4.4): the v-if keeps config requests to the
+                   visible tab only (D-20). -->
+              <TabPanel v-if="canReadConfig" value="config">
+                <AgentConfigTab
+                  v-if="activeTab === 'config'"
+                  :key="selectedAgent.id"
+                  :agent="selectedAgent"
+                />
               </TabPanel>
             </TabPanels>
           </Tabs>
@@ -473,6 +492,9 @@ import TabList from '@/volt/TabList.vue';
 import TabPanel from '@/volt/TabPanel.vue';
 import TabPanels from '@/volt/TabPanels.vue';
 import { decamelizeKeys, useDataApi } from '@/composables/axios';
+import { usePermissions } from '@/composables/usePermissions';
+import { ACTIONS, RESOURCES } from '@/constants/permissions';
+import AgentConfigTab from '@/components/agents/config/AgentConfigTab.vue';
 import { useConfigStore } from '@/stores/config';
 import type { ErrorBody, ErrorResponse } from '@/stores/types';
 import type {
@@ -484,7 +506,7 @@ import type {
 } from '@/types/agents';
 
 type AgentDialogMode = 'create' | 'edit';
-type AgentTab = 'details' | 'keys';
+type AgentTab = 'details' | 'keys' | 'config';
 
 interface AgentFormData {
   name: string;
@@ -502,7 +524,16 @@ const toast = useToast();
 const confirm = useConfirm();
 const configStore = useConfigStore();
 
-const activeTab = ref<AgentTab>('details');
+// R40: the page is readable with agent:read; registration, keys and CRUD stay admin-only and
+// are hidden (not disabled) for everyone else, since they belong to a different role.
+const { can, canManageAdmin } = usePermissions();
+const canReadConfig = computed(() => can(RESOURCES.AGENT, ACTIONS.READ));
+
+function defaultTab(): AgentTab {
+  return canManageAdmin.value || !canReadConfig.value ? 'details' : 'config';
+}
+
+const activeTab = ref<AgentTab>(defaultTab());
 const selectedAgentId = ref<string | null>(null);
 const apiBaseUrl = ref('');
 
@@ -632,7 +663,7 @@ watch(
     if (!items?.length) {
       selectedAgentId.value = null;
       agentKeys.value = [];
-      activeTab.value = 'details';
+      activeTab.value = defaultTab();
       return;
     }
 
@@ -649,8 +680,13 @@ watch(
 );
 
 watch(
-  () => selectedAgentId.value,
-  async (agentId) => {
+  [() => selectedAgentId.value, () => canManageAdmin.value],
+  async ([agentId, isAdmin]) => {
+    // Keys are admin-only: never request them (and never trigger a 403 toast) otherwise.
+    if (!isAdmin) {
+      agentKeys.value = [];
+      return;
+    }
     if (!agentId) {
       agentKeys.value = [];
       return;
@@ -659,6 +695,17 @@ watch(
     await loadAgentKeys(agentId);
   },
   { immediate: true },
+);
+
+// Permissions hydrate after mount (the store is optimistic until then): move a non-admin off
+// the admin-only tab, onto Configuration.
+watch(
+  () => canManageAdmin.value,
+  (isAdmin) => {
+    if (!isAdmin && activeTab.value !== 'config') {
+      activeTab.value = defaultTab();
+    }
+  },
 );
 
 watch(
