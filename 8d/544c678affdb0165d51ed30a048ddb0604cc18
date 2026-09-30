@@ -1,0 +1,2 @@
+lisa-addressed:
+pass 2 fixes: validation-bases-mismatch (validationInstanceIds mirrors ValidationBases; used for client validation and the policy-only fallback), file-plugin-without-source-blocks (effective source check over every plugin).
