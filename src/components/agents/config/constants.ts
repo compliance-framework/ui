@@ -148,3 +148,16 @@ export function labelFor(
     ? labels[code]
     : null;
 }
+
+// ---- Bundle file states (U4.3) ----
+
+export const FILE_STATE_LABELS: Record<string, string> = {
+  inherited: 'inherited',
+  overridden: 'overridden',
+  deleted: 'Deleted vendor file',
+  added: 'added',
+  'delete-missing': 'Not in the vendor bundle; has no effect',
+  set: 'added or overridden',
+  conflict: 'Both overridden and deleted',
+  dropped: 'File module dropped by the overlay',
+};

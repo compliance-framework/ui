@@ -99,7 +99,7 @@
       <template v-if="step === 'edit'">
         <OverlayFormEditor v-if="draft.mode.value === 'form'">
           <template #policies>
-            <slot name="policies" />
+            <PoliciesSection />
           </template>
         </OverlayFormEditor>
         <OverlayYamlEditor v-else />
@@ -260,6 +260,7 @@ import EditorBanner from './editor/EditorBanner.vue';
 import OverlayFormEditor from './editor/OverlayFormEditor.vue';
 import OverlayYamlEditor from './editor/OverlayYamlEditor.vue';
 import SavePreviewPanel from './editor/SavePreviewPanel.vue';
+import PoliciesSection from './editor/PoliciesSection.vue';
 
 const props = defineProps<{
   visible: boolean;

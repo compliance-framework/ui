@@ -26,13 +26,46 @@
         {{ row.deleted }} deleted
         <template v-if="row.age"> · added {{ row.age }}</template>
       </p>
+      <p v-if="row.vendorUnknown" class="mt-1 text-xs text-gray-400">
+        The vendor file list appears after an instance reports this bundle.
+      </p>
+      <ul
+        v-if="row.files.length"
+        class="mt-2 space-y-0.5 text-xs"
+        :data-test="`summary-files-${row.name}`"
+      >
+        <li
+          v-for="f in row.files"
+          :key="f.path"
+          class="flex gap-2"
+          :data-state="f.state"
+        >
+          <span
+            class="font-mono"
+            :class="{ 'line-through': f.state === 'deleted' }"
+            >{{ f.path }}</span
+          >
+          <span class="text-gray-500">{{ FILE_STATE_LABELS[f.state] }}</span>
+        </li>
+      </ul>
     </div>
   </section>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import type { ConfigDoc, OverlayDoc } from '@/types/agent-config';
+import type {
+  ConfigDoc,
+  OverlayDoc,
+  PolicyBundleDoc,
+  PolicyBundleReport,
+} from '@/types/agent-config';
+import {
+  bundleFileStates,
+  vendorFilesFor,
+} from '@/utils/agent-config/policy-files';
+import { isPlainObject } from '@/utils/agent-config/merge-patch';
+import { FILE_STATE_LABELS } from './constants';
 import { bundleProvenance } from '@/utils/agent-config/provenance';
 import { formatRelative } from '@/utils/agent-config/display';
 import ProvenanceBadge from './ProvenanceBadge.vue';
@@ -43,7 +76,30 @@ const props = defineProps<{
   overlay: OverlayDoc | null;
   bundlesFirstSeen?: Record<string, string>;
   highlight?: string | null;
+  /** The instance's reported bundles (vendor file lists, R10). */
+  reports?: PolicyBundleReport[] | null;
 }>();
+
+function asBundle(v: unknown): PolicyBundleDoc | null {
+  return isPlainObject(v) ? (v as PolicyBundleDoc) : null;
+}
+
+// Read-only variant of the editor's file table (U4.1).
+function fileInfo(name: string, b: PolicyBundleDoc) {
+  const vendor = b.extends
+    ? vendorFilesFor(name, b, props.reports ?? null)
+    : [];
+  const files = bundleFileStates(
+    vendor,
+    asBundle(props.base?.policy_bundles?.[name]),
+    asBundle(
+      (props.overlay?.policy_bundles as Record<string, unknown> | undefined)?.[
+        name
+      ],
+    ),
+  ).map((f) => ({ path: f.path, state: f.state }));
+  return { files, vendorUnknown: vendor === null };
+}
 
 const rows = computed(() =>
   Object.entries(props.effective?.policy_bundles ?? {})
@@ -56,6 +112,7 @@ const rows = computed(() =>
       deleted: (b?.delete ?? []).length,
       provenance: bundleProvenance(name, props.base ?? {}, props.overlay ?? {}),
       age: formatRelative(props.bundlesFirstSeen?.[name]),
+      ...fileInfo(name, b ?? {}),
     })),
 );
 </script>

@@ -229,9 +229,7 @@
         class="text-xs text-gray-500 dark:text-slate-400"
         data-test="policy-behavior"
       >
-        {{ behaviourCount }} behaviour{{
-          behaviourCount === 1 ? '' : 's'
-        }}
+        {{ behaviourCount }} behaviour{{ behaviourCount === 1 ? '' : 's' }}
         (edit in YAML)
       </p>
     </template>

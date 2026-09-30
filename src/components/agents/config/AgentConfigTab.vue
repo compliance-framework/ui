@@ -91,6 +91,7 @@
           )
         "
         :bundles-first-seen="state.config.value?.bundlesFirstSeen"
+        :policy-bundles="state.selectedInstance.value?.policyBundles ?? null"
       />
       <ConfigYamlViewer
         v-else-if="view === 'file'"

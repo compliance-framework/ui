@@ -30,7 +30,8 @@ export function piniaWith(permissions: Record<string, string[]>): Pinia {
 
 export function globalWith(
   pinia: Pinia,
-  extraStubs: Record<string, unknown> = {},
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  extraStubs: Record<string, any> = {},
 ) {
   return {
     plugins: [pinia, PrimeVue, ToastService, ConfirmationService],
@@ -38,19 +39,8 @@ export function globalWith(
       tooltip: { mounted: () => undefined, updated: () => undefined },
     },
     stubs: {
-      // CodeMirror is stubbed everywhere except its own spec.
-      CodeEditor: {
-        name: 'CodeEditor',
-        props: ['modelValue', 'readonly', 'language', 'diagnostics', 'label'],
-        emits: ['update:modelValue'],
-        template:
-          '<textarea class="code-editor-stub" :data-language="language" :readonly="readonly" :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />',
-      },
-      CodeMergeView: {
-        name: 'CodeMergeView',
-        props: ['original', 'modified', 'language', 'mode'],
-        template: '<div class="merge-stub">{{ original }}|{{ modified }}</div>',
-      },
+      // CodeMirror: specs that render editors mock '@/components/code-editor' with
+      // ./codeEditorMock (sync stand-ins); only CodeEditor.spec mounts the real editor.
       ...extraStubs,
     },
   };

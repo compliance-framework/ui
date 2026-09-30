@@ -65,6 +65,7 @@
             :overlay="appliedOverlay"
             :bundles-first-seen="bundlesFirstSeen"
             :highlight="highlightBundle"
+            :reports="policyBundles"
           />
         </slot>
       </template>
@@ -82,7 +83,12 @@
 <script setup lang="ts">
 import { computed, nextTick, ref } from 'vue';
 import SelectButton from '@/volt/SelectButton.vue';
-import type { ConfigDoc, OverlayDoc, PluginDoc } from '@/types/agent-config';
+import type {
+  ConfigDoc,
+  OverlayDoc,
+  PluginDoc,
+  PolicyBundleReport,
+} from '@/types/agent-config';
 import { sanitizeForDisplay } from '@/utils/agent-config/display';
 import { isPlainObject } from '@/utils/agent-config/merge-patch';
 import LockedKeysPanel from './LockedKeysPanel.vue';
@@ -102,6 +108,8 @@ const props = defineProps<{
   appliedRevisionNote: number | null;
   filename: string;
   bundlesFirstSeen?: Record<string, string>;
+  /** The instance's reported policy bundles (vendor file lists). */
+  policyBundles?: PolicyBundleReport[] | null;
 }>();
 
 const mode = ref<'summary' | 'yaml'>('summary');
