@@ -29,6 +29,9 @@ vi.mock('primevue/useconfirm', () => ({
 
 import AgentConfigEditorDrawer from '../AgentConfigEditorDrawer.vue';
 
+// The async CodeMirror wrappers are replaced by synchronous stubs.
+vi.mock('@/components/code-editor', () => import('./codeEditorMock'));
+
 const agent: Agent = {
   id: 'agent-1',
   name: 'ssh',
@@ -62,19 +65,15 @@ const cleanPreview: ConfigPreview = {
 function makeApi(over: Partial<AgentConfigApi> = {}): AgentConfigApi {
   return {
     fixtures: false,
-    getConfig: vi
-      .fn()
-      .mockResolvedValue({
-        ...configRev7,
-        revision: 8,
-        createdBy: 'bob@example.com',
-      }),
-    putConfig: vi
-      .fn()
-      .mockResolvedValue({
-        revision: { ...configRev7, revision: 8 },
-        created: true,
-      }),
+    getConfig: vi.fn().mockResolvedValue({
+      ...configRev7,
+      revision: 8,
+      createdBy: 'bob@example.com',
+    }),
+    putConfig: vi.fn().mockResolvedValue({
+      revision: { ...configRev7, revision: 8 },
+      created: true,
+    }),
     preview: vi.fn().mockResolvedValue(cleanPreview),
     listRevisions: vi.fn(),
     getRevision: vi.fn(),
@@ -181,16 +180,14 @@ describe('AgentConfigEditorDrawer (U2)', () => {
 
   it('409 shows the conflict banner; keep rebases and returns to review, discard reloads', async () => {
     api.current = makeApi({
-      putConfig: vi
-        .fn()
-        .mockRejectedValue(
-          new AgentConfigApiError({
-            kind: 'conflict',
-            status: 409,
-            message: 'c',
-            currentRevision: 8,
-          }),
-        ),
+      putConfig: vi.fn().mockRejectedValue(
+        new AgentConfigApiError({
+          kind: 'conflict',
+          status: 409,
+          message: 'c',
+          currentRevision: 8,
+        }),
+      ),
     });
     const wrapper = mountDrawer();
     await toReview(wrapper);
@@ -225,16 +222,14 @@ describe('AgentConfigEditorDrawer (U2)', () => {
 
   it('422 maps overlay / instances / policy-errors and stays on review', async () => {
     api.current = makeApi({
-      putConfig: vi
-        .fn()
-        .mockRejectedValue(
-          new AgentConfigApiError({
-            kind: 'invalid',
-            status: 422,
-            message: 'invalid',
-            body: error422.errors,
-          }),
-        ),
+      putConfig: vi.fn().mockRejectedValue(
+        new AgentConfigApiError({
+          kind: 'invalid',
+          status: 422,
+          message: 'invalid',
+          body: error422.errors,
+        }),
+      ),
     });
     const wrapper = mountDrawer();
     await toReview(wrapper);

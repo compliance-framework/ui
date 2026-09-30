@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import type { ConfigPreview, InstancePreview } from '@/types/agent-config';
 import {
@@ -12,6 +12,9 @@ import {
 import SavePreviewPanel from '../editor/SavePreviewPanel.vue';
 import { safetyForRow } from '../editor/review';
 import { globalWith, piniaWith, ADMIN } from './helpers';
+
+// The async CodeMirror wrappers are replaced by synchronous stubs.
+vi.mock('@/components/code-editor', () => import('./codeEditorMock'));
 
 const details = new Map(
   instancesMixed.items

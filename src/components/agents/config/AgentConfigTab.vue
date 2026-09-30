@@ -109,6 +109,17 @@
           empty-text="No overlay saved yet."
         />
       </div>
+      <AgentConfigHistory
+        v-else-if="view === 'history'"
+        :api="api"
+        :agent-id="agent.id"
+        :file-base="safeName"
+        :desired-revision="state.desiredRevision.value"
+        :can-revert="canConfigure"
+        :revert-tooltip="permissionTooltip(RESOURCES.AGENT, ACTIONS.CONFIGURE)"
+        :get-revision="state.getRevisionCached"
+        @changed="refresh"
+      />
     </template>
 
     <AgentConfigEditorDrawer
@@ -147,6 +158,7 @@ import AgentInstancePicker from './AgentInstancePicker.vue';
 import InstanceModeNotice from './InstanceModeNotice.vue';
 import AgentConfigEffectiveView from './AgentConfigEffectiveView.vue';
 import ConfigYamlViewer from './ConfigYamlViewer.vue';
+import AgentConfigHistory from './AgentConfigHistory.vue';
 import {
   LOCKED_LEGEND,
   NOT_REPORTED_TEXT,
@@ -159,7 +171,7 @@ const AgentConfigEditorDrawer = defineAsyncComponent(
   () => import('./AgentConfigEditorDrawer.vue'),
 );
 
-type ConfigView = 'effective' | 'file' | 'overlay';
+type ConfigView = 'effective' | 'file' | 'overlay' | 'history';
 
 const props = defineProps<{ agent: Agent }>();
 
@@ -172,6 +184,7 @@ const viewOptions = [
   { label: 'Effective', value: 'effective' },
   { label: 'File', value: 'file' },
   { label: 'Overlay', value: 'overlay' },
+  { label: 'History', value: 'history' },
 ];
 const refreshing = ref(false);
 
@@ -182,6 +195,9 @@ const canEdit = computed(
     can(RESOURCES.AGENT, ACTIONS.CONFIGURE) ||
     can(RESOURCES.AGENT, ACTIONS.CONFIGURE_POLICY),
 );
+// Revert can touch anything: the UI requires configure (the API also accepts
+// configure-policy for policy-only reverts; U2.7).
+const canConfigure = computed(() => can(RESOURCES.AGENT, ACTIONS.CONFIGURE));
 const editTooltip = computed(() =>
   canEdit.value ? '' : permissionTooltip(RESOURCES.AGENT, ACTIONS.CONFIGURE),
 );
@@ -228,9 +244,12 @@ const overlayDoc = computed(() => {
   return cfg.overlay ?? {};
 });
 
+const safeName = computed(() =>
+  props.agent.name.replace(/[^A-Za-z0-9_.-]+/g, '-'),
+);
+
 function fileName(kind: string, rev: number): string {
-  const safe = props.agent.name.replace(/[^A-Za-z0-9_.-]+/g, '-');
-  return `${safe}-${kind}-r${rev}.yaml`;
+  return `${safeName.value}-${kind}-r${rev}.yaml`;
 }
 
 async function refresh() {
