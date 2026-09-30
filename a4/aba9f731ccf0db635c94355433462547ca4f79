@@ -10,3 +10,8 @@ pass 1 fixes (commit a4aba9f):
 - file-view-not-sanitized, history-view-error, history reload/pagination (seq guard, dedupe, inline page error).
 - r59-file-origin-blocks, new-plugin-source-standalone, forbidden env case, cron5 robfig parity, interval, empty extends, data parse, lossless coercion, __proto__ guards.
 - codemirror-undo-crosses-docs (addToHistory false + :key), dirty-guard-unparsed-yaml (hasUnsavedChanges), kv overlay-only clear, JSON watcher clobbering, customize reopen, policy-only reset gating, stale 422 errors cleared, live-check status reset, a11y (role/tabindex, aria-live, aria-pressed), non-admin copy.
+
+lisa-selfreview:
+pass 2 (strict) verdict: request_changes
+- [medium] validation-bases-mismatch (AgentConfigEditorDrawer → useOverlayDraft clientIssues): client validation runs against EVERY loaded base (stale, report-mode), while the API validates only ValidationBases (fresh apply-mode instances, else the latest-reported apply-mode one, else standalone). A problem introduced only for a report-mode host blocks Review although the API would save. Fix: compute the same set client-side (validationInstanceIds) and use it for validation and the advisory policy-only fallback; keep all bases for removals.
+- [medium] file-plugin-without-source-blocks (validation.ts effectiveIssues): the "needs a source" check only looks at plugins the overlay touches, so a file plugin that already lacks a source becomes a BLOCKING issue as soon as the overlay touches it (the R59 baseline with overlay {} never sees it). Fix: check every effective plugin; the baseline then marks file-origin ones non-blocking.
