@@ -39,6 +39,7 @@
     "@codemirror/state": "^6.7.6",
     "@codemirror/view": "^6.43.13",
     "@heroicons/vue": "^2.2.0",
+    "@lezer/highlight": "^1.2.5",
     "@tailwindcss/vite": "^4.1.14",
     "@types/chart.js": "^2.9.41",
     "@vueuse/core": "^13.5.0",

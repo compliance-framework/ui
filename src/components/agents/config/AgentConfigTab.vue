@@ -35,6 +35,10 @@
         :sync-summary="state.syncSummary.value"
         :instance-count="state.instances.value.length"
         :loading="refreshing"
+        show-edit
+        :can-edit="canEdit"
+        :edit-tooltip="editTooltip"
+        @edit="openEditor"
         @refresh="refresh"
         @select-instance="state.selectInstance"
       />
@@ -106,15 +110,36 @@
         />
       </div>
     </template>
+
+    <AgentConfigEditorDrawer
+      v-if="drawerOpen && state.config.value"
+      v-model:visible="drawerOpen"
+      :agent="agent"
+      :config="state.config.value"
+      :instances="state.instances.value"
+      :instance-details="instanceDetails"
+      :initial-instance-id="state.selectedInstanceId.value"
+      :details-loading="detailsLoading"
+      @saved="onSaved"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, toRef } from 'vue';
+import {
+  computed,
+  defineAsyncComponent,
+  onMounted,
+  ref,
+  shallowRef,
+  toRef,
+} from 'vue';
 import Message from '@/volt/Message.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
 import SelectButton from '@/volt/SelectButton.vue';
 import type { Agent } from '@/types/agents';
+import type { AgentInstanceDetail } from '@/types/agent-config';
+import { usePermissions } from '@/composables/usePermissions';
 import { useAgentConfigApi } from '@/composables/agent-config/useAgentConfigApi';
 import { useAgentConfig } from '@/composables/agent-config/useAgentConfig';
 import AgentConfigHeader from './AgentConfigHeader.vue';
@@ -127,6 +152,12 @@ import {
   NOT_REPORTED_TEXT,
   OVERLAY_SECRETS_NOTICE,
 } from './constants';
+
+// The editor (form, YAML, review) is only needed once someone opens it: keep it out of the
+// AgentsView chunk.
+const AgentConfigEditorDrawer = defineAsyncComponent(
+  () => import('./AgentConfigEditorDrawer.vue'),
+);
 
 type ConfigView = 'effective' | 'file' | 'overlay';
 
@@ -143,6 +174,36 @@ const viewOptions = [
   { label: 'Overlay', value: 'overlay' },
 ];
 const refreshing = ref(false);
+
+// ---- Editor (U2.7): configure OR configure-policy opens it ----
+const { can, permissionTooltip, RESOURCES, ACTIONS } = usePermissions();
+const canEdit = computed(
+  () =>
+    can(RESOURCES.AGENT, ACTIONS.CONFIGURE) ||
+    can(RESOURCES.AGENT, ACTIONS.CONFIGURE_POLICY),
+);
+const editTooltip = computed(() =>
+  canEdit.value ? '' : permissionTooltip(RESOURCES.AGENT, ACTIONS.CONFIGURE),
+);
+const drawerOpen = ref(false);
+const instanceDetails = shallowRef(new Map<string, AgentInstanceDetail>());
+const detailsLoading = ref(false);
+
+/** The review diff needs every reported base: load them all (≤ 6 at a time) on open. */
+async function openEditor() {
+  if (!canEdit.value) return;
+  drawerOpen.value = true;
+  detailsLoading.value = true;
+  try {
+    instanceDetails.value = await state.loadAllInstanceDetails();
+  } finally {
+    detailsLoading.value = false;
+  }
+}
+
+async function onSaved() {
+  await refresh();
+}
 
 const selectedSummary = computed(
   () =>

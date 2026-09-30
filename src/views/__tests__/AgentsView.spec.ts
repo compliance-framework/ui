@@ -137,6 +137,8 @@ vi.mock('@/composables/usePermissions', async () => {
 });
 
 vi.mock('@/components/agents/config/AgentConfigTab.vue', () => ({
+  // Loaded through defineAsyncComponent, which unwraps `default` of ES modules.
+  __esModule: true,
   default: {
     name: 'AgentConfigTab',
     props: ['agent'],

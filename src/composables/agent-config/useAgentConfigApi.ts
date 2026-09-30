@@ -19,7 +19,6 @@ import type {
   SaveResult,
 } from '@/types/agent-config';
 import { AgentConfigApiError, type AgentConfigApi } from './api-types';
-import { createFixtureApi } from './fixtureApi';
 
 export * from './api-types';
 
@@ -282,7 +281,28 @@ export function createHttpAgentConfigApi(
   };
 }
 
+/**
+ * Fixture mode loads the in-memory implementation (and its fixtures) on first use, so none of
+ * it ships in the regular chunks.
+ */
+function createLazyFixtureApi(): AgentConfigApi {
+  let impl: Promise<AgentConfigApi> | null = null;
+  const load = () =>
+    (impl ??= import('./fixtureApi').then((m) => m.createFixtureApi()));
+  return {
+    fixtures: true,
+    getConfig: (...a) => load().then((api) => api.getConfig(...a)),
+    putConfig: (...a) => load().then((api) => api.putConfig(...a)),
+    preview: (...a) => load().then((api) => api.preview(...a)),
+    listRevisions: (...a) => load().then((api) => api.listRevisions(...a)),
+    getRevision: (...a) => load().then((api) => api.getRevision(...a)),
+    revert: (...a) => load().then((api) => api.revert(...a)),
+    listInstances: (...a) => load().then((api) => api.listInstances(...a)),
+    getInstance: (...a) => load().then((api) => api.getInstance(...a)),
+  };
+}
+
 export function useAgentConfigApi(): AgentConfigApi {
-  if (agentConfigFixturesEnabled()) return createFixtureApi();
+  if (agentConfigFixturesEnabled()) return createLazyFixtureApi();
   return createHttpAgentConfigApi(useAuthenticatedInstance());
 }

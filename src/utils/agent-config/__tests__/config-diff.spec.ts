@@ -45,3 +45,17 @@ describe('diffConfigs', () => {
     expect(diffConfigs(null, {})).toEqual([]);
   });
 });
+
+describe('formatRelative', () => {
+  it('formats past and future times', async () => {
+    const { formatRelative } = await import('../display');
+    const now = Date.parse('2026-09-30T12:00:00Z');
+    expect(formatRelative('2026-09-30T10:00:00Z', now)).toMatch(/2 hours ago/);
+    expect(formatRelative('2026-10-03T12:00:00Z', now)).toMatch(/in 3 days/);
+    expect(formatRelative('2026-09-30T12:00:20Z', now)).toMatch(
+      /this minute|now|0 minutes/,
+    );
+    expect(formatRelative(null)).toBe('');
+    expect(formatRelative('garbage')).toBe('');
+  });
+});

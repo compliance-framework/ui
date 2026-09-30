@@ -52,3 +52,15 @@ describe('overlay-ops', () => {
     ).toEqual({});
   });
 });
+
+describe('replacingPatch', () => {
+  it('writes target keys in full and nulls keys only in the source', async () => {
+    const { replacingPatch } = await import('../overlay-ops');
+    const { mergePatch } = await import('../merge-patch');
+    const source = { a: 1, b: { c: 2, d: 3 }, e: [1] };
+    const target = { a: 1, b: { c: 5 }, f: 'x' };
+    const patch = replacingPatch(source, target);
+    expect(patch).toEqual({ a: 1, b: { c: 5, d: null }, f: 'x', e: null });
+    expect(mergePatch(source, patch)).toEqual(target);
+  });
+});

@@ -1,6 +1,5 @@
 // Small display helpers for the agent Configuration tab.
 
-import { formatDistanceToNow } from 'date-fns';
 import type { ConfigDoc } from '@/types/agent-config';
 import { clone, isPlainObject } from './merge-patch';
 
@@ -17,11 +16,30 @@ export function sanitizeForDisplay<T>(doc: T): T {
   return out as T;
 }
 
-export function formatRelative(value?: string | null): string {
+const RELATIVE_UNITS: [Intl.RelativeTimeFormatUnit, number][] = [
+  ['year', 365 * 24 * 3600],
+  ['month', 30 * 24 * 3600],
+  ['week', 7 * 24 * 3600],
+  ['day', 24 * 3600],
+  ['hour', 3600],
+  ['minute', 60],
+];
+
+/** "2 hours ago" / "in 3 days" (Intl, no date library in the page chunk). */
+export function formatRelative(
+  value?: string | null,
+  now: number = Date.now(),
+): string {
   if (!value) return '';
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return '';
-  return formatDistanceToNow(d, { addSuffix: true });
+  const t = new Date(value).getTime();
+  if (Number.isNaN(t)) return '';
+  const seconds = Math.round((t - now) / 1000);
+  const rtf = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' });
+  for (const [unit, size] of RELATIVE_UNITS) {
+    if (Math.abs(seconds) >= size)
+      return rtf.format(Math.round(seconds / size), unit);
+  }
+  return rtf.format(0, 'minute');
 }
 
 export function formatAbsolute(value?: string | null): string {

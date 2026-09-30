@@ -476,7 +476,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, defineAsyncComponent, onMounted, ref, watch } from 'vue';
 import { isAxiosError, type AxiosError } from 'axios';
 import { useToast } from 'primevue/usetoast';
 import { useConfirm } from 'primevue/useconfirm';
@@ -494,7 +494,7 @@ import TabPanels from '@/volt/TabPanels.vue';
 import { decamelizeKeys, useDataApi } from '@/composables/axios';
 import { usePermissions } from '@/composables/usePermissions';
 import { ACTIONS, RESOURCES } from '@/constants/permissions';
-import AgentConfigTab from '@/components/agents/config/AgentConfigTab.vue';
+
 import { useConfigStore } from '@/stores/config';
 import type { ErrorBody, ErrorResponse } from '@/stores/types';
 import type {
@@ -504,6 +504,12 @@ import type {
   CreateAgentServiceAccountKeyRequest,
   UpsertAgentRequest,
 } from '@/types/agents';
+
+// The Configuration tab (js-yaml, provenance, status views) is its own chunk, fetched the
+// first time the tab is shown; the editor and CodeMirror are split further inside it.
+const AgentConfigTab = defineAsyncComponent(
+  () => import('@/components/agents/config/AgentConfigTab.vue'),
+);
 
 type AgentDialogMode = 'create' | 'edit';
 type AgentTab = 'details' | 'keys' | 'config';

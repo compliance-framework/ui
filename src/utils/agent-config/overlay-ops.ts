@@ -82,3 +82,26 @@ export function makeAbsent<T extends object>(
 ): T {
   return hasAt(base, ptr) ? nullAt(overlay, ptr) : unsetAt(overlay, ptr);
 }
+
+/**
+ * A merge patch that turns `source` into exactly `target` while keeping every target key
+ * explicit (no normalisation against the base, which differs between instances): target keys
+ * are written in full (nested objects recursively) and keys present only in `source` become
+ * `null`. Used for whole-object editors such as `policy_data` (objects MERGE under RFC 7396,
+ * so a key removed in the editor must be nulled).
+ */
+export function replacingPatch(source: unknown, target: unknown): unknown {
+  if (!isPlainObject(target)) return clone(target);
+  const src: PlainObject = isPlainObject(source) ? source : {};
+  const out: PlainObject = {};
+  for (const [k, v] of Object.entries(target)) {
+    out[k] =
+      isPlainObject(v) && isPlainObject(src[k])
+        ? replacingPatch(src[k], v)
+        : clone(v);
+  }
+  for (const k of Object.keys(src)) {
+    if (!Object.prototype.hasOwnProperty.call(target, k)) out[k] = null;
+  }
+  return out;
+}

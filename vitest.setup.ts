@@ -51,3 +51,40 @@ if (
     configurable: true,
   });
 }
+
+// CodeMirror measures text through Range rects, which jsdom does not implement. Stub them
+// (only the CodeEditor spec mounts a real editor; everything else stubs it).
+if (typeof Range !== 'undefined') {
+  const emptyRect = () =>
+    ({
+      x: 0,
+      y: 0,
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      width: 0,
+      height: 0,
+      toJSON: () => ({}),
+    }) as DOMRect;
+  if (!Range.prototype.getBoundingClientRect) {
+    Range.prototype.getBoundingClientRect = emptyRect;
+  }
+  if (!Range.prototype.getClientRects) {
+    Range.prototype.getClientRects = () =>
+      ({
+        length: 0,
+        item: () => null,
+        [Symbol.iterator]: function* () {},
+      }) as unknown as DOMRectList;
+  }
+}
+if (
+  typeof document !== 'undefined' &&
+  typeof document.createRange !== 'function'
+) {
+  document.createRange = () => {
+    const range = new Range();
+    return range;
+  };
+}

@@ -12,7 +12,7 @@ import {
   instancesMixed,
 } from '@/composables/agent-config/fixtures';
 import type { Agent } from '@/types/agents';
-import { ADMIN, globalWith, piniaWith } from './helpers';
+import { ADMIN, READER, globalWith, piniaWith } from './helpers';
 
 const api = vi.hoisted(() => ({ current: null as unknown as AgentConfigApi }));
 vi.mock('@/composables/agent-config/useAgentConfigApi', async () => {
@@ -91,15 +91,13 @@ describe('AgentConfigTab', () => {
 
   it('shows the unsupported state on a 404', async () => {
     api.current = makeApi({
-      getConfig: vi
-        .fn()
-        .mockRejectedValue(
-          new AgentConfigApiError({
-            kind: 'unsupported',
-            status: 404,
-            message: 'x',
-          }),
-        ),
+      getConfig: vi.fn().mockRejectedValue(
+        new AgentConfigApiError({
+          kind: 'unsupported',
+          status: 404,
+          message: 'x',
+        }),
+      ),
     });
     const wrapper = mountTab();
     await flushPromises();
@@ -129,12 +127,10 @@ describe('AgentConfigTab', () => {
 
   it('handles zero instances: header text, empty effective/file, overlay still works', async () => {
     api.current = makeApi({
-      listInstances: vi
-        .fn()
-        .mockResolvedValue({
-          items: [],
-          meta: { desiredRevision: 7, counts: {} },
-        }),
+      listInstances: vi.fn().mockResolvedValue({
+        items: [],
+        meta: { desiredRevision: 7, counts: {} },
+      }),
     });
     const wrapper = mountTab();
     await flushPromises();
@@ -154,12 +150,10 @@ describe('AgentConfigTab', () => {
 
   it('hides the picker with one instance, collapses stale instances with more', async () => {
     api.current = makeApi({
-      listInstances: vi
-        .fn()
-        .mockResolvedValue({
-          items: [instancesMixed.items[0]],
-          meta: instancesMixed.meta,
-        }),
+      listInstances: vi.fn().mockResolvedValue({
+        items: [instancesMixed.items[0]],
+        meta: instancesMixed.meta,
+      }),
     });
     const one = mountTab();
     await flushPromises();
@@ -221,5 +215,34 @@ describe('AgentConfigTab', () => {
     await flushPromises();
     expect(api.current.getConfig).not.toHaveBeenCalled();
     expect(wrapper.find('[data-test="config-error"]').exists()).toBe(true);
+  });
+  it('Edit is disabled without configure/configure-policy; opening loads every reported instance', async () => {
+    const reader = mount(AgentConfigTab, {
+      props: { agent },
+      global: globalWith(piniaWith(READER)),
+    });
+    await flushPromises();
+    expect(
+      reader.find('[data-test="edit-config"]').attributes('disabled'),
+    ).toBeDefined();
+
+    const wrapper = mount(AgentConfigTab, {
+      props: { agent },
+      global: globalWith(piniaWith(ADMIN), {
+        AgentConfigEditorDrawer: {
+          name: 'AgentConfigEditorDrawer',
+          props: ['instanceDetails', 'visible'],
+          template:
+            '<div data-test="drawer-stub">{{ instanceDetails.size }}</div>',
+        },
+      }),
+    });
+    await flushPromises();
+    (api.current.getInstance as ReturnType<typeof vi.fn>).mockClear();
+    await wrapper.find('[data-test="edit-config"]').trigger('click');
+    await flushPromises();
+    // Every instance with reportedAt (6 of 7; ip-e never reported); the selected one is cached.
+    expect(api.current.getInstance).toHaveBeenCalledTimes(5);
+    expect(wrapper.find('[data-test="drawer-stub"]').text()).toBe('6');
   });
 });
