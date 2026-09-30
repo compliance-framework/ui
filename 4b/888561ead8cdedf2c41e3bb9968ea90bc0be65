@@ -1,0 +1,8 @@
+lisa-selfreview:
+pass 1 (strict) verdict: request_changes
+- [high] mask-copied-into-overlay (editor/PluginCard.vue onPolicyData, editor/PolicyBundleCard.vue onData): the policy_data / bundle data editors start from the EFFECTIVE (redacted) value; API Redact masks secret-like keys under plugins.*.policy_data and policy_bundles.*.data, so editing any key copies "••••" into the overlay (save blocked forever) and bundle data writes the whole object without nulls, so removed file keys can never be deleted. Fix: replacingPatch omits leaves that are the mask in both source and target; bundle data uses replacingPatch(fileBundle.data, target).
+- [medium] makeabsent-placeholder-only (useOverlayDraft.makeAbsent): null-vs-omit decided from the placeholder instance's base only; a key present in another instance's file survives a "Remove". Fix: null when ANY known base has the key.
+- [medium] conflict-keep-stale-preview (AgentConfigEditorDrawer resolveConflict): "Keep my draft" reuses the cached preview (overlay unchanged) instead of a fresh one (LLD U2.5). Fix: goReview(force).
+- [medium] client-sends-mask (useAgentConfigApi putConfig/preview): no defence in depth; the client would send "••••" if a caller skipped validation. Fix: refuse locally with an `invalid` error listing the pointers.
+- [low] undelete-placeholder-only (useBundleOps.undeleteFile): [] vs unset decided from the placeholder base only. Fix: any known base with a non-empty file delete list → [].
+- [low] r58-no-hint (NewBundleDialog): a policy-only user can pick an extends source the agent doesn't use; Save is then disabled with a generic reason. Fix: inline hint in the dialog (R58).
