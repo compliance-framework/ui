@@ -1,0 +1,16 @@
+lisa-design:
+- Contract = API PR #465 code (internal/api/handler/agent_config.go, pkg/agentconfig), not the LLD, where they differ: meta.counts also has pending/unknown; preview instances[] and 422 instances[] carry `warnings` (R59, always arrays) rendered amber/non-blocking; `validated` gates blocking (R48) with the LLD §C fallback (absent → non-stale errors block + note).
+- Bundle budget: AgentConfigTab (js-yaml, status/provenance) and AgentConfigEditorDrawer are defineAsyncComponent chunks, CodeMirror is split further (CodeEditor/CodeMergeView). LLD put js-yaml in the AgentsView chunk; that blew the 20 KB gz budget, so the tab is lazy. Keep these async; specs mock the tab module with __esModule:true.
+- getConfig 404 → `unsupported` only when the body has no {errors:{body}} (old API = missing route); a 404 with an error body (agent not found) is `other`. Do not collapse them.
+- isPolicyOnlyChange mirrors agentconfig.PolicyOnlyChange exactly (leaf diff with object expansion, plugin-set equality, whole-list vs R22 same-index swap, R58 extends rule via usedSources, no bases = one empty base). Bases = preview `validated` instances, else fresh apply-mode, else all known. Advisory only (enables/disables Save).
+- policy_data (and bundle data via set) are whole-object editors: policy_data writes replacingPatch(base, target) — every target key explicit plus null for base keys the user removed — because objects MERGE under RFC 7396. No normalisation against the base anywhere (bases differ per instance).
+- R56 everywhere: reset/clear/"File value" = omit key (unsetAt, prunes empty parents to depth 1); null only for Remove plugin, protocol Auto, schedule "Use agent default", module revert-to-vendor/drop. makeAbsent = null iff the placeholder base has the key.
+- File-state table adds a `dropped` row (file-defined, non-vendor module nulled by the overlay, action Restore) so an overlay null is always undoable; not in the LLD table.
+- Rego report diagnostics (source 3) are used only for status rejected + reason policy-errors + attempted == desired, and only while the module text equals its text in merge(placeholder base, desired overlay).
+- CodeEditor: prop is `label` (not ariaLabel: vue-tsc binds aria-label as an attribute); dark theme follows html.dark via MutationObserver instead of calling useTheme() (which installs matchMedia listeners); a11y hint "Esc then Tab" shown when editable.
+- Fixture mode (VITE_AGENT_CONFIG_FIXTURES / ?fixtures=agent-config) lazy-imports fixtureApi on first call; never an automatic fallback.
+- formatRelative uses Intl.RelativeTimeFormat (no date-fns in the tab chunk).
+- R57 (owner decision: document only): OVERLAY_SECRETS_NOTICE shown in the editor banner and the Overlay view; no masking/rejection client-side.
+- Revert and Clear overlay require agent:configure in the UI (stricter than the API's configure|configure-policy), per LLD U2.7.
+- R40/R50: route+nav on agent:read, CRUD/keys hidden unless admin:manage, keys never fetched for non-admins; the policy-author MANIFEST_ROLES entry must ship with/after the API release (release gate, PR body).
+- Deferred (LLD U4-opt): "Try it" playback and vendor-source pre-fill (need evidence-v3); override pre-fills the vendor package line only.
