@@ -6,3 +6,11 @@ pass 1 (strict) verdict: request_changes
 - [medium] client-sends-mask (useAgentConfigApi putConfig/preview): no defence in depth; the client would send "••••" if a caller skipped validation. Fix: refuse locally with an `invalid` error listing the pointers.
 - [low] undelete-placeholder-only (useBundleOps.undeleteFile): [] vs unset decided from the placeholder base only. Fix: any known base with a non-empty file delete list → [].
 - [low] r58-no-hint (NewBundleDialog): a policy-only user can pick an extends source the agent doesn't use; Save is then disabled with a generic reason. Fix: inline hint in the dialog (R58).
+
+lisa-selfreview:
+pass 1 (strict), read path / page (continued):
+- [high] keys-request-races-hydration (views/admin/AgentsView.vue keys watcher): canManageAdmin is optimistic before /me/permissions hydrates, so a non-admin deep-linking to /admin/agents can fire GET …/keys (403 + two toasts) and see admin-only buttons flash; violates R40/U1.1. Fix: wait for hydration (usePermissions exposes `loaded`), gate admin UI on "permissions settled && admin", keep the optimistic fallback if hydration fails.
+- [medium] select-instance-mixes-data (composables/agent-config/useAgentConfig.ts selectInstance): header/notice switch to the new instance while Effective/File still show the previous one; detail is published before its applied overlay. Fix: publish detail+overlay together; views render only when the loaded detail matches the selected id; show the error instead of "not reported" when the detail fails.
+- [medium] file-view-not-sanitized (AgentConfigTab File view): base YAML bypasses sanitizeForDisplay (client_secret defence in depth). Fix: sanitize.
+- [medium] history-view-error-as-empty (AgentConfigHistory.view): a failed getRevision shows "No overlay." Fix: catch → dialogError.
+- [low] history-not-reloaded-after-save; [low] history pagination (no seq guard, duplicate rows, error hides loaded rows); [low] applied-overlay fallback note mislabelled; [low] stale load error overwrites status; [low] admin-only copy shown to non-admins; [low] a11y: lock icon has no role, stale picker buttons lack aria-pressed; [low] no useAgentConfig spec (hydration wait, stale responses).
