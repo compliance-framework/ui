@@ -1,0 +1,52 @@
+lisa-addressed:
+---
+Comment (src/components/agents/config/AgentConfigTab.vue:211):
+Non-blocking (NEEDS-DECISION): I checked the declared divergence where Revert and Clear overlay need `agent:configure` in the UI, while the API accepts `configure-policy` when `PolicyOnlyChange(current, target)` holds (D18). It matches LLD U2.7, fails closed, and the API stays authoritative, so I'm fine shipping it.
+
+The product cost is that a `policy-author` who saves bad inline Rego can't use one-click Revert. They have to undo it by hand in the editor, which they are allowed to do. If that matters, a follow-up could enable Revert for policy-only users when `isPolicyOnlyChange(validationBases, currentOverlay, targetOverlay)` is true. The target overlay is already fetched through `getRevisionCached`. Clear overlay can stay `configure`-only. Owner's call.
+Replies:
+Owner decision R61 (design §12): the Revert / Clear overlay gating is a **UI bug**, so this is now blocking. The rule is that the UI enables Revert and Clear overlay whenever the API would accept the change:
+
+- **Always** for `agent:configure`.
+- For **`configure-policy`-only** users, when `isPolicyOnlyChange(validationBases, current, target)` holds.
+  - `current` is the desired revision's overlay.
+  - `target` is the reverted revision's overlay, or `{}` for Clear.
+- **Otherwise** the button is disabled, with a tooltip naming the first non-policy path, e.g. "Needs agent:configure: this changes `/plugins/local-ssh/schedule`". Use `firstNonPolicyPath(current, target)`. When that returns null but the check still fails (R22/R58 list/extends rules), fall back to a generic "changes plugin policy lists or `extends` beyond what your role allows".
+- A **403** from the API is still handled as today, since the API is the authority.
+
+Guidance:
+- **History panel (Revert).**
+  - Replace the single `canRevert: boolean` prop (`AgentConfigTab.vue:211` → `AgentConfigHistory`) with a per-revision decision, e.g. a `revertGate(rev) => { allowed: boolean; reason?: string }` prop, or compute it inside `AgentConfigHistory`.
+  - For policy-only users, get the target overlay through the existing `getRevisionCached(rev)`. It is already used for View/Diff, so decide lazily on hover/open or batch-load for the visible page.
+  - Take the bases from the validation set: `validationInstanceIds(state.instances)` mapped through `getInstanceDetail` / `loadAllInstanceDetails` to `.base`. That is the same set the drawer's `validationBases` uses, and the API's `ValidationBases`. No bases means `isPolicyOnlyChange` uses one empty base, as on the API.
+  - Keep `openRevert` guarded by the same decision. `canConfigure` users skip the check entirely.
+- **Clear overlay (drawer footer, `AgentConfigEditorDrawer.vue:168–174`).**
+  - Enable it when `canConfigure || isPolicyOnlyChange(validationBases.value, draft.original.value, {})`.
+  - Use the same tooltip rule.
+  - The Save gate (`saveDisabledReason` via `policyBases`) already covers the save that follows.
+- **Reuse, don't re-implement.** Use `isPolicyOnlyChange` and `firstNonPolicyPath` from `utils/agent-config/policy-files.ts`, and `validationInstanceIds` from `utils/agent-config/instance-status.ts`. Consider a small shared helper, e.g. `policyOnlyGate(bases, current, target)`, so the history panel and the drawer can't drift apart.
+- **Tests.**
+  1. A policy-author (`configure-policy` only) can Revert to a revision that differs from the current one only under `/policy_bundles` or `/plugins/*/policies`. The button is enabled and `api.revert` is called with `If-Match`.
+  2. The same user sees Revert disabled for a revision that also changes a non-policy field (e.g. `schedule` or `config`), and the tooltip names that pointer.
+  3. Clear overlay follows the same rule: enabled when the current overlay is policy-only, and disabled with a tooltip naming the path otherwise.
+  4. `agent:configure` users stay enabled in every case.
+  5. A 403 from revert still surfaces the error. Update the existing "Revert is disabled without configure" spec.
+- Update the PR body's Divergences section, since this is no longer a divergence.
+---
+Comment (src/components/agents/config/AgentConfigTab.vue:211):
+Blocking: R61 (owner decision, design §12). Revert and Clear overlay must be enabled whenever the API would accept the change:
+
+- always with `agent:configure`;
+- for `configure-policy`-only users, when `isPolicyOnlyChange(validationBases, current, target)` holds (`target` = the reverted revision's overlay, or `{}` for Clear);
+- otherwise disabled, with a tooltip naming the first non-policy path (`firstNonPolicyPath`).
+
+403 handling stays. Today `canConfigure` here (and `:disabled="!canConfigure"` on Clear overlay in `AgentConfigEditorDrawer.vue:168–174`) blocks policy-authors unconditionally. See the R61 reply on the earlier thread at this line for the implementation and test guidance.
+Replies:
+**lisa implementation guidance:** Classified **fix** (R61, owner override of the earlier `lisa-design` note "Revert and Clear overlay require agent:configure"). Plan, per the guidance on PRRT_kwDONe0Wms6nofY6:
+- `utils/agent-config/policy-files.ts`: new `policyOnlyGate(bases, current, target) => { allowed, reason }` built on `isPolicyOnlyChange` + `firstNonPolicyPath` (generic R22/R58 reason when no path is found). Shared by the history panel and the drawer.
+- `useAgentConfig`: `loadValidationBases()` = `validationInstanceIds(instances)` → cached instance detail `.base` (memoised per load, fails closed).
+- `AgentConfigHistory`: `canRevert` → `revertAccess: 'full' | 'policy-only' | 'none'` + `currentOverlay` + `loadBases`; per-revision decision batch-loaded for the listed rows via `getRevision`; tooltip = gate reason; `openRevert` guarded by the same decision; 403 path unchanged.
+- `AgentConfigEditorDrawer` Clear overlay: enabled for configure, else `policyOnlyGate(validationBases, draft.original, {})`.
+- Specs as listed (policy-author enabled/disabled Revert with path tooltip, Clear overlay both ways, configure always enabled, 403 surfaced).
+
+<!-- lisa-guidance-posted -->
