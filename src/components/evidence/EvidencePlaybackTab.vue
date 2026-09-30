@@ -214,23 +214,16 @@
         <h3 class="text-lg font-semibold text-zinc-700 dark:text-slate-200">
           Policy
         </h3>
-        <details
-          v-for="file in playback.policyFiles"
-          :key="file.path"
-          :open="file.containsPackage || playback.policyFiles.length === 1"
-          class="mt-3"
-        >
-          <summary class="cursor-pointer font-mono text-sm">
-            {{ file.path }}
-            <span
-              v-if="file.containsPackage"
-              class="ml-2 text-xs text-gray-600 dark:text-slate-400"
-            >
-              defines {{ playback.package }}
-            </span>
-          </summary>
-          <pre :class="preClass">{{ file.source }}</pre>
-        </details>
+        <template v-if="policyFile">
+          <p class="mt-3 font-mono text-sm" data-test="playback-policy-path">
+            {{ policyFile.path }}
+          </p>
+          <pre :class="preClass">{{ policyFile.source }}</pre>
+        </template>
+        <p v-else class="mt-4 text-sm text-gray-600 dark:text-slate-400">
+          The policy file for {{ playback.package || 'this evidence' }} could
+          not be identified in the stored bundle.
+        </p>
         <details v-if="playback.bundleDataJson" class="mt-3">
           <summary class="cursor-pointer text-sm">Bundle data</summary>
           <pre :class="preClass">{{ playback.bundleDataJson }}</pre>
@@ -385,6 +378,12 @@ const artifactEntries = computed(() => {
   }
   return entries;
 });
+
+// The bundle holds every policy for the plugin; only the one that produced this evidence
+// is shown.
+const policyFile = computed(() =>
+  playback.value?.policyFiles.find((file) => file.containsPackage),
+);
 
 const recordedIds = computed(
   () => new Set(playback.value?.recorded.violationIds ?? []),

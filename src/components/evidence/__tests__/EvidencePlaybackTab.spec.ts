@@ -147,11 +147,12 @@ describe('EvidencePlaybackTab', () => {
     expect(violations).toContain('recorded');
 
     const policy = wrapper.find('[data-test="playback-policy"]');
-    const files = policy.findAll('details');
-    expect(files[0].text()).toContain('lib/helpers.rego');
-    expect(files[0].attributes('open')).toBeUndefined();
-    expect(files[1].text()).toContain('defines compliance_framework.ports');
-    expect(files[1].attributes('open')).toBeDefined();
+    expect(policy.find('[data-test="playback-policy-path"]').text()).toBe(
+      'policy.rego',
+    );
+    expect(policy.text()).toContain('package compliance_framework.ports');
+    expect(policy.text()).not.toContain('lib/helpers.rego');
+    expect(policy.text()).not.toContain('package ccf_libs.helpers');
 
     expect(wrapper.find('[data-test="playback-config"]').text()).toContain(
       '"extra": true',
@@ -233,6 +234,26 @@ describe('EvidencePlaybackTab', () => {
       'Recorded violation IDs: unapproved-port',
     );
     expect(wrapper.find('[data-test="playback-policy"]').exists()).toBe(true);
+  });
+
+  it('says when the policy file for the evidence cannot be identified', async () => {
+    refs.playback.value = playbackFixture({
+      policyFiles: playbackFixture().policyFiles.map((file) => ({
+        ...file,
+        containsPackage: false,
+      })),
+      replay: null,
+      comparison: null,
+    });
+    const wrapper = mountTab();
+    await flushPromises();
+
+    const policy = wrapper.find('[data-test="playback-policy"]');
+    expect(policy.text()).toContain(
+      'The policy file for compliance_framework.ports could not be identified',
+    );
+    expect(policy.text()).not.toContain('package compliance_framework.ports');
+    expect(policy.text()).not.toContain('package ccf_libs.helpers');
   });
 
   it('says when no policy data was configured', async () => {
