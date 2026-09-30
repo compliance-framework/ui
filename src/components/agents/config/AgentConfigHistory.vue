@@ -3,7 +3,7 @@
     <p v-if="loading && !items.length" class="text-sm text-gray-500">
       Loading revisions…
     </p>
-    <Message v-else-if="error" severity="error">
+    <Message v-else-if="error && !items.length" severity="error">
       <div class="flex flex-wrap items-center gap-3">
         <span>{{ error }}</span>
         <SecondaryButton size="small" @click="reload">Retry</SecondaryButton>
@@ -104,6 +104,13 @@
         </tbody>
       </table>
     </div>
+    <p
+      v-if="error && items.length"
+      class="text-sm text-red-600 dark:text-red-400"
+      data-test="history-page-error"
+    >
+      {{ error }}
+    </p>
     <div v-if="page < totalPages" class="flex justify-center">
       <SecondaryButton
         size="small"
@@ -123,6 +130,13 @@
       class="w-full max-w-4xl"
     >
       <p v-if="dialogLoading" class="text-sm text-gray-500">Loading…</p>
+      <p
+        v-else-if="dialogError"
+        class="text-sm text-red-600"
+        data-test="view-error"
+      >
+        {{ dialogError }}
+      </p>
       <ConfigYamlViewer
         v-else-if="viewOpen"
         :doc="viewDoc"
@@ -247,7 +261,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, shallowRef } from 'vue';
+import { onMounted, ref, shallowRef, watch } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import Dialog from '@/volt/Dialog.vue';
 import Message from '@/volt/Message.vue';
@@ -315,22 +329,33 @@ const reverting = ref(false);
 const invalidOpen = ref(false);
 const invalidBody = shallowRef<ConfigErrorBody | null>(null);
 
+let fetchSeq = 0;
+
 async function fetchPage(p: number) {
+  const seq = ++fetchSeq;
   loading.value = true;
   error.value = null;
   try {
     const res = await props.api.listRevisions(props.agentId, p, PAGE_SIZE);
-    // Revision 0 is never listed.
+    // A reload started meanwhile: drop this (possibly older) page.
+    if (seq !== fetchSeq) return;
+    // Revision 0 is never listed. Offsets shift when someone saves between pages, so merge
+    // by revision (newest first) instead of appending duplicates.
     const rows = res.items.filter((r) => r.revision > 0);
-    items.value = p === 1 ? rows : [...items.value, ...rows];
+    const merged = new Map(
+      (p === 1 ? [] : items.value).map((r) => [r.revision, r]),
+    );
+    for (const r of rows) merged.set(r.revision, r);
+    items.value = [...merged.values()].sort((a, b) => b.revision - a.revision);
     page.value = p;
     totalPages.value = res.totalPages;
   } catch (e) {
+    if (seq !== fetchSeq) return;
     error.value = isAgentConfigApiError(e)
       ? e.message
       : 'Failed to load revisions.';
   } finally {
-    loading.value = false;
+    if (seq === fetchSeq) loading.value = false;
   }
 }
 
@@ -352,8 +377,14 @@ async function view(rev: number) {
   viewDoc.value = null;
   viewOpen.value = true;
   dialogLoading.value = true;
+  dialogError.value = null;
   try {
     viewDoc.value = await overlayOf(rev);
+  } catch (e) {
+    // Never show a failed load as an empty overlay.
+    dialogError.value = isAgentConfigApiError(e)
+      ? e.message
+      : 'Failed to load the revision.';
   } finally {
     dialogLoading.value = false;
   }
@@ -443,6 +474,13 @@ async function doRevert() {
 }
 
 onMounted(reload);
+// A save or revert elsewhere (e.g. the editor) moves the desired revision: reload the list.
+watch(
+  () => props.desiredRevision,
+  (n, o) => {
+    if (n !== o) reload();
+  },
+);
 
 defineExpose({ reload });
 </script>

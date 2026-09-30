@@ -10,7 +10,7 @@
     >
       <i class="pi pi-info-circle mr-1" />{{ OVERLAY_SECRETS_NOTICE }}
     </p>
-    <div class="flex flex-wrap items-center gap-3 text-xs">
+    <div class="flex flex-wrap items-center gap-3 text-xs" aria-live="polite">
       <span v-if="detailsLoading" class="text-gray-500"
         >Loading instance files…</span
       >

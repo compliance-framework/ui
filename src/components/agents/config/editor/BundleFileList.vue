@@ -31,6 +31,9 @@
             />
             <span
               v-if="row.inOverlay"
+              role="img"
+              tabindex="0"
+              aria-label="Set in the overlay"
               v-tooltip.top="'Set in the overlay'"
               class="mr-1 inline-block h-2 w-2 rounded-full bg-sky-500"
               data-test="overlay-dot"
@@ -45,6 +48,8 @@
             >
             <i
               v-if="row.isTest && row.vendor && row.state === 'inherited'"
+              role="img"
+              tabindex="0"
               v-tooltip.top="VENDOR_TEST_TOOLTIP"
               class="pi pi-info-circle ml-1 text-[0.7rem] text-gray-400"
               :aria-label="VENDOR_TEST_TOOLTIP"

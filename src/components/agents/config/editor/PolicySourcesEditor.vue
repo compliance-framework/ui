@@ -109,13 +109,15 @@ import InputText from '@/volt/InputText.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
 import { pointer } from '@/utils/agent-config/json-pointer';
 import { isInlineSource } from '@/utils/agent-config/validation';
+import { isPolicyOnlyChange } from '@/utils/agent-config/policy-files';
+import { unsetAt } from '@/utils/agent-config/overlay-ops';
 import FieldHints from './FieldHints.vue';
 import FieldIssues from './FieldIssues.vue';
 import { useEditor } from './useEditor';
 
 const props = defineProps<{ plugin: string; disabled?: boolean }>();
 
-const { draft, policyOnly, has, effectiveValue, trustHint } = useEditor();
+const { draft, ctx, policyOnly, has, effectiveValue, trustHint } = useEditor();
 
 const ptr = computed(() => pointer('plugins', props.plugin, 'policies'));
 const overridden = computed(() => has(ptr.value));
@@ -125,7 +127,17 @@ const entries = computed<string[]>(() => {
 });
 // Policy-only users may toggle inline: entries only (R22 swaps happen via Customize).
 const canReorder = computed(() => !props.disabled && !policyOnly.value);
-const allowReset = computed(() => true);
+// Policy-only users may reset the list only when that is itself a policy-only change (it can
+// revert non-inline entries the saved overlay changed, which needs agent:configure).
+const allowReset = computed(
+  () =>
+    !policyOnly.value ||
+    isPolicyOnlyChange(
+      ctx.bases.value,
+      draft.original.value,
+      unsetAt(draft.overlay.value, ptr.value),
+    ),
+);
 const newEntry = ref('');
 
 function canRemove(entry: string): boolean {

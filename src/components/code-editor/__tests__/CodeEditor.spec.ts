@@ -69,4 +69,15 @@ describe('CodeEditor (CodeMirror 6)', () => {
     expect(wrapper.find('.cm-lintRange').exists()).toBe(false);
     wrapper.unmount();
   });
+  it('does not put external document replacements in the undo history', async () => {
+    const { undo } = await import('@codemirror/commands');
+    const wrapper = mountEditor({ modelValue: 'module A\n' });
+    const view = (wrapper.vm as unknown as { view: Parameters<typeof undo>[0] })
+      .view;
+    await wrapper.setProps({ modelValue: 'module B\n' });
+    expect(undo(view)).toBe(false);
+    expect(view.state.doc.toString()).toBe('module B\n');
+    expect(wrapper.emitted('update:modelValue')).toBeUndefined();
+    wrapper.unmount();
+  });
 });

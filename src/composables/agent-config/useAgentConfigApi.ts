@@ -19,6 +19,7 @@ import type {
   SaveResult,
 } from '@/types/agent-config';
 import { AgentConfigApiError, type AgentConfigApi } from './api-types';
+import { maskedPointers } from '@/utils/agent-config/validation';
 
 export * from './api-types';
 
@@ -160,6 +161,29 @@ export function toAgentConfigError(
 
 const ifMatch = (rev: number) => ({ 'If-Match': `"${rev}"` });
 
+/**
+ * Defence in depth (R25): a masked report value must never be sent back. The editor already
+ * blocks it; this refuses locally if a caller ever skips that validation.
+ */
+function refuseMasked(overlay: unknown): void {
+  const ptrs = maskedPointers(overlay);
+  if (!ptrs.length) return;
+  const body =
+    'The overlay contains a masked value ("••••") copied from a report; it was not sent.';
+  throw new AgentConfigApiError({
+    kind: 'invalid',
+    message: body,
+    body: {
+      body,
+      overlay: ptrs.map((path) => ({
+        path,
+        code: 'masked-value',
+        message: 'This looks like a masked value copied from a report',
+      })),
+    },
+  });
+}
+
 function saveResult(
   res: AxiosResponse<{ data: AgentConfigRevision }>,
 ): SaveResult {
@@ -197,6 +221,7 @@ export function createHttpAgentConfigApi(
       }),
     putConfig: (agentId, body, rev) =>
       call('putConfig', async () => {
+        refuseMasked(body.overlay);
         const payload: SaveConfigRequest = { overlay: body.overlay };
         if (body.comment && body.comment.trim())
           payload.comment = body.comment.trim();
@@ -213,6 +238,7 @@ export function createHttpAgentConfigApi(
       }),
     preview: (agentId, overlay, signal) =>
       call('preview', async () => {
+        refuseMasked(overlay);
         const res = await instance.post<{ data: ConfigPreview }>(
           `${base(agentId)}/config/preview`,
           { overlay },

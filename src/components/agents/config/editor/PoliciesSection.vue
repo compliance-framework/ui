@@ -40,6 +40,8 @@
       v-model:visible="newOpen"
       :taken="ops.takenNames.value"
       :plugins="ops.pluginNames.value"
+      :policy-only="policyOnly"
+      :used-sources="ops.usedSourcesEverywhere.value"
       @create="onCreate"
     />
     <CustomizeBundleDialog
@@ -67,7 +69,7 @@ import { moduleDiagnostics } from './policyDiagnostics';
 import { useBundleOps } from './useBundleOps';
 import { useEditor } from './useEditor';
 
-const { draft, ctx } = useEditor();
+const { draft, ctx, policyOnly } = useEditor();
 const ops = useBundleOps();
 const newOpen = ref(false);
 const customizeOpen = ref(false);

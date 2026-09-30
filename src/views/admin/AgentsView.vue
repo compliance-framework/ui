@@ -2,14 +2,14 @@
   <PageHeader>Agents</PageHeader>
   <PageSubHeader>
     {{
-      canManageAdmin
+      isAdmin
         ? 'Register agents, manage their service account keys and configuration'
         : 'Review and configure agents'
     }}
   </PageSubHeader>
 
   <div class="mt-6 space-y-6">
-    <div v-if="canManageAdmin" class="flex justify-end">
+    <div v-if="isAdmin" class="flex justify-end">
       <PrimaryButton @click="openCreateAgentDialog"
         >Register Agent</PrimaryButton
       >
@@ -26,8 +26,11 @@
       </template>
       <template v-else-if="!agents?.length">
         <Message severity="warn" variant="outlined" class="m-6">
-          No agents found. Register your first agent to create service account
-          keys.
+          {{
+            isAdmin
+              ? 'No agents found. Register your first agent to create service account keys.'
+              : 'No agents found.'
+          }}
         </Message>
       </template>
       <template v-else>
@@ -40,7 +43,7 @@
               <th class="table-header">Active Key Count</th>
               <th class="table-header">Last Authenticated</th>
               <th class="table-header">Created</th>
-              <th v-if="canManageAdmin" class="table-header">Actions</th>
+              <th v-if="isAdmin" class="table-header">Actions</th>
             </tr>
           </thead>
           <tbody class="table-body">
@@ -83,7 +86,7 @@
               <td class="table-cell text-gray-600 dark:text-slate-400">
                 {{ formatDate(agent.createdAt) }}
               </td>
-              <td v-if="canManageAdmin" class="table-cell">
+              <td v-if="isAdmin" class="table-cell">
                 <div class="flex flex-wrap gap-2">
                   <TertiaryButton @click.stop="openEditAgentDialog(agent)">
                     Edit
@@ -113,14 +116,16 @@
             {{
               selectedAgent
                 ? selectedAgent.description || 'No description provided.'
-                : 'Select an agent to review details and manage keys.'
+                : isAdmin
+                  ? 'Select an agent to review details and manage keys.'
+                  : 'Select an agent to review its details and configuration.'
             }}
           </p>
         </div>
         <PrimaryButton
-          v-if="canManageAdmin"
+          v-if="isAdmin"
           :disabled="!selectedAgent"
-          @click="activeTab = 'keys'"
+          @click="chooseTab('keys')"
         >
           Manage Keys
         </PrimaryButton>
@@ -128,10 +133,10 @@
 
       <div class="p-6">
         <template v-if="selectedAgent">
-          <Tabs v-model:value="activeTab">
+          <Tabs :value="activeTab" @update:value="chooseTab">
             <TabList>
               <Tab value="details">Details</Tab>
-              <Tab v-if="canManageAdmin" value="keys">Service Account Keys</Tab>
+              <Tab v-if="isAdmin" value="keys">Service Account Keys</Tab>
               <Tab v-if="canReadConfig" value="config">Configuration</Tab>
             </TabList>
             <TabPanels>
@@ -181,7 +186,7 @@
                   </div>
                 </div>
 
-                <div v-if="canManageAdmin" class="mt-6 flex flex-wrap gap-3">
+                <div v-if="isAdmin" class="mt-6 flex flex-wrap gap-3">
                   <PrimaryButton @click="openEditAgentDialog(selectedAgent)">
                     Edit Agent
                   </PrimaryButton>
@@ -191,7 +196,7 @@
                 </div>
               </TabPanel>
 
-              <TabPanel v-if="canManageAdmin" value="keys">
+              <TabPanel v-if="isAdmin" value="keys">
                 <div class="pt-4 space-y-4">
                   <div class="flex justify-end">
                     <PrimaryButton @click="openCreateKeyDialog">
@@ -301,7 +306,11 @@
         </template>
         <template v-else>
           <Message severity="warn" variant="outlined">
-            Select or register an agent to manage service account keys.
+            {{
+              isAdmin
+                ? 'Select or register an agent to manage service account keys.'
+                : 'Select an agent to review its configuration.'
+            }}
           </Message>
         </template>
       </div>
@@ -532,14 +541,33 @@ const configStore = useConfigStore();
 
 // R40: the page is readable with agent:read; registration, keys and CRUD stay admin-only and
 // are hidden (not disabled) for everyone else, since they belong to a different role.
-const { can, canManageAdmin } = usePermissions();
+const { can, canManageAdmin, loaded, hydrate } = usePermissions();
 const canReadConfig = computed(() => can(RESOURCES.AGENT, ACTIONS.READ));
 
+// can() is optimistic until /me/permissions hydrates (D-21): admin-only UI and the admin-only
+// keys request wait for it, so a non-admin never flashes admin buttons or fires GET …/keys.
+// If hydration fails, fall back to the optimistic answer (the PDP remains the real gate).
+const permissionsReady = ref(loaded.value);
+if (!permissionsReady.value) {
+  Promise.resolve(hydrate())
+    .catch(() => undefined)
+    .finally(() => {
+      permissionsReady.value = true;
+    });
+}
+const isAdmin = computed(() => permissionsReady.value && canManageAdmin.value);
+
 function defaultTab(): AgentTab {
-  return canManageAdmin.value || !canReadConfig.value ? 'details' : 'config';
+  return isAdmin.value || !canReadConfig.value ? 'details' : 'config';
 }
 
 const activeTab = ref<AgentTab>(defaultTab());
+// Once the user picks a tab, permission changes no longer move them.
+let tabChosen = false;
+function chooseTab(tab: string | number) {
+  tabChosen = true;
+  activeTab.value = tab as AgentTab;
+}
 const selectedAgentId = ref<string | null>(null);
 const apiBaseUrl = ref('');
 
@@ -686,14 +714,10 @@ watch(
 );
 
 watch(
-  [() => selectedAgentId.value, () => canManageAdmin.value],
-  async ([agentId, isAdmin]) => {
+  [() => selectedAgentId.value, () => isAdmin.value],
+  async ([agentId, admin]) => {
     // Keys are admin-only: never request them (and never trigger a 403 toast) otherwise.
-    if (!isAdmin) {
-      agentKeys.value = [];
-      return;
-    }
-    if (!agentId) {
+    if (!admin || !agentId) {
       agentKeys.value = [];
       return;
     }
@@ -703,16 +727,14 @@ watch(
   { immediate: true },
 );
 
-// Permissions hydrate after mount (the store is optimistic until then): move a non-admin off
-// the admin-only tab, onto Configuration.
-watch(
-  () => canManageAdmin.value,
-  (isAdmin) => {
-    if (!isAdmin && activeTab.value !== 'config') {
-      activeTab.value = defaultTab();
-    }
-  },
-);
+// When permissions settle, land on the right default tab (Configuration for non-admins) unless
+// the user already picked one; never leave a non-admin on the admin-only Keys tab.
+watch(permissionsReady, (ready) => {
+  if (ready && !tabChosen) activeTab.value = defaultTab();
+});
+watch(isAdmin, (admin) => {
+  if (!admin && activeTab.value === 'keys') activeTab.value = defaultTab();
+});
 
 watch(
   () => agentsError.value,

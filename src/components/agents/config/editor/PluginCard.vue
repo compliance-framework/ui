@@ -243,13 +243,17 @@ import InputText from '@/volt/InputText.vue';
 import Select from '@/volt/Select.vue';
 import TertiaryButton from '@/volt/TertiaryButton.vue';
 import { CodeEditor } from '@/components/code-editor';
-import { pointer } from '@/utils/agent-config/json-pointer';
+import { getAt, pointer } from '@/utils/agent-config/json-pointer';
 import {
   pluginProvenance,
   provenanceOf,
 } from '@/utils/agent-config/provenance';
 import { describeCron5 } from '@/utils/agent-config/cron5';
-import { deepEqual, isPlainObject } from '@/utils/agent-config/merge-patch';
+import {
+  deepEqual,
+  isPlainObject,
+  mergePatch,
+} from '@/utils/agent-config/merge-patch';
 import { replacingPatch } from '@/utils/agent-config/overlay-ops';
 import ProvenanceBadge from '../ProvenanceBadge.vue';
 import { CONFIG_KEY_LOCK_TOOLTIP } from '../constants';
@@ -377,7 +381,12 @@ const labelRows = computed(() => mapRows('labels'));
 const configKeys = computed(() => configRows.value.map((r) => r.key));
 
 function setMapValue(field: 'config' | 'labels', k: string, v: string) {
-  if (!v) draft.unset(p(field, k));
+  // Emptying a key a file defines inherits the file value again; a key only the overlay adds
+  // keeps an empty value (the row stays; its delete button removes it).
+  const inAnyBase = [ctx.placeholderBase.value, ...ctx.bases.value].some(
+    (b) => getAt(b ?? {}, p(field, k)) !== undefined,
+  );
+  if (!v && inAnyBase) draft.unset(p(field, k));
   else draft.set(p(field, k), v);
 }
 
@@ -393,10 +402,13 @@ watch(
   (v) => {
     // Keep the editor in sync with external changes (reset, YAML), but never clobber the
     // user's in-progress (possibly invalid) text.
+    if (policyDataError.value) return;
     try {
-      if (deepEqual(JSON.parse(policyDataText.value), v ?? {})) return;
+      // null-valued keys delete under RFC 7396, so compare the text's merged form.
+      if (deepEqual(mergePatch({}, JSON.parse(policyDataText.value)), v ?? {}))
+        return;
     } catch {
-      if (policyDataError.value) return;
+      return;
     }
     policyDataText.value = currentPolicyDataText();
     policyDataError.value = '';

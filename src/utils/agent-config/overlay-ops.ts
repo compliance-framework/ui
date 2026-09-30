@@ -4,8 +4,15 @@
 // effective config so the agent default applies (nullAt). makeAbsent picks between the two
 // so a removal is expressed with the smallest overlay.
 
-import { clone, isPlainObject, type PlainObject } from './merge-patch';
+import {
+  clone,
+  getOwn,
+  isPlainObject,
+  setOwn,
+  type PlainObject,
+} from './merge-patch';
 import { hasAt, parsePointer } from './json-pointer';
+import { REDACTED_MASK } from '@/types/agent-config';
 
 /**
  * Sets `value` at `ptr`. A `null` or non-object intermediate is replaced with `{}`, so an
@@ -25,10 +32,11 @@ export function setAt<T extends object>(
     : {};
   let cur = root;
   for (const token of tokens.slice(0, -1)) {
-    if (!isPlainObject(cur[token])) cur[token] = {};
-    cur = cur[token] as PlainObject;
+    // Own properties only: "__proto__" must never walk into Object.prototype.
+    if (!isPlainObject(getOwn(cur, token))) setOwn(cur, token, {});
+    cur = getOwn(cur, token) as PlainObject;
   }
-  cur[tokens[tokens.length - 1]] = clone(value);
+  setOwn(cur, tokens[tokens.length - 1], clone(value));
   return root as T;
 }
 
@@ -46,7 +54,7 @@ export function unsetAt<T extends object>(overlay: T, ptr: string): T {
   const chain: PlainObject[] = [root];
   let cur = root;
   for (const token of tokens.slice(0, -1)) {
-    const next = cur[token];
+    const next = getOwn(cur, token);
     if (!isPlainObject(next)) return root as T;
     chain.push(next);
     cur = next;
@@ -87,21 +95,28 @@ export function makeAbsent<T extends object>(
  * A merge patch that turns `source` into exactly `target` while keeping every target key
  * explicit (no normalisation against the base, which differs between instances): target keys
  * are written in full (nested objects recursively) and keys present only in `source` become
- * `null`. Used for whole-object editors such as `policy_data` (objects MERGE under RFC 7396,
- * so a key removed in the editor must be nulled).
+ * `null`. Used for whole-object editors such as `policy_data` and bundle `data` (objects MERGE
+ * under RFC 7396, so a key removed in the editor must be nulled).
+ *
+ * The source is a REDACTED report value: a leaf that is the mask ("••••") in both source and
+ * target is omitted, so an untouched secret is never copied into the overlay (the host keeps
+ * its own value) and the mask is never sent back (R25).
  */
 export function replacingPatch(source: unknown, target: unknown): unknown {
   if (!isPlainObject(target)) return clone(target);
   const src: PlainObject = isPlainObject(source) ? source : {};
   const out: PlainObject = {};
   for (const [k, v] of Object.entries(target)) {
-    out[k] =
-      isPlainObject(v) && isPlainObject(src[k])
-        ? replacingPatch(src[k], v)
-        : clone(v);
+    if (v === REDACTED_MASK && getOwn(src, k) === REDACTED_MASK) continue;
+    const sv = getOwn(src, k);
+    setOwn(
+      out,
+      k,
+      isPlainObject(v) && isPlainObject(sv) ? replacingPatch(sv, v) : clone(v),
+    );
   }
   for (const k of Object.keys(src)) {
-    if (!Object.prototype.hasOwnProperty.call(target, k)) out[k] = null;
+    if (!Object.prototype.hasOwnProperty.call(target, k)) setOwn(out, k, null);
   }
   return out;
 }

@@ -13,12 +13,34 @@ export function isPlainObject(value: unknown): value is PlainObject {
   );
 }
 
+/**
+ * Assigns `obj[key] = value` as an own data property. A plain assignment of "__proto__"
+ * (a legal JSON/YAML key) would change the object's prototype instead of storing the key.
+ */
+export function setOwn(obj: PlainObject, key: string, value: unknown): void {
+  if (key === '__proto__') {
+    Object.defineProperty(obj, key, {
+      value,
+      enumerable: true,
+      writable: true,
+      configurable: true,
+    });
+  } else {
+    obj[key] = value;
+  }
+}
+
+/** Own property (never inherited, e.g. Object.prototype via "__proto__"). */
+export function getOwn(obj: PlainObject, key: string): unknown {
+  return Object.prototype.hasOwnProperty.call(obj, key) ? obj[key] : undefined;
+}
+
 /** Deep clone of a JSON value. */
 export function clone<T>(value: T): T {
   if (Array.isArray(value)) return value.map((v) => clone(v)) as unknown as T;
   if (isPlainObject(value)) {
     const out: PlainObject = {};
-    for (const [k, v] of Object.entries(value)) out[k] = clone(v);
+    for (const [k, v] of Object.entries(value)) setOwn(out, k, clone(v));
     return out as T;
   }
   return value;
@@ -56,7 +78,7 @@ export function mergePatch<T = unknown>(target: unknown, patch: unknown): T {
     if (value === null) {
       delete result[key];
     } else {
-      result[key] = mergePatch(result[key], value);
+      setOwn(result, key, mergePatch(getOwn(result, key), value));
     }
   }
   return result as T;

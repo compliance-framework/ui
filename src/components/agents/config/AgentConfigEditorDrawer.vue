@@ -72,6 +72,14 @@
             >
               Discard my draft and reload
             </SecondaryButton>
+            <SecondaryButton
+              v-if="!conflict.latest"
+              size="small"
+              data-test="conflict-reload"
+              @click="reloadLatest"
+            >
+              Reload latest
+            </SecondaryButton>
             <PrimaryButton
               size="small"
               :disabled="!conflict.latest"
@@ -121,7 +129,7 @@
         >
           <div class="flex flex-wrap items-center gap-3">
             <span>{{ reviewError }}</span>
-            <SecondaryButton size="small" @click="goReview"
+            <SecondaryButton size="small" @click="goReview(true)"
               >Retry</SecondaryButton
             >
             <SecondaryButton size="small" @click="step = 'edit'"
@@ -138,6 +146,7 @@
           :base-revision="draft.baseRevision.value"
           :saving="saving"
           :save-errors="saveErrors"
+          v-model:comment="comment"
           :save-disabled-reason="saveDisabledReason"
           @back="step = 'edit'"
           @save="save"
@@ -174,7 +183,7 @@
           v-if="step === 'edit'"
           :disabled="!canReview"
           data-test="review-changes"
-          @click="goReview"
+          @click="goReview()"
         >
           Review changes
         </PrimaryButton>
@@ -253,7 +262,7 @@ import {
   isPolicyOnlyChange,
   vendorFilesFor,
 } from '@/utils/agent-config/policy-files';
-import { isPlainObject, deepEqual } from '@/utils/agent-config/merge-patch';
+import { isPlainObject } from '@/utils/agent-config/merge-patch';
 import { formatRelative } from '@/utils/agent-config/display';
 import { toYaml } from '@/utils/agent-config/yaml';
 import EditorBanner from './editor/EditorBanner.vue';
@@ -294,7 +303,8 @@ provide(EDITOR_PERMISSIONS_KEY, { mode: editorMode });
 const agentId = toRef(() => props.agent.id);
 const instancesRef = toRef(() => props.instances);
 const detailsRef = toRef(() => props.instanceDetails);
-const configRef = toRef(() => props.config);
+// The revision the draft is based on; follows a 409 rebase (desired revision, bundle ages).
+const configRef = ref<AgentConfigRevision>(props.config);
 const placeholderInstanceId = ref<string | null>(
   props.initialInstanceId &&
     props.instanceDetails.get(props.initialInstanceId)?.base
@@ -358,6 +368,15 @@ const canPreview = computed(
 const preview = usePreview(agentId, draft.overlay, api, canPreview);
 const savePolicyErrors = ref<PolicyError[]>([]);
 
+// 422 details describe the draft that was sent; drop them once it changes.
+watch(
+  () => draft.overlay.value,
+  () => {
+    savePolicyErrors.value = [];
+    saveErrors.value = null;
+  },
+);
+
 const ctx: EditorContext = {
   agentId,
   config: configRef,
@@ -389,6 +408,8 @@ function setMode(next: 'form' | 'yaml') {
 const reviewLoading = ref(false);
 const reviewError = ref<string | null>(null);
 const saving = ref(false);
+// Lives here (not in the review panel) so a conflict round-trip keeps it.
+const comment = ref('');
 const saveError = ref<string | null>(null);
 const saveErrors = ref<ConfigErrorBody | null>(null);
 const conflict = ref<{
@@ -432,6 +453,7 @@ const policyBases = computed<ConfigDoc[]>(() => {
   return fresh.length ? fresh : bases.value;
 });
 const saveDisabledReason = computed(() => {
+  if (conflict.value) return 'Resolve the conflict first';
   if (editorMode.value === 'full') return '';
   return isPolicyOnlyChange(
     policyBases.value,
@@ -442,14 +464,15 @@ const saveDisabledReason = computed(() => {
     : 'Your role can only change policy bundles and inline references';
 });
 
-async function goReview() {
+/** @param force run a fresh preview even if the cached one matches the draft. */
+async function goReview(force = false) {
   if (draft.mode.value === 'yaml' && !draft.flushYaml()) return;
   if (draft.yamlError.value || hasBlocking(draft.clientIssues.value)) return;
   step.value = 'review';
   reviewError.value = null;
   saveErrors.value = null;
   savePolicyErrors.value = [];
-  if (preview.isCurrent()) return;
+  if (!force && preview.isCurrent()) return;
   reviewLoading.value = true;
   try {
     await preview.run();
@@ -533,16 +556,26 @@ async function save(comment: string) {
   }
 }
 
+async function reloadLatest() {
+  if (!conflict.value) return;
+  const latest = await api.getConfig(props.agent.id).catch(() => null);
+  if (latest && conflict.value) {
+    conflict.value = { currentRevision: latest.revision, latest };
+  } else {
+    saveError.value = 'Could not load the latest configuration; try again.';
+  }
+}
+
 async function resolveConflict(keep: boolean) {
   const latest = conflict.value?.latest;
   if (!latest) return;
   draft.rebase(latest, keep);
+  configRef.value = latest;
   conflict.value = null;
   saveErrors.value = null;
   if (keep) {
     // Back to Review with a fresh preview; the user then saves over the latest revision.
-    step.value = 'edit';
-    await goReview();
+    await goReview(true);
   } else {
     step.value = 'edit';
   }
@@ -551,7 +584,11 @@ async function resolveConflict(keep: boolean) {
 function confirmClear() {
   confirm.require({
     header: 'Clear overlay',
-    message: `Every agent instance returns to its local configuration. This creates revision r${draft.baseRevision.value + 1}.`,
+    message:
+      `Every agent instance returns to its local configuration. This creates revision r${draft.baseRevision.value + 1}.` +
+      (draft.isDirty.value
+        ? ' Your unsaved edits in this editor are discarded too.'
+        : ''),
     rejectProps: { label: 'Cancel', severity: 'secondary', outlined: true },
     acceptProps: { label: 'Clear overlay', severity: 'danger' },
     accept: async () => {
@@ -592,11 +629,7 @@ async function onVisibleChange(value: boolean) {
     emit('update:visible', true);
     return;
   }
-  if (
-    !closing &&
-    draft.isDirty.value &&
-    !deepEqual(draft.overlay.value, draft.original.value)
-  ) {
+  if (!closing && draft.hasUnsavedChanges.value) {
     if (!(await askDiscard())) return;
   }
   closing = true;
@@ -608,7 +641,7 @@ function beforeUnload(e: BeforeUnloadEvent) {
   e.returnValue = '';
 }
 watch(
-  () => draft.isDirty.value,
+  () => draft.hasUnsavedChanges.value,
   (dirty) => {
     if (dirty) window.addEventListener('beforeunload', beforeUnload);
     else window.removeEventListener('beforeunload', beforeUnload);
@@ -619,7 +652,7 @@ watch(
 // Only inside a routed view (not in isolated component tests).
 if (inject(matchedRouteKey, null)) {
   onBeforeRouteLeave(() =>
-    closing || !draft.isDirty.value ? true : askDiscard(),
+    closing || !draft.hasUnsavedChanges.value ? true : askDiscard(),
   );
 }
 

@@ -297,4 +297,46 @@ describe('AgentConfigEditorDrawer (U2)', () => {
       '${env:NAME}',
     );
   });
+  it('disables Save during a conflict and can reload the latest revision when it failed to load', async () => {
+    const getConfig = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('offline'))
+      .mockResolvedValue({ ...configRev7, revision: 8 });
+    api.current = makeApi({
+      getConfig,
+      putConfig: vi.fn().mockRejectedValue(
+        new AgentConfigApiError({
+          kind: 'conflict',
+          status: 409,
+          message: 'c',
+          currentRevision: 8,
+        }),
+      ),
+    });
+    const wrapper = mountDrawer();
+    await toReview(wrapper);
+    await wrapper.find('[data-test="save-comment"]').setValue('keep me');
+    await wrapper.find('[data-test="save-config"]').trigger('click');
+    await flushPromises();
+    expect(
+      wrapper.find('[data-test="save-config"]').attributes('disabled'),
+    ).toBeDefined();
+    expect(
+      wrapper.find('[data-test="conflict-keep"]').attributes('disabled'),
+    ).toBeDefined();
+    await wrapper.find('[data-test="conflict-reload"]').trigger('click');
+    await flushPromises();
+    await wrapper.find('[data-test="conflict-keep"]').trigger('click');
+    await flushPromises();
+    // The comment survives the conflict round trip.
+    expect(
+      (
+        wrapper.find('[data-test="save-comment"]')
+          .element as HTMLTextAreaElement
+      ).value,
+    ).toBe('keep me');
+    expect(
+      wrapper.find('[data-test="save-config"]').attributes('disabled'),
+    ).toBeUndefined();
+  });
 });

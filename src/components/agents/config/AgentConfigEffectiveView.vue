@@ -14,8 +14,14 @@
           class="text-sm text-amber-700 dark:text-amber-300"
           data-test="provenance-note"
         >
-          Provenance reflects r{{ appliedRevisionNote }}, the revision this
-          instance runs.
+          <template v-if="provenanceFallback">
+            Could not load r{{ appliedRevisionNote }}, the revision this
+            instance runs; provenance is shown against the desired revision.
+          </template>
+          <template v-else>
+            Provenance reflects r{{ appliedRevisionNote }}, the revision this
+            instance runs.
+          </template>
         </p>
         <span v-else />
         <SelectButton
@@ -106,6 +112,8 @@ const props = defineProps<{
   appliedOverlay: OverlayDoc | null;
   /** Applied revision when the instance is not in sync, else null. */
   appliedRevisionNote: number | null;
+  /** The applied revision's overlay could not be loaded (desired overlay used instead). */
+  provenanceFallback?: boolean;
   filename: string;
   bundlesFirstSeen?: Record<string, string>;
   /** The instance's reported policy bundles (vendor file lists). */

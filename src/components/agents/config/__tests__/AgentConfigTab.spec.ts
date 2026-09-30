@@ -245,4 +245,34 @@ describe('AgentConfigTab', () => {
     expect(api.current.getInstance).toHaveBeenCalledTimes(5);
     expect(wrapper.find('[data-test="drawer-stub"]').text()).toBe('6');
   });
+  it('never renders client_secret in the File view', async () => {
+    api.current = makeApi({
+      getInstance: vi
+        .fn()
+        .mockImplementation(async (_a: string, id: string) => {
+          const d = detailFor(
+            instancesMixed.items.find((i) => i.instanceId === id)!,
+            {},
+          );
+          d.base = {
+            ...d.base!,
+            api: {
+              url: 'https://x',
+              auth: { client_id: 'cid', client_secret: 'LEAKED' },
+            },
+          };
+          return d;
+        }),
+    });
+    const wrapper = mountTab();
+    await flushPromises();
+    (
+      wrapper.vm as unknown as { $: { setupState: { view: string } } }
+    ).$.setupState.view = 'file';
+    await flushPromises();
+    expect(wrapper.find('[data-test="yaml-text"]').text()).toContain(
+      'client_id: cid',
+    );
+    expect(wrapper.html()).not.toContain('LEAKED');
+  });
 });

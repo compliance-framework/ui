@@ -83,10 +83,14 @@ const cards = computed(() => {
   const eff = draft.effectiveDraft.value.plugins ?? {};
   const out = Object.keys(eff).map((name) => ({ name, removed: false }));
   const ov = draft.overlay.value.plugins;
-  const base = ctx.placeholderBase.value?.plugins ?? {};
+  // Removed plugins from ANY instance's file stay listed (greyed, with Restore).
+  const inSomeBase = (name: string) =>
+    [ctx.placeholderBase.value, ...ctx.bases.value].some(
+      (b) => !!b?.plugins?.[name],
+    );
   if (isPlainObject(ov)) {
     for (const [name, v] of Object.entries(ov)) {
-      if (v === null && base[name] && !(name in eff))
+      if (v === null && inSomeBase(name) && !(name in eff))
         out.push({ name, removed: true });
     }
   }

@@ -21,7 +21,7 @@
 // CodeMirror lives in its own chunk that is fetched only when an editor, diff or Rego view
 // opens.
 import { onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue';
-import { Compartment, EditorState } from '@codemirror/state';
+import { Compartment, EditorState, Transaction } from '@codemirror/state';
 import {
   drawSelection,
   EditorView,
@@ -153,7 +153,11 @@ watch(
   (value) => {
     const v = view.value;
     if (!v || value === v.state.doc.toString()) return;
-    v.dispatch({ changes: { from: 0, to: v.state.doc.length, insert: value } });
+    // Not undoable: undo must never bring back a different document (e.g. another module).
+    v.dispatch({
+      changes: { from: 0, to: v.state.doc.length, insert: value },
+      annotations: Transaction.addToHistory.of(false),
+    });
     applyDiagnostics();
   },
 );

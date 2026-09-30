@@ -6,6 +6,7 @@ import type { PolicyBundleDoc } from '@/types/agent-config';
 import { pointer } from '@/utils/agent-config/json-pointer';
 import { isPlainObject } from '@/utils/agent-config/merge-patch';
 import { NAME_RE, isInlineSource } from '@/utils/agent-config/validation';
+import { usedSources } from '@/utils/agent-config/policy-files';
 import { useEditor } from './useEditor';
 
 /** Name sanitisation for "Customize a bundle": lowercase, [^a-z0-9_-] → '-', ≤ 63 chars. */
@@ -164,10 +165,18 @@ export function useBundleOps() {
   function undeleteFile(b: string, path: string) {
     const B = bundles.value[b] ?? {};
     const next = (B.delete ?? []).filter((p) => p !== path);
-    const baseDel = fileBundle(b)?.delete;
+    // Omitting the key would bring back a file-defined delete list on ANY instance whose
+    // file has one; write [] then.
+    const fileDeletes = [ctx.placeholderBase.value, ...ctx.bases.value].some(
+      (base) => {
+        const del = (
+          base?.policy_bundles?.[b] as PolicyBundleDoc | null | undefined
+        )?.delete;
+        return Array.isArray(del) && del.length > 0;
+      },
+    );
     const ptr = pointer('policy_bundles', b, 'delete');
-    if (next.length === 0 && !(Array.isArray(baseDel) && baseDel.length))
-      draft.unset(ptr);
+    if (next.length === 0 && !fileDeletes) draft.unset(ptr);
     else draft.set(ptr, next);
   }
   function setData(b: string, data: Record<string, unknown>) {
@@ -193,6 +202,14 @@ export function useBundleOps() {
     deleteVendorFile,
     undeleteFile,
     setData,
+    /** Sources every known base already uses (R58: allowed `extends` for policy-only users). */
+    usedSourcesEverywhere: computed(() => {
+      const bases = ctx.bases.value.length ? ctx.bases.value : [{}];
+      const sets = bases.map((base) => usedSources(base));
+      return new Set(
+        [...sets[0]].filter((src) => sets.every((set) => set.has(src))),
+      );
+    }),
     nonInlineSources: (plugin: string) =>
       effectivePolicies(plugin).filter((s) => !isInlineSource(s)),
     validName: (n: string) => NAME_RE.test(n) && !takenNames.value.has(n),

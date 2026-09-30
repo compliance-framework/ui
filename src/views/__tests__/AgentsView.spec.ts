@@ -102,6 +102,9 @@ const mockLoadKeys = vi.fn().mockImplementation(async (url: string) => {
 // Mutable permission map. The existing cases run as an admin (admin:manage + agent:*).
 const perms = vi.hoisted(() => ({
   map: {} as Record<string, string[]>,
+  // Simulates the permissions store: can() is optimistic until hydrate() settles.
+  loaded: true,
+  hydrate: null as null | (() => Promise<unknown>),
 }));
 const ADMIN_PERMS = {
   admin: ['manage'],
@@ -116,18 +119,23 @@ const ADMIN_PERMS = {
 };
 
 vi.mock('@/composables/usePermissions', async () => {
-  const { computed } = await import('vue');
+  const { computed, ref } = await import('vue');
   const constants = await vi.importActual<
     typeof import('@/constants/permissions')
   >('@/constants/permissions');
   return {
     usePermissions: () => {
+      const loaded = ref(perms.loaded);
       const can = (resource: string, action: string) =>
-        perms.map[resource]?.includes(action) ?? false;
+        !loaded.value || (perms.map[resource]?.includes(action) ?? false);
       return {
         can,
         canManageAdmin: computed(() => can('admin', 'manage')),
-        hydrate: vi.fn(),
+        loaded,
+        hydrate: vi.fn(async () => {
+          await perms.hydrate?.();
+          loaded.value = true;
+        }),
         permissionTooltip: constants.permissionTooltip,
         RESOURCES: constants.RESOURCES,
         ACTIONS: constants.ACTIONS,
@@ -385,6 +393,8 @@ describe('AgentsView', () => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
     perms.map = ADMIN_PERMS;
+    perms.loaded = true;
+    perms.hydrate = null;
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-04-06T00:00:00Z'));
 
@@ -670,5 +680,39 @@ describe('AgentsView', () => {
     await wrapper.findAll('tbody tr')[1].trigger('click');
     await flushPromises();
     expect(wrapper.find('[data-test="config-tab"]').text()).toBe('agent-2');
+  });
+  it('never requests keys or shows admin UI to a non-admin before permissions hydrate (R40)', async () => {
+    perms.map = { agent: ['read'] };
+    perms.loaded = false;
+    let release: () => void = () => undefined;
+    perms.hydrate = () => new Promise<void>((r) => (release = r));
+    const wrapper = mountView();
+    await flushPromises();
+    // Optimistic can() would say "admin" here; the page waits instead.
+    expect(mockLoadKeys).not.toHaveBeenCalled();
+    expect(findButtonByText(wrapper, 'Register Agent')).toBeUndefined();
+    expect(findButtonByText(wrapper, 'Manage Keys')).toBeUndefined();
+
+    release();
+    await flushPromises();
+    expect(mockLoadKeys).not.toHaveBeenCalled();
+    expect(findButtonByText(wrapper, 'Register Agent')).toBeUndefined();
+    expect(wrapper.find('[data-test="config-tab"]').exists()).toBe(true);
+    expect(toastAdd).not.toHaveBeenCalled();
+  });
+
+  it('loads keys for an admin once permissions hydrate', async () => {
+    perms.loaded = false;
+    let release: () => void = () => undefined;
+    perms.hydrate = () => new Promise<void>((r) => (release = r));
+    const wrapper = mountView();
+    await flushPromises();
+    expect(mockLoadKeys).not.toHaveBeenCalled();
+    release();
+    await flushPromises();
+    expect(mockLoadKeys).toHaveBeenCalledWith('/api/admin/agents/agent-1/keys');
+    expect(findButtonByText(wrapper, 'Register Agent')).toBeTruthy();
+    // Admins land on Details.
+    expect(wrapper.find('[data-test="config-tab"]').exists()).toBe(false);
   });
 });

@@ -75,6 +75,7 @@
       />
       <RegoModuleEditor
         v-if="selected && selectedText !== null"
+        :key="selected"
         :bundle="name"
         :path="selected"
         :model-value="selectedText"
@@ -123,7 +124,12 @@ import {
 } from '@/utils/agent-config/policy-files';
 import { bundleProvenance } from '@/utils/agent-config/provenance';
 import { formatRelative } from '@/utils/agent-config/display';
-import { isPlainObject } from '@/utils/agent-config/merge-patch';
+import {
+  deepEqual,
+  isPlainObject,
+  mergePatch,
+} from '@/utils/agent-config/merge-patch';
+import { replacingPatch } from '@/utils/agent-config/overlay-ops';
 import { DATA_FILE_RE } from '@/utils/agent-config/validation';
 import ProvenanceBadge from '../ProvenanceBadge.vue';
 import ConfigPill from '../ConfigPill.vue';
@@ -231,13 +237,12 @@ const dataError = ref('');
 watch(
   () => bundleDoc.value.data,
   (d) => {
+    if (dataError.value) return;
     try {
-      if (
-        JSON.stringify(JSON.parse(dataText.value)) === JSON.stringify(d ?? {})
-      )
+      if (deepEqual(mergePatch({}, JSON.parse(dataText.value)), d ?? {}))
         return;
     } catch {
-      if (dataError.value) return;
+      return;
     }
     dataText.value = JSON.stringify(d ?? {}, null, 2);
   },
@@ -249,7 +254,15 @@ function onData(text: string) {
     if (!isPlainObject(parsed))
       throw new Error('Bundle data must be a JSON object');
     dataError.value = '';
-    props.ops.setData(props.name, parsed);
+    // Objects merge (RFC 7396): write the full target plus nulls for file keys the user
+    // removed, never copying the file's masked values (R25).
+    props.ops.setData(
+      props.name,
+      replacingPatch(props.ops.fileBundle(props.name)?.data, parsed) as Record<
+        string,
+        unknown
+      >,
+    );
   } catch (e) {
     dataError.value = (e as Error).message;
   }

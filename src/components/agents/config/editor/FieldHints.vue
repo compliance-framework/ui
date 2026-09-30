@@ -2,6 +2,8 @@
   <span class="inline-flex items-center gap-1">
     <i
       v-if="shieldInfo"
+      role="img"
+      tabindex="0"
       v-tooltip.top="shieldInfo.tooltip"
       class="pi pi-shield text-xs"
       :class="

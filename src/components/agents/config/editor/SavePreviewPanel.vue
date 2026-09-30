@@ -336,7 +336,7 @@ const props = defineProps<{
 
 defineEmits<{ back: []; save: [comment: string] }>();
 
-const comment = ref('');
+const comment = defineModel<string>('comment', { default: '' });
 const yamlOpen = reactive(new Set<string>());
 const diffOpen = ref(false);
 const diffTitle = ref('');

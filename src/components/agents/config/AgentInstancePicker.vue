@@ -31,6 +31,7 @@
           type="button"
           class="opacity-70"
           :class="itemClass(item.inst.instanceId)"
+          :aria-pressed="item.inst.instanceId === selectedId"
           :data-test="`pick-${item.inst.instanceId}`"
           @click="$emit('select', item.inst.instanceId)"
         >

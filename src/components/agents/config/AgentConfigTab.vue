@@ -76,14 +76,23 @@
         {{ state.instanceError.value }}
       </Message>
 
+      <p
+        v-if="instanceView && instancePending"
+        class="text-sm text-gray-500 dark:text-slate-400"
+        data-test="instance-pending"
+      >
+        Loading instance…
+      </p>
+      <span v-else-if="instanceView && state.instanceError.value" />
       <AgentConfigEffectiveView
-        v-if="view === 'effective'"
+        v-else-if="view === 'effective'"
         :effective-doc="
           reported ? (state.selectedInstance.value?.effective ?? null) : null
         "
         :base="state.selectedInstance.value?.base ?? null"
         :applied-overlay="state.appliedOverlay.value"
         :applied-revision-note="appliedRevisionNote"
+        :provenance-fallback="state.appliedOverlayFallback.value"
         :filename="
           fileName(
             'effective',
@@ -95,7 +104,7 @@
       />
       <ConfigYamlViewer
         v-else-if="view === 'file'"
-        :doc="reported ? (state.selectedInstance.value?.base ?? null) : null"
+        :doc="fileDoc"
         :filename="fileName('file', 0)"
         :empty-text="NOT_REPORTED_TEXT"
         :legend="LOCKED_LEGEND"
@@ -154,6 +163,7 @@ import type { AgentInstanceDetail } from '@/types/agent-config';
 import { usePermissions } from '@/composables/usePermissions';
 import { useAgentConfigApi } from '@/composables/agent-config/useAgentConfigApi';
 import { useAgentConfig } from '@/composables/agent-config/useAgentConfig';
+import { sanitizeForDisplay } from '@/utils/agent-config/display';
 import AgentConfigHeader from './AgentConfigHeader.vue';
 import AgentInstancePicker from './AgentInstancePicker.vue';
 import InstanceModeNotice from './InstanceModeNotice.vue';
@@ -233,6 +243,22 @@ const reported = computed(
     !!state.selectedState.value &&
     state.selectedState.value.state !== 'not-reported',
 );
+const instanceView = computed(
+  () => view.value === 'effective' || view.value === 'file',
+);
+// While switching instances the previous detail is still loaded: show a placeholder rather
+// than one host's config under another host's header.
+const instancePending = computed(
+  () =>
+    !!state.selectedInstanceId.value &&
+    !state.selectedInstanceCurrent.value &&
+    !state.instanceError.value,
+);
+// Defence in depth: the file view never shows api.auth.client_secret either.
+const fileDoc = computed(() => {
+  const base = state.selectedInstance.value?.base;
+  return reported.value && base ? sanitizeForDisplay(base) : null;
+});
 const appliedRevisionNote = computed(() => {
   const inst = state.selectedInstance.value;
   if (!inst || inst.syncStatus === 'in-sync') return null;

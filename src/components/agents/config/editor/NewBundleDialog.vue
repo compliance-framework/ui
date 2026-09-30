@@ -37,6 +37,14 @@
         <p v-if="extendsError" class="mt-1 text-xs text-red-600">
           {{ extendsError }}
         </p>
+        <p
+          v-else-if="extendsNeedsConfigure"
+          class="mt-1 text-xs text-amber-700 dark:text-amber-300"
+          data-test="nb-extends-r58"
+        >
+          Your role can only extend a source this agent already uses; saving a
+          new source needs agent:configure.
+        </p>
       </div>
       <fieldset v-if="plugins.length">
         <legend class="field-label">Use in plugins</legend>
@@ -79,6 +87,9 @@ const props = defineProps<{
   visible: boolean;
   taken: Set<string>;
   plugins: string[];
+  /** Policy-only users (R58) may only extend already-used sources. */
+  policyOnly?: boolean;
+  usedSources?: Set<string>;
 }>();
 const emit = defineEmits<{
   'update:visible': [v: boolean];
@@ -110,6 +121,10 @@ const extendsError = computed(() =>
     ? 'A bundle cannot extend another inline bundle'
     : '',
 );
+const extendsNeedsConfigure = computed(() => {
+  const ext = extendsSource.value.trim();
+  return !!props.policyOnly && !!ext && !(props.usedSources?.has(ext) ?? false);
+});
 const valid = computed(
   () => !!name.value && !nameError.value && !extendsError.value,
 );

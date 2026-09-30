@@ -274,4 +274,36 @@ describe('OverlayFormEditor (U2.3)', () => {
     );
     expect(instanceIds.a).toBeTruthy();
   });
+  it('never copies masked file values into policy_data (R25)', async () => {
+    const d = detailFor(a, {});
+    d.base!.plugins!['local-ssh']!.policy_data = {
+      api_key: '••••',
+      max_auth_tries: 4,
+    };
+    const { wrapper, draft } = mountForm({ details: [d] });
+    const editor = card(wrapper, 'local-ssh').find('textarea.code-editor-stub');
+    await editor.setValue(
+      JSON.stringify({ api_key: '••••', max_auth_tries: 2 }),
+    );
+    expect(draft.overlay.value).toEqual({
+      plugins: { 'local-ssh': { policy_data: { max_auth_tries: 2 } } },
+    });
+    expect(JSON.stringify(draft.overlay.value)).not.toContain('••••');
+  });
+
+  it('keeps an overlay-only config key (empty value) while its value is cleared', async () => {
+    const { wrapper, draft } = mountForm({
+      overlay: { plugins: { 'local-ssh': { config: { extra: 'x' } } } },
+    });
+    const row = card(wrapper, 'local-ssh').find(
+      '[data-test="config-local-ssh"] [data-row="extra"]',
+    );
+    await row.find('input').setValue('');
+    expect(draft.overlay.value).toEqual({
+      plugins: { 'local-ssh': { config: { extra: '' } } },
+    });
+    expect(card(wrapper, 'local-ssh').find('[data-row="extra"]').exists()).toBe(
+      true,
+    );
+  });
 });

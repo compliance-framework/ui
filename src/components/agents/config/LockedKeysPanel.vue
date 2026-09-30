@@ -8,14 +8,15 @@
     </h4>
     <dl class="grid grid-cols-1 gap-x-6 gap-y-2 text-sm md:grid-cols-2">
       <div v-for="row in rows" :key="row.key" class="flex items-start gap-2">
-        <i
-          v-tooltip.top="LOCK_TOOLTIP"
-          class="pi pi-lock mt-0.5 text-xs text-gray-400"
-          :aria-label="LOCK_TOOLTIP"
-          data-test="lock-icon"
-        />
         <dt class="font-mono text-xs text-gray-500 dark:text-slate-400">
-          {{ row.key }}
+          <i
+            v-tooltip.top="LOCK_TOOLTIP"
+            role="img"
+            tabindex="0"
+            class="pi pi-lock mr-2 text-xs text-gray-400"
+            :aria-label="LOCK_TOOLTIP"
+            data-test="lock-icon"
+          />{{ row.key }}
         </dt>
         <dd class="break-all text-gray-900 dark:text-slate-200">
           <template v-if="Array.isArray(row.value)">

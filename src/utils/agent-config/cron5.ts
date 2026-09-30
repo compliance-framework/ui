@@ -98,21 +98,28 @@ function validateRange(expr: string, spec: FieldSpec): string | null {
 
 /** Returns an error message, or null when the expression is a valid agent schedule. */
 export function validateCron5(input: string): string | null {
-  let expr = input.trim();
-  if (!expr) return 'Schedule is empty';
-  const tz = /^(CRON_TZ|TZ)=\S+\s+/.exec(expr);
-  if (tz) expr = expr.slice(tz[0].length);
+  // Mirrors robfig/cron Parse: no trimming before the TZ prefix or a descriptor (so
+  // "@daily " is rejected as the agent would), fields split like strings.Fields.
+  let expr = input;
+  if (!expr.trim()) return 'Schedule is empty';
+  if (expr.startsWith('TZ=') || expr.startsWith('CRON_TZ=')) {
+    const space = expr.indexOf(' ');
+    if (space < 0) return 'a time zone prefix must be followed by a schedule';
+    const zone = expr.slice(expr.indexOf('=') + 1, space);
+    if (!validTimeZone(zone)) return `unknown time zone "${zone}"`;
+    expr = expr.slice(space).trim();
+  }
   if (expr.startsWith('@')) {
     if (DESCRIPTORS.includes(expr)) return null;
     if (expr.startsWith('@every ')) {
-      const d = expr.slice('@every '.length).trim();
+      const d = expr.slice('@every '.length);
       return GO_DURATION_RE.test(d)
         ? null
         : `invalid duration "${d}" in @every`;
     }
     return `unrecognized descriptor "${expr}"`;
   }
-  const fields = expr.split(/\s+/);
+  const fields = expr.trim().split(/\s+/);
   if (fields.length !== 5) {
     return `expected 5 fields (minute hour day-of-month month day-of-week), found ${fields.length}`;
   }
@@ -124,6 +131,17 @@ export function validateCron5(input: string): string | null {
     }
   }
   return null;
+}
+
+function validTimeZone(zone: string): boolean {
+  if (!zone) return false;
+  if (zone === 'UTC' || zone === 'Local') return true;
+  try {
+    new Intl.DateTimeFormat('en', { timeZone: zone });
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 const DAY_NAMES = [

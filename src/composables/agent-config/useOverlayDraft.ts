@@ -13,12 +13,8 @@ import type {
   OverlayDoc,
 } from '@/types/agent-config';
 import { clone, deepEqual, mergePatch } from '@/utils/agent-config/merge-patch';
-import {
-  makeAbsent as makeAbsentOp,
-  nullAt,
-  setAt,
-  unsetAt,
-} from '@/utils/agent-config/overlay-ops';
+import { nullAt, setAt, unsetAt } from '@/utils/agent-config/overlay-ops';
+import { hasAt } from '@/utils/agent-config/json-pointer';
 import { parseYaml, toYaml, type YamlError } from '@/utils/agent-config/yaml';
 import {
   coerceStringMaps,
@@ -50,6 +46,18 @@ export function useOverlayDraft(
   let yamlTimer: ReturnType<typeof setTimeout> | null = null;
 
   const isDirty = computed(() => !deepEqual(overlay.value, original.value));
+  /** YAML text as last generated from the overlay (mode switch, rebase, replaceAll). */
+  const yamlBaseline = ref(yamlText.value);
+  /**
+   * For close/unload/route guards: also counts YAML typed but not parsed yet (debounce) or
+   * that does not parse, which isDirty (parsed overlay only) cannot see.
+   */
+  const hasUnsavedChanges = computed(
+    () =>
+      isDirty.value ||
+      (mode.value === 'yaml' &&
+        (yamlError.value !== null || yamlText.value !== yamlBaseline.value)),
+  );
   const effectiveDraft = computed(() =>
     mergePatch<ConfigDoc>(base.value ?? {}, overlay.value),
   );
@@ -72,9 +80,18 @@ export function useOverlayDraft(
   function remove(ptr: string): void {
     overlay.value = nullAt(overlay.value, ptr);
   }
-  /** null if the base has the key, else omit. */
+  /**
+   * null if ANY known base (or the placeholder base) has the key, else omit: a key that only
+   * another instance's file defines must still be removed there.
+   */
   function makeAbsent(ptr: string): void {
-    overlay.value = makeAbsentOp(overlay.value, base.value ?? {}, ptr);
+    const bases = [
+      ...(options.bases?.value ?? []),
+      ...(base.value ? [base.value] : []),
+    ];
+    overlay.value = bases.some((b) => hasAt(b, ptr))
+      ? nullAt(overlay.value, ptr)
+      : unsetAt(overlay.value, ptr);
   }
 
   function parseNow(text: string): boolean {
@@ -104,6 +121,7 @@ export function useOverlayDraft(
     if (next === mode.value) return true;
     if (next === 'yaml') {
       yamlText.value = toYaml(overlay.value);
+      yamlBaseline.value = yamlText.value;
       yamlError.value = null;
       coerced.value = [];
       mode.value = 'yaml';
@@ -130,6 +148,7 @@ export function useOverlayDraft(
     if (!keepDraft) {
       overlay.value = clone(latest.overlay ?? {});
       yamlText.value = toYaml(overlay.value);
+      yamlBaseline.value = yamlText.value;
       yamlError.value = null;
       coerced.value = [];
     }
@@ -139,6 +158,7 @@ export function useOverlayDraft(
   function replaceAll(next: OverlayDoc): void {
     overlay.value = clone(next);
     yamlText.value = toYaml(overlay.value);
+    yamlBaseline.value = yamlText.value;
     yamlError.value = null;
     coerced.value = [];
   }
@@ -157,6 +177,7 @@ export function useOverlayDraft(
     coerced,
     mode,
     isDirty,
+    hasUnsavedChanges,
     effectiveDraft,
     clientIssues,
     set,

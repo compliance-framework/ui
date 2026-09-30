@@ -64,3 +64,51 @@ describe('replacingPatch', () => {
     expect(mergePatch(source, patch)).toEqual(target);
   });
 });
+
+describe('replacingPatch and masked values (R25)', () => {
+  it('never copies an untouched mask from the redacted source into the patch', async () => {
+    const { replacingPatch } = await import('../overlay-ops');
+    const source = {
+      api_key: '••••',
+      nested: { token: '••••', n: 1 },
+      keep: 'a',
+    };
+    const target = {
+      api_key: '••••',
+      nested: { token: '••••', n: 2 },
+      keep: 'b',
+    };
+    expect(replacingPatch(source, target)).toEqual({
+      nested: { n: 2 },
+      keep: 'b',
+    });
+    // A mask the user typed where the source had something else is kept (validation blocks it).
+    expect(replacingPatch({ a: 'x' }, { a: '••••' })).toEqual({ a: '••••' });
+  });
+});
+
+describe('"__proto__" keys are data, never prototypes', () => {
+  it('setAt does not pollute Object.prototype and keeps the key', async () => {
+    const { setAt } = await import('../overlay-ops');
+    const out = setAt(
+      { plugins: {} },
+      '/plugins/__proto__/config/k',
+      'v',
+    ) as Record<string, unknown>;
+    expect(({} as Record<string, unknown>).config).toBeUndefined();
+    expect(Object.prototype.hasOwnProperty.call(out.plugins, '__proto__')).toBe(
+      true,
+    );
+  });
+
+  it('clone and mergePatch preserve an own "__proto__" key', async () => {
+    const { clone, mergePatch } = await import('../merge-patch');
+    const doc = JSON.parse('{"policy_data":{"__proto__":{"x":1}}}');
+    expect(JSON.stringify(clone(doc))).toBe(
+      '{"policy_data":{"__proto__":{"x":1}}}',
+    );
+    expect(JSON.stringify(mergePatch({}, doc))).toBe(
+      '{"policy_data":{"__proto__":{"x":1}}}',
+    );
+  });
+});

@@ -162,4 +162,28 @@ describe('useOverlayDraft', () => {
       d.clientIssues.value.some((i) => i.ptr === '/api' && i.blocking),
     ).toBe(true);
   });
+  it('hasUnsavedChanges sees YAML that is not parsed yet or does not parse', () => {
+    const d = useOverlayDraft(rev({ verbosity: 1 }), ref(base));
+    d.setMode('yaml');
+    expect(d.hasUnsavedChanges.value).toBe(false);
+    d.onYamlInput('verbosity: 2\n');
+    // Within the debounce the parsed overlay is unchanged, but the text is not.
+    expect(d.isDirty.value).toBe(false);
+    expect(d.hasUnsavedChanges.value).toBe(true);
+    d.onYamlInput('plugins: [\n');
+    vi.advanceTimersByTime(YAML_DEBOUNCE_MS);
+    expect(d.hasUnsavedChanges.value).toBe(true);
+  });
+
+  it('makeAbsent nulls a key that only another instance file defines', () => {
+    const other: ConfigDoc = {
+      plugins: { extra: { source: 'ghcr.io/x/extra:v1' } },
+    };
+    const d = useOverlayDraft(rev(), ref(base), { bases: ref([base, other]) });
+    d.makeAbsent('/plugins/extra');
+    expect(d.overlay.value).toEqual({ plugins: { extra: null } });
+    d.set('/plugins/neu', { source: 's' });
+    d.makeAbsent('/plugins/neu');
+    expect(d.overlay.value).toEqual({ plugins: { extra: null } });
+  });
 });

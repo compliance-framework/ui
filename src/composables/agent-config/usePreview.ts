@@ -72,6 +72,8 @@ export function usePreview(
   function schedule() {
     if (timer) clearTimeout(timer);
     timer = null;
+    // "Checked" only describes the draft it was computed for.
+    if (!isCurrent() && status.value === 'checked') status.value = 'idle';
     if (!liveEligible() || isCurrent()) return;
     timer = setTimeout(() => {
       timer = null;

@@ -222,3 +222,25 @@ describe('useAgentConfigApi (HTTP client)', () => {
     ).toBe('network');
   });
 });
+
+describe('useAgentConfigApi never sends the mask (R25)', () => {
+  it('refuses a PUT or preview whose overlay contains "••••" without calling the API', async () => {
+    const localPut = vi.fn();
+    const localPost = vi.fn();
+    const client = createHttpAgentConfigApi({
+      get: vi.fn(),
+      put: localPut,
+      post: localPost,
+    } as never);
+    const overlay = { plugins: { a: { config: { api_key: '••••' } } } };
+    const err = await client.putConfig('a1', { overlay }, 7).catch((e) => e);
+    expect(err).toBeInstanceOf(AgentConfigApiError);
+    expect(err.kind).toBe('invalid');
+    expect(err.body.overlay[0].path).toBe('/plugins/a/config/api_key');
+    await expect(client.preview('a1', overlay)).rejects.toMatchObject({
+      kind: 'invalid',
+    });
+    expect(localPut).not.toHaveBeenCalled();
+    expect(localPost).not.toHaveBeenCalled();
+  });
+});

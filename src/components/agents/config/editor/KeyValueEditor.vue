@@ -12,6 +12,8 @@
       }}</span>
       <i
         v-if="row.locked"
+        role="img"
+        tabindex="0"
         v-tooltip.top="row.lockTooltip"
         class="pi pi-lock text-xs text-gray-400"
         :aria-label="row.lockTooltip"
@@ -19,6 +21,8 @@
       />
       <i
         v-if="row.shield"
+        role="img"
+        tabindex="0"
         v-tooltip.top="row.shield.tooltip"
         class="pi pi-shield text-xs"
         :class="
@@ -29,6 +33,8 @@
       />
       <i
         v-if="keyWarning(row.key)"
+        role="img"
+        tabindex="0"
         v-tooltip.top="KEY_WARNING"
         class="pi pi-exclamation-triangle text-xs text-amber-500"
         :aria-label="KEY_WARNING"

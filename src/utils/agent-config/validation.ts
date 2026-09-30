@@ -16,6 +16,7 @@ import {
 } from './merge-patch';
 import { escapeToken, getAt, parsePointer, pointer } from './json-pointer';
 import { validateCron5, GO_DURATION_RE } from './cron5';
+import { CORE_SCHEMA, load } from 'js-yaml';
 
 export interface ClientIssue {
   ptr: string;
@@ -104,7 +105,10 @@ export function coerceStringMaps(overlay: OverlayDoc): {
       const map = plugin[field];
       if (!isPlainObject(map)) continue;
       for (const [k, v] of Object.entries(map)) {
-        if (typeof v === 'number' || typeof v === 'boolean') {
+        if (
+          typeof v === 'boolean' ||
+          (typeof v === 'number' && Number.isSafeInteger(v))
+        ) {
           if (!out) out = clone(overlay);
           (
             ((out.plugins as PlainObject)[name] as PlainObject)[
@@ -156,6 +160,18 @@ function importedDataPackages(src: string): string[] {
     out.push(m[1]);
   }
   return out;
+}
+
+function dataParseError(path: string, src: string): string | null {
+  try {
+    if (path.endsWith('.json')) JSON.parse(src);
+    else load(src, { schema: CORE_SCHEMA });
+    return null;
+  } catch (e) {
+    return e instanceof Error
+      ? (e.message.split('\n')[0] ?? 'invalid')
+      : 'invalid';
+  }
 }
 
 function bundleBytes(b: PolicyBundleDoc): number {
@@ -227,20 +243,23 @@ export function validateOverlayClientSide(
   }
 
   const ae = overlay.agent_evidence;
-  if (
-    isPlainObject(ae) &&
-    typeof ae.interval === 'string' &&
-    !GO_DURATION_RE.test(ae.interval)
-  ) {
-    add(
-      '/agent_evidence/interval',
-      'Use a Go duration such as 30s, 5m or 1h',
-      true,
-    );
+  if (isPlainObject(ae) && typeof ae.interval === 'string') {
+    // The API trims, parses as a Go duration and rejects negative values.
+    const iv = ae.interval.trim();
+    if (!GO_DURATION_RE.test(iv)) {
+      add(
+        '/agent_evidence/interval',
+        'Use a Go duration such as 30s, 5m or 1h',
+        true,
+      );
+    } else if (iv.startsWith('-') && !/^-0+(\.0*)?[a-zµμ]*$/.test(iv)) {
+      add(
+        '/agent_evidence/interval',
+        'The interval must not be negative',
+        true,
+      );
+    }
   }
-
-  const knownBaseHas = (ptr: string) =>
-    bases.some((b) => getAt(b, ptr) !== undefined);
 
   // Plugins.
   const plugins = overlay.plugins;
@@ -259,7 +278,6 @@ export function validateOverlayClientSide(
         add(pptr, 'A plugin must be a mapping', true);
         continue;
       }
-      const isNew = !knownBaseHas(pptr);
       if (typeof plugin.source === 'string') {
         if (plugin.source.trim() === '')
           add(`${pptr}/source`, 'Source must not be empty', true);
@@ -270,11 +288,6 @@ export function validateOverlayClientSide(
             true,
           );
         }
-      } else if (
-        isNew &&
-        (plugin.source === undefined || plugin.source === null)
-      ) {
-        add(`${pptr}/source`, 'A new plugin needs a source', true);
       }
       if (typeof plugin.schedule === 'string') {
         const err = validateCron5(plugin.schedule);
@@ -319,6 +332,14 @@ export function validateOverlayClientSide(
           const kptr = pointer('plugins', name, field, k);
           if (isPlainObject(v) || Array.isArray(v)) {
             add(kptr, 'Values must be strings', true);
+          } else if (typeof v === 'number' || typeof v === 'boolean') {
+            // Only whole numbers and booleans are converted safely (R27); YAML already lost the
+            // original text of 1.10 or 1e3, so ask for quotes instead of guessing.
+            add(
+              kptr,
+              'Quote this value: plugin config and label values are strings',
+              true,
+            );
           }
           if (k === '') add(kptr, 'Keys must not be empty', true);
           if (
@@ -352,7 +373,7 @@ export function validateOverlayClientSide(
       return;
     }
     for (const name of refs) {
-      if (name.startsWith(FORBIDDEN_ENV_PREFIX)) {
+      if (name.toUpperCase().startsWith(FORBIDDEN_ENV_PREFIX)) {
         add(ptr, `\${env:${name}} is not allowed (agent credentials)`, true);
         continue;
       }
@@ -427,6 +448,11 @@ function validateBundles(
             true,
           );
         }
+        if (!path.endsWith('.rego') && src.trim() !== '') {
+          const parseErr = dataParseError(path, src);
+          if (parseErr)
+            add(mptr, `The data file does not parse: ${parseErr}`, true);
+        }
         if (path.endsWith('.rego')) {
           if (!packageOf(src))
             add(mptr, 'The module has no package line', false);
@@ -451,109 +477,170 @@ function validateBundles(
     }
   }
 
-  // Effective checks, per known base (or none).
-  const effs = (bases.length ? bases : [{}]).map((b) =>
-    mergePatch<ConfigDoc>(b, overlay),
-  );
-  for (const eff of effs) {
-    const bundles = eff.policy_bundles ?? {};
-    for (const [name, raw] of Object.entries(bundles)) {
-      if (!isPlainObject(raw)) continue;
-      const b = raw as PolicyBundleDoc;
-      const bptr = pointer('policy_bundles', name);
-      const modules = (b.modules ?? {}) as Record<string, string>;
-      const hasExtends = typeof b.extends === 'string' && b.extends !== '';
-      const hasModules = Object.keys(modules).length > 0;
-      const hasData = isPlainObject(b.data);
-      if (!hasExtends && !hasModules && !hasData) {
-        add(bptr, 'A bundle needs extends, modules or data', true);
+  // Effective checks, per known base (or none). Like the API (R59, splitIntroduced), only
+  // problems the overlay INTRODUCES block: anything already present in merge(base, {}) comes
+  // from the host's own file and is reported as a non-blocking hint.
+  const standalone = bases.length === 0;
+  for (const base of standalone ? [{}] : bases) {
+    const before = new Set(
+      effectiveIssues(mergePatch<ConfigDoc>(base, {}), {}, ctx, standalone).map(
+        issueKey,
+      ),
+    );
+    for (const i of effectiveIssues(
+      mergePatch<ConfigDoc>(base, overlay),
+      overlay,
+      ctx,
+      standalone,
+    )) {
+      if (before.has(issueKey(i))) {
+        add(i.ptr, `${i.message} (already in the agent's file)`, false);
+      } else {
+        add(i.ptr, i.message, i.blocking);
       }
-      if (hasData && Object.keys(modules).some((p) => DATA_FILE_RE.test(p))) {
-        add(
-          `${bptr}/data`,
-          'Set either data or a root data.json / data.yaml / data.yml module, not both',
-          true,
-        );
-      }
-      const del = Array.isArray(b.delete) ? b.delete : [];
-      if (del.length > 0 && !hasExtends) {
-        add(`${bptr}/delete`, 'Deleting files requires extends', true);
-      }
-      for (const p of del) {
-        if (Object.prototype.hasOwnProperty.call(modules, p)) {
-          add(
-            pointer('policy_bundles', name, 'modules', p),
-            'This file is both overridden and deleted',
-            true,
-          );
-        }
-      }
-      const total = bundleBytes(b);
-      if (total > LIMITS.bundleBytes) {
-        add(
-          bptr,
-          `Bundle is ${total} bytes; the limit is ${LIMITS.bundleBytes}`,
-          true,
-        );
-      }
-      // R21: imports across bundles are not supported.
-      const own = new Set(
-        Object.entries(modules)
-          .filter(([p, src]) => p.endsWith('.rego') && typeof src === 'string')
-          .map(([, src]) => packageOf(src))
-          .filter((p): p is string => !!p),
-      );
-      const vendor = ctx.vendorPackages?.(name) ?? null;
-      for (const [path, src] of Object.entries(modules)) {
-        if (!path.endsWith('.rego') || typeof src !== 'string') continue;
-        if (
-          !(
-            isPlainObject(overlay.policy_bundles) &&
-            isPlainObject((overlay.policy_bundles as PlainObject)[name])
-          )
-        )
-          continue;
-        for (const imp of importedDataPackages(src)) {
-          const known = [...own, ...(vendor ?? [])];
-          const resolves = known.some(
-            (pkg) => imp === pkg || imp.startsWith(`${pkg}.`),
-          );
-          if (!resolves && (vendor !== null || !hasExtends)) {
-            add(
-              pointer('policy_bundles', name, 'modules', path),
-              `import data.${imp}: imports across bundles are not supported`,
-              false,
-            );
-          }
-        }
-      }
-    }
-    // Plugin references.
-    for (const [pname, plugin] of Object.entries(eff.plugins ?? {})) {
-      if (!isPlainObject(plugin) || !Array.isArray(plugin.policies)) continue;
-      const pols = plugin.policies as string[];
-      pols.forEach((e) => {
-        const b = typeof e === 'string' ? inlineBundleName(e) : null;
-        if (b && !isPlainObject(bundles[b])) {
-          add(
-            pointer('plugins', pname, 'policies'),
-            `${e} has no bundle named "${b}"`,
-            true,
-          );
-        }
-        if (b && isPlainObject(bundles[b])) {
-          const ext = (bundles[b] as PolicyBundleDoc).extends;
-          if (typeof ext === 'string' && pols.includes(ext)) {
-            add(
-              pointer('plugins', pname, 'policies'),
-              `Both the vendor bundle ${ext} and its customized copy ${e} are loaded`,
-              false,
-            );
-          }
-        }
-      });
     }
   }
+}
+
+function issueKey(i: ClientIssue): string {
+  return `${i.ptr}\u0000${i.message}`;
+}
+
+/** Problems of one effective config (merge of a base and the overlay). */
+function effectiveIssues(
+  eff: ConfigDoc,
+  overlay: OverlayDoc,
+  ctx: ValidationContext,
+  standalone: boolean,
+): ClientIssue[] {
+  const out: ClientIssue[] = [];
+  const add = (ptr: string, message: string, blocking: boolean) =>
+    out.push({ ptr, message, blocking });
+
+  // Plugins the overlay touches must end up with a source. With no known base the API runs
+  // overlay-only checks (standalone), so this is only a hint then.
+  const ovPlugins = isPlainObject(overlay.plugins) ? overlay.plugins : {};
+  for (const [pname, ov] of Object.entries(ovPlugins)) {
+    const plugin = eff.plugins?.[pname];
+    if (ov === null || !isPlainObject(plugin)) continue;
+    if (typeof plugin.source !== 'string' || plugin.source.trim() === '') {
+      add(
+        pointer('plugins', pname, 'source'),
+        standalone
+          ? 'Needs a source unless the agent file defines this plugin'
+          : 'A plugin needs a source (not defined by this agent file)',
+        !standalone,
+      );
+    }
+  }
+
+  const bundles = eff.policy_bundles ?? {};
+  for (const [name, raw] of Object.entries(bundles)) {
+    if (!isPlainObject(raw)) continue;
+    const b = raw as PolicyBundleDoc;
+    const bptr = pointer('policy_bundles', name);
+    const modules = (b.modules ?? {}) as Record<string, string>;
+    const hasExtends = typeof b.extends === 'string' && b.extends.trim() !== '';
+    const hasModules = Object.keys(modules).length > 0;
+    const hasData = isPlainObject(b.data);
+    if (typeof b.extends === 'string' && b.extends.trim() === '') {
+      add(`${bptr}/extends`, 'extends must not be empty', true);
+    }
+    if (!hasExtends && !hasModules && !hasData) {
+      add(bptr, 'A bundle needs extends, modules or data', true);
+    }
+    if (hasData && Object.keys(modules).some((p) => DATA_FILE_RE.test(p))) {
+      add(
+        `${bptr}/data`,
+        'Set either data or a root data.json / data.yaml / data.yml module, not both',
+        true,
+      );
+    }
+    const del = Array.isArray(b.delete) ? b.delete : [];
+    if (del.length > 0 && !hasExtends) {
+      add(`${bptr}/delete`, 'Deleting files requires extends', true);
+    }
+    for (const p of del) {
+      if (Object.prototype.hasOwnProperty.call(modules, p)) {
+        add(
+          pointer('policy_bundles', name, 'modules', p),
+          'This file is both overridden and deleted',
+          true,
+        );
+      }
+    }
+    const total = bundleBytes(b);
+    if (total > LIMITS.bundleBytes) {
+      add(
+        bptr,
+        `Bundle is ${total} bytes; the limit is ${LIMITS.bundleBytes}`,
+        true,
+      );
+    }
+    // R21: imports across bundles are not supported (hint, overlay bundles only).
+    const own = new Set(
+      Object.entries(modules)
+        .filter(([p, src]) => p.endsWith('.rego') && typeof src === 'string')
+        .map(([, src]) => packageOf(src))
+        .filter((p): p is string => !!p),
+    );
+    const vendor = ctx.vendorPackages?.(name) ?? null;
+    const inOverlay =
+      isPlainObject(overlay.policy_bundles) &&
+      isPlainObject((overlay.policy_bundles as PlainObject)[name]);
+    for (const [path, src] of Object.entries(modules)) {
+      if (!inOverlay || !path.endsWith('.rego') || typeof src !== 'string')
+        continue;
+      for (const imp of importedDataPackages(src)) {
+        const known = [...own, ...(vendor ?? [])];
+        const resolves = known.some(
+          (pkg) => imp === pkg || imp.startsWith(`${pkg}.`),
+        );
+        if (!resolves && (vendor !== null || !hasExtends)) {
+          add(
+            pointer('policy_bundles', name, 'modules', path),
+            `import data.${imp}: imports across bundles are not supported`,
+            false,
+          );
+        }
+      }
+    }
+  }
+  // Plugin references.
+  for (const [pname, plugin] of Object.entries(eff.plugins ?? {})) {
+    if (!isPlainObject(plugin) || !Array.isArray(plugin.policies)) continue;
+    const pols = plugin.policies as string[];
+    pols.forEach((e) => {
+      const b = typeof e === 'string' ? inlineBundleName(e) : null;
+      if (b && !isPlainObject(bundles[b])) {
+        add(
+          pointer('plugins', pname, 'policies'),
+          `${e} has no bundle named "${b}"`,
+          true,
+        );
+      }
+      if (b && isPlainObject(bundles[b])) {
+        const ext = (bundles[b] as PolicyBundleDoc).extends;
+        if (typeof ext === 'string' && pols.includes(ext)) {
+          add(
+            pointer('plugins', pname, 'policies'),
+            `Both the vendor bundle ${ext} and its customized copy ${e} are loaded`,
+            false,
+          );
+        }
+      }
+    });
+  }
+  return out;
+}
+
+/** Pointers of every string value equal to the report mask ("••••", R25). */
+export function maskedPointers(doc: unknown): string[] {
+  const out: string[] = [];
+  walkStrings('', doc, (ptr, s) => {
+    if (s === REDACTED_MASK) out.push(ptr);
+  });
+  return out;
 }
 
 export function hasBlocking(issues: ClientIssue[]): boolean {

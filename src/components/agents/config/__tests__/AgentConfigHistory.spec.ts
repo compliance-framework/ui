@@ -236,4 +236,45 @@ describe('AgentConfigHistory (U3)', () => {
       'No revisions yet.',
     );
   });
+  it('shows a failed View as an error, not as an empty overlay', async () => {
+    const { wrapper, getRevision } = mountHistory(makeApi());
+    await flushPromises();
+    getRevision.mockRejectedValueOnce(
+      new AgentConfigApiError({
+        kind: 'other',
+        status: 404,
+        message: 'revision not found',
+      }),
+    );
+    await row(wrapper, 5).find('[data-test="history-view"]').trigger('click');
+    await flushPromises();
+    expect(wrapper.find('[data-test="view-error"]').text()).toBe(
+      'revision not found',
+    );
+  });
+
+  it('dedupes rows when offsets shift between pages', async () => {
+    const api = makeApi({
+      listRevisions: vi
+        .fn()
+        .mockResolvedValueOnce({
+          ...revisionsPage1,
+          items: revisionsPage1.items.slice(0, 4),
+          totalPages: 2,
+        })
+        // A new revision shifted the offsets: r4 comes again.
+        .mockResolvedValueOnce({
+          ...revisionsPage1,
+          items: revisionsPage1.items.slice(3),
+          totalPages: 2,
+        }),
+    });
+    const { wrapper } = mountHistory(api);
+    await flushPromises();
+    await wrapper.find('[data-test="history-more"]').trigger('click');
+    await flushPromises();
+    expect(
+      wrapper.findAll('[data-rev]').map((r) => r.attributes('data-rev')),
+    ).toEqual(['7', '6', '5', '4', '3', '2', '1']);
+  });
 });

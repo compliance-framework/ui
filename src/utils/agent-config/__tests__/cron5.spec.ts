@@ -14,6 +14,8 @@ describe('validateCron5', () => {
     '@every 90s',
     '@every 1h30m',
     'CRON_TZ=UTC 0 3 * * *',
+    'TZ=Europe/Lisbon 0 3 * * *',
+    ' */5 * * * * ',
   ])('accepts %s', (expr) => {
     expect(validateCron5(expr)).toBeNull();
   });
@@ -32,6 +34,10 @@ describe('validateCron5', () => {
     'every night',
     '@often',
     '@every soon',
+    '@daily ',
+    ' @daily',
+    '@every  5m',
+    'TZ=Nowhere/Nope 0 3 * * *',
   ])('rejects %s', (expr) => {
     expect(validateCron5(expr)).not.toBeNull();
   });

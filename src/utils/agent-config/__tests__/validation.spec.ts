@@ -294,3 +294,118 @@ describe('byteSize', () => {
     expect(byteSize('••••')).toBe(12);
   });
 });
+
+describe('validateOverlayClientSide mirrors the API rules (self-review)', () => {
+  it('R59: problems already in the host file never block an unrelated edit', () => {
+    const bad: ConfigDoc = {
+      ...base,
+      policy_bundles: { x: { modules: { 'data.json': '{}' }, data: { a: 1 } } },
+    };
+    const issues = validateOverlayClientSide({ verbosity: 1 }, [bad]);
+    expect(
+      issues.find((i) => i.ptr === '/policy_bundles/x/data'),
+    ).toMatchObject({ blocking: false });
+    expect(hasBlocking(issues)).toBe(false);
+    // …but an overlay that introduces the same kind of problem still blocks.
+    const introduced = validateOverlayClientSide(
+      {
+        policy_bundles: {
+          y: { modules: { 'data.json': '{}' }, data: { a: 1 } },
+        },
+      },
+      [bad],
+    );
+    expect(
+      introduced.find((i) => i.ptr === '/policy_bundles/y/data')?.blocking,
+    ).toBe(true);
+  });
+
+  it('standalone (no known base): a plugin without a source is only a hint', () => {
+    const issues = validateOverlayClientSide(
+      { plugins: { ssh: { config: { port: '2' } } } },
+      [],
+    );
+    expect(issues.find((i) => i.ptr === '/plugins/ssh/source')).toMatchObject({
+      blocking: false,
+    });
+  });
+
+  it('source: null on a file plugin blocks when a base is known', () => {
+    const issues = validateOverlayClientSide(
+      { plugins: { ssh: { source: null } } } as unknown as OverlayDoc,
+      [base],
+    );
+    expect(issues.find((i) => i.ptr === '/plugins/ssh/source')?.blocking).toBe(
+      true,
+    );
+  });
+
+  it('treats the forbidden env prefix case-insensitively', () => {
+    const i = validateOverlayClientSide(
+      {
+        plugins: {
+          ssh: { config: { s: '${env:ccf_api_auth_client_secret}' } },
+        },
+      },
+      [base],
+    );
+    expect(i.some((x) => x.blocking && /not allowed/.test(x.message))).toBe(
+      true,
+    );
+  });
+
+  it('interval: trims surrounding spaces, rejects negatives', () => {
+    expect(
+      validateOverlayClientSide({ agent_evidence: { interval: ' 5m ' } }, [
+        base,
+      ]),
+    ).toEqual([]);
+    expect(
+      validateOverlayClientSide({ agent_evidence: { interval: '-5m' } }, [
+        base,
+      ])[0],
+    ).toMatchObject({
+      blocking: true,
+      message: 'The interval must not be negative',
+    });
+  });
+
+  it('blocks an empty extends and data files that do not parse', () => {
+    const e = validateOverlayClientSide(
+      {
+        policy_bundles: {
+          b: { extends: ' ', modules: { 'a.rego': 'package a' } },
+        },
+      },
+      [base],
+    );
+    expect(e.find((i) => i.ptr === '/policy_bundles/b/extends')?.blocking).toBe(
+      true,
+    );
+    const d = validateOverlayClientSide(
+      {
+        policy_bundles: {
+          b: { modules: { 'data.json': '{nope', 'x/data.yaml': 'a: [1' } },
+        },
+      },
+      [base],
+    );
+    expect(
+      d.filter((i) => i.blocking && /does not parse/.test(i.message)),
+    ).toHaveLength(2);
+  });
+
+  it('only coerces booleans and safe integers; other numbers must be quoted', () => {
+    const o = {
+      plugins: { ssh: { config: { v: 1.1, big: 2 ** 60, ok: 22 } } },
+    } as unknown as OverlayDoc;
+    const c = coerceStringMaps(o);
+    expect(c.coerced).toEqual(['/plugins/ssh/config/ok']);
+    const issues = validateOverlayClientSide(c.overlay, [base]);
+    expect(
+      issues
+        .filter((i) => i.blocking && /Quote this value/.test(i.message))
+        .map((i) => i.ptr),
+    ).toEqual(['/plugins/ssh/config/v', '/plugins/ssh/config/big']);
+  });
+});

@@ -103,25 +103,25 @@ const sources = computed(() =>
   plugin.value ? props.sourcesOf(plugin.value) : [],
 );
 
+/** Defaults for a plugin: its first non-inline source and a free "<plugin>-custom" name. */
+function resetFor(p: string) {
+  source.value = sources.value[0] ?? '';
+  name.value = p
+    ? uniqueName(sanitizeBundleName(`${p}-custom`), props.taken)
+    : '';
+}
 watch(
   () => props.visible,
   (v) => {
     if (!v) return;
     plugin.value = pluginsWithSources.value[0] ?? '';
     swap.value = true;
+    // The plugin watcher does not fire when the same plugin is preselected again.
+    resetFor(plugin.value);
   },
   { immediate: true },
 );
-watch(
-  plugin,
-  (p) => {
-    source.value = sources.value[0] ?? '';
-    name.value = p
-      ? uniqueName(sanitizeBundleName(`${p}-custom`), props.taken)
-      : '';
-  },
-  { immediate: true },
-);
+watch(plugin, resetFor);
 
 const nameError = computed(() => {
   if (!NAME_RE.test(name.value))

@@ -39,6 +39,8 @@ export function useAgentConfig(agentId: Ref<string>, api: AgentConfigApi) {
   const appliedOverlay = shallowRef<OverlayDoc | null>(null);
   const instanceLoading = ref(false);
   const instanceError = ref<string | null>(null);
+  /** The applied revision's overlay could not be loaded; provenance uses the desired one. */
+  const appliedOverlayFallback = ref(false);
   const status = ref<AgentConfigStatus>('idle');
   const error = ref<string | null>(null);
 
@@ -55,6 +57,12 @@ export function useAgentConfig(agentId: Ref<string>, api: AgentConfigApi) {
   );
   const syncSummary = computed(() =>
     summarizeSync(instances.value, instanceStates.value),
+  );
+  /** The loaded detail belongs to the selected id (false while switching instances). */
+  const selectedInstanceCurrent = computed(
+    () =>
+      !!selectedInstance.value &&
+      selectedInstance.value.instanceId === selectedInstanceId.value,
   );
   const selectedState = computed(
     () =>
@@ -109,16 +117,21 @@ export function useAgentConfig(agentId: Ref<string>, api: AgentConfigApi) {
     try {
       const detail = await getInstanceDetail(id, true);
       if (seq !== selectSeq) return;
-      selectedInstance.value = detail;
       let overlay: OverlayDoc = {};
+      let fallback = false;
       try {
         overlay = await resolveAppliedOverlay(detail);
       } catch {
         // Provenance degrades to the desired overlay when the applied one can't be loaded.
         overlay = config.value?.overlay ?? {};
+        fallback = true;
       }
       if (seq !== selectSeq) return;
+      // Publish the detail and the overlay of the revision it runs together, so the views
+      // never pair one instance's config with another's provenance.
+      selectedInstance.value = detail;
       appliedOverlay.value = overlay;
+      appliedOverlayFallback.value = fallback;
     } catch (e) {
       if (seq !== selectSeq) return;
       selectedInstance.value = null;
@@ -208,9 +221,12 @@ export function useAgentConfig(agentId: Ref<string>, api: AgentConfigApi) {
   async function load(): Promise<void> {
     status.value = 'loading';
     error.value = null;
+    const seq = loadSeq + 1;
     try {
       await fetchAll(false);
     } catch (e) {
+      // A newer load/refresh already superseded this one.
+      if (seq !== loadSeq) return;
       if (isAgentConfigApiError(e) && e.kind === 'unsupported') {
         status.value = 'unsupported';
       } else {
@@ -222,9 +238,11 @@ export function useAgentConfig(agentId: Ref<string>, api: AgentConfigApi) {
 
   /** After save/revert: reload and keep the selected instance. */
   async function refresh(): Promise<void> {
+    const seq = loadSeq + 1;
     try {
       await fetchAll(true);
     } catch (e) {
+      if (seq !== loadSeq) return;
       error.value = messageOf(e, 'Failed to refresh the agent configuration.');
       if (isAgentConfigApiError(e) && e.kind === 'unsupported')
         status.value = 'unsupported';
@@ -239,8 +257,10 @@ export function useAgentConfig(agentId: Ref<string>, api: AgentConfigApi) {
     instanceStates,
     selectedInstanceId,
     selectedInstance,
+    selectedInstanceCurrent,
     selectedState,
     appliedOverlay,
+    appliedOverlayFallback,
     desiredRevision,
     syncSummary,
     status,
