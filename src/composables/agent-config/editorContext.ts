@@ -27,6 +27,8 @@ export interface EditorContext {
   placeholderBase: ComputedRef<ConfigDoc | null>;
   /** All known bases (reported instances with a detail). */
   bases: ComputedRef<ConfigDoc[]>;
+  /** The bases a save is validated against (API ValidationBases); optional for callers. */
+  validationBases?: ComputedRef<ConfigDoc[]>;
   lastPreview: Ref<ConfigPreview | null>;
   /** Policy errors from the last failed save (422), for Rego diagnostics. */
   savePolicyErrors: Ref<PolicyError[]>;

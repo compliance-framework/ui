@@ -204,7 +204,9 @@ export function useBundleOps() {
     setData,
     /** Sources every known base already uses (R58: allowed `extends` for policy-only users). */
     usedSourcesEverywhere: computed(() => {
-      const bases = ctx.bases.value.length ? ctx.bases.value : [{}];
+      // Same bases as the API's PolicyOnlyChange (R58): the validation set.
+      const set = ctx.validationBases?.value ?? ctx.bases.value;
+      const bases = set.length ? set : [{}];
       const sets = bases.map((base) => usedSources(base));
       return new Set(
         [...sets[0]].filter((src) => sets.every((set) => set.has(src))),

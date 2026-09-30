@@ -393,6 +393,7 @@ const ctx: EditorContext = {
   placeholderInstanceId,
   placeholderBase,
   bases,
+  validationBases,
   lastPreview: preview.lastPreview,
   savePolicyErrors,
 };
@@ -430,9 +431,13 @@ let closing = false;
 const originalNonEmpty = computed(
   () => Object.keys(draft.original.value).length > 0,
 );
+// Wait for the instance files: validation and the review diff need them.
 const canReview = computed(
   () =>
-    draft.isDirty.value && !draft.yamlError.value && blockingCount.value === 0,
+    draft.isDirty.value &&
+    !draft.yamlError.value &&
+    blockingCount.value === 0 &&
+    !props.detailsLoading,
 );
 
 /**

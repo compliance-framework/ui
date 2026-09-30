@@ -339,4 +339,17 @@ describe('AgentConfigEditorDrawer (U2)', () => {
       wrapper.find('[data-test="save-config"]').attributes('disabled'),
     ).toBeUndefined();
   });
+  it('keeps Review disabled while the instance files are loading', async () => {
+    const wrapper = mountDrawer();
+    await wrapper.setProps({ detailsLoading: true });
+    (wrapper.vm as unknown as Exposed).draft.set('/verbosity', 2);
+    await flushPromises();
+    expect(
+      wrapper.find('[data-test="review-changes"]').attributes('disabled'),
+    ).toBeDefined();
+    await wrapper.setProps({ detailsLoading: false });
+    expect(
+      wrapper.find('[data-test="review-changes"]').attributes('disabled'),
+    ).toBeUndefined();
+  });
 });
