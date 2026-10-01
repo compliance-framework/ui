@@ -326,12 +326,15 @@ describe('R79: plugins built on an agent library without inline policies', () =>
     expect(
       dialog.find('[data-test="inline-blocked-ubuntu-packages"]').text(),
     ).toContain('plugin ubuntu-packages (agent lib v0.7.1)');
-    // An existing assignment can still be removed.
+    // An existing assignment can still be removed, and says why it should be.
     expect(
       dialog
         .find('[data-test="assign-check-local-ssh"]')
         .attributes('disabled'),
     ).toBeUndefined();
+    expect(
+      dialog.find('[data-test="inline-blocked-local-ssh"]').text(),
+    ).toContain('agents reject this assignment; unassign it');
   });
 
   it('blocks Review & save while the draft gives an unsupported plugin inline policies', async () => {

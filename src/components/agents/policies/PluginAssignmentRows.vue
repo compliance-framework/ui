@@ -40,11 +40,14 @@
         >
       </label>
       <p
-        v-if="blocked(p)"
+        v-if="p.inlineBlocked && (blocked(p) || model[p.name]?.assigned)"
         class="mt-1 ml-6 text-xs text-red-700 dark:text-red-300"
         :data-test="`inline-blocked-${p.name}`"
       >
-        <i class="pi pi-ban mr-1" />{{ blocked(p) }}
+        <i class="pi pi-ban mr-1" />{{ p.inlineBlocked
+        }}<template v-if="!blocked(p)">
+          · agents reject this assignment; unassign it</template
+        >
       </p>
       <p
         v-else-if="p.inlineWarning && model[p.name]?.assigned"
