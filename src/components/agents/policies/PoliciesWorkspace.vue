@@ -295,6 +295,7 @@ import {
   modulePackage,
   newModulePolicyId,
   pluginPathFor,
+  vendorPluginPathFor,
   policyIdRules,
   streamIdentity,
   type StreamIdentity,
@@ -545,10 +546,13 @@ function ensureVendorText(digest: string, path: string) {
     .catch(() => rememberVendorText(digest, path, null));
 }
 
-/** The plugin path of the source bundle `name` extends (R77), or null. */
+/**
+ * The plugin path of the source bundle `name` extends (R77), or null: a report entry loading
+ * it directly, else the inline bundle's reported `extends.plugin-path` (R78, after the swap).
+ */
 function vendorPluginPath(name: string): string | null {
   const ext = ops.extendsOf(name);
-  return ext ? pluginPathFor(ext, ws.reportSets.value) : null;
+  return ext ? vendorPluginPathFor(ext, name, ws.reportSets.value) : null;
 }
 
 /** Each authored policy module's stream identity, per bundle. */

@@ -18,7 +18,8 @@ import type {
   PluginReport,
 } from '@/types/agent-config';
 import { isPlainObject, mergePatch } from './merge-patch';
-import { hasAt, pointer } from './json-pointer';
+import { diffConfigs } from './config-diff';
+import { parsePointer, pointer } from './json-pointer';
 import { inlineBundleName } from './validation';
 
 /** pluginlib.MinInlinePolicy (agent#95): the first agent library that honours policy_id. */
@@ -101,6 +102,19 @@ function inlineEntries(doc: ConfigDoc, name: string): string[] {
   });
 }
 
+/**
+ * The agent's touchedByOverlay (cmd/config.go): `ptr` and one of the `touched` pointers are
+ * equal or one is a segment-wise prefix of the other.
+ */
+function touchedAt(ptr: string, touched: string[]): boolean {
+  const p = parsePointer(ptr);
+  return touched.some((o) => {
+    const t = parsePointer(o);
+    const n = Math.min(p.length, t.length);
+    return p.slice(0, n).every((tok, i) => tok === t[i]);
+  });
+}
+
 export interface InlineGateIssue {
   plugin: string;
   instanceId: string;
@@ -120,6 +134,10 @@ export interface InlineGateIssue {
  * rejects the revision) when the library is too old AND the overlay brought the plugin and
  * its inline policies together: it changed the plugin's source, gave it an inline entry its
  * file does not have, or changed one of its inline bundles. Otherwise a warning.
+ *
+ * "Changed" is per instance and relative to that instance's file, as on the agent
+ * (cmd/reconciler.go overlayTouched = DiffJSON(file, file ⊕ overlay), matched segment-wise by
+ * touchedByOverlay): an overlay that re-states the file's value changes nothing there.
  */
 export function inlineGateIssues(
   overlay: OverlayDoc,
@@ -130,6 +148,9 @@ export function inlineGateIssues(
     if (!inst.plugins?.length) continue;
     const base = inst.base ?? {};
     const eff = mergePatch<ConfigDoc>(base, overlay);
+    let touched: string[] | null = null;
+    const changed = (ptr: string) =>
+      touchedAt(ptr, (touched ??= diffConfigs(base, eff).map((d) => d.path)));
     for (const name of Object.keys(eff.plugins ?? {}).sort()) {
       const plugin = pluginOf(eff, name);
       if (!plugin || plugin.enabled === false) continue;
@@ -140,9 +161,9 @@ export function inlineGateIssues(
       const bundles = entries.map((e) => inlineBundleName(e)!);
       const fileEntries = pluginOf(base, name)?.policies ?? [];
       const introduced =
-        hasAt(overlay, pointer('plugins', name, 'source')) ||
+        changed(pointer('plugins', name, 'source')) ||
         entries.some((e) => !fileEntries.includes(e)) ||
-        bundles.some((b) => hasAt(overlay, pointer('policy_bundles', b)));
+        bundles.some((b) => changed(pointer('policy_bundles', b)));
       out.push({
         plugin: name,
         instanceId: inst.instanceId,

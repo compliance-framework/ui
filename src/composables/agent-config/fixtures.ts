@@ -321,6 +321,10 @@ function redact(doc: ConfigDoc): ConfigDoc {
   return out;
 }
 
+/** R78: the reported `extends.plugin-path` of inline:ssh-tuned (api#465). */
+export const FIXTURE_SSH_POLICIES_PLUGIN_PATH =
+  '.compliance-framework/policies/ghcr.io/compliance-framework/plugin-local-ssh-policies/v1.0.0';
+
 export function detailFor(
   s: AgentInstanceSummary,
   overlay: OverlayDoc,
@@ -343,6 +347,8 @@ export function detailFor(
           source: SSH_POLICIES,
           digest: 'tree:sha256:bb22',
           artifactDigest: FIXTURE_ARTIFACTS.sshPolicies,
+          // R78: where plugins would load the vendor source (it is replaced in every plugin).
+          pluginPath: FIXTURE_SSH_POLICIES_PLUGIN_PATH,
           files: [
             {
               path: 'banner.rego',

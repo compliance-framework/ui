@@ -9,6 +9,7 @@ import {
   joinPath,
   modulePackage,
   pluginPathFor,
+  vendorPluginPathFor,
   policyIdRules,
   seedPath,
   streamIdentity,
@@ -128,6 +129,44 @@ describe('continuity policy_id (R77 correction)', () => {
     expect(
       pluginPathFor('src', [[{ source: 'o', digest: 'd', files: [] }]]),
     ).toBe(null);
+  });
+});
+
+describe('vendorPluginPathFor (R78)', () => {
+  const ext = (bundle: string, source: string, pluginPath?: string) => ({
+    source: `inline:${bundle}`,
+    digest: 'd',
+    files: [],
+    extends: { source, digest: 'v', files: [], pluginPath },
+  });
+
+  it('prefers a report entry loading the source directly', () => {
+    expect(
+      vendorPluginPathFor('src', 'b', [
+        [ext('b', 'src', 'from-extends')],
+        [{ source: 'src', digest: 'd', files: [], pluginPath: './x' }],
+      ]),
+    ).toBe('./x');
+  });
+
+  it("falls back to the bundle's extends.plugin-path, then another bundle's", () => {
+    expect(
+      vendorPluginPathFor('src', 'b', [
+        [ext('a', 'src', 'a-path'), ext('b', 'src', './own/')],
+      ]),
+    ).toBe('./own/');
+    expect(vendorPluginPathFor('src', 'b', [[ext('a', 'src', 'a-path')]])).toBe(
+      'a-path',
+    );
+  });
+
+  it('ignores an extends of another source, and knows nothing without one', () => {
+    expect(
+      vendorPluginPathFor('src', 'b', [[ext('b', 'other', 'x')]]),
+    ).toBeNull();
+    expect(
+      vendorPluginPathFor('src', 'b', [[ext('b', 'src')], null]),
+    ).toBeNull();
   });
 });
 

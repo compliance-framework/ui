@@ -177,6 +177,13 @@ export interface PolicyBundleReport {
     files: PolicyFileReport[];
     /** R62: artifact of the vendor tree alone (GET /api/artifacts/{digest}/files). */
     artifactDigest?: string;
+    /**
+     * R78 (api#465 `extends.plugin-path`): the literal path the agent would pass to plugins
+     * for the extends source if a plugin loaded it directly. Keeps a vendor file's evidence
+     * stream reachable after the inline bundle replaced the source in every plugin (no
+     * `policy-bundles[]` entry names the source any more). Absent from older agents.
+     */
+    pluginPath?: string;
   } | null;
   files: PolicyFileReport[];
   /**

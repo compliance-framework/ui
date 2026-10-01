@@ -132,6 +132,79 @@ describe('inlineGateIssues', () => {
     expect(issue).toMatchObject({ plugin: 'ssh', blocking: true });
   });
 
+  // Like the agent (overlayTouched = DiffJSON(file, file ⊕ overlay)), "introduced" is
+  // relative to each instance's file: re-stating the file's value changes nothing.
+  const fileB: ConfigDoc = {
+    plugins: { ssh: { source: OLD, policies: ['inline:file-b'] } },
+    policy_bundles: { 'file-b': { modules: { 'a.rego': 'package a' } } },
+  };
+
+  it("only warns when the overlay re-states the file's source and bundle", () => {
+    const restate: OverlayDoc = {
+      plugins: { ssh: { source: OLD, policies: ['inline:file-b'] } },
+      policy_bundles: { 'file-b': { modules: { 'a.rego': 'package a' } } },
+    };
+    const [w] = inlineGateIssues(restate, [
+      inst(reports('unsupported'), fileB),
+    ]);
+    expect(w).toMatchObject({ plugin: 'ssh', blocking: false });
+  });
+
+  it('blocks when the re-stated bundle or source differs from the file', () => {
+    const bundle: OverlayDoc = {
+      policy_bundles: { 'file-b': { modules: { 'a.rego': 'package a2' } } },
+    };
+    expect(
+      inlineGateIssues(bundle, [inst(reports('unsupported'), fileB)])[0]
+        .blocking,
+    ).toBe(true);
+    const r: PluginReport[] = [
+      ...reports('unsupported'),
+      {
+        name: 'x',
+        source: NEW,
+        libVersion: 'v0.1.9',
+        inlinePolicies: 'unsupported',
+      },
+    ];
+    expect(
+      inlineGateIssues({ plugins: { ssh: { source: NEW } } }, [
+        inst(r, fileB),
+      ])[0].blocking,
+    ).toBe(true);
+  });
+
+  it("decides per instance against that instance's file", () => {
+    const fileNew: ConfigDoc = {
+      ...fileB,
+      plugins: { ssh: { source: NEW, policies: ['inline:file-b'] } },
+    };
+    const r: PluginReport[] = [
+      {
+        name: 'ssh',
+        source: OLD,
+        libVersion: 'v0.1.9',
+        inlinePolicies: 'unsupported',
+      },
+      {
+        name: 'x',
+        source: NEW,
+        libVersion: 'v0.1.9',
+        inlinePolicies: 'unsupported',
+      },
+    ];
+    // The pin matches a's file (no change there) and changes b's source.
+    const pin: OverlayDoc = { plugins: { ssh: { source: OLD } } };
+    const issues = inlineGateIssues(pin, [
+      inst(r, fileB, 'a'),
+      inst(r, fileNew, 'b'),
+    ]);
+    expect(issues.map((i) => [i.instanceId, i.blocking])).toEqual([
+      ['a', false],
+      ['b', true],
+    ]);
+  });
+
   it('warns, never blocks, for an unknown library', () => {
     const [w] = inlineGateIssues(assignOverlay, [inst(reports('unknown', ''))]);
     expect(w.blocking).toBe(false);

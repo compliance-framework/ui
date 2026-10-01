@@ -47,18 +47,42 @@ const SSH_SRC = FIXTURE_ARTIFACT_SOURCES[FIXTURE_ARTIFACTS.sshPolicies];
 /** An un-cleaned local plugin path: the continuity id must keep it literally (R77). */
 const VENDOR_PATH = './policies/ssh/';
 
+/**
+ * Sets (or, when undefined, drops) the inline bundles' reported `extends.plugin-path` (R78):
+ * the tests opt in to it, so "no plugin path" stays the default.
+ */
+function withExtendsPath(
+  d: AgentInstanceDetail,
+  path: string | undefined,
+): AgentInstanceDetail {
+  return {
+    ...d,
+    policyBundles: d.policyBundles.map((b) => {
+      if (!b.extends) return b;
+      const { pluginPath: _drop, ...ext } = b.extends;
+      void _drop;
+      return {
+        ...b,
+        extends: path === undefined ? ext : { ...ext, pluginPath: path },
+      };
+    }),
+  };
+}
+
 function api(
   opts: {
     pluginPath?: string;
+    /** The inline bundle's `extends.plugin-path` (the source was swapped out everywhere). */
+    extendsPluginPath?: string;
     plugins?: PluginReport[];
     sources?: Record<string, string>;
   } = {},
 ): AgentConfigApi {
   const detailA: AgentInstanceDetail = {
-    ...instanceDetailA,
+    ...withExtendsPath(instanceDetailA, opts.extendsPluginPath),
     plugins: opts.plugins ?? null,
     policyBundles: [
-      ...instanceDetailA.policyBundles,
+      ...withExtendsPath(instanceDetailA, opts.extendsPluginPath).policyBundles,
       ...(opts.pluginPath
         ? [
             {
@@ -84,7 +108,10 @@ function api(
     getInstance: vi.fn().mockImplementation(async (_a: string, id: string) => {
       if (id === instanceIds.a) return detailA;
       const s = instancesMixed.items.find((i) => i.instanceId === id)!;
-      return detailFor(s, configRev7.overlay ?? {});
+      return withExtendsPath(
+        detailFor(s, configRev7.overlay ?? {}),
+        opts.extendsPluginPath,
+      );
     }),
     getArtifactFile: vi
       .fn()
@@ -163,6 +190,34 @@ describe('R78: Override continues the vendor evidence stream', () => {
     expect(wrapper.find('[data-test="stream-fork"]').exists()).toBe(false);
   });
 
+  it("after the swap uses the inline bundle's extends.plugin-path, literally", async () => {
+    // No policy-bundles[] entry names the vendor source any more (the inline bundle replaced
+    // it in every plugin): the continuity id comes from extends.plugin-path (api#465).
+    const { wrapper, ws } = await mountWorkspace(
+      api({ extendsPluginPath: VENDOR_PATH }),
+    );
+    await override(wrapper, 'root_login.rego');
+    expect(modules(ws)['root_login.rego']).toContain(
+      'import rego.v1\n\npolicy_id := "./policies/ssh//root_login.rego"\n\ntitle := ',
+    );
+    expect(
+      row(wrapper, 'root_login.rego')
+        .find('[data-test="file-stream"]')
+        .attributes('data-stream'),
+    ).toBe('continues');
+    expect(wrapper.find('[data-test="stream-fork"]').exists()).toBe(false);
+  });
+
+  it('prefers a report entry loading the vendor source directly over extends.plugin-path', async () => {
+    const { wrapper, ws } = await mountWorkspace(
+      api({ pluginPath: VENDOR_PATH, extendsPluginPath: 'other/path' }),
+    );
+    await override(wrapper, 'root_login.rego');
+    expect(modules(ws)['root_login.rego']).toContain(
+      'policy_id := "./policies/ssh//root_login.rego"',
+    );
+  });
+
   it('keeps a policy_id the vendor module already declares', async () => {
     const declared = SSH_SRC['root_login.rego'].replace(
       'import rego.v1\n',
@@ -183,7 +238,7 @@ describe('R78: Override continues the vendor evidence stream', () => {
     ).toBe('continues');
   });
 
-  it('without a reported plugin path inserts nothing and says the stream is new', async () => {
+  it('without a plugin path or an extends.plugin-path inserts nothing and says the stream is new', async () => {
     const { wrapper, ws } = await mountWorkspace(api());
     await override(wrapper, 'root_login.rego');
     expect(modules(ws)['root_login.rego']).toBe(SSH_SRC['root_login.rego']);

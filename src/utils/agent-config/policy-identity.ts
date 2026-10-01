@@ -119,6 +119,31 @@ export function pluginPathFor(
   return null;
 }
 
+/**
+ * The plugin path a continuity policy_id of inline bundle `bundle` builds on for the source
+ * `source` it extends (R77/R78), or null. In order: the `plugin-path` of a report entry that
+ * loads the source directly; else the `extends.plugin-path` of the bundle's own report entry
+ * (api#465: where plugins would load the source, reported even after the bundle replaced it
+ * in every plugin); else that of any other inline bundle extending the same source.
+ */
+export function vendorPluginPathFor(
+  source: string,
+  bundle: string,
+  reportSets: (PolicyBundleReport[] | null | undefined)[],
+): string | null {
+  const direct = pluginPathFor(source, reportSets);
+  if (direct) return direct;
+  const all = reportSets.flatMap((r) => r ?? []);
+  const ext = (r: PolicyBundleReport) =>
+    r.extends?.source === source && typeof r.extends.pluginPath === 'string'
+      ? r.extends.pluginPath
+      : '';
+  const own = `inline:${bundle}`;
+  for (const r of all) if (r.source === own && ext(r)) return ext(r);
+  for (const r of all) if (ext(r)) return ext(r);
+  return null;
+}
+
 // ---- Reading a module (line based) ----
 
 /** Removes a trailing `# comment` outside double-quoted strings. */
