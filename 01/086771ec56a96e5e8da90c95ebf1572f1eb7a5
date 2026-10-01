@@ -55,3 +55,6 @@ Replies:
 **lisa implementation guidance:** Fix. Delete expectNoStreamUi and the absence-only cases in PoliciesIdentity.spec.ts along with the R79 block; keep only cases that assert real behaviour.
 
 <!-- lisa-guidance-posted -->
+
+lisa-design:
+- R88-R91 (owner, design 13.7): no client-side inline-policy gate (plugin-compat mirror deleted; lib badge neutral 'agent vX'); no continuity fields (plugin-path, extends.plugin-path, inline-policies); UI validation = API preview (validation.ts client-only: mapping, masked values, scalar quoting, data-file parse, import hint); Review & save waits for the live preview (usePreview.pending) and is blocked by its errors; no ?fixtures mode; no bundle age.
