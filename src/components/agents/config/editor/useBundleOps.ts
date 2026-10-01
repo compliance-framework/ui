@@ -7,6 +7,7 @@ import { pointer } from '@/utils/agent-config/json-pointer';
 import { isPlainObject } from '@/utils/agent-config/merge-patch';
 import { NAME_RE, isInlineSource } from '@/utils/agent-config/validation';
 import { usedSources } from '@/utils/agent-config/policy-files';
+import { moduleTemplate } from '@/utils/agent-config/rego-template';
 import { useEditor } from './useEditor';
 
 /** Name sanitisation for "Customize a bundle": lowercase, [^a-z0-9_-] → '-', ≤ 63 chars. */
@@ -33,9 +34,22 @@ function snake(s: string): string {
   return s.replace(/[^A-Za-z0-9_]/g, '_');
 }
 
-export function regoSkeleton(pkg: string): string {
-  return `package ${pkg}\n\nimport rego.v1\n`;
+/** A default bundle name for a copy of `source`: "<last path segment>-custom". */
+export function bundleNameForSource(
+  source: string,
+  taken: Set<string>,
+): string {
+  const last =
+    source
+      .replace(/[:@][^/]*$/, '')
+      .split('/')
+      .filter(Boolean)
+      .pop() ?? 'bundle';
+  return uniqueName(sanitizeBundleName(`${last}-custom`), taken);
 }
+
+/** How "Assign to plugins" wires an extends bundle (R66). */
+export type AssignMode = 'replace' | 'alongside';
 
 export function useBundleOps() {
   const { draft, ctx } = useEditor();
@@ -98,37 +112,50 @@ export function useBundleOps() {
   }
 
   // ---- Bundles ----
-  function createBundle(
-    name: string,
-    opts: { extends?: string; usedBy?: string[] },
-  ) {
+  /** A new bundle: extends `source` (nothing overridden yet) or one template module. */
+  function createBundle(name: string, opts: { extends?: string } = {}) {
     const doc: PolicyBundleDoc = opts.extends
       ? { extends: opts.extends }
       : {
           modules: {
-            'main.rego': regoSkeleton(`compliance_framework.${snake(name)}`),
+            'main.rego': moduleTemplate(`compliance_framework.${snake(name)}`),
           },
         };
     draft.set(pointer('policy_bundles', name), doc);
-    for (const p of opts.usedBy ?? []) wire(p, name, true);
   }
 
-  /** extends S, plus (optionally) the R22 swap of S → inline:<name> at the same index. */
-  function customizeBundle(
-    plugin: string,
-    source: string,
-    name: string,
-    swap: boolean,
-  ) {
-    draft.set(pointer('policy_bundles', name), { extends: source });
-    if (swap) {
-      const cur = effectivePolicies(plugin);
-      const idx = cur.indexOf(source);
-      if (idx >= 0) {
-        cur[idx] = `inline:${name}`;
-        draft.set(pointer('plugins', plugin, 'policies'), cur);
-      }
-    }
+  /** The source bundle `name` extends in the draft, or null. */
+  function extendsOf(name: string): string | null {
+    const ext = bundles.value[name]?.extends;
+    return typeof ext === 'string' && ext ? ext : null;
+  }
+
+  /**
+   * R66: wire inline:<name> into `plugin`. For a bundle that extends S and a plugin that loads
+   * S, "replace" swaps S for inline:<name> at the same index (R22, allowed for policy-only
+   * users) so the vendor packages are not evaluated twice; "alongside" appends.
+   */
+  function assign(plugin: string, name: string, mode: AssignMode = 'replace') {
+    const ref = `inline:${name}`;
+    const cur = effectivePolicies(plugin);
+    if (cur.includes(ref)) return;
+    const ext = extendsOf(name);
+    const idx = ext ? cur.indexOf(ext) : -1;
+    if (mode === 'replace' && idx >= 0) cur[idx] = ref;
+    else cur.push(ref);
+    draft.set(pointer('plugins', plugin, 'policies'), cur);
+  }
+
+  /** Unwire inline:<name>; a swapped bundle gives its place back to the source it extends. */
+  function unassign(plugin: string, name: string) {
+    const ref = `inline:${name}`;
+    const cur = effectivePolicies(plugin);
+    const idx = cur.indexOf(ref);
+    if (idx < 0) return;
+    const ext = extendsOf(name);
+    if (ext && !cur.includes(ext)) cur[idx] = ext;
+    else cur.splice(idx, 1);
+    draft.set(pointer('plugins', plugin, 'policies'), cur);
   }
 
   function deleteBundle(name: string) {
@@ -193,7 +220,9 @@ export function useBundleOps() {
     usedBy,
     wire,
     createBundle,
-    customizeBundle,
+    extendsOf,
+    assign,
+    unassign,
     deleteBundle,
     resetBundle,
     setModule,
@@ -214,6 +243,17 @@ export function useBundleOps() {
     }),
     nonInlineSources: (plugin: string) =>
       effectivePolicies(plugin).filter((s) => !isInlineSource(s)),
+    /** Non-inline policy sources the draft's plugins load → the plugins loading each. */
+    sourceUsage: computed(() => {
+      const out = new Map<string, string[]>();
+      for (const p of pluginNames.value) {
+        for (const src of effectivePolicies(p)) {
+          if (isInlineSource(src)) continue;
+          out.set(src, [...(out.get(src) ?? []), p]);
+        }
+      }
+      return out;
+    }),
     validName: (n: string) => NAME_RE.test(n) && !takenNames.value.has(n),
   };
 }

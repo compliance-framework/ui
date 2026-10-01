@@ -434,6 +434,17 @@ const authenticatedRoutes = [
     },
   },
   {
+    // R68: the full-page policy workspace of one agent. Readable with agent:read; editing
+    // needs agent:configure or agent:configure-policy (checked in the view, R58/R61).
+    path: '/admin/agents/:id/policies',
+    name: 'admin-agent-policies',
+    component: () => import('../views/admin/AgentPoliciesView.vue'),
+    meta: {
+      requiresAuth: true,
+      permission: { resource: RESOURCES.AGENT, action: ACTIONS.READ },
+    },
+  },
+  {
     path: '/admin/notifications',
     name: 'admin-notifications',
     redirect: { name: 'admin-diagnostics-notifications' },

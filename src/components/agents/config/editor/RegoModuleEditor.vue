@@ -16,8 +16,8 @@
       :language="language"
       :readonly="readonly"
       :diagnostics="editorDiagnostics"
-      min-height="200px"
-      max-height="60vh"
+      :min-height="minHeight"
+      :max-height="maxHeight"
       :label="`${bundle}/${path}`"
       @update:model-value="$emit('update:modelValue', $event)"
     />
@@ -31,6 +31,9 @@
             : 'text-amber-700 dark:text-amber-300'
         "
       >
+        <span v-if="d.code" class="mr-1 font-medium">
+          <CodeLabel :labels="POLICY_ERROR_CODE_LABELS" :code="d.code" />:
+        </span>
         {{ d.message }}
       </li>
     </ul>
@@ -43,14 +46,21 @@ import { CodeEditor, type EditorDiagnostic } from '@/components/code-editor';
 import type { PolicyError } from '@/types/agent-config';
 import { byteSize, LIMITS } from '@/utils/agent-config/validation';
 import { humanBytes } from '@/utils/agent-config/display';
+import CodeLabel from '../CodeLabel.vue';
+import { POLICY_ERROR_CODE_LABELS } from '../constants';
 
-const props = defineProps<{
-  bundle: string;
-  path: string;
-  modelValue: string;
-  diagnostics: PolicyError[];
-  readonly?: boolean;
-}>();
+const props = withDefaults(
+  defineProps<{
+    bundle: string;
+    path: string;
+    modelValue: string;
+    diagnostics: PolicyError[];
+    readonly?: boolean;
+    minHeight?: string;
+    maxHeight?: string;
+  }>(),
+  { readonly: false, minHeight: '200px', maxHeight: '60vh' },
+);
 defineEmits<{ 'update:modelValue': [value: string] }>();
 
 const language = computed(() =>
@@ -69,7 +79,8 @@ const editorDiagnostics = computed<EditorDiagnostic[]>(() =>
     .map((d) => ({
       row: d.row!,
       col: d.col,
-      message: d.message,
+      // R63: the code leads the marker text so contract problems read clearly.
+      message: d.code ? `[${d.code}] ${d.message}` : d.message,
       severity: d.severity,
     })),
 );
