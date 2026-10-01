@@ -75,9 +75,10 @@
       <p
         v-if="p.assigned && !model[p.name]?.assigned"
         class="mt-1 ml-6 text-xs text-gray-500 dark:text-slate-400"
+        :data-test="`unassign-hint-${p.name}`"
       >
         Unassigning
-        <template v-if="source && !p.usesSource"
+        <template v-if="source && p.restoresSource"
           >puts <code class="font-mono">{{ source }}</code> back in its
           place.</template
         ><template v-else>removes the reference.</template>
@@ -99,6 +100,8 @@ export interface AssignmentPlugin {
   usesSource: boolean;
   /** inline:<bundle> is already in the plugin's policies. */
   assigned: boolean;
+  /** Unassigning undoes a swap and puts the source back (else it only removes the ref). */
+  restoresSource?: boolean;
 }
 
 export type Assignments = Record<

@@ -787,6 +787,7 @@ const assignmentPlugins = computed<AssignmentPlugin[]>(() => {
       name: p,
       usesSource: !!ext && pols.includes(ext),
       assigned: !!b && pols.includes(`inline:${b}`),
+      restoresSource: !!b && ops.restoredSource(p, b) !== null,
     };
   });
 });

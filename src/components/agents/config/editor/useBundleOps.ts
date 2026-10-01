@@ -2,9 +2,9 @@
 // effective draft (file bundle merged with the overlay); `baseB` the file-defined bundle.
 
 import { computed } from 'vue';
-import type { PolicyBundleDoc } from '@/types/agent-config';
+import type { ConfigDoc, PolicyBundleDoc } from '@/types/agent-config';
 import { pointer } from '@/utils/agent-config/json-pointer';
-import { isPlainObject } from '@/utils/agent-config/merge-patch';
+import { isPlainObject, mergePatch } from '@/utils/agent-config/merge-patch';
 import { NAME_RE, isInlineSource } from '@/utils/agent-config/validation';
 import { usedSources } from '@/utils/agent-config/policy-files';
 import { moduleTemplate } from '@/utils/agent-config/rego-template';
@@ -85,11 +85,14 @@ export function useBundleOps() {
     )?.[name];
     return isPlainObject(b) ? (b as PolicyBundleDoc) : null;
   }
-  function effectivePolicies(plugin: string): string[] {
-    const p = draft.effectiveDraft.value.plugins?.[plugin];
+  function policiesIn(doc: ConfigDoc | null | undefined, plugin: string) {
+    const p = doc?.plugins?.[plugin];
     return isPlainObject(p) && Array.isArray(p.policies)
       ? [...(p.policies as string[])]
       : [];
+  }
+  function effectivePolicies(plugin: string): string[] {
+    return policiesIn(draft.effectiveDraft.value, plugin);
   }
   function usedBy(name: string): string[] {
     return pluginNames.value.filter((p) =>
@@ -146,14 +149,38 @@ export function useBundleOps() {
     draft.set(pointer('plugins', plugin, 'policies'), cur);
   }
 
+  /**
+   * The source unassigning inline:<name> from `plugin` puts back, or null. Only an undone R66
+   * swap restores: the plugin's saved list (file + saved overlay) or file list had the
+   * extended source S where the bundle now sits. A bundle that was appended (the plugin never
+   * loaded S) is just removed; restoring S would add a source the plugin never ran.
+   */
+  function restoredSource(plugin: string, name: string): string | null {
+    const cur = effectivePolicies(plugin);
+    const idx = cur.indexOf(`inline:${name}`);
+    const ext = extendsOf(name);
+    if (idx < 0 || !ext || cur.includes(ext)) return null;
+    const bases = [ctx.placeholderBase.value, ...ctx.bases.value].filter(
+      (b): b is ConfigDoc => !!b,
+    );
+    const swapped = bases.some(
+      (base) =>
+        policiesIn(base, plugin)[idx] === ext ||
+        policiesIn(mergePatch<ConfigDoc>(base, draft.original.value), plugin)[
+          idx
+        ] === ext,
+    );
+    return swapped ? ext : null;
+  }
+
   /** Unwire inline:<name>; a swapped bundle gives its place back to the source it extends. */
   function unassign(plugin: string, name: string) {
     const ref = `inline:${name}`;
     const cur = effectivePolicies(plugin);
     const idx = cur.indexOf(ref);
     if (idx < 0) return;
-    const ext = extendsOf(name);
-    if (ext && !cur.includes(ext)) cur[idx] = ext;
+    const restore = restoredSource(plugin, name);
+    if (restore) cur[idx] = restore;
     else cur.splice(idx, 1);
     draft.set(pointer('plugins', plugin, 'policies'), cur);
   }
@@ -223,6 +250,7 @@ export function useBundleOps() {
     extendsOf,
     assign,
     unassign,
+    restoredSource,
     deleteBundle,
     resetBundle,
     setModule,

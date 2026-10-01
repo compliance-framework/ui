@@ -407,6 +407,74 @@ describe('Policies view: bundles and assignment (R66, R58)', () => {
     ).toEqual([SSH_POLICIES]);
   });
 
+  async function setAssignment(
+    wrapper: ReturnType<typeof mount>,
+    plugin: string,
+    on: boolean,
+  ) {
+    await wrapper.find('[data-test="assign-bundle"]').trigger('click');
+    await flushPromises();
+    const dialog = wrapper.find('[data-test="assign-dialog"]');
+    await dialog.find(`[data-test="assign-check-${plugin}"]`).setValue(on);
+    return dialog;
+  }
+
+  it('unassigning a swapped bundle restores the source at the same index (R66 undo)', async () => {
+    const { wrapper, ws } = await mountWorkspace(artifactApi(), POLICY_AUTHOR);
+    const dialog = await setAssignment(wrapper, 'local-ssh', false);
+    expect(
+      dialog.find('[data-test="unassign-hint-local-ssh"]').text(),
+    ).toContain(`puts ${SSH_POLICIES} back`);
+    await dialog.find('form').trigger('submit');
+    expect(
+      ws.draft.effectiveDraft.value.plugins?.['local-ssh']?.policies,
+    ).toEqual([SSH_POLICIES]);
+    // The inverse swap stays a policy-only change (R22).
+    expect(ws.saveDisabledReason.value).toBe('');
+  });
+
+  it('unassigning an appended bundle only removes the reference, never adds the source', async () => {
+    const { wrapper, ws } = await mountWorkspace(artifactApi(), POLICY_AUTHOR);
+    // ubuntu-packages never loaded SSH_POLICIES: assigning appends inline:ssh-tuned.
+    let dialog = await setAssignment(wrapper, 'ubuntu-packages', true);
+    await dialog.find('form').trigger('submit');
+    const pols = () =>
+      ws.draft.effectiveDraft.value.plugins?.['ubuntu-packages']?.policies;
+    expect(pols()).toEqual([UBUNTU_POLICIES, 'inline:ssh-tuned']);
+    expect(ws.saveDisabledReason.value).toBe('');
+
+    dialog = await setAssignment(wrapper, 'ubuntu-packages', false);
+    expect(
+      dialog.find('[data-test="unassign-hint-ubuntu-packages"]').text(),
+    ).toContain('removes the reference');
+    expect(
+      dialog.find('[data-test="unassign-hint-ubuntu-packages"]').text(),
+    ).not.toContain('puts');
+    await dialog.find('form').trigger('submit');
+    expect(pols()).toEqual([UBUNTU_POLICIES]);
+    expect(pols()).not.toContain(SSH_POLICIES);
+    expect(ws.saveDisabledReason.value).toBe('');
+  });
+
+  it('unassigning after the source was dropped from an "alongside" list does not add it back', async () => {
+    const { wrapper, ws } = await mountWorkspace(artifactApi());
+    // The bundle sits at index 1 (it was added alongside and SSH_POLICIES was later
+    // dropped): no saved or file list had SSH_POLICIES there, so nothing is restored.
+    ws.draft.set('/plugins/local-ssh/policies', [
+      'ghcr.io/brand/other:v1',
+      'inline:ssh-tuned',
+    ]);
+    await flushPromises();
+    const dialog = await setAssignment(wrapper, 'local-ssh', false);
+    expect(
+      dialog.find('[data-test="unassign-hint-local-ssh"]').text(),
+    ).toContain('removes the reference');
+    await dialog.find('form').trigger('submit');
+    expect(
+      ws.draft.effectiveDraft.value.plugins?.['local-ssh']?.policies,
+    ).toEqual(['ghcr.io/brand/other:v1']);
+  });
+
   it('a policy author can use the view, with the R58 hint for a new source', async () => {
     const { wrapper, ws } = await mountWorkspace(
       artifactApi(),
