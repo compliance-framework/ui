@@ -1,3 +1,7 @@
 lisa-design:
 - R78 continuity after the swap: the vendor plugin path for a continuity policy_id (Override insert, stream labels, fork checks) is, in order: the `plugin-path` of a policy-bundles[] entry loading the extends source directly; else `extends.plugin-path` (api#465, camelCased to `extends.pluginPath`, not under a stop path) of the bundle's own `inline:<bundle>` entry; else that of another inline bundle extending the same source. Only when none is reported: insert nothing + "new stream" notice. Helper: `vendorPluginPathFor` (utils/agent-config/policy-identity.ts). Literal `<path>/<file>`, never path.Join.
 - R79 mirror "introduced" = the agent's rule: per instance, `diffConfigs(file, file ⊕ overlay)` pointers matched segment-wise in both directions (agent touchedByOverlay) against /plugins/<p>/source and /policy_bundles/<b>; an overlay re-stating the file's value is NOT introduced (warning only). newEntry stays file-relative.
+
+lisa-addressed:
+PRRT_kwDONe0Wms6oBOCz (plugin-compat.ts:143): inlineGateIssues no longer uses hasAt(overlay, …); per instance it diffs the file against file ⊕ overlay (diffConfigs) and matches segment-prefix like the agent's overlayTouched/touchedByOverlay. Tests: re-stated source+bundle → warning; differing bundle/source → blocking; multi-instance with different file sources → per-instance outcome.
+R78 follow-up: continuity ids fall back to extends.plugin-path (vendorPluginPathFor); fixtures report extends.pluginPath; after-swap spec inserts the literal extends.plugin-path + "/" + file.
