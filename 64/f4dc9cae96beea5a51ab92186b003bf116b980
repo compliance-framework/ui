@@ -1,2 +1,6 @@
 lisa-addressed:
 round 3 pass 1 fixes: violation-true-object-rule (contract hint accepts `violation[{…}] := true`).
+
+lisa-selfreview:
+round 3 pass 2 (strict) verdict: request_changes
+- [low] assigned-unsupported-no-reason (policies/PluginAssignmentRows.vue): a plugin that already has the bundle but whose build is unsupported showed no reason in the Assign dialog (only the pending bar's client issue). Fix: show the R79 reason with "agents reject this assignment; unassign it".
