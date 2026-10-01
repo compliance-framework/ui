@@ -1,0 +1,15 @@
+lisa-addressed:
+---
+Comment (src/components/agents/config/InstanceModeNotice.vue:142):
+**Gap against design (R88/R75): agent policy warnings on an applied revision are never shown.** The agent appends its policy warnings to every report (`agent cmd/report.go:124`, `policy-errors` with severity `warning`) — e.g. `policy-stream-forked` (agent#95 bce3ad3 now emits one per unshadowed extends bundle and plugin, **Bundle set, Path empty**), `policy-package-changed`, `plugin-lib-policy-id-unsupported`, `duplicate-policy-identity` from the file. The UI only lists `instance.policyErrors` when `state === 'rejected-invalid'`, and the Policies view only uses preview/save errors, so these warnings (the ones telling users their evidence streams fork) are invisible. Fix: (1) here, also list warning-severity `instance.policyErrors` for applied/other states (label the code via `POLICY_ERROR_CODE_LABELS`); (2) render an empty `path` as bundle-level (`<bundle>` without `/`).
+Replies:
+**lisa implementation guidance:** **lisa implementation guidance:** Fix (R88/R75). Add `policyErrorLocation(e)` to utils/agent-config/display.ts (`<bundle>` when path is empty, else `<bundle>/<path>[:row:col]`) and use it wherever a PolicyError location is rendered. In InstanceModeNotice keep the rejected-invalid list (now with the code label) and add an amber `policy-warnings` block listing warning-severity `instance.policyErrors` for every other state, code via CodeLabel + POLICY_ERROR_CODE_LABELS. Tests: applied instance with policy-stream-forked (empty path) shows `<bundle>` + label; rejected-invalid does not list them twice.
+
+<!-- lisa-guidance-posted -->
+---
+Comment (src/components/agents/policies/PoliciesWorkspace.vue:516):
+Same gap in the Policies view: include the validation-set instances' reported `policyErrors` (warnings) in `allProblems`/`problemsOfBundle`, tagged with the hostname when there are several instances, deduped like the rest. Entries with an empty `path` belong to the bundle (show them on the bundle header / problems list, not on a file; `openProblem` should just select the bundle). Keep it small.
+Replies:
+**lisa implementation guidance:** **lisa implementation guidance:** Fix. In PoliciesWorkspace add `reportedProblems`: the warning-severity policyErrors of `validationInstanceIds(ws.state.instances)` summaries, message suffixed ` (on <hostname>)` when there are several. Fold them into `allProblems` (same dedupe key), into `problemsOfBundle` counts (deduped), and into per-file counts only when path is non-empty. `openProblem` only selects a file when path is non-empty. PolicyValidationPanel renders the location with `policyErrorLocation`. Tests: an applied instance's empty-path warning appears in the panel as `<bundle>`, counts on the bundle, and clicking it selects the bundle with no file; two instances get hostname suffixes.
+
+<!-- lisa-guidance-posted -->
