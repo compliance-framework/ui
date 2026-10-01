@@ -1,0 +1,2 @@
+lisa-addressed:
+round 3 pass 1 fixes: violation-true-object-rule (contract hint accepts `violation[{…}] := true`).
