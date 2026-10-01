@@ -1,0 +1,57 @@
+lisa-addressed:
+---
+Comment (src/utils/agent-config/plugin-compat.ts:26):
+**Bug against design (R86/R88, design §13.6–13.7), must fix.** The R79/R81 inline gate mirror is stale: with path shadowing and R82 dropped, every plugin can take inline policies, the v0.9.0 gate and `plugin-lib-inline-unsupported` are gone, and the report drops `plugins[].inline-policies`. Today the UI shows wrong text (`PluginSummaryCard.vue:383` "supports inline policies and policy_id" for v0.1.9 builds; "agent ≥ v0.9.0" messages) and warns on every inline assignment for unknown-lib (local) builds (`useConfigWorkspace.ts:189-232`). **Delete the mirror** rather than updating it — the agent's remaining `plugin-lib-*` errors/warnings (set-form < v0.7.1, authored `policy_id` ignored) already arrive as labelled policy errors. Remove: this file; `useConfigWorkspace.ts:189-232, 354-356`; `ReviewSaveDialog.vue:89-128, 236-247`; `PoliciesWorkspace.vue:51-57, 102, 191, 803-831`; `editBlocked` in `BundleFileTree.vue`; `PluginAssignmentRows.vue` gate (43-58, 132-134, 155); `CreateBundleDialog.vue` (150, 186, 241-242, 279); `PolicySourcesEditor.vue:158`; `INLINE_SUPPORT_LABELS`; `PluginCompat.spec.ts` (keep a small badge test) and `plugin-compat.spec.ts`. Reduce `libBadge` to a neutral "agent vX" (no ✓/?).
+Replies:
+**lisa implementation guidance:** Fix (owner decision R86/R88/R91). Delete src/utils/agent-config/plugin-compat.ts and its spec; remove compatInstances/inlineGate/inlineBlocked/inlineUnknown and the extraIssues hook from useConfigWorkspace/useOverlayDraft; strip the gate from ReviewSaveDialog, PoliciesWorkspace (bundleInlineBlocked, inlineGateFor), BundleFileTree (editBlocked), PluginAssignmentRows (inlineBlocked/inlineWarning), CreateBundleDialog (inlineGate prop), PolicySourcesEditor; drop INLINE_SUPPORT_LABELS. PluginSummaryCard libBadge becomes a neutral 'agent vX' chip shown only when libVersion is known. PluginCompat.spec shrinks to the badge test; PoliciesIdentity R79 block goes.
+
+<!-- lisa-guidance-posted -->
+---
+Comment (src/components/agents/config/constants.ts:156):
+R88: remove the labels for codes the agent no longer emits — `plugin-lib-inline-unsupported` (here) and `policy-id-continuity-skipped` (L151) — and their `constants.spec.ts` entries. Dead exports to drop while here: `MODE_LABELS` (L21), `INSTANCE_STATUS_LABELS` (L182).
+Replies:
+**lisa implementation guidance:** Fix (R88). Remove POLICY_ERROR_CODE_LABELS entries for plugin-lib-inline-unsupported and policy-id-continuity-skipped and their constants.spec entries; drop the unused MODE_LABELS and INSTANCE_STATUS_LABELS exports (verify no importers).
+
+<!-- lisa-guidance-posted -->
+---
+Comment (src/types/agent-config.ts:200):
+R88: the API removes `policy-bundles[].plugin-path`, `extends.plugin-path` (L186) and `plugins[].inline-policies` (L215) from the report. Remove these types, the `InlinePolicySupport` type, the related `useAgentConfigApi.spec.ts:178-186` case, and the unused `FIXTURE_SSH_*_PLUGIN_PATH` fixtures (`fixtures.ts:324-357`).
+Replies:
+**lisa implementation guidance:** Fix (R88). Drop PolicyBundleReport.pluginPath, extends.pluginPath, PluginReport.inlinePolicies and InlinePolicySupport; remove the useAgentConfigApi.spec case that asserts them and the FIXTURE_SSH_*_PLUGIN_PATH fixtures.
+
+<!-- lisa-guidance-posted -->
+---
+Comment (src/utils/agent-config/validation.ts:190):
+**Owner decision R89: validate through the API.** `validateOverlayClientSide` mirrors the API's overlay rules O1–O11 (+ `splitIntroduced`, cron5 validation). The API's `POST /api/admin/agents/:id/config/preview` (already called, debounced) returns `overlayErrors`, `policyErrors` and per-instance results. Cut this down to client-only checks (YAML/JSON parse, masked `••••` values, scalar coercion, the cross-bundle import hint) and gate Review & save on the preview's errors (plus a pending/in-flight state so save can't race a stale preview). Keep `describeCron5` (display), drop `validateCron5` if only used here. Expected: validation.ts 647 → ~150 lines.
+Replies:
+**lisa implementation guidance:** Fix (R89). Shrink validation.ts to client-only checks: overlay must be a mapping, masked values, scalar coercion hints (Quote this value / Values must be strings), data-file parse, cross-bundle import hint; keep the helpers other files import (NAME_RE, DATA_FILE_RE, LIMITS, byteSize, isInlineSource, inlineBundleName, modulePathError, coerceStringMaps, maskedPointers, hasBlocking). Remove the O1-O11 mirrors (locked keys, sizes, verbosity, interval, cron, protocol, names, sources, env refs, bundle shape/effective checks, splitIntroduced). Workspace gate: Review & save also blocks on preview errors (overlayErrors, error-severity policyErrors, validated-instance errors) and while a preview is pending/in flight or not current for the draft. validateCron5 stays: AddPluginDialog and InlineScalarEditor use it for per-field input validation.
+
+<!-- lisa-guidance-posted -->
+---
+Comment (src/utils/agent-config/contract-hints.ts:171):
+R89 (cont.): `contractHints` re-implements the Rego contract with regexes; the preview's `policyErrors` come from real Rego parsing (regocheck/CheckContract, with positions). Delete this file and render the preview's `policyErrors` in the editor instead (after the debounce). Fold `policy-identity.ts` down to what the template needs (`newModulePolicyId` → `rego-template.ts`).
+Replies:
+**lisa implementation guidance:** Fix (R89). Delete contract-hints.ts (+spec); PoliciesWorkspace diagnostics come from moduleDiagnostics (preview policyErrors, 422 errors, report) only, which already renders rows/cols in the editor. Move newModulePolicyId into rego-template.ts and delete policy-identity.ts (+spec).
+
+<!-- lisa-guidance-posted -->
+---
+Comment (src/composables/agent-config/useAgentConfigApi.ts:45):
+**Owner decision R90: remove the `?fixtures` demo mode.** Delete `fixtureApi.ts`, this toggle (L45-56, the `fixtures` flag and its uses ~L338-362), the `fixtures` field in the API type and the banners (`AgentConfigTab.vue:30`, …). Keep `fixtures.ts` as test data but move it under `__tests__/` (17 specs use it) and trim exports only fixtureApi used.
+Replies:
+**lisa implementation guidance:** Fix (R90). Delete fixtureApi.ts (+spec), the ?fixtures toggle and flag in useAgentConfigApi/api-types, and the banners/props that read it; git mv fixtures.ts under src/composables/agent-config/__tests__/ and update imports; trim exports nothing uses.
+
+<!-- lisa-guidance-posted -->
+---
+Comment (src/components/agents/config/PolicyBundlesSummary.vue:107):
+**Owner decision R90: defer bundle age.** The API removes `bundles-first-seen` (it scanned every revision on each config read). Remove the prop/display here, `AgentConfigEffectiveView.vue:84,141`, `AgentConfigTab.vue:118`, the type and tests.
+Replies:
+**lisa implementation guidance:** Fix (R90). Remove bundlesFirstSeen from the revision type, the PolicyBundlesSummary prop/display, AgentConfigEffectiveView and AgentConfigTab plumbing, the stop path and tests.
+
+<!-- lisa-guidance-posted -->
+---
+Comment (src/components/agents/policies/__tests__/PoliciesIdentity.spec.ts:123):
+Low (tests that can't fail): `expectNoStreamUi` and the cases at ~170-216 assert absence of `data-test` attributes from code this PR already deleted, and `diagnostics().some(fork)` is false — they pass with zero data. Delete them (the R79 block at ~275-370 goes with the gate removal).
+Replies:
+**lisa implementation guidance:** Fix. Delete expectNoStreamUi and the absence-only cases in PoliciesIdentity.spec.ts along with the R79 block; keep only cases that assert real behaviour.
+
+<!-- lisa-guidance-posted -->
