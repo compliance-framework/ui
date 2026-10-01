@@ -1,7 +1,12 @@
-// The Rego module template (R64): what Override starts from when the vendor source is not
-// available, and what "Add file" creates. It satisfies the policy contract (R63) as written:
-// a string title and description, a violation set of objects with string id/title, and a
+// The Rego module template (R64, R78): what Override starts from when the vendor source is
+// not available, and what "Add file" creates. It satisfies the policy contract (R63) as
+// written: a string title and description, violations as objects with string id/title, and a
 // labels object, so an unedited template compiles and produces evidence (never a violation).
+//
+// R78: violations use the OBJECT form `violation[{...}] if { … }`, which every plugin build
+// evaluates (`violation contains` crashes plugins built on agent < v0.7.1, design §13.4), and
+// the module declares a `policy_id` so its evidence stream does not depend on where the bundle
+// lives.
 
 /** Rego package names: dot-separated identifiers. */
 const PACKAGE_RE = /^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)*$/;
@@ -16,17 +21,21 @@ export function packageForPath(path: string): string {
   return `compliance_framework.${stem || 'policy'}`;
 }
 
-/** The module template for package `pkg` (falls back to compliance_framework.policy). */
-export function moduleTemplate(pkg: string): string {
+/**
+ * The module template for package `pkg` (falls back to compliance_framework.policy), with
+ * `policy_id := "<policyId>"` when one is given (R78: `<bundle>/<file>` for a new module).
+ */
+export function moduleTemplate(pkg: string, policyId?: string | null): string {
   const name = PACKAGE_RE.test(pkg) ? pkg : 'compliance_framework.policy';
+  const id = policyId ? `\npolicy_id := ${JSON.stringify(policyId)}\n` : '';
   return `package ${name}
 
 import rego.v1
-
+${id}
 title := "TODO: what this policy checks"
 description := "TODO: why it matters and how to fix a violation"
 
-violation contains {"id": "TODO-id", "title": "TODO: what is wrong"} if {
+violation[{"id": "TODO-id", "title": "TODO: what is wrong"}] if {
 \t# TODO: the conditions under which the input is non-compliant
 \tfalse
 }

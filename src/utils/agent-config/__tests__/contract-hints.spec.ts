@@ -91,4 +91,51 @@ describe('contractHints (R63, client mirror)', () => {
     ]);
     expect(h[2].col).toBe(6);
   });
+
+  it('accepts the object form violation[{…}] if { … } (R78), not violation[k] := v', () => {
+    const ok =
+      HEAD +
+      'title := "t"\n' +
+      'violation[{"id": "a", "title": "A"}] if { input.b }\n' +
+      'violation[{\n  "id": "b",\n}] if { input.c }\n';
+    expect(contractHints('b', { 'ssh.rego': ok })).toEqual([]);
+    const bad =
+      HEAD + 'title := "t"\nviolation["a"] := {"id": "a"} if { true }\n';
+    expect(codes(contractHints('b', { 'ssh.rego': bad }))).toEqual([
+      'invalid-violation-rule:error:6',
+    ]);
+  });
+
+  it('checks policy_id: one constant string literal per package, unique in the bundle (R75)', () => {
+    const t = HEAD + 'title := "t"\nviolation[{"id": "a"}] if { false }\n';
+    expect(
+      contractHints('b', { 'a.rego': `${t}policy_id := "b/a.rego"\n` }),
+    ).toEqual([]);
+    expect(
+      codes(contractHints('b', { 'a.rego': `${t}policy_id := input.x\n` })),
+    ).toEqual(['invalid-policy-id:error:7']);
+    expect(
+      codes(
+        contractHints('b', {
+          'a.rego': `${t}policy_id := "x"\npolicy_id := "y"\n`,
+        }),
+      ),
+    ).toEqual(['invalid-policy-id:error:8']);
+    const other =
+      'package compliance_framework.other\n\nimport rego.v1\n\ntitle := "o"\nviolation[{"id": "o"}] if { false }\npolicy_id := "same"\n';
+    expect(
+      codes(
+        contractHints('b', {
+          'a.rego': `${t}policy_id := "same"\n`,
+          'z.rego': other,
+        }),
+      ),
+    ).toEqual(['duplicate-policy-id:error:7']);
+    expect(
+      contractHints('b', {
+        'a.rego': `${t}policy_id := "same"\n`,
+        'z.rego': other,
+      })[0].path,
+    ).toBe('z.rego');
+  });
 });

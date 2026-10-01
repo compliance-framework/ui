@@ -163,7 +163,7 @@ describe('Policies view: override and view (R62, R64)', () => {
     const text = bundleOf(ws).modules?.['root_login.rego'] ?? '';
     expect(text).toMatch(/^package compliance_framework\.root_login\n/);
     expect(text).toMatch(/^title := /m);
-    expect(text).toMatch(/^violation contains /m);
+    expect(text).toMatch(/^violation\[\{"id": /m);
   });
 
   it('uses the template without fetching when no digest was reported', async () => {
@@ -221,7 +221,11 @@ describe('Policies view: override and view (R62, R64)', () => {
       actions: [],
     });
     await flushPromises();
-    expect(api.getArtifactFile).not.toHaveBeenCalled();
+    // (The R78 stream check may read the already-overridden vendor modules, never this one.)
+    expect(api.getArtifactFile).not.toHaveBeenCalledWith(
+      expect.anything(),
+      'root_login.rego',
+    );
     expect(confirmed.messages[0]).toContain('different source');
   });
 

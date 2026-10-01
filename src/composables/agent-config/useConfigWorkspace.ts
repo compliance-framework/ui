@@ -24,9 +24,10 @@ import type {
 import { usePermissions } from '@/composables/usePermissions';
 import { useUserStore } from '@/stores/auth';
 import { isPlainObject } from '@/utils/agent-config/merge-patch';
-import { parsePointer } from '@/utils/agent-config/json-pointer';
+import { parsePointer, pointer } from '@/utils/agent-config/json-pointer';
 import {
   hasBlocking,
+  type ClientIssue,
   type ValidationContext,
 } from '@/utils/agent-config/validation';
 import {
@@ -34,6 +35,12 @@ import {
   vendorFilesFor,
 } from '@/utils/agent-config/policy-files';
 import { isForbiddenPointer } from '@/utils/agent-config/field-access';
+import {
+  inlineBlockedReason,
+  inlineGateIssues,
+  inlineUnknownReason,
+  type CompatInstance,
+} from '@/utils/agent-config/plugin-compat';
 import { validationInstanceIds } from '@/utils/agent-config/instance-status';
 import type { AgentConfigApi } from './api-types';
 import type { AgentConfigState } from './useAgentConfig';
@@ -179,7 +186,50 @@ export function useConfigWorkspace(
     bases,
     validationBases,
     validationContext,
+    extraIssues: () => inlineGateClientIssues.value,
   });
+
+  // ---- R79: plugin compatibility with inline policies (the agent decides) ----
+  /** The validation-set instances with their reported plugins (R76) and file. */
+  const compatInstances = computed<CompatInstance[]>(() => {
+    const ids = new Set(validationInstanceIds(state.instances.value));
+    return state.instances.value
+      .filter((i) => ids.has(i.instanceId))
+      .map((i) => ({
+        instanceId: i.instanceId,
+        hostname: i.hostname,
+        base: instanceDetails.value.get(i.instanceId)?.base ?? null,
+        plugins: i.plugins ?? null,
+      }));
+  });
+  const inlineGate = computed(() =>
+    inlineGateIssues(draft.overlay.value, compatInstances.value),
+  );
+  const inlineGateClientIssues = computed<ClientIssue[]>(() => {
+    const many = compatInstances.value.length > 1;
+    return inlineGate.value.map((g) => ({
+      ptr: pointer('plugins', g.plugin, 'policies'),
+      message:
+        many && g.hostname ? `${g.message} (on ${g.hostname})` : g.message,
+      blocking: g.blocking,
+    }));
+  });
+  /** R79: why `plugin` must not get inline policies (an instance reports it unsupported). */
+  function inlineBlocked(plugin: string): string | null {
+    return inlineBlockedReason(
+      plugin,
+      compatInstances.value,
+      draft.overlay.value,
+    );
+  }
+  /** R79: a warning when an instance cannot tell whether `plugin` supports inline policies. */
+  function inlineUnknown(plugin: string): string | null {
+    return inlineUnknownReason(
+      plugin,
+      compatInstances.value,
+      draft.overlay.value,
+    );
+  }
 
   const blockingCount = computed(
     () => draft.clientIssues.value.filter((i) => i.blocking).length,
@@ -300,6 +350,10 @@ export function useConfigWorkspace(
     preview,
     savePolicyErrors,
     blockingCount,
+    compatInstances,
+    inlineGate,
+    inlineBlocked,
+    inlineUnknown,
     ctx,
     canEditPointer,
     policyBases,

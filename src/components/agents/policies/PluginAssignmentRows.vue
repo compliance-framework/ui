@@ -14,11 +14,19 @@
       class="rounded-md border border-ccf-300 px-2 py-1.5 text-sm dark:border-slate-700"
       :data-test="`assign-${p.name}`"
     >
-      <label class="flex items-center gap-2">
+      <label
+        v-tooltip.top="{
+          value: blocked(p) ?? '',
+          disabled: !blocked(p),
+        }"
+        class="flex items-center gap-2"
+        :class="{ 'opacity-60': blocked(p) }"
+      >
         <input
           type="checkbox"
           class="h-4 w-4"
           :checked="model[p.name]?.assigned ?? false"
+          :disabled="!!blocked(p)"
           :data-test="`assign-check-${p.name}`"
           @change="
             setAssigned(p.name, ($event.target as HTMLInputElement).checked)
@@ -31,6 +39,20 @@
           >loads {{ source }}</span
         >
       </label>
+      <p
+        v-if="blocked(p)"
+        class="mt-1 ml-6 text-xs text-red-700 dark:text-red-300"
+        :data-test="`inline-blocked-${p.name}`"
+      >
+        <i class="pi pi-ban mr-1" />{{ blocked(p) }}
+      </p>
+      <p
+        v-else-if="p.inlineWarning && model[p.name]?.assigned"
+        class="mt-1 ml-6 text-xs text-amber-700 dark:text-amber-300"
+        :data-test="`inline-warning-${p.name}`"
+      >
+        <i class="pi pi-exclamation-triangle mr-1" />{{ p.inlineWarning }}
+      </p>
       <div
         v-if="model[p.name]?.assigned && p.usesSource && source && !p.assigned"
         class="mt-1 ml-6 space-y-1 text-xs"
@@ -91,7 +113,8 @@
 // Per-plugin assignment of a bundle (R66). For a bundle that extends S and a plugin that
 // loads S, the default is to REPLACE S at the same index (the R22 swap, allowed for
 // policy-only users); adding alongside is an explicit choice with a duplicate-evidence
-// warning.
+// warning. Plugins built on an agent library without inline-policy support cannot be
+// assigned (R79).
 import type { AssignMode } from '../config/editor/useBundleOps';
 
 export interface AssignmentPlugin {
@@ -102,6 +125,10 @@ export interface AssignmentPlugin {
   assigned: boolean;
   /** Unassigning undoes a swap and puts the source back (else it only removes the ref). */
   restoresSource?: boolean;
+  /** R79: why the plugin cannot get inline policies (its build is too old), or null. */
+  inlineBlocked?: string | null;
+  /** R79: the plugin's inline support is unknown on some instance, or null. */
+  inlineWarning?: string | null;
 }
 
 export type Assignments = Record<
@@ -109,7 +136,7 @@ export type Assignments = Record<
   { assigned: boolean; mode: AssignMode }
 >;
 
-defineProps<{
+const props = defineProps<{
   plugins: AssignmentPlugin[];
   /** The source the bundle extends, if any. */
   source: string | null;
@@ -117,7 +144,19 @@ defineProps<{
 }>();
 const model = defineModel<Assignments>({ required: true });
 
+/**
+ * R79: a plugin whose build cannot honour inline policies cannot be given this bundle; an
+ * existing assignment may still be removed.
+ */
+function blocked(p: AssignmentPlugin): string | null {
+  return p.inlineBlocked && !p.assigned ? p.inlineBlocked : null;
+}
+
 function setAssigned(plugin: string, assigned: boolean) {
+  if (assigned) {
+    const p = props.plugins.find((x) => x.name === plugin);
+    if (p && blocked(p)) return;
+  }
   model.value = {
     ...model.value,
     [plugin]: { mode: model.value[plugin]?.mode ?? 'replace', assigned },

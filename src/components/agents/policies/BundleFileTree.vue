@@ -69,18 +69,39 @@
           <span :class="STATE_CLASSES[item.row.state]" data-test="file-state">{{
             STATE_LABELS[item.row.state]
           }}</span>
+          <span
+            v-if="streams?.[item.row.path]"
+            v-tooltip.top="streamTooltip(streams[item.row.path])"
+            tabindex="0"
+            class="rounded px-1 text-[0.65rem]"
+            :class="STREAM_CLASSES[streams[item.row.path].kind]"
+            :aria-label="streamTooltip(streams[item.row.path])"
+            data-test="file-stream"
+            :data-stream="streams[item.row.path].kind"
+            >{{ STREAM_LABELS[streams[item.row.path].kind] }}</span
+          >
           <span class="ml-auto flex flex-wrap gap-2">
-            <button
+            <span
               v-for="a in actionsFor(item.row)"
               :key="a"
-              type="button"
-              class="text-sky-700 hover:underline disabled:opacity-40 dark:text-sky-300"
-              :disabled="a !== 'view' && a !== 'edit' && !canEdit"
-              :data-action="a"
-              @click="$emit('action', a, item.row)"
+              v-tooltip.top="{
+                value: editBlocked ?? '',
+                disabled: !(a === 'override' && editBlocked),
+              }"
             >
-              {{ actionLabel(a, item.row) }}
-            </button>
+              <button
+                type="button"
+                class="text-sky-700 hover:underline disabled:opacity-40 dark:text-sky-300"
+                :disabled="
+                  (a !== 'view' && a !== 'edit' && !canEdit) ||
+                  (a === 'override' && !!editBlocked)
+                "
+                :data-action="a"
+                @click="$emit('action', a, item.row)"
+              >
+                {{ actionLabel(a, item.row) }}
+              </button>
+            </span>
           </span>
         </li>
       </template>
@@ -100,13 +121,17 @@
         aria-label="New file path"
         data-test="add-file-path"
       />
-      <SecondaryButton
-        size="small"
-        type="submit"
-        :disabled="!newPath || !!newPathError"
-        data-test="add-file"
-        >Add file</SecondaryButton
+      <span
+        v-tooltip.top="{ value: editBlocked ?? '', disabled: !editBlocked }"
       >
+        <SecondaryButton
+          size="small"
+          type="submit"
+          :disabled="!newPath || !!newPathError || !!editBlocked"
+          data-test="add-file"
+          >Add file</SecondaryButton
+        >
+      </span>
       <span
         v-if="newPath && newPathError"
         class="w-full text-xs text-red-600 dark:text-red-400"
@@ -145,6 +170,11 @@ import { computed, ref } from 'vue';
 import InputText from '@/volt/InputText.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
 import type { FileRow, FileState } from '@/utils/agent-config/policy-files';
+import {
+  STREAM_LABELS,
+  type StreamIdentity,
+  type StreamKind,
+} from '@/utils/agent-config/policy-identity';
 import { modulePathError } from '@/utils/agent-config/validation';
 import ConfigPill from '../config/ConfigPill.vue';
 import { FILE_STATE_LABELS, VENDOR_TEST_TOOLTIP } from '../config/constants';
@@ -168,6 +198,10 @@ const props = defineProps<{
   problems: Record<string, { errors: number; warnings: number }>;
   selected: string | null;
   canEdit: boolean;
+  /** R78: the evidence stream of each authored policy module, by path. */
+  streams?: Record<string, StreamIdentity>;
+  /** R79: why files cannot be overridden or added (a plugin using the bundle is too old). */
+  editBlocked?: string | null;
 }>();
 const emit = defineEmits<{
   action: [action: TreeAction, row: FileRow];
@@ -186,6 +220,24 @@ const STATE_CLASSES: Record<FileState, string> = {
   conflict: 'text-red-600 dark:text-red-400 font-semibold',
   dropped: 'text-gray-500 italic',
 };
+
+const STREAM_CLASSES: Record<StreamKind, string> = {
+  continues:
+    'bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-300',
+  own: 'bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300',
+  path: 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300',
+};
+
+function streamTooltip(id: StreamIdentity): string {
+  switch (id.kind) {
+    case 'continues':
+      return `Writes to the vendor policy's evidence stream (policy_id ${JSON.stringify(id.policyId)})`;
+    case 'own':
+      return `Its own evidence stream, from policy_id ${JSON.stringify(id.policyId)}; independent of where the bundle lives`;
+    case 'path':
+      return 'No policy_id: the stream follows the path plugins load the bundle from, so renaming the bundle or moving the agent state starts another one';
+  }
+}
 
 /** Rows grouped under directory headers (paths are sorted). */
 const items = computed(() => {
@@ -256,7 +308,7 @@ const newPathError = computed(() => {
   return modulePathError(newPath.value) ?? '';
 });
 function addFile() {
-  if (!newPath.value || newPathError.value) return;
+  if (!newPath.value || newPathError.value || props.editBlocked) return;
   emit('add-file', newPath.value);
   newPath.value = '';
 }

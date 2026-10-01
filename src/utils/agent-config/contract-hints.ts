@@ -9,6 +9,7 @@
 
 import type { PolicyError } from '@/types/agent-config';
 import { FORBIDDEN_BUILTINS } from './validation';
+import { policyIdRules } from './policy-identity';
 
 /** A browser-side hint; same shape as an API PolicyError plus a marker. */
 export type ContractHint = PolicyError & { client: true };
@@ -48,6 +49,8 @@ interface Head {
   value: string | null;
   /** The head has an `if` / body (conditional). */
   conditional: boolean;
+  /** The head line, comment stripped. */
+  line: string;
 }
 
 interface ParsedModule {
@@ -123,6 +126,7 @@ function parseModule(path: string, src: string): ParsedModule {
       contains: op === 'contains',
       value,
       conditional: op === 'if' || op === '{' || /\bif\b/.test(rest),
+      line,
     });
   });
   return out;
@@ -227,7 +231,11 @@ export function contractHints(
     if (!underRoot(m.pkg, [POLICY_ROOT])) continue;
     byPkg.set(m.pkg, [...(byPkg.get(m.pkg) ?? []), m]);
   }
-  for (const [pkg, mods] of byPkg) {
+  const sources = new Map(Object.entries(modules));
+  const declaredIds = new Map<string, { pkg: string; path: string }>();
+  for (const [pkg, mods] of Array.from(byPkg).sort(([, a], [, b]) =>
+    a[0].path.localeCompare(b[0].path),
+  )) {
     const inherited = (opts.inherited ?? []).filter(
       (v) =>
         v.package === pkg &&
@@ -246,17 +254,21 @@ export function contractHints(
             h.col,
             'error',
             'contract-key-function',
-            'violation is defined as a function; it must be a set of objects (`violation contains {…} if …`)',
+            'violation is defined as a function; it must be a collection of objects (`violation[{…}] if { … }`)',
           );
         } else if (h.bracket) {
-          push(
-            m.path,
-            h.row,
-            h.col,
-            'error',
-            'invalid-violation-rule',
-            'violation is an object rule; it must be a set of objects (`violation contains {…} if …`)',
-          );
+          // `violation[{…}] if { … }` (value true) is the object form every plugin evaluates
+          // (R78); only `violation[key] := value` is wrong (policyeval checkViolationRule).
+          if (/^violation\s*\[.*\]\s*(:=|=(?!=))/.test(h.line)) {
+            push(
+              m.path,
+              h.row,
+              h.col,
+              'error',
+              'invalid-violation-rule',
+              'violation is an object rule (`violation[key] := value`); the agent reads its keys as the violations and ignores the values. Use `violation[{…}] if { … }`',
+            );
+          }
         } else if (h.value !== null) {
           const kind = literalKind(h.value);
           if (kind && kind !== 'set' && kind !== 'array') {
@@ -321,6 +333,42 @@ export function contractHints(
           'empty-title',
           'title is empty; the evidence has no title',
         );
+      }
+    }
+
+    // policy_id (R74/R75): one unconditional string literal per package.
+    const idRules = mods.flatMap((m) =>
+      policyIdRules(sources.get(m.path) ?? '').map((r) => ({ m, r })),
+    );
+    for (const { m, r } of idRules) {
+      if (r.problem)
+        push(m.path, r.row, r.col, 'error', 'invalid-policy-id', r.problem);
+    }
+    if (idRules.length > 1) {
+      for (const { m, r } of idRules.slice(1)) {
+        push(
+          m.path,
+          r.row,
+          r.col,
+          'error',
+          'invalid-policy-id',
+          `policy_id of package ${pkg} is defined ${idRules.length} times; declare it once, as \`policy_id := "..."\``,
+        );
+      }
+    } else if (idRules.length === 1 && !idRules[0].r.problem) {
+      const { m, r } = idRules[0];
+      const prev = declaredIds.get(r.literal!);
+      if (prev) {
+        push(
+          m.path,
+          r.row,
+          r.col,
+          'error',
+          'duplicate-policy-id',
+          `policy_id ${JSON.stringify(r.literal)} is also declared by package ${prev.pkg} in ${prev.path}; each policy needs its own policy_id, or their evidence shares one stream`,
+        );
+      } else {
+        declaredIds.set(r.literal!, { pkg, path: m.path });
       }
     }
 

@@ -71,6 +71,7 @@
               :overlay="appliedOverlay"
               :removed="card.removed"
               :pending-new="card.pendingNew"
+              :report="reportOf(card.name)"
               @show-bundle="showBundle"
             />
           </div>
@@ -111,6 +112,7 @@ import type {
   ConfigDoc,
   OverlayDoc,
   PluginDoc,
+  PluginReport,
   PolicyBundleReport,
 } from '@/types/agent-config';
 import { sanitizeForDisplay } from '@/utils/agent-config/display';
@@ -139,7 +141,13 @@ const props = defineProps<{
   bundlesFirstSeen?: Record<string, string>;
   /** The instance's reported policy bundles (vendor file lists). */
   policyBundles?: PolicyBundleReport[] | null;
+  /** R76/R79: the instance's plugins and the agent library each was built with. */
+  pluginReports?: PluginReport[] | null;
 }>();
+
+function reportOf(name: string): PluginReport | null {
+  return props.pluginReports?.find((r) => r.name === name) ?? null;
+}
 
 const mode = ref<'summary' | 'yaml'>('summary');
 const modeOptions = [

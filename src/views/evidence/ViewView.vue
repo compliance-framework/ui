@@ -249,6 +249,7 @@
           v-if="canPlayBack"
           :evidence-id="evidence.id"
           :policy-source="policySource"
+          :policy-id="policyId"
         />
       </div>
 
@@ -950,6 +951,7 @@ import {
 } from '@/utils/evidence-status';
 import {
   POLICY_BUNDLE_DIGEST_PROP,
+  POLICY_ID_LABEL,
   POLICY_SOURCE_PROP,
 } from '@/types/evidence-playback';
 import type { Activity, BackMatterResource, Link, Property } from '@/oscal';
@@ -1091,6 +1093,11 @@ const metadataProps = computed<Property[]>(() => evidence.value?.props ?? []);
 const policySource = computed(
   () =>
     metadataProps.value.find((prop) => prop.name === POLICY_SOURCE_PROP)?.value,
+);
+const policyId = computed(
+  () =>
+    evidence.value?.labels.find((label) => label.name === POLICY_ID_LABEL)
+      ?.value,
 );
 const canPlayBack = computed(() =>
   metadataProps.value.some((prop) => prop.name === POLICY_BUNDLE_DIGEST_PROP),

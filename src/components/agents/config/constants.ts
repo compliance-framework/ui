@@ -142,6 +142,25 @@ export const POLICY_ERROR_CODE_LABELS: Record<string, string> = {
   'eval-conflict': 'Evaluation conflict',
   'dry-run-timeout': 'Dry run timed out',
   'duplicate-policy-package': 'Package loaded twice',
+  // Evidence identity (R74/R75, design §13.4)
+  'invalid-policy-id': 'Invalid policy_id',
+  'duplicate-policy-id': 'Duplicate policy_id',
+  'duplicate-policy-identity': 'Same evidence stream loaded twice',
+  'policy-package-changed': 'Package changed: new evidence stream',
+  'policy-stream-forked': 'New evidence stream',
+  // Plugin compatibility (R76/R79)
+  'plugin-lib-violation-set-unsupported':
+    'Plugin cannot evaluate set violations',
+  'plugin-lib-policy-id-unsupported': 'Plugin ignores policy_id',
+  'plugin-lib-inline-unsupported': "Plugin doesn't support inline policies",
+};
+
+// ---- Plugin compatibility (R76/R79; texts in utils/agent-config/plugin-compat.ts) ----
+
+export const INLINE_SUPPORT_LABELS: Record<string, string> = {
+  supported: 'inline policies supported',
+  unsupported: 'no inline policies',
+  unknown: 'inline support unknown',
 };
 
 /** R64 (corrects the earlier "never reject" wording, §13.1). */

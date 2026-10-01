@@ -86,6 +86,47 @@
         </div>
       </Message>
 
+      <section
+        v-if="supportRows.length"
+        class="space-y-1 rounded-md border border-ccf-300 p-3 text-sm dark:border-slate-700"
+        data-test="inline-support"
+      >
+        <h4 class="font-medium text-gray-900 dark:text-slate-200">
+          Inline policy support of the plugins this revision gives inline
+          bundles
+        </h4>
+        <ul class="space-y-1">
+          <li
+            v-for="row in supportRows"
+            :key="row.plugin"
+            :data-test="`inline-support-${row.plugin}`"
+          >
+            <span class="font-mono text-xs">{{ row.plugin }}</span>
+            <ConfigPill
+              v-if="row.divergent"
+              severity="warn"
+              class="ml-1"
+              data-test="inline-support-divergent"
+              >differs across instances</ConfigPill
+            >
+            <span class="ml-2 inline-flex flex-wrap gap-2 text-xs">
+              <span
+                v-for="i in row.instances"
+                :key="i.instanceId"
+                :class="SUPPORT_CLASSES[i.support ?? 'none']"
+                :data-support="i.support ?? 'none'"
+                >{{ i.hostname || i.instanceId.slice(0, 8) }}:
+                {{
+                  i.support
+                    ? (INLINE_SUPPORT_LABELS[i.support] ?? i.support)
+                    : 'not reported'
+                }}<template v-if="i.lib"> (agent {{ i.lib }})</template></span
+              >
+            </span>
+          </li>
+        </ul>
+      </section>
+
       <p
         v-if="reviewLoading"
         class="text-sm text-gray-500"
@@ -161,7 +202,9 @@ import { hasBlocking } from '@/utils/agent-config/validation';
 import { formatRelative } from '@/utils/agent-config/display';
 import { toYaml } from '@/utils/agent-config/yaml';
 import SavePreviewPanel from '../editor/SavePreviewPanel.vue';
-import { OVERLAY_SECRETS_NOTICE } from '../constants';
+import ConfigPill from '../ConfigPill.vue';
+import { INLINE_SUPPORT_LABELS, OVERLAY_SECRETS_NOTICE } from '../constants';
+import { inlineSupportRows } from '@/utils/agent-config/plugin-compat';
 
 const props = defineProps<{ visible: boolean }>();
 const emit = defineEmits<{ 'update:visible': [v: boolean] }>();
@@ -180,6 +223,28 @@ const conflict = ref<{
   latest: AgentConfigRevision | null;
 } | null>(null);
 const theirChangesOpen = ref(false);
+
+// R79: per-instance inline support of the plugins the draft gives inline bundles. Shown when
+// it is not supported everywhere, so diverging replicas (different plugin builds) stand out.
+const SUPPORT_CLASSES: Record<string, string> = {
+  supported: 'text-green-700 dark:text-green-300',
+  unsupported: 'text-red-700 dark:text-red-300',
+  unknown: 'text-amber-700 dark:text-amber-300',
+  none: 'text-gray-500 dark:text-slate-400',
+};
+const supportRows = computed(() => {
+  const instances = ws.state.instances.value
+    .filter((i) => i.plugins?.length)
+    .map((i) => ({
+      instanceId: i.instanceId,
+      hostname: i.hostname,
+      base: ws.instanceDetails.value.get(i.instanceId)?.base ?? null,
+      plugins: i.plugins,
+    }));
+  return inlineSupportRows(draft.overlay.value, instances).filter(
+    (r) => r.divergent || r.instances.some((i) => i.support !== 'supported'),
+  );
+});
 
 const saveDisabledReason = computed(() =>
   conflict.value ? 'Resolve the conflict first' : ws.saveDisabledReason.value,

@@ -121,7 +121,9 @@ function satisfiedFixture(
   });
 }
 
-function mountSections(extraProps: { policySource?: string } = {}) {
+function mountSections(
+  extraProps: { policySource?: string; policyId?: string } = {},
+) {
   return mount(EvidencePlaybackSections, {
     props: { evidenceId: 'evidence-1', ...extraProps },
     attachTo: document.body,
@@ -186,7 +188,7 @@ describe('EvidencePlaybackSections', () => {
 
   async function load(
     fixture: EvidencePlayback | undefined,
-    extraProps: { policySource?: string } = {},
+    extraProps: { policySource?: string; policyId?: string } = {},
   ) {
     pending = fixture;
     wrapper = mountSections(extraProps);
@@ -447,6 +449,19 @@ describe('EvidencePlaybackSections', () => {
     expect(w.find('[data-test="playback-policy-source"]').text()).toBe(
       'Not recorded',
     );
+  });
+
+  it('shows the policy_id the policy declares, when there is one', async () => {
+    const w = await load(satisfiedFixture(), { policyId: 'ssh/deny.rego' });
+    await expand(w, 'policy');
+    expect(w.find('[data-test="playback-policy-id"]').text()).toBe(
+      'ssh/deny.rego',
+    );
+    w.unmount();
+
+    const none = await load(satisfiedFixture());
+    await expand(none, 'policy');
+    expect(none.find('[data-test="playback-policy-id"]').exists()).toBe(false);
   });
 
   it('says when no policy data was configured', async () => {

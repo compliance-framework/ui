@@ -48,6 +48,25 @@
           >
             {{ TEMPORARY_POLICY_HINT }}
           </p>
+          <p
+            v-if="bundleDoc.extends"
+            class="text-xs text-gray-500 dark:text-slate-400"
+            data-test="inherited-stream-hint"
+          >
+            Evidence streams: a plugin that loads this bundle instead of
+            <span class="font-mono break-all">{{ bundleDoc.extends }}</span>
+            records inherited vendor modules without a
+            <code class="font-mono">policy_id</code> in new, path-based streams.
+            Overrides keep the vendor stream through their
+            <code class="font-mono">policy_id</code>.
+          </p>
+          <Message
+            v-if="bundleInlineBlocked"
+            severity="error"
+            data-test="bundle-inline-blocked"
+          >
+            <span class="text-sm">{{ bundleInlineBlocked }}</span>
+          </Message>
           <div class="flex flex-wrap gap-2 pt-1">
             <SecondaryButton
               v-if="canEdit"
@@ -92,6 +111,8 @@
           :problems="problemsByPath"
           :selected="sel.file"
           :can-edit="canEdit"
+          :streams="selectedStreams"
+          :edit-blocked="bundleInlineBlocked"
           @action="onAction"
           @add-file="addFile"
           @delete-path="(p) => ops.deleteVendorFile(sel.bundle!, p)"
@@ -179,7 +200,11 @@
         :diagnostics="selectedDiagnostics"
         :readonly="!canEdit"
         :vendor-tests="vendorTestOffer"
-        :can-override="canEdit && selectedRow?.state === 'inherited'"
+        :can-override="
+          canEdit && selectedRow?.state === 'inherited' && !bundleInlineBlocked
+        "
+        :stream="sel.mode === 'edit' ? selectedStream : null"
+        :stream-source="bundleDoc?.extends ?? null"
         @update="(t) => ops.setModule(sel.bundle!, sel.file!, t)"
         @delete-tests="deleteVendorTests"
         @override="selectedRow && override(selectedRow)"
@@ -209,6 +234,7 @@
       :initial-source="createSource"
       :policy-only="ws.editorMode.value === 'policy-only'"
       :used-sources="ops.usedSourcesEverywhere.value"
+      :inline-gate="inlineGateFor"
       @create="onCreate"
     />
     <AssignBundleDialog
@@ -227,6 +253,7 @@
 // Every change goes to the shared pending-changes draft (R69), saved from the pending bar.
 import { computed, reactive, ref, shallowRef, watch } from 'vue';
 import { useConfirm } from 'primevue/useconfirm';
+import Message from '@/volt/Message.vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
 import TertiaryButton from '@/volt/TertiaryButton.vue';
@@ -260,6 +287,18 @@ import {
   moduleTemplate,
   packageForPath,
 } from '@/utils/agent-config/rego-template';
+import {
+  continuityPolicyId,
+  declaredPolicyId,
+  forkMessage,
+  insertPolicyId,
+  modulePackage,
+  newModulePolicyId,
+  pluginPathFor,
+  policyIdRules,
+  streamIdentity,
+  type StreamIdentity,
+} from '@/utils/agent-config/policy-identity';
 import ProvenanceBadge from '../config/ProvenanceBadge.vue';
 import { CROSS_BUNDLE_HELP, TEMPORARY_POLICY_HINT } from '../config/constants';
 import { moduleDiagnostics } from '../config/editor/policyDiagnostics';
@@ -487,6 +526,136 @@ function apiDiagnostics(bundle: string, path: string): PolicyError[] {
     },
   );
 }
+// ---- Evidence stream identity (R78) ----
+/** Vendor module sources read for stream checks, by `${digest}\0${path}` (null = failed). */
+const vendorTexts = shallowRef(new Map<string, string | null>());
+const requestedTexts = new Set<string>();
+function rememberVendorText(digest: string, path: string, text: string | null) {
+  const m = new Map(vendorTexts.value);
+  m.set(`${digest}\u0000${path}`, text);
+  vendorTexts.value = m;
+}
+function ensureVendorText(digest: string, path: string) {
+  const key = `${digest}\u0000${path}`;
+  if (requestedTexts.has(key) || vendorTexts.value.has(key)) return;
+  requestedTexts.add(key);
+  vendor
+    .fileSource(digest, path)
+    .then((f) => rememberVendorText(digest, path, f.source))
+    .catch(() => rememberVendorText(digest, path, null));
+}
+
+/** The plugin path of the source bundle `name` extends (R77), or null. */
+function vendorPluginPath(name: string): string | null {
+  const ext = ops.extendsOf(name);
+  return ext ? pluginPathFor(ext, ws.reportSets.value) : null;
+}
+
+/** Each authored policy module's stream identity, per bundle. */
+const streamsByBundle = computed(() => {
+  const out = new Map<string, Map<string, StreamIdentity>>();
+  for (const [name, b] of Object.entries(ops.bundles.value)) {
+    const streams = new Map<string, StreamIdentity>();
+    const rows = bundleFileStates(
+      vendorFilesOf(name),
+      ops.fileBundle(name),
+      ops.overlayBundle(name),
+    );
+    const digest = vendorArtifactFor(name, b, ws.reportSets.value).digest;
+    const vp = vendorPluginPath(name);
+    const bp = pluginPathFor(`inline:${name}`, ws.reportSets.value);
+    for (const r of rows) {
+      const src = b.modules?.[r.path];
+      if (typeof src !== 'string' || r.isTest || !r.path.endsWith('.rego'))
+        continue;
+      const pkg = modulePackage(src)?.pkg ?? '';
+      if (
+        pkg !== 'compliance_framework' &&
+        !pkg.startsWith('compliance_framework.')
+      )
+        continue;
+      const vendorText = digest
+        ? vendorTexts.value.get(`${digest}\u0000${r.path}`)
+        : undefined;
+      streams.set(
+        r.path,
+        streamIdentity(
+          name,
+          r.path,
+          src,
+          r.state === 'overridden'
+            ? {
+                vendorPackage: r.vendor?.package ?? null,
+                vendorSource: vendorText ?? undefined,
+                vendorPluginPath: vp,
+                bundlePluginPath: bp,
+              }
+            : null,
+        ),
+      );
+    }
+    out.set(name, streams);
+  }
+  return out;
+});
+// Overridden modules of the selected bundle: read the vendor source once, so a policy_id the
+// vendor declares is compared (cached; artifacts are immutable).
+watch(
+  () =>
+    sel.bundle && artifact.value.digest
+      ? rows.value
+          .filter(
+            (r) =>
+              r.state === 'overridden' && !r.isTest && r.path.endsWith('.rego'),
+          )
+          .map((r) => r.path)
+      : [],
+  (paths) => {
+    const digest = artifact.value.digest;
+    if (digest) paths.forEach((p) => ensureVendorText(digest, p));
+  },
+  { immediate: true },
+);
+const selectedStreams = computed<Record<string, StreamIdentity>>(() =>
+  Object.fromEntries(
+    sel.bundle ? (streamsByBundle.value.get(sel.bundle) ?? new Map()) : [],
+  ),
+);
+const selectedStream = computed(() =>
+  sel.file ? (selectedStreams.value[sel.file] ?? null) : null,
+);
+
+/** R78 editor warnings: an override whose package or policy_id forks the vendor stream. */
+function streamHints(
+  name: string,
+  src: Record<string, string>,
+): ContractHint[] {
+  const out: ContractHint[] = [];
+  const ext = ops.extendsOf(name);
+  for (const [path, id] of streamsByBundle.value.get(name) ?? []) {
+    if (!id.fork) continue;
+    const text = src[path] ?? '';
+    const row =
+      id.fork.reason === 'policy-id'
+        ? (policyIdRules(text)[0]?.row ?? 1)
+        : (modulePackage(text)?.row ?? 1);
+    out.push({
+      bundle: name,
+      path,
+      row,
+      col: 1,
+      severity: 'warning',
+      code:
+        id.fork.reason === 'package'
+          ? 'policy-package-changed'
+          : 'policy-stream-forked',
+      message: forkMessage(id.fork, id.policyId, ext),
+      client: true,
+    });
+  }
+  return out;
+}
+
 const hintsByBundle = computed(() => {
   const out = new Map<string, ContractHint[]>();
   for (const [name, b] of Object.entries(ops.bundles.value)) {
@@ -501,23 +670,24 @@ const hintsByBundle = computed(() => {
     )
       .filter((r) => r.state === 'inherited' && r.vendor)
       .map((r) => ({ path: r.path, package: r.vendor?.package }));
-    out.set(
-      name,
-      contractHints(name, modules, {
+    out.set(name, [
+      ...contractHints(name, modules, {
         incomplete: typeof b.extends === 'string' || !!ops.fileBundle(name),
         inherited,
       }),
-    );
+      ...streamHints(name, modules),
+    ]);
   }
   return out;
 });
 /** API problems first; a browser hint with the same code and line is not repeated. */
 function diagnosticsFor(bundle: string, path: string): PolicyError[] {
   const api = apiDiagnostics(bundle, path);
+  // An API problem without a row (e.g. the agent's policy-stream-forked) covers the file.
   const hints = (hintsByBundle.value.get(bundle) ?? []).filter(
     (h) =>
       h.path === path &&
-      !api.some((e) => e.code === h.code && (e.row ?? 0) === h.row),
+      !api.some((e) => e.code === h.code && (!e.row || e.row === h.row)),
   );
   return [...api, ...hints];
 }
@@ -661,11 +831,23 @@ async function override(row: FileRow) {
   if (!b || overriding.value) return;
   const digest = artifact.value.digest;
   let reason: string = VENDOR_MISS_TEXT[artifact.value.miss ?? 'no-digest'];
+  // R78: continue the vendor stream. A vendor module without a policy_id gets the literal
+  // `<plugin-path>/<file>` of the source the bundle replaces (R77); with no reported plugin
+  // path nothing is inserted and the editor says the override starts a new stream.
+  const vp = vendorPluginPath(b);
   if (digest) {
     overriding.value = row.path;
     try {
       const f = await vendor.fileSource(digest, row.path);
-      ops.setModule(b, row.path, f.source);
+      rememberVendorText(digest, row.path, f.source);
+      const keep = declaredPolicyId(f.source) !== null || vp === null;
+      ops.setModule(
+        b,
+        row.path,
+        keep
+          ? f.source
+          : insertPolicyId(f.source, continuityPolicyId(vp!, row.path)),
+      );
       selectBundleKeep(b);
       openEdit(row.path);
       return;
@@ -684,7 +866,10 @@ async function override(row: FileRow) {
       ops.setModule(
         b,
         row.path,
-        moduleTemplate(row.vendor?.package ?? packageForPath(row.path)),
+        moduleTemplate(
+          row.vendor?.package ?? packageForPath(row.path),
+          vp === null ? null : continuityPolicyId(vp, row.path),
+        ),
       );
       selectBundleKeep(b);
       openEdit(row.path);
@@ -754,7 +939,12 @@ function addFile(path: string) {
   ops.setModule(
     sel.bundle,
     path,
-    path.endsWith('.rego') ? moduleTemplate(packageForPath(path)) : '',
+    path.endsWith('.rego')
+      ? moduleTemplate(
+          packageForPath(path),
+          newModulePolicyId(sel.bundle, path),
+        )
+      : '',
   );
   openEdit(path);
 }
@@ -778,6 +968,23 @@ function onCreate(c: {
 }
 
 const assignOpen = ref(false);
+
+// ---- R79: plugins whose build cannot honour inline policies ----
+function inlineGateFor(plugin: string) {
+  return {
+    blocked: ws.inlineBlocked(plugin),
+    warning: ws.inlineUnknown(plugin),
+  };
+}
+/** Why the selected bundle's files cannot be overridden or added: a plugin using it is too old. */
+const bundleInlineBlocked = computed<string | null>(() => {
+  if (!sel.bundle) return null;
+  for (const p of ops.usedBy(sel.bundle)) {
+    const reason = ws.inlineBlocked(p);
+    if (reason) return reason;
+  }
+  return null;
+});
 const assignmentPlugins = computed<AssignmentPlugin[]>(() => {
   const b = sel.bundle;
   const ext = bundleDoc.value?.extends ?? null;
@@ -788,6 +995,8 @@ const assignmentPlugins = computed<AssignmentPlugin[]>(() => {
       usesSource: !!ext && pols.includes(ext),
       assigned: !!b && pols.includes(`inline:${b}`),
       restoresSource: !!b && ops.restoredSource(p, b) !== null,
+      inlineBlocked: ws.inlineBlocked(p),
+      inlineWarning: ws.inlineUnknown(p),
     };
   });
 });

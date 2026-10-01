@@ -28,6 +28,7 @@ import { getAt, hasAt, isPrefix } from '@/utils/agent-config/json-pointer';
 import { changedLeafPaths } from '@/utils/agent-config/policy-files';
 import {
   validateOverlayClientSide,
+  type ClientIssue,
   type ValidationContext,
 } from '@/utils/agent-config/validation';
 
@@ -67,6 +68,11 @@ export interface OverlayDraftOptions {
    */
   validationBases?: Ref<ConfigDoc[]>;
   validationContext?: Ref<ValidationContext>;
+  /**
+   * Further issues computed outside the overlay checks (R79 plugin compatibility), read
+   * lazily inside `clientIssues` so they may depend on this draft.
+   */
+  extraIssues?: () => ClientIssue[];
 }
 
 export function useOverlayDraft(
@@ -85,15 +91,23 @@ export function useOverlayDraft(
   const effectiveDraft = computed(() =>
     mergePatch<ConfigDoc>(base.value ?? {}, overlay.value),
   );
-  const clientIssues = computed(() =>
-    validateOverlayClientSide(
+  const clientIssues = computed(() => {
+    const issues = validateOverlayClientSide(
       overlay.value,
       options.validationBases?.value ??
         options.bases?.value ??
         (base.value ? [base.value] : []),
       options.validationContext?.value ?? {},
-    ),
-  );
+    );
+    const seen = new Set(issues.map((i) => `${i.ptr}\u0000${i.message}`));
+    for (const i of options.extraIssues?.() ?? []) {
+      const key = `${i.ptr}\u0000${i.message}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      issues.push(i);
+    }
+    return issues;
+  });
 
   /** Whether the draft changes `ptr`, something under it, or an ancestor of it. */
   function pendingAt(ptr: string): boolean {

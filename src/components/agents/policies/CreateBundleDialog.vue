@@ -146,6 +146,11 @@ const props = defineProps<{
   /** Policy-only users (R58) may only extend already-used sources. */
   policyOnly?: boolean;
   usedSources?: Set<string>;
+  /** R79: per plugin, why it cannot get inline policies / a support warning. */
+  inlineGate?: (plugin: string) => {
+    blocked: string | null;
+    warning: string | null;
+  };
 }>();
 const emit = defineEmits<{
   'update:visible': [v: boolean];
@@ -177,7 +182,10 @@ function defaultAssignments(): Assignments {
   const out: Assignments = {};
   for (const p of props.plugins) {
     const uses = !!ext && usersOf(ext).includes(p);
-    out[p] = { assigned: uses, mode: 'replace' };
+    out[p] = {
+      assigned: uses && !props.inlineGate?.(p).blocked,
+      mode: 'replace',
+    };
   }
   return out;
 }
@@ -230,6 +238,8 @@ const assignmentPlugins = computed<AssignmentPlugin[]>(() =>
     usesSource:
       !!extendsSource.value && usersOf(extendsSource.value).includes(p),
     assigned: false,
+    inlineBlocked: props.inlineGate?.(p).blocked ?? null,
+    inlineWarning: props.inlineGate?.(p).warning ?? null,
   })),
 );
 
@@ -266,7 +276,7 @@ function submit() {
     name: name.value,
     ...(extendsSource.value ? { extends: extendsSource.value } : {}),
     assignments: Object.entries(assignments.value)
-      .filter(([, a]) => a.assigned)
+      .filter(([p, a]) => a.assigned && !props.inlineGate?.(p).blocked)
       .map(([plugin, a]) => ({ plugin, mode: a.mode })),
   });
   emit('update:visible', false);

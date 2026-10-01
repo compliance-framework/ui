@@ -17,6 +17,17 @@
       <ConfigPill v-if="plugin?.enabled === false" severity="secondary">
         Disabled
       </ConfigPill>
+      <span
+        v-if="libBadge"
+        v-tooltip.top="libBadge.tooltip"
+        tabindex="0"
+        class="rounded px-1.5 text-[0.7rem]"
+        :class="libBadge.classes"
+        :aria-label="libBadge.tooltip"
+        data-test="plugin-lib"
+        :data-support="report?.inlinePolicies ?? ''"
+        >{{ libBadge.text }}</span
+      >
       <span v-if="removed" class="text-xs text-red-600 dark:text-red-400">
         Removed by overlay
       </span>
@@ -261,7 +272,16 @@ import { computed } from 'vue';
 import { RouterLink } from 'vue-router';
 import { useConfirm } from 'primevue/useconfirm';
 import TertiaryButton from '@/volt/TertiaryButton.vue';
-import type { ConfigDoc, OverlayDoc, PluginDoc } from '@/types/agent-config';
+import type {
+  ConfigDoc,
+  OverlayDoc,
+  PluginDoc,
+  PluginReport,
+} from '@/types/agent-config';
+import {
+  MIN_INLINE_POLICY_LIB,
+  inlineUnsupportedText,
+} from '@/utils/agent-config/plugin-compat';
 import { pointer } from '@/utils/agent-config/json-pointer';
 import {
   pluginProvenance,
@@ -286,6 +306,8 @@ const props = defineProps<{
   removed?: boolean;
   /** Added by the pending draft (not reported yet). */
   pendingNew?: boolean;
+  /** R76/R79: this plugin's report on the shown instance (agent lib, inline support). */
+  report?: PluginReport | null;
 }>();
 
 defineEmits<{ 'show-bundle': [name: string] }>();
@@ -348,6 +370,42 @@ function undoPlugin() {
   if (props.removed && !ws.draft.pendingAt(p())) ws.draft.unset(p());
   else ws.draft.revertPointer(p());
 }
+
+/** R76/R79: the plugin's agent library and whether it supports inline policies. */
+const libBadge = computed(() => {
+  const r = props.report;
+  if (!r || (!r.libVersion && !r.inlinePolicies)) return null;
+  const lib = r.libVersion || 'unknown lib';
+  switch (r.inlinePolicies) {
+    case 'supported':
+      return {
+        text: `agent ${lib} · inline ✓`,
+        tooltip: `Built on agent library ${lib}: supports inline policies and policy_id`,
+        classes:
+          'bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-300',
+      };
+    case 'unsupported':
+      return {
+        text: `agent ${lib} · no inline`,
+        tooltip: inlineUnsupportedText(props.name, r.libVersion ?? ''),
+        classes: 'bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-300',
+      };
+    case 'unknown':
+      return {
+        text: `agent ${lib} · inline ?`,
+        tooltip: `The agent library version of this build is unknown (a local or replaced build): inline policies are allowed with a warning. Plugins built on agent < ${MIN_INLINE_POLICY_LIB} ignore policy_id.`,
+        classes:
+          'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300',
+      };
+    default:
+      return {
+        text: `agent ${lib}`,
+        tooltip: `Built on agent library ${lib}`,
+        classes:
+          'bg-slate-200 text-gray-700 dark:bg-slate-700 dark:text-slate-300',
+      };
+  }
+});
 
 function count(v: unknown): number {
   return v && typeof v === 'object' ? Object.keys(v).length : 0;
