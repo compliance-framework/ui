@@ -60,6 +60,14 @@
     <Message v-else-if="error" severity="warn" data-test="source-error">
       {{ error }}
     </Message>
+    <p
+      v-else-if="text === null && mode === 'edit'"
+      class="rounded-md border border-dashed border-ccf-300 p-4 text-sm text-gray-500 dark:border-slate-700 dark:text-slate-400"
+      data-test="no-module-text"
+    >
+      The draft has no module text for this file (it is inherited, deleted or
+      restored). Use View or Override in the file list.
+    </p>
     <RegoModuleEditor
       v-else-if="text !== null"
       :key="`${bundle}/${path}/${mode}`"

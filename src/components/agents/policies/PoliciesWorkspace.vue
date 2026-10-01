@@ -304,12 +304,14 @@ function selectSource(source: string) {
   sel.file = null;
   sel.mode = null;
 }
+// ?bundle=<name> opens that bundle once the draft is there.
 watch(
-  () => ws.ready.value && Object.keys(ops.bundles.value),
-  () => {
-    if (sel.bundle || sel.source || !ws.ready.value) return;
-    const want = props.initialBundle;
-    if (want && ops.bundles.value[want]) selectBundle(want);
+  () =>
+    ws.ready.value &&
+    !!props.initialBundle &&
+    !!ops.bundles.value[props.initialBundle],
+  (ok) => {
+    if (ok && !sel.bundle && !sel.source) selectBundle(props.initialBundle!);
   },
   { immediate: true },
 );

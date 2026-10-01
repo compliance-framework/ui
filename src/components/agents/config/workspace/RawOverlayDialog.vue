@@ -111,7 +111,7 @@
 // R70: the structured drawer is gone; the raw overlay is edited here and feeds the same
 // pending-changes draft, preview and save flow. Forbidden keys (R71) are highlighted and
 // block Apply client-side; the API's 422 `locked-key` stays authoritative.
-import { computed, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import Button from '@/volt/Button.vue';
 import Dialog from '@/volt/Dialog.vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
@@ -186,6 +186,11 @@ function onInput(value: string) {
     parseNow(value);
   }, PARSE_DEBOUNCE_MS);
 }
+
+onBeforeUnmount(() => {
+  if (timer) clearTimeout(timer);
+  timer = null;
+});
 
 function flush() {
   if (timer) {

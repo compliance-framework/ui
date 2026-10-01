@@ -184,10 +184,12 @@ describe('useOverlayDraft', () => {
 describe('draft registry (R69)', () => {
   beforeEach(() => resetAgentDrafts());
 
-  it('keeps one draft per agent for the session', () => {
-    const a = agentDraftState('a');
-    expect(agentDraftState('a')).toBe(a);
-    expect(agentDraftState('b')).not.toBe(a);
+  it('keeps one draft per agent and user for the session', () => {
+    const a = agentDraftState('a', 'u1');
+    expect(agentDraftState('a', 'u1')).toBe(a);
+    expect(agentDraftState('b', 'u1')).not.toBe(a);
+    // Another user in the same tab (logout does not reload) never gets u1's draft.
+    expect(agentDraftState('a', 'u2')).not.toBe(a);
     expect(a.baseRevision.value).toBe(-1);
   });
 

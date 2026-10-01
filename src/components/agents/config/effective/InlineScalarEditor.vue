@@ -174,7 +174,9 @@ function initialChoice(): Choice {
   if (overlayValue === null) return props.kind === 'protocol' ? AUTO : FILE;
   return overlayValue as Choice;
 }
-const choice = ref<Choice>(initialChoice());
+const startChoice = initialChoice();
+const choice = ref<Choice>(startChoice);
+const startText = text.value;
 
 const error = computed(() => {
   if (isSelect.value) return '';
@@ -205,6 +207,15 @@ const hint = computed(() => {
 
 function apply() {
   if (error.value) return;
+  // An untouched field the overlay does not set: nothing to change (do not pin the file
+  // value into the overlay).
+  const untouched = isSelect.value
+    ? choice.value === startChoice
+    : text.value === startText;
+  if (untouched && !inOverlay.value) {
+    emit('done');
+    return;
+  }
   if (isSelect.value) {
     if (choice.value === FILE) draft.unset(props.ptr);
     else if (choice.value === AUTO) draft.remove(props.ptr);

@@ -123,6 +123,16 @@ describe('inline editing on the Effective view (R69)', () => {
     wrapper.unmount();
   });
 
+  it('Apply on an untouched field does not pin the file value', async () => {
+    const { wrapper, ws } = await mountTab();
+    let editor = await openEditor(wrapper, '/plugins/local-ssh/enabled');
+    await editor.find('form').trigger('submit');
+    editor = await openEditor(wrapper, '/agent_evidence/interval');
+    await editor.find('form').trigger('submit');
+    expect(ws.draft.isDirty.value).toBe(false);
+    wrapper.unmount();
+  });
+
   it('config keys: per-key editor with Remove, and never pre-fills a masked value (R25)', async () => {
     const { wrapper, ws } = await mountTab();
     const editor = await openEditor(wrapper, '/plugins/local-ssh/config/port');

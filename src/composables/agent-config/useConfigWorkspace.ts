@@ -22,6 +22,7 @@ import type {
   SaveResult,
 } from '@/types/agent-config';
 import { usePermissions } from '@/composables/usePermissions';
+import { useUserStore } from '@/stores/auth';
 import { isPlainObject } from '@/utils/agent-config/merge-patch';
 import { parsePointer } from '@/utils/agent-config/json-pointer';
 import {
@@ -150,7 +151,8 @@ export function useConfigWorkspace(
   });
 
   // ---- The draft (shared per agent) ----
-  const draftState = agentDraftState(agentId);
+  // Scoped to the signed-in user (see draftRegistry).
+  const draftState = agentDraftState(agentId, useUserStore().user?.id ?? '');
   watch(
     state.config,
     (cfg) => {

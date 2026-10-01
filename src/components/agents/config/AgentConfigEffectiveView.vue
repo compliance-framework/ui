@@ -185,12 +185,17 @@ const pluginCards = computed(() => {
       }
     }
   }
-  // Plugins the pending draft adds (R69): shown from the draft until an instance reports them.
+  // Plugins the pending draft adds (R69), shown from the draft. A plugin the saved desired
+  // revision adds but this instance has not applied yet is not "pending" and is not shown.
   if (ws?.ready.value) {
     for (const [name, plugin] of Object.entries(
       ws.draft.effectiveDraft.value.plugins ?? {},
     )) {
-      if (isPlainObject(plugin) && !cards.some((c) => c.name === name)) {
+      if (
+        isPlainObject(plugin) &&
+        !cards.some((c) => c.name === name) &&
+        ws.draft.pendingAt(pointer('plugins', name))
+      ) {
         cards.push({
           name,
           plugin: plugin as PluginDoc,

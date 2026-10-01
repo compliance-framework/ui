@@ -1,4 +1,5 @@
-// Shared access to the editor draft, context and permissions for the drawer's sections,
+// Shared access to the editor draft, context and permissions for the components that edit the
+// pending-changes draft (inline Effective-view editors, Policies view, bundle operations),
 // plus the preview-derived hints (shields, trust hints) and lock/"differs" hints (LLD U2.3).
 
 import { computed, inject } from 'vue';
