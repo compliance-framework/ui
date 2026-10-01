@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createFixtureApi, resetFixtureState } from '../fixtureApi';
-import { instanceIds } from '../fixtures';
+import { FIXTURE_ARTIFACTS, instanceIds } from '../fixtures';
 
 describe('fixture API (U0.6)', () => {
   beforeEach(() => resetFixtureState());
@@ -46,5 +46,25 @@ describe('fixture API (U0.6)', () => {
     expect(preview.standalone).toBe(false);
     const reverted = await api.revert('x', 6, 7);
     expect(reverted.revision.revertOf).toBe(6);
+  });
+
+  it('serves vendor sources for the reported artifact digests (R62)', async () => {
+    const api = createFixtureApi();
+    const detail = await api.getInstance('x', instanceIds.a);
+    const inline = detail.policyBundles.find(
+      (b) => b.source === 'inline:ssh-tuned',
+    );
+    expect(inline?.extends?.artifactDigest).toBe(FIXTURE_ARTIFACTS.sshPolicies);
+    const list = await api.listArtifactFiles(FIXTURE_ARTIFACTS.sshPolicies);
+    expect(list.files.map((f) => f.path)).toContain('banner.rego');
+    const file = await api.getArtifactFile(
+      FIXTURE_ARTIFACTS.sshPolicies,
+      'banner.rego',
+    );
+    expect(file.source).toMatch(/^package compliance_framework\.banner/);
+    expect(file.package).toBe('compliance_framework.banner');
+    await expect(
+      api.getArtifactFile(FIXTURE_ARTIFACTS.sshPolicies, 'nope.rego'),
+    ).rejects.toMatchObject({ status: 404 });
   });
 });

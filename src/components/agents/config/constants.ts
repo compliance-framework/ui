@@ -118,6 +118,40 @@ export const FIELD_ERROR_CODE_LABELS: Record<string, string> = {
   parse: 'Parse error',
 };
 
+// ---- PolicyError codes (R63: policyeval contract.go, regocheck, agent inlinepolicy) ----
+
+export const POLICY_ERROR_CODE_LABELS: Record<string, string> = {
+  // Contract (static, policyeval.CheckContract; dynamic, ValidateResult)
+  'missing-title': 'Missing title',
+  'empty-title': 'Empty title',
+  'conditional-title': 'Title may be undefined',
+  'missing-violation': 'No violation rule',
+  'contract-key-function': 'Contract key is a function',
+  'contract-key-multi-value': 'Contract key is multi-value',
+  'invalid-type': 'Wrong type',
+  'invalid-violation-rule': 'Invalid violation rule',
+  'invalid-violation': 'Invalid violation',
+  'violation-missing-id': 'Violation without id',
+  'invalid-risk-template': 'Invalid risk template',
+  'unknown-violation-id': 'Unknown violation id',
+  'duplicate-package-module': 'Package defined twice',
+  'no-output': 'No output',
+  // Parse level (regocheck)
+  'rego-parse-error': 'Parse error',
+  'missing-rego-v1-import': 'Missing import rego.v1',
+  'package-namespace': 'Package namespace',
+  'forbidden-builtin': 'Forbidden builtin',
+  // Agent checks (compile, tests, dry run)
+  'eval-error': 'Evaluation error',
+  'eval-conflict': 'Evaluation conflict',
+  'dry-run-timeout': 'Dry run timed out',
+  'duplicate-policy-package': 'Package loaded twice',
+};
+
+/** R64 (corrects the earlier "never reject" wording, §13.1). */
+export const VENDOR_TEST_TOOLTIP =
+  'Vendor test failures are warnings; vendor tests that no longer compile reject the revision.';
+
 // ---- Preview will-apply reasons ----
 
 export const WILL_APPLY_REASON_LABELS: Record<string, string> = {

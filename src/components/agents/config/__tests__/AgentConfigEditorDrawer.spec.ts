@@ -66,6 +66,8 @@ const cleanPreview: ConfigPreview = {
 function makeApi(over: Partial<AgentConfigApi> = {}): AgentConfigApi {
   return {
     fixtures: false,
+    listArtifactFiles: vi.fn(),
+    getArtifactFile: vi.fn(),
     getConfig: vi.fn().mockResolvedValue({
       ...configRev7,
       revision: 8,

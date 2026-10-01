@@ -29,6 +29,53 @@ export const UBUNTU_SOURCE =
 export const UBUNTU_POLICIES =
   'ghcr.io/compliance-framework/plugin-ubuntu-policies:v0.2.0';
 
+/** R62: artifact digests the fixture reports name (sources in FIXTURE_ARTIFACT_SOURCES). */
+export const FIXTURE_ARTIFACTS = {
+  sshPolicies: `sha256:${'b'.repeat(64)}`,
+  inlineSshTuned: `sha256:${'a'.repeat(64)}`,
+  ubuntuPolicies: `sha256:${'d'.repeat(64)}`,
+} as const;
+
+function fixturePolicy(pkg: string, title: string): string {
+  return `package compliance_framework.${pkg}
+
+import rego.v1
+
+title := "${title}"
+description := "Fixture vendor policy ${pkg}."
+
+violation contains {"id": "${pkg}", "title": "${title} failed"} if {
+	input.${pkg} == false
+}
+`;
+}
+
+/** Vendor file sources per artifact digest (fixture mode only). */
+export const FIXTURE_ARTIFACT_SOURCES: Record<
+  string,
+  Record<string, string>
+> = {
+  [FIXTURE_ARTIFACTS.sshPolicies]: {
+    'banner.rego': fixturePolicy('banner', 'SSH banner is set'),
+    'banner_test.rego': `package compliance_framework.banner_test
+
+import rego.v1
+
+test_violation if {
+	data.compliance_framework.banner.violation with input as {"banner": false}
+}
+`,
+    'max_auth_tries.rego': fixturePolicy(
+      'max_auth_tries',
+      'SSH MaxAuthTries is low',
+    ),
+    'root_login.rego': fixturePolicy('root_login', 'SSH root login is off'),
+  },
+  [FIXTURE_ARTIFACTS.ubuntuPolicies]: {
+    'packages.rego': fixturePolicy('packages', 'Packages are up to date'),
+  },
+};
+
 export const instanceIds = {
   a: '0f5e2c1a-0000-4000-8000-00000000000a',
   b: '0f5e2c1a-0000-4000-8000-00000000000b',
@@ -291,9 +338,11 @@ export function detailFor(
       {
         source: 'inline:ssh-tuned',
         digest: 'tree:sha256:aa11',
+        artifactDigest: FIXTURE_ARTIFACTS.inlineSshTuned,
         extends: {
           source: SSH_POLICIES,
           digest: 'tree:sha256:bb22',
+          artifactDigest: FIXTURE_ARTIFACTS.sshPolicies,
           files: [
             {
               path: 'banner.rego',
@@ -338,6 +387,7 @@ export function detailFor(
       {
         source: UBUNTU_POLICIES,
         digest: 'tree:sha256:dd44',
+        artifactDigest: FIXTURE_ARTIFACTS.ubuntuPolicies,
         files: [
           {
             path: 'packages.rego',

@@ -6,11 +6,15 @@ import type {
 } from '@/types/agent-config';
 import {
   bundleFileStates,
+  changedLeafPaths,
   firstNonPolicyPath,
   isPolicyOnlyChange,
   POLICY_ONLY_GENERIC_REASON,
   policyOnlyGate,
+  sourceArtifact,
+  vendorArtifactFor,
   vendorFilesFor,
+  vendorTestsFor,
 } from '../policy-files';
 
 const f = (path: string, pkg?: string): PolicyFileReport => ({
@@ -282,5 +286,91 @@ describe('policyOnlyGate (R61: Revert / Clear overlay)', () => {
     expect(
       policyOnlyGate([base], {}, { policy_bundles: { b: bundle('new:v1') } }),
     ).toEqual({ allowed: false, reason: POLICY_ONLY_GENERIC_REASON });
+  });
+});
+
+describe('vendor sources (R62/R64)', () => {
+  const report = (
+    over: Partial<PolicyBundleReport> & { source: string },
+  ): PolicyBundleReport => ({ digest: 'tree:x', files: [], ...over });
+
+  it('prefers the inline entry extends digest when it reports the same source', () => {
+    const reports = [
+      report({
+        source: 'inline:b',
+        extends: {
+          source: 'oci://v1',
+          digest: 'tree:v',
+          files: [],
+          artifactDigest: 'sha256:ext',
+        },
+      }),
+      report({ source: 'oci://v1', artifactDigest: 'sha256:direct' }),
+    ];
+    expect(vendorArtifactFor('b', { extends: 'oci://v1' }, [reports])).toEqual({
+      digest: 'sha256:ext',
+      miss: null,
+    });
+  });
+
+  it('falls back to the direct source report, then explains the miss', () => {
+    const mismatch = [
+      report({
+        source: 'inline:b',
+        extends: {
+          source: 'oci://v0',
+          digest: 'tree:v',
+          files: [],
+          artifactDigest: 'sha256:old',
+        },
+      }),
+    ];
+    expect(vendorArtifactFor('b', { extends: 'oci://v1' }, [mismatch])).toEqual(
+      { digest: null, miss: 'extends-mismatch' },
+    );
+    expect(
+      vendorArtifactFor('b', { extends: 'oci://v1' }, [
+        mismatch,
+        [report({ source: 'oci://v1', artifactDigest: 'sha256:direct' })],
+      ]).digest,
+    ).toBe('sha256:direct');
+    expect(vendorArtifactFor('b', { extends: 'oci://v1' }, [null])).toEqual({
+      digest: null,
+      miss: 'no-report',
+    });
+    expect(
+      vendorArtifactFor('b', { extends: 'oci://v1' }, [
+        [report({ source: 'inline:b' })],
+      ]).miss,
+    ).toBe('no-digest');
+    expect(sourceArtifact('oci://v1', [report({ source: 'oci://v1' })])).toBe(
+      null,
+    );
+  });
+
+  it('finds the vendor tests of a package or file stem', () => {
+    const files = [
+      f('ssh.rego', 'compliance_framework.ssh'),
+      f('ssh_test.rego', 'compliance_framework.ssh'),
+      f('other_test.rego', 'compliance_framework.ssh_test'),
+      f('x_test.rego', 'compliance_framework.x'),
+    ];
+    expect(
+      vendorTestsFor('compliance_framework.ssh', 'ssh.rego', files).map(
+        (x) => x.path,
+      ),
+    ).toEqual(['ssh_test.rego', 'other_test.rego']);
+    expect(vendorTestsFor(null, 'x.rego', files).map((x) => x.path)).toEqual([
+      'x_test.rego',
+    ]);
+  });
+
+  it('changedLeafPaths lists differing leaves (arrays whole)', () => {
+    expect(
+      changedLeafPaths(
+        { verbosity: 1, plugins: { a: { policies: ['x'] } } },
+        { plugins: { a: { policies: ['x', 'y'] }, b: { source: 's' } } },
+      ),
+    ).toEqual(['/plugins/a/policies', '/plugins/b/source', '/verbosity']);
   });
 });

@@ -10,6 +10,8 @@ import { jsonBody, useAuthenticatedInstance } from '@/composables/axios';
 import type {
   AgentConfigRevision,
   AgentConfigRevisionSummary,
+  ArtifactFileList,
+  ArtifactFileSource,
   AgentInstanceDetail,
   AgentInstanceSummary,
   ConfigErrorBody,
@@ -162,6 +164,16 @@ export function toAgentConfigError(
 const ifMatch = (rev: number) => ({ 'If-Match': `"${rev}"` });
 
 /**
+ * Artifact file route (R62). Each path segment is encoded on its own, so the slashes stay
+ * literal and a segment containing "%", "#" or "?" survives; the API unescapes either form.
+ */
+export function artifactFileUrl(digest: string, path?: string): string {
+  const base = `/api/artifacts/${encodeURIComponent(digest)}/files`;
+  if (path === undefined) return base;
+  return `${base}/${path.split('/').map(encodeURIComponent).join('/')}`;
+}
+
+/**
  * Defence in depth (R25): a masked report value must never be sent back. The editor already
  * blocks it; this refuses locally if a caller ever skips that validation.
  */
@@ -304,6 +316,21 @@ export function createHttpAgentConfigApi(
         );
         return res.data.data;
       }),
+    // Bare bodies (no `data` envelope); immutable (the browser revalidates by ETag).
+    listArtifactFiles: (digest) =>
+      call('listArtifactFiles', async () => {
+        const res = await instance.get<ArtifactFileList>(
+          artifactFileUrl(digest),
+        );
+        return { ...res.data, files: res.data.files ?? [] };
+      }),
+    getArtifactFile: (digest, path) =>
+      call('getArtifactFile', async () => {
+        const res = await instance.get<ArtifactFileSource>(
+          artifactFileUrl(digest, path),
+        );
+        return res.data;
+      }),
   };
 }
 
@@ -325,6 +352,9 @@ function createLazyFixtureApi(): AgentConfigApi {
     revert: (...a) => load().then((api) => api.revert(...a)),
     listInstances: (...a) => load().then((api) => api.listInstances(...a)),
     getInstance: (...a) => load().then((api) => api.getInstance(...a)),
+    listArtifactFiles: (...a) =>
+      load().then((api) => api.listArtifactFiles(...a)),
+    getArtifactFile: (...a) => load().then((api) => api.getArtifactFile(...a)),
   };
 }
 

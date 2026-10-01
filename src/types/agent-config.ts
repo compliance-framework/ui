@@ -135,6 +135,12 @@ export interface PolicyError {
   col?: number;
   message: string;
   severity: 'error' | 'warning';
+  /**
+   * R63: a policyeval contract code (missing-title, invalid-violation, …), a regocheck code
+   * (rego-parse-error, forbidden-builtin, …) or an agent check code (eval-error, …). Absent
+   * from older producers. Labels: POLICY_ERROR_CODE_LABELS.
+   */
+  code?: string;
 }
 
 // ---- Instances (API agentInstanceSummary / agentInstanceDetail, R10) ----
@@ -169,8 +175,44 @@ export interface PolicyBundleReport {
     source: string;
     digest: string;
     files: PolicyFileReport[];
+    /** R62: artifact of the vendor tree alone (GET /api/artifacts/{digest}/files). */
+    artifactDigest?: string;
   } | null;
   files: PolicyFileReport[];
+  /**
+   * R62: the uploaded artifact of this tree ("sha256:<hex>" of the canonical tar), readable
+   * through the artifact file routes. Empty/absent when the upload failed or the agent is
+   * older; kept when `files` was dropped to fit the report.
+   */
+  artifactDigest?: string;
+}
+
+// ---- Policy bundle artifacts (R62: GET /api/artifacts/{digest}/files[/{path}]) ----
+
+/** One file of a stored policy bundle artifact. */
+export interface ArtifactFileInfo {
+  path: string;
+  /** Lowercase hex, as in agent config reports. */
+  sha256: string;
+  size: number;
+  /** Rego package without "data.", for .rego files that parse. */
+  package?: string;
+}
+
+/** Bare body (no `data` envelope) of GET /api/artifacts/{digest}/files. */
+export interface ArtifactFileList {
+  digest: string;
+  /** agentconfig.BundleTreeDigest of the same files ("tree:sha256:…"). */
+  treeDigest: string;
+  files: ArtifactFileInfo[];
+}
+
+/** Bare body of GET /api/artifacts/{digest}/files/{path}. */
+export interface ArtifactFileSource {
+  path: string;
+  package?: string;
+  sha256: string;
+  source: string;
 }
 
 export interface AgentInstanceSummary {

@@ -72,6 +72,97 @@ export function vendorFilesFor(
   return null;
 }
 
+// ---------------------------------------------------------------------------------------
+// Vendor sources (R62): which artifact holds the vendor tree a bundle extends.
+// ---------------------------------------------------------------------------------------
+
+export type VendorArtifactMiss = 'no-report' | 'no-digest' | 'extends-mismatch';
+
+export interface VendorArtifact {
+  /** The artifact digest to read vendor files from, or null. */
+  digest: string | null;
+  /** Why there is no digest (null when there is one). */
+  miss: VendorArtifactMiss | null;
+}
+
+/**
+ * The artifact of the vendor tree bundle `name` extends, from instance reports (R62):
+ *  1. the `inline:<name>` entry's `extends.artifact-digest`, when it reports the SAME
+ *     extends source as the draft (a draft that changed `extends` must not pre-fill the old
+ *     source's files);
+ *  2. otherwise the `artifact-digest` of an entry whose source is the extends source (a
+ *     plugin still loads it directly).
+ * `reportSets` are tried in order (e.g. the selected instance first, then the others).
+ */
+export function vendorArtifactFor(
+  name: string,
+  bundle: PolicyBundleDoc | null | undefined,
+  reportSets: (PolicyBundleReport[] | null | undefined)[],
+): VendorArtifact {
+  const ext = typeof bundle?.extends === 'string' ? bundle.extends : '';
+  if (!ext) return { digest: null, miss: 'no-digest' };
+  let miss: VendorArtifactMiss = 'no-report';
+  for (const reports of reportSets) {
+    if (!reports) continue;
+    if (miss === 'no-report') miss = 'no-digest';
+    const inline = reports.find((r) => r.source === `inline:${name}`);
+    if (inline?.extends) {
+      if (inline.extends.source !== ext) miss = 'extends-mismatch';
+      else if (inline.extends.artifactDigest)
+        return { digest: inline.extends.artifactDigest, miss: null };
+    }
+    const direct = sourceArtifact(ext, reports);
+    if (direct) return { digest: direct, miss: null };
+  }
+  return { digest: null, miss };
+}
+
+/** The `artifact-digest` reported for a policy source loaded directly, or null. */
+export function sourceArtifact(
+  source: string,
+  reports: PolicyBundleReport[] | null | undefined,
+): string | null {
+  return (
+    (reports ?? []).find((r) => r.source === source && r.artifactDigest)
+      ?.artifactDigest ?? null
+  );
+}
+
+export const VENDOR_MISS_TEXT: Record<
+  VendorArtifactMiss | 'not-found' | 'error',
+  string
+> = {
+  'no-report':
+    'No instance has reported this bundle yet, so its vendor source is not available',
+  'no-digest':
+    "The agent did not upload this bundle's vendor source (older agent, or the upload failed)",
+  'extends-mismatch':
+    'The draft extends a different source than the agents last reported, so the reported vendor source does not apply',
+  'not-found': 'The vendor file is not in the uploaded artifact',
+  error: 'The vendor source could not be loaded',
+};
+
+/**
+ * Vendor `_test.rego` files that test package `pkg` (the package itself or `<pkg>_test`), or
+ * sit next to `path` as `<stem>_test.rego`. Used to offer deleting them with an override
+ * (R64): a vendor test that references a rule the override removed stops the bundle from
+ * compiling.
+ */
+export function vendorTestsFor(
+  pkg: string | null | undefined,
+  path: string,
+  vendorFiles: PolicyFileReport[] | null | undefined,
+): PolicyFileReport[] {
+  const stem = path.replace(/\.rego$/, '');
+  return (vendorFiles ?? []).filter(
+    (f) =>
+      f.path.endsWith('_test.rego') &&
+      f.path !== path &&
+      ((!!pkg && (f.package === pkg || f.package === `${pkg}_test`)) ||
+        f.path === `${stem}_test.rego`),
+  );
+}
+
 /**
  * The file table for one bundle.
  * @param vendorFiles the vendor list (null = unknown)
@@ -217,6 +308,13 @@ function leafDiffPaths(
     return;
   }
   if (hasA !== hasB || !deepEqual(a, b)) out.push(path);
+}
+
+/** RFC 6901 pointers of every leaf that differs between two overlays (arrays are leaves). */
+export function changedLeafPaths(a: unknown, b: unknown): string[] {
+  const out: string[] = [];
+  leafDiffPaths('', a, b, true, true, out);
+  return out;
 }
 
 /** Paths configure-policy may change: /policy_bundles/** or exactly /plugins/<p>/policies. */

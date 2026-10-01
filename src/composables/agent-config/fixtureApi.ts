@@ -27,6 +27,7 @@ import { diffConfigs } from '@/utils/agent-config/config-diff';
 import { sourceTrusted } from '@/utils/agent-config/glob';
 import { AgentConfigApiError, type AgentConfigApi } from './api-types';
 import {
+  FIXTURE_ARTIFACT_SOURCES,
   configRev6,
   configRev7,
   detailFor,
@@ -311,5 +312,45 @@ export function createFixtureApi(): AgentConfigApi {
       );
       return delay(detailFor(summary, applied?.overlay ?? {}));
     },
+    async listArtifactFiles(digest) {
+      const files = FIXTURE_ARTIFACT_SOURCES[digest];
+      if (!files) throw artifactNotFound(digest);
+      return delay({
+        digest,
+        treeDigest: `tree:${digest}`,
+        files: Object.entries(files)
+          .sort(([a], [b]) => a.localeCompare(b))
+          .map(([path, source]) => ({
+            path,
+            sha256: '0'.repeat(64),
+            size: source.length,
+            package: fixturePackage(source),
+          })),
+      });
+    },
+    async getArtifactFile(digest, path) {
+      const source = FIXTURE_ARTIFACT_SOURCES[digest]?.[path];
+      if (source === undefined) throw artifactNotFound(digest, path);
+      return delay({
+        path,
+        sha256: '0'.repeat(64),
+        package: fixturePackage(source),
+        source,
+      });
+    },
   };
+}
+
+function artifactNotFound(digest: string, path?: string): AgentConfigApiError {
+  return new AgentConfigApiError({
+    kind: 'other',
+    status: 404,
+    message: path
+      ? `artifact ${digest} has no file "${path}"`
+      : `artifact ${digest} not found`,
+  });
+}
+
+function fixturePackage(source: string): string | undefined {
+  return /^package\s+([\w.]+)/m.exec(source)?.[1];
 }
