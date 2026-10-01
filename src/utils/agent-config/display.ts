@@ -1,6 +1,6 @@
 // Small display helpers for the agent Configuration tab.
 
-import type { ConfigDoc } from '@/types/agent-config';
+import type { ConfigDoc, PolicyError } from '@/types/agent-config';
 import { clone, isPlainObject } from './merge-patch';
 
 /**
@@ -53,4 +53,14 @@ export function humanBytes(n: number): string {
   if (n < 1024) return `${n} B`;
   if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KiB`;
   return `${(n / (1024 * 1024)).toFixed(1)} MiB`;
+}
+
+/**
+ * Where a policy problem is: `<bundle>/<path>[:row:col]`, or just `<bundle>` for a
+ * bundle-level one (empty path, e.g. the agent's policy-stream-forked).
+ */
+export function policyErrorLocation(e: PolicyError): string {
+  if (!e.path) return e.bundle;
+  const pos = e.row ? `:${e.row}:${e.col ?? 1}` : '';
+  return `${e.bundle}/${e.path}${pos}`;
 }

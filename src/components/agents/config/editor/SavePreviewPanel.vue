@@ -34,12 +34,7 @@
             e.severity === 'error' ? 'policy-error' : 'policy-warning'
           "
         >
-          <code class="font-mono text-xs"
-            >{{ e.bundle }}/{{ e.path || ''
-            }}<template v-if="e.row"
-              >:{{ e.row }}:{{ e.col ?? 1 }}</template
-            ></code
-          >
+          <code class="font-mono text-xs">{{ policyErrorLocation(e) }}</code>
           <span v-if="e.code" class="ml-1 text-xs" data-test="policy-code">
             <CodeLabel :labels="POLICY_ERROR_CODE_LABELS" :code="e.code" />
           </span>
@@ -313,6 +308,7 @@ import type {
 import { mergePatch } from '@/utils/agent-config/merge-patch';
 import { diffConfigs, type DiffEntry } from '@/utils/agent-config/config-diff';
 import { toYaml } from '@/utils/agent-config/yaml';
+import { policyErrorLocation } from '@/utils/agent-config/display';
 import { LIMITS } from '@/utils/agent-config/validation';
 import ConfigPill from '../ConfigPill.vue';
 import CodeLabel from '../CodeLabel.vue';

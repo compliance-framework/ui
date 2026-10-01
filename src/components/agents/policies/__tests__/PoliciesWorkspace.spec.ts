@@ -551,3 +551,61 @@ describe('Policies view: bundles and assignment (R66, R58)', () => {
     expect(ws.draft.isDirty.value).toBe(false);
   });
 });
+
+describe('Policies view: reported policy warnings (R75, R88)', () => {
+  beforeEach(() => {
+    resetAgentDrafts();
+    resetVendorSourceCache();
+  });
+
+  const forked = {
+    bundle: 'ssh-tuned',
+    path: '',
+    message: 'new evidence streams',
+    severity: 'warning' as const,
+    code: 'policy-stream-forked',
+  };
+  /** Only ip-a in the validation set unless `withB`; ip-c (report mode) never is. */
+  function reportingApi(withB: boolean) {
+    const ids: string[] = withB
+      ? [instanceIds.a, instanceIds.b, instanceIds.c]
+      : [instanceIds.a, instanceIds.c];
+    const items = instancesMixed.items
+      .filter((i) => ids.includes(i.instanceId))
+      .map((i) => ({ ...i, policyErrors: [forked] }));
+    return artifactApi({
+      listInstances: vi.fn().mockResolvedValue({ ...instancesMixed, items }),
+    });
+  }
+
+  it("lists a validation instance's bundle-level warning and opens the bundle", async () => {
+    const { wrapper } = await mountWorkspace(reportingApi(false), ADMIN, null);
+    const warnings = wrapper.findAll('[data-test="validation-warning"]');
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0].find('code').text()).toBe('ssh-tuned');
+    expect(warnings[0].text()).toContain('New evidence stream');
+    expect(warnings[0].text()).not.toContain('(on ');
+    expect(
+      wrapper
+        .find('[data-test="bundle-item-ssh-tuned"] [role="img"]')
+        .attributes('aria-label'),
+    ).toBe('Has warnings');
+
+    await warnings[0].find('button').trigger('click');
+    await flushPromises();
+    expect(wrapper.find('[data-test="bundle-header"]').text()).toContain(
+      'ssh-tuned',
+    );
+    expect(wrapper.find('[data-test="editor-pane"]').exists()).toBe(false);
+  });
+
+  it('tags each instance with its hostname when several report', async () => {
+    const { wrapper } = await mountWorkspace(reportingApi(true), ADMIN, null);
+    const texts = wrapper
+      .findAll('[data-test="validation-warning"]')
+      .map((w) => w.text());
+    expect(texts).toHaveLength(2);
+    expect(texts[0]).toContain('(on ip-a)');
+    expect(texts[1]).toContain('(on ip-b)');
+  });
+});

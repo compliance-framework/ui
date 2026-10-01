@@ -249,12 +249,7 @@
                 : 'text-amber-700 dark:text-amber-300'
             "
           >
-            <code class="font-mono text-xs"
-              >{{ e.bundle }}/{{ e.path
-              }}<template v-if="e.row"
-                >:{{ e.row }}:{{ e.col ?? 1 }}</template
-              ></code
-            >
+            <code class="font-mono text-xs">{{ policyErrorLocation(e) }}</code>
             — {{ e.message }}
           </li>
         </ul>
@@ -288,6 +283,7 @@ import {
   formatAbsolute,
   formatRelative,
   humanBytes,
+  policyErrorLocation,
 } from '@/utils/agent-config/display';
 import { toYaml } from '@/utils/agent-config/yaml';
 import { LIMITS } from '@/utils/agent-config/validation';

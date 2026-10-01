@@ -65,12 +65,7 @@
           class="text-left hover:underline"
           @click="$emit('open', e.bundle, e.path)"
         >
-          <code class="font-mono"
-            >{{ e.bundle }}/{{ e.path
-            }}<template v-if="e.row"
-              >:{{ e.row }}:{{ e.col ?? 1 }}</template
-            ></code
-          >
+          <code class="font-mono">{{ policyErrorLocation(e) }}</code>
           <span v-if="e.code" class="ml-1 font-medium">
             <CodeLabel :labels="POLICY_ERROR_CODE_LABELS" :code="e.code" />
           </span>
@@ -94,11 +89,13 @@
 
 <script setup lang="ts">
 // The Policies view's validation panel (R68, R89): the live / on-demand API preview's policy
-// errors (with their R63 codes) and the draft's other issues.
+// errors (with their R63 codes), the agents' reported policy warnings and the draft's other
+// issues.
 import SecondaryButton from '@/volt/SecondaryButton.vue';
 import type { PolicyError } from '@/types/agent-config';
 import type { PreviewStatus } from '@/composables/agent-config/usePreview';
 import type { ClientIssue } from '@/utils/agent-config/validation';
+import { policyErrorLocation } from '@/utils/agent-config/display';
 import CodeLabel from '../config/CodeLabel.vue';
 import { POLICY_ERROR_CODE_LABELS } from '../config/constants';
 

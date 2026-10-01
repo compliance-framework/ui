@@ -252,6 +252,7 @@ import {
   type FileRow,
 } from '@/utils/agent-config/policy-files';
 import { bundleProvenance } from '@/utils/agent-config/provenance';
+import { validationInstanceIds } from '@/utils/agent-config/instance-status';
 import {
   moduleTemplate,
   newModulePolicyId,
@@ -485,6 +486,46 @@ function diagnosticsFor(bundle: string, path: string): PolicyError[] {
   );
 }
 
+/**
+ * R75/R88: the policy warnings the validation-set instances report on the revision they run
+ * (e.g. policy-stream-forked; an empty path is bundle-level), tagged with the hostname when
+ * there are several.
+ */
+const reportedProblems = computed<PolicyError[]>(() => {
+  const ids = new Set(validationInstanceIds(ws.state.instances.value));
+  const insts = ws.state.instances.value.filter((i) => ids.has(i.instanceId));
+  const many = insts.length > 1;
+  return insts.flatMap((i) =>
+    i.policyErrors
+      .filter((e) => e.severity === 'warning')
+      .map((e) =>
+        many && i.hostname
+          ? { ...e, message: `${e.message} (on ${i.hostname})` }
+          : e,
+      ),
+  );
+});
+const problemKey = (e: PolicyError) =>
+  `${e.bundle}|${e.path}|${e.row ?? ''}|${e.code ?? ''}|${e.message}`;
+function dedupe(list: PolicyError[]): PolicyError[] {
+  const seen = new Set<string>();
+  return list.filter((e) => {
+    const k = problemKey(e);
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
+}
+/** A file's diagnostics plus the reported warnings on it (file counts). */
+function fileProblems(bundle: string, path: string): PolicyError[] {
+  return dedupe([
+    ...diagnosticsFor(bundle, path),
+    ...reportedProblems.value.filter(
+      (e) => e.bundle === bundle && e.path === path,
+    ),
+  ]);
+}
+
 function count(d: PolicyError[]) {
   return {
     errors: d.filter((x) => x.severity === 'error').length,
@@ -499,13 +540,18 @@ function problemsOfBundle(name: string) {
       .map((e) => e.path),
   ]);
   const all = Array.from(paths).flatMap((p) => diagnosticsFor(name, p));
-  return count(all);
+  return count(
+    dedupe([
+      ...all,
+      ...reportedProblems.value.filter((e) => e.bundle === name),
+    ]),
+  );
 }
 const problemsByPath = computed(() => {
   const out: Record<string, { errors: number; warnings: number }> = {};
   if (!sel.bundle) return out;
   for (const r of rows.value) {
-    const c = count(diagnosticsFor(sel.bundle, r.path));
+    const c = count(fileProblems(sel.bundle, r.path));
     if (c.errors || c.warnings) out[r.path] = c;
   }
   return out;
@@ -513,25 +559,18 @@ const problemsByPath = computed(() => {
 const selectedDiagnostics = computed(() =>
   sel.bundle && sel.file ? diagnosticsFor(sel.bundle, sel.file) : [],
 );
-const allProblems = computed(() => {
-  const seen = new Set<string>();
-  const out: PolicyError[] = [];
-  for (const e of [
+const allProblems = computed(() =>
+  dedupe([
     ...(ws.preview.lastPreview.value?.policyErrors ?? []),
     ...ws.savePolicyErrors.value,
-  ]) {
-    const k = `${e.bundle}|${e.path}|${e.row ?? ''}|${e.code ?? ''}|${e.message}`;
-    if (seen.has(k)) continue;
-    seen.add(k);
-    out.push(e);
-  }
-  return out.sort(
+    ...reportedProblems.value,
+  ]).sort(
     (a, b) =>
       a.bundle.localeCompare(b.bundle) ||
       a.path.localeCompare(b.path) ||
       (a.row ?? 0) - (b.row ?? 0),
-  );
-});
+  ),
+);
 const policyIssues = computed(() =>
   draft.issues.value.filter(
     (i) =>
@@ -542,7 +581,8 @@ const policyIssues = computed(() =>
 function openProblem(bundle: string, path: string) {
   if (!ops.bundles.value[bundle]) return;
   selectBundle(bundle);
-  if (typeof ops.bundles.value[bundle].modules?.[path] === 'string') {
+  // An empty path is bundle-level: selecting the bundle is all there is to open.
+  if (path && typeof ops.bundles.value[bundle].modules?.[path] === 'string') {
     sel.file = path;
     sel.mode = 'edit';
   }
