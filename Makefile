@@ -21,7 +21,7 @@ maintain:  ## Performs regular updates that may be required
 	@npm run lint
 
 check-version:  ## Check node version is satisfactory
-	@bash -c '[ "$$(printf "%s\n" 21.0.0 "$$(node -v | sed "s/^v//")" | sort -V | head -n1)" = "21.0.0" ] || (echo "Node.js too old" >&2; exit 1)'
+	@bash -c '[ "$$(printf "%s\n" 20.0.0 "$$(node -v | sed "s/^v//")" | sort -V | head -n1)" = "20.0.0" ] || (echo "Node.js too old" >&2; exit 1)'
 
 install:  ## Install node packages what's required
 	@npm i

@@ -8,7 +8,7 @@ CCF uses a centralized tooltip system that makes it easy to add contextual help 
 
 ### 1. Centralized Configuration
 
-All tooltip text is defined in `/Users/gusfcarvalho/Documents/repos/cs/ccf/ui/src/config/tooltips.ts`:
+All tooltip text is defined in `src/config/tooltips.ts`:
 
 ```typescript
 export const TOOLTIPS = {
