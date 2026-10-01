@@ -66,13 +66,15 @@ const FIELD_CODES = [
   'parse',
 ];
 // R75/R76/R79 (api errors.go PolicyCode*, policyeval Issue*) and the agent-only
-// policy-stream-forked (agent#95 inlinepolicy.CodePolicyStreamForked).
+// policy-stream-forked (agent#95 inlinepolicy.CodePolicyStreamForked) and the R82
+// policy-id-continuity-skipped warning (multi-module package).
 const POLICY_IDENTITY_CODES = [
   'invalid-policy-id',
   'duplicate-policy-id',
   'duplicate-policy-identity',
   'policy-package-changed',
   'policy-stream-forked',
+  'policy-id-continuity-skipped',
   'plugin-lib-violation-set-unsupported',
   'plugin-lib-policy-id-unsupported',
   'plugin-lib-inline-unsupported',

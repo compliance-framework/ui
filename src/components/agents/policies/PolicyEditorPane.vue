@@ -25,7 +25,7 @@
     </header>
 
     <p
-      v-if="stream && mode === 'edit'"
+      v-if="stream"
       class="text-xs text-gray-500 dark:text-slate-400"
       data-test="stream-identity"
     >
@@ -37,14 +37,16 @@
         ·
         <code class="font-mono break-all">{{ stream.policyId }}</code></template
       >
+      <template v-else-if="stream.automaticId">
+        · the agent adds
+        <code class="font-mono break-all" data-test="stream-automatic-id"
+          >policy_id := {{ JSON.stringify(stream.automaticId) }}</code
+        ></template
+      >
     </p>
-    <Message
-      v-if="stream?.fork && mode === 'edit'"
-      severity="warn"
-      data-test="stream-fork"
-    >
+    <Message v-if="stream?.fork" severity="warn" data-test="stream-fork">
       <span class="text-sm">{{
-        forkMessage(stream.fork, stream.policyId, streamSource ?? null)
+        forkMessage(stream.fork, stream.policyId)
       }}</span>
     </Message>
 
@@ -135,10 +137,8 @@ defineProps<{
   vendorTests: string[];
   /** View mode on an inherited vendor file the user may override. */
   canOverride?: boolean;
-  /** R78: the module's evidence stream (authored policy modules only). */
+  /** R78/R82: the module's evidence stream (policy modules of a bundle). */
   stream?: StreamIdentity | null;
-  /** The source the bundle extends (named in the fork notice). */
-  streamSource?: string | null;
 }>();
 defineEmits<{
   update: [text: string];

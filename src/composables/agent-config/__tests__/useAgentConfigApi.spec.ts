@@ -163,7 +163,7 @@ describe('useAgentConfigApi (HTTP client)', () => {
         'policy-bundles': [
           {
             source: 'inline:b',
-            'plugin-path': '/state/inline/b/current/bundle',
+            'plugin-path': '.compliance-framework/policies/inline/b/policies',
             extends: { source: 'oci://v', 'plugin-path': './v/' },
           },
         ],
@@ -181,7 +181,7 @@ describe('useAgentConfigApi (HTTP client)', () => {
       };
     };
     expect(out.data.policyBundles[0].pluginPath).toBe(
-      '/state/inline/b/current/bundle',
+      '.compliance-framework/policies/inline/b/policies',
     );
     expect(out.data.policyBundles[0].extends.pluginPath).toBe('./v/');
   });

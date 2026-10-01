@@ -1,4 +1,5 @@
-// Evidence identity of policy modules (design §13.4: R74 policy_id, R77 plugin-path, R78).
+// Evidence identity of policy modules (design §13.4: R74 policy_id, R77 plugin-path, R78;
+// §13.5: R82 automatic continuity policy_id).
 //
 // Plugins seed each evidence UUID with the policy's file (the path the agent passed them,
 // joined with the module's path and cleaned by OPA's loader) and the literal policy path.
@@ -8,7 +9,9 @@
 // writes to.
 //
 // ADVISORY: like contract-hints, the policy_id and package are read line by line, never by
-// parsing Rego. The agent's checks (policy-stream-forked, policy-package-changed) decide.
+// parsing Rego. The agent's checks (policy-stream-forked, policy-package-changed) decide, and
+// the agent itself appends the continuity policy_id to modules that continue a vendor file
+// (R82); the UI only mirrors that rule to label streams and warn about forks.
 
 import type { PolicyBundleReport } from '@/types/agent-config';
 
@@ -94,7 +97,7 @@ export function seedPath(
  * The policy_id that makes a module at `file` continue the evidence stream of the module at
  * `file` under plugin path `pluginPath` when that one declares none (R77 correction): the
  * LITERAL `<plugin-path>/<file>`, not path.Join, so an un-cleaned plugin path such as "./x"
- * or "x/" survives in the `_policy_path` seed.
+ * or "x/" survives in the `_policy_path` seed. R82: the agent appends exactly this id itself.
  */
 export function continuityPolicyId(pluginPath: string, file: string): string {
   return `${pluginPath}/${file}`;
@@ -271,95 +274,137 @@ export function hasPolicyIdRule(src: string): boolean {
   return policyIdRules(src).length > 0;
 }
 
-/**
- * Inserts `policy_id := "<id>"` after the module's imports (after the package line when it
- * has none). A module that already has a policy_id rule is returned unchanged.
- */
-export function insertPolicyId(src: string, id: string): string {
-  if (hasPolicyIdRule(src)) return src;
-  const lines = src.split('\n');
-  const pkg = modulePackage(src);
-  let at = pkg ? pkg.row : 0; // index after which to insert (1-based row → index)
-  for (let i = at; i < lines.length; i++) {
-    const l = stripComment(lines[i]).trim();
-    if (l === '') continue;
-    if (/^import\s/.test(l)) {
-      at = i + 1;
-      continue;
-    }
-    break;
-  }
-  const decl = `policy_id := ${JSON.stringify(id)}`;
-  const before = lines.slice(0, at);
-  const after = lines.slice(at);
-  // One blank line between the imports and the declaration, and after it.
-  while (before.length && before[before.length - 1].trim() === '') before.pop();
-  while (after.length && after[0].trim() === '') after.shift();
-  return [...before, '', decl, '', ...after].join('\n');
-}
-
-// ---- Stream identity (R78) ----
+// ---- Stream identity (R78, R82) ----
+//
+// R82 (design §13.5): while materializing an inline bundle that `extends` a source, the AGENT
+// appends `policy_id := "<extends.plugin-path>/<rel>"` to every non-test module that continues
+// a vendor file (inherited unchanged, or overridden at the same path with the same package)
+// and declares no policy_id, unless its package has more than one non-test module. So those
+// modules keep the vendor's stream with no user action; the UI only labels them and warns
+// when an edit forks the stream.
 
 /** Which evidence stream a module writes to. */
-export type StreamKind = 'continues' | 'own' | 'path';
+export type StreamKind = 'automatic' | 'continues' | 'own' | 'new' | 'path';
 
 export const STREAM_LABELS: Record<StreamKind, string> = {
+  automatic: 'continues vendor stream (automatic)',
   continues: 'continues vendor stream',
   own: 'own stream (policy_id)',
+  new: 'new stream',
   path: 'new stream (path-based)',
 };
 
-/** Why an override does not continue the vendor policy's stream. */
+/** Why a module that replaces or inherits a vendor module does not continue its stream. */
 export type ForkReason =
   /** The package line differs from the vendor module's. */
   | 'package'
   /** The policy_id differs from the one that continues the stream. */
   | 'policy-id'
-  /** No policy_id; `expected` would continue the stream. */
+  /** No policy_id, but the vendor module declares one (`expected`): the agent's id differs. */
   | 'no-policy-id'
-  /** No policy_id, and no instance reported the vendor plugin path (R77). */
-  | 'unknown-plugin-path';
+  /** The package has more than one non-test module: the agent adds no policy_id (R82). */
+  | 'multi-module';
+
+export interface StreamFork {
+  reason: ForkReason;
+  /** The policy_id that would continue the vendor stream, when known. */
+  expected: string | null;
+  /** The vendor package (reason 'package'). */
+  vendorPackage?: string;
+  /** The module's package (reasons 'package' and 'multi-module'). */
+  package?: string;
+  /** The package's non-test modules (reason 'multi-module'). */
+  modules?: string[];
+}
 
 export interface StreamIdentity {
   kind: StreamKind;
   /** The module's declared policy_id, or null. */
   policyId: string | null;
-  /** For an override that forks the vendor stream. */
-  fork: {
-    reason: ForkReason;
-    /** The policy_id that would continue the vendor stream, when known. */
-    expected: string | null;
-    /** The vendor package (reason 'package'). */
-    vendorPackage?: string;
-    /** The override's package (reason 'package'). */
-    package?: string;
-  } | null;
+  /** R82: the policy_id the agent appends (kind 'automatic'), when the plugin path is known. */
+  automaticId?: string | null;
+  /** For a module that does not continue the vendor stream it replaces or inherits. */
+  fork: StreamFork | null;
 }
 
-export interface OverrideContext {
+export interface VendorContext {
   /** The vendor module's package, when reported. */
   vendorPackage?: string | null;
   /** The vendor module's source; undefined = not loaded (its policy_id is unknown). */
   vendorSource?: string | null;
-  /** The plugin path of the source the bundle replaces (R77), or null when unreported. */
+  /** The plugin path of the source the bundle extends (R77), or null when unreported. */
   vendorPluginPath: string | null;
-  /** The plugin path of the bundle itself, or null (a stand-in is used). */
+  /** The plugin path of the bundle itself, or null (the R82 inline path is assumed). */
   bundlePluginPath: string | null;
+  /**
+   * The non-test `.rego` modules of the bundle as plugins load it (vendor files included)
+   * that share this module's package; more than one = the agent skips its policy_id (R82).
+   */
+  packageModules?: string[];
+}
+
+/** R82 (b): the relative path plugins load inline bundle `bundle` from. */
+export function inlinePluginPath(bundle: string): string {
+  return `.compliance-framework/policies/inline/${bundle}/policies`;
+}
+
+function vendorIdOf(ctx: VendorContext): string | null | undefined {
+  // undefined = vendor source not loaded; null = the vendor declares no policy_id.
+  return typeof ctx.vendorSource === 'string'
+    ? declaredPolicyId(ctx.vendorSource)
+    : undefined;
+}
+
+function multiModuleFork(
+  ctx: VendorContext,
+  pkg: string | null,
+  expected: string | null,
+): StreamFork | null {
+  const mods = ctx.packageModules ?? [];
+  if (mods.length <= 1) return null;
+  return {
+    reason: 'multi-module',
+    expected,
+    ...(pkg ? { package: pkg } : {}),
+    modules: [...mods].sort(),
+  };
 }
 
 /**
- * The stream identity of module `path` of bundle `bundle` with text `src`. Pass `override`
- * when the module replaces a vendor module at the same path (an extends bundle).
+ * Whether policy_id `id` of the module at `path` in the bundle writes to the same stream as
+ * the vendor module at `path` (declaring `vendorId`, or none), by the policyeval.SeedPath
+ * port; null when the vendor plugin path is unknown.
+ */
+function continuesVendor(
+  id: string,
+  vendorId: string | null | undefined,
+  path: string,
+  bundle: string,
+  ctx: VendorContext,
+): boolean | null {
+  const vp = ctx.vendorPluginPath;
+  if (vp === null) {
+    return typeof vendorId === 'string' ? id === vendorId : null;
+  }
+  const bp = ctx.bundlePluginPath || inlinePluginPath(bundle);
+  const [vf, vpath] = seedPath(vendorId ?? '', joinPath(vp, path), vp);
+  const [of, opath] = seedPath(id, joinPath(bp, path), bp);
+  return vf === of && vpath === opath;
+}
+
+/**
+ * The stream identity of authored module `path` of bundle `bundle` with text `src`. Pass
+ * `override` when the module replaces a vendor module at the same path (an extends bundle).
  */
 export function streamIdentity(
   bundle: string,
   path: string,
   src: string,
-  override?: OverrideContext | null,
+  override?: VendorContext | null,
 ): StreamIdentity {
   const policyId = declaredPolicyId(src);
-  const own: StreamKind = policyId ? 'own' : 'path';
-  if (!override) return { kind: own, policyId, fork: null };
+  if (!override)
+    return { kind: policyId ? 'own' : 'path', policyId, fork: null };
 
   const pkg = modulePackage(src)?.pkg ?? null;
   const vendorPackage =
@@ -368,8 +413,9 @@ export function streamIdentity(
       ? (modulePackage(override.vendorSource)?.pkg ?? null)
       : null);
   if (vendorPackage && pkg && vendorPackage !== pkg) {
+    // Not a continuation of the vendor file: the agent adds nothing (R82).
     return {
-      kind: own,
+      kind: policyId ? 'own' : 'new',
       policyId,
       fork: {
         reason: 'package',
@@ -380,60 +426,79 @@ export function streamIdentity(
     };
   }
 
-  // undefined = vendor source not loaded; null = the vendor declares no policy_id.
-  const vendorId =
-    typeof override.vendorSource === 'string'
-      ? declaredPolicyId(override.vendorSource)
-      : undefined;
+  const vendorId = vendorIdOf(override);
   const vp = override.vendorPluginPath;
-  const expected =
-    vendorId ?? (vp !== null ? continuityPolicyId(vp, path) : null);
+  const continuity = vp !== null ? continuityPolicyId(vp, path) : null;
+  const expected = vendorId ?? continuity;
 
-  if (!policyId) {
-    return {
-      kind: 'path',
-      policyId,
-      fork: {
-        reason: expected ? 'no-policy-id' : 'unknown-plugin-path',
-        expected,
-      },
-    };
+  if (policyId) {
+    // An explicit policy_id always wins (R82).
+    const same = continuesVendor(policyId, vendorId, path, bundle, override);
+    if (same === true) return { kind: 'continues', policyId, fork: null };
+    if (same === false)
+      return { kind: 'own', policyId, fork: { reason: 'policy-id', expected } };
+    // Neither the vendor plugin path nor a vendor policy_id: cannot tell.
+    return { kind: 'own', policyId, fork: null };
   }
-  if (vp !== null) {
-    const bp = override.bundlePluginPath || `/inline/${bundle}/current/bundle`;
-    const [vf, vpath] = seedPath(vendorId ?? '', joinPath(vp, path), vp);
-    const [of, opath] = seedPath(policyId, joinPath(bp, path), bp);
-    if (vf === of && vpath === opath)
-      return { kind: 'continues', policyId, fork: null };
-    return { kind: 'own', policyId, fork: { reason: 'policy-id', expected } };
-  }
+
+  const multi = multiModuleFork(override, pkg ?? vendorPackage, expected);
+  if (multi) return { kind: 'path', policyId, fork: multi };
   if (typeof vendorId === 'string') {
-    return policyId === vendorId
-      ? { kind: 'continues', policyId, fork: null }
-      : {
-          kind: 'own',
-          policyId,
-          fork: { reason: 'policy-id', expected: vendorId },
-        };
+    // The agent appends the continuity id, which only keeps a vendor stream that has none.
+    const same =
+      continuity !== null
+        ? continuesVendor(continuity, vendorId, path, bundle, override)
+        : false;
+    if (!same)
+      return {
+        kind: 'new',
+        policyId,
+        fork: { reason: 'no-policy-id', expected: vendorId },
+      };
   }
-  // Neither the vendor plugin path nor a vendor policy_id: cannot tell.
-  return { kind: 'own', policyId, fork: null };
+  return { kind: 'automatic', policyId, automaticId: continuity, fork: null };
 }
 
-/** The editor warning for a forked override ("this starts a new evidence stream"). */
-export function forkMessage(
-  fork: NonNullable<StreamIdentity['fork']>,
-  policyId: string | null,
-  source: string | null,
-): string {
+/**
+ * The stream identity of vendor module `path`, inherited unchanged by an extends bundle
+ * (R82): the vendor's own policy_id when it declares one, else the agent's automatic one,
+ * unless its package has several modules (then the agent skips it and the stream forks).
+ */
+export function inheritedStreamIdentity(
+  path: string,
+  ctx: VendorContext,
+): StreamIdentity {
+  const vendorId = vendorIdOf(ctx);
+  if (vendorId) return { kind: 'continues', policyId: vendorId, fork: null };
+  const pkg =
+    ctx.vendorPackage ??
+    (typeof ctx.vendorSource === 'string'
+      ? (modulePackage(ctx.vendorSource)?.pkg ?? null)
+      : null);
+  const continuity =
+    ctx.vendorPluginPath !== null
+      ? continuityPolicyId(ctx.vendorPluginPath, path)
+      : null;
+  const multi = multiModuleFork(ctx, pkg, continuity);
+  if (multi) return { kind: 'path', policyId: null, fork: multi };
+  return {
+    kind: 'automatic',
+    policyId: null,
+    automaticId: continuity,
+    fork: null,
+  };
+}
+
+/** The editor warning for a module that forks the vendor stream. */
+export function forkMessage(fork: StreamFork, policyId: string | null): string {
   switch (fork.reason) {
     case 'package':
       return `The override changes the package from ${fork.vendorPackage} to ${fork.package}: this starts a new evidence stream. Keep \`package ${fork.vendorPackage}\` to continue the vendor policy's stream.`;
     case 'policy-id':
-      return `policy_id ${JSON.stringify(policyId)} does not continue the vendor policy's evidence stream: this starts a new evidence stream.${fork.expected ? ` Declare \`policy_id := ${JSON.stringify(fork.expected)}\` to continue it.` : ''}`;
+      return `policy_id ${JSON.stringify(policyId)} does not continue the vendor policy's evidence stream: this starts a new evidence stream.${fork.expected ? ` Declare \`policy_id := ${JSON.stringify(fork.expected)}\`, or remove it to let the agent continue the stream automatically.` : ''}`;
     case 'no-policy-id':
-      return `The override has no policy_id: this starts a new evidence stream. Declare \`policy_id := ${JSON.stringify(fork.expected)}\` to continue the vendor policy's stream.`;
-    case 'unknown-plugin-path':
-      return `No instance has reported where plugins load ${source ?? 'the extended source'} from, so a continuing policy_id cannot be built: evidence for this override will start a new stream.`;
+      return `The vendor module declares policy_id ${JSON.stringify(fork.expected)} and the override has none: the agent's automatic policy_id starts a new evidence stream. Keep \`policy_id := ${JSON.stringify(fork.expected)}\` to continue the vendor policy's stream.`;
+    case 'multi-module':
+      return `Package ${fork.package ?? '(unknown)'} has more than one module (${(fork.modules ?? []).join(', ')}): the agent does not add the continuity policy_id here (it would conflict), so this module's evidence starts a new, path-based stream. Declare a policy_id for the package to choose its stream.`;
   }
 }

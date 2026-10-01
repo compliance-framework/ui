@@ -1,11 +1,12 @@
-// R74/R77/R78: evidence identity of policy modules (design §13.4).
+// R74/R77/R78: evidence identity of policy modules (design §13.4); R82 (§13.5).
 import { describe, expect, it } from 'vitest';
 import {
   cleanPath,
   continuityPolicyId,
   declaredPolicyId,
   forkMessage,
-  insertPolicyId,
+  inheritedStreamIdentity,
+  inlinePluginPath,
   joinPath,
   modulePackage,
   pluginPathFor,
@@ -17,8 +18,8 @@ import {
 
 const VENDOR =
   '.compliance-framework/policies/compliance-framework/plugin-local-ssh-policies/v0.2.0/policies';
-const INLINE =
-  '/app/.compliance-framework/state/local-dev/inline/ssh/current/bundle';
+/** R82 (b): the relative path plugins load inline bundle `ssh` from. */
+const INLINE = '.compliance-framework/policies/inline/ssh/policies';
 
 const VENDOR_SRC = `package compliance_framework.deny_password_auth
 
@@ -204,98 +205,83 @@ describe('reading policy_id and package', () => {
   });
 });
 
-describe('insertPolicyId (R78 Override)', () => {
-  it('inserts the declaration after the imports', () => {
-    const out = insertPolicyId(VENDOR_SRC, `${VENDOR}/deny.rego`);
-    expect(out).toContain(
-      `import rego.v1\n\npolicy_id := ${JSON.stringify(`${VENDOR}/deny.rego`)}\n\ntitle := `,
-    );
-    expect(declaredPolicyId(out)).toBe(`${VENDOR}/deny.rego`);
-  });
+/** `src` with `policy_id := "<id>"` after its `import rego.v1`. */
+const withId = (src: string, id: string) =>
+  src.replace(
+    'import rego.v1\n',
+    `import rego.v1\n\npolicy_id := ${JSON.stringify(id)}\n`,
+  );
 
-  it('after the last of several imports, or the package line without imports', () => {
-    expect(
-      insertPolicyId(
-        'package a\n\nimport rego.v1\nimport data.lib.x\n\nallow := true\n',
-        'id',
-      ),
-    ).toBe(
-      'package a\n\nimport rego.v1\nimport data.lib.x\n\npolicy_id := "id"\n\nallow := true\n',
-    );
-    expect(insertPolicyId('package a\nallow := true\n', 'id')).toBe(
-      'package a\n\npolicy_id := "id"\n\nallow := true\n',
-    );
-  });
-
-  it('keeps a module that already declares a policy_id', () => {
-    const src = 'package a\n\nimport rego.v1\n\npolicy_id := "vendor-id"\n';
-    expect(insertPolicyId(src, 'other')).toBe(src);
-  });
-
-  it('escapes the id as a Rego string', () => {
-    expect(insertPolicyId('package a\n', 'C:\\x"y')).toContain(
-      'policy_id := "C:\\\\x\\"y"',
-    );
-  });
-});
-
-describe('streamIdentity (R78)', () => {
+describe('streamIdentity of an override (R78, R82)', () => {
+  const PKG = 'compliance_framework.deny_password_auth';
   const override = (
     src: string,
     o: Partial<Parameters<typeof streamIdentity>[3] & object> = {},
   ) =>
     streamIdentity('ssh', 'deny.rego', src, {
-      vendorPackage: 'compliance_framework.deny_password_auth',
+      vendorPackage: PKG,
       vendorSource: VENDOR_SRC,
       vendorPluginPath: VENDOR,
       bundlePluginPath: INLINE,
+      packageModules: ['deny.rego'],
       ...o,
     });
 
-  it('an override with the continuity id continues the vendor stream', () => {
-    const src = insertPolicyId(
-      VENDOR_SRC,
-      continuityPolicyId(VENDOR, 'deny.rego'),
+  it('the R82 inline plugin path is relative, without the state dir', () => {
+    expect(inlinePluginPath('ssh')).toBe(INLINE);
+  });
+
+  it('without a policy_id it continues the vendor stream automatically (the agent adds it)', () => {
+    expect(override(VENDOR_SRC)).toEqual({
+      kind: 'automatic',
+      policyId: null,
+      automaticId: `${VENDOR}/deny.rego`,
+      fork: null,
+    });
+    // The agent knows its plugin path even when no instance reported it.
+    expect(override(VENDOR_SRC, { vendorPluginPath: null })).toMatchObject({
+      kind: 'automatic',
+      automaticId: null,
+      fork: null,
+    });
+    // Vendor source not loaded yet: the vendor has no policy_id as far as we know.
+    expect(override(VENDOR_SRC, { vendorSource: undefined }).kind).toBe(
+      'automatic',
     );
+  });
+
+  it('an explicit continuity id continues the vendor stream', () => {
+    const src = withId(VENDOR_SRC, continuityPolicyId(VENDOR, 'deny.rego'));
     expect(override(src)).toMatchObject({ kind: 'continues', fork: null });
-    // The bundle's own plugin path is not needed to tell.
+    // The bundle's own plugin path is not needed to tell (the R82 path is assumed).
     expect(override(src, { bundlePluginPath: null }).kind).toBe('continues');
   });
 
-  it('an override without a policy_id starts a new path-based stream', () => {
-    const id = override(VENDOR_SRC);
-    expect(id.kind).toBe('path');
-    expect(id.fork).toEqual({
-      reason: 'no-policy-id',
-      expected: `${VENDOR}/deny.rego`,
-    });
-    expect(forkMessage(id.fork!, null, 'oci://x')).toContain(
-      'this starts a new evidence stream',
-    );
-  });
-
-  it('without a reported plugin path it says the stream is new', () => {
-    const id = override(VENDOR_SRC, { vendorPluginPath: null });
-    expect(id.fork?.reason).toBe('unknown-plugin-path');
-    expect(forkMessage(id.fork!, null, 'oci://x')).toContain(
-      'evidence for this override will start a new stream',
-    );
-  });
-
-  it('a changed or removed policy_id forks the stream', () => {
-    const src = insertPolicyId(VENDOR_SRC, 'something-else');
-    const id = override(src);
+  it('an explicit policy_id that differs from the continuity id forks the stream', () => {
+    const id = override(withId(VENDOR_SRC, 'something-else'));
     expect(id.kind).toBe('own');
     expect(id.fork).toEqual({
       reason: 'policy-id',
       expected: `${VENDOR}/deny.rego`,
     });
+    expect(forkMessage(id.fork!, id.policyId)).toContain(
+      'this starts a new evidence stream',
+    );
+    expect(forkMessage(id.fork!, id.policyId)).toContain(
+      'remove it to let the agent continue the stream automatically',
+    );
+  });
+
+  it('an explicit policy_id without a plugin path or vendor id cannot be judged', () => {
+    expect(
+      override(withId(VENDOR_SRC, 'mine'), { vendorPluginPath: null }),
+    ).toEqual({ kind: 'own', policyId: 'mine', fork: null });
   });
 
   it('a vendor policy_id is the one to keep', () => {
-    const vendor = insertPolicyId(VENDOR_SRC, 'ssh-deny-password');
+    const vendor = withId(VENDOR_SRC, 'ssh-deny-password');
     expect(override(vendor, { vendorSource: vendor }).kind).toBe('continues');
-    const changed = override(insertPolicyId(VENDOR_SRC, 'mine'), {
+    const changed = override(withId(VENDOR_SRC, 'mine'), {
       vendorSource: vendor,
     });
     expect(changed.fork).toEqual({
@@ -306,22 +292,64 @@ describe('streamIdentity (R78)', () => {
     expect(
       override(vendor, { vendorSource: vendor, vendorPluginPath: null }).kind,
     ).toBe('continues');
+    // Dropping it: the agent's continuity id is not the vendor's id.
+    const dropped = override(VENDOR_SRC, { vendorSource: vendor });
+    expect(dropped).toMatchObject({
+      kind: 'new',
+      fork: { reason: 'no-policy-id', expected: 'ssh-deny-password' },
+    });
+    expect(forkMessage(dropped.fork!, null)).toContain(
+      'Keep `policy_id := "ssh-deny-password"`',
+    );
   });
 
-  it('a changed package forks the stream', () => {
-    const src = insertPolicyId(
-      VENDOR_SRC.replace('deny_password_auth', 'mine'),
-      continuityPolicyId(VENDOR, 'deny.rego'),
-    );
-    const id = override(src);
-    expect(id.fork).toMatchObject({
-      reason: 'package',
-      vendorPackage: 'compliance_framework.deny_password_auth',
-      package: 'compliance_framework.mine',
+  it('a changed package forks the stream (the agent adds nothing)', () => {
+    const id = override(VENDOR_SRC.replace('deny_password_auth', 'mine'));
+    expect(id).toMatchObject({
+      kind: 'new',
+      fork: {
+        reason: 'package',
+        vendorPackage: PKG,
+        package: 'compliance_framework.mine',
+      },
     });
-    expect(forkMessage(id.fork!, id.policyId, null)).toContain(
-      'Keep `package compliance_framework.deny_password_auth`',
+    expect(forkMessage(id.fork!, id.policyId)).toContain(
+      `Keep \`package ${PKG}\``,
     );
+    // Even with the continuity id: the package is part of the identity.
+    const withCont = override(
+      withId(
+        VENDOR_SRC.replace('deny_password_auth', 'mine'),
+        continuityPolicyId(VENDOR, 'deny.rego'),
+      ),
+    );
+    expect(withCont).toMatchObject({
+      kind: 'own',
+      fork: { reason: 'package' },
+    });
+  });
+
+  it('a multi-module package is skipped by the agent: path-based, with a warning', () => {
+    const id = override(VENDOR_SRC, {
+      packageModules: ['deny.rego', 'deny_extra.rego'],
+    });
+    expect(id).toMatchObject({
+      kind: 'path',
+      fork: {
+        reason: 'multi-module',
+        package: PKG,
+        modules: ['deny.rego', 'deny_extra.rego'],
+      },
+    });
+    expect(forkMessage(id.fork!, null)).toContain(
+      'the agent does not add the continuity policy_id here',
+    );
+    // An explicit policy_id still wins.
+    expect(
+      override(withId(VENDOR_SRC, continuityPolicyId(VENDOR, 'deny.rego')), {
+        packageModules: ['deny.rego', 'deny_extra.rego'],
+      }).kind,
+    ).toBe('continues');
   });
 
   it('a module that overrides nothing has its own stream or a path-based one', () => {
@@ -335,5 +363,46 @@ describe('streamIdentity (R78)', () => {
     expect(
       streamIdentity('b', 'x.rego', 'package compliance_framework.x\n').kind,
     ).toBe('path');
+  });
+});
+
+describe('inheritedStreamIdentity (R82)', () => {
+  const ctx = {
+    vendorPackage: 'compliance_framework.deny_password_auth',
+    vendorPluginPath: VENDOR,
+    bundlePluginPath: INLINE,
+    packageModules: ['deny.rego'],
+  };
+
+  it('continues the vendor stream automatically', () => {
+    expect(inheritedStreamIdentity('deny.rego', ctx)).toEqual({
+      kind: 'automatic',
+      policyId: null,
+      automaticId: `${VENDOR}/deny.rego`,
+      fork: null,
+    });
+    expect(
+      inheritedStreamIdentity('deny.rego', { ...ctx, vendorPluginPath: null })
+        .kind,
+    ).toBe('automatic');
+  });
+
+  it("keeps the vendor's own policy_id", () => {
+    const vendor = withId(VENDOR_SRC, 'ssh-deny-password');
+    expect(
+      inheritedStreamIdentity('deny.rego', { ...ctx, vendorSource: vendor }),
+    ).toEqual({ kind: 'continues', policyId: 'ssh-deny-password', fork: null });
+  });
+
+  it('forks when the package has several modules', () => {
+    expect(
+      inheritedStreamIdentity('deny.rego', {
+        ...ctx,
+        packageModules: ['deny.rego', 'a.rego'],
+      }),
+    ).toMatchObject({
+      kind: 'path',
+      fork: { reason: 'multi-module', modules: ['a.rego', 'deny.rego'] },
+    });
   });
 });

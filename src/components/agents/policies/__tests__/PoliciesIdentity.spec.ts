@@ -1,6 +1,7 @@
-// Round 3 (design §13.4) in the Policies view: R78 evidence identity (Override continues the
-// vendor stream, template policy_id, editor warnings, stream labels) and the R79 gate for
-// plugins built on an agent library without inline-policy support.
+// Rounds 3-4 (design §13.4, §13.5) in the Policies view: evidence identity (R78, with R82's
+// automatic continuity policy_id: Override no longer inserts one, stream labels, fork
+// warnings, template policy_id) and the R79 gate for plugins built on an agent library
+// without inline-policy support.
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import type { AgentConfigApi } from '@/composables/agent-config/api-types';
@@ -160,62 +161,66 @@ async function override(w: ReturnType<typeof mount>, path: string) {
   await flushPromises();
 }
 
-describe('R78: Override continues the vendor evidence stream', () => {
+const stream = (w: ReturnType<typeof mount>, path: string) =>
+  row(w, path).find('[data-test="file-stream"]');
+
+describe('R82: modules that continue a vendor file keep its stream automatically', () => {
   beforeEach(() => {
     resetAgentDrafts();
     resetVendorSourceCache();
   });
 
-  it('inserts policy_id = the literal <plugin-path>/<file> of the replaced source', async () => {
+  it('Override pre-fills the vendor source without inserting a policy_id', async () => {
     const { wrapper, ws } = await mountWorkspace(
       api({ pluginPath: VENDOR_PATH }),
     );
     await override(wrapper, 'root_login.rego');
-    const text = modules(ws)['root_login.rego'] ?? '';
-    // String concatenation, not path.Join: "./policies/ssh/" + "/" + file.
-    expect(text).toContain(
-      'import rego.v1\n\npolicy_id := "./policies/ssh//root_login.rego"\n\ntitle := ',
+    expect(modules(ws)['root_login.rego']).toBe(SSH_SRC['root_login.rego']);
+    expect(stream(wrapper, 'root_login.rego').attributes('data-stream')).toBe(
+      'automatic',
     );
-    expect(text.replace(/\npolicy_id := .*\n\n/, '\n')).toBe(
-      SSH_SRC['root_login.rego'],
+    expect(stream(wrapper, 'root_login.rego').text()).toBe(
+      'continues vendor stream (automatic)',
     );
-    expect(
-      row(wrapper, 'root_login.rego')
-        .find('[data-test="file-stream"]')
-        .attributes('data-stream'),
-    ).toBe('continues');
     expect(wrapper.find('[data-test="stream-identity"]').text()).toContain(
-      'continues vendor stream',
+      'continues vendor stream (automatic)',
+    );
+    // The id the agent appends: the literal <plugin-path>/<file> (R77).
+    expect(wrapper.find('[data-test="stream-automatic-id"]').text()).toBe(
+      'policy_id := "./policies/ssh//root_login.rego"',
     );
     expect(wrapper.find('[data-test="stream-fork"]').exists()).toBe(false);
   });
 
-  it("after the swap uses the inline bundle's extends.plugin-path, literally", async () => {
-    // No policy-bundles[] entry names the vendor source any more (the inline bundle replaced
-    // it in every plugin): the continuity id comes from extends.plugin-path (api#465).
-    const { wrapper, ws } = await mountWorkspace(
+  it("after the swap the automatic id uses the inline bundle's extends.plugin-path", async () => {
+    const { wrapper } = await mountWorkspace(
       api({ extendsPluginPath: VENDOR_PATH }),
     );
     await override(wrapper, 'root_login.rego');
-    expect(modules(ws)['root_login.rego']).toContain(
-      'import rego.v1\n\npolicy_id := "./policies/ssh//root_login.rego"\n\ntitle := ',
+    expect(wrapper.find('[data-test="stream-automatic-id"]').text()).toBe(
+      'policy_id := "./policies/ssh//root_login.rego"',
     );
-    expect(
-      row(wrapper, 'root_login.rego')
-        .find('[data-test="file-stream"]')
-        .attributes('data-stream'),
-    ).toBe('continues');
-    expect(wrapper.find('[data-test="stream-fork"]').exists()).toBe(false);
   });
 
   it('prefers a report entry loading the vendor source directly over extends.plugin-path', async () => {
-    const { wrapper, ws } = await mountWorkspace(
+    const { wrapper } = await mountWorkspace(
       api({ pluginPath: VENDOR_PATH, extendsPluginPath: 'other/path' }),
     );
     await override(wrapper, 'root_login.rego');
-    expect(modules(ws)['root_login.rego']).toContain(
-      'policy_id := "./policies/ssh//root_login.rego"',
+    expect(wrapper.find('[data-test="stream-automatic-id"]').text()).toContain(
+      '"./policies/ssh//root_login.rego"',
     );
+  });
+
+  it('without a reported plugin path the override still continues (no new-stream notice)', async () => {
+    const { wrapper, ws } = await mountWorkspace(api());
+    await override(wrapper, 'root_login.rego');
+    expect(modules(ws)['root_login.rego']).toBe(SSH_SRC['root_login.rego']);
+    expect(stream(wrapper, 'root_login.rego').attributes('data-stream')).toBe(
+      'automatic',
+    );
+    expect(wrapper.find('[data-test="stream-fork"]').exists()).toBe(false);
+    expect(wrapper.text()).not.toContain('will start a new stream');
   });
 
   it('keeps a policy_id the vendor module already declares', async () => {
@@ -231,28 +236,34 @@ describe('R78: Override continues the vendor evidence stream', () => {
     );
     await override(wrapper, 'root_login.rego');
     expect(modules(ws)['root_login.rego']).toBe(declared);
-    expect(
-      row(wrapper, 'root_login.rego')
-        .find('[data-test="file-stream"]')
-        .attributes('data-stream'),
-    ).toBe('continues');
-  });
-
-  it('without a plugin path or an extends.plugin-path inserts nothing and says the stream is new', async () => {
-    const { wrapper, ws } = await mountWorkspace(api());
-    await override(wrapper, 'root_login.rego');
-    expect(modules(ws)['root_login.rego']).toBe(SSH_SRC['root_login.rego']);
-    expect(wrapper.find('[data-test="stream-fork"]').text()).toContain(
-      'evidence for this override will start a new stream',
+    expect(stream(wrapper, 'root_login.rego').attributes('data-stream')).toBe(
+      'continues',
     );
-    expect(
-      row(wrapper, 'root_login.rego')
-        .find('[data-test="file-stream"]')
-        .attributes('data-stream'),
-    ).toBe('path');
   });
 
-  it('warns in the editor when the policy_id or the package is changed', async () => {
+  it('labels inherited vendor modules as continuing automatically', async () => {
+    const { wrapper } = await mountWorkspace(api({ pluginPath: VENDOR_PATH }));
+    for (const path of ['banner.rego', 'root_login.rego']) {
+      expect(row(wrapper, path).attributes('data-state')).toBe('inherited');
+      expect(stream(wrapper, path).attributes('data-stream')).toBe('automatic');
+    }
+    // Vendor tests have no stream.
+    expect(stream(wrapper, 'banner_test.rego').exists()).toBe(false);
+    // r7's override keeps the vendor path and package: automatic too.
+    expect(
+      stream(wrapper, 'max_auth_tries.rego').attributes('data-stream'),
+    ).toBe('automatic');
+    // Viewing an inherited module shows its stream.
+    await row(wrapper, 'banner.rego')
+      .find('[data-action="view"]')
+      .trigger('click');
+    await flushPromises();
+    expect(wrapper.find('[data-test="stream-identity"]').text()).toContain(
+      'continues vendor stream (automatic)',
+    );
+  });
+
+  it('warns only when an edit forks the stream: another policy_id or package', async () => {
     const { wrapper, ws } = await mountWorkspace(
       api({ pluginPath: VENDOR_PATH }),
     );
@@ -264,8 +275,21 @@ describe('R78: Override continues the vendor evidence stream', () => {
           .find('[data-test="editor-pane"] textarea')
           .attributes('data-diagnostics') ?? '[]',
       ) as { message: string; severity: string }[];
+    const withId = (id: string) =>
+      text.replace(
+        'import rego.v1\n',
+        `import rego.v1\n\npolicy_id := "${id}"\n`,
+      );
 
-    ws.draft.set(MOD, text.replace(/policy_id := ".*"/, 'policy_id := "mine"'));
+    // The continuity id, written out: same stream, no warning.
+    ws.draft.set(MOD, withId('./policies/ssh//root_login.rego'));
+    await flushPromises();
+    expect(stream(wrapper, 'root_login.rego').attributes('data-stream')).toBe(
+      'continues',
+    );
+    expect(wrapper.find('[data-test="stream-fork"]').exists()).toBe(false);
+
+    ws.draft.set(MOD, withId('mine'));
     await flushPromises();
     expect(wrapper.find('[data-test="stream-fork"]').text()).toContain(
       'this starts a new evidence stream',
@@ -280,27 +304,58 @@ describe('R78: Override continues the vendor evidence stream', () => {
           d.severity === 'warning',
       ),
     ).toBe(true);
-    expect(
-      row(wrapper, 'root_login.rego')
-        .find('[data-test="file-stream"]')
-        .attributes('data-stream'),
-    ).toBe('own');
-
-    ws.draft.set(MOD, text.replace(/\npolicy_id := .*\n/, '\n'));
-    await flushPromises();
-    expect(
-      row(wrapper, 'root_login.rego')
-        .find('[data-test="file-stream"]')
-        .attributes('data-stream'),
-    ).toBe('path');
+    expect(stream(wrapper, 'root_login.rego').attributes('data-stream')).toBe(
+      'own',
+    );
 
     ws.draft.set(MOD, text.replace('root_login', 'renamed'));
     await flushPromises();
+    expect(stream(wrapper, 'root_login.rego').attributes('data-stream')).toBe(
+      'new',
+    );
+    expect(stream(wrapper, 'root_login.rego').text()).toBe('new stream');
     expect(
       diags().some((d) => d.message.startsWith('[policy-package-changed]')),
     ).toBe(true);
     expect(wrapper.find('[data-test="validation-panel"]').text()).toContain(
       'Package changed: new evidence stream',
+    );
+
+    // Back to the vendor text: no warning.
+    ws.draft.set(MOD, text);
+    await flushPromises();
+    expect(wrapper.find('[data-test="stream-fork"]').exists()).toBe(false);
+  });
+
+  it("a multi-module package shows the agent's skip as a warning", async () => {
+    const { wrapper, ws } = await mountWorkspace(
+      api({ pluginPath: VENDOR_PATH }),
+    );
+    // A new module in root_login's package: the agent adds no continuity id to either.
+    ws.draft.set(
+      '/policy_bundles/ssh-tuned/modules/root_login_extra.rego',
+      'package compliance_framework.root_login\n\nimport rego.v1\n\ntitle := "extra"\n',
+    );
+    await flushPromises();
+    expect(stream(wrapper, 'root_login.rego').attributes('data-stream')).toBe(
+      'path',
+    );
+    expect(
+      wrapper.find('[data-file="root_login.rego"]').attributes('data-state'),
+    ).toBe('inherited');
+    await row(wrapper, 'root_login.rego')
+      .find('[data-action="view"]')
+      .trigger('click');
+    await flushPromises();
+    expect(wrapper.find('[data-test="stream-fork"]').text()).toContain(
+      'the agent does not add the continuity policy_id here',
+    );
+    expect(wrapper.find('[data-test="validation-panel"]').text()).toContain(
+      'No automatic policy_id: new evidence stream',
+    );
+    // The other packages are unaffected.
+    expect(stream(wrapper, 'banner.rego').attributes('data-stream')).toBe(
+      'automatic',
     );
   });
 
@@ -317,18 +372,25 @@ describe('R78: Override continues the vendor evidence stream', () => {
     const text = modules(ws)['checks/new.rego'] ?? '';
     expect(text).toContain('policy_id := "ssh-tuned/checks/new.rego"');
     expect(text).toMatch(/^violation\[\{"id": /m);
-    expect(
-      row(wrapper, 'checks/new.rego')
-        .find('[data-test="file-stream"]')
-        .attributes('data-stream'),
-    ).toBe('own');
+    expect(stream(wrapper, 'checks/new.rego').attributes('data-stream')).toBe(
+      'own',
+    );
+    // Without its policy_id a brand-new module is path-based.
+    ws.draft.set(
+      '/policy_bundles/ssh-tuned/modules/checks~1new.rego',
+      text.replace(/\npolicy_id := .*\n/, '\n'),
+    );
+    await flushPromises();
+    expect(stream(wrapper, 'checks/new.rego').text()).toBe(
+      'new stream (path-based)',
+    );
   });
 
-  it('explains that inherited vendor modules fork when the bundle replaces the source', async () => {
+  it('explains that inherited and same-package overrides continue automatically', async () => {
     const { wrapper } = await mountWorkspace(api());
-    expect(
-      wrapper.find('[data-test="inherited-stream-hint"]').text(),
-    ).toContain('new, path-based streams');
+    const hint = wrapper.find('[data-test="inherited-stream-hint"]').text();
+    expect(hint).toContain('automatically');
+    expect(hint).not.toContain('new, path-based streams');
   });
 });
 

@@ -53,12 +53,13 @@
             class="text-xs text-gray-500 dark:text-slate-400"
             data-test="inherited-stream-hint"
           >
-            Evidence streams: a plugin that loads this bundle instead of
+            Evidence streams: inherited vendor modules, and overrides that keep
+            the vendor path and package, continue the vendor streams of
             <span class="font-mono break-all">{{ bundleDoc.extends }}</span>
-            records inherited vendor modules without a
-            <code class="font-mono">policy_id</code> in new, path-based streams.
-            Overrides keep the vendor stream through their
-            <code class="font-mono">policy_id</code>.
+            automatically (the agent adds their
+            <code class="font-mono">policy_id</code>). Changing an override's
+            package or giving it a different
+            <code class="font-mono">policy_id</code> starts a new stream.
           </p>
           <Message
             v-if="bundleInlineBlocked"
@@ -203,8 +204,11 @@
         :can-override="
           canEdit && selectedRow?.state === 'inherited' && !bundleInlineBlocked
         "
-        :stream="sel.mode === 'edit' ? selectedStream : null"
-        :stream-source="bundleDoc?.extends ?? null"
+        :stream="
+          sel.mode === 'edit' || selectedRow?.state === 'inherited'
+            ? selectedStream
+            : null
+        "
         @update="(t) => ops.setModule(sel.bundle!, sel.file!, t)"
         @delete-tests="deleteVendorTests"
         @override="selectedRow && override(selectedRow)"
@@ -288,10 +292,8 @@ import {
   packageForPath,
 } from '@/utils/agent-config/rego-template';
 import {
-  continuityPolicyId,
-  declaredPolicyId,
   forkMessage,
-  insertPolicyId,
+  inheritedStreamIdentity,
   modulePackage,
   newModulePolicyId,
   pluginPathFor,
@@ -527,7 +529,7 @@ function apiDiagnostics(bundle: string, path: string): PolicyError[] {
     },
   );
 }
-// ---- Evidence stream identity (R78) ----
+// ---- Evidence stream identity (R78, R82) ----
 /** Vendor module sources read for stream checks, by `${digest}\0${path}` (null = failed). */
 const vendorTexts = shallowRef(new Map<string, string | null>());
 const requestedTexts = new Set<string>();
@@ -555,7 +557,13 @@ function vendorPluginPath(name: string): string | null {
   return ext ? vendorPluginPathFor(ext, name, ws.reportSets.value) : null;
 }
 
-/** Each authored policy module's stream identity, per bundle. */
+const isPolicyPackage = (pkg: string) =>
+  pkg === 'compliance_framework' || pkg.startsWith('compliance_framework.');
+
+/**
+ * Each policy module's stream identity, per bundle: authored modules, and (R82) the vendor
+ * modules an extends bundle inherits unchanged, which the agent keeps on the vendor stream.
+ */
 const streamsByBundle = computed(() => {
   const out = new Map<string, Map<string, StreamIdentity>>();
   for (const [name, b] of Object.entries(ops.bundles.value)) {
@@ -568,33 +576,52 @@ const streamsByBundle = computed(() => {
     const digest = vendorArtifactFor(name, b, ws.reportSets.value).digest;
     const vp = vendorPluginPath(name);
     const bp = pluginPathFor(`inline:${name}`, ws.reportSets.value);
+    // The package of each non-test module plugins load (R82 skips multi-module packages).
+    const pkgOf = new Map<string, string>();
     for (const r of rows) {
+      if (r.isTest || !r.path.endsWith('.rego')) continue;
       const src = b.modules?.[r.path];
-      if (typeof src !== 'string' || r.isTest || !r.path.endsWith('.rego'))
-        continue;
-      const pkg = modulePackage(src)?.pkg ?? '';
-      if (
-        pkg !== 'compliance_framework' &&
-        !pkg.startsWith('compliance_framework.')
-      )
-        continue;
+      const pkg =
+        r.state === 'inherited'
+          ? r.vendor?.package
+          : r.state === 'deleted' || typeof src !== 'string'
+            ? undefined
+            : modulePackage(src)?.pkg;
+      if (pkg) pkgOf.set(r.path, pkg.replace(/^data\./, ''));
+    }
+    const packageModules = (pkg: string | undefined) =>
+      pkg
+        ? Array.from(pkgOf)
+            .filter(([, p]) => p === pkg)
+            .map(([path]) => path)
+        : [];
+    for (const r of rows) {
+      if (r.isTest || !r.path.endsWith('.rego')) continue;
+      const pkg = pkgOf.get(r.path) ?? '';
+      if (!isPolicyPackage(pkg)) continue;
       const vendorText = digest
         ? vendorTexts.value.get(`${digest}\u0000${r.path}`)
         : undefined;
+      const ctx = {
+        vendorPackage: r.vendor?.package ?? null,
+        vendorSource: vendorText ?? undefined,
+        vendorPluginPath: vp,
+        bundlePluginPath: bp,
+        packageModules: packageModules(pkg),
+      };
+      if (r.state === 'inherited') {
+        streams.set(r.path, inheritedStreamIdentity(r.path, ctx));
+        continue;
+      }
+      const src = b.modules?.[r.path];
+      if (typeof src !== 'string') continue;
       streams.set(
         r.path,
         streamIdentity(
           name,
           r.path,
           src,
-          r.state === 'overridden'
-            ? {
-                vendorPackage: r.vendor?.package ?? null,
-                vendorSource: vendorText ?? undefined,
-                vendorPluginPath: vp,
-                bundlePluginPath: bp,
-              }
-            : null,
+          r.state === 'overridden' ? ctx : null,
         ),
       );
     }
@@ -629,13 +656,22 @@ const selectedStream = computed(() =>
   sel.file ? (selectedStreams.value[sel.file] ?? null) : null,
 );
 
-/** R78 editor warnings: an override whose package or policy_id forks the vendor stream. */
+const FORK_CODES = {
+  package: 'policy-package-changed',
+  'policy-id': 'policy-stream-forked',
+  'no-policy-id': 'policy-stream-forked',
+  'multi-module': 'policy-id-continuity-skipped',
+} as const;
+
+/**
+ * R78/R82 editor warnings: a module whose package or policy_id forks the vendor stream, and
+ * modules of a multi-module package the agent adds no continuity policy_id to.
+ */
 function streamHints(
   name: string,
   src: Record<string, string>,
 ): ContractHint[] {
   const out: ContractHint[] = [];
-  const ext = ops.extendsOf(name);
   for (const [path, id] of streamsByBundle.value.get(name) ?? []) {
     if (!id.fork) continue;
     const text = src[path] ?? '';
@@ -649,11 +685,8 @@ function streamHints(
       row,
       col: 1,
       severity: 'warning',
-      code:
-        id.fork.reason === 'package'
-          ? 'policy-package-changed'
-          : 'policy-stream-forked',
-      message: forkMessage(id.fork, id.policyId, ext),
+      code: FORK_CODES[id.fork.reason],
+      message: forkMessage(id.fork, id.policyId),
       client: true,
     });
   }
@@ -666,7 +699,12 @@ const hintsByBundle = computed(() => {
     const modules: Record<string, string> = {};
     for (const [p, src] of Object.entries(b.modules ?? {}))
       if (typeof src === 'string') modules[p] = src;
-    if (!Object.keys(modules).length) continue;
+    const stream = streamHints(name, modules);
+    if (!Object.keys(modules).length) {
+      // Inherited vendor modules only: just the R82 skips.
+      if (stream.length) out.set(name, stream);
+      continue;
+    }
     const inherited = bundleFileStates(
       vendorFilesOf(name),
       ops.fileBundle(name),
@@ -679,7 +717,7 @@ const hintsByBundle = computed(() => {
         incomplete: typeof b.extends === 'string' || !!ops.fileBundle(name),
         inherited,
       }),
-      ...streamHints(name, modules),
+      ...stream,
     ]);
   }
   return out;
@@ -835,23 +873,14 @@ async function override(row: FileRow) {
   if (!b || overriding.value) return;
   const digest = artifact.value.digest;
   let reason: string = VENDOR_MISS_TEXT[artifact.value.miss ?? 'no-digest'];
-  // R78: continue the vendor stream. A vendor module without a policy_id gets the literal
-  // `<plugin-path>/<file>` of the source the bundle replaces (R77); with no reported plugin
-  // path nothing is inserted and the editor says the override starts a new stream.
-  const vp = vendorPluginPath(b);
+  // R82: the vendor source as is. The override keeps the vendor stream with no policy_id of
+  // its own: the agent appends `<extends.plugin-path>/<file>` while it keeps the package.
   if (digest) {
     overriding.value = row.path;
     try {
       const f = await vendor.fileSource(digest, row.path);
       rememberVendorText(digest, row.path, f.source);
-      const keep = declaredPolicyId(f.source) !== null || vp === null;
-      ops.setModule(
-        b,
-        row.path,
-        keep
-          ? f.source
-          : insertPolicyId(f.source, continuityPolicyId(vp!, row.path)),
-      );
+      ops.setModule(b, row.path, f.source);
       selectBundleKeep(b);
       openEdit(row.path);
       return;
@@ -870,10 +899,8 @@ async function override(row: FileRow) {
       ops.setModule(
         b,
         row.path,
-        moduleTemplate(
-          row.vendor?.package ?? packageForPath(row.path),
-          vp === null ? null : continuityPolicyId(vp, row.path),
-        ),
+        // No policy_id: same package, so the agent continues the stream (R82).
+        moduleTemplate(row.vendor?.package ?? packageForPath(row.path)),
       );
       selectBundleKeep(b);
       openEdit(row.path);

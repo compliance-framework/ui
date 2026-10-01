@@ -148,6 +148,7 @@ export const POLICY_ERROR_CODE_LABELS: Record<string, string> = {
   'duplicate-policy-identity': 'Same evidence stream loaded twice',
   'policy-package-changed': 'Package changed: new evidence stream',
   'policy-stream-forked': 'New evidence stream',
+  'policy-id-continuity-skipped': 'No automatic policy_id: new evidence stream',
   // Plugin compatibility (R76/R79)
   'plugin-lib-violation-set-unsupported':
     'Plugin cannot evaluate set violations',

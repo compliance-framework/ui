@@ -325,6 +325,10 @@ function redact(doc: ConfigDoc): ConfigDoc {
 export const FIXTURE_SSH_POLICIES_PLUGIN_PATH =
   '.compliance-framework/policies/ghcr.io/compliance-framework/plugin-local-ssh-policies/v1.0.0';
 
+/** R82 (b): the reported `plugin-path` of inline:ssh-tuned. */
+export const FIXTURE_SSH_TUNED_PLUGIN_PATH =
+  '.compliance-framework/policies/inline/ssh-tuned/policies';
+
 export function detailFor(
   s: AgentInstanceSummary,
   overlay: OverlayDoc,
@@ -343,6 +347,8 @@ export function detailFor(
         source: 'inline:ssh-tuned',
         digest: 'tree:sha256:aa11',
         artifactDigest: FIXTURE_ARTIFACTS.inlineSshTuned,
+        // R82 (b): plugins load inline bundles from this relative path.
+        pluginPath: FIXTURE_SSH_TUNED_PLUGIN_PATH,
         extends: {
           source: SSH_POLICIES,
           digest: 'tree:sha256:bb22',

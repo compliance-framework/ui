@@ -26,10 +26,6 @@ import type {
   PolicyBundleDoc,
 } from '@/types/agent-config';
 import {
-  continuityPolicyId,
-  insertPolicyId,
-} from '@/utils/agent-config/policy-identity';
-import {
   ADMIN,
   POLICY_AUTHOR,
   fakeApi,
@@ -55,12 +51,6 @@ vi.mock('primevue/useconfirm', () => ({
 import PoliciesWorkspace from '../PoliciesWorkspace.vue';
 
 const SSH_SRC = FIXTURE_ARTIFACT_SOURCES[FIXTURE_ARTIFACTS.sshPolicies];
-/** The vendor source with the R78 continuity policy_id Override inserts (fixture plugin path). */
-const continued = (path: string) =>
-  insertPolicyId(
-    SSH_SRC[path],
-    continuityPolicyId(FIXTURE_SSH_POLICIES_PLUGIN_PATH, path),
-  );
 
 /** r7 without the vendor-test delete, so banner_test.rego is still inherited. */
 const configNoDelete = {
@@ -149,12 +139,13 @@ describe('Policies view: override and view (R62, R64)', () => {
       FIXTURE_ARTIFACTS.sshPolicies,
       'root_login.rego',
     );
-    // R78: plus the continuity policy_id from the reported extends.plugin-path.
-    const expected = continued('root_login.rego');
-    expect(expected).toContain(
+    // R82: the vendor source as is; the agent appends the continuity policy_id.
+    const expected = SSH_SRC['root_login.rego'];
+    expect(expected).not.toContain('policy_id');
+    expect(bundleOf(ws).modules?.['root_login.rego']).toBe(expected);
+    expect(wrapper.find('[data-test="stream-automatic-id"]').text()).toBe(
       `policy_id := "${FIXTURE_SSH_POLICIES_PLUGIN_PATH}/root_login.rego"`,
     );
-    expect(bundleOf(ws).modules?.['root_login.rego']).toBe(expected);
     expect(confirmed.messages).toEqual([]);
     const editor = wrapper.find('[data-test="editor-pane"] textarea');
     expect((editor.element as HTMLTextAreaElement).value).toBe(expected);
@@ -275,9 +266,7 @@ describe('Policies view: override and view (R62, R64)', () => {
     expect(ws.draft.isDirty.value).toBe(false);
     await wrapper.find('[data-test="override-from-view"]').trigger('click');
     await flushPromises();
-    expect(bundleOf(ws).modules?.['banner.rego']).toBe(
-      continued('banner.rego'),
-    );
+    expect(bundleOf(ws).modules?.['banner.rego']).toBe(SSH_SRC['banner.rego']);
   });
 
   it('Add file creates a module from the template and shows contract markers (R63)', async () => {
