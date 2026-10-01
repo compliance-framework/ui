@@ -1,2 +1,5 @@
 lisa-addressed:
 round 2 pass 1 fixes: draft-leaks-across-users (drafts keyed by user id + agent id), pending-new-mislabel (only draft-pending plugins get the pending card), no-op-apply (untouched Apply does not write), raw-dialog-timer (cleared on unmount), initial-bundle-watch (boolean source), edit-pane-empty (hint), stale useEditor comment. Deferred (low): refresh re-fetches every detail; per-keystroke contract hints for all bundles; in-place :id change on the Policies route.
+
+lisa-selfreview:
+round 2 pass 2 (strict) verdict: approve — re-read the round-2 files (workspace, draft registry, inline editors, review/raw dialogs, Policies view, contract hints, field access) after the pass-1 fixes; no new findings. Still deferred (low): refresh re-fetches every instance detail (and the selected one twice); contract hints recompute for every bundle per keystroke; AgentPoliciesView ignores an in-place :id change.
