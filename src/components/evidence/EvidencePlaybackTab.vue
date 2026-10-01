@@ -118,6 +118,25 @@
         <dl
           class="mt-4 grid grid-cols-1 gap-x-6 gap-y-2 text-sm md:grid-cols-[max-content_1fr]"
         >
+          <dt class="text-gray-600 dark:text-slate-400">Policy source</dt>
+          <dd
+            class="flex items-center gap-2 font-mono break-all"
+            data-test="playback-policy-source"
+          >
+            <template v-if="policySource">
+              <span>{{ policySource }}</span>
+              <button
+                type="button"
+                class="font-sans text-xs text-blue-700 hover:underline dark:text-blue-400"
+                @click="copy(policySource)"
+              >
+                copy
+              </button>
+            </template>
+            <span v-else class="font-sans text-gray-600 dark:text-slate-400">
+              Not recorded
+            </span>
+          </dd>
           <dt class="text-gray-600 dark:text-slate-400">Policy package</dt>
           <dd class="font-mono break-all">{{ playback.package }}</dd>
           <dt class="text-gray-600 dark:text-slate-400">Evaluated at</dt>
@@ -218,6 +237,12 @@
           <p class="mt-3 font-mono text-sm" data-test="playback-policy-path">
             {{ policyFile.path }}
           </p>
+          <p
+            v-if="policySource"
+            class="mt-1 text-xs text-gray-600 dark:text-slate-400"
+          >
+            From <span class="font-mono break-all">{{ policySource }}</span>
+          </p>
           <pre :class="preClass">{{ policyFile.source }}</pre>
         </template>
         <p v-else class="mt-4 text-sm text-gray-600 dark:text-slate-400">
@@ -315,6 +340,9 @@ import type { EvidencePlayback } from '@/types/evidence-playback';
 
 const props = defineProps<{
   evidenceId: string;
+  // Where the policy bundle came from, as the agent recorded it. Evidence from agents
+  // before v0.8.0-rc3 has none.
+  policySource?: string;
 }>();
 
 const toast = useToast();

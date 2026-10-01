@@ -846,7 +846,10 @@
       </div>
 
       <div v-else-if="activeTab === 'playback'" class="space-y-4">
-        <EvidencePlaybackTab :evidence-id="evidence.id" />
+        <EvidencePlaybackTab
+          :evidence-id="evidence.id"
+          :policy-source="policySource"
+        />
       </div>
       <div v-else class="space-y-4">
         <EvidenceHistorySection :uuid="evidence.uuid" />
@@ -945,7 +948,10 @@ import {
   FindingStatusColor,
   getEvidenceStatusColor,
 } from '@/utils/evidence-status';
-import { POLICY_BUNDLE_DIGEST_PROP } from '@/types/evidence-playback';
+import {
+  POLICY_BUNDLE_DIGEST_PROP,
+  POLICY_SOURCE_PROP,
+} from '@/types/evidence-playback';
 import type { Activity, BackMatterResource, Link, Property } from '@/oscal';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
 import Dialog from '@/volt/Dialog.vue';
@@ -1083,6 +1089,10 @@ const sspOptions = computed(() =>
 const metadataProps = computed<Property[]>(() => evidence.value?.props ?? []);
 
 // Evidence can be played back when the agent stored the artifacts its evaluation used.
+const policySource = computed(
+  () =>
+    metadataProps.value.find((prop) => prop.name === POLICY_SOURCE_PROP)?.value,
+);
 const canPlayBack = computed(() =>
   metadataProps.value.some((prop) => prop.name === POLICY_BUNDLE_DIGEST_PROP),
 );

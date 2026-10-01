@@ -100,9 +100,9 @@ function playbackFixture(
   };
 }
 
-function mountTab() {
+function mountTab(extraProps: { policySource?: string } = {}) {
   return mount(EvidencePlaybackTab, {
-    props: { evidenceId: 'evidence-1' },
+    props: { evidenceId: 'evidence-1', ...extraProps },
     global: {
       stubs: {
         PageCard: { template: '<section><slot /></section>' },
@@ -254,6 +254,32 @@ describe('EvidencePlaybackTab', () => {
     );
     expect(policy.text()).not.toContain('package compliance_framework.ports');
     expect(policy.text()).not.toContain('package ccf_libs.helpers');
+  });
+
+  it('reports the policy source the agent recorded', async () => {
+    const source =
+      'ghcr.io/compliance-framework/plugin-apt-versions-policies:v0.4.0';
+    const wrapper = mountTab({ policySource: source });
+    await flushPromises();
+
+    expect(
+      wrapper.find('[data-test="playback-policy-source"]').text(),
+    ).toContain(source);
+    expect(wrapper.find('[data-test="playback-policy"]').text()).toContain(
+      `From ${source}`,
+    );
+  });
+
+  it('says when the policy source was not recorded', async () => {
+    const wrapper = mountTab();
+    await flushPromises();
+
+    expect(
+      wrapper.find('[data-test="playback-policy-source"]').text(),
+    ).toContain('Not recorded');
+    expect(wrapper.find('[data-test="playback-policy"]').text()).not.toContain(
+      'From ',
+    );
   });
 
   it('says when no policy data was configured', async () => {

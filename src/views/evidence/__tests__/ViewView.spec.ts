@@ -558,8 +558,9 @@ function mountView() {
           template: '<div>EvidenceHistorySection {{ uuid }}</div>',
         },
         EvidencePlaybackTab: {
-          props: ['evidenceId'],
-          template: '<div>EvidencePlaybackTab {{ evidenceId }}</div>',
+          props: ['evidenceId', 'policySource'],
+          template:
+            '<div>EvidencePlaybackTab {{ evidenceId }} source={{ policySource }}</div>',
         },
         ResultComplianceOverTimeChart: {
           template: '<div>Chart</div>',
@@ -666,6 +667,13 @@ describe('Evidence ViewView', () => {
         ns: '',
         remarks: '',
       },
+      {
+        name: '_policy_source',
+        value: 'ghcr.io/org/policies:v1',
+        class: '',
+        ns: '',
+        remarks: '',
+      },
     ];
     refs.evidenceResponse = structuredClone(withArtifacts);
     refs.evidence.value = structuredClone(withArtifacts);
@@ -688,7 +696,9 @@ describe('Evidence ViewView', () => {
     ]);
 
     await clickButtonByText(wrapper, 'Playback');
-    expect(wrapper.text()).toContain(`EvidencePlaybackTab ${withArtifacts.id}`);
+    expect(wrapper.text()).toContain(
+      `EvidencePlaybackTab ${withArtifacts.id} source=ghcr.io/org/policies:v1`,
+    );
     expect(wrapper.text()).not.toContain('EvidenceHistorySection');
   });
 
