@@ -557,6 +557,11 @@ function mountView() {
           props: ['uuid'],
           template: '<div>EvidenceHistorySection {{ uuid }}</div>',
         },
+        EvidencePlaybackSections: {
+          props: ['evidenceId', 'policySource'],
+          template:
+            '<div>EvidencePlaybackSections {{ evidenceId }} source={{ policySource }}</div>',
+        },
         ResultComplianceOverTimeChart: {
           template: '<div>Chart</div>',
         },
@@ -649,6 +654,52 @@ describe('Evidence ViewView', () => {
     expect(backLink.attributes('data-to')).toContain('"sortDirection":"asc"');
     expect(backLink.attributes('aria-label')).toBe('Back to Evidence');
     expect(backLink.text()).toBe('<');
+  });
+
+  it('shows the policy evaluation on the overview for evidence with stored policy artifacts', async () => {
+    const withArtifacts = structuredClone(baseEvidence);
+    withArtifacts.props = [
+      ...(withArtifacts.props ?? []),
+      {
+        name: '_policy_bundle_digest',
+        value: 'sha256:abc',
+        class: '',
+        ns: '',
+        remarks: '',
+      },
+      {
+        name: '_policy_source',
+        value: 'ghcr.io/org/policies:v1',
+        class: '',
+        ns: '',
+        remarks: '',
+      },
+    ];
+    refs.evidenceResponse = structuredClone(withArtifacts);
+    refs.evidence.value = structuredClone(withArtifacts);
+
+    const wrapper = mountView();
+    await flushPromises();
+
+    expect(wrapper.text()).toContain(
+      `EvidencePlaybackSections ${withArtifacts.id} source=ghcr.io/org/policies:v1`,
+    );
+    const tabTexts = wrapper
+      .find('.border-b')
+      .findAll('button')
+      .map((button) => button.text());
+    expect(tabTexts).not.toContain('Playback');
+
+    await clickButtonByText(wrapper, 'Metadata');
+    expect(wrapper.text()).not.toContain('EvidencePlaybackSections');
+  });
+
+  it('shows no policy evaluation for evidence without stored policy artifacts', async () => {
+    const wrapper = mountView();
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('Current State');
+    expect(wrapper.text()).not.toContain('EvidencePlaybackSections');
   });
 
   it('shows labels, props, and links in the metadata tab', async () => {

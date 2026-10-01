@@ -244,6 +244,12 @@
             </div>
           </div>
         </PageCard>
+
+        <EvidencePlaybackSections
+          v-if="canPlayBack"
+          :evidence-id="evidence.id"
+          :policy-source="policySource"
+        />
       </div>
 
       <div v-else-if="activeTab === 'metadata'" class="space-y-4">
@@ -937,6 +943,15 @@ import PageSubHeader from '@/components/PageSubHeader.vue';
 import BackMatterDisplay from '@/components/BackMatterDisplay.vue';
 import LabelList from '@/components/LabelList.vue';
 import EvidenceHistorySection from '@/components/evidence/EvidenceHistorySection.vue';
+import EvidencePlaybackSections from '@/components/evidence/EvidencePlaybackSections.vue';
+import {
+  FindingStatusColor,
+  getEvidenceStatusColor,
+} from '@/utils/evidence-status';
+import {
+  POLICY_BUNDLE_DIGEST_PROP,
+  POLICY_SOURCE_PROP,
+} from '@/types/evidence-playback';
 import type { Activity, BackMatterResource, Link, Property } from '@/oscal';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
 import Dialog from '@/volt/Dialog.vue';
@@ -1071,6 +1086,15 @@ const sspOptions = computed(() =>
 );
 
 const metadataProps = computed<Property[]>(() => evidence.value?.props ?? []);
+
+// Evidence can be played back when the agent stored the artifacts its evaluation used.
+const policySource = computed(
+  () =>
+    metadataProps.value.find((prop) => prop.name === POLICY_SOURCE_PROP)?.value,
+);
+const canPlayBack = computed(() =>
+  metadataProps.value.some((prop) => prop.name === POLICY_BUNDLE_DIGEST_PROP),
+);
 const metadataLinks = computed<Link[]>(() => evidence.value?.links ?? []);
 const backMatterResources = computed<BackMatterResource[]>(
   () => evidence.value?.backMatter?.resources ?? [],
@@ -1245,13 +1269,6 @@ const validBadgeClass =
 const invalidBadgeClass =
   'bg-red-50 text-red-800 border-red-800 dark:bg-red-950/30 dark:text-red-500 dark:border-red-600';
 
-enum FindingStatusColor {
-  UNKNOWN = 'bg-slate-50 text-slate-700 border-slate-300 dark:bg-slate-900 dark:text-slate-300 dark:border-slate-700',
-  SATISFIED = 'bg-green-50 text-green-800 border-green-800 dark:bg-green-950/30 dark:text-green-500 dark:border-green-600',
-  'NOT-SATISFIED' = 'bg-red-50 text-red-800 border-red-800 dark:bg-red-950/30 dark:text-red-500 dark:border-red-600',
-  'IN-PROGRESS' = 'bg-amber-50 text-amber-800 border-amber-700 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-700',
-}
-
 function showActivities(selectedEvidence: Evidence) {
   activities.value = selectedEvidence.activities || [];
   toggleActivitiesModal(true);
@@ -1259,14 +1276,6 @@ function showActivities(selectedEvidence: Evidence) {
 
 function toggleActivitiesModal(open: boolean) {
   showActivitiesModal.value = open;
-}
-
-function getEvidenceStatusColor(status?: string): string {
-  return (
-    FindingStatusColor[
-      status?.toUpperCase() as keyof typeof FindingStatusColor
-    ] || FindingStatusColor.UNKNOWN
-  );
 }
 
 const RISK_STATUS_COLORS: Record<string, string> = {
