@@ -1,12 +1,22 @@
-// The editor draft (LLD U2.2): ONE overlay document is the single source of truth; the YAML
-// text is derived on form→yaml switches and parsed back (debounced) while typing in YAML.
+// The pending-changes draft (R69): ONE overlay document per agent, edited from the Effective
+// view (inline pencils), the Policies view and the raw YAML dialog, and saved as one revision.
+// The state lives in the per-agent registry (./draftRegistry) so it survives navigation between
+// the Configuration tab and the Policies view; this composable adds the operations and the
+// derived views (effective draft, changed paths, client issues) for one component tree.
 //
 // Draft semantics: clearing a field omits the key (the file value applies again); there is no
 // automatic normalisation of overlay values equal to the base, because bases differ between
 // instances and dropping a key could silently un-pin it elsewhere (the API's R14 no-op check
 // covers accidental "no change" saves).
 
-import { computed, ref, shallowRef, type Ref } from 'vue';
+import {
+  computed,
+  isRef,
+  ref,
+  shallowRef,
+  type Ref,
+  type ShallowRef,
+} from 'vue';
 import type {
   AgentConfigRevision,
   ConfigDoc,
@@ -14,15 +24,39 @@ import type {
 } from '@/types/agent-config';
 import { clone, deepEqual, mergePatch } from '@/utils/agent-config/merge-patch';
 import { nullAt, setAt, unsetAt } from '@/utils/agent-config/overlay-ops';
-import { hasAt } from '@/utils/agent-config/json-pointer';
-import { parseYaml, toYaml, type YamlError } from '@/utils/agent-config/yaml';
+import { getAt, hasAt, isPrefix } from '@/utils/agent-config/json-pointer';
+import { changedLeafPaths } from '@/utils/agent-config/policy-files';
 import {
-  coerceStringMaps,
   validateOverlayClientSide,
   type ValidationContext,
 } from '@/utils/agent-config/validation';
 
-export const YAML_DEBOUNCE_MS = 300;
+/** The shared, per-agent draft state. `baseRevision` -1 = not initialised yet. */
+export interface DraftState {
+  baseRevision: Ref<number>;
+  /** Overlay of `baseRevision` (what is saved). */
+  original: ShallowRef<OverlayDoc>;
+  /** The draft overlay. */
+  overlay: ShallowRef<OverlayDoc>;
+  /** Review comment, kept with the draft across a 409 round-trip and navigation. */
+  comment: Ref<string>;
+}
+
+export function createDraftState(initial?: AgentConfigRevision): DraftState {
+  return {
+    baseRevision: ref(initial ? initial.revision : -1),
+    original: shallowRef<OverlayDoc>(clone(initial?.overlay ?? {})),
+    overlay: shallowRef<OverlayDoc>(clone(initial?.overlay ?? {})),
+    comment: ref(''),
+  };
+}
+
+function isDraftState(v: unknown): v is DraftState {
+  // An AgentConfigRevision also has `overlay` and `comment`, but plain values, not refs.
+  return (
+    !!v && typeof v === 'object' && 'baseRevision' in v && isRef(v.baseRevision)
+  );
+}
 
 export interface OverlayDraftOptions {
   /** Every known instance base (removals null a key any of them defines). */
@@ -36,32 +70,17 @@ export interface OverlayDraftOptions {
 }
 
 export function useOverlayDraft(
-  initial: AgentConfigRevision,
+  initial: AgentConfigRevision | DraftState,
   base: Ref<ConfigDoc | null>,
   options: OverlayDraftOptions = {},
 ) {
-  const baseRevision = ref(initial.revision);
-  const original = shallowRef<OverlayDoc>(clone(initial.overlay ?? {}));
-  const overlay = shallowRef<OverlayDoc>(clone(initial.overlay ?? {}));
-  const yamlText = ref(toYaml(overlay.value));
-  const yamlError = ref<YamlError | null>(null);
-  /** Pointers whose scalar values were converted to strings from YAML (R27). */
-  const coerced = ref<string[]>([]);
-  const mode = ref<'form' | 'yaml'>('form');
-  let yamlTimer: ReturnType<typeof setTimeout> | null = null;
+  const state = isDraftState(initial) ? initial : createDraftState(initial);
+  const { baseRevision, original, overlay } = state;
 
   const isDirty = computed(() => !deepEqual(overlay.value, original.value));
-  /** YAML text as last generated from the overlay (mode switch, rebase, replaceAll). */
-  const yamlBaseline = ref(yamlText.value);
-  /**
-   * For close/unload/route guards: also counts YAML typed but not parsed yet (debounce) or
-   * that does not parse, which isDirty (parsed overlay only) cannot see.
-   */
-  const hasUnsavedChanges = computed(
-    () =>
-      isDirty.value ||
-      (mode.value === 'yaml' &&
-        (yamlError.value !== null || yamlText.value !== yamlBaseline.value)),
+  /** Pointers of every changed leaf (arrays are one leaf): the "N pending changes". */
+  const changedPaths = computed(() =>
+    isDirty.value ? changedLeafPaths(original.value, overlay.value) : [],
   );
   const effectiveDraft = computed(() =>
     mergePatch<ConfigDoc>(base.value ?? {}, overlay.value),
@@ -75,6 +94,11 @@ export function useOverlayDraft(
       options.validationContext?.value ?? {},
     ),
   );
+
+  /** Whether the draft changes `ptr`, something under it, or an ancestor of it. */
+  function pendingAt(ptr: string): boolean {
+    return changedPaths.value.some((p) => isPrefix(p, ptr) || isPrefix(ptr, p));
+  }
 
   function set(ptr: string, v: unknown): void {
     overlay.value = setAt(overlay.value, ptr, v);
@@ -100,103 +124,50 @@ export function useOverlayDraft(
       ? nullAt(overlay.value, ptr)
       : unsetAt(overlay.value, ptr);
   }
-
-  function parseNow(text: string): boolean {
-    const res = parseYaml(text);
-    if (!res.ok) {
-      yamlError.value = res.error;
-      return false;
-    }
-    const c = coerceStringMaps(res.value as OverlayDoc);
-    yamlError.value = null;
-    coerced.value = c.coerced;
-    overlay.value = c.overlay;
-    return true;
-  }
-
-  function flushYaml(): boolean {
-    if (yamlTimer) {
-      clearTimeout(yamlTimer);
-      yamlTimer = null;
-      return parseNow(yamlText.value);
-    }
-    return yamlError.value === null;
-  }
-
-  /** form→yaml regenerates the text; yaml→form parses it and stays on YAML when it fails. */
-  function setMode(next: 'form' | 'yaml'): boolean {
-    if (next === mode.value) return true;
-    if (next === 'yaml') {
-      yamlText.value = toYaml(overlay.value);
-      yamlBaseline.value = yamlText.value;
-      yamlError.value = null;
-      coerced.value = [];
-      mode.value = 'yaml';
-      return true;
-    }
-    if (!flushYaml() || yamlError.value) return false;
-    mode.value = 'form';
-    return true;
-  }
-
-  function onYamlInput(text: string): void {
-    yamlText.value = text;
-    if (yamlTimer) clearTimeout(yamlTimer);
-    yamlTimer = setTimeout(() => {
-      yamlTimer = null;
-      parseNow(text);
-    }, YAML_DEBOUNCE_MS);
+  /** Undo the draft at `ptr`: back to the saved overlay's value (or absence). */
+  function revertPointer(ptr: string): void {
+    overlay.value = hasAt(original.value, ptr)
+      ? setAt(overlay.value, ptr, getAt(original.value, ptr))
+      : unsetAt(overlay.value, ptr);
   }
 
   /** 409 handling: adopt `latest` as the base revision, keeping or discarding the draft. */
   function rebase(latest: AgentConfigRevision, keepDraft: boolean): void {
     baseRevision.value = latest.revision;
     original.value = clone(latest.overlay ?? {});
-    if (!keepDraft) {
-      overlay.value = clone(latest.overlay ?? {});
-      yamlText.value = toYaml(overlay.value);
-      yamlBaseline.value = yamlText.value;
-      yamlError.value = null;
-      coerced.value = [];
-    }
+    if (!keepDraft) overlay.value = clone(latest.overlay ?? {});
   }
 
-  /** "Clear overlay" → {}. */
+  /** Raw YAML apply / "Clear overlay" → {}. */
   function replaceAll(next: OverlayDoc): void {
     overlay.value = clone(next);
-    yamlText.value = toYaml(overlay.value);
-    yamlBaseline.value = yamlText.value;
-    yamlError.value = null;
-    coerced.value = [];
   }
 
-  function dispose(): void {
-    if (yamlTimer) clearTimeout(yamlTimer);
-    yamlTimer = null;
+  /** Drop every pending change. */
+  function discard(): void {
+    overlay.value = clone(original.value);
+    state.comment.value = '';
   }
 
   return {
+    state,
     baseRevision,
     original,
     overlay,
-    yamlText,
-    yamlError,
-    coerced,
-    mode,
+    comment: state.comment,
     isDirty,
-    hasUnsavedChanges,
+    changedPaths,
     effectiveDraft,
     clientIssues,
+    pendingAt,
     set,
     unset,
     remove,
     makeAbsent,
-    setMode,
-    onYamlInput,
-    flushYaml,
+    revertPointer,
     rebase,
     replaceAll,
-    dispose,
+    discard,
   };
 }
 

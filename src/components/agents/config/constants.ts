@@ -36,10 +36,6 @@ export const MODE_TEXT = {
 export const NOT_REPORTED_TEXT =
   'No configuration reported yet. The agent may be offline, running a version without remote configuration support, or have `remote_config.mode: off`.';
 
-/** R30 wording. */
-export const LOCK_TOOLTIP =
-  'Set locally on the agent host (config file, environment or CLI); cannot be changed from CCF';
-
 export const LOCKED_LEGEND =
   '`api`, `daemon` and `remote_config` are set locally on the agent host and cannot be changed from CCF.';
 

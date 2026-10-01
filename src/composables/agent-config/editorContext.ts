@@ -1,4 +1,5 @@
-// Injection keys shared by the editor drawer and its sections.
+// Injection keys shared by the editing workspace (useConfigWorkspace) and the components
+// that edit the draft: inline Effective-view editors, the Policies view, bundle operations.
 
 import type { ComputedRef, InjectionKey, Ref } from 'vue';
 import type {
@@ -22,7 +23,7 @@ export interface EditorContext {
   config: Ref<AgentConfigRevision>;
   instances: Ref<AgentInstanceSummary[]>;
   instanceDetails: Ref<Map<string, AgentInstanceDetail>>;
-  /** The instance whose base supplies placeholders (U2.2). */
+  /** The instance whose base supplies placeholders (the selected instance when loaded). */
   placeholderInstanceId: Ref<string | null>;
   placeholderBase: ComputedRef<ConfigDoc | null>;
   /** All known bases (reported instances with a detail). */

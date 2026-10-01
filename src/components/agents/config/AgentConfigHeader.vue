@@ -83,24 +83,12 @@
       >
         <i class="pi pi-refresh" :class="{ 'animate-spin': loading }" />
       </SecondaryButton>
-      <span
-        v-if="showEdit"
-        v-tooltip.top="{ value: editTooltip, disabled: canEdit }"
-      >
-        <PrimaryButton
-          :disabled="!canEdit || loading"
-          data-test="edit-config"
-          @click="$emit('edit')"
-        >
-          Edit configuration
-        </PrimaryButton>
-      </span>
+      <slot name="actions" />
     </div>
   </header>
 </template>
 
 <script setup lang="ts">
-import PrimaryButton from '@/volt/PrimaryButton.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
 import type { AgentConfigRevision } from '@/types/agent-config';
 import type { SyncSummary } from '@/utils/agent-config/instance-status';
@@ -112,13 +100,10 @@ withDefaults(
     config: AgentConfigRevision | null;
     syncSummary: SyncSummary;
     instanceCount: number;
-    canEdit?: boolean;
-    editTooltip?: string;
-    showEdit?: boolean;
     loading?: boolean;
   }>(),
-  { canEdit: false, editTooltip: '', showEdit: false, loading: false },
+  { loading: false },
 );
 
-defineEmits<{ edit: []; refresh: []; 'select-instance': [id: string] }>();
+defineEmits<{ refresh: []; 'select-instance': [id: string] }>();
 </script>

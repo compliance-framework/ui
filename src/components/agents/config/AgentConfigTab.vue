@@ -35,13 +35,29 @@
         :sync-summary="state.syncSummary.value"
         :instance-count="state.instances.value.length"
         :loading="refreshing"
-        show-edit
-        :can-edit="canEdit"
-        :edit-tooltip="editTooltip"
-        @edit="openEditor"
         @refresh="refresh"
         @select-instance="state.selectInstance"
-      />
+      >
+        <template #actions>
+          <RouterLink
+            :to="{ name: 'admin-agent-policies', params: { id: agent.id } }"
+            class="inline-flex items-center gap-1 rounded-md border border-ccf-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-slate-100 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"
+            data-test="open-policies-view"
+          >
+            <i class="pi pi-file-edit text-xs" />Policies
+          </RouterLink>
+          <span v-tooltip.top="{ value: editTooltip, disabled: canEdit }">
+            <SecondaryButton
+              size="small"
+              :disabled="!canEdit || !ws.ready.value"
+              data-test="raw-overlay"
+              @click="rawOpen = true"
+            >
+              Advanced: raw YAML
+            </SecondaryButton>
+          </span>
+        </template>
+      </AgentConfigHeader>
 
       <AgentInstancePicker
         v-if="state.instances.value.length > 1"
@@ -134,17 +150,8 @@
       />
     </template>
 
-    <AgentConfigEditorDrawer
-      v-if="drawerOpen && state.config.value"
-      v-model:visible="drawerOpen"
-      :agent="agent"
-      :config="state.config.value"
-      :instances="state.instances.value"
-      :instance-details="instanceDetails"
-      :initial-instance-id="state.selectedInstanceId.value"
-      :details-loading="detailsLoading"
-      @saved="onSaved"
-    />
+    <PendingChangesBar />
+    <RawOverlayDialog v-if="rawOpen" v-model:visible="rawOpen" />
   </div>
 </template>
 
@@ -154,17 +161,19 @@ import {
   defineAsyncComponent,
   onMounted,
   ref,
-  shallowRef,
   toRef,
+  watch,
 } from 'vue';
+import { RouterLink } from 'vue-router';
 import Message from '@/volt/Message.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
 import SelectButton from '@/volt/SelectButton.vue';
 import type { Agent } from '@/types/agents';
-import type { AgentInstanceDetail, OverlayDoc } from '@/types/agent-config';
+import type { OverlayDoc } from '@/types/agent-config';
 import { usePermissions } from '@/composables/usePermissions';
 import { useAgentConfigApi } from '@/composables/agent-config/useAgentConfigApi';
 import { useAgentConfig } from '@/composables/agent-config/useAgentConfig';
+import { useConfigWorkspace } from '@/composables/agent-config/useConfigWorkspace';
 import { sanitizeForDisplay } from '@/utils/agent-config/display';
 import AgentConfigHeader from './AgentConfigHeader.vue';
 import AgentInstancePicker from './AgentInstancePicker.vue';
@@ -172,16 +181,16 @@ import InstanceModeNotice from './InstanceModeNotice.vue';
 import AgentConfigEffectiveView from './AgentConfigEffectiveView.vue';
 import ConfigYamlViewer from './ConfigYamlViewer.vue';
 import AgentConfigHistory from './AgentConfigHistory.vue';
+import PendingChangesBar from './workspace/PendingChangesBar.vue';
 import {
   LOCKED_LEGEND,
   NOT_REPORTED_TEXT,
   OVERLAY_SECRETS_NOTICE,
 } from './constants';
 
-// The editor (form, YAML, review) is only needed once someone opens it: keep it out of the
-// AgentsView chunk.
-const AgentConfigEditorDrawer = defineAsyncComponent(
-  () => import('./AgentConfigEditorDrawer.vue'),
+// The raw YAML dialog (CodeMirror) loads only when someone opens it.
+const RawOverlayDialog = defineAsyncComponent(
+  () => import('./workspace/RawOverlayDialog.vue'),
 );
 
 type ConfigView = 'effective' | 'file' | 'overlay' | 'history';
@@ -191,6 +200,9 @@ const props = defineProps<{ agent: Agent }>();
 const api = useAgentConfigApi();
 const agentId = toRef(() => props.agent.id);
 const state = useAgentConfig(agentId, api);
+// R69: the shared pending-changes draft + inline editing (also used by the Policies view).
+const ws = useConfigWorkspace(props.agent.id, api, state);
+const rawOpen = ref(false);
 
 const view = ref<ConfigView>('effective');
 const viewOptions = [
@@ -201,13 +213,9 @@ const viewOptions = [
 ];
 const refreshing = ref(false);
 
-// ---- Editor (U2.7): configure OR configure-policy opens it ----
+// ---- Editing: configure OR configure-policy (U2.7, R58/R61) ----
 const { can, permissionTooltip, RESOURCES, ACTIONS } = usePermissions();
-const canEdit = computed(
-  () =>
-    can(RESOURCES.AGENT, ACTIONS.CONFIGURE) ||
-    can(RESOURCES.AGENT, ACTIONS.CONFIGURE_POLICY),
-);
+const canEdit = ws.canEdit;
 // R61: configure may revert to anything; configure-policy only when the revert is a
 // policy-only change (decided per revision in the history panel, as the API does).
 const revertAccess = computed<'full' | 'policy-only' | 'none'>(() => {
@@ -222,25 +230,20 @@ const currentOverlay = computed<OverlayDoc>(
 const editTooltip = computed(() =>
   canEdit.value ? '' : permissionTooltip(RESOURCES.AGENT, ACTIONS.CONFIGURE),
 );
-const drawerOpen = ref(false);
-const instanceDetails = shallowRef(new Map<string, AgentInstanceDetail>());
-const detailsLoading = ref(false);
-
-/** The review diff needs every reported base: load them all (≤ 6 at a time) on open. */
-async function openEditor() {
-  if (!canEdit.value) return;
-  drawerOpen.value = true;
-  detailsLoading.value = true;
-  try {
-    instanceDetails.value = await state.loadAllInstanceDetails();
-  } finally {
-    detailsLoading.value = false;
-  }
-}
-
-async function onSaved() {
-  await refresh();
-}
+// Validation and the review diff need every reported base: editors load them (≤ 6 at a
+// time) in the background once the configuration is there; readers never do.
+watch(
+  // After the selected instance's own load, so it is not fetched twice.
+  () =>
+    state.status.value === 'ready' &&
+    !state.instanceLoading.value &&
+    canEdit.value,
+  (go) => {
+    if (go && !ws.detailsLoaded.value && !ws.detailsLoading.value)
+      ws.loadDetails();
+  },
+  { immediate: true },
+);
 
 const selectedSummary = computed(
   () =>
@@ -302,5 +305,5 @@ onMounted(() => {
   state.load();
 });
 
-defineExpose({ state });
+defineExpose({ state, ws });
 </script>

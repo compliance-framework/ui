@@ -67,7 +67,7 @@ describe('AgentConfigEffectiveView', () => {
     );
   });
 
-  it('shows the locked panel with the R30 tooltip and never renders client_secret', () => {
+  it('shows the forbidden keys locked and muted (R71) and never renders client_secret', () => {
     const leaky = mergePatch<ConfigDoc>(baseConfig, {}) as ConfigDoc;
     leaky.api = {
       url: 'https://x',
@@ -80,9 +80,10 @@ describe('AgentConfigEffectiveView', () => {
     expect(locked.findAll('[data-test="lock-icon"]').length).toBe(9);
     expect(
       locked.find('[data-test="lock-icon"]').attributes('aria-label'),
-    ).toBe(
-      'Set locally on the agent host (config file, environment or CLI); cannot be changed from CCF',
-    );
+    ).toBe('Set on the agent host; can never be changed remotely');
+    expect(locked.findAll('[data-state="forbidden"]').length).toBe(9);
+    // No pencil on a forbidden field.
+    expect(locked.find('[data-test^="edit-"]').exists()).toBe(false);
     expect(wrapper.html()).not.toContain('SUPER-SECRET');
   });
 

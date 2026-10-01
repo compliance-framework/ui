@@ -3,24 +3,33 @@
     class="rounded-md border border-ccf-300 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/60"
     data-test="locked-keys"
   >
-    <h4 class="mb-3 text-sm font-semibold text-gray-900 dark:text-slate-200">
-      Set locally on the agent host
+    <h4 class="mb-1 text-sm font-semibold text-gray-900 dark:text-slate-200">
+      <i class="pi pi-lock mr-1 text-xs text-gray-400" />Set on the agent host
     </h4>
+    <p class="mb-3 text-xs text-gray-500 dark:text-slate-400">
+      {{ FORBIDDEN_TOOLTIP }}.
+    </p>
     <dl class="grid grid-cols-1 gap-x-6 gap-y-2 text-sm md:grid-cols-2">
-      <div v-for="row in rows" :key="row.key" class="flex items-start gap-2">
-        <dt class="font-mono text-xs text-gray-500 dark:text-slate-400">
+      <div
+        v-for="row in rows"
+        :key="row.key"
+        class="flex items-start gap-2"
+        data-state="forbidden"
+        :data-test="`locked-${row.key}`"
+      >
+        <dt class="font-mono text-xs text-gray-400 dark:text-slate-500">
           <i
-            v-tooltip.top="LOCK_TOOLTIP"
+            v-tooltip.top="FORBIDDEN_TOOLTIP"
             role="img"
             tabindex="0"
             class="pi pi-lock mr-2 text-xs text-gray-400"
-            :aria-label="LOCK_TOOLTIP"
+            :aria-label="FORBIDDEN_TOOLTIP"
             data-test="lock-icon"
           />{{ row.key }}
         </dt>
-        <dd class="break-all text-gray-900 dark:text-slate-200">
+        <dd class="break-all text-gray-500 dark:text-slate-400">
           <template v-if="Array.isArray(row.value)">
-            <span v-if="!row.value.length" class="text-gray-500">none</span>
+            <span v-if="!row.value.length" class="text-gray-400">none</span>
             <span
               v-for="v in row.value"
               :key="v"
@@ -36,9 +45,11 @@
 </template>
 
 <script setup lang="ts">
+// R71 "forbidden" state: api.*, daemon and remote_config.* are muted, locked and never get a
+// pencil; they can only change on the agent host (file, environment or CLI, R30).
 import { computed } from 'vue';
 import type { ConfigDoc } from '@/types/agent-config';
-import { LOCK_TOOLTIP } from './constants';
+import { FORBIDDEN_TOOLTIP } from '@/utils/agent-config/field-access';
 
 const props = defineProps<{ doc: ConfigDoc | null }>();
 

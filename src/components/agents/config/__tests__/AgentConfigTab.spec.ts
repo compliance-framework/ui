@@ -219,35 +219,35 @@ describe('AgentConfigTab', () => {
     expect(api.current.getConfig).not.toHaveBeenCalled();
     expect(wrapper.find('[data-test="config-error"]').exists()).toBe(true);
   });
-  it('Edit is disabled without configure/configure-policy; opening loads every reported instance', async () => {
+  it('readers get no editing UI and load no other instance; editors load every reported instance in the background', async () => {
     const reader = mount(AgentConfigTab, {
       props: { agent },
       global: globalWith(piniaWith(READER)),
     });
     await flushPromises();
     expect(
-      reader.find('[data-test="edit-config"]').attributes('disabled'),
+      reader.find('[data-test="raw-overlay"]').attributes('disabled'),
     ).toBeDefined();
+    expect(reader.find('[data-test^="edit-/"]').exists()).toBe(false);
+    // Only the selected instance's detail (no background load for readers).
+    expect(api.current.getInstance).toHaveBeenCalledTimes(1);
+    expect(reader.find('[data-test="open-policies-view"]').exists()).toBe(true);
 
+    api.current = makeApi();
     const wrapper = mount(AgentConfigTab, {
       props: { agent },
-      global: globalWith(piniaWith(ADMIN), {
-        AgentConfigEditorDrawer: {
-          name: 'AgentConfigEditorDrawer',
-          props: ['instanceDetails', 'visible'],
-          template:
-            '<div data-test="drawer-stub">{{ instanceDetails.size }}</div>',
-        },
-      }),
+      global: globalWith(piniaWith(ADMIN)),
     });
     await flushPromises();
-    (api.current.getInstance as ReturnType<typeof vi.fn>).mockClear();
-    await wrapper.find('[data-test="edit-config"]').trigger('click');
-    await flushPromises();
-    // Every instance with reportedAt (6 of 7; ip-e never reported); the selected one is cached.
-    expect(api.current.getInstance).toHaveBeenCalledTimes(5);
-    expect(wrapper.find('[data-test="drawer-stub"]').text()).toBe('6');
+    // The selected one plus every other instance with reportedAt (6 of 7; ip-e never
+    // reported); the selected one is fetched fresh, the others once.
+    expect(api.current.getInstance).toHaveBeenCalledTimes(6);
+    expect(
+      wrapper.find('[data-test="raw-overlay"]').attributes('disabled'),
+    ).toBe(undefined);
+    expect(wrapper.find('[data-test="edit-/verbosity"]').exists()).toBe(true);
   });
+
   it('R61: History gets the revert access and the desired overlay for the policy-only gate', async () => {
     const cases: [Record<string, string[]>, string][] = [
       [ADMIN, 'full'],

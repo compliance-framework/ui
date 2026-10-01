@@ -42,9 +42,19 @@
           :overlay="appliedOverlay"
         />
         <section class="space-y-2">
-          <h4 class="text-sm font-semibold text-gray-900 dark:text-slate-200">
-            Plugins
-          </h4>
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <h4 class="text-sm font-semibold text-gray-900 dark:text-slate-200">
+              Plugins
+            </h4>
+            <SecondaryButton
+              v-if="canAddPlugin"
+              size="small"
+              data-test="add-plugin"
+              @click="addPluginOpen = true"
+            >
+              <i class="pi pi-plus mr-1" />Add plugin
+            </SecondaryButton>
+          </div>
           <p
             v-if="!pluginCards.length"
             class="text-sm text-gray-500 dark:text-slate-400"
@@ -60,6 +70,7 @@
               :base="base"
               :overlay="appliedOverlay"
               :removed="card.removed"
+              :pending-new="card.pendingNew"
               @show-bundle="showBundle"
             />
           </div>
@@ -83,11 +94,18 @@
         :legend="LOCKED_LEGEND"
       />
     </template>
+    <AddPluginDialog
+      v-if="canAddPlugin"
+      v-model:visible="addPluginOpen"
+      :existing="existingPluginNames"
+      @add="addPlugin"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, nextTick, ref } from 'vue';
+import SecondaryButton from '@/volt/SecondaryButton.vue';
 import SelectButton from '@/volt/SelectButton.vue';
 import type {
   ConfigDoc,
@@ -97,6 +115,9 @@ import type {
 } from '@/types/agent-config';
 import { sanitizeForDisplay } from '@/utils/agent-config/display';
 import { isPlainObject } from '@/utils/agent-config/merge-patch';
+import { pointer } from '@/utils/agent-config/json-pointer';
+import { useWorkspace } from '@/composables/agent-config/useConfigWorkspace';
+import AddPluginDialog from './editor/AddPluginDialog.vue';
 import LockedKeysPanel from './LockedKeysPanel.vue';
 import ConfigFlagsSummary from './ConfigFlagsSummary.vue';
 import PluginSummaryCard from './PluginSummaryCard.vue';
@@ -131,12 +152,23 @@ const effective = computed(() =>
   props.effectiveDoc ? sanitizeForDisplay(props.effectiveDoc) : null,
 );
 
+const ws = useWorkspace();
+
 const pluginCards = computed(() => {
-  const cards: { name: string; plugin: PluginDoc | null; removed: boolean }[] =
-    [];
+  const cards: {
+    name: string;
+    plugin: PluginDoc | null;
+    removed: boolean;
+    pendingNew: boolean;
+  }[] = [];
   const eff = effective.value?.plugins ?? {};
   for (const [name, plugin] of Object.entries(eff)) {
-    cards.push({ name, plugin: plugin ?? null, removed: false });
+    cards.push({
+      name,
+      plugin: plugin ?? null,
+      removed: false,
+      pendingNew: false,
+    });
   }
   // Base plugins the overlay removed render greyed ("Removed by overlay").
   const overlayPlugins = props.appliedOverlay?.plugins;
@@ -144,12 +176,55 @@ const pluginCards = computed(() => {
     for (const [name, v] of Object.entries(overlayPlugins)) {
       const basePlugin = props.base?.plugins?.[name];
       if (v === null && basePlugin && !(name in eff)) {
-        cards.push({ name, plugin: basePlugin, removed: true });
+        cards.push({
+          name,
+          plugin: basePlugin,
+          removed: true,
+          pendingNew: false,
+        });
+      }
+    }
+  }
+  // Plugins the pending draft adds (R69): shown from the draft until an instance reports them.
+  if (ws?.ready.value) {
+    for (const [name, plugin] of Object.entries(
+      ws.draft.effectiveDraft.value.plugins ?? {},
+    )) {
+      if (isPlainObject(plugin) && !cards.some((c) => c.name === name)) {
+        cards.push({
+          name,
+          plugin: plugin as PluginDoc,
+          removed: false,
+          pendingNew: true,
+        });
       }
     }
   }
   return cards.sort((a, b) => a.name.localeCompare(b.name));
 });
+
+// ---- Add plugin (agent:configure; a pending change) ----
+const canAddPlugin = computed(
+  () => !!ws && ws.ready.value && ws.canConfigure.value,
+);
+const addPluginOpen = ref(false);
+const existingPluginNames = computed(() => {
+  const names = new Set(pluginCards.value.map((c) => c.name));
+  for (const b of ws?.bases.value ?? [])
+    Object.keys(b.plugins ?? {}).forEach((n) => names.add(n));
+  return Array.from(names);
+});
+function addPlugin(plugin: {
+  name: string;
+  source: string;
+  schedule?: string;
+}) {
+  ws?.draft.set(pointer('plugins', plugin.name), {
+    source: plugin.source,
+    ...(plugin.schedule ? { schedule: plugin.schedule } : {}),
+    policies: [],
+  });
+}
 
 async function showBundle(name: string) {
   highlightBundle.value = name;

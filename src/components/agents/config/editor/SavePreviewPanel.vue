@@ -40,6 +40,9 @@
               >:{{ e.row }}:{{ e.col ?? 1 }}</template
             ></code
           >
+          <span v-if="e.code" class="ml-1 text-xs" data-test="policy-code">
+            <CodeLabel :labels="POLICY_ERROR_CODE_LABELS" :code="e.code" />
+          </span>
           — {{ e.message }}
         </li>
       </ul>
@@ -251,9 +254,9 @@
         {{ comment.length }}/{{ LIMITS.commentChars }}
       </p>
       <div class="flex justify-end gap-2">
-        <SecondaryButton data-test="review-back" @click="$emit('back')"
-          >Back</SecondaryButton
-        >
+        <SecondaryButton data-test="review-back" @click="$emit('back')">{{
+          backLabel
+        }}</SecondaryButton>
         <span
           v-tooltip.top="{
             value: saveDisabledReason,
@@ -316,23 +319,33 @@ import CodeLabel from '../CodeLabel.vue';
 import {
   CHANGE_REASON_LABELS,
   FIELD_ERROR_CODE_LABELS,
+  POLICY_ERROR_CODE_LABELS,
   WILL_APPLY_REASON_LABELS,
 } from '../constants';
 import DiffRows from './DiffRows.vue';
 import SafetyTag from './SafetyTag.vue';
 import { instanceErrorsBlock, previewBlocks, saveErrorsBlock } from './review';
 
-const props = defineProps<{
-  preview: ConfigPreview;
-  instanceDetails: Map<string, AgentInstanceDetail>;
-  currentOverlay: OverlayDoc;
-  draftOverlay: OverlayDoc;
-  baseRevision: number;
-  saving?: boolean;
-  /** Raw 422 body of the last failed save (R6). */
-  saveErrors?: ConfigErrorBody | null;
-  saveDisabledReason?: string;
-}>();
+const props = withDefaults(
+  defineProps<{
+    preview: ConfigPreview;
+    instanceDetails: Map<string, AgentInstanceDetail>;
+    currentOverlay: OverlayDoc;
+    draftOverlay: OverlayDoc;
+    baseRevision: number;
+    saving?: boolean;
+    /** Raw 422 body of the last failed save (R6). */
+    saveErrors?: ConfigErrorBody | null;
+    saveDisabledReason?: string;
+    backLabel?: string;
+  }>(),
+  {
+    saving: false,
+    saveErrors: null,
+    saveDisabledReason: '',
+    backLabel: 'Back',
+  },
+);
 
 defineEmits<{ back: []; save: [comment: string] }>();
 

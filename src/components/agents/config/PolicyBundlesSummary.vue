@@ -1,8 +1,22 @@
 <template>
   <section class="space-y-2" data-test="bundles-summary">
-    <h4 class="text-sm font-semibold text-gray-900 dark:text-slate-200">
-      Policy bundles
-    </h4>
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <h4 class="text-sm font-semibold text-gray-900 dark:text-slate-200">
+        Policy bundles
+      </h4>
+      <RouterLink
+        v-if="ws"
+        :to="policiesRoute()"
+        class="text-xs text-sky-700 hover:underline dark:text-sky-300"
+        data-test="open-policies"
+      >
+        <i class="pi pi-pencil mr-1 text-[0.7rem]" />{{
+          ws.canEdit.value
+            ? 'Edit in the Policies view'
+            : 'Open the Policies view'
+        }}
+      </RouterLink>
+    </div>
     <p v-if="!rows.length" class="text-sm text-gray-500 dark:text-slate-400">
       No inline policy bundles.
     </p>
@@ -20,6 +34,19 @@
           extends
           <span class="font-mono text-xs break-all">{{ row.extends }}</span>
         </span>
+        <ConfigPill
+          v-if="ws?.draft.pendingAt(`/policy_bundles/${row.name}`)"
+          severity="info"
+          :data-test="`bundle-pending-${row.name}`"
+          >pending changes</ConfigPill
+        >
+        <RouterLink
+          v-if="ws"
+          :to="policiesRoute(row.name)"
+          class="ml-auto text-xs text-sky-700 hover:underline dark:text-sky-300"
+          :data-test="`open-bundle-${row.name}`"
+          >Open</RouterLink
+        >
       </div>
       <p class="mt-1 text-xs text-gray-500 dark:text-slate-400">
         {{ row.modules }} module{{ row.modules === 1 ? '' : 's' }} ·
@@ -69,6 +96,9 @@ import { FILE_STATE_LABELS } from './constants';
 import { bundleProvenance } from '@/utils/agent-config/provenance';
 import { formatRelative } from '@/utils/agent-config/display';
 import ProvenanceBadge from './ProvenanceBadge.vue';
+import ConfigPill from './ConfigPill.vue';
+import { RouterLink } from 'vue-router';
+import { useWorkspace } from '@/composables/agent-config/useConfigWorkspace';
 
 const props = defineProps<{
   effective: ConfigDoc | null;
@@ -79,6 +109,15 @@ const props = defineProps<{
   /** The instance's reported bundles (vendor file lists, R10). */
   reports?: PolicyBundleReport[] | null;
 }>();
+
+const ws = useWorkspace();
+function policiesRoute(bundle?: string) {
+  return {
+    name: 'admin-agent-policies',
+    params: { id: ws?.agentId ?? '' },
+    ...(bundle ? { query: { bundle } } : {}),
+  };
+}
 
 function asBundle(v: unknown): PolicyBundleDoc | null {
   return isPlainObject(v) ? (v as PolicyBundleDoc) : null;

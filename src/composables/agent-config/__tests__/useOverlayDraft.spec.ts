@@ -1,7 +1,12 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { ref } from 'vue';
 import type { AgentConfigRevision, ConfigDoc } from '@/types/agent-config';
-import { YAML_DEBOUNCE_MS, useOverlayDraft } from '../useOverlayDraft';
+import { createDraftState, useOverlayDraft } from '../useOverlayDraft';
+import {
+  agentDraftState,
+  resetAgentDrafts,
+  syncDraftState,
+} from '../draftRegistry';
 
 const base: ConfigDoc = {
   verbosity: 0,
@@ -27,9 +32,6 @@ const rev = (overlay = {}, revision = 7): AgentConfigRevision => ({
 });
 
 describe('useOverlayDraft', () => {
-  beforeEach(() => vi.useFakeTimers());
-  afterEach(() => vi.useRealTimers());
-
   it('set / unset / remove / makeAbsent on nested and new plugins', () => {
     const d = useOverlayDraft(rev(), ref(base));
     d.set('/plugins/ssh/config/port', '2222');
@@ -100,44 +102,6 @@ describe('useOverlayDraft', () => {
     expect(d.isDirty.value).toBe(false);
   });
 
-  it('round-trips form ↔ yaml', () => {
-    const d = useOverlayDraft(rev({ verbosity: 1 }), ref(base));
-    d.set('/plugins/ssh/config/port', '2222');
-    expect(d.setMode('yaml')).toBe(true);
-    expect(d.yamlText.value).toContain("port: '2222'");
-    d.onYamlInput('verbosity: 2\n');
-    vi.advanceTimersByTime(YAML_DEBOUNCE_MS);
-    expect(d.overlay.value).toEqual({ verbosity: 2 });
-    expect(d.setMode('form')).toBe(true);
-    expect(d.mode.value).toBe('form');
-  });
-
-  it('blocks the yaml → form switch on a YAML error (flushing a pending parse)', () => {
-    const d = useOverlayDraft(rev(), ref(base));
-    d.setMode('yaml');
-    d.onYamlInput('plugins: [unclosed\n');
-    expect(d.setMode('form')).toBe(false);
-    expect(d.mode.value).toBe('yaml');
-    expect(d.yamlError.value?.message).toBeTruthy();
-    d.onYamlInput('verbosity: 1\n');
-    vi.advanceTimersByTime(YAML_DEBOUNCE_MS);
-    expect(d.yamlError.value).toBeNull();
-    expect(d.setMode('form')).toBe(true);
-  });
-
-  it('coerces scalar config values from YAML (R27) without rewriting the text', () => {
-    const d = useOverlayDraft(rev(), ref(base));
-    d.setMode('yaml');
-    const text = 'plugins:\n  ssh:\n    config:\n      port: 2222\n';
-    d.onYamlInput(text);
-    vi.advanceTimersByTime(YAML_DEBOUNCE_MS);
-    expect(d.overlay.value).toEqual({
-      plugins: { ssh: { config: { port: '2222' } } },
-    });
-    expect(d.coerced.value).toEqual(['/plugins/ssh/config/port']);
-    expect(d.yamlText.value).toBe(text);
-  });
-
   it('rebase keeps or discards the draft', () => {
     const keep = useOverlayDraft(rev({ verbosity: 1 }, 7), ref(base));
     keep.set('/verbosity', 2);
@@ -162,18 +126,6 @@ describe('useOverlayDraft', () => {
       d.clientIssues.value.some((i) => i.ptr === '/api' && i.blocking),
     ).toBe(true);
   });
-  it('hasUnsavedChanges sees YAML that is not parsed yet or does not parse', () => {
-    const d = useOverlayDraft(rev({ verbosity: 1 }), ref(base));
-    d.setMode('yaml');
-    expect(d.hasUnsavedChanges.value).toBe(false);
-    d.onYamlInput('verbosity: 2\n');
-    // Within the debounce the parsed overlay is unchanged, but the text is not.
-    expect(d.isDirty.value).toBe(false);
-    expect(d.hasUnsavedChanges.value).toBe(true);
-    d.onYamlInput('plugins: [\n');
-    vi.advanceTimersByTime(YAML_DEBOUNCE_MS);
-    expect(d.hasUnsavedChanges.value).toBe(true);
-  });
 
   it('makeAbsent nulls a key that only another instance file defines', () => {
     const other: ConfigDoc = {
@@ -185,5 +137,79 @@ describe('useOverlayDraft', () => {
     d.set('/plugins/neu', { source: 's' });
     d.makeAbsent('/plugins/neu');
     expect(d.overlay.value).toEqual({ plugins: { extra: null } });
+  });
+
+  it('counts changed leaves, answers pendingAt and undoes one pointer (R69)', () => {
+    const d = useOverlayDraft(
+      rev({ verbosity: 1, plugins: { ssh: { schedule: '0 * * * *' } } }),
+      ref(base),
+    );
+    expect(d.changedPaths.value).toEqual([]);
+    d.set('/verbosity', 2);
+    d.set('/plugins/ssh/config/port', '2222');
+    d.set('/plugins/ssh/policies', ['a', 'b']);
+    expect(d.changedPaths.value).toEqual([
+      '/plugins/ssh/config/port',
+      '/plugins/ssh/policies',
+      '/verbosity',
+    ]);
+    expect(d.pendingAt('/plugins/ssh/config')).toBe(true);
+    expect(d.pendingAt('/plugins/ssh/schedule')).toBe(false);
+    expect(d.pendingAt('/plugins')).toBe(true);
+    d.revertPointer('/verbosity');
+    expect(d.overlay.value.verbosity).toBe(1);
+    d.revertPointer('/plugins/ssh/config/port');
+    expect(d.overlay.value).toEqual({
+      verbosity: 1,
+      plugins: { ssh: { schedule: '0 * * * *', policies: ['a', 'b'] } },
+    });
+    d.discard();
+    expect(d.isDirty.value).toBe(false);
+  });
+
+  it('two drafts over one DraftState see the same changes (tab ↔ Policies view)', () => {
+    const state = createDraftState(rev({ verbosity: 1 }));
+    const tab = useOverlayDraft(state, ref(base));
+    const policies = useOverlayDraft(state, ref(base));
+    tab.set('/verbosity', 2);
+    policies.set('/policy_bundles/b', { modules: { 'a.rego': 'x' } });
+    expect(tab.changedPaths.value).toEqual([
+      '/policy_bundles/b/modules/a.rego',
+      '/verbosity',
+    ]);
+    expect(policies.overlay.value).toBe(tab.overlay.value);
+  });
+});
+
+describe('draft registry (R69)', () => {
+  beforeEach(() => resetAgentDrafts());
+
+  it('keeps one draft per agent for the session', () => {
+    const a = agentDraftState('a');
+    expect(agentDraftState('a')).toBe(a);
+    expect(agentDraftState('b')).not.toBe(a);
+    expect(a.baseRevision.value).toBe(-1);
+  });
+
+  it('adopts newer revisions while clean, keeps the base while dirty, forces after a save', () => {
+    const s = agentDraftState('a');
+    syncDraftState(s, rev({ verbosity: 1 }, 7));
+    expect(s.baseRevision.value).toBe(7);
+    syncDraftState(s, rev({ verbosity: 0 }, 8));
+    expect([s.baseRevision.value, s.overlay.value]).toEqual([
+      8,
+      { verbosity: 0 },
+    ]);
+
+    s.overlay.value = { verbosity: 2 };
+    s.comment.value = 'why';
+    syncDraftState(s, rev({ verbosity: 0 }, 9));
+    expect(s.baseRevision.value).toBe(8);
+    expect(s.overlay.value).toEqual({ verbosity: 2 });
+
+    syncDraftState(s, rev({ verbosity: 2 }, 10), true);
+    expect(s.baseRevision.value).toBe(10);
+    expect(s.original.value).toEqual({ verbosity: 2 });
+    expect(s.comment.value).toBe('');
   });
 });
