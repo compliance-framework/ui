@@ -11,7 +11,6 @@ import type { ConfigWorkspace } from '@/composables/agent-config/useConfigWorksp
 import {
   FIXTURE_ARTIFACTS,
   FIXTURE_ARTIFACT_SOURCES,
-  FIXTURE_SSH_POLICIES_PLUGIN_PATH,
   SSH_POLICIES,
   UBUNTU_POLICIES,
   configRev7,
@@ -139,13 +138,10 @@ describe('Policies view: override and view (R62, R64)', () => {
       FIXTURE_ARTIFACTS.sshPolicies,
       'root_login.rego',
     );
-    // R82: the vendor source as is; the agent appends the continuity policy_id.
+    // The vendor source as is: nothing is inserted.
     const expected = SSH_SRC['root_login.rego'];
     expect(expected).not.toContain('policy_id');
     expect(bundleOf(ws).modules?.['root_login.rego']).toBe(expected);
-    expect(wrapper.find('[data-test="stream-automatic-id"]').text()).toBe(
-      `policy_id := "${FIXTURE_SSH_POLICIES_PLUGIN_PATH}/root_login.rego"`,
-    );
     expect(confirmed.messages).toEqual([]);
     const editor = wrapper.find('[data-test="editor-pane"] textarea');
     expect((editor.element as HTMLTextAreaElement).value).toBe(expected);
@@ -224,7 +220,6 @@ describe('Policies view: override and view (R62, R64)', () => {
       actions: [],
     });
     await flushPromises();
-    // (The R78 stream check may read the already-overridden vendor modules, never this one.)
     expect(api.getArtifactFile).not.toHaveBeenCalledWith(
       expect.anything(),
       'root_login.rego',

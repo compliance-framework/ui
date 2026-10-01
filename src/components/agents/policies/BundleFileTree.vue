@@ -69,17 +69,6 @@
           <span :class="STATE_CLASSES[item.row.state]" data-test="file-state">{{
             STATE_LABELS[item.row.state]
           }}</span>
-          <span
-            v-if="streams?.[item.row.path]"
-            v-tooltip.top="streamTooltip(streams[item.row.path])"
-            tabindex="0"
-            class="rounded px-1 text-[0.65rem]"
-            :class="STREAM_CLASSES[streams[item.row.path].kind]"
-            :aria-label="streamTooltip(streams[item.row.path])"
-            data-test="file-stream"
-            :data-stream="streams[item.row.path].kind"
-            >{{ STREAM_LABELS[streams[item.row.path].kind] }}</span
-          >
           <span class="ml-auto flex flex-wrap gap-2">
             <span
               v-for="a in actionsFor(item.row)"
@@ -170,11 +159,6 @@ import { computed, ref } from 'vue';
 import InputText from '@/volt/InputText.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
 import type { FileRow, FileState } from '@/utils/agent-config/policy-files';
-import {
-  STREAM_LABELS,
-  type StreamIdentity,
-  type StreamKind,
-} from '@/utils/agent-config/policy-identity';
 import { modulePathError } from '@/utils/agent-config/validation';
 import ConfigPill from '../config/ConfigPill.vue';
 import { FILE_STATE_LABELS, VENDOR_TEST_TOOLTIP } from '../config/constants';
@@ -198,8 +182,6 @@ const props = defineProps<{
   problems: Record<string, { errors: number; warnings: number }>;
   selected: string | null;
   canEdit: boolean;
-  /** R78/R82: the evidence stream of each policy module (authored or inherited), by path. */
-  streams?: Record<string, StreamIdentity>;
   /** R79: why files cannot be overridden or added (a plugin using the bundle is too old). */
   editBlocked?: string | null;
 }>();
@@ -220,35 +202,6 @@ const STATE_CLASSES: Record<FileState, string> = {
   conflict: 'text-red-600 dark:text-red-400 font-semibold',
   dropped: 'text-gray-500 italic',
 };
-
-const STREAM_CLASSES: Record<StreamKind, string> = {
-  automatic:
-    'bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-300',
-  continues:
-    'bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-300',
-  own: 'bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300',
-  new: 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300',
-  path: 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300',
-};
-
-function streamTooltip(id: StreamIdentity): string {
-  switch (id.kind) {
-    case 'automatic':
-      return `Writes to the vendor policy's evidence stream: the agent adds ${id.automaticId ? `policy_id ${JSON.stringify(id.automaticId)}` : 'the continuing policy_id'} because the module keeps the vendor path and package`;
-    case 'continues':
-      return `Writes to the vendor policy's evidence stream (policy_id ${JSON.stringify(id.policyId)})`;
-    case 'own':
-      return `Its own evidence stream, from policy_id ${JSON.stringify(id.policyId)}; independent of where the bundle lives`;
-    case 'new':
-      return id.fork?.reason === 'package'
-        ? `The package differs from the vendor module's (${id.fork.vendorPackage}): a new evidence stream`
-        : "Does not continue the vendor policy's evidence stream: a new one";
-    case 'path':
-      return id.fork?.reason === 'multi-module'
-        ? 'Its package has more than one module, so the agent adds no continuing policy_id: a new stream that follows the path plugins load the bundle from'
-        : 'No policy_id: the stream follows the path plugins load the bundle from, so renaming the bundle starts another one';
-  }
-}
 
 /** Rows grouped under directory headers (paths are sorted). */
 const items = computed(() => {

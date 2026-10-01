@@ -24,32 +24,6 @@
       </SecondaryButton>
     </header>
 
-    <p
-      v-if="stream"
-      class="text-xs text-gray-500 dark:text-slate-400"
-      data-test="stream-identity"
-    >
-      Evidence stream:
-      <span class="font-medium" :data-stream="stream.kind">{{
-        STREAM_LABELS[stream.kind]
-      }}</span>
-      <template v-if="stream.policyId">
-        ·
-        <code class="font-mono break-all">{{ stream.policyId }}</code></template
-      >
-      <template v-else-if="stream.automaticId">
-        · the agent adds
-        <code class="font-mono break-all" data-test="stream-automatic-id"
-          >policy_id := {{ JSON.stringify(stream.automaticId) }}</code
-        ></template
-      >
-    </p>
-    <Message v-if="stream?.fork" severity="warn" data-test="stream-fork">
-      <span class="text-sm">{{
-        forkMessage(stream.fork, stream.policyId)
-      }}</span>
-    </Message>
-
     <Message
       v-if="vendorTests.length && mode === 'edit' && !readonly"
       severity="warn"
@@ -118,11 +92,6 @@ import type { PolicyError } from '@/types/agent-config';
 import ConfigPill from '../config/ConfigPill.vue';
 import RegoModuleEditor from '../config/editor/RegoModuleEditor.vue';
 import { VENDOR_TEST_TOOLTIP } from '../config/constants';
-import {
-  STREAM_LABELS,
-  forkMessage,
-  type StreamIdentity,
-} from '@/utils/agent-config/policy-identity';
 
 defineProps<{
   bundle: string;
@@ -137,8 +106,6 @@ defineProps<{
   vendorTests: string[];
   /** View mode on an inherited vendor file the user may override. */
   canOverride?: boolean;
-  /** R78/R82: the module's evidence stream (policy modules of a bundle). */
-  stream?: StreamIdentity | null;
 }>();
 defineEmits<{
   update: [text: string];
