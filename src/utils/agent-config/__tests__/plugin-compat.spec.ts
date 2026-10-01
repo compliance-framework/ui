@@ -25,7 +25,7 @@ const reports = (support: string, lib = 'v0.1.9'): PluginReport[] => [
   {
     name: 'other',
     source: 'ghcr.io/cf/other:v1',
-    libVersion: 'v0.8.0',
+    libVersion: 'v0.9.0',
     inlinePolicies: 'supported',
   },
 ];
@@ -83,7 +83,7 @@ describe('inlineGateIssues', () => {
       blocking: true,
       bundles: ['tuned'],
       message:
-        "plugin ssh (agent lib v0.1.9) doesn't support inline policies; upgrade the plugin to a build on agent ≥ v0.8.0",
+        "plugin ssh (agent lib v0.1.9) doesn't support inline policies; upgrade the plugin to a build on agent ≥ v0.9.0",
     });
   });
 
@@ -116,7 +116,7 @@ describe('inlineGateIssues', () => {
       {
         name: 'ssh',
         source: NEW,
-        libVersion: 'v0.8.0',
+        libVersion: 'v0.9.0',
         inlinePolicies: 'supported',
       },
       {
@@ -213,7 +213,7 @@ describe('inlineGateIssues', () => {
 
   it('says nothing for supported or disabled plugins, or without reports', () => {
     expect(
-      inlineGateIssues(assignOverlay, [inst(reports('supported', 'v0.8.0'))]),
+      inlineGateIssues(assignOverlay, [inst(reports('supported', 'v0.9.0'))]),
     ).toEqual([]);
     expect(
       inlineGateIssues(
@@ -229,7 +229,7 @@ describe('inlineGateIssues', () => {
 
   it('checks each instance (replicas on different builds)', () => {
     const issues = inlineGateIssues(assignOverlay, [
-      inst(reports('supported', 'v0.8.0'), base, 'a'),
+      inst(reports('supported', 'v0.9.0'), base, 'a'),
       inst(reports('unsupported'), base, 'b'),
     ]);
     expect(issues.map((i) => [i.instanceId, i.blocking])).toEqual([
@@ -240,7 +240,7 @@ describe('inlineGateIssues', () => {
 
 describe('per-plugin reasons and the review rows', () => {
   const instances = [
-    inst(reports('supported', 'v0.8.0'), base, 'a'),
+    inst(reports('supported', 'v0.9.0'), base, 'a'),
     inst(reports('unsupported'), base, 'b'),
   ];
 

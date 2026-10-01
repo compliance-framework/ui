@@ -50,7 +50,7 @@ const agent: Agent = {
 const reports = (
   ssh: string,
   ubuntu = 'unsupported',
-  sshLib = 'v0.8.0',
+  sshLib = 'v0.9.0',
 ): PluginReport[] => [
   {
     name: 'local-ssh',
@@ -120,14 +120,14 @@ describe('plugin agent library badge (R76/R79)', () => {
     const ssh = w.find(
       '[data-test="plugin-card-local-ssh"] [data-test="plugin-lib"]',
     );
-    expect(ssh.text()).toBe('agent v0.8.0 · inline ✓');
+    expect(ssh.text()).toBe('agent v0.9.0 · inline ✓');
     expect(ssh.attributes('data-support')).toBe('supported');
     const ubuntu = w.find(
       '[data-test="plugin-card-ubuntu-packages"] [data-test="plugin-lib"]',
     );
     expect(ubuntu.text()).toBe('agent v0.7.1 · no inline');
     expect(ubuntu.attributes('aria-label')).toContain(
-      'upgrade the plugin to a build on agent ≥ v0.8.0',
+      'upgrade the plugin to a build on agent ≥ v0.9.0',
     );
   });
 

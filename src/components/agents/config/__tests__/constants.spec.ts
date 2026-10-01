@@ -103,7 +103,7 @@ describe('agent config labels', () => {
 
   it('R79 message matches the agent wording', () => {
     expect(inlineUnsupportedText('ssh', 'v0.1.9')).toBe(
-      "plugin ssh (agent lib v0.1.9) doesn't support inline policies; upgrade the plugin to a build on agent ≥ v0.8.0",
+      "plugin ssh (agent lib v0.1.9) doesn't support inline policies; upgrade the plugin to a build on agent ≥ v0.9.0",
     );
   });
 

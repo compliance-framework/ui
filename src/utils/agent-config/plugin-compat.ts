@@ -22,8 +22,8 @@ import { diffConfigs } from './config-diff';
 import { parsePointer, pointer } from './json-pointer';
 import { inlineBundleName } from './validation';
 
-/** pluginlib.MinInlinePolicy (agent#95): the first agent library that honours policy_id. */
-export const MIN_INLINE_POLICY_LIB = 'v0.8.0';
+/** pluginlib.MinInlinePolicy: the first agent library that honours policy_id (R81: v0.8.0/v0.8.1 shipped without it). */
+export const MIN_INLINE_POLICY_LIB = 'v0.9.0';
 
 /** The agent's plugin-lib-inline-unsupported message (R79). */
 export function inlineUnsupportedText(plugin: string, lib: string): string {

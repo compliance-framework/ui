@@ -353,7 +353,7 @@ describe('R79: plugins built on an agent library without inline policies', () =>
     },
   ];
   const TEXT =
-    "plugin local-ssh (agent lib v0.1.9) doesn't support inline policies; upgrade the plugin to a build on agent ≥ v0.8.0";
+    "plugin local-ssh (agent lib v0.1.9) doesn't support inline policies; upgrade the plugin to a build on agent ≥ v0.9.0";
 
   it('disables Override and Add file for a bundle an unsupported plugin uses', async () => {
     const { wrapper } = await mountWorkspace(api({ plugins: unsupported }));
