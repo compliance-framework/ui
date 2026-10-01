@@ -97,7 +97,8 @@ describe('contractHints (R63, client mirror)', () => {
       HEAD +
       'title := "t"\n' +
       'violation[{"id": "a", "title": "A"}] if { input.b }\n' +
-      'violation[{\n  "id": "b",\n}] if { input.c }\n';
+      'violation[{\n  "id": "b",\n}] if { input.c }\n' +
+      'violation[{"id": "c"}] := true if { input.d }\n';
     expect(contractHints('b', { 'ssh.rego': ok })).toEqual([]);
     const bad =
       HEAD + 'title := "t"\nviolation["a"] := {"id": "a"} if { true }\n';

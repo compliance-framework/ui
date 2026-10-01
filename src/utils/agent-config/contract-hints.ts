@@ -258,8 +258,9 @@ export function contractHints(
           );
         } else if (h.bracket) {
           // `violation[{…}] if { … }` (value true) is the object form every plugin evaluates
-          // (R78); only `violation[key] := value` is wrong (policyeval checkViolationRule).
-          if (/^violation\s*\[.*\]\s*(:=|=(?!=))/.test(h.line)) {
+          // (R78); only `violation[key] := value` with a value other than true is wrong
+          // (policyeval checkViolationRule).
+          if (/^violation\s*\[.*\]\s*(:=|=(?!=))(?!\s*true\b)/.test(h.line)) {
             push(
               m.path,
               h.row,
