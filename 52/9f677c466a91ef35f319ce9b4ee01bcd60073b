@@ -1,0 +1,4 @@
+lisa-addressed:
+review round (owner-directed fixes):
+- PRRT_kwDONe0Wms6n7qWm unassign-restores-unloaded-source: useBundleOps.restoredSource(plugin, name) returns S only when a known base's file list or merge(base, draft.original) had S at the bundle's index (an undone R66 swap); otherwise unassign splices the inline entry. PluginAssignmentRows hint "puts S back" uses AssignmentPlugin.restoresSource (from restoredSource), else "removes the reference". Tests: swap->unassign restores at index (policy-only, saveDisabledReason ''), append->unassign removes only inline, alongside-with-S-dropped never re-adds S.
+- PRRT_kwDONe0Wms6n7qX4 policies-view-agent-rebind: AgentPoliciesView is a thin route wrapper rendering AgentPoliciesPage :key=agentId; workspace/draft are bound per instance so an in-place :id change re-creates them. Test: A->B in-place navigation yields B's draft, A's draft untouched, PUT goes to agent-2.
