@@ -12,3 +12,14 @@ Round 2 (design §13, owner e2e feedback) — supersedes the round-1 notes about
 - R63 client hints (utils/agent-config/contract-hints) are line-based, column-1 rule heads only, never blocking; API PolicyErrors win: a hint with the same code+row as an API error is not shown twice. Markers prefix the code: "[missing-title] …".
 - R66 swap-by-default lives in useBundleOps.assign(plugin, name, 'replace'|'alongside'); unassign of a swapped bundle puts the extended source back at the same index (inverse R22 swap) rather than dropping it.
 - Bundle size (vite build): AgentsView 21.7 kB (6.6 gz, unchanged); AgentConfigTab 72.8 kB (20.9 gz); AgentPoliciesView 56.5 kB (18.4 gz); shared workspace chunk 101.9 kB (35.8 gz: js-yaml, validation, workspace, inline editors); ReviewSaveDialog 19.8 kB and RawOverlayDialog 5.1 kB are async; CodeMirror stays in CodeEditor 46.4 kB / CodeMergeView 29.3 kB async chunks. The drawer chunk (86.2 kB) is gone.
+
+lisa-selfreview:
+round 2 pass 1 (strict) verdict: request_changes
+- [high] draft-leaks-across-users (composables/agent-config/draftRegistry.ts): drafts are keyed by agent only and logout does not reload the SPA (stores/auth.ts logout), so the next user in the same tab inherits the previous user's pending changes and could save them under their own identity. Fix: key the registry by user id + agent id (useConfigWorkspace passes useUserStore().user?.id); a token-expiry re-login by the same user keeps the draft.
+- [medium] pending-new-mislabel (AgentConfigEffectiveView pluginCards): plugins the SAVED desired revision adds but the selected instance has not applied yet are labelled "pending: new plugin". Fix: only plugins the draft itself changes (draft.pendingAt) get the pending card.
+- [low] no-op-apply (effective/InlineScalarEditor apply): Apply on an untouched field pins the file value into the overlay (a pending change that changes nothing). Fix: close without writing when the value is unchanged and the key is not in the overlay.
+- [low] raw-dialog-timer (workspace/RawOverlayDialog): the parse debounce timer is not cleared on unmount. Fix: onBeforeUnmount clearTimeout.
+- [low] initial-bundle-watch (policies/PoliciesWorkspace): watch source returns a fresh array each run (fires on every draft change). Fix: watch a boolean.
+- [low] edit-pane-empty (PoliciesWorkspace/PolicyEditorPane): edit mode on a file whose module text the draft no longer has (e.g. after Restore) renders an empty pane. Fix: show a hint.
+- [low] stale-comment (editor/useEditor.ts header still says "the drawer's sections").
+- [low, defer] refresh re-fetches every instance detail and the selected one twice; contract hints recompute for every bundle per keystroke; AgentPoliciesView ignores an in-place :id change (no UI navigates agent→agent there).
