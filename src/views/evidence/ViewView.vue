@@ -244,6 +244,12 @@
             </div>
           </div>
         </PageCard>
+
+        <EvidencePlaybackSections
+          v-if="canPlayBack"
+          :evidence-id="evidence.id"
+          :policy-source="policySource"
+        />
       </div>
 
       <div v-else-if="activeTab === 'metadata'" class="space-y-4">
@@ -845,12 +851,6 @@
         </PageCard>
       </div>
 
-      <div v-else-if="activeTab === 'playback'" class="space-y-4">
-        <EvidencePlaybackTab
-          :evidence-id="evidence.id"
-          :policy-source="policySource"
-        />
-      </div>
       <div v-else class="space-y-4">
         <EvidenceHistorySection :uuid="evidence.uuid" />
       </div>
@@ -943,7 +943,7 @@ import PageSubHeader from '@/components/PageSubHeader.vue';
 import BackMatterDisplay from '@/components/BackMatterDisplay.vue';
 import LabelList from '@/components/LabelList.vue';
 import EvidenceHistorySection from '@/components/evidence/EvidenceHistorySection.vue';
-import EvidencePlaybackTab from '@/components/evidence/EvidencePlaybackTab.vue';
+import EvidencePlaybackSections from '@/components/evidence/EvidencePlaybackSections.vue';
 import {
   FindingStatusColor,
   getEvidenceStatusColor,
@@ -996,17 +996,16 @@ const backToEvidenceRoute = computed(() => ({
   query: route.query,
 }));
 
-const allTabs = [
+const tabs = [
   { id: 'overview', label: 'Overview' },
   { id: 'metadata', label: 'Metadata' },
   { id: 'risks', label: 'Risks' },
   { id: 'media', label: 'Media' },
   { id: 'signature', label: 'Signature' },
-  { id: 'playback', label: 'Playback' },
   { id: 'history', label: 'History' },
 ] as const;
 
-const activeTab = ref<(typeof allTabs)[number]['id']>('overview');
+const activeTab = ref<(typeof tabs)[number]['id']>('overview');
 const activities = ref<Activity[]>([] as Activity[]);
 const showActivitiesModal = ref(false);
 const verificationAttempted = ref(false);
@@ -1096,15 +1095,6 @@ const policySource = computed(
 const canPlayBack = computed(() =>
   metadataProps.value.some((prop) => prop.name === POLICY_BUNDLE_DIGEST_PROP),
 );
-const tabs = computed(() =>
-  allTabs.filter((tab) => tab.id !== 'playback' || canPlayBack.value),
-);
-
-watch(canPlayBack, (available) => {
-  if (!available && activeTab.value === 'playback') {
-    activeTab.value = 'overview';
-  }
-});
 const metadataLinks = computed<Link[]>(() => evidence.value?.links ?? []);
 const backMatterResources = computed<BackMatterResource[]>(
   () => evidence.value?.backMatter?.resources ?? [],

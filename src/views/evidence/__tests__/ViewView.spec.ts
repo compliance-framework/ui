@@ -557,10 +557,10 @@ function mountView() {
           props: ['uuid'],
           template: '<div>EvidenceHistorySection {{ uuid }}</div>',
         },
-        EvidencePlaybackTab: {
+        EvidencePlaybackSections: {
           props: ['evidenceId', 'policySource'],
           template:
-            '<div>EvidencePlaybackTab {{ evidenceId }} source={{ policySource }}</div>',
+            '<div>EvidencePlaybackSections {{ evidenceId }} source={{ policySource }}</div>',
         },
         ResultComplianceOverTimeChart: {
           template: '<div>Chart</div>',
@@ -656,7 +656,7 @@ describe('Evidence ViewView', () => {
     expect(backLink.text()).toBe('<');
   });
 
-  it('offers the playback tab only for evidence with stored policy artifacts', async () => {
+  it('shows the policy evaluation on the overview for evidence with stored policy artifacts', async () => {
     const withArtifacts = structuredClone(baseEvidence);
     withArtifacts.props = [
       ...(withArtifacts.props ?? []),
@@ -681,25 +681,25 @@ describe('Evidence ViewView', () => {
     const wrapper = mountView();
     await flushPromises();
 
+    expect(wrapper.text()).toContain(
+      `EvidencePlaybackSections ${withArtifacts.id} source=ghcr.io/org/policies:v1`,
+    );
     const tabTexts = wrapper
       .find('.border-b')
       .findAll('button')
       .map((button) => button.text());
-    expect(tabTexts).toEqual([
-      'Overview',
-      'Metadata',
-      'Risks',
-      'Media',
-      'Signature',
-      'Playback',
-      'History',
-    ]);
+    expect(tabTexts).not.toContain('Playback');
 
-    await clickButtonByText(wrapper, 'Playback');
-    expect(wrapper.text()).toContain(
-      `EvidencePlaybackTab ${withArtifacts.id} source=ghcr.io/org/policies:v1`,
-    );
-    expect(wrapper.text()).not.toContain('EvidenceHistorySection');
+    await clickButtonByText(wrapper, 'Metadata');
+    expect(wrapper.text()).not.toContain('EvidencePlaybackSections');
+  });
+
+  it('shows no policy evaluation for evidence without stored policy artifacts', async () => {
+    const wrapper = mountView();
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('Current State');
+    expect(wrapper.text()).not.toContain('EvidencePlaybackSections');
   });
 
   it('shows labels, props, and links in the metadata tab', async () => {

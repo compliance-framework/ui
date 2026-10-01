@@ -14,11 +14,21 @@ export interface EvidencePlaybackFile {
   containsPackage: boolean;
 }
 
+// Where a rule is in its policy file: the 1-based first and last line.
+export interface EvidencePlaybackRuleLocation {
+  file: string;
+  startLine: number;
+  endLine: number;
+}
+
 export interface EvidencePlaybackViolation {
   id?: string;
   title?: string;
   description?: string;
   remarks?: string;
+  // The `violation` rules that produced it. Empty when they could not be located; absent
+  // from APIs that predate rule locations.
+  rules?: EvidencePlaybackRuleLocation[];
 }
 
 export interface EvidencePlaybackRecorded {
@@ -73,7 +83,7 @@ export interface EvidencePlayback {
   errors: EvidencePlaybackError[];
 }
 
-// The evidence prop that shows an evidence can be played back.
+// The evidence prop that shows an evidence's policy evaluation can be played back.
 export const POLICY_BUNDLE_DIGEST_PROP = '_policy_bundle_digest';
 
 // The evidence prop the agent records with the configured source of the policy bundle: an
