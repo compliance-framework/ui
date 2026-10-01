@@ -13,9 +13,8 @@ const emit = defineEmits<{
 
 function formatProps(props: Statement['props']): string {
   if (!props?.length) {
-    return 'None';
+    return '';
   }
-
   return props
     .map((prop) => {
       if (prop.name && prop.value) {
@@ -28,9 +27,8 @@ function formatProps(props: Statement['props']): string {
 
 function formatLinks(links: Statement['links']): string {
   if (!links?.length) {
-    return 'None';
+    return '';
   }
-
   return links
     .map((link) => link.text || link.href || link.rel || 'Link')
     .join(', ');
@@ -47,15 +45,15 @@ function formatLinks(links: Statement['links']): string {
       />
       <p class="text-sm">{{ statement.statementId }}</p>
     </div>
-    <div>
+    <div v-if="statement.remarks">
       <TooltipTitle
         text="Remarks"
         tooltip-key="statement.remarks"
         underline-class="text-sm font-medium text-gray-500 underline decoration-dotted cursor-help"
       />
-      <p class="text-sm">{{ statement.remarks || 'None' }}</p>
+      <p class="text-sm">{{ statement.remarks }}</p>
     </div>
-    <div>
+    <div v-if="statement.props">
       <TooltipTitle
         text="Props"
         tooltip-key="statement.props"
@@ -63,7 +61,7 @@ function formatLinks(links: Statement['links']): string {
       />
       <p class="text-sm">{{ formatProps(statement.props) }}</p>
     </div>
-    <div>
+    <div v-if="statement.links">
       <TooltipTitle
         text="Links"
         tooltip-key="statement.links"
