@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import { resetAgentDrafts } from '@/composables/agent-config/draftRegistry';
 import type { ConfigWorkspace } from '@/composables/agent-config/useConfigWorkspace';
-import { configRev7 } from '@/composables/agent-config/fixtures';
+import { configRev7 } from '@/composables/agent-config/__tests__/fixtures';
 import {
   ADMIN,
   POLICY_AUTHOR,

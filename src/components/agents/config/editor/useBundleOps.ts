@@ -7,8 +7,10 @@ import { pointer } from '@/utils/agent-config/json-pointer';
 import { isPlainObject, mergePatch } from '@/utils/agent-config/merge-patch';
 import { NAME_RE, isInlineSource } from '@/utils/agent-config/validation';
 import { usedSources } from '@/utils/agent-config/policy-files';
-import { moduleTemplate } from '@/utils/agent-config/rego-template';
-import { newModulePolicyId } from '@/utils/agent-config/policy-identity';
+import {
+  moduleTemplate,
+  newModulePolicyId,
+} from '@/utils/agent-config/rego-template';
 import { useEditor } from './useEditor';
 
 /** Name sanitisation for "Customize a bundle": lowercase, [^a-z0-9_-] → '-', ≤ 63 chars. */

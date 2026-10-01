@@ -1,5 +1,5 @@
-// Shared types of the agent config client (kept apart from useAgentConfigApi.ts so the
-// fixture implementation can import them without a module cycle).
+// Shared types of the agent config client (kept apart from useAgentConfigApi.ts so components
+// and tests can import them without pulling in the HTTP client).
 
 import type {
   AgentConfigRevision,
@@ -95,6 +95,4 @@ export interface AgentConfigApi {
   listArtifactFiles(digest: string): Promise<ArtifactFileList>;
   /** R62: one file's source; 404 = unknown digest or path, 415/422 = not readable as text. */
   getArtifactFile(digest: string, path: string): Promise<ArtifactFileSource>;
-  /** True when this client serves in-memory fixtures (LLD U0.6). */
-  readonly fixtures: boolean;
 }

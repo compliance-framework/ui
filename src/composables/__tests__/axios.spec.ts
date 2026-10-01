@@ -90,7 +90,7 @@ describe('agent config stop paths', () => {
       config,
     });
 
-  it('keeps snake_case overlay keys and bundle-name keys verbatim (config)', async () => {
+  it('keeps snake_case overlay keys verbatim (config)', async () => {
     const { STOP_PATHS } = await import(
       '@/composables/agent-config/useAgentConfigApi'
     );
@@ -103,7 +103,6 @@ describe('agent config stop paths', () => {
           overlay: {
             plugins: { 'local-ssh': { policy_data: { max_auth_tries: 3 } } },
           },
-          'bundles-first-seen': { 'ssh-tuned': '2026-09-20T10:00:00Z' },
         },
       }),
     });
@@ -112,7 +111,6 @@ describe('agent config stop paths', () => {
       overlay: {
         plugins: { 'local-ssh': { policy_data: { max_auth_tries: 3 } } },
       },
-      bundlesFirstSeen: { 'ssh-tuned': '2026-09-20T10:00:00Z' },
     });
   });
 

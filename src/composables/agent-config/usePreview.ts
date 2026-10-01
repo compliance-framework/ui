@@ -1,6 +1,7 @@
-// Live, debounced, advisory preview (LLD U2.5): POST …/config/preview 1.5 s after the last
-// draft change, only when the draft parses, has no blocking client issues and is at most
-// 256 KiB (larger drafts preview on Review only). Each call aborts the previous one.
+// Live, debounced preview (LLD U2.5, R89): POST …/config/preview 1.5 s after the last draft
+// change, only when the draft has no blocking client-only issues and is at most 256 KiB
+// (larger drafts preview on Review only). Each call aborts the previous one. It is the UI's
+// validation: its errors gate Review & save.
 
 import { onScopeDispose, ref, shallowRef, watch, type Ref } from 'vue';
 import type { ConfigPreview, OverlayDoc } from '@/types/agent-config';
@@ -21,6 +22,8 @@ export function usePreview(
   const lastPreview = shallowRef<ConfigPreview | null>(null);
   const lastPreviewFor = shallowRef<OverlayDoc | null>(null);
   const status = ref<PreviewStatus>('idle');
+  /** A live preview is scheduled (debouncing) or running. */
+  const pending = ref(false);
   const error = ref<string | null>(null);
   let controller: AbortController | null = null;
   let timer: ReturnType<typeof setTimeout> | null = null;
@@ -38,6 +41,7 @@ export function usePreview(
       clearTimeout(timer);
       timer = null;
     }
+    pending.value = true;
     controller?.abort();
     const ctrl = new AbortController();
     controller = ctrl;
@@ -58,7 +62,10 @@ export function usePreview(
       }
       throw e;
     } finally {
-      if (controller === ctrl) controller = null;
+      if (controller === ctrl) {
+        controller = null;
+        pending.value = !!timer;
+      }
     }
   }
 
@@ -74,7 +81,9 @@ export function usePreview(
     timer = null;
     // "Checked" only describes the draft it was computed for.
     if (!isCurrent() && status.value === 'checked') status.value = 'idle';
+    pending.value = !!controller;
     if (!liveEligible() || isCurrent()) return;
+    pending.value = true;
     timer = setTimeout(() => {
       timer = null;
       run().catch(() => undefined);
@@ -88,6 +97,7 @@ export function usePreview(
     timer = null;
     controller?.abort();
     controller = null;
+    pending.value = false;
   }
 
   onScopeDispose(stop);
@@ -96,6 +106,7 @@ export function usePreview(
     lastPreview,
     lastPreviewFor,
     status,
+    pending,
     error,
     run,
     isCurrent,

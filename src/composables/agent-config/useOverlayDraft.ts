@@ -2,7 +2,7 @@
 // view (inline pencils), the Policies view and the raw YAML dialog, and saved as one revision.
 // The state lives in the per-agent registry (./draftRegistry) so it survives navigation between
 // the Configuration tab and the Policies view; this composable adds the operations and the
-// derived views (effective draft, changed paths, client issues) for one component tree.
+// derived views (effective draft, changed paths, issues) for one component tree.
 //
 // Draft semantics: clearing a field omits the key (the file value applies again); there is no
 // automatic normalisation of overlay values equal to the base, because bases differ between
@@ -69,8 +69,8 @@ export interface OverlayDraftOptions {
   validationBases?: Ref<ConfigDoc[]>;
   validationContext?: Ref<ValidationContext>;
   /**
-   * Further issues computed outside the overlay checks (R79 plugin compatibility), read
-   * lazily inside `clientIssues` so they may depend on this draft.
+   * Issues found outside the browser (R89: the API preview of this draft), read lazily inside
+   * `issues` so they may depend on this draft.
    */
   extraIssues?: () => ClientIssue[];
 }
@@ -91,14 +91,19 @@ export function useOverlayDraft(
   const effectiveDraft = computed(() =>
     mergePatch<ConfigDoc>(base.value ?? {}, overlay.value),
   );
-  const clientIssues = computed(() => {
-    const issues = validateOverlayClientSide(
+  /** The browser's client-only checks (R89). */
+  const clientIssues = computed(() =>
+    validateOverlayClientSide(
       overlay.value,
       options.validationBases?.value ??
         options.bases?.value ??
         (base.value ? [base.value] : []),
       options.validationContext?.value ?? {},
-    );
+    ),
+  );
+  /** Client-only issues plus `extraIssues` (the API preview's), deduplicated. */
+  const issues = computed(() => {
+    const issues = [...clientIssues.value];
     const seen = new Set(issues.map((i) => `${i.ptr}\u0000${i.message}`));
     for (const i of options.extraIssues?.() ?? []) {
       const key = `${i.ptr}\u0000${i.message}`;
@@ -173,6 +178,7 @@ export function useOverlayDraft(
     changedPaths,
     effectiveDraft,
     clientIssues,
+    issues,
     pendingAt,
     set,
     unset,

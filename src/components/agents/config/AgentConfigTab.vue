@@ -27,9 +27,6 @@
       </div>
     </Message>
     <template v-else>
-      <Message v-if="api.fixtures" severity="warn" data-test="fixtures-banner">
-        Showing fixture data (agent configuration fixture mode is on).
-      </Message>
       <AgentConfigHeader
         :config="state.config.value"
         :sync-summary="state.syncSummary.value"
@@ -115,7 +112,6 @@
             state.selectedInstance.value?.appliedRevision ?? 0,
           )
         "
-        :bundles-first-seen="state.config.value?.bundlesFirstSeen"
         :policy-bundles="state.selectedInstance.value?.policyBundles ?? null"
         :plugin-reports="state.selectedInstance.value?.plugins ?? null"
       />

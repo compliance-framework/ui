@@ -100,7 +100,7 @@ export function useEditor() {
     return getAt(draft.effectiveDraft.value, ptr);
   }
   function issuesAt(ptr: string) {
-    return draft.clientIssues.value.filter((i) => i.ptr === ptr);
+    return draft.issues.value.filter((i) => i.ptr === ptr);
   }
   /** True when the known instances' file values differ at `ptr`. */
   function differsAcrossInstances(ptr: string): boolean {

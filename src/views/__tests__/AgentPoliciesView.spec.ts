@@ -13,7 +13,7 @@ import {
   configRev7,
   overlayRev7,
   previewMixed,
-} from '@/composables/agent-config/fixtures';
+} from '@/composables/agent-config/__tests__/fixtures';
 import type { ConfigPreview } from '@/types/agent-config';
 import type { Agent } from '@/types/agents';
 import {
@@ -195,6 +195,9 @@ describe('AgentPoliciesView (R68)', () => {
     expect(tab2.find('[data-test="pending-count"]').text()).toBe(
       '2 pending changes',
     );
+    // R89: Review waits for the live preview.
+    await (tab2.vm as unknown as { ws: ConfigWorkspace }).ws.preview.run();
+    await flushPromises();
     await tab2.find('[data-test="pending-review"]').trigger('click');
     await vi.dynamicImportSettled();
     await flushPromises();
@@ -249,6 +252,8 @@ describe('AgentPoliciesView (R68)', () => {
     await view
       .find('[data-file="root_login.rego"] [data-action="override"]')
       .trigger('click');
+    await flushPromises();
+    await wsB.preview.run();
     await flushPromises();
     await view.find('[data-test="pending-review"]').trigger('click');
     await vi.dynamicImportSettled();

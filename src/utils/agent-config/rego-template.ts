@@ -8,6 +8,11 @@
 // the module declares a `policy_id` so its evidence stream does not depend on where the bundle
 // lives.
 
+/** The policy_id a new module gets (R78): `<bundle>/<file>`, stable from day one. */
+export function newModulePolicyId(bundle: string, file: string): string {
+  return `${bundle}/${file}`;
+}
+
 /** Rego package names: dot-separated identifiers. */
 const PACKAGE_RE = /^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)*$/;
 

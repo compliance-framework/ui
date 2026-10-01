@@ -5,7 +5,7 @@ import {
   baseConfig,
   instanceDetailA,
   overlayRev7,
-} from '@/composables/agent-config/fixtures';
+} from '@/composables/agent-config/__tests__/fixtures';
 import { mergePatch } from '@/utils/agent-config/merge-patch';
 import AgentConfigEffectiveView from '../AgentConfigEffectiveView.vue';
 import { globalWith, piniaWith, READER } from './helpers';

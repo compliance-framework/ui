@@ -10,7 +10,7 @@ import {
   detailFor,
   instanceIds,
   instancesMixed,
-} from '../fixtures';
+} from './fixtures';
 import { useAgentConfig } from '../useAgentConfig';
 import { validationInstanceIds } from '@/utils/agent-config/instance-status';
 
@@ -26,7 +26,6 @@ function deferred<T>() {
 
 function makeApi(over: Partial<AgentConfigApi> = {}): AgentConfigApi {
   return {
-    fixtures: false,
     listArtifactFiles: vi.fn(),
     getArtifactFile: vi.fn(),
     getConfig: vi.fn().mockResolvedValue(configRev7),

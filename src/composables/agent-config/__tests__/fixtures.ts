@@ -2,7 +2,7 @@
 // useAgentConfigApi returns, i.e. AFTER the camelcase interceptor: envelope keys camelCase,
 // config documents (overlay/base/effective/remote-config) verbatim snake_case.
 //
-// Used by the in-memory fixture API (fixture mode) and by the specs.
+// Test data for the specs (the `?fixtures` demo mode was removed, R90).
 
 import type {
   AgentConfigRevision,
@@ -50,7 +50,7 @@ violation contains {"id": "${pkg}", "title": "${title} failed"} if {
 `;
 }
 
-/** Vendor file sources per artifact digest (fixture mode only). */
+/** Vendor file sources per artifact digest (the artifact file routes, R62). */
 export const FIXTURE_ARTIFACT_SOURCES: Record<
   string,
   Record<string, string>
@@ -183,7 +183,6 @@ export const configRev7: AgentConfigRevision = {
   createdBy: 'alice@example.com',
   createdAt: '2026-09-29T08:00:00Z',
   revertOf: null,
-  bundlesFirstSeen: { 'ssh-tuned': '2026-09-20T10:00:00Z' },
 };
 
 export const configRev6: AgentConfigRevision = {
@@ -321,14 +320,6 @@ function redact(doc: ConfigDoc): ConfigDoc {
   return out;
 }
 
-/** R78: the reported `extends.plugin-path` of inline:ssh-tuned (api#465). */
-export const FIXTURE_SSH_POLICIES_PLUGIN_PATH =
-  '.compliance-framework/policies/ghcr.io/compliance-framework/plugin-local-ssh-policies/v1.0.0';
-
-/** R82 (b): the reported `plugin-path` of inline:ssh-tuned. */
-export const FIXTURE_SSH_TUNED_PLUGIN_PATH =
-  '.compliance-framework/policies/inline/ssh-tuned/policies';
-
 export function detailFor(
   s: AgentInstanceSummary,
   overlay: OverlayDoc,
@@ -347,14 +338,10 @@ export function detailFor(
         source: 'inline:ssh-tuned',
         digest: 'tree:sha256:aa11',
         artifactDigest: FIXTURE_ARTIFACTS.inlineSshTuned,
-        // R82 (b): plugins load inline bundles from this relative path.
-        pluginPath: FIXTURE_SSH_TUNED_PLUGIN_PATH,
         extends: {
           source: SSH_POLICIES,
           digest: 'tree:sha256:bb22',
           artifactDigest: FIXTURE_ARTIFACTS.sshPolicies,
-          // R78: where plugins would load the vendor source (it is replaced in every plugin).
-          pluginPath: FIXTURE_SSH_POLICIES_PLUGIN_PATH,
           files: [
             {
               path: 'banner.rego',

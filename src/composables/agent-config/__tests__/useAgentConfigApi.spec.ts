@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AxiosError, AxiosHeaders } from 'axios';
-import camelcaseKeys from 'camelcase-keys';
 import { jsonBody } from '@/composables/axios';
 import {
   AgentConfigApiError,
@@ -8,7 +7,7 @@ import {
   createHttpAgentConfigApi,
   toAgentConfigError,
 } from '../useAgentConfigApi';
-import { error409, error422, error428 } from '../fixtures';
+import { error409, error422, error428 } from './fixtures';
 
 vi.mock('@/composables/axios', async () => {
   const actual = await vi.importActual<typeof import('@/composables/axios')>(
@@ -154,36 +153,6 @@ describe('useAgentConfigApi (HTTP client)', () => {
     expect(get).toHaveBeenLastCalledWith('/api/admin/agents/a1/instances/i1', {
       camelcaseStopPaths: STOP_PATHS.instances,
     });
-  });
-
-  it('camelCases the R77/R78 plugin paths of an instance report (not under a stop path)', () => {
-    // The response interceptor's conversion, with the instances stop paths.
-    const raw = {
-      data: {
-        'policy-bundles': [
-          {
-            source: 'inline:b',
-            'plugin-path': '.compliance-framework/policies/inline/b/policies',
-            extends: { source: 'oci://v', 'plugin-path': './v/' },
-          },
-        ],
-      },
-    };
-    const out = camelcaseKeys(raw, {
-      deep: true,
-      stopPaths: [...STOP_PATHS.instances],
-    }) as unknown as {
-      data: {
-        policyBundles: {
-          pluginPath: string;
-          extends: { pluginPath: string };
-        }[];
-      };
-    };
-    expect(out.data.policyBundles[0].pluginPath).toBe(
-      '.compliance-framework/policies/inline/b/policies',
-    );
-    expect(out.data.policyBundles[0].extends.pluginPath).toBe('./v/');
   });
 
   it('maps 409 to conflict with current-revision read from the raw kebab body', async () => {

@@ -31,7 +31,7 @@ export * from './api-types';
  * opaque.
  */
 export const STOP_PATHS = {
-  config: ['data.overlay', 'data.bundles-first-seen'],
+  config: ['data.overlay'],
   revisions: ['data.overlay'],
   // List (array) and detail (object) both resolve to data.<key>.
   instances: ['data.base', 'data.effective', 'data.remote-config'],
@@ -41,20 +41,6 @@ export const STOP_PATHS = {
     'data.instances.diff-vs-current.to',
   ],
 } as const;
-
-/** Fixture mode: VITE_AGENT_CONFIG_FIXTURES=true or ?fixtures=agent-config. No auto fallback. */
-export function agentConfigFixturesEnabled(): boolean {
-  if (import.meta.env.VITE_AGENT_CONFIG_FIXTURES === 'true') return true;
-  if (typeof window === 'undefined') return false;
-  try {
-    return (
-      new URLSearchParams(window.location.search).get('fixtures') ===
-      'agent-config'
-    );
-  } catch {
-    return false;
-  }
-}
 
 function errorBodyOf(error: unknown): ConfigErrorBody | undefined {
   if (!isAxiosError(error)) return undefined;
@@ -73,7 +59,7 @@ function errorBodyOf(error: unknown): ConfigErrorBody | undefined {
 /** Normalises any failure into an AgentConfigApiError (LLD U0.3 table). */
 export function toAgentConfigError(
   error: unknown,
-  op: keyof Omit<AgentConfigApi, 'fixtures'>,
+  op: keyof AgentConfigApi,
 ): AgentConfigApiError {
   if (error instanceof AgentConfigApiError) return error;
   if (isAxiosError(error) && error.code === 'ERR_CANCELED') {
@@ -209,7 +195,7 @@ export function createHttpAgentConfigApi(
     `/api/admin/agents/${encodeURIComponent(agentId)}`;
 
   async function call<T>(
-    op: keyof Omit<AgentConfigApi, 'fixtures'>,
+    op: keyof AgentConfigApi,
     fn: () => Promise<T>,
   ): Promise<T> {
     try {
@@ -220,7 +206,6 @@ export function createHttpAgentConfigApi(
   }
 
   return {
-    fixtures: false,
     getConfig: (agentId) =>
       call('getConfig', async () => {
         const res = await instance.get<{ data: AgentConfigRevision }>(
@@ -334,31 +319,6 @@ export function createHttpAgentConfigApi(
   };
 }
 
-/**
- * Fixture mode loads the in-memory implementation (and its fixtures) on first use, so none of
- * it ships in the regular chunks.
- */
-function createLazyFixtureApi(): AgentConfigApi {
-  let impl: Promise<AgentConfigApi> | null = null;
-  const load = () =>
-    (impl ??= import('./fixtureApi').then((m) => m.createFixtureApi()));
-  return {
-    fixtures: true,
-    getConfig: (...a) => load().then((api) => api.getConfig(...a)),
-    putConfig: (...a) => load().then((api) => api.putConfig(...a)),
-    preview: (...a) => load().then((api) => api.preview(...a)),
-    listRevisions: (...a) => load().then((api) => api.listRevisions(...a)),
-    getRevision: (...a) => load().then((api) => api.getRevision(...a)),
-    revert: (...a) => load().then((api) => api.revert(...a)),
-    listInstances: (...a) => load().then((api) => api.listInstances(...a)),
-    getInstance: (...a) => load().then((api) => api.getInstance(...a)),
-    listArtifactFiles: (...a) =>
-      load().then((api) => api.listArtifactFiles(...a)),
-    getArtifactFile: (...a) => load().then((api) => api.getArtifactFile(...a)),
-  };
-}
-
 export function useAgentConfigApi(): AgentConfigApi {
-  if (agentConfigFixturesEnabled()) return createLazyFixtureApi();
   return createHttpAgentConfigApi(useAuthenticatedInstance());
 }

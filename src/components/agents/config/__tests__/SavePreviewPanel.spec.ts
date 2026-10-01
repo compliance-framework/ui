@@ -8,7 +8,7 @@ import {
   instancesMixed,
   previewMixed,
   previewStandalone,
-} from '@/composables/agent-config/fixtures';
+} from '@/composables/agent-config/__tests__/fixtures';
 import SavePreviewPanel from '../editor/SavePreviewPanel.vue';
 import { safetyForRow } from '../editor/review';
 import { globalWith, piniaWith, ADMIN } from './helpers';

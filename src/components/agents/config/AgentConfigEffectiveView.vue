@@ -81,7 +81,6 @@
             :effective="effective"
             :base="base"
             :overlay="appliedOverlay"
-            :bundles-first-seen="bundlesFirstSeen"
             :highlight="highlightBundle"
             :reports="policyBundles"
           />
@@ -138,10 +137,9 @@ const props = defineProps<{
   /** The applied revision's overlay could not be loaded (desired overlay used instead). */
   provenanceFallback?: boolean;
   filename: string;
-  bundlesFirstSeen?: Record<string, string>;
   /** The instance's reported policy bundles (vendor file lists). */
   policyBundles?: PolicyBundleReport[] | null;
-  /** R76/R79: the instance's plugins and the agent library each was built with. */
+  /** R76: the instance's plugins and the agent library each was built with. */
   pluginReports?: PluginReport[] | null;
 }>();
 

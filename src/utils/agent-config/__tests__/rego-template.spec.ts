@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { moduleTemplate, packageForPath } from '../rego-template';
-import { contractHints } from '../contract-hints';
+import {
+  moduleTemplate,
+  newModulePolicyId,
+  packageForPath,
+} from '../rego-template';
 
 describe('module template (R64, R78)', () => {
   it('has the contract fields, never the bare skeleton', () => {
@@ -24,12 +27,12 @@ describe('module template (R64, R78)', () => {
     expect(t).toMatch(
       /^import rego\.v1\n\npolicy_id := "my-bundle\/checks\/x\.rego"\n\ntitle := /m,
     );
-    expect(contractHints('b', { 'x.rego': t })).toEqual([]);
   });
 
-  it('satisfies the client contract hints as written', () => {
-    const t = moduleTemplate('compliance_framework.x');
-    expect(contractHints('b', { 'x.rego': t })).toEqual([]);
+  it('gives a new module the policy_id <bundle>/<file> (R78)', () => {
+    expect(newModulePolicyId('ssh-tuned', 'checks/new.rego')).toBe(
+      'ssh-tuned/checks/new.rego',
+    );
   });
 
   it('derives a package from the file name and rejects junk packages', () => {

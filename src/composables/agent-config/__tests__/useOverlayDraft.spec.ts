@@ -117,14 +117,20 @@ describe('useOverlayDraft', () => {
     expect(discard.isDirty.value).toBe(false);
   });
 
-  it('replaceAll clears the overlay and client issues are computed', () => {
-    const d = useOverlayDraft(rev({ verbosity: 1 }), ref(base));
+  it('replaceAll clears the overlay; issues add the extra (preview) ones', () => {
+    const d = useOverlayDraft(rev({ verbosity: 1 }), ref(base), {
+      extraIssues: () => [{ ptr: '/api', message: 'locked', blocking: true }],
+    });
     d.replaceAll({});
     expect(d.overlay.value).toEqual({});
-    d.set('/api', { url: 'x' });
-    expect(
-      d.clientIssues.value.some((i) => i.ptr === '/api' && i.blocking),
-    ).toBe(true);
+    d.set('/plugins/ssh/config/password', '••••');
+    expect(d.clientIssues.value.map((i) => i.ptr)).toEqual([
+      '/plugins/ssh/config/password',
+    ]);
+    expect(d.issues.value.map((i) => i.ptr)).toEqual([
+      '/plugins/ssh/config/password',
+      '/api',
+    ]);
   });
 
   it('makeAbsent nulls a key that only another instance file defines', () => {

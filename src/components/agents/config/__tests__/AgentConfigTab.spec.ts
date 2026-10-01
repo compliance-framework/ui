@@ -10,7 +10,7 @@ import {
   instanceDetailA,
   instanceIds,
   instancesMixed,
-} from '@/composables/agent-config/fixtures';
+} from '@/composables/agent-config/__tests__/fixtures';
 import type { Agent } from '@/types/agents';
 import { ADMIN, POLICY_AUTHOR, READER, globalWith, piniaWith } from './helpers';
 
@@ -36,7 +36,6 @@ const agent: Agent = {
 
 function makeApi(over: Partial<AgentConfigApi> = {}): AgentConfigApi {
   return {
-    fixtures: false,
     listArtifactFiles: vi.fn(),
     getArtifactFile: vi.fn(),
     getConfig: vi.fn().mockResolvedValue(configRev7),

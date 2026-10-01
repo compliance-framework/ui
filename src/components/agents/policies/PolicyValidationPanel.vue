@@ -24,8 +24,7 @@
           >Check failed: {{ error }}</span
         >
         <span v-else class="text-gray-500 dark:text-slate-400"
-          >Browser checks only; run the API check for compile, contract and
-          builtin checks.</span
+          >The API checks the pending changes shortly after each edit.</span
         >
       </span>
       <span class="flex-1" />
@@ -76,12 +75,6 @@
             <CodeLabel :labels="POLICY_ERROR_CODE_LABELS" :code="e.code" />
           </span>
           — {{ e.message }}
-          <span
-            v-if="'client' in e"
-            class="text-gray-500 dark:text-slate-400"
-            data-test="client-hint"
-            >(browser check)</span
-          >
         </button>
       </li>
       <li
@@ -100,8 +93,8 @@
 </template>
 
 <script setup lang="ts">
-// The Policies view's validation panel (R68): the live / on-demand API preview's policy
-// errors (with their R63 codes), the browser contract hints and the draft's client issues.
+// The Policies view's validation panel (R68, R89): the live / on-demand API preview's policy
+// errors (with their R63 codes) and the draft's other issues.
 import SecondaryButton from '@/volt/SecondaryButton.vue';
 import type { PolicyError } from '@/types/agent-config';
 import type { PreviewStatus } from '@/composables/agent-config/usePreview';
@@ -113,7 +106,7 @@ defineProps<{
   status: PreviewStatus;
   error: string | null;
   canRun: boolean;
-  problems: (PolicyError & { client?: true })[];
+  problems: PolicyError[];
   issues: ClientIssue[];
 }>();
 defineEmits<{ run: []; open: [bundle: string, path: string] }>();

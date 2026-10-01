@@ -10,7 +10,7 @@ import {
   UBUNTU_POLICIES,
   configRev7,
   previewMixed,
-} from '@/composables/agent-config/fixtures';
+} from '@/composables/agent-config/__tests__/fixtures';
 import type { ConfigPreview } from '@/types/agent-config';
 import type { Agent } from '@/types/agents';
 import {
@@ -55,6 +55,13 @@ const cleanPreview: ConfigPreview = {
 /** Lets the async review dialog chunk load and its preview resolve. */
 async function settle() {
   await vi.dynamicImportSettled();
+  await flushPromises();
+}
+
+/** Runs the live preview now instead of waiting for the debounce (R89 gate). */
+async function checked(ws: ConfigWorkspace) {
+  await flushPromises();
+  await ws.preview.run().catch(() => undefined);
   await flushPromises();
 }
 
@@ -103,7 +110,7 @@ describe('pending-changes bar (R69)', () => {
     const { wrapper, ws } = await mountTab();
     ws.draft.set('/verbosity', 2);
     ws.draft.set('/plugins/local-ssh/schedule', '0 * * * *');
-    await flushPromises();
+    await checked(ws);
     await wrapper.find('[data-test="pending-review"]').trigger('click');
     await settle();
     expect(api.current.preview).toHaveBeenCalled();
@@ -141,7 +148,7 @@ describe('pending-changes bar (R69)', () => {
     );
     const { wrapper, ws } = await mountTab();
     ws.draft.set('/verbosity', 2);
-    await flushPromises();
+    await checked(ws);
     await wrapper.find('[data-test="pending-review"]').trigger('click');
     await settle();
     (api.current.getConfig as ReturnType<typeof vi.fn>).mockResolvedValue(
@@ -165,27 +172,68 @@ describe('pending-changes bar (R69)', () => {
       UBUNTU_POLICIES,
       'inline:ssh-tuned',
     ]);
-    await flushPromises();
+    await checked(ws);
     expect(
       wrapper.find('[data-test="pending-review"]').attributes('disabled'),
     ).toBeUndefined();
     ws.draft.set('/verbosity', 2);
-    await flushPromises();
+    await checked(ws);
     expect(
       wrapper.find('[data-test="pending-review"]').attributes('disabled'),
     ).toBeDefined();
     expect(ws.saveDisabledReason.value).toContain('policy bundles');
   });
 
-  it('blocking client issues disable Review', async () => {
+  it('client-only problems disable Review and the live preview', async () => {
     const { wrapper, ws } = await mountTab();
-    ws.draft.set('/plugins/local-ssh/schedule', 'nope');
+    ws.draft.set('/plugins/local-ssh/config/password', '••••');
     await flushPromises();
     expect(wrapper.find('[data-test="pending-blocking"]').text()).toContain(
       '1 problem',
     );
+    expect(ws.preview.pending.value).toBe(false);
     expect(
       wrapper.find('[data-test="pending-review"]').attributes('disabled'),
     ).toBeDefined();
+  });
+
+  it('R89: Review waits for the preview and is disabled by its errors', async () => {
+    api.current.preview = vi.fn().mockResolvedValue({
+      ...cleanPreview,
+      overlayErrors: [
+        { path: '/plugins/local-ssh/schedule', message: 'bad cron' },
+      ],
+      policyErrors: [
+        {
+          bundle: 'ssh-tuned',
+          path: 'a.rego',
+          row: 3,
+          message: 'parse error',
+          severity: 'error',
+        },
+      ],
+    } satisfies ConfigPreview);
+    const { wrapper, ws } = await mountTab();
+    ws.draft.set('/plugins/local-ssh/schedule', 'nope');
+    await flushPromises();
+    // Debouncing: Review cannot race the preview.
+    expect(ws.preview.pending.value).toBe(true);
+    expect(ws.reviewDisabledReason.value).toBe('Checking the pending changes…');
+    await checked(ws);
+    expect(ws.preview.pending.value).toBe(false);
+    expect(wrapper.find('[data-test="pending-blocking"]').text()).toContain(
+      '2 problems',
+    );
+    await wrapper.find('[data-test="pending-toggle"]').trigger('click');
+    const issues = wrapper.find('[data-test="pending-issues"]').text();
+    expect(issues).toContain('/plugins/local-ssh/schedule — bad cron');
+    expect(issues).toContain('ssh-tuned/a.rego:3');
+    expect(
+      wrapper.find('[data-test="pending-review"]').attributes('disabled'),
+    ).toBeDefined();
+    // The preview's problems describe that draft only.
+    ws.draft.set('/plugins/local-ssh/schedule', '@hourly');
+    await flushPromises();
+    expect(ws.blockingCount.value).toBe(0);
   });
 });

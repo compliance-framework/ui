@@ -19,7 +19,7 @@ import {
   instanceIds,
   instancesMixed,
   overlayRev7,
-} from '@/composables/agent-config/fixtures';
+} from '@/composables/agent-config/__tests__/fixtures';
 import type {
   AgentInstanceDetail,
   PolicyBundleDoc,
@@ -264,8 +264,28 @@ describe('Policies view: override and view (R62, R64)', () => {
     expect(bundleOf(ws).modules?.['banner.rego']).toBe(SSH_SRC['banner.rego']);
   });
 
-  it('Add file creates a module from the template and shows contract markers (R63)', async () => {
-    const { wrapper, ws } = await mountWorkspace(artifactApi());
+  it('Add file creates a module from the template; the preview marks its problems (R63, R89)', async () => {
+    const { wrapper, ws } = await mountWorkspace(
+      artifactApi({
+        preview: vi.fn().mockResolvedValue({
+          desiredRevision: 7,
+          standalone: false,
+          overlayErrors: [],
+          policyErrors: [
+            {
+              bundle: 'ssh-tuned',
+              path: 'checks/extra.rego',
+              row: 1,
+              col: 1,
+              message: 'title is not defined',
+              severity: 'warning',
+              code: 'missing-title',
+            },
+          ],
+          instances: [],
+        }),
+      }),
+    );
     const path = wrapper.find('[data-test="add-file-path"]');
     await path.setValue('checks/extra.rego');
     await wrapper
@@ -275,23 +295,29 @@ describe('Policies view: override and view (R62, R64)', () => {
     expect(bundleOf(ws).modules?.['checks/extra.rego']).toMatch(
       /^package compliance_framework\.extra\n/,
     );
-    // Remove the title: the editor gets a missing-title marker; the panel lists it.
     ws.draft.set(
       '/policy_bundles/ssh-tuned/modules/checks~1extra.rego',
       'package compliance_framework.extra\n\nimport rego.v1\n',
     );
     await flushPromises();
-    const diags = JSON.parse(
-      wrapper
-        .find('[data-test="editor-pane"] textarea')
-        .attributes('data-diagnostics') ?? '[]',
-    ) as { message: string; severity: string }[];
-    expect(diags.some((d) => d.message.startsWith('[missing-title]'))).toBe(
-      true,
-    );
+    const diags = () =>
+      JSON.parse(
+        wrapper
+          .find('[data-test="editor-pane"] textarea')
+          .attributes('data-diagnostics') ?? '[]',
+      ) as { message: string; row?: number }[];
+    // No browser re-implementation of the contract: markers come from the preview.
+    expect(diags()).toEqual([]);
+    await ws.preview.run();
+    await flushPromises();
+    expect(
+      diags().some(
+        (d) => d.message.startsWith('[missing-title]') && d.row === 1,
+      ),
+    ).toBe(true);
     const panel = wrapper.find('[data-test="validation-panel"]');
     expect(panel.text()).toContain('Missing title');
-    expect(panel.find('[data-test="client-hint"]').exists()).toBe(true);
+    expect(panel.text()).toContain('ssh-tuned/checks/extra.rego:1:1');
   });
 
   it('lists API policy errors with their codes in the validation panel', async () => {

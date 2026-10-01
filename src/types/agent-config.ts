@@ -93,14 +93,9 @@ export interface AgentConfigRevision {
   /** null for revision 0. */
   createdAt: string | null;
   revertOf: number | null;
-  /** 12.6, optional: bundle name → RFC 3339 (stop path: keys are bundle names). */
-  bundlesFirstSeen?: Record<string, string>;
 }
 
-export type AgentConfigRevisionSummary = Omit<
-  AgentConfigRevision,
-  'overlay' | 'bundlesFirstSeen'
->;
+export type AgentConfigRevisionSummary = Omit<AgentConfigRevision, 'overlay'>;
 
 /** 201 → created: true; 200 (semantically unchanged, R14) → created: false. */
 export interface SaveResult {
@@ -177,13 +172,6 @@ export interface PolicyBundleReport {
     files: PolicyFileReport[];
     /** R62: artifact of the vendor tree alone (GET /api/artifacts/{digest}/files). */
     artifactDigest?: string;
-    /**
-     * R78 (api#465 `extends.plugin-path`): the literal path the agent would pass to plugins
-     * for the extends source if a plugin loaded it directly. Keeps a vendor file's evidence
-     * stream reachable after the inline bundle replaced the source in every plugin (no
-     * `policy-bundles[]` entry names the source any more). Absent from older agents.
-     */
-    pluginPath?: string;
   } | null;
   files: PolicyFileReport[];
   /**
@@ -192,16 +180,7 @@ export interface PolicyBundleReport {
    * older; kept when `files` was dropped to fit the report.
    */
   artifactDigest?: string;
-  /**
-   * R77: the exact path string the agent passes to plugins for this source (may be
-   * un-cleaned, e.g. "./x" or "x/"). Plugins seed evidence UUIDs with it, so a policy_id that
-   * continues a file's stream is the literal `<pluginPath>/<file>`. Absent from older agents.
-   */
-  pluginPath?: string;
 }
-
-/** R79 `plugins[].inline-policies`. */
-export type InlinePolicySupport = 'supported' | 'unsupported' | 'unknown';
 
 /** R76: one plugin of an instance and the agent library its binary was built with. */
 export interface PluginReport {
@@ -211,8 +190,6 @@ export interface PluginReport {
   source?: string;
   /** github.com/compliance-framework/agent version from the binary's build info ('' = unknown). */
   libVersion?: string;
-  /** R79; absent from agents before it. */
-  inlinePolicies?: InlinePolicySupport | string;
 }
 
 // ---- Policy bundle artifacts (R62: GET /api/artifacts/{digest}/files[/{path}]) ----
@@ -278,7 +255,7 @@ export interface AgentInstanceSummary {
   truncated?: boolean;
   /** R41: tolerated file-origin problems (e.g. a bad cron → plugin skipped). */
   warnings?: FieldError[];
-  /** R76/R79: the reported plugins and their agent library. Empty/absent from older agents. */
+  /** R76: the reported plugins and their agent library. Empty/absent from older agents. */
   plugins?: PluginReport[] | null;
 }
 

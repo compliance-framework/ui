@@ -146,12 +146,11 @@ import {
   instanceDetailA,
   instanceIds,
   instancesMixed,
-} from '@/composables/agent-config/fixtures';
+} from '@/composables/agent-config/__tests__/fixtures';
 
 /** A fake API backed by the fixtures; override any method. */
 export function fakeApi(over: Partial<AgentConfigApi> = {}): AgentConfigApi {
   return {
-    fixtures: false,
     getConfig: vi.fn().mockResolvedValue(configRev7),
     putConfig: vi.fn(),
     preview: vi.fn(),

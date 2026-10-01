@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { AgentInstanceSummary } from '@/types/agent-config';
-import { instancesMixed } from '@/composables/agent-config/fixtures';
+import { instancesMixed } from '@/composables/agent-config/__tests__/fixtures';
 import {
   deriveInstanceState,
   summarizeSync,

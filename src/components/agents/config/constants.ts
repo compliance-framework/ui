@@ -18,13 +18,6 @@ export function verbosityLabel(v: unknown): string {
 
 // ---- Mode texts (design §6.1) ----
 
-export const MODE_LABELS: Record<string, string> = {
-  off: 'off',
-  report: 'report',
-  apply_safe: 'apply_safe',
-  apply_all: 'apply_all',
-};
-
 export const MODE_TEXT = {
   report: 'This agent is not accepting remote configuration.',
   apply_safe:
@@ -148,20 +141,10 @@ export const POLICY_ERROR_CODE_LABELS: Record<string, string> = {
   'duplicate-policy-identity': 'Same evidence stream loaded twice',
   'policy-package-changed': 'Package changed: new evidence stream',
   'policy-stream-forked': 'New evidence stream',
-  'policy-id-continuity-skipped': 'No automatic policy_id: new evidence stream',
-  // Plugin compatibility (R76/R79)
+  // Plugin compatibility (R76)
   'plugin-lib-violation-set-unsupported':
     'Plugin cannot evaluate set violations',
   'plugin-lib-policy-id-unsupported': 'Plugin ignores policy_id',
-  'plugin-lib-inline-unsupported': "Plugin doesn't support inline policies",
-};
-
-// ---- Plugin compatibility (R76/R79; texts in utils/agent-config/plugin-compat.ts) ----
-
-export const INLINE_SUPPORT_LABELS: Record<string, string> = {
-  supported: 'inline policies supported',
-  unsupported: 'no inline policies',
-  unknown: 'inline support unknown',
 };
 
 /** R64 (corrects the earlier "never reject" wording, §13.1). */
@@ -177,15 +160,6 @@ export const WILL_APPLY_REASON_LABELS: Record<string, string> = {
   'unsafe-changes': 'Needs apply_all for some changes',
   'forbidden-changes': 'Contains a forbidden change (rejected in every mode)',
   'invalid-config': 'The resulting config is invalid for this host',
-};
-
-export const INSTANCE_STATUS_LABELS: Record<string, string> = {
-  applied: 'applied',
-  rejected: 'rejected',
-  failed: 'failed',
-  pending: 'pending',
-  'not-applicable': 'not applicable',
-  unknown: 'unknown',
 };
 
 /** Label for a code, or null when unknown (callers then render the raw code in monospace). */

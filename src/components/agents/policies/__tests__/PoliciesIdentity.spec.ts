@@ -1,7 +1,6 @@
-// Rounds 3-4 (design §13.4, §13.5) in the Policies view: Override pre-fills the vendor
-// source and inserts nothing, the new-module template declares policy_id, no client-side
-// evidence-stream labels or fork warnings (the agent decides and reports them), and the R79
-// gate for plugins built on an agent library without inline-policy support.
+// Policy identity in the Policies view (design §13.4-13.7): Override pre-fills the vendor
+// source and inserts nothing, the new-module template declares policy_id, and the agent's
+// stream codes render with labels.
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import type { AgentConfigApi } from '@/composables/agent-config/api-types';
@@ -18,7 +17,7 @@ import {
   instanceDetailA,
   instanceIds,
   instancesMixed,
-} from '@/composables/agent-config/fixtures';
+} from '@/composables/agent-config/__tests__/fixtures';
 import type {
   AgentInstanceDetail,
   PluginReport,
@@ -112,34 +111,13 @@ const row = (w: ReturnType<typeof mount>, path: string) =>
 const modules = (ws: ConfigWorkspace) =>
   (ws.draft.overlay.value.policy_bundles?.['ssh-tuned'] as PolicyBundleDoc)
     .modules ?? {};
-const MOD = '/policy_bundles/ssh-tuned/modules/root_login.rego';
 
 async function override(w: ReturnType<typeof mount>, path: string) {
   await row(w, path).find('[data-action="override"]').trigger('click');
   await flushPromises();
 }
 
-/** Nothing in the view explains or labels evidence streams. */
-function expectNoStreamUi(w: ReturnType<typeof mount>) {
-  for (const t of [
-    'file-stream',
-    'stream-identity',
-    'stream-automatic-id',
-    'stream-fork',
-    'inherited-stream-hint',
-  ])
-    expect(w.find(`[data-test="${t}"]`).exists()).toBe(false);
-  expect(w.text()).not.toMatch(/vendor stream|new stream|own stream/);
-}
-
-const diagnostics = (w: ReturnType<typeof mount>) =>
-  JSON.parse(
-    w
-      .find('[data-test="editor-pane"] textarea')
-      .attributes('data-diagnostics') ?? '[]',
-  ) as { message: string; severity: string }[];
-
-describe('Policies view: policy identity without client-side stream labels', () => {
+describe('Policies view: policy identity', () => {
   beforeEach(() => {
     resetAgentDrafts();
     resetVendorSourceCache();
@@ -152,7 +130,6 @@ describe('Policies view: policy identity without client-side stream labels', () 
     expect(row(wrapper, 'root_login.rego').attributes('data-state')).toBe(
       'overridden',
     );
-    expectNoStreamUi(wrapper);
   });
 
   it('keeps a policy_id the vendor module already declares', async () => {
@@ -165,54 +142,6 @@ describe('Policies view: policy identity without client-side stream labels', () 
     );
     await override(wrapper, 'root_login.rego');
     expect(modules(ws)['root_login.rego']).toBe(declared);
-  });
-
-  it('shows no stream labels on inherited modules, in the tree or the viewer', async () => {
-    const { wrapper } = await mountWorkspace(api());
-    expect(row(wrapper, 'banner.rego').attributes('data-state')).toBe(
-      'inherited',
-    );
-    await row(wrapper, 'banner.rego')
-      .find('[data-action="view"]')
-      .trigger('click');
-    await flushPromises();
-    expect(wrapper.find('[data-test="read-only"]').exists()).toBe(true);
-    expectNoStreamUi(wrapper);
-  });
-
-  it('computes no fork warnings in the browser when an edit changes policy_id or package', async () => {
-    const { wrapper, ws } = await mountWorkspace(api());
-    await override(wrapper, 'root_login.rego');
-    const text = modules(ws)['root_login.rego']!;
-    const forkCodes =
-      /^\[(policy-stream-forked|policy-package-changed|policy-id-continuity-skipped)\]/;
-
-    ws.draft.set(
-      MOD,
-      text.replace(
-        'import rego.v1\n',
-        'import rego.v1\n\npolicy_id := "mine"\n',
-      ),
-    );
-    await flushPromises();
-    expect(diagnostics(wrapper).some((d) => forkCodes.test(d.message))).toBe(
-      false,
-    );
-
-    ws.draft.set(MOD, text.replace('root_login', 'renamed'));
-    await flushPromises();
-    expect(diagnostics(wrapper).some((d) => forkCodes.test(d.message))).toBe(
-      false,
-    );
-    // A second module in a vendor package: no client-side multi-module skip hint either.
-    ws.draft.set(
-      '/policy_bundles/ssh-tuned/modules/banner_extra.rego',
-      'package compliance_framework.banner\n\nimport rego.v1\n\ntitle := "extra"\n',
-    );
-    await flushPromises();
-    const panel = wrapper.find('[data-test="validation-panel"]').text();
-    expect(panel).not.toContain('evidence stream');
-    expectNoStreamUi(wrapper);
   });
 
   it('still renders the agent-reported stream codes with readable labels', async () => {
@@ -232,7 +161,6 @@ describe('Policies view: policy identity without client-side stream labels', () 
           policyErrors: [
             err('max_auth_tries.rego', 'policy-package-changed', 'pkg moved'),
             err('max_auth_tries.rego', 'policy-stream-forked', 'id differs'),
-            err('banner.rego', 'policy-id-continuity-skipped', 'two modules'),
           ],
           instances: [],
         }),
@@ -248,10 +176,9 @@ describe('Policies view: policy identity without client-side stream labels', () 
     for (const label of [
       'Package changed: new evidence stream',
       'New evidence stream',
-      'No automatic policy_id: new evidence stream',
     ])
       expect(panel).toContain(label);
-    for (const message of ['pkg moved', 'id differs', 'two modules'])
+    for (const message of ['pkg moved', 'id differs'])
       expect(panel).toContain(message);
   });
 
@@ -268,103 +195,5 @@ describe('Policies view: policy identity without client-side stream labels', () 
     const text = modules(ws)['checks/new.rego'] ?? '';
     expect(text).toContain('policy_id := "ssh-tuned/checks/new.rego"');
     expect(text).toMatch(/^violation\[\{"id": /m);
-    expectNoStreamUi(wrapper);
-  });
-});
-
-describe('R79: plugins built on an agent library without inline policies', () => {
-  beforeEach(() => {
-    resetAgentDrafts();
-    resetVendorSourceCache();
-  });
-
-  const unsupported: PluginReport[] = [
-    {
-      name: 'local-ssh',
-      source: 'ghcr.io/compliance-framework/plugin-local-ssh:v1.2.0',
-      libVersion: 'v0.1.9',
-      inlinePolicies: 'unsupported',
-    },
-    {
-      name: 'ubuntu-packages',
-      source: 'ghcr.io/compliance-framework/plugin-ubuntu-packages:v0.4.0',
-      libVersion: 'v0.7.1',
-      inlinePolicies: 'unsupported',
-    },
-  ];
-  const TEXT =
-    "plugin local-ssh (agent lib v0.1.9) doesn't support inline policies; upgrade the plugin to a build on agent ≥ v0.9.0";
-
-  it('disables Override and Add file for a bundle an unsupported plugin uses', async () => {
-    const { wrapper } = await mountWorkspace(api({ plugins: unsupported }));
-    expect(
-      wrapper.find('[data-test="bundle-inline-blocked"]').text(),
-    ).toContain(TEXT);
-    expect(
-      row(wrapper, 'root_login.rego')
-        .find('[data-action="override"]')
-        .attributes('disabled'),
-    ).toBeDefined();
-    await wrapper.find('[data-test="add-file-path"]').setValue('x.rego');
-    expect(
-      wrapper.find('[data-test="add-file"]').attributes('disabled'),
-    ).toBeDefined();
-  });
-
-  it('blocks assigning the bundle to an unsupported plugin, with the reason', async () => {
-    const { wrapper } = await mountWorkspace(api({ plugins: unsupported }));
-    await wrapper.find('[data-test="assign-bundle"]').trigger('click');
-    await flushPromises();
-    const dialog = wrapper.find('[data-test="assign-dialog"]');
-    const check = dialog.find('[data-test="assign-check-ubuntu-packages"]');
-    expect(check.attributes('disabled')).toBeDefined();
-    expect(
-      dialog.find('[data-test="inline-blocked-ubuntu-packages"]').text(),
-    ).toContain('plugin ubuntu-packages (agent lib v0.7.1)');
-    // An existing assignment can still be removed, and says why it should be.
-    expect(
-      dialog
-        .find('[data-test="assign-check-local-ssh"]')
-        .attributes('disabled'),
-    ).toBeUndefined();
-    expect(
-      dialog.find('[data-test="inline-blocked-local-ssh"]').text(),
-    ).toContain('agents reject this assignment; unassign it');
-  });
-
-  it('blocks Review & save while the draft gives an unsupported plugin inline policies', async () => {
-    const { ws } = await mountWorkspace(api({ plugins: unsupported }));
-    // r7 swaps inline:ssh-tuned into local-ssh: the agent would reject it.
-    const issue = ws.draft.clientIssues.value.find(
-      (i) =>
-        i.ptr === '/plugins/local-ssh/policies' && i.message.includes(TEXT),
-    );
-    expect(issue?.blocking).toBe(true);
-    expect(ws.blockingCount.value).toBeGreaterThan(0);
-    // Unassigning lifts the block.
-    ws.draft.set('/plugins/local-ssh/policies', [SSH_POLICIES]);
-    await flushPromises();
-    expect(
-      ws.draft.clientIssues.value.some((i) => i.message.includes(TEXT)),
-    ).toBe(false);
-  });
-
-  it('an unknown library version warns without blocking', async () => {
-    const { ws } = await mountWorkspace(
-      api({
-        plugins: [
-          {
-            name: 'local-ssh',
-            source: unsupported[0].source,
-            inlinePolicies: 'unknown',
-          },
-        ],
-      }),
-    );
-    const issue = ws.draft.clientIssues.value.find((i) =>
-      i.message.includes('agent library version is unknown'),
-    );
-    expect(issue?.blocking).toBe(false);
-    expect(ws.inlineBlocked('local-ssh')).toBeNull();
   });
 });

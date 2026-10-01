@@ -48,13 +48,6 @@
           >
             {{ TEMPORARY_POLICY_HINT }}
           </p>
-          <Message
-            v-if="bundleInlineBlocked"
-            severity="error"
-            data-test="bundle-inline-blocked"
-          >
-            <span class="text-sm">{{ bundleInlineBlocked }}</span>
-          </Message>
           <div class="flex flex-wrap gap-2 pt-1">
             <SecondaryButton
               v-if="canEdit"
@@ -99,7 +92,6 @@
           :problems="problemsByPath"
           :selected="sel.file"
           :can-edit="canEdit"
-          :edit-blocked="bundleInlineBlocked"
           @action="onAction"
           @add-file="addFile"
           @delete-path="(p) => ops.deleteVendorFile(sel.bundle!, p)"
@@ -187,9 +179,7 @@
         :diagnostics="selectedDiagnostics"
         :readonly="!canEdit"
         :vendor-tests="vendorTestOffer"
-        :can-override="
-          canEdit && selectedRow?.state === 'inherited' && !bundleInlineBlocked
-        "
+        :can-override="canEdit && selectedRow?.state === 'inherited'"
         @update="(t) => ops.setModule(sel.bundle!, sel.file!, t)"
         @delete-tests="deleteVendorTests"
         @override="selectedRow && override(selectedRow)"
@@ -203,7 +193,7 @@
       <PolicyValidationPanel
         :status="ws.preview.status.value"
         :error="ws.preview.error.value"
-        :can-run="canEdit && ws.draft.isDirty.value && !ws.blockingCount.value"
+        :can-run="canEdit && ws.draft.isDirty.value && !ws.clientBlocked.value"
         :problems="allProblems"
         :issues="policyIssues"
         @run="ws.preview.retry()"
@@ -219,7 +209,6 @@
       :initial-source="createSource"
       :policy-only="ws.editorMode.value === 'policy-only'"
       :used-sources="ops.usedSourcesEverywhere.value"
-      :inline-gate="inlineGateFor"
       @create="onCreate"
     />
     <AssignBundleDialog
@@ -238,7 +227,6 @@
 // Every change goes to the shared pending-changes draft (R69), saved from the pending bar.
 import { computed, reactive, ref, shallowRef, watch } from 'vue';
 import { useConfirm } from 'primevue/useconfirm';
-import Message from '@/volt/Message.vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
 import TertiaryButton from '@/volt/TertiaryButton.vue';
@@ -265,14 +253,10 @@ import {
 } from '@/utils/agent-config/policy-files';
 import { bundleProvenance } from '@/utils/agent-config/provenance';
 import {
-  contractHints,
-  type ContractHint,
-} from '@/utils/agent-config/contract-hints';
-import {
   moduleTemplate,
+  newModulePolicyId,
   packageForPath,
 } from '@/utils/agent-config/rego-template';
-import { newModulePolicyId } from '@/utils/agent-config/policy-identity';
 import ProvenanceBadge from '../config/ProvenanceBadge.vue';
 import { CROSS_BUNDLE_HELP, TEMPORARY_POLICY_HINT } from '../config/constants';
 import { moduleDiagnostics } from '../config/editor/policyDiagnostics';
@@ -468,7 +452,7 @@ watch(
   { immediate: true },
 );
 
-// ---- Diagnostics (R63): API (preview, 422, report) + browser contract hints ----
+// ---- Diagnostics (R63, R89): the API's (preview, 422, report), with positions ----
 const reportInstance = computed(
   () =>
     ws.state.instances.value.find(
@@ -481,7 +465,7 @@ const desiredEffective = computed(() =>
     ws.ctx.config.value.overlay ?? {},
   ),
 );
-function apiDiagnostics(bundle: string, path: string): PolicyError[] {
+function diagnosticsFor(bundle: string, path: string): PolicyError[] {
   return moduleDiagnostics(
     bundle,
     path,
@@ -501,41 +485,6 @@ function apiDiagnostics(bundle: string, path: string): PolicyError[] {
   );
 }
 
-const hintsByBundle = computed(() => {
-  const out = new Map<string, ContractHint[]>();
-  for (const [name, b] of Object.entries(ops.bundles.value)) {
-    const modules: Record<string, string> = {};
-    for (const [p, src] of Object.entries(b.modules ?? {}))
-      if (typeof src === 'string') modules[p] = src;
-    if (!Object.keys(modules).length) continue;
-    const inherited = bundleFileStates(
-      vendorFilesOf(name),
-      ops.fileBundle(name),
-      ops.overlayBundle(name),
-    )
-      .filter((r) => r.state === 'inherited' && r.vendor)
-      .map((r) => ({ path: r.path, package: r.vendor?.package }));
-    out.set(
-      name,
-      contractHints(name, modules, {
-        incomplete: typeof b.extends === 'string' || !!ops.fileBundle(name),
-        inherited,
-      }),
-    );
-  }
-  return out;
-});
-/** API problems first; a browser hint with the same code and line is not repeated. */
-function diagnosticsFor(bundle: string, path: string): PolicyError[] {
-  const api = apiDiagnostics(bundle, path);
-  // An API problem without a row (e.g. the agent's policy-stream-forked) covers the file.
-  const hints = (hintsByBundle.value.get(bundle) ?? []).filter(
-    (h) =>
-      h.path === path &&
-      !api.some((e) => e.code === h.code && (!e.row || e.row === h.row)),
-  );
-  return [...api, ...hints];
-}
 function count(d: PolicyError[]) {
   return {
     errors: d.filter((x) => x.severity === 'error').length,
@@ -566,30 +515,16 @@ const selectedDiagnostics = computed(() =>
 );
 const allProblems = computed(() => {
   const seen = new Set<string>();
-  const out: (PolicyError & { client?: true })[] = [];
-  const push = (e: PolicyError & { client?: true }) => {
-    const k = `${e.bundle}|${e.path}|${e.row ?? ''}|${e.code ?? ''}|${e.message}`;
-    if (seen.has(k)) return;
-    seen.add(k);
-    out.push(e);
-  };
-  [
+  const out: PolicyError[] = [];
+  for (const e of [
     ...(ws.preview.lastPreview.value?.policyErrors ?? []),
     ...ws.savePolicyErrors.value,
-  ].forEach(push);
-  for (const hints of hintsByBundle.value.values())
-    hints
-      .filter(
-        (h) =>
-          !out.some(
-            (e) =>
-              e.bundle === h.bundle &&
-              e.path === h.path &&
-              e.code === h.code &&
-              (e.row ?? 0) === h.row,
-          ),
-      )
-      .forEach(push);
+  ]) {
+    const k = `${e.bundle}|${e.path}|${e.row ?? ''}|${e.code ?? ''}|${e.message}`;
+    if (seen.has(k)) continue;
+    seen.add(k);
+    out.push(e);
+  }
   return out.sort(
     (a, b) =>
       a.bundle.localeCompare(b.bundle) ||
@@ -598,7 +533,7 @@ const allProblems = computed(() => {
   );
 });
 const policyIssues = computed(() =>
-  draft.clientIssues.value.filter(
+  draft.issues.value.filter(
     (i) =>
       isPrefix('/policy_bundles', i.ptr) ||
       /^\/plugins\/[^/]+\/policies/.test(i.ptr),
@@ -800,22 +735,6 @@ function onCreate(c: {
 
 const assignOpen = ref(false);
 
-// ---- R79: plugins whose build cannot honour inline policies ----
-function inlineGateFor(plugin: string) {
-  return {
-    blocked: ws.inlineBlocked(plugin),
-    warning: ws.inlineUnknown(plugin),
-  };
-}
-/** Why the selected bundle's files cannot be overridden or added: a plugin using it is too old. */
-const bundleInlineBlocked = computed<string | null>(() => {
-  if (!sel.bundle) return null;
-  for (const p of ops.usedBy(sel.bundle)) {
-    const reason = ws.inlineBlocked(p);
-    if (reason) return reason;
-  }
-  return null;
-});
 const assignmentPlugins = computed<AssignmentPlugin[]>(() => {
   const b = sel.bundle;
   const ext = bundleDoc.value?.extends ?? null;
@@ -826,8 +745,6 @@ const assignmentPlugins = computed<AssignmentPlugin[]>(() => {
       usesSource: !!ext && pols.includes(ext),
       assigned: !!b && pols.includes(`inline:${b}`),
       restoresSource: !!b && ops.restoredSource(p, b) !== null,
-      inlineBlocked: ws.inlineBlocked(p),
-      inlineWarning: ws.inlineUnknown(p),
     };
   });
 });

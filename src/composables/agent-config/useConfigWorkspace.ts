@@ -17,6 +17,7 @@ import type {
   AgentConfigRevision,
   AgentInstanceDetail,
   ConfigDoc,
+  ConfigPreview,
   PolicyBundleDoc,
   PolicyError,
   SaveResult,
@@ -24,7 +25,7 @@ import type {
 import { usePermissions } from '@/composables/usePermissions';
 import { useUserStore } from '@/stores/auth';
 import { isPlainObject } from '@/utils/agent-config/merge-patch';
-import { parsePointer, pointer } from '@/utils/agent-config/json-pointer';
+import { parsePointer } from '@/utils/agent-config/json-pointer';
 import {
   hasBlocking,
   type ClientIssue,
@@ -35,12 +36,6 @@ import {
   vendorFilesFor,
 } from '@/utils/agent-config/policy-files';
 import { isForbiddenPointer } from '@/utils/agent-config/field-access';
-import {
-  inlineBlockedReason,
-  inlineGateIssues,
-  inlineUnknownReason,
-  type CompatInstance,
-} from '@/utils/agent-config/plugin-compat';
 import { validationInstanceIds } from '@/utils/agent-config/instance-status';
 import type { AgentConfigApi } from './api-types';
 import type { AgentConfigState } from './useAgentConfig';
@@ -186,66 +181,63 @@ export function useConfigWorkspace(
     bases,
     validationBases,
     validationContext,
-    extraIssues: () => inlineGateClientIssues.value,
+    extraIssues: () => previewIssues.value,
   });
 
-  // ---- R79: plugin compatibility with inline policies (the agent decides) ----
-  /** The validation-set instances with their reported plugins (R76) and file. */
-  const compatInstances = computed<CompatInstance[]>(() => {
-    const ids = new Set(validationInstanceIds(state.instances.value));
-    return state.instances.value
-      .filter((i) => ids.has(i.instanceId))
-      .map((i) => ({
-        instanceId: i.instanceId,
-        hostname: i.hostname,
-        base: instanceDetails.value.get(i.instanceId)?.base ?? null,
-        plugins: i.plugins ?? null,
-      }));
-  });
-  const inlineGate = computed(() =>
-    inlineGateIssues(draft.overlay.value, compatInstances.value),
-  );
-  const inlineGateClientIssues = computed<ClientIssue[]>(() => {
-    const many = compatInstances.value.length > 1;
-    return inlineGate.value.map((g) => ({
-      ptr: pointer('plugins', g.plugin, 'policies'),
-      message:
-        many && g.hostname ? `${g.message} (on ${g.hostname})` : g.message,
-      blocking: g.blocking,
-    }));
-  });
-  /** R79: why `plugin` must not get inline policies (an instance reports it unsupported). */
-  function inlineBlocked(plugin: string): string | null {
-    return inlineBlockedReason(
-      plugin,
-      compatInstances.value,
-      draft.overlay.value,
-    );
-  }
-  /** R79: a warning when an instance cannot tell whether `plugin` supports inline policies. */
-  function inlineUnknown(plugin: string): string | null {
-    return inlineUnknownReason(
-      plugin,
-      compatInstances.value,
-      draft.overlay.value,
-    );
-  }
-
-  const blockingCount = computed(
-    () => draft.clientIssues.value.filter((i) => i.blocking).length,
-  );
-
-  // ---- Live, advisory preview (debounced; only for a dirty, locally valid draft) ----
+  // ---- Live preview (debounced; only for a dirty draft without client-only blockers) ----
+  // R89: the preview is the UI's validation. Its errors gate Review & save.
+  const clientBlocked = computed(() => hasBlocking(draft.clientIssues.value));
   const agentIdRef = computed(() => agentId);
   const canPreview = computed(
     () =>
       canEdit.value &&
       ready.value &&
       draft.isDirty.value &&
-      !hasBlocking(draft.clientIssues.value) &&
+      !clientBlocked.value &&
       !detailsLoading.value,
   );
   const preview = usePreview(agentIdRef, draft.overlay, api, canPreview);
+  /** The last preview, while it still describes the draft. */
+  const currentPreview = computed<ConfigPreview | null>(() =>
+    preview.isCurrent() ? preview.lastPreview.value : null,
+  );
+  /** The preview's overlay and per-instance problems, as issues at their pointers (R59). */
+  const previewIssues = computed<ClientIssue[]>(() => {
+    const p = currentPreview.value;
+    if (!p) return [];
+    const out: ClientIssue[] = p.overlayErrors.map((e) => ({
+      ptr: e.path,
+      message: e.message,
+      blocking: true,
+    }));
+    const many = p.instances.length > 1;
+    for (const inst of p.instances) {
+      const on = many && inst.hostname ? ` (on ${inst.hostname})` : '';
+      // R48: only validated instances block; older APIs lack `validated` (fresh ones block).
+      const blocks = inst.validated ?? !inst.stale;
+      for (const e of inst.errors)
+        out.push({ ptr: e.path, message: e.message + on, blocking: blocks });
+      for (const e of inst.warnings ?? [])
+        out.push({
+          ptr: e.path,
+          message: `${e.message} (already in the agent's file)${on}`,
+          blocking: false,
+        });
+    }
+    return out;
+  });
+  /** Error-severity policy problems of the current preview (shown per module). */
+  const previewPolicyErrors = computed(
+    () =>
+      currentPreview.value?.policyErrors.filter(
+        (e) => e.severity === 'error',
+      ) ?? [],
+  );
+  const blockingCount = computed(
+    () =>
+      draft.issues.value.filter((i) => i.blocking).length +
+      previewPolicyErrors.value.length,
+  );
   /** Policy errors from the last failed save (422), for Rego diagnostics. */
   const savePolicyErrors = ref<PolicyError[]>([]);
   watch(draft.overlay, () => {
@@ -301,6 +293,13 @@ export function useConfigWorkspace(
       : 'Your role can only change policy bundles and inline references';
   });
 
+  /** '' = Review & save is enabled; else why not (R89: never ahead of a pending preview). */
+  const reviewDisabledReason = computed(() => {
+    if (blockingCount.value) return 'Fix the problems first';
+    if (preview.pending.value) return 'Checking the pending changes…';
+    return saveDisabledReason.value;
+  });
+
   const reviewOpen = ref(false);
   function openReview(): void {
     if (!draft.isDirty.value) return;
@@ -349,15 +348,14 @@ export function useConfigWorkspace(
     reportSets,
     preview,
     savePolicyErrors,
+    clientBlocked,
+    previewPolicyErrors,
     blockingCount,
-    compatInstances,
-    inlineGate,
-    inlineBlocked,
-    inlineUnknown,
     ctx,
     canEditPointer,
     policyBases,
     saveDisabledReason,
+    reviewDisabledReason,
     reviewOpen,
     openReview,
     onSaved,

@@ -70,27 +70,17 @@
             STATE_LABELS[item.row.state]
           }}</span>
           <span class="ml-auto flex flex-wrap gap-2">
-            <span
+            <button
               v-for="a in actionsFor(item.row)"
               :key="a"
-              v-tooltip.top="{
-                value: editBlocked ?? '',
-                disabled: !(a === 'override' && editBlocked),
-              }"
+              type="button"
+              class="text-sky-700 hover:underline disabled:opacity-40 dark:text-sky-300"
+              :disabled="a !== 'view' && a !== 'edit' && !canEdit"
+              :data-action="a"
+              @click="$emit('action', a, item.row)"
             >
-              <button
-                type="button"
-                class="text-sky-700 hover:underline disabled:opacity-40 dark:text-sky-300"
-                :disabled="
-                  (a !== 'view' && a !== 'edit' && !canEdit) ||
-                  (a === 'override' && !!editBlocked)
-                "
-                :data-action="a"
-                @click="$emit('action', a, item.row)"
-              >
-                {{ actionLabel(a, item.row) }}
-              </button>
-            </span>
+              {{ actionLabel(a, item.row) }}
+            </button>
           </span>
         </li>
       </template>
@@ -110,17 +100,13 @@
         aria-label="New file path"
         data-test="add-file-path"
       />
-      <span
-        v-tooltip.top="{ value: editBlocked ?? '', disabled: !editBlocked }"
+      <SecondaryButton
+        size="small"
+        type="submit"
+        :disabled="!newPath || !!newPathError"
+        data-test="add-file"
+        >Add file</SecondaryButton
       >
-        <SecondaryButton
-          size="small"
-          type="submit"
-          :disabled="!newPath || !!newPathError || !!editBlocked"
-          data-test="add-file"
-          >Add file</SecondaryButton
-        >
-      </span>
       <span
         v-if="newPath && newPathError"
         class="w-full text-xs text-red-600 dark:text-red-400"
@@ -182,8 +168,6 @@ const props = defineProps<{
   problems: Record<string, { errors: number; warnings: number }>;
   selected: string | null;
   canEdit: boolean;
-  /** R79: why files cannot be overridden or added (a plugin using the bundle is too old). */
-  editBlocked?: string | null;
 }>();
 const emit = defineEmits<{
   action: [action: TreeAction, row: FileRow];
@@ -272,7 +256,7 @@ const newPathError = computed(() => {
   return modulePathError(newPath.value) ?? '';
 });
 function addFile() {
-  if (!newPath.value || newPathError.value || props.editBlocked) return;
+  if (!newPath.value || newPathError.value) return;
   emit('add-file', newPath.value);
   newPath.value = '';
 }

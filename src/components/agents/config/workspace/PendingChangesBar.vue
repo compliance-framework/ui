@@ -91,12 +91,12 @@
         </li>
       </ul>
       <ul
-        v-if="draft.clientIssues.value.length"
+        v-if="draft.issues.value.length || ws.previewPolicyErrors.value.length"
         class="space-y-0.5 text-xs"
         data-test="pending-issues"
       >
         <li
-          v-for="(i, idx) in draft.clientIssues.value"
+          v-for="(i, idx) in draft.issues.value"
           :key="idx"
           :class="
             i.blocking
@@ -105,6 +105,17 @@
           "
         >
           <code class="font-mono">{{ i.ptr || '/' }}</code> — {{ i.message }}
+        </li>
+        <li
+          v-for="(e, idx) in ws.previewPolicyErrors.value"
+          :key="`p${idx}`"
+          class="text-red-600 dark:text-red-400"
+        >
+          <code class="font-mono"
+            >{{ e.bundle }}/{{ e.path
+            }}<template v-if="e.row">:{{ e.row }}</template></code
+          >
+          — {{ e.message }}
         </li>
       </ul>
     </div>
@@ -150,11 +161,7 @@ const behind = computed(
     !!ws.state.config.value &&
     latestRevision.value !== draft.baseRevision.value,
 );
-const reviewTooltip = computed(() => {
-  if (ws.blockingCount.value) return 'Fix the problems first';
-  if (ws.saveDisabledReason.value) return ws.saveDisabledReason.value;
-  return '';
-});
+const reviewTooltip = computed(() => ws.reviewDisabledReason.value);
 
 function confirmDiscard() {
   confirm.require({

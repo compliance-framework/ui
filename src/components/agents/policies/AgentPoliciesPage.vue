@@ -60,9 +60,6 @@
       </div>
     </Message>
     <template v-else>
-      <Message v-if="api.fixtures" severity="warn">
-        Showing fixture data (agent configuration fixture mode is on).
-      </Message>
       <Message
         v-if="!ws.canEdit.value"
         severity="info"

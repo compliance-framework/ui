@@ -5,7 +5,7 @@ import type {
   ConfigPreview,
   PolicyError,
 } from '@/types/agent-config';
-import { instancesMixed } from '@/composables/agent-config/fixtures';
+import { instancesMixed } from '@/composables/agent-config/__tests__/fixtures';
 import { moduleDiagnostics } from '../editor/policyDiagnostics';
 import { ADMIN, globalWith, piniaWith } from './helpers';
 

@@ -10,7 +10,7 @@ import {
   error422,
   overlayRev7,
   revisionsPage1,
-} from '@/composables/agent-config/fixtures';
+} from '@/composables/agent-config/__tests__/fixtures';
 import { ADMIN, globalWith, piniaWith } from './helpers';
 
 const toastAdd = vi.hoisted(() => vi.fn());
@@ -29,7 +29,6 @@ const DialogStub = {
 
 function makeApi(over: Partial<AgentConfigApi> = {}): AgentConfigApi {
   return {
-    fixtures: false,
     listArtifactFiles: vi.fn(),
     getArtifactFile: vi.fn(),
     getConfig: vi.fn(),

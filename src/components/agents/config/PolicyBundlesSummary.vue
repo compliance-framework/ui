@@ -51,7 +51,6 @@
       <p class="mt-1 text-xs text-gray-500 dark:text-slate-400">
         {{ row.modules }} module{{ row.modules === 1 ? '' : 's' }} ·
         {{ row.deleted }} deleted
-        <template v-if="row.age"> · added {{ row.age }}</template>
       </p>
       <p v-if="row.vendorUnknown" class="mt-1 text-xs text-gray-400">
         The vendor file list appears after an instance reports this bundle.
@@ -94,7 +93,6 @@ import {
 import { isPlainObject } from '@/utils/agent-config/merge-patch';
 import { FILE_STATE_LABELS } from './constants';
 import { bundleProvenance } from '@/utils/agent-config/provenance';
-import { formatRelative } from '@/utils/agent-config/display';
 import ProvenanceBadge from './ProvenanceBadge.vue';
 import ConfigPill from './ConfigPill.vue';
 import { RouterLink } from 'vue-router';
@@ -104,7 +102,6 @@ const props = defineProps<{
   effective: ConfigDoc | null;
   base: ConfigDoc | null;
   overlay: OverlayDoc | null;
-  bundlesFirstSeen?: Record<string, string>;
   highlight?: string | null;
   /** The instance's reported bundles (vendor file lists, R10). */
   reports?: PolicyBundleReport[] | null;
@@ -150,7 +147,6 @@ const rows = computed(() =>
       modules: Object.keys(b?.modules ?? {}).length,
       deleted: (b?.delete ?? []).length,
       provenance: bundleProvenance(name, props.base ?? {}, props.overlay ?? {}),
-      age: formatRelative(props.bundlesFirstSeen?.[name]),
       ...fileInfo(name, b ?? {}),
     })),
 );

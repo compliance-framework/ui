@@ -114,12 +114,10 @@ import { unsetAt } from '@/utils/agent-config/overlay-ops';
 import FieldHints from './FieldHints.vue';
 import FieldIssues from './FieldIssues.vue';
 import { useEditor } from './useEditor';
-import { useWorkspace } from '@/composables/agent-config/useConfigWorkspace';
 
 const props = defineProps<{ plugin: string; disabled?: boolean }>();
 
 const { draft, ctx, policyOnly, has, effectiveValue, trustHint } = useEditor();
-const ws = useWorkspace();
 
 const ptr = computed(() => pointer('plugins', props.plugin, 'policies'));
 const overridden = computed(() => has(ptr.value));
@@ -154,8 +152,6 @@ const addError = computed(() => {
   if (policyOnly.value && !isInlineSource(e)) {
     return 'Your role can only add inline: bundle references';
   }
-  // R79: the agent rejects inline policies for a plugin built on a too-old agent library.
-  if (isInlineSource(e)) return ws?.inlineBlocked(props.plugin) ?? '';
   return '';
 });
 
