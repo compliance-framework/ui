@@ -31,6 +31,21 @@
       <ConfigPill v-if="pendingNew" severity="info" data-test="pending-new"
         >pending: new plugin</ConfigPill
       >
+      <i
+        v-if="installText"
+        v-tooltip.top="installText"
+        role="img"
+        tabindex="0"
+        class="pi text-xs"
+        :class="
+          installAccess?.state === 'readonly'
+            ? 'pi-ban text-red-600 dark:text-red-400'
+            : 'pi-shield text-amber-600 dark:text-amber-400'
+        "
+        :aria-label="installText"
+        :data-state="installAccess?.state"
+        data-test="plugin-install-access"
+      />
       <ConfigPill
         v-if="pendingRemoval"
         severity="danger"
@@ -264,6 +279,7 @@ import {
   type Provenance,
 } from '@/utils/agent-config/provenance';
 import { describeCron5 } from '@/utils/agent-config/cron5';
+import { addPluginTooltip } from '@/utils/agent-config/field-access';
 import { useWorkspace } from '@/composables/agent-config/useConfigWorkspace';
 import ProvenanceBadge from './ProvenanceBadge.vue';
 import ConfigPill from './ConfigPill.vue';
@@ -317,6 +333,16 @@ const labelEntries = computed(() =>
 const canManage = computed(
   () => !!ws && ws.ready.value && ws.canConfigure.value,
 );
+/** R71 for a plugin the draft adds: would the reporting instances install it? */
+const installAccess = computed(() =>
+  props.pendingNew && canManage.value ? ws!.accessAt(p()) : null,
+);
+const installText = computed(() =>
+  installAccess.value
+    ? addPluginTooltip(installAccess.value, props.plugin?.source ?? props.name)
+    : '',
+);
+
 /** The draft removes a plugin the instance still runs. */
 const pendingRemoval = computed(() => {
   if (!ws || props.removed || props.pendingNew) return false;

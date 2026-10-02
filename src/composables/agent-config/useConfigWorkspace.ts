@@ -23,6 +23,7 @@ import { usePermissions } from '@/composables/usePermissions';
 import { useUserStore } from '@/stores/auth';
 import { hasBlocking, type ClientIssue } from '@/utils/agent-config/validation';
 import {
+  addPluginAccess,
   fieldAccess,
   type AccessContext,
   type FieldAccess,
@@ -172,12 +173,22 @@ export function useConfigWorkspace(
   );
 
   // ---- R71: per-field access over the reporting instances (field-access.ts) ----
+  // Instance bases tell which plugins and sources each host's file has (a plugin the draft
+  // adds applies only where its source is accepted); the draft overlay supplies that source.
   const accessContext = computed<AccessContext>(() => ({
     instances: state.instances.value,
+    bases: new Map(
+      Array.from(instanceDetails.value, ([id, d]) => [id, d.base] as const),
+    ),
+    overlay: draft.overlay.value,
   }));
   /** Whether the reporting instances would apply a change at `ptr` (three states). */
   function accessAt(ptr: string): FieldAccess {
     return fieldAccess(ptr, accessContext.value);
+  }
+  /** Whether they would install a new plugin (with `source`, once known). */
+  function addPluginAccessFor(source?: string): FieldAccess {
+    return addPluginAccess(accessContext.value, source);
   }
 
   const config = computed(() => state.config.value ?? EMPTY_REVISION);
@@ -261,6 +272,7 @@ export function useConfigWorkspace(
     blockingCount,
     ctx,
     accessAt,
+    addPluginAccess: addPluginAccessFor,
     canEditPointer,
     saveDisabledReason,
     reviewDisabledReason,

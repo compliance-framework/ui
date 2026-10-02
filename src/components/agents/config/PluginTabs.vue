@@ -13,14 +13,11 @@
       <p class="text-sm text-gray-500 dark:text-slate-400">
         No plugins configured.
       </p>
-      <SecondaryButton
-        v-if="canAddPlugin"
-        size="small"
-        data-test="add-plugin"
-        @click="addPluginOpen = true"
-      >
-        <i class="pi pi-plus mr-1" />Add plugin
-      </SecondaryButton>
+      <AddPluginAction
+        v-if="canAddPlugin && addAccess"
+        :access="addAccess"
+        @open="addPluginOpen = true"
+      />
     </div>
     <Tabs v-else :value="active" scrollable @update:value="onTab">
       <div ref="strip" class="flex items-end gap-1">
@@ -30,6 +27,11 @@
             :key="card.name"
             :value="card.name"
             class="flex items-center gap-1.5 px-3! py-2! text-sm"
+            :aria-describedby="
+              installText(card)
+                ? `${headingId}-${card.name}-install`
+                : undefined
+            "
             :data-test="`plugin-tab-${card.name}`"
           >
             <span
@@ -45,17 +47,28 @@
               :data-test="`plugin-tab-hint-${hint.key}`"
               >{{ hint.label }}</span
             >
+            <i
+              v-if="installState(card) === 'restricted'"
+              v-tooltip.top="installText(card)"
+              aria-hidden="true"
+              class="pi pi-shield text-xs text-amber-600 dark:text-amber-400"
+              data-test="plugin-tab-restricted"
+            />
+            <i
+              v-else-if="installState(card) === 'readonly'"
+              v-tooltip.top="installText(card)"
+              aria-hidden="true"
+              class="pi pi-ban text-xs text-red-600 dark:text-red-400"
+              data-test="plugin-tab-not-installed"
+            />
           </Tab>
         </TabList>
-        <TertiaryButton
-          v-if="canAddPlugin"
-          size="small"
+        <AddPluginAction
+          v-if="canAddPlugin && addAccess"
           class="mb-1 flex-shrink-0"
-          data-test="add-plugin"
-          @click="addPluginOpen = true"
-        >
-          <i class="pi pi-plus mr-1" />Add plugin
-        </TertiaryButton>
+          :access="addAccess"
+          @open="addPluginOpen = true"
+        />
       </div>
       <TabPanel
         v-for="card in cards"
@@ -75,6 +88,15 @@
         />
       </TabPanel>
     </Tabs>
+    <!-- Descriptions of the tabs' install markers (a tab is a button: no focusable icons). -->
+    <template v-for="card in cards" :key="card.name">
+      <span
+        v-if="installText(card)"
+        :id="`${headingId}-${card.name}-install`"
+        class="sr-only"
+        >{{ installText(card) }}</span
+      >
+    </template>
     <AddPluginDialog
       v-if="canAddPlugin"
       v-model:visible="addPluginOpen"
@@ -92,8 +114,6 @@
 // editor keeps its state across tab switches. The "add" action sits after the tablist, not
 // in it: it opens a dialog rather than showing a panel. Adding a plugin selects its tab.
 import { computed, nextTick, ref, useId, watch } from 'vue';
-import SecondaryButton from '@/volt/SecondaryButton.vue';
-import TertiaryButton from '@/volt/TertiaryButton.vue';
 import Tabs from '@/volt/Tabs.vue';
 import TabList from '@/volt/TabList.vue';
 import Tab from '@/volt/Tab.vue';
@@ -105,9 +125,11 @@ import type {
   PluginReport,
 } from '@/types/agent-config';
 import { pointer } from '@/utils/agent-config/json-pointer';
+import { addPluginTooltip } from '@/utils/agent-config/field-access';
 import { useWorkspace } from '@/composables/agent-config/useConfigWorkspace';
 import PluginSummaryCard from './PluginSummaryCard.vue';
 import AddPluginDialog from './editor/AddPluginDialog.vue';
+import AddPluginAction from './editor/AddPluginAction.vue';
 
 export interface PluginCard {
   name: string;
@@ -176,9 +198,28 @@ function hintsOf(card: PluginCard) {
   return hints;
 }
 
-// ---- Add plugin (agent:configure; a pending change) ----
+/**
+ * R71 for a plugin the draft adds: whether the reporting instances would install it with its
+ * source (readonly = none would). Only for editors.
+ */
+function installAccess(card: PluginCard) {
+  if (!card.pendingNew || !ws?.canConfigure.value) return null;
+  return ws.accessAt(pointer('plugins', card.name));
+}
+function installState(card: PluginCard) {
+  return installAccess(card)?.state ?? 'editable';
+}
+function installText(card: PluginCard): string {
+  const a = installAccess(card);
+  return a ? addPluginTooltip(a, card.plugin?.source ?? card.name) : '';
+}
+
+// ---- Add plugin (agent:configure; a pending change), gated by R71 (addPluginAccess) ----
 const canAddPlugin = computed(
   () => !!ws && ws.ready.value && ws.canConfigure.value,
+);
+const addAccess = computed(() =>
+  canAddPlugin.value ? ws!.addPluginAccess() : null,
 );
 const addPluginOpen = ref(false);
 const existingPluginNames = computed(() => {

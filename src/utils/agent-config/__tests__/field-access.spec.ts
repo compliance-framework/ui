@@ -3,9 +3,15 @@ import type { AgentInstanceSummary } from '@/types/agent-config';
 import {
   accessPopulation,
   accessTooltip,
+  addPluginAccess,
+  addPluginTooltip,
+  classifySource,
   fieldAccess,
+  installVerdict,
   instanceFieldVerdict,
   isForbiddenPointer,
+  isOciSource,
+  sourceKind,
 } from '../field-access';
 
 function inst(
@@ -192,5 +198,153 @@ describe('field access (R71)', () => {
     );
     const text = accessTooltip(fieldAccess('/verbosity', many));
     expect(text).toContain('abcdefgh, h1, h2, h3, h4 and 2 more');
+  });
+});
+
+describe('sources (sources.go KindOf, classify.go sourceClass)', () => {
+  it('isOciSource mirrors the API strict tag validation', () => {
+    const cases: [string, boolean][] = [
+      ['ghcr.io/compliance-framework/plugin-local-ssh:v1.0.0', true],
+      ['ghcr.io/compliance-framework/plugin-local-ssh-policies:latest', true],
+      ['docker.io/library/alpine:3.20', true],
+      ['localhost:5000/plugin:v1', true],
+      ['registry.example.com:5000/a/b/c:1.2.3', true],
+      ['ghcr.io/x/y', false], // an explicit tag is required
+      ['ghcr.io/X/Y:v1', false],
+      ['ghcr.io/x/y:', false],
+      ['docker.io/alpine:3', false], // implicit library/ namespace
+      ['./plugins/foo', false],
+      ['/opt/plugin', false],
+      ['plugin', false],
+      ['', false],
+      ['inline:ssh', false],
+    ];
+    for (const [s, oci] of cases) {
+      expect([s, isOciSource(s)]).toEqual([s, oci]);
+      expect(sourceKind(s)).toBe(oci ? 'oci' : 'local');
+    }
+  });
+
+  it('classifySource: already used, local, trusted, untrusted', () => {
+    const used = new Set(['/opt/used', 'docker.io/acme/used:v1']);
+    const s = safe('s', {
+      trusted_sources: ['ghcr.io/org/*'],
+      allow_local_sources: true,
+    });
+    const a = inst({
+      instanceId: 'a',
+      mode: 'apply_all',
+      remoteConfig: { allow_local_sources: true },
+    });
+    expect(classifySource(s, '/opt/used', used)).toEqual({
+      safety: 'safe',
+      reason: 'already-used',
+    });
+    // allow_local_sources only counts in apply_all.
+    expect(classifySource(s, '/opt/new', used).safety).toBe('forbidden');
+    expect(classifySource(a, '/opt/new', used)).toEqual({
+      safety: 'unsafe',
+      reason: 'new-local-source',
+    });
+    expect(classifySource(all('b'), '/opt/new', used).safety).toBe('forbidden');
+    expect(classifySource(s, 'ghcr.io/org/p:v1', used).reason).toBe(
+      'trusted-source',
+    );
+    // '*' does not cross '/'.
+    expect(classifySource(s, 'ghcr.io/org/sub/p:v1', used).reason).toBe(
+      'untrusted-source',
+    );
+  });
+});
+
+describe('adding a plugin (installVerdict / addPluginAccess)', () => {
+  const trusted = safe('trusted', { trusted_sources: ['ghcr.io/org/*'] });
+  const bare = safe('bare', { trusted_sources: [], allow_local_sources: true });
+
+  it('without a source: who could install any new plugin', () => {
+    expect(installVerdict(report('r'), undefined, null).verdict).toBe('no');
+    expect(installVerdict(all('a'), undefined, null).verdict).toBe('yes');
+    expect(installVerdict(trusted, undefined, null).verdict).toBe('yes');
+    // No trusted_sources: only reusing a source the file already has is Safe.
+    expect(installVerdict(bare, undefined, null)).toEqual({
+      verdict: 'no',
+      reason:
+        'apply_safe without trusted_sources: a new source needs apply_all',
+    });
+    const base = { plugins: { ssh: { source: 'ghcr.io/x/ssh:v1' } } };
+    expect(installVerdict(bare, undefined, base).verdict).toBe('partial');
+
+    expect(addPluginAccess([report('r1'), report('r2')]).state).toBe(
+      'readonly',
+    );
+    expect(addPluginAccess([report('r1'), trusted]).state).toBe('restricted');
+    expect(addPluginAccess([trusted, all('a')]).state).toBe('editable');
+    expect(addPluginAccess([]).state).toBe('editable');
+    expect(addPluginTooltip(addPluginAccess([report('r1'), bare]))).toBe(
+      'No reporting instance would install a new plugin — report-only mode: does not apply remote configuration: r1; apply_safe without trusted_sources: a new source needs apply_all: bare',
+    );
+  });
+
+  it('with a source: the concrete classification decides', () => {
+    const fleet = [trusted, bare, all('a')];
+    const t = addPluginAccess(fleet, 'ghcr.io/org/p:v1');
+    expect(t.state).toBe('restricted');
+    expect(t.restrictions.map((r) => r.instance)).toEqual(['bare']);
+    expect(addPluginAccess([trusted, all('a')], 'ghcr.io/org/p:v1').state).toBe(
+      'editable',
+    );
+    // An untrusted OCI source: only apply_all installs it.
+    const u = addPluginAccess(fleet, 'docker.io/acme/p:v1');
+    expect(u.state).toBe('restricted');
+    expect(u.applying).toBe(1);
+    expect(addPluginTooltip(u, 'docker.io/acme/p:v1')).toContain(
+      'May not be installed on 2 of 3 reporting instances',
+    );
+    // A local path: Forbidden everywhere without apply_all + allow_local_sources.
+    expect(addPluginAccess(fleet, '/opt/p').state).toBe('readonly');
+    // An already-used source is Safe even without trusted_sources.
+    const ctx = {
+      instances: [bare],
+      bases: new Map([
+        ['bare', { plugins: { ssh: { source: 'docker.io/acme/p:v1' } } }],
+      ]),
+    };
+    expect(addPluginAccess(ctx, 'docker.io/acme/p:v1').state).toBe('editable');
+  });
+
+  it("a plugin a host's file lacks applies there only if its source is installed", () => {
+    const base = { plugins: { ssh: { source: 'ghcr.io/org/ssh:v1' } } };
+    const instances = [trusted, all('a')];
+    const bases = new Map([
+      ['trusted', base],
+      ['a', base],
+    ]);
+    const ctx = (source?: string) => ({
+      instances,
+      bases,
+      overlay: { plugins: { extra: source ? { source } : { schedule: '' } } },
+    });
+    // Untrusted: apply_safe won't install it, so none of its fields apply there.
+    const untrusted = ctx('docker.io/acme/extra:v1');
+    for (const ptr of ['/plugins/extra', '/plugins/extra/schedule']) {
+      const acc = fieldAccess(ptr, untrusted);
+      expect(acc.state).toBe('restricted');
+      expect(acc.restrictions[0].instance).toBe('trusted');
+    }
+    // Its own source field follows the field rule (a trusted source would apply).
+    expect(fieldAccess('/plugins/extra/source', untrusted).state).toBe(
+      'editable',
+    );
+    expect(
+      fieldAccess('/plugins/extra/schedule', ctx('ghcr.io/org/e:v1')).state,
+    ).toBe('editable');
+    // No source in the overlay for a host that lacks the plugin.
+    const noSource = fieldAccess('/plugins/extra/schedule', ctx());
+    expect(noSource.state).toBe('readonly');
+    expect(accessTooltip(noSource)).toContain('the overlay sets no source');
+    // Plugins the file has are unaffected.
+    expect(fieldAccess('/plugins/ssh/schedule', untrusted).state).toBe(
+      'editable',
+    );
   });
 });
