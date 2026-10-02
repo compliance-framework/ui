@@ -4,6 +4,21 @@ import { reactive, ref } from 'vue';
 import IndexView from '../IndexView.vue';
 import type { Evidence } from '@/stores/evidence.ts';
 
+const { subjectLookupGet } = vi.hoisted(() => ({
+  subjectLookupGet: vi.fn(async () => ({
+    data: {
+      data: [
+        {
+          subjectUuid: 'subject-1',
+          type: 'component',
+          kind: 'defined-component',
+          title: 'GitHub Organization: acme',
+        },
+      ],
+    },
+  })),
+}));
+
 const {
   routeState,
   replaceMock,
@@ -170,6 +185,12 @@ const {
       if (filterText.includes('exportable') || name.includes('exportable')) {
         data = exportableEvidence;
       }
+      if (name.includes('with-subjects')) {
+        data = baseEvidence.slice(0, 3).map((item) => ({
+          ...item,
+          subjectReferences: [],
+        }));
+      }
       if (filterText.includes('huge-export') || name.includes('huge-export')) {
         data = hugeExportableEvidence;
       }
@@ -284,6 +305,7 @@ vi.mock('@/composables/axios', async () => {
   return {
     useAuthenticatedInstance: () => ({
       post: evidenceSearchPost,
+      get: subjectLookupGet,
     }),
     useDataApi: (
       url?: string | null,
@@ -383,6 +405,29 @@ describe('Evidence IndexView', () => {
           BurgerMenu: {
             props: ['items'],
             template: '<div>Menu</div>',
+          },
+          SubjectFilter: {
+            props: ['modelValue'],
+            emits: ['update:modelValue'],
+            template: `
+              <div data-testid="subject-filter">
+                <span data-testid="selected-subject">{{ modelValue?.title }}</span>
+                <button
+                  type="button"
+                  data-testid="pick-subject"
+                  @click="$emit('update:modelValue', { subjectUuid: 'subject-1', type: 'component', kind: 'defined-component', title: 'GitHub Organization: acme' })"
+                >
+                  pick
+                </button>
+                <button
+                  type="button"
+                  data-testid="clear-subject"
+                  @click="$emit('update:modelValue', null)"
+                >
+                  clear
+                </button>
+              </div>
+            `,
           },
           EvidenceList: {
             props: ['evidence', 'sortBy', 'sortDirection', 'navigationQuery'],
@@ -1200,5 +1245,67 @@ describe('Evidence IndexView', () => {
         detail: '502: Upstream export search failed',
       }),
     );
+  });
+
+  it('hides the subject filter when the API returns no subjects on evidence', async () => {
+    const wrapper = mountView();
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="subject-filter"]').exists()).toBe(false);
+  });
+
+  it('filters the evidence search by the chosen subject', async () => {
+    routeMock.query = { filter: 'with-subjects' };
+    const wrapper = mountView();
+    await flushPromises();
+
+    await wrapper.get('[data-testid="pick-subject"]').trigger('click');
+    await flushPromises();
+
+    expect(evidenceSearchPost).toHaveBeenLastCalledWith(
+      '/api/evidence/search?page=1&limit=50&sortBy=lastSeenAt&sortDirection=desc&name=with-subjects&subjectUuid=subject-1',
+      expect.any(Object),
+    );
+
+    await wrapper.get('[data-testid="clear-subject"]').trigger('click');
+    await flushPromises();
+
+    expect(evidenceSearchPost).toHaveBeenLastCalledWith(
+      '/api/evidence/search?page=1&limit=50&sortBy=lastSeenAt&sortDirection=desc&name=with-subjects',
+      expect.any(Object),
+    );
+  });
+
+  it('filters by a subject given in the URL and shows its title', async () => {
+    routeMock.query = { filter: 'with-subjects', subject: 'subject-1' };
+    const wrapper = mountView();
+    await flushPromises();
+
+    expect(evidenceSearchPost).toHaveBeenLastCalledWith(
+      '/api/evidence/search?page=1&limit=50&sortBy=lastSeenAt&sortDirection=desc&name=with-subjects&subjectUuid=subject-1',
+      expect.any(Object),
+    );
+    expect(subjectLookupGet).toHaveBeenCalledWith('/api/subjects', {
+      params: { ids: 'subject-1', limit: 1 },
+    });
+    expect(wrapper.get('[data-testid="selected-subject"]').text()).toBe(
+      'GitHub Organization: acme',
+    );
+    expect(wrapper.get('[data-testid="navigation-query"]').text()).toContain(
+      '"subject":"subject-1"',
+    );
+  });
+
+  it('keeps a chosen subject in the URL, back on the first page', async () => {
+    routeMock.query = { filter: 'with-subjects' };
+    const wrapper = mountView();
+    await flushPromises();
+
+    await wrapper.get('[data-testid="pick-subject"]').trigger('click');
+    await flushPromises();
+
+    expect(replaceMock).toHaveBeenLastCalledWith({
+      query: { filter: 'with-subjects', subject: 'subject-1', page: undefined },
+    });
   });
 });

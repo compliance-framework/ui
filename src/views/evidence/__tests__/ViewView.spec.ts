@@ -513,6 +513,11 @@ function mountView() {
         PageCard: {
           template: '<section><slot /></section>',
         },
+        SubjectsSection: {
+          props: ['subjectReferences'],
+          template:
+            '<div data-testid="subjects-section">{{ subjectReferences.length }} subjects</div>',
+        },
         SecondaryButton: {
           emits: ['click'],
           template:
@@ -700,6 +705,49 @@ describe('Evidence ViewView', () => {
 
     expect(wrapper.text()).toContain('Current State');
     expect(wrapper.text()).not.toContain('EvidencePlaybackSections');
+  });
+
+  it('leaves out the Subjects card when the API returns no subjects', async () => {
+    const wrapper = mountView();
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="subjects-card"]').exists()).toBe(false);
+    const currentState = wrapper
+      .findAll('h3')
+      .find((h3) => h3.text() === 'Current State')!;
+    expect(
+      currentState.element
+        .closest('.grid')
+        ?.classList.contains('lg:grid-cols-2'),
+      'Current State takes the full width',
+    ).toBe(false);
+  });
+
+  it('shows the Subjects card to the right of Current State', async () => {
+    refs.evidenceResponse = {
+      ...structuredClone(baseEvidence),
+      subjectReferences: [
+        { subjectUuid: 's-1', type: 'component', title: 'acme' },
+      ],
+    };
+    refs.evidence.value = structuredClone(refs.evidenceResponse);
+
+    const wrapper = mountView();
+    await flushPromises();
+
+    const card = wrapper.get('[data-testid="subjects-card"]');
+    expect(card.find('h3').text()).toBe('Subjects');
+    expect(card.get('[data-testid="subjects-section"]').text()).toBe(
+      '1 subjects',
+    );
+
+    const row = card.element.parentElement!;
+    expect(row.classList.contains('lg:grid-cols-2')).toBe(true);
+    expect(
+      row.firstElementChild?.textContent,
+      'Current State on the left',
+    ).toContain('Current State');
+    expect(row.lastElementChild, 'Subjects on the right').toBe(card.element);
   });
 
   it('shows labels, props, and links in the metadata tab', async () => {

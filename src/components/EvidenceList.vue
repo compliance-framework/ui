@@ -3,6 +3,7 @@
     <colgroup>
       <col class="w-20" />
       <col class="w-[30%]" />
+      <col v-if="showSubjects" class="w-[25%]" />
       <col class="w-48" />
       <col v-if="configStore.showLabels" />
     </colgroup>
@@ -41,6 +42,9 @@
             </span>
             <span class="sr-only">{{ getSortLabel('name') }}</span>
           </button>
+        </th>
+        <th v-if="showSubjects" class="py-2 px-2 text-left text-sm font-medium">
+          Subjects
         </th>
         <th
           class="py-2 px-2 text-left text-sm font-medium"
@@ -89,6 +93,52 @@
           >
             {{ item.title }}
           </RouterLink>
+        </td>
+        <td
+          v-if="showSubjects"
+          class="py-2 px-2 min-w-0"
+          data-testid="subjects-cell"
+        >
+          <div
+            v-if="item.subjectReferences?.length"
+            class="flex min-w-0 flex-wrap items-center gap-1"
+          >
+            <!-- Styled like a Chip, but truncates long titles; the tooltip shows them in full. -->
+            <span
+              v-for="subject in item.subjectReferences.slice(
+                0,
+                SUBJECT_PREVIEW_LIMIT,
+              )"
+              :key="subject.subjectUuid"
+              v-tooltip.top="subjectTitle(subject)"
+              class="inline-block min-w-0 max-w-full truncate rounded-2xl bg-ccf-100 px-3 py-2 text-sm text-ccf-900 dark:bg-slate-800 dark:text-slate-300"
+              data-testid="subject-chip"
+            >
+              {{ subjectTitle(subject) }}
+            </span>
+            <button
+              v-if="item.subjectReferences.length > SUBJECT_PREVIEW_LIMIT"
+              type="button"
+              class="inline-block shrink-0 rounded-md border border-slate-200 bg-white px-2 py-1 text-sm text-gray-600 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-400"
+              :aria-label="remainingSubjectsAriaLabel(item.subjectReferences)"
+              data-testid="subjects-more"
+              @click.stop="toggleSubjects($event, item.subjectReferences)"
+            >
+              +{{ item.subjectReferences.length - SUBJECT_PREVIEW_LIMIT }} more
+              {{
+                item.subjectReferences.length - SUBJECT_PREVIEW_LIMIT === 1
+                  ? 'subject'
+                  : 'subjects'
+              }}
+            </button>
+          </div>
+          <span
+            v-else
+            class="inline-flex items-center gap-1 text-sm text-amber-700 dark:text-amber-400"
+          >
+            <BIconExclamationTriangle aria-hidden="true" />
+            Unattributed
+          </span>
         </td>
         <td class="py-2 px-2 whitespace-nowrap">
           {{ formatDateTime(item.end) }}
@@ -156,6 +206,19 @@
       />
     </div>
   </Popover>
+  <Popover ref="subjectsOp" class="max-w-[40rem]">
+    <div
+      class="flex gap-2 items-center flex-wrap"
+      data-testid="subjects-popover"
+    >
+      <Chip
+        class="mx-0.5 max-w-full whitespace-normal text-sm [overflow-wrap:anywhere]"
+        v-for="(subject, index) in popoverSubjects"
+        :key="`popover-subject-${index}-${subject}`"
+        :label="subject"
+      />
+    </div>
+  </Popover>
 </template>
 <script setup lang="ts">
 import ResultStatusRing from '@/components/ResultStatusRing.vue';
@@ -169,8 +232,9 @@ import type {
   EvidenceSortBy,
   SortDirection,
 } from '@/stores/evidence.ts';
+import type { SubjectReference } from '@/oscal';
 import Chip from '@/volt/Chip.vue';
-import { BIconEye } from 'bootstrap-icons-vue';
+import { BIconExclamationTriangle, BIconEye } from 'bootstrap-icons-vue';
 
 const props = withDefaults(
   defineProps<{
@@ -192,11 +256,38 @@ const emit = defineEmits<{
 
 const popoverLabels = ref<string[]>([]);
 const op = ref();
+const popoverSubjects = ref<string[]>([]);
+const subjectsOp = ref();
 
 const configStore = useConfigStore();
 const route = useRoute();
 const router = useRouter();
 const LABEL_PREVIEW_LIMIT = 5;
+// The Subjects column shows the first subjects as chips, then "+N" for the rest.
+const SUBJECT_PREVIEW_LIMIT = 2;
+
+// Rows carry subjectReferences only when the API supports subjects; without it the column is
+// left out rather than showing every row as unattributed.
+const showSubjects = computed(() =>
+  props.evidence.some((item) => item.subjectReferences !== undefined),
+);
+
+function subjectTitle(subject: SubjectReference) {
+  return subject.title || subject.subjectUuid;
+}
+
+function remainingSubjectsAriaLabel(subjects: SubjectReference[]) {
+  const remaining = subjects.slice(SUBJECT_PREVIEW_LIMIT).map(subjectTitle);
+  return `View all subjects. +${remaining.length} more ${
+    remaining.length === 1 ? 'subject' : 'subjects'
+  }: ${remaining.join('; ')}`;
+}
+
+// Opens the popover listing all of a row's subjects in full, like the labels popover.
+function toggleSubjects(event: Event, subjects: SubjectReference[]) {
+  popoverSubjects.value = subjects.map(subjectTitle);
+  subjectsOp.value?.toggle?.(event);
+}
 
 interface LabelPreview {
   preview: string[];

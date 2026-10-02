@@ -70,6 +70,26 @@
               <p
                 class="text-xs uppercase tracking-wider text-gray-500 dark:text-slate-400"
               >
+                Display Priority
+              </p>
+              <p class="text-sm text-gray-900 dark:text-slate-200">
+                {{ template.displayPriority ?? 0 }}
+              </p>
+            </div>
+            <div>
+              <p
+                class="text-xs uppercase tracking-wider text-gray-500 dark:text-slate-400"
+              >
+                Component Type
+              </p>
+              <p class="text-sm text-gray-900 dark:text-slate-200">
+                {{ getDefinedComponentTypeLabel(template.componentType) }}
+              </p>
+            </div>
+            <div>
+              <p
+                class="text-xs uppercase tracking-wider text-gray-500 dark:text-slate-400"
+              >
                 Last Updated
               </p>
               <p class="text-sm text-gray-900 dark:text-slate-200">
@@ -288,6 +308,7 @@ import RouterLinkButton from '@/components/RouterLinkButton.vue';
 import { useDataApi } from '@/composables/axios';
 import {
   formatSubjectTemplateDate,
+  getDefinedComponentTypeLabel,
   getSubjectTemplateSourceModeLabel,
   getSubjectTemplateTypeLabel,
   type SubjectTemplate,

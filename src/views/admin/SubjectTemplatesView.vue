@@ -228,6 +228,40 @@
         </div>
       </div>
 
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label
+            for="subject-template-display-priority"
+            class="inline-block pb-1 dark:text-slate-300"
+            >Display Priority</label
+          >
+          <FormInput
+            id="subject-template-display-priority"
+            v-model="formData.displayPriority"
+            type="number"
+            step="1"
+            :disabled="isSaving"
+            placeholder="0"
+          />
+        </div>
+
+        <div class="md:col-span-2">
+          <label class="inline-block pb-1 dark:text-slate-300"
+            >Component Type</label
+          >
+          <Select
+            v-model="formData.componentType"
+            :options="DEFINED_COMPONENT_TYPE_OPTIONS"
+            optionLabel="label"
+            optionValue="value"
+            :placeholder="getDefinedComponentTypeLabel(null)"
+            showClear
+            :disabled="isSaving"
+            class="w-full"
+          />
+        </div>
+      </div>
+
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label class="inline-block pb-1 dark:text-slate-300"
@@ -491,6 +525,8 @@ import {
   getSubjectTemplateKey,
   getSubjectTemplateSourceModeLabel,
   getSubjectTemplateTypeLabel,
+  getDefinedComponentTypeLabel,
+  DEFINED_COMPONENT_TYPE_OPTIONS,
   SUBJECT_TEMPLATE_SOURCE_MODE_OPTIONS,
   SUBJECT_TEMPLATE_TYPE_OPTIONS,
   type SubjectTemplate,

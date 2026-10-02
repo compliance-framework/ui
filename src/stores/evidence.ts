@@ -3,7 +3,7 @@ import decamelizeKeys from 'decamelize-keys';
 import { defineStore } from 'pinia';
 import { useConfigStore } from '@/stores/config.ts';
 import { type Filter } from '@/parsers/labelfilter.ts';
-import type { Activity, Hash, Link, Property } from '@/oscal';
+import type { Activity, Hash, Link, Property, SubjectReference } from '@/oscal';
 import type { DataResponse } from '@/stores/types.ts';
 import type { Control } from '@/oscal';
 import type { BackMatter } from '@/oscal';
@@ -16,6 +16,11 @@ export interface EvidenceStatus {
 export interface EvidenceLabel {
   name: string;
   value: string;
+}
+
+// A subject named on submitted evidence (subjects[].subject-uuid).
+export interface DeclaredSubject {
+  subjectUuid: string;
 }
 
 export interface Evidence {
@@ -32,6 +37,9 @@ export interface Evidence {
   backMatter?: BackMatter;
   status: EvidenceStatus;
   activities: Activity[];
+  // What the evidence is about. Search rows carry a compact form (uuid, type, title) without
+  // legacy subjects; absent when the API doesn't provide subjects.
+  subjectReferences?: SubjectReference[];
 }
 
 export type EvidenceSortBy = 'lastSeenAt' | 'name' | 'status';

@@ -69,6 +69,22 @@
       </div>
 
       <div class="mt-6 border-t border-ccf-300 pt-4 dark:border-slate-700">
+        <h4 class="text-sm font-semibold text-zinc-700 dark:text-slate-200">
+          Subject
+          <span v-if="manualSubjectRequired" class="text-red-500">*</span>
+        </h4>
+        <p class="mt-1 text-sm text-gray-600 dark:text-slate-400">
+          What this evidence is about.
+        </p>
+        <div class="mt-3">
+          <SubjectPicker
+            v-model="subjects"
+            :invalid="manualSubjectRequired && subjects.length === 0"
+          />
+        </div>
+      </div>
+
+      <div class="mt-6 border-t border-ccf-300 pt-4 dark:border-slate-700">
         <div class="flex items-center justify-between gap-2">
           <h4 class="text-sm font-semibold text-zinc-700 dark:text-slate-200">
             Labels
@@ -265,6 +281,7 @@
 
 <script lang="ts" setup>
 import type {
+  DeclaredSubject,
   Evidence,
   EvidenceLabel,
   EvidenceStatus,
@@ -284,6 +301,9 @@ import PageCard from '@/components/PageCard.vue';
 import LabelList from '@/components/LabelList.vue';
 import PropsEditor from '@/components/forms/PropsEditor.vue';
 import LinksEditor from '@/components/forms/LinksEditor.vue';
+import SubjectPicker from '@/components/evidence/SubjectPicker.vue';
+import { useEvidenceConfig } from '@/composables/evidence/useEvidenceConfig';
+import type { SubjectSummary } from '@/types/subjects';
 import { usePermissions } from '@/composables/usePermissions';
 import { RESOURCES, ACTIONS } from '@/constants/permissions';
 
@@ -294,6 +314,8 @@ const props = defineProps<{
 }>();
 
 const { can, permissionTooltip } = usePermissions();
+const { manualSubjectRequired } = useEvidenceConfig();
+const subjects = ref<SubjectSummary[]>([]);
 const submitAction = computed(() =>
   props.updating ? ACTIONS.UPDATE : ACTIONS.CREATE,
 );
@@ -357,11 +379,19 @@ const dateValidationError = computed(() => {
 });
 
 const isFormValid = computed(() => {
+  if (manualSubjectRequired.value && subjects.value.length === 0) {
+    return false;
+  }
   return !dateValidationError.value;
 });
 
 const emit = defineEmits<{
-  submit: [Partial<Evidence>, EvidenceLabel[], EvidenceStatus];
+  submit: [
+    Partial<Evidence>,
+    EvidenceLabel[],
+    EvidenceStatus,
+    DeclaredSubject[],
+  ];
 }>();
 
 function handleSubmit() {
@@ -379,7 +409,13 @@ function handleSubmit() {
     links: linksList.value.filter((link) => link.href),
   };
 
-  emit('submit', evidenceToSubmit, labels.value, status.value);
+  emit(
+    'submit',
+    evidenceToSubmit,
+    labels.value,
+    status.value,
+    subjects.value.map((subject) => ({ subjectUuid: subject.subjectUuid })),
+  );
 }
 
 function onUpload(file: File, base64: Base64) {

@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   buildUpsertSubjectTemplatePayload,
   createEmptySubjectTemplateForm,
+  createSubjectTemplateFormFromTemplate,
+  getDefinedComponentTypeLabel,
   generateUniqueSubjectTemplateCopyName,
   renderTemplateString,
 } from './subject-templates';
@@ -63,6 +65,7 @@ describe('subject-templates helpers', () => {
       name: 'GitHub Repo Subject',
       type: 'component',
       sourceMode: 'runtime-derived',
+      displayPriority: 0,
       titleTemplate: '{{repository}}',
       descriptionTemplate: 'Repo {{repository}} in {{organization}}',
       purposeTemplate: 'Track repository risk',
@@ -91,6 +94,73 @@ describe('subject-templates helpers', () => {
         },
       ],
     });
+  });
+
+  function validComponentForm() {
+    const form = createEmptySubjectTemplateForm();
+    form.name = 'GitHub Organization';
+    form.type = 'component';
+    form.sourceMode = 'runtime-derived';
+    form.labelSchema = [{ key: 'organization', description: '' }];
+    form.selectorLabels = [{ key: '_plugin', value: 'github' }];
+    form.identityLabelKeys = ['organization'];
+    return form;
+  }
+
+  it('sends display priority as a number and the chosen component type', () => {
+    const form = validComponentForm();
+    form.displayPriority = '7';
+    form.componentType = 'software';
+
+    const payload = buildUpsertSubjectTemplatePayload(form);
+
+    expect(payload.displayPriority).toBe(7);
+    expect(payload.componentType).toBe('software');
+  });
+
+  it('defaults an empty display priority to 0 and leaves component type unset', () => {
+    const form = validComponentForm();
+    form.displayPriority = '';
+    form.componentType = null;
+
+    const payload = buildUpsertSubjectTemplatePayload(form);
+
+    expect(payload.displayPriority).toBe(0);
+    expect(payload.componentType).toBeUndefined();
+  });
+
+  it('rejects a fractional display priority', () => {
+    const form = validComponentForm();
+    form.displayPriority = 1.5;
+
+    expect(() => buildUpsertSubjectTemplatePayload(form)).toThrow(
+      'Display priority must be a whole number.',
+    );
+  });
+
+  it('keeps display priority and component type when editing a template', () => {
+    const form = createSubjectTemplateFormFromTemplate({
+      name: 'GitHub Organization',
+      type: 'component',
+      sourceMode: 'runtime-derived',
+      displayPriority: 3,
+      componentType: 'software',
+      labelSchema: [{ key: 'organization' }],
+      selectorLabels: [{ key: '_plugin', value: 'github' }],
+      identityLabelKeys: ['organization'],
+    });
+
+    const payload = buildUpsertSubjectTemplatePayload(form);
+
+    expect(payload.displayPriority).toBe(3);
+    expect(payload.componentType).toBe('software');
+  });
+
+  it('labels component types, falling back to the default', () => {
+    expect(getDefinedComponentTypeLabel('process-procedure')).toBe(
+      'Process Procedure',
+    );
+    expect(getDefinedComponentTypeLabel(null)).toBe('Default (service)');
   });
 
   it('rejects identity keys that are missing from label schema', () => {
