@@ -134,20 +134,12 @@
           >
           <span class="flex flex-wrap gap-1">
             <span v-if="!policies.length" class="text-gray-500">none</span>
-            <template v-for="pol in policies" :key="pol">
-              <a
-                v-if="pol.startsWith('inline:')"
-                :href="`#agent-bundle-${pol.slice(7)}`"
-                class="rounded bg-sky-100 px-1.5 font-mono text-xs text-sky-700 hover:underline dark:bg-sky-500/15 dark:text-sky-300"
-                @click.prevent="$emit('show-bundle', pol.slice(7))"
-                >{{ pol }}</a
-              >
-              <span
-                v-else
-                class="rounded bg-slate-200 px-1.5 font-mono text-xs break-all dark:bg-slate-700"
-                >{{ pol }}</span
-              >
-            </template>
+            <span
+              v-for="pol in policies"
+              :key="pol"
+              class="rounded bg-slate-200 px-1.5 font-mono text-xs break-all dark:bg-slate-700"
+              >{{ pol }}</span
+            >
           </span>
           <ProvenanceBadge
             v-if="field('policies') !== 'file'"
@@ -155,15 +147,6 @@
           />
           <template #editor>
             <PolicySourcesEditor :plugin="name" />
-            <p class="mt-2 text-xs text-gray-500 dark:text-slate-400">
-              To customize a bundle's files, use the
-              <RouterLink
-                v-if="policiesRoute"
-                :to="policiesRoute"
-                class="text-sky-700 hover:underline dark:text-sky-300"
-                >Policies view</RouterLink
-              ><template v-else>Policies view</template>.
-            </p>
           </template>
         </EditableField>
       </div>
@@ -266,7 +249,6 @@
 // One plugin on the Effective view, with an inline editor per editable field (R69) and the
 // field states of R71.
 import { computed } from 'vue';
-import { RouterLink } from 'vue-router';
 import { useConfirm } from 'primevue/useconfirm';
 import TertiaryButton from '@/volt/TertiaryButton.vue';
 import type {
@@ -303,8 +285,6 @@ const props = defineProps<{
   report?: PluginReport | null;
 }>();
 
-defineEmits<{ 'show-bundle': [name: string] }>();
-
 const ws = useWorkspace();
 const confirm = useConfirm();
 
@@ -331,9 +311,6 @@ const labelEntries = computed(() =>
   Object.entries(props.plugin?.labels ?? {}).sort(([a], [b]) =>
     a.localeCompare(b),
   ),
-);
-const policiesRoute = computed(() =>
-  ws ? { name: 'admin-agent-policies', params: { id: ws.agentId } } : null,
 );
 
 // ---- Plugin-level actions (agent:configure) ----

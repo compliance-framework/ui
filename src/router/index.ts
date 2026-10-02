@@ -428,19 +428,8 @@ const authenticatedRoutes = [
     component: () => import('../views/admin/AgentsView.vue'),
     meta: {
       requiresAuth: true,
-      // R40: readable with agent:read (viewer/auditor/contributor/policy-author); keys and
-      // CRUD inside the page stay behind admin:manage.
-      permission: { resource: RESOURCES.AGENT, action: ACTIONS.READ },
-    },
-  },
-  {
-    // R68: the full-page policy workspace of one agent. Readable with agent:read; editing
-    // needs agent:configure or agent:configure-policy (checked in the view, R58/R61).
-    path: '/admin/agents/:id/policies',
-    name: 'admin-agent-policies',
-    component: () => import('../views/admin/AgentPoliciesView.vue'),
-    meta: {
-      requiresAuth: true,
+      // R40: readable with agent:read (viewer/auditor/contributor); keys and CRUD inside the
+      // page stay behind admin:manage.
       permission: { resource: RESOURCES.AGENT, action: ACTIONS.READ },
     },
   },

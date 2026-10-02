@@ -230,7 +230,6 @@ describe('AgentConfigTab', () => {
     expect(reader.find('[data-test^="edit-/"]').exists()).toBe(false);
     // Only the selected instance's detail (no background load for readers).
     expect(api.current.getInstance).toHaveBeenCalledTimes(1);
-    expect(reader.find('[data-test="open-policies-view"]').exists()).toBe(true);
 
     api.current = makeApi();
     const wrapper = mount(AgentConfigTab, {

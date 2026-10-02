@@ -68,17 +68,6 @@ describe('router', () => {
     });
   });
 
-  it('gates the agent Policies view on agent:read (R68)', () => {
-    const route = router
-      .getRoutes()
-      .find((r) => r.name === 'admin-agent-policies');
-    expect(route?.path).toBe('/admin/agents/:id/policies');
-    expect(route?.meta.permission).toEqual({
-      resource: 'agent',
-      action: 'read',
-    });
-  });
-
   it('registers the dashboard suggestions review route behind auth meta', () => {
     const route = router
       .getRoutes()

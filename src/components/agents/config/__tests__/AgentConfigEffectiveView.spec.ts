@@ -1,11 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { mount } from '@vue/test-utils';
 import type { ConfigDoc, OverlayDoc } from '@/types/agent-config';
-import {
-  baseConfig,
-  instanceDetailA,
-  overlayRev7,
-} from '@/composables/agent-config/__tests__/fixtures';
+import { baseConfig } from '@/composables/agent-config/__tests__/fixtures';
 import { mergePatch } from '@/utils/agent-config/merge-patch';
 import AgentConfigEffectiveView from '../AgentConfigEffectiveView.vue';
 import { globalWith, piniaWith, READER } from './helpers';
@@ -117,29 +113,6 @@ describe('AgentConfigEffectiveView', () => {
     });
     expect(wrapper.find('[data-test="effective-empty"]').text()).toContain(
       'No configuration reported yet.',
-    );
-  });
-  it('lists bundle file states read-only from the instance report', () => {
-    const wrapper = mount(AgentConfigEffectiveView, {
-      props: {
-        effectiveDoc: mergePatch<ConfigDoc>(baseConfig, overlayRev7),
-        base: baseConfig,
-        appliedOverlay: overlayRev7,
-        appliedRevisionNote: null,
-        filename: 'x.yaml',
-        policyBundles: instanceDetailA.policyBundles,
-      },
-      global: globalWith(piniaWith(READER)),
-    });
-    const files = wrapper.find('[data-test="summary-files-ssh-tuned"]');
-    expect(files.find('[data-state="deleted"]').text()).toContain(
-      'banner_test.rego',
-    );
-    expect(files.find('[data-state="overridden"]').text()).toContain(
-      'max_auth_tries.rego',
-    );
-    expect(files.find('[data-state="inherited"]').text()).toContain(
-      'banner.rego',
     );
   });
 });

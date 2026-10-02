@@ -279,7 +279,7 @@
         v-if="diffOpen"
         :original="diffOriginal"
         :modified="diffModified"
-        :language="diffTitle.endsWith('.rego') ? 'rego' : 'text'"
+        language="text"
         mode="split"
       />
     </Dialog>

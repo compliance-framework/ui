@@ -72,19 +72,9 @@
               :removed="card.removed"
               :pending-new="card.pendingNew"
               :report="reportOf(card.name)"
-              @show-bundle="showBundle"
             />
           </div>
         </section>
-        <slot name="bundles" :highlight="highlightBundle">
-          <PolicyBundlesSummary
-            :effective="effective"
-            :base="base"
-            :overlay="appliedOverlay"
-            :highlight="highlightBundle"
-            :reports="policyBundles"
-          />
-        </slot>
       </template>
       <ConfigYamlViewer
         v-else
@@ -104,7 +94,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, ref } from 'vue';
+import { computed, ref } from 'vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
 import SelectButton from '@/volt/SelectButton.vue';
 import type {
@@ -112,7 +102,6 @@ import type {
   OverlayDoc,
   PluginDoc,
   PluginReport,
-  PolicyBundleReport,
 } from '@/types/agent-config';
 import { sanitizeForDisplay } from '@/utils/agent-config/display';
 import { isPlainObject } from '@/utils/agent-config/merge-patch';
@@ -122,7 +111,6 @@ import AddPluginDialog from './editor/AddPluginDialog.vue';
 import LockedKeysPanel from './LockedKeysPanel.vue';
 import ConfigFlagsSummary from './ConfigFlagsSummary.vue';
 import PluginSummaryCard from './PluginSummaryCard.vue';
-import PolicyBundlesSummary from './PolicyBundlesSummary.vue';
 import ConfigYamlViewer from './ConfigYamlViewer.vue';
 import { LOCKED_LEGEND, NOT_REPORTED_TEXT } from './constants';
 
@@ -137,8 +125,6 @@ const props = defineProps<{
   /** The applied revision's overlay could not be loaded (desired overlay used instead). */
   provenanceFallback?: boolean;
   filename: string;
-  /** The instance's reported policy bundles (vendor file lists). */
-  policyBundles?: PolicyBundleReport[] | null;
   /** R76: the instance's plugins and the agent library each was built with. */
   pluginReports?: PluginReport[] | null;
 }>();
@@ -152,7 +138,6 @@ const modeOptions = [
   { label: 'Summary', value: 'summary' },
   { label: 'YAML', value: 'yaml' },
 ];
-const highlightBundle = ref<string | null>(null);
 
 const effective = computed(() =>
   props.effectiveDoc ? sanitizeForDisplay(props.effectiveDoc) : null,
@@ -235,13 +220,5 @@ function addPlugin(plugin: {
     ...(plugin.schedule ? { schedule: plugin.schedule } : {}),
     policies: [],
   });
-}
-
-async function showBundle(name: string) {
-  highlightBundle.value = name;
-  await nextTick();
-  document
-    .getElementById(`agent-bundle-${name}`)
-    ?.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
 }
 </script>

@@ -1,4 +1,4 @@
-// Pure conversion of row/col problems (API PolicyError rows, YAML parse errors) into
+// Pure conversion of row/col problems (e.g. YAML parse errors) into
 // CodeMirror lint diagnostics. Rows and columns are 1-based; they are clamped to the
 // document, and a diagnostic runs from its column to the end of its line.
 

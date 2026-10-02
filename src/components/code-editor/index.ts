@@ -1,5 +1,5 @@
-// Async entry points: CodeMirror is split into its own chunk and loaded only when an editor,
-// a diff or a Rego view is actually rendered (the read-only Configuration tab never loads it).
+// Async entry points: CodeMirror is split into its own chunk and loaded only when an editor or
+// a diff is actually rendered (the read-only Configuration tab never loads it).
 import { defineAsyncComponent } from 'vue';
 import CodeEditorFallback from './CodeEditorFallback.vue';
 

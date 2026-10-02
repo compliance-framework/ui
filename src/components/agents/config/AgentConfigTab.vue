@@ -36,13 +36,6 @@
         @select-instance="state.selectInstance"
       >
         <template #actions>
-          <RouterLink
-            :to="{ name: 'admin-agent-policies', params: { id: agent.id } }"
-            class="inline-flex items-center gap-1 rounded-md border border-ccf-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-slate-100 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"
-            data-test="open-policies-view"
-          >
-            <i class="pi pi-file-edit text-xs" />Policies
-          </RouterLink>
           <span v-tooltip.top="{ value: editTooltip, disabled: canEdit }">
             <SecondaryButton
               size="small"
@@ -112,7 +105,6 @@
             state.selectedInstance.value?.appliedRevision ?? 0,
           )
         "
-        :policy-bundles="state.selectedInstance.value?.policyBundles ?? null"
         :plugin-reports="state.selectedInstance.value?.plugins ?? null"
       />
       <ConfigYamlViewer
@@ -161,7 +153,6 @@ import {
   toRef,
   watch,
 } from 'vue';
-import { RouterLink } from 'vue-router';
 import Message from '@/volt/Message.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
 import SelectButton from '@/volt/SelectButton.vue';
@@ -197,7 +188,7 @@ const props = defineProps<{ agent: Agent }>();
 const api = useAgentConfigApi();
 const agentId = toRef(() => props.agent.id);
 const state = useAgentConfig(agentId, api);
-// R69: the shared pending-changes draft + inline editing (also used by the Policies view).
+// R69: the shared pending-changes draft + inline editing.
 const ws = useConfigWorkspace(props.agent.id, api, state);
 const rawOpen = ref(false);
 

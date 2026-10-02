@@ -56,10 +56,10 @@ describe('CodeEditor (CodeMirror 6)', () => {
 
   it('renders diagnostics', async () => {
     const wrapper = mountEditor({
-      modelValue: 'package x\n\nallow if {\n',
-      language: 'rego',
+      modelValue: 'plugins:\n  ssh:\n    source: [\n',
+      language: 'yaml',
       diagnostics: [
-        { row: 3, col: 7, message: 'rego_parse_error', severity: 'error' },
+        { row: 3, col: 13, message: 'unexpected end', severity: 'error' },
       ],
     });
     await flushPromises();

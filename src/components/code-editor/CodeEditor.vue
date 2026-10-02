@@ -18,8 +18,7 @@
 
 <script setup lang="ts">
 // CodeMirror 6 editor (LLD U2.8). Loaded asynchronously by consumers (see ./index.ts), so
-// CodeMirror lives in its own chunk that is fetched only when an editor, diff or Rego view
-// opens.
+// CodeMirror lives in its own chunk that is fetched only when an editor or diff opens.
 import { onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue';
 import { Compartment, EditorState, Transaction } from '@codemirror/state';
 import {
