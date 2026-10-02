@@ -221,3 +221,56 @@ describe('draft registry (R69)', () => {
     expect(s.comment.value).toBe('');
   });
 });
+
+describe('policy_data arrays: one element change per edited item', () => {
+  const pdBase: ConfigDoc = {
+    plugins: {
+      ssh: {
+        source: 's',
+        policies: ['p1'],
+        policy_data: { users: ['root', 'admin', 'ops'], n: 1 },
+      },
+    },
+  };
+  const USERS = '/plugins/ssh/policy_data/users';
+
+  it('counts, marks and reverts a single changed item of a whole-array write', () => {
+    const d = useOverlayDraft(rev(), ref(pdBase));
+    d.setValue(USERS, ['root', 'ADMIN', 'ops'], '/plugins/ssh/policy_data');
+    // The overlay holds the whole array…
+    expect(d.overlay.value).toEqual({
+      plugins: { ssh: { policy_data: { users: ['root', 'ADMIN', 'ops'] } } },
+    });
+    // …shown as one element change.
+    expect(d.changedPaths.value).toEqual([`${USERS}/1`]);
+    expect(d.pendingAt(`${USERS}/1`)).toBe(true);
+    expect(d.pendingAt(`${USERS}/0`)).toBe(false);
+    d.revertPointer(`${USERS}/1`);
+    expect(d.isDirty.value).toBe(false);
+  });
+
+  it('additions and removals are element changes; reverting one keeps the other', () => {
+    const d = useOverlayDraft(rev(), ref(pdBase));
+    d.setValue(USERS, ['admin', 'ops', 'dev'], '/plugins/ssh/policy_data');
+    expect(d.changedPaths.value).toEqual([`${USERS}/0`, `${USERS}/2`]);
+    // Undo the removal of "root" (old index 0): only the addition remains.
+    d.revertPointer(`${USERS}/0`);
+    expect(d.overlay.value).toEqual({
+      plugins: {
+        ssh: { policy_data: { users: ['root', 'admin', 'ops', 'dev'] } },
+      },
+    });
+    expect(d.changedPaths.value).toEqual([`${USERS}/3`]);
+    d.revertPointer(`${USERS}/3`);
+    expect(d.isDirty.value).toBe(false);
+  });
+
+  it('counts from the saved revision, and leaves other arrays whole', () => {
+    const saved = { plugins: { ssh: { policy_data: { users: ['x'] } } } };
+    const d = useOverlayDraft(rev(saved), ref(pdBase));
+    d.setValue(USERS, ['x', 'y'], '/plugins/ssh/policy_data');
+    expect(d.changedPaths.value).toEqual([`${USERS}/1`]);
+    d.set('/plugins/ssh/policies', ['p1', 'p2']);
+    expect(d.changedPaths.value).toContain('/plugins/ssh/policies');
+  });
+});

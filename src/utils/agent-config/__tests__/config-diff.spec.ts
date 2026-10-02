@@ -70,3 +70,57 @@ describe('changedLeafPaths', () => {
     ).toEqual(['/plugins/a/policies', '/plugins/b/source', '/verbosity']);
   });
 });
+
+describe('element-level array changes', () => {
+  it('pairs a replaced item, and keeps insertions / removals from shifting the rest', async () => {
+    const { arrayElementChanges } = await import('../config-diff');
+    expect(arrayElementChanges(['a', 'b', 'c'], ['a', 'B', 'c'])).toEqual([
+      {
+        kind: 'changed',
+        beforeIndex: 1,
+        afterIndex: 1,
+        before: 'b',
+        after: 'B',
+      },
+    ]);
+    expect(arrayElementChanges(['a', 'b', 'c'], ['x', 'a', 'b', 'c'])).toEqual([
+      { kind: 'added', afterIndex: 0, after: 'x' },
+    ]);
+    expect(arrayElementChanges(['a', 'b', 'c'], ['a', 'c'])).toEqual([
+      { kind: 'removed', beforeIndex: 1, afterIndex: 1, before: 'b' },
+    ]);
+    expect(arrayElementChanges([{ k: 1 }], [{ k: 1 }])).toEqual([]);
+    expect(arrayElementChanges([], [1, 2])).toHaveLength(2);
+  });
+
+  it('diffConfigs expands policy_data arrays only', () => {
+    const before = {
+      plugins: {
+        p: { policies: ['x'], policy_data: { users: ['a', 'b', 'c'] } },
+      },
+    };
+    const after = {
+      plugins: {
+        p: { policies: ['x', 'y'], policy_data: { users: ['a', 'B', 'c'] } },
+      },
+    };
+    expect(diffConfigs(before, after)).toEqual([
+      {
+        path: '/plugins/p/policies',
+        kind: 'changed',
+        before: ['x'],
+        after: ['x', 'y'],
+      },
+      {
+        path: '/plugins/p/policy_data/users/1',
+        kind: 'changed',
+        before: 'b',
+        after: 'B',
+      },
+    ]);
+    // The underlying documents are untouched; a caller can opt out.
+    expect(diffConfigs(before, after, () => false)[1].path).toBe(
+      '/plugins/p/policy_data/users',
+    );
+  });
+});

@@ -198,3 +198,22 @@ describe('SavePreviewPanel (U2.5)', () => {
     expect(w.emitted('save')?.[0]).toEqual(['why']);
   });
 });
+
+describe('review rows for policy_data arrays', () => {
+  it('shows a whole-array write as element-level rows', () => {
+    const w = mountPanel(clean([inst({})]), {
+      currentOverlay: {
+        plugins: { 'local-ssh': { policy_data: { users: ['a', 'b'] } } },
+      },
+      draftOverlay: {
+        plugins: { 'local-ssh': { policy_data: { users: ['a', 'B', 'c'] } } },
+      },
+    });
+    const paths = w
+      .findAll('[data-test="diff-rows"] tr[data-path]')
+      .map((r) => r.attributes('data-path'));
+    expect(paths).toContain('/plugins/local-ssh/policy_data/users/1');
+    expect(paths).toContain('/plugins/local-ssh/policy_data/users/2');
+    expect(paths).not.toContain('/plugins/local-ssh/policy_data/users');
+  });
+});

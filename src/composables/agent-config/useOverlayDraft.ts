@@ -31,7 +31,13 @@ import {
   setValue as setValueAt,
   type PatchOp,
 } from '@/utils/agent-config/policy-data-patch';
-import { changedLeafPaths } from '@/utils/agent-config/config-diff';
+import {
+  arrayElementChanges,
+  changedLeafPaths,
+  elementPointer,
+  isPolicyDataPointer,
+  type ElementChange,
+} from '@/utils/agent-config/config-diff';
 import {
   validateOverlayClientSide,
   type ClientIssue,
@@ -83,13 +89,50 @@ export function useOverlayDraft(
   const { baseRevision, original, overlay } = state;
 
   const isDirty = computed(() => !deepEqual(overlay.value, original.value));
-  /** Pointers of every changed leaf (arrays are one leaf): the "N pending changes". */
-  const changedPaths = computed(() =>
-    isDirty.value ? changedLeafPaths(original.value, overlay.value) : [],
-  );
   const effectiveDraft = computed(() =>
     mergePatch<ConfigDoc>(base.value ?? {}, overlay.value),
   );
+  /** The effective config of the saved overlay (what element changes are counted from). */
+  const effectiveOriginal = computed(() =>
+    mergePatch<ConfigDoc>(base.value ?? {}, original.value),
+  );
+  /**
+   * The changed leaves: pointers of the "N pending changes". Arrays are one leaf, except under
+   * a plugin's policy_data, where a changed array (written whole, RFC 7396) counts as its
+   * changed elements; `elements` maps each such element pointer to its change.
+   */
+  const changes = computed(() => {
+    const paths: string[] = [];
+    const elements = new Map<
+      string,
+      { arrayPtr: string; change: ElementChange }
+    >();
+    if (!isDirty.value) return { paths, elements };
+    for (const p of changedLeafPaths(original.value, overlay.value)) {
+      const before = isPolicyDataPointer(p)
+        ? getAt(effectiveOriginal.value, p)
+        : undefined;
+      const after = isPolicyDataPointer(p)
+        ? getAt(effectiveDraft.value, p)
+        : undefined;
+      const diff =
+        Array.isArray(before) && Array.isArray(after)
+          ? arrayElementChanges(before, after)
+          : [];
+      if (!diff.length) {
+        paths.push(p);
+        continue;
+      }
+      for (const change of diff) {
+        const ep = elementPointer(p, change);
+        if (elements.has(ep)) continue;
+        elements.set(ep, { arrayPtr: p, change });
+        paths.push(ep);
+      }
+    }
+    return { paths, elements };
+  });
+  const changedPaths = computed(() => changes.value.paths);
   /** The browser's client-only checks (R89). */
   const clientIssues = computed(() => validateOverlayClientSide(overlay.value));
   /** Client-only issues plus `extraIssues` (the API preview's), deduplicated. */
@@ -157,9 +200,32 @@ export function useOverlayDraft(
 
   /** Undo the draft at `ptr`: back to the saved overlay's value (or absence). */
   function revertPointer(ptr: string): void {
+    const element = changes.value.elements.get(ptr);
+    if (element) {
+      revertElement(element.arrayPtr, element.change);
+      return;
+    }
     overlay.value = hasAt(original.value, ptr)
       ? setAt(overlay.value, ptr, getAt(original.value, ptr))
       : unsetAt(overlay.value, ptr);
+  }
+
+  /** Undo one element of a changed array; the array is written whole (or reverted). */
+  function revertElement(arrayPtr: string, c: ElementChange): void {
+    const now = getAt(effectiveDraft.value, arrayPtr);
+    const saved = getAt(effectiveOriginal.value, arrayPtr);
+    if (!Array.isArray(now)) return;
+    const next = clone(now);
+    if (c.kind === 'changed') next[c.afterIndex] = clone(c.before);
+    else if (c.kind === 'added') next.splice(c.afterIndex, 1);
+    else next.splice(c.afterIndex, 0, clone(c.before));
+    if (deepEqual(next, saved)) {
+      overlay.value = hasAt(original.value, arrayPtr)
+        ? setAt(overlay.value, arrayPtr, getAt(original.value, arrayPtr))
+        : unsetAt(overlay.value, arrayPtr);
+    } else {
+      overlay.value = setAt(overlay.value, arrayPtr, next);
+    }
   }
 
   /** 409 handling: adopt `latest` as the base revision, keeping or discarding the draft. */
