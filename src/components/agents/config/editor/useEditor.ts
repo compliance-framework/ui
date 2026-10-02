@@ -10,7 +10,7 @@ import {
 } from '@/composables/agent-config/editorContext';
 import { deepEqual } from '@/utils/agent-config/merge-patch';
 import { getAt, hasAt, isPrefix } from '@/utils/agent-config/json-pointer';
-import { configKeyOverridable } from '@/utils/agent-config/glob';
+import type { FieldAccess } from '@/utils/agent-config/field-access';
 import { CHANGE_REASON_LABELS, labelFor } from '../constants';
 
 export interface Shield {
@@ -105,25 +105,9 @@ export function useEditor() {
     const first = getAt(bases[0], ptr);
     return bases.some((b) => !deepEqual(getAt(b, ptr), first));
   }
-  /**
-   * §6.2 config-key lock: every fresh apply_safe instance (with a reported remote_config)
-   * lacks a matching overridable_config_flags glob. Locked rows stay editable.
-   */
-  function configKeyLocked(plugin: string, key: string): boolean {
-    const safe = ctx.instances.value.filter(
-      (i) => !i.stale && i.mode === 'apply_safe' && i.remoteConfig,
-    );
-    return (
-      safe.length > 0 &&
-      safe.every(
-        (i) =>
-          !configKeyOverridable(
-            i.remoteConfig?.overridable_config_flags ?? [],
-            plugin,
-            key,
-          ),
-      )
-    );
+  /** R71 three-state access of the field at `ptr` (field-access.ts). */
+  function access(ptr: string): FieldAccess {
+    return ctx.accessAt(ptr);
   }
   function shield(ptr: string): Shield | null {
     return shieldFor(ctx.lastPreview.value, ptr);
@@ -141,7 +125,7 @@ export function useEditor() {
     effectiveValue,
     issuesAt,
     differsAcrossInstances,
-    configKeyLocked,
+    access,
     shield,
     trustHint,
   };

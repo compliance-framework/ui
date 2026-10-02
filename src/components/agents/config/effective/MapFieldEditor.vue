@@ -14,22 +14,22 @@
 
 <script setup lang="ts">
 // Inline editor of a plugin's `config` or `labels` map (R69): add, change, reset to the file
-// value or remove keys. Values are strings (R27). Lock icons mark config keys no fresh
-// apply_safe instance may override (overridable_config_flags).
+// value or remove keys. Values are strings (R27). Each row carries its R71 access: a key no
+// reporting instance would apply (e.g. no overridable_config_flags entry anywhere) is
+// read-only with a lock, one only some would apply gets a shield.
 import { computed } from 'vue';
 import { pointer } from '@/utils/agent-config/json-pointer';
 import { isPlainObject } from '@/utils/agent-config/merge-patch';
 import { provenanceOf } from '@/utils/agent-config/provenance';
 import { REDACTED_MASK } from '@/types/agent-config';
+import { accessTooltip } from '@/utils/agent-config/field-access';
 import KeyValueEditor, { type KeyValueRow } from '../editor/KeyValueEditor.vue';
 import FieldIssues from '../editor/FieldIssues.vue';
 import { useEditor } from '../editor/useEditor';
-import { CONFIG_KEY_LOCK_TOOLTIP } from '../constants';
 
 const props = defineProps<{ plugin: string; field: 'config' | 'labels' }>();
 
-const { draft, ctx, baseValue, overlayValue, configKeyLocked, shield } =
-  useEditor();
+const { draft, ctx, baseValue, overlayValue, access, shield } = useEditor();
 
 function p(key?: string): string {
   return key === undefined
@@ -50,8 +50,8 @@ const rows = computed<KeyValueRow[]>(() => {
       const ptr = p(k);
       const bv = isPlainObject(base) ? base[k] : undefined;
       const oVal = isPlainObject(ov) ? ov[k] : undefined;
-      const locked =
-        props.field === 'config' && configKeyLocked(props.plugin, k);
+      const acc = access(ptr);
+      const locked = acc.state === 'readonly';
       return {
         key: k,
         value: typeof oVal === 'string' ? oVal : '',
@@ -68,7 +68,8 @@ const rows = computed<KeyValueRow[]>(() => {
         ),
         removed: isPlainObject(ov) && oVal === null,
         locked,
-        lockTooltip: locked ? CONFIG_KEY_LOCK_TOOLTIP : undefined,
+        lockTooltip: locked ? accessTooltip(acc) : undefined,
+        restricted: acc.state === 'restricted' ? accessTooltip(acc) : undefined,
         shield: shield(ptr),
       };
     });

@@ -20,6 +20,15 @@
         data-test="kv-lock"
       />
       <i
+        v-if="row.restricted && !row.shield"
+        role="img"
+        tabindex="0"
+        v-tooltip.top="row.restricted"
+        class="pi pi-shield text-xs text-amber-600 dark:text-amber-400"
+        :aria-label="row.restricted"
+        data-test="kv-restricted"
+      />
+      <i
         v-if="row.shield"
         role="img"
         tabindex="0"
@@ -45,7 +54,7 @@
         :placeholder="
           row.removed ? 'removed by overlay' : (row.placeholder ?? '')
         "
-        :disabled="disabled"
+        :disabled="disabled || row.locked"
         size="small"
         class="min-w-40 flex-1"
         :aria-label="`${label} ${row.key}`"
@@ -60,7 +69,7 @@
         v-tooltip.top="'Reset to file value'"
         type="button"
         class="text-xs text-sky-700 disabled:opacity-40 dark:text-sky-300"
-        :disabled="disabled"
+        :disabled="disabled || row.locked"
         :aria-label="`Reset ${row.key}`"
         data-test="kv-reset"
         @click="$emit('reset', row.key)"
@@ -71,7 +80,7 @@
         v-if="!row.removed"
         type="button"
         class="text-xs text-red-600 disabled:opacity-40 dark:text-red-400"
-        :disabled="disabled"
+        :disabled="disabled || row.locked"
         :aria-label="`Delete ${row.key}`"
         data-test="kv-delete"
         @click="$emit('delete', row.key)"
@@ -132,8 +141,11 @@ export interface KeyValueRow {
   placeholder?: string;
   provenance: Provenance;
   removed?: boolean;
+  /** R71 read-only: no reporting instance would apply a change to this key. */
   locked?: boolean;
   lockTooltip?: string;
+  /** R71 restricted: why some reporting instances would not apply it (shield tooltip). */
+  restricted?: string;
   shield?: Shield | null;
 }
 

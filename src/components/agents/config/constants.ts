@@ -31,9 +31,6 @@ export const NOT_REPORTED_TEXT =
 export const LOCKED_LEGEND =
   '`api`, `daemon` and `remote_config` are set locally on the agent host and cannot be changed from CCF.';
 
-export const CONFIG_KEY_LOCK_TOOLTIP =
-  "Not in this agent's `overridable_config_flags`; requires `apply_all`";
-
 /** R57: overlays are readable by every agent:read holder. */
 export const OVERLAY_SECRETS_NOTICE =
   'Overlays are stored as written and are readable by everyone who can view agents. Do not type secrets here: use a ${env:NAME} placeholder in a plugin config value, which the agent resolves on its own host.';

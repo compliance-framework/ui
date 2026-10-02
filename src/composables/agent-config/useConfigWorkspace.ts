@@ -22,7 +22,11 @@ import type {
 import { usePermissions } from '@/composables/usePermissions';
 import { useUserStore } from '@/stores/auth';
 import { hasBlocking, type ClientIssue } from '@/utils/agent-config/validation';
-import { isForbiddenPointer } from '@/utils/agent-config/field-access';
+import {
+  fieldAccess,
+  type AccessContext,
+  type FieldAccess,
+} from '@/utils/agent-config/field-access';
 import type { AgentConfigApi } from './api-types';
 import type { AgentConfigState } from './useAgentConfig';
 import { agentDraftState, syncDraftState } from './draftRegistry';
@@ -167,6 +171,15 @@ export function useConfigWorkspace(
     () => draft.issues.value.filter((i) => i.blocking).length,
   );
 
+  // ---- R71: per-field access over the reporting instances (field-access.ts) ----
+  const accessContext = computed<AccessContext>(() => ({
+    instances: state.instances.value,
+  }));
+  /** Whether the reporting instances would apply a change at `ptr` (three states). */
+  function accessAt(ptr: string): FieldAccess {
+    return fieldAccess(ptr, accessContext.value);
+  }
+
   const config = computed(() => state.config.value ?? EMPTY_REVISION);
   const ctx: EditorContext = {
     agentId: agentIdRef,
@@ -177,11 +190,17 @@ export function useConfigWorkspace(
     placeholderBase,
     bases,
     lastPreview: preview.lastPreview,
+    accessAt,
   };
 
-  /** Whether this user may edit the field at `ptr` (R40); forbidden keys never. */
+  /**
+   * Whether this user may edit the field at `ptr` (R40): never a forbidden key, nor a field
+   * no reporting instance would apply (R71 read-only).
+   */
   function canEditPointer(ptr: string): boolean {
-    return canConfigure.value && !isForbiddenPointer(ptr);
+    if (!canConfigure.value) return false;
+    const state = accessAt(ptr).state;
+    return state !== 'forbidden' && state !== 'readonly';
   }
 
   /** '' = the user may save this draft; else why not (R40). */
@@ -241,6 +260,7 @@ export function useConfigWorkspace(
     clientBlocked,
     blockingCount,
     ctx,
+    accessAt,
     canEditPointer,
     saveDisabledReason,
     reviewDisabledReason,

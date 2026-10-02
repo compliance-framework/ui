@@ -9,6 +9,7 @@ import type {
   ConfigDoc,
   ConfigPreview,
 } from '@/types/agent-config';
+import type { FieldAccess } from '@/utils/agent-config/field-access';
 import type { OverlayDraft } from './useOverlayDraft';
 
 export interface EditorContext {
@@ -22,6 +23,8 @@ export interface EditorContext {
   /** All known bases (reported instances with a detail). */
   bases: ComputedRef<ConfigDoc[]>;
   lastPreview: Ref<ConfigPreview | null>;
+  /** R71 three-state access of the field at a pointer (utils/agent-config/field-access). */
+  accessAt: (ptr: string) => FieldAccess;
 }
 
 export const OVERLAY_DRAFT_KEY: InjectionKey<OverlayDraft> =

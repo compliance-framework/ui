@@ -6,6 +6,7 @@ import type { AgentConfigApi } from '@/composables/agent-config/useAgentConfigAp
 import { resetAgentDrafts } from '@/composables/agent-config/draftRegistry';
 import type { ConfigWorkspace } from '@/composables/agent-config/useConfigWorkspace';
 import type { Agent } from '@/types/agents';
+import { instancesMixed } from '@/composables/agent-config/__tests__/fixtures';
 import { ADMIN, READER, fakeApi, globalWith, piniaWith } from './helpers';
 
 vi.mock('@/components/code-editor', () => import('./codeEditorMock'));
@@ -197,33 +198,99 @@ describe('field states (R71)', () => {
     api.current = fakeApi();
   });
 
-  it('forbidden fields are locked without a pencil; restricted fields name the instances', async () => {
+  it('forbidden fields are locked without a pencil', async () => {
     const { wrapper } = await mountTab();
     const locked = wrapper.find('[data-test="locked-keys"]');
     expect(locked.findAll('[data-state="forbidden"]').length).toBe(8);
     expect(locked.find('[data-test^="edit-"]').exists()).toBe(false);
+    wrapper.unmount();
+  });
 
-    // `password` is not in any apply_safe instance's overridable_config_flags.
+  it('none apply: read-only with the reasons; some apply: pencil + shield', async () => {
+    // Fixture fleet (fresh, reported): ip-a, ip-b, ip-f, ip-g in apply_safe with
+    // `local-ssh:port` / `timeout` flags, ip-c in report mode. ip-d (stale) and ip-e (never
+    // reported) are not counted.
+    const { wrapper } = await mountTab();
     const password = wrapper.find(sel('/plugins/local-ssh/config/password'));
-    expect(password.attributes('data-state')).toBe('restricted');
-    const shield = password.find('[data-test="field-restricted"]');
-    expect(shield.attributes('aria-label')).toContain('ip-a');
-    expect(shield.attributes('aria-label')).toContain(
-      'overridable_config_flags',
-    );
-    // `port` is overridable everywhere: plain editable.
+    expect(password.attributes('data-state')).toBe('readonly');
     expect(
-      wrapper
-        .find(sel('/plugins/local-ssh/config/port'))
-        .attributes('data-state'),
-    ).toBe('editable');
-    expect(
-      wrapper
-        .find(sel('/plugins/local-ssh/config/password'))
+      password
         .find('[data-test="edit-/plugins/local-ssh/config/password"]')
         .exists(),
+    ).toBe(false);
+    expect(password.find('[data-test="field-restricted"]').exists()).toBe(
+      false,
+    );
+    const why = password
+      .find('[data-test="field-readonly"]')
+      .attributes('aria-label');
+    expect(why).toContain('no reporting instance would apply');
+    expect(why).toContain('overridable_config_flags');
+    expect(why).toContain('ip-a, ip-b, ip-f, ip-g');
+    expect(why).toContain('report-only mode');
+    expect(why).not.toContain('ip-d');
+
+    // `port` is overridable on every apply_safe instance; only ip-c (report) won't apply it.
+    const port = wrapper.find(sel('/plugins/local-ssh/config/port'));
+    expect(port.attributes('data-state')).toBe('restricted');
+    expect(
+      port.find('[data-test="edit-/plugins/local-ssh/config/port"]').exists(),
+    ).toBe(true);
+    const shield = port
+      .find('[data-test="field-restricted"]')
+      .attributes('aria-label');
+    expect(shield).toContain('1 of 5');
+    expect(shield).toContain('ip-c');
+
+    // The config map editor shows the read-only key locked and disabled.
+    const editor = await openEditor(wrapper, '/plugins/local-ssh/config');
+    const row = editor.find('[data-row="password"]');
+    expect(row.find('[data-test="kv-lock"]').exists()).toBe(true);
+    expect(row.find('input').attributes('disabled')).toBeDefined();
+    expect(
+      editor
+        .find('[data-row="port"] [data-test="kv-restricted"]')
+        .attributes('aria-label'),
+    ).toContain('ip-c');
+    wrapper.unmount();
+  });
+
+  it('all apply: pencil only, no shield', async () => {
+    api.current = fakeApi({
+      listInstances: vi.fn().mockResolvedValue({
+        ...instancesMixed,
+        items: instancesMixed.items.filter((i) => i.mode !== 'report'),
+      }),
+    });
+    const { wrapper } = await mountTab();
+    const port = wrapper.find(sel('/plugins/local-ssh/config/port'));
+    expect(port.attributes('data-state')).toBe('editable');
+    expect(port.find('[data-test="field-restricted"]').exists()).toBe(false);
+    expect(
+      port.find('[data-test="edit-/plugins/local-ssh/config/port"]').exists(),
     ).toBe(true);
     wrapper.unmount();
+  });
+
+  it('no reporting instance yet: editable without shields', async () => {
+    api.current = fakeApi({
+      listInstances: vi.fn().mockResolvedValue({
+        items: [],
+        meta: instancesMixed.meta,
+      }),
+    });
+    const tab = mount(AgentConfigTab, {
+      props: { agent },
+      global: globalWith(piniaWith(ADMIN)),
+    });
+    await flushPromises();
+    const ws = (tab.vm as unknown as { ws: ConfigWorkspace }).ws;
+    expect(ws.accessAt('/plugins/local-ssh/config/password').state).toBe(
+      'editable',
+    );
+    expect(ws.canEditPointer('/plugins/local-ssh/config/password')).toBe(true);
+    expect(ws.canEditPointer('/api/url')).toBe(false);
+    tab.unmount();
   });
 
   it('a reader gets no pencils and no plugin actions', async () => {
@@ -237,6 +304,9 @@ describe('field states (R71)', () => {
     ).toBe(false);
     expect(wrapper.find('[data-test="remove-plugin"]').exists()).toBe(false);
     expect(wrapper.find('[data-test="add-plugin"]').exists()).toBe(false);
+    // Access hints describe what an edit would do: hidden from readers.
+    expect(wrapper.find('[data-test="field-restricted"]').exists()).toBe(false);
+    expect(wrapper.find('[data-test="field-readonly"]').exists()).toBe(false);
     wrapper.unmount();
   });
 });

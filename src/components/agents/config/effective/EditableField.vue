@@ -25,13 +25,22 @@
         data-test="field-forbidden"
       />
       <i
-        v-else-if="access.state === 'restricted' && ws"
-        v-tooltip.top="restrictionText"
+        v-else-if="showAccess && access.state === 'restricted'"
+        v-tooltip.top="accessText"
         role="img"
         tabindex="0"
         class="pi pi-shield text-xs text-amber-600 dark:text-amber-400"
-        :aria-label="restrictionText"
+        :aria-label="accessText"
         data-test="field-restricted"
+      />
+      <i
+        v-else-if="showAccess && access.state === 'readonly'"
+        v-tooltip.top="accessText"
+        role="img"
+        tabindex="0"
+        class="pi pi-info-circle text-xs text-gray-400 dark:text-slate-500"
+        :aria-label="accessText"
+        data-test="field-readonly"
       />
       <button
         v-if="editable"
@@ -90,16 +99,22 @@
 </template>
 
 <script setup lang="ts">
-// One field of the Effective view with its R71 state (✏️ editable, 🛡 restricted, 🔒
-// forbidden) and, when the workspace is provided and the user may edit it, an inline editor
-// that writes to the shared pending-changes draft (R69).
+// One field of the Effective view with its R71 state and, when the workspace is provided and
+// the user may edit it, an inline editor that writes to the shared pending-changes draft
+// (R69). States (utils/agent-config/field-access.ts), over the reporting instances:
+//   editable   — every instance would apply a change: pencil only;
+//   restricted — some would not: pencil + shield naming them and why;
+//   readonly   — none would: no pencil, an info icon explains why;
+//   forbidden  — locked keys: lock icon, never editable.
+// Without agent:configure every field is read-only and the access hints are hidden (they
+// describe what an edit would do).
 import { computed, ref } from 'vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
 import { useWorkspace } from '@/composables/agent-config/useConfigWorkspace';
 import {
   FORBIDDEN_TOOLTIP,
+  accessTooltip,
   fieldAccess,
-  restrictionTooltip,
 } from '@/utils/agent-config/field-access';
 import { getAt } from '@/utils/agent-config/json-pointer';
 import InlineScalarEditor from './InlineScalarEditor.vue';
@@ -121,18 +136,17 @@ const props = withDefaults(
 const ws = useWorkspace();
 const open = ref(false);
 
+// Read-only contexts (no workspace) only know the locked keys.
 const access = computed(() =>
-  fieldAccess(props.ptr, ws?.state.instances.value ?? []),
+  ws ? ws.accessAt(props.ptr) : fieldAccess(props.ptr, []),
 );
-const restrictionText = computed(() =>
-  restrictionTooltip(access.value.restrictions),
+const accessText = computed(() => accessTooltip(access.value));
+/** Shields / read-only hints are for users who may edit (agent:configure). */
+const showAccess = computed(
+  () => !!ws && ws.ready.value && ws.canConfigure.value,
 );
 const editable = computed(
-  () =>
-    !!ws &&
-    ws.ready.value &&
-    access.value.state !== 'forbidden' &&
-    ws.canEditPointer(props.ptr),
+  () => !!ws && ws.ready.value && ws.canEditPointer(props.ptr),
 );
 const pending = computed(() => !!ws && ws.draft.pendingAt(props.ptr));
 
