@@ -61,9 +61,8 @@
 <script setup lang="ts">
 // Inline editor of a plugin's `policy_data` (R69): a structured view (PolicyDataTree) by
 // default, and the raw JSON editor for power users. Both edit the same target, the effective
-// policy_data, and write it through `commit`: objects MERGE under RFC 7396, so the draft gets
-// the full target plus nulls for file keys the user removed (replacingPatch); arrays replace
-// wholesale; a masked report value is never copied into the overlay (R25). The raw editor
+// policy_data, and write it through `commit`, which records only the real changes (a minimal
+// merge patch; a masked report value is never copied into the overlay, R25). The raw editor
 // writes on valid JSON only, and follows external changes (structured edits, undo, raw YAML).
 import { computed, ref, watch } from 'vue';
 import SelectButton from '@/volt/SelectButton.vue';
@@ -75,13 +74,13 @@ import {
   mergePatch,
   type PlainObject,
 } from '@/utils/agent-config/merge-patch';
-import { replacingPatch } from '@/utils/agent-config/overlay-ops';
+import { diffOps } from '@/utils/agent-config/policy-data-patch';
 import FieldIssues from '../editor/FieldIssues.vue';
 import { useEditor } from '../editor/useEditor';
 import PolicyDataTree from './PolicyDataTree.vue';
 
 const props = defineProps<{ plugin: string }>();
-const { draft, has, baseValue, effectiveValue } = useEditor();
+const { draft, has, effectiveValue } = useEditor();
 
 const ptr = computed(() => pointer('plugins', props.plugin, 'policy_data'));
 const error = ref('');
@@ -122,11 +121,13 @@ watch(
   },
 );
 
-/** Writes `target` (the whole policy_data) to the draft. */
+/**
+ * Records only what changes from the current effective policy_data to `target`, at the
+ * pointers that change (policy-data-patch.ts): nothing for unchanged keys or untouched masked
+ * values, null for a removed file key, a changed array whole.
+ */
 function commit(target: PlainObject) {
-  const base = baseValue(ptr.value);
-  if (!has(ptr.value) && deepEqual(target, base ?? {})) return;
-  draft.set(ptr.value, replacingPatch(base, target));
+  draft.applyOps(diffOps(ptr.value, current.value, target), ptr.value);
 }
 
 function onInput(value: string) {

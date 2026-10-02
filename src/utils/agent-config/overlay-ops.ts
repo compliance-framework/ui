@@ -12,7 +12,6 @@ import {
   type PlainObject,
 } from './merge-patch';
 import { hasAt, parsePointer } from './json-pointer';
-import { REDACTED_MASK } from '@/types/agent-config';
 
 /**
  * Sets `value` at `ptr`. A `null` or non-object intermediate is replaced with `{}`, so an
@@ -89,34 +88,4 @@ export function makeAbsent<T extends object>(
   ptr: string,
 ): T {
   return hasAt(base, ptr) ? nullAt(overlay, ptr) : unsetAt(overlay, ptr);
-}
-
-/**
- * A merge patch that turns `source` into exactly `target` while keeping every target key
- * explicit (no normalisation against the base, which differs between instances): target keys
- * are written in full (nested objects recursively) and keys present only in `source` become
- * `null`. Used for whole-object editors such as `policy_data` (objects MERGE
- * under RFC 7396, so a key removed in the editor must be nulled).
- *
- * The source is a REDACTED report value: a leaf that is the mask ("••••") in both source and
- * target is omitted, so an untouched secret is never copied into the overlay (the host keeps
- * its own value) and the mask is never sent back (R25).
- */
-export function replacingPatch(source: unknown, target: unknown): unknown {
-  if (!isPlainObject(target)) return clone(target);
-  const src: PlainObject = isPlainObject(source) ? source : {};
-  const out: PlainObject = {};
-  for (const [k, v] of Object.entries(target)) {
-    if (v === REDACTED_MASK && getOwn(src, k) === REDACTED_MASK) continue;
-    const sv = getOwn(src, k);
-    setOwn(
-      out,
-      k,
-      isPlainObject(v) && isPlainObject(sv) ? replacingPatch(sv, v) : clone(v),
-    );
-  }
-  for (const k of Object.keys(src)) {
-    if (!Object.prototype.hasOwnProperty.call(target, k)) setOwn(out, k, null);
-  }
-  return out;
 }

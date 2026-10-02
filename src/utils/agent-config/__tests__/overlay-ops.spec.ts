@@ -53,40 +53,6 @@ describe('overlay-ops', () => {
   });
 });
 
-describe('replacingPatch', () => {
-  it('writes target keys in full and nulls keys only in the source', async () => {
-    const { replacingPatch } = await import('../overlay-ops');
-    const { mergePatch } = await import('../merge-patch');
-    const source = { a: 1, b: { c: 2, d: 3 }, e: [1] };
-    const target = { a: 1, b: { c: 5 }, f: 'x' };
-    const patch = replacingPatch(source, target);
-    expect(patch).toEqual({ a: 1, b: { c: 5, d: null }, f: 'x', e: null });
-    expect(mergePatch(source, patch)).toEqual(target);
-  });
-});
-
-describe('replacingPatch and masked values (R25)', () => {
-  it('never copies an untouched mask from the redacted source into the patch', async () => {
-    const { replacingPatch } = await import('../overlay-ops');
-    const source = {
-      api_key: '••••',
-      nested: { token: '••••', n: 1 },
-      keep: 'a',
-    };
-    const target = {
-      api_key: '••••',
-      nested: { token: '••••', n: 2 },
-      keep: 'b',
-    };
-    expect(replacingPatch(source, target)).toEqual({
-      nested: { n: 2 },
-      keep: 'b',
-    });
-    // A mask the user typed where the source had something else is kept (validation blocks it).
-    expect(replacingPatch({ a: 'x' }, { a: '••••' })).toEqual({ a: '••••' });
-  });
-});
-
 describe('"__proto__" keys are data, never prototypes', () => {
   it('setAt does not pollute Object.prototype and keeps the key', async () => {
     const { setAt } = await import('../overlay-ops');

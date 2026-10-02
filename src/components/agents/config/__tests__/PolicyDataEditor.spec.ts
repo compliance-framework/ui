@@ -131,19 +131,13 @@ describe('structured policy_data editor', () => {
     wrapper.unmount();
   });
 
-  it('edits a scalar: the full target is written, keys verbatim, the mask omitted', async () => {
+  it('edits a scalar: only that key is written (minimal patch)', async () => {
     const { wrapper, ws } = await mountEditor();
     await editScalar(wrapper, 'MaxAuthTries', '6');
-    const patch = pd(ws)!;
-    expect(patch.MaxAuthTries).toBe(6);
-    expect(patch.nested).toEqual(POLICY_DATA.nested);
-    expect(patch['allowed-users']).toEqual(['root', 'admin']);
-    // An untouched masked secret is never copied (the host keeps its value).
-    expect('api_token' in patch).toBe(false);
-    expect(Object.keys(patch)).toEqual(
-      expect.arrayContaining(['MaxAuthTries', 'allowed-users', 'nested']),
-    );
-    expect(Object.keys(patch.nested as object)).toEqual(['Deep_Key']);
+    expect(pd(ws)).toEqual({ MaxAuthTries: 6 });
+    expect(ws.draft.changedPaths.value).toEqual([
+      '/plugins/local-ssh/policy_data/MaxAuthTries',
+    ]);
     wrapper.unmount();
   });
 

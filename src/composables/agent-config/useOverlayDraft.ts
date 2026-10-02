@@ -25,6 +25,12 @@ import type {
 import { clone, deepEqual, mergePatch } from '@/utils/agent-config/merge-patch';
 import { nullAt, setAt, unsetAt } from '@/utils/agent-config/overlay-ops';
 import { getAt, hasAt, isPrefix } from '@/utils/agent-config/json-pointer';
+import {
+  applyOps as applyPatchOps,
+  removeValue as removeValueAt,
+  setValue as setValueAt,
+  type PatchOp,
+} from '@/utils/agent-config/policy-data-patch';
 import { changedLeafPaths } from '@/utils/agent-config/config-diff';
 import {
   validateOverlayClientSide,
@@ -128,6 +134,27 @@ export function useOverlayDraft(
       ? nullAt(overlay.value, ptr)
       : unsetAt(overlay.value, ptr);
   }
+  /** Every known host file (the instance bases and the placeholder base). */
+  function knownBases(): ConfigDoc[] {
+    const all = [...(options.bases?.value ?? [])];
+    if (base.value && !all.includes(base.value)) all.push(base.value);
+    return all;
+  }
+  /**
+   * Minimal edits of a whole-document field such as policy_data (policy-data-patch.ts): set
+   * the effective value at `ptr` (under `scope`), dropping the entry when it is the file
+   * value again; remove a key (null where a file has it); or apply a list of such edits.
+   */
+  function setValue(ptr: string, v: unknown, scope: string): void {
+    overlay.value = setValueAt(overlay.value, ptr, v, knownBases(), scope);
+  }
+  function removeValue(ptr: string): void {
+    overlay.value = removeValueAt(overlay.value, ptr, knownBases());
+  }
+  function applyOps(ops: readonly PatchOp[], scope: string): void {
+    overlay.value = applyPatchOps(overlay.value, ops, knownBases(), scope);
+  }
+
   /** Undo the draft at `ptr`: back to the saved overlay's value (or absence). */
   function revertPointer(ptr: string): void {
     overlay.value = hasAt(original.value, ptr)
@@ -169,6 +196,9 @@ export function useOverlayDraft(
     unset,
     remove,
     makeAbsent,
+    setValue,
+    removeValue,
+    applyOps,
     revertPointer,
     rebase,
     replaceAll,
