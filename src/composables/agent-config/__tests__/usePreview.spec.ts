@@ -8,7 +8,6 @@ const result = {
   desiredRevision: 7,
   standalone: true,
   overlayErrors: [],
-  policyErrors: [],
   instances: [],
 };
 

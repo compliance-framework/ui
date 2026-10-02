@@ -73,11 +73,11 @@ describe('AgentConfigEffectiveView', () => {
     const locked = wrapper.find('[data-test="locked-keys"]');
     expect(locked.text()).toContain('api.auth.client_id');
     expect(locked.text()).toContain('cid');
-    expect(locked.findAll('[data-test="lock-icon"]').length).toBe(9);
+    expect(locked.findAll('[data-test="lock-icon"]').length).toBe(8);
     expect(
       locked.find('[data-test="lock-icon"]').attributes('aria-label'),
     ).toBe('Set on the agent host; can never be changed remotely');
-    expect(locked.findAll('[data-state="forbidden"]').length).toBe(9);
+    expect(locked.findAll('[data-state="forbidden"]').length).toBe(8);
     // No pencil on a forbidden field.
     expect(locked.find('[data-test^="edit-"]').exists()).toBe(false);
     expect(wrapper.html()).not.toContain('SUPER-SECRET');

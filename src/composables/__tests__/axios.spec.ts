@@ -130,7 +130,7 @@ describe('agent config stop paths', () => {
               overridable_config_flags: [],
             },
             base: { agent_evidence: { emit_on_run_completion: true } },
-            'policy-errors': [],
+            'report-stale': false,
           },
         ],
         meta: { 'desired-revision': 7, counts: { 'in-sync': 1 } },
@@ -145,7 +145,7 @@ describe('agent config stop paths', () => {
             overridable_config_flags: [],
           },
           base: { agent_evidence: { emit_on_run_completion: true } },
-          policyErrors: [],
+          reportStale: false,
         },
       ],
       meta: { desiredRevision: 7, counts: { inSync: 1 } },
@@ -164,7 +164,7 @@ describe('agent config stop paths', () => {
           instances: [
             {
               'instance-id': 'i',
-              effective: { policy_bundles: { my_b: {} } },
+              effective: { agent_evidence: { emit_on_run_completion: true } },
               'diff-vs-current': [
                 { path: '/p', op: 'replace', from: { a_b: 1 }, to: { c_d: 2 } },
               ],
@@ -176,7 +176,7 @@ describe('agent config stop paths', () => {
     });
     expect(response.data.data.instances[0]).toEqual({
       instanceId: 'i',
-      effective: { policy_bundles: { my_b: {} } },
+      effective: { agent_evidence: { emit_on_run_completion: true } },
       diffVsCurrent: [
         { path: '/p', op: 'replace', from: { a_b: 1 }, to: { c_d: 2 } },
       ],

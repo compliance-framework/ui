@@ -77,10 +77,6 @@ const rows = computed(() => {
       key: 'remote_config.allow_local_sources',
       value: show(rc.allow_local_sources, 'false'),
     },
-    {
-      key: 'remote_config.allow_inline_policies',
-      value: show(rc.allow_inline_policies, 'true'),
-    },
   ];
 });
 </script>

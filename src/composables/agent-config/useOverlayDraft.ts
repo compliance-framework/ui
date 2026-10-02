@@ -1,8 +1,8 @@
 // The pending-changes draft (R69): ONE overlay document per agent, edited from the Effective
-// view (inline pencils), the Policies view and the raw YAML dialog, and saved as one revision.
-// The state lives in the per-agent registry (./draftRegistry) so it survives navigation between
-// the Configuration tab and the Policies view; this composable adds the operations and the
-// derived views (effective draft, changed paths, issues) for one component tree.
+// view (inline pencils) and the raw YAML dialog, and saved as one revision. The state lives in
+// the per-agent registry (./draftRegistry) so it survives the Configuration tab being remounted;
+// this composable adds the operations and the derived views (effective draft, changed paths,
+// issues) for one component tree.
 //
 // Draft semantics: clearing a field omits the key (the file value applies again); there is no
 // automatic normalisation of overlay values equal to the base, because bases differ between
@@ -25,11 +25,10 @@ import type {
 import { clone, deepEqual, mergePatch } from '@/utils/agent-config/merge-patch';
 import { nullAt, setAt, unsetAt } from '@/utils/agent-config/overlay-ops';
 import { getAt, hasAt, isPrefix } from '@/utils/agent-config/json-pointer';
-import { changedLeafPaths } from '@/utils/agent-config/policy-files';
+import { changedLeafPaths } from '@/utils/agent-config/config-diff';
 import {
   validateOverlayClientSide,
   type ClientIssue,
-  type ValidationContext,
 } from '@/utils/agent-config/validation';
 
 /** The shared, per-agent draft state. `baseRevision` -1 = not initialised yet. */
@@ -63,12 +62,6 @@ export interface OverlayDraftOptions {
   /** Every known instance base (removals null a key any of them defines). */
   bases?: Ref<ConfigDoc[]>;
   /**
-   * The bases a save is validated against (API ValidationBases); defaults to `bases`. Empty
-   * means standalone (overlay-only checks), as on the API.
-   */
-  validationBases?: Ref<ConfigDoc[]>;
-  validationContext?: Ref<ValidationContext>;
-  /**
    * Issues found outside the browser (R89: the API preview of this draft), read lazily inside
    * `issues` so they may depend on this draft.
    */
@@ -92,15 +85,7 @@ export function useOverlayDraft(
     mergePatch<ConfigDoc>(base.value ?? {}, overlay.value),
   );
   /** The browser's client-only checks (R89). */
-  const clientIssues = computed(() =>
-    validateOverlayClientSide(
-      overlay.value,
-      options.validationBases?.value ??
-        options.bases?.value ??
-        (base.value ? [base.value] : []),
-      options.validationContext?.value ?? {},
-    ),
-  );
+  const clientIssues = computed(() => validateOverlayClientSide(overlay.value));
   /** Client-only issues plus `extraIssues` (the API preview's), deduplicated. */
   const issues = computed(() => {
     const issues = [...clientIssues.value];

@@ -1,11 +1,7 @@
 <template>
   <div class="space-y-4" data-test="save-preview">
     <!-- Top-level errors / warnings -->
-    <section
-      v-if="topErrors.length || policyProblems.length"
-      class="space-y-1"
-      data-test="top-errors"
-    >
+    <section v-if="topErrors.length" class="space-y-1" data-test="top-errors">
       <h4 class="text-sm font-semibold text-gray-900 dark:text-slate-200">
         Problems
       </h4>
@@ -19,24 +15,6 @@
           <code class="font-mono text-xs">{{ e.path || '/' }}</code>
           <span v-if="e.code" class="ml-1 text-xs text-gray-500">
             <CodeLabel :labels="FIELD_ERROR_CODE_LABELS" :code="e.code" />
-          </span>
-          — {{ e.message }}
-        </li>
-        <li
-          v-for="(e, i) in policyProblems"
-          :key="`p${i}`"
-          :class="
-            e.severity === 'error'
-              ? 'text-red-700 dark:text-red-300'
-              : 'text-amber-700 dark:text-amber-300'
-          "
-          :data-test="
-            e.severity === 'error' ? 'policy-error' : 'policy-warning'
-          "
-        >
-          <code class="font-mono text-xs">{{ policyErrorLocation(e) }}</code>
-          <span v-if="e.code" class="ml-1 text-xs" data-test="policy-code">
-            <CodeLabel :labels="POLICY_ERROR_CODE_LABELS" :code="e.code" />
           </span>
           — {{ e.message }}
         </li>
@@ -303,19 +281,16 @@ import type {
   FieldError,
   InstancePreview,
   OverlayDoc,
-  PolicyError,
 } from '@/types/agent-config';
 import { mergePatch } from '@/utils/agent-config/merge-patch';
 import { diffConfigs, type DiffEntry } from '@/utils/agent-config/config-diff';
 import { toYaml } from '@/utils/agent-config/yaml';
-import { policyErrorLocation } from '@/utils/agent-config/display';
 import { LIMITS } from '@/utils/agent-config/validation';
 import ConfigPill from '../ConfigPill.vue';
 import CodeLabel from '../CodeLabel.vue';
 import {
   CHANGE_REASON_LABELS,
   FIELD_ERROR_CODE_LABELS,
-  POLICY_ERROR_CODE_LABELS,
   WILL_APPLY_REASON_LABELS,
 } from '../constants';
 import DiffRows from './DiffRows.vue';
@@ -356,21 +331,6 @@ const topErrors = computed<FieldError[]>(() => [
   ...props.preview.overlayErrors,
   ...(props.saveErrors?.overlay ?? []),
 ]);
-const policyProblems = computed<PolicyError[]>(() => {
-  const seen = new Set<string>();
-  const out: PolicyError[] = [];
-  for (const e of [
-    ...props.preview.policyErrors,
-    ...(props.saveErrors?.['policy-errors'] ?? []),
-  ]) {
-    const k = `${e.bundle}|${e.path}|${e.row}|${e.col}|${e.message}`;
-    if (!seen.has(k)) {
-      seen.add(k);
-      out.push(e);
-    }
-  }
-  return out;
-});
 const legacyValidation = computed(() =>
   props.preview.instances.some((i) => i.validated === undefined),
 );

@@ -12,7 +12,7 @@ import {
   instancesMixed,
 } from '@/composables/agent-config/__tests__/fixtures';
 import type { Agent } from '@/types/agents';
-import { ADMIN, POLICY_AUTHOR, READER, globalWith, piniaWith } from './helpers';
+import { ADMIN, READER, globalWith, piniaWith } from './helpers';
 
 const api = vi.hoisted(() => ({ current: null as unknown as AgentConfigApi }));
 vi.mock('@/composables/agent-config/useAgentConfigApi', async () => {
@@ -36,8 +36,6 @@ const agent: Agent = {
 
 function makeApi(over: Partial<AgentConfigApi> = {}): AgentConfigApi {
   return {
-    listArtifactFiles: vi.fn(),
-    getArtifactFile: vi.fn(),
     getConfig: vi.fn().mockResolvedValue(configRev7),
     putConfig: vi.fn(),
     preview: vi.fn(),
@@ -146,7 +144,7 @@ describe('AgentConfigTab', () => {
     ).$.setupState.view = 'overlay';
     await flushPromises();
     expect(wrapper.find('[data-test="yaml-text"]').text()).toContain(
-      'ssh-tuned',
+      'local-ssh-policies:v1.1.0',
     );
   });
 
@@ -246,13 +244,12 @@ describe('AgentConfigTab', () => {
     expect(wrapper.find('[data-test="edit-/verbosity"]').exists()).toBe(true);
   });
 
-  it('R61: History gets the revert access and the desired overlay for the policy-only gate', async () => {
-    const cases: [Record<string, string[]>, string][] = [
-      [ADMIN, 'full'],
-      [POLICY_AUTHOR, 'policy-only'],
-      [READER, 'none'],
+  it('History may revert only with agent:configure', async () => {
+    const cases: [Record<string, string[]>, boolean][] = [
+      [ADMIN, true],
+      [READER, false],
     ];
-    for (const [perms, access] of cases) {
+    for (const [perms, canRevert] of cases) {
       const wrapper = mount(AgentConfigTab, {
         props: { agent },
         global: globalWith(piniaWith(perms)),
@@ -263,13 +260,7 @@ describe('AgentConfigTab', () => {
         .vm.$emit('update:modelValue', 'history');
       await flushPromises();
       const history = wrapper.findComponent(AgentConfigHistory);
-      expect(history.props('revertAccess')).toBe(access);
-      expect(history.props('currentOverlay')).toEqual(configRev7.overlay);
-      if (access === 'policy-only') {
-        const bases = await history.props('loadBases')();
-        // The validation set (fresh apply-mode instances), as the API's ValidationBases.
-        expect(bases.length).toBeGreaterThan(0);
-      }
+      expect(history.props('canRevert')).toBe(canRevert);
       wrapper.unmount();
     }
   });

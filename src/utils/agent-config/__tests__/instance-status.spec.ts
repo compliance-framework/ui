@@ -1,11 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { AgentInstanceSummary } from '@/types/agent-config';
 import { instancesMixed } from '@/composables/agent-config/__tests__/fixtures';
-import {
-  deriveInstanceState,
-  summarizeSync,
-  validationInstanceIds,
-} from '../instance-status';
+import { deriveInstanceState, summarizeSync } from '../instance-status';
 
 const base = instancesMixed.items[0];
 const inst = (over: Partial<AgentInstanceSummary>): AgentInstanceSummary => ({
@@ -49,7 +45,7 @@ describe('deriveInstanceState (U1.3 table)', () => {
     ],
     [
       'row 5',
-      { status: 'rejected', reason: 'policy-errors' },
+      { status: 'rejected', reason: 'invalid-config' },
       'rejected-invalid',
       'Rejected r7',
     ],
@@ -148,31 +144,5 @@ describe('summarizeSync', () => {
     expect(s.notReported).toBe(1);
     expect(s.stale).toBe(1);
     expect(s.problems.map((p) => p.hostname)).toEqual(['ip-b']);
-  });
-});
-
-describe('validationInstanceIds (API ValidationBases)', () => {
-  const i = (id: string, over: Partial<AgentInstanceSummary>) =>
-    inst({ instanceId: id, ...over });
-  it('uses fresh apply-mode instances with a report', () => {
-    expect(validationInstanceIds(instancesMixed.items)).toEqual(
-      instancesMixed.items
-        .filter(
-          (x) =>
-            !x.stale &&
-            (x.mode === 'apply_safe' || x.mode === 'apply_all') &&
-            x.reportedAt,
-        )
-        .map((x) => x.instanceId),
-    );
-  });
-  it('falls back to the latest reported apply-mode instance, else none', () => {
-    const stale = [
-      i('old', { stale: true, reportedAt: '2026-09-01T00:00:00Z' }),
-      i('new', { stale: true, reportedAt: '2026-09-02T00:00:00Z' }),
-      i('rep', { mode: 'report' }),
-    ];
-    expect(validationInstanceIds(stale)).toEqual(['new']);
-    expect(validationInstanceIds([i('rep', { mode: 'report' })])).toEqual([]);
   });
 });

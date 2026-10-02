@@ -8,11 +8,7 @@
       <span v-if="!overridden" class="text-[0.7rem] text-gray-400"
         >(file value)</span
       >
-      <FieldHints
-        :ptr="ptr"
-        :disabled="policyOnly && !allowReset"
-        @reset="draft.unset(ptr)"
-      />
+      <FieldHints :ptr="ptr" @reset="draft.unset(ptr)" />
     </div>
     <ol class="space-y-1">
       <li
@@ -40,7 +36,7 @@
           <button
             type="button"
             class="px-1 disabled:opacity-30"
-            :disabled="!canReorder || idx === 0"
+            :disabled="idx === 0"
             :aria-label="`Move ${entry} up`"
             @click="move(idx, -1)"
           >
@@ -49,7 +45,7 @@
           <button
             type="button"
             class="px-1 disabled:opacity-30"
-            :disabled="!canReorder || idx === entries.length - 1"
+            :disabled="idx === entries.length - 1"
             :aria-label="`Move ${entry} down`"
             @click="move(idx, 1)"
           >
@@ -57,8 +53,7 @@
           </button>
           <button
             type="button"
-            class="px-1 text-red-600 disabled:opacity-30 dark:text-red-400"
-            :disabled="!canRemove(entry)"
+            class="px-1 text-red-600 dark:text-red-400"
             :aria-label="`Remove ${entry}`"
             data-test="remove-policy"
             @click="removeAt(idx)"
@@ -71,20 +66,12 @@
         No policy sources.
       </li>
     </ol>
-    <form
-      v-if="!disabled"
-      class="flex items-center gap-2"
-      @submit.prevent="add"
-    >
+    <form class="flex items-center gap-2" @submit.prevent="add">
       <InputText
         v-model="newEntry"
         size="small"
         class="flex-1"
-        :placeholder="
-          policyOnly
-            ? 'inline:<bundle>'
-            : 'OCI reference, local path or inline:<bundle>'
-        "
+        placeholder="OCI reference or local path"
         :aria-label="`Add a policy source to ${plugin}`"
         data-test="new-policy"
       />
@@ -108,16 +95,13 @@ import { computed, ref } from 'vue';
 import InputText from '@/volt/InputText.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
 import { pointer } from '@/utils/agent-config/json-pointer';
-import { isInlineSource } from '@/utils/agent-config/validation';
-import { isPolicyOnlyChange } from '@/utils/agent-config/policy-files';
-import { unsetAt } from '@/utils/agent-config/overlay-ops';
 import FieldHints from './FieldHints.vue';
 import FieldIssues from './FieldIssues.vue';
 import { useEditor } from './useEditor';
 
-const props = defineProps<{ plugin: string; disabled?: boolean }>();
+const props = defineProps<{ plugin: string }>();
 
-const { draft, ctx, policyOnly, has, effectiveValue, trustHint } = useEditor();
+const { draft, has, effectiveValue, trustHint } = useEditor();
 
 const ptr = computed(() => pointer('plugins', props.plugin, 'policies'));
 const overridden = computed(() => has(ptr.value));
@@ -125,38 +109,17 @@ const entries = computed<string[]>(() => {
   const v = effectiveValue(ptr.value);
   return Array.isArray(v) ? (v as string[]) : [];
 });
-// Policy-only users may toggle inline: entries only (R22 swaps happen via Customize).
-const canReorder = computed(() => !props.disabled && !policyOnly.value);
-// Policy-only users may reset the list only when that is itself a policy-only change (it can
-// revert non-inline entries the saved overlay changed, which needs agent:configure).
-const allowReset = computed(
-  () =>
-    !policyOnly.value ||
-    isPolicyOnlyChange(
-      ctx.bases.value,
-      draft.original.value,
-      unsetAt(draft.overlay.value, ptr.value),
-    ),
-);
 const newEntry = ref('');
-
-function canRemove(entry: string): boolean {
-  if (props.disabled) return false;
-  return !policyOnly.value || isInlineSource(entry);
-}
 
 const addError = computed(() => {
   const e = newEntry.value.trim();
   if (!e) return '';
   if (entries.value.includes(e)) return 'Already in the list';
-  if (policyOnly.value && !isInlineSource(e)) {
-    return 'Your role can only add inline: bundle references';
-  }
   return '';
 });
 
 function hint(entry: string) {
-  return isInlineSource(entry) ? null : trustHint(ptr.value, entry);
+  return trustHint(ptr.value, entry);
 }
 
 /** Arrays replace wholesale (RFC 7396): every write sends the whole list. */

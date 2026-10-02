@@ -170,13 +170,13 @@ describe('useAgentConfigApi (HTTP client)', () => {
     put.mockRejectedValue(axiosError(422, error422));
     const err = await api.putConfig('a1', { overlay: {} }, 7).catch((e) => e);
     expect(err.kind).toBe('invalid');
-    expect(err.body['policy-errors']).toHaveLength(1);
+    expect(err.body.overlay).toHaveLength(1);
     expect(err.body.instances[0]['instance-id']).toBeTruthy();
     expect(err.message).toBe('configuration overlay is invalid');
   });
 
   it.each([
-    [403, { errors: { body: 'only policy changes' } }, 'forbidden'],
+    [403, { errors: { body: 'forbidden' } }, 'forbidden'],
     [413, { errors: { body: 'too big' } }, 'too-large'],
     [500, { errors: { body: 'boom' } }, 'other'],
   ])('maps %s to %s', (status, body, kind) => {
@@ -242,40 +242,5 @@ describe('useAgentConfigApi never sends the mask (R25)', () => {
     });
     expect(localPut).not.toHaveBeenCalled();
     expect(localPost).not.toHaveBeenCalled();
-  });
-});
-
-describe('artifact file routes (R62)', () => {
-  beforeEach(() => get.mockReset());
-
-  it('lists files from the bare body and encodes the digest', async () => {
-    const body = {
-      digest: 'sha256:abc',
-      treeDigest: 'tree:sha256:def',
-      files: [{ path: 'a.rego', sha256: '00', size: 3, package: 'x' }],
-    };
-    get.mockResolvedValue({ status: 200, data: body });
-    await expect(api.listArtifactFiles('sha256:abc')).resolves.toEqual(body);
-    expect(get).toHaveBeenCalledWith('/api/artifacts/sha256%3Aabc/files');
-  });
-
-  it('reads one file, keeping slashes and encoding each segment', async () => {
-    get.mockResolvedValue({
-      status: 200,
-      data: { path: 'dir/a b.rego', sha256: '00', source: 'package x' },
-    });
-    const f = await api.getArtifactFile('sha256:abc', 'dir/a b.rego');
-    expect(f.source).toBe('package x');
-    expect(get).toHaveBeenCalledWith(
-      '/api/artifacts/sha256%3Aabc/files/dir/a%20b.rego',
-    );
-  });
-
-  it('maps a 404 to an error carrying the status', () => {
-    const err = toAgentConfigError(
-      axiosError(404, { errors: { body: 'artifact x has no file "a"' } }),
-      'getArtifactFile',
-    );
-    expect(err).toMatchObject({ kind: 'other', status: 404 });
   });
 });

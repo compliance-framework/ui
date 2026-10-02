@@ -8,14 +8,6 @@
     @update:visible="onVisible"
   >
     <div class="space-y-4">
-      <Message
-        v-if="ws.editorMode.value === 'policy-only'"
-        severity="info"
-        data-test="policy-only-banner"
-      >
-        Your role can save changes to policy bundles and <code>inline:</code>
-        references only.
-      </Message>
       <p
         class="text-xs text-gray-500 dark:text-slate-400"
         data-test="secrets-notice"
@@ -142,7 +134,7 @@
 
 <script setup lang="ts">
 // Review and save (R69): the existing preview UX (per-instance diff, safety tags, will-apply,
-// R59 warnings, policy problems) over the shared draft, saved as ONE revision with If-Match
+// R59 warnings) over the shared draft, saved as ONE revision with If-Match
 // and the 409 flow. Opened from the pending-changes bar.
 import { computed, ref, watch } from 'vue';
 import { useToast } from 'primevue/usetoast';
@@ -189,7 +181,6 @@ const saveDisabledReason = computed(() =>
 async function runReview(force = false) {
   reviewError.value = null;
   saveErrors.value = null;
-  ws.savePolicyErrors.value = [];
   if (hasBlocking(draft.clientIssues.value)) {
     reviewError.value = 'Fix the problems listed in the pending changes first.';
     return;
@@ -278,17 +269,10 @@ async function save(comment: string) {
       }
       case 'invalid':
         saveErrors.value = e.body ?? { body: e.message };
-        ws.savePolicyErrors.value = e.body?.['policy-errors'] ?? [];
         break;
       case 'forbidden':
-        saveError.value =
-          ws.editorMode.value === 'policy-only'
-            ? `${e.message} Only policy bundles and inline: references can be changed with your role.`
-            : e.message;
-        break;
       case 'too-large':
-        saveError.value =
-          'The configuration is too large (limit 2 MiB with policy bundles).';
+        saveError.value = e.message;
         break;
       default:
         saveError.value = `${e.message} Your changes are kept; try again.`;

@@ -50,89 +50,12 @@ export function globalWith(
 
 export const ADMIN = {
   admin: ['manage'],
-  agent: ['read', 'configure', 'configure-policy'],
+  agent: ['read', 'configure'],
 };
 export const READER = { agent: ['read'] };
-export const POLICY_AUTHOR = { agent: ['read', 'configure-policy'] };
-
-// ---- Editor harness: provide a draft + context + permissions to editor sections ----
-import { computed, ref, shallowRef } from 'vue';
-import type {
-  AgentConfigRevision,
-  AgentInstanceDetail,
-  AgentInstanceSummary,
-  ConfigDoc,
-  ConfigPreview,
-  OverlayDoc,
-  PolicyError,
-} from '@/types/agent-config';
-import { useOverlayDraft } from '@/composables/agent-config/useOverlayDraft';
-import {
-  EDITOR_CONTEXT_KEY,
-  EDITOR_PERMISSIONS_KEY,
-  OVERLAY_DRAFT_KEY,
-  type EditorContext,
-  type EditorMode,
-} from '@/composables/agent-config/editorContext';
-
-export function editorHarness(opts: {
-  overlay?: OverlayDoc;
-  revision?: number;
-  instances: AgentInstanceSummary[];
-  details: AgentInstanceDetail[];
-  preview?: ConfigPreview | null;
-  mode?: EditorMode;
-  placeholderInstanceId?: string | null;
-}) {
-  const config: AgentConfigRevision = {
-    agentId: 'agent-1',
-    revision: opts.revision ?? 7,
-    overlay: opts.overlay ?? {},
-    overlaySize: 2,
-    comment: null,
-    createdBy: null,
-    createdAt: null,
-    revertOf: null,
-  };
-  const details = new Map(opts.details.map((d) => [d.instanceId, d]));
-  const placeholderInstanceId = ref<string | null>(
-    opts.placeholderInstanceId ?? opts.details[0]?.instanceId ?? null,
-  );
-  const placeholderBase = computed<ConfigDoc | null>(
-    () =>
-      (placeholderInstanceId.value &&
-        details.get(placeholderInstanceId.value)?.base) ||
-      null,
-  );
-  const bases = computed(() =>
-    opts.details.map((d) => d.base).filter((b): b is ConfigDoc => !!b),
-  );
-  const draft = useOverlayDraft(config, placeholderBase, { bases });
-  const ctx: EditorContext = {
-    agentId: ref('agent-1'),
-    config: ref(config),
-    instances: ref(opts.instances),
-    instanceDetails: shallowRef(details),
-    placeholderInstanceId,
-    placeholderBase,
-    bases,
-    lastPreview: shallowRef(opts.preview ?? null),
-    savePolicyErrors: ref<PolicyError[]>([]),
-  };
-  const mode = computed<EditorMode>(() => opts.mode ?? 'full');
-  return {
-    draft,
-    ctx,
-    provide: {
-      [OVERLAY_DRAFT_KEY as symbol]: draft,
-      [EDITOR_CONTEXT_KEY as symbol]: ctx,
-      [EDITOR_PERMISSIONS_KEY as symbol]: { mode },
-    },
-  };
-}
 
 // ---- Workspace harness: a real useAgentConfig + useConfigWorkspace over a fake API ----
-import { defineComponent, h, type Component } from 'vue';
+import { computed, defineComponent, h, type Component } from 'vue';
 import { vi } from 'vitest';
 import type { AgentConfigApi } from '@/composables/agent-config/api-types';
 import { useAgentConfig } from '@/composables/agent-config/useAgentConfig';
@@ -165,8 +88,6 @@ export function fakeApi(over: Partial<AgentConfigApi> = {}): AgentConfigApi {
       const s = instancesMixed.items.find((i) => i.instanceId === id)!;
       return detailFor(s, configRev7.overlay ?? {});
     }),
-    listArtifactFiles: vi.fn(),
-    getArtifactFile: vi.fn(),
     ...over,
   };
 }

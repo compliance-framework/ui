@@ -87,7 +87,7 @@ import Dialog from '@/volt/Dialog.vue';
 import InputText from '@/volt/InputText.vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
 import TertiaryButton from '@/volt/TertiaryButton.vue';
-import { NAME_RE, isInlineSource } from '@/utils/agent-config/validation';
+import { NAME_RE } from '@/utils/agent-config/validation';
 import { describeCron5, validateCron5 } from '@/utils/agent-config/cron5';
 
 const props = defineProps<{ visible: boolean; existing: string[] }>();
@@ -121,8 +121,6 @@ const nameError = computed(() => {
 });
 const sourceError = computed(() => {
   if (!source.value.trim()) return 'A source is required';
-  if (isInlineSource(source.value))
-    return 'A plugin source cannot be an inline: bundle';
   return '';
 });
 const scheduleError = computed(() =>

@@ -75,14 +75,14 @@
         <span
           v-if="hasSavedOverlay"
           v-tooltip.top="{
-            value: clearGate.reason,
-            disabled: clearGate.allowed,
+            value: CLEAR_DENIED,
+            disabled: ws.canConfigure.value,
           }"
         >
           <Button
             severity="danger"
             size="small"
-            :disabled="!clearGate.allowed"
+            :disabled="!ws.canConfigure.value"
             data-test="clear-overlay"
             @click="clearOverlay"
           >
@@ -125,10 +125,6 @@ import {
   validateOverlayClientSide,
 } from '@/utils/agent-config/validation';
 import { deepEqual, isPlainObject } from '@/utils/agent-config/merge-patch';
-import {
-  policyOnlyGate,
-  type PolicyOnlyGate,
-} from '@/utils/agent-config/policy-files';
 import { FORBIDDEN_TOOLTIP } from '@/utils/agent-config/field-access';
 import { OVERLAY_SECRETS_NOTICE } from '../constants';
 
@@ -239,7 +235,7 @@ const diagnostics = computed<EditorDiagnostic[]>(() => {
 
 const issues = computed(() =>
   parsed.value && !forbidden.value.length
-    ? validateOverlayClientSide(parsed.value, ws.validationBases.value)
+    ? validateOverlayClientSide(parsed.value)
     : [],
 );
 
@@ -261,22 +257,11 @@ function apply() {
 const hasSavedOverlay = computed(
   () => Object.keys(ws.draft.original.value).length > 0,
 );
-/**
- * R61: Clear overlay is a change to {} — configure always, configure-policy when that is a
- * policy-only change against the validation bases (the API decides; 403 still handled).
- */
-const clearGate = computed<PolicyOnlyGate>(() => {
-  if (ws.canConfigure.value) return { allowed: true, reason: '' };
-  if (!ws.canEdit.value)
-    return { allowed: false, reason: 'You cannot change this configuration' };
-  if (ws.detailsLoading.value) {
-    return { allowed: false, reason: 'Loading the instance configuration…' };
-  }
-  return policyOnlyGate(ws.validationBases.value, ws.draft.original.value, {});
-});
+const CLEAR_DENIED = "You don't have permission to change this configuration";
 
+// "Clear overlay" only fills the editor with {}; it is a pending change like any other.
 function clearOverlay() {
-  if (!clearGate.value.allowed) return;
+  if (!ws.canConfigure.value) return;
   text.value = '{}\n';
   parseNow(text.value);
 }

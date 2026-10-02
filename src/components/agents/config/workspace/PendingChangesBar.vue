@@ -91,7 +91,7 @@
         </li>
       </ul>
       <ul
-        v-if="draft.issues.value.length || ws.previewPolicyErrors.value.length"
+        v-if="draft.issues.value.length"
         class="space-y-0.5 text-xs"
         data-test="pending-issues"
       >
@@ -106,17 +106,6 @@
         >
           <code class="font-mono">{{ i.ptr || '/' }}</code> — {{ i.message }}
         </li>
-        <li
-          v-for="(e, idx) in ws.previewPolicyErrors.value"
-          :key="`p${idx}`"
-          class="text-red-600 dark:text-red-400"
-        >
-          <code class="font-mono"
-            >{{ e.bundle }}/{{ e.path
-            }}<template v-if="e.row">:{{ e.row }}</template></code
-          >
-          — {{ e.message }}
-        </li>
       </ul>
     </div>
   </div>
@@ -128,7 +117,7 @@
 
 <script setup lang="ts">
 // The sticky "N pending changes · Review & save · Discard" bar (R69). It follows the shared
-// per-agent draft, so it shows the same changes in the Configuration tab and the Policies view.
+// per-agent draft.
 import {
   computed,
   defineAsyncComponent,
@@ -152,7 +141,7 @@ const confirm = useConfirm();
 const expanded = ref(false);
 
 const visible = computed(
-  () => ws.canEdit.value && ws.ready.value && draft.isDirty.value,
+  () => ws.canConfigure.value && ws.ready.value && draft.isDirty.value,
 );
 const count = computed(() => draft.changedPaths.value.length);
 const latestRevision = computed(() => ws.state.config.value?.revision ?? 0);

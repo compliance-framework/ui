@@ -1,7 +1,6 @@
-// Per-agent pending-changes drafts for the browser session (R69). The Configuration tab and
-// the Policies view are different routes; both bind to the same DraftState here, so edits
-// made in one show up (and are saved together) in the other. Kept in memory only: a reload
-// starts clean (the pending bar guards it with beforeunload).
+// Per-agent pending-changes drafts for the browser session (R69). The Configuration tab binds
+// to the DraftState here, so pending edits survive leaving and re-opening the tab. Kept in
+// memory only: a reload starts clean (the pending bar guards it with beforeunload).
 //
 // Drafts are scoped to the signed-in user: logout does not reload the app, so another user in
 // the same tab must never see (or save) someone else's pending changes. The same user signing

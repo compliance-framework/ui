@@ -23,7 +23,6 @@ export const MODE_TEXT = {
   apply_safe:
     "Accepts policy, schedule and flag changes. New sources need `apply_all` or a `trusted_sources` entry. Plugin config keys need a matching `overridable_config_flags` entry in the agent's file.",
   apply_all: 'Applies all changes except locked keys.',
-  inlineDisabled: 'Inline policy changes need `apply_all` on this host.',
 } as const;
 
 export const NOT_REPORTED_TEXT =
@@ -39,12 +38,6 @@ export const CONFIG_KEY_LOCK_TOOLTIP =
 export const OVERLAY_SECRETS_NOTICE =
   'Overlays are stored as written and are readable by everyone who can view agents. Do not type secrets here: use a ${env:NAME} placeholder in a plugin config value, which the agent resolves on its own host.';
 
-export const TEMPORARY_POLICY_HINT =
-  'Overlay policies are meant to be temporary. Publish as a bundle when stable.';
-
-export const CROSS_BUNDLE_HELP =
-  'Each policy source is loaded as its own bundle: imports across bundles are not supported.';
-
 // ---- Classify reasons (API A1.6, classify.go) ----
 
 export const CHANGE_REASON_LABELS: Record<string, string> = {
@@ -57,8 +50,6 @@ export const CHANGE_REASON_LABELS: Record<string, string> = {
   'untrusted-source': 'Untrusted source',
   'local-source-not-allowed': 'Local sources are not allowed on this host',
   'new-local-source': 'New local source',
-  'inline-policy': 'Inline policy',
-  'inline-policies-disabled': 'Inline policies are disabled on this host',
   'overridable-config-flag': 'Overridable config key',
   'config-not-overridable': 'Config key not overridable',
   'new-env-reference': 'Reads a new host environment variable',
@@ -73,7 +64,6 @@ export const APPLY_REASON_LABELS: Record<string, string> = {
   'forbidden-changes': 'The revision contains a forbidden change',
   'invalid-config':
     'The config was invalid; the agent kept its last-known-good configuration',
-  'policy-errors': 'A policy bundle failed to parse, compile or pass its tests',
   'download-failed': 'A plugin or policy bundle could not be downloaded',
   'env-missing':
     'A ${env:…} placeholder names a variable that is not set on the host',
@@ -97,59 +87,13 @@ export const FIELD_ERROR_CODE_LABELS: Record<string, string> = {
   cron: 'Invalid schedule',
   duration: 'Invalid duration',
   source: 'Invalid source',
-  'unresolved-ref': 'Unknown bundle',
   'env-location': 'Placeholder not allowed here',
   'forbidden-env': 'Forbidden variable',
   'env-missing': 'Variable not set',
   'masked-value': 'Masked value',
   required: 'Required',
-  conflict: 'Conflict',
   parse: 'Parse error',
 };
-
-// ---- PolicyError codes (R63: policyeval contract.go, regocheck, agent inlinepolicy) ----
-
-export const POLICY_ERROR_CODE_LABELS: Record<string, string> = {
-  // Contract (static, policyeval.CheckContract; dynamic, ValidateResult)
-  'missing-title': 'Missing title',
-  'empty-title': 'Empty title',
-  'conditional-title': 'Title may be undefined',
-  'missing-violation': 'No violation rule',
-  'contract-key-function': 'Contract key is a function',
-  'contract-key-multi-value': 'Contract key is multi-value',
-  'invalid-type': 'Wrong type',
-  'invalid-violation-rule': 'Invalid violation rule',
-  'invalid-violation': 'Invalid violation',
-  'violation-missing-id': 'Violation without id',
-  'invalid-risk-template': 'Invalid risk template',
-  'unknown-violation-id': 'Unknown violation id',
-  'duplicate-package-module': 'Package defined twice',
-  'no-output': 'No output',
-  // Parse level (regocheck)
-  'rego-parse-error': 'Parse error',
-  'missing-rego-v1-import': 'Missing import rego.v1',
-  'package-namespace': 'Package namespace',
-  'forbidden-builtin': 'Forbidden builtin',
-  // Agent checks (compile, tests, dry run)
-  'eval-error': 'Evaluation error',
-  'eval-conflict': 'Evaluation conflict',
-  'dry-run-timeout': 'Dry run timed out',
-  'duplicate-policy-package': 'Package loaded twice',
-  // Evidence identity (R74/R75, design §13.4)
-  'invalid-policy-id': 'Invalid policy_id',
-  'duplicate-policy-id': 'Duplicate policy_id',
-  'duplicate-policy-identity': 'Same evidence stream loaded twice',
-  'policy-package-changed': 'Package changed: new evidence stream',
-  'policy-stream-forked': 'New evidence stream',
-  // Plugin compatibility (R76)
-  'plugin-lib-violation-set-unsupported':
-    'Plugin cannot evaluate set violations',
-  'plugin-lib-policy-id-unsupported': 'Plugin ignores policy_id',
-};
-
-/** R64 (corrects the earlier "never reject" wording, §13.1). */
-export const VENDOR_TEST_TOOLTIP =
-  'Vendor test failures are warnings; vendor tests that no longer compile reject the revision.';
 
 // ---- Preview will-apply reasons ----
 
@@ -172,16 +116,3 @@ export function labelFor(
     ? labels[code]
     : null;
 }
-
-// ---- Bundle file states (U4.3) ----
-
-export const FILE_STATE_LABELS: Record<string, string> = {
-  inherited: 'inherited',
-  overridden: 'overridden',
-  deleted: 'Deleted vendor file',
-  added: 'added',
-  'delete-missing': 'Not in the vendor bundle; has no effect',
-  set: 'added or overridden',
-  conflict: 'Both overridden and deleted',
-  dropped: 'File module dropped by the overlay',
-};

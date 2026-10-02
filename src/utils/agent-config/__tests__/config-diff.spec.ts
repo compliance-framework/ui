@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { diffConfigs } from '../config-diff';
+import { changedLeafPaths, diffConfigs } from '../config-diff';
 
 describe('diffConfigs', () => {
   it('recurses into objects and compares arrays and strings whole', () => {
@@ -26,15 +26,15 @@ describe('diffConfigs', () => {
 
   it('flags multi-line strings and escapes pointer tokens', () => {
     const d = diffConfigs(
-      { policy_bundles: { b: { modules: { 'd/x.rego': 'package a\n' } } } },
-      { policy_bundles: { b: { modules: { 'd/x.rego': 'package b\n' } } } },
+      { plugins: { p: { policy_data: { 'd/x': 'line a\n' } } } },
+      { plugins: { p: { policy_data: { 'd/x': 'line b\n' } } } },
     );
     expect(d).toEqual([
       {
-        path: '/policy_bundles/b/modules/d~1x.rego',
+        path: '/plugins/p/policy_data/d~1x',
         kind: 'changed',
-        before: 'package a\n',
-        after: 'package b\n',
+        before: 'line a\n',
+        after: 'line b\n',
         multiline: true,
       },
     ]);
@@ -57,5 +57,16 @@ describe('formatRelative', () => {
     );
     expect(formatRelative(null)).toBe('');
     expect(formatRelative('garbage')).toBe('');
+  });
+});
+
+describe('changedLeafPaths', () => {
+  it('lists differing leaves (arrays whole)', () => {
+    expect(
+      changedLeafPaths(
+        { verbosity: 1, plugins: { a: { policies: ['x'] } } },
+        { plugins: { a: { policies: ['x', 'y'] }, b: { source: 's' } } },
+      ),
+    ).toEqual(['/plugins/a/policies', '/plugins/b/source', '/verbosity']);
   });
 });

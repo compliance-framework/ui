@@ -88,13 +88,13 @@
                 <span
                   v-if="r.revision !== desiredRevision"
                   v-tooltip.top="{
-                    value: revertDecision(r.revision).reason,
-                    disabled: revertDecision(r.revision).allowed,
+                    value: revertTooltip,
+                    disabled: canRevert,
                   }"
                 >
                   <TertiaryButton
                     size="small"
-                    :disabled="!revertDecision(r.revision).allowed"
+                    :disabled="!canRevert"
                     data-test="history-revert"
                     @click="openRevert(r.revision)"
                   >
@@ -240,18 +240,6 @@
               {{ e.message }}
             </li>
           </template>
-          <li
-            v-for="(e, i) in invalidBody?.['policy-errors'] ?? []"
-            :key="`p${i}`"
-            :class="
-              e.severity === 'error'
-                ? 'text-red-700 dark:text-red-300'
-                : 'text-amber-700 dark:text-amber-300'
-            "
-          >
-            <code class="font-mono text-xs">{{ policyErrorLocation(e) }}</code>
-            — {{ e.message }}
-          </li>
         </ul>
       </div>
     </Dialog>
@@ -271,7 +259,6 @@ import { CodeMergeView } from '@/components/code-editor';
 import type {
   AgentConfigRevision,
   AgentConfigRevisionSummary,
-  ConfigDoc,
   ConfigErrorBody,
   OverlayDoc,
 } from '@/types/agent-config';
@@ -283,37 +270,23 @@ import {
   formatAbsolute,
   formatRelative,
   humanBytes,
-  policyErrorLocation,
 } from '@/utils/agent-config/display';
 import { toYaml } from '@/utils/agent-config/yaml';
 import { LIMITS } from '@/utils/agent-config/validation';
-import {
-  policyOnlyGate,
-  type PolicyOnlyGate,
-} from '@/utils/agent-config/policy-files';
 import ConfigPill from './ConfigPill.vue';
 import ConfigYamlViewer from './ConfigYamlViewer.vue';
 
 const PAGE_SIZE = 20;
-
-type RevertAccess = 'full' | 'policy-only' | 'none';
 
 const props = defineProps<{
   api: AgentConfigApi;
   agentId: string;
   fileBase: string;
   desiredRevision: number;
-  /**
-   * R61: `full` (agent:configure) may revert to anything; `policy-only` (configure-policy)
-   * only when the revert is a policy-only change (policyOnlyGate); `none` never.
-   */
-  revertAccess: RevertAccess;
-  /** Tooltip for `none`. */
+  /** Whether the user may revert (agent:configure). */
+  canRevert: boolean;
+  /** Why Revert is disabled when `canRevert` is false. */
   revertTooltip: string;
-  /** The desired revision's overlay: the `current` side of the policy-only check. */
-  currentOverlay: OverlayDoc;
-  /** The validation bases (API ValidationBases) for the policy-only check. */
-  loadBases: () => Promise<ConfigDoc[]>;
   /** Cached revision loader shared with the tab (U1.3). */
   getRevision: (rev: number) => Promise<AgentConfigRevision>;
 }>();
@@ -424,62 +397,8 @@ async function diff(from: number, to: number) {
   }
 }
 
-// ---- Revert gate (R61) ----
-const ALLOWED: PolicyOnlyGate = { allowed: true, reason: '' };
-const CHECKING: PolicyOnlyGate = {
-  allowed: false,
-  reason: 'Checking whether your role can revert to this revision…',
-};
-/** Per-revision decisions for policy-only users, filled for the listed rows. */
-const decisions = shallowRef(new Map<number, PolicyOnlyGate>());
-let gateSeq = 0;
-
-function revertDecision(rev: number): PolicyOnlyGate {
-  if (props.revertAccess === 'full') return ALLOWED;
-  if (props.revertAccess === 'none') {
-    return { allowed: false, reason: props.revertTooltip };
-  }
-  return decisions.value.get(rev) ?? CHECKING;
-}
-
-function setDecision(seq: number, rev: number, d: PolicyOnlyGate) {
-  if (seq !== gateSeq) return;
-  const next = new Map(decisions.value);
-  next.set(rev, d);
-  decisions.value = next;
-}
-
-/** Decide every listed revision not decided yet (the target overlays are cached). */
-function decideRows() {
-  if (props.revertAccess !== 'policy-only') return;
-  const seq = gateSeq;
-  const current = props.currentOverlay;
-  for (const r of items.value) {
-    const rev = r.revision;
-    if (rev === props.desiredRevision || decisions.value.has(rev)) continue;
-    setDecision(seq, rev, CHECKING);
-    Promise.all([props.loadBases(), overlayOf(rev)]).then(
-      ([bases, target]) =>
-        setDecision(seq, rev, policyOnlyGate(bases, current, target)),
-      (e) =>
-        setDecision(seq, rev, {
-          allowed: false,
-          reason: `Could not check this revert: ${
-            isAgentConfigApiError(e) ? e.message : 'failed to load'
-          }`,
-        }),
-    );
-  }
-}
-
-function resetDecisions() {
-  gateSeq++;
-  decisions.value = new Map();
-  decideRows();
-}
-
 function openRevert(rev: number) {
-  if (!revertDecision(rev).allowed) return;
+  if (!props.canRevert) return;
   revertRev.value = rev;
   revertComment.value = '';
   revertOpen.value = true;
@@ -543,12 +462,6 @@ async function doRevert() {
 }
 
 onMounted(reload);
-watch(items, decideRows);
-// A new desired overlay, other bases or another role invalidates every decision.
-watch(
-  () => [props.currentOverlay, props.revertAccess, props.loadBases],
-  resetDecisions,
-);
 // A save or revert elsewhere (e.g. the editor) moves the desired revision: reload the list.
 watch(
   () => props.desiredRevision,

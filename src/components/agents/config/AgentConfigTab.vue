@@ -130,10 +130,8 @@
         :agent-id="agent.id"
         :file-base="safeName"
         :desired-revision="state.desiredRevision.value"
-        :revert-access="revertAccess"
+        :can-revert="ws.canConfigure.value"
         :revert-tooltip="permissionTooltip(RESOURCES.AGENT, ACTIONS.CONFIGURE)"
-        :current-overlay="currentOverlay"
-        :load-bases="state.loadValidationBases"
         :get-revision="state.getRevisionCached"
         @changed="refresh"
       />
@@ -157,7 +155,6 @@ import Message from '@/volt/Message.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
 import SelectButton from '@/volt/SelectButton.vue';
 import type { Agent } from '@/types/agents';
-import type { OverlayDoc } from '@/types/agent-config';
 import { usePermissions } from '@/composables/usePermissions';
 import { useAgentConfigApi } from '@/composables/agent-config/useAgentConfigApi';
 import { useAgentConfig } from '@/composables/agent-config/useAgentConfig';
@@ -201,20 +198,9 @@ const viewOptions = [
 ];
 const refreshing = ref(false);
 
-// ---- Editing: configure OR configure-policy (U2.7, R58/R61) ----
-const { can, permissionTooltip, RESOURCES, ACTIONS } = usePermissions();
-const canEdit = ws.canEdit;
-// R61: configure may revert to anything; configure-policy only when the revert is a
-// policy-only change (decided per revision in the history panel, as the API does).
-const revertAccess = computed<'full' | 'policy-only' | 'none'>(() => {
-  if (can(RESOURCES.AGENT, ACTIONS.CONFIGURE)) return 'full';
-  if (can(RESOURCES.AGENT, ACTIONS.CONFIGURE_POLICY)) return 'policy-only';
-  return 'none';
-});
-const EMPTY_OVERLAY: OverlayDoc = {};
-const currentOverlay = computed<OverlayDoc>(
-  () => state.config.value?.overlay ?? EMPTY_OVERLAY,
-);
+// ---- Editing: agent:configure (U2.7) ----
+const { permissionTooltip, RESOURCES, ACTIONS } = usePermissions();
+const canEdit = ws.canConfigure;
 const editTooltip = computed(() =>
   canEdit.value ? '' : permissionTooltip(RESOURCES.AGENT, ACTIONS.CONFIGURE),
 );

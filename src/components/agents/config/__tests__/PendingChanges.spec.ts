@@ -1,5 +1,5 @@
 // R69: the sticky pending-changes bar, Review & save as ONE revision (If-Match, 409 flow),
-// and the R58/R61 policy-only gate.
+// gated on agent:configure.
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import type { AgentConfigApi } from '@/composables/agent-config/useAgentConfigApi';
@@ -7,19 +7,12 @@ import { AgentConfigApiError } from '@/composables/agent-config/api-types';
 import { resetAgentDrafts } from '@/composables/agent-config/draftRegistry';
 import type { ConfigWorkspace } from '@/composables/agent-config/useConfigWorkspace';
 import {
-  UBUNTU_POLICIES,
   configRev7,
   previewMixed,
 } from '@/composables/agent-config/__tests__/fixtures';
 import type { ConfigPreview } from '@/types/agent-config';
 import type { Agent } from '@/types/agents';
-import {
-  ADMIN,
-  POLICY_AUTHOR,
-  fakeApi,
-  globalWith,
-  piniaWith,
-} from './helpers';
+import { ADMIN, READER, fakeApi, globalWith, piniaWith } from './helpers';
 
 vi.mock('@/components/code-editor', () => import('./codeEditorMock'));
 vi.mock('primevue/useconfirm', () => ({
@@ -166,22 +159,16 @@ describe('pending-changes bar (R69)', () => {
     expect(wrapper.find('[data-test="conflict-banner"]').exists()).toBe(false);
   });
 
-  it('R58/R61: a policy author can review policy-only changes, not others', async () => {
-    const { wrapper, ws } = await mountTab(POLICY_AUTHOR);
-    ws.draft.set('/plugins/ubuntu-packages/policies', [
-      UBUNTU_POLICIES,
-      'inline:ssh-tuned',
-    ]);
-    await checked(ws);
-    expect(
-      wrapper.find('[data-test="pending-review"]').attributes('disabled'),
-    ).toBeUndefined();
+  it('a reader can neither preview nor review a draft', async () => {
+    const { wrapper, ws } = await mountTab(READER);
     ws.draft.set('/verbosity', 2);
-    await checked(ws);
-    expect(
-      wrapper.find('[data-test="pending-review"]').attributes('disabled'),
-    ).toBeDefined();
-    expect(ws.saveDisabledReason.value).toContain('policy bundles');
+    await flushPromises();
+    expect(ws.preview.pending.value).toBe(false);
+    expect(api.current.preview).not.toHaveBeenCalled();
+    expect(wrapper.find('[data-test="pending-review"]').exists()).toBe(false);
+    expect(ws.saveDisabledReason.value).toBe(
+      "You don't have permission to change this configuration",
+    );
   });
 
   it('client-only problems disable Review and the live preview', async () => {
@@ -203,15 +190,6 @@ describe('pending-changes bar (R69)', () => {
       overlayErrors: [
         { path: '/plugins/local-ssh/schedule', message: 'bad cron' },
       ],
-      policyErrors: [
-        {
-          bundle: 'ssh-tuned',
-          path: 'a.rego',
-          row: 3,
-          message: 'parse error',
-          severity: 'error',
-        },
-      ],
     } satisfies ConfigPreview);
     const { wrapper, ws } = await mountTab();
     ws.draft.set('/plugins/local-ssh/schedule', 'nope');
@@ -222,12 +200,11 @@ describe('pending-changes bar (R69)', () => {
     await checked(ws);
     expect(ws.preview.pending.value).toBe(false);
     expect(wrapper.find('[data-test="pending-blocking"]').text()).toContain(
-      '2 problems',
+      '1 problem',
     );
     await wrapper.find('[data-test="pending-toggle"]').trigger('click');
     const issues = wrapper.find('[data-test="pending-issues"]').text();
     expect(issues).toContain('/plugins/local-ssh/schedule — bad cron');
-    expect(issues).toContain('ssh-tuned/a.rego:3');
     expect(
       wrapper.find('[data-test="pending-review"]').attributes('disabled'),
     ).toBeDefined();

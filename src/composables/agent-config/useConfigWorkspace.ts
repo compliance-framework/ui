@@ -1,8 +1,7 @@
 // The editing workspace of one agent (R69): the shared pending-changes draft, the instance
-// bases it is validated against, the live preview and the permission rules, provided to the
-// Effective view (inline pencils), the Policies view, the pending-changes bar and the review
-// dialog. Created by the Configuration tab and by the Policies view; both bind to the same
-// per-agent draft (draftRegistry), so their edits are saved together as one revision.
+// bases it is shown against, the live preview and the permission rules, provided to the
+// Effective view (inline pencils), the raw YAML dialog, the pending-changes bar and the review
+// dialog. Created by the Configuration tab; the draft is per agent (draftRegistry).
 
 import {
   computed,
@@ -18,25 +17,12 @@ import type {
   AgentInstanceDetail,
   ConfigDoc,
   ConfigPreview,
-  PolicyBundleDoc,
-  PolicyError,
   SaveResult,
 } from '@/types/agent-config';
 import { usePermissions } from '@/composables/usePermissions';
 import { useUserStore } from '@/stores/auth';
-import { isPlainObject } from '@/utils/agent-config/merge-patch';
-import { parsePointer } from '@/utils/agent-config/json-pointer';
-import {
-  hasBlocking,
-  type ClientIssue,
-  type ValidationContext,
-} from '@/utils/agent-config/validation';
-import {
-  isPolicyOnlyChange,
-  vendorFilesFor,
-} from '@/utils/agent-config/policy-files';
+import { hasBlocking, type ClientIssue } from '@/utils/agent-config/validation';
 import { isForbiddenPointer } from '@/utils/agent-config/field-access';
-import { validationInstanceIds } from '@/utils/agent-config/instance-status';
 import type { AgentConfigApi } from './api-types';
 import type { AgentConfigState } from './useAgentConfig';
 import { agentDraftState, syncDraftState } from './draftRegistry';
@@ -44,10 +30,8 @@ import { useOverlayDraft } from './useOverlayDraft';
 import { usePreview } from './usePreview';
 import {
   EDITOR_CONTEXT_KEY,
-  EDITOR_PERMISSIONS_KEY,
   OVERLAY_DRAFT_KEY,
   type EditorContext,
-  type EditorMode,
 } from './editorContext';
 
 const EMPTY_REVISION: AgentConfigRevision = {
@@ -61,13 +45,6 @@ const EMPTY_REVISION: AgentConfigRevision = {
   revertOf: null,
 };
 
-/** Paths a configure-policy-only user may change (D18/R22): bundles and policy lists. */
-export function isPolicyPointer(ptr: string): boolean {
-  const t = parsePointer(ptr);
-  if (t[0] === 'policy_bundles') return true;
-  return t.length === 3 && t[0] === 'plugins' && t[2] === 'policies';
-}
-
 export function useConfigWorkspace(
   agentId: string,
   api: AgentConfigApi,
@@ -75,15 +52,6 @@ export function useConfigWorkspace(
 ) {
   const { can, RESOURCES, ACTIONS } = usePermissions();
   const canConfigure = computed(() => can(RESOURCES.AGENT, ACTIONS.CONFIGURE));
-  const canConfigurePolicy = computed(() =>
-    can(RESOURCES.AGENT, ACTIONS.CONFIGURE_POLICY),
-  );
-  const canEdit = computed(
-    () => canConfigure.value || canConfigurePolicy.value,
-  );
-  const editorMode = computed<EditorMode>(() =>
-    canConfigure.value ? 'full' : 'policy-only',
-  );
 
   // ---- Instance details (bases + reports): every reported instance, loaded on demand ----
   const loadedDetails = shallowRef(new Map<string, AgentInstanceDetail>());
@@ -135,22 +103,6 @@ export function useConfigWorkspace(
       .map((d) => d.base)
       .filter((b): b is ConfigDoc => !!b),
   );
-  // The API validates a save against these instances only (R48); mirror it client-side.
-  const validationBases = computed<ConfigDoc[]>(() =>
-    validationInstanceIds(state.instances.value)
-      .map((id) => instanceDetails.value.get(id)?.base)
-      .filter((b): b is ConfigDoc => !!b),
-  );
-  /** Every loaded instance's policy bundle reports, the placeholder's first (R62). */
-  const reportSets = computed(() => {
-    const first = placeholderDetail.value;
-    const rest = Array.from(instanceDetails.value.values()).filter(
-      (d) => d !== first,
-    );
-    return [first, ...rest]
-      .filter((d): d is AgentInstanceDetail => !!d)
-      .map((d) => d.policyBundles ?? null);
-  });
 
   // ---- The draft (shared per agent) ----
   // Scoped to the signed-in user (see draftRegistry).
@@ -164,23 +116,8 @@ export function useConfigWorkspace(
   );
   const ready = computed(() => draftState.baseRevision.value >= 0);
 
-  const validationContext = computed<ValidationContext>(() => ({
-    vendorPackages: (bundle: string) => {
-      const b = draft.effectiveDraft.value.policy_bundles?.[bundle];
-      const files = vendorFilesFor(
-        bundle,
-        isPlainObject(b) ? (b as PolicyBundleDoc) : null,
-        placeholderDetail.value?.policyBundles ?? null,
-      );
-      return files
-        ? files.map((f) => f.package).filter((p): p is string => !!p)
-        : null;
-    },
-  }));
   const draft = useOverlayDraft(draftState, placeholderBase, {
     bases,
-    validationBases,
-    validationContext,
     extraIssues: () => previewIssues.value,
   });
 
@@ -190,7 +127,7 @@ export function useConfigWorkspace(
   const agentIdRef = computed(() => agentId);
   const canPreview = computed(
     () =>
-      canEdit.value &&
+      canConfigure.value &&
       ready.value &&
       draft.isDirty.value &&
       !clientBlocked.value &&
@@ -226,23 +163,9 @@ export function useConfigWorkspace(
     }
     return out;
   });
-  /** Error-severity policy problems of the current preview (shown per module). */
-  const previewPolicyErrors = computed(
-    () =>
-      currentPreview.value?.policyErrors.filter(
-        (e) => e.severity === 'error',
-      ) ?? [],
-  );
   const blockingCount = computed(
-    () =>
-      draft.issues.value.filter((i) => i.blocking).length +
-      previewPolicyErrors.value.length,
+    () => draft.issues.value.filter((i) => i.blocking).length,
   );
-  /** Policy errors from the last failed save (422), for Rego diagnostics. */
-  const savePolicyErrors = ref<PolicyError[]>([]);
-  watch(draft.overlay, () => {
-    savePolicyErrors.value = [];
-  });
 
   const config = computed(() => state.config.value ?? EMPTY_REVISION);
   const ctx: EditorContext = {
@@ -253,45 +176,20 @@ export function useConfigWorkspace(
     placeholderInstanceId,
     placeholderBase,
     bases,
-    validationBases,
     lastPreview: preview.lastPreview,
-    savePolicyErrors,
   };
 
-  /** Whether this user may edit the field at `ptr` (R40/R58/R61); forbidden keys never. */
+  /** Whether this user may edit the field at `ptr` (R40); forbidden keys never. */
   function canEditPointer(ptr: string): boolean {
-    if (isForbiddenPointer(ptr)) return false;
-    if (canConfigure.value) return true;
-    return canConfigurePolicy.value && isPolicyPointer(ptr);
+    return canConfigure.value && !isForbiddenPointer(ptr);
   }
 
-  /**
-   * The bases a save validates against (R48): the previewed `validated` instances when known,
-   * else fresh apply-mode instances. For the advisory policy-only check (the API decides).
-   */
-  const policyBases = computed<ConfigDoc[]>(() => {
-    const p = preview.lastPreview.value;
-    if (p && p.instances.some((i) => i.validated !== undefined)) {
-      return p.instances
-        .filter((i) => i.validated)
-        .map((i) => instanceDetails.value.get(i.instanceId)?.base)
-        .filter((b): b is ConfigDoc => !!b);
-    }
-    return validationBases.value;
-  });
-  /** '' = the user may save this draft; else why not (R58/R61, mirrors PolicyOnlyChange). */
-  const saveDisabledReason = computed(() => {
-    if (!canEdit.value)
-      return "You don't have permission to change this configuration";
-    if (editorMode.value === 'full') return '';
-    return isPolicyOnlyChange(
-      policyBases.value,
-      draft.original.value,
-      draft.overlay.value,
-    )
+  /** '' = the user may save this draft; else why not (R40). */
+  const saveDisabledReason = computed(() =>
+    canConfigure.value
       ? ''
-      : 'Your role can only change policy bundles and inline references';
-  });
+      : "You don't have permission to change this configuration",
+  );
 
   /** '' = Review & save is enabled; else why not (R89: never ahead of a pending preview). */
   const reviewDisabledReason = computed(() => {
@@ -316,7 +214,6 @@ export function useConfigWorkspace(
       },
       true,
     );
-    savePolicyErrors.value = [];
     await state.refresh();
   }
 
@@ -332,28 +229,19 @@ export function useConfigWorkspace(
     state,
     ready,
     canConfigure,
-    canConfigurePolicy,
-    canEdit,
-    editorMode,
     draft,
     instanceDetails,
     detailsLoading,
     detailsLoaded,
     loadDetails,
     placeholderInstanceId,
-    placeholderDetail,
     placeholderBase,
     bases,
-    validationBases,
-    reportSets,
     preview,
-    savePolicyErrors,
     clientBlocked,
-    previewPolicyErrors,
     blockingCount,
     ctx,
     canEditPointer,
-    policyBases,
     saveDisabledReason,
     reviewDisabledReason,
     reviewOpen,
@@ -365,7 +253,6 @@ export function useConfigWorkspace(
   provide(WORKSPACE_KEY, workspace);
   provide(OVERLAY_DRAFT_KEY, draft);
   provide(EDITOR_CONTEXT_KEY, ctx);
-  provide(EDITOR_PERMISSIONS_KEY, { mode: editorMode });
   return workspace;
 }
 

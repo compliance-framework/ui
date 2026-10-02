@@ -1,12 +1,11 @@
-// Shared access to the editor draft, context and permissions for the components that edit the
-// pending-changes draft (inline Effective-view editors, Policies view, bundle operations),
-// plus the preview-derived hints (shields, trust hints) and lock/"differs" hints (LLD U2.3).
+// Shared access to the editor draft and context for the components that edit the
+// pending-changes draft (the inline Effective-view editors), plus the preview-derived hints
+// (shields, trust hints) and lock/"differs" hints (LLD U2.3).
 
-import { computed, inject } from 'vue';
+import { inject } from 'vue';
 import type { ConfigChange, ConfigPreview } from '@/types/agent-config';
 import {
   EDITOR_CONTEXT_KEY,
-  EDITOR_PERMISSIONS_KEY,
   OVERLAY_DRAFT_KEY,
 } from '@/composables/agent-config/editorContext';
 import { deepEqual } from '@/utils/agent-config/merge-patch';
@@ -83,9 +82,6 @@ export function trustHintFor(
 export function useEditor() {
   const draft = inject(OVERLAY_DRAFT_KEY)!;
   const ctx = inject(EDITOR_CONTEXT_KEY)!;
-  const perms = inject(EDITOR_PERMISSIONS_KEY)!;
-
-  const policyOnly = computed(() => perms.mode.value === 'policy-only');
 
   function has(ptr: string): boolean {
     return hasAt(draft.overlay.value, ptr);
@@ -139,8 +135,6 @@ export function useEditor() {
   return {
     draft,
     ctx,
-    perms,
-    policyOnly,
     has,
     overlayValue,
     baseValue,

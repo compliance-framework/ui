@@ -2,7 +2,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import { h, inject, provide, ref, shallowRef, watch } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
-import { routeLocationKey } from 'vue-router';
 import type {
   Agent,
   AgentServiceAccountKey,
@@ -109,14 +108,7 @@ const perms = vi.hoisted(() => ({
 }));
 const ADMIN_PERMS = {
   admin: ['manage'],
-  agent: [
-    'read',
-    'create',
-    'update',
-    'delete',
-    'configure',
-    'configure-policy',
-  ],
+  agent: ['read', 'create', 'update', 'delete', 'configure'],
 };
 
 vi.mock('@/composables/usePermissions', async () => {
@@ -670,25 +662,6 @@ describe('AgentsView', () => {
     await findButtonByText(wrapper, 'Details')!.trigger('click');
     expect(wrapper.text()).toContain('Active Keys');
     expect(findButtonByText(wrapper, 'Edit Agent')).toBeUndefined();
-  });
-
-  it('honours the ?agent=&tab=config deep link from the Policies view', async () => {
-    Object.defineProperty(window.navigator, 'clipboard', {
-      value: { writeText: clipboardWriteText },
-      configurable: true,
-    });
-    const wrapper = mount(AgentsView, {
-      global: {
-        provide: {
-          [routeLocationKey as symbol]: {
-            query: { agent: 'agent-2', tab: 'config' },
-          },
-        },
-      },
-    });
-    await flushPromises();
-    // Even for an admin (whose default tab is Details).
-    expect(wrapper.find('[data-test="config-tab"]').text()).toBe('agent-2');
   });
 
   it('re-keys the config tab when switching agents', async () => {

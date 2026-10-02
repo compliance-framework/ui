@@ -49,14 +49,6 @@ export function pluginProvenance(
   return provenanceOf(pointer('plugins', name), base, overlay);
 }
 
-export function bundleProvenance(
-  name: string,
-  base: unknown,
-  overlay: unknown,
-): Provenance {
-  return provenanceOf(pointer('policy_bundles', name), base, overlay);
-}
-
 export const PROVENANCE_LABELS: Record<Provenance, string> = {
   file: 'file',
   overlay: 'overlay',

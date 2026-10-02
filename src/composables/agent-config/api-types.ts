@@ -3,8 +3,6 @@
 
 import type {
   AgentConfigRevision,
-  ArtifactFileList,
-  ArtifactFileSource,
   AgentConfigRevisionSummary,
   AgentInstanceDetail,
   AgentInstanceSummary,
@@ -91,8 +89,4 @@ export interface AgentConfigApi {
     agentId: string,
     instanceId: string,
   ): Promise<AgentInstanceDetail>;
-  /** R62: files of a policy bundle artifact (vendor sources reported by agents). */
-  listArtifactFiles(digest: string): Promise<ArtifactFileList>;
-  /** R62: one file's source; 404 = unknown digest or path, 415/422 = not readable as text. */
-  getArtifactFile(digest: string, path: string): Promise<ArtifactFileSource>;
 }

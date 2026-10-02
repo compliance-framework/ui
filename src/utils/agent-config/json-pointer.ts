@@ -1,6 +1,6 @@
 // RFC 6901 JSON Pointers (design R5). Every config path the API returns (`changes`, `unsafe`,
 // 422 `overlay`/`instances` errors, `warnings`) is a pointer such as
-// `/plugins/local-ssh/config/port` or `/policy_bundles/ssh-tuned/modules/a~1b.rego`.
+// `/plugins/local-ssh/config/port` or `/plugins/local-ssh/labels/team~1owner`.
 
 import { isPlainObject } from './merge-patch';
 

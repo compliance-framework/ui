@@ -6,13 +6,7 @@ import type { AgentConfigApi } from '@/composables/agent-config/useAgentConfigAp
 import { resetAgentDrafts } from '@/composables/agent-config/draftRegistry';
 import type { ConfigWorkspace } from '@/composables/agent-config/useConfigWorkspace';
 import type { Agent } from '@/types/agents';
-import {
-  ADMIN,
-  POLICY_AUTHOR,
-  fakeApi,
-  globalWith,
-  piniaWith,
-} from './helpers';
+import { ADMIN, READER, fakeApi, globalWith, piniaWith } from './helpers';
 
 vi.mock('@/components/code-editor', () => import('./codeEditorMock'));
 // Confirmations accept immediately.
@@ -171,11 +165,13 @@ describe('inline editing on the Effective view (R69)', () => {
     expect(editor.find('[data-test="policy-data-error"]').exists()).toBe(true);
 
     editor = await openEditor(wrapper, '/plugins/ubuntu-packages/policies');
-    await editor.find('[data-test="new-policy"]').setValue('inline:ssh-tuned');
+    await editor
+      .find('[data-test="new-policy"]')
+      .setValue('ghcr.io/compliance-framework/plugin-extra-policies:v1');
     await editor.find('form').trigger('submit');
     expect(
       ws.draft.overlay.value.plugins?.['ubuntu-packages']?.policies,
-    ).toContain('inline:ssh-tuned');
+    ).toContain('ghcr.io/compliance-framework/plugin-extra-policies:v1');
     wrapper.unmount();
   });
 
@@ -204,7 +200,7 @@ describe('field states (R71)', () => {
   it('forbidden fields are locked without a pencil; restricted fields name the instances', async () => {
     const { wrapper } = await mountTab();
     const locked = wrapper.find('[data-test="locked-keys"]');
-    expect(locked.findAll('[data-state="forbidden"]').length).toBe(9);
+    expect(locked.findAll('[data-state="forbidden"]').length).toBe(8);
     expect(locked.find('[data-test^="edit-"]').exists()).toBe(false);
 
     // `password` is not in any apply_safe instance's overridable_config_flags.
@@ -230,11 +226,11 @@ describe('field states (R71)', () => {
     wrapper.unmount();
   });
 
-  it('a policy author only gets the policy-assignment pencils', async () => {
-    const { wrapper } = await mountTab(POLICY_AUTHOR);
+  it('a reader gets no pencils and no plugin actions', async () => {
+    const { wrapper } = await mountTab(READER);
     expect(
       wrapper.find('[data-test="edit-/plugins/local-ssh/policies"]').exists(),
-    ).toBe(true);
+    ).toBe(false);
     expect(wrapper.find('[data-test="edit-/verbosity"]').exists()).toBe(false);
     expect(
       wrapper.find('[data-test="edit-/plugins/local-ssh/schedule"]').exists(),

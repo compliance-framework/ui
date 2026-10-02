@@ -1,8 +1,8 @@
 // Field states on the Effective view (R71):
 //   forbidden  — `api.*`, `daemon`, `remote_config.*`: set on the agent host, never overlaid;
 //   restricted — editable, but some apply_safe instances will not apply a change there
-//                (no matching trusted_sources / overridable_config_flags, or inline policies
-//                disabled), derived from each instance's reported `remote_config`;
+//                (no matching trusted_sources / overridable_config_flags), derived from each
+//                instance's reported `remote_config`;
 //   editable   — everything else.
 // Mirrors agentconfig.Classify for apply_safe hosts. ADVISORY: the preview and the agents
 // decide; a value-dependent rule (e.g. a source that is already used) can still make a
@@ -41,8 +41,6 @@ function label(i: AgentInstanceSummary): string {
 
 const NO_TRUSTED =
   'apply_safe without trusted_sources: a new source needs apply_all';
-const INLINE_OFF =
-  'inline policies are disabled on this host (allow_inline_policies: false)';
 
 /** Why each fresh apply_safe instance would not apply a change at `ptr`. */
 export function fieldRestrictions(
@@ -56,7 +54,6 @@ export function fieldRestrictions(
     if (inst.stale || inst.mode !== 'apply_safe' || !rc) continue;
     const trusted = rc.trusted_sources ?? [];
     const flags = rc.overridable_config_flags ?? [];
-    const inlineOff = rc.allow_inline_policies === false;
     const reasons: string[] = [];
     if (t[0] === 'plugins' && t.length >= 3) {
       const plugin = t[1];
@@ -76,14 +73,9 @@ export function fieldRestrictions(
             `apply_safe without overridable_config_flags for ${plugin}: config changes need apply_all`,
           );
         }
-      } else if (t[2] === 'source') {
+      } else if (t[2] === 'source' || t[2] === 'policies') {
         if (!trusted.length) reasons.push(NO_TRUSTED);
-      } else if (t[2] === 'policies') {
-        if (!trusted.length) reasons.push(NO_TRUSTED);
-        if (inlineOff) reasons.push(INLINE_OFF);
       }
-    } else if (t[0] === 'policy_bundles' && inlineOff) {
-      reasons.push(INLINE_OFF);
     }
     for (const reason of reasons) out.push({ instance: label(inst), reason });
   }

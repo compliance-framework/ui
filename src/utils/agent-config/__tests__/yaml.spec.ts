@@ -32,14 +32,14 @@ describe('yaml', () => {
   it('dumps multi-line strings as block scalars and keeps key order', () => {
     const text = toYaml({
       z: 1,
-      modules: { 'a.rego': 'package a\n\nimport rego.v1\n' },
+      policy_data: { motd: 'line one\n\nline two\n' },
     });
-    expect(text).toContain('modules:');
-    expect(text).toMatch(/a\.rego: \|/);
-    expect(text.indexOf('z:')).toBeLessThan(text.indexOf('modules:'));
+    expect(text).toContain('policy_data:');
+    expect(text).toMatch(/motd: \|/);
+    expect(text.indexOf('z:')).toBeLessThan(text.indexOf('policy_data:'));
     expect(parseYaml(text)).toEqual({
       ok: true,
-      value: { z: 1, modules: { 'a.rego': 'package a\n\nimport rego.v1\n' } },
+      value: { z: 1, policy_data: { motd: 'line one\n\nline two\n' } },
     });
   });
 

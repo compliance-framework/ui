@@ -95,7 +95,7 @@ export function makeAbsent<T extends object>(
  * A merge patch that turns `source` into exactly `target` while keeping every target key
  * explicit (no normalisation against the base, which differs between instances): target keys
  * are written in full (nested objects recursively) and keys present only in `source` become
- * `null`. Used for whole-object editors such as `policy_data` and bundle `data` (objects MERGE
+ * `null`. Used for whole-object editors such as `policy_data` (objects MERGE
  * under RFC 7396, so a key removed in the editor must be nulled).
  *
  * The source is a REDACTED report value: a leaf that is the mask ("••••") in both source and

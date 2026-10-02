@@ -4,11 +4,9 @@ import type { AgentConfigApi } from '@/composables/agent-config/useAgentConfigAp
 import { AgentConfigApiError } from '@/composables/agent-config/api-types';
 import type { AgentConfigRevision, OverlayDoc } from '@/types/agent-config';
 import {
-  baseConfig,
   configRev6,
   configRev7,
   error422,
-  overlayRev7,
   revisionsPage1,
 } from '@/composables/agent-config/__tests__/fixtures';
 import { ADMIN, globalWith, piniaWith } from './helpers';
@@ -29,8 +27,6 @@ const DialogStub = {
 
 function makeApi(over: Partial<AgentConfigApi> = {}): AgentConfigApi {
   return {
-    listArtifactFiles: vi.fn(),
-    getArtifactFile: vi.fn(),
     getConfig: vi.fn(),
     putConfig: vi.fn(),
     preview: vi.fn(),
@@ -45,18 +41,6 @@ function makeApi(over: Partial<AgentConfigApi> = {}): AgentConfigApi {
     ...over,
   };
 }
-
-/** r5 differs from r7 only under /policy_bundles and /plugins/local-ssh/policies. */
-const policyOnlyRev5: OverlayDoc = {
-  verbosity: 1,
-  plugins: {
-    'local-ssh': {
-      schedule: '*/15 * * * *',
-      config: { port: '2222' },
-      policy_data: { max_auth_tries: 3 },
-    },
-  },
-};
 
 function mountHistory(
   api: AgentConfigApi,
@@ -78,7 +62,6 @@ function mountHistory(
       );
     return cache.get(rev)!;
   });
-  const loadBases = vi.fn().mockResolvedValue([baseConfig]);
   const global = globalWith(piniaWith(ADMIN), { Dialog: DialogStub });
   const wrapper = mount(AgentConfigHistory, {
     props: {
@@ -86,10 +69,8 @@ function mountHistory(
       agentId: 'agent-1',
       fileBase: 'ssh',
       desiredRevision: 7,
-      revertAccess: 'full',
+      canRevert: true,
       revertTooltip: "You don't have permission to configure agents.",
-      currentOverlay: overlayRev7,
-      loadBases,
       getRevision,
       ...extra,
     },
@@ -104,7 +85,7 @@ function mountHistory(
       },
     },
   });
-  return { wrapper, getRevision, loadBases };
+  return { wrapper, getRevision };
 }
 
 function setTip(
@@ -210,140 +191,24 @@ describe('AgentConfigHistory (U3)', () => {
     );
   });
 
-  it('Revert is disabled without configure or configure-policy', async () => {
-    const { wrapper, loadBases } = mountHistory(makeApi(), {
-      revertAccess: 'none',
-    });
+  it('Revert is disabled without agent:configure', async () => {
+    const api = makeApi();
+    const { wrapper } = mountHistory(api, { canRevert: false });
     await flushPromises();
     expect(revertBtn(wrapper, 5).attributes('disabled')).toBeDefined();
     expect(revertTip(wrapper, 5)).toBe(
       "You don't have permission to configure agents.",
     );
-    expect(loadBases).not.toHaveBeenCalled();
+    await revertBtn(wrapper, 5).trigger('click');
+    expect(wrapper.find('[data-test="revert-dialog"]').exists()).toBe(false);
   });
 
-  describe('R61: configure-policy-only users', () => {
-    it('can revert to a revision that differs only in policies (If-Match of the desired revision)', async () => {
-      const api = makeApi();
-      const { wrapper, loadBases } = mountHistory(
-        api,
-        { revertAccess: 'policy-only' },
-        { 5: policyOnlyRev5 },
-      );
-      await flushPromises();
-      expect(loadBases).toHaveBeenCalled();
-      expect(revertBtn(wrapper, 5).attributes('disabled')).toBeUndefined();
-      expect(revertTip(wrapper, 5)).toBe('');
-      await revertBtn(wrapper, 5).trigger('click');
-      await wrapper.find('[data-test="revert-confirm"]').trigger('click');
-      await flushPromises();
-      expect(api.revert).toHaveBeenCalledWith('agent-1', 5, 7, '');
-    });
-
-    it('sees Revert disabled, naming the path, when the revert changes a non-policy field', async () => {
-      const api = makeApi();
-      const { wrapper } = mountHistory(
-        api,
-        { revertAccess: 'policy-only' },
-        {
-          5: policyOnlyRev5,
-          4: {
-            ...policyOnlyRev5,
-            plugins: {
-              'local-ssh': {
-                ...(policyOnlyRev5.plugins!['local-ssh'] as object),
-                schedule: '@hourly',
-              },
-            },
-          },
-        },
-      );
-      await flushPromises();
-      // r6 drops config.port (among others); r4 changes the schedule.
-      expect(revertBtn(wrapper, 6).attributes('disabled')).toBeDefined();
-      expect(revertTip(wrapper, 6)).toBe(
-        'Needs agent:configure: this changes /plugins/local-ssh/config/port',
-      );
-      expect(revertTip(wrapper, 4)).toBe(
-        'Needs agent:configure: this changes /plugins/local-ssh/schedule',
-      );
-      await revertBtn(wrapper, 6).trigger('click');
-      expect(wrapper.find('[data-test="revert-dialog"]').exists()).toBe(false);
-      expect(api.revert).not.toHaveBeenCalled();
-    });
-
-    it('fails closed while checking and when the revision cannot be loaded', async () => {
-      const { wrapper, getRevision } = mountHistory(makeApi(), {
-        revertAccess: 'policy-only',
-      });
-      getRevision.mockRejectedValueOnce(
-        new AgentConfigApiError({
-          kind: 'network',
-          message: 'offline',
-        }),
-      );
-      await flushPromises();
-      expect(
-        [7, 6, 5, 4, 3, 2, 1]
-          .filter((r) => r !== 7)
-          .every((r) => revertBtn(wrapper, r).attributes('disabled') != null),
-      ).toBe(true);
-      expect(revertTip(wrapper, 6)).toBe(
-        'Could not check this revert: offline',
-      );
-    });
-
-    it('still surfaces a 403 from the API', async () => {
-      const api = makeApi({
-        revert: vi.fn().mockRejectedValue(
-          new AgentConfigApiError({
-            kind: 'forbidden',
-            status: 403,
-            message: 'insufficient permissions',
-          }),
-        ),
-      });
-      const { wrapper } = mountHistory(
-        api,
-        { revertAccess: 'policy-only' },
-        { 5: policyOnlyRev5 },
-      );
-      await flushPromises();
-      await revertBtn(wrapper, 5).trigger('click');
-      await wrapper.find('[data-test="revert-confirm"]').trigger('click');
-      await flushPromises();
-      expect(toastAdd).toHaveBeenCalledWith(
-        expect.objectContaining({
-          severity: 'error',
-          summary: 'Revert failed',
-          detail: 'insufficient permissions',
-        }),
-      );
-    });
-
-    it('re-decides when the desired overlay changes', async () => {
-      const { wrapper } = mountHistory(
-        makeApi(),
-        { revertAccess: 'policy-only' },
-        { 5: policyOnlyRev5 },
-      );
-      await flushPromises();
-      expect(revertBtn(wrapper, 5).attributes('disabled')).toBeUndefined();
-      await wrapper.setProps({ currentOverlay: { verbosity: 3 } });
-      await flushPromises();
-      expect(revertTip(wrapper, 5)).toBe(
-        'Needs agent:configure: this changes /plugins/local-ssh/config/port',
-      );
-    });
-  });
-
-  it('agent:configure users can revert to any revision without a policy check', async () => {
-    const { wrapper, loadBases, getRevision } = mountHistory(makeApi());
+  it('agent:configure users can revert to any revision without loading it', async () => {
+    const { wrapper, getRevision } = mountHistory(makeApi());
     await flushPromises();
     for (const r of [6, 5, 4, 3, 2, 1]) {
       expect(revertBtn(wrapper, r).attributes('disabled')).toBeUndefined();
     }
-    expect(loadBases).not.toHaveBeenCalled();
     expect(getRevision).not.toHaveBeenCalled();
   });
 
@@ -389,7 +254,6 @@ describe('AgentConfigHistory (U3)', () => {
     const dlg = i.wrapper.find('[data-test="revert-invalid"]');
     expect(dlg.text()).toContain('/api');
     expect(dlg.text()).toContain('invalid cron');
-    expect(dlg.text()).toContain('max_auth_tries.rego:3:1');
   });
 
   it('shows the empty state', async () => {

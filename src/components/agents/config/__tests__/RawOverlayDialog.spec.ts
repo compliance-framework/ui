@@ -1,13 +1,11 @@
 // R70: the raw overlay YAML dialog feeds the shared draft; forbidden keys (R71) are
-// highlighted and block Apply; Clear overlay keeps the R61 gate.
+// highlighted and block Apply; Clear overlay needs agent:configure.
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import { resetAgentDrafts } from '@/composables/agent-config/draftRegistry';
 import type { ConfigWorkspace } from '@/composables/agent-config/useConfigWorkspace';
-import { configRev7 } from '@/composables/agent-config/__tests__/fixtures';
 import {
   ADMIN,
-  POLICY_AUTHOR,
   READER,
   fakeApi,
   globalWith,
@@ -54,7 +52,7 @@ describe('RawOverlayDialog (R70)', () => {
     const { wrapper, ws } = await mountDialog();
     expect(
       (wrapper.find('textarea').element as HTMLTextAreaElement).value,
-    ).toContain('ssh-tuned');
+    ).toContain('local-ssh-policies:v1.1.0');
     expect(
       wrapper.find('[data-test="raw-apply"]').attributes('disabled'),
     ).toBeDefined();
@@ -106,33 +104,12 @@ describe('RawOverlayDialog (R70)', () => {
     ).toBeDefined();
   });
 
-  it('Clear overlay: always for configure; for policy authors only when policy-only (R61)', async () => {
+  it('Clear overlay replaces the draft with {} for configure', async () => {
     const admin = await mountDialog();
     await admin.wrapper.find('[data-test="clear-overlay"]').trigger('click');
     await flushPromises();
     await admin.wrapper.find('[data-test="raw-apply"]').trigger('click');
     expect(admin.ws.draft.overlay.value).toEqual({});
-
-    resetAgentDrafts();
-    // r7 also sets verbosity and plugin fields: clearing it is not policy-only.
-    const author = await mountDialog(POLICY_AUTHOR);
-    expect(
-      author.wrapper.find('[data-test="clear-overlay"]').attributes('disabled'),
-    ).toBeDefined();
-
-    resetAgentDrafts();
-    const policyOnly = {
-      ...configRev7,
-      overlay: { policy_bundles: configRev7.overlay!.policy_bundles },
-    };
-    const author2 = await mountDialog(POLICY_AUTHOR, {
-      getConfig: vi.fn().mockResolvedValue(policyOnly),
-    });
-    expect(
-      author2.wrapper
-        .find('[data-test="clear-overlay"]')
-        .attributes('disabled'),
-    ).toBeUndefined();
   });
 
   it('a reader cannot clear', async () => {

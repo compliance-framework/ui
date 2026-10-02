@@ -1,23 +1,12 @@
 // Client-only overlay checks (R89): what the API cannot tell the editor, or tells only after a
-// round trip that would fail anyway: a mapping overlay, masked values copied from a report,
-// unquoted plugin config/label scalars (R27), data files that do not parse, and imports across
-// bundles (hint). Every other rule (O1–O11, the Rego contract) comes from the API's debounced
-// preview (POST …/config/preview); the API and the agent stay authoritative.
+// round trip that would fail anyway: a mapping overlay, masked values copied from a report and
+// unquoted plugin config/label scalars (R27). Every other rule (O1–O11) comes from the API's
+// debounced preview (POST …/config/preview); the API and the agent stay authoritative.
 
 import { REDACTED_MASK } from '@/types/agent-config';
-import type {
-  ConfigDoc,
-  OverlayDoc,
-  PolicyBundleDoc,
-} from '@/types/agent-config';
-import {
-  clone,
-  isPlainObject,
-  mergePatch,
-  type PlainObject,
-} from './merge-patch';
+import type { OverlayDoc } from '@/types/agent-config';
+import { clone, isPlainObject, type PlainObject } from './merge-patch';
 import { escapeToken, pointer } from './json-pointer';
-import { CORE_SCHEMA, load } from 'js-yaml';
 
 export interface ClientIssue {
   ptr: string;
@@ -25,18 +14,12 @@ export interface ClientIssue {
   blocking: boolean;
 }
 
-/** Plugin and bundle names (R28, API PluginNamePattern / BundleNamePattern). */
+/** Plugin names (R28, API PluginNamePattern). */
 export const NAME_RE = /^[a-z0-9][a-z0-9_-]{0,62}$/;
-/** API ModulePathPattern (R18). */
-const MODULE_PATH_RE = /^[A-Za-z0-9_\-./]+\.(rego|json|yaml|yml)$/;
-/** The only non-Rego files OPA loads from a policy root (R18). */
-export const DATA_FILE_RE = /^data\.(json|yaml|yml)$/;
-const INLINE_PREFIX = 'inline:';
 
 export const LIMITS = {
   /** Larger drafts are checked on Review only (live preview). */
   overlayBytes: 256 * 1024,
-  moduleBytes: 256 * 1024,
   commentChars: 2000,
 } as const;
 
@@ -44,37 +27,6 @@ const encoder = new TextEncoder();
 
 export function byteSize(str: string): number {
   return encoder.encode(str).length;
-}
-
-export function isInlineSource(s: string): boolean {
-  return s.startsWith(INLINE_PREFIX);
-}
-
-export function inlineBundleName(s: string): string | null {
-  if (!isInlineSource(s)) return null;
-  const n = s.slice(INLINE_PREFIX.length);
-  return n === '' ? null : n;
-}
-
-function basename(p: string): string {
-  const i = p.lastIndexOf('/');
-  return i >= 0 ? p.slice(i + 1) : p;
-}
-
-/** Mirrors agentconfig.ValidateModulePath. Returns an error message or null. */
-export function modulePathError(p: string): string | null {
-  if (!MODULE_PATH_RE.test(p)) {
-    return 'Module paths use letters, digits, "_", "-", "." and "/", and end in .rego, .json, .yaml or .yml';
-  }
-  if (p.startsWith('/'))
-    return 'Module paths are relative to the policy root (no leading "/")';
-  if (p.split('/').some((seg) => seg === '' || seg === '.' || seg === '..')) {
-    return 'Module paths must not contain empty, "." or ".." segments';
-  }
-  if (!p.endsWith('.rego') && !DATA_FILE_RE.test(basename(p))) {
-    return 'Only .rego modules and data.json, data.yaml or data.yml data files are loaded';
-  }
-  return null;
 }
 
 /**
@@ -130,46 +82,11 @@ function walkStrings(
   }
 }
 
-export interface ValidationContext {
-  /** Known vendor packages per bundle name (from instance reports), for the import hint. */
-  vendorPackages?: (bundle: string) => string[] | null;
-}
-
-function packageOf(src: string): string | null {
-  const m = /^\s*package\s+([A-Za-z0-9_.[\]"]+)/m.exec(src);
-  return m ? m[1] : null;
-}
-
-function importedDataPackages(src: string): string[] {
-  const out: string[] = [];
-  for (const m of src.matchAll(/^\s*import\s+data\.([A-Za-z0-9_.]+)/gm)) {
-    out.push(m[1]);
-  }
-  return out;
-}
-
-function dataParseError(path: string, src: string): string | null {
-  try {
-    if (path.endsWith('.json')) JSON.parse(src);
-    else load(src, { schema: CORE_SCHEMA });
-    return null;
-  } catch (e) {
-    return e instanceof Error
-      ? (e.message.split('\n')[0] ?? 'invalid')
-      : 'invalid';
-  }
-}
-
 /**
  * The client-only checks of an overlay (R89). Blocking issues disable Review & save and the
- * live preview; the rest are hints. `bases` (the instances' files) only resolve the import
- * hint against file-defined modules.
+ * live preview.
  */
-export function validateOverlayClientSide(
-  overlay: OverlayDoc,
-  bases: ConfigDoc[] = [],
-  ctx: ValidationContext = {},
-): ClientIssue[] {
+export function validateOverlayClientSide(overlay: OverlayDoc): ClientIssue[] {
   const issues: ClientIssue[] = [];
   const seen = new Set<string>();
   const add = (ptr: string, message: string, blocking: boolean) => {
@@ -214,59 +131,7 @@ export function validateOverlayClientSide(
     add(ptr, 'This looks like a masked value copied from a report', true);
   }
 
-  const ob = overlay.policy_bundles;
-  if (!isPlainObject(ob)) return issues;
-  for (const [name, bundle] of Object.entries(ob)) {
-    if (!isPlainObject(bundle)) continue;
-    for (const [path, src] of Object.entries(
-      (bundle as PolicyBundleDoc).modules ?? {},
-    )) {
-      if (typeof src !== 'string' || path.endsWith('.rego') || !src.trim())
-        continue;
-      const err = dataParseError(path, src);
-      if (err)
-        add(
-          pointer('policy_bundles', name, 'modules', path),
-          `The data file does not parse: ${err}`,
-          true,
-        );
-    }
-    for (const base of bases.length ? bases : [{}]) {
-      importHints(name, mergePatch<ConfigDoc>(base, overlay), ctx, add);
-    }
-  }
   return issues;
-}
-
-/** R21: imports across bundles are not supported (hint for the overlay's modules). */
-function importHints(
-  name: string,
-  eff: ConfigDoc,
-  ctx: ValidationContext,
-  add: (ptr: string, message: string, blocking: boolean) => void,
-): void {
-  const b = eff.policy_bundles?.[name];
-  if (!isPlainObject(b)) return;
-  const modules = (b.modules ?? {}) as Record<string, string>;
-  const hasExtends = typeof b.extends === 'string' && b.extends.trim() !== '';
-  const own = Object.entries(modules)
-    .filter(([p, src]) => p.endsWith('.rego') && typeof src === 'string')
-    .map(([, src]) => packageOf(src))
-    .filter((p): p is string => !!p);
-  const vendor = ctx.vendorPackages?.(name) ?? null;
-  if (vendor === null && hasExtends) return;
-  const known = [...own, ...(vendor ?? [])];
-  for (const [path, src] of Object.entries(modules)) {
-    if (!path.endsWith('.rego') || typeof src !== 'string') continue;
-    for (const imp of importedDataPackages(src)) {
-      if (!known.some((pkg) => imp === pkg || imp.startsWith(`${pkg}.`)))
-        add(
-          pointer('policy_bundles', name, 'modules', path),
-          `import data.${imp}: imports across bundles are not supported`,
-          false,
-        );
-    }
-  }
 }
 
 /** Pointers of every string value equal to the report mask ("••••", R25). */

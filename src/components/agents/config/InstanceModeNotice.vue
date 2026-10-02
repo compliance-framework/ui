@@ -74,12 +74,6 @@
           >{{ s }}</code
         >
       </div>
-      <p
-        v-if="rc.allow_inline_policies === false"
-        class="text-amber-700 dark:text-amber-300"
-      >
-        {{ MODE_TEXT.inlineDisabled }}
-      </p>
     </template>
     <template v-else-if="instance.mode === 'apply_all'">
       <p class="text-gray-600 dark:text-slate-400">{{ MODE_TEXT.apply_all }}</p>
@@ -137,20 +131,6 @@
           </template>
         </li>
       </ul>
-      <ul
-        v-if="
-          state.state === 'rejected-invalid' && instance.policyErrors.length
-        "
-        class="space-y-1 text-xs"
-      >
-        <li v-for="(pe, i) in instance.policyErrors" :key="i">
-          <code class="font-mono">{{ policyErrorLocation(pe) }}</code>
-          <span v-if="pe.code" class="ml-1 font-medium">
-            <CodeLabel :labels="POLICY_ERROR_CODE_LABELS" :code="pe.code" />
-          </span>
-          — {{ pe.message }}
-        </li>
-      </ul>
       <p
         v-if="
           instance.appliedRevision !== null &&
@@ -160,30 +140,6 @@
       >
         running r{{ instance.appliedRevision }}
       </p>
-    </div>
-
-    <!-- R75/R88: the agent's policy warnings on the revision it runs -->
-    <div
-      v-if="policyWarnings.length"
-      class="rounded-md bg-amber-50 p-3 dark:bg-amber-500/10"
-      data-test="policy-warnings"
-    >
-      <p class="mb-1 text-xs font-medium text-amber-800 dark:text-amber-300">
-        Policy warnings reported by this agent
-      </p>
-      <ul class="space-y-1 text-xs">
-        <li
-          v-for="(pe, i) in policyWarnings"
-          :key="i"
-          class="flex flex-wrap gap-2"
-        >
-          <code class="font-mono">{{ policyErrorLocation(pe) }}</code>
-          <span v-if="pe.code" class="font-medium">
-            <CodeLabel :labels="POLICY_ERROR_CODE_LABELS" :code="pe.code" />
-          </span>
-          <span>{{ pe.message }}</span>
-        </li>
-      </ul>
     </div>
 
     <!-- R41 file warnings -->
@@ -220,7 +176,6 @@ import type {
   RemoteConfigDoc,
 } from '@/types/agent-config';
 import type { InstanceUiState } from '@/utils/agent-config/instance-status';
-import { policyErrorLocation } from '@/utils/agent-config/display';
 import ConfigPill from './ConfigPill.vue';
 import CodeLabel from './CodeLabel.vue';
 import InstanceStatusChip from './InstanceStatusChip.vue';
@@ -230,7 +185,6 @@ import {
   FIELD_ERROR_CODE_LABELS,
   MODE_TEXT,
   NOT_REPORTED_TEXT,
-  POLICY_ERROR_CODE_LABELS,
 } from './constants';
 
 const props = defineProps<{
@@ -246,13 +200,5 @@ const isUnsafeRow = computed(
   () =>
     props.state?.state === 'rejected-unsafe' ||
     props.state?.state === 'rejected-forbidden',
-);
-/** Rejected-invalid lists every policy error above; other states show the warnings here. */
-const policyWarnings = computed(() =>
-  props.state?.state === 'rejected-invalid'
-    ? []
-    : (props.instance?.policyErrors ?? []).filter(
-        (e) => e.severity === 'warning',
-      ),
 );
 </script>

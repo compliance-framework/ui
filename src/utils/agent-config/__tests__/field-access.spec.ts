@@ -27,7 +27,6 @@ function inst(
     heartbeatConfigRevision: 1,
     reportStale: false,
     unsafe: [],
-    policyErrors: [],
     ...over,
   };
 }
@@ -66,12 +65,12 @@ describe('field access (R71)', () => {
     expect(restrictionTooltip(user.restrictions)).toContain('host-a:');
   });
 
-  it('restricts sources/policies without trusted_sources and bundles with inline policies off', () => {
+  it('restricts sources/policies without trusted_sources', () => {
     const list = [
       inst({
         instanceId: 'h1',
         hostname: 'h1',
-        remoteConfig: { trusted_sources: [], allow_inline_policies: false },
+        remoteConfig: { trusted_sources: [] },
       }),
     ];
     expect(fieldAccess('/plugins/ssh/source', list).restrictions).toHaveLength(
@@ -79,10 +78,7 @@ describe('field access (R71)', () => {
     );
     expect(
       fieldAccess('/plugins/ssh/policies', list).restrictions,
-    ).toHaveLength(2);
-    expect(fieldAccess('/policy_bundles/b/modules/a.rego', list).state).toBe(
-      'restricted',
-    );
+    ).toHaveLength(1);
     expect(fieldAccess('/plugins/ssh/schedule', list).state).toBe('editable');
     expect(fieldAccess('/verbosity', list).state).toBe('editable');
   });

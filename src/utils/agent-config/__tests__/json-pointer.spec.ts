@@ -15,10 +15,7 @@ describe('json-pointer', () => {
       '/plugins/local-ssh/config/port',
       ['plugins', 'local-ssh', 'config', 'port'],
     ],
-    [
-      '/policy_bundles/b/modules/a~1b.rego',
-      ['policy_bundles', 'b', 'modules', 'a/b.rego'],
-    ],
+    ['/plugins/p/labels/team~1owner', ['plugins', 'p', 'labels', 'team/owner']],
     ['/x/~0tilde~1slash', ['x', '~tilde/slash']],
     ['/a/', ['a', '']],
   ])('parses %s', (ptr, tokens) => {
@@ -31,8 +28,8 @@ describe('json-pointer', () => {
   });
 
   it('pointer() escapes tokens', () => {
-    expect(pointer('policy_bundles', 'b', 'modules', 'dir/x.rego')).toBe(
-      '/policy_bundles/b/modules/dir~1x.rego',
+    expect(pointer('plugins', 'p', 'policy_data', 'dir/x')).toBe(
+      '/plugins/p/policy_data/dir~1x',
     );
   });
 

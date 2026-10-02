@@ -54,7 +54,6 @@ export function previewBlocks(preview: ConfigPreview | null): boolean {
   if (!preview) return false;
   return (
     preview.overlayErrors.length > 0 ||
-    preview.policyErrors.some((e) => e.severity === 'error') ||
     preview.instances.some(instanceErrorsBlock)
   );
 }
@@ -65,8 +64,7 @@ export function saveErrorsBlock(
   if (!body) return false;
   return (
     (body.overlay?.length ?? 0) > 0 ||
-    (body.instances ?? []).some((i) => i.errors?.length) ||
-    (body['policy-errors'] ?? []).some((e) => e.severity === 'error')
+    (body.instances ?? []).some((i) => i.errors?.length)
   );
 }
 

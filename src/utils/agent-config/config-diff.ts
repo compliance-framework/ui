@@ -1,5 +1,5 @@
 // Client-side config diff (R16): recurses into objects; arrays and strings are compared as a
-// whole. Multi-line strings (Rego modules) are flagged so the UI can open a text diff.
+// whole. Multi-line strings are flagged so the UI can open a text diff.
 
 import { deepEqual, isPlainObject } from './merge-patch';
 import { escapeToken } from './json-pointer';
@@ -61,5 +61,43 @@ function entry(
 export function diffConfigs(before: unknown, after: unknown): DiffEntry[] {
   const out: DiffEntry[] = [];
   walk('', before ?? {}, after ?? {}, out);
+  return out;
+}
+
+function leafDiffPaths(
+  path: string,
+  a: unknown,
+  b: unknown,
+  hasA: boolean,
+  hasB: boolean,
+  out: string[],
+): void {
+  let objA = isPlainObject(a) ? a : null;
+  let objB = isPlainObject(b) ? b : null;
+  if (objA && !hasB) objB = {};
+  else if (objB && !hasA) objA = {};
+  if (objA && objB) {
+    const keys = Array.from(
+      new Set([...Object.keys(objA), ...Object.keys(objB)]),
+    ).sort();
+    for (const k of keys) {
+      leafDiffPaths(
+        `${path}/${escapeToken(k)}`,
+        objA[k],
+        objB[k],
+        Object.prototype.hasOwnProperty.call(objA, k),
+        Object.prototype.hasOwnProperty.call(objB, k),
+        out,
+      );
+    }
+    return;
+  }
+  if (hasA !== hasB || !deepEqual(a, b)) out.push(path);
+}
+
+/** RFC 6901 pointers of every leaf that differs between two overlays (arrays are leaves). */
+export function changedLeafPaths(a: unknown, b: unknown): string[] {
+  const out: string[] = [];
+  leafDiffPaths('', a, b, true, true, out);
   return out;
 }

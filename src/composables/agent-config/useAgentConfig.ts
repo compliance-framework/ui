@@ -7,7 +7,6 @@ import type {
   AgentConfigRevision,
   AgentInstanceDetail,
   AgentInstanceSummary,
-  ConfigDoc,
   InstancesMeta,
   OverlayDoc,
 } from '@/types/agent-config';
@@ -16,7 +15,6 @@ import { ACTIONS, RESOURCES } from '@/constants/permissions';
 import {
   deriveInstanceState,
   summarizeSync,
-  validationInstanceIds,
 } from '@/utils/agent-config/instance-status';
 import { isAgentConfigApiError, type AgentConfigApi } from './api-types';
 
@@ -48,7 +46,6 @@ export function useAgentConfig(agentId: Ref<string>, api: AgentConfigApi) {
 
   const revisionCache = new Map<number, AgentConfigRevision>();
   const detailCache = new Map<string, AgentInstanceDetail>();
-  let basesPromise: Promise<ConfigDoc[]> | null = null;
   let loadSeq = 0;
   let selectSeq = 0;
 
@@ -212,7 +209,6 @@ export function useAgentConfig(agentId: Ref<string>, api: AgentConfigApi) {
     instances.value = list.items;
     meta.value = list.meta;
     detailCache.clear();
-    basesPromise = null;
     status.value = 'ready';
     const keep =
       keepSelection &&
@@ -246,27 +242,6 @@ export function useAgentConfig(agentId: Ref<string>, api: AgentConfigApi) {
         error.value = messageOf(e, 'Failed to load the agent configuration.');
       }
     }
-  }
-
-  /**
-   * Bases of the instances a save or revert validates against (the API's ValidationBases,
-   * R48), for the policy-only Revert gate (R61). Memoised until the next load; a failed
-   * detail rejects (the gate fails closed) and is retried on the next call.
-   */
-  function loadValidationBases(): Promise<ConfigDoc[]> {
-    if (!basesPromise) {
-      const ids = validationInstanceIds(instances.value);
-      const p = fetchDetails(ids, false).then((details) =>
-        ids
-          .map((id) => details.get(id)?.base)
-          .filter((b): b is ConfigDoc => !!b),
-      );
-      basesPromise = p;
-      p.catch(() => {
-        if (basesPromise === p) basesPromise = null;
-      });
-    }
-    return basesPromise;
   }
 
   /** After save/revert: reload and keep the selected instance. */
@@ -305,7 +280,6 @@ export function useAgentConfig(agentId: Ref<string>, api: AgentConfigApi) {
     refresh,
     getRevisionCached,
     loadAllInstanceDetails,
-    loadValidationBases,
   };
 }
 

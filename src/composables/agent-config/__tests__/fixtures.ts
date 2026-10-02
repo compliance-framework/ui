@@ -28,53 +28,9 @@ export const UBUNTU_SOURCE =
   'ghcr.io/compliance-framework/plugin-ubuntu-packages:v0.4.0';
 export const UBUNTU_POLICIES =
   'ghcr.io/compliance-framework/plugin-ubuntu-policies:v0.2.0';
-
-/** R62: artifact digests the fixture reports name (sources in FIXTURE_ARTIFACT_SOURCES). */
-export const FIXTURE_ARTIFACTS = {
-  sshPolicies: `sha256:${'b'.repeat(64)}`,
-  inlineSshTuned: `sha256:${'a'.repeat(64)}`,
-  ubuntuPolicies: `sha256:${'d'.repeat(64)}`,
-} as const;
-
-function fixturePolicy(pkg: string, title: string): string {
-  return `package compliance_framework.${pkg}
-
-import rego.v1
-
-title := "${title}"
-description := "Fixture vendor policy ${pkg}."
-
-violation contains {"id": "${pkg}", "title": "${title} failed"} if {
-	input.${pkg} == false
-}
-`;
-}
-
-/** Vendor file sources per artifact digest (the artifact file routes, R62). */
-export const FIXTURE_ARTIFACT_SOURCES: Record<
-  string,
-  Record<string, string>
-> = {
-  [FIXTURE_ARTIFACTS.sshPolicies]: {
-    'banner.rego': fixturePolicy('banner', 'SSH banner is set'),
-    'banner_test.rego': `package compliance_framework.banner_test
-
-import rego.v1
-
-test_violation if {
-	data.compliance_framework.banner.violation with input as {"banner": false}
-}
-`,
-    'max_auth_tries.rego': fixturePolicy(
-      'max_auth_tries',
-      'SSH MaxAuthTries is low',
-    ),
-    'root_login.rego': fixturePolicy('root_login', 'SSH root login is off'),
-  },
-  [FIXTURE_ARTIFACTS.ubuntuPolicies]: {
-    'packages.rego': fixturePolicy('packages', 'Packages are up to date'),
-  },
-};
+/** The policy bundle overlay r7 swaps local-ssh to. */
+export const SSH_POLICIES_NEXT =
+  'ghcr.io/compliance-framework/plugin-local-ssh-policies:v1.1.0';
 
 export const instanceIds = {
   a: '0f5e2c1a-0000-4000-8000-00000000000a',
@@ -86,22 +42,12 @@ export const instanceIds = {
   g: '0f5e2c1a-0000-4000-8000-000000000010',
 } as const;
 
-const MAX_AUTH_TRIES_REGO = `package compliance_framework.max_auth_tries
-
-import rego.v1
-
-violation contains {"remarks": "MaxAuthTries is higher than allowed"} if {
-\tinput.max_auth_tries > data.max_auth_tries
-}
-`;
-
 export const remoteConfigSafe: RemoteConfigDoc = {
   mode: 'apply_safe',
   poll_interval: '60s',
   trusted_sources: ['ghcr.io/compliance-framework/*'],
   overridable_config_flags: ['local-ssh:port', 'timeout'],
   allow_local_sources: false,
-  allow_inline_policies: true,
 };
 
 export const baseConfig: ConfigDoc = {
@@ -144,16 +90,9 @@ export const overlayRev7: OverlayDoc = {
   plugins: {
     'local-ssh': {
       schedule: '*/15 * * * *',
-      policies: ['inline:ssh-tuned'],
+      policies: [SSH_POLICIES_NEXT],
       config: { port: '2222' },
       policy_data: { max_auth_tries: 3 },
-    },
-  },
-  policy_bundles: {
-    'ssh-tuned': {
-      extends: SSH_POLICIES,
-      modules: { 'max_auth_tries.rego': MAX_AUTH_TRIES_REGO },
-      delete: ['banner_test.rego'],
     },
   },
 };
@@ -221,7 +160,6 @@ function summary(
     reportStale: false,
     remoteConfig: remoteConfigSafe,
     unsafe: [],
-    policyErrors: [],
     daemon: true,
     truncated: false,
     warnings: [],
@@ -335,36 +273,9 @@ export function detailFor(
     effective: redact(mergePatch<ConfigDoc>(base, overlay)),
     policyBundles: [
       {
-        source: 'inline:ssh-tuned',
+        source: SSH_POLICIES_NEXT,
         digest: 'tree:sha256:aa11',
-        artifactDigest: FIXTURE_ARTIFACTS.inlineSshTuned,
-        extends: {
-          source: SSH_POLICIES,
-          digest: 'tree:sha256:bb22',
-          artifactDigest: FIXTURE_ARTIFACTS.sshPolicies,
-          files: [
-            {
-              path: 'banner.rego',
-              sha256: 'b1',
-              package: 'compliance_framework.banner',
-            },
-            {
-              path: 'banner_test.rego',
-              sha256: 'b2',
-              package: 'compliance_framework.banner_test',
-            },
-            {
-              path: 'max_auth_tries.rego',
-              sha256: 'b3',
-              package: 'compliance_framework.max_auth_tries',
-            },
-            {
-              path: 'root_login.rego',
-              sha256: 'b4',
-              package: 'compliance_framework.root_login',
-            },
-          ],
-        },
+        artifactDigest: `sha256:${'a'.repeat(64)}`,
         files: [
           {
             path: 'banner.rego',
@@ -376,17 +287,12 @@ export function detailFor(
             sha256: 'c3',
             package: 'compliance_framework.max_auth_tries',
           },
-          {
-            path: 'root_login.rego',
-            sha256: 'b4',
-            package: 'compliance_framework.root_login',
-          },
         ],
       },
       {
         source: UBUNTU_POLICIES,
         digest: 'tree:sha256:dd44',
-        artifactDigest: FIXTURE_ARTIFACTS.ubuntuPolicies,
+        artifactDigest: `sha256:${'d'.repeat(64)}`,
         files: [
           {
             path: 'packages.rego',
@@ -399,25 +305,10 @@ export function detailFor(
   };
 }
 
-export const instanceDetailA: AgentInstanceDetail = {
-  ...detailFor(instancesMixed.items[0], overlayRev7),
-  policyErrors: [
-    {
-      bundle: 'ssh-tuned',
-      path: 'max_auth_tries.rego',
-      row: 6,
-      col: 2,
-      message: 'rego_type_error: undefined ref: data.max_auth_tries',
-      severity: 'error',
-    },
-    {
-      bundle: 'ssh-tuned',
-      path: 'root_login_test.rego',
-      message: 'vendor test test_root_login_denied failed',
-      severity: 'warning',
-    },
-  ],
-};
+export const instanceDetailA: AgentInstanceDetail = detailFor(
+  instancesMixed.items[0],
+  overlayRev7,
+);
 
 export const previewMixed: ConfigPreview = {
   desiredRevision: 7,
@@ -427,16 +318,6 @@ export const previewMixed: ConfigPreview = {
       path: '/plugins/local-ssh/labels/team',
       code: 'invalid-type',
       message: 'must be a string',
-    },
-  ],
-  policyErrors: [
-    {
-      bundle: 'ssh-tuned',
-      path: 'max_auth_tries.rego',
-      row: 1,
-      col: 1,
-      message: 'package is outside the compliance_framework namespace',
-      severity: 'warning',
     },
   ],
   instances: [
@@ -504,9 +385,9 @@ export const previewMixed: ConfigPreview = {
       effective: mergePatch<ConfigDoc>(baseConfig, overlayRev7),
       errors: [
         {
-          path: '/plugins/local-ssh/policies',
-          code: 'unresolved-ref',
-          message: 'no bundle',
+          path: '/plugins/local-ssh/policies/0',
+          code: 'source',
+          message: 'policy source is empty',
         },
       ],
       warnings: [],
@@ -521,7 +402,6 @@ export const previewStandalone: ConfigPreview = {
   desiredRevision: 0,
   standalone: true,
   overlayErrors: [],
-  policyErrors: [],
   instances: [],
 };
 
@@ -569,16 +449,6 @@ export const error422: { errors: ConfigErrorBody } = {
         warnings: [
           { path: '/plugins/y/schedule', code: 'cron', message: 'file cron' },
         ],
-      },
-    ],
-    'policy-errors': [
-      {
-        bundle: 'ssh-tuned',
-        path: 'max_auth_tries.rego',
-        row: 3,
-        col: 1,
-        message: 'rego_parse_error: unexpected eof',
-        severity: 'error',
       },
     ],
   },

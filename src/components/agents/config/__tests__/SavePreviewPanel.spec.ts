@@ -56,7 +56,6 @@ const clean = (instances: InstancePreview[]): ConfigPreview => ({
   desiredRevision: 7,
   standalone: false,
   overlayErrors: [],
-  policyErrors: [],
   instances,
 });
 const saveButton = (w: ReturnType<typeof mount>) =>
@@ -122,18 +121,14 @@ describe('SavePreviewPanel (U2.5)', () => {
     ).toBeDefined();
   });
 
-  it('warnings (policy warnings, R59 file warnings) do not block', () => {
+  it('R59 file warnings do not block', () => {
     const p = clean([
       inst({
         warnings: [{ path: '/plugins/y/schedule', message: 'file cron' }],
       }),
     ]);
-    p.policyErrors = [
-      { bundle: 'b', path: 'a.rego', message: 'warn', severity: 'warning' },
-    ];
     const w = mountPanel(p);
     expect(saveButton(w).attributes('disabled')).toBeUndefined();
-    expect(w.find('[data-test="policy-warning"]').exists()).toBe(true);
     expect(w.find('[data-test="instance-warnings"]').text()).toContain(
       'does not block',
     );
@@ -190,9 +185,6 @@ describe('SavePreviewPanel (U2.5)', () => {
   it('maps a 422 body onto the lists and instance panels', () => {
     const w = mountPanel(clean([inst({})]), { saveErrors: error422.errors });
     expect(w.find('[data-test="overlay-error"]').text()).toContain('/api');
-    expect(w.find('[data-test="policy-error"]').text()).toContain(
-      'max_auth_tries.rego:3:1',
-    );
     expect(
       w.find(`[data-test="instance-panel-${instanceIds.a}"]`).text(),
     ).toContain('invalid cron');

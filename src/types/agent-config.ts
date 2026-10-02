@@ -26,19 +26,6 @@ export interface PluginDoc {
   policy_behavior?: Record<string, string[] | null> | null;
 }
 
-/** R17 policy bundle. */
-export interface PolicyBundleDoc {
-  extends?: string | null;
-  /**
-   * string = add/replace; null (overlay only) = DELETE the effective module (the vendor file
-   * shows through / a file-defined module is dropped); omitted = undo an overlay override.
-   */
-  modules?: Record<string, string | null> | null;
-  /** Vendor paths removed from `extends`. Arrays replace wholesale. */
-  delete?: string[] | null;
-  data?: Record<string, unknown> | null;
-}
-
 /** Normalized `remote_config` file block (R10, R29 defaults). */
 export interface RemoteConfigDoc {
   mode?: AgentConfigMode;
@@ -50,8 +37,6 @@ export interface RemoteConfigDoc {
   overridable_config_flags?: string[];
   /** Default false. */
   allow_local_sources?: boolean;
-  /** Default true. */
-  allow_inline_policies?: boolean;
 }
 
 /** Base / effective config (redacted, unresolved `${env:}` placeholders). */
@@ -66,7 +51,6 @@ export interface ConfigDoc {
     interval?: string;
   } | null;
   plugins?: Record<string, PluginDoc | null>;
-  policy_bundles?: Record<string, PolicyBundleDoc | null>;
 }
 
 /** JSON Merge Patch (RFC 7396) over ConfigDoc minus the locked keys. `null` deletes. */
@@ -122,22 +106,6 @@ export interface FieldError {
   code?: string;
 }
 
-/** `path` is module-relative, not a pointer (R47). */
-export interface PolicyError {
-  bundle: string;
-  path: string;
-  row?: number;
-  col?: number;
-  message: string;
-  severity: 'error' | 'warning';
-  /**
-   * R63: a policyeval contract code (missing-title, invalid-violation, …), a regocheck code
-   * (rego-parse-error, forbidden-builtin, …) or an agent check code (eval-error, …). Absent
-   * from older producers. Labels: POLICY_ERROR_CODE_LABELS.
-   */
-  code?: string;
-}
-
 // ---- Instances (API agentInstanceSummary / agentInstanceDetail, R10) ----
 
 export type InstanceStatus =
@@ -161,23 +129,15 @@ export interface PolicyFileReport {
 }
 
 export interface PolicyBundleReport {
-  /** "inline:ssh-tuned" | OCI ref | local path. */
+  /** OCI ref or local path. */
   source: string;
   /** "tree:sha256:…" (R10). */
   digest: string;
-  /** R10: inline bundles with `extends` carry the vendor tree. */
-  extends?: {
-    source: string;
-    digest: string;
-    files: PolicyFileReport[];
-    /** R62: artifact of the vendor tree alone (GET /api/artifacts/{digest}/files). */
-    artifactDigest?: string;
-  } | null;
   files: PolicyFileReport[];
   /**
-   * R62: the uploaded artifact of this tree ("sha256:<hex>" of the canonical tar), readable
-   * through the artifact file routes. Empty/absent when the upload failed or the agent is
-   * older; kept when `files` was dropped to fit the report.
+   * The uploaded artifact of this tree ("sha256:<hex>" of the canonical tar). Empty/absent
+   * when the upload failed or the agent is older; kept when `files` was dropped to fit the
+   * report.
    */
   artifactDigest?: string;
 }
@@ -190,34 +150,6 @@ export interface PluginReport {
   source?: string;
   /** github.com/compliance-framework/agent version from the binary's build info ('' = unknown). */
   libVersion?: string;
-}
-
-// ---- Policy bundle artifacts (R62: GET /api/artifacts/{digest}/files[/{path}]) ----
-
-/** One file of a stored policy bundle artifact. */
-export interface ArtifactFileInfo {
-  path: string;
-  /** Lowercase hex, as in agent config reports. */
-  sha256: string;
-  size: number;
-  /** Rego package without "data.", for .rego files that parse. */
-  package?: string;
-}
-
-/** Bare body (no `data` envelope) of GET /api/artifacts/{digest}/files. */
-export interface ArtifactFileList {
-  digest: string;
-  /** agentconfig.BundleTreeDigest of the same files ("tree:sha256:…"). */
-  treeDigest: string;
-  files: ArtifactFileInfo[];
-}
-
-/** Bare body of GET /api/artifacts/{digest}/files/{path}. */
-export interface ArtifactFileSource {
-  path: string;
-  package?: string;
-  sha256: string;
-  source: string;
 }
 
 export interface AgentInstanceSummary {
@@ -248,7 +180,6 @@ export interface AgentInstanceSummary {
   /** snake_case inside (stop path). Absent when never reported. */
   remoteConfig?: RemoteConfigDoc | null;
   unsafe: ConfigChange[];
-  policyErrors: PolicyError[];
   /** R10; false = one-shot run (pruned after 24 h, R37). */
   daemon?: boolean | null;
   /** R10; the report was cut to fit 4 MiB. */
@@ -329,8 +260,6 @@ export interface ConfigPreview {
   /** R14: no base available; only overlay-level checks ran. */
   standalone: boolean;
   overlayErrors: FieldError[];
-  /** Errors and warnings. */
-  policyErrors: PolicyError[];
   instances: InstancePreview[];
 }
 
@@ -356,6 +285,5 @@ export interface ConfigErrorBody {
   body: string;
   overlay?: FieldError[];
   instances?: ConfigErrorInstance[];
-  'policy-errors'?: PolicyError[];
   'current-revision'?: number;
 }

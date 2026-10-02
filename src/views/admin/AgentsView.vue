@@ -485,15 +485,7 @@
 </template>
 
 <script setup lang="ts">
-import {
-  computed,
-  defineAsyncComponent,
-  inject,
-  onMounted,
-  ref,
-  watch,
-} from 'vue';
-import { routeLocationKey } from 'vue-router';
+import { computed, defineAsyncComponent, onMounted, ref, watch } from 'vue';
 import { isAxiosError, type AxiosError } from 'axios';
 import { useToast } from 'primevue/usetoast';
 import { useConfirm } from 'primevue/useconfirm';
@@ -578,13 +570,6 @@ function chooseTab(tab: string | number) {
 }
 const selectedAgentId = ref<string | null>(null);
 const apiBaseUrl = ref('');
-
-// Deep link back from the Policies view: ?agent=<id>&tab=config selects that agent's
-// Configuration tab (when the user may read it).
-const routeQuery = inject(routeLocationKey, null)?.query ?? {};
-let requestedAgentId =
-  typeof routeQuery.agent === 'string' ? routeQuery.agent : null;
-if (routeQuery.tab === 'config' && canReadConfig.value) chooseTab('config');
 
 const agentDialogVisible = ref(false);
 const agentDialogMode = ref<AgentDialogMode>('create');
@@ -723,9 +708,7 @@ watch(
       return;
     }
 
-    const requested = items.find((agent) => agent.id === requestedAgentId);
-    requestedAgentId = null;
-    selectedAgentId.value = requested?.id ?? items[0].id;
+    selectedAgentId.value = items[0].id;
   },
   { immediate: true },
 );

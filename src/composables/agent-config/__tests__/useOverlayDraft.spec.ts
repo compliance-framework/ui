@@ -173,17 +173,17 @@ describe('useOverlayDraft', () => {
     expect(d.isDirty.value).toBe(false);
   });
 
-  it('two drafts over one DraftState see the same changes (tab ↔ Policies view)', () => {
+  it('two drafts over one DraftState see the same changes (a remounted tab)', () => {
     const state = createDraftState(rev({ verbosity: 1 }));
-    const tab = useOverlayDraft(state, ref(base));
-    const policies = useOverlayDraft(state, ref(base));
-    tab.set('/verbosity', 2);
-    policies.set('/policy_bundles/b', { modules: { 'a.rego': 'x' } });
-    expect(tab.changedPaths.value).toEqual([
-      '/policy_bundles/b/modules/a.rego',
+    const first = useOverlayDraft(state, ref(base));
+    const second = useOverlayDraft(state, ref(base));
+    first.set('/verbosity', 2);
+    second.set('/plugins/ssh/labels', { team: 'x' });
+    expect(first.changedPaths.value).toEqual([
+      '/plugins/ssh/labels/team',
       '/verbosity',
     ]);
-    expect(policies.overlay.value).toBe(tab.overlay.value);
+    expect(second.overlay.value).toBe(first.overlay.value);
   });
 });
 
