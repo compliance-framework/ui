@@ -8,6 +8,8 @@ const template = ref<SubjectTemplate | undefined>({
   name: 'Template One',
   type: 'component',
   sourceMode: 'runtime-derived',
+  displayPriority: 4,
+  componentType: 'software',
   titleTemplate: '{{repository}}',
   descriptionTemplate: 'Desc',
   purposeTemplate: 'Purpose',
@@ -109,6 +111,9 @@ describe('SubjectTemplateDetailView', () => {
     expect(wrapper.text()).toContain('Template One');
     expect(wrapper.text()).toContain('repository');
     expect(wrapper.text()).toContain('plugin: github');
+    expect(wrapper.text()).toContain('Display Priority');
+    expect(wrapper.text()).toContain('4');
+    expect(wrapper.text()).toContain('Software');
 
     const editButton = wrapper
       .findAll('button')

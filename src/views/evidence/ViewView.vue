@@ -167,83 +167,101 @@
           </div>
         </PageCard>
 
-        <PageCard>
-          <h3 class="text-lg font-semibold text-zinc-700 dark:text-slate-200">
-            Current State
-          </h3>
-          <div
-            class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 text-sm text-gray-700 dark:text-slate-300"
-          >
-            <div>
-              <p
-                class="text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400"
-              >
-                Status Reason
-              </p>
-              <p class="font-medium text-gray-900 dark:text-slate-100">
-                {{ evidence.status?.reason || 'No reason provided.' }}
-              </p>
-            </div>
-            <div>
-              <p
-                class="text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400"
-              >
-                Labels
-              </p>
-              <p class="font-medium text-gray-900 dark:text-slate-100">
-                {{ evidence.labels.length }}
-              </p>
-            </div>
-            <div>
-              <p
-                class="text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400"
-              >
-                Tasks
-              </p>
-              <p class="font-medium text-gray-900 dark:text-slate-100">
-                {{ evidence.activities?.length || 0 }}
-              </p>
-            </div>
-            <div>
-              <p
-                class="text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400"
-              >
-                Metadata Links
-              </p>
-              <p class="font-medium text-gray-900 dark:text-slate-100">
-                {{ metadataLinks.length }}
-              </p>
-            </div>
-            <div>
-              <p
-                class="text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400"
-              >
-                Back Matter Resources
-              </p>
-              <p class="font-medium text-gray-900 dark:text-slate-100">
-                {{ backMatterResources.length }}
-              </p>
-            </div>
-            <div>
-              <p
-                class="text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400"
-              >
-                {{ overviewLifecycleLabel }}
-              </p>
-              <template v-if="showLatestEvidenceLink">
-                <RouterLink
-                  :to="latestEvidenceRoute"
-                  class="inline-flex items-center rounded-md border border-ccf-300 px-3 py-2 text-sm font-medium text-gray-900 hover:bg-zinc-50 dark:border-slate-700 dark:text-slate-100 dark:hover:bg-slate-800"
+        <!-- Subjects sits to the right of Current State. It's shown only when the API
+             provides subjects; without it Current State takes the full width. -->
+        <div
+          class="grid grid-cols-1 items-start gap-4"
+          :class="{ 'lg:grid-cols-2': showSubjects }"
+        >
+          <PageCard>
+            <h3 class="text-lg font-semibold text-zinc-700 dark:text-slate-200">
+              Current State
+            </h3>
+            <div
+              class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 text-sm text-gray-700 dark:text-slate-300"
+              :class="{ 'xl:grid-cols-3': !showSubjects }"
+            >
+              <div>
+                <p
+                  class="text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400"
                 >
-                  Go to latest evidence
-                </RouterLink>
-              </template>
-              <p v-else class="font-medium" :class="expirationTextClass">
-                {{ expirationLabel }}
-              </p>
+                  Status Reason
+                </p>
+                <p class="font-medium text-gray-900 dark:text-slate-100">
+                  {{ evidence.status?.reason || 'No reason provided.' }}
+                </p>
+              </div>
+              <div>
+                <p
+                  class="text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400"
+                >
+                  Labels
+                </p>
+                <p class="font-medium text-gray-900 dark:text-slate-100">
+                  {{ evidence.labels.length }}
+                </p>
+              </div>
+              <div>
+                <p
+                  class="text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400"
+                >
+                  Tasks
+                </p>
+                <p class="font-medium text-gray-900 dark:text-slate-100">
+                  {{ evidence.activities?.length || 0 }}
+                </p>
+              </div>
+              <div>
+                <p
+                  class="text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400"
+                >
+                  Metadata Links
+                </p>
+                <p class="font-medium text-gray-900 dark:text-slate-100">
+                  {{ metadataLinks.length }}
+                </p>
+              </div>
+              <div>
+                <p
+                  class="text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400"
+                >
+                  Back Matter Resources
+                </p>
+                <p class="font-medium text-gray-900 dark:text-slate-100">
+                  {{ backMatterResources.length }}
+                </p>
+              </div>
+              <div>
+                <p
+                  class="text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400"
+                >
+                  {{ overviewLifecycleLabel }}
+                </p>
+                <template v-if="showLatestEvidenceLink">
+                  <RouterLink
+                    :to="latestEvidenceRoute"
+                    class="inline-flex items-center rounded-md border border-ccf-300 px-3 py-2 text-sm font-medium text-gray-900 hover:bg-zinc-50 dark:border-slate-700 dark:text-slate-100 dark:hover:bg-slate-800"
+                  >
+                    Go to latest evidence
+                  </RouterLink>
+                </template>
+                <p v-else class="font-medium" :class="expirationTextClass">
+                  {{ expirationLabel }}
+                </p>
+              </div>
             </div>
-          </div>
-        </PageCard>
+          </PageCard>
+
+          <PageCard v-if="showSubjects" data-testid="subjects-card">
+            <h3 class="text-lg font-semibold text-zinc-700 dark:text-slate-200">
+              Subjects
+            </h3>
+            <SubjectsSection
+              class="mt-4"
+              :subject-references="evidence.subjectReferences ?? []"
+            />
+          </PageCard>
+        </div>
 
         <EvidencePlaybackSections
           v-if="canPlayBack"
@@ -969,6 +987,12 @@ import { useToast } from 'primevue/usetoast';
 import { usePermissions } from '@/composables/usePermissions';
 import { RESOURCES, ACTIONS } from '@/constants/permissions';
 import { riskStatusLabel } from '@/utils/risk-workflow';
+import {
+  getSafeExternalHref,
+  isInternalLink,
+  normalizeLinkHref,
+} from '@/utils/links';
+import SubjectsSection from '@/components/evidence/SubjectsSection.vue';
 import type { Risk as OscalRisk, SystemSecurityPlan } from '@/oscal';
 import type {
   Evidence,
@@ -1091,6 +1115,11 @@ const metadataProps = computed<Property[]>(() => evidence.value?.props ?? []);
 const policySource = computed(
   () =>
     metadataProps.value.find((prop) => prop.name === POLICY_SOURCE_PROP)?.value,
+);
+// Older APIs leave subjectReferences out of the evidence response, and get no Subjects
+// card.
+const showSubjects = computed(
+  () => evidence.value?.subjectReferences !== undefined,
 );
 const canPlayBack = computed(() =>
   metadataProps.value.some((prop) => prop.name === POLICY_BUNDLE_DIGEST_PROP),
@@ -1397,24 +1426,6 @@ function formatDateTime(value?: string) {
   }
 
   return date.toLocaleString();
-}
-
-function normalizeLinkHref(value?: string) {
-  return typeof value === 'string' ? value.trim() : '';
-}
-
-function isInternalLink(value?: string) {
-  return normalizeLinkHref(value).startsWith('#');
-}
-
-function getSafeExternalHref(value?: string) {
-  const href = normalizeLinkHref(value);
-
-  if (/^(https?:|mailto:)/i.test(href)) {
-    return href;
-  }
-
-  return '';
 }
 
 function getMediaType(resource: BackMatterResource): string {
