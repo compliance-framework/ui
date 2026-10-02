@@ -1,7 +1,12 @@
 // R69 / R71: inline pencils on the Effective view write to the shared pending-changes draft;
 // fields show editable / restricted / forbidden states.
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  flushPromises,
+  mount,
+  type VueWrapper,
+  enableAutoUnmount,
+} from '@vue/test-utils';
 import type { AgentConfigApi } from '@/composables/agent-config/useAgentConfigApi';
 import { resetAgentDrafts } from '@/composables/agent-config/draftRegistry';
 import type { ConfigWorkspace } from '@/composables/agent-config/useConfigWorkspace';
@@ -26,6 +31,11 @@ vi.mock('@/composables/agent-config/useAgentConfigApi', async () => {
 
 import AgentConfigTab from '../AgentConfigTab.vue';
 import Select from '@/volt/Select.vue';
+
+// PrimeVue's TabList schedules a 150 ms ink-bar update on mount and never clears it; a wrapper
+// left mounted lets it fire after this file's jsdom environment is torn down
+// ("HTMLElement is not defined"). Unmounting nulls its refs, so the timer becomes a no-op.
+enableAutoUnmount(afterEach);
 
 const agent: Agent = {
   id: 'agent-1',
@@ -88,7 +98,6 @@ describe('inline editing on the Effective view (R69)', () => {
       ws.draft.overlay.value.plugins?.['local-ssh'] &&
         'schedule' in ws.draft.overlay.value.plugins['local-ssh']!,
     ).toBe(false);
-    wrapper.unmount();
   });
 
   it('booleans, verbosity and duration use small editors (R56: file value omits)', async () => {
@@ -115,7 +124,6 @@ describe('inline editing on the Effective view (R69)', () => {
     await editor.find('[data-test="scalar-input"]').setValue('15m');
     await editor.find('form').trigger('submit');
     expect(ws.draft.overlay.value.agent_evidence?.interval).toBe('15m');
-    wrapper.unmount();
   });
 
   it('Apply on an untouched field does not pin the file value', async () => {
@@ -125,7 +133,6 @@ describe('inline editing on the Effective view (R69)', () => {
     editor = await openEditor(wrapper, '/agent_evidence/interval');
     await editor.find('form').trigger('submit');
     expect(ws.draft.isDirty.value).toBe(false);
-    wrapper.unmount();
   });
 
   it('config keys: per-key editor with Remove, and never pre-fills a masked value (R25)', async () => {
@@ -141,7 +148,6 @@ describe('inline editing on the Effective view (R69)', () => {
     expect(ws.draft.overlay.value.plugins?.['local-ssh']?.config?.port).toBe(
       null,
     );
-    wrapper.unmount();
   });
 
   it('labels, policy data and policy assignment use the map / per-value / list editors', async () => {
@@ -175,7 +181,6 @@ describe('inline editing on the Effective view (R69)', () => {
     expect(
       ws.draft.overlay.value.plugins?.['ubuntu-packages']?.policies,
     ).toContain('ghcr.io/compliance-framework/plugin-extra-policies:v1');
-    wrapper.unmount();
   });
 
   it('removes and restores a plugin as a pending change', async () => {
@@ -190,7 +195,6 @@ describe('inline editing on the Effective view (R69)', () => {
     expect(card.find('[data-test="pending-removal"]').exists()).toBe(true);
     await card.find('[data-test="plugin-undo-removal"]').trigger('click');
     expect(ws.draft.isDirty.value).toBe(false);
-    wrapper.unmount();
   });
 });
 
@@ -205,7 +209,6 @@ describe('field states (R71)', () => {
     const locked = wrapper.find('[data-test="locked-keys"]');
     expect(locked.findAll('[data-state="forbidden"]').length).toBe(8);
     expect(locked.find('[data-test^="edit-"]').exists()).toBe(false);
-    wrapper.unmount();
   });
 
   it('none apply: read-only with the reasons; some apply: pencil + shield', async () => {
@@ -259,7 +262,6 @@ describe('field states (R71)', () => {
         .find('[data-row="port"] [data-test="kv-restricted"]')
         .attributes('aria-label'),
     ).toContain('ip-c');
-    wrapper.unmount();
   });
 
   it('all apply: pencil only, no shield', async () => {
@@ -276,7 +278,6 @@ describe('field states (R71)', () => {
     expect(
       port.find('[data-test="edit-/plugins/local-ssh/config/port"]').exists(),
     ).toBe(true);
-    wrapper.unmount();
   });
 
   it('no reporting instance yet: editable without shields', async () => {
@@ -297,7 +298,6 @@ describe('field states (R71)', () => {
     );
     expect(ws.canEditPointer('/plugins/local-ssh/config/password')).toBe(true);
     expect(ws.canEditPointer('/api/url')).toBe(false);
-    tab.unmount();
   });
 
   it('a reader gets no pencils and no plugin actions', async () => {
@@ -314,6 +314,5 @@ describe('field states (R71)', () => {
     // Access hints describe what an edit would do: hidden from readers.
     expect(wrapper.find('[data-test="field-restricted"]').exists()).toBe(false);
     expect(wrapper.find('[data-test="field-readonly"]').exists()).toBe(false);
-    wrapper.unmount();
   });
 });

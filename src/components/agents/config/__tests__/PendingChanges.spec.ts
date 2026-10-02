@@ -1,7 +1,7 @@
 // R69: the sticky pending-changes bar, Review & save as ONE revision (If-Match, 409 flow),
 // gated on agent:configure.
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { flushPromises, mount } from '@vue/test-utils';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { flushPromises, mount, enableAutoUnmount } from '@vue/test-utils';
 import type { AgentConfigApi } from '@/composables/agent-config/useAgentConfigApi';
 import { AgentConfigApiError } from '@/composables/agent-config/api-types';
 import { resetAgentDrafts } from '@/composables/agent-config/draftRegistry';
@@ -29,6 +29,11 @@ vi.mock('@/composables/agent-config/useAgentConfigApi', async () => {
 });
 
 import AgentConfigTab from '../AgentConfigTab.vue';
+
+// PrimeVue's TabList schedules a 150 ms ink-bar update on mount and never clears it; a wrapper
+// left mounted lets it fire after this file's jsdom environment is torn down
+// ("HTMLElement is not defined"). Unmounting nulls its refs, so the timer becomes a no-op.
+enableAutoUnmount(afterEach);
 
 const agent: Agent = {
   id: 'agent-1',

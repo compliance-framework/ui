@@ -1,6 +1,6 @@
 // R76 on the Configuration tab: the plugin's agent library on the Effective view.
-import { describe, expect, it } from 'vitest';
-import { mount } from '@vue/test-utils';
+import { afterEach, describe, expect, it } from 'vitest';
+import { mount, enableAutoUnmount } from '@vue/test-utils';
 import {
   SSH_SOURCE,
   baseConfig,
@@ -8,6 +8,11 @@ import {
 import type { ConfigDoc, PluginReport } from '@/types/agent-config';
 import AgentConfigEffectiveView from '../AgentConfigEffectiveView.vue';
 import { READER, globalWith, piniaWith } from './helpers';
+
+// PrimeVue's TabList schedules a 150 ms ink-bar update on mount and never clears it; a wrapper
+// left mounted lets it fire after this file's jsdom environment is torn down
+// ("HTMLElement is not defined"). Unmounting nulls its refs, so the timer becomes a no-op.
+enableAutoUnmount(afterEach);
 
 describe('plugin agent library badge (R76)', () => {
   function view(plugins: PluginReport[] | null) {

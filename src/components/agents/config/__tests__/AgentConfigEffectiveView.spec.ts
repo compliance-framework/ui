@@ -1,10 +1,15 @@
-import { describe, expect, it } from 'vitest';
-import { mount } from '@vue/test-utils';
+import { afterEach, describe, expect, it } from 'vitest';
+import { mount, enableAutoUnmount } from '@vue/test-utils';
 import type { ConfigDoc, OverlayDoc } from '@/types/agent-config';
 import { baseConfig } from '@/composables/agent-config/__tests__/fixtures';
 import { mergePatch } from '@/utils/agent-config/merge-patch';
 import AgentConfigEffectiveView from '../AgentConfigEffectiveView.vue';
 import { globalWith, piniaWith, READER } from './helpers';
+
+// PrimeVue's TabList schedules a 150 ms ink-bar update on mount and never clears it; a wrapper
+// left mounted lets it fire after this file's jsdom environment is torn down
+// ("HTMLElement is not defined"). Unmounting nulls its refs, so the timer becomes a no-op.
+enableAutoUnmount(afterEach);
 
 function mountView(
   overlay: OverlayDoc,

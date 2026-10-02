@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { flushPromises, mount } from '@vue/test-utils';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { flushPromises, mount, enableAutoUnmount } from '@vue/test-utils';
 import type { AgentConfigApi } from '@/composables/agent-config/useAgentConfigApi';
 import { AgentConfigApiError } from '@/composables/agent-config/api-types';
 import {
@@ -24,6 +24,11 @@ vi.mock('@/composables/agent-config/useAgentConfigApi', async () => {
 
 import AgentConfigTab from '../AgentConfigTab.vue';
 import AgentConfigHistory from '../AgentConfigHistory.vue';
+
+// PrimeVue's TabList schedules a 150 ms ink-bar update on mount and never clears it; a wrapper
+// left mounted lets it fire after this file's jsdom environment is torn down
+// ("HTMLElement is not defined"). Unmounting nulls its refs, so the timer becomes a no-op.
+enableAutoUnmount(afterEach);
 
 const agent: Agent = {
   id: 'agent-1',
@@ -261,7 +266,6 @@ describe('AgentConfigTab', () => {
       await flushPromises();
       const history = wrapper.findComponent(AgentConfigHistory);
       expect(history.props('canRevert')).toBe(canRevert);
-      wrapper.unmount();
     }
   });
 

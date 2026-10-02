@@ -1,8 +1,13 @@
 // R71 for adding a plugin: the add action is disabled when no reporting instance could install
 // a new plugin, shielded when only some could, plain when all could; the dialog re-evaluates
 // with the concrete source, and the new plugin's tab/fields keep the shield.
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  flushPromises,
+  mount,
+  type VueWrapper,
+  enableAutoUnmount,
+} from '@vue/test-utils';
 import type { AgentConfigApi } from '@/composables/agent-config/useAgentConfigApi';
 import { resetAgentDrafts } from '@/composables/agent-config/draftRegistry';
 import type { ConfigWorkspace } from '@/composables/agent-config/useConfigWorkspace';
@@ -24,6 +29,11 @@ vi.mock('@/composables/agent-config/useAgentConfigApi', async () => {
 });
 
 import AgentConfigTab from '../AgentConfigTab.vue';
+
+// PrimeVue's TabList schedules a 150 ms ink-bar update on mount and never clears it; a wrapper
+// left mounted lets it fire after this file's jsdom environment is torn down
+// ("HTMLElement is not defined"). Unmounting nulls its refs, so the timer becomes a no-op.
+enableAutoUnmount(afterEach);
 
 const agent: Agent = {
   id: 'agent-1',
@@ -91,26 +101,25 @@ describe('add-plugin gating (R71)', () => {
     expect(
       wrapper.find('[data-test="add-plugin-wrapper"]').attributes('tabindex'),
     ).toBe('0');
-    wrapper.unmount();
   });
 
-  it('some could: enabled with a shield; all could: no shield', async () => {
-    let { wrapper } = await mountTab();
+  it('some could: enabled with a shield', async () => {
+    const { wrapper } = await mountTab();
     expect(addButton(wrapper).attributes('disabled')).toBeUndefined();
     expect(
       wrapper
         .find('[data-test="add-plugin-restricted"]')
         .attributes('aria-label'),
     ).toContain('ip-c');
-    wrapper.unmount();
+  });
 
+  it('all could: enabled without a shield', async () => {
     withInstances(fresh.filter((i) => i.mode !== 'report'));
-    ({ wrapper } = await mountTab());
+    const { wrapper } = await mountTab();
     expect(addButton(wrapper).attributes('disabled')).toBeUndefined();
     expect(wrapper.find('[data-test="add-plugin-restricted"]').exists()).toBe(
       false,
     );
-    wrapper.unmount();
   });
 
   it('apply_safe without trusted_sources could only reuse a source its file has', async () => {
@@ -146,7 +155,6 @@ describe('add-plugin gating (R71)', () => {
     expect(
       wrapper.find('[data-test="add-plugin-submit"]').attributes('disabled'),
     ).toBeDefined();
-    wrapper.unmount();
   });
 
   it('no reporting instance (all stale): enabled without a shield, and the dialog says why', async () => {
@@ -161,7 +169,6 @@ describe('add-plugin gating (R71)', () => {
     const access = wrapper.find('[data-test="add-plugin-access"]');
     expect(access.attributes('data-state')).toBe('editable');
     expect(access.text()).toContain('No instance has a fresh report');
-    wrapper.unmount();
   });
 
   it('screen-reader descriptions stay inside a positioned box (no second page scrollbar)', async () => {
@@ -176,7 +183,6 @@ describe('add-plugin gating (R71)', () => {
     expect(wrapper.find('[data-test="plugin-tabs"]').classes()).toContain(
       'relative',
     );
-    wrapper.unmount();
   });
 
   it('the dialog re-evaluates with the concrete source', async () => {
@@ -203,7 +209,6 @@ describe('add-plugin gating (R71)', () => {
     expect(wrapper.find('[data-test="add-plugin-access"]').text()).toContain(
       'allow_local_sources',
     );
-    wrapper.unmount();
   });
 
   it("keeps the shield on the new plugin's tab, card and fields", async () => {
@@ -242,6 +247,5 @@ describe('add-plugin gating (R71)', () => {
         .find('[data-test="field-/plugins/extra/schedule"]')
         .attributes('data-state'),
     ).toBe('restricted');
-    wrapper.unmount();
   });
 });

@@ -1,7 +1,12 @@
 // The plugins of the Effective view as tabs: selection, keyboard navigation, the add action
 // (which selects the new plugin's tab), removal markers and the empty state.
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  flushPromises,
+  mount,
+  type VueWrapper,
+  enableAutoUnmount,
+} from '@vue/test-utils';
 import type { AgentConfigApi } from '@/composables/agent-config/useAgentConfigApi';
 import { resetAgentDrafts } from '@/composables/agent-config/draftRegistry';
 import type { ConfigWorkspace } from '@/composables/agent-config/useConfigWorkspace';
@@ -32,6 +37,11 @@ vi.mock('@/composables/agent-config/useAgentConfigApi', async () => {
 import AgentConfigTab from '../AgentConfigTab.vue';
 import AgentConfigEffectiveView from '../AgentConfigEffectiveView.vue';
 import AddPluginDialog from '../editor/AddPluginDialog.vue';
+
+// PrimeVue's TabList schedules a 150 ms ink-bar update on mount and never clears it; a wrapper
+// left mounted lets it fire after this file's jsdom environment is torn down
+// ("HTMLElement is not defined"). Unmounting nulls its refs, so the timer becomes a no-op.
+enableAutoUnmount(afterEach);
 
 const agent: Agent = {
   id: 'agent-1',
@@ -86,7 +96,6 @@ describe('plugin tabs', () => {
     const other = wrapper.find('[data-test="plugin-panel-ubuntu-packages"]');
     expect(other.exists()).toBe(true);
     expect(other.isVisible()).toBe(false);
-    wrapper.unmount();
   });
 
   it('selects on click, and moves the focus with the arrow keys (Enter selects)', async () => {
@@ -110,7 +119,6 @@ describe('plugin tabs', () => {
     expect(document.activeElement).toBe(tab(wrapper, 'local-ssh').element);
     await tab(wrapper, 'local-ssh').trigger('keydown', { code: 'Enter' });
     expect(selectedTabs(wrapper)).toEqual(['plugin-tab-local-ssh']);
-    wrapper.unmount();
   });
 
   it('the add action adds a pending plugin and selects its tab; discarding falls back', async () => {
@@ -146,7 +154,6 @@ describe('plugin tabs', () => {
     await panel.find('[data-test="plugin-undo-removal"]').trigger('click');
     expect(tab(wrapper, 'extra').exists()).toBe(false);
     expect(selectedTabs(wrapper)).toEqual(['plugin-tab-local-ssh']);
-    wrapper.unmount();
   });
 
   it('marks pending changes, removals and disabled plugins on the tab', async () => {
@@ -173,15 +180,15 @@ describe('plugin tabs', () => {
         .find('[data-test="plugin-tab-hint-pending"]')
         .exists(),
     ).toBe(true);
-    wrapper.unmount();
   });
 
-  it('shows the disabled hint, and readers get no add action', async () => {
+  it('readers get no add action', async () => {
     const { wrapper } = await mountTab(READER);
     expect(wrapper.find('[data-test="add-plugin"]').exists()).toBe(false);
     expect(wrapper.findAll('[role="tab"]').length).toBe(2);
-    wrapper.unmount();
+  });
 
+  it('shows the disabled hint', () => {
     const view = mount(AgentConfigEffectiveView, {
       props: {
         effectiveDoc: {
