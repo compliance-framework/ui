@@ -26,6 +26,7 @@ vi.mock('@/composables/agent-config/useAgentConfigApi', async () => {
 
 import AgentConfigTab from '../AgentConfigTab.vue';
 import Select from '@/volt/Select.vue';
+import SelectButton from '@/volt/SelectButton.vue';
 
 const agent: Agent = {
   id: 'agent-1',
@@ -158,6 +159,13 @@ describe('inline editing on the Effective view (R69)', () => {
       .trigger('click');
 
     editor = await openEditor(wrapper, '/plugins/local-ssh/policy_data');
+    // Structured by default; the raw JSON editor is one toggle away.
+    expect(editor.find('[data-test="policy-data-structured"]').exists()).toBe(
+      true,
+    );
+    await editor
+      .findComponent(SelectButton)
+      .vm.$emit('update:modelValue', 'raw');
     await editor.find('textarea').setValue('{"max_auth_tries": 5}');
     expect(
       ws.draft.overlay.value.plugins?.['local-ssh']?.policy_data,

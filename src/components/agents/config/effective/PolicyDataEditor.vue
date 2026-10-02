@@ -1,20 +1,48 @@
 <template>
-  <div class="space-y-1">
-    <CodeEditor
-      :model-value="text"
-      language="json"
-      min-height="140px"
-      max-height="320px"
-      :label="`Policy data for ${plugin}`"
-      @update:model-value="onInput"
+  <div class="space-y-2">
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <SelectButton
+        :model-value="mode"
+        :options="modeOptions"
+        option-label="label"
+        option-value="value"
+        option-disabled="disabled"
+        :allow-empty="false"
+        :aria-label="`Policy data editor for ${plugin}`"
+        data-test="policy-data-mode"
+        @update:model-value="setMode"
+      />
+      <span
+        v-if="mode === 'raw' && error"
+        class="text-xs text-gray-500 dark:text-slate-400"
+        >Fix the JSON to switch back to the structured view.</span
+      >
+    </div>
+    <PolicyDataTree
+      v-if="mode === 'structured'"
+      :model-value="current"
+      editable
+      :label="`Policy data of ${plugin}`"
+      test-id="policy-data-structured"
+      @update:model-value="commit"
     />
-    <p
-      v-if="error"
-      class="text-xs text-red-600 dark:text-red-400"
-      data-test="policy-data-error"
-    >
-      {{ error }}
-    </p>
+    <template v-else>
+      <CodeEditor
+        :model-value="text"
+        language="json"
+        min-height="140px"
+        max-height="320px"
+        :label="`Policy data for ${plugin}`"
+        @update:model-value="onInput"
+      />
+      <p
+        v-if="error"
+        class="text-xs text-red-600 dark:text-red-400"
+        data-test="policy-data-error"
+      >
+        {{ error }}
+      </p>
+    </template>
     <div class="flex justify-end">
       <button
         v-if="has(ptr)"
@@ -31,20 +59,26 @@
 </template>
 
 <script setup lang="ts">
-// Inline JSON editor of a plugin's `policy_data` (R69). Objects MERGE under RFC 7396, so the
-// draft gets the full target plus nulls for file keys the user removed (replacingPatch); a
-// masked report value is never copied into the overlay (R25). Written on valid JSON only.
+// Inline editor of a plugin's `policy_data` (R69): a structured view (PolicyDataTree) by
+// default, and the raw JSON editor for power users. Both edit the same target, the effective
+// policy_data, and write it through `commit`: objects MERGE under RFC 7396, so the draft gets
+// the full target plus nulls for file keys the user removed (replacingPatch); arrays replace
+// wholesale; a masked report value is never copied into the overlay (R25). The raw editor
+// writes on valid JSON only, and follows external changes (structured edits, undo, raw YAML).
 import { computed, ref, watch } from 'vue';
+import SelectButton from '@/volt/SelectButton.vue';
 import { CodeEditor } from '@/components/code-editor';
 import { pointer } from '@/utils/agent-config/json-pointer';
 import {
   deepEqual,
   isPlainObject,
   mergePatch,
+  type PlainObject,
 } from '@/utils/agent-config/merge-patch';
 import { replacingPatch } from '@/utils/agent-config/overlay-ops';
 import FieldIssues from '../editor/FieldIssues.vue';
 import { useEditor } from '../editor/useEditor';
+import PolicyDataTree from './PolicyDataTree.vue';
 
 const props = defineProps<{ plugin: string }>();
 const { draft, has, baseValue, effectiveValue } = useEditor();
@@ -52,13 +86,29 @@ const { draft, has, baseValue, effectiveValue } = useEditor();
 const ptr = computed(() => pointer('plugins', props.plugin, 'policy_data'));
 const error = ref('');
 
-function currentText(): string {
+/** The effective policy_data (the editors' target). */
+const current = computed<PlainObject>(() => {
   const v = effectiveValue(ptr.value);
-  return isPlainObject(v) ? JSON.stringify(v, null, 2) : '{}';
+  return isPlainObject(v) ? v : {};
+});
+
+function currentText(): string {
+  return JSON.stringify(current.value, null, 2);
 }
 const text = ref(currentText());
 
-// Follow external changes (undo, raw YAML) without clobbering in-progress invalid text.
+const mode = ref<'structured' | 'raw'>('structured');
+const modeOptions = computed(() => [
+  { label: 'Structured', value: 'structured', disabled: !!error.value },
+  { label: 'Raw JSON', value: 'raw', disabled: false },
+]);
+function setMode(next: 'structured' | 'raw') {
+  if (next === 'structured' && error.value) return;
+  if (next === 'raw') text.value = currentText();
+  mode.value = next;
+}
+
+// Follow external changes without clobbering in-progress invalid text.
 watch(
   () => effectiveValue(ptr.value),
   (v) => {
@@ -71,6 +121,13 @@ watch(
     text.value = currentText();
   },
 );
+
+/** Writes `target` (the whole policy_data) to the draft. */
+function commit(target: PlainObject) {
+  const base = baseValue(ptr.value);
+  if (!has(ptr.value) && deepEqual(target, base ?? {})) return;
+  draft.set(ptr.value, replacingPatch(base, target));
+}
 
 function onInput(value: string) {
   text.value = value;
@@ -86,9 +143,7 @@ function onInput(value: string) {
     return;
   }
   error.value = '';
-  const base = baseValue(ptr.value);
-  if (!has(ptr.value) && deepEqual(parsed, base ?? {})) return;
-  draft.set(ptr.value, replacingPatch(base, parsed));
+  commit(parsed);
 }
 
 function reset() {
