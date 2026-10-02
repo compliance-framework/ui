@@ -164,6 +164,21 @@ describe('add-plugin gating (R71)', () => {
     wrapper.unmount();
   });
 
+  it('screen-reader descriptions stay inside a positioned box (no second page scrollbar)', async () => {
+    // A position:absolute sr-only element without a positioned ancestor is placed against the
+    // document and, deep inside the scrolling <main>, stretches the page itself.
+    const { wrapper } = await mountTab();
+    const srOnly = wrapper.findAll('.sr-only');
+    expect(srOnly.length).toBeGreaterThan(0);
+    for (const el of srOnly) {
+      expect(el.element.parentElement!.closest('.relative')).not.toBeNull();
+    }
+    expect(wrapper.find('[data-test="plugin-tabs"]').classes()).toContain(
+      'relative',
+    );
+    wrapper.unmount();
+  });
+
   it('the dialog re-evaluates with the concrete source', async () => {
     const { wrapper } = await mountTab();
     await openDialog(wrapper, 'ghcr.io/compliance-framework/plugin-extra:v1');

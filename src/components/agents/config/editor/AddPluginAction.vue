@@ -1,5 +1,9 @@
 <template>
-  <span class="inline-flex items-center gap-1.5" data-test="add-plugin-action">
+  <!-- relative: contains the absolutely positioned sr-only description (see PluginTabs). -->
+  <span
+    class="relative inline-flex items-center gap-1.5"
+    data-test="add-plugin-action"
+  >
     <span
       v-tooltip.top="{ value: tooltip, disabled: !disabled }"
       :tabindex="disabled ? 0 : undefined"

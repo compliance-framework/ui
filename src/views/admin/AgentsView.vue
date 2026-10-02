@@ -102,8 +102,12 @@
       </template>
     </div>
 
+    <!-- overflow-clip, not overflow-hidden: it clips the rounded corners without becoming a
+         scroll container, so the Configuration tab's sticky pending-changes bar sticks to the
+         page scroll. -->
     <div
-      class="rounded-md bg-white dark:bg-slate-900 border border-ccf-300 dark:border-slate-700 overflow-hidden"
+      class="rounded-md bg-white dark:bg-slate-900 border border-ccf-300 dark:border-slate-700 overflow-clip"
+      data-test="agent-detail-card"
     >
       <div
         class="flex items-center justify-between gap-4 border-b border-ccf-300 dark:border-slate-700 px-6 py-4"

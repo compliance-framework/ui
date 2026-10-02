@@ -1,5 +1,8 @@
 <template>
-  <section class="space-y-2" data-test="plugin-tabs">
+  <!-- relative: the sr-only descriptions below are position:absolute; without a positioned
+       ancestor they are placed against the document and, deep inside the scrolling <main>,
+       stretch the document itself (a second page scrollbar). -->
+  <section class="relative space-y-2" data-test="plugin-tabs">
     <h4
       :id="headingId"
       class="text-sm font-semibold text-gray-900 dark:text-slate-200"

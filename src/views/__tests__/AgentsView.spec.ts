@@ -463,6 +463,14 @@ describe('AgentsView', () => {
     expect(wrapper.text()).toContain('client-id-1');
   });
 
+  it('the detail card clips without becoming a scroll container (sticky pending bar)', async () => {
+    const wrapper = mountView();
+    await flushPromises();
+    const card = wrapper.find('[data-test="agent-detail-card"]');
+    expect(card.classes()).toContain('overflow-clip');
+    expect(card.classes()).not.toContain('overflow-hidden');
+  });
+
   it('creates an agent and refreshes the list', async () => {
     const wrapper = mountView();
     await flushPromises();
