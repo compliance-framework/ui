@@ -26,7 +26,7 @@
             v-for="card in cards"
             :key="card.name"
             :value="card.name"
-            class="flex items-center gap-1.5 px-3! py-2! text-sm"
+            class="flex items-center gap-1.5 rounded-t-md px-3! py-2! text-sm aria-selected:bg-slate-100 dark:aria-selected:bg-slate-800"
             :aria-describedby="
               installText(card)
                 ? `${headingId}-${card.name}-install`
