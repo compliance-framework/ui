@@ -29,7 +29,7 @@
         >{{ label }}</span
       >
       <span
-        v-if="editable && !editing"
+        v-if="editable && !editing && !maskLocked"
         class="inline-flex shrink-0 gap-0.5"
         data-test="pd-actions"
       >
@@ -100,6 +100,15 @@
           >env</ConfigPill
         >
       </template>
+      <i
+        v-if="listHasMask && !maskLocked"
+        v-tooltip.top="MASKED_LIST_TOOLTIP"
+        role="img"
+        tabindex="0"
+        class="pi pi-lock text-xs text-gray-400 dark:text-slate-500"
+        :aria-label="MASKED_LIST_TOOLTIP"
+        :data-test="`pd-masked-list-${ptr}`"
+      />
       <i
         v-if="note"
         v-tooltip.top="note.text"
@@ -192,6 +201,7 @@
           :ptr="child.ptr"
           :depth="depth + 1"
           :in-array="Array.isArray(value)"
+          :mask-locked="maskLocked || listHasMask"
           @set="onChildSet"
           @remove="onChildRemove"
         />
@@ -209,7 +219,7 @@
           {{ Array.isArray(value) ? 'No items.' : 'No keys.' }}
         </li>
       </ul>
-      <div v-if="editable" class="ml-5">
+      <div v-if="editable && !maskLocked && !listHasMask" class="ml-5">
         <PolicyDataAddForm
           :in-array="Array.isArray(value)"
           :item-type="Array.isArray(value) ? itemType(value) : null"
@@ -238,6 +248,7 @@ import { escapeToken, parsePointer } from '@/utils/agent-config/json-pointer';
 import { clone, isPlainObject } from '@/utils/agent-config/merge-patch';
 import {
   CHILD_PAGE,
+  containsMask,
   envRefs,
   envSegments,
   isContainer,
@@ -263,6 +274,12 @@ const props = defineProps<{
   depth: number;
   /** An array item (its label is the index). */
   inArray: boolean;
+  /**
+   * Inside a list that holds a masked value: the list can only be written whole (RFC 7396),
+   * which would copy the mask, so its items are not edited here (the raw view can, by
+   * retyping the masked values).
+   */
+  maskLocked?: boolean;
 }>();
 const emit = defineEmits<{
   set: [ptr: string, value: unknown];
@@ -299,6 +316,12 @@ const summary = computed(() => {
 
 const editable = computed(() => !!tree && tree.canEdit(props.ptr));
 const note = computed(() => tree?.accessNote(props.ptr) ?? null);
+/** A list holding a masked value (at any depth): its items are locked (see maskLocked). */
+const listHasMask = computed(
+  () => Array.isArray(props.value) && containsMask(props.value),
+);
+const MASKED_LIST_TOOLTIP =
+  'Holds masked values: a list is saved whole, which would copy the masks. Edit it in the raw JSON view and retype the masked values, or remove the whole list.';
 const isChanged = computed(() => !!tree && tree.changed(props.ptr));
 
 const expanded = ref(!startsCollapsed(props.depth, props.value));

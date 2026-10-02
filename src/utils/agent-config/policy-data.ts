@@ -34,6 +34,13 @@ export function isMasked(v: unknown): boolean {
   return v === REDACTED_MASK;
 }
 
+/** Whether `v` is, or contains at any depth, a masked value. */
+export function containsMask(v: unknown): boolean {
+  if (isMasked(v)) return true;
+  if (Array.isArray(v)) return v.some(containsMask);
+  return isPlainObject(v) && Object.values(v).some(containsMask);
+}
+
 const ENV_REF = /\$\{env:([A-Za-z_][A-Za-z0-9_]*)\}/g;
 
 /** The ${env:NAME} references in a string (agentconfig.EnvRefPattern), in order. */

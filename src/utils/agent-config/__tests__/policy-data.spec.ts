@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   CHILD_PAGE,
+  containsMask,
   envRefs,
   envSegments,
   getIn,
@@ -93,6 +94,8 @@ describe('policy-data helpers', () => {
   it('recognises masked values and ${env:} references', () => {
     expect(isMasked('••••')).toBe(true);
     expect(isMasked('x')).toBe(false);
+    expect(containsMask(['a', { b: ['••••'] }])).toBe(true);
+    expect(containsMask({ a: ['x', 1, null, true] })).toBe(false);
     expect(envRefs('a ${env:HOME} b ${env:_X1}')).toEqual(['HOME', '_X1']);
     expect(envSegments('pre ${env:A} post')).toEqual([
       { text: 'pre ', env: false },

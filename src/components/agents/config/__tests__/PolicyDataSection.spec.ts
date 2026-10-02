@@ -37,6 +37,9 @@ const POLICY_DATA = {
     { id: 'r2', on: false },
   ],
   api_token: '••••',
+  // Masked by value (e.g. a URL with a password), under keys that do not look secret.
+  upstream: '••••',
+  mirrors: ['https://a.example', '••••', { url: '••••' }],
   banner: 'Hello ${env:BANNER}!',
   nothing: null,
   big: Array.from({ length: 60 }, (_, i) => i),
@@ -171,7 +174,7 @@ describe('policy_data section: display', () => {
     expect(card.find('[data-test="policy-data-view-a"]').text()).toContain(
       'MaxAuthTries',
     );
-    expect(card.text()).toContain('8 keys');
+    expect(card.text()).toContain('10 keys');
   });
 });
 
@@ -302,6 +305,48 @@ describe('policy_data section: per-element edits (minimal patch)', () => {
     expect(pd(ws)).toEqual({ MaxAuthTries: 9, banner: 'x' });
     expect(ws.draft.overlay.value.verbosity).toBe(1);
     expect(ws.draft.changedPaths.value).toEqual([`${PD}/banner`]);
+    wrapper.unmount();
+  });
+});
+
+describe('policy_data section: masked values anywhere', () => {
+  beforeEach(() => resetAgentDrafts());
+
+  it('a masked value under any key shows as masked and needs a new value', async () => {
+    const { wrapper, ws } = await mountSection();
+    expect(
+      node(wrapper, 'upstream').find('[data-test="pd-masked"]').exists(),
+    ).toBe(true);
+    await btn(wrapper, 'edit', 'upstream').trigger('click');
+    const form = btn(wrapper, 'edit-form', 'upstream');
+    expect(form.find('[data-test="pd-edit-error"]').exists()).toBe(true);
+    // Editing a sibling never copies the mask.
+    await btn(wrapper, 'edit-form', 'upstream')
+      .find('button[type="button"]')
+      .trigger('click');
+    await editValue(wrapper, 'banner', 'x');
+    expect(pd(ws)).toEqual({ banner: 'x' });
+    wrapper.unmount();
+  });
+
+  it('a list holding a masked value cannot be edited item by item (it would copy the mask)', async () => {
+    const { wrapper, ws } = await mountSection();
+    const list = node(wrapper, 'mirrors');
+    expect(btn(wrapper, 'masked-list', 'mirrors').exists()).toBe(true);
+    expect(list.find(`[data-test="pd-edit-${PD}/mirrors/0"]`).exists()).toBe(
+      false,
+    );
+    expect(list.find(`[data-test="pd-remove-${PD}/mirrors/0"]`).exists()).toBe(
+      false,
+    );
+    expect(
+      list.find(`[data-test="pd-edit-${PD}/mirrors/2/url"]`).exists(),
+    ).toBe(false);
+    expect(btn(wrapper, 'add', 'mirrors').exists()).toBe(false);
+    // The whole list can still be removed (nothing is copied).
+    await btn(wrapper, 'remove', 'mirrors').trigger('click');
+    expect(pd(ws)).toEqual({ mirrors: null });
+    expect(ws.draft.clientIssues.value).toEqual([]);
     wrapper.unmount();
   });
 });
