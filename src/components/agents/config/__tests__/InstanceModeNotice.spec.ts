@@ -43,4 +43,16 @@ describe('InstanceModeNotice', () => {
     expect(w.find('[data-test="rejection-details"]').exists()).toBe(false);
     expect(w.find('[data-test="file-warnings"]').exists()).toBe(false);
   });
+
+  it('explains report-only as the default mode and how to opt in', () => {
+    const w = mountNotice({
+      mode: 'report',
+      status: 'not-applicable',
+      syncStatus: 'not-applicable',
+      warnings: [],
+    });
+    const text = w.find('[data-test="mode-notice"]').text();
+    expect(text).toContain('default when `remote_config.mode` is not set');
+    expect(text).toContain('apply_safe');
+  });
 });

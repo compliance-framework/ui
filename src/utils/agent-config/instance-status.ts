@@ -132,7 +132,7 @@ export function deriveInstanceState(
       key: 'truncated',
       label: 'Report truncated',
       tooltip:
-        "The agent's report exceeded the size limit; some bundles or files may be missing",
+        "The agent's report exceeded the size limit, so its local file was dropped: the File view and the checks against this host's file are unavailable",
       severity: 'warn',
     });
   }

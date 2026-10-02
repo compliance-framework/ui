@@ -263,7 +263,7 @@ export function detailFor(
   overlay: OverlayDoc,
 ): AgentInstanceDetail {
   if (s.reportedAt == null) {
-    return { ...s, base: null, effective: null, policyBundles: [] };
+    return { ...s, base: null, effective: null };
   }
   const base = clone(baseConfig);
   base.remote_config = clone(s.remoteConfig ?? remoteConfigSafe);
@@ -271,37 +271,6 @@ export function detailFor(
     ...s,
     base,
     effective: redact(mergePatch<ConfigDoc>(base, overlay)),
-    policyBundles: [
-      {
-        source: SSH_POLICIES_NEXT,
-        digest: 'tree:sha256:aa11',
-        artifactDigest: `sha256:${'a'.repeat(64)}`,
-        files: [
-          {
-            path: 'banner.rego',
-            sha256: 'b1',
-            package: 'compliance_framework.banner',
-          },
-          {
-            path: 'max_auth_tries.rego',
-            sha256: 'c3',
-            package: 'compliance_framework.max_auth_tries',
-          },
-        ],
-      },
-      {
-        source: UBUNTU_POLICIES,
-        digest: 'tree:sha256:dd44',
-        artifactDigest: `sha256:${'d'.repeat(64)}`,
-        files: [
-          {
-            path: 'packages.rego',
-            sha256: 'd1',
-            package: 'compliance_framework.packages',
-          },
-        ],
-      },
-    ],
   };
 }
 

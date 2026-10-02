@@ -19,7 +19,8 @@ export function verbosityLabel(v: unknown): string {
 // ---- Mode texts (design §6.1) ----
 
 export const MODE_TEXT = {
-  report: 'This agent is not accepting remote configuration.',
+  report:
+    "This agent reports its configuration but does not apply remote changes. Report-only is the default when `remote_config.mode` is not set; set it to `apply_safe` or `apply_all` in the agent's file to opt in.",
   apply_safe:
     "Accepts policy, schedule and flag changes. New sources need `apply_all` or a `trusted_sources` entry. Plugin config keys need a matching `overridable_config_flags` entry in the agent's file.",
   apply_all: 'Applies all changes except locked keys.',

@@ -28,6 +28,7 @@ export interface PluginDoc {
 
 /** Normalized `remote_config` file block (R10, R29 defaults). */
 export interface RemoteConfigDoc {
+  /** Default `report` with API credentials, `off` without (R29). */
   mode?: AgentConfigMode;
   /** Default "60s". */
   poll_interval?: string;
@@ -122,26 +123,6 @@ export type SyncStatus =
   | 'not-applicable'
   | 'unknown';
 
-export interface PolicyFileReport {
-  path: string;
-  sha256: string;
-  package?: string;
-}
-
-export interface PolicyBundleReport {
-  /** OCI ref or local path. */
-  source: string;
-  /** "tree:sha256:…" (R10). */
-  digest: string;
-  files: PolicyFileReport[];
-  /**
-   * The uploaded artifact of this tree ("sha256:<hex>" of the canonical tar). Empty/absent
-   * when the upload failed or the agent is older; kept when `files` was dropped to fit the
-   * report.
-   */
-  artifactDigest?: string;
-}
-
 /** R76: one plugin of an instance and the agent library its binary was built with. */
 export interface PluginReport {
   /** The plugin's key under `plugins`. */
@@ -182,7 +163,7 @@ export interface AgentInstanceSummary {
   unsafe: ConfigChange[];
   /** R10; false = one-shot run (pruned after 24 h, R37). */
   daemon?: boolean | null;
-  /** R10; the report was cut to fit 4 MiB. */
+  /** R10; the report exceeded 4 MiB and its `base` (the host's file) was dropped. */
   truncated?: boolean;
   /** R41: tolerated file-origin problems (e.g. a bad cron → plugin skipped). */
   warnings?: FieldError[];
@@ -195,7 +176,6 @@ export interface AgentInstanceDetail extends AgentInstanceSummary {
   base: ConfigDoc | null;
   /** Opaque (stop path). */
   effective: ConfigDoc | null;
-  policyBundles: PolicyBundleReport[];
 }
 
 export interface InstanceCounts {

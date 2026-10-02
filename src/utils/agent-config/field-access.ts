@@ -95,7 +95,11 @@ export function accessPopulation(
   );
 }
 
-/** The instance's remote_config with the API's Normalize defaults (R29). */
+/**
+ * The instance's remote_config with the API's Normalize defaults (R29). The mode is the one
+ * the instance reported (already normalized: an unset mode is `report` with credentials,
+ * `off` without); '' only for an instance that never reported, which is not counted.
+ */
 export function normalizedRemoteConfig(inst: AgentInstanceSummary) {
   const rc = inst.remoteConfig ?? {};
   return {

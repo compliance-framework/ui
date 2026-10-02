@@ -63,7 +63,11 @@ const rows = computed(() => {
     { key: 'api.url', value: show(d.api?.url) },
     { key: 'api.auth.client_id', value: show(d.api?.auth?.client_id) },
     { key: 'daemon', value: show(d.daemon) },
-    { key: 'remote_config.mode', value: show(rc.mode, 'off') },
+    // R29: an unset mode is report with API credentials, off without.
+    {
+      key: 'remote_config.mode',
+      value: show(rc.mode, d.api?.auth?.client_id ? 'report' : 'off'),
+    },
     {
       key: 'remote_config.poll_interval',
       value: show(rc.poll_interval, '60s'),

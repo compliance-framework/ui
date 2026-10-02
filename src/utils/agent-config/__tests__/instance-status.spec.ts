@@ -128,6 +128,8 @@ describe('deriveInstanceState (U1.3 table)', () => {
       'report-stale',
       'file-warnings',
     ]);
+    // A truncated report has no base (the host's file was dropped), never missing bundles.
+    expect(s.badges[1].tooltip).toContain('local file was dropped');
     expect(s.badges[3].label).toBe('1 file warning');
     expect(deriveInstanceState(inst({}), 7).badges).toEqual([]);
   });
