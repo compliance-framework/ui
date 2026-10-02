@@ -13,6 +13,26 @@
       >
         {{ name }}
       </h4>
+      <span v-if="canManage" class="flex gap-2" data-test="plugin-actions">
+        <TertiaryButton
+          v-if="pendingRemoval || removed || pendingNew"
+          size="small"
+          data-test="plugin-undo-removal"
+          @click="undoPlugin"
+        >
+          {{
+            pendingNew ? 'Discard plugin' : removed ? 'Restore' : 'Undo removal'
+          }}
+        </TertiaryButton>
+        <TertiaryButton
+          v-else
+          size="small"
+          data-test="remove-plugin"
+          @click="confirmRemove"
+        >
+          Remove
+        </TertiaryButton>
+      </span>
       <ProvenanceBadge v-if="!pendingNew" :provenance="cardProvenance" />
       <ConfigPill v-if="plugin?.enabled === false" severity="secondary">
         Disabled
@@ -52,26 +72,6 @@
         data-test="pending-removal"
         >pending: removal</ConfigPill
       >
-      <span v-if="canManage" class="ml-auto flex gap-2">
-        <TertiaryButton
-          v-if="pendingRemoval || removed || pendingNew"
-          size="small"
-          data-test="plugin-undo-removal"
-          @click="undoPlugin"
-        >
-          {{
-            pendingNew ? 'Discard plugin' : removed ? 'Restore' : 'Undo removal'
-          }}
-        </TertiaryButton>
-        <TertiaryButton
-          v-else
-          size="small"
-          data-test="remove-plugin"
-          @click="confirmRemove"
-        >
-          Remove
-        </TertiaryButton>
-      </span>
     </header>
     <div class="grid grid-cols-1 gap-x-6 gap-y-2 text-sm md:grid-cols-2">
       <div class="md:col-span-2">

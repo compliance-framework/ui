@@ -118,6 +118,22 @@ describe('policy_data section: display', () => {
     wrapper.unmount();
   });
 
+  it('puts the edit / remove actions right after the key, before the value', async () => {
+    const { wrapper } = await mountSection();
+    const row = node(wrapper, 'MaxAuthTries').element.firstElementChild!;
+    const kids = Array.from(row.children);
+    const label = kids.findIndex((k) => k.textContent === 'MaxAuthTries');
+    const actions = row.querySelector('[data-test="pd-actions"]')!;
+    expect(kids[label + 1]).toBe(actions);
+    expect(actions.className).not.toContain('ml-auto');
+    expect(
+      Array.from(actions.querySelectorAll('button')).map((b) =>
+        b.getAttribute('aria-label'),
+      ),
+    ).toEqual(['Edit MaxAuthTries', 'Remove MaxAuthTries']);
+    wrapper.unmount();
+  });
+
   it('collapses deep and large containers, and pages long lists', async () => {
     const { wrapper } = await mountSection();
     expect(node(wrapper, 'nested/Deep_Key/level').exists()).toBe(true);

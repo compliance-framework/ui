@@ -19,20 +19,8 @@
         :data-entry="entry"
       >
         <span class="w-5 text-right text-gray-400">{{ idx + 1 }}.</span>
-        <code class="font-mono break-all">{{ entry }}</code>
-        <span
-          v-if="hint(entry)"
-          class="rounded px-1 text-[0.7rem]"
-          :class="
-            hint(entry)!.safe === hint(entry)!.total
-              ? 'bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-300'
-              : 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300'
-          "
-          data-test="trust-hint"
-          >trusted on {{ hint(entry)!.safe }}/{{ hint(entry)!.total }} instances
-          · {{ hint(entry)!.label }}</span
-        >
-        <span class="ml-auto flex gap-1">
+        <code class="min-w-0 font-mono break-all">{{ entry }}</code>
+        <span class="inline-flex shrink-0 gap-1" data-test="policy-actions">
           <button
             type="button"
             class="px-1 disabled:opacity-30"
@@ -61,6 +49,18 @@
             <i class="pi pi-times text-[0.7rem]" />
           </button>
         </span>
+        <span
+          v-if="hint(entry)"
+          class="rounded px-1 text-[0.7rem]"
+          :class="
+            hint(entry)!.safe === hint(entry)!.total
+              ? 'bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-300'
+              : 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300'
+          "
+          data-test="trust-hint"
+          >trusted on {{ hint(entry)!.safe }}/{{ hint(entry)!.total }} instances
+          · {{ hint(entry)!.label }}</span
+        >
       </li>
       <li v-if="!entries.length" class="text-xs text-gray-500">
         No policy sources.

@@ -247,6 +247,11 @@ describe('field states (R71)', () => {
     // The config map editor shows the read-only key locked and disabled.
     const editor = await openEditor(wrapper, '/plugins/local-ssh/config');
     const row = editor.find('[data-row="password"]');
+    // Row actions sit next to the key, before the value input.
+    const order = Array.from(row.element.children).map(
+      (c) => c.getAttribute('data-test') ?? c.tagName,
+    );
+    expect(order.indexOf('kv-actions')).toBeLessThan(order.indexOf('INPUT'));
     expect(row.find('[data-test="kv-lock"]').exists()).toBe(true);
     expect(row.find('input').attributes('disabled')).toBeDefined();
     expect(

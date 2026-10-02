@@ -7,9 +7,11 @@
       :class="{ 'opacity-60': row.removed }"
       :data-row="row.key"
     >
-      <span class="w-40 truncate font-mono text-xs" :title="row.key">{{
-        row.key
-      }}</span>
+      <span
+        class="max-w-56 min-w-0 truncate font-mono text-xs"
+        :title="row.key"
+        >{{ row.key }}</span
+      >
       <i
         v-if="row.locked"
         role="img"
@@ -49,6 +51,34 @@
         :aria-label="KEY_WARNING"
         data-test="kv-key-warning"
       />
+      <span
+        class="inline-flex shrink-0 items-center gap-1.5"
+        data-test="kv-actions"
+      >
+        <button
+          v-if="row.provenance !== 'file'"
+          v-tooltip.top="'Reset to file value'"
+          type="button"
+          class="text-xs text-sky-700 disabled:opacity-40 dark:text-sky-300"
+          :disabled="disabled || row.locked"
+          :aria-label="`Reset ${row.key}`"
+          data-test="kv-reset"
+          @click="$emit('reset', row.key)"
+        >
+          ↺
+        </button>
+        <button
+          v-if="!row.removed"
+          type="button"
+          class="text-xs text-red-600 disabled:opacity-40 dark:text-red-400"
+          :disabled="disabled || row.locked"
+          :aria-label="`Delete ${row.key}`"
+          data-test="kv-delete"
+          @click="$emit('delete', row.key)"
+        >
+          <i class="pi pi-trash" />
+        </button>
+      </span>
       <InputText
         :model-value="row.value"
         :placeholder="
@@ -64,29 +94,6 @@
         v-if="row.provenance !== 'file'"
         :provenance="row.provenance"
       />
-      <button
-        v-if="row.provenance !== 'file'"
-        v-tooltip.top="'Reset to file value'"
-        type="button"
-        class="text-xs text-sky-700 disabled:opacity-40 dark:text-sky-300"
-        :disabled="disabled || row.locked"
-        :aria-label="`Reset ${row.key}`"
-        data-test="kv-reset"
-        @click="$emit('reset', row.key)"
-      >
-        ↺
-      </button>
-      <button
-        v-if="!row.removed"
-        type="button"
-        class="text-xs text-red-600 disabled:opacity-40 dark:text-red-400"
-        :disabled="disabled || row.locked"
-        :aria-label="`Delete ${row.key}`"
-        data-test="kv-delete"
-        @click="$emit('delete', row.key)"
-      >
-        <i class="pi pi-trash" />
-      </button>
     </div>
     <p v-if="!rows.length" class="text-xs text-gray-500 dark:text-slate-400">
       None.

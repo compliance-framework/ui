@@ -81,7 +81,7 @@
       >
         {{ error }} Fix the JSON to switch back to the structured view.
       </p>
-      <div class="flex justify-end">
+      <div>
         <button
           v-if="inOverlay"
           type="button"

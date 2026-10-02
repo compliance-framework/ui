@@ -20,7 +20,7 @@
       </button>
       <span v-else class="w-4" />
       <span
-        class="font-mono text-xs break-all"
+        class="min-w-0 font-mono text-xs break-all"
         :class="
           inArray
             ? 'text-gray-400 dark:text-slate-500'
@@ -28,6 +28,31 @@
         "
         >{{ label }}</span
       >
+      <span
+        v-if="editable && !editing"
+        class="inline-flex shrink-0 gap-0.5"
+        data-test="pd-actions"
+      >
+        <button
+          v-if="!container && type !== 'null'"
+          type="button"
+          class="rounded p-0.5 text-gray-500 hover:bg-slate-200 hover:text-sky-700 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-sky-300"
+          :aria-label="`Edit ${label}`"
+          :data-test="`pd-edit-${ptr}`"
+          @click="startEdit"
+        >
+          <i class="pi pi-pencil text-[0.65rem]" />
+        </button>
+        <button
+          type="button"
+          class="rounded p-0.5 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10"
+          :aria-label="`Remove ${label}`"
+          :data-test="`pd-remove-${ptr}`"
+          @click="$emit('remove', ptr)"
+        >
+          <i class="pi pi-trash text-[0.65rem]" />
+        </button>
+      </span>
       <template v-if="!editing">
         <span
           v-if="container"
@@ -102,27 +127,6 @@
           @click="tree!.revert(ptr)"
         >
           ↺
-        </button>
-      </span>
-      <span v-if="editable && !editing" class="ml-auto flex gap-1">
-        <button
-          v-if="!container && type !== 'null'"
-          type="button"
-          class="rounded p-0.5 text-gray-500 hover:bg-slate-200 hover:text-sky-700 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-sky-300"
-          :aria-label="`Edit ${label}`"
-          :data-test="`pd-edit-${ptr}`"
-          @click="startEdit"
-        >
-          <i class="pi pi-pencil text-[0.65rem]" />
-        </button>
-        <button
-          type="button"
-          class="rounded p-0.5 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10"
-          :aria-label="`Remove ${label}`"
-          :data-test="`pd-remove-${ptr}`"
-          @click="$emit('remove', ptr)"
-        >
-          <i class="pi pi-trash text-[0.65rem]" />
         </button>
       </span>
     </div>
