@@ -151,12 +151,6 @@
               Not recorded
             </span>
           </dd>
-          <template v-if="policyId">
-            <dt class="text-gray-600 dark:text-slate-400">Policy ID</dt>
-            <dd class="font-mono break-all" data-test="playback-policy-id">
-              {{ policyId }}
-            </dd>
-          </template>
           <dt class="text-gray-600 dark:text-slate-400">Package</dt>
           <dd class="font-mono break-all">{{ playback.package }}</dd>
           <dt class="text-gray-600 dark:text-slate-400">Evaluated at</dt>
@@ -328,8 +322,6 @@ const props = defineProps<{
   // Where the policy bundle came from, as the agent recorded it. Evidence from agents
   // before v0.8.0-rc3 has none.
   policySource?: string;
-  // The policy's declared policy_id (the `_policy_id` label), when it has one.
-  policyId?: string;
 }>();
 
 const toast = useToast();

@@ -89,7 +89,3 @@ export const POLICY_BUNDLE_DIGEST_PROP = '_policy_bundle_digest';
 // The evidence prop the agent records with the configured source of the policy bundle: an
 // OCI reference such as ghcr.io/org/plugin-x-policies:v1.2.3, or a local path.
 export const POLICY_SOURCE_PROP = '_policy_source';
-
-// The evidence label with the policy's declared policy_id (agent R74), which decides its
-// evidence stream instead of the bundle's location. Absent when the policy declares none.
-export const POLICY_ID_LABEL = '_policy_id';
