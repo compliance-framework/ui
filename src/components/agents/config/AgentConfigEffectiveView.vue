@@ -41,40 +41,12 @@
           :base="base"
           :overlay="appliedOverlay"
         />
-        <section class="space-y-2">
-          <div class="flex flex-wrap items-center justify-between gap-2">
-            <h4 class="text-sm font-semibold text-gray-900 dark:text-slate-200">
-              Plugins
-            </h4>
-            <SecondaryButton
-              v-if="canAddPlugin"
-              size="small"
-              data-test="add-plugin"
-              @click="addPluginOpen = true"
-            >
-              <i class="pi pi-plus mr-1" />Add plugin
-            </SecondaryButton>
-          </div>
-          <p
-            v-if="!pluginCards.length"
-            class="text-sm text-gray-500 dark:text-slate-400"
-          >
-            No plugins configured.
-          </p>
-          <div class="grid grid-cols-1 gap-3 xl:grid-cols-2">
-            <PluginSummaryCard
-              v-for="card in pluginCards"
-              :key="card.name"
-              :name="card.name"
-              :plugin="card.plugin"
-              :base="base"
-              :overlay="appliedOverlay"
-              :removed="card.removed"
-              :pending-new="card.pendingNew"
-              :report="reportOf(card.name)"
-            />
-          </div>
-        </section>
+        <PluginTabs
+          :cards="pluginCards"
+          :base="base"
+          :overlay="appliedOverlay"
+          :plugin-reports="pluginReports"
+        />
       </template>
       <ConfigYamlViewer
         v-else
@@ -84,33 +56,20 @@
         :legend="LOCKED_LEGEND"
       />
     </template>
-    <AddPluginDialog
-      v-if="canAddPlugin"
-      v-model:visible="addPluginOpen"
-      :existing="existingPluginNames"
-      @add="addPlugin"
-    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import SecondaryButton from '@/volt/SecondaryButton.vue';
 import SelectButton from '@/volt/SelectButton.vue';
-import type {
-  ConfigDoc,
-  OverlayDoc,
-  PluginDoc,
-  PluginReport,
-} from '@/types/agent-config';
+import type { ConfigDoc, OverlayDoc, PluginReport } from '@/types/agent-config';
 import { sanitizeForDisplay } from '@/utils/agent-config/display';
 import { isPlainObject } from '@/utils/agent-config/merge-patch';
 import { pointer } from '@/utils/agent-config/json-pointer';
 import { useWorkspace } from '@/composables/agent-config/useConfigWorkspace';
-import AddPluginDialog from './editor/AddPluginDialog.vue';
 import LockedKeysPanel from './LockedKeysPanel.vue';
 import ConfigFlagsSummary from './ConfigFlagsSummary.vue';
-import PluginSummaryCard from './PluginSummaryCard.vue';
+import PluginTabs, { type PluginCard } from './PluginTabs.vue';
 import ConfigYamlViewer from './ConfigYamlViewer.vue';
 import { LOCKED_LEGEND, NOT_REPORTED_TEXT } from './constants';
 
@@ -129,10 +88,6 @@ const props = defineProps<{
   pluginReports?: PluginReport[] | null;
 }>();
 
-function reportOf(name: string): PluginReport | null {
-  return props.pluginReports?.find((r) => r.name === name) ?? null;
-}
-
 const mode = ref<'summary' | 'yaml'>('summary');
 const modeOptions = [
   { label: 'Summary', value: 'summary' },
@@ -146,12 +101,7 @@ const effective = computed(() =>
 const ws = useWorkspace();
 
 const pluginCards = computed(() => {
-  const cards: {
-    name: string;
-    plugin: PluginDoc | null;
-    removed: boolean;
-    pendingNew: boolean;
-  }[] = [];
+  const cards: PluginCard[] = [];
   const eff = effective.value?.plugins ?? {};
   for (const [name, plugin] of Object.entries(eff)) {
     cards.push({
@@ -189,7 +139,7 @@ const pluginCards = computed(() => {
       ) {
         cards.push({
           name,
-          plugin: plugin as PluginDoc,
+          plugin: plugin as PluginCard['plugin'],
           removed: false,
           pendingNew: true,
         });
@@ -198,27 +148,4 @@ const pluginCards = computed(() => {
   }
   return cards.sort((a, b) => a.name.localeCompare(b.name));
 });
-
-// ---- Add plugin (agent:configure; a pending change) ----
-const canAddPlugin = computed(
-  () => !!ws && ws.ready.value && ws.canConfigure.value,
-);
-const addPluginOpen = ref(false);
-const existingPluginNames = computed(() => {
-  const names = new Set(pluginCards.value.map((c) => c.name));
-  for (const b of ws?.bases.value ?? [])
-    Object.keys(b.plugins ?? {}).forEach((n) => names.add(n));
-  return Array.from(names);
-});
-function addPlugin(plugin: {
-  name: string;
-  source: string;
-  schedule?: string;
-}) {
-  ws?.draft.set(pointer('plugins', plugin.name), {
-    source: plugin.source,
-    ...(plugin.schedule ? { schedule: plugin.schedule } : {}),
-    policies: [],
-  });
-}
 </script>

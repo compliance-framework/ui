@@ -88,3 +88,12 @@ if (
     return range;
   };
 }
+
+// jsdom has no ResizeObserver; PrimeVue's scrollable TabList observes its strip with one.
+if (typeof globalThis.ResizeObserver === 'undefined') {
+  globalThis.ResizeObserver = class {
+    observe(): void {}
+    unobserve(): void {}
+    disconnect(): void {}
+  } as unknown as typeof ResizeObserver;
+}
