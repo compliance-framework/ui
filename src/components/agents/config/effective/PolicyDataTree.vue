@@ -6,59 +6,49 @@
         :key="key"
         :label="key"
         :value="value"
-        :path="[key]"
+        :ptr="`${ptr}/${escapeToken(key)}`"
         :depth="0"
-        :editable="editable"
         :in-array="false"
-        @set="onSet"
-        @remove="onRemove"
+        @set="(p, v) => tree?.set(p, v)"
+        @remove="(p) => tree?.remove(p)"
       />
     </ul>
     <p v-else class="text-xs text-gray-500 dark:text-slate-400">No keys.</p>
     <PolicyDataAddForm
-      v-if="editable"
+      v-if="tree?.canEdit(ptr)"
       class="ml-5"
       :in-array="false"
+      :item-type="null"
       :existing="entries.map(([k]) => k)"
       :where="label"
       test-key="root"
-      @add="(k, v) => onSet([k!], v)"
+      @add="(k, v) => tree?.set(`${ptr}/${escapeToken(k ?? '')}`, v)"
     />
   </div>
 </template>
 
 <script setup lang="ts">
-// Structured view (and editor, when `editable`) of a plugin's policy_data: nested objects as
-// collapsible key/value groups, arrays as lists, scalars with their type. Every edit emits the
-// WHOLE new object (update:modelValue); the caller turns it into the overlay exactly as the
-// raw JSON editor does. Keys are used verbatim.
-import { computed } from 'vue';
+// Structured view of a plugin's policy_data: nested objects as collapsible key/value groups,
+// arrays as lists. With a PolicyDataTreeContext provided (PolicyDataSection) every key and
+// item is editable on its own; without one it only displays. Keys are used verbatim.
+import { computed, inject } from 'vue';
 import type { PlainObject } from '@/utils/agent-config/merge-patch';
-import {
-  removeIn,
-  setIn,
-  type DataPath,
-} from '@/utils/agent-config/policy-data';
+import { escapeToken } from '@/utils/agent-config/json-pointer';
 import PolicyDataNode from './PolicyDataNode.vue';
 import PolicyDataAddForm from './PolicyDataAddForm.vue';
+import { POLICY_DATA_TREE_KEY } from './policyDataContext';
 
 const props = withDefaults(
   defineProps<{
-    modelValue: PlainObject;
-    editable?: boolean;
+    value: PlainObject;
+    /** The policy_data pointer the keys live under. */
+    ptr: string;
     label?: string;
     testId?: string;
   }>(),
-  { editable: false, label: 'Policy data', testId: 'policy-data-tree' },
+  { label: 'Policy data', testId: 'policy-data-tree' },
 );
-const emit = defineEmits<{ 'update:modelValue': [value: PlainObject] }>();
 
-const entries = computed(() => Object.entries(props.modelValue));
-
-function onSet(path: DataPath, value: unknown) {
-  emit('update:modelValue', setIn(props.modelValue, path, value));
-}
-function onRemove(path: DataPath) {
-  emit('update:modelValue', removeIn(props.modelValue, path));
-}
+const tree = inject(POLICY_DATA_TREE_KEY, null);
+const entries = computed(() => Object.entries(props.value));
 </script>

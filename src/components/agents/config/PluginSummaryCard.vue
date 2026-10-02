@@ -235,35 +235,10 @@
         </EditableField>
       </div>
       <div class="md:col-span-2">
-        <EditableField
-          ref="policyDataField"
-          :ptr="p('policy_data')"
-          label="policy data"
-          kind="custom"
-          :show-pending-value="false"
-        >
-          <template #label
-            ><span class="text-gray-500 dark:text-slate-400">
-              Policy data
-            </span></template
-          >
-          <span
-            >{{ policyDataKeys }} key{{ policyDataKeys === 1 ? '' : 's' }}</span
-          >
-          <ProvenanceBadge
-            v-if="field('policy_data') !== 'file'"
-            :provenance="field('policy_data')"
-          />
-          <template #editor>
-            <PolicyDataEditor :plugin="name" />
-          </template>
-        </EditableField>
-        <PolicyDataTree
-          v-if="policyDataKeys && !policyDataField?.open"
-          class="mt-1 pl-3"
-          :model-value="policyData"
-          :label="`Policy data of ${name}`"
-          :test-id="`policy-data-view-${name}`"
+        <PolicyDataSection
+          :plugin="name"
+          :reported="plugin?.policy_data"
+          :provenance="field('policy_data')"
         />
       </div>
     </div>
@@ -273,7 +248,7 @@
 <script setup lang="ts">
 // One plugin on the Effective view, with an inline editor per editable field (R69) and the
 // field states of R71.
-import { computed, ref } from 'vue';
+import { computed } from 'vue';
 import { useConfirm } from 'primevue/useconfirm';
 import TertiaryButton from '@/volt/TertiaryButton.vue';
 import type {
@@ -283,7 +258,6 @@ import type {
   PluginReport,
 } from '@/types/agent-config';
 import { pointer } from '@/utils/agent-config/json-pointer';
-import { isPlainObject } from '@/utils/agent-config/merge-patch';
 import {
   pluginProvenance,
   provenanceOf,
@@ -296,8 +270,7 @@ import ProvenanceBadge from './ProvenanceBadge.vue';
 import ConfigPill from './ConfigPill.vue';
 import EditableField from './effective/EditableField.vue';
 import MapFieldEditor from './effective/MapFieldEditor.vue';
-import PolicyDataEditor from './effective/PolicyDataEditor.vue';
-import PolicyDataTree from './effective/PolicyDataTree.vue';
+import PolicyDataSection from './effective/PolicyDataSection.vue';
 import PolicySourcesEditor from './editor/PolicySourcesEditor.vue';
 
 const props = defineProps<{
@@ -381,11 +354,4 @@ function undoPlugin() {
 
 /** R76: the agent library the plugin's build was built with, when reported. */
 const libVersion = computed(() => props.report?.libVersion || '');
-
-// policy_data as a structured, read-only view; hidden while its editor is open.
-const policyDataField = ref<InstanceType<typeof EditableField> | null>(null);
-const policyData = computed(() =>
-  isPlainObject(props.plugin?.policy_data) ? props.plugin.policy_data : {},
-);
-const policyDataKeys = computed(() => Object.keys(policyData.value).length);
 </script>

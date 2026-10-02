@@ -26,7 +26,6 @@ vi.mock('@/composables/agent-config/useAgentConfigApi', async () => {
 
 import AgentConfigTab from '../AgentConfigTab.vue';
 import Select from '@/volt/Select.vue';
-import SelectButton from '@/volt/SelectButton.vue';
 
 const agent: Agent = {
   id: 'agent-1',
@@ -145,7 +144,7 @@ describe('inline editing on the Effective view (R69)', () => {
     wrapper.unmount();
   });
 
-  it('labels, policy data and policy assignment use the map / JSON / list editors', async () => {
+  it('labels, policy data and policy assignment use the map / per-value / list editors', async () => {
     const { wrapper, ws } = await mountTab();
     let editor = await openEditor(wrapper, '/plugins/local-ssh/labels');
     await editor.find('[data-test="kv-new-key"]').setValue('team');
@@ -158,20 +157,15 @@ describe('inline editing on the Effective view (R69)', () => {
       .find('[data-test="done-/plugins/local-ssh/labels"]')
       .trigger('click');
 
-    editor = await openEditor(wrapper, '/plugins/local-ssh/policy_data');
-    // Structured by default; the raw JSON editor is one toggle away.
-    expect(editor.find('[data-test="policy-data-structured"]').exists()).toBe(
-      true,
-    );
-    await editor
-      .findComponent(SelectButton)
-      .vm.$emit('update:modelValue', 'raw');
-    await editor.find('textarea').setValue('{"max_auth_tries": 5}');
-    expect(
-      ws.draft.overlay.value.plugins?.['local-ssh']?.policy_data,
-    ).toMatchObject({ max_auth_tries: 5 });
-    await editor.find('textarea').setValue('{nope');
-    expect(editor.find('[data-test="policy-data-error"]').exists()).toBe(true);
+    // policy_data: each value has its own pencil (no whole-object editor).
+    const pdPtr = '/plugins/local-ssh/policy_data/max_auth_tries';
+    await wrapper.find(`[data-test="pd-edit-${pdPtr}"]`).trigger('click');
+    const pdForm = wrapper.find(`[data-test="pd-edit-form-${pdPtr}"]`);
+    await pdForm.find('[data-test="pd-edit-value"]').setValue('5');
+    await pdForm.trigger('submit');
+    expect(ws.draft.overlay.value.plugins?.['local-ssh']?.policy_data).toEqual({
+      max_auth_tries: 5,
+    });
 
     editor = await openEditor(wrapper, '/plugins/ubuntu-packages/policies');
     await editor

@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
   CHILD_PAGE,
-  convertValue,
   envRefs,
   envSegments,
   getIn,
   isMasked,
+  itemType,
   jsonType,
+  parseNewValue,
   parseScalar,
   removeIn,
   setIn,
@@ -52,6 +53,9 @@ describe('policy-data helpers', () => {
     expect(removeIn(b, ['kebab-key', 'snake_key', 0])['kebab-key']).toEqual({
       snake_key: [20, 3],
     });
+    // Pointer tokens are strings: array indices still work.
+    expect(removeIn([1, 2, 3], ['1'])).toEqual([1, 3]);
+    expect(setIn([1, { a: 1 }], ['1', 'a'], 2)).toEqual([1, { a: 2 }]);
     expect('a/b~c' in removeIn(b, ['a/b~c'])).toBe(false);
     expect(JSON.stringify(root)).toBe(frozen);
 
@@ -61,16 +65,17 @@ describe('policy-data helpers', () => {
     expect(({} as Record<string, unknown>).polluted).toBeUndefined();
   });
 
-  it('convertValue keeps what makes sense', () => {
-    expect(convertValue('3', 'number')).toBe(3);
-    expect(convertValue('x', 'number')).toBe(0);
-    expect(convertValue(3, 'string')).toBe('3');
-    expect(convertValue('true', 'boolean')).toBe(true);
-    expect(convertValue({ a: 1 }, 'string')).toBe('{"a":1}');
-    expect(convertValue('x', 'array')).toEqual(['x']);
-    expect(convertValue(null, 'array')).toEqual([]);
-    expect(convertValue([1], 'object')).toEqual({});
-    expect(convertValue(5, 'null')).toBeNull();
+  it('parseNewValue: the container type, else a JSON literal, else text', () => {
+    expect(parseNewValue('5', null)).toEqual({ value: 5, error: '' });
+    expect(parseNewValue('[]', null).value).toEqual([]);
+    expect(parseNewValue('"5"', null).value).toBe('5');
+    expect(parseNewValue('hello world', null).value).toBe('hello world');
+    expect(parseNewValue('5', 'string').value).toBe('5');
+    expect(parseNewValue('x', 'number').error).toBe('Enter a number');
+    expect(itemType(['a', 'b'])).toBe('string');
+    expect(itemType([1, 'b'])).toBeNull();
+    expect(itemType([{}])).toBeNull();
+    expect(itemType([])).toBeNull();
   });
 
   it('parseScalar validates numbers and booleans, keeps strings verbatim', () => {

@@ -27,30 +27,25 @@
         :aria-label="`New key in ${where}`"
         data-test="pd-new-key"
       />
-      <select
-        v-model="type"
-        :class="SELECT_CLASS"
-        :aria-label="`Type of the new ${inArray ? 'item' : 'value'}`"
-        data-test="pd-new-type"
+      <label
+        v-if="itemType === 'boolean'"
+        class="inline-flex items-center gap-1.5 text-xs"
       >
-        <option v-for="t in types" :key="t" :value="t">{{ t }}</option>
-      </select>
-      <select
-        v-if="type === 'boolean'"
-        v-model="text"
-        :class="SELECT_CLASS"
-        aria-label="New value"
-        data-test="pd-new-value"
-      >
-        <option value="true">true</option>
-        <option value="false">false</option>
-      </select>
+        <input
+          v-model="checked"
+          type="checkbox"
+          aria-label="New value"
+          data-test="pd-new-value"
+        />
+        {{ checked ? 'true' : 'false' }}
+      </label>
       <InputText
-        v-else-if="type === 'string' || type === 'number'"
+        v-else
         v-model="text"
         size="small"
         class="min-w-32 flex-1 font-mono"
-        placeholder="value"
+        :placeholder="itemType ? `${itemType} value` : 'value'"
+        :inputmode="itemType === 'number' ? 'decimal' : undefined"
         aria-label="New value"
         data-test="pd-new-value"
       />
@@ -65,6 +60,13 @@
         >Cancel</TertiaryButton
       >
       <p
+        v-if="!itemType"
+        class="w-full text-xs text-gray-500 dark:text-slate-400"
+      >
+        A JSON value (5, true, [], {}, "text") keeps its type; anything else is
+        text.
+      </p>
+      <p
         v-if="error && (key || text)"
         class="w-full text-xs text-red-600 dark:text-red-400"
         data-test="pd-add-error"
@@ -76,16 +78,20 @@
 </template>
 
 <script setup lang="ts">
-// "Add key" / "Add item" of one object / array in the structured policy_data editor.
-import { computed, ref, watch } from 'vue';
+// "Add key" / "Add item" of one object / array in the structured policy_data editor. There is
+// no type selector: a list whose items share a scalar type takes new items of that type;
+// otherwise the value is read as a JSON literal when it parses, else as text.
+import { computed, ref } from 'vue';
 import InputText from '@/volt/InputText.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
 import TertiaryButton from '@/volt/TertiaryButton.vue';
-import { parseScalar, type JsonType } from '@/utils/agent-config/policy-data';
+import { parseNewValue, type JsonType } from '@/utils/agent-config/policy-data';
 
 const props = defineProps<{
   /** Adding to an array (no key) rather than an object. */
   inArray: boolean;
+  /** The scalar type the new value must have (an array's items), or null. */
+  itemType: JsonType | null;
   /** Keys already in the object (duplicates are refused). */
   existing: readonly string[];
   /** Human name of the container, for labels. */
@@ -94,48 +100,34 @@ const props = defineProps<{
 }>();
 const emit = defineEmits<{ add: [key: string | null, value: unknown] }>();
 
-// In an object, null would delete the key (RFC 7396): only arrays can hold a null.
-const types = computed<JsonType[]>(() =>
-  props.inArray
-    ? ['string', 'number', 'boolean', 'object', 'array', 'null']
-    : ['string', 'number', 'boolean', 'object', 'array'],
-);
-
 const open = ref(false);
 const key = ref('');
-const type = ref<JsonType>('string');
 const text = ref('');
+const checked = ref(false);
 
-watch(type, (t) => {
-  if (t === 'boolean') text.value = 'true';
-  else if (t !== 'string' && t !== 'number') text.value = '';
-});
-
+const parsed = computed(() =>
+  props.itemType === 'boolean'
+    ? { value: checked.value, error: '' }
+    : parseNewValue(text.value, props.itemType),
+);
 const error = computed(() => {
   if (!props.inArray) {
     if (!key.value) return 'Enter a key';
     if (props.existing.includes(key.value)) return 'This key exists';
   }
-  return parseScalar(text.value, type.value).error;
+  return parsed.value.error;
 });
 
 function close() {
   open.value = false;
   key.value = '';
   text.value = '';
-  type.value = 'string';
+  checked.value = false;
 }
 
 function submit() {
   if (error.value) return;
-  emit(
-    'add',
-    props.inArray ? null : key.value,
-    parseScalar(text.value, type.value).value,
-  );
+  emit('add', props.inArray ? null : key.value, parsed.value.value);
   close();
 }
-
-const SELECT_CLASS =
-  'rounded-md border border-ccf-300 bg-white px-2 py-1 text-xs text-gray-900 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200';
 </script>

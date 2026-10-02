@@ -1,7 +1,7 @@
-// Pure helpers of the structured `policy_data` view/editor (PolicyDataTree). Edits produce a
-// new full policy_data object (the editor's target); PolicyDataEditor turns the target into
-// the same merge patch as the raw JSON editor (overlay-ops replacingPatch). Keys are used
-// verbatim (own properties only, "__proto__" included): never case-converted.
+// Pure helpers of the structured `policy_data` view/editor (PolicyDataTree). Edits are
+// written per pointer (policy-data-patch.ts). Keys are used verbatim (own properties only,
+// "__proto__" included): never case-converted. A value keeps its JSON type when edited; a
+// type change is done in the raw JSON view.
 
 import { REDACTED_MASK } from '@/types/agent-config';
 import { clone, getOwn, isPlainObject, setOwn } from './merge-patch';
@@ -55,7 +55,7 @@ export function envSegments(s: string): { text: string; env: boolean }[] {
 }
 
 function childOf(container: unknown, key: string | number): unknown {
-  if (Array.isArray(container)) return container[key as number];
+  if (Array.isArray(container)) return container[Number(key)];
   return isPlainObject(container) ? getOwn(container, String(key)) : undefined;
 }
 
@@ -72,7 +72,7 @@ export function setIn<T>(root: T, path: DataPath, value: unknown): T {
   const [head, ...rest] = path;
   if (Array.isArray(root)) {
     const out = root.slice();
-    out[head as number] = setIn(out[head as number], rest, value);
+    out[Number(head)] = setIn(out[Number(head)], rest, value);
     return out as T;
   }
   const out = isPlainObject(root) ? clone(root) : {};
@@ -92,7 +92,7 @@ export function removeIn<T>(root: T, path: DataPath): T {
   const parent = getIn(root, parentPath);
   let next: unknown;
   if (Array.isArray(parent)) {
-    next = parent.filter((_, i) => i !== key);
+    next = parent.filter((_, i) => i !== Number(key));
   } else if (isPlainObject(parent)) {
     next = clone(parent);
     delete (next as Record<string, unknown>)[String(key)];
@@ -100,29 +100,6 @@ export function removeIn<T>(root: T, path: DataPath): T {
     return root;
   }
   return parentPath.length ? setIn(root, parentPath, next) : (next as T);
-}
-
-/** The value `v` converted to `type`, keeping what makes sense (e.g. "3" → 3). */
-export function convertValue(v: unknown, type: JsonType): unknown {
-  const from = jsonType(v);
-  if (from === type) return clone(v);
-  switch (type) {
-    case 'string':
-      if (from === 'object' || from === 'array') return JSON.stringify(v);
-      return from === 'null' ? '' : String(v);
-    case 'number': {
-      const n = typeof v === 'string' ? Number(v.trim()) : Number(v);
-      return typeof v !== 'object' && v !== '' && Number.isFinite(n) ? n : 0;
-    }
-    case 'boolean':
-      return v === true || v === 'true' || (typeof v === 'number' && v !== 0);
-    case 'null':
-      return null;
-    case 'object':
-      return {};
-    case 'array':
-      return from === 'null' ? [] : [clone(v)];
-  }
 }
 
 /**
@@ -156,6 +133,33 @@ export function parseScalar(
     default:
       return { value: text, error: '' };
   }
+}
+
+/**
+ * A value typed into an "add" form: as `type` when the container dictates one (an array whose
+ * items share a scalar type), else as a JSON literal when it parses (5, true, null, [], {},
+ * "quoted"), else as the plain string.
+ */
+export function parseNewValue(
+  text: string,
+  type: JsonType | null,
+): { value: unknown; error: string } {
+  if (type === 'string' || type === 'number' || type === 'boolean') {
+    return parseScalar(text, type);
+  }
+  try {
+    return { value: JSON.parse(text), error: '' };
+  } catch {
+    return { value: text, error: '' };
+  }
+}
+
+/** The scalar type every item of `arr` shares, or null (mixed, containers, empty). */
+export function itemType(arr: readonly unknown[]): JsonType | null {
+  const types = new Set(arr.map(jsonType));
+  if (types.size !== 1) return null;
+  const [t] = types;
+  return t === 'string' || t === 'number' || t === 'boolean' ? t : null;
 }
 
 /** Display text of a scalar ('' for containers). */
