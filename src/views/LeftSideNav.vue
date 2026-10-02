@@ -208,7 +208,8 @@ const links = ref<Array<NavigationItem>>([
       {
         name: 'admin-agents',
         title: 'Agents',
-        permission: ADMIN_MANAGE,
+        // R40: agent:read, like the route.
+        permission: { resource: RESOURCES.AGENT, action: ACTIONS.READ },
       },
       // {
       //   name: 'admin-subject-templates',

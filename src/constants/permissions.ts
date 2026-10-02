@@ -75,6 +75,11 @@ export const ACTIONS = {
   // action-only resources
   TRIGGER: 'trigger',
   EXECUTE: 'execute',
+  // agent remote configuration (design §7, R39/R40)
+  CONFIGURE: 'configure',
+  // The agent service account fetching its overlay / reporting. Mirrored from the manifest;
+  // the UI never checks it.
+  SYNC: 'sync',
 } as const;
 
 export type ResourceName = (typeof RESOURCES)[keyof typeof RESOURCES];
@@ -160,6 +165,7 @@ const ACTION_VERBS: Partial<Record<string, string>> = {
   [ACTIONS.USERS_MANAGE]: 'manage',
   [ACTIONS.SSO_MANAGE]: 'manage',
   [ACTIONS.SETTINGS_MANAGE]: 'manage',
+  [ACTIONS.CONFIGURE]: 'configure',
 };
 
 // Tooltip shown on a disabled action the user lacks permission for.

@@ -19,9 +19,13 @@ export function usePermissions() {
     store.can(RESOURCES.ADMIN, ACTIONS.MANAGE),
   );
 
+  // Whether /me/permissions has hydrated (can() is optimistic until then).
+  const loaded = computed(() => store.loaded);
+
   return {
     can,
     canManageAdmin,
+    loaded,
     hydrate: () => store.hydrate(),
     permissionTooltip,
     RESOURCES,

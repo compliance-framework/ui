@@ -428,7 +428,9 @@ const authenticatedRoutes = [
     component: () => import('../views/admin/AgentsView.vue'),
     meta: {
       requiresAuth: true,
-      permission: ADMIN_MANAGE,
+      // R40: readable with agent:read (viewer/auditor/contributor); keys and CRUD inside the
+      // page stay behind admin:manage.
+      permission: { resource: RESOURCES.AGENT, action: ACTIONS.READ },
     },
   },
   {
