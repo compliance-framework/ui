@@ -1,5 +1,5 @@
-import { flushPromises, mount } from '@vue/test-utils';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { flushPromises, mount, enableAutoUnmount } from '@vue/test-utils';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { nextTick } from 'vue';
 import {
   buildAiDiagnosticsCacheHitChartData,
@@ -83,6 +83,11 @@ vi.mock('@/components/charts/LineChart.vue', () => ({
 }));
 
 import AiDiagnosticsView from '../admin/AiDiagnosticsView.vue';
+
+// PrimeVue's TabList schedules a 150 ms ink-bar update on mount and never clears it; a wrapper
+// left mounted lets it fire after this file's jsdom environment is torn down
+// ("HTMLElement is not defined"). Unmounting nulls its refs, so the timer becomes a no-op.
+enableAutoUnmount(afterEach);
 
 function mountView() {
   return mount(AiDiagnosticsView, {

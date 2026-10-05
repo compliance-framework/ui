@@ -46,8 +46,8 @@ describe('router', () => {
   });
 
   it('gates admin routes on admin:manage so direct-URL access is blocked (BCH-1318)', () => {
-    const agents = router.getRoutes().find((r) => r.name === 'admin-agents');
-    expect(agents?.meta.permission).toEqual({
+    const groups = router.getRoutes().find((r) => r.name === 'admin-groups');
+    expect(groups?.meta.permission).toEqual({
       resource: 'admin',
       action: 'manage',
     });
@@ -58,6 +58,14 @@ describe('router', () => {
       .getRoutes()
       .find((r) => r.name === 'catalog-create');
     expect(catalogCreate?.meta.permission).toBeUndefined();
+  });
+
+  it('gates the agents page on agent:read (agent remote config R40)', () => {
+    const agents = router.getRoutes().find((r) => r.name === 'admin-agents');
+    expect(agents?.meta.permission).toEqual({
+      resource: 'agent',
+      action: 'read',
+    });
   });
 
   it('registers the dashboard suggestions review route behind auth meta', () => {
