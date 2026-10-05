@@ -384,4 +384,40 @@ describe('SubjectTemplatesView', () => {
     const preview = wrapper.get('[data-testid="template-preview"]');
     expect(preview.attributes('data-disabled')).toBe('true');
   });
+
+  it('keeps display priority and component type when saving an edit', async () => {
+    templates.value = [
+      {
+        id: 'template-1',
+        name: 'GitHub Organization',
+        type: 'component',
+        sourceMode: 'runtime-derived',
+        displayPriority: 7,
+        componentType: 'software',
+        selectorLabels: [{ key: '_plugin', value: 'github' }],
+        labelSchema: [{ key: 'organization', description: '' }],
+        identityLabelKeys: ['organization'],
+      },
+    ];
+
+    const wrapper = mountView();
+
+    await findButtonByText(wrapper, 'Edit')!.trigger('click');
+
+    const priorityInput = wrapper.find('#subject-template-display-priority');
+    expect(priorityInput.exists()).toBe(true);
+    expect((priorityInput.element as HTMLInputElement).value).toBe('7');
+
+    await wrapper.find('form').trigger('submit');
+
+    expect(mockUpdateTemplate).toHaveBeenCalledWith(
+      '/api/admin/subject-templates/template-1',
+      {
+        data: expect.objectContaining({
+          displayPriority: 7,
+          componentType: 'software',
+        }),
+      },
+    );
+  });
 });

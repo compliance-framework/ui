@@ -61,6 +61,11 @@
           </SecondaryButton>
         </div>
       </form>
+      <SubjectFilter
+        v-if="subjectsSupported"
+        :model-value="selectedSubject"
+        @update:model-value="changeSubject"
+      />
       <SecondaryButton @click.prevent="share" class="text-sm">
         <BIconShare class="mr-2" />
         Share
@@ -153,6 +158,9 @@ import type {
   SortDirection,
 } from '@/stores/evidence.ts';
 import EvidenceList from '@/components/EvidenceList.vue';
+import SubjectFilter from '@/components/evidence/SubjectFilter.vue';
+import { useSubjectSearch } from '@/composables/subjects/useSubjectSearch';
+import type { SubjectSummary } from '@/types/subjects';
 import BurgerMenu from '@/components/BurgerMenu.vue';
 import { useAuthenticatedInstance, useDataApi } from '@/composables/axios';
 import type { PaginatedListResponse } from '@/stores/types.ts';
@@ -178,6 +186,12 @@ const exportingCsv = ref(false);
 const lastExecutedFilter = ref('');
 const lastExecutedSortBy = ref<EvidenceSortBy>('lastSeenAt');
 const lastExecutedSortDirection = ref<SortDirection>('desc');
+// The subject filter lives in the route (?subject=<uuid>) like the other list filters;
+// selectedSubject is what the filter shows.
+const selectedSubject = ref<SubjectSummary | null>(null);
+// Set once the API returns subjects on evidence rows; older APIs get no subject filter.
+const subjectsSupported = ref(false);
+const { lookup: lookupSubjects } = useSubjectSearch();
 
 const EVIDENCE_PAGE_SIZE = 50;
 const EVIDENCE_EXPORT_PAGE_SIZE = 100;
@@ -229,14 +243,16 @@ watch(
     () => route.query.page,
     () => route.query.sortBy,
     () => route.query.sortDirection,
+    () => route.query.subject,
   ],
   (
-    [newFilter, newPage, newSortBy, newSortDirection],
-    [oldFilter, oldPage, oldSortBy, oldSortDirection],
+    [newFilter, newPage, newSortBy, newSortDirection, newSubject],
+    [oldFilter, oldPage, oldSortBy, oldSortDirection, oldSubject],
   ) => {
     const nextFilter = getRouteFilterValue(newFilter);
 
     uiStore.setEvidenceFilter(nextFilter);
+    syncSubjectFromRoute(newSubject);
 
     currentPage.value = parsePageQuery(newPage);
     applySort(
@@ -248,7 +264,8 @@ watch(
       newFilter === oldFilter &&
       newPage === oldPage &&
       newSortBy === oldSortBy &&
-      newSortDirection === oldSortDirection
+      newSortDirection === oldSortDirection &&
+      newSubject === oldSubject
     ) {
       return;
     }
@@ -462,6 +479,11 @@ function buildEvidenceSearchRequest(
     params.set('name', searchText);
   }
 
+  const subjectUuid = getRouteSubjectUuid(route.query.subject);
+  if (subjectUuid) {
+    params.set('subjectUuid', subjectUuid);
+  }
+
   const complianceParams: Record<string, string> = {
     interval: EVIDENCE_STATUS_INTERVAL,
   };
@@ -493,6 +515,7 @@ const navigationQuery = computed<Record<string, string | undefined>>(() => {
     sortDirection:
       sortDirection.value === 'desc' ? undefined : sortDirection.value,
     page: currentPage.value > 1 ? String(currentPage.value) : undefined,
+    subject: getRouteSubjectUuid(route.query.subject),
   };
 });
 
@@ -520,6 +543,9 @@ async function search(page = currentPage.value) {
     const paginatedEvidence = evidenceResponse.data;
 
     evidence.value = paginatedEvidence.data ?? [];
+    if (evidence.value.some((item) => item.subjectReferences !== undefined)) {
+      subjectsSupported.value = true;
+    }
     totalEvidence.value = paginatedEvidence.total ?? 0;
     currentPage.value = paginatedEvidence.page ?? page;
     totalPages.value = Math.max(paginatedEvidence.totalPages ?? 1, 1);
@@ -781,6 +807,49 @@ async function changeSort(nextSortBy: EvidenceSortBy) {
   });
 }
 
+function getRouteSubjectUuid(value: unknown) {
+  return typeof value === 'string' && value.trim() ? value.trim() : undefined;
+}
+
+// Keeps the filter in step with the route. A subject that arrives by URL (e.g. from an
+// evidence's Subjects card) shows its UUID until its title is looked up.
+function syncSubjectFromRoute(value: unknown) {
+  const subjectUuid = getRouteSubjectUuid(value);
+  if (!subjectUuid) {
+    selectedSubject.value = null;
+    return;
+  }
+  if (selectedSubject.value?.subjectUuid === subjectUuid) {
+    return;
+  }
+
+  subjectsSupported.value = true;
+  selectedSubject.value = {
+    subjectUuid,
+    type: '',
+    kind: 'defined-component',
+    title: subjectUuid,
+  };
+  void lookupSubjects([subjectUuid]).then(([found]) => {
+    if (found && selectedSubject.value?.subjectUuid === subjectUuid) {
+      selectedSubject.value = found;
+    }
+  });
+}
+
+// Changing the subject goes through the route (back to the first page); the route watcher
+// runs the search.
+async function changeSubject(subject: SubjectSummary | null) {
+  selectedSubject.value = subject;
+  await router.replace({
+    query: {
+      ...route.query,
+      subject: subject?.subjectUuid,
+      page: undefined,
+    },
+  });
+}
+
 async function changePage(page: number) {
   const nextPage = Math.min(Math.max(page, 1), totalPages.value);
 
@@ -810,6 +879,7 @@ onMounted(() => {
   const nextFilter = getRouteFilterValue(route.query.filter);
 
   uiStore.setEvidenceFilter(nextFilter);
+  syncSubjectFromRoute(route.query.subject);
   currentPage.value = parsePageQuery(route.query.page);
   applySort(
     parseSortByQuery(route.query.sortBy, uiStore.evidenceSortBy),

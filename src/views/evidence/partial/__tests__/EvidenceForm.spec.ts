@@ -1,6 +1,17 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
+import { ref } from 'vue';
 import EvidenceForm from '../EvidenceForm.vue';
+
+const { evidenceConfig } = vi.hoisted(() => ({
+  evidenceConfig: { manualSubjectRequired: false },
+}));
+
+vi.mock('@/composables/evidence/useEvidenceConfig', () => ({
+  useEvidenceConfig: () => ({
+    manualSubjectRequired: ref(evidenceConfig.manualSubjectRequired),
+  }),
+}));
 
 vi.mock('uuid', () => ({
   v4: () => 'test-uuid',
@@ -72,6 +83,20 @@ function mountForm(props: Record<string, unknown> = {}) {
         },
         BIconArrowRepeat: { template: '<span></span>' },
         BIconX: { template: '<span></span>' },
+        SubjectPicker: {
+          props: ['modelValue', 'invalid'],
+          emits: ['update:modelValue'],
+          template: `
+            <button
+              type="button"
+              data-testid="pick-subject"
+              :data-invalid="String(invalid)"
+              @click="$emit('update:modelValue', [{ subjectUuid: 's-1', type: 'party', kind: 'party', title: 'Network Team' }])"
+            >
+              pick
+            </button>
+          `,
+        },
       },
     },
   });
@@ -81,6 +106,7 @@ function mountForm(props: Record<string, unknown> = {}) {
 
 describe('EvidenceForm', () => {
   afterEach(() => {
+    evidenceConfig.manualSubjectRequired = false;
     for (const wrapper of mountedWrappers) {
       wrapper.unmount();
     }
@@ -109,5 +135,44 @@ describe('EvidenceForm', () => {
     const errorMessage = wrapper.find('.text-red-500');
     expect(errorMessage.exists()).toBe(true);
     expect(errorMessage.text()).toContain('future');
+  });
+
+  const pastEvidence = {
+    title: 'Quarterly firewall rule review',
+    start: '2024-01-01T00:00:00Z',
+    end: '2024-01-02T00:00:00Z',
+  };
+
+  it('requires a subject when the API requires one, and submits the picked subjects', async () => {
+    evidenceConfig.manualSubjectRequired = true;
+    const wrapper = mountForm({ evidence: pastEvidence });
+    await flushPromises();
+
+    const submitButton = wrapper.get('button[type="submit"]');
+    expect(submitButton.attributes('disabled')).toBeDefined();
+    expect(wrapper.text()).toContain('Subject *');
+    expect(
+      wrapper.get('[data-testid="pick-subject"]').attributes('data-invalid'),
+    ).toBe('true');
+
+    await wrapper.get('[data-testid="pick-subject"]').trigger('click');
+    expect(submitButton.attributes('disabled')).toBeUndefined();
+
+    await wrapper.get('form').trigger('submit');
+    const [, , , subjects] = wrapper.emitted('submit')![0]!;
+    expect(subjects).toEqual([{ subjectUuid: 's-1' }]);
+  });
+
+  it('allows submitting without a subject when the API does not require one', async () => {
+    const wrapper = mountForm({ evidence: pastEvidence });
+    await flushPromises();
+
+    expect(
+      wrapper.get('button[type="submit"]').attributes('disabled'),
+    ).toBeUndefined();
+
+    await wrapper.get('form').trigger('submit');
+    const [, , , subjects] = wrapper.emitted('submit')![0]!;
+    expect(subjects).toEqual([]);
   });
 });

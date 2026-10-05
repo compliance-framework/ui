@@ -37,6 +37,35 @@ export const SUBJECT_TEMPLATE_SOURCE_MODE_OPTIONS: Array<{
   { label: 'Manual', value: 'manual' },
 ];
 
+// OSCAL component types for a component definition's defined components. The API writes a
+// template's component type onto the defined components it derives from evidence.
+export const DEFINED_COMPONENT_TYPES = [
+  'interconnection',
+  'software',
+  'hardware',
+  'service',
+  'policy',
+  'physical',
+  'process-procedure',
+  'plan',
+  'guidance',
+  'standard',
+  'validation',
+] as const;
+
+export const DEFAULT_DEFINED_COMPONENT_TYPE = 'service';
+
+export const DEFINED_COMPONENT_TYPE_OPTIONS: Array<{
+  label: string;
+  value: string;
+}> = DEFINED_COMPONENT_TYPES.map((value) => ({
+  label: value
+    .split('-')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' '),
+  value,
+}));
+
 export interface SubjectTemplateSelectorLabel {
   key: string;
   value: string;
@@ -61,6 +90,8 @@ export interface SubjectTemplate {
   props?: Property[];
   links?: Link[];
   sourceMode?: SubjectTemplateSourceMode;
+  displayPriority?: number;
+  componentType?: string | null;
   selectorLabels?: SubjectTemplateSelectorLabel[];
   labelSchema?: SubjectTemplateLabelSchemaField[];
 }
@@ -76,6 +107,8 @@ export interface UpsertSubjectTemplateRequest {
   props: Property[];
   links: Link[];
   sourceMode: SubjectTemplateSourceMode;
+  displayPriority: number;
+  componentType?: string;
   selectorLabels: SubjectTemplateSelectorLabel[];
   labelSchema: SubjectTemplateLabelSchemaField[];
 }
@@ -109,6 +142,10 @@ export interface SubjectTemplateFormData {
   name: string;
   type: SubjectTemplateType;
   sourceMode: SubjectTemplateSourceMode;
+  // A number input may hand back a string (or '' when cleared); parsed on submit.
+  displayPriority: number | string;
+  // null means the API default (service).
+  componentType: string | null;
   titleTemplate: string;
   descriptionTemplate: string;
   purposeTemplate: string;
@@ -141,6 +178,8 @@ export function createEmptySubjectTemplateForm(): SubjectTemplateFormData {
     name: '',
     type: SUBJECT_TEMPLATE_TYPES[0],
     sourceMode: SUBJECT_TEMPLATE_SOURCE_MODES[0],
+    displayPriority: 0,
+    componentType: null,
     titleTemplate: '',
     descriptionTemplate: '',
     purposeTemplate: '',
@@ -157,6 +196,16 @@ export function isSubjectTemplateType(
   value: string,
 ): value is SubjectTemplateType {
   return SUBJECT_TEMPLATE_TYPES.includes(value as SubjectTemplateType);
+}
+
+export function getDefinedComponentTypeLabel(value?: string | null): string {
+  const option = DEFINED_COMPONENT_TYPE_OPTIONS.find(
+    (entry) => entry.value === value,
+  );
+  if (option) {
+    return option.label;
+  }
+  return value ? value : `Default (${DEFAULT_DEFINED_COMPONENT_TYPE})`;
 }
 
 export function isSubjectTemplateSourceMode(
@@ -290,6 +339,8 @@ export function createSubjectTemplateFormFromTemplate(
   form.name = template.name ?? '';
   form.type = template.type ?? SUBJECT_TEMPLATE_TYPES[0];
   form.sourceMode = template.sourceMode ?? SUBJECT_TEMPLATE_SOURCE_MODES[0];
+  form.displayPriority = template.displayPriority ?? 0;
+  form.componentType = template.componentType ?? null;
   form.titleTemplate = template.titleTemplate ?? '';
   form.descriptionTemplate = template.descriptionTemplate ?? '';
   form.purposeTemplate = template.purposeTemplate ?? '';
@@ -450,6 +501,20 @@ function normalizeLinks(links: SubjectTemplateLinkFormRow[]): Link[] {
   return normalized;
 }
 
+function normalizeDisplayPriority(value: number | string): number {
+  const raw = String(value ?? '').trim();
+  if (raw === '') {
+    return 0;
+  }
+
+  const priority = Number(raw);
+  if (!Number.isInteger(priority)) {
+    throw new Error('Display priority must be a whole number.');
+  }
+
+  return priority;
+}
+
 export function buildUpsertSubjectTemplatePayload(
   formData: SubjectTemplateFormData,
 ): UpsertSubjectTemplateRequest {
@@ -497,6 +562,8 @@ export function buildUpsertSubjectTemplatePayload(
     name,
     type: formData.type,
     sourceMode: formData.sourceMode,
+    displayPriority: normalizeDisplayPriority(formData.displayPriority),
+    componentType: toOptionalTrimmed(formData.componentType),
     titleTemplate: toOptionalTrimmed(formData.titleTemplate),
     descriptionTemplate: toOptionalTrimmed(formData.descriptionTemplate),
     purposeTemplate: toOptionalTrimmed(formData.purposeTemplate),

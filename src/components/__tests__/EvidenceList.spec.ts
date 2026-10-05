@@ -413,4 +413,150 @@ describe('EvidenceList', () => {
     expect(showHiddenPreview.text()).toContain('_internal=secret');
     expect(showHiddenPreview.text()).toContain('resource_id=visible-resource');
   });
+
+  describe('Subjects column', () => {
+    const baseEvidence = {
+      start: '2026-04-15T00:00:00Z',
+      end: '2026-04-15T01:00:00Z',
+      status: { reason: 'test', state: 'satisfied' },
+      labels: [],
+      activities: [],
+    };
+
+    function mountWithSubjects(evidence: Record<string, unknown>[]) {
+      return mount(EvidenceList, {
+        props: {
+          evidence: evidence.map((item) => ({ ...baseEvidence, ...item })),
+        } as never,
+        global: {
+          directives: {
+            tooltip: {
+              mounted(el: HTMLElement, binding: { value: string }) {
+                el.setAttribute('data-tooltip', binding.value);
+              },
+            },
+          },
+          stubs: {
+            RouterLink: { props: ['to'], template: '<a><slot /></a>' },
+            ResultStatusRing: { template: '<span />' },
+            Popover: { template: '<div><slot /></div>' },
+            Chip: {
+              props: ['label'],
+              template: '<span>{{ label }}</span>',
+            },
+            BIconEye: { template: '<span />' },
+            BIconExclamationTriangle: { template: '<span />' },
+          },
+        },
+      });
+    }
+
+    it('is hidden when the API does not return subjects', () => {
+      const wrapper = mountWithSubjects([
+        { id: 'evidence-1', uuid: 'stream-1', title: 'Older API evidence' },
+      ]);
+
+      expect(wrapper.text()).not.toContain('Subjects');
+      expect(wrapper.find('[data-testid="subjects-cell"]').exists()).toBe(
+        false,
+      );
+    });
+
+    it('shows the first two subjects as chips, then +N for the rest', () => {
+      const wrapper = mountWithSubjects([
+        {
+          id: 'evidence-1',
+          uuid: 'stream-1',
+          title: 'Branch protection on default branch',
+          subjectReferences: [
+            { subjectUuid: 's-1', type: 'component', title: 'repo: api' },
+            { subjectUuid: 's-2', type: 'component', title: 'acme' },
+            { subjectUuid: 's-3', type: 'component', title: 'branch: main' },
+            { subjectUuid: 's-4', type: 'component' },
+          ],
+        },
+      ]);
+
+      expect(wrapper.find('thead').text()).toContain('Subjects');
+      const chips = wrapper.findAll('[data-testid="subject-chip"]');
+      expect(chips.map((chip) => chip.text())).toEqual(['repo: api', 'acme']);
+      for (const chip of chips) {
+        expect(chip.classes(), 'long titles are cut short').toContain(
+          'truncate',
+        );
+        expect(
+          chip.attributes('data-tooltip'),
+          'hover shows the full title',
+        ).toBe(chip.text());
+      }
+
+      const more = wrapper.get('[data-testid="subjects-more"]');
+      expect(more.element.tagName).toBe('BUTTON');
+      expect(more.text()).toBe('+2 more subjects');
+      expect(
+        more.attributes('data-tooltip'),
+        'the button opens the subjects popover rather than showing a tooltip',
+      ).toBeUndefined();
+      expect(more.attributes('aria-label')).toBe(
+        'View all subjects. +2 more subjects: branch: main; s-4',
+      );
+    });
+
+    it("lists all of a row's subjects in full when +N is clicked", async () => {
+      const wrapper = mountWithSubjects([
+        {
+          id: 'evidence-1',
+          uuid: 'stream-1',
+          title: 'Branch protection on default branch',
+          subjectReferences: [
+            { subjectUuid: 's-1', type: 'component', title: 'repo: api' },
+            { subjectUuid: 's-2', type: 'component', title: 'acme' },
+            { subjectUuid: 's-3', type: 'component', title: 'branch: main' },
+          ],
+        },
+      ]);
+
+      const popover = wrapper.get('[data-testid="subjects-popover"]');
+      expect(popover.text()).toBe('');
+
+      await wrapper.get('[data-testid="subjects-more"]').trigger('click');
+
+      expect(wrapper.get('[data-testid="subjects-more"]').text()).toBe(
+        '+1 more subject',
+      );
+      expect(popover.findAll('span').map((chip) => chip.text())).toEqual([
+        'repo: api',
+        'acme',
+        'branch: main',
+      ]);
+      expect(
+        pushMock,
+        'clicking +N does not open the evidence',
+      ).not.toHaveBeenCalled();
+    });
+
+    it('marks evidence without subjects as unattributed', () => {
+      const wrapper = mountWithSubjects([
+        {
+          id: 'evidence-1',
+          uuid: 'stream-1',
+          title: 'All teams use closed visibility',
+          subjectReferences: [
+            { subjectUuid: 's-1', type: 'component', title: 'acme' },
+          ],
+        },
+        {
+          id: 'evidence-2',
+          uuid: 'stream-2',
+          title: 'Legacy plugin check',
+          subjectReferences: [],
+        },
+      ]);
+
+      const cells = wrapper.findAll('[data-testid="subjects-cell"]');
+      expect(cells).toHaveLength(2);
+      expect(cells[0]!.text()).toBe('acme');
+      expect(cells[1]!.text()).toContain('Unattributed');
+    });
+  });
 });
