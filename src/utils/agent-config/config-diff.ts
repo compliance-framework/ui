@@ -211,6 +211,7 @@ function leafDiffPaths(
     const keys = Array.from(
       new Set([...Object.keys(objA), ...Object.keys(objB)]),
     ).sort();
+    const pushed = out.length;
     for (const k of keys) {
       leafDiffPaths(
         `${path}/${escapeToken(k)}`,
@@ -221,6 +222,8 @@ function leafDiffPaths(
         out,
       );
     }
+    // An object added or removed with no leaf below it (`n: {}`) is itself the change.
+    if (hasA !== hasB && out.length === pushed) out.push(path);
     return;
   }
   if (hasA !== hasB || !deepEqual(a, b)) out.push(path);

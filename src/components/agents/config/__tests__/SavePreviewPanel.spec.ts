@@ -9,7 +9,9 @@ import {
   previewMixed,
   previewStandalone,
 } from '@/composables/agent-config/__tests__/fixtures';
+import PrimeDialog from 'primevue/dialog';
 import SavePreviewPanel from '../editor/SavePreviewPanel.vue';
+import DiffRows from '../editor/DiffRows.vue';
 import { safetyForRow } from '../editor/review';
 import { globalWith, piniaWith, ADMIN } from './helpers';
 
@@ -196,6 +198,28 @@ describe('SavePreviewPanel (U2.5)', () => {
     await w.find('[data-test="save-comment"]').setValue('why');
     await saveButton(w).trigger('click');
     expect(w.emitted('save')?.[0]).toEqual(['why']);
+  });
+
+  it('disables Back while saving', () => {
+    const w = mountPanel(clean([inst({})]), { saving: true });
+    expect(
+      w.find('[data-test="review-back"]').attributes('disabled'),
+    ).toBeDefined();
+    expect(saveButton(w).attributes('disabled')).toBeDefined();
+  });
+
+  it('reports its nested diff dialog opening and closing (Esc gate)', async () => {
+    const w = mountPanel(clean([inst({})]));
+    const row = { path: '/x', kind: 'changed', before: 'a', after: 'b' };
+    w.findComponent(DiffRows).vm.$emit('open-diff', row);
+    await w.vm.$nextTick();
+    expect(w.emitted('childOpen')).toEqual([[true]]);
+    const diff = w
+      .findAllComponents(PrimeDialog)
+      .find((d) => d.props('header') === '/x')!;
+    diff.vm.$emit('update:visible', false);
+    await w.vm.$nextTick();
+    expect(w.emitted('childOpen')).toEqual([[true], [false]]);
   });
 });
 

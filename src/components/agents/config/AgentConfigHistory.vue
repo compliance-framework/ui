@@ -1,6 +1,9 @@
 <template>
   <div class="space-y-3" data-test="config-history">
-    <p v-if="loading && !items.length" class="text-sm text-gray-500">
+    <p
+      v-if="loading && !items.length"
+      class="text-sm text-gray-500 dark:text-slate-400"
+    >
       Loading revisions…
     </p>
     <Message v-else-if="error && !items.length" severity="error">
@@ -114,7 +117,7 @@
     >
       {{ error }}
     </p>
-    <div v-if="page < totalPages" class="flex justify-center">
+    <div v-if="items.length && page < totalPages" class="flex justify-center">
       <SecondaryButton
         size="small"
         :disabled="loading"
@@ -132,10 +135,12 @@
       :header="`Overlay r${viewRev}`"
       class="w-full max-w-4xl"
     >
-      <p v-if="dialogLoading" class="text-sm text-gray-500">Loading…</p>
+      <p v-if="dialogLoading" class="text-sm text-gray-500 dark:text-slate-400">
+        Loading…
+      </p>
       <p
         v-else-if="dialogError"
-        class="text-sm text-red-600"
+        class="text-sm text-red-600 dark:text-red-400"
         data-test="view-error"
       >
         {{ dialogError }}
@@ -155,8 +160,14 @@
       :header="diffTitle"
       class="w-full max-w-5xl"
     >
-      <p v-if="dialogLoading" class="text-sm text-gray-500">Loading…</p>
-      <p v-else-if="dialogError" class="text-sm text-red-600">
+      <p v-if="dialogLoading" class="text-sm text-gray-500 dark:text-slate-400">
+        Loading…
+      </p>
+      <p
+        v-else-if="dialogError"
+        class="text-sm text-red-600 dark:text-red-400"
+        data-test="diff-error"
+      >
         {{ dialogError }}
       </p>
       <CodeMergeView
@@ -182,7 +193,7 @@
           }}? It is re-validated against the current instances.
         </p>
         <label
-          class="block text-xs font-medium tracking-wide text-gray-500 uppercase"
+          class="block text-xs font-medium tracking-wide text-gray-500 uppercase dark:text-slate-400"
           for="revert-comment"
         >
           Comment (optional)
@@ -318,6 +329,8 @@ const invalidOpen = ref(false);
 const invalidBody = shallowRef<ConfigErrorBody | null>(null);
 
 let fetchSeq = 0;
+/** View / Diff share the dialog state: only the latest call may write it. */
+let dialogSeq = 0;
 
 async function fetchPage(p: number) {
   const seq = ++fetchSeq;
@@ -360,40 +373,52 @@ async function overlayOf(rev: number): Promise<OverlayDoc> {
   return (await props.getRevision(rev)).overlay ?? {};
 }
 
-async function view(rev: number) {
-  viewRev.value = rev;
+/** A new View / Diff: older loads still in flight are dropped (see dialogSeq). */
+function startDialog(): number {
   viewDoc.value = null;
-  viewOpen.value = true;
-  dialogLoading.value = true;
+  diffOriginal.value = '';
+  diffModified.value = '';
   dialogError.value = null;
+  dialogLoading.value = true;
+  return ++dialogSeq;
+}
+
+async function view(rev: number) {
+  const seq = startDialog();
+  viewRev.value = rev;
+  viewOpen.value = true;
   try {
-    viewDoc.value = await overlayOf(rev);
+    const doc = await overlayOf(rev);
+    if (seq !== dialogSeq) return;
+    viewDoc.value = doc;
   } catch (e) {
+    if (seq !== dialogSeq) return;
     // Never show a failed load as an empty overlay.
     dialogError.value = isAgentConfigApiError(e)
       ? e.message
       : 'Failed to load the revision.';
   } finally {
-    dialogLoading.value = false;
+    if (seq === dialogSeq) dialogLoading.value = false;
   }
 }
 
 /** YAML diff of two revisions' overlays; r0 (and "before r1") is {}. */
 async function diff(from: number, to: number) {
+  const seq = startDialog();
   diffTitle.value = `r${Math.max(from, 0)} → r${to}`;
   diffOpen.value = true;
-  dialogLoading.value = true;
-  dialogError.value = null;
   try {
     const [a, b] = await Promise.all([overlayOf(from), overlayOf(to)]);
+    if (seq !== dialogSeq) return;
     diffOriginal.value = toYaml(a);
     diffModified.value = toYaml(b);
   } catch (e) {
+    if (seq !== dialogSeq) return;
     dialogError.value = isAgentConfigApiError(e)
       ? e.message
       : 'Failed to load the revisions.';
   } finally {
-    dialogLoading.value = false;
+    if (seq === dialogSeq) dialogLoading.value = false;
   }
 }
 

@@ -49,7 +49,7 @@ export function shieldFor(
     .filter((i) => i.mode === 'apply_all')
     .map((i) => i.hostname || i.instanceId.slice(0, 8));
   if (allForbidden) return { level: 'forbidden', tooltip: 'Forbidden' };
-  let tooltip = 'Requires `apply_all` on the agent';
+  let tooltip = 'Requires apply_all on the agent';
   if (applyAll.length) tooltip += `. Applied anyway by: ${applyAll.join(', ')}`;
   return { level: 'unsafe', tooltip };
 }
@@ -110,10 +110,10 @@ export function useEditor() {
     return ctx.accessAt(ptr);
   }
   function shield(ptr: string): Shield | null {
-    return shieldFor(ctx.lastPreview.value, ptr);
+    return shieldFor(ctx.currentPreview.value, ptr);
   }
   function trustHint(ptr: string, source: string): TrustHint | null {
-    return trustHintFor(ctx.lastPreview.value, ptr, source);
+    return trustHintFor(ctx.currentPreview.value, ptr, source);
   }
 
   return {

@@ -52,7 +52,7 @@ describe('InstanceModeNotice', () => {
       warnings: [],
     });
     const text = w.find('[data-test="mode-notice"]').text();
-    expect(text).toContain('default when `remote_config.mode` is not set');
+    expect(text).toContain('default when remote_config.mode is not set');
     expect(text).toContain('apply_safe');
   });
 });

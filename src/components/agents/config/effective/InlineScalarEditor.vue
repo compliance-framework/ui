@@ -103,6 +103,7 @@ import {
   validateCron5,
 } from '@/utils/agent-config/cron5';
 import { VERBOSITY_OPTIONS } from '../constants';
+import { definedInAnyBase, setStringKey } from './emptyValue';
 import type { ScalarKind } from './scalar';
 
 const props = defineProps<{
@@ -120,6 +121,9 @@ const inOverlay = computed(() => hasAt(draft.overlay.value, props.ptr));
 const overlayValue = getAt(draft.overlay.value, props.ptr);
 const effectiveValue = getAt(draft.effectiveDraft.value, props.ptr);
 const baseValue = getAt(ws.placeholderBase.value ?? {}, props.ptr);
+const bases = [ws.placeholderBase.value, ...ws.bases.value];
+/** Some instance's file defines this key: emptying it inherits the file value. */
+const inAnyBase = definedInAnyBase(bases, props.ptr);
 
 // ---- text kinds ----
 function initialText(): string {
@@ -199,7 +203,7 @@ const hint = computed(() => {
   if (props.kind === 'cron' && text.value.trim())
     return describeCron5(text.value.trim());
   if (!isSelect.value && !text.value.trim())
-    return props.kind === 'text' && props.removable
+    return props.kind === 'text' && props.removable && !inAnyBase
       ? 'Empty: an empty string. Use "Remove" to delete the key.'
       : 'Empty: the file value applies.';
   return '';
@@ -222,8 +226,11 @@ function apply() {
     else draft.set(props.ptr, choice.value);
   } else {
     const v = props.kind === 'text' ? text.value : text.value.trim();
-    // An empty text keeps an empty string only for overlay-only config/label keys.
-    if (!v && !props.removable) draft.unset(props.ptr);
+    // A config / label key (removable) follows the map editor's rule (emptyValue.ts): empty
+    // unsets a key a file defines and keeps "" for an overlay-only key. Other fields: empty
+    // always means the file value.
+    if (props.removable) setStringKey(draft, bases, props.ptr, v);
+    else if (!v) draft.unset(props.ptr);
     else draft.set(props.ptr, v);
   }
   emit('done');

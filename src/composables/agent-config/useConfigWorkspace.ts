@@ -9,17 +9,23 @@ import {
   provide,
   ref,
   shallowRef,
+  toValue,
   watch,
   type InjectionKey,
+  type MaybeRefOrGetter,
+  type Ref,
 } from 'vue';
 import type {
   AgentConfigRevision,
   AgentInstanceDetail,
   ConfigDoc,
   ConfigPreview,
+  OverlayDoc,
   SaveResult,
 } from '@/types/agent-config';
 import { usePermissions } from '@/composables/usePermissions';
+import { instanceErrorsBlock } from '@/components/agents/config/editor/review';
+import { clone, deepEqual } from '@/utils/agent-config/merge-patch';
 import { useUserStore } from '@/stores/auth';
 import { hasBlocking, type ClientIssue } from '@/utils/agent-config/validation';
 import {
@@ -31,13 +37,23 @@ import {
 import type { AgentConfigApi } from './api-types';
 import type { AgentConfigState } from './useAgentConfig';
 import { agentDraftState, syncDraftState } from './draftRegistry';
-import { useOverlayDraft } from './useOverlayDraft';
+import { useOverlayDraft, type DraftState } from './useOverlayDraft';
 import { usePreview } from './usePreview';
 import {
   EDITOR_CONTEXT_KEY,
   OVERLAY_DRAFT_KEY,
   type EditorContext,
 } from './editorContext';
+
+/** A writable ref that reads and writes whichever ref `target` currently returns. */
+function proxyRef<T>(target: () => Ref<T>): Ref<T> {
+  return computed({
+    get: () => target().value,
+    set: (v) => {
+      target().value = v;
+    },
+  });
+}
 
 const EMPTY_REVISION: AgentConfigRevision = {
   agentId: '',
@@ -51,7 +67,8 @@ const EMPTY_REVISION: AgentConfigRevision = {
 };
 
 export function useConfigWorkspace(
-  agentId: string,
+  /** The agent (a string, ref or getter): API calls and the draft follow its current value. */
+  agentId: MaybeRefOrGetter<string>,
   api: AgentConfigApi,
   state: AgentConfigState,
 ) {
@@ -110,8 +127,20 @@ export function useConfigWorkspace(
   );
 
   // ---- The draft (shared per agent) ----
-  // Scoped to the signed-in user (see draftRegistry).
-  const draftState = agentDraftState(agentId, useUserStore().user?.id ?? '');
+  // Scoped to the signed-in user (see draftRegistry). A different agent id swaps the state
+  // the draft refs point at (one DraftState per agent); only a config load syncs it, so a
+  // new agent's draft is never initialised from the previous agent's still-loaded config.
+  const userKey = useUserStore().user?.id ?? '';
+  const agentIdRef = computed(() => toValue(agentId));
+  const registryState = computed(() =>
+    agentDraftState(agentIdRef.value, userKey),
+  );
+  const draftState: DraftState = {
+    baseRevision: proxyRef(() => registryState.value.baseRevision),
+    original: proxyRef(() => registryState.value.original),
+    overlay: proxyRef(() => registryState.value.overlay),
+    comment: proxyRef(() => registryState.value.comment),
+  };
   watch(
     state.config,
     (cfg) => {
@@ -129,7 +158,6 @@ export function useConfigWorkspace(
   // ---- Live preview (debounced; only for a dirty draft without client-only blockers) ----
   // R89: the preview is the UI's validation. Its errors gate Review & save.
   const clientBlocked = computed(() => hasBlocking(draft.clientIssues.value));
-  const agentIdRef = computed(() => agentId);
   const canPreview = computed(
     () =>
       canConfigure.value &&
@@ -156,7 +184,7 @@ export function useConfigWorkspace(
     for (const inst of p.instances) {
       const on = many && inst.hostname ? ` (on ${inst.hostname})` : '';
       // R48: only validated instances block; older APIs lack `validated` (fresh ones block).
-      const blocks = inst.validated ?? !inst.stale;
+      const blocks = instanceErrorsBlock(inst);
       for (const e of inst.errors)
         out.push({ ptr: e.path, message: e.message + on, blocking: blocks });
       for (const e of inst.warnings ?? [])
@@ -201,6 +229,7 @@ export function useConfigWorkspace(
     placeholderBase,
     bases,
     lastPreview: preview.lastPreview,
+    currentPreview,
     accessAt,
   };
 
@@ -234,16 +263,23 @@ export function useConfigWorkspace(
     reviewOpen.value = true;
   }
 
-  /** After a save: the saved overlay becomes the base, then everything reloads. */
-  async function onSaved(result: SaveResult): Promise<void> {
-    syncDraftState(
-      draftState,
-      {
-        ...result.revision,
-        overlay: result.revision.overlay ?? draft.overlay.value,
-      },
-      true,
-    );
+  /**
+   * After a save: the saved overlay becomes the base, then everything reloads. `sent` is the
+   * overlay the save sent: when the draft has moved on since, only the base moves and the
+   * newer edits stay pending.
+   */
+  async function onSaved(result: SaveResult, sent?: OverlayDoc): Promise<void> {
+    const saved = {
+      ...result.revision,
+      overlay: result.revision.overlay ?? sent ?? draft.overlay.value,
+    };
+    if (!sent || deepEqual(draft.overlay.value, sent)) {
+      syncDraftState(draftState, saved, true);
+    } else {
+      draftState.baseRevision.value = saved.revision;
+      draftState.original.value = clone(saved.overlay);
+      draftState.comment.value = '';
+    }
     await state.refresh();
   }
 
@@ -254,7 +290,7 @@ export function useConfigWorkspace(
   }
 
   const workspace = {
-    agentId,
+    agentId: agentIdRef,
     api,
     state,
     ready,

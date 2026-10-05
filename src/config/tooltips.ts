@@ -50,6 +50,16 @@ export const TOOLTIPS = {
   'statement.props': '', // TODO: Add tooltip
   'statement.links': '', // TODO: Add tooltip
 
+  // Agent configuration
+  'agents.config.policyData.masked':
+    'Masked in the report: the host keeps its value unless you set a new one',
+  'agents.config.policyData.env':
+    '${env:…} is resolved only in plugin config values: here it is a literal string, and the API rejects new references in policy_data',
+  'agents.config.policyData.maskedList':
+    'Holds masked values: a list is saved whole, which would copy the masks. Edit it in the raw JSON view and retype the masked values, or remove the whole list.',
+  /** Followed by the reported library version. */
+  'agents.config.plugin.libVersion': 'Built on agent library',
+
   // Add more tooltips here as needed
   // 'feature.name': 'Tooltip text here',
 } as const;

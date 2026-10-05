@@ -25,16 +25,20 @@ const RELATIVE_UNITS: [Intl.RelativeTimeFormatUnit, number][] = [
   ['minute', 60],
 ];
 
-/** "2 hours ago" / "in 3 days" (Intl, no date library in the page chunk). */
+/**
+ * "2 hours ago" / "in 3 days" (Intl, no date library in the page chunk). `locale` defaults to
+ * the browser's.
+ */
 export function formatRelative(
   value?: string | null,
   now: number = Date.now(),
+  locale?: string,
 ): string {
   if (!value) return '';
   const t = new Date(value).getTime();
   if (Number.isNaN(t)) return '';
   const seconds = Math.round((t - now) / 1000);
-  const rtf = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' });
+  const rtf = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' });
   for (const [unit, size] of RELATIVE_UNITS) {
     if (Math.abs(seconds) >= size)
       return rtf.format(Math.round(seconds / size), unit);

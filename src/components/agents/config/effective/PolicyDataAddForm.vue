@@ -86,6 +86,7 @@ import InputText from '@/volt/InputText.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
 import TertiaryButton from '@/volt/TertiaryButton.vue';
 import { parseNewValue, type JsonType } from '@/utils/agent-config/policy-data';
+import { NULL_KEY_ERROR } from './nullKeys';
 
 const props = defineProps<{
   /** Adding to an array (no key) rather than an object. */
@@ -115,7 +116,12 @@ const error = computed(() => {
     if (!key.value) return 'Enter a key';
     if (props.existing.includes(key.value)) return 'This key exists';
   }
-  return parsed.value.error;
+  if (parsed.value.error) return parsed.value.error;
+  // RFC 7396: null at a key means "delete" in the overlay. Arrays are written whole, so their
+  // items may be null.
+  if (!props.inArray && parsed.value.value === null)
+    return `${NULL_KEY_ERROR}; use Remove`;
+  return '';
 });
 
 function close() {

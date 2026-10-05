@@ -109,9 +109,29 @@ export function removeIn<T>(root: T, path: DataPath): T {
   return parentPath.length ? setIn(root, parentPath, next) : (next as T);
 }
 
+/** JSON's number grammar (RFC 8259): no hex / binary / octal, no `Infinity`, no `.5`. */
+const JSON_NUMBER_RE = /^-?(0|[1-9]\d*)(\.\d+)?([eE][+-]?\d+)?$/;
+const NUMBER_TOO_LARGE = 'Number too large';
+
+/** True when `n` survives a JSON round trip as typed: finite, and an integer only up to 2^53. */
+function isStorableNumber(n: number): boolean {
+  return (
+    Number.isFinite(n) &&
+    !(Number.isInteger(n) && Math.abs(n) > Number.MAX_SAFE_INTEGER)
+  );
+}
+
+/** Whether `v` (a JSON.parse result) holds a number that would not be stored as typed. */
+function hasUnstorableNumber(v: unknown): boolean {
+  if (typeof v === 'number') return !isStorableNumber(v);
+  if (Array.isArray(v)) return v.some(hasUnstorableNumber);
+  if (isPlainObject(v)) return Object.values(v).some(hasUnstorableNumber);
+  return false;
+}
+
 /**
  * Parses the text of a scalar editor as `type`. Strings are taken verbatim; numbers must be
- * finite JSON numbers; booleans "true"/"false".
+ * JSON numbers that are stored exactly (finite, integers within 2^53); booleans "true"/"false".
  */
 export function parseScalar(
   text: string,
@@ -120,9 +140,12 @@ export function parseScalar(
   switch (type) {
     case 'number': {
       const t = text.trim();
-      const n = Number(t);
-      if (!t || !Number.isFinite(n)) {
+      if (!JSON_NUMBER_RE.test(t)) {
         return { value: undefined, error: 'Enter a number' };
+      }
+      const n = Number(t);
+      if (!isStorableNumber(n)) {
+        return { value: undefined, error: NUMBER_TOO_LARGE };
       }
       return { value: n, error: '' };
     }
@@ -154,11 +177,20 @@ export function parseNewValue(
   if (type === 'string' || type === 'number' || type === 'boolean') {
     return parseScalar(text, type);
   }
+  let value: unknown;
   try {
-    return { value: JSON.parse(text), error: '' };
+    value = JSON.parse(text);
   } catch {
     return { value: text, error: '' };
   }
+  // 1e999 parses as Infinity (saved as null, an RFC 7396 delete) and big integers lose digits.
+  if (hasUnstorableNumber(value)) {
+    return {
+      value: undefined,
+      error: `${NUMBER_TOO_LARGE}; quote it to keep it as a string`,
+    };
+  }
+  return { value, error: '' };
 }
 
 /** The scalar type every item of `arr` shares, or null (mixed, containers, empty). */

@@ -6,6 +6,7 @@ import {
   coerceStringMaps,
   validateOverlayClientSide,
 } from '../validation';
+import { parseYaml } from '../yaml';
 
 function find(overlay: OverlayDoc, ptr: string) {
   return validateOverlayClientSide(overlay).filter((i) => i.ptr === ptr);
@@ -43,46 +44,69 @@ describe('validateOverlayClientSide (R89: client-only checks)', () => {
     expect(find(o, '/plugins/ssh/config/k')[0].blocking).toBe(true);
   });
 
-  it('only coerces booleans and safe integers; other numbers must be quoted', () => {
+  it('only coerces booleans; every number must be quoted', () => {
     const o = {
-      plugins: { ssh: { config: { v: 1.1, big: 2 ** 60, ok: 22 } } },
+      plugins: { ssh: { config: { v: 1.1, big: 2 ** 60, n: 22, on: true } } },
     } as unknown as OverlayDoc;
     const c = coerceStringMaps(o);
-    expect(c.coerced).toEqual(['/plugins/ssh/config/ok']);
+    expect(c.coerced).toEqual(['/plugins/ssh/config/on']);
     const issues = validateOverlayClientSide(c.overlay);
     expect(
       issues
         .filter((i) => i.blocking && /Quote this value/.test(i.message))
         .map((i) => i.ptr),
-    ).toEqual(['/plugins/ssh/config/v', '/plugins/ssh/config/big']);
+    ).toEqual([
+      '/plugins/ssh/config/v',
+      '/plugins/ssh/config/big',
+      '/plugins/ssh/config/n',
+    ]);
   });
+
+  it.each(['0644', '1.0', '1e3', '0x1F', '01234'])(
+    'blocks the YAML number %s instead of sending a different string',
+    (text) => {
+      const r = parseYaml(`plugins:\n  ssh:\n    config:\n      v: ${text}\n`);
+      if (!r.ok) throw new Error(r.error.message);
+      const c = coerceStringMaps(r.value);
+      expect(c.coerced).toEqual([]);
+      expect(find(c.overlay, '/plugins/ssh/config/v')).toEqual([
+        {
+          ptr: '/plugins/ssh/config/v',
+          message: expect.stringMatching(/Quote this value/),
+          blocking: true,
+        },
+      ]);
+    },
+  );
 });
 
 describe('coerceStringMaps (R27)', () => {
-  it('converts scalars in config and labels and reports pointers', () => {
+  it('converts booleans (not numbers) in config and labels and reports pointers', () => {
     const o = {
       plugins: {
-        ssh: { config: { port: 2222, on: true, s: 'x' }, labels: { n: 1 } },
+        ssh: {
+          config: { port: 2222, on: true, s: 'x' },
+          labels: { n: 1, off: false },
+        },
       },
     } as unknown as OverlayDoc;
     const r = coerceStringMaps(o);
     expect(r.overlay).toEqual({
       plugins: {
         ssh: {
-          config: { port: '2222', on: 'true', s: 'x' },
-          labels: { n: '1' },
+          config: { port: 2222, on: 'true', s: 'x' },
+          labels: { n: 1, off: 'false' },
         },
       },
     });
     expect(r.coerced).toEqual([
-      '/plugins/ssh/config/port',
       '/plugins/ssh/config/on',
-      '/plugins/ssh/labels/n',
+      '/plugins/ssh/labels/off',
     ]);
     expect(
       (o.plugins as Record<string, { config: Record<string, unknown> }>).ssh
-        .config.port,
-    ).toBe(2222);
+        .config.on,
+    ).toBe(true);
   });
 
   it('returns the same object when nothing changes', () => {

@@ -5,6 +5,8 @@
     :header="`Review and save · base r${draft.baseRevision.value}`"
     class="w-full max-w-5xl"
     data-test="review-dialog"
+    :closable="!saving"
+    :close-on-escape="!saving && !childOpen"
     @update:visible="onVisible"
   >
     <div class="space-y-4">
@@ -66,6 +68,20 @@
         </div>
       </Message>
 
+      <Message
+        v-if="rebaseConflicts.length"
+        severity="warn"
+        data-test="rebase-conflicts"
+      >
+        Also changed by the other revision (your value is kept):
+        <code
+          v-for="(p, i) in rebaseConflicts"
+          :key="p"
+          class="font-mono text-xs"
+          >{{ p }}{{ i < rebaseConflicts.length - 1 ? ', ' : '' }}</code
+        >
+      </Message>
+
       <Message v-if="saveError" severity="error" data-test="save-error">
         <div class="flex flex-wrap items-center gap-3">
           <span>{{ saveError }}</span>
@@ -80,7 +96,7 @@
 
       <p
         v-if="reviewLoading"
-        class="text-sm text-gray-500"
+        class="text-sm text-gray-500 dark:text-slate-400"
         data-test="review-loading"
       >
         <i class="pi pi-spin pi-spinner mr-1" />Checking the pending changes
@@ -112,6 +128,7 @@
         back-label="Keep editing"
         @back="onVisible(false)"
         @save="save"
+        @child-open="panelChildOpen = $event"
       />
     </div>
   </Dialog>
@@ -147,6 +164,7 @@ import type {
   AgentConfigRevision,
   ConfigErrorBody,
 } from '@/types/agent-config';
+import { clone } from '@/utils/agent-config/merge-patch';
 import { isAgentConfigApiError } from '@/composables/agent-config/api-types';
 import { useWorkspace } from '@/composables/agent-config/useConfigWorkspace';
 import { hasBlocking } from '@/utils/agent-config/validation';
@@ -172,6 +190,13 @@ const conflict = ref<{
   latest: AgentConfigRevision | null;
 } | null>(null);
 const theirChangesOpen = ref(false);
+/** Pointers both this draft and the other revision changed ("Keep my changes"). */
+const rebaseConflicts = ref<string[]>([]);
+const panelChildOpen = ref(false);
+// PrimeVue closes every open dialog on Esc: keep this one open while a nested one is.
+const childOpen = computed(
+  () => theirChangesOpen.value || panelChildOpen.value,
+);
 
 const saveDisabledReason = computed(() =>
   conflict.value ? 'Resolve the conflict first' : ws.saveDisabledReason.value,
@@ -223,10 +248,12 @@ async function save(comment: string) {
   saving.value = true;
   saveError.value = null;
   saveErrors.value = null;
+  // The draft can change while the save is in flight; onSaved compares against this.
+  const sent = clone(draft.overlay.value);
   try {
     const result = await ws.api.putConfig(
-      ws.agentId,
-      { overlay: draft.overlay.value, comment },
+      ws.agentId.value,
+      { overlay: sent, comment },
       draft.baseRevision.value,
     );
     if (result.created) {
@@ -245,7 +272,7 @@ async function save(comment: string) {
       });
     }
     emit('update:visible', false);
-    await ws.onSaved(result);
+    await ws.onSaved(result, sent);
   } catch (e) {
     if (!isAgentConfigApiError(e)) {
       saveError.value = 'The configuration could not be saved.';
@@ -259,7 +286,9 @@ async function save(comment: string) {
           detail: 'Configuration changed by someone else',
           life: 4000,
         });
-        const latest = await ws.api.getConfig(ws.agentId).catch(() => null);
+        const latest = await ws.api
+          .getConfig(ws.agentId.value)
+          .catch(() => null);
         conflict.value = {
           currentRevision:
             e.currentRevision ?? latest?.revision ?? draft.baseRevision.value,
@@ -284,7 +313,7 @@ async function save(comment: string) {
 
 async function reloadLatest() {
   if (!conflict.value) return;
-  const latest = await ws.api.getConfig(ws.agentId).catch(() => null);
+  const latest = await ws.api.getConfig(ws.agentId.value).catch(() => null);
   if (latest && conflict.value) {
     conflict.value = { currentRevision: latest.revision, latest };
   } else {
@@ -295,7 +324,8 @@ async function reloadLatest() {
 async function resolveConflict(keep: boolean) {
   const latest = conflict.value?.latest;
   if (!latest) return;
-  draft.rebase(latest, keep);
+  const both = draft.rebase(latest, keep);
+  rebaseConflicts.value = keep ? both : [];
   conflict.value = null;
   saveErrors.value = null;
   if (keep) {

@@ -1,11 +1,12 @@
 <template>
-  <pre
-    class="max-h-[480px] min-h-[120px] overflow-auto rounded-md border border-ccf-300 bg-gray-50 p-3 font-mono text-xs dark:border-slate-700 dark:bg-slate-900"
-    >{{ modelValue ?? original ?? '' }}</pre
-  >
+  <div
+    class="min-h-[120px] rounded-md border border-ccf-300 bg-gray-50 dark:border-slate-700 dark:bg-slate-900"
+    aria-busy="true"
+    data-test="code-editor-loading"
+  />
 </template>
 
 <script setup lang="ts">
-// Shown while the CodeMirror chunk loads.
-defineProps<{ modelValue?: string; original?: string }>();
+// Placeholder shown while the CodeMirror chunk loads. Vue renders a loadingComponent
+// without props, so it cannot show the document.
 </script>

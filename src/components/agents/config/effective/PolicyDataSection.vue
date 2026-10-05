@@ -9,40 +9,14 @@
       <span class="text-gray-500 dark:text-slate-400">Policy data</span>
       <span>{{ keyCount }} key{{ keyCount === 1 ? '' : 's' }}</span>
       <ProvenanceBadge v-if="provenance !== 'file'" :provenance="provenance" />
-      <i
-        v-if="showAccess && access.state === 'restricted'"
-        v-tooltip.top="accessText"
-        role="img"
-        tabindex="0"
-        class="pi pi-shield text-xs text-amber-600 dark:text-amber-400"
-        :aria-label="accessText"
-        data-test="field-restricted"
-      />
-      <i
-        v-else-if="showAccess && access.state === 'readonly'"
-        v-tooltip.top="accessText"
-        role="img"
-        tabindex="0"
-        class="pi pi-info-circle text-xs text-gray-400 dark:text-slate-500"
-        :aria-label="accessText"
-        data-test="field-readonly"
-      />
-      <span
+      <AccessIcon v-if="showAccess" :state="access.state" :text="accessText" />
+      <PendingPill
         v-if="pending"
-        class="inline-flex items-center gap-1 rounded-full bg-sky-100 px-2 py-0.5 text-xs text-sky-800 dark:bg-sky-500/15 dark:text-sky-200"
-        :data-test="`pending-${ptr}`"
-      >
-        pending
-        <button
-          type="button"
-          class="ml-0.5"
-          aria-label="Undo the pending changes to policy data"
-          :data-test="`undo-${ptr}`"
-          @click="ws!.draft.revertPointer(ptr)"
-        >
-          ↺
-        </button>
-      </span>
+        undo-label="Undo the pending changes to policy data"
+        :test-id="`pending-${ptr}`"
+        :undo-test-id="`undo-${ptr}`"
+        @undo="ws!.draft.revertPointer(ptr)"
+      />
       <SelectButton
         v-if="editable"
         class="ml-auto"
@@ -120,6 +94,9 @@ import { accessTooltip, fieldAccess } from '@/utils/agent-config/field-access';
 import type { Provenance } from '@/utils/agent-config/provenance';
 import ProvenanceBadge from '../ProvenanceBadge.vue';
 import FieldIssues from '../editor/FieldIssues.vue';
+import AccessIcon from './AccessIcon.vue';
+import PendingPill from './PendingPill.vue';
+import { NULL_KEY_ERROR, opsSetNullKey } from './nullKeys';
 import PolicyDataTree from './PolicyDataTree.vue';
 import { POLICY_DATA_TREE_KEY } from './policyDataContext';
 
@@ -215,9 +192,15 @@ function onInput(value: string) {
     error.value = 'Policy data must be a JSON object.';
     return;
   }
-  error.value = '';
   // Only what really changed, at the pointers that changed.
-  ws?.draft.applyOps(diffOps(ptr.value, shown.value, parsed), ptr.value);
+  const ops = diffOps(ptr.value, shown.value, parsed);
+  // A new null at a key would record a deletion (RFC 7396); nulls inside arrays are kept.
+  if (opsSetNullKey(ops)) {
+    error.value = `${NULL_KEY_ERROR}: delete the key instead.`;
+    return;
+  }
+  error.value = '';
+  ws?.draft.applyOps(ops, ptr.value);
 }
 
 function reset() {

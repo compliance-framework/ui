@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import {
-  CHILD_PAGE,
   containsMask,
   envRefs,
   envSegments,
@@ -73,16 +72,59 @@ describe('policy-data helpers', () => {
     expect(parseNewValue('hello world', null).value).toBe('hello world');
     expect(parseNewValue('5', 'string').value).toBe('5');
     expect(parseNewValue('x', 'number').error).toBe('Enter a number');
+    expect(parseNewValue('0x10', 'number').error).toBe('Enter a number');
     expect(itemType(['a', 'b'])).toBe('string');
     expect(itemType([1, 'b'])).toBeNull();
     expect(itemType([{}])).toBeNull();
     expect(itemType([])).toBeNull();
   });
 
+  it('parseNewValue rejects JSON numbers that would not be stored as typed', () => {
+    for (const t of [
+      '1e999',
+      '-1e999',
+      '12345678901234567890',
+      '[1, 1e999]',
+      '{"a": {"b": 12345678901234567890}}',
+    ]) {
+      expect(parseNewValue(t, null)).toEqual({
+        value: undefined,
+        error: 'Number too large; quote it to keep it as a string',
+      });
+    }
+    expect(parseNewValue('"12345678901234567890"', null).value).toBe(
+      '12345678901234567890',
+    );
+    expect(parseNewValue('[1.5, -9007199254740991]', null).value).toEqual([
+      1.5, -9007199254740991,
+    ]);
+  });
+
   it('parseScalar validates numbers and booleans, keeps strings verbatim', () => {
     expect(parseScalar(' 4.5 ', 'number')).toEqual({ value: 4.5, error: '' });
     expect(parseScalar('', 'number').error).toBe('Enter a number');
-    expect(parseScalar('1e999', 'number').error).toBe('Enter a number');
+    expect(parseScalar('-1.5e3', 'number').value).toBe(-1500);
+    // JSON number grammar only: Number() would accept these.
+    for (const t of [
+      '0x10',
+      '0b11',
+      '0o7',
+      '.5',
+      '5.',
+      '+1',
+      '01',
+      'Infinity',
+    ]) {
+      expect(parseScalar(t, 'number').error).toBe('Enter a number');
+    }
+    // Not stored as typed: Infinity, or an integer beyond 2^53.
+    expect(parseScalar('1e999', 'number').error).toBe('Number too large');
+    expect(parseScalar('12345678901234567890', 'number').error).toBe(
+      'Number too large',
+    );
+    expect(parseScalar('9007199254740991', 'number').value).toBe(
+      Number.MAX_SAFE_INTEGER,
+    );
     expect(parseScalar('false', 'boolean')).toEqual({
       value: false,
       error: '',
@@ -116,6 +158,5 @@ describe('policy-data helpers', () => {
         Array.from({ length: 21 }, (_, i) => i),
       ),
     ).toBe(true);
-    expect(CHILD_PAGE).toBeGreaterThan(20);
   });
 });

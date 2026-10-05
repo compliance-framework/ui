@@ -75,14 +75,14 @@
         <span
           v-if="hasSavedOverlay"
           v-tooltip.top="{
-            value: CLEAR_DENIED,
-            disabled: ws.canConfigure.value,
+            value: ws.saveDisabledReason.value,
+            disabled: !ws.saveDisabledReason.value,
           }"
         >
           <Button
             severity="danger"
             size="small"
-            :disabled="!ws.canConfigure.value"
+            :disabled="!!ws.saveDisabledReason.value"
             data-test="clear-overlay"
             @click="clearOverlay"
           >
@@ -257,11 +257,10 @@ function apply() {
 const hasSavedOverlay = computed(
   () => Object.keys(ws.draft.original.value).length > 0,
 );
-const CLEAR_DENIED = "You don't have permission to change this configuration";
 
 // "Clear overlay" only fills the editor with {}; it is a pending change like any other.
 function clearOverlay() {
-  if (!ws.canConfigure.value) return;
+  if (ws.saveDisabledReason.value) return;
   text.value = '{}\n';
   parseNow(text.value);
 }

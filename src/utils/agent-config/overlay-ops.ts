@@ -1,8 +1,8 @@
 // Pure edits of an overlay document at a JSON Pointer. Each returns a new document.
 //
 // R56 rule: "reset to file" = OMIT the key (unsetAt); `null` = delete the key from the
-// effective config so the agent default applies (nullAt). makeAbsent picks between the two
-// so a removal is expressed with the smallest overlay.
+// effective config so the agent default applies (nullAt). removeValueAt (policy-data-patch.ts)
+// picks between the two against every known host file.
 
 import {
   clone,
@@ -76,16 +76,4 @@ export function unsetAt<T extends object>(overlay: T, ptr: string): T {
 /** Writes an explicit `null` (RFC 7396 delete) at `ptr`. */
 export function nullAt<T extends object>(overlay: T, ptr: string): T {
   return setAt(overlay, ptr, null);
-}
-
-/**
- * Makes the key absent from the EFFECTIVE config: `null` when the base defines it, otherwise
- * simply omits it from the overlay.
- */
-export function makeAbsent<T extends object>(
-  overlay: T,
-  base: unknown,
-  ptr: string,
-): T {
-  return hasAt(base, ptr) ? nullAt(overlay, ptr) : unsetAt(overlay, ptr);
 }

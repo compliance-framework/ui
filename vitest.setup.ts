@@ -79,17 +79,9 @@ if (typeof Range !== 'undefined') {
       }) as unknown as DOMRectList;
   }
 }
-if (
-  typeof document !== 'undefined' &&
-  typeof document.createRange !== 'function'
-) {
-  document.createRange = () => {
-    const range = new Range();
-    return range;
-  };
-}
 
 // jsdom has no ResizeObserver; PrimeVue's scrollable TabList observes its strip with one.
+// This stub is a no-op: ResizeObserver callbacks never fire in any spec.
 if (typeof globalThis.ResizeObserver === 'undefined') {
   globalThis.ResizeObserver = class {
     observe(): void {}

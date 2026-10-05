@@ -20,17 +20,17 @@ export function verbosityLabel(v: unknown): string {
 
 export const MODE_TEXT = {
   report:
-    "This agent reports its configuration but does not apply remote changes. Report-only is the default when `remote_config.mode` is not set; set it to `apply_safe` or `apply_all` in the agent's file to opt in.",
+    "This agent reports its configuration but does not apply remote changes. Report-only is the default when remote_config.mode is not set; set it to apply_safe or apply_all in the agent's file to opt in.",
   apply_safe:
-    "Accepts policy, schedule and flag changes. New sources need `apply_all` or a `trusted_sources` entry. Plugin config keys need a matching `overridable_config_flags` entry in the agent's file.",
+    "Accepts policy, schedule and flag changes. New sources need apply_all or a trusted_sources entry. Plugin config keys need a matching overridable_config_flags entry in the agent's file.",
   apply_all: 'Applies all changes except locked keys.',
 } as const;
 
 export const NOT_REPORTED_TEXT =
-  'No configuration reported yet. The agent may be offline, running a version without remote configuration support, or have `remote_config.mode: off`.';
+  'No configuration reported yet. The agent may be offline, running a version without remote configuration support, or have remote_config.mode set to off.';
 
 export const LOCKED_LEGEND =
-  '`api`, `daemon` and `remote_config` are set locally on the agent host and cannot be changed from CCF.';
+  'The api, daemon and remote_config sections are set locally on the agent host and cannot be changed from CCF.';
 
 /** R57: overlays are readable by every agent:read holder. */
 export const OVERLAY_SECRETS_NOTICE =

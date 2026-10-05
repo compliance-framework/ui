@@ -26,6 +26,7 @@ import { accessTooltip } from '@/utils/agent-config/field-access';
 import KeyValueEditor, { type KeyValueRow } from '../editor/KeyValueEditor.vue';
 import FieldIssues from '../editor/FieldIssues.vue';
 import { useEditor } from '../editor/useEditor';
+import { setStringKey } from './emptyValue';
 
 const props = defineProps<{ plugin: string; field: 'config' | 'labels' }>();
 
@@ -75,22 +76,8 @@ const rows = computed<KeyValueRow[]>(() => {
     });
 });
 
-/**
- * Emptying a key a file defines inherits the file value again; a key only the overlay adds
- * keeps an empty value (the row stays; its delete button removes it).
- */
+/** An emptied value: the file value again when a file defines the key (emptyValue.ts). */
 function setValue(k: string, v: string) {
-  const inAnyBase = [ctx.placeholderBase.value, ...ctx.bases.value].some(
-    (b) => isPlainObject(b) && baseHas(b, k),
-  );
-  if (!v && inAnyBase) draft.unset(p(k));
-  else draft.set(p(k), v);
-}
-
-function baseHas(b: object, k: string): boolean {
-  const plugins = (b as { plugins?: Record<string, unknown> }).plugins;
-  const plugin = plugins?.[props.plugin];
-  const map = isPlainObject(plugin) ? plugin[props.field] : undefined;
-  return isPlainObject(map) && Object.prototype.hasOwnProperty.call(map, k);
+  setStringKey(draft, [ctx.placeholderBase.value, ...ctx.bases.value], p(k), v);
 }
 </script>

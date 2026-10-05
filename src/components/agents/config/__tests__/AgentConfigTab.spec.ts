@@ -24,6 +24,8 @@ vi.mock('@/composables/agent-config/useAgentConfigApi', async () => {
 
 import AgentConfigTab from '../AgentConfigTab.vue';
 import AgentConfigHistory from '../AgentConfigHistory.vue';
+import AgentConfigEffectiveView from '../AgentConfigEffectiveView.vue';
+import ConfigYamlViewer from '../ConfigYamlViewer.vue';
 
 // PrimeVue's TabList schedules a 150 ms ink-bar update on mount and never clears it; a wrapper
 // left mounted lets it fire after this file's jsdom environment is torn down
@@ -57,6 +59,13 @@ function makeApi(over: Partial<AgentConfigApi> = {}): AgentConfigApi {
     }),
     ...over,
   };
+}
+
+/** Switches the view through the "Configuration view" SelectButton, as a click would. */
+function setView(wrapper: ReturnType<typeof mountTab>, view: string) {
+  wrapper
+    .findComponent({ name: 'SelectButton' })
+    .vm.$emit('update:modelValue', view);
 }
 
 function mountTab() {
@@ -144,9 +153,7 @@ describe('AgentConfigTab', () => {
     expect(wrapper.find('[data-test="effective-empty"]').text()).toContain(
       'No configuration reported yet.',
     );
-    (
-      wrapper.vm as unknown as { $: { setupState: { view: string } } }
-    ).$.setupState.view = 'overlay';
+    setView(wrapper, 'overlay');
     await flushPromises();
     expect(wrapper.find('[data-test="yaml-text"]').text()).toContain(
       'local-ssh-policies:v1.1.0',
@@ -200,9 +207,7 @@ describe('AgentConfigTab', () => {
     expect(wrapper.find('[data-test="config-header"]').text()).toContain(
       'No overlay saved: agents run their local configuration.',
     );
-    (
-      wrapper.vm as unknown as { $: { setupState: { view: string } } }
-    ).$.setupState.view = 'overlay';
+    setView(wrapper, 'overlay');
     await flushPromises();
     expect(wrapper.find('[data-test="yaml-empty"]').text()).toBe(
       'No overlay saved yet.',
@@ -269,6 +274,35 @@ describe('AgentConfigTab', () => {
     }
   });
 
+  it('names File / Effective downloads after the shown instance', async () => {
+    const wrapper = mountTab();
+    await flushPromises();
+    expect(
+      wrapper.findComponent(AgentConfigEffectiveView).props('filename'),
+    ).toBe('ssh-agent-ip-a-effective.yaml');
+    setView(wrapper, 'file');
+    await flushPromises();
+    expect(wrapper.findComponent(ConfigYamlViewer).props('filename')).toBe(
+      'ssh-agent-ip-a-file.yaml',
+    );
+  });
+
+  it('falls back to a short instance id without a hostname', async () => {
+    const only = { ...instancesMixed.items[0], hostname: null };
+    api.current = makeApi({
+      listInstances: vi
+        .fn()
+        .mockResolvedValue({ items: [only], meta: instancesMixed.meta }),
+    });
+    const wrapper = mountTab();
+    await flushPromises();
+    setView(wrapper, 'file');
+    await flushPromises();
+    expect(wrapper.findComponent(ConfigYamlViewer).props('filename')).toBe(
+      `ssh-agent-${only.instanceId.slice(0, 8)}-file.yaml`,
+    );
+  });
+
   it('never renders client_secret in the File view', async () => {
     api.current = makeApi({
       getInstance: vi
@@ -290,9 +324,7 @@ describe('AgentConfigTab', () => {
     });
     const wrapper = mountTab();
     await flushPromises();
-    (
-      wrapper.vm as unknown as { $: { setupState: { view: string } } }
-    ).$.setupState.view = 'file';
+    setView(wrapper, 'file');
     await flushPromises();
     expect(wrapper.find('[data-test="yaml-text"]').text()).toContain(
       'client_id: cid',

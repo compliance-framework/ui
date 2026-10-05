@@ -58,15 +58,16 @@ describe('RawOverlayDialog (R70)', () => {
     ).toBeDefined();
     await type(
       wrapper,
-      'verbosity: 2\nplugins:\n  local-ssh:\n    config:\n      port: 2200\n',
+      'verbosity: 2\nplugins:\n  local-ssh:\n    config:\n      debug: true\n',
     );
+    // Only booleans are coerced (R27); a number would be a blocking issue instead.
     expect(wrapper.find('[data-test="yaml-coerced"]').text()).toContain(
-      '/plugins/local-ssh/config/port',
+      '/plugins/local-ssh/config/debug',
     );
     await wrapper.find('[data-test="raw-apply"]').trigger('click');
     expect(ws.draft.overlay.value).toEqual({
       verbosity: 2,
-      plugins: { 'local-ssh': { config: { port: '2200' } } },
+      plugins: { 'local-ssh': { config: { debug: 'true' } } },
     });
     expect(
       wrapper.findComponent(RawOverlayDialog).emitted('update:visible'),

@@ -60,7 +60,9 @@
           >{{ summary }}</span
         >
         <template v-else-if="masked">
-          <span class="font-mono text-xs text-gray-500">{{ value }}</span>
+          <span class="font-mono text-xs text-gray-500 dark:text-slate-400">{{
+            value
+          }}</span>
           <ConfigPill
             v-tooltip.top="MASKED_TOOLTIP"
             severity="secondary"
@@ -109,35 +111,20 @@
         :aria-label="MASKED_LIST_TOOLTIP"
         :data-test="`pd-masked-list-${ptr}`"
       />
-      <i
+      <AccessIcon
         v-if="note"
-        v-tooltip.top="note.text"
-        role="img"
-        tabindex="0"
-        class="pi text-xs"
-        :class="
-          note.state === 'restricted'
-            ? 'pi-shield text-amber-600 dark:text-amber-400'
-            : 'pi-info-circle text-gray-400 dark:text-slate-500'
-        "
-        :aria-label="note.text"
-        :data-test="`pd-access-${ptr}`"
+        :state="note.state"
+        :text="note.text"
+        :test-id="`pd-access-${ptr}`"
       />
-      <span
+      <PendingPill
         v-if="isChanged"
-        class="inline-flex items-center gap-1 rounded-full bg-sky-100 px-2 text-[0.7rem] text-sky-800 dark:bg-sky-500/15 dark:text-sky-200"
-        :data-test="`pd-pending-${ptr}`"
-      >
-        pending
-        <button
-          type="button"
-          :aria-label="`Undo the pending change to ${label}`"
-          :data-test="`pd-undo-${ptr}`"
-          @click="tree!.revert(ptr)"
-        >
-          ↺
-        </button>
-      </span>
+        compact
+        :undo-label="`Undo the pending change to ${label}`"
+        :test-id="`pd-pending-${ptr}`"
+        :undo-test-id="`pd-undo-${ptr}`"
+        @undo="tree!.revert(ptr)"
+      />
     </div>
 
     <form
@@ -215,7 +202,10 @@
             Show {{ hiddenCount }} more
           </button>
         </li>
-        <li v-if="!children.length" class="py-0.5 text-xs text-gray-500">
+        <li
+          v-if="!children.length"
+          class="py-0.5 text-xs text-gray-500 dark:text-slate-400"
+        >
           {{ Array.isArray(value) ? 'No items.' : 'No keys.' }}
         </li>
       </ul>
@@ -240,8 +230,9 @@
 // done in the raw JSON view. Object keys are written at their own pointer; an array item edit
 // is emitted as the whole new array at the array's pointer (RFC 7396), and the draft shows it
 // as an element change. Objects / arrays collapse beyond COLLAPSE_DEPTH or COLLAPSE_SIZE.
-import { computed, inject, ref } from 'vue';
+import { computed, inject, ref, watch } from 'vue';
 import InputText from '@/volt/InputText.vue';
+import { TOOLTIPS } from '@/config/tooltips';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
 import TertiaryButton from '@/volt/TertiaryButton.vue';
 import { escapeToken, parsePointer } from '@/utils/agent-config/json-pointer';
@@ -264,6 +255,8 @@ import {
   type JsonType,
 } from '@/utils/agent-config/policy-data';
 import ConfigPill from '../ConfigPill.vue';
+import AccessIcon from './AccessIcon.vue';
+import PendingPill from './PendingPill.vue';
 import PolicyDataAddForm from './PolicyDataAddForm.vue';
 import { POLICY_DATA_TREE_KEY } from './policyDataContext';
 
@@ -288,10 +281,9 @@ const emit = defineEmits<{
 
 const tree = inject(POLICY_DATA_TREE_KEY, null);
 
-const MASKED_TOOLTIP =
-  'Masked in the report: the host keeps its value unless you set a new one';
-const ENV_TOOLTIP =
-  '${env:…} is resolved only in plugin config values: here it is a literal string, and the API rejects new references in policy_data';
+const MASKED_TOOLTIP = TOOLTIPS['agents.config.policyData.masked'];
+const ENV_TOOLTIP = TOOLTIPS['agents.config.policyData.env'];
+const MASKED_LIST_TOOLTIP = TOOLTIPS['agents.config.policyData.maskedList'];
 const SCALAR_CLASSES: Partial<Record<JsonType, string>> = {
   number: 'text-sky-800 dark:text-sky-200',
   boolean: 'text-amber-800 dark:text-amber-200',
@@ -320,8 +312,6 @@ const note = computed(() => tree?.accessNote(props.ptr) ?? null);
 const listHasMask = computed(
   () => Array.isArray(props.value) && containsMask(props.value),
 );
-const MASKED_LIST_TOOLTIP =
-  'Holds masked values: a list is saved whole, which would copy the masks. Edit it in the raw JSON view and retype the masked values, or remove the whole list.';
 const isChanged = computed(() => !!tree && tree.changed(props.ptr));
 
 const expanded = ref(!startsCollapsed(props.depth, props.value));
@@ -356,6 +346,19 @@ const editType = computed<JsonType>(() =>
 );
 const text = ref('');
 const checked = ref(false);
+
+// Array items are keyed by index: after a sibling is removed (or an undo splices the list)
+// this node shows another item, so an open editor would write the old text over it. Close it,
+// and re-derive the collapsed state when the value's kind changes.
+watch(
+  () => props.value,
+  (next, prev) => {
+    editing.value = false;
+    if (jsonType(next) !== jsonType(prev)) {
+      expanded.value = !startsCollapsed(props.depth, next);
+    }
+  },
+);
 
 function startEdit() {
   text.value = masked.value ? '' : scalarText(props.value);

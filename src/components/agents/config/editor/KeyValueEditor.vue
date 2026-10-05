@@ -17,7 +17,7 @@
         role="img"
         tabindex="0"
         v-tooltip.top="row.lockTooltip"
-        class="pi pi-lock text-xs text-gray-400"
+        class="pi pi-lock text-xs text-gray-400 dark:text-slate-400"
         :aria-label="row.lockTooltip"
         data-test="kv-lock"
       />
@@ -37,7 +37,9 @@
         v-tooltip.top="row.shield.tooltip"
         class="pi pi-shield text-xs"
         :class="
-          row.shield.level === 'forbidden' ? 'text-red-600' : 'text-amber-600'
+          row.shield.level === 'forbidden'
+            ? 'text-red-600 dark:text-red-400'
+            : 'text-amber-600 dark:text-amber-400'
         "
         :aria-label="row.shield.tooltip"
         data-test="kv-shield"
@@ -47,7 +49,7 @@
         role="img"
         tabindex="0"
         v-tooltip.top="KEY_WARNING"
-        class="pi pi-exclamation-triangle text-xs text-amber-500"
+        class="pi pi-exclamation-triangle text-xs text-amber-500 dark:text-amber-400"
         :aria-label="KEY_WARNING"
         data-test="kv-key-warning"
       />
@@ -182,18 +184,19 @@ function keyWarning(key: string): boolean {
   return !!props.warnKeys && (key.includes('.') || key !== key.toLowerCase());
 }
 
-// An empty or duplicate key is a blocking error.
+// Keys are trimmed: "foo " is the key "foo". An empty or duplicate key is a blocking error.
+const trimmedKey = computed(() => newKey.value.trim());
 const addError = computed(() => {
   if (!newKey.value) return '';
-  if (!newKey.value.trim()) return 'The key is empty';
-  if (props.rows.some((r) => r.key === newKey.value && !r.removed))
+  if (!trimmedKey.value) return 'The key is empty';
+  if (props.rows.some((r) => r.key === trimmedKey.value && !r.removed))
     return 'Duplicate key';
   return '';
 });
 
 function add() {
-  if (addError.value || !newKey.value) return;
-  emit('add', newKey.value, newValue.value);
+  if (addError.value || !trimmedKey.value) return;
+  emit('add', trimmedKey.value, newValue.value);
   newKey.value = '';
   newValue.value = '';
 }

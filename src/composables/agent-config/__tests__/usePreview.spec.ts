@@ -42,15 +42,48 @@ describe('usePreview (live checks)', () => {
     expect(state.isCurrent()).toBe(true);
     // R89: nothing scheduled or in flight once the draft is checked.
     expect(state.pending.value).toBe(false);
-    // A manual run aborts nothing now, but a new run supersedes an in-flight one.
+    // A manual run aborts nothing now. A run for the same draft joins the one in flight; a
+    // run for a different draft supersedes it.
     preview.mockImplementation(() => new Promise(() => undefined));
     overlay.value = { verbosity: 0 };
     await nextTick();
     vi.advanceTimersByTime(LIVE_PREVIEW_DEBOUNCE_MS);
     const inflight = preview.mock.calls[1][2] as AbortSignal;
     state.run().catch(() => undefined);
+    expect(preview).toHaveBeenCalledTimes(2);
+    expect(inflight.aborted).toBe(false);
+    overlay.value = { verbosity: 3 };
+    state.run().catch(() => undefined);
+    expect(preview).toHaveBeenCalledTimes(3);
     expect(inflight.aborted).toBe(true);
     expect(signal.aborted).toBe(false);
+    scope.stop();
+  });
+
+  it('does not abort or repeat an explicit run when live checks resume for the same draft', async () => {
+    // Review: loadDetails() makes canPreview false, the dialog runs a preview, then the
+    // details finish loading while that preview is still in flight.
+    const { preview, can, state, scope } = setup(false);
+    let resolve!: (v: typeof result) => void;
+    preview.mockImplementation(
+      () => new Promise<typeof result>((res) => (resolve = res)),
+    );
+    const explicit = state.run();
+    expect(preview).toHaveBeenCalledTimes(1);
+    const signal = preview.mock.calls[0][2] as AbortSignal;
+    can.value = true;
+    await nextTick();
+    vi.advanceTimersByTime(LIVE_PREVIEW_DEBOUNCE_MS);
+    expect(preview).toHaveBeenCalledTimes(1);
+    expect(signal.aborted).toBe(false);
+    // Running again for the same draft joins the call in flight.
+    expect(state.run()).toBe(explicit);
+    resolve(result);
+    await expect(explicit).resolves.toEqual(result);
+    expect(state.status.value).toBe('checked');
+    expect(state.pending.value).toBe(false);
+    await vi.runAllTimersAsync();
+    expect(preview).toHaveBeenCalledTimes(1);
     scope.stop();
   });
 

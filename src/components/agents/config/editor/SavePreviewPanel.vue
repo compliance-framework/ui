@@ -13,7 +13,10 @@
           data-test="overlay-error"
         >
           <code class="font-mono text-xs">{{ e.path || '/' }}</code>
-          <span v-if="e.code" class="ml-1 text-xs text-gray-500">
+          <span
+            v-if="e.code"
+            class="ml-1 text-xs text-gray-500 dark:text-slate-400"
+          >
             <CodeLabel :labels="FIELD_ERROR_CODE_LABELS" :code="e.code" />
           </span>
           — {{ e.message }}
@@ -134,17 +137,17 @@
             v-for="(e, i) in inst.errors"
             :key="`e${i}`"
             :class="
-              inst.errorsBlock
+              inst.blocking
                 ? 'text-red-700 dark:text-red-300'
                 : 'text-amber-700 dark:text-amber-300'
             "
             :data-test="
-              inst.errorsBlock ? 'instance-error' : 'instance-error-nonblocking'
+              inst.blocking ? 'instance-error' : 'instance-error-nonblocking'
             "
           >
             <code class="font-mono text-xs">{{ e.path || '/' }}</code> —
             {{ e.message }}
-            <span v-if="!inst.errorsBlock" class="text-xs">
+            <span v-if="!inst.blocking" class="text-xs">
               (Not validated on save: stale or not in an apply mode)
             </span>
           </li>
@@ -189,7 +192,7 @@
           />
         </template>
         <div v-else class="space-y-1" data-test="changes-fallback">
-          <p class="text-xs text-gray-500">
+          <p class="text-xs text-gray-500 dark:text-slate-400">
             The file of this instance is unavailable; classified changes:
           </p>
           <ul class="space-y-0.5 text-xs">
@@ -223,13 +226,16 @@
         class="w-full"
         data-test="save-comment"
       />
-      <p class="text-right text-xs text-gray-500">
+      <p class="text-right text-xs text-gray-500 dark:text-slate-400">
         {{ comment.length }}/{{ LIMITS.commentChars }}
       </p>
       <div class="flex justify-end gap-2">
-        <SecondaryButton data-test="review-back" @click="$emit('back')">{{
-          backLabel
-        }}</SecondaryButton>
+        <SecondaryButton
+          :disabled="saving"
+          data-test="review-back"
+          @click="$emit('back')"
+          >{{ backLabel }}</SecondaryButton
+        >
         <span
           v-tooltip.top="{
             value: saveDisabledReason,
@@ -265,7 +271,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue';
+import { computed, reactive, ref, watch } from 'vue';
 import Dialog from '@/volt/Dialog.vue';
 import Message from '@/volt/Message.vue';
 import Panel from '@/volt/Panel.vue';
@@ -318,7 +324,12 @@ const props = withDefaults(
   },
 );
 
-defineEmits<{ back: []; save: [comment: string] }>();
+const emit = defineEmits<{
+  back: [];
+  save: [comment: string];
+  /** A nested dialog (View diff) opened or closed: the host gates its own Esc on it. */
+  childOpen: [open: boolean];
+}>();
 
 const comment = defineModel<string>('comment', { default: '' });
 const yamlOpen = reactive(new Set<string>());
@@ -326,6 +337,7 @@ const diffOpen = ref(false);
 const diffTitle = ref('');
 const diffOriginal = ref('');
 const diffModified = ref('');
+watch(diffOpen, (open) => emit('childOpen', open));
 
 const topErrors = computed<FieldError[]>(() => [
   ...props.preview.overlayErrors,
@@ -370,7 +382,6 @@ const panels = computed(() =>
       rows,
       errors,
       warnings,
-      errorsBlock: errorsBlock && errors.length > 0,
       blocking: errorsBlock && errors.length > 0,
     };
   }),

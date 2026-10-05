@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import type { ConfigDoc, OverlayDoc } from '@/types/agent-config';
-import { applyOps, diffOps, removeValue, setValue } from '../policy-data-patch';
+import {
+  applyOps,
+  diffOps,
+  removeValueAt,
+  setValue,
+} from '../policy-data-patch';
 import { getAt } from '../json-pointer';
 import { mergePatch } from '../merge-patch';
 
@@ -142,15 +147,59 @@ describe('minimal policy_data patches', () => {
     expect(eff(o)).toEqual({ n: 1 });
   });
 
-  it('removeValue nulls file keys only', () => {
-    expect(removeValue({}, `${PD}/b/c`, [base])).toEqual({
+  it('removeValueAt nulls file keys only', () => {
+    expect(removeValueAt({}, `${PD}/b/c`, [base])).toEqual({
       plugins: { p: { policy_data: { b: { c: null } } } },
     });
     expect(
-      removeValue({ plugins: { p: { policy_data: { q: 1 } } } }, `${PD}/q`, [
+      removeValueAt({ plugins: { p: { policy_data: { q: 1 } } } }, `${PD}/q`, [
         base,
       ]),
     ).toEqual({});
+  });
+
+  it('removeValueAt checks every host file and works outside policy_data', () => {
+    const other: ConfigDoc = { plugins: { extra: { source: 'e' } } };
+    // Only another host's file has `extra`: still nulled.
+    expect(removeValueAt({}, '/plugins/extra', [base, other])).toEqual({
+      plugins: { extra: null },
+    });
+    // No file has `neu`: the overlay entry (and its emptied parents) are dropped.
+    expect(
+      removeValueAt({ plugins: { neu: { source: 'n' } } }, '/plugins/neu', [
+        base,
+        other,
+      ]),
+    ).toEqual({});
+  });
+
+  it('keeps an emptied overlay-only object inside policy_data', () => {
+    let o = edit({}, (pd) => ({ ...pd, n: { k: 1 } }));
+    expect(getAt(o, `${PD}/n`)).toEqual({ k: 1 });
+    o = edit(o, (pd) => ({ ...pd, n: {} }));
+    expect(o).toEqual({ plugins: { p: { policy_data: { n: {} } } } });
+    expect(eff(o).n).toEqual({});
+
+    // Nested: only the emptied parent is kept, its ancestors come back with it.
+    o = edit({}, (pd) => ({ ...pd, m: { n: { k: 1 } } }));
+    o = edit(o, (pd) => ({ ...pd, m: { n: {} } }));
+    expect(eff(o).m).toEqual({ n: {} });
+  });
+
+  it('prunes an emptied object every host file already has', () => {
+    // `b` is an object in the file: the overlay's `b: {}` would be a no-op.
+    let o = edit({}, (pd) => ({ ...pd, b: { c: 2, d: 'x', z: 1 } }));
+    expect(o).toEqual({ plugins: { p: { policy_data: { b: { z: 1 } } } } });
+    o = edit(o, (pd) => ({ ...pd, b: { c: 2, d: 'x' } }));
+    expect(o).toEqual({});
+    // With no host file loaded, an emptied object is kept.
+    expect(
+      removeValueAt(
+        { plugins: { p: { policy_data: { b: { z: 1 } } } } },
+        `${PD}/b/z`,
+        [],
+      ),
+    ).toEqual({ plugins: { p: { policy_data: { b: {} } } } });
   });
 
   it('diffOps: objects recurse, everything else is one set', () => {

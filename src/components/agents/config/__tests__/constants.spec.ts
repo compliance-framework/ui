@@ -3,6 +3,9 @@ import {
   APPLY_REASON_LABELS,
   CHANGE_REASON_LABELS,
   FIELD_ERROR_CODE_LABELS,
+  LOCKED_LEGEND,
+  MODE_TEXT,
+  NOT_REPORTED_TEXT,
   WILL_APPLY_REASON_LABELS,
   labelFor,
 } from '../constants';
@@ -80,6 +83,16 @@ describe('agent config labels', () => {
   it('unknown codes have no label (rendered verbatim)', () => {
     expect(labelFor(APPLY_REASON_LABELS, 'brand-new-code')).toBeNull();
     expect(labelFor(APPLY_REASON_LABELS, null)).toBeNull();
+  });
+
+  it('plain-text notices carry no Markdown (they render with {{ }})', () => {
+    for (const t of [
+      ...Object.values(MODE_TEXT),
+      NOT_REPORTED_TEXT,
+      LOCKED_LEGEND,
+    ]) {
+      expect(t).not.toContain('`');
+    }
   });
 
   it('agent permission constants', () => {

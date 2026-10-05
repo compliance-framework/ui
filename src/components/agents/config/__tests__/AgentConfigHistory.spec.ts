@@ -310,4 +310,75 @@ describe('AgentConfigHistory (U3)', () => {
       wrapper.findAll('[data-rev]').map((r) => r.attributes('data-rev')),
     ).toEqual(['7', '6', '5', '4', '3', '2', '1']);
   });
+  it('hides Load more while the first page loads and after it fails', async () => {
+    let fail!: (e: unknown) => void;
+    const api = makeApi({
+      listRevisions: vi.fn().mockReturnValueOnce(
+        new Promise((_, reject) => {
+          fail = reject;
+        }),
+      ),
+    });
+    const { wrapper } = mountHistory(api);
+    await flushPromises();
+    expect(wrapper.text()).toContain('Loading revisions…');
+    expect(wrapper.find('[data-test="history-more"]').exists()).toBe(false);
+    fail(
+      new AgentConfigApiError({ kind: 'other', status: 500, message: 'boom' }),
+    );
+    await flushPromises();
+    expect(wrapper.text()).toContain('boom');
+    expect(wrapper.text()).toContain('Retry');
+    expect(wrapper.find('[data-test="history-more"]').exists()).toBe(false);
+  });
+
+  it('a slower earlier View never replaces a later one', async () => {
+    const { wrapper, getRevision } = mountHistory(makeApi());
+    await flushPromises();
+    let finishR5!: (r: AgentConfigRevision) => void;
+    getRevision.mockImplementationOnce(
+      () =>
+        new Promise<AgentConfigRevision>((resolve) => {
+          finishR5 = resolve;
+        }),
+    );
+    await row(wrapper, 5).find('[data-test="history-view"]').trigger('click');
+    await row(wrapper, 4).find('[data-test="history-view"]').trigger('click');
+    await flushPromises();
+    finishR5({ ...configRev6, revision: 5, overlay: { verbosity: 5 } });
+    await flushPromises();
+    const dialog = wrapper.find('.dialog-stub');
+    expect(dialog.text()).toContain('Overlay r4');
+    expect(dialog.find('[data-test="yaml-text"]').text()).toContain(
+      'verbosity: 4',
+    );
+    expect(dialog.text()).not.toContain('verbosity: 5');
+  });
+
+  it('a View finishing during a Diff leaves the Diff loading', async () => {
+    const { wrapper, getRevision } = mountHistory(makeApi());
+    await flushPromises();
+    const pending: ((r: AgentConfigRevision) => void)[] = [];
+    const later = () =>
+      new Promise<AgentConfigRevision>((resolve) => pending.push(resolve));
+    getRevision
+      .mockImplementationOnce(later)
+      .mockImplementationOnce(later)
+      .mockImplementationOnce(later);
+    await row(wrapper, 5).find('[data-test="history-view"]').trigger('click');
+    await row(wrapper, 3)
+      .find('[data-test="history-diff-prev"]')
+      .trigger('click');
+    // The View's revision arrives first.
+    pending[0]({ ...configRev6, revision: 5, overlay: { verbosity: 5 } });
+    await flushPromises();
+    expect(wrapper.find('.merge-stub').exists()).toBe(false);
+    expect(wrapper.text()).toContain('Loading…');
+    pending[1]({ ...configRev6, revision: 2, overlay: { verbosity: 2 } });
+    pending[2]({ ...configRev6, revision: 3, overlay: { verbosity: 3 } });
+    await flushPromises();
+    const merge = wrapper.find('.merge-stub').text();
+    expect(merge).toContain('verbosity: 2');
+    expect(merge).toContain('verbosity: 3');
+  });
 });

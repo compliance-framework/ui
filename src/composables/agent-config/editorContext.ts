@@ -23,6 +23,8 @@ export interface EditorContext {
   /** All known bases (reported instances with a detail). */
   bases: ComputedRef<ConfigDoc[]>;
   lastPreview: Ref<ConfigPreview | null>;
+  /** The last preview while it still describes the draft, else null (shields, trust hints). */
+  currentPreview: ComputedRef<ConfigPreview | null>;
   /** R71 three-state access of the field at a pointer (utils/agent-config/field-access). */
   accessAt: (ptr: string) => FieldAccess;
 }

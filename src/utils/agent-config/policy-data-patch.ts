@@ -27,6 +27,7 @@ import {
   parsePointer,
 } from './json-pointer';
 import { nullAt, setAt, unsetAt } from './overlay-ops';
+import { isPolicyDataPointer } from './config-diff';
 
 export type PatchOp =
   | { op: 'set'; ptr: string; value: unknown }
@@ -136,18 +137,35 @@ export function setValue<T extends OverlayDoc>(
   return setAt(out, ptr, replacing(bases, ptr, value));
 }
 
-/** Removes the key / value at `ptr` from the effective config: `null` where a file has it. */
-export function removeValue<T extends OverlayDoc>(
+/**
+ * Removes the key / value at `ptr` from the EFFECTIVE config (any overlay pointer, against
+ * every known host file): `null` where some file has it, else the overlay entry is dropped.
+ *
+ * Dropping an entry prunes parent objects it leaves empty (an empty `plugins.<p>: {}` would
+ * create a plugin under RFC 7396). Inside a plugin's policy_data, though, an empty object is
+ * data: an emptied parent is pruned only when every file already has an object there (so `{}`
+ * is a no-op), otherwise it is kept as `{}`.
+ */
+export function removeValueAt<T extends OverlayDoc>(
   overlay: T,
   ptr: string,
   bases: readonly ConfigDoc[],
 ): T {
-  return bases.some((b) => hasAt(b, ptr))
-    ? nullAt(overlay, ptr)
-    : unsetAt(overlay, ptr);
+  if (bases.some((b) => hasAt(b, ptr))) return nullAt(overlay, ptr);
+  const out = unsetAt(overlay, ptr);
+  const parent = formatPointer(parsePointer(ptr).slice(0, -1));
+  if (
+    isPolicyDataPointer(parent) &&
+    isPlainObject(getAt(overlay, parent)) &&
+    !hasAt(out, parent) &&
+    !(bases.length && bases.every((b) => isPlainObject(getAt(b, parent))))
+  ) {
+    return setAt(out, parent, {});
+  }
+  return out;
 }
 
-/** Applies `ops` in order (setValue / removeValue). */
+/** Applies `ops` in order (setValue / removeValueAt). */
 export function applyOps<T extends OverlayDoc>(
   overlay: T,
   ops: readonly PatchOp[],
@@ -159,7 +177,7 @@ export function applyOps<T extends OverlayDoc>(
     out =
       o.op === 'set'
         ? setValue(out, o.ptr, o.value, bases, scope)
-        : removeValue(out, o.ptr, bases);
+        : removeValueAt(out, o.ptr, bases);
   }
   return out;
 }

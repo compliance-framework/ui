@@ -185,11 +185,23 @@ describe('useAgentConfigApi (HTTP client)', () => {
     );
   });
 
-  it('maps a 404 without an error body on getConfig to unsupported, but not a missing agent', () => {
+  it('maps a 404 without an error body on getConfig/listInstances to unsupported, but not a missing agent', () => {
     expect(
       toAgentConfigError(axiosError(404, { message: 'Not Found' }), 'getConfig')
         .kind,
     ).toBe('unsupported');
+    expect(
+      toAgentConfigError(
+        axiosError(404, { message: 'Not Found' }),
+        'listInstances',
+      ).kind,
+    ).toBe('unsupported');
+    expect(
+      toAgentConfigError(
+        axiosError(404, { errors: { body: 'agent not found' } }),
+        'listInstances',
+      ).kind,
+    ).toBe('other');
     expect(
       toAgentConfigError(
         axiosError(404, { errors: { body: 'agent not found' } }),

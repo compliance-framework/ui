@@ -46,20 +46,6 @@ describe('diffConfigs', () => {
   });
 });
 
-describe('formatRelative', () => {
-  it('formats past and future times', async () => {
-    const { formatRelative } = await import('../display');
-    const now = Date.parse('2026-09-30T12:00:00Z');
-    expect(formatRelative('2026-09-30T10:00:00Z', now)).toMatch(/2 hours ago/);
-    expect(formatRelative('2026-10-03T12:00:00Z', now)).toMatch(/in 3 days/);
-    expect(formatRelative('2026-09-30T12:00:20Z', now)).toMatch(
-      /this minute|now|0 minutes/,
-    );
-    expect(formatRelative(null)).toBe('');
-    expect(formatRelative('garbage')).toBe('');
-  });
-});
-
 describe('changedLeafPaths', () => {
   it('lists differing leaves (arrays whole)', () => {
     expect(
@@ -68,6 +54,13 @@ describe('changedLeafPaths', () => {
         { plugins: { a: { policies: ['x', 'y'] }, b: { source: 's' } } },
       ),
     ).toEqual(['/plugins/a/policies', '/plugins/b/source', '/verbosity']);
+  });
+
+  it('lists an empty object that was added or removed', () => {
+    const o = { plugins: { p: { policy_data: { n: {} } } } };
+    expect(changedLeafPaths({}, o)).toEqual(['/plugins/p/policy_data/n']);
+    expect(changedLeafPaths(o, {})).toEqual(['/plugins/p/policy_data/n']);
+    expect(changedLeafPaths(o, o)).toEqual([]);
   });
 });
 

@@ -266,6 +266,51 @@ describe('policy_data section: per-element edits (minimal patch)', () => {
     wrapper.unmount();
   });
 
+  it('closes an open item editor when a removal shifts the list under it', async () => {
+    const { wrapper, ws } = await mountSection();
+    await btn(wrapper, 'add', 'allowed-users').trigger('click');
+    const form = btn(wrapper, 'add-form', 'allowed-users');
+    await form.find('[data-test="pd-new-value"]').setValue('z');
+    await form.trigger('submit');
+    expect(pd(ws)!['allowed-users']).toEqual(['root', 'admin', 'z']);
+
+    // Editing [1] ("admin"), then removing [0]: the node at [1] now shows "z".
+    await btn(wrapper, 'edit', 'allowed-users/1').trigger('click');
+    await btn(wrapper, 'edit-form', 'allowed-users/1')
+      .find('[data-test="pd-edit-value"]')
+      .setValue('edited');
+    await btn(wrapper, 'remove', 'allowed-users/0').trigger('click');
+    await flushPromises();
+    expect(btn(wrapper, 'edit-form', 'allowed-users/1').exists()).toBe(false);
+    expect(pd(ws)!['allowed-users']).toEqual(['admin', 'z']);
+    expect(node(wrapper, 'allowed-users/1').text()).toContain('"z"');
+    wrapper.unmount();
+  });
+
+  it('refuses null for a key (an overlay delete), but not for a list item', async () => {
+    const { wrapper, ws } = await mountSection();
+    await wrapper.find('[data-test="pd-add-root"]').trigger('click');
+    const form = wrapper.find('[data-test="pd-add-form-root"]');
+    await form.find('[data-test="pd-new-key"]').setValue('foo');
+    await form.find('[data-test="pd-new-value"]').setValue('null');
+    expect(form.find('[data-test="pd-add-error"]').text()).toContain(
+      "null can't be stored for a key",
+    );
+    expect(
+      form.find('[data-test="pd-add-submit"]').attributes('disabled'),
+    ).toBeDefined();
+    await form.trigger('submit');
+    expect(pd(ws)).toBeUndefined();
+
+    await btn(wrapper, 'add', 'rules').trigger('click');
+    const lf = btn(wrapper, 'add-form', 'rules');
+    await lf.find('[data-test="pd-new-value"]').setValue('null');
+    expect(lf.find('[data-test="pd-add-error"]').exists()).toBe(false);
+    await lf.trigger('submit');
+    expect(pd(ws)!.rules).toEqual([...POLICY_DATA.rules, null]);
+    wrapper.unmount();
+  });
+
   it('a key inside a list item rewrites the list (never a pointer into the array)', async () => {
     const { wrapper, ws } = await mountSection();
     await editValue(wrapper, 'rules/1/on', true);
@@ -406,6 +451,32 @@ describe('policy_data section: raw JSON view', () => {
     await flushPromises();
     await wrapper.find('[data-test="policy-data-reset"]').trigger('click');
     expect(pd(ws)).toBeUndefined();
+    wrapper.unmount();
+  });
+  it('refuses a new null for a key, but keeps nulls inside lists and existing ones', async () => {
+    const { wrapper, ws } = await mountSection();
+    wrapper.findComponent(SelectButton).vm.$emit('update:modelValue', 'raw');
+    await flushPromises();
+    const textarea = wrapper.find('textarea');
+    const raw = JSON.parse((textarea.element as HTMLTextAreaElement).value);
+    // The file's own `nothing: null` is not a change.
+    expect(raw.nothing).toBeNull();
+
+    await textarea.setValue(
+      JSON.stringify({ ...raw, nested: { ...raw.nested, gone: null } }),
+    );
+    expect(wrapper.find('[data-test="policy-data-error"]').text()).toContain(
+      "null can't be stored for a key",
+    );
+    expect(pd(ws)).toBeUndefined();
+
+    await textarea.setValue(
+      JSON.stringify({ ...raw, 'allowed-users': ['root', null] }),
+    );
+    expect(wrapper.find('[data-test="policy-data-error"]').exists()).toBe(
+      false,
+    );
+    expect(pd(ws)).toEqual({ 'allowed-users': ['root', null] });
     wrapper.unmount();
   });
 });

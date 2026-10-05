@@ -51,6 +51,24 @@
         <template v-else-if="ws.preview.status.value === 'checked'">
           <i class="pi pi-check mr-1 text-[0.7rem]" />Checked
         </template>
+        <span
+          v-else-if="ws.preview.status.value === 'failed'"
+          class="text-red-600 dark:text-red-400"
+          data-test="live-check-failed"
+        >
+          <i class="pi pi-exclamation-circle mr-1 text-[0.7rem]" />Check
+          failed<template v-if="ws.preview.error.value"
+            >: {{ ws.preview.error.value }}</template
+          >
+          <button
+            type="button"
+            class="ml-1 text-sky-700 hover:underline dark:text-sky-300"
+            data-test="live-check-retry"
+            @click="ws.preview.retry()"
+          >
+            Retry
+          </button>
+        </span>
       </span>
       <span class="flex-1" />
       <TertiaryButton

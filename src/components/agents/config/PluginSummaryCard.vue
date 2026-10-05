@@ -39,7 +39,7 @@
       </ConfigPill>
       <span
         v-if="libVersion"
-        v-tooltip.top="`Built on agent library ${libVersion}`"
+        v-tooltip.top="`${LIB_TOOLTIP} ${libVersion}`"
         tabindex="0"
         class="rounded bg-slate-200 px-1.5 text-[0.7rem] text-gray-700 dark:bg-slate-700 dark:text-slate-300"
         data-test="plugin-lib"
@@ -51,20 +51,13 @@
       <ConfigPill v-if="pendingNew" severity="info" data-test="pending-new"
         >pending: new plugin</ConfigPill
       >
-      <i
+      <AccessIcon
         v-if="installText"
-        v-tooltip.top="installText"
-        role="img"
-        tabindex="0"
-        class="pi text-xs"
-        :class="
-          installAccess?.state === 'readonly'
-            ? 'pi-ban text-red-600 dark:text-red-400'
-            : 'pi-shield text-amber-600 dark:text-amber-400'
-        "
-        :aria-label="installText"
+        :state="installAccess?.state"
+        :text="installText"
+        blocked
         :data-state="installAccess?.state"
-        data-test="plugin-install-access"
+        test-id="plugin-install-access"
       />
       <ConfigPill
         v-if="pendingRemoval"
@@ -112,7 +105,9 @@
           <span class="font-mono text-xs">{{
             plugin?.schedule ?? '* * * * *'
           }}</span>
-          <span class="ml-1 text-xs text-gray-500">({{ scheduleText }})</span>
+          <span class="ml-1 text-xs text-gray-500 dark:text-slate-400"
+            >({{ scheduleText }})</span
+          >
         </span>
         <ProvenanceBadge
           v-if="field('schedule') !== 'file'"
@@ -148,7 +143,11 @@
             </span></template
           >
           <span class="flex flex-wrap gap-1">
-            <span v-if="!policies.length" class="text-gray-500">none</span>
+            <span
+              v-if="!policies.length"
+              class="text-gray-500 dark:text-slate-400"
+              >none</span
+            >
             <span
               v-for="pol in policies"
               :key="pol"
@@ -194,9 +193,10 @@
             removable
           >
             <template #label
-              ><span class="font-mono text-xs text-gray-500">{{
-                k
-              }}</span></template
+              ><span
+                class="font-mono text-xs text-gray-500 dark:text-slate-400"
+                >{{ k }}</span
+              ></template
             >
             <span class="font-mono text-xs break-all">{{
               plugin?.config?.[k] ?? '—'
@@ -217,7 +217,11 @@
             ></template
           >
           <span class="flex flex-wrap gap-1">
-            <span v-if="!labelEntries.length" class="text-gray-500">none</span>
+            <span
+              v-if="!labelEntries.length"
+              class="text-gray-500 dark:text-slate-400"
+              >none</span
+            >
             <span
               v-for="[k, v] in labelEntries"
               :key="k"
@@ -251,6 +255,7 @@
 import { computed } from 'vue';
 import { useConfirm } from 'primevue/useconfirm';
 import TertiaryButton from '@/volt/TertiaryButton.vue';
+import { TOOLTIPS } from '@/config/tooltips';
 import type {
   ConfigDoc,
   OverlayDoc,
@@ -268,6 +273,7 @@ import { addPluginTooltip } from '@/utils/agent-config/field-access';
 import { useWorkspace } from '@/composables/agent-config/useConfigWorkspace';
 import ProvenanceBadge from './ProvenanceBadge.vue';
 import ConfigPill from './ConfigPill.vue';
+import AccessIcon from './effective/AccessIcon.vue';
 import EditableField from './effective/EditableField.vue';
 import MapFieldEditor from './effective/MapFieldEditor.vue';
 import PolicyDataSection from './effective/PolicyDataSection.vue';
@@ -354,4 +360,5 @@ function undoPlugin() {
 
 /** R76: the agent library the plugin's build was built with, when reported. */
 const libVersion = computed(() => props.report?.libVersion || '');
+const LIB_TOOLTIP = TOOLTIPS['agents.config.plugin.libVersion'];
 </script>

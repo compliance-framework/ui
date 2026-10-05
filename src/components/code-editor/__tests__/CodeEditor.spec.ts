@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
+import { defineComponent } from 'vue';
 import CodeEditor from '../CodeEditor.vue';
 
 function mountEditor(props: Record<string, unknown> = {}) {
@@ -51,6 +52,67 @@ describe('CodeEditor (CodeMirror 6)', () => {
       'true',
     );
     expect(wrapper.text()).toContain('Esc then Tab to leave the editor');
+    wrapper.unmount();
+  });
+
+  it('keeps Escape inside the editor so a dialog does not close on it', () => {
+    const wrapper = mountEditor();
+    const onDocument = vi.fn();
+    document.addEventListener('keydown', onDocument);
+    try {
+      const content = wrapper.find('.cm-content').element;
+      content.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }),
+      );
+      expect(onDocument).not.toHaveBeenCalled();
+      // Other keys still bubble.
+      content.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'a', bubbles: true }),
+      );
+      expect(onDocument).toHaveBeenCalledTimes(1);
+    } finally {
+      document.removeEventListener('keydown', onDocument);
+      wrapper.unmount();
+    }
+  });
+
+  it('describes the editable content with the "Esc then Tab" hint', async () => {
+    const wrapper = mountEditor();
+    const hint = wrapper.find('p');
+    expect(hint.attributes('aria-hidden')).toBeUndefined();
+    const id = hint.attributes('id');
+    expect(id).toBeTruthy();
+    expect(wrapper.find('.cm-content').attributes('aria-describedby')).toBe(id);
+    // Unique per editor in the app.
+    const both = mount(
+      defineComponent({
+        components: { CodeEditor },
+        template: `<div>
+          <CodeEditor model-value="" language="yaml" label="A" />
+          <CodeEditor model-value="" language="yaml" label="B" />
+        </div>`,
+      }),
+      { attachTo: document.body },
+    );
+    const ids = both.findAll('p').map((p) => p.attributes('id'));
+    expect(ids).toHaveLength(2);
+    expect(ids[0]).not.toBe(ids[1]);
+    both.unmount();
+    await wrapper.setProps({ readonly: true });
+    expect(
+      wrapper.find('.cm-content').attributes('aria-describedby'),
+    ).toBeUndefined();
+    wrapper.unmount();
+  });
+
+  it('takes min/max height from the host, following prop changes', async () => {
+    const wrapper = mountEditor({ minHeight: '100px', maxHeight: '300px' });
+    const host = wrapper.find('[data-test="code-editor"]')
+      .element as HTMLElement;
+    expect(host.style.maxHeight).toBe('300px');
+    await wrapper.setProps({ maxHeight: '200px' });
+    expect(host.style.maxHeight).toBe('200px');
+    expect(host.style.minHeight).toBe('100px');
     wrapper.unmount();
   });
 

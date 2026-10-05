@@ -10,11 +10,11 @@
 <script setup lang="ts">
 // Read-only diff (LLD U2.8): split (MergeView) or unified (unifiedMergeView).
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
-import { EditorState } from '@codemirror/state';
+import { Compartment, EditorState } from '@codemirror/state';
 import { EditorView, lineNumbers } from '@codemirror/view';
 import { MergeView, unifiedMergeView } from '@codemirror/merge';
 import { languageExtension, type EditorLanguage } from './languages';
-import { editorTheme, isDarkMode } from './theme';
+import { editorTheme, isDarkMode, onDarkModeChange } from './theme';
 
 const props = withDefaults(
   defineProps<{
@@ -29,6 +29,10 @@ const props = withDefaults(
 
 const host = ref<HTMLElement | null>(null);
 let destroy: (() => void) | null = null;
+let views: EditorView[] = [];
+let stopThemeSync: (() => void) | null = null;
+// Follows dark-mode toggles like CodeEditor, without rebuilding the diff.
+const themeConf = new Compartment();
 
 function extensions() {
   return [
@@ -36,13 +40,14 @@ function extensions() {
     EditorState.readOnly.of(true),
     EditorView.editable.of(false),
     languageExtension(props.language, false),
-    editorTheme(isDarkMode()),
+    themeConf.of(editorTheme(isDarkMode())),
   ];
 }
 
 function build() {
   destroy?.();
   destroy = null;
+  views = [];
   if (!host.value) return;
   if (props.mode === 'split') {
     const mv = new MergeView({
@@ -51,6 +56,7 @@ function build() {
       parent: host.value,
       collapseUnchanged: { margin: 3, minSize: 6 },
     });
+    views = [mv.a, mv.b];
     destroy = () => mv.destroy();
   } else {
     const v = new EditorView({
@@ -67,12 +73,22 @@ function build() {
         ],
       }),
     });
+    views = [v];
     destroy = () => v.destroy();
   }
 }
 
-onMounted(build);
-onBeforeUnmount(() => destroy?.());
+onMounted(() => {
+  build();
+  stopThemeSync = onDarkModeChange((dark) => {
+    for (const v of views)
+      v.dispatch({ effects: themeConf.reconfigure(editorTheme(dark)) });
+  });
+});
+onBeforeUnmount(() => {
+  stopThemeSync?.();
+  destroy?.();
+});
 watch(
   () => [props.original, props.modified, props.language, props.mode],
   build,

@@ -7,7 +7,9 @@
       v-tooltip.top="shieldInfo.tooltip"
       class="pi pi-shield text-xs"
       :class="
-        shieldInfo.level === 'forbidden' ? 'text-red-600' : 'text-amber-600'
+        shieldInfo.level === 'forbidden'
+          ? 'text-red-600 dark:text-red-400'
+          : 'text-amber-600 dark:text-amber-400'
       "
       :aria-label="shieldInfo.tooltip"
       :data-test="`shield-${ptr}`"

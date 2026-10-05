@@ -92,3 +92,23 @@ export function isDarkMode(): boolean {
     document.documentElement.classList.contains('dark')
   );
 }
+
+/** Calls `cb` whenever the app's dark mode toggles; returns the disposer. */
+export function onDarkModeChange(cb: (dark: boolean) => void): () => void {
+  if (typeof MutationObserver === 'undefined') return () => undefined;
+  const observer = new MutationObserver(() => cb(isDarkMode()));
+  observer.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ['class'],
+  });
+  return () => observer.disconnect();
+}
+
+/**
+ * Layout shared by every editor. The host element carries min/max height (so prop changes
+ * apply without a new theme); the editor inherits them and scrolls inside.
+ */
+export const layoutTheme = EditorView.theme({
+  '&': { minHeight: 'inherit', maxHeight: 'inherit' },
+  '.cm-scroller': { overflow: 'auto' },
+});

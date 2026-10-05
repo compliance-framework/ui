@@ -8,8 +8,8 @@
     />
     <p
       v-if="!readonly"
+      :id="hintId"
       class="text-[0.7rem] text-gray-400 dark:text-slate-500"
-      aria-hidden="true"
     >
       Esc then Tab to leave the editor
     </p>
@@ -19,7 +19,7 @@
 <script setup lang="ts">
 // CodeMirror 6 editor (LLD U2.8). Loaded asynchronously by consumers (see ./index.ts), so
 // CodeMirror lives in its own chunk that is fetched only when an editor or diff opens.
-import { onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue';
+import { onBeforeUnmount, onMounted, ref, shallowRef, useId, watch } from 'vue';
 import { Compartment, EditorState, Transaction } from '@codemirror/state';
 import {
   drawSelection,
@@ -39,7 +39,12 @@ import { bracketMatching, indentOnInput } from '@codemirror/language';
 import { highlightSelectionMatches, searchKeymap } from '@codemirror/search';
 import { lintGutter, lintKeymap, setDiagnostics } from '@codemirror/lint';
 import { languageExtension, type EditorLanguage } from './languages';
-import { editorTheme, isDarkMode } from './theme';
+import {
+  editorTheme,
+  isDarkMode,
+  layoutTheme,
+  onDarkModeChange,
+} from './theme';
 import { toDiagnostics, type EditorDiagnostic } from './diagnostics';
 
 const props = withDefaults(
@@ -69,14 +74,30 @@ const languageConf = new Compartment();
 const readonlyConf = new Compartment();
 const themeConf = new Compartment();
 const labelConf = new Compartment();
-let themeObserver: MutationObserver | null = null;
+const hintId = `code-editor-hint-${useId()}`;
+let stopThemeSync: (() => void) | null = null;
+
+// Esc must stay inside the editor: CodeMirror uses it (tab-focus mode, closing search), but
+// a document-level listener (e.g. a Dialog's closeOnEscape) would also act on it and close
+// the dialog, discarding the text. CodeMirror still handles the key (return false).
+const keepEscape = EditorView.domEventHandlers({
+  keydown(event) {
+    if (event.key === 'Escape') event.stopPropagation();
+    return false;
+  },
+});
 
 function readonlyExt(ro: boolean) {
   return [EditorState.readOnly.of(ro), EditorView.editable.of(!ro)];
 }
 
-function labelExt(label: string) {
-  return EditorView.contentAttributes.of({ 'aria-label': label });
+// The "Esc then Tab" hint describes the editable content to screen readers.
+function labelExt(label: string, ro: boolean) {
+  return EditorView.contentAttributes.of(
+    ro
+      ? { 'aria-label': label }
+      : { 'aria-label': label, 'aria-describedby': hintId },
+  );
 }
 
 function applyDiagnostics() {
@@ -111,11 +132,9 @@ onMounted(() => {
       languageConf.of(languageExtension(props.language)),
       readonlyConf.of(readonlyExt(props.readonly)),
       themeConf.of(editorTheme(isDarkMode())),
-      labelConf.of(labelExt(props.label)),
-      EditorView.theme({
-        '&': { maxHeight: props.maxHeight, minHeight: props.minHeight },
-        '.cm-scroller': { overflow: 'auto' },
-      }),
+      labelConf.of(labelExt(props.label, props.readonly)),
+      layoutTheme,
+      keepEscape,
       EditorView.updateListener.of((update) => {
         if (update.docChanged) {
           const text = update.state.doc.toString();
@@ -127,21 +146,13 @@ onMounted(() => {
   view.value = new EditorView({ state, parent: host.value });
   applyDiagnostics();
 
-  if (typeof MutationObserver !== 'undefined') {
-    themeObserver = new MutationObserver(() => {
-      view.value?.dispatch({
-        effects: themeConf.reconfigure(editorTheme(isDarkMode())),
-      });
-    });
-    themeObserver.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['class'],
-    });
-  }
+  stopThemeSync = onDarkModeChange((dark) => {
+    view.value?.dispatch({ effects: themeConf.reconfigure(editorTheme(dark)) });
+  });
 });
 
 onBeforeUnmount(() => {
-  themeObserver?.disconnect();
+  stopThemeSync?.();
   view.value?.destroy();
   view.value = null;
 });
@@ -174,7 +185,10 @@ watch(
   () => props.readonly,
   (ro) => {
     view.value?.dispatch({
-      effects: readonlyConf.reconfigure(readonlyExt(ro)),
+      effects: [
+        readonlyConf.reconfigure(readonlyExt(ro)),
+        labelConf.reconfigure(labelExt(props.label, ro)),
+      ],
     });
   },
 );
@@ -182,7 +196,9 @@ watch(
 watch(
   () => props.label,
   (label) => {
-    view.value?.dispatch({ effects: labelConf.reconfigure(labelExt(label)) });
+    view.value?.dispatch({
+      effects: labelConf.reconfigure(labelExt(label, props.readonly)),
+    });
   },
 );
 

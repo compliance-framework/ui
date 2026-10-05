@@ -1,7 +1,9 @@
 // Client-only overlay checks (R89): what the API cannot tell the editor, or tells only after a
-// round trip that would fail anyway: a mapping overlay, masked values copied from a report and
-// unquoted plugin config/label scalars (R27). Every other rule (O1–O11) comes from the API's
-// debounced preview (POST …/config/preview); the API and the agent stay authoritative.
+// round trip that would fail anyway: a mapping overlay (parsing), masked values copied from a
+// report, unquoted plugin config/label scalars (R27, booleans coerced) and the plugin-name
+// pattern (O6, NAME_RE: AddPluginDialog checks a name before it is part of any overlay). Every
+// other rule (O1–O11) comes from the API's debounced preview (POST …/config/preview); the API
+// and the agent stay authoritative.
 
 import { REDACTED_MASK } from '@/types/agent-config';
 import type { OverlayDoc } from '@/types/agent-config';
@@ -14,7 +16,10 @@ export interface ClientIssue {
   blocking: boolean;
 }
 
-/** Plugin names (R28, API PluginNamePattern). */
+/**
+ * Plugin names (R28, rule O6). An intentional client-side copy: it must match the API's
+ * `PluginNamePattern` exactly.
+ */
 export const NAME_RE = /^[a-z0-9][a-z0-9_-]{0,62}$/;
 
 export const LIMITS = {
@@ -30,9 +35,11 @@ export function byteSize(str: string): number {
 }
 
 /**
- * R27: YAML `port: 2222` must be sent as "2222". Converts number/boolean values of
- * `plugins.*.config` / `labels` to strings. Objects and arrays are left for the (blocking)
- * validation.
+ * R27: plugin config and label values are strings. Converts BOOLEAN values of
+ * `plugins.*.config` / `labels` to "true" / "false" (no information is lost). Numbers are left
+ * for the blocking "Quote this value" check: YAML has already lost their source text (`0644`,
+ * `1.0`, `1e3`, `0x1F` all load as numbers whose String() differs from what was typed).
+ * Objects and arrays are left for the (blocking) validation too.
  */
 export function coerceStringMaps(overlay: OverlayDoc): {
   overlay: OverlayDoc;
@@ -48,10 +55,7 @@ export function coerceStringMaps(overlay: OverlayDoc): {
       const map = plugin[field];
       if (!isPlainObject(map)) continue;
       for (const [k, v] of Object.entries(map)) {
-        if (
-          typeof v === 'boolean' ||
-          (typeof v === 'number' && Number.isSafeInteger(v))
-        ) {
+        if (typeof v === 'boolean') {
           if (!out) out = clone(overlay);
           (
             ((out.plugins as PlainObject)[name] as PlainObject)[
@@ -113,8 +117,8 @@ export function validateOverlayClientSide(overlay: OverlayDoc): ClientIssue[] {
           if (isPlainObject(v) || Array.isArray(v)) {
             add(kptr, 'Values must be strings', true);
           } else if (typeof v === 'number' || typeof v === 'boolean') {
-            // Only whole numbers and booleans are converted safely (R27); YAML already lost the
-            // original text of 1.10 or 1e3, so ask for quotes instead of guessing.
+            // Only booleans are converted (R27); YAML already lost the original text of a number
+            // (0644, 1.0, 1e3, 0x1F), so ask for quotes instead of guessing.
             add(
               kptr,
               'Quote this value: plugin config and label values are strings',

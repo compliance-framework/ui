@@ -150,6 +150,26 @@ describe('inline editing on the Effective view (R69)', () => {
     );
   });
 
+  it('emptying a config key a file defines brings the file value back (as the map editor does)', async () => {
+    const { wrapper, ws } = await mountTab();
+    const ptr = '/plugins/local-ssh/config/port';
+    let editor = await openEditor(wrapper, ptr);
+    await editor.find('[data-test="scalar-input"]').setValue('2200');
+    await editor.find('form').trigger('submit');
+    expect(ws.draft.overlay.value.plugins?.['local-ssh']?.config?.port).toBe(
+      '2200',
+    );
+    editor = await openEditor(wrapper, ptr);
+    await editor.find('[data-test="scalar-input"]').setValue('');
+    expect(editor.find('[data-test="scalar-hint"]').text()).toBe(
+      'Empty: the file value applies.',
+    );
+    await editor.find('form').trigger('submit');
+    // Unset (not pinned to ""): the overlay no longer has the key.
+    const config = ws.draft.overlay.value.plugins?.['local-ssh']?.config ?? {};
+    expect('port' in config).toBe(false);
+  });
+
   it('labels, policy data and policy assignment use the map / per-value / list editors', async () => {
     const { wrapper, ws } = await mountTab();
     let editor = await openEditor(wrapper, '/plugins/local-ssh/labels');

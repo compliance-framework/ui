@@ -54,23 +54,37 @@ const DESCRIPTORS = [
 export const GO_DURATION_RE =
   /^[-+]?(0|((\d+(\.\d*)?|\.\d+)(ns|us|µs|μs|ms|s|m|h))+)$/;
 
-function parseValue(raw: string, spec: FieldSpec): number | string {
-  const lower = raw.toLowerCase();
-  if (spec.names && lower in spec.names) return spec.names[lower];
-  if (!/^\d+$/.test(raw)) return `invalid ${spec.name} value "${raw}"`;
-  return Number(raw);
+const INT64_MAX = 9223372036854775807n;
+
+/** Go strconv.Atoi (64-bit int) followed by robfig's non-negative check (mustParseInt). */
+function mustParseInt(raw: string, what: string): number | string {
+  if (!/^[+-]?\d+$/.test(raw)) return `invalid ${what} "${raw}"`;
+  const n = BigInt(raw);
+  if (n > INT64_MAX || n < -INT64_MAX - 1n) return `invalid ${what} "${raw}"`;
+  if (n < 0n) return `${what} "${raw}" must not be negative`;
+  return Number(n);
 }
 
+function parseValue(raw: string, spec: FieldSpec): number | string {
+  const lower = raw.toLowerCase();
+  // Own keys only: "constructor" / "__proto__" are not month or weekday names.
+  if (spec.names && Object.prototype.hasOwnProperty.call(spec.names, lower))
+    return spec.names[lower];
+  return mustParseInt(raw, `${spec.name} value`);
+}
+
+// robfig getRange: `range[/step]`. A range whose first hyphen part is `*` or `?` is the whole
+// field and the rest of it is ignored (`*-5` is `*`); `N/step` means `N-max/step`.
 function validateRange(expr: string, spec: FieldSpec): string | null {
   const [rangePart, stepPart, ...extra] = expr.split('/');
   if (extra.length > 0) return `too many slashes in ${spec.name} "${expr}"`;
   let start: number;
   let end: number;
-  if (rangePart === '*' || rangePart === '?') {
+  const bounds = rangePart.split('-');
+  if (bounds[0] === '*' || bounds[0] === '?') {
     start = spec.min;
     end = spec.max;
   } else {
-    const bounds = rangePart.split('-');
     if (bounds.length > 2) return `too many hyphens in ${spec.name} "${expr}"`;
     const lo = parseValue(bounds[0], spec);
     if (typeof lo === 'string') return lo;
@@ -84,7 +98,9 @@ function validateRange(expr: string, spec: FieldSpec): string | null {
     }
   }
   if (stepPart !== undefined) {
-    if (!/^\d+$/.test(stepPart) || Number(stepPart) === 0) {
+    const step = mustParseInt(stepPart, `step of ${spec.name}`);
+    if (typeof step === 'string') return step;
+    if (step === 0) {
       return `step of ${spec.name} "${expr}" must be a positive number`;
     }
   }
@@ -98,8 +114,9 @@ function validateRange(expr: string, spec: FieldSpec): string | null {
 
 /** Returns an error message, or null when the expression is a valid agent schedule. */
 export function validateCron5(input: string): string | null {
-  // Mirrors robfig/cron Parse: no trimming before the TZ prefix or a descriptor (so
-  // "@daily " is rejected as the agent would), fields split like strings.Fields.
+  // Mirrors robfig/cron v3 Parse: no trimming before the TZ prefix or a descriptor (so
+  // "@daily " is rejected as the agent would), fields split like strings.Fields, comma lists
+  // split like strings.FieldsFunc (empty items are skipped: `1,,2` is `1,2`).
   let expr = input;
   if (!expr.trim()) return 'Schedule is empty';
   if (expr.startsWith('TZ=') || expr.startsWith('CRON_TZ=')) {
@@ -125,7 +142,7 @@ export function validateCron5(input: string): string | null {
   }
   for (let i = 0; i < 5; i++) {
     for (const part of fields[i].split(',')) {
-      if (part === '') return `empty value in ${FIELDS[i].name}`;
+      if (part === '') continue;
       const err = validateRange(part, FIELDS[i]);
       if (err) return err;
     }

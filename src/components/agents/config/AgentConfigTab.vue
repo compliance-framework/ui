@@ -99,18 +99,13 @@
         :applied-overlay="state.appliedOverlay.value"
         :applied-revision-note="appliedRevisionNote"
         :provenance-fallback="state.appliedOverlayFallback.value"
-        :filename="
-          fileName(
-            'effective',
-            state.selectedInstance.value?.appliedRevision ?? 0,
-          )
-        "
+        :filename="instanceFileName('effective')"
         :plugin-reports="state.selectedInstance.value?.plugins ?? null"
       />
       <ConfigYamlViewer
         v-else-if="view === 'file'"
         :doc="fileDoc"
-        :filename="fileName('file', 0)"
+        :filename="instanceFileName('file')"
         :empty-text="NOT_REPORTED_TEXT"
         :legend="LOCKED_LEGEND"
       />
@@ -120,7 +115,7 @@
         </p>
         <ConfigYamlViewer
           :doc="overlayDoc"
-          :filename="fileName('overlay', state.desiredRevision.value)"
+          :filename="`${safeName}-overlay-r${state.desiredRevision.value}.yaml`"
           empty-text="No overlay saved yet."
         />
       </div>
@@ -186,7 +181,7 @@ const api = useAgentConfigApi();
 const agentId = toRef(() => props.agent.id);
 const state = useAgentConfig(agentId, api);
 // R69: the shared pending-changes draft + inline editing.
-const ws = useConfigWorkspace(props.agent.id, api, state);
+const ws = useConfigWorkspace(agentId, api, state);
 const rawOpen = ref(false);
 
 const view = ref<ConfigView>('effective');
@@ -258,12 +253,22 @@ const overlayDoc = computed(() => {
   return cfg.overlay ?? {};
 });
 
-const safeName = computed(() =>
-  props.agent.name.replace(/[^A-Za-z0-9_.-]+/g, '-'),
-);
+function safeFilePart(s: string): string {
+  return s.replace(/[^A-Za-z0-9_.-]+/g, '-');
+}
+const safeName = computed(() => safeFilePart(props.agent.name));
+/** The shown instance in download names: its hostname, else a short instance id. */
+const safeHost = computed(() => {
+  const host = selectedSummary.value?.hostname;
+  if (host) return safeFilePart(host);
+  return safeFilePart((state.selectedInstanceId.value ?? '').slice(0, 8));
+});
 
-function fileName(kind: string, rev: number): string {
-  return `${safeName.value}-${kind}-r${rev}.yaml`;
+/** The File / Effective views show one instance: name the download after it. */
+function instanceFileName(kind: 'file' | 'effective'): string {
+  return (
+    [safeName.value, safeHost.value, kind].filter(Boolean).join('-') + '.yaml'
+  );
 }
 
 async function refresh() {

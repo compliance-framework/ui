@@ -95,9 +95,9 @@ describe('AgentConfigEffectiveView', () => {
       auth: { client_id: 'cid', client_secret: 'SUPER-SECRET' },
     };
     const wrapper = mountView({}, leaky);
-    (
-      wrapper.vm as unknown as { $: { setupState: { mode: string } } }
-    ).$.setupState.mode = 'yaml';
+    wrapper
+      .findComponent({ name: 'SelectButton' })
+      .vm.$emit('update:modelValue', 'yaml');
     await wrapper.vm.$nextTick();
     expect(wrapper.find('[data-test="yaml-text"]').text()).toContain(
       'client_id: cid',

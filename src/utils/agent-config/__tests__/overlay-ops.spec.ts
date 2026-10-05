@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { makeAbsent, nullAt, setAt, unsetAt } from '../overlay-ops';
+import { nullAt, setAt, unsetAt } from '../overlay-ops';
 
 describe('overlay-ops', () => {
   it('setAt creates intermediates and never mutates', () => {
@@ -40,16 +40,6 @@ describe('overlay-ops', () => {
 
   it('nullAt writes an explicit null', () => {
     expect(nullAt({}, '/plugins/a')).toEqual({ plugins: { a: null } });
-  });
-
-  it('makeAbsent nulls base keys and omits overlay-only keys', () => {
-    const base = { plugins: { a: { schedule: '* * * * *' } } };
-    expect(makeAbsent({}, base, '/plugins/a')).toEqual({
-      plugins: { a: null },
-    });
-    expect(
-      makeAbsent({ plugins: { b: { source: 's' } } }, base, '/plugins/b'),
-    ).toEqual({});
   });
 });
 

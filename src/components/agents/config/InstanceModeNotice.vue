@@ -50,8 +50,14 @@
         class="flex flex-wrap items-center gap-1"
         data-test="trusted-sources"
       >
-        <span class="text-xs text-gray-500">Trusted sources:</span>
-        <span v-if="!trusted.length" class="text-xs text-gray-500">none</span>
+        <span class="text-xs text-gray-500 dark:text-slate-400"
+          >Trusted sources:</span
+        >
+        <span
+          v-if="!trusted.length"
+          class="text-xs text-gray-500 dark:text-slate-400"
+          >none</span
+        >
         <code
           v-for="s in trusted"
           :key="s"
@@ -63,8 +69,12 @@
         class="flex flex-wrap items-center gap-1"
         data-test="overridable-flags"
       >
-        <span class="text-xs text-gray-500">Overridable config keys:</span>
-        <span v-if="!overridable.length" class="text-xs text-gray-500"
+        <span class="text-xs text-gray-500 dark:text-slate-400"
+          >Overridable config keys:</span
+        >
+        <span
+          v-if="!overridable.length"
+          class="text-xs text-gray-500 dark:text-slate-400"
           >none</span
         >
         <code
@@ -159,7 +169,7 @@
           class="flex flex-wrap gap-2"
         >
           <code class="font-mono">{{ w.path || '/' }}</code>
-          <span v-if="w.code" class="text-gray-500">
+          <span v-if="w.code" class="text-gray-500 dark:text-slate-400">
             <CodeLabel :labels="FIELD_ERROR_CODE_LABELS" :code="w.code" />
           </span>
           <span>{{ w.message }}</span>

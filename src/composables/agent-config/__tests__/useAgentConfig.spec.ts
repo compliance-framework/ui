@@ -2,7 +2,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ref } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
 import { usePermissionsStore } from '@/stores/permissions';
+import { AxiosError, AxiosHeaders } from 'axios';
 import type { AgentConfigApi } from '../api-types';
+import { createHttpAgentConfigApi } from '../useAgentConfigApi';
 import type { AgentInstanceDetail } from '@/types/agent-config';
 import {
   configRev6,
@@ -112,6 +114,33 @@ describe('useAgentConfig', () => {
     await state.selectInstance(instanceIds.f);
     expect(state.appliedOverlayFallback.value).toBe(true);
     expect(state.appliedOverlay.value).toEqual(configRev7.overlay);
+  });
+
+  it('reports an older API as unsupported even when listInstances 404s first', async () => {
+    store.permissions = { agent: ['read'] };
+    store.loaded = true;
+    // An older API has neither route: both 404 with no {errors:{body}}.
+    const notFound = () => {
+      const err = new AxiosError('Not Found', 'ERR_BAD_REQUEST');
+      err.response = {
+        status: 404,
+        data: { message: 'Not Found' },
+        statusText: '',
+        headers: {},
+        config: { headers: new AxiosHeaders() },
+      };
+      return err;
+    };
+    const cfg = deferred<never>();
+    const get = vi.fn((url: string) =>
+      url.endsWith('/instances') ? Promise.reject(notFound()) : cfg.promise,
+    );
+    const api = createHttpAgentConfigApi({ get } as never);
+    const state = useAgentConfig(ref('agent-1'), api);
+    await state.load();
+    expect(get).toHaveBeenCalledTimes(2);
+    expect(state.status.value).toBe('unsupported');
+    cfg.reject(notFound());
   });
 
   it('ignores the failure of a superseded load', async () => {

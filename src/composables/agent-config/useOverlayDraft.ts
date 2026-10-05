@@ -27,7 +27,7 @@ import { nullAt, setAt, unsetAt } from '@/utils/agent-config/overlay-ops';
 import { getAt, hasAt, isPrefix } from '@/utils/agent-config/json-pointer';
 import {
   applyOps as applyPatchOps,
-  removeValue as removeValueAt,
+  removeValueAt,
   setValue as setValueAt,
   type PatchOp,
 } from '@/utils/agent-config/policy-data-patch';
@@ -61,6 +61,13 @@ export function createDraftState(initial?: AgentConfigRevision): DraftState {
     overlay: shallowRef<OverlayDoc>(clone(initial?.overlay ?? {})),
     comment: ref(''),
   };
+}
+
+/** Whether two overlays agree at `ptr` (both lack it, or hold equal values). */
+function sameAt(a: OverlayDoc, b: OverlayDoc, ptr: string): boolean {
+  const has = hasAt(a, ptr);
+  if (has !== hasAt(b, ptr)) return false;
+  return !has || deepEqual(getAt(a, ptr), getAt(b, ptr));
 }
 
 function isDraftState(v: unknown): v is DraftState {
@@ -165,17 +172,12 @@ export function useOverlayDraft(
     overlay.value = nullAt(overlay.value, ptr);
   }
   /**
-   * null if ANY known base (or the placeholder base) has the key, else omit: a key that only
-   * another instance's file defines must still be removed there.
+   * Removes the key from the effective config: null if ANY known base (or the placeholder
+   * base) has it, else omit (a key only another instance's file defines must still be removed
+   * there). Same rule as `removeValue` (policy-data-patch.ts `removeValueAt`).
    */
   function makeAbsent(ptr: string): void {
-    const bases = [
-      ...(options.bases?.value ?? []),
-      ...(base.value ? [base.value] : []),
-    ];
-    overlay.value = bases.some((b) => hasAt(b, ptr))
-      ? nullAt(overlay.value, ptr)
-      : unsetAt(overlay.value, ptr);
+    overlay.value = removeValueAt(overlay.value, ptr, knownBases());
   }
   /** Every known host file (the instance bases and the placeholder base). */
   function knownBases(): ConfigDoc[] {
@@ -228,11 +230,37 @@ export function useOverlayDraft(
     }
   }
 
-  /** 409 handling: adopt `latest` as the base revision, keeping or discarding the draft. */
-  function rebase(latest: AgentConfigRevision, keepDraft: boolean): void {
+  /**
+   * 409 handling: adopt `latest` as the base revision, keeping or discarding the draft. Kept,
+   * only the draft's own changes (against the old base) are re-applied onto `latest`'s overlay,
+   * so the other revision's changes survive. Returns the pointers both sides changed (the
+   * draft's value wins there).
+   */
+  function rebase(latest: AgentConfigRevision, keepDraft: boolean): string[] {
+    const theirs = clone(latest.overlay ?? {});
+    const conflicts: string[] = [];
+    if (keepDraft) {
+      const mine = overlay.value;
+      const theirChanges = changedLeafPaths(original.value, theirs);
+      let next = clone(theirs);
+      for (const p of changedLeafPaths(original.value, mine)) {
+        // Both changed it (or an ancestor / descendant of it), to different values.
+        if (
+          !sameAt(mine, theirs, p) &&
+          theirChanges.some((t) => isPrefix(t, p) || isPrefix(p, t))
+        )
+          conflicts.push(p);
+        next = hasAt(mine, p)
+          ? setAt(next, p, getAt(mine, p))
+          : unsetAt(next, p);
+      }
+      overlay.value = next;
+    } else {
+      overlay.value = clone(theirs);
+    }
     baseRevision.value = latest.revision;
-    original.value = clone(latest.overlay ?? {});
-    if (!keepDraft) overlay.value = clone(latest.overlay ?? {});
+    original.value = theirs;
+    return conflicts;
   }
 
   /** Raw YAML apply / "Clear overlay" → {}. */

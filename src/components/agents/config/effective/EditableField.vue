@@ -15,32 +15,10 @@
       >
         <slot />
       </span>
-      <i
-        v-if="access.state === 'forbidden'"
-        v-tooltip.top="FORBIDDEN_TOOLTIP"
-        role="img"
-        tabindex="0"
-        class="pi pi-lock text-xs text-gray-400"
-        :aria-label="FORBIDDEN_TOOLTIP"
-        data-test="field-forbidden"
-      />
-      <i
-        v-else-if="showAccess && access.state === 'restricted'"
-        v-tooltip.top="accessText"
-        role="img"
-        tabindex="0"
-        class="pi pi-shield text-xs text-amber-600 dark:text-amber-400"
-        :aria-label="accessText"
-        data-test="field-restricted"
-      />
-      <i
-        v-else-if="showAccess && access.state === 'readonly'"
-        v-tooltip.top="accessText"
-        role="img"
-        tabindex="0"
-        class="pi pi-info-circle text-xs text-gray-400 dark:text-slate-500"
-        :aria-label="accessText"
-        data-test="field-readonly"
+      <AccessIcon
+        v-if="access.state === 'forbidden' || showAccess"
+        :state="access.state"
+        :text="access.state === 'forbidden' ? FORBIDDEN_TOOLTIP : accessText"
       />
       <button
         v-if="editable"
@@ -53,22 +31,14 @@
       >
         <i class="pi pi-pencil text-xs" />
       </button>
-      <span
+      <PendingPill
         v-if="pending"
-        class="inline-flex items-center gap-1 rounded-full bg-sky-100 px-2 py-0.5 text-xs text-sky-800 dark:bg-sky-500/15 dark:text-sky-200"
-        :data-test="`pending-${ptr}`"
-      >
-        pending<template v-if="pendingText">: {{ pendingText }}</template>
-        <button
-          type="button"
-          class="ml-0.5"
-          :aria-label="`Undo the pending change to ${label}`"
-          :data-test="`undo-${ptr}`"
-          @click="ws!.draft.revertPointer(ptr)"
-        >
-          ↺
-        </button>
-      </span>
+        :text="pendingText"
+        :undo-label="`Undo the pending change to ${label}`"
+        :test-id="`pending-${ptr}`"
+        :undo-test-id="`undo-${ptr}`"
+        @undo="ws!.draft.revertPointer(ptr)"
+      />
     </div>
     <div
       v-if="open && editable"
@@ -117,7 +87,9 @@ import {
   fieldAccess,
 } from '@/utils/agent-config/field-access';
 import { getAt } from '@/utils/agent-config/json-pointer';
+import AccessIcon from './AccessIcon.vue';
 import InlineScalarEditor from './InlineScalarEditor.vue';
+import PendingPill from './PendingPill.vue';
 import type { ScalarKind } from './scalar';
 
 const props = withDefaults(

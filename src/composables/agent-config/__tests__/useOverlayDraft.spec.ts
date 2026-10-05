@@ -105,16 +105,65 @@ describe('useOverlayDraft', () => {
   it('rebase keeps or discards the draft', () => {
     const keep = useOverlayDraft(rev({ verbosity: 1 }, 7), ref(base));
     keep.set('/verbosity', 2);
-    keep.rebase(rev({ verbosity: 0 }, 8), true);
+    // Both sides changed /verbosity: the draft's value wins and the pointer is reported.
+    expect(keep.rebase(rev({ verbosity: 0 }, 8), true)).toEqual(['/verbosity']);
     expect(keep.baseRevision.value).toBe(8);
     expect(keep.original.value).toEqual({ verbosity: 0 });
     expect(keep.overlay.value).toEqual({ verbosity: 2 });
 
     const discard = useOverlayDraft(rev({ verbosity: 1 }, 7), ref(base));
     discard.set('/verbosity', 2);
-    discard.rebase(rev({ verbosity: 0 }, 8), false);
+    expect(discard.rebase(rev({ verbosity: 0 }, 8), false)).toEqual([]);
     expect(discard.overlay.value).toEqual({ verbosity: 0 });
     expect(discard.isDirty.value).toBe(false);
+  });
+
+  it("rebase keeps the other revision's changes and re-applies only the draft's", () => {
+    const d = useOverlayDraft(
+      rev({ verbosity: 1, plugins: { ssh: { schedule: '0 * * * *' } } }, 7),
+      ref(base),
+    );
+    d.set('/plugins/ssh/config/port', '2222');
+    d.unset('/plugins/ssh/schedule');
+    d.set('/verbosity', 3);
+    const latest = rev(
+      {
+        verbosity: 3,
+        plugins: {
+          ssh: { schedule: '0 * * * *', enabled: false },
+          c: { source: 'ghcr.io/x/c:v1' },
+        },
+      },
+      8,
+    );
+    // /verbosity changed to the same value on both sides: not a conflict.
+    expect(d.rebase(latest, true)).toEqual([]);
+    expect(d.overlay.value).toEqual({
+      verbosity: 3,
+      plugins: {
+        ssh: { enabled: false, config: { port: '2222' } },
+        c: { source: 'ghcr.io/x/c:v1' },
+      },
+    });
+    expect(d.original.value).toEqual(latest.overlay);
+    expect(d.changedPaths.value).toEqual([
+      '/plugins/ssh/config/port',
+      '/plugins/ssh/schedule',
+    ]);
+  });
+
+  it('rebase reports a pointer the other revision removed under the draft', () => {
+    const d = useOverlayDraft(
+      rev({ plugins: { ssh: { enabled: true } } }),
+      ref(base),
+    );
+    d.set('/plugins/ssh/config/port', '2222');
+    expect(d.rebase(rev({ plugins: { ssh: null } }, 8), true)).toEqual([
+      '/plugins/ssh/config/port',
+    ]);
+    expect(d.overlay.value).toEqual({
+      plugins: { ssh: { config: { port: '2222' } } },
+    });
   });
 
   it('replaceAll clears the overlay; issues add the extra (preview) ones', () => {

@@ -119,8 +119,9 @@ export function toAgentConfigError(
         message: 'The configuration is too large (request limit 1 MiB).',
       });
     case 404:
-      // A missing ROUTE (old API) has no {errors:{body}}; a missing agent does.
-      if (op === 'getConfig' && !body) {
+      // A missing ROUTE (old API) has no {errors:{body}}; a missing agent or instance does.
+      // Both initial-load ops map it, so the result doesn't depend on which 404 lands first.
+      if ((op === 'getConfig' || op === 'listInstances') && !body) {
         return new AgentConfigApiError({
           kind: 'unsupported',
           status,

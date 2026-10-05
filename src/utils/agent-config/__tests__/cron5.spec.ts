@@ -16,6 +16,14 @@ describe('validateCron5', () => {
     'CRON_TZ=UTC 0 3 * * *',
     'TZ=Europe/Lisbon 0 3 * * *',
     ' */5 * * * * ',
+    // robfig v3 quirks the agent accepts: empty comma items are skipped, Atoi takes a sign,
+    // and anything after a leading `*` / `?` in a range is ignored.
+    '1,,2 * * * *',
+    ', * * * *',
+    '+5 * * * *',
+    '*/+5 * * * *',
+    '*-5 * * * *',
+    '?-1-2/3 * * * *',
   ])('accepts %s', (expr) => {
     expect(validateCron5(expr)).toBeNull();
   });
@@ -38,6 +46,15 @@ describe('validateCron5', () => {
     ' @daily',
     '@every  5m',
     'TZ=Nowhere/Nope 0 3 * * *',
+    '0 0 * constructor *',
+    '0 0 * * __proto__',
+    '0 0 * * toString',
+    '-5 * * * *',
+    '*/-1 * * * *',
+    '*/+0 * * * *',
+    '1-2-3 * * * *',
+    '*5 * * * *',
+    '*/99999999999999999999 * * * *',
   ])('rejects %s', (expr) => {
     expect(validateCron5(expr)).not.toBeNull();
   });

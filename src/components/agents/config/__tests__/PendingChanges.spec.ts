@@ -1,18 +1,35 @@
 // R69: the sticky pending-changes bar, Review & save as ONE revision (If-Match, 409 flow),
 // gated on agent:configure.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { flushPromises, mount, enableAutoUnmount } from '@vue/test-utils';
+import {
+  flushPromises,
+  mount,
+  enableAutoUnmount,
+  type VueWrapper,
+} from '@vue/test-utils';
+import PrimeDialog from 'primevue/dialog';
 import type { AgentConfigApi } from '@/composables/agent-config/useAgentConfigApi';
 import { AgentConfigApiError } from '@/composables/agent-config/api-types';
 import { resetAgentDrafts } from '@/composables/agent-config/draftRegistry';
 import type { ConfigWorkspace } from '@/composables/agent-config/useConfigWorkspace';
 import {
   configRev7,
+  instanceIds,
+  overlayRev7,
   previewMixed,
 } from '@/composables/agent-config/__tests__/fixtures';
-import type { ConfigPreview } from '@/types/agent-config';
+import type { ConfigPreview, SaveResult } from '@/types/agent-config';
 import type { Agent } from '@/types/agents';
-import { ADMIN, READER, fakeApi, globalWith, piniaWith } from './helpers';
+import FieldHints from '../editor/FieldHints.vue';
+import SavePreviewPanel from '../editor/SavePreviewPanel.vue';
+import {
+  ADMIN,
+  READER,
+  fakeApi,
+  globalWith,
+  piniaWith,
+  workspaceHost,
+} from './helpers';
 
 vi.mock('@/components/code-editor', () => import('./codeEditorMock'));
 vi.mock('primevue/useconfirm', () => ({
@@ -61,6 +78,13 @@ async function checked(ws: ConfigWorkspace) {
   await flushPromises();
   await ws.preview.run().catch(() => undefined);
   await flushPromises();
+}
+
+/** The PrimeVue Dialog of the review (its header starts with "Review"). */
+function reviewDialog(wrapper: VueWrapper) {
+  return wrapper
+    .findAllComponents(PrimeDialog)
+    .find((d) => String(d.props('header')).startsWith('Review'))!;
 }
 
 async function mountTab(perms: Record<string, string[]> = ADMIN) {
@@ -217,5 +241,168 @@ describe('pending-changes bar (R69)', () => {
     ws.draft.set('/plugins/local-ssh/schedule', '@hourly');
     await flushPromises();
     expect(ws.blockingCount.value).toBe(0);
+  });
+  it('409: "Keep my changes" keeps the other revision and flags pointers both changed', async () => {
+    const latest = {
+      ...configRev7,
+      revision: 8,
+      createdBy: 'bob',
+      overlay: {
+        ...overlayRev7,
+        verbosity: 3,
+        plugins: {
+          ...overlayRev7.plugins,
+          c: { source: 'ghcr.io/x/c:v1' },
+        },
+      },
+    };
+    api.current.putConfig = vi.fn().mockRejectedValue(
+      new AgentConfigApiError({
+        kind: 'conflict',
+        status: 409,
+        message: 'conflict',
+        currentRevision: 8,
+      }),
+    );
+    const { wrapper, ws } = await mountTab();
+    ws.draft.set('/verbosity', 2);
+    ws.draft.set('/plugins/local-ssh/enabled', false);
+    await checked(ws);
+    await wrapper.find('[data-test="pending-review"]').trigger('click');
+    await settle();
+    (api.current.getConfig as ReturnType<typeof vi.fn>).mockResolvedValue(
+      latest,
+    );
+    await wrapper.find('[data-test="save-config"]').trigger('click');
+    await flushPromises();
+    await wrapper.find('[data-test="conflict-keep"]').trigger('click');
+    await flushPromises();
+    const overlay = ws.draft.overlay.value as {
+      verbosity: number;
+      plugins: Record<string, Record<string, unknown>>;
+    };
+    expect(overlay.plugins.c).toEqual({ source: 'ghcr.io/x/c:v1' });
+    expect(overlay.plugins['local-ssh'].enabled).toBe(false);
+    expect(overlay.verbosity).toBe(2);
+    expect(ws.draft.changedPaths.value).toEqual([
+      '/plugins/local-ssh/enabled',
+      '/verbosity',
+    ]);
+    expect(wrapper.find('[data-test="rebase-conflicts"]').text()).toContain(
+      '/verbosity',
+    );
+    expect(wrapper.find('[data-test="rebase-conflicts"]').text()).not.toContain(
+      'enabled',
+    );
+  });
+
+  it('cannot be closed while saving; edits made meanwhile stay pending', async () => {
+    let resolvePut!: (r: SaveResult) => void;
+    api.current.putConfig = vi
+      .fn()
+      .mockReturnValue(new Promise<SaveResult>((r) => (resolvePut = r)));
+    const { wrapper, ws } = await mountTab();
+    ws.draft.set('/verbosity', 2);
+    await checked(ws);
+    await wrapper.find('[data-test="pending-review"]').trigger('click');
+    await settle();
+    expect(reviewDialog(wrapper).props('closable')).toBe(true);
+    await wrapper.find('[data-test="save-config"]').trigger('click');
+    await flushPromises();
+    expect(reviewDialog(wrapper).props('closable')).toBe(false);
+    expect(reviewDialog(wrapper).props('closeOnEscape')).toBe(false);
+    expect(
+      wrapper.find('[data-test="review-back"]').attributes('disabled'),
+    ).toBeDefined();
+    // An edit lands while the PUT is in flight (e.g. from another component).
+    ws.draft.set('/plugins/local-ssh/enabled', false);
+    const sent = (api.current.putConfig as ReturnType<typeof vi.fn>).mock
+      .calls[0][1].overlay;
+    const saved = { ...configRev7, revision: 8, overlay: sent };
+    (api.current.getConfig as ReturnType<typeof vi.fn>).mockResolvedValue(
+      saved,
+    );
+    resolvePut({ revision: saved, created: true });
+    await flushPromises();
+    expect(ws.draft.baseRevision.value).toBe(8);
+    expect(ws.draft.original.value).toEqual(sent);
+    expect(ws.draft.changedPaths.value).toEqual(['/plugins/local-ssh/enabled']);
+  });
+
+  it("Esc in a nested dialog doesn't close the review", async () => {
+    const { wrapper, ws } = await mountTab();
+    ws.draft.set('/verbosity', 2);
+    await checked(ws);
+    await wrapper.find('[data-test="pending-review"]').trigger('click');
+    await settle();
+    expect(reviewDialog(wrapper).props('closeOnEscape')).toBe(true);
+    wrapper.findComponent(SavePreviewPanel).vm.$emit('childOpen', true);
+    await flushPromises();
+    expect(reviewDialog(wrapper).props('closeOnEscape')).toBe(false);
+    wrapper.findComponent(SavePreviewPanel).vm.$emit('childOpen', false);
+    await flushPromises();
+    expect(reviewDialog(wrapper).props('closeOnEscape')).toBe(true);
+  });
+
+  it('a failed live check shows the error and retries; Review stays enabled', async () => {
+    api.current.preview = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('upstream 500'))
+      .mockResolvedValue(cleanPreview);
+    const { wrapper, ws } = await mountTab();
+    ws.draft.set('/verbosity', 2);
+    await checked(ws);
+    expect(ws.preview.status.value).toBe('failed');
+    const failed = wrapper.find('[data-test="live-check-failed"]');
+    expect(failed.text()).toContain('upstream 500');
+    expect(
+      wrapper.find('[data-test="pending-review"]').attributes('disabled'),
+    ).toBeUndefined();
+    await wrapper.find('[data-test="live-check-retry"]').trigger('click');
+    await flushPromises();
+    expect(api.current.preview).toHaveBeenCalledTimes(2);
+    expect(wrapper.find('[data-test="live-check-failed"]').exists()).toBe(
+      false,
+    );
+    expect(wrapper.find('[data-test="live-check"]').text()).toContain(
+      'Checked',
+    );
+  });
+});
+
+describe('preview hints follow the current draft', () => {
+  beforeEach(() => resetAgentDrafts());
+
+  it('discarding the draft clears the shield of the last preview', async () => {
+    const ptr = '/plugins/local-ssh/source';
+    const unsafe: ConfigPreview = {
+      ...cleanPreview,
+      instances: [
+        {
+          ...cleanPreview.instances.find(
+            (i) => i.instanceId === instanceIds.a,
+          )!,
+          stale: false,
+          changes: [
+            { path: ptr, safety: 'unsafe', reason: 'untrusted-source' },
+          ],
+        },
+      ],
+    };
+    const fake = fakeApi({ preview: vi.fn().mockResolvedValue(unsafe) });
+    const out: { ws?: ConfigWorkspace } = {};
+    const wrapper = mount(
+      workspaceHost(fake, FieldHints, () => ({ ptr }), out),
+      { global: globalWith(piniaWith(ADMIN)) },
+    );
+    await flushPromises();
+    const ws = out.ws!;
+    ws.draft.set(ptr, 'ghcr.io/evil/ssh:v1');
+    await checked(ws);
+    expect(wrapper.find(`[data-test="shield-${ptr}"]`).exists()).toBe(true);
+    ws.discard();
+    await flushPromises();
+    expect(ws.ctx.currentPreview.value).toBeNull();
+    expect(wrapper.find(`[data-test="shield-${ptr}"]`).exists()).toBe(false);
   });
 });

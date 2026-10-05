@@ -27,7 +27,46 @@ export type ParseYamlResult =
   | { ok: true; value: Record<string, unknown> }
   | { ok: false; error: YamlError };
 
-/** Parses an overlay document. Empty text is `{}`; a non-mapping root is an error. */
+/** More values than an overlay plausibly has; the walk stops there. */
+const MAX_NODES = 100_000;
+
+/**
+ * Why a loaded document is not accepted, or null. js-yaml has no alias limit and loads an alias
+ * of a mapping / sequence as a shared reference, so a few hundred bytes of nested aliases
+ * expand into billions of nodes for any later walk. A container reached twice IS an alias, so
+ * the check stops at the first one, before anything is expanded. `<<` merge keys are not part
+ * of CORE_SCHEMA and would be saved as a literal "<<" key.
+ */
+function unsupported(root: unknown): string | null {
+  const seen = new Set<object>();
+  const stack: object[] = [];
+  let nodes = 0;
+  const visit = (v: unknown): string | null => {
+    if (++nodes > MAX_NODES) return 'Document is too large';
+    if (v === null || typeof v !== 'object') return null;
+    if (seen.has(v)) return 'YAML aliases are not supported';
+    seen.add(v);
+    stack.push(v);
+    return null;
+  };
+  let err = visit(root);
+  while (!err && stack.length) {
+    const v = stack.pop() as object;
+    if (!Array.isArray(v) && Object.prototype.hasOwnProperty.call(v, '<<')) {
+      return 'YAML merge keys (<<) are not supported';
+    }
+    for (const child of Object.values(v)) {
+      err = visit(child);
+      if (err) break;
+    }
+  }
+  return err;
+}
+
+/**
+ * Parses an overlay document. Empty text is `{}`; a non-mapping root, an alias of a mapping or
+ * sequence, and a `<<` merge key are errors.
+ */
 export function parseYaml(text: string): ParseYamlResult {
   if (text.trim() === '') return { ok: true, value: {} };
   let value: unknown;
@@ -50,6 +89,8 @@ export function parseYaml(text: string): ParseYamlResult {
     };
   }
   if (value === null || value === undefined) return { ok: true, value: {} };
+  const why = unsupported(value);
+  if (why) return { ok: false, error: { message: why, line: 0, column: 0 } };
   if (!isPlainObject(value)) {
     return {
       ok: false,
