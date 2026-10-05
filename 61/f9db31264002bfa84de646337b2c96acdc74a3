@@ -1,0 +1,546 @@
+lisa-addressed:
+---
+Comment (src/components/agents/config/workspace/RawOverlayDialog.vue:2):
+**High: Escape inside the YAML editor closes the dialog and throws away the user's YAML.**
+
+PrimeVue's `Dialog` defaults to `closeOnEscape: true` and listens for keydown on `document`. CodeMirror never stops Escape from propagating. The editor's own hint (`CodeEditor.vue:14`) tells keyboard users to press "Esc then Tab to leave the editor". Esc also closes CodeMirror's search panel.
+
+Both uses of Esc close this dialog. It is mounted with `v-if="rawOpen"` (`AgentConfigTab.vue`), so the unapplied YAML is lost without a confirmation. Keyboard users have no way to leave the editor without losing their work.
+
+**Suggested fix:**
+- In `CodeEditor.vue`, add `EditorView.domEventHandlers({ keydown: (e) => { if (e.key === 'Escape') e.stopPropagation(); return false; } })`. CodeMirror still gets the key, so tab-focus mode keeps working.
+- And/or pass `:close-on-escape="false"` here, and confirm before closing when the text differs from the text the dialog opened with.
+- Smaller point: the hint at `CodeEditor.vue:12` is `aria-hidden`, so screen-reader users, who need it most, never hear it. Expose it through `aria-describedby`.
+Replies:
+**lisa implementation guidance:** Fix in `CodeEditor.vue`: add `EditorView.domEventHandlers({ keydown(e) { if (e.key === 'Escape') e.stopPropagation(); return false; } })` to the extensions. CodeMirror still handles Esc (tab-focus mode and closing search), but the document-level Dialog listener no longer sees it. Also expose the hint through `aria-describedby` (unique id) instead of `aria-hidden`. Add a CodeEditor spec showing that an Escape keydown in the editor doesn't bubble to `document`.
+
+<!-- lisa-guidance-posted -->
+---
+Comment (src/components/agents/config/workspace/ReviewSaveDialog.vue:298):
+**Medium: after a 409, "Keep my changes" silently reverts the other person's revision.**
+
+`draft.rebase(latest, true)` (`useOverlayDraft.ts:232-236`) keeps the user's whole overlay document, which still holds the content of the old base. It only moves `original` and `baseRevision`. The PUT then replaces the full overlay.
+
+Example:
+1. Alice works from r7.
+2. Bob saves r8, which adds plugin `c`.
+3. Alice clicks "Keep my changes" and saves. r9 drops plugin `c`.
+
+The review diff does show the removal, but the button says "keep *my changes*", not "overwrite theirs". The test at `PendingChanges.spec.ts:138` builds `latest` with the same overlay as r7, so it can't catch this.
+
+**Suggested fix:** re-apply only the draft's changed paths (`changedPaths` against the old `original`) onto `latest.overlay`, and flag paths that both sides changed. At minimum, rename the button to something like "Overwrite with my version" and list the paths of theirs that will be reverted.
+Replies:
+**lisa implementation guidance:** Fix in `useOverlayDraft.rebase(latest, true)`:
+- Before moving `original`, compute the draft's changed pointers against the OLD `original` (`changedPaths`).
+- Rebuild `overlay` as `clone(latest.overlay)`. For each changed pointer, apply the draft's value with `setAt`, or remove it when the draft no longer has it.
+- Return the pointers that both sides changed (old original → latest differs at the same pointer). `ReviewSaveDialog` lists them in a warning ("Also changed by the other revision: …").
+
+Add a `PendingChanges` spec where `latest` adds plugin `c`; after Keep, the overlay contains both `c` and the user's edit.
+
+<!-- lisa-guidance-posted -->
+---
+Comment (src/components/agents/config/workspace/ReviewSaveDialog.vue:248):
+**Medium: closing the review while a save is in flight wipes edits made in the meantime and hides save errors.**
+
+While `saving` is true, the dialog can still be closed (X or Esc), and "Keep editing" (`SavePreviewPanel.vue:230`) is not disabled.
+
+- **Edits lost:** the user clicks Save, then "Keep editing" on a slow network, and edits a field. When the PUT resolves, `onSaved` force-syncs the draft (`syncDraftState(..., true)`) to `result.revision.overlay`. The new edit and the comment disappear without notice.
+- **Errors hidden:** if the PUT fails instead (422/403/413/network), `saveError`, `saveErrors` and `conflict` are set on an unmounted component, so nothing is shown. Only a 409 toasts.
+- **Duplicate PUT:** reopening Review and saving again sends a second PUT with the same If-Match.
+
+**Suggested fix:**
+- Set `:closable="!saving"` and `:close-on-escape="!saving"`, and disable Back while saving.
+- Better: snapshot the overlay sent in `save()`, and in `onSaved` force-sync only when `deepEqual(draft.overlay, sentOverlay)`. Otherwise rebase the newer edits onto the saved revision.
+Replies:
+**lisa implementation guidance:** Fix:
+- In `ReviewSaveDialog`, pass `:closable="!saving"` and `:close-on-escape="!saving"` to the Dialog.
+- In `SavePreviewPanel`, disable the Back / "Keep editing" button while `saving`.
+- In `ws.onSaved`, keep the force-sync but only when the current draft overlay deep-equals the overlay that was sent (pass `sent` from `save()`). Otherwise update `original`/`baseRevision` to the saved revision and keep the user's newer overlay.
+
+Add a spec.
+
+<!-- lisa-guidance-posted -->
+---
+Comment (src/components/agents/config/effective/PolicyDataNode.vue:198):
+**Medium: array children are keyed by index pointer, so an open item editor can write into the wrong item.**
+
+For arrays, `child.ptr` ends in the index (line 333). Each node keeps its own `editing`, `text`, `expanded` and `showAll` state. Only the node being edited hides its own actions (line 32), so its siblings still show the trash button.
+
+To reproduce:
+1. Take the list `[x, y, z]` and open the editor on `[1]` (`y`).
+2. Click trash on `[0]`. The list is now `[y, z]`.
+3. The node keyed `/…/1` survives with `editing = true` and the old text, but now shows `z`.
+4. Apply writes `[y, "<edited y>"]`. `z` is lost from the draft without any warning.
+
+The same thing happens with per-item undo (splice), and `expanded` state also bleeds onto the wrong item.
+
+**Suggested fix (any of these):**
+- Close the editor when the value under the node changes, e.g. `watch(() => props.value, () => { editing.value = false })`.
+- Hide sibling actions while any item editor in the list is open.
+- Key array children by a stable identity.
+Replies:
+**lisa implementation guidance:** In `PolicyDataNode.vue`, add `watch(() => props.value, () => { editing.value = false; })` (deep: false is enough, since a parent splice produces a new value reference for the shifted child). This closes a stale editor when the item under it changes. Also reset `expanded` to its default when the value's container type changes.
+
+Add a `PolicyDataSection` spec: open the editor on `[1]`, remove `[0]`, and assert the editor is closed and `z` is preserved.
+
+<!-- lisa-guidance-posted -->
+---
+Comment (src/components/agents/config/effective/PolicyDataAddForm.vue:113):
+**Medium: a `null` value for a policy_data object key silently deletes the key.**
+
+`parseNewValue('null')` returns `null`, and this validation accepts it. The hint at lines 66-67 says a JSON value keeps its type. But `setValue` writes `k: null` into the overlay, and under RFC 7396 that means delete.
+
+- **Add form:** adding `foo: null` creates no node, and the overlay gets a stray `foo: null`. It counts as a pending change but has no per-item undo.
+- **Raw JSON view** (`PolicyDataSection.vue:220`): typing `"MaxAuthTries": null` records a deletion of the file key. The `shown` watch (lines 195-203) then rewrites the editor text under the cursor, so the line the user just typed disappears.
+
+`null` is a real policy_data value (the fixtures include `nothing: null`), so users will try this.
+
+**Suggested fix:**
+- Reject `null` at object-key positions, with a message like "null can't be stored in an overlay; use Remove". Keep allowing it inside arrays, which are written whole.
+- Apply the same check in the raw view's `onInput` before calling `diffOps`.
+Replies:
+**lisa implementation guidance:** Reject `null` at object-key positions:
+- In `PolicyDataAddForm`'s `error` computed: if `!props.inArray && parsed.value.value === null`, return "null can't be stored for a key (it means delete in an overlay); use Remove".
+- In `PolicyDataSection`'s raw-JSON `onInput`: walk `parsed` and, if any object property value is `null`, set `error` with the same message and don't apply.
+- Null stays allowed inside arrays.
+
+Add specs for both.
+
+<!-- lisa-guidance-posted -->
+---
+Comment (src/utils/agent-config/validation.ts:53):
+**Medium: raw-YAML coercion silently changes plugin config and label values.**
+
+By the time this check runs, js-yaml's CORE schema has already turned the text into a number. Float-looking and prefixed literals that land on an integer pass `Number.isSafeInteger` and are sent as a different string. No blocking issue is raised.
+
+Results from `parseYaml` → `coerceStringMaps` → `validateOverlayClientSide`:
+
+| YAML | sent as |
+|---|---|
+| `mode: 0644` | `"644"` |
+| `version: 1.0` | `"1"` |
+| `exp: 1e3` | `"1000"` |
+| `hex: 0x1F` | `"31"` |
+| `zip: 01234` | `"1234"` |
+
+The notice lists the affected pointers but not the new values, so a file mode `0644` reaches the fleet as `"644"`. The comment at lines 116-117 claims `1e3` is blocked, but it isn't.
+
+**Suggested fix:**
+- Auto-coerce booleans only, and treat every number as blocking ("Quote this value").
+- Or load with a schema whose int/float types keep the source text, and coerce to that text under `config`/`labels`.
+Replies:
+**lisa implementation guidance:** In `coerceStringMaps`, only auto-coerce booleans. Leave numbers alone, so `validateOverlayClientSide` reports them as blocking "Quote this value" issues. Update the comment at lines 116-117 and the specs: `0644`, `1.0`, `1e3` and `0x1F` all block, and booleans still coerce.
+
+<!-- lisa-guidance-posted -->
+---
+Comment (src/utils/agent-config/policy-data-patch.ts:145):
+**Medium: removing the last key of an object that exists only in the overlay deletes the whole object.**
+
+`removeValue` falls back to `unsetAt`, which prunes every ancestor left empty (`overlay-ops.ts:62-72`). That pruning is right for `plugins.<p>: {}`, but inside `policy_data` an empty object is real data.
+
+Through `applyOps(diffOps(...))`, the path the tree and the raw editor both use:
+1. Add `n: {k: 1}`, which no host file has.
+2. Edit it to `n: {}`.
+3. The overlay becomes `{}`, and `n` disappears from the effective `policy_data`.
+
+A Rego policy that tells `{}` apart from "absent" now sees different input.
+
+**Suggested fix:** inside the policy_data scope, prune an emptied object only when every base has an object at that pointer. Only then is `{}` a no-op under RFC 7396. Otherwise keep it as `{}`.
+Replies:
+**lisa implementation guidance:** In `policy-data-patch.ts`'s `removeValue` (the `unsetAt` fallback), don't prune past an emptied object inside the policy_data scope unless every base has an object at that parent pointer. Simplest approach: after `unsetAt`, if the parent object pointer (still within policy_data) is now missing from the overlay AND not all bases have an object there, re-create it with `setAt(parent, {})`.
+
+Add a spec: add `n:{k:1}`, edit it to `n:{}`, and expect the overlay to keep `n: {}`.
+
+<!-- lisa-guidance-posted -->
+---
+Comment (src/composables/agent-config/useAgentConfig.ts:202):
+**Medium: detecting an older API depends on which request fails first.**
+
+Against an older API, both requests 404 with no `errors` body. Only `op === 'getConfig'` maps to `kind: 'unsupported'` (`useAgentConfigApi.ts:123`); `listInstances` maps to `'other'`. `Promise.all` rejects with whichever 404 arrives first.
+
+So about half the time the tab shows a generic "Not Found" error with a Retry button instead of "This CCF API version does not support agent configuration". A spec where the instances request 404s first ends with `status === 'error'`.
+
+**Suggested fix:**
+- Await `getConfig` first, or use `Promise.allSettled` and rethrow `getConfig`'s error first.
+- Or treat a 404 with no body as `unsupported` for every op on these routes; the API always sends `{errors:{body}}` for a missing agent or instance.
+Replies:
+**lisa implementation guidance:** In `useAgentConfigApi`'s error mapping, treat a 404 with no body (`!body`) as `kind: 'unsupported'` for the `listInstances` op as well as `getConfig`. Missing agents and instances always carry `{errors:{body}}`.
+
+Add a spec where `listInstances` 404s first and the status is `unsupported`.
+
+<!-- lisa-guidance-posted -->
+---
+Comment (src/composables/agent-config/usePreview.ts:85):
+**Medium: the debounced live preview can abort, or repeat, the Review dialog's own preview.**
+
+`schedule()` only skips when `isCurrent()` is true, and that stays false while a run for the *same* overlay is still in flight. The timer callback then calls `run()` without re-checking, and `run()` aborts the controller in flight.
+
+Flow:
+1. Opening Review calls `ws.loadDetails()`, which sets `detailsLoading` and makes `canPreview` false.
+2. The dialog then calls `preview.run()`.
+3. When the details finish loading, `canPreview` flips back to true and a live run is scheduled 1.5 s later.
+4. If the review preview takes longer than that, the live run aborts it, and `ReviewSaveDialog` shows "Request cancelled" with Retry.
+5. If it's faster, a redundant second `POST /config/preview` still goes out.
+
+Reproduced: with a pending `run()`, toggling `canPreview` false→true and advancing 1.5 s gives 2 calls, with the first signal aborted.
+
+**Suggested fix:**
+- Track the overlay of the run in flight and skip scheduling or running when it equals the current overlay.
+- And/or never let a debounced run abort an explicit `run()`.
+- And/or `stop()` live scheduling while Review is open.
+Replies:
+**lisa implementation guidance:** In `usePreview.ts`, track `inflightFor` (a clone of the overlay that the controller in flight was started for):
+- In `schedule()`, skip when the run in flight deep-equals the current overlay.
+- In the timer callback, return early when `isCurrent()` or the run in flight matches.
+- In `run()`, when a run for a deep-equal overlay is already in flight, return that promise instead of aborting it.
+
+Add a spec: a pending `run()`, toggle `canPreview` false→true, advance 1.5 s, and expect 1 call with no abort.
+
+<!-- lisa-guidance-posted -->
+---
+Comment (src/components/agents/config/workspace/PendingChangesBar.vue:48):
+**Low: a failed live preview is invisible, and Review & save stays enabled.**
+
+This span only renders the `checking` and `checked` states. Nothing in the UI uses `preview.status === 'failed'`, `preview.error` or `preview.retry`. After a 500 or a network error, "Checking…" just disappears, with no error and no retry until the next edit.
+
+The PR body says Review & save is disabled while the preview is "erroring", but `reviewDisabledReason` ignores failures. The review re-runs the preview, so this isn't a safety hole.
+
+**Suggested fix:** add a `failed` branch that shows `preview.error` with a Retry button, and either include failures in `reviewDisabledReason` or reword the PR description.
+Replies:
+**lisa implementation guidance:** In `PendingChangesBar`, add a `failed` branch: show `ws.preview.error` plus a small Retry button calling `ws.preview.retry`. Leave Review enabled, because Review re-runs the preview and is authoritative. Instead, fix the PR description wording later (I'll update the body). Add a spec.
+
+<!-- lisa-guidance-posted -->
+---
+Comment (src/components/agents/config/editor/useEditor.ts:113):
+**Low: shields and trust hints read the last preview even after the draft has moved on.**
+
+`shield()` and `trustHint()` (line 116) use `ctx.lastPreview`, while `previewIssues` correctly checks `isCurrent()`.
+
+Example:
+1. The draft sets an untrusted source, and the preview marks `/plugins/x/source` as unsafe.
+2. The user clicks Discard. The draft is clean, so `canPreview` is false and no new preview runs.
+3. The amber or red shield stays on that field indefinitely.
+
+The same happens while the draft is client-blocked or over the size limit.
+
+**Suggested fix:** expose the current preview, or `isCurrent()`, on the editor context and use it here.
+Replies:
+**lisa implementation guidance:** Expose a `currentPreview` computed on the editor context (`lastPreview` when `isCurrent()`, else null) in `editorContext`/`useConfigWorkspace`. Use it in `useEditor.shield()` and `trustHint()` instead of `ctx.lastPreview`. Add a spec where discarding the draft clears the shield.
+
+<!-- lisa-guidance-posted -->
+---
+Comment (src/components/agents/config/workspace/RawOverlayDialog.vue:144):
+**Low: a small YAML alias bomb freezes the tab.**
+
+js-yaml (CORE_SCHEMA) has no alias limit and stores aliases as shared references. `validateOverlayClientSide` then walks the expanded tree (`maskedPointers` → `walkStrings`, lines 236-240).
+
+A 430-byte document (9 nested levels × 10 aliases) parses in 0 ms, but walking or stringifying it runs for about 15 s. Pasting one freezes the tab 250 ms later. It's self-inflicted and client-only, hence Low.
+
+Separately, `<<` merge keys aren't supported under CORE_SCHEMA and pass through as a literal `"<<"` key.
+
+**Suggested fix:** reject documents with aliases (or more than N of them), or bound the walk with a node budget. Alternatively, switch to the `yaml` package and set `maxAliasCount`. Also give `<<` a clear error.
+Replies:
+**lisa implementation guidance:** In `utils/agent-config/yaml.ts` `parseYaml`:
+- Reject documents that use aliases: scan for alias tokens, or count alias nodes via a `listener` / a regex pre-check on `/(^|[\s,\[{])\*[^\s,\]}]+/m` outside quotes. js-yaml 4 has no alias limit, so the simplest robust option is: after load, walk the result with a seen-Set and fail when any object is reached twice (shared reference = alias) or when the node count exceeds 100k.
+- Also reject a literal `<<` key with "YAML merge keys (<<) are not supported".
+
+Add specs.
+
+<!-- lisa-guidance-posted -->
+---
+Comment (src/components/code-editor/index.ts:6):
+**Low: the loading fallback is always empty, and a failed chunk load leaves it stuck forever.**
+
+Vue renders `loadingComponent` without props, so `CodeEditorFallback`'s `modelValue`/`original` are never passed and its `<pre>` is always blank.
+
+No `errorComponent` or `onError` is set either. If the CodeMirror chunk fails to load (stale hashes after a deploy, a flaky network), Vue keeps rendering that empty read-only box with no message, and the raw YAML dialog can't be used.
+
+**Suggested fix:** add an `errorComponent` (for example a plain `<textarea>` bound to v-model) and an `onError` retry. Drop the unused props from the fallback.
+Replies:
+**lisa implementation guidance:** In `code-editor/index.ts`, add an `errorComponent` (a small component that renders a read-only `<pre>` or `<textarea>` with an error message, "The editor failed to load; reload the page") and `onError(err, retry, fail, attempts) { attempts <= 2 ? retry() : fail(); }`. Drop the unused props from `CodeEditorFallback` (or remove props and keep it as a plain placeholder).
+
+<!-- lisa-guidance-posted -->
+---
+Comment (src/components/agents/config/editor/SavePreviewPanel.vue:250):
+**Low: Escape in a nested dialog also closes the Review dialog and drops the 409 banner.**
+
+PrimeVue binds a document keydown listener for each open Dialog and doesn't check which one is on top. Esc in "View diff" or "Their changes" therefore closes both dialogs. Closing Review unmounts it and drops `conflict`, so the user has to save again to get the 409 back.
+
+**Suggested fix:** set `:close-on-escape="false"` on the outer dialog while a child dialog is open, or render the child dialogs outside it.
+Replies:
+**lisa implementation guidance:** In `SavePreviewPanel`, the nested "View diff" and "Their changes" dialogs should not bubble Esc to the outer Review dialog. Emit an event or expose a `childOpen` state up to `ReviewSaveDialog`, which binds `:close-on-escape="!saving && !childOpen"`. Alternatively, the child dialogs can stop propagation themselves, but PrimeVue listens on document, so gating the outer dialog is the reliable option.
+
+<!-- lisa-guidance-posted -->
+---
+Comment (src/components/agents/config/AgentConfigHistory.vue:370):
+**Low: in View and Diff, a slower earlier request can overwrite a later one.**
+
+`view()` and `diff()` have no sequence guard, and they share `dialogLoading` and `dialogError`.
+
+- **View, then View:** open View r3 (uncached and slow), close it, then open View r2. r3 resolves after r2 and replaces `viewDoc`. The dialog is titled "Overlay r2", and Download saves `…-overlay-r2.yaml` containing r3's overlay.
+- **View, then Diff:** view's `finally` clears `dialogLoading` while the diff is still loading. Because the diff texts aren't reset, the previous diff shows under the new title.
+
+**Suggested fix:** add a `dialogSeq` counter, as `fetchPage` already does with `fetchSeq`, and drop stale results. Reset `viewDoc` and the diff texts at the start of each call.
+Replies:
+**lisa implementation guidance:** In `AgentConfigHistory`, add `let dialogSeq = 0`. `view()` and `diff()` do `const seq = ++dialogSeq`, reset `viewDoc`/`diffOriginal`/`diffModified`/`dialogError` at the start, and drop results (and skip `finally` side-effects) when `seq !== dialogSeq`. Add a spec with two overlapping view calls.
+
+<!-- lisa-guidance-posted -->
+---
+Comment (src/components/agents/config/effective/InlineScalarEditor.vue:226):
+**Low: the per-key editor and the map editor handle an emptied value differently.**
+
+The comment says an empty text keeps `""` only for *overlay-only* keys, but the code keeps `""` for every `removable` field, including a config key defined in the agent's file.
+
+For the same pointer `/plugins/x/config/k`:
+- `MapFieldEditor.vue:82-88` (the "Config (N)" pencil) unsets the key, so the file value applies again.
+- This per-key pencil pins `""` instead.
+
+**Suggested fix:** move `MapFieldEditor.setValue`'s rule (unset when any base defines the key) into a shared helper and use it in both places. Update the hint to match.
+Replies:
+**lisa implementation guidance:** Extract the "empty value" rule from `MapFieldEditor.setValue` (unset when any base defines the key, else set `""`) into a small shared helper, e.g. in `useOverlayDraft` or `utils/agent-config/overlay-ops.ts`. `InlineScalarEditor.apply` and `MapFieldEditor` both call it. Update the comment and the hint text to match.
+
+<!-- lisa-guidance-posted -->
+---
+Comment (src/components/agents/config/AgentConfigHistory.vue:117):
+**Low: "Load more" shows before the first page loads and after it fails.**
+
+`page` starts at 0 and `totalPages` at 1.
+- **While loading:** a disabled "Load more" sits under "Loading revisions…".
+- **After a failed first load:** an enabled "Load more" sits next to Retry and fetches page 1 again.
+
+**Suggested fix:** `v-if="items.length && page < totalPages"`.
+Replies:
+**lisa implementation guidance:** Change it to `v-if="items.length && page < totalPages"`, and add a spec assertion that Load more is hidden while the first page loads or after it fails.
+
+<!-- lisa-guidance-posted -->
+---
+Comment (src/components/agents/config/constants.ts:23):
+**Low: Markdown backticks show up literally in the UI.**
+
+`MODE_TEXT.report`, `NOT_REPORTED_TEXT` (line 30) and `LOCKED_LEGEND` (line 33) contain backticks, but they're rendered with `{{ }}`. Users see `` `remote_config.mode` `` with the backticks, and `InstanceModeNotice.spec.ts:55` asserts that literal output.
+
+**Suggested fix:** drop the backticks, or split the strings and render the code parts in `<code>`/`CodeLabel`.
+Replies:
+**lisa implementation guidance:** Remove the backticks from `MODE_TEXT.report`, `NOT_REPORTED_TEXT` and `LOCKED_LEGEND`. Plain text is fine; there's no need for markup. Update `InstanceModeNotice.spec` and `constants.spec`.
+
+<!-- lisa-guidance-posted -->
+---
+Comment (src/components/agents/config/effective/PolicyDataNode.vue:291):
+**Low (pattern mismatch): tooltip text is hard-coded here.**
+
+AGENTS.md says tooltip text lives in `src/config/tooltips.ts` (see `docs/TOOLTIPS.md`). Here `MASKED_TOOLTIP` and `ENV_TOOLTIP` are inline, as is `MASKED_LIST_TOOLTIP` (lines 323-324). `PluginSummaryCard.vue:42` does the same.
+
+**Suggested fix:** move the static strings to `src/config/tooltips.ts` under `agents.config.*` keys.
+Replies:
+**lisa implementation guidance:** Move `MASKED_TOOLTIP`, `ENV_TOOLTIP` and `MASKED_LIST_TOOLTIP` (PolicyDataNode) and the static tooltip in `PluginSummaryCard.vue:42` into `src/config/tooltips.ts` under an `agentConfig` group, following the existing structure and `docs/TOOLTIPS.md`, and import them.
+
+<!-- lisa-guidance-posted -->
+---
+Comment (src/components/agents/config/effective/EditableField.vue:27):
+**Low (duplication): the access-icon and pending-pill markup is copied in several components.**
+
+The shield/info icons (lines 27-44) and the pending pill with ↺ (lines 56-71) appear again, with the same `showAccess` computed, in:
+- `PolicyDataSection.vue:12-45`
+- `PolicyDataNode.vue:112-140`
+- `PluginSummaryCard.vue:54-68` (a fourth copy of the icon)
+
+The classes, ARIA attributes and test ids already differ slightly between the copies, and any fix has to be made in every one of them.
+
+**Suggested fix:** extract `AccessIcon.vue` (props: `state`, `text`) and `PendingPill.vue` (props: label and text; emits undo).
+Replies:
+**lisa implementation guidance:** Extract `AccessIcon.vue` (props: `state: FieldAccessState`, `text: string`, optional `testId`) and `PendingPill.vue` (props: `label`, `title`; emits `undo`) under `components/agents/config/effective/`. Replace the copies in `EditableField`, `PolicyDataSection`, `PolicyDataNode` and `PluginSummaryCard`, keeping the existing `data-test` ids so the specs still pass.
+
+<!-- lisa-guidance-posted -->
+---
+Comment (src/utils/agent-config/cron5.ts:59):
+**Low: `validateCron5` accepts `constructor` and `__proto__` as month or weekday names.**
+
+`in` walks the prototype chain. `spec.names['constructor']` is a function, every range comparison against it is `NaN` and therefore false, so the validator returns `null` (valid).
+
+- **UI:** `'0 0 * constructor *'` and `'0 0 * * __proto__'` both pass.
+- **robfig/cron v3:** both are rejected with `failed to parse int from constructor`.
+
+**Suggested fix:** use `Object.hasOwn(spec.names, lower)`, or use `Map`s for the month and weekday names.
+Replies:
+**lisa implementation guidance:** Use `Object.hasOwn(spec.names, lower)` instead of `in`. Add spec cases for `'0 0 * constructor *'` and `'0 0 * * __proto__'`, which must be rejected.
+
+<!-- lisa-guidance-posted -->
+---
+Comment (src/utils/agent-config/cron5.ts:128):
+**Low: this blocking client-side copy of the API's schedule rule (O7) disagrees with robfig in both directions.**
+
+The header says it "Mirrors robfig/cron Parse", but robfig v3.0.1 accepts these schedules and the UI rejects them:
+- `1,,2 * * * *`: robfig's `FieldsFunc` skips empty items.
+- `+5 * * * *`: `Atoi` accepts `+5`.
+- `*-5 * * * *`: robfig ignores anything after `*`.
+
+The previous thread covers the opposite direction: the UI accepts names robfig rejects. `InlineScalarEditor` and `AddPluginDialog` treat this check as a blocking error, which contradicts the PR's "the API is the validator" stance.
+
+**Suggested fix:** make it a non-blocking hint and let the preview's `overlay-errors` decide. If it stays blocking, mirror robfig exactly.
+Replies:
+**lisa implementation guidance:** Mirror robfig exactly:
+- Split comma lists, skipping empty items as `FieldsFunc` does.
+- Parse ints with `/^[+-]?\d+$/`, then reject negatives (`+5` ok).
+- For a part starting with `*` or `?`, ignore the remainder before any `/`, matching robfig's `getRange` behaviour.
+
+Add specs for `1,,2`, `+5` and `*-5`. Keep it blocking.
+
+<!-- lisa-guidance-posted -->
+---
+Comment (src/utils/agent-config/config-diff.ts:208):
+**Low: `changedLeafPaths` reports nothing when an empty object is added or removed.**
+
+When one side is absent it's treated as `{}`, so if the other side is also `{}` the key union is empty and nothing is pushed. For example, `changedLeafPaths({}, {plugins:{p:{policy_data:{n:{}}}}})` returns `[]`.
+
+`useOverlayDraft` builds "N pending changes" and `pendingAt` from this function. The draft can therefore be dirty while showing 0 changes and no pending marker.
+
+**Suggested fix:** after the key loop, push `path` when `hasA !== hasB` and no child path was emitted.
+Replies:
+**lisa implementation guidance:** In `changedLeafPaths`, after the key loop, when `hasA !== hasB` and no child path was pushed for this subtree, push `path`. Add a spec: `({}, {plugins:{p:{policy_data:{n:{}}}}})` returns the `/plugins/p/policy_data/n` path.
+
+<!-- lisa-guidance-posted -->
+---
+Comment (src/utils/agent-config/policy-data.ts:157):
+**Low: number parsing in the policy_data editor can change or drop values silently.**
+
+- **Infinity:** `parseNewValue('1e999')` returns `Infinity` with no error. That serializes as `null`, which is an RFC 7396 delete; inside an array it becomes a `null` item.
+- **Precision:** `parseNewValue('12345678901234567890')` returns `12345678901234567000` with no warning.
+- **Non-JSON literals:** `parseScalar('0x10', 'number')` gives `16` and `'0b11'` gives `3` (lines 122-124), because `Number()` accepts literals that JSON doesn't.
+
+**Suggested fix:**
+- Reject non-finite numbers after `JSON.parse`.
+- Reject integers above `Number.MAX_SAFE_INTEGER`, or keep their text as a string.
+- In `parseScalar`, check the input against the JSON number grammar before calling `Number`.
+Replies:
+**lisa implementation guidance:** In `policy-data.ts`:
+- `parseNewValue`: after `JSON.parse`, walk the value and reject non-finite numbers, and integers whose `Math.abs` exceeds `Number.MAX_SAFE_INTEGER` ("Number too large; quote it to keep it as a string").
+- `parseScalar` (number kind): require `/^-?(0|[1-9]\d*)(\.\d+)?([eE][+-]?\d+)?$/` before calling `Number`, and apply the same finiteness and safe-integer checks.
+
+Add specs.
+
+<!-- lisa-guidance-posted -->
+---
+Comment (src/utils/agent-config/overlay-ops.ts:85):
+**Low (dead code and duplication): `makeAbsent` is only used by its own spec.**
+
+`useOverlayDraft.ts:171-179` defines its own multi-base `makeAbsent` (`bases.some(hasAt) ? nullAt : unsetAt`). `removeValue` in `policy-data-patch.ts:140-148` repeats the same logic again.
+
+The exported single-base version here is a trap: with one base it misses keys that only another host's file has.
+
+**Suggested fix:** delete this export and its test, and have `useOverlayDraft` call the shared multi-base helper.
+Replies:
+**lisa implementation guidance:** Delete `makeAbsent` from `overlay-ops.ts` and its spec. In `useOverlayDraft`, replace the local `makeAbsent` with the shared multi-base helper from `policy-data-patch.ts` (`removeValue`); export it under a neutral name if needed, e.g. `removeValueAt(overlay, ptr, bases)`.
+
+<!-- lisa-guidance-posted -->
+---
+Comment (src/components/agents/config/AgentConfigTab.vue:113):
+**Low: downloaded file names don't identify the instance.**
+
+The File view always downloads `<agent>-file-r0.yaml`. "r0" means nothing here, and every instance gets the same name. The Effective download (lines 102-107) also leaves out the instance.
+
+**Suggested fix:** include the sanitized hostname or a short instance id, e.g. `${safeName}-${host}-file.yaml`.
+Replies:
+**lisa implementation guidance:** Include the instance in download names: `${safeName}-${safeHost}-file.yaml` and `${safeName}-${safeHost}-effective.yaml`. Use the selected instance's hostname, sanitized like `safeName`, falling back to the short instance id. Drop the `r0`.
+
+<!-- lisa-guidance-posted -->
+---
+Comment (src/components/agents/config/AgentConfigHistory.vue:3):
+**Nit (convention): some text classes are missing `dark:` variants**, which AGENTS.md asks for. They are plain `text-gray-500` or `text-red-600` / `text-amber-600` classes:
+- `AgentConfigHistory.vue:3, 135, 138, 158, 159, 185`
+- `InstanceModeNotice.vue:53, 54, 66, 67, 162`
+- `PluginSummaryCard.vue:115, 151, 197, 220`
+- `PolicyDataNode.vue:63, 218`
+- `FieldHints.vue:10`
+- `KeyValueEditor.vue:20, 40, 50`
+- `SavePreviewPanel.vue:16, 192`
+- `ReviewSaveDialog.vue:83`
+
+Add `dark:text-slate-400` / `dark:text-red-400` etc., as the neighbouring lines already do.
+Replies:
+**lisa implementation guidance:** Add `dark:` variants (`dark:text-slate-400` for gray, `dark:text-red-400` for red, `dark:text-amber-400` for amber) at every location listed in the thread: AgentConfigHistory, InstanceModeNotice, PluginSummaryCard, PolicyDataNode, FieldHints, KeyValueEditor, SavePreviewPanel and ReviewSaveDialog.
+
+<!-- lisa-guidance-posted -->
+---
+Comment (src/components/agents/config/editor/KeyValueEditor.vue:186):
+**Nit: the new key is never trimmed.** `trim()` only drives the empty check, so `"foo "` passes the duplicate check against `foo` and is emitted with the trailing space. Trim the key in both `addError` and `add`.
+Replies:
+**lisa implementation guidance:** In `KeyValueEditor`, trim the new key in both `addError` (the duplicate/empty check) and `add` (the emitted key). Add a spec.
+
+<!-- lisa-guidance-posted -->
+---
+Comment (src/components/code-editor/CodeEditor.vue:115):
+**Nit: the theme is created once per mount.**
+- A fresh `EditorView.theme({...})` on every mount registers a new StyleModule each time, and these are never removed. It also ignores later `minHeight` / `maxHeight` changes. Use host styles, or one static theme in a compartment.
+- Related: `CodeMergeView.vue:39` reads `isDarkMode()` once, so an open diff doesn't follow a theme toggle, unlike `CodeEditor`.
+Replies:
+**lisa implementation guidance:** Hoist the theme:
+- Use one module-level `EditorView.theme` for the static rules.
+- Apply `minHeight`/`maxHeight` through host-element styles (`:style` on the wrapper with `.cm-editor`/`.cm-scroller` set to inherit), or a Compartment reconfigured on prop change.
+- In `CodeMergeView`, follow theme toggles the same way `CodeEditor` does (reuse its dark-mode compartment/observer approach).
+
+<!-- lisa-guidance-posted -->
+---
+Comment (src/components/agents/config/workspace/RawOverlayDialog.vue:260):
+**Nit: `CLEAR_DENIED` duplicates the permission message in `useConfigWorkspace.saveDisabledReason`.** Its branch is also effectively dead, because the dialog only opens when `canEdit` is true. Use `ws.saveDisabledReason` instead.
+Replies:
+**lisa implementation guidance:** Remove `CLEAR_DENIED` from `RawOverlayDialog` and use `ws.saveDisabledReason` (or the existing `canEdit` gate) instead.
+
+<!-- lisa-guidance-posted -->
+---
+Comment (src/components/agents/config/editor/SavePreviewPanel.vue:373):
+**Nit: duplicated logic.**
+- `errorsBlock` and `blocking` are the same expression.
+- `useConfigWorkspace.previewIssues` re-implements `review.ts` `instanceErrorsBlock` (`validated ?? !stale`).
+
+Reuse the helper so the two can't drift apart.
+Replies:
+**lisa implementation guidance:** In `SavePreviewPanel`, drop the duplicate `errorsBlock`/`blocking` field (keep one, update its users). In `useConfigWorkspace.previewIssues`, use `review.ts` `instanceErrorsBlock` instead of the inline `validated ?? !stale`.
+
+<!-- lisa-guidance-posted -->
+---
+Comment (src/components/agents/config/AgentConfigTab.vue:189):
+**Nit: the agent id is captured once here, while `useAgentConfig` (line 186) gets a reactive `toRef`.**
+
+This works only because `AgentsView` keys the tab by agent id. If that key is ever dropped, the draft, preview and save would keep targeting the previous agent while the view shows the new one.
+
+Pass the ref, or add a comment that the tab must be remounted per agent.
+Replies:
+**lisa implementation guidance:** Pass the reactive `agentId` ref (the `toRef` already built at line 186) into `useConfigWorkspace`, and read `.value` inside, where it is used for API calls and the draft registry key. If that is too invasive, add a comment on the `:key` in `AgentsView` and here saying a remount per agent is required. Prefer the ref.
+
+<!-- lisa-guidance-posted -->
+---
+Comment (src/components/agents/config/__tests__/AgentConfigTab.spec.ts:147):
+**Nit (test quality): these specs set `wrapper.vm.$.setupState.mode` / `.view` directly instead of driving the control.**
+
+The same pattern appears at lines 203-205 and 293-295, and in `AgentConfigEffectiveView.spec.ts:98-100`. The History case in this spec (lines 263-265) already emits `update:modelValue` on the SelectButton. Use that approach so the tests exercise the real control.
+Replies:
+**lisa implementation guidance:** Replace the `wrapper.vm.$.setupState.mode` / `.view` assignments, here and in `AgentConfigEffectiveView.spec.ts:98-100`, with `findComponent(SelectButton).vm.$emit('update:modelValue', ...)`, as the History case at lines 263-265 already does.
+
+<!-- lisa-guidance-posted -->
+---
+Comment (src/utils/agent-config/validation.ts:18):
+**Nit: `NAME_RE` is a client-side copy of the API's `PluginNamePattern` (rule O6), and it blocks input in `AddPluginDialog`.**
+
+The header says every other rule comes from the API preview. Either list O6 as an intentional client-side check in the header, or take the name error from the preview's `overlay-errors`.
+Replies:
+**lisa implementation guidance:** Update the `validation.ts` header to list O6 (the plugin-name pattern, `NAME_RE`) as an intentional client-side check, alongside parsing, masking and coercion, and add a note that it must match the API's `PluginNamePattern`. No behavior change.
+
+<!-- lisa-guidance-posted -->
+---
+Comment (src/utils/agent-config/__tests__/config-diff.spec.ts:49):
+**Nit (tests):**
+- **Wrong file and locale-dependent:** this `formatRelative` (`display.ts`) test lives in the config-diff spec. It also depends on the machine's locale, because `Intl.RelativeTimeFormat(undefined)` returns "há 2 horas" on pt-BR, so it fails there. Move it to `display.spec.ts` and pin the locale.
+- **Tests a constant:** `policy-data.spec.ts:119` (`expect(CHILD_PAGE).toBeGreaterThan(20)`) only asserts the value of a constant. Remove it or test the behaviour it's meant to guarantee.
+Replies:
+**lisa implementation guidance:** Move the `formatRelative` describe block into a new `utils/agent-config/__tests__/display.spec.ts`, and make it locale-independent: add an optional `locale` parameter to `formatRelative` (default `undefined`) and pass `'en'` in the test. Also delete the `expect(CHILD_PAGE).toBeGreaterThan(20)` test in `policy-data.spec.ts`.
+
+<!-- lisa-guidance-posted -->
+---
+Comment (vitest.setup.ts:82):
+**Nit: the `document.createRange` stub is dead code.** jsdom already implements `document.createRange`, so this branch never runs; drop lines 82-90.
+
+Also note in a comment that the global `ResizeObserver` stub is a no-op, so ResizeObserver callbacks never fire in any spec.
+Replies:
+**lisa implementation guidance:** Remove the dead `document.createRange` branch in `vitest.setup.ts` (lines 82-90), and add a one-line comment on the `ResizeObserver` stub saying its callbacks never fire in specs.
+
+<!-- lisa-guidance-posted -->
