@@ -42,15 +42,6 @@ export function subjectSource(ref: SubjectReference) {
   return ccfPropValue(ref, 'subject-source');
 }
 
-// The template a template-derived subject came from, and its display priority.
-export function subjectTemplate(ref: SubjectReference) {
-  const name = ccfPropValue(ref, 'subject-template');
-  if (!name) {
-    return undefined;
-  }
-  return { name, priority: ccfPropValue(ref, 'display-priority') ?? '0' };
-}
-
 const SUBJECT_KIND_LABELS: Record<SubjectKind, string> = {
   'defined-component': 'defined component',
   'system-component': 'system component',

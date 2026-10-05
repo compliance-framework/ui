@@ -62,6 +62,23 @@ describe('useSubjectSearch', () => {
     expect(suggestions.value).toEqual([]);
   });
 
+  it('keeps the latest search when an earlier one resolves after it', async () => {
+    const pay = { subjectUuid: 's-1', title: 'pay' };
+    const payments = { subjectUuid: 's-2', title: 'payments' };
+    let resolvePay!: (value: unknown) => void;
+    getMock
+      .mockReturnValueOnce(new Promise((resolve) => (resolvePay = resolve)))
+      .mockResolvedValueOnce({ data: { data: [payments] } });
+    const { suggestions, search } = useSubjectSearch();
+
+    const first = search('pay');
+    await search('payments');
+    resolvePay({ data: { data: [pay] } });
+    await first;
+
+    expect(suggestions.value).toEqual([payments]);
+  });
+
   it('narrows system components to an SSP', async () => {
     getMock.mockResolvedValue({ data: { data: [] } });
     const { search } = useSubjectSearch();

@@ -1,16 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { mount } from '@vue/test-utils';
+import { flushPromises, mount } from '@vue/test-utils';
 import { ref } from 'vue';
 import AutoComplete from '@/volt/AutoComplete.vue';
 import Select from '@/volt/Select.vue';
 import SubjectPicker from '../SubjectPicker.vue';
 import type { SubjectSummary } from '@/types/subjects';
 
-const { searchMock, suggestions, unsupported } = vi.hoisted(() => ({
-  searchMock: vi.fn(),
-  suggestions: { value: [] as unknown[] },
-  unsupported: { value: false },
-}));
+const { searchMock, suggestions, unsupported, loadSspsMock, canMock } =
+  vi.hoisted(() => ({
+    searchMock: vi.fn(),
+    suggestions: { value: [] as unknown[] },
+    unsupported: { value: false },
+    loadSspsMock: vi.fn(),
+    canMock: vi.fn<(resource: string, action: string) => boolean>(() => true),
+  }));
 
 vi.mock('@/composables/subjects/useSubjectSearch', () => ({
   useSubjectSearch: () => ({
@@ -21,12 +24,20 @@ vi.mock('@/composables/subjects/useSubjectSearch', () => ({
 }));
 
 vi.mock('@/composables/axios', () => ({
-  useDataApi: () => ({
-    data: ref([
-      { id: 'ssp-1', metadata: { title: 'Payments Platform' } },
-      { id: 'ssp-2' },
-    ]),
-  }),
+  useDataApi: () => {
+    const data = ref<unknown[] | undefined>(undefined);
+    loadSspsMock.mockImplementation(async () => {
+      data.value = [
+        { id: 'ssp-1', metadata: { title: 'Payments Platform' } },
+        { id: 'ssp-2' },
+      ];
+    });
+    return { data, execute: loadSspsMock };
+  },
+}));
+
+vi.mock('@/composables/usePermissions', () => ({
+  usePermissions: () => ({ can: canMock }),
 }));
 
 const firewall: SubjectSummary = {
@@ -76,12 +87,16 @@ function mountPicker(modelValue: SubjectSummary[] = []) {
 describe('SubjectPicker', () => {
   beforeEach(() => {
     searchMock.mockReset();
+    loadSspsMock.mockReset();
+    canMock.mockReset();
+    canMock.mockReturnValue(true);
     suggestions.value = [];
     unsupported.value = false;
   });
 
   it('offers the SSPs and searches within the chosen one', async () => {
     const wrapper = mountPicker();
+    await flushPromises();
 
     const select = wrapper.findComponent(Select);
     expect(select.props('options')).toEqual([
@@ -128,6 +143,18 @@ describe('SubjectPicker', () => {
       .trigger('click');
 
     expect(wrapper.emitted('update:modelValue')).toEqual([[[networkTeam]]]);
+  });
+
+  it('neither loads nor offers SSPs without SSP read', () => {
+    canMock.mockImplementation(
+      (resource: string, action: string) =>
+        !(resource === 'ssp' && action === 'read'),
+    );
+    const wrapper = mountPicker();
+
+    expect(loadSspsMock).not.toHaveBeenCalled();
+    expect(wrapper.findComponent(Select).exists()).toBe(false);
+    expect(wrapper.findComponent(AutoComplete).exists()).toBe(true);
   });
 
   it('is hidden when the API does not support subjects', () => {

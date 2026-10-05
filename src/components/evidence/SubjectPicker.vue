@@ -26,6 +26,7 @@
         </template>
       </AutoComplete>
       <Select
+        v-if="canReadSsps"
         v-model="sspId"
         :options="sspOptions"
         optionLabel="label"
@@ -67,13 +68,15 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { BIconX } from 'bootstrap-icons-vue';
 import AutoComplete from '@/volt/AutoComplete.vue';
 import Chip from '@/volt/Chip.vue';
 import Select from '@/volt/Select.vue';
 import TertiaryButton from '@/volt/TertiaryButton.vue';
 import { useDataApi } from '@/composables/axios';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
 import { useSubjectSearch } from '@/composables/subjects/useSubjectSearch';
 import { describeSubject, type SubjectSummary } from '@/types/subjects';
 
@@ -92,8 +95,24 @@ const emit = defineEmits<{
 }>();
 
 const { suggestions, unsupported, search } = useSubjectSearch();
-const { data: sspList } = useDataApi<SSPListItem[]>(
+const { can } = usePermissions();
+
+// The SSP narrowing needs SSP read, which submitting evidence doesn't; without it the SSP
+// list isn't fetched (it would 403) and the dropdown is left out.
+const canReadSsps = computed(() => can(RESOURCES.SSP, ACTIONS.READ));
+const { data: sspList, execute: loadSsps } = useDataApi<SSPListItem[]>(
   '/api/oscal/system-security-plans',
+  null,
+  { immediate: false },
+);
+watch(
+  canReadSsps,
+  (allowed) => {
+    if (allowed && !sspList.value) {
+      void loadSsps();
+    }
+  },
+  { immediate: true },
 );
 
 const query = ref<string | SubjectSummary>('');
