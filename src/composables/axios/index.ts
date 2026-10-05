@@ -221,10 +221,20 @@ const decamelizeKeys = (data: any, headers: AxiosHeaders) => {
   return JSON.stringify(_decamelizeKeys(data, { separator: '-', deep: true }));
 };
 
+// JSON body WITHOUT key transformation, for opaque documents whose keys must be sent verbatim
+// (e.g. agent config overlays: snake_case `policy_data`, plugin names and config keys).
+// It sets Content-Type explicitly: with a custom transformRequest axios no longer sets it,
+// and a bare JSON.stringify would go out as text/plain (agent remote-config design R13).
+const jsonBody = (data: unknown, headers: AxiosHeaders) => {
+  headers.set('Content-Type', 'application/json');
+  return JSON.stringify(data);
+};
+
 export {
   useAuthenticatedInstance,
   useGuestInstance,
   useDataApi,
   useGuestApi,
   decamelizeKeys,
+  jsonBody,
 };
