@@ -453,6 +453,25 @@ describe('policy_data section: raw JSON view', () => {
     expect(pd(ws)).toBeUndefined();
     wrapper.unmount();
   });
+  it.each([
+    ['1e999', 'an out-of-range number (Infinity, saved as null)'],
+    ['12345678901234567890', 'an integer past 2^53'],
+  ])('refuses %s (%s) instead of saving something else', async (literal) => {
+    const { wrapper, ws } = await mountSection();
+    wrapper.findComponent(SelectButton).vm.$emit('update:modelValue', 'raw');
+    await flushPromises();
+    const textarea = wrapper.find('textarea');
+    const text = (textarea.element as HTMLTextAreaElement).value;
+    await textarea.setValue(
+      text.replace(/"MaxAuthTries": \d+/, `"MaxAuthTries": ${literal}`),
+    );
+    expect(wrapper.find('[data-test="policy-data-error"]').text()).toContain(
+      'cannot be saved as typed',
+    );
+    expect(pd(ws)).toBeUndefined();
+    wrapper.unmount();
+  });
+
   it('refuses a new null for a key, but keeps nulls inside lists and existing ones', async () => {
     const { wrapper, ws } = await mountSection();
     wrapper.findComponent(SelectButton).vm.$emit('update:modelValue', 'raw');
