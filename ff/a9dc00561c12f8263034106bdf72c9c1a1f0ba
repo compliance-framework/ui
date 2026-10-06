@@ -1,0 +1,2 @@
+lisa-addressed:
+- review finding 8 (#333 part): KEY_WARNING -> agents.config.plugin.configKeyCase, 'Reset to file value' -> agents.config.field.resetToFile (KeyValueEditor, FieldHints).
