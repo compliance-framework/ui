@@ -1,0 +1,2 @@
+lisa-addressed:
+- pagination items 2 + 4 (#333 part): AgentInstancePicker PICKER_PAGE_SIZE=25 pager (picker-pager/prev/next/range), AgentConfigHeader partial-fleet note. Spec InstanceListPaging.spec.ts.
