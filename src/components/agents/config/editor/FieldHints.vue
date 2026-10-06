@@ -22,7 +22,7 @@
     >
     <button
       v-if="showReset"
-      v-tooltip.top="'Reset to file value'"
+      v-tooltip.top="RESET_TOOLTIP"
       type="button"
       class="text-xs text-sky-700 hover:underline disabled:opacity-40 dark:text-sky-300"
       :aria-label="`Reset ${ptr} to the file value`"
@@ -37,7 +37,10 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import { TOOLTIPS } from '@/config/tooltips';
 import { useEditor } from './useEditor';
+
+const RESET_TOOLTIP = TOOLTIPS['agents.config.field.resetToFile'];
 
 const props = defineProps<{
   ptr: string;

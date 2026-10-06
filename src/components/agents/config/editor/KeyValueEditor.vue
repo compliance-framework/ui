@@ -59,7 +59,7 @@
       >
         <button
           v-if="row.provenance !== 'file'"
-          v-tooltip.top="'Reset to file value'"
+          v-tooltip.top="RESET_TOOLTIP"
           type="button"
           class="text-xs text-sky-700 disabled:opacity-40 dark:text-sky-300"
           :disabled="disabled || row.locked"
@@ -140,6 +140,7 @@
 import { computed, ref } from 'vue';
 import InputText from '@/volt/InputText.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
+import { TOOLTIPS } from '@/config/tooltips';
 import ProvenanceBadge from '../ProvenanceBadge.vue';
 import type { Provenance } from '@/utils/agent-config/provenance';
 import type { Shield } from './useEditor';
@@ -174,8 +175,8 @@ const emit = defineEmits<{
   add: [key: string, value: string];
 }>();
 
-const KEY_WARNING =
-  "The agent lowercases and dot-splits keys that come from its file, and globs match case-sensitively; this key may not match the file's key";
+const KEY_WARNING = TOOLTIPS['agents.config.plugin.configKeyCase'];
+const RESET_TOOLTIP = TOOLTIPS['agents.config.field.resetToFile'];
 
 const newKey = ref('');
 const newValue = ref('');

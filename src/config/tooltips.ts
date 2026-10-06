@@ -67,6 +67,9 @@ export const TOOLTIPS = {
     'Holds masked values: a list is saved whole, which would copy the masks. Edit it in the raw JSON view and retype the masked values, or remove the whole list.',
   /** Followed by the reported library version. */
   'agents.config.plugin.libVersion': 'Built on agent library',
+  'agents.config.field.resetToFile': 'Reset to file value',
+  'agents.config.plugin.configKeyCase':
+    "The agent lowercases and dot-splits keys that come from its file, and globs match case-sensitively; this key may not match the file's key",
 
   // Add more tooltips here as needed
   // 'feature.name': 'Tooltip text here',
