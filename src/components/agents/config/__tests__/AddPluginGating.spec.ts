@@ -19,7 +19,13 @@ import {
   instancesMixed,
   remoteConfigSafe,
 } from '@/composables/agent-config/__tests__/fixtures';
-import { ADMIN, fakeApi, globalWith, piniaWith } from './helpers';
+import {
+  ADMIN,
+  fakeApi,
+  globalWith,
+  pagedListInstances,
+  piniaWith,
+} from './helpers';
 
 vi.mock('@/components/code-editor', () => import('./codeEditorMock'));
 const api = vi.hoisted(() => ({ current: null as unknown as AgentConfigApi }));
@@ -53,11 +59,7 @@ const fresh = instancesMixed.items.filter(
 );
 
 function withInstances(items: AgentInstanceSummary[]) {
-  api.current = fakeApi({
-    listInstances: vi
-      .fn()
-      .mockResolvedValue({ items, meta: instancesMixed.meta }),
-  });
+  api.current = fakeApi({ listInstances: pagedListInstances(items) });
 }
 
 async function mountTab() {

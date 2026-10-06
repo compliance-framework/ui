@@ -12,7 +12,14 @@ import { resetAgentDrafts } from '@/composables/agent-config/draftRegistry';
 import type { ConfigWorkspace } from '@/composables/agent-config/useConfigWorkspace';
 import type { Agent } from '@/types/agents';
 import { instancesMixed } from '@/composables/agent-config/__tests__/fixtures';
-import { ADMIN, READER, fakeApi, globalWith, piniaWith } from './helpers';
+import {
+  ADMIN,
+  READER,
+  fakeApi,
+  globalWith,
+  pagedListInstances,
+  piniaWith,
+} from './helpers';
 
 vi.mock('@/components/code-editor', () => import('./codeEditorMock'));
 // Confirmations accept immediately.
@@ -286,10 +293,9 @@ describe('field states (R71)', () => {
 
   it('all apply: pencil only, no shield', async () => {
     api.current = fakeApi({
-      listInstances: vi.fn().mockResolvedValue({
-        ...instancesMixed,
-        items: instancesMixed.items.filter((i) => i.mode !== 'report'),
-      }),
+      listInstances: pagedListInstances(
+        instancesMixed.items.filter((i) => i.mode !== 'report'),
+      ),
     });
     const { wrapper } = await mountTab();
     const port = wrapper.find(sel('/plugins/local-ssh/config/port'));
@@ -302,10 +308,7 @@ describe('field states (R71)', () => {
 
   it('no reporting instance yet: editable without shields', async () => {
     api.current = fakeApi({
-      listInstances: vi.fn().mockResolvedValue({
-        items: [],
-        meta: instancesMixed.meta,
-      }),
+      listInstances: pagedListInstances([]),
     });
     const tab = mount(AgentConfigTab, {
       props: { agent },
