@@ -1,0 +1,2 @@
+lisa-addressed:
+- pagination item 5 (#342 part): AddPluginGating withInstances + InlineEditing use pagedListInstances.
