@@ -1,0 +1,2 @@
+lisa-addressed:
+- review 4c1d4df03b98 (#333 part): header appends '(incl. stale, from the API's fleet counts)' when syncSummary.partial; InstanceListPaging.spec complete = 2/4, partial = 3/5 with the wording.
