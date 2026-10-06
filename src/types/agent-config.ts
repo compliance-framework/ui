@@ -194,7 +194,16 @@ export interface InstanceCounts {
 
 export interface InstancesMeta {
   desiredRevision: number;
+  /** Over ALL the agent's instances, not only the returned page. */
   counts: InstanceCounts;
+  /**
+   * The returned page (1-based), its size, every instance and the page count. The list is
+   * paginated (limit max 25): an API without these fields returned one page with everything.
+   */
+  page?: number;
+  limit?: number;
+  total?: number;
+  totalPages?: number;
 }
 
 // ---- Preview (API configPreviewResponse) ----
