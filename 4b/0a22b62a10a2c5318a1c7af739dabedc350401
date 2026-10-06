@@ -1,0 +1,2 @@
+lisa-addressed:
+- pagination items 2 + 4 (#341 part): AgentConfigTab :instance-count=state.instanceTotal. AgentConfigTab.spec: single instance 1 listInstances call no notices; 130-instance cap case; listInstances called with page query.
