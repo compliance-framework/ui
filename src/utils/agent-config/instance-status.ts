@@ -2,6 +2,7 @@
 // and `stale` (R10, R14); there is no clock logic here.
 
 import type { AgentInstanceSummary } from '@/types/agent-config';
+import { TOOLTIPS } from '@/config/tooltips';
 
 export type InstanceUiStateName =
   | 'not-reported'
@@ -123,7 +124,7 @@ export function deriveInstanceState(
     badges.push({
       key: 'one-shot',
       label: 'One-shot run',
-      tooltip: 'Runs once and exits; pruned 24 h after it was last seen',
+      tooltip: TOOLTIPS['agents.config.instance.oneShot'],
       severity: 'secondary',
     });
   }
@@ -131,8 +132,7 @@ export function deriveInstanceState(
     badges.push({
       key: 'truncated',
       label: 'Report truncated',
-      tooltip:
-        "The agent's report exceeded the size limit, so its local file was dropped: the File view and the checks against this host's file are unavailable",
+      tooltip: TOOLTIPS['agents.config.instance.truncated'],
       severity: 'warn',
     });
   }
@@ -148,8 +148,7 @@ export function deriveInstanceState(
     badges.push({
       key: 'file-warnings',
       label: `${warnings} file warning${warnings === 1 ? '' : 's'}`,
-      tooltip:
-        "Problems in this agent's local file (tolerated; the affected plugins are skipped)",
+      tooltip: TOOLTIPS['agents.config.instance.fileWarnings'],
       severity: 'warn',
     });
   }

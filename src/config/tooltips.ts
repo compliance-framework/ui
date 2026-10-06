@@ -53,6 +53,12 @@ export const TOOLTIPS = {
   // Agent configuration
   'agents.config.field.forbidden':
     'Set on the agent host; can never be changed remotely',
+  'agents.config.instance.oneShot':
+    'Runs once and exits; pruned 24 h after it was last seen',
+  'agents.config.instance.truncated':
+    "The agent's report exceeded the size limit, so its local file was dropped: the File view and the checks against this host's file are unavailable",
+  'agents.config.instance.fileWarnings':
+    "Problems in this agent's local file (tolerated; the affected plugins are skipped)",
 
   // Add more tooltips here as needed
   // 'feature.name': 'Tooltip text here',
