@@ -188,6 +188,103 @@ describe('field access (R71)', () => {
     );
   });
 
+  it("apply_safe: re-enabling a plugin the host's file disables needs a trusted source", () => {
+    const base = {
+      plugins: { ssh: { enabled: false, source: 'ghcr.io/org/ssh:v1' } },
+    };
+    const u = safe('u', { trusted_sources: [] });
+    const t = safe('t', { trusted_sources: ['ghcr.io/org/*'] });
+    const ctx = (
+      instances: AgentInstanceSummary[],
+      overlay: Record<string, unknown> | null = null,
+    ) => ({
+      instances,
+      bases: new Map(instances.map((i) => [i.instanceId, base])),
+      overlay,
+    });
+    const untrusted = fieldAccess('/plugins/ssh/enabled', ctx([u]));
+    expect(untrusted.state).toBe('readonly');
+    expect(accessTooltip(untrusted)).toContain('re-enabling a plugin');
+    expect(fieldAccess('/plugins/ssh/enabled', ctx([t])).state).toBe(
+      'editable',
+    );
+    expect(fieldAccess('/plugins/ssh/enabled', ctx([u, all('a')])).state).toBe(
+      'restricted',
+    );
+    // The overlay's source is the one that runs.
+    const moved = { plugins: { ssh: { source: 'docker.io/x/ssh:v1' } } };
+    expect(fieldAccess('/plugins/ssh/enabled', ctx([t], moved)).state).toBe(
+      'readonly',
+    );
+    // An enabled plugin, or one without a loaded file, stays data-only.
+    const on = new Map([['u', { plugins: { ssh: { source: 'x' } } }]]);
+    expect(
+      fieldAccess('/plugins/ssh/enabled', { instances: [u], bases: on }).state,
+    ).toBe('editable');
+    expect(fieldAccess('/plugins/ssh/enabled', [u]).state).toBe('editable');
+  });
+
+  it("re-enabling re-checks the plugin's kept policies and ${env:} references", () => {
+    // classify_test.go TestClassifyReenableKeptParts.
+    const rc = { trusted_sources: ['ghcr.io/trusted/*'] };
+    const t = safe('t', rc);
+    const at = (plugin: Record<string, unknown>, overlay = null as unknown) =>
+      fieldAccess('/plugins/x/enabled', {
+        instances: [t],
+        bases: new Map([['t', { plugins: { x: plugin } }]]),
+        overlay: overlay as Record<string, unknown> | null,
+      });
+    const x = {
+      enabled: false,
+      source: 'ghcr.io/trusted/p:v1',
+      policies: ['ghcr.io/evil/pol:v9', '/tmp/local-policy'],
+      config: { host: 'db', token: '${env:DB_TOKEN}' },
+    };
+    expect(accessTooltip(at(x))).toContain('re-checks its policies');
+    const noPolicies = { ...x, policies: ['ghcr.io/trusted/pol:v1'] };
+    expect(accessTooltip(at(noPolicies))).toContain('${env:}');
+    // The overlay drops the untrusted entries and the env reference.
+    expect(
+      at(x, {
+        plugins: {
+          x: {
+            policies: ['ghcr.io/trusted/pol:v1'],
+            config: { token: null },
+          },
+        },
+      }).state,
+    ).toBe('editable');
+  });
+
+  it("apply_safe without trusted_sources: a source the host's file uses can be reused", () => {
+    const u = safe('u', { trusted_sources: [] });
+    const withOther = {
+      plugins: {
+        ssh: { source: 'ghcr.io/org/ssh:v1' },
+        other: { source: 'ghcr.io/org/other:v2' },
+      },
+    };
+    const reuse = fieldAccess('/plugins/ssh/source', {
+      instances: [u],
+      bases: new Map([['u', withOther]]),
+    });
+    expect(reuse.state).toBe('restricted');
+    expect(reuse.restrictions[0]).toMatchObject({
+      partial: true,
+      reason: expect.stringContaining('only a source this host already uses'),
+    });
+    // A disabled plugin's sources are not "already used" (classify.go usedSources).
+    const onlyDisabled = {
+      plugins: { ssh: { enabled: false, source: 'ghcr.io/org/ssh:v1' } },
+    };
+    expect(
+      fieldAccess('/plugins/ssh/source', {
+        instances: [u],
+        bases: new Map([['u', onlyDisabled]]),
+      }).state,
+    ).toBe('readonly');
+  });
+
   it('labels instances by hostname, else the short id, and caps the host list', () => {
     const many = Array.from({ length: 7 }, (_, n) =>
       inst({
@@ -218,6 +315,9 @@ describe('sources (sources.go KindOf, classify.go sourceClass)', () => {
       ['plugin', false],
       ['', false],
       ['inline:ssh', false],
+      // Go's url.Parse rejects or decodes a percent escape in the authority.
+      ['foo%.com/acme/plugin:v1', false],
+      ['foo%41.com/acme/plugin:v1', false],
     ];
     for (const [s, oci] of cases) {
       expect([s, isOciSource(s)]).toEqual([s, oci]);
