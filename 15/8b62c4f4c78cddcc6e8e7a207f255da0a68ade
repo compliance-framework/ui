@@ -1,0 +1,2 @@
+lisa-addressed:
+- pagination item 1 (#328 part): api-types InstancesPageQuery, listInstances(agentId, query?).
