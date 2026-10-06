@@ -8,6 +8,32 @@
       {{ NOT_REPORTED_TEXT }}
     </p>
     <template v-else>
+      <!-- Editing waits for every reporting instance's file (useConfigWorkspace). -->
+      <template v-if="basesNotice">
+        <Message
+          v-if="ws!.failedBaseIds.value.length"
+          severity="warn"
+          data-test="bases-failed"
+        >
+          <div class="flex flex-wrap items-center gap-3">
+            <span>{{ basesNotice }}</span>
+            <SecondaryButton
+              size="small"
+              :disabled="ws!.detailsLoading.value"
+              data-test="bases-retry"
+              @click="ws!.loadDetails()"
+              >Retry</SecondaryButton
+            >
+          </div>
+        </Message>
+        <p
+          v-else
+          class="text-xs text-gray-500 dark:text-slate-400"
+          data-test="bases-loading"
+        >
+          {{ basesNotice }}
+        </p>
+      </template>
       <div class="flex flex-wrap items-center justify-between gap-2">
         <p
           v-if="appliedRevisionNote !== null"
@@ -64,7 +90,9 @@ import { computed, ref } from 'vue';
 import SelectButton from '@/volt/SelectButton.vue';
 import type { ConfigDoc, OverlayDoc, PluginReport } from '@/types/agent-config';
 import { sanitizeForDisplay } from '@/utils/agent-config/display';
-import { isPlainObject } from '@/utils/agent-config/merge-patch';
+import { getOwn, isPlainObject } from '@/utils/agent-config/merge-patch';
+import Message from '@/volt/Message.vue';
+import SecondaryButton from '@/volt/SecondaryButton.vue';
 import { pointer } from '@/utils/agent-config/json-pointer';
 import { useWorkspace } from '@/composables/agent-config/useConfigWorkspace';
 import LockedKeysPanel from './LockedKeysPanel.vue';
@@ -99,6 +127,12 @@ const effective = computed(() =>
 );
 
 const ws = useWorkspace();
+/** Why editing waits (instance files loading or failed): editors only. */
+const basesNotice = computed(() =>
+  ws && ws.ready.value && ws.canConfigure.value
+    ? ws.basesBlockedReason.value
+    : '',
+);
 
 const pluginCards = computed(() => {
   const cards: PluginCard[] = [];
@@ -115,11 +149,16 @@ const pluginCards = computed(() => {
   const overlayPlugins = props.appliedOverlay?.plugins;
   if (isPlainObject(overlayPlugins)) {
     for (const [name, v] of Object.entries(overlayPlugins)) {
-      const basePlugin = props.base?.plugins?.[name];
-      if (v === null && basePlugin && !(name in eff)) {
+      // Own properties only: a plugin may be named "constructor".
+      const basePlugin = getOwn(props.base?.plugins ?? {}, name);
+      if (
+        v === null &&
+        isPlainObject(basePlugin) &&
+        getOwn(eff, name) === undefined
+      ) {
         cards.push({
           name,
-          plugin: basePlugin,
+          plugin: basePlugin as PluginCard['plugin'],
           removed: true,
           pendingNew: false,
         });

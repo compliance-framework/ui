@@ -49,6 +49,9 @@ describe('plugin agent library badge (R76)', () => {
   });
 
   it('shows nothing for agents that do not report plugins', () => {
-    expect(view(null).find('[data-test="plugin-lib"]').exists()).toBe(false);
+    const w = view(null);
+    // The card renders: only its library badge is absent.
+    expect(w.find('[data-test="plugin-card-local-ssh"]').exists()).toBe(true);
+    expect(w.find('[data-test="plugin-lib"]').exists()).toBe(false);
   });
 });

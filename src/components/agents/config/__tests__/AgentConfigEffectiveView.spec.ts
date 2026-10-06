@@ -120,4 +120,27 @@ describe('AgentConfigEffectiveView', () => {
       'No configuration reported yet.',
     );
   });
+
+  it('matches removed plugins by own name only (a plugin may be named "constructor")', () => {
+    const removedCtor = (base: ConfigDoc) =>
+      mount(AgentConfigEffectiveView, {
+        props: {
+          effectiveDoc: mergePatch<ConfigDoc>(base, CTOR_REMOVED),
+          base,
+          appliedOverlay: CTOR_REMOVED,
+          appliedRevisionNote: null,
+          filename: 'x.yaml',
+        },
+        global: globalWith(piniaWith(READER)),
+      }).find('[data-test="plugin-card-constructor"]');
+    // The file has it and the overlay removes it: a "Removed by overlay" card.
+    const withCtor = mergePatch<ConfigDoc>(baseConfig, {
+      plugins: { constructor: { source: 'ghcr.io/x/ctor:v1' } },
+    });
+    expect(removedCtor(withCtor).text()).toContain('Removed by overlay');
+    // The file lacks it: no card (Object#constructor is not a plugin).
+    expect(removedCtor(baseConfig).exists()).toBe(false);
+  });
 });
+
+const CTOR_REMOVED: OverlayDoc = JSON.parse('{"plugins":{"constructor":null}}');

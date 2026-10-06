@@ -48,10 +48,18 @@ import {
   type FieldAccess,
 } from '@/utils/agent-config/field-access';
 
-const props = defineProps<{ access: FieldAccess }>();
+const props = defineProps<{
+  access: FieldAccess;
+  /** Why adding waits regardless of R71 (e.g. instance files still loading); '' = it does not. */
+  blockedReason?: string;
+}>();
 defineEmits<{ open: [] }>();
 
 const descId = `add-plugin-${useId()}`;
-const disabled = computed(() => props.access.state === 'readonly');
-const tooltip = computed(() => addPluginTooltip(props.access));
+const disabled = computed(
+  () => props.access.state === 'readonly' || !!props.blockedReason,
+);
+const tooltip = computed(
+  () => props.blockedReason || addPluginTooltip(props.access),
+);
 </script>

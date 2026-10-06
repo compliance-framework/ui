@@ -19,6 +19,7 @@
       <AddPluginAction
         v-if="canAddPlugin && addAccess"
         :access="addAccess"
+        :blocked-reason="addBlockedReason"
         @open="addPluginOpen = true"
       />
     </div>
@@ -70,6 +71,7 @@
           v-if="canAddPlugin && addAccess"
           class="mb-1 flex-shrink-0"
           :access="addAccess"
+          :blocked-reason="addBlockedReason"
           @open="addPluginOpen = true"
         />
       </div>
@@ -128,6 +130,7 @@ import type {
   PluginReport,
 } from '@/types/agent-config';
 import { pointer } from '@/utils/agent-config/json-pointer';
+import { getOwn, isPlainObject } from '@/utils/agent-config/merge-patch';
 import { addPluginTooltip } from '@/utils/agent-config/field-access';
 import { useWorkspace } from '@/composables/agent-config/useConfigWorkspace';
 import PluginSummaryCard from './PluginSummaryCard.vue';
@@ -188,7 +191,7 @@ function hintsOf(card: PluginCard) {
   const effDraft = ws?.draft.effectiveDraft.value.plugins ?? {};
   if (card.pendingNew) {
     hints.push({ key: 'new', label: 'new', severity: 'info' });
-  } else if (pending && !card.removed && !effDraft[card.name]) {
+  } else if (pending && !card.removed && !getOwn(effDraft, card.name)) {
     hints.push({ key: 'removal', label: 'removal', severity: 'danger' });
   } else if (pending) {
     hints.push({ key: 'pending', label: 'pending', severity: 'info' });
@@ -224,11 +227,23 @@ const canAddPlugin = computed(
 const addAccess = computed(() =>
   canAddPlugin.value ? ws!.addPluginAccess() : null,
 );
+/** Adding computes the install access over every instance's file: it waits for all of them. */
+const addBlockedReason = computed(() => ws?.basesBlockedReason.value ?? '');
 const addPluginOpen = ref(false);
+/**
+ * Names the dialog refuses: adding writes the whole plugin, so it would replace one that a
+ * host's file, the saved overlay or the draft already defines (even one this instance does
+ * not run yet).
+ */
 const existingPluginNames = computed(() => {
   const names = new Set(props.cards.map((c) => c.name));
   for (const b of ws?.bases.value ?? [])
     Object.keys(b.plugins ?? {}).forEach((n) => names.add(n));
+  for (const o of [ws?.draft.original.value, ws?.draft.overlay.value]) {
+    const plugins = o?.plugins;
+    if (!isPlainObject(plugins)) continue;
+    for (const [n, v] of Object.entries(plugins)) if (v !== null) names.add(n);
+  }
   return Array.from(names);
 });
 /** Adds the plugin to the draft and selects its (new) tab. */
