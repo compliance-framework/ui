@@ -1,11 +1,15 @@
 <template>
   <PageHeader>Agents</PageHeader>
   <PageSubHeader>
-    Register agents and manage their service account keys
+    {{
+      isAdmin
+        ? 'Register agents, manage their service account keys and configuration'
+        : 'Review and configure agents'
+    }}
   </PageSubHeader>
 
   <div class="mt-6 space-y-6">
-    <div class="flex justify-end">
+    <div v-if="isAdmin" class="flex justify-end">
       <PrimaryButton @click="openCreateAgentDialog"
         >Register Agent</PrimaryButton
       >
@@ -22,8 +26,11 @@
       </template>
       <template v-else-if="!agents?.length">
         <Message severity="warn" variant="outlined" class="m-6">
-          No agents found. Register your first agent to create service account
-          keys.
+          {{
+            isAdmin
+              ? 'No agents found. Register your first agent to create service account keys.'
+              : 'No agents found.'
+          }}
         </Message>
       </template>
       <template v-else>
@@ -36,7 +43,7 @@
               <th class="table-header">Active Key Count</th>
               <th class="table-header">Last Authenticated</th>
               <th class="table-header">Created</th>
-              <th class="table-header">Actions</th>
+              <th v-if="isAdmin" class="table-header">Actions</th>
             </tr>
           </thead>
           <tbody class="table-body">
@@ -79,7 +86,7 @@
               <td class="table-cell text-gray-600 dark:text-slate-400">
                 {{ formatDate(agent.createdAt) }}
               </td>
-              <td class="table-cell">
+              <td v-if="isAdmin" class="table-cell">
                 <div class="flex flex-wrap gap-2">
                   <TertiaryButton @click.stop="openEditAgentDialog(agent)">
                     Edit
@@ -95,8 +102,12 @@
       </template>
     </div>
 
+    <!-- overflow-clip, not overflow-hidden: it clips the rounded corners without becoming a
+         scroll container, so the Configuration tab's sticky pending-changes bar sticks to the
+         page scroll. -->
     <div
-      class="rounded-md bg-white dark:bg-slate-900 border border-ccf-300 dark:border-slate-700 overflow-hidden"
+      class="rounded-md bg-white dark:bg-slate-900 border border-ccf-300 dark:border-slate-700 overflow-clip"
+      data-test="agent-detail-card"
     >
       <div
         class="flex items-center justify-between gap-4 border-b border-ccf-300 dark:border-slate-700 px-6 py-4"
@@ -109,21 +120,28 @@
             {{
               selectedAgent
                 ? selectedAgent.description || 'No description provided.'
-                : 'Select an agent to review details and manage keys.'
+                : isAdmin
+                  ? 'Select an agent to review details and manage keys.'
+                  : 'Select an agent to review its details and configuration.'
             }}
           </p>
         </div>
-        <PrimaryButton :disabled="!selectedAgent" @click="activeTab = 'keys'">
+        <PrimaryButton
+          v-if="isAdmin"
+          :disabled="!selectedAgent"
+          @click="chooseTab('keys')"
+        >
           Manage Keys
         </PrimaryButton>
       </div>
 
       <div class="p-6">
         <template v-if="selectedAgent">
-          <Tabs v-model:value="activeTab">
+          <Tabs :value="activeTab" @update:value="chooseTab">
             <TabList>
               <Tab value="details">Details</Tab>
-              <Tab value="keys">Service Account Keys</Tab>
+              <Tab v-if="isAdmin" value="keys">Service Account Keys</Tab>
+              <Tab v-if="canReadConfig" value="config">Configuration</Tab>
             </TabList>
             <TabPanels>
               <TabPanel value="details">
@@ -172,7 +190,7 @@
                   </div>
                 </div>
 
-                <div class="mt-6 flex flex-wrap gap-3">
+                <div v-if="isAdmin" class="mt-6 flex flex-wrap gap-3">
                   <PrimaryButton @click="openEditAgentDialog(selectedAgent)">
                     Edit Agent
                   </PrimaryButton>
@@ -182,7 +200,7 @@
                 </div>
               </TabPanel>
 
-              <TabPanel value="keys">
+              <TabPanel v-if="isAdmin" value="keys">
                 <div class="pt-4 space-y-4">
                   <div class="flex justify-end">
                     <PrimaryButton @click="openCreateKeyDialog">
@@ -277,12 +295,26 @@
                   </template>
                 </div>
               </TabPanel>
+
+              <!-- TabPanel is not lazy (PrimeVue 4.4): the v-if keeps config requests to the
+                   visible tab only (D-20). -->
+              <TabPanel v-if="canReadConfig" value="config">
+                <AgentConfigTab
+                  v-if="activeTab === 'config'"
+                  :key="selectedAgent.id"
+                  :agent="selectedAgent"
+                />
+              </TabPanel>
             </TabPanels>
           </Tabs>
         </template>
         <template v-else>
           <Message severity="warn" variant="outlined">
-            Select or register an agent to manage service account keys.
+            {{
+              isAdmin
+                ? 'Select or register an agent to manage service account keys.'
+                : 'Select an agent to review its configuration.'
+            }}
           </Message>
         </template>
       </div>
@@ -457,7 +489,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, defineAsyncComponent, onMounted, ref, watch } from 'vue';
 import { isAxiosError, type AxiosError } from 'axios';
 import { useToast } from 'primevue/usetoast';
 import { useConfirm } from 'primevue/useconfirm';
@@ -473,6 +505,9 @@ import TabList from '@/volt/TabList.vue';
 import TabPanel from '@/volt/TabPanel.vue';
 import TabPanels from '@/volt/TabPanels.vue';
 import { decamelizeKeys, useDataApi } from '@/composables/axios';
+import { usePermissions } from '@/composables/usePermissions';
+import { ACTIONS, RESOURCES } from '@/constants/permissions';
+
 import { useConfigStore } from '@/stores/config';
 import type { ErrorBody, ErrorResponse } from '@/stores/types';
 import type {
@@ -483,8 +518,14 @@ import type {
   UpsertAgentRequest,
 } from '@/types/agents';
 
+// The Configuration tab (js-yaml, provenance, status views) is its own chunk, fetched the
+// first time the tab is shown; the editor and CodeMirror are split further inside it.
+const AgentConfigTab = defineAsyncComponent(
+  () => import('@/components/agents/config/AgentConfigTab.vue'),
+);
+
 type AgentDialogMode = 'create' | 'edit';
-type AgentTab = 'details' | 'keys';
+type AgentTab = 'details' | 'keys' | 'config';
 
 interface AgentFormData {
   name: string;
@@ -502,7 +543,35 @@ const toast = useToast();
 const confirm = useConfirm();
 const configStore = useConfigStore();
 
-const activeTab = ref<AgentTab>('details');
+// R40: the page is readable with agent:read; registration, keys and CRUD stay admin-only and
+// are hidden (not disabled) for everyone else, since they belong to a different role.
+const { can, canManageAdmin, loaded, hydrate } = usePermissions();
+const canReadConfig = computed(() => can(RESOURCES.AGENT, ACTIONS.READ));
+
+// can() is optimistic until /me/permissions hydrates (D-21): admin-only UI and the admin-only
+// keys request wait for it, so a non-admin never flashes admin buttons or fires GET …/keys.
+// If hydration fails, fall back to the optimistic answer (the PDP remains the real gate).
+const permissionsReady = ref(loaded.value);
+if (!permissionsReady.value) {
+  Promise.resolve(hydrate())
+    .catch(() => undefined)
+    .finally(() => {
+      permissionsReady.value = true;
+    });
+}
+const isAdmin = computed(() => permissionsReady.value && canManageAdmin.value);
+
+function defaultTab(): AgentTab {
+  return isAdmin.value || !canReadConfig.value ? 'details' : 'config';
+}
+
+const activeTab = ref<AgentTab>(defaultTab());
+// Once the user picks a tab, permission changes no longer move them.
+let tabChosen = false;
+function chooseTab(tab: string | number) {
+  tabChosen = true;
+  activeTab.value = tab as AgentTab;
+}
 const selectedAgentId = ref<string | null>(null);
 const apiBaseUrl = ref('');
 
@@ -632,7 +701,7 @@ watch(
     if (!items?.length) {
       selectedAgentId.value = null;
       agentKeys.value = [];
-      activeTab.value = 'details';
+      activeTab.value = defaultTab();
       return;
     }
 
@@ -649,9 +718,10 @@ watch(
 );
 
 watch(
-  () => selectedAgentId.value,
-  async (agentId) => {
-    if (!agentId) {
+  [() => selectedAgentId.value, () => isAdmin.value],
+  async ([agentId, admin]) => {
+    // Keys are admin-only: never request them (and never trigger a 403 toast) otherwise.
+    if (!admin || !agentId) {
       agentKeys.value = [];
       return;
     }
@@ -660,6 +730,15 @@ watch(
   },
   { immediate: true },
 );
+
+// When permissions settle, land on the right default tab (Configuration for non-admins) unless
+// the user already picked one; never leave a non-admin on the admin-only Keys tab.
+watch(permissionsReady, (ready) => {
+  if (ready && !tabChosen) activeTab.value = defaultTab();
+});
+watch(isAdmin, (admin) => {
+  if (!admin && activeTab.value === 'keys') activeTab.value = defaultTab();
+});
 
 watch(
   () => agentsError.value,

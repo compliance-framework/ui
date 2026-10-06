@@ -1,10 +1,15 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { mount } from '@vue/test-utils';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { mount, enableAutoUnmount } from '@vue/test-utils';
 import { nextTick, ref } from 'vue';
 import SystemSecurityPlanCreateView from '@/views/system-security-plans/SystemSecurityPlanCreateView.vue';
 import SystemSecurityPlanListView from '@/views/system-security-plans/SystemSecurityPlanListView.vue';
 import SystemSecurityPlanSystemImplementationEditorView from '@/views/system-security-plans/SystemSecurityPlanSystemImplementationEditorView.vue';
 import type { SystemSecurityPlan } from '@/oscal';
+
+// PrimeVue's TabList schedules a 150 ms ink-bar update on mount and never clears it; a wrapper
+// left mounted lets it fire after this file's jsdom environment is torn down
+// ("HTMLElement is not defined"). Unmounting nulls its refs, so the timer becomes a no-op.
+enableAutoUnmount(afterEach);
 
 const push = vi.fn();
 const setSecurityPlan = vi.fn();
