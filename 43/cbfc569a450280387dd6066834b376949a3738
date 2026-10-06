@@ -1,0 +1,5 @@
+lisa-addressed:
+- #325 PRRT_kwDONe0Wms6pAF9a + PRRT_kwDONe0Wms6pXNIw: apply_safe enabled on a plugin the loaded base disables -> reenableVerdict: trusted effective source, kept policies classify safe, no ${env:} in effective config; else no(). Without a loaded base it stays YES (advisory).
+- #325 PRRT_kwDONe0Wms6pAF84: apply_safe without trusted_sources, source is partial when usedSources is non-empty. usedSources skips disabled plugins (API classify.go).
+- #325 PRRT_kwDONe0Wms6pAF92: REGISTRY_RE no longer allows %.
+- #325 PRRT_kwDONe0Wms6pXNKY (Should-fix, partly): agentconfig-conformance.json transcribed from API pkg/agentconfig tests @83ed7d6 and asserted against glob/cron5/field-access (+NAME_RE in #326). Generating it from the API is NOT done — left open for the reviewer.
