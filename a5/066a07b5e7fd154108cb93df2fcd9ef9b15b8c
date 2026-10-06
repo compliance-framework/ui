@@ -1,0 +1,4 @@
+lisa-addressed:
+- #326 PRRT_kwDONe0Wms6pXNTX (blocker): validateOverlayClientSide blocks non-finite numbers and integers past 2^53 anywhere (unstorableNumberPointers); also #328 policy-data reuse and #337 PolicyDataSection raw JSON guard (spec in #338).
+- #326 PRRT_kwDONe0Wms6pAGI7: arrayElementChanges trims common prefix/suffix before LCS; regression at 600x601.
+- #326 PRRT_kwDONe0Wms6pAGKD: sanitizeForDisplay spec (removal from copy, input unchanged).
