@@ -5,6 +5,7 @@
 
 import { REDACTED_MASK } from '@/types/agent-config';
 import { clone, getOwn, isPlainObject, setOwn } from './merge-patch';
+import { isStorableNumber, unstorableNumberPointers } from './validation';
 
 export type JsonType =
   | 'string'
@@ -113,20 +114,9 @@ export function removeIn<T>(root: T, path: DataPath): T {
 const JSON_NUMBER_RE = /^-?(0|[1-9]\d*)(\.\d+)?([eE][+-]?\d+)?$/;
 const NUMBER_TOO_LARGE = 'Number too large';
 
-/** True when `n` survives a JSON round trip as typed: finite, and an integer only up to 2^53. */
-function isStorableNumber(n: number): boolean {
-  return (
-    Number.isFinite(n) &&
-    !(Number.isInteger(n) && Math.abs(n) > Number.MAX_SAFE_INTEGER)
-  );
-}
-
 /** Whether `v` (a JSON.parse result) holds a number that would not be stored as typed. */
-function hasUnstorableNumber(v: unknown): boolean {
-  if (typeof v === 'number') return !isStorableNumber(v);
-  if (Array.isArray(v)) return v.some(hasUnstorableNumber);
-  if (isPlainObject(v)) return Object.values(v).some(hasUnstorableNumber);
-  return false;
+export function hasUnstorableNumber(v: unknown): boolean {
+  return unstorableNumberPointers(v).length > 0;
 }
 
 /**
