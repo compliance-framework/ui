@@ -50,6 +50,10 @@ export const TOOLTIPS = {
   'statement.props': '', // TODO: Add tooltip
   'statement.links': '', // TODO: Add tooltip
 
+  // Agent configuration
+  'agents.config.field.forbidden':
+    'Set on the agent host; can never be changed remotely',
+
   // Add more tooltips here as needed
   // 'feature.name': 'Tooltip text here',
 } as const;

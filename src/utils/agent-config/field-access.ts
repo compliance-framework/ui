@@ -22,6 +22,7 @@
 // particular change.
 
 import { LOCKED_KEYS } from '@/types/agent-config';
+import { TOOLTIPS } from '@/config/tooltips';
 import type {
   AgentInstanceSummary,
   ChangeSafety,
@@ -74,8 +75,7 @@ export interface AccessContext {
   overlay?: OverlayDoc | null;
 }
 
-export const FORBIDDEN_TOOLTIP =
-  'Set on the agent host; can never be changed remotely';
+export const FORBIDDEN_TOOLTIP = TOOLTIPS['agents.config.field.forbidden'];
 
 /** `api`, `daemon`, `remote_config` and anything below them (R23, R30). */
 export function isForbiddenPointer(ptr: string): boolean {
