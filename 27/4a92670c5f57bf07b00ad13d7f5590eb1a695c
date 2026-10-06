@@ -1,0 +1,2 @@
+lisa-addressed:
+- pagination item 2 (#327 part): summarizeSync(instances, states, counts?) -> total/inSync/expected(inSync+outOfSync)/stale/notReported(unknown) from counts; partial when rows < counts.total (reportOnly null, problems from loaded rows). fixtures meta page fields.
