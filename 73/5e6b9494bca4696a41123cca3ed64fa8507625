@@ -1,0 +1,2 @@
+lisa-addressed:
+- review findings 1 (#339 part: PluginTabs hintsOf, AgentConfigEffectiveView removed card via getOwn + isPlainObject), 2 (existingPluginNames += non-null plugin keys of draft.original/draft.overlay), 6 (#339 part: AddPluginAction blockedReason; bases-loading / bases-failed + Retry notice in AgentConfigEffectiveView), 4 (#339 part: PluginLibVersion.spec anchors on the card). Specs: PluginTabsWorkspace.spec.ts (repro #2 + #3 tab hint + gating/retry), AgentConfigEffectiveView.spec constructor case.
