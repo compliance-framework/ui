@@ -36,6 +36,8 @@ export async function listAllInstances(
     limit: INSTANCE_PAGE_LIMIT,
   });
   const byId = new Map(res.items.map((i) => [i.instanceId, i]));
+  // A row seen twice means the list moved under the pages: some other row was skipped.
+  let shifted = false;
   let page = 1;
   while (page < (res.meta.totalPages ?? 1) && page < maxPages) {
     page++;
@@ -43,14 +45,14 @@ export async function listAllInstances(
       page,
       limit: INSTANCE_PAGE_LIMIT,
     });
-    for (const i of res.items)
-      if (!byId.has(i.instanceId)) byId.set(i.instanceId, i);
+    for (const i of res.items) {
+      if (byId.has(i.instanceId)) shifted = true;
+      else byId.set(i.instanceId, i);
+    }
   }
-  const items = Array.from(byId.values());
-  const total = res.meta.counts?.total ?? res.meta.total ?? items.length;
   return {
-    items,
+    items: Array.from(byId.values()),
     meta: res.meta,
-    partial: page < (res.meta.totalPages ?? 1) || items.length < total,
+    partial: shifted || page < (res.meta.totalPages ?? 1),
   };
 }
