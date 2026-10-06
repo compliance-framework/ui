@@ -90,6 +90,7 @@ import {
   type PlainObject,
 } from '@/utils/agent-config/merge-patch';
 import { diffOps } from '@/utils/agent-config/policy-data-patch';
+import { hasUnstorableNumber } from '@/utils/agent-config/policy-data';
 import { accessTooltip, fieldAccess } from '@/utils/agent-config/field-access';
 import type { Provenance } from '@/utils/agent-config/provenance';
 import ProvenanceBadge from '../ProvenanceBadge.vue';
@@ -190,6 +191,12 @@ function onInput(value: string) {
   }
   if (!isPlainObject(parsed)) {
     error.value = 'Policy data must be a JSON object.';
+    return;
+  }
+  // 1e999 parses as Infinity (saved as null, an RFC 7396 delete) and big integers lose digits.
+  if (hasUnstorableNumber(parsed)) {
+    error.value =
+      'A number cannot be saved as typed (not finite, or more digits than 2^53); quote it to keep it as text.';
     return;
   }
   // Only what really changed, at the pointers that changed.
