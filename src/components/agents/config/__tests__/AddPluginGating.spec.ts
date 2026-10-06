@@ -14,6 +14,8 @@ import type { ConfigWorkspace } from '@/composables/agent-config/useConfigWorksp
 import type { AgentInstanceSummary } from '@/types/agent-config';
 import type { Agent } from '@/types/agents';
 import {
+  configRev7,
+  detailFor,
   instancesMixed,
   remoteConfigSafe,
 } from '@/composables/agent-config/__tests__/fixtures';
@@ -212,16 +214,21 @@ describe('add-plugin gating (R71)', () => {
   });
 
   it("keeps the shield on the new plugin's tab, card and fields", async () => {
-    withInstances([
-      ...fresh.filter((i) => i.mode === 'apply_safe'),
-      {
-        ...fresh[0],
-        instanceId: '0f5e2c1a-0000-4000-8000-0000000000aa',
-        hostname: 'ip-all',
-        mode: 'apply_all',
-        remoteConfig: { ...remoteConfigSafe, mode: 'apply_all' },
-      },
-    ]);
+    const all: AgentInstanceSummary = {
+      ...fresh[0],
+      instanceId: '0f5e2c1a-0000-4000-8000-0000000000aa',
+      hostname: 'ip-all',
+      mode: 'apply_all',
+      remoteConfig: { ...remoteConfigSafe, mode: 'apply_all' },
+    };
+    withInstances([...fresh.filter((i) => i.mode === 'apply_safe'), all]);
+    // ip-all's file loads too: editing waits for every reporting instance's file.
+    const fallback = api.current.getInstance;
+    api.current.getInstance = vi.fn(async (agentId: string, id: string) =>
+      id === all.instanceId
+        ? detailFor(all, configRev7.overlay ?? {})
+        : fallback(agentId, id),
+    );
     const { wrapper, ws } = await mountTab();
     await openDialog(wrapper, 'docker.io/acme/extra:v1');
     expect(
