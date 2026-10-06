@@ -1,0 +1,4 @@
+lisa-addressed:
+- #323 PRRT_kwDONe0Wms6pALLi + PRRT_kwDONe0Wms6pXM-B (ianmiell CORE-INPUT-001): parseYaml rejects number scalars that would not be saved as typed — non-finite (.inf/.nan), not plain decimal (0644, 0x1F, 0o17, +5, !!int 0644), integers past 2^53 without . or e — in every field and in mapping keys, with line/column. 1e999 is not a YAML float, so it stays the string typed.
+- #323 PRRT_kwDONe0Wms6pALMI: explicit null/~ root is 'Overlay must be a mapping'; comment-only text (no node with content, tracked by the js-yaml listener) is {}.
+- #323 PRRT_kwDONe0Wms6pALMg + PRRT_kwDONe0Wms6pALMx: provenance uses hasAt alone for the file; walking the overlay, an array/scalar ancestor replaces the subtree (nulls below are data; descendants classified by presence in the replacement).
