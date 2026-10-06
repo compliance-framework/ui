@@ -1,0 +1,2 @@
+lisa-addressed:
+- review 4c1d4df03b98: summarizeSync rows when complete (inSync/expected/reportOnly/stale/notReported as before, total from counts); counts (incl. stale) only when partial. Specs: 'a stale instance is never counted as in sync (complete list with counts)', complete-list row numbers (2/4), partial case uses counts.
