@@ -62,7 +62,7 @@ describe('validateOverlayClientSide (R89: client-only checks)', () => {
     ]);
   });
 
-  it.each(['0644', '1.0', '1e3', '0x1F', '01234'])(
+  it.each(['1.0', '1e3'])(
     'blocks the YAML number %s instead of sending a different string',
     (text) => {
       const r = parseYaml(`plugins:\n  ssh:\n    config:\n      v: ${text}\n`);
@@ -78,6 +78,32 @@ describe('validateOverlayClientSide (R89: client-only checks)', () => {
       ]);
     },
   );
+
+  it.each(['0644', '0x1F', '01234'])(
+    'the YAML parser already rejects the ambiguous number %s',
+    (text) => {
+      expect(
+        parseYaml(`plugins:\n  ssh:\n    config:\n      v: ${text}\n`).ok,
+      ).toBe(false);
+    },
+  );
+
+  it('blocks numbers JSON cannot carry as typed, in every field', () => {
+    // Raw JSON views: JSON.parse gives Infinity for 1e999 and rounds 20-digit integers.
+    const o = JSON.parse(
+      '{"verbosity": 1e999, "plugins": {"p": {"policy_data": {"limit": 1e999, "id": 12345678901234567890, "ok": [1, 2.5, -0, 9007199254740991]}}}}',
+    ) as OverlayDoc;
+    (o.plugins!.p!.policy_data as Record<string, unknown>).nan = NaN;
+    const ptrs = validateOverlayClientSide(o)
+      .filter((i) => i.blocking && /cannot be saved as typed/.test(i.message))
+      .map((i) => i.ptr);
+    expect(ptrs).toEqual([
+      '/verbosity',
+      '/plugins/p/policy_data/limit',
+      '/plugins/p/policy_data/id',
+      '/plugins/p/policy_data/nan',
+    ]);
+  });
 });
 
 describe('coerceStringMaps (R27)', () => {

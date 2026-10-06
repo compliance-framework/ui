@@ -86,6 +86,33 @@ describe('element-level array changes', () => {
     expect(arrayElementChanges([], [1, 2])).toHaveLength(2);
   });
 
+  it('keeps insertion alignment for arrays past the LCS limit', async () => {
+    const { arrayElementChanges } = await import('../config-diff');
+    const before = Array.from({ length: 600 }, (_, i) => `item-${i}`);
+    // 600 × 601 cells is past the limit: one insertion is still one addition.
+    expect(arrayElementChanges(before, ['new', ...before])).toEqual([
+      { kind: 'added', afterIndex: 0, after: 'new' },
+    ]);
+    const inserted = [...before.slice(0, 3), 'new', ...before.slice(3)];
+    expect(arrayElementChanges(before, inserted)).toEqual([
+      { kind: 'added', afterIndex: 3, after: 'new' },
+    ]);
+    const removed = before.filter((_, i) => i !== 10);
+    expect(arrayElementChanges(before, removed)).toEqual([
+      { kind: 'removed', beforeIndex: 10, afterIndex: 10, before: 'item-10' },
+    ]);
+    const edited = before.map((v, i) => (i === 300 ? 'changed' : v));
+    expect(arrayElementChanges(before, edited)).toEqual([
+      {
+        kind: 'changed',
+        beforeIndex: 300,
+        afterIndex: 300,
+        before: 'item-300',
+        after: 'changed',
+      },
+    ]);
+  });
+
   it('diffConfigs expands policy_data arrays only', () => {
     const before = {
       plugins: {

@@ -1,7 +1,8 @@
 // Client-only overlay checks (R89): what the API cannot tell the editor, or tells only after a
 // round trip that would fail anyway: a mapping overlay (parsing), masked values copied from a
 // report, unquoted plugin config/label scalars (R27, booleans coerced) and the plugin-name
-// pattern (O6, NAME_RE: AddPluginDialog checks a name before it is part of any overlay). Every
+// pattern (O6, NAME_RE: AddPluginDialog checks a name before it is part of any overlay), and
+// numbers JSON cannot carry as typed (Infinity / NaN become null, a delete). Every
 // other rule (O1–O11) comes from the API's debounced preview (POST …/config/preview); the API
 // and the agent stay authoritative.
 
@@ -37,9 +38,8 @@ export function byteSize(str: string): number {
 /**
  * R27: plugin config and label values are strings. Converts BOOLEAN values of
  * `plugins.*.config` / `labels` to "true" / "false" (no information is lost). Numbers are left
- * for the blocking "Quote this value" check: YAML has already lost their source text (`0644`,
- * `1.0`, `1e3`, `0x1F` all load as numbers whose String() differs from what was typed).
- * Objects and arrays are left for the (blocking) validation too.
+ * for the blocking "Quote this value" check: `1.0` and `1e3` load as numbers whose String()
+ * differs from what was typed. Objects and arrays are left for the (blocking) validation too.
  */
 export function coerceStringMaps(overlay: OverlayDoc): {
   overlay: OverlayDoc;
@@ -68,6 +68,31 @@ export function coerceStringMaps(overlay: OverlayDoc): {
     }
   }
   return { overlay: out ?? overlay, coerced };
+}
+
+/** True when `n` survives a JSON round trip as typed: finite, and an integer only up to 2^53. */
+export function isStorableNumber(n: number): boolean {
+  return (
+    Number.isFinite(n) &&
+    !(Number.isInteger(n) && Math.abs(n) > Number.MAX_SAFE_INTEGER)
+  );
+}
+
+/** Pointers of every number in `doc` that would not be stored as typed (isStorableNumber). */
+export function unstorableNumberPointers(doc: unknown): string[] {
+  const out: string[] = [];
+  const walk = (ptr: string, v: unknown) => {
+    if (typeof v === 'number') {
+      if (!isStorableNumber(v)) out.push(ptr);
+    } else if (Array.isArray(v)) {
+      v.forEach((x, i) => walk(`${ptr}/${i}`, x));
+    } else if (isPlainObject(v)) {
+      for (const [k, x] of Object.entries(v))
+        walk(`${ptr}/${escapeToken(k)}`, x);
+    }
+  };
+  walk('', doc);
+  return out;
 }
 
 function walkStrings(
@@ -128,6 +153,16 @@ export function validateOverlayClientSide(overlay: OverlayDoc): ClientIssue[] {
         }
       }
     }
+  }
+
+  // JSON.stringify writes Infinity / NaN as null, which RFC 7396 reads as a delete of that key
+  // on every host, and integers above 2^53 lose digits.
+  for (const ptr of unstorableNumberPointers(overlay)) {
+    add(
+      ptr,
+      'This number cannot be saved as typed (not finite, or more digits than 2^53); quote it to keep it as text',
+      true,
+    );
   }
 
   // R25: a masked value copied from a report would be saved literally.

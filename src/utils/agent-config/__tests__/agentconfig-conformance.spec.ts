@@ -12,6 +12,7 @@ import fixture from './fixtures/agentconfig-conformance.json';
 import { configKeyOverridable, sourceTrusted } from '../glob';
 import { validateCron5 } from '../cron5';
 import { fieldAccess, sourceKind } from '../field-access';
+import { NAME_RE } from '../validation';
 
 interface Conformance {
   trustedSources: {
@@ -28,6 +29,7 @@ interface Conformance {
   }[];
   sourceKinds: [string, 'oci' | 'local'][];
   schedules: { valid: string[]; invalid: string[] };
+  pluginNames: { valid: string[]; invalid: string[] };
   applySafe: {
     cases: {
       name: string;
@@ -114,6 +116,14 @@ describe('pkg/agentconfig conformance', () => {
 
   it.each(cases.schedules.invalid)('ParseSchedule(%j) fails', (expr) => {
     expect(validateCron5(expr)).not.toBeNull();
+  });
+
+  it.each(cases.pluginNames.valid)('PluginNamePattern accepts %j', (name) => {
+    expect(NAME_RE.test(name)).toBe(true);
+  });
+
+  it.each(cases.pluginNames.invalid)('PluginNamePattern rejects %j', (name) => {
+    expect(NAME_RE.test(name)).toBe(false);
   });
 
   it.each(cases.applySafe.cases)(

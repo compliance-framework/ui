@@ -23,13 +23,15 @@ export interface ElementChange {
   after?: unknown;
 }
 
-/** Above this many LCS cells, arrays are compared index by index. */
+/** Above this many LCS cells (after trimming the common ends), the rest is compared index by index. */
 const LCS_LIMIT = 250_000;
 
 /**
  * Element-level changes from `before` to `after`: a longest-common-subsequence alignment (so an
  * insertion does not shift every later item into a "change"), where a removal and an addition
- * at the same spot pair into a `changed` element.
+ * at the same spot pair into a `changed` element. The common prefix and suffix are matched
+ * first, so one edit in an array of any size (the usual case) aligns exactly in linear memory;
+ * only a middle larger than LCS_LIMIT cells falls back to index by index.
  */
 export function arrayElementChanges(
   before: readonly unknown[],
@@ -39,40 +41,59 @@ export function arrayElementChanges(
   const m = after.length;
   type Step = { op: 'eq' | 'del' | 'ins'; i: number; j: number };
   const steps: Step[] = [];
-  if (n * m > LCS_LIMIT) {
-    for (let k = 0; k < Math.max(n, m); k++) {
-      if (k < n && k < m && deepEqual(before[k], after[k])) {
-        steps.push({ op: 'eq', i: k, j: k });
+  let pre = 0;
+  while (pre < n && pre < m && deepEqual(before[pre], after[pre])) pre++;
+  let suf = 0;
+  while (
+    suf < n - pre &&
+    suf < m - pre &&
+    deepEqual(before[n - 1 - suf], after[m - 1 - suf])
+  ) {
+    suf++;
+  }
+  // The middle still to align: before[pre, ne) and after[pre, me).
+  const ne = n - suf;
+  const me = m - suf;
+  const bn = ne - pre;
+  const bm = me - pre;
+  if (bn * bm > LCS_LIMIT) {
+    for (let k = 0; k < Math.max(bn, bm); k++) {
+      const i = pre + k;
+      const j = pre + k;
+      if (i < ne && j < me && deepEqual(before[i], after[j])) {
+        steps.push({ op: 'eq', i, j });
         continue;
       }
-      if (k < n) steps.push({ op: 'del', i: k, j: Math.min(k, m) });
-      if (k < m) steps.push({ op: 'ins', i: Math.min(k, n), j: k });
+      if (i < ne) steps.push({ op: 'del', i, j: Math.min(j, me) });
+      if (j < me) steps.push({ op: 'ins', i: Math.min(i, ne), j });
     }
   } else {
-    // lcs[i][j]: LCS length of before[i:] and after[j:].
-    const lcs = Array.from({ length: n + 1 }, () =>
-      new Array<number>(m + 1).fill(0),
+    // lcs[a][b]: LCS length of before[pre + a, ne) and after[pre + b, me).
+    const lcs = Array.from({ length: bn + 1 }, () =>
+      new Array<number>(bm + 1).fill(0),
     );
-    for (let i = n - 1; i >= 0; i--) {
-      for (let j = m - 1; j >= 0; j--) {
-        lcs[i][j] = deepEqual(before[i], after[j])
-          ? lcs[i + 1][j + 1] + 1
-          : Math.max(lcs[i + 1][j], lcs[i][j + 1]);
+    for (let a = bn - 1; a >= 0; a--) {
+      for (let b = bm - 1; b >= 0; b--) {
+        lcs[a][b] = deepEqual(before[pre + a], after[pre + b])
+          ? lcs[a + 1][b + 1] + 1
+          : Math.max(lcs[a + 1][b], lcs[a][b + 1]);
       }
     }
-    let i = 0;
-    let j = 0;
-    while (i < n || j < m) {
-      if (i < n && j < m && deepEqual(before[i], after[j])) {
+    let a = 0;
+    let b = 0;
+    while (a < bn || b < bm) {
+      const i = pre + a;
+      const j = pre + b;
+      if (a < bn && b < bm && deepEqual(before[i], after[j])) {
         steps.push({ op: 'eq', i, j });
-        i++;
-        j++;
-      } else if (j < m && (i >= n || lcs[i][j + 1] >= lcs[i + 1][j])) {
+        a++;
+        b++;
+      } else if (b < bm && (a >= bn || lcs[a][b + 1] >= lcs[a + 1][b])) {
         steps.push({ op: 'ins', i, j });
-        j++;
+        b++;
       } else {
         steps.push({ op: 'del', i, j });
-        i++;
+        a++;
       }
     }
   }
