@@ -19,6 +19,8 @@ export interface PolicyDataTreeContext {
   set(ptr: string, value: unknown): void;
   /** Remove the key at `ptr`. */
   remove(ptr: string): void;
+  /** The instances' files differ at `ptr` (an array edit writes one list for all of them). */
+  differs?(ptr: string): boolean;
 }
 
 export const POLICY_DATA_TREE_KEY: InjectionKey<PolicyDataTreeContext> =

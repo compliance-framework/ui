@@ -95,6 +95,7 @@ import { accessTooltip, fieldAccess } from '@/utils/agent-config/field-access';
 import type { Provenance } from '@/utils/agent-config/provenance';
 import ProvenanceBadge from '../ProvenanceBadge.vue';
 import FieldIssues from '../editor/FieldIssues.vue';
+import { useEditor } from '../editor/useEditor';
 import AccessIcon from './AccessIcon.vue';
 import PendingPill from './PendingPill.vue';
 import { NULL_KEY_ERROR, opsSetNullKey } from './nullKeys';
@@ -109,6 +110,8 @@ const props = defineProps<{
 }>();
 
 const ws = useWorkspace();
+// The shared editor helpers need the workspace's draft and context (absent when read-only).
+const editor = ws ? useEditor() : null;
 const ptr = computed(() => pointer('plugins', props.plugin, 'policy_data'));
 
 const access = computed(() =>
@@ -148,6 +151,7 @@ provide(POLICY_DATA_TREE_KEY, {
   revert: (p) => ws?.draft.revertPointer(p),
   set: (p, v) => ws?.draft.setValue(p, v, ptr.value),
   remove: (p) => ws?.draft.removeValue(p),
+  differs: (p) => !!editor && editor.differsAcrossInstances(p),
 });
 
 // ---- Structured / raw JSON ----

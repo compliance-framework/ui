@@ -59,6 +59,12 @@
           class="text-xs text-gray-500 dark:text-slate-400"
           >{{ summary }}</span
         >
+        <span
+          v-if="differs"
+          class="text-[0.7rem] text-gray-500 dark:text-slate-400"
+          :data-test="`pd-differs-${ptr}`"
+          >differs across instances</span
+        >
         <template v-else-if="masked">
           <span class="font-mono text-xs text-gray-500 dark:text-slate-400">{{
             value
@@ -313,6 +319,16 @@ const listHasMask = computed(
   () => Array.isArray(props.value) && containsMask(props.value),
 );
 const isChanged = computed(() => !!tree && tree.changed(props.ptr));
+/**
+ * An editable list whose value differs between the instances' files: any edit writes one list
+ * for every instance (RFC 7396), as PolicySourcesEditor warns for policies.
+ */
+const differs = computed(
+  () =>
+    Array.isArray(props.value) &&
+    editable.value &&
+    !!tree?.differs?.(props.ptr),
+);
 
 const expanded = ref(!startsCollapsed(props.depth, props.value));
 const showAll = ref(false);
