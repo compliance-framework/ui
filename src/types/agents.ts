@@ -36,3 +36,7 @@ export interface CreateAgentServiceAccountKeyRequest {
   expiresAt?: string;
   neverExpires: boolean;
 }
+
+// Agent remote configuration (overlay, instances, preview). Kept in its own module; re-exported
+// here so agent types have a single import point.
+export * from './agent-config';
