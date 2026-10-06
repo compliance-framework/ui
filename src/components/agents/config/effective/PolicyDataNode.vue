@@ -54,17 +54,17 @@
         </button>
       </span>
       <template v-if="!editing">
-        <span
-          v-if="container"
-          class="text-xs text-gray-500 dark:text-slate-400"
-          >{{ summary }}</span
-        >
-        <span
-          v-if="differs"
-          class="text-[0.7rem] text-gray-500 dark:text-slate-400"
-          :data-test="`pd-differs-${ptr}`"
-          >differs across instances</span
-        >
+        <template v-if="container">
+          <span class="text-xs text-gray-500 dark:text-slate-400">{{
+            summary
+          }}</span>
+          <span
+            v-if="differs"
+            class="text-[0.7rem] text-gray-500 dark:text-slate-400"
+            :data-test="`pd-differs-${ptr}`"
+            >differs across instances</span
+          >
+        </template>
         <template v-else-if="masked">
           <span class="font-mono text-xs text-gray-500 dark:text-slate-400">{{
             value

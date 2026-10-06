@@ -29,6 +29,7 @@ import {
 vi.mock('@/components/code-editor', () => import('./codeEditorMock'));
 
 import PolicyDataSection from '../effective/PolicyDataSection.vue';
+import PolicyDataTree from '../effective/PolicyDataTree.vue';
 
 enableAutoUnmount(afterEach);
 
@@ -79,6 +80,35 @@ describe('policy_data: lists that differ across instances', () => {
     expect(w.find(`[data-test="pd-node-${PD}/ports"]`).exists()).toBe(true);
     expect(differs(w, 'ports').exists()).toBe(false);
     expect(differs(w, 'max_auth_tries').exists()).toBe(false);
+  });
+
+  it('a differing list shows the hint and no scalar value span', async () => {
+    const w = await mountSection(ADMIN);
+    expect(differs(w, 'users').exists()).toBe(true);
+    expect(w.find(`[data-test="pd-value-${PD}/users"]`).exists()).toBe(false);
+    // A scalar still renders its value.
+    expect(w.find(`[data-test="pd-value-${PD}/max_auth_tries"]`).exists()).toBe(
+      true,
+    );
+  });
+
+  it('a container node renders no scalar value span', () => {
+    const w = mount(PolicyDataTree, {
+      props: {
+        value: { rules: { a: 1 }, list: [1, 2] },
+        ptr: '/plugins/p/policy_data',
+      },
+      global: globalWith(piniaWith(READER)),
+    });
+    expect(
+      w.find('[data-test="pd-node-/plugins/p/policy_data/rules"]').exists(),
+    ).toBe(true);
+    expect(
+      w.find('[data-test="pd-value-/plugins/p/policy_data/rules"]').exists(),
+    ).toBe(false);
+    expect(
+      w.find('[data-test="pd-value-/plugins/p/policy_data/list"]').exists(),
+    ).toBe(false);
   });
 
   it('is an editing hint: readers do not see it', async () => {
