@@ -1,0 +1,2 @@
+lisa-addressed:
+- #325 PRRT_kwDONe0Wms6pXNKY (drift example): cron5 time zones are case-sensitive like Go LoadLocation; Intl resolutions that differ only by case are rejected.
