@@ -1,0 +1,2 @@
+lisa-addressed:
+- review finding 9 (CORE-DUP-001): fixture = API golden pkg/agentconfig/testdata/conformance.json @ c0b3792 (byte-identical, .prettierignore). Sync script + npm script + CI job conformance-drift (pull-request.yml, --check main, 404 => notice). Spec guards the table set; pluginNames runner stays in #326 with NAME_RE. field-access.ts unchanged (new re-enable local source case passes).
