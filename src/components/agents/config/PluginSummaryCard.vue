@@ -24,14 +24,19 @@
             pendingNew ? 'Discard plugin' : removed ? 'Restore' : 'Undo removal'
           }}
         </TertiaryButton>
-        <TertiaryButton
+        <span
           v-else
-          size="small"
-          data-test="remove-plugin"
-          @click="confirmRemove"
+          v-tooltip.top="{ value: removeBlocked, disabled: !removeBlocked }"
         >
-          Remove
-        </TertiaryButton>
+          <TertiaryButton
+            size="small"
+            :disabled="!!removeBlocked"
+            data-test="remove-plugin"
+            @click="confirmRemove"
+          >
+            Remove
+          </TertiaryButton>
+        </span>
       </span>
       <ProvenanceBadge v-if="!pendingNew" :provenance="cardProvenance" />
       <ConfigPill v-if="plugin?.enabled === false" severity="secondary">
@@ -263,6 +268,7 @@ import type {
   PluginReport,
 } from '@/types/agent-config';
 import { pointer } from '@/utils/agent-config/json-pointer';
+import { getOwn } from '@/utils/agent-config/merge-patch';
 import {
   pluginProvenance,
   provenanceOf,
@@ -337,9 +343,12 @@ const installText = computed(() =>
 /** The draft removes a plugin the instance still runs. */
 const pendingRemoval = computed(() => {
   if (!ws || props.removed || props.pendingNew) return false;
+  // Own properties only: a plugin may be named like an Object.prototype member ("constructor").
   const eff = ws.draft.effectiveDraft.value.plugins ?? {};
-  return ws.draft.pendingAt(p()) && !eff[props.name];
+  return ws.draft.pendingAt(p()) && !getOwn(eff, props.name);
 });
+/** Removal nulls the plugin where any host's file has it: it needs every file (else why not). */
+const removeBlocked = computed(() => ws?.basesBlockedReason.value ?? '');
 
 function confirmRemove() {
   confirm.require({
