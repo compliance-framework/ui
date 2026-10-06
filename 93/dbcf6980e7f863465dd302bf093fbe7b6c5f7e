@@ -1,0 +1,2 @@
+lisa-addressed:
+- review finding 8 (#325 part): FORBIDDEN_TOOLTIP moved to src/config/tooltips.ts 'agents.config.field.forbidden' (export kept, consumers unchanged).
