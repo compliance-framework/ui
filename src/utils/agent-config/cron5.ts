@@ -150,12 +150,19 @@ export function validateCron5(input: string): string | null {
   return null;
 }
 
+/**
+ * Go's time.LoadLocation: "UTC" and "Local", else a zoneinfo file name, which is
+ * case-sensitive on the agent's (Linux) host. Intl matches names case-insensitively, so a name
+ * it resolves to a different case only ("utc", "europe/london") is rejected.
+ */
 function validTimeZone(zone: string): boolean {
   if (!zone) return false;
   if (zone === 'UTC' || zone === 'Local') return true;
   try {
-    new Intl.DateTimeFormat('en', { timeZone: zone });
-    return true;
+    const resolved = new Intl.DateTimeFormat('en', {
+      timeZone: zone,
+    }).resolvedOptions().timeZone;
+    return resolved === zone || resolved.toLowerCase() !== zone.toLowerCase();
   } catch {
     return false;
   }

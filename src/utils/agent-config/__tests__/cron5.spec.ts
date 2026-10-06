@@ -15,6 +15,7 @@ describe('validateCron5', () => {
     '@every 1h30m',
     'CRON_TZ=UTC 0 3 * * *',
     'TZ=Europe/Lisbon 0 3 * * *',
+    'TZ=US/Eastern 0 3 * * *',
     ' */5 * * * * ',
     // robfig v3 quirks the agent accepts: empty comma items are skipped, Atoi takes a sign,
     // and anything after a leading `*` / `?` in a range is ignored.
@@ -46,6 +47,9 @@ describe('validateCron5', () => {
     ' @daily',
     '@every  5m',
     'TZ=Nowhere/Nope 0 3 * * *',
+    // Go's LoadLocation is case-sensitive (zoneinfo file names).
+    'TZ=utc 0 3 * * *',
+    'CRON_TZ=europe/london 0 3 * * *',
     '0 0 * constructor *',
     '0 0 * * __proto__',
     '0 0 * * toString',
