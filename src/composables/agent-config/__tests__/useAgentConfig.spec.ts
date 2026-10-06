@@ -14,6 +14,7 @@ import {
   instancesMixed,
 } from './fixtures';
 import { useAgentConfig } from '../useAgentConfig';
+import { MAX_INSTANCE_PAGES } from '../instancePages';
 
 function deferred<T>() {
   let resolve!: (v: T) => void;
@@ -141,6 +142,60 @@ describe('useAgentConfig', () => {
     expect(get).toHaveBeenCalledTimes(2);
     expect(state.status.value).toBe('unsupported');
     cfg.reject(notFound());
+  });
+
+  /** `n` copies of ip-a served 25 per page, as the paginated API does. */
+  function pagedApi(n: number) {
+    const rows = Array.from({ length: n }, (_, i) => ({
+      ...instancesMixed.items[0],
+      instanceId: `i${i + 1}`,
+    }));
+    return makeApi({
+      listInstances: vi.fn(
+        async (_a: string, q: { page?: number; limit?: number } = {}) => {
+          const page = q.page ?? 1;
+          const limit = q.limit ?? 25;
+          return {
+            items: rows.slice((page - 1) * limit, page * limit),
+            meta: {
+              desiredRevision: 7,
+              counts: { ...instancesMixed.meta.counts, total: n, inSync: n },
+              page,
+              limit,
+              total: n,
+              totalPages: Math.ceil(n / limit),
+            },
+          };
+        },
+      ),
+    });
+  }
+
+  it('loads every page of instances; fleet numbers come from meta.counts', async () => {
+    store.permissions = { agent: ['read'] };
+    store.loaded = true;
+    const api = pagedApi(60);
+    const state = useAgentConfig(ref('agent-1'), api);
+    await state.load();
+    expect(api.listInstances).toHaveBeenCalledTimes(3);
+    expect(state.instances.value).toHaveLength(60);
+    expect(state.instancesPartial.value).toBe(false);
+    expect(state.instanceTotal.value).toBe(60);
+    expect(state.syncSummary.value.inSync).toBe(60);
+  });
+
+  it('past the page cap the list is partial; totals still cover the fleet', async () => {
+    store.permissions = { agent: ['read'] };
+    store.loaded = true;
+    const api = pagedApi(130);
+    const state = useAgentConfig(ref('agent-1'), api);
+    await state.load();
+    expect(api.listInstances).toHaveBeenCalledTimes(MAX_INSTANCE_PAGES);
+    expect(state.instances.value).toHaveLength(100);
+    expect(state.instancesPartial.value).toBe(true);
+    expect(state.instanceTotal.value).toBe(130);
+    expect(state.syncSummary.value.total).toBe(130);
+    expect(state.syncSummary.value.partial).toBe(true);
   });
 
   it('ignores the failure of a superseded load', async () => {

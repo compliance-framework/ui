@@ -116,8 +116,12 @@ describe('useConfigWorkspace: edits wait for every instance file', () => {
       fakeApi({
         getConfig: vi.fn().mockResolvedValue(configRev7),
         listInstances: vi.fn().mockResolvedValue({
-          ...instancesMixed,
           items: [only],
+          meta: {
+            ...instancesMixed.meta,
+            total: 1,
+            counts: { ...instancesMixed.meta.counts, total: 1 },
+          },
         }),
         getInstance,
       }),
@@ -126,5 +130,47 @@ describe('useConfigWorkspace: edits wait for every instance file', () => {
     expect(ws.canEditPointer(PTR)).toBe(true);
     // The background load reuses the selected instance's detail: one request.
     expect(getInstance).toHaveBeenCalledTimes(1);
+    // One page of instances: one list request, and the summary covers the fleet.
+    expect(ws.api.listInstances).toHaveBeenCalledTimes(1);
+    expect(ws.state.syncSummary.value.partial).toBe(false);
+  });
+
+  it('an instance list cut at the page cap blocks edits, naming the cap', async () => {
+    // 130 instances (6 pages of 25): only the first 4 pages are loaded.
+    const rows = Array.from({ length: 130 }, (_, i) => ({
+      ...instancesMixed.items[0],
+      instanceId: `i${i + 1}`,
+      hostname: `ip-${i + 1}`,
+    }));
+    const ws = await mountWorkspace(
+      fakeApi({
+        listInstances: vi.fn(
+          async (_a: string, q: { page?: number; limit?: number } = {}) => {
+            const page = q.page ?? 1;
+            return {
+              items: rows.slice((page - 1) * 25, page * 25),
+              meta: {
+                ...instancesMixed.meta,
+                counts: { ...instancesMixed.meta.counts, total: 130 },
+                page,
+                total: 130,
+                totalPages: 6,
+              },
+            };
+          },
+        ),
+        getInstance: vi.fn(async (_a: string, id: string) => ({
+          ...detailFor(instancesMixed.items[0], overlayRev7),
+          instanceId: id,
+        })),
+      }),
+    );
+    expect(ws.state.instancesPartial.value).toBe(true);
+    // Every loaded instance's file is there, yet the rest of the fleet is unknown.
+    expect(ws.failedBaseIds.value).toEqual([]);
+    expect(ws.canEditPointer(PTR)).toBe(false);
+    expect(ws.basesBlockedReason.value).toBe(
+      "Only 100 of 130 instances are loaded (at most 100): editing needs every instance's file",
+    );
   });
 });

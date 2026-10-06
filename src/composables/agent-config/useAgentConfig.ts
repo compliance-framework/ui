@@ -17,6 +17,7 @@ import {
   summarizeSync,
 } from '@/utils/agent-config/instance-status';
 import { isAgentConfigApiError, type AgentConfigApi } from './api-types';
+import { listAllInstances } from './instancePages';
 
 export type AgentConfigStatus =
   | 'idle'
@@ -34,6 +35,8 @@ export function useAgentConfig(agentId: Ref<string>, api: AgentConfigApi) {
   const config = shallowRef<AgentConfigRevision | null>(null);
   const instances = shallowRef<AgentInstanceSummary[]>([]);
   const meta = shallowRef<InstancesMeta | null>(null);
+  /** The loaded rows are not every instance (paginated list past MAX_INSTANCE_PAGES). */
+  const instancesPartial = ref(false);
   const selectedInstanceId = ref<string | null>(null);
   const selectedInstance = shallowRef<AgentInstanceDetail | null>(null);
   const appliedOverlay = shallowRef<OverlayDoc | null>(null);
@@ -55,8 +58,12 @@ export function useAgentConfig(agentId: Ref<string>, api: AgentConfigApi) {
   const instanceStates = computed(() =>
     instances.value.map((i) => deriveInstanceState(i, desiredRevision.value)),
   );
+  /** Every instance of the agent (the API's fleet-wide count), loaded or not. */
+  const instanceTotal = computed(
+    () => meta.value?.counts?.total ?? instances.value.length,
+  );
   const syncSummary = computed(() =>
-    summarizeSync(instances.value, instanceStates.value),
+    summarizeSync(instances.value, instanceStates.value, meta.value?.counts),
   );
   /** The loaded detail belongs to the selected id (false while switching instances). */
   const selectedInstanceCurrent = computed(
@@ -201,13 +208,14 @@ export function useAgentConfig(agentId: Ref<string>, api: AgentConfigApi) {
     }
     const [cfg, list] = await Promise.all([
       api.getConfig(agentId.value),
-      api.listInstances(agentId.value),
+      listAllInstances(api, agentId.value),
     ]);
     if (seq !== loadSeq) return;
     config.value = cfg;
     if (cfg.overlay) revisionCache.set(cfg.revision, cfg);
     instances.value = list.items;
     meta.value = list.meta;
+    instancesPartial.value = list.partial;
     detailCache.clear();
     status.value = 'ready';
     const keep =
@@ -262,6 +270,8 @@ export function useAgentConfig(agentId: Ref<string>, api: AgentConfigApi) {
     config,
     instances,
     meta,
+    instancesPartial,
+    instanceTotal,
     instanceStates,
     selectedInstanceId,
     selectedInstance,

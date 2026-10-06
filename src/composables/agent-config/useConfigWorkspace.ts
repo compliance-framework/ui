@@ -37,6 +37,7 @@ import {
 import type { AgentConfigApi } from './api-types';
 import type { AgentConfigState } from './useAgentConfig';
 import { agentDraftState, syncDraftState } from './draftRegistry';
+import { INSTANCE_PAGE_LIMIT, MAX_INSTANCE_PAGES } from './instancePages';
 import { useOverlayDraft, type DraftState } from './useOverlayDraft';
 import { usePreview } from './usePreview';
 import {
@@ -127,9 +128,10 @@ export function useConfigWorkspace(
   );
 
   // Base-dependent edits (null or omit a key, "back to the file value") are only right against
-  // EVERY reporting instance's file, so they wait until each one is loaded, and a failed load
-  // blocks them until a retry (loadDetails) succeeds. A single-instance agent's only file is
-  // the selected instance's, so it never waits on the background load.
+  // EVERY reporting instance's file, so they wait until each one is loaded, a failed load
+  // blocks them until a retry (loadDetails) succeeds, and an instance list cut at the page cap
+  // blocks them outright. A single-instance agent's only file is the selected instance's, so it
+  // never waits on the background load.
   const missingBaseIds = computed(() =>
     state.instances.value
       .filter(
@@ -143,6 +145,11 @@ export function useConfigWorkspace(
   );
   /** '' = every reporting instance's file is loaded (edits allowed); else why not. */
   const basesBlockedReason = computed(() => {
+    // Past the page cap the instances (and so their files) are not all known: field access
+    // and the draft would be computed over part of the fleet.
+    if (state.instancesPartial.value) {
+      return `Only ${state.instances.value.length} of ${state.instanceTotal.value} instances are loaded (at most ${MAX_INSTANCE_PAGES * INSTANCE_PAGE_LIMIT}): editing needs every instance's file`;
+    }
     if (!missingBaseIds.value.length) return '';
     if (!failedBaseIds.value.length) return "Loading the instances' files…";
     const hosts = failedBaseIds.value.map((id) => {
