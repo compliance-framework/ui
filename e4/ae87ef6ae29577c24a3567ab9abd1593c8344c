@@ -1,0 +1,2 @@
+lisa-addressed:
+- pagination items 2 + 3 (#331 part): useAgentConfig listAllInstances, instancesPartial, instanceTotal, syncSummary(counts); useConfigWorkspace basesBlockedReason 'Only N of M instances are loaded (at most 100)…' when partial. Specs: useAgentConfig.spec (3 pages, cap partial + totals), useConfigWorkspace.spec (partial blocks edits; single instance = 1 listInstances call).
