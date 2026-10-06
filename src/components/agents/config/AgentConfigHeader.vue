@@ -41,6 +41,9 @@
       >
         <span class="font-medium text-gray-900 dark:text-slate-200">
           In sync: {{ syncSummary.inSync }}/{{ syncSummary.expected }} instances
+          <template v-if="syncSummary.partial">
+            (incl. stale, from the API's fleet counts)</template
+          >
         </span>
         <span
           v-if="syncSummary.reportOnly"

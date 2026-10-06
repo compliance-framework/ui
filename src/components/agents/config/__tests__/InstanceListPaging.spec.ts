@@ -98,8 +98,8 @@ describe('AgentConfigHeader on part of the fleet', () => {
 
   it('says the loaded rows are part of the fleet, with fleet-wide counts', () => {
     const w = header(rows(100), 130);
-    expect(w.find('[data-test="sync-summary"]').text()).toContain(
-      'In sync: 3/5 instances',
+    expect(w.find('[data-test="sync-summary"]').text()).toMatch(
+      /In sync: 3\/5 instances\s+\(incl\. stale, from the API's fleet counts\)/,
     );
     expect(w.find('[data-test="partial-fleet"]').text()).toContain(
       'Showing 100 of 130 instances',
@@ -108,7 +108,13 @@ describe('AgentConfigHeader on part of the fleet', () => {
 
   it('says nothing more when every instance is loaded', () => {
     const w = header(instancesMixed.items, 7);
-    expect(w.find('[data-test="sync-summary"]').exists()).toBe(true);
+    // Every row loaded: the row-based numbers (stale instances not in sync).
+    expect(w.find('[data-test="sync-summary"]').text()).toContain(
+      'In sync: 2/4 instances',
+    );
+    expect(w.find('[data-test="sync-summary"]').text()).not.toContain(
+      'incl. stale',
+    );
     expect(w.find('[data-test="partial-fleet"]').exists()).toBe(false);
   });
 });
