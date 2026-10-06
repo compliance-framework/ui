@@ -1,0 +1,2 @@
+lisa-addressed:
+- review finding 8 (#327 part): instance-status badge tooltips moved to src/config/tooltips.ts agents.config.instance.{oneShot,truncated,fileWarnings}.
