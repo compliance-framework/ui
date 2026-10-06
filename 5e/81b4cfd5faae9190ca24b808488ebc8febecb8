@@ -1,0 +1,2 @@
+lisa-addressed:
+- AddPluginGating.spec 'keeps the shield…': ip-all now has a detail (getInstance override), needed by finding 6's Add plugin gating.
