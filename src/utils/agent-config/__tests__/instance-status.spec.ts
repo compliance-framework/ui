@@ -150,19 +150,38 @@ describe('summarizeSync', () => {
     expect(s.partial).toBe(false);
   });
 
-  it("takes fleet-wide numbers from the API's counts (over every instance)", () => {
+  it('a complete list keeps the row numbers; counts only supply the total', () => {
     const states = instancesMixed.items.map((i) => deriveInstanceState(i, 7));
     const s = summarizeSync(
       instancesMixed.items,
       states,
       instancesMixed.meta.counts,
     );
-    // in sync: a, g, d (stale included); out of sync: b, f.
+    // As without counts: fresh apply-mode a, b, f, g; the stale d is not counted in sync.
     expect([s.inSync, s.expected, s.stale, s.notReported]).toEqual([
-      3, 5, 1, 1,
+      2, 4, 1, 1,
     ]);
     expect(s.total).toBe(7);
     expect(s.reportOnly).toBe(1);
+    expect(s.partial).toBe(false);
+  });
+
+  it('a stale instance is never counted as in sync (complete list with counts)', () => {
+    const inst = { ...instancesMixed.items[0], stale: true, warnings: [] };
+    const states = [deriveInstanceState(inst, 7)];
+    const counts = {
+      total: 1,
+      fresh: 0,
+      stale: 1,
+      inSync: 1,
+      outOfSync: 0,
+      pending: 0,
+      rejected: 0,
+      failed: 0,
+      unknown: 0,
+    };
+    const s = summarizeSync([inst], states, counts);
+    expect([s.inSync, s.expected, s.stale]).toEqual([0, 0, 1]);
     expect(s.partial).toBe(false);
   });
 
@@ -172,7 +191,10 @@ describe('summarizeSync', () => {
     const counts = { ...instancesMixed.meta.counts, total: 120, inSync: 90 };
     const s = summarizeSync(rows, states, counts);
     expect(s.total).toBe(120);
+    // Fleet-wide, from the API's counts (stale instances included).
     expect(s.inSync).toBe(90);
+    expect(s.expected).toBe(92);
+    expect(s.stale).toBe(1);
     expect(s.loaded).toBe(2);
     expect(s.partial).toBe(true);
     // Row-only numbers are not shown as fleet-wide.

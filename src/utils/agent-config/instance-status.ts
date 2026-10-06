@@ -173,8 +173,8 @@ export interface SyncSummary {
   total: number;
   inSync: number;
   /**
-   * Instances whose sync applies. From the rows: non-stale apply-mode instances (R14 "fresh").
-   * From the API's counts: in sync + out of sync (apply-mode instances that reported).
+   * Instances whose sync applies: non-stale apply-mode instances (R14 "fresh"). When `partial`,
+   * the API's counts instead: in sync + out of sync, stale instances included.
    */
   expected: number;
   /** From the rows only: null when they are not every instance (`partial`). */
@@ -189,9 +189,10 @@ export interface SyncSummary {
 }
 
 /**
- * The header's sync summary. Fleet-wide numbers come from the API's `counts` (over every
- * instance) when given; the rows only supply what counts lack (report-only, the problem
- * chips), which covers part of the fleet when not every instance is loaded.
+ * The header's sync summary, from the rows. When the rows are only part of the fleet
+ * (`partial`: fewer than `counts.total`), the fleet-wide numbers come from the API's `counts`
+ * instead, which include stale instances (the header says so); report-only is then unknown and
+ * the problem chips cover the loaded rows.
  */
 export function summarizeSync(
   instances: AgentInstanceSummary[],
@@ -233,12 +234,14 @@ export function summarizeSync(
   summary.reportOnly = reportOnly;
   if (counts) {
     summary.total = counts.total;
+    summary.partial = instances.length < counts.total;
+  }
+  if (counts && summary.partial) {
     summary.inSync = counts.inSync;
     summary.expected = counts.inSync + counts.outOfSync;
     summary.stale = counts.stale;
     summary.notReported = counts.unknown ?? summary.notReported;
-    summary.partial = instances.length < counts.total;
-    if (summary.partial) summary.reportOnly = null;
+    summary.reportOnly = null;
   }
   return summary;
 }
