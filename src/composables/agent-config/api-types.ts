@@ -55,9 +55,16 @@ export interface RevisionsPage {
   totalPages: number;
 }
 
+/** One page of an agent's instances (last seen first); `meta.counts` cover every instance. */
 export interface InstancesList {
   items: AgentInstanceSummary[];
   meta: InstancesMeta;
+}
+
+/** The instance list's page (1-based, default 1) and size (default and max 25). */
+export interface InstancesPageQuery {
+  page?: number;
+  limit?: number;
 }
 
 export interface AgentConfigApi {
@@ -84,7 +91,10 @@ export interface AgentConfigApi {
     ifMatchRevision: number,
     comment?: string,
   ): Promise<SaveResult>;
-  listInstances(agentId: string): Promise<InstancesList>;
+  listInstances(
+    agentId: string,
+    query?: InstancesPageQuery,
+  ): Promise<InstancesList>;
   getInstance(
     agentId: string,
     instanceId: string,
