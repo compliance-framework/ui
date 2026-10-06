@@ -1,0 +1,2 @@
+lisa-addressed:
+- #335 PRRT_kwDONe0Wms6pXNcd: RawOverlayDialog close-on-escape=false; Cancel and x go through requestClose -> useConfirm 'Discard overlay edits?' when text differs from what it opened with. Chose confirm over keeping the draft text across unmounts.
