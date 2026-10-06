@@ -1,0 +1,2 @@
+lisa-addressed:
+- listAllInstances partial = page cap hit || duplicate row seen (shift).

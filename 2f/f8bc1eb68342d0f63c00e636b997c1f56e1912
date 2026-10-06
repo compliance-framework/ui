@@ -1,0 +1,2 @@
+lisa-addressed:
+- pagination items 1 + 3 (#330 part): listInstances page/limit params; instancePages.ts INSTANCE_PAGE_LIMIT=25, MAX_INSTANCE_PAGES=4, listAllInstances -> {items, meta, partial}. Specs: useAgentConfigApi.spec page query/meta, instancePages.spec (one page = one call, multi-page, cap partial, shifted pages, unpaginated API).
