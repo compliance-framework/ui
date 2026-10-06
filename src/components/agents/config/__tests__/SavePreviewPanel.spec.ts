@@ -241,3 +241,60 @@ describe('review rows for policy_data arrays', () => {
     expect(paths).not.toContain('/plugins/local-ssh/policy_data/users');
   });
 });
+
+describe('instances the preview did not include', () => {
+  // What the API sends when it bounds the preview (configPreviewResponse).
+  const bounded: ConfigPreview = {
+    ...clean([inst({})]),
+    omittedInstances: 60,
+  };
+  const omittedId = 'ffffffff-0000-4000-8000-0000000000ff';
+
+  it('says how many instances were left out of the preview', () => {
+    const w = mountPanel(bounded, { draftOverlay: { verbosity: 2 } });
+    const summary = w.find('[data-test="apply-summary"]').text();
+    expect(summary).toContain('1 of 1 instances will apply');
+    expect(w.find('[data-test="omitted-instances"]').text()).toContain(
+      '60 more instances were not previewed; a save still validates against them',
+    );
+  });
+
+  it('says nothing when the preview covers every instance', () => {
+    const w = mountPanel(clean([inst({})]));
+    expect(w.find('[data-test="apply-summary"]').exists()).toBe(true);
+    expect(w.find('[data-test="omitted-instances"]').exists()).toBe(false);
+  });
+
+  it('shows a 422 error for an instance that is not in the preview', () => {
+    const w = mountPanel(bounded, {
+      draftOverlay: { verbosity: 2 },
+      saveErrors: {
+        body: 'invalid',
+        instances: [
+          {
+            'instance-id': omittedId,
+            hostname: 'ip-omitted',
+            errors: [{ path: '/verbosity', message: 'BOOM-not-allowed' }],
+          },
+          {
+            'instance-id': instanceIds.a,
+            hostname: 'ip-a',
+            errors: [{ path: '/verbosity', message: 'in-its-panel' }],
+          },
+        ],
+      },
+    });
+    // Save is blocked by that error...
+    expect(saveButton(w).attributes('disabled')).toBeDefined();
+    // ...so the user must be able to see it, with the host it is about.
+    const other = w.find(`[data-test="other-instance-${omittedId}"]`);
+    expect(other.exists()).toBe(true);
+    expect(other.text()).toContain('ip-omitted');
+    expect(other.text()).toContain('BOOM-not-allowed');
+    // A previewed instance's errors stay in its own panel only.
+    expect(w.findAll('[data-test="other-instance-error"]')).toHaveLength(1);
+    expect(
+      w.find(`[data-test="instance-panel-${instanceIds.a}"]`).text(),
+    ).toContain('in-its-panel');
+  });
+});

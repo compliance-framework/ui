@@ -39,6 +39,15 @@
         {{ applying }} of {{ preview.instances.length }} instances will apply
         this revision.
       </p>
+      <p
+        v-if="omitted"
+        class="text-amber-700 dark:text-amber-300"
+        data-test="omitted-instances"
+      >
+        {{ omitted }} more
+        {{ omitted === 1 ? 'instance was' : 'instances were' }} not previewed; a
+        save still validates against them.
+      </p>
       <ul class="space-y-1">
         <li
           v-for="inst in notApplying"
@@ -86,6 +95,48 @@
         This API does not say which instances a save validates against; errors
         on every non-stale instance are treated as blocking.
       </p>
+    </section>
+
+    <!-- 422 errors of instances the preview did not include (e.g. omitted ones) -->
+    <section
+      v-if="otherSaveErrors.length"
+      class="space-y-1"
+      data-test="other-instance-errors"
+    >
+      <h4 class="text-sm font-semibold text-gray-900 dark:text-slate-200">
+        Other instances
+      </h4>
+      <ul class="space-y-2 text-sm">
+        <li
+          v-for="inst in otherSaveErrors"
+          :key="inst['instance-id']"
+          :data-test="`other-instance-${inst['instance-id']}`"
+        >
+          <span class="font-mono text-xs">{{
+            inst.hostname || inst['instance-id'].slice(0, 8)
+          }}</span>
+          <ul class="mt-1 ml-4 space-y-0.5">
+            <li
+              v-for="(e, i) in inst.errors ?? []"
+              :key="`e${i}`"
+              class="text-red-700 dark:text-red-300"
+              data-test="other-instance-error"
+            >
+              <code class="font-mono text-xs">{{ e.path || '/' }}</code> —
+              {{ e.message }}
+            </li>
+            <li
+              v-for="(w, i) in inst.warnings ?? []"
+              :key="`w${i}`"
+              class="text-amber-700 dark:text-amber-300"
+            >
+              <code class="font-mono text-xs">{{ w.path || '/' }}</code> —
+              {{ w.message }}
+              <span class="text-xs">(in this host's file; does not block)</span>
+            </li>
+          </ul>
+        </li>
+      </ul>
     </section>
 
     <!-- Standalone diff: current overlay vs draft -->
@@ -351,6 +402,16 @@ const applying = computed(
 );
 const notApplying = computed(() =>
   props.preview.instances.filter((i) => !i.willApply),
+);
+/** Instances beyond the preview's bound (50 instances / 16 MiB); a save validates them. */
+const omitted = computed(() => props.preview.omittedInstances ?? 0);
+/** 422 instances with no preview panel: shown on their own, since they block the save. */
+const otherSaveErrors = computed(() =>
+  (props.saveErrors?.instances ?? []).filter(
+    (s) =>
+      (s.errors?.length || s.warnings?.length) &&
+      !props.preview.instances.some((p) => p.instanceId === s['instance-id']),
+  ),
 );
 
 function offending(inst: InstancePreview) {
