@@ -1,6 +1,7 @@
-// The UI's copies of the API's pkg/agentconfig rules against one table of expected results
-// (fixtures/agentconfig-conformance.json, from the API's own tests), so a rule that changes on
-// one side and not the other fails here.
+// The UI's copies of the API's pkg/agentconfig rules against the API's golden file of expected
+// results (fixtures/agentconfig-conformance.json, vendored byte for byte; see fixtures/README.md),
+// so a rule that changes on one side and not the other fails here. Every table is run; the
+// expectations all come from the file.
 import { describe, expect, it } from 'vitest';
 import type {
   AgentInstanceSummary,
@@ -66,6 +67,22 @@ function applySafe(trusted: string[]): AgentInstanceSummary {
 }
 
 describe('pkg/agentconfig conformance', () => {
+  it('knows every table of the golden file', () => {
+    // A table the API adds must get a runner here (pluginNames runs with validation.ts).
+    expect(
+      Object.keys(fixture)
+        .filter((k) => !k.startsWith('_'))
+        .sort(),
+    ).toEqual([
+      'applySafe',
+      'overridableConfigFlags',
+      'pluginNames',
+      'schedules',
+      'sourceKinds',
+      'trustedSources',
+    ]);
+  });
+
   it.each(cases.trustedSources.cases)(
     'MatchTrustedSource(%j)',
     (source, want) => {

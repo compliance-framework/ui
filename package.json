@@ -19,6 +19,7 @@
     "format:fix": "prettier --write src/",
     "format:staged": "lint-staged",
     "format:check": "prettier --check src/",
+    "sync:agentconfig-conformance": "scripts/sync-agentconfig-conformance.sh",
     "prepare": "husky"
   },
   "lint-staged": {
