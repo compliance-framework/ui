@@ -1,0 +1,2 @@
+# Vendored byte-for-byte from compliance-framework/api (see the README next to it).
+src/utils/agent-config/__tests__/fixtures/agentconfig-conformance.json

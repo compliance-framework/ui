@@ -26,6 +26,18 @@ jobs:
         run: |
           make reviewable
 
+  conformance-drift:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # The vendored agentconfig conformance file must match the API's main (a notice, not a
+      # failure, while the API has not published it yet). Not in `make reviewable`: it needs
+      # the network.
+      - name: Compare the agentconfig conformance file with api@main
+        run: scripts/sync-agentconfig-conformance.sh --check main
+
   type-check:
     runs-on: ubuntu-latest
     steps:
