@@ -1,0 +1,2 @@
+lisa-addressed:
+- pagination item 5 (#331 part): helpers.ts pagedListInstances; fakeApi.listInstances paged.
