@@ -5,7 +5,10 @@
     header="Advanced: edit raw overlay (YAML)"
     class="w-full max-w-4xl"
     data-test="raw-overlay-dialog"
-    @update:visible="$emit('update:visible', $event)"
+    :close-on-escape="false"
+    @update:visible="
+      (v: boolean) => (v ? $emit('update:visible', v) : requestClose())
+    "
   >
     <div class="space-y-3">
       <p class="text-xs text-gray-500 dark:text-slate-400">
@@ -90,9 +93,7 @@
           </Button>
         </span>
         <span class="flex-1" />
-        <TertiaryButton
-          data-test="raw-cancel"
-          @click="$emit('update:visible', false)"
+        <TertiaryButton data-test="raw-cancel" @click="requestClose"
           >Cancel</TertiaryButton
         >
         <PrimaryButton
@@ -111,7 +112,10 @@
 // R70: the structured drawer is gone; the raw overlay is edited here and feeds the same
 // pending-changes draft, preview and save flow. Forbidden keys (R71) are highlighted and
 // block Apply client-side; the API's 422 `locked-key` stays authoritative.
+// The tab unmounts the dialog when it closes, so closing with edits that were not applied asks
+// first; Escape never closes it (inside the editor it only leaves the editor).
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
+import { useConfirm } from 'primevue/useconfirm';
 import Button from '@/volt/Button.vue';
 import Dialog from '@/volt/Dialog.vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
@@ -135,6 +139,8 @@ const ws = useWorkspace()!;
 const PARSE_DEBOUNCE_MS = 250;
 
 const text = ref('');
+/** The text the dialog opened with: anything else is an edit closing would lose. */
+const openedWith = ref('');
 const parsed = ref<OverlayDoc | null>(null);
 const coerced = ref<string[]>([]);
 const parseError = ref<YamlError | null>(null);
@@ -169,10 +175,33 @@ watch(
   (v) => {
     if (!v) return;
     text.value = toYaml(ws.draft.overlay.value);
+    openedWith.value = text.value;
     parseNow(text.value);
   },
   { immediate: true },
 );
+
+const confirm = useConfirm();
+
+/** Cancel / ×: closes, after confirming when the text was edited. */
+function requestClose() {
+  if (text.value === openedWith.value) {
+    emit('update:visible', false);
+    return;
+  }
+  confirm.require({
+    header: 'Discard overlay edits?',
+    message:
+      'Your edits to the overlay YAML have not been applied to the pending changes and will be lost.',
+    rejectProps: {
+      label: 'Keep editing',
+      severity: 'secondary',
+      outlined: true,
+    },
+    acceptProps: { label: 'Discard', severity: 'danger' },
+    accept: () => emit('update:visible', false),
+  });
+}
 
 function onInput(value: string) {
   text.value = value;
@@ -265,5 +294,5 @@ function clearOverlay() {
   parseNow(text.value);
 }
 
-defineExpose({ text, onInput, flush, apply });
+defineExpose({ text, onInput, flush, apply, requestClose });
 </script>

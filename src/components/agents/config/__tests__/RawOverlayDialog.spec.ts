@@ -15,6 +15,12 @@ import {
 
 vi.mock('@/components/code-editor', () => import('./codeEditorMock'));
 
+const confirmRequire = vi.fn();
+vi.mock('primevue/useconfirm', () => ({
+  useConfirm: () => ({ require: confirmRequire }),
+}));
+
+import PrimeDialog from 'primevue/dialog';
 import RawOverlayDialog from '../workspace/RawOverlayDialog.vue';
 
 async function mountDialog(
@@ -46,7 +52,43 @@ async function type(wrapper: ReturnType<typeof mount>, text: string) {
 }
 
 describe('RawOverlayDialog (R70)', () => {
-  beforeEach(() => resetAgentDrafts());
+  beforeEach(() => {
+    resetAgentDrafts();
+    confirmRequire.mockReset();
+  });
+
+  it('never closes on Escape', async () => {
+    const { wrapper } = await mountDialog();
+    // The innermost Dialog is PrimeVue's (the first is the Volt wrapper).
+    const prime = wrapper.findAllComponents(PrimeDialog).at(-1)!;
+    expect(prime.props('closeOnEscape')).toBe(false);
+  });
+
+  it('Cancel closes at once while nothing was edited', async () => {
+    const { wrapper } = await mountDialog();
+    await wrapper.find('[data-test="raw-cancel"]').trigger('click');
+    expect(confirmRequire).not.toHaveBeenCalled();
+    expect(
+      wrapper.findComponent(RawOverlayDialog).emitted('update:visible'),
+    ).toEqual([[false]]);
+  });
+
+  it('Cancel and × ask before discarding edits', async () => {
+    const { wrapper } = await mountDialog();
+    await type(wrapper, 'verbosity: 3\n');
+    const dialog = wrapper.findComponent(RawOverlayDialog);
+    await wrapper.find('[data-test="raw-cancel"]').trigger('click');
+    // The × emits update:visible false from the Dialog.
+    wrapper.findComponent({ name: 'Dialog' }).vm.$emit('update:visible', false);
+    expect(confirmRequire).toHaveBeenCalledTimes(2);
+    expect(dialog.emitted('update:visible')).toBeUndefined();
+    expect(confirmRequire.mock.calls[0][0]).toMatchObject({
+      header: 'Discard overlay edits?',
+    });
+    // Keep editing (reject) leaves the dialog open; Discard (accept) closes it.
+    confirmRequire.mock.calls[0][0].accept();
+    expect(dialog.emitted('update:visible')).toEqual([[false]]);
+  });
 
   it('starts from the draft and applies a parsed, coerced document to it', async () => {
     const { wrapper, ws } = await mountDialog();
