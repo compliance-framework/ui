@@ -1,0 +1,2 @@
+lisa-addressed:
+- regression from finding 7: PolicyDataNode container branch wrapped in <template v-if=container> (summary + differs hint) so masked/string/v-else chain hangs off container again. Specs in PolicyDataDiffers.spec: 'a container node renders no scalar value span', 'a differing list shows the hint and no scalar value span'.
