@@ -146,5 +146,37 @@ describe('summarizeSync', () => {
     expect(s.notReported).toBe(1);
     expect(s.stale).toBe(1);
     expect(s.problems.map((p) => p.hostname)).toEqual(['ip-b']);
+    expect(s.total).toBe(7);
+    expect(s.partial).toBe(false);
+  });
+
+  it("takes fleet-wide numbers from the API's counts (over every instance)", () => {
+    const states = instancesMixed.items.map((i) => deriveInstanceState(i, 7));
+    const s = summarizeSync(
+      instancesMixed.items,
+      states,
+      instancesMixed.meta.counts,
+    );
+    // in sync: a, g, d (stale included); out of sync: b, f.
+    expect([s.inSync, s.expected, s.stale, s.notReported]).toEqual([
+      3, 5, 1, 1,
+    ]);
+    expect(s.total).toBe(7);
+    expect(s.reportOnly).toBe(1);
+    expect(s.partial).toBe(false);
+  });
+
+  it('marks the summary partial when fewer rows are loaded than counts.total', () => {
+    const rows = instancesMixed.items.slice(0, 2);
+    const states = rows.map((i) => deriveInstanceState(i, 7));
+    const counts = { ...instancesMixed.meta.counts, total: 120, inSync: 90 };
+    const s = summarizeSync(rows, states, counts);
+    expect(s.total).toBe(120);
+    expect(s.inSync).toBe(90);
+    expect(s.loaded).toBe(2);
+    expect(s.partial).toBe(true);
+    // Row-only numbers are not shown as fleet-wide.
+    expect(s.reportOnly).toBeNull();
+    expect(s.problems.map((p) => p.hostname)).toEqual(['ip-b']);
   });
 });

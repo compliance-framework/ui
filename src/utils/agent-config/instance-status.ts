@@ -1,7 +1,10 @@
 // Reported instance state → UI state (LLD U1.3). Uses the server's `status`, `syncStatus`
 // and `stale` (R10, R14); there is no clock logic here.
 
-import type { AgentInstanceSummary } from '@/types/agent-config';
+import type {
+  AgentInstanceSummary,
+  InstanceCounts,
+} from '@/types/agent-config';
 import { TOOLTIPS } from '@/config/tooltips';
 
 export type InstanceUiStateName =
@@ -166,28 +169,47 @@ export function deriveInstanceState(
 }
 
 export interface SyncSummary {
+  /** Every instance of the agent: meta.counts.total when known, else the loaded rows. */
+  total: number;
   inSync: number;
-  /** Non-stale instances in apply_safe/apply_all (R14 "fresh"). */
+  /**
+   * Instances whose sync applies. From the rows: non-stale apply-mode instances (R14 "fresh").
+   * From the API's counts: in sync + out of sync (apply-mode instances that reported).
+   */
   expected: number;
-  reportOnly: number;
+  /** From the rows only: null when they are not every instance (`partial`). */
+  reportOnly: number | null;
   notReported: number;
   stale: number;
-  /** Rows 3–6 on non-stale instances. */
+  /** Rows 3–6 on non-stale loaded instances. */
   problems: { instanceId: string; hostname: string | null; label: string }[];
+  /** Fewer rows are loaded than the agent has (the list is paginated): problems cover `loaded`. */
+  partial: boolean;
+  loaded: number;
 }
 
+/**
+ * The header's sync summary. Fleet-wide numbers come from the API's `counts` (over every
+ * instance) when given; the rows only supply what counts lack (report-only, the problem
+ * chips), which covers part of the fleet when not every instance is loaded.
+ */
 export function summarizeSync(
   instances: AgentInstanceSummary[],
   states: InstanceUiState[],
+  counts?: InstanceCounts | null,
 ): SyncSummary {
   const summary: SyncSummary = {
+    total: instances.length,
     inSync: 0,
     expected: 0,
     reportOnly: 0,
     notReported: 0,
     stale: 0,
     problems: [],
+    partial: false,
+    loaded: instances.length,
   };
+  let reportOnly = 0;
   instances.forEach((inst, i) => {
     const st = states[i];
     if (inst.stale) {
@@ -198,7 +220,7 @@ export function summarizeSync(
       summary.expected++;
       if (st.state === 'in-sync') summary.inSync++;
     }
-    if (st.state === 'report-only') summary.reportOnly++;
+    if (st.state === 'report-only') reportOnly++;
     if (st.state === 'not-reported') summary.notReported++;
     if (st.problem) {
       summary.problems.push({
@@ -208,5 +230,15 @@ export function summarizeSync(
       });
     }
   });
+  summary.reportOnly = reportOnly;
+  if (counts) {
+    summary.total = counts.total;
+    summary.inSync = counts.inSync;
+    summary.expected = counts.inSync + counts.outOfSync;
+    summary.stale = counts.stale;
+    summary.notReported = counts.unknown ?? summary.notReported;
+    summary.partial = instances.length < counts.total;
+    if (summary.partial) summary.reportOnly = null;
+  }
   return summary;
 }

@@ -238,6 +238,10 @@ export const instancesMixed: {
   ],
   meta: {
     desiredRevision: 7,
+    page: 1,
+    limit: 25,
+    total: 7,
+    totalPages: 1,
     counts: {
       total: 7,
       fresh: 6,
