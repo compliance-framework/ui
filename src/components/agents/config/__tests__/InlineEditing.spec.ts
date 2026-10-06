@@ -322,6 +322,13 @@ describe('field states (R71)', () => {
 
   it('a reader gets no pencils and no plugin actions', async () => {
     const { wrapper } = await mountTab(READER);
+    // The tab renders the fields (the absences below are about their actions, not a broken tab).
+    expect(
+      wrapper.find('[data-test="field-/plugins/local-ssh/schedule"]').exists(),
+    ).toBe(true);
+    expect(wrapper.find('[data-test="plugin-card-local-ssh"]').exists()).toBe(
+      true,
+    );
     expect(
       wrapper.find('[data-test="edit-/plugins/local-ssh/policies"]').exists(),
     ).toBe(false);
