@@ -1,0 +1,2 @@
+lisa-addressed:
+- review finding 1 (#338 part): PluginSummaryCard pendingRemoval uses getOwn. Finding 6 (#338 part): Remove disabled with basesBlockedReason tooltip. Spec PluginSummaryCard.spec.ts (repro #3 at card level + Remove gating).
