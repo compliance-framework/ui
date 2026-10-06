@@ -85,7 +85,10 @@ describe('AgentConfigTab', () => {
     expect(wrapper.find('[data-test="config-loading"]').exists()).toBe(true);
     await flushPromises();
     expect(api.current.getConfig).toHaveBeenCalledWith('agent-1');
-    expect(api.current.listInstances).toHaveBeenCalledWith('agent-1');
+    expect(api.current.listInstances).toHaveBeenCalledWith('agent-1', {
+      page: 1,
+      limit: 25,
+    });
     expect(wrapper.find('[data-test="desired-revision"]').text()).toContain(
       'r7',
     );
@@ -164,12 +167,20 @@ describe('AgentConfigTab', () => {
     api.current = makeApi({
       listInstances: vi.fn().mockResolvedValue({
         items: [instancesMixed.items[0]],
-        meta: instancesMixed.meta,
+        meta: {
+          ...instancesMixed.meta,
+          total: 1,
+          counts: { ...instancesMixed.meta.counts, total: 1 },
+        },
       }),
     });
     const one = mountTab();
     await flushPromises();
     expect(one.find('[data-test="instance-picker"]').exists()).toBe(false);
+    // One instance: one list request, no paging notices.
+    expect(api.current.listInstances).toHaveBeenCalledTimes(1);
+    expect(one.find('[data-test="partial-fleet"]').exists()).toBe(false);
+    expect(one.find('[data-test="bases-loading"]').exists()).toBe(false);
 
     api.current = makeApi();
     const many = mountTab();
@@ -182,6 +193,50 @@ describe('AgentConfigTab', () => {
     expect(many.find(`[data-test="pick-${instanceIds.d}"]`).exists()).toBe(
       true,
     );
+  });
+
+  it('past the page cap: fleet-wide header, a paged picker, and edits blocked', async () => {
+    const rows = Array.from({ length: 130 }, (_, i) => ({
+      ...instancesMixed.items[0],
+      instanceId: `i${i + 1}`,
+      hostname: `ip-${i + 1}`,
+    }));
+    api.current = makeApi({
+      listInstances: vi.fn(
+        async (_a: string, q: { page?: number; limit?: number } = {}) => {
+          const page = q.page ?? 1;
+          return {
+            items: rows.slice((page - 1) * 25, page * 25),
+            meta: {
+              ...instancesMixed.meta,
+              counts: { ...instancesMixed.meta.counts, total: 130 },
+              page,
+              total: 130,
+              totalPages: 6,
+            },
+          };
+        },
+      ),
+      getInstance: vi.fn(async (_a: string, id: string) => ({
+        ...instanceDetailA,
+        instanceId: id,
+      })),
+    });
+    const wrapper = mountTab();
+    await flushPromises();
+    expect(api.current.listInstances).toHaveBeenCalledTimes(4);
+    expect(wrapper.find('[data-test="partial-fleet"]').text()).toContain(
+      'Showing 100 of 130 instances',
+    );
+    expect(wrapper.find('[data-test="picker-range"]').text()).toBe(
+      '1–25 of 100',
+    );
+    expect(wrapper.find('[data-test="bases-loading"]').text()).toContain(
+      'Only 100 of 130 instances are loaded',
+    );
+    // The field renders, without a pencil.
+    expect(wrapper.find('[data-test="field-/verbosity"]').exists()).toBe(true);
+    expect(wrapper.find('[data-test="edit-/verbosity"]').exists()).toBe(false);
   });
 
   it('selecting an instance fetches its detail and the overlay of its applied revision', async () => {

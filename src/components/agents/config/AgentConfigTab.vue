@@ -30,7 +30,7 @@
       <AgentConfigHeader
         :config="state.config.value"
         :sync-summary="state.syncSummary.value"
-        :instance-count="state.instances.value.length"
+        :instance-count="state.instanceTotal.value"
         :loading="refreshing"
         @refresh="refresh"
         @select-instance="state.selectInstance"
