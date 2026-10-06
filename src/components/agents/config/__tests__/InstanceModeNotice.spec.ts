@@ -40,6 +40,9 @@ describe('InstanceModeNotice', () => {
 
   it('shows no rejection details for an applied instance', () => {
     const w = mountNotice({ warnings: [] });
+    // The notice itself renders: the absences below are about its content.
+    expect(w.find('[data-test="mode-notice"]').exists()).toBe(true);
+    expect(w.find('[data-test="mode-badge"]').exists()).toBe(true);
     expect(w.find('[data-test="rejection-details"]').exists()).toBe(false);
     expect(w.find('[data-test="file-warnings"]').exists()).toBe(false);
   });
