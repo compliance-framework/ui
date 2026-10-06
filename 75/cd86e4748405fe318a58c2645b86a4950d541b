@@ -1,0 +1,2 @@
+lisa-addressed:
+- review finding 7: PolicyDataNode shows 'differs across instances' (pd-differs-<ptr>) on editable array nodes via tree context differs() -> useEditor().differsAcrossInstances. Spec PolicyDataDiffers.spec.ts (new, in #337).
