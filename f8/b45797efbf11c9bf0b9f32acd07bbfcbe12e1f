@@ -1,0 +1,2 @@
+lisa-addressed:
+- review finding 3 (#324 part): ConfigPreview.omittedInstances?: number (API configPreviewResponse omitted-instances); shown by SavePreviewPanel in #334.
