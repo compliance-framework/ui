@@ -126,6 +126,32 @@ export function useConfigWorkspace(
       .filter((b): b is ConfigDoc => !!b),
   );
 
+  // Base-dependent edits (null or omit a key, "back to the file value") are only right against
+  // EVERY reporting instance's file, so they wait until each one is loaded, and a failed load
+  // blocks them until a retry (loadDetails) succeeds. A single-instance agent's only file is
+  // the selected instance's, so it never waits on the background load.
+  const missingBaseIds = computed(() =>
+    state.instances.value
+      .filter(
+        (i) => i.reportedAt != null && !instanceDetails.value.has(i.instanceId),
+      )
+      .map((i) => i.instanceId),
+  );
+  /** Reporting instances whose detail the last loadDetails could not load. */
+  const failedBaseIds = computed(() =>
+    detailsLoaded.value && !detailsLoading.value ? missingBaseIds.value : [],
+  );
+  /** '' = every reporting instance's file is loaded (edits allowed); else why not. */
+  const basesBlockedReason = computed(() => {
+    if (!missingBaseIds.value.length) return '';
+    if (!failedBaseIds.value.length) return "Loading the instances' files…";
+    const hosts = failedBaseIds.value.map((id) => {
+      const s = state.instances.value.find((i) => i.instanceId === id);
+      return s?.hostname || id.slice(0, 8);
+    });
+    return `Could not load the file of ${hosts.join(', ')}: editing waits until every reporting instance's file is loaded`;
+  });
+
   // ---- The draft (shared per agent) ----
   // Scoped to the signed-in user (see draftRegistry). A different agent id swaps the state
   // the draft refs point at (one DraftState per agent); only a config load syncs it, so a
@@ -235,10 +261,11 @@ export function useConfigWorkspace(
 
   /**
    * Whether this user may edit the field at `ptr` (R40): never a forbidden key, nor a field
-   * no reporting instance would apply (R71 read-only).
+   * no reporting instance would apply (R71 read-only), nor before every reporting instance's
+   * file is loaded (`basesBlockedReason`).
    */
   function canEditPointer(ptr: string): boolean {
-    if (!canConfigure.value) return false;
+    if (!canConfigure.value || basesBlockedReason.value) return false;
     const state = accessAt(ptr).state;
     return state !== 'forbidden' && state !== 'readonly';
   }
@@ -300,6 +327,8 @@ export function useConfigWorkspace(
     detailsLoading,
     detailsLoaded,
     loadDetails,
+    failedBaseIds,
+    basesBlockedReason,
     placeholderInstanceId,
     placeholderBase,
     bases,

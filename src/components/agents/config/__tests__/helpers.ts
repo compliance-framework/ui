@@ -55,7 +55,7 @@ export const ADMIN = {
 export const READER = { agent: ['read'] };
 
 // ---- Workspace harness: a real useAgentConfig + useConfigWorkspace over a fake API ----
-import { computed, defineComponent, h, type Component } from 'vue';
+import { computed, defineComponent, h, watch, type Component } from 'vue';
 import { vi } from 'vitest';
 import type { AgentConfigApi } from '@/composables/agent-config/api-types';
 import { useAgentConfig } from '@/composables/agent-config/useAgentConfig';
@@ -95,6 +95,7 @@ export function fakeApi(over: Partial<AgentConfigApi> = {}): AgentConfigApi {
 /**
  * A host component that loads the agent config and provides a workspace to `inner`
  * (rendered with `props` once the configuration is ready). `out.ws` exposes the workspace.
+ * Like the Configuration tab, it loads every instance's detail for editors.
  */
 export function workspaceHost(
   api: AgentConfigApi,
@@ -112,6 +113,18 @@ export function workspaceHost(
       );
       const ws = useConfigWorkspace(agentId, api, state);
       out.ws = ws;
+      // As the Configuration tab does: editors load every reporting instance's file.
+      watch(
+        () =>
+          state.status.value === 'ready' &&
+          !state.instanceLoading.value &&
+          ws.canConfigure.value,
+        (go) => {
+          if (go && !ws.detailsLoaded.value && !ws.detailsLoading.value)
+            ws.loadDetails();
+        },
+        { immediate: true },
+      );
       state.load();
       return () =>
         state.status.value === 'ready'
