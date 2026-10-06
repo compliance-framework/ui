@@ -241,6 +241,11 @@ export interface ConfigPreview {
   standalone: boolean;
   overlayErrors: FieldError[];
   instances: InstancePreview[];
+  /**
+   * Instances the preview left out (the API previews at most 50 instances / 16 MiB). A save
+   * still validates against them. Absent from older APIs.
+   */
+  omittedInstances?: number;
 }
 
 export interface SaveConfigRequest {
