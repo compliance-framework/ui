@@ -9,6 +9,7 @@ import {
   formatPointer,
   pointer,
 } from './json-pointer';
+import { isPlainObject } from './merge-patch';
 
 export type Provenance =
   | 'file'
@@ -16,14 +17,26 @@ export type Provenance =
   | 'overrides-file'
   | 'removed-by-overlay';
 
-/** True when the overlay nulls `ptr` or one of its ancestors. */
-function nulledByOverlay(overlay: unknown, ptr: string): boolean {
+/**
+ * What the overlay does at `ptr` under RFC 7396. Walking down from the root, a null is a
+ * deletion and an object merges, but an array or scalar replaces the whole subtree: below it,
+ * nulls are data, not deletions, and a pointer is there only if the replacement has it.
+ */
+function overlayEffect(
+  overlay: unknown,
+  ptr: string,
+): 'none' | 'deleted' | 'set' | 'replaced-without' {
   const tokens = parsePointer(ptr);
   for (let i = 1; i <= tokens.length; i++) {
     const p = formatPointer(tokens.slice(0, i));
-    if (hasAt(overlay, p) && getAt(overlay, p) === null) return true;
+    if (!hasAt(overlay, p)) return 'none';
+    const v = getAt(overlay, p);
+    if (v === null) return 'deleted';
+    if (i < tokens.length && !isPlainObject(v)) {
+      return hasAt(overlay, ptr) ? 'set' : 'replaced-without';
+    }
   }
-  return false;
+  return 'set';
 }
 
 export function provenanceOf(
@@ -31,14 +44,17 @@ export function provenanceOf(
   base: unknown,
   overlay: unknown,
 ): Provenance {
-  const inBase = hasAt(base, ptr) && getAt(base, ptr) !== null;
-  if (nulledByOverlay(overlay, ptr)) {
-    return inBase ? 'removed-by-overlay' : 'file';
+  // A null file value is still a member of the file.
+  const inBase = hasAt(base, ptr);
+  switch (overlayEffect(overlay, ptr)) {
+    case 'deleted':
+    case 'replaced-without':
+      return inBase ? 'removed-by-overlay' : 'file';
+    case 'set':
+      return inBase ? 'overrides-file' : 'overlay';
+    default:
+      return 'file';
   }
-  if (hasAt(overlay, ptr)) {
-    return inBase ? 'overrides-file' : 'overlay';
-  }
-  return 'file';
 }
 
 export function pluginProvenance(

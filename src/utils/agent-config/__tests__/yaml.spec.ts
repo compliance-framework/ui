@@ -27,6 +27,10 @@ describe('yaml', () => {
     });
     expect(parseYaml('')).toEqual({ ok: true, value: {} });
     expect(parseYaml('# only a comment\n')).toEqual({ ok: true, value: {} });
+    expect(parseYaml('---\n# only a comment\n')).toEqual({
+      ok: true,
+      value: {},
+    });
   });
 
   it('dumps multi-line strings as block scalars and keeps key order', () => {
@@ -85,6 +89,72 @@ describe('yaml', () => {
     expect(parseYaml(text)).toMatchObject({
       ok: false,
       error: { message: 'Document is too large' },
+    });
+  });
+
+  it('rejects an explicit null root instead of reading it as {}', () => {
+    for (const text of ['null\n', '~\n', '--- null\n', '# note\n~\n']) {
+      expect(parseYaml(text)).toMatchObject({
+        ok: false,
+        error: { message: 'Overlay must be a mapping' },
+      });
+    }
+  });
+
+  it.each([
+    ['policy_data:\n  threshold: .inf\n', '.inf', 'is not a finite number', 1],
+    ['policy_data:\n  t: -.Inf\n', '-.Inf', 'is not a finite number', 1],
+    ['policy_data:\n  t: .nan\n', '.nan', 'is not a finite number', 1],
+    ['mode: 0644\n', '0644', 'is not a plain decimal number', 0],
+    ['x: [1, 0x1F]\n', '0x1F', 'is not a plain decimal number', 0],
+    ['x: 0o17\n', '0o17', 'is not a plain decimal number', 0],
+    ['x: +5\n', '+5', 'is not a plain decimal number', 0],
+    ['x: !!int 0644\n', '0644', 'is not a plain decimal number', 0],
+    [
+      'id: 12345678901234567890\n',
+      '12345678901234567890',
+      'has more digits than can be stored exactly',
+      0,
+    ],
+    ['0644: key\n', '0644', 'is not a plain decimal number', 0],
+  ])('rejects %j (%s)', (text, literal, reason, line) => {
+    expect(parseYaml(text)).toEqual({
+      ok: false,
+      error: {
+        message: `${literal} ${reason}: quote it to keep it as text`,
+        line,
+        column: expect.any(Number),
+      },
+    });
+  });
+
+  it('points at the rejected number', () => {
+    const r = parseYaml('a: 1\nb:\n  c: 0x10\n');
+    expect(r).toMatchObject({ ok: false, error: { line: 2, column: 5 } });
+  });
+
+  it('accepts plain decimal numbers and quoted look-alikes', () => {
+    expect(
+      parseYaml(
+        'a: 0\nb: -12\nc: 1.5\nd: 1e3\ne: 1.0\nf: 9007199254740991\ng: "0644"\nh: ".inf"\n',
+      ),
+    ).toEqual({
+      ok: true,
+      value: {
+        a: 0,
+        b: -12,
+        c: 1.5,
+        d: 1000,
+        e: 1,
+        f: 9007199254740991,
+        g: '0644',
+        h: '.inf',
+      },
+    });
+    // Out of float range: not a YAML float at all, so it stays the string typed.
+    expect(parseYaml('a: 1e999\n')).toEqual({
+      ok: true,
+      value: { a: '1e999' },
     });
   });
 
