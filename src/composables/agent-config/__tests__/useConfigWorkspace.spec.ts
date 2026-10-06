@@ -11,6 +11,7 @@ import {
   ADMIN,
   fakeApi,
   globalWith,
+  pagedListInstances,
   piniaWith,
   workspaceHost,
 } from '@/components/agents/config/__tests__/helpers';
@@ -115,14 +116,7 @@ describe('useConfigWorkspace: edits wait for every instance file', () => {
     const ws = await mountWorkspace(
       fakeApi({
         getConfig: vi.fn().mockResolvedValue(configRev7),
-        listInstances: vi.fn().mockResolvedValue({
-          items: [only],
-          meta: {
-            ...instancesMixed.meta,
-            total: 1,
-            counts: { ...instancesMixed.meta.counts, total: 1 },
-          },
-        }),
+        listInstances: pagedListInstances([only]),
         getInstance,
       }),
     );
@@ -144,21 +138,7 @@ describe('useConfigWorkspace: edits wait for every instance file', () => {
     }));
     const ws = await mountWorkspace(
       fakeApi({
-        listInstances: vi.fn(
-          async (_a: string, q: { page?: number; limit?: number } = {}) => {
-            const page = q.page ?? 1;
-            return {
-              items: rows.slice((page - 1) * 25, page * 25),
-              meta: {
-                ...instancesMixed.meta,
-                counts: { ...instancesMixed.meta.counts, total: 130 },
-                page,
-                total: 130,
-                totalPages: 6,
-              },
-            };
-          },
-        ),
+        listInstances: pagedListInstances(rows),
         getInstance: vi.fn(async (_a: string, id: string) => ({
           ...detailFor(instancesMixed.items[0], overlayRev7),
           instanceId: id,

@@ -57,7 +57,14 @@ export const READER = { agent: ['read'] };
 // ---- Workspace harness: a real useAgentConfig + useConfigWorkspace over a fake API ----
 import { computed, defineComponent, h, watch, type Component } from 'vue';
 import { vi } from 'vitest';
-import type { AgentConfigApi } from '@/composables/agent-config/api-types';
+import type {
+  AgentConfigApi,
+  InstancesPageQuery,
+} from '@/composables/agent-config/api-types';
+import type {
+  AgentInstanceSummary,
+  InstanceCounts,
+} from '@/types/agent-config';
 import { useAgentConfig } from '@/composables/agent-config/useAgentConfig';
 import {
   useConfigWorkspace,
@@ -71,6 +78,39 @@ import {
   instancesMixed,
 } from '@/composables/agent-config/__tests__/fixtures';
 
+/**
+ * A listInstances that serves `items` as the paginated API does: `limit` (default 25) a page,
+ * page fields in meta, and counts over every item.
+ */
+export function pagedListInstances(items: AgentInstanceSummary[]) {
+  const counts: InstanceCounts = {
+    total: items.length,
+    fresh: items.filter((i) => !i.stale).length,
+    stale: items.filter((i) => i.stale).length,
+    inSync: items.filter((i) => i.syncStatus === 'in-sync').length,
+    outOfSync: items.filter((i) => i.syncStatus === 'out-of-sync').length,
+    pending: items.filter((i) => i.status === 'pending').length,
+    rejected: items.filter((i) => i.status === 'rejected').length,
+    failed: items.filter((i) => i.status === 'failed').length,
+    unknown: items.filter((i) => i.status === 'unknown').length,
+  };
+  return vi.fn(async (_agentId: string, q: InstancesPageQuery = {}) => {
+    const page = q.page ?? 1;
+    const limit = q.limit ?? 25;
+    return {
+      items: items.slice((page - 1) * limit, page * limit),
+      meta: {
+        desiredRevision: instancesMixed.meta.desiredRevision,
+        counts,
+        page,
+        limit,
+        total: items.length,
+        totalPages: Math.max(1, Math.ceil(items.length / limit)),
+      },
+    };
+  });
+}
+
 /** A fake API backed by the fixtures; override any method. */
 export function fakeApi(over: Partial<AgentConfigApi> = {}): AgentConfigApi {
   return {
@@ -82,7 +122,7 @@ export function fakeApi(over: Partial<AgentConfigApi> = {}): AgentConfigApi {
       .mockResolvedValue({ items: [], total: 0, totalPages: 1 }),
     getRevision: vi.fn().mockResolvedValue(configRev7),
     revert: vi.fn(),
-    listInstances: vi.fn().mockResolvedValue(instancesMixed),
+    listInstances: pagedListInstances(instancesMixed.items),
     getInstance: vi.fn().mockImplementation(async (_a: string, id: string) => {
       if (id === instanceIds.a) return instanceDetailA;
       const s = instancesMixed.items.find((i) => i.instanceId === id)!;
