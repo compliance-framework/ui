@@ -19,6 +19,7 @@ import type {
   SaveResult,
 } from '@/types/agent-config';
 import { AgentConfigApiError, type AgentConfigApi } from './api-types';
+import { INSTANCE_PAGE_LIMIT } from './instancePages';
 import { maskedPointers } from '@/utils/agent-config/validation';
 
 export * from './api-types';
@@ -271,12 +272,16 @@ export function createHttpAgentConfigApi(
         );
         return saveResult(res);
       }),
-    listInstances: (agentId) =>
+    listInstances: (agentId, query = {}) =>
       call('listInstances', async () => {
         const res = await instance.get<{
           data: AgentInstanceSummary[];
           meta: InstancesMeta;
         }>(`${base(agentId)}/instances`, {
+          params: {
+            page: query.page ?? 1,
+            limit: query.limit ?? INSTANCE_PAGE_LIMIT,
+          },
           camelcaseStopPaths: STOP_PATHS.instances,
         });
         return { items: res.data.data ?? [], meta: res.data.meta };

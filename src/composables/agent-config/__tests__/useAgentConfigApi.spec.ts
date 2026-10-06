@@ -133,7 +133,28 @@ describe('useAgentConfigApi (HTTP client)', () => {
     expect(config.transformRequest).toEqual([jsonBody]);
   });
 
-  it('listInstances and getInstance: stop paths', async () => {
+  it('listInstances and getInstance: page query, meta and stop paths', async () => {
+    // As the camelcase interceptor leaves it: page fields beside the fleet-wide counts.
+    const meta = {
+      desiredRevision: 7,
+      counts: { total: 60, fresh: 58, stale: 2, inSync: 50, outOfSync: 8 },
+      page: 2,
+      limit: 25,
+      total: 60,
+      totalPages: 3,
+    };
+    get.mockResolvedValueOnce({
+      status: 200,
+      data: { data: [{ instanceId: 'i26' }], meta },
+    });
+    await expect(
+      api.listInstances('a1', { page: 2, limit: 25 }),
+    ).resolves.toEqual({ items: [{ instanceId: 'i26' }], meta });
+    expect(get).toHaveBeenLastCalledWith('/api/admin/agents/a1/instances', {
+      params: { page: 2, limit: 25 },
+      camelcaseStopPaths: STOP_PATHS.instances,
+    });
+    // Without a query: the first page of 25.
     get.mockResolvedValueOnce({
       status: 200,
       data: { data: [], meta: { desiredRevision: 0 } },
@@ -143,6 +164,7 @@ describe('useAgentConfigApi (HTTP client)', () => {
       meta: { desiredRevision: 0 },
     });
     expect(get).toHaveBeenLastCalledWith('/api/admin/agents/a1/instances', {
+      params: { page: 1, limit: 25 },
       camelcaseStopPaths: STOP_PATHS.instances,
     });
     get.mockResolvedValueOnce({
