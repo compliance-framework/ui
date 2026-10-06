@@ -60,6 +60,14 @@
         >
           {{ syncSummary.stale }} stale
         </span>
+        <span
+          v-if="syncSummary.partial"
+          class="text-amber-700 dark:text-amber-300"
+          data-test="partial-fleet"
+        >
+          Showing {{ syncSummary.loaded }} of {{ syncSummary.total }} instances:
+          the list and problems below cover only those
+        </span>
         <button
           v-for="p in syncSummary.problems"
           :key="p.instanceId"
@@ -99,6 +107,7 @@ withDefaults(
   defineProps<{
     config: AgentConfigRevision | null;
     syncSummary: SyncSummary;
+    /** Every instance of the agent (the API's count), loaded or not. */
     instanceCount: number;
     loading?: boolean;
   }>(),

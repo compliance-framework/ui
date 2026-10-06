@@ -2,45 +2,65 @@
   <div class="space-y-2" data-test="instance-picker">
     <div class="flex flex-wrap gap-2">
       <button
-        v-for="item in freshItems"
+        v-for="item in pageItems"
         :key="item.inst.instanceId"
         type="button"
-        :class="itemClass(item.inst.instanceId)"
+        :class="[
+          itemClass(item.inst.instanceId),
+          { 'opacity-70': item.inst.stale },
+        ]"
         :aria-pressed="item.inst.instanceId === selectedId"
         :data-test="`pick-${item.inst.instanceId}`"
         @click="$emit('select', item.inst.instanceId)"
       >
         <span class="font-mono text-xs">{{ label(item.inst) }}</span>
+        <ConfigPill v-if="item.inst.stale" severity="secondary"
+          >stale</ConfigPill
+        >
         <InstanceStatusChip :state="item.state" />
       </button>
     </div>
-    <div v-if="staleItems.length">
+    <div
+      v-if="pageCount > 1"
+      class="flex items-center gap-2 text-xs text-gray-500 dark:text-slate-400"
+      data-test="picker-pager"
+    >
       <button
         type="button"
-        class="text-xs text-gray-500 underline dark:text-slate-400"
-        data-test="toggle-stale"
-        @click="showStale = !showStale"
+        class="underline disabled:no-underline disabled:opacity-40"
+        :disabled="page === 0"
+        data-test="picker-prev"
+        @click="page--"
       >
-        {{ showStale ? 'Hide' : 'Show' }} {{ staleItems.length }} stale
-        instance{{ staleItems.length === 1 ? '' : 's' }}
+        Previous
       </button>
-      <div v-if="showStale" class="mt-2 flex flex-wrap gap-2">
-        <button
-          v-for="item in staleItems"
-          :key="item.inst.instanceId"
-          type="button"
-          class="opacity-70"
-          :class="itemClass(item.inst.instanceId)"
-          :aria-pressed="item.inst.instanceId === selectedId"
-          :data-test="`pick-${item.inst.instanceId}`"
-          @click="$emit('select', item.inst.instanceId)"
-        >
-          <span class="font-mono text-xs">{{ label(item.inst) }}</span>
-          <ConfigPill severity="secondary">stale</ConfigPill>
-          <InstanceStatusChip :state="item.state" />
-        </button>
-      </div>
+      <span data-test="picker-range"
+        >{{ page * PICKER_PAGE_SIZE + 1 }}–{{
+          Math.min((page + 1) * PICKER_PAGE_SIZE, shown.length)
+        }}
+        of {{ shown.length }}</span
+      >
+      <button
+        type="button"
+        class="underline disabled:no-underline disabled:opacity-40"
+        :disabled="page >= pageCount - 1"
+        data-test="picker-next"
+        @click="page++"
+      >
+        Next
+      </button>
     </div>
+    <button
+      v-if="staleItems.length"
+      type="button"
+      class="text-xs text-gray-500 underline dark:text-slate-400"
+      data-test="toggle-stale"
+      @click="showStale = !showStale"
+    >
+      {{ showStale ? 'Hide' : 'Show' }} {{ staleItems.length }} stale instance{{
+        staleItems.length === 1 ? '' : 's'
+      }}
+    </button>
   </div>
 </template>
 
@@ -50,6 +70,9 @@ import type { AgentInstanceSummary } from '@/types/agent-config';
 import type { InstanceUiState } from '@/utils/agent-config/instance-status';
 import InstanceStatusChip from './InstanceStatusChip.vue';
 import ConfigPill from './ConfigPill.vue';
+
+/** Instances per picker page (the API's page size). */
+const PICKER_PAGE_SIZE = 25;
 
 const props = defineProps<{
   instances: AgentInstanceSummary[];
@@ -66,12 +89,34 @@ const items = computed(() =>
 const freshItems = computed(() => items.value.filter((i) => !i.inst.stale));
 const staleItems = computed(() => items.value.filter((i) => i.inst.stale));
 const showStale = ref(false);
+/** Fresh instances, then the stale ones when shown; rendered a page at a time. */
+const shown = computed(() =>
+  showStale.value
+    ? [...freshItems.value, ...staleItems.value]
+    : freshItems.value,
+);
+const page = ref(0);
+const pageCount = computed(() =>
+  Math.max(1, Math.ceil(shown.value.length / PICKER_PAGE_SIZE)),
+);
+const pageItems = computed(() =>
+  shown.value.slice(
+    page.value * PICKER_PAGE_SIZE,
+    (page.value + 1) * PICKER_PAGE_SIZE,
+  ),
+);
+watch(pageCount, (n) => {
+  if (page.value > n - 1) page.value = n - 1;
+});
 
+// The selected instance is always on the shown page (stale ones expand the list).
 watch(
   () => props.selectedId,
   (id) => {
     if (staleItems.value.some((i) => i.inst.instanceId === id))
       showStale.value = true;
+    const at = shown.value.findIndex((i) => i.inst.instanceId === id);
+    if (at >= 0) page.value = Math.floor(at / PICKER_PAGE_SIZE);
   },
   { immediate: true },
 );
