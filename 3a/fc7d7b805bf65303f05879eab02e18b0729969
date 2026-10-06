@@ -1,0 +1,2 @@
+lisa-addressed:
+- review finding 6 (#331 part): useConfigWorkspace missingBaseIds/failedBaseIds/basesBlockedReason; canEditPointer false until every reporting instance's detail is loaded; failures tracked (retry = loadDetails). Spec useConfigWorkspace.spec.ts (repro #1 cases + single-instance). Chose blocking + Retry over a warning: an edit computed without a base can silently un-pin a value on that host.
