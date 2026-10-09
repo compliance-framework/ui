@@ -1,0 +1,2 @@
+lisa-addressed:
+- coordinator: shared workflow pins moved from v1.4.0 to @899dbe5d7dac02de5fd60a92d764b189259e03dd # v1.5.0 (caller-facing inputs, secrets and permissions unchanged; v1.5.0 only adds the VERSION build arg, which ui's Dockerfile ignores).
