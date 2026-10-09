@@ -19,7 +19,7 @@ Copied from: compliance-framework/api@c0b3792 (branch
 3. Run `npx vitest run src/utils/agent-config/__tests__/agentconfig-conformance.spec.ts`
    and fix the UI code until every case passes.
 
-CI (`conformance-drift` in `.github/workflows/pull-request.yml`) fails when this
+CI (the extra command in `.github/workflows/ci.yml`) fails when this
 copy differs from the API's `main`; until the file exists on `main` it passes
 with a notice. `make reviewable` does not run it (no network in the local gate).
 

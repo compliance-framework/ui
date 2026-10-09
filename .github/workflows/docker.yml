@@ -17,8 +17,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # Skipped without a cache_key: actions/cache needs a key (release.yml passes none).
       - name: Restore Docker Cache
-        uses: actions/cache@v3
+        if: inputs.cache_key
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: /tmp/.buildx-cache
           key: ${{ inputs.cache_key }}
@@ -67,7 +69,8 @@ jobs:
           docker save ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:build > /tmp/.buildx-cache/image.tar
 
       - name: Save Build Cache
-        uses: actions/cache@v3
+        if: inputs.cache_key
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: /tmp/.buildx-cache
           key: ${{ inputs.cache_key }}
