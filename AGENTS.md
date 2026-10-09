@@ -20,7 +20,7 @@ The UI depends on the API's JSON shapes, which are typed by hand here. Releases 
 ## Commands
 
 ```sh
-make reviewable                              # format check + type-check + lint + unit tests: what CI runs
+make reviewable                              # format check + type-check + lint + unit tests: what CI runs, less the build
 npx vitest run src/path/to/file.spec.ts      # one spec
 npm run dev                                  # dev server on http://localhost:3000
 VITE_API_URL=http://localhost:8080 npm run dev   # against a local-dev API
@@ -28,8 +28,12 @@ npm run format:fix                           # prettier --write src/
 ```
 
 - **Node version.** CI and the Docker image use Node 20 (`engines` says `^20`), but newer
-  Node versions work locally. CI runs `make reviewable` plus a separate type-check job that
-  covers the same checks, so if `make reviewable` passes, CI should too.
+  Node versions work locally.
+- **CI.** `.github/workflows/ci.yml` calls the shared `ci-ui.yml` from
+  `compliance-framework/workflows`: ESLint (fails on errors), the Prettier check, type-check,
+  unit tests, the build and the conformance drift check, plus the PR title, vulnerability and
+  actionlint checks. The one check to require is `ci / required`. If `make reviewable` and
+  `npm run build` pass, the Node checks should too.
 - **Pre-commit hook.** The husky hook runs lint-staged, which reformats all of `src/`, not
   only staged files. Expect whitespace changes in files you didn't touch; that is fine.
 - **Formatting.** ESLint does not check formatting; Prettier does. Its config is the

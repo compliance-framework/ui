@@ -1,0 +1,38 @@
+name: ci
+
+on:
+  pull_request:
+    # edited re-runs the PR title check after a title edit.
+    # closed: notify marks the PR's needs-human card handled and closes its CI incident.
+    types: [opened, edited, synchronize, reopened, labeled, unlabeled, closed]
+  push:
+    branches: [main]
+
+permissions: {}
+
+jobs:
+  ci:
+    uses: compliance-framework/workflows/.github/workflows/ci-ui.yml@55c549bf712163152173b398e297fba0f907ceca # v1.4.0
+    with:
+      # The unit tests are the test:unit script (Vitest), not test.
+      test-script: test:unit
+      # The vendored agentconfig conformance file must match the API's main (a notice, not a
+      # failure, while the API has not published it yet). Not in `make reviewable`: it needs
+      # the network.
+      extra-command: scripts/sync-agentconfig-conformance.sh --check main
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: read
+      security-events: write
+    secrets: inherit
+
+  notify:
+    needs: [ci]
+    if: always()
+    uses: compliance-framework/workflows/.github/workflows/notify-failure.yml@55c549bf712163152173b398e297fba0f907ceca # v1.4.0
+    with:
+      needs: ${{ toJSON(needs) }}
+    permissions:
+      contents: read
+    secrets: inherit
