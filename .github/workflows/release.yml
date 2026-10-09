@@ -1,15 +1,20 @@
-name: Release New Version
+name: release
 
 on:
-  push:
-    tags:
-      - 'v*'
+  release:
+    types: [published]
+
+permissions:
+  contents: read
 
 jobs:
   release:
-    permissions:
-      packages: write
-      contents: write
-    uses: ./.github/workflows/docker.yml
+    # ghcr.io/compliance-framework/ui, linux/amd64 and linux/arm64: :X.Y.Z, :X.Y, :X and :latest
+    # for a final release, :X.Y.Z-rcN only for a pre-release.
+    uses: compliance-framework/workflows/.github/workflows/release-ui.yml@55c549bf712163152173b398e297fba0f907ceca # v1.4.0
     with:
-      push: true
+      images: '[{"name": "ui", "dockerfile": "Dockerfile"}]'
+    permissions:
+      contents: read
+      packages: write
+    secrets: inherit

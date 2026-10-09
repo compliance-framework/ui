@@ -1,0 +1,27 @@
+name: preview
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, synchronize, reopened, labeled]
+
+permissions:
+  contents: read
+
+concurrency:
+  # A merged PR's events carry the base branch as github.ref, so key PR runs by number.
+  group: preview-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  preview:
+    # :main and :sha-<7> on pushes to main; :pr-<number> on PRs labelled preview.
+    uses: compliance-framework/workflows/.github/workflows/preview.yml@55c549bf712163152173b398e297fba0f907ceca # v1.4.0
+    with:
+      kind: image
+      on-main: true
+      images: '[{"name": "ui", "dockerfile": "Dockerfile"}]'
+    permissions:
+      contents: read
+      packages: write

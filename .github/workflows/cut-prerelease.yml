@@ -1,0 +1,15 @@
+name: cut-prerelease
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  cut:
+    # Tags main's head as vX.Y.Z-rcN, X.Y.Z from the open release-please PR, as a pre-release.
+    uses: compliance-framework/workflows/.github/workflows/cut-prerelease.yml@55c549bf712163152173b398e297fba0f907ceca # v1.4.0
+    permissions:
+      contents: read
+    secrets: inherit

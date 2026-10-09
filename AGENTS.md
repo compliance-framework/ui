@@ -15,7 +15,10 @@ API.
 - **local-dev**: Docker Compose stack running all of the above. Use it for end-to-end checks.
 
 The UI depends on the API's JSON shapes, which are typed by hand here. Releases are tags
-(`vX.Y.Z`, or `vX.Y.Z-rcN`). CI publishes `ghcr.io/compliance-framework/ui`.
+(`vX.Y.Z`, or `vX.Y.Z-rcN`) made by the release bot, never pushed by hand. Merging the
+release-please PR releases `vX.Y.Z`. The `cut-prerelease` workflow cuts an rc. Each release
+publishes `ghcr.io/compliance-framework/ui` (`release.yml`). `preview.yml` publishes `:main`
+on pushes to `main`, and `:pr-<n>` for PRs labelled `preview`.
 
 ## Commands
 
