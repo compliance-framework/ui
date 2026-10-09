@@ -1,0 +1,2 @@
+lisa-addressed:
+- coordinator: release-ui, preview and cut-prerelease pins moved to @899dbe5d7dac02de5fd60a92d764b189259e03dd # v1.5.0; image tags/platforms unchanged in v1.5.0 (only VERSION build arg added).
