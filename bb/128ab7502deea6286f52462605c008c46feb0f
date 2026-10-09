@@ -5,3 +5,6 @@ lisa-design:
 - ESLint: `npm run lint` (eslint src/) reports 0 errors and 0 warnings on main, so no baseline or "new errors only" gating is needed.
 - docker.yml/release.yml stay until T03. docker.yml's actions/cache@v3 fails the shared actionlint check, so its two cache steps move to v4 and skip without a cache_key: release.yml never passes one, and the old runs logged "Input required and not supplied: key" without restoring or saving anything, so publishing is unchanged.
 - Dropped mock-ui's "Tracks compliance-framework/workflows main until v1 is tagged" comment: the callers pin a release.
+
+lisa-selfreview:
+- pass 1: [must-fix] CORE-CI-001 .github/workflows/docker.yml:23 actions/cache@v4 is a mutable tag on the two touched steps -> pin by SHA (fix).
