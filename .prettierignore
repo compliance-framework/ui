@@ -1,2 +1,5 @@
 # Vendored byte-for-byte from compliance-framework/api (see the README next to it).
 src/utils/agent-config/__tests__/fixtures/agentconfig-conformance.json
+# release-please writes these; its formatting is not ours to fix
+CHANGELOG.md
+.release-please-manifest.json
