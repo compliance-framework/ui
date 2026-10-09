@@ -1,0 +1,7 @@
+lisa-design:
+- Shared workflows pinned at @55c549bf712163152173b398e297fba0f907ceca # v1.4.0 (coordinator update; supersedes the spec's v1.3.2).
+- ci.yml mirrors mock-ui's caller (trigger types incl. edited/labeled/unlabeled/closed, notify with secrets: inherit); release-checks is added in T02, not here.
+- test-script: test:unit, because ui has no `test` npm script; extra-command runs scripts/sync-agentconfig-conformance.sh --check main (the old conformance-drift job).
+- ESLint: `npm run lint` (eslint src/) reports 0 errors and 0 warnings on main, so no baseline or "new errors only" gating is needed.
+- docker.yml/release.yml stay until T03. docker.yml's actions/cache@v3 fails the shared actionlint check, so its two cache steps move to v4 and skip without a cache_key: release.yml never passes one, and the old runs logged "Input required and not supplied: key" without restoring or saving anything, so publishing is unchanged.
+- Dropped mock-ui's "Tracks compliance-framework/workflows main until v1 is tagged" comment: the callers pin a release.
