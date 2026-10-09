@@ -1,6 +1,6 @@
 {
   "name": "continuous-compliance",
-  "version": "0.0.0",
+  "version": "2.12.1",
   "private": true,
   "type": "module",
   "scripts": {
