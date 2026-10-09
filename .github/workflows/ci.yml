@@ -12,7 +12,7 @@ permissions: {}
 
 jobs:
   ci:
-    uses: compliance-framework/workflows/.github/workflows/ci-ui.yml@55c549bf712163152173b398e297fba0f907ceca # v1.4.0
+    uses: compliance-framework/workflows/.github/workflows/ci-ui.yml@899dbe5d7dac02de5fd60a92d764b189259e03dd # v1.5.0
     with:
       # The unit tests are the test:unit script (Vitest), not test.
       test-script: test:unit
@@ -30,7 +30,7 @@ jobs:
   notify:
     needs: [ci]
     if: always()
-    uses: compliance-framework/workflows/.github/workflows/notify-failure.yml@55c549bf712163152173b398e297fba0f907ceca # v1.4.0
+    uses: compliance-framework/workflows/.github/workflows/notify-failure.yml@899dbe5d7dac02de5fd60a92d764b189259e03dd # v1.5.0
     with:
       needs: ${{ toJSON(needs) }}
     permissions:
