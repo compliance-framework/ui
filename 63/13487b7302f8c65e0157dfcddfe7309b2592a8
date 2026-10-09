@@ -1,0 +1,2 @@
+lisa-addressed:
+- pass 1: CORE-CI-001 docker.yml actions/cache pinned at 0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0.
