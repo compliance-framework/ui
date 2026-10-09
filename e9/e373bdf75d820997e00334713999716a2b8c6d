@@ -1,0 +1,6 @@
+lisa-design:
+- release-please-config.json inlines workflows/release-please/defaults.json (as mock-ui does; release-please has no remote extends) plus bootstrap-sha 0ca4ccdb801d045a3d7d8f17b2b4c951d90b7b22 (main when the stack was cut) and one "." package: release-type node, include-component-in-tag false, so tags stay vX.Y.Z.
+- Seed 2.12.1 = latest release v2.12.1; package.json and package-lock.json (root + packages[""]) set to 2.12.1 with `npm version --no-git-tag-version`, so release-please's node updater starts from the manifest value.
+- No package-name/component override: the release branch will be release-please--branches--main--components--continuous-compliance (from package.json name). cut-prerelease matches only the release-please--branches-- prefix and release-checks only release-please--, so the suffix is cosmetic; renaming the npm package is out of scope.
+- .prettierignore gains CHANGELOG.md and .release-please-manifest.json (spec). ui's format:check is `prettier --check src/`, so they are not checked today; the ignore keeps it safe if the scope widens.
+- Majors: ui is past 1.0, so release-checks' version-guard requires release:major-approved; no repo-side config needed.
