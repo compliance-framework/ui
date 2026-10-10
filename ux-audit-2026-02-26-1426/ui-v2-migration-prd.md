@@ -302,7 +302,7 @@ The SSP and `/system` tabs that main added to existing families (W2-13, W2-14, W
 ### 7.12 Cutover and cleanup
 
 - [ ] C-01 Fold the router overlay into `src/router/index.ts`, with every route pointing at its V2 view.
-- [ ] C-01a Fold `AppV2Root.vue` and `AppShell.vue` back into `App.vue` and `layouts/App.vue`, and delete the branch-only sync tooling (`scripts/v2-drift/`, `.claude/skills/sync-main/`) so none of it reaches main.
+- [ ] C-01a Fold `AppV2Root.vue` and `AppShell.vue` back into `App.vue` and `layouts/App.vue`, and delete the branch-only sync tooling (`scripts/v2-drift/`, `.claude/skills/sync-main/`) so none of it reaches main, and untrack `.claude/settings.local.json` (committed on the branch in `b2667a2`).
 - [ ] C-02 Remove V1 UI components no longer referenced.
 - [ ] C-03 Remove V1-only styles and obsolete token aliases.
 - [ ] C-04 Remove V1 UI-only stores and persisted keys, with a one-time localStorage cleanup.
