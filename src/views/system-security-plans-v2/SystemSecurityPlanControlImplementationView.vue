@@ -166,7 +166,11 @@
                 <span
                   class="inline-flex items-center justify-center border border-[var(--ui-v2-border)] bg-[var(--ui-v2-surface)] px-1.5 py-[2px] font-[var(--ui-v2-font-secondary)] text-[9px] font-extrabold tracking-[1px] text-[var(--ui-v2-foreground)]"
                 >
-                  {{ requirementCount }}
+                  {{
+                    requirementSearch.trim()
+                      ? `${visibleRequirements.length} / ${requirementCount}`
+                      : requirementCount
+                  }}
                 </span>
               </div>
 
@@ -175,11 +179,26 @@
               </PrimaryButton>
             </div>
 
+            <InputText
+              v-model="requirementSearch"
+              type="search"
+              aria-label="Search requirements by control ID or remarks"
+              placeholder="Search control ID or remarks..."
+              fluid
+            />
+
+            <p
+              v-if="requirementSearch.trim() && !visibleRequirements.length"
+              class="font-[var(--ui-v2-font-secondary)] text-[10px] font-semibold tracking-[1px] text-[var(--ui-v2-tertiary-foreground)]"
+            >
+              No requirements match "{{ requirementSearch.trim() }}".
+            </p>
+
             <div
               class="requirements-scroll space-y-2 xl:min-h-0 xl:flex-1 xl:overflow-y-auto xl:overscroll-contain xl:pr-1"
             >
               <button
-                v-for="requirement in requirements"
+                v-for="requirement in visibleRequirements"
                 :key="requirement.uuid"
                 type="button"
                 class="w-full border p-2.5 text-left transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--ui-v2-primary)]"
@@ -373,7 +392,7 @@
                         )
                       "
                     >
-                      CREATE COMPONENT
+                      ADD COMPONENT IMPLEMENTATION
                     </PrimaryButton>
                     <SecondaryButton
                       type="button"
@@ -1667,6 +1686,7 @@ import type {
   SystemComponent,
 } from '@/oscal';
 import DangerButton from '@/volt/DangerButton.vue';
+import InputText from '@/volt/InputText.vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
 import ControlImplementationModalForm from '@/components/v2/system-security-plans/forms/ControlImplementationModalForm.vue';
@@ -1808,8 +1828,32 @@ const requirements = computed(
   () => controlImplementation.value?.implementedRequirements || [],
 );
 
+// Natural order (ac-2 before ac-10, ac-2.1 right after ac-2) plus a search over
+// control ID and remarks: the API returns hundreds of requirements in no
+// meaningful order (backlog M1-16).
+const requirementSearch = ref('');
+const sortedRequirements = computed(() =>
+  [...requirements.value].sort((a, b) =>
+    (a.controlId || '').localeCompare(b.controlId || '', undefined, {
+      numeric: true,
+      sensitivity: 'base',
+    }),
+  ),
+);
+const visibleRequirements = computed(() => {
+  const query = requirementSearch.value.trim().toLowerCase();
+  if (!query) {
+    return sortedRequirements.value;
+  }
+  return sortedRequirements.value.filter(
+    (requirement) =>
+      (requirement.controlId || '').toLowerCase().includes(query) ||
+      (requirement.remarks || '').toLowerCase().includes(query),
+  );
+});
+
 watch(
-  requirements,
+  sortedRequirements,
   (nextRequirements) => {
     if (!nextRequirements.length) {
       selectedRequirementUuid.value = '';
@@ -1835,7 +1879,7 @@ const selectedRequirement = computed<ImplementedRequirement | null>(() => {
   return (
     requirements.value.find(
       (requirement) => requirement.uuid === selectedRequirementUuid.value,
-    ) || requirements.value[0]
+    ) || sortedRequirements.value[0]
   );
 });
 

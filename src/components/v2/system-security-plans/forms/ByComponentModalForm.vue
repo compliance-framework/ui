@@ -42,6 +42,12 @@ const emit = defineEmits<{
 const toast = useToast();
 const formId = `by-component-form-${uuid()}`;
 const isEditMode = computed(() => Boolean(props.byComponent));
+// Name the statement this implementation belongs to (backlog M1-16).
+const drawerDescription = computed(() =>
+  props.statement
+    ? `How a component implements statement ${props.statement.statementId || props.statement.uuid} of ${props.requirement.controlId || 'this requirement'}.`
+    : 'Describe how a component implements this requirement.',
+);
 
 const implementationStates = [
   'implemented',
@@ -324,7 +330,7 @@ async function submit(): Promise<void> {
         ? 'EDIT BY-COMPONENT IMPLEMENTATION'
         : 'CREATE BY-COMPONENT IMPLEMENTATION'
     "
-    description="Map requirement behavior to a specific component and describe how the implementation is delivered."
+    :description="drawerDescription"
     :submit-mode="isEditMode ? 'save' : 'create'"
     :submitting="saving"
     :disable-submit="!canSubmit"

@@ -147,3 +147,9 @@ Dated record of migration work and approved design deviations. Decisions are sum
   - Metadata editing is not added: main has no metadata editor, so it is a new feature that needs a decision.
   - The same investigation confirmed M2-07 as data loss on main: saving the V1 form unchanged dropped information types and blanked impact levels. M2-07 is flagged as the top main PR candidate.
 - 2026-10-10: Prepared the M2-07 main fix on local branch `fix/ssp-characteristics-deep-keys` (`bfd51e4`, signed, one commit on `origin/main`; not pushed). The change is `decamelizeKeys(..., { deep: true })` in `stores/system-security-plans.ts` `updateCharacteristics`. A new store spec fails on main's code and passes with the fix, and main's `make reviewable` passes (1773 tests). The branch is V1-only per the "PRs to main" rules; the temporary worktree was removed. Logged M2-23: `updateSystemImplementation` has the same shallow pattern (unverified). Added untracking `.claude/settings.local.json` (committed in `b2667a2`) to cutover task C-01a.
+- 2026-10-10: Mostly fixed M1-16.
+  - The V2 SSP Control Implementation requirement list is in natural control-ID order (`ac-2`, `ac-2.1`, `ac-10`), with a search over control ID and remarks, a "shown / total" count and a no-match message. The default selection follows the sorted order.
+  - The statement action reads "ADD COMPONENT IMPLEMENTATION", and the by-component drawer's subtitle names its statement and control.
+  - Spec: `requirementListSearch.spec.ts`. Browser check on FedRAMP: 664 requirements start `ac-1, ac-2, ac-2.1…`; searching "si-4" shows 26 (badge "26 / 664").
+  - Still open: the "Implemented" terminology mismatch between Controls and Compliance.
+  - Checked M2-23: no UI on main calls the shallow `updateSystemImplementation` (main's overview form saves with axios deep `decamelizeKeys`), so it is downgraded to P3 dead code.
