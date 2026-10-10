@@ -24,12 +24,13 @@
 
     <p
       v-if="formError"
+      role="alert"
       class="mb-4 border border-[var(--ui-v2-error)] bg-[var(--ui-v2-error-tint-10)] px-3 py-2 text-[var(--ui-v2-error)]"
     >
       {{ formError }}
     </p>
 
-    <form @submit.prevent="onSubmit" class="space-y-4">
+    <form @submit.prevent="onSubmit" class="space-y-4" novalidate>
       <div>
         <label
           for="email"
@@ -42,9 +43,13 @@
           autocomplete="email"
           placeholder="name@company.com"
           type="email"
+          required
+          :aria-invalid="emailInvalid"
+          :aria-describedby="errors.email?.length ? 'email-error' : undefined"
         />
         <p
           v-for="error in errors.email || []"
+          id="email-error"
           :key="error"
           class="ui-v2-meta mt-1 text-[var(--ui-v2-error)]"
         >
@@ -64,9 +69,15 @@
           autocomplete="current-password"
           placeholder="********"
           type="password"
+          required
+          :aria-invalid="passwordInvalid"
+          :aria-describedby="
+            errors.password?.length ? 'password-error' : undefined
+          "
         />
         <p
           v-for="error in errors.password || []"
+          id="password-error"
           :key="error"
           class="ui-v2-meta mt-1 text-[var(--ui-v2-error)]"
         >
@@ -86,9 +97,6 @@
       <router-link :to="{ name: 'forgot-password' }" class="ui-v2-link">
         Forgot Password?
       </router-link>
-      <span class="text-[var(--ui-v2-tertiary-foreground)]"
-        >Go to recovery</span
-      >
     </div>
 
     <p
@@ -153,6 +161,7 @@ import { useGuestApi } from '@/composables/axios';
 import { useOIDC, type OIDCProvider } from '@/composables/useOIDC';
 import { useAuthHydration } from '@/composables/useAuthHydration';
 import { resolveAuthNextLocation } from '@/utils/auth-redirect';
+import { useUserStore } from '@/stores/auth';
 import { useConfigStore, type LoginBannerSeverity } from '@/stores/config';
 import Message from '@/volt/Message.vue';
 import type { DataResponse } from '@/stores/types';
@@ -170,6 +179,14 @@ const password = ref('');
 const errors = ref<AuthError>({} as AuthError);
 const formError = ref<string | null>(null);
 const isLoading = ref(false);
+// Bad credentials don't say which field is wrong, so both are marked invalid.
+const credentialsRejected = ref(false);
+const emailInvalid = computed(
+  () => credentialsRejected.value || Boolean(errors.value?.email?.length),
+);
+const passwordInvalid = computed(
+  () => credentialsRejected.value || Boolean(errors.value?.password?.length),
+);
 
 const { hydrateCurrentUser } = useAuthHydration();
 const configStore = useConfigStore();
@@ -233,8 +250,7 @@ const loginErrorMessages: Record<string, string> = {
     'Your SSO account is missing the required access groups. Please contact an administrator to gain access.',
   provider_disabled:
     'This SSO provider is currently disabled. Please try another option or contact an administrator.',
-  session_expired:
-    'Your SSO session expired before completing sign-in. Please try again.',
+  session_expired: 'Your session expired. Please sign in again.',
 };
 
 const resolveLoginNotice = () => {
@@ -297,13 +313,29 @@ watch(
 );
 
 onMounted(() => {
+  // Already signed in: go where the user was headed instead of showing the form.
+  if (useUserStore().isAuthenticated) {
+    void router.replace(resolveAuthNextLocation(route.query.next));
+    return;
+  }
   loadProviders();
   void loadLoginBanner();
 });
 
+function validate(): boolean {
+  const fieldErrors = {} as AuthError;
+  if (!email.value.trim()) fieldErrors.email = ['Email is required.'];
+  if (!password.value) fieldErrors.password = ['Password is required.'];
+  errors.value = fieldErrors;
+  return !fieldErrors.email && !fieldErrors.password;
+}
+
 async function onSubmit() {
-  errors.value = {} as AuthError;
   formError.value = null;
+  credentialsRejected.value = false;
+  if (!validate()) {
+    return;
+  }
   isLoading.value = true;
   try {
     await login({
@@ -317,11 +349,13 @@ async function onSubmit() {
   } catch (error) {
     const response = error as AxiosError<DataResponse<AuthError>>;
     if (response.response?.status === 401) {
-      const errorResponse = response.response?.data;
-      errors.value = errorResponse?.data as AuthError;
-      if (!errors.value?.email?.length && !errors.value?.password?.length) {
-        formError.value = 'Invalid credentials. Please verify and try again.';
-      }
+      // Report rejected credentials once, for the whole form.
+      const apiErrors = response.response?.data?.data;
+      formError.value =
+        apiErrors?.email?.[0] ||
+        apiErrors?.password?.[0] ||
+        'Invalid email or password.';
+      credentialsRejected.value = true;
       return;
     }
 

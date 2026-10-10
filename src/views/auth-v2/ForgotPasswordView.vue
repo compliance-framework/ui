@@ -11,7 +11,7 @@
     </header>
 
     <template v-if="!isSent">
-      <form @submit.prevent="onSubmit" class="space-y-4">
+      <form @submit.prevent="onSubmit" class="space-y-4" novalidate>
         <div>
           <label
             for="email"
@@ -24,9 +24,13 @@
             autocomplete="email"
             placeholder="name@company.com"
             type="email"
+            required
+            :aria-invalid="Boolean(errors.email?.length)"
+            :aria-describedby="errors.email?.length ? 'email-error' : undefined"
           />
           <p
             v-for="error in errors.email || []"
+            id="email-error"
             :key="error"
             class="ui-v2-meta mt-1 text-[var(--ui-v2-error)]"
           >
@@ -46,9 +50,6 @@
         <router-link :to="{ name: 'login' }" class="ui-v2-link">
           Back to Sign In
         </router-link>
-        <span class="text-[var(--ui-v2-tertiary-foreground)]"
-          >Keep help contact support</span
-        >
       </div>
 
       <section
@@ -76,18 +77,17 @@
 
     <template v-else>
       <div
+        role="status"
         class="border border-[var(--ui-v2-success)] bg-[var(--ui-v2-success-tint-10)] p-4 text-[var(--ui-v2-foreground)]"
       >
-        Reset link sent. Check your inbox for next steps.
+        If an account exists for {{ email.trim() }}, we have sent a reset link.
+        Check your inbox for next steps.
       </div>
-      <p class="ui-v2-meta mt-4 text-[var(--ui-v2-muted-foreground)]">
-        Redirecting to sign in in a few seconds.
-      </p>
       <router-link
         :to="{ name: 'login' }"
         class="ui-v2-link ui-v2-nav mt-4 inline-block"
       >
-        Back to Sign In Now
+        Back to Sign In
       </router-link>
     </template>
   </AuthPanelCard>
@@ -95,7 +95,6 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import { useRouter } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
 import type { AxiosError } from 'axios';
 import { useGuestApi } from '@/composables/axios';
@@ -108,15 +107,16 @@ interface AuthError {
   email: string[];
 }
 
-const REDIRECT_DELAY_MS = 5000;
-
 const email = ref('');
 const errors = ref<AuthError>({} as AuthError);
 const isLoading = ref(false);
 const isSent = ref(false);
 
-const router = useRouter();
 const toast = useToast();
+
+// Anti-enumeration only applies to a well-formed address: an empty or
+// malformed one is rejected here instead of claiming a link was sent.
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const { execute: forgotPassword } = useGuestApi<string>(
   '/api/auth/forgot-password',
@@ -127,26 +127,26 @@ const { execute: forgotPassword } = useGuestApi<string>(
 );
 
 async function onSubmit() {
+  const address = email.value.trim();
+  if (!address) {
+    errors.value = { email: ['Email is required.'] };
+    return;
+  }
+  if (!EMAIL_PATTERN.test(address)) {
+    errors.value = { email: ['Enter a valid email address.'] };
+    return;
+  }
   errors.value = {} as AuthError;
   isLoading.value = true;
   try {
     await forgotPassword({
       data: {
-        email: email.value,
+        email: address,
       },
     });
 
+    // One success message, and the user stays on the page to read it.
     isSent.value = true;
-    toast.add({
-      severity: 'success',
-      summary: 'Reset Link Sent',
-      detail: 'Please check your email for password reset instructions.',
-      life: REDIRECT_DELAY_MS,
-    });
-
-    setTimeout(() => {
-      router.push({ name: 'login' });
-    }, REDIRECT_DELAY_MS);
   } catch (error) {
     const response = error as AxiosError<DataResponse<AuthError>>;
     if (response.response?.data?.data) {

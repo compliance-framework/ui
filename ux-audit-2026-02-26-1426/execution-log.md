@@ -125,3 +125,10 @@ Dated record of migration work and approved design deviations. Decisions are sum
   - Also fixed a stale-row bug in SSP Control Implementation: deleting a statement-level or legacy by-component mutated data held in a `shallowRef`, so the row stayed on screen until a refetch. Both deletes now call `triggerRef(controlImplementation)`. The new spec fails without it.
   - Specs: `legacyRequirementComponents.spec.ts` (read-only legacy row, DELETE endpoint and removal, statement-level delete removes the row) and a statement-only guard case in `ByComponentModalForm.spec.ts`.
   - Not browser-verified: the seed data has no legacy requirement-level rows, and the API cannot create one.
+- 2026-10-10: Fixed the V2 half of M3-06 (A-05, A-06, A-07, part of A-24 and A-25).
+  - Login: requires email and password before calling the API. Bad credentials show one form-level `role="alert"` banner and mark both fields `aria-invalid`. A signed-in visit to `/auth/login` redirects to `next` or home. The `session_expired` copy is generic. The duplicate "Go to recovery" text is removed.
+  - Forgot password: requires a well-formed email, shows one `role="status"` message naming the address, has no duplicate toast and no auto-redirect.
+  - Password reset: a missing or invalid token, or a 401 from the API, hides the form and shows an error state with "Request a New Link".
+  - Specs: new cases in `AuthFlowsV2.spec.ts` (10 tests).
+  - Browser check: all four behaviors confirmed (empty login sends no POST; wrong password shows the banner with both fields invalid; empty forgot sends no POST; bogus token shows the invalid-link state; signed-in `/auth/login?next=/controls` lands on `/controls`).
+  - Still open: the 401 handler's `next`/`error=session_expired` (main-owned `composables/axios/index.ts`, a main PR candidate), and the DOCS/SUPPORT header text, which has no destination to link to.

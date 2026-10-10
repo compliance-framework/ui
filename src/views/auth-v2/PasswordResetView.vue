@@ -9,14 +9,23 @@
       </p>
     </header>
 
-    <div
-      v-if="tokenError"
-      class="mb-4 border border-[var(--ui-v2-info)] bg-[var(--ui-v2-info-tint-10)] p-3 text-[var(--ui-v2-foreground)]"
-    >
-      {{ tokenError }}
-    </div>
+    <!-- Invalid link: hide the form and offer a new link (login handoff §3). -->
+    <section v-if="tokenError" class="space-y-4">
+      <div
+        role="alert"
+        class="border border-[var(--ui-v2-error)] bg-[var(--ui-v2-error-tint-10)] p-3 text-[var(--ui-v2-error)]"
+      >
+        {{ tokenError }}
+      </div>
+      <router-link
+        :to="{ name: 'forgot-password' }"
+        class="ui-v2-nav inline-flex w-full items-center justify-center border border-[var(--ui-v2-primary)] bg-[var(--ui-v2-primary)] px-4 py-2 font-semibold text-[var(--ui-v2-primary-foreground)]"
+      >
+        Request a New Link
+      </router-link>
+    </section>
 
-    <form @submit.prevent="onSubmit" class="space-y-4">
+    <form v-else @submit.prevent="onSubmit" class="space-y-4">
       <div>
         <label
           for="password"
@@ -91,9 +100,6 @@
       <router-link :to="{ name: 'login' }" class="ui-v2-link">
         Back to Sign In
       </router-link>
-      <span class="text-[var(--ui-v2-tertiary-foreground)]"
-        >Keep help contact support</span
-      >
     </div>
   </AuthPanelCard>
 </template>
@@ -120,6 +126,8 @@ const token = ref('');
 const errors = ref<AuthError>({} as AuthError);
 const isLoading = ref(false);
 const tokenError = ref('');
+const INVALID_LINK_MESSAGE =
+  'This password reset link is invalid or has expired. Request a new link to continue.';
 
 const router = useRouter();
 const route = useRoute();
@@ -207,14 +215,7 @@ onMounted(() => {
   }
 
   if (!token.value || !isTokenFormatValid.value) {
-    toast.add({
-      severity: 'error',
-      summary: 'Invalid Reset Link',
-      detail: 'This password reset link is invalid or has expired.',
-      life: 4000,
-    });
-    tokenError.value =
-      'This password reset link appears invalid or expired. Please request a new link.';
+    tokenError.value = INVALID_LINK_MESSAGE;
   }
 });
 
@@ -263,9 +264,9 @@ async function onSubmit() {
 
       switch (status) {
         case 401:
-          errorMessage =
-            'This reset link is invalid or has expired. Please request a new password reset link.';
-          break;
+          // The server rejected the token: switch to the invalid-link state.
+          tokenError.value = INVALID_LINK_MESSAGE;
+          return;
         case 422:
           errorMessage =
             'There was a problem with the information provided. Please review your input and try again.';
