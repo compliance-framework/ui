@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, reactive } from 'vue';
+import { uuid } from '@/utils/uuid';
 import type { AxiosError } from 'axios';
 import { useRouter } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
@@ -23,7 +24,7 @@ const toast = useToast();
 
 const formId = 'system-security-plan-create-form';
 const form = reactive({
-  uuid: crypto.randomUUID(),
+  uuid: uuid(),
   title: '',
   version: '1.0.0',
   remarks: '',

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue';
+import { uuid } from '@/utils/uuid';
 import { useRoute, useRouter } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
 import InputText from '@/volt/InputText.vue';
@@ -164,7 +165,7 @@ watch(
     }
 
     if (!nextComponentId) {
-      form.uuid = crypto.randomUUID();
+      form.uuid = uuid();
       loadErrorMessage.value = '';
       return;
     }
@@ -239,7 +240,7 @@ function resetErrors(): void {
 function addProtocol(): void {
   form.protocols = form.protocols || [];
   form.protocols.push({
-    uuid: crypto.randomUUID(),
+    uuid: uuid(),
     title: '',
     name: '',
     portRanges: [],

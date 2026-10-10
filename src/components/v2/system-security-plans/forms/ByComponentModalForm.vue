@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, reactive, watch } from 'vue';
+import { uuid } from '@/utils/uuid';
 import { useToast } from 'primevue/usetoast';
 import DangerButton from '@/volt/DangerButton.vue';
 import InputText from '@/volt/InputText.vue';
@@ -37,7 +38,7 @@ const emit = defineEmits<{
 }>();
 
 const toast = useToast();
-const formId = `by-component-form-${crypto.randomUUID()}`;
+const formId = `by-component-form-${uuid()}`;
 const isEditMode = computed(() => Boolean(props.byComponent));
 const isStatementScoped = computed(() => Boolean(props.statement));
 
@@ -132,7 +133,7 @@ function cloneExport(value: NonNullable<ByComponent['export']>) {
 }
 
 function resetForm(): void {
-  form.uuid = crypto.randomUUID();
+  form.uuid = uuid();
   form.componentUuid = '';
   form.description = '';
   form.props = [];
@@ -155,7 +156,7 @@ function resetErrors(): void {
 function ensureExport(): NonNullable<ByComponent['export']> {
   if (!form.export) {
     form.export = {
-      uuid: crypto.randomUUID(),
+      uuid: uuid(),
       description: '',
       props: [],
       links: [],
@@ -177,7 +178,7 @@ function ensureExport(): NonNullable<ByComponent['export']> {
 function addProvided(): void {
   const exportBlock = ensureExport();
   exportBlock.provided!.push({
-    uuid: crypto.randomUUID(),
+    uuid: uuid(),
     description: '',
     props: [],
     links: [],
@@ -191,7 +192,7 @@ function removeProvided(index: number): void {
 function addResponsibility(): void {
   const exportBlock = ensureExport();
   exportBlock.responsibilities!.push({
-    uuid: crypto.randomUUID(),
+    uuid: uuid(),
     description: '',
     props: [],
     links: [],
@@ -206,7 +207,7 @@ function removeResponsibility(index: number): void {
 function addInherited(): void {
   form.inherited = form.inherited || [];
   form.inherited.push({
-    uuid: crypto.randomUUID(),
+    uuid: uuid(),
     providedUuid: '',
     description: '',
     props: [],
@@ -222,7 +223,7 @@ function removeInherited(index: number): void {
 function addSatisfied(): void {
   form.satisfied = form.satisfied || [];
   form.satisfied.push({
-    uuid: crypto.randomUUID(),
+    uuid: uuid(),
     responsibilityUuid: '',
     description: '',
     props: [],

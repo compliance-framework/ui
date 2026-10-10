@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, reactive, watch } from 'vue';
+import { uuid } from '@/utils/uuid';
 import { useToast } from 'primevue/usetoast';
 import InputText from '@/volt/InputText.vue';
 import Textarea from '@/volt/Textarea.vue';
@@ -30,7 +31,7 @@ const emit = defineEmits<{
 }>();
 
 const toast = useToast();
-const formId = `system-implementation-user-form-${crypto.randomUUID()}`;
+const formId = `system-implementation-user-form-${uuid()}`;
 const isEditMode = computed(() => Boolean(props.user));
 const fieldErrors = reactive({ title: '', description: '', server: '' });
 const form = reactive<{
@@ -91,7 +92,7 @@ watch(
         functionsPerformed: cloneValue(privilege.functionsPerformed || []),
       }));
     } else {
-      form.uuid = crypto.randomUUID();
+      form.uuid = uuid();
       form.title = '';
       form.shortName = '';
       form.description = '';

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, reactive, watch } from 'vue';
+import { uuid } from '@/utils/uuid';
 import { useToast } from 'primevue/usetoast';
 import InputText from '@/volt/InputText.vue';
 import Textarea from '@/volt/Textarea.vue';
@@ -32,7 +33,7 @@ const emit = defineEmits<{
 }>();
 
 const toast = useToast();
-const formId = `statement-form-${crypto.randomUUID()}`;
+const formId = `statement-form-${uuid()}`;
 
 const isEditMode = computed(() => Boolean(props.statement));
 
@@ -89,7 +90,7 @@ watch(
 );
 
 function resetForm(statementId = ''): void {
-  form.uuid = crypto.randomUUID();
+  form.uuid = uuid();
   form.statementId = statementId;
   form.description = '';
   form.props = [];
@@ -106,7 +107,7 @@ function resetErrors(): void {
 
 function addProperty(): void {
   form.props = form.props || [];
-  form.props.push({ uuid: crypto.randomUUID(), name: '', value: '' });
+  form.props.push({ uuid: uuid(), name: '', value: '' });
 }
 
 function removeProperty(index: number): void {

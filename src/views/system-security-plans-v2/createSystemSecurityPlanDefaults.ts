@@ -1,3 +1,5 @@
+import { uuid } from '@/utils/uuid';
+
 export interface CreateSystemSecurityPlanInput {
   uuid: string;
   title: string;
@@ -86,9 +88,9 @@ export function createSystemSecurityPlanDefaults(
         props: [],
         links: [],
       },
-      authorizationBoundary: createEmptyDiagramSection(crypto.randomUUID()),
-      networkArchitecture: createEmptyDiagramSection(crypto.randomUUID()),
-      dataFlow: createEmptyDiagramSection(crypto.randomUUID()),
+      authorizationBoundary: createEmptyDiagramSection(uuid()),
+      networkArchitecture: createEmptyDiagramSection(uuid()),
+      dataFlow: createEmptyDiagramSection(uuid()),
       props: [],
       links: [],
     },

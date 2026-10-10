@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, reactive, watch } from 'vue';
+import { uuid } from '@/utils/uuid';
 import { useToast } from 'primevue/usetoast';
 import InputText from '@/volt/InputText.vue';
 import Textarea from '@/volt/Textarea.vue';
@@ -32,7 +33,7 @@ const emit = defineEmits<{
   saved: [component: SystemComponent];
 }>();
 const toast = useToast();
-const formId = `system-implementation-component-form-${crypto.randomUUID()}`;
+const formId = `system-implementation-component-form-${uuid()}`;
 const isEditMode = computed(() => Boolean(props.component));
 const componentTypeOptions = [
   'this-system',
@@ -129,7 +130,7 @@ watch(
       form.props = cloneValue(value.props || []);
       form.links = cloneValue(value.links || []);
     } else {
-      form.uuid = crypto.randomUUID();
+      form.uuid = uuid();
       form.type = '';
       form.title = '';
       form.description = '';
@@ -146,7 +147,7 @@ watch(
 
 function addProtocol(): void {
   form.protocols?.push({
-    uuid: crypto.randomUUID(),
+    uuid: uuid(),
     title: '',
     name: '',
     portRanges: [],

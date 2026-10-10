@@ -1094,6 +1094,7 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
+import { uuid } from '@/utils/uuid';
 import { useRouter } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
 import InputText from '@/volt/InputText.vue';
@@ -2320,7 +2321,7 @@ async function ensureRequirementForControl(
       `/api/oscal/system-security-plans/${activeSspId.value}/control-implementation/implemented-requirements`,
       {
         data: {
-          uuid: crypto.randomUUID(),
+          uuid: uuid(),
           controlId: control.id,
         },
       },

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue';
+import { uuid } from '@/utils/uuid';
 import { useRoute, useRouter } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
 import InputText from '@/volt/InputText.vue';
@@ -130,7 +131,7 @@ watch(
     }
 
     if (!nextAuthorizationId) {
-      form.uuid = crypto.randomUUID();
+      form.uuid = uuid();
       loadErrorMessage.value = '';
       return;
     }

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue';
+import { uuid } from '@/utils/uuid';
 import { useToast } from 'primevue/usetoast';
 import Textarea from '@/volt/Textarea.vue';
 import InputText from '@/volt/InputText.vue';
@@ -33,7 +34,7 @@ const emit = defineEmits<{
 }>();
 
 const toast = useToast();
-const formId = `system-implementation-overview-form-${crypto.randomUUID()}`;
+const formId = `system-implementation-overview-form-${uuid()}`;
 const form = reactive<{
   users: SystemImplementation['users'];
   components: SystemImplementation['components'];
