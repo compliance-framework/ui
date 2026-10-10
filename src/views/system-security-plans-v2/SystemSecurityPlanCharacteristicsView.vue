@@ -113,9 +113,13 @@
                     </button>
 
                     <button
+                      v-tooltip.top="{
+                        value: permissionTooltip(RESOURCES.SSP, ACTIONS.DELETE),
+                        disabled: canDeleteSsp,
+                      }"
                       type="button"
                       class="inline-flex h-[22px] w-[22px] items-center justify-center border border-[var(--ui-v2-error)] bg-[var(--ui-v2-error-tint-10)] text-[var(--ui-v2-error)] transition-colors duration-150 hover:bg-[var(--ui-v2-error-tint-10)] disabled:cursor-not-allowed disabled:opacity-60"
-                      :disabled="isWorking"
+                      :disabled="isWorking || !canDeleteSsp"
                       @click="confirmDeleteDiagram(diagramSet.kind, diagram)"
                     >
                       <V2LucideIcon name="x" :size="12" />
@@ -222,6 +226,12 @@ import type { ErrorBody, ErrorResponse } from '@/stores/types';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
 import Drawer from '@/volt/Drawer.vue';
 import InputText from '@/volt/InputText.vue';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
+
+// Delete actions are gated on ssp:delete, as on main (backlog M1-13).
+const { can, permissionTooltip } = usePermissions();
+const canDeleteSsp = computed(() => can(RESOURCES.SSP, ACTIONS.DELETE));
 
 type DiagramKind =
   | 'authorization-boundary'

@@ -323,6 +323,11 @@
                     JSON
                   </SecondaryButton>
                   <DangerButton
+                    :disabled="!canDeleteSsp"
+                    v-tooltip.top="{
+                      value: permissionTooltip(RESOURCES.SSP, ACTIONS.DELETE),
+                      disabled: canDeleteSsp,
+                    }"
                     type="button"
                     size="small"
                     @click="
@@ -493,6 +498,11 @@
                     JSON
                   </SecondaryButton>
                   <DangerButton
+                    :disabled="!canDeleteSsp"
+                    v-tooltip.top="{
+                      value: permissionTooltip(RESOURCES.SSP, ACTIONS.DELETE),
+                      disabled: canDeleteSsp,
+                    }"
                     type="button"
                     size="small"
                     @click="
@@ -646,6 +656,11 @@
                     JSON
                   </SecondaryButton>
                   <DangerButton
+                    :disabled="!canDeleteSsp"
+                    v-tooltip.top="{
+                      value: permissionTooltip(RESOURCES.SSP, ACTIONS.DELETE),
+                      disabled: canDeleteSsp,
+                    }"
                     type="button"
                     size="small"
                     @click="
@@ -843,6 +858,12 @@ import type {
 } from '@/oscal';
 import { useDataApi } from '@/composables/axios';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
+
+// Delete actions are gated on ssp:delete, as on main (backlog M1-13).
+const { can, permissionTooltip } = usePermissions();
+const canDeleteSsp = computed(() => can(RESOURCES.SSP, ACTIONS.DELETE));
 
 type ImplementationTab = 'overview' | 'users' | 'components' | 'authorizations';
 type DistributionTone = 'success' | 'warning' | 'info' | 'muted';

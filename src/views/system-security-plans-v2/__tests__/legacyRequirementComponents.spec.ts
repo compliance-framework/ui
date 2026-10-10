@@ -55,6 +55,14 @@ vi.mock('@/composables/axios', () => ({
   }),
 }));
 
+const canMock = vi.fn<(...args: unknown[]) => boolean>(() => true);
+vi.mock('@/composables/usePermissions', () => ({
+  usePermissions: () => ({
+    can: (...args: unknown[]) => canMock(...args),
+    permissionTooltip: () => 'no permission',
+  }),
+}));
+
 vi.mock('primevue/usetoast', () => ({
   useToast: () => ({ add: vi.fn() }),
 }));
@@ -144,6 +152,18 @@ describe('legacy requirement-level components (SSP control implementation)', () 
       .map((button) => button.text());
     expect(labels).toContain('DELETE');
     expect(labels).not.toContain('EDIT');
+  });
+
+  it('disables delete without ssp:delete', async () => {
+    canMock.mockReturnValue(false);
+    const wrapper = await mountView();
+    const remove = legacyRow(wrapper)
+      .findAll('button')
+      .find((button) => button.text() === 'DELETE')!;
+
+    expect(remove.attributes('disabled')).toBeDefined();
+    expect(canMock).toHaveBeenCalledWith('ssp', 'delete');
+    canMock.mockReturnValue(true);
   });
 
   it('delete the row through the requirement-level endpoint', async () => {

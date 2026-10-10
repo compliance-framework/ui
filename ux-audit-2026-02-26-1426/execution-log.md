@@ -132,3 +132,9 @@ Dated record of migration work and approved design deviations. Decisions are sum
   - Specs: new cases in `AuthFlowsV2.spec.ts` (10 tests).
   - Browser check: all four behaviors confirmed (empty login sends no POST; wrong password shows the banner with both fields invalid; empty forgot sends no POST; bogus token shows the invalid-link state; signed-in `/auth/login?next=/controls` lands on `/controls`).
   - Still open: the 401 handler's `next`/`error=session_expired` (main-owned `composables/axios/index.ts`, a main PR candidate), and the DOCS/SUPPORT header text, which has no destination to link to.
+- 2026-10-10: Mostly fixed M1-13.
+  - The new `useSspSubmitPermission` composable gates the submit of all 8 V2 SSP editor drawers on `ssp:create` (create) or `ssp:update` (edit), as main does. `V2EditorDrawer` gained a `disabledReason` prop that shows main's permission tooltip on the disabled submit, and each form's `submit()` returns early without permission.
+  - Delete actions in V2 SSP Control Implementation, System Implementation, Characteristics and Controls are disabled without `ssp:delete`, with the tooltip.
+  - Specs: `permissionGating.spec.ts` (update/create checks, disabled submit makes no API call) and a delete-gating case in `legacyRequirementComponents.spec.ts`. Existing V2 form and view specs now mock `usePermissions`.
+  - Browser check as admin: edit drawer SAVE enabled, no console errors. Not checked with a restricted account, because the local database has only the admin user.
+  - Still open: disabling the buttons that _open_ create/edit drawers (submit is already gated), and SSP create/list actions.

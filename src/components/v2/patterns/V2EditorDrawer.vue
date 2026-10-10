@@ -12,6 +12,8 @@ interface Props {
   submitMode?: 'create' | 'save';
   submitting?: boolean;
   disableSubmit?: boolean;
+  // Shown as a tooltip on the disabled submit button (e.g. missing permission).
+  disabledReason?: string;
   widthClass?: string;
 }
 
@@ -20,6 +22,7 @@ const props = withDefaults(defineProps<Props>(), {
   submitMode: 'save',
   submitting: false,
   disableSubmit: false,
+  disabledReason: '',
   widthClass: 'w-screen! sm:w-[94vw]! lg:w-[560px]!',
 });
 
@@ -124,28 +127,37 @@ onBeforeUnmount(() => {
         </div>
 
         <div class="flex shrink-0 items-center gap-3">
-          <PrimaryButton
-            class="!h-8 !px-4 !py-0 !text-[10px] shrink-0"
-            size="small"
-            type="submit"
-            :form="formId"
-            :disabled="disableSubmit || submitting"
+          <!-- Disabled buttons swallow pointer events, so the tooltip sits on a wrapper. -->
+          <span
+            v-tooltip.bottom="{
+              value: disabledReason,
+              disabled: !disabledReason || !disableSubmit,
+            }"
+            class="inline-flex"
           >
-            <span class="ssp-editor-drawer__submit-label">
-              <template v-if="submitting">
-                <span>{{ submitCopy.active }}</span>
-                <span
-                  aria-hidden="true"
-                  class="ssp-editor-drawer__ellipsis-shell"
-                >
-                  <span class="ssp-editor-drawer__ellipsis">...</span>
-                </span>
-              </template>
-              <template v-else>
-                {{ submitCopy.idle }}
-              </template>
-            </span>
-          </PrimaryButton>
+            <PrimaryButton
+              class="!h-8 !px-4 !py-0 !text-[10px] shrink-0"
+              size="small"
+              type="submit"
+              :form="formId"
+              :disabled="disableSubmit || submitting"
+            >
+              <span class="ssp-editor-drawer__submit-label">
+                <template v-if="submitting">
+                  <span>{{ submitCopy.active }}</span>
+                  <span
+                    aria-hidden="true"
+                    class="ssp-editor-drawer__ellipsis-shell"
+                  >
+                    <span class="ssp-editor-drawer__ellipsis">...</span>
+                  </span>
+                </template>
+                <template v-else>
+                  {{ submitCopy.idle }}
+                </template>
+              </span>
+            </PrimaryButton>
+          </span>
         </div>
       </div>
     </template>

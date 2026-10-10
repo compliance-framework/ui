@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue';
+import { useSspSubmitPermission } from '@/composables/v2/useSspSubmitPermission';
 import { uuid } from '@/utils/uuid';
 import { useToast } from 'primevue/usetoast';
 import DangerButton from '@/volt/DangerButton.vue';
@@ -236,7 +237,14 @@ function validate(): boolean {
   return valid;
 }
 
+const { canSubmit, disabledReason } = useSspSubmitPermission(
+  () => isEditMode.value,
+);
+
 async function submit(): Promise<void> {
+  if (!canSubmit.value) {
+    return;
+  }
   if (!validate()) {
     return;
   }
@@ -319,6 +327,8 @@ async function submit(): Promise<void> {
     description="Map requirement behavior to a specific component and describe how the implementation is delivered."
     :submit-mode="isEditMode ? 'save' : 'create'"
     :submitting="saving"
+    :disable-submit="!canSubmit"
+    :disabled-reason="disabledReason"
     :form-id="formId"
     width-class="w-screen! sm:w-[94vw]! lg:w-[980px]!"
     @close="close"

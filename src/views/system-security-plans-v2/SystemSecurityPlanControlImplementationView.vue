@@ -270,9 +270,13 @@
                 </div>
 
                 <DangerButton
+                  v-tooltip.top="{
+                    value: permissionTooltip(RESOURCES.SSP, ACTIONS.DELETE),
+                    disabled: canDeleteSsp,
+                  }"
                   type="button"
                   size="small"
-                  :disabled="!selectedRequirement"
+                  :disabled="!selectedRequirement || !canDeleteSsp"
                   @click="confirmDeleteRequirement(selectedRequirement)"
                 >
                   DELETE
@@ -520,6 +524,14 @@
                           EDIT
                         </SecondaryButton>
                         <DangerButton
+                          :disabled="!canDeleteSsp"
+                          v-tooltip.top="{
+                            value: permissionTooltip(
+                              RESOURCES.SSP,
+                              ACTIONS.DELETE,
+                            ),
+                            disabled: canDeleteSsp,
+                          }"
                           type="button"
                           size="small"
                           @click="
@@ -992,6 +1004,11 @@
                       }}
                     </span>
                     <DangerButton
+                      :disabled="!canDeleteSsp"
+                      v-tooltip.top="{
+                        value: permissionTooltip(RESOURCES.SSP, ACTIONS.DELETE),
+                        disabled: canDeleteSsp,
+                      }"
                       type="button"
                       size="small"
                       @click="
@@ -1660,6 +1677,12 @@ import { useDataApi } from '@/composables/axios';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
 import { getIdFromRoute } from '@/utils/get-id-from-route';
 import { sspDetailProfileBindingKey } from './sspDetailProfileBinding';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
+
+// Delete actions are gated on ssp:delete, as on main (backlog M1-13).
+const { can, permissionTooltip } = usePermissions();
+const canDeleteSsp = computed(() => can(RESOURCES.SSP, ACTIONS.DELETE));
 
 type InspectorTab =
   | 'statements'

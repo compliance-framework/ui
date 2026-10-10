@@ -618,6 +618,11 @@
               </div>
 
               <DangerButton
+                :disabled="!canDeleteSsp"
+                v-tooltip.top="{
+                  value: permissionTooltip(RESOURCES.SSP, ACTIONS.DELETE),
+                  disabled: canDeleteSsp,
+                }"
                 type="button"
                 size="small"
                 @click="confirmDeleteRequirementByComponent(byComponent)"
@@ -756,6 +761,11 @@
                   EDIT
                 </SecondaryButton>
                 <button
+                  :disabled="!canDeleteSsp"
+                  v-tooltip.top="{
+                    value: permissionTooltip(RESOURCES.SSP, ACTIONS.DELETE),
+                    disabled: canDeleteSsp,
+                  }"
                   type="button"
                   class="ui-v2-nav text-[var(--ui-v2-error)]"
                   @click="confirmDeleteStatementByComponent(byComponent)"
@@ -1154,6 +1164,11 @@ import SystemImplementationComponentModalForm from '@/components/v2/system-secur
 import DashboardMiniStatusChartV2 from '@/components/v2/dashboard/DashboardMiniStatusChartV2.vue';
 import ControlsEvidenceSummary from '@/components/v2/controls/ControlsEvidenceSummary.vue';
 import ControlsStatementDetailTree from '@/components/v2/controls/ControlsStatementDetailTree.vue';
+import { usePermissions } from '@/composables/usePermissions';
+
+// Delete actions are gated on ssp:delete, as on main (backlog M1-13).
+const { can, permissionTooltip } = usePermissions();
+const canDeleteSsp = computed(() => can(RESOURCES.SSP, ACTIONS.DELETE));
 
 type StatusFilterKey = 'not-started' | 'in-progress' | 'needs-evidence';
 type ComponentFlowContext = 'statement' | 'requirement';

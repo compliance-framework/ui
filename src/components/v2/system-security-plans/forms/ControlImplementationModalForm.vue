@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, reactive, watch } from 'vue';
+import { useSspSubmitPermission } from '@/composables/v2/useSspSubmitPermission';
 import { uuid } from '@/utils/uuid';
 import { useToast } from 'primevue/usetoast';
 import InputText from '@/volt/InputText.vue';
@@ -105,7 +106,12 @@ function validate(): boolean {
   return valid;
 }
 
+const { canSubmit, disabledReason } = useSspSubmitPermission(true);
+
 async function submit(): Promise<void> {
+  if (!canSubmit.value) {
+    return;
+  }
   if (!validate()) return;
   try {
     await saveControlImplementation(
@@ -141,6 +147,8 @@ async function submit(): Promise<void> {
     :form-id="formId"
     submit-mode="save"
     :submitting="saving"
+    :disable-submit="!canSubmit"
+    :disabled-reason="disabledReason"
     width-class="w-screen! sm:w-[94vw]! lg:w-[760px]!"
     @close="emit('cancel')"
   >

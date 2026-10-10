@@ -41,6 +41,14 @@ vi.mock('@/composables/axios', () => ({
   ),
 }));
 
+const canMock = vi.fn<(...args: unknown[]) => boolean>(() => true);
+vi.mock('@/composables/usePermissions', () => ({
+  usePermissions: () => ({
+    can: (...args: unknown[]) => canMock(...args),
+    permissionTooltip: () => 'no permission',
+  }),
+}));
+
 vi.mock('primevue/usetoast', () => ({
   useToast: () => ({ add: vi.fn() }),
 }));

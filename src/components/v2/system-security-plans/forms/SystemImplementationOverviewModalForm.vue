@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue';
+import { useSspSubmitPermission } from '@/composables/v2/useSspSubmitPermission';
 import { uuid } from '@/utils/uuid';
 import { useToast } from 'primevue/usetoast';
 import Textarea from '@/volt/Textarea.vue';
@@ -94,7 +95,12 @@ function removeLink(index: number): void {
   form.links.splice(index, 1);
 }
 
+const { canSubmit, disabledReason } = useSspSubmitPermission(true);
+
 async function submit(): Promise<void> {
+  if (!canSubmit.value) {
+    return;
+  }
   validationErrors.value = propertyAndLinkErrors(form.props, form.links);
   if (validationErrors.value.length) {
     return;
@@ -145,6 +151,8 @@ async function submit(): Promise<void> {
     description="Update the shared implementation narrative, supporting properties, and reference links."
     submit-mode="save"
     :submitting="isSaving"
+    :disable-submit="!canSubmit"
+    :disabled-reason="disabledReason"
     :form-id="formId"
     @close="emit('cancel')"
   >

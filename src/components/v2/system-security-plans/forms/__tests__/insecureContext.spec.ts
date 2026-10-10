@@ -15,6 +15,14 @@ vi.mock('@/composables/axios', () => ({
   decamelizeKeys: (data: unknown) => data,
 }));
 
+// Submit is gated on SSP permissions (backlog M1-13); grant them here.
+vi.mock('@/composables/usePermissions', () => ({
+  usePermissions: () => ({
+    can: () => true,
+    permissionTooltip: () => '',
+  }),
+}));
+
 vi.mock('primevue/usetoast', () => ({
   useToast: () => ({ add: vi.fn() }),
 }));
