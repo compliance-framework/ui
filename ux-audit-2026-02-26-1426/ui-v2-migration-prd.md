@@ -63,6 +63,19 @@ In code:
 - V2 primitives and patterns: `src/components/v2/`
 - Sandboxes: `/__v2/components` (`src/views/system-v2/V2ComponentLibraryView.vue`) and `/__v2/tokens` (`src/views/system-v2/V2TokenVisualTestView.vue`)
 
+### 4.5 Product decisions (2026-10-10)
+
+Owner decisions on the questions raised by the audit:
+
+1. **Dark mode stays.** V2 has a light/dark toggle in the user menu, and the Mocha tokens are used in dark. The forced light theme is removed (`useTheme.ts` is back to main's version). PRD Q-06 (theme parity checks) applies to every migrated family.
+2. **Post-login landing stays on Evidence** (main's choice). Evidence becomes V2 by cutover (M4-02). Revisit only if stakeholders ask for a different home page.
+3. **No SSP metadata editor for now.** Main has none, so it would be a new feature (out of scope, §3). It is logged as a post-cutover idea. Any future editor must send the full metadata object, because the metadata PUT replaces the whole record.
+4. **SSP tab set:** Overview, Characteristics, Implementation, Controls, Risks, Compliance, JSON.
+   - Users, Components and Authorizations are sections of Implementation; their old routes redirect to `implementation?section=…`.
+   - Export Offerings, Leverage and Inherited Capabilities are hidden from the tab bar, as on main, but stay reachable by URL because V1 panels link to them. Before cutover they need a V2 view or their inbound links removed (Gate E).
+5. **No logout confirmation.** Logout signs out immediately, the common pattern. W1-06's confirmation idea is dropped.
+6. **Destructive confirmations focus Cancel.** Enter or Esc cancels, and Tab reaches the destructive action. Non-destructive confirmations focus the confirm action.
+
 ### 4.4 Branch sync architecture (2026-10-10)
 
 Main is merged into the branch daily (procedure: Daily Sync Routine in `migration-governance.md`). Main is active: 145 commits landed between the branch point `28af00f` and the merge at `5b60e22`. That causes two costs:

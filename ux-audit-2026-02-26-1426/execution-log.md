@@ -164,3 +164,9 @@ Dated record of migration work and approved design deviations. Decisions are sum
   - `fix/evidence-filter-form-validation` (`c4c217f`, M2-03): `FilterForm` requires a name and filter with inline, aria-linked errors and shows parse errors inline; `CreateFormView` toasts success or the API error. The V2 Evidence Filters list reuses `FilterForm` in its edit dialog, so it gets the validation after the merge.
   - Both have specs that fail on main and pass with the fix, and both passed main's `make reviewable`.
   - The local API and dev server stopped at their 2-hour background limit, so restart them before the next browser check.
+- 2026-10-10: Owner decisions recorded in PRD §4.5 and implemented:
+  - Destructive confirm dialogs focus Cancel (`0bac116`).
+  - The SSP tab set is Overview, Characteristics, Implementation, Controls, Risks, Compliance, JSON. Users, components and authorizations redirect to Implementation sections via `?section=`; export offerings, leverage and inherited capabilities are hidden but reachable by URL (`c4623e4`).
+  - Dark mode is back: `useTheme.ts` is restored to main's version, which removes another main-owned file from the branch diff, and the V2 user menu has a Dark mode toggle (`9027b7f`).
+  - Paperwork only: landing stays on Evidence, no metadata editor for now, no logout confirmation.
+  - Browser checks: the 7-tab bar; `/components` → `/system-implementation?section=components`; `/inherited-capabilities` still loads; the dark toggle switches V2 and V1 pages and persists. Screenshots of the SSP library, SSP Controls and V1 Evidence in dark looked correct.
