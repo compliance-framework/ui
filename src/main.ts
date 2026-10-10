@@ -6,7 +6,7 @@ import { createPinia } from 'pinia';
 import piniaPluginPersistedstate from 'pinia-plugin-persistedstate';
 
 import App from './App.vue';
-import router from './router';
+import router from './router/v2';
 import CatalogGroup from '@/views/catalog/CatalogGroup.vue';
 import CatalogControl from '@/views/catalog/CatalogControl.vue';
 

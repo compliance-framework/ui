@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import router from '../index';
+import router from '../v2';
 
 vi.mock('@/stores/auth', () => ({
   useUserStore: () => ({ isAuthenticated: true }),

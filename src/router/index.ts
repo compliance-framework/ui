@@ -1,16 +1,7 @@
-import {
-  createRouter,
-  createWebHistory,
-  type RouteLocationNormalized,
-} from 'vue-router';
+import { createRouter, createWebHistory } from 'vue-router';
 import AppLayout from '@/views/layouts/App.vue';
-import GuestV2Layout from '@/views/layouts/GuestV2Layout.vue';
+import GuestLayout from '@/views/layouts/GuestLayout.vue';
 import { useUserStore } from '@/stores/auth';
-import { RouteNames } from './routeNames';
-import {
-  dispatchUIMigrationStatusEvent,
-  getMatchedUIVersions,
-} from './uiMigrationInstrumentation';
 import { usePermissionsStore } from '@/stores/permissions';
 import { RESOURCES, ACTIONS } from '@/constants/permissions';
 
@@ -25,19 +16,22 @@ const authenticatedRoutes = [
   {
     path: '/',
     name: 'home',
+    // Redirects to the canonical evidence route (rather than duplicating its component
+    // under a second route name) so the initial landing page resolves as 'evidence:index'
+    // — the same name LeftSideNav's active-section tracking matches on — and the "Evidence"
+    // nav item is correctly highlighted from the very first render, not just after the user
+    // clicks it.
     redirect: { name: 'evidence:index' },
     meta: {
       requiresAuth: true,
-      uiVersion: 'v2',
     },
   },
   {
     path: '/dashboards',
     name: 'dashboards',
-    component: () => import('../views/dashboards-v2/DashboardListView.vue'),
+    component: () => import('../views/dashboard/IndexView.vue'),
     meta: {
       requiresAuth: true,
-      uiVersion: 'v2',
       permission: { resource: RESOURCES.FILTER, action: ACTIONS.READ },
     },
   },
@@ -66,37 +60,17 @@ const authenticatedRoutes = [
     // route level code-splitting
     // this generates a separate chunk (About.[hash].js) for this route
     // which is lazy-loaded when the route is visited.
-    component: () => import('../views/dashboards-v2/DashboardListView.vue'),
+    component: () => import('../views/dashboard/IndexView.vue'),
     meta: {
       requiresAuth: true,
-      uiVersion: 'v2',
-    },
-  },
-  {
-    path: '__v2/tokens',
-    name: 'ui-v2:tokens',
-    component: () => import('../views/system-v2/V2TokenVisualTestView.vue'),
-    meta: {
-      requiresAuth: true,
-      uiVersion: 'v2',
-    },
-  },
-  {
-    path: '__v2/components',
-    name: 'ui-v2:components',
-    component: () => import('../views/system-v2/V2ComponentLibraryView.vue'),
-    meta: {
-      requiresAuth: true,
-      uiVersion: 'v2',
     },
   },
   {
     path: 'controls',
     name: 'controls:index',
-    component: () => import('../views/controls-v2/ControlsWorkspaceView.vue'),
+    component: () => import('../views/control-implementations/IndexView.vue'),
     meta: {
       requiresAuth: true,
-      uiVersion: 'v2',
     },
   },
   {
@@ -207,96 +181,79 @@ const authenticatedRoutes = [
       {
         path: '',
         name: 'system:overview',
-        component: () => import('../views/system-v2/SystemOverviewView.vue'),
-        meta: {
-          uiVersion: 'v2',
-        },
+        component: () => import('../views/system/OverviewView.vue'),
       },
       {
         path: 'characteristics',
         name: 'system:characteristics',
         component: () => import('../views/system/CharacteristicsView.vue'),
-        meta: { uiVersion: 'v2' },
       },
       {
         path: 'implementation',
         name: 'system:implementation',
         component: () =>
           import('../views/system/ImplementationOverviewView.vue'),
-        meta: { uiVersion: 'v2' },
       },
       {
         path: 'users',
         name: 'system:users',
         component: () => import('../views/system/UsersView.vue'),
-        meta: { uiVersion: 'v2' },
       },
       {
         path: 'components',
         name: 'system:components',
         component: () => import('../views/system/ComponentsView.vue'),
-        meta: { uiVersion: 'v2' },
       },
       {
         path: 'components/dashboards/:componentId',
         name: 'system-component-dashboards',
         component: () => import('../views/system/ComponentsView.vue'),
-        meta: { uiVersion: 'v2' },
       },
       {
         path: 'authorizations',
         name: 'system:authorizations',
         component: () => import('../views/system/AuthorizationsView.vue'),
-        meta: { uiVersion: 'v2' },
       },
       {
         path: 'control-implementation',
         name: 'system:control-implementation',
         component: () =>
           import('../views/system/ControlImplementationView.vue'),
-        meta: { uiVersion: 'v2' },
       },
       {
         path: 'export-offerings',
         name: 'system:export-offerings',
         component: () => import('../views/system/ExportOfferingsView.vue'),
-        meta: { uiVersion: 'v2' },
       },
       {
         path: 'leverage',
         name: 'system:leverage',
         component: () => import('../views/system/LeverageView.vue'),
-        meta: { uiVersion: 'v2' },
       },
       {
         path: 'inherited-capabilities',
         name: 'system:inherited-capabilities',
         component: () =>
           import('../views/system/InheritedCapabilitiesView.vue'),
-        meta: { uiVersion: 'v2' },
       },
       {
         path: 'risks',
         name: 'system:risks',
         component: () => import('../views/RisksView.vue'),
-        meta: { uiVersion: 'v2' },
       },
       {
         path: 'compliance',
         name: 'system:compliance',
         component: () => import('../views/system/ComplianceView.vue'),
-        meta: { uiVersion: 'v2' },
       },
       {
         path: 'json',
         name: 'system:json',
         component: () => import('../views/system/JsonView.vue'),
-        meta: { uiVersion: 'v2' },
       },
     ],
     meta: {
       requiresAuth: true,
-      uiVersion: 'v2',
     },
   },
   {
@@ -319,6 +276,14 @@ const authenticatedRoutes = [
     path: 'risks/:riskId',
     name: 'risks:detail',
     component: () => import('../views/risk/RiskDetailView.vue'),
+    meta: {
+      requiresAuth: true,
+    },
+  },
+  {
+    path: 'inventory',
+    name: 'inventory:index',
+    component: () => import('../views/InventoryView.vue'),
     meta: {
       requiresAuth: true,
     },
@@ -764,12 +729,9 @@ const authenticatedRoutes = [
     // this generates a separate chunk (About.[hash].js) for this route
     // which is lazy-loaded when the route is visited.
     component: () =>
-      import(
-        '../views/system-security-plans-v2/SystemSecurityPlanListView.vue'
-      ),
+      import('../views/system-security-plans/SystemSecurityPlanListView.vue'),
     meta: {
       requiresAuth: true,
-      uiVersion: 'v2',
     },
   },
   {
@@ -801,12 +763,9 @@ const authenticatedRoutes = [
     path: '/system-security-plans/:id',
     name: 'system-security-plan-editor',
     component: () =>
-      import(
-        '../views/system-security-plans-v2/SystemSecurityPlanEditorView.vue'
-      ),
+      import('../views/system-security-plans/SystemSecurityPlanEditorView.vue'),
     meta: {
       requiresAuth: true,
-      uiVersion: 'v2',
     },
     children: [
       {
@@ -814,33 +773,24 @@ const authenticatedRoutes = [
         name: 'system-security-plan-overview',
         component: () =>
           import(
-            '../views/system-security-plans-v2/SystemSecurityPlanOverviewView.vue'
+            '../views/system-security-plans/SystemSecurityPlanOverviewView.vue'
           ),
-        meta: {
-          uiVersion: 'v2',
-        },
       },
       {
         path: 'system-characteristics',
         name: 'system-security-plan-characteristics',
         component: () =>
           import(
-            '../views/system-security-plans-v2/SystemSecurityPlanCharacteristicsView.vue'
+            '../views/system-security-plans/SystemSecurityPlanCharacteristicsView.vue'
           ),
-        meta: {
-          uiVersion: 'v2',
-        },
       },
       {
         path: 'system-implementation',
         name: 'system-security-plan-implementation',
         component: () =>
           import(
-            '../views/system-security-plans-v2/SystemSecurityPlanSystemImplementationView.vue'
+            '../views/system-security-plans/SystemSecurityPlanSystemImplementationEditorView.vue'
           ),
-        meta: {
-          uiVersion: 'v2',
-        },
       },
       {
         path: 'users',
@@ -849,7 +799,6 @@ const authenticatedRoutes = [
           import(
             '../views/system-security-plans/SystemSecurityPlanUsersView.vue'
           ),
-        meta: { uiVersion: 'v2' },
       },
       {
         path: 'components',
@@ -858,7 +807,6 @@ const authenticatedRoutes = [
           import(
             '../views/system-security-plans/SystemSecurityPlanComponentsView.vue'
           ),
-        meta: { uiVersion: 'v2' },
       },
       {
         path: 'authorizations',
@@ -867,18 +815,14 @@ const authenticatedRoutes = [
           import(
             '../views/system-security-plans/SystemSecurityPlanAuthorizationsView.vue'
           ),
-        meta: { uiVersion: 'v2' },
       },
       {
         path: 'control-implementation',
         name: 'system-security-plan-control-implementation',
         component: () =>
           import(
-            '../views/system-security-plans-v2/SystemSecurityPlanControlImplementationView.vue'
+            '../views/system-security-plans/SystemSecurityPlanControlImplementationView.vue'
           ),
-        meta: {
-          uiVersion: 'v2',
-        },
       },
       {
         path: 'export-offerings',
@@ -887,7 +831,6 @@ const authenticatedRoutes = [
           import(
             '../views/system-security-plans/SystemSecurityPlanExportOfferingsView.vue'
           ),
-        meta: { uiVersion: 'v2' },
       },
       {
         path: 'leverage',
@@ -896,7 +839,6 @@ const authenticatedRoutes = [
           import(
             '../views/system-security-plans/SystemSecurityPlanLeverageView.vue'
           ),
-        meta: { uiVersion: 'v2' },
       },
       {
         path: 'inherited-capabilities',
@@ -905,41 +847,32 @@ const authenticatedRoutes = [
           import(
             '../views/system-security-plans/SystemSecurityPlanInheritedCapabilitiesView.vue'
           ),
-        meta: { uiVersion: 'v2' },
       },
       {
         path: 'risks',
         name: 'system-security-plan-risks',
         component: () => import('../views/RisksView.vue'),
-        meta: { uiVersion: 'v2' },
       },
       {
         path: 'risks/:riskId',
         name: 'system-security-plan-risk-detail',
         component: () => import('../views/risk/RiskDetailView.vue'),
-        meta: { uiVersion: 'v2' },
       },
       {
         path: 'compliance',
         name: 'system-security-plan-compliance',
         component: () =>
           import(
-            '../views/system-security-plans-v2/SystemSecurityPlanComplianceView.vue'
+            '../views/system-security-plans/SystemSecurityPlanComplianceView.vue'
           ),
-        meta: {
-          uiVersion: 'v2',
-        },
       },
       {
         path: 'json',
         name: 'system-security-plan-json',
         component: () =>
           import(
-            '../views/system-security-plans-v2/SystemSecurityPlanJSONView.vue'
+            '../views/system-security-plans/SystemSecurityPlanJSONView.vue'
           ),
-        meta: {
-          uiVersion: 'v2',
-        },
       },
     ],
   },
@@ -1059,12 +992,9 @@ const authenticatedRoutes = [
     // this generates a separate chunk (About.[hash].js) for this route
     // which is lazy-loaded when the route is visited.
     component: () =>
-      import(
-        '../views/system-security-plans-v2/SystemSecurityPlanCreateView.vue'
-      ),
+      import('../views/system-security-plans/SystemSecurityPlanCreateView.vue'),
     meta: {
       requiresAuth: true,
-      uiVersion: 'v2',
     },
   },
   {
@@ -1230,63 +1160,34 @@ const publicRoutes = [
   {
     path: 'login',
     name: 'login',
-    component: () => import('@/views/auth-v2/LoginView.vue'),
-    meta: {
-      uiVersion: 'v2',
-    },
+    component: () => import('@/views/LoginView.vue'),
   },
   {
     path: 'forgot-password',
     name: 'forgot-password',
-    component: () => import('@/views/auth-v2/ForgotPasswordView.vue'),
-    meta: {
-      uiVersion: 'v2',
-    },
+    component: () => import('@/views/ForgotPasswordView.vue'),
   },
   {
     path: 'password-reset',
     name: 'password-reset',
-    component: () => import('@/views/auth-v2/PasswordResetView.vue'),
-    meta: {
-      uiVersion: 'v2',
-    },
+    component: () => import('@/views/PasswordResetView.vue'),
   },
   {
     path: 'sso/callback',
     name: 'sso-callback',
-    component: () => import('@/views/auth-v2/SSOCallbackView.vue'),
-    meta: {
-      uiVersion: 'v2',
-    },
+    component: () => import('@/views/SSOCallbackView.vue'),
   },
   {
     path: 'slack/callback',
     name: 'slack-link-callback',
     component: () => import('@/views/SlackLinkCallbackView.vue'),
-    meta: { uiVersion: 'v2' },
   },
   {
     path: 'logout',
     name: 'logout',
-    component: () => import('@/views/auth-v2/LogoutView.vue'),
-    meta: {
-      uiVersion: 'v2',
-    },
+    component: () => import('@/views/LogoutView.vue'),
   },
 ];
-
-function violatesUIMigrationGuard(to: RouteLocationNormalized): boolean {
-  const matchedUIVersions = getMatchedUIVersions(to.matched);
-  const firstV2RecordIndex = matchedUIVersions.indexOf('v2');
-
-  if (firstV2RecordIndex === -1) {
-    return false;
-  }
-
-  return matchedUIVersions
-    .slice(firstV2RecordIndex + 1)
-    .some((version) => version !== 'v2');
-}
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -1301,12 +1202,11 @@ const router = createRouter({
     {
       path: '/auth',
       name: 'auth',
-      component: GuestV2Layout,
+      component: GuestLayout,
       children: publicRoutes,
       meta: {
         requiresAuth: false,
-        hideThemeToggle: true,
-        uiVersion: 'v2',
+        asd: false,
       },
     },
     {
@@ -1318,11 +1218,6 @@ const router = createRouter({
         requiresAuth: true,
       },
     },
-    {
-      path: '/:pathMatch(.*)*',
-      name: 'not-found',
-      component: () => import('@/views/NotFoundView.vue'),
-    },
   ],
 });
 
@@ -1330,17 +1225,9 @@ router.beforeEach((to, from, next) => {
   const requiresAuth = to.matched.some((record) => record.meta.requiresAuth);
   const userStore = useUserStore();
   const isAuthenticated = userStore.isAuthenticated;
-
   if (requiresAuth && !isAuthenticated) {
     // Redirect to the login page if the user is not authenticated
-    return next({ name: RouteNames.LOGIN, query: { next: to.fullPath } });
-  }
-
-  if (violatesUIMigrationGuard(to)) {
-    console.error(
-      `[ui-migration-guard] Blocked mixed V1/V2 route chain from "${from.fullPath}" to "${to.fullPath}".`,
-    );
-    return next({ name: 'not-found', query: { reason: 'mixed-ui-version' } });
+    return next({ name: 'login', query: { next: to.fullPath } });
   }
 
   // Permission gate (BCH-1318): block direct-URL access to routes the subject can't reach.
@@ -1365,10 +1252,6 @@ router.beforeEach((to, from, next) => {
 
   // Proceed to the requested route
   return next();
-});
-
-router.afterEach((to) => {
-  dispatchUIMigrationStatusEvent(to);
 });
 
 export default router;
