@@ -1093,7 +1093,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, provide, ref, watch } from 'vue';
 import { uuid } from '@/utils/uuid';
 import { useRouter } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
@@ -1141,6 +1141,10 @@ import {
 } from '@/stores/system-security-plans';
 import IndexControlImplementation from '@/views/control-implementations/partials/IndexControlImplementation.vue';
 import SharedResponsibilityPanel from '@/views/control-implementations/partials/SharedResponsibilityPanel.vue';
+import {
+  LeveragedControlsKey,
+  useLeveragedControls,
+} from '@/composables/useLeveragedControls';
 import type { SharedResponsibilityProvided } from '@/types/ssp-leverage';
 import PermissionGate from '@/components/auth/PermissionGate.vue';
 import { RESOURCES, ACTIONS } from '@/constants/permissions';
@@ -1233,6 +1237,15 @@ const selectedProfileId = ref('');
 
 const activePlan = computed(() => systemStore.system.securityPlan);
 const activeSspId = computed(() => activePlan.value?.uuid || '');
+
+// The embedded V1 IndexControlImplementation renders inherited-responsibility
+// rows from this injection; without a provider they render nothing, as if no
+// capability were inherited (backlog M1-02). One fetch for the whole page, as
+// main's /controls IndexView does. Replace with the V2 drawer under M1-05.
+provide(
+  LeveragedControlsKey,
+  useLeveragedControls(computed(() => activeSspId.value || undefined)),
+);
 
 const { data: profileData, execute: executeProfile } = useDataApi<Profile>(
   null,
