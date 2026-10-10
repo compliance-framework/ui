@@ -153,3 +153,9 @@ Dated record of migration work and approved design deviations. Decisions are sum
   - Spec: `requirementListSearch.spec.ts`. Browser check on FedRAMP: 664 requirements start `ac-1, ac-2, ac-2.1…`; searching "si-4" shows 26 (badge "26 / 664").
   - Still open: the "Implemented" terminology mismatch between Controls and Compliance.
   - Checked M2-23: no UI on main calls the shallow `updateSystemImplementation` (main's overview form saves with axios deep `decamelizeKeys`), so it is downgraded to P3 dead code.
+- 2026-10-10: Prepared four more V1-only main fixes as local branches off `origin/main`, all signed and not pushed. Each has a spec that fails on main and passes with the fix, and each passed main's `make reviewable`.
+  - `fix/assessment-results-import-ap` (`5f9cbde`, M2-05): `importAP` → `importAp`, and the result count comes from `/results`.
+  - `fix/subject-picker-ssp-uuid` (`afe1d4c`, M2-01): SSP options keyed by `uuid`. The spec fixture had the same wrong `id` shape.
+  - `fix/control-evidence-null-labels` (`82dbb34`, M2-04): `labels: null` from `for-control` defaults to `[]`. The spec reproduces the production `TypeError` on main.
+  - `fix/statement-id-read-only` (`4cff3a4`, M2-21): the V1 statement ID is read-only and the PUT keeps the original.
+  - The backlog lists them in a "Main PR queue" under M2.
