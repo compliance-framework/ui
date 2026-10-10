@@ -6,7 +6,7 @@
     loading-description="Retrieving system security plans..."
   >
     <template #header>
-      <V2PageHeader eyebrow="Dashboard" title="System Security Plan Library">
+      <V2PageHeader eyebrow="Systems" title="System Security Plan Library">
         <template #actions>
           <div class="flex flex-wrap items-center gap-2">
             <RouterLink
@@ -126,7 +126,7 @@
                 <p
                   class="ui-v2-meta mt-1 text-[var(--ui-v2-tertiary-foreground)]"
                 >
-                  UUID: {{ ssp.uuid }}
+                  UUID: <span class="normal-case">{{ ssp.uuid }}</span>
                 </p>
               </td>
               <td
@@ -165,7 +165,7 @@
                     :disabled="isActive(ssp)"
                     @click="setActivePlan(ssp)"
                   >
-                    Set
+                    SET
                   </button>
                 </div>
               </td>

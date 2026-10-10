@@ -1,9 +1,9 @@
 <template>
   <div class="space-y-6">
     <V2PageHeader
-      eyebrow="Controls"
+      eyebrow="Implementation"
       title="Controls"
-      description="Tree-first workflow: expand groups, implement statements inline, and open drawers only when needed."
+      description="Implement each control's statements for the active system security plan and link the evidence filters that support them."
     />
 
     <PrerequisiteGate
@@ -795,7 +795,7 @@
         </div>
       </SspEditorSection>
 
-      <SspEditorSection title="DASHBOARDS">
+      <SspEditorSection title="EVIDENCE FILTERS">
         <template #actions>
           <div v-if="selectedStatementRecord" class="flex flex-wrap gap-2">
             <SecondaryButton
@@ -951,7 +951,7 @@
             @submit.prevent="linkExistingDashboard"
           >
             <V2FormField
-              label="AVAILABLE DASHBOARDS"
+              label="AVAILABLE EVIDENCE FILTERS"
               input-id="controls-dashboard-link"
             >
               <template #default="fieldProps">
@@ -2781,7 +2781,7 @@ async function loadAvailableEvidence(): Promise<void> {
       summary: 'Evidence Load Failed',
       detail: resolveApiErrorMessage(
         error,
-        'Unable to load evidence choices for dashboard creation.',
+        'Unable to load evidence choices for the evidence filter.',
       ),
       life: 4000,
     });
@@ -2829,7 +2829,7 @@ async function submitDashboardCreate(): Promise<void> {
       summary: 'Invalid Filter',
       detail: resolveApiErrorMessage(
         error,
-        'The generated dashboard filter could not be parsed.',
+        'The generated evidence filter could not be parsed.',
       ),
       life: 4000,
     });
@@ -2862,7 +2862,7 @@ async function submitDashboardCreate(): Promise<void> {
       summary: 'Create Failed',
       detail: resolveApiErrorMessage(
         error,
-        'Unable to create the dashboard for this control.',
+        'Unable to create the evidence filter for this control.',
       ),
       life: 4000,
     });
@@ -2878,7 +2878,7 @@ async function loadDashboardsForControl(controlId: string): Promise<void> {
   } catch (error) {
     toast.add({
       severity: 'error',
-      summary: 'Dashboard Load Failed',
+      summary: 'Evidence Filters Load Failed',
       detail: resolveApiErrorMessage(
         error,
         'Unable to load linked evidence filters for this control.',
@@ -2897,10 +2897,10 @@ async function loadAllDashboards(): Promise<void> {
   } catch (error) {
     toast.add({
       severity: 'error',
-      summary: 'Dashboard Load Failed',
+      summary: 'Evidence Filters Load Failed',
       detail: resolveApiErrorMessage(
         error,
-        'Unable to load available dashboards.',
+        'Unable to load available evidence filters.',
       ),
       life: 4000,
     });
@@ -2952,7 +2952,7 @@ async function linkExistingDashboard(): Promise<void> {
 async function confirmUnlinkDashboard(dashboard: Dashboard): Promise<void> {
   confirmDeleteDialog(() => unlinkDashboard(dashboard), {
     itemName: dashboard.name,
-    itemType: 'dashboard link',
+    itemType: 'evidence filter link',
   });
 }
 
@@ -3046,10 +3046,10 @@ function viewDashboardEvidence(dashboard: Dashboard): void {
   } catch (error) {
     toast.add({
       severity: 'error',
-      summary: 'Invalid Dashboard Filter',
+      summary: 'Invalid Evidence Filter',
       detail: resolveApiErrorMessage(
         error,
-        'Unable to open evidence because the dashboard filter is invalid.',
+        'Unable to open evidence because the evidence filter is invalid.',
       ),
       life: 4000,
     });

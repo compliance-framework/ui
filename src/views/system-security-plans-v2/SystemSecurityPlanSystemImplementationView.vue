@@ -1152,7 +1152,7 @@ function handleOverviewSaved(
 }
 
 function formatUserHeading(user: SystemUser): string {
-  return `v ${(user.title || 'UNTITLED USER').toUpperCase()}`;
+  return (user.title || 'UNTITLED USER').toUpperCase();
 }
 
 function formatUserRoles(user: SystemUser): string {
@@ -1174,7 +1174,7 @@ function formatUserPrivileges(user: SystemUser): string {
 }
 
 function formatComponentHeading(component: SystemComponent): string {
-  return `v ${(component.title || 'UNTITLED COMPONENT').toUpperCase()}`;
+  return (component.title || 'UNTITLED COMPONENT').toUpperCase();
 }
 
 function componentTypeColor(type: string): string {

@@ -28,7 +28,7 @@
       <p
         class="font-[var(--ui-v2-font-secondary)] text-[11px] font-semibold tracking-[1px] text-[var(--ui-v2-foreground)]"
       >
-        Attach a profile in OVERVIEW to view compliance data.
+        Select a profile in the header above to view compliance data.
       </p>
     </section>
 

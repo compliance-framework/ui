@@ -264,7 +264,10 @@
                   class="ui-v2-nav mt-1 text-[10px] font-semibold tracking-[1px] text-[var(--ui-v2-secondary-foreground)]"
                   :title="selectedRequirement.uuid"
                 >
-                  UUID: {{ formatCompactUuid(selectedRequirement.uuid) }}
+                  UUID:
+                  <span class="normal-case">{{
+                    formatCompactUuid(selectedRequirement.uuid)
+                  }}</span>
                 </p>
               </div>
 

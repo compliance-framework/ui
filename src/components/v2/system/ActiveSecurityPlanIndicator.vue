@@ -26,7 +26,8 @@ const summaryText = computed(() => {
   const title =
     activePlan.value.metadata?.title || 'Untitled System Security Plan';
   const version = activePlan.value.metadata?.version || 'N/A';
-  return `${title} / v${version}`;
+  // Only numeric versions get a "v" (not "fedramp2.1.0-…" or "N/A").
+  return `${title} / ${/^\d/.test(version) ? `v${version}` : version}`;
 });
 
 const isSwitcherOpen = ref(false);
@@ -136,7 +137,7 @@ onUnmounted(() => {
         v-if="activePlan?.uuid"
         class="ui-v2-meta mt-1 text-[var(--ui-v2-tertiary-foreground)]"
       >
-        ID: {{ activePlan.uuid }}
+        ID: <span class="normal-case">{{ activePlan.uuid }}</span>
       </p>
     </div>
 

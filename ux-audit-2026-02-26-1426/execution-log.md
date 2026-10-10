@@ -196,3 +196,10 @@ Dated record of migration work and approved design deviations. Decisions are sum
   - Renamed the two ambiguous V2 labels: Admin "Risks" → "Risk Administration" and "System Users" → "User Accounts". Main's V1 `LeftSideNav` is unaffected.
   - Items can declare extra `activePaths`, so `/workflow-definitions/:id` highlights Workflow Definitions and `/workflow-executions/:id` highlights Workflow Instances. The active link has `aria-current="page"`.
   - Spec: `composables/v2/__tests__/useV2Navigation.spec.ts`. Browser check: five sections, items 01–18, Manage Systems active on the SSP library.
+- 2026-10-10: V2 polish (parts of M1-17 and M1-18):
+  - Removed the stray "v" before implementation user/component titles. The active-SSP bar prefixes "v" only for numeric versions, so `fedramp2.1.0-oscal1.0.4` shows as stored.
+  - UUIDs keep their case in the SSP library, Control Implementation and the active-SSP bar.
+  - The SSP library eyebrow reads "Systems" (was "Dashboard"), and the row action reads "SET".
+  - The no-profile compliance hint points to the profile selector in the header.
+  - Controls has a real description instead of a design note, an "Implementation" eyebrow, and "Evidence filter" wording instead of "Dashboard" in its section, labels and toasts.
+  - Browser check on the library, Controls and FedRAMP implementation users.
