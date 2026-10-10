@@ -204,3 +204,8 @@ Dated record of migration work and approved design deviations. Decisions are sum
   - Controls has a real description instead of a design note, an "Implementation" eyebrow, and "Evidence filter" wording instead of "Dashboard" in its section, labels and toasts.
   - Browser check on the library, Controls and FedRAMP implementation users.
 - 2026-10-10: Fixed M1-20. Deleted the five unused V2 editor views in `system-security-plans-v2/editors/` (`ControlImplementation`, `SystemImplementationAuthorization`/`Component`/`Overview`/`User` `EditorView.vue`): none was routed or imported, and they were where the editable-UUID finding (B-12) came from. `sspEditorHelpers.ts` stays. The drift map has no stale entries.
+- 2026-10-10: Fixed M1-11 (SSP Compliance parity).
+  - Each leveraged control row shows main's leverage badge ("Inherited", "· drifted", "· revoked", "· superseded"), with main's origin and outstanding-responsibilities tooltip. Labels and tooltip come from `utils/compliance.ts`; colours use V2 tokens (purple active, warning border when drifted, muted when revoked or superseded).
+  - The badge doesn't link to Inherited Capabilities, because that tab is hidden in V2 (PRD §4.5). Linking it is part of M1-08.
+  - The legend puts each swatch before its label and adds Inherited, in main's order: Satisfied, Inherited, Not satisfied, Unknown. Group cards show their inherited count.
+  - Spec: `system-security-plans-v2/__tests__/compliance.spec.ts`. No browser check: the local seed has no leverage links, so the badge can't render there.

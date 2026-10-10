@@ -124,19 +124,19 @@
           />
         </div>
 
-        <div class="flex flex-wrap items-center gap-3">
-          <span class="ui-v2-label text-[var(--ui-v2-secondary-foreground)]"
-            >SATISFIED</span
+        <!-- Swatch before its label, so each reads as belonging to its own label. -->
+        <div class="flex flex-wrap items-center gap-4">
+          <span
+            v-for="entry in legendEntries"
+            :key="entry.label"
+            class="inline-flex items-center gap-1.5"
           >
-          <span class="h-2 w-2 bg-[var(--ui-v2-success)]" />
-          <span class="ui-v2-label text-[var(--ui-v2-secondary-foreground)]"
-            >NOT SATISFIED</span
-          >
-          <span class="h-2 w-2 bg-[var(--ui-v2-error)]" />
-          <span class="ui-v2-label text-[var(--ui-v2-secondary-foreground)]"
-            >UNKNOWN</span
-          >
-          <span class="h-2 w-2 bg-[#9ca0b0]" />
+            <span class="h-2 w-2" :class="entry.swatch" />
+            <span
+              class="ui-v2-label text-[var(--ui-v2-secondary-foreground)]"
+              >{{ entry.label }}</span
+            >
+          </span>
         </div>
 
         <div class="flex items-center justify-between gap-3">
@@ -220,6 +220,12 @@
                 class="ui-v2-nav font-semibold text-[var(--ui-v2-secondary-foreground)]"
               >
                 {{ group.satisfied }} satisfied
+              </p>
+              <p
+                v-if="group.inherited"
+                class="ui-v2-nav font-semibold text-[var(--ui-v2-secondary-foreground)]"
+              >
+                {{ group.inherited }} inherited
               </p>
               <p
                 class="ui-v2-nav font-semibold text-[var(--ui-v2-secondary-foreground)]"
@@ -333,8 +339,19 @@
             "
           >
             <div class="flex-1 min-w-0 space-y-0.5">
-              <p class="ui-v2-label text-[var(--ui-v2-foreground)]">
+              <p
+                class="ui-v2-label flex flex-wrap items-center gap-2 text-[var(--ui-v2-foreground)]"
+              >
                 {{ row.controlId }}
+                <!-- Plain badge: the Inherited Capabilities tab it linked to on
+                     main is hidden in V2 (PRD §4.5). -->
+                <span
+                  v-if="row.leverage"
+                  v-tooltip.top="row.leverage.tooltip"
+                  class="inline-flex border px-1.5 py-[1px] text-[9px] font-bold tracking-[1px]"
+                  :class="row.leverage.class"
+                  >{{ row.leverage.label }}</span
+                >
               </p>
               <p
                 class="font-[var(--ui-v2-font-secondary)] text-[12px] font-semibold leading-[1.35] tracking-[0.2px] normal-case text-[var(--ui-v2-secondary-foreground)]"
@@ -393,6 +410,8 @@ import { useProfileCompliance } from '@/composables/useProfileCompliance';
 import {
   computeComplianceWidths,
   controlKey,
+  leverageBadge,
+  leverageTooltip,
   statusCount,
 } from '@/utils/compliance';
 import {
@@ -411,6 +430,7 @@ interface GroupBreakdownRow {
   label: string;
   compliancePercent: number;
   satisfied: number;
+  inherited: number;
   notSatisfied: number;
   unknown: number;
   notImplemented: number;
@@ -434,6 +454,7 @@ interface ControlTableRow {
   controlTitle: string;
   groupLabel: string;
   status: StatusDisplay;
+  leverage: { label: string; tooltip: string; class: string } | null;
   evidence: {
     g: number;
     u: number;
@@ -593,12 +614,33 @@ const showNoDataState = computed(() => {
   return totalControls.value === 0;
 });
 
+// Per-control leverage badge (ported from main's ComplianceProgressPanel,
+// backlog M1-11): labels and tooltip come from utils/compliance, colours from
+// V2 tokens.
+function leverageTone(status: string): string {
+  if (status === 'drifted') {
+    return 'border-[var(--ui-v2-warning)] text-[var(--ui-v2-foreground)]';
+  }
+  if (status === 'revoked' || status === 'superseded') {
+    return 'border-[var(--ui-v2-border)] bg-[var(--ui-v2-surface)] text-[var(--ui-v2-muted-foreground)]';
+  }
+  return 'border-purple-500/50 bg-purple-500/10 text-purple-700 dark:text-purple-300';
+}
+
+const legendEntries = [
+  { label: 'SATISFIED', swatch: 'bg-[var(--ui-v2-success)]' },
+  { label: 'INHERITED', swatch: 'bg-purple-500' },
+  { label: 'NOT SATISFIED', swatch: 'bg-[var(--ui-v2-error)]' },
+  { label: 'UNKNOWN', swatch: 'bg-[#9ca0b0]' },
+];
+
 const groupRows = computed<GroupBreakdownRow[]>(() =>
   groups.value.map((group) => ({
     id: group.id,
     label: formatGroupLabel(group.id, group.title),
     compliancePercent: group.compliancePercent,
     satisfied: group.satisfied,
+    inherited: group.inherited ?? 0,
     notSatisfied: group.notSatisfied,
     unknown: group.unknown,
     notImplemented: groupNotImplementedCount(group.id),
@@ -613,6 +655,13 @@ const controlRows = computed<ControlTableRow[]>(() =>
     controlTitle: String(control.title || ''),
     groupLabel: formatGroupLabel(control.groupId, control.groupTitle),
     status: controlStatusDisplay(control.computedStatus),
+    leverage: control.leverage
+      ? {
+          label: leverageBadge(control.leverage).label.toUpperCase(),
+          tooltip: leverageTooltip(control.leverage),
+          class: leverageTone(control.leverage.status),
+        }
+      : null,
     evidence: {
       g: statusCount(control, 'satisfied'),
       u: statusCount(control, 'unknown') + statusCount(control, 'incomplete'),

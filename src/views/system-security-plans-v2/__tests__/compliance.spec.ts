@@ -32,9 +32,37 @@ vi.mock('@/composables/useProfileCompliance', () => ({
         title: 'Access Control',
         computedStatus: 'inherited',
         statusCounts: [],
+        leverage: {
+          inherited: true,
+          satisfaction: 'full',
+          status: 'drifted',
+          links: 1,
+          outstandingCount: 0,
+          totalResponsibilities: 2,
+          inheritedFrom: [
+            {
+              upstreamSspId: 'up-1',
+              upstreamSspTitle: 'Platform SSP',
+              offeringId: 'off-1',
+              offeringTitle: 'Shared IAM',
+              offeringVersion: 3,
+            },
+          ],
+        },
       },
     ]),
-    groups: ref([]),
+    groups: ref([
+      {
+        id: 'ac',
+        title: 'Access Control',
+        totalControls: 10,
+        satisfied: 2,
+        inherited: 6,
+        notSatisfied: 1,
+        unknown: 1,
+        compliancePercent: 80,
+      },
+    ]),
     isLoading: ref(false),
     error: ref(null),
     loadCompliance,
@@ -70,6 +98,44 @@ describe('remake compliance posture', () => {
       'width: 60%',
     );
     expect(wrapper.find('.border-purple-300').text()).toContain('INHERITED');
+    wrapper.unmount();
+  });
+
+  it('badges leveraged controls and counts inherited controls per group', async () => {
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [{ path: '/ssp/:id', component: { template: '<div />' } }],
+    });
+    await router.push('/ssp/ssp-1');
+    await router.isReady();
+    const wrapper = mount(ComplianceView, {
+      global: {
+        plugins: [router],
+        directives: { tooltip: {} },
+        provide: {
+          [sspDetailProfileBindingKey as symbol]: {
+            profileResolved: ref(true),
+            selectedProfileId: ref('p-1'),
+          },
+        },
+      },
+    });
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('INHERITED · DRIFTED');
+    expect(wrapper.text()).toContain('6 inherited');
+    const legend = wrapper
+      .findAll('.ui-v2-label')
+      .map((label) => label.text())
+      .filter((text) =>
+        ['SATISFIED', 'INHERITED', 'NOT SATISFIED', 'UNKNOWN'].includes(text),
+      );
+    expect(legend.slice(0, 4)).toEqual([
+      'SATISFIED',
+      'INHERITED',
+      'NOT SATISFIED',
+      'UNKNOWN',
+    ]);
     wrapper.unmount();
   });
 });
