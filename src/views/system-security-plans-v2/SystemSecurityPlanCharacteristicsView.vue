@@ -19,6 +19,44 @@
     </section>
 
     <template v-else>
+      <section
+        class="space-y-3 border border-[var(--ui-v2-border)] bg-[var(--ui-v2-card)] p-5"
+      >
+        <header class="flex items-center justify-between gap-3">
+          <h2 class="ui-v2-section-title text-[var(--ui-v2-foreground)]">
+            SYSTEM INFORMATION
+          </h2>
+          <button
+            v-tooltip.top="{
+              value: permissionTooltip(RESOURCES.SSP, ACTIONS.UPDATE),
+              disabled: canUpdateSsp,
+            }"
+            type="button"
+            class="ui-v2-nav border border-[var(--ui-v2-border)] bg-[var(--ui-v2-background)] px-3 py-1.5 font-semibold text-[var(--ui-v2-foreground)] disabled:cursor-not-allowed disabled:opacity-50"
+            :disabled="!characteristics || !canUpdateSsp"
+            @click="showCharacteristicsEditor = true"
+          >
+            EDIT
+          </button>
+        </header>
+        <dl class="grid gap-x-6 gap-y-3 md:grid-cols-2">
+          <div v-for="item in systemInformationItems" :key="item.label">
+            <dt class="ui-v2-label text-[var(--ui-v2-secondary-foreground)]">
+              {{ item.label }}
+            </dt>
+            <dd
+              v-if="item.value"
+              class="mt-0.5 whitespace-pre-line text-[var(--ui-v2-foreground)]"
+            >
+              {{ item.value }}
+            </dd>
+            <dd v-else class="mt-0.5 text-[var(--ui-v2-tertiary-foreground)]">
+              Not provided.
+            </dd>
+          </div>
+        </dl>
+      </section>
+
       <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <article
           v-for="card in metricCards"
@@ -208,6 +246,14 @@
         />
       </div>
     </Drawer>
+
+    <SystemCharacteristicsModalForm
+      v-if="showCharacteristicsEditor && characteristics"
+      :ssp-id="sspId"
+      :characteristics="characteristics"
+      @cancel="showCharacteristicsEditor = false"
+      @saved="handleCharacteristicsSaved"
+    />
   </div>
 </template>
 
@@ -228,10 +274,12 @@ import Drawer from '@/volt/Drawer.vue';
 import InputText from '@/volt/InputText.vue';
 import { usePermissions } from '@/composables/usePermissions';
 import { RESOURCES, ACTIONS } from '@/constants/permissions';
+import SystemCharacteristicsModalForm from '@/components/v2/system-security-plans/forms/SystemCharacteristicsModalForm.vue';
 
 // Delete actions are gated on ssp:delete, as on main (backlog M1-13).
 const { can, permissionTooltip } = usePermissions();
 const canDeleteSsp = computed(() => can(RESOURCES.SSP, ACTIONS.DELETE));
+const canUpdateSsp = computed(() => can(RESOURCES.SSP, ACTIONS.UPDATE));
 
 type DiagramKind =
   | 'authorization-boundary'
@@ -256,6 +304,27 @@ const {
   error,
   execute: loadCharacteristics,
 } = useDataApi<SystemCharacteristics>(null, null, { immediate: false });
+
+// System information editing (backlog M1-01).
+const showCharacteristicsEditor = ref(false);
+const systemInformationItems = computed(() => [
+  { label: 'SYSTEM NAME', value: characteristics.value?.systemName },
+  { label: 'SHORT NAME', value: characteristics.value?.systemNameShort },
+  {
+    label: 'SENSITIVITY LEVEL',
+    value: characteristics.value?.securitySensitivityLevel,
+  },
+  { label: 'DESCRIPTION', value: characteristics.value?.description },
+  { label: 'REMARKS', value: characteristics.value?.remarks },
+]);
+
+async function handleCharacteristicsSaved(): Promise<void> {
+  showCharacteristicsEditor.value = false;
+  // Re-read rather than trust the PUT echo, so the page shows stored values.
+  await loadCharacteristics(
+    `/api/oscal/system-security-plans/${sspId.value}/system-characteristics`,
+  );
+}
 
 const {
   data: authorizationBoundary,

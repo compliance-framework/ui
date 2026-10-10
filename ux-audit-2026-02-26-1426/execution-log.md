@@ -138,3 +138,11 @@ Dated record of migration work and approved design deviations. Decisions are sum
   - Specs: `permissionGating.spec.ts` (update/create checks, disabled submit makes no API call) and a delete-gating case in `legacyRequirementComponents.spec.ts`. Existing V2 form and view specs now mock `usePermissions`.
   - Browser check as admin: edit drawer SAVE enabled, no console errors. Not checked with a restricted account, because the local database has only the admin user.
   - Still open: disabling the buttons that _open_ create/edit drawers (submit is already gated), and SSP create/list actions.
+- 2026-10-10: Fixed M1-01 for system characteristics.
+  - The V2 characteristics page has a SYSTEM INFORMATION section (system name, short name, sensitivity, description, remarks) with EDIT, gated on `ssp:update`. It opens the new `SystemCharacteristicsModalForm`.
+  - API behavior, established on a throwaway copy of the GoodRead SSP before building: the characteristics PUT replaces associations it isn't given, so a body with only the edited fields wiped information types and system ids. It skips empty strings, so fields can't be cleared.
+  - The V2 editor therefore sends the current characteristics with only the edited fields changed, deep-kebab-cased, and blocks clearing an already-set optional field with an explanation.
+  - Browser check on the throwaway SSP: edits saved and showed on the page; information types, system ids, impact levels and status were preserved. The throwaway SSP was deleted afterwards (204).
+  - Spec: `SystemCharacteristicsModalForm.spec.ts`.
+  - Metadata editing is not added: main has no metadata editor, so it is a new feature that needs a decision.
+  - The same investigation confirmed M2-07 as data loss on main: saving the V1 form unchanged dropped information types and blanked impact levels. M2-07 is flagged as the top main PR candidate.
