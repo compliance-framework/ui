@@ -159,3 +159,8 @@ Dated record of migration work and approved design deviations. Decisions are sum
   - `fix/control-evidence-null-labels` (`82dbb34`, M2-04): `labels: null` from `for-control` defaults to `[]`. The spec reproduces the production `TypeError` on main.
   - `fix/statement-id-read-only` (`4cff3a4`, M2-21): the V1 statement ID is read-only and the PUT keeps the original.
   - The backlog lists them in a "Main PR queue" under M2.
+- 2026-10-10: Prepared two more V1-only main fixes as local branches (signed, not pushed):
+  - `fix/user-self-lock-delete` (`821271b`, M2-06): Lock and Delete are disabled on your own account with a tooltip, and Lock asks for confirmation.
+  - `fix/evidence-filter-form-validation` (`c4c217f`, M2-03): `FilterForm` requires a name and filter with inline, aria-linked errors and shows parse errors inline; `CreateFormView` toasts success or the API error. The V2 Evidence Filters list reuses `FilterForm` in its edit dialog, so it gets the validation after the merge.
+  - Both have specs that fail on main and pass with the fix, and both passed main's `make reviewable`.
+  - The local API and dev server stopped at their 2-hour background limit, so restart them before the next browser check.
