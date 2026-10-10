@@ -170,3 +170,15 @@ Dated record of migration work and approved design deviations. Decisions are sum
   - Dark mode is back: `useTheme.ts` is restored to main's version, which removes another main-owned file from the branch diff, and the V2 user menu has a Dark mode toggle (`9027b7f`).
   - Paperwork only: landing stays on Evidence, no metadata editor for now, no logout confirmation.
   - Browser checks: the 7-tab bar; `/components` → `/system-implementation?section=components`; `/inherited-capabilities` still loads; the dark toggle switches V2 and V1 pages and persists. Screenshots of the SSP library, SSP Controls and V1 Evidence in dark looked correct.
+- 2026-10-10: Verified the top three main fixes in a running copy of main's UI against the local API, before (`origin/main` `e5f9837`) and after (fix branch) on the same data. Screenshots are in thread storage `thr_njraugf3an/pr-evidence/`.
+  - M2-07 (`fix/ssp-characteristics-deep-keys`):
+    - Before: saving `/system/characteristics` unchanged on a fully populated SSP (throwaway GoodRead copy) sent camelCase nested keys, and the API then showed information types 1 → 0 and all three impact levels blank.
+    - After: kebab-case nested keys, with information types, impact levels and system ids preserved. A real edit (remarks) also saved.
+  - M2-04 (`fix/control-evidence-null-labels`):
+    - Before: `/catalogs/…/control/ac-2/evidence` threw `Cannot read properties of null (reading 'filter')` and showed no header and no rows.
+    - After: the header reads "ac-2 - Account Management", 60 rows, no errors.
+    - Caveat: the rows show "No labels" because the API's for-control endpoint doesn't load labels; showing them needs an API change.
+  - M2-05 (`fix/assessment-results-import-ap`):
+    - Before: the overview showed "Href N/A" and "contains 0 result(s)", and the Import AP form opened empty.
+    - After: "Href ./ap.oscal.xml", "contains 1 result(s)", and the form is pre-filled.
+  - The throwaway SSP was deleted afterwards and the remake dev server restarted on :3000.
