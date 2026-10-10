@@ -41,3 +41,40 @@ export function toDateInputValue(value?: string): string {
 
   return parsed.toISOString().slice(0, 10);
 }
+
+// Property and link rows in V2 editors: rows left completely empty are dropped
+// before saving; partly filled rows must satisfy OSCAL (a property needs a name
+// and a value, a link needs an href) or the save is blocked.
+type EditableProperty = { name?: string; value?: string };
+type EditableLink = { href?: string; text?: string; rel?: string };
+
+const isBlank = (value?: string) => !value?.trim();
+
+export function isBlankProperty(property: EditableProperty): boolean {
+  return isBlank(property.name) && isBlank(property.value);
+}
+
+export function isBlankLink(link: EditableLink): boolean {
+  return isBlank(link.href) && isBlank(link.text) && isBlank(link.rel);
+}
+
+export function propertyAndLinkErrors(
+  properties: EditableProperty[],
+  links: EditableLink[],
+): string[] {
+  const errors: string[] = [];
+  properties.forEach((property, index) => {
+    if (
+      !isBlankProperty(property) &&
+      (isBlank(property.name) || isBlank(property.value))
+    ) {
+      errors.push(`Property ${index + 1} needs both a name and a value.`);
+    }
+  });
+  links.forEach((link, index) => {
+    if (!isBlankLink(link) && isBlank(link.href)) {
+      errors.push(`Link ${index + 1} needs an HREF.`);
+    }
+  });
+  return errors;
+}

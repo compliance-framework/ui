@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive, watch } from 'vue';
+import { computed, reactive, ref, watch } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import Textarea from '@/volt/Textarea.vue';
 import InputText from '@/volt/InputText.vue';
@@ -16,6 +16,9 @@ import SspEditorRemoveButton from '@/components/v2/system-security-plans/forms/S
 import SspEditorSection from '@/components/v2/system-security-plans/forms/SspEditorSection.vue';
 import {
   cloneValue,
+  isBlankLink,
+  isBlankProperty,
+  propertyAndLinkErrors,
   resolveApiErrorMessage,
 } from '@/views/system-security-plans-v2/editors/sspEditorHelpers';
 
@@ -55,11 +58,11 @@ const {
   { immediate: false },
 );
 
-const saveErrorMessage = computed(() => '');
+const validationErrors = ref<string[]>([]);
 const errorSummary = computed(() =>
-  toErrorSummaryItems([{ message: saveErrorMessage.value }]).map(
-    (item) => item.message,
-  ),
+  toErrorSummaryItems(
+    validationErrors.value.map((message) => ({ message })),
+  ).map((item) => item.message),
 );
 
 watch(
@@ -91,6 +94,11 @@ function removeLink(index: number): void {
 }
 
 async function submit(): Promise<void> {
+  validationErrors.value = propertyAndLinkErrors(form.props, form.links);
+  if (validationErrors.value.length) {
+    return;
+  }
+
   try {
     await saveSystemImplementation(
       `/api/oscal/system-security-plans/${props.sspId}/system-implementation`,
@@ -99,8 +107,8 @@ async function submit(): Promise<void> {
           users: form.users,
           components: form.components,
           remarks: form.remarks,
-          props: form.props,
-          links: form.links,
+          props: form.props.filter((property) => !isBlankProperty(property)),
+          links: form.links.filter((link) => !isBlankLink(link)),
         } as SystemImplementation,
       },
     );
@@ -146,7 +154,7 @@ async function submit(): Promise<void> {
       >
         <SspEditorSection
           variant="plain"
-          title="REMARKS *"
+          title="REMARKS"
           description="Describe the system implementation and additional context."
         >
           <V2FormField
@@ -180,6 +188,7 @@ async function submit(): Promise<void> {
               <SspEditorCompactField
                 :input-id="`implementation-property-name-${index}`"
                 label="NAME"
+                required
               >
                 <template #default="fieldProps">
                   <InputText
@@ -193,6 +202,7 @@ async function submit(): Promise<void> {
               <SspEditorCompactField
                 :input-id="`implementation-property-value-${index}`"
                 label="VALUE"
+                required
               >
                 <template #default="fieldProps">
                   <InputText
@@ -236,6 +246,7 @@ async function submit(): Promise<void> {
                 <SspEditorCompactField
                   :input-id="`implementation-link-href-${index}`"
                   label="HREF"
+                  required
                 >
                   <template #default="fieldProps">
                     <InputText
