@@ -1112,7 +1112,12 @@ import type {
   SystemComponent,
   ByComponent,
 } from '@/oscal';
-import type { Dashboard, DashboardCreate } from '@/stores/filters';
+import type { Dashboard } from '@/stores/filters';
+import {
+  buildControlLinksBody,
+  buildCreateFilterBody,
+  filterListParams,
+} from './evidenceFilterRequests';
 import type { Evidence } from '@/stores/evidence';
 import type {
   ProfileComplianceControl,
@@ -1261,12 +1266,10 @@ const { execute: executeDeleteStatementByComponent } = useDataApi<void>(
   { immediate: false },
 );
 
+// /api/filters binds camelCase JSON: no decamelizeKeys (see evidenceFilterRequests.ts).
 const { execute: executeCreateDashboard } = useDataApi<Dashboard>(
   null,
-  {
-    method: 'POST',
-    transformRequest: [decamelizeKeys],
-  },
+  { method: 'POST' },
   { immediate: false },
 );
 
@@ -1280,10 +1283,7 @@ const { data: allDashboardsData, execute: executeFetchAllDashboards } =
 
 const { execute: executeUpdateDashboard } = useDataApi<Dashboard>(
   null,
-  {
-    method: 'PUT',
-    transformRequest: [decamelizeKeys],
-  },
+  { method: 'PUT' },
   { immediate: false },
 );
 
@@ -2774,7 +2774,7 @@ async function submitDashboardCreate(): Promise<void> {
     return;
   }
 
-  let parsedFilter: DashboardCreate['filter'];
+  let parsedFilter: Dashboard['filter'];
   try {
     parsedFilter = new FilterParser(computedFilter.value).parse();
   } catch (error) {
@@ -2792,12 +2792,12 @@ async function submitDashboardCreate(): Promise<void> {
 
   try {
     await executeCreateDashboard('/api/filters', {
-      data: {
-        name: evidenceDashboard.value.name,
-        filter: parsedFilter,
-        controls: [selectedRequirement.value.controlId],
-        components: [],
-      } satisfies DashboardCreate,
+      data: buildCreateFilterBody(
+        evidenceDashboard.value.name,
+        parsedFilter,
+        selectedRequirement.value.controlId,
+        activeSspId.value,
+      ),
     });
 
     toast.add({
@@ -2825,9 +2825,9 @@ async function submitDashboardCreate(): Promise<void> {
 
 async function loadDashboardsForControl(controlId: string): Promise<void> {
   try {
-    await executeFetchDashboardsByControl(
-      `/api/filters?controlId=${controlId}`,
-    );
+    await executeFetchDashboardsByControl('/api/filters', {
+      params: filterListParams(activeSspId.value, controlId),
+    });
     existingDashboards.value = dashboardsByControlData.value || [];
   } catch (error) {
     toast.add({
@@ -2844,7 +2844,9 @@ async function loadDashboardsForControl(controlId: string): Promise<void> {
 
 async function loadAllDashboards(): Promise<void> {
   try {
-    await executeFetchAllDashboards('/api/filters');
+    await executeFetchAllDashboards('/api/filters', {
+      params: filterListParams(activeSspId.value),
+    });
     allDashboards.value = allDashboardsData.value || [];
   } catch (error) {
     toast.add({
@@ -2875,11 +2877,7 @@ async function linkExistingDashboard(): Promise<void> {
 
   try {
     await executeUpdateDashboard(`/api/filters/${dashboard.id}`, {
-      data: {
-        name: dashboard.name,
-        filter: dashboard.filter,
-        controls: nextControlIds,
-      },
+      data: buildControlLinksBody(dashboard, nextControlIds),
     });
 
     toast.add({
@@ -2924,11 +2922,7 @@ async function unlinkDashboard(dashboard: Dashboard): Promise<void> {
 
   try {
     await executeUpdateDashboard(`/api/filters/${dashboard.id}`, {
-      data: {
-        name: dashboard.name,
-        filter: dashboard.filter,
-        controls: nextControlIds,
-      },
+      data: buildControlLinksBody(dashboard, nextControlIds),
     });
 
     toast.add({
