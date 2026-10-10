@@ -99,12 +99,17 @@
                   REMARKS
                 </p>
                 <p
+                  v-if="systemImplementation?.remarks"
                   class="font-[var(--ui-v2-font-secondary)] text-[11px] font-semibold tracking-[1px] text-[var(--ui-v2-muted-foreground)]"
                 >
-                  {{
-                    systemImplementation?.remarks ||
-                    'Describe the system implementation and any additional remarks.'
-                  }}
+                  {{ systemImplementation.remarks }}
+                </p>
+                <!-- An explicit empty state: placeholder copy here read as authored SSP content (M0-09). -->
+                <p
+                  v-else
+                  class="font-[var(--ui-v2-font-secondary)] text-[11px] tracking-[1px] text-[var(--ui-v2-tertiary-foreground)]"
+                >
+                  No remarks provided.
                 </p>
               </section>
 

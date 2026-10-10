@@ -58,12 +58,17 @@
           DESCRIPTION
         </p>
         <p
+          v-if="controlImplementation.description"
           class="mt-1 font-[var(--ui-v2-font-secondary)] text-[12px] font-semibold tracking-[1px] text-[var(--ui-v2-muted-foreground)]"
         >
-          {{
-            controlImplementation.description ||
-            'Access control implementation narrative with requirement-level and component-level mappings.'
-          }}
+          {{ controlImplementation.description }}
+        </p>
+        <!-- An explicit empty state: a hard-coded fallback here read as authored SSP content (M0-09). -->
+        <p
+          v-else
+          class="mt-1 font-[var(--ui-v2-font-secondary)] text-[12px] tracking-[1px] text-[var(--ui-v2-tertiary-foreground)]"
+        >
+          No description provided.
         </p>
 
         <div class="mt-3 grid gap-3 md:grid-cols-3">

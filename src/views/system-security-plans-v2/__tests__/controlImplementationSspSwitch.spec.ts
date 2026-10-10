@@ -97,4 +97,32 @@ describe('SSP control implementation under KeepAlive', () => {
     );
     wrapper.unmount();
   });
+
+  it('shows an empty state instead of placeholder copy for a missing description', async () => {
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        {
+          path: '/system-security-plans/:id/control-implementation',
+          component: SystemSecurityPlanControlImplementationView,
+        },
+      ],
+    });
+    await router.push('/system-security-plans/ssp-c/control-implementation');
+    const wrapper = mount(Host, {
+      global: {
+        plugins: [router, [PrimeVue, { unstyled: true }]],
+        stubs: {
+          ControlImplementationModalForm: true,
+          ImplementedRequirementModalForm: true,
+          StatementModalForm: true,
+          ByComponentModalForm: true,
+        },
+      },
+    });
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('No description provided.');
+    expect(wrapper.text()).not.toContain('implementation narrative');
+  });
 });
