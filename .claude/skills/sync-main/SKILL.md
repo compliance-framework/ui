@@ -12,7 +12,7 @@ The V2 redesign ships as one big-bang cutover from `feat/BCH-1174-ux-resume`, an
 - Merge, never rebase. Never push unless the user asks.
 - Main-owned files stay byte-identical to main. Branch behavior lives in branch-only files: `src/router/v2.ts`, `src/AppV2Root.vue`, `src/views/layouts/AppShell.vue`, `src/views/system-v2/*`, `*-v2/` and `components/v2/`. The accepted exceptions are the `src/volt/*` wrappers, the V2 tokens in `src/assets/main.css`, the two import lines in `src/main.ts`, and the `lucide-vue-next` dependency (PRD §4.4).
 - Don't edit `AGENTS.md`, `CLAUDE.md`, CI workflows or other main-owned config on the branch.
-- Commits are signed with the user's SSH key. If a commit fails with a passphrase error, don't disable signing: stop and give the user the exact `git commit` command.
+- Commits are signed with the user's SSH key through the SSH agent, which the Claude Code sandbox blocks. Run `git commit` (and `git fetch`) outside the sandbox. If signing still fails, don't disable signing: stop and give the user the exact `git commit` command.
 - The git stash stack is shared with other worktrees. Don't use bare `git stash`.
 
 ## Steps
@@ -71,7 +71,7 @@ npm run build
 git commit --no-edit
 ```
 
-If signing fails, give the user that command, wait for them to commit, then continue.
+Run it outside the sandbox so signing can reach the SSH agent. If it still fails, give the user that command, wait for them to commit, then continue.
 
 ### 6. Triage drift
 
