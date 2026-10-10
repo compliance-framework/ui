@@ -182,3 +182,4 @@ Dated record of migration work and approved design deviations. Decisions are sum
     - Before: the overview showed "Href N/A" and "contains 0 result(s)", and the Import AP form opened empty.
     - After: "Href ./ap.oscal.xml", "contains 1 result(s)", and the form is pre-filled.
   - The throwaway SSP was deleted afterwards and the remake dev server restarted on :3000.
+- 2026-10-10: Opened PRs to main for the three verified fixes, with bodies in the `pr` skill format (Summary / Evidence / Merge Danger): #351 (M2-07, `fix/ssp-characteristics-deep-keys`), #352 (M2-04, `fix/control-evidence-null-labels`) and #353 (M2-05, `fix/assessment-results-import-ap`). The other four prepared branches stay local, pending a decision.
