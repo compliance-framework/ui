@@ -5,6 +5,7 @@ import type { CCFUser } from '@/stores/types';
 import { useAuthenticatedInstance } from '@/composables/axios';
 import { useUserStore } from '@/stores/auth';
 import { useMyAssignments } from '@/composables/workflows/useMyAssignments';
+import { useTheme } from '@/composables/useTheme';
 
 const router = useRouter();
 const axios = useAuthenticatedInstance();
@@ -60,6 +61,11 @@ const userInitials = computed(() => {
 
   return 'U';
 });
+
+// Dark mode (owner decision 2026-10-10): main's theme state, so the choice is
+// shared with V1 pages and persisted the same way.
+const { theme, toggleTheme } = useTheme();
+const isDark = computed(() => theme.value === 'dark');
 
 const menuItems = [
   { label: 'My Tasks', routeName: 'my-tasks' },
@@ -215,6 +221,19 @@ onUnmounted(() => {
           {{ taskCount > 9 ? '9+' : taskCount }}
         </span>
       </RouterLink>
+
+      <button
+        type="button"
+        role="menuitemcheckbox"
+        :aria-checked="isDark"
+        class="ui-v2-nav flex w-full items-center justify-between border-b border-[var(--ui-v2-border)] px-3 py-2 text-left text-[var(--ui-v2-foreground)] transition-colors hover:bg-[var(--ui-v2-primary-tint-10)]"
+        @click="toggleTheme"
+      >
+        <span>Dark mode</span>
+        <span class="text-[var(--ui-v2-secondary-foreground)]">{{
+          isDark ? 'On' : 'Off'
+        }}</span>
+      </button>
 
       <button
         type="button"

@@ -5,8 +5,6 @@ export type ThemeChangeDetail = { theme: Theme };
 
 const THEME_STORAGE_KEY = 'theme';
 const isClient = typeof window !== 'undefined';
-const FORCED_THEME: Theme | null = 'light';
-const isThemeForced = FORCED_THEME !== null;
 
 const systemPreference = ref<Theme>('light');
 const theme = ref<Theme>('light');
@@ -17,32 +15,13 @@ let mediaQuery: MediaQueryList | null = null;
 let removeMediaQueryListener: (() => void) | null = null;
 let consumerCount = 0;
 
-if (isClient && isThemeForced) {
-  document.documentElement.classList.toggle(
-    'dark',
-    (FORCED_THEME as Theme) === 'dark',
-  );
-}
-
-const resolveThemeValue = (value: Theme): Theme => {
-  if (isThemeForced && FORCED_THEME) {
-    return FORCED_THEME;
-  }
-  return value;
-};
-
 const applyThemeClass = (value: Theme) => {
   if (!isClient) return;
-  const resolvedTheme = resolveThemeValue(value);
-  document.documentElement.classList.toggle('dark', resolvedTheme === 'dark');
+  document.documentElement.classList.toggle('dark', value === 'dark');
 };
 
 const persistThemeSelection = () => {
   if (!isClient) return;
-  if (isThemeForced) {
-    localStorage.removeItem(THEME_STORAGE_KEY);
-    return;
-  }
   if (isSystemTheme.value) {
     localStorage.removeItem(THEME_STORAGE_KEY);
   } else {
@@ -60,11 +39,10 @@ const dispatchThemeChange = (value: Theme) => {
 };
 
 const updateTheme = (value: Theme) => {
-  const resolvedTheme = resolveThemeValue(value);
-  theme.value = resolvedTheme;
-  applyThemeClass(resolvedTheme);
+  theme.value = value;
+  applyThemeClass(value);
   persistThemeSelection();
-  dispatchThemeChange(resolvedTheme);
+  dispatchThemeChange(value);
 };
 
 const handleMediaQueryChange = (event: MediaQueryListEvent) => {
@@ -80,13 +58,6 @@ const initializeTheme = () => {
   }
 
   if (!isClient) {
-    initialized = true;
-    return;
-  }
-
-  if (isThemeForced && FORCED_THEME) {
-    isSystemTheme.value = false;
-    updateTheme(FORCED_THEME);
     initialized = true;
     return;
   }
@@ -129,22 +100,12 @@ export function useTheme() {
   registerConsumer();
 
   const toggleTheme = () => {
-    if (isThemeForced && FORCED_THEME) {
-      updateTheme(FORCED_THEME);
-      return;
-    }
-
     isSystemTheme.value = false;
     const nextTheme = theme.value === 'dark' ? 'light' : 'dark';
     updateTheme(nextTheme);
   };
 
   const useSystemValue = () => {
-    if (isThemeForced && FORCED_THEME) {
-      updateTheme(FORCED_THEME);
-      return;
-    }
-
     isSystemTheme.value = true;
     updateTheme(systemPreference.value);
   };
