@@ -151,7 +151,10 @@ async function submit(): Promise<void> {
       isEditMode.value ? `${baseUrl}/${form.uuid}` : baseUrl,
       {
         method: isEditMode.value ? 'PUT' : 'POST',
-        data: form,
+        // Never re-key an existing statement (see the STATEMENT ID field).
+        data: props.statement
+          ? { ...form, statementId: props.statement.statementId }
+          : form,
       },
     );
 
@@ -209,11 +212,18 @@ async function submit(): Promise<void> {
             </template>
           </V2FormField>
 
+          <!-- The statement ID ties the record to the control's statement part;
+               changing it on an existing statement detaches it from the tree. -->
           <V2FormField
             label="STATEMENT ID"
             input-id="statement-id"
             required
             :error="fieldErrors.statementId"
+            :helper-text="
+              isEditMode
+                ? 'Identifies the control statement part. It cannot be changed.'
+                : undefined
+            "
           >
             <template #default="fieldProps">
               <InputText
@@ -221,6 +231,7 @@ async function submit(): Promise<void> {
                 :input-id="fieldProps.inputId"
                 :aria-describedby="fieldProps.describedBy"
                 :aria-invalid="fieldProps.invalid"
+                :readonly="isEditMode"
                 fluid
               />
             </template>
