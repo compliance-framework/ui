@@ -18,7 +18,7 @@ vi.mock('primevue/usetoast', () => ({
   }),
 }));
 
-const mockCan = vi.fn((..._args: string[]) => true);
+const mockCan = vi.fn<(...args: string[]) => boolean>(() => true);
 vi.mock('@/composables/usePermissions', () => ({
   usePermissions: () => ({
     can: (...args: string[]) => mockCan(...args),
