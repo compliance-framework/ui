@@ -1696,16 +1696,47 @@ const editingByComponent = ref<ByComponent | null>(null);
 const inspectorTab = ref<InspectorTab>('statements');
 const selectedRequirementUuid = ref('');
 
+// Watched, not interpolated once: this view lives under <KeepAlive> in the SSP
+// editor, so a URL fixed at setup pins the first SSP while writes resolve the
+// current one, and a delete could hit SSP B with SSP A's uuids (backlog M0-08,
+// fixed the same way on main in fd4305f).
+const controlImplementationUrl = computed(() =>
+  sspId.value
+    ? `/api/oscal/system-security-plans/${sspId.value}/control-implementation`
+    : null,
+);
+const systemComponentsUrl = computed(() =>
+  sspId.value
+    ? `/api/oscal/system-security-plans/${sspId.value}/system-implementation/components`
+    : null,
+);
+
 const {
   data: controlImplementation,
   isLoading: isControlImplementationLoading,
   error: controlImplementationError,
-} = useDataApi<ControlImplementation>(
-  `/api/oscal/system-security-plans/${route.params.id}/control-implementation`,
-);
+  execute: fetchControlImplementation,
+} = useDataApi<ControlImplementation>(null, {}, { immediate: false });
 
-const { data: systemComponents } = useDataApi<SystemComponent[]>(
-  `/api/oscal/system-security-plans/${route.params.id}/system-implementation/components`,
+const { data: systemComponents, execute: fetchSystemComponents } = useDataApi<
+  SystemComponent[]
+>(null, {}, { immediate: false });
+
+watch(
+  [controlImplementationUrl, systemComponentsUrl],
+  async ([ciUrl, componentsUrl]) => {
+    // Never show the previous SSP's data under the new one.
+    controlImplementation.value = undefined;
+    systemComponents.value = undefined;
+    if (!ciUrl || !componentsUrl) {
+      return;
+    }
+    await Promise.all([
+      fetchControlImplementation(ciUrl).catch(() => undefined),
+      fetchSystemComponents(componentsUrl).catch(() => undefined),
+    ]);
+  },
+  { immediate: true },
 );
 
 const { execute: executeDelete } = useDataApi<void>(null, { method: 'DELETE' });
@@ -2149,7 +2180,7 @@ async function deleteRequirement(
 ): Promise<void> {
   try {
     await executeDelete(
-      `/api/oscal/system-security-plans/${route.params.id}/control-implementation/implemented-requirements/${requirement.uuid}`,
+      `/api/oscal/system-security-plans/${sspId.value}/control-implementation/implemented-requirements/${requirement.uuid}`,
     );
 
     if (controlImplementation.value) {
@@ -2403,7 +2434,7 @@ async function deleteStatementByComponent(
 ): Promise<void> {
   try {
     await executeDelete(
-      `/api/oscal/system-security-plans/${route.params.id}/control-implementation/implemented-requirements/${requirement.uuid}/statements/${statement.uuid}/by-components/${byComponent.uuid}`,
+      `/api/oscal/system-security-plans/${sspId.value}/control-implementation/implemented-requirements/${requirement.uuid}/statements/${statement.uuid}/by-components/${byComponent.uuid}`,
     );
 
     const currentRequirement = (
