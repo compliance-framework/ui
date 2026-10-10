@@ -110,3 +110,9 @@ Dated record of migration work and approved design deviations. Decisions are sum
   - The embedded editors are V1-styled; restyling is under M1-05.
   - Specs: `ByComponentModalForm.spec.ts` (payloads, result merge, create/edit modes, close behavior) and `SharedResponsibilityEditors.spec.ts` (editor wiring, option narrowing, load failure).
   - Browser check (FedRAMP, AC-2 `ac-2_smt`): ADD PROVIDED sent `POST …/export` + `POST …/export/provided`, and the API returned the new entry. The drawer SAVE sent a metadata-only PUT, and the export survived. The test export was deleted afterwards (204).
+- 2026-10-10: Fixed M0-07.
+  - The V2 Evidence Filters list (`DashboardSavedViewsSectionV2`/`DashboardSavedViewCardV2`) now has a header CREATE (to `dashboards.create`), an Edit action per card that opens main's `FilterEditModal`, and FILTER create/update/delete permission gating with main's tooltips.
+  - The heading reads "EVIDENCE FILTERS", the empty state mentions Create, and the card's `controls`/`components` mapping is null-guarded. Added a `pencil` icon to `V2LucideIcon`.
+  - The list filters, scope column and posture items from parity #4–#7 remain in M4-02.
+  - Specs: `DashboardSavedViewsSectionV2.spec.ts` (edit dialog and refresh, permission enable/disable) and the new `DashboardSavedViewCardV2.spec.ts`.
+  - Browser check: editing the SSP-bound "AWS EC2 Audit Logging" from `/dashboards` sent a PUT that kept `ssp-id` and controls, and the card updated. The name was restored via the API afterwards.

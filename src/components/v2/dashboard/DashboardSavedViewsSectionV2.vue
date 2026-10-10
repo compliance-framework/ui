@@ -6,10 +6,27 @@ import { useToast } from 'primevue/usetoast';
 import { useDataApi } from '@/composables/axios';
 import V2StatePanel from '@/components/v2/system/V2StatePanel.vue';
 import type { Dashboard } from '@/stores/filters';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
+// Main's edit dialog: it keeps the filter's SSP binding and controls on PUT.
+import FilterEditModal from '@/views/dashboard/partials/FilterEditModal.vue';
 import DashboardSavedViewCardV2 from './DashboardSavedViewCardV2.vue';
 
 const confirm = useConfirm();
 const toast = useToast();
+const { can, permissionTooltip } = usePermissions();
+
+const canCreate = computed(() => can(RESOURCES.FILTER, ACTIONS.CREATE));
+const canEdit = computed(() => can(RESOURCES.FILTER, ACTIONS.UPDATE));
+const canDelete = computed(() => can(RESOURCES.FILTER, ACTIONS.DELETE));
+
+const showEditModal = ref(false);
+const editingDashboard = ref<Dashboard | null>(null);
+
+function openEdit(dashboard: Dashboard): void {
+  editingDashboard.value = dashboard;
+  showEditModal.value = true;
+}
 
 const {
   data: dashboards,
@@ -107,13 +124,30 @@ async function deleteDashboard(dashboard: Dashboard): Promise<void> {
 
 <template>
   <section class="space-y-4">
-    <header class="space-y-1.5">
-      <h2 class="ui-v2-section-title text-[var(--ui-v2-foreground)]">
-        DASHBOARDS
-      </h2>
-      <p class="ui-v2-meta text-[var(--ui-v2-secondary-foreground)]">
-        Findings grouped by query
-      </p>
+    <header class="flex items-start justify-between gap-4">
+      <div class="space-y-1.5">
+        <h2 class="ui-v2-section-title text-[var(--ui-v2-foreground)]">
+          EVIDENCE FILTERS
+        </h2>
+        <p class="ui-v2-meta text-[var(--ui-v2-secondary-foreground)]">
+          Findings grouped by query
+        </p>
+      </div>
+      <RouterLink
+        v-if="canCreate"
+        :to="{ name: 'dashboards.create' }"
+        class="ui-v2-nav inline-flex items-center border border-[var(--ui-v2-primary)] bg-[var(--ui-v2-primary)] px-4 py-2 font-semibold text-[var(--ui-v2-primary-foreground)]"
+      >
+        CREATE
+      </RouterLink>
+      <span
+        v-else
+        v-tooltip.top="permissionTooltip(RESOURCES.FILTER, ACTIONS.CREATE)"
+        class="ui-v2-nav inline-flex cursor-not-allowed items-center border border-[var(--ui-v2-border)] px-4 py-2 font-semibold text-[var(--ui-v2-muted-foreground)] opacity-60"
+        aria-disabled="true"
+      >
+        CREATE
+      </span>
     </header>
 
     <div
@@ -161,7 +195,7 @@ async function deleteDashboard(dashboard: Dashboard): Promise<void> {
       v-else-if="!hasDashboards"
       kind="empty"
       title="No evidence filters available"
-      description="Saved evidence filters appear once you create one from the Evidence workspace."
+      description="Create an evidence filter here, or save a query from the Evidence workspace."
     >
       <template #actions>
         <RouterLink
@@ -179,8 +213,19 @@ async function deleteDashboard(dashboard: Dashboard): Promise<void> {
         :key="dashboard.id || dashboard.uuid || dashboard.name"
         :dashboard="dashboard"
         :deleting="dashboard.id === deletingDashboardId"
+        :can-edit="canEdit"
+        :can-delete="canDelete"
+        :edit-tooltip="permissionTooltip(RESOURCES.FILTER, ACTIONS.UPDATE)"
+        :delete-tooltip="permissionTooltip(RESOURCES.FILTER, ACTIONS.DELETE)"
+        @edit="openEdit"
         @delete="confirmDelete"
       />
     </div>
+
+    <FilterEditModal
+      v-model:visible="showEditModal"
+      :dashboard="editingDashboard"
+      @saved="reloadDashboards"
+    />
   </section>
 </template>

@@ -18,6 +18,14 @@ vi.mock('primevue/usetoast', () => ({
   }),
 }));
 
+const mockCan = vi.fn((..._args: string[]) => true);
+vi.mock('@/composables/usePermissions', () => ({
+  usePermissions: () => ({
+    can: (...args: string[]) => mockCan(...args),
+    permissionTooltip: () => 'You do not have permission',
+  }),
+}));
+
 vi.mock('primevue/useconfirm', () => ({
   useConfirm: () => ({
     require: mockConfirmRequire,
@@ -72,10 +80,16 @@ function mountComponent() {
         },
         DashboardSavedViewCardV2: {
           name: 'DashboardSavedViewCardV2',
-          props: ['dashboard', 'deleting'],
-          emits: ['delete'],
+          props: ['dashboard', 'deleting', 'canEdit', 'canDelete'],
+          emits: ['delete', 'edit'],
           template:
-            '<button class="emit-delete" @click="$emit(\'delete\', dashboard)">{{ dashboard.name }}</button>',
+            '<div><button class="emit-delete" @click="$emit(\'delete\', dashboard)">{{ dashboard.name }}</button><button class="emit-edit" @click="$emit(\'edit\', dashboard)">edit</button></div>',
+        },
+        FilterEditModal: {
+          name: 'FilterEditModal',
+          props: ['visible', 'dashboard'],
+          emits: ['saved', 'update:visible'],
+          template: '<div class="edit-modal" />',
         },
       },
     },
@@ -88,6 +102,7 @@ describe('DashboardSavedViewsSectionV2', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockCan.mockImplementation(() => true);
 
     listApi = createApiMock<Dashboard[]>([createDashboard()]);
     deleteApi = createApiMock<void>();
@@ -101,7 +116,7 @@ describe('DashboardSavedViewsSectionV2', () => {
     const wrapper = mountComponent();
     await flushPromises();
 
-    expect(wrapper.text()).toContain('DASHBOARDS');
+    expect(wrapper.text()).toContain('EVIDENCE FILTERS');
     expect(wrapper.text()).toContain('Demo SAT CCC.AuditLog.C01');
   });
 
@@ -138,5 +153,39 @@ describe('DashboardSavedViewsSectionV2', () => {
         summary: 'Evidence Filter Deleted',
       }),
     );
+  });
+
+  it('opens the edit dialog for a card and refreshes after saving', async () => {
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    await wrapper.find('button.emit-edit').trigger('click');
+    const modal = wrapper.findComponent({ name: 'FilterEditModal' });
+    expect(modal.props('visible')).toBe(true);
+    expect(modal.props('dashboard')).toMatchObject({ id: 'dashboard-1' });
+
+    modal.vm.$emit('saved');
+    await flushPromises();
+    expect(listApi.execute).toHaveBeenCalledWith('/api/filters');
+  });
+
+  it('offers Create and enables card actions with FILTER permissions', async () => {
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    expect(wrapper.find('a').text()).toBe('CREATE');
+    const card = wrapper.findComponent({ name: 'DashboardSavedViewCardV2' });
+    expect(card.props()).toMatchObject({ canEdit: true, canDelete: true });
+  });
+
+  it('disables Create, Edit and Delete without FILTER permissions', async () => {
+    mockCan.mockImplementation(() => false);
+    const wrapper = mountComponent();
+    await flushPromises();
+
+    expect(wrapper.find('a').exists()).toBe(false);
+    expect(wrapper.find('[aria-disabled="true"]').text()).toBe('CREATE');
+    const card = wrapper.findComponent({ name: 'DashboardSavedViewCardV2' });
+    expect(card.props()).toMatchObject({ canEdit: false, canDelete: false });
   });
 });

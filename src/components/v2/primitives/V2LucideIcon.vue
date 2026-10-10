@@ -8,6 +8,7 @@ import {
   Copy,
   Eye,
   Info,
+  Pencil,
   Plus,
   Search,
   Trash2,
@@ -22,6 +23,7 @@ type V2LucideName =
   | 'chevron-up'
   | 'copy'
   | 'info'
+  | 'pencil'
   | 'plus'
   | 'search'
   | 'trash-2'
@@ -49,6 +51,7 @@ const iconMap = {
   'chevron-up': ChevronUp,
   copy: Copy,
   info: Info,
+  pencil: Pencil,
   plus: Plus,
   search: Search,
   'trash-2': Trash2,
