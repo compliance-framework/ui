@@ -195,8 +195,11 @@ export const useSystemSecurityPlanStore = defineStore(
           headers: {
             'Content-Type': 'application/json',
           },
+          // Deep: nested keys (information types, impact levels) must be
+          // kebab-case too, or the API drops them and replaces those
+          // associations with nothing on every save.
           body: JSON.stringify(
-            decamelizeKeys(characteristics, { separator: '-' }),
+            decamelizeKeys(characteristics, { separator: '-', deep: true }),
           ),
           credentials: 'include',
         },
