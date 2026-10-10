@@ -1,31 +1,95 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue';
-import { useRoute } from 'vue-router';
-import AppV1Layout from '@/views/layouts/AppV1Layout.vue';
-import AppV2Layout from '@/views/layouts/AppV2Layout.vue';
-
+import { RouterView } from 'vue-router';
+import LeftSideNav from '@/views/LeftSideNav.vue';
+import SidebarToggle from '@/components/navigation/SidebarToggle.vue';
+import ProfileDropdown from '@/components/ProfileDropdown.vue';
+import { useSidebarStore } from '@/stores/sidebar';
 import { useUserStore } from '@/stores/auth';
 import { usePermissionsStore } from '@/stores/permissions';
+import { useSystemStore } from '@/stores/system';
 
-const route = useRoute();
+const sidebarStore = useSidebarStore();
 const userStore = useUserStore();
 const permissionsStore = usePermissionsStore();
+const systemStore = useSystemStore();
 
+const activeSystemName = computed(
+  () => systemStore.system.securityPlan?.metadata?.title,
+);
+
+// Auth is persisted, so on a hard refresh the user stays authenticated without re-running
+// the login hydration. Refresh the permission hints here so gating reflects current policy
+// (BCH-1318). Non-blocking — hydrate() swallows its own errors and can() stays optimistic.
 onMounted(() => {
   if (userStore.isAuthenticated) {
-    void permissionsStore.hydrate();
+    permissionsStore.hydrate();
   }
 });
-
-const usesV2Shell = computed(() =>
-  route.matched.some((record) => record.meta.uiVersion === 'v2'),
-);
-
-const activeLayout = computed(() =>
-  usesV2Shell.value ? AppV2Layout : AppV1Layout,
-);
 </script>
 
 <template>
-  <component :is="activeLayout" />
+  <div class="flex h-screen">
+    <!-- Sidebar -->
+    <div
+      class="fixed top-0 left-0 h-full transition-all duration-300 ease-in-out z-10"
+      :class="{
+        'w-80': sidebarStore.open,
+        'w-24': !sidebarStore.open,
+      }"
+    >
+      <LeftSideNav
+        class="h-full w-full transition-all duration-300 ease-in-out"
+      />
+
+      <!-- Toggle Button -->
+      <SidebarToggle />
+    </div>
+
+    <!-- Main Content -->
+    <main
+      class="grow transition-all duration-300 ease-in-out bg-zinc-50 dark:bg-slate-950 text-zinc-800 dark:text-slate-50 overflow-auto"
+      :class="{
+        'ml-80': sidebarStore.open,
+        'ml-24': !sidebarStore.open,
+      }"
+    >
+      <!-- Header -->
+      <header
+        class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-3 relative z-40"
+      >
+        <div class="flex items-center justify-between">
+          <div class="flex-1">
+            <span
+              v-if="activeSystemName"
+              class="text-sm font-medium text-gray-700 dark:text-slate-200"
+            >
+              Active System: {{ activeSystemName }}
+            </span>
+          </div>
+
+          <!-- Profile Dropdown -->
+          <ProfileDropdown />
+        </div>
+      </header>
+
+      <!-- Page Content -->
+      <div class="px-12 py-4">
+        <router-view v-slot="{ Component }">
+          <KeepAlive include="CatalogView">
+            <component :is="Component" />
+          </KeepAlive>
+        </router-view>
+      </div>
+    </main>
+  </div>
 </template>
+
+<style>
+@reference "@/assets/main.css";
+
+body,
+html {
+  @apply bg-white;
+}
+</style>

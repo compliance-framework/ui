@@ -1,12 +1,24 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
 import { RouterView, useRoute } from 'vue-router';
 import V2SideNavigation from '@/components/v2/navigation/V2SideNavigation.vue';
 import V2TopNavigation from '@/components/v2/navigation/V2TopNavigation.vue';
 import V2UserMenu from '@/components/v2/navigation/V2UserMenu.vue';
 import ActiveSecurityPlanIndicator from '@/components/v2/system/ActiveSecurityPlanIndicator.vue';
+import { useUserStore } from '@/stores/auth';
+import { usePermissionsStore } from '@/stores/permissions';
 
 const route = useRoute();
+const userStore = useUserStore();
+const permissionsStore = usePermissionsStore();
+
+// Mirrors main's layouts/App.vue: a hard refresh keeps the persisted session, so
+// refresh permission hints on mount (BCH-1318).
+onMounted(() => {
+  if (userStore.isAuthenticated) {
+    void permissionsStore.hydrate();
+  }
+});
 
 const showActiveSecurityPlanIndicator = computed(() => {
   const routeName = String(route.name || '');

@@ -1,28 +1,5 @@
 <template>
-  <div v-if="isV2SystemRoute" class="space-y-6">
-    <nav
-      class="flex overflow-x-auto border border-[var(--ui-v2-border)] bg-[var(--ui-v2-card)]"
-    >
-      <RouterLink
-        v-for="tab in tabs"
-        :key="tab.route"
-        :to="{ name: tab.route }"
-        class="ui-v2-nav border-r border-[var(--ui-v2-border)] px-4 py-3 whitespace-nowrap"
-        :class="
-          activeRoute === tab.route
-            ? 'bg-[var(--ui-v2-primary-tint-15)] text-[var(--ui-v2-foreground)]'
-            : 'text-[var(--ui-v2-secondary-foreground)]'
-        "
-      >
-        {{ tab.label }}
-      </RouterLink>
-    </nav>
-    <RouterView v-slot="{ Component }">
-      <KeepAlive><component :is="Component" /></KeepAlive>
-    </RouterView>
-  </div>
-
-  <Message v-else-if="!systemSecurityPlan" severity="error" variant="outlined">
+  <Message v-if="!systemSecurityPlan" severity="error" variant="outlined">
     <div class="space-y-2 text-gray-700 dark:text-slate-200">
       <h4 class="text-base font-semibold">System Security Plan not selected</h4>
       <p>You have not selected a system security plan for editing.</p>
@@ -37,7 +14,6 @@
       </p>
     </div>
   </Message>
-
   <div v-else>
     <PageSubHeader>{{ systemSecurityPlan.metadata?.title }}</PageSubHeader>
 
@@ -69,7 +45,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { ref } from 'vue';
 import PageHeader from '@/components/PageHeader.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
 import { type SystemSecurityPlan } from '@/oscal';
@@ -82,13 +58,11 @@ import Message from '@/volt/Message.vue';
 import { sspSectionTabRoutes } from '@/constants/ssp-section-tabs';
 
 const { system } = useSystemStore();
-const route = useRoute();
-
-const systemSecurityPlan = computed(
-  () => system.securityPlan as SystemSecurityPlan | undefined,
+const systemSecurityPlan = ref<SystemSecurityPlan>(
+  system.securityPlan as SystemSecurityPlan,
 );
 
-const activeRoute = computed(() => route.name as string);
+const route = useRoute();
+const activeRoute = ref(route.name as string);
 const tabs = sspSectionTabRoutes('system:');
-const isV2SystemRoute = computed(() => route.meta.uiVersion === 'v2');
 </script>

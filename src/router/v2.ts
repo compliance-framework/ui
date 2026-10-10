@@ -10,6 +10,7 @@ import type {
   Router,
 } from 'vue-router';
 import GuestV2Layout from '@/views/layouts/GuestV2Layout.vue';
+import AppShell from '@/views/layouts/AppShell.vue';
 import router from './index';
 import {
   dispatchUIMigrationStatusEvent,
@@ -39,7 +40,9 @@ export const V2_ROUTE_OVERRIDES: Record<string, V2RouteOverride> = {
     component: () => import('../views/controls-v2/ControlsWorkspaceView.vue'),
   },
 
-  system: {},
+  system: {
+    component: () => import('../views/system-v2/SystemV2View.vue'),
+  },
   'system:overview': {
     component: () => import('../views/system-v2/SystemOverviewView.vue'),
   },
@@ -142,6 +145,12 @@ export const V2_ROUTE_OVERRIDES: Record<string, V2RouteOverride> = {
   },
 };
 
+// Component swaps that must NOT be tagged v2. The `app` root hosts both V1 and
+// V2 children, and tagging it would make the mixed-version guard block V1 pages.
+export const V2_COMPONENT_SWAPS: Record<string, RouteViewComponent> = {
+  app: AppShell,
+};
+
 function violatesUIMigrationGuard(to: RouteLocationNormalized): boolean {
   const matchedUIVersions = getMatchedUIVersions(to.matched);
   const firstV2RecordIndex = matchedUIVersions.indexOf('v2');
@@ -162,9 +171,10 @@ export function applyV2Routes(target: Router): void {
 
   // Fail loudly when main renames or removes a route this overlay targets, so
   // the daily merge surfaces it instead of silently dropping a V2 view.
-  const missing = Object.keys(V2_ROUTE_OVERRIDES).filter(
-    (name) => !records.has(name),
-  );
+  const missing = [
+    ...Object.keys(V2_ROUTE_OVERRIDES),
+    ...Object.keys(V2_COMPONENT_SWAPS),
+  ].filter((name) => !records.has(name));
   if (missing.length > 0) {
     throw new Error(
       `[ui-v2] Route overlay targets routes missing from src/router/index.ts: ${missing.join(', ')}`,
@@ -183,6 +193,11 @@ export function applyV2Routes(target: Router): void {
       };
     }
     Object.assign(record.meta, override.meta, { uiVersion: 'v2' });
+  }
+
+  for (const [name, component] of Object.entries(V2_COMPONENT_SWAPS)) {
+    const record = records.get(name)!;
+    record.components = { ...record.components, default: component };
   }
 
   target.addRoute('app', {

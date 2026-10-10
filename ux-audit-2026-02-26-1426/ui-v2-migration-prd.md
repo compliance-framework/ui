@@ -105,8 +105,8 @@ Legend: `[ ]` not started, `[~]` in progress, `[x]` done, `[-]` blocked.
 - [x] P0-05 Tag each route by module, complexity, and dependency risk.
 - [x] P0-06 Define release gating criteria (functional parity, UX parity, accessibility, visual QA).
 - [x] P0-07 Move V2 route overrides into a branch-only router overlay so `src/router/index.ts` is identical to main (§4.4). Done: `src/router/v2.ts`, hooked in by the router import in `main.ts`.
-- [ ] P0-08 Restore main's `LeftSideNav.vue`, `SystemView.vue` and `layouts/App.vue`, and move the V2 logic into new files (§4.4).
-- [ ] P0-09 Add a V1→V2 twin map and a drift-check script for post-merge drift detection (§4.4).
+- [x] P0-08 Restore main's `LeftSideNav.vue`, `SystemView.vue` and `layouts/App.vue`, and move the V2 logic into new files (§4.4).
+- [ ] P0-09 Add a V1→V2 twin map and a drift-check script for post-merge drift detection (§4.4). Include `src/views/LeftSideNav.vue` → `src/config/navigation.ts`: V2 nav items are a branch copy of main's inline list.
 - [x] P0-10 Document the daily sync routine (merge → `make reviewable` → drift check → port or log) in `migration-governance.md`.
 
 ### 7.2 Foundations: tokens, typography, and theming
