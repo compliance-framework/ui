@@ -217,6 +217,12 @@
                   </p>
 
                   <div class="flex items-center gap-1.5">
+                    <V2RiskBadge
+                      v-if="requirement.controlId"
+                      plain
+                      :summary="controlRisks(requirement.controlId)"
+                      :control-id="requirement.controlId"
+                    />
                     <span
                       class="inline-flex items-center justify-center border border-[var(--ui-v2-border)] bg-[var(--ui-v2-background)] px-1.5 py-[1px] font-[var(--ui-v2-font-secondary)] text-[8px] font-bold tracking-[1px] text-[var(--ui-v2-secondary-foreground)]"
                     >
@@ -253,6 +259,12 @@
                   class="ui-v2-nav text-[10px] font-semibold tracking-[1px] text-[var(--ui-v2-secondary-foreground)]"
                 >
                   {{ selectedRequirementControlId }}
+                  <V2RiskBadge
+                    v-if="selectedRequirement.controlId"
+                    class="ml-2 align-middle"
+                    :summary="controlRisks(selectedRequirement.controlId)"
+                    :control-id="selectedRequirement.controlId"
+                  />
                 </p>
                 <p
                   class="mt-1 break-words font-[var(--ui-v2-font-primary)] text-[22px] font-bold leading-tight tracking-[0.3px] text-[var(--ui-v2-foreground)]"
@@ -508,6 +520,17 @@
                         >
                           {{ getByComponentDisplayTitle(byComponent) }}
                         </p>
+                        <V2RiskBadge
+                          v-if="selectedRequirement.controlId"
+                          class="mt-1"
+                          :summary="
+                            componentRisks(
+                              selectedRequirement.controlId,
+                              byComponent.componentUuid,
+                            )
+                          "
+                          :control-id="selectedRequirement.controlId"
+                        />
                         <p
                           class="ui-v2-meta text-[9px] font-semibold tracking-[1px] text-[var(--ui-v2-secondary-foreground)]"
                           :title="byComponent.componentUuid"
@@ -1001,6 +1024,17 @@
                     >
                       {{ getByComponentDisplayTitle(byComponent) }}
                     </p>
+                    <V2RiskBadge
+                      v-if="selectedRequirement.controlId"
+                      class="mt-1"
+                      :summary="
+                        componentRisks(
+                          selectedRequirement.controlId,
+                          byComponent.componentUuid,
+                        )
+                      "
+                      :control-id="selectedRequirement.controlId"
+                    />
                     <p
                       class="ui-v2-meta text-[9px] font-semibold tracking-[1px] text-[var(--ui-v2-secondary-foreground)]"
                       :title="byComponent.componentUuid"
@@ -1696,6 +1730,8 @@ import ControlImplementationModalForm from '@/components/v2/system-security-plan
 import ImplementedRequirementModalForm from '@/components/v2/system-security-plans/forms/ImplementedRequirementModalForm.vue';
 import StatementModalForm from '@/components/v2/system-security-plans/forms/StatementModalForm.vue';
 import ByComponentModalForm from '@/components/v2/system-security-plans/forms/ByComponentModalForm.vue';
+import V2RiskBadge from '@/components/v2/risks/V2RiskBadge.vue';
+import { useSspControlRisks } from '@/composables/v2/useSspControlRisks';
 import { useDataApi } from '@/composables/axios';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
 import { getIdFromRoute } from '@/utils/get-id-from-route';
@@ -1723,6 +1759,11 @@ const toast = useToast();
 const { confirmDeleteDialog } = useDeleteConfirmationDialog();
 
 const sspId = computed(() => getIdFromRoute(route));
+
+// Open-risk badges on requirements and component implementations (M1-04).
+const { controlRisks, componentRisks } = useSspControlRisks(
+  computed(() => sspId.value || undefined),
+);
 
 const profileBinding = inject(sspDetailProfileBindingKey, null);
 

@@ -380,6 +380,10 @@
                                 >
                                   {{ row.control.title }}
                                 </p>
+                                <V2RiskBadge
+                                  :summary="controlRisks(row.control.id)"
+                                  :control-id="row.control.id"
+                                />
                               </div>
                             </div>
                           </div>
@@ -607,8 +611,20 @@
           >
             <div class="flex items-start justify-between gap-3">
               <div class="space-y-1.5">
-                <p class="ui-v2-label text-[var(--ui-v2-secondary-foreground)]">
+                <p
+                  class="ui-v2-label flex flex-wrap items-center gap-2 text-[var(--ui-v2-secondary-foreground)]"
+                >
                   {{ resolveComponentTitle(byComponent.componentUuid) }}
+                  <V2RiskBadge
+                    v-if="selectedRequirement?.controlId"
+                    :summary="
+                      componentRisks(
+                        selectedRequirement.controlId,
+                        byComponent.componentUuid,
+                      )
+                    "
+                    :control-id="selectedRequirement.controlId"
+                  />
                 </p>
                 <p class="ui-v2-body text-[var(--ui-v2-foreground)]">
                   {{
@@ -743,8 +759,20 @@
           >
             <div class="flex flex-wrap items-start justify-between gap-3">
               <div class="space-y-1.5">
-                <p class="ui-v2-label text-[var(--ui-v2-secondary-foreground)]">
+                <p
+                  class="ui-v2-label flex flex-wrap items-center gap-2 text-[var(--ui-v2-secondary-foreground)]"
+                >
                   {{ resolveComponentTitle(byComponent.componentUuid) }}
+                  <V2RiskBadge
+                    v-if="selectedRequirement?.controlId"
+                    :summary="
+                      componentRisks(
+                        selectedRequirement.controlId,
+                        byComponent.componentUuid,
+                      )
+                    "
+                    :control-id="selectedRequirement.controlId"
+                  />
                 </p>
                 <p class="ui-v2-body text-[var(--ui-v2-foreground)]">
                   {{
@@ -1164,6 +1192,8 @@ import SystemImplementationComponentModalForm from '@/components/v2/system-secur
 import DashboardMiniStatusChartV2 from '@/components/v2/dashboard/DashboardMiniStatusChartV2.vue';
 import ControlsEvidenceSummary from '@/components/v2/controls/ControlsEvidenceSummary.vue';
 import ControlsStatementDetailTree from '@/components/v2/controls/ControlsStatementDetailTree.vue';
+import V2RiskBadge from '@/components/v2/risks/V2RiskBadge.vue';
+import { useSspControlRisks } from '@/composables/v2/useSspControlRisks';
 import { usePermissions } from '@/composables/usePermissions';
 
 // Delete actions are gated on ssp:delete, as on main (backlog M1-13).
@@ -1252,6 +1282,11 @@ const activeSspId = computed(() => activePlan.value?.uuid || '');
 provide(
   LeveragedControlsKey,
   useLeveragedControls(computed(() => activeSspId.value || undefined)),
+);
+
+// Open-risk badges on control rows and component implementations (M1-04).
+const { controlRisks, componentRisks } = useSspControlRisks(
+  computed(() => activeSspId.value || undefined),
 );
 
 const { data: profileData, execute: executeProfile } = useDataApi<Profile>(

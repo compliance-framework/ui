@@ -209,3 +209,10 @@ Dated record of migration work and approved design deviations. Decisions are sum
   - The badge doesn't link to Inherited Capabilities, because that tab is hidden in V2 (PRD §4.5). Linking it is part of M1-08.
   - The legend puts each swatch before its label and adds Inherited, in main's order: Satisfied, Inherited, Not satisfied, Unknown. Group cards show their inherited count.
   - Spec: `system-security-plans-v2/__tests__/compliance.spec.ts`. No browser check: the local seed has no leverage links, so the badge can't render there.
+- 2026-10-10: Fixed M1-04 (risk badges).
+  - New `useSspControlRisks` composable fetches `/system-security-plans/:id/risks?limit=100` once per page, skips closed, resolved, complete and remediated risks, and counts open risks per control and per control + component, as main's control-implementation views do.
+  - New `V2RiskBadge` shows "N risks" ("99+" at the cap), toned by the highest impact: error for high or unrated, warning for medium, muted for low. It links to the Risk Register filtered by `controlId`.
+  - Controls: badges on control rows and on requirement- and statement-level component cards.
+  - SSP Control Implementation: a badge on each requirement in the list (non-link there, since the row is a button), on the selected requirement's header, and on each component card.
+  - One deliberate difference from main: a risk without an impact counts as high everywhere. Main does this on the control tree but uses low on component cards.
+  - Specs: `useSspControlRisks.spec.ts`, `V2RiskBadge.spec.ts`. Not yet browser-checked.
