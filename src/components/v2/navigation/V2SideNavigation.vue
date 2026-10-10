@@ -3,7 +3,7 @@ import { computed } from 'vue';
 import { useV2Navigation } from '@/composables/v2/useV2Navigation';
 import { useUserStore } from '@/stores/auth';
 
-const { navItems, isActive } = useV2Navigation();
+const { navSections, isActive } = useV2Navigation();
 const userStore = useUserStore();
 
 const userLabel = computed(() => {
@@ -25,26 +25,34 @@ const userLabel = computed(() => {
       </p>
     </div>
 
-    <nav class="px-4">
-      <RouterLink
-        v-for="item in navItems"
-        :key="item.label"
-        :to="item.to"
-        class="ui-v2-nav flex items-center gap-3 border-b border-[var(--ui-v2-border)] px-3 py-2 text-[var(--ui-v2-secondary-foreground)] transition-colors"
-        :class="
-          isActive(item)
-            ? 'border-l-[3px] border-l-[var(--ui-v2-primary)] bg-[var(--ui-v2-primary-tint-10)] text-[var(--ui-v2-foreground)]'
-            : 'hover:text-[var(--ui-v2-foreground)]'
-        "
-      >
-        <span
-          class="font-semibold"
-          :class="isActive(item) ? 'text-[var(--ui-v2-primary)]' : ''"
+    <nav class="space-y-4 px-4 pb-4" aria-label="Main">
+      <section v-for="section in navSections" :key="section.label">
+        <p
+          class="ui-v2-label mb-1 px-3 text-[var(--ui-v2-tertiary-foreground)]"
         >
-          {{ item.index }}
-        </span>
-        <span>{{ item.label }}</span>
-      </RouterLink>
+          {{ section.label }}
+        </p>
+        <RouterLink
+          v-for="item in section.items"
+          :key="item.label"
+          :to="item.to"
+          :aria-current="isActive(item) ? 'page' : undefined"
+          class="ui-v2-nav flex items-center gap-3 border-b border-[var(--ui-v2-border)] px-3 py-2 text-[var(--ui-v2-secondary-foreground)] transition-colors"
+          :class="
+            isActive(item)
+              ? 'border-l-[3px] border-l-[var(--ui-v2-primary)] bg-[var(--ui-v2-primary-tint-10)] text-[var(--ui-v2-foreground)]'
+              : 'hover:text-[var(--ui-v2-foreground)]'
+          "
+        >
+          <span
+            class="font-semibold"
+            :class="isActive(item) ? 'text-[var(--ui-v2-primary)]' : ''"
+          >
+            {{ item.index }}
+          </span>
+          <span>{{ item.label }}</span>
+        </RouterLink>
+      </section>
     </nav>
 
     <div class="mt-auto border-t border-[var(--ui-v2-border)] px-4 py-3">

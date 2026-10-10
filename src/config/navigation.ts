@@ -6,6 +6,9 @@ export interface NavigationItem {
   name?: string;
   permission?: { resource: string; action: string };
   children?: Array<NavigationItem>;
+  // Extra path prefixes that also mark the item active (detail pages whose
+  // paths don't start with the item's own path).
+  activePaths?: string[];
 }
 
 const ADMIN_MANAGE = { resource: RESOURCES.ADMIN, action: ACTIONS.MANAGE };
@@ -62,6 +65,7 @@ export const navigationItems: NavigationItem[] = [
         name: 'workflow:index',
         title: 'Workflow Definitions',
         abbr: 'WD',
+        activePaths: ['/workflow-definitions'],
         permission: {
           resource: RESOURCES.WORKFLOW_DEFINITION,
           action: ACTIONS.READ,
@@ -71,6 +75,7 @@ export const navigationItems: NavigationItem[] = [
         name: 'workflow-instances:index',
         title: 'Workflow Instances',
         abbr: 'WI',
+        activePaths: ['/workflow-executions'],
         permission: {
           resource: RESOURCES.WORKFLOW_INSTANCE,
           action: ACTIONS.READ,
@@ -107,12 +112,14 @@ export const navigationItems: NavigationItem[] = [
     children: [
       {
         name: 'admin-risks',
-        title: 'Risks',
+        // Distinct from the workspace "Risk Register".
+        title: 'Risk Administration',
         permission: ADMIN_MANAGE,
       },
       {
         name: 'users-list',
-        title: 'System Users',
+        // App sign-in accounts, not an SSP's system users.
+        title: 'User Accounts',
         permission: ADMIN_MANAGE,
       },
       {

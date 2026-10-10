@@ -191,3 +191,8 @@ Dated record of migration work and approved design deviations. Decisions are sum
   - Spec: `realDataFit.spec.ts`. Browser check on the throwaway SSP: the seeded user and the `leveraged-system` component save unchanged (PUT 200). The component was unchanged, and the user's privilege count stayed 19 → 19 after the fix. The throwaway SSP was deleted.
   - Logged M2-24: main's V1 user form has the same duplication (API root cause).
   - Still open: party, control and component-definition pickers.
+- 2026-10-10: Fixed M3-04.
+  - The V2 sidebar groups its numbered items under section labels (Systems, Workspace, Workflows, Control Definitions, Admin), built from `src/config/navigation.ts` with numbering continuous across sections. Empty sections are hidden when permissions remove every item.
+  - Renamed the two ambiguous V2 labels: Admin "Risks" → "Risk Administration" and "System Users" → "User Accounts". Main's V1 `LeftSideNav` is unaffected.
+  - Items can declare extra `activePaths`, so `/workflow-definitions/:id` highlights Workflow Definitions and `/workflow-executions/:id` highlights Workflow Instances. The active link has `aria-current="page"`.
+  - Spec: `composables/v2/__tests__/useV2Navigation.spec.ts`. Browser check: five sections, items 01–18, Manage Systems active on the SSP library.
