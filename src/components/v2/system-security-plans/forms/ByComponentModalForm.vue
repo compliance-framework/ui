@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive, watch } from 'vue';
+import { computed, reactive, ref, watch } from 'vue';
 import { uuid } from '@/utils/uuid';
 import { useToast } from 'primevue/usetoast';
 import DangerButton from '@/volt/DangerButton.vue';
@@ -17,6 +17,8 @@ import { focusFirstInvalidField } from '@/composables/v2/useV2FormValidation';
 import V2FormField from '@/components/v2/forms/V2FormField.vue';
 import V2EditorDrawer from '@/components/v2/patterns/V2EditorDrawer.vue';
 import V2EditorFormTemplate from '@/components/v2/patterns/V2EditorFormTemplate.vue';
+import SharedResponsibilityEditors from '@/components/v2/system-security-plans/forms/SharedResponsibilityEditors.vue';
+import SharedResponsibilityBlocks from '@/components/system-security-plans/SharedResponsibilityBlocks.vue';
 import {
   cloneValue,
   resolveApiErrorMessage,
@@ -51,13 +53,6 @@ const implementationStates = [
 ];
 
 const componentOptions = computed(() => props.systemComponents || []);
-const exportDescription = computed({
-  get: () => form.export?.description || '',
-  set: (value: string) => {
-    ensureExport().description = value;
-  },
-});
-
 const form = reactive<ByComponent>({
   uuid: '',
   componentUuid: '',
@@ -124,6 +119,29 @@ watch(
   { immediate: true },
 );
 
+// The shared responsibility editors save immediately through their own
+// endpoints, so closing the drawer afterwards must still report the change.
+const sharedResponsibilityChanged = ref(false);
+watch(
+  () => [form.export, form.inherited, form.satisfied],
+  () => {
+    sharedResponsibilityChanged.value = true;
+  },
+);
+
+function close(): void {
+  if (sharedResponsibilityChanged.value && props.byComponent) {
+    emit('saved', {
+      ...props.byComponent,
+      export: form.export,
+      inherited: form.inherited,
+      satisfied: form.satisfied,
+    });
+    return;
+  }
+  emit('cancel');
+}
+
 function cloneExport(value: NonNullable<ByComponent['export']>) {
   return {
     ...cloneValue(value),
@@ -151,89 +169,6 @@ function resetErrors(): void {
   fieldErrors.componentUuid = '';
   fieldErrors.description = '';
   fieldErrors.server = '';
-}
-
-function ensureExport(): NonNullable<ByComponent['export']> {
-  if (!form.export) {
-    form.export = {
-      uuid: uuid(),
-      description: '',
-      props: [],
-      links: [],
-      provided: [],
-      responsibilities: [],
-    };
-  }
-
-  if (!form.export.provided) {
-    form.export.provided = [];
-  }
-  if (!form.export.responsibilities) {
-    form.export.responsibilities = [];
-  }
-
-  return form.export;
-}
-
-function addProvided(): void {
-  const exportBlock = ensureExport();
-  exportBlock.provided!.push({
-    uuid: uuid(),
-    description: '',
-    props: [],
-    links: [],
-  });
-}
-
-function removeProvided(index: number): void {
-  form.export?.provided?.splice(index, 1);
-}
-
-function addResponsibility(): void {
-  const exportBlock = ensureExport();
-  exportBlock.responsibilities!.push({
-    uuid: uuid(),
-    description: '',
-    props: [],
-    links: [],
-    providedUuid: '',
-  });
-}
-
-function removeResponsibility(index: number): void {
-  form.export?.responsibilities?.splice(index, 1);
-}
-
-function addInherited(): void {
-  form.inherited = form.inherited || [];
-  form.inherited.push({
-    uuid: uuid(),
-    providedUuid: '',
-    description: '',
-    props: [],
-    links: [],
-  });
-}
-
-function removeInherited(index: number): void {
-  form.inherited = form.inherited || [];
-  form.inherited.splice(index, 1);
-}
-
-function addSatisfied(): void {
-  form.satisfied = form.satisfied || [];
-  form.satisfied.push({
-    uuid: uuid(),
-    responsibilityUuid: '',
-    description: '',
-    props: [],
-    links: [],
-  });
-}
-
-function removeSatisfied(index: number): void {
-  form.satisfied = form.satisfied || [];
-  form.satisfied.splice(index, 1);
 }
 
 function addParameter(): void {
@@ -315,10 +250,35 @@ async function submit(): Promise<void> {
   const url = isEditMode.value ? `${baseUrl}/${form.uuid}` : baseUrl;
   const method = isEditMode.value ? 'PUT' : 'POST';
 
-  try {
-    await persistByComponent(url, { method, data: form });
+  // Only the fields the API writes. Export/inherited/satisfied save through
+  // their own endpoints (SharedResponsibilityEditors): the PUT ignores them and
+  // the POST would bypass the leverage bookkeeping. The PUT also ignores
+  // responsible roles, so they are only sent on create (backlog M0-01).
+  const data: Partial<ByComponent> = {
+    uuid: form.uuid,
+    componentUuid: form.componentUuid,
+    description: form.description,
+    props: form.props,
+    links: form.links,
+    setParameters: form.setParameters,
+    remarks: form.remarks,
+    implementationStatus: form.implementationStatus,
+    ...(isEditMode.value ? {} : { responsibleRoles: form.responsibleRoles }),
+  };
 
-    const result = persistedByComponent.value!;
+  try {
+    await persistByComponent(url, { method, data });
+
+    // The PUT response echoes the body, so restore what it didn't carry.
+    const result: ByComponent = isEditMode.value
+      ? {
+          ...persistedByComponent.value!,
+          export: form.export,
+          inherited: form.inherited,
+          satisfied: form.satisfied,
+          responsibleRoles: props.byComponent?.responsibleRoles,
+        }
+      : persistedByComponent.value!;
     toast.add({
       severity: 'success',
       summary: isEditMode.value ? 'Component Saved' : 'Component Created',
@@ -357,7 +317,7 @@ async function submit(): Promise<void> {
     :submitting="saving"
     :form-id="formId"
     width-class="w-screen! sm:w-[94vw]! lg:w-[980px]!"
-    @close="emit('cancel')"
+    @close="close"
   >
     <form :id="formId" class="space-y-5" @submit.prevent="submit">
       <V2EditorFormTemplate :error-summary="errorSummary">
@@ -477,196 +437,30 @@ async function submit(): Promise<void> {
         </V2FormField>
 
         <section class="space-y-3">
-          <div class="flex items-center justify-between gap-3">
-            <p class="ui-v2-label text-[var(--ui-v2-secondary-foreground)]">
-              EXPORT / PROVIDED
+          <p class="ui-v2-label text-[var(--ui-v2-secondary-foreground)]">
+            SHARED RESPONSIBILITY
+          </p>
+          <SharedResponsibilityEditors
+            v-if="isEditMode && statement"
+            v-model:export="form.export"
+            v-model:inherited="form.inherited"
+            v-model:satisfied="form.satisfied"
+            :ssp-id="sspId"
+            :requirement="requirement"
+            :statement="statement"
+            :by-component-id="form.uuid"
+          />
+          <template v-else-if="isEditMode && byComponent">
+            <p class="ui-v2-body text-[var(--ui-v2-muted-foreground)]">
+              Shared responsibility is tracked per statement, so this
+              requirement-level row is read-only.
             </p>
-            <div class="flex gap-2">
-              <SecondaryButton type="button" size="small" @click="addProvided"
-                >ADD PROVIDED</SecondaryButton
-              >
-              <SecondaryButton
-                type="button"
-                size="small"
-                @click="addResponsibility"
-                >ADD RESPONSIBILITY</SecondaryButton
-              >
-            </div>
-          </div>
-
-          <V2FormField
-            label="EXPORT DESCRIPTION"
-            input-id="by-component-export-description"
-          >
-            <template #default="fieldProps">
-              <Textarea
-                v-model="exportDescription"
-                :id="fieldProps.inputId"
-                rows="3"
-                fluid
-              />
-            </template>
-          </V2FormField>
-
-          <div v-if="form.export?.provided?.length" class="space-y-3">
-            <article
-              v-for="(provided, index) in form.export.provided"
-              :key="provided.uuid"
-              class="space-y-3 border border-[var(--ui-v2-border)] bg-[var(--ui-v2-background)] p-3"
-            >
-              <div class="flex justify-end">
-                <DangerButton
-                  type="button"
-                  size="small"
-                  @click="removeProvided(index)"
-                  >REMOVE</DangerButton
-                >
-              </div>
-              <V2FormField
-                :input-id="`by-component-provided-description-${index}`"
-                label="Provided Description"
-              >
-                <template #default="fieldProps">
-                  <Textarea
-                    v-model="provided.description"
-                    :id="fieldProps.inputId"
-                    rows="3"
-                    fluid
-                  />
-                </template>
-              </V2FormField>
-            </article>
-          </div>
-
-          <div v-if="form.export?.responsibilities?.length" class="space-y-3">
-            <article
-              v-for="(responsibility, index) in form.export.responsibilities"
-              :key="responsibility.uuid"
-              class="space-y-3 border border-[var(--ui-v2-border)] bg-[var(--ui-v2-background)] p-3"
-            >
-              <div class="flex justify-end">
-                <DangerButton
-                  type="button"
-                  size="small"
-                  @click="removeResponsibility(index)"
-                  >REMOVE</DangerButton
-                >
-              </div>
-              <V2FormField
-                :input-id="`by-component-responsibility-description-${index}`"
-                label="Responsibility Description"
-              >
-                <template #default="fieldProps">
-                  <Textarea
-                    v-model="responsibility.description"
-                    :id="fieldProps.inputId"
-                    rows="3"
-                    fluid
-                  />
-                </template>
-              </V2FormField>
-              <V2FormField
-                :input-id="`by-component-responsibility-provided-${index}`"
-                label="Provided UUID Link"
-              >
-                <template #default="fieldProps">
-                  <InputText
-                    v-model="responsibility.providedUuid"
-                    :id="fieldProps.inputId"
-                    fluid
-                  />
-                </template>
-              </V2FormField>
-            </article>
-          </div>
-        </section>
-
-        <section class="space-y-3">
-          <div class="flex items-center justify-between gap-3">
-            <p class="ui-v2-label text-[var(--ui-v2-secondary-foreground)]">
-              INHERITED / SATISFIED
-            </p>
-            <div class="flex gap-2">
-              <SecondaryButton type="button" size="small" @click="addInherited"
-                >ADD INHERITED</SecondaryButton
-              >
-              <SecondaryButton type="button" size="small" @click="addSatisfied"
-                >ADD SATISFIED</SecondaryButton
-              >
-            </div>
-          </div>
-
-          <div v-if="form.inherited?.length" class="space-y-3">
-            <article
-              v-for="(item, index) in form.inherited"
-              :key="item.uuid"
-              class="space-y-3 border border-[var(--ui-v2-border)] bg-[var(--ui-v2-background)] p-3"
-            >
-              <div class="flex justify-end">
-                <DangerButton
-                  type="button"
-                  size="small"
-                  @click="removeInherited(index)"
-                  >REMOVE</DangerButton
-                >
-              </div>
-              <V2FormField
-                :input-id="`by-component-inherited-description-${index}`"
-                label="Inherited Description"
-                ><template #default="fieldProps"
-                  ><Textarea
-                    v-model="item.description"
-                    :id="fieldProps.inputId"
-                    rows="3"
-                    fluid /></template
-              ></V2FormField>
-              <V2FormField
-                :input-id="`by-component-inherited-provided-${index}`"
-                label="Provided UUID"
-                ><template #default="fieldProps"
-                  ><InputText
-                    v-model="item.providedUuid"
-                    :id="fieldProps.inputId"
-                    fluid /></template
-              ></V2FormField>
-            </article>
-          </div>
-
-          <div v-if="form.satisfied?.length" class="space-y-3">
-            <article
-              v-for="(item, index) in form.satisfied"
-              :key="item.uuid"
-              class="space-y-3 border border-[var(--ui-v2-border)] bg-[var(--ui-v2-background)] p-3"
-            >
-              <div class="flex justify-end">
-                <DangerButton
-                  type="button"
-                  size="small"
-                  @click="removeSatisfied(index)"
-                  >REMOVE</DangerButton
-                >
-              </div>
-              <V2FormField
-                :input-id="`by-component-satisfied-description-${index}`"
-                label="Satisfied Description"
-                ><template #default="fieldProps"
-                  ><Textarea
-                    v-model="item.description"
-                    :id="fieldProps.inputId"
-                    rows="3"
-                    fluid /></template
-              ></V2FormField>
-              <V2FormField
-                :input-id="`by-component-satisfied-responsibility-${index}`"
-                label="Responsibility UUID"
-                ><template #default="fieldProps"
-                  ><InputText
-                    v-model="item.responsibilityUuid"
-                    :id="fieldProps.inputId"
-                    fluid /></template
-              ></V2FormField>
-            </article>
-          </div>
+            <SharedResponsibilityBlocks :by-component="byComponent" />
+          </template>
+          <p v-else class="ui-v2-body text-[var(--ui-v2-muted-foreground)]">
+            Create this component implementation first, then edit it to add
+            exports, inherited capabilities and satisfied responsibilities.
+          </p>
         </section>
 
         <section class="space-y-3">
@@ -735,12 +529,38 @@ async function submit(): Promise<void> {
             <p class="ui-v2-label text-[var(--ui-v2-secondary-foreground)]">
               RESPONSIBLE ROLES
             </p>
-            <SecondaryButton type="button" size="small" @click="addRole"
+            <SecondaryButton
+              v-if="!isEditMode"
+              type="button"
+              size="small"
+              @click="addRole"
               >ADD ROLE</SecondaryButton
             >
           </div>
 
-          <div v-if="form.responsibleRoles?.length" class="space-y-3">
+          <!-- The by-component PUT does not write responsible roles, so edits to
+               an existing row would be silently dropped (backlog M0-01). -->
+          <template v-if="isEditMode">
+            <p class="ui-v2-body text-[var(--ui-v2-muted-foreground)]">
+              Responsible roles can only be set when the component
+              implementation is created.
+            </p>
+            <ul
+              v-if="form.responsibleRoles?.length"
+              class="ui-v2-body space-y-1 text-[var(--ui-v2-foreground)]"
+            >
+              <li
+                v-for="(role, index) in form.responsibleRoles"
+                :key="`role-readonly-${index}`"
+              >
+                {{ role.roleId
+                }}<template v-if="role.partyUuids?.length">
+                  · {{ role.partyUuids.join(', ') }}</template
+                >
+              </li>
+            </ul>
+          </template>
+          <div v-else-if="form.responsibleRoles?.length" class="space-y-3">
             <article
               v-for="(role, index) in form.responsibleRoles"
               :key="`role-${index}`"
