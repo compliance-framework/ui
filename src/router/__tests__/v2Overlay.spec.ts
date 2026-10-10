@@ -45,6 +45,17 @@ describe('V2 route overlay', () => {
     },
   );
 
+  it.each(['ui-v2:tokens', 'ui-v2:components'])(
+    'restricts the %s sandbox to admins',
+    (name) => {
+      const record = router.getRoutes().find((r) => r.name === name);
+      expect(record?.meta.permission).toEqual({
+        resource: 'admin',
+        action: 'manage',
+      });
+    },
+  );
+
   it('mounts the V2 shell on the app root without tagging it v2', () => {
     const app = router.getRoutes().find((r) => r.name === 'app');
     expect(app?.components?.default).toBe(V2_COMPONENT_SWAPS.app);

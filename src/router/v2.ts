@@ -12,6 +12,7 @@ import type {
 import GuestV2Layout from '@/views/layouts/GuestV2Layout.vue';
 import AppShell from '@/views/layouts/AppShell.vue';
 import router from './index';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
 import {
   dispatchUIMigrationStatusEvent,
   getMatchedUIVersions,
@@ -164,6 +165,13 @@ function violatesUIMigrationGuard(to: RouteLocationNormalized): boolean {
     .some((version) => version !== 'v2');
 }
 
+// The /__v2 design sandboxes stay reachable for design review on preview
+// images, but only for admins (backlog M1-19). They are deleted at cutover (C-01a).
+const SANDBOX_PERMISSION = {
+  resource: RESOURCES.ADMIN,
+  action: ACTIONS.MANAGE,
+};
+
 export function applyV2Routes(target: Router): void {
   const records = new Map(
     target.getRoutes().map((record) => [record.name, record]),
@@ -204,13 +212,21 @@ export function applyV2Routes(target: Router): void {
     path: '__v2/tokens',
     name: 'ui-v2:tokens',
     component: () => import('../views/system-v2/V2TokenVisualTestView.vue'),
-    meta: { requiresAuth: true, uiVersion: 'v2' },
+    meta: {
+      requiresAuth: true,
+      uiVersion: 'v2',
+      permission: SANDBOX_PERMISSION,
+    },
   });
   target.addRoute('app', {
     path: '__v2/components',
     name: 'ui-v2:components',
     component: () => import('../views/system-v2/V2ComponentLibraryView.vue'),
-    meta: { requiresAuth: true, uiVersion: 'v2' },
+    meta: {
+      requiresAuth: true,
+      uiVersion: 'v2',
+      permission: SANDBOX_PERMISSION,
+    },
   });
   target.addRoute({
     path: '/:pathMatch(.*)*',
