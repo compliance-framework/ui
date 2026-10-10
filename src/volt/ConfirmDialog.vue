@@ -45,7 +45,6 @@
           <DangerButton
             v-if="isDestructive(message.acceptProps?.severity)"
             type="button"
-            :ref="focusPrimaryActionButton"
             @click="acceptCallback"
           >
             {{ getDialogLabel(message.acceptProps?.label, 'Delete') }}
@@ -54,14 +53,20 @@
           <PrimaryButton
             v-else
             type="button"
-            :ref="focusPrimaryActionButton"
+            :ref="focusOnOpen"
             @click="acceptCallback"
           >
             {{ getDialogLabel(message.acceptProps?.label, 'Confirm') }}
           </PrimaryButton>
 
+          <!-- Destructive dialogs open on Cancel, so a stray Enter can't delete. -->
           <SecondaryButton
             type="button"
+            :ref="
+              isDestructive(message.acceptProps?.severity)
+                ? focusOnOpen
+                : undefined
+            "
             :class="cancelButtonClass(message.acceptProps?.severity)"
             @click="rejectCallback"
           >
@@ -188,7 +193,7 @@ function toDialogHeading(value: string): string {
 
 function keyboardHint(severity: unknown): string {
   if (isDestructive(severity)) {
-    return 'ESC TO CANCEL  •  ENTER TO DELETE';
+    return 'ESC OR ENTER TO CANCEL  •  TAB TO DELETE';
   }
 
   return 'ESC TO CANCEL  •  ENTER TO CONFIRM';
@@ -202,7 +207,7 @@ function cancelButtonClass(severity: unknown): string {
   return '';
 }
 
-function focusPrimaryActionButton(target: unknown): void {
+function focusOnOpen(target: unknown): void {
   if (target === null) {
     return;
   }
