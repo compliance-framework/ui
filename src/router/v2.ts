@@ -25,7 +25,18 @@ type RouteViewComponent = NonNullable<
 type V2RouteOverride = {
   component?: RouteViewComponent;
   meta?: Record<string, unknown>;
+  redirect?: RouteRecordNormalized['redirect'];
 };
+
+// The SSP users/components/authorizations tabs duplicate sections of the V2
+// Implementation tab, so they redirect there (owner decision 2026-10-10).
+const toImplementationSection =
+  (section: string): RouteRecordNormalized['redirect'] =>
+  (to) => ({
+    name: 'system-security-plan-implementation',
+    params: to.params,
+    query: { ...to.query, section },
+  });
 
 // Keyed by route name. Every entry is tagged `uiVersion: 'v2'`; entries without
 // a component keep main's view (V1 inside the V2 shell, see route-inventory.md).
@@ -97,9 +108,13 @@ export const V2_ROUTE_OVERRIDES: Record<string, V2RouteOverride> = {
         '../views/system-security-plans-v2/SystemSecurityPlanSystemImplementationView.vue'
       ),
   },
-  'system-security-plan-users': {},
-  'system-security-plan-components': {},
-  'system-security-plan-authorizations': {},
+  'system-security-plan-users': { redirect: toImplementationSection('users') },
+  'system-security-plan-components': {
+    redirect: toImplementationSection('components'),
+  },
+  'system-security-plan-authorizations': {
+    redirect: toImplementationSection('authorizations'),
+  },
   'system-security-plan-control-implementation': {
     component: () =>
       import(
@@ -199,6 +214,9 @@ export function applyV2Routes(target: Router): void {
         ...record.components,
         default: override.component,
       };
+    }
+    if (override.redirect) {
+      record.redirect = override.redirect;
     }
     Object.assign(record.meta, override.meta, { uiVersion: 'v2' });
   }

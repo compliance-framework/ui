@@ -875,6 +875,26 @@ const { confirmDeleteDialog } = useDeleteConfirmationDialog();
 
 const sspId = computed(() => String(route.params.id || ''));
 const innerTab = ref<ImplementationTab>('overview');
+
+// `?section=users|components|authorizations` opens that section. The old
+// standalone users/components/authorizations tabs redirect here (owner
+// decision 2026-10-10: one SSP tab set, no duplicates).
+const IMPLEMENTATION_SECTIONS: ImplementationTab[] = [
+  'overview',
+  'users',
+  'components',
+  'authorizations',
+];
+watch(
+  () => route.query.section,
+  (section) => {
+    const value = Array.isArray(section) ? section[0] : section;
+    if (IMPLEMENTATION_SECTIONS.includes(value as ImplementationTab)) {
+      innerTab.value = value as ImplementationTab;
+    }
+  },
+  { immediate: true },
+);
 const hasActivatedOnce = ref(false);
 
 const systemImplementationUrl = computed(

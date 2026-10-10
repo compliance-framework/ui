@@ -339,6 +339,10 @@ const { can } = usePermissions();
 
 const sspId = computed(() => String(route.params.id || ''));
 
+// Owner decision 2026-10-10: main's trimmed tab set plus the rebuilt V2 tabs.
+// Users, components and authorizations live in the Implementation tab; export
+// offerings, leverage and inherited capabilities are hidden as on main (their
+// routes stay reachable for deep links).
 const tabs = [
   { index: '01', label: 'OVERVIEW', route: 'system-security-plan-overview' },
   {
@@ -356,29 +360,13 @@ const tabs = [
     label: 'CONTROLS',
     route: 'system-security-plan-control-implementation',
   },
+  { index: '05', label: 'RISKS', route: 'system-security-plan-risks' },
   {
-    index: '05',
+    index: '06',
     label: 'COMPLIANCE',
     route: 'system-security-plan-compliance',
   },
-  { index: '06', label: 'JSON', route: 'system-security-plan-json' },
-  {
-    index: '07',
-    label: 'COMPONENTS',
-    route: 'system-security-plan-components',
-  },
-  { index: '08', label: 'RISKS', route: 'system-security-plan-risks' },
-  {
-    index: '09',
-    label: 'EXPORT OFFERINGS',
-    route: 'system-security-plan-export-offerings',
-  },
-  { index: '10', label: 'LEVERAGE', route: 'system-security-plan-leverage' },
-  {
-    index: '11',
-    label: 'INHERITED CAPABILITIES',
-    route: 'system-security-plan-inherited-capabilities',
-  },
+  { index: '07', label: 'JSON', route: 'system-security-plan-json' },
 ];
 
 interface SspHeaderBreadcrumbMetaItem {

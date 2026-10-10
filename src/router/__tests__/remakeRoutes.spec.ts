@@ -11,7 +11,6 @@ vi.mock('@/stores/permissions', () => ({
 describe('remake route integration', () => {
   it.each([
     'system-security-plan-implementation',
-    'system-security-plan-components',
     'system-security-plan-risks',
     'system-security-plan-export-offerings',
     'system-security-plan-leverage',
@@ -28,4 +27,19 @@ describe('remake route integration', () => {
     });
     expect(router.currentRoute.value.name).toBe(name);
   });
+
+  it.each(['users', 'components', 'authorizations'])(
+    'redirects the duplicate SSP %s tab to its Implementation section',
+    async (section) => {
+      await router.push({
+        name: `system-security-plan-${section}`,
+        params: { id: 'ssp-1' },
+      });
+      expect(router.currentRoute.value.name).toBe(
+        'system-security-plan-implementation',
+      );
+      expect(router.currentRoute.value.params.id).toBe('ssp-1');
+      expect(router.currentRoute.value.query.section).toBe(section);
+    },
+  );
 });
