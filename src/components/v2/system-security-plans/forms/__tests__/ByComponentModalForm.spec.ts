@@ -182,6 +182,35 @@ describe('ByComponentModalForm', () => {
     expect(saved.inherited).toEqual(updated);
   });
 
+  it('refuses to save without a statement (no requirement-level create)', async () => {
+    const wrapper = mount(ByComponentModalForm, {
+      props: {
+        sspId: 'ssp-1',
+        requirement,
+        statement: null,
+        systemComponents: [
+          { uuid: 'comp-1', title: 'App', type: 'software' },
+        ] as never,
+        preferredComponentUuid: 'comp-1',
+      },
+      global: {
+        plugins: [[PrimeVue, { unstyled: true }]],
+        stubs: {
+          V2EditorDrawer: DrawerStub,
+          SharedResponsibilityEditors: EditorsStub,
+        },
+      },
+    });
+    await wrapper
+      .find('#by-component-description')
+      .setValue('Requirement-level');
+    await wrapper.find('form').trigger('submit');
+    await flushPromises();
+
+    expect(persistByComponent).not.toHaveBeenCalled();
+    expect(wrapper.text()).toContain('recorded per statement');
+  });
+
   it('just cancels when nothing changed', async () => {
     const wrapper = mountForm(existing);
     await wrapper.find('#drawer-close').trigger('click');

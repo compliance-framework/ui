@@ -945,6 +945,15 @@
                 </p>
               </div>
 
+              <p
+                v-else
+                class="font-[var(--ui-v2-font-secondary)] text-[10px] font-semibold tracking-[1px] text-[var(--ui-v2-tertiary-foreground)]"
+              >
+                Requirement-level component implementations are legacy and
+                read-only: implementation is tracked per statement. Delete a row
+                once its content lives on a statement.
+              </p>
+
               <article
                 v-for="byComponent in selectedRequirement.byComponents || []"
                 :key="byComponent.uuid"
@@ -982,18 +991,18 @@
                         )
                       }}
                     </span>
-                    <SecondaryButton
+                    <DangerButton
                       type="button"
                       size="small"
                       @click="
-                        editRequirementByComponent(
+                        confirmDeleteRequirementByComponent(
                           selectedRequirement,
                           byComponent,
                         )
                       "
                     >
-                      EDIT
-                    </SecondaryButton>
+                      DELETE
+                    </DangerButton>
                   </div>
                 </div>
 
@@ -1621,25 +1630,11 @@
       @cancel="showEditStatementByComponentModal = false"
       @saved="handleStatementByComponentSaved"
     />
-
-    <ByComponentModalForm
-      v-if="
-        showEditRequirementByComponentModal &&
-        editingByComponent &&
-        editingRequirement
-      "
-      :ssp-id="sspId"
-      :requirement="editingRequirement"
-      :by-component="editingByComponent"
-      :system-components="systemComponents"
-      @cancel="showEditRequirementByComponentModal = false"
-      @saved="handleRequirementByComponentSaved"
-    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, inject, ref, watch } from 'vue';
+import { computed, inject, ref, triggerRef, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
 import type {
@@ -1692,7 +1687,6 @@ const showEditStatementModal = ref(false);
 const showCreateStatementModal = ref(false);
 const showCreateStatementByComponentModal = ref(false);
 const showEditStatementByComponentModal = ref(false);
-const showEditRequirementByComponentModal = ref(false);
 
 const editingRequirement = ref<ImplementedRequirement | null>(null);
 const editingStatement = ref<Statement | null>(null);
@@ -2282,16 +2276,6 @@ function editStatementByComponent(
   showEditStatementByComponentModal.value = true;
 }
 
-function editRequirementByComponent(
-  requirement: ImplementedRequirement,
-  byComponent: ByComponent,
-): void {
-  editingRequirement.value = requirement;
-  editingStatement.value = null;
-  editingByComponent.value = byComponent;
-  showEditRequirementByComponentModal.value = true;
-}
-
 function handleStatementSaved(updatedStatement: Statement): void {
   if (controlImplementation.value && editingRequirement.value) {
     const requirementIndex = (
@@ -2373,27 +2357,6 @@ function handleStatementByComponentSaved(
   editingByComponent.value = null;
 }
 
-function handleRequirementByComponentSaved(
-  updatedByComponent: ByComponent,
-): void {
-  if (controlImplementation.value && editingRequirement.value) {
-    const requirement = (
-      controlImplementation.value.implementedRequirements || []
-    ).find((candidate) => candidate.uuid === editingRequirement.value?.uuid);
-    const index = requirement?.byComponents?.findIndex(
-      (candidate) => candidate.uuid === updatedByComponent.uuid,
-    );
-
-    if (requirement?.byComponents && index !== undefined && index >= 0) {
-      requirement.byComponents[index] = updatedByComponent;
-    }
-  }
-
-  showEditRequirementByComponentModal.value = false;
-  editingByComponent.value = null;
-  editingStatement.value = null;
-}
-
 function handleStatementCreated(newStatement: Statement): void {
   if (controlImplementation.value && editingRequirement.value) {
     const requirementIndex = (
@@ -2432,6 +2395,60 @@ function confirmDeleteStatementByComponent(
   );
 }
 
+// Legacy requirement-level rows are read-only plus delete, as on main: the API
+// has no requirement-level create, and implementation is tracked per statement
+// (backlog M1-14).
+function confirmDeleteRequirementByComponent(
+  requirement: ImplementedRequirement,
+  byComponent: ByComponent,
+): void {
+  confirmDeleteDialog(
+    () => deleteRequirementByComponent(requirement, byComponent),
+    {
+      itemName: getByComponentDisplayTitle(byComponent),
+      itemType: 'legacy component implementation',
+    },
+  );
+}
+
+async function deleteRequirementByComponent(
+  requirement: ImplementedRequirement,
+  byComponent: ByComponent,
+): Promise<void> {
+  try {
+    await executeDelete(
+      `/api/oscal/system-security-plans/${sspId.value}/control-implementation/implemented-requirements/${requirement.uuid}/by-components/${byComponent.uuid}`,
+    );
+
+    const currentRequirement = (
+      controlImplementation.value?.implementedRequirements || []
+    ).find((candidate) => candidate.uuid === requirement.uuid);
+    if (currentRequirement?.byComponents) {
+      currentRequirement.byComponents = currentRequirement.byComponents.filter(
+        (candidate) => candidate.uuid !== byComponent.uuid,
+      );
+    }
+    // The data lives in a shallowRef, so in-place edits don't re-render.
+    triggerRef(controlImplementation);
+
+    toast.add({
+      severity: 'success',
+      summary: 'Success',
+      detail: 'Legacy component implementation deleted.',
+      life: 3000,
+    });
+  } catch (error) {
+    console.error('Failed to delete legacy by-component:', error);
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail:
+        'Failed to delete the component implementation. Please try again.',
+      life: 5000,
+    });
+  }
+}
+
 async function deleteStatementByComponent(
   requirement: ImplementedRequirement,
   statement: Statement,
@@ -2454,6 +2471,7 @@ async function deleteStatementByComponent(
         (candidate) => candidate.uuid !== byComponent.uuid,
       );
     }
+    triggerRef(controlImplementation);
 
     toast.add({
       severity: 'success',

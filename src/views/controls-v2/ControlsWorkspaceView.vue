@@ -595,6 +595,11 @@
         </p>
 
         <div v-else class="space-y-3">
+          <p class="ui-v2-meta text-[var(--ui-v2-tertiary-foreground)]">
+            Requirement-level component implementations are legacy and
+            read-only: implementation is tracked per statement. Delete a row
+            once its content lives on a statement.
+          </p>
           <article
             v-for="byComponent in selectedRequirement.byComponents || []"
             :key="byComponent.uuid"
@@ -612,13 +617,13 @@
                 </p>
               </div>
 
-              <SecondaryButton
+              <DangerButton
                 type="button"
                 size="small"
-                @click="openEditRequirementByComponentModal(byComponent)"
+                @click="confirmDeleteRequirementByComponent(byComponent)"
               >
-                EDIT
-              </SecondaryButton>
+                DELETE
+              </DangerButton>
             </div>
 
             <div class="flex flex-wrap items-center gap-3">
@@ -1069,20 +1074,6 @@
       @saved="handleStatementByComponentSaved"
     />
 
-    <ByComponentModalForm
-      v-if="
-        showEditRequirementByComponentModal &&
-        editingRequirement &&
-        editingByComponent
-      "
-      :ssp-id="activeSspId"
-      :requirement="editingRequirement"
-      :by-component="editingByComponent"
-      :system-components="systemComponentsData || []"
-      @cancel="showEditRequirementByComponentModal = false"
-      @saved="handleRequirementByComponentSaved"
-    />
-
     <SystemImplementationComponentModalForm
       v-if="showCreateComponentModal"
       :ssp-id="activeSspId"
@@ -1100,6 +1091,7 @@ import { useToast } from 'primevue/usetoast';
 import InputText from '@/volt/InputText.vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
+import DangerButton from '@/volt/DangerButton.vue';
 import Select from '@/volt/Select.vue';
 import type {
   Catalog,
@@ -1322,7 +1314,6 @@ const showCreateStatementModal = ref(false);
 const showEditStatementModal = ref(false);
 const showCreateStatementByComponentModal = ref(false);
 const showEditStatementByComponentModal = ref(false);
-const showEditRequirementByComponentModal = ref(false);
 const showCreateComponentModal = ref(false);
 const showCreateDashboardForm = ref(false);
 const showLinkDashboardForm = ref(false);
@@ -1465,7 +1456,7 @@ const selectedControlStatementCount = computed(
 
 const requirementWorkspaceNote = computed(() => {
   if (selectedControlStatementCount.value === 0) {
-    return 'No statement parts in this control. Requirement-level components are the editable records here.';
+    return 'No statement parts in this control. Requirement-level component implementations are legacy and read-only.';
   }
 
   return '';
@@ -2471,16 +2462,6 @@ function openEditStatementByComponentModal(byComponent: ByComponent): void {
   showEditStatementByComponentModal.value = true;
 }
 
-function openEditRequirementByComponentModal(byComponent: ByComponent): void {
-  if (!selectedRequirement.value) {
-    return;
-  }
-
-  editingRequirement.value = selectedRequirement.value;
-  editingByComponent.value = byComponent;
-  showEditRequirementByComponentModal.value = true;
-}
-
 function openCreateComponentModal(context: ComponentFlowContext): void {
   componentFlowContext.value = context;
   showCreateComponentModal.value = true;
@@ -2581,19 +2562,55 @@ function handleStatementByComponentSaved(byComponent: ByComponent): void {
   showEditStatementByComponentModal.value = false;
 }
 
-function handleRequirementByComponentSaved(byComponent: ByComponent): void {
-  if (!selectedRequirement.value) {
+// Legacy requirement-level rows are read-only plus delete, as on main: the API
+// has no requirement-level create, and implementation is tracked per statement
+// (backlog M1-14).
+function confirmDeleteRequirementByComponent(byComponent: ByComponent): void {
+  if (!selectedRequirement.value || !activeSspId.value) {
     return;
   }
 
-  const updatedRequirement = cloneRequirement(selectedRequirement.value);
-  updatedRequirement.byComponents = (updatedRequirement.byComponents || []).map(
-    (candidate) =>
-      candidate.uuid === byComponent.uuid ? byComponent : candidate,
-  );
-  updateRequirementInCollection(updatedRequirement);
+  confirmDeleteDialog(() => deleteRequirementByComponent(byComponent), {
+    itemName: resolveComponentTitle(byComponent.componentUuid),
+    itemType: 'legacy component implementation',
+  });
+}
 
-  showEditRequirementByComponentModal.value = false;
+async function deleteRequirementByComponent(
+  byComponent: ByComponent,
+): Promise<void> {
+  if (!selectedRequirement.value || !activeSspId.value) {
+    return;
+  }
+
+  try {
+    await executeDeleteStatementByComponent(
+      `/api/oscal/system-security-plans/${activeSspId.value}/control-implementation/implemented-requirements/${selectedRequirement.value.uuid}/by-components/${byComponent.uuid}`,
+    );
+
+    const updatedRequirement = cloneRequirement(selectedRequirement.value);
+    updatedRequirement.byComponents = (
+      updatedRequirement.byComponents || []
+    ).filter((candidate) => candidate.uuid !== byComponent.uuid);
+    updateRequirementInCollection(updatedRequirement);
+
+    toast.add({
+      severity: 'success',
+      summary: 'Component Removed',
+      detail: 'The legacy component implementation was deleted.',
+      life: 2500,
+    });
+  } catch (error) {
+    toast.add({
+      severity: 'error',
+      summary: 'Delete Failed',
+      detail: resolveApiErrorMessage(
+        error,
+        'Unable to delete the legacy component implementation.',
+      ),
+      life: 4000,
+    });
+  }
 }
 
 function cloneRequirement(

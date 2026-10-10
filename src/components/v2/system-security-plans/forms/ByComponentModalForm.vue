@@ -18,7 +18,6 @@ import V2FormField from '@/components/v2/forms/V2FormField.vue';
 import V2EditorDrawer from '@/components/v2/patterns/V2EditorDrawer.vue';
 import V2EditorFormTemplate from '@/components/v2/patterns/V2EditorFormTemplate.vue';
 import SharedResponsibilityEditors from '@/components/v2/system-security-plans/forms/SharedResponsibilityEditors.vue';
-import SharedResponsibilityBlocks from '@/components/system-security-plans/SharedResponsibilityBlocks.vue';
 import {
   cloneValue,
   resolveApiErrorMessage,
@@ -42,7 +41,6 @@ const emit = defineEmits<{
 const toast = useToast();
 const formId = `by-component-form-${uuid()}`;
 const isEditMode = computed(() => Boolean(props.byComponent));
-const isStatementScoped = computed(() => Boolean(props.statement));
 
 const implementationStates = [
   'implemented',
@@ -243,9 +241,15 @@ async function submit(): Promise<void> {
     return;
   }
 
-  const baseUrl = isStatementScoped.value
-    ? `/api/oscal/system-security-plans/${props.sspId}/control-implementation/implemented-requirements/${props.requirement.uuid}/statements/${props.statement!.uuid}/by-components`
-    : `/api/oscal/system-security-plans/${props.sspId}/control-implementation/implemented-requirements/${props.requirement.uuid}/by-components`;
+  // Statement-only, as on main: the API has no requirement-level by-component
+  // create, and legacy requirement-level rows are read-only plus delete in the
+  // parent views (backlog M1-14).
+  if (!props.statement) {
+    fieldErrors.server =
+      'Component implementations are recorded per statement. Select a statement first.';
+    return;
+  }
+  const baseUrl = `/api/oscal/system-security-plans/${props.sspId}/control-implementation/implemented-requirements/${props.requirement.uuid}/statements/${props.statement.uuid}/by-components`;
 
   const url = isEditMode.value ? `${baseUrl}/${form.uuid}` : baseUrl;
   const method = isEditMode.value ? 'PUT' : 'POST';
@@ -450,13 +454,6 @@ async function submit(): Promise<void> {
             :statement="statement"
             :by-component-id="form.uuid"
           />
-          <template v-else-if="isEditMode && byComponent">
-            <p class="ui-v2-body text-[var(--ui-v2-muted-foreground)]">
-              Shared responsibility is tracked per statement, so this
-              requirement-level row is read-only.
-            </p>
-            <SharedResponsibilityBlocks :by-component="byComponent" />
-          </template>
           <p v-else class="ui-v2-body text-[var(--ui-v2-muted-foreground)]">
             Create this component implementation first, then edit it to add
             exports, inherited capabilities and satisfied responsibilities.
