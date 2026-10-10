@@ -187,6 +187,7 @@
 
 <script setup lang="ts">
 import { computed, reactive, ref } from 'vue';
+import { uuid } from '@/utils/uuid';
 import Dialog from '@/volt/Dialog.vue';
 import { useToast } from 'primevue/usetoast';
 import type { MitigatingFactor, SubjectReference, Risk } from '@/oscal';
@@ -302,7 +303,7 @@ function saveFactor() {
     editingIndex.value !== null && current[editingIndex.value]
       ? current[editingIndex.value]
       : {
-          uuid: crypto.randomUUID(),
+          uuid: uuid(),
           description: '',
         };
 

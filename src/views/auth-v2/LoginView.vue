@@ -1,5 +1,13 @@
 <template>
   <AuthPanelCard>
+    <Message
+      v-if="showLoginBanner"
+      :severity="loginBannerSeverity"
+      closable
+      @close="dismissLoginBanner"
+    >
+      {{ loginBanner }}
+    </Message>
     <div
       v-if="loginNotice"
       class="mb-5 border border-[var(--ui-v2-primary-stroke-30)] bg-[var(--ui-v2-primary-tint-10)] px-3 py-2 text-[var(--ui-v2-foreground)]"
@@ -143,7 +151,10 @@ import { useToast } from 'primevue/usetoast';
 import type { AxiosError } from 'axios';
 import { useGuestApi } from '@/composables/axios';
 import { useOIDC, type OIDCProvider } from '@/composables/useOIDC';
-import { useUserStore } from '@/stores/auth';
+import { useAuthHydration } from '@/composables/useAuthHydration';
+import { resolveAuthNextLocation } from '@/utils/auth-redirect';
+import { useConfigStore, type LoginBannerSeverity } from '@/stores/config';
+import Message from '@/volt/Message.vue';
 import type { DataResponse } from '@/stores/types';
 import AuthInput from '@/components/v2/auth/AuthInput.vue';
 import AuthPanelCard from '@/components/v2/auth/AuthPanelCard.vue';
@@ -160,7 +171,11 @@ const errors = ref<AuthError>({} as AuthError);
 const formError = ref<string | null>(null);
 const isLoading = ref(false);
 
-const user = useUserStore();
+const { hydrateCurrentUser } = useAuthHydration();
+const configStore = useConfigStore();
+const loginBanner = ref('');
+const loginBannerSeverity = ref<LoginBannerSeverity>('info');
+const showLoginBanner = ref(false);
 const {
   providers: ssoProviders,
   isLoading: isSSOLoading,
@@ -234,6 +249,47 @@ const resolveLoginNotice = () => {
   }
 };
 
+const loginBannerDismissalKeyPrefix = 'login-banner-dismissed:';
+const getLoginBannerDismissalKey = (message: string) =>
+  `${loginBannerDismissalKeyPrefix}${encodeURIComponent(message)}`;
+
+function clearLoginBannerDismissals() {
+  const keys: string[] = [];
+  for (let index = 0; index < localStorage.length; index += 1) {
+    const key = localStorage.key(index);
+    if (key?.startsWith(loginBannerDismissalKeyPrefix)) {
+      keys.push(key);
+    }
+  }
+
+  keys.forEach((key) => localStorage.removeItem(key));
+}
+
+async function loadLoginBanner() {
+  try {
+    const config = await configStore.getConfig();
+    const message = config.LOGIN_BANNER ?? '';
+
+    loginBanner.value = message;
+    loginBannerSeverity.value = config.LOGIN_BANNER_SEVERITY ?? 'info';
+    showLoginBanner.value =
+      message.length > 0 &&
+      localStorage.getItem(getLoginBannerDismissalKey(message)) !== 'true';
+  } catch {
+    loginBanner.value = '';
+    loginBannerSeverity.value = 'info';
+    showLoginBanner.value = false;
+  }
+}
+
+function dismissLoginBanner() {
+  if (loginBanner.value.length > 0) {
+    clearLoginBannerDismissals();
+    localStorage.setItem(getLoginBannerDismissalKey(loginBanner.value), 'true');
+  }
+  showLoginBanner.value = false;
+}
+
 watch(
   () => route.query.error,
   () => resolveLoginNotice(),
@@ -242,6 +298,7 @@ watch(
 
 onMounted(() => {
   loadProviders();
+  void loadLoginBanner();
 });
 
 async function onSubmit() {
@@ -255,14 +312,11 @@ async function onSubmit() {
         password: password.value,
       },
     });
-    user.isAuthenticated = true;
-    if (route.query.hasOwnProperty('next')) {
-      return router.push(route.query.next as string);
-    }
-    return router.push({ name: 'home' });
+    await hydrateCurrentUser();
+    return router.push(resolveAuthNextLocation(route.query.next));
   } catch (error) {
     const response = error as AxiosError<DataResponse<AuthError>>;
-    if (response.status === 401) {
+    if (response.response?.status === 401) {
       const errorResponse = response.response?.data;
       errors.value = errorResponse?.data as AuthError;
       if (!errors.value?.email?.length && !errors.value?.password?.length) {

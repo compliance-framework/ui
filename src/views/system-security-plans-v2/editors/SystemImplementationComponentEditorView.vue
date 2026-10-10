@@ -61,7 +61,7 @@ const breadcrumbs = computed<SspEditorBreadcrumbItem[]>(() => [
   {
     label: 'IMPLEMENTATION',
     to: {
-      name: 'system-security-plan-system-implementation',
+      name: 'system-security-plan-implementation',
       params: { id: sspId.value },
       query: { section: 'components' },
     },
@@ -69,7 +69,7 @@ const breadcrumbs = computed<SspEditorBreadcrumbItem[]>(() => [
   {
     label: 'COMPONENTS',
     to: {
-      name: 'system-security-plan-system-implementation',
+      name: 'system-security-plan-implementation',
       params: { id: sspId.value },
       query: { section: 'components' },
     },
@@ -78,7 +78,7 @@ const breadcrumbs = computed<SspEditorBreadcrumbItem[]>(() => [
 ]);
 
 const backTo = computed(() => ({
-  name: 'system-security-plan-system-implementation',
+  name: 'system-security-plan-implementation',
   params: { id: sspId.value },
   query: { section: 'components' },
 }));

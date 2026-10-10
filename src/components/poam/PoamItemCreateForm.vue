@@ -55,7 +55,16 @@
         </button>
         <button
           type="submit"
-          :disabled="!formData.title || !formData.description || saving"
+          :disabled="
+            !formData.title ||
+            !formData.description ||
+            saving ||
+            !can(RESOURCES.POAM_ITEM, ACTIONS.CREATE)
+          "
+          v-tooltip.top="{
+            value: permissionTooltip(RESOURCES.POAM_ITEM, ACTIONS.CREATE),
+            disabled: can(RESOURCES.POAM_ITEM, ACTIONS.CREATE),
+          }"
           class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {{ saving ? 'Creating...' : 'Create' }}
@@ -67,11 +76,16 @@
 
 <script setup lang="ts">
 import { reactive } from 'vue';
+import { uuid } from '@/utils/uuid';
 import type { POAMItem } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import type { AxiosError } from 'axios';
 import type { ErrorResponse, ErrorBody } from '@/stores/types';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
+
+const { can, permissionTooltip } = usePermissions();
 
 const props = defineProps<{
   poamId: string;
@@ -113,7 +127,7 @@ async function submit() {
 
   try {
     const newItem: Partial<POAMItem> = {
-      uuid: crypto.randomUUID(),
+      uuid: uuid(),
       title: formData.title,
       description: formData.description,
       remarks: formData.remarks || undefined,

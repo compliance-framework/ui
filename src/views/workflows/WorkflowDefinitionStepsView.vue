@@ -10,7 +10,17 @@
           Define the steps and their dependencies for this workflow
         </p>
       </div>
-      <PrimaryButton @click="openCreateForm">
+      <PrimaryButton
+        @click="openCreateForm"
+        :disabled="!can(RESOURCES.WORKFLOW_STEP_DEFINITION, ACTIONS.CREATE)"
+        v-tooltip.top="{
+          value: permissionTooltip(
+            RESOURCES.WORKFLOW_STEP_DEFINITION,
+            ACTIONS.CREATE,
+          ),
+          disabled: can(RESOURCES.WORKFLOW_STEP_DEFINITION, ACTIONS.CREATE),
+        }"
+      >
         <i class="pi pi-plus mr-2"></i>
         Add Step
       </PrimaryButton>
@@ -40,9 +50,6 @@
         <div class="flex justify-between items-start">
           <div class="flex-1">
             <div class="flex items-center gap-2">
-              <span class="text-sm text-gray-400 dark:text-slate-500">
-                #{{ step.order }}
-              </span>
               <h4 class="font-medium text-gray-900 dark:text-slate-200">
                 {{ step.name }}
               </h4>
@@ -69,13 +76,42 @@
             </div>
           </div>
           <div class="flex gap-2">
-            <SecondaryButton size="small" @click.stop="editStep(step)">
+            <SecondaryButton
+              size="small"
+              @click.stop="editStep(step)"
+              :disabled="
+                !can(RESOURCES.WORKFLOW_STEP_DEFINITION, ACTIONS.UPDATE)
+              "
+              v-tooltip.top="{
+                value: permissionTooltip(
+                  RESOURCES.WORKFLOW_STEP_DEFINITION,
+                  ACTIONS.UPDATE,
+                ),
+                disabled: can(
+                  RESOURCES.WORKFLOW_STEP_DEFINITION,
+                  ACTIONS.UPDATE,
+                ),
+              }"
+            >
               Edit
             </SecondaryButton>
             <SecondaryButton
               size="small"
               severity="danger"
               @click.stop="handleDeleteStep(step)"
+              :disabled="
+                !can(RESOURCES.WORKFLOW_STEP_DEFINITION, ACTIONS.DELETE)
+              "
+              v-tooltip.top="{
+                value: permissionTooltip(
+                  RESOURCES.WORKFLOW_STEP_DEFINITION,
+                  ACTIONS.DELETE,
+                ),
+                disabled: can(
+                  RESOURCES.WORKFLOW_STEP_DEFINITION,
+                  ACTIONS.DELETE,
+                ),
+              }"
             >
               Delete
             </SecondaryButton>
@@ -108,7 +144,6 @@
       <StepDefinitionForm
         :step="editingStep ?? undefined"
         :workflow-definition-id="store.definition.id"
-        :default-grace-period-days="store.definition.gracePeriodDays"
         :available-steps="store.steps"
         @saved="handleStepSaved"
         @cancel="closeForm"
@@ -129,6 +164,10 @@ import Badge from '@/volt/Badge.vue';
 import Drawer from '@/volt/Drawer.vue';
 import StepDAGVisualization from './partials/StepDAGVisualization.vue';
 import StepDefinitionForm from './partials/StepDefinitionForm.vue';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
+
+const { can, permissionTooltip } = usePermissions();
 
 const store = useWorkflowDefinitionStore();
 const { deleteStep } = useWorkflowStepDefinitions();

@@ -9,6 +9,7 @@ import type {
 } from '@/oscal';
 import { useSystemStore } from '@/stores/system';
 import { useDataApi } from '@/composables/axios';
+import RiskOverviewSection from '@/components/system-security-plans/RiskOverviewSection.vue';
 import V2PageHeader from '@/components/v2/patterns/V2PageHeader.vue';
 import PrerequisiteGate from '@/components/v2/system/PrerequisiteGate.vue';
 import V2StatePanel from '@/components/v2/system/V2StatePanel.vue';
@@ -376,5 +377,10 @@ function formatDate(dateString?: string): string {
         />
       </template>
     </template>
+    <RiskOverviewSection
+      v-if="activeSspId"
+      :ssp-id="activeSspId"
+      risk-list-route-name="system:risks"
+    />
   </div>
 </template>

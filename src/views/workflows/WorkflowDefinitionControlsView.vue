@@ -10,7 +10,17 @@
           Link this workflow to specific controls from your catalogs
         </p>
       </div>
-      <PrimaryButton @click="showLinkDialog = true">
+      <PrimaryButton
+        @click="showLinkDialog = true"
+        :disabled="!can(RESOURCES.CONTROL_RELATIONSHIP, ACTIONS.CREATE)"
+        v-tooltip.top="{
+          value: permissionTooltip(
+            RESOURCES.CONTROL_RELATIONSHIP,
+            ACTIONS.CREATE,
+          ),
+          disabled: can(RESOURCES.CONTROL_RELATIONSHIP, ACTIONS.CREATE),
+        }"
+      >
         <i class="pi pi-link mr-2"></i>
         Link Control
       </PrimaryButton>
@@ -59,6 +69,14 @@
           size="small"
           severity="danger"
           @click="handleUnlink(rel)"
+          :disabled="!can(RESOURCES.CONTROL_RELATIONSHIP, ACTIONS.DELETE)"
+          v-tooltip.top="{
+            value: permissionTooltip(
+              RESOURCES.CONTROL_RELATIONSHIP,
+              ACTIONS.DELETE,
+            ),
+            disabled: can(RESOURCES.CONTROL_RELATIONSHIP, ACTIONS.DELETE),
+          }"
         >
           Unlink
         </SecondaryButton>
@@ -117,7 +135,19 @@
           <SecondaryButton @click="closeLinkDialog">Cancel</SecondaryButton>
           <PrimaryButton
             @click="handleLink"
-            :disabled="!selectedCatalogId || !selectedControlId || isLinking"
+            :disabled="
+              !selectedCatalogId ||
+              !selectedControlId ||
+              isLinking ||
+              !can(RESOURCES.CONTROL_RELATIONSHIP, ACTIONS.CREATE)
+            "
+            v-tooltip.top="{
+              value: permissionTooltip(
+                RESOURCES.CONTROL_RELATIONSHIP,
+                ACTIONS.CREATE,
+              ),
+              disabled: can(RESOURCES.CONTROL_RELATIONSHIP, ACTIONS.CREATE),
+            }"
           >
             <i v-if="isLinking" class="pi pi-spin pi-spinner mr-2"></i>
             Link Control
@@ -142,6 +172,10 @@ import Dialog from '@/volt/Dialog.vue';
 import Select from '@/volt/Select.vue';
 import Label from '@/volt/Label.vue';
 import Message from '@/volt/Message.vue';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
+
+const { can, permissionTooltip } = usePermissions();
 
 const store = useWorkflowDefinitionStore();
 const {

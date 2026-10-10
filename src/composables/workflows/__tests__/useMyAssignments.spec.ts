@@ -104,6 +104,86 @@ describe('useMyAssignments', () => {
       );
     });
 
+    // BCH-1156: date inputs produce YYYY-MM-DD strings; the API requires RFC3339.
+    // Passing a plain date string must result in an RFC3339 value in the URL.
+    it('converts YYYY-MM-DD date strings to RFC3339 format in query params', async () => {
+      const emptyResponse: MyAssignmentsResponse = {
+        data: [],
+        total: 0,
+        limit: 10,
+        offset: 0,
+        hasMore: false,
+      };
+
+      setMockResponse(emptyResponse);
+
+      const { fetchMyAssignments } = useMyAssignments();
+      await fetchMyAssignments({
+        dueBefore: '2024-12-31',
+        dueAfter: '2024-01-01',
+      });
+
+      const calledUrl = mockExecute.mock.calls[0][0] as string;
+      // Must contain RFC3339 timestamps, not bare YYYY-MM-DD strings
+      expect(calledUrl).toContain('due_before=2024-12-31T');
+      expect(calledUrl).toContain('due_after=2024-01-01T');
+      expect(calledUrl).not.toContain('due_before=2024-12-31&');
+      expect(calledUrl).not.toContain('due_after=2024-01-01&');
+      expect(calledUrl).not.toMatch(/due_before=2024-12-31$/);
+      expect(calledUrl).not.toMatch(/due_after=2024-01-01$/);
+    });
+
+    // BCH-1156: dueBefore must use end-of-day so tasks due ON that date are included.
+    // Sending start-of-day (T00:00:00Z) causes the API (due_date <= X) to exclude
+    // tasks whose due_date is any time after midnight on the selected day.
+    it('sends end-of-day timestamp for dueBefore so same-day tasks are included', async () => {
+      const emptyResponse: MyAssignmentsResponse = {
+        data: [],
+        total: 0,
+        limit: 10,
+        offset: 0,
+        hasMore: false,
+      };
+
+      setMockResponse(emptyResponse);
+
+      const { fetchMyAssignments } = useMyAssignments();
+      await fetchMyAssignments({ dueBefore: '2026-05-28' });
+
+      const calledUrl = mockExecute.mock.calls[0][0] as string;
+      // Must be end-of-day (T23...) not start-of-day (T00...)
+      expect(calledUrl).toContain('due_before=2026-05-28T23');
+    });
+
+    // BCH-1156: Go's time.Parse(time.RFC3339, ...) does not accept fractional seconds.
+    // toISOString() always produces milliseconds (e.g. T23:59:59.999Z) which causes
+    // a persistent 400 even after the YYYY-MM-DD → RFC3339 conversion is applied.
+    it('formats date params without milliseconds so Go time.RFC3339 can parse them', async () => {
+      const emptyResponse: MyAssignmentsResponse = {
+        data: [],
+        total: 0,
+        limit: 10,
+        offset: 0,
+        hasMore: false,
+      };
+
+      setMockResponse(emptyResponse);
+
+      const { fetchMyAssignments } = useMyAssignments();
+      await fetchMyAssignments({
+        dueBefore: '2026-05-28',
+        dueAfter: '2026-05-26',
+      });
+
+      const calledUrl = mockExecute.mock.calls[0][0] as string;
+      // Must not contain milliseconds (.000, .999, etc)
+      expect(calledUrl).not.toMatch(/due_before=.*\.\d{3}/);
+      expect(calledUrl).not.toMatch(/due_after=.*\.\d{3}/);
+      // Must end with Z (UTC) after the seconds
+      expect(calledUrl).toContain('due_before=2026-05-28T23%3A59%3A59Z');
+      expect(calledUrl).toContain('due_after=2026-05-26T00%3A00%3A00Z');
+    });
+
     it('includes all filter parameters', async () => {
       const mockResponse: MyAssignmentsResponse = {
         data: [],
@@ -126,7 +206,7 @@ describe('useMyAssignments', () => {
       });
 
       const expectedUrl =
-        '/api/workflows/step-executions/my?status=in_progress&due_before=2024-12-31&due_after=2024-01-01&workflow_definition_id=workflow-123&limit=15&offset=5';
+        '/api/workflows/step-executions/my?status=in_progress&due_before=2024-12-31T23%3A59%3A59Z&due_after=2024-01-01T00%3A00%3A00Z&workflow_definition_id=workflow-123&limit=15&offset=5';
       expect(mockExecute).toHaveBeenCalledWith(expectedUrl);
     });
 
@@ -389,6 +469,28 @@ describe('useMyAssignments', () => {
   });
 
   describe('edge cases', () => {
+    // new Date('not-a-date').toISOString() throws RangeError; invalid strings must
+    // be silently dropped so the API call still proceeds without the bad param.
+    it('silently omits due date params when the date string is invalid', async () => {
+      const emptyResponse: MyAssignmentsResponse = {
+        data: [],
+        total: 0,
+        limit: 10,
+        offset: 0,
+        hasMore: false,
+      };
+      setMockResponse(emptyResponse);
+
+      const { fetchMyAssignments } = useMyAssignments();
+      await expect(
+        fetchMyAssignments({ dueBefore: 'not-a-date', dueAfter: 'also-bad' }),
+      ).resolves.toBeDefined();
+
+      const calledUrl = mockExecute.mock.calls[0][0] as string;
+      expect(calledUrl).not.toContain('due_before');
+      expect(calledUrl).not.toContain('due_after');
+    });
+
     it('handles empty results', async () => {
       const mockResponse: MyAssignmentsResponse = {
         data: [],

@@ -1,16 +1,20 @@
 <template>
-  <CollapsableGroup>
+  <CollapsableGroup
+    :persist-key="`catalog:${catalog.uuid}:control:${control.id}`"
+  >
     <template #header>
-      <div class="py-2 px-4 flex items-center gap-4">
+      <div class="py-3 px-4 flex flex-wrap items-center gap-3">
         <span
-          class="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-800 text-gray-800 dark:text-slate-300 rounded-md text-sm whitespace-nowrap px-4 py-1"
+          class="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-800 text-gray-800 dark:text-slate-300 rounded-md text-sm whitespace-nowrap px-2 py-1"
           >{{ control.id }}</span
         >
-        <div class="grow">
-          {{ control.title }}
-          <span class="text-gray-400 dark:text-slate-300 text-sm px-2 py-1"
-            >Control</span
-          >
+        <div class="min-w-0 grow">
+          <span class="font-medium text-gray-900 dark:text-slate-100">
+            {{ control.title }}
+          </span>
+          <span class="text-gray-400 dark:text-slate-300 text-sm px-2 py-1">
+            Control
+          </span>
         </div>
         <ResultStatusBadge
           v-if="complianceCounts.total"
@@ -18,50 +22,105 @@
           :red="complianceCounts.red"
           :green="complianceCounts.green"
         ></ResultStatusBadge>
-        <TertiaryButton
-          v-if="control.class"
-          class="bg-white hover:bg-zinc-100 dark:bg-slate-800 dark:hover:bg-slate-600"
-          @click.stop="gotoFindings"
-          >Findings</TertiaryButton
-        >
-        <TertiaryButton
-          class="bg-white hover:bg-zinc-100 dark:bg-slate-800 dark:hover:bg-slate-600"
-          @click.stop="showEdit = true"
-          >Edit</TertiaryButton
-        >
-        <TertiaryButton
-          class="bg-white hover:bg-zinc-100 dark:bg-slate-800 dark:hover:bg-slate-600"
-          @click.stop="deleteControl()"
-          >Delete</TertiaryButton
-        >
+        <div class="flex flex-wrap items-center gap-2">
+          <TertiaryButton
+            v-if="control.class"
+            size="small"
+            @click.stop="gotoFindings"
+          >
+            Findings
+          </TertiaryButton>
+          <TertiaryButton
+            size="small"
+            @click.stop="showControlForm = true"
+            :disabled="!can(RESOURCES.CATALOG, ACTIONS.CREATE)"
+            v-tooltip.top="{
+              value: permissionTooltip(RESOURCES.CATALOG, ACTIONS.CREATE),
+              disabled: can(RESOURCES.CATALOG, ACTIONS.CREATE),
+            }"
+          >
+            <i class="pi pi-plus mr-1"></i>
+            Control
+          </TertiaryButton>
+          <SecondaryButton
+            size="small"
+            @click.stop="showEdit = true"
+            :disabled="!can(RESOURCES.CATALOG, ACTIONS.UPDATE)"
+            v-tooltip.top="{
+              value: permissionTooltip(RESOURCES.CATALOG, ACTIONS.UPDATE),
+              disabled: can(RESOURCES.CATALOG, ACTIONS.UPDATE),
+            }"
+          >
+            Edit
+          </SecondaryButton>
+          <TertiaryButton
+            size="small"
+            class="border-red-200 text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-950/40"
+            @click.stop="deleteControl()"
+            :disabled="!can(RESOURCES.CATALOG, ACTIONS.DELETE)"
+            v-tooltip.top="{
+              value: permissionTooltip(RESOURCES.CATALOG, ACTIONS.DELETE),
+              disabled: can(RESOURCES.CATALOG, ACTIONS.DELETE),
+            }"
+          >
+            Delete
+          </TertiaryButton>
+        </div>
       </div>
     </template>
     <div
       class="px-4 py-4 dark:bg-slate-950 border-b border-ccf-300 dark:border-slate-700"
     >
-      <div class="flex items-start justify-between gap-4">
-        <div>
-          <TertiaryButton v-if="!statement" @click="showEditStatement = true"
-            >Add Statement</TertiaryButton
-          >
-          <TertiaryButton
-            v-if="statement"
-            class="ml-2"
-            @click="showEditStatement = true"
-            >Edit Statement</TertiaryButton
-          >
-          <TertiaryButton
-            v-if="!objective"
-            class="ml-2"
-            @click="showEditObjective = true"
-            >Add Objective</TertiaryButton
-          >
-          <TertiaryButton
-            v-if="!guidance"
-            class="ml-2"
-            @click="showEditGuidance = true"
-            >Add Guidance</TertiaryButton
-          >
+      <div
+        class="flex flex-col items-stretch gap-4 lg:flex-row lg:items-start lg:justify-between"
+      >
+        <div class="min-w-0 grow">
+          <div class="mb-4 flex flex-wrap gap-2">
+            <TertiaryButton
+              v-if="!statement"
+              size="small"
+              @click="showEditStatement = true"
+              :disabled="!can(RESOURCES.CATALOG, ACTIONS.UPDATE)"
+              v-tooltip.top="{
+                value: permissionTooltip(RESOURCES.CATALOG, ACTIONS.UPDATE),
+                disabled: can(RESOURCES.CATALOG, ACTIONS.UPDATE),
+              }"
+              >Add Statement</TertiaryButton
+            >
+            <TertiaryButton
+              v-if="statement"
+              size="small"
+              @click="showEditStatement = true"
+              :disabled="!can(RESOURCES.CATALOG, ACTIONS.UPDATE)"
+              v-tooltip.top="{
+                value: permissionTooltip(RESOURCES.CATALOG, ACTIONS.UPDATE),
+                disabled: can(RESOURCES.CATALOG, ACTIONS.UPDATE),
+              }"
+              >Edit Statement</TertiaryButton
+            >
+            <TertiaryButton
+              v-if="!objective"
+              size="small"
+              @click="showEditObjective = true"
+              :disabled="!can(RESOURCES.CATALOG, ACTIONS.UPDATE)"
+              v-tooltip.top="{
+                value: permissionTooltip(RESOURCES.CATALOG, ACTIONS.UPDATE),
+                disabled: can(RESOURCES.CATALOG, ACTIONS.UPDATE),
+              }"
+              >Add Objective</TertiaryButton
+            >
+            <TertiaryButton
+              v-if="!guidance"
+              size="small"
+              @click="showEditGuidance = true"
+              :disabled="!can(RESOURCES.CATALOG, ACTIONS.UPDATE)"
+              v-tooltip.top="{
+                value: permissionTooltip(RESOURCES.CATALOG, ACTIONS.UPDATE),
+                disabled: can(RESOURCES.CATALOG, ACTIONS.UPDATE),
+              }"
+              >Add Guidance</TertiaryButton
+            >
+          </div>
 
           <PartDisplayEditor
             v-for="part in control.parts"
@@ -104,52 +163,51 @@
           @deleted="onChildDeleted"
         />
       </div>
-      <div class="mt-4">
-        <!--        <TertiaryButton @click="showControlForm = true" class="ml-2"-->
-        <!--          >Add Control</TertiaryButton-->
-        <!--        >-->
-        <ControlCreateModal
-          @created="controlCreated"
-          :catalog="catalog"
-          :parent-control="props.control"
-          v-model="showControlForm"
-        />
-        <ControlPartEditModal
-          v-model="showEditStatement"
-          :catalog="catalog"
-          :control="props.control"
-          type="statement"
-          @updated="onUpdated"
-        />
-        <ControlPartEditModal
-          v-model="showEditObjective"
-          :catalog="catalog"
-          :control="props.control"
-          type="assessment-objective"
-          @updated="onUpdated"
-        />
-        <ControlPartEditModal
-          v-model="showEditGuidance"
-          :catalog="catalog"
-          :control="props.control"
-          type="guidance"
-          @updated="onUpdated"
-        />
-        <ControlEditModal
-          v-model="showEdit"
-          :catalog="catalog"
-          :control="props.control"
-          @updated="onUpdated"
-        />
-      </div>
     </div>
   </CollapsableGroup>
+  <!-- Outside CollapsableGroup's body, which unmounts (v-if) while collapsed: these modals
+       must stay mounted regardless of expand state, since a header button can open one
+       (e.g. Edit) before the control has ever been expanded. -->
+  <ControlCreateModal
+    @created="controlCreated"
+    :catalog="catalog"
+    :parent-control="props.control"
+    v-model="showControlForm"
+  />
+  <ControlPartEditModal
+    v-model="showEditStatement"
+    :catalog="catalog"
+    :control="props.control"
+    type="statement"
+    @updated="onUpdated"
+  />
+  <ControlPartEditModal
+    v-model="showEditObjective"
+    :catalog="catalog"
+    :control="props.control"
+    type="assessment-objective"
+    @updated="onUpdated"
+  />
+  <ControlPartEditModal
+    v-model="showEditGuidance"
+    :catalog="catalog"
+    :control="props.control"
+    type="guidance"
+    @updated="onUpdated"
+  />
+  <ControlEditModal
+    v-model="showEdit"
+    :catalog="catalog"
+    :control="props.control"
+    @updated="onUpdated"
+  />
 </template>
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import CollapsableGroup from '@/components/CollapsableGroup.vue';
 import ResultStatusBadge from '@/components/ResultStatusBadge.vue';
 import { type Catalog, type Control } from '@/oscal';
+import SecondaryButton from '@/volt/SecondaryButton.vue';
 import TertiaryButton from '@/volt/TertiaryButton.vue';
 import ControlCreateModal from '@/components/catalogs/ControlCreateModal.vue';
 import ControlEditModal from '@/components/catalogs/ControlEditModal.vue';
@@ -162,6 +220,10 @@ import type { ComplianceIntervalStatus } from '@/stores/evidence';
 import { computeEvidenceStatusCounts } from '@/composables/useEvidenceStatusCounts';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
 import { useToast } from 'primevue/usetoast';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
+
+const { can, permissionTooltip } = usePermissions();
 
 const props = defineProps<{
   catalog: Catalog;

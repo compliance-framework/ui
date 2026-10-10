@@ -30,12 +30,19 @@
           </td>
           <td class="py-2 pr-3">
             <PrimaryButton
-              :disabled="!!importedCatalogs[catalog.uuid]"
+              :disabled="
+                !!importedCatalogs[catalog.uuid] ||
+                !can(RESOURCES.PROFILE, ACTIONS.UPDATE)
+              "
               @click="$emit('import', catalog)"
               class="disabled:text-ccf-600 disabled:bg-ccf-200 dark:disabled:bg-slate-700"
               v-tooltip.top="{
-                value: 'Catalog is already imported in this profile',
-                disabled: !importedCatalogs[catalog.uuid],
+                value: !can(RESOURCES.PROFILE, ACTIONS.UPDATE)
+                  ? permissionTooltip(RESOURCES.PROFILE, ACTIONS.UPDATE)
+                  : 'Catalog is already imported in this profile',
+                disabled:
+                  can(RESOURCES.PROFILE, ACTIONS.UPDATE) &&
+                  !importedCatalogs[catalog.uuid],
               }"
               >Import</PrimaryButton
             >
@@ -52,6 +59,10 @@ import PrimaryButton from '@/volt/PrimaryButton.vue';
 import { ref, watch } from 'vue';
 import { type DataResponse, useApi } from '@/composables/api';
 import type { Catalog } from '@/oscal';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
+
+const { can, permissionTooltip } = usePermissions();
 
 const { data: catalogs, loading } = useApi<DataResponse<Catalog[]>>(
   new Request('/api/oscal/catalogs'),

@@ -8,34 +8,47 @@
         class="w-full hidden dark:block"
       />
     </div>
+    <Message
+      v-if="showLoginBanner"
+      :severity="loginBannerSeverity"
+      closable
+      class="mx-8 mb-4"
+      @close="dismissLoginBanner"
+    >
+      {{ loginBanner }}
+    </Message>
     <form @submit.prevent="onSubmit" class="space-y-4">
       <div>
         <label
           for="email"
           class="block text-sm font-medium text-gray-700 dark:text-slate-300"
-          >Email</label
         >
+          Email
+        </label>
         <FormInput v-model="email" placeholder="Email" />
         <span
           class="text-sm text-red-500 dark:text-red-500"
           v-for="error in errors.email"
           :key="error"
-          >{{ error }}</span
         >
+          {{ error }}
+        </span>
       </div>
       <div>
         <label
           for="password"
           class="block text-sm font-medium text-gray-700 dark:text-slate-300"
-          >Password</label
         >
+          Password
+        </label>
         <FormInput v-model="password" placeholder="Password" type="password" />
         <span
           class="dark:text-red-500"
           v-for="error in errors.password"
           :key="error"
-          >{{ error }}</span
         >
+          {{ error }}
+        </span>
       </div>
       <div>
         <PrimaryButton type="submit" class="w-full"> Login </PrimaryButton>
@@ -119,18 +132,20 @@
 import PageCard from '@/components/PageCard.vue';
 import { ref, onMounted, watch, computed } from 'vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
-import { useUserStore } from '@/stores/auth';
 import { useRoute, useRouter } from 'vue-router';
 // import type { DataResponse } from '@/stores/api.ts';
 import FormInput from '@/components/forms/FormInput.vue';
+import Message from '@/volt/Message.vue';
 import lightLogo from '@/assets/logo-light.svg';
 import darkLogo from '@/assets/logo-dark.svg';
 import SideNavLogo from '@/components/navigation/SideNavLogo.vue';
 import { useToast } from 'primevue/usetoast';
 import { useGuestApi } from '@/composables/axios';
 import type { AxiosError } from 'axios';
-import type { DataResponse } from '@/stores/types';
 import { useOIDC, type OIDCProvider } from '@/composables/useOIDC';
+import { useAuthHydration } from '@/composables/useAuthHydration';
+import { resolveAuthNextLocation } from '@/utils/auth-redirect';
+import { useConfigStore, type LoginBannerSeverity } from '@/stores/config';
 
 interface AuthError {
   email: string[];
@@ -139,9 +154,9 @@ interface AuthError {
 
 const email = ref('');
 const password = ref('');
-const errors = ref<AuthError>({} as AuthError);
+const errors = ref<AuthError>(createDefaultAuthErrors());
 
-const user = useUserStore();
+const { hydrateCurrentUser } = useAuthHydration();
 const {
   providers: ssoProviders,
   isLoading: isSSOLoading,
@@ -151,10 +166,13 @@ const {
 } = useOIDC();
 
 const loginNotice = ref<string | null>(null);
+const loginBanner = ref('');
+const loginBannerSeverity = ref<LoginBannerSeverity>('info');
+const showLoginBanner = ref(false);
 // TODO: Once other areas need this, move the "no SSO providers" UX into useOIDC or a shared helper.
 const hasSSOProviders = computed(() => (ssoProviders.value?.length ?? 0) > 0);
 
-const { execute: login } = useGuestApi<DataResponse<AuthError>>(
+const { execute: login } = useGuestApi<AuthError>(
   '/api/auth/login',
   {
     method: 'POST',
@@ -165,6 +183,14 @@ const { execute: login } = useGuestApi<DataResponse<AuthError>>(
 const route = useRoute();
 const router = useRouter();
 const toast = useToast();
+const configStore = useConfigStore();
+
+function createDefaultAuthErrors(): AuthError {
+  return {
+    email: [],
+    password: [],
+  };
+}
 
 const loginWithSSO = async (providerName: string) => {
   try {
@@ -216,6 +242,47 @@ const resolveLoginNotice = () => {
   }
 };
 
+const loginBannerDismissalKeyPrefix = 'login-banner-dismissed:';
+const getLoginBannerDismissalKey = (message: string) =>
+  `${loginBannerDismissalKeyPrefix}${encodeURIComponent(message)}`;
+
+function clearLoginBannerDismissals() {
+  const keys: string[] = [];
+  for (let index = 0; index < localStorage.length; index += 1) {
+    const key = localStorage.key(index);
+    if (key?.startsWith(loginBannerDismissalKeyPrefix)) {
+      keys.push(key);
+    }
+  }
+
+  keys.forEach((key) => localStorage.removeItem(key));
+}
+
+async function loadLoginBanner() {
+  try {
+    const config = await configStore.getConfig();
+    const message = config.LOGIN_BANNER ?? '';
+
+    loginBanner.value = message;
+    loginBannerSeverity.value = config.LOGIN_BANNER_SEVERITY ?? 'info';
+    showLoginBanner.value =
+      message.length > 0 &&
+      localStorage.getItem(getLoginBannerDismissalKey(message)) !== 'true';
+  } catch {
+    loginBanner.value = '';
+    loginBannerSeverity.value = 'info';
+    showLoginBanner.value = false;
+  }
+}
+
+function dismissLoginBanner() {
+  if (loginBanner.value.length > 0) {
+    clearLoginBannerDismissals();
+    localStorage.setItem(getLoginBannerDismissalKey(loginBanner.value), 'true');
+  }
+  showLoginBanner.value = false;
+}
+
 watch(
   () => route.query.error,
   () => resolveLoginNotice(),
@@ -224,10 +291,62 @@ watch(
 
 onMounted(() => {
   loadProviders();
+  void loadLoginBanner();
 });
 
+function isAuthError(value: unknown): value is AuthError {
+  if (!value || typeof value !== 'object') return false;
+
+  const maybeAuthError = value as Partial<AuthError>;
+  return (
+    Array.isArray(maybeAuthError.email) &&
+    maybeAuthError.email.every((error) => typeof error === 'string') &&
+    Array.isArray(maybeAuthError.password) &&
+    maybeAuthError.password.every((error) => typeof error === 'string')
+  );
+}
+
+function normalizeAuthErrors(value: unknown): AuthError {
+  if (!isAuthError(value)) return createDefaultAuthErrors();
+
+  return {
+    email: Array.isArray(value.email) ? value.email : [],
+    password: Array.isArray(value.password) ? value.password : [],
+  };
+}
+
+function showLoginFailed(error: unknown) {
+  const response = error as AxiosError<unknown>;
+  if (response.response?.status === 401) {
+    const responseData = response.response.data;
+    const authErrors =
+      responseData && typeof responseData === 'object' && 'data' in responseData
+        ? responseData.data
+        : responseData;
+
+    errors.value = normalizeAuthErrors(authErrors);
+  }
+
+  toast.add({
+    severity: 'error',
+    summary: 'Login Failed',
+    life: 3000,
+  });
+}
+
+function showHydrationFailed() {
+  toast.add({
+    severity: 'error',
+    summary: 'Unable to Load Account',
+    detail:
+      'Your credentials were accepted, but we could not load your account details. Please try again.',
+    life: 3000,
+  });
+}
+
 async function onSubmit() {
-  errors.value = {} as AuthError;
+  errors.value = createDefaultAuthErrors();
+
   try {
     await login({
       data: {
@@ -235,30 +354,24 @@ async function onSubmit() {
         password: password.value,
       },
     });
-    user.isAuthenticated = true;
-
-    toast.add({
-      severity: 'success',
-      summary: 'Login Successful',
-      detail: 'You have successfully logged in.',
-      life: 3000,
-    });
-    if (route.query.hasOwnProperty('next')) {
-      return router.push(route.query.next as string);
-    }
-    return router.push({ name: 'home' });
   } catch (error) {
-    const response = error as AxiosError<DataResponse<AuthError>>;
-    if (response.status === 401) {
-      const errorResponse = response.response?.data;
-      errors.value = errorResponse?.data as AuthError;
-    }
-
-    toast.add({
-      severity: 'error',
-      summary: 'Login Failed',
-      life: 3000,
-    });
+    showLoginFailed(error);
+    return;
   }
+
+  try {
+    await hydrateCurrentUser();
+  } catch {
+    showHydrationFailed();
+    return;
+  }
+
+  toast.add({
+    severity: 'success',
+    summary: 'Login Successful',
+    detail: 'You have successfully logged in.',
+    life: 3000,
+  });
+  return router.push(resolveAuthNextLocation(route.query.next));
 }
 </script>

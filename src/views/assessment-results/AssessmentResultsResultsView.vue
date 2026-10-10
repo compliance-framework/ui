@@ -6,7 +6,15 @@
       </h2>
       <button
         @click="showCreateModal = true"
-        class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+        :disabled="!can(RESOURCES.ASSESSMENT_RESULTS, ACTIONS.CREATE)"
+        v-tooltip.top="{
+          value: permissionTooltip(
+            RESOURCES.ASSESSMENT_RESULTS,
+            ACTIONS.CREATE,
+          ),
+          disabled: can(RESOURCES.ASSESSMENT_RESULTS, ACTIONS.CREATE),
+        }"
+        class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed"
       >
         Add Result
       </button>
@@ -63,7 +71,15 @@
             </RouterLink>
             <button
               @click="editResult(result)"
-              class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-sm"
+              :disabled="!can(RESOURCES.ASSESSMENT_RESULTS, ACTIONS.UPDATE)"
+              v-tooltip.top="{
+                value: permissionTooltip(
+                  RESOURCES.ASSESSMENT_RESULTS,
+                  ACTIONS.UPDATE,
+                ),
+                disabled: can(RESOURCES.ASSESSMENT_RESULTS, ACTIONS.UPDATE),
+              }"
+              class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-sm disabled:opacity-60 disabled:cursor-not-allowed"
             >
               Edit
             </button>
@@ -73,7 +89,15 @@
                   itemType: 'result',
                 })
               "
-              class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md text-sm"
+              :disabled="!can(RESOURCES.ASSESSMENT_RESULTS, ACTIONS.DELETE)"
+              v-tooltip.top="{
+                value: permissionTooltip(
+                  RESOURCES.ASSESSMENT_RESULTS,
+                  ACTIONS.DELETE,
+                ),
+                disabled: can(RESOURCES.ASSESSMENT_RESULTS, ACTIONS.DELETE),
+              }"
+              class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md text-sm disabled:opacity-60 disabled:cursor-not-allowed"
             >
               Delete
             </button>
@@ -164,7 +188,16 @@
           </button>
           <button
             type="submit"
-            :disabled="creating"
+            :disabled="
+              creating || !can(RESOURCES.ASSESSMENT_RESULTS, ACTIONS.CREATE)
+            "
+            v-tooltip.top="{
+              value: permissionTooltip(
+                RESOURCES.ASSESSMENT_RESULTS,
+                ACTIONS.CREATE,
+              ),
+              disabled: can(RESOURCES.ASSESSMENT_RESULTS, ACTIONS.CREATE),
+            }"
             class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
           >
             {{ creating ? 'Creating...' : 'Create' }}
@@ -186,6 +219,10 @@ import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import type { AxiosError } from 'axios';
 import type { ErrorResponse, ErrorBody } from '@/stores/types';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
+
+const { can, permissionTooltip } = usePermissions();
 
 const props = defineProps({
   assessmentResults: {

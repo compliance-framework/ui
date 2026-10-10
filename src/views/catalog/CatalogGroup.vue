@@ -1,42 +1,79 @@
 <template>
-  <CollapsableGroup>
+  <CollapsableGroup :persist-key="`catalog:${catalog.uuid}:group:${group.id}`">
     <template #header>
-      <div class="py-4 px-4 flex items-center gap-4">
+      <div class="py-4 px-4 flex flex-wrap items-center gap-3">
         <span
-          class="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-800 text-gray-800 dark:text-slate-300 rounded-md text-sm px-2 py-1 mr-2"
+          class="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-800 text-gray-800 dark:text-slate-300 rounded-md text-sm px-2 py-1"
           >{{ group.id }}</span
         >
-        <div class="grow">
-          {{ group.title }}
-          <span class="text-gray-400 dark:text-slate-300 text-sm px-2 py-1"
-            >Group</span
-          >
+        <div class="min-w-0 grow">
+          <span class="font-medium text-gray-900 dark:text-slate-100">
+            {{ group.title }}
+          </span>
+          <span class="text-gray-400 dark:text-slate-300 text-sm px-2 py-1">
+            Group
+          </span>
         </div>
-        <TertiaryButton
-          class="bg-white hover:bg-zinc-100 dark:bg-slate-800 dark:hover:bg-slate-600"
-          @click.stop="showEdit = true"
-          >Edit</TertiaryButton
-        >
-        <TertiaryButton
-          class="bg-white hover:bg-zinc-100 dark:bg-slate-800 dark:hover:bg-slate-600"
-          @click.stop="showEditDescription = true"
-          >Edit Description</TertiaryButton
-        >
-        <TertiaryButton
-          class="bg-white hover:bg-zinc-100 dark:bg-slate-800 dark:hover:bg-slate-600"
-          @click.stop="showGroupForm = true"
-          >Add Group</TertiaryButton
-        >
-        <TertiaryButton
-          class="bg-white hover:bg-zinc-100 dark:bg-slate-800 dark:hover:bg-slate-600"
-          @click.stop="showControlForm = true"
-          >Add Control</TertiaryButton
-        >
-        <TertiaryButton
-          class="bg-white hover:bg-zinc-100 dark:bg-slate-800 dark:hover:bg-slate-600"
-          @click.stop="deleteGroup()"
-          >Delete</TertiaryButton
-        >
+        <div class="flex flex-wrap items-center gap-2">
+          <SecondaryButton
+            size="small"
+            @click.stop="showEdit = true"
+            :disabled="!can(RESOURCES.CATALOG, ACTIONS.UPDATE)"
+            v-tooltip.top="{
+              value: permissionTooltip(RESOURCES.CATALOG, ACTIONS.UPDATE),
+              disabled: can(RESOURCES.CATALOG, ACTIONS.UPDATE),
+            }"
+          >
+            Edit
+          </SecondaryButton>
+          <TertiaryButton
+            size="small"
+            @click.stop="showEditDescription = true"
+            :disabled="!can(RESOURCES.CATALOG, ACTIONS.UPDATE)"
+            v-tooltip.top="{
+              value: permissionTooltip(RESOURCES.CATALOG, ACTIONS.UPDATE),
+              disabled: can(RESOURCES.CATALOG, ACTIONS.UPDATE),
+            }"
+          >
+            Description
+          </TertiaryButton>
+          <TertiaryButton
+            size="small"
+            @click.stop="showGroupForm = true"
+            :disabled="!can(RESOURCES.CATALOG, ACTIONS.CREATE)"
+            v-tooltip.top="{
+              value: permissionTooltip(RESOURCES.CATALOG, ACTIONS.CREATE),
+              disabled: can(RESOURCES.CATALOG, ACTIONS.CREATE),
+            }"
+          >
+            <i class="pi pi-plus mr-1"></i>
+            Group
+          </TertiaryButton>
+          <TertiaryButton
+            size="small"
+            @click.stop="showControlForm = true"
+            :disabled="!can(RESOURCES.CATALOG, ACTIONS.CREATE)"
+            v-tooltip.top="{
+              value: permissionTooltip(RESOURCES.CATALOG, ACTIONS.CREATE),
+              disabled: can(RESOURCES.CATALOG, ACTIONS.CREATE),
+            }"
+          >
+            <i class="pi pi-plus mr-1"></i>
+            Control
+          </TertiaryButton>
+          <TertiaryButton
+            size="small"
+            class="border-red-200 text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-950/40"
+            @click.stop="deleteGroup()"
+            :disabled="!can(RESOURCES.CATALOG, ACTIONS.DELETE)"
+            v-tooltip.top="{
+              value: permissionTooltip(RESOURCES.CATALOG, ACTIONS.DELETE),
+              disabled: can(RESOURCES.CATALOG, ACTIONS.DELETE),
+            }"
+          >
+            Delete
+          </TertiaryButton>
+        </div>
       </div>
     </template>
     <div
@@ -75,34 +112,35 @@
           @deleted="onChildGroupDeleted"
         />
       </div>
-      <div class="mt-4">
-        <GroupCreateModal
-          @created="groupCreated"
-          :catalog="catalog"
-          :parent="props.group"
-          v-model="showGroupForm"
-        />
-        <GroupDescriptionModal
-          v-model="showEditDescription"
-          :catalog="catalog"
-          :group="props.group"
-          @updated="onUpdated"
-        />
-        <GroupEditModal
-          v-model="showEdit"
-          :catalog="catalog"
-          :group="props.group"
-          @updated="onUpdated"
-        />
-        <ControlCreateModal
-          @created="controlCreated"
-          :catalog="catalog"
-          :parent-group="props.group"
-          v-model="showControlForm"
-        />
-      </div>
     </div>
   </CollapsableGroup>
+  <!-- Outside CollapsableGroup's body, which unmounts (v-if) while collapsed: these modals
+       must stay mounted regardless of expand state, since a header button can open one
+       (e.g. Edit) before the group has ever been expanded. -->
+  <GroupCreateModal
+    @created="groupCreated"
+    :catalog="catalog"
+    :parent="props.group"
+    v-model="showGroupForm"
+  />
+  <GroupDescriptionModal
+    v-model="showEditDescription"
+    :catalog="catalog"
+    :group="props.group"
+    @updated="onUpdated"
+  />
+  <GroupEditModal
+    v-model="showEdit"
+    :catalog="catalog"
+    :group="props.group"
+    @updated="onUpdated"
+  />
+  <ControlCreateModal
+    @created="controlCreated"
+    :catalog="catalog"
+    :parent-group="props.group"
+    v-model="showControlForm"
+  />
 </template>
 <script setup lang="ts">
 import { ref } from 'vue';
@@ -113,9 +151,15 @@ import ControlCreateModal from '@/components/catalogs/ControlCreateModal.vue';
 import GroupEditModal from '@/components/catalogs/GroupEditModal.vue';
 import GroupDescriptionModal from '@/components/catalogs/GroupDescriptionModal.vue';
 import PartDisplayEditor from '@/components/PartDisplayEditor.vue';
+import SecondaryButton from '@/volt/SecondaryButton.vue';
+import TertiaryButton from '@/volt/TertiaryButton.vue';
 import { useDataApi } from '@/composables/axios';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
 import { useToast } from 'primevue/usetoast';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
+
+const { can, permissionTooltip } = usePermissions();
 
 const props = defineProps<{
   catalog: Catalog;

@@ -10,7 +10,7 @@
               command: () => {
                 showCreateInventoryItemModal = true;
               },
-              disabled: false, // Allow creating unattached inventory
+              disabled: !can(RESOURCES.INVENTORY, ACTIONS.CREATE),
             },
           ]"
         />
@@ -183,18 +183,42 @@
                 <TertiaryButton
                   v-if="system.securityPlan && item.sourceType === 'ssp'"
                   @click.stop="editInventoryItem(item)"
+                  :disabled="!can(RESOURCES.INVENTORY, ACTIONS.UPDATE)"
+                  v-tooltip.top="{
+                    value: permissionTooltip(
+                      RESOURCES.INVENTORY,
+                      ACTIONS.UPDATE,
+                    ),
+                    disabled: can(RESOURCES.INVENTORY, ACTIONS.UPDATE),
+                  }"
                 >
                   Edit
                 </TertiaryButton>
                 <PrimaryButton
                   v-if="system.securityPlan && item.sourceType === 'ssp'"
                   @click.stop="attachInventoryItem(item)"
+                  :disabled="!can(RESOURCES.INVENTORY, ACTIONS.UPDATE)"
+                  v-tooltip.top="{
+                    value: permissionTooltip(
+                      RESOURCES.INVENTORY,
+                      ACTIONS.UPDATE,
+                    ),
+                    disabled: can(RESOURCES.INVENTORY, ACTIONS.UPDATE),
+                  }"
                 >
                   Attach
                 </PrimaryButton>
                 <PrimaryButton
                   v-if="system.securityPlan && item.sourceType !== 'ssp'"
                   @click.stop="attachToSSP()"
+                  :disabled="!can(RESOURCES.INVENTORY, ACTIONS.UPDATE)"
+                  v-tooltip.top="{
+                    value: permissionTooltip(
+                      RESOURCES.INVENTORY,
+                      ACTIONS.UPDATE,
+                    ),
+                    disabled: can(RESOURCES.INVENTORY, ACTIONS.UPDATE),
+                  }"
                 >
                   Add to SSP
                 </PrimaryButton>
@@ -209,6 +233,14 @@
                       itemType: 'inventory item',
                     })
                   "
+                  :disabled="!can(RESOURCES.INVENTORY, ACTIONS.DELETE)"
+                  v-tooltip.top="{
+                    value: permissionTooltip(
+                      RESOURCES.INVENTORY,
+                      ACTIONS.DELETE,
+                    ),
+                    disabled: can(RESOURCES.INVENTORY, ACTIONS.DELETE),
+                  }"
                 >
                   Delete
                 </TertiaryButton>
@@ -329,6 +361,8 @@ import { useDataApi } from '@/composables/axios';
 import type { AxiosError } from 'axios';
 import type { ErrorResponse, ErrorBody } from '@/stores/types.ts';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
 
 // Extended inventory item type with source information
 interface InventoryItemWithSource extends InventoryItem {
@@ -340,6 +374,7 @@ interface InventoryItemWithSource extends InventoryItem {
 const toast = useToast();
 const { system } = useSystemStore();
 const sspId = computed(() => system.securityPlan?.uuid ?? '');
+const { can, permissionTooltip } = usePermissions();
 
 const { confirmDeleteDialog } = useDeleteConfirmationDialog();
 

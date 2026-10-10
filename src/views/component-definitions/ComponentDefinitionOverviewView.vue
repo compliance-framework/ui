@@ -47,7 +47,7 @@
           }"
           class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md"
         >
-          Edit Component
+          Edit Component Definition
         </RouterLink>
         <RouterLink
           :to="{
@@ -56,7 +56,7 @@
           }"
           class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
         >
-          Edit Components
+          Edit Component Templates
         </RouterLink>
         <RouterLink
           :to="{
@@ -65,7 +65,7 @@
           }"
           class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md"
         >
-          Edit Capabilities
+          Edit Component Capabilities
         </RouterLink>
       </div>
 

@@ -6,7 +6,14 @@
         Manage workflow templates for continuous compliance activities
       </PageSubHeader>
     </div>
-    <PrimaryButton @click="toggleCreating">
+    <PrimaryButton
+      @click="toggleCreating"
+      :disabled="!can(RESOURCES.WORKFLOW_DEFINITION, ACTIONS.CREATE)"
+      v-tooltip.top="{
+        value: permissionTooltip(RESOURCES.WORKFLOW_DEFINITION, ACTIONS.CREATE),
+        disabled: can(RESOURCES.WORKFLOW_DEFINITION, ACTIONS.CREATE),
+      }"
+    >
       <i class="pi pi-plus mr-2"></i>
       New Definition
     </PrimaryButton>
@@ -148,6 +155,14 @@
               <SecondaryButton
                 @click="handleDelete(definition)"
                 severity="danger"
+                :disabled="!can(RESOURCES.WORKFLOW_DEFINITION, ACTIONS.DELETE)"
+                v-tooltip.top="{
+                  value: permissionTooltip(
+                    RESOURCES.WORKFLOW_DEFINITION,
+                    ACTIONS.DELETE,
+                  ),
+                  disabled: can(RESOURCES.WORKFLOW_DEFINITION, ACTIONS.DELETE),
+                }"
               >
                 Delete
               </SecondaryButton>
@@ -193,6 +208,10 @@ import Badge from '@/volt/Badge.vue';
 import Dialog from '@/volt/Dialog.vue';
 import WorkflowDefinitionCreateForm from './partials/WorkflowDefinitionCreateForm.vue';
 import { useToggle } from '@/composables/useToggle';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
+
+const { can, permissionTooltip } = usePermissions();
 
 const router = useRouter();
 

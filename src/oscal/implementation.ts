@@ -14,6 +14,7 @@ export interface SystemComponent extends HasPropAndLink {
   protocols?: Protocol[];
   remarks?: string;
   responsibleRoles?: ResponsibleRole[];
+  definedComponentId?: string;
 }
 
 enum SystemComponentType {

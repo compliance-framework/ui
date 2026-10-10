@@ -1,15 +1,23 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import { RouterView } from 'vue-router';
 import LeftSideNav from '@/views/LeftSideNav.vue';
 import SidebarToggle from '@/components/navigation/SidebarToggle.vue';
 import ProfileDropdown from '@/components/ProfileDropdown.vue';
 import { useSidebarStore } from '@/stores/sidebar';
+import { useSystemStore } from '@/stores/system';
 
 const sidebarStore = useSidebarStore();
+const systemStore = useSystemStore();
+
+const activeSystemName = computed(
+  () => systemStore.system.securityPlan?.metadata?.title,
+);
 </script>
 
 <template>
   <div class="flex h-screen">
+    <!-- Sidebar -->
     <div
       class="fixed top-0 left-0 h-full transition-all duration-300 ease-in-out z-10"
       :class="{
@@ -21,9 +29,11 @@ const sidebarStore = useSidebarStore();
         class="h-full w-full transition-all duration-300 ease-in-out"
       />
 
+      <!-- Toggle Button -->
       <SidebarToggle />
     </div>
 
+    <!-- Main Content -->
     <main
       class="grow transition-all duration-300 ease-in-out bg-zinc-50 dark:bg-slate-950 text-zinc-800 dark:text-slate-50 overflow-auto"
       :class="{
@@ -31,21 +41,32 @@ const sidebarStore = useSidebarStore();
         'ml-24': !sidebarStore.open,
       }"
     >
+      <!-- Header -->
       <header
         class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-3 relative z-40"
       >
         <div class="flex items-center justify-between">
-          <div class="flex-1"></div>
+          <div class="flex-1">
+            <span
+              v-if="activeSystemName"
+              class="text-sm font-medium text-gray-700 dark:text-slate-200"
+            >
+              Active System: {{ activeSystemName }}
+            </span>
+          </div>
+
+          <!-- Profile Dropdown -->
           <ProfileDropdown />
         </div>
       </header>
 
+      <!-- Page Content -->
       <div class="px-12 py-4">
-        <RouterView v-slot="{ Component }">
+        <router-view v-slot="{ Component }">
           <KeepAlive include="CatalogView">
             <component :is="Component" />
           </KeepAlive>
-        </RouterView>
+        </router-view>
       </div>
     </main>
   </div>

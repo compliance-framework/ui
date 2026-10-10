@@ -5,6 +5,7 @@ export interface Dashboard {
   id?: string;
   uuid?: string;
   name: string;
+  sspId?: string | null;
   filter: Filter;
   controls: Control[];
   components: SystemComponent[];

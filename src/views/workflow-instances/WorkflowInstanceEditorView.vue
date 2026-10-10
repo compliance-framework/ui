@@ -45,17 +45,51 @@
       <SecondaryButton
         v-if="store.isActive"
         @click="handleDeactivate"
-        :disabled="isToggling"
+        :disabled="
+          isToggling || !can(RESOURCES.WORKFLOW_INSTANCE, ACTIONS.UPDATE)
+        "
+        v-tooltip.top="{
+          value: permissionTooltip(RESOURCES.WORKFLOW_INSTANCE, ACTIONS.UPDATE),
+          disabled: can(RESOURCES.WORKFLOW_INSTANCE, ACTIONS.UPDATE),
+        }"
       >
         <i v-if="isToggling" class="pi pi-spin pi-spinner mr-2"></i>
         Deactivate
       </SecondaryButton>
-      <PrimaryButton v-else @click="handleActivate" :disabled="isToggling">
+      <PrimaryButton
+        v-else
+        @click="handleActivate"
+        :disabled="
+          isToggling || !can(RESOURCES.WORKFLOW_INSTANCE, ACTIONS.UPDATE)
+        "
+        v-tooltip.top="{
+          value: permissionTooltip(RESOURCES.WORKFLOW_INSTANCE, ACTIONS.UPDATE),
+          disabled: can(RESOURCES.WORKFLOW_INSTANCE, ACTIONS.UPDATE),
+        }"
+      >
         <i v-if="isToggling" class="pi pi-spin pi-spinner mr-2"></i>
         Activate
       </PrimaryButton>
-      <PrimaryButton @click="handleExecute" :disabled="!store.isActive">
-        <i class="pi pi-play mr-2"></i>
+      <PrimaryButton
+        @click="handleExecute"
+        :disabled="
+          isExecuting ||
+          !store.isActive ||
+          !can(RESOURCES.WORKFLOW_EXECUTION, ACTIONS.CREATE)
+        "
+        v-tooltip.top="{
+          value: permissionTooltip(
+            RESOURCES.WORKFLOW_EXECUTION,
+            ACTIONS.CREATE,
+          ),
+          disabled: can(RESOURCES.WORKFLOW_EXECUTION, ACTIONS.CREATE),
+        }"
+      >
+        <i
+          :class="
+            isExecuting ? 'pi pi-spin pi-spinner mr-2' : 'pi pi-play mr-2'
+          "
+        ></i>
         Execute Now
       </PrimaryButton>
     </div>
@@ -123,33 +157,6 @@
       </RouterView>
     </div>
   </template>
-
-  <!-- Execute Confirmation Dialog -->
-  <Dialog
-    header="Execute Workflow"
-    :draggable="false"
-    v-model:visible="showExecuteDialog"
-    modal
-    class="w-full max-w-md"
-  >
-    <div class="space-y-4">
-      <p>Are you sure you want to start a new execution of this workflow?</p>
-      <p class="text-sm text-gray-500 dark:text-slate-400">
-        This will create tasks for all defined steps in the workflow.
-      </p>
-      <div
-        class="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-slate-700"
-      >
-        <SecondaryButton @click="showExecuteDialog = false">
-          Cancel
-        </SecondaryButton>
-        <PrimaryButton @click="confirmExecute" :disabled="isExecuting">
-          <i v-if="isExecuting" class="pi pi-spin pi-spinner mr-2"></i>
-          Start Execution
-        </PrimaryButton>
-      </div>
-    </div>
-  </Dialog>
 </template>
 
 <script setup lang="ts">
@@ -163,10 +170,13 @@ import PageHeader from '@/components/PageHeader.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
 import Badge from '@/volt/Badge.vue';
 import Message from '@/volt/Message.vue';
-import Dialog from '@/volt/Dialog.vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
 import RouterLinkButton from '@/components/RouterLinkButton.vue';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
+
+const { can, permissionTooltip } = usePermissions();
 
 const route = useRoute();
 const router = useRouter();
@@ -175,7 +185,6 @@ const store = useWorkflowInstanceStore();
 const { startExecution } = useWorkflowExecutions();
 
 const isToggling = ref(false);
-const showExecuteDialog = ref(false);
 const isExecuting = ref(false);
 
 function formatCadence(cadence: CadenceType): string {
@@ -237,11 +246,7 @@ async function handleDeactivate() {
   }
 }
 
-function handleExecute() {
-  showExecuteDialog.value = true;
-}
-
-async function confirmExecute() {
+async function handleExecute() {
   if (!store.instance) return;
 
   isExecuting.value = true;
@@ -250,7 +255,6 @@ async function confirmExecute() {
       { workflowInstanceId: store.instance.id },
       (execution) => {
         store.addExecutionLocally(execution);
-        showExecuteDialog.value = false;
         router.push({
           name: 'workflow-execution-view',
           params: { id: execution.id },

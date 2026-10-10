@@ -46,14 +46,6 @@
               {{ stepDefinition?.responsibleRole || 'Not assigned' }}
             </div>
           </div>
-          <div>
-            <div class="text-xs text-gray-500 dark:text-slate-400">
-              Estimated Duration
-            </div>
-            <div class="text-sm font-medium text-gray-900 dark:text-slate-200">
-              {{ formatDuration(stepDefinition?.estimatedDurationMinutes) }}
-            </div>
-          </div>
         </div>
 
         <!-- Timestamps -->
@@ -233,7 +225,7 @@
         <EvidenceSubmissionForm
           v-if="canSubmitEvidence"
           :step="step"
-          :evidence-requirements="requiredEvidenceTypes"
+          :evidence-requirements="evidenceRequirements"
           @evidence-submitted="handleEvidenceSubmitted"
         />
 
@@ -269,7 +261,13 @@
         <PrimaryButton
           v-if="canStart"
           @click="handleStart"
-          :disabled="isProcessing"
+          :disabled="
+            isProcessing || !can(RESOURCES.STEP_EXECUTION, ACTIONS.UPDATE)
+          "
+          v-tooltip.top="{
+            value: permissionTooltip(RESOURCES.STEP_EXECUTION, ACTIONS.UPDATE),
+            disabled: can(RESOURCES.STEP_EXECUTION, ACTIONS.UPDATE),
+          }"
           class="flex-1"
         >
           <i v-if="isProcessing" class="pi pi-spin pi-spinner mr-2"></i>
@@ -280,7 +278,15 @@
         <PrimaryButton
           v-if="canComplete"
           @click="handleComplete"
-          :disabled="isProcessing || !hasRequiredEvidence"
+          :disabled="
+            isProcessing ||
+            !hasRequiredEvidence ||
+            !can(RESOURCES.STEP_EXECUTION, ACTIONS.UPDATE)
+          "
+          v-tooltip.top="{
+            value: permissionTooltip(RESOURCES.STEP_EXECUTION, ACTIONS.UPDATE),
+            disabled: can(RESOURCES.STEP_EXECUTION, ACTIONS.UPDATE),
+          }"
           class="flex-1"
         >
           <i v-if="isProcessing" class="pi pi-spin pi-spinner mr-2"></i>
@@ -292,7 +298,13 @@
           v-if="canFail"
           severity="danger"
           @click="openFailDialog"
-          :disabled="isProcessing"
+          :disabled="
+            isProcessing || !can(RESOURCES.STEP_EXECUTION, ACTIONS.UPDATE)
+          "
+          v-tooltip.top="{
+            value: permissionTooltip(RESOURCES.STEP_EXECUTION, ACTIONS.UPDATE),
+            disabled: can(RESOURCES.STEP_EXECUTION, ACTIONS.UPDATE),
+          }"
         >
           <i class="pi pi-times mr-2"></i>
           Mark Failed
@@ -301,7 +313,13 @@
         <SecondaryButton
           v-if="canReassign"
           @click="openReassignDialog"
-          :disabled="isProcessing"
+          :disabled="
+            isProcessing || !can(RESOURCES.STEP_EXECUTION, ACTIONS.UPDATE)
+          "
+          v-tooltip.top="{
+            value: permissionTooltip(RESOURCES.STEP_EXECUTION, ACTIONS.UPDATE),
+            disabled: can(RESOURCES.STEP_EXECUTION, ACTIONS.UPDATE),
+          }"
         >
           <i class="pi pi-send mr-2"></i>
           Reassign Task
@@ -354,7 +372,15 @@
         <SecondaryButton
           severity="danger"
           @click="handleFail"
-          :disabled="!failureReason.trim() || isProcessing"
+          :disabled="
+            !failureReason.trim() ||
+            isProcessing ||
+            !can(RESOURCES.STEP_EXECUTION, ACTIONS.UPDATE)
+          "
+          v-tooltip.top="{
+            value: permissionTooltip(RESOURCES.STEP_EXECUTION, ACTIONS.UPDATE),
+            disabled: can(RESOURCES.STEP_EXECUTION, ACTIONS.UPDATE),
+          }"
         >
           <i v-if="isProcessing" class="pi pi-spin pi-spinner mr-2"></i>
           <i v-else class="pi pi-times mr-2"></i>
@@ -378,13 +404,14 @@
       </p>
 
       <div>
-        <Label for="reassign-user" required>Assignee (Email)</Label>
+        <Label for="reassign-user" required>Assignee</Label>
         <AutoComplete
           id="reassign-user"
           v-model="selectedReassignUser"
           :suggestions="userSuggestions"
           optionLabel="displayName"
-          placeholder="Search users by name or email..."
+          :filterBy="['displayName', 'id']"
+          placeholder="Search users by name or ID..."
           class="w-full"
           aria-required="true"
           :forceSelection="true"
@@ -397,7 +424,7 @@
                 {{ item.displayName }}
               </span>
               <span class="text-sm text-gray-500 dark:text-slate-400">
-                {{ item.email }}
+                {{ item.id }}
               </span>
             </div>
           </template>
@@ -407,7 +434,7 @@
                 {{ value?.displayName }}
               </span>
               <span class="text-sm text-gray-500 dark:text-slate-400">
-                {{ value?.email }}
+                {{ value?.id }}
               </span>
             </div>
           </template>
@@ -438,7 +465,13 @@
         <PrimaryButton
           form="reassign-form"
           type="submit"
-          :disabled="isProcessing"
+          :disabled="
+            isProcessing || !can(RESOURCES.STEP_EXECUTION, ACTIONS.UPDATE)
+          "
+          v-tooltip.top="{
+            value: permissionTooltip(RESOURCES.STEP_EXECUTION, ACTIONS.UPDATE),
+            disabled: can(RESOURCES.STEP_EXECUTION, ACTIONS.UPDATE),
+          }"
         >
           <i v-if="isProcessing" class="pi pi-spin pi-spinner mr-2"></i>
           <i v-else class="pi pi-send mr-2"></i>
@@ -472,6 +505,10 @@ import SecondaryButton from '@/volt/SecondaryButton.vue';
 import Message from '@/volt/Message.vue';
 import AutoComplete from '@/volt/AutoComplete.vue';
 import EvidenceSubmissionForm from './EvidenceSubmissionForm.vue';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
+
+const { can, permissionTooltip } = usePermissions();
 
 const props = defineProps<{
   step: StepExecution | null;
@@ -587,14 +624,6 @@ function formatDate(dateString: string): string {
   return new Date(dateString).toLocaleString();
 }
 
-function formatDuration(minutes?: number): string {
-  if (!minutes) return 'Not specified';
-  if (minutes < 60) return `${minutes} minutes`;
-  const hours = Math.floor(minutes / 60);
-  const mins = minutes % 60;
-  return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
-}
-
 async function handleStart() {
   if (!props.step) return;
 
@@ -664,8 +693,8 @@ async function handleReassign() {
   if (!props.step) return;
 
   const selectedUser = selectedReassignUser.value;
-  if (!selectedUser?.email) {
-    reassignError.value = 'Please select a valid user with an email address.';
+  if (!selectedUser?.id) {
+    reassignError.value = 'Please select a valid user.';
     return;
   }
 
@@ -680,8 +709,8 @@ async function handleReassign() {
 
   try {
     await reassignStepExecution(props.step.id, {
-      assignedToType: 'email',
-      assignedToId: selectedUser.email,
+      assignedToType: 'user',
+      assignedToId: selectedUser.id,
       reason: reassignReason.value.trim() || undefined,
     });
     emit('step-updated');

@@ -119,7 +119,18 @@
         </div>
 
         <div class="mt-6">
-          <PrimaryButton type="submit" :disabled="submitting || !canSubmit">
+          <PrimaryButton
+            type="submit"
+            :disabled="
+              submitting ||
+              !canSubmit ||
+              !can(RESOURCES.PROFILE, ACTIONS.CREATE)
+            "
+            v-tooltip.top="{
+              value: permissionTooltip(RESOURCES.PROFILE, ACTIONS.CREATE),
+              disabled: can(RESOURCES.PROFILE, ACTIONS.CREATE),
+            }"
+          >
             {{ submitting ? 'Building...' : 'Build Profile' }}
           </PrimaryButton>
         </div>
@@ -161,7 +172,10 @@ import { useToast } from 'primevue/usetoast';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import type { AxiosHeaders } from 'axios';
 import type { Catalog } from '@/oscal';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
 
+const { can, permissionTooltip } = usePermissions();
 const toast = useToast();
 const uuidRe =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;

@@ -7,8 +7,8 @@ import DashboardSavedViewsSectionV2 from '@/components/v2/dashboard/DashboardSav
 <template>
   <div class="space-y-6">
     <V2PageHeader
-      eyebrow="Dashboards"
-      title="Dashboards"
+      eyebrow="Evidence"
+      title="Evidence Filters"
       description="Compliance posture and findings grouped by query"
     />
 

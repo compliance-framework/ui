@@ -1,9 +1,78 @@
 <template>
-  <PageHeader>Catalog</PageHeader>
-  <PageSubHeader>{{ catalog?.metadata?.title }}</PageSubHeader>
+  <div
+    class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between"
+  >
+    <div>
+      <PageHeader>
+        Catalog
+        <span
+          v-if="catalog && !isCatalogActive(catalog)"
+          class="ml-2 inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 align-middle text-xs font-semibold text-amber-800 dark:bg-amber-900/40 dark:text-amber-300"
+        >
+          Inactive
+        </span>
+      </PageHeader>
+      <PageSubHeader>{{ catalog?.metadata?.title }}</PageSubHeader>
+    </div>
+    <div
+      v-if="catalog"
+      class="flex flex-wrap items-center gap-2 lg:justify-end"
+    >
+      <SecondaryButton
+        @click="toggleActive"
+        :disabled="!can(RESOURCES.CATALOG, ACTIONS.UPDATE)"
+        v-tooltip.top="{
+          value: permissionTooltip(RESOURCES.CATALOG, ACTIONS.UPDATE),
+          disabled: can(RESOURCES.CATALOG, ACTIONS.UPDATE),
+        }"
+      >
+        {{ isCatalogActive(catalog) ? 'Deactivate' : 'Activate' }}
+      </SecondaryButton>
+      <PrimaryButton
+        @click="showControlForm = true"
+        :disabled="!can(RESOURCES.CATALOG, ACTIONS.CREATE)"
+        v-tooltip.top="{
+          value: permissionTooltip(RESOURCES.CATALOG, ACTIONS.CREATE),
+          disabled: can(RESOURCES.CATALOG, ACTIONS.CREATE),
+        }"
+      >
+        <i class="pi pi-plus mr-2"></i>
+        Add Control
+      </PrimaryButton>
+      <SecondaryButton
+        @click="showGroupForm = true"
+        :disabled="!can(RESOURCES.CATALOG, ACTIONS.CREATE)"
+        v-tooltip.top="{
+          value: permissionTooltip(RESOURCES.CATALOG, ACTIONS.CREATE),
+          disabled: can(RESOURCES.CATALOG, ACTIONS.CREATE),
+        }"
+        >Add Group</SecondaryButton
+      >
+      <SecondaryButton
+        @click="showEdit = true"
+        :disabled="!can(RESOURCES.CATALOG, ACTIONS.UPDATE)"
+        v-tooltip.top="{
+          value: permissionTooltip(RESOURCES.CATALOG, ACTIONS.UPDATE),
+          disabled: can(RESOURCES.CATALOG, ACTIONS.UPDATE),
+        }"
+        >Edit</SecondaryButton
+      >
+      <TertiaryButton
+        @click="deleteCurrentCatalog"
+        :disabled="!can(RESOURCES.CATALOG, ACTIONS.DELETE)"
+        v-tooltip.top="{
+          value: permissionTooltip(RESOURCES.CATALOG, ACTIONS.DELETE),
+          disabled: can(RESOURCES.CATALOG, ACTIONS.DELETE),
+        }"
+        class="border-red-200 text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-950/40"
+      >
+        Delete
+      </TertiaryButton>
+    </div>
+  </div>
 
   <div
-    class="mt-4 rounded-md bg-white dark:bg-slate-900 border-collapse border border-ccf-300 dark:border-slate-700"
+    class="mt-6 rounded-md bg-white dark:bg-slate-900 border-collapse border border-ccf-300 dark:border-slate-700"
     v-if="catalog"
   >
     <CatalogGroup
@@ -23,15 +92,7 @@
       @updated="reloadLists"
     />
   </div>
-  <div class="mt-4" v-if="catalog">
-    <PrimaryButton @click="deleteCurrentCatalog" class="mr-2"
-      >Delete</PrimaryButton
-    >
-    <PrimaryButton @click="showEdit = true" class="mr-2">Edit</PrimaryButton>
-    <TertiaryButton @click="showGroupForm = true">Add Group</TertiaryButton>
-    <TertiaryButton @click="showControlForm = true" class="ml-2"
-      >Add Control</TertiaryButton
-    >
+  <div v-if="catalog">
     <GroupCreateModal
       @created="groupCreated"
       :catalog="catalog"
@@ -64,14 +125,25 @@ import GroupCreateModal from '@/components/catalogs/GroupCreateModal.vue';
 import ControlCreateModal from '@/components/catalogs/ControlCreateModal.vue';
 import CatalogEditModal from '@/components/catalogs/CatalogEditModal.vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
+import SecondaryButton from '@/volt/SecondaryButton.vue';
+import TertiaryButton from '@/volt/TertiaryButton.vue';
 import { useToast } from 'primevue/usetoast';
 import type { ErrorResponse, ErrorBody } from '@/stores/types.ts';
 import { useDataApi } from '@/composables/axios';
 import type { AxiosError } from 'axios';
-import { useCatalogDelete } from '@/composables/catalog';
+import {
+  useCatalogDelete,
+  useCatalogActiveToggle,
+  isCatalogActive,
+  withCatalogActive,
+} from '@/composables/catalog';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
 
+const { can, permissionTooltip } = usePermissions();
 const toast = useToast();
 const { deleteCatalog: deleteCatalogAction } = useCatalogDelete();
+const { setCatalogActive } = useCatalogActiveToggle();
 const route = useRoute();
 const router = useRouter();
 const catalogId = ref<string>(route.params.id as string);
@@ -137,6 +209,20 @@ async function deleteCatalog(uuid: string, title: string) {
 
 function deleteCurrentCatalog() {
   deleteCatalog(catalogId.value, catalog.value?.metadata?.title || '');
+}
+
+async function toggleActive() {
+  if (!catalog.value) return;
+  const current = catalog.value;
+  const next = !isCatalogActive(current);
+  await setCatalogActive(
+    catalogId.value,
+    current.metadata?.title ?? '',
+    next,
+    () => {
+      catalog.value = withCatalogActive(current, next);
+    },
+  );
 }
 function reloadLists() {
   groupExecute(`/api/oscal/catalogs/${catalogId.value}/groups`);

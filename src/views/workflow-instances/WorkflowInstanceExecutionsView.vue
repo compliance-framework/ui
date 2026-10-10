@@ -1,19 +1,13 @@
 <template>
   <div v-if="store.instance" class="space-y-6">
     <!-- Header -->
-    <div class="flex justify-between items-center">
-      <div>
-        <h3 class="text-lg font-medium text-gray-900 dark:text-slate-200">
-          Execution History
-        </h3>
-        <p class="text-sm text-gray-500 dark:text-slate-400">
-          View past and current workflow executions
-        </p>
-      </div>
-      <PrimaryButton @click="handleExecute" :disabled="!store.isActive">
-        <i class="pi pi-play mr-2"></i>
-        Execute Now
-      </PrimaryButton>
+    <div>
+      <h3 class="text-lg font-medium text-gray-900 dark:text-slate-200">
+        Execution History
+      </h3>
+      <p class="text-sm text-gray-500 dark:text-slate-400">
+        View past and current workflow executions
+      </p>
     </div>
 
     <!-- Empty State -->
@@ -72,11 +66,11 @@
             <td
               class="px-6 py-4 text-sm text-gray-500 dark:text-slate-400 whitespace-nowrap"
             >
-              {{ formatDate(execution.triggeredAt) }}
+              {{ execution.startedAt ? formatDate(execution.startedAt) : '-' }}
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
               <Badge :severity="getStatusSeverity(execution.status)">
-                {{ execution.status.replace('_', ' ') }}
+                {{ execution.status.replace(/_/g, ' ') }}
               </Badge>
             </td>
             <td class="px-6 py-4 text-sm text-gray-500 dark:text-slate-400">
@@ -91,7 +85,9 @@
               <span v-else-if="execution.cancelledAt" class="text-red-500">
                 Cancelled: {{ formatDate(execution.cancelledAt) }}
               </span>
-              <span v-else class="text-gray-400">-</span>
+              <span v-else class="text-gray-400">{{
+                execution.status.replace(/_/g, ' ')
+              }}</span>
             </td>
             <td class="px-6 py-4 text-right">
               <RouterLinkButton
@@ -107,54 +103,17 @@
         </tbody>
       </table>
     </div>
-
-    <!-- Execute Confirmation Dialog -->
-    <Dialog
-      header="Execute Workflow"
-      :draggable="false"
-      v-model:visible="showExecuteDialog"
-      modal
-      class="w-full max-w-md"
-    >
-      <div class="space-y-4">
-        <p>Are you sure you want to start a new execution of this workflow?</p>
-        <p class="text-sm text-gray-500 dark:text-slate-400">
-          This will create tasks for all defined steps in the workflow.
-        </p>
-        <div
-          class="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-slate-700"
-        >
-          <SecondaryButton @click="showExecuteDialog = false">
-            Cancel
-          </SecondaryButton>
-          <PrimaryButton @click="confirmExecute" :disabled="isExecuting">
-            <i v-if="isExecuting" class="pi pi-spin pi-spinner mr-2"></i>
-            Start Execution
-          </PrimaryButton>
-        </div>
-      </div>
-    </Dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import { useRouter } from 'vue-router';
+import { computed } from 'vue';
 import { useWorkflowInstanceStore } from '@/stores/workflows/instances';
-import { useWorkflowExecutions } from '@/composables/workflows';
 import type { WorkflowExecutionStatus } from '@/types/workflows';
-import PrimaryButton from '@/volt/PrimaryButton.vue';
-import SecondaryButton from '@/volt/SecondaryButton.vue';
 import RouterLinkButton from '@/components/RouterLinkButton.vue';
 import Badge from '@/volt/Badge.vue';
-import Dialog from '@/volt/Dialog.vue';
 
-const router = useRouter();
 const store = useWorkflowInstanceStore();
-const { startExecution } = useWorkflowExecutions();
-
-const showExecuteDialog = ref(false);
-const isExecuting = ref(false);
 
 const sortedExecutions = computed(() => {
   return [...store.executions].sort((a, b) => {
@@ -184,32 +143,5 @@ function getStatusSeverity(
     cancelled: 'warn',
   };
   return severities[status] || 'secondary';
-}
-
-function handleExecute() {
-  showExecuteDialog.value = true;
-}
-
-async function confirmExecute() {
-  if (!store.instance) return;
-
-  isExecuting.value = true;
-  try {
-    await startExecution(
-      { workflowInstanceId: store.instance.id },
-      (execution) => {
-        store.addExecutionLocally(execution);
-        showExecuteDialog.value = false;
-        router.push({
-          name: 'workflow-execution-view',
-          params: { id: execution.id },
-        });
-      },
-    );
-  } catch {
-    // Error handled by composable
-  } finally {
-    isExecuting.value = false;
-  }
 }
 </script>

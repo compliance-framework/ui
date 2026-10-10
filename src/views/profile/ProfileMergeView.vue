@@ -41,7 +41,15 @@
           <option value="flat">Flat</option>
         </select>
       </div>
-      <PrimaryButton class="mt-4" @click.prevent="updateMerge()">
+      <PrimaryButton
+        class="mt-4"
+        @click.prevent="updateMerge()"
+        :disabled="!can(RESOURCES.PROFILE, ACTIONS.UPDATE)"
+        v-tooltip.top="{
+          value: permissionTooltip(RESOURCES.PROFILE, ACTIONS.UPDATE),
+          disabled: can(RESOURCES.PROFILE, ACTIONS.UPDATE),
+        }"
+      >
         Save Merge Settings
       </PrimaryButton>
     </form>
@@ -58,7 +66,10 @@ import PrimaryButton from '@/volt/PrimaryButton.vue';
 import { decamelizeKeys, useDataApi } from '@/composables/axios';
 import type { AxiosError } from 'axios';
 import type { ErrorResponse, ErrorBody } from '@/stores/types';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
 
+const { can, permissionTooltip } = usePermissions();
 const route = useRoute();
 const toast = useToast();
 const id = route.params.id as string;

@@ -116,9 +116,19 @@
 
     <!-- Create Button -->
     <div class="mt-4">
-      <RouterLinkButton to="/assessment-results/create">
+      <PrimaryButton
+        @click="$router.push('/assessment-results/create')"
+        :disabled="!can(RESOURCES.ASSESSMENT_RESULTS, ACTIONS.CREATE)"
+        v-tooltip.top="{
+          value: permissionTooltip(
+            RESOURCES.ASSESSMENT_RESULTS,
+            ACTIONS.CREATE,
+          ),
+          disabled: can(RESOURCES.ASSESSMENT_RESULTS, ACTIONS.CREATE),
+        }"
+      >
         Create New Assessment Results
-      </RouterLinkButton>
+      </PrimaryButton>
     </div>
   </div>
 </template>
@@ -133,10 +143,13 @@ import Badge from '@/volt/Badge.vue';
 import { useSystemStore } from '@/stores/system.ts';
 import { useDataApi } from '@/composables/axios';
 import RouterLinkButton from '@/components/RouterLinkButton.vue';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
 
 const configStore = useConfigStore();
 const toast = useToast();
 const systemStore = useSystemStore();
+const { can, permissionTooltip } = usePermissions();
 
 const {
   data: assessmentResults,

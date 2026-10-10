@@ -64,14 +64,32 @@
       <p class="text-gray-500 dark:text-slate-400 mb-4">
         No back matter resources defined.
       </p>
-      <TertiaryButton @click="showCreateModal = true"
+      <TertiaryButton
+        @click="showCreateModal = true"
+        :disabled="!can(RESOURCES.COMPONENT_DEFINITION, ACTIONS.CREATE)"
+        v-tooltip.top="{
+          value: permissionTooltip(
+            RESOURCES.COMPONENT_DEFINITION,
+            ACTIONS.CREATE,
+          ),
+          disabled: can(RESOURCES.COMPONENT_DEFINITION, ACTIONS.CREATE),
+        }"
         >Add Resource</TertiaryButton
       >
     </div>
   </div>
 
   <div class="mt-4" v-if="backMatter && backMatter.resources?.length > 0">
-    <TertiaryButton @click="showCreateModal = true"
+    <TertiaryButton
+      @click="showCreateModal = true"
+      :disabled="!can(RESOURCES.COMPONENT_DEFINITION, ACTIONS.CREATE)"
+      v-tooltip.top="{
+        value: permissionTooltip(
+          RESOURCES.COMPONENT_DEFINITION,
+          ACTIONS.CREATE,
+        ),
+        disabled: can(RESOURCES.COMPONENT_DEFINITION, ACTIONS.CREATE),
+      }"
       >Add Resource</TertiaryButton
     >
   </div>
@@ -92,6 +110,10 @@ import { useRoute } from 'vue-router';
 import TertiaryButton from '@/volt/TertiaryButton.vue';
 import BackMatterResourceCreateModal from '@/components/component-definitions/BackMatterResourceCreateModal.vue';
 import { useDataApi } from '@/composables/axios';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
+
+const { can, permissionTooltip } = usePermissions();
 
 const route = useRoute();
 const componentDefinitionId = ref<string>(route.params.id as string);

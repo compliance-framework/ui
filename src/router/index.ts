@@ -11,15 +11,21 @@ import {
   dispatchUIMigrationStatusEvent,
   getMatchedUIVersions,
 } from './uiMigrationInstrumentation';
+import { usePermissionsStore } from '@/stores/permissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
+
+// Routes carrying this meta are only reachable when the subject may admin:manage. The nav
+// hides their entries; this guard blocks direct-URL access too (BCH-1318).
+const ADMIN_MANAGE = {
+  resource: RESOURCES.ADMIN,
+  action: ACTIONS.MANAGE,
+} as const;
 
 const authenticatedRoutes = [
   {
     path: '/',
     name: 'home',
-    // route level code-splitting
-    // this generates a separate chunk (About.[hash].js) for this route
-    // which is lazy-loaded when the route is visited.
-    component: () => import('../views/dashboards-v2/DashboardListView.vue'),
+    redirect: { name: 'evidence:index' },
     meta: {
       requiresAuth: true,
       uiVersion: 'v2',
@@ -28,13 +34,11 @@ const authenticatedRoutes = [
   {
     path: '/dashboards',
     name: 'dashboards',
-    // route level code-splitting
-    // this generates a separate chunk (About.[hash].js) for this route
-    // which is lazy-loaded when the route is visited.
     component: () => import('../views/dashboards-v2/DashboardListView.vue'),
     meta: {
       requiresAuth: true,
       uiVersion: 'v2',
+      permission: { resource: RESOURCES.FILTER, action: ACTIONS.READ },
     },
   },
   {
@@ -44,6 +48,14 @@ const authenticatedRoutes = [
     // this generates a separate chunk (About.[hash].js) for this route
     // which is lazy-loaded when the route is visited.
     component: () => import('../views/dashboard/CreateFormView.vue'),
+    meta: {
+      requiresAuth: true,
+    },
+  },
+  {
+    path: '/dashboards/suggestions/:sspId',
+    name: 'dashboards.suggestions',
+    component: () => import('../views/dashboard/SuggestionsView.vue'),
     meta: {
       requiresAuth: true,
     },
@@ -201,42 +213,104 @@ const authenticatedRoutes = [
         },
       },
       {
+        path: 'characteristics',
+        name: 'system:characteristics',
+        component: () => import('../views/system/CharacteristicsView.vue'),
+        meta: { uiVersion: 'v2' },
+      },
+      {
+        path: 'implementation',
+        name: 'system:implementation',
+        component: () =>
+          import('../views/system/ImplementationOverviewView.vue'),
+        meta: { uiVersion: 'v2' },
+      },
+      {
         path: 'users',
         name: 'system:users',
         component: () => import('../views/system/UsersView.vue'),
+        meta: { uiVersion: 'v2' },
       },
       {
         path: 'components',
         name: 'system:components',
         component: () => import('../views/system/ComponentsView.vue'),
-        children: [
-          {
-            path: ':componentId/dashboards',
-            name: 'system-component-dashboards',
-            component: () =>
-              import('../views/system/partials/ComponentDashboardsView.vue'),
-          },
-        ],
+        meta: { uiVersion: 'v2' },
       },
       {
         path: 'components/dashboards/:componentId',
         name: 'system-component-dashboards',
         component: () => import('../views/system/ComponentsView.vue'),
+        meta: { uiVersion: 'v2' },
       },
       {
         path: 'authorizations',
         name: 'system:authorizations',
         component: () => import('../views/system/AuthorizationsView.vue'),
+        meta: { uiVersion: 'v2' },
+      },
+      {
+        path: 'control-implementation',
+        name: 'system:control-implementation',
+        component: () =>
+          import('../views/system/ControlImplementationView.vue'),
+        meta: { uiVersion: 'v2' },
+      },
+      {
+        path: 'export-offerings',
+        name: 'system:export-offerings',
+        component: () => import('../views/system/ExportOfferingsView.vue'),
+        meta: { uiVersion: 'v2' },
+      },
+      {
+        path: 'leverage',
+        name: 'system:leverage',
+        component: () => import('../views/system/LeverageView.vue'),
+        meta: { uiVersion: 'v2' },
+      },
+      {
+        path: 'inherited-capabilities',
+        name: 'system:inherited-capabilities',
+        component: () =>
+          import('../views/system/InheritedCapabilitiesView.vue'),
+        meta: { uiVersion: 'v2' },
+      },
+      {
+        path: 'risks',
+        name: 'system:risks',
+        component: () => import('../views/RisksView.vue'),
+        meta: { uiVersion: 'v2' },
+      },
+      {
+        path: 'compliance',
+        name: 'system:compliance',
+        component: () => import('../views/system/ComplianceView.vue'),
+        meta: { uiVersion: 'v2' },
+      },
+      {
+        path: 'json',
+        name: 'system:json',
+        component: () => import('../views/system/JsonView.vue'),
+        meta: { uiVersion: 'v2' },
       },
     ],
     meta: {
       requiresAuth: true,
+      uiVersion: 'v2',
     },
   },
   {
     path: 'risks',
     name: 'risks:index',
     component: () => import('../views/RisksView.vue'),
+    meta: {
+      requiresAuth: true,
+    },
+  },
+  {
+    path: 'poam-items',
+    name: 'poam-items:index',
+    component: () => import('../views/poam/CCFPoamItemsListView.vue'),
     meta: {
       requiresAuth: true,
     },
@@ -384,11 +458,116 @@ const authenticatedRoutes = [
     },
   },
   {
+    path: '/admin/agents',
+    name: 'admin-agents',
+    component: () => import('../views/admin/AgentsView.vue'),
+    meta: {
+      requiresAuth: true,
+      // R40: readable with agent:read (viewer/auditor/contributor); keys and CRUD inside the
+      // page stay behind admin:manage.
+      permission: { resource: RESOURCES.AGENT, action: ACTIONS.READ },
+    },
+  },
+  {
+    path: '/admin/notifications',
+    name: 'admin-notifications',
+    redirect: { name: 'admin-diagnostics-notifications' },
+    meta: {
+      requiresAuth: true,
+      permission: ADMIN_MANAGE,
+    },
+  },
+  {
+    path: '/admin/diagnostics',
+    name: 'admin-diagnostics',
+    component: () => import('../views/admin/DiagnosticsView.vue'),
+    redirect: { name: 'admin-diagnostics-notifications' },
+    meta: {
+      requiresAuth: true,
+      permission: ADMIN_MANAGE,
+    },
+    children: [
+      {
+        path: 'notifications',
+        name: 'admin-diagnostics-notifications',
+        component: () => import('../views/admin/NotificationsView.vue'),
+        meta: {
+          requiresAuth: true,
+          permission: ADMIN_MANAGE,
+        },
+      },
+      {
+        path: 'ai-suggestions',
+        name: 'admin-diagnostics-ai-suggestions',
+        component: () => import('../views/admin/AiDiagnosticsView.vue'),
+        meta: {
+          requiresAuth: true,
+          permission: ADMIN_MANAGE,
+        },
+      },
+    ],
+  },
+  {
+    path: '/admin/risks',
+    name: 'admin-risks',
+    component: () => import('../views/admin/AdminRisksView.vue'),
+    meta: {
+      requiresAuth: true,
+      permission: ADMIN_MANAGE,
+    },
+  },
+  {
+    path: '/admin/subject-templates',
+    name: 'admin-subject-templates',
+    component: () => import('../views/admin/SubjectTemplatesView.vue'),
+    meta: {
+      requiresAuth: true,
+      permission: ADMIN_MANAGE,
+    },
+  },
+  {
+    path: '/admin/subject-templates/:id',
+    name: 'admin-subject-template-detail',
+    component: () => import('../views/admin/SubjectTemplateDetailView.vue'),
+    meta: {
+      requiresAuth: true,
+      permission: ADMIN_MANAGE,
+    },
+  },
+  {
+    path: '/admin/risk-templates',
+    name: 'admin-risk-templates',
+    component: () => import('../views/admin/RiskTemplatesView.vue'),
+    meta: {
+      requiresAuth: true,
+      permission: ADMIN_MANAGE,
+    },
+  },
+  {
     path: '/admin/import',
     name: 'admin-import',
     component: () => import('../views/admin/ImportView.vue'),
     meta: {
       requiresAuth: true,
+      permission: ADMIN_MANAGE,
+    },
+  },
+  {
+    path: '/admin/groups',
+    name: 'admin-groups',
+    component: () => import('../views/groups/GroupsListView.vue'),
+    meta: {
+      requiresAuth: true,
+      permission: ADMIN_MANAGE,
+    },
+  },
+  {
+    path: '/admin/groups/:id',
+    name: 'admin-group-view',
+    component: () => import('../views/groups/GroupView.vue'),
+    meta: {
+      requiresAuth: true,
+      permission: ADMIN_MANAGE,
     },
   },
   {
@@ -654,7 +833,7 @@ const authenticatedRoutes = [
       },
       {
         path: 'system-implementation',
-        name: 'system-security-plan-system-implementation',
+        name: 'system-security-plan-implementation',
         component: () =>
           import(
             '../views/system-security-plans-v2/SystemSecurityPlanSystemImplementationView.vue'
@@ -662,6 +841,33 @@ const authenticatedRoutes = [
         meta: {
           uiVersion: 'v2',
         },
+      },
+      {
+        path: 'users',
+        name: 'system-security-plan-users',
+        component: () =>
+          import(
+            '../views/system-security-plans/SystemSecurityPlanUsersView.vue'
+          ),
+        meta: { uiVersion: 'v2' },
+      },
+      {
+        path: 'components',
+        name: 'system-security-plan-components',
+        component: () =>
+          import(
+            '../views/system-security-plans/SystemSecurityPlanComponentsView.vue'
+          ),
+        meta: { uiVersion: 'v2' },
+      },
+      {
+        path: 'authorizations',
+        name: 'system-security-plan-authorizations',
+        component: () =>
+          import(
+            '../views/system-security-plans/SystemSecurityPlanAuthorizationsView.vue'
+          ),
+        meta: { uiVersion: 'v2' },
       },
       {
         path: 'control-implementation',
@@ -673,6 +879,45 @@ const authenticatedRoutes = [
         meta: {
           uiVersion: 'v2',
         },
+      },
+      {
+        path: 'export-offerings',
+        name: 'system-security-plan-export-offerings',
+        component: () =>
+          import(
+            '../views/system-security-plans/SystemSecurityPlanExportOfferingsView.vue'
+          ),
+        meta: { uiVersion: 'v2' },
+      },
+      {
+        path: 'leverage',
+        name: 'system-security-plan-leverage',
+        component: () =>
+          import(
+            '../views/system-security-plans/SystemSecurityPlanLeverageView.vue'
+          ),
+        meta: { uiVersion: 'v2' },
+      },
+      {
+        path: 'inherited-capabilities',
+        name: 'system-security-plan-inherited-capabilities',
+        component: () =>
+          import(
+            '../views/system-security-plans/SystemSecurityPlanInheritedCapabilitiesView.vue'
+          ),
+        meta: { uiVersion: 'v2' },
+      },
+      {
+        path: 'risks',
+        name: 'system-security-plan-risks',
+        component: () => import('../views/RisksView.vue'),
+        meta: { uiVersion: 'v2' },
+      },
+      {
+        path: 'risks/:riskId',
+        name: 'system-security-plan-risk-detail',
+        component: () => import('../views/risk/RiskDetailView.vue'),
+        meta: { uiVersion: 'v2' },
       },
       {
         path: 'compliance',
@@ -912,6 +1157,10 @@ const authenticatedRoutes = [
     component: () => import('../views/users/UsersListView.vue'),
     meta: {
       requiresAuth: true,
+      // Admin-managed directory (matches the nav gate). Individual /users/:id profiles are
+      // left ungated so deep links from non-admin contexts still resolve; a denied load
+      // falls back to the global 403 handler.
+      permission: ADMIN_MANAGE,
     },
   },
   {
@@ -942,6 +1191,38 @@ const authenticatedRoutes = [
     path: '/about',
     name: 'about',
     component: () => import('../views/AboutView.vue'),
+  },
+  {
+    path: '/control-links',
+    name: 'control-links-list',
+    component: () => import('../views/control-links/ControlLinkListView.vue'),
+    meta: {
+      requiresAuth: true,
+    },
+  },
+  {
+    path: '/control-links/new',
+    name: 'control-links-create',
+    component: () => import('../views/control-links/ControlLinkCreateView.vue'),
+    meta: {
+      requiresAuth: true,
+    },
+  },
+  {
+    path: '/lineage',
+    name: 'lineage',
+    component: () => import('../views/lineage/LineageTreeView.vue'),
+    meta: {
+      requiresAuth: true,
+    },
+  },
+  {
+    path: '/lineage/graph',
+    name: 'lineage-graph',
+    component: () => import('../views/lineage/LineageGraphView.vue'),
+    meta: {
+      requiresAuth: true,
+    },
   },
 ];
 
@@ -977,6 +1258,12 @@ const publicRoutes = [
     meta: {
       uiVersion: 'v2',
     },
+  },
+  {
+    path: 'slack/callback',
+    name: 'slack-link-callback',
+    component: () => import('@/views/SlackLinkCallbackView.vue'),
+    meta: { uiVersion: 'v2' },
   },
   {
     path: 'logout',
@@ -1054,6 +1341,26 @@ router.beforeEach((to, from, next) => {
       `[ui-migration-guard] Blocked mixed V1/V2 route chain from "${from.fullPath}" to "${to.fullPath}".`,
     );
     return next({ name: 'not-found', query: { reason: 'mixed-ui-version' } });
+  }
+
+  // Permission gate (BCH-1318): block direct-URL access to routes the subject can't reach.
+  // The nav already hides these entries; this covers typed URLs and bookmarks. can() is
+  // optimistic until permissions load, so this never traps a user mid-hydration; the PDP
+  // and the global 403 handler remain the real enforcement.
+  if (isAuthenticated) {
+    const permissionsStore = usePermissionsStore();
+    const denied = to.matched.some((record) => {
+      const permission = record.meta.permission as
+        | { resource: string; action: string }
+        | undefined;
+      return (
+        permission &&
+        !permissionsStore.can(permission.resource, permission.action)
+      );
+    });
+    if (denied) {
+      return next({ name: 'home' });
+    }
   }
 
   // Proceed to the requested route

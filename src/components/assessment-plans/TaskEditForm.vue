@@ -51,7 +51,15 @@
     </div>
 
     <div class="flex gap-2">
-      <PrimaryButton type="submit">Update Task</PrimaryButton>
+      <PrimaryButton
+        type="submit"
+        :disabled="!can(RESOURCES.ASSESSMENT_PLAN, ACTIONS.UPDATE)"
+        v-tooltip.top="{
+          value: permissionTooltip(RESOURCES.ASSESSMENT_PLAN, ACTIONS.UPDATE),
+          disabled: can(RESOURCES.ASSESSMENT_PLAN, ACTIONS.UPDATE),
+        }"
+        >Update Task</PrimaryButton
+      >
       <SecondaryButton type="button" @click="$emit('cancel')"
         >Cancel</SecondaryButton
       >
@@ -70,8 +78,11 @@ import TaskDependencyManager from '@/components/forms/TaskDependencyManager.vue'
 import PrimaryButton from '@/volt/PrimaryButton.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
 
 const toast = useToast();
+const { can, permissionTooltip } = usePermissions();
 
 const props = defineProps<{
   assessmentPlanId: string;

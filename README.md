@@ -1,8 +1,5 @@
 # Continuous Compliance UI project
 
-> [!WARNING]
-> This repository is still very much in development, and not ready for use yet.
-
 ## Project Setup
 
 Install and use NVM:
@@ -13,21 +10,40 @@ nvm install 20 && nvm use 20
 npm install
 ```
 
-### Configuration 
+### Configuration
 
 #### Locally
+
 To configure the running frontend, add a file called `public/config.json` with your configuration.
 
 This file will also be used when running in Docker.
+
 ```json
 {
-  "API_URL": "http://localhost:9000"
+  "API_URL": "http://localhost:9000",
+  "LOGIN_BANNER": "",
+  "LOGIN_BANNER_SEVERITY": "info",
+  "FILTER_COMPONENT_LINKING_ENABLED": false
 }
 ```
 
-#### In Production
-Mount a file called `/app/config.json` with your configuration.
+`API_URL` is the url to connect to for the CCF API
+`LOGIN_BANNER` displays a dismissible notice on the login page when set to a non-empty string.
+`LOGIN_BANNER_SEVERITY` controls its styling and can be `info`, `warn`, `error`, or `success`.
+`FILTER_COMPONENT_LINKING_ENABLED` shows the UI for linking filters to system components
 
+Developers can override these values at build time with `VITE_LOGIN_BANNER` and
+`VITE_LOGIN_BANNER_SEVERITY`. `VITE_LOGIN_BANNER` takes precedence over `config.json`; setting it to
+an explicit empty string disables the banner for that build without editing `config.json`.
+
+`FILTER_COMPONENT_LINKING_ENABLED` is a feature flag (default `false`) that shows the UI for linking
+filters to system components: the component "Dashboards" drawer on SSP pages and the Components
+selector on the filter form. It can be overridden at build time with
+`VITE_FILTER_COMPONENT_LINKING_ENABLED=true|false`.
+
+#### In Production
+
+Mount a file called `/app/config.json` with your configuration.
 
 ### Compile and Hot-Reload for Development
 
@@ -51,22 +67,6 @@ npm run build
 npm run test:unit
 ```
 
-### Run End-to-End Tests with [Nightwatch](https://nightwatchjs.org/)
-
-```sh
-# When using CI, the project must be built first.
-npm run build
-
-# Runs the end-to-end tests
-npm run test:e2e
-# Runs the tests only on Chrome
-npm run test:e2e -- --env chrome
-# Runs the tests of a specific file
-npm run test:e2e -- tests/e2e/example.ts
-# Runs the tests in debug mode
-npm run test:e2e -- --debug
-```
-    
 ### Lint with [ESLint](https://eslint.org/)
 
 ```sh

@@ -54,19 +54,6 @@
       </small>
     </div>
 
-    <!-- Estimated Duration -->
-    <div>
-      <Label for="step-duration">Estimated Duration (minutes)</Label>
-      <input
-        id="step-duration"
-        v-model.number="form.estimatedDurationMinutes"
-        type="number"
-        min="0"
-        placeholder="30"
-        class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-      />
-    </div>
-
     <!-- Grace Period -->
     <div>
       <Label for="step-grace-period">Grace Period (Days)</Label>
@@ -210,7 +197,7 @@ import type {
   EvidenceType,
 } from '@/types/workflows';
 import {
-  DEFAULT_GRACE_PERIOD_DAYS,
+  DEFAULT_STEP_GRACE_PERIOD_DAYS,
   parseGracePeriodInput,
   parseEvidenceRequired,
   toGracePeriodInputValue,
@@ -251,7 +238,6 @@ type StepFormState = {
   responsibleRole: string;
   evidenceRequiredEnabled: boolean;
   evidenceItems: EvidenceItem[];
-  estimatedDurationMinutes: number;
   gracePeriodDays: number;
   order: number;
   dependsOn: string[];
@@ -262,7 +248,7 @@ const defaultEvidenceItems: EvidenceItem[] = [
 ];
 // Step-level default comes from the parent workflow model when provided.
 const effectiveDefaultGracePeriodDays =
-  props.defaultGracePeriodDays ?? DEFAULT_GRACE_PERIOD_DAYS;
+  props.defaultGracePeriodDays ?? DEFAULT_STEP_GRACE_PERIOD_DAYS;
 
 const form = reactive<StepFormState>({
   workflowDefinitionId: props.workflowDefinitionId,
@@ -271,7 +257,6 @@ const form = reactive<StepFormState>({
   responsibleRole: '',
   evidenceRequiredEnabled: true,
   evidenceItems: [...defaultEvidenceItems],
-  estimatedDurationMinutes: 30,
   gracePeriodDays: effectiveDefaultGracePeriodDays,
   order: 1,
   dependsOn: [],
@@ -314,7 +299,6 @@ function initForm() {
             required: req.required,
           }))
         : [...defaultEvidenceItems];
-    form.estimatedDurationMinutes = props.step.estimatedDurationMinutes || 30;
     form.gracePeriodDays =
       props.step.gracePeriodDays ?? effectiveDefaultGracePeriodDays;
     gracePeriodDaysInput.value =
@@ -330,7 +314,6 @@ function initForm() {
     form.responsibleRole = '';
     form.evidenceRequiredEnabled = true;
     form.evidenceItems = [...defaultEvidenceItems];
-    form.estimatedDurationMinutes = 30;
     form.gracePeriodDays = effectiveDefaultGracePeriodDays;
     gracePeriodDaysInput.value = toGracePeriodInputValue(
       effectiveDefaultGracePeriodDays,
@@ -398,7 +381,6 @@ async function handleSubmit() {
         description: form.description || undefined,
         responsibleRole: form.responsibleRole || undefined,
         evidenceRequired: buildEvidencePayload(),
-        estimatedDurationMinutes: form.estimatedDurationMinutes || undefined,
         gracePeriodDays: form.gracePeriodDays,
         order: form.order,
         dependsOn: form.dependsOn,
@@ -415,7 +397,6 @@ async function handleSubmit() {
         description: form.description || undefined,
         responsibleRole: form.responsibleRole || undefined,
         evidenceRequired: buildEvidencePayload(),
-        estimatedDurationMinutes: form.estimatedDurationMinutes || undefined,
         gracePeriodDays: form.gracePeriodDays,
         order: form.order,
         dependsOn: form.dependsOn,

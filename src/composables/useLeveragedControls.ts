@@ -1,0 +1,138 @@
+import { computed, watch, type InjectionKey, type Ref } from 'vue';
+import { useDataApi } from '@/composables/axios';
+import type {
+  LeveragedControl,
+  ResponsibilityFilter,
+} from '@/types/ssp-leverage';
+
+// The downstream inheritance read models: which offerings this SSP leverages per
+// control/statement (with live satisfaction + evidence posture) and which filters are
+// attached to each inherited responsibility.
+//
+// Both endpoints are hand-written camelCase JSON — requests must NOT use decamelizeKeys.
+// The URLs are computed, not interpolated once at setup: `useDataApi` resolves
+// `toValue(url)` a single time and this composable's consumers live under <KeepAlive>
+// hosts, so a plain string would pin the first sspId forever (the stale-fetch trap).
+//
+// Instantiate ONCE per page (IndexView does, providing it under LeveragedControlsKey) —
+// the /controls tree renders one card per control, and each card must not refetch.
+
+export function linkKey(controlId?: string, statementId?: string): string {
+  // The separator is written as an escape, not a raw NUL byte: a literal NUL makes git
+  // treat this source file as binary, which silently drops it out of every diff and
+  // review. The runtime key is unchanged.
+  return `${(controlId ?? '').trim().toLowerCase()}\u0000${(statementId ?? '').trim().toLowerCase()}`;
+}
+
+// responsibilityPosture is a map keyed by responsibility UUIDs. The global response
+// interceptor deep-camelCases every key — which strips the dashes out of a UUID key —
+// so the map must be fenced off or its keys never match any responsibility uuid again.
+export const LEVERAGED_CONTROLS_STOP_PATHS: readonly string[] = [
+  'data.responsibilityPosture',
+];
+
+export function useLeveragedControls(sspId: Ref<string | undefined>) {
+  const controlsUrl = computed(() =>
+    sspId.value
+      ? `/api/oscal/system-security-plans/${sspId.value}/leveraged-controls`
+      : null,
+  );
+  const filtersUrl = computed(() =>
+    sspId.value
+      ? `/api/oscal/system-security-plans/${sspId.value}/responsibility-filters`
+      : null,
+  );
+
+  const {
+    data: controls,
+    isLoading: controlsLoading,
+    error: controlsError,
+    execute: fetchControls,
+  } = useDataApi<LeveragedControl[]>(
+    null,
+    { camelcaseStopPaths: LEVERAGED_CONTROLS_STOP_PATHS },
+    { immediate: false },
+  );
+
+  const {
+    data: responsibilityFilters,
+    error: responsibilityFiltersError,
+    execute: fetchResponsibilityFilters,
+  } = useDataApi<ResponsibilityFilter[]>(null, {}, { immediate: false });
+
+  // The `.catch`es only stop rejected fetches becoming unhandled rejections; the error
+  // refs are the signal. A failed fetch leaves `data` untouched, so consumers should
+  // treat errors as "unknown", never as "nothing inherited".
+  async function refresh(): Promise<void> {
+    await Promise.all([
+      controlsUrl.value
+        ? fetchControls(controlsUrl.value).catch(() => undefined)
+        : Promise.resolve(),
+      filtersUrl.value
+        ? fetchResponsibilityFilters(filtersUrl.value).catch(() => undefined)
+        : Promise.resolve(),
+    ]);
+  }
+
+  watch(
+    [controlsUrl, filtersUrl],
+    () => {
+      if (!controlsUrl.value) {
+        controls.value = undefined;
+      }
+      if (!filtersUrl.value) {
+        responsibilityFilters.value = undefined;
+      }
+      void refresh();
+    },
+    { immediate: true },
+  );
+
+  // Leverage links grouped per (controlId, statementId) — the join key statement cards
+  // and the statement drawer use. Case-insensitive: SSP ids are not reliably cased the
+  // same as the catalog's.
+  const linksByStatement = computed(() => {
+    const map = new Map<string, LeveragedControl[]>();
+    for (const link of controls.value ?? []) {
+      const key = linkKey(link.controlId, link.statementId);
+      const existing = map.get(key);
+      if (existing) {
+        existing.push(link);
+      } else {
+        map.set(key, [link]);
+      }
+    }
+    return map;
+  });
+
+  const filtersByResponsibility = computed(() => {
+    const map = new Map<string, ResponsibilityFilter[]>();
+    for (const row of responsibilityFilters.value ?? []) {
+      const existing = map.get(row.responsibilityUuid);
+      if (existing) {
+        existing.push(row);
+      } else {
+        map.set(row.responsibilityUuid, [row]);
+      }
+    }
+    return map;
+  });
+
+  return {
+    controls,
+    controlsLoading,
+    controlsError,
+    responsibilityFilters,
+    responsibilityFiltersError,
+    linksByStatement,
+    filtersByResponsibility,
+    refresh,
+  };
+}
+
+export type LeveragedControlsContext = ReturnType<typeof useLeveragedControls>;
+
+// Provided by the /controls IndexView so its N statement cards (and the statement
+// drawer) share one fetch instead of each making their own.
+export const LeveragedControlsKey: InjectionKey<LeveragedControlsContext> =
+  Symbol('leveraged-controls');

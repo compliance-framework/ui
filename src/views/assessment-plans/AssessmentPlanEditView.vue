@@ -88,7 +88,19 @@
             >
               Cancel
             </RouterLink>
-            <PrimaryButton type="submit"> Save Changes </PrimaryButton>
+            <PrimaryButton
+              type="submit"
+              :disabled="!can(RESOURCES.ASSESSMENT_PLAN, ACTIONS.UPDATE)"
+              v-tooltip.top="{
+                value: permissionTooltip(
+                  RESOURCES.ASSESSMENT_PLAN,
+                  ACTIONS.UPDATE,
+                ),
+                disabled: can(RESOURCES.ASSESSMENT_PLAN, ACTIONS.UPDATE),
+              }"
+            >
+              Save Changes
+            </PrimaryButton>
           </div>
         </div>
       </form>
@@ -110,10 +122,13 @@ import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import type { ErrorBody, ErrorResponse } from '@/stores/types';
 import type { AxiosError } from 'axios';
 import { computed } from 'vue';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
 
 const route = useRoute();
 const router = useRouter();
 const toast = useToast();
+const { can, permissionTooltip } = usePermissions();
 
 const {
   data: assessmentPlan,

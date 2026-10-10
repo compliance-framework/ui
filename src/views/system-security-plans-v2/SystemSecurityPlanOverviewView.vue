@@ -1,5 +1,9 @@
 <template>
   <div class="space-y-4">
+    <RiskOverviewSection
+      :ssp-id="sspId"
+      risk-list-route-name="system-security-plan-risks"
+    />
     <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
       <article
         v-for="card in statsCards"
@@ -126,6 +130,10 @@
             <div
               class="h-full bg-[var(--ui-v2-success)]"
               :style="{ width: `${satisfiedBarPercent}%` }"
+            />
+            <div
+              class="h-full bg-purple-500"
+              :style="{ width: `${inheritedBarPercent}%` }"
             />
             <div
               class="h-full bg-[var(--ui-v2-error)]"
@@ -259,6 +267,7 @@ import type {
   SystemUser,
 } from '@/oscal';
 import { useDataApi } from '@/composables/axios';
+import RiskOverviewSection from '@/components/system-security-plans/RiskOverviewSection.vue';
 import { useProfileCompliance } from '@/composables/useProfileCompliance';
 import {
   sspDetailProfileBindingKey,
@@ -499,6 +508,11 @@ const summaryItems = computed(() => [
     valueClass: 'text-[var(--ui-v2-success)]',
   },
   {
+    label: 'INHERITED',
+    value: summary.value?.inherited || 0,
+    valueClass: 'text-purple-700',
+  },
+  {
     label: 'NOT SAT',
     value: notSatisfiedCount.value,
     valueClass: 'text-[var(--ui-v2-error)]',
@@ -519,6 +533,10 @@ const summaryItems = computed(() => [
     valueClass: 'text-[var(--ui-v2-foreground)]',
   },
 ]);
+
+const inheritedBarPercent = computed(() =>
+  calculateBarPercent(summary.value?.inherited || 0, totalControls.value),
+);
 
 const satisfiedBarPercent = computed(() =>
   calculateBarPercent(satisfiedCount.value, totalControls.value),

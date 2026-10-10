@@ -1,75 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { useRoute } from 'vue-router';
+import { useV2Navigation } from '@/composables/v2/useV2Navigation';
 import { useUserStore } from '@/stores/auth';
 
-type NavItem = {
-  index: string;
-  label: string;
-  to: { name: string };
-  exactPaths?: string[];
-  pathPrefixes: string[];
-};
-
-const route = useRoute();
+const { navItems, isActive } = useV2Navigation();
 const userStore = useUserStore();
-
-const navItems: NavItem[] = [
-  {
-    index: '01',
-    label: 'Dashboards',
-    to: { name: 'dashboards' },
-    exactPaths: ['/'],
-    pathPrefixes: [
-      '/dashboards',
-      '/system-security-plans',
-      '/assessment-plans',
-      '/assessment-results',
-      '/plan-of-action-and-milestones',
-    ],
-  },
-  {
-    index: '02',
-    label: 'System',
-    to: { name: 'system:overview' },
-    pathPrefixes: ['/system'],
-  },
-  {
-    index: '03',
-    label: 'Controls',
-    to: { name: 'controls:index' },
-    pathPrefixes: ['/controls'],
-  },
-  {
-    index: '04',
-    label: 'Workflows',
-    to: { name: 'workflow:index' },
-    pathPrefixes: [
-      '/workflows',
-      '/workflow-definitions',
-      '/workflow-instances',
-      '/workflow-executions',
-    ],
-  },
-  {
-    index: '05',
-    label: 'My Tasks',
-    to: { name: 'my-tasks' },
-    pathPrefixes: ['/my-tasks'],
-  },
-  {
-    index: '06',
-    label: 'Evidence',
-    to: { name: 'evidence:index' },
-    pathPrefixes: ['/evidence'],
-  },
-  {
-    index: '07',
-    label: 'Inventory',
-    to: { name: 'inventory:index' },
-    pathPrefixes: ['/inventory'],
-  },
-];
 
 const userLabel = computed(() => {
   const email = userStore.user?.email;
@@ -78,13 +13,6 @@ const userLabel = computed(() => {
   }
   return 'ADMIN';
 });
-
-function isActive(item: NavItem): boolean {
-  if (item.exactPaths?.includes(route.path)) {
-    return true;
-  }
-  return item.pathPrefixes.some((prefix) => route.path.startsWith(prefix));
-}
 </script>
 
 <template>

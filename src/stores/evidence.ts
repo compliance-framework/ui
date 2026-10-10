@@ -3,7 +3,7 @@ import decamelizeKeys from 'decamelize-keys';
 import { defineStore } from 'pinia';
 import { useConfigStore } from '@/stores/config.ts';
 import { type Filter } from '@/parsers/labelfilter.ts';
-import type { Activity, Link, Property } from '@/oscal';
+import type { Activity, Hash, Link, Property, SubjectReference } from '@/oscal';
 import type { DataResponse } from '@/stores/types.ts';
 import type { Control } from '@/oscal';
 import type { BackMatter } from '@/oscal';
@@ -18,6 +18,11 @@ export interface EvidenceLabel {
   value: string;
 }
 
+// A subject named on submitted evidence (subjects[].subject-uuid).
+export interface DeclaredSubject {
+  subjectUuid: string;
+}
+
 export interface Evidence {
   id: string;
   uuid: string;
@@ -26,11 +31,74 @@ export interface Evidence {
   labels: EvidenceLabel[];
   start: string; // ISO 8601
   end: string; // ISO 8601
+  expires?: string; // ISO 8601
   links?: Link[];
   props?: Property[];
   backMatter?: BackMatter;
   status: EvidenceStatus;
   activities: Activity[];
+  // What the evidence is about. Search rows carry a compact form (uuid, type, title) without
+  // legacy subjects; absent when the API doesn't provide subjects.
+  subjectReferences?: SubjectReference[];
+}
+
+export type EvidenceSortBy = 'lastSeenAt' | 'name' | 'status';
+export type SortDirection = 'asc' | 'desc';
+
+export interface EvidenceSignatureSigner {
+  type: string;
+  id?: string;
+  email?: string;
+  name?: string;
+  credentialId?: string;
+}
+
+export interface EvidenceSignatureClaims {
+  tokenKind?: string;
+  subject?: string;
+  issuer?: string;
+  issuedAt?: string;
+  expiresAt?: string;
+  notBefore?: string;
+  givenName?: string;
+  familyName?: string;
+  agentId?: string;
+  credentialId?: string;
+  authMethod?: string;
+}
+
+export interface EvidenceSignature {
+  version: string;
+  signatureAlgorithm: string;
+  signedAt: string;
+  contentHash: Hash;
+  signer: EvidenceSignatureSigner;
+  claims: EvidenceSignatureClaims;
+  jws: string;
+}
+
+export interface SignatureDetail {
+  status: string;
+  signature?: EvidenceSignature;
+}
+
+export interface VerificationChecks {
+  hashMatch: boolean;
+  signatureValid: boolean;
+  temporalValid: boolean;
+  signedContentMatches: boolean;
+}
+
+export interface VerificationResult {
+  status: string;
+  signature?: EvidenceSignature;
+  isValid: boolean;
+  checks: VerificationChecks;
+  errors?: string[];
+  contentHash?: Hash;
+  signer?: EvidenceSignatureSigner;
+  claims?: EvidenceSignatureClaims;
+  signedAt?: string;
 }
 
 export interface FlatLabelEvidence extends Omit<Evidence, 'labels'> {
@@ -157,13 +225,13 @@ export const useEvidenceStore = defineStore('evidence', () => {
 
   async function getComplianceForSearch(
     filter: Filter,
-    intervals: string | null = null,
+    interval: string | null = null,
   ): Promise<DataResponse<ComplianceInterval[]>> {
     const config = await configStore.getConfig();
     const response = await fetch(
       `${config.API_URL}/api/evidence/status-over-time?` +
         new URLSearchParams({
-          intervals: intervals ?? '',
+          interval: interval ?? '',
         }),
       {
         method: 'POST',
@@ -186,13 +254,13 @@ export const useEvidenceStore = defineStore('evidence', () => {
 
   async function getComplianceForUUID(
     uuid: string,
-    intervals: string | null = null,
+    interval: string | null = null,
   ): Promise<DataResponse<ComplianceInterval[]>> {
     const config = await configStore.getConfig();
     const response = await fetch(
       `${config.API_URL}/api/evidence/status-over-time/${uuid}?` +
         new URLSearchParams({
-          intervals: intervals ?? '',
+          interval: interval ?? '',
         }),
       {
         method: 'GET',

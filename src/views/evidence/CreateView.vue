@@ -14,12 +14,12 @@ import { ref } from 'vue';
 import PageHeader from '@/components/PageHeader.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
 import type {
+  DeclaredSubject,
   Evidence,
   EvidenceLabel,
   EvidenceStatus,
 } from '@/stores/evidence.ts';
 import router from '@/router';
-import { v4 as uuidv4 } from 'uuid';
 import EvidenceForm from './partial/EvidenceForm.vue';
 
 import type { BackMatterResource } from '@/oscal';
@@ -35,14 +35,13 @@ const { data: createdEvidence, execute: createEvidence } = useDataApi<Evidence>(
 );
 
 const backmatterResources = ref<BackMatterResource[]>([]);
-const evidence = ref<Partial<Evidence>>({
-  uuid: uuidv4(),
-});
+const evidence = ref<Partial<Evidence>>({});
 
 async function submit(
   updatedEvidence: Partial<Evidence>,
   labels: EvidenceLabel[],
   status: EvidenceStatus,
+  subjects: DeclaredSubject[],
 ) {
   const flatLabels = {} as Record<string, string>;
   labels.forEach((label) => {
@@ -53,6 +52,8 @@ async function submit(
       ...updatedEvidence,
       status: status,
       labels: flatLabels,
+      // The picked subjects replace any subjects on the evidence being re-submitted.
+      subjects,
       backMatter: {
         resources: backmatterResources.value,
       },

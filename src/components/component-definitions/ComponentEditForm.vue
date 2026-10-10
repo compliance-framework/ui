@@ -1,7 +1,7 @@
 <template>
   <form @submit.prevent="updateComponent()">
     <h1 class="text-xl font-semibold mb-6 dark:text-slate-300">
-      Edit component
+      Edit Component Template
     </h1>
 
     <div class="mb-4">
@@ -75,7 +75,18 @@
     </div>
 
     <div class="flex gap-2">
-      <PrimaryButton type="submit">Update Component</PrimaryButton>
+      <PrimaryButton
+        type="submit"
+        :disabled="!can(RESOURCES.COMPONENT_DEFINITION, ACTIONS.UPDATE)"
+        v-tooltip.top="{
+          value: permissionTooltip(
+            RESOURCES.COMPONENT_DEFINITION,
+            ACTIONS.UPDATE,
+          ),
+          disabled: can(RESOURCES.COMPONENT_DEFINITION, ACTIONS.UPDATE),
+        }"
+        >Update Component</PrimaryButton
+      >
       <SecondaryButton type="button" @click="$emit('cancel')"
         >Cancel</SecondaryButton
       >
@@ -94,6 +105,10 @@ import { useToast } from 'primevue/usetoast';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import type { AxiosError } from 'axios';
 import type { ErrorResponse, ErrorBody } from '@/stores/types';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
+
+const { can, permissionTooltip } = usePermissions();
 
 const toast = useToast();
 

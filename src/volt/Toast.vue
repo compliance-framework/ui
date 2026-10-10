@@ -25,17 +25,13 @@ import Toast, {
   type ToastProps,
 } from 'primevue/toast';
 import { computed } from 'vue';
-import { useRoute } from 'vue-router';
+import { useIsV2Route } from './useRouteUiVersion';
 import { ptViewMerge } from './utils';
 
 interface Props extends /* @vue-ignore */ ToastProps {}
 defineProps<Props>();
 
-const route = useRoute();
-
-const isV2Route = computed(() =>
-  route.matched.some((record) => record.meta.uiVersion === 'v2'),
-);
+const isV2Route = useIsV2Route();
 
 const legacyTheme: ToastPassThroughOptions = {
   root: `w-96 rounded-md whitespace-pre-line break-words

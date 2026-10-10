@@ -16,18 +16,20 @@
         <label class="inline-block pb-2 dark:text-slate-300"
           >Title <span class="text-red-500">*</span></label
         >
-        <FormInput
+        <InputText
           v-model="userData.title"
           placeholder="User title or role name"
           required
+          class="w-full"
         />
       </div>
 
       <div class="mb-4">
         <label class="inline-block pb-2 dark:text-slate-300">Short Name</label>
-        <FormInput
+        <InputText
           v-model="userData.shortName"
           placeholder="Short name or abbreviation"
+          class="w-full"
         />
       </div>
 
@@ -35,7 +37,7 @@
         <label class="inline-block pb-2 dark:text-slate-300"
           >Description <span class="text-red-500">*</span></label
         >
-        <FormTextarea v-model="userData.description" required />
+        <Textarea v-model="userData.description" required class="w-full" />
       </div>
 
       <div class="mb-4">
@@ -46,10 +48,10 @@
             :key="index"
             class="flex gap-2"
           >
-            <FormInput
+            <InputText
               v-model="userData.roleIds![index]"
               placeholder="Role ID"
-              class="flex-1"
+              class="flex-1 w-full"
             />
             <button
               type="button"
@@ -97,9 +99,10 @@
               <label class="inline-block pb-1 text-sm dark:text-slate-300"
                 >Title</label
               >
-              <FormInput
+              <InputText
                 v-model="privilege.title"
                 placeholder="Privilege title"
+                class="w-full"
               />
             </div>
 
@@ -107,7 +110,11 @@
               <label class="inline-block pb-1 text-sm dark:text-slate-300"
                 >Description</label
               >
-              <FormTextarea v-model="privilege.description" rows="2" />
+              <Textarea
+                v-model="privilege.description"
+                rows="2"
+                class="w-full"
+              />
             </div>
 
             <div class="mb-3">
@@ -121,10 +128,10 @@
                   :key="funcIndex"
                   class="flex gap-2"
                 >
-                  <FormInput
+                  <InputText
                     v-model="privilege.functionsPerformed![funcIndex]"
                     placeholder="Function description"
-                    class="flex-1"
+                    class="flex-1 w-full"
                   />
                   <button
                     type="button"
@@ -165,7 +172,11 @@
         </button>
         <button
           type="submit"
-          :disabled="saving"
+          :disabled="saving || !can(RESOURCES.SSP, ACTIONS.UPDATE)"
+          v-tooltip.top="{
+            value: permissionTooltip(RESOURCES.SSP, ACTIONS.UPDATE),
+            disabled: can(RESOURCES.SSP, ACTIONS.UPDATE),
+          }"
           class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 transition-colors"
         >
           {{ saving ? 'Saving...' : 'Save User' }}
@@ -178,12 +189,16 @@
 <script setup lang="ts">
 import { reactive, onMounted } from 'vue';
 import { useToast } from 'primevue/usetoast';
-import FormInput from '@/components/forms/FormInput.vue';
-import FormTextarea from '@/components/forms/FormTextarea.vue';
+import InputText from '@/volt/InputText.vue';
+import Textarea from '@/volt/Textarea.vue';
 import type { SystemUser } from '@/oscal';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import type { AxiosError } from 'axios';
 import type { ErrorResponse, ErrorBody } from '@/stores/types';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
+
+const { can, permissionTooltip } = usePermissions();
 
 const props = defineProps<{
   sspId: string;

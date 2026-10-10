@@ -8,7 +8,7 @@
     <div :class="gridClass">
       <PageCard
         v-for="item in complianceItems"
-        :key="item.sspId"
+        :key="`${item.sspId}:${item.profileId}`"
         class="cursor-pointer transition-shadow hover:shadow-md"
         role="button"
         tabindex="0"
@@ -94,6 +94,12 @@
             }"
           ></div>
           <div
+            class="bg-purple-500"
+            :style="{
+              width: `${inheritedWidth(item.summary)}%`,
+            }"
+          ></div>
+          <div
             class="bg-red-500"
             :style="{
               width: `${notSatisfiedWidth(item.summary)}%`,
@@ -135,18 +141,21 @@ import PageHeader from '@/components/PageHeader.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
 import PageCard from '@/components/PageCard.vue';
 import { useDataApi } from '@/composables/axios';
-import type { SystemSecurityPlan, Profile } from '@/oscal';
+import { useSystemSecurityPlanStore } from '@/stores/system-security-plans';
+import type { SystemSecurityPlan } from '@/oscal';
 import type { ProfileComplianceSummary } from '@/types/compliance';
 import { computeComplianceWidths } from '@/utils/compliance';
 
 interface ComplianceItem {
   sspId: string;
+  profileId: string;
   sspTitle: string;
   profileTitle: string;
   summary: ProfileComplianceSummary;
 }
 
 const router = useRouter();
+const sspStore = useSystemSecurityPlanStore();
 const complianceItems = ref<ComplianceItem[]>([]);
 const isLoading = ref(true);
 
@@ -159,10 +168,6 @@ const gridClass = computed(() => {
 });
 
 const { execute: fetchSSPs } = useDataApi<SystemSecurityPlan[]>(null, null, {
-  immediate: false,
-});
-
-const { execute: fetchProfile } = useDataApi<Profile>(null, null, {
   immediate: false,
 });
 
@@ -191,28 +196,31 @@ onMounted(async () => {
 
     for (const ssp of ssps) {
       try {
-        const { data: profileData } = await fetchProfile(
-          `/api/oscal/system-security-plans/${ssp.uuid}/profile`,
-        );
-        const profile = profileData.value?.data;
-        if (!profile) {
-          continue;
-        }
+        const { data: bindings } = await sspStore.listProfiles(ssp.uuid);
 
-        const { data: complianceData } = await fetchCompliance(
-          `/api/oscal/profiles/${profile.uuid}/compliance-progress?includeControls=false`,
-        );
-        const progress = complianceData.value?.data;
-        if (!progress?.summary) {
-          continue;
-        }
+        for (const binding of bindings) {
+          const profileUuid = binding.uuid;
 
-        results.push({
-          sspId: ssp.uuid,
-          sspTitle: ssp.metadata?.title || 'Untitled SSP',
-          profileTitle: profile.metadata?.title || 'Untitled Profile',
-          summary: progress.summary,
-        });
+          try {
+            const { data: complianceData } = await fetchCompliance(
+              `/api/oscal/profiles/${profileUuid}/compliance-progress?includeControls=false`,
+            );
+            const progress = complianceData.value?.data;
+            if (!progress?.summary) {
+              continue;
+            }
+
+            results.push({
+              sspId: ssp.uuid,
+              profileId: profileUuid,
+              sspTitle: ssp.metadata?.title || 'Untitled SSP',
+              profileTitle: binding.title || 'Untitled Profile',
+              summary: progress.summary,
+            });
+          } catch {
+            // Skip profiles with errors
+          }
+        }
       } catch {
         // Skip SSPs without profiles or with errors
       }
@@ -226,6 +234,14 @@ onMounted(async () => {
 
 function satisfiedWidth(summary: ProfileComplianceSummary): number {
   return computeComplianceWidths(summary).satisfied;
+}
+
+// This widget is fed by the PROFILE compliance endpoint (no sspId), so Contract A
+// always emits `inherited: 0` and this segment is zero-width today. It is rendered
+// anyway so the bar stays correct (sums to ~100, no transparent gap) if the widget
+// is ever repointed at SSP-scoped data where inherited > 0.
+function inheritedWidth(summary: ProfileComplianceSummary): number {
+  return computeComplianceWidths(summary).inherited;
 }
 
 function notSatisfiedWidth(summary: ProfileComplianceSummary): number {

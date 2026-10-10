@@ -1,0 +1,718 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { enableAutoUnmount, mount } from '@vue/test-utils';
+import { defineComponent, h, reactive, ref } from 'vue';
+import IndexView from '../IndexView.vue';
+
+enableAutoUnmount(afterEach);
+
+const listProfiles = vi.fn();
+const axiosGet = vi.fn();
+const loadRisks = vi.fn(async () => ({ data: { value: { data: [] } } }));
+const fetchControlImplementations = vi.fn();
+const aiConfigState = reactive({
+  dashboardSuggestionsEnabled: false,
+  dashboardSuggestionsConfigFetched: false,
+});
+const systemStoreState = reactive({
+  system: { securityPlan: { uuid: 'ssp-1' } as { uuid: string } | null },
+});
+const fetchDashboardSuggestionsConfig = vi.fn(async () => {
+  aiConfigState.dashboardSuggestionsConfigFetched = true;
+  return aiConfigState.dashboardSuggestionsEnabled;
+});
+let pendingDashboardSuggestionsFixture: unknown[] = [];
+let controlResultsFixture: unknown[] = [];
+let pendingDashboardSuggestionsReject = false;
+let controlResultsReject = false;
+const uiStore = {
+  controlImplementationDrawerOpen: false,
+  controlImplementationSelectedRequirementId: null as string | null,
+  controlImplementationExpandedKeys: {},
+  setControlImplementationDrawerOpen: vi.fn((value: boolean) => {
+    uiStore.controlImplementationDrawerOpen = value;
+  }),
+  setControlImplementationSelectedRequirementId: vi.fn(
+    (value: string | null) => {
+      uiStore.controlImplementationSelectedRequirementId = value;
+    },
+  ),
+  setControlImplementationExpandedKeys: vi.fn((value) => {
+    uiStore.controlImplementationExpandedKeys = value;
+  }),
+};
+
+vi.mock('@/stores/system.ts', () => ({
+  useSystemStore: () => systemStoreState,
+}));
+
+vi.mock('@/stores/system-security-plans', () => ({
+  useSystemSecurityPlanStore: () => ({
+    listProfiles,
+  }),
+}));
+
+vi.mock('@/stores/ui.ts', () => ({
+  useUIStore: () => uiStore,
+}));
+
+vi.mock('@/stores/ai-config', () => ({
+  useAiConfigStore: () => ({
+    get dashboardSuggestionsEnabled() {
+      return aiConfigState.dashboardSuggestionsEnabled;
+    },
+    get dashboardSuggestionsConfigFetched() {
+      return aiConfigState.dashboardSuggestionsConfigFetched;
+    },
+    fetchDashboardSuggestionsConfig,
+  }),
+}));
+
+vi.mock('vue-router', () => ({
+  RouterLink: {
+    name: 'RouterLink',
+    props: ['to'],
+    template: '<a><slot /></a>',
+  },
+  useRouter: () => ({ push: vi.fn() }),
+}));
+
+vi.mock('@/composables/useCatalogTree', () => ({
+  buildTreeNodesWithPrefix: () => [
+    {
+      key: 'control:ac-1',
+      type: 'control',
+      data: { id: 'ac-1', title: 'Access Control' },
+    },
+    {
+      key: 'control:ac-2',
+      type: 'control',
+      data: { id: 'ac-2', title: 'Audit Control' },
+    },
+  ],
+}));
+
+vi.mock('@/composables/axios', () => ({
+  useAuthenticatedInstance: () => ({ get: axiosGet, post: vi.fn() }),
+  decamelizeKeys: (data: unknown) => data,
+  useDataApi: (url: string | null) => {
+    if (typeof url === 'string' && url.includes('control-implementation')) {
+      return {
+        isLoading: ref(false),
+        execute: fetchControlImplementations,
+      };
+    }
+    if (url === null) {
+      return {
+        data: ref([]),
+        isLoading: ref(false),
+        error: ref(null),
+        execute: loadRisks,
+      };
+    }
+    return {
+      data: ref([]),
+      isLoading: ref(false),
+      error: ref(null),
+      execute: loadRisks,
+    };
+  },
+}));
+
+const toastAdd = vi.fn();
+vi.mock('primevue/usetoast', () => ({
+  useToast: () => ({ add: toastAdd }),
+}));
+
+vi.mock('primevue/useconfirm', () => ({
+  useConfirm: () => ({ require: vi.fn() }),
+}));
+
+vi.mock('bootstrap-icons-vue', () => ({
+  BIconEye: { template: '<span />' },
+}));
+
+function flushPromises() {
+  return new Promise((resolve) => setTimeout(resolve, 0));
+}
+
+function createDeferred<T>() {
+  let resolve!: (value: T | PromiseLike<T>) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((promiseResolve, promiseReject) => {
+    resolve = promiseResolve;
+    reject = promiseReject;
+  });
+  return { promise, resolve, reject };
+}
+
+async function waitForMountedControls() {
+  for (let index = 0; index < 5; index += 1) {
+    await flushPromises();
+  }
+}
+
+// The eye button on a control row opens its implementation drawer.
+async function openDrawerForControl(
+  wrapper: ReturnType<typeof mount>,
+  controlId: string,
+) {
+  const row = wrapper
+    .findAll('div')
+    .find((div) => div.attributes('key') === `control:${controlId}`);
+  const eye = (row ?? wrapper)
+    .findAll('button')
+    .find((button) => button.attributes('title') === 'View implementation');
+  if (!eye) throw new Error(`No enabled eye button for ${controlId}`);
+  await eye.trigger('click');
+  await waitForMountedControls();
+}
+
+const stubs = {
+  RouterLink: { template: '<a><slot /></a>' },
+  Message: { template: '<div><slot /></div>' },
+  Badge: { template: '<span><slot />{{ value }}</span>', props: ['value'] },
+  Chip: { template: '<span>{{ label }}</span>', props: ['label'] },
+  Button: {
+    props: ['disabled', 'ariaLabel', 'title', 'label'],
+    emits: ['click'],
+    template:
+      '<button :disabled="disabled" :aria-label="ariaLabel" :title="title" @click="!disabled && $emit(\'click\', $event)"><slot />{{ label }}</button>',
+  },
+  Tree: defineComponent({
+    props: ['value'],
+    setup(props, { slots }) {
+      function flatten(nodes: unknown[]): unknown[] {
+        return nodes.flatMap((node) => {
+          const item = node as { type?: string; children?: unknown[] };
+          return item.type === 'control'
+            ? [item]
+            : flatten(item.children ?? []);
+        });
+      }
+
+      return () =>
+        h(
+          'div',
+          flatten((props.value as unknown[]) ?? []).map((node) =>
+            h('div', { key: (node as { key: string }).key }, [
+              slots.control?.({ node }),
+            ]),
+          ),
+        );
+    },
+  }),
+  Drawer: { template: '<div><slot /></div>' },
+  IndexControlImplementation: { template: '<div />' },
+  RiskIndicatorBadge: { template: '<span />' },
+  ControlEvidenceCounter: { template: '<span />' },
+  StatementByComponent: { template: '<div />' },
+  ExportStatementDialog: {
+    props: [
+      'visible',
+      'sspId',
+      'sspTitle',
+      'controlId',
+      'statementId',
+      'byComponentUuid',
+    ],
+    emits: ['update:visible', 'saved'],
+    template:
+      '<div v-if="visible" data-testid="export-dialog" :data-control-id="controlId" :data-statement-id="statementId" :data-by-component-uuid="byComponentUuid" />',
+  },
+  SharedResponsibilityPanel: {
+    props: ['sspId', 'controlId'],
+    emits: ['editProvides', 'imported'],
+    template:
+      '<div data-testid="shared-responsibility" :data-control-id="controlId" />',
+  },
+  PageHeader: { template: '<h1><slot /></h1>' },
+  PageSubHeader: { template: '<p><slot /></p>' },
+};
+
+describe('control implementations IndexView', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    aiConfigState.dashboardSuggestionsEnabled = false;
+    aiConfigState.dashboardSuggestionsConfigFetched = false;
+    systemStoreState.system.securityPlan = { uuid: 'ssp-1' };
+    pendingDashboardSuggestionsFixture = [];
+    controlResultsFixture = [];
+    pendingDashboardSuggestionsReject = false;
+    controlResultsReject = false;
+    uiStore.controlImplementationDrawerOpen = false;
+    uiStore.controlImplementationSelectedRequirementId = null;
+    uiStore.controlImplementationExpandedKeys = {};
+    listProfiles.mockResolvedValue({
+      data: [{ uuid: 'profile-1', title: 'Profile One' }],
+    });
+    axiosGet.mockImplementation(async (url: string) => {
+      if (url.includes('/dashboard-suggestions?status=pending')) {
+        if (pendingDashboardSuggestionsReject) {
+          throw new Error('pending failed');
+        }
+        return { data: { data: pendingDashboardSuggestionsFixture } };
+      }
+      if (url.includes('/dashboard-suggestions/control-results')) {
+        if (controlResultsReject) {
+          throw new Error('results failed');
+        }
+        return { data: { data: controlResultsFixture } };
+      }
+      return { data: { data: { uuid: 'catalog-1' } } };
+    });
+    fetchControlImplementations.mockResolvedValue({
+      data: {
+        value: {
+          data: {
+            implementedRequirements: [
+              {
+                uuid: 'req-1',
+                controlId: 'ac-1',
+                statements: [
+                  {
+                    uuid: 'stmt-1',
+                    statementId: 'ac-1_smt.a',
+                    byComponents: [
+                      {
+                        uuid: 'bc-1',
+                        componentUuid: 'comp-1',
+                        description: 'Statement-level implementation',
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        },
+      },
+    });
+  });
+
+  it('disables the implementation eye button when a control has no implementation', async () => {
+    const wrapper = mount(IndexView, { global: { stubs } });
+    await waitForMountedControls();
+
+    const noImplementationButton = wrapper
+      .findAll('button')
+      .find((button) => button.attributes('title') === 'No implementation yet');
+
+    expect(noImplementationButton?.attributes('disabled')).toBeDefined();
+    await noImplementationButton?.trigger('click');
+    expect(uiStore.setControlImplementationDrawerOpen).not.toHaveBeenCalled();
+  });
+
+  it('opens the drawer with the selected requirement when an implementation exists', async () => {
+    const wrapper = mount(IndexView, { global: { stubs } });
+    await waitForMountedControls();
+
+    const implementationButton = wrapper
+      .findAll('button')
+      .find((button) => button.attributes('title') === 'View implementation');
+
+    expect(implementationButton).toBeDefined();
+    expect(implementationButton?.attributes('disabled')).toBeUndefined();
+    await implementationButton?.trigger('click');
+
+    expect(uiStore.setControlImplementationDrawerOpen).toHaveBeenCalledWith(
+      true,
+    );
+    expect(
+      uiStore.setControlImplementationSelectedRequirementId,
+    ).toHaveBeenCalledWith('req-1');
+  });
+
+  it('does not render the AI dashboard suggestions panel when the feature flag is disabled', async () => {
+    const wrapper = mount(IndexView, { global: { stubs } });
+    await waitForMountedControls();
+
+    const implementationButton = wrapper
+      .findAll('button')
+      .find((button) => button.attributes('title') === 'View implementation');
+    await implementationButton?.trigger('click');
+    await flushPromises();
+
+    expect(wrapper.text()).not.toContain('AI evidence filter suggestions');
+    expect(axiosGet).not.toHaveBeenCalledWith(
+      expect.stringContaining('/dashboard-suggestions?status=pending'),
+      expect.anything(),
+    );
+    expect(axiosGet).not.toHaveBeenCalledWith(
+      expect.stringContaining('/dashboard-suggestions/control-results'),
+    );
+  });
+
+  it('loads core controls data before dashboard suggestions config resolves', async () => {
+    const configDeferred = createDeferred<boolean>();
+    fetchDashboardSuggestionsConfig.mockImplementationOnce(
+      () => configDeferred.promise,
+    );
+
+    mount(IndexView, { global: { stubs } });
+    await waitForMountedControls();
+
+    expect(fetchDashboardSuggestionsConfig).toHaveBeenCalled();
+    expect(listProfiles).toHaveBeenCalled();
+    expect(fetchControlImplementations).toHaveBeenCalled();
+    expect(axiosGet).not.toHaveBeenCalledWith(
+      expect.stringContaining('/dashboard-suggestions?status=pending'),
+      expect.anything(),
+    );
+  });
+
+  it('matches pending suggestions to the selected control case-insensitively', async () => {
+    aiConfigState.dashboardSuggestionsEnabled = true;
+    pendingDashboardSuggestionsFixture = [
+      {
+        id: 'suggestion-1',
+        status: 'pending',
+        controlId: 'AC-1',
+        labelSetHash: 'hash-1',
+        proposedFilterName: 'Production evidence',
+        proposedFilterLabelSet: { env: 'prod' },
+        confidence: 0.8,
+        reasoning: 'Uppercase control id still matches.',
+      },
+    ];
+
+    const wrapper = mount(IndexView, { global: { stubs } });
+    await waitForMountedControls();
+
+    const implementationButton = wrapper
+      .findAll('button')
+      .find((button) => button.attributes('title') === 'View implementation');
+    await implementationButton?.trigger('click');
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('AI evidence filter suggestions');
+    expect(wrapper.text()).toContain('Production evidence');
+    expect(wrapper.text()).toContain('80% confidence');
+    expect(axiosGet).toHaveBeenCalledWith(
+      expect.stringContaining('/dashboard-suggestions?status=pending'),
+      expect.objectContaining({
+        camelcaseStopPaths: expect.arrayContaining([
+          'data.proposedFilterLabelSet',
+        ]),
+      }),
+    );
+    expect(axiosGet).toHaveBeenCalledWith(
+      expect.stringContaining('/dashboard-suggestions/control-results'),
+    );
+  });
+
+  it('loads dashboard suggestion state once when config resolution enables suggestions on mount', async () => {
+    aiConfigState.dashboardSuggestionsEnabled = true;
+    const configDeferred = createDeferred<void>();
+    const pendingDeferred = createDeferred<{
+      data: { data: unknown[] };
+    }>();
+    const controlResultsDeferred = createDeferred<{
+      data: { data: unknown[] };
+    }>();
+
+    fetchDashboardSuggestionsConfig.mockImplementationOnce(async () => {
+      await configDeferred.promise;
+      aiConfigState.dashboardSuggestionsConfigFetched = true;
+      return aiConfigState.dashboardSuggestionsEnabled;
+    });
+    axiosGet.mockImplementation((url: string) => {
+      if (url.includes('/dashboard-suggestions?status=pending')) {
+        return pendingDeferred.promise;
+      }
+      if (url.includes('/dashboard-suggestions/control-results')) {
+        return controlResultsDeferred.promise;
+      }
+      return Promise.resolve({ data: { data: { uuid: 'catalog-1' } } });
+    });
+
+    mount(IndexView, { global: { stubs } });
+    configDeferred.resolve();
+    await flushPromises();
+
+    const pendingCalls = axiosGet.mock.calls.filter(([url]) =>
+      String(url).includes('/dashboard-suggestions?status=pending'),
+    );
+    const controlResultsCalls = axiosGet.mock.calls.filter(([url]) =>
+      String(url).includes('/dashboard-suggestions/control-results'),
+    );
+    expect(pendingCalls).toHaveLength(1);
+    expect(axiosGet).toHaveBeenCalledWith(
+      expect.stringContaining(
+        '/api/oscal/system-security-plans/ssp-1/dashboard-suggestions?status=pending',
+      ),
+      expect.any(Object),
+    );
+    expect(controlResultsCalls).toHaveLength(1);
+    expect(axiosGet).toHaveBeenCalledWith(
+      expect.stringContaining(
+        '/api/oscal/system-security-plans/ssp-1/dashboard-suggestions/control-results',
+      ),
+    );
+
+    pendingDeferred.resolve({ data: { data: [] } });
+    controlResultsDeferred.resolve({ data: { data: [] } });
+    await waitForMountedControls();
+  });
+
+  it('ignores stale dashboard suggestion responses after switching SSPs', async () => {
+    aiConfigState.dashboardSuggestionsEnabled = true;
+    aiConfigState.dashboardSuggestionsConfigFetched = true;
+    const ssp1Pending = createDeferred<{ data: { data: unknown[] } }>();
+    const ssp1ControlResults = createDeferred<{ data: { data: unknown[] } }>();
+    const ssp2Pending = createDeferred<{ data: { data: unknown[] } }>();
+    const ssp2ControlResults = createDeferred<{ data: { data: unknown[] } }>();
+
+    axiosGet.mockImplementation((url: string) => {
+      if (url.includes('/ssp-1/dashboard-suggestions?status=pending')) {
+        return ssp1Pending.promise;
+      }
+      if (url.includes('/ssp-1/dashboard-suggestions/control-results')) {
+        return ssp1ControlResults.promise;
+      }
+      if (url.includes('/ssp-2/dashboard-suggestions?status=pending')) {
+        return ssp2Pending.promise;
+      }
+      if (url.includes('/ssp-2/dashboard-suggestions/control-results')) {
+        return ssp2ControlResults.promise;
+      }
+      return Promise.resolve({ data: { data: { uuid: 'catalog-1' } } });
+    });
+
+    const wrapper = mount(IndexView, { global: { stubs } });
+    await flushPromises();
+
+    systemStoreState.system.securityPlan = { uuid: 'ssp-2' };
+    await flushPromises();
+
+    ssp2Pending.resolve({
+      data: {
+        data: [
+          {
+            id: 'suggestion-2',
+            status: 'pending',
+            controlId: 'AC-1',
+            labelSetHash: 'hash-2',
+            proposedFilterName: 'Second SSP suggestion',
+          },
+        ],
+      },
+    });
+    ssp2ControlResults.resolve({ data: { data: [] } });
+    await flushPromises();
+
+    ssp1Pending.resolve({
+      data: {
+        data: [
+          {
+            id: 'suggestion-1',
+            status: 'pending',
+            controlId: 'AC-1',
+            labelSetHash: 'hash-1',
+            proposedFilterName: 'First SSP stale suggestion',
+          },
+        ],
+      },
+    });
+    ssp1ControlResults.resolve({ data: { data: [] } });
+    await waitForMountedControls();
+
+    const callsBeforeDrawerOpen = axiosGet.mock.calls.length;
+    const implementationButton = wrapper
+      .findAll('button')
+      .find((button) => button.attributes('title') === 'View implementation');
+    await implementationButton?.trigger('click');
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('Second SSP suggestion');
+    expect(wrapper.text()).not.toContain('First SSP stale suggestion');
+    expect(axiosGet.mock.calls).toHaveLength(callsBeforeDrawerOpen);
+  });
+
+  it('keeps pending suggestions visible when control-results cannot be fetched', async () => {
+    aiConfigState.dashboardSuggestionsEnabled = true;
+    controlResultsReject = true;
+    pendingDashboardSuggestionsFixture = [
+      {
+        id: 'suggestion-1',
+        status: 'pending',
+        controlId: 'AC-1',
+        labelSetHash: 'hash-1',
+        proposedFilterName: 'Resilient suggestion',
+      },
+    ];
+
+    const wrapper = mount(IndexView, { global: { stubs } });
+    await waitForMountedControls();
+
+    const implementationButton = wrapper
+      .findAll('button')
+      .find((button) => button.attributes('title') === 'View implementation');
+    await implementationButton?.trigger('click');
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('Resilient suggestion');
+  });
+
+  it('keeps no-match state visible when pending suggestions cannot be fetched', async () => {
+    aiConfigState.dashboardSuggestionsEnabled = true;
+    pendingDashboardSuggestionsReject = true;
+    controlResultsFixture = [
+      {
+        controlId: 'AC-1',
+        outcome: 'no_match',
+        evaluatedAt: '2026-06-18T10:30:00Z',
+      },
+    ];
+
+    const wrapper = mount(IndexView, { global: { stubs } });
+    await waitForMountedControls();
+
+    const implementationButton = wrapper
+      .findAll('button')
+      .find((button) => button.attributes('title') === 'View implementation');
+    await implementationButton?.trigger('click');
+    await flushPromises();
+
+    expect(wrapper.text()).toContain(
+      'AI reviewed this control and found no matching evidence filter',
+    );
+  });
+
+  it('surfaces a clickable suggestions badge that opens the drawer for a control with no implementation', async () => {
+    // ac-2 has no implemented requirement (only ac-1 does), so its eye button is
+    // disabled. A pending suggestion for ac-2 must still be reachable via a badge.
+    aiConfigState.dashboardSuggestionsEnabled = true;
+    pendingDashboardSuggestionsFixture = [
+      {
+        id: 'suggestion-2',
+        status: 'pending',
+        controlId: 'AC-2',
+        labelSetHash: 'hash-2',
+        proposedFilterName: 'Unimplemented control suggestion',
+      },
+    ];
+
+    const wrapper = mount(IndexView, { global: { stubs } });
+    await waitForMountedControls();
+
+    // The ac-2 eye button is disabled (no implementation to view).
+    const eyeButtons = wrapper
+      .findAll('button')
+      .filter((button) => button.attributes('title') !== undefined);
+    expect(
+      eyeButtons.some((button) => button.attributes('disabled') !== undefined),
+    ).toBe(true);
+
+    const badge = wrapper
+      .findAll('button')
+      .find((button) =>
+        button
+          .attributes('aria-label')
+          ?.includes('pending AI evidence filter suggestion'),
+      );
+    expect(badge).toBeTruthy();
+    expect(badge?.text()).toContain('1');
+
+    // Before opening, the drawer's suggestions panel is not scoped to ac-2.
+    expect(wrapper.text()).not.toContain('Unimplemented control suggestion');
+
+    await badge?.trigger('click');
+    await flushPromises();
+
+    expect(uiStore.setControlImplementationDrawerOpen).toHaveBeenCalledWith(
+      true,
+    );
+    expect(
+      uiStore.setControlImplementationSelectedRequirementId,
+    ).toHaveBeenCalledWith(null);
+    expect(wrapper.text()).toContain('Unimplemented control suggestion');
+  });
+
+  it('scopes the Shared Responsibility panel to the control whose drawer is open', async () => {
+    const wrapper = mount(IndexView, { global: { stubs } });
+    await waitForMountedControls();
+    await openDrawerForControl(wrapper, 'ac-1');
+
+    expect(
+      wrapper
+        .find('[data-testid="shared-responsibility"]')
+        .attributes('data-control-id'),
+    ).toBe('ac-1');
+  });
+
+  it('opens the export dialog straight from the rollup row — no lookup, no "no longer loaded" toast', async () => {
+    const wrapper = mount(IndexView, { global: { stubs } });
+    await waitForMountedControls();
+    await openDrawerForControl(wrapper, 'ac-1');
+
+    // A rollup provides row (API shape): no requirement/statement uuids — the dialog
+    // resolves those itself, so opening it can't depend on what happens to be loaded.
+    wrapper
+      .getComponent<typeof IndexView>('[data-testid="shared-responsibility"]')
+      .vm.$emit('editProvides', {
+        controlId: 'AC-1',
+        statementId: 'ac-1_smt.a',
+        byComponentUuid: 'bc-1',
+        componentUuid: 'comp-1',
+        componentTitle: 'API',
+        exportUuid: 'exp-1',
+        provided: [{ uuid: 'p-1', description: 'x' }],
+        responsibilities: [],
+        offered: true,
+      });
+    await waitForMountedControls();
+
+    const dialog = wrapper.find('[data-testid="export-dialog"]');
+    expect(dialog.exists()).toBe(true);
+    expect(dialog.attributes('data-control-id')).toBe('AC-1');
+    expect(dialog.attributes('data-statement-id')).toBe('ac-1_smt.a');
+    expect(dialog.attributes('data-by-component-uuid')).toBe('bc-1');
+    expect(toastAdd).not.toHaveBeenCalledWith(
+      expect.objectContaining({ summary: 'Unable to open the editor' }),
+    );
+  });
+
+  it('expands, highlights and announces a requirement created by an import', async () => {
+    const wrapper = mount(IndexView, { global: { stubs } });
+    await waitForMountedControls();
+    await openDrawerForControl(wrapper, 'ac-1');
+
+    // ac-2 has no implementation of its own: importing an upstream offering for it is what
+    // makes the requirement appear — the visible payoff of the import flow.
+    wrapper
+      .getComponent<typeof IndexView>('[data-testid="shared-responsibility"]')
+      .vm.$emit('imported', {
+        links: [],
+        meta: {
+          created: {
+            implementedRequirements: [
+              { uuid: 'req-2', controlId: 'ac-2', created: true },
+              // Reused, not created — must not be announced.
+              { uuid: 'req-1', controlId: 'ac-1', created: false },
+            ],
+            // Statements carry no controlId of their own (API shape) — the join runs
+            // through implementedRequirementUuid.
+            statements: [
+              {
+                uuid: 'stmt-2',
+                statementId: 'ac-2_smt.a',
+                implementedRequirementUuid: 'req-2',
+                created: true,
+              },
+            ],
+          },
+        },
+      });
+    await waitForMountedControls();
+
+    expect(uiStore.controlImplementationExpandedKeys).toMatchObject({
+      'control:ac-2': true,
+    });
+    expect(wrapper.find('.ring-2').exists()).toBe(true);
+
+    const detail = toastAdd.mock.calls.at(-1)?.[0]?.detail as string;
+    expect(detail).toContain('implemented requirement ac-2');
+    expect(detail).toContain('statement ac-2_smt.a');
+    expect(detail).not.toContain('ac-1');
+  });
+});

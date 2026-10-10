@@ -80,9 +80,16 @@
     </div>
 
     <div class="mt-4">
-      <RouterLinkButton :to="{ name: 'assessment-plan-create' }">
+      <PrimaryButton
+        @click="$router.push({ name: 'assessment-plan-create' })"
+        :disabled="!can(RESOURCES.ASSESSMENT_PLAN, ACTIONS.CREATE)"
+        v-tooltip.top="{
+          value: permissionTooltip(RESOURCES.ASSESSMENT_PLAN, ACTIONS.CREATE),
+          disabled: can(RESOURCES.ASSESSMENT_PLAN, ACTIONS.CREATE),
+        }"
+      >
         Create Assessment Plan
-      </RouterLinkButton>
+      </PrimaryButton>
     </div>
   </template>
 </template>
@@ -100,9 +107,12 @@ import type { ErrorResponse, ErrorBody } from '@/stores/types.ts';
 import decamelizeKeys from 'decamelize-keys';
 import { computed } from 'vue';
 import RouterLinkButton from '@/components/RouterLinkButton.vue';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
 
 const toast = useToast();
 const systemStore = useSystemStore();
+const { can, permissionTooltip } = usePermissions();
 
 const {
   data: assessmentPlans,

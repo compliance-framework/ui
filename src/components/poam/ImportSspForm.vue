@@ -46,7 +46,15 @@
         </button>
         <button
           type="submit"
-          :disabled="!formData.href || saving"
+          :disabled="
+            !formData.href ||
+            saving ||
+            !can(RESOURCES.POAM_OSCAL, importSspAction)
+          "
+          v-tooltip.top="{
+            value: permissionTooltip(RESOURCES.POAM_OSCAL, importSspAction),
+            disabled: can(RESOURCES.POAM_OSCAL, importSspAction),
+          }"
           class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {{ saving ? 'Saving...' : isEditing ? 'Update' : 'Create' }}
@@ -61,6 +69,8 @@ import { reactive, computed, onMounted } from 'vue';
 import type { ImportSSP } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi } from '@/composables/axios';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
 
 const props = defineProps<{
   poamId: string;
@@ -73,6 +83,7 @@ const emit = defineEmits<{
 }>();
 
 const toast = useToast();
+const { can, permissionTooltip } = usePermissions();
 
 const {
   data: updatedImportSsp,
@@ -85,6 +96,9 @@ const {
 );
 
 const isEditing = computed(() => !!props.importSsp);
+const importSspAction = computed(() =>
+  isEditing.value ? ACTIONS.UPDATE : ACTIONS.CREATE,
+);
 
 const formData = reactive({
   href: '',

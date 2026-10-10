@@ -50,7 +50,7 @@ import Dialog, {
   type DialogProps,
 } from 'primevue/dialog';
 import { computed } from 'vue';
-import { useRoute } from 'vue-router';
+import { useIsV2Route } from './useRouteUiVersion';
 import SecondaryButton from './SecondaryButton.vue';
 import { ptViewMerge } from './utils';
 
@@ -60,11 +60,8 @@ interface Props extends /* @vue-ignore */ DialogProps {
 }
 
 const props = defineProps<Props>();
-const route = useRoute();
 
-const isV2Route = computed(() =>
-  route.matched.some((record) => record.meta.uiVersion === 'v2'),
-);
+const isV2Route = useIsV2Route();
 
 const getSizeClass = () => {
   const size = props.size;

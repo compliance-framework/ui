@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   toastAdd: vi.fn(),
   loginExecute: vi.fn(),
   guestGet: vi.fn(),
+  permissionHydrate: vi.fn(),
   oidcLoadProviders: vi.fn(),
   oidcInitiateLogin: vi.fn(),
   oidcProviders: { value: [] as Array<{ name: string; displayName: string }> },
@@ -62,6 +63,16 @@ vi.mock('@/composables/useOIDC', () => ({
 
 vi.mock('@/stores/auth', () => ({
   useUserStore: () => mocks.userStore,
+}));
+
+vi.mock('@/stores/permissions', () => ({
+  usePermissionsStore: () => ({ hydrate: mocks.permissionHydrate }),
+}));
+
+vi.mock('@/stores/config', () => ({
+  useConfigStore: () => ({
+    getConfig: async () => ({ API_URL: 'http://localhost' }),
+  }),
 }));
 
 const authComponentStub = { template: '<div><slot /></div>' };
@@ -123,6 +134,18 @@ async function flushAsync() {
 describe('Auth V2 flow validation', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.guestGet.mockResolvedValue({
+      data: {
+        data: {
+          id: 'u-1',
+          email: 'user@example.com',
+          firstName: 'User',
+          lastName: 'One',
+          failedLogins: 0,
+        },
+      },
+    });
+    mocks.permissionHydrate.mockResolvedValue(undefined);
     mocks.userStore.user = null;
     mocks.userStore.isAuthenticated = false;
     mocks.oidcProviders.value = [];
@@ -162,13 +185,15 @@ describe('Auth V2 flow validation', () => {
       },
     });
     expect(mocks.userStore.isAuthenticated).toBe(true);
-    expect(pushSpy).toHaveBeenCalledWith('/evidence');
+    expect(pushSpy).toHaveBeenCalledWith({ path: '/evidence' });
+    expect(mocks.guestGet).toHaveBeenCalledWith('/api/users/me');
+    expect(mocks.permissionHydrate).toHaveBeenCalledOnce();
   });
 
   it('handles login validation errors without authenticating the user', async () => {
     mocks.loginExecute.mockRejectedValue({
-      status: 401,
       response: {
+        status: 401,
         data: {
           data: {
             email: ['Invalid credentials'],
@@ -198,6 +223,29 @@ describe('Auth V2 flow validation', () => {
 
     expect(wrapper.text()).toContain('Invalid credentials');
     expect(mocks.userStore.isAuthenticated).toBe(false);
+    expect(mocks.guestGet).not.toHaveBeenCalled();
+  });
+
+  it('keeps login on the form when account hydration fails', async () => {
+    mocks.loginExecute.mockResolvedValue({});
+    mocks.guestGet.mockRejectedValue(new Error('account unavailable'));
+    const router = await createTestRouter('/auth/login');
+    const pushSpy = vi.spyOn(router, 'push');
+    const wrapper = mount(LoginView, {
+      global: {
+        plugins: [router],
+        stubs: {
+          AuthPanelCard: authComponentStub,
+          AuthInput: authInputStub,
+          AuthPrimaryButton: authButtonStub,
+        },
+      },
+    });
+    await wrapper.get('form').trigger('submit.prevent');
+    await flushAsync();
+    expect(mocks.userStore.logout).toHaveBeenCalledOnce();
+    expect(pushSpy).not.toHaveBeenCalled();
+    expect(wrapper.text()).toContain('Unable to sign in');
   });
 
   it('completes SSO callback success and redirects after timeout', async () => {

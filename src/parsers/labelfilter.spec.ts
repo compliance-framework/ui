@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 
-import { FilterParser } from './labelfilter.ts';
+import { FilterParser, serializeFilter } from './labelfilter.ts';
 
 describe('FilterParser', () => {
   it('parses empty search', () => {
@@ -193,6 +193,26 @@ describe('FilterParser', () => {
         },
       }),
     );
+  });
+
+  it('round-trips through serializeFilter', () => {
+    const inputs = [
+      'foo=bar',
+      'foo!=bar',
+      'foo=bar AND bat!=baz',
+      'foo=bar AND (bat=baz OR bat=bay)',
+      '(foo=bar AND bat=bay) OR (foo=bar OR baz!=bay)',
+    ];
+    for (const input of inputs) {
+      const parsed = new FilterParser(input).parse();
+      const reparsed = new FilterParser(serializeFilter(parsed)).parse();
+      expect(reparsed).toEqual(parsed);
+    }
+  });
+
+  it('serializes an empty filter to an empty string', () => {
+    expect(serializeFilter(new FilterParser('').parse())).toBe('');
+    expect(serializeFilter(undefined)).toBe('');
   });
 
   it('parses two subqueries', () => {

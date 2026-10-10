@@ -161,6 +161,28 @@
                 </div>
               </div>
 
+              <div class="max-w-xl">
+                <label
+                  for="ssp-profiles"
+                  class="ui-v2-label block text-[var(--ui-v2-secondary-foreground)]"
+                  >Profiles</label
+                >
+                <MultiSelect
+                  input-id="ssp-profiles"
+                  v-model="selectedProfiles"
+                  :options="availableProfileItems"
+                  option-label="label"
+                  option-value="value"
+                  display="chip"
+                  placeholder="Select profiles"
+                  :loading="loadingProfiles"
+                  :disabled="
+                    isAttachingProfile || !can(RESOURCES.SSP, ACTIONS.UPDATE)
+                  "
+                  class="w-full"
+                />
+              </div>
+
               <div
                 ref="profileSwitcherElement"
                 class="relative inline-flex max-w-full"
@@ -292,14 +314,16 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, provide, ref, watch } from 'vue';
-import type { AxiosError } from 'axios';
 import type { RouteLocationRaw } from 'vue-router';
 import { RouterView, useRoute } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
 import type { Profile, SystemSecurityPlan } from '@/oscal';
-import type { ErrorBody, ErrorResponse } from '@/stores/types';
 import { useDataApi } from '@/composables/axios';
 import { useSystemStore } from '@/stores/system';
+import { useSspProfileBindings } from '@/composables/useSspProfileBindings';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
+import MultiSelect from '@/volt/MultiSelect.vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
 import V2StatePanel from '@/components/v2/system/V2StatePanel.vue';
 import V2LucideIcon from '@/components/v2/primitives/V2LucideIcon.vue';
@@ -311,6 +335,7 @@ import {
 const route = useRoute();
 const toast = useToast();
 const systemStore = useSystemStore();
+const { can } = usePermissions();
 
 const sspId = computed(() => String(route.params.id || ''));
 
@@ -324,7 +349,7 @@ const tabs = [
   {
     index: '03',
     label: 'IMPLEMENTATION',
-    route: 'system-security-plan-system-implementation',
+    route: 'system-security-plan-implementation',
   },
   {
     index: '04',
@@ -337,6 +362,23 @@ const tabs = [
     route: 'system-security-plan-compliance',
   },
   { index: '06', label: 'JSON', route: 'system-security-plan-json' },
+  {
+    index: '07',
+    label: 'COMPONENTS',
+    route: 'system-security-plan-components',
+  },
+  { index: '08', label: 'RISKS', route: 'system-security-plan-risks' },
+  {
+    index: '09',
+    label: 'EXPORT OFFERINGS',
+    route: 'system-security-plan-export-offerings',
+  },
+  { index: '10', label: 'LEVERAGE', route: 'system-security-plan-leverage' },
+  {
+    index: '11',
+    label: 'INHERITED CAPABILITIES',
+    route: 'system-security-plan-inherited-capabilities',
+  },
 ];
 
 interface SspHeaderBreadcrumbMetaItem {
@@ -358,30 +400,37 @@ const { data: profiles, isLoading: loadingProfiles } = useDataApi<Profile[]>(
   '/api/oscal/profiles',
 );
 
-const { execute: executeAttachedProfile } = useDataApi<Profile>(
-  null,
-  { method: 'GET' },
-  { immediate: false },
-);
-
-const { execute: attachProfile } = useDataApi<void>(
-  null,
-  { method: 'PUT' },
-  { immediate: false },
-);
-
 const profileResolved = ref(false);
-const isAttachingProfile = ref(false);
 const selectedProfileId = ref('');
-const attachedProfileId = ref('');
+const {
+  selectedProfiles,
+  profileSaveInProgress: isAttachingProfile,
+  loadInitialProfiles,
+} = useSspProfileBindings(() => sspId.value);
+
+watch(selectedProfiles, (ids) => {
+  if (!ids.includes(selectedProfileId.value)) {
+    selectedProfileId.value = ids[0] || '';
+  }
+});
+
 const profileSwitcherOpen = ref(false);
 const profileSwitcherElement = ref<HTMLElement | null>(null);
 
-const profileItems = computed<SspProfileOption[]>(() =>
+const availableProfileItems = computed<SspProfileOption[]>(() =>
   (profiles.value || []).map((item) => ({
     label: normalizeProfileLabel(item.metadata?.title || item.uuid),
     value: item.uuid,
   })),
+);
+const profileItems = computed(() =>
+  selectedProfiles.value.map(
+    (id) =>
+      availableProfileItems.value.find((item) => item.value === id) || {
+        label: id,
+        value: id,
+      },
+  ),
 );
 
 const selectedProfileLabel = computed(() => {
@@ -478,7 +527,6 @@ provide(sspDetailProfileBindingKey, {
   profileResolved,
   isAttachingProfile,
   selectedProfileId,
-  attachedProfileId,
   selectProfile,
 });
 
@@ -487,7 +535,6 @@ watch(
   async (id) => {
     if (!id) {
       selectedProfileId.value = '';
-      attachedProfileId.value = '';
       profileResolved.value = true;
       return;
     }
@@ -495,7 +542,7 @@ watch(
     profileResolved.value = false;
     await Promise.allSettled([
       loadSystemSecurityPlan(`/api/oscal/system-security-plans/${id}`),
-      loadAttachedProfile(id),
+      loadInitialProfiles(),
     ]);
     profileResolved.value = true;
   },
@@ -537,90 +584,15 @@ function handleDocumentClick(event: MouseEvent): void {
   }
 }
 
-async function loadAttachedProfile(id: string): Promise<void> {
-  try {
-    const response = await executeAttachedProfile(
-      `/api/oscal/system-security-plans/${id}/profile`,
-    );
-    const attachedProfile = response.data.value?.data;
-
-    if (!attachedProfile) {
-      selectedProfileId.value = '';
-      attachedProfileId.value = '';
-      return;
-    }
-
-    selectedProfileId.value = attachedProfile.uuid;
-    attachedProfileId.value = attachedProfile.uuid;
-  } catch (error) {
-    const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
-    if (errorResponse.response?.status === 404) {
-      selectedProfileId.value = '';
-      attachedProfileId.value = '';
-      return;
-    }
-
-    toast.add({
-      severity: 'error',
-      summary: 'Error Loading Profile',
-      detail:
-        errorResponse.response?.data.errors.body ||
-        'Unable to load the attached profile for this plan.',
-      life: 3000,
-    });
-  }
-}
-
 async function selectProfile(profileId: string): Promise<boolean> {
   if (
-    !sspId.value ||
-    !profileId ||
-    profileId === attachedProfileId.value ||
-    isAttachingProfile.value
+    !selectedProfiles.value.includes(profileId) ||
+    selectedProfileId.value === profileId
   ) {
     return false;
   }
-
-  const previousProfileId = attachedProfileId.value;
-  isAttachingProfile.value = true;
-
-  try {
-    await attachProfile(
-      `/api/oscal/system-security-plans/${sspId.value}/profile`,
-      {
-        data: {
-          profileId,
-        },
-      },
-    );
-
-    selectedProfileId.value = profileId;
-    attachedProfileId.value = profileId;
-
-    toast.add({
-      severity: 'success',
-      summary: 'Profile Updated',
-      life: 2500,
-    });
-
-    return true;
-  } catch (error) {
-    selectedProfileId.value = previousProfileId;
-
-    const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
-    toast.add({
-      severity: 'error',
-      summary: 'Failed to Set Profile',
-      detail:
-        errorResponse.response?.data.errors.body ||
-        'An error occurred while assigning this profile.',
-      life: 3000,
-    });
-
-    return false;
-  } finally {
-    isAttachingProfile.value = false;
-  }
+  selectedProfileId.value = profileId;
+  return true;
 }
 
 function setAsActive(): void {
@@ -644,7 +616,7 @@ async function reloadCurrentPlan(): Promise<void> {
 
   await Promise.allSettled([
     loadSystemSecurityPlan(`/api/oscal/system-security-plans/${sspId.value}`),
-    loadAttachedProfile(sspId.value),
+    loadInitialProfiles(),
   ]);
 }
 

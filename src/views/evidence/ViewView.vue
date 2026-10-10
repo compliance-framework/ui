@@ -1,74 +1,913 @@
 <template>
-  <template v-if="evidence">
-    <div class="flex items-center justify-between mb-2">
-      <PageHeader>
-        {{ evidence.title }}
-      </PageHeader>
-      <SecondaryButton class="ml-4" @click="directToUpdate()">
-        Update Evidence
-      </SecondaryButton>
+  <div class="p-6 space-y-6">
+    <div class="flex items-center justify-between gap-3">
+      <div class="flex items-start gap-3">
+        <RouterLink
+          :to="backToEvidenceRoute"
+          class="mt-1 inline-flex h-8 w-8 items-center justify-center rounded-md border border-ccf-300 text-lg leading-none hover:bg-zinc-50 dark:border-slate-700 dark:hover:bg-slate-800"
+          aria-label="Back to Evidence"
+        >
+          &lt;
+        </RouterLink>
+        <div>
+          <PageHeader>{{ evidence?.title || 'Evidence Detail' }}</PageHeader>
+          <PageSubHeader v-if="evidence">
+            {{ evidence.uuid }}
+          </PageSubHeader>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2">
+        <RouterLinkButton
+          v-if="workflowExecutionRoute"
+          :to="workflowExecutionRoute"
+        >
+          Back to Execution
+        </RouterLinkButton>
+        <SecondaryButton v-if="evidence" @click="directToUpdate()">
+          Re-submit
+        </SecondaryButton>
+      </div>
     </div>
-    <PageSubHeader>
-      {{ evidence.uuid }}
-    </PageSubHeader>
-    <div class="grid grid-cols-2 gap-4 mt-4 items-start">
-      <div>
-        <PageCard>
-          <h3 class="text-lg flex items-center mb-2">
-            <span> Evidence </span>
+
+    <div v-if="isLoading" class="text-sm text-gray-600 dark:text-slate-400">
+      Loading evidence details...
+    </div>
+
+    <Message v-else-if="error" severity="error" variant="outlined">
+      <h4 class="font-bold">Error loading evidence</h4>
+      <p class="text-sm">The requested evidence record could not be loaded.</p>
+    </Message>
+
+    <Message v-else-if="!evidence" severity="warn" variant="outlined">
+      <h4 class="font-bold">Evidence not found</h4>
+      <p class="text-sm">The requested evidence record could not be located.</p>
+    </Message>
+
+    <template v-else>
+      <div
+        class="bg-white dark:bg-slate-900 border border-ccf-300 dark:border-slate-700 rounded-lg p-6 space-y-4"
+      >
+        <div class="flex flex-col gap-2">
+          <div class="flex flex-wrap items-center gap-3">
+            <h2 class="text-xl font-semibold text-gray-900 dark:text-slate-200">
+              {{ evidence.title || 'Untitled Evidence' }}
+            </h2>
             <span
               :class="[
-                'rounded-md px-2 py-1 text-sm ml-4 font-light',
+                'inline-flex rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wide',
                 getEvidenceStatusColor(evidence.status?.state),
               ]"
             >
-              {{ evidence.status?.state.toUpperCase() }}
+              {{ evidence.status?.state || 'unknown' }}
             </span>
-          </h3>
-          <div>
-            <p class="text-sm text-gray-800 dark:text-slate-300">
-              Collected {{ new Date(evidence.end).toLocaleString() }}
-            </p>
-            <p class="font-medium mt-4">
-              {{ evidence.title }}
-            </p>
-            <p class="pt-1">{{ evidence.description }}</p>
-            <SecondaryButton @click="showActivities(evidence)" class="mt-4">
-              View Tasks
-            </SecondaryButton>
+            <span
+              v-tooltip.bottom="signatureTooltip"
+              :class="[
+                'inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold',
+                signatureBadgeClass,
+              ]"
+            >
+              <component :is="signatureIcon" class="mr-1" />
+              {{ signatureBadgeText }}
+            </span>
           </div>
+
+          <p class="text-sm text-gray-700 dark:text-slate-300">
+            {{ evidence.description || 'No description provided.' }}
+          </p>
+        </div>
+
+        <div
+          class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4 text-sm text-gray-700 dark:text-slate-300"
+        >
+          <div>
+            <p
+              class="text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400"
+            >
+              Collected
+            </p>
+            <p class="font-medium text-gray-900 dark:text-slate-100">
+              {{ formatDateTime(evidence.end) }}
+            </p>
+          </div>
+
+          <div>
+            <p
+              class="text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400"
+            >
+              {{ summaryLifecycleLabel }}
+            </p>
+            <template v-if="showLatestEvidenceLink">
+              <RouterLink
+                :to="latestEvidenceRoute"
+                class="inline-flex items-center rounded-md border border-ccf-300 px-3 py-2 text-sm font-medium text-gray-900 hover:bg-zinc-50 dark:border-slate-700 dark:text-slate-100 dark:hover:bg-slate-800"
+              >
+                Go to latest evidence
+              </RouterLink>
+            </template>
+            <p v-else class="font-medium" :class="expirationTextClass">
+              {{ expirationLabel }}
+            </p>
+          </div>
+
+          <div>
+            <p
+              class="text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400"
+            >
+              Summary
+            </p>
+            <p class="font-medium text-gray-900 dark:text-slate-100">
+              {{ evidence.labels.length }} labels,
+              {{ metadataProps.length }} props,
+              {{ metadataLinks.length }} links,
+              {{ displayableMedia.length }} media items
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div
+        class="border-b border-ccf-300 dark:border-slate-700 flex flex-wrap gap-2 pb-2"
+      >
+        <button
+          v-for="tab in tabs"
+          :key="tab.id"
+          class="px-3 py-1 rounded-md text-sm"
+          :class="
+            tab.id === activeTab
+              ? 'bg-blue-600 text-white'
+              : 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
+          "
+          @click="activeTab = tab.id"
+        >
+          {{ tab.label }}
+        </button>
+      </div>
+
+      <div v-if="activeTab === 'overview'" class="space-y-4">
+        <PageCard>
+          <div class="flex flex-wrap items-start justify-between gap-4">
+            <div class="space-y-2">
+              <h3
+                class="text-lg font-semibold text-zinc-700 dark:text-slate-200"
+              >
+                Overview
+              </h3>
+              <p class="text-sm text-gray-700 dark:text-slate-300">
+                {{ evidence.description || 'No description provided.' }}
+              </p>
+            </div>
+
+            <div class="space-y-2">
+              <SecondaryButton @click="showActivities(evidence)">
+                View Tasks
+              </SecondaryButton>
+            </div>
+          </div>
+        </PageCard>
+
+        <!-- Subjects sits to the right of Current State. It's shown only when the API
+             provides subjects; without it Current State takes the full width. -->
+        <div
+          class="grid grid-cols-1 items-start gap-4"
+          :class="{ 'lg:grid-cols-2': showSubjects }"
+        >
+          <PageCard>
+            <h3 class="text-lg font-semibold text-zinc-700 dark:text-slate-200">
+              Current State
+            </h3>
+            <div
+              class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 text-sm text-gray-700 dark:text-slate-300"
+              :class="{ 'xl:grid-cols-3': !showSubjects }"
+            >
+              <div>
+                <p
+                  class="text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400"
+                >
+                  Status Reason
+                </p>
+                <p class="font-medium text-gray-900 dark:text-slate-100">
+                  {{ evidence.status?.reason || 'No reason provided.' }}
+                </p>
+              </div>
+              <div>
+                <p
+                  class="text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400"
+                >
+                  Labels
+                </p>
+                <p class="font-medium text-gray-900 dark:text-slate-100">
+                  {{ evidence.labels.length }}
+                </p>
+              </div>
+              <div>
+                <p
+                  class="text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400"
+                >
+                  Tasks
+                </p>
+                <p class="font-medium text-gray-900 dark:text-slate-100">
+                  {{ evidence.activities?.length || 0 }}
+                </p>
+              </div>
+              <div>
+                <p
+                  class="text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400"
+                >
+                  Metadata Links
+                </p>
+                <p class="font-medium text-gray-900 dark:text-slate-100">
+                  {{ metadataLinks.length }}
+                </p>
+              </div>
+              <div>
+                <p
+                  class="text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400"
+                >
+                  Back Matter Resources
+                </p>
+                <p class="font-medium text-gray-900 dark:text-slate-100">
+                  {{ backMatterResources.length }}
+                </p>
+              </div>
+              <div>
+                <p
+                  class="text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400"
+                >
+                  {{ overviewLifecycleLabel }}
+                </p>
+                <template v-if="showLatestEvidenceLink">
+                  <RouterLink
+                    :to="latestEvidenceRoute"
+                    class="inline-flex items-center rounded-md border border-ccf-300 px-3 py-2 text-sm font-medium text-gray-900 hover:bg-zinc-50 dark:border-slate-700 dark:text-slate-100 dark:hover:bg-slate-800"
+                  >
+                    Go to latest evidence
+                  </RouterLink>
+                </template>
+                <p v-else class="font-medium" :class="expirationTextClass">
+                  {{ expirationLabel }}
+                </p>
+              </div>
+            </div>
+          </PageCard>
+
+          <PageCard v-if="showSubjects" data-testid="subjects-card">
+            <h3 class="text-lg font-semibold text-zinc-700 dark:text-slate-200">
+              Subjects
+            </h3>
+            <SubjectsSection
+              class="mt-4"
+              :subject-references="evidence.subjectReferences ?? []"
+            />
+          </PageCard>
+        </div>
+
+        <EvidencePlaybackSections
+          v-if="canPlayBack"
+          :evidence-id="evidence.id"
+          :policy-source="policySource"
+        />
+      </div>
+
+      <div v-else-if="activeTab === 'metadata'" class="space-y-4">
+        <PageCard>
+          <h3 class="text-lg font-semibold text-zinc-700 dark:text-slate-200">
+            Labels
+          </h3>
+          <div class="mt-4">
+            <LabelList
+              v-if="evidence.labels.length"
+              :labels="evidence.labels"
+              show-all
+            />
+            <p v-else class="text-sm text-gray-600 dark:text-slate-400">
+              No labels are available for this evidence record.
+            </p>
+          </div>
+        </PageCard>
+
+        <PageCard>
+          <h3 class="text-lg font-semibold text-zinc-700 dark:text-slate-200">
+            Props
+          </h3>
+          <div v-if="metadataProps.length" class="mt-4 space-y-3">
+            <div
+              v-for="(prop, index) in metadataProps"
+              :key="`${prop.name || 'prop'}-${prop.value || ''}-${prop.class || ''}-${prop.ns || ''}-${index}`"
+              class="rounded-md border border-ccf-300 p-3 dark:border-slate-700"
+            >
+              <p class="text-sm text-gray-900 dark:text-slate-200">
+                {{ prop.name || 'Unnamed prop' }}: {{ prop.value || '-' }}
+              </p>
+              <p class="text-xs text-gray-500 dark:text-slate-400">
+                class: {{ prop.class || '-' }} | ns: {{ prop.ns || '-' }}
+              </p>
+              <p
+                v-if="prop.remarks"
+                class="text-xs text-gray-500 dark:text-slate-400"
+              >
+                remarks: {{ prop.remarks }}
+              </p>
+            </div>
+          </div>
+          <p v-else class="mt-4 text-sm text-gray-600 dark:text-slate-400">
+            No props are available for this evidence record.
+          </p>
+        </PageCard>
+
+        <PageCard>
+          <h3 class="text-lg font-semibold text-zinc-700 dark:text-slate-200">
+            Links
+          </h3>
+          <div v-if="metadataLinks.length" class="mt-4 space-y-3">
+            <div
+              v-for="link in metadataLinks"
+              :key="`${link.href}-${link.rel || ''}-${link.text || ''}`"
+              class="rounded-md border border-ccf-300 p-3 dark:border-slate-700"
+            >
+              <div class="flex flex-wrap items-center gap-2 text-sm">
+                <span class="font-medium text-gray-900 dark:text-slate-200">
+                  {{ link.text || link.href }}
+                </span>
+                <span
+                  v-if="link.rel"
+                  class="rounded-full bg-slate-100 px-2 py-0.5 text-xs dark:bg-slate-800"
+                >
+                  {{ link.rel }}
+                </span>
+              </div>
+              <div class="mt-2 text-sm text-gray-700 dark:text-slate-300">
+                <template v-if="isInternalLink(link.href)">
+                  Internal resource reference:
+                  <code
+                    class="rounded bg-slate-100 px-2 py-1 text-xs dark:bg-slate-800"
+                  >
+                    {{ normalizeLinkHref(link.href) }}
+                  </code>
+                </template>
+                <a
+                  v-else-if="getSafeExternalHref(link.href)"
+                  :href="getSafeExternalHref(link.href)"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="underline text-blue-600 dark:text-blue-400"
+                >
+                  {{ normalizeLinkHref(link.href) }}
+                </a>
+                <template v-else>
+                  Unsupported or unsafe link:
+                  <code
+                    class="rounded bg-slate-100 px-2 py-1 text-xs dark:bg-slate-800"
+                  >
+                    {{ normalizeLinkHref(link.href) || 'N/A' }}
+                  </code>
+                </template>
+              </div>
+            </div>
+          </div>
+          <p v-else class="mt-4 text-sm text-gray-600 dark:text-slate-400">
+            No links are available for this evidence record.
+          </p>
         </PageCard>
       </div>
 
-      <div>
+      <div v-else-if="activeTab === 'risks'" class="space-y-4">
         <PageCard>
-          <h3 class="text-lg font-semibold text-zinc-600 dark:text-slate-300">
+          <div class="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <h3
+                class="text-lg font-semibold text-zinc-700 dark:text-slate-200"
+              >
+                Associated Risks
+              </h3>
+              <p class="mt-2 text-sm text-gray-700 dark:text-slate-300">
+                Risks linked to this evidence stream, across all system security
+                plans.
+              </p>
+            </div>
+            <SecondaryButton
+              :disabled="!hasStreamUuid || !can(RESOURCES.RISK, ACTIONS.CREATE)"
+              v-tooltip.top="{
+                value: permissionTooltip(RESOURCES.RISK, ACTIONS.CREATE),
+                disabled: can(RESOURCES.RISK, ACTIONS.CREATE),
+              }"
+              @click="openCreateRiskDialog"
+            >
+              Create Risk
+            </SecondaryButton>
+          </div>
+
+          <Message
+            v-if="!hasStreamUuid"
+            severity="warn"
+            variant="outlined"
+            class="mt-4"
+          >
+            This evidence record has no stream identifier, so risks cannot be
+            associated with it.
+          </Message>
+
+          <div
+            v-else-if="risksLoading"
+            class="mt-4 text-sm text-gray-600 dark:text-slate-400"
+          >
+            Loading associated risks...
+          </div>
+
+          <Message
+            v-else-if="risksError"
+            severity="error"
+            variant="outlined"
+            class="mt-4"
+          >
+            Failed to load risks for this evidence record.
+          </Message>
+
+          <div v-else-if="evidenceRisks.length" class="mt-4 space-y-3">
+            <div
+              v-for="risk in evidenceRisks"
+              :key="risk.id"
+              class="rounded-md border border-ccf-300 p-4 dark:border-slate-700"
+            >
+              <div class="flex flex-wrap items-center gap-3">
+                <RouterLink
+                  :to="{
+                    name: 'system-security-plan-risk-detail',
+                    params: { id: risk.sspId, riskId: risk.id },
+                  }"
+                  class="font-medium text-blue-600 underline dark:text-blue-400"
+                >
+                  {{ risk.title || 'Untitled Risk' }}
+                </RouterLink>
+                <span
+                  :class="[
+                    'inline-flex rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wide',
+                    getRiskStatusColor(risk.status),
+                  ]"
+                >
+                  {{ riskStatusLabel(risk.status) }}
+                </span>
+                <span
+                  v-if="risk.sourceType === 'evidence-auto'"
+                  class="inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-xs dark:bg-slate-800"
+                >
+                  Auto-generated
+                </span>
+              </div>
+              <p
+                v-if="risk.description"
+                class="mt-2 text-sm text-gray-700 dark:text-slate-300"
+              >
+                {{ risk.description }}
+              </p>
+              <div class="mt-3 flex flex-wrap items-center gap-2">
+                <span
+                  :class="[
+                    'inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs',
+                    neutralPillColor,
+                  ]"
+                >
+                  <span
+                    class="text-[10px] font-medium uppercase tracking-wide opacity-60"
+                  >
+                    SSP
+                  </span>
+                  <span class="font-semibold">
+                    {{ risk.sspTitle || risk.sspId }}
+                  </span>
+                </span>
+                <span
+                  v-if="risk.likelihood"
+                  :class="[
+                    'inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs',
+                    getRiskLevelColor(risk.likelihood),
+                  ]"
+                >
+                  <span
+                    class="text-[10px] font-medium uppercase tracking-wide opacity-60"
+                  >
+                    Likelihood
+                  </span>
+                  <span class="font-semibold uppercase tracking-wide">
+                    {{ risk.likelihood }}
+                  </span>
+                </span>
+                <span
+                  v-if="risk.impact"
+                  :class="[
+                    'inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs',
+                    getRiskLevelColor(risk.impact),
+                  ]"
+                >
+                  <span
+                    class="text-[10px] font-medium uppercase tracking-wide opacity-60"
+                  >
+                    Impact
+                  </span>
+                  <span class="font-semibold uppercase tracking-wide">
+                    {{ risk.impact }}
+                  </span>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <p v-else class="mt-4 text-sm text-gray-600 dark:text-slate-400">
+            No risks are associated with this evidence record.
+          </p>
+        </PageCard>
+      </div>
+
+      <div v-else-if="activeTab === 'media'" class="space-y-4">
+        <PageCard>
+          <h3 class="text-lg font-semibold text-zinc-700 dark:text-slate-200">
             Media
           </h3>
-          <div class="flex flex-col gap-y-4">
+
+          <div
+            v-if="displayableMedia.length"
+            class="mt-4 flex flex-col gap-y-4"
+          >
             <div
               v-for="media in displayableMedia"
               :key="media.uuid"
               class="border border-ccf-300 rounded-md overflow-hidden"
             >
-              <BackMatterDisplay :resource="media" />
+              <div v-if="isRenderableTextMedia(media)">
+                <div class="flex items-stretch bg-white dark:bg-slate-950">
+                  <button
+                    type="button"
+                    class="flex min-w-0 flex-1 items-center justify-between gap-4 px-4 py-3 text-left text-sm font-medium text-gray-900 hover:bg-zinc-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-ccf-500 dark:text-slate-100 dark:hover:bg-slate-900"
+                    :aria-expanded="isTextMediaExpanded(media.uuid)"
+                    :aria-controls="textMediaContentId(media.uuid)"
+                    :data-testid="`media-toggle-${media.uuid}`"
+                    @click="toggleTextMedia(media.uuid)"
+                  >
+                    <span class="min-w-0 break-words">
+                      {{ media.title || media.uuid }}
+                    </span>
+                    <span class="shrink-0 text-xs" aria-hidden="true">
+                      {{ isTextMediaExpanded(media.uuid) ? '-' : '+' }}
+                    </span>
+                  </button>
+                  <a
+                    v-if="hasBase64MediaPayload(media)"
+                    :download="media.title || media.uuid"
+                    :href="mediaDataHref(media)"
+                    :aria-label="`Download ${media.title || media.uuid}`"
+                    class="flex shrink-0 items-center px-4 text-gray-700 hover:bg-zinc-50 hover:text-ccf-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-ccf-500 dark:text-slate-200 dark:hover:bg-slate-900"
+                  >
+                    <BIconDownload />
+                  </a>
+                </div>
+                <pre
+                  v-if="isTextMediaExpanded(media.uuid)"
+                  :id="textMediaContentId(media.uuid)"
+                  class="max-h-[32rem] overflow-auto p-4 text-sm leading-6 text-gray-900 whitespace-pre-wrap break-words dark:text-slate-100"
+                  >{{ renderMediaText(media) }}</pre
+                >
+              </div>
+              <BackMatterDisplay v-else :resource="media" />
               <div
+                v-if="!isRenderableTextMedia(media)"
                 class="border-t border-ccf-300 py-2 px-4 flex justify-between items-center"
               >
-                <span>
-                  {{ media.title || media.uuid }}
-                </span>
+                <span>{{ media.title || media.uuid }}</span>
                 <a
+                  v-if="hasBase64MediaPayload(media)"
                   :download="media.title || media.uuid"
-                  :href="`data:${media.base64?.mediaType};base64,${media.base64?.value}`"
+                  :href="mediaDataHref(media)"
+                  :aria-label="`Download ${media.title || media.uuid}`"
                 >
                   <BIconDownload />
                 </a>
               </div>
             </div>
           </div>
+
+          <p v-else class="mt-4 text-sm text-gray-600 dark:text-slate-400">
+            No displayable media resources are linked to this evidence record.
+          </p>
         </PageCard>
       </div>
+
+      <div v-else-if="activeTab === 'signature'" class="space-y-4">
+        <PageCard>
+          <div class="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <h3
+                class="text-lg font-semibold text-zinc-700 dark:text-slate-200"
+              >
+                Verification
+              </h3>
+              <p class="mt-2 text-sm text-gray-700 dark:text-slate-300">
+                Run a fresh verification against the current evidence content
+                and the stored signed payload.
+              </p>
+            </div>
+
+            <SecondaryButton :disabled="verifying" @click="runVerification">
+              {{ verificationAttempted ? 'Re-verify' : 'Verify' }}
+            </SecondaryButton>
+          </div>
+
+          <Message
+            v-if="verifyError"
+            severity="error"
+            variant="outlined"
+            class="mt-4"
+          >
+            Verification failed to run for this evidence record.
+          </Message>
+
+          <div v-else-if="verificationResult" class="mt-4 space-y-4">
+            <div class="flex flex-wrap items-center gap-3">
+              <span
+                class="inline-flex rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wide"
+                :class="
+                  verificationResult.isValid
+                    ? validBadgeClass
+                    : invalidBadgeClass
+                "
+              >
+                {{ verificationResult.isValid ? 'Valid' : 'Invalid' }}
+              </span>
+              <span class="text-sm text-gray-700 dark:text-slate-300">
+                Verification status: {{ verificationResult.status }}
+              </span>
+            </div>
+
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+              <div
+                v-for="check in verificationChecks"
+                :key="check.label"
+                class="rounded-md border border-ccf-300 p-4 dark:border-slate-700"
+              >
+                <p
+                  class="text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400"
+                >
+                  {{ check.label }}
+                </p>
+                <p
+                  class="mt-2 text-sm font-semibold"
+                  :class="
+                    check.value
+                      ? 'text-green-700 dark:text-green-400'
+                      : 'text-red-700 dark:text-red-400'
+                  "
+                >
+                  {{ check.value ? 'Pass' : 'Fail' }}
+                </p>
+              </div>
+            </div>
+
+            <div
+              v-if="verificationResult.contentHash"
+              class="rounded-md border border-ccf-300 p-4 dark:border-slate-700"
+            >
+              <h4 class="font-semibold text-gray-900 dark:text-slate-200">
+                Verified Content Hash
+              </h4>
+              <p class="mt-2 text-sm text-gray-700 dark:text-slate-300">
+                {{ verificationResult.contentHash.algorithm }}
+              </p>
+              <p
+                class="mt-2 rounded bg-slate-100 p-3 text-xs break-all dark:bg-slate-800 dark:text-slate-300"
+              >
+                {{ verificationResult.contentHash.value }}
+              </p>
+            </div>
+
+            <div
+              v-if="verificationResult.errors?.length"
+              class="rounded-md border border-red-200 bg-red-50 p-4 dark:border-red-900 dark:bg-red-950/30"
+            >
+              <h4 class="font-semibold text-red-800 dark:text-red-300">
+                Verification Errors
+              </h4>
+              <ul
+                class="mt-2 list-disc pl-5 text-sm text-red-700 dark:text-red-300"
+              >
+                <li
+                  v-for="verificationError in verificationResult.errors"
+                  :key="verificationError"
+                >
+                  {{ verificationError }}
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <p v-else class="mt-4 text-sm text-gray-600 dark:text-slate-400">
+            Run verification to compare the current evidence content with the
+            stored signature payload.
+          </p>
+        </PageCard>
+
+        <PageCard>
+          <div class="flex flex-wrap items-start justify-between gap-4">
+            <div class="space-y-2">
+              <h3
+                class="text-lg font-semibold text-zinc-700 dark:text-slate-200"
+              >
+                Signature Details
+              </h3>
+              <p class="text-sm text-gray-700 dark:text-slate-300">
+                Stored signature status:
+                <span class="font-medium">{{ signatureSummary }}</span>
+              </p>
+            </div>
+            <span
+              v-tooltip.bottom="signatureTooltip"
+              :class="[
+                'inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold',
+                signatureBadgeClass,
+              ]"
+            >
+              <component :is="signatureIcon" class="mr-1" />
+              {{ signatureBadgeText }}
+            </span>
+          </div>
+
+          <Message
+            v-if="signatureError"
+            severity="error"
+            variant="outlined"
+            class="mt-4"
+          >
+            Failed to load the stored signature for this evidence record.
+          </Message>
+
+          <div
+            v-else-if="signatureDetail?.signature"
+            class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2"
+          >
+            <div
+              class="rounded-md border border-ccf-300 p-4 dark:border-slate-700"
+            >
+              <h4 class="font-semibold text-gray-900 dark:text-slate-200">
+                Envelope
+              </h4>
+              <dl class="mt-3 space-y-2 text-sm">
+                <div class="flex justify-between gap-4">
+                  <dt class="text-gray-500 dark:text-slate-400">Version</dt>
+                  <dd class="text-right text-gray-900 dark:text-slate-200">
+                    {{ signatureDetail.signature.version }}
+                  </dd>
+                </div>
+                <div class="flex justify-between gap-4">
+                  <dt class="text-gray-500 dark:text-slate-400">Algorithm</dt>
+                  <dd class="text-right text-gray-900 dark:text-slate-200">
+                    {{ signatureDetail.signature.signatureAlgorithm }}
+                  </dd>
+                </div>
+                <div class="flex justify-between gap-4">
+                  <dt class="text-gray-500 dark:text-slate-400">Signed At</dt>
+                  <dd class="text-right text-gray-900 dark:text-slate-200">
+                    {{ formatDateTime(signatureDetail.signature.signedAt) }}
+                  </dd>
+                </div>
+                <div class="flex justify-between gap-4">
+                  <dt class="text-gray-500 dark:text-slate-400">
+                    Content Hash
+                  </dt>
+                  <dd class="text-right text-gray-900 dark:text-slate-200">
+                    {{ signatureDetail.signature.contentHash.algorithm }}
+                  </dd>
+                </div>
+              </dl>
+              <p
+                class="mt-3 rounded bg-slate-100 p-3 text-xs break-all dark:bg-slate-800 dark:text-slate-300"
+              >
+                {{ signatureDetail.signature.contentHash.value }}
+              </p>
+            </div>
+
+            <div
+              class="rounded-md border border-ccf-300 p-4 dark:border-slate-700"
+            >
+              <h4 class="font-semibold text-gray-900 dark:text-slate-200">
+                Signer
+              </h4>
+              <dl class="mt-3 space-y-2 text-sm">
+                <div class="flex justify-between gap-4">
+                  <dt class="text-gray-500 dark:text-slate-400">Type</dt>
+                  <dd class="text-right text-gray-900 dark:text-slate-200">
+                    {{ signatureDetail.signature.signer.type || 'N/A' }}
+                  </dd>
+                </div>
+                <div class="flex justify-between gap-4">
+                  <dt class="text-gray-500 dark:text-slate-400">Name</dt>
+                  <dd class="text-right text-gray-900 dark:text-slate-200">
+                    {{ signatureDetail.signature.signer.name || 'N/A' }}
+                  </dd>
+                </div>
+                <div class="flex justify-between gap-4">
+                  <dt class="text-gray-500 dark:text-slate-400">Email</dt>
+                  <dd class="text-right text-gray-900 dark:text-slate-200">
+                    {{ signatureDetail.signature.signer.email || 'N/A' }}
+                  </dd>
+                </div>
+                <div class="flex justify-between gap-4">
+                  <dt class="text-gray-500 dark:text-slate-400">ID</dt>
+                  <dd class="text-right text-gray-900 dark:text-slate-200">
+                    {{ signatureDetail.signature.signer.id || 'N/A' }}
+                  </dd>
+                </div>
+                <div class="flex justify-between gap-4">
+                  <dt class="text-gray-500 dark:text-slate-400">
+                    Credential ID
+                  </dt>
+                  <dd class="text-right text-gray-900 dark:text-slate-200">
+                    {{ signatureDetail.signature.signer.credentialId || 'N/A' }}
+                  </dd>
+                </div>
+              </dl>
+            </div>
+
+            <div
+              class="rounded-md border border-ccf-300 p-4 dark:border-slate-700 md:col-span-2"
+            >
+              <h4 class="font-semibold text-gray-900 dark:text-slate-200">
+                Claims
+              </h4>
+              <div
+                class="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3"
+              >
+                <div
+                  v-for="claim in signatureClaims"
+                  :key="claim.label"
+                  class="text-sm"
+                >
+                  <p class="text-gray-500 dark:text-slate-400">
+                    {{ claim.label }}
+                  </p>
+                  <p class="font-medium text-gray-900 dark:text-slate-200">
+                    {{ claim.value }}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div
+              class="rounded-md border border-ccf-300 p-4 dark:border-slate-700 md:col-span-2"
+            >
+              <h4 class="font-semibold text-gray-900 dark:text-slate-200">
+                JWS
+              </h4>
+              <pre
+                class="mt-3 overflow-x-auto rounded bg-slate-100 p-3 text-xs break-all whitespace-pre-wrap dark:bg-slate-800 dark:text-slate-300"
+                >{{ signatureDetail.signature.jws }}</pre
+              >
+            </div>
+          </div>
+
+          <p v-else class="mt-4 text-sm text-gray-600 dark:text-slate-400">
+            No stored signature envelope is available for this evidence record.
+          </p>
+        </PageCard>
+      </div>
+
+      <div v-else class="space-y-4">
+        <EvidenceHistorySection :uuid="evidence.uuid" />
+      </div>
+
+      <Dialog
+        v-model:visible="showCreateRiskDialog"
+        modal
+        header="Create Risk from Evidence"
+      >
+        <div class="w-[48rem] max-w-full space-y-4 px-4 pt-2">
+          <div>
+            <label
+              class="text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400"
+            >
+              System Security Plan
+            </label>
+            <Select
+              v-model="createRiskSspId"
+              :options="sspOptions"
+              option-label="title"
+              option-value="uuid"
+              placeholder="Select the SSP this risk belongs to"
+              class="mt-1 w-full"
+            />
+            <p class="mt-1 text-xs text-gray-500 dark:text-slate-400">
+              Risks live in a system security plan's risk register. The new risk
+              will be linked to this evidence stream.
+            </p>
+          </div>
+
+          <RiskCreateForm
+            v-if="createRiskSspId"
+            :key="createRiskSspId"
+            :ssp-id="createRiskSspId"
+            @cancel="showCreateRiskDialog = false"
+            @created="onRiskCreated"
+          />
+        </div>
+      </Dialog>
 
       <Dialog
         v-model:visible="showActivitiesModal"
@@ -102,70 +941,365 @@
           class="mt-4 border-t border-zinc-300 dark:border-slate-400 text-right py-4 px-4"
         >
           <SecondaryButton
-            @click="toggleActivitiesModal(false)"
             class="px-2 py-1 shadow"
+            @click="toggleActivitiesModal(false)"
           >
             Close
           </SecondaryButton>
         </div>
       </Dialog>
-    </div>
-  </template>
+    </template>
+  </div>
 </template>
+
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import PageHeader from '@/components/PageHeader.vue';
 import PageCard from '@/components/PageCard.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
 import BackMatterDisplay from '@/components/BackMatterDisplay.vue';
-import type { Activity } from '@/oscal';
+import LabelList from '@/components/LabelList.vue';
+import EvidenceHistorySection from '@/components/evidence/EvidenceHistorySection.vue';
+import EvidencePlaybackSections from '@/components/evidence/EvidencePlaybackSections.vue';
+import {
+  FindingStatusColor,
+  getEvidenceStatusColor,
+} from '@/utils/evidence-status';
+import {
+  POLICY_BUNDLE_DIGEST_PROP,
+  POLICY_SOURCE_PROP,
+} from '@/types/evidence-playback';
+import type { Activity, BackMatterResource, Link, Property } from '@/oscal';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
-import { BIconDownload } from 'bootstrap-icons-vue';
-import { useDataApi } from '@/composables/axios';
-
 import Dialog from '@/volt/Dialog.vue';
-import type { Evidence } from '@/stores/evidence.ts';
-import type { BackMatterResource } from '@/oscal';
+import Message from '@/volt/Message.vue';
+import RouterLinkButton from '@/components/RouterLinkButton.vue';
+import RiskCreateForm from '@/components/risk/RiskCreateForm.vue';
+import Select from '@/volt/Select.vue';
+import {
+  BIconDownload,
+  BIconLockFill,
+  BIconUnlockFill,
+} from 'bootstrap-icons-vue';
+import { useDataApi, decamelizeKeys } from '@/composables/axios';
+import { useToast } from 'primevue/usetoast';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
+import { riskStatusLabel } from '@/utils/risk-workflow';
+import {
+  getSafeExternalHref,
+  isInternalLink,
+  normalizeLinkHref,
+} from '@/utils/links';
+import SubjectsSection from '@/components/evidence/SubjectsSection.vue';
+import type { Risk as OscalRisk, SystemSecurityPlan } from '@/oscal';
+import type {
+  Evidence,
+  SignatureDetail,
+  VerificationResult,
+} from '@/stores/evidence.ts';
+
+interface EvidenceRisk {
+  id: string;
+  title: string;
+  description?: string;
+  status: string;
+  likelihood?: string;
+  impact?: string;
+  sspId: string;
+  sspTitle?: string;
+  sourceType?: string;
+}
 
 const route = useRoute();
 const router = useRouter();
-const id = route.params.id as string;
+const evidenceId = computed(() => route.params.id as string);
+const backToEvidenceRoute = computed(() => ({
+  name: 'evidence:index',
+  query: route.query,
+}));
 
-const { data: evidence } = useDataApi<Evidence>(`/api/evidence/${id}`);
+const tabs = [
+  { id: 'overview', label: 'Overview' },
+  { id: 'metadata', label: 'Metadata' },
+  { id: 'risks', label: 'Risks' },
+  { id: 'media', label: 'Media' },
+  { id: 'signature', label: 'Signature' },
+  { id: 'history', label: 'History' },
+] as const;
 
+const activeTab = ref<(typeof tabs)[number]['id']>('overview');
 const activities = ref<Activity[]>([] as Activity[]);
 const showActivitiesModal = ref(false);
+const verificationAttempted = ref(false);
+const expandedTextMedia = ref<Set<string>>(new Set());
+const showCreateRiskDialog = ref(false);
+const createRiskSspId = ref<string | null>(null);
+const risksLoadedForUuid = ref<string | null>(null);
 
-const displayableMedia = ref<BackMatterResource[]>([]);
-watch(evidence, () => {
-  if (!evidence.value) {
-    return;
-  }
-  displayableMedia.value = [];
-  if (!evidence.value.links) {
-    return;
-  }
-  for (const link of evidence.value.links) {
-    if (typeof link.href === 'string' && link.href.startsWith('#')) {
-      const resource = evidence.value.backMatter?.resources.find(
-        (r: BackMatterResource) => r.uuid === link.href.substring(1),
-      );
-      if (resource) {
-        displayableMedia.value.push(resource);
+const toast = useToast();
+const { can, permissionTooltip } = usePermissions();
+
+const {
+  data: evidence,
+  isLoading,
+  error,
+  execute: loadEvidence,
+} = useDataApi<Evidence>(null, null, { immediate: false });
+const {
+  data: signatureDetail,
+  error: signatureError,
+  execute: loadSignatureDetail,
+} = useDataApi<SignatureDetail>(null, null, { immediate: false });
+const { data: latestEvidence, execute: loadLatestEvidence } =
+  useDataApi<Evidence>(null, null, { immediate: false });
+const {
+  data: verificationResult,
+  execute: executeVerify,
+  isLoading: verifying,
+  error: verifyError,
+} = useDataApi<VerificationResult>(
+  null,
+  { method: 'POST' },
+  { immediate: false },
+);
+const {
+  data: evidenceRisksData,
+  isLoading: risksLoading,
+  error: risksError,
+  execute: loadEvidenceRisks,
+} = useDataApi<EvidenceRisk[]>(null, null, { immediate: false });
+const { data: ssps, execute: loadSsps } = useDataApi<SystemSecurityPlan[]>(
+  null,
+  null,
+  { immediate: false },
+);
+const { execute: executeLinkEvidence } = useDataApi(
+  null,
+  { method: 'POST', transformRequest: [decamelizeKeys] },
+  { immediate: false },
+);
+
+const workflowExecutionId = computed(
+  () =>
+    evidence.value?.labels.find((l) => l.name === 'workflow.execution.id')
+      ?.value,
+);
+const workflowExecutionRoute = computed(() =>
+  workflowExecutionId.value
+    ? {
+        name: 'workflow-execution-view',
+        params: { id: workflowExecutionId.value },
       }
-    }
-  }
+    : null,
+);
+
+const ZERO_UUID = '00000000-0000-0000-0000-000000000000';
+const hasStreamUuid = computed(() =>
+  Boolean(evidence.value?.uuid && evidence.value.uuid !== ZERO_UUID),
+);
+const evidenceRisks = computed<EvidenceRisk[]>(
+  () => evidenceRisksData.value ?? [],
+);
+const sspOptions = computed(() =>
+  (ssps.value ?? []).map((ssp) => ({
+    uuid: ssp.uuid,
+    title: ssp.metadata?.title || ssp.uuid,
+  })),
+);
+
+const metadataProps = computed<Property[]>(() => evidence.value?.props ?? []);
+
+// Evidence can be played back when the agent stored the artifacts its evaluation used.
+const policySource = computed(
+  () =>
+    metadataProps.value.find((prop) => prop.name === POLICY_SOURCE_PROP)?.value,
+);
+// Older APIs leave subjectReferences out of the evidence response, and get no Subjects
+// card.
+const showSubjects = computed(
+  () => evidence.value?.subjectReferences !== undefined,
+);
+const canPlayBack = computed(() =>
+  metadataProps.value.some((prop) => prop.name === POLICY_BUNDLE_DIGEST_PROP),
+);
+const metadataLinks = computed<Link[]>(() => evidence.value?.links ?? []);
+const backMatterResources = computed<BackMatterResource[]>(
+  () => evidence.value?.backMatter?.resources ?? [],
+);
+const resourceMap = computed(() => {
+  return new Map(
+    backMatterResources.value.map((resource) => [resource.uuid, resource]),
+  );
 });
 
-enum FindingStatusColor {
-  UNKNOWN = 'grey',
-  SATISFIED = 'bg-green-50 dark:bg-green-950/30 text-green-800 dark:text-green-500 border border-green-800 dark:border-green-600',
-  'NOT-SATISFIED' = 'bg-red-50 dark:bg-red-950/30 text-red-800 dark:text-red-500 border border-red-800 dark:border-red-600',
-}
+const displayableMedia = computed<BackMatterResource[]>(() => {
+  return metadataLinks.value
+    .filter(
+      (link) => typeof link.href === 'string' && link.href.startsWith('#'),
+    )
+    .map((link) => resourceMap.value.get(link.href.substring(1)))
+    .filter((resource): resource is BackMatterResource => Boolean(resource));
+});
 
-function showActivities(evidence: Evidence) {
-  activities.value = evidence.activities || [];
+const signatureBadgeState = computed(() => {
+  if (signatureError.value) {
+    return {
+      text: 'Unavailable',
+      tooltip: 'Signature status is unavailable',
+      badgeClass:
+        'bg-slate-50 text-slate-700 border-slate-400 dark:bg-slate-900/30 dark:text-slate-300 dark:border-slate-600',
+      icon: BIconUnlockFill,
+    };
+  }
+
+  if (!signatureDetail.value) {
+    return {
+      text: 'Loading...',
+      tooltip: 'Signature status is loading',
+      badgeClass:
+        'bg-slate-50 text-slate-700 border-slate-400 dark:bg-slate-900/30 dark:text-slate-300 dark:border-slate-600',
+      icon: BIconUnlockFill,
+    };
+  }
+
+  if (signatureDetail.value.status === 'signed') {
+    return {
+      text: 'Signed',
+      tooltip: 'Evidence is signed',
+      badgeClass:
+        'bg-green-50 text-green-800 border-green-800 dark:bg-green-950/30 dark:text-green-500 dark:border-green-600',
+      icon: BIconLockFill,
+    };
+  }
+
+  return {
+    text: 'Unsigned',
+    tooltip: 'Evidence is unsigned',
+    badgeClass:
+      'bg-amber-50 text-amber-800 border-amber-700 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-700',
+    icon: BIconUnlockFill,
+  };
+});
+const signatureSummary = computed(() => signatureBadgeState.value.text);
+const signatureBadgeText = computed(() => signatureBadgeState.value.text);
+const signatureTooltip = computed(() => signatureBadgeState.value.tooltip);
+const signatureBadgeClass = computed(
+  () => signatureBadgeState.value.badgeClass,
+);
+const signatureIcon = computed(() => signatureBadgeState.value.icon);
+const isLatestEvidence = computed(() => {
+  if (!evidence.value?.id || !latestEvidence.value?.id) {
+    return true;
+  }
+  return evidence.value.id === latestEvidence.value.id;
+});
+const showLatestEvidenceLink = computed(() => {
+  return Boolean(
+    evidence.value?.id && latestEvidence.value?.id && !isLatestEvidence.value,
+  );
+});
+const latestEvidenceRoute = computed(() => ({
+  name: 'evidence:view',
+  params: { id: latestEvidence.value?.id },
+}));
+const summaryLifecycleLabel = computed(() =>
+  showLatestEvidenceLink.value ? 'Latest Evidence' : 'Expiration Date',
+);
+const overviewLifecycleLabel = computed(() =>
+  showLatestEvidenceLink.value ? 'Latest Evidence' : 'Expiration',
+);
+const expirationDate = computed(() => evidence.value?.expires);
+const isExpired = computed(() => {
+  if (!expirationDate.value) {
+    return false;
+  }
+  return new Date(expirationDate.value).getTime() < Date.now();
+});
+const expiresSoon = computed(() => {
+  if (!expirationDate.value || isExpired.value) {
+    return false;
+  }
+  return (
+    new Date(expirationDate.value).getTime() - Date.now() <=
+    7 * 24 * 60 * 60 * 1000
+  );
+});
+const expirationTextClass = computed(() => {
+  if (!expirationDate.value) {
+    return 'text-gray-900 dark:text-slate-100';
+  }
+  if (isExpired.value) {
+    return 'text-red-700 dark:text-red-400';
+  }
+  if (expiresSoon.value) {
+    return 'text-amber-700 dark:text-amber-400';
+  }
+  return 'text-green-700 dark:text-green-400';
+});
+const expirationLabel = computed(() => {
+  if (!expirationDate.value) {
+    return 'No expiration date';
+  }
+  return isExpired.value
+    ? `${formatDateTime(expirationDate.value)} (expired)`
+    : formatDateTime(expirationDate.value);
+});
+
+const signatureClaims = computed(() => {
+  const claims = signatureDetail.value?.signature?.claims;
+  if (!claims) {
+    return [];
+  }
+
+  return [
+    { label: 'Subject', value: claims.subject || 'N/A' },
+    { label: 'Issuer', value: claims.issuer || 'N/A' },
+    { label: 'Token Kind', value: claims.tokenKind || 'N/A' },
+    { label: 'Issued At', value: formatDateTime(claims.issuedAt) },
+    { label: 'Expires At', value: formatDateTime(claims.expiresAt) },
+    { label: 'Not Before', value: formatDateTime(claims.notBefore) },
+    { label: 'Given Name', value: claims.givenName || 'N/A' },
+    { label: 'Family Name', value: claims.familyName || 'N/A' },
+    { label: 'Agent ID', value: claims.agentId || 'N/A' },
+    { label: 'Credential ID', value: claims.credentialId || 'N/A' },
+    { label: 'Auth Method', value: claims.authMethod || 'N/A' },
+  ];
+});
+
+const verificationChecks = computed(() => {
+  if (!verificationResult.value) {
+    return [];
+  }
+
+  return [
+    {
+      label: 'Hash Match',
+      value: verificationResult.value.checks.hashMatch,
+    },
+    {
+      label: 'Signature Valid',
+      value: verificationResult.value.checks.signatureValid,
+    },
+    {
+      label: 'Temporal Valid',
+      value: verificationResult.value.checks.temporalValid,
+    },
+    {
+      label: 'Signed Content Matches',
+      value: verificationResult.value.checks.signedContentMatches,
+    },
+  ];
+});
+
+const validBadgeClass =
+  'bg-green-50 text-green-800 border-green-800 dark:bg-green-950/30 dark:text-green-500 dark:border-green-600';
+const invalidBadgeClass =
+  'bg-red-50 text-red-800 border-red-800 dark:bg-red-950/30 dark:text-red-500 dark:border-red-600';
+
+function showActivities(selectedEvidence: Evidence) {
+  activities.value = selectedEvidence.activities || [];
   toggleActivitiesModal(true);
 }
 
@@ -173,12 +1307,100 @@ function toggleActivitiesModal(open: boolean) {
   showActivitiesModal.value = open;
 }
 
-function getEvidenceStatusColor(status?: string): string {
+const RISK_STATUS_COLORS: Record<string, string> = {
+  open: FindingStatusColor['NOT-SATISFIED'],
+  investigating: FindingStatusColor['IN-PROGRESS'],
+  'mitigating-planned': FindingStatusColor['IN-PROGRESS'],
+  'mitigating-implemented': FindingStatusColor['IN-PROGRESS'],
+  remediated: FindingStatusColor.SATISFIED,
+  closed: FindingStatusColor.SATISFIED,
+  'risk-accepted': FindingStatusColor.UNKNOWN,
+  accepted: FindingStatusColor.UNKNOWN,
+};
+
+function getRiskStatusColor(status?: string): string {
   return (
-    FindingStatusColor[
-      status?.toUpperCase() as keyof typeof FindingStatusColor
-    ] || FindingStatusColor.UNKNOWN
+    RISK_STATUS_COLORS[status?.toLowerCase() ?? ''] ||
+    FindingStatusColor.UNKNOWN
   );
+}
+
+const neutralPillColor = FindingStatusColor.UNKNOWN;
+
+const RISK_LEVEL_COLORS: Record<string, string> = {
+  critical: FindingStatusColor['NOT-SATISFIED'],
+  high: FindingStatusColor['NOT-SATISFIED'],
+  moderate: FindingStatusColor['IN-PROGRESS'],
+  medium: FindingStatusColor['IN-PROGRESS'],
+  low: FindingStatusColor.SATISFIED,
+  negligible: FindingStatusColor.UNKNOWN,
+};
+
+function getRiskLevelColor(level?: string): string {
+  return RISK_LEVEL_COLORS[level?.toLowerCase() ?? ''] || neutralPillColor;
+}
+
+async function refreshEvidenceRisks() {
+  const streamUuid = evidence.value?.uuid;
+  if (!streamUuid || streamUuid === ZERO_UUID) {
+    return;
+  }
+  try {
+    await loadEvidenceRisks(`/api/evidence/${evidenceId.value}/risks`);
+    // Mark loaded only after the fetch succeeds so a failed request retries on
+    // the next Risks-tab visit instead of staying stuck on the error state.
+    risksLoadedForUuid.value = streamUuid;
+  } catch {
+    // The failure is surfaced through risksError; leave risksLoadedForUuid unset.
+  }
+}
+
+async function ensureEvidenceRisksLoaded() {
+  if (
+    !evidence.value?.uuid ||
+    risksLoadedForUuid.value === evidence.value.uuid
+  ) {
+    return;
+  }
+  await refreshEvidenceRisks();
+}
+
+function openCreateRiskDialog() {
+  createRiskSspId.value = null;
+  showCreateRiskDialog.value = true;
+  if (!ssps.value?.length) {
+    loadSsps('/api/oscal/system-security-plans');
+  }
+}
+
+async function onRiskCreated(risk: OscalRisk & { id?: string }) {
+  showCreateRiskDialog.value = false;
+
+  // The SSP-scoped register create responds with a register risk carrying an
+  // `id`; a plain OSCAL risk has none, so it's optional on the payload.
+  const riskId = risk.id;
+  const sspId = createRiskSspId.value;
+  const streamUuid = evidence.value?.uuid;
+  if (!riskId || !sspId || !streamUuid) {
+    return;
+  }
+
+  try {
+    await executeLinkEvidence(
+      `/api/oscal/system-security-plans/${sspId}/risks/${riskId}/evidence`,
+      { data: { evidenceId: streamUuid } },
+    );
+  } catch {
+    toast.add({
+      severity: 'warn',
+      summary: 'Evidence link failed',
+      detail:
+        'The risk was created, but it could not be linked to this evidence.',
+      life: 5000,
+    });
+  }
+
+  await refreshEvidenceRisks();
 }
 
 function directToUpdate() {
@@ -187,4 +1409,140 @@ function directToUpdate() {
     params: { id: evidence.value!.id },
   });
 }
+
+async function runVerification() {
+  verificationAttempted.value = true;
+  await executeVerify(`/api/evidence/${evidenceId.value}/verify`);
+}
+
+function formatDateTime(value?: string) {
+  if (!value) {
+    return 'N/A';
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return date.toLocaleString();
+}
+
+function getMediaType(resource: BackMatterResource): string {
+  return resource.base64?.mediaType?.split(';')[0]?.trim().toLowerCase() ?? '';
+}
+
+function hasBase64MediaPayload(resource: BackMatterResource): boolean {
+  return Boolean(resource.base64?.mediaType && resource.base64?.value);
+}
+
+function mediaDataHref(resource: BackMatterResource): string {
+  return `data:${resource.base64?.mediaType};base64,${resource.base64?.value}`;
+}
+
+function isRenderableTextMedia(resource: BackMatterResource): boolean {
+  if (!resource.base64?.value) {
+    return false;
+  }
+
+  const mediaType = getMediaType(resource);
+
+  return (
+    mediaType.startsWith('text/') ||
+    mediaType === 'application/json' ||
+    mediaType.endsWith('+json') ||
+    mediaType === 'application/yaml' ||
+    mediaType === 'application/x-yaml' ||
+    mediaType.endsWith('+yaml')
+  );
+}
+
+function isTextMediaExpanded(uuid: string): boolean {
+  return expandedTextMedia.value.has(uuid);
+}
+
+function textMediaContentId(uuid: string): string {
+  return `evidence-media-content-${uuid}`;
+}
+
+function toggleTextMedia(uuid: string) {
+  const nextExpandedTextMedia = new Set(expandedTextMedia.value);
+
+  if (nextExpandedTextMedia.has(uuid)) {
+    nextExpandedTextMedia.delete(uuid);
+  } else {
+    nextExpandedTextMedia.add(uuid);
+  }
+
+  expandedTextMedia.value = nextExpandedTextMedia;
+}
+
+function decodeBase64Text(value: string): string {
+  try {
+    const bytes = Uint8Array.from(atob(value), (character) =>
+      character.charCodeAt(0),
+    );
+
+    return new TextDecoder().decode(bytes);
+  } catch {
+    return value;
+  }
+}
+
+function renderMediaText(resource: BackMatterResource): string {
+  const text = decodeBase64Text(resource.base64?.value ?? '');
+  const mediaType = getMediaType(resource);
+
+  if (mediaType === 'application/json' || mediaType.endsWith('+json')) {
+    try {
+      return JSON.stringify(JSON.parse(text), null, 2);
+    } catch {
+      return text;
+    }
+  }
+
+  return text;
+}
+
+watch(
+  evidenceId,
+  async (id) => {
+    verificationAttempted.value = false;
+    verificationResult.value = undefined;
+    verifyError.value = undefined;
+    showActivitiesModal.value = false;
+    showCreateRiskDialog.value = false;
+    expandedTextMedia.value = new Set();
+    evidence.value = undefined;
+    signatureDetail.value = undefined;
+    latestEvidence.value = undefined;
+    evidenceRisksData.value = undefined;
+    risksLoadedForUuid.value = null;
+
+    await Promise.allSettled([
+      loadEvidence(`/api/evidence/${id}`),
+      loadSignatureDetail(`/api/evidence/${id}/signature`),
+    ]);
+
+    const currentEvidence = evidence.value as Evidence | undefined;
+    const evidenceUuid = currentEvidence?.uuid;
+
+    if (evidenceUuid) {
+      await Promise.allSettled([
+        loadLatestEvidence(`/api/evidence/latest/${evidenceUuid}`),
+      ]);
+    }
+
+    if (activeTab.value === 'risks') {
+      await ensureEvidenceRisksLoaded();
+    }
+  },
+  { immediate: true },
+);
+
+watch(activeTab, async (tab) => {
+  if (tab === 'risks') {
+    await ensureEvidenceRisksLoaded();
+  }
+});
 </script>

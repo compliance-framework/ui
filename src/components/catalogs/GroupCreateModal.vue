@@ -23,13 +23,18 @@ function done(group: Group) {
 </script>
 
 <template>
-  <Dialog v-model:visible="show" modal header="Create a new group">
-    <div class="px-12 py-4">
-      <GroupCreateForm
-        @created="done"
-        :parent="props.parent"
-        :catalog="props.catalog"
-      />
-    </div>
+  <Dialog
+    v-model:visible="show"
+    modal
+    header="Create Group"
+    :draggable="false"
+    class="w-full max-w-2xl"
+  >
+    <GroupCreateForm
+      @created="done"
+      @cancel="show = false"
+      :parent="props.parent"
+      :catalog="props.catalog"
+    />
   </Dialog>
 </template>

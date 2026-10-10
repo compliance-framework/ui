@@ -1,7 +1,8 @@
 <template>
-  <PageHeader> Update Evidence </PageHeader>
+  <PageHeader> Re-submit Evidence </PageHeader>
   <PageSubHeader>
-    Update the details of an existing piece of evidence.
+    Submit a new revision of this evidence. The revision joins the same evidence
+    stream and becomes the latest record.
   </PageSubHeader>
   <template v-if="isLoading">
     <div class="text-center">
@@ -23,6 +24,7 @@ import EvidenceForm from './partial/EvidenceForm.vue';
 import PageHeader from '@/components/PageHeader.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
 import type {
+  DeclaredSubject,
   Evidence,
   EvidenceLabel,
   EvidenceStatus,
@@ -62,6 +64,7 @@ async function submit(
   updatedEvidence: Partial<Evidence>,
   labels: EvidenceLabel[],
   status: EvidenceStatus,
+  subjects: DeclaredSubject[],
 ) {
   const flatLabels = {} as Record<string, string>;
   labels.forEach((label) => {
@@ -72,6 +75,8 @@ async function submit(
       ...updatedEvidence,
       status: status,
       labels: flatLabels,
+      // The picked subjects replace any subjects on the evidence being re-submitted.
+      subjects,
       backMatter: {
         resources: backmatterResources.value,
       },

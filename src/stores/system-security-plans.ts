@@ -42,6 +42,11 @@ export interface CreateStatementRequest {
   remarks?: string;
 }
 
+export interface SystemSecurityPlanProfileBinding {
+  uuid: string;
+  title: string;
+}
+
 export const useSystemSecurityPlanStore = defineStore(
   'system-security-plans',
   () => {
@@ -95,6 +100,69 @@ export const useSystemSecurityPlanStore = defineStore(
         throw response;
       }
       return response.json();
+    }
+
+    async function listProfiles(
+      id: string,
+    ): Promise<DataResponse<SystemSecurityPlanProfileBinding[]>> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/system-security-plans/${encodeURIComponent(id)}/profiles`,
+        {
+          credentials: 'include',
+        },
+      );
+      if (!response.ok) {
+        throw response;
+      }
+      const result = (await response.json()) as DataResponse<
+        Array<{ id?: string; uuid?: string; title: string }>
+      >;
+      return {
+        data: result.data.map((profile) => {
+          const uuid = profile.uuid ?? profile.id;
+          if (!uuid) {
+            throw new Error(
+              'Invalid profile response: profile is missing both uuid and id',
+            );
+          }
+          return { uuid, title: profile.title };
+        }),
+      };
+    }
+
+    async function addProfile(id: string, profileId: string): Promise<void> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/system-security-plans/${encodeURIComponent(id)}/profiles`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            profileId: profileId,
+          }),
+          credentials: 'include',
+        },
+      );
+      if (!response.ok) {
+        throw response;
+      }
+    }
+
+    async function removeProfile(id: string, profileId: string): Promise<void> {
+      const config = await configStore.getConfig();
+      const response = await fetch(
+        `${config.API_URL}/api/oscal/system-security-plans/${encodeURIComponent(id)}/profiles/${encodeURIComponent(profileId)}`,
+        {
+          method: 'DELETE',
+          credentials: 'include',
+        },
+      );
+      if (!response.ok) {
+        throw response;
+      }
     }
 
     async function getCharacteristics(
@@ -910,6 +978,9 @@ export const useSystemSecurityPlanStore = defineStore(
       full,
       create,
       attachProfile,
+      listProfiles,
+      addProfile,
+      removeProfile,
 
       getCharacteristics,
       getCharacteristicsAuthorizationBoundary,

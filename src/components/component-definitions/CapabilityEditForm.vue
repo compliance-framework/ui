@@ -37,7 +37,18 @@
     </div>
 
     <div class="flex gap-2">
-      <PrimaryButton type="submit">Update Capability</PrimaryButton>
+      <PrimaryButton
+        type="submit"
+        :disabled="!can(RESOURCES.COMPONENT_DEFINITION, ACTIONS.UPDATE)"
+        v-tooltip.top="{
+          value: permissionTooltip(
+            RESOURCES.COMPONENT_DEFINITION,
+            ACTIONS.UPDATE,
+          ),
+          disabled: can(RESOURCES.COMPONENT_DEFINITION, ACTIONS.UPDATE),
+        }"
+        >Update Capability</PrimaryButton
+      >
       <SecondaryButton type="button" @click="$emit('cancel')"
         >Cancel</SecondaryButton
       >
@@ -54,6 +65,10 @@ import FormTextarea from '@/components/forms/FormTextarea.vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
+
+const { can, permissionTooltip } = usePermissions();
 
 const toast = useToast();
 

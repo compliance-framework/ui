@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
-import { ref } from 'vue';
+import { ref, shallowRef } from 'vue';
 import DashboardSavedViewsSectionV2 from '../DashboardSavedViewsSectionV2.vue';
 import type { Dashboard } from '@/stores/filters';
 
@@ -25,7 +25,7 @@ vi.mock('primevue/useconfirm', () => ({
 }));
 
 interface ApiMock<T> {
-  data: ReturnType<typeof ref<T | undefined>>;
+  data: ReturnType<typeof shallowRef<T | undefined>>;
   error: ReturnType<typeof ref<unknown>>;
   isLoading: ReturnType<typeof ref<boolean>>;
   execute: ReturnType<typeof vi.fn>;
@@ -33,7 +33,7 @@ interface ApiMock<T> {
 
 function createApiMock<T>(initialData?: T): ApiMock<T> {
   return {
-    data: ref(initialData),
+    data: shallowRef(initialData),
     error: ref(null),
     isLoading: ref(false),
     execute: vi.fn(),
@@ -111,7 +111,7 @@ describe('DashboardSavedViewsSectionV2', () => {
     const wrapper = mountComponent();
     await flushPromises();
 
-    expect(wrapper.text()).toContain('No dashboards available');
+    expect(wrapper.text()).toContain('No evidence filters available');
     expect(wrapper.text()).toContain('GO TO EVIDENCE');
   });
 
@@ -135,7 +135,7 @@ describe('DashboardSavedViewsSectionV2', () => {
     expect(mockToastAdd).toHaveBeenCalledWith(
       expect.objectContaining({
         severity: 'success',
-        summary: 'Dashboard Deleted',
+        summary: 'Evidence Filter Deleted',
       }),
     );
   });

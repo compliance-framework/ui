@@ -1,212 +1,93 @@
 <template>
-  <div v-if="loading" class="text-center py-8">
-    <p class="text-gray-500 dark:text-slate-400">Loading risks...</p>
-  </div>
-
-  <Message v-else-if="!poamDefined" severity="error" variant="outlined">
-    <div class="space-y-2 text-gray-700 dark:text-slate-200">
-      <h4 class="text-base font-semibold">
-        Plan Of Action and Milestones not selected
-      </h4>
-      <p>
-        No Plan Of Action and Milestones (POA&M) has been selected for editing.
-      </p>
-      <p>
-        Please return to the
-        <RouterLink
-          :to="{ name: 'plan-of-action-and-milestones' }"
-          class="font-medium underline text-blue-600 dark:text-blue-300"
-          >POA&M
-        </RouterLink>
-        to select one
-      </p>
-    </div>
-  </Message>
-
-  <div v-else-if="error" class="text-center py-8">
-    <p class="text-red-500">Error loading risks: {{ error }}</p>
-  </div>
-
-  <div v-else class="space-y-4">
-    <PageHeader>Risk Register</PageHeader>
-    <div v-if="!risks?.length" class="text-center py-8">
-      <p class="text-gray-500 dark:text-slate-400">No risks found.</p>
-    </div>
-    <div class="p-6">
-      <div class="flex justify-between items-center mb-6">
-        <PrimaryButton @click="showCreateModal = true">
-          Add Risk
-        </PrimaryButton>
-      </div>
-      <div
-        v-for="risk in risks"
-        :key="risk.uuid"
-        class="bg-white dark:bg-slate-900 border border-ccf-300 dark:border-slate-700 rounded-lg p-6"
-      >
-        <div class="flex justify-between items-start">
-          <div class="flex-1">
-            <h3 class="text-lg font-medium text-gray-900 dark:text-slate-300">
-              {{ risk.title || 'Untitled Risk' }}
-            </h3>
-            <p class="text-gray-600 dark:text-slate-400 mt-2">
-              {{ risk.description }}
-            </p>
-
-            <div v-if="risk.statement" class="mt-3">
-              <h4
-                class="text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
-              >
-                Statement
-              </h4>
-              <p class="text-sm text-gray-600 dark:text-slate-400">
-                {{ risk.statement }}
-              </p>
-            </div>
-
-            <div class="mt-3">
-              <h4
-                class="text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
-              >
-                Status
-              </h4>
-              <span
-                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
-              >
-                {{ risk.status }}
-              </span>
-            </div>
-
-            <div class="mt-4 flex flex-wrap gap-2">
-              <span
-                v-if="risk.threatIds?.length"
-                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
-              >
-                {{ risk.threatIds.length }} Threats
-              </span>
-              <span
-                v-if="risk.characterizations?.length"
-                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
-              >
-                {{ risk.characterizations.length }} Characterizations
-              </span>
-              <span
-                v-if="risk.mitigatingFactors?.length"
-                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-              >
-                {{ risk.mitigatingFactors.length }} Mitigating Factors
-              </span>
-              <span
-                v-if="risk.remediations?.length"
-                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
-              >
-                {{ risk.remediations.length }} Remediations
-              </span>
-            </div>
-
-            <div
-              v-if="risk.deadline"
-              class="mt-3 text-sm text-gray-500 dark:text-slate-400"
-            >
-              <strong>Deadline:</strong> {{ formatDate(risk.deadline) }}
-            </div>
-          </div>
-
-          <div class="ml-4 flex gap-2">
-            <RouterLinkButton
-              v-if="risk.uuid"
-              variant="text"
-              :to="{ name: 'risks:detail', params: { riskId: risk.uuid } }"
-            >
-              Open
-            </RouterLinkButton>
-            <TertiaryButton @click="editRisk(risk)"> Edit </TertiaryButton>
-            <TertiaryButton
-              v-if="risk.uuid"
-              @click="
-                confirmDeleteDialog(() => deleteRisk(risk.uuid!), {
-                  itemType: 'risk',
-                })
-              "
-            >
-              Delete
-            </TertiaryButton>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Create Modal -->
-    <Dialog v-model:visible="showCreateModal" modal size="lg">
-      <RiskCreateForm
-        :poam-id="poamUuid"
-        @cancel="showCreateModal = false"
-        @created="handleRiskCreated"
-      />
-    </Dialog>
-
-    <!-- Edit Modal -->
-    <Dialog v-model:visible="showEditModal" modal size="lg">
-      <RiskEditForm
-        v-if="editingRisk"
-        :poam-id="poamUuid"
-        :risk="editingRisk"
-        @cancel="showEditModal = false"
-        @saved="handleRiskSaved"
-      />
-    </Dialog>
-  </div>
+  <RiskRegisterPanel
+    :risks="risks || []"
+    :loading="loading"
+    :error="error ? String(error) : null"
+    :context-missing="contextMissing"
+    :ssp-id="sspId"
+    title="SSP Risk Register"
+    @risk-created="handleRiskCreated"
+    @risk-updated="handleRiskSaved"
+    @risk-deleted="handleRiskDeleted"
+  />
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, watch } from 'vue';
+import { useRoute } from 'vue-router';
 import { type Risk } from '@/oscal';
-import Dialog from '@/volt/Dialog.vue';
-import Message from '@/volt/Message.vue';
-import PrimaryButton from '@/volt/PrimaryButton.vue';
-import TertiaryButton from '@/volt/TertiaryButton.vue';
-import RiskCreateForm from '@/components/poam/RiskCreateForm.vue';
-import RiskEditForm from '@/components/poam/RiskEditForm.vue';
-import { useToast } from 'primevue/usetoast';
-import PageHeader from '@/components/PageHeader.vue';
 import { useSystemStore } from '@/stores/system.ts';
 import { useDataApi } from '@/composables/axios';
-import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
-import RouterLinkButton from '@/components/RouterLinkButton.vue';
+import { sameRiskIdentifier } from '@/utils/risk-id';
+import RiskRegisterPanel from '@/components/risk/RiskRegisterPanel.vue';
 
-const toast = useToast();
+const route = useRoute();
 const { system } = useSystemStore();
 
-const { confirmDeleteDialog } = useDeleteConfirmationDialog();
+const sspId = computed(
+  () =>
+    (route.params.id as string | undefined) || system.securityPlan?.uuid || '',
+);
 
-const poamDefined = ref<boolean>(!!system.poam);
-const poamUuid = computed(() => system.poam?.uuid ?? '');
+const contextMissing = computed(() => !sspId.value);
+
+const endpoint = computed(() => {
+  if (!sspId.value) return null;
+  return `/api/oscal/system-security-plans/${sspId.value}/risks`;
+});
 
 const {
   data: risks,
   error,
   isLoading: loading,
   execute: loadRisks,
-} = useDataApi<Risk[]>(
-  `/api/oscal/plan-of-action-and-milestones/${system.poam?.uuid}/risks`,
-  {},
-  { immediate: false },
+} = useDataApi<Risk[]>(null, {}, { immediate: false });
+
+watch(
+  endpoint,
+  async (value) => {
+    if (!value) {
+      risks.value = [];
+      return;
+    }
+    try {
+      await loadRisks(value);
+    } catch {
+      // Error state is already captured by useDataApi().error.
+    }
+  },
+  { immediate: true },
 );
 
+interface RiskUpdatedDetail {
+  risk: Risk;
+  context?: { scope: 'poam' | 'ssp'; id: string };
+  sspId?: string;
+}
+
 const handleRiskUpdated = (event: Event) => {
-  const detail = (event as CustomEvent<{ risk: Risk; poamId?: string }>).detail;
-  if (!detail?.risk?.uuid) return;
-  if (detail.poamId && detail.poamId !== poamUuid.value) return;
-  if (!risks.value) return;
-  const index = risks.value.findIndex((item) => item.uuid === detail.risk.uuid);
+  const detail = (event as CustomEvent<RiskUpdatedDetail>).detail;
+  if (!detail?.risk || !risks.value || !sspId.value) return;
+
+  if (detail.context && detail.context.scope !== 'ssp') {
+    return;
+  }
+
+  if (detail.context && detail.context.id !== sspId.value) {
+    return;
+  }
+
+  if (detail.sspId && detail.sspId !== sspId.value) return;
+
+  const index = risks.value.findIndex((item) =>
+    sameRiskIdentifier(item, detail.risk),
+  );
   if (index !== -1) {
     risks.value[index] = detail.risk;
   }
 };
 
 onMounted(() => {
-  if (system.poam) {
-    loadRisks();
-  }
   window.addEventListener('risk-updated', handleRiskUpdated as EventListener);
 });
 
@@ -217,69 +98,35 @@ onUnmounted(() => {
   );
 });
 
-const { execute: executeDeleteRisk } = useDataApi<void>(
-  null,
-  { method: 'DELETE' },
-  { immediate: false },
-);
+function handleRiskCreated(newRisk: Risk) {
+  if (!risks.value) {
+    risks.value = [newRisk];
+  } else {
+    risks.value = [...risks.value, newRisk];
+  }
+}
 
-// Modal states
-const showCreateModal = ref(false);
-const showEditModal = ref(false);
-
-// Edit targets
-const editingRisk = ref<Risk | null>(null);
-
-// Risk management
-const editRisk = (risk: Risk) => {
-  editingRisk.value = risk;
-  showEditModal.value = true;
-};
-
-const handleRiskCreated = (newRisk: Risk) => {
-  if (!risks.value) return;
-  risks.value.push(newRisk);
-  showCreateModal.value = false;
-};
-
-const handleRiskSaved = (updatedRisk: Risk) => {
+function handleRiskSaved(updatedRisk: Risk) {
   if (!risks.value || !updatedRisk) return;
-  const index = risks.value.findIndex((risk) => risk.uuid === updatedRisk.uuid);
+  const index = risks.value.findIndex((risk) =>
+    sameRiskIdentifier(risk, updatedRisk),
+  );
   if (index !== -1) {
-    risks.value[index] = updatedRisk;
+    risks.value = [
+      ...risks.value.slice(0, index),
+      updatedRisk,
+      ...risks.value.slice(index + 1),
+    ];
   }
-  showEditModal.value = false;
-  editingRisk.value = null;
-};
+}
 
-const deleteRisk = async (uuid: string) => {
-  try {
-    if (!poamUuid.value) {
-      throw new Error('No POA&M ID found.');
+async function handleRiskDeleted() {
+  if (endpoint.value) {
+    try {
+      await loadRisks(endpoint.value);
+    } catch {
+      // Error state is captured by useDataApi
     }
-    await executeDeleteRisk(
-      `/api/oscal/plan-of-action-and-milestones/${poamUuid.value}/risks/${uuid}`,
-    );
-    toast.add({
-      severity: 'success',
-      summary: 'Risk Deleted',
-      detail: 'Risk deleted successfully',
-      life: 3000,
-    });
-    await loadRisks(); // Reload the list
-  } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-    toast.add({
-      severity: 'error',
-      summary: 'Delete Failed',
-      detail: `Failed to delete risk: ${errorMessage}`,
-      life: 5000,
-    });
   }
-};
-
-function formatDate(dateString?: string): string {
-  if (!dateString) return 'N/A';
-  return new Date(dateString).toLocaleDateString();
 }
 </script>

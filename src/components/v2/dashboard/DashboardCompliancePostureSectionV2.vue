@@ -3,7 +3,7 @@ import { computed, onMounted, ref } from 'vue';
 import { RouterLink, useRouter } from 'vue-router';
 import { useDataApi } from '@/composables/axios';
 import V2StatePanel from '@/components/v2/system/V2StatePanel.vue';
-import type { Profile, SystemSecurityPlan } from '@/oscal';
+import type { SystemSecurityPlan } from '@/oscal';
 import type {
   ProfileComplianceProgress,
   ProfileComplianceSummary,
@@ -17,16 +17,15 @@ interface ComplianceItem {
   summary: ProfileComplianceSummary;
 }
 
+import { useSystemSecurityPlanStore } from '@/stores/system-security-plans';
+
 const router = useRouter();
+const sspStore = useSystemSecurityPlanStore();
 const items = ref<ComplianceItem[]>([]);
 const isLoading = ref(true);
 const errorMessage = ref<string | null>(null);
 
 const { execute: fetchSSPs } = useDataApi<SystemSecurityPlan[]>(null, null, {
-  immediate: false,
-});
-
-const { execute: fetchProfile } = useDataApi<Profile>(null, null, {
   immediate: false,
 });
 
@@ -69,31 +68,23 @@ async function loadItems(): Promise<void> {
 
     for (const ssp of ssps) {
       try {
-        const { data: profileResponse } = await fetchProfile(
-          `/api/oscal/system-security-plans/${ssp.uuid}/profile`,
-        );
-        const profile = profileResponse.value?.data;
-
-        if (!profile) {
-          continue;
+        const { data: bindings } = await sspStore.listProfiles(ssp.uuid);
+        for (const profile of bindings) {
+          const { data: complianceResponse } = await fetchCompliance(
+            `/api/oscal/profiles/${profile.uuid}/compliance-progress?includeControls=false&sspId=${encodeURIComponent(ssp.uuid)}`,
+          );
+          const progress = complianceResponse.value?.data;
+          if (!progress?.summary) {
+            failedCount += 1;
+            continue;
+          }
+          nextItems.push({
+            sspId: ssp.uuid,
+            sspTitle: ssp.metadata?.title || 'Untitled SSP',
+            profileTitle: profile.title || 'Untitled Profile',
+            summary: progress.summary,
+          });
         }
-
-        const { data: complianceResponse } = await fetchCompliance(
-          `/api/oscal/profiles/${profile.uuid}/compliance-progress?includeControls=false`,
-        );
-        const progress = complianceResponse.value?.data;
-
-        if (!progress?.summary) {
-          failedCount += 1;
-          continue;
-        }
-
-        nextItems.push({
-          sspId: ssp.uuid,
-          sspTitle: ssp.metadata?.title || 'Untitled SSP',
-          profileTitle: profile.metadata?.title || 'Untitled Profile',
-          summary: progress.summary,
-        });
       } catch {
         failedCount += 1;
       }
@@ -191,7 +182,7 @@ onMounted(() => {
     <div v-else :class="gridClass">
       <button
         v-for="item in items"
-        :key="item.sspId"
+        :key="`${item.sspId}:${item.profileTitle}`"
         type="button"
         class="space-y-3 border border-[var(--ui-v2-border)] bg-[var(--ui-v2-card)] p-5 text-left transition-colors hover:bg-[var(--ui-v2-surface)]"
         @click="openCompliance(item.sspId)"
@@ -284,6 +275,10 @@ onMounted(() => {
             :style="{ width: `${widths(item.summary).satisfied}%` }"
           />
           <div
+            class="h-full bg-purple-500"
+            :style="{ width: `${widths(item.summary).inherited}%` }"
+          />
+          <div
             class="h-full bg-[var(--ui-v2-error)]"
             :style="{ width: `${widths(item.summary).notSatisfied}%` }"
           />
@@ -300,7 +295,8 @@ onMounted(() => {
             <span
               class="mr-1 inline-block h-2 w-2 bg-[var(--ui-v2-success)] align-middle"
             />
-            {{ item.summary.satisfied }} satisfied
+            {{ item.summary.satisfied }} satisfied ·
+            {{ item.summary.inherited || 0 }} inherited
           </span>
           <span
             class="ui-v2-nav font-semibold text-[var(--ui-v2-secondary-foreground)]"

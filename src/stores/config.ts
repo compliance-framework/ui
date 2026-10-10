@@ -1,9 +1,51 @@
 import { defineStore } from 'pinia';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import builtInConfig from '../defaultconfig.json';
 
 export interface Config {
   API_URL: string;
+  LOGIN_BANNER?: string;
+  LOGIN_BANNER_SEVERITY?: LoginBannerSeverity;
+  // Feature flag: allow filters (dashboards) to be linked to system components.
+  FILTER_COMPONENT_LINKING_ENABLED?: boolean;
+}
+
+const loginBannerSeverities = ['info', 'warn', 'error', 'success'] as const;
+export type LoginBannerSeverity = (typeof loginBannerSeverities)[number];
+
+const defaultConfig = builtInConfig as Config;
+
+function isLoginBannerSeverity(value: unknown): value is LoginBannerSeverity {
+  return (
+    typeof value === 'string' &&
+    loginBannerSeverities.includes(value as LoginBannerSeverity)
+  );
+}
+
+function parseBooleanEnv(value: string | undefined): boolean | undefined {
+  if (value === 'true') return true;
+  if (value === 'false') return false;
+  return undefined;
+}
+
+function applyOverrides(cfg: Config): Config {
+  return {
+    ...cfg,
+    FILTER_COMPONENT_LINKING_ENABLED:
+      parseBooleanEnv(import.meta.env.VITE_FILTER_COMPONENT_LINKING_ENABLED) ??
+      cfg.FILTER_COMPONENT_LINKING_ENABLED === true,
+    LOGIN_BANNER:
+      import.meta.env.VITE_LOGIN_BANNER !== undefined
+        ? import.meta.env.VITE_LOGIN_BANNER
+        : cfg.LOGIN_BANNER,
+    LOGIN_BANNER_SEVERITY: isLoginBannerSeverity(
+      import.meta.env.VITE_LOGIN_BANNER_SEVERITY,
+    )
+      ? import.meta.env.VITE_LOGIN_BANNER_SEVERITY
+      : isLoginBannerSeverity(cfg.LOGIN_BANNER_SEVERITY)
+        ? cfg.LOGIN_BANNER_SEVERITY
+        : 'info',
+  };
 }
 
 export const useConfigStore = defineStore('config', () => {
@@ -17,10 +59,10 @@ export const useConfigStore = defineStore('config', () => {
     }
 
     if (import.meta.env.VITE_API_URL) {
-      config.value = {
-        ...builtInConfig,
+      config.value = applyOverrides({
+        ...defaultConfig,
         API_URL: import.meta.env.VITE_API_URL,
-      };
+      });
       return config.value;
     }
 
@@ -41,12 +83,16 @@ export const useConfigStore = defineStore('config', () => {
         }
       }
     }
-    config.value = {
-      ...builtInConfig,
+    config.value = applyOverrides({
+      ...defaultConfig,
       ...returnedConfig,
-    };
+    });
     return config.value;
   }
+
+  const filterComponentLinkingEnabled = computed(
+    () => config.value?.FILTER_COMPONENT_LINKING_ENABLED === true,
+  );
 
   function toggleLabels() {
     showLabels.value = !showLabels.value;
@@ -62,5 +108,6 @@ export const useConfigStore = defineStore('config', () => {
     toggleLabels,
     toggleHiddenLabels,
     getConfig,
+    filterComponentLinkingEnabled,
   };
 });

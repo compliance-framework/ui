@@ -1085,7 +1085,7 @@ function setInnerTab(tab: ImplementationTab): void {
   }
 
   void router.replace({
-    name: 'system-security-plan-system-implementation',
+    name: 'system-security-plan-implementation',
     params: { id: sspId.value },
     query: {
       ...route.query,

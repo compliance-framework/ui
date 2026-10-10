@@ -11,7 +11,6 @@ export interface SspDetailProfileBinding {
   profileResolved: Ref<boolean>;
   isAttachingProfile: Ref<boolean>;
   selectedProfileId: Ref<string>;
-  attachedProfileId: Ref<string>;
   selectProfile: (profileId: string) => Promise<boolean>;
 }
 

@@ -72,6 +72,20 @@
                 </p>
               </div>
 
+              <div v-if="profileBindings.length > 1" class="max-w-xl">
+                <label for="controls-profile" class="ui-v2-label block"
+                  >Profile</label
+                >
+                <Select
+                  input-id="controls-profile"
+                  v-model="selectedProfileId"
+                  :options="profileBindings"
+                  option-label="title"
+                  option-value="uuid"
+                  class="w-full"
+                />
+              </div>
+
               <div class="grid gap-3 sm:grid-cols-3">
                 <article
                   class="border border-[var(--ui-v2-border)] bg-[var(--ui-v2-surface)] p-3"
@@ -537,15 +551,33 @@
       width-class="w-screen! sm:w-[94vw]! lg:w-[560px]!"
       @close="closeControlWorkspace"
     >
+      <SspEditorSection title="STATEMENTS">
+        <IndexControlImplementation
+          :control="selectedControlEntry.control"
+          :implementation="selectedRequirement"
+          @exported="refreshImplementation"
+          @imported="refreshImplementation"
+        />
+      </SspEditorSection>
+      <SspEditorSection title="SHARED RESPONSIBILITY">
+        <SharedResponsibilityPanel
+          :ssp-id="activeSspId"
+          :control-id="selectedRequirement.controlId"
+          @edit-provides="editProvidedCapability"
+          @imported="refreshImplementation"
+        />
+      </SspEditorSection>
       <SspEditorSection title="COMPONENTS">
         <template #actions>
-          <SecondaryButton
-            type="button"
-            size="small"
-            @click="openCreateComponentModal('requirement')"
-          >
-            CREATE SYSTEM COMPONENT
-          </SecondaryButton>
+          <PermissionGate :resource="RESOURCES.SSP" :action="ACTIONS.UPDATE">
+            <SecondaryButton
+              type="button"
+              size="small"
+              @click="openCreateComponentModal('requirement')"
+            >
+              CREATE SYSTEM COMPONENT
+            </SecondaryButton>
+          </PermissionGate>
         </template>
 
         <p
@@ -653,7 +685,7 @@
           {{
             selectedStatementRecord
               ? 'Add components or manage evidence for this saved statement.'
-              : 'Create the statement record first, then add components or dashboards.'
+              : 'Create the statement record first, then add components or evidence filters.'
           }}
         </p>
       </div>
@@ -756,14 +788,14 @@
               size="small"
               @click="toggleCreateDashboardForm"
             >
-              {{ showCreateDashboardForm ? 'CLOSE' : 'CREATE DASHBOARD' }}
+              {{ showCreateDashboardForm ? 'CLOSE' : 'CREATE EVIDENCE FILTER' }}
             </SecondaryButton>
             <SecondaryButton
               type="button"
               size="small"
               @click="toggleLinkDashboardForm"
             >
-              {{ showLinkDashboardForm ? 'CLOSE' : 'LINK DASHBOARD' }}
+              {{ showLinkDashboardForm ? 'CLOSE' : 'LINK EVIDENCE FILTER' }}
             </SecondaryButton>
           </div>
         </template>
@@ -772,7 +804,7 @@
           v-if="!selectedStatementRecord"
           class="ui-v2-body text-[var(--ui-v2-muted-foreground)]"
         >
-          Save this statement to create or link dashboards.
+          Save this statement to create or link evidence filters.
         </p>
 
         <template v-if="selectedStatementRecord">
@@ -914,7 +946,7 @@
                   :options="availableDashboardsToLink"
                   option-label="name"
                   filter
-                  placeholder="Select a dashboard to link..."
+                  placeholder="Select an evidence filter to link..."
                 />
               </template>
             </V2FormField>
@@ -934,14 +966,14 @@
           v-if="dashboardsLoading"
           class="ui-v2-body text-[var(--ui-v2-muted-foreground)]"
         >
-          Loading dashboards...
+          Loading evidence filters...
         </p>
 
         <p
           v-else-if="selectedStatementRecord && existingDashboards.length === 0"
           class="ui-v2-body text-[var(--ui-v2-muted-foreground)]"
         >
-          No dashboards linked yet.
+          No evidence filters linked yet.
         </p>
 
         <div v-else class="grid gap-4 lg:grid-cols-2">
@@ -959,7 +991,7 @@
                   {{ dashboard.name }}
                 </h4>
                 <p class="ui-v2-meta text-[var(--ui-v2-tertiary-foreground)]">
-                  Control-linked evidence dashboard
+                  Control-linked evidence filter
                 </p>
               </div>
 
@@ -1062,7 +1094,6 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
-import type { AxiosError } from 'axios';
 import { useRouter } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
 import InputText from '@/volt/InputText.vue';
@@ -1098,6 +1129,15 @@ import {
   cloneValue,
   resolveApiErrorMessage,
 } from '@/views/system-security-plans-v2/editors/sspEditorHelpers';
+import {
+  useSystemSecurityPlanStore,
+  type SystemSecurityPlanProfileBinding,
+} from '@/stores/system-security-plans';
+import IndexControlImplementation from '@/views/control-implementations/partials/IndexControlImplementation.vue';
+import SharedResponsibilityPanel from '@/views/control-implementations/partials/SharedResponsibilityPanel.vue';
+import type { SharedResponsibilityProvided } from '@/types/ssp-leverage';
+import PermissionGate from '@/components/auth/PermissionGate.vue';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
 import V2PageHeader from '@/components/v2/patterns/V2PageHeader.vue';
 import V2WorkspaceDrawer from '@/components/v2/patterns/V2WorkspaceDrawer.vue';
 import PrerequisiteGate from '@/components/v2/system/PrerequisiteGate.vue';
@@ -1180,6 +1220,10 @@ const toast = useToast();
 const systemStore = useSystemStore();
 const uiStore = useUIStore();
 const { confirmDeleteDialog } = useDeleteConfirmationDialog();
+
+const sspStore = useSystemSecurityPlanStore();
+const profileBindings = ref<SystemSecurityPlanProfileBinding[]>([]);
+const selectedProfileId = ref('');
 
 const activePlan = computed(() => systemStore.system.securityPlan);
 const activeSspId = computed(() => activePlan.value?.uuid || '');
@@ -1527,6 +1571,10 @@ watch(
   },
   { immediate: true },
 );
+
+watch(selectedProfileId, () => {
+  if (!isReloading.value) void reloadControls();
+});
 
 watch(
   resolvedCatalogData,
@@ -1929,6 +1977,16 @@ function controlState(
   requirement: ImplementedRequirement | null,
   statementParts: Part[],
 ) {
+  if (
+    complianceControlMap.value.get(normalizeKey(control.id))?.computedStatus ===
+    'inherited'
+  ) {
+    return {
+      label: 'INHERITED',
+      chipStatus: 'inherited',
+      filterKeys: new Set<StatusFilterKey>(),
+    };
+  }
   const hasStatements = statementParts.length > 0;
   const implementationStarted = hasImplementationContent(requirement);
   const evidenceEntries = getControlEvidenceEntries(control.id);
@@ -1992,9 +2050,30 @@ function clearWorkspaceSelection(): void {
   resetDashboardPanels();
 }
 
+async function refreshImplementation(): Promise<void> {
+  if (!activeSspId.value) return;
+  await executeControlImplementation(
+    `/api/oscal/system-security-plans/${activeSspId.value}/control-implementation`,
+  );
+  await loadCompliance({ includeControls: true, sspId: activeSspId.value });
+}
+
+function editProvidedCapability(row: SharedResponsibilityProvided): void {
+  const statement = selectedRequirement.value?.statements?.find(
+    (item) => item.statementId === row.statementId,
+  );
+  const byComponent = statement?.byComponents?.find(
+    (item) => item.uuid === row.byComponentUuid,
+  );
+  if (!statement || !byComponent) return;
+  selectedStatementPartId.value = statement.statementId;
+  openEditStatementByComponentModal(byComponent);
+}
+
 function closeControlWorkspace(): void {
   controlWorkspaceOpen.value = false;
   clearWorkspaceSelection();
+  void refreshImplementation();
 }
 
 function closeStatementWorkspace(): void {
@@ -2167,20 +2246,21 @@ async function reloadControls(): Promise<void> {
   isReloading.value = true;
 
   try {
-    await executeProfile(
-      `/api/oscal/system-security-plans/${activeSspId.value}/profile`,
-    );
-  } catch (error) {
-    const axiosError = error as AxiosError;
-    if (axiosError.response?.status === 404) {
+    const { data: bindings } = await sspStore.listProfiles(activeSspId.value);
+    profileBindings.value = bindings;
+    if (!bindings.some((binding) => binding.uuid === selectedProfileId.value)) {
+      selectedProfileId.value = bindings[0]?.uuid || '';
+    }
+    if (!selectedProfileId.value) {
       profileMissing.value = true;
       isReloading.value = false;
       return;
     }
-
+    await executeProfile(`/api/oscal/profiles/${selectedProfileId.value}`);
+  } catch (error) {
     loadErrorMessage.value = resolveApiErrorMessage(
       error,
-      'Unable to load the active profile for Controls.',
+      'Unable to load the active profiles for Controls.',
     );
     isReloading.value = false;
     return;
@@ -2722,8 +2802,8 @@ async function submitDashboardCreate(): Promise<void> {
 
     toast.add({
       severity: 'success',
-      summary: 'Dashboard Created',
-      detail: 'The control-linked dashboard was created successfully.',
+      summary: 'Evidence Filter Created',
+      detail: 'The control-linked evidence filter was created successfully.',
       life: 2500,
     });
 
@@ -2755,7 +2835,7 @@ async function loadDashboardsForControl(controlId: string): Promise<void> {
       summary: 'Dashboard Load Failed',
       detail: resolveApiErrorMessage(
         error,
-        'Unable to load linked dashboards for this control.',
+        'Unable to load linked evidence filters for this control.',
       ),
       life: 4000,
     });
@@ -2804,7 +2884,7 @@ async function linkExistingDashboard(): Promise<void> {
 
     toast.add({
       severity: 'success',
-      summary: 'Dashboard Linked',
+      summary: 'Evidence Filter Linked',
       detail: `${dashboard.name} is now linked to the selected control.`,
       life: 2500,
     });
@@ -2818,7 +2898,7 @@ async function linkExistingDashboard(): Promise<void> {
       summary: 'Link Failed',
       detail: resolveApiErrorMessage(
         error,
-        'Unable to link the selected dashboard.',
+        'Unable to link the selected evidence filter.',
       ),
       life: 4000,
     });
@@ -2853,7 +2933,7 @@ async function unlinkDashboard(dashboard: Dashboard): Promise<void> {
 
     toast.add({
       severity: 'success',
-      summary: 'Dashboard Unlinked',
+      summary: 'Evidence Filter Unlinked',
       detail: `${dashboard.name} was removed from the selected control.`,
       life: 2500,
     });
@@ -2864,7 +2944,10 @@ async function unlinkDashboard(dashboard: Dashboard): Promise<void> {
     toast.add({
       severity: 'error',
       summary: 'Unlink Failed',
-      detail: resolveApiErrorMessage(error, 'Unable to unlink the dashboard.'),
+      detail: resolveApiErrorMessage(
+        error,
+        'Unable to unlink the evidence filter.',
+      ),
       life: 4000,
     });
   }

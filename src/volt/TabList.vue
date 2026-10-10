@@ -24,9 +24,10 @@ defineProps<Props>();
 
 const isV2Route = useIsV2Route();
 
-const navButton = `!absolute flex-shrink-0 top-0 z-20 h-full flex items-center justify-center cursor-pointer
+const navButton = `!absolute hidden p-scrollable:flex flex-shrink-0 top-0 z-20 h-full items-center justify-center cursor-pointer
         bg-surface-0 dark:bg-surface-900 text-surface-500 dark:text-surface-400 hover:text-surface-700 dark:hover:text-surface-0 w-10
         shadow-[0px_0px_10px_50px_rgba(255,255,255,0.6)] dark:shadow-[0px_0px_10px_50px] dark:shadow-surface-900/50
+        disabled:opacity-0 disabled:pointer-events-none
         focus-visible:z-10 focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-[-1px] focus-visible:outline-primary
         transition-colors duration-200`;
 
@@ -42,7 +43,7 @@ const legacyTheme: TabListPassThroughOptions = {
   activeBar: `z-10 block absolute -bottom-px h-px bg-primary transition-[left] duration-200 ease-[cubic-bezier(0.35,0,0.25,1)]`,
 };
 
-const v2NavButton = `!absolute flex-shrink-0 top-0 z-20 h-full flex items-center justify-center cursor-pointer w-10
+const v2NavButton = `!absolute hidden p-scrollable:flex flex-shrink-0 top-0 z-20 h-full items-center justify-center cursor-pointer w-10
         bg-[var(--ui-v2-card)] text-[var(--ui-v2-secondary-foreground)]
         hover:text-[var(--ui-v2-primary)]
         shadow-[0px_0px_10px_50px_var(--ui-v2-card)]

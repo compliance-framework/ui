@@ -5,11 +5,18 @@
       <div
         class="bg-white dark:bg-slate-900 border border-ccf-300 dark:border-slate-700 rounded-lg p-6"
       >
-        <h3
-          class="text-lg font-semibold mb-4 text-gray-900 dark:text-slate-300"
+        <div
+          class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
         >
-          System Security Plan Metadata
-        </h3>
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-slate-300">
+            System Security Plan Metadata
+          </h3>
+          <div class="flex flex-wrap gap-2">
+            <SecondaryButton @click="downloadJson">
+              Download JSON
+            </SecondaryButton>
+          </div>
+        </div>
 
         <div
           v-if="systemSecurityPlan.metadata"
@@ -68,16 +75,18 @@
           <div>
             <label
               class="block text-sm font-medium text-gray-700 dark:text-slate-400 mb-1"
-              >Profile</label
+              >Profiles</label
             >
-            <Select
-              placeholder="Profile"
+            <MultiSelect
+              placeholder="Select profiles"
               :loading="loadingProfiles"
-              checkmark
+              :disabled="profileSaveInProgress"
+              display="chip"
               class="w-full"
-              v-model="selectedProfile"
+              v-model="selectedProfiles"
               :options="profileItems"
               optionLabel="name"
+              optionValue="value"
             />
           </div>
 
@@ -97,58 +106,100 @@
         </div>
       </div>
 
-      <!-- Actions Section -->
+      <!-- Compliance Section -->
       <div
         class="bg-white dark:bg-slate-900 border border-ccf-300 dark:border-slate-700 rounded-lg p-6"
       >
-        <h3
-          class="text-lg font-semibold mb-4 text-gray-900 dark:text-slate-300"
-        >
-          Actions
-        </h3>
-
-        <div class="flex flex-wrap gap-3">
-          <button
-            @click="editMetadata"
-            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+        <div class="mb-4 flex items-center justify-between gap-3">
+          <TooltipTitle
+            text="Compliance"
+            tooltip-key="system.compliance"
+            underline-class="text-lg font-semibold text-gray-900 dark:text-slate-300 underline decoration-dotted cursor-help"
+          />
+          <RouterLinkButton
+            :to="{
+              name: complianceRouteName,
+              params: { id: sspId },
+            }"
+            variant="outlined"
           >
-            Edit Metadata
-          </button>
-          <button
-            @click="editSystemCharacteristics"
-            class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Edit System Characteristics
-          </button>
-          <button
-            @click="editImplementation"
-            class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Edit Implementation
-          </button>
-          <button
-            @click="editControls"
-            class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Edit Controls
-          </button>
-          <button
-            @click="downloadJson"
-            class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md"
-          >
-            Download JSON
-          </button>
+            Open full compliance view
+          </RouterLinkButton>
         </div>
 
-        <!-- Feature Notice -->
         <div
-          class="mt-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md"
+          v-if="loadingCompliancePreview"
+          class="text-sm text-gray-500 dark:text-slate-400"
         >
-          <p class="text-sm text-green-800 dark:text-green-200">
-            <strong>Edit Mode:</strong> Edit buttons are now enabled. Some
-            editing functionality is still in development. You can view all SSP
-            data and download the full JSON representation.
-          </p>
+          Loading compliance progress...
+        </div>
+
+        <template v-else-if="compliancePreview?.summary">
+          <div class="grid grid-cols-1 gap-4 md:grid-cols-5">
+            <div
+              v-for="stat in complianceStats"
+              :key="stat.label"
+              class="rounded-md border border-ccf-300 bg-white p-4 dark:border-slate-700 dark:bg-slate-900"
+            >
+              <div class="flex items-center justify-between gap-3">
+                <p
+                  class="text-xs font-medium uppercase text-gray-500 dark:text-slate-400"
+                >
+                  {{ stat.label }}
+                </p>
+                <i
+                  v-if="stat.icon"
+                  :class="stat.icon"
+                  class="text-sm text-gray-400 dark:text-slate-500"
+                ></i>
+              </div>
+              <p
+                class="mt-2 text-2xl font-semibold text-gray-900 dark:text-slate-100"
+              >
+                {{ stat.value }}
+              </p>
+            </div>
+          </div>
+
+          <div
+            class="mt-5 rounded-md border border-ccf-300 bg-white p-4 dark:border-slate-700 dark:bg-slate-900"
+          >
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div>
+                <p
+                  class="text-xs font-medium uppercase text-gray-500 dark:text-slate-400"
+                >
+                  Controls Satisfied
+                </p>
+                <p class="mt-1 text-sm text-gray-900 dark:text-slate-200">
+                  {{ compliancePreview.summary.satisfied }}/{{
+                    compliancePreview.summary.totalControls
+                  }}
+                  controls satisfied ({{
+                    compliancePreview.summary.compliancePercent
+                  }}%)
+                </p>
+              </div>
+              <div v-if="compliancePreview.implementation">
+                <p
+                  class="text-xs font-medium uppercase text-gray-500 dark:text-slate-400"
+                >
+                  Implementation Coverage
+                </p>
+                <p class="mt-1 text-sm text-gray-900 dark:text-slate-200">
+                  {{ compliancePreview.implementation.implementationPercent }}%
+                  ({{ compliancePreview.implementation.implementedControls }}
+                  implemented,
+                  {{ compliancePreview.implementation.unimplementedControls }}
+                  not implemented)
+                </p>
+              </div>
+            </div>
+          </div>
+        </template>
+
+        <div v-else class="text-sm text-gray-500 dark:text-slate-400">
+          Select a profile to view compliance posture.
         </div>
       </div>
 
@@ -195,6 +246,11 @@
           </div>
         </div>
       </div>
+
+      <RiskOverviewSection
+        :ssp-id="sspId"
+        :risk-list-route-name="riskListRouteName"
+      />
 
       <!-- System Characteristics Summary -->
       <div
@@ -259,13 +315,15 @@
           </div>
         </div>
       </div>
+
+      <Diagrams :ssp-id="sspId" />
     </div>
   </template>
 </template>
 
 <script setup lang="ts">
 import { onMounted, ref, watch, computed } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute } from 'vue-router';
 import type {
   SystemSecurityPlan,
   SystemCharacteristics,
@@ -274,16 +332,40 @@ import type {
   LeveragedAuthorization,
 } from '@/oscal';
 import type { InventoryItem, Profile } from '@/oscal';
-import Select from '@/volt/Select.vue';
+import MultiSelect from '@/volt/MultiSelect.vue';
+import SecondaryButton from '@/volt/SecondaryButton.vue';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi } from '@/composables/axios';
 import type { AxiosError } from 'axios';
 import type { ErrorResponse, ErrorBody } from '@/stores/types.ts';
 import decamelizeKeys from 'decamelize-keys';
+import RiskOverviewSection, {
+  type RiskListRouteName,
+} from '@/components/system-security-plans/RiskOverviewSection.vue';
+import { useSspProfileBindings } from '@/composables/useSspProfileBindings';
+import type { ProfileComplianceProgress } from '@/types/compliance';
+import RouterLinkButton from '@/components/RouterLinkButton.vue';
+import TooltipTitle from '@/components/TooltipTitle.vue';
+import Diagrams from '@/views/system/DiagramsView.vue';
+
+const props = withDefaults(
+  defineProps<{
+    // Overrides the id taken from the route param, e.g. when embedded on a
+    // page that already knows which SSP is active (see src/views/system/OverviewView.vue).
+    sspId?: string;
+    riskListRouteName?: RiskListRouteName;
+    complianceRouteName?: string;
+  }>(),
+  {
+    riskListRouteName: 'system-security-plan-risks',
+    complianceRouteName: 'system-security-plan-compliance',
+  },
+);
 
 const route = useRoute();
-const router = useRouter();
 const toast = useToast();
+
+const sspId = computed(() => props.sspId || String(route.params.id || ''));
 
 const systemImplementationStats = ref({
   users: 0,
@@ -301,43 +383,29 @@ const statistics = computed(() => ({
 }));
 
 const { data: systemSecurityPlan } = useDataApi<SystemSecurityPlan>(
-  `/api/oscal/system-security-plans/${route.params.id}`,
+  `/api/oscal/system-security-plans/${sspId.value}`,
 );
 
 const { data: systemCharacteristics } = useDataApi<SystemCharacteristics>(
-  `/api/oscal/system-security-plans/${route.params.id}/system-characteristics`,
+  `/api/oscal/system-security-plans/${sspId.value}/system-characteristics`,
 );
 
-const { execute: executeAttachedProfile } = useDataApi<Profile>(
-  `/api/oscal/system-security-plans/${route.params.id}/profile`,
-  {
-    method: 'GET',
-  },
-  { immediate: false },
-);
-const { execute: attachProfile } = useDataApi<void>(
-  `/api/oscal/system-security-plans/${route.params.id}/profile`,
-  {
-    method: 'PUT',
-  },
-  { immediate: false },
-);
 const { execute: executeSIUsers } = useDataApi<SystemUser[]>(
-  `/api/oscal/system-security-plans/${route.params.id}/system-implementation/users`,
+  `/api/oscal/system-security-plans/${sspId.value}/system-implementation/users`,
   {
     method: 'GET',
   },
   { immediate: false },
 );
 const { execute: executeSIComponents } = useDataApi<SystemComponent[]>(
-  `/api/oscal/system-security-plans/${route.params.id}/system-implementation/components`,
+  `/api/oscal/system-security-plans/${sspId.value}/system-implementation/components`,
   {
     method: 'GET',
   },
   { immediate: false },
 );
 const { execute: executeSIInventory } = useDataApi<InventoryItem[]>(
-  `/api/oscal/system-security-plans/${route.params.id}/system-implementation/inventory-items`,
+  `/api/oscal/system-security-plans/${sspId.value}/system-implementation/inventory-items`,
   {
     method: 'GET',
   },
@@ -346,14 +414,14 @@ const { execute: executeSIInventory } = useDataApi<InventoryItem[]>(
 const { execute: executeSILeveragedAuths } = useDataApi<
   LeveragedAuthorization[]
 >(
-  `/api/oscal/system-security-plans/${route.params.id}/system-implementation/leveraged-authorizations`,
+  `/api/oscal/system-security-plans/${sspId.value}/system-implementation/leveraged-authorizations`,
   {
     method: 'GET',
   },
   { immediate: false },
 );
 const { execute: executeDownloadJSON } = useDataApi(
-  `/api/oscal/system-security-plans/${route.params.id}/full`,
+  `/api/oscal/system-security-plans/${sspId.value}/full`,
   {
     method: 'GET',
   },
@@ -375,58 +443,87 @@ watch(profiles, () => {
     }) || [];
 });
 
-const selectedProfile = ref<{ name: string; value: string }>({
-  name: '',
-  value: '',
+const compliancePreview = ref<ProfileComplianceProgress | null>(null);
+const loadingCompliancePreview = ref(false);
+
+const complianceStats = computed(() => {
+  const summary = compliancePreview.value?.summary;
+  if (!summary) return [];
+
+  return [
+    {
+      label: 'Satisfied',
+      value: summary.satisfied,
+      icon: 'pi pi-check-circle',
+    },
+    {
+      label: 'Not Satisfied',
+      value: summary.notSatisfied,
+      icon: 'pi pi-times-circle',
+    },
+    { label: 'Unknown', value: summary.unknown, icon: 'pi pi-question-circle' },
+    {
+      label: 'Compliance',
+      value: `${summary.compliancePercent}%`,
+      icon: 'pi pi-chart-line',
+    },
+    {
+      label: 'Assessed',
+      value: `${summary.assessedPercent}%`,
+      icon: 'pi pi-verified',
+    },
+  ];
 });
+
+const { execute: executeCompliance } = useDataApi<ProfileComplianceProgress>(
+  null,
+  null,
+  { immediate: false },
+);
+
+async function loadCompliancePreview(profileId?: string) {
+  if (!profileId || !sspId.value) {
+    compliancePreview.value = null;
+    return;
+  }
+
+  loadingCompliancePreview.value = true;
+  try {
+    const { data } = await executeCompliance(
+      `/api/oscal/profiles/${profileId}/compliance-progress?includeControls=false&sspId=${sspId.value}`,
+    );
+    compliancePreview.value = data.value?.data || null;
+  } catch (error) {
+    compliancePreview.value = null;
+
+    const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
+    if (errorResponse.response?.status !== 404) {
+      toast.add({
+        severity: 'error',
+        summary: 'Error loading compliance progress',
+        detail:
+          errorResponse.response?.data.errors.body ||
+          'Unable to load compliance progress.',
+        life: 3000,
+      });
+    }
+  } finally {
+    loadingCompliancePreview.value = false;
+  }
+}
+
+const { selectedProfiles, profileSaveInProgress, loadInitialProfiles } =
+  useSspProfileBindings(
+    () => sspId.value,
+    async (currentProfiles) => {
+      await loadCompliancePreview(currentProfiles[0]);
+    },
+  );
 
 onMounted(async () => {
   try {
-    try {
-      const { data } = await executeAttachedProfile();
-      if (data.value) {
-        selectedProfile.value = {
-          name: data.value.data.metadata.title,
-          value: data.value.data.uuid,
-        };
-      }
-    } catch (error) {
-      const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
-      if (errorResponse.response?.status !== 404) {
-        // 404s are fine, just means no profile is attached
-        toast.add({
-          severity: 'error',
-          summary: 'Error Loading Profile',
-          detail:
-            errorResponse.response?.data.errors.body ||
-            'An error occurred while loading the profile.',
-          life: 3000,
-        });
-      }
-    }
-
-    watch(selectedProfile, async () => {
-      try {
-        await attachProfile({
-          data: {
-            profileId: selectedProfile.value?.value,
-          },
-        });
-        toast.add({
-          severity: 'success',
-          summary: 'Profile updated',
-          life: 3000,
-        });
-      } catch (error) {
-        const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
-        toast.add({
-          severity: 'error',
-          summary: 'Failed to set profile',
-          detail: `Received error status from API. Status: ${errorResponse.status}`,
-          life: 3000,
-        });
-      }
-    });
+    await loadInitialProfiles();
+    await loadCompliancePreview(selectedProfiles.value[0]);
 
     // Load system implementation statistics
     try {
@@ -507,28 +604,4 @@ async function downloadJson(): Promise<void> {
     });
   }
 }
-
-// Placeholder functions for editing functionality
-const editMetadata = () => {
-  // Navigate to the SSP editor view
-  router.push(`/system-security-plans/${systemSecurityPlan.value!.uuid}`);
-};
-
-const editSystemCharacteristics = () => {
-  router.push(
-    `/system-security-plans/${systemSecurityPlan.value!.uuid}/system-characteristics`,
-  );
-};
-
-const editImplementation = () => {
-  router.push(
-    `/system-security-plans/${systemSecurityPlan.value!.uuid}/system-implementation`,
-  );
-};
-
-const editControls = () => {
-  router.push(
-    `/system-security-plans/${systemSecurityPlan.value!.uuid}/control-implementation`,
-  );
-};
 </script>

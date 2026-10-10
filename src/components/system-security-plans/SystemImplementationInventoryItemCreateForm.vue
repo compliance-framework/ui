@@ -8,10 +8,10 @@
       <div class="mb-4">
         <label class="inline-block pb-2 dark:text-slate-300">UUID</label>
         <div class="flex gap-2">
-          <FormInput
+          <InputText
             v-model="inventoryItemData.uuid"
             placeholder="Inventory Item UUID"
-            class="flex-1"
+            class="flex-1 w-full"
             readonly
           />
           <button
@@ -28,12 +28,16 @@
         <label class="inline-block pb-2 dark:text-slate-300"
           >Description <span class="text-red-500">*</span></label
         >
-        <FormTextarea v-model="inventoryItemData.description" required />
+        <Textarea
+          v-model="inventoryItemData.description"
+          required
+          class="w-full"
+        />
       </div>
 
       <div class="mb-4">
         <label class="inline-block pb-2 dark:text-slate-300">Remarks</label>
-        <FormTextarea v-model="inventoryItemData.remarks" />
+        <Textarea v-model="inventoryItemData.remarks" class="w-full" />
       </div>
 
       <div class="flex justify-end gap-4">
@@ -46,7 +50,11 @@
         </button>
         <button
           type="submit"
-          :disabled="saving"
+          :disabled="saving || !can(RESOURCES.SSP, ACTIONS.CREATE)"
+          v-tooltip.top="{
+            value: permissionTooltip(RESOURCES.SSP, ACTIONS.CREATE),
+            disabled: can(RESOURCES.SSP, ACTIONS.CREATE),
+          }"
           class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 transition-colors"
         >
           {{ saving ? 'Creating...' : 'Create Inventory Item' }}
@@ -59,10 +67,14 @@
 <script setup lang="ts">
 import { reactive, onMounted } from 'vue';
 import { useToast } from 'primevue/usetoast';
-import FormInput from '@/components/forms/FormInput.vue';
-import FormTextarea from '@/components/forms/FormTextarea.vue';
+import InputText from '@/volt/InputText.vue';
+import Textarea from '@/volt/Textarea.vue';
 import type { InventoryItem } from '@/oscal';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
+
+const { can, permissionTooltip } = usePermissions();
 
 const props = defineProps<{
   sspId: string;

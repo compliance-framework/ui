@@ -116,9 +116,19 @@
 
     <!-- Create Button -->
     <div class="mt-4">
-      <RouterLinkButton to="/plan-of-action-and-milestones/create">
+      <RouterLinkButton
+        v-if="can(RESOURCES.POAM_OSCAL, ACTIONS.CREATE)"
+        to="/plan-of-action-and-milestones/create"
+      >
         Create New POAM
       </RouterLinkButton>
+      <PrimaryButton
+        v-else
+        disabled
+        v-tooltip.top="permissionTooltip(RESOURCES.POAM_OSCAL, ACTIONS.CREATE)"
+      >
+        Create New POAM
+      </PrimaryButton>
     </div>
   </div>
 </template>
@@ -133,9 +143,12 @@ import { useSystemStore } from '@/stores/system.ts';
 import { useDataApi } from '@/composables/axios';
 import decamelizeKeys from 'decamelize-keys';
 import RouterLinkButton from '@/components/RouterLinkButton.vue';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
 
 const toast = useToast();
 const systemStore = useSystemStore();
+const { can, permissionTooltip } = usePermissions();
 
 const {
   data: planOfActionAndMilestones,

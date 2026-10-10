@@ -35,18 +35,16 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
-import { useRoute, useRouter, type RouteLocationRaw } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
-import { useGuestInstance } from '@/composables/axios';
-import { useUserStore } from '@/stores/auth';
-import type { CCFUser, DataResponse } from '@/stores/types';
+import { useAuthHydration } from '@/composables/useAuthHydration';
+import { resolveAuthNextLocation } from '@/utils/auth-redirect';
 import AuthPanelCard from '@/components/v2/auth/AuthPanelCard.vue';
 
 const router = useRouter();
 const route = useRoute();
 const toast = useToast();
-const userStore = useUserStore();
-const axios = useGuestInstance();
+const { hydrateCurrentUser } = useAuthHydration();
 
 const status = ref<'loading' | 'success' | 'error'>('loading');
 
@@ -139,36 +137,12 @@ const goToLogin = () => {
   router.replace({ name: 'login' });
 };
 
-const fetchCurrentUser = async () => {
-  const response = await axios.get<DataResponse<CCFUser>>('/api/users/me');
-  return response.data.data;
-};
-
-const isSafeRelativePath = (path: string) => {
-  if (!path.startsWith('/') || path.startsWith('//')) return false;
-  return !/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(path);
-};
-
-const resolveNextLocation = (): RouteLocationRaw => {
-  const nextParam = route.query.next;
-  if (
-    typeof nextParam === 'string' &&
-    nextParam.trim().length > 0 &&
-    isSafeRelativePath(nextParam)
-  ) {
-    return { path: nextParam };
-  }
-  return { name: 'home' };
-};
-
 const SUCCESS_TOAST_DURATION = 2500;
 const ERROR_TOAST_DURATION = 4000;
 
 onMounted(async () => {
   try {
-    const user = await fetchCurrentUser();
-    userStore.user = user;
-    userStore.isAuthenticated = true;
+    await hydrateCurrentUser();
     status.value = 'success';
 
     toast.add({
@@ -178,7 +152,7 @@ onMounted(async () => {
       life: SUCCESS_TOAST_DURATION,
     });
 
-    const nextLocation = resolveNextLocation();
+    const nextLocation = resolveAuthNextLocation(route.query.next);
     setTimeout(() => {
       router.replace(nextLocation);
     }, SUCCESS_TOAST_DURATION);

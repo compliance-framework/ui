@@ -11,12 +11,16 @@
             tooltip-key="ssp.control.implementation"
             underline-class="text-lg font-semibold text-gray-900 dark:text-slate-300 underline decoration-dotted cursor-help"
           />
-          <button
+          <SecondaryButton
             @click="editControlImplementation"
-            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+            :disabled="!can(RESOURCES.SSP, ACTIONS.UPDATE)"
+            v-tooltip.top="{
+              value: permissionTooltip(RESOURCES.SSP, ACTIONS.UPDATE),
+              disabled: can(RESOURCES.SSP, ACTIONS.UPDATE),
+            }"
           >
             Edit
-          </button>
+          </SecondaryButton>
         </div>
 
         <div v-if="controlImplementation" class="grid grid-cols-1 gap-6">
@@ -33,36 +37,32 @@
           <!-- Summary Statistics -->
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
             <div
-              class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800"
+              class="bg-white dark:bg-slate-900 p-4 rounded-lg border border-ccf-300 dark:border-slate-700 shadow"
             >
-              <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">
+              <div class="text-2xl font-bold text-gray-900 dark:text-slate-200">
                 {{ controlImplementation.implementedRequirements?.length || 0 }}
               </div>
-              <div class="text-sm text-blue-600 dark:text-blue-400">
+              <div class="text-sm text-gray-600 dark:text-slate-400">
                 Implemented Requirements
               </div>
             </div>
             <div
-              class="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-200 dark:border-green-800"
+              class="bg-white dark:bg-slate-900 p-4 rounded-lg border border-ccf-300 dark:border-slate-700 shadow"
             >
-              <div
-                class="text-2xl font-bold text-green-600 dark:text-green-400"
-              >
+              <div class="text-2xl font-bold text-gray-900 dark:text-slate-200">
                 {{ totalStatements }}
               </div>
-              <div class="text-sm text-green-600 dark:text-green-400">
+              <div class="text-sm text-gray-600 dark:text-slate-400">
                 Total Statements
               </div>
             </div>
             <div
-              class="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg border border-purple-200 dark:border-purple-800"
+              class="bg-white dark:bg-slate-900 p-4 rounded-lg border border-ccf-300 dark:border-slate-700 shadow"
             >
-              <div
-                class="text-2xl font-bold text-purple-600 dark:text-purple-400"
-              >
+              <div class="text-2xl font-bold text-gray-900 dark:text-slate-200">
                 {{ totalByComponents }}
               </div>
-              <div class="text-sm text-purple-600 dark:text-purple-400">
+              <div class="text-sm text-gray-600 dark:text-slate-400">
                 Component Implementations
               </div>
             </div>
@@ -106,12 +106,17 @@
               }})</span
             >
           </div>
-          <button
+          <PrimaryButton
             @click="addRequirement"
-            class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+            :disabled="!can(RESOURCES.SSP, ACTIONS.CREATE)"
+            v-tooltip.top="{
+              value: permissionTooltip(RESOURCES.SSP, ACTIONS.CREATE),
+              disabled: can(RESOURCES.SSP, ACTIONS.CREATE),
+            }"
           >
+            <i class="pi pi-plus mr-2"></i>
             Add Requirement
-          </button>
+          </PrimaryButton>
         </div>
 
         <div
@@ -133,29 +138,42 @@
                 </p>
               </div>
               <div class="flex gap-2">
-                <button
+                <SecondaryButton
                   @click="createStatement(requirement)"
-                  class="text-green-600 hover:text-green-800 dark:text-green-400 disabled:opacity-50 disabled:cursor-not-allowed"
+                  :disabled="!can(RESOURCES.SSP, ACTIONS.CREATE)"
+                  v-tooltip.top="{
+                    value: permissionTooltip(RESOURCES.SSP, ACTIONS.CREATE),
+                    disabled: can(RESOURCES.SSP, ACTIONS.CREATE),
+                  }"
                 >
                   Create Statement
-                </button>
-                <button
+                </SecondaryButton>
+                <SecondaryButton
                   @click="editRequirement(requirement)"
-                  class="text-blue-600 hover:text-blue-800 dark:text-blue-400 disabled:opacity-50 disabled:cursor-not-allowed"
+                  :disabled="!can(RESOURCES.SSP, ACTIONS.UPDATE)"
+                  v-tooltip.top="{
+                    value: permissionTooltip(RESOURCES.SSP, ACTIONS.UPDATE),
+                    disabled: can(RESOURCES.SSP, ACTIONS.UPDATE),
+                  }"
                 >
                   Edit
-                </button>
-                <button
+                </SecondaryButton>
+                <TertiaryButton
+                  :disabled="!can(RESOURCES.SSP, ACTIONS.DELETE)"
+                  v-tooltip.top="{
+                    value: permissionTooltip(RESOURCES.SSP, ACTIONS.DELETE),
+                    disabled: can(RESOURCES.SSP, ACTIONS.DELETE),
+                  }"
                   @click="
                     confirmDeleteDialog(() => deleteRequirement(requirement), {
                       itemName: requirement.controlId,
                       itemType: 'requirement',
                     })
                   "
-                  class="text-red-600 hover:text-red-800 dark:text-red-400 disabled:opacity-50 disabled:cursor-not-allowed"
+                  class="border-red-200 text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-950/40"
                 >
                   Delete
-                </button>
+                </TertiaryButton>
               </div>
             </div>
 
@@ -178,19 +196,19 @@
                       >{{ statement.statementId }}</span
                     >
                     <div class="flex gap-2">
-                      <button
-                        @click="createComponent(statement)"
-                        class="text-green-600 hover:text-green-800 dark:text-green-400 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
-                        disabled
-                      >
-                        Create Component
-                      </button>
-                      <button
+                      <SecondaryButton
                         @click="editStatement(requirement, statement)"
-                        class="text-blue-600 hover:text-blue-800 dark:text-blue-400 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+                        :disabled="!can(RESOURCES.SSP, ACTIONS.UPDATE)"
+                        v-tooltip.top="{
+                          value: permissionTooltip(
+                            RESOURCES.SSP,
+                            ACTIONS.UPDATE,
+                          ),
+                          disabled: can(RESOURCES.SSP, ACTIONS.UPDATE),
+                        }"
                       >
                         Edit
-                      </button>
+                      </SecondaryButton>
                     </div>
                   </div>
                   <p class="text-sm text-gray-600 dark:text-slate-400">
@@ -210,7 +228,11 @@
                         class="text-xs bg-white dark:bg-slate-900 p-2 rounded border"
                       >
                         <StatementByComponent
+                          :ssp="ssp"
                           :by-component="byComponent"
+                          :control-id="requirement.controlId"
+                          :ssp-risks="sspRisks || []"
+                          :risk-fetch-limit="RISK_FETCH_LIMIT"
                           @save="
                             handleSaveStatementByComponent(
                               requirement,
@@ -225,6 +247,13 @@
                               $event,
                             )
                           "
+                          @edit-shared-responsibility="
+                            editStatementByComponent(
+                              requirement,
+                              statement,
+                              $event,
+                            )
+                          "
                         />
                       </div>
                     </div>
@@ -233,7 +262,9 @@
               </div>
             </div>
 
-            <!-- Requirement By Components (at requirement level) -->
+            <!-- Requirement By Components (at requirement level) — legacy. These still
+                 exist in the wild, so they render, but shared responsibility is anchored on
+                 statements now: no Edit, no create, only read and Delete. -->
             <div v-if="requirement.byComponents?.length" class="mt-4">
               <h5
                 class="text-sm font-medium text-gray-700 dark:text-slate-400 mb-2"
@@ -242,6 +273,11 @@
                   requirement.byComponents.length
                 }})
               </h5>
+              <p class="text-xs text-gray-500 dark:text-slate-400 mb-2">
+                Legacy — shared responsibility is tracked per statement. These
+                requirement-level implementations are read-only; move their
+                exports to a statement's by-component.
+              </p>
               <div class="space-y-2">
                 <div
                   v-for="byComponent in requirement.byComponents"
@@ -253,14 +289,41 @@
                       class="text-sm font-medium text-gray-900 dark:text-slate-300"
                       >{{ byComponent.componentUuid }}</span
                     >
-                    <button
-                      @click="
-                        editRequirementByComponent(requirement, byComponent)
-                      "
-                      class="text-blue-600 hover:text-blue-800 dark:text-blue-400 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Edit
-                    </button>
+                    <div class="flex gap-2">
+                      <SecondaryButton
+                        @click="
+                          viewRequirementByComponent(requirement, byComponent)
+                        "
+                      >
+                        View
+                      </SecondaryButton>
+                      <TertiaryButton
+                        :disabled="!can(RESOURCES.SSP, ACTIONS.DELETE)"
+                        v-tooltip.top="{
+                          value: permissionTooltip(
+                            RESOURCES.SSP,
+                            ACTIONS.DELETE,
+                          ),
+                          disabled: can(RESOURCES.SSP, ACTIONS.DELETE),
+                        }"
+                        @click="
+                          confirmDeleteDialog(
+                            () =>
+                              deleteRequirementByComponent(
+                                requirement,
+                                byComponent,
+                              ),
+                            {
+                              itemName: byComponent.componentUuid,
+                              itemType: 'legacy component implementation',
+                            },
+                          )
+                        "
+                        class="border-red-200 text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-950/40"
+                      >
+                        Delete
+                      </TertiaryButton>
+                    </div>
                   </div>
                   <p class="text-sm text-gray-600 dark:text-slate-400">
                     {{ byComponent.description }}
@@ -376,12 +439,12 @@
       />
     </Dialog>
 
-    <!-- Requirement By Component Edit Modal -->
+    <!-- Requirement By Component Modal — read-only: this path is legacy. -->
     <Dialog
       v-model:visible="showEditRequirementByComponentModal"
       size="xl"
       modal
-      header="Edit Component Implementation"
+      header="Legacy Component Implementation"
     >
       <ByComponentEditForm
         v-if="editingByComponent && editingRequirement && !editingStatement"
@@ -389,7 +452,6 @@
         :requirement="editingRequirement"
         :by-component="editingByComponent"
         @cancel="showEditRequirementByComponentModal = false"
-        @saved="handleRequirementByComponentSaved"
       />
     </Dialog>
   </template>
@@ -397,28 +459,37 @@
 
 <script setup lang="ts">
 import TooltipTitle from '@/components/TooltipTitle.vue';
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
 import type {
   ControlImplementation,
   ImplementedRequirement,
+  Risk,
   Statement,
   SystemSecurityPlan,
   ByComponent,
 } from '@/oscal';
 import Dialog from '@/volt/Dialog.vue';
+import PrimaryButton from '@/volt/PrimaryButton.vue';
+import SecondaryButton from '@/volt/SecondaryButton.vue';
+import TertiaryButton from '@/volt/TertiaryButton.vue';
 import ImplementedRequirementCreateForm from '@/components/system-security-plans/ImplementedRequirementCreateForm.vue';
 import ImplementedRequirementEditForm from '@/components/system-security-plans/ImplementedRequirementEditForm.vue';
 import ControlImplementationEditForm from '@/components/system-security-plans/ControlImplementationEditForm.vue';
 import StatementEditForm from '@/components/system-security-plans/StatementEditForm.vue';
 import StatementCreateForm from '@/components/system-security-plans/StatementCreateForm.vue';
-import StatementByComponent from '@/views/control-implementations/partials/StatementByComponent.vue';
+import StatementByComponent from '@/views/system-security-plans/partials/StatementByComponent.vue';
 import ByComponentEditForm from '@/components/system-security-plans/ByComponentEditForm.vue';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
-import { getIdFromRoute } from '@/utils/get-poam-id-from-route';
+import { getIdFromRoute } from '@/utils/get-id-from-route';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
 
+const { can, permissionTooltip } = usePermissions();
+
+const props = defineProps<{ sspId?: string }>();
 const route = useRoute();
 const toast = useToast();
 
@@ -426,7 +497,8 @@ const { confirmDeleteDialog } = useDeleteConfirmationDialog();
 
 const error = ref<string | null>(null);
 
-const sspId = computed(() => getIdFromRoute(route));
+const sspId = computed(() => props.sspId || getIdFromRoute(route) || '');
+const RISK_FETCH_LIMIT = 100;
 
 // Modal states
 const showCreateRequirementModal = ref(false);
@@ -442,13 +514,51 @@ const editingRequirement = ref<ImplementedRequirement | null>(null);
 const editingStatement = ref<Statement | null>(null);
 const editingByComponent = ref<ByComponent | null>(null);
 
-const { data: ssp, isLoading: sspLoading } = useDataApi<SystemSecurityPlan>(
-  `/api/oscal/system-security-plans/${route.params.id}`,
+// Watched, not interpolated once: useDataApi resolves toValue(url) a single time, and this
+// view's host (<KeepAlive> in SystemSecurityPlanEditorView) keeps the instance alive across
+// SSP switches — so a plain string pins the FIRST sspId and renders A's requirements while
+// every write path resolves the id at call time. That gap is what deleteRequirementByComponent
+// hangs a destructive action on. Same treatment as the sibling Inherited Capabilities view.
+const sspUrl = computed(() =>
+  sspId.value ? `/api/oscal/system-security-plans/${sspId.value}` : null,
 );
-const { data: controlImplementation, isLoading: ciLoading } =
-  useDataApi<ControlImplementation>(
-    `/api/oscal/system-security-plans/${route.params.id}/control-implementation`,
-  );
+const ciUrl = computed(() =>
+  sspId.value
+    ? `/api/oscal/system-security-plans/${sspId.value}/control-implementation`
+    : null,
+);
+
+const {
+  data: ssp,
+  isLoading: sspLoading,
+  execute: fetchSsp,
+} = useDataApi<SystemSecurityPlan>(null, {}, { immediate: false });
+const {
+  data: controlImplementation,
+  isLoading: ciLoading,
+  execute: fetchControlImplementation,
+} = useDataApi<ControlImplementation>(null, {}, { immediate: false });
+
+watch(
+  [sspUrl, ciUrl],
+  async () => {
+    if (!sspUrl.value || !ciUrl.value) {
+      ssp.value = undefined;
+      controlImplementation.value = undefined;
+      return;
+    }
+    await Promise.all([
+      fetchSsp(sspUrl.value).catch(() => undefined),
+      fetchControlImplementation(ciUrl.value).catch(() => undefined),
+    ]);
+  },
+  { immediate: true },
+);
+const { data: sspRisks, execute: loadSspRisks } = useDataApi<Risk[]>(
+  null,
+  {},
+  { immediate: false },
+);
 const { execute: executeDelete } = useDataApi<void>(null, { method: 'DELETE' });
 const { execute: executeUpdateByComponent } = useDataApi<ByComponent>(null, {
   method: 'PUT',
@@ -482,6 +592,25 @@ const totalByComponents = computed(() => {
   return total;
 });
 
+watch(
+  sspId,
+  async (value) => {
+    if (!value) {
+      sspRisks.value = [];
+      return;
+    }
+    const query = new URLSearchParams({ limit: `${RISK_FETCH_LIMIT}` });
+    try {
+      await loadSspRisks(
+        `/api/oscal/system-security-plans/${value}/risks?${query.toString()}`,
+      );
+    } catch {
+      // Error state is already handled by useDataApi.
+    }
+  },
+  { immediate: true },
+);
+
 // Control Implementation management
 const editControlImplementation = () => {
   showEditControlImplementationModal.value = true;
@@ -506,8 +635,17 @@ const editRequirement = (requirement: ImplementedRequirement) => {
 
 const deleteRequirement = async (requirement: ImplementedRequirement) => {
   try {
+    if (!sspId.value) {
+      toast.add({
+        severity: 'error',
+        summary: 'Missing System Plan',
+        detail: 'Unable to determine which system security plan to update.',
+        life: 4000,
+      });
+      return;
+    }
     await executeDelete(
-      `/api/oscal/system-security-plans/${route.params.id}/control-implementation/implemented-requirements/${requirement.uuid}`,
+      `/api/oscal/system-security-plans/${sspId.value}/control-implementation/implemented-requirements/${requirement.uuid}`,
     );
     if (controlImplementation.value) {
       controlImplementation.value.implementedRequirements =
@@ -611,11 +749,6 @@ const createStatement = (requirement: ImplementedRequirement) => {
   showCreateStatementModal.value = true;
 };
 
-const createComponent = (statement: Statement) => {
-  console.log('Create Component for Statement:', statement);
-  alert('Create Component functionality is in development');
-};
-
 const handleStatementByComponentSaved = (updatedByComponent: ByComponent) => {
   if (
     controlImplementation.value &&
@@ -653,32 +786,10 @@ const handleStatementByComponentSaved = (updatedByComponent: ByComponent) => {
   editingRequirement.value = null;
 };
 
-const handleRequirementByComponentSaved = (updatedByComponent: ByComponent) => {
-  if (controlImplementation.value && editingRequirement.value) {
-    const reqIndex =
-      controlImplementation.value.implementedRequirements.findIndex(
-        (r) => r.uuid === editingRequirement.value?.uuid,
-      );
-    if (reqIndex !== -1) {
-      const requirement =
-        controlImplementation.value.implementedRequirements[reqIndex];
-      if (requirement.byComponents) {
-        const byCompIndex = requirement.byComponents.findIndex(
-          (bc) => bc.uuid === updatedByComponent.uuid,
-        );
-        if (byCompIndex !== -1) {
-          requirement.byComponents[byCompIndex] = updatedByComponent;
-        }
-      }
-    }
-  }
-  showEditRequirementByComponentModal.value = false;
-  editingByComponent.value = null;
-  editingRequirement.value = null;
-  editingStatement.value = null;
-};
-
-const editRequirementByComponent = (
+// Opens the read-only view of a legacy, requirement-anchored by-component. There is no edit
+// path here by design: ByComponentEditForm renders this row read-only when no statement is
+// passed.
+const viewRequirementByComponent = (
   requirement: ImplementedRequirement,
   byComponent: ByComponent,
 ) => {
@@ -686,6 +797,59 @@ const editRequirementByComponent = (
   editingByComponent.value = byComponent;
   editingStatement.value = null;
   showEditRequirementByComponentModal.value = true;
+};
+
+const deleteRequirementByComponent = async (
+  requirement: ImplementedRequirement,
+  byComponent: ByComponent,
+) => {
+  try {
+    if (!sspId.value) {
+      toast.add({
+        severity: 'error',
+        summary: 'Missing System Plan',
+        detail: 'Unable to determine which system security plan to update.',
+        life: 4000,
+      });
+      return;
+    }
+    await executeDelete(
+      `/api/oscal/system-security-plans/${sspId.value}/control-implementation/implemented-requirements/${requirement.uuid}/by-components/${byComponent.uuid}`,
+    );
+    requirement.byComponents = (requirement.byComponents ?? []).filter(
+      (bc) => bc.uuid !== byComponent.uuid,
+    );
+    toast.add({
+      severity: 'success',
+      summary: 'Success',
+      detail: 'Legacy component implementation deleted.',
+      life: 3000,
+    });
+  } catch (error) {
+    console.error('Failed to delete legacy by-component:', error);
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail:
+        'Failed to delete the component implementation. Please try again.',
+      life: 5000,
+    });
+  }
+};
+
+// The statement-level counterpart of viewRequirementByComponent, and the trigger the
+// statement-level ByComponentEditForm modal has always been waiting for: without it, the
+// export/inherited/satisfied editors were unreachable in the running app, because every
+// seeded SSP is 100% statement-level.
+const editStatementByComponent = (
+  requirement: ImplementedRequirement,
+  statement: Statement,
+  byComponent: ByComponent,
+) => {
+  editingRequirement.value = requirement;
+  editingStatement.value = statement;
+  editingByComponent.value = byComponent;
+  showEditStatementByComponentModal.value = true;
 };
 
 const handleSaveStatementByComponent = async (

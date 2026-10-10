@@ -29,7 +29,14 @@
         <FormTextarea v-model="poam.metadata.remarks" />
       </div>
       <div class="text-right">
-        <PrimaryButton type="submit">
+        <PrimaryButton
+          type="submit"
+          :disabled="!can(RESOURCES.POAM_OSCAL, ACTIONS.CREATE)"
+          v-tooltip.top="{
+            value: permissionTooltip(RESOURCES.POAM_OSCAL, ACTIONS.CREATE),
+            disabled: can(RESOURCES.POAM_OSCAL, ACTIONS.CREATE),
+          }"
+        >
           Create Plan of Action and Milestones
         </PrimaryButton>
       </div>
@@ -55,6 +62,10 @@ import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import type { AxiosError } from 'axios';
 import type { ErrorResponse, ErrorBody } from '@/stores/types';
 import type { Metadata } from '@/oscal';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
+
+const { can, permissionTooltip } = usePermissions();
 
 const poam = ref<POAM>({
   uuid: '',

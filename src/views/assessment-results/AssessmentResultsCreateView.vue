@@ -134,7 +134,16 @@
             </RouterLink>
             <button
               type="submit"
-              :disabled="loading"
+              :disabled="
+                loading || !can(RESOURCES.ASSESSMENT_RESULTS, ACTIONS.CREATE)
+              "
+              v-tooltip.top="{
+                value: permissionTooltip(
+                  RESOURCES.ASSESSMENT_RESULTS,
+                  ACTIONS.CREATE,
+                ),
+                disabled: can(RESOURCES.ASSESSMENT_RESULTS, ACTIONS.CREATE),
+              }"
               class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {{ loading ? 'Creating...' : 'Create Assessment Results' }}
@@ -154,9 +163,12 @@ import type { AssessmentResult } from '@/oscal';
 import { useToast } from 'primevue/usetoast';
 import { v4 as uuidv4 } from 'uuid';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
 
 const router = useRouter();
 const toast = useToast();
+const { can, permissionTooltip } = usePermissions();
 
 const formData = ref({
   uuid: uuidv4(),

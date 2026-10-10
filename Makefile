@@ -21,7 +21,7 @@ maintain:  ## Performs regular updates that may be required
 	@npm run lint
 
 check-version:  ## Check node version is satisfactory
-	@bash -c '[ "$$(printf "%s\n" 21.0.0 "$$(node -v | sed "s/^v//")" | sort -V | head -n1)" = "21.0.0" ] || (echo "Node.js too old" >&2; exit 1)'
+	@bash -c '[ "$$(printf "%s\n" 20.0.0 "$$(node -v | sed "s/^v//")" | sort -V | head -n1)" = "20.0.0" ] || (echo "Node.js too old" >&2; exit 1)'
 
 install:  ## Install node packages what's required
 	@npm i
@@ -31,9 +31,6 @@ build:  ## Build
 
 unit-test:   ## Run unit tests
 	@npm run test:unit
-
-e2e-test: build    ## Run end-to-end tests
-	@npm run test:e2e
 
 dev: check-version install   ## Run development environment
 	@./hack/local-shared/do start_docker
@@ -45,5 +42,8 @@ typecheck: ## Run typecheck
 lint: ## Run lint
 	@npm run lint
 
-reviewable: typecheck lint unit-test
+formatcheck: ## Run format check
+	@npm run format:check
+
+reviewable: formatcheck typecheck lint unit-test
 	@echo "All checks passed, ready for review"

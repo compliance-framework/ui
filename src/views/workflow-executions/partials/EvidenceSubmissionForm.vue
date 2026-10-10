@@ -17,6 +17,8 @@
           id="evidenceType"
           v-model="evidenceForm.type"
           :options="availableEvidenceTypes"
+          optionLabel="label"
+          optionValue="value"
           placeholder="Select evidence type"
           class="w-full"
         />
@@ -30,12 +32,18 @@
           type="file"
           multiple
           @change="handleFileChange"
-          accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif"
+          :accept="fileAcceptTypes"
           class="w-full px-3 py-2 border border-ccf-300 dark:border-slate-700 rounded-md bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-200"
         />
         <small class="text-gray-500 dark:text-slate-400">
-          Supported: PDF, Word, Images (max 10MB per file, multiple files
-          allowed)
+          <template v-if="evidenceForm.type === 'screenshot'">
+            Supported: PNG, JPG, GIF, WebP (max 10MB per file, multiple files
+            allowed)
+          </template>
+          <template v-else>
+            Supported: PDF, Word, Images (max 10MB per file, multiple files
+            allowed)
+          </template>
         </small>
         <div v-if="selectedFiles.length > 0" class="mt-2 space-y-1">
           <div class="text-sm text-green-600 dark:text-green-400">
@@ -90,7 +98,15 @@
       <!-- Add Evidence Button -->
       <PrimaryButton
         @click="handleSubmit"
-        :disabled="isSubmitting || !canSubmit"
+        :disabled="
+          isSubmitting ||
+          !canSubmit ||
+          !can(RESOURCES.STEP_EXECUTION, ACTIONS.UPDATE)
+        "
+        v-tooltip.top="{
+          value: permissionTooltip(RESOURCES.STEP_EXECUTION, ACTIONS.UPDATE),
+          disabled: can(RESOURCES.STEP_EXECUTION, ACTIONS.UPDATE),
+        }"
         class="w-full"
       >
         <i v-if="isSubmitting" class="pi pi-spin pi-spinner mr-2"></i>
@@ -106,6 +122,7 @@ import { ref, computed } from 'vue';
 import type {
   StepExecution,
   EvidenceType,
+  EvidenceRequirement,
   StepExecutionEvidenceSubmit,
 } from '@/types/workflows';
 import Label from '@/volt/Label.vue';
@@ -114,10 +131,14 @@ import InputText from '@/volt/InputText.vue';
 import Textarea from '@/volt/Textarea.vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
 import Message from '@/volt/Message.vue';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
+
+const { can, permissionTooltip } = usePermissions();
 
 const props = defineProps<{
   step: StepExecution;
-  evidenceRequirements: string[];
+  evidenceRequirements: EvidenceRequirement[];
 }>();
 
 const emit = defineEmits<{
@@ -140,8 +161,18 @@ const selectedFiles = ref<File[]>([]);
 const isSubmitting = ref(false);
 const submitError = ref('');
 
-// Get evidence types from requirements, or allow all common types
 const availableEvidenceTypes = computed(() => {
+  const toOption = (type: EvidenceType, description?: string) => ({
+    value: type,
+    label: description || type,
+  });
+
+  if (props.evidenceRequirements.length > 0) {
+    return props.evidenceRequirements.map((req) =>
+      toOption(req.type, req.description),
+    );
+  }
+
   const allTypes: EvidenceType[] = [
     'document',
     'attestation',
@@ -149,12 +180,7 @@ const availableEvidenceTypes = computed(() => {
     'link',
     'text',
   ];
-
-  if (props.evidenceRequirements.length > 0) {
-    return props.evidenceRequirements;
-  }
-
-  return allTypes;
+  return allTypes.map((type) => toOption(type));
 });
 
 const isFileEvidenceType = computed(() => {
@@ -174,6 +200,22 @@ const isAttestationEvidenceType = computed(() => {
 const isLinkEvidenceType = computed(() => {
   return evidenceForm.value.type === 'link';
 });
+
+const screenshotAcceptTypes = '.png,.jpg,.jpeg,.gif,.webp';
+const documentAcceptTypes = '.pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp';
+
+const fileAcceptTypes = computed(() => {
+  return evidenceForm.value.type === 'screenshot'
+    ? screenshotAcceptTypes
+    : documentAcceptTypes;
+});
+
+const screenshotAllowedMimeTypes = new Set([
+  'image/png',
+  'image/jpeg',
+  'image/gif',
+  'image/webp',
+]);
 
 const canSubmit = computed(() => {
   if (!evidenceForm.value.type) return false;
@@ -202,6 +244,18 @@ function handleFileChange(event: Event) {
       submitError.value = `The following files exceed 10MB limit: ${oversizedFiles.map((f) => f.name).join(', ')}`;
       selectedFiles.value = [];
       return;
+    }
+
+    // Validate file type compatibility with evidence type
+    if (evidenceForm.value.type === 'screenshot') {
+      const invalidFiles = files.filter(
+        (file) => !screenshotAllowedMimeTypes.has(file.type),
+      );
+      if (invalidFiles.length > 0) {
+        submitError.value = `screenshot evidence only accepts image files (PNG, JPG, GIF, WebP): ${invalidFiles.map((f) => f.name).join(', ')}`;
+        selectedFiles.value = [];
+        return;
+      }
     }
 
     selectedFiles.value = files;

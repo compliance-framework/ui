@@ -37,7 +37,7 @@
 
   <div class="mt-4">
     <div class="flex gap-4">
-      <form @submit.prevent="search" class="grow">
+      <form @submit.prevent="submitSearch" class="grow">
         <div
           class="flex border rounded-md text-zinc-700 dark:text-slate-300 bg-white dark:bg-slate-900 border-ccf-300 dark:border-slate-700"
         >
@@ -61,9 +61,22 @@
           </SecondaryButton>
         </div>
       </form>
+      <SubjectFilter
+        v-if="subjectsSupported"
+        :model-value="selectedSubject"
+        @update:model-value="changeSubject"
+      />
       <SecondaryButton @click.prevent="share" class="text-sm">
         <BIconShare class="mr-2" />
         Share
+      </SecondaryButton>
+      <SecondaryButton
+        :disabled="!canExportCsv"
+        @click.prevent="exportToCsv"
+        class="text-sm"
+      >
+        <BIconDownload class="mr-2" />
+        {{ exportingCsv ? 'Exporting...' : 'Export to CSV' }}
       </SecondaryButton>
       <PrimaryButton @click.prevent="save" class="text-sm">
         Save
@@ -77,11 +90,44 @@
   <div
     class="mt-4 rounded-md bg-white dark:bg-slate-900 border-collapse border border-ccf-300 dark:border-slate-700"
   >
-    <EvidenceList :evidence="evidence" />
+    <EvidenceList
+      :evidence="evidence"
+      :navigation-query="navigationQuery"
+      :sort-by="sortBy"
+      :sort-direction="sortDirection"
+      @sort="changeSort"
+    />
+  </div>
+
+  <div
+    v-if="totalEvidence > 0"
+    class="mt-4 flex flex-wrap items-center justify-between gap-3"
+  >
+    <p class="text-sm text-gray-500 dark:text-slate-400">
+      Showing {{ pageStart }}-{{ pageEnd }} of {{ totalEvidence }}
+    </p>
+
+    <div class="flex items-center gap-2">
+      <TertiaryButton
+        :disabled="currentPage <= 1"
+        @click="changePage(currentPage - 1)"
+      >
+        Previous
+      </TertiaryButton>
+      <span class="text-sm text-gray-600 dark:text-slate-300">
+        Page {{ currentPage }} of {{ totalPages }}
+      </span>
+      <TertiaryButton
+        :disabled="currentPage >= totalPages"
+        @click="changePage(currentPage + 1)"
+      >
+        Next
+      </TertiaryButton>
+    </div>
   </div>
 </template>
 <script setup lang="ts">
-import { onMounted, ref, computed, watch } from 'vue';
+import { onBeforeUnmount, onMounted, ref, computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import type { AxiosError } from 'axios';
 import { useUIStore } from '@/stores/ui.ts';
@@ -90,7 +136,7 @@ import PageCard from '@/components/PageCard.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
 import Message from '@/volt/Message.vue';
 import { FilterParser } from '@/parsers/labelfilter.ts';
-import { BIconSearch, BIconShare } from 'bootstrap-icons-vue';
+import { BIconDownload, BIconSearch, BIconShare } from 'bootstrap-icons-vue';
 import type { ChartData } from 'chart.js';
 import {
   calculateComplianceOverTimeData,
@@ -103,18 +149,81 @@ import { useConfigStore } from '@/stores/config.ts';
 import { useToast } from 'primevue/usetoast';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
+import TertiaryButton from '@/volt/TertiaryButton.vue';
 import InfoCircleIcon from '@primevue/icons/infocircle';
-import type { ComplianceInterval, Evidence } from '@/stores/evidence.ts';
+import type {
+  ComplianceInterval,
+  Evidence,
+  EvidenceSortBy,
+  SortDirection,
+} from '@/stores/evidence.ts';
 import EvidenceList from '@/components/EvidenceList.vue';
+import SubjectFilter from '@/components/evidence/SubjectFilter.vue';
+import { useSubjectSearch } from '@/composables/subjects/useSubjectSearch';
+import type { SubjectSummary } from '@/types/subjects';
 import BurgerMenu from '@/components/BurgerMenu.vue';
-import { useDataApi } from '@/composables/axios';
+import { useAuthenticatedInstance, useDataApi } from '@/composables/axios';
+import type { PaginatedListResponse } from '@/stores/types.ts';
+import { getErrorDetail, getErrorStatus } from '@/utils/httpErrors';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
 
 const configStore = useConfigStore();
 const route = useRoute();
 const router = useRouter();
 const uiStore = useUIStore();
 const toast = useToast();
+const authenticatedApi = useAuthenticatedInstance();
+const { can } = usePermissions();
 const error = ref<AxiosError | null>(null);
+const evidence = ref<Evidence[]>([]);
+const totalEvidence = ref(0);
+const currentPage = ref(1);
+const totalPages = ref(1);
+const sortBy = ref<EvidenceSortBy>('lastSeenAt');
+const sortDirection = ref<SortDirection>('desc');
+const exportingCsv = ref(false);
+const lastExecutedFilter = ref('');
+const lastExecutedSortBy = ref<EvidenceSortBy>('lastSeenAt');
+const lastExecutedSortDirection = ref<SortDirection>('desc');
+// The subject filter lives in the route (?subject=<uuid>) like the other list filters;
+// selectedSubject is what the filter shows.
+const selectedSubject = ref<SubjectSummary | null>(null);
+// Set once the API returns subjects on evidence rows; older APIs get no subject filter.
+const subjectsSupported = ref(false);
+const { lookup: lookupSubjects } = useSubjectSearch();
+
+const EVIDENCE_PAGE_SIZE = 50;
+const EVIDENCE_EXPORT_PAGE_SIZE = 100;
+const EVIDENCE_EXPORT_CONFIRM_THRESHOLD = 1000;
+const EVIDENCE_EXPORT_MAX_ROWS = 5000;
+const SEARCH_DEBOUNCE_MS = 500;
+const EVIDENCE_STATUS_INTERVAL =
+  '0m,2m,4m,6m,8m,12m,16m,20m,25m,30m,40m,50m,1h';
+const CSV_EXCLUDED_HEADERS = new Set([
+  'id',
+  'uuid',
+  'labels',
+  'origins',
+  'backMatter',
+]);
+let filterRouteUpdateTimeout: ReturnType<typeof setTimeout> | undefined;
+
+const hasPendingSearchChanges = computed(() => {
+  return (
+    uiStore.evidenceFilter.trim() !== lastExecutedFilter.value ||
+    sortBy.value !== lastExecutedSortBy.value ||
+    sortDirection.value !== lastExecutedSortDirection.value
+  );
+});
+
+const canExportCsv = computed(() => {
+  return (
+    totalEvidence.value > 0 &&
+    !exportingCsv.value &&
+    !hasPendingSearchChanges.value
+  );
+});
 
 const filter = computed({
   get: () => uiStore.evidenceFilter,
@@ -124,62 +233,58 @@ const filter = computed({
       return;
     }
     uiStore.setEvidenceFilter(val);
-    // Update URL query parameter without reloading page
-    router.replace({
-      query: { ...route.query, filter: val || undefined },
-    });
+    scheduleFilterRouteUpdate(val);
   },
 });
 
 watch(
-  () => route.query.filter,
-  (newFilter) => {
-    // Avoid redundant updates when the change originated from the filter setter
-    if (newFilter === uiStore.evidenceFilter) {
+  [
+    () => route.query.filter,
+    () => route.query.page,
+    () => route.query.sortBy,
+    () => route.query.sortDirection,
+    () => route.query.subject,
+  ],
+  (
+    [newFilter, newPage, newSortBy, newSortDirection, newSubject],
+    [oldFilter, oldPage, oldSortBy, oldSortDirection, oldSubject],
+  ) => {
+    const nextFilter = getRouteFilterValue(newFilter);
+
+    uiStore.setEvidenceFilter(nextFilter);
+    syncSubjectFromRoute(newSubject);
+
+    currentPage.value = parsePageQuery(newPage);
+    applySort(
+      parseSortByQuery(newSortBy, uiStore.evidenceSortBy),
+      parseSortDirectionQuery(newSortDirection, uiStore.evidenceSortDirection),
+    );
+
+    if (
+      newFilter === oldFilter &&
+      newPage === oldPage &&
+      newSortBy === oldSortBy &&
+      newSortDirection === oldSortDirection &&
+      newSubject === oldSubject
+    ) {
       return;
     }
 
-    if (typeof newFilter === 'string') {
-      uiStore.setEvidenceFilter(newFilter);
-    } else {
-      uiStore.setEvidenceFilter('');
+    if (typeof newFilter === 'string' && nextFilter.length === 0) {
+      void replaceFilterRoute('');
+      return;
     }
-    search();
+
+    search(currentPage.value);
   },
 );
-
-const { data: evidenceData, execute: loadEvidence } = useDataApi<Evidence[]>(
-  '/api/evidence/search',
-  {
-    method: 'POST',
-  },
-  { immediate: false },
-);
-
-const evidence = computed(() => {
-  return evidenceData.value
-    ? [...evidenceData.value].sort((a, b) => {
-        // Order results by their end date for better UI consistency
-        const x = new Date(a.end);
-        const y = new Date(b.end);
-
-        if (x > y) {
-          return 1;
-        }
-        if (x < y) {
-          return -1;
-        }
-        return 0;
-      })
-    : [];
-});
 
 const { data: complianceOverTime, execute: loadComplianceOverTime } =
   useDataApi<ComplianceInterval[]>(
     '/api/evidence/status-over-time',
     {
       params: {
-        interval: '0m,2m,4m,6m,8m,12m,16m,20m,25m,30m,40m,50m,1h',
+        interval: EVIDENCE_STATUS_INTERVAL,
       },
       method: 'POST',
     },
@@ -205,31 +310,595 @@ const heartbeatChartData = computed<ChartData<'line', DateDataPoint[]>>(() => {
   return calculateHeartbeatOverTimeData(heartbeats.value ?? []);
 });
 
-async function search() {
-  const query = new FilterParser(filter.value).parse();
+const pageStart = computed(() => {
+  if (totalEvidence.value === 0) {
+    return 0;
+  }
+
+  return (currentPage.value - 1) * EVIDENCE_PAGE_SIZE + 1;
+});
+
+const pageEnd = computed(() => {
+  if (totalEvidence.value === 0) {
+    return 0;
+  }
+
+  return Math.min(currentPage.value * EVIDENCE_PAGE_SIZE, totalEvidence.value);
+});
+
+function parsePageQuery(value: unknown) {
+  const page = Number.parseInt(String(value ?? ''), 10);
+
+  if (Number.isNaN(page) || page < 1) {
+    return 1;
+  }
+
+  return page;
+}
+
+function parseSortByQuery(
+  value: unknown,
+  fallback: EvidenceSortBy = 'lastSeenAt',
+): EvidenceSortBy {
+  if (value === 'name' || value === 'status' || value === 'lastSeenAt') {
+    return value;
+  }
+
+  return fallback;
+}
+
+function parseSortDirectionQuery(
+  value: unknown,
+  fallback: SortDirection = 'desc',
+): SortDirection {
+  if (value === 'asc' || value === 'desc') {
+    return value;
+  }
+
+  return fallback;
+}
+
+function applySort(
+  nextSortBy: EvidenceSortBy,
+  nextSortDirection: SortDirection,
+) {
+  sortBy.value = nextSortBy;
+  sortDirection.value = nextSortDirection;
+  uiStore.setEvidenceSortBy(nextSortBy);
+  uiStore.setEvidenceSortDirection(nextSortDirection);
+}
+
+function isLabelFilterSearch(value: string) {
+  return /!?=/.test(value);
+}
+
+function hasIncompleteLabelSyntax(value: string) {
+  return /!?=\s*$/.test(value.trim());
+}
+
+function canRunEvidenceSearch(value: string) {
+  const searchText = value.trim();
+
+  if (searchText.length === 0) {
+    return true;
+  }
+
+  return searchText.length >= 3 && !hasIncompleteLabelSyntax(searchText);
+}
+
+function getRouteFilterValue(value: unknown) {
+  if (typeof value !== 'string') {
+    return '';
+  }
+
+  return canRunEvidenceSearch(value) ? value.trim() : '';
+}
+
+function canPersistFilterInRoute(value: string) {
+  return value.length === 0 || canRunEvidenceSearch(value);
+}
+
+function normalizeFilterRouteValue(value: string) {
+  const normalizedValue = value.trim();
+
+  return normalizedValue.length > 0 ? normalizedValue : undefined;
+}
+
+function scheduleFilterRouteUpdate(value: string) {
+  clearFilterRouteUpdateTimeout();
+
+  if (!canPersistFilterInRoute(value)) {
+    return;
+  }
+
+  filterRouteUpdateTimeout = setTimeout(() => {
+    filterRouteUpdateTimeout = undefined;
+    void replaceFilterRoute(value);
+  }, SEARCH_DEBOUNCE_MS);
+}
+
+function clearFilterRouteUpdateTimeout() {
+  if (filterRouteUpdateTimeout) {
+    clearTimeout(filterRouteUpdateTimeout);
+    filterRouteUpdateTimeout = undefined;
+  }
+}
+
+async function replaceFilterRoute(value: string) {
+  await router.replace({
+    query: {
+      ...route.query,
+      filter: normalizeFilterRouteValue(value),
+      page: undefined,
+    },
+  });
+}
+
+async function flushFilterRouteUpdate() {
+  clearFilterRouteUpdateTimeout();
+
+  if (!canPersistFilterInRoute(uiStore.evidenceFilter)) {
+    return false;
+  }
+
+  const nextFilter = normalizeFilterRouteValue(uiStore.evidenceFilter);
+  const currentFilter =
+    typeof route.query.filter === 'string' ? route.query.filter : undefined;
+
+  if (currentFilter === nextFilter && route.query.page === undefined) {
+    return false;
+  }
+
+  await replaceFilterRoute(uiStore.evidenceFilter);
+  return true;
+}
+
+function buildEvidenceSearchRequest(
+  page: number,
+  options?: {
+    filterText?: string;
+    limit?: number;
+    sortBy?: EvidenceSortBy;
+    sortDirection?: SortDirection;
+  },
+) {
+  const searchText = (options?.filterText ?? uiStore.evidenceFilter).trim();
+  const isLabelSearch = isLabelFilterSearch(searchText);
+  const query = isLabelSearch
+    ? new FilterParser(searchText).parse()
+    : new FilterParser('').parse();
+
+  const params = new URLSearchParams({
+    page: String(page),
+    limit: String(options?.limit ?? EVIDENCE_PAGE_SIZE),
+    sortBy: options?.sortBy ?? sortBy.value,
+    sortDirection: options?.sortDirection ?? sortDirection.value,
+  });
+
+  if (searchText && !isLabelSearch) {
+    params.set('name', searchText);
+  }
+
+  const subjectUuid = getRouteSubjectUuid(route.query.subject);
+  if (subjectUuid) {
+    params.set('subjectUuid', subjectUuid);
+  }
+
+  const complianceParams: Record<string, string> = {
+    interval: EVIDENCE_STATUS_INTERVAL,
+  };
+
+  if (searchText && !isLabelSearch) {
+    complianceParams.name = searchText;
+  }
+
+  return {
+    url: `/api/evidence/search?${params.toString()}`,
+    body: {
+      filter: query,
+    },
+    complianceParams,
+    searchText,
+    sortBy: options?.sortBy ?? sortBy.value,
+    sortDirection: options?.sortDirection ?? sortDirection.value,
+  };
+}
+
+const navigationQuery = computed<Record<string, string | undefined>>(() => {
+  const nextFilter = canPersistFilterInRoute(uiStore.evidenceFilter)
+    ? normalizeFilterRouteValue(uiStore.evidenceFilter)
+    : undefined;
+
+  return {
+    filter: nextFilter,
+    sortBy: sortBy.value === 'lastSeenAt' ? undefined : sortBy.value,
+    sortDirection:
+      sortDirection.value === 'desc' ? undefined : sortDirection.value,
+    page: currentPage.value > 1 ? String(currentPage.value) : undefined,
+    subject: getRouteSubjectUuid(route.query.subject),
+  };
+});
+
+async function search(page = currentPage.value) {
+  error.value = null;
+
+  if (!canRunEvidenceSearch(uiStore.evidenceFilter)) {
+    return;
+  }
 
   try {
-    await Promise.all([
-      loadEvidence({
-        data: { filter: query },
-      }),
+    const request = buildEvidenceSearchRequest(page);
+    const [evidenceResponse] = await Promise.all([
+      authenticatedApi.post<PaginatedListResponse<Evidence>>(
+        request.url,
+        request.body,
+      ),
       loadComplianceOverTime({
-        data: { filter: query },
+        data: request.body,
+        params: request.complianceParams,
       }),
       loadHeartbeats(),
     ]);
+
+    const paginatedEvidence = evidenceResponse.data;
+
+    evidence.value = paginatedEvidence.data ?? [];
+    if (evidence.value.some((item) => item.subjectReferences !== undefined)) {
+      subjectsSupported.value = true;
+    }
+    totalEvidence.value = paginatedEvidence.total ?? 0;
+    currentPage.value = paginatedEvidence.page ?? page;
+    totalPages.value = Math.max(paginatedEvidence.totalPages ?? 1, 1);
+    lastExecutedFilter.value = request.searchText;
+    lastExecutedSortBy.value = request.sortBy;
+    lastExecutedSortDirection.value = request.sortDirection;
   } catch (err) {
     error.value = err as AxiosError;
   }
 }
 
-onMounted(() => {
-  if (route.query.filter) {
-    uiStore.setEvidenceFilter(route.query.filter as string);
-  } else {
-    uiStore.setEvidenceFilter('');
+function sanitizeCsvCell(value: string) {
+  if (value.match(/^\s*[=+\-@]/)) {
+    return "'" + value;
   }
-  search();
+
+  return value;
+}
+
+function flattenCsvRecord(
+  value: unknown,
+  prefix = '',
+  output: Record<string, string> = {},
+) {
+  if (value === null || value === undefined) {
+    if (prefix) {
+      output[prefix] = '';
+    }
+
+    return output;
+  }
+
+  if (Array.isArray(value)) {
+    if (prefix) {
+      output[prefix] = JSON.stringify(value);
+    }
+
+    return output;
+  }
+
+  if (typeof value === 'object') {
+    const entries = Object.entries(value as Record<string, unknown>);
+
+    if (entries.length === 0) {
+      if (prefix) {
+        output[prefix] = '{}';
+      }
+
+      return output;
+    }
+
+    for (const [key, nestedValue] of entries) {
+      const nextPrefix = prefix ? `${prefix}.${key}` : key;
+      flattenCsvRecord(nestedValue, nextPrefix, output);
+    }
+
+    return output;
+  }
+
+  if (prefix) {
+    output[prefix] = String(value);
+  }
+
+  return output;
+}
+
+function isExcludedCsvHeader(header: string) {
+  for (const excludedHeader of CSV_EXCLUDED_HEADERS) {
+    if (header === excludedHeader || header.startsWith(`${excludedHeader}.`)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function buildEvidenceCsv(evidenceItems: Evidence[]) {
+  const payloadHeaders = new Set<string>();
+  const labelHeaders = new Set<string>();
+  const rows = evidenceItems.map((item) => {
+    const row = flattenCsvRecord(item);
+
+    for (const header of Object.keys(row)) {
+      if (!header.startsWith('label.') && !isExcludedCsvHeader(header)) {
+        payloadHeaders.add(header);
+      }
+    }
+
+    for (const label of item.labels ?? []) {
+      const labelHeader = `label.${label.name}`;
+      const existingValue = row[labelHeader];
+      row[labelHeader] =
+        existingValue == null || existingValue === ''
+          ? label.value
+          : `${existingValue}; ${label.value}`;
+      labelHeaders.add(labelHeader);
+    }
+
+    return row;
+  });
+
+  const headers = [
+    ...Array.from(payloadHeaders).sort(),
+    ...Array.from(labelHeaders).sort(),
+  ];
+
+  return [
+    headers,
+    ...rows.map((row) => headers.map((header) => row[header] ?? '')),
+  ]
+    .map((row) =>
+      row
+        .map((cell) => `"${sanitizeCsvCell(cell).replace(/"/g, '""')}"`)
+        .join(','),
+    )
+    .join('\n');
+}
+
+function downloadCsv(csvContent: string) {
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `evidence-export-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+function showExportTooLargeToast() {
+  toast.add({
+    severity: 'error',
+    summary: 'Export Too Large',
+    detail: `CSV export is limited to ${EVIDENCE_EXPORT_MAX_ROWS} evidence records. Narrow your search and try again.`,
+    life: 5000,
+  });
+}
+
+function confirmCsvExport(total: number) {
+  if (total <= EVIDENCE_EXPORT_CONFIRM_THRESHOLD) {
+    return true;
+  }
+
+  return window.confirm(
+    `Export ${total} evidence records to CSV? This may take a while.`,
+  );
+}
+
+async function exportToCsv() {
+  if (!canExportCsv.value) {
+    return;
+  }
+
+  if (totalEvidence.value > EVIDENCE_EXPORT_MAX_ROWS) {
+    showExportTooLargeToast();
+    return;
+  }
+
+  if (!confirmCsvExport(totalEvidence.value)) {
+    return;
+  }
+
+  exportingCsv.value = true;
+
+  try {
+    const allEvidence: Evidence[] = [];
+    let page = 1;
+    let totalExportPages = 1;
+    let confirmedExportTotal =
+      totalEvidence.value > EVIDENCE_EXPORT_CONFIRM_THRESHOLD
+        ? totalEvidence.value
+        : 0;
+
+    do {
+      const request = buildEvidenceSearchRequest(page, {
+        filterText: lastExecutedFilter.value,
+        limit: EVIDENCE_EXPORT_PAGE_SIZE,
+        sortBy: lastExecutedSortBy.value,
+        sortDirection: lastExecutedSortDirection.value,
+      });
+      const response = await authenticatedApi.post<
+        PaginatedListResponse<Evidence>
+      >(request.url, request.body);
+      const paginatedEvidence = response.data;
+      const exportTotal = paginatedEvidence.total ?? allEvidence.length;
+
+      if (exportTotal > EVIDENCE_EXPORT_MAX_ROWS) {
+        showExportTooLargeToast();
+        return;
+      }
+
+      if (
+        exportTotal > EVIDENCE_EXPORT_CONFIRM_THRESHOLD &&
+        exportTotal > confirmedExportTotal
+      ) {
+        if (!confirmCsvExport(exportTotal)) {
+          return;
+        }
+
+        confirmedExportTotal = exportTotal;
+      }
+
+      allEvidence.push(...(paginatedEvidence.data ?? []));
+      totalExportPages = Math.max(paginatedEvidence.totalPages ?? 1, 1);
+      page += 1;
+    } while (page <= totalExportPages);
+
+    const csvContent = buildEvidenceCsv(allEvidence);
+
+    downloadCsv(csvContent);
+    toast.add({
+      severity: 'success',
+      summary: 'CSV Exported',
+      detail: `Downloaded ${allEvidence.length} evidence records.`,
+      life: 3000,
+    });
+  } catch (err) {
+    console.error('Failed to export evidence CSV:', err);
+    const errorStatus = getErrorStatus(err);
+    const errorDetail = await getErrorDetail(
+      err,
+      'Unable to export evidence as CSV. Please try again.',
+    );
+    toast.add({
+      severity: 'error',
+      summary: 'Export Failed',
+      detail: errorStatus ? `${errorStatus}: ${errorDetail}` : errorDetail,
+      life: 4000,
+    });
+  } finally {
+    exportingCsv.value = false;
+  }
+}
+
+function getDefaultSortDirection(nextSortBy: EvidenceSortBy): SortDirection {
+  if (nextSortBy === 'name' || nextSortBy === 'status') {
+    return 'asc';
+  }
+
+  return 'desc';
+}
+
+async function changeSort(nextSortBy: EvidenceSortBy) {
+  const nextSortDirection =
+    sortBy.value === nextSortBy
+      ? sortDirection.value === 'asc'
+        ? 'desc'
+        : 'asc'
+      : getDefaultSortDirection(nextSortBy);
+
+  await router.replace({
+    query: {
+      ...route.query,
+      sortBy: nextSortBy,
+      sortDirection: nextSortDirection,
+      page: undefined,
+    },
+  });
+}
+
+function getRouteSubjectUuid(value: unknown) {
+  return typeof value === 'string' && value.trim() ? value.trim() : undefined;
+}
+
+// Keeps the filter in step with the route. A subject that arrives by URL (e.g. from an
+// evidence's Subjects card) shows its UUID until its title is looked up.
+function syncSubjectFromRoute(value: unknown) {
+  const subjectUuid = getRouteSubjectUuid(value);
+  if (!subjectUuid) {
+    selectedSubject.value = null;
+    return;
+  }
+  if (selectedSubject.value?.subjectUuid === subjectUuid) {
+    return;
+  }
+
+  subjectsSupported.value = true;
+  selectedSubject.value = {
+    subjectUuid,
+    type: '',
+    kind: 'defined-component',
+    title: subjectUuid,
+  };
+  void lookupSubjects([subjectUuid]).then(([found]) => {
+    if (found && selectedSubject.value?.subjectUuid === subjectUuid) {
+      selectedSubject.value = found;
+    }
+  });
+}
+
+// Changing the subject goes through the route (back to the first page); the route watcher
+// runs the search.
+async function changeSubject(subject: SubjectSummary | null) {
+  selectedSubject.value = subject;
+  await router.replace({
+    query: {
+      ...route.query,
+      subject: subject?.subjectUuid,
+      page: undefined,
+    },
+  });
+}
+
+async function changePage(page: number) {
+  const nextPage = Math.min(Math.max(page, 1), totalPages.value);
+
+  if (nextPage === currentPage.value) {
+    return;
+  }
+
+  await router.replace({
+    query: {
+      ...route.query,
+      page: nextPage > 1 ? String(nextPage) : undefined,
+    },
+  });
+}
+
+async function submitSearch() {
+  const routeUpdated = await flushFilterRouteUpdate();
+
+  if (routeUpdated) {
+    return;
+  }
+
+  await search(1);
+}
+
+onMounted(() => {
+  const nextFilter = getRouteFilterValue(route.query.filter);
+
+  uiStore.setEvidenceFilter(nextFilter);
+  syncSubjectFromRoute(route.query.subject);
+  currentPage.value = parsePageQuery(route.query.page);
+  applySort(
+    parseSortByQuery(route.query.sortBy, uiStore.evidenceSortBy),
+    parseSortDirectionQuery(
+      route.query.sortDirection,
+      uiStore.evidenceSortDirection,
+    ),
+  );
+
+  if (typeof route.query.filter === 'string' && nextFilter.length === 0) {
+    void replaceFilterRoute('');
+    return;
+  }
+
+  search(currentPage.value);
+});
+
+onBeforeUnmount(() => {
+  clearFilterRouteUpdateTimeout();
 });
 
 async function save() {
@@ -290,6 +959,7 @@ const menuItems = ref([
       {
         label: 'Create New',
         icon: 'pi pi-plus',
+        disabled: !can(RESOURCES.EVIDENCE, ACTIONS.CREATE),
         command: async () => {
           await router.push({
             name: 'evidence:create',

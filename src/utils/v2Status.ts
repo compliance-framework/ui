@@ -24,6 +24,7 @@ const STATUS_MAP: Record<string, V2StatusMeta> = {
   needs_evidence: { label: 'Needs Evidence', tone: 'warning' },
   draft: { label: 'Draft', tone: 'info' },
   in_progress: { label: 'In Progress', tone: 'info' },
+  inherited: { label: 'Inherited', tone: 'info' },
   implemented: { label: 'Implemented', tone: 'info' },
   partially_implemented: { label: 'Partially Implemented', tone: 'info' },
   running: { label: 'Running', tone: 'info' },

@@ -56,11 +56,12 @@ import { useRoute } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
 import { useConfigStore } from '@/stores/config.ts';
 
+const props = defineProps<{ sspId?: string }>();
 const route = useRoute();
 const configStore = useConfigStore();
 const toast = useToast();
 
-const sspId = ref<string>(route.params.id as string);
+const sspId = computed(() => props.sspId || String(route.params.id || ''));
 const sspData = ref<any>(); // eslint-disable-line @typescript-eslint/no-explicit-any
 const loading = ref<boolean>(true);
 const error = ref<string | null>(null);

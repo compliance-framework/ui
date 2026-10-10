@@ -74,7 +74,7 @@
           OVERALL COMPLIANCE PROGRESS
         </h2>
 
-        <div class="grid gap-[10px] sm:grid-cols-2 xl:grid-cols-5">
+        <div class="grid gap-[10px] sm:grid-cols-2 xl:grid-cols-6">
           <article
             v-for="tile in summaryTiles"
             :key="tile.label"
@@ -109,6 +109,10 @@
           <div
             class="h-full bg-[var(--ui-v2-success)]"
             :style="{ width: `${summaryWidths.satisfied}%` }"
+          />
+          <div
+            class="h-full bg-purple-500"
+            :style="{ width: `${summaryWidths.inherited}%` }"
           />
           <div
             class="h-full bg-[var(--ui-v2-error)]"
@@ -196,6 +200,10 @@
               <div
                 class="h-full bg-[var(--ui-v2-success)]"
                 :style="{ width: `${group.widths.satisfied}%` }"
+              />
+              <div
+                class="h-full bg-purple-500"
+                :style="{ width: `${group.widths.inherited}%` }"
               />
               <div
                 class="h-full bg-[var(--ui-v2-error)]"
@@ -408,6 +416,7 @@ interface GroupBreakdownRow {
   notImplemented: number;
   widths: {
     satisfied: number;
+    inherited: number;
     notSatisfied: number;
     unknown: number;
   };
@@ -444,8 +453,8 @@ const profileResolved = computed(
   () => profileBinding?.profileResolved.value || false,
 );
 
-const attachedProfileId = computed(
-  () => profileBinding?.attachedProfileId.value || '',
+const selectedProfileId = computed(
+  () => profileBinding?.selectedProfileId.value || '',
 );
 
 const {
@@ -456,13 +465,13 @@ const {
   isLoading,
   error,
   loadCompliance,
-} = useProfileCompliance(attachedProfileId);
+} = useProfileCompliance(selectedProfileId);
 
 const hasCurrentProgress = computed(() =>
   Boolean(
     progress.value &&
-      attachedProfileId.value &&
-      progress.value.scope.id === attachedProfileId.value,
+      selectedProfileId.value &&
+      progress.value.scope.id === selectedProfileId.value,
   ),
 );
 
@@ -508,6 +517,11 @@ const summaryTiles = computed<ComplianceSummaryTile[]>(() => [
     valueClass: 'text-[var(--ui-v2-success)]',
   },
   {
+    label: 'INHERITED',
+    value: summary.value?.inherited || 0,
+    valueClass: 'text-purple-700',
+  },
+  {
     label: 'NOT SATISFIED',
     value: notSatisfiedControls.value,
     valueClass: 'text-[var(--ui-v2-error)]',
@@ -536,7 +550,7 @@ const progressSatisfiedLabel = computed(
 );
 
 const showNoProfileState = computed(
-  () => profileResolved.value && !attachedProfileId.value,
+  () => profileResolved.value && !selectedProfileId.value,
 );
 
 const showLoadingState = computed(() => {
@@ -544,7 +558,7 @@ const showLoadingState = computed(() => {
     return true;
   }
 
-  if (!attachedProfileId.value) {
+  if (!selectedProfileId.value) {
     return false;
   }
 
@@ -558,7 +572,7 @@ const showLoadingState = computed(() => {
 const showErrorState = computed(
   () =>
     profileResolved.value &&
-    Boolean(attachedProfileId.value) &&
+    Boolean(selectedProfileId.value) &&
     Boolean(error.value) &&
     !showLoadingState.value,
 );
@@ -608,7 +622,7 @@ const controlRows = computed<ControlTableRow[]>(() =>
 );
 
 watch(
-  [sspId, attachedProfileId],
+  [sspId, selectedProfileId],
   async ([id, profileId]) => {
     if (!id || !profileId) {
       return;
@@ -629,7 +643,7 @@ watch(
 const hasActivatedOnce = ref(false);
 
 onActivated(async () => {
-  if (!sspId.value || !attachedProfileId.value) {
+  if (!sspId.value || !selectedProfileId.value) {
     return;
   }
 
@@ -681,6 +695,12 @@ function controlStatusDisplay(status: string): StatusDisplay {
         containerClass:
           'border-[color:var(--ui-v2-success)_/_0.3] bg-[var(--ui-v2-success-tint-10)]',
         textClass: 'text-[var(--ui-v2-success)]',
+      };
+    case 'inherited':
+      return {
+        label: 'INHERITED',
+        containerClass: 'border-purple-300 bg-purple-100',
+        textClass: 'text-purple-700',
       };
     case 'not-satisfied':
       return {

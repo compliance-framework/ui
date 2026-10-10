@@ -120,7 +120,7 @@ import ConfirmDialog, {
   type ConfirmDialogProps,
 } from 'primevue/confirmdialog';
 import { computed } from 'vue';
-import { useRoute } from 'vue-router';
+import { useIsV2Route } from './useRouteUiVersion';
 import Button from './Button.vue';
 import DangerButton from './DangerButton.vue';
 import PrimaryButton from './PrimaryButton.vue';
@@ -130,11 +130,7 @@ import { ptViewMerge } from './utils';
 interface Props extends /* @vue-ignore */ ConfirmDialogProps {}
 defineProps<Props>();
 
-const route = useRoute();
-
-const isV2Route = computed(() =>
-  route.matched.some((record) => record.meta.uiVersion === 'v2'),
-);
+const isV2Route = useIsV2Route();
 
 const legacyTheme: ConfirmDialogPassThroughOptions = {
   root: `max-h-[90%] max-w-screen rounded-xl

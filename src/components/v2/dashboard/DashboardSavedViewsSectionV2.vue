@@ -43,7 +43,7 @@ const loadErrorMessage = computed(() => {
     return error.value.message;
   }
 
-  return 'Unable to load dashboards.';
+  return 'Unable to load evidence filters.';
 });
 
 async function reloadDashboards(): Promise<void> {
@@ -56,8 +56,8 @@ function confirmDelete(dashboard: Dashboard): void {
   }
 
   confirm.require({
-    header: 'Delete Dashboard',
-    message: `Are you sure you want to delete the ${dashboard.name} dashboard?`,
+    header: 'Delete Evidence Filter',
+    message: `Are you sure you want to delete the ${dashboard.name} evidence filter?`,
     acceptProps: {
       label: 'Delete',
       severity: 'danger',
@@ -83,7 +83,7 @@ async function deleteDashboard(dashboard: Dashboard): Promise<void> {
     await reloadDashboards();
     toast.add({
       severity: 'success',
-      summary: 'Dashboard Deleted',
+      summary: 'Evidence Filter Deleted',
       detail: `${dashboard.name} was removed.`,
       life: 3000,
     });
@@ -91,7 +91,7 @@ async function deleteDashboard(dashboard: Dashboard): Promise<void> {
     const detail =
       deleteError instanceof Error
         ? deleteError.message
-        : 'Unable to delete this dashboard.';
+        : 'Unable to delete this evidence filter.';
 
     toast.add({
       severity: 'error',
@@ -119,7 +119,7 @@ async function deleteDashboard(dashboard: Dashboard): Promise<void> {
     <div
       v-if="isLoading"
       class="grid gap-4 md:grid-cols-2"
-      aria-label="Loading dashboards"
+      aria-label="Loading evidence filters"
     >
       <article
         v-for="index in 4"
@@ -143,7 +143,7 @@ async function deleteDashboard(dashboard: Dashboard): Promise<void> {
     <V2StatePanel
       v-else-if="loadErrorMessage"
       kind="error"
-      title="Unable to load dashboards."
+      title="Unable to load evidence filters."
       :description="loadErrorMessage"
     >
       <template #actions>
@@ -160,8 +160,8 @@ async function deleteDashboard(dashboard: Dashboard): Promise<void> {
     <V2StatePanel
       v-else-if="!hasDashboards"
       kind="empty"
-      title="No dashboards available"
-      description="Saved dashboards appear once you create one from the Evidence workspace."
+      title="No evidence filters available"
+      description="Saved evidence filters appear once you create one from the Evidence workspace."
     >
       <template #actions>
         <RouterLink

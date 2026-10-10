@@ -44,11 +44,13 @@ describe('Dialog keyboard affordances', () => {
 
     await nextTick();
 
-    const autofocusButtons = document.querySelectorAll('button[autofocus]');
+    const autofocusButtons = document.querySelectorAll(
+      'button[aria-label="Close"][autofocus]',
+    );
     expect(autofocusButtons.length).toBeGreaterThan(0);
 
     const className = autofocusButtons[0].getAttribute('class') || '';
-    expect(className).toContain('ui-v2-radius-none');
+    expect(className).toContain('rounded-none');
 
     wrapper.unmount();
   });

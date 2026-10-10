@@ -1658,7 +1658,7 @@ import StatementModalForm from '@/components/v2/system-security-plans/forms/Stat
 import ByComponentModalForm from '@/components/v2/system-security-plans/forms/ByComponentModalForm.vue';
 import { useDataApi } from '@/composables/axios';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
-import { getIdFromRoute } from '@/utils/get-poam-id-from-route';
+import { getIdFromRoute } from '@/utils/get-id-from-route';
 import { sspDetailProfileBindingKey } from './sspDetailProfileBinding';
 
 type InspectorTab =
@@ -1716,12 +1716,12 @@ const {
   error: resolvedCatalogError,
 } = useDataApi<Catalog>(null, null, { immediate: false });
 
-const attachedProfileId = computed(
-  () => profileBinding?.attachedProfileId.value || '',
+const selectedProfileId = computed(
+  () => profileBinding?.selectedProfileId.value || '',
 );
 
 watch(
-  attachedProfileId,
+  selectedProfileId,
   async (profileId) => {
     resolvedCatalog.value = undefined;
 

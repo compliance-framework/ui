@@ -16,16 +16,17 @@
         <label class="inline-block pb-2 dark:text-slate-300"
           >Statement ID <span class="text-red-500">*</span></label
         >
-        <FormInput
+        <InputText
           v-model="statementData.statementId"
           placeholder="e.g., au-1_smt"
           required
+          class="w-full"
         />
       </div>
 
       <div class="mb-4">
         <label class="inline-block pb-2 dark:text-slate-300">Remarks</label>
-        <FormTextarea v-model="statementData.remarks" rows="3" />
+        <Textarea v-model="statementData.remarks" rows="3" class="w-full" />
       </div>
 
       <!-- Properties -->
@@ -55,13 +56,21 @@
                 <label class="inline-block pb-1 text-sm dark:text-slate-300"
                   >Name</label
                 >
-                <FormInput v-model="prop.name" placeholder="Property name" />
+                <InputText
+                  v-model="prop.name"
+                  placeholder="Property name"
+                  class="w-full"
+                />
               </div>
               <div>
                 <label class="inline-block pb-1 text-sm dark:text-slate-300"
                   >Value</label
                 >
-                <FormInput v-model="prop.value" placeholder="Property value" />
+                <InputText
+                  v-model="prop.value"
+                  placeholder="Property value"
+                  class="w-full"
+                />
               </div>
             </div>
           </div>
@@ -103,20 +112,32 @@
                 <label class="inline-block pb-1 text-sm dark:text-slate-300"
                   >Href</label
                 >
-                <FormInput v-model="link.href" placeholder="URL or reference" />
+                <InputText
+                  v-model="link.href"
+                  placeholder="URL or reference"
+                  class="w-full"
+                />
               </div>
               <div>
                 <label class="inline-block pb-1 text-sm dark:text-slate-300"
                   >Rel</label
                 >
-                <FormInput v-model="link.rel" placeholder="Relationship" />
+                <InputText
+                  v-model="link.rel"
+                  placeholder="Relationship"
+                  class="w-full"
+                />
               </div>
             </div>
             <div class="mt-2">
               <label class="inline-block pb-1 text-sm dark:text-slate-300"
                 >Text</label
               >
-              <FormInput v-model="link.text" placeholder="Link text" />
+              <InputText
+                v-model="link.text"
+                placeholder="Link text"
+                class="w-full"
+              />
             </div>
           </div>
 
@@ -140,7 +161,11 @@
         </button>
         <button
           type="submit"
-          :disabled="saving"
+          :disabled="saving || !can(RESOURCES.SSP, ACTIONS.UPDATE)"
+          v-tooltip.top="{
+            value: permissionTooltip(RESOURCES.SSP, ACTIONS.UPDATE),
+            disabled: can(RESOURCES.SSP, ACTIONS.UPDATE),
+          }"
           class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 transition-colors"
         >
           {{ saving ? 'Saving...' : 'Save Statement' }}
@@ -152,13 +177,18 @@
 
 <script setup lang="ts">
 import { reactive, onMounted } from 'vue';
+import { uuid } from '@/utils/uuid';
 import { useToast } from 'primevue/usetoast';
-import FormInput from '@/components/forms/FormInput.vue';
-import FormTextarea from '@/components/forms/FormTextarea.vue';
+import InputText from '@/volt/InputText.vue';
+import Textarea from '@/volt/Textarea.vue';
 import type { Statement } from '@/oscal';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import type { AxiosError } from 'axios';
 import type { ErrorResponse, ErrorBody } from '@/stores/types.ts';
+import { usePermissions } from '@/composables/usePermissions';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
+
+const { can, permissionTooltip } = usePermissions();
 
 const props = defineProps<{
   sspId: string;
@@ -210,7 +240,7 @@ const addProperty = () => {
     value: '',
     class: '',
     ns: '',
-    uuid: crypto.randomUUID(),
+    uuid: uuid(),
   });
 };
 
