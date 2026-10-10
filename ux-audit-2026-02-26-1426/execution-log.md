@@ -203,3 +203,4 @@ Dated record of migration work and approved design deviations. Decisions are sum
   - The no-profile compliance hint points to the profile selector in the header.
   - Controls has a real description instead of a design note, an "Implementation" eyebrow, and "Evidence filter" wording instead of "Dashboard" in its section, labels and toasts.
   - Browser check on the library, Controls and FedRAMP implementation users.
+- 2026-10-10: Fixed M1-20. Deleted the five unused V2 editor views in `system-security-plans-v2/editors/` (`ControlImplementation`, `SystemImplementationAuthorization`/`Component`/`Overview`/`User` `EditorView.vue`): none was routed or imported, and they were where the editable-UUID finding (B-12) came from. `sspEditorHelpers.ts` stays. The drift map has no stale entries.
