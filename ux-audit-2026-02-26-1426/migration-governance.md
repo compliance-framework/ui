@@ -72,10 +72,17 @@ A slice is one PR or commit series on the branch. Each slice:
 
 See PRD §4.4 for why and for the overlay architecture.
 
-1. Run `git merge main` (merge, not rebase). If a main-owned file conflicts, take main's version and re-apply the branch behavior in its overlay.
-2. Run `make reviewable` and `npm run build`. Fix any failure before starting feature work.
-3. Run the drift check from the last synced main SHA. For each main commit that touched a V1 file with a V2 copy, port the change the same day or add a row to BACKLOG section D.
-4. Update "Last synced main" at the top of the backlog.
+In Claude Code, say "sync with main" to run this routine with the `sync-main` skill (`.claude/skills/sync-main/SKILL.md`). Keep the skill and this section in step.
+
+1. Run `git merge main` (merge, not rebase). If a main-owned file conflicts, take main's version and re-apply the branch behavior in its overlay. For `package.json` or `package-lock.json`, take main's versions, then run `npm install lucide-vue-next` to re-add the branch's only extra dependency.
+2. Run `make reviewable` and `npm run build`. Fix any failure before starting feature work. If the app throws `[ui-v2] Route overlay targets routes missing…`, main renamed or removed a route: update `src/router/v2.ts`.
+3. Run `node scripts/v2-drift/drift.mjs`. It reads the last synced SHA from the backlog and compares against `main` (pass `--to origin/main` if local `main` is stale). For each entry:
+   - **Drift:** port the change to the V2 file the same day, or add a row to BACKLOG section D.
+   - **Routes added:** add the family or tab to `route-inventory.md`.
+   - **Routes removed:** fix the overlay if it targets them.
+   - **Conflict watch:** main-owned files the branch still edits. Move the branch change into an overlay where possible.
+   - **Stale twins.json entries:** main moved a file; fix `scripts/v2-drift/twins.json` and re-run.
+4. Run `node scripts/v2-drift/drift.mjs --record` to write the new "Last synced main" line to the backlog, and commit it with the merge follow-ups.
 
 ## PRs to main
 

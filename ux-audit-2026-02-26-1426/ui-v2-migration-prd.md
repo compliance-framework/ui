@@ -75,7 +75,7 @@ To keep both low:
 - Main-owned files stay byte-identical to main. Branch behavior goes in new files:
   - a router overlay (`src/router/v2.ts`) that replaces the component and `meta.uiVersion` by route name at startup;
   - V2 layouts and navigation that read `src/config/navigation.ts`.
-- Accepted exceptions: the route-aware `src/volt/*` wrappers, the V2 tokens in `src/assets/main.css`, and the one-line overlay hook in `main.ts`.
+- Accepted exceptions: the route-aware `src/volt/*` wrappers, the V2 tokens in `src/assets/main.css`, the two import lines in `main.ts` (router overlay and `AppV2Root.vue`), and the `lucide-vue-next` dependency in `package.json`/`package-lock.json`.
 - V1 files stay on the branch until cutover. Deleting them would turn every main edit to them into a modify/delete conflict, and the drift check needs them.
 - `AGENTS.md`, `CLAUDE.md`, CI workflows and other main-owned config aren't edited on the branch.
 
@@ -106,7 +106,7 @@ Legend: `[ ]` not started, `[~]` in progress, `[x]` done, `[-]` blocked.
 - [x] P0-06 Define release gating criteria (functional parity, UX parity, accessibility, visual QA).
 - [x] P0-07 Move V2 route overrides into a branch-only router overlay so `src/router/index.ts` is identical to main (§4.4). Done: `src/router/v2.ts`, hooked in by the router import in `main.ts`.
 - [x] P0-08 Restore main's `LeftSideNav.vue`, `SystemView.vue` and `layouts/App.vue`, and move the V2 logic into new files (§4.4).
-- [ ] P0-09 Add a V1→V2 twin map and a drift-check script for post-merge drift detection (§4.4). Include `src/views/LeftSideNav.vue` → `src/config/navigation.ts`: V2 nav items are a branch copy of main's inline list.
+- [x] P0-09 Add a V1→V2 twin map and a drift-check script for post-merge drift detection (§4.4). Include `src/views/LeftSideNav.vue` → `src/config/navigation.ts`: V2 nav items are a branch copy of main's inline list.
 - [x] P0-10 Document the daily sync routine (merge → `make reviewable` → drift check → port or log) in `migration-governance.md`.
 
 ### 7.2 Foundations: tokens, typography, and theming
@@ -302,6 +302,7 @@ The SSP and `/system` tabs that main added to existing families (W2-13, W2-14, W
 ### 7.12 Cutover and cleanup
 
 - [ ] C-01 Fold the router overlay into `src/router/index.ts`, with every route pointing at its V2 view.
+- [ ] C-01a Fold `AppV2Root.vue` and `AppShell.vue` back into `App.vue` and `layouts/App.vue`, and delete the branch-only sync tooling (`scripts/v2-drift/`, `.claude/skills/sync-main/`) so none of it reaches main.
 - [ ] C-02 Remove V1 UI components no longer referenced.
 - [ ] C-03 Remove V1-only styles and obsolete token aliases.
 - [ ] C-04 Remove V1 UI-only stores and persisted keys, with a one-time localStorage cleanup.

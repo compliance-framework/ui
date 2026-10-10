@@ -1,0 +1,173 @@
+{
+  "$comment": "V1 files (main) whose behavior the V2 branch re-implements. When main changes a v1 path, port the change to the v2 paths or log it in BACKLOG section D. Globs: * matches within a path segment, ** across segments. Only list V1 files that users of the branch no longer see; V1 views still served as V1 get main's changes through the merge. See PRD §4.4.",
+  "twins": [
+    {
+      "id": "controls",
+      "v1": ["src/views/control-implementations/**"],
+      "v2": ["src/views/controls-v2/**", "src/components/v2/controls/**"]
+    },
+    {
+      "id": "ssp-forms",
+      "v1": [
+        "src/components/system-security-plans/ByComponent*",
+        "src/components/system-security-plans/ControlImplementationEditForm.vue",
+        "src/components/system-security-plans/ExportStatementDialog.vue",
+        "src/components/system-security-plans/ImplementedRequirement*",
+        "src/components/system-security-plans/SharedResponsibilityBlocks.vue",
+        "src/components/system-security-plans/Statement*",
+        "src/components/system-security-plans/SystemImplementation*",
+        "src/components/system-security-plans/SystemUsersPanel.vue",
+        "src/components/system-security-plans/ComponentsPanel.vue",
+        "src/components/system-security-plans/LeveragedAuthorizationsPanel.vue",
+        "src/components/system-security-plans/__tests__/**"
+      ],
+      "v2": [
+        "src/components/v2/system-security-plans/**",
+        "src/views/system-security-plans-v2/editors/**"
+      ]
+    },
+    {
+      "id": "ssp-list",
+      "v1": ["src/views/system-security-plans/SystemSecurityPlanListView.vue"],
+      "v2": [
+        "src/views/system-security-plans-v2/SystemSecurityPlanListView.vue"
+      ]
+    },
+    {
+      "id": "ssp-create",
+      "v1": [
+        "src/views/system-security-plans/SystemSecurityPlanCreateView.vue"
+      ],
+      "v2": [
+        "src/views/system-security-plans-v2/SystemSecurityPlanCreateView.vue",
+        "src/views/system-security-plans-v2/createSystemSecurityPlanDefaults.ts"
+      ]
+    },
+    {
+      "id": "ssp-editor-shell",
+      "v1": [
+        "src/views/system-security-plans/SystemSecurityPlanEditorView.vue",
+        "src/constants/ssp-section-tabs.ts"
+      ],
+      "v2": [
+        "src/views/system-security-plans-v2/SystemSecurityPlanEditorView.vue",
+        "src/views/system-security-plans-v2/sspDetailProfileBinding.ts"
+      ]
+    },
+    {
+      "id": "ssp-overview",
+      "v1": [
+        "src/views/system-security-plans/SystemSecurityPlanOverviewView.vue"
+      ],
+      "v2": [
+        "src/views/system-security-plans-v2/SystemSecurityPlanOverviewView.vue"
+      ]
+    },
+    {
+      "id": "ssp-characteristics",
+      "v1": [
+        "src/views/system-security-plans/SystemSecurityPlanCharacteristicsView.vue",
+        "src/components/SystemCharacteristicsForm.vue"
+      ],
+      "v2": [
+        "src/views/system-security-plans-v2/SystemSecurityPlanCharacteristicsView.vue"
+      ]
+    },
+    {
+      "id": "ssp-system-implementation",
+      "v1": [
+        "src/views/system-security-plans/SystemSecurityPlanSystemImplementationEditorView.vue"
+      ],
+      "v2": [
+        "src/views/system-security-plans-v2/SystemSecurityPlanSystemImplementationView.vue"
+      ]
+    },
+    {
+      "id": "ssp-control-implementation",
+      "v1": [
+        "src/views/system-security-plans/SystemSecurityPlanControlImplementationView.vue",
+        "src/views/system-security-plans/partials/**"
+      ],
+      "v2": [
+        "src/views/system-security-plans-v2/SystemSecurityPlanControlImplementationView.vue"
+      ]
+    },
+    {
+      "id": "ssp-compliance",
+      "v1": [
+        "src/views/system-security-plans/SystemSecurityPlanComplianceView.vue",
+        "src/components/ComplianceProgressPanel.vue"
+      ],
+      "v2": [
+        "src/views/system-security-plans-v2/SystemSecurityPlanComplianceView.vue"
+      ]
+    },
+    {
+      "id": "ssp-json",
+      "v1": ["src/views/system-security-plans/SystemSecurityPlanJSONView.vue"],
+      "v2": [
+        "src/views/system-security-plans-v2/SystemSecurityPlanJSONView.vue"
+      ]
+    },
+    {
+      "id": "ssp-view-specs",
+      "v1": ["src/views/system-security-plans/__tests__/**"],
+      "v2": ["src/views/system-security-plans-v2/**"]
+    },
+    {
+      "id": "system-overview",
+      "v1": ["src/views/system/OverviewView.vue"],
+      "v2": ["src/views/system-v2/SystemOverviewView.vue"]
+    },
+    {
+      "id": "system-parent",
+      "v1": ["src/views/SystemView.vue"],
+      "v2": ["src/views/system-v2/SystemV2View.vue"]
+    },
+    {
+      "id": "dashboards-list",
+      "v1": [
+        "src/views/dashboard/IndexView.vue",
+        "src/views/dashboard/CompliancePostureWidget.vue",
+        "src/views/dashboard/partials/**",
+        "src/views/dashboard/__tests__/**"
+      ],
+      "v2": ["src/views/dashboards-v2/**", "src/components/v2/dashboard/**"]
+    },
+    {
+      "id": "auth",
+      "v1": [
+        "src/views/LoginView.vue",
+        "src/views/ForgotPasswordView.vue",
+        "src/views/PasswordResetView.vue",
+        "src/views/SSOCallbackView.vue",
+        "src/views/LogoutView.vue",
+        "src/views/layouts/GuestLayout.vue"
+      ],
+      "v2": ["src/views/auth-v2/**", "src/views/layouts/GuestV2Layout.vue"]
+    },
+    {
+      "id": "app-layout",
+      "v1": ["src/views/layouts/App.vue", "src/App.vue"],
+      "v2": [
+        "src/views/layouts/AppV2Layout.vue",
+        "src/views/layouts/AppShell.vue",
+        "src/AppV2Root.vue"
+      ]
+    },
+    {
+      "id": "navigation",
+      "v1": ["src/views/LeftSideNav.vue"],
+      "v2": [
+        "src/config/navigation.ts",
+        "src/components/v2/navigation/**",
+        "src/composables/v2/useV2Navigation.ts"
+      ]
+    },
+    {
+      "id": "router",
+      "v1": ["src/router/index.ts"],
+      "v2": ["src/router/v2.ts"]
+    }
+  ]
+}
