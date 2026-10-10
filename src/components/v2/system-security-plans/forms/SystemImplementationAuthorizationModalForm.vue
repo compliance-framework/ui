@@ -190,7 +190,7 @@ async function submit(): Promise<void> {
               ><template #default="fieldProps"
                 ><InputText
                   :model-value="isEditMode ? form.uuid : 'Auto-generated'"
-                  :input-id="fieldProps.inputId"
+                  :id="fieldProps.inputId"
                   readonly
                   fluid /></template
             ></V2FormField>
@@ -202,7 +202,7 @@ async function submit(): Promise<void> {
               ><template #default="fieldProps"
                 ><InputText
                   v-model="form.title"
-                  :input-id="fieldProps.inputId"
+                  :id="fieldProps.inputId"
                   fluid /></template
             ></V2FormField>
             <V2FormField
@@ -213,7 +213,7 @@ async function submit(): Promise<void> {
               ><template #default="fieldProps"
                 ><InputText
                   v-model="form.partyUuid"
-                  :input-id="fieldProps.inputId"
+                  :id="fieldProps.inputId"
                   fluid /></template
             ></V2FormField>
             <V2FormField
@@ -233,7 +233,7 @@ async function submit(): Promise<void> {
             ><template #default="fieldProps"
               ><Textarea
                 v-model="form.remarks"
-                :input-id="fieldProps.inputId"
+                :id="fieldProps.inputId"
                 rows="4"
                 fluid /></template
           ></V2FormField>
@@ -255,7 +255,7 @@ async function submit(): Promise<void> {
                 <template #default="fieldProps">
                   <InputText
                     v-model="property.name"
-                    :input-id="fieldProps.inputId"
+                    :id="fieldProps.inputId"
                     fluid
                   />
                 </template>
@@ -268,7 +268,7 @@ async function submit(): Promise<void> {
                 <template #default="fieldProps">
                   <InputText
                     v-model="property.value"
-                    :input-id="fieldProps.inputId"
+                    :id="fieldProps.inputId"
                     fluid
                   />
                 </template>
@@ -311,7 +311,7 @@ async function submit(): Promise<void> {
                   <template #default="fieldProps">
                     <InputText
                       v-model="link.href"
-                      :input-id="fieldProps.inputId"
+                      :id="fieldProps.inputId"
                       fluid
                     />
                   </template>
@@ -324,7 +324,7 @@ async function submit(): Promise<void> {
                   <template #default="fieldProps">
                     <InputText
                       v-model="link.rel"
-                      :input-id="fieldProps.inputId"
+                      :id="fieldProps.inputId"
                       fluid
                     />
                   </template>
@@ -340,7 +340,7 @@ async function submit(): Promise<void> {
                 <template #default="fieldProps">
                   <InputText
                     v-model="link.text"
-                    :input-id="fieldProps.inputId"
+                    :id="fieldProps.inputId"
                     fluid
                   />
                 </template>

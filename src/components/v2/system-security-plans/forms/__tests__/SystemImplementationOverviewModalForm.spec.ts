@@ -54,9 +54,8 @@ async function addProperty(wrapper: ReturnType<typeof mountForm>) {
   await add.trigger('click');
 }
 
-// V2 forms pass `input-id` instead of `id` to InputText (backlog M3-14).
 const field = (wrapper: ReturnType<typeof mountForm>, id: string) =>
-  wrapper.find(`input[input-id="${id}"]`);
+  wrapper.find(`#${id}`);
 
 describe('SystemImplementationOverviewModalForm', () => {
   beforeEach(() => {

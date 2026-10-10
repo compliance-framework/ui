@@ -365,7 +365,7 @@ async function submit(): Promise<void> {
             <template #default="fieldProps">
               <InputText
                 :model-value="form.uuid"
-                :input-id="fieldProps.inputId"
+                :id="fieldProps.inputId"
                 readonly
                 fluid
               />
@@ -399,7 +399,7 @@ async function submit(): Promise<void> {
               <InputText
                 v-else
                 v-model="form.componentUuid"
-                :input-id="fieldProps.inputId"
+                :id="fieldProps.inputId"
                 :aria-describedby="fieldProps.describedBy"
                 :aria-invalid="fieldProps.invalid"
                 fluid
@@ -417,7 +417,7 @@ async function submit(): Promise<void> {
           <template #default="fieldProps">
             <Textarea
               v-model="form.description"
-              :input-id="fieldProps.inputId"
+              :id="fieldProps.inputId"
               :aria-describedby="fieldProps.describedBy"
               :aria-invalid="fieldProps.invalid"
               rows="4"
@@ -456,7 +456,7 @@ async function submit(): Promise<void> {
             <template #default="fieldProps">
               <Textarea
                 v-model="form.implementationStatus!.remarks"
-                :input-id="fieldProps.inputId"
+                :id="fieldProps.inputId"
                 rows="3"
                 fluid
               />
@@ -468,7 +468,7 @@ async function submit(): Promise<void> {
           <template #default="fieldProps">
             <Textarea
               v-model="form.remarks"
-              :input-id="fieldProps.inputId"
+              :id="fieldProps.inputId"
               rows="3"
               fluid
             />
@@ -500,7 +500,7 @@ async function submit(): Promise<void> {
             <template #default="fieldProps">
               <Textarea
                 v-model="exportDescription"
-                :input-id="fieldProps.inputId"
+                :id="fieldProps.inputId"
                 rows="3"
                 fluid
               />
@@ -528,7 +528,7 @@ async function submit(): Promise<void> {
                 <template #default="fieldProps">
                   <Textarea
                     v-model="provided.description"
-                    :input-id="fieldProps.inputId"
+                    :id="fieldProps.inputId"
                     rows="3"
                     fluid
                   />
@@ -558,7 +558,7 @@ async function submit(): Promise<void> {
                 <template #default="fieldProps">
                   <Textarea
                     v-model="responsibility.description"
-                    :input-id="fieldProps.inputId"
+                    :id="fieldProps.inputId"
                     rows="3"
                     fluid
                   />
@@ -571,7 +571,7 @@ async function submit(): Promise<void> {
                 <template #default="fieldProps">
                   <InputText
                     v-model="responsibility.providedUuid"
-                    :input-id="fieldProps.inputId"
+                    :id="fieldProps.inputId"
                     fluid
                   />
                 </template>
@@ -615,7 +615,7 @@ async function submit(): Promise<void> {
                 ><template #default="fieldProps"
                   ><Textarea
                     v-model="item.description"
-                    :input-id="fieldProps.inputId"
+                    :id="fieldProps.inputId"
                     rows="3"
                     fluid /></template
               ></V2FormField>
@@ -625,7 +625,7 @@ async function submit(): Promise<void> {
                 ><template #default="fieldProps"
                   ><InputText
                     v-model="item.providedUuid"
-                    :input-id="fieldProps.inputId"
+                    :id="fieldProps.inputId"
                     fluid /></template
               ></V2FormField>
             </article>
@@ -651,7 +651,7 @@ async function submit(): Promise<void> {
                 ><template #default="fieldProps"
                   ><Textarea
                     v-model="item.description"
-                    :input-id="fieldProps.inputId"
+                    :id="fieldProps.inputId"
                     rows="3"
                     fluid /></template
               ></V2FormField>
@@ -661,7 +661,7 @@ async function submit(): Promise<void> {
                 ><template #default="fieldProps"
                   ><InputText
                     v-model="item.responsibilityUuid"
-                    :input-id="fieldProps.inputId"
+                    :id="fieldProps.inputId"
                     fluid /></template
               ></V2FormField>
             </article>
@@ -699,7 +699,7 @@ async function submit(): Promise<void> {
                   ><template #default="fieldProps"
                     ><InputText
                       v-model="parameter.paramId"
-                      :input-id="fieldProps.inputId"
+                      :id="fieldProps.inputId"
                       fluid /></template
                 ></V2FormField>
                 <V2FormField
@@ -708,7 +708,7 @@ async function submit(): Promise<void> {
                   ><template #default="fieldProps"
                     ><InputText
                       :model-value="(parameter.values || []).join(', ')"
-                      :input-id="fieldProps.inputId"
+                      :id="fieldProps.inputId"
                       fluid
                       @update:model-value="
                         setParameterValues(index, $event)
@@ -721,7 +721,7 @@ async function submit(): Promise<void> {
                 ><template #default="fieldProps"
                   ><Textarea
                     v-model="parameter.remarks"
-                    :input-id="fieldProps.inputId"
+                    :id="fieldProps.inputId"
                     rows="3"
                     fluid /></template
               ></V2FormField>
@@ -760,7 +760,7 @@ async function submit(): Promise<void> {
                   ><template #default="fieldProps"
                     ><InputText
                       v-model="role.roleId"
-                      :input-id="fieldProps.inputId"
+                      :id="fieldProps.inputId"
                       fluid /></template
                 ></V2FormField>
                 <V2FormField
@@ -769,7 +769,7 @@ async function submit(): Promise<void> {
                   ><template #default="fieldProps"
                     ><InputText
                       :model-value="(role.partyUuids || []).join(', ')"
-                      :input-id="fieldProps.inputId"
+                      :id="fieldProps.inputId"
                       fluid
                       @update:model-value="
                         setRolePartyUuids(index, $event)

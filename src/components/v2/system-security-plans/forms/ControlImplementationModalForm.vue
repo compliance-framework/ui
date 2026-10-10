@@ -155,7 +155,7 @@ async function submit(): Promise<void> {
             <template #default="fieldProps"
               ><Textarea
                 v-model="form.description"
-                :input-id="fieldProps.inputId"
+                :id="fieldProps.inputId"
                 rows="5"
                 fluid
             /></template>
@@ -181,7 +181,7 @@ async function submit(): Promise<void> {
                   <template #default="fieldProps">
                     <InputText
                       v-model="parameter.paramId"
-                      :input-id="fieldProps.inputId"
+                      :id="fieldProps.inputId"
                       fluid
                     />
                   </template>
@@ -217,7 +217,7 @@ async function submit(): Promise<void> {
                         <template #default="fieldProps">
                           <InputText
                             v-model="parameter.values[valueIndex]"
-                            :input-id="fieldProps.inputId"
+                            :id="fieldProps.inputId"
                             fluid
                           />
                         </template>
@@ -257,7 +257,7 @@ async function submit(): Promise<void> {
                 <template #default="fieldProps">
                   <Textarea
                     v-model="parameter.remarks"
-                    :input-id="fieldProps.inputId"
+                    :id="fieldProps.inputId"
                     rows="3"
                     fluid
                   />

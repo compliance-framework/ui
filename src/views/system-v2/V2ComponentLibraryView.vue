@@ -190,7 +190,7 @@ function handleMenuAction(actionId: string) {
           <template #default="fieldProps">
             <InputText
               v-model="demoName"
-              :input-id="fieldProps.inputId"
+              :id="fieldProps.inputId"
               :aria-describedby="fieldProps.describedBy"
               :aria-invalid="fieldProps.invalid"
               fluid
@@ -271,7 +271,7 @@ function handleMenuAction(actionId: string) {
           <template #default="fieldProps">
             <Textarea
               v-model="demoDescription"
-              :input-id="fieldProps.inputId"
+              :id="fieldProps.inputId"
               :aria-describedby="fieldProps.describedBy"
               :aria-invalid="fieldProps.invalid"
               rows="4"
@@ -454,7 +454,7 @@ function handleMenuAction(actionId: string) {
           <V2FormField label="Example Field" input-id="dialog-example" required>
             <template #default="fieldProps">
               <InputText
-                :input-id="fieldProps.inputId"
+                :id="fieldProps.inputId"
                 :aria-describedby="fieldProps.describedBy"
                 :aria-invalid="fieldProps.invalid"
                 fluid

@@ -42,9 +42,7 @@ const existing: Statement = {
   remarks: '',
 };
 
-// V2 forms pass `input-id` to volt InputText, which renders it as an attribute
-// rather than `id` (logged in the backlog), so select on that attribute.
-const STATEMENT_ID = 'input[input-id="statement-id"]';
+const STATEMENT_ID = '#statement-id';
 
 function mountForm(statement?: Statement) {
   return mount(StatementModalForm, {
@@ -69,6 +67,15 @@ describe('StatementModalForm', () => {
     const input = wrapper.find(STATEMENT_ID);
     expect(input.attributes('readonly')).toBeDefined();
     expect(wrapper.text()).toContain('It cannot be changed');
+  });
+
+  it('links the STATEMENT ID label to its input', async () => {
+    const wrapper = mountForm(existing);
+    await flushPromises();
+
+    const label = wrapper.find('label[for="statement-id"]');
+    expect(label.exists()).toBe(true);
+    expect(wrapper.find(STATEMENT_ID).element.tagName).toBe('INPUT');
   });
 
   it('lets the statement ID be set when creating a statement', async () => {

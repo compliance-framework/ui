@@ -201,7 +201,7 @@ async function submit(): Promise<void> {
               ><template #default="fieldProps"
                 ><InputText
                   :model-value="isEditMode ? form.uuid : 'Auto-generated'"
-                  :input-id="fieldProps.inputId"
+                  :id="fieldProps.inputId"
                   readonly
                   fluid /></template
             ></V2FormField>
@@ -213,14 +213,14 @@ async function submit(): Promise<void> {
               ><template #default="fieldProps"
                 ><InputText
                   v-model="form.title"
-                  :input-id="fieldProps.inputId"
+                  :id="fieldProps.inputId"
                   fluid /></template
             ></V2FormField>
             <V2FormField label="SHORT NAME" input-id="system-user-short-name"
               ><template #default="fieldProps"
                 ><InputText
                   v-model="form.shortName"
-                  :input-id="fieldProps.inputId"
+                  :id="fieldProps.inputId"
                   fluid /></template
             ></V2FormField>
           </div>
@@ -232,7 +232,7 @@ async function submit(): Promise<void> {
             ><template #default="fieldProps"
               ><Textarea
                 v-model="form.description"
-                :input-id="fieldProps.inputId"
+                :id="fieldProps.inputId"
                 rows="5"
                 fluid /></template
           ></V2FormField>
@@ -254,7 +254,7 @@ async function submit(): Promise<void> {
                 <template #default="fieldProps">
                   <InputText
                     v-model="form.roleIds[index]"
-                    :input-id="fieldProps.inputId"
+                    :id="fieldProps.inputId"
                     fluid
                   />
                 </template>
@@ -297,7 +297,7 @@ async function submit(): Promise<void> {
                   <template #default="fieldProps">
                     <InputText
                       v-model="privilege.title"
-                      :input-id="fieldProps.inputId"
+                      :id="fieldProps.inputId"
                       fluid
                     />
                   </template>
@@ -310,7 +310,7 @@ async function submit(): Promise<void> {
                   <template #default="fieldProps">
                     <Textarea
                       v-model="privilege.description"
-                      :input-id="fieldProps.inputId"
+                      :id="fieldProps.inputId"
                       rows="3"
                       fluid
                     />
@@ -351,7 +351,7 @@ async function submit(): Promise<void> {
                             v-model="
                               privilege.functionsPerformed![functionIndex]
                             "
-                            :input-id="fieldProps.inputId"
+                            :id="fieldProps.inputId"
                             fluid
                           />
                         </template>

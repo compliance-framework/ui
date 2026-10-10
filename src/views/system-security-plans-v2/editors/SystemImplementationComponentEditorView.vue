@@ -421,7 +421,7 @@ async function handleSubmit(): Promise<void> {
             <template #default="fieldProps">
               <InputText
                 :model-value="isEditMode ? form.uuid : 'Auto-generated'"
-                :input-id="fieldProps.inputId"
+                :id="fieldProps.inputId"
                 readonly
                 fluid
               />
@@ -463,7 +463,7 @@ async function handleSubmit(): Promise<void> {
             <template #default="fieldProps">
               <InputText
                 v-model="form.title"
-                :input-id="fieldProps.inputId"
+                :id="fieldProps.inputId"
                 :aria-describedby="fieldProps.describedBy"
                 :aria-invalid="fieldProps.invalid"
                 fluid
@@ -507,7 +507,7 @@ async function handleSubmit(): Promise<void> {
           <template #default="fieldProps">
             <Textarea
               v-model="form.description"
-              :input-id="fieldProps.inputId"
+              :id="fieldProps.inputId"
               :aria-describedby="fieldProps.describedBy"
               :aria-invalid="fieldProps.invalid"
               rows="5"
@@ -525,7 +525,7 @@ async function handleSubmit(): Promise<void> {
           <template #default="fieldProps">
             <Textarea
               v-model="form.purpose"
-              :input-id="fieldProps.inputId"
+              :id="fieldProps.inputId"
               :aria-describedby="fieldProps.describedBy"
               :aria-invalid="fieldProps.invalid"
               rows="4"
@@ -542,7 +542,7 @@ async function handleSubmit(): Promise<void> {
             <template #default="fieldProps">
               <Textarea
                 v-model="form.status.remarks"
-                :input-id="fieldProps.inputId"
+                :id="fieldProps.inputId"
                 :aria-describedby="fieldProps.describedBy"
                 :aria-invalid="fieldProps.invalid"
                 rows="3"
@@ -555,7 +555,7 @@ async function handleSubmit(): Promise<void> {
             <template #default="fieldProps">
               <Textarea
                 v-model="form.remarks"
-                :input-id="fieldProps.inputId"
+                :id="fieldProps.inputId"
                 :aria-describedby="fieldProps.describedBy"
                 :aria-invalid="fieldProps.invalid"
                 rows="3"
@@ -591,7 +591,7 @@ async function handleSubmit(): Promise<void> {
                 <template #default="fieldProps">
                   <InputText
                     v-model="protocol.title"
-                    :input-id="fieldProps.inputId"
+                    :id="fieldProps.inputId"
                     :aria-describedby="fieldProps.describedBy"
                     :aria-invalid="fieldProps.invalid"
                     fluid
@@ -606,7 +606,7 @@ async function handleSubmit(): Promise<void> {
                 <template #default="fieldProps">
                   <InputText
                     v-model="protocol.name"
-                    :input-id="fieldProps.inputId"
+                    :id="fieldProps.inputId"
                     :aria-describedby="fieldProps.describedBy"
                     :aria-invalid="fieldProps.invalid"
                     fluid
@@ -632,7 +632,7 @@ async function handleSubmit(): Promise<void> {
                   <template #default="fieldProps">
                     <InputText
                       v-model="range.transport"
-                      :input-id="fieldProps.inputId"
+                      :id="fieldProps.inputId"
                       :aria-describedby="fieldProps.describedBy"
                       :aria-invalid="fieldProps.invalid"
                       fluid

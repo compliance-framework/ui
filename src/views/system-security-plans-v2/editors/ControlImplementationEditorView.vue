@@ -265,7 +265,7 @@ async function handleSubmit(): Promise<void> {
           <template #default="fieldProps">
             <Textarea
               v-model="form.description"
-              :input-id="fieldProps.inputId"
+              :id="fieldProps.inputId"
               :aria-describedby="fieldProps.describedBy"
               :aria-invalid="fieldProps.invalid"
               rows="5"
@@ -299,7 +299,7 @@ async function handleSubmit(): Promise<void> {
               <template #default="fieldProps">
                 <InputText
                   v-model="parameter.paramId"
-                  :input-id="fieldProps.inputId"
+                  :id="fieldProps.inputId"
                   :aria-describedby="fieldProps.describedBy"
                   :aria-invalid="fieldProps.invalid"
                   fluid
@@ -324,7 +324,7 @@ async function handleSubmit(): Promise<void> {
                   <template #default="fieldProps">
                     <InputText
                       v-model="parameter.values[valueIndex]"
-                      :input-id="fieldProps.inputId"
+                      :id="fieldProps.inputId"
                       :aria-describedby="fieldProps.describedBy"
                       :aria-invalid="fieldProps.invalid"
                       fluid
@@ -357,7 +357,7 @@ async function handleSubmit(): Promise<void> {
               <template #default="fieldProps">
                 <Textarea
                   v-model="parameter.remarks"
-                  :input-id="fieldProps.inputId"
+                  :id="fieldProps.inputId"
                   :aria-describedby="fieldProps.describedBy"
                   :aria-invalid="fieldProps.invalid"
                   rows="3"

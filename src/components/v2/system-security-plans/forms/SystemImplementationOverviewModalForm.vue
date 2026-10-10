@@ -165,7 +165,7 @@ async function submit(): Promise<void> {
             <template #default="fieldProps">
               <Textarea
                 v-model="form.remarks"
-                :input-id="fieldProps.inputId"
+                :id="fieldProps.inputId"
                 class="h-[140px] min-h-[140px] resize-none"
                 placeholder="Describe the system implementation and any additional remarks..."
                 rows="5"
@@ -193,7 +193,7 @@ async function submit(): Promise<void> {
                 <template #default="fieldProps">
                   <InputText
                     v-model="property.name"
-                    :input-id="fieldProps.inputId"
+                    :id="fieldProps.inputId"
                     fluid
                   />
                 </template>
@@ -207,7 +207,7 @@ async function submit(): Promise<void> {
                 <template #default="fieldProps">
                   <InputText
                     v-model="property.value"
-                    :input-id="fieldProps.inputId"
+                    :id="fieldProps.inputId"
                     fluid
                   />
                 </template>
@@ -251,7 +251,7 @@ async function submit(): Promise<void> {
                   <template #default="fieldProps">
                     <InputText
                       v-model="link.href"
-                      :input-id="fieldProps.inputId"
+                      :id="fieldProps.inputId"
                       fluid
                     />
                   </template>
@@ -264,7 +264,7 @@ async function submit(): Promise<void> {
                   <template #default="fieldProps">
                     <InputText
                       v-model="link.rel"
-                      :input-id="fieldProps.inputId"
+                      :id="fieldProps.inputId"
                       fluid
                     />
                   </template>
@@ -280,7 +280,7 @@ async function submit(): Promise<void> {
                 <template #default="fieldProps">
                   <InputText
                     v-model="link.text"
-                    :input-id="fieldProps.inputId"
+                    :id="fieldProps.inputId"
                     fluid
                   />
                 </template>

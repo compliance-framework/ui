@@ -821,7 +821,7 @@
                 <template #default="fieldProps">
                   <InputText
                     v-model="evidenceDashboard.name"
-                    :input-id="fieldProps.inputId"
+                    :id="fieldProps.inputId"
                     fluid
                   />
                 </template>
