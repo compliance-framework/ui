@@ -280,7 +280,10 @@ async function submit(): Promise<void> {
     links: form.links,
     setParameters: form.setParameters,
     remarks: form.remarks,
-    implementationStatus: form.implementationStatus,
+    // An empty status isn't a valid OSCAL implementation-status; omit it.
+    ...(form.implementationStatus?.state
+      ? { implementationStatus: form.implementationStatus }
+      : {}),
     ...(isEditMode.value ? {} : { responsibleRoles: form.responsibleRoles }),
   };
 

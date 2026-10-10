@@ -183,3 +183,11 @@ Dated record of migration work and approved design deviations. Decisions are sum
     - After: "Href ./ap.oscal.xml", "contains 1 result(s)", and the form is pre-filled.
   - The throwaway SSP was deleted afterwards and the remake dev server restarted on :3000.
 - 2026-10-10: Opened PRs to main for the three verified fixes, with bodies in the `pr` skill format (Summary / Evidence / Merge Danger): #351 (M2-07, `fix/ssp-characteristics-deep-keys`), #352 (M2-04, `fix/control-evidence-null-labels`) and #353 (M2-05, `fix/assessment-results-import-ap`). The other four prepared branches stay local, pending a decision.
+- 2026-10-10: Partly fixed M1-15. V2 SSP forms now accept real data:
+  - User Description and component Purpose are no longer required. Both are optional in OSCAL, and the seeded records lack them.
+  - The component type select keeps a record's non-standard type (`leveraged-system`, `procedure`) visible.
+  - By-component saves omit an empty implementation status.
+  - Found and fixed a duplication bug: the users PUT appends the privileges it is sent, so every save of a user duplicated its authorized privileges (9 → 18 on a throwaway FedRAMP copy). V2 edits now show existing privileges read-only and send only newly added ones.
+  - Spec: `realDataFit.spec.ts`. Browser check on the throwaway SSP: the seeded user and the `leveraged-system` component save unchanged (PUT 200). The component was unchanged, and the user's privilege count stayed 19 → 19 after the fix. The throwaway SSP was deleted.
+  - Logged M2-24: main's V1 user form has the same duplication (API root cause).
+  - Still open: party, control and component-definition pickers.

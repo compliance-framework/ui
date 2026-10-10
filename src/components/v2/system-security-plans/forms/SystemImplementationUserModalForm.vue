@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive, watch } from 'vue';
+import { computed, reactive, ref, watch } from 'vue';
 import { useSspSubmitPermission } from '@/composables/v2/useSspSubmitPermission';
 import { uuid } from '@/utils/uuid';
 import { useToast } from 'primevue/usetoast';
@@ -72,6 +72,14 @@ const errorSummary = computed(() =>
   ]).map((item) => item.message),
 );
 
+// The users PUT appends the privileges it is sent and can't remove any: an
+// unchanged save of a user with N privileges stored 2N (verified 2026-10-10).
+// So edits send only newly added privileges (or none), and existing ones are
+// read-only until the API replaces the list.
+const existingPrivileges = ref<NonNullable<SystemUser['authorizedPrivileges']>>(
+  [],
+);
+
 watch(
   () => props.user,
   (value) => {
@@ -86,13 +94,13 @@ watch(
       form.props = cloneValue(value.props || []);
       form.links = cloneValue(value.links || []);
       form.roleIds = cloneValue(value.roleIds || []);
-      form.authorizedPrivileges = cloneValue(
-        value.authorizedPrivileges || [],
-      ).map((privilege) => ({
-        ...privilege,
-        functionsPerformed: cloneValue(privilege.functionsPerformed || []),
-      }));
+      // Existing privileges are shown read-only; the list holds only new ones.
+      existingPrivileges.value = uniquePrivileges(
+        cloneValue(value.authorizedPrivileges || []),
+      );
+      form.authorizedPrivileges = [];
     } else {
+      existingPrivileges.value = [];
       form.uuid = uuid();
       form.title = '';
       form.shortName = '';
@@ -105,6 +113,22 @@ watch(
   },
   { immediate: true },
 );
+
+function uniquePrivileges(
+  privileges: NonNullable<SystemUser['authorizedPrivileges']>,
+): NonNullable<SystemUser['authorizedPrivileges']> {
+  const seen = new Set<string>();
+  return privileges.filter((privilege) => {
+    const key = JSON.stringify([
+      privilege.title,
+      privilege.description ?? '',
+      privilege.functionsPerformed ?? [],
+    ]);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
 
 function addRoleId(): void {
   form.roleIds.push('');
@@ -140,9 +164,8 @@ function validate(): boolean {
   fieldErrors.description = '';
   fieldErrors.server = '';
   if (!form.title.trim()) fieldErrors.title = 'Title is required.';
-  if (!form.description.trim())
-    fieldErrors.description = 'Description is required.';
-  const valid = !fieldErrors.title && !fieldErrors.description;
+  // Description is optional in OSCAL; requiring it blocked editing seeded users.
+  const valid = !fieldErrors.title;
   if (!valid)
     focusFirstInvalidField(document.getElementById(formId) || document);
   return valid;
@@ -151,6 +174,14 @@ function validate(): boolean {
 const { canSubmit, disabledReason } = useSspSubmitPermission(
   () => isEditMode.value,
 );
+
+function requestBody(): Partial<SystemUser> {
+  if (!isEditMode.value) {
+    return form;
+  }
+  const { authorizedPrivileges, ...rest } = form;
+  return authorizedPrivileges.length ? { ...rest, authorizedPrivileges } : rest;
+}
 
 async function submit(): Promise<void> {
   if (!canSubmit.value) {
@@ -162,9 +193,17 @@ async function submit(): Promise<void> {
       isEditMode.value
         ? `/api/oscal/system-security-plans/${props.sspId}/system-implementation/users/${form.uuid}`
         : `/api/oscal/system-security-plans/${props.sspId}/system-implementation/users`,
-      { method: isEditMode.value ? 'PUT' : 'POST', data: form },
+      { method: isEditMode.value ? 'PUT' : 'POST', data: requestBody() },
     );
-    const result = persistedUser.value!;
+    const result = isEditMode.value
+      ? {
+          ...persistedUser.value!,
+          authorizedPrivileges: [
+            ...existingPrivileges.value,
+            ...form.authorizedPrivileges,
+          ],
+        }
+      : persistedUser.value!;
     toast.add({
       severity: 'success',
       summary: isEditMode.value ? 'User Saved' : 'User Created',
@@ -238,7 +277,6 @@ async function submit(): Promise<void> {
           <V2FormField
             label="DESCRIPTION"
             input-id="system-user-description"
-            required
             :error="fieldErrors.description"
             ><template #default="fieldProps"
               ><Textarea
@@ -289,6 +327,29 @@ async function submit(): Promise<void> {
         </SspEditorCollectionSection>
 
         <SspEditorCollectionSection title="AUTHORIZED PRIVILEGES">
+          <div
+            v-if="isEditMode && existingPrivileges.length"
+            class="space-y-2 border-b border-[var(--ui-v2-border)] px-3 py-2.5"
+          >
+            <p class="ui-v2-meta text-[var(--ui-v2-tertiary-foreground)]">
+              Existing privileges can't be changed or removed here yet; you can
+              add new ones.
+            </p>
+            <ul class="ui-v2-body space-y-1 text-[var(--ui-v2-foreground)]">
+              <li
+                v-for="(privilege, index) in existingPrivileges"
+                :key="`existing-privilege-${index}`"
+              >
+                <span class="font-semibold">{{ privilege.title }}</span>
+                <span
+                  v-if="privilege.functionsPerformed?.length"
+                  class="text-[var(--ui-v2-secondary-foreground)]"
+                >
+                  · {{ privilege.functionsPerformed.join(', ') }}</span
+                >
+              </li>
+            </ul>
+          </div>
           <div
             v-if="form.authorizedPrivileges.length"
             class="divide-y divide-[var(--ui-v2-border)]"

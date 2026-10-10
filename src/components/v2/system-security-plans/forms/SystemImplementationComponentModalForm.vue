@@ -52,6 +52,15 @@ const componentTypeOptions = [
   'validation',
   'network',
 ];
+// Keep a record's existing type selectable even when it isn't a standard OSCAL
+// value (seed data uses `leveraged-system` and `procedure`); otherwise the
+// select shows blank and the type can't be seen or re-selected.
+const visibleComponentTypeOptions = computed(() => {
+  const current = String(form.type || '').trim();
+  return current && !componentTypeOptions.includes(current)
+    ? [...componentTypeOptions, current]
+    : componentTypeOptions;
+});
 const componentStatusOptions = [
   'operational',
   'under-development',
@@ -201,8 +210,7 @@ function validate(): boolean {
     fieldErrors.title = 'Title is required.';
   if (!String(form.description || '').trim())
     fieldErrors.description = 'Description is required.';
-  if (!String(form.purpose || '').trim())
-    fieldErrors.purpose = 'Purpose is required.';
+  // Purpose is optional in OSCAL; requiring it blocked editing seeded components.
   if (!String(form.status?.state || '').trim())
     fieldErrors.statusState = 'Status state is required.';
   const valid =
@@ -300,7 +308,7 @@ async function submit(): Promise<void> {
                 >
                   <option value="">Select component type</option>
                   <option
-                    v-for="option in componentTypeOptions"
+                    v-for="option in visibleComponentTypeOptions"
                     :key="option"
                     :value="option"
                   >
@@ -358,7 +366,6 @@ async function submit(): Promise<void> {
           <V2FormField
             label="PURPOSE"
             input-id="system-component-purpose"
-            required
             :error="fieldErrors.purpose"
             ><template #default="fieldProps"
               ><Textarea
