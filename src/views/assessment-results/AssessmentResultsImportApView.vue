@@ -80,8 +80,8 @@ const formData = ref({
 onMounted(() => {
   // Initialize form with current data
   formData.value = {
-    href: props.assessmentResults.importAP?.href || '',
-    remarks: props.assessmentResults.importAP?.remarks || '',
+    href: props.assessmentResults.importAp?.href || '',
+    remarks: props.assessmentResults.importAp?.remarks || '',
   };
 });
 
