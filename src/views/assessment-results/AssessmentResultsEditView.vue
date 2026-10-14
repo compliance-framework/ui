@@ -243,8 +243,8 @@ async function loadAssessmentResults() {
         remarks: ar.value.metadata?.remarks || '',
       },
       importAp: {
-        href: ar.value.importAP?.href || '',
-        remarks: ar.value.importAP?.remarks || '',
+        href: ar.value.importAp?.href || '',
+        remarks: ar.value.importAp?.remarks || '',
       },
       results: ar.value.results || [],
     };
