@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue';
-import { RouterView } from 'vue-router';
+import { RouterView, useRoute } from 'vue-router';
 import LeftSideNav from '@/views/LeftSideNav.vue';
 import SidebarToggle from '@/components/navigation/SidebarToggle.vue';
 import ProfileDropdown from '@/components/ProfileDropdown.vue';
+import ActiveSystemSelector from '@/components/system/ActiveSystemSelector.vue';
 import { useSidebarStore } from '@/stores/sidebar';
 import { useUserStore } from '@/stores/auth';
 import { usePermissionsStore } from '@/stores/permissions';
@@ -14,8 +15,18 @@ const userStore = useUserStore();
 const permissionsStore = usePermissionsStore();
 const systemStore = useSystemStore();
 
-const activeSystemName = computed(
-  () => systemStore.system.securityPlan?.metadata?.title,
+// Many system-scoped pages read the active SSP once at setup. Keying them on it remounts
+// the current page when the user switches systems from the header, so they follow the
+// switch without each one watching the store. Global pages share one constant key, so a
+// switch there doesn't reload a page that doesn't depend on it.
+const route = useRoute();
+const activeSystemScoped = computed(() =>
+  route.matched.some((record) => record.meta.activeSystemScoped),
+);
+const activeSystemKey = computed(() =>
+  activeSystemScoped.value
+    ? `system:${systemStore.system.securityPlan?.uuid ?? 'none'}`
+    : 'global',
 );
 
 // Auth is persisted, so on a hard refresh the user stays authenticated without re-running
@@ -60,12 +71,7 @@ onMounted(() => {
       >
         <div class="flex items-center justify-between">
           <div class="flex-1">
-            <span
-              v-if="activeSystemName"
-              class="text-sm font-medium text-gray-700 dark:text-slate-200"
-            >
-              Active System: {{ activeSystemName }}
-            </span>
+            <ActiveSystemSelector />
           </div>
 
           <!-- Profile Dropdown -->
@@ -77,7 +83,7 @@ onMounted(() => {
       <div class="px-12 py-4">
         <router-view v-slot="{ Component }">
           <KeepAlive include="CatalogView">
-            <component :is="Component" />
+            <component :is="Component" :key="activeSystemKey" />
           </KeepAlive>
         </router-view>
       </div>

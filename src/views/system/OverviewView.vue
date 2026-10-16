@@ -1,10 +1,6 @@
 <template>
   <div class="p-4">
-    <SystemSecurityPlanOverviewView
-      :ssp-id="sspId"
-      risk-list-route-name="system:risks"
-      compliance-route-name="system:compliance"
-    />
+    <SystemSecurityPlanOverviewView :ssp-id="sspId" />
   </div>
 </template>
 

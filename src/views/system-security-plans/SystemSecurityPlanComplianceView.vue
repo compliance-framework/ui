@@ -32,15 +32,12 @@
         No profile is attached to this System Security Plan. Attach a profile
         from the
         <RouterLink
-          :to="{
-            name: 'system-security-plan-overview',
-            params: { id: sspId },
-          }"
+          :to="attachProfileRoute"
           class="underline text-blue-600 dark:text-blue-400"
         >
-          Overview
+          {{ attachProfileLabel }}
         </RouterLink>
-        tab to view compliance progress.
+        page to view compliance progress.
       </div>
     </template>
 
@@ -81,12 +78,25 @@ import {
 } from '@/stores/system-security-plans';
 import { getErrorStatus } from '@/utils/httpErrors';
 
-const props = defineProps<{ sspId?: string }>();
+const props = defineProps<{
+  sspId?: string;
+  // Where the "no profile attached" empty state sends the user. The SSP Editor attaches
+  // profiles on its Overview tab; the active system does it on This System > Implementation.
+  attachProfileRouteName?: string;
+}>();
 const route = useRoute();
 const toast = useToast();
 const sspStore = useSystemSecurityPlanStore();
 
 const sspId = computed(() => props.sspId || String(route.params.id || ''));
+const attachProfileRoute = computed(() =>
+  props.attachProfileRouteName
+    ? { name: props.attachProfileRouteName }
+    : { name: 'system-security-plan-overview', params: { id: sspId.value } },
+);
+const attachProfileLabel = computed(() =>
+  props.attachProfileRouteName ? 'Implementation' : 'Overview',
+);
 const profileId = ref<string>('');
 const profileResolved = ref(false);
 const profileLoading = ref(false);

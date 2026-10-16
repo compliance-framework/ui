@@ -167,6 +167,12 @@ async function openDrawerForControl(
   await waitForMountedControls();
 }
 
+// Stands in for the real picker: tests emit `updated` from it as if a profile change saved.
+const ProfilePickerStub = defineComponent({
+  emits: ['updated'],
+  template: '<div data-testid="profile-picker" />',
+});
+
 const stubs = {
   RouterLink: { template: '<a><slot /></a>' },
   Message: { template: '<div><slot /></div>' },
@@ -227,6 +233,8 @@ const stubs = {
   },
   PageHeader: { template: '<h1><slot /></h1>' },
   PageSubHeader: { template: '<p><slot /></p>' },
+  SspProfilePicker: ProfilePickerStub,
+  NoActiveSystem: { template: '<div data-testid="no-active-system" />' },
 };
 
 describe('control implementations IndexView', () => {
@@ -714,5 +722,47 @@ describe('control implementations IndexView', () => {
     expect(detail).toContain('implemented requirement ac-2');
     expect(detail).toContain('statement ac-2_smt.a');
     expect(detail).not.toContain('ac-1');
+  });
+  it('applies only the latest profile reload when picker changes overlap', async () => {
+    const wrapper = mount(IndexView, { global: { stubs } });
+    await waitForMountedControls();
+
+    const olderReload = createDeferred<{ data: unknown[] }>();
+    const newerReload = createDeferred<{ data: unknown[] }>();
+    listProfiles
+      .mockReturnValueOnce(olderReload.promise)
+      .mockReturnValueOnce(newerReload.promise);
+    axiosGet.mockClear();
+
+    const picker = wrapper.findComponent(ProfilePickerStub);
+    picker.vm.$emit('updated', ['profile-old']);
+    picker.vm.$emit('updated', ['profile-new']);
+
+    // The newer request answers first, then the older one arrives late.
+    newerReload.resolve({ data: [{ uuid: 'profile-new', title: 'New' }] });
+    await waitForMountedControls();
+    olderReload.resolve({ data: [{ uuid: 'profile-old', title: 'Old' }] });
+    await waitForMountedControls();
+
+    const resolvedUrls = axiosGet.mock.calls
+      .map(([url]) => String(url))
+      .filter((url) => url.endsWith('/resolved'));
+    expect(resolvedUrls).toContain('/api/oscal/profiles/profile-new/resolved');
+    expect(resolvedUrls).not.toContain(
+      '/api/oscal/profiles/profile-old/resolved',
+    );
+  });
+
+  it('keeps the current controls on screen when a profile reload fails', async () => {
+    const wrapper = mount(IndexView, { global: { stubs } });
+    await waitForMountedControls();
+    expect(wrapper.text()).toContain('Access Control');
+
+    listProfiles.mockRejectedValueOnce(new Error('reload failed'));
+    wrapper.findComponent(ProfilePickerStub).vm.$emit('updated', ['profile-2']);
+    await waitForMountedControls();
+
+    expect(wrapper.text()).toContain('Access Control');
+    expect(wrapper.text()).not.toContain('No profile attached yet');
   });
 });

@@ -8,12 +8,14 @@ import darkLogo from '@/assets/logo-dark.svg';
 import lightMiniLogo from '@/assets/logo-light-mini.svg';
 import darkMiniLogo from '@/assets/logo-dark-mini.svg';
 import { useSidebarStore } from '@/stores/sidebar';
+import { useSystemStore } from '@/stores/system';
 import { computed, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { usePermissions } from '@/composables/usePermissions';
 import { RESOURCES, ACTIONS } from '@/constants/permissions';
 
 const sidebarStore = useSidebarStore();
+const systemStore = useSystemStore();
 const { can } = usePermissions();
 const route = useRoute();
 const router = useRouter();
@@ -44,95 +46,41 @@ function abbreviated(link: NavigationItem): string {
     .join('');
 }
 
-const links = ref<Array<NavigationItem>>([
+interface NavigationSection {
+  // Heading shown above the section's entries (a divider when the sidebar is collapsed).
+  title: string;
+  links: Array<NavigationItem>;
+}
+
+// The nav is split by scope so a user always knows what a page is about: "This System"
+// pages all follow the system picked in the header's Active System menu (Evidence is the
+// one exception for now; it still lists evidence across every system until the API can
+// filter it), while "Global" pages are shared across every system.
+const sections: Array<NavigationSection> = [
   {
-    title: 'Systems',
-    children: [
+    title: 'This System',
+    links: [
       {
-        name: 'system:overview',
-        title: 'Active System',
-        abbr: 'SYS',
+        name: 'evidence:index',
+        title: 'Evidence',
+        abbr: 'EV',
+        permission: { resource: RESOURCES.EVIDENCE, action: ACTIONS.READ },
       },
       {
-        name: 'system-security-plans',
-        title: 'Manage Systems',
-        permission: { resource: RESOURCES.SSP, action: ACTIONS.READ },
+        name: 'controls:index',
+        title: 'Implementation',
+        abbr: 'IMP',
       },
-    ],
-  },
-  {
-    name: 'evidence:index',
-    title: 'Evidence',
-    abbr: 'EV',
-    permission: { resource: RESOURCES.EVIDENCE, action: ACTIONS.READ },
-  },
-  {
-    name: 'controls:index',
-    title: 'Controls',
-    abbr: 'CON',
-  },
-  {
-    name: 'lineage',
-    title: 'Compliance Map',
-    abbr: 'CM',
-  },
-  {
-    name: 'risks:index',
-    title: 'Risk Register',
-    abbr: 'RIS',
-    permission: { resource: RESOURCES.RISK, action: ACTIONS.READ },
-  },
-  {
-    name: 'dashboards',
-    title: 'Evidence Filters',
-    abbr: 'FIL',
-    permission: { resource: RESOURCES.FILTER, action: ACTIONS.READ },
-  },
-  // {
-  //   name: 'inventory:index',
-  //   title: 'Inventory',
-  //   abbr: 'INV',
-  //   permission: { resource: RESOURCES.INVENTORY, action: ACTIONS.READ },
-  // },
-  // {
-  //   title: 'Implementation',
-  //   children: [
-  //     {
-  //       name: 'assessment-plans',
-  //       title: 'Assessment Plans',
-  //       permission: {
-  //         resource: RESOURCES.ASSESSMENT_PLAN,
-  //         action: ACTIONS.READ,
-  //       },
-  //     },
-  //     {
-  //       name: 'assessment-results',
-  //       title: 'Assessment Results',
-  //       permission: {
-  //         resource: RESOURCES.ASSESSMENT_RESULTS,
-  //         action: ACTIONS.READ,
-  //       },
-  //     },
-  //     {
-  //       name: 'plan-of-action-and-milestones',
-  //       title: 'POA&M',
-  //       abbr: 'PM',
-  //       permission: { resource: RESOURCES.POAM_OSCAL, action: ACTIONS.READ },
-  //     },
-  //   ],
-  // },
-  {
-    title: 'Workflows',
-    abbr: 'WF',
-    children: [
       {
-        name: 'workflow:index',
-        title: 'Workflow Definitions',
-        abbr: 'WD',
-        permission: {
-          resource: RESOURCES.WORKFLOW_DEFINITION,
-          action: ACTIONS.READ,
-        },
+        name: 'compliance:index',
+        title: 'Compliance',
+        abbr: 'COM',
+      },
+      {
+        name: 'risks:index',
+        title: 'Risks',
+        abbr: 'RIS',
+        permission: { resource: RESOURCES.RISK, action: ACTIONS.READ },
       },
       {
         name: 'workflow-instances:index',
@@ -143,99 +91,127 @@ const links = ref<Array<NavigationItem>>([
           action: ACTIONS.READ,
         },
       },
-    ],
-  },
-  {
-    title: 'Control Definitions',
-    abbr: 'CD',
-    children: [
       {
-        name: 'catalog-list',
-        title: 'Catalogs',
-        abbr: 'CAT',
-        permission: { resource: RESOURCES.CATALOG, action: ACTIONS.READ },
-      },
-      {
-        name: 'control-links-list',
-        title: 'Control Links',
-        abbr: 'CL',
-        permission: { resource: RESOURCES.CONTROL_LINK, action: ACTIONS.READ },
-      },
-      {
-        name: 'profile-list',
-        title: 'Profiles',
-        abbr: 'PR',
-        permission: { resource: RESOURCES.PROFILE, action: ACTIONS.READ },
+        name: 'system:overview',
+        title: 'Configure System',
+        abbr: 'CFG',
       },
     ],
   },
   {
-    title: 'Admin',
-    children: [
+    title: 'Global',
+    links: [
       {
-        name: 'admin-risks',
-        title: 'Risks',
-        permission: ADMIN_MANAGE,
-      },
-      // {
-      //   name: 'component-definitions',
-      //   title: 'Component Definitions',
-      //   permission: {
-      //     resource: RESOURCES.COMPONENT_DEFINITION,
-      //     action: ACTIONS.READ,
-      //   },
-      // },
-      // {
-      //   name: 'admin-parties',
-      //   title: 'Parties',
-      //   permission: { resource: RESOURCES.PARTY, action: ACTIONS.READ },
-      // },
-      // {
-      //   name: 'admin-roles',
-      //   title: 'Roles',
-      //   permission: { resource: RESOURCES.ROLE, action: ACTIONS.READ },
-      // },
-      {
-        name: 'users-list',
-        title: 'System Users',
-        permission: ADMIN_MANAGE,
+        title: 'Analysis',
+        abbr: 'AN',
+        children: [
+          {
+            name: 'admin-risks',
+            title: 'Risks',
+            abbr: 'RIS',
+            permission: ADMIN_MANAGE,
+          },
+          {
+            name: 'lineage',
+            title: 'Compliance Map',
+            abbr: 'CM',
+          },
+        ],
       },
       {
-        name: 'admin-groups',
-        title: 'Groups',
-        permission: ADMIN_MANAGE,
+        title: 'Integrations',
+        abbr: 'INT',
+        children: [
+          {
+            name: 'workflow:index',
+            title: 'Workflow Definitions',
+            abbr: 'WD',
+            permission: {
+              resource: RESOURCES.WORKFLOW_DEFINITION,
+              action: ACTIONS.READ,
+            },
+          },
+          {
+            name: 'dashboards',
+            title: 'Evidence Filters',
+            abbr: 'FIL',
+            permission: { resource: RESOURCES.FILTER, action: ACTIONS.READ },
+          },
+          {
+            name: 'admin-agents',
+            title: 'Agents',
+            abbr: 'AG',
+            // R40: agent:read, like the route.
+            permission: { resource: RESOURCES.AGENT, action: ACTIONS.READ },
+          },
+          {
+            name: 'admin-import',
+            title: 'Import',
+            abbr: 'IMP',
+            permission: ADMIN_MANAGE,
+          },
+        ],
       },
       {
-        name: 'admin-agents',
-        title: 'Agents',
-        // R40: agent:read, like the route.
-        permission: { resource: RESOURCES.AGENT, action: ACTIONS.READ },
+        title: 'Control Definitions',
+        abbr: 'CD',
+        children: [
+          {
+            name: 'catalog-list',
+            title: 'Catalogs',
+            abbr: 'CAT',
+            permission: { resource: RESOURCES.CATALOG, action: ACTIONS.READ },
+          },
+          {
+            name: 'profile-list',
+            title: 'Profiles',
+            abbr: 'PR',
+            permission: { resource: RESOURCES.PROFILE, action: ACTIONS.READ },
+          },
+          {
+            name: 'control-links-list',
+            title: 'Control Links',
+            abbr: 'CL',
+            permission: {
+              resource: RESOURCES.CONTROL_LINK,
+              action: ACTIONS.READ,
+            },
+          },
+        ],
       },
-      // {
-      //   name: 'admin-subject-templates',
-      //   title: 'Subject Templates',
-      //   permission: ADMIN_MANAGE,
-      // },
-      // {
-      //   name: 'admin-risk-templates',
-      //   title: 'Risk Templates',
-      //   permission: ADMIN_MANAGE,
-      // },
       {
-        name: 'admin-diagnostics',
-        title: 'Diagnostics',
-        abbr: 'DIAG',
-        permission: ADMIN_MANAGE,
-      },
-      {
-        name: 'admin-import',
-        title: 'Import',
-        abbr: 'IMP',
-        permission: ADMIN_MANAGE,
+        title: 'Admin',
+        children: [
+          {
+            name: 'users-list',
+            title: 'Users',
+            permission: ADMIN_MANAGE,
+          },
+          {
+            name: 'admin-groups',
+            title: 'Groups',
+            permission: ADMIN_MANAGE,
+          },
+          {
+            name: 'admin-diagnostics',
+            title: 'Diagnostics',
+            abbr: 'DIAG',
+            permission: ADMIN_MANAGE,
+          },
+        ],
       },
     ],
   },
-]);
+];
+
+// Every top-level entry across both sections, in display order, for active-route matching.
+const links = computed<Array<NavigationItem>>(() =>
+  sections.flatMap((section) => section.links),
+);
+
+const activeSystemName = computed(
+  () => systemStore.system.securityPlan?.metadata?.title,
+);
 
 function itemAllowed(item: NavigationItem): boolean {
   if (!item.permission) return true;
@@ -244,8 +220,8 @@ function itemAllowed(item: NavigationItem): boolean {
 
 // Filter nav by permission: drop denied leaf links, drop denied children, and hide a
 // category entirely once it has no visible children (BCH-1318).
-const visibleLinks = computed<Array<NavigationItem>>(() =>
-  links.value
+function visibleItems(items: Array<NavigationItem>): Array<NavigationItem> {
+  return items
     .map((link) =>
       link.children
         ? { ...link, children: link.children.filter(itemAllowed) }
@@ -253,7 +229,15 @@ const visibleLinks = computed<Array<NavigationItem>>(() =>
     )
     .filter((link) =>
       link.children ? link.children.length > 0 : itemAllowed(link),
-    ),
+    );
+}
+
+// A section with nothing left to show (e.g. Global for a user who may read nothing in it)
+// is dropped along with its heading.
+const visibleSections = computed<Array<NavigationSection>>(() =>
+  sections
+    .map((section) => ({ ...section, links: visibleItems(section.links) }))
+    .filter((section) => section.links.length > 0),
 );
 
 // Identifies a top-level nav entry for the sticky-active tracking below: a category by its
@@ -366,44 +350,71 @@ const footLinks = ref<Array<NavigationItem>>([
     <div class="overflow-y-auto max-h-full grow flex flex-col justify-between">
       <!-- Top items -->
       <div>
-        <!-- Main Navigation Items -->
-        <template v-for="link in visibleLinks" :key="link.name">
-          <SideNavCategory
-            :title="link.title"
-            :open="linkKey(link) === activeSection.topLevel"
-            :active="linkKey(link) === activeSection.topLevel"
-            v-if="link.children"
+        <!-- Main Navigation Items, grouped by scope -->
+        <div
+          v-for="section in visibleSections"
+          :key="section.title"
+          role="group"
+          :aria-label="section.title"
+          class="mb-4"
+          :data-nav-section="section.title"
+        >
+          <div v-if="sidebarStore.open" class="px-6 pt-2 pb-1">
+            <h2
+              class="text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-slate-500"
+            >
+              {{ section.title }}
+            </h2>
+            <p
+              v-if="section.title === 'This System'"
+              class="mt-0.5 truncate text-sm text-zinc-600 dark:text-slate-300"
+              :title="activeSystemName"
+            >
+              {{ activeSystemName || 'No system selected' }}
+            </p>
+          </div>
+          <hr v-else class="mx-4 my-2 border-ccf-300 dark:border-slate-700" />
+          <template
+            v-for="link in section.links"
+            :key="link.name ?? link.title"
           >
-            <template #title>
-              <span>{{
-                sidebarStore.open ? link.title : abbreviated(link)
-              }}</span>
-            </template>
-            <template v-for="child in link.children" :key="child.name">
-              <SideNavLink
-                :to="{ name: child.name }"
-                :active="child.name === activeSection.child"
-                v-tooltip.right="{
-                  value: `${link.title} | ${child.title}`,
-                  disabled: sidebarStore.open,
-                }"
-              >
-                {{ sidebarStore.open ? child.title : abbreviated(child) }}
-              </SideNavLink>
-            </template>
-          </SideNavCategory>
-          <SideNavLink
-            v-else
-            :to="{ name: link.name }"
-            :active="link.name === activeSection.topLevel"
-            v-tooltip.hover.right="{
-              value: link.title,
-              disabled: sidebarStore.open,
-            }"
-          >
-            {{ sidebarStore.open ? link.title : abbreviated(link) }}
-          </SideNavLink>
-        </template>
+            <SideNavCategory
+              :title="link.title"
+              :open="linkKey(link) === activeSection.topLevel"
+              :active="linkKey(link) === activeSection.topLevel"
+              v-if="link.children"
+            >
+              <template #title>
+                <span>{{
+                  sidebarStore.open ? link.title : abbreviated(link)
+                }}</span>
+              </template>
+              <template v-for="child in link.children" :key="child.name">
+                <SideNavLink
+                  :to="{ name: child.name }"
+                  :active="child.name === activeSection.child"
+                  v-tooltip.right="{
+                    value: `${link.title} | ${child.title}`,
+                    disabled: sidebarStore.open,
+                  }"
+                >
+                  {{ sidebarStore.open ? child.title : abbreviated(child) }}
+                </SideNavLink>
+              </template>
+            </SideNavCategory>
+            <SideNavLink
+              v-else
+              :to="{ name: link.name }"
+              :active="link.name === activeSection.topLevel"
+              v-tooltip.hover.right="{
+                value: link.title,
+                disabled: sidebarStore.open,
+              }"
+            >
+              {{ sidebarStore.open ? link.title : abbreviated(link) }}
+            </SideNavLink>
+          </template>
+        </div>
       </div>
 
       <!-- Bottom Items -->

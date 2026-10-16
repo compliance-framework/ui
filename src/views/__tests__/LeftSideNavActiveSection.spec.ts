@@ -26,6 +26,7 @@ const routeNames = [
   'assessment-plans',
   'assessment-results',
   'catalog-list',
+  'compliance:index',
   'component-definitions',
   'control-links-list',
   'controls:index',
@@ -44,6 +45,12 @@ const routeNames = [
   'workflow:index',
 ];
 
+// Nav routes whose real path matters to the tests below (path-prefix matching).
+const realPaths: Record<string, string> = {
+  'catalog-list': '/catalogs',
+  'system:overview': '/system',
+};
+
 function createTestRouter() {
   return createRouter({
     history: createWebHistory(),
@@ -51,11 +58,16 @@ function createTestRouter() {
       ...routeNames.map((name) => ({
         // 'catalog-list' mirrors the real router's /catalogs path, since the whole point
         // of the tests below is exercising the path-prefix relationship with its siblings.
-        path:
-          name === 'catalog-list' ? '/catalogs' : `/${name.replace(':', '-')}`,
+        path: realPaths[name] ?? `/${name.replace(':', '-')}`,
         name,
         component: { template: '<div />' },
       })),
+      // A Configure System tab other than Overview, never itself a nav item.
+      {
+        path: '/system/components',
+        name: 'system:components',
+        component: { template: '<div />' },
+      },
       // Flat siblings of 'catalog-list', not themselves nav items — matches the real
       // router's shape (/catalogs, /catalogs/:id, /catalogs/new).
       {
@@ -170,6 +182,25 @@ describe('LeftSideNav active-section persistence', () => {
 
     expect(findCategory('Control Definitions')?.props('active')).toBe(false);
     expect(findChildLink('catalog-list')?.props('active')).toBe(false);
-    expect(findCategory('Workflows')?.props('active')).toBe(true);
+    expect(findCategory('Integrations')?.props('active')).toBe(true);
+  });
+
+  it('keeps Configure System highlighted on any of its tabs', async () => {
+    const router = createTestRouter();
+    await router.push({ name: 'system:components' });
+    await router.isReady();
+
+    const wrapper = mountNav(router);
+    const findLink = (routeName: string) =>
+      wrapper
+        .findAllComponents(SideNavLink)
+        .find(
+          (link) =>
+            (link.props('to') as { name?: string } | undefined)?.name ===
+            routeName,
+        );
+
+    expect(findLink('system:overview')?.props('active')).toBe(true);
+    expect(findLink('compliance:index')?.props('active')).toBe(false);
   });
 });

@@ -218,10 +218,11 @@ describe('System Security Plan views', () => {
         metadata: expect.objectContaining({ title: 'New SSP' }),
       }),
     });
-    expect(push).toHaveBeenCalledWith({
-      name: 'system-security-plan-editor',
-      params: { id: 'created-ssp' },
-    });
+    // A new system becomes the active one and opens in Configure System.
+    expect(setSecurityPlan).toHaveBeenCalledWith(
+      expect.objectContaining({ uuid: 'created-ssp' }),
+    );
+    expect(push).toHaveBeenCalledWith({ name: 'system:overview' });
   });
 
   it('renders the list create button, active badge, and only inactive Set Active action', () => {

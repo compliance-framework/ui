@@ -7,6 +7,7 @@
         Risk Overview
       </h3>
       <button
+        v-if="showRegisterLink"
         type="button"
         class="text-sm font-medium text-blue-600 underline dark:text-blue-300"
         @click="navigateToRiskList()"
@@ -72,10 +73,17 @@ export type RiskListRouteName =
   | 'risks:index'
   | 'system:risks';
 
-const props = defineProps<{
-  sspId: string;
-  riskListRouteName: RiskListRouteName;
-}>();
+const props = withDefaults(
+  defineProps<{
+    sspId: string;
+    riskListRouteName: RiskListRouteName;
+    // Off when the section already sits next to the register it would link to.
+    showRegisterLink?: boolean;
+    // Merged into every drill-down's query, e.g. to switch the host page to its register tab.
+    registerQuery?: Record<string, string>;
+  }>(),
+  { showRegisterLink: true, registerQuery: () => ({}) },
+);
 
 const router = useRouter();
 const authenticatedApi = useAuthenticatedInstance();
@@ -142,7 +150,8 @@ const scoreTrendEndpoint = computed(() =>
     : null,
 );
 
-function navigateToRiskList(query: Record<string, string> = {}) {
+function navigateToRiskList(filters: Record<string, string> = {}) {
+  const query = { ...filters, ...props.registerQuery };
   if (
     props.riskListRouteName === 'system-security-plan-risks' &&
     !props.sspId

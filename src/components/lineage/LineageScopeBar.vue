@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
+import { useTimeAgo } from '@vueuse/core';
 import Select from '@/volt/Select.vue';
 import SelectButton from '@/volt/SelectButton.vue';
+import SecondaryButton from '@/volt/SecondaryButton.vue';
 import { useSystemSecurityPlanStore } from '@/stores/system-security-plans';
 import { useLineageScopeStore } from '@/stores/lineageScope';
 
@@ -9,6 +11,18 @@ interface Option {
   label: string;
   value: string;
 }
+
+const props = defineProps<{
+  /** When the data on screen was loaded by the API; null hides the label. */
+  generatedAt?: Date | null;
+  /** True while the view reloads, disabling the refresh button. */
+  refreshing?: boolean;
+}>();
+
+const emit = defineEmits<{ refresh: [] }>();
+
+const updatedAgo = useTimeAgo(computed(() => props.generatedAt ?? new Date()));
+const updatedTitle = computed(() => props.generatedAt?.toLocaleString() ?? '');
 
 const scopeStore = useLineageScopeStore();
 const sspStore = useSystemSecurityPlanStore();
@@ -133,5 +147,23 @@ watch(
         @update:modelValue="onTypes"
       />
     </label>
+
+    <div class="ml-auto flex items-center gap-3">
+      <span
+        v-if="generatedAt"
+        class="text-sm text-surface-500 dark:text-surface-400"
+        :title="updatedTitle"
+        data-testid="lineage-updated"
+        >Updated {{ updatedAgo }}</span
+      >
+      <SecondaryButton
+        :disabled="refreshing"
+        data-testid="lineage-refresh"
+        @click="emit('refresh')"
+      >
+        <i class="pi pi-refresh mr-2" :class="{ 'pi-spin': refreshing }"></i>
+        Refresh
+      </SecondaryButton>
+    </div>
   </div>
 </template>

@@ -3,10 +3,13 @@ import { mount, flushPromises } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import type { LineageNode } from '@/composables/useLineage/types';
 
-const { fetchRootNodesMock, fetchChildNodesMock } = vi.hoisted(() => ({
-  fetchRootNodesMock: vi.fn(),
-  fetchChildNodesMock: vi.fn(),
-}));
+const { fetchRootNodesMock, fetchChildNodesMock, refreshMock } = vi.hoisted(
+  () => ({
+    fetchRootNodesMock: vi.fn(),
+    fetchChildNodesMock: vi.fn(),
+    refreshMock: vi.fn(),
+  }),
+);
 
 vi.mock('@/composables/useLineage', async () => {
   const { ref } = await import('vue');
@@ -17,6 +20,8 @@ vi.mock('@/composables/useLineage', async () => {
       fetchRootNodes: fetchRootNodesMock,
       fetchChildNodes: fetchChildNodesMock,
       clearCache: vi.fn(),
+      refresh: refreshMock,
+      generatedAt: ref(null),
       usingFixtures: ref(false),
     }),
   };
@@ -24,6 +29,7 @@ vi.mock('@/composables/useLineage', async () => {
 
 import LineageGraphView from '../LineageGraphView.vue';
 import LineageNodeDrawer from '@/components/lineage/LineageNodeDrawer.vue';
+import LineageScopeBar from '@/components/lineage/LineageScopeBar.vue';
 import { useUIStore } from '@/stores/ui';
 
 function baseFields() {
@@ -267,5 +273,57 @@ describe('LineageGraphView column collapse', () => {
     await flushPromises();
     expect(wrapper.text()).not.toContain('Access Control');
     expect(fetchChildNodesMock).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('LineageGraphView refresh', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia());
+    fetchRootNodesMock.mockReset();
+    fetchChildNodesMock.mockReset();
+    refreshMock.mockReset();
+  });
+
+  it('refreshes, replays the drill-down path, and stays busy until the replay is done', async () => {
+    const root = groupNode('Standards', 1);
+    fetchRootNodesMock.mockImplementation(async () => [{ ...root }]);
+    fetchChildNodesMock.mockResolvedValue([controlNode('Access Control')]);
+    useUIStore().setLineageGraphPath([root.key]);
+
+    const wrapper = mount(LineageGraphView, {
+      global: {
+        stubs: {
+          LineageScopeBar: true,
+          LineageViewSwitch: true,
+          LineageNodeDrawer: true,
+        },
+      },
+    });
+    await flushPromises();
+    expect(fetchChildNodesMock).toHaveBeenCalledTimes(1);
+
+    // Hold the replayed column's children so the reload is caught mid-replay.
+    let releaseChildren: (() => void) | undefined;
+    fetchChildNodesMock.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          releaseChildren = () => resolve([controlNode('Access Control v2')]);
+        }),
+    );
+
+    const bar = wrapper.findComponent(LineageScopeBar);
+    bar.vm.$emit('refresh');
+    await flushPromises();
+
+    expect(refreshMock).toHaveBeenCalledTimes(1);
+    expect(fetchRootNodesMock).toHaveBeenCalledTimes(2);
+    expect(fetchChildNodesMock).toHaveBeenCalledTimes(2);
+    expect(bar.props('refreshing')).toBe(true);
+
+    releaseChildren!();
+    await flushPromises();
+
+    expect(bar.props('refreshing')).toBe(false);
+    expect(wrapper.text()).toContain('Access Control v2');
   });
 });

@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import LineageNodeDrawer from '../LineageNodeDrawer.vue';
+import { useLineage } from '@/composables/useLineage';
 import type {
   LineageLeverageRow,
   LineageNode,
@@ -211,5 +212,67 @@ describe('LineageNodeDrawer — inherited capabilities', () => {
 
     expect(wrapper.text()).toContain('SSP Beta');
     expect(wrapper.text()).not.toContain('SSP Alpha');
+  });
+});
+
+describe('LineageNodeDrawer reloads', () => {
+  beforeEach(() => {
+    getMock.mockReset();
+    getMock.mockResolvedValue({ data: { data: [] } });
+  });
+
+  const sspCalls = () =>
+    getMock.mock.calls.filter((c) => String(c[0]).endsWith('/ssps')).length;
+
+  it('reloads its panels when a view refresh hands it the same node as a new object', async () => {
+    const node = controlNode();
+    const wrapper = mountDrawer({ node });
+    await flushPromises();
+    expect(sspCalls()).toBe(1);
+
+    await wrapper.setProps({ node });
+    await flushPromises();
+    expect(sspCalls()).toBe(1);
+
+    await wrapper.setProps({ node: controlNode() });
+    await flushPromises();
+    expect(sspCalls()).toBe(2);
+  });
+
+  const sspCallArgs = () =>
+    getMock.mock.calls.filter((c) => String(c[0]).endsWith('/ssps'));
+
+  it('rebuilds the unscoped data on the first /ssps request after a view refresh only', async () => {
+    useLineage().refresh();
+    const wrapper = mountDrawer({ node: controlNode() });
+    await flushPromises();
+    await wrapper.setProps({ node: controlNode() });
+    await flushPromises();
+
+    const calls = sspCallArgs();
+    expect(calls).toHaveLength(2);
+    expect(calls[0][1]).toEqual({ params: { refresh: 'true' } });
+    expect(calls[1][1]).toBeUndefined();
+  });
+
+  it('keeps the pending rebuild when the /ssps request fails', async () => {
+    let failSSPs = true;
+    getMock.mockImplementation((url: string) => {
+      if (url.endsWith('/ssps') && failSSPs) {
+        failSSPs = false;
+        return Promise.reject(new Error('network down'));
+      }
+      return Promise.resolve({ data: { data: [] } });
+    });
+    useLineage().refresh();
+    const wrapper = mountDrawer({ node: controlNode() });
+    await flushPromises();
+    await wrapper.setProps({ node: controlNode() });
+    await flushPromises();
+
+    const calls = sspCallArgs();
+    expect(calls).toHaveLength(2);
+    expect(calls[0][1]).toEqual({ params: { refresh: 'true' } });
+    expect(calls[1][1]).toEqual({ params: { refresh: 'true' } });
   });
 });
