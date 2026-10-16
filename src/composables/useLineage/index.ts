@@ -1,8 +1,9 @@
-// Data layer for the compliance lineage views. Fetches roots and lazy one-level
-// children from the lineage API, caches per key+scope until refresh() or a scope
-// change, and maps API nodes to PrimeVue-shaped tree nodes. When the API PoC branch isn't running it transparently
-// serves the fixture graph (see fixtures.ts) so both views stay demoable — either
-// forced via a flag or as an automatic fallback when a request fails.
+// Data layer for the compliance lineage views. Fetches roots and lazy
+// one-level children from the lineage API, caches per key+scope until refresh()
+// or a scope change, and maps API nodes to PrimeVue-shaped tree nodes. When the
+// API PoC branch isn't running it transparently serves the fixture graph (see
+// fixtures.ts) so both views stay demoable — either forced via a flag or as an
+// automatic fallback when a request fails.
 
 import { readonly, ref } from 'vue';
 import type { AxiosInstance } from 'axios';
