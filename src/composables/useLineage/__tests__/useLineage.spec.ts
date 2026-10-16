@@ -7,7 +7,7 @@ vi.mock('@/composables/axios', () => ({
   useAuthenticatedInstance: () => ({ get: mockGet }),
 }));
 
-import { useLineage, mapNode } from '../index';
+import { useLineage, mapNode, takeUnscopedRefresh } from '../index';
 
 function apiNode(over: Partial<LineageNode> = {}): LineageNode {
   return {
@@ -163,5 +163,95 @@ describe('useLineage fetching + caching', () => {
     mockGet.mockResolvedValueOnce({ data: { data: [apiNode()] } });
     await api.fetchRoots({ sspId: 'recover-b' });
     expect(api.usingFixtures.value).toBe(false);
+  });
+});
+
+describe('useLineage refresh + data age', () => {
+  beforeEach(() => {
+    mockGet.mockReset();
+  });
+
+  function response(nodes: LineageNode[], generatedAt?: string) {
+    return {
+      data: { data: nodes },
+      headers: generatedAt ? { 'x-lineage-generated-at': generatedAt } : {},
+    };
+  }
+
+  it('asks the API to rebuild on the first roots fetch after refresh only', async () => {
+    const api = useLineage();
+    api.clearCache();
+    mockGet.mockResolvedValue(response([apiNode()]));
+
+    await api.fetchRoots({ sspId: 's1' });
+    api.refresh();
+    await api.fetchRoots({ sspId: 's1' });
+    await api.fetchChildren('control:cat-1/ac-1', { sspId: 's1' });
+    api.clearCache();
+    await api.fetchRoots({ sspId: 's1' });
+
+    expect(mockGet.mock.calls.map((c) => c[1].params)).toEqual([
+      { sspId: 's1' },
+      { sspId: 's1', refresh: 'true' },
+      { sspId: 's1' },
+      { sspId: 's1' },
+    ]);
+  });
+
+  it('reports the oldest generated-at since the cache was cleared', async () => {
+    const api = useLineage();
+    api.clearCache();
+    expect(api.generatedAt.value).toBeNull();
+
+    mockGet.mockResolvedValueOnce(
+      response([apiNode()], '2026-10-16T12:00:05Z'),
+    );
+    await api.fetchRoots({ sspId: 'age' });
+    mockGet.mockResolvedValueOnce(
+      response([apiNode({ key: 'child:1' })], '2026-10-16T12:05:00Z'),
+    );
+    await api.fetchChildren('control:cat-1/ac-1', { sspId: 'age' });
+
+    expect(api.generatedAt.value?.toISOString()).toBe(
+      '2026-10-16T12:00:05.000Z',
+    );
+
+    api.refresh();
+    expect(api.generatedAt.value).toBeNull();
+  });
+
+  it('ignores a missing or malformed generated-at header', async () => {
+    const api = useLineage();
+    api.clearCache();
+    mockGet.mockResolvedValueOnce(response([apiNode()], 'not a date'));
+    await api.fetchRoots({ sspId: 'bad-header' });
+    mockGet.mockResolvedValueOnce(response([apiNode()]));
+    await api.fetchRoots({ sspId: 'no-header' });
+
+    expect(api.generatedAt.value).toBeNull();
+  });
+
+  it('has the drawer rebuild the unscoped data after a scoped refresh', async () => {
+    const api = useLineage();
+    api.clearCache();
+    takeUnscopedRefresh();
+    mockGet.mockResolvedValue(response([apiNode()]));
+
+    api.refresh();
+    await api.fetchRoots({ sspId: 's1' });
+
+    expect(takeUnscopedRefresh()).toBe(true);
+    expect(takeUnscopedRefresh()).toBe(false);
+  });
+
+  it('does not rebuild the unscoped data twice after an unscoped refresh', async () => {
+    const api = useLineage();
+    api.clearCache();
+    mockGet.mockResolvedValue(response([apiNode()]));
+
+    api.refresh();
+    await api.fetchRoots({ types: ['standard'] });
+
+    expect(takeUnscopedRefresh()).toBe(false);
   });
 });

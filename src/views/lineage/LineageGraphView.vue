@@ -32,8 +32,14 @@ interface Column {
 const router = useRouter();
 const scopeStore = useLineageScopeStore();
 const uiStore = useUIStore();
-const { fetchRootNodes, fetchChildNodes, clearCache, usingFixtures } =
-  useLineage();
+const {
+  fetchRootNodes,
+  fetchChildNodes,
+  clearCache,
+  refresh,
+  generatedAt,
+  usingFixtures,
+} = useLineage();
 
 const columns = ref<Column[]>([]);
 const loading = ref(false);
@@ -283,6 +289,12 @@ onMounted(() => {
 });
 onUnmounted(() => window.removeEventListener('resize', computeArrows));
 
+// Reload with current data from the API, replaying the drill-down path.
+function onRefresh() {
+  refresh();
+  loadRoots();
+}
+
 watch(
   () => scopeStore.scope,
   () => {
@@ -309,7 +321,11 @@ watch(
       <LineageViewSwitch active="graph" />
     </header>
 
-    <LineageScopeBar />
+    <LineageScopeBar
+      :generatedAt="generatedAt"
+      :refreshing="loading"
+      @refresh="onRefresh"
+    />
 
     <p
       v-if="usingFixtures"

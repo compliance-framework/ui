@@ -18,7 +18,14 @@ import { useUIStore } from '@/stores/ui';
 const router = useRouter();
 const scopeStore = useLineageScopeStore();
 const uiStore = useUIStore();
-const { fetchRoots, fetchChildren, clearCache, usingFixtures } = useLineage();
+const {
+  fetchRoots,
+  fetchChildren,
+  clearCache,
+  refresh,
+  generatedAt,
+  usingFixtures,
+} = useLineage();
 
 const nodes = ref<LineageTreeNode[]>([]);
 const loading = ref(false);
@@ -130,6 +137,12 @@ watch(drawerVisible, (isOpen) => {
 
 onMounted(loadRoots);
 
+// Reload with current data from the API, keeping what is expanded and selected.
+function onRefresh() {
+  refresh();
+  loadRoots();
+}
+
 // Refetch when the scope changes (SSP / component / types).
 watch(
   () => scopeStore.scope,
@@ -156,7 +169,11 @@ watch(
       <LineageViewSwitch active="tree" />
     </header>
 
-    <LineageScopeBar />
+    <LineageScopeBar
+      :generatedAt="generatedAt"
+      :refreshing="loading"
+      @refresh="onRefresh"
+    />
 
     <p
       v-if="usingFixtures"
