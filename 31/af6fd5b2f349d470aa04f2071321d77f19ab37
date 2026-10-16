@@ -1,0 +1,32 @@
+lisa-addressed:
+---
+Comment (src/components/lineage/LineageNodeDrawer.vue:262):
+**[Must-fix] CORE-TEST-001 · New behaviour without a test**
+
+`loadSSPRows` now sends `params: { refresh: 'true' }` when `takeUnscopedRefresh()` is true. No spec covers that branch: `useLineage.spec` tests the flag itself, and the new `LineageNodeDrawer.spec` case only counts `/ssps` calls. Removing the branch, or sending the param on every open, would pass every test.
+
+**Why:** Untested behaviour regresses silently and the next refactor removes it without anyone noticing.
+**Fix:** In LineageNodeDrawer.spec: call `useLineage().refresh()` (the real composable; axios is already mocked), mount the drawer for a control node, and assert the `/ssps` call has `{ params: { refresh: 'true' } }`. Reopen it with a new node and assert the next call has no params.
+
+<sub>ccf-review · 7cbd8124524a · rules@992d25d050e9</sub>
+---
+Comment (src/components/lineage/LineageNodeDrawer.vue:262):
+**[Must-fix] A failed /ssps request still uses up the pending unscoped refresh**
+
+`takeUnscopedRefresh()` clears the flag before the request is sent. If that `/ssps` request fails (transient network error, 5xx), the catch shows the error state, but the flag is already gone. The next time the drawer opens, it reads the unrefreshed unscoped engine and shows data from before the user's Refresh, for up to the API's TTL.
+
+**Why:** A transient failure should not quietly turn the next successful load into stale data the user explicitly asked to refresh.
+**Fix:** Only consume the flag on success. For example, in the catch block, mark the unscoped refresh pending again through a small exported `restoreUnscopedRefresh()`. Or have `takeUnscopedRefresh` return a commit function that is called after a successful response. Cover it in the drawer spec with a rejected first `/ssps` call.
+**Severity basis:** no rule matched; decision tree: wrong behaviour or missing companion change.
+
+<sub>ccf-review · 9d7f66ee5d31 · rules@992d25d050e9</sub>
+---
+Comment (src/composables/useLineage/index.ts:3):
+**[Nit] CORE-STYLE-001 · Readability nit**
+
+The edited header comment now has a ~115-character line ("change, and maps API nodes to PrimeVue-shaped tree nodes. When the API PoC branch isn't running it transparently"), while the rest of the block wraps at 80.
+
+**Why:** Small clarity issues add up, but do not affect behaviour.
+**Fix:** Re-wrap the header comment at 80 columns.
+
+<sub>ccf-review · 4c3de8095f50 · rules@992d25d050e9</sub>
