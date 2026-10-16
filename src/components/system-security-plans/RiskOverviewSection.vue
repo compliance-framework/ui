@@ -77,10 +77,12 @@ const props = withDefaults(
   defineProps<{
     sspId: string;
     riskListRouteName: RiskListRouteName;
-    // Off when the section already sits on top of the register it would link to.
+    // Off when the section already sits next to the register it would link to.
     showRegisterLink?: boolean;
+    // Merged into every drill-down's query, e.g. to switch the host page to its register tab.
+    registerQuery?: Record<string, string>;
   }>(),
-  { showRegisterLink: true },
+  { showRegisterLink: true, registerQuery: () => ({}) },
 );
 
 const router = useRouter();
@@ -148,7 +150,8 @@ const scoreTrendEndpoint = computed(() =>
     : null,
 );
 
-function navigateToRiskList(query: Record<string, string> = {}) {
+function navigateToRiskList(filters: Record<string, string> = {}) {
+  const query = { ...filters, ...props.registerQuery };
   if (
     props.riskListRouteName === 'system-security-plan-risks' &&
     !props.sspId

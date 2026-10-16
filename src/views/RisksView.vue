@@ -8,33 +8,46 @@
       </PageSubHeader>
     </template>
 
-    <!-- The dashboard used to sit on the SSP Overview; it lives next to the register now so
-         the summary and the list it drills into are on one page. Its widgets push register
-         filters into the query string, which the panel below already follows. -->
-    <RiskOverviewSection
-      v-if="sspId"
-      :ssp-id="sspId"
-      :risk-list-route-name="riskListRouteName"
-      :show-register-link="false"
-    />
-
-    <RiskRegisterPanel
-      :risks="risks || []"
-      :loading="loading"
-      :error="error ? String(error) : null"
-      :context-missing="contextMissing"
-      :ssp-id="sspId"
-      title="SSP Risk Register"
-      @risk-created="handleRiskCreated"
-      @risk-updated="handleRiskSaved"
-      @risk-deleted="handleRiskDeleted"
-    />
+    <!-- The dashboard used to sit on the SSP Overview; it lives next to the register now.
+         Its widgets drill into the register by pushing filters plus view=register into the
+         query string, which the register panel already follows. -->
+    <Tabs :value="activeTab" @update:value="chooseTab">
+      <TabList>
+        <Tab value="dashboard">Dashboard</Tab>
+        <Tab value="register">Register</Tab>
+      </TabList>
+      <TabPanels>
+        <TabPanel value="dashboard">
+          <!-- v-if: charts measure their container, which is zero-sized while hidden. -->
+          <RiskOverviewSection
+            v-if="sspId && activeTab === 'dashboard'"
+            :ssp-id="sspId"
+            :risk-list-route-name="riskListRouteName"
+            :show-register-link="false"
+            :register-query="{ view: 'register' }"
+          />
+        </TabPanel>
+        <TabPanel value="register">
+          <RiskRegisterPanel
+            :risks="risks || []"
+            :loading="loading"
+            :error="error ? String(error) : null"
+            :context-missing="contextMissing"
+            :ssp-id="sspId"
+            title="SSP Risk Register"
+            @risk-created="handleRiskCreated"
+            @risk-updated="handleRiskSaved"
+            @risk-deleted="handleRiskDeleted"
+          />
+        </TabPanel>
+      </TabPanels>
+    </Tabs>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, watch } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { type Risk } from '@/oscal';
 import { useSystemStore } from '@/stores/system.ts';
 import { useDataApi } from '@/composables/axios';
@@ -46,9 +59,32 @@ import RiskOverviewSection, {
 import NoActiveSystem from '@/components/system/NoActiveSystem.vue';
 import PageHeader from '@/components/PageHeader.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
+import Tabs from '@/volt/Tabs.vue';
+import TabList from '@/volt/TabList.vue';
+import Tab from '@/volt/Tab.vue';
+import TabPanels from '@/volt/TabPanels.vue';
+import TabPanel from '@/volt/TabPanel.vue';
 
 const route = useRoute();
+const router = useRouter();
 const { system } = useSystemStore();
+
+type RisksTab = 'dashboard' | 'register';
+
+// The tab lives in the query (?view=register) so dashboard drill-downs, bookmarks and the
+// browser's back button all land on the right one. A link that carries register filters
+// but no view (e.g. from a control's risk badge) opens the register too.
+const activeTab = computed<RisksTab>(() => {
+  const view = route.query.view;
+  if (view === 'dashboard' || view === 'register') return view;
+  const hasFilters = Object.keys(route.query).length > 0;
+  return hasFilters ? 'register' : 'dashboard';
+});
+
+function chooseTab(value: string | number) {
+  if (value === activeTab.value) return;
+  void router.replace({ query: { ...route.query, view: String(value) } });
+}
 
 const sspId = computed(
   () =>
