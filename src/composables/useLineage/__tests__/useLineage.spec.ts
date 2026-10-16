@@ -254,4 +254,30 @@ describe('useLineage refresh + data age', () => {
 
     expect(takeUnscopedRefresh()).toBe(false);
   });
+
+  it('keeps a response that was in flight during refresh() out of the fresh cache', async () => {
+    const api = useLineage();
+    api.clearCache();
+    const scope = { sspId: 'in-flight' };
+    let resolveOld: (value: unknown) => void = () => {};
+    mockGet.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveOld = resolve;
+      }),
+    );
+
+    const old = api.fetchChildren('control:cat-1/ac-1', scope);
+    api.refresh();
+    resolveOld(
+      response([apiNode({ key: 'child:old' })], '2026-10-16T11:00:00Z'),
+    );
+    expect((await old)[0].key).toBe('child:old');
+    expect(api.generatedAt.value).toBeNull();
+
+    mockGet.mockResolvedValueOnce(response([apiNode({ key: 'child:new' })]));
+    const fresh = await api.fetchChildren('control:cat-1/ac-1', scope);
+
+    expect(mockGet).toHaveBeenCalledTimes(2);
+    expect(fresh[0].key).toBe('child:new');
+  });
 });

@@ -38,6 +38,11 @@ let refreshPending = false;
 // takeUnscopedRefresh).
 let unscopedRefreshPending = false;
 
+// Bumped by clearCache(). A request captures it before it is sent; if it has
+// changed by the time the response arrives, the response predates the clear, so
+// it is returned to its caller but kept out of the fresh cache and the data age.
+let generation = 0;
+
 /**
  * True once after refresh() if the unscoped lineage data has not been rebuilt
  * since: the caller sends refresh=true with its next unscoped lineage request.
@@ -124,6 +129,7 @@ export function useLineage() {
       fixtureCacheKeys.add(ck);
       nodes = fixtureRoots(scope);
     } else {
+      const gen = generation;
       try {
         const params: Record<string, string> = scopeParams(scope);
         if (refreshPending) params.refresh = 'true';
@@ -131,6 +137,7 @@ export function useLineage() {
           '/api/lineage/roots',
           { params },
         );
+        if (gen !== generation) return res.data?.data ?? [];
         if (params.refresh && !scope.sspId && !scope.componentId) {
           unscopedRefreshPending = false;
         }
@@ -140,6 +147,7 @@ export function useLineage() {
         // Live fetch succeeded → we're not on demo data anymore.
         usingFixtures.value = false;
       } catch (err) {
+        if (gen !== generation) return fixtureRoots(scope);
         // API unavailable → keep the demo alive with fixtures.
         console.warn('[useLineage] roots fetch failed, using fixtures', err);
         usingFixtures.value = true;
@@ -168,15 +176,18 @@ export function useLineage() {
       fixtureCacheKeys.add(ck);
       nodes = fixtureChildren(key, scope);
     } else {
+      const gen = generation;
       try {
         const res = await instance.get<DataResponse<LineageNode[]>>(
           `/api/lineage/nodes/${encodeURIComponent(key)}/children`,
           { params: scopeParams(scope) },
         );
+        if (gen !== generation) return res.data?.data ?? [];
         noteGeneratedAt(res.headers);
         nodes = res.data?.data ?? [];
         usingFixtures.value = false;
       } catch (err) {
+        if (gen !== generation) return fixtureChildren(key, scope);
         console.warn('[useLineage] children fetch failed, using fixtures', err);
         usingFixtures.value = true;
         fixtureCacheKeys.add(ck);
@@ -202,6 +213,7 @@ export function useLineage() {
 
   /** Drop all cached nodes — call when scope changes so views refetch. */
   function clearCache() {
+    generation++;
     cache.clear();
     fixtureCacheKeys.clear();
     generatedAt.value = null;
