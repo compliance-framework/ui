@@ -1,6 +1,8 @@
 <template>
   <div class="p-4">
-    <DiagramsView :ssp-id="sspId" />
+    <!-- Keyed so moving between SSPs in the editor remounts it instead of reusing the
+         KeepAlive instance that is bound to the previous id. -->
+    <DiagramsView :key="sspId" :ssp-id="sspId" />
   </div>
 </template>
 

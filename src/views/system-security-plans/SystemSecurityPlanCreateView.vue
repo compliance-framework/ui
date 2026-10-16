@@ -168,6 +168,14 @@ async function submit() {
     }
     // A freshly created system is almost always the one the user wants to work on next:
     // make it active and continue in Configure System rather than the detached editor.
+    // Add it to the header's system list too, but only once that list has loaded:
+    // writing it earlier would mark a partial list as complete.
+    if (systemStore.availablePlansLoaded) {
+      systemStore.setAvailablePlans([
+        ...systemStore.availablePlans,
+        data.value!,
+      ]);
+    }
     systemStore.setSecurityPlan(data.value!);
     await router.push({ name: 'system:overview' });
   } catch (error) {

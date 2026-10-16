@@ -8,6 +8,8 @@ const mocks = vi.hoisted(() => ({
   decamelizeKeys: vi.fn(),
   push: vi.fn(),
   setSecurityPlan: vi.fn(),
+  setAvailablePlans: vi.fn(),
+  systemStore: { availablePlansLoaded: false, availablePlans: [] as unknown[] },
   toastAdd: vi.fn(),
   uuidv4: vi.fn(),
 }));
@@ -35,7 +37,16 @@ vi.mock('vue-router', () => ({
 }));
 
 vi.mock('@/stores/system.ts', () => ({
-  useSystemStore: () => ({ setSecurityPlan: mocks.setSecurityPlan }),
+  useSystemStore: () => ({
+    get availablePlansLoaded() {
+      return mocks.systemStore.availablePlansLoaded;
+    },
+    get availablePlans() {
+      return mocks.systemStore.availablePlans;
+    },
+    setSecurityPlan: mocks.setSecurityPlan,
+    setAvailablePlans: mocks.setAvailablePlans,
+  }),
 }));
 
 vi.mock('uuid', () => ({
@@ -84,6 +95,8 @@ function mountView() {
 describe('SystemSecurityPlanCreateView', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.systemStore.availablePlansLoaded = false;
+    mocks.systemStore.availablePlans = [];
     mocks.uuidv4.mockReset();
     createdSystemSecurityPlan.value = {
       uuid: 'created-ssp',
@@ -146,6 +159,33 @@ describe('SystemSecurityPlanCreateView', () => {
       expect.objectContaining({ uuid: 'created-ssp' }),
     );
     expect(mocks.push).toHaveBeenCalledWith({ name: 'system:overview' });
+  });
+
+  it('adds the new SSP to an already loaded system list', async () => {
+    mocks.systemStore.availablePlansLoaded = true;
+    mocks.systemStore.availablePlans = [{ uuid: 'existing' }];
+    const wrapper = mountView();
+
+    await wrapper.findAll('input')[1].setValue('New SSP');
+    await wrapper.find('form').trigger('submit');
+    await flushPromises();
+
+    expect(mocks.setAvailablePlans).toHaveBeenCalledWith([
+      { uuid: 'existing' },
+      expect.objectContaining({ uuid: 'created-ssp' }),
+    ]);
+  });
+
+  it('leaves an unloaded system list alone', async () => {
+    mocks.systemStore.availablePlansLoaded = false;
+    const wrapper = mountView();
+
+    await wrapper.findAll('input')[1].setValue('New SSP');
+    await wrapper.find('form').trigger('submit');
+    await flushPromises();
+
+    expect(mocks.setSecurityPlan).toHaveBeenCalled();
+    expect(mocks.setAvailablePlans).not.toHaveBeenCalled();
   });
 
   it('disables inputs and prevents duplicate create requests while submitting', async () => {

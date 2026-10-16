@@ -702,11 +702,22 @@ async function loadControlImplementations() {
   controlImplementations.value = nextMap;
 }
 
-async function loadProfileBindings() {
+// Profile changes from the picker can trigger overlapping reloads. Each load takes a
+// token and only the latest one may write its result, so a slow earlier response can't
+// replace the bindings (or the tree) from a newer selection.
+let profileBindingsLoadToken = 0;
+let catalogLoadToken = 0;
+
+// keepCurrent leaves the current bindings and tree on screen until the replacement
+// arrives (and keeps them if the request fails), for reloads after a profile change.
+async function loadProfileBindings(options: { keepCurrent?: boolean } = {}) {
+  const token = ++profileBindingsLoadToken;
   const sspId = systemStore.system.securityPlan?.uuid;
-  profileBindings.value = [];
-  profilesResolved.value = false;
-  nodes.value = [];
+  if (!options.keepCurrent) {
+    profileBindings.value = [];
+    profilesResolved.value = false;
+    nodes.value = [];
+  }
 
   if (!sspId) {
     return;
@@ -715,18 +726,24 @@ async function loadProfileBindings() {
   profileBindingsLoading.value = true;
   try {
     const result = await sspStore.listProfiles(sspId);
+    if (token !== profileBindingsLoadToken) return;
     profileBindings.value = result.data || [];
   } catch (err) {
+    if (token !== profileBindingsLoadToken) return;
     if (err instanceof Response && err.status === 404) {
+      profileBindings.value = [];
       return;
     }
     throw err;
   } finally {
-    profileBindingsLoading.value = false;
+    if (token === profileBindingsLoadToken) {
+      profileBindingsLoading.value = false;
+    }
   }
 }
 
 async function loadResolvedProfileCatalogs() {
+  const token = ++catalogLoadToken;
   profilesResolved.value = false;
   nodes.value = [];
 
@@ -744,6 +761,7 @@ async function loadResolvedProfileCatalogs() {
         return { profileBinding, resolvedCatalog: response.data?.data };
       }),
     );
+    if (token !== catalogLoadToken) return;
 
     const failedCount = results.filter((r) => r.status === 'rejected').length;
     if (failedCount > 0) {
@@ -780,7 +798,9 @@ async function loadResolvedProfileCatalogs() {
     nodes.value = profileNodes;
     profilesResolved.value = profileNodes.length > 0;
   } finally {
-    catalogLoading.value = false;
+    if (token === catalogLoadToken) {
+      catalogLoading.value = false;
+    }
   }
 }
 
@@ -1295,7 +1315,7 @@ watch(
 // bindings is enough: the profileBindings watcher re-resolves their catalogs.
 async function handleProfilesUpdated() {
   try {
-    await loadProfileBindings();
+    await loadProfileBindings({ keepCurrent: true });
   } catch (err) {
     error.value = err;
     toast.add({
