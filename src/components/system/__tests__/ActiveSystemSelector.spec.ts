@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { useSystemStore } from '@/stores/system';
+import { usePermissionsStore } from '@/stores/permissions';
 import ActiveSystemSelector from '../ActiveSystemSelector.vue';
 
 const get = vi.fn();
@@ -10,8 +11,13 @@ vi.mock('@/composables/axios', () => ({
   useAuthenticatedInstance: () => ({ get }),
 }));
 
+const permission = { canRead: true };
+
 vi.mock('@/composables/usePermissions', () => ({
-  usePermissions: () => ({ can: () => true }),
+  usePermissions: () => ({
+    can: (resource: string, action: string) =>
+      resource === 'ssp' && action === 'read' ? permission.canRead : true,
+  }),
 }));
 
 const SelectStub = {
@@ -40,6 +46,9 @@ describe('ActiveSystemSelector', () => {
     localStorage.clear();
     setActivePinia(createPinia());
     get.mockReset();
+    permission.canRead = true;
+    // Permissions already loaded, as after a login (no hydrate request needed).
+    usePermissionsStore().loaded = true;
   });
 
   it('loads the systems and switches the active one on selection', async () => {
@@ -80,5 +89,40 @@ describe('ActiveSystemSelector', () => {
     expect(wrapper.find('.select-stub').attributes('data-placeholder')).toBe(
       'No systems yet',
     );
+  });
+
+  it('hides the switcher and never lists systems without ssp:read', async () => {
+    permission.canRead = false;
+
+    const wrapper = mountSelector();
+    await flushPromises();
+
+    expect(get).not.toHaveBeenCalled();
+    expect(wrapper.find('.select-stub').exists()).toBe(false);
+  });
+
+  it('waits for permissions to load before listing systems', async () => {
+    const permissionsStore = usePermissionsStore();
+    permissionsStore.loaded = false;
+    let finishHydrate!: () => void;
+    const hydrate = vi.spyOn(permissionsStore, 'hydrate').mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          finishHydrate = () => {
+            permissionsStore.loaded = true;
+            resolve(undefined);
+          };
+        }),
+    );
+    get.mockResolvedValue({ data: { data: [] } });
+
+    mountSelector();
+    await flushPromises();
+    expect(hydrate).toHaveBeenCalled();
+    expect(get).not.toHaveBeenCalled();
+
+    finishHydrate();
+    await flushPromises();
+    expect(get).toHaveBeenCalledWith('/api/oscal/system-security-plans');
   });
 });

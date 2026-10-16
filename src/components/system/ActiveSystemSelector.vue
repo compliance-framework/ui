@@ -1,5 +1,5 @@
 <template>
-  <div class="flex items-center gap-2">
+  <div v-if="canRead" class="flex items-center gap-2">
     <label
       for="active-system-select"
       class="text-sm font-medium text-gray-700 dark:text-slate-200 whitespace-nowrap"
@@ -55,14 +55,19 @@ import type { SystemSecurityPlan } from '@/oscal';
 import { useAuthenticatedInstance } from '@/composables/axios';
 import { useSystemStore } from '@/stores/system';
 import { usePermissions } from '@/composables/usePermissions';
+import { usePermissionsStore } from '@/stores/permissions';
 import { RESOURCES, ACTIONS } from '@/constants/permissions';
 import type { DataResponse } from '@/stores/types';
 
 const systemStore = useSystemStore();
 const api = useAuthenticatedInstance();
 const { can } = usePermissions();
+const permissionsStore = usePermissionsStore();
 const loading = ref(false);
 
+// Listing SSPs needs ssp:read (the API guards the list). Without it the switcher is
+// hidden and never asks, so users without access don't get a 403 toast on every page.
+const canRead = computed(() => can(RESOURCES.SSP, ACTIONS.READ));
 const canCreate = computed(() => can(RESOURCES.SSP, ACTIONS.CREATE));
 const activeId = computed(() => systemStore.system.securityPlan?.uuid ?? null);
 
@@ -90,6 +95,7 @@ const placeholder = computed(() => {
 });
 
 async function loadPlans() {
+  if (!canRead.value) return;
   loading.value = true;
   try {
     const response = await api.get<DataResponse<SystemSecurityPlan[]>>(
@@ -110,5 +116,11 @@ function select(uuid: string | null) {
   }
 }
 
-onMounted(loadPlans);
+// can() is optimistic until permissions load. Wait for them first (hydrate() shares
+// App.vue's in-flight request) so a user without ssp:read never sends the request. If
+// hydration fails, can() stays optimistic and the list loads as before.
+onMounted(async () => {
+  if (!permissionsStore.loaded) await permissionsStore.hydrate();
+  await loadPlans();
+});
 </script>
