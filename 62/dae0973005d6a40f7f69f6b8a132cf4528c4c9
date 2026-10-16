@@ -1,0 +1,72 @@
+lisa-addressed:
+---
+Comment (src/components/system-security-plans/RiskOverviewSection.vue:153):
+**[Must-fix] CORE-TEST-001 · New behaviour without a test**
+
+`navigateToRiskList` now merges `registerQuery` into every drill-down (this is how dashboard clicks open the Register tab), and `showRegisterLink` hides the header link. `RisksView.spec.ts` only checks that the prop is passed; nothing checks that `router.push` receives the merged query or that the link is hidden.
+
+**Why:** Untested behaviour regresses silently and the next refactor removes it without anyone noticing.
+**Fix:** Add a RiskOverviewSection spec: a widget `navigate` with `{ status: 'open' }` and `registerQuery: { view: 'register' }` pushes `{ name, query: { status: 'open', view: 'register' } }`; `showRegisterLink: false` removes the "Open risk register" button.
+
+<sub>ccf-review · 8fc63cb5f09f · rules@992d25d050e9</sub>
+Replies:
+**lisa implementation guidance:** New src/components/system-security-plans/__tests__/RiskOverviewSection.spec.ts. Mock vue-router's useRouter to give a push spy. Mock useAuthenticatedInstance's get to resolve { data: { data: [] } }. Stub the six widget components so one of them emits navigate with { status: 'open' }. Assert push({ name: 'risks:index', query: { status: 'open', view: 'register' } }) when registerQuery={view:'register'}. Assert the 'Open risk register' button is absent with showRegisterLink=false and present by default.
+
+<!-- lisa-guidance-posted -->
+---
+Comment (src/components/system/ActiveSystemSelector.vue:92):
+**[Must-fix] Header switcher requests the SSP list for users without ssp:read**
+
+`loadPlans()` runs on every layout mount and every dropdown open, with no permission check. The API guards `GET /api/oscal/system-security-plans` with `guard.Read()`, so a user without `ssp:read` gets a 403 on every page load. That triggers the global "Permission denied" toast and a permissions re-hydrate. Before this PR the nav hid "Manage Systems" from these users. Reproduced: with `can()` returning false, the request is still sent.
+
+**Why:** The switcher is in the layout, so for users without ssp:read every page shows a permission-denied toast for an action they never took.
+**Fix:** Check `can(RESOURCES.SSP, ACTIONS.READ)` before calling `loadPlans()` (on mount and in `@show`). Since `can()` is optimistic until permissions load, also re-run it once the permission store has loaded. Without read access, hide the switcher or show it read-only and disabled. Add a spec for the denied case.
+**Severity basis:** no rule matched; decision tree: wrong behaviour or missing companion change.
+
+<sub>ccf-review · 39b9d1b3f40b · rules@992d25d050e9</sub>
+Replies:
+**lisa implementation guidance:** ActiveSystemSelector.vue: add `const canRead = computed(() => can(RESOURCES.SSP, ACTIONS.READ))`. Return early from loadPlans() when !canRead. Replace onMounted(loadPlans) with `watch(() => [canRead.value, permissionsStore.loaded], () => { if (canRead.value) loadPlans(); }, { immediate: true })` (usePermissionsStore exposes `loaded`), so a denial that arrives after hydration cancels the optimistic fetch and a later grant still loads. Render the component's root with v-if="canRead". Spec in ActiveSystemSelector.spec.ts: with the usePermissions mock returning false, get is never called and the select isn't rendered. Make the existing mock switchable per test.
+
+<!-- lisa-guidance-posted -->
+---
+Comment (src/components/system/NoActiveSystem.vue:67):
+**[Must-fix] CORE-TEST-001 · New behaviour without a test**
+
+`NoActiveSystem` picks between "Create your first system" (loaded list, no SSPs) and "Select a system", and hides the create button without `ssp:create`. None of these branches is tested, and every This System page renders this component.
+
+**Why:** Untested behaviour regresses silently and the next refactor removes it without anyone noticing.
+**Fix:** Add `src/components/system/__tests__/NoActiveSystem.spec.ts` covering: list not loaded → select copy; loaded and empty → create copy with the button; loaded and empty without `ssp:create` → "ask an administrator"; loaded with plans → select copy.
+
+<sub>ccf-review · c2df4b0cf850 · rules@992d25d050e9</sub>
+Replies:
+**lisa implementation guidance:** New src/components/system/__tests__/NoActiveSystem.spec.ts with a real pinia and useSystemStore. Cover: (a) availablePlansLoaded=false gives 'Select a system'; (b) loaded with an empty list and can()=true gives 'Create your first system' and a create link; (c) loaded, empty, can()=false gives the 'Ask an administrator' text and no create link; (d) loaded with one plan gives 'Select a system'. Stub RouterLinkButton as <a><slot/></a>, and mock usePermissions with a switchable can.
+
+<!-- lisa-guidance-posted -->
+---
+Comment (src/views/layouts/App.vue:21):
+**[Must-fix] CORE-TEST-001 · New behaviour without a test**
+
+Keying the routed page by the active SSP's uuid is what makes every system-scoped page follow a header switch. Many of those pages read the store only once at setup. No spec covers it, so a refactor that drops the key would silently leave pages showing the old system.
+
+**Why:** Untested behaviour regresses silently and the next refactor removes it without anyone noticing.
+**Fix:** Add a layout spec: mount App.vue with a routed stub page that counts its mounts, change `systemStore.setSecurityPlan(...)`, and assert the page remounts once.
+
+<sub>ccf-review · 109a00470211 · rules@992d25d050e9</sub>
+Replies:
+**lisa implementation guidance:** New src/views/layouts/__tests__/App.spec.ts. Use a real memory-history router with one child route whose component counts its mounts (onMounted increment), and a real pinia. Stub LeftSideNav, SidebarToggle, ProfileDropdown and ActiveSystemSelector. Mount AppLayout, navigate to the child, then call useSystemStore().setSecurityPlan({uuid:'ssp-2',...}) and await nextTick or flushPromises. Assert mounts went from 1 to 2. Mock usePermissionsStore/useUserStore only as far as App.vue's onMounted needs (isAuthenticated false avoids hydrate).
+
+<!-- lisa-guidance-posted -->
+---
+Comment (src/views/system-security-plans/SystemSecurityPlanComplianceView.vue:92):
+**[Must-fix] CORE-TEST-001 · New behaviour without a test**
+
+The "no profile attached" link now goes to Implementation (`controls:index`) when `attachProfileRouteName` is set, and otherwise to the editor Overview. Neither branch is tested.
+
+**Why:** Untested behaviour regresses silently and the next refactor removes it without anyone noticing.
+**Fix:** Extend the compliance view spec: with no profile bindings, assert the link targets `{ name: 'controls:index' }` and reads "Implementation" when the prop is set, and targets the editor overview otherwise.
+
+<sub>ccf-review · 4063912e813e · rules@992d25d050e9</sub>
+Replies:
+**lisa implementation guidance:** Find the existing spec for SystemSecurityPlanComplianceView (search __tests__ for it). Add two cases with listProfiles resolving no bindings. With attachProfileRouteName='controls:index', the RouterLink stub's `to` is { name: 'controls:index' } and the text includes 'Implementation'. Without the prop, `to` is { name: 'system-security-plan-overview', params: { id: <sspId> } } and the text includes 'Overview'. Use a RouterLink stub that exposes `to` as a prop. If there's no existing spec, create src/views/system-security-plans/__tests__/SystemSecurityPlanComplianceView.spec.ts.
+
+<!-- lisa-guidance-posted -->
