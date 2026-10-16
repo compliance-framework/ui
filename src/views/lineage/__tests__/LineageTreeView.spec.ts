@@ -3,9 +3,10 @@ import { mount, flushPromises } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 
 // Hoisted so the (hoisted) vi.mock factory can reference it.
-const { fetchRootsMock, fetchChildrenMock } = vi.hoisted(() => ({
+const { fetchRootsMock, fetchChildrenMock, refreshMock } = vi.hoisted(() => ({
   fetchRootsMock: vi.fn(),
   fetchChildrenMock: vi.fn(),
+  refreshMock: vi.fn(),
 }));
 
 vi.mock('@/composables/useLineage', async () => {
@@ -17,6 +18,8 @@ vi.mock('@/composables/useLineage', async () => {
       fetchRootNodes: vi.fn(),
       fetchChildNodes: vi.fn(),
       clearCache: vi.fn(),
+      refresh: refreshMock,
+      generatedAt: ref(null),
       usingFixtures: ref(false),
     }),
   };
@@ -24,6 +27,7 @@ vi.mock('@/composables/useLineage', async () => {
 
 import LineageTreeView from '../LineageTreeView.vue';
 import LineageNodeDrawer from '@/components/lineage/LineageNodeDrawer.vue';
+import LineageScopeBar from '@/components/lineage/LineageScopeBar.vue';
 import { useUIStore } from '@/stores/ui';
 
 const sampleTreeNode = {
@@ -85,6 +89,7 @@ describe('LineageTreeView (smoke)', () => {
     fetchRootsMock.mockResolvedValue([sampleTreeNode]);
     fetchChildrenMock.mockReset();
     fetchChildrenMock.mockResolvedValue([sampleChildNode]);
+    refreshMock.mockReset();
   });
 
   it('renders the heading and loads roots on mount', async () => {
@@ -164,5 +169,36 @@ describe('LineageTreeView (smoke)', () => {
 
     expect(uiStore.lineageDrawerOpen).toBe(false);
     expect(uiStore.lineageSelectedNodeKey).toBeNull();
+  });
+
+  it('refreshes and reloads the roots, keeping expanded nodes, when the scope bar asks', async () => {
+    const uiStore = useUIStore();
+    uiStore.setLineageExpandedKeys({ [sampleTreeNode.key]: true });
+    // A fresh root per load, as the real composable returns, so each load hydrates.
+    fetchRootsMock.mockImplementation(async () => [
+      { ...sampleTreeNode, children: undefined },
+    ]);
+
+    const wrapper = mount(LineageTreeView, {
+      global: {
+        stubs: {
+          Tree: true,
+          LineageScopeBar: true,
+          LineageViewSwitch: true,
+          LineageNodeDrawer: true,
+          LineageNodeRow: true,
+        },
+      },
+    });
+    await flushPromises();
+    expect(fetchRootsMock).toHaveBeenCalledTimes(1);
+    expect(fetchChildrenMock).toHaveBeenCalledTimes(1);
+
+    wrapper.findComponent(LineageScopeBar).vm.$emit('refresh');
+    await flushPromises();
+
+    expect(refreshMock).toHaveBeenCalledTimes(1);
+    expect(fetchRootsMock).toHaveBeenCalledTimes(2);
+    expect(fetchChildrenMock).toHaveBeenCalledTimes(2);
   });
 });
