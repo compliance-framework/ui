@@ -53,6 +53,11 @@ export function takeUnscopedRefresh(): boolean {
   return pending;
 }
 
+/** Put back a refresh taken by takeUnscopedRefresh() whose request failed. */
+export function restoreUnscopedRefresh() {
+  unscopedRefreshPending = true;
+}
+
 function noteGeneratedAt(headers: unknown) {
   const raw = (headers as Record<string, unknown> | undefined)?.[
     'x-lineage-generated-at'

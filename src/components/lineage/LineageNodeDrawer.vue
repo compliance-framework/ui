@@ -3,7 +3,10 @@ import { computed, ref, watch } from 'vue';
 import Drawer from '@/volt/Drawer.vue';
 import Badge from '@/volt/Badge.vue';
 import { useAuthenticatedInstance } from '@/composables/axios';
-import { takeUnscopedRefresh } from '@/composables/useLineage';
+import {
+  restoreUnscopedRefresh,
+  takeUnscopedRefresh,
+} from '@/composables/useLineage';
 import RiskHeatBadge from './RiskHeatBadge.vue';
 import {
   nodeKind,
@@ -255,11 +258,12 @@ async function loadSSPRows(node: LineageNode) {
     return;
   }
   sspState.value = 'loading';
+  const refresh = takeUnscopedRefresh();
   try {
     // The table is inherently multi-SSP, so it is NOT scoped to the selected SSP.
     // After a view refresh it rebuilds the unscoped data it reads, too.
     const url = `/api/lineage/nodes/${encodeURIComponent(node.key)}/ssps`;
-    const res = takeUnscopedRefresh()
+    const res = refresh
       ? await instance.get(url, { params: { refresh: 'true' } })
       : await instance.get(url);
     if (sspRequestKey !== node.key) return;
@@ -267,6 +271,8 @@ async function loadSSPRows(node: LineageNode) {
     sspRows.value = Array.isArray(rows) ? (rows as LineageSSPRow[]) : [];
     sspState.value = 'loaded';
   } catch (err) {
+    // The rebuild may not have happened: leave it for the next request.
+    if (refresh) restoreUnscopedRefresh();
     if (sspRequestKey !== node.key) return;
     console.warn('[LineageNodeDrawer] per-SSP fetch failed', err);
     sspState.value = 'error';
