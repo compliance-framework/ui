@@ -14,7 +14,7 @@ import AppLayout from '../App.vue';
 enableAutoUnmount(afterEach);
 
 let pageMounts = 0;
-const SystemScopedPage = defineComponent({
+const CountingPage = defineComponent({
   setup() {
     onMounted(() => {
       pageMounts += 1;
@@ -27,18 +27,25 @@ function plan(uuid: string): PartialSystemSecurityPlan {
   return { uuid, metadata: { title: uuid } } as PartialSystemSecurityPlan;
 }
 
-async function mountLayout() {
+async function mountLayout(path = '/page') {
   const router = createRouter({
     history: createMemoryHistory(),
     routes: [
       {
         path: '/',
         component: AppLayout,
-        children: [{ path: 'page', component: SystemScopedPage }],
+        children: [
+          {
+            path: 'page',
+            component: CountingPage,
+            meta: { activeSystemScoped: true },
+          },
+          { path: 'global', component: CountingPage },
+        ],
       },
     ],
   });
-  await router.push('/page');
+  await router.push(path);
   await router.isReady();
 
   return mount(
@@ -64,7 +71,7 @@ describe('App layout', () => {
     pageMounts = 0;
   });
 
-  it('remounts the current page when the active system changes', async () => {
+  it('remounts a This System page when the active system changes', async () => {
     const systemStore = useSystemStore();
     systemStore.setSecurityPlan(plan('ssp-1'));
 
@@ -88,6 +95,19 @@ describe('App layout', () => {
       uuid: 'ssp-1',
       metadata: { title: 'Renamed' },
     } as PartialSystemSecurityPlan);
+    await flushPromises();
+
+    expect(pageMounts).toBe(1);
+  });
+
+  it('leaves a global page alone when the active system changes', async () => {
+    const systemStore = useSystemStore();
+    systemStore.setSecurityPlan(plan('ssp-1'));
+
+    const wrapper = await mountLayout('/global');
+    expect(wrapper.find('.page').exists()).toBe(true);
+
+    systemStore.setSecurityPlan(plan('ssp-2'));
     await flushPromises();
 
     expect(pageMounts).toBe(1);

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue';
-import { RouterView } from 'vue-router';
+import { RouterView, useRoute } from 'vue-router';
 import LeftSideNav from '@/views/LeftSideNav.vue';
 import SidebarToggle from '@/components/navigation/SidebarToggle.vue';
 import ProfileDropdown from '@/components/ProfileDropdown.vue';
@@ -15,11 +15,18 @@ const userStore = useUserStore();
 const permissionsStore = usePermissionsStore();
 const systemStore = useSystemStore();
 
-// Many system-scoped pages read the active SSP once at setup. Keying the page on it
-// remounts the current page when the user switches systems from the header, so every page
-// follows the switch without each one having to watch the store.
-const activeSystemKey = computed(
-  () => systemStore.system.securityPlan?.uuid ?? 'none',
+// Many system-scoped pages read the active SSP once at setup. Keying them on it remounts
+// the current page when the user switches systems from the header, so they follow the
+// switch without each one watching the store. Global pages share one constant key, so a
+// switch there doesn't reload a page that doesn't depend on it.
+const route = useRoute();
+const activeSystemScoped = computed(() =>
+  route.matched.some((record) => record.meta.activeSystemScoped),
+);
+const activeSystemKey = computed(() =>
+  activeSystemScoped.value
+    ? `system:${systemStore.system.securityPlan?.uuid ?? 'none'}`
+    : 'global',
 );
 
 // Auth is persisted, so on a hard refresh the user stays authenticated without re-running

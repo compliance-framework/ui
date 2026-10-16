@@ -12,6 +12,9 @@ const ADMIN_MANAGE = {
   action: ACTIONS.MANAGE,
 } as const;
 
+// Routes marked `activeSystemScoped` show data for the active system (the nav's This
+// System pages, except Evidence, which is still global). The layout remounts them when the
+// header switcher changes system. Every other page ignores a switch.
 const authenticatedRoutes = [
   {
     path: '/',
@@ -71,6 +74,7 @@ const authenticatedRoutes = [
     component: () => import('../views/control-implementations/IndexView.vue'),
     meta: {
       requiresAuth: true,
+      activeSystemScoped: true,
     },
   },
   {
@@ -123,6 +127,7 @@ const authenticatedRoutes = [
       import('../views/workflow-instances/WorkflowInstancesIndexView.vue'),
     meta: {
       requiresAuth: true,
+      activeSystemScoped: true,
     },
   },
   {
@@ -266,6 +271,7 @@ const authenticatedRoutes = [
     ],
     meta: {
       requiresAuth: true,
+      activeSystemScoped: true,
     },
   },
   {
@@ -274,6 +280,7 @@ const authenticatedRoutes = [
     component: () => import('../views/RisksView.vue'),
     meta: {
       requiresAuth: true,
+      activeSystemScoped: true,
     },
   },
   {
@@ -282,6 +289,7 @@ const authenticatedRoutes = [
     component: () => import('../views/system/ComplianceView.vue'),
     meta: {
       requiresAuth: true,
+      activeSystemScoped: true,
     },
   },
   {
