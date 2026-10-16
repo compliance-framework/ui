@@ -1,0 +1,5 @@
+lisa-addressed:
+self-review pass 1:
+- fixed 3d25d90ba428: LineageGraphView/LineageTreeView onRefresh hold a refreshing ref across await loadRoots(); scope bar gets loading || refreshing.
+- fixed 0a2f8d02d240: LineageGraphView.spec "LineageGraphView refresh" case (refresh + replay, busy until replay done).
+- dismissed 28d2d38a0f3d: the drawer watch getter returns a new array on every re-run, so a new node object with the same key already reloads the panels; added a LineageNodeDrawer.spec guard test instead of a code change.
