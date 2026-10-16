@@ -213,3 +213,28 @@ describe('LineageNodeDrawer — inherited capabilities', () => {
     expect(wrapper.text()).not.toContain('SSP Alpha');
   });
 });
+
+describe('LineageNodeDrawer reloads', () => {
+  beforeEach(() => {
+    getMock.mockReset();
+    getMock.mockResolvedValue({ data: { data: [] } });
+  });
+
+  const sspCalls = () =>
+    getMock.mock.calls.filter((c) => String(c[0]).endsWith('/ssps')).length;
+
+  it('reloads its panels when a view refresh hands it the same node as a new object', async () => {
+    const node = controlNode();
+    const wrapper = mountDrawer({ node });
+    await flushPromises();
+    expect(sspCalls()).toBe(1);
+
+    await wrapper.setProps({ node });
+    await flushPromises();
+    expect(sspCalls()).toBe(1);
+
+    await wrapper.setProps({ node: controlNode() });
+    await flushPromises();
+    expect(sspCalls()).toBe(2);
+  });
+});

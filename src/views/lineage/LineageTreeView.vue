@@ -138,9 +138,17 @@ watch(drawerVisible, (isOpen) => {
 onMounted(loadRoots);
 
 // Reload with current data from the API, keeping what is expanded and selected.
-function onRefresh() {
-  refresh();
-  loadRoots();
+// The button stays disabled until the whole reload is done, not just the roots,
+// so a second click cannot start a replay alongside this one.
+const refreshing = ref(false);
+async function onRefresh() {
+  refreshing.value = true;
+  try {
+    refresh();
+    await loadRoots();
+  } finally {
+    refreshing.value = false;
+  }
 }
 
 // Refetch when the scope changes (SSP / component / types).
@@ -171,7 +179,7 @@ watch(
 
     <LineageScopeBar
       :generatedAt="generatedAt"
-      :refreshing="loading"
+      :refreshing="loading || refreshing"
       @refresh="onRefresh"
     />
 

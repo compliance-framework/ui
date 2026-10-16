@@ -290,9 +290,17 @@ onMounted(() => {
 onUnmounted(() => window.removeEventListener('resize', computeArrows));
 
 // Reload with current data from the API, replaying the drill-down path.
-function onRefresh() {
-  refresh();
-  loadRoots();
+// The button stays disabled until the whole reload is done, not just the roots,
+// so a second click cannot start a replay alongside this one.
+const refreshing = ref(false);
+async function onRefresh() {
+  refreshing.value = true;
+  try {
+    refresh();
+    await loadRoots();
+  } finally {
+    refreshing.value = false;
+  }
 }
 
 watch(
@@ -323,7 +331,7 @@ watch(
 
     <LineageScopeBar
       :generatedAt="generatedAt"
-      :refreshing="loading"
+      :refreshing="loading || refreshing"
       @refresh="onRefresh"
     />
 
