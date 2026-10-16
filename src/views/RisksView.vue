@@ -1,15 +1,35 @@
 <template>
-  <RiskRegisterPanel
-    :risks="risks || []"
-    :loading="loading"
-    :error="error ? String(error) : null"
-    :context-missing="contextMissing"
-    :ssp-id="sspId"
-    title="SSP Risk Register"
-    @risk-created="handleRiskCreated"
-    @risk-updated="handleRiskSaved"
-    @risk-deleted="handleRiskDeleted"
-  />
+  <NoActiveSystem v-if="showOnboarding" subject="risks" />
+  <div v-else class="space-y-6">
+    <template v-if="isActiveSystemPage">
+      <PageHeader>Risks</PageHeader>
+      <PageSubHeader>
+        Risk posture and register for {{ systemTitle }}
+      </PageSubHeader>
+    </template>
+
+    <!-- The dashboard used to sit on the SSP Overview; it lives next to the register now so
+         the summary and the list it drills into are on one page. Its widgets push register
+         filters into the query string, which the panel below already follows. -->
+    <RiskOverviewSection
+      v-if="sspId"
+      :ssp-id="sspId"
+      :risk-list-route-name="riskListRouteName"
+      :show-register-link="false"
+    />
+
+    <RiskRegisterPanel
+      :risks="risks || []"
+      :loading="loading"
+      :error="error ? String(error) : null"
+      :context-missing="contextMissing"
+      :ssp-id="sspId"
+      title="SSP Risk Register"
+      @risk-created="handleRiskCreated"
+      @risk-updated="handleRiskSaved"
+      @risk-deleted="handleRiskDeleted"
+    />
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -20,6 +40,12 @@ import { useSystemStore } from '@/stores/system.ts';
 import { useDataApi } from '@/composables/axios';
 import { sameRiskIdentifier } from '@/utils/risk-id';
 import RiskRegisterPanel from '@/components/risk/RiskRegisterPanel.vue';
+import RiskOverviewSection, {
+  type RiskListRouteName,
+} from '@/components/system-security-plans/RiskOverviewSection.vue';
+import NoActiveSystem from '@/components/system/NoActiveSystem.vue';
+import PageHeader from '@/components/PageHeader.vue';
+import PageSubHeader from '@/components/PageSubHeader.vue';
 
 const route = useRoute();
 const { system } = useSystemStore();
@@ -30,6 +56,19 @@ const sspId = computed(
 );
 
 const contextMissing = computed(() => !sspId.value);
+
+// This view backs both This System > Risks (active SSP) and the SSP Editor's Risks tab
+// (`:id` route param). Only the former gets a page header and the onboarding empty state.
+const isActiveSystemPage = computed(() => !route.params.id);
+const showOnboarding = computed(
+  () => isActiveSystemPage.value && contextMissing.value,
+);
+const riskListRouteName = computed<RiskListRouteName>(() =>
+  isActiveSystemPage.value ? 'risks:index' : 'system-security-plan-risks',
+);
+const systemTitle = computed(
+  () => system.securityPlan?.metadata?.title || 'this system',
+);
 
 const endpoint = computed(() => {
   if (!sspId.value) return null;

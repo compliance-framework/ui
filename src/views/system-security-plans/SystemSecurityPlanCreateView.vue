@@ -104,6 +104,7 @@ import type { AxiosError } from 'axios';
 import type { ErrorResponse, ErrorBody } from '@/stores/types';
 import { usePermissions } from '@/composables/usePermissions';
 import { RESOURCES, ACTIONS } from '@/constants/permissions';
+import { useSystemStore } from '@/stores/system.ts';
 
 const { can, permissionTooltip } = usePermissions();
 
@@ -123,6 +124,7 @@ const { data, execute: createSystemSecurityPlan } =
   );
 
 const router = useRouter();
+const systemStore = useSystemStore();
 const toast = useToast();
 const isSubmitting = ref(false);
 const errors = reactive<Record<string, string>>({});
@@ -164,10 +166,10 @@ async function submit() {
       });
       return;
     }
-    await router.push({
-      name: 'system-security-plan-editor',
-      params: { id: createdUuid },
-    });
+    // A freshly created system is almost always the one the user wants to work on next:
+    // make it active and continue in Configure System rather than the detached editor.
+    systemStore.setSecurityPlan(data.value!);
+    await router.push({ name: 'system:overview' });
   } catch (error) {
     const responseError = error as AxiosError<ErrorResponse<ErrorBody>>;
     errorMessage.value =

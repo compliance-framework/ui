@@ -227,6 +227,8 @@ const stubs = {
   },
   PageHeader: { template: '<h1><slot /></h1>' },
   PageSubHeader: { template: '<p><slot /></p>' },
+  SspProfilePicker: { template: '<div data-testid="profile-picker" />' },
+  NoActiveSystem: { template: '<div data-testid="no-active-system" />' },
 };
 
 describe('control implementations IndexView', () => {

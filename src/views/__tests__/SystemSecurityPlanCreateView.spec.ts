@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   createSystemSecurityPlan: vi.fn(),
   decamelizeKeys: vi.fn(),
   push: vi.fn(),
+  setSecurityPlan: vi.fn(),
   toastAdd: vi.fn(),
   uuidv4: vi.fn(),
 }));
@@ -31,6 +32,10 @@ vi.mock('vue-router', () => ({
   useRouter: () => ({
     push: mocks.push,
   }),
+}));
+
+vi.mock('@/stores/system.ts', () => ({
+  useSystemStore: () => ({ setSecurityPlan: mocks.setSecurityPlan }),
 }));
 
 vi.mock('uuid', () => ({
@@ -120,7 +125,7 @@ describe('SystemSecurityPlanCreateView', () => {
     );
   });
 
-  it('creates the SSP and redirects to the editor', async () => {
+  it('creates the SSP, makes it active and opens Configure System', async () => {
     const wrapper = mountView();
     const titleInput = wrapper.findAll('input')[1];
 
@@ -137,10 +142,10 @@ describe('SystemSecurityPlanCreateView', () => {
         },
       },
     });
-    expect(mocks.push).toHaveBeenCalledWith({
-      name: 'system-security-plan-editor',
-      params: { id: 'created-ssp' },
-    });
+    expect(mocks.setSecurityPlan).toHaveBeenCalledWith(
+      expect.objectContaining({ uuid: 'created-ssp' }),
+    );
+    expect(mocks.push).toHaveBeenCalledWith({ name: 'system:overview' });
   });
 
   it('disables inputs and prevents duplicate create requests while submitting', async () => {

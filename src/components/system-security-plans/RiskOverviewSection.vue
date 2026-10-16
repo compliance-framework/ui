@@ -7,6 +7,7 @@
         Risk Overview
       </h3>
       <button
+        v-if="showRegisterLink"
         type="button"
         class="text-sm font-medium text-blue-600 underline dark:text-blue-300"
         @click="navigateToRiskList()"
@@ -72,10 +73,15 @@ export type RiskListRouteName =
   | 'risks:index'
   | 'system:risks';
 
-const props = defineProps<{
-  sspId: string;
-  riskListRouteName: RiskListRouteName;
-}>();
+const props = withDefaults(
+  defineProps<{
+    sspId: string;
+    riskListRouteName: RiskListRouteName;
+    // Off when the section already sits on top of the register it would link to.
+    showRegisterLink?: boolean;
+  }>(),
+  { showRegisterLink: true },
+);
 
 const router = useRouter();
 const authenticatedApi = useAuthenticatedInstance();

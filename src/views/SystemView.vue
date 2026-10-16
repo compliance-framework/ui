@@ -1,24 +1,10 @@
 <template>
-  <Message v-if="!systemSecurityPlan" severity="error" variant="outlined">
-    <div class="space-y-2 text-gray-700 dark:text-slate-200">
-      <h4 class="text-base font-semibold">System Security Plan not selected</h4>
-      <p>You have not selected a system security plan for editing.</p>
-      <p>
-        Please return to the
-        <RouterLink
-          :to="{ name: 'system-security-plans' }"
-          class="font-medium underline text-blue-600 dark:text-blue-300"
-          >SSP Page
-        </RouterLink>
-        to select one
-      </p>
-    </div>
-  </Message>
+  <NoActiveSystem v-if="!systemSecurityPlan" subject="configuration" />
   <div v-else>
     <PageSubHeader>{{ systemSecurityPlan.metadata?.title }}</PageSubHeader>
 
     <div>
-      <PageHeader>System Security Plan</PageHeader>
+      <PageHeader>Configure System</PageHeader>
       <Tabs :value="activeRoute">
         <TabList>
           <Tab
@@ -48,15 +34,17 @@
 import { ref } from 'vue';
 import PageHeader from '@/components/PageHeader.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
+import NoActiveSystem from '@/components/system/NoActiveSystem.vue';
 import { type SystemSecurityPlan } from '@/oscal';
 import { RouterView, useRoute } from 'vue-router';
 import { useSystemStore } from '@/stores/system.ts';
 import Tabs from '@/volt/Tabs.vue';
 import Tab from '@/volt/Tab.vue';
 import TabList from '@/volt/TabList.vue';
-import Message from '@/volt/Message.vue';
 import { sspSectionTabRoutes } from '@/constants/ssp-section-tabs';
 
+// The layout remounts this page whenever the active system changes, so a one-off read of
+// the store is enough here.
 const { system } = useSystemStore();
 const systemSecurityPlan = ref<SystemSecurityPlan>(
   system.securityPlan as SystemSecurityPlan,
@@ -64,5 +52,7 @@ const systemSecurityPlan = ref<SystemSecurityPlan>(
 
 const route = useRoute();
 const activeRoute = ref(route.name as string);
-const tabs = sspSectionTabRoutes('system:');
+// Risks and Compliance have their own This System nav entries, so Configure System leaves
+// them out.
+const tabs = sspSectionTabRoutes('system:', { includeEditorOnly: false });
 </script>
