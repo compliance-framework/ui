@@ -1,0 +1,5 @@
+lisa-selfreview:
+pass 1 (strict): request_changes
+- must-fix 28d2d38a0f3d LineageNodeDrawer watch: refresh with drawer open leaves evidence / per-SSP / leverage stale (watch keyed on node.key only).
+- must-fix 3d25d90ba428 LineageGraphView onRefresh: button re-enables when roots land, before the path replay; a second click interleaves two replays.
+- must-fix 0a2f8d02d240 CORE-TEST-001 LineageGraphView onRefresh untested.
