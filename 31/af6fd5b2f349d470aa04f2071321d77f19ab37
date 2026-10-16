@@ -30,3 +30,6 @@ The edited header comment now has a ~115-character line ("change, and maps API n
 **Fix:** Re-wrap the header comment at 80 columns.
 
 <sub>ccf-review · 4c3de8095f50 · rules@992d25d050e9</sub>
+
+lisa-addressed:
+Review body (Outside the diff, Must-fix): a getRoots/getChildren response in flight across refresh() repopulated the fresh cache and moved generatedAt back. Fixed in 3676dd6 with a module-level generation counter bumped by clearCache(); stale responses (API and fixture fallback) are returned but not cached and do not touch generatedAt or the refresh flags.
