@@ -1,0 +1,5 @@
+lisa-addressed:
+self-review pass 1:
+- 412cd1a6e8cf useSspScope.load ignores a response when sspId changed in flight (+ test)
+- 5999548ad966 ScopePanel empty state only when scope loaded; failed load -> toast, no empty claim (+ test)
+- baa04e6e68cd AND separator dark:text-slate-400
