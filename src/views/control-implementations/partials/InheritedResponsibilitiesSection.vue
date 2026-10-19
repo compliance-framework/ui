@@ -231,6 +231,8 @@
               :available-label-names="availableLabelNames"
               :available-label-values="availableLabelValues"
               :computed-filter="computedFilter"
+              :scope-followable="scopeFollowable"
+              v-model:follow-ssp-scope="followSspScope"
               :is-submitting="creatingDashboard"
               :server-error="createDashboardError"
               @submit="createDashboard(row.responsibilityUuid)"
@@ -581,6 +583,8 @@ const {
   availableLabelNames,
   availableLabelValues,
   computedFilter,
+  scopeFollowable,
+  followSspScope,
   loadAvailableEvidence,
   addLabelCondition,
   removeLabelCondition,
@@ -637,6 +641,9 @@ async function createDashboard(responsibilityUuid: string) {
       name: dashboardName.value.trim(),
       filter: parsedFilter,
       sspId: props.sspId,
+      ...(scopeFollowable.value && followSspScope.value
+        ? { followSspScope: true }
+        : {}),
     });
     const created = (res.data?.data ?? res.data) as Dashboard | undefined;
     if (!created?.id) {

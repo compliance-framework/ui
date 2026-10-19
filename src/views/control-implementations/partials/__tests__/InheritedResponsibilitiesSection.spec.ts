@@ -428,6 +428,32 @@ describe('InheritedResponsibilitiesSection', () => {
     expect(refreshMock).toHaveBeenCalled();
   });
 
+  it('makes the new dashboard follow the SSP scope when the SSP has one', async () => {
+    getMock.mockImplementation((url: string) =>
+      Promise.resolve(
+        url === `/api/oscal/system-security-plans/${SSP}/scope`
+          ? { data: { data: { entries: [{ id: 'e-1' }], exceptions: [] } } }
+          : { data: { value: [] } },
+      ),
+    );
+    postMock.mockImplementation((url: string) =>
+      Promise.resolve({
+        data: { data: url === '/api/filters' ? { id: 'new-f' } : [] },
+      }),
+    );
+
+    const wrapper = mountSection([makeLink()]);
+    await findButton(wrapper, 'Create evidence filter').trigger('click');
+    await flushPromises();
+    await wrapper.find('[data-testid="pick-baseline"]').trigger('click');
+    await wrapper.find('[data-testid="set-name"]').trigger('click');
+    await wrapper.find('[data-testid="submit-create"]').trigger('click');
+    await flushPromises();
+
+    const createCall = postMock.mock.calls.find((c) => c[0] === '/api/filters');
+    expect(createCall![1]).toMatchObject({ sspId: SSP, followSspScope: true });
+  });
+
   it('detaches a dashboard with the sspId query param', async () => {
     const wrapper = mountSection([makeLink()], {
       filters: [

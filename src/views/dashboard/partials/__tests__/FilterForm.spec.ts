@@ -1,4 +1,4 @@
-import { mount } from '@vue/test-utils';
+import { flushPromises, mount } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ref } from 'vue';
 import type { Dashboard } from '@/stores/filters';
@@ -22,7 +22,10 @@ vi.mock('@/composables/usePermissions', () => ({
   usePermissions: () => ({ can: () => true, permissionTooltip: () => '' }),
 }));
 
+const scopeGet = vi.hoisted(() => vi.fn());
+
 vi.mock('@/composables/axios', () => ({
+  useAuthenticatedInstance: () => ({ get: scopeGet }),
   useDataApi: (url?: string | null) => {
     if (
       url === '/api/oscal/catalogs' ||
@@ -75,9 +78,15 @@ function mountForm(dashboard: Dashboard) {
   });
 }
 
+function scopeWith(entries: unknown[]) {
+  return { data: { data: { autoFilters: false, entries, exceptions: [] } } };
+}
+
 describe('FilterForm (edit prefill)', () => {
   beforeEach(() => {
     configState.filterComponentLinkingEnabled = true;
+    scopeGet.mockReset();
+    scopeGet.mockResolvedValue(scopeWith([]));
   });
 
   it('prefills name and the serialized filter string', () => {
@@ -130,23 +139,7 @@ describe('FilterForm (edit prefill)', () => {
   });
 
   it('pre-selects the SSP given on create', async () => {
-    const wrapper = mount(FilterForm, {
-      props: { initialFilter: 'team=payments', initialSspId: 'ssp-9' },
-      global: {
-        directives: { tooltip: { mounted: () => undefined } },
-        stubs: {
-          FormInput: {
-            props: ['modelValue'],
-            template: '<input :value="modelValue" />',
-          },
-          Select: { props: ['modelValue'], template: '<div />' },
-          MultiSelect: { props: ['modelValue'], template: '<div />' },
-          PrimaryButton: {
-            template: '<button type="submit"><slot /></button>',
-          },
-        },
-      },
-    });
+    const wrapper = mountCreate('ssp-9');
 
     await wrapper.find('form').trigger('submit');
     const payload = wrapper.emitted('submit')?.[0]?.[0] as {
@@ -154,4 +147,78 @@ describe('FilterForm (edit prefill)', () => {
     };
     expect(payload.sspId).toBe('ssp-9');
   });
+
+  it('offers to follow the scope of an SSP that has one, on by default for new filters', async () => {
+    scopeGet.mockResolvedValue(scopeWith([{ id: 'e-1' }]));
+    const wrapper = mountCreate('ssp-9');
+    await flushPromises();
+
+    const follow = wrapper.find('[data-testid="follow-ssp-scope"]');
+    expect(scopeGet).toHaveBeenCalledWith(
+      '/api/oscal/system-security-plans/ssp-9/scope',
+    );
+    expect((follow.element as HTMLInputElement).checked).toBe(true);
+
+    await wrapper.find('form').trigger('submit');
+    expect(wrapper.emitted('submit')?.[0]?.[0]).toMatchObject({
+      sspId: 'ssp-9',
+      followSspScope: true,
+    });
+  });
+
+  it('does not offer to follow an SSP without scope entries', async () => {
+    const wrapper = mountCreate('ssp-9');
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="follow-ssp-scope"]').exists()).toBe(
+      false,
+    );
+    await wrapper.find('form').trigger('submit');
+    expect(wrapper.emitted('submit')?.[0]?.[0]).not.toHaveProperty(
+      'followSspScope',
+    );
+  });
+
+  it('edits a following filter through its own expression, showing the effective one', async () => {
+    const dashboard = {
+      ...makeDashboard(),
+      filter: new FilterParser('team=payments AND repo=a').parse(),
+      scopeBase: new FilterParser('team=payments').parse(),
+    };
+    const wrapper = mountForm(dashboard);
+    await flushPromises();
+
+    const input = () => wrapper.findAll('input')[1].element as HTMLInputElement;
+    expect(input().value).toBe('team=payments');
+    expect(wrapper.find('[data-testid="effective-filter"]').text()).toContain(
+      'team=payments AND repo=a',
+    );
+
+    // Unticking keeps the effective filter, as the API does.
+    await wrapper.find('[data-testid="follow-ssp-scope"]').setValue(false);
+    expect(input().value).toBe('team=payments AND repo=a');
+
+    await wrapper.find('form').trigger('submit');
+    expect(wrapper.emitted('submit')?.[0]?.[0]).toMatchObject({
+      followSspScope: false,
+    });
+  });
 });
+
+function mountCreate(initialSspId: string) {
+  return mount(FilterForm, {
+    props: { initialFilter: 'team=payments', initialSspId },
+    global: {
+      directives: { tooltip: { mounted: () => undefined } },
+      stubs: {
+        FormInput: {
+          props: ['modelValue'],
+          template: '<input :value="modelValue" />',
+        },
+        Select: { props: ['modelValue'], template: '<div />' },
+        MultiSelect: { props: ['modelValue'], template: '<div />' },
+        PrimaryButton: { template: '<button type="submit"><slot /></button>' },
+      },
+    },
+  });
+}

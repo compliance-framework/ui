@@ -7,6 +7,14 @@
     <div class="mb-4">
       <label class="inline-block pb-2">Result Filter</label>
       <FormInput v-model="filter" />
+      <p
+        v-if="showingBase"
+        class="mt-2 text-sm text-gray-600 dark:text-slate-400"
+        data-testid="effective-filter"
+      >
+        Effective filter, with the scope:
+        <code class="break-all">{{ effectiveFilter }}</code>
+      </p>
     </div>
     <div class="mb-4">
       <label class="inline-block pb-2">Scope</label>
@@ -17,6 +25,17 @@
         optionValue="value"
         class="w-full"
       />
+      <label
+        v-if="followVisible"
+        class="mt-2 flex items-center gap-2 text-sm text-gray-800 dark:text-slate-300"
+      >
+        <input
+          v-model="followScope"
+          type="checkbox"
+          data-testid="follow-ssp-scope"
+        />
+        Follow this SSP's scope
+      </label>
     </div>
     <div class="mb-4">
       <label class="inline-block pb-2">Controls</label>
@@ -121,7 +140,8 @@ import type {
   Control,
   SystemComponent,
 } from '@/oscal';
-import { useDataApi } from '@/composables/axios';
+import { useAuthenticatedInstance, useDataApi } from '@/composables/axios';
+import { sspHasScopeEntries } from '@/composables/useSspScope';
 import { usePermissions } from '@/composables/usePermissions';
 import { RESOURCES, ACTIONS } from '@/constants/permissions';
 import { useConfigStore } from '@/stores/config';
@@ -187,15 +207,58 @@ interface SelectComponent {
   items: ComponentOption[];
 }
 
+// A filter that follows its SSP's scope is edited through its own expression
+// (scopeBase); the stored filter is that AND the scope, shown read-only.
+const followingBase = props.dashboard?.scopeBase ?? null;
+const effectiveFilter = props.dashboard
+  ? serializeFilter(props.dashboard.filter)
+  : '';
+
 const name = ref<string>(props.dashboard?.name ?? '');
 const filter = ref<string>(
   props.dashboard
-    ? serializeFilter(props.dashboard.filter)
+    ? serializeFilter(followingBase ?? props.dashboard.filter)
     : props.initialFilter,
 );
 const selectedSspId = ref<string | null>(
   props.dashboard ? (props.dashboard.sspId ?? null) : props.initialSspId,
 );
+
+// "Follow this SSP's scope": shown when the chosen SSP has scope entries (or the filter
+// already follows that SSP's scope), on by default for new filters.
+const followScope = ref<boolean>(props.dashboard ? !!followingBase : true);
+const selectedSspHasScope = ref(false);
+const followVisible = computed(
+  () =>
+    !!selectedSspId.value &&
+    (selectedSspHasScope.value ||
+      (!!followingBase && selectedSspId.value === props.dashboard?.sspId)),
+);
+const scopeApi = useAuthenticatedInstance();
+watch(
+  selectedSspId,
+  async (sspId) => {
+    selectedSspHasScope.value = false;
+    if (!sspId) return;
+    try {
+      const hasScope = await sspHasScopeEntries(scopeApi, sspId);
+      if (selectedSspId.value === sspId) selectedSspHasScope.value = hasScope;
+    } catch (error) {
+      console.error(`Error reading the scope of SSP ${sspId}:`, error);
+    }
+  },
+  { immediate: true },
+);
+// Whether the input holds the following filter's own expression. Once it stops following
+// (unticked, or moved to another scope), the API keeps the effective filter, so show that.
+const showingBase = computed(
+  () => !!followingBase && followVisible.value && followScope.value,
+);
+watch(showingBase, (base) => {
+  filter.value = serializeFilter(
+    base ? followingBase! : props.dashboard!.filter,
+  );
+});
 const selectedControls = ref<ControlOption[]>(
   (props.dashboard?.controls ?? []).map((control) => ({
     label: `${control.id} ${control.title}`,
@@ -365,6 +428,9 @@ function submit() {
   );
   try {
     const parsedFilter = new FilterParser(filter.value).parse();
+    // followSspScope: true makes the filter follow; false is only sent to stop a filter
+    // that follows today, since the API keeps the effective filter when it is false.
+    const follow = followVisible.value && followScope.value;
     emit('submit', {
       ...(props.dashboard ?? {}),
       name: name.value,
@@ -372,6 +438,7 @@ function submit() {
       filter: parsedFilter,
       controls: controlIds,
       components: componentIds,
+      ...(follow || followingBase ? { followSspScope: follow } : {}),
     });
   } catch (error) {
     console.error(error);

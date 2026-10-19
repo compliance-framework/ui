@@ -1,10 +1,8 @@
-import { toValue, type MaybeRefOrGetter } from 'vue';
+import { ref, toValue, type MaybeRefOrGetter } from 'vue';
 import { useAuthenticatedInstance } from '@/composables/axios';
-import { sspScopeEndpoint } from '@/composables/useSspScope';
+import { sspHasScopeEntries } from '@/composables/useSspScope';
 import type { Evidence } from '@/stores/evidence';
 import type { DataResponse } from '@/stores/types';
-import type { SspScope } from '@/types/ssp-scope';
-import { getErrorStatus } from '@/utils/httpErrors';
 
 export const SCOPED_BASELINE_EVIDENCE_LIMIT = 100;
 
@@ -17,24 +15,14 @@ export function useBaselineEvidence(
   sspId?: MaybeRefOrGetter<string | null | undefined>,
 ) {
   const api = useAuthenticatedInstance();
-
-  async function scopeHasEntries(id: string): Promise<boolean> {
-    try {
-      const response = await api.get<DataResponse<SspScope>>(
-        sspScopeEndpoint(id),
-      );
-      return (response.data.data?.entries?.length ?? 0) > 0;
-    } catch (error) {
-      // An API without SSP scopes: keep today's unscoped behaviour.
-      if (getErrorStatus(error) === 404) return false;
-      throw error;
-    }
-  }
+  // Whether the last fetch used the SSP's scope, i.e. the SSP has scope entries.
+  const scoped = ref(false);
 
   async function fetchBaselineEvidence(): Promise<Evidence[]> {
     const id = toValue(sspId);
-    const scoped = id ? await scopeHasEntries(id) : false;
-    const response = scoped
+    const hasScope = id ? await sspHasScopeEntries(api, id) : false;
+    scoped.value = hasScope;
+    const response = hasScope
       ? await api.post<DataResponse<Evidence[]>>(
           `/api/oscal/system-security-plans/${id}/evidence/search`,
           { filter: {} },
@@ -46,5 +34,5 @@ export function useBaselineEvidence(
     return response.data.data ?? [];
   }
 
-  return { fetchBaselineEvidence };
+  return { fetchBaselineEvidence, scoped };
 }

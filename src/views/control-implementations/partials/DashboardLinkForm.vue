@@ -3,6 +3,7 @@ import { reactive, watch } from 'vue';
 import type { Dashboard } from '@/stores/filters';
 import Label from '@/volt/Label.vue';
 import Select from '@/volt/Select.vue';
+import FilterOriginBadges from '@/components/filters/FilterOriginBadges.vue';
 import Message from '@/volt/Message.vue';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
@@ -59,7 +60,12 @@ function submit() {
         placeholder="Select an evidence filter to link..."
         class="w-full"
         :invalid="!!errors.dashboard"
-      />
+      >
+        <template #option="slotProps">
+          <span>{{ slotProps.option.name }}</span>
+          <FilterOriginBadges :filter="slotProps.option" class="ml-2" />
+        </template>
+      </Select>
       <small v-if="errors.dashboard" class="text-red-500">
         {{ errors.dashboard }}
       </small>

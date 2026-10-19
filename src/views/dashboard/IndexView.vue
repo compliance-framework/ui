@@ -142,6 +142,7 @@
               class="px-6 py-4 text-sm font-medium text-gray-900 dark:text-slate-300"
             >
               {{ dashboard.name }}
+              <FilterOriginBadges :filter="dashboard" class="ml-2" />
             </td>
             <td class="px-6 py-4 text-sm text-gray-500 dark:text-slate-400">
               {{ scopeLabel(dashboard) }}
@@ -258,6 +259,7 @@ import type { Dashboard } from '@/stores/filters.ts';
 import type { SystemSecurityPlan } from '@/oscal';
 import DashboardChart from '@/views/dashboard/DashboardChart.vue';
 import FilterEditModal from '@/views/dashboard/partials/FilterEditModal.vue';
+import FilterOriginBadges from '@/components/filters/FilterOriginBadges.vue';
 import { useConfirm } from 'primevue/useconfirm';
 import { useToast } from 'primevue/usetoast';
 import PrimaryButton from '@/volt/PrimaryButton.vue';

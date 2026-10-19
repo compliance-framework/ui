@@ -32,9 +32,10 @@ describe('useBaselineEvidence', () => {
 
   it("uses the SSP's in-scope evidence, 100 at most, when the SSP has a scope", async () => {
     api.get.mockResolvedValue(scope([{ id: 'e-1' }]));
-    const { fetchBaselineEvidence } = useBaselineEvidence(ref('ssp-1'));
+    const { fetchBaselineEvidence, scoped } = useBaselineEvidence(ref('ssp-1'));
 
     await expect(fetchBaselineEvidence()).resolves.toEqual(evidence);
+    expect(scoped.value).toBe(true);
     expect(api.get).toHaveBeenCalledWith(
       '/api/oscal/system-security-plans/ssp-1/scope',
     );
@@ -47,9 +48,12 @@ describe('useBaselineEvidence', () => {
 
   it('keeps all evidence for an SSP with an empty scope', async () => {
     api.get.mockResolvedValue(scope([]));
-    const { fetchBaselineEvidence } = useBaselineEvidence(() => 'ssp-1');
+    const { fetchBaselineEvidence, scoped } = useBaselineEvidence(
+      () => 'ssp-1',
+    );
 
     await fetchBaselineEvidence();
+    expect(scoped.value).toBe(false);
 
     expect(api.post).toHaveBeenCalledWith('/api/evidence/search', {
       filter: {},
