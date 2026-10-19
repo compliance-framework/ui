@@ -5,3 +5,7 @@ lisa-design:
 - UA2: EvidenceView reads the scope once (the layout remounts activeSystemScoped pages on system switch); empty scope -> empty state with a link to system:scope, never an empty evidence list.
 - UA2: "Save as filter" passes ?sspId= to dashboards.create; FilterForm gains initialSspId (create only, editing keeps dashboard.sspId); CreateFormView returns to system:evidence when it came with sspId, else evidence:index.
 - UA2: the Agent health chart stays global on the scoped page (agents are not scoped).
+
+lisa-selfreview:
+pass 1 (strict): request_changes
+- [must-fix] X:correctness/detail-back-link-leaves-scoped-page views/evidence/ViewView.vue backToEvidenceRoute: opening evidence from This System > Evidence and pressing back lands on Global > Evidence -> fix
