@@ -13,6 +13,20 @@
       <PrimaryButton v-if="template" @click="dialogVisible = true">
         Edit Template
       </PrimaryButton>
+      <SecondaryButton
+        v-if="template"
+        :disabled="!template.enabled || isRunning"
+        data-testid="run-now"
+        @click="runNow"
+      >
+        {{ isRunning ? 'Queuing...' : 'Run now' }}
+      </SecondaryButton>
+      <span
+        v-if="template && !template.enabled"
+        class="self-center text-sm text-gray-500 dark:text-slate-400"
+      >
+        Enable the template to run it.
+      </span>
     </div>
 
     <PageCard>
@@ -39,6 +53,11 @@
         </div>
       </dl>
     </PageCard>
+
+    <template v-if="template">
+      <SspTemplatePreviewPanel :key="template.updatedAt" :template="template" />
+      <SspTemplateInstancesTable :template-id="templateId" />
+    </template>
   </div>
 
   <SspTemplateFormDialog
@@ -51,18 +70,24 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
+import { useToast } from 'primevue/usetoast';
 import { useDataApi } from '@/composables/axios';
 import { serializeFilter } from '@/parsers/labelfilter';
+import { getErrorDetail } from '@/utils/httpErrors';
 import { getIdFromRoute } from '@/utils/get-id-from-route';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
+import SecondaryButton from '@/volt/SecondaryButton.vue';
 import PageCard from '@/components/PageCard.vue';
 import PageHeader from '@/components/PageHeader.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
 import RouterLinkButton from '@/components/RouterLinkButton.vue';
 import SspTemplateFormDialog from '@/components/ssp-templates/SspTemplateFormDialog.vue';
+import SspTemplateInstancesTable from '@/components/ssp-templates/SspTemplateInstancesTable.vue';
+import SspTemplatePreviewPanel from '@/components/ssp-templates/SspTemplatePreviewPanel.vue';
 import { formatSspTemplateDate, type SspTemplate } from '@/types/ssp-templates';
 
 const route = useRoute();
+const toast = useToast();
 const templateId = computed(() => getIdFromRoute(route));
 const dialogVisible = ref(false);
 
@@ -72,6 +97,33 @@ const {
   error,
   execute,
 } = useDataApi<SspTemplate>(null, {}, { immediate: false });
+
+const { execute: executeRun, isLoading: isRunning } = useDataApi<unknown>(
+  null,
+  { method: 'POST' },
+  { immediate: false },
+);
+
+// Discovery runs in the background (202); the created SSPs table shows its result once
+// refreshed.
+async function runNow() {
+  try {
+    await executeRun(`/api/admin/ssp-templates/${templateId.value}/run`);
+    toast.add({
+      severity: 'success',
+      summary: 'Discovery queued',
+      detail: 'Refresh the created SSPs in a moment to see the result.',
+      life: 4000,
+    });
+  } catch (err) {
+    toast.add({
+      severity: 'error',
+      summary: 'Run failed',
+      detail: await getErrorDetail(err, 'Failed to queue a discovery run.'),
+      life: 4000,
+    });
+  }
+}
 
 function loadTemplate() {
   return execute(`/api/admin/ssp-templates/${templateId.value}`);

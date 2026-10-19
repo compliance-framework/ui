@@ -213,3 +213,92 @@ export function formatSspTemplateDate(rawDate?: string | null): string {
   const parsed = new Date(rawDate);
   return Number.isNaN(parsed.getTime()) ? '-' : parsed.toLocaleString();
 }
+
+// --- Preview, run and created SSPs (detail page) ---------------------------------------
+
+// Label key -> value for one SSP group. Keys are user-defined labels (`_app`,
+// `aws_account`), so every response carrying them needs a camelcase stop path.
+export type SspTemplateKeyValues = Record<string, string>;
+
+export interface SspTemplateLabel {
+  key: string;
+  value: string;
+}
+
+export interface SspTemplatePreviewSsp {
+  keyValues: SspTemplateKeyValues;
+  title: string;
+  exists: boolean;
+  streams: number;
+  learn: SspTemplateLabel[][];
+  skippedByException?: SspTemplateLabel[][] | null;
+}
+
+export interface SspTemplatePreviewBelowThreshold {
+  keyValues: SspTemplateKeyValues;
+  streams: number;
+}
+
+export interface SspTemplatePreviewInvalid {
+  keyValues: SspTemplateKeyValues;
+  reason: string;
+}
+
+export interface SspTemplatePreview {
+  ssps: SspTemplatePreviewSsp[];
+  belowThreshold?: SspTemplatePreviewBelowThreshold[] | null;
+  missingKeys: number;
+  invalid?: SspTemplatePreviewInvalid[] | null;
+}
+
+export interface SspTemplateInstance {
+  keyValues: SspTemplateKeyValues;
+  // Needed by the forget route; not in the design's list contract yet.
+  keyHash?: string;
+  // null once the SSP was deleted.
+  sspId: string | null;
+  title: string;
+  createdAt: string;
+  lastSeenAt: string;
+  stale: boolean;
+  lastError: string | null;
+  skippedEntries: number;
+}
+
+// The camelcase interceptor matches stop paths against the response's original
+// (kebab-case) keys, envelope included; the `key-values` key itself is still camelCased.
+export const SSP_TEMPLATE_PREVIEW_STOP_PATHS = [
+  'data.ssps.key-values',
+  'data.below-threshold.key-values',
+  'data.invalid.key-values',
+] as const;
+export const SSP_TEMPLATE_INSTANCES_STOP_PATHS = ['data.key-values'] as const;
+
+// The saved template as a preview (or create/update) body: its settings without the
+// server-owned fields.
+export function toSspTemplateRequest(
+  template: SspTemplate,
+): UpsertSspTemplateRequest {
+  return {
+    name: template.name,
+    enabled: template.enabled,
+    keys: template.keys,
+    filter: template.filter ?? null,
+    scopeLabels: template.scopeLabels ?? [],
+    minStreams: template.minStreams,
+    titleTemplate: template.titleTemplate,
+    descriptionTemplate: template.descriptionTemplate ?? undefined,
+    props: template.props ?? [],
+    profileIds: template.profileIds ?? [],
+  };
+}
+
+export function formatKeyValues(keyValues: SspTemplateKeyValues): string {
+  return Object.entries(keyValues)
+    .map(([key, value]) => `${key}=${value}`)
+    .join(', ');
+}
+
+export function formatLabels(labels: SspTemplateLabel[]): string {
+  return labels.map(({ key, value }) => `${key}=${value}`).join(' AND ');
+}
