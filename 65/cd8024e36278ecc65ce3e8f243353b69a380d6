@@ -4,3 +4,10 @@ lisa-design:
 - Preview runs on demand (a Preview button), not on page load, since it scans the latest evidence of every stream. The panel is keyed on the template's updatedAt so an edit clears a stale preview.
 - The preview body is the saved template mapped by toSspTemplateRequest (settings only, no id/timestamps/list extras).
 - Run now does not reload the created SSPs (the run is queued, 202); the table has a Refresh button.
+
+lisa-selfreview:
+pass 1:
+- [must-fix] correctness/instances-ignore-template-change SspTemplateInstancesTable: loaded once at setup, not when templateId changes -> fixed (watch, immediate).
+- [should-fix] correctness/preview-key-per-template SspTemplateDetailView: preview panel keyed only on updatedAt -> keyed on id+updatedAt.
+- [nit] style/unused-expose SspTemplateInstancesTable: defineExpose({load}) unused -> removed.
+- [question] contract/forget-needs-key-hash: instance list contract has no key hash for DELETE .../ssps/{keyHash} -> PR open question.
