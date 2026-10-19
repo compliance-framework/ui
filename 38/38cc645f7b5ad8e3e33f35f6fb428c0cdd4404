@@ -1,2 +1,5 @@
 lisa-addressed:
 - self-review pass 1: SspTemplateFormDialog loads /api/oscal/profiles on first open (and again if no data), not on host mount.
+
+lisa-selfreview:
+pass 2: approve, no new findings.
