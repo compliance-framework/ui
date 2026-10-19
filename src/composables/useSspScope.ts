@@ -33,16 +33,22 @@ export function useSspScope(sspId: Ref<string | undefined>) {
   }
 
   async function load(): Promise<SspScope | undefined> {
-    if (!sspId.value) {
+    const id = sspId.value;
+    if (!id) {
       scope.value = undefined;
       return undefined;
     }
     loading.value = true;
     try {
       const response = await api.get<DataResponse<SspScope>>(
-        sspScopeEndpoint(sspId.value),
+        sspScopeEndpoint(id),
       );
-      scope.value = response.data.data;
+      // The SSP can change while the request is in flight (the editor reuses its tab
+      // views across SSPs); a late answer for the previous SSP must not replace the
+      // current one.
+      if (sspId.value === id) {
+        scope.value = response.data.data;
+      }
       return scope.value;
     } finally {
       loading.value = false;

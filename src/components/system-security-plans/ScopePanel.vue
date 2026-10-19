@@ -40,7 +40,7 @@
         Entries
       </h3>
       <p
-        v-if="!loading && entries.length === 0"
+        v-if="scope && entries.length === 0"
         class="mt-2 text-sm text-gray-600 dark:text-slate-400"
         data-testid="scope-empty"
       >
@@ -67,7 +67,11 @@
             <td class="py-2 pr-4">
               <span class="flex flex-wrap items-center gap-1">
                 <template v-for="(label, i) in entry.labels" :key="label.key">
-                  <span v-if="i > 0" class="text-xs text-gray-500">AND</span>
+                  <span
+                    v-if="i > 0"
+                    class="text-xs text-gray-500 dark:text-slate-400"
+                    >AND</span
+                  >
                   <Chip :label="`${label.key}=${label.value}`" />
                 </template>
               </span>
@@ -168,7 +172,11 @@
                   v-for="(label, i) in exception.labels"
                   :key="label.key"
                 >
-                  <span v-if="i > 0" class="text-xs text-gray-500">AND</span>
+                  <span
+                    v-if="i > 0"
+                    class="text-xs text-gray-500 dark:text-slate-400"
+                    >AND</span
+                  >
                   <Chip :label="`${label.key}=${label.value}`" />
                 </template>
               </span>
@@ -226,15 +234,8 @@ const confirm = useConfirm();
 const toast = useToast();
 const api = useAuthenticatedInstance();
 
-const {
-  scope,
-  loading,
-  load,
-  addEntry,
-  addException,
-  deleteException,
-  setAutoFilters,
-} = useSspScope(toRef(props, 'sspId'));
+const { scope, load, addEntry, addException, deleteException, setAutoFilters } =
+  useSspScope(toRef(props, 'sspId'));
 
 const canUpdate = computed(() => can(RESOURCES.SSP, ACTIONS.UPDATE));
 const entries = computed(() => scope.value?.entries ?? []);

@@ -139,6 +139,21 @@ describe('ScopePanel', () => {
     expect(wrapper.find('[data-testid="scope-empty"]').exists()).toBe(true);
   });
 
+  it('reports a failed load instead of claiming the scope is empty', async () => {
+    state.get.mockImplementation((url: string) =>
+      url.endsWith('/label-keys')
+        ? Promise.resolve({ data: { data: [] } })
+        : Promise.reject(new Error('boom')),
+    );
+    const wrapper = mountPanel();
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="scope-empty"]').exists()).toBe(false);
+    expect(state.toastAdd).toHaveBeenCalledWith(
+      expect.objectContaining({ summary: 'Failed to load scope' }),
+    );
+  });
+
   it('adds an entry from the builder rows, skipping incomplete rows', async () => {
     const wrapper = mountPanel();
     await flushPromises();

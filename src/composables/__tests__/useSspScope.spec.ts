@@ -62,6 +62,24 @@ describe('useSspScope', () => {
     expect(loaded.value).toBeUndefined();
   });
 
+  it('ignores a late answer for an SSP that is no longer selected', async () => {
+    let answer: (value: unknown) => void = () => undefined;
+    api.get.mockReturnValueOnce(
+      new Promise((resolve) => {
+        answer = resolve;
+      }),
+    );
+    const sspId = ref('ssp-1');
+    const { scope: loaded, load } = useSspScope(sspId);
+
+    const pending = load();
+    sspId.value = 'ssp-2';
+    answer({ data: { data: scope } });
+    await pending;
+
+    expect(loaded.value).toBeUndefined();
+  });
+
   it('posts a new entry kebab-cased and reloads the scope', async () => {
     const { addEntry } = useSspScope(ref('ssp-1'));
     const labels = [{ key: 'repo', value: 'b' }];
