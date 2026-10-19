@@ -3,3 +3,8 @@ lisa-design:
 - TemplatePreview is reused unchanged: its sample labels are named `.<key>` so its `{{ name }}` substitution matches Go-template placeholders `{{ ._app }}`. `{{ index . "aws:account" }}` is not previewed. Purpose/Remarks show "-".
 - Key and scope-label chips use the Volt AutoComplete with `multiple :typeahead="false"` (Enter adds a chip); no new chips component.
 - The dialog saves through the API itself and emits `saved`; hosts (list, detail) just reload.
+
+lisa-selfreview:
+pass 1:
+- [should-fix] performance/eager-profile-fetch SspTemplateFormDialog: profiles fetched on every list/detail page load even if the dialog never opens -> fixed (load on open, retry when no data).
+- [nit, deferred] AutoComplete chips: text typed but not confirmed with Enter is not added; the form then says a key is required. Hint text explains Enter.
