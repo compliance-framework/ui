@@ -532,6 +532,8 @@ const navigationQuery = computed<Record<string, string | undefined>>(() => {
       sortDirection.value === 'desc' ? undefined : sortDirection.value,
     page: currentPage.value > 1 ? String(currentPage.value) : undefined,
     subject: getRouteSubjectUuid(route.query.subject),
+    // Lets the evidence detail page send "back" to This System > Evidence.
+    from: props.sspId ? 'system' : undefined,
   };
 });
 

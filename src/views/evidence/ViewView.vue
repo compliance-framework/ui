@@ -1015,10 +1015,15 @@ interface EvidenceRisk {
 const route = useRoute();
 const router = useRouter();
 const evidenceId = computed(() => route.params.id as string);
-const backToEvidenceRoute = computed(() => ({
-  name: 'evidence:index',
-  query: route.query,
-}));
+// `from=system` marks a visit from This System > Evidence, so "back" returns there
+// instead of to the global Evidence page.
+const backToEvidenceRoute = computed(() => {
+  const { from, ...query } = route.query;
+  return {
+    name: from === 'system' ? 'system:evidence' : 'evidence:index',
+    query,
+  };
+});
 
 const tabs = [
   { id: 'overview', label: 'Overview' },

@@ -661,6 +661,17 @@ describe('Evidence ViewView', () => {
     expect(backLink.text()).toBe('<');
   });
 
+  it('sends back to This System > Evidence when opened from there', async () => {
+    refs.route.query = { filter: 'recent', from: 'system' };
+    const wrapper = mountView();
+    await flushPromises();
+
+    const backLink = wrapper.find('[aria-label="Back to Evidence"]');
+    expect(backLink.attributes('data-to')).toContain('system:evidence');
+    expect(backLink.attributes('data-to')).toContain('"filter":"recent"');
+    expect(backLink.attributes('data-to')).not.toContain('from');
+  });
+
   it('shows the policy evaluation on the overview for evidence with stored policy artifacts', async () => {
     const withArtifacts = structuredClone(baseEvidence);
     withArtifacts.props = [

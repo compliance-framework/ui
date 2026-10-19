@@ -550,6 +550,9 @@ describe('Evidence IndexView', () => {
       expect.any(Object),
     );
     expect(statusOverTimeUrls).toEqual([`${base}/evidence/status-over-time`]);
+    expect(
+      JSON.parse(wrapper.find('[data-testid="navigation-query"]').text()),
+    ).toMatchObject({ from: 'system' });
 
     const save = wrapper
       .findAll('button')
