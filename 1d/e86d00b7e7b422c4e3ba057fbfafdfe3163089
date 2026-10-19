@@ -1,0 +1,3 @@
+lisa-addressed:
+self-review pass 1:
+- detail-back-link-leaves-scoped-page: IndexView adds from=system to navigationQuery when sspId is set; ViewView back link goes to system:evidence for from=system and drops `from` from the query (+ tests)
