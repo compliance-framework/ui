@@ -276,9 +276,13 @@ const toast = useToast();
 const form = ref<SspTemplateFormData>(createEmptySspTemplateForm());
 const isEdit = computed(() => Boolean(props.template?.id));
 
-const { data: profiles, isLoading: loadingProfiles } = useDataApi<Profile[]>(
-  '/api/oscal/profiles',
-);
+// Loaded on first open (and again after a failed load), so the list page does not fetch
+// profiles it may never show.
+const {
+  data: profiles,
+  isLoading: loadingProfiles,
+  execute: loadProfiles,
+} = useDataApi<Profile[]>('/api/oscal/profiles', {}, { immediate: false });
 const profileOptions = computed(
   () =>
     profiles.value?.map((profile) => ({
@@ -313,6 +317,9 @@ watch(
   visible,
   (open) => {
     if (open) {
+      if (!profiles.value && !loadingProfiles.value) {
+        loadProfiles();
+      }
       form.value = props.template
         ? createSspTemplateFormFromTemplate(props.template)
         : createEmptySspTemplateForm();

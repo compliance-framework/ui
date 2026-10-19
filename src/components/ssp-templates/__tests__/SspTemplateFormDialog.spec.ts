@@ -6,6 +6,7 @@ import type { SspTemplate } from '@/types/ssp-templates';
 
 const state = vi.hoisted(() => ({
   save: vi.fn(),
+  loadProfiles: vi.fn(),
   saveConfig: undefined as unknown,
   toastAdd: vi.fn(),
   decamelizeKeys: vi.fn(),
@@ -15,9 +16,16 @@ vi.mock('@/composables/axios', () => ({
   decamelizeKeys: state.decamelizeKeys,
   useDataApi: (url: string | null, config: unknown) => {
     if (url === '/api/oscal/profiles') {
+      const profiles = ref<unknown[] | undefined>(undefined);
+      state.loadProfiles.mockImplementation(async () => {
+        profiles.value = [
+          { uuid: 'p-1', metadata: { title: 'NIST Moderate' } },
+        ];
+      });
       return {
-        data: ref([{ uuid: 'p-1', metadata: { title: 'NIST Moderate' } }]),
+        data: profiles,
         isLoading: ref(false),
+        execute: state.loadProfiles,
       };
     }
     state.saveConfig = config;
@@ -126,6 +134,7 @@ describe('SspTemplateFormDialog', () => {
 
   it('edits a saved template with its keys locked', async () => {
     const wrapper = mountDialog(saved);
+    expect(state.loadProfiles).toHaveBeenCalledTimes(1);
     const keys = wrapper.findAllComponents({ name: 'AutoComplete' })[0];
     expect(keys.props('disabled')).toBe(true);
     expect(keys.props('modelValue')).toEqual(['_app']);
@@ -194,5 +203,16 @@ describe('SspTemplateFormDialog', () => {
     expect(
       wrapper.findAll('[data-testid="ssp-template-scope-group"]'),
     ).toHaveLength(0);
+  });
+
+  it('does not load profiles until the dialog opens', async () => {
+    const wrapper = mount(SspTemplateFormDialog, {
+      props: { visible: false, template: null },
+      global: { stubs: { Dialog: true } },
+    });
+    expect(state.loadProfiles).not.toHaveBeenCalled();
+
+    await wrapper.setProps({ visible: true });
+    expect(state.loadProfiles).toHaveBeenCalledTimes(1);
   });
 });
