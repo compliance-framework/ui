@@ -1,0 +1,7 @@
+lisa-design:
+- UA1: scope API calls go through useAuthenticatedInstance in useSspScope (plain async functions, re-read the scope after every write because one write can change both lists); bodies use transformRequest: [decamelizeKeys] since the scope routes are kebab-case.
+- UA1: no delete-entry action anywhere; "Remove from scope" posts an exception with the entry's labels (design rule).
+- UA1: LabelConditionBuilder gets an optional ignoreScope prop (default false) that adds ignoreScope=true to label-values; ScopePanel also calls label-keys with ignoreScope=true. Other callers are unchanged.
+- UA1: origin badge shows "Template" without the template name: the template API (feature 2) does not exist yet, so there is no name to show.
+- UA1: Scope tab placed right after Components in SSP_SECTION_TABS, visible in both trees (not editorOnly).
+- UA1: API errors (incl. the 409 refusing to empty a followed scope) are shown as an error toast with the API's message via getErrorDetail.
