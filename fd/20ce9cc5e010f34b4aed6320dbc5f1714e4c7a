@@ -1,0 +1,2 @@
+lisa-addressed:
+review #361 PRRT_kwDONe0Wms6t7cqS: ScopePanel.loadLabelKeys types label-keys as DashboardSuggestionLabelKey[] and maps to entry.key; spec mock uses the real {key, values} shape (fails on the old code)
