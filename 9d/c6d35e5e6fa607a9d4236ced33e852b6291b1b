@@ -3,3 +3,7 @@ lisa-design:
 - UA3: an empty scope keeps all evidence in filter forms (design: SSP without a scope keeps today's behaviour). A 404 on GET …/scope (API without scopes) also keeps today's behaviour; any other scope error fails the load (toast) instead of silently widening to all evidence.
 - UA3: useEvidenceDashboardForm takes the SSP as a getter; ControlStatementImplementation passes () => resolvedSspId.value because resolvedSspId is declared after the composable call and is only read on load.
 - UA3: SuggestionScopeDialog / LabelConditionBuilder unchanged (the API restricts label-keys/values/sets); no badge or hint.
+
+lisa-selfreview:
+pass 1 (strict): request_changes
+- [must-fix] CORE-TEST-001 views/system/partials/ComponentDashboardsView.vue loadAvailableEvidence: the components drawer's switch to the SSP's baseline evidence has no test -> fix
