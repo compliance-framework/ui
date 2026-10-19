@@ -1,0 +1,7 @@
+lisa-design:
+- Split UB1 in two PRs to stay under 1000 changed lines: this PR (list, delete, read-only detail, routes, nav, types + payload builders) and feat/ssp-templates-1b-admin-form (create/edit dialog). Detail page panels (preview, run, created SSPs) remain UB2.
+- The list shows "Created SSPs" and "Last run" from optional `ssp-count`/`last-run-at` template fields, which the design's API contract does not define; they render "-" when absent. Do not compute them with one GET .../ssps per row (N+1).
+- `/admin/ssp-templates/:id` is registered here (as the design asks), so this PR ships a read-only detail view; UB2 adds its panels.
+- Payload builders mirror the API's 400 rules (1..5 keys, <=10 scope-label groups of <=5, min-streams >= 1 integer, title required, filter parses) so the form reports them before saving; the API stays authoritative. Keys are trimmed and de-duplicated, not lower-cased (the API lower-cases).
+- An empty filter is sent as `filter: null` (not omitted) so a PUT clears a saved filter.
+- Types spec is co-located (src/types/ssp-templates.spec.ts) like subject-templates.spec.ts.
