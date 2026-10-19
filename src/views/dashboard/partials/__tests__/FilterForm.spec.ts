@@ -128,4 +128,30 @@ describe('FilterForm (edit prefill)', () => {
     };
     expect(payload.components).toEqual(['comp-1']);
   });
+
+  it('pre-selects the SSP given on create', async () => {
+    const wrapper = mount(FilterForm, {
+      props: { initialFilter: 'team=payments', initialSspId: 'ssp-9' },
+      global: {
+        directives: { tooltip: { mounted: () => undefined } },
+        stubs: {
+          FormInput: {
+            props: ['modelValue'],
+            template: '<input :value="modelValue" />',
+          },
+          Select: { props: ['modelValue'], template: '<div />' },
+          MultiSelect: { props: ['modelValue'], template: '<div />' },
+          PrimaryButton: {
+            template: '<button type="submit"><slot /></button>',
+          },
+        },
+      },
+    });
+
+    await wrapper.find('form').trigger('submit');
+    const payload = wrapper.emitted('submit')?.[0]?.[0] as {
+      sspId: string | null;
+    };
+    expect(payload.sspId).toBe('ssp-9');
+  });
 });
