@@ -5,3 +5,9 @@ lisa-design:
 - UA1: origin badge shows "Template" without the template name: the template API (feature 2) does not exist yet, so there is no name to show.
 - UA1: Scope tab placed right after Components in SSP_SECTION_TABS, visible in both trees (not editorOnly).
 - UA1: API errors (incl. the 409 refusing to empty a followed scope) are shown as an error toast with the API's message via getErrorDetail.
+
+lisa-selfreview:
+pass 1 (strict): request_changes
+- [must-fix] 412cd1a6e8cf useSspScope.load: stale response for a previous SSP can overwrite the current scope -> fix
+- [must-fix] 5999548ad966 CORE-ERR-001 ScopePanel: failed load shows "No entries yet" -> fix
+- [should-fix] baa04e6e68cd UI-COMP-001 ScopePanel: AND separator lacks dark: variant -> fix
