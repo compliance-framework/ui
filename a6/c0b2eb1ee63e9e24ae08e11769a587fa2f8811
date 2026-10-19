@@ -7,3 +7,8 @@ lisa-design:
 - UA4: sspHasScopeEntries moved into useSspScope.ts and shared by useBaselineEvidence and FilterForm; useBaselineEvidence exposes `scoped` so useEvidenceDashboardForm knows whether the new filter can follow the scope without a second GET.
 - UA4: badges live in one component, components/filters/FilterOriginBadges.vue ("Follows scope" when scopeBase is set, "Automatic" when origin is scope-policy), used by dashboard/IndexView and DashboardLinkForm's option template.
 - UA4: ComponentDashboardsView's own create form is not given the follow option (design lists only EvidenceDashboardForm and FilterForm).
+
+lisa-selfreview:
+pass 1 (strict): request_changes
+- [must-fix] X:correctness/effective-filter-shown-for-other-ssp FilterForm template: moving a following filter to another scoped SSP keeps showing "Effective filter, with the scope" for the old SSP's scope -> fix (show it only while the SSP is unchanged)
+- [should-fix, deferred] X:error-handling/scope-read-error-hides-follow FilterForm: a failed GET …/scope only logs and hides the follow option; the filter is then saved as non-following. Kept: filter creation stays correct and an existing following filter keeps its option via scopeBase.
