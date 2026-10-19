@@ -1,2 +1,5 @@
 lisa-addressed:
 - self-review pass 1: instances table watches templateId (immediate); preview panel keyed on id+updatedAt; dropped unused defineExpose.
+
+lisa-selfreview:
+pass 2: approve, no new findings.
