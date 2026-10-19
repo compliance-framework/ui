@@ -1,0 +1,5 @@
+lisa-design:
+- UA3: one helper, useBaselineEvidence(sspId getter/ref), decides scoped vs global baseline evidence and is shared by useEvidenceDashboardForm and ComponentDashboardsView (which had its own copy of the fetch). It reads the scope (GET …/scope) on each load: entries > 0 -> POST …/{id}/evidence/search?limit=100, otherwise today's POST /api/evidence/search (no limit, unchanged).
+- UA3: an empty scope keeps all evidence in filter forms (design: SSP without a scope keeps today's behaviour). A 404 on GET …/scope (API without scopes) also keeps today's behaviour; any other scope error fails the load (toast) instead of silently widening to all evidence.
+- UA3: useEvidenceDashboardForm takes the SSP as a getter; ControlStatementImplementation passes () => resolvedSspId.value because resolvedSspId is declared after the composable call and is only read on load.
+- UA3: SuggestionScopeDialog / LabelConditionBuilder unchanged (the API restricts label-keys/values/sets); no badge or hint.
