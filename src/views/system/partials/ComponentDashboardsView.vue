@@ -11,6 +11,7 @@ import PrimaryButton from '@/volt/PrimaryButton.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
 import BurgerMenu from '@/components/BurgerMenu.vue';
 import { useToggle } from '@/composables/useToggle';
+import { useBaselineEvidence } from '@/composables/useBaselineEvidence';
 import { useDataApi, decamelizeKeys } from '@/composables/axios';
 import { useToast } from 'primevue/usetoast';
 import Button from '@/volt/Button.vue';
@@ -68,13 +69,7 @@ const { execute: createEvidenceDashboard } = useDataApi<Dashboard>(
   { immediate: false },
 );
 
-const { execute: fetchEvidenceForLabels } = useDataApi<Evidence[]>(
-  '/api/evidence/search',
-  {
-    method: 'POST',
-  },
-  { immediate: false },
-);
+const { fetchBaselineEvidence } = useBaselineEvidence(() => sspId);
 
 const { execute: fetchDashboardsByComponent } = useDataApi<
   DashboardWithComponents[]
@@ -116,11 +111,8 @@ async function loadAvailableEvidence(forceReload = false) {
   if (!forceReload && availableEvidence.value.length > 0) return; // Already loaded
   evidenceLoading.value = true;
   try {
-    const res = await fetchEvidenceForLabels({
-      data: { filter: {} },
-    });
-    const evidenceList = res.data.value?.data || res.data.value || [];
-    availableEvidence.value = (evidenceList as Evidence[])
+    const evidenceList = await fetchBaselineEvidence();
+    availableEvidence.value = evidenceList
       .filter((ev) => ev.labels && ev.labels.length > 0)
       .map((ev) => ({
         ...ev,

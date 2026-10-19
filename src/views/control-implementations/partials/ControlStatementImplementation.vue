@@ -72,7 +72,8 @@ const showCreateComponentModal = ref(false);
 const { value: showEvidenceLinkingForm, set: setEvidenceLinkingForm } =
   useToggle(false);
 // The "New Evidence Dashboard" label-condition builder — shared with the inherited
-// responsibilities drawer via one composable instead of two copies of the logic.
+// responsibilities drawer via one composable instead of two copies of the logic. The SSP
+// is passed as a getter: resolvedSspId is declared further down and only read on load.
 const {
   name: evidenceDashboardName,
   selectedBaselineEvidence,
@@ -88,7 +89,7 @@ const {
   addLabelCondition,
   removeLabelCondition,
   reset: resetEvidenceDashboardForm,
-} = useEvidenceDashboardForm();
+} = useEvidenceDashboardForm(() => resolvedSspId.value);
 
 // Existing dashboards for this control
 type DashboardWithControls = Dashboard;
