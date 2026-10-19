@@ -1,0 +1,2 @@
+lisa-addressed:
+review #364 PRRT_kwDONe0Wms6t7jy8 (CORE-ERR-001): FilterForm tracks the scope read (done/loading/failed); failed shows an error Message with Retry and, like loading, blocks submit (button disabled + guard in submit()); spec rejects the scope GET with 500, asserts the error and no submit, then retries and submits with followSspScope: true
