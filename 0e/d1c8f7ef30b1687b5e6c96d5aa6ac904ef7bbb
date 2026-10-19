@@ -1,0 +1,7 @@
+lisa-design:
+- UA2 (deviation): instead of moving the body of views/evidence/IndexView.vue into a new component, IndexView.vue itself takes optional props (searchEndpoint, statusOverTimeEndpoint, sspId) defaulting to today's global endpoints. Moving ~970 lines to a new file counts as ~1950 changed lines (GitHub does not pair a shrunk file with a new one as a rename), which would break the 1000-line limit with no way to split it. Both pages still share one body.
+- UA2: system:evidence is a top-level route at /system/evidence (not a Configure System child, so it gets no tab bar), meta requiresAuth + activeSystemScoped. In LeftSideNav it precedes Configure System, so path-prefix matching picks Evidence for /system/evidence.
+- UA2: the This System > Evidence nav item is gated on ssp:read (the scoped routes' guard); Global > Evidence keeps evidence:read.
+- UA2: EvidenceView reads the scope once (the layout remounts activeSystemScoped pages on system switch); empty scope -> empty state with a link to system:scope, never an empty evidence list.
+- UA2: "Save as filter" passes ?sspId= to dashboards.create; FilterForm gains initialSspId (create only, editing keeps dashboard.sspId); CreateFormView returns to system:evidence when it came with sspId, else evidence:index.
+- UA2: the Agent health chart stays global on the scoped page (agents are not scoped).
