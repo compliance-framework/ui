@@ -102,6 +102,7 @@
 </template>
 
 <script setup lang="ts">
+import { watch } from 'vue';
 import { RouterLink } from 'vue-router';
 import { useConfirm } from 'primevue/useconfirm';
 import { useToast } from 'primevue/usetoast';
@@ -176,6 +177,5 @@ async function forget(instance: SspTemplateInstance) {
   }
 }
 
-defineExpose({ load });
-load();
+watch(() => props.templateId, load, { immediate: true });
 </script>

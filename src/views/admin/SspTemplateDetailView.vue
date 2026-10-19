@@ -55,7 +55,10 @@
     </PageCard>
 
     <template v-if="template">
-      <SspTemplatePreviewPanel :key="template.updatedAt" :template="template" />
+      <SspTemplatePreviewPanel
+        :key="`${template.id}-${template.updatedAt}`"
+        :template="template"
+      />
       <SspTemplateInstancesTable :template-id="templateId" />
     </template>
   </div>

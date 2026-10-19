@@ -147,4 +147,14 @@ describe('SspTemplateInstancesTable', () => {
       }),
     );
   });
+
+  it('reloads when the template changes', async () => {
+    const wrapper = mountTable();
+    await flushPromises();
+    await wrapper.setProps({ templateId: 't-2' });
+
+    expect(state.load).toHaveBeenLastCalledWith(
+      '/api/admin/ssp-templates/t-2/ssps',
+    );
+  });
 });
