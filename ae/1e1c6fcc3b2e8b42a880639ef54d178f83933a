@@ -1,2 +1,5 @@
 lisa-addressed:
 self-review pass 1: CORE-TEST-001 ComponentDashboardsView -> new spec asserts the drawer passes its sspId to useBaselineEvidence and loads it when a filter is created
+
+lisa-selfreview:
+pass 2 (strict): approve, no findings. make reviewable + npm run build green.
