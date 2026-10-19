@@ -6,6 +6,10 @@
   </PageSubHeader>
 
   <div class="mt-6 space-y-4">
+    <div class="flex justify-end">
+      <PrimaryButton @click="openDialog(null)">Create Template</PrimaryButton>
+    </div>
+
     <div
       class="rounded-md bg-white dark:bg-slate-900 border border-ccf-300 dark:border-slate-700 overflow-x-auto"
     >
@@ -66,6 +70,9 @@
                 >
                   View
                 </RouterLinkButton>
+                <TertiaryButton @click="openDialog(template)">
+                  Edit
+                </TertiaryButton>
                 <TertiaryButton @click="confirmDelete(template)">
                   Delete
                 </TertiaryButton>
@@ -76,22 +83,34 @@
       </table>
     </div>
   </div>
+
+  <SspTemplateFormDialog
+    v-model:visible="dialogVisible"
+    :template="editedTemplate"
+    @saved="loadTemplates()"
+  />
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue';
 import { useConfirm } from 'primevue/useconfirm';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi } from '@/composables/axios';
 import { getErrorDetail } from '@/utils/httpErrors';
 import Chip from '@/volt/Chip.vue';
+import PrimaryButton from '@/volt/PrimaryButton.vue';
 import TertiaryButton from '@/volt/TertiaryButton.vue';
 import PageHeader from '@/components/PageHeader.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
 import RouterLinkButton from '@/components/RouterLinkButton.vue';
+import SspTemplateFormDialog from '@/components/ssp-templates/SspTemplateFormDialog.vue';
 import { formatSspTemplateDate, type SspTemplate } from '@/types/ssp-templates';
 
 const toast = useToast();
 const confirm = useConfirm();
+
+const dialogVisible = ref(false);
+const editedTemplate = ref<SspTemplate | null>(null);
 
 const {
   data: templates,
@@ -105,6 +124,11 @@ const { execute: executeDelete } = useDataApi<void>(
   { method: 'DELETE' },
   { immediate: false },
 );
+
+function openDialog(template: SspTemplate | null) {
+  editedTemplate.value = template;
+  dialogVisible.value = true;
+}
 
 function confirmDelete(template: SspTemplate) {
   confirm.require({

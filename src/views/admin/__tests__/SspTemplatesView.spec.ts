@@ -50,6 +50,12 @@ function mountView() {
           props: ['to'],
           template: '<a data-testid="view-link"><slot /></a>',
         },
+        SspTemplateFormDialog: {
+          name: 'SspTemplateFormDialog',
+          props: ['visible', 'template'],
+          emits: ['update:visible', 'saved'],
+          template: '<div />',
+        },
       },
     },
   });
@@ -78,6 +84,24 @@ describe('SspTemplatesView', () => {
     expect(rows[1].findAll('td')[3].text()).toBe('-');
     expect(rows[1].findAll('td')[4].text()).toBe('-');
   });
+  it('opens the form empty for create and with the template for edit', async () => {
+    const wrapper = mountView();
+    const dialog = () =>
+      wrapper.findComponent({ name: 'SspTemplateFormDialog' });
+    const button = (text: string) =>
+      wrapper.findAll('button').find((b) => b.text() === text)!;
+
+    await button('Create Template').trigger('click');
+    expect(dialog().props('visible')).toBe(true);
+    expect(dialog().props('template')).toBeNull();
+
+    await button('Edit').trigger('click');
+    expect(dialog().props('template')).toEqual(template);
+
+    dialog().vm.$emit('saved');
+    expect(state.load).toHaveBeenCalled();
+  });
+
   it('deletes a template after confirmation and reloads the list', async () => {
     const wrapper = mountView();
     const deleteButton = wrapper
