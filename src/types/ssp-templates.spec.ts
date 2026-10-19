@@ -118,6 +118,8 @@ describe('ssp-templates types', () => {
       descriptionTemplate: null,
       props: null,
       profileIds: ['p-1'],
+      createdAt: '2026-10-19T10:00:00Z',
+      updatedAt: '2026-10-19T10:00:00Z',
     });
 
     expect(form).toEqual({

@@ -71,14 +71,14 @@ const fields = computed(() => {
     return [];
   }
   return [
-    { label: 'Keys', value: (t.keys ?? []).join(', ') },
+    { label: 'Keys', value: t.keys.join(', ') },
     { label: 'Enabled', value: t.enabled ? 'Yes' : 'No' },
     { label: 'Evidence filter', value: serializeFilter(t.filter) },
     {
       label: 'Scope label groups',
       value: (t.scopeLabels ?? []).map((group) => group.join(' + ')).join('\n'),
     },
-    { label: 'Minimum streams', value: String(t.minStreams ?? 1) },
+    { label: 'Minimum streams', value: String(t.minStreams) },
     { label: 'Profiles', value: String(t.profileIds?.length ?? 0) },
     { label: 'Title template', value: t.titleTemplate },
     { label: 'Description template', value: t.descriptionTemplate },
@@ -88,7 +88,7 @@ const fields = computed(() => {
     },
     {
       label: 'Last updated',
-      value: formatSspTemplateDate(t.updatedAt ?? t.createdAt),
+      value: formatSspTemplateDate(t.updatedAt),
     },
   ];
 });

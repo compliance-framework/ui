@@ -71,7 +71,8 @@ describe('SspTemplatesView', () => {
     expect(rows[0].text()).toContain('_app');
     expect(rows[0].text()).toContain('env');
     expect(rows[0].text()).toContain('Yes');
-    expect(rows[0].text()).toContain('4');
+    expect(rows[0].findAll('td')[3].text()).toBe('4');
+    expect(rows[0].findAll('td')[4].text()).not.toBe('-');
     // Counts and run times the API does not return yet show as a dash.
     expect(rows[1].text()).toContain('No');
     expect(rows[1].findAll('td')[3].text()).toBe('-');

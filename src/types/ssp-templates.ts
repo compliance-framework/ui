@@ -22,19 +22,19 @@ export interface SspTemplateProp {
 }
 
 export interface SspTemplate {
-  id?: string;
-  name?: string;
-  enabled?: boolean;
-  keys?: string[];
+  id: string;
+  name: string;
+  enabled: boolean;
+  keys: string[];
   filter?: Filter | null;
   scopeLabels?: string[][] | null;
-  minStreams?: number;
-  titleTemplate?: string;
+  minStreams: number;
+  titleTemplate: string;
   descriptionTemplate?: string | null;
   props?: SspTemplateProp[] | null;
   profileIds?: string[] | null;
-  createdAt?: string;
-  updatedAt?: string;
+  createdAt: string;
+  updatedAt: string;
   // Not in the design's contract yet: shown in the list when the API returns them.
   sspCount?: number | null;
   lastRunAt?: string | null;
@@ -88,13 +88,13 @@ export function createSspTemplateFormFromTemplate(
   template: SspTemplate,
 ): SspTemplateFormData {
   return {
-    name: template.name ?? '',
-    enabled: template.enabled ?? true,
-    keys: [...(template.keys ?? [])],
+    name: template.name,
+    enabled: template.enabled,
+    keys: [...template.keys],
     filter: serializeFilter(template.filter),
     scopeLabels: (template.scopeLabels ?? []).map((group) => [...group]),
-    minStreams: template.minStreams ?? 1,
-    titleTemplate: template.titleTemplate ?? '',
+    minStreams: template.minStreams,
+    titleTemplate: template.titleTemplate,
     descriptionTemplate: template.descriptionTemplate ?? '',
     props: (template.props ?? []).map((prop) => ({
       name: prop.name ?? '',
