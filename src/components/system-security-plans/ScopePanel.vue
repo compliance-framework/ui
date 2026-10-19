@@ -213,6 +213,7 @@ import PageCard from '@/components/PageCard.vue';
 import LabelConditionBuilder from '@/views/dashboard/partials/LabelConditionBuilder.vue';
 import {
   buildDashboardSuggestionLabelKeysEndpoint,
+  type DashboardSuggestionLabelKey,
   type LabelConditionRow,
 } from '@/views/dashboard/partials/dashboard-suggestions';
 import Badge from '@/volt/Badge.vue';
@@ -259,11 +260,11 @@ function formatDate(value?: string): string {
 async function loadLabelKeys() {
   if (!props.sspId) return;
   try {
-    const response = await api.get<DataResponse<string[]>>(
+    const response = await api.get<DataResponse<DashboardSuggestionLabelKey[]>>(
       buildDashboardSuggestionLabelKeysEndpoint(props.sspId),
       { params: { ignoreScope: true } },
     );
-    labelKeys.value = response.data.data ?? [];
+    labelKeys.value = (response.data.data ?? []).map((entry) => entry.key);
   } catch {
     labelKeys.value = [];
   }

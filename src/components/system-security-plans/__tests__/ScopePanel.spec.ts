@@ -71,7 +71,12 @@ function mockGet(currentScope: unknown = scope) {
   state.get.mockImplementation((url: string) =>
     Promise.resolve({
       data: {
-        data: url.endsWith('/label-keys') ? ['repo', 'env'] : currentScope,
+        data: url.endsWith('/label-keys')
+          ? [
+              { key: 'repo', values: ['a', 'b'] },
+              { key: 'env', values: ['prod'] },
+            ]
+          : currentScope,
       },
     }),
   );
