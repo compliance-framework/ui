@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from 'vue-router';
+import { createRouter, createWebHistory, type RouteLocation } from 'vue-router';
 import AppLayout from '@/views/layouts/App.vue';
 import GuestLayout from '@/views/layouts/GuestLayout.vue';
 import { useUserStore } from '@/stores/auth';
@@ -12,6 +12,9 @@ const ADMIN_MANAGE = {
   action: ACTIONS.MANAGE,
 } as const;
 
+// Routes marked `activeSystemScoped` show data for the active system (the nav's This
+// System pages, except Evidence, which is still global). The layout remounts them when the
+// header switcher changes system. Every other page ignores a switch.
 const authenticatedRoutes = [
   {
     path: '/',
@@ -71,6 +74,7 @@ const authenticatedRoutes = [
     component: () => import('../views/control-implementations/IndexView.vue'),
     meta: {
       requiresAuth: true,
+      activeSystemScoped: true,
     },
   },
   {
@@ -123,6 +127,7 @@ const authenticatedRoutes = [
       import('../views/workflow-instances/WorkflowInstancesIndexView.vue'),
     meta: {
       requiresAuth: true,
+      activeSystemScoped: true,
     },
   },
   {
@@ -189,6 +194,12 @@ const authenticatedRoutes = [
         component: () => import('../views/system/CharacteristicsView.vue'),
       },
       {
+        path: 'authorization-boundary',
+        name: 'system:diagrams',
+        component: () =>
+          import('../views/system/AuthorizationBoundaryView.vue'),
+      },
+      {
         path: 'implementation',
         name: 'system:implementation',
         component: () =>
@@ -236,15 +247,21 @@ const authenticatedRoutes = [
         component: () =>
           import('../views/system/InheritedCapabilitiesView.vue'),
       },
+      // Risks and Compliance for the active system are top-level This System pages now
+      // (risks:index, compliance:index). Keep the old names resolving so bookmarks and any
+      // stray links land on the canonical page instead of a blank tab.
       {
         path: 'risks',
         name: 'system:risks',
-        component: () => import('../views/RisksView.vue'),
+        redirect: (to: RouteLocation) => ({
+          name: 'risks:index',
+          query: to.query,
+        }),
       },
       {
         path: 'compliance',
         name: 'system:compliance',
-        component: () => import('../views/system/ComplianceView.vue'),
+        redirect: { name: 'compliance:index' },
       },
       {
         path: 'json',
@@ -254,6 +271,7 @@ const authenticatedRoutes = [
     ],
     meta: {
       requiresAuth: true,
+      activeSystemScoped: true,
     },
   },
   {
@@ -262,6 +280,16 @@ const authenticatedRoutes = [
     component: () => import('../views/RisksView.vue'),
     meta: {
       requiresAuth: true,
+      activeSystemScoped: true,
+    },
+  },
+  {
+    path: 'compliance',
+    name: 'compliance:index',
+    component: () => import('../views/system/ComplianceView.vue'),
+    meta: {
+      requiresAuth: true,
+      activeSystemScoped: true,
     },
   },
   {
@@ -782,6 +810,14 @@ const authenticatedRoutes = [
         component: () =>
           import(
             '../views/system-security-plans/SystemSecurityPlanCharacteristicsView.vue'
+          ),
+      },
+      {
+        path: 'authorization-boundary',
+        name: 'system-security-plan-diagrams',
+        component: () =>
+          import(
+            '../views/system-security-plans/SystemSecurityPlanDiagramsView.vue'
           ),
       },
       {

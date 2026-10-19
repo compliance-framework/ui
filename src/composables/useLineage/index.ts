@@ -1,10 +1,11 @@
-// Data layer for the compliance lineage views. Fetches roots and lazy one-level
-// children from the lineage API, caches per key+scope, and maps API nodes to
-// PrimeVue-shaped tree nodes. When the API PoC branch isn't running it transparently
-// serves the fixture graph (see fixtures.ts) so both views stay demoable — either
-// forced via a flag or as an automatic fallback when a request fails.
+// Data layer for the compliance lineage views. Fetches roots and lazy
+// one-level children from the lineage API, caches per key+scope until refresh()
+// or a scope change, and maps API nodes to PrimeVue-shaped tree nodes. When the
+// API PoC branch isn't running it transparently serves the fixture graph (see
+// fixtures.ts) so both views stay demoable — either forced via a flag or as an
+// automatic fallback when a request fails.
 
-import { ref } from 'vue';
+import { readonly, ref } from 'vue';
 import type { AxiosInstance } from 'axios';
 import { useAuthenticatedInstance } from '@/composables/axios';
 import type { DataResponse } from '@/stores/types';
@@ -21,6 +22,52 @@ const cache = new Map<string, LineageNode[]>();
 // that only hits the cache (e.g. the graph after the tree already populated it)
 // still know it's showing demo data and surface the banner.
 const fixtureCacheKeys = new Set<string>();
+
+// When the data on screen was loaded by the API (its X-Lineage-Generated-At
+// header): the oldest response since the cache was last cleared, so the "updated"
+// label never claims fresher data than some node shows. Null for fixtures or
+// before the first load.
+const generatedAt = ref<Date | null>(null);
+
+// Set by refresh(): the next roots request asks the API to rebuild its shared
+// cached data, and every later request reuses that rebuild.
+let refreshPending = false;
+
+// The API caches one dataset per scope, and the drawer's per-SSP table always reads
+// the unscoped one. A refresh in an SSP- or component-scoped view rebuilds only that
+// scope, so the drawer's next request rebuilds the unscoped one (see
+// takeUnscopedRefresh).
+let unscopedRefreshPending = false;
+
+// Bumped by clearCache(). A request captures it before it is sent; if it has
+// changed by the time the response arrives, the response predates the clear, so
+// it is returned to its caller but kept out of the fresh cache and the data age.
+let generation = 0;
+
+/**
+ * True once after refresh() if the unscoped lineage data has not been rebuilt
+ * since: the caller sends refresh=true with its next unscoped lineage request.
+ */
+export function takeUnscopedRefresh(): boolean {
+  const pending = unscopedRefreshPending;
+  unscopedRefreshPending = false;
+  return pending;
+}
+
+/** Put back a refresh taken by takeUnscopedRefresh() whose request failed. */
+export function restoreUnscopedRefresh() {
+  unscopedRefreshPending = true;
+}
+
+function noteGeneratedAt(headers: unknown) {
+  const raw = (headers as Record<string, unknown> | undefined)?.[
+    'x-lineage-generated-at'
+  ];
+  if (typeof raw !== 'string') return;
+  const at = new Date(raw);
+  if (Number.isNaN(at.getTime())) return;
+  if (!generatedAt.value || at < generatedAt.value) generatedAt.value = at;
+}
 
 function scopeKey(scope: LineageScope): string {
   const types = (scope.types ?? []).slice().sort().join(',');
@@ -88,17 +135,25 @@ export function useLineage() {
       fixtureCacheKeys.add(ck);
       nodes = fixtureRoots(scope);
     } else {
+      const gen = generation;
       try {
+        const params: Record<string, string> = scopeParams(scope);
+        if (refreshPending) params.refresh = 'true';
         const res = await instance.get<DataResponse<LineageNode[]>>(
           '/api/lineage/roots',
-          {
-            params: scopeParams(scope),
-          },
+          { params },
         );
+        if (gen !== generation) return res.data?.data ?? [];
+        if (params.refresh && !scope.sspId && !scope.componentId) {
+          unscopedRefreshPending = false;
+        }
+        refreshPending = false;
+        noteGeneratedAt(res.headers);
         nodes = res.data?.data ?? [];
         // Live fetch succeeded → we're not on demo data anymore.
         usingFixtures.value = false;
       } catch (err) {
+        if (gen !== generation) return fixtureRoots(scope);
         // API unavailable → keep the demo alive with fixtures.
         console.warn('[useLineage] roots fetch failed, using fixtures', err);
         usingFixtures.value = true;
@@ -127,14 +182,18 @@ export function useLineage() {
       fixtureCacheKeys.add(ck);
       nodes = fixtureChildren(key, scope);
     } else {
+      const gen = generation;
       try {
         const res = await instance.get<DataResponse<LineageNode[]>>(
           `/api/lineage/nodes/${encodeURIComponent(key)}/children`,
           { params: scopeParams(scope) },
         );
+        if (gen !== generation) return res.data?.data ?? [];
+        noteGeneratedAt(res.headers);
         nodes = res.data?.data ?? [];
         usingFixtures.value = false;
       } catch (err) {
+        if (gen !== generation) return fixtureChildren(key, scope);
         console.warn('[useLineage] children fetch failed, using fixtures', err);
         usingFixtures.value = true;
         fixtureCacheKeys.add(ck);
@@ -160,14 +219,28 @@ export function useLineage() {
 
   /** Drop all cached nodes — call when scope changes so views refetch. */
   function clearCache() {
+    generation++;
     cache.clear();
     fixtureCacheKeys.clear();
+    generatedAt.value = null;
     // Let the next fetch re-decide; the banner shouldn't stick if the API recovers.
     usingFixtures.value = false;
   }
 
+  /**
+   * Drop all cached nodes and have the next roots fetch rebuild the API's shared
+   * data, so the view shows current evidence. Call, then reload the roots.
+   */
+  function refresh() {
+    clearCache();
+    refreshPending = true;
+    unscopedRefreshPending = true;
+  }
+
   return {
     usingFixtures,
+    generatedAt: readonly(generatedAt),
+    refresh,
     fetchRoots,
     fetchChildren,
     fetchRootNodes: getRoots,

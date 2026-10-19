@@ -1,8 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
+import type { Component } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
 import { useSidebarStore } from '@/stores/sidebar';
 import { usePermissionsStore } from '@/stores/permissions';
+import { useSystemStore } from '@/stores/system';
 import LeftSideNav from '../LeftSideNav.vue';
 import SideNavCategory from '@/components/navigation/SideNavCategory.vue';
 
@@ -28,6 +30,53 @@ vi.mock('vue-router', () => ({
   },
 }));
 
+// Category bodies render as <section>; the nav's own scope groups are role="group".
+const categoryStubs = {
+  SideNav: {
+    template: '<div><slot name="logo" /><slot /></div>',
+  },
+  SideNavCategory: {
+    template:
+      '<section><div class="category-title"><slot name="title" /></div><div><slot /></div></section>',
+  },
+  SideNavLink: {
+    template: '<a class="sidenav-link"><slot /></a>',
+  },
+  SideNavLogo: {
+    template: '<img alt="logo" />',
+  },
+};
+
+// Real SideNavCategory, for tests about its open/active state.
+const realCategoryStubs = {
+  SideNav: categoryStubs.SideNav,
+  SideNavLink: categoryStubs.SideNavLink,
+  SideNavLogo: categoryStubs.SideNavLogo,
+};
+
+const tooltip = { mounted: () => undefined };
+
+function mountNav(stubs: Record<string, Component | boolean> = categoryStubs) {
+  const sidebarStore = useSidebarStore();
+  sidebarStore.open = true;
+  return mount(LeftSideNav, {
+    global: { directives: { tooltip }, stubs },
+  });
+}
+
+function linkTexts(wrapper: ReturnType<typeof mountNav>) {
+  return wrapper
+    .findAll('.sidenav-link')
+    .map((link) => link.text().trim())
+    .filter((text) => text.length > 0);
+}
+
+function findCategory(wrapper: ReturnType<typeof mountNav>, title: string) {
+  return wrapper
+    .findAll('section')
+    .find((category) => category.find('.category-title').text() === title);
+}
+
 describe('LeftSideNav', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
@@ -38,39 +87,8 @@ describe('LeftSideNav', () => {
     localStorage.clear();
   });
 
-  it('no longer renders the retired admin links', () => {
-    const sidebarStore = useSidebarStore();
-    sidebarStore.open = true;
-
-    const wrapper = mount(LeftSideNav, {
-      global: {
-        directives: {
-          tooltip: {
-            mounted: () => undefined,
-          },
-        },
-        stubs: {
-          SideNav: {
-            template: '<div><slot name="logo" /><slot /></div>',
-          },
-          SideNavCategory: {
-            template:
-              '<section><div class="category-title"><slot name="title" /></div><div><slot /></div></section>',
-          },
-          SideNavLink: {
-            template: '<a class="sidenav-link"><slot /></a>',
-          },
-          SideNavLogo: {
-            template: '<img alt="logo" />',
-          },
-        },
-      },
-    });
-
-    const linkTexts = wrapper
-      .findAll('.sidenav-link')
-      .map((link) => link.text().trim())
-      .filter((text) => text.length > 0);
+  it('no longer renders the retired links', () => {
+    const texts = linkTexts(mountNav());
 
     for (const label of [
       'Subject Templates',
@@ -78,387 +96,145 @@ describe('LeftSideNav', () => {
       'Component Definitions',
       'Parties',
       'Roles',
-    ]) {
-      expect(linkTexts).not.toContain(label);
-    }
-  });
-
-  it('reinstates Groups, Agents, Diagnostics and Import in the navigation', () => {
-    const sidebarStore = useSidebarStore();
-    sidebarStore.open = true;
-
-    const wrapper = mount(LeftSideNav, {
-      global: {
-        directives: {
-          tooltip: {
-            mounted: () => undefined,
-          },
-        },
-        stubs: {
-          SideNav: {
-            template: '<div><slot name="logo" /><slot /></div>',
-          },
-          SideNavCategory: {
-            template:
-              '<section><div class="category-title"><slot name="title" /></div><div><slot /></div></section>',
-          },
-          SideNavLink: {
-            template: '<a class="sidenav-link"><slot /></a>',
-          },
-          SideNavLogo: {
-            template: '<img alt="logo" />',
-          },
-        },
-      },
-    });
-
-    const linkTexts = wrapper
-      .findAll('.sidenav-link')
-      .map((link) => link.text().trim())
-      .filter((text) => text.length > 0);
-
-    for (const label of ['Groups', 'Agents', 'Diagnostics', 'Import']) {
-      expect(linkTexts).toContain(label);
-    }
-  });
-
-  it('groups Risks, Groups, Agents, Diagnostics and Import under a separate Admin category', () => {
-    const sidebarStore = useSidebarStore();
-    sidebarStore.open = true;
-
-    const wrapper = mount(LeftSideNav, {
-      global: {
-        directives: {
-          tooltip: {
-            mounted: () => undefined,
-          },
-        },
-        stubs: {
-          SideNav: {
-            template: '<div><slot name="logo" /><slot /></div>',
-          },
-          SideNavCategory: {
-            template:
-              '<section><div class="category-title"><slot name="title" /></div><div><slot /></div></section>',
-          },
-          SideNavLink: {
-            template: '<a class="sidenav-link"><slot /></a>',
-          },
-          SideNavLogo: {
-            template: '<img alt="logo" />',
-          },
-        },
-      },
-    });
-
-    const categories = wrapper.findAll('section');
-    const adminCategory = categories.find(
-      (category) => category.find('.category-title').text() === 'Admin',
-    );
-
-    expect(adminCategory).toBeTruthy();
-    for (const label of [
-      'Risks',
-      'Groups',
-      'Agents',
-      'Diagnostics',
-      'Import',
-    ]) {
-      expect(adminCategory?.text()).toContain(label);
-    }
-
-    // Not nested under Admin — Control Definitions still owns these.
-    expect(adminCategory?.text()).not.toContain('Catalogs');
-    expect(adminCategory?.text()).not.toContain('Control Links');
-  });
-
-  it('groups Catalogs, Control Links and Profiles under Control Definitions, with Evidence Filters and Compliance Map as top-level links', () => {
-    const sidebarStore = useSidebarStore();
-    sidebarStore.open = true;
-
-    const wrapper = mount(LeftSideNav, {
-      global: {
-        directives: {
-          tooltip: {
-            mounted: () => undefined,
-          },
-        },
-        stubs: {
-          SideNav: {
-            template: '<div><slot name="logo" /><slot /></div>',
-          },
-          SideNavCategory: {
-            template:
-              '<section><div class="category-title"><slot name="title" /></div><div><slot /></div></section>',
-          },
-          SideNavLink: {
-            template: '<a class="sidenav-link"><slot /></a>',
-          },
-          SideNavLogo: {
-            template: '<img alt="logo" />',
-          },
-        },
-      },
-    });
-
-    const categories = wrapper.findAll('section');
-    const controlDefinitionsCategory = categories.find(
-      (category) =>
-        category.find('.category-title').text() === 'Control Definitions',
-    );
-
-    expect(controlDefinitionsCategory).toBeTruthy();
-
-    for (const label of ['Catalogs', 'Control Links', 'Profiles']) {
-      expect(controlDefinitionsCategory?.text()).toContain(label);
-    }
-    expect(controlDefinitionsCategory?.text()).not.toContain('Risks');
-    expect(controlDefinitionsCategory?.text()).not.toContain(
-      'Evidence Filters',
-    );
-    expect(controlDefinitionsCategory?.text()).not.toContain('Compliance Map');
-
-    // Evidence Filters and Compliance Map are now standalone top-level links,
-    // not nested under any category.
-    const topLevelLinks = wrapper
-      .findAll('.sidenav-link')
-      .map((link) => link.text().trim());
-    expect(topLevelLinks).toContain('Evidence Filters');
-    expect(topLevelLinks).toContain('Compliance Map');
-
-    // Dashboards is still not a standalone top-level link.
-    expect(topLevelLinks).not.toContain('Dashboards');
-  });
-
-  it('groups Active System and Manage Systems under a Systems category', () => {
-    const sidebarStore = useSidebarStore();
-    sidebarStore.open = true;
-
-    const wrapper = mount(LeftSideNav, {
-      global: {
-        directives: {
-          tooltip: {
-            mounted: () => undefined,
-          },
-        },
-        stubs: {
-          SideNav: {
-            template: '<div><slot name="logo" /><slot /></div>',
-          },
-          SideNavCategory: {
-            template:
-              '<section><div class="category-title"><slot name="title" /></div><div><slot /></div></section>',
-          },
-          SideNavLink: {
-            template: '<a class="sidenav-link"><slot /></a>',
-          },
-          SideNavLogo: {
-            template: '<img alt="logo" />',
-          },
-        },
-      },
-    });
-
-    const categories = wrapper.findAll('section');
-    const systemsCategory = categories.find(
-      (category) => category.find('.category-title').text() === 'Systems',
-    );
-
-    expect(systemsCategory).toBeTruthy();
-    expect(systemsCategory?.text()).toContain('Active System');
-    expect(systemsCategory?.text()).toContain('Manage Systems');
-    expect(systemsCategory?.text()).not.toContain('System Security Plans');
-  });
-
-  it('puts Systems at the top, followed by Evidence, Controls, Compliance Map, Risk Register and Evidence Filters', () => {
-    const sidebarStore = useSidebarStore();
-    sidebarStore.open = true;
-
-    const wrapper = mount(LeftSideNav, {
-      global: {
-        directives: {
-          tooltip: {
-            mounted: () => undefined,
-          },
-        },
-        stubs: {
-          SideNav: {
-            template: '<div><slot name="logo" /><slot /></div>',
-          },
-          SideNavCategory: {
-            template:
-              '<section><div class="category-title"><slot name="title" /></div><div><slot /></div></section>',
-          },
-          SideNavLink: {
-            template: '<a class="sidenav-link"><slot /></a>',
-          },
-          SideNavLogo: {
-            template: '<img alt="logo" />',
-          },
-        },
-      },
-    });
-
-    const orderedLabels = wrapper
-      .findAll('.category-title, .sidenav-link')
-      .map((el) => el.text().trim());
-    const categoryTitles = wrapper
-      .findAll('.category-title')
-      .map((el) => el.text().trim());
-
-    const indexOf = (label: string) => orderedLabels.indexOf(label);
-
-    // Systems is the first top-level category, with its children rendered
-    // immediately after it, followed by Evidence, Controls, Compliance Map,
-    // Risk Register and Evidence Filters, in that order.
-    expect(categoryTitles.at(0)).toBe('Systems');
-    expect(orderedLabels.slice(0, 8)).toEqual([
-      'Systems',
+      // Folded into the header's Active System menu / renamed in the menu reorg.
       'Active System',
       'Manage Systems',
-      'Evidence',
       'Controls',
-      'Compliance Map',
       'Risk Register',
-      'Evidence Filters',
-    ]);
+      'System Users',
+    ]) {
+      expect(texts).not.toContain(label);
+    }
+  });
 
-    for (const label of ['Workflows', 'Control Definitions']) {
-      expect(indexOf('Systems')).toBeLessThan(indexOf(label));
+  it('splits the nav into a This System section followed by a Global section', () => {
+    const wrapper = mountNav();
+    const groups = wrapper.findAll('[role="group"]');
+
+    expect(groups.map((group) => group.attributes('aria-label'))).toEqual([
+      'This System',
+      'Global',
+    ]);
+    expect(groups[0].text()).toContain('This System');
+    expect(groups[1].text()).toContain('Global');
+  });
+
+  it('lists the system-scoped pages, in order, under This System', () => {
+    const wrapper = mountNav();
+    const thisSystem = wrapper.find('[aria-label="This System"]');
+    const labels = thisSystem
+      .findAll('.sidenav-link')
+      .map((link) => link.text().trim());
+
+    expect(labels).toEqual([
+      'Evidence',
+      'Implementation',
+      'Compliance',
+      'Risks',
+      'Workflow Instances',
+      'Configure System',
+    ]);
+  });
+
+  it('names the active system under the This System heading', () => {
+    const systemStore = useSystemStore();
+    systemStore.setSecurityPlan({
+      uuid: 'ssp-1',
+      metadata: { title: 'Payments Platform' },
+    } as never);
+
+    const thisSystem = mountNav().find('[aria-label="This System"]');
+    expect(thisSystem.text()).toContain('Payments Platform');
+  });
+
+  it('says when no system is selected', () => {
+    const thisSystem = mountNav().find('[aria-label="This System"]');
+    expect(thisSystem.text()).toContain('No system selected');
+  });
+
+  it('groups the Global pages into Analysis, Integrations, Control Definitions and Admin', () => {
+    const wrapper = mountNav();
+    const global = wrapper.find('[aria-label="Global"]');
+
+    expect(
+      global.findAll('.category-title').map((title) => title.text().trim()),
+    ).toEqual(['Analysis', 'Integrations', 'Control Definitions', 'Admin']);
+
+    const expectations: Record<string, string[]> = {
+      Analysis: ['Risks', 'Compliance Map'],
+      Integrations: [
+        'Workflow Definitions',
+        'Evidence Filters',
+        'Agents',
+        'Import',
+      ],
+      'Control Definitions': ['Catalogs', 'Profiles', 'Control Links'],
+      Admin: ['Users', 'Groups', 'Diagnostics'],
+    };
+
+    for (const [category, children] of Object.entries(expectations)) {
+      const labels = findCategory(wrapper, category)!
+        .findAll('.sidenav-link')
+        .map((link) => link.text().trim());
+      expect(labels).toEqual(children);
     }
   });
 
   it('highlights and opens the category containing the active route', () => {
-    const sidebarStore = useSidebarStore();
-    sidebarStore.open = true;
     // 'catalog-list' is a child of Control Definitions.
     mockRoute.matched = [{ name: 'catalog-list' }];
 
-    const wrapper = mount(LeftSideNav, {
-      global: {
-        directives: {
-          tooltip: {
-            mounted: () => undefined,
-          },
-        },
-        stubs: {
-          SideNav: {
-            template: '<div><slot name="logo" /><slot /></div>',
-          },
-          SideNavLink: {
-            template: '<a class="sidenav-link"><slot /></a>',
-          },
-          SideNavLogo: {
-            template: '<img alt="logo" />',
-          },
-        },
-      },
-    });
+    const wrapper = mountNav(realCategoryStubs);
+    const category = (title: string) =>
+      wrapper
+        .findAllComponents(SideNavCategory)
+        .find((item) => item.props('title') === title);
 
-    const governanceCategory = wrapper
-      .findAllComponents(SideNavCategory)
-      .find((category) => category.props('title') === 'Control Definitions');
-    const workflowsCategory = wrapper
-      .findAllComponents(SideNavCategory)
-      .find((category) => category.props('title') === 'Workflows');
-
-    expect(governanceCategory?.props('active')).toBe(true);
-    expect(governanceCategory?.props('open')).toBe(true);
+    expect(category('Control Definitions')?.props('active')).toBe(true);
+    expect(category('Control Definitions')?.props('open')).toBe(true);
 
     // A category that doesn't contain the active route is neither highlighted nor forced open.
-    expect(workflowsCategory?.props('active')).toBe(false);
-    expect(workflowsCategory?.props('open')).toBe(false);
+    expect(category('Integrations')?.props('active')).toBe(false);
+    expect(category('Integrations')?.props('open')).toBe(false);
   });
 
   it('keeps a manually opened category open across a hard refresh, even with nothing under it selected', async () => {
     mockRoute.matched = []; // nothing active anywhere
-    const sidebarStore = useSidebarStore();
-    sidebarStore.open = true;
 
-    const mountFresh = () =>
-      mount(LeftSideNav, {
-        global: {
-          directives: {
-            tooltip: {
-              mounted: () => undefined,
-            },
-          },
-          stubs: {
-            SideNav: {
-              template: '<div><slot name="logo" /><slot /></div>',
-            },
-            SideNavLink: {
-              template: '<a class="sidenav-link"><slot /></a>',
-            },
-            SideNavLogo: {
-              template: '<img alt="logo" />',
-            },
-          },
-        },
-      });
-
-    const findWorkflowsChildren = (wrapper: ReturnType<typeof mountFresh>) =>
+    const findIntegrations = (wrapper: ReturnType<typeof mountNav>) =>
       wrapper
         .findAllComponents(SideNavCategory)
-        .find((category) => category.props('title') === 'Workflows')!
-        .find('div.mb-2');
+        .find((category) => category.props('title') === 'Integrations')!;
 
-    const wrapper = mountFresh();
-    expect(findWorkflowsChildren(wrapper).classes()).toContain('hidden');
+    const wrapper = mountNav(realCategoryStubs);
+    expect(findIntegrations(wrapper).find('div.mb-2').classes()).toContain(
+      'hidden',
+    );
 
-    const workflowsHeader = wrapper
-      .findAllComponents(SideNavCategory)
-      .find((category) => category.props('title') === 'Workflows')!
-      .find('div');
-    await workflowsHeader.trigger('click');
-
-    expect(findWorkflowsChildren(wrapper).classes()).not.toContain('hidden');
+    await findIntegrations(wrapper).find('div').trigger('click');
+    expect(findIntegrations(wrapper).find('div.mb-2').classes()).not.toContain(
+      'hidden',
+    );
 
     // Simulate a hard refresh: a brand-new Pinia instance (so the store itself is rebuilt
     // from scratch, not just re-read from memory) backed by the same localStorage, exactly
     // as a real browser reload would leave it.
     setActivePinia(createPinia());
-    const wrapperAfterRefresh = mountFresh();
-    expect(findWorkflowsChildren(wrapperAfterRefresh).classes()).not.toContain(
-      'hidden',
-    );
+    const wrapperAfterRefresh = mountNav(realCategoryStubs);
+    expect(
+      findIntegrations(wrapperAfterRefresh).find('div.mb-2').classes(),
+    ).not.toContain('hidden');
   });
+
   it('shows Agents (but not Groups) to a non-admin with agent:read (R40)', () => {
-    const sidebarStore = useSidebarStore();
-    sidebarStore.open = true;
     const permissions = usePermissionsStore();
     permissions.permissions = { agent: ['read'], admin: [] };
     permissions.loaded = true;
 
-    const wrapper = mount(LeftSideNav, {
-      global: {
-        directives: {
-          tooltip: {
-            mounted: () => undefined,
-          },
-        },
-        stubs: {
-          SideNav: {
-            template: '<div><slot name="logo" /><slot /></div>',
-          },
-          SideNavCategory: {
-            template:
-              '<section><div class="category-title"><slot name="title" /></div><div><slot /></div></section>',
-          },
-          SideNavLink: {
-            template: '<a class="sidenav-link"><slot /></a>',
-          },
-          SideNavLogo: {
-            template: '<img alt="logo" />',
-          },
-        },
-      },
-    });
-
-    const linkTexts = wrapper
-      .findAll('.sidenav-link')
-      .map((link) => link.text().trim());
-    expect(linkTexts).toContain('Agents');
-    expect(linkTexts).not.toContain('Groups');
+    const texts = linkTexts(mountNav());
+    expect(texts).toContain('Agents');
+    expect(texts).not.toContain('Groups');
+    // Analysis > Risks is admin-only; Compliance Map keeps the category visible.
+    expect(texts).toContain('Compliance Map');
   });
 });

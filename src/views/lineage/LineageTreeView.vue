@@ -18,7 +18,14 @@ import { useUIStore } from '@/stores/ui';
 const router = useRouter();
 const scopeStore = useLineageScopeStore();
 const uiStore = useUIStore();
-const { fetchRoots, fetchChildren, clearCache, usingFixtures } = useLineage();
+const {
+  fetchRoots,
+  fetchChildren,
+  clearCache,
+  refresh,
+  generatedAt,
+  usingFixtures,
+} = useLineage();
 
 const nodes = ref<LineageTreeNode[]>([]);
 const loading = ref(false);
@@ -130,6 +137,20 @@ watch(drawerVisible, (isOpen) => {
 
 onMounted(loadRoots);
 
+// Reload with current data from the API, keeping what is expanded and selected.
+// The button stays disabled until the whole reload is done, not just the roots,
+// so a second click cannot start a replay alongside this one.
+const refreshing = ref(false);
+async function onRefresh() {
+  refreshing.value = true;
+  try {
+    refresh();
+    await loadRoots();
+  } finally {
+    refreshing.value = false;
+  }
+}
+
 // Refetch when the scope changes (SSP / component / types).
 watch(
   () => scopeStore.scope,
@@ -156,7 +177,11 @@ watch(
       <LineageViewSwitch active="tree" />
     </header>
 
-    <LineageScopeBar />
+    <LineageScopeBar
+      :generatedAt="generatedAt"
+      :refreshing="loading || refreshing"
+      @refresh="onRefresh"
+    />
 
     <p
       v-if="usingFixtures"

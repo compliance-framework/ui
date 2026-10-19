@@ -1,63 +1,21 @@
 <template>
-  <Message v-if="loading" severity="info" variant="simple">
-    <span class="flex items-center gap-2">
-      <i class="pi pi-spin pi-spinner"></i>
-      Loading control data...
-    </span>
-  </Message>
-
-  <Message
-    v-else-if="!systemStore.system.securityPlan"
-    severity="error"
-    variant="outlined"
-  >
-    <div class="space-y-2 text-gray-700 dark:text-slate-200">
-      <h4 class="text-base font-semibold">System Security Plan not selected</h4>
-      <p>You have not selected a system security plan for editing.</p>
-      <p>
-        Please return to the
-        <RouterLink
-          :to="{ name: 'system-security-plans' }"
-          class="font-medium underline text-blue-600 dark:text-blue-300"
-          >SSP Page
-        </RouterLink>
-        to select one
-      </p>
-    </div>
-  </Message>
-
-  <Message v-else-if="!activeProfile" severity="error" variant="outlined">
-    <div class="space-y-2 text-gray-700 dark:text-slate-200">
-      <h4 class="text-base font-semibold">
-        Your selected SSP does not have a linked profile
-      </h4>
-      <p>
-        The System Security Plan you have selected does not have any linked
-        profiles.
-      </p>
-      <p>
-        Please return to the
-        <RouterLink
-          :to="{ name: 'system' }"
-          class="font-medium underline text-blue-600 dark:text-blue-300"
-          >System Page
-        </RouterLink>
-        to select one
-      </p>
-    </div>
-  </Message>
+  <NoActiveSystem
+    v-if="!systemStore.system.securityPlan"
+    subject="control implementations"
+  />
 
   <div v-else>
     <div
       class="mb-4 flex flex-col gap-3 md:flex-row md:items-end md:justify-between"
     >
       <div>
-        <PageHeader>Controls</PageHeader>
+        <PageHeader>Implementation</PageHeader>
         <PageSubHeader
           >Specify how controls are implemented across the business
         </PageSubHeader>
       </div>
       <Button
+        v-if="activeProfile"
         type="button"
         severity="secondary"
         :label="bulkSuggestionsButtonLabel"
@@ -67,7 +25,35 @@
       />
     </div>
 
-    <Message v-if="!profilesResolved" severity="secondary">
+    <!-- Profiles decide which controls show up below, so they're managed right here rather
+         than on a separate configuration page. -->
+    <div
+      class="mb-6 rounded-lg border border-ccf-300 bg-white p-4 dark:border-slate-700 dark:bg-slate-900"
+    >
+      <SspProfilePicker
+        :ssp-id="systemStore.system.securityPlan.uuid"
+        @updated="handleProfilesUpdated"
+      />
+    </div>
+
+    <Message v-if="loading" severity="info" variant="simple">
+      <span class="flex items-center gap-2">
+        <i class="pi pi-spin pi-spinner"></i>
+        Loading control data...
+      </span>
+    </Message>
+
+    <Message v-else-if="!activeProfile" severity="secondary" variant="outlined">
+      <div class="space-y-2 text-gray-700 dark:text-slate-200">
+        <h4 class="text-base font-semibold">No profile attached yet</h4>
+        <p>
+          Pick one or more profiles above to choose which controls this system
+          implements. Their controls will appear here, ready to document.
+        </p>
+      </div>
+    </Message>
+
+    <Message v-else-if="!profilesResolved" severity="secondary">
       No catalog is available for the linked profile.
     </Message>
     <div v-else>
@@ -241,6 +227,8 @@ import {
 import { useUIStore } from '@/stores/ui.ts';
 import PageHeader from '@/components/PageHeader.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
+import NoActiveSystem from '@/components/system/NoActiveSystem.vue';
+import SspProfilePicker from '@/components/system/SspProfilePicker.vue';
 import ControlEvidenceCounter from './partials/ControlEvidenceCounter.vue';
 import { buildTreeNodesWithPrefix } from '@/composables/useCatalogTree';
 import type { TreeNode } from '@/composables/useCatalogTree';
@@ -714,11 +702,22 @@ async function loadControlImplementations() {
   controlImplementations.value = nextMap;
 }
 
-async function loadProfileBindings() {
+// Profile changes from the picker can trigger overlapping reloads. Each load takes a
+// token and only the latest one may write its result, so a slow earlier response can't
+// replace the bindings (or the tree) from a newer selection.
+let profileBindingsLoadToken = 0;
+let catalogLoadToken = 0;
+
+// keepCurrent leaves the current bindings and tree on screen until the replacement
+// arrives (and keeps them if the request fails), for reloads after a profile change.
+async function loadProfileBindings(options: { keepCurrent?: boolean } = {}) {
+  const token = ++profileBindingsLoadToken;
   const sspId = systemStore.system.securityPlan?.uuid;
-  profileBindings.value = [];
-  profilesResolved.value = false;
-  nodes.value = [];
+  if (!options.keepCurrent) {
+    profileBindings.value = [];
+    profilesResolved.value = false;
+    nodes.value = [];
+  }
 
   if (!sspId) {
     return;
@@ -727,18 +726,24 @@ async function loadProfileBindings() {
   profileBindingsLoading.value = true;
   try {
     const result = await sspStore.listProfiles(sspId);
+    if (token !== profileBindingsLoadToken) return;
     profileBindings.value = result.data || [];
   } catch (err) {
+    if (token !== profileBindingsLoadToken) return;
     if (err instanceof Response && err.status === 404) {
+      profileBindings.value = [];
       return;
     }
     throw err;
   } finally {
-    profileBindingsLoading.value = false;
+    if (token === profileBindingsLoadToken) {
+      profileBindingsLoading.value = false;
+    }
   }
 }
 
 async function loadResolvedProfileCatalogs() {
+  const token = ++catalogLoadToken;
   profilesResolved.value = false;
   nodes.value = [];
 
@@ -756,6 +761,7 @@ async function loadResolvedProfileCatalogs() {
         return { profileBinding, resolvedCatalog: response.data?.data };
       }),
     );
+    if (token !== catalogLoadToken) return;
 
     const failedCount = results.filter((r) => r.status === 'rejected').length;
     if (failedCount > 0) {
@@ -792,7 +798,9 @@ async function loadResolvedProfileCatalogs() {
     nodes.value = profileNodes;
     profilesResolved.value = profileNodes.length > 0;
   } finally {
-    catalogLoading.value = false;
+    if (token === catalogLoadToken) {
+      catalogLoading.value = false;
+    }
   }
 }
 
@@ -1302,6 +1310,25 @@ watch(
     }
   },
 );
+
+// Attaching or detaching a profile changes which controls the tree shows. Reloading the
+// bindings is enough: the profileBindings watcher re-resolves their catalogs.
+async function handleProfilesUpdated() {
+  try {
+    await loadProfileBindings({ keepCurrent: true });
+  } catch (err) {
+    error.value = err;
+    toast.add({
+      severity: 'error',
+      summary: 'Error Loading Profile Bindings',
+      detail: await getErrorDetail(
+        err,
+        'An error occurred while loading the profiles linked to this SSP.',
+      ),
+      life: 3000,
+    });
+  }
+}
 
 onMounted(async () => {
   void initializeDashboardSuggestionState();
