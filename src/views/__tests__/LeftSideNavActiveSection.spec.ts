@@ -22,6 +22,7 @@ const routeNames = [
   'admin-risk-templates',
   'admin-risks',
   'admin-roles',
+  'admin-ssp-templates',
   'admin-subject-templates',
   'assessment-plans',
   'assessment-results',

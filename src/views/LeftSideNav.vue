@@ -200,6 +200,12 @@ const sections: Array<NavigationSection> = [
             permission: ADMIN_MANAGE,
           },
           {
+            name: 'admin-ssp-templates',
+            title: 'SSP Templates',
+            abbr: 'SSPT',
+            permission: ADMIN_MANAGE,
+          },
+          {
             name: 'admin-diagnostics',
             title: 'Diagnostics',
             abbr: 'DIAG',
