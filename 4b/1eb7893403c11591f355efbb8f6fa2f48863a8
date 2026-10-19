@@ -5,3 +5,9 @@ lisa-design:
 - Payload builders mirror the API's 400 rules (1..5 keys, <=10 scope-label groups of <=5, min-streams >= 1 integer, title required, filter parses) so the form reports them before saving; the API stays authoritative. Keys are trimmed and de-duplicated, not lower-cased (the API lower-cases).
 - An empty filter is sent as `filter: null` (not omitted) so a PUT clears a saved filter.
 - Types spec is co-located (src/types/ssp-templates.spec.ts) like subject-templates.spec.ts.
+
+lisa-selfreview:
+pass 1:
+- [must-fix] UI-TYPE-001 src/types/ssp-templates.ts SspTemplate: always-present API fields typed optional -> fixed.
+- [must-fix] CORE-TEST-002 SspTemplatesView.spec: count asserted via row toContain('4') -> fixed.
+- [question] contract/list-columns-not-in-contract: ssp-count / last-run-at not in API contract -> PR open question.
