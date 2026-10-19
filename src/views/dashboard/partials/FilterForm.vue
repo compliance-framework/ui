@@ -36,6 +36,21 @@
         />
         Follow this SSP's scope
       </label>
+      <Message
+        v-if="scopeCheck === 'failed'"
+        severity="error"
+        class="mt-2"
+        data-testid="scope-error"
+      >
+        Could not read this SSP's scope, so the filter cannot follow it yet.
+        <button
+          type="button"
+          class="underline"
+          @click="checkScope(selectedSspId)"
+        >
+          Retry
+        </button>
+      </Message>
     </div>
     <div class="mb-4">
       <label class="inline-block pb-2">Controls</label>
@@ -113,7 +128,7 @@
       </SecondaryButton>
       <PrimaryButton
         type="submit"
-        :disabled="!canSubmit"
+        :disabled="!canSubmit || scopeCheck !== 'done'"
         v-tooltip.top="{
           value: permissionTooltip(RESOURCES.FILTER, permissionAction),
           disabled: canSubmit,
@@ -134,6 +149,7 @@ import PrimaryButton from '@/volt/PrimaryButton.vue';
 import SecondaryButton from '@/volt/SecondaryButton.vue';
 import MultiSelect from '@/volt/MultiSelect.vue';
 import Select from '@/volt/Select.vue';
+import Message from '@/volt/Message.vue';
 import type {
   Catalog,
   SystemSecurityPlan,
@@ -234,21 +250,26 @@ const followVisible = computed(
     (selectedSspHasScope.value ||
       (!!followingBase && selectedSspId.value === props.dashboard?.sspId)),
 );
+// Until the SSP's scope is read, whether the filter may follow it is unknown, so the form
+// cannot be submitted: saving then would silently drop following.
+const scopeCheck = ref<'done' | 'loading' | 'failed'>('done');
 const scopeApi = useAuthenticatedInstance();
-watch(
-  selectedSspId,
-  async (sspId) => {
-    selectedSspHasScope.value = false;
-    if (!sspId) return;
-    try {
-      const hasScope = await sspHasScopeEntries(scopeApi, sspId);
-      if (selectedSspId.value === sspId) selectedSspHasScope.value = hasScope;
-    } catch (error) {
-      console.error(`Error reading the scope of SSP ${sspId}:`, error);
-    }
-  },
-  { immediate: true },
-);
+async function checkScope(sspId: string | null) {
+  selectedSspHasScope.value = false;
+  scopeCheck.value = sspId ? 'loading' : 'done';
+  if (!sspId) return;
+  try {
+    const hasScope = await sspHasScopeEntries(scopeApi, sspId);
+    if (selectedSspId.value !== sspId) return;
+    selectedSspHasScope.value = hasScope;
+    scopeCheck.value = 'done';
+  } catch (error) {
+    if (selectedSspId.value !== sspId) return;
+    console.error(`Error reading the scope of SSP ${sspId}:`, error);
+    scopeCheck.value = 'failed';
+  }
+}
+watch(selectedSspId, checkScope, { immediate: true });
 // Whether the input holds the following filter's own expression. Once it stops following
 // (unticked, or moved to another scope), the API keeps the effective filter, so show that.
 const showingBase = computed(
@@ -422,6 +443,7 @@ function getComponentSelectList(component: SystemComponent): ComponentOption[] {
 }
 
 function submit() {
+  if (scopeCheck.value !== 'done') return;
   const controlIds = selectedControls.value.map((control) => control.value);
   const componentIds = selectedComponents.value.map(
     (component) => component.value,

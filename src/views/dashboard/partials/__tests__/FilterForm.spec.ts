@@ -102,6 +102,7 @@ describe('FilterForm (edit prefill)', () => {
 
   it('emits a submit payload with parsed filter and control/component ids', async () => {
     const wrapper = mountForm(makeDashboard());
+    await flushPromises();
     await wrapper.find('form').trigger('submit');
 
     const payload = wrapper.emitted('submit')?.[0]?.[0] as {
@@ -131,6 +132,7 @@ describe('FilterForm (edit prefill)', () => {
     expect(wrapper.text()).not.toContain('Select Components');
     expect(wrapper.text()).toContain('Select Controls');
 
+    await flushPromises();
     await wrapper.find('form').trigger('submit');
     const payload = wrapper.emitted('submit')?.[0]?.[0] as {
       components: string[];
@@ -141,6 +143,7 @@ describe('FilterForm (edit prefill)', () => {
   it('pre-selects the SSP given on create', async () => {
     const wrapper = mountCreate('ssp-9');
 
+    await flushPromises();
     await wrapper.find('form').trigger('submit');
     const payload = wrapper.emitted('submit')?.[0]?.[0] as {
       sspId: string | null;
@@ -162,6 +165,27 @@ describe('FilterForm (edit prefill)', () => {
     await wrapper.find('form').trigger('submit');
     expect(wrapper.emitted('submit')?.[0]?.[0]).toMatchObject({
       sspId: 'ssp-9',
+      followSspScope: true,
+    });
+  });
+
+  it('shows a failed scope read and refuses to save until it is retried', async () => {
+    scopeGet.mockRejectedValueOnce({ response: { status: 500 } });
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const wrapper = mountCreate('ssp-9');
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="scope-error"]').exists()).toBe(true);
+    await wrapper.find('form').trigger('submit');
+    expect(wrapper.emitted('submit')).toBeUndefined();
+
+    scopeGet.mockResolvedValue(scopeWith([{ id: 'e-1' }]));
+    await wrapper.find('[data-testid="scope-error"] button').trigger('click');
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="scope-error"]').exists()).toBe(false);
+    await wrapper.find('form').trigger('submit');
+    expect(wrapper.emitted('submit')?.[0]?.[0]).toMatchObject({
       followSspScope: true,
     });
   });
