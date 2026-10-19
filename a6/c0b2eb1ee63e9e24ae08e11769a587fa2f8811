@@ -1,0 +1,9 @@
+lisa-design:
+- UA4: followSspScope is sent as true when the user follows; false only to stop a filter that follows today (dashboard.scopeBase set); otherwise omitted. The design says followSspScope:false "keeps the current effective filter", so sending false on every plain edit could make the API ignore the edited expression.
+- UA4: when a following filter stops following in the form (unticked, or the SSP changes so the option is hidden), the input switches to the effective filter, which is what the API keeps; ticking again switches back to scopeBase.
+- UA4: the follow option shows when the chosen SSP has scope entries (GET …/scope; 404 = none), or when editing a filter that already follows that same SSP (so a failed scope read cannot silently stop it following).
+- UA4: Dashboard.origin is optional (absent from APIs older than A4); scopeBase is optional/nullable. DashboardCreate gains followSspScope?.
+- UA4: CreateFormView and FilterEditModal no longer decamelize /api/filters bodies (camelCase API, AGENTS.md trap); with decamelizeKeys followSspScope would arrive as follow-ssp-scope and never bind. sspId already bound both ways on the API.
+- UA4: sspHasScopeEntries moved into useSspScope.ts and shared by useBaselineEvidence and FilterForm; useBaselineEvidence exposes `scoped` so useEvidenceDashboardForm knows whether the new filter can follow the scope without a second GET.
+- UA4: badges live in one component, components/filters/FilterOriginBadges.vue ("Follows scope" when scopeBase is set, "Automatic" when origin is scope-policy), used by dashboard/IndexView and DashboardLinkForm's option template.
+- UA4: ComponentDashboardsView's own create form is not given the follow option (design lists only EvidenceDashboardForm and FilterForm).
