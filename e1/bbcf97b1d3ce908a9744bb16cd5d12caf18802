@@ -1,0 +1,2 @@
+lisa-addressed:
+- self-review pass 1: SspTemplate id/name/enabled/keys/minStreams/titleTemplate/createdAt/updatedAt are required (non-null API columns); list spec asserts the count cell exactly.
