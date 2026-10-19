@@ -1,0 +1,6 @@
+lisa-design:
+- camelcaseStopPaths use the response's raw kebab-case keys (`data.ssps.key-values`, `data.below-threshold.key-values`, `data.invalid.key-values`, `data.key-values`), not the camelCased `keyValues` the design text names: camelcase-keys matches stop paths against original keys (same as STOP_PATHS in useAgentConfigApi). A types spec runs camelcase-keys with them to pin this.
+- Forget needs `{keyHash}` but the design's instance list has no key hash; the UI reads an optional `key-hash` per instance and disables Forget without it (open question for the API). It does not compute the hash client-side (encoding is API-internal).
+- Preview runs on demand (a Preview button), not on page load, since it scans the latest evidence of every stream. The panel is keyed on the template's updatedAt so an edit clears a stale preview.
+- The preview body is the saved template mapped by toSspTemplateRequest (settings only, no id/timestamps/list extras).
+- Run now does not reload the created SSPs (the run is queued, 202); the table has a Refresh button.
