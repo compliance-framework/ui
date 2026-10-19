@@ -8,7 +8,7 @@
       <label class="inline-block pb-2">Result Filter</label>
       <FormInput v-model="filter" />
       <p
-        v-if="showingBase"
+        v-if="showingBase && selectedSspId === props.dashboard?.sspId"
         class="mt-2 text-sm text-gray-600 dark:text-slate-400"
         data-testid="effective-filter"
       >

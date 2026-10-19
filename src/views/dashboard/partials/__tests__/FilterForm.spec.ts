@@ -194,6 +194,21 @@ describe('FilterForm (edit prefill)', () => {
       'team=payments AND repo=a',
     );
 
+    // Under another SSP's scope, this effective filter no longer applies.
+    scopeGet.mockResolvedValue(scopeWith([{ id: 'e-2' }]));
+    (wrapper.vm as unknown as { selectedSspId: string }).selectedSspId =
+      'ssp-2';
+    await flushPromises();
+    expect(wrapper.find('[data-testid="follow-ssp-scope"]').exists()).toBe(
+      true,
+    );
+    expect(wrapper.find('[data-testid="effective-filter"]').exists()).toBe(
+      false,
+    );
+    (wrapper.vm as unknown as { selectedSspId: string }).selectedSspId =
+      'ssp-1';
+    await flushPromises();
+
     // Unticking keeps the effective filter, as the API does.
     await wrapper.find('[data-testid="follow-ssp-scope"]').setValue(false);
     expect(input().value).toBe('team=payments AND repo=a');
