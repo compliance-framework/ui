@@ -1,2 +1,5 @@
 lisa-addressed:
 self-review pass 1: effective-filter-shown-for-other-ssp -> FilterForm shows the effective filter only while the selected SSP is the filter's own (+ test that fails without the fix)
+
+lisa-selfreview:
+pass 2 (strict): approve; the deferred should-fix (scope-read-error-hides-follow) stays deferred. make reviewable + npm run build green.
