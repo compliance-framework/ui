@@ -20,6 +20,7 @@ export const SSP_SECTION_TABS: SspSectionTab[] = [
   // { label: 'System Implementation', suffix: 'implementation' },
   // { label: 'Users', suffix: 'users' },
   { label: 'Components', suffix: 'components' },
+  { label: 'Scope', suffix: 'scope' },
   // { label: 'Leveraged Authorizations', suffix: 'authorizations' },
   // { label: 'Control Implementation', suffix: 'control-implementation' },
   // { label: 'Export Offerings', suffix: 'export-offerings' },

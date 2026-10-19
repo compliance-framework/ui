@@ -216,6 +216,11 @@ const authenticatedRoutes = [
         component: () => import('../views/system/ComponentsView.vue'),
       },
       {
+        path: 'scope',
+        name: 'system:scope',
+        component: () => import('../views/system/ScopeView.vue'),
+      },
+      {
         path: 'components/dashboards/:componentId',
         name: 'system-component-dashboards',
         component: () => import('../views/system/ComponentsView.vue'),
@@ -842,6 +847,14 @@ const authenticatedRoutes = [
         component: () =>
           import(
             '../views/system-security-plans/SystemSecurityPlanComponentsView.vue'
+          ),
+      },
+      {
+        path: 'scope',
+        name: 'system-security-plan-scope',
+        component: () =>
+          import(
+            '../views/system-security-plans/SystemSecurityPlanScopeView.vue'
           ),
       },
       {

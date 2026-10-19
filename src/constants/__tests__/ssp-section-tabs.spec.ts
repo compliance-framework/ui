@@ -10,6 +10,7 @@ describe('sspSectionTabRoutes', () => {
       'Characteristics',
       'Authorization Boundary',
       'Components',
+      'Scope',
       'Risks',
       'Compliance',
       'JSON',
@@ -24,6 +25,7 @@ describe('sspSectionTabRoutes', () => {
       'Characteristics',
       'Authorization Boundary',
       'Components',
+      'Scope',
       'JSON',
     ]);
     expect(tabs[0].route).toBe('system:overview');
