@@ -1,0 +1,5 @@
+lisa-design:
+- The admin SSP templates API is kebab-case (design: "bodies with transformRequest: [decamelizeKeys]"), so decamelizeKeys on /api/admin/ssp-templates is intended, not UI-API-002. The body has no user-defined map keys (filter/props are fixed-shape objects; label keys are values).
+- TemplatePreview is reused unchanged: its sample labels are named `.<key>` so its `{{ name }}` substitution matches Go-template placeholders `{{ ._app }}`. `{{ index . "aws:account" }}` is not previewed. Purpose/Remarks show "-".
+- Key and scope-label chips use the Volt AutoComplete with `multiple :typeahead="false"` (Enter adds a chip); no new chips component.
+- The dialog saves through the API itself and emits `saved`; hosts (list, detail) just reload.
