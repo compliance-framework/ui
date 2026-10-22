@@ -1,10 +1,16 @@
+import camelcaseKeys from 'camelcase-keys';
 import { describe, expect, it } from 'vitest';
 import {
   buildUpsertSspTemplatePayload,
   createEmptySspTemplateForm,
   createSspTemplateFormFromTemplate,
   formatSspTemplateDate,
+  formatKeyValues,
+  formatLabels,
   parseSspTemplateFilter,
+  SSP_TEMPLATE_INSTANCES_STOP_PATHS,
+  SSP_TEMPLATE_PREVIEW_STOP_PATHS,
+  toSspTemplateRequest,
   type SspTemplateFormData,
 } from './ssp-templates';
 
@@ -140,5 +146,81 @@ describe('ssp-templates types', () => {
     expect(formatSspTemplateDate(undefined)).toBe('-');
     expect(formatSspTemplateDate('nope')).toBe('-');
     expect(formatSspTemplateDate('2026-10-19T10:00:00Z')).not.toBe('-');
+  });
+});
+
+describe('ssp-templates preview and instances helpers', () => {
+  it('turns a saved template into a request without server-owned fields', () => {
+    expect(
+      toSspTemplateRequest({
+        id: 't-1',
+        name: 'Apps',
+        enabled: true,
+        keys: ['_app'],
+        filter: undefined,
+        scopeLabels: null,
+        minStreams: 1,
+        titleTemplate: 'T',
+        descriptionTemplate: null,
+        props: null,
+        profileIds: null,
+        createdAt: '2026-10-19T10:00:00Z',
+        updatedAt: '2026-10-19T10:00:00Z',
+        sspCount: 3,
+      }),
+    ).toEqual({
+      name: 'Apps',
+      enabled: true,
+      keys: ['_app'],
+      filter: null,
+      scopeLabels: [],
+      minStreams: 1,
+      titleTemplate: 'T',
+      descriptionTemplate: undefined,
+      props: [],
+      profileIds: [],
+    });
+  });
+
+  it('formats key values and learned label sets', () => {
+    expect(formatKeyValues({ _app: 'payments', aws_account: '1' })).toBe(
+      '_app=payments, aws_account=1',
+    );
+    expect(
+      formatLabels([
+        { key: 'aws_account', value: '1' },
+        { key: 'region', value: 'eu' },
+      ]),
+    ).toBe('aws_account=1 AND region=eu');
+  });
+
+  it('keeps label keys verbatim through the response camelCasing', () => {
+    const preview = camelcaseKeys(
+      {
+        data: {
+          ssps: [{ 'key-values': { _app: 'a', aws_account: '1' } }],
+          'below-threshold': [{ 'key-values': { _app: 'b' } }],
+          invalid: [{ 'key-values': { aws_account: 'x' } }],
+          'missing-keys': 1,
+        },
+      },
+      { deep: true, stopPaths: [...SSP_TEMPLATE_PREVIEW_STOP_PATHS] },
+    );
+    expect(preview).toEqual({
+      data: {
+        ssps: [{ keyValues: { _app: 'a', aws_account: '1' } }],
+        belowThreshold: [{ keyValues: { _app: 'b' } }],
+        invalid: [{ keyValues: { aws_account: 'x' } }],
+        missingKeys: 1,
+      },
+    });
+
+    const instances = camelcaseKeys(
+      { data: [{ 'key-values': { aws_account: '1' }, 'ssp-id': null }] },
+      { deep: true, stopPaths: [...SSP_TEMPLATE_INSTANCES_STOP_PATHS] },
+    );
+    expect(instances).toEqual({
+      data: [{ keyValues: { aws_account: '1' }, sspId: null }],
+    });
   });
 });
