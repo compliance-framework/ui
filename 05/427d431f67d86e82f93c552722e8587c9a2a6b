@@ -1,0 +1,2 @@
+lisa-design:
+- UI copy says "System Template(s)" (user request); code identifiers, route names/paths, files and /api/admin/ssp-templates keep "ssp-templates". The nav entry uses the default abbreviation (ST).
