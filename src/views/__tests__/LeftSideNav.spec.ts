@@ -136,6 +136,25 @@ describe('LeftSideNav', () => {
     ]);
   });
 
+  it("links This System's Evidence to the scoped page and Global's to all evidence", () => {
+    const wrapper = mountNav({
+      ...categoryStubs,
+      SideNavLink: {
+        props: ['to'],
+        template: '<a class="sidenav-link" :data-route="to?.name"><slot /></a>',
+      },
+    });
+    const evidenceRoute = (section: string) =>
+      wrapper
+        .find(`[aria-label="${section}"]`)
+        .findAll('.sidenav-link')
+        .find((link) => link.text().trim() === 'Evidence')
+        ?.attributes('data-route');
+
+    expect(evidenceRoute('This System')).toBe('system:evidence');
+    expect(evidenceRoute('Global')).toBe('evidence:index');
+  });
+
   it('names the active system under the This System heading', () => {
     const systemStore = useSystemStore();
     systemStore.setSecurityPlan({

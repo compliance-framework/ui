@@ -132,12 +132,15 @@ const props = withDefaults(
     dashboard?: Dashboard | null;
     /** Prefill the Result Filter input (create flow deep-links `?filter=`). */
     initialFilter?: string;
+    /** Pre-select the SSP on create (This System > Evidence deep-links `?sspId=`). */
+    initialSspId?: string | null;
     submitLabel?: string;
     showCancel?: boolean;
   }>(),
   {
     dashboard: null,
     initialFilter: '',
+    initialSspId: null,
     submitLabel: 'Submit',
     showCancel: false,
   },
@@ -190,7 +193,9 @@ const filter = ref<string>(
     ? serializeFilter(props.dashboard.filter)
     : props.initialFilter,
 );
-const selectedSspId = ref<string | null>(props.dashboard?.sspId ?? null);
+const selectedSspId = ref<string | null>(
+  props.dashboard ? (props.dashboard.sspId ?? null) : props.initialSspId,
+);
 const selectedControls = ref<ControlOption[]>(
   (props.dashboard?.controls ?? []).map((control) => ({
     label: `${control.id} ${control.title}`,

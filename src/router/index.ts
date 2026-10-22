@@ -13,8 +13,9 @@ const ADMIN_MANAGE = {
 } as const;
 
 // Routes marked `activeSystemScoped` show data for the active system (the nav's This
-// System pages, except Evidence, which is still global). The layout remounts them when the
-// header switcher changes system. Every other page ignores a switch.
+// System pages). The layout remounts them when the header switcher changes system. Every
+// other page ignores a switch. Global > Evidence (`evidence:index`) lists all evidence;
+// This System > Evidence (`system:evidence`) lists the active system's in-scope evidence.
 const authenticatedRoutes = [
   {
     path: '/',
@@ -274,6 +275,15 @@ const authenticatedRoutes = [
         component: () => import('../views/system/JsonView.vue'),
       },
     ],
+    meta: {
+      requiresAuth: true,
+      activeSystemScoped: true,
+    },
+  },
+  {
+    path: 'system/evidence',
+    name: 'system:evidence',
+    component: () => import('../views/system/EvidenceView.vue'),
     meta: {
       requiresAuth: true,
       activeSystemScoped: true,

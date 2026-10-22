@@ -168,6 +168,22 @@ import { getErrorDetail, getErrorStatus } from '@/utils/httpErrors';
 import { usePermissions } from '@/composables/usePermissions';
 import { RESOURCES, ACTIONS } from '@/constants/permissions';
 
+// One page body for both evidence pages: Global > Evidence (the defaults, all evidence)
+// and This System > Evidence (system/EvidenceView.vue), which passes the SSP's scoped
+// search endpoints and the SSP to pre-select when the search is saved as a filter.
+const props = withDefaults(
+  defineProps<{
+    searchEndpoint?: string;
+    statusOverTimeEndpoint?: string;
+    sspId?: string;
+  }>(),
+  {
+    searchEndpoint: '/api/evidence/search',
+    statusOverTimeEndpoint: '/api/evidence/status-over-time',
+    sspId: undefined,
+  },
+);
+
 const configStore = useConfigStore();
 const route = useRoute();
 const router = useRouter();
@@ -281,7 +297,7 @@ watch(
 
 const { data: complianceOverTime, execute: loadComplianceOverTime } =
   useDataApi<ComplianceInterval[]>(
-    '/api/evidence/status-over-time',
+    props.statusOverTimeEndpoint,
     {
       params: {
         interval: EVIDENCE_STATUS_INTERVAL,
@@ -493,7 +509,7 @@ function buildEvidenceSearchRequest(
   }
 
   return {
-    url: `/api/evidence/search?${params.toString()}`,
+    url: `${props.searchEndpoint}?${params.toString()}`,
     body: {
       filter: query,
     },
@@ -516,6 +532,8 @@ const navigationQuery = computed<Record<string, string | undefined>>(() => {
       sortDirection.value === 'desc' ? undefined : sortDirection.value,
     page: currentPage.value > 1 ? String(currentPage.value) : undefined,
     subject: getRouteSubjectUuid(route.query.subject),
+    // Lets the evidence detail page send "back" to This System > Evidence.
+    from: props.sspId ? 'system' : undefined,
   };
 });
 
@@ -904,7 +922,9 @@ onBeforeUnmount(() => {
 async function save() {
   await router.push({
     name: 'dashboards.create',
-    query: { filter: filter.value },
+    query: props.sspId
+      ? { filter: filter.value, sspId: props.sspId }
+      : { filter: filter.value },
   });
 }
 

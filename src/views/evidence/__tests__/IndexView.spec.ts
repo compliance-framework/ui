@@ -4,6 +4,8 @@ import { reactive, ref } from 'vue';
 import IndexView from '../IndexView.vue';
 import type { Evidence } from '@/stores/evidence.ts';
 
+const statusOverTimeUrls = vi.hoisted(() => [] as string[]);
+
 const { subjectLookupGet } = vi.hoisted(() => ({
   subjectLookupGet: vi.fn(async () => ({
     data: {
@@ -314,9 +316,10 @@ vi.mock('@/composables/axios', async () => {
       },
     ) => {
       if (
-        url === '/api/evidence/status-over-time' &&
+        url?.endsWith('/evidence/status-over-time') &&
         config?.method === 'POST'
       ) {
+        statusOverTimeUrls.push(url);
         return {
           data: complianceData,
           execute: loadComplianceOverTime,
@@ -363,8 +366,9 @@ describe('Evidence IndexView', () => {
     vi.useRealTimers();
   });
 
-  function mountView() {
+  function mountView(props: Record<string, string> = {}) {
     const wrapper = mount(IndexView, {
+      props,
       global: {
         directives: {
           tooltip: {
@@ -514,6 +518,51 @@ describe('Evidence IndexView', () => {
     expect(wrapper.text()).not.toContain('Evidence 51');
     expect(wrapper.text()).toContain('Showing 1-50 of 55');
     expect(wrapper.text()).toContain('Page 1 of 2');
+  });
+
+  it('saves a global search as a filter without an SSP', async () => {
+    const wrapper = mountView();
+    await flushPromises();
+
+    const save = wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Save');
+    await save!.trigger('click');
+
+    expect(pushMock).toHaveBeenCalledWith({
+      name: 'dashboards.create',
+      query: { filter: '' },
+    });
+  });
+
+  it('searches through the endpoints it is given and saves with the SSP pre-selected', async () => {
+    statusOverTimeUrls.length = 0;
+    const base = '/api/oscal/system-security-plans/ssp-1';
+    const wrapper = mountView({
+      searchEndpoint: `${base}/evidence/search`,
+      statusOverTimeEndpoint: `${base}/evidence/status-over-time`,
+      sspId: 'ssp-1',
+    });
+    await flushPromises();
+
+    expect(evidenceSearchPost).toHaveBeenCalledWith(
+      `${base}/evidence/search?page=1&limit=50&sortBy=lastSeenAt&sortDirection=desc`,
+      expect.any(Object),
+    );
+    expect(statusOverTimeUrls).toEqual([`${base}/evidence/status-over-time`]);
+    expect(
+      JSON.parse(wrapper.find('[data-testid="navigation-query"]').text()),
+    ).toMatchObject({ from: 'system' });
+
+    const save = wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Save');
+    await save!.trigger('click');
+
+    expect(pushMock).toHaveBeenCalledWith({
+      name: 'dashboards.create',
+      query: { filter: '', sspId: 'ssp-1' },
+    });
   });
 
   it('loads the first evidence page for a valid initial search and renders pagination summary', async () => {

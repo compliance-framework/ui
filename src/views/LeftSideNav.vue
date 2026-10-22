@@ -53,18 +53,19 @@ interface NavigationSection {
 }
 
 // The nav is split by scope so a user always knows what a page is about: "This System"
-// pages all follow the system picked in the header's Active System menu (Evidence is the
-// one exception for now; it still lists evidence across every system until the API can
-// filter it), while "Global" pages are shared across every system.
+// pages all follow the system picked in the header's Active System menu (its Evidence
+// lists only that system's in-scope evidence), while "Global" pages are shared across
+// every system (its Evidence lists all evidence).
 const sections: Array<NavigationSection> = [
   {
     title: 'This System',
     links: [
       {
-        name: 'evidence:index',
+        name: 'system:evidence',
         title: 'Evidence',
         abbr: 'EV',
-        permission: { resource: RESOURCES.EVIDENCE, action: ACTIONS.READ },
+        // The scoped evidence routes are guarded as SSP reads.
+        permission: { resource: RESOURCES.SSP, action: ACTIONS.READ },
       },
       {
         name: 'controls:index',
@@ -101,6 +102,12 @@ const sections: Array<NavigationSection> = [
   {
     title: 'Global',
     links: [
+      {
+        name: 'evidence:index',
+        title: 'Evidence',
+        abbr: 'EV',
+        permission: { resource: RESOURCES.EVIDENCE, action: ACTIONS.READ },
+      },
       {
         title: 'Analysis',
         abbr: 'AN',

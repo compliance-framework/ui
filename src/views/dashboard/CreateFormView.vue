@@ -1,7 +1,11 @@
 <template>
   <PageHeader> New Evidence Filter </PageHeader>
   <PageCard class="mt-8 w-1/2">
-    <FilterForm :initial-filter="initialFilter" @submit="submit" />
+    <FilterForm
+      :initial-filter="initialFilter"
+      :initial-ssp-id="initialSspId"
+      @submit="submit"
+    />
   </PageCard>
 </template>
 <script setup lang="ts">
@@ -18,6 +22,10 @@ const router = useRouter();
 const route = useRoute();
 
 const initialFilter = ref<string>((route.query['filter'] as string) ?? '');
+// Set when the search was saved from This System > Evidence: pre-select that SSP and
+// go back to that page afterwards.
+const initialSspId =
+  typeof route.query['sspId'] === 'string' ? route.query['sspId'] : null;
 
 const { execute: createDashboard } = useDataApi<DashboardCreate>(
   '/api/filters',
@@ -32,7 +40,7 @@ async function submit(payload: DashboardCreate) {
   try {
     await createDashboard({ data: payload });
     return router.push({
-      name: 'evidence:index',
+      name: initialSspId ? 'system:evidence' : 'evidence:index',
       query: { filter: serializeFilter(payload.filter) },
     });
   } catch (error) {

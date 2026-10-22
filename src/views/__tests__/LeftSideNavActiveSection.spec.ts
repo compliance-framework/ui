@@ -39,6 +39,7 @@ const routeNames = [
   'profile-list',
   'risks:index',
   'system-security-plans',
+  'system:evidence',
   'system:overview',
   'users-list',
   'workflow-instances:index',
@@ -49,6 +50,7 @@ const routeNames = [
 const realPaths: Record<string, string> = {
   'catalog-list': '/catalogs',
   'system:overview': '/system',
+  'system:evidence': '/system/evidence',
 };
 
 function createTestRouter() {
@@ -202,5 +204,25 @@ describe('LeftSideNav active-section persistence', () => {
 
     expect(findLink('system:overview')?.props('active')).toBe(true);
     expect(findLink('compliance:index')?.props('active')).toBe(false);
+  });
+
+  it("highlights This System's Evidence, not Configure System, on the scoped evidence page", async () => {
+    const router = createTestRouter();
+    await router.push({ name: 'system:evidence' });
+    await router.isReady();
+
+    const wrapper = mountNav(router);
+    const findLink = (routeName: string) =>
+      wrapper
+        .findAllComponents(SideNavLink)
+        .find(
+          (link) =>
+            (link.props('to') as { name?: string } | undefined)?.name ===
+            routeName,
+        );
+
+    expect(findLink('system:evidence')?.props('active')).toBe(true);
+    expect(findLink('system:overview')?.props('active')).toBe(false);
+    expect(findLink('evidence:index')?.props('active')).toBe(false);
   });
 });
