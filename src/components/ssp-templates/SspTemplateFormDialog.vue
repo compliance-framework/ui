@@ -2,7 +2,7 @@
   <Dialog
     v-model:visible="visible"
     modal
-    :header="isEdit ? 'Edit SSP Template' : 'Create SSP Template'"
+    :header="isEdit ? 'Edit System Template' : 'Create System Template'"
     class="w-full max-w-4xl"
   >
     <form class="space-y-6 p-1" @submit.prevent="submit">
@@ -351,7 +351,7 @@ async function submit() {
     toast.add({
       severity: 'success',
       summary: id ? 'Template Updated' : 'Template Created',
-      detail: `SSP template "${payload.name}" saved.`,
+      detail: `System template "${payload.name}" saved.`,
       life: 3000,
     });
     visible.value = false;
@@ -360,7 +360,7 @@ async function submit() {
     toast.add({
       severity: 'error',
       summary: 'Save Failed',
-      detail: await getErrorDetail(error, 'Failed to save SSP template.'),
+      detail: await getErrorDetail(error, 'Failed to save system template.'),
       life: 4000,
     });
   }
