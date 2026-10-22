@@ -543,6 +543,24 @@ const authenticatedRoutes = [
     },
   },
   {
+    path: '/admin/ssp-templates',
+    name: 'admin-ssp-templates',
+    component: () => import('../views/admin/SspTemplatesView.vue'),
+    meta: {
+      requiresAuth: true,
+      permission: ADMIN_MANAGE,
+    },
+  },
+  {
+    path: '/admin/ssp-templates/:id',
+    name: 'admin-ssp-template-detail',
+    component: () => import('../views/admin/SspTemplateDetailView.vue'),
+    meta: {
+      requiresAuth: true,
+      permission: ADMIN_MANAGE,
+    },
+  },
+  {
     path: '/admin/risk-templates',
     name: 'admin-risk-templates',
     component: () => import('../views/admin/RiskTemplatesView.vue'),
