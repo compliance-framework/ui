@@ -188,7 +188,7 @@ describe('LeftSideNav', () => {
         'Import',
       ],
       'Control Definitions': ['Catalogs', 'Profiles', 'Control Links'],
-      Admin: ['Users', 'Groups', 'SSP Templates', 'Diagnostics'],
+      Admin: ['Users', 'Groups', 'System Templates', 'Diagnostics'],
     };
 
     for (const [category, children] of Object.entries(expectations)) {
@@ -253,7 +253,7 @@ describe('LeftSideNav', () => {
     const texts = linkTexts(mountNav());
     expect(texts).toContain('Agents');
     expect(texts).not.toContain('Groups');
-    expect(texts).not.toContain('SSP Templates');
+    expect(texts).not.toContain('System Templates');
     // Analysis > Risks is admin-only; Compliance Map keeps the category visible.
     expect(texts).toContain('Compliance Map');
   });

@@ -1,5 +1,5 @@
 <template>
-  <PageHeader>SSP Template</PageHeader>
+  <PageHeader>System Template</PageHeader>
   <PageSubHeader v-if="template">{{ template.name }}</PageSubHeader>
 
   <div class="mt-6 space-y-4">

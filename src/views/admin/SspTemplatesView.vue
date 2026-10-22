@@ -1,5 +1,5 @@
 <template>
-  <PageHeader>SSP Templates</PageHeader>
+  <PageHeader>System Templates</PageHeader>
   <PageSubHeader>
     Create one SSP per application (or any label combination) found in the
     evidence
@@ -13,13 +13,13 @@
         Loading templates...
       </p>
       <p v-else-if="error" class="p-6 text-red-500">
-        Error loading SSP templates.
+        Error loading system templates.
       </p>
       <p
         v-else-if="!templates?.length"
         class="p-6 text-gray-500 dark:text-slate-400"
       >
-        No SSP templates yet.
+        No system templates yet.
       </p>
       <table v-else class="w-full min-w-[900px] text-sm">
         <thead class="bg-gray-50 dark:bg-slate-800">
@@ -108,7 +108,7 @@ const { execute: executeDelete } = useDataApi<void>(
 
 function confirmDelete(template: SspTemplate) {
   confirm.require({
-    header: 'Delete SSP template',
+    header: 'Delete system template',
     message: `Delete the template "${template.name}"? The SSPs it created and their scope entries are kept.`,
     rejectProps: { label: 'Cancel', severity: 'secondary', outlined: true },
     acceptProps: { label: 'Delete', severity: 'danger' },
@@ -122,7 +122,7 @@ async function deleteTemplate(template: SspTemplate) {
     toast.add({
       severity: 'success',
       summary: 'Template Deleted',
-      detail: `SSP template "${template.name}" deleted.`,
+      detail: `System template "${template.name}" deleted.`,
       life: 3000,
     });
     await loadTemplates();
@@ -130,7 +130,7 @@ async function deleteTemplate(template: SspTemplate) {
     toast.add({
       severity: 'error',
       summary: 'Delete Failed',
-      detail: await getErrorDetail(err, 'Failed to delete SSP template.'),
+      detail: await getErrorDetail(err, 'Failed to delete system template.'),
       life: 4000,
     });
   }

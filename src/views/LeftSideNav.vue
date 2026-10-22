@@ -201,8 +201,7 @@ const sections: Array<NavigationSection> = [
           },
           {
             name: 'admin-ssp-templates',
-            title: 'SSP Templates',
-            abbr: 'SSPT',
+            title: 'System Templates',
             permission: ADMIN_MANAGE,
           },
           {
