@@ -585,7 +585,7 @@ const {
   addLabelCondition,
   removeLabelCondition,
   reset: resetDashboardForm,
-} = useEvidenceDashboardForm();
+} = useEvidenceDashboardForm(() => props.sspId);
 
 const creatingForResponsibility = ref<string | null>(null);
 const creatingDashboard = ref(false);

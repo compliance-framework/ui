@@ -1,8 +1,7 @@
 import { computed, ref, watch } from 'vue';
-import type { ComputedRef, Ref } from 'vue';
+import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import { useToast } from 'primevue/usetoast';
-import { useDataApi } from '@/composables/axios';
-import type { Evidence } from '@/stores/evidence';
+import { useBaselineEvidence } from '@/composables/useBaselineEvidence';
 import type {
   LabelCondition,
   SearchableEvidence,
@@ -33,7 +32,12 @@ export interface EvidenceDashboardFormApi {
 // string — everything EvidenceDashboardForm.vue binds to. Extracted so the control
 // statement editor and the inherited-responsibilities drawer drive it from one place
 // instead of duplicating ~150 lines of intricate label logic.
-export function useEvidenceDashboardForm(): EvidenceDashboardFormApi {
+//
+// `sspId` is the SSP the filter is built for: when that SSP has a scope, the baseline
+// evidence is its in-scope evidence (see useBaselineEvidence).
+export function useEvidenceDashboardForm(
+  sspId?: MaybeRefOrGetter<string | null | undefined>,
+): EvidenceDashboardFormApi {
   const toast = useToast();
 
   const name = ref('');
@@ -44,19 +48,14 @@ export function useEvidenceDashboardForm(): EvidenceDashboardFormApi {
   const newLabelName = ref('');
   const newLabelValue = ref('');
 
-  const { execute: fetchEvidenceForLabels } = useDataApi<Evidence[]>(
-    '/api/evidence/search',
-    { method: 'POST' },
-    { immediate: false },
-  );
+  const { fetchBaselineEvidence } = useBaselineEvidence(sspId);
 
   async function loadAvailableEvidence(forceReload = false) {
     if (!forceReload && availableEvidence.value.length > 0) return; // Already loaded
     evidenceLoading.value = true;
     try {
-      const res = await fetchEvidenceForLabels({ data: { filter: {} } });
-      const evidenceList = res.data.value?.data || res.data.value || [];
-      availableEvidence.value = (evidenceList as Evidence[])
+      const evidenceList = await fetchBaselineEvidence();
+      availableEvidence.value = evidenceList
         .filter((ev) => ev.labels && ev.labels.length > 0)
         .map((ev) => ({
           ...ev,
