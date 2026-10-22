@@ -7,12 +7,18 @@ const state = vi.hoisted(() => ({
   toastAdd: vi.fn(),
 }));
 
-vi.mock('@/composables/useBaselineEvidence', () => ({
-  useBaselineEvidence: (sspId: unknown) => {
-    state.sspIds.push(sspId);
-    return { fetchBaselineEvidence: state.fetchBaselineEvidence };
-  },
-}));
+vi.mock('@/composables/useBaselineEvidence', async () => {
+  const { ref } = await import('vue');
+  return {
+    useBaselineEvidence: (sspId: unknown) => {
+      state.sspIds.push(sspId);
+      return {
+        fetchBaselineEvidence: state.fetchBaselineEvidence,
+        scoped: ref(true),
+      };
+    },
+  };
+});
 
 vi.mock('primevue/usetoast', () => ({
   useToast: () => ({ add: state.toastAdd }),
@@ -52,5 +58,16 @@ describe('useEvidenceDashboardForm', () => {
     expect(state.toastAdd).toHaveBeenCalledWith(
       expect.objectContaining({ summary: 'Failed to load evidence' }),
     );
+  });
+
+  it('follows the scope of a scoped SSP by default, again after a reset', () => {
+    const form = useEvidenceDashboardForm('ssp-1');
+    expect(form.scopeFollowable.value).toBe(true);
+    expect(form.followSspScope.value).toBe(true);
+
+    form.followSspScope.value = false;
+    form.reset();
+
+    expect(form.followSspScope.value).toBe(true);
   });
 });

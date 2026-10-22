@@ -16,7 +16,7 @@ import PageCard from '@/components/PageCard.vue';
 import FilterForm from '@/views/dashboard/partials/FilterForm.vue';
 import type { DashboardCreate } from '@/stores/filters.ts';
 import { serializeFilter } from '@/parsers/labelfilter.ts';
-import { useDataApi, decamelizeKeys } from '@/composables/axios';
+import { useDataApi } from '@/composables/axios';
 
 const router = useRouter();
 const route = useRoute();
@@ -31,7 +31,8 @@ const { execute: createDashboard } = useDataApi<DashboardCreate>(
   '/api/filters',
   {
     method: 'POST',
-    transformRequest: [decamelizeKeys],
+    // /api/filters is a camelCase API: no decamelizeKeys, or followSspScope and sspId
+    // would go out kebab-cased.
   },
   { immediate: false },
 );

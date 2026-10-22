@@ -1,6 +1,8 @@
 import { ref, type Ref } from 'vue';
+import type { AxiosInstance } from 'axios';
 import { decamelizeKeys, useAuthenticatedInstance } from '@/composables/axios';
 import type { DataResponse } from '@/stores/types';
+import { getErrorStatus } from '@/utils/httpErrors';
 import type {
   ScopeEntry,
   ScopeException,
@@ -10,6 +12,22 @@ import type {
 
 export function sspScopeEndpoint(sspId: string): string {
   return `/api/oscal/system-security-plans/${sspId}/scope`;
+}
+
+// Whether the SSP has scope entries. An API without SSP scopes (404) has none.
+export async function sspHasScopeEntries(
+  api: AxiosInstance,
+  sspId: string,
+): Promise<boolean> {
+  try {
+    const response = await api.get<DataResponse<SspScope>>(
+      sspScopeEndpoint(sspId),
+    );
+    return (response.data.data?.entries?.length ?? 0) > 0;
+  } catch (error) {
+    if (getErrorStatus(error) === 404) return false;
+    throw error;
+  }
 }
 
 // Reads and edits one SSP's scope. The routes are kebab-case, so request bodies go out

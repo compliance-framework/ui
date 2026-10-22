@@ -19,6 +19,8 @@ defineProps<{
   computedFilter: string;
   isSubmitting?: boolean;
   serverError?: string;
+  // The SSP has scope entries: offer to make the new filter follow its scope.
+  scopeFollowable?: boolean;
 }>();
 
 const name = defineModel<string>('name', { required: true });
@@ -28,6 +30,9 @@ const selectedBaselineEvidence = defineModel<SearchableEvidence | null>(
 );
 const newLabelName = defineModel<string>('newLabelName', { required: true });
 const newLabelValue = defineModel<string>('newLabelValue', { required: true });
+const followSspScope = defineModel<boolean>('followSspScope', {
+  default: true,
+});
 
 const emit = defineEmits<{
   submit: [];
@@ -172,6 +177,25 @@ function submit() {
         {{ computedFilter }}
       </div>
     </div>
+
+    <label
+      v-if="scopeFollowable"
+      class="flex items-start gap-2 text-sm text-gray-800 dark:text-slate-300"
+    >
+      <input
+        v-model="followSspScope"
+        type="checkbox"
+        class="mt-1"
+        data-testid="follow-ssp-scope"
+      />
+      <span>
+        Follow this SSP's scope
+        <span class="block text-gray-600 dark:text-slate-400">
+          The filter only matches this SSP's evidence, and keeps matching it
+          when the scope changes.
+        </span>
+      </span>
+    </label>
 
     <Message v-if="serverError" severity="error">
       {{ serverError }}

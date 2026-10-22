@@ -85,6 +85,8 @@ const {
   availableLabelNames,
   availableLabelValues,
   computedFilter,
+  scopeFollowable,
+  followSspScope,
   loadAvailableEvidence,
   addLabelCondition,
   removeLabelCondition,
@@ -1298,6 +1300,9 @@ async function submitEvidenceLinking() {
         // Scope the dashboard's filter to this SSP rather than creating a global
         // filter that would apply across every plan.
         sspId: resolvedSspId.value,
+        ...(scopeFollowable.value && followSspScope.value
+          ? { followSspScope: true }
+          : {}),
       },
     });
     toast.add({
@@ -1521,6 +1526,8 @@ async function submitEvidenceLinking() {
           :available-label-names="availableLabelNames"
           :available-label-values="availableLabelValues"
           :computed-filter="computedFilter"
+          :scope-followable="scopeFollowable"
+          v-model:follow-ssp-scope="followSspScope"
           :is-submitting="creatingEvidenceDashboard"
           :server-error="createEvidenceDashboardError"
           @submit="submitEvidenceLinking"

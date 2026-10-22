@@ -21,6 +21,10 @@ export interface EvidenceDashboardFormApi {
   availableLabelNames: ComputedRef<string[]>;
   availableLabelValues: ComputedRef<string[]>;
   computedFilter: ComputedRef<string>;
+  // Whether the SSP has scope entries, so the new filter can follow its scope.
+  scopeFollowable: Ref<boolean>;
+  // The "Follow this SSP's scope" choice, on by default.
+  followSspScope: Ref<boolean>;
   loadAvailableEvidence: (forceReload?: boolean) => Promise<void>;
   addLabelCondition: () => void;
   removeLabelCondition: (index: number) => void;
@@ -48,7 +52,9 @@ export function useEvidenceDashboardForm(
   const newLabelName = ref('');
   const newLabelValue = ref('');
 
-  const { fetchBaselineEvidence } = useBaselineEvidence(sspId);
+  const { fetchBaselineEvidence, scoped: scopeFollowable } =
+    useBaselineEvidence(sspId);
+  const followSspScope = ref(true);
 
   async function loadAvailableEvidence(forceReload = false) {
     if (!forceReload && availableEvidence.value.length > 0) return; // Already loaded
@@ -175,6 +181,7 @@ export function useEvidenceDashboardForm(
 
   function reset() {
     name.value = '';
+    followSspScope.value = true;
     selectedBaselineEvidence.value = null;
     labelConditions.value = [];
     newLabelName.value = '';
@@ -193,6 +200,8 @@ export function useEvidenceDashboardForm(
     availableLabelNames,
     availableLabelValues,
     computedFilter,
+    scopeFollowable,
+    followSspScope,
     loadAvailableEvidence,
     addLabelCondition,
     removeLabelCondition,

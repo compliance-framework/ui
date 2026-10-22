@@ -21,7 +21,7 @@
 import Dialog from '@/volt/Dialog.vue';
 import FilterForm from '@/views/dashboard/partials/FilterForm.vue';
 import type { Dashboard, DashboardCreate } from '@/stores/filters.ts';
-import { useDataApi, decamelizeKeys } from '@/composables/axios';
+import { useDataApi } from '@/composables/axios';
 import { useToast } from 'primevue/usetoast';
 
 const visible = defineModel<boolean>('visible', { required: true });
@@ -40,7 +40,8 @@ const { execute: updateDashboard } = useDataApi<Dashboard>(
   null,
   {
     method: 'PUT',
-    transformRequest: [decamelizeKeys],
+    // /api/filters is a camelCase API: no decamelizeKeys, or followSspScope and sspId
+    // would go out kebab-cased.
   },
   { immediate: false },
 );
