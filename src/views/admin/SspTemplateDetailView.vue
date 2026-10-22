@@ -10,6 +10,9 @@
       >
         Back to List
       </RouterLinkButton>
+      <PrimaryButton v-if="template" @click="dialogVisible = true">
+        Edit Template
+      </PrimaryButton>
     </div>
 
     <PageCard>
@@ -37,22 +40,31 @@
       </dl>
     </PageCard>
   </div>
+
+  <SspTemplateFormDialog
+    v-model:visible="dialogVisible"
+    :template="template"
+    @saved="loadTemplate()"
+  />
 </template>
 
 <script setup lang="ts">
-import { computed, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useDataApi } from '@/composables/axios';
 import { serializeFilter } from '@/parsers/labelfilter';
 import { getIdFromRoute } from '@/utils/get-id-from-route';
+import PrimaryButton from '@/volt/PrimaryButton.vue';
 import PageCard from '@/components/PageCard.vue';
 import PageHeader from '@/components/PageHeader.vue';
 import PageSubHeader from '@/components/PageSubHeader.vue';
 import RouterLinkButton from '@/components/RouterLinkButton.vue';
+import SspTemplateFormDialog from '@/components/ssp-templates/SspTemplateFormDialog.vue';
 import { formatSspTemplateDate, type SspTemplate } from '@/types/ssp-templates';
 
 const route = useRoute();
 const templateId = computed(() => getIdFromRoute(route));
+const dialogVisible = ref(false);
 
 const {
   data: template,

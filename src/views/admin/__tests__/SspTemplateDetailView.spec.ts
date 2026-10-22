@@ -32,6 +32,12 @@ function mountView() {
     global: {
       stubs: {
         RouterLinkButton: { template: '<a><slot /></a>' },
+        SspTemplateFormDialog: {
+          name: 'SspTemplateFormDialog',
+          props: ['visible', 'template'],
+          emits: ['update:visible', 'saved'],
+          template: '<div />',
+        },
       },
     },
   });
@@ -69,5 +75,18 @@ describe('SspTemplateDetailView', () => {
     expect(summary.text()).toContain('aws_account + region');
     expect(summary.text()).toContain('SSP for Application {{ ._app }}');
     expect(summary.text()).toContain('application: {{ ._app }}');
+  });
+
+  it('edits the template in the form dialog and reloads it when saved', async () => {
+    const wrapper = mountView();
+    await flushPromises();
+
+    await wrapper.find('button').trigger('click');
+    const dialog = wrapper.findComponent({ name: 'SspTemplateFormDialog' });
+    expect(dialog.props('visible')).toBe(true);
+    expect(dialog.props('template')).toMatchObject({ id: 't-1' });
+
+    dialog.vm.$emit('saved');
+    expect(state.load).toHaveBeenCalledTimes(2);
   });
 });
