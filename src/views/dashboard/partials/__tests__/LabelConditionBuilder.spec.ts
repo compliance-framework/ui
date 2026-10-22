@@ -13,15 +13,18 @@ vi.mock('@/composables/axios', () => ({
 
 // Host with a real v-model so writes between keystrokes sync, mirroring the
 // dialog's usage of the component.
-function mountBuilder(initial: { key: string; value: string }[] = []) {
+function mountBuilder(
+  initial: { key: string; value: string }[] = [],
+  ignoreScope = false,
+) {
   const rows = ref(initial);
   const Host = defineComponent({
     components: { LabelConditionBuilder },
     setup() {
-      return { rows };
+      return { rows, ignoreScope };
     },
     template:
-      '<LabelConditionBuilder v-model="rows" ssp-id="ssp-1" :keys="[\'repository\',\'env\']" />',
+      '<LabelConditionBuilder v-model="rows" ssp-id="ssp-1" :keys="[\'repository\',\'env\']" :ignore-scope="ignoreScope" />',
   });
   const wrapper = mount(Host, {
     global: {
@@ -75,6 +78,21 @@ describe('LabelConditionBuilder', () => {
     expect(state.axiosGet).toHaveBeenCalledWith(
       expect.stringContaining('/dashboard-suggestions/label-values'),
       { params: { key: 'repository', query: 'todo' } },
+    );
+  });
+
+  it('asks for values from all evidence when told to ignore the scope', async () => {
+    const { wrapper } = mountBuilder([{ key: 'repository', value: '' }], true);
+
+    const valueInput = wrapper
+      .find('[data-testid="condition-0"]')
+      .findAllComponents({ name: 'AutoComplete' })[1];
+    valueInput.vm.$emit('complete', { query: 'todo' });
+    await flushPromises();
+
+    expect(state.axiosGet).toHaveBeenCalledWith(
+      expect.stringContaining('/dashboard-suggestions/label-values'),
+      { params: { key: 'repository', query: 'todo', ignoreScope: true } },
     );
   });
 

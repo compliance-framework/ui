@@ -65,11 +65,15 @@ const props = withDefaults(
     addLabel?: string;
     valuePlaceholder?: string;
     testid?: string;
+    // Suggest values from all evidence instead of the SSP's scope. The scope editor
+    // needs it: a new scope entry is by definition not in the scope yet.
+    ignoreScope?: boolean;
   }>(),
   {
     addLabel: 'Add condition',
     valuePlaceholder: 'value',
     testid: 'condition',
+    ignoreScope: false,
   },
 );
 
@@ -114,7 +118,13 @@ async function onValueComplete(event: { query: string }, key: string) {
   try {
     const response = await axios.get<DataResponse<string[]>>(
       buildDashboardSuggestionLabelValuesEndpoint(props.sspId),
-      { params: { key, query: event.query } },
+      {
+        params: {
+          key,
+          query: event.query,
+          ...(props.ignoreScope ? { ignoreScope: true } : {}),
+        },
+      },
     );
     valueSuggestions.value = response.data.data ?? [];
   } catch {
