@@ -95,11 +95,11 @@
             >Href</label
           >
           <p class="mt-1 text-sm text-gray-900 dark:text-slate-200">
-            {{ assessmentResults.importAP?.href || 'N/A' }}
+            {{ assessmentResults.importAp?.href || 'N/A' }}
           </p>
         </div>
 
-        <div v-if="assessmentResults.importAP?.remarks">
+        <div v-if="assessmentResults.importAp?.remarks">
           <label
             class="block text-sm font-medium text-gray-700 dark:text-slate-300"
             >Remarks</label
@@ -107,7 +107,7 @@
           <p
             class="mt-1 text-sm text-gray-900 dark:text-slate-200 whitespace-pre-wrap"
           >
-            {{ assessmentResults.importAP.remarks }}
+            {{ assessmentResults.importAp.remarks }}
           </p>
         </div>
       </div>
@@ -122,9 +122,7 @@
       <div class="bg-gray-50 dark:bg-slate-800 p-4 rounded-lg">
         <p class="text-sm text-gray-700 dark:text-slate-300">
           This assessment contains
-          <span class="font-semibold">{{
-            assessmentResults.results?.length || 0
-          }}</span>
+          <span class="font-semibold">{{ resultCount }}</span>
           result(s).
         </p>
       </div>
@@ -186,11 +184,11 @@
 </template>
 
 <script setup lang="ts">
-import { type PropType } from 'vue';
+import { computed, type PropType } from 'vue';
 import { useRouter } from 'vue-router';
 import { useConfigStore } from '@/stores/config';
 import { useToast } from 'primevue/usetoast';
-import type { AssessmentResult } from '@/oscal';
+import type { AssessmentResult, Result } from '@/oscal';
 import { useDataApi } from '@/composables/axios';
 import { useDeleteConfirmationDialog } from '@/utils/delete-dialog';
 import { usePermissions } from '@/composables/usePermissions';
@@ -210,6 +208,16 @@ const configStore = useConfigStore();
 const toast = useToast();
 
 const { confirmDeleteDialog } = useDeleteConfirmationDialog();
+
+// The assessment-results GET doesn't include results (they come from /results),
+// so counting `assessmentResults.results` always showed 0.
+const { data: resultList } = useDataApi<Result[]>(
+  `/api/oscal/assessment-results/${props.assessmentResults.uuid}/results`,
+);
+const resultCount = computed(
+  () =>
+    resultList.value?.length ?? props.assessmentResults.results?.length ?? 0,
+);
 
 const { execute: executeDelete } = useDataApi<void>(
   `/api/oscal/assessment-results/${props.assessmentResults.uuid}`,
