@@ -7,8 +7,8 @@ RUN npm run build
 
 # production stage
 FROM nginx:stable-alpine AS production
-# CVE-2026-111497: pick up the patched Brotli until the nginx base image is rebuilt with it.
-RUN apk upgrade --no-cache brotli-libs
+# Pick up Alpine package fixes the nginx base image hasn't been rebuilt with yet.
+RUN apk upgrade --no-cache
 WORKDIR /app
 COPY --from=build /app/dist /app
 COPY deployment/nginx.conf /etc/nginx/conf.d/default.conf
