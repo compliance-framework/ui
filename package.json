@@ -27,7 +27,7 @@
   },
   "engines": {
     "npm": "^10.1",
-    "node": "^20"
+    "node": "^22"
   },
   "dependencies": {
     "@codemirror/commands": "^6.11.1",
