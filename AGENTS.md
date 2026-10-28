@@ -30,8 +30,8 @@ VITE_API_URL=http://localhost:8080 npm run dev   # against a local-dev API
 npm run format:fix                           # prettier --write src/
 ```
 
-- **Node version.** CI and the Docker image use Node 20 (`engines` says `^20`), but newer
-  Node versions work locally.
+- **Node version.** CI (through `.nvmrc`) and the Docker image use Node 22 (`engines` says
+  `^22`), but newer Node versions work locally.
 - **CI.** `.github/workflows/ci.yml` calls the shared `ci-ui.yml` from
   `compliance-framework/workflows`: ESLint (fails on errors), the Prettier check, type-check,
   unit tests, the build and the conformance drift check, plus the PR title, vulnerability and
