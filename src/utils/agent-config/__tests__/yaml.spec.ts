@@ -12,12 +12,10 @@ describe('yaml', () => {
 
   it('reports the error line and column', () => {
     const r = parseYaml('plugins:\n  a: [1, 2\n');
-    expect(r.ok).toBe(false);
-    if (!r.ok) {
-      expect(r.error.line).toBeGreaterThanOrEqual(1);
-      expect(r.error.column).toBeGreaterThanOrEqual(0);
-      expect(r.error.message).toBeTruthy();
-    }
+    if (r.ok) throw new Error('expected a parse error');
+    expect(r.error.line).toBeGreaterThanOrEqual(1);
+    expect(r.error.column).toBeGreaterThanOrEqual(0);
+    expect(r.error.message).toBeTruthy();
   });
 
   it('requires a mapping root; empty is {}', () => {
