@@ -1,3 +1,6 @@
 lisa-design:
 - ci.yml leaves `images` unset: the v1.9.0 default `[{}]` (repo name `ui`, Dockerfile, context .) matches release.yml's `[{"name": "ui", "dockerfile": "Dockerfile"}]`, so CI scans the released image.
 - AGENTS.md's CI bullet names the new non-gating image check so the "one check to require" guidance stays accurate.
+
+lisa-selfreview:
+- pass 1: approve, no findings (pins are full SHAs of the v1.9.0 tag commit; permissions unchanged; release.yml image list equals the images default; AGENTS.md CI bullet updated; YAML parses; actionlint not installed)
