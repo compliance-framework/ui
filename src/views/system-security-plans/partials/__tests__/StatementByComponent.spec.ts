@@ -95,8 +95,7 @@ describe('StatementByComponent', () => {
       global: { stubs },
     });
 
-    expect(execute).toHaveBeenCalledOnce();
-    expect(execute).toHaveBeenCalledWith(
+    expect(execute).toHaveBeenCalledExactlyOnceWith(
       '/api/oscal/system-security-plans/ssp-1/system-implementation/components/component-1',
     );
   });
