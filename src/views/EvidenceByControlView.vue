@@ -27,7 +27,12 @@ const controlId = route.params.id as string;
 onMounted(() => {
   evidenceStore.getForControl(controlId).then((data) => {
     control.value = data.metadata.control;
-    evidence.value = data.data;
+    // for-control returns `labels: null` (labels aren't loaded there), and the
+    // list's LabelList maps over them, which crashed the whole page.
+    evidence.value = data.data.map((item) => ({
+      ...item,
+      labels: item.labels ?? [],
+    }));
   });
 });
 </script>
