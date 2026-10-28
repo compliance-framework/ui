@@ -38,8 +38,7 @@
       <pre
         class="font-mono text-sm whitespace-pre-wrap"
         data-test="yaml-text"
-        >{{ text }}</pre
-      >
+        >{{ text }}</pre>
     </div>
   </div>
 </template>

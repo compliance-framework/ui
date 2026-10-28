@@ -14,10 +14,7 @@ export type PoamItemStatus =
   | 'risk-accepted';
 
 export type MilestoneStatus =
-  | 'open'
-  | 'in-progress'
-  | 'completed'
-  | 'cancelled';
+  'open' | 'in-progress' | 'completed' | 'cancelled';
 
 export type PoamSourceType =
   | 'security-assessment'

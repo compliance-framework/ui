@@ -27,9 +27,7 @@ import type {
 } from '@/oscal';
 
 export type Diagrammable =
-  | AuthorizationBoundary
-  | DataFlow
-  | NetworkArchitecture;
+  AuthorizationBoundary | DataFlow | NetworkArchitecture;
 
 export interface CreateStatementRequest {
   uuid: string;

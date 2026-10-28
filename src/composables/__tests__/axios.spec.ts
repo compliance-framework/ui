@@ -91,9 +91,8 @@ describe('agent config stop paths', () => {
     });
 
   it('keeps snake_case overlay keys verbatim (config)', async () => {
-    const { STOP_PATHS } = await import(
-      '@/composables/agent-config/useAgentConfigApi'
-    );
+    const { STOP_PATHS } =
+      await import('@/composables/agent-config/useAgentConfigApi');
     const instance = useAuthenticatedInstance();
     const response = await instance.get('/x', {
       camelcaseStopPaths: STOP_PATHS.config,
@@ -115,9 +114,8 @@ describe('agent config stop paths', () => {
   });
 
   it('keeps base/effective/remote-config verbatim inside arrays (instances list)', async () => {
-    const { STOP_PATHS } = await import(
-      '@/composables/agent-config/useAgentConfigApi'
-    );
+    const { STOP_PATHS } =
+      await import('@/composables/agent-config/useAgentConfigApi');
     const instance = useAuthenticatedInstance();
     const response = await instance.get('/x', {
       camelcaseStopPaths: STOP_PATHS.instances,
@@ -153,9 +151,8 @@ describe('agent config stop paths', () => {
   });
 
   it('keeps preview effective and diff values verbatim', async () => {
-    const { STOP_PATHS } = await import(
-      '@/composables/agent-config/useAgentConfigApi'
-    );
+    const { STOP_PATHS } =
+      await import('@/composables/agent-config/useAgentConfigApi');
     const instance = useAuthenticatedInstance();
     const response = await instance.get('/x', {
       camelcaseStopPaths: STOP_PATHS.preview,

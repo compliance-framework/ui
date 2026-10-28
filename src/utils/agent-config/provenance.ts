@@ -12,10 +12,7 @@ import {
 import { isPlainObject } from './merge-patch';
 
 export type Provenance =
-  | 'file'
-  | 'overlay'
-  | 'overrides-file'
-  | 'removed-by-overlay';
+  'file' | 'overlay' | 'overrides-file' | 'removed-by-overlay';
 
 /**
  * What the overlay does at `ptr` under RFC 7396. Walking down from the root, a null is a

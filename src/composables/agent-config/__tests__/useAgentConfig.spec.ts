@@ -35,11 +35,12 @@ function makeApi(over: Partial<AgentConfigApi> = {}): AgentConfigApi {
     getRevision: vi.fn().mockResolvedValue(configRev6),
     revert: vi.fn(),
     listInstances: vi.fn().mockResolvedValue(instancesMixed),
-    getInstance: vi
-      .fn()
-      .mockImplementation(async (_a: string, id: string) =>
-        detailFor(instancesMixed.items.find((i) => i.instanceId === id)!, {}),
+    getInstance: vi.fn().mockImplementation(async (_a: string, id: string) =>
+      detailFor(
+        instancesMixed.items.find((i) => i.instanceId === id)!,
+        {},
       ),
+    ),
     ...over,
   };
 }

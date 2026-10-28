@@ -144,9 +144,7 @@ const authenticatedRoutes = [
         path: '',
         name: 'workflow-instance-overview',
         component: () =>
-          import(
-            '../views/workflow-instances/WorkflowInstanceOverviewView.vue'
-          ),
+          import('../views/workflow-instances/WorkflowInstanceOverviewView.vue'),
       },
       {
         path: 'roles',
@@ -158,9 +156,7 @@ const authenticatedRoutes = [
         path: 'executions',
         name: 'workflow-instance-executions',
         component: () =>
-          import(
-            '../views/workflow-instances/WorkflowInstanceExecutionsView.vue'
-          ),
+          import('../views/workflow-instances/WorkflowInstanceExecutionsView.vue'),
       },
       {
         path: 'json',
@@ -609,9 +605,7 @@ const authenticatedRoutes = [
     path: '/component-definitions/create',
     name: 'component-definition-create',
     component: () =>
-      import(
-        '../views/component-definitions/ComponentDefinitionCreateView.vue'
-      ),
+      import('../views/component-definitions/ComponentDefinitionCreateView.vue'),
     meta: {
       requiresAuth: true,
     },
@@ -620,9 +614,7 @@ const authenticatedRoutes = [
     path: '/component-definitions/:id',
     name: 'component-definition-editor',
     component: () =>
-      import(
-        '../views/component-definitions/ComponentDefinitionEditorView.vue'
-      ),
+      import('../views/component-definitions/ComponentDefinitionEditorView.vue'),
     meta: {
       requiresAuth: true,
     },
@@ -631,41 +623,31 @@ const authenticatedRoutes = [
         path: '',
         name: 'component-definition-overview',
         component: () =>
-          import(
-            '../views/component-definitions/ComponentDefinitionOverviewView.vue'
-          ),
+          import('../views/component-definitions/ComponentDefinitionOverviewView.vue'),
       },
       {
         path: 'components',
         name: 'component-definition-components',
         component: () =>
-          import(
-            '../views/component-definitions/ComponentDefinitionComponentsView.vue'
-          ),
+          import('../views/component-definitions/ComponentDefinitionComponentsView.vue'),
       },
       {
         path: 'capabilities',
         name: 'component-definition-capabilities',
         component: () =>
-          import(
-            '../views/component-definitions/ComponentDefinitionCapabilitiesView.vue'
-          ),
+          import('../views/component-definitions/ComponentDefinitionCapabilitiesView.vue'),
       },
       {
         path: 'back-matter',
         name: 'component-definition-back-matter',
         component: () =>
-          import(
-            '../views/component-definitions/ComponentDefinitionBackMatterView.vue'
-          ),
+          import('../views/component-definitions/ComponentDefinitionBackMatterView.vue'),
       },
       {
         path: 'json',
         name: 'component-definition-json',
         component: () =>
-          import(
-            '../views/component-definitions/ComponentDefinitionJSONView.vue'
-          ),
+          import('../views/component-definitions/ComponentDefinitionJSONView.vue'),
       },
     ],
   },
@@ -802,9 +784,7 @@ const authenticatedRoutes = [
     // this generates a separate chunk (About.[hash].js) for this route
     // which is lazy-loaded when the route is visited.
     component: () =>
-      import(
-        '../views/plan-of-actions-and-milestones/PlanOfActionAndMilestonesListView.vue'
-      ),
+      import('../views/plan-of-actions-and-milestones/PlanOfActionAndMilestonesListView.vue'),
     meta: {
       requiresAuth: true,
     },
@@ -813,9 +793,7 @@ const authenticatedRoutes = [
     path: '/plan-of-action-and-milestones/create',
     name: 'plan-of-action-and-milestones-create',
     component: () =>
-      import(
-        '../views/plan-of-actions-and-milestones/PlanOfActionAndMilestonesCreateView.vue'
-      ),
+      import('../views/plan-of-actions-and-milestones/PlanOfActionAndMilestonesCreateView.vue'),
     meta: {
       requiresAuth: true,
     },
@@ -833,97 +811,73 @@ const authenticatedRoutes = [
         path: '',
         name: 'system-security-plan-overview',
         component: () =>
-          import(
-            '../views/system-security-plans/SystemSecurityPlanOverviewView.vue'
-          ),
+          import('../views/system-security-plans/SystemSecurityPlanOverviewView.vue'),
       },
       {
         path: 'system-characteristics',
         name: 'system-security-plan-characteristics',
         component: () =>
-          import(
-            '../views/system-security-plans/SystemSecurityPlanCharacteristicsView.vue'
-          ),
+          import('../views/system-security-plans/SystemSecurityPlanCharacteristicsView.vue'),
       },
       {
         path: 'authorization-boundary',
         name: 'system-security-plan-diagrams',
         component: () =>
-          import(
-            '../views/system-security-plans/SystemSecurityPlanDiagramsView.vue'
-          ),
+          import('../views/system-security-plans/SystemSecurityPlanDiagramsView.vue'),
       },
       {
         path: 'system-implementation',
         name: 'system-security-plan-implementation',
         component: () =>
-          import(
-            '../views/system-security-plans/SystemSecurityPlanSystemImplementationEditorView.vue'
-          ),
+          import('../views/system-security-plans/SystemSecurityPlanSystemImplementationEditorView.vue'),
       },
       {
         path: 'users',
         name: 'system-security-plan-users',
         component: () =>
-          import(
-            '../views/system-security-plans/SystemSecurityPlanUsersView.vue'
-          ),
+          import('../views/system-security-plans/SystemSecurityPlanUsersView.vue'),
       },
       {
         path: 'components',
         name: 'system-security-plan-components',
         component: () =>
-          import(
-            '../views/system-security-plans/SystemSecurityPlanComponentsView.vue'
-          ),
+          import('../views/system-security-plans/SystemSecurityPlanComponentsView.vue'),
       },
       {
         path: 'scope',
         name: 'system-security-plan-scope',
         component: () =>
-          import(
-            '../views/system-security-plans/SystemSecurityPlanScopeView.vue'
-          ),
+          import('../views/system-security-plans/SystemSecurityPlanScopeView.vue'),
       },
       {
         path: 'authorizations',
         name: 'system-security-plan-authorizations',
         component: () =>
-          import(
-            '../views/system-security-plans/SystemSecurityPlanAuthorizationsView.vue'
-          ),
+          import('../views/system-security-plans/SystemSecurityPlanAuthorizationsView.vue'),
       },
       {
         path: 'control-implementation',
         name: 'system-security-plan-control-implementation',
         component: () =>
-          import(
-            '../views/system-security-plans/SystemSecurityPlanControlImplementationView.vue'
-          ),
+          import('../views/system-security-plans/SystemSecurityPlanControlImplementationView.vue'),
       },
       {
         path: 'export-offerings',
         name: 'system-security-plan-export-offerings',
         component: () =>
-          import(
-            '../views/system-security-plans/SystemSecurityPlanExportOfferingsView.vue'
-          ),
+          import('../views/system-security-plans/SystemSecurityPlanExportOfferingsView.vue'),
       },
       {
         path: 'leverage',
         name: 'system-security-plan-leverage',
         component: () =>
-          import(
-            '../views/system-security-plans/SystemSecurityPlanLeverageView.vue'
-          ),
+          import('../views/system-security-plans/SystemSecurityPlanLeverageView.vue'),
       },
       {
         path: 'inherited-capabilities',
         name: 'system-security-plan-inherited-capabilities',
         component: () =>
-          import(
-            '../views/system-security-plans/SystemSecurityPlanInheritedCapabilitiesView.vue'
-          ),
+          import('../views/system-security-plans/SystemSecurityPlanInheritedCapabilitiesView.vue'),
       },
       {
         path: 'risks',
@@ -939,17 +893,13 @@ const authenticatedRoutes = [
         path: 'compliance',
         name: 'system-security-plan-compliance',
         component: () =>
-          import(
-            '../views/system-security-plans/SystemSecurityPlanComplianceView.vue'
-          ),
+          import('../views/system-security-plans/SystemSecurityPlanComplianceView.vue'),
       },
       {
         path: 'json',
         name: 'system-security-plan-json',
         component: () =>
-          import(
-            '../views/system-security-plans/SystemSecurityPlanJSONView.vue'
-          ),
+          import('../views/system-security-plans/SystemSecurityPlanJSONView.vue'),
       },
     ],
   },
@@ -957,9 +907,7 @@ const authenticatedRoutes = [
     path: '/plan-of-action-and-milestones/:id',
     name: 'plan-of-action-and-milestones-editor',
     component: () =>
-      import(
-        '../views/plan-of-actions-and-milestones/PlanOfActionAndMilestonesEditorView.vue'
-      ),
+      import('../views/plan-of-actions-and-milestones/PlanOfActionAndMilestonesEditorView.vue'),
     meta: {
       requiresAuth: true,
     },
@@ -968,57 +916,43 @@ const authenticatedRoutes = [
         path: '',
         name: 'plan-of-action-and-milestones-overview',
         component: () =>
-          import(
-            '../views/plan-of-actions-and-milestones/PlanOfActionAndMilestonesOverviewView.vue'
-          ),
+          import('../views/plan-of-actions-and-milestones/PlanOfActionAndMilestonesOverviewView.vue'),
       },
       {
         path: 'poam-items',
         name: 'plan-of-action-and-milestones-poam-items',
         component: () =>
-          import(
-            '../views/plan-of-actions-and-milestones/PlanOfActionAndMilestonesPoamItemsView.vue'
-          ),
+          import('../views/plan-of-actions-and-milestones/PlanOfActionAndMilestonesPoamItemsView.vue'),
       },
       {
         path: 'import-ssp',
         name: 'plan-of-action-and-milestones-import-ssp',
         component: () =>
-          import(
-            '../views/plan-of-actions-and-milestones/PlanOfActionAndMilestonesImportSspView.vue'
-          ),
+          import('../views/plan-of-actions-and-milestones/PlanOfActionAndMilestonesImportSspView.vue'),
       },
       {
         path: 'system-id',
         name: 'plan-of-action-and-milestones-system-id',
         component: () =>
-          import(
-            '../views/plan-of-actions-and-milestones/PlanOfActionAndMilestonesSystemIdView.vue'
-          ),
+          import('../views/plan-of-actions-and-milestones/PlanOfActionAndMilestonesSystemIdView.vue'),
       },
       {
         path: 'local-definitions',
         name: 'plan-of-action-and-milestones-local-definitions',
         component: () =>
-          import(
-            '../views/plan-of-actions-and-milestones/PlanOfActionAndMilestonesLocalDefinitionsView.vue'
-          ),
+          import('../views/plan-of-actions-and-milestones/PlanOfActionAndMilestonesLocalDefinitionsView.vue'),
       },
       {
         path: 'observations',
         name: 'plan-of-action-and-milestones-observations',
         component: () =>
-          import(
-            '../views/plan-of-actions-and-milestones/PlanOfActionAndMilestonesObservationsView.vue'
-          ),
+          import('../views/plan-of-actions-and-milestones/PlanOfActionAndMilestonesObservationsView.vue'),
       },
       {
         path: 'risks',
         name: 'plan-of-action-and-milestones-risks',
         component: () =>
-          import(
-            '../views/plan-of-actions-and-milestones/PlanOfActionAndMilestonesRisksView.vue'
-          ),
+          import('../views/plan-of-actions-and-milestones/PlanOfActionAndMilestonesRisksView.vue'),
       },
       {
         path: 'risks/:riskId',
@@ -1029,25 +963,19 @@ const authenticatedRoutes = [
         path: 'findings',
         name: 'plan-of-action-and-milestones-findings',
         component: () =>
-          import(
-            '../views/plan-of-actions-and-milestones/PlanOfActionAndMilestonesFindingsView.vue'
-          ),
+          import('../views/plan-of-actions-and-milestones/PlanOfActionAndMilestonesFindingsView.vue'),
       },
       {
         path: 'back-matter',
         name: 'plan-of-action-and-milestones-back-matter',
         component: () =>
-          import(
-            '../views/plan-of-actions-and-milestones/PlanOfActionAndMilestonesBackMatterView.vue'
-          ),
+          import('../views/plan-of-actions-and-milestones/PlanOfActionAndMilestonesBackMatterView.vue'),
       },
       {
         path: 'json',
         name: 'plan-of-action-and-milestones-json',
         component: () =>
-          import(
-            '../views/plan-of-actions-and-milestones/PlanOfActionAndMilestonesJSONView.vue'
-          ),
+          import('../views/plan-of-actions-and-milestones/PlanOfActionAndMilestonesJSONView.vue'),
       },
     ],
   },
@@ -1055,9 +983,7 @@ const authenticatedRoutes = [
     path: '/plan-of-action-and-milestones/:id/edit',
     name: 'plan-of-action-and-milestones-edit',
     component: () =>
-      import(
-        '../views/plan-of-actions-and-milestones/PlanOfActionAndMilestonesEditView.vue'
-      ),
+      import('../views/plan-of-actions-and-milestones/PlanOfActionAndMilestonesEditView.vue'),
     meta: {
       requiresAuth: true,
     },
@@ -1105,41 +1031,31 @@ const authenticatedRoutes = [
         path: '',
         name: 'assessment-results-overview',
         component: () =>
-          import(
-            '../views/assessment-results/AssessmentResultsOverviewView.vue'
-          ),
+          import('../views/assessment-results/AssessmentResultsOverviewView.vue'),
       },
       {
         path: 'import-ap',
         name: 'assessment-results-import-ap',
         component: () =>
-          import(
-            '../views/assessment-results/AssessmentResultsImportApView.vue'
-          ),
+          import('../views/assessment-results/AssessmentResultsImportApView.vue'),
       },
       {
         path: 'results',
         name: 'assessment-results-results',
         component: () =>
-          import(
-            '../views/assessment-results/AssessmentResultsResultsView.vue'
-          ),
+          import('../views/assessment-results/AssessmentResultsResultsView.vue'),
       },
       {
         path: 'local-definitions',
         name: 'assessment-results-local-definitions',
         component: () =>
-          import(
-            '../views/assessment-results/AssessmentResultsLocalDefinitionsView.vue'
-          ),
+          import('../views/assessment-results/AssessmentResultsLocalDefinitionsView.vue'),
       },
       {
         path: 'back-matter',
         name: 'assessment-results-back-matter',
         component: () =>
-          import(
-            '../views/assessment-results/AssessmentResultsBackMatterView.vue'
-          ),
+          import('../views/assessment-results/AssessmentResultsBackMatterView.vue'),
       },
       {
         path: 'json',
@@ -1315,8 +1231,7 @@ router.beforeEach((to, from, next) => {
     const permissionsStore = usePermissionsStore();
     const denied = to.matched.some((record) => {
       const permission = record.meta.permission as
-        | { resource: string; action: string }
-        | undefined;
+        { resource: string; action: string } | undefined;
       return (
         permission &&
         !permissionsStore.can(permission.resource, permission.action)

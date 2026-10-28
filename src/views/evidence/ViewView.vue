@@ -565,8 +565,7 @@
                   v-if="isTextMediaExpanded(media.uuid)"
                   :id="textMediaContentId(media.uuid)"
                   class="max-h-[32rem] overflow-auto p-4 text-sm leading-6 text-gray-900 whitespace-pre-wrap break-words dark:text-slate-100"
-                  >{{ renderMediaText(media) }}</pre
-                >
+                  >{{ renderMediaText(media) }}</pre>
               </div>
               <BackMatterDisplay v-else :resource="media" />
               <div
@@ -858,8 +857,7 @@
               </h4>
               <pre
                 class="mt-3 overflow-x-auto rounded bg-slate-100 p-3 text-xs break-all whitespace-pre-wrap dark:bg-slate-800 dark:text-slate-300"
-                >{{ signatureDetail.signature.jws }}</pre
-              >
+                >{{ signatureDetail.signature.jws }}</pre>
             </div>
           </div>
 

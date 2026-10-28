@@ -55,8 +55,7 @@ export interface IncorporatesComponent {
   description: string;
 }
 
-export interface ComponentDefinitionControlImplementation
-  extends HasPropAndLink {
+export interface ComponentDefinitionControlImplementation extends HasPropAndLink {
   uuid: string;
   source: string;
   description: string;
@@ -64,8 +63,7 @@ export interface ComponentDefinitionControlImplementation
   implementedRequirements: ComponentDefinitionImplementedRequirement[];
 }
 
-export interface ComponentDefinitionImplementedRequirement
-  extends HasPropAndLink {
+export interface ComponentDefinitionImplementedRequirement extends HasPropAndLink {
   uuid: string;
   controlId: string;
   description: string;

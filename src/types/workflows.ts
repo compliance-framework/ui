@@ -11,12 +11,7 @@
 export type WorkflowDefinitionStatus = 'draft' | 'published' | 'deprecated';
 
 export type WorkflowExecutionStatus =
-  | 'pending'
-  | 'in_progress'
-  | 'overdue'
-  | 'completed'
-  | 'failed'
-  | 'cancelled';
+  'pending' | 'in_progress' | 'overdue' | 'completed' | 'failed' | 'cancelled';
 
 export type StepExecutionStatus =
   | 'pending'
@@ -44,12 +39,7 @@ export type CadenceType =
   | `cron:${string}`;
 
 export type EvidenceType =
-  | 'document'
-  | 'attestation'
-  | 'screenshot'
-  | 'link'
-  | 'text'
-  | 'automatic';
+  'document' | 'attestation' | 'screenshot' | 'link' | 'text' | 'automatic';
 
 // ============================================================================
 // Workflow Definition

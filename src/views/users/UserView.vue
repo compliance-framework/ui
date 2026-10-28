@@ -45,8 +45,7 @@
             <template v-if="formattedUserAttributes">
               <pre
                 class="mt-2 rounded bg-gray-100 dark:bg-slate-800/80 p-3 text-sm overflow-auto text-gray-800 dark:text-slate-100"
-                >{{ formattedUserAttributes }}</pre
-              >
+                >{{ formattedUserAttributes }}</pre>
             </template>
             <span v-else>None</span>
           </div>

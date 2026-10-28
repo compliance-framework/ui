@@ -79,8 +79,7 @@ export function useAiDiagnostics() {
         { camelcaseStopPaths: labelKeyStopPaths },
       );
       const payload = response?.data.value as
-        | AiDiagnosticsRunsResponse
-        | undefined;
+        AiDiagnosticsRunsResponse | undefined;
 
       runs.value = payload?.data ?? [];
       nextCursor.value = payload?.meta?.nextCursor ?? null;
@@ -109,8 +108,7 @@ export function useAiDiagnostics() {
         { camelcaseStopPaths: labelKeyStopPaths },
       );
       const payload = response?.data.value as
-        | AiDiagnosticsRunsResponse
-        | undefined;
+        AiDiagnosticsRunsResponse | undefined;
 
       runs.value = [...runs.value, ...(payload?.data ?? [])];
       nextCursor.value = payload?.meta?.nextCursor ?? null;

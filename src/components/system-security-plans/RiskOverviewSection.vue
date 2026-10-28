@@ -69,9 +69,7 @@ import {
 import type { DataResponse } from '@/stores/types';
 
 export type RiskListRouteName =
-  | 'system-security-plan-risks'
-  | 'risks:index'
-  | 'system:risks';
+  'system-security-plan-risks' | 'risks:index' | 'system:risks';
 
 const props = withDefaults(
   defineProps<{

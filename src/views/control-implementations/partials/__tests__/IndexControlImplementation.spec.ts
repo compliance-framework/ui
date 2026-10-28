@@ -216,9 +216,9 @@ describe('IndexControlImplementation', () => {
     await exportButton(wrapper)!.trigger('click');
 
     wrapper
-      .getComponent<
-        typeof IndexControlImplementation
-      >('[data-testid="export-dialog"]')
+      .getComponent<typeof IndexControlImplementation>(
+        '[data-testid="export-dialog"]',
+      )
       .vm.$emit('saved');
 
     expect(wrapper.emitted('exported')).toHaveLength(1);

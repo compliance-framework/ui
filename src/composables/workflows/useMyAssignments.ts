@@ -106,8 +106,7 @@ export function useMyAssignments() {
       await executeMyAssignments(url);
 
       const responseData = axiosResponse.value?.data as unknown as
-        | MyAssignmentsResponse
-        | undefined;
+        MyAssignmentsResponse | undefined;
       return responseData?.total ?? 0;
     } catch (err) {
       console.error('Failed to get assignment count:', err);

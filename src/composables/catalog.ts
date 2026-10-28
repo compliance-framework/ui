@@ -15,11 +15,7 @@ export const CATALOG_TYPE_NS = 'https://compliance-framework.github.io/ns';
 export const CATALOG_ACTIVE_PROP = 'catalog-active';
 
 export type CatalogType =
-  | 'standard'
-  | 'policy'
-  | 'procedure'
-  | 'internal'
-  | 'other';
+  'standard' | 'policy' | 'procedure' | 'internal' | 'other';
 
 /**
  * Resolve a catalog's type from its OSCAL metadata props. The backend only
