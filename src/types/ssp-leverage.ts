@@ -39,9 +39,7 @@ export interface SubscribeRequest {
 
 // GET /oscal/system-security-plans/:id/leveraged-controls (BCH-1338/1339/1341/1346).
 export type ResponsibilityPostureValue =
-  | 'satisfied'
-  | 'not-satisfied'
-  | 'unknown';
+  'satisfied' | 'not-satisfied' | 'unknown';
 
 export interface LeveragedControlInheritedFrom {
   upstreamSspId: string;

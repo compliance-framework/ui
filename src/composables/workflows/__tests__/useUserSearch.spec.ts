@@ -64,8 +64,7 @@ describe('useUserSearch', () => {
   it('uses the trimmed query when calling the selectable-users API', async () => {
     const { searchUsers } = useUserSearch();
     const execute = mockUseDataApi.mock.results.at(-1)?.value.execute as
-      | ReturnType<typeof vi.fn>
-      | undefined;
+      ReturnType<typeof vi.fn> | undefined;
 
     await searchUsers({ query: '  alpha  ' });
 
@@ -75,8 +74,7 @@ describe('useUserSearch', () => {
   it('does not call the selectable-users API for queries shorter than 3 characters', async () => {
     const { searchUsers, userSuggestions } = useUserSearch();
     const execute = mockUseDataApi.mock.results.at(-1)?.value.execute as
-      | ReturnType<typeof vi.fn>
-      | undefined;
+      ReturnType<typeof vi.fn> | undefined;
 
     await searchUsers({ query: 'ab' });
 

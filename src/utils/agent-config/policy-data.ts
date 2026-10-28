@@ -8,12 +8,7 @@ import { clone, getOwn, isPlainObject, setOwn } from './merge-patch';
 import { isStorableNumber, unstorableNumberPointers } from './validation';
 
 export type JsonType =
-  | 'string'
-  | 'number'
-  | 'boolean'
-  | 'null'
-  | 'object'
-  | 'array';
+  'string' | 'number' | 'boolean' | 'null' | 'object' | 'array';
 
 export type DataPath = readonly (string | number)[];
 

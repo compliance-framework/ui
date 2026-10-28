@@ -20,11 +20,7 @@ import { isAgentConfigApiError, type AgentConfigApi } from './api-types';
 import { listAllInstances } from './instancePages';
 
 export type AgentConfigStatus =
-  | 'idle'
-  | 'loading'
-  | 'ready'
-  | 'unsupported'
-  | 'error';
+  'idle' | 'loading' | 'ready' | 'unsupported' | 'error';
 
 /** Max concurrent instance-detail requests when the editor needs every base (U2.2). */
 const DETAIL_CONCURRENCY = 6;

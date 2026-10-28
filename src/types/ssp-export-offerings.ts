@@ -3,10 +3,7 @@
 // rather than in src/oscal, and requests must not use decamelizeKeys.
 
 export type SSPExportOfferingStatus =
-  | 'draft'
-  | 'published'
-  | 'deprecated'
-  | 'revoked';
+  'draft' | 'published' | 'deprecated' | 'revoked';
 
 export interface SSPExportOfferingItem {
   id: string;

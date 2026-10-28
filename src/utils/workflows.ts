@@ -56,13 +56,11 @@ export function parseEvidenceRequired(
         return parsed as EvidenceRequirement[];
       }
       // Legacy format: array of strings - convert to new format
-      return parsed.map(
-        (type: string): EvidenceRequirement => ({
-          type: type as EvidenceType,
-          description: '',
-          required: true,
-        }),
-      );
+      return parsed.map((type: string): EvidenceRequirement => ({
+        type: type as EvidenceType,
+        description: '',
+        required: true,
+      }));
     }
   } catch {
     // Ignore parse errors and fall back to an empty list

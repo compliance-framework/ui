@@ -143,9 +143,7 @@ function useDataApi<T>(
   url?: Ref | string | null,
   config?: AxiosRequestConfig | null,
   options?:
-    | UseAxiosOptions
-    | UseAxiosOptionsWithInitialData<DataResponse<T>>
-    | null,
+    UseAxiosOptions | UseAxiosOptionsWithInitialData<DataResponse<T>> | null,
 ) {
   const instance = useAuthenticatedInstance();
   const ax = useAxios<DataResponse<T>>(
@@ -180,9 +178,7 @@ function useGuestApi<T>(
   url?: Ref | string | null,
   config?: AxiosRequestConfig | null,
   options?:
-    | UseAxiosOptions
-    | UseAxiosOptionsWithInitialData<DataResponse<T>>
-    | null,
+    UseAxiosOptions | UseAxiosOptionsWithInitialData<DataResponse<T>> | null,
 ) {
   const instance = useGuestInstance();
   const ax = useAxios<DataResponse<T>>(

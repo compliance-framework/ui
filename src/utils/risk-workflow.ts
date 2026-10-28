@@ -10,12 +10,7 @@ export type RiskRegisterStatus =
 export type RiskReviewDecision = 'extend' | 'reopen' | 'reassess';
 
 export type RiskWorkflowStage =
-  | 'intake'
-  | 'investigation'
-  | 'mitigation'
-  | 'accepted'
-  | 'closed'
-  | 'unknown';
+  'intake' | 'investigation' | 'mitigation' | 'accepted' | 'closed' | 'unknown';
 
 export interface RiskOwnerAssignmentDto {
   ownerKind: 'user';

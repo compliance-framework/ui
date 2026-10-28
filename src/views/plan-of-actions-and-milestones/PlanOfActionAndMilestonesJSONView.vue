@@ -26,8 +26,7 @@
     >
       <pre
         class="p-4 overflow-auto text-sm text-gray-900 dark:text-slate-300 bg-gray-50 dark:bg-slate-800"
-        >{{ formattedJson }}</pre
-      >
+        >{{ formattedJson }}</pre>
     </div>
   </div>
 </template>

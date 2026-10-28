@@ -603,9 +603,7 @@ function cancelCaptionEdit(uuid: string) {
 }
 
 type DiagramKind =
-  | 'authorization-boundary'
-  | 'network-architecture'
-  | 'data-flow';
+  'authorization-boundary' | 'network-architecture' | 'data-flow';
 
 function resolveGrouping(kind: DiagramKind): {
   grouping: Ref<Diagrammable | undefined>;

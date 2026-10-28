@@ -110,18 +110,10 @@ export interface FieldError {
 // ---- Instances (API agentInstanceSummary / agentInstanceDetail, R10) ----
 
 export type InstanceStatus =
-  | 'applied'
-  | 'rejected'
-  | 'failed'
-  | 'pending'
-  | 'not-applicable'
-  | 'unknown';
+  'applied' | 'rejected' | 'failed' | 'pending' | 'not-applicable' | 'unknown';
 
 export type SyncStatus =
-  | 'in-sync'
-  | 'out-of-sync'
-  | 'not-applicable'
-  | 'unknown';
+  'in-sync' | 'out-of-sync' | 'not-applicable' | 'unknown';
 
 /** R76: one plugin of an instance and the agent library its binary was built with. */
 export interface PluginReport {

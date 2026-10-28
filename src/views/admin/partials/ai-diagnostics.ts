@@ -1,10 +1,7 @@
 import type { ChartData } from 'chart.js';
 
 export type AiDiagnosticsStatus =
-  | 'pending'
-  | 'running'
-  | 'completed'
-  | 'failed';
+  'pending' | 'running' | 'completed' | 'failed';
 
 export type AiDiagnosticsCheckStatus = 'pass' | 'warn' | 'fail';
 

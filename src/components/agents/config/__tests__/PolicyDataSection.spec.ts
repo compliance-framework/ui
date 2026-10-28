@@ -79,8 +79,7 @@ async function mountSection(
 
 const pd = (ws: ConfigWorkspace) =>
   ws.draft.overlay.value.plugins?.['local-ssh']?.policy_data as
-    | Record<string, unknown>
-    | undefined;
+    Record<string, unknown> | undefined;
 const node = (w: VueWrapper, rel: string) =>
   w.find(`[data-test="pd-node-${PD}/${rel}"]`);
 const btn = (w: VueWrapper, what: string, rel: string) =>

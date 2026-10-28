@@ -373,8 +373,7 @@ async function buildComponentList() {
       );
       // useAxios execute() returns AxiosResponse; payload is in response.data.data
       const fullSystemSecurityPlan = response?.data.value?.data as
-        | SystemSecurityPlan
-        | undefined;
+        SystemSecurityPlan | undefined;
       if (!fullSystemSecurityPlan) {
         continue;
       }

@@ -30,8 +30,7 @@ import { nullAt, setAt, unsetAt } from './overlay-ops';
 import { isPolicyDataPointer } from './config-diff';
 
 export type PatchOp =
-  | { op: 'set'; ptr: string; value: unknown }
-  | { op: 'remove'; ptr: string };
+  { op: 'set'; ptr: string; value: unknown } | { op: 'remove'; ptr: string };
 
 /**
  * The edits turning `before` into `after` at `ptr`: objects recurse key by key (an added or

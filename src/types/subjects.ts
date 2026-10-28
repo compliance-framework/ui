@@ -2,10 +2,7 @@ import type { SubjectReference } from '@/oscal';
 
 // The kinds of entity evidence can name as its subject (GET /api/subjects).
 export type SubjectKind =
-  | 'defined-component'
-  | 'system-component'
-  | 'party'
-  | 'user';
+  'defined-component' | 'system-component' | 'party' | 'user';
 
 export interface SubjectSummary {
   subjectUuid: string;

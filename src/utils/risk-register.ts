@@ -34,11 +34,7 @@ export type RiskSortBy =
 
 export type SortDirection = 'asc' | 'desc';
 export type RiskSeverityLevel =
-  | 'unknown'
-  | 'low'
-  | 'medium'
-  | 'high'
-  | 'critical';
+  'unknown' | 'low' | 'medium' | 'high' | 'critical';
 
 export const defaultRiskFilters: RiskFilters = {
   search: '',

@@ -3,17 +3,10 @@ import type { Filter as LabelFilter } from '@/parsers/labelfilter';
 export type { LabelFilter };
 
 export type DashboardSuggestionStatus =
-  | 'pending'
-  | 'accepted'
-  | 'rejected'
-  | 'superseded';
+  'pending' | 'accepted' | 'rejected' | 'superseded';
 
 export type SuggestionRunStatus =
-  | 'idle'
-  | 'pending'
-  | 'running'
-  | 'completed'
-  | 'failed';
+  'idle' | 'pending' | 'running' | 'completed' | 'failed';
 
 export interface DashboardSuggestionLabelSet {
   hash: string;

@@ -11,9 +11,7 @@ export interface TreeNode {
 }
 
 type TreeNodeSource =
-  | Catalog
-  | Group
-  | { groups?: Group[]; controls?: Control[] };
+  Catalog | Group | { groups?: Group[]; controls?: Control[] };
 
 function sortNodes(nodes: Array<TreeNode>): Array<TreeNode> {
   return nodes.sort((a, b) =>
