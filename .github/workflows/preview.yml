@@ -17,7 +17,7 @@ concurrency:
 jobs:
   preview:
     # :main and :sha-<7> on pushes to main; :pr-<number> on PRs labelled preview.
-    uses: compliance-framework/workflows/.github/workflows/preview.yml@e85d35af2af2ddfcd4b92061d2063e665c1831f6 # v1.7.0
+    uses: compliance-framework/workflows/.github/workflows/preview.yml@aafa1649ac6f33c02c581486c50f9cf04cc0eb54 # v1.9.1
     with:
       kind: image
       on-main: true

@@ -13,7 +13,7 @@ permissions: {}
 
 jobs:
   ci:
-    uses: compliance-framework/workflows/.github/workflows/ci-ui.yml@e85d35af2af2ddfcd4b92061d2063e665c1831f6 # v1.7.0
+    uses: compliance-framework/workflows/.github/workflows/ci-ui.yml@aafa1649ac6f33c02c581486c50f9cf04cc0eb54 # v1.9.1
     with:
       # The unit tests are the test:unit script (Vitest), not test.
       test-script: test:unit
@@ -30,14 +30,14 @@ jobs:
 
   release-checks:
     # Acts only on release-please--* PRs; skipped (counts as passing) elsewhere.
-    uses: compliance-framework/workflows/.github/workflows/release-checks.yml@e85d35af2af2ddfcd4b92061d2063e665c1831f6 # v1.7.0
+    uses: compliance-framework/workflows/.github/workflows/release-checks.yml@aafa1649ac6f33c02c581486c50f9cf04cc0eb54 # v1.9.1
     permissions:
       contents: read
 
   notify:
     needs: [ci, release-checks]
     if: always()
-    uses: compliance-framework/workflows/.github/workflows/notify-failure.yml@e85d35af2af2ddfcd4b92061d2063e665c1831f6 # v1.7.0
+    uses: compliance-framework/workflows/.github/workflows/notify-failure.yml@aafa1649ac6f33c02c581486c50f9cf04cc0eb54 # v1.9.1
     with:
       needs: ${{ toJSON(needs) }}
     permissions:
