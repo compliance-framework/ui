@@ -11,7 +11,7 @@ jobs:
   release:
     # ghcr.io/compliance-framework/ui, linux/amd64 and linux/arm64: :X.Y.Z, :X.Y, :X and :latest
     # for a final release, :X.Y.Z-rcN only for a pre-release.
-    uses: compliance-framework/workflows/.github/workflows/release-ui.yml@aafa1649ac6f33c02c581486c50f9cf04cc0eb54 # v1.9.1
+    uses: compliance-framework/workflows/.github/workflows/release-ui.yml@dc7434879fbd0db1d1df9f590ed8bc13789bd320 # v1.9.2
     with:
       images: '[{"name": "ui", "dockerfile": "Dockerfile"}]'
     permissions:
