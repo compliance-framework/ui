@@ -93,7 +93,7 @@ async function send() {
       v-model:visible="visible"
       modal
       header="Send feedback"
-      class="w-full max-w-lg"
+      :style="{ width: 'min(32rem, calc(100vw - 2rem))' }"
     >
       <form class="space-y-4 p-1" @submit.prevent="send">
         <p class="text-sm text-gray-600 dark:text-slate-400">
