@@ -8,6 +8,8 @@ export interface Config {
   LOGIN_BANNER_SEVERITY?: LoginBannerSeverity;
   // Feature flag: allow filters (dashboards) to be linked to system components.
   FILTER_COMPONENT_LINKING_ENABLED?: boolean;
+  // Public demo only: the demo portal's feedback endpoint. When set, a feedback button is shown.
+  DEMO_FEEDBACK_URL?: string;
 }
 
 const loginBannerSeverities = ['info', 'warn', 'error', 'success'] as const;
@@ -34,6 +36,10 @@ function applyOverrides(cfg: Config): Config {
     FILTER_COMPONENT_LINKING_ENABLED:
       parseBooleanEnv(import.meta.env.VITE_FILTER_COMPONENT_LINKING_ENABLED) ??
       cfg.FILTER_COMPONENT_LINKING_ENABLED === true,
+    DEMO_FEEDBACK_URL:
+      import.meta.env.VITE_DEMO_FEEDBACK_URL !== undefined
+        ? import.meta.env.VITE_DEMO_FEEDBACK_URL
+        : cfg.DEMO_FEEDBACK_URL,
     LOGIN_BANNER:
       import.meta.env.VITE_LOGIN_BANNER !== undefined
         ? import.meta.env.VITE_LOGIN_BANNER

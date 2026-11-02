@@ -18,6 +18,30 @@ describe('config store', () => {
     vi.stubEnv('VITE_LOGIN_BANNER', undefined);
     vi.stubEnv('VITE_LOGIN_BANNER_SEVERITY', undefined);
     vi.stubEnv('VITE_FILTER_COMPONENT_LINKING_ENABLED', undefined);
+    vi.stubEnv('VITE_DEMO_FEEDBACK_URL', undefined);
+  });
+
+  it('has no demo feedback URL by default', async () => {
+    mockConfigResponse({ API_URL: 'https://api.example.test' });
+
+    const config = await useConfigStore().getConfig();
+
+    expect(config.DEMO_FEEDBACK_URL).toBe('');
+  });
+
+  it('resolves DEMO_FEEDBACK_URL from config.json, overridden by VITE_DEMO_FEEDBACK_URL', async () => {
+    mockConfigResponse({
+      DEMO_FEEDBACK_URL: 'https://demo.example.test/api/feedback',
+    });
+    expect((await useConfigStore().getConfig()).DEMO_FEEDBACK_URL).toBe(
+      'https://demo.example.test/api/feedback',
+    );
+
+    setActivePinia(createPinia());
+    vi.stubEnv('VITE_DEMO_FEEDBACK_URL', 'http://localhost:8081/api/feedback');
+    expect((await useConfigStore().getConfig()).DEMO_FEEDBACK_URL).toBe(
+      'http://localhost:8081/api/feedback',
+    );
   });
 
   afterEach(() => {
