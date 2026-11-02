@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.14.0](https://github.com/compliance-framework/ui/compare/v2.13.0...v2.14.0) (2026-11-02)
+
+
+### Features
+
+* feedback button for the public demo ([#386](https://github.com/compliance-framework/ui/issues/386)) ([eca859f](https://github.com/compliance-framework/ui/commit/eca859f45518c6ef8a4c8dc7ab31948a40a105ba))
+
+
+### Bug Fixes
+
+* **deps:** patch OS packages in nginx:stable-alpine (CVE-2026-111497, CVE-2026-92392) ([#383](https://github.com/compliance-framework/ui/issues/383)) ([2ed9808](https://github.com/compliance-framework/ui/commit/2ed9808e6593664f2f030773c6ef8c1a5fbe4bcf))
+
 ## [2.13.0](https://github.com/compliance-framework/ui/compare/v2.12.1...v2.13.0) (2026-10-28)
 
 
