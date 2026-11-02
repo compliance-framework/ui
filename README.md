@@ -23,7 +23,8 @@ This file will also be used when running in Docker.
   "API_URL": "http://localhost:9000",
   "LOGIN_BANNER": "",
   "LOGIN_BANNER_SEVERITY": "info",
-  "FILTER_COMPONENT_LINKING_ENABLED": false
+  "FILTER_COMPONENT_LINKING_ENABLED": false,
+  "DEMO_FEEDBACK_URL": ""
 }
 ```
 
@@ -31,6 +32,9 @@ This file will also be used when running in Docker.
 `LOGIN_BANNER` displays a dismissible notice on the login page when set to a non-empty string.
 `LOGIN_BANNER_SEVERITY` controls its styling and can be `info`, `warn`, `error`, or `success`.
 `FILTER_COMPONENT_LINKING_ENABLED` shows the UI for linking filters to system components
+`DEMO_FEEDBACK_URL` is for the public demo only: when set, a _Feedback_ button posts the visitor's
+feedback (with credentials) to this URL, the demo portal's `/api/feedback`. Unset or empty, no button.
+It can be overridden at build time with `VITE_DEMO_FEEDBACK_URL`.
 
 Developers can override these values at build time with `VITE_LOGIN_BANNER` and
 `VITE_LOGIN_BANNER_SEVERITY`. `VITE_LOGIN_BANNER` takes precedence over `config.json`; setting it to
