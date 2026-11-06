@@ -100,6 +100,9 @@
   "overrides": {
     "@tailwindcss/typography": {
       "postcss-selector-parser": "^6.1.5"
+    },
+    "overrides": {
+      "esbuild": "^0.25.10"
     }
   },
   "prettier": {
