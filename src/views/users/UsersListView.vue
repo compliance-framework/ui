@@ -63,9 +63,9 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted, watch, type Ref } from 'vue';
 import PageHeader from '@/components/PageHeader.vue';
-import type { CCFUser } from '@/stores/types';
+import type { CCFUser, ErrorBody, ErrorResponse } from '@/stores/types';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
 import UserCreateForm from '@/components/users/UserCreateForm.vue';
 import Dialog from '@/volt/Dialog.vue';
@@ -105,7 +105,7 @@ watch(
 );
 
 // Automatically show toast when error occurs
-useErrorToast(error, {
+useErrorToast(error as Ref<AxiosError<ErrorResponse<ErrorBody>> | undefined>, {
   summary: 'Error loading users',
   life: 3000,
 });
