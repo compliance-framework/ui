@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.15.0](https://github.com/compliance-framework/ui/compare/v2.14.0...v2.15.0) (2026-11-06)
+
+
+### Features
+
+* add reusable error handling utilities and integrate into user management components ([#141](https://github.com/compliance-framework/ui/issues/141)) ([2badd16](https://github.com/compliance-framework/ui/commit/2badd1607c631d7a1a5d0aa3ffb7a187440864a6))
+
+
+### Bug Fixes
+
+* **deps:** patch OS packages in nginx:stable-alpine (CVE-2026-107928, CVE-2026-107929, CVE-2026-111497, CVE-2026-113351, and 23 more) ([#388](https://github.com/compliance-framework/ui/issues/388)) ([d3e315e](https://github.com/compliance-framework/ui/commit/d3e315e3fb1998ead10234e29348e5dacbecba4c))
+
 ## [2.14.0](https://github.com/compliance-framework/ui/compare/v2.13.0...v2.14.0) (2026-11-02)
 
 
