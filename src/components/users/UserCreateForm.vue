@@ -62,6 +62,7 @@ import PrimaryButton from '../PrimaryButton.vue';
 import { useDataApi } from '@/composables/axios';
 import type { AxiosError } from 'axios';
 import { useToast } from 'primevue/usetoast';
+import { formatAxiosError } from '@/utils/error-formatting';
 
 const passwords = reactive({
   password: '',
@@ -120,11 +121,11 @@ async function createUser() {
     emit('create', createdUser.value);
   } catch (error) {
     const errorResponse = error as AxiosError<ErrorResponse<ErrorBody>>;
+    const formattedError = formatAxiosError(errorResponse);
     toast.add({
       severity: 'error',
-      summary: 'Error creating user',
-      detail:
-        errorResponse.response?.data.errors.body ?? 'Unknown error occurred',
+      summary: `Error creating user${formattedError.statusCode ? `: ${formattedError.summary}` : ''}`,
+      detail: formattedError.detail,
       life: 3000,
     });
     return;

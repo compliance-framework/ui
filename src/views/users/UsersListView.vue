@@ -63,9 +63,9 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted, watch, type Ref } from 'vue';
 import PageHeader from '@/components/PageHeader.vue';
-import type { CCFUser } from '@/stores/types';
+import type { CCFUser, ErrorBody, ErrorResponse } from '@/stores/types';
 import PrimaryButton from '@/volt/PrimaryButton.vue';
 import UserCreateForm from '@/components/users/UserCreateForm.vue';
 import Dialog from '@/volt/Dialog.vue';
@@ -73,6 +73,7 @@ import { useToast } from 'primevue/usetoast';
 import { useDataApi } from '@/composables/axios';
 import RouterLinkButton from '@/components/RouterLinkButton.vue';
 import type { AxiosError } from 'axios';
+import { useErrorToast } from '@/composables/useErrorToast';
 
 const showDialog = ref(false);
 const toast = useToast();
@@ -102,6 +103,12 @@ watch(
     }
   },
 );
+
+// Automatically show toast when error occurs
+useErrorToast(error as Ref<AxiosError<ErrorResponse<ErrorBody>> | undefined>, {
+  summary: 'Error loading users',
+  life: 3000,
+});
 
 function completed(newUser: CCFUser) {
   showDialog.value = false;
