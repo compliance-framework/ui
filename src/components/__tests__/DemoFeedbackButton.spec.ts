@@ -122,6 +122,15 @@ describe('DemoFeedbackButton', () => {
     expect(mockToastAdd).not.toHaveBeenCalled();
   });
 
+  it('keeps the dialog narrower than the screen', async () => {
+    const wrapper = await mountButton(FEEDBACK_URL);
+    await wrapper.find('[data-testid="demo-feedback-button"]').trigger('click');
+    // An inline width: Volt's Dialog root classes (w-1/3, max-w-screen) override width classes.
+    const style = wrapper.find('.dialog').attributes('style');
+    expect(style).toMatch(/^width: min\(32rem/);
+    expect(style).toContain('calc(100vw - 2rem)');
+  });
+
   it('does not send blank feedback', async () => {
     const fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);
