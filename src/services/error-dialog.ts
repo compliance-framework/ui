@@ -15,8 +15,10 @@ export interface ErrorDialogPayload {
   onClose?: () => void;
 }
 
-interface ErrorDialogState
-  extends Omit<ErrorDialogPayload, 'summary' | 'detail'> {
+interface ErrorDialogState extends Omit<
+  ErrorDialogPayload,
+  'summary' | 'detail'
+> {
   visible: boolean;
   summary: string;
   detail: string;
