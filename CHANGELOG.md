@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.15.1](https://github.com/compliance-framework/ui/compare/v2.15.0...v2.15.1) (2026-11-06)
+
+
+### Bug Fixes
+
+* **assessment-results:** read import-ap under its camelCased key ([#353](https://github.com/compliance-framework/ui/issues/353)) ([17b9436](https://github.com/compliance-framework/ui/commit/17b94363dfcc935899ce4c6c9fb1d1cfcce62593))
+* **evidence:** render control evidence whose labels are null ([#352](https://github.com/compliance-framework/ui/issues/352)) ([a6f3d0a](https://github.com/compliance-framework/ui/commit/a6f3d0a55e925e98b51a8922cda1fae8c3652a8e))
+* **ssp:** stop the characteristics editor wiping information types ([#351](https://github.com/compliance-framework/ui/issues/351)) ([1209d33](https://github.com/compliance-framework/ui/commit/1209d338c8f3c37d9e935650d87657e71926f6a5))
+
 ## [2.15.0](https://github.com/compliance-framework/ui/compare/v2.14.0...v2.15.0) (2026-11-06)
 
 
