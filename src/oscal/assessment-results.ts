@@ -23,7 +23,8 @@ import type {
 export interface AssessmentResult {
   uuid: string;
   metadata: Metadata;
-  importAP: ImportAP;
+  // The API's `import-ap` camelCases to `importAp`, not `importAP`.
+  importAp: ImportAP;
   localDefinitions?: AssessmentResultLocalDefinitions;
   results: Result[];
   backMatter?: BackMatter;
