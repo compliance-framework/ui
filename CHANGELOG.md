@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.15.2](https://github.com/compliance-framework/ui/compare/v2.15.1...v2.15.2) (2026-11-07)
+
+
+### Bug Fixes
+
+* **deps:** patch OS packages in nginx:stable-alpine (CVE-2026-4738) ([#393](https://github.com/compliance-framework/ui/issues/393)) ([ee6d1ae](https://github.com/compliance-framework/ui/commit/ee6d1aead58f1866cc0ba575d1be9a6a3d800432))
+* keep the demo feedback dialog narrower than the screen ([#387](https://github.com/compliance-framework/ui/issues/387)) ([5e406cc](https://github.com/compliance-framework/ui/commit/5e406ccdd3b664b2fd4d2ec8e932ff27acf03c98))
+
 ## [2.15.1](https://github.com/compliance-framework/ui/compare/v2.15.0...v2.15.1) (2026-11-06)
 
 
