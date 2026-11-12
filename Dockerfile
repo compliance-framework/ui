@@ -1,4 +1,4 @@
-FROM node:22@sha256:7702d8aa4d5910871692af4480eb3ba86f23047a6417a44d857d06c95d060d3f AS build
+FROM node:22@sha256:e13726ca604184d7a91fcacab1fc09eefd642dc28e79ac34e85540dd93b78cfb AS build
 WORKDIR /app
 COPY package*.json ./
 RUN npm install
