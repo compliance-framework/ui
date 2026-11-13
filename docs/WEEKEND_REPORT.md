@@ -511,3 +511,12 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   rebuilds the map when either list arrives.
 - **Found (data):** the local-dev profile "Meridian Delivery Controls — Basic Profile" imports
   the same catalog four times.
+
+### Workflow definition Overview tab
+
+- The edit form (name, description, version, suggested cadence, grace period, required
+  evidence as checkboxes) and the metadata are design-system; the script is the classic page's.
+  Save explains why it's unavailable ("Nothing has changed yet.").
+- **Found (classic bug, fixed here):** Save was enabled on an untouched form, because the
+  evidence watcher rewrote `evidenceRequired` in a normalised form after the "original" snapshot.
+  The form now normalises before taking the snapshot.

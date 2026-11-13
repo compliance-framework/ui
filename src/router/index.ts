@@ -109,7 +109,7 @@ const authenticatedRoutes = [
         path: '',
         name: 'workflow-definition-overview',
         component: () =>
-          import('../views/workflows/WorkflowDefinitionOverviewView.vue'),
+          import('../screens/workflows/WorkflowDefinitionOverviewTab.vue'),
       },
       {
         path: 'steps',
