@@ -1199,6 +1199,28 @@ const designSystemRoutes = [
       permission: { resource: RESOURCES.SSP, action: ACTIONS.READ },
     },
   },
+  {
+    // System pages take the system from the URL so links are shareable. SystemScope makes
+    // it the current system, which the classic system pages read.
+    path: 'systems/:systemId',
+    component: () => import('@/screens/systems/SystemScope.vue'),
+    meta: {
+      requiresAuth: true,
+      permission: { resource: RESOURCES.SSP, action: ACTIONS.READ },
+    },
+    children: [
+      {
+        path: '',
+        redirect: { name: 'ds-system-evidence' },
+      },
+      {
+        path: 'evidence',
+        name: 'ds-system-evidence',
+        component: () => import('@/screens/evidence/SystemEvidenceScreen.vue'),
+        meta: { title: 'Evidence' },
+      },
+    ],
+  },
 ];
 
 const router = createRouter({

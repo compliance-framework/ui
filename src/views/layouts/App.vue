@@ -29,6 +29,16 @@ const activeSystemKey = computed(() =>
     : 'global',
 );
 
+// Redesign proof of concept: "Try the new UI" opens the redesigned version of this page when
+// there is one, keeping the view in the query, and the redesigned Systems list otherwise.
+const newUiLink = computed(() => {
+  const systemId = systemStore.system.securityPlan?.uuid;
+  if (route.name === 'system:evidence' && systemId) {
+    return { path: `/next/systems/${systemId}/evidence`, query: route.query };
+  }
+  return '/next/systems';
+});
+
 // Auth is persisted, so on a hard refresh the user stays authenticated without re-running
 // the login hydration. Refresh the permission hints here so gating reflects current policy
 // (BCH-1318). Non-blocking — hydrate() swallows its own errors and can() stays optimistic.
@@ -76,7 +86,7 @@ onMounted(() => {
 
           <!-- Redesign proof of concept (src/ds) -->
           <RouterLink
-            to="/next/systems"
+            :to="newUiLink"
             class="mr-4 text-sm font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
           >
             Try the new UI

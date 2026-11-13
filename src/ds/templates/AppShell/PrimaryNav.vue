@@ -116,8 +116,15 @@ const isOpen = (id: string, containsActive: boolean) =>
         </ul>
       </Disclosure>
 
+      <p
+        v-if="!group.collapsible && group.label && mode !== 'rail'"
+        class="primary-nav__heading"
+        aria-hidden="true"
+      >
+        {{ group.label }}
+      </p>
       <ul
-        v-else
+        v-if="!group.collapsible"
         class="primary-nav__list"
         :aria-label="
           group.id === 'system'
@@ -290,6 +297,19 @@ const isOpen = (id: string, containsActive: boolean) =>
 
 .primary-nav__link:focus-visible {
   outline-offset: calc(var(--focus-width) * -1);
+}
+
+.primary-nav__heading {
+  padding: var(--space-2) var(--space-3) var(--space-1);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-caption);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+}
+
+.primary-nav__group--system > .primary-nav__heading {
+  padding-inline: 0;
 }
 
 .primary-nav__legacy {

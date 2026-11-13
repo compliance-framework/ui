@@ -23,8 +23,9 @@ export interface ResolvedNavGroup extends Omit<NavGroup, 'items'> {
 
 /**
  * The navigation the user may use, with the active item derived from the route: the deepest nav
- * path that contains the current URL wins. Legacy system pages read the active system from the
- * system store, so the system group is hidden until one is chosen.
+ * path that contains the current URL wins. The system group links to the current system: the one
+ * in the URL on a redesigned system page, otherwise the system store's (which classic system
+ * pages read). It is hidden until a system is chosen.
  */
 export function useNav() {
   const route = useRoute();
@@ -45,7 +46,13 @@ export function useNav() {
           !permissions.can(item.permission.resource, item.permission.action)
         )
           return [];
-        const to = { name: item.route };
+        const record = router.getRoutes().find((r) => r.name === item.route);
+        const to = {
+          name: item.route,
+          params: record?.path.includes(':systemId')
+            ? { systemId: system.value!.uuid }
+            : {},
+        };
         return [
           {
             name: item.route,

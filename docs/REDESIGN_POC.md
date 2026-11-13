@@ -1,32 +1,42 @@
 # Redesign proof of concept
 
 Branch `poc/redesign-foundation` brings the design system from `ccf-mockup-redesign` into this
-repo and rebuilds one screen with it against the live API. The goal is to show the migration path:
+repo and rebuilds two screens with it against the live API: the Systems list and This System >
+Evidence. The goal is to show the migration path:
 the new design system sits beside the legacy UI and screens move over one at a time.
 
 ## Try it
 
 ```sh
-npm run dev   # then sign in and open /next/systems, or use "Try the new UI" in the header
+npm run dev   # then sign in and use "Try the new UI" in the header
+# against local-dev while its containers hold port 3000:
+VITE_API_PROXY=http://localhost:8080 npm run dev
 ```
 
-- `/next/systems` is the redesigned Systems list, on live data, inside the new shell.
-- The new shell's nav uses the redesign's structure and labels. Items marked with ↗ still open the
-  classic page (and the classic layout). "Classic UI" in the header goes back.
+- `/next/systems` is the redesigned Systems list (also "All systems" in the system switcher).
+- `/next/systems/<ssp-uuid>/evidence` is This System > Evidence. The link is shareable: opening it
+  makes that system the current system.
+- The new shell's nav keeps the classic app's structure and labels. Items marked with ↗ still open
+  the classic page (and the classic layout). "Classic UI" in the header goes back; on the classic
+  system Evidence page, "Try the new UI" opens the redesigned one with the same view.
 - The theme follows the existing setting (`dark` class, `theme` in localStorage), so switching in
   either UI carries over.
 
 ## What is where
 
-| Path                 | What it is                                                                                                                                                     |
-| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/ds/tokens/`     | Design tokens (colour, type, space, motion…) and element defaults, copied from the mockup and scoped to `html[data-ds]`.                                       |
-| `src/ds/components/` | 30 component folders from the mockup (Button, DataTable, DataState, FilterBar, Menu, Dialog, Drawer, Select, Tabs, layout primitives…), on reka-ui and Lucide. |
-| `src/ds/templates/`  | `AppShell` (new header, nav, system switcher) and `ListTemplate`.                                                                                              |
-| `src/ds/query.ts`    | `useApiQuery`: wraps `useDataApi` and maps the request to the DataState states (loading, ready, empty, error, forbidden).                                      |
-| `src/screens/`       | Redesigned screens. Screens compose templates and components; they contain no CSS or class attributes.                                                         |
+| Path                 | What it is                                                                                                                                                      |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/ds/tokens/`     | Design tokens (colour, type, space, motion…) and element defaults, copied from the mockup and scoped to `html[data-ds]`.                                        |
+| `src/ds/components/` | 30 component folders from the mockup (Button, DataTable, DataState, FilterBar, Menu, Dialog, Drawer, Select, Tabs, layout primitives…), on reka-ui and Lucide.  |
+| `src/ds/templates/`  | `AppShell` (new header, nav, system switcher) and `ListTemplate`.                                                                                               |
+| `src/ds/query.ts`    | `useApiQuery`: wraps `useDataApi` and maps the request to the DataState states (loading, ready, empty, error, forbidden).                                       |
+| `src/screens/`       | Redesigned screens. Screens compose templates and components; they contain no CSS or class attributes. `systems/SystemScope.vue` is the frame for system pages. |
 
 ## Decisions for review
+
+Answered so far (2026-11-13): 2 is accepted for now; 7 is the system in the URL, with navigation
+true to the current app; 8 is to match the current app's columns, with no summary endpoint. 13–16
+are new and still open.
 
 1. **Incremental migration, not a rewrite.** The design system lives in `src/ds/` next to PrimeVue
    and Tailwind. Each screen moves when it's ready, and PrimeVue and Tailwind are removed once
@@ -59,22 +69,22 @@ npm run dev   # then sign in and open /next/systems, or use "Try the new UI" in 
    camelCasing, cookie auth and the 401/403 interceptors behave as they do everywhere else. No new
    data library (such as TanStack Query) for now. Revisit when screens need caching or shared
    queries.
-7. **The navigation follows the redesign's structure, mapped onto today's routes.** It has the
-   current system, Global, Control definitions and Admin. Labels follow the mockup where a
-   matching page exists ("All systems", "Evidence stream", "Cross-system risks", "Source"). Where
-   the mockup's destination doesn't exist yet (Assessments, People, Details, Components, POA&M),
-   the item is left out rather than pointed at a near match. "Implementation" and "Evidence
-   filters" keep legacy names because the redesign merges them into other pages. The system group
-   still reads the active system from the system store; the mockup puts the system in the URL
-   (`/systems/:sspId/...`). Moving to URL scoping is a separate decision, and probably the most
-   important structural one.
-8. **Systems was the first screen.** It is a read-mostly list, so it exercises the shell, the list
-   template, the filter bar, the data table, every DataState state, URL-held search and sort, row
-   menus and permission-gated actions, all on one endpoint. The mockup's columns for
-   authorization, impact, controls implemented, evidence satisfied and open risks were **left
-   out**: the list endpoint doesn't return them, and loading each system's records just to fill
-   the table would be slow. They need a summary endpoint from the API. Creating a system and
-   opening one still go to the classic pages.
+7. **The system lives in the URL; navigation stays true to the current app.** _Agreed._
+   - Redesigned system pages are `/next/systems/:systemId/...`, identified by SSP UUID.
+     `SystemScope` frames them: it loads the system named in the URL and makes it the current
+     system, so a shared link sets the reader's current system, and the nav, the switcher and the
+     classic system pages (which read the system store) all agree. An unknown system shows "System
+     not found" in place; a forbidden one shows no access.
+   - Switching system on a redesigned system page keeps the same page and puts the new system in
+     the URL. Search, sort and page are dropped on a switch, because they may not apply.
+   - The nav has the classic structure and labels: **This System** (Evidence, Implementation,
+     Compliance, Risks, Workflow Instances, Configure System), then **Global** (Evidence) with
+     **Analysis**, **Integrations**, **Control Definitions** and **Admin** as collapsible groups.
+     As in the classic app, the Systems list is reached from the system switcher, not the nav.
+8. **Systems was the first screen; its columns match the current app.** _Agreed._ Title, version
+   and last modified, with no summary endpoint. It exercises the shell, the list template, the
+   filter bar, the data table, every DataState state, URL-held search and sort, row menus and
+   permission-gated actions. Creating a system and opening one still go to the classic pages.
 9. **The mockup's terminology is adopted only on new screens.** The Systems page says "Systems"
    and "Current", not "System Security Plans" and "Active". The status vocabulary in
    `StatusBadge/statuses.ts` came across intact but isn't used yet; each wording change should be
@@ -88,11 +98,26 @@ npm run dev   # then sign in and open /next/systems, or use "Try the new UI" in 
 12. **The mockup's tooling isn't ported yet:** Playwright browser tests, axe accessibility checks,
     stylelint token enforcement, the vocabulary check and knip. They're the biggest remaining win
     from the mockup and should come next, before more screens are migrated. This branch has Vitest
-    specs for the Systems screen, its URL state and `useApiQuery`.
+    specs for both screens, their URL state, `SystemScope` and `useApiQuery`.
+13. **This System > Evidence is a first cut of the classic page, with a handoff for the rest.** It
+    has the scope check ("Define this system's scope"), title and label-query search with the same
+    validation as the classic page, sort by status, name and last seen, pagination, the subjects
+    column, and Share. **Not yet ported:** the compliance-over-time and agent-health charts, CSV
+    export, Save as filter, the subject filter and the labels column. "Open classic view" opens the
+    classic page with the exact same view for those.
+14. **Evidence uses the classic page's query parameters** (`filter`, `page`, `sortBy`,
+    `sortDirection`, `subject`), so a view moves between the two pages unchanged, and a subject
+    filter set on the classic page is honoured (and shown as a removable chip) here.
+15. **Evidence records still open on the classic record page**, with `from=system` so its "back"
+    returns to This System > Evidence. The record page is the obvious next migration after this
+    one.
+16. **Times show in the viewer's local time zone.** The mockup used UTC everywhere so its
+    screenshots were stable; for real data, local time matches the classic page.
 
 ## Suggested next steps
 
-- Agree on the decisions above, especially 2 (`/next` route prefix), 7 (system scoped in the URL
-  or in the store) and 8 (an API summary endpoint for the Systems list).
+- Review 13–16.
 - Port the Playwright, axe and stylelint setup and run it on `/next/*`.
-- Migrate a system-scoped screen next (Overview or Evidence) to test URL scoping.
+- Finish Evidence (charts, CSV export, save as filter, subject filter), then the evidence record
+  page, so the whole evidence journey stays in the new UI.
+- Then a system page with editing (Risks or Configure System) to prove out forms and dialogs.

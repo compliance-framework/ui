@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { TooltipProvider } from 'reka-ui';
 import Drawer from '@/ds/components/Drawer/Drawer.vue';
 import Icon from '@/ds/components/Icon/Icon.vue';
@@ -29,6 +29,7 @@ import { useNavMode } from './useNavMode';
  * element defaults (see src/ds/tokens). Legacy pages never see them.
  */
 const route = useRoute();
+const router = useRouter();
 const userStore = useUserStore();
 const permissions = usePermissionsStore();
 const systemStore = useSystemStore();
@@ -79,7 +80,20 @@ const systems = computed(() =>
   })),
 );
 
+/**
+ * Switching keeps the user on the same page of the newly chosen system. On a redesigned system
+ * page that means the same route with the new system in the URL; SystemScope then makes it
+ * current. Elsewhere the choice goes straight to the store.
+ */
 function switchSystem(id: string): void {
+  if (typeof route.params.systemId === 'string') {
+    if (route.params.systemId === id) return;
+    void router.push({
+      name: route.name ?? 'ds-system-evidence',
+      params: { ...route.params, systemId: id },
+    });
+    return;
+  }
   const plan = systemStore.availablePlans.find(
     (candidate) => candidate.uuid === id,
   );

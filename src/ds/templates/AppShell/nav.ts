@@ -2,12 +2,14 @@ import type { IconName } from '@/ds/components/Icon/icons';
 import { RESOURCES, ACTIONS } from '@/constants/permissions';
 
 /**
- * Primary navigation for the design-system shell, in the redesign's information architecture:
- * the current system first, then Global, Control definitions and Admin.
+ * Primary navigation for the design-system shell. It keeps the classic app's structure and
+ * labels (src/views/LeftSideNav.vue): This System, then Global with its Evidence link and the
+ * Analysis, Integrations, Control Definitions and Admin groups.
  *
- * During the migration most destinations are still legacy pages. Items with `next: true` are
- * redesigned screens that render inside this shell; the rest open the legacy layout. Labels use
- * the redesign's vocabulary even where the legacy page title differs.
+ * During the migration most destinations are still classic pages. Items with `next: true` are
+ * redesigned screens that render inside this shell; the rest open the classic layout. A
+ * redesigned system page takes the system from its URL (`:systemId`); classic system pages read
+ * the current system from the system store, which the URL keeps in step.
  */
 export interface NavItem {
   /** Route name. */
@@ -21,8 +23,9 @@ export interface NavItem {
 }
 
 export interface NavGroup {
-  /** `system` groups are titled with the active system's name. */
-  id: 'system' | 'shared' | 'frameworks' | 'admin';
+  /** `system` groups are titled with the current system's name. */
+  id:
+    'system' | 'global' | 'analysis' | 'integrations' | 'frameworks' | 'admin';
   label?: string;
   icon?: IconName;
   /** Disclosure groups collapse; the others are always open. */
@@ -36,75 +39,96 @@ const read = (resource: string) => ({ resource, action: ACTIONS.READ });
 export const navGroups: NavGroup[] = [
   {
     id: 'system',
+    label: 'This System',
     collapsible: false,
     items: [
-      { route: 'system:overview', label: 'Overview', icon: 'overview' },
-      { route: 'compliance:index', label: 'Compliance', icon: 'controls' },
       {
-        route: 'system:evidence',
+        route: 'ds-system-evidence',
         label: 'Evidence',
         icon: 'evidence',
+        next: true,
         permission: read(RESOURCES.SSP),
       },
+      { route: 'controls:index', label: 'Implementation', icon: 'components' },
+      { route: 'compliance:index', label: 'Compliance', icon: 'controls' },
       {
         route: 'risks:index',
         label: 'Risks',
         icon: 'risks',
         permission: read(RESOURCES.RISK),
       },
-      { route: 'controls:index', label: 'Implementation', icon: 'components' },
       {
         route: 'workflow-instances:index',
-        label: 'Workflows',
-        icon: 'workflows',
+        label: 'Workflow Instances',
+        icon: 'instances',
         permission: read(RESOURCES.WORKFLOW_INSTANCE),
       },
-      { route: 'system:json', label: 'Source', icon: 'source' },
+      { route: 'system:overview', label: 'Configure System', icon: 'details' },
     ],
   },
   {
-    id: 'shared',
+    id: 'global',
     label: 'Global',
-    icon: 'systems',
-    collapsible: true,
+    collapsible: false,
     items: [
       {
-        route: 'ds-systems',
-        label: 'All systems',
-        icon: 'systems',
-        next: true,
-        permission: read(RESOURCES.SSP),
-      },
-      {
         route: 'evidence:index',
-        label: 'Evidence stream',
+        label: 'Evidence',
         icon: 'evidence',
         permission: read(RESOURCES.EVIDENCE),
       },
+    ],
+  },
+  {
+    id: 'analysis',
+    label: 'Analysis',
+    icon: 'chart',
+    collapsible: true,
+    items: [
+      {
+        route: 'admin-risks',
+        label: 'Risks',
+        icon: 'crossSystemRisks',
+        permission: ADMIN_MANAGE,
+      },
+      { route: 'lineage', label: 'Compliance Map', icon: 'complianceMap' },
+    ],
+  },
+  {
+    id: 'integrations',
+    label: 'Integrations',
+    icon: 'integrations',
+    collapsible: true,
+    items: [
+      {
+        route: 'workflow:index',
+        label: 'Workflow Definitions',
+        icon: 'definitions',
+        permission: read(RESOURCES.WORKFLOW_DEFINITION),
+      },
       {
         route: 'dashboards',
-        label: 'Evidence filters',
+        label: 'Evidence Filters',
         icon: 'filter',
         permission: read(RESOURCES.FILTER),
       },
       {
-        route: 'admin-risks',
-        label: 'Cross-system risks',
-        icon: 'crossSystemRisks',
-        permission: ADMIN_MANAGE,
+        route: 'admin-agents',
+        label: 'Agents',
+        icon: 'agents',
+        permission: read(RESOURCES.AGENT),
       },
-      { route: 'lineage', label: 'Compliance map', icon: 'complianceMap' },
       {
-        route: 'workflow:index',
-        label: 'Workflow definitions',
-        icon: 'definitions',
-        permission: read(RESOURCES.WORKFLOW_DEFINITION),
+        route: 'admin-import',
+        label: 'Import',
+        icon: 'import',
+        permission: ADMIN_MANAGE,
       },
     ],
   },
   {
     id: 'frameworks',
-    label: 'Control definitions',
+    label: 'Control Definitions',
     icon: 'frameworks',
     collapsible: true,
     items: [
@@ -122,14 +146,9 @@ export const navGroups: NavGroup[] = [
       },
       {
         route: 'control-links-list',
-        label: 'Control links',
+        label: 'Control Links',
         icon: 'controlLinks',
         permission: read(RESOURCES.CONTROL_LINK),
-      },
-      {
-        route: 'component-definitions',
-        label: 'Component definitions',
-        icon: 'componentDefinitions',
       },
     ],
   },
@@ -152,21 +171,9 @@ export const navGroups: NavGroup[] = [
         permission: ADMIN_MANAGE,
       },
       {
-        route: 'admin-agents',
-        label: 'Agents',
-        icon: 'agents',
-        permission: read(RESOURCES.AGENT),
-      },
-      {
         route: 'admin-ssp-templates',
-        label: 'Templates',
+        label: 'System Templates',
         icon: 'templates',
-        permission: ADMIN_MANAGE,
-      },
-      {
-        route: 'admin-import',
-        label: 'Import',
-        icon: 'import',
         permission: ADMIN_MANAGE,
       },
       {
