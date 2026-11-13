@@ -127,7 +127,7 @@ const authenticatedRoutes = [
         path: 'json',
         name: 'workflow-definition-json',
         component: () =>
-          import('../views/workflows/WorkflowDefinitionJSONView.vue'),
+          import('../screens/workflows/WorkflowDefinitionJsonTab.vue'),
       },
     ],
   },
@@ -162,7 +162,7 @@ const authenticatedRoutes = [
         path: 'json',
         name: 'workflow-instance-json',
         component: () =>
-          import('../views/workflow-instances/WorkflowInstanceJSONView.vue'),
+          import('../screens/workflows/WorkflowInstanceJsonTab.vue'),
       },
     ],
   },

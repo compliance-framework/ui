@@ -441,3 +441,6 @@ page structurally migrated, say so and I'll switch.
   classic assessment plan tab carried a commented-out "Edit JSON" feature; that's gone with it.
 - The two workflow JSON tabs build their JSON from store state (definition plus steps, instance
   plus role assignments), so they stay classic for now.
+- Follow-up: the two **workflow JSON tabs** are design-system too (definition plus steps;
+  instance plus role assignments and the last ten runs), in the same code block. The classic
+  views' own copy and download toasts are replaced by the code block's.
