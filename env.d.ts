@@ -11,3 +11,13 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
+
+// PrimeVue ships no types for its toast event bus; the design system's ToastRegion listens to it.
+declare module 'primevue/toasteventbus' {
+  const ToastEventBus: {
+    on(event: string, handler: (payload: never) => void): void;
+    off(event: string, handler: (payload: never) => void): void;
+    emit(event: string, payload?: unknown): void;
+  };
+  export default ToastEventBus;
+}

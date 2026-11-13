@@ -147,6 +147,24 @@ for (const theme of themes) {
     });
   }
 
+  test(`axe: a toast on screen (${theme})`, async ({ page }) => {
+    await signIn(page, theme);
+    await mockApi(page);
+    await open(page, '/catalogs');
+    await page
+      .getByRole('button', { name: /^Actions for / })
+      .first()
+      .click();
+    // The activate endpoint isn't mocked, so this raises an error toast.
+    await page.getByRole('menuitem', { name: /activate/i }).click();
+    await page
+      .getByRole('alert')
+      .getByText(/wasn't/)
+      .waitFor();
+    const violations = await axe(page, `${theme} toast`);
+    expect(violations, violations.join('\n')).toEqual([]);
+  });
+
   test(`axe: menus and popovers open (${theme})`, async ({ page }) => {
     await signIn(page, theme);
     await mockApi(page);

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { RouterView } from 'vue-router';
-import Toast from '@/volt/Toast.vue';
+import ToastRegion from '@/ds/components/ToastRegion/ToastRegion.vue';
 import ConfirmDialog from '@/volt/ConfirmDialog.vue';
 import DemoFeedbackButton from '@/components/DemoFeedbackButton.vue';
 import ErrorDialogHost from '@/components/notifications/ErrorDialogHost.vue';
@@ -15,7 +15,7 @@ useTheme();
   <RouterView />
   <!-- After the page, so the page's own skip link is the first tab stop. -->
   <DemoFeedbackButton />
-  <Toast />
+  <ToastRegion />
   <ErrorDialogHost />
   <ConfirmDialog />
 </template>

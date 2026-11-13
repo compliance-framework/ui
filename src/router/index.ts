@@ -767,17 +767,17 @@ const authenticatedRoutes = [
         component: () =>
           import('../views/assessment-results/AssessmentResultsResultsView.vue'),
       },
+      // Local definitions and back matter were "coming soon" placeholders; old links open the
+      // overview instead.
       {
         path: 'local-definitions',
         name: 'assessment-results-local-definitions',
-        component: () =>
-          import('../views/assessment-results/AssessmentResultsLocalDefinitionsView.vue'),
+        redirect: { name: 'assessment-results-overview' },
       },
       {
         path: 'back-matter',
         name: 'assessment-results-back-matter',
-        component: () =>
-          import('../views/assessment-results/AssessmentResultsBackMatterView.vue'),
+        redirect: { name: 'assessment-results-overview' },
       },
       {
         path: 'json',

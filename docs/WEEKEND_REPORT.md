@@ -444,3 +444,15 @@ page structurally migrated, say so and I'll switch.
 - Follow-up: the two **workflow JSON tabs** are design-system too (definition plus steps;
   instance plus role assignments and the last ten runs), in the same code block. The classic
   views' own copy and download toasts are replaced by the code block's.
+
+### Toasts: a design-system toast region for the whole app
+
+- **Decision (design system):** the mockup's `ToastRegion` and its toast policy are ported, and
+  the global PrimeVue `<Toast />` is gone. The region listens to PrimeVue's toast event bus, so
+  the roughly 700 existing `useToast().add(...)` calls (classic pages and screens) all show
+  design-system toasts unchanged. This fixes the colour-contrast failure found earlier.
+- **Decision (behaviour change):** success and info toasts dismiss after 5 s; warnings and errors
+  now **stay until dismissed** (the mockup's policy, and better for accessibility). Call sites'
+  `life` values (often 3 s for errors) are ignored. A repeated message replaces the earlier one.
+- Toasts are announced politely (success, info) or assertively (warnings, errors). A new axe
+  test checks a page with a toast on screen.

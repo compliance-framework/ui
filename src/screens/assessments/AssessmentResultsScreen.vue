@@ -76,14 +76,6 @@ const recordTabs = computed(() => {
       label: 'Results',
       to: { name: 'assessment-results-results', params: { id } },
     },
-    {
-      label: 'Local definitions',
-      to: { name: 'assessment-results-local-definitions', params: { id } },
-    },
-    {
-      label: 'Back matter',
-      to: { name: 'assessment-results-back-matter', params: { id } },
-    },
     { label: 'JSON', to: { name: 'assessment-results-json', params: { id } } },
   ];
 });

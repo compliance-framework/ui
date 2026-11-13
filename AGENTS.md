@@ -64,9 +64,10 @@ npm run format:fix                           # prettier --write src/
   `src/ds/`, with migrated pages in `src/screens/`. Read `docs/REDESIGN.md` first: it has the
   migration steps, URL scheme and tracker. A migrated page replaces its classic page (which is
   deleted); classic pages render inside the new shell via `LegacyPage` until their turn. In
-  `src/ds` and `src/screens`: no Tailwind or PrimeVue components (the global PrimeVue toast is
-  the one exception for now); scoped CSS using only `--ds-` tokens; screens contain no CSS or
-  class attributes; read data through `useApiQuery` and render states with `DataState`.
+  `src/ds` and `src/screens`: no Tailwind or PrimeVue components; scoped CSS using only `--ds-`
+  tokens; screens contain no CSS or class attributes; read data through `useApiQuery` and render
+  states with `DataState`. Toasts: keep calling PrimeVue's `useToast()`; the design system's
+  `ToastRegion` (in `App.vue`) shows them, with its own policy (errors stay until dismissed).
   `npm run lint:css` enforces the tokens; add each migrated route to `e2e/a11y.spec.ts` and its
   API calls to `e2e/support/api.ts`.
 

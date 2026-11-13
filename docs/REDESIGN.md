@@ -144,8 +144,10 @@ Made during the work (open to review):
   camelCasing, cookie auth and the 401/403 handling are unchanged. No new data library yet.
 - **Dark mode uses the existing `.dark` class and `useTheme`**; the shell's account menu changes
   it. The classic floating theme button is gone.
-- **Toasts still use PrimeVue's Toast** until the mockup's toast region is ported, so there is one
-  toast system.
+- **Toasts use the design system's `ToastRegion`** (ported from the mockup), mounted once in
+  `App.vue`. It listens to PrimeVue's toast event bus, so every existing `useToast()` call, classic
+  or redesigned, shows a design-system toast. Success and info dismiss after 5 s; warnings and
+  errors stay until dismissed (the `life` a call site passes is ignored).
 - **Wording follows the current app**; the status vocabulary in `StatusBadge/statuses.ts` is used
   where it matches (evidence results, risk statuses and levels).
 - **Times show in the viewer's local time zone**, as the current app does.
