@@ -305,7 +305,7 @@ const authenticatedRoutes = [
       {
         path: 'compliance',
         name: 'profile:view-compliance',
-        component: () => import('../views/profile/ProfileComplianceView.vue'),
+        component: () => import('../screens/profiles/ProfileComplianceTab.vue'),
         meta: {
           requiresAuth: true,
         },

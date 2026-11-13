@@ -468,3 +468,11 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
 - And the app-wide **error dialog** (`services/error-dialog`, used by `useAxiosErrorDialog`) is
   now a design-system dialog too. With the toast region and the confirm host, nothing PrimeVue
   is mounted globally in `App.vue` any more; PrimeVue remains only inside classic islands.
+
+### Profile Compliance tab
+
+- **Decision:** This System > Compliance's body (totals, overall and per-group breakdowns,
+  implementation coverage, filterable controls) is now its own component,
+  `ComplianceProgressView`. The profile record's Compliance tab reuses it, replacing the
+  classic `ComplianceProgressPanel` (deleted, with its spec). The profile tab hides the
+  inherited-capability links, which only make sense for a system.
