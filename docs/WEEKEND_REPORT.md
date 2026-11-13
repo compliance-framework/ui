@@ -27,6 +27,11 @@ without a redesigned page around it. Pages fall into three kinds:
 - **Design-system header over a classic body**: Agents, risk and subject templates, Import,
   Inventory, Build a profile from props, Filter suggestions.
 
+App-wide pieces are design-system too: **toasts, confirmations and the error dialog** (the
+classic `useToast()` and `useConfirm()` calls are bridged, so nothing PrimeVue is mounted
+globally any more). Among record tabs, the JSON tabs, the four OSCAL Overview tabs, the profile's
+Controls and Compliance tabs are rebuilt.
+
 The full list of islands still to replace is in `docs/REDESIGN.md` → Legacy islands, and per
 page below.
 
@@ -39,8 +44,10 @@ page below.
 3. Shared building blocks instead of per-page copies: one list screen for five document types,
    one create/edit form for seven document types, `useListView` for URL search and sort.
 4. The cross-system risk register is the system register in a global mode, not a second page.
-5. New design-system pieces: `Combobox` (filterable picker), `GuestTemplate`, query-based
-   `Tabs`, optional search in `FilterBar`, `disabledReason` on checkbox options.
+5. New design-system pieces: `Combobox` (filterable picker), `GuestTemplate`, `ToastRegion`
+   (bridging PrimeVue's toast bus; errors now stay until dismissed), `ConfirmHost` (bridging
+   PrimeVue's confirm bus), query-based `Tabs`, optional search in `FilterBar`, `disabledReason`
+   on checkbox options.
 6. Several "toast after submit" and `window.prompt()` flows became inline field errors and
    design-system dialogs (sign-in, password reset, cancel a run, all new forms).
 7. Header-only migration for the big admin pages (`embedded` prop), so their large specs run
@@ -56,6 +63,9 @@ page below.
 - The Compliance page read `uuid` from SSP profiles, but the API returns `id` (from before the
   weekend).
 - `SystemSecurityPlanDiagramsView` ignored its `sspId` prop; `inventory:index` was defined twice.
+- The profile Controls tab never resolved its imports' catalogs when the back matter loaded after
+  the imports (a race), so every control group requested `catalogs/undefined` (classic UI; fixed
+  here).
 - The global PrimeVue toast fails axe colour contrast; the classic `FilterForm` has unlabelled
   inputs.
 
