@@ -289,7 +289,7 @@ const authenticatedRoutes = [
       {
         path: '',
         name: 'profile:view-controls',
-        component: () => import('../views/profile/ProfileControlsView.vue'),
+        component: () => import('../screens/profiles/ProfileControlsTab.vue'),
         meta: {
           requiresAuth: true,
         },

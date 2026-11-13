@@ -1,100 +1,9 @@
-<template>
-  <template v-if="importsLoading || backmatterLoading">
-    <PageHeader>Loading profile controls...</PageHeader>
-  </template>
-  <template v-else>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8 py-3">
-      <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
-        <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">
-          {{ importedCatalogsCount }}
-        </div>
-        <div class="text-sm text-blue-600 dark:text-blue-400">
-          Imported Catalogs
-        </div>
-      </div>
-      <div class="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
-        <div class="text-2xl font-bold text-green-600 dark:text-green-400">
-          {{ includedControlsCount }}
-        </div>
-        <div class="text-sm text-green-600 dark:text-green-400">
-          Included Controls
-        </div>
-      </div>
-      <div class="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg">
-        <div class="text-2xl font-bold text-purple-600 dark:text-purple-400">
-          {{ excludedControlsCount }}
-        </div>
-        <div class="text-sm text-purple-600 dark:text-purple-400">
-          Excluded Controls
-        </div>
-      </div>
-    </div>
-    <CollapsableGroup v-for="imp in imports" :key="imp.href">
-      <template #header>
-        <div
-          class="py-4 px-4 bg-white dark:bg-slate-900 border border-ccf-300 dark:border-slate-700 flex flex-inline"
-        >
-          <span class="grow font-medium">
-            {{ findResourceByHref(imp.href)?.title || 'No Title' }}</span
-          >
-          <PrimaryButton
-            class="flex gap-2"
-            @click="removeImport(imp)"
-            :disabled="!can(RESOURCES.PROFILE, ACTIONS.UPDATE)"
-            v-tooltip.top="{
-              value: permissionTooltip(RESOURCES.PROFILE, ACTIONS.UPDATE),
-              disabled: can(RESOURCES.PROFILE, ACTIONS.UPDATE),
-            }"
-            >Remove</PrimaryButton
-          >
-        </div>
-      </template>
-      <div
-        class="px-4 py-4 bg-white dark:bg-slate-950 border border-ccf-300 dark:border-slate-700"
-      >
-        <p>Included Controls</p>
-        <ProfileControlGroups
-          :groups="imp.includeControls as ProfileSelectControlByID[]"
-          :catalog="importedCatalogsByHref[imp.href]"
-        />
-        <hr class="my-4 border-ccf-300 dark:border-slate-700 border-dashed" />
-        <p>Excluded Controls</p>
-        <ProfileControlGroups
-          :groups="imp.excludeControls as ProfileSelectControlByID[]"
-          :catalog="importedCatalogsByHref[imp.href]"
-        />
-        <PrimaryButton
-          class="mt-2"
-          @click="save(toValue(imp))"
-          :disabled="!can(RESOURCES.PROFILE, ACTIONS.UPDATE)"
-          v-tooltip.top="{
-            value: permissionTooltip(RESOURCES.PROFILE, ACTIONS.UPDATE),
-            disabled: can(RESOURCES.PROFILE, ACTIONS.UPDATE),
-          }"
-          >Save</PrimaryButton
-        >
-      </div>
-    </CollapsableGroup>
-    <PrimaryButton
-      class="mt-4"
-      @click="openCatalogDialog()"
-      :disabled="!can(RESOURCES.PROFILE, ACTIONS.UPDATE)"
-      v-tooltip.top="{
-        value: permissionTooltip(RESOURCES.PROFILE, ACTIONS.UPDATE),
-        disabled: can(RESOURCES.PROFILE, ACTIONS.UPDATE),
-      }"
-      >Add Catalog Import</PrimaryButton
-    >
-    <CatalogImportDialog
-      :visible="catalogDialogVisible"
-      :importedCatalogs="importedCatalogsByUUID"
-      @update:visible="catalogDialogVisible = $event"
-      @import="addImport"
-    />
-  </template>
-</template>
-
 <script setup lang="ts">
+/**
+ * A profile's Controls tab: which catalogs it imports and the controls it includes or excludes
+ * from each, with Save and Remove per import and "Add catalog import". The control-group editor
+ * and the catalog picker are classic islands. The script is the classic page's.
+ */
 import { type Import } from '@/oscal';
 import type {
   BackMatterResource,
@@ -103,11 +12,16 @@ import type {
 } from '@/oscal';
 import { useRoute } from 'vue-router';
 import { ref, computed, toValue, watch } from 'vue';
-import CollapsableGroup from '@/components/CollapsableGroup.vue';
-import PrimaryButton from '@/volt/PrimaryButton.vue';
 import ProfileControlGroups from '@/components/profiles/ProfileControlGroups.vue';
-import PageHeader from '@/components/PageHeader.vue';
 import CatalogImportDialog from '@/components/profiles/CatalogImportDialog.vue';
+import LegacyPage from '@/views/layouts/LegacyPage.vue';
+import Button from '@/ds/components/Button/Button.vue';
+import DataState from '@/ds/components/DataState/DataState.vue';
+import DescriptionList from '@/ds/components/DescriptionList/DescriptionList.vue';
+import Disclosure from '@/ds/components/Disclosure/Disclosure.vue';
+import Text from '@/ds/components/Text/Text.vue';
+import Cluster from '@/ds/components/layout/Cluster.vue';
+import Stack from '@/ds/components/layout/Stack.vue';
 import { useToast } from 'primevue/usetoast';
 import { useConfirm } from 'primevue/useconfirm';
 import { type Catalog } from '@/oscal';
@@ -117,7 +31,12 @@ import { type AxiosError } from 'axios';
 import { usePermissions } from '@/composables/usePermissions';
 import { RESOURCES, ACTIONS } from '@/constants/permissions';
 
-const { can, permissionTooltip } = usePermissions();
+const { can } = usePermissions();
+const updateDenied = computed(() =>
+  can(RESOURCES.PROFILE, ACTIONS.UPDATE)
+    ? undefined
+    : "Your access doesn't include changing profiles.",
+);
 const route = useRoute();
 const toast = useToast();
 const confirm = useConfirm();
@@ -215,7 +134,9 @@ async function save(imp: Import) {
   }
 }
 
-watch(imports, async () => {
+// Rebuilt when either list arrives: the classic page watched only imports, so when the back
+// matter loaded second, no import resolved to its catalog and the control groups failed.
+watch([imports, backmatter], async () => {
   importedCatalogsByUUID.value = {};
   importedCatalogsByHref.value = {};
   if (!imports.value) return;
@@ -312,4 +233,91 @@ function removeImport(imp: Import) {
 function openCatalogDialog() {
   catalogDialogVisible.value = true;
 }
+
+const counts = computed(() => [
+  {
+    key: 'catalogs',
+    label: 'Imported catalogs',
+    value: importedCatalogsCount.value,
+  },
+  {
+    key: 'included',
+    label: 'Included controls',
+    value: includedControlsCount.value,
+  },
+  {
+    key: 'excluded',
+    label: 'Excluded controls',
+    value: excludedControlsCount.value,
+  },
+]);
 </script>
+
+<template>
+  <DataState
+    v-if="importsLoading || backmatterLoading"
+    status="loading"
+    subject="this profile's controls"
+    skeleton="panel"
+  />
+  <Stack v-else gap="5">
+    <DescriptionList :items="counts" />
+    <Disclosure
+      v-for="imp in imports"
+      :key="imp.href"
+      :label="findResourceByHref(imp.href)?.title || 'Untitled catalog'"
+    >
+      <Stack gap="4">
+        <!-- The control groups load their catalog, so they wait until its ID is known. -->
+        <LegacyPage v-if="importedCatalogsByHref[imp.href]">
+          <Stack gap="4">
+            <Text variant="label">Included controls</Text>
+            <ProfileControlGroups
+              :groups="imp.includeControls as ProfileSelectControlByID[]"
+              :catalog="importedCatalogsByHref[imp.href]"
+            />
+            <Text variant="label">Excluded controls</Text>
+            <ProfileControlGroups
+              :groups="imp.excludeControls as ProfileSelectControlByID[]"
+              :catalog="importedCatalogsByHref[imp.href]"
+            />
+          </Stack>
+        </LegacyPage>
+        <Cluster gap="2">
+          <Button
+            variant="primary"
+            icon="save"
+            :disabled-reason="updateDenied"
+            @click="save(toValue(imp))"
+            >Save</Button
+          >
+          <Button
+            variant="danger"
+            icon="delete"
+            :disabled-reason="updateDenied"
+            @click="removeImport(imp)"
+            >Remove import</Button
+          >
+        </Cluster>
+      </Stack>
+    </Disclosure>
+    <Text v-if="!imports?.length" variant="caption"
+      >This profile doesn't import any catalogs yet. Add one to choose its
+      controls.</Text
+    >
+    <div>
+      <Button
+        icon="add"
+        :disabled-reason="updateDenied"
+        @click="openCatalogDialog()"
+        >Add catalog import</Button
+      >
+    </div>
+  </Stack>
+  <CatalogImportDialog
+    :visible="catalogDialogVisible"
+    :imported-catalogs="importedCatalogsByUUID"
+    @update:visible="catalogDialogVisible = $event"
+    @import="addImport"
+  />
+</template>

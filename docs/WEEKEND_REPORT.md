@@ -489,3 +489,15 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   component templates"), "Available features" notices, and the POA&M overview's preview of its
   first five items (the POA&M items tab lists them).
 - **Gap:** the profile's first tab (Controls) and the workflow overview tabs are still classic.
+
+### Profile Controls tab
+
+- Counts as a description list; each catalog import is a design-system disclosure with Save and
+  Remove import; "Add catalog import" below. **Gap (islands):** the include/exclude control-group
+  editor and the catalog picker dialog are classic. The script is the classic page's.
+- **Found (classic bug, fixed here):** the classic tab built its import→catalog map when the
+  imports loaded. If the back matter arrived second (as it does in local-dev), no import
+  resolved, and every control group requested `/api/oscal/catalogs/undefined/full` (400). It now
+  rebuilds the map when either list arrives.
+- **Found (data):** the local-dev profile "Meridian Delivery Controls — Basic Profile" imports
+  the same catalog four times.
