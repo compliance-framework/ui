@@ -217,3 +217,20 @@ page structurally migrated, say so and I'll switch.
 - **Found:** my route-meta helper had put `ds: true` on the wrong route once (About has no
   `meta`). I fixed it and checked every route: nothing outside `src/screens` is marked as
   redesigned.
+
+### Create and edit forms for component definitions, profiles, assessment plans, POA&Ms
+
+- **Decision:** the seven classic create and edit pages (each its own copy of ID, Title,
+  Version, Remarks) are now **one configurable form screen** (`src/screens/documents/
+  DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to their fields
+  (title required; an assessment plan's SSP URL required and well-formed) instead of toasts.
+  Edit loads the whole document and sends it back with the changed fields, as before.
+- **Found (API bug):** `PUT /api/oscal/component-definitions/:id` returns 200 and echoes the
+  body but stores nothing (checked in local-dev: title and remarks changes don't persist). That's
+  presumably why the classic "Edit component definition" page was read-only. **Decision:** that
+  route now redirects to the definition's overview, which shows the same details. POA&M and
+  assessment plan PUTs do persist (checked with throwaway records, then deleted).
+- **Decision:** a new document's ID is the generated UUID in a full-width field with a "Generate
+  a new ID" button under it (the classic page had an icon-only button glued to the input).
+- Live testing created a component definition "Weekend test CD" in local-dev. The API has no
+  delete for component definitions, so it's still there.

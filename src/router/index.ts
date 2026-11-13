@@ -264,9 +264,10 @@ const authenticatedRoutes = [
   {
     path: '/profiles/create',
     name: 'profile:create',
-    component: () => import('../views/profile/ProfileCreate.vue'),
+    component: () => import('../screens/documents/DocumentForms.vue'),
     meta: {
       requiresAuth: true,
+      ds: true,
     },
   },
   {
@@ -486,10 +487,10 @@ const authenticatedRoutes = [
   {
     path: '/component-definitions/create',
     name: 'component-definition-create',
-    component: () =>
-      import('../views/component-definitions/ComponentDefinitionCreateView.vue'),
+    component: () => import('../screens/documents/DocumentForms.vue'),
     meta: {
       requiresAuth: true,
+      ds: true,
     },
   },
   {
@@ -535,13 +536,14 @@ const authenticatedRoutes = [
     ],
   },
   {
+    // The API accepts PUT on a component definition but doesn't store metadata changes, so the
+    // classic edit page was read-only. Its overview shows the same details.
     path: '/component-definitions/:id/edit',
     name: 'component-definition-edit',
-    component: () =>
-      import('../views/component-definitions/ComponentDefinitionEditView.vue'),
-    meta: {
-      requiresAuth: true,
-    },
+    redirect: (to: RouteLocation) => ({
+      name: 'component-definition-overview',
+      params: { id: to.params.id },
+    }),
   },
   {
     path: '/assessment-plans',
@@ -555,10 +557,10 @@ const authenticatedRoutes = [
   {
     path: '/assessment-plans/create',
     name: 'assessment-plan-create',
-    component: () =>
-      import('../views/assessment-plans/AssessmentPlanCreateView.vue'),
+    component: () => import('../screens/documents/DocumentForms.vue'),
     meta: {
       requiresAuth: true,
+      ds: true,
     },
   },
   {
@@ -593,10 +595,10 @@ const authenticatedRoutes = [
   {
     path: '/assessment-plans/:id/edit',
     name: 'assessment-plan-edit',
-    component: () =>
-      import('../views/assessment-plans/AssessmentPlanEditView.vue'),
+    component: () => import('../screens/documents/DocumentForms.vue'),
     meta: {
       requiresAuth: true,
+      ds: true,
     },
   },
   {
@@ -614,10 +616,10 @@ const authenticatedRoutes = [
   {
     path: '/plan-of-action-and-milestones/create',
     name: 'plan-of-action-and-milestones-create',
-    component: () =>
-      import('../views/plan-of-actions-and-milestones/PlanOfActionAndMilestonesCreateView.vue'),
+    component: () => import('../screens/documents/DocumentForms.vue'),
     meta: {
       requiresAuth: true,
+      ds: true,
     },
   },
   {
@@ -699,10 +701,10 @@ const authenticatedRoutes = [
   {
     path: '/plan-of-action-and-milestones/:id/edit',
     name: 'plan-of-action-and-milestones-edit',
-    component: () =>
-      import('../views/plan-of-actions-and-milestones/PlanOfActionAndMilestonesEditView.vue'),
+    component: () => import('../screens/documents/DocumentForms.vue'),
     meta: {
       requiresAuth: true,
+      ds: true,
     },
   },
   {

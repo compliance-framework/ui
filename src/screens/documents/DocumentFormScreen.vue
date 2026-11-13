@@ -1,0 +1,267 @@
+<script setup lang="ts">
+import { computed, reactive, ref, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { useToast } from 'primevue/usetoast';
+import { v4 as uuidv4 } from 'uuid';
+import { useAuthenticatedInstance, decamelizeKeys } from '@/composables/axios';
+import { ACTIONS } from '@/constants/permissions';
+import { usePermissionsStore } from '@/stores/permissions';
+import type { DataResponse } from '@/stores/types';
+import { getErrorDetail, getErrorStatus } from '@/utils/httpErrors';
+import type { QueryStatus } from '@/ds/query';
+import Breadcrumbs from '@/ds/components/Breadcrumbs/Breadcrumbs.vue';
+import Button from '@/ds/components/Button/Button.vue';
+import DataState from '@/ds/components/DataState/DataState.vue';
+import FormField from '@/ds/components/FormField/FormField.vue';
+import InlineMessage from '@/ds/components/InlineMessage/InlineMessage.vue';
+import PageHeader from '@/ds/components/PageHeader/PageHeader.vue';
+import Textarea from '@/ds/components/Textarea/Textarea.vue';
+import TextInput from '@/ds/components/TextInput/TextInput.vue';
+import Cluster from '@/ds/components/layout/Cluster.vue';
+import Panel from '@/ds/components/layout/Panel.vue';
+import Stack from '@/ds/components/layout/Stack.vue';
+import { DOCUMENT_FORMS, validateDocument } from './formKinds';
+
+/**
+ * Create or edit an OSCAL document's metadata (component definitions, profiles, assessment plans,
+ * POA&Ms), configured in formKinds.ts. Edit loads the whole document and sends it back with
+ * the changed fields, as the classic pages did. Errors show next to their fields.
+ */
+const props = defineProps<{ kind: string; mode: 'create' | 'edit' }>();
+
+const route = useRoute();
+const router = useRouter();
+const toast = useToast();
+const api = useAuthenticatedInstance();
+const permissions = usePermissionsStore();
+const config = DOCUMENT_FORMS[props.kind]!;
+const id = props.mode === 'edit' ? String(route.params.id) : '';
+
+type Doc = Record<string, unknown> & {
+  uuid?: string;
+  metadata: Record<string, unknown>;
+  importSsp?: Record<string, unknown>;
+};
+
+const fields = reactive({
+  uuid: uuidv4(),
+  title: '',
+  version: '',
+  remarks: '',
+  published: '',
+  importSspHref: '',
+  importSspRemarks: '',
+});
+const loaded = ref<Doc>();
+const status = ref<QueryStatus>(props.mode === 'edit' ? 'loading' : 'ready');
+
+function fill(doc: Doc): void {
+  const meta = doc.metadata ?? {};
+  fields.uuid = doc.uuid ?? fields.uuid;
+  fields.title = String(meta.title ?? '');
+  fields.version = String(meta.version ?? '');
+  fields.remarks = String(meta.remarks ?? '');
+  fields.published = meta.published ? String(meta.published).slice(0, 10) : '';
+  fields.importSspHref = String(doc.importSsp?.href ?? '');
+  fields.importSspRemarks = String(doc.importSsp?.remarks ?? '');
+}
+
+async function load(): Promise<void> {
+  status.value = 'loading';
+  try {
+    const response = await api.get<DataResponse<Doc>>(
+      `${config.endpoint}/${id}`,
+    );
+    loaded.value = response.data.data;
+    fill(loaded.value);
+    status.value = 'ready';
+  } catch (error) {
+    status.value = getErrorStatus(error) === 403 ? 'forbidden' : 'error';
+  }
+}
+if (props.mode === 'edit') void load();
+else fill(config.blank() as Doc);
+
+const attempted = ref(false);
+const errors = computed(() =>
+  attempted.value ? validateDocument(config, fields) : {},
+);
+watch(
+  () => fields.title,
+  () => (saveError.value = undefined),
+);
+
+const title = computed(() =>
+  props.mode === 'create'
+    ? `New ${config.noun}`
+    : `Edit ${fields.title || config.noun}`,
+);
+const back = computed(() =>
+  props.mode === 'create'
+    ? { label: config.listLabel, to: { name: config.listRoute } }
+    : {
+        label: loaded.value?.metadata.title
+          ? String(loaded.value.metadata.title)
+          : `This ${config.noun}`,
+        to: { name: config.detailRoute, params: { id } },
+      },
+);
+const denied = computed(() =>
+  permissions.can(
+    config.resource,
+    props.mode === 'create' ? ACTIONS.CREATE : ACTIONS.UPDATE,
+  )
+    ? undefined
+    : `Your access doesn't include ${props.mode === 'create' ? 'creating' : 'editing'} ${config.noun}s.`,
+);
+
+function payload(): Doc {
+  const base = (loaded.value ?? config.blank()) as Doc;
+  const doc: Doc = {
+    ...base,
+    uuid: props.mode === 'create' ? fields.uuid.trim() : base.uuid,
+    metadata: {
+      ...base.metadata,
+      title: fields.title.trim(),
+      remarks: fields.remarks.trim() || undefined,
+      ...(config.version
+        ? { version: fields.version.trim() || undefined }
+        : {}),
+      ...(config.published && fields.published
+        ? { published: new Date(fields.published).toISOString() }
+        : {}),
+      ...(props.mode === 'edit'
+        ? { lastModified: new Date().toISOString() }
+        : {}),
+    },
+  };
+  if (config.importSsp)
+    doc.importSsp = {
+      ...base.importSsp,
+      href: fields.importSspHref.trim(),
+      remarks: fields.importSspRemarks.trim() || undefined,
+    };
+  return doc;
+}
+
+const saving = ref(false);
+const saveError = ref<string>();
+async function submit(): Promise<void> {
+  attempted.value = true;
+  if (Object.keys(errors.value).length) return;
+  saving.value = true;
+  saveError.value = undefined;
+  try {
+    const request = { transformRequest: [decamelizeKeys] };
+    const response =
+      props.mode === 'create'
+        ? await api.post<DataResponse<Doc>>(config.endpoint, payload(), request)
+        : await api.put<DataResponse<Doc>>(
+            `${config.endpoint}/${id}`,
+            payload(),
+            request,
+          );
+    toast.add({
+      severity: 'success',
+      summary: props.mode === 'create' ? 'Created' : 'Saved',
+      detail: fields.title.trim(),
+      life: 3000,
+    });
+    void router.push({
+      name: config.detailRoute,
+      params: { id: response.data.data?.uuid ?? id ?? fields.uuid },
+    });
+  } catch (error) {
+    saveError.value = await getErrorDetail(
+      error,
+      props.mode === 'create'
+        ? `The ${config.noun} couldn't be created. Try again.`
+        : "The changes weren't saved. Try again.",
+    );
+  } finally {
+    saving.value = false;
+  }
+}
+</script>
+
+<template>
+  <Stack gap="6">
+    <Breadcrumbs :crumbs="[back]" />
+    <PageHeader :title="title" />
+    <DataState
+      v-if="status !== 'ready'"
+      :status="status"
+      :subject="`this ${config.noun}`"
+      skeleton="panel"
+      @retry="load"
+    />
+    <Panel v-else>
+      <form novalidate @submit.prevent="submit">
+        <Stack gap="4">
+          <Stack v-if="mode === 'create'" gap="2" align="start">
+            <FormField
+              label="ID"
+              hint="A UUID. Keep the generated one unless you're recreating an existing document."
+            >
+              <TextInput v-model="fields.uuid" />
+            </FormField>
+            <Button
+              size="sm"
+              variant="tertiary"
+              icon="refresh"
+              @click="fields.uuid = uuidv4()"
+              >Generate a new ID</Button
+            >
+          </Stack>
+          <FormField label="Title" required :error="errors.title">
+            <TextInput v-model="fields.title" />
+          </FormField>
+          <FormField v-if="config.version" label="Version">
+            <TextInput v-model="fields.version" placeholder="1.0" />
+          </FormField>
+          <FormField
+            v-if="config.published && mode === 'edit'"
+            label="Published"
+          >
+            <TextInput v-model="fields.published" type="date" />
+          </FormField>
+          <FormField label="Remarks">
+            <Textarea v-model="fields.remarks" :rows="4" />
+          </FormField>
+          <template v-if="config.importSsp">
+            <FormField
+              label="System security plan URL"
+              hint="The SSP this plan assesses."
+              required
+              :error="errors.importSspHref"
+            >
+              <TextInput v-model="fields.importSspHref" type="url" />
+            </FormField>
+            <FormField label="Remarks on the SSP">
+              <Textarea v-model="fields.importSspRemarks" :rows="3" />
+            </FormField>
+          </template>
+          <InlineMessage
+            v-if="saveError"
+            tone="error"
+            :title="mode === 'create' ? 'Not created' : 'Not saved'"
+          >
+            <p>{{ saveError }}</p>
+          </InlineMessage>
+          <Cluster justify="end" gap="2">
+            <Button :to="back.to">Cancel</Button>
+            <Button
+              variant="primary"
+              type="submit"
+              :loading="saving"
+              :disabled-reason="denied"
+              >{{
+                mode === 'create' ? `Create ${config.noun}` : 'Save changes'
+              }}</Button
+            >
+          </Cluster>
+        </Stack>
+      </form>
+    </Panel>
+  </Stack>
+</template>
