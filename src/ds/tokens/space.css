@@ -1,0 +1,46 @@
+/* Space (4px base), control sizes and layout widths. */
+:root[data-ds] {
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-page-x: 16px;
+  --space-section: 32px;
+
+  --size-control-sm: 32px;
+  --size-control-md: 40px;
+  --size-icon-sm: 14px;
+  --size-icon-md: 16px;
+  --size-icon-lg: 20px;
+  --size-target-min: 24px;
+
+  --width-column-sm: 200px;
+  --width-column-md: 280px;
+  --width-column-lg: 360px;
+  --width-form: 720px;
+  --width-reading: 960px;
+  --width-dialog-s: 480px;
+  --width-dialog-m: 640px;
+  --width-dialog-l: 880px;
+  --width-nav: 240px;
+  --width-rail: 64px;
+  --height-header: 64px;
+}
+
+/* Breakpoints mirror breakpoints.ts (media queries cannot read custom properties). */
+@media (min-width: 640px) {
+  :root[data-ds] {
+    --space-page-x: 24px;
+  }
+}
+
+@media (min-width: 1024px) {
+  :root[data-ds] {
+    --space-page-x: 40px;
+  }
+}

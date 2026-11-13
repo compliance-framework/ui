@@ -18,6 +18,16 @@ export default [
   ...vueTsEslintConfig(),
 
   {
+    // Design-system components are namespaced by their folder (@/ds/components/Text/Text.vue),
+    // so single-word names cannot collide with HTML elements in practice.
+    name: 'app/design-system',
+    files: ['src/ds/**/*.vue'],
+    rules: {
+      'vue/multi-word-component-names': 'off',
+    },
+  },
+
+  {
     ...pluginVitest.configs.recommended,
     files: ['src/**/__tests__/*'],
   },

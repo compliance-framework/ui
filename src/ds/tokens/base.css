@@ -1,0 +1,80 @@
+/*
+ * Global element defaults for the new design system. They apply only while a design-system layout
+ * is mounted (it sets `data-ds` on <html>), so legacy Tailwind pages keep their own defaults.
+ */
+:root[data-ds] {
+  background: var(--color-surface-base);
+  color: var(--color-text-primary);
+  font-family: var(--font-ui);
+  font-size: 100%;
+  line-height: var(--leading-body);
+  /* JetBrains Mono would draw != as ≠; users must see what they type. */
+  font-variant-ligatures: none;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* :where() keeps these at element specificity, so any component class overrides them. */
+:where(:root[data-ds]) {
+  & body {
+    margin: 0;
+    background: var(--color-surface-base);
+    font-family: var(--font-ui);
+    font-size: var(--font-size-body);
+  }
+
+  & :is(h1, h2, h3, h4, p, ul, ol, dl, dd, figure) {
+    margin: 0;
+  }
+
+  & a {
+    color: inherit;
+  }
+
+  & :is(button, input, select, textarea) {
+    font: inherit;
+    color: inherit;
+  }
+
+  /*
+   * Scrollbars (scroll model, DEC-34): thin and token-coloured. Every scroll area carries
+   * `data-scroll`, and only the innermost one under the pointer shows its bar.
+   */
+  & * {
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+  }
+
+  & [data-scroll] {
+    position: relative;
+  }
+
+  & [data-scroll]:hover:not(:has([data-scroll]:hover)) {
+    scrollbar-color: var(--color-border-strong) transparent;
+  }
+
+  & :focus-visible {
+    outline: var(--focus-width) solid var(--color-border-focus);
+    outline-offset: var(--focus-offset);
+  }
+
+  & :is(code, kbd, samp) {
+    font-family: var(--font-ui);
+    font-size: 1em;
+  }
+
+  & :is(code, pre) {
+    font-family: var(--font-code);
+  }
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}

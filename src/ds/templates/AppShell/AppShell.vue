@@ -1,0 +1,527 @@
+<script setup lang="ts">
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { useRoute } from 'vue-router';
+import { TooltipProvider } from 'reka-ui';
+import Drawer from '@/ds/components/Drawer/Drawer.vue';
+import Icon from '@/ds/components/Icon/Icon.vue';
+import IconButton from '@/ds/components/IconButton/IconButton.vue';
+import Menu from '@/ds/components/Menu/Menu.vue';
+import type { MenuEntry } from '@/ds/components/Menu/menuEntries';
+import ScrollArea from '@/ds/components/ScrollArea/ScrollArea.vue';
+import SystemSwitcher from '@/ds/components/SystemSwitcher/SystemSwitcher.vue';
+import { useAuthenticatedInstance } from '@/composables/axios';
+import { useTheme } from '@/composables/useTheme';
+import { RESOURCES, ACTIONS } from '@/constants/permissions';
+import type { SystemSecurityPlan } from '@/oscal';
+import { useUserStore } from '@/stores/auth';
+import { usePermissionsStore } from '@/stores/permissions';
+import { useSystemStore } from '@/stores/system';
+import type { DataResponse } from '@/stores/types';
+import PrimaryNav from './PrimaryNav.vue';
+import { useContentScroll } from './useContentScroll';
+import { useNavMode } from './useNavMode';
+
+/**
+ * The design-system app shell: skip link, header (product mark, Classic UI link, account menu
+ * with theme), primary nav as drawer / rail / expanded by width, and one scrolling <main>.
+ *
+ * While it is mounted it sets `data-ds` on <html>, which switches on the design-system tokens and
+ * element defaults (see src/ds/tokens). Legacy pages never see them.
+ */
+const route = useRoute();
+const userStore = useUserStore();
+const permissions = usePermissionsStore();
+const systemStore = useSystemStore();
+const api = useAuthenticatedInstance();
+const { theme, isSystemTheme, toggleTheme, useSystemValue } = useTheme();
+
+const { mode, toggle } = useNavMode();
+const drawerOpen = ref(false);
+const main = ref<HTMLElement>();
+useContentScroll(main);
+watch(
+  () => route.fullPath,
+  () => (drawerOpen.value = false),
+);
+
+onMounted(() => {
+  document.documentElement.setAttribute('data-ds', '');
+  if (userStore.isAuthenticated) permissions.hydrate();
+  void loadSystems();
+});
+onBeforeUnmount(() => document.documentElement.removeAttribute('data-ds'));
+
+// Systems ------------------------------------------------------------------------------------
+
+const canReadSystems = computed(() =>
+  permissions.can(RESOURCES.SSP, ACTIONS.READ),
+);
+
+async function loadSystems(): Promise<void> {
+  if (!canReadSystems.value) return;
+  try {
+    const response = await api.get<DataResponse<SystemSecurityPlan[]>>(
+      '/api/oscal/system-security-plans',
+    );
+    systemStore.setAvailablePlans(response.data.data ?? []);
+  } catch {
+    // Keep the current list; the 401/403 interceptors handle auth errors.
+  }
+}
+
+const systems = computed(() =>
+  systemStore.availablePlans.map((plan) => ({
+    id: plan.uuid,
+    name: plan.metadata.title,
+    description: plan.metadata.version
+      ? `Version ${plan.metadata.version}`
+      : '',
+  })),
+);
+
+function switchSystem(id: string): void {
+  const plan = systemStore.availablePlans.find(
+    (candidate) => candidate.uuid === id,
+  );
+  if (plan) systemStore.setSecurityPlan(plan);
+}
+
+// Account ------------------------------------------------------------------------------------
+
+const userName = computed(() => {
+  const user = userStore.user;
+  return (
+    [user?.firstName, user?.lastName].filter(Boolean).join(' ').trim() ||
+    user?.email ||
+    'Unknown user'
+  );
+});
+const initials = computed(() => {
+  const user = userStore.user;
+  return (
+    `${user?.firstName?.trim()[0] ?? ''}${user?.lastName?.trim()[0] ?? ''}`.toUpperCase() ||
+    'U'
+  );
+});
+
+const themeChoice = computed(() =>
+  isSystemTheme.value ? 'system' : theme.value,
+);
+function chooseTheme(value: string): void {
+  if (value === 'system') return useSystemValue();
+  // toggleTheme flips the theme and pins it as an explicit choice; flipping twice pins the current one.
+  if (value !== theme.value) toggleTheme();
+  else if (isSystemTheme.value) {
+    toggleTheme();
+    toggleTheme();
+  }
+}
+
+const userMenu = computed<MenuEntry[]>(() => [
+  { label: 'Preferences', icon: 'preferences', to: { name: 'preferences' } },
+  {
+    type: 'radio',
+    label: 'Theme',
+    value: themeChoice.value,
+    options: [
+      { value: 'light', label: 'Light', icon: 'themeLight' },
+      { value: 'dark', label: 'Dark', icon: 'themeDark' },
+      { value: 'system', label: 'Match system', icon: 'themeSystem' },
+    ],
+    onChange: chooseTheme,
+  },
+  { type: 'separator' },
+  { label: 'Sign out', icon: 'signOut', to: { name: 'logout' } },
+]);
+</script>
+
+<template>
+  <TooltipProvider>
+    <div class="shell" :class="`shell--${mode}`">
+      <a href="#main" class="shell__skip">Skip to main content</a>
+
+      <header class="shell__top">
+        <RouterLink
+          v-if="mode !== 'drawer'"
+          :to="{ name: 'ds-systems' }"
+          class="shell__corner"
+          aria-label="CCF, Continuous Compliance Framework, home"
+        >
+          <span class="shell__mark" aria-hidden="true" />
+          <span class="shell__wordmark" aria-hidden="true">CCF</span>
+        </RouterLink>
+        <div class="shell__header">
+          <IconButton
+            v-if="mode === 'drawer'"
+            icon="menu"
+            label="Open navigation"
+            aria-haspopup="dialog"
+            @click="drawerOpen = true"
+          />
+          <RouterLink
+            v-if="mode === 'drawer'"
+            :to="{ name: 'ds-systems' }"
+            class="shell__brand"
+            aria-label="CCF, Continuous Compliance Framework, home"
+          >
+            <span class="shell__mark" aria-hidden="true" />
+            <span class="shell__wordmark" aria-hidden="true">CCF</span>
+          </RouterLink>
+          <div
+            v-if="mode === 'drawer' && canReadSystems"
+            class="shell__switcher"
+          >
+            <SystemSwitcher
+              :systems="systems"
+              :current-id="systemStore.system.securityPlan?.uuid"
+              :all-systems-to="{ name: 'ds-systems' }"
+              @select="switchSystem"
+            />
+          </div>
+          <div class="shell__tools">
+            <RouterLink
+              :to="{ name: 'home' }"
+              class="shell__work"
+              aria-label="Back to the classic UI"
+            >
+              <Icon name="back" />
+              <span class="shell__work-label" aria-hidden="true"
+                >Classic UI</span
+              >
+            </RouterLink>
+            <Menu :label="`Account menu, ${userName}`" :items="userMenu">
+              <template #trigger>
+                <button
+                  type="button"
+                  class="shell__account"
+                  :aria-label="`Account menu, ${userName}`"
+                >
+                  <span class="shell__avatar" aria-hidden="true">{{
+                    initials
+                  }}</span>
+                  <span class="shell__account-name" aria-hidden="true">{{
+                    userName
+                  }}</span>
+                  <Icon name="expand" />
+                </button>
+              </template>
+              <template #header>
+                <span class="shell__menu-name">{{ userName }}</span>
+                <span class="shell__menu-meta">{{
+                  userStore.user?.email
+                }}</span>
+              </template>
+            </Menu>
+          </div>
+        </div>
+      </header>
+
+      <div class="shell__body">
+        <nav
+          v-if="mode !== 'drawer'"
+          id="primary-nav"
+          class="shell__nav"
+          aria-label="Primary"
+        >
+          <div v-if="canReadSystems" class="shell__nav-switcher">
+            <SystemSwitcher
+              :systems="systems"
+              :current-id="systemStore.system.securityPlan?.uuid"
+              :all-systems-to="{ name: 'ds-systems' }"
+              :variant="mode === 'rail' ? 'compact' : 'sidebar'"
+              @select="switchSystem"
+            />
+          </div>
+          <ScrollArea surface="raised" scrollbar="none"
+            ><PrimaryNav :mode="mode"
+          /></ScrollArea>
+          <div class="shell__nav-footer">
+            <IconButton
+              :icon="mode === 'expanded' ? 'railCollapse' : 'railExpand'"
+              :label="
+                mode === 'expanded'
+                  ? 'Collapse navigation'
+                  : 'Expand navigation'
+              "
+              :expanded="mode === 'expanded'"
+              controls="primary-nav"
+              @click="toggle"
+            />
+          </div>
+        </nav>
+        <Drawer
+          v-else
+          v-model:open="drawerOpen"
+          title="Navigation"
+          side="left"
+          title-hidden
+        >
+          <nav aria-label="Primary">
+            <PrimaryNav mode="drawer" @navigate="drawerOpen = false" />
+          </nav>
+        </Drawer>
+
+        <main
+          id="main"
+          ref="main"
+          class="shell__main"
+          tabindex="-1"
+          data-scroll
+        >
+          <RouterView />
+          <div data-tooltip-portal />
+        </main>
+      </div>
+    </div>
+  </TooltipProvider>
+</template>
+
+<style scoped>
+.shell {
+  /* App frame (scroll model): header and nav stay put; only the content scrolls. */
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  height: 100dvh;
+  overflow: hidden;
+  background: var(--color-surface-base);
+  color: var(--color-text-primary);
+  font-family: var(--font-ui);
+}
+
+.shell__skip {
+  position: absolute;
+  top: var(--space-2);
+  left: var(--space-2);
+  z-index: var(--z-tooltip);
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-action-primary-bg);
+  border: var(--border-width) solid var(--color-action-primary-border);
+  color: var(--color-action-primary-fg);
+  font-weight: var(--font-weight-bold);
+  transform: translateY(-200%);
+}
+
+.shell__skip:focus {
+  transform: none;
+}
+
+.shell__top {
+  display: flex;
+  min-width: 0;
+  border-bottom: var(--border-width) solid var(--color-border-subtle);
+  background: var(--color-surface-raised);
+}
+
+.shell__corner {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  width: var(--width-nav);
+  border-right: var(--border-width) solid var(--color-border-subtle);
+  color: var(--color-text-primary);
+  text-decoration: none;
+}
+
+.shell--rail .shell__corner {
+  width: var(--width-rail);
+}
+
+.shell--rail .shell__corner .shell__mark {
+  display: none;
+}
+
+.shell__nav-switcher {
+  display: flex;
+  flex: none;
+  padding: var(--space-3) var(--space-3) 0;
+  background: var(--color-surface-raised);
+}
+
+.shell__nav-switcher > * {
+  flex: 1;
+}
+
+.shell__header {
+  z-index: var(--z-header);
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  height: var(--height-header);
+  padding: 0 var(--space-page-x);
+  background: var(--color-surface-raised);
+}
+
+.shell__brand {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--size-target-min);
+  color: var(--color-text-primary);
+  text-decoration: none;
+}
+
+.shell__mark {
+  width: var(--size-icon-sm);
+  height: var(--size-icon-sm);
+  background: var(--color-action-primary-bg);
+  border: var(--border-width) solid var(--color-action-primary-border);
+}
+
+.shell__wordmark {
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--tracking-logo);
+}
+
+.shell__switcher {
+  display: flex;
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.shell__tools {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-1);
+  margin-left: auto;
+}
+
+.shell__work,
+.shell__account {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: var(--size-control-md);
+  padding: 0 var(--space-2);
+  border: var(--border-width) solid transparent;
+  background: transparent;
+  color: var(--color-text-primary);
+  font-size: var(--font-size-label);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--tracking-wide);
+  text-decoration: none;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.shell__work:hover,
+.shell__account:hover {
+  background: var(--color-surface-hover);
+}
+
+.shell__avatar {
+  display: inline-grid;
+  place-items: center;
+  width: var(--size-control-sm);
+  height: var(--size-control-sm);
+  border: var(--border-width) solid var(--color-border-strong);
+  border-radius: var(--radius-round);
+  background: var(--color-surface-sunken);
+}
+
+.shell__account-name {
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.shell__menu-name {
+  display: block;
+  font-weight: var(--font-weight-bold);
+}
+
+.shell__menu-meta {
+  display: block;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-caption);
+}
+
+.shell__body {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+}
+
+.shell__nav {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  width: var(--width-nav);
+  min-height: 0;
+  border-right: var(--border-width) solid var(--color-border-subtle);
+  background: var(--color-surface-raised);
+}
+
+.shell--rail .shell__nav {
+  width: var(--width-rail);
+}
+
+.shell__nav-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: var(--space-2) var(--space-3);
+  border-top: var(--border-width) solid var(--color-border-subtle);
+}
+
+.shell--rail .shell__nav-footer {
+  justify-content: center;
+}
+
+.shell__main {
+  /* The one page scroller. A size container, so panes inside can size to it (100cqh). */
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--space-6) var(--space-page-x) var(--space-12);
+  container-type: size;
+}
+
+.shell__main:focus {
+  outline: none;
+}
+
+/* Below 640px labels give way to icons, and the system switcher takes its own full-width row. */
+@media (max-width: 639px) {
+  .shell__header {
+    flex-wrap: wrap;
+    column-gap: var(--space-1);
+    height: auto;
+    padding-block: var(--space-2);
+  }
+
+  .shell__work,
+  .shell__account {
+    padding-inline: var(--space-1);
+  }
+
+  .shell__switcher {
+    flex-basis: 100%;
+    order: 1;
+  }
+
+  .shell__switcher > * {
+    flex: 1;
+  }
+
+  .shell__wordmark,
+  .shell__work-label,
+  .shell__account-name {
+    display: none;
+  }
+}
+
+@media (max-width: 1023px) {
+  .shell__account-name {
+    display: none;
+  }
+}
+</style>

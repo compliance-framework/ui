@@ -58,6 +58,11 @@ npm run format:fix                           # prettier --write src/
   `/config.json` at runtime over `src/defaultconfig.json`.
 - `src/oscal/`, `src/types/`: hand-written API types (OSCAL and non-OSCAL).
 - `src/utils/`, `src/parsers/`: pure helpers with co-located specs.
+- `src/ds/`, `src/screens/`: the redesign design system and the screens built on it, mounted
+  under `/next`. See `docs/REDESIGN_POC.md`. Inside them: no Tailwind or PrimeVue components
+  (the global PrimeVue toast is the one exception for now); style components with scoped CSS
+  that uses only the tokens in `src/ds/tokens/`; screens contain no CSS or class attributes;
+  read data through `useApiQuery` and render states with `DataState`.
 
 ## API client traps
 

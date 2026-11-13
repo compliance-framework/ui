@@ -1,5 +1,7 @@
 import './assets/main.css';
 import 'primeicons/primeicons.css';
+// Design-system tokens; inert until a design-system layout sets data-ds on <html>.
+import './ds/tokens/index.css';
 
 import { createApp } from 'vue';
 import { createPinia } from 'pinia';

@@ -1182,6 +1182,25 @@ const publicRoutes = [
   },
 ];
 
+// Redesign proof of concept: screens built on the design system in src/ds render inside its
+// own shell under /next. Navigation there links back to legacy pages until they are migrated.
+const designSystemRoutes = [
+  {
+    path: '',
+    redirect: { name: 'ds-systems' },
+  },
+  {
+    path: 'systems',
+    name: 'ds-systems',
+    component: () => import('@/screens/systems/SystemsScreen.vue'),
+    meta: {
+      requiresAuth: true,
+      title: 'Systems',
+      permission: { resource: RESOURCES.SSP, action: ACTIONS.READ },
+    },
+  },
+];
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -1200,6 +1219,15 @@ const router = createRouter({
       meta: {
         requiresAuth: false,
         asd: false,
+      },
+    },
+    {
+      path: '/next',
+      name: 'next',
+      component: () => import('@/ds/templates/AppShell/AppShell.vue'),
+      children: designSystemRoutes,
+      meta: {
+        requiresAuth: true,
       },
     },
     {

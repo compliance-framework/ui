@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue';
-import { RouterView, useRoute } from 'vue-router';
+import { RouterLink, RouterView, useRoute } from 'vue-router';
 import LeftSideNav from '@/views/LeftSideNav.vue';
 import SidebarToggle from '@/components/navigation/SidebarToggle.vue';
 import ProfileDropdown from '@/components/ProfileDropdown.vue';
@@ -73,6 +73,14 @@ onMounted(() => {
           <div class="flex-1">
             <ActiveSystemSelector />
           </div>
+
+          <!-- Redesign proof of concept (src/ds) -->
+          <RouterLink
+            to="/next/systems"
+            class="mr-4 text-sm font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+          >
+            Try the new UI
+          </RouterLink>
 
           <!-- Profile Dropdown -->
           <ProfileDropdown />
