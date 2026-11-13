@@ -57,7 +57,7 @@ export const navGroups: NavGroup[] = [
         permission: read(RESOURCES.RISK),
       },
       {
-        route: 'workflow-instances:index',
+        route: 'system-workflows',
         label: 'Workflow Instances',
         icon: 'instances',
         permission: read(RESOURCES.WORKFLOW_INSTANCE),

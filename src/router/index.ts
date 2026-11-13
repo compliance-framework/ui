@@ -123,16 +123,6 @@ const authenticatedRoutes = [
     ],
   },
   {
-    path: 'workflow-instances',
-    name: 'workflow-instances:index',
-    component: () =>
-      import('../views/workflow-instances/WorkflowInstancesIndexView.vue'),
-    meta: {
-      requiresAuth: true,
-      activeSystemScoped: true,
-    },
-  },
-  {
     path: 'workflow-instances/:id',
     name: 'workflow-instance-editor',
     component: () =>
@@ -1171,6 +1161,13 @@ const designSystemRoutes = [
         meta: { title: 'Compliance' },
       },
       {
+        path: 'workflows',
+        name: 'system-workflows',
+        component: () =>
+          import('@/screens/workflows/WorkflowInstancesScreen.vue'),
+        meta: { title: 'Workflow Instances' },
+      },
+      {
         path: 'evidence',
         name: 'system-evidence',
         component: () => import('@/screens/evidence/EvidenceScreen.vue'),
@@ -1236,6 +1233,11 @@ const designSystemRoutes = [
     path: 'compliance',
     name: 'compliance:index',
     redirect: toCurrentSystem('system-compliance'),
+  },
+  {
+    path: 'workflow-instances',
+    name: 'workflow-instances:index',
+    redirect: toCurrentSystem('system-workflows'),
   },
 ];
 

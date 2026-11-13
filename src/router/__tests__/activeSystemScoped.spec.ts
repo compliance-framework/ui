@@ -14,7 +14,6 @@ describe('activeSystemScoped routes', () => {
   it.each([
     'controls:index',
     'risks:index',
-    'workflow-instances:index',
     'system:overview',
     'system:components',
     'system:diagrams',

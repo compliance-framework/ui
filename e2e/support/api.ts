@@ -269,6 +269,39 @@ export async function mockApi(page: Page, options: MockOptions = {}) {
         { data: { scope: {}, summary: {}, groups: [], controls: [] } },
       );
     }
+    if (path === '/api/workflows/definitions')
+      return json(route, {
+        data: [
+          {
+            id: 'def-1',
+            name: 'Quarterly access review',
+            'evidence-required': '',
+          },
+        ],
+      });
+    if (path === '/api/workflows/instances' && method === 'GET')
+      return list(
+        route,
+        lists,
+        {
+          data: [
+            {
+              id: 'wi-1',
+              name: 'Payments access review',
+              description: 'Reviews privileged access every quarter',
+              'workflow-definition-id': 'def-1',
+              'workflow-definition': {
+                id: 'def-1',
+                name: 'Quarterly access review',
+              },
+              cadence: 'quarterly',
+              'is-active': true,
+              'last-execution-at': '2026-10-01T09:00:00Z',
+            },
+          ],
+        },
+        { data: [] },
+      );
     if (path === '/api/agent/heartbeat/over-time') {
       return json(route, {
         data: [0, 1, 2, 3, 4, 5].map((i) => ({

@@ -19,6 +19,7 @@ const routes = [
   '/systems',
   `/systems/${SYSTEMS.scoped}/evidence`,
   `/systems/${SYSTEMS.scoped}/compliance`,
+  `/systems/${SYSTEMS.scoped}/workflows`,
   `/systems/${SYSTEMS.unscoped}/evidence`,
   `/systems/${SYSTEMS.missing}/evidence`,
 ];
@@ -115,6 +116,13 @@ for (const theme of themes) {
       ...(await axe(page, `${theme} evidence filters and chart table open`)),
     );
 
+    await open(page, `/systems/${SYSTEMS.scoped}/workflows`);
+    await page.getByRole('button', { name: 'New instance' }).first().click();
+    await page.getByRole('dialog').waitFor();
+    violations.push(...(await axe(page, `${theme} new instance dialog`)));
+    await page.keyboard.press('Escape');
+
+    await open(page, `/systems/${SYSTEMS.scoped}/evidence`);
     await page.locator('.switcher__trigger').first().click();
     await page.getByRole('listbox', { name: 'Systems' }).waitFor();
     violations.push(
