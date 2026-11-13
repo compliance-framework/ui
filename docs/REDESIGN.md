@@ -94,6 +94,9 @@ Replace each with a design-system version, then delete the classic component.
   `ControlImplementationSuggestions`, `SharedResponsibilityPanel`, `ExportStatementDialog`.
   The bulk "Apply all suggestions" confirmation is still PrimeVue's confirm dialog.
 
+- Record pages (workflow definition, workflow instance, profile, component definition, assessment
+  plan, POA&M, assessment results): every tab's content is the classic tab view.
+
 ## To-dos
 
 Small things noticed along the way, to sweep up later:
@@ -103,6 +106,8 @@ Small things noticed along the way, to sweep up later:
   so on `main` it may never find the attached profiles. The new page accepts both. Worth checking
   on `main`.
 - The classic "Select a system" prompt (classic system pages) still uses classic styling.
+- Workflow instance pages (`/workflow-instances/:id`) highlight no nav item; they belong under
+  `/systems/:id/workflows/:instanceId` once their tabs are rebuilt.
 - Classic risk detail (`/risks/:id`, `/system-security-plans/:id/risks/:id`) highlights no nav
   item, because its URL is outside `/systems/`. It will once risk detail is migrated under
   `/systems/:id/risks/:riskId`.

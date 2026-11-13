@@ -1,44 +1,15 @@
-<template>
-  <template v-if="isLoading">
-    <PageHeader>Loading profile...</PageHeader>
-  </template>
-  <template v-else>
-    <PageHeader>{{ profile?.metadata?.title }}</PageHeader>
-    <PageSubHeader>{{ profile?.uuid }}</PageSubHeader>
-
-    <Tabs value="main">
-      <TabList>
-        <Tab
-          v-for="route in routes"
-          :key="route.name"
-          :value="route.name"
-          as="div"
-        >
-          <RouterLink :to="{ name: route.name, params: { id: profile?.uuid } }">
-            {{ route.label }}
-          </RouterLink>
-        </Tab>
-      </TabList>
-    </Tabs>
-
-    <RouterView v-slot="{ Component }">
-      <KeepAlive>
-        <component :is="Component" />
-      </KeepAlive>
-    </RouterView>
-  </template>
-</template>
-
 <script setup lang="ts">
-import PageHeader from '@/components/PageHeader.vue';
-import PageSubHeader from '@/components/PageSubHeader.vue';
-
-import Tabs from '@/volt/Tabs.vue';
-import TabList from '@/volt/TabList.vue';
-import Tab from '@/volt/Tab.vue';
+/**
+ * A profile (/profiles/:id/...): its title and sections (controls, compliance, JSON) as route
+ * tabs. The sections are classic islands until rebuilt.
+ */
+import LegacyPage from '@/views/layouts/LegacyPage.vue';
+import DataState from '@/ds/components/DataState/DataState.vue';
+import Text from '@/ds/components/Text/Text.vue';
+import RecordTemplate from '@/ds/templates/RecordTemplate/RecordTemplate.vue';
 
 import type { Profile } from '@/oscal';
-import { onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi } from '@/composables/axios';
@@ -75,12 +46,36 @@ const routes = ref([
 onMounted(async () => {
   await execute('/api/oscal/profiles/' + route.params.id);
 });
+
+const tabs = computed(() =>
+  routes.value.map((r) => ({
+    label: r.label,
+    to: { name: r.name, params: { id: profile.value?.uuid } },
+  })),
+);
 </script>
 
-<style scoped>
-@reference "@/assets/main.css";
-
-.router-link-exact-active {
-  @apply bg-none;
-}
-</style>
+<template>
+  <DataState
+    v-if="isLoading || !profile"
+    :status="error ? 'error' : 'loading'"
+    subject="this profile"
+    skeleton="panel"
+  />
+  <RecordTemplate
+    v-else
+    :title="profile.metadata?.title ?? 'Profile'"
+    :tabs="tabs"
+  >
+    <template #status>
+      <Text as="span" variant="caption">{{ profile.uuid }}</Text>
+    </template>
+    <LegacyPage>
+      <RouterView v-slot="{ Component }">
+        <KeepAlive>
+          <component :is="Component" />
+        </KeepAlive>
+      </RouterView>
+    </LegacyPage>
+  </RecordTemplate>
+</template>

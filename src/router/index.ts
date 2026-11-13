@@ -98,9 +98,9 @@ const authenticatedRoutes = [
   {
     path: 'workflow-definitions/:id',
     name: 'workflow-definition-editor',
-    component: () =>
-      import('../views/workflows/WorkflowDefinitionEditorView.vue'),
+    component: () => import('@/screens/workflows/WorkflowDefinitionScreen.vue'),
     meta: {
+      ds: true,
       requiresAuth: true,
     },
     children: [
@@ -133,10 +133,10 @@ const authenticatedRoutes = [
   {
     path: 'workflow-instances/:id',
     name: 'workflow-instance-editor',
-    component: () =>
-      import('../views/workflow-instances/WorkflowInstanceEditorView.vue'),
+    component: () => import('@/screens/workflows/WorkflowInstanceScreen.vue'),
     meta: {
       requiresAuth: true,
+      ds: true,
     },
     children: [
       {
@@ -277,8 +277,9 @@ const authenticatedRoutes = [
   {
     path: '/profiles/:id',
     name: 'profile:view',
-    component: () => import('../views/profile/ProfileView.vue'),
+    component: () => import('@/screens/profiles/ProfileScreen.vue'),
     meta: {
+      ds: true,
       requiresAuth: true,
     },
     children: [
@@ -485,8 +486,9 @@ const authenticatedRoutes = [
     path: '/component-definitions/:id',
     name: 'component-definition-editor',
     component: () =>
-      import('../views/component-definitions/ComponentDefinitionEditorView.vue'),
+      import('@/screens/component-definitions/ComponentDefinitionScreen.vue'),
     meta: {
+      ds: true,
       requiresAuth: true,
     },
     children: [
@@ -552,9 +554,9 @@ const authenticatedRoutes = [
   {
     path: '/assessment-plans/:id',
     name: 'assessment-plan-editor',
-    component: () =>
-      import('../views/assessment-plans/AssessmentPlanEditorView.vue'),
+    component: () => import('@/screens/assessments/AssessmentPlanScreen.vue'),
     meta: {
+      ds: true,
       requiresAuth: true,
     },
     children: [
@@ -611,9 +613,9 @@ const authenticatedRoutes = [
   {
     path: '/plan-of-action-and-milestones/:id',
     name: 'plan-of-action-and-milestones-editor',
-    component: () =>
-      import('../views/plan-of-actions-and-milestones/PlanOfActionAndMilestonesEditorView.vue'),
+    component: () => import('@/screens/poam/PoamScreen.vue'),
     meta: {
+      ds: true,
       requiresAuth: true,
     },
     children: [
@@ -727,8 +729,9 @@ const authenticatedRoutes = [
     path: '/assessment-results/:id',
     name: 'assessment-results-editor',
     component: () =>
-      import('../views/assessment-results/AssessmentResultsEditorView.vue'),
+      import('@/screens/assessments/AssessmentResultsScreen.vue'),
     meta: {
+      ds: true,
       requiresAuth: true,
     },
     children: [

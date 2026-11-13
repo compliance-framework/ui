@@ -66,3 +66,17 @@ page structurally migrated, say so and I'll switch.
   classic Risks view and dashboard widgets, and the classic SSP Compliance view (all now unused).
 - **Decision:** with every This System page URL-scoped, the router test now checks that each
   This System nav item's route takes `:systemId`.
+
+### Record pages: one design-system frame for all seven
+
+- **Decision:** the seven classic "editor" pages with tabs (workflow definition, workflow
+  instance, profile, component definition, assessment plan, POA&M, assessment results) now share
+  the mockup's `RecordTemplate` (title as the only h1, status, actions, route tabs). Each keeps
+  its classic script (loading, actions such as Activate / Run now) and its URLs; the tab contents
+  are classic islands.
+- **Decision:** tab labels use sentence case ("Role assignments", "Back matter"), and "Executions"
+  on a workflow instance is now "Runs", matching the Run now button.
+- **Decision:** a workflow instance that fails to load stays on its page with an error, where
+  the classic page bounced to the instances list.
+- **Gap:** assessment plans, POA&Ms and assessment results have no records in local-dev, so
+  those three frames are verified by type-check and build only, not in a browser.
