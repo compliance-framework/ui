@@ -1,3 +1,4 @@
+import type { Risk } from '@/oscal';
 export type RiskRegisterStatus =
   | 'open'
   | 'investigating'
@@ -292,4 +293,60 @@ export function riskWorkflowHints(status?: string): string[] {
   return [
     `Next allowed transitions: ${next.map((item) => riskStatusLabel(item)).join(', ')}.`,
   ];
+}
+
+// Owners of a register risk as user references, primary first and without duplicates, for
+// looking up display names (the risk register lists these).
+function toRecord(value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== 'object') return null;
+  return value as Record<string, unknown>;
+}
+
+function readOwnerString(
+  source: Record<string, unknown>,
+  keys: string[],
+): string | undefined {
+  for (const key of keys) {
+    const candidate = source[key];
+    if (typeof candidate === 'string' && candidate.trim()) {
+      return candidate.trim();
+    }
+  }
+  return undefined;
+}
+
+export function looksLikeUuid(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    value,
+  );
+}
+
+export function riskOwnerRefs(risk: Risk): string[] {
+  const source = toRecord(risk);
+  const normalizedOwners = normalizeOwnerAssignments({
+    primaryOwnerUserId: source
+      ? readOwnerString(source, ['primaryOwnerUserId'])
+      : undefined,
+    ownerAssignments: Array.isArray(source?.ownerAssignments)
+      ? source.ownerAssignments
+          .map((entry) => toRecord(entry))
+          .filter(
+            (entry): entry is Record<string, unknown> =>
+              !!entry && readOwnerString(entry, ['ownerKind']) === 'user',
+          )
+          .map((entry) => ({
+            ownerKind: 'user' as const,
+            ownerRef: readOwnerString(entry, ['ownerRef']) || '',
+            isPrimary: !!entry.isPrimary,
+          }))
+          .filter((entry) => !!entry.ownerRef)
+      : [],
+  });
+
+  return [
+    normalizedOwners.primaryOwnerUserId,
+    ...normalizedOwners.ownerAssignments.map((entry) => entry.ownerRef),
+  ].filter((value, index, sourceValues): value is string => {
+    return !!value && sourceValues.indexOf(value) === index;
+  });
 }

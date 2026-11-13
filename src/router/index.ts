@@ -268,15 +268,6 @@ const authenticatedRoutes = [
     },
   },
   {
-    path: 'risks',
-    name: 'risks:index',
-    component: () => import('../views/RisksView.vue'),
-    meta: {
-      requiresAuth: true,
-      activeSystemScoped: true,
-    },
-  },
-  {
     path: 'poam-items',
     name: 'poam-items:index',
     component: () => import('../views/poam/CCFPoamItemsListView.vue'),
@@ -1161,6 +1152,18 @@ const designSystemRoutes = [
         meta: { title: 'Compliance' },
       },
       {
+        path: 'risks',
+        name: 'system-risks',
+        component: () => import('@/screens/risks/RisksDashboardScreen.vue'),
+        meta: { title: 'Risks' },
+      },
+      {
+        path: 'risks/register',
+        name: 'system-risks-register',
+        component: () => import('@/screens/risks/RiskRegisterScreen.vue'),
+        meta: { title: 'Risks' },
+      },
+      {
         path: 'workflows',
         name: 'system-workflows',
         component: () =>
@@ -1238,6 +1241,24 @@ const designSystemRoutes = [
     path: 'workflow-instances',
     name: 'workflow-instances:index',
     redirect: toCurrentSystem('system-workflows'),
+  },
+  {
+    // The classic page chose its tab with ?view=; a link carrying register filters (e.g. from a
+    // control's risk badge) opened the register.
+    path: 'risks',
+    name: 'risks:index',
+    redirect: (to: RouteLocation) => {
+      const { view, ...query } = to.query;
+      const register =
+        view === 'register' ||
+        (view !== 'dashboard' && Object.keys(query).length > 0);
+      return toCurrentSystem(
+        register ? 'system-risks-register' : 'system-risks',
+      )({
+        ...to,
+        query,
+      } as RouteLocation);
+    },
   },
 ];
 

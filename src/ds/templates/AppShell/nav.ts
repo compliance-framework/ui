@@ -45,7 +45,7 @@ export const navGroups: NavGroup[] = [
       { route: 'controls:index', label: 'Implementation', icon: 'components' },
       { route: 'system-compliance', label: 'Compliance', icon: 'controls' },
       {
-        route: 'risks:index',
+        route: 'system-risks',
         label: 'Risks',
         icon: 'risks',
         permission: read(RESOURCES.RISK),

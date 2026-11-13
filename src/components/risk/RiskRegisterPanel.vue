@@ -677,7 +677,10 @@ import {
   type RiskSortBy,
   type SortDirection,
 } from '@/utils/risk-register';
-import { normalizeOwnerAssignments } from '@/utils/risk-workflow';
+import {
+  looksLikeUuid,
+  riskOwnerRefs as ownerRefsForRisk,
+} from '@/utils/risk-workflow';
 import { getRiskIdentifier } from '@/utils/risk-id';
 
 export interface SspOption {
@@ -785,60 +788,6 @@ function queryString(value: unknown): string {
     return value[0].trim();
   }
   return '';
-}
-
-function toRecord(value: unknown): Record<string, unknown> | null {
-  if (!value || typeof value !== 'object') return null;
-  return value as Record<string, unknown>;
-}
-
-function readOwnerString(
-  source: Record<string, unknown>,
-  keys: string[],
-): string | undefined {
-  for (const key of keys) {
-    const candidate = source[key];
-    if (typeof candidate === 'string' && candidate.trim()) {
-      return candidate.trim();
-    }
-  }
-  return undefined;
-}
-
-function looksLikeUuid(value: string): boolean {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-    value,
-  );
-}
-
-function ownerRefsForRisk(risk: Risk): string[] {
-  const source = toRecord(risk);
-  const normalizedOwners = normalizeOwnerAssignments({
-    primaryOwnerUserId: source
-      ? readOwnerString(source, ['primaryOwnerUserId'])
-      : undefined,
-    ownerAssignments: Array.isArray(source?.ownerAssignments)
-      ? source.ownerAssignments
-          .map((entry) => toRecord(entry))
-          .filter(
-            (entry): entry is Record<string, unknown> =>
-              !!entry && readOwnerString(entry, ['ownerKind']) === 'user',
-          )
-          .map((entry) => ({
-            ownerKind: 'user' as const,
-            ownerRef: readOwnerString(entry, ['ownerRef']) || '',
-            isPrimary: !!entry.isPrimary,
-          }))
-          .filter((entry) => !!entry.ownerRef)
-      : [],
-  });
-
-  return [
-    normalizedOwners.primaryOwnerUserId,
-    ...normalizedOwners.ownerAssignments.map((entry) => entry.ownerRef),
-  ].filter((value, index, sourceValues): value is string => {
-    return !!value && sourceValues.indexOf(value) === index;
-  });
 }
 
 async function hydrateRiskOwners(risks: Risk[]) {

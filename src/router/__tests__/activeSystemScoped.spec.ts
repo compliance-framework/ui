@@ -13,7 +13,6 @@ function scoped(name: string): boolean {
 describe('activeSystemScoped routes', () => {
   it.each([
     'controls:index',
-    'risks:index',
     'system:overview',
     'system:components',
     'system:diagrams',

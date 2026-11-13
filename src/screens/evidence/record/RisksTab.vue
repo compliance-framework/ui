@@ -12,10 +12,10 @@ import InlineMessage from '@/ds/components/InlineMessage/InlineMessage.vue';
 import Panel from '@/ds/components/layout/Panel.vue';
 import Stack from '@/ds/components/layout/Stack.vue';
 import StatusBadge from '@/ds/components/StatusBadge/StatusBadge.vue';
-import { statuses, type StatusKey } from '@/ds/components/StatusBadge/statuses';
 import Tag from '@/ds/components/Tag/Tag.vue';
 import Text from '@/ds/components/Text/Text.vue';
 import TextLink from '@/ds/components/TextLink/TextLink.vue';
+import { riskBadge } from '../../risks/risks';
 import { ZERO_UUID, useEvidenceRecord } from './evidenceRecord';
 
 /**
@@ -58,21 +58,13 @@ async function load(): Promise<void> {
 }
 void load();
 
-/** The badge for a status or level, when the shared vocabulary has one. */
-function badge(value?: string): StatusKey | undefined {
-  if (!value) return undefined;
-  const normal = value.toLowerCase().replace(/^risk-/, '');
-  const key = `risk-${normal === 'accepted' ? 'accepted' : normal}`;
-  return key in statuses ? (key as StatusKey) : undefined;
-}
-
 const rows = computed(() =>
   risks.value.map((risk) => ({
     ...risk,
     system: risk.sspTitle || risk.sspId,
-    statusKey: badge(risk.status),
-    likelihoodKey: badge(risk.likelihood),
-    impactKey: badge(risk.impact),
+    statusKey: riskBadge(risk.status),
+    likelihoodKey: riskBadge(risk.likelihood),
+    impactKey: riskBadge(risk.impact),
   })),
 );
 

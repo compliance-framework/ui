@@ -269,6 +269,7 @@ export async function mockApi(page: Page, options: MockOptions = {}) {
         { data: { scope: {}, summary: {}, groups: [], controls: [] } },
       );
     }
+    if (path === '/api/admin/risk-templates') return json(route, { data: [] });
     if (path === '/api/workflows/definitions')
       return json(route, {
         data: [
@@ -338,6 +339,28 @@ export async function mockApi(page: Page, options: MockOptions = {}) {
       if (!plan) return json(route, { errors: { body: 'not found' } }, 404);
       const rest = ssp[2] ?? '';
       if (rest === '') return json(route, { data: plan });
+      if (rest === '/risks')
+        return list(
+          route,
+          lists,
+          {
+            data: [
+              {
+                uuid: 'risk-1',
+                id: 'risk-1',
+                title: 'Backups not tested',
+                description: 'Restores have not been rehearsed this quarter.',
+                statement: 'Data could be lost.',
+                status: 'open',
+                likelihood: 'moderate',
+                impact: 'high',
+                deadline: '2026-10-01T00:00:00Z',
+              },
+            ],
+          },
+          { data: [] },
+        );
+      if (rest === '/risks/score-timeseries') return json(route, { data: [] });
       if (rest === '/profiles')
         return json(route, {
           data: [
