@@ -221,6 +221,54 @@ export async function mockApi(page: Page, options: MockOptions = {}) {
       });
     if (path.startsWith('/api/evidence/status-over-time/'))
       return json(route, { data: [] });
+    if (/^\/api\/oscal\/profiles\/[^/]+\/compliance-progress$/.test(path)) {
+      const controls = ['ac-1', 'ac-2', 'ac-3'].map((id, i) => ({
+        'control-id': id,
+        'catalog-id': 'cat-1',
+        title: `Control ${id}`,
+        'group-id': 'ac',
+        'group-title': 'Access control',
+        implemented: i !== 2,
+        'computed-status': ['satisfied', 'not-satisfied', 'unknown'][i],
+        'status-counts': [{ status: 'satisfied', count: 3 - i }],
+      }));
+      return list(
+        route,
+        lists,
+        {
+          data: {
+            scope: { id: path.split('/')[4], type: 'profile' },
+            summary: {
+              'total-controls': 3,
+              satisfied: 1,
+              'not-satisfied': 1,
+              unknown: 1,
+              inherited: 0,
+              'compliance-percent': 33,
+              'assessed-percent': 67,
+            },
+            implementation: {
+              'implemented-controls': 2,
+              'implementation-percent': 67,
+              'unimplemented-controls': 1,
+            },
+            groups: [
+              {
+                id: 'ac',
+                title: 'Access control',
+                'total-controls': 3,
+                satisfied: 1,
+                'not-satisfied': 1,
+                unknown: 1,
+                'compliance-percent': 33,
+              },
+            ],
+            controls,
+          },
+        },
+        { data: { scope: {}, summary: {}, groups: [], controls: [] } },
+      );
+    }
     if (path === '/api/agent/heartbeat/over-time') {
       return json(route, {
         data: [0, 1, 2, 3, 4, 5].map((i) => ({
@@ -257,6 +305,13 @@ export async function mockApi(page: Page, options: MockOptions = {}) {
       if (!plan) return json(route, { errors: { body: 'not found' } }, 404);
       const rest = ssp[2] ?? '';
       if (rest === '') return json(route, { data: plan });
+      if (rest === '/profiles')
+        return json(route, {
+          data: [
+            { id: 'prof-1', title: 'Payments baseline' },
+            { id: 'prof-2', title: 'Resilience' },
+          ],
+        });
       if (rest === '/scope') {
         const entries =
           plan.uuid === SYSTEMS.scoped

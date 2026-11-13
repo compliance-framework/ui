@@ -117,6 +117,12 @@ const isOpen = (id: string, containsActive: boolean) =>
       >
         {{ group.label }}
       </p>
+      <p
+        v-if="group.id === 'system' && !system && mode !== 'rail'"
+        class="primary-nav__hint"
+      >
+        No system chosen. Pick one above, or from All systems.
+      </p>
       <ul
         v-if="!group.collapsible"
         class="primary-nav__list"
@@ -295,6 +301,13 @@ const isOpen = (id: string, containsActive: boolean) =>
   font-weight: var(--ds-font-weight-bold);
   letter-spacing: var(--ds-tracking-wide);
   text-transform: uppercase;
+}
+
+.primary-nav__hint {
+  padding: 0 0 var(--ds-space-2);
+  color: var(--ds-color-text-secondary);
+  font-size: var(--ds-font-size-caption);
+  line-height: var(--ds-leading-snug);
 }
 
 .primary-nav__group--system > .primary-nav__heading {

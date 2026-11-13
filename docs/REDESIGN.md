@@ -62,7 +62,7 @@ Tabs and nested pages move with their parent. **Done** means migrated, with the 
 | Global > Evidence                                                                                | `evidence:index` → `/evidence` (same screen as This System > Evidence)                                       | **Done**                                                                                   |
 | Evidence create, re-submit, history                                                              | `evidence:create`, `evidence:update` (one form screen), `evidence:history` → the latest record's History tab | **Done**                                                                                   |
 | This System > Implementation                                                                     | `controls:index`                                                                                             | To do                                                                                      |
-| This System > Compliance                                                                         | `compliance:index`                                                                                           | To do                                                                                      |
+| This System > Compliance                                                                         | `compliance:index` → `/systems/:id/compliance`                                                               | **Done**                                                                                   |
 | This System > Risks, risk detail                                                                 | `risks:index`, `risks:detail`                                                                                | To do                                                                                      |
 | This System > Workflow Instances                                                                 | `workflow-instances:index`, `workflow-instance-*`, `workflow-execution-view`                                 | To do                                                                                      |
 | Configure System (15 tabs)                                                                       | `system:*`, `system-component-dashboards`                                                                    | To do                                                                                      |
@@ -81,6 +81,16 @@ Tabs and nested pages move with their parent. **Done** means migrated, with the 
 When the last classic page goes: delete `LegacyPage`, PrimeVue, Volt, Tailwind and the classic
 components; drop the `--ds-` prefix if wanted.
 
+## To-dos
+
+Small things noticed along the way, to sweep up later:
+
+- Compliance: the six totals wrap to two rows at 1440px; a compact tile row would fit them on one.
+- The classic Compliance page read `uuid` from `GET /ssp/:id/profiles`, but the API returns `id`,
+  so on `main` it may never find the attached profiles. The new page accepts both. Worth checking
+  on `main`.
+- The classic "Select a system" prompt (classic system pages) still uses classic styling.
+
 ## Decisions
 
 Agreed with the product owner (2026-11-13):
@@ -88,8 +98,10 @@ Agreed with the product owner (2026-11-13):
 - **Big bang on this branch.** Pages are replaced, not run side by side; merge conflicts with
   `main` are accepted as the cost of moving fast.
 - **Navigation stays true to the current app** (structure and labels): This System, then Global
-  with Evidence, Analysis, Integrations, Control Definitions and Admin. The Systems list is
-  reached from the system switcher.
+  with Evidence, Analysis, Integrations, Control Definitions and Admin. This System is always
+  shown, as in the classic app; with no system chosen it says so, and its pages ask for one.
+  It also lists **All systems** (an addition: the classic app reached the list only from its
+  system menu).
 - **The system lives in the URL**, identified by SSP UUID; opening a link makes it the current
   system.
 - **The Systems list matches the current app's columns** (no per-system summary endpoint).

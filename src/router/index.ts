@@ -287,15 +287,6 @@ const authenticatedRoutes = [
     },
   },
   {
-    path: 'compliance',
-    name: 'compliance:index',
-    component: () => import('../views/system/ComplianceView.vue'),
-    meta: {
-      requiresAuth: true,
-      activeSystemScoped: true,
-    },
-  },
-  {
     path: 'poam-items',
     name: 'poam-items:index',
     component: () => import('../views/poam/CCFPoamItemsListView.vue'),
@@ -1135,6 +1126,17 @@ function evidenceRecordTabs(prefix: string) {
   ];
 }
 
+// A classic system route (which read the current system from the store) now leads to the
+// redesigned page for the current system, or to the Systems list to choose one.
+function toCurrentSystem(name: string) {
+  return (to: RouteLocation) => {
+    const systemId = useSystemStore().system.securityPlan?.uuid;
+    return systemId
+      ? { name, params: { systemId }, query: to.query, hash: to.hash }
+      : { name: 'systems' };
+  };
+}
+
 const designSystemRoutes = [
   {
     path: 'systems',
@@ -1161,6 +1163,12 @@ const designSystemRoutes = [
       {
         path: '',
         redirect: { name: 'system-evidence' },
+      },
+      {
+        path: 'compliance',
+        name: 'system-compliance',
+        component: () => import('@/screens/compliance/ComplianceScreen.vue'),
+        meta: { title: 'Compliance' },
       },
       {
         path: 'evidence',
@@ -1222,12 +1230,12 @@ const designSystemRoutes = [
   {
     path: 'system/evidence',
     name: 'system:evidence',
-    redirect: (to: RouteLocation) => {
-      const systemId = useSystemStore().system.securityPlan?.uuid;
-      return systemId
-        ? { name: 'system-evidence', params: { systemId }, query: to.query }
-        : { name: 'systems' };
-    },
+    redirect: toCurrentSystem('system-evidence'),
+  },
+  {
+    path: 'compliance',
+    name: 'compliance:index',
+    redirect: toCurrentSystem('system-compliance'),
   },
 ];
 

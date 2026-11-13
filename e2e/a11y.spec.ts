@@ -18,6 +18,7 @@ const routes = [
   `/evidence/${EVIDENCE_ID}/update`,
   '/systems',
   `/systems/${SYSTEMS.scoped}/evidence`,
+  `/systems/${SYSTEMS.scoped}/compliance`,
   `/systems/${SYSTEMS.unscoped}/evidence`,
   `/systems/${SYSTEMS.missing}/evidence`,
 ];

@@ -21,9 +21,9 @@ export interface ResolvedNavGroup extends Omit<NavGroup, 'items'> {
 
 /**
  * The navigation the user may use, with the active item derived from the route: the deepest nav
- * path that contains the current URL wins. The system group links to the current system: the one
- * in the URL on a redesigned system page, otherwise the system store's (which classic system
- * pages read). It is hidden until a system is chosen.
+ * path that contains the current URL wins. The system group links to the current system (the
+ * system store, which the URL keeps in step). It is always shown, as in the classic app; with no
+ * system chosen its pages ask for one.
  */
 export function useNav() {
   const route = useRoute();
@@ -37,20 +37,23 @@ export function useNav() {
     const resolved = navGroups.map((group) => ({
       ...group,
       items: group.items.flatMap((item) => {
-        if (group.id === 'system' && !system.value) return [];
         if (!router.hasRoute(item.route)) return [];
         if (
           item.permission &&
           !permissions.can(item.permission.resource, item.permission.action)
         )
           return [];
+        // A page that takes the system from its URL needs one; with no system chosen it
+        // leads to the Systems list to choose one. Classic pages prompt for a system themselves.
         const record = router.getRoutes().find((r) => r.name === item.route);
-        const to = {
-          name: item.route,
-          params: record?.path.includes(':systemId')
-            ? { systemId: system.value!.uuid }
-            : {},
-        };
+        const needsSystem = Boolean(record?.path.includes(':systemId'));
+        const to =
+          needsSystem && !system.value
+            ? { name: 'systems' }
+            : {
+                name: item.route,
+                params: needsSystem ? { systemId: system.value!.uuid } : {},
+              };
         return [
           {
             name: item.route,
