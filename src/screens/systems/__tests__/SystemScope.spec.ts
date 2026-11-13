@@ -71,9 +71,10 @@ describe('SystemScope', () => {
     expect(useSystemStore().system.securityPlan).toBeUndefined();
   });
 
-  it('shows forbidden when the user may not read the system', async () => {
+  it('shows a system the user may not read as not found', async () => {
     api.get.mockRejectedValue({ response: { status: 403 } });
     const { wrapper } = await mountScope('/next/systems/secret/evidence');
-    expect(wrapper.text()).toContain("You don't have access to this system");
+    expect(wrapper.text()).toContain('System not found');
+    expect(wrapper.find('.page').exists()).toBe(false);
   });
 });

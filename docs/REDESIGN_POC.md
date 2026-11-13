@@ -74,7 +74,8 @@ are new and still open.
      `SystemScope` frames them: it loads the system named in the URL and makes it the current
      system, so a shared link sets the reader's current system, and the nav, the switcher and the
      classic system pages (which read the system store) all agree. An unknown system shows "System
-     not found" in place; a forbidden one shows no access.
+     not found" in place. So does a 403 (_agreed 2026-11-13_): the API documents no
+     per-system 403 yet, and treating both alike never confirms that a hidden system exists.
    - Switching system on a redesigned system page keeps the same page and puts the new system in
      the URL. Search, sort and page are dropped on a switch, because they may not apply.
    - The nav has the classic structure and labels: **This System** (Evidence, Implementation,
