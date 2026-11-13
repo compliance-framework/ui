@@ -281,7 +281,7 @@ const profileOptions = computed(() =>
       icon="controls"
     >
       <template #empty-actions>
-        <TextLink :to="{ name: 'controls:index' }"
+        <TextLink :to="{ name: 'system-implementation', params: { systemId } }"
           >Go to Implementation</TextLink
         >
       </template>

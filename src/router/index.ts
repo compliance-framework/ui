@@ -71,15 +71,6 @@ const authenticatedRoutes = [
     },
   },
   {
-    path: 'controls',
-    name: 'controls:index',
-    component: () => import('../views/control-implementations/IndexView.vue'),
-    meta: {
-      requiresAuth: true,
-      activeSystemScoped: true,
-    },
-  },
-  {
     path: 'workflows',
     name: 'workflow:index',
     component: () => import('../views/workflows/WorkFlowIndexView.vue'),
@@ -1152,6 +1143,13 @@ const designSystemRoutes = [
         meta: { title: 'Compliance' },
       },
       {
+        path: 'implementation',
+        name: 'system-implementation',
+        component: () =>
+          import('@/screens/implementation/ImplementationScreen.vue'),
+        meta: { title: 'Implementation' },
+      },
+      {
         path: 'risks',
         name: 'system-risks',
         component: () => import('@/screens/risks/RisksDashboardScreen.vue'),
@@ -1236,6 +1234,11 @@ const designSystemRoutes = [
     path: 'compliance',
     name: 'compliance:index',
     redirect: toCurrentSystem('system-compliance'),
+  },
+  {
+    path: 'controls',
+    name: 'controls:index',
+    redirect: toCurrentSystem('system-implementation'),
   },
   {
     path: 'workflow-instances',

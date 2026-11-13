@@ -1,235 +1,32 @@
-<template>
-  <NoActiveSystem
-    v-if="!systemStore.system.securityPlan"
-    subject="control implementations"
-  />
-
-  <div v-else>
-    <div
-      class="mb-4 flex flex-col gap-3 md:flex-row md:items-end md:justify-between"
-    >
-      <div>
-        <PageHeader>Implementation</PageHeader>
-        <PageSubHeader
-          >Specify how controls are implemented across the business
-        </PageSubHeader>
-      </div>
-      <Button
-        v-if="activeProfile"
-        type="button"
-        severity="secondary"
-        :label="bulkSuggestionsButtonLabel"
-        :loading="bulkSuggestionsBusy"
-        :disabled="bulkSuggestionsOperationLocked || catalogLoading || loading"
-        @click="prepareApplyAllSuggestions"
-      />
-    </div>
-
-    <!-- Profiles decide which controls show up below, so they're managed right here rather
-         than on a separate configuration page. -->
-    <div
-      class="mb-6 rounded-lg border border-ccf-300 bg-white p-4 dark:border-slate-700 dark:bg-slate-900"
-    >
-      <SspProfilePicker
-        :ssp-id="systemStore.system.securityPlan.uuid"
-        @updated="handleProfilesUpdated"
-      />
-    </div>
-
-    <Message v-if="loading" severity="info" variant="simple">
-      <span class="flex items-center gap-2">
-        <i class="pi pi-spin pi-spinner"></i>
-        Loading control data...
-      </span>
-    </Message>
-
-    <Message v-else-if="!activeProfile" severity="secondary" variant="outlined">
-      <div class="space-y-2 text-gray-700 dark:text-slate-200">
-        <h4 class="text-base font-semibold">No profile attached yet</h4>
-        <p>
-          Pick one or more profiles above to choose which controls this system
-          implements. Their controls will appear here, ready to document.
-        </p>
-      </div>
-    </Message>
-
-    <Message v-else-if="!profilesResolved" severity="secondary">
-      No catalog is available for the linked profile.
-    </Message>
-    <div v-else>
-      <Tree
-        v-model:expandedKeys="expandedKeys"
-        :value="nodes"
-        :filter="true"
-        filterMode="lenient"
-      >
-        <template #group="slotProps">
-          <div class="flex items-center gap-x-3">
-            <h4>{{ slotProps.node.data.title }}</h4>
-          </div>
-        </template>
-        <template #control="slotProps">
-          <div
-            :class="
-              isHighlightedControl(slotProps.node.data.id)
-                ? 'rounded ring-2 ring-blue-400 dark:ring-blue-500 bg-blue-50 dark:bg-blue-900/20 p-2'
-                : ''
-            "
-          >
-            <div class="flex items-center gap-x-3">
-              <Badge class="text-base">{{ slotProps.node.data.id }}</Badge>
-              <h4>{{ slotProps.node.data.title }}</h4>
-              <Badge class="text-base">{{
-                controlByComponentCount(slotProps.node.data.id)
-              }}</Badge>
-              <Button
-                variant="text"
-                :disabled="!hasControlImplementation(slotProps.node.data.id)"
-                :aria-label="
-                  hasControlImplementation(slotProps.node.data.id)
-                    ? 'View implementation'
-                    : 'No implementation yet'
-                "
-                :title="
-                  hasControlImplementation(slotProps.node.data.id)
-                    ? 'View implementation'
-                    : 'No implementation yet'
-                "
-                @click="openControlDrawer(slotProps.node.data.id)"
-                ><BIconEye
-              /></Button>
-              <RiskIndicatorBadge
-                :risk-count="controlRiskCount(slotProps.node.data.id)"
-                :is-capped="
-                  controlRiskCount(slotProps.node.data.id) >= RISK_FETCH_LIMIT
-                "
-                :highest-severity="
-                  controlHighestSeverity(slotProps.node.data.id)
-                "
-                clickable
-                @click.stop="openControlRisks(slotProps.node.data.id)"
-              />
-              <SuggestionIndicatorBadge
-                v-if="aiConfigStore.dashboardSuggestionsEnabled"
-                :count="controlSuggestionCount(slotProps.node.data.id)"
-                @click.stop="openControlDrawer(slotProps.node.data.id)"
-              />
-              <ControlEvidenceCounter
-                :control="slotProps.node.data"
-                :ssp-id="systemStore.system.securityPlan?.uuid"
-              />
-            </div>
-            <div class="py-4">
-              <IndexControlImplementation
-                :control="slotProps.node.data"
-                :implementation="controlImplementations[slotProps.node.data.id]"
-                @exported="handleExported"
-                @imported="handleImported"
-              />
-            </div>
-          </div>
-        </template>
-      </Tree>
-    </div>
-  </div>
-
-  <Drawer
-    v-model:visible="controlDrawerOpen"
-    position="right"
-    class="w-full! md:w-1/2! lg:w-3/5!"
-  >
-    <template #header>
-      <div v-if="selectedControl" class="min-w-0">
-        <div class="flex items-center gap-x-3">
-          <Badge class="text-base">{{ selectedControl.id }}</Badge>
-          <h4 class="font-semibold text-2xl truncate">
-            {{ selectedControl.title }}
-          </h4>
-        </div>
-        <p
-          v-if="selectedControlDescription"
-          class="mt-1 text-sm text-gray-500 dark:text-slate-400"
-        >
-          {{ selectedControlDescription }}
-        </p>
-      </div>
-      <h4 v-else class="font-semibold text-2xl">Implementation</h4>
-    </template>
-
-    <ControlImplementationSuggestions
-      v-if="aiConfigStore.dashboardSuggestionsEnabled"
-      :control-id="selectedDrawerControlId"
-      :ssp-id="systemStore.system.securityPlan?.uuid"
-      :suggestions="selectedControlDashboardSuggestions"
-      :result="selectedControlSuggestionResult"
-      :loading="dashboardSuggestionStateLoading"
-    />
-
-    <div class="flex items-center mb-4 gap-x-4">
-      <h4 class="font-medium text-xl">Components</h4>
-      <Badge
-        :value="selectedImplementedRequirement?.byComponents?.length"
-        severity="info"
-      />
-    </div>
-    <div
-      v-for="(
-        byComponent, index
-      ) in selectedImplementedRequirement?.byComponents || []"
-      :key="byComponent.uuid"
-    >
-      <div
-        class="h-0.5 w-full bg-gray-200 dark:bg-slate-700 my-4"
-        v-if="index !== 0"
-      ></div>
-      <StatementByComponent
-        :by-component="byComponent"
-        :control-id="selectedImplementedRequirement?.controlId"
-        :ssp-risks="sspRisks || []"
-        :risk-fetch-limit="RISK_FETCH_LIMIT"
-      />
-    </div>
-
-    <div class="h-0.5 w-full bg-gray-200 dark:bg-slate-700 my-6"></div>
-
-    <SharedResponsibilityPanel
-      v-if="selectedSspId && selectedDrawerControlId"
-      :key="`${selectedSspId}:${selectedDrawerControlId}:${sharedResponsibilityRefreshKey}`"
-      :ssp-id="selectedSspId"
-      :control-id="selectedDrawerControlId"
-      @edit-provides="openProvidesEditor"
-      @imported="handleImported"
-    />
-
-    <ExportStatementDialog
-      v-if="selectedSspId && providesEditTarget"
-      v-model:visible="showProvidesEditDialog"
-      :ssp-id="selectedSspId"
-      :ssp-title="selectedSspTitle"
-      :control-id="providesEditTarget.controlId"
-      :statement-id="providesEditTarget.statementId"
-      :by-component-uuid="providesEditTarget.byComponentUuid"
-      @saved="handleProvidesSaved"
-    />
-  </Drawer>
-</template>
-
 <script setup lang="ts">
+/**
+ * This System > Implementation (/systems/:systemId/implementation): which profiles the system
+ * implements, every control they bring in (grouped as in the catalog, searchable), how each is
+ * implemented, and a drawer with a control's component statements, AI suggestions and shared
+ * responsibilities. The data logic is the classic page's, unchanged; the per-control editors are
+ * classic components embedded as legacy islands until they are rebuilt.
+ */
+import { computed as dsComputed, ref as dsRef } from 'vue';
+import LegacyPage from '@/views/layouts/LegacyPage.vue';
+import Button from '@/ds/components/Button/Button.vue';
+import DataState from '@/ds/components/DataState/DataState.vue';
+import Drawer from '@/ds/components/Drawer/Drawer.vue';
+import FilterBar from '@/ds/components/FilterBar/FilterBar.vue';
+import Panel from '@/ds/components/layout/Panel.vue';
+import Stack from '@/ds/components/layout/Stack.vue';
+import Text from '@/ds/components/Text/Text.vue';
+import ListTemplate from '@/ds/templates/ListTemplate/ListTemplate.vue';
+import ControlTreeNode from './ControlTreeNode.vue';
+import ProfilesField from './ProfilesField.vue';
+import { provideControlTree } from './controlTree';
 import { onMounted, provide, ref, watch, computed } from 'vue';
-import { useRouter } from 'vue-router';
-import Message from '@/volt/Message.vue';
-import Badge from '@/volt/Badge.vue';
+
 import { useSystemStore } from '@/stores/system.ts';
 import {
   useSystemSecurityPlanStore,
   type SystemSecurityPlanProfileBinding,
 } from '@/stores/system-security-plans';
 import { useUIStore } from '@/stores/ui.ts';
-import PageHeader from '@/components/PageHeader.vue';
-import PageSubHeader from '@/components/PageSubHeader.vue';
-import NoActiveSystem from '@/components/system/NoActiveSystem.vue';
-import SspProfilePicker from '@/components/system/SspProfilePicker.vue';
-import ControlEvidenceCounter from './partials/ControlEvidenceCounter.vue';
 import { buildTreeNodesWithPrefix } from '@/composables/useCatalogTree';
 import type { TreeNode } from '@/composables/useCatalogTree';
 import { useAuthenticatedInstance, useDataApi } from '@/composables/axios';
@@ -237,8 +34,6 @@ import {
   LeveragedControlsKey,
   useLeveragedControls,
 } from '@/composables/useLeveragedControls';
-import Tree from '@/volt/Tree.vue';
-import IndexControlImplementation from '@/views/control-implementations/partials/IndexControlImplementation.vue';
 import ControlImplementationSuggestions from '@/views/control-implementations/partials/ControlImplementationSuggestions.vue';
 import type { Catalog, Group } from '@/oscal';
 import type { DataResponse } from '@/stores/types.ts';
@@ -253,14 +48,9 @@ import type {
   SharedResponsibilityProvided,
   SubscribeResponseMeta,
 } from '@/types/ssp-leverage';
-import Button from '@/volt/Button.vue';
-import { BIconEye } from 'bootstrap-icons-vue';
-import Drawer from '@/volt/Drawer.vue';
 import ExportStatementDialog from '@/components/system-security-plans/ExportStatementDialog.vue';
-import SharedResponsibilityPanel from './partials/SharedResponsibilityPanel.vue';
-import StatementByComponent from './partials/StatementByComponent.vue';
-import RiskIndicatorBadge from './partials/RiskIndicatorBadge.vue';
-import SuggestionIndicatorBadge from './partials/SuggestionIndicatorBadge.vue';
+import SharedResponsibilityPanel from '@/views/control-implementations/partials/SharedResponsibilityPanel.vue';
+import StatementByComponent from '@/views/control-implementations/partials/StatementByComponent.vue';
 import { useToast } from 'primevue/usetoast';
 import { useConfirm } from 'primevue/useconfirm';
 import {
@@ -292,7 +82,6 @@ const uiStore = useUIStore();
 const toast = useToast();
 const confirm = useConfirm();
 const axios = useAuthenticatedInstance();
-const router = useRouter();
 const aiConfigStore = useAiConfigStore();
 
 const controlDrawerOpen = computed({
@@ -618,18 +407,6 @@ async function initializeDashboardSuggestionState() {
   } catch {
     // Dashboard suggestions are optional; do not block the core controls view.
   }
-}
-
-function openControlRisks(controlId?: string) {
-  if (!controlId) {
-    return;
-  }
-  void router.push({
-    name: 'risks:index',
-    query: {
-      controlId,
-    },
-  });
 }
 
 function controlByComponentCount(controlId?: string): number {
@@ -1083,10 +860,6 @@ watch(profileBindings, async () => {
   }
 });
 
-function hasControlImplementation(controlId?: string): boolean {
-  return !!(controlId && controlImplementations.value[controlId]);
-}
-
 const selectedSspId = computed(
   () => systemStore.system.securityPlan?.uuid ?? '',
 );
@@ -1357,4 +1130,163 @@ onMounted(async () => {
     error.value = err;
   }
 });
+
+// Redesigned presentation ----------------------------------------------------------------------
+
+const treeQuery = dsRef('');
+const treeDraft = dsRef('');
+const pageStatus = dsComputed(() => {
+  if (loading.value) return 'loading' as const;
+  if (!activeProfile.value || !profilesResolved.value) return 'empty' as const;
+  return 'ready' as const;
+});
+const drawerTitle = dsComputed(() =>
+  selectedControl.value
+    ? `${selectedControl.value.id} · ${selectedControl.value.title}`
+    : 'Implementation',
+);
+
+provideControlTree({
+  sspId: () => systemStore.system.securityPlan?.uuid ?? '',
+  query: () => treeQuery.value,
+  suggestionsEnabled: () => aiConfigStore.dashboardSuggestionsEnabled,
+  implementation: (id) => controlImplementations.value[id],
+  byComponentCount: controlByComponentCount,
+  riskCount: controlRiskCount,
+  riskSeverity: controlHighestSeverity,
+  suggestionCount: controlSuggestionCount,
+  highlighted: isHighlightedControl,
+  isOpen: (key) => Boolean(expandedKeys.value[key]),
+  setOpen: (key, open) =>
+    (expandedKeys.value = { ...expandedKeys.value, [key]: open }),
+  openDrawer: openControlDrawer,
+  risksLink: (controlId) => ({ name: 'risks:index', query: { controlId } }),
+  onExported: () => void handleExported(),
+  onImported: (payload) =>
+    void handleImported(payload as Parameters<typeof handleImported>[0]),
+});
 </script>
+
+<template>
+  <ListTemplate
+    title="Implementation"
+    :description="`How ${selectedSspTitle} implements its controls.`"
+  >
+    <template v-if="activeProfile" #actions>
+      <Button
+        :loading="bulkSuggestionsBusy"
+        :disabled-reason="
+          bulkSuggestionsOperationLocked || catalogLoading || loading
+            ? 'Wait for the current operation to finish.'
+            : undefined
+        "
+        @click="prepareApplyAllSuggestions"
+        >{{ bulkSuggestionsButtonLabel }}</Button
+      >
+    </template>
+
+    <template #banner>
+      <Panel
+        title="Profiles"
+        description="The profiles this system implements decide the controls below."
+      >
+        <ProfilesField
+          :ssp-id="selectedSspId"
+          @updated="handleProfilesUpdated"
+        />
+      </Panel>
+    </template>
+
+    <template v-if="pageStatus === 'ready'" #filters>
+      <FilterBar
+        v-model:query="treeDraft"
+        label="Filter controls"
+        search-label="Search controls"
+        search-placeholder="ID or title, e.g. ac-2"
+        :chips="treeQuery ? [{ label: `Search: ${treeQuery}` }] : []"
+        @search="treeQuery = treeDraft.trim()"
+        @remove="treeQuery = treeDraft = ''"
+        @clear="treeQuery = treeDraft = ''"
+      />
+    </template>
+
+    <DataState
+      :status="pageStatus"
+      subject="controls"
+      :empty-title="
+        activeProfile
+          ? 'No catalog for this profile'
+          : 'No profile attached yet'
+      "
+      :empty-body="
+        activeProfile
+          ? 'The attached profile has no catalog to resolve controls from.'
+          : 'Attach one or more profiles above to choose which controls this system implements. Their controls appear here, ready to document.'
+      "
+      icon="controls"
+      skeleton="panel"
+    >
+      <Stack gap="3" as="ul">
+        <li v-for="node in nodes" :key="node.key">
+          <ControlTreeNode :node="node" />
+        </li>
+      </Stack>
+    </DataState>
+  </ListTemplate>
+
+  <Drawer
+    v-model:open="controlDrawerOpen"
+    :title="drawerTitle"
+    :description="selectedControlDescription"
+  >
+    <LegacyPage>
+      <ControlImplementationSuggestions
+        v-if="aiConfigStore.dashboardSuggestionsEnabled"
+        :control-id="selectedDrawerControlId"
+        :ssp-id="systemStore.system.securityPlan?.uuid"
+        :suggestions="selectedControlDashboardSuggestions"
+        :result="selectedControlSuggestionResult"
+        :loading="dashboardSuggestionStateLoading"
+      />
+    </LegacyPage>
+    <Stack gap="4">
+      <Text variant="label"
+        >Components ({{
+          selectedImplementedRequirement?.byComponents?.length ?? 0
+        }})</Text
+      >
+      <LegacyPage
+        v-for="byComponent in selectedImplementedRequirement?.byComponents ||
+        []"
+        :key="byComponent.uuid"
+      >
+        <StatementByComponent
+          :by-component="byComponent"
+          :control-id="selectedImplementedRequirement?.controlId"
+          :ssp-risks="sspRisks || []"
+          :risk-fetch-limit="RISK_FETCH_LIMIT"
+        />
+      </LegacyPage>
+      <LegacyPage>
+        <SharedResponsibilityPanel
+          v-if="selectedSspId && selectedDrawerControlId"
+          :key="`${selectedSspId}:${selectedDrawerControlId}:${sharedResponsibilityRefreshKey}`"
+          :ssp-id="selectedSspId"
+          :control-id="selectedDrawerControlId"
+          @edit-provides="openProvidesEditor"
+          @imported="handleImported"
+        />
+        <ExportStatementDialog
+          v-if="selectedSspId && providesEditTarget"
+          v-model:visible="showProvidesEditDialog"
+          :ssp-id="selectedSspId"
+          :ssp-title="selectedSspTitle"
+          :control-id="providesEditTarget.controlId"
+          :statement-id="providesEditTarget.statementId"
+          :by-component-uuid="providesEditTarget.byComponentUuid"
+          @saved="handleProvidesSaved"
+        />
+      </LegacyPage>
+    </Stack>
+  </Drawer>
+</template>

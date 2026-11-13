@@ -42,7 +42,11 @@ export const navGroups: NavGroup[] = [
         icon: 'evidence',
         permission: read(RESOURCES.SSP),
       },
-      { route: 'controls:index', label: 'Implementation', icon: 'components' },
+      {
+        route: 'system-implementation',
+        label: 'Implementation',
+        icon: 'components',
+      },
       { route: 'system-compliance', label: 'Compliance', icon: 'controls' },
       {
         route: 'system-risks',

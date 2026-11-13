@@ -11,14 +11,12 @@ function scoped(name: string): boolean {
 // flag must match the nav's classic This System pages. Migrated system pages take the system
 // from their URL (/systems/:systemId/...) instead, and their classic names only redirect.
 describe('activeSystemScoped routes', () => {
-  it.each([
-    'controls:index',
-    'system:overview',
-    'system:components',
-    'system:diagrams',
-  ])('%s follows the active system', (name) => {
-    expect(scoped(name)).toBe(true);
-  });
+  it.each(['system:overview', 'system:components', 'system:diagrams'])(
+    '%s follows the active system',
+    (name) => {
+      expect(scoped(name)).toBe(true);
+    },
+  );
 
   it.each([
     'evidence:index',

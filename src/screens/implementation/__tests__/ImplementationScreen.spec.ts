@@ -1,7 +1,8 @@
+import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { enableAutoUnmount, mount } from '@vue/test-utils';
 import { defineComponent, h, reactive, ref } from 'vue';
-import IndexView from '../IndexView.vue';
+import IndexView from '../ImplementationScreen.vue';
 
 enableAutoUnmount(afterEach);
 
@@ -156,12 +157,14 @@ async function openDrawerForControl(
   wrapper: ReturnType<typeof mount>,
   controlId: string,
 ) {
-  const row = wrapper
-    .findAll('div')
-    .find((div) => div.attributes('key') === `control:${controlId}`);
+  const row = wrapper.findAll('li').find((li) => li.text().includes(controlId));
   const eye = (row ?? wrapper)
     .findAll('button')
-    .find((button) => button.attributes('title') === 'View implementation');
+    .find(
+      (button) =>
+        button.text().includes('Details') &&
+        button.attributes('disabled') === undefined,
+    );
   if (!eye) throw new Error(`No enabled eye button for ${controlId}`);
   await eye.trigger('click');
   await waitForMountedControls();
@@ -178,11 +181,12 @@ const stubs = {
   Message: { template: '<div><slot /></div>' },
   Badge: { template: '<span><slot />{{ value }}</span>', props: ['value'] },
   Chip: { template: '<span>{{ label }}</span>', props: ['label'] },
+  // The design-system Button: disabled with a reason, otherwise clickable.
   Button: {
-    props: ['disabled', 'ariaLabel', 'title', 'label'],
+    props: ['disabledReason'],
     emits: ['click'],
     template:
-      '<button :disabled="disabled" :aria-label="ariaLabel" :title="title" @click="!disabled && $emit(\'click\', $event)"><slot />{{ label }}</button>',
+      '<button :disabled="!!disabledReason" @click="!disabledReason && $emit(\'click\', $event)"><slot /></button>',
   },
   Tree: defineComponent({
     props: ['value'],
@@ -233,11 +237,13 @@ const stubs = {
   },
   PageHeader: { template: '<h1><slot /></h1>' },
   PageSubHeader: { template: '<p><slot /></p>' },
-  SspProfilePicker: ProfilePickerStub,
+  ProfilesField: ProfilePickerStub,
   NoActiveSystem: { template: '<div data-testid="no-active-system" />' },
 };
 
-describe('control implementations IndexView', () => {
+describe('ImplementationScreen (the classic Implementation logic, redesigned)', () => {
+  beforeEach(() => setActivePinia(createPinia()));
+
   beforeEach(() => {
     vi.clearAllMocks();
     aiConfigState.dashboardSuggestionsEnabled = false;
@@ -303,7 +309,11 @@ describe('control implementations IndexView', () => {
 
     const noImplementationButton = wrapper
       .findAll('button')
-      .find((button) => button.attributes('title') === 'No implementation yet');
+      .find(
+        (button) =>
+          button.text().includes('Details') &&
+          button.attributes('disabled') !== undefined,
+      );
 
     expect(noImplementationButton?.attributes('disabled')).toBeDefined();
     await noImplementationButton?.trigger('click');
@@ -316,7 +326,11 @@ describe('control implementations IndexView', () => {
 
     const implementationButton = wrapper
       .findAll('button')
-      .find((button) => button.attributes('title') === 'View implementation');
+      .find(
+        (button) =>
+          button.text().includes('Details') &&
+          button.attributes('disabled') === undefined,
+      );
 
     expect(implementationButton).toBeDefined();
     expect(implementationButton?.attributes('disabled')).toBeUndefined();
@@ -336,7 +350,11 @@ describe('control implementations IndexView', () => {
 
     const implementationButton = wrapper
       .findAll('button')
-      .find((button) => button.attributes('title') === 'View implementation');
+      .find(
+        (button) =>
+          button.text().includes('Details') &&
+          button.attributes('disabled') === undefined,
+      );
     await implementationButton?.trigger('click');
     await flushPromises();
 
@@ -388,7 +406,11 @@ describe('control implementations IndexView', () => {
 
     const implementationButton = wrapper
       .findAll('button')
-      .find((button) => button.attributes('title') === 'View implementation');
+      .find(
+        (button) =>
+          button.text().includes('Details') &&
+          button.attributes('disabled') === undefined,
+      );
     await implementationButton?.trigger('click');
     await flushPromises();
 
@@ -527,7 +549,11 @@ describe('control implementations IndexView', () => {
     const callsBeforeDrawerOpen = axiosGet.mock.calls.length;
     const implementationButton = wrapper
       .findAll('button')
-      .find((button) => button.attributes('title') === 'View implementation');
+      .find(
+        (button) =>
+          button.text().includes('Details') &&
+          button.attributes('disabled') === undefined,
+      );
     await implementationButton?.trigger('click');
     await flushPromises();
 
@@ -554,7 +580,11 @@ describe('control implementations IndexView', () => {
 
     const implementationButton = wrapper
       .findAll('button')
-      .find((button) => button.attributes('title') === 'View implementation');
+      .find(
+        (button) =>
+          button.text().includes('Details') &&
+          button.attributes('disabled') === undefined,
+      );
     await implementationButton?.trigger('click');
     await flushPromises();
 
@@ -577,7 +607,11 @@ describe('control implementations IndexView', () => {
 
     const implementationButton = wrapper
       .findAll('button')
-      .find((button) => button.attributes('title') === 'View implementation');
+      .find(
+        (button) =>
+          button.text().includes('Details') &&
+          button.attributes('disabled') === undefined,
+      );
     await implementationButton?.trigger('click');
     await flushPromises();
 
@@ -586,7 +620,7 @@ describe('control implementations IndexView', () => {
     );
   });
 
-  it('surfaces a clickable suggestions badge that opens the drawer for a control with no implementation', async () => {
+  it('keeps Details reachable for a control with suggestions but no implementation', async () => {
     // ac-2 has no implemented requirement (only ac-1 does), so its eye button is
     // disabled. A pending suggestion for ac-2 must still be reachable via a badge.
     aiConfigState.dashboardSuggestionsEnabled = true;
@@ -603,23 +637,17 @@ describe('control implementations IndexView', () => {
     const wrapper = mount(IndexView, { global: { stubs } });
     await waitForMountedControls();
 
-    // The ac-2 eye button is disabled (no implementation to view).
-    const eyeButtons = wrapper
-      .findAll('button')
-      .filter((button) => button.attributes('title') !== undefined);
-    expect(
-      eyeButtons.some((button) => button.attributes('disabled') !== undefined),
-    ).toBe(true);
-
-    const badge = wrapper
-      .findAll('button')
-      .find((button) =>
-        button
-          .attributes('aria-label')
-          ?.includes('pending AI evidence filter suggestion'),
-      );
-    expect(badge).toBeTruthy();
-    expect(badge?.text()).toContain('1');
+    // ac-2 has no implementation, but its pending suggestion keeps Details reachable.
+    // The innermost list item holding ac-2 is its row (its group's item holds every control).
+    const row = wrapper
+      .findAll('li')
+      .filter((li) => li.text().includes('ac-2'))
+      .at(-1);
+    expect(row?.text()).toContain('1 suggestion');
+    const badge = row
+      ?.findAll('button')
+      .find((button) => button.text().includes('Details'));
+    expect(badge?.attributes('disabled')).toBeUndefined();
 
     // Before opening, the drawer's suggestions panel is not scoped to ac-2.
     expect(wrapper.text()).not.toContain('Unimplemented control suggestion');
@@ -716,7 +744,7 @@ describe('control implementations IndexView', () => {
     expect(uiStore.controlImplementationExpandedKeys).toMatchObject({
       'control:ac-2': true,
     });
-    expect(wrapper.find('.ring-2').exists()).toBe(true);
+    expect(wrapper.text()).toContain('Just changed');
 
     const detail = toastAdd.mock.calls.at(-1)?.[0]?.detail as string;
     expect(detail).toContain('implemented requirement ac-2');
