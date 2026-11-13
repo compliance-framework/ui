@@ -7,12 +7,12 @@ function scoped(name: string): boolean {
     .matched.some((record) => record.meta.activeSystemScoped);
 }
 
-// The layout remounts only `activeSystemScoped` pages when the active system changes, so
-// the flag must match the nav's This System section (minus Evidence, which is global).
+// The shell remounts only `activeSystemScoped` pages when the active system changes, so the
+// flag must match the nav's classic This System pages. Migrated system pages take the system
+// from their URL (/systems/:systemId/...) instead, and their classic names only redirect.
 describe('activeSystemScoped routes', () => {
   it.each([
     'controls:index',
-    'compliance:index',
     'risks:index',
     'workflow-instances:index',
     'system:overview',
