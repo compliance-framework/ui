@@ -709,33 +709,6 @@ const authenticatedRoutes = [
     },
   },
   {
-    path: '/evidence/create',
-    name: 'evidence:create',
-    component: () => import('../views/evidence/CreateView.vue'),
-    meta: {
-      requiresAuth: true,
-    },
-  },
-  {
-    path: '/evidence/:id/update',
-    name: 'evidence:update',
-    component: () => import('../views/evidence/UpdateView.vue'),
-    meta: {
-      requiresAuth: true,
-    },
-  },
-  {
-    path: '/evidence/history/:uuid',
-    name: 'evidence:history',
-    // route level code-splitting
-    // this generates a separate chunk (About.[hash].js) for this route
-    // which is lazy-loaded when the route is visited.
-    component: () => import('../views/evidence/HistoryView.vue'),
-    meta: {
-      requiresAuth: true,
-    },
-  },
-  {
     path: '/plan-of-action-and-milestones',
     name: 'plan-of-action-and-milestones',
     // route level code-splitting
@@ -1210,6 +1183,27 @@ const designSystemRoutes = [
     component: () => import('@/screens/evidence/EvidenceScreen.vue'),
     // No permission gate, as before: 'home' redirects here, so a gate would loop.
     meta: { requiresAuth: true, ds: true, title: 'Evidence' },
+  },
+  {
+    path: 'evidence/create',
+    name: 'evidence:create',
+    component: () => import('@/screens/evidence/form/EvidenceFormScreen.vue'),
+    // Not gated, as before: the form explains a missing permission at submit.
+    meta: { requiresAuth: true, ds: true, title: 'New evidence' },
+  },
+  {
+    path: 'evidence/:id/update',
+    name: 'evidence:update',
+    component: () => import('@/screens/evidence/form/EvidenceFormScreen.vue'),
+    // Not gated, as before: the form explains a missing permission at submit.
+    meta: { requiresAuth: true, ds: true, title: 'Re-submit evidence' },
+  },
+  {
+    // The classic history URL names a stream; it opens the latest record's History tab.
+    path: 'evidence/history/:uuid',
+    name: 'evidence:history',
+    component: () => import('@/screens/evidence/EvidenceHistoryRedirect.vue'),
+    meta: { requiresAuth: true, ds: true, title: 'Evidence history' },
   },
   {
     // The same record outside a system, for links from global pages.

@@ -14,6 +14,8 @@ import {
  */
 const routes = [
   '/evidence',
+  '/evidence/create',
+  `/evidence/${EVIDENCE_ID}/update`,
   '/systems',
   `/systems/${SYSTEMS.scoped}/evidence`,
   `/systems/${SYSTEMS.unscoped}/evidence`,

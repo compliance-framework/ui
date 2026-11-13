@@ -142,7 +142,11 @@ export async function signIn(page: Page, theme: 'light' | 'dark' = 'light') {
   }, theme);
 }
 
+/** Bodies POSTed to /api/evidence during the test, newest last. */
+export const created: unknown[] = [];
+
 export async function mockApi(page: Page, options: MockOptions = {}) {
+  created.length = 0;
   const lists = options.lists ?? 'ready';
   const permissions = Object.fromEntries(
     Object.values(RESOURCES).map((resource) => [resource, ALL_ACTIONS]),
@@ -157,6 +161,13 @@ export async function mockApi(page: Page, options: MockOptions = {}) {
     const url = new URL(route.request().url());
     const path = url.pathname;
     const method = route.request().method();
+
+    if (path === '/api/evidence/config')
+      return json(route, { data: { 'manual-subject-required': false } });
+    if (path === '/api/evidence' && method === 'POST') {
+      created.push(route.request().postDataJSON());
+      return json(route, { data: { id: 'ev-9' } }, 201);
+    }
 
     if (path === '/api/me/permissions') {
       return json(route, { subject: { type: 'user', id: 'u-1' }, permissions });
