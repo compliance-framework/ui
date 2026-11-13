@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
-import { useRoute, useRouter, type LocationQueryRaw } from 'vue-router';
+import { computed, ref } from 'vue';
+import { useRoute } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
 import { useAuthenticatedInstance, useDataApi } from '@/composables/axios';
 import {
@@ -20,10 +20,7 @@ import Button from '@/ds/components/Button/Button.vue';
 import ConfirmDialog from '@/ds/components/ConfirmDialog/ConfirmDialog.vue';
 import DataState from '@/ds/components/DataState/DataState.vue';
 import DataTable from '@/ds/components/DataTable/DataTable.vue';
-import type {
-  DataTableColumn,
-  DataTableSort,
-} from '@/ds/components/DataTable/types';
+import type { DataTableColumn } from '@/ds/components/DataTable/types';
 import FilterBar from '@/ds/components/FilterBar/FilterBar.vue';
 import Menu from '@/ds/components/Menu/Menu.vue';
 import type { MenuEntry } from '@/ds/components/Menu/menuEntries';
@@ -33,13 +30,13 @@ import Text from '@/ds/components/Text/Text.vue';
 import TextLink from '@/ds/components/TextLink/TextLink.vue';
 import Cluster from '@/ds/components/layout/Cluster.vue';
 import ListTemplate from '@/ds/templates/ListTemplate/ListTemplate.vue';
+import { matches, useListView } from '../listView';
 
 /**
  * Catalogs (List template): one tab per catalog type (standards, policies, procedures, internal,
  * other), as on the classic page. The tab, title search and sort live in the URL. Rows can be
  * opened, activated or deactivated, downloaded as full OSCAL JSON, and deleted.
  */
-type SortKey = 'title' | 'version' | 'lastModified';
 interface Row {
   id: string;
   title: string;
@@ -58,7 +55,6 @@ const TYPES: { value: CatalogType; label: string }[] = [
 ];
 
 const route = useRoute();
-const router = useRouter();
 const toast = useToast();
 const api = useAuthenticatedInstance();
 const permissions = usePermissionsStore();
@@ -68,32 +64,11 @@ const permissions = usePermissionsStore();
 const type = computed<CatalogType>(
   () => TYPES.find((t) => t.value === route.query.type)?.value ?? 'standard',
 );
-const q = computed(() => String(route.query.q ?? ''));
-const sortKey = computed<SortKey>(() =>
-  route.query.sort === 'version' || route.query.sort === 'lastModified'
-    ? route.query.sort
-    : 'title',
+const view = useListView(
+  ['title', 'version', 'lastModified'] as const,
+  'title',
 );
-const sortDir = computed<DataTableSort['direction']>(() =>
-  route.query.dir === 'descending' ? 'descending' : 'ascending',
-);
-
-/** Each change is a history entry, so Back undoes it; defaults are left out of the URL. */
-function go(patch: { q?: string; sort?: SortKey; dir?: string }): void {
-  const query: LocationQueryRaw = { ...route.query, ...patch };
-  if (!query.q) delete query.q;
-  if (query.sort === 'title') delete query.sort;
-  if (query.dir !== 'descending') delete query.dir;
-  void router.push({ query });
-}
-
-const draft = ref(q.value);
-watch(q, (value) => (draft.value = value));
-
-const chips = computed(() =>
-  q.value ? [{ label: `Search: ${q.value}` }] : [],
-);
-const chipLabels = computed(() => chips.value.map((chip) => chip.label));
+const { q, draft, chips, chipLabels, sort } = view;
 
 // Results ------------------------------------------------------------------------------------
 
@@ -101,14 +76,12 @@ const catalogs = useApiQuery<Catalog[]>('/api/oscal/catalogs');
 
 /** Catalogs matching the search, by type; the tab counts follow the search. */
 const matching = computed(() => {
-  const needle = q.value.toLowerCase();
   const groups = Object.fromEntries(
     TYPES.map((t) => [t.value, [] as Catalog[]]),
   ) as Record<CatalogType, Catalog[]>;
   for (const catalog of catalogs.data.value ?? []) {
-    if (needle && !catalog.metadata.title.toLowerCase().includes(needle))
-      continue;
-    groups[catalogType(catalog)].push(catalog);
+    if (matches(q.value, catalog.metadata.title))
+      groups[catalogType(catalog)].push(catalog);
   }
   return groups;
 });
@@ -132,24 +105,19 @@ const typeLabel = computed(() =>
   TYPES.find((t) => t.value === type.value)!.label.toLowerCase(),
 );
 
-const rows = computed<Row[]>(() => {
-  const key = sortKey.value;
-  const sign = sortDir.value === 'ascending' ? 1 : -1;
-  return matching.value[type.value]
-    .map((catalog) => ({
+const rows = computed<Row[]>(() =>
+  view.sortRows(
+    matching.value[type.value].map((catalog) => ({
       id: catalog.uuid,
       title: catalog.metadata.title,
       version: catalog.metadata.version ?? '',
       lastModified: catalog.metadata.lastModified ?? '',
       active: isCatalogActive(catalog),
       catalog,
-    }))
-    .sort(
-      (a, b) =>
-        sign * a[key].localeCompare(b[key], 'en', { numeric: true }) ||
-        a.title.localeCompare(b.title),
-    );
-});
+    })),
+    'title',
+  ),
+);
 
 const status = computed(() =>
   catalogs.status.value === 'ready' && rows.value.length === 0
@@ -161,11 +129,6 @@ const summary = computed(() => {
   if (!q.value || catalogs.status.value !== 'ready') return '';
   const total = Object.values(matching.value).flat().length;
   return total ? `${plural(total, 'catalog')} match.` : 'No catalogs match.';
-});
-
-const sort = computed<DataTableSort>({
-  get: () => ({ key: sortKey.value, direction: sortDir.value }),
-  set: (next) => go({ sort: next.key as SortKey, dir: next.direction }),
 });
 
 const columns: DataTableColumn[] = [
@@ -326,9 +289,9 @@ function rowActions(row: Row): MenuEntry[] {
         search-placeholder="Title"
         :chips="chips"
         :summary="summary"
-        @search="go({ q: draft.trim() })"
-        @remove="go({ q: '' })"
-        @clear="go({ q: '' })"
+        @search="view.search"
+        @remove="view.clearSearch()"
+        @clear="view.clearSearch()"
       />
     </template>
 
@@ -341,7 +304,7 @@ function rowActions(row: Row): MenuEntry[] {
         icon="catalogs"
         :filters="chipLabels"
         @retry="catalogs.retry"
-        @clear-filters="go({ q: '' })"
+        @clear-filters="view.clearSearch()"
       >
         <DataTable
           v-model:sort="sort"

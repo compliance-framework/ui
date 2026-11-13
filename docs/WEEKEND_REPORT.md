@@ -109,3 +109,20 @@ page structurally migrated, say so and I'll switch.
 - **Decision (design system):** route-bound `Tabs` now also select tabs that differ only by
   query: the tab whose query values all match the URL wins, most specific first, so a tab with no
   query is the default. This makes query tabs available to other lists.
+
+### Shared list view, and the admin lists (users, groups, parties, roles)
+
+- **Decision:** the URL search-and-sort logic every simple list repeats is now one composable,
+  `src/screens/listView.ts` (`useListView`, `matches`). The document lists and Catalogs use it;
+  Systems, Evidence and the risk register keep their own (more filters).
+- Users: name, email, last sign-in; Locked and Inactive tags; search by name or email. **New
+  user** is a design-system dialog with inline validation (email shape, required names, matching
+  passwords) instead of a toast after submit.
+- Groups: name, description, members (sortable). **Decision:** creating a group opens it, since
+  a group does nothing until it has members and roles (the classic page stayed on the list).
+- Parties and Roles: the classic pages were collapsible lists showing name and remarks; they're
+  now searchable read-only tables (parties also show type and email).
+- **Found:** local-dev has no roles (`GET /api/oscal/roles` returns `[]`), so Roles shows its
+  empty state there.
+- Live testing created a group "Weekend test group" and a user `weekend.test2@example.com` in
+  local-dev. Delete them if they get in the way.

@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
-import { useRoute, useRouter, type LocationQueryRaw } from 'vue-router';
+import { computed } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import { useDataApi } from '@/composables/axios';
 import { ACTIONS } from '@/constants/permissions';
@@ -13,10 +12,7 @@ import { useApiQuery } from '@/ds/query';
 import Button from '@/ds/components/Button/Button.vue';
 import DataState from '@/ds/components/DataState/DataState.vue';
 import DataTable from '@/ds/components/DataTable/DataTable.vue';
-import type {
-  DataTableColumn,
-  DataTableSort,
-} from '@/ds/components/DataTable/types';
+import type { DataTableColumn } from '@/ds/components/DataTable/types';
 import FilterBar from '@/ds/components/FilterBar/FilterBar.vue';
 import Menu from '@/ds/components/Menu/Menu.vue';
 import type { MenuEntry } from '@/ds/components/Menu/menuEntries';
@@ -24,6 +20,7 @@ import Cluster from '@/ds/components/layout/Cluster.vue';
 import Tag from '@/ds/components/Tag/Tag.vue';
 import TextLink from '@/ds/components/TextLink/TextLink.vue';
 import ListTemplate from '@/ds/templates/ListTemplate/ListTemplate.vue';
+import { matches, useListView } from '../listView';
 import { DOCUMENT_LISTS } from './documentKinds';
 
 /**
@@ -37,7 +34,6 @@ interface DocumentSummary {
   metadata: { title: string; version?: string; lastModified?: string };
 }
 
-type SortKey = 'title' | 'version' | 'lastModified';
 type Row = {
   id: string;
   title: string;
@@ -48,66 +44,36 @@ type Row = {
 
 const props = defineProps<{ kind: string }>();
 
-const route = useRoute();
-const router = useRouter();
 const toast = useToast();
 const permissions = usePermissionsStore();
 const systemStore = useSystemStore();
 
 const config = DOCUMENT_LISTS[props.kind]!;
 
-// View (URL) ---------------------------------------------------------------------------------
-
-const q = computed(() => String(route.query.q ?? ''));
-const sortKey = computed<SortKey>(() =>
-  route.query.sort === 'version' || route.query.sort === 'lastModified'
-    ? route.query.sort
-    : 'title',
+const view = useListView(
+  ['title', 'version', 'lastModified'] as const,
+  'title',
 );
-const sortDir = computed<DataTableSort['direction']>(() =>
-  route.query.dir === 'descending' ? 'descending' : 'ascending',
-);
-
-/** Each change is a history entry, so Back undoes it; defaults are left out of the URL. */
-function go(patch: { q?: string; sort?: SortKey; dir?: string }): void {
-  const query: LocationQueryRaw = { ...route.query, ...patch };
-  if (!query.q) delete query.q;
-  if (query.sort === 'title') delete query.sort;
-  if (query.dir !== 'descending') delete query.dir;
-  void router.push({ query });
-}
-
-const draft = ref(q.value);
-watch(q, (value) => (draft.value = value));
-
-const chips = computed(() =>
-  q.value ? [{ label: `Search: ${q.value}` }] : [],
-);
-const chipLabels = computed(() => chips.value.map((chip) => chip.label));
+const { q, draft, chips, chipLabels, sort } = view;
 
 // Results ------------------------------------------------------------------------------------
 
 const documents = useApiQuery<DocumentSummary[]>(config.endpoint);
 
-const rows = computed<Row[]>(() => {
-  const needle = q.value.toLowerCase();
-  const key = sortKey.value;
-  const sign = sortDir.value === 'ascending' ? 1 : -1;
-  return (documents.data.value ?? [])
-    .filter((d) => !needle || d.metadata.title.toLowerCase().includes(needle))
-    .map((d) => ({
-      id: d.uuid,
-      title: d.metadata.title,
-      version: d.metadata.version ?? '',
-      lastModified: d.metadata.lastModified ?? '',
-      document: d,
-    }))
-    .sort(
-      (a, b) =>
-        sign * a[key].localeCompare(b[key], 'en', { numeric: true }) ||
-        a.title.localeCompare(b.title),
-    );
-});
+const rows = computed<Row[]>(() =>
+  view.sortRows(
+    (documents.data.value ?? [])
+      .filter((d) => matches(q.value, d.metadata.title))
+      .map((d) => ({
+        id: d.uuid,
+        title: d.metadata.title,
+        version: d.metadata.version ?? '',
+        lastModified: d.metadata.lastModified ?? '',
+        document: d,
+      })),
+    'title',
+  ),
+);
 
 /** A successful empty list is first use; empty under a search is filtered-empty. */
 const status = computed(() =>
@@ -122,11 +88,6 @@ const summary = computed(() => {
   return status.value === 'ready'
     ? `${plural(rows.value.length, 'match', 'matches')}.`
     : '';
-});
-
-const sort = computed<DataTableSort>({
-  get: () => ({ key: sortKey.value, direction: sortDir.value }),
-  set: (next) => go({ sort: next.key as SortKey, dir: next.direction }),
 });
 
 const columns: DataTableColumn[] = [
@@ -234,9 +195,9 @@ function rowActions(row: Row): MenuEntry[] {
         search-placeholder="Title"
         :chips="chips"
         :summary="summary"
-        @search="go({ q: draft.trim() })"
-        @remove="go({ q: '' })"
-        @clear="go({ q: '' })"
+        @search="view.search"
+        @remove="view.clearSearch()"
+        @clear="view.clearSearch()"
       />
     </template>
 
@@ -248,7 +209,7 @@ function rowActions(row: Row): MenuEntry[] {
       :icon="config.icon"
       :filters="chipLabels"
       @retry="documents.retry"
-      @clear-filters="go({ q: '' })"
+      @clear-filters="view.clearSearch()"
     >
       <template #empty-actions>
         <Button

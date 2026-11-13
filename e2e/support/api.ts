@@ -330,6 +330,76 @@ export async function mockApi(page: Page, options: MockOptions = {}) {
         totalPages: 1,
       });
     }
+    if (path === '/api/admin/users' && method === 'GET')
+      return list(
+        route,
+        lists,
+        {
+          data: [
+            {
+              id: 'u1',
+              email: 'tony@example.com',
+              'first-name': 'Tony',
+              'last-name': 'Smith',
+              'last-login': '2026-11-10T09:00:00Z',
+            },
+            {
+              id: 'u2',
+              email: 'ada@example.com',
+              'first-name': 'Ada',
+              'last-name': 'Lovelace',
+              'is-locked': true,
+            },
+          ],
+        },
+        { data: [] },
+      );
+    if (path === '/api/admin/groups' && method === 'GET')
+      return list(
+        route,
+        lists,
+        {
+          data: [
+            {
+              id: 'g1',
+              name: 'Auditors',
+              description: 'External audit',
+              'member-count': 3,
+            },
+          ],
+        },
+        { data: [] },
+      );
+    if (path === '/api/oscal/parties' && method === 'GET')
+      return list(
+        route,
+        lists,
+        {
+          data: [
+            {
+              uuid: 'p1',
+              name: 'Meridian Financial Group',
+              type: 'organization',
+            },
+          ],
+        },
+        { data: [] },
+      );
+    if (path === '/api/oscal/roles' && method === 'GET')
+      return list(
+        route,
+        lists,
+        {
+          data: [
+            {
+              id: 'system-owner',
+              title: 'System owner',
+              description: 'Owns the system.',
+            },
+          ],
+        },
+        { data: [] },
+      );
     const documentList = path.match(
       /^\/api\/oscal\/(catalogs|profiles|component-definitions|assessment-plans|assessment-results|plan-of-action-and-milestones)$/,
     );

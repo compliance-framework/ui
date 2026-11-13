@@ -322,17 +322,19 @@ const authenticatedRoutes = [
   {
     path: '/parties',
     name: 'admin-parties',
-    component: () => import('../views/PartyListView.vue'),
+    component: () => import('../screens/admin/PartiesScreen.vue'),
     meta: {
       requiresAuth: true,
+      ds: true,
     },
   },
   {
     path: '/roles',
     name: 'admin-roles',
-    component: () => import('../views/RoleListView.vue'),
+    component: () => import('../screens/admin/RolesScreen.vue'),
     meta: {
       requiresAuth: true,
+      ds: true,
     },
   },
   {
@@ -451,9 +453,10 @@ const authenticatedRoutes = [
   {
     path: '/admin/groups',
     name: 'admin-groups',
-    component: () => import('../views/groups/GroupsListView.vue'),
+    component: () => import('../screens/admin/GroupsScreen.vue'),
     meta: {
       requiresAuth: true,
+      ds: true,
       permission: ADMIN_MANAGE,
     },
   },
@@ -787,9 +790,10 @@ const authenticatedRoutes = [
   {
     path: '/users',
     name: 'users-list',
-    component: () => import('../views/users/UsersListView.vue'),
+    component: () => import('../screens/admin/UsersScreen.vue'),
     meta: {
       requiresAuth: true,
+      ds: true,
       // Admin-managed directory (matches the nav gate). Individual /users/:id profiles are
       // left ungated so deep links from non-admin contexts still resolve; a denied load
       // falls back to the global 403 handler.
