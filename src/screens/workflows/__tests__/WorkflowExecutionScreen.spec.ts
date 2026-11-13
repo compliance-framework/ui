@@ -1,7 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { mount, flushPromises } from '@vue/test-utils';
-import { ref } from 'vue';
-import WorkflowExecutionView from '../WorkflowExecutionView.vue';
+import { createPinia, setActivePinia } from 'pinia';
+import { defineComponent, h, ref } from 'vue';
+import { TooltipProvider } from 'reka-ui';
+import ConfirmDialog from '@/ds/components/ConfirmDialog/ConfirmDialog.vue';
+import WorkflowExecutionView from '../WorkflowExecutionScreen.vue';
 import type { WorkflowExecution } from '@/types/workflows';
 
 const mockGetExecution = vi.fn();
@@ -42,6 +45,11 @@ vi.mock('@/composables/workflows', () => ({
 vi.mock('vue-router', () => ({
   useRoute: () => ({ params: { id: 'exec-1' } }),
   useRouter: () => ({ back: vi.fn(), push: vi.fn() }),
+  // Buttons with `to` render a RouterLink; show its target for the assertions.
+  RouterLink: {
+    props: ['to'],
+    template: '<a :href="JSON.stringify(to)"><slot /></a>',
+  },
 }));
 
 function createExecution(
@@ -61,29 +69,26 @@ function createExecution(
 }
 
 function mountComponent() {
-  return mount(WorkflowExecutionView, {
-    global: {
-      stubs: {
-        PageHeader: { template: '<div><slot /></div>' },
-        PageSubHeader: { template: '<div><slot /></div>' },
-        Badge: { template: '<span><slot /></span>' },
-        Message: { template: '<div><slot /></div>' },
-        SecondaryButton: { template: '<button><slot /></button>' },
-        RouterLinkButton: {
-          props: ['to'],
-          template: '<a :href="JSON.stringify(to)"><slot /></a>',
+  return mount(
+    defineComponent({
+      render: () => h(TooltipProvider, null, () => h(WorkflowExecutionView)),
+    }),
+    {
+      global: {
+        stubs: {
+          ExecutionMetrics: { template: '<div></div>' },
+          ExecutionDAGView: { template: '<div></div>' },
+          StepExecutionList: { template: '<div></div>' },
+          StepExecutionPanel: { template: '<div></div>' },
         },
-        ExecutionMetrics: { template: '<div></div>' },
-        ExecutionDAGView: { template: '<div></div>' },
-        StepExecutionList: { template: '<div></div>' },
-        StepExecutionPanel: { template: '<div></div>' },
       },
     },
-  });
+  );
 }
 
 describe('WorkflowExecutionView evidence stream link', () => {
   beforeEach(() => {
+    setActivePinia(createPinia());
     vi.clearAllMocks();
     execution.value = null;
     executionStatus.value = null;
@@ -106,7 +111,7 @@ describe('WorkflowExecutionView evidence stream link', () => {
     const wrapper = mountComponent();
     await flushPromises();
 
-    expect(wrapper.text()).toContain('View Evidence Stream');
+    expect(wrapper.text()).toContain('View evidence stream');
     const link = wrapper.find(
       'a[href*="aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"]',
     );
@@ -128,7 +133,7 @@ describe('WorkflowExecutionView evidence stream link', () => {
     const wrapper = mountComponent();
     await flushPromises();
 
-    expect(wrapper.text()).toContain('View Evidence Stream');
+    expect(wrapper.text()).toContain('View evidence stream');
     const link = wrapper.find(
       'a[href*="aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"]',
     );
@@ -149,7 +154,7 @@ describe('WorkflowExecutionView evidence stream link', () => {
     const wrapper = mountComponent();
     await flushPromises();
 
-    expect(wrapper.text()).not.toContain('View Evidence Stream');
+    expect(wrapper.text()).not.toContain('View evidence stream');
   });
 
   // BCH-1155: no link when UUID is absent even if status is terminal
@@ -162,6 +167,32 @@ describe('WorkflowExecutionView evidence stream link', () => {
     const wrapper = mountComponent();
     await flushPromises();
 
-    expect(wrapper.text()).not.toContain('View Evidence Stream');
+    expect(wrapper.text()).not.toContain('View evidence stream');
+  });
+
+  it('asks why before cancelling a run, then cancels with that reason', async () => {
+    execution.value = createExecution('in_progress');
+    const wrapper = mountComponent();
+    await flushPromises();
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text().includes('Cancel run'))!
+      .trigger('click');
+    const dialog = wrapper.findComponent(ConfirmDialog);
+    expect(dialog.props('open')).toBe(true);
+    expect(dialog.props('confirmDisabledReason')).toBeDefined();
+    const reason = document.body.querySelector<HTMLTextAreaElement>('textarea');
+    if (reason) {
+      reason.value = 'Superseded by a new run';
+      reason.dispatchEvent(new Event('input'));
+    }
+    await flushPromises();
+    dialog.vm.$emit('confirm');
+    await flushPromises();
+    expect(mockCancelExecution).toHaveBeenCalledWith(
+      'exec-1',
+      'Superseded by a new run',
+      expect.any(Function),
+    );
   });
 });

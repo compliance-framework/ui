@@ -168,10 +168,10 @@ const authenticatedRoutes = [
   {
     path: 'workflow-executions/:id',
     name: 'workflow-execution-view',
-    component: () =>
-      import('../views/workflow-executions/WorkflowExecutionView.vue'),
+    component: () => import('../screens/workflows/WorkflowExecutionScreen.vue'),
     meta: {
       requiresAuth: true,
+      ds: true,
     },
   },
   {

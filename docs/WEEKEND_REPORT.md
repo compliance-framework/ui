@@ -291,3 +291,15 @@ page structurally migrated, say so and I'll switch.
   "worst N nodes" explanation.
 - **Gap (islands):** the tree, graph, scope bar and node drawer are classic, so the page isn't
   in the axe checks.
+
+### Workflow run page (`/workflow-executions/:id`)
+
+- Title (the instance's name) with the run's status badge, its dates as facts, a breadcrumb to
+  the instance's Runs tab, the failure reason as an error message, and step counts as a
+  description list. Actions: View evidence stream, Retry run, Cancel run.
+- **Decision:** cancelling asked for a reason with the browser's `window.prompt()`; it's now a
+  design-system confirm with a required Reason field ("Keep running" / "Cancel run").
+- **Decision:** a run that fails to load stays put with Retry, instead of offering a link to a
+  classic instances route.
+- **Gap (islands):** execution metrics, the step graph, the step list and the step panel are
+  classic. Not in the axe checks for that reason.
