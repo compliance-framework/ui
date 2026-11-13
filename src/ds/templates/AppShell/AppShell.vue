@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { TooltipProvider } from 'reka-ui';
 import Drawer from '@/ds/components/Drawer/Drawer.vue';
@@ -17,16 +17,19 @@ import { useUserStore } from '@/stores/auth';
 import { usePermissionsStore } from '@/stores/permissions';
 import { useSystemStore } from '@/stores/system';
 import type { DataResponse } from '@/stores/types';
+import LegacyPage from '@/views/layouts/LegacyPage.vue';
 import PrimaryNav from './PrimaryNav.vue';
 import { useContentScroll } from './useContentScroll';
 import { useNavMode } from './useNavMode';
 
 /**
- * The design-system app shell: skip link, header (product mark, Classic UI link, account menu
- * with theme), primary nav as drawer / rail / expanded by width, and one scrolling <main>.
+ * The app shell: skip link, header (product mark, account menu with theme), primary nav as
+ * drawer / rail / expanded by width, and one scrolling <main>.
  *
- * While it is mounted it sets `data-ds` on <html>, which switches on the design-system tokens and
- * element defaults (see src/ds/tokens). Legacy pages never see them.
+ * Redesigned screens (`meta.ds`) render as they are. Pages not yet migrated render inside
+ * LegacyPage, which restores their Tailwind look, and keep the classic layout's behaviour: system
+ * pages (`meta.activeSystemScoped`) remount when the current system changes, since many read it
+ * once at setup, and the catalog view is kept alive between visits.
  */
 const route = useRoute();
 const router = useRouter();
@@ -46,11 +49,16 @@ watch(
 );
 
 onMounted(() => {
-  document.documentElement.setAttribute('data-ds', '');
   if (userStore.isAuthenticated) permissions.hydrate();
   void loadSystems();
 });
-onBeforeUnmount(() => document.documentElement.removeAttribute('data-ds'));
+
+const redesigned = computed(() => route.matched.some((r) => r.meta.ds));
+const legacyKey = computed(() =>
+  route.matched.some((r) => r.meta.activeSystemScoped)
+    ? `system:${systemStore.system.securityPlan?.uuid ?? 'none'}`
+    : 'global',
+);
 
 // Systems ------------------------------------------------------------------------------------
 
@@ -92,13 +100,13 @@ function switchSystem(id: string): void {
     // new system's list for that section.
     if (route.params.evidenceId) {
       void router.push({
-        name: 'ds-system-evidence',
+        name: 'system-evidence',
         params: { systemId: id },
       });
       return;
     }
     void router.push({
-      name: route.name ?? 'ds-system-evidence',
+      name: route.name ?? 'system-evidence',
       params: { ...route.params, systemId: id },
     });
     return;
@@ -166,7 +174,7 @@ const userMenu = computed<MenuEntry[]>(() => [
       <header class="shell__top">
         <RouterLink
           v-if="mode !== 'drawer'"
-          :to="{ name: 'ds-systems' }"
+          :to="{ name: 'home' }"
           class="shell__corner"
           aria-label="CCF, Continuous Compliance Framework, home"
         >
@@ -183,7 +191,7 @@ const userMenu = computed<MenuEntry[]>(() => [
           />
           <RouterLink
             v-if="mode === 'drawer'"
-            :to="{ name: 'ds-systems' }"
+            :to="{ name: 'home' }"
             class="shell__brand"
             aria-label="CCF, Continuous Compliance Framework, home"
           >
@@ -197,21 +205,11 @@ const userMenu = computed<MenuEntry[]>(() => [
             <SystemSwitcher
               :systems="systems"
               :current-id="systemStore.system.securityPlan?.uuid"
-              :all-systems-to="{ name: 'ds-systems' }"
+              :all-systems-to="{ name: 'systems' }"
               @select="switchSystem"
             />
           </div>
           <div class="shell__tools">
-            <RouterLink
-              :to="{ name: 'home' }"
-              class="shell__work"
-              aria-label="Back to the classic UI"
-            >
-              <Icon name="back" />
-              <span class="shell__work-label" aria-hidden="true"
-                >Classic UI</span
-              >
-            </RouterLink>
             <Menu :label="`Account menu, ${userName}`" :items="userMenu">
               <template #trigger>
                 <button type="button" class="shell__account">
@@ -251,7 +249,7 @@ const userMenu = computed<MenuEntry[]>(() => [
             <SystemSwitcher
               :systems="systems"
               :current-id="systemStore.system.securityPlan?.uuid"
-              :all-systems-to="{ name: 'ds-systems' }"
+              :all-systems-to="{ name: 'systems' }"
               :variant="mode === 'rail' ? 'compact' : 'sidebar'"
               @select="switchSystem"
             />
@@ -292,7 +290,14 @@ const userMenu = computed<MenuEntry[]>(() => [
           tabindex="-1"
           data-scroll
         >
-          <RouterView />
+          <RouterView v-slot="{ Component }">
+            <component :is="Component" v-if="redesigned" />
+            <LegacyPage v-else>
+              <KeepAlive include="CatalogView">
+                <component :is="Component" :key="legacyKey" />
+              </KeepAlive>
+            </LegacyPage>
+          </RouterView>
           <div data-tooltip-portal />
         </main>
       </div>
@@ -307,21 +312,21 @@ const userMenu = computed<MenuEntry[]>(() => [
   grid-template-rows: auto minmax(0, 1fr);
   height: 100dvh;
   overflow: hidden;
-  background: var(--color-surface-base);
-  color: var(--color-text-primary);
-  font-family: var(--font-ui);
+  background: var(--ds-color-surface-base);
+  color: var(--ds-color-text-primary);
+  font-family: var(--ds-font-ui);
 }
 
 .shell__skip {
   position: absolute;
-  top: var(--space-2);
-  left: var(--space-2);
-  z-index: var(--z-tooltip);
-  padding: var(--space-2) var(--space-4);
-  background: var(--color-action-primary-bg);
-  border: var(--border-width) solid var(--color-action-primary-border);
-  color: var(--color-action-primary-fg);
-  font-weight: var(--font-weight-bold);
+  top: var(--ds-space-2);
+  left: var(--ds-space-2);
+  z-index: var(--ds-z-tooltip);
+  padding: var(--ds-space-2) var(--ds-space-4);
+  background: var(--ds-color-action-primary-bg);
+  border: var(--ds-border-width) solid var(--ds-color-action-primary-border);
+  color: var(--ds-color-action-primary-fg);
+  font-weight: var(--ds-font-weight-bold);
   transform: translateY(-200%);
 }
 
@@ -332,8 +337,8 @@ const userMenu = computed<MenuEntry[]>(() => [
 .shell__top {
   display: flex;
   min-width: 0;
-  border-bottom: var(--border-width) solid var(--color-border-subtle);
-  background: var(--color-surface-raised);
+  border-bottom: var(--ds-border-width) solid var(--ds-color-border-subtle);
+  background: var(--ds-color-surface-raised);
 }
 
 .shell__corner {
@@ -341,15 +346,15 @@ const userMenu = computed<MenuEntry[]>(() => [
   flex: none;
   align-items: center;
   justify-content: center;
-  gap: var(--space-2);
-  width: var(--width-nav);
-  border-right: var(--border-width) solid var(--color-border-subtle);
-  color: var(--color-text-primary);
+  gap: var(--ds-space-2);
+  width: var(--ds-width-nav);
+  border-right: var(--ds-border-width) solid var(--ds-color-border-subtle);
+  color: var(--ds-color-text-primary);
   text-decoration: none;
 }
 
 .shell--rail .shell__corner {
-  width: var(--width-rail);
+  width: var(--ds-width-rail);
 }
 
 .shell--rail .shell__corner .shell__mark {
@@ -359,8 +364,8 @@ const userMenu = computed<MenuEntry[]>(() => [
 .shell__nav-switcher {
   display: flex;
   flex: none;
-  padding: var(--space-3) var(--space-3) 0;
-  background: var(--color-surface-raised);
+  padding: var(--ds-space-3) var(--ds-space-3) 0;
+  background: var(--ds-color-surface-raised);
 }
 
 .shell__nav-switcher > * {
@@ -368,38 +373,38 @@ const userMenu = computed<MenuEntry[]>(() => [
 }
 
 .shell__header {
-  z-index: var(--z-header);
+  z-index: var(--ds-z-header);
   display: flex;
   flex: 1;
   min-width: 0;
   align-items: center;
-  gap: var(--space-2) var(--space-3);
-  height: var(--height-header);
-  padding: 0 var(--space-page-x);
-  background: var(--color-surface-raised);
+  gap: var(--ds-space-2) var(--ds-space-3);
+  height: var(--ds-height-header);
+  padding: 0 var(--ds-space-page-x);
+  background: var(--ds-color-surface-raised);
 }
 
 .shell__brand {
   display: inline-flex;
   flex: none;
   align-items: center;
-  gap: var(--space-2);
-  min-height: var(--size-target-min);
-  color: var(--color-text-primary);
+  gap: var(--ds-space-2);
+  min-height: var(--ds-size-target-min);
+  color: var(--ds-color-text-primary);
   text-decoration: none;
 }
 
 .shell__mark {
-  width: var(--size-icon-sm);
-  height: var(--size-icon-sm);
-  background: var(--color-action-primary-bg);
-  border: var(--border-width) solid var(--color-action-primary-border);
+  width: var(--ds-size-icon-sm);
+  height: var(--ds-size-icon-sm);
+  background: var(--ds-color-action-primary-bg);
+  border: var(--ds-border-width) solid var(--ds-color-action-primary-border);
 }
 
 .shell__wordmark {
-  font-size: var(--font-size-body);
-  font-weight: var(--font-weight-bold);
-  letter-spacing: var(--tracking-logo);
+  font-size: var(--ds-font-size-body);
+  font-weight: var(--ds-font-weight-bold);
+  letter-spacing: var(--ds-tracking-logo);
 }
 
 .shell__switcher {
@@ -412,7 +417,7 @@ const userMenu = computed<MenuEntry[]>(() => [
   display: flex;
   flex: none;
   align-items: center;
-  gap: var(--space-1);
+  gap: var(--ds-space-1);
   margin-left: auto;
 }
 
@@ -420,15 +425,15 @@ const userMenu = computed<MenuEntry[]>(() => [
 .shell__account {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-2);
-  height: var(--size-control-md);
-  padding: 0 var(--space-2);
-  border: var(--border-width) solid transparent;
+  gap: var(--ds-space-2);
+  height: var(--ds-size-control-md);
+  padding: 0 var(--ds-space-2);
+  border: var(--ds-border-width) solid transparent;
   background: transparent;
-  color: var(--color-text-primary);
-  font-size: var(--font-size-label);
-  font-weight: var(--font-weight-bold);
-  letter-spacing: var(--tracking-wide);
+  color: var(--ds-color-text-primary);
+  font-size: var(--ds-font-size-label);
+  font-weight: var(--ds-font-weight-bold);
+  letter-spacing: var(--ds-tracking-wide);
   text-decoration: none;
   text-transform: uppercase;
   cursor: pointer;
@@ -436,17 +441,17 @@ const userMenu = computed<MenuEntry[]>(() => [
 
 .shell__work:hover,
 .shell__account:hover {
-  background: var(--color-surface-hover);
+  background: var(--ds-color-surface-hover);
 }
 
 .shell__avatar {
   display: inline-grid;
   place-items: center;
-  width: var(--size-control-sm);
-  height: var(--size-control-sm);
-  border: var(--border-width) solid var(--color-border-strong);
-  border-radius: var(--radius-round);
-  background: var(--color-surface-sunken);
+  width: var(--ds-size-control-sm);
+  height: var(--ds-size-control-sm);
+  border: var(--ds-border-width) solid var(--ds-color-border-strong);
+  border-radius: var(--ds-radius-round);
+  background: var(--ds-color-surface-sunken);
 }
 
 .shell__account-name {
@@ -456,13 +461,13 @@ const userMenu = computed<MenuEntry[]>(() => [
 
 .shell__menu-name {
   display: block;
-  font-weight: var(--font-weight-bold);
+  font-weight: var(--ds-font-weight-bold);
 }
 
 .shell__menu-meta {
   display: block;
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-caption);
+  color: var(--ds-color-text-secondary);
+  font-size: var(--ds-font-size-caption);
 }
 
 .shell__body {
@@ -475,21 +480,21 @@ const userMenu = computed<MenuEntry[]>(() => [
   display: flex;
   flex: none;
   flex-direction: column;
-  width: var(--width-nav);
+  width: var(--ds-width-nav);
   min-height: 0;
-  border-right: var(--border-width) solid var(--color-border-subtle);
-  background: var(--color-surface-raised);
+  border-right: var(--ds-border-width) solid var(--ds-color-border-subtle);
+  background: var(--ds-color-surface-raised);
 }
 
 .shell--rail .shell__nav {
-  width: var(--width-rail);
+  width: var(--ds-width-rail);
 }
 
 .shell__nav-footer {
   display: flex;
   justify-content: flex-end;
-  padding: var(--space-2) var(--space-3);
-  border-top: var(--border-width) solid var(--color-border-subtle);
+  padding: var(--ds-space-2) var(--ds-space-3);
+  border-top: var(--ds-border-width) solid var(--ds-color-border-subtle);
 }
 
 .shell--rail .shell__nav-footer {
@@ -501,11 +506,11 @@ const userMenu = computed<MenuEntry[]>(() => [
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--ds-space-4);
   min-width: 0;
   min-height: 0;
   overflow-y: auto;
-  padding: var(--space-6) var(--space-page-x) var(--space-12);
+  padding: var(--ds-space-6) var(--ds-space-page-x) var(--ds-space-12);
   container-type: size;
 }
 
@@ -517,14 +522,14 @@ const userMenu = computed<MenuEntry[]>(() => [
 @media (max-width: 639px) {
   .shell__header {
     flex-wrap: wrap;
-    column-gap: var(--space-1);
+    column-gap: var(--ds-space-1);
     height: auto;
-    padding-block: var(--space-2);
+    padding-block: var(--ds-space-2);
   }
 
   .shell__work,
   .shell__account {
-    padding-inline: var(--space-1);
+    padding-inline: var(--ds-space-1);
   }
 
   .shell__switcher {

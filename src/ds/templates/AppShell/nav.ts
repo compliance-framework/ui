@@ -2,22 +2,16 @@ import type { IconName } from '@/ds/components/Icon/icons';
 import { RESOURCES, ACTIONS } from '@/constants/permissions';
 
 /**
- * Primary navigation for the design-system shell. It keeps the classic app's structure and
- * labels (src/views/LeftSideNav.vue): This System, then Global with its Evidence link and the
- * Analysis, Integrations, Control Definitions and Admin groups.
- *
- * During the migration most destinations are still classic pages. Items with `next: true` are
- * redesigned screens that render inside this shell; the rest open the classic layout. A
- * redesigned system page takes the system from its URL (`:systemId`); classic system pages read
- * the current system from the system store, which the URL keeps in step.
+ * Primary navigation. It keeps the current app's structure and labels: This System, then Global
+ * with its Evidence link and the Analysis, Integrations, Control Definitions and Admin groups.
+ * A redesigned system page takes the system from its URL (`:systemId`); pages not yet migrated
+ * read the current system from the system store, which the URL keeps in step.
  */
 export interface NavItem {
   /** Route name. */
   route: string;
   label: string;
   icon: IconName;
-  /** Rendered by a redesigned screen inside this shell. */
-  next?: boolean;
   /** Hidden unless the user may perform (resource, action). */
   permission?: { resource: string; action: string };
 }
@@ -43,10 +37,9 @@ export const navGroups: NavGroup[] = [
     collapsible: false,
     items: [
       {
-        route: 'ds-system-evidence',
+        route: 'system-evidence',
         label: 'Evidence',
         icon: 'evidence',
-        next: true,
         permission: read(RESOURCES.SSP),
       },
       { route: 'controls:index', label: 'Implementation', icon: 'components' },

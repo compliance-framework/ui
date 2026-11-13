@@ -29,9 +29,9 @@
       </h3>
       <p class="mt-2 text-gray-600 dark:text-slate-400">
         Pick the system you want to work on from the
-        <strong>Active System</strong> menu at the top of the page. Everything
-        under <strong>This System</strong> will then show that system's
-        {{ subject }}.
+        <strong>System</strong> switcher at the top of the navigation.
+        Everything under <strong>This System</strong> will then show that
+        system's {{ subject }}.
       </p>
       <div class="mt-6 flex justify-center">
         <RouterLinkButton

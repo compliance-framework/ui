@@ -223,8 +223,8 @@ export function toneVars(
 ): Record<'--tone-fg' | '--tone-bg', string> {
   const role = tone.startsWith('risk-') ? tone : `status-${tone}`;
   return {
-    '--tone-fg': `var(--color-${role}-fg)`,
-    '--tone-bg': `var(--color-${role}-bg)`,
+    '--tone-fg': `var(--ds-color-${role}-fg)`,
+    '--tone-bg': `var(--ds-color-${role}-bg)`,
   };
 }
 

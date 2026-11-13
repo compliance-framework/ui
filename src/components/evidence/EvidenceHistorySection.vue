@@ -224,7 +224,7 @@ function formatDateTime(value?: string) {
 function openEvidence(id: string) {
   router.push({
     name: 'evidence:view',
-    params: { id },
+    params: { evidenceId: id },
   });
 }
 </script>

@@ -17,7 +17,7 @@
 <style scoped>
 .split {
   display: grid;
-  gap: var(--space-5);
+  gap: var(--ds-space-5);
   min-width: 0;
 }
 
@@ -25,7 +25,7 @@
 .split__side {
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
+  gap: var(--ds-space-5);
   min-width: 0;
 }
 

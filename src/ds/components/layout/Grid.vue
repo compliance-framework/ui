@@ -12,7 +12,7 @@ withDefaults(defineProps<{ min?: 'sm' | 'md' | 'lg'; gap?: SpaceStep }>(), {
   <div
     class="grid"
     :style="{
-      '--grid-min': `var(--width-column-${min})`,
+      '--grid-min': `var(--ds-width-column-${min})`,
       '--grid-gap': spaceVar(gap),
     }"
   >

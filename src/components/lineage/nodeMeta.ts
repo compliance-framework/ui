@@ -488,7 +488,7 @@ export function nodeDetailRoute(
     // The evidence key holds the *stream* uuid, not the record id — only
     // evidenceId links to GET /evidence/{id}, so never fall back to the key.
     return node.evidenceId
-      ? { name: 'evidence:view', params: { id: node.evidenceId } }
+      ? { name: 'evidence:view', params: { evidenceId: node.evidenceId } }
       : null;
   }
   return null;

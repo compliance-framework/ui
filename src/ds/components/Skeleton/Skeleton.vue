@@ -42,13 +42,13 @@ const n = computed(() => props.count ?? (props.variant === 'table' ? 5 : 3));
 .skeleton {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--ds-space-3);
   min-width: 0;
 }
 
 .skeleton--panel {
-  padding: var(--space-5);
-  border: var(--border-width) solid var(--color-border-subtle);
+  padding: var(--ds-space-5);
+  border: var(--ds-border-width) solid var(--ds-color-border-subtle);
 }
 
 .skeleton--table {
@@ -57,15 +57,15 @@ const n = computed(() => props.count ?? (props.variant === 'table' ? 5 : 3));
 
 .skeleton__bar {
   display: block;
-  height: var(--space-3);
+  height: var(--ds-space-3);
   background: linear-gradient(
     to right,
-    var(--color-surface-sunken) 30%,
-    var(--color-surface-base) 50%,
-    var(--color-surface-sunken) 70%
+    var(--ds-color-surface-sunken) 30%,
+    var(--ds-color-surface-base) 50%,
+    var(--ds-color-surface-sunken) 70%
   );
   background-size: 300% 100%;
-  animation: skeleton-shimmer calc(var(--duration-slow) * 6) linear infinite;
+  animation: skeleton-shimmer calc(var(--ds-duration-slow) * 6) linear infinite;
 }
 
 .skeleton__bar:last-child {
@@ -74,21 +74,21 @@ const n = computed(() => props.count ?? (props.variant === 'table' ? 5 : 3));
 
 .skeleton__bar--title {
   width: 40%;
-  height: var(--space-5);
-  margin-block-end: var(--space-2);
+  height: var(--ds-space-5);
+  margin-block-end: var(--ds-space-2);
 }
 
 .skeleton__row {
   display: grid;
   grid-template-columns: 2fr 1fr 1fr 1fr;
   align-items: center;
-  gap: var(--space-4);
-  min-height: var(--size-control-md);
-  border-block-end: var(--border-width) solid var(--color-border-subtle);
+  gap: var(--ds-space-4);
+  min-height: var(--ds-size-control-md);
+  border-block-end: var(--ds-border-width) solid var(--ds-color-border-subtle);
 }
 
 .skeleton__row--head {
-  border-block-end-color: var(--color-border-strong);
+  border-block-end-color: var(--ds-color-border-strong);
 }
 
 @keyframes skeleton-shimmer {

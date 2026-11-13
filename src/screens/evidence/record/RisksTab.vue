@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { useAuthenticatedInstance } from '@/composables/axios';
-import { RESOURCES, ACTIONS } from '@/constants/permissions';
-import { usePermissionsStore } from '@/stores/permissions';
 import type { DataResponse } from '@/stores/types';
 import { getErrorStatus } from '@/utils/httpErrors';
 import { riskStatusLabel } from '@/utils/risk-workflow';
@@ -22,7 +20,7 @@ import { ZERO_UUID, useEvidenceRecord } from './evidenceRecord';
 
 /**
  * Risks linked to this evidence stream, across every system. Creating a risk from the evidence
- * is still on the classic page, linked from here.
+ * is not rebuilt yet.
  */
 interface EvidenceRisk {
   id: string;
@@ -38,7 +36,6 @@ interface EvidenceRisk {
 
 const { evidence } = useEvidenceRecord();
 const api = useAuthenticatedInstance();
-const permissions = usePermissionsStore();
 
 const hasStream = computed(
   () => Boolean(evidence.value?.uuid) && evidence.value!.uuid !== ZERO_UUID,
@@ -79,13 +76,12 @@ const rows = computed(() =>
   })),
 );
 
-const createDenied = computed(() => {
-  if (!hasStream.value)
-    return 'This evidence has no stream, so risks can’t be linked to it.';
-  return permissions.can(RESOURCES.RISK, ACTIONS.CREATE)
-    ? undefined
-    : "Your access doesn't include creating risks.";
-});
+/** Creating a risk from evidence is not rebuilt yet; the button says why. */
+const createDenied = computed(() =>
+  hasStream.value
+    ? 'Creating a risk from evidence isn’t rebuilt yet.'
+    : 'This evidence has no stream, so risks can’t be linked to it.',
+);
 </script>
 
 <template>
@@ -94,16 +90,7 @@ const createDenied = computed(() => {
     description="Risks linked to this evidence stream, across every system."
   >
     <template #actions>
-      <Button
-        icon="add"
-        :to="
-          createDenied
-            ? undefined
-            : { name: 'evidence:view', params: { id: evidence!.id } }
-        "
-        :disabled-reason="createDenied"
-        >Create risk (classic page)</Button
-      >
+      <Button icon="add" :disabled-reason="createDenied">Create risk</Button>
     </template>
     <InlineMessage v-if="!hasStream" tone="warning" title="No evidence stream">
       <p>

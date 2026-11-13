@@ -37,41 +37,45 @@ withDefaults(defineProps<{ tone: MessageTone; title?: string }>(), {
 .inline-message {
   display: flex;
   align-items: flex-start;
-  gap: var(--space-3);
+  gap: var(--ds-space-3);
   min-width: 0;
-  padding: var(--space-3) var(--space-4);
+  padding: var(--ds-space-3) var(--ds-space-4);
   background: var(--tone-bg);
-  color: var(--color-text-primary);
-  border-inline-start: var(--border-width-indicator) solid var(--tone-fg);
-  border-radius: var(--radius-none);
-  font-size: var(--font-size-body);
-  line-height: var(--leading-body);
+  color: var(--ds-color-text-primary);
+  border-inline-start: var(--ds-border-width-indicator) solid var(--tone-fg);
+  border-radius: var(--ds-radius-none);
+  font-size: var(--ds-font-size-body);
+  line-height: var(--ds-leading-body);
 }
 
 .inline-message--info {
-  --tone-fg: var(--color-status-info-fg);
-  --tone-bg: var(--color-status-info-bg);
+  --tone-fg: var(--ds-color-status-info-fg);
+  --tone-bg: var(--ds-color-status-info-bg);
 }
 
 .inline-message--success {
-  --tone-fg: var(--color-status-success-fg);
-  --tone-bg: var(--color-status-success-bg);
+  --tone-fg: var(--ds-color-status-success-fg);
+  --tone-bg: var(--ds-color-status-success-bg);
 }
 
 .inline-message--warning {
-  --tone-fg: var(--color-status-warning-fg);
-  --tone-bg: var(--color-status-warning-bg);
+  --tone-fg: var(--ds-color-status-warning-fg);
+  --tone-bg: var(--ds-color-status-warning-bg);
 }
 
 .inline-message--error {
-  --tone-fg: var(--color-status-error-fg);
-  --tone-bg: var(--color-status-error-bg);
+  --tone-fg: var(--ds-color-status-error-fg);
+  --tone-bg: var(--ds-color-status-error-bg);
 }
 
 .inline-message__icon {
   /* centre the icon on the first line of text */
   margin-block-start: calc(
-    (var(--font-size-body) * var(--leading-body) - var(--size-icon-md)) / 2
+    (
+        var(--ds-font-size-body) * var(--ds-leading-body) -
+          var(--ds-size-icon-md)
+      ) /
+      2
   );
   color: var(--tone-fg);
 }
@@ -81,26 +85,26 @@ withDefaults(defineProps<{ tone: MessageTone; title?: string }>(), {
   flex: 1;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-3) var(--space-4);
+  gap: var(--ds-space-3) var(--ds-space-4);
   min-width: 0;
 }
 
 .inline-message__text {
   display: flex;
-  flex: 1 1 var(--width-column-md);
+  flex: 1 1 var(--ds-width-column-md);
   flex-direction: column;
-  gap: var(--space-1);
+  gap: var(--ds-space-1);
   min-width: 0;
 }
 
 .inline-message__title {
   color: var(--tone-fg);
-  font-weight: var(--font-weight-bold);
+  font-weight: var(--ds-font-weight-bold);
 }
 
 .inline-message__actions {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-2);
+  gap: var(--ds-space-2);
 }
 </style>

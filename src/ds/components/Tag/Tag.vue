@@ -15,24 +15,24 @@ defineProps<{ label: string; change?: 'added' | 'removed' }>();
 .tag {
   display: inline-block;
   max-width: 100%;
-  padding: 0 var(--space-2);
-  border: var(--border-width) solid var(--color-border-strong);
-  background: var(--color-surface-sunken);
-  font-size: var(--font-size-caption);
-  line-height: var(--leading-body);
+  padding: 0 var(--ds-space-2);
+  border: var(--ds-border-width) solid var(--ds-color-border-strong);
+  background: var(--ds-color-surface-sunken);
+  font-size: var(--ds-font-size-caption);
+  line-height: var(--ds-leading-body);
   overflow-wrap: anywhere;
 }
 
 .tag--added {
-  color: var(--color-status-success-fg);
-  border-color: var(--color-status-success-fg);
-  background: var(--color-status-success-bg);
+  color: var(--ds-color-status-success-fg);
+  border-color: var(--ds-color-status-success-fg);
+  background: var(--ds-color-status-success-bg);
 }
 
 .tag--removed {
-  color: var(--color-status-error-fg);
-  border-color: var(--color-status-error-fg);
-  background: var(--color-status-error-bg);
+  color: var(--ds-color-status-error-fg);
+  border-color: var(--ds-color-status-error-fg);
+  background: var(--ds-color-status-error-bg);
   text-decoration: line-through;
 }
 </style>

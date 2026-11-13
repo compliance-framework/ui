@@ -110,43 +110,43 @@ function onClick(event: MouseEvent): void {
   flex: none;
   align-items: center;
   justify-content: center;
-  gap: var(--space-2);
-  min-width: var(--size-target-min);
-  padding: 0 var(--space-4);
-  border: var(--border-width) solid transparent;
-  border-radius: var(--radius-none);
-  font-family: var(--font-ui);
-  font-size: var(--font-size-label);
-  font-weight: var(--font-weight-bold);
-  letter-spacing: var(--tracking-wide);
-  line-height: var(--leading-tight);
+  gap: var(--ds-space-2);
+  min-width: var(--ds-size-target-min);
+  padding: 0 var(--ds-space-4);
+  border: var(--ds-border-width) solid transparent;
+  border-radius: var(--ds-radius-none);
+  font-family: var(--ds-font-ui);
+  font-size: var(--ds-font-size-label);
+  font-weight: var(--ds-font-weight-bold);
+  letter-spacing: var(--ds-tracking-wide);
+  line-height: var(--ds-leading-tight);
   text-transform: uppercase;
   text-decoration: none;
   white-space: nowrap;
   cursor: pointer;
-  transition: background-color var(--duration-fast) var(--ease-standard);
+  transition: background-color var(--ds-duration-fast) var(--ds-ease-standard);
 }
 
 .button--md {
-  height: var(--size-control-md);
+  height: var(--ds-size-control-md);
 }
 
 .button--sm {
-  height: var(--size-control-sm);
-  padding: 0 var(--space-3);
+  height: var(--ds-size-control-sm);
+  padding: 0 var(--ds-space-3);
 }
 
 .button--wrap {
   max-width: 100%;
   height: auto;
-  min-height: var(--size-control-md);
-  padding-block: var(--space-2);
+  min-height: var(--ds-size-control-md);
+  padding-block: var(--ds-space-2);
   white-space: normal;
   text-align: start;
 }
 
 .button--wrap.button--sm {
-  min-height: var(--size-control-sm);
+  min-height: var(--ds-size-control-sm);
 }
 
 .button--wrap > span {
@@ -155,50 +155,50 @@ function onClick(event: MouseEvent): void {
 }
 
 .button--primary {
-  background: var(--color-action-primary-bg);
-  border-color: var(--color-action-primary-border);
-  color: var(--color-action-primary-fg);
+  background: var(--ds-color-action-primary-bg);
+  border-color: var(--ds-color-action-primary-border);
+  color: var(--ds-color-action-primary-fg);
 }
 
 .button--primary:hover {
-  background: var(--color-action-primary-bg-hover);
+  background: var(--ds-color-action-primary-bg-hover);
 }
 
 .button--secondary {
-  background: var(--color-action-secondary-bg);
-  border-color: var(--color-border-strong);
-  color: var(--color-text-primary);
+  background: var(--ds-color-action-secondary-bg);
+  border-color: var(--ds-color-border-strong);
+  color: var(--ds-color-text-primary);
 }
 
 .button--secondary:hover {
-  background: var(--color-action-secondary-bg-hover);
+  background: var(--ds-color-action-secondary-bg-hover);
 }
 
 .button--tertiary {
   background: transparent;
-  color: var(--color-text-primary);
+  color: var(--ds-color-text-primary);
 }
 
 .button--tertiary:hover {
-  background: var(--color-surface-hover);
+  background: var(--ds-color-surface-hover);
 }
 
 .button--danger {
-  background: var(--color-action-danger-bg);
-  border-color: var(--color-action-danger-fg);
-  color: var(--color-action-danger-fg);
+  background: var(--ds-color-action-danger-bg);
+  border-color: var(--ds-color-action-danger-fg);
+  color: var(--ds-color-action-danger-fg);
 }
 
 .button.button--disabled,
 .button.button--disabled:hover {
   background: transparent;
-  border: var(--border-width) dashed var(--color-border-strong);
-  color: var(--color-text-disabled);
+  border: var(--ds-border-width) dashed var(--ds-color-border-strong);
+  color: var(--ds-color-text-disabled);
   cursor: not-allowed;
 }
 
 .button__spinner {
-  animation: spin calc(var(--duration-slow) * 4) linear infinite;
+  animation: spin calc(var(--ds-duration-slow) * 4) linear infinite;
 }
 
 @keyframes spin {

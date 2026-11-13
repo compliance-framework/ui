@@ -106,29 +106,29 @@ function toggle(value: string, checked: boolean): void {
 }
 
 .checkbox-group__legend {
-  padding: 0 0 var(--space-1);
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-label);
-  font-weight: var(--font-weight-bold);
-  letter-spacing: var(--tracking-wide);
-  line-height: var(--leading-snug);
+  padding: 0 0 var(--ds-space-1);
+  color: var(--ds-color-text-secondary);
+  font-size: var(--ds-font-size-label);
+  font-weight: var(--ds-font-weight-bold);
+  letter-spacing: var(--ds-tracking-wide);
+  line-height: var(--ds-leading-snug);
   text-transform: uppercase;
   overflow-wrap: anywhere;
 }
 
 .checkbox-group__required {
-  margin-inline-start: var(--space-1);
-  color: var(--color-status-error-fg);
+  margin-inline-start: var(--ds-space-1);
+  color: var(--ds-color-status-error-fg);
 }
 
 .checkbox-group__body {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: var(--ds-space-2);
 }
 
 /* Like RadioGroup: an invalid group outlines its unchecked boxes in the error colour. */
 .checkbox-group--invalid :deep(.checkbox__input:not(:checked)) {
-  border-color: var(--color-status-error-fg);
+  border-color: var(--ds-color-status-error-fg);
 }
 </style>

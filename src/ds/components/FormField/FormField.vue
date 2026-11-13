@@ -61,22 +61,22 @@ provide(fieldKey, {
 .form-field {
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
+  gap: var(--ds-space-1);
   min-width: 0;
 }
 
 .form-field__label {
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-label);
-  font-weight: var(--font-weight-bold);
-  letter-spacing: var(--tracking-wide);
-  line-height: var(--leading-snug);
+  color: var(--ds-color-text-secondary);
+  font-size: var(--ds-font-size-label);
+  font-weight: var(--ds-font-weight-bold);
+  letter-spacing: var(--ds-tracking-wide);
+  line-height: var(--ds-leading-snug);
   text-transform: uppercase;
   overflow-wrap: anywhere;
 }
 
 .form-field__required {
-  margin-inline-start: var(--space-1);
-  color: var(--color-status-error-fg);
+  margin-inline-start: var(--ds-space-1);
+  color: var(--ds-color-status-error-fg);
 }
 </style>

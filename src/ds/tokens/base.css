@@ -1,70 +1,67 @@
 /*
- * Global element defaults for the new design system. They apply only while a design-system layout
- * is mounted (it sets `data-ds` on <html>), so legacy Tailwind pages keep their own defaults.
+ * Global element defaults for the design system. Pages not yet migrated render inside a legacy
+ * wrapper (src/views/layouts/LegacyPage.vue) that restores their Tailwind look. :where() keeps
+ * these at element specificity, so any component or utility class overrides them.
  */
-:root[data-ds] {
-  background: var(--color-surface-base);
-  color: var(--color-text-primary);
-  font-family: var(--font-ui);
+:where(html) {
+  background: var(--ds-color-surface-base);
+  color: var(--ds-color-text-primary);
+  font-family: var(--ds-font-ui);
   font-size: 100%;
-  line-height: var(--leading-body);
+  line-height: var(--ds-leading-body);
   /* JetBrains Mono would draw != as ≠; users must see what they type. */
   font-variant-ligatures: none;
   -webkit-text-size-adjust: 100%;
 }
 
-/* :where() keeps these at element specificity, so any component class overrides them. */
-:where(:root[data-ds]) {
-  & body {
-    margin: 0;
-    background: var(--color-surface-base);
-    font-family: var(--font-ui);
-    font-size: var(--font-size-body);
-  }
+:where(body) {
+  margin: 0;
+  background: var(--ds-color-surface-base);
+  font-size: var(--ds-font-size-body);
+}
 
-  & :is(h1, h2, h3, h4, p, ul, ol, dl, dd, figure) {
-    margin: 0;
-  }
+:where(h1, h2, h3, h4, p, ul, ol, dl, dd, figure) {
+  margin: 0;
+}
 
-  & a {
-    color: inherit;
-  }
+:where(a) {
+  color: inherit;
+}
 
-  & :is(button, input, select, textarea) {
-    font: inherit;
-    color: inherit;
-  }
+:where(button, input, select, textarea) {
+  font: inherit;
+  color: inherit;
+}
 
-  /*
-   * Scrollbars (scroll model, DEC-34): thin and token-coloured. Every scroll area carries
-   * `data-scroll`, and only the innermost one under the pointer shows its bar.
-   */
-  & * {
-    scrollbar-width: thin;
-    scrollbar-color: transparent transparent;
-  }
+/*
+ * Scrollbars (scroll model, DEC-34): thin and token-coloured. Every scroll area carries
+ * `data-scroll`, and only the innermost one under the pointer shows its bar.
+ */
+:where(*) {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
 
-  & [data-scroll] {
-    position: relative;
-  }
+:where([data-scroll]) {
+  position: relative;
+}
 
-  & [data-scroll]:hover:not(:has([data-scroll]:hover)) {
-    scrollbar-color: var(--color-border-strong) transparent;
-  }
+:where([data-scroll]:hover:not(:has([data-scroll]:hover))) {
+  scrollbar-color: var(--ds-color-border-strong) transparent;
+}
 
-  & :focus-visible {
-    outline: var(--focus-width) solid var(--color-border-focus);
-    outline-offset: var(--focus-offset);
-  }
+:where(:focus-visible) {
+  outline: var(--ds-focus-width) solid var(--ds-color-border-focus);
+  outline-offset: var(--ds-focus-offset);
+}
 
-  & :is(code, kbd, samp) {
-    font-family: var(--font-ui);
-    font-size: 1em;
-  }
+:where(code, kbd, samp) {
+  font-family: var(--ds-font-ui);
+  font-size: 1em;
+}
 
-  & :is(code, pre) {
-    font-family: var(--font-code);
-  }
+:where(code, pre) {
+  font-family: var(--ds-font-code);
 }
 
 .visually-hidden {

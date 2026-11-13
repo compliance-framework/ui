@@ -13,7 +13,7 @@ import Stack from '@/ds/components/layout/Stack.vue';
 import PageHeader from '@/ds/components/PageHeader/PageHeader.vue';
 
 /**
- * The frame for every redesigned system page (/next/systems/:systemId/...). The system in the
+ * The frame for every redesigned system page (/systems/:systemId/...). The system in the
  * URL is the source of truth, so links are shareable: opening one makes that system the current
  * system, which keeps the nav, the switcher and the classic system pages in step. Pages render
  * only once the system is known, keyed by it, so each one reads its system once.
@@ -63,7 +63,7 @@ watch(systemId, (id) => void resolve(id), { immediate: true });
       icon="systems"
     >
       <template #empty-actions>
-        <TextLink :to="{ name: 'ds-systems' }">All systems</TextLink>
+        <TextLink :to="{ name: 'systems' }">All systems</TextLink>
       </template>
     </DataState>
   </Stack>

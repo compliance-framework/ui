@@ -1,4 +1,5 @@
 import { inject, provide, ref, type InjectionKey, type Ref } from 'vue';
+import type { RouteLocationRaw } from 'vue-router';
 import type { AxiosInstance } from 'axios';
 import type { BackMatterResource, Link, Property } from '@/oscal';
 import type { Evidence, SignatureDetail } from '@/stores/evidence';
@@ -19,6 +20,8 @@ export interface EvidenceRecord {
   /** The newest record in this evidence stream, when it isn't this one. */
   latestId: Ref<string | undefined>;
   reload: () => Promise<void>;
+  /** A link to a record (this one by default) and tab, in the current context. */
+  link: (tab?: string, evidenceId?: string) => RouteLocationRaw;
 }
 
 const key: InjectionKey<EvidenceRecord> = Symbol('evidence-record');
@@ -28,6 +31,7 @@ export const ZERO_UUID = '00000000-0000-0000-0000-000000000000';
 export function useEvidenceLoader(
   api: AxiosInstance,
   evidenceId: () => string,
+  link: EvidenceRecord['link'],
 ): EvidenceRecord {
   const status = ref<QueryStatus | 'missing'>('loading');
   const evidence = ref<Evidence>();
@@ -72,7 +76,7 @@ export function useEvidenceLoader(
     latestId.value = newestId && newestId !== id ? newestId : undefined;
   }
 
-  return { status, evidence, signature, latestId, reload };
+  return { status, evidence, signature, latestId, reload, link };
 }
 
 export function provideEvidenceRecord(record: EvidenceRecord): void {

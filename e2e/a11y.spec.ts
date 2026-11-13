@@ -13,12 +13,12 @@ import {
  * each data state, and with each menu, popover and drawer open.
  */
 const routes = [
-  '/next/systems',
-  `/next/systems/${SYSTEMS.scoped}/evidence`,
-  `/next/systems/${SYSTEMS.unscoped}/evidence`,
-  `/next/systems/${SYSTEMS.missing}/evidence`,
+  '/systems',
+  `/systems/${SYSTEMS.scoped}/evidence`,
+  `/systems/${SYSTEMS.unscoped}/evidence`,
+  `/systems/${SYSTEMS.missing}/evidence`,
 ];
-const record = `/next/systems/${SYSTEMS.scoped}/evidence/${EVIDENCE_ID}`;
+const record = `/systems/${SYSTEMS.scoped}/evidence/${EVIDENCE_ID}`;
 const recordTabs = [
   '',
   '/metadata',
@@ -85,7 +85,7 @@ for (const theme of themes) {
     await mockApi(page);
     const violations: string[] = [];
 
-    await open(page, '/next/systems');
+    await open(page, '/systems');
     await page
       .getByRole('button', { name: /^Actions for / })
       .first()
@@ -103,7 +103,7 @@ for (const theme of themes) {
     );
     await page.keyboard.press('Escape');
 
-    await open(page, `/next/systems/${SYSTEMS.scoped}/evidence`);
+    await open(page, `/systems/${SYSTEMS.scoped}/evidence`);
     await page.getByRole('button', { name: 'Subject' }).click();
     await page.getByRole('button', { name: 'Columns' }).click();
     await page.getByRole('button', { name: 'Show as table' }).first().click();
@@ -145,7 +145,7 @@ for (const theme of themes) {
     await page.setViewportSize({ width: 390, height: 844 });
     await signIn(page, theme);
     await mockApi(page);
-    await open(page, `/next/systems/${SYSTEMS.scoped}/evidence`);
+    await open(page, `/systems/${SYSTEMS.scoped}/evidence`);
     await page.getByRole('button', { name: 'Open navigation' }).click();
     await page.getByRole('dialog').waitFor();
     const violations = await axe(page, `${theme} nav drawer`);

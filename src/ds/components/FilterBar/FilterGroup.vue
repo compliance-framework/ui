@@ -22,12 +22,12 @@ defineProps<{ legend: string }>();
 }
 
 .filter-group__legend {
-  padding: 0 0 var(--space-1);
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-label);
-  font-weight: var(--font-weight-bold);
-  letter-spacing: var(--tracking-wide);
-  line-height: var(--leading-snug);
+  padding: 0 0 var(--ds-space-1);
+  color: var(--ds-color-text-secondary);
+  font-size: var(--ds-font-size-label);
+  font-weight: var(--ds-font-weight-bold);
+  letter-spacing: var(--ds-tracking-wide);
+  line-height: var(--ds-leading-snug);
   text-transform: uppercase;
 }
 
@@ -35,7 +35,7 @@ defineProps<{ legend: string }>();
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-2) var(--space-4);
-  min-height: var(--size-control-md);
+  gap: var(--ds-space-2) var(--ds-space-4);
+  min-height: var(--ds-size-control-md);
 }
 </style>

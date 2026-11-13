@@ -15,15 +15,15 @@ defineProps<
 <style scoped>
 .text-link {
   overflow-wrap: anywhere;
-  color: var(--color-text-primary);
-  font-weight: var(--font-weight-semibold);
+  color: var(--ds-color-text-primary);
+  font-weight: var(--ds-font-weight-semibold);
   text-decoration: underline;
-  text-decoration-thickness: var(--border-width);
-  text-underline-offset: var(--space-1);
+  text-decoration-thickness: var(--ds-border-width);
+  text-underline-offset: var(--ds-space-1);
 }
 
 .text-link:hover {
-  color: var(--color-text-accent);
-  text-decoration-thickness: var(--focus-width);
+  color: var(--ds-color-text-accent);
+  text-decoration-thickness: var(--ds-focus-width);
 }
 </style>

@@ -20,9 +20,9 @@ async function mountScope(path: string) {
   const router = createRouter({
     history: createMemoryHistory(),
     routes: [
-      { path: '/next/systems', name: 'ds-systems', component: Page },
+      { path: '/systems', name: 'systems', component: Page },
       {
-        path: '/next/systems/:systemId',
+        path: '/systems/:systemId',
         component: SystemScope,
         children: [{ path: 'evidence', component: Page }],
       },
@@ -54,7 +54,7 @@ describe('SystemScope', () => {
       metadata: { title: 'System A' },
     } as never);
 
-    const { wrapper } = await mountScope('/next/systems/sys-b/evidence');
+    const { wrapper } = await mountScope('/systems/sys-b/evidence');
 
     expect(api.get).toHaveBeenCalledWith(
       '/api/oscal/system-security-plans/sys-b',
@@ -65,7 +65,7 @@ describe('SystemScope', () => {
 
   it('shows an unknown system in place, with a way back', async () => {
     api.get.mockRejectedValue({ response: { status: 404 } });
-    const { wrapper } = await mountScope('/next/systems/nope/evidence');
+    const { wrapper } = await mountScope('/systems/nope/evidence');
     expect(wrapper.text()).toContain('System not found');
     expect(wrapper.find('.page').exists()).toBe(false);
     expect(useSystemStore().system.securityPlan).toBeUndefined();
@@ -73,7 +73,7 @@ describe('SystemScope', () => {
 
   it('shows a system the user may not read as not found', async () => {
     api.get.mockRejectedValue({ response: { status: 403 } });
-    const { wrapper } = await mountScope('/next/systems/secret/evidence');
+    const { wrapper } = await mountScope('/systems/secret/evidence');
     expect(wrapper.text()).toContain('System not found');
     expect(wrapper.find('.page').exists()).toBe(false);
   });

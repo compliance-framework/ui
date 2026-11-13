@@ -2,7 +2,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mount, enableAutoUnmount } from '@vue/test-utils';
 import { nextTick, ref } from 'vue';
 import SystemSecurityPlanCreateView from '@/views/system-security-plans/SystemSecurityPlanCreateView.vue';
-import SystemSecurityPlanListView from '@/views/system-security-plans/SystemSecurityPlanListView.vue';
 import SystemSecurityPlanSystemImplementationEditorView from '@/views/system-security-plans/SystemSecurityPlanSystemImplementationEditorView.vue';
 import type { SystemSecurityPlan } from '@/oscal';
 
@@ -223,21 +222,6 @@ describe('System Security Plan views', () => {
       expect.objectContaining({ uuid: 'created-ssp' }),
     );
     expect(push).toHaveBeenCalledWith({ name: 'system:overview' });
-  });
-
-  it('renders the list create button, active badge, and only inactive Set Active action', () => {
-    const wrapper = mount(SystemSecurityPlanListView, {
-      global: { stubs },
-    });
-
-    expect(wrapper.text()).toContain('Manage OSCAL System Security Plans');
-    expect(wrapper.text()).toContain('New System Security Plan');
-    expect(wrapper.findAll('[data-testid="active-badge"]')).toHaveLength(1);
-    expect(
-      wrapper
-        .findAll('button')
-        .filter((button) => button.text() === 'Set Active'),
-    ).toHaveLength(1);
   });
 
   it('passes fetched system implementation data through to the overview form and updates it on save', async () => {

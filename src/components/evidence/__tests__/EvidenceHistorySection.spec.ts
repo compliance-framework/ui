@@ -193,7 +193,7 @@ describe('EvidenceHistorySection', () => {
 
     expect(routerPush).toHaveBeenCalledWith({
       name: 'evidence:view',
-      params: { id: 'historic-1' },
+      params: { evidenceId: 'historic-1' },
     });
   });
 

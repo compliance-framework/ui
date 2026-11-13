@@ -48,7 +48,7 @@ import {
 /**
  * This System > Evidence: the system's in-scope evidence, through the SSP's scoped search. The
  * system comes from the URL (SystemScope makes it current). Search, subject, sort and page live in
- * the URL under the classic page's parameter names, so a view opens unchanged on either page. It
+ * the URL under the classic page's parameter names, so old links still open the same view. It
  * has the classic page's tools: status and agent-health trends, CSV export, save as filter, the
  * subject filter and the labels column. A system with no scope entries asks for a scope rather
  * than listing nothing.
@@ -260,7 +260,7 @@ function pageLink(page: number) {
 /** Evidence opens in place; the list's view travels along so the breadcrumb returns to it. */
 function evidenceLink(id: string) {
   return {
-    name: 'ds-evidence-overview',
+    name: 'system-evidence-record',
     params: { systemId, evidenceId: id },
     query: viewQuery(view.value),
   };
@@ -370,11 +370,6 @@ const trendRequest = computed(() => {
         : undefined,
   };
 });
-
-const classicView = computed(() => ({
-  name: 'system:evidence',
-  query: viewQuery(view.value),
-}));
 </script>
 
 <template>
@@ -388,7 +383,6 @@ const classicView = computed(() => ({
         @click="beginExport"
         >Export CSV</Button
       >
-      <Button icon="external" :to="classicView">Open classic view</Button>
       <Button
         variant="primary"
         icon="save"

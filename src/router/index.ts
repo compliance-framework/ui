@@ -1,7 +1,8 @@
 import { createRouter, createWebHistory, type RouteLocation } from 'vue-router';
-import AppLayout from '@/views/layouts/App.vue';
+import AppShell from '@/ds/templates/AppShell/AppShell.vue';
 import GuestLayout from '@/views/layouts/GuestLayout.vue';
 import { useUserStore } from '@/stores/auth';
+import { useSystemStore } from '@/stores/system';
 import { usePermissionsStore } from '@/stores/permissions';
 import { RESOURCES, ACTIONS } from '@/constants/permissions';
 
@@ -22,7 +23,7 @@ const authenticatedRoutes = [
     name: 'home',
     // Redirects to the canonical evidence route (rather than duplicating its component
     // under a second route name) so the initial landing page resolves as 'evidence:index'
-    // — the same name LeftSideNav's active-section tracking matches on — and the "Evidence"
+    // — the name the nav's active item matches on — and the "Evidence"
     // nav item is correctly highlighted from the very first render, not just after the user
     // clicks it.
     redirect: { name: 'evidence:index' },
@@ -271,15 +272,6 @@ const authenticatedRoutes = [
         component: () => import('../views/system/JsonView.vue'),
       },
     ],
-    meta: {
-      requiresAuth: true,
-      activeSystemScoped: true,
-    },
-  },
-  {
-    path: 'system/evidence',
-    name: 'system:evidence',
-    component: () => import('../views/system/EvidenceView.vue'),
     meta: {
       requiresAuth: true,
       activeSystemScoped: true,
@@ -728,17 +720,6 @@ const authenticatedRoutes = [
     },
   },
   {
-    path: '/evidence/:id',
-    name: 'evidence:view',
-    // route level code-splitting
-    // this generates a separate chunk (About.[hash].js) for this route
-    // which is lazy-loaded when the route is visited.
-    component: () => import('../views/evidence/ViewView.vue'),
-    meta: {
-      requiresAuth: true,
-    },
-  },
-  {
     path: '/evidence/create',
     name: 'evidence:create',
     component: () => import('../views/evidence/CreateView.vue'),
@@ -761,18 +742,6 @@ const authenticatedRoutes = [
     // this generates a separate chunk (About.[hash].js) for this route
     // which is lazy-loaded when the route is visited.
     component: () => import('../views/evidence/HistoryView.vue'),
-    meta: {
-      requiresAuth: true,
-    },
-  },
-  {
-    path: '/system-security-plans',
-    name: 'system-security-plans',
-    // route level code-splitting
-    // this generates a separate chunk (About.[hash].js) for this route
-    // which is lazy-loaded when the route is visited.
-    component: () =>
-      import('../views/system-security-plans/SystemSecurityPlanListView.vue'),
     meta: {
       requiresAuth: true,
     },
@@ -1182,86 +1151,93 @@ const publicRoutes = [
   },
 ];
 
-// Redesign proof of concept: screens built on the design system in src/ds render inside its
-// own shell under /next. Navigation there links back to legacy pages until they are migrated.
+// Redesigned screens (src/screens, built on src/ds). They replace classic pages one at a time:
+// each takes over its classic route (or the classic route redirects to it) and the classic page
+// is deleted. `meta.ds` tells the shell not to wrap them in the legacy page frame.
+
+// An evidence record's tabs, each its own route so tabs are shareable. `prefix` names them for
+// the context: inside a system or the global record.
+function evidenceRecordTabs(prefix: string) {
+  const tab = (path: string, name: string, file: string) => ({
+    path,
+    name: name ? `${prefix}-${name}` : prefix,
+    component: () => import(`../screens/evidence/record/${file}.vue`),
+  });
+  return [
+    tab('', '', 'OverviewTab'),
+    tab('metadata', 'metadata', 'MetadataTab'),
+    tab('risks', 'risks', 'RisksTab'),
+    tab('media', 'media', 'MediaTab'),
+    tab('signature', 'signature', 'SignatureTab'),
+    tab('history', 'history', 'HistoryTab'),
+  ];
+}
+
 const designSystemRoutes = [
   {
-    path: '',
-    redirect: { name: 'ds-systems' },
-  },
-  {
     path: 'systems',
-    name: 'ds-systems',
+    name: 'systems',
     component: () => import('@/screens/systems/SystemsScreen.vue'),
     meta: {
       requiresAuth: true,
+      ds: true,
       title: 'Systems',
       permission: { resource: RESOURCES.SSP, action: ACTIONS.READ },
     },
   },
   {
     // System pages take the system from the URL so links are shareable. SystemScope makes
-    // it the current system, which the classic system pages read.
+    // it the current system, which the classic system pages still read.
     path: 'systems/:systemId',
     component: () => import('@/screens/systems/SystemScope.vue'),
     meta: {
       requiresAuth: true,
+      ds: true,
       permission: { resource: RESOURCES.SSP, action: ACTIONS.READ },
     },
     children: [
       {
         path: '',
-        redirect: { name: 'ds-system-evidence' },
+        redirect: { name: 'system-evidence' },
       },
       {
         path: 'evidence',
-        name: 'ds-system-evidence',
+        name: 'system-evidence',
         component: () => import('@/screens/evidence/SystemEvidenceScreen.vue'),
         meta: { title: 'Evidence' },
       },
       {
-        // Each tab of an evidence record is its own route, so tabs are shareable.
         path: 'evidence/:evidenceId',
         component: () =>
           import('@/screens/evidence/record/EvidenceRecordScreen.vue'),
         meta: { title: 'Evidence' },
-        children: [
-          {
-            path: '',
-            name: 'ds-evidence-overview',
-            component: () =>
-              import('@/screens/evidence/record/OverviewTab.vue'),
-          },
-          {
-            path: 'metadata',
-            name: 'ds-evidence-metadata',
-            component: () =>
-              import('@/screens/evidence/record/MetadataTab.vue'),
-          },
-          {
-            path: 'risks',
-            name: 'ds-evidence-risks',
-            component: () => import('@/screens/evidence/record/RisksTab.vue'),
-          },
-          {
-            path: 'media',
-            name: 'ds-evidence-media',
-            component: () => import('@/screens/evidence/record/MediaTab.vue'),
-          },
-          {
-            path: 'signature',
-            name: 'ds-evidence-signature',
-            component: () =>
-              import('@/screens/evidence/record/SignatureTab.vue'),
-          },
-          {
-            path: 'history',
-            name: 'ds-evidence-history',
-            component: () => import('@/screens/evidence/record/HistoryTab.vue'),
-          },
-        ],
+        children: evidenceRecordTabs('system-evidence-record'),
       },
     ],
+  },
+  {
+    // The same record outside a system, for links from global pages.
+    path: 'evidence/:evidenceId',
+    component: () =>
+      import('@/screens/evidence/record/EvidenceRecordScreen.vue'),
+    meta: { requiresAuth: true, ds: true, title: 'Evidence' },
+    children: evidenceRecordTabs('evidence:view'),
+  },
+  // Classic routes that now lead to redesigned screens, kept so existing links still work.
+  {
+    path: 'system-security-plans',
+    name: 'system-security-plans',
+    redirect: { name: 'systems' },
+  },
+  {
+    path: 'system/evidence',
+    name: 'system:evidence',
+    redirect: (to: RouteLocation) => {
+      const systemId = useSystemStore().system.securityPlan?.uuid;
+      return systemId
+        ? { name: 'system-evidence', params: { systemId }, query: to.query }
+        : { name: 'systems' };
+    },
   },
 ];
 
@@ -1286,19 +1262,10 @@ const router = createRouter({
       },
     },
     {
-      path: '/next',
-      name: 'next',
-      component: () => import('@/ds/templates/AppShell/AppShell.vue'),
-      children: designSystemRoutes,
-      meta: {
-        requiresAuth: true,
-      },
-    },
-    {
       path: '/',
       name: 'app',
-      component: AppLayout,
-      children: authenticatedRoutes,
+      component: AppShell,
+      children: [...authenticatedRoutes, ...designSystemRoutes],
       meta: {
         requiresAuth: true,
       },

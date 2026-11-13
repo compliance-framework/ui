@@ -58,19 +58,19 @@ const portalTarget = computed(() => {
 
 <style scoped>
 .tooltip {
-  z-index: var(--z-tooltip);
+  z-index: var(--ds-z-tooltip);
   max-width: min(
-    var(--width-dialog-s),
+    var(--ds-width-dialog-s),
     var(--reka-tooltip-content-available-width)
   );
-  padding: var(--space-1) var(--space-2);
-  background: var(--color-text-primary);
-  color: var(--color-text-inverse);
-  font-family: var(--font-ui);
-  font-size: var(--font-size-caption);
-  line-height: var(--leading-snug);
+  padding: var(--ds-space-1) var(--ds-space-2);
+  background: var(--ds-color-text-primary);
+  color: var(--ds-color-text-inverse);
+  font-family: var(--ds-font-ui);
+  font-size: var(--ds-font-size-caption);
+  line-height: var(--ds-leading-snug);
   overflow-wrap: anywhere;
-  border-radius: var(--radius-none);
-  box-shadow: var(--shadow-raised);
+  border-radius: var(--ds-radius-none);
+  box-shadow: var(--ds-shadow-raised);
 }
 </style>

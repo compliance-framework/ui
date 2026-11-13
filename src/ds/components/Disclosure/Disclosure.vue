@@ -48,20 +48,20 @@ const regionId = useId();
 .disclosure__trigger {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
+  gap: var(--ds-space-3);
   width: 100%;
-  min-height: var(--size-control-md);
-  padding: 0 var(--space-3);
+  min-height: var(--ds-size-control-md);
+  padding: 0 var(--ds-space-3);
   border: none;
   background: transparent;
-  color: var(--color-text-primary);
-  font-weight: var(--font-weight-bold);
+  color: var(--ds-color-text-primary);
+  font-weight: var(--ds-font-weight-bold);
   text-align: start;
   cursor: pointer;
 }
 
 .disclosure__trigger:hover {
-  background: var(--color-surface-hover);
+  background: var(--ds-color-surface-hover);
 }
 
 .disclosure__label {
@@ -70,7 +70,7 @@ const regionId = useId();
 }
 
 .disclosure__chevron {
-  transition: transform var(--duration-fast) var(--ease-standard);
+  transition: transform var(--ds-duration-fast) var(--ds-ease-standard);
 }
 
 .disclosure__trigger[aria-expanded='true'] .disclosure__chevron {
@@ -78,30 +78,30 @@ const regionId = useId();
 }
 
 .disclosure--default .disclosure__trigger {
-  border-bottom: var(--border-width) solid var(--color-border-subtle);
+  border-bottom: var(--ds-border-width) solid var(--ds-color-border-subtle);
 }
 
 .disclosure--default .disclosure__region {
-  padding: var(--space-3);
+  padding: var(--ds-space-3);
 }
 
 .disclosure--nav .disclosure__trigger {
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-label);
-  font-weight: var(--font-weight-medium);
-  letter-spacing: var(--tracking-wide);
+  color: var(--ds-color-text-secondary);
+  font-size: var(--ds-font-size-label);
+  font-weight: var(--ds-font-weight-medium);
+  letter-spacing: var(--ds-tracking-wide);
   text-transform: uppercase;
-  border-left: var(--border-width-indicator) solid transparent;
+  border-left: var(--ds-border-width-indicator) solid transparent;
 }
 
 .disclosure--nav .disclosure__trigger:hover {
-  color: var(--color-text-primary);
+  color: var(--ds-color-text-primary);
 }
 
 .disclosure--nav .disclosure__trigger[aria-current='location'] {
-  border-left-color: var(--color-indicator);
-  background: var(--color-surface-selected);
-  color: var(--color-text-primary);
-  font-weight: var(--font-weight-bold);
+  border-left-color: var(--ds-color-indicator);
+  background: var(--ds-color-surface-selected);
+  color: var(--ds-color-text-primary);
+  font-weight: var(--ds-font-weight-bold);
 }
 </style>

@@ -31,21 +31,21 @@ onMounted(() => root.value?.querySelector('button')?.focus());
 .discard {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--ds-space-3);
 }
 
 .discard__message {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
-  color: var(--color-status-warning-fg);
-  font-weight: var(--font-weight-semibold);
+  gap: var(--ds-space-2);
+  color: var(--ds-color-status-warning-fg);
+  font-weight: var(--ds-font-weight-semibold);
 }
 
 .discard__actions {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
-  gap: var(--space-3);
+  gap: var(--ds-space-3);
 }
 </style>

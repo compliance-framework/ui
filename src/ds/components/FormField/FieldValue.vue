@@ -11,13 +11,13 @@ defineProps<{ value?: string }>();
 
 <style scoped>
 .field-value {
-  font-size: var(--font-size-body);
-  line-height: var(--leading-body);
+  font-size: var(--ds-font-size-body);
+  line-height: var(--ds-leading-body);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
 
 .field-value--empty {
-  color: var(--color-text-secondary);
+  color: var(--ds-color-text-secondary);
 }
 </style>

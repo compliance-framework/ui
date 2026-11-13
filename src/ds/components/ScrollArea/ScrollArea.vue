@@ -40,35 +40,39 @@ const { scrollable } = useScrollable('area');
 
 <style scoped>
 .scroll-area {
-  --fade-edge: color-mix(in srgb, var(--color-text-primary) 18%, transparent);
+  --fade-edge: color-mix(
+    in srgb,
+    var(--ds-color-text-primary) 18%,
+    transparent
+  );
 
   flex: 1;
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
   background:
-    linear-gradient(var(--fade-cover), transparent) top / 100% var(--space-8)
+    linear-gradient(var(--fade-cover), transparent) top / 100% var(--ds-space-8)
       no-repeat local,
-    linear-gradient(transparent, var(--fade-cover)) bottom / 100% var(--space-8)
-      no-repeat local,
-    linear-gradient(var(--fade-edge), transparent) top / 100% var(--space-2)
+    linear-gradient(transparent, var(--fade-cover)) bottom / 100%
+      var(--ds-space-8) no-repeat local,
+    linear-gradient(var(--fade-edge), transparent) top / 100% var(--ds-space-2)
       no-repeat scroll,
-    linear-gradient(transparent, var(--fade-edge)) bottom / 100% var(--space-2)
-      no-repeat scroll;
+    linear-gradient(transparent, var(--fade-edge)) bottom / 100%
+      var(--ds-space-2) no-repeat scroll;
   background-color: var(--fade-cover);
 }
 
 .scroll-area--base {
-  --fade-cover: var(--color-surface-base);
+  --fade-cover: var(--ds-color-surface-base);
 }
 
 .scroll-area--raised {
-  --fade-cover: var(--color-surface-raised);
+  --fade-cover: var(--ds-color-surface-raised);
 }
 
 .scroll-area--inset {
-  margin: calc((var(--focus-width) + var(--focus-offset)) * -1);
-  padding: calc(var(--focus-width) + var(--focus-offset));
+  margin: calc((var(--ds-focus-width) + var(--ds-focus-offset)) * -1);
+  padding: calc(var(--ds-focus-width) + var(--ds-focus-offset));
 }
 
 .scroll-area--bar-none {

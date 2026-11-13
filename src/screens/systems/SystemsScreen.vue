@@ -22,7 +22,6 @@ import Menu from '@/ds/components/Menu/Menu.vue';
 import type { MenuEntry } from '@/ds/components/Menu/menuEntries';
 import Cluster from '@/ds/components/layout/Cluster.vue';
 import Tag from '@/ds/components/Tag/Tag.vue';
-import Text from '@/ds/components/Text/Text.vue';
 import TextLink from '@/ds/components/TextLink/TextLink.vue';
 import ListTemplate from '@/ds/templates/ListTemplate/ListTemplate.vue';
 import {
@@ -37,7 +36,7 @@ import {
 /**
  * Systems (List template), the first redesigned screen on live data: one row per system security
  * plan. Search and sort live in the URL, so Back and Share reproduce the view. Creating and editing
- * a system still happen on the classic pages.
+ * a system are not rebuilt yet, so those links open the existing pages.
  */
 const route = useRoute();
 const router = useRouter();
@@ -266,12 +265,5 @@ function rowActions(plan: SystemSecurityPlan): MenuEntry[] {
         </template>
       </DataTable>
     </DataState>
-
-    <template #footer>
-      <Text variant="caption"
-        >Opening a system takes you to its classic page while the redesign is in
-        progress.</Text
-      >
-    </template>
   </ListTemplate>
 </template>

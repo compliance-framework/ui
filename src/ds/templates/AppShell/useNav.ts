@@ -12,8 +12,6 @@ interface ResolvedNavItem {
   to: RouteLocationRaw;
   path: string;
   active: boolean;
-  /** Opens the legacy layout rather than a redesigned screen. */
-  legacy: boolean;
 }
 
 export interface ResolvedNavGroup extends Omit<NavGroup, 'items'> {
@@ -61,7 +59,6 @@ export function useNav() {
             to,
             path: router.resolve(to).path,
             active: false,
-            legacy: !item.next,
           },
         ];
       }),

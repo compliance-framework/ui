@@ -148,39 +148,39 @@ const panel = computed<{ icon: IconName; title: string }>(() => {
 .data-state {
   display: flex;
   align-items: flex-start;
-  gap: var(--space-4);
+  gap: var(--ds-space-4);
   min-width: 0;
-  padding: var(--space-8) var(--space-6);
-  background: var(--color-surface-sunken);
-  border: var(--border-width) solid var(--color-border-subtle);
-  border-radius: var(--radius-none);
+  padding: var(--ds-space-8) var(--ds-space-6);
+  background: var(--ds-color-surface-sunken);
+  border: var(--ds-border-width) solid var(--ds-color-border-subtle);
+  border-radius: var(--ds-radius-none);
 }
 
 .data-state__icon {
-  color: var(--color-text-secondary);
+  color: var(--ds-color-text-secondary);
 }
 
 .data-state__content {
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: var(--ds-space-2);
   min-width: 0;
-  max-width: var(--width-form);
+  max-width: var(--ds-width-form);
 }
 
 .data-state__title {
-  font-family: var(--font-display);
-  font-size: var(--font-size-h2);
-  font-weight: var(--font-weight-bold);
-  letter-spacing: var(--tracking-card);
-  line-height: var(--leading-snug);
+  font-family: var(--ds-font-display);
+  font-size: var(--ds-font-size-h2);
+  font-weight: var(--ds-font-weight-bold);
+  letter-spacing: var(--ds-tracking-card);
+  line-height: var(--ds-leading-snug);
 }
 
 .data-state__body {
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-body);
-  line-height: var(--leading-body);
+  color: var(--ds-color-text-secondary);
+  font-size: var(--ds-font-size-body);
+  line-height: var(--ds-leading-body);
 }
 
 .data-state__filters {
@@ -188,21 +188,21 @@ const panel = computed<{ icon: IconName; title: string }>(() => {
   padding: 0;
   list-style: none;
   flex-wrap: wrap;
-  gap: var(--space-2);
+  gap: var(--ds-space-2);
 }
 
 .data-state__filter {
-  padding: var(--space-1) var(--space-2);
-  border: var(--border-width) solid var(--color-border-strong);
-  font-size: var(--font-size-caption);
-  line-height: var(--leading-snug);
+  padding: var(--ds-space-1) var(--ds-space-2);
+  border: var(--ds-border-width) solid var(--ds-color-border-strong);
+  font-size: var(--ds-font-size-caption);
+  line-height: var(--ds-leading-snug);
   overflow-wrap: anywhere;
 }
 
 .data-state__actions {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-2);
-  margin-block-start: var(--space-2);
+  gap: var(--ds-space-2);
+  margin-block-start: var(--ds-space-2);
 }
 </style>

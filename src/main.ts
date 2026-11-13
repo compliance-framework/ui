@@ -1,6 +1,6 @@
 import './assets/main.css';
 import 'primeicons/primeicons.css';
-// Design-system tokens; inert until a design-system layout sets data-ds on <html>.
+// Design-system tokens and element defaults (prefixed --ds-, so they never clash with Tailwind's).
 import './ds/tokens/index.css';
 
 import { createApp } from 'vue';

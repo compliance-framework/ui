@@ -50,15 +50,15 @@ const definition = computed(() => statuses[props.status]);
 .status-badge {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-1);
+  gap: var(--ds-space-1);
   max-width: 100%;
-  padding: var(--space-1) var(--space-2);
-  border: var(--border-width) solid currentColor;
-  border-radius: var(--radius-none);
-  font-size: var(--font-size-label);
-  font-weight: var(--font-weight-bold);
-  letter-spacing: var(--tracking-wide);
-  line-height: var(--leading-snug);
+  padding: var(--ds-space-1) var(--ds-space-2);
+  border: var(--ds-border-width) solid currentColor;
+  border-radius: var(--ds-radius-none);
+  font-size: var(--ds-font-size-label);
+  font-weight: var(--ds-font-weight-bold);
+  letter-spacing: var(--ds-tracking-wide);
+  line-height: var(--ds-leading-snug);
   text-transform: uppercase;
   vertical-align: middle;
   background: var(--tone-bg);
@@ -66,11 +66,11 @@ const definition = computed(() => statuses[props.status]);
 }
 
 .status-badge--compact {
-  padding: var(--space-1);
+  padding: var(--ds-space-1);
   flex: none;
 }
 
 .status-badge--neutral {
-  border-color: var(--color-border-strong);
+  border-color: var(--ds-color-border-strong);
 }
 </style>

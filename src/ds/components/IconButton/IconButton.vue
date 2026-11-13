@@ -87,37 +87,37 @@ function onClick(event: MouseEvent): void {
   align-items: center;
   justify-content: center;
   padding: 0;
-  border: var(--border-width) solid transparent;
-  border-radius: var(--radius-none);
+  border: var(--ds-border-width) solid transparent;
+  border-radius: var(--ds-radius-none);
   background: transparent;
-  color: var(--color-text-primary);
+  color: var(--ds-color-text-primary);
   cursor: pointer;
-  transition: background-color var(--duration-fast) var(--ease-standard);
+  transition: background-color var(--ds-duration-fast) var(--ds-ease-standard);
 }
 
 .icon-button--md {
-  width: var(--size-control-md);
-  height: var(--size-control-md);
+  width: var(--ds-size-control-md);
+  height: var(--ds-size-control-md);
 }
 
 .icon-button--sm {
-  width: var(--size-control-sm);
-  height: var(--size-control-sm);
+  width: var(--ds-size-control-sm);
+  height: var(--ds-size-control-sm);
 }
 
 .icon-button:hover {
-  background: var(--color-surface-hover);
+  background: var(--ds-color-surface-hover);
 }
 
 .icon-button--secondary {
-  background: var(--color-action-secondary-bg);
-  border-color: var(--color-border-strong);
+  background: var(--ds-color-action-secondary-bg);
+  border-color: var(--ds-color-border-strong);
 }
 
 .icon-button.icon-button--disabled {
   background: transparent;
-  border: var(--border-width) dashed var(--color-border-strong);
-  color: var(--color-text-disabled);
+  border: var(--ds-border-width) dashed var(--ds-color-border-strong);
+  color: var(--ds-color-text-disabled);
   cursor: not-allowed;
 }
 </style>

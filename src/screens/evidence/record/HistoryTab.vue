@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { useRoute } from 'vue-router';
 import { useAuthenticatedInstance } from '@/composables/axios';
 import type { Evidence } from '@/stores/evidence';
 import type { DataResponse } from '@/stores/types';
@@ -21,8 +20,7 @@ import { ZERO_UUID, useEvidenceRecord } from './evidenceRecord';
  * History: every record in this evidence stream, newest first, each opening in place, with the
  * stream's status trend and agent health below, as on the classic page.
  */
-const route = useRoute();
-const { evidence } = useEvidenceRecord();
+const { evidence, link } = useEvidenceRecord();
 const api = useAuthenticatedInstance();
 
 const uuid = computed(() => evidence.value?.uuid);
@@ -66,14 +64,6 @@ const rows = computed(() =>
       };
     }),
 );
-
-function recordLink(id: string) {
-  return {
-    name: 'ds-evidence-overview',
-    params: { systemId: route.params.systemId, evidenceId: id },
-    query: route.query,
-  };
-}
 </script>
 
 <template>
@@ -104,7 +94,7 @@ function recordLink(id: string) {
           /></template>
           <template #cell-title="{ row: r }">
             <Tag v-if="r.current" label="This record" />
-            <TextLink v-else :to="recordLink(r.id)">{{ r.title }}</TextLink>
+            <TextLink v-else :to="link('', r.id)">{{ r.title }}</TextLink>
           </template>
           <template #cell-collected="{ row: r }">{{
             formatLocalDateTime(r.collected)

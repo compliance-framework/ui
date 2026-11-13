@@ -89,16 +89,16 @@ function onChange(event: Event): void {
 <style scoped>
 .checkbox {
   display: grid;
-  grid-template-columns: var(--size-target-min) minmax(0, 1fr);
-  column-gap: var(--space-2);
+  grid-template-columns: var(--ds-size-target-min) minmax(0, 1fr);
+  column-gap: var(--ds-space-2);
   align-items: start;
 }
 
 .checkbox__control {
   position: relative;
   display: flex;
-  width: var(--size-target-min);
-  height: var(--size-target-min);
+  width: var(--ds-size-target-min);
+  height: var(--ds-size-target-min);
 }
 
 .checkbox__input {
@@ -106,53 +106,53 @@ function onChange(event: Event): void {
   width: 100%;
   height: 100%;
   margin: 0;
-  background: var(--color-surface-sunken);
-  border: var(--border-width) solid var(--color-border-strong);
-  border-radius: var(--radius-none);
+  background: var(--ds-color-surface-sunken);
+  border: var(--ds-border-width) solid var(--ds-color-border-strong);
+  border-radius: var(--ds-radius-none);
   cursor: pointer;
-  transition: background-color var(--duration-fast) var(--ease-standard);
+  transition: background-color var(--ds-duration-fast) var(--ds-ease-standard);
 }
 
 .checkbox__input:hover {
-  background: var(--color-surface-base);
+  background: var(--ds-color-surface-base);
 }
 
 .checkbox__input:checked,
 .checkbox__input:indeterminate {
-  background: var(--color-action-primary-bg);
-  border-color: var(--color-action-primary-border);
+  background: var(--ds-color-action-primary-bg);
+  border-color: var(--ds-color-action-primary-border);
 }
 
 .checkbox__check {
   position: absolute;
   inset: 0;
   margin: auto;
-  color: var(--color-action-primary-fg);
+  color: var(--ds-color-action-primary-fg);
   pointer-events: none;
 }
 
 .checkbox__text {
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
+  gap: var(--ds-space-1);
   min-width: 0;
 }
 
 .checkbox__label {
   display: flex;
   align-items: center;
-  min-height: var(--size-target-min);
-  font-size: var(--font-size-body);
-  font-weight: var(--font-weight-medium);
-  line-height: var(--leading-snug);
+  min-height: var(--ds-size-target-min);
+  font-size: var(--ds-font-size-body);
+  font-weight: var(--ds-font-weight-medium);
+  line-height: var(--ds-leading-snug);
   overflow-wrap: anywhere;
   cursor: pointer;
 }
 
 .checkbox__note {
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-caption);
-  line-height: var(--leading-snug);
+  color: var(--ds-color-text-secondary);
+  font-size: var(--ds-font-size-caption);
+  line-height: var(--ds-leading-snug);
   overflow-wrap: anywhere;
 }
 
@@ -161,13 +161,13 @@ function onChange(event: Event): void {
 .checkbox--disabled .checkbox__input:checked,
 .checkbox--disabled .checkbox__input:indeterminate {
   background: transparent;
-  border: var(--border-width) dashed var(--color-border-strong);
+  border: var(--ds-border-width) dashed var(--ds-color-border-strong);
   cursor: not-allowed;
 }
 
 .checkbox--disabled .checkbox__check,
 .checkbox--disabled .checkbox__label {
-  color: var(--color-text-disabled);
+  color: var(--ds-color-text-disabled);
 }
 
 .checkbox--disabled .checkbox__label {

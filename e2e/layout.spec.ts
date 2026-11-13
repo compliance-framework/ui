@@ -7,9 +7,9 @@ import { EVIDENCE_ID, mockApi, signIn, SYSTEMS } from './support/api';
  * action reachable at 1280×800 with the navigation expanded.
  */
 const routes = [
-  '/next/systems',
-  `/next/systems/${SYSTEMS.scoped}/evidence`,
-  `/next/systems/${SYSTEMS.scoped}/evidence/${EVIDENCE_ID}/signature`,
+  '/systems',
+  `/systems/${SYSTEMS.scoped}/evidence`,
+  `/systems/${SYSTEMS.scoped}/evidence/${EVIDENCE_ID}/signature`,
 ];
 
 test.beforeEach(async ({ page }) => {
@@ -35,7 +35,7 @@ for (const width of [320, 1024, 1440]) {
 test('the skip link is the first tab stop and moves focus to the content', async ({
   page,
 }) => {
-  await page.goto('/next/systems');
+  await page.goto('/systems');
   await page.locator('main h1').waitFor();
   await page.keyboard.press('Tab');
   const skip = page.getByRole('link', { name: 'Skip to main content' });
@@ -47,7 +47,7 @@ test('the skip link is the first tab stop and moves focus to the content', async
 test('menus close on Escape and return focus to their trigger', async ({
   page,
 }) => {
-  await page.goto('/next/systems');
+  await page.goto('/systems');
   const trigger = page.getByRole('button', { name: /^Actions for / }).first();
   await trigger.focus();
   await page.keyboard.press('Enter');
@@ -61,7 +61,7 @@ test('the system switcher opens from the keyboard and switches system', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto(`/next/systems/${SYSTEMS.scoped}/evidence`);
+  await page.goto(`/systems/${SYSTEMS.scoped}/evidence`);
   await page.locator('main h1').waitFor();
   await page.locator('.switcher__trigger').first().focus();
   await page.keyboard.press('Enter');
@@ -69,7 +69,7 @@ test('the system switcher opens from the keyboard and switches system', async ({
   await page.keyboard.press('ArrowDown');
   await page.keyboard.press('Enter');
   await expect(page).toHaveURL(
-    new RegExp(`/next/systems/${SYSTEMS.unscoped}/evidence`),
+    new RegExp(`/systems/${SYSTEMS.unscoped}/evidence`),
   );
 });
 

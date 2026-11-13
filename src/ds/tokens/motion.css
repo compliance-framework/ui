@@ -1,15 +1,15 @@
 /* Motion: every duration drops to 0 under reduced motion (D-19, F-37). */
-:root[data-ds] {
-  --duration-fast: 120ms;
-  --duration-base: 160ms;
-  --duration-slow: 240ms;
-  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+:root {
+  --ds-duration-fast: 120ms;
+  --ds-duration-base: 160ms;
+  --ds-duration-slow: 240ms;
+  --ds-ease-standard: cubic-bezier(0.2, 0, 0, 1);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  :root[data-ds] {
-    --duration-fast: 0ms;
-    --duration-base: 0ms;
-    --duration-slow: 0ms;
+  :root {
+    --ds-duration-fast: 0ms;
+    --ds-duration-base: 0ms;
+    --ds-duration-slow: 0ms;
   }
 }

@@ -145,26 +145,26 @@ function choose(value: AcceptableValue | AcceptableValue[] | undefined): void {
 .switcher__trigger {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--ds-space-2);
   min-width: 0;
   max-width: 100%;
   overflow: hidden;
-  height: var(--size-control-md);
-  padding: 0 var(--space-3);
-  border: var(--border-width) solid var(--color-border-strong);
-  border-radius: var(--radius-none);
-  background: var(--color-surface-sunken);
-  color: var(--color-text-primary);
+  height: var(--ds-size-control-md);
+  padding: 0 var(--ds-space-3);
+  border: var(--ds-border-width) solid var(--ds-color-border-strong);
+  border-radius: var(--ds-radius-none);
+  background: var(--ds-color-surface-sunken);
+  color: var(--ds-color-text-primary);
   cursor: pointer;
 }
 
 .switcher__trigger--sidebar {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: var(--space-1) var(--space-2);
+  gap: var(--ds-space-1) var(--ds-space-2);
   height: auto;
-  min-height: var(--size-control-md);
-  padding: var(--space-2);
+  min-height: var(--ds-size-control-md);
+  padding: var(--ds-space-2);
   text-align: left;
 }
 
@@ -186,19 +186,19 @@ function choose(value: AcceptableValue | AcceptableValue[] | undefined): void {
 .switcher__trigger--compact {
   justify-content: center;
   padding: 0;
-  min-width: var(--size-target-min);
-  font-weight: var(--font-weight-bold);
+  min-width: var(--ds-size-target-min);
+  font-weight: var(--ds-font-weight-bold);
 }
 
 .switcher__trigger:hover {
-  background: var(--color-surface-base);
+  background: var(--ds-color-surface-base);
 }
 
 .switcher__eyebrow {
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-label);
-  font-weight: var(--font-weight-bold);
-  letter-spacing: var(--tracking-wide);
+  color: var(--ds-color-text-secondary);
+  font-size: var(--ds-font-size-label);
+  font-weight: var(--ds-font-weight-bold);
+  letter-spacing: var(--ds-tracking-wide);
   text-transform: uppercase;
 }
 
@@ -210,8 +210,8 @@ function choose(value: AcceptableValue | AcceptableValue[] | undefined): void {
 @media (max-width: 639px) {
   .switcher__eyebrow {
     position: absolute;
-    width: var(--border-width);
-    height: var(--border-width);
+    width: var(--ds-border-width);
+    height: var(--ds-border-width);
     overflow: hidden;
     clip-path: inset(50%);
     white-space: nowrap;
@@ -221,69 +221,69 @@ function choose(value: AcceptableValue | AcceptableValue[] | undefined): void {
 .switcher__name {
   min-width: 0;
   overflow: hidden;
-  font-weight: var(--font-weight-bold);
+  font-weight: var(--ds-font-weight-bold);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .switcher__content {
-  z-index: var(--z-overlay);
-  width: min(var(--width-dialog-s), calc(100vw - var(--space-4)));
-  border: var(--border-width) solid var(--color-border-strong);
-  background: var(--color-surface-overlay);
-  box-shadow: var(--shadow-raised);
+  z-index: var(--ds-z-overlay);
+  width: min(var(--ds-width-dialog-s), calc(100vw - var(--ds-space-4)));
+  border: var(--ds-border-width) solid var(--ds-color-border-strong);
+  background: var(--ds-color-surface-overlay);
+  box-shadow: var(--ds-shadow-raised);
 }
 
 .switcher__search {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
-  padding: 0 var(--space-3);
-  border-bottom: var(--border-width) solid var(--color-border-subtle);
-  color: var(--color-text-secondary);
+  gap: var(--ds-space-2);
+  padding: 0 var(--ds-space-3);
+  border-bottom: var(--ds-border-width) solid var(--ds-color-border-subtle);
+  color: var(--ds-color-text-secondary);
 }
 
 .switcher__filter {
   flex: 1;
   min-width: 0;
-  height: var(--size-control-md);
+  height: var(--ds-size-control-md);
   border: none;
   background: transparent;
-  color: var(--color-text-primary);
+  color: var(--ds-color-text-primary);
 }
 
 .switcher__filter::placeholder {
-  color: var(--color-text-secondary);
+  color: var(--ds-color-text-secondary);
 }
 
 .switcher__filter:focus-visible {
-  outline-offset: calc(var(--focus-width) * -1);
+  outline-offset: calc(var(--ds-focus-width) * -1);
 }
 
 .switcher__list {
-  max-height: calc(var(--size-control-md) * 7);
+  max-height: calc(var(--ds-size-control-md) * 7);
   overflow-y: auto;
-  padding: var(--space-1) 0;
+  padding: var(--ds-space-1) 0;
 }
 
 .switcher__option {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-2) var(--space-3);
-  border-left: var(--border-width-indicator) solid transparent;
+  gap: var(--ds-space-3);
+  padding: var(--ds-space-2) var(--ds-space-3);
+  border-left: var(--ds-border-width-indicator) solid transparent;
   cursor: pointer;
 }
 
 .switcher__option[data-highlighted] {
-  background: var(--color-surface-hover);
-  outline: var(--focus-width) solid var(--color-border-focus);
-  outline-offset: calc(var(--focus-width) * -1);
+  background: var(--ds-color-surface-hover);
+  outline: var(--ds-focus-width) solid var(--ds-color-border-focus);
+  outline-offset: calc(var(--ds-focus-width) * -1);
 }
 
 .switcher__option[data-state='checked'] {
-  border-left-color: var(--color-indicator);
-  background: var(--color-surface-selected);
+  border-left-color: var(--ds-color-indicator);
+  background: var(--ds-color-surface-selected);
 }
 
 .switcher__option-text {
@@ -294,32 +294,32 @@ function choose(value: AcceptableValue | AcceptableValue[] | undefined): void {
 }
 
 .switcher__option-name {
-  font-weight: var(--font-weight-bold);
+  font-weight: var(--ds-font-weight-bold);
 }
 
 .switcher__option-description,
 .switcher__none {
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-caption);
-  line-height: var(--leading-snug);
+  color: var(--ds-color-text-secondary);
+  font-size: var(--ds-font-size-caption);
+  line-height: var(--ds-leading-snug);
 }
 
 .switcher__none {
-  padding: var(--space-3);
+  padding: var(--ds-space-3);
 }
 
 .switcher__all {
   display: block;
-  padding: var(--space-3);
-  border-top: var(--border-width) solid var(--color-border-subtle);
-  color: var(--color-text-primary);
-  font-size: var(--font-size-label);
-  font-weight: var(--font-weight-bold);
-  letter-spacing: var(--tracking-wide);
+  padding: var(--ds-space-3);
+  border-top: var(--ds-border-width) solid var(--ds-color-border-subtle);
+  color: var(--ds-color-text-primary);
+  font-size: var(--ds-font-size-label);
+  font-weight: var(--ds-font-weight-bold);
+  letter-spacing: var(--ds-tracking-wide);
   text-transform: uppercase;
 }
 
 .switcher__all:hover {
-  background: var(--color-surface-hover);
+  background: var(--ds-color-surface-hover);
 }
 </style>

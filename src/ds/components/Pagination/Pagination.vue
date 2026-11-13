@@ -90,22 +90,22 @@ const items = computed(() => pageItems(props.page, props.pageCount));
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-3) var(--space-4);
+  gap: var(--ds-space-3) var(--ds-space-4);
   min-width: 0;
 }
 
 .pagination__total {
   margin: 0;
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-body);
-  line-height: var(--leading-snug);
+  color: var(--ds-color-text-secondary);
+  font-size: var(--ds-font-size-body);
+  line-height: var(--ds-leading-snug);
 }
 
 .pagination__list {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-1);
+  gap: var(--ds-space-1);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -115,37 +115,37 @@ const items = computed(() => pageItems(props.page, props.pageCount));
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: var(--space-1);
-  min-width: var(--size-control-sm);
-  min-height: var(--size-control-sm);
-  padding: 0 var(--space-2);
-  border: var(--border-width) solid var(--color-border-strong);
-  background: var(--color-surface-base);
-  color: var(--color-text-primary);
-  font-size: var(--font-size-body);
-  font-weight: var(--font-weight-medium);
-  line-height: var(--leading-snug);
+  gap: var(--ds-space-1);
+  min-width: var(--ds-size-control-sm);
+  min-height: var(--ds-size-control-sm);
+  padding: 0 var(--ds-space-2);
+  border: var(--ds-border-width) solid var(--ds-color-border-strong);
+  background: var(--ds-color-surface-base);
+  color: var(--ds-color-text-primary);
+  font-size: var(--ds-font-size-body);
+  font-weight: var(--ds-font-weight-medium);
+  line-height: var(--ds-leading-snug);
   text-decoration: none;
-  transition: background-color var(--duration-fast) var(--ease-standard);
+  transition: background-color var(--ds-duration-fast) var(--ds-ease-standard);
 }
 
 a.pagination__link:hover {
-  background: var(--color-surface-hover);
+  background: var(--ds-color-surface-hover);
 }
 
 .pagination__link--current,
 a.pagination__link--current:hover {
-  background: var(--color-action-primary-bg);
-  border-color: var(--color-action-primary-border);
-  color: var(--color-action-primary-fg);
-  font-weight: var(--font-weight-bold);
+  background: var(--ds-color-action-primary-bg);
+  border-color: var(--ds-color-action-primary-border);
+  color: var(--ds-color-action-primary-fg);
+  font-weight: var(--ds-font-weight-bold);
 }
 
 /* Not a control, so it keeps readable text; the dashed border marks it as unavailable. */
 .pagination__link--disabled {
   border-style: dashed;
   background: transparent;
-  color: var(--color-text-secondary);
+  color: var(--ds-color-text-secondary);
   cursor: not-allowed;
 }
 
@@ -153,8 +153,8 @@ a.pagination__link--current:hover {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: var(--size-target-min);
-  min-height: var(--size-control-sm);
-  color: var(--color-text-secondary);
+  min-width: var(--ds-size-target-min);
+  min-height: var(--ds-size-control-sm);
+  color: var(--ds-color-text-secondary);
 }
 </style>

@@ -8,7 +8,7 @@ import Text from '../Text/Text.vue';
 /**
  * A line chart for trends (F-17 AC3, F-29). It has a y axis with gridlines and tick labels, x tick
  * labels thinned to fit, axis titles, and a legend. Each series has its own colour
- * (--color-chart-1…3) and marker shape (circle, square, triangle), drawn on every point, so the
+ * (--ds-color-chart-1…3) and marker shape (circle, square, triangle), drawn on every point, so the
  * chart still works in greyscale. The SVG is an image named by a text summary, and "Show as table"
  * swaps in the same values as an accessible table. The surrounding Panel supplies the title.
  * The viewBox follows the rendered width, so tick labels keep their token size on a phone.
@@ -317,7 +317,7 @@ const tableRows = computed(() =>
 .line-chart {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--ds-space-3);
   min-width: 0;
 }
 
@@ -326,30 +326,30 @@ const tableRows = computed(() =>
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-2) var(--space-4);
+  gap: var(--ds-space-2) var(--ds-space-4);
 }
 
 .line-chart__legend {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-2) var(--space-4);
+  gap: var(--ds-space-2) var(--ds-space-4);
   margin: 0;
   padding: 0;
   list-style: none;
-  font-size: var(--font-size-caption);
-  line-height: var(--leading-snug);
+  font-size: var(--ds-font-size-caption);
+  line-height: var(--ds-leading-snug);
 }
 
 .line-chart__legend-item {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--ds-space-2);
 }
 
 .line-chart__swatch {
   flex: none;
-  width: var(--space-6);
-  height: var(--space-3);
+  width: var(--ds-space-6);
+  height: var(--ds-space-3);
   overflow: visible;
 }
 
@@ -361,50 +361,50 @@ const tableRows = computed(() =>
 }
 
 .line-chart__grid {
-  stroke: var(--color-border-subtle);
-  stroke-width: var(--border-width);
+  stroke: var(--ds-color-border-subtle);
+  stroke-width: var(--ds-border-width);
 }
 
 .line-chart__axis {
-  stroke: var(--color-border-strong);
-  stroke-width: var(--border-width);
+  stroke: var(--ds-color-border-strong);
+  stroke-width: var(--ds-border-width);
 }
 
 .line-chart__tick,
 .line-chart__title {
-  font-family: var(--font-ui);
-  font-size: var(--font-size-caption);
-  fill: var(--color-text-secondary);
+  font-family: var(--ds-font-ui);
+  font-size: var(--ds-font-size-caption);
+  fill: var(--ds-color-text-secondary);
 }
 
 .line-chart__title {
-  font-weight: var(--font-weight-bold);
-  letter-spacing: var(--tracking-wide);
+  font-weight: var(--ds-font-weight-bold);
+  letter-spacing: var(--ds-tracking-wide);
   text-transform: uppercase;
 }
 
 .line-chart__series--1 {
-  color: var(--color-chart-1);
+  color: var(--ds-color-chart-1);
 }
 
 .line-chart__series--2 {
-  color: var(--color-chart-2);
+  color: var(--ds-color-chart-2);
 }
 
 .line-chart__series--3 {
-  color: var(--color-chart-3);
+  color: var(--ds-color-chart-3);
 }
 
 .line-chart__line {
   fill: none;
   stroke: currentColor;
-  stroke-width: calc(var(--border-width) * 2);
+  stroke-width: calc(var(--ds-border-width) * 2);
   stroke-linejoin: round;
 }
 
 .line-chart__marker {
   fill: currentColor;
-  stroke: var(--color-surface-raised);
-  stroke-width: var(--border-width);
+  stroke: var(--ds-color-surface-raised);
+  stroke-width: var(--ds-border-width);
 }
 </style>

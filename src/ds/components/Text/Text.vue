@@ -38,49 +38,49 @@ withDefaults(
 }
 
 .text--body {
-  font-size: var(--font-size-body);
-  line-height: var(--leading-body);
+  font-size: var(--ds-font-size-body);
+  line-height: var(--ds-leading-body);
 }
 
 .text--secondary {
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-body);
-  line-height: var(--leading-body);
+  color: var(--ds-color-text-secondary);
+  font-size: var(--ds-font-size-body);
+  line-height: var(--ds-leading-body);
 }
 
 .text--caption {
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-caption);
-  line-height: var(--leading-snug);
+  color: var(--ds-color-text-secondary);
+  font-size: var(--ds-font-size-caption);
+  line-height: var(--ds-leading-snug);
 }
 
 .text--label {
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-label);
-  font-weight: var(--font-weight-bold);
-  letter-spacing: var(--tracking-wide);
-  line-height: var(--leading-snug);
+  color: var(--ds-color-text-secondary);
+  font-size: var(--ds-font-size-label);
+  font-weight: var(--ds-font-weight-bold);
+  letter-spacing: var(--ds-tracking-wide);
+  line-height: var(--ds-leading-snug);
   text-transform: uppercase;
 }
 
 .text--metric {
-  font-family: var(--font-display);
-  font-size: var(--font-size-metric);
-  font-weight: var(--font-weight-bold);
-  line-height: var(--leading-tight);
+  font-family: var(--ds-font-display);
+  font-size: var(--ds-font-size-metric);
+  font-weight: var(--ds-font-weight-bold);
+  line-height: var(--ds-leading-tight);
 }
 .text--code {
-  padding: 0 var(--space-1);
-  border: var(--border-width) solid var(--color-border-subtle);
-  background: var(--color-surface-sunken);
-  font-family: var(--font-ui);
-  font-size: var(--font-size-body);
+  padding: 0 var(--ds-space-1);
+  border: var(--ds-border-width) solid var(--ds-color-border-subtle);
+  background: var(--ds-color-surface-sunken);
+  font-family: var(--ds-font-ui);
+  font-size: var(--ds-font-size-body);
   overflow-wrap: anywhere;
 }
 .text--prose {
-  max-width: var(--width-reading);
-  font-family: var(--font-prose);
-  font-size: var(--font-size-prose);
-  line-height: var(--leading-prose);
+  max-width: var(--ds-width-reading);
+  font-family: var(--ds-font-prose);
+  font-size: var(--ds-font-size-prose);
+  line-height: var(--ds-leading-prose);
 }
 </style>

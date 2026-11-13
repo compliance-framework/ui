@@ -1,10 +1,10 @@
 /* Three elevations: flat (border only), raised (menus, popovers, toasts), overlay (dialogs, drawers). */
-:root[data-ds] {
-  --shadow-raised: 0 8px 24px rgb(17 17 27 / 0.1);
-  --shadow-overlay: 0 16px 48px rgb(17 17 27 / 0.18);
+:root {
+  --ds-shadow-raised: 0 8px 24px rgb(17 17 27 / 0.1);
+  --ds-shadow-overlay: 0 16px 48px rgb(17 17 27 / 0.18);
 }
 
-:root[data-ds].dark {
-  --shadow-raised: 0 8px 24px rgb(0 0 0 / 0.35);
-  --shadow-overlay: 0 16px 48px rgb(0 0 0 / 0.5);
+:root.dark {
+  --ds-shadow-raised: 0 8px 24px rgb(0 0 0 / 0.35);
+  --ds-shadow-overlay: 0 16px 48px rgb(0 0 0 / 0.5);
 }

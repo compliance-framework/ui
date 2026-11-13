@@ -1,8 +1,8 @@
 /* Stacking layers. Toasts sit below nothing interactive in the header (F-13 AC5). */
-:root[data-ds] {
-  --z-header: 30;
-  --z-drawer: 40;
-  --z-overlay: 50;
-  --z-toast: 60;
-  --z-tooltip: 70;
+:root {
+  --ds-z-header: 30;
+  --ds-z-drawer: 40;
+  --ds-z-overlay: 50;
+  --ds-z-toast: 60;
+  --ds-z-tooltip: 70;
 }

@@ -47,16 +47,16 @@ withDefaults(
   list-style: none;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-1) var(--space-2);
-  font-size: var(--font-size-caption);
-  line-height: var(--leading-snug);
-  color: var(--color-text-secondary);
+  gap: var(--ds-space-1) var(--ds-space-2);
+  font-size: var(--ds-font-size-caption);
+  line-height: var(--ds-leading-snug);
+  color: var(--ds-color-text-secondary);
 }
 
 .breadcrumbs__item {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--ds-space-2);
   min-width: 0;
   overflow-wrap: anywhere;
 }
@@ -64,13 +64,13 @@ withDefaults(
 .breadcrumbs__link {
   display: inline-flex;
   align-items: center;
-  min-height: var(--size-target-min);
-  color: var(--color-text-primary);
+  min-height: var(--ds-size-target-min);
+  color: var(--ds-color-text-primary);
   text-decoration: underline;
-  text-underline-offset: var(--space-1);
+  text-underline-offset: var(--ds-space-1);
 }
 
 .breadcrumbs__link:hover {
-  color: var(--color-text-accent);
+  color: var(--ds-color-text-accent);
 }
 </style>

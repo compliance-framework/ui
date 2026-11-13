@@ -167,7 +167,7 @@ function download(): void {
 .code-block {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: var(--ds-space-2);
   min-width: 0;
 }
 
@@ -176,53 +176,53 @@ function download(): void {
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-2) var(--space-4);
+  gap: var(--ds-space-2) var(--ds-space-4);
 }
 
 .code-block__file {
   min-width: 0;
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-caption);
-  line-height: var(--leading-snug);
+  color: var(--ds-color-text-secondary);
+  font-size: var(--ds-font-size-caption);
+  line-height: var(--ds-leading-snug);
   overflow-wrap: anywhere;
 }
 
 .code-block__actions {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-2);
+  gap: var(--ds-space-2);
   margin-inline-start: auto;
 }
 
 .code-block__region {
   min-width: 0;
   overflow-x: auto;
-  background: var(--color-surface-sunken);
-  border: var(--border-width) solid var(--color-border-subtle);
-  border-radius: var(--radius-none);
+  background: var(--ds-color-surface-sunken);
+  border: var(--ds-border-width) solid var(--ds-color-border-subtle);
+  border-radius: var(--ds-radius-none);
 }
 
 .code-block__region:focus-visible {
-  outline-offset: calc(var(--focus-width) * -1);
+  outline-offset: calc(var(--ds-focus-width) * -1);
 }
 
 .code-block__body {
   display: flex;
   width: max-content;
   min-width: 100%;
-  font-family: var(--font-code);
-  font-size: var(--font-size-body);
-  line-height: var(--leading-body);
+  font-family: var(--ds-font-code);
+  font-size: var(--ds-font-size-body);
+  line-height: var(--ds-leading-body);
 }
 
 .code-block__gutter {
   position: sticky;
   left: 0;
   flex: none;
-  padding: var(--space-3);
-  background: var(--color-surface-sunken);
-  border-inline-end: var(--border-width) solid var(--color-border-subtle);
-  color: var(--color-text-secondary);
+  padding: var(--ds-space-3);
+  background: var(--ds-color-surface-sunken);
+  border-inline-end: var(--ds-border-width) solid var(--ds-color-border-subtle);
+  color: var(--ds-color-text-secondary);
   text-align: end;
   white-space: pre;
   user-select: none;
@@ -231,14 +231,14 @@ function download(): void {
 .code-block__code {
   flex: 1;
   margin: 0;
-  padding: var(--space-3) var(--space-4);
+  padding: var(--ds-space-3) var(--ds-space-4);
   font: inherit;
   white-space: pre;
   tab-size: 2;
 }
 
 .code-block__line--highlighted {
-  background: var(--color-surface-selected);
-  font-weight: var(--font-weight-bold);
+  background: var(--ds-color-surface-selected);
+  font-weight: var(--ds-font-weight-bold);
 }
 </style>

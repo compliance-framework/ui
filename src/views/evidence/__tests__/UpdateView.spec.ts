@@ -75,7 +75,7 @@ describe('Evidence UpdateView', () => {
     expect(sentBody().subjects).toEqual([{ 'subject-uuid': 's-1' }]);
     expect(pushMock).toHaveBeenCalledWith({
       name: 'evidence:view',
-      params: { id: 'created-2' },
+      params: { evidenceId: 'created-2' },
     });
   });
 });

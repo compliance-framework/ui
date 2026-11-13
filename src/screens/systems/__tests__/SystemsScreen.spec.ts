@@ -25,12 +25,12 @@ const plan = (uuid: string, title: string, lastModified: string) => ({
   metadata: { title, version: '1.0.0', lastModified },
 });
 
-async function mountScreen(path = '/next/systems') {
+async function mountScreen(path = '/systems') {
   const Stub = defineComponent({ render: () => h('div') });
   const router = createRouter({
     history: createMemoryHistory(),
     routes: [
-      { path: '/next/systems', name: 'ds-systems', component: SystemsScreen },
+      { path: '/systems', name: 'systems', component: SystemsScreen },
       {
         path: '/system-security-plans/create',
         name: 'system-security-plans-create',
@@ -76,7 +76,7 @@ describe('SystemsScreen', () => {
   });
 
   it('filters by the search in the URL and names the filter when nothing matches', async () => {
-    const { wrapper } = await mountScreen('/next/systems?q=nothing');
+    const { wrapper } = await mountScreen('/systems?q=nothing');
     expect(wrapper.text()).toContain('Nothing matches these filters');
     expect(wrapper.text()).toContain('Search: nothing');
   });

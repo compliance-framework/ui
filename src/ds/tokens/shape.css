@@ -1,9 +1,9 @@
 /* Shape: zero radius throughout (ui-remake); round only for avatar, switch thumb and dot. */
-:root[data-ds] {
-  --radius-none: 0;
-  --radius-round: 9999px;
-  --border-width: 1px;
-  --border-width-indicator: 3px;
-  --focus-width: 2px;
-  --focus-offset: 2px;
+:root {
+  --ds-radius-none: 0;
+  --ds-radius-round: 9999px;
+  --ds-border-width: 1px;
+  --ds-border-width-indicator: 3px;
+  --ds-focus-width: 2px;
+  --ds-focus-offset: 2px;
 }

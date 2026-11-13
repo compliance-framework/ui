@@ -168,16 +168,16 @@ function cellClasses(column: DataTableColumn): Record<string, boolean> {
 .data-table {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: var(--ds-space-2);
   min-width: 0;
 }
 
 .data-table__caption {
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-label);
-  font-weight: var(--font-weight-bold);
-  letter-spacing: var(--tracking-wide);
-  line-height: var(--leading-snug);
+  color: var(--ds-color-text-secondary);
+  font-size: var(--ds-font-size-label);
+  font-weight: var(--ds-font-weight-bold);
+  letter-spacing: var(--ds-tracking-wide);
+  line-height: var(--ds-leading-snug);
   text-transform: uppercase;
 }
 
@@ -188,40 +188,40 @@ function cellClasses(column: DataTableColumn): Record<string, boolean> {
      scrolls sideways when it doesn't fit. */
   max-width: 100%;
   overflow-x: auto;
-  border: var(--border-width) solid var(--color-border-subtle);
-  background: var(--color-surface-base);
+  border: var(--ds-border-width) solid var(--ds-color-border-subtle);
+  background: var(--ds-color-surface-base);
 }
 
 .data-table__table {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
-  font-size: var(--font-size-body);
-  line-height: var(--leading-snug);
+  font-size: var(--ds-font-size-body);
+  line-height: var(--ds-leading-snug);
 }
 
 th,
 td {
-  padding: var(--space-2) var(--space-3);
+  padding: var(--ds-space-2) var(--ds-space-3);
   text-align: start;
   vertical-align: middle;
   overflow-wrap: normal;
-  border-bottom: var(--border-width) solid var(--color-border-subtle);
+  border-bottom: var(--ds-border-width) solid var(--ds-color-border-subtle);
 }
 
 tbody th {
-  font-weight: var(--font-weight-regular);
+  font-weight: var(--ds-font-weight-regular);
 }
 
 thead th {
-  background: var(--color-surface-sunken);
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-label);
-  font-weight: var(--font-weight-bold);
-  letter-spacing: var(--tracking-wide);
+  background: var(--ds-color-surface-sunken);
+  color: var(--ds-color-text-secondary);
+  font-size: var(--ds-font-size-label);
+  font-weight: var(--ds-font-weight-bold);
+  letter-spacing: var(--ds-tracking-wide);
   text-transform: uppercase;
   white-space: nowrap;
-  border-bottom-color: var(--color-border-strong);
+  border-bottom-color: var(--ds-color-border-strong);
 }
 
 tbody tr:last-child > * {
@@ -229,7 +229,7 @@ tbody tr:last-child > * {
 }
 
 tbody tr:hover > * {
-  background: var(--color-surface-hover);
+  background: var(--ds-color-surface-hover);
 }
 
 .data-table__cell--end {
@@ -243,12 +243,12 @@ tbody tr:hover > * {
 .data-table__sort {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-1);
-  min-height: var(--size-target-min);
-  margin: calc(var(--space-1) * -1) calc(var(--space-2) * -1);
-  padding: var(--space-1) var(--space-2);
+  gap: var(--ds-space-1);
+  min-height: var(--ds-size-target-min);
+  margin: calc(var(--ds-space-1) * -1) calc(var(--ds-space-2) * -1);
+  padding: var(--ds-space-1) var(--ds-space-2);
   border: 0;
-  border-radius: var(--radius-none);
+  border-radius: var(--ds-radius-none);
   background: transparent;
   font: inherit;
   letter-spacing: inherit;
@@ -258,12 +258,12 @@ tbody tr:hover > * {
 }
 
 .data-table__sort:hover {
-  background: var(--color-surface-hover);
-  color: var(--color-text-primary);
+  background: var(--ds-color-surface-hover);
+  color: var(--ds-color-text-primary);
 }
 
 th[aria-sort] .data-table__sort {
-  color: var(--color-text-primary);
+  color: var(--ds-color-text-primary);
 }
 
 .data-table__actions {
@@ -273,10 +273,10 @@ th[aria-sort] .data-table__sort {
   white-space: nowrap;
 }
 .data-table__cell--min-sm {
-  min-width: var(--width-column-sm);
+  min-width: var(--ds-width-column-sm);
 }
 
 .data-table__cell--min-md {
-  min-width: var(--width-column-md);
+  min-width: var(--ds-width-column-md);
 }
 </style>

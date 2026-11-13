@@ -21,25 +21,29 @@ defineProps<{
 <style scoped>
 .field-hint,
 .field-error {
-  font-size: var(--font-size-caption);
-  line-height: var(--leading-snug);
+  font-size: var(--ds-font-size-caption);
+  line-height: var(--ds-leading-snug);
   overflow-wrap: anywhere;
 }
 
 .field-hint {
-  color: var(--color-text-secondary);
+  color: var(--ds-color-text-secondary);
 }
 
 .field-error {
   display: flex;
   align-items: flex-start;
-  gap: var(--space-1);
-  color: var(--color-status-error-fg);
+  gap: var(--ds-space-1);
+  color: var(--ds-color-status-error-fg);
 }
 
 .field-error__icon {
   margin-top: calc(
-    (var(--font-size-caption) * var(--leading-snug) - var(--size-icon-sm)) / 2
+    (
+        var(--ds-font-size-caption) * var(--ds-leading-snug) -
+          var(--ds-size-icon-sm)
+      ) /
+      2
   );
 }
 </style>

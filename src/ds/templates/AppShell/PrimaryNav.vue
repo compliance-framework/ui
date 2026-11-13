@@ -10,8 +10,7 @@ import { useNav } from './useNav';
 /**
  * Primary navigation. Expanded and drawer modes show icon + label, with Global, Control
  * definitions and Admin as disclosure groups. Rail mode shows icons with their labels as
- * accessible names and tooltips; the disclosure groups become flyout menus. Links to pages not
- * yet redesigned carry a marker, because they leave this shell for the legacy layout.
+ * accessible names and tooltips; the disclosure groups become flyout menus.
  */
 defineProps<{ mode: NavMode }>();
 const emit = defineEmits<{ navigate: [] }>();
@@ -106,11 +105,6 @@ const isOpen = (id: string, containsActive: boolean) =>
             >
               <Icon :name="item.icon" />
               <span>{{ item.label }}</span>
-              <span v-if="item.legacy" class="primary-nav__legacy"
-                ><Icon name="external" size="sm" /><span class="visually-hidden"
-                  >(classic page)</span
-                ></span
-              >
             </RouterLink>
           </li>
         </ul>
@@ -162,11 +156,6 @@ const isOpen = (id: string, containsActive: boolean) =>
           >
             <Icon :name="item.icon" />
             <span>{{ item.label }}</span>
-            <span v-if="item.legacy" class="primary-nav__legacy"
-              ><Icon name="external" size="sm" /><span class="visually-hidden"
-                >(classic page)</span
-              ></span
-            >
           </RouterLink>
         </li>
       </ul>
@@ -178,22 +167,22 @@ const isOpen = (id: string, containsActive: boolean) =>
 .primary-nav {
   display: flex;
   flex-direction: column;
-  padding: 0 0 var(--space-3);
+  padding: 0 0 var(--ds-space-3);
 }
 
 .primary-nav__group--system {
-  padding: 0 var(--space-3) var(--space-2);
+  padding: 0 var(--ds-space-3) var(--ds-space-2);
 }
 
 .primary-nav__group--system > .primary-nav__list {
-  border: var(--border-width) solid var(--color-border-subtle);
-  background: var(--color-surface-sunken);
+  border: var(--ds-border-width) solid var(--ds-color-border-subtle);
+  background: var(--ds-color-surface-sunken);
 }
 
 .primary-nav:not(.primary-nav--rail)
   .primary-nav__group--system
   .primary-nav__link {
-  padding-left: var(--space-6);
+  padding-left: var(--ds-space-6);
 }
 
 /* Directory guides connect the selected system to its pages without changing link semantics. */
@@ -213,7 +202,7 @@ const isOpen = (id: string, containsActive: boolean) =>
   .primary-nav__list
   > li::after {
   position: absolute;
-  left: var(--space-3);
+  left: var(--ds-space-3);
   content: '';
   pointer-events: none;
 }
@@ -224,7 +213,7 @@ const isOpen = (id: string, containsActive: boolean) =>
   > li::before {
   top: 0;
   bottom: 0;
-  border-left: var(--border-width) solid var(--color-border-strong);
+  border-left: var(--ds-border-width) solid var(--ds-color-border-strong);
 }
 
 .primary-nav:not(.primary-nav--rail)
@@ -239,14 +228,14 @@ const isOpen = (id: string, containsActive: boolean) =>
   .primary-nav__list
   > li::after {
   top: 50%;
-  width: var(--space-2);
-  border-top: var(--border-width) solid var(--color-border-strong);
+  width: var(--ds-space-2);
+  border-top: var(--ds-border-width) solid var(--ds-color-border-strong);
 }
 
 .primary-nav__group + .primary-nav__group {
-  margin-top: var(--space-2);
-  padding-top: var(--space-2);
-  border-top: var(--border-width) solid var(--color-border-subtle);
+  margin-top: var(--ds-space-2);
+  padding-top: var(--ds-space-2);
+  border-top: var(--ds-border-width) solid var(--ds-color-border-subtle);
 }
 
 .primary-nav__list {
@@ -256,66 +245,60 @@ const isOpen = (id: string, containsActive: boolean) =>
 }
 
 .primary-nav__list--nested .primary-nav__link {
-  padding-left: var(--space-8);
+  padding-left: var(--ds-space-8);
 }
 
 .primary-nav__link {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
+  gap: var(--ds-space-3);
   width: 100%;
-  min-height: var(--size-control-md);
-  padding: var(--space-2) var(--space-3);
+  min-height: var(--ds-size-control-md);
+  padding: var(--ds-space-2) var(--ds-space-3);
   border: none;
-  border-left: var(--border-width-indicator) solid transparent;
+  border-left: var(--ds-border-width-indicator) solid transparent;
   background: transparent;
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-label);
-  font-weight: var(--font-weight-medium);
-  letter-spacing: var(--tracking-wide);
-  line-height: var(--leading-snug);
+  color: var(--ds-color-text-secondary);
+  font-size: var(--ds-font-size-label);
+  font-weight: var(--ds-font-weight-medium);
+  letter-spacing: var(--ds-tracking-wide);
+  line-height: var(--ds-leading-snug);
   text-decoration: none;
   text-transform: uppercase;
   cursor: pointer;
 }
 
 .primary-nav__link:hover {
-  background: var(--color-surface-hover);
-  color: var(--color-text-primary);
+  background: var(--ds-color-surface-hover);
+  color: var(--ds-color-text-primary);
 }
 
 .primary-nav__group--system .primary-nav__link:hover {
-  background: var(--color-surface-base);
+  background: var(--ds-color-surface-base);
 }
 
 .primary-nav__link--active {
-  border-left-color: var(--color-indicator);
-  background: var(--color-surface-selected);
-  color: var(--color-text-primary);
-  font-weight: var(--font-weight-bold);
+  border-left-color: var(--ds-color-indicator);
+  background: var(--ds-color-surface-selected);
+  color: var(--ds-color-text-primary);
+  font-weight: var(--ds-font-weight-bold);
 }
 
 .primary-nav__link:focus-visible {
-  outline-offset: calc(var(--focus-width) * -1);
+  outline-offset: calc(var(--ds-focus-width) * -1);
 }
 
 .primary-nav__heading {
-  padding: var(--space-2) var(--space-3) var(--space-1);
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-caption);
-  font-weight: var(--font-weight-bold);
-  letter-spacing: var(--tracking-wide);
+  padding: var(--ds-space-2) var(--ds-space-3) var(--ds-space-1);
+  color: var(--ds-color-text-secondary);
+  font-size: var(--ds-font-size-caption);
+  font-weight: var(--ds-font-weight-bold);
+  letter-spacing: var(--ds-tracking-wide);
   text-transform: uppercase;
 }
 
 .primary-nav__group--system > .primary-nav__heading {
   padding-inline: 0;
-}
-
-.primary-nav__legacy {
-  display: inline-flex;
-  margin-left: auto;
-  color: var(--color-text-disabled);
 }
 
 .primary-nav__link--rail {

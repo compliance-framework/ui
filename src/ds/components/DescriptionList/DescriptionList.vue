@@ -41,42 +41,42 @@ withDefaults(
 <style scoped>
 .description-list {
   display: grid;
-  gap: var(--space-4) var(--space-6);
+  gap: var(--ds-space-4) var(--ds-space-6);
   margin: 0;
 }
 
 .description-list--columns {
   grid-template-columns: repeat(
     auto-fill,
-    minmax(min(100%, var(--width-column-sm)), 1fr)
+    minmax(min(100%, var(--ds-width-column-sm)), 1fr)
   );
 }
 
 .description-list--inline {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-1) var(--space-6);
+  gap: var(--ds-space-1) var(--ds-space-6);
 }
 
 .description-list--inline .description-list__item {
   flex-direction: row;
   align-items: baseline;
-  gap: var(--space-2);
+  gap: var(--ds-space-2);
 }
 
 .description-list__item {
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
+  gap: var(--ds-space-1);
   min-width: 0;
 }
 
 .description-list__term {
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-label);
-  font-weight: var(--font-weight-bold);
-  letter-spacing: var(--tracking-wide);
-  line-height: var(--leading-snug);
+  color: var(--ds-color-text-secondary);
+  font-size: var(--ds-font-size-label);
+  font-weight: var(--ds-font-weight-bold);
+  letter-spacing: var(--ds-tracking-wide);
+  line-height: var(--ds-leading-snug);
   text-transform: uppercase;
 }
 
@@ -86,6 +86,6 @@ withDefaults(
 }
 
 .description-list__empty {
-  color: var(--color-text-secondary);
+  color: var(--ds-color-text-secondary);
 }
 </style>

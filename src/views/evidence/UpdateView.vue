@@ -84,7 +84,7 @@ async function submit(
   });
   return await router.push({
     name: 'evidence:view',
-    params: { id: createdEvidence.value!.id },
+    params: { evidenceId: createdEvidence.value!.id },
   });
 }
 </script>

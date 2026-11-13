@@ -1,101 +1,101 @@
 /* Colour roles. Light = Catppuccin Latte, dark = Mocha (ui-remake), adjusted per D-01…D-20.
    Every fg/bg pair is contrast-tested by scripts/checks/contrast.ts. */
-:root[data-ds] {
+:root {
   color-scheme: light;
   /* surfaces (ui-remake: background / card / surface) */
-  --color-surface-base: #eff1f5;
-  --color-surface-raised: #dce0e8;
-  --color-surface-sunken: #e6e9ef;
-  --color-surface-selected: #ede7de;
-  --color-scrim: rgb(17 17 27 / 0.5);
+  --ds-color-surface-base: #eff1f5;
+  --ds-color-surface-raised: #dce0e8;
+  --ds-color-surface-sunken: #e6e9ef;
+  --ds-color-surface-selected: #ede7de;
+  --ds-color-scrim: rgb(17 17 27 / 0.5);
   /* text */
-  --color-text-primary: #4c4f69;
-  --color-text-secondary: #5c5f77; /* was #6c6f85 (4.37) – D-01 */
-  --color-text-disabled: #8c8fa1; /* disabled only – D-02 */
-  --color-text-inverse: #eff1f5;
-  --color-text-accent: #8f5208; /* was amber #df8e1d (2.31) – D-04 */
+  --ds-color-text-primary: #4c4f69;
+  --ds-color-text-secondary: #5c5f77; /* was #6c6f85 (4.37) – D-01 */
+  --ds-color-text-disabled: #8c8fa1; /* disabled only – D-02 */
+  --ds-color-text-inverse: #eff1f5;
+  --ds-color-text-accent: #8f5208; /* was amber #df8e1d (2.31) – D-04 */
   /* borders */
-  --color-border-subtle: #ccd0da; /* decorative dividers only */
-  --color-border-strong: #6c6f85; /* control boundaries – D-05 */
+  --ds-color-border-subtle: #ccd0da; /* decorative dividers only */
+  --ds-color-border-strong: #6c6f85; /* control boundaries – D-05 */
   /* actions */
-  --color-action-primary-bg: #df8e1d;
-  --color-action-primary-bg-hover: #e9a443;
-  --color-action-primary-fg: #1e1e2e; /* was #4c4f69 (3.05) – D-03 */
-  --color-action-danger-bg: #f0dde2;
+  --ds-color-action-primary-bg: #df8e1d;
+  --ds-color-action-primary-bg-hover: #e9a443;
+  --ds-color-action-primary-fg: #1e1e2e; /* was #4c4f69 (3.05) – D-03 */
+  --ds-color-action-danger-bg: #f0dde2;
   /* status (severity) – fg is used for text and icons, bg for tints */
-  --color-status-success-fg: #2a7019; /* was #40a02b (2.96) – D-06 */
-  --color-status-success-bg: #dee9e1;
-  --color-status-warning-fg: #a8420a; /* peach, not amber – D-07 */
-  --color-status-warning-bg: #f3e0d4;
-  --color-status-error-fg: #b00d30; /* was #d20f39 (4.10 on card) – D-06 */
-  --color-status-error-bg: #ecdade;
-  --color-status-info-fg: #1a56d6; /* was #1e66f5 (3.71 on card) – D-06 */
-  --color-status-info-bg: #dae3f5;
-  --color-status-neutral-bg: #e6e9ef;
+  --ds-color-status-success-fg: #2a7019; /* was #40a02b (2.96) – D-06 */
+  --ds-color-status-success-bg: #dee9e1;
+  --ds-color-status-warning-fg: #a8420a; /* peach, not amber – D-07 */
+  --ds-color-status-warning-bg: #f3e0d4;
+  --ds-color-status-error-fg: #b00d30; /* was #d20f39 (4.10 on card) – D-06 */
+  --ds-color-status-error-bg: #ecdade;
+  --ds-color-status-info-fg: #1a56d6; /* was #1e66f5 (3.71 on card) – D-06 */
+  --ds-color-status-info-bg: #dae3f5;
+  --ds-color-status-neutral-bg: #e6e9ef;
   /* risk level (Negligible → Critical); paired with a level icon + label */
-  --color-risk-low-fg: #0b625e;
-  --color-risk-low-bg: #d6e8e8;
-  --color-risk-high-fg: #a32f43;
-  --color-risk-high-bg: #eedde1;
+  --ds-color-risk-low-fg: #0b625e;
+  --ds-color-risk-low-bg: #d6e8e8;
+  --ds-color-risk-high-fg: #a32f43;
+  --ds-color-risk-high-bg: #eedde1;
 }
 
-:root[data-ds].dark {
+:root.dark {
   color-scheme: dark;
-  --color-surface-base: #1e1e2e;
-  --color-surface-raised: #11111b;
-  --color-surface-sunken: #181825;
-  --color-surface-selected: #34323b;
-  --color-scrim: rgb(0 0 0 / 0.6);
-  --color-text-primary: #cdd6f4;
-  --color-text-secondary: #a6adc8; /* was #6c7086 (3.36) – D-01 */
-  --color-text-disabled: #6c7086;
-  --color-text-inverse: #11111b;
-  --color-text-accent: #f9e2af;
-  --color-border-subtle: #313244;
-  --color-border-strong: #6c7086;
-  --color-action-primary-bg: #f9e2af;
-  --color-action-primary-bg-hover: #f5d48c;
-  --color-action-primary-fg: #11111b;
-  --color-action-danger-bg: #34293a;
-  --color-status-success-fg: #a6e3a1;
-  --color-status-success-bg: #2c323a;
-  --color-status-warning-fg: #fab387;
-  --color-status-warning-bg: #3a2f31;
-  --color-status-error-fg: #f38ba8;
-  --color-status-error-bg: #34293a;
-  --color-status-info-fg: #89b4fa;
-  --color-status-info-bg: #292d43;
-  --color-status-neutral-bg: #313244;
-  --color-risk-low-fg: #94e2d5;
-  --color-risk-low-bg: #263538;
-  --color-risk-high-fg: #eba0ac;
-  --color-risk-high-bg: #362a33;
+  --ds-color-surface-base: #1e1e2e;
+  --ds-color-surface-raised: #11111b;
+  --ds-color-surface-sunken: #181825;
+  --ds-color-surface-selected: #34323b;
+  --ds-color-scrim: rgb(0 0 0 / 0.6);
+  --ds-color-text-primary: #cdd6f4;
+  --ds-color-text-secondary: #a6adc8; /* was #6c7086 (3.36) – D-01 */
+  --ds-color-text-disabled: #6c7086;
+  --ds-color-text-inverse: #11111b;
+  --ds-color-text-accent: #f9e2af;
+  --ds-color-border-subtle: #313244;
+  --ds-color-border-strong: #6c7086;
+  --ds-color-action-primary-bg: #f9e2af;
+  --ds-color-action-primary-bg-hover: #f5d48c;
+  --ds-color-action-primary-fg: #11111b;
+  --ds-color-action-danger-bg: #34293a;
+  --ds-color-status-success-fg: #a6e3a1;
+  --ds-color-status-success-bg: #2c323a;
+  --ds-color-status-warning-fg: #fab387;
+  --ds-color-status-warning-bg: #3a2f31;
+  --ds-color-status-error-fg: #f38ba8;
+  --ds-color-status-error-bg: #34293a;
+  --ds-color-status-info-fg: #89b4fa;
+  --ds-color-status-info-bg: #292d43;
+  --ds-color-status-neutral-bg: #313244;
+  --ds-color-risk-low-fg: #94e2d5;
+  --ds-color-risk-low-bg: #263538;
+  --ds-color-risk-high-fg: #eba0ac;
+  --ds-color-risk-high-bg: #362a33;
 }
 
 /*
  * Roles that share a value with another role in both themes are aliases, so each colour has one
  * source. Re-declared on every theme scope so nested scopes (the Tokens page) resolve them locally.
  */
-:root[data-ds] {
-  --color-surface-overlay: var(
-    --color-surface-raised
+:root {
+  --ds-color-surface-overlay: var(
+    --ds-color-surface-raised
   ); /* dialogs, menus and popovers sit on the raised surface */
-  --color-surface-hover: var(
-    --color-surface-sunken
+  --ds-color-surface-hover: var(
+    --ds-color-surface-sunken
   ); /* hover dips the surface one step */
-  --color-border-focus: var(--color-text-accent); /* focus ring (D-14) */
-  --color-indicator: var(
-    --color-text-accent
+  --ds-color-border-focus: var(--ds-color-text-accent); /* focus ring (D-14) */
+  --ds-color-indicator: var(
+    --ds-color-text-accent
   ); /* active nav and tab bar (D-04) */
-  --color-action-primary-border: var(
-    --color-text-accent
+  --ds-color-action-primary-border: var(
+    --ds-color-text-accent
   ); /* primary button boundary (D-03) */
-  --color-action-secondary-bg: var(--color-surface-sunken);
-  --color-action-secondary-bg-hover: var(--color-surface-base);
-  --color-action-danger-fg: var(--color-status-error-fg);
-  --color-status-neutral-fg: var(--color-text-primary);
+  --ds-color-action-secondary-bg: var(--ds-color-surface-sunken);
+  --ds-color-action-secondary-bg-hover: var(--ds-color-surface-base);
+  --ds-color-action-danger-fg: var(--ds-color-status-error-fg);
+  --ds-color-status-neutral-fg: var(--ds-color-text-primary);
   /* chart series: each ≥3:1 against the panel surface, and paired with a marker shape (F-17) */
-  --color-chart-1: var(--color-text-accent);
-  --color-chart-2: var(--color-status-info-fg);
-  --color-chart-3: var(--color-risk-low-fg);
+  --ds-color-chart-1: var(--ds-color-text-accent);
+  --ds-color-chart-2: var(--ds-color-status-info-fg);
+  --ds-color-chart-3: var(--ds-color-risk-low-fg);
 }

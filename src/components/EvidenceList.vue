@@ -413,7 +413,7 @@ async function openEvidence(item: Evidence) {
 function evidenceRoute(item: Evidence) {
   return {
     name: 'evidence:view',
-    params: { id: item.id },
+    params: { evidenceId: item.id },
     query: props.navigationQuery ?? route.query,
   };
 }

@@ -119,48 +119,48 @@ function onKeydown(event: KeyboardEvent): void {
 .tabs__list {
   display: flex;
   overflow-x: auto;
-  border-bottom: var(--border-width) solid var(--color-border-subtle);
+  border-bottom: var(--ds-border-width) solid var(--ds-color-border-subtle);
 }
 
 .tabs__tab {
   display: inline-flex;
   flex: none;
   align-items: center;
-  gap: var(--space-2);
-  min-height: var(--size-control-md);
-  padding: 0 var(--space-4);
-  border-bottom: var(--border-width-indicator) solid transparent;
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-label);
-  font-weight: var(--font-weight-medium);
-  letter-spacing: var(--tracking-wide);
+  gap: var(--ds-space-2);
+  min-height: var(--ds-size-control-md);
+  padding: 0 var(--ds-space-4);
+  border-bottom: var(--ds-border-width-indicator) solid transparent;
+  color: var(--ds-color-text-secondary);
+  font-size: var(--ds-font-size-label);
+  font-weight: var(--ds-font-weight-medium);
+  letter-spacing: var(--ds-tracking-wide);
   text-decoration: none;
   text-transform: uppercase;
   white-space: nowrap;
 }
 
 .tabs__tab:hover {
-  color: var(--color-text-primary);
-  background: var(--color-surface-hover);
+  color: var(--ds-color-text-primary);
+  background: var(--ds-color-surface-hover);
 }
 
 .tabs__tab[aria-selected='true'] {
-  border-bottom-color: var(--color-indicator);
-  color: var(--color-text-primary);
-  font-weight: var(--font-weight-bold);
+  border-bottom-color: var(--ds-color-indicator);
+  color: var(--ds-color-text-primary);
+  font-weight: var(--ds-font-weight-bold);
 }
 
 .tabs__tab:focus-visible {
-  outline-offset: calc(var(--focus-width) * -1);
+  outline-offset: calc(var(--ds-focus-width) * -1);
 }
 
 .tabs__count {
-  padding: 0 var(--space-1);
-  border: var(--border-width) solid var(--color-border-strong);
-  font-weight: var(--font-weight-bold);
+  padding: 0 var(--ds-space-1);
+  border: var(--ds-border-width) solid var(--ds-color-border-strong);
+  font-weight: var(--ds-font-weight-bold);
 }
 
 .tabs__panel {
-  padding-top: var(--space-6);
+  padding-top: var(--ds-space-6);
 }
 </style>

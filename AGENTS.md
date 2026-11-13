@@ -25,7 +25,7 @@ on pushes to `main`, and `:pr-<n>` for PRs labelled `preview`.
 ```sh
 make reviewable                              # format check + type-check + lint + unit tests: what CI runs, less the build
 npx vitest run src/path/to/file.spec.ts      # one spec
-npm run test:e2e                             # browser checks (axe, reflow, keyboard) for /next screens
+npm run test:e2e                             # browser checks (axe, reflow, keyboard) for migrated screens
 npm run dev                                  # dev server on http://localhost:3000
 VITE_API_URL=http://localhost:8080 npm run dev   # against a local-dev API
 VITE_API_PROXY=http://localhost:8080 npm run dev # same, proxied: works on any port (no CORS)
@@ -60,13 +60,15 @@ npm run format:fix                           # prettier --write src/
   `/config.json` at runtime over `src/defaultconfig.json`.
 - `src/oscal/`, `src/types/`: hand-written API types (OSCAL and non-OSCAL).
 - `src/utils/`, `src/parsers/`: pure helpers with co-located specs.
-- `src/ds/`, `src/screens/`: the redesign design system and the screens built on it, mounted
-  under `/next`. See `docs/REDESIGN_POC.md`. Inside them: no Tailwind or PrimeVue components
-  (the global PrimeVue toast is the one exception for now); style components with scoped CSS
-  that uses only the tokens in `src/ds/tokens/`; screens contain no CSS or class attributes;
-  read data through `useApiQuery` and render states with `DataState`. `npm run lint:css` enforces
-  the tokens; add each new `/next` route to `e2e/a11y.spec.ts` and its API calls to
-  `e2e/support/api.ts`.
+- **Redesign in progress (this branch):** the UI is moving page by page onto the design system in
+  `src/ds/`, with migrated pages in `src/screens/`. Read `docs/REDESIGN.md` first: it has the
+  migration steps, URL scheme and tracker. A migrated page replaces its classic page (which is
+  deleted); classic pages render inside the new shell via `LegacyPage` until their turn. In
+  `src/ds` and `src/screens`: no Tailwind or PrimeVue components (the global PrimeVue toast is
+  the one exception for now); scoped CSS using only `--ds-` tokens; screens contain no CSS or
+  class attributes; read data through `useApiQuery` and render states with `DataState`.
+  `npm run lint:css` enforces the tokens; add each migrated route to `e2e/a11y.spec.ts` and its
+  API calls to `e2e/support/api.ts`.
 
 ## API client traps
 

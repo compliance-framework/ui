@@ -94,41 +94,43 @@ function onInput(event: Event): void {
 
 .text-input__icon {
   position: absolute;
-  top: calc(50% - var(--size-icon-md) / 2);
-  left: var(--space-3);
-  color: var(--color-text-secondary);
+  top: calc(50% - var(--ds-size-icon-md) / 2);
+  left: var(--ds-space-3);
+  color: var(--ds-color-text-secondary);
   pointer-events: none;
 }
 
 .text-input__control {
   width: 100%;
   min-width: 0;
-  height: var(--size-control-md);
+  height: var(--ds-size-control-md);
   margin: 0;
-  padding: 0 var(--space-3);
-  background: var(--color-surface-sunken);
-  border: var(--border-width) solid var(--color-border-strong);
-  border-radius: var(--radius-none);
-  color: var(--color-text-primary);
-  font-size: var(--font-size-body);
-  line-height: var(--leading-snug);
-  transition: background-color var(--duration-fast) var(--ease-standard);
+  padding: 0 var(--ds-space-3);
+  background: var(--ds-color-surface-sunken);
+  border: var(--ds-border-width) solid var(--ds-color-border-strong);
+  border-radius: var(--ds-radius-none);
+  color: var(--ds-color-text-primary);
+  font-size: var(--ds-font-size-body);
+  line-height: var(--ds-leading-snug);
+  transition: background-color var(--ds-duration-fast) var(--ds-ease-standard);
 }
 
 .text-input__control:hover {
-  background: var(--color-surface-base);
+  background: var(--ds-color-surface-base);
 }
 
 .text-input__control::placeholder {
-  color: var(--color-text-secondary);
+  color: var(--ds-color-text-secondary);
   opacity: 1;
 }
 
 .text-input__control--icon {
-  padding-left: calc(var(--space-3) + var(--size-icon-md) + var(--space-2));
+  padding-left: calc(
+    var(--ds-space-3) + var(--ds-size-icon-md) + var(--ds-space-2)
+  );
 }
 
 .text-input__control--invalid {
-  border-color: var(--color-status-error-fg);
+  border-color: var(--ds-color-status-error-fg);
 }
 </style>

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { subjectSource } from '@/types/subjects';
-import Button from '@/ds/components/Button/Button.vue';
 import DescriptionList from '@/ds/components/DescriptionList/DescriptionList.vue';
 import InlineMessage from '@/ds/components/InlineMessage/InlineMessage.vue';
 import ItemList from '@/ds/components/ItemList/ItemList.vue';
@@ -11,9 +10,8 @@ import Text from '@/ds/components/Text/Text.vue';
 import { canPlayBack, useEvidenceRecord } from './evidenceRecord';
 
 /**
- * Overview: what the evidence says and why, the tasks behind it, and what it is about. Playback
- * of the policy evaluation is still on the classic page, linked from here when the agent stored
- * what playback needs.
+ * Overview: what the evidence says and why, the tasks behind it, and what it is about. Policy
+ * playback is not rebuilt yet; a note says so when the agent stored what playback needs.
  */
 const { evidence } = useEvidenceRecord();
 const item = computed(() => evidence.value!);
@@ -86,20 +84,12 @@ const playback = computed(() => canPlayBack(item.value.props));
     <InlineMessage
       v-if="playback"
       tone="info"
-      title="This evaluation can be played back"
+      title="Playback hasn't been rebuilt yet"
     >
       <p>
-        The agent stored the policy and input it evaluated. Playback is on the
-        classic page for now.
+        The agent stored the policy and input it evaluated, so this evaluation
+        can be played back once playback is part of the new UI.
       </p>
-      <template #actions>
-        <Button
-          size="sm"
-          icon="external"
-          :to="{ name: 'evidence:view', params: { id: item.id } }"
-          >Open playback</Button
-        >
-      </template>
     </InlineMessage>
   </Stack>
 </template>

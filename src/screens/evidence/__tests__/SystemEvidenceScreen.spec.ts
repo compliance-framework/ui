@@ -41,20 +41,20 @@ const evidence = (id: string, title: string, state: string) => ({
 const searchCalls = () =>
   api.post.mock.calls.filter(([url]) => String(url).endsWith('/search'));
 
-async function mountScreen(path = '/next/systems/sys-1/evidence') {
+async function mountScreen(path = '/systems/sys-1/evidence') {
   const Stub = defineComponent({ render: () => h('div') });
   const router = createRouter({
     history: createMemoryHistory(),
     routes: [
       {
-        path: '/next/systems/:systemId/evidence',
-        name: 'ds-system-evidence',
+        path: '/systems/:systemId/evidence',
+        name: 'system-evidence',
         component: SystemEvidenceScreen,
       },
       { path: '/evidence/:id', name: 'evidence:view', component: Stub },
       {
-        path: '/next/systems/:systemId/evidence/:evidenceId',
-        name: 'ds-evidence-overview',
+        path: '/systems/:systemId/evidence/:evidenceId',
+        name: 'system-evidence-record',
         component: Stub,
       },
       { path: '/system/evidence', name: 'system:evidence', component: Stub },
@@ -101,7 +101,7 @@ describe('SystemEvidenceScreen', () => {
 
   it("searches the system's scoped endpoint with the URL's view", async () => {
     await mountScreen(
-      '/next/systems/sys-1/evidence?filter=provider%3Daws&sortBy=name&sortDirection=asc',
+      '/systems/sys-1/evidence?filter=provider%3Daws&sortBy=name&sortDirection=asc',
     );
     const [url, body, config] = searchCalls()[0]!;
     expect(url).toBe('/api/oscal/system-security-plans/sys-1/evidence/search');
@@ -121,18 +121,15 @@ describe('SystemEvidenceScreen', () => {
     expect(wrapper.text()).toContain('Not satisfied');
     const link = wrapper.findAll('tbody a')[0]!;
     expect(link.text()).toBe('Backups verified');
-    expect(link.attributes('href')).toBe('/next/systems/sys-1/evidence/e1');
+    expect(link.attributes('href')).toBe('/systems/sys-1/evidence/e1');
   });
 
-  it('carries the view to the classic page', async () => {
+  it('keeps the list view on links into a record', async () => {
     const { wrapper } = await mountScreen(
-      '/next/systems/sys-1/evidence?sortBy=name&sortDirection=asc',
+      '/systems/sys-1/evidence?sortBy=name&sortDirection=asc',
     );
-    const classic = wrapper
-      .findAll('a')
-      .find((a) => a.text().includes('Open classic view'));
-    expect(classic!.attributes('href')).toBe(
-      '/system/evidence?sortBy=name&sortDirection=asc',
+    expect(wrapper.findAll('tbody a')[0]!.attributes('href')).toBe(
+      '/systems/sys-1/evidence/e1?sortBy=name&sortDirection=asc',
     );
   });
 
@@ -155,7 +152,7 @@ describe('SystemEvidenceScreen', () => {
 
   it('saves the applied search as a filter for this system', async () => {
     const { wrapper } = await mountScreen(
-      '/next/systems/sys-1/evidence?filter=provider%3Daws',
+      '/systems/sys-1/evidence?filter=provider%3Daws',
     );
     const save = wrapper
       .findAll('a')
@@ -201,7 +198,7 @@ describe('SystemEvidenceScreen', () => {
   });
 
   it('charts the status trend for the applied search', async () => {
-    await mountScreen('/next/systems/sys-1/evidence?filter=backups');
+    await mountScreen('/systems/sys-1/evidence?filter=backups');
     const trend = api.post.mock.calls.find(([url]) =>
       String(url).endsWith('/status-over-time'),
     );

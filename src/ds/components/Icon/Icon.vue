@@ -30,17 +30,17 @@ withDefaults(
 }
 
 .icon--sm {
-  width: var(--size-icon-sm);
-  height: var(--size-icon-sm);
+  width: var(--ds-size-icon-sm);
+  height: var(--ds-size-icon-sm);
 }
 
 .icon--md {
-  width: var(--size-icon-md);
-  height: var(--size-icon-md);
+  width: var(--ds-size-icon-md);
+  height: var(--ds-size-icon-md);
 }
 
 .icon--lg {
-  width: var(--size-icon-lg);
-  height: var(--size-icon-lg);
+  width: var(--ds-size-icon-lg);
+  height: var(--ds-size-icon-lg);
 }
 </style>

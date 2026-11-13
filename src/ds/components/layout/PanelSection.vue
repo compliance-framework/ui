@@ -52,10 +52,10 @@ const headingId = useId();
 .panel-section {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--ds-space-3);
   min-width: 0;
-  padding-top: var(--space-4);
-  border-top: var(--border-width) solid var(--color-border-subtle);
+  padding-top: var(--ds-space-4);
+  border-top: var(--ds-border-width) solid var(--ds-color-border-subtle);
 }
 
 .panel-section__header {
@@ -63,32 +63,32 @@ const headingId = useId();
   flex-wrap: wrap;
   align-items: flex-start;
   justify-content: space-between;
-  gap: var(--space-2) var(--space-3);
+  gap: var(--ds-space-2) var(--ds-space-3);
 }
 
 .panel-section__titles {
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
+  gap: var(--ds-space-1);
   min-width: 0;
 }
 
 .panel-section__title {
-  font-family: var(--font-display);
-  font-size: var(--font-size-h3);
-  font-weight: var(--font-weight-bold);
-  letter-spacing: var(--tracking-card);
-  line-height: var(--leading-snug);
+  font-family: var(--ds-font-display);
+  font-size: var(--ds-font-size-h3);
+  font-weight: var(--ds-font-weight-bold);
+  letter-spacing: var(--ds-tracking-card);
+  line-height: var(--ds-leading-snug);
 }
 
 .panel-section__description {
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-caption);
+  color: var(--ds-color-text-secondary);
+  font-size: var(--ds-font-size-caption);
 }
 
 .panel-section__actions {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-2);
+  gap: var(--ds-space-2);
 }
 </style>

@@ -22,17 +22,34 @@ import {
 } from './evidenceRecord';
 
 /**
- * An evidence record inside This System (/next/systems/:systemId/evidence/:evidenceId/...), with
- * the classic record page's tabs as routes, so each tab has its own shareable URL. The header
+ * An evidence record, with the classic record page's tabs as routes, so each tab has its own
+ * shareable URL. It opens inside a system (/systems/:systemId/evidence/:evidenceId/...) from This
+ * System > Evidence, or on its own (/evidence/:evidenceId/...) from global pages. The header
  * carries the status, signature and key facts; the list's search travels in the query so
  * "Evidence" in the breadcrumb returns to the same view.
  */
 const route = useRoute();
 const api = useAuthenticatedInstance();
 
-const systemId = computed(() => String(route.params.systemId));
+const systemId = computed(() =>
+  typeof route.params.systemId === 'string' ? route.params.systemId : undefined,
+);
 const evidenceId = computed(() => String(route.params.evidenceId));
-const record = useEvidenceLoader(api, () => evidenceId.value);
+/** Tab route names: `<prefix>`, `<prefix>-metadata`, … (see evidenceRecordTabs). */
+const prefix = computed(() =>
+  systemId.value ? 'system-evidence-record' : 'evidence:view',
+);
+function link(tab = '', id = evidenceId.value) {
+  return {
+    name: tab ? `${prefix.value}-${tab}` : prefix.value,
+    params: {
+      ...(systemId.value ? { systemId: systemId.value } : {}),
+      evidenceId: id,
+    },
+    query: listQuery.value,
+  };
+}
+const record = useEvidenceLoader(api, () => evidenceId.value, link);
 provideEvidenceRecord(record);
 watch(evidenceId, () => void record.reload(), { immediate: true });
 
@@ -43,30 +60,25 @@ const listQuery = computed(() => viewQuery(readView(route.query)));
 const crumbs = computed(() => [
   {
     label: 'Evidence',
-    to: {
-      name: 'ds-system-evidence',
-      params: { systemId: systemId.value },
-      query: listQuery.value,
-    },
+    to: systemId.value
+      ? {
+          name: 'system-evidence',
+          params: { systemId: systemId.value },
+          query: listQuery.value,
+        }
+      : { name: 'evidence:index', query: listQuery.value },
   },
 ]);
 
 const tabs = computed(() =>
   [
-    { label: 'Overview', name: 'ds-evidence-overview' },
-    { label: 'Metadata', name: 'ds-evidence-metadata' },
-    { label: 'Risks', name: 'ds-evidence-risks' },
-    { label: 'Media', name: 'ds-evidence-media' },
-    { label: 'Signature', name: 'ds-evidence-signature' },
-    { label: 'History', name: 'ds-evidence-history' },
-  ].map((tab) => ({
-    label: tab.label,
-    to: {
-      name: tab.name,
-      params: { systemId: systemId.value, evidenceId: evidenceId.value },
-      query: listQuery.value,
-    },
-  })),
+    { label: 'Overview', tab: '' },
+    { label: 'Metadata', tab: 'metadata' },
+    { label: 'Risks', tab: 'risks' },
+    { label: 'Media', tab: 'media' },
+    { label: 'Signature', tab: 'signature' },
+    { label: 'History', tab: 'history' },
+  ].map(({ label, tab }) => ({ label, to: link(tab) })),
 );
 
 const state = computed(() => {
@@ -154,12 +166,7 @@ const executionId = computed(
         <template #facts>
           <DescriptionList :items="facts" layout="inline">
             <template v-if="record.latestId.value" #value-expires>
-              <TextLink
-                :to="{
-                  name: 'ds-evidence-overview',
-                  params: { systemId, evidenceId: record.latestId.value },
-                  query: listQuery,
-                }"
+              <TextLink :to="link('', record.latestId.value)"
                 >Go to the latest evidence</TextLink
               >
             </template>
@@ -178,15 +185,6 @@ const executionId = computed(
             icon="refresh"
             :to="{ name: 'evidence:update', params: { id: evidence.id } }"
             >Re-submit</Button
-          >
-          <Button
-            icon="external"
-            :to="{
-              name: 'evidence:view',
-              params: { id: evidence.id },
-              query: { ...listQuery, from: 'system' },
-            }"
-            >Open classic view</Button
           >
         </template>
       </PageHeader>

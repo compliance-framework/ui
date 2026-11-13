@@ -220,75 +220,77 @@ function escape(event: KeyboardEvent): void {
 
 .text-completion__icon {
   position: absolute;
-  top: calc(50% - var(--size-icon-md) / 2);
-  left: var(--space-3);
-  color: var(--color-text-secondary);
+  top: calc(50% - var(--ds-size-icon-md) / 2);
+  left: var(--ds-space-3);
+  color: var(--ds-color-text-secondary);
   pointer-events: none;
 }
 
 .text-completion__input {
   width: 100%;
   min-width: 0;
-  height: var(--size-control-md);
+  height: var(--ds-size-control-md);
   margin: 0;
-  padding: 0 var(--space-3);
-  background: var(--color-surface-sunken);
-  border: var(--border-width) solid var(--color-border-strong);
-  border-radius: var(--radius-none);
-  color: var(--color-text-primary);
-  font-family: var(--font-ui);
-  font-size: var(--font-size-body);
-  line-height: var(--leading-snug);
-  transition: background-color var(--duration-fast) var(--ease-standard);
+  padding: 0 var(--ds-space-3);
+  background: var(--ds-color-surface-sunken);
+  border: var(--ds-border-width) solid var(--ds-color-border-strong);
+  border-radius: var(--ds-radius-none);
+  color: var(--ds-color-text-primary);
+  font-family: var(--ds-font-ui);
+  font-size: var(--ds-font-size-body);
+  line-height: var(--ds-leading-snug);
+  transition: background-color var(--ds-duration-fast) var(--ds-ease-standard);
 }
 
 .text-completion__input:hover {
-  background: var(--color-surface-base);
+  background: var(--ds-color-surface-base);
 }
 
 .text-completion__input::placeholder {
-  color: var(--color-text-secondary);
+  color: var(--ds-color-text-secondary);
   opacity: 1;
 }
 
 .text-completion__input--icon {
-  padding-left: calc(var(--space-3) + var(--size-icon-md) + var(--space-2));
+  padding-left: calc(
+    var(--ds-space-3) + var(--ds-size-icon-md) + var(--ds-space-2)
+  );
 }
 
 .text-completion__input--invalid {
-  border-color: var(--color-status-error-fg);
+  border-color: var(--ds-color-status-error-fg);
 }
 
 .text-completion__choices {
-  z-index: var(--z-overlay);
+  z-index: var(--ds-z-overlay);
   width: var(--reka-combobox-trigger-width);
   max-width: var(--reka-combobox-content-available-width);
   max-height: var(--reka-combobox-content-available-height);
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: var(--space-1) 0;
-  background: var(--color-surface-overlay);
-  border: var(--border-width) solid var(--color-border-strong);
-  border-radius: var(--radius-none);
-  box-shadow: var(--shadow-raised);
-  font-family: var(--font-ui);
-  font-size: var(--font-size-body);
-  line-height: var(--leading-body);
+  padding: var(--ds-space-1) 0;
+  background: var(--ds-color-surface-overlay);
+  border: var(--ds-border-width) solid var(--ds-color-border-strong);
+  border-radius: var(--ds-radius-none);
+  box-shadow: var(--ds-shadow-raised);
+  font-family: var(--ds-font-ui);
+  font-size: var(--ds-font-size-body);
+  line-height: var(--ds-leading-body);
 }
 
 .text-completion__choice {
-  min-height: var(--size-control-md);
-  padding: var(--space-2) var(--space-3);
-  color: var(--color-text-primary);
+  min-height: var(--ds-size-control-md);
+  padding: var(--ds-space-2) var(--ds-space-3);
+  color: var(--ds-color-text-primary);
   overflow-wrap: anywhere;
   cursor: pointer;
 }
 
 .text-completion__choice[data-highlighted] {
-  background: var(--color-surface-hover);
+  background: var(--ds-color-surface-hover);
 }
 
 .text-completion__choice[data-state='checked'] {
-  font-weight: var(--font-weight-semibold);
+  font-weight: var(--ds-font-weight-semibold);
 }
 </style>

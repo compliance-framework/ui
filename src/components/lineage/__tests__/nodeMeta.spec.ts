@@ -267,7 +267,7 @@ describe('nodeDetailRoute', () => {
   it('routes evidence nodes to evidence:view with the evidenceId', () => {
     expect(
       nodeDetailRoute(base({ nodeType: 'evidence', evidenceId: 'e-1' })),
-    ).toEqual({ name: 'evidence:view', params: { id: 'e-1' } });
+    ).toEqual({ name: 'evidence:view', params: { evidenceId: 'e-1' } });
   });
 
   it('never uses the (stream) key as the evidence id — returns null without evidenceId', () => {

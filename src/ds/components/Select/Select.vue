@@ -66,42 +66,43 @@ const selectedLabel = computed(
   appearance: none;
   width: 100%;
   min-width: 0;
-  height: var(--size-control-md);
+  height: var(--ds-size-control-md);
   margin: 0;
-  padding: 0 calc(var(--space-3) + var(--size-icon-md) + var(--space-2)) 0
-    var(--space-3);
-  background: var(--color-surface-sunken);
-  border: var(--border-width) solid var(--color-border-strong);
-  border-radius: var(--radius-none);
-  color: var(--color-text-primary);
-  font-size: var(--font-size-body);
-  line-height: var(--leading-snug);
+  padding: 0
+    calc(var(--ds-space-3) + var(--ds-size-icon-md) + var(--ds-space-2)) 0
+    var(--ds-space-3);
+  background: var(--ds-color-surface-sunken);
+  border: var(--ds-border-width) solid var(--ds-color-border-strong);
+  border-radius: var(--ds-radius-none);
+  color: var(--ds-color-text-primary);
+  font-size: var(--ds-font-size-body);
+  line-height: var(--ds-leading-snug);
   text-overflow: ellipsis;
   cursor: pointer;
-  transition: background-color var(--duration-fast) var(--ease-standard);
+  transition: background-color var(--ds-duration-fast) var(--ds-ease-standard);
 }
 
 .select__control:hover {
-  background: var(--color-surface-base);
+  background: var(--ds-color-surface-base);
 }
 
 .select__control--placeholder {
-  color: var(--color-text-secondary);
+  color: var(--ds-color-text-secondary);
 }
 
 .select__control option {
-  color: var(--color-text-primary);
+  color: var(--ds-color-text-primary);
 }
 
 .select__control--invalid {
-  border-color: var(--color-status-error-fg);
+  border-color: var(--ds-color-status-error-fg);
 }
 
 .select__chevron {
   position: absolute;
-  top: calc(50% - var(--size-icon-md) / 2);
-  right: var(--space-3);
-  color: var(--color-text-secondary);
+  top: calc(50% - var(--ds-size-icon-md) / 2);
+  right: var(--ds-space-3);
+  color: var(--ds-color-text-secondary);
   pointer-events: none;
 }
 </style>

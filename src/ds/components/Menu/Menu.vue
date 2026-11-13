@@ -178,105 +178,105 @@ function onSelect(event: Event, entry: MenuAction): void {
   flex: none;
   align-items: center;
   justify-content: center;
-  width: var(--size-control-md);
-  height: var(--size-control-md);
+  width: var(--ds-size-control-md);
+  height: var(--ds-size-control-md);
   padding: 0;
-  border: var(--border-width) solid transparent;
-  border-radius: var(--radius-none);
+  border: var(--ds-border-width) solid transparent;
+  border-radius: var(--ds-radius-none);
   background: transparent;
-  color: var(--color-text-primary);
+  color: var(--ds-color-text-primary);
   cursor: pointer;
-  transition: background-color var(--duration-fast) var(--ease-standard);
+  transition: background-color var(--ds-duration-fast) var(--ds-ease-standard);
 }
 
 .menu-trigger:hover,
 .menu-trigger[aria-expanded='true'] {
-  background: var(--color-surface-hover);
+  background: var(--ds-color-surface-hover);
 }
 
 .menu {
-  z-index: var(--z-overlay);
+  z-index: var(--ds-z-overlay);
   display: flex;
   flex-direction: column;
-  min-width: var(--width-column-sm);
+  min-width: var(--ds-width-column-sm);
   max-width: min(
-    var(--width-column-lg),
+    var(--ds-width-column-lg),
     var(--reka-dropdown-menu-content-available-width)
   );
   max-height: var(--reka-dropdown-menu-content-available-height);
   overflow-y: auto;
-  padding: var(--space-1) 0;
-  background: var(--color-surface-overlay);
-  border: var(--border-width) solid var(--color-border-strong);
-  border-radius: var(--radius-none);
-  box-shadow: var(--shadow-raised);
+  padding: var(--ds-space-1) 0;
+  background: var(--ds-color-surface-overlay);
+  border: var(--ds-border-width) solid var(--ds-color-border-strong);
+  border-radius: var(--ds-radius-none);
+  box-shadow: var(--ds-shadow-raised);
 }
 
 .menu[data-state='open'] {
-  animation: menu-in var(--duration-fast) var(--ease-standard);
+  animation: menu-in var(--ds-duration-fast) var(--ds-ease-standard);
 }
 
 .menu__header {
-  padding: var(--space-2) var(--space-3);
-  font-size: var(--font-size-body);
+  padding: var(--ds-space-2) var(--ds-space-3);
+  font-size: var(--ds-font-size-body);
   overflow-wrap: anywhere;
 }
 
 .menu__separator {
-  height: var(--border-width);
-  margin: var(--space-1) 0;
-  background: var(--color-border-subtle);
+  height: var(--ds-border-width);
+  margin: var(--ds-space-1) 0;
+  background: var(--ds-color-border-subtle);
 }
 
 .menu__label {
-  padding: var(--space-2) var(--space-3) var(--space-1);
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-label);
-  font-weight: var(--font-weight-bold);
-  letter-spacing: var(--tracking-wide);
-  line-height: var(--leading-snug);
+  padding: var(--ds-space-2) var(--ds-space-3) var(--ds-space-1);
+  color: var(--ds-color-text-secondary);
+  font-size: var(--ds-font-size-label);
+  font-weight: var(--ds-font-weight-bold);
+  letter-spacing: var(--ds-tracking-wide);
+  line-height: var(--ds-leading-snug);
   text-transform: uppercase;
 }
 
 .menu__item {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
-  min-height: var(--size-control-md);
-  padding: var(--space-2) var(--space-3);
-  border: var(--border-width) solid transparent;
-  color: var(--color-text-primary);
-  font-size: var(--font-size-body);
-  line-height: var(--leading-snug);
+  gap: var(--ds-space-2);
+  min-height: var(--ds-size-control-md);
+  padding: var(--ds-space-2) var(--ds-space-3);
+  border: var(--ds-border-width) solid transparent;
+  color: var(--ds-color-text-primary);
+  font-size: var(--ds-font-size-body);
+  line-height: var(--ds-leading-snug);
   text-decoration: none;
   cursor: pointer;
   user-select: none;
 }
 
 .menu__item[data-highlighted] {
-  background: var(--color-surface-hover);
+  background: var(--ds-color-surface-hover);
 }
 
 .menu__item--current {
-  border-left: var(--border-width-indicator) solid var(--color-indicator);
-  background: var(--color-surface-selected);
-  font-weight: var(--font-weight-bold);
+  border-left: var(--ds-border-width-indicator) solid var(--ds-color-indicator);
+  background: var(--ds-color-surface-selected);
+  font-weight: var(--ds-font-weight-bold);
 }
 
 .menu__item--danger {
-  color: var(--color-action-danger-fg);
+  color: var(--ds-color-action-danger-fg);
 }
 
 .menu__item--danger[data-highlighted] {
-  background: var(--color-action-danger-bg);
+  background: var(--ds-color-action-danger-bg);
 }
 
 .menu__item.menu__item--disabled,
 .menu__item.menu__item--disabled[data-highlighted] {
   border-style: dashed;
-  border-color: var(--color-border-strong);
+  border-color: var(--ds-color-border-strong);
   background: transparent;
-  color: var(--color-text-disabled);
+  color: var(--ds-color-text-disabled);
   cursor: not-allowed;
 }
 
@@ -289,8 +289,8 @@ function onSelect(event: Event, entry: MenuAction): void {
 }
 
 .menu__reason {
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-caption);
+  color: var(--ds-color-text-secondary);
+  font-size: var(--ds-font-size-caption);
 }
 
 .menu__indicator {

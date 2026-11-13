@@ -210,7 +210,7 @@ describe('EvidenceList', () => {
 
     expect(pushMock).toHaveBeenCalledWith({
       name: 'evidence:view',
-      params: { id: 'evidence-1' },
+      params: { evidenceId: 'evidence-1' },
       query: {
         filter: 'recent',
         page: '2',

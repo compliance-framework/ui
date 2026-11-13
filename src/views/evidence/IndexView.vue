@@ -169,9 +169,8 @@ import { usePermissions } from '@/composables/usePermissions';
 import { buildEvidenceCsv, downloadCsv } from '@/utils/evidence-csv';
 import { RESOURCES, ACTIONS } from '@/constants/permissions';
 
-// One page body for both evidence pages: Global > Evidence (the defaults, all evidence)
-// and This System > Evidence (system/EvidenceView.vue), which passes the SSP's scoped
-// search endpoints and the SSP to pre-select when the search is saved as a filter.
+// Global > Evidence. The endpoint and SSP props date from when This System > Evidence shared
+// this page; it is now src/screens/evidence/SystemEvidenceScreen.vue.
 const props = withDefaults(
   defineProps<{
     searchEndpoint?: string;
