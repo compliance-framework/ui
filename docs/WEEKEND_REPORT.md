@@ -476,3 +476,16 @@ DocumentFormScreen.vue`, configured in `formKinds.ts`). Errors show next to thei
   `ComplianceProgressView`. The profile record's Compliance tab reuses it, replacing the
   classic `ComplianceProgressPanel` (deleted, with its spec). The profile tab hides the
   inherited-capability links, which only make sense for a system.
+
+### Record pages' Overview tabs
+
+- **Decision:** the component definition, assessment plan, assessment results and POA&M
+  overviews now share one design-system tab (`DocumentOverviewTab`): details (title, version,
+  published, last modified, OSCAL version, UUID, remarks), what the document imports (an
+  assessment plan's SSP, assessment results' plan), and counts of what it contains. "Edit
+  details" goes to the design-system edit form where one exists. Delete stays where the classic
+  overview had it (assessment results only), with a design-system confirm.
+- Dropped from the classic overviews: buttons that duplicated the tab bar ("Manage tasks", "Edit
+  component templates"), "Available features" notices, and the POA&M overview's preview of its
+  first five items (the POA&M items tab lists them).
+- **Gap:** the profile's first tab (Controls) and the workflow overview tabs are still classic.

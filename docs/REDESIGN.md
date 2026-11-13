@@ -96,8 +96,9 @@ Replace each with a design-system version, then delete the classic component.
 
 - Record pages (workflow definition, workflow instance, profile, component definition, assessment
   plan, POA&M, assessment results): every tab's content is the classic tab view, except the JSON
-  tabs (the five OSCAL ones share `DocumentJsonTab`; the workflow ones have their own) and the
-  profile's Compliance tab (`ComplianceProgressView`, shared with This System > Compliance).
+  tabs (the five OSCAL ones share `DocumentJsonTab`; the workflow ones have their own) the
+  profile's Compliance tab (`ComplianceProgressView`, shared with This System > Compliance), and the
+  four OSCAL Overview tabs (`DocumentOverviewTab`).
 
 ## To-dos
 

@@ -2,7 +2,6 @@ import { describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import { ref } from 'vue';
 import type { AssessmentResult } from '@/oscal';
-import AssessmentResultsOverviewView from '../AssessmentResultsOverviewView.vue';
 import AssessmentResultsImportApView from '../AssessmentResultsImportApView.vue';
 
 vi.mock('@/composables/axios', () => ({
@@ -35,18 +34,6 @@ const assessmentResults = {
 const global = { directives: { tooltip: {} }, stubs: { RouterLink: true } };
 
 describe('assessment results import-ap', () => {
-  it('shows the stored import-ap href and the real result count', async () => {
-    const wrapper = mount(AssessmentResultsOverviewView, {
-      props: { assessmentResults },
-      global,
-    });
-    await flushPromises();
-
-    expect(wrapper.text()).toContain('./ap.oscal.xml');
-    expect(wrapper.text()).toContain('Imported plan');
-    expect(wrapper.text()).toMatch(/contains\s*1\s*result/);
-  });
-
   it('prefills the import-ap form with the stored values', async () => {
     const wrapper = mount(AssessmentResultsImportApView, {
       props: { assessmentResults },

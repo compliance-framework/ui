@@ -511,8 +511,7 @@ const authenticatedRoutes = [
       {
         path: '',
         name: 'component-definition-overview',
-        component: () =>
-          import('../views/component-definitions/ComponentDefinitionOverviewView.vue'),
+        component: () => import('../screens/documents/DocumentOverviewTab.vue'),
       },
       {
         path: 'components',
@@ -579,8 +578,7 @@ const authenticatedRoutes = [
       {
         path: '',
         name: 'assessment-plan-overview',
-        component: () =>
-          import('../views/assessment-plans/AssessmentPlanOverviewView.vue'),
+        component: () => import('../screens/documents/DocumentOverviewTab.vue'),
       },
       {
         path: 'tasks',
@@ -637,8 +635,7 @@ const authenticatedRoutes = [
       {
         path: '',
         name: 'plan-of-action-and-milestones-overview',
-        component: () =>
-          import('../views/plan-of-actions-and-milestones/PlanOfActionAndMilestonesOverviewView.vue'),
+        component: () => import('../screens/documents/DocumentOverviewTab.vue'),
       },
       {
         path: 'poam-items',
@@ -752,8 +749,7 @@ const authenticatedRoutes = [
       {
         path: '',
         name: 'assessment-results-overview',
-        component: () =>
-          import('../views/assessment-results/AssessmentResultsOverviewView.vue'),
+        component: () => import('../screens/documents/DocumentOverviewTab.vue'),
       },
       {
         path: 'import-ap',
