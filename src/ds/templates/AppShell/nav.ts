@@ -37,12 +37,6 @@ export const navGroups: NavGroup[] = [
     collapsible: false,
     items: [
       {
-        route: 'systems',
-        label: 'All systems',
-        icon: 'systems',
-        permission: read(RESOURCES.SSP),
-      },
-      {
         route: 'system-evidence',
         label: 'Evidence',
         icon: 'evidence',
@@ -70,6 +64,12 @@ export const navGroups: NavGroup[] = [
     label: 'Global',
     collapsible: false,
     items: [
+      {
+        route: 'systems',
+        label: 'All systems',
+        icon: 'systems',
+        permission: read(RESOURCES.SSP),
+      },
       {
         route: 'evidence:index',
         label: 'Evidence',

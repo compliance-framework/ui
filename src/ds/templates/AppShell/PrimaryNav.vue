@@ -121,7 +121,7 @@ const isOpen = (id: string, containsActive: boolean) =>
         v-if="group.id === 'system' && !system && mode !== 'rail'"
         class="primary-nav__hint"
       >
-        No system chosen. Pick one above, or from All systems.
+        No system chosen. Pick one above, or from All systems under Global.
       </p>
       <ul
         v-if="!group.collapsible"
