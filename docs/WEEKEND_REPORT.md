@@ -260,3 +260,24 @@ page structurally migrated, say so and I'll switch.
   (status, evidence linked to its record, last seen) with a breadcrumb back to the catalog,
   replacing the classic `EvidenceList` (now deleted). The classic spec's case (the endpoint
   returns `labels: null`) is kept.
+
+### Control links, and a design-system Combobox
+
+- **Control links** (`/control-links`): individual and catalog links as query tabs
+  (`?view=catalog`), relationship as a tag, Delete and Re-sync in the row menu. Deleting still
+  confirms in the classic PrimeVue dialog (via `useControlLinkDelete`). **Gap:** worth moving
+  to the design-system confirm when the composable is next touched.
+- **New control link**: scope as a radio group, then source, relationship and target in panel
+  sections. Errors show by each field ("Choose the source catalog.", "A control can't be linked
+  to itself.").
+- **Decision (design system): new `Combobox`** (`src/ds/components/Combobox`). The classic form
+  used PrimeVue's filterable selects, and a catalog can have hundreds of controls, so a native
+  select wouldn't do. The Combobox is built on reka-ui's: type to filter by label or ID, arrow
+  keys and Enter to choose, it shows the chosen label, it restores the chosen label if you leave
+  without choosing (only listed values can be picked), and it caps the list at 100 with "Type to
+  narrow". It reuses TextCompletion's portal targeting, so it works inside dialogs. Checked live
+  with mouse and keyboard. It should also suit the other control pickers still in classic
+  islands.
+- **Found (mine):** the user page's axe failure included a heading-order issue I'd blamed on
+  its classic islands. It was my own panel sections (h3 straight after the h1). Fixed there and
+  on New control link.

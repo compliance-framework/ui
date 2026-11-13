@@ -168,16 +168,20 @@ async function remove(): Promise<void> {
 
     <Stack gap="6">
       <Panel>
-        <PanelSection title="Account">
+        <PanelSection title="Account" :level="2">
           <DescriptionList :items="facts" />
         </PanelSection>
-        <PanelSection v-if="attributes" title="Attributes from sign-in">
+        <PanelSection
+          v-if="attributes"
+          title="Attributes from sign-in"
+          :level="2"
+        >
           <CodeBlock :code="attributes" label="User attributes" />
         </PanelSection>
       </Panel>
 
       <Panel>
-        <PanelSection title="Groups">
+        <PanelSection title="Groups" :level="2">
           <DataState
             :status="groups.status.value"
             subject="groups"

@@ -357,6 +357,25 @@ export async function mockApi(page: Page, options: MockOptions = {}) {
           metadata: { control: { id: 'ac-2', title: 'Account management' } },
         },
       );
+    if (path === '/api/control-links' && method === 'GET')
+      return list(
+        route,
+        lists,
+        {
+          data: [
+            {
+              'source-catalog-id': 'catalogs-1',
+              'source-control-id': 'pol-ac',
+              'target-catalog-id': 'catalogs-2',
+              'target-control-id': 'ac-1',
+              'relationship-type': 'implements',
+            },
+          ],
+        },
+        { data: [] },
+      );
+    if (path === '/api/control-links/catalog' && method === 'GET')
+      return json(route, { data: [] });
     if (path === '/api/poam-items')
       return list(
         route,

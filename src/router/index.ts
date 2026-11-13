@@ -845,17 +845,20 @@ const authenticatedRoutes = [
   {
     path: '/control-links',
     name: 'control-links-list',
-    component: () => import('../views/control-links/ControlLinkListView.vue'),
+    component: () => import('../screens/control-links/ControlLinksScreen.vue'),
     meta: {
       requiresAuth: true,
+      ds: true,
     },
   },
   {
     path: '/control-links/new',
     name: 'control-links-create',
-    component: () => import('../views/control-links/ControlLinkCreateView.vue'),
+    component: () =>
+      import('../screens/control-links/NewControlLinkScreen.vue'),
     meta: {
       requiresAuth: true,
+      ds: true,
     },
   },
   {
