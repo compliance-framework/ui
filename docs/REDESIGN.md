@@ -148,6 +148,9 @@ Made during the work (open to review):
   `App.vue`. It listens to PrimeVue's toast event bus, so every existing `useToast()` call, classic
   or redesigned, shows a design-system toast. Success and info dismiss after 5 s; warnings and
   errors stay until dismissed (the `life` a call site passes is ignored).
+- **Confirmations use the design system's `ConfirmHost`** in `App.vue`, which shows PrimeVue
+  `useConfirm().require(...)` requests as design-system ConfirmDialogs. New screens use
+  `ConfirmDialog` directly.
 - **Wording follows the current app**; the status vocabulary in `StatusBadge/statuses.ts` is used
   where it matches (evidence results, risk statuses and levels).
 - **Times show in the viewer's local time zone**, as the current app does.

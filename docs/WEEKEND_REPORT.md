@@ -456,3 +456,12 @@ page structurally migrated, say so and I'll switch.
   `life` values (often 3 s for errors) are ignored. A repeated message replaces the earlier one.
 - Toasts are announced politely (success, info) or assertively (warnings, errors). A new axe
   test checks a page with a toast on screen.
+- Follow-up: **confirmations get the same treatment.** A design-system `ConfirmHost` replaces
+  PrimeVue's global `<ConfirmDialog />` and listens to PrimeVue's confirmation event bus, so the
+  23 classic `confirm.require(...)` calls (delete catalog, delete control link, run or cancel a
+  workflow, and so on) open the design-system confirm. The header becomes the title, the message
+  the body, and the accept and reject labels the buttons. It's destructive styling when the
+  accept severity is `danger` or the wording says delete or remove, primary otherwise.
+- Also in this stretch: the assessment results **Local definitions** and **Back matter** tabs
+  were "coming soon" placeholders; they're removed from the tab bar and their URLs redirect to
+  the overview.

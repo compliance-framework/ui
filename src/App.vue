@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { RouterView } from 'vue-router';
 import ToastRegion from '@/ds/components/ToastRegion/ToastRegion.vue';
-import ConfirmDialog from '@/volt/ConfirmDialog.vue';
+import ConfirmHost from '@/ds/components/ConfirmDialog/ConfirmHost.vue';
 import DemoFeedbackButton from '@/components/DemoFeedbackButton.vue';
 import ErrorDialogHost from '@/components/notifications/ErrorDialogHost.vue';
 import { useTheme } from '@/composables/useTheme';
@@ -17,5 +17,5 @@ useTheme();
   <DemoFeedbackButton />
   <ToastRegion />
   <ErrorDialogHost />
-  <ConfirmDialog />
+  <ConfirmHost />
 </template>

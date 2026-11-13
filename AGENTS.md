@@ -68,6 +68,7 @@ npm run format:fix                           # prettier --write src/
   tokens; screens contain no CSS or class attributes; read data through `useApiQuery` and render
   states with `DataState`. Toasts: keep calling PrimeVue's `useToast()`; the design system's
   `ToastRegion` (in `App.vue`) shows them, with its own policy (errors stay until dismissed).
+  Classic `useConfirm().require(...)` calls are shown by the design system's `ConfirmHost`.
   `npm run lint:css` enforces the tokens; add each migrated route to `e2e/a11y.spec.ts` and its
   API calls to `e2e/support/api.ts`.
 
