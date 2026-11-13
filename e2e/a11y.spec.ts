@@ -17,6 +17,11 @@ const routes = [
   '/evidence/create',
   `/evidence/${EVIDENCE_ID}/update`,
   '/systems',
+  '/profiles',
+  '/component-definitions',
+  '/assessment-plans',
+  '/assessment-results',
+  '/plan-of-action-and-milestones',
   `/systems/${SYSTEMS.scoped}/evidence`,
   `/systems/${SYSTEMS.scoped}/compliance`,
   `/systems/${SYSTEMS.scoped}/workflows`,
@@ -76,6 +81,7 @@ test.beforeEach(async ({ page }) => {
 for (const theme of themes) {
   for (const state of states) {
     test(`axe: every route, ${state} (${theme})`, async ({ page }) => {
+      test.setTimeout(routes.length * 5_000); // one axe pass per route
       await signIn(page, theme);
       await mockApi(page, { lists: state });
       const violations: string[] = [];

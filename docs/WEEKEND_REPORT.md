@@ -80,3 +80,21 @@ page structurally migrated, say so and I'll switch.
   the classic page bounced to the instances list.
 - **Gap:** assessment plans, POA&Ms and assessment results have no records in local-dev, so
   those three frames are verified by type-check and build only, not in a browser.
+
+### Document lists: one screen for five lists
+
+- Profiles, component definitions, assessment plans, assessment results and POA&Ms now share one
+  list screen (`src/screens/documents/`), configured per type in `documentKinds.ts`: title,
+  version and last modified, title search and sort in the URL, a Create button, and each row
+  links to its record.
+- **Decision:** the classic "Set" button on assessment plans, results and POA&Ms is now **Make
+  active** in each row's menu, and the active one carries an **Active** tag (like "Current" on
+  Systems). Full-JSON download moved into the same menu as **Download source (JSON)**, as on
+  Systems. Profiles had neither, so its rows have no menu; "Build profile from props" is a page
+  action.
+- **Decision:** every list shows Version and Last modified, where the classic profile, component
+  definition and assessment plan lists showed only the title.
+- Classic list views deleted. Catalogs is different enough (category tabs, activate, delete) to
+  get its own screen next.
+- e2e: the five lists are in the axe checks. The "every route" axe test now scales its timeout
+  with the number of routes, since it was hitting the 30s default.

@@ -253,9 +253,10 @@ const authenticatedRoutes = [
   {
     path: '/profiles',
     name: 'profile-list',
-    component: () => import('../views/profile/ProfileList.vue'),
+    component: () => import('../screens/documents/DocumentLists.vue'),
     meta: {
       requiresAuth: true,
+      ds: true,
     },
   },
   {
@@ -467,10 +468,10 @@ const authenticatedRoutes = [
   {
     path: '/component-definitions',
     name: 'component-definitions',
-    component: () =>
-      import('../views/component-definitions/ComponentDefinitionListView.vue'),
+    component: () => import('../screens/documents/DocumentLists.vue'),
     meta: {
       requiresAuth: true,
+      ds: true,
     },
   },
   {
@@ -536,10 +537,10 @@ const authenticatedRoutes = [
   {
     path: '/assessment-plans',
     name: 'assessment-plans',
-    component: () =>
-      import('../views/assessment-plans/AssessmentPlanListView.vue'),
+    component: () => import('../screens/documents/DocumentLists.vue'),
     meta: {
       requiresAuth: true,
+      ds: true,
     },
   },
   {
@@ -595,10 +596,10 @@ const authenticatedRoutes = [
     // route level code-splitting
     // this generates a separate chunk (About.[hash].js) for this route
     // which is lazy-loaded when the route is visited.
-    component: () =>
-      import('../views/plan-of-actions-and-milestones/PlanOfActionAndMilestonesListView.vue'),
+    component: () => import('../screens/documents/DocumentLists.vue'),
     meta: {
       requiresAuth: true,
+      ds: true,
     },
   },
   {
@@ -710,10 +711,10 @@ const authenticatedRoutes = [
   {
     path: '/assessment-results',
     name: 'assessment-results',
-    component: () =>
-      import('../views/assessment-results/AssessmentResultsListView.vue'),
+    component: () => import('../screens/documents/DocumentLists.vue'),
     meta: {
       requiresAuth: true,
+      ds: true,
     },
   },
   {

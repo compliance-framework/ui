@@ -330,6 +330,20 @@ export async function mockApi(page: Page, options: MockOptions = {}) {
         totalPages: 1,
       });
     }
+    const documentList = path.match(
+      /^\/api\/oscal\/(profiles|component-definitions|assessment-plans|assessment-results|plan-of-action-and-milestones)$/,
+    );
+    if (documentList && method === 'GET') {
+      const documents = [1, 2].map((i) => ({
+        uuid: `${documentList[1]}-${i}`,
+        metadata: {
+          title: `Example ${documentList[1]} ${i}`,
+          version: `1.${i}`,
+          'last-modified': `2026-11-0${i}T00:00:00Z`,
+        },
+      }));
+      return list(route, lists, { data: documents }, { data: [] });
+    }
     if (path === '/api/oscal/system-security-plans' && method === 'GET') {
       return list(route, lists, { data: plans }, { data: [] });
     }
